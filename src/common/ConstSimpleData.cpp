@@ -11,14 +11,14 @@
 **/
 
 #include "ConstSimpleData.h"
-#include "IHeapData.h"
+#include "HeapData.h"
 #include "Stringf.h"
 
 ConstSimpleData::ConstSimpleData( const void *data, unsigned size ) : _data( data ), _size( size )
 {
 }
 
-ConstSimpleData::ConstSimpleData( const IHeapData &data ) : _data( data.data() ), _size( data.size() )
+ConstSimpleData::ConstSimpleData( const HeapData &data ) : _data( data.data() ), _size( data.size() )
 {
 }
 

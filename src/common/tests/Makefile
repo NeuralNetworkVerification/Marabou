@@ -18,11 +18,13 @@ TEST_FILES = \
 	Test_Set.h \
 	Test_Map.h \
 	Test_ConstSimpleData.h \
+	Test_HeapData.h \
 
 SOURCES += \
 	../String.cpp \
 	../Error.cpp \
 	../ConstSimpleData.cpp \
+	../HeapData.cpp \
 	\
 	../mock/Errno.cpp \
 	../mock/CommonMock.cpp \

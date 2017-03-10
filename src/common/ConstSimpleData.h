@@ -13,7 +13,7 @@
 #ifndef __ConstSimpleData_h__
 #define __ConstSimpleData_h__
 
-class IHeapData;
+class HeapData;
 class String;
 
 #include <cstdio>
@@ -22,7 +22,7 @@ class ConstSimpleData
 {
 public:
 	ConstSimpleData( const void *data, unsigned size );
-    ConstSimpleData( const IHeapData &data );
+    ConstSimpleData( const HeapData &data );
 	const void *data() const;
     unsigned size() const;
     const char *asChar() const;
