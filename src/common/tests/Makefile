@@ -12,6 +12,7 @@ TEST_FILES = \
 	Test_List.h \
 	Test_Stringf.h \
 	Test_Error.h \
+	Test_Queue.h \
 
 SOURCES += \
 	../String.cpp \
