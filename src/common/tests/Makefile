@@ -4,6 +4,7 @@ TEST_TARGET = CommonTests.tests
 
 LOCAL_INCLUDES += \
 	.. \
+	$(CONFIGURATION_DIR) \
 
 TEST_FILES = $(wildcard Test_*.h)
 
@@ -13,6 +14,7 @@ SOURCES += \
 	../ConstSimpleData.cpp \
 	../HeapData.cpp \
 	../File.cpp \
+	../FloatUtils.cpp \
 	\
 	../mock/Errno.cpp \
 	../mock/CommonMock.cpp \

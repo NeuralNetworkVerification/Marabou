@@ -2,16 +2,18 @@
 # Places
 #
 
-SRC_DIR         = $(ROOT_DIR)
-PROJECT_DIR     = $(ROOT_DIR)/..
+SRC_DIR           = $(ROOT_DIR)
+PROJECT_DIR       = $(ROOT_DIR)/..
 
-TOOLS_DIR	= $(PROJECT_DIR)/tools
-CXXTEST_DIR 	= $(TOOLS_DIR)/cxxtest
+TOOLS_DIR	  = $(PROJECT_DIR)/tools
+CXXTEST_DIR 	  = $(TOOLS_DIR)/cxxtest
 
-COMMON_DIR 	= $(SRC_DIR)/common
-COMMON_MOCK_DIR = $(COMMON_DIR)/Mock
-COMMON_REAL_DIR = $(COMMON_DIR)/Real
-COMMON_TEST_DIR = $(COMMON_DIR)/tests
+COMMON_DIR 	  = $(SRC_DIR)/common
+COMMON_MOCK_DIR   = $(COMMON_DIR)/Mock
+COMMON_REAL_DIR   = $(COMMON_DIR)/Real
+COMMON_TEST_DIR   = $(COMMON_DIR)/tests
+
+CONFIGURATION_DIR = $(SRC_DIR)/configuration
 
 #
 # Utilities
