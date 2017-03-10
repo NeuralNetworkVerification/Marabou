@@ -15,49 +15,49 @@
 #include <stdlib.h>
 #include <string.h>
 
-Error::Error( const char *errorClass, unsigned code ) : _code( code )
+Error::Error( const char *errorClass, int code ) : _code( code )
 {
-  memset( _errorClass, 0, sizeof(_userMessage) );
-  memset( _userMessage, 0, sizeof(_userMessage) );
+    memset( _errorClass, 0, sizeof(_userMessage) );
+    memset( _userMessage, 0, sizeof(_userMessage) );
 
-  strncpy( _errorClass, errorClass, BUFFER_SIZE - 1 );
-  _errno = T::errorNumber();
+    strncpy( _errorClass, errorClass, BUFFER_SIZE - 1 );
+    _errno = T::errorNumber();
 }
 
-Error::Error( const char *errorClass, unsigned code, const char *userMessage ) : _code( code )
+Error::Error( const char *errorClass, int code, const char *userMessage ) : _code( code )
 {
-  memset( _errorClass, 0, sizeof(_userMessage) );
-  memset( _userMessage, 0, sizeof(_userMessage) );
+    memset( _errorClass, 0, sizeof(_userMessage) );
+    memset( _userMessage, 0, sizeof(_userMessage) );
 
-  strncpy( _errorClass, errorClass, BUFFER_SIZE - 1 );
-  setUserMessage( userMessage );
+    strncpy( _errorClass, errorClass, BUFFER_SIZE - 1 );
+    setUserMessage( userMessage );
 
-  _errno = T::errorNumber();
+    _errno = T::errorNumber();
 }
 
 int Error::getErrno() const
 {
-  return _errno;
+    return _errno;
 }
 
 int Error::getCode() const
 {
-  return _code;
+    return _code;
 }
 
 void Error::setUserMessage( const char *userMessage )
 {
-  strncpy( _userMessage, userMessage, BUFFER_SIZE - 1 );
+    strncpy( _userMessage, userMessage, BUFFER_SIZE - 1 );
 }
 
 const char *Error::getErrorClass() const
 {
-  return _errorClass;
+    return _errorClass;
 }
 
 const char *Error::getUserMessage() const
 {
-  return _userMessage;
+    return _userMessage;
 }
 
 //

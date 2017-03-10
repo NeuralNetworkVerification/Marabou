@@ -16,8 +16,8 @@
 class Error
 {
 public:
-    Error( const char *errorClass, unsigned code );
-    Error( const char *errorClass, unsigned code, const char *userMessage );
+    Error( const char *errorClass, int code );
+    Error( const char *errorClass, int code, const char *userMessage );
     int getErrno() const;
     int getCode() const;
     void setUserMessage( const char *userMessage );
