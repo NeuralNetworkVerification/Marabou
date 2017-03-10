@@ -10,10 +10,6 @@
 ** directory for licensing information.\endverbatim
 **/
 
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-
 #include "CommonError.h"
 #include "ConstSimpleData.h"
 #include "File.h"
