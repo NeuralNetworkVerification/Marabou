@@ -1,5 +1,7 @@
 #define CXXTEST_MOCK_TEST_SOURCE_FILE
 #include "T/stdlib.h"
+#include "T/sys/stat.h"
+#include "T/unistd.h"
 
 //
 // Local Variables:

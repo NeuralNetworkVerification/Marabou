@@ -27,6 +27,10 @@ public:
         KEY_DOESNT_EXIST_IN_MAP = 5,
         MAP_IS_EMPTY = 6,
         NOT_ENOUGH_MEMORY = 7,
+        STAT_FAILED = 8,
+        OPEN_FAILED = 9,
+        WRITE_FAILED = 10,
+        READ_FAILED = 11,
     };
 
     CommonError( CommonError::Code code ) : Error( "CommonError", (int)code )

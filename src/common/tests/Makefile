@@ -20,12 +20,14 @@ TEST_FILES = \
 	Test_ConstSimpleData.h \
 	Test_HeapData.h \
 	Test_Pair.h \
+	Test_File.h \
 
 SOURCES += \
 	../String.cpp \
 	../Error.cpp \
 	../ConstSimpleData.cpp \
 	../HeapData.cpp \
+	../File.cpp \
 	\
 	../mock/Errno.cpp \
 	../mock/CommonMock.cpp \

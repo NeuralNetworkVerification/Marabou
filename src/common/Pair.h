@@ -81,3 +81,11 @@ std::ostream &operator<<( std::ostream &stream, const Pair<L, R> &pair )
 }
 
 #endif // __Pair_h__
+
+//
+// Local Variables:
+// compile-command: "make -C .. "
+// tags-file-name: "../TAGS"
+// c-basic-offset: 4
+// End:
+//
