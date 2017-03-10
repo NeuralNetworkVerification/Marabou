@@ -11,9 +11,14 @@ TEST_FILES = \
 	Test_String.h \
 	Test_List.h \
 	Test_Stringf.h \
+	Test_Error.h \
 
 SOURCES += \
 	../String.cpp \
+	../Error.cpp \
+	\
+	../mock/Errno.cpp \
+
 
 # CommonMock.cpp \
 # 	Errno.cpp \
