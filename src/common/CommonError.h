@@ -20,6 +20,9 @@ class CommonError : public Error
 public:
 	enum Code {
         QUEUE_IS_EMPTY = 0,
+        VALUE_DOESNT_EXIST_IN_VECTOR = 1,
+        VECTOR_OUT_OF_BOUNDS = 2,
+        POPPING_FROM_EMPTY_VECTOR = 3,
     };
 
     CommonError( CommonError::Code code ) : Error( "CommonError", (int)code )
