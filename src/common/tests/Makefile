@@ -16,6 +16,7 @@ TEST_FILES = \
 	Test_Vector.h \
 	Test_Stack.h \
 	Test_Set.h \
+	Test_Map.h \
 
 SOURCES += \
 	../String.cpp \
