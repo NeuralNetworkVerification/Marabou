@@ -17,10 +17,12 @@ TEST_FILES = \
 	Test_Stack.h \
 	Test_Set.h \
 	Test_Map.h \
+	Test_ConstSimpleData.h \
 
 SOURCES += \
 	../String.cpp \
 	../Error.cpp \
+	../ConstSimpleData.cpp \
 	\
 	../mock/Errno.cpp \
 	../mock/CommonMock.cpp \
