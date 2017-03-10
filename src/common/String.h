@@ -55,6 +55,31 @@ protected:
 
 std::ostream &operator<<( std::ostream &stream, const String &string );
 
+#ifdef CXXTEST_RUNNING
+#include <cxxtest/ValueTraits.h>
+#include <stdio.h>
+namespace CxxTest
+{
+    CXXTEST_TEMPLATE_INSTANTIATION
+    class ValueTraits<String>
+    {
+    public:
+        ValueTraits( const String &string ) : _string( string )
+        {
+        }
+
+        const char *asString() const
+        {
+            return _string.ascii();
+        }
+
+    private:
+        const String &_string;
+    };
+}
+
+#endif // CXXTEST_RUNNING
+
 #endif // __String_h__
 
 //
