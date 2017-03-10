@@ -23,6 +23,9 @@ public:
         VALUE_DOESNT_EXIST_IN_VECTOR = 1,
         VECTOR_OUT_OF_BOUNDS = 2,
         POPPING_FROM_EMPTY_VECTOR = 3,
+        STACK_IS_EMPTY = 4,
+        KEY_DOESNT_EXIST_IN_MAP = 5,
+        MAP_IS_EMPTY = 6,
     };
 
     CommonError( CommonError::Code code ) : Error( "CommonError", (int)code )

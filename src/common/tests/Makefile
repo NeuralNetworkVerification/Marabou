@@ -14,12 +14,15 @@ TEST_FILES = \
 	Test_Error.h \
 	Test_Queue.h \
 	Test_Vector.h \
+	Test_Stack.h \
+	Test_Set.h \
 
 SOURCES += \
 	../String.cpp \
 	../Error.cpp \
 	\
 	../mock/Errno.cpp \
+	../mock/CommonMock.cpp \
 
 
 # CommonMock.cpp \
