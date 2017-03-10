@@ -19,6 +19,7 @@ TEST_FILES = \
 	Test_Map.h \
 	Test_ConstSimpleData.h \
 	Test_HeapData.h \
+	Test_Pair.h \
 
 SOURCES += \
 	../String.cpp \
