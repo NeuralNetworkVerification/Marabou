@@ -9,8 +9,8 @@ TOOLS_DIR	  = $(PROJECT_DIR)/tools
 CXXTEST_DIR 	  = $(TOOLS_DIR)/cxxtest
 
 COMMON_DIR 	  = $(SRC_DIR)/common
-COMMON_MOCK_DIR   = $(COMMON_DIR)/Mock
-COMMON_REAL_DIR   = $(COMMON_DIR)/Real
+COMMON_MOCK_DIR   = $(COMMON_DIR)/mock
+COMMON_REAL_DIR   = $(COMMON_DIR)/real
 COMMON_TEST_DIR   = $(COMMON_DIR)/tests
 
 CONFIGURATION_DIR = $(SRC_DIR)/configuration
@@ -67,10 +67,13 @@ CFLAGS += \
 	-g \
 
 %.obj: %.cpp
-	$(COMPILE) -c -o $@ $< $(CFLAGS) $(addprefix -I, $(LOCAL_INCLUDES))
+	@echo "CC\t" $@
+	@$(COMPILE) -c -o $@ $< $(CFLAGS) $(addprefix -I, $(LOCAL_INCLUDES))
+
 
 %.obj: %.cxx
-	$(COMPILE) -c -o $@ $< $(CFLAGS) $(addprefix -I, $(LOCAL_INCLUDES))
+	@echo "CC\t" $@
+	@$(COMPILE) -c -o $@ $< $(CFLAGS) $(addprefix -I, $(LOCAL_INCLUDES))
 
 #
 # Linking C/C++
@@ -113,13 +116,16 @@ TEST_OBJECTS = $(CXX_SOURCES:%.cxx=%.obj) $(OBJECTS) runner.obj
 DEPS = $(SOURCES:%.cpp=%.d) $(CXX_SOURCES:%.cxx=%.d)
 
 cxxtest_%.cxx: %.h
-	$(TESTGEN) --part --have-eh --abort-on-fail -o $@ $^
+	@echo "CXX\t" $@
+	@$(TESTGEN) --part --have-eh --abort-on-fail -o $@ $^
 
 runner.cxx:
+	@echo "CXX\t" $@
 	$(TESTGEN) --root --have-eh --abort-on-fail --error-printer -o $@
 
 %.tests: $(TEST_OBJECTS)
-	$(LINK) -o $@ $^ $(addprefix -l, $(SYSTEM_LIBRARIES))
+	@echo "LD\t" $@
+	@$(LINK) -o $@ $^ $(addprefix -l, $(SYSTEM_LIBRARIES))
 
 .PRECIOUS: %.cxx %.obj
 
