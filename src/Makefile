@@ -2,6 +2,7 @@ ROOT_DIR = .
 
 SUBDIRS += \
 	common \
+	reluplex \
 
 all:
 	@echo Done
