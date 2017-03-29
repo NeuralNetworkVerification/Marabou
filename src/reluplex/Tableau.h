@@ -36,8 +36,21 @@ public:
 
     /*
       Initialize the basis matrix to a certain set of basic variables
+      Non basic variables are set to 0, assignment is recomputed
     */
-    void initializeBasisMatrix( const Set<unsigned> &basicVariables );
+    void initializeBasis( const Set<unsigned> &basicVariables );
+
+    /*
+      Get the assignment of a variable, either basic or non-basic
+    */
+    double getValue( unsigned variable );
+
+    /*
+      Set the lower/upper bounds for a variable
+    */
+    void setLowerBound( unsigned variable, double value );
+    void setUpperBound( unsigned variable, double value );
+
 
     /*
       Perform a backward transformation, i.e. find d such that d = inv(B) * a,
@@ -93,15 +106,21 @@ private:
     /* The right hand side vector of Ax = b */
     double *_b;
 
-    /* Current set of basic variables (length m) */
-    unsigned *_basicVariables;
+    /* Mapping between basic variables and indices (length m) */
+    unsigned *_basicIndexToVariable;
 
-    /* Current set of non-basic variables (length n-m) */
-    unsigned *_nonBasicVariables;
+    /* Mapping between non-basic variables and indices (length m) */
+    unsigned *_nonBasicIndexToVariable;
+
+    /* Mapping from variable to index, either basic or non-basic */
+    unsigned *_variableToIndex;
+
+    /* The set of current basic variables */
+    Set<unsigned> _basicVariables;
 
     /* The position of the non basic variables.
-       True: at upper bound; False: at lower bound */
-    bool *_nonBasicValues;
+       True at upper bound, false at lower bound */
+    bool *_nonBasicAtUpper;
 
     /* Upper and lower bounds for all variables */
     double *_lowerBounds;

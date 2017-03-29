@@ -48,22 +48,28 @@ Tableau::~Tableau()
         _b = NULL;
     }
 
-    if ( _basicVariables )
+    if ( _basicIndexToVariable )
     {
-        delete[] _basicVariables;
-        _basicVariables = NULL;
+        delete[] _basicIndexToVariable;
+        _basicIndexToVariable = NULL;
     }
 
-    if ( _nonBasicVariables )
+    if ( _variableToIndex )
     {
-        delete[] _nonBasicVariables;
-        _nonBasicVariables = NULL;
+        delete[] _variableToIndex;
+        _variableToIndex = NULL;
     }
 
-    if ( _nonBasicValues )
+    if ( _nonBasicIndexToVariable )
     {
-        delete[] _nonBasicValues;
-        _nonBasicValues = NULL;
+        delete[] _nonBasicIndexToVariable;
+        _nonBasicIndexToVariable = NULL;
+    }
+
+    if ( _nonBasicAtUpper )
+    {
+        delete[] _nonBasicAtUpper;
+        _nonBasicAtUpper = NULL;
     }
 
     if ( _lowerBounds )
@@ -102,16 +108,20 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     if ( !_a )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "a" );
 
-    _basicVariables = new unsigned[m];
-    if ( !_basicVariables )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "basicVariables" );
+    _basicIndexToVariable = new unsigned[m];
+    if ( !_basicIndexToVariable )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "basicIndexToVariable" );
 
-    _nonBasicVariables = new unsigned[n-m];
-    if ( !_nonBasicVariables )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "nonBasicVariables" );
+    _variableToIndex = new unsigned[n];
+    if ( !_variableToIndex )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "variableToIndex" );
 
-    _nonBasicValues = new bool[n-m];
-    if ( !_nonBasicValues )
+    _nonBasicIndexToVariable = new unsigned[n-m];
+    if ( !_nonBasicIndexToVariable )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "nonBasicIndexToVariable" );
+
+    _nonBasicAtUpper = new bool[n-m];
+    if ( !_nonBasicAtUpper )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "nonBasicValues" );
 
     _lowerBounds = new double[n];
@@ -132,7 +142,7 @@ void Tableau::setEntryValue( unsigned row, unsigned column, double value )
     _A[(column * _m) + row] = value;
 }
 
-void Tableau::initializeBasisMatrix( const Set<unsigned> &basicVariables )
+void Tableau::initializeBasis( const Set<unsigned> &basicVariables )
 {
     unsigned basicIndex = 0;
     unsigned nonBasicIndex = 0;
@@ -141,14 +151,20 @@ void Tableau::initializeBasisMatrix( const Set<unsigned> &basicVariables )
     {
         if ( basicVariables.exists( i ) )
         {
-            _basicVariables[basicIndex] = i;
+            _basicIndexToVariable[basicIndex] = i;
+            _variableToIndex[i] = basicIndex;
             memcpy( _B + basicIndex * _m, _A + i * _m, sizeof(double) * _m );
             ++basicIndex;
         }
         else
-            _nonBasicValues[nonBasicIndex++] = i;
+        {
+            _nonBasicIndexToVariable[nonBasicIndex] = i;
+            _variableToIndex[i] = nonBasicIndex;
+            ++nonBasicIndex;
+        }
     }
 
+    _basicVariables = basicVariables;
     ASSERT( basicIndex + nonBasicIndex == _n );
 }
 
@@ -213,6 +229,31 @@ void Tableau::solveForwardMultiplication( const double *M, double *d, const doub
     }
 
 }
+
+void Tableau::setLowerBound( unsigned variable, double value )
+{
+    ASSERT( variable < _n );
+    _lowerBounds[variable] = value;
+}
+
+void Tableau::setUpperBound( unsigned variable, double value )
+{
+    ASSERT( variable < _n );
+    _upperBounds[variable] = value;
+}
+
+double Tableau::getValue( unsigned variable )
+{
+    if ( _basicVariables.exists( variable ) )
+        return 0.0;
+
+    unsigned index = _variableToIndex[variable];
+    if ( _nonBasicAtUpper[index] )
+        return _upperBounds[variable];
+    else
+        return _lowerBounds[variable];
+}
+
 
 // 1  2  3     x1        4
 // 0  2  2     x2   =    0

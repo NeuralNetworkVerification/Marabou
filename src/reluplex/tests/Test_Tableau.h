@@ -57,6 +57,33 @@ public:
         tableau.setEntryValue( 2, 6, 1 );
     }
 
+    void test_initalize_basis_get_value()
+    {
+        Tableau tableau;
+
+        TS_ASSERT_THROWS_NOTHING( tableau.setDimensions( 3, 7 ) );
+        initializeTableauValues( tableau );
+
+        for ( unsigned i = 0; i < 7; ++i )
+        {
+            TS_ASSERT_THROWS_NOTHING( tableau.setLowerBound( i, 1 ) );
+            TS_ASSERT_THROWS_NOTHING( tableau.setUpperBound( i, 2 ) );
+        }
+
+        Set<unsigned> basicVariables = { 4, 5, 6 };
+        TS_ASSERT_THROWS_NOTHING( tableau.initializeBasis( basicVariables ) );
+
+        // All non-basics are set to lower bounds.
+        TS_ASSERT_EQUALS( tableau.getValue( 0 ), 1.0 );
+        TS_ASSERT_EQUALS( tableau.getValue( 1 ), 1.0 );
+        TS_ASSERT_EQUALS( tableau.getValue( 2 ), 1.0 );
+        TS_ASSERT_EQUALS( tableau.getValue( 3 ), 1.0 );
+
+        // TS_ASSERT_EQUALS( getValue( 4 ), 1.0 );
+        // TS_ASSERT_EQUALS( getValue( 5 ), 1.0 );
+        // TS_ASSERT_EQUALS( getValue( 6 ), 1.0 );
+    }
+
     void test_backward_transformation_no_eta()
     {
         Tableau tableau;
@@ -65,7 +92,7 @@ public:
         initializeTableauValues( tableau );
 
         Set<unsigned> basicVariables = { 4, 5, 6 };
-        TS_ASSERT_THROWS_NOTHING( tableau.initializeBasisMatrix( basicVariables ) );
+        TS_ASSERT_THROWS_NOTHING( tableau.initializeBasis( basicVariables ) );
 
         double result[3];
         std::fill( result, result + 3, 0.0 );
