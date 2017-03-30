@@ -36,6 +36,12 @@ Tableau::~Tableau()
         _B = NULL;
     }
 
+    if ( _AN )
+    {
+        delete[] _AN;
+        _AN = NULL;
+    }
+
     if ( _a )
     {
         delete[] _A;
@@ -104,9 +110,17 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     if ( !_B )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "B" );
 
+    _AN = new double[m * (n-m)];
+    if ( !_AN )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "AN" );
+
     _a = new double[m];
     if ( !_a )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "a" );
+
+    _b = new double[m];
+    if ( !_b )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "b" );
 
     _basicIndexToVariable = new unsigned[m];
     if ( !_basicIndexToVariable )
@@ -147,6 +161,9 @@ void Tableau::initializeBasis( const Set<unsigned> &basicVariables )
     unsigned basicIndex = 0;
     unsigned nonBasicIndex = 0;
 
+    _basicVariables = basicVariables;
+
+    // Assign variable indices, grab basic columns from A into B
     for ( unsigned i = 0; i < _n; ++i )
     {
         if ( basicVariables.exists( i ) )
@@ -160,12 +177,39 @@ void Tableau::initializeBasis( const Set<unsigned> &basicVariables )
         {
             _nonBasicIndexToVariable[nonBasicIndex] = i;
             _variableToIndex[i] = nonBasicIndex;
+            memcpy( _AN + nonBasicIndex * _m, _A + i * _m, sizeof(double) * _m );
             ++nonBasicIndex;
         }
     }
-
-    _basicVariables = basicVariables;
     ASSERT( basicIndex + nonBasicIndex == _n );
+
+    // Set non-basics to lower bounds
+    std::fill( _nonBasicAtUpper, _nonBasicAtUpper + _n - _m, false );
+
+    // Recompute assignment
+    computeAssignment();
+}
+
+void Tableau::computeAssignment()
+{
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        double result = _b[i];
+        printf( "result = %lf\n", result );
+
+        for ( unsigned j = 0; j < _n - _m; ++j )
+        {
+            double nonBasicValue = _nonBasicAtUpper[j] ?
+                _upperBounds[_nonBasicIndexToVariable[j]] :
+                _lowerBounds[_nonBasicIndexToVariable[j]];
+
+            printf( "result -= %lf * %lf\n", _AN[(j * _m) + i], nonBasicValue );
+            result -= ( ( _AN[(j * _m) + i] * nonBasicValue ) / _B[(i * _m) + i] );
+        }
+
+        _assignment[i] = result;
+        printf( "Final result: %lf\n", _assignment[i] );
+    }
 }
 
 
@@ -245,13 +289,16 @@ void Tableau::setUpperBound( unsigned variable, double value )
 double Tableau::getValue( unsigned variable )
 {
     if ( _basicVariables.exists( variable ) )
-        return 0.0;
+        return _assignment[_variableToIndex[variable]];
 
     unsigned index = _variableToIndex[variable];
-    if ( _nonBasicAtUpper[index] )
-        return _upperBounds[variable];
-    else
-        return _lowerBounds[variable];
+    return _nonBasicAtUpper[index] ? _upperBounds[variable] : _lowerBounds[variable];
+}
+
+
+void Tableau::setRightHandSide( const double *b )
+{
+    memcpy( _b, b, sizeof(double) * _m );
 }
 
 

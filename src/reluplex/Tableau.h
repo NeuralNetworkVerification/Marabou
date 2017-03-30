@@ -35,8 +35,13 @@ public:
     void setEntryValue( unsigned row, unsigned column, double value );
 
     /*
+      Set the values of the right hand side vector, b, of size m
+     */
+    void setRightHandSide( const double *b );
+
+    /*
       Initialize the basis matrix to a certain set of basic variables
-      Non basic variables are set to 0, assignment is recomputed
+      Non basic variables are set to their lower bounds, assignment is recomputed
     */
     void initializeBasis( const Set<unsigned> &basicVariables );
 
@@ -87,6 +92,26 @@ public:
             }
             printf( "\n" );
         }
+
+        printf( "\nDumping B:\n" );
+        for ( unsigned i = 0; i < _m; ++i )
+        {
+            for ( unsigned j = 0; j < _m; ++j )
+            {
+                printf( "%5.1lf ", _B[j * _m + i] );
+            }
+            printf( "\n" );
+        }
+
+        printf( "\nDumping AN:\n" );
+        for ( unsigned i = 0; i < _m; ++i )
+        {
+            for ( unsigned j = 0; j < _n - _m; ++j )
+            {
+                printf( "%5.1lf ", _AN[j * _m + i] );
+            }
+            printf( "\n" );
+        }
     }
 
 private:
@@ -99,6 +124,9 @@ private:
 
     /* The basis matrix, which is a subset of A's columns */
     double *_B;
+
+    /* The non-basic matrix, which is a subset of A's columns */
+    double *_AN;
 
     /* A single column matrix from A */
     double *_a;
@@ -131,6 +159,9 @@ private:
 
     /* Extract d for the equation M * d = a. Assume M is upper triangular, and is stored column-wise. */
     void solveForwardMultiplication( const double *M, double *d, const double *a );
+
+    /* Compute the assignment. Assumes the basis has just been refactored */
+    void computeAssignment();
 };
 
 #endif // __Tableau_h__
