@@ -10,10 +10,10 @@
  ** directory for licensing information.\endverbatim
  **/
 
-#include "Debug.h"
 #include "ReluplexError.h"
 #include "Tableau.h"
 
+#include <assert.h>
 #include <string.h>
 
 Tableau::Tableau()
@@ -165,7 +165,7 @@ void Tableau::initializeBasis( const Set<unsigned> &basicVariables )
     }
 
     _basicVariables = basicVariables;
-    ASSERT( basicIndex + nonBasicIndex == _n );
+    assert( basicIndex + nonBasicIndex == _n );
 }
 
 
@@ -232,13 +232,13 @@ void Tableau::solveForwardMultiplication( const double *M, double *d, const doub
 
 void Tableau::setLowerBound( unsigned variable, double value )
 {
-    ASSERT( variable < _n );
+    assert( variable < _n );
     _lowerBounds[variable] = value;
 }
 
 void Tableau::setUpperBound( unsigned variable, double value )
 {
-    ASSERT( variable < _n );
+    assert( variable < _n );
     _upperBounds[variable] = value;
 }
 
