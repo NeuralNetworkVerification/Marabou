@@ -10,6 +10,9 @@
  ** directory for licensing information.\endverbatim
  **/
 
+#include <cstdio>
+#include "GlobalConfiguration.h"
+
 const double GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS = 0.0000000001;
 
 void GlobalConfiguration::print()
