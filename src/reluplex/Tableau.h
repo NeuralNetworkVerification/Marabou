@@ -130,6 +130,9 @@ public:
         }
     }
 
+    /* Picks the entering variable. Refreshes the cost function. */
+    unsigned pickEnteringVariable();
+
 private:
     /* The dimensions of matrix A */
     unsigned _n;
@@ -156,7 +159,7 @@ private:
     /* Mapping between basic variables and indices (length m) */
     unsigned *_basicIndexToVariable;
 
-    /* Mapping between non-basic variables and indices (length m) */
+    /* Mapping between non-basic variables and indices (length n - m) */
     unsigned *_nonBasicIndexToVariable;
 
     /* Mapping from variable to index, either basic or non-basic */

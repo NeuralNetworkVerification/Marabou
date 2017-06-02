@@ -401,6 +401,27 @@ unsigned Tableau::getBasicStatus( unsigned basic )
     return _basicStatus[_variableToIndex[basic]];
 }
 
+unsigned Tableau::pickEnteringVariable()
+{
+    computeCostFunction();
+
+    // Dantzig's rule
+    unsigned maxIndex = 0;
+    double maxValue = FloatUtils::abs( _costFunction[maxIndex] );
+
+    for ( unsigned i = 1; i < _n - _m; ++i )
+    {
+        double contender = FloatUtils::abs( _costFunction[i] );
+        if ( FloatUtils::gt( contender, maxValue ) )
+        {
+            maxIndex = i;
+            maxValue = contender;
+        }
+    }
+
+    return _nonBasicIndexToVariable[maxIndex];
+}
+
 //
 // Local Variables:
 // compile-command: "make -C . "
