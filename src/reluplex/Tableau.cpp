@@ -353,7 +353,6 @@ void Tableau::setRightHandSide( const double *b )
 const double *Tableau::getCostFunction()
 {
     computeCostFunction();
-
     return _costFunction;
 }
 
@@ -378,47 +377,29 @@ void Tableau::computeCostFunction()
 
     for ( unsigned i = 0; i < _m; ++i )
     {
-        // Currently assume the basic matrix is diagonal
+        // Currently assume the basic matrix is diagonal.
+        // If the variable is too low, We want to add -row, but the
+        // equation is given as x = -An*xn so the two negations cancel
+        // out. The too high case is symmetrical.
         if ( basicTooLow( i ) )
-            addRowToCostFunction( i, -1 );
-        else if ( basicTooHigh( i ) )
             addRowToCostFunction( i, 1 );
+        else if ( basicTooHigh( i ) )
+            addRowToCostFunction( i, -1 );
     }
 }
 
 void Tableau::addRowToCostFunction( unsigned row, double weight )
 {
-    // TODO: we assume B is the identity matrix, otherwise might need to divide by the coefficient from B.
-    printf( "\nAdding row: %u, with weight %lf\n", row, weight );
-
+    // TODO: we assume B is the identity matrix, otherwise might need
+    // to divide by the coefficient from B.
     for ( unsigned i = 0; i < _n - _m; ++i )
-    {
         _costFunction[i] += ( _AN[i * _m + row] * weight );
-        printf( "\t+= %lf * %lf\n", _AN[i * _m + row], weight );
-    }
 }
 
 unsigned Tableau::getBasicStatus( unsigned basic )
 {
     return _basicStatus[_variableToIndex[basic]];
 }
-
-// 1  2  3     x1        4
-// 0  2  2     x2   =    0
-// 0  0 -1     x3        2
-
-//     x3 = 2 / -1 = -2
-//     2x2 + 2x3 = 0 -->
-//     x2 = 0 - 2(-2)
-// private:
-//     /* The matrix */
-//     double **_A;
-
-//     /* The result vector */
-//     double *_b;
-
-
-// };
 
 //
 // Local Variables:
