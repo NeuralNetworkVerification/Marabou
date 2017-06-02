@@ -195,7 +195,8 @@ public:
 
         // Const function is: - x1 -  x2 - 2x3 - 2x4
 
-        TS_ASSERT_EQUALS( tableau->pickEnteringVariable(), 2u );
+        TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable() );
+        TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
 
         TS_ASSERT_THROWS_NOTHING( delete tableau );
     }

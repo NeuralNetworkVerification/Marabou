@@ -242,6 +242,12 @@ void Tableau::computeAssignment()
     }
 }
 
+void Tableau::computeBasicStatus()
+{
+    for ( unsigned i = 0; i < _m; ++i )
+        computeBasicStatus( i );
+}
+
 void Tableau::computeBasicStatus( unsigned basic )
 {
     double ub = _upperBounds[_basicIndexToVariable[basic]];
@@ -261,8 +267,6 @@ void Tableau::computeBasicStatus( unsigned basic )
     else
         _basicStatus[basic] = Tableau::BETWEEN;
 }
-
-
 
     /*
       Perform a backward transformation, i.e. find d such that d = inv(B) * a
@@ -344,7 +348,6 @@ double Tableau::getValue( unsigned variable )
     return _nonBasicAtUpper[index] ? _upperBounds[variable] : _lowerBounds[variable];
 }
 
-
 void Tableau::setRightHandSide( const double *b )
 {
     memcpy( _b, b, sizeof(double) * _m );
@@ -356,19 +359,28 @@ const double *Tableau::getCostFunction()
     return _costFunction;
 }
 
-bool Tableau::basicOutOfBounds( unsigned basic )
+bool Tableau::basicOutOfBounds( unsigned basic ) const
 {
     return basicTooHigh( basic ) || basicTooLow( basic );
 }
 
-bool Tableau::basicTooLow( unsigned basic )
+bool Tableau::basicTooLow( unsigned basic ) const
 {
     return _basicStatus[basic] == Tableau::BELOW_LB;
 }
 
-bool Tableau::basicTooHigh( unsigned basic )
+bool Tableau::basicTooHigh( unsigned basic ) const
 {
     return _basicStatus[basic] == Tableau::ABOVE_UB;
+}
+
+bool Tableau::existsBasicOutOfBounds() const
+{
+    for ( unsigned i = 0; i < _m; ++i )
+        if ( basicOutOfBounds( i ) )
+            return true;
+
+    return false;
 }
 
 void Tableau::computeCostFunction()
@@ -401,7 +413,7 @@ unsigned Tableau::getBasicStatus( unsigned basic )
     return _basicStatus[_variableToIndex[basic]];
 }
 
-unsigned Tableau::pickEnteringVariable()
+void Tableau::pickEnteringVariable()
 {
     computeCostFunction();
 
@@ -419,7 +431,39 @@ unsigned Tableau::pickEnteringVariable()
         }
     }
 
-    return _nonBasicIndexToVariable[maxIndex];
+    _enteringVariable = _nonBasicIndexToVariable[maxIndex];
+}
+
+unsigned Tableau::getEnteringVariable() const
+{
+    return _enteringVariable;
+}
+
+bool Tableau::pickLeavingVariable()
+{
+    return false;
+}
+
+void Tableau::performPivot()
+{
+}
+
+bool Tableau::solve()
+{
+    while ( true )
+    {
+        computeBasicStatus();
+
+        if ( !existsBasicOutOfBounds() )
+            return true;
+
+        pickEnteringVariable();
+
+        if ( !pickLeavingVariable() )
+            return false;
+
+        performPivot();
+    }
 }
 
 //

@@ -131,7 +131,20 @@ public:
     }
 
     /* Picks the entering variable. Refreshes the cost function. */
-    unsigned pickEnteringVariable();
+    void pickEnteringVariable();
+    unsigned getEnteringVariable() const;
+
+    /* Picks the leaving variable. Returns true if successful, false
+       if no eligible variables exist. */
+    bool pickLeavingVariable();
+
+    /* Performs the pivot operation after the entering and leaving
+       variables have been selected */
+    void performPivot();
+
+    /* Attempt to find a feasible solution. Returns true if found,
+       false if problem is infeasible. */
+    bool solve();
 
 private:
     /* The dimensions of matrix A */
@@ -182,6 +195,9 @@ private:
     /* The current status of the basic variabels */
     unsigned *_basicStatus;
 
+    /* A non-basic variable chosen to become basic in this iteration */
+    unsigned _enteringVariable;
+
     /* Extract d for the equation M * d = a. Assume M is upper triangular, and is stored column-wise. */
     void solveForwardMultiplication( const double *M, double *d, const double *a );
 
@@ -193,11 +209,15 @@ private:
     void addRowToCostFunction( unsigned row, double weight );
 
     /* True if the basic variable is out of bounds */
-    bool basicOutOfBounds( unsigned basic );
-    bool basicTooHigh( unsigned basic );
-    bool basicTooLow( unsigned basic );
+    bool basicOutOfBounds( unsigned basic ) const;
+    bool basicTooHigh( unsigned basic ) const;
+    bool basicTooLow( unsigned basic ) const;
+
+    /* True if there exists some out-of-bounds basic */
+    bool existsBasicOutOfBounds() const;
 
     /* Compute the status of the basic variable based on current assignment */
+    void computeBasicStatus();
     void computeBasicStatus( unsigned basic );
 };
 
