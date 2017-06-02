@@ -18,6 +18,15 @@
 class Tableau
 {
 public:
+    enum BasicStatus {
+        BELOW_LB = 0,
+        AT_LB,
+        BETWEEN,
+        FIXED,
+        AT_UB,
+        ABOVE_UB,
+    };
+
     Tableau();
 
     ~Tableau();
@@ -56,6 +65,13 @@ public:
     void setLowerBound( unsigned variable, double value );
     void setUpperBound( unsigned variable, double value );
 
+    /*
+      Return the current status of the basic variable
+    */
+    unsigned getBasicStatus( unsigned basic );
+
+    // Currently for debug purposes
+    const double *getCostFunction();
 
     /*
       Perform a backward transformation, i.e. find d such that d = inv(B) * a,
@@ -134,6 +150,9 @@ private:
     /* The right hand side vector of Ax = b */
     double *_b;
 
+    /* The cost function */
+    double *_costFunction;
+
     /* Mapping between basic variables and indices (length m) */
     unsigned *_basicIndexToVariable;
 
@@ -157,11 +176,26 @@ private:
     /* The current assignment for the basic variables */
     double *_assignment;
 
+    /* The current status of the basic variabels */
+    unsigned *_basicStatus;
+
     /* Extract d for the equation M * d = a. Assume M is upper triangular, and is stored column-wise. */
     void solveForwardMultiplication( const double *M, double *d, const double *a );
 
     /* Compute the assignment. Assumes the basis has just been refactored */
     void computeAssignment();
+
+    /* Compute the cost function */
+    void computeCostFunction();
+    void addRowToCostFunction( unsigned row, double weight );
+
+    /* True if the basic variable is out of bounds */
+    bool basicOutOfBounds( unsigned basic );
+    bool basicTooHigh( unsigned basic );
+    bool basicTooLow( unsigned basic );
+
+    /* Compute the status of the basic variable based on current assignment */
+    void computeBasicStatus( unsigned basic );
 };
 
 #endif // __Tableau_h__

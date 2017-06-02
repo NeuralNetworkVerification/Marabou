@@ -10,8 +10,11 @@ LOCAL_INCLUDES += \
 TEST_FILES = $(wildcard Test_*.h)
 
 SOURCES += \
+	GlobalConfiguration.cpp \
+	\
 	Error.cpp \
 	Errno.cpp \
+	FloatUtils.cpp \
 	\
 	../Tableau.cpp \
 
@@ -23,6 +26,7 @@ CFLAGS += \
 
 include $(ROOT_DIR)/Rules.mk
 
+vpath %.cpp $(CONFIGURATION_DIR)
 vpath %.cpp $(COMMON_DIR)
 vpath %.cpp $(COMMON_REAL_DIR)
 

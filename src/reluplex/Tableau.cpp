@@ -11,6 +11,7 @@
  **/
 
 #include "Debug.h"
+#include "FloatUtils.h"
 #include "ReluplexError.h"
 #include "Tableau.h"
 
@@ -18,7 +19,19 @@
 
 Tableau::Tableau()
     : _A( NULL )
+    , _B( NULL )
+    , _AN( NULL )
+    , _a( NULL )
     , _b( NULL )
+    , _costFunction( NULL )
+    , _basicIndexToVariable( NULL )
+    , _nonBasicIndexToVariable( NULL )
+    , _variableToIndex( NULL )
+    , _nonBasicAtUpper( NULL )
+    , _lowerBounds( NULL )
+    , _upperBounds( NULL )
+    , _assignment( NULL )
+    , _basicStatus( NULL )
 {
 }
 
@@ -52,6 +65,12 @@ Tableau::~Tableau()
     {
         delete[] _b;
         _b = NULL;
+    }
+
+    if ( _costFunction )
+    {
+        delete[] _costFunction;
+        _costFunction = NULL;
     }
 
     if ( _basicIndexToVariable )
@@ -95,6 +114,12 @@ Tableau::~Tableau()
         delete[] _assignment;
         _assignment = NULL;
     }
+
+    if ( _basicStatus )
+    {
+        delete[] _basicStatus;
+        _basicStatus = NULL;
+    }
 }
 
 void Tableau::setDimensions( unsigned m, unsigned n )
@@ -121,6 +146,10 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     _b = new double[m];
     if ( !_b )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "b" );
+
+    _costFunction = new double[n-m];
+    if ( !_costFunction )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "costFunction" );
 
     _basicIndexToVariable = new unsigned[m];
     if ( !_basicIndexToVariable )
@@ -149,6 +178,10 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     _assignment = new double[m];
     if ( !_assignment )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "assignment" );
+
+    _basicStatus = new unsigned[m];
+    if ( !_basicStatus )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "basicStatus" );
 }
 
 void Tableau::setEntryValue( unsigned row, unsigned column, double value )
@@ -195,21 +228,38 @@ void Tableau::computeAssignment()
     for ( unsigned i = 0; i < _m; ++i )
     {
         double result = _b[i];
-        printf( "result = %lf\n", result );
-
         for ( unsigned j = 0; j < _n - _m; ++j )
         {
             double nonBasicValue = _nonBasicAtUpper[j] ?
                 _upperBounds[_nonBasicIndexToVariable[j]] :
                 _lowerBounds[_nonBasicIndexToVariable[j]];
 
-            printf( "result -= %lf * %lf\n", _AN[(j * _m) + i], nonBasicValue );
             result -= ( ( _AN[(j * _m) + i] * nonBasicValue ) / _B[(i * _m) + i] );
         }
 
         _assignment[i] = result;
-        printf( "Final result: %lf\n", _assignment[i] );
+        computeBasicStatus( i );
     }
+}
+
+void Tableau::computeBasicStatus( unsigned basic )
+{
+    double ub = _upperBounds[_basicIndexToVariable[basic]];
+    double lb = _lowerBounds[_basicIndexToVariable[basic]];
+    double value = _assignment[basic];
+
+    if ( FloatUtils::gt( value , ub ) )
+        _basicStatus[basic] = Tableau::ABOVE_UB;
+    else if ( FloatUtils::lt( value , lb ) )
+        _basicStatus[basic] = Tableau::BELOW_LB;
+    else if ( FloatUtils::areEqual( lb, ub ) )
+        _basicStatus[basic] = Tableau::FIXED;
+    else if ( FloatUtils::areEqual( ub, value ) )
+        _basicStatus[basic] = Tableau::AT_UB;
+    else if ( FloatUtils::areEqual( lb, value ) )
+        _basicStatus[basic] = Tableau::AT_LB;
+    else
+        _basicStatus[basic] = Tableau::BETWEEN;
 }
 
 
@@ -271,7 +321,6 @@ void Tableau::solveForwardMultiplication( const double *M, double *d, const doub
         d[i] = d[i] / M[i * _m + i];
         printf( "\tAfter division: d[i] = %5.1lf\n", d[i] );
     }
-
 }
 
 void Tableau::setLowerBound( unsigned variable, double value )
@@ -301,6 +350,58 @@ void Tableau::setRightHandSide( const double *b )
     memcpy( _b, b, sizeof(double) * _m );
 }
 
+const double *Tableau::getCostFunction()
+{
+    computeCostFunction();
+
+    return _costFunction;
+}
+
+bool Tableau::basicOutOfBounds( unsigned basic )
+{
+    return basicTooHigh( basic ) || basicTooLow( basic );
+}
+
+bool Tableau::basicTooLow( unsigned basic )
+{
+    return _basicStatus[basic] == Tableau::BELOW_LB;
+}
+
+bool Tableau::basicTooHigh( unsigned basic )
+{
+    return _basicStatus[basic] == Tableau::ABOVE_UB;
+}
+
+void Tableau::computeCostFunction()
+{
+    std::fill( _costFunction, _costFunction + _n - _m, 0.0 );
+
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        // Currently assume the basic matrix is diagonal
+        if ( basicTooLow( i ) )
+            addRowToCostFunction( i, -1 );
+        else if ( basicTooHigh( i ) )
+            addRowToCostFunction( i, 1 );
+    }
+}
+
+void Tableau::addRowToCostFunction( unsigned row, double weight )
+{
+    // TODO: we assume B is the identity matrix, otherwise might need to divide by the coefficient from B.
+    printf( "\nAdding row: %u, with weight %lf\n", row, weight );
+
+    for ( unsigned i = 0; i < _n - _m; ++i )
+    {
+        _costFunction[i] += ( _AN[i * _m + row] * weight );
+        printf( "\t+= %lf * %lf\n", _AN[i * _m + row], weight );
+    }
+}
+
+unsigned Tableau::getBasicStatus( unsigned basic )
+{
+    return _basicStatus[_variableToIndex[basic]];
+}
 
 // 1  2  3     x1        4
 // 0  2  2     x2   =    0

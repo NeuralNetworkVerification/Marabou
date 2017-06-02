@@ -21,9 +21,7 @@ public:
 
     void tearDown()
     {
-        TS_TRACE( "Tear down" );
         TS_ASSERT_THROWS_NOTHING( delete mock );
-        TS_TRACE( "Tear down done" );
     }
 
     void initializeTableauValues( Tableau &tableau )
@@ -80,16 +78,24 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         initializeTableauValues( *tableau );
 
-        for ( unsigned i = 0; i < 7; ++i )
+        for ( unsigned i = 0; i < 4; ++i )
         {
             TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( i, 1 ) );
             TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( i, 2 ) );
         }
 
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 4, 218 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 4, 228 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 5, 112 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 5, 114 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 6, 400 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 6, 402 ) );
+
         Set<unsigned> basicVariables = { 4, 5, 6 };
         TS_ASSERT_THROWS_NOTHING( tableau->initializeBasis( basicVariables ) );
 
-                tableau->dump();
         // All non-basics are set to lower bounds.
         TS_ASSERT_EQUALS( tableau->getValue( 0 ), 1.0 );
         TS_ASSERT_EQUALS( tableau->getValue( 1 ), 1.0 );
@@ -106,8 +112,54 @@ public:
         TS_ASSERT_EQUALS( tableau->getValue( 6 ), 406.0 );
 
         TS_ASSERT_THROWS_NOTHING( delete tableau );
+    }
 
-        TS_TRACE( "TEST DONE" );
+    void test_initalize_basis_get_cost_function()
+    {
+        Tableau *tableau;
+
+        TS_ASSERT( tableau = new Tableau );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        initializeTableauValues( *tableau );
+
+        for ( unsigned i = 0; i < 4; ++i )
+        {
+            TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( i, 1 ) );
+            TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( i, 2 ) );
+        }
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 4, 218 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 4, 228 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 5, 112 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 5, 114 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 6, 400 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 6, 402 ) );
+
+        Set<unsigned> basicVariables = { 4, 5, 6 };
+        TS_ASSERT_THROWS_NOTHING( tableau->initializeBasis( basicVariables ) );
+
+        TS_ASSERT_EQUALS( tableau->getBasicStatus( 4 ), Tableau::BELOW_LB );
+        TS_ASSERT_EQUALS( tableau->getBasicStatus( 5 ), Tableau::BETWEEN );
+        TS_ASSERT_EQUALS( tableau->getBasicStatus( 6 ), Tableau::ABOVE_UB );
+
+        const double *costFunction;
+        TS_ASSERT_THROWS_NOTHING( costFunction = tableau->getCostFunction() );
+
+        // Expect:
+        // cost = - x5 + x7
+        //      = + 3x1 + 2x2 +  x3 + 2x4
+        //        - 4x1 - 3x2 - 3x3 - 4x4
+        //      = -  x1 -  x2 - 2x3 - 2x4
+
+        TS_ASSERT_EQUALS( costFunction[0], -1 );
+        TS_ASSERT_EQUALS( costFunction[1], -1 );
+        TS_ASSERT_EQUALS( costFunction[2], -2 );
+        TS_ASSERT_EQUALS( costFunction[3], -2 );
+
+        TS_ASSERT_THROWS_NOTHING( delete tableau );
     }
 
     void test_backward_transformation_no_eta()
