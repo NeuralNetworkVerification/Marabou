@@ -224,6 +224,95 @@ public:
         TS_ASSERT_EQUALS( result[1], 1.0 );
         TS_ASSERT_EQUALS( result[0], 2.0 );
     }
+
+    void test_get_get_leaving_variable()
+    {
+        Tableau *tableau;
+
+        TS_ASSERT( tableau = new Tableau );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        initializeTableauValues( *tableau );
+
+        for ( unsigned i = 0; i < 4; ++i )
+        {
+            TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( i, 1 ) );
+            TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( i, 10 ) );
+        }
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 4, 219 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 4, 228 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 5, 112 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 5, 114 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 6, 400 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 6, 402 ) );
+
+        Set<unsigned> basicVariables = { 4, 5, 6 };
+        TS_ASSERT_THROWS_NOTHING( tableau->initializeBasis( basicVariables ) );
+
+        TS_ASSERT_EQUALS( tableau->getBasicStatus( 4 ), Tableau::BELOW_LB );
+        TS_ASSERT_EQUALS( tableau->getBasicStatus( 5 ), Tableau::BETWEEN );
+        TS_ASSERT_EQUALS( tableau->getBasicStatus( 6 ), Tableau::ABOVE_UB );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable() );
+        TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
+
+        // Entering variable is 2, and it needs to increase
+        // Current basic values are: 217, 113, 406
+        TS_ASSERT_EQUALS( tableau->getValue( 4 ), 217.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 5 ), 113.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 6 ), 406.0 );
+
+        double d1[] = { 1, 1, 1 };
+        // Var 4 will hit its lower bound: constraint is 2
+        // Var 5 will hit its upper bound: constraint is 1
+        // Var 6 poses no constraint
+        TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d1 ) );
+        TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 5u );
+        TS_ASSERT_EQUALS( tableau->getChangeRatio(), 1.0 );
+
+        double d2[] = { 0.5, 0.5, 0.5 };
+        // d1 scaled by 1/2
+        TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d2 ) );
+        TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 5u );
+        TS_ASSERT_EQUALS( tableau->getChangeRatio(), 2.0 );
+
+        double d3[] = { -1, -1, -1 };
+        // Var 4 poses no constraint
+        // Var 5 will hit its lower bound: constraint is 1
+        // Var 6 will hit its upper bound: constraint is 4
+        TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d3 ) );
+        TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 5u );
+        TS_ASSERT_EQUALS( tableau->getChangeRatio(), 1.0 );
+
+        double d4[] = { -1, -0.1, -2 };
+        // Var 4 poses no constraint
+        // Var 5 will hit its lower bound: constraint is 10
+        // Var 6 will hit its upper bound: constraint is 2
+        TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d4 ) );
+        TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 6u );
+        TS_ASSERT_EQUALS( tableau->getChangeRatio(), 2.0 );
+
+        double d5[] = { -1, 0, -0.5 };
+        // Var 4 poses no constraint
+        // Var 5 poses no constraint
+        // Var 6 will hit its upper bound: constraint is 8
+        TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d5 ) );
+        TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 6u );
+        TS_ASSERT_EQUALS( tableau->getChangeRatio(), 8.0 );
+
+        double d6[] = { 0.5, 0, -0.1 };
+        // Var 4 will hit its lower bound: constraint is 4
+        // Var 5 poses no constraint
+        // Var 6 will hit its upper bound: constraint is 40
+        TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d6 ) );
+        TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 4u );
+        TS_ASSERT_EQUALS( tableau->getChangeRatio(), 4.0 );
+
+        TS_ASSERT_THROWS_NOTHING( delete tableau );
+    }
 };
 
 //

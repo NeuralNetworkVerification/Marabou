@@ -303,7 +303,6 @@ void Tableau::backwardTransformation( unsigned enteringVariable, double *result 
     solveForwardMultiplication( _B, result, _a );
 }
 
-
 /* Extract d for the equation M * d = a. Assume M is upper triangular, and is stored column-wise. */
 void Tableau::solveForwardMultiplication( const double *M, double *d, const double *a )
 {
@@ -460,12 +459,12 @@ double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient
         if ( _basicStatus[basicIndex] == BasicStatus::ABOVE_UB )
         {
             // Maximal change: hitting the upper bound
-            maxChange = _upperBounds[basic] - _assignment[basic]; // negative
+            maxChange = _upperBounds[basic] - _assignment[basicIndex];
         }
         else if ( _basicStatus[basicIndex] == BasicStatus::BETWEEN )
         {
             // Maximal change: hitting the lower bound
-            maxChange = _lowerBounds[basic] - _assignment[basic]; // negative
+            maxChange = _lowerBounds[basic] - _assignment[basicIndex];
         }
         else if ( ( _basicStatus[basicIndex] == BasicStatus::AT_UB ) ||
                   ( _basicStatus[basicIndex] == BasicStatus::AT_LB ) )
@@ -476,12 +475,10 @@ double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient
         else
         {
             // Variable is below its lower bound, no constraint here
-            maxChange = - DBL_MAX - _assignment[basic];
+            maxChange = - DBL_MAX - _assignment[basicIndex];
         }
 
         ratio = maxChange / coefficient;
-        // positive coefficient --> ratio is negative --> bound on how much can decrease
-        // negative coefficient --> ratio is positive --> bound on how much can increase
     }
     else if ( ( FloatUtils::isPositive( coefficient ) && !decrease ) ||
               ( FloatUtils::isNegative( coefficient ) && decrease ) )
@@ -493,12 +490,12 @@ double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient
         if ( _basicStatus[basicIndex] == BasicStatus::BELOW_LB )
         {
             // Maximal change: hitting the lower bound
-            maxChange = _lowerBounds[basic] - _assignment[basic]; // positive
+            maxChange = _lowerBounds[basic] - _assignment[basicIndex];
         }
         else if ( _basicStatus[basicIndex] == BasicStatus::BETWEEN )
         {
             // Maximal change: hitting the upper bound
-            maxChange = _upperBounds[basic] - _assignment[basic]; // negative
+            maxChange = _upperBounds[basic] - _assignment[basicIndex];
         }
         else if ( ( _basicStatus[basicIndex] == BasicStatus::AT_UB ) ||
                   ( _basicStatus[basicIndex] == BasicStatus::AT_LB ) )
@@ -509,12 +506,10 @@ double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient
         else
         {
             // Variable is above its upper bound, no constraint here
-            maxChange = DBL_MAX - _assignment[basic];
+            maxChange = DBL_MAX - _assignment[basicIndex];
         }
 
         ratio = maxChange / coefficient;
-        // positive coefficient --> ratio is positive --> bound on how much can increase
-        // negative coefficient --> ratio is negative --> bound on how much can decrease
     }
     else
     {
@@ -577,7 +572,7 @@ void Tableau::pickLeavingVariable( double *d )
         // The maximum amount by which the entering variable can
         // increase, as determined by its bounds. This is a positive
         // value.
-        _changeRatio = lb - ub;
+        _changeRatio = ub - lb;
 
         // Iterate over the basics that depend on the entering
         // variable and see if any of them imposes a tighter
@@ -595,6 +590,16 @@ void Tableau::pickLeavingVariable( double *d )
             }
         }
     }
+}
+
+unsigned Tableau::getLeavingVariable() const
+{
+    return _leavingVariable;
+}
+
+double Tableau::getChangeRatio() const
+{
+    return _changeRatio;
 }
 
 bool Tableau::solve()
