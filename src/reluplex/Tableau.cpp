@@ -15,6 +15,7 @@
 #include "ReluplexError.h"
 #include "Tableau.h"
 
+#include <cfloat>
 #include <string.h>
 
 Tableau::Tableau()
@@ -258,8 +259,8 @@ void Tableau::computeBasicStatus( unsigned basic )
         _basicStatus[basic] = Tableau::ABOVE_UB;
     else if ( FloatUtils::lt( value , lb ) )
         _basicStatus[basic] = Tableau::BELOW_LB;
-    else if ( FloatUtils::areEqual( lb, ub ) )
-        _basicStatus[basic] = Tableau::FIXED;
+    // else if ( FloatUtils::areEqual( lb, ub ) )
+    //     _basicStatus[basic] = Tableau::FIXED;
     else if ( FloatUtils::areEqual( ub, value ) )
         _basicStatus[basic] = Tableau::AT_UB;
     else if ( FloatUtils::areEqual( lb, value ) )
@@ -439,17 +440,167 @@ unsigned Tableau::getEnteringVariable() const
     return _enteringVariable;
 }
 
-bool Tableau::pickLeavingVariable()
-{
-    return false;
-}
-
 void Tableau::performPivot()
 {
 }
 
+double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient, bool decrease )
+{
+    unsigned basic = _basicIndexToVariable[basicIndex];
+    double ratio;
+
+    ASSERT( !FloatUtils::isZero( coefficient ) );
+
+    if ( ( FloatUtils::isPositive( coefficient ) && decrease ) ||
+         ( FloatUtils::isNegative( coefficient ) && !decrease ) )
+    {
+        // Basic variable is decreasing
+        double maxChange;
+
+        if ( _basicStatus[basicIndex] == BasicStatus::ABOVE_UB )
+        {
+            // Maximal change: hitting the upper bound
+            maxChange = _upperBounds[basic] - _assignment[basic]; // negative
+        }
+        else if ( _basicStatus[basicIndex] == BasicStatus::BETWEEN )
+        {
+            // Maximal change: hitting the lower bound
+            maxChange = _lowerBounds[basic] - _assignment[basic]; // negative
+        }
+        else if ( ( _basicStatus[basicIndex] == BasicStatus::AT_UB ) ||
+                  ( _basicStatus[basicIndex] == BasicStatus::AT_LB ) )
+        {
+            // Variable is pressed against a bound - can't change!
+            maxChange = 0;
+        }
+        else
+        {
+            // Variable is below its lower bound, no constraint here
+            maxChange = - DBL_MAX - _assignment[basic];
+        }
+
+        ratio = maxChange / coefficient;
+        // positive coefficient --> ratio is negative --> bound on how much can decrease
+        // negative coefficient --> ratio is positive --> bound on how much can increase
+    }
+    else if ( ( FloatUtils::isPositive( coefficient ) && !decrease ) ||
+              ( FloatUtils::isNegative( coefficient ) && decrease ) )
+
+    {
+        // Basic variable is increasing
+        double maxChange;
+
+        if ( _basicStatus[basicIndex] == BasicStatus::BELOW_LB )
+        {
+            // Maximal change: hitting the lower bound
+            maxChange = _lowerBounds[basic] - _assignment[basic]; // positive
+        }
+        else if ( _basicStatus[basicIndex] == BasicStatus::BETWEEN )
+        {
+            // Maximal change: hitting the upper bound
+            maxChange = _upperBounds[basic] - _assignment[basic]; // negative
+        }
+        else if ( ( _basicStatus[basicIndex] == BasicStatus::AT_UB ) ||
+                  ( _basicStatus[basicIndex] == BasicStatus::AT_LB ) )
+        {
+            // Variable is pressed against a bound - can't change!
+            maxChange = 0;
+        }
+        else
+        {
+            // Variable is above its upper bound, no constraint here
+            maxChange = DBL_MAX - _assignment[basic];
+        }
+
+        ratio = maxChange / coefficient;
+        // positive coefficient --> ratio is positive --> bound on how much can increase
+        // negative coefficient --> ratio is negative --> bound on how much can decrease
+    }
+    else
+    {
+        ASSERT( false );
+    }
+
+    return ratio;
+}
+
+void Tableau::pickLeavingVariable( double *d )
+{
+    ASSERT( !FloatUtils::isZero( _costFunction[_enteringVariable] ) );
+    bool decrease = FloatUtils::isPositive( _costFunction[_enteringVariable] );
+
+    DEBUG({
+        if ( decrease )
+        {
+            ASSERTM( _nonBasicAtUpper[_enteringVariable],
+                     "Error! Entering variable needs to decreased but is at its lower bound" );
+        }
+        else
+        {
+            ASSERTM( !_nonBasicAtUpper[_enteringVariable],
+                     "Error! Entering variable needs to decreased but is at its upper bound" );
+        }
+        });
+
+    double lb = _lowerBounds[_enteringVariable];
+    double ub = _upperBounds[_enteringVariable];
+
+    _leavingVariable = _enteringVariable;
+
+    // TODO: assuming all coefficient in B are 1
+
+    if ( decrease )
+    {
+        // The maximum amount by which the entering variable can
+        // decrease, as determined by its bounds. This is a negative
+        // value.
+        _changeRatio = lb - ub;
+
+        // Iterate over the basics that depend on the entering
+        // variable and see if any of them imposes a tighter
+        // constraint.
+        for ( unsigned i = 0; i < _m; ++i )
+        {
+            if ( !FloatUtils::isZero( d[i] ) )
+            {
+                double ratio = ratioConstraintPerBasic( i, d[i], decrease );
+                if ( ratio > _changeRatio )
+                {
+                    _changeRatio = ratio;
+                    _leavingVariable = _basicIndexToVariable[i];
+                }
+            }
+        }
+    }
+    else
+    {
+        // The maximum amount by which the entering variable can
+        // increase, as determined by its bounds. This is a positive
+        // value.
+        _changeRatio = lb - ub;
+
+        // Iterate over the basics that depend on the entering
+        // variable and see if any of them imposes a tighter
+        // constraint.
+        for ( unsigned i = 0; i < _m; ++i )
+        {
+            if ( !FloatUtils::isZero( d[i] ) )
+            {
+                double ratio = ratioConstraintPerBasic( i, d[i], decrease );
+                if ( ratio < _changeRatio )
+                {
+                    _changeRatio = ratio;
+                    _leavingVariable = _basicIndexToVariable[i];
+                }
+            }
+        }
+    }
+}
+
 bool Tableau::solve()
 {
+    // Todo: If l >= u for some var, fail immediately
+
     while ( true )
     {
         computeBasicStatus();
@@ -459,8 +610,7 @@ bool Tableau::solve()
 
         pickEnteringVariable();
 
-        if ( !pickLeavingVariable() )
-            return false;
+        pickLeavingVariable( _AN + ( _enteringVariable * _m ) );
 
         performPivot();
     }

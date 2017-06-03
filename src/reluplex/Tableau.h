@@ -22,7 +22,7 @@ public:
         BELOW_LB = 0,
         AT_LB,
         BETWEEN,
-        FIXED,
+        // FIXED,
         AT_UB,
         ABOVE_UB,
     };
@@ -134,9 +134,9 @@ public:
     void pickEnteringVariable();
     unsigned getEnteringVariable() const;
 
-    /* Picks the leaving variable. Returns true if successful, false
-       if no eligible variables exist. */
-    bool pickLeavingVariable();
+    /* Pick the leaving variable according to the entering variable.
+       d is the column vector for the entering variable (length m) */
+    void pickLeavingVariable( double *d );
 
     /* Performs the pivot operation after the entering and leaving
        variables have been selected */
@@ -145,6 +145,12 @@ public:
     /* Attempt to find a feasible solution. Returns true if found,
        false if problem is infeasible. */
     bool solve();
+
+    /* Calculate the ratio constraint for the entering variable
+       imposed by a basic variable.
+       Coefficient is the relevant coefficient in the tableau.
+       Decrease is true iff the entering variable is decreasing. */
+    double ratioConstraintPerBasic( unsigned basicIndex, double coefficient, bool decrease );
 
 private:
     /* The dimensions of matrix A */
@@ -197,6 +203,13 @@ private:
 
     /* A non-basic variable chosen to become basic in this iteration */
     unsigned _enteringVariable;
+
+    /* A basic variable chosen to become non-basic in this iteration */
+    unsigned _leavingVariable;
+
+    /* The amount by which the entering variable should change in this
+       pivot step */
+    double _changeRatio;
 
     /* Extract d for the equation M * d = a. Assume M is upper triangular, and is stored column-wise. */
     void solveForwardMultiplication( const double *M, double *d, const double *a );
