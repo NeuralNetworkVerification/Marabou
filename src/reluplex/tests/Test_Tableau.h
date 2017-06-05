@@ -311,6 +311,13 @@ public:
         TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 4u );
         TS_ASSERT_EQUALS( tableau->getChangeRatio(), 4.0 );
 
+        double d7[] = { -1, 0, -0.00001 };
+        // The entering variable (2) can change by 9 at most. Here
+        // this will be the bound.
+        TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d7 ) );
+        TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 2u );
+        TS_ASSERT_EQUALS( tableau->getChangeRatio(), 9.0 );
+
         TS_ASSERT_THROWS_NOTHING( delete tableau );
     }
 };
