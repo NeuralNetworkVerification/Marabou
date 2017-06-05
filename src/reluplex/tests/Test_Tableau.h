@@ -320,6 +320,107 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( delete tableau );
     }
+
+    void test_perform_pivot_nonbasic_goes_to_opposite_bound()
+    {
+        Tableau *tableau;
+
+        TS_ASSERT( tableau = new Tableau );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        initializeTableauValues( *tableau );
+
+        for ( unsigned i = 0; i < 4; ++i )
+        {
+            TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( i, 1 ) );
+            TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( i, 10 ) );
+        }
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 4, 219 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 4, 228 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 5, 112 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 5, 114 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 6, 400 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 6, 402 ) );
+
+        Set<unsigned> basicVariables = { 4, 5, 6 };
+        TS_ASSERT_THROWS_NOTHING( tableau->initializeBasis( basicVariables ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable() );
+
+        double d[] = { -1, 0, -0.00001 };
+        TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d ) );
+        TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 2u );
+        TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
+
+        TS_ASSERT( !tableau->isBasic( 2u ) );
+
+        // Before the pivot, the variable is at the lower bound
+        TS_ASSERT_EQUALS( tableau->getValue( 2u ), 1.0 );
+        TS_ASSERT_THROWS_NOTHING( tableau->performPivot() );
+        // After the pivot, the variable is at the upper bound
+        TS_ASSERT_EQUALS( tableau->getValue( 2u ), 10.0 );
+
+        TS_ASSERT( !tableau->isBasic( 2u ) );
+
+        TS_ASSERT_THROWS_NOTHING( delete tableau );
+    }
+
+    void test_perform_pivot_nonbasic_becomes_basic()
+    {
+        Tableau *tableau;
+
+        TS_ASSERT( tableau = new Tableau );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        initializeTableauValues( *tableau );
+
+        for ( unsigned i = 0; i < 4; ++i )
+        {
+            TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( i, 1 ) );
+            TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( i, 10 ) );
+        }
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 4, 219 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 4, 228 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 5, 112 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 5, 114 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 6, 400 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 6, 402 ) );
+
+        Set<unsigned> basicVariables = { 4, 5, 6 };
+        TS_ASSERT_THROWS_NOTHING( tableau->initializeBasis( basicVariables ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable() );
+
+        double d[] = { 1, 1, 1 };
+        // Var 4 will hit its lower bound: constraint is 2
+        // Var 5 will hit its upper bound: constraint is 1
+        // Var 6 poses no constraint
+        TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d ) );
+        TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
+        TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 5u );
+
+        TS_ASSERT( !tableau->isBasic( 2u ) );
+        TS_ASSERT( tableau->isBasic( 5u ) );
+
+        TS_ASSERT_EQUALS( tableau->getValue( 2u ), 1.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 5u ), 113.0 );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->performPivot() );
+
+        TS_ASSERT( tableau->isBasic( 2u ) );
+        TS_ASSERT( !tableau->isBasic( 5u ) );
+
+        // The new non-basic variable is at its upper bound
+        TS_ASSERT_EQUALS( tableau->getValue( 5u ), 114.0 );
+
+        TS_ASSERT_THROWS_NOTHING( delete tableau );
+    }
 };
 
 //

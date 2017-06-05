@@ -27,6 +27,11 @@ public:
         ABOVE_UB,
     };
 
+    enum AssignmentStatus {
+        ASSIGNMENT_INVALID,
+        ASSIGNMENT_VALID,
+    };
+
     Tableau();
 
     ~Tableau();
@@ -154,6 +159,9 @@ public:
        Decrease is true iff the entering variable is decreasing. */
     double ratioConstraintPerBasic( unsigned basicIndex, double coefficient, bool decrease );
 
+    /* True iff the variable is basic */
+    bool isBasic( unsigned variable ) const;
+
 private:
     /* The dimensions of matrix A */
     unsigned _n;
@@ -200,6 +208,9 @@ private:
     /* The current assignment for the basic variables */
     double *_assignment;
 
+    /* Status of the current assignment */
+    AssignmentStatus _assignmentStatus;
+
     /* The current status of the basic variabels */
     unsigned *_basicStatus;
 
@@ -211,7 +222,9 @@ private:
 
     /* The amount by which the entering variable should change in this
        pivot step */
+    // TODO: maybe can remove changeRatio
     double _changeRatio;
+    bool _leavingVariableIncreases;
 
     /* Extract d for the equation M * d = a. Assume M is upper triangular, and is stored column-wise. */
     void solveForwardMultiplication( const double *M, double *d, const double *a );

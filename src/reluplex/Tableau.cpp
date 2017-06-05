@@ -32,6 +32,7 @@ Tableau::Tableau()
     , _lowerBounds( NULL )
     , _upperBounds( NULL )
     , _assignment( NULL )
+    , _assignmentStatus( ASSIGNMENT_INVALID )
     , _basicStatus( NULL )
 {
 }
@@ -226,6 +227,9 @@ void Tableau::initializeBasis( const Set<unsigned> &basicVariables )
 
 void Tableau::computeAssignment()
 {
+    if ( _assignmentStatus == ASSIGNMENT_VALID )
+        return;
+
     for ( unsigned i = 0; i < _m; ++i )
     {
         double result = _b[i];
@@ -241,6 +245,8 @@ void Tableau::computeAssignment()
         _assignment[i] = result;
         computeBasicStatus( i );
     }
+
+    _assignmentStatus = ASSIGNMENT_VALID;
 }
 
 void Tableau::computeBasicStatus()
@@ -341,11 +347,20 @@ void Tableau::setUpperBound( unsigned variable, double value )
 
 double Tableau::getValue( unsigned variable )
 {
-    if ( _basicVariables.exists( variable ) )
-        return _assignment[_variableToIndex[variable]];
+    if ( !_basicVariables.exists( variable ) )
+    {
+        // The values of non-basics can be extracted even if the
+        // assignment is invalid
+        unsigned index = _variableToIndex[variable];
+        return _nonBasicAtUpper[index] ? _upperBounds[variable] : _lowerBounds[variable];
+    }
 
-    unsigned index = _variableToIndex[variable];
-    return _nonBasicAtUpper[index] ? _upperBounds[variable] : _lowerBounds[variable];
+    // Values of basic variabels require valid assignments
+    // TODO: maybe we should compute just that one variable?
+    if ( _assignmentStatus != ASSIGNMENT_VALID )
+        computeAssignment();
+
+    return _assignment[_variableToIndex[variable]];
 }
 
 void Tableau::setRightHandSide( const double *b )
@@ -431,16 +446,42 @@ void Tableau::pickEnteringVariable()
         }
     }
 
-    _enteringVariable = _nonBasicIndexToVariable[maxIndex];
+    _enteringVariable = maxIndex;
 }
 
 unsigned Tableau::getEnteringVariable() const
 {
-    return _enteringVariable;
+    return _nonBasicIndexToVariable[_enteringVariable];
 }
 
 void Tableau::performPivot()
 {
+    // Any kind of pivot invalidates the assignment
+    _assignmentStatus = ASSIGNMENT_INVALID;
+
+    if ( _leavingVariable == _m )
+    {
+        // The entering variable is simply switching to its opposite bound.
+        _nonBasicAtUpper[_enteringVariable] = !_nonBasicAtUpper[_enteringVariable];
+    }
+    else
+    {
+        unsigned currentBasic = _basicIndexToVariable[_leavingVariable];
+        unsigned currentNonBasic = _nonBasicIndexToVariable[_enteringVariable];
+
+        // Update the database
+        _basicVariables.insert( currentNonBasic );
+        _basicVariables.erase( currentBasic );
+
+        // Adjust the tableau indexing
+        _basicIndexToVariable[_leavingVariable] = currentNonBasic;
+        _nonBasicIndexToVariable[_enteringVariable] = currentBasic;
+        _variableToIndex[currentBasic] = _enteringVariable;
+        _variableToIndex[currentNonBasic] = _leavingVariable;
+
+        // Update value of the old basic (now non-basic) variable
+        _nonBasicAtUpper[_enteringVariable] = _leavingVariableIncreases;
+    }
 }
 
 double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient, bool decrease )
@@ -540,7 +581,8 @@ void Tableau::pickLeavingVariable( double *d )
     double lb = _lowerBounds[_enteringVariable];
     double ub = _upperBounds[_enteringVariable];
 
-    _leavingVariable = _enteringVariable;
+    // A marker to show that no leaving variable has been selected
+    _leavingVariable = _m;
 
     // TODO: assuming all coefficient in B are 1
 
@@ -562,10 +604,12 @@ void Tableau::pickLeavingVariable( double *d )
                 if ( ratio > _changeRatio )
                 {
                     _changeRatio = ratio;
-                    _leavingVariable = _basicIndexToVariable[i];
+                    _leavingVariable = i;
                 }
             }
         }
+
+        _leavingVariableIncreases = FloatUtils::isNegative( d[_leavingVariable] );
     }
     else
     {
@@ -585,16 +629,21 @@ void Tableau::pickLeavingVariable( double *d )
                 if ( ratio < _changeRatio )
                 {
                     _changeRatio = ratio;
-                    _leavingVariable = _basicIndexToVariable[i];
+                    _leavingVariable = i;
                 }
             }
         }
+
+        _leavingVariableIncreases = FloatUtils::isPositive( d[_leavingVariable] );
     }
 }
 
 unsigned Tableau::getLeavingVariable() const
 {
-    return _leavingVariable;
+    if ( _leavingVariable == _m )
+        return _nonBasicIndexToVariable[_enteringVariable];
+
+    return _basicIndexToVariable[_leavingVariable];
 }
 
 double Tableau::getChangeRatio() const
@@ -614,11 +663,14 @@ bool Tableau::solve()
             return true;
 
         pickEnteringVariable();
-
         pickLeavingVariable( _AN + ( _enteringVariable * _m ) );
-
         performPivot();
     }
+}
+
+bool Tableau::isBasic( unsigned variable ) const
+{
+    return _basicVariables.exists( variable );
 }
 
 //
