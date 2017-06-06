@@ -23,6 +23,7 @@ Tableau::Tableau()
     , _B( NULL )
     , _AN( NULL )
     , _a( NULL )
+    , _d( NULL )
     , _b( NULL )
     , _costFunction( NULL )
     , _basicIndexToVariable( NULL )
@@ -57,10 +58,10 @@ Tableau::~Tableau()
         _AN = NULL;
     }
 
-    if ( _a )
+    if ( _d )
     {
-        delete[] _A;
-        _A = NULL;
+        delete[] _d;
+        _d = NULL;
     }
 
     if ( _b )
@@ -141,9 +142,9 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     if ( !_AN )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "AN" );
 
-    _a = new double[m];
-    if ( !_a )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "a" );
+    _d = new double[m];
+    if ( !_d )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "d" );
 
     _b = new double[m];
     if ( !_b )
@@ -298,40 +299,40 @@ void Tableau::computeBasicStatus( unsigned basic )
       result needs to be of size m.
     */
 
-void Tableau::backwardTransformation( unsigned enteringVariable, double *result )
-{
-    // Obtain column a from A, put it in _a
-    memcpy( _a, _A + enteringVariable * _m, sizeof(double) * _m );
+// void Tableau::backwardTransformation( unsigned enteringVariable, double *result )
+// {
+//     // Obtain column a from A, put it in _a
+//     memcpy( _a, _A + enteringVariable * _m, sizeof(double) * _m );
 
-    // Perform the backward transformation, step by step.
-    // For now, assume no eta functions, so just solve B * d = a.
+//     // Perform the backward transformation, step by step.
+//     // For now, assume no eta functions, so just solve B * d = a.
 
-    solveForwardMultiplication( _B, result, _a );
-}
+//     solveForwardMultiplication( _B, result, _a );
+// }
 
-/* Extract d for the equation M * d = a. Assume M is upper triangular, and is stored column-wise. */
-void Tableau::solveForwardMultiplication( const double *M, double *d, const double *a )
-{
-    printf( "solveForwardMultiplication: vector a is: " );
-    for ( unsigned i = 0; i < _m; ++i )
-        printf( "%5.1lf ", a[i] );
-    printf( "\n" );
+// /* Extract d for the equation M * d = a. Assume M is upper triangular, and is stored column-wise. */
+// void Tableau::solveForwardMultiplication( const double *M, double *d, const double *a )
+// {
+//     printf( "solveForwardMultiplication: vector a is: " );
+//     for ( unsigned i = 0; i < _m; ++i )
+//         printf( "%5.1lf ", a[i] );
+//     printf( "\n" );
 
-    for ( int i = _m - 1; i >= 0; --i )
-    {
-        printf( "Starting iteration for: i = %i\n", i );
+//     for ( int i = _m - 1; i >= 0; --i )
+//     {
+//         printf( "Starting iteration for: i = %i\n", i );
 
-        d[i] = a[i];
-        printf( "\tInitializing: d[i] = a[i] = %5.1lf\n", d[i] );
-        for ( unsigned j = i + 1; j < _m; ++j )
-        {
-            d[i] = d[i] - ( d[j] * M[j * _m + i] );
-        }
-        printf( "\tAfter summation: d[i] = %5.1lf\n", d[i] );
-        d[i] = d[i] / M[i * _m + i];
-        printf( "\tAfter division: d[i] = %5.1lf\n", d[i] );
-    }
-}
+//         d[i] = a[i];
+//         printf( "\tInitializing: d[i] = a[i] = %5.1lf\n", d[i] );
+//         for ( unsigned j = i + 1; j < _m; ++j )
+//         {
+//             d[i] = d[i] - ( d[j] * M[j * _m + i] );
+//         }
+//         printf( "\tAfter summation: d[i] = %5.1lf\n", d[i] );
+//         d[i] = d[i] / M[i * _m + i];
+//         printf( "\tAfter division: d[i] = %5.1lf\n", d[i] );
+//     }
+// }
 
 void Tableau::setLowerBound( unsigned variable, double value )
 {

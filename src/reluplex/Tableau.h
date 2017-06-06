@@ -100,7 +100,7 @@ public:
 
       result needs to be of size m.
     */
-    void backwardTransformation( unsigned enteringVariable, double *result );
+    // void backwardTransformation( unsigned enteringVariable, double *result );
 
     void dump()
     {
@@ -179,6 +179,9 @@ private:
     /* A single column matrix from A */
     double *_a;
 
+    /* Used to compute inv(B)*a */
+    double *_d;
+
     /* The right hand side vector of Ax = b */
     double *_b;
 
@@ -227,7 +230,7 @@ private:
     bool _leavingVariableIncreases;
 
     /* Extract d for the equation M * d = a. Assume M is upper triangular, and is stored column-wise. */
-    void solveForwardMultiplication( const double *M, double *d, const double *a );
+    // void solveForwardMultiplication( const double *M, double *d, const double *a );
 
     /* Compute the assignment. Assumes the basis has just been refactored */
     void computeAssignment();
