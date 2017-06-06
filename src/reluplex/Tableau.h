@@ -225,8 +225,9 @@ private:
 
     /* The amount by which the entering variable should change in this
        pivot step */
-    // TODO: maybe can remove changeRatio
     double _changeRatio;
+
+    /* True if the leaving variable increases, false otherwise */
     bool _leavingVariableIncreases;
 
     /* Extract d for the equation M * d = a. Assume M is upper triangular, and is stored column-wise. */
