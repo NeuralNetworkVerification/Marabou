@@ -15,6 +15,8 @@
 
 #include "Set.h"
 
+class BasisFactorization;
+
 class Tableau
 {
 public:
@@ -161,6 +163,9 @@ private:
     /* The right hand side vector of Ax = b */
     double *_b;
 
+    /* The current factorization of the basis */
+    BasisFactorization *_basisFactorization;
+
     /* The cost function */
     double *_costFunction;
 
@@ -228,7 +233,7 @@ private:
     void computeBasicStatus();
     void computeBasicStatus( unsigned basic );
 
-    /* Compute _d = inv(B)*a */
+    /* Compute _d = inv(B) * a */
     void computeD();
 };
 

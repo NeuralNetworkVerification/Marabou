@@ -10,6 +10,8 @@
  ** directory for licensing information.\endverbatim
  **/
 
+
+#include "BasisFactorization.h"
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "ReluplexError.h"
@@ -25,6 +27,7 @@ Tableau::Tableau()
     , _a( NULL )
     , _d( NULL )
     , _b( NULL )
+    , _basisFactorization( NULL )
     , _costFunction( NULL )
     , _basicIndexToVariable( NULL )
     , _nonBasicIndexToVariable( NULL )
@@ -123,6 +126,12 @@ Tableau::~Tableau()
         delete[] _basicStatus;
         _basicStatus = NULL;
     }
+
+    if ( _basisFactorization )
+    {
+        delete _basisFactorization;
+        _basisFactorization = NULL;
+    }
 }
 
 void Tableau::setDimensions( unsigned m, unsigned n )
@@ -185,6 +194,10 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     _basicStatus = new unsigned[m];
     if ( !_basicStatus )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::basicStatus" );
+
+    _basisFactorization = new BasisFactorization( _m );
+    if ( !_basisFactorization )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::basisFactorization" );
 }
 
 void Tableau::setEntryValue( unsigned row, unsigned column, double value )
@@ -400,31 +413,36 @@ unsigned Tableau::getEnteringVariable() const
 void Tableau::performPivot()
 {
     // Any kind of pivot invalidates the assignment
+    // TODO: we don't really need to invalidate, can update the basis
+    // vars based on _d
     _assignmentStatus = ASSIGNMENT_INVALID;
 
     if ( _leavingVariable == _m )
     {
         // The entering variable is simply switching to its opposite bound.
         _nonBasicAtUpper[_enteringVariable] = !_nonBasicAtUpper[_enteringVariable];
+        return;
     }
-    else
-    {
-        unsigned currentBasic = _basicIndexToVariable[_leavingVariable];
-        unsigned currentNonBasic = _nonBasicIndexToVariable[_enteringVariable];
 
-        // Update the database
-        _basicVariables.insert( currentNonBasic );
-        _basicVariables.erase( currentBasic );
+    unsigned currentBasic = _basicIndexToVariable[_leavingVariable];
+    unsigned currentNonBasic = _nonBasicIndexToVariable[_enteringVariable];
 
-        // Adjust the tableau indexing
-        _basicIndexToVariable[_leavingVariable] = currentNonBasic;
-        _nonBasicIndexToVariable[_enteringVariable] = currentBasic;
-        _variableToIndex[currentBasic] = _enteringVariable;
-        _variableToIndex[currentNonBasic] = _leavingVariable;
+    // Update the database
+    _basicVariables.insert( currentNonBasic );
+    _basicVariables.erase( currentBasic );
 
-        // Update value of the old basic (now non-basic) variable
-        _nonBasicAtUpper[_enteringVariable] = _leavingVariableIncreases;
-    }
+    // Adjust the tableau indexing
+    _basicIndexToVariable[_leavingVariable] = currentNonBasic;
+    _nonBasicIndexToVariable[_enteringVariable] = currentBasic;
+    _variableToIndex[currentBasic] = _enteringVariable;
+    _variableToIndex[currentNonBasic] = _leavingVariable;
+
+    // Update value of the old basic (now non-basic) variable
+    _nonBasicAtUpper[_enteringVariable] = _leavingVariableIncreases;
+
+    // Update the basis factorization. The column corresponding to the
+    // leaving variable is the one that has changed
+    _basisFactorization->pushEtaMatrix( _leavingVariable, _d );
 }
 
 double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient, bool decrease )
@@ -599,8 +617,8 @@ void Tableau::computeD()
     // _a gets the entering variable's column in AN
     _a = _AN + ( _enteringVariable * _m );
 
-    // Compute inv(b)*a
-    memcpy( _d, _a, sizeof(double) * _m );
+    // Compute d = inv(B) * a using the basis factorization
+    _basisFactorization->forwardTransformation( _a, _d );
 }
 
 bool Tableau::solve()
