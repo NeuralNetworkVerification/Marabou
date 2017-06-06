@@ -132,59 +132,59 @@ void Tableau::setDimensions( unsigned m, unsigned n )
 
     _A = new double[n*m];
     if ( !_A )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "A" );
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::A" );
 
     _B = new double[m*m];
     if ( !_B )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "B" );
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::B" );
 
     _AN = new double[m * (n-m)];
     if ( !_AN )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "AN" );
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::AN" );
 
     _d = new double[m];
     if ( !_d )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "d" );
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::d" );
 
     _b = new double[m];
     if ( !_b )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "b" );
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::b" );
 
     _costFunction = new double[n-m];
     if ( !_costFunction )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "costFunction" );
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::costFunction" );
 
     _basicIndexToVariable = new unsigned[m];
     if ( !_basicIndexToVariable )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "basicIndexToVariable" );
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::basicIndexToVariable" );
 
     _variableToIndex = new unsigned[n];
     if ( !_variableToIndex )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "variableToIndex" );
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::variableToIndex" );
 
     _nonBasicIndexToVariable = new unsigned[n-m];
     if ( !_nonBasicIndexToVariable )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "nonBasicIndexToVariable" );
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::nonBasicIndexToVariable" );
 
     _nonBasicAtUpper = new bool[n-m];
     if ( !_nonBasicAtUpper )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "nonBasicValues" );
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::nonBasicValues" );
 
     _lowerBounds = new double[n];
     if ( !_lowerBounds )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "lowerBounds" );
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::lowerBounds" );
 
     _upperBounds = new double[n];
     if ( !_upperBounds )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "upperBounds" );
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::upperBounds" );
 
     _assignment = new double[m];
     if ( !_assignment )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "assignment" );
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::assignment" );
 
     _basicStatus = new unsigned[m];
     if ( !_basicStatus )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "basicStatus" );
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::basicStatus" );
 }
 
 void Tableau::setEntryValue( unsigned row, unsigned column, double value )

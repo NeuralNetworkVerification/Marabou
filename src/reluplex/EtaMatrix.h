@@ -16,7 +16,7 @@
 class EtaMatrix
 {
 public:
-    EtaMatrix( unsigned m );
+    EtaMatrix( unsigned m, unsigned index, double *column );
     ~EtaMatrix();
 
     unsigned _m;

@@ -14,14 +14,18 @@
 #include "ReluplexError.h"
 
 #include <cstdlib>
+#include <cstring>
 
-EtaMatrix::EtaMatrix( unsigned m )
+EtaMatrix::EtaMatrix( unsigned m, unsigned index, double *column )
     : _m( m )
+    , _columnIndex( index )
     , _column( NULL )
 {
     _column = new double[_m];
     if ( !_column )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "EtaMatrix::_column" );
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "EtaMatrix::column" );
+
+    memcpy( _column, column, sizeof(double) * _m );
 }
 
 EtaMatrix::~EtaMatrix()
