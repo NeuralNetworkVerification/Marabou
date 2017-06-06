@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file BasisDecomposition.h
+/*! \file BasisFactorization.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz
@@ -10,20 +10,20 @@
  ** directory for licensing information.\endverbatim
  **/
 
-#ifndef __BasisDecomposition_h__
-#define __BasisDecomposition_h__
+#ifndef __BasisFactorization_h__
+#define __BasisFactorization_h__
 
 #include "List.h"
 
 class EtaMatrix;
 
-class BasisDecomposition
+class BasisFactorization
 {
 public:
-    BasisDecomposition( unsigned m );
-    ~BasisDecomposition();
+    BasisFactorization( unsigned m );
+    ~BasisFactorization();
 
-    /* Adds a new eta matrix to the basis decomposition. The matrix is
+    /* Adds a new eta matrix to the basis factorization. The matrix is
     the identity matrix with the specified column replaced by the one
     provided */
     void pushEtaMatrix( unsigned columnIndex, double *column );
@@ -53,7 +53,7 @@ private:
     List<EtaMatrix *> _etas;
 };
 
-#endif // __BasisDecomposition_h__
+#endif // __BasisFactorization_h__
 
 //
 // Local Variables:

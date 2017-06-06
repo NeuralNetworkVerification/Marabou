@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file BasisDecomposition.h
+/*! \file BasisFactorization.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz
@@ -10,23 +10,23 @@
  ** directory for licensing information.\endverbatim
  **/
 
-#include "BasisDecomposition.h"
+#include "BasisFactorization.h"
 #include "EtaMatrix.h"
 #include "ReluplexError.h"
 
 #include <cstdlib>
 #include <cstring>
 
-BasisDecomposition::BasisDecomposition( unsigned m )
+BasisFactorization::BasisFactorization( unsigned m )
     : _m( m )
     , _B0( NULL )
 {
     _B0 = new double[m*m];
     if ( !_B0 )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "BasisDecomposition::B0" );
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "BasisFactorization::B0" );
 }
 
-BasisDecomposition::~BasisDecomposition()
+BasisFactorization::~BasisFactorization()
 {
     if ( _B0 )
     {
@@ -38,13 +38,13 @@ BasisDecomposition::~BasisDecomposition()
         delete it;
 }
 
-void BasisDecomposition::pushEtaMatrix( unsigned columnIndex, double *column )
+void BasisFactorization::pushEtaMatrix( unsigned columnIndex, double *column )
 {
     EtaMatrix *matrix = new EtaMatrix( _m, columnIndex, column );
     _etas.append( matrix );
 }
 
-void BasisDecomposition::forwardTransformation( const double *a, double *result )
+void BasisFactorization::forwardTransformation( const double *a, double *result )
 {
     if ( _etas.empty() )
     {
