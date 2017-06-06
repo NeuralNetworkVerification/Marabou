@@ -193,37 +193,13 @@ public:
         TS_ASSERT_EQUALS( tableau->getBasicStatus( 5 ), Tableau::BETWEEN );
         TS_ASSERT_EQUALS( tableau->getBasicStatus( 6 ), Tableau::ABOVE_UB );
 
-        // Const function is: - x1 -  x2 - 2x3 - 2x4
+        // Cost function is: - x1 -  x2 - 2x3 - 2x4
 
         TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable() );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
 
         TS_ASSERT_THROWS_NOTHING( delete tableau );
     }
-
-    // void test_backward_transformation_no_eta()
-    // {
-    //     Tableau tableau;
-
-    //     TS_ASSERT_THROWS_NOTHING( tableau.setDimensions( 3, 7 ) );
-    //     initializeTableauValues( tableau );
-
-    //     Set<unsigned> basicVariables = { 4, 5, 6 };
-    //     TS_ASSERT_THROWS_NOTHING( tableau.initializeBasis( basicVariables ) );
-
-    //     double result[3];
-    //     std::fill( result, result + 3, 0.0 );
-
-    //     tableau.dump();
-
-    //     TS_ASSERT_THROWS_NOTHING( tableau.backwardTransformation( 1, result ) );
-
-    //     // In this case, B = I, and so we expect the result d to be the column a that
-    //     // belongs to the entering variable, 1.
-    //     TS_ASSERT_EQUALS( result[2], 3.0 );
-    //     TS_ASSERT_EQUALS( result[1], 1.0 );
-    //     TS_ASSERT_EQUALS( result[0], 2.0 );
-    // }
 
     void test_get_get_leaving_variable()
     {
