@@ -652,6 +652,15 @@ double Tableau::getChangeRatio() const
     return _changeRatio;
 }
 
+void Tableau::computeD()
+{
+    // _a gets the entering variable's column in AN
+    _a = _AN + ( _enteringVariable * _m );
+
+    // Compute inv(b)*a
+    memcpy( _d, _a, sizeof(double) * _m );
+}
+
 bool Tableau::solve()
 {
     // Todo: If l >= u for some var, fail immediately
@@ -664,7 +673,8 @@ bool Tableau::solve()
             return true;
 
         pickEnteringVariable();
-        pickLeavingVariable( _AN + ( _enteringVariable * _m ) );
+        computeD();
+        pickLeavingVariable( _d );
         performPivot();
     }
 }

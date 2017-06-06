@@ -250,6 +250,9 @@ private:
     /* Compute the status of the basic variable based on current assignment */
     void computeBasicStatus();
     void computeBasicStatus( unsigned basic );
+
+    /* Compute _d = inv(B)*a */
+    void computeD();
 };
 
 #endif // __Tableau_h__
