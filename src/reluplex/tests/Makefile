@@ -17,6 +17,8 @@ SOURCES += \
 	FloatUtils.cpp \
 	\
 	../Tableau.cpp \
+	../EtaMatrix.cpp \
+	../BasisDecomposition.cpp \
 
 all:
 	./$(TEST_TARGET)

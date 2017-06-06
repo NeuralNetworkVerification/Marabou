@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file ReluplexError.h
+/*! \file EtaMatrix.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz
@@ -10,34 +10,26 @@
  ** directory for licensing information.\endverbatim
  **/
 
-#ifndef __ReluplexError_h__
-#define __ReluplexError_h__
+#ifndef __EtaMatrix_h__
+#define __EtaMatrix_h__
 
-#include "Error.h"
-
-class ReluplexError : public Error
+class EtaMatrix
 {
 public:
-	enum Code {
-        ALLOCATION_FAILED = 0,
-    };
+    EtaMatrix( unsigned m );
+    ~EtaMatrix();
 
-    ReluplexError( ReluplexError::Code code ) : Error( "ReluplexError", (int)code )
-	{
-	}
-
-    ReluplexError( ReluplexError::Code code, const char *userMessage ) :
-        Error( "ReluplexError", (int)code, userMessage )
-    {
-    }
+    unsigned _m;
+    unsigned _columnIndex;
+    double *_column;
 };
 
-#endif // __ReluplexError_h__
+#endif // __EtaMatrix_h__
 
 //
 // Local Variables:
-// compile-command: "make -C .. "
-// tags-file-name: "../TAGS"
+// compile-command: "make -C . "
+// tags-file-name: "./TAGS"
 // c-basic-offset: 4
 // End:
 //

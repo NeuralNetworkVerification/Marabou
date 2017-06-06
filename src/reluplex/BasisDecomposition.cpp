@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file ReluplexError.h
+/*! \file BasisDecomposition.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz
@@ -10,34 +10,20 @@
  ** directory for licensing information.\endverbatim
  **/
 
-#ifndef __ReluplexError_h__
-#define __ReluplexError_h__
+#include "BasisDecomposition.h"
 
-#include "Error.h"
-
-class ReluplexError : public Error
+BasisDecomposition::BasisDecomposition()
 {
-public:
-	enum Code {
-        ALLOCATION_FAILED = 0,
-    };
+}
 
-    ReluplexError( ReluplexError::Code code ) : Error( "ReluplexError", (int)code )
-	{
-	}
-
-    ReluplexError( ReluplexError::Code code, const char *userMessage ) :
-        Error( "ReluplexError", (int)code, userMessage )
-    {
-    }
-};
-
-#endif // __ReluplexError_h__
+BasisDecomposition::~BasisDecomposition()
+{
+}
 
 //
 // Local Variables:
-// compile-command: "make -C .. "
-// tags-file-name: "../TAGS"
+// compile-command: "make -C . "
+// tags-file-name: "./TAGS"
 // c-basic-offset: 4
 // End:
 //
