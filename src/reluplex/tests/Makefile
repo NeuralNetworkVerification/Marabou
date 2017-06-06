@@ -18,7 +18,7 @@ SOURCES += \
 	\
 	../Tableau.cpp \
 	../EtaMatrix.cpp \
-	../BasisDecomposition.cpp \
+	../BasisFactorization.cpp \
 
 all:
 	./$(TEST_TARGET)

@@ -1,22 +1,22 @@
 #include <cxxtest/TestSuite.h>
 
 #include "MockErrno.h"
-#include "BasisDecomposition.h"
+#include "BasisFactorization.h"
 #include <string.h>
 
-class MockForBasisDecomposition
+class MockForBasisFactorization
 {
 public:
 };
 
-class BasisDecompositionTestSuite : public CxxTest::TestSuite
+class BasisFactorizationTestSuite : public CxxTest::TestSuite
 {
 public:
-    MockForBasisDecomposition *mock;
+    MockForBasisFactorization *mock;
 
-    void basisDecompositionUp()
+    void basisFactorizationUp()
     {
-        TS_ASSERT( mock = new MockForBasisDecomposition );
+        TS_ASSERT( mock = new MockForBasisFactorization );
     }
 
     void tearDown()
@@ -26,7 +26,7 @@ public:
 
     void test_forward_transformation()
     {
-        BasisDecomposition basis( 3 );
+        BasisFactorization basis( 3 );
 
         // If no eta matrices are provided, d = a
         double a1[] = { 1, 1, 3 };
