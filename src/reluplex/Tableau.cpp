@@ -244,22 +244,41 @@ void Tableau::computeAssignment()
     if ( _assignmentStatus == ASSIGNMENT_VALID )
         return;
 
-    for ( unsigned i = 0; i < _m; ++i )
+    /*
+      The basic assignment is given by the formula:
+
+       xB = inv(B) * b - inv(B) * AN * xN
+          = inv(B) * ( b - AN * xN )
+                       -----------
+                            y
+
+       where B is the basis matrix, AN is the non-basis matrix, xN are
+       the value of the non basic variables and b is the original
+       right hand side.
+
+       We first compute y, and then do an FTRAN pass to solve B*xB = y
+    */
+
+    double *y = new double[_m];
+    memcpy( y, _b, sizeof(double) * _m );
+
+    // Compute a linear combination of the columns of AN
+    double *ANColumn;
+    for ( unsigned i = 0; i < _n - _m; ++i )
     {
-        double result = _b[i];
-        for ( unsigned j = 0; j < _n - _m; ++j )
-        {
-            double nonBasicValue = _nonBasicAtUpper[j] ?
-                _upperBounds[_nonBasicIndexToVariable[j]] :
-                _lowerBounds[_nonBasicIndexToVariable[j]];
-
-            result -= ( ( _AN[(j * _m) + i] * nonBasicValue ) / _B[(i * _m) + i] );
-        }
-
-        _assignment[i] = result;
-        computeBasicStatus( i );
+        unsigned var = _nonBasicIndexToVariable[i];
+        double value = _nonBasicAtUpper[i] ? _upperBounds[var] : _lowerBounds[var];
+        ANColumn = _AN + ( i * _m );
+        for ( unsigned j = 0; j < _m; ++j )
+            y[j] -= ANColumn[j] * value;
     }
 
+    // Solve B*xB = y by performing a forward transformation
+    _basisFactorization->forwardTransformation( y, _assignment );
+
+    delete[] y;
+
+    computeBasicStatus();
     _assignmentStatus = ASSIGNMENT_VALID;
 }
 
