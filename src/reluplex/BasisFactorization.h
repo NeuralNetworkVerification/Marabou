@@ -28,24 +28,24 @@ public:
     provided */
     void pushEtaMatrix( unsigned columnIndex, double *column );
 
-    /* Perform a forward transformation, i.e. find d such that d = inv(B) * a,
-       The solution is found by solving Bd = a.
+    /* Perform a forward transformation, i.e. find x such that x = inv(B) * y,
+       The solution is found by solving Bx = y.
 
-       Bd = (B0 * E1 * E2 ... * En) d = B0 * ( E1 ( ... ( En * d ) ) ) = a
+       Bx = (B0 * E1 * E2 ... * En) x = B0 * ( E1 ( ... ( En * x ) ) ) = y
                                                          -- u_n --
                                                   ----- u_1 ------
                                              ------- u_0 ---------
 
       And the equation is solved iteratively:
-      B0     * u0   =   a  --> obtain u0
+      B0     * u0   =   y  --> obtain u0
       E1     * u1   =  u0  --> obtain u1
       ...
-      En     * d    =  un  --> obtain d
+      En     * x    =  un  --> obtain x
 
-      For now, assume that B0 = I, so we start with u0 = a.
+      For now, assume that B0 = I, so we start with u0 = y.
 
       Result needs to be of size m */
-    void forwardTransformation( const double *a, double *result );
+    void forwardTransformation( const double *y, double *x );
 
     /* Perform a backward transformation, i.e. find x such that x = y * inv(B),
        The solution is found by solving xB = y.
