@@ -47,6 +47,25 @@ public:
       Result needs to be of size m */
     void forwardTransformation( const double *a, double *result );
 
+    /* Perform a backward transformation, i.e. find x such that x = y * inv(B),
+       The solution is found by solving xB = y.
+
+       xB = x (B0 * E1 * E2 ... * En) = ( ( ( x B0 ) * E1 ... ) En ) = y
+                                             ------- u_n ---------
+                                             --- u_1 ----
+                                             - u_0 -
+
+      And the equation is solved iteratively:
+      u_n-1  * En   =  y   --> obtain u_n-1
+      ...
+      u1     * E2   =  u2  --> obtain u1
+      u0     * E1   =  u1  --> obtain u0
+
+      For now, assume that B0 = I, so we start with u0 = x.
+
+      Result needs to be of size m */
+    void backwardTransformation( const double *y, double *x );
+
 private:
     unsigned _m;
     double *_B0;

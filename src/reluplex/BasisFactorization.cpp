@@ -73,6 +73,38 @@ void BasisFactorization::forwardTransformation( const double *a, double *result 
     }
 }
 
+void BasisFactorization::backwardTransformation( const double *y, double *x )
+{
+    if ( _etas.empty() )
+    {
+        memcpy( x, y, sizeof(double) * _m );
+        return;
+    }
+
+    double *tempY = new double[_m];
+    memcpy( tempY, y, sizeof(double) * _m );
+    std::fill( x, x + _m, 0.0 );
+
+    for ( auto eta = _etas.rbegin(); eta != _etas.rend(); ++eta )
+    {
+        // x is going to equal y in all entries except columnIndex
+        memcpy( x, tempY, sizeof(double) * _m );
+
+        // Compute the special column
+        unsigned columnIndex = (*eta)->_columnIndex;
+        x[columnIndex] = y[columnIndex];
+        for ( unsigned i = 0; i < _m; ++i )
+        {
+            if ( i != columnIndex )
+                x[columnIndex] -= x[i] * (*eta)->_column[i];
+        }
+        x[columnIndex] = x[columnIndex] / (*eta)->_column[columnIndex];
+
+        // The x from this iteration becomes y for the next iteration
+        memcpy( tempY, x, sizeof(double) *_m );
+    }
+}
+
 //
 // Local Variables:
 // compile-command: "make -C . "
