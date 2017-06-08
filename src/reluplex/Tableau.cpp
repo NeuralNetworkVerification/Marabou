@@ -483,25 +483,54 @@ unsigned Tableau::getBasicStatus( unsigned basic )
     return _basicStatus[_variableToIndex[basic]];
 }
 
-void Tableau::pickEnteringVariable()
+bool Tableau::pickEnteringVariable()
 {
-    computeCostFunction();
+    List<unsigned> candidates;
+    for ( unsigned i = 0; i < _n - _m; ++i )
+    {
+        if ( eligibleForEntry( i ) )
+            candidates.append( i );
+    }
+
+    if ( candidates.empty() )
+        return false;
 
     // Dantzig's rule
-    unsigned maxIndex = 0;
+    auto candidate = candidates.begin();
+    unsigned maxIndex = *candidate;
     double maxValue = FloatUtils::abs( _costFunction[maxIndex] );
+    ++candidate;
 
-    for ( unsigned i = 1; i < _n - _m; ++i )
+    while ( candidate != candidates.end() )
     {
-        double contender = FloatUtils::abs( _costFunction[i] );
-        if ( FloatUtils::gt( contender, maxValue ) )
+        double contenderValue = FloatUtils::abs( _costFunction[*candidate] );
+        if ( FloatUtils::gt( contenderValue, maxValue ) )
         {
-            maxIndex = i;
-            maxValue = contender;
+            maxIndex = *candidate;
+            maxValue = contenderValue;
         }
+        ++candidate;
     }
 
     _enteringVariable = maxIndex;
+    return true;
+}
+
+bool Tableau::eligibleForEntry( unsigned nonBasic )
+{
+    // A non-basic variable is eligible for entry if
+    //   1. It has a negative coefficient in the cost function and it
+    //      can increase
+    //   2. It has a positive coefficient in the cost function and it
+    //      can decrease
+    if ( FloatUtils::isZero( _costFunction[nonBasic] ) )
+        return false;
+
+    bool positive = FloatUtils::isPositive( _costFunction[nonBasic] );
+
+    return
+        ( positive && _nonBasicAtUpper[nonBasic] ) ||
+        ( !positive && !_nonBasicAtUpper[nonBasic] );
 }
 
 unsigned Tableau::getEnteringVariable() const
@@ -731,7 +760,10 @@ bool Tableau::solve()
         if ( !existsBasicOutOfBounds() )
             return true;
 
-        pickEnteringVariable();
+        computeCostFunction();
+        if ( !pickEnteringVariable() )
+            return false;
+
         computeD();
         pickLeavingVariable( _d );
         performPivot();

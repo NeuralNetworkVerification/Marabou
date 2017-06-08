@@ -162,7 +162,7 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete tableau );
     }
 
-    void test_get_entering_variable()
+    void test_get_entering_variable__have_eligible_variables()
     {
         Tableau *tableau;
 
@@ -195,8 +195,57 @@ public:
 
         // Cost function is: - x1 -  x2 - 2x3 - 2x4
 
-        TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable() );
+        TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
+        TS_ASSERT( tableau->pickEnteringVariable() );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
+
+        TS_ASSERT_THROWS_NOTHING( delete tableau );
+    }
+
+    void test_get_entering_variable__no_eligible_variables()
+    {
+        Tableau *tableau;
+
+        TS_ASSERT( tableau = new Tableau );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        initializeTableauValues( *tableau );
+
+        for ( unsigned i = 0; i < 4; ++i )
+        {
+            TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( i, 1 ) );
+            TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( i, 2 ) );
+        }
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 4, 216 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 4, 228 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 5, 120 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 5, 122 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 6, 400 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 6, 412 ) );
+
+        Set<unsigned> basicVariables = { 4, 5, 6 };
+        TS_ASSERT_THROWS_NOTHING( tableau->initializeBasis( basicVariables ) );
+
+        TS_ASSERT_EQUALS( tableau->getBasicStatus( 4 ), Tableau::BETWEEN );
+        TS_ASSERT_EQUALS( tableau->getBasicStatus( 5 ), Tableau::BELOW_LB );
+        TS_ASSERT_EQUALS( tableau->getBasicStatus( 6 ), Tableau::BETWEEN );
+
+
+        const double *costFunction;
+        TS_ASSERT_THROWS_NOTHING( costFunction = tableau->getCostFunction() );
+        TS_ASSERT_EQUALS( costFunction[0], 1 );
+        TS_ASSERT_EQUALS( costFunction[1], 1 );
+        TS_ASSERT_EQUALS( costFunction[2], 1 );
+        TS_ASSERT_EQUALS( costFunction[3], 1 );
+
+        // Cost function is: + x1 + x2 + x3 + x4
+        // All these variables are at their lower bounds, so cannot decrease.
+
+        TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
+        TS_ASSERT( !tableau->pickEnteringVariable() );
 
         TS_ASSERT_THROWS_NOTHING( delete tableau );
     }
@@ -232,6 +281,7 @@ public:
         TS_ASSERT_EQUALS( tableau->getBasicStatus( 5 ), Tableau::BETWEEN );
         TS_ASSERT_EQUALS( tableau->getBasicStatus( 6 ), Tableau::ABOVE_UB );
 
+        TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
         TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable() );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
 
@@ -324,6 +374,7 @@ public:
         Set<unsigned> basicVariables = { 4, 5, 6 };
         TS_ASSERT_THROWS_NOTHING( tableau->initializeBasis( basicVariables ) );
 
+        TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
         TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable() );
 
         double d[] = { -1, 0, -0.00001 };
@@ -371,6 +422,7 @@ public:
         Set<unsigned> basicVariables = { 4, 5, 6 };
         TS_ASSERT_THROWS_NOTHING( tableau->initializeBasis( basicVariables ) );
 
+        TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
         TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable() );
 
         double d[] = { 1, 1, 1 };

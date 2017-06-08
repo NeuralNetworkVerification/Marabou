@@ -113,8 +113,9 @@ public:
         }
     }
 
-    /* Picks the entering variable. Refreshes the cost function. */
-    void pickEnteringVariable();
+    /* Picks the entering variable. */
+    bool pickEnteringVariable();
+    bool eligibleForEntry( unsigned nonBasic );
     unsigned getEnteringVariable() const;
 
     /* Pick the leaving variable according to the entering variable.
@@ -139,6 +140,9 @@ public:
 
     /* True iff the variable is basic */
     bool isBasic( unsigned variable ) const;
+
+    /* Compute the cost function */
+    void computeCostFunction();
 
 private:
     /* The dimensions of matrix A */
@@ -219,8 +223,7 @@ private:
     /* Compute the assignment. Assumes the basis has just been refactored */
     void computeAssignment();
 
-    /* Compute the cost function */
-    void computeCostFunction();
+    /* Helper functions for calculating the cost */
     void computeBasicCosts();
     void computeMultipliers();
     void computeReducedCosts();
