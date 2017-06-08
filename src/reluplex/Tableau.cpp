@@ -492,6 +492,8 @@ bool Tableau::pickEnteringVariable()
             candidates.append( i );
     }
 
+    // TODO: is it really the case that no candidates -->
+    // infeasibility? Maybe they canceled out or something?
     if ( candidates.empty() )
         return false;
 
@@ -518,11 +520,14 @@ bool Tableau::pickEnteringVariable()
 
 bool Tableau::eligibleForEntry( unsigned nonBasic )
 {
-    // A non-basic variable is eligible for entry if
+    // A non-basic variable is eligible for entry if one of the two
+    //   conditions holds:
+    //
     //   1. It has a negative coefficient in the cost function and it
     //      can increase
     //   2. It has a positive coefficient in the cost function and it
     //      can decrease
+
     if ( FloatUtils::isZero( _costFunction[nonBasic] ) )
         return false;
 
