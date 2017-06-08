@@ -166,8 +166,10 @@ private:
     /* The current factorization of the basis */
     BasisFactorization *_basisFactorization;
 
-    /* The cost function */
+    /* The cost function and auxiliary variable for computing it */
     double *_costFunction;
+    double *_basicCosts;
+    double *_multipliers;
 
     /* Mapping between basic variables and indices (length m) */
     unsigned *_basicIndexToVariable;
@@ -219,7 +221,9 @@ private:
 
     /* Compute the cost function */
     void computeCostFunction();
-    void addRowToCostFunction( unsigned row, double weight );
+    void computeBasicCosts();
+    void computeMultipliers();
+    void computeReducedCosts();
 
     /* True if the basic variable is out of bounds */
     bool basicOutOfBounds( unsigned basic ) const;

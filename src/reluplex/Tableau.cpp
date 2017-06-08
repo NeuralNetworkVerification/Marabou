@@ -29,6 +29,8 @@ Tableau::Tableau()
     , _b( NULL )
     , _basisFactorization( NULL )
     , _costFunction( NULL )
+    , _basicCosts( NULL )
+    , _multipliers( NULL )
     , _basicIndexToVariable( NULL )
     , _nonBasicIndexToVariable( NULL )
     , _variableToIndex( NULL )
@@ -77,6 +79,18 @@ Tableau::~Tableau()
     {
         delete[] _costFunction;
         _costFunction = NULL;
+    }
+
+    if ( _basicCosts )
+    {
+        delete[] _basicCosts;
+        _basicCosts = NULL;
+    }
+
+    if ( _multipliers )
+    {
+        delete[] _multipliers;
+        _multipliers = NULL;
     }
 
     if ( _basicIndexToVariable )
@@ -162,6 +176,14 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     _costFunction = new double[n-m];
     if ( !_costFunction )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::costFunction" );
+
+    _basicCosts = new double[m];
+    if ( !_basicCosts )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::basicCosts" );
+
+    _multipliers = new double[m];
+    if ( !_multipliers )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::multipliers" );
 
     _basicIndexToVariable = new unsigned[m];
     if ( !_basicIndexToVariable )
@@ -375,27 +397,85 @@ bool Tableau::existsBasicOutOfBounds() const
 
 void Tableau::computeCostFunction()
 {
-    std::fill( _costFunction, _costFunction + _n - _m, 0.0 );
+    /*
+      The cost function is computed in three steps:
 
+      1. Compute the basic costs c.
+         These costs indicate whether a basic variable's row in
+         the tableau should be added as is (variable too great;
+         cost = 1), should be added negatively (variable is too
+         small; cost = -1), or should be ignored (variable
+         within bounds; cost = 0).
+
+      2. Compute the multipliers p.
+         p = c' * inv(B)
+         This is solved by invoking BTRAN for pB = c'
+
+      3. Compute the non-basic (reduced) costs.
+         These are given by -p * AN
+
+      Comment: the correctness follows from the fact that
+
+      xB = inv(B)(b - AN xN)
+
+      we ignore b because the constants don't matter for the cost
+      function, and we omit xN because we want the function and not an
+      evaluation thereof on a specific point.
+     */
+
+    // Step 1: compute basic costs
+    computeBasicCosts();
+
+    // Step 2: compute the multipliers
+    computeMultipliers();
+
+    // Step 3: compute reduced costs
+    computeReducedCosts();
+
+    // std::fill( _costFunction, _costFunction + _n - _m, 0.0 );
+
+    // for ( unsigned i = 0; i < _m; ++i )
+    // {
+    //     // Currently assume the basic matrix is diagonal.
+    //     // If the variable is too low, We want to add -row, but the
+    //     // equation is given as x = -An*xn so the two negations cancel
+    //     // out. The too high case is symmetrical.
+    //     if ( basicTooLow( i ) )
+    //         addRowToCostFunction( i, 1 );
+    //     else if ( basicTooHigh( i ) )
+    //         addRowToCostFunction( i, -1 );
+    // }
+}
+
+void Tableau::computeBasicCosts()
+{
     for ( unsigned i = 0; i < _m; ++i )
     {
-        // Currently assume the basic matrix is diagonal.
-        // If the variable is too low, We want to add -row, but the
-        // equation is given as x = -An*xn so the two negations cancel
-        // out. The too high case is symmetrical.
         if ( basicTooLow( i ) )
-            addRowToCostFunction( i, 1 );
+            _basicCosts[i] = -1;
         else if ( basicTooHigh( i ) )
-            addRowToCostFunction( i, -1 );
+            _basicCosts[i] = 1;
+        else
+            _basicCosts[i] = 0;
     }
 }
 
-void Tableau::addRowToCostFunction( unsigned row, double weight )
+void Tableau::computeMultipliers()
 {
-    // TODO: we assume B is the identity matrix, otherwise might need
-    // to divide by the coefficient from B.
+    _basisFactorization->backwardTransformation( _basicCosts, _multipliers );
+}
+
+void Tableau::computeReducedCosts()
+{
+    double *ANColumn;
     for ( unsigned i = 0; i < _n - _m; ++i )
-        _costFunction[i] += ( _AN[i * _m + row] * weight );
+    {
+        ANColumn = _AN + ( i * _m );
+
+        _costFunction[i] = 0;
+        for ( unsigned j = 0; j < _m; ++j )
+            _costFunction[i] -= ( _multipliers[j] * ANColumn[j] );
+    }
 }
 
 unsigned Tableau::getBasicStatus( unsigned basic )
