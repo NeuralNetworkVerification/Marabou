@@ -10,7 +10,6 @@
  ** directory for licensing information.\endverbatim
  **/
 
-
 #include "BasisFactorization.h"
 #include "Debug.h"
 #include "FloatUtils.h"
@@ -320,8 +319,6 @@ void Tableau::computeBasicStatus( unsigned basic )
         _basicStatus[basic] = Tableau::ABOVE_UB;
     else if ( FloatUtils::lt( value , lb ) )
         _basicStatus[basic] = Tableau::BELOW_LB;
-    // else if ( FloatUtils::areEqual( lb, ub ) )
-    //     _basicStatus[basic] = Tableau::FIXED;
     else if ( FloatUtils::areEqual( ub, value ) )
         _basicStatus[basic] = Tableau::AT_UB;
     else if ( FloatUtils::areEqual( lb, value ) )
@@ -431,20 +428,6 @@ void Tableau::computeCostFunction()
 
     // Step 3: compute reduced costs
     computeReducedCosts();
-
-    // std::fill( _costFunction, _costFunction + _n - _m, 0.0 );
-
-    // for ( unsigned i = 0; i < _m; ++i )
-    // {
-    //     // Currently assume the basic matrix is diagonal.
-    //     // If the variable is too low, We want to add -row, but the
-    //     // equation is given as x = -An*xn so the two negations cancel
-    //     // out. The too high case is symmetrical.
-    //     if ( basicTooLow( i ) )
-    //         addRowToCostFunction( i, 1 );
-    //     else if ( basicTooHigh( i ) )
-    //         addRowToCostFunction( i, -1 );
-    // }
 }
 
 void Tableau::computeBasicCosts()
@@ -754,30 +737,42 @@ void Tableau::computeD()
     _basisFactorization->forwardTransformation( _a, _d );
 }
 
-bool Tableau::solve()
-{
-    // Todo: If l >= u for some var, fail immediately
-
-    while ( true )
-    {
-        computeBasicStatus();
-
-        if ( !existsBasicOutOfBounds() )
-            return true;
-
-        computeCostFunction();
-        if ( !pickEnteringVariable() )
-            return false;
-
-        computeD();
-        pickLeavingVariable( _d );
-        performPivot();
-    }
-}
-
 bool Tableau::isBasic( unsigned variable ) const
 {
     return _basicVariables.exists( variable );
+}
+
+void Tableau::dump() const
+{
+    printf( "\nDumping A:\n" );
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        for ( unsigned j = 0; j < _n; ++j )
+        {
+            printf( "%5.1lf ", _A[j * _m + i] );
+        }
+        printf( "\n" );
+    }
+
+    printf( "\nDumping B:\n" );
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        for ( unsigned j = 0; j < _m; ++j )
+        {
+            printf( "%5.1lf ", _B[j * _m + i] );
+        }
+        printf( "\n" );
+    }
+
+    printf( "\nDumping AN:\n" );
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        for ( unsigned j = 0; j < _n - _m; ++j )
+        {
+            printf( "%5.1lf ", _AN[j * _m + i] );
+        }
+        printf( "\n" );
+    }
 }
 
 //
