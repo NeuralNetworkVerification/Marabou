@@ -34,6 +34,7 @@ public:
     virtual bool pickEnteringVariable() = 0;
     virtual bool eligibleForEntry( unsigned nonBasic ) = 0;
     virtual unsigned getEnteringVariable() const = 0;
+    virtual void pickLeavingVariable() = 0;
     virtual void pickLeavingVariable( double *d ) = 0;
     virtual unsigned getLeavingVariable() const = 0;
     virtual double getChangeRatio() const = 0;

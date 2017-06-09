@@ -98,6 +98,7 @@ public:
       Pick the leaving variable according to the entering variable.
       d is the column vector for the entering variable (length m)
     */
+    void pickLeavingVariable();
     void pickLeavingVariable( double *d );
     unsigned getLeavingVariable() const;
     double getChangeRatio() const;

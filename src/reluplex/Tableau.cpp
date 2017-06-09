@@ -637,6 +637,11 @@ double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient
     return ratio;
 }
 
+void Tableau::pickLeavingVariable()
+{
+    pickLeavingVariable( _d );
+}
+
 void Tableau::pickLeavingVariable( double *d )
 {
     ASSERT( !FloatUtils::isZero( _costFunction[_enteringVariable] ) );

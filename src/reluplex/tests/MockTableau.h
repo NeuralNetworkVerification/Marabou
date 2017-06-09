@@ -53,6 +53,7 @@ public:
     bool pickEnteringVariable() { return false; }
     bool eligibleForEntry( unsigned /* nonBasic */ ) { return false; }
     unsigned getEnteringVariable() const { return 0; }
+    void pickLeavingVariable() {};
     void pickLeavingVariable( double */* d */ ) {}
     unsigned getLeavingVariable() const { return 0; }
     double getChangeRatio() const { return 0; }

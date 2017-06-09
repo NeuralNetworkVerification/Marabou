@@ -22,25 +22,23 @@ Engine::~Engine()
 
 bool Engine::solve()
 {
-    return false;
-
     // Todo: If l >= u for some var, fail immediately
 
-    // while ( true )
-    // {
-    //     computeBasicStatus();
+    while ( true )
+    {
+        _tableau->computeBasicStatus();
 
-    //     if ( !existsBasicOutOfBounds() )
-    //         return true;
+        if ( !_tableau->existsBasicOutOfBounds() )
+            return true;
 
-    //     computeCostFunction();
-    //     if ( !pickEnteringVariable() )
-    //         return false;
+        _tableau->computeCostFunction();
+        if ( !_tableau->pickEnteringVariable() )
+            return false;
 
-    //     computeD();
-    //     pickLeavingVariable( _d );
-    //     performPivot();
-    // }
+        _tableau->computeD();
+        _tableau->pickLeavingVariable();
+        _tableau->performPivot();
+    }
 }
 
 //
