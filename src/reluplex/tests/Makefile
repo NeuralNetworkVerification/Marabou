@@ -12,16 +12,16 @@ TEST_FILES = $(wildcard Test_*.h)
 SOURCES += \
 	GlobalConfiguration.cpp \
 	\
-	Error.cpp \
 	Errno.cpp \
+	Error.cpp \
 	FloatUtils.cpp \
 	\
-	../BasisFactorization.cpp \
-	../Engine.cpp \
-	../EtaMatrix.cpp \
-	../Tableau.cpp \
+	BasisFactorization.cpp \
+	Engine.cpp \
+	EtaMatrix.cpp \
+	Tableau.cpp \
 	\
-	../mock/TableauFactory.cpp \
+	TableauFactory.cpp \
 
 all:
 	./$(TEST_TARGET)
@@ -34,6 +34,8 @@ include $(ROOT_DIR)/Rules.mk
 vpath %.cpp $(CONFIGURATION_DIR)
 vpath %.cpp $(COMMON_DIR)
 vpath %.cpp $(COMMON_REAL_DIR)
+vpath %.cpp $(RELUPLEX_DIR)
+vpath %.cpp $(RELUPLEX_MOCK_DIR)
 
 #
 # Local Variables:
