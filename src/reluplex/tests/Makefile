@@ -16,9 +16,12 @@ SOURCES += \
 	Errno.cpp \
 	FloatUtils.cpp \
 	\
-	../Tableau.cpp \
-	../EtaMatrix.cpp \
 	../BasisFactorization.cpp \
+	../Engine.cpp \
+	../EtaMatrix.cpp \
+	../Tableau.cpp \
+	\
+	../mock/TableauFactory.cpp \
 
 all:
 	./$(TEST_TARGET)

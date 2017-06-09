@@ -13,6 +13,8 @@
 #ifndef __Engine_h__
 #define __Engine_h__
 
+#include "AutoTableau.h"
+
 class Engine
 {
 public:
@@ -24,7 +26,7 @@ public:
     bool solve();
 
 private:
-    Tableau _tableau;
+    AutoTableau _tableau;
 };
 
 #endif // __Engine_h__

@@ -13,11 +13,12 @@
 #ifndef __Tableau_h__
 #define __Tableau_h__
 
+#include "ITableau.h"
 #include "Set.h"
 
 class BasisFactorization;
 
-class Tableau
+class Tableau : public ITableau
 {
 public:
     enum BasicStatus {

@@ -1,3 +1,15 @@
+/*********************                                                        */
+/*! \file Test_BasisFactorization.h
+** \verbatim
+** Top contributors (to current version):
+**   Guy Katz
+** This file is part of the Reluplex project.
+** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
+** in the top-level source directory) and their institutional affiliations.
+** All rights reserved. See the file COPYING in the top-level source
+** directory for licensing information.\endverbatim
+**/
+
 #include <cxxtest/TestSuite.h>
 
 #include "MockErrno.h"
@@ -14,7 +26,7 @@ class BasisFactorizationTestSuite : public CxxTest::TestSuite
 public:
     MockForBasisFactorization *mock;
 
-    void basisFactorizationUp()
+    void setUp()
     {
         TS_ASSERT( mock = new MockForBasisFactorization );
     }
