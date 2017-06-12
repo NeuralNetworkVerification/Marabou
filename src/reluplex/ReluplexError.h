@@ -20,6 +20,7 @@ class ReluplexError : public Error
 public:
 	enum Code {
         ALLOCATION_FAILED = 0,
+        VARIABLE_INDEX_OUT_OF_RANGE = 1,
     };
 
     ReluplexError( ReluplexError::Code code ) : Error( "ReluplexError", (int)code )

@@ -15,6 +15,8 @@
 
 #include "GlobalConfiguration.h"
 
+#include <cfloat>
+
 class FloatUtils
 {
 public:
