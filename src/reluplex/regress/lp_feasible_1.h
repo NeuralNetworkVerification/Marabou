@@ -14,15 +14,46 @@
 #define __Lp_Feasible_1_h__
 
 #include "Engine.h"
+#include "InputQuery.h"
 
 class Lp_Feasible_1
 {
 public:
     void run()
     {
-        Engine engine;
+        // Simple satisfiable query:
+        //   0  <= x0 <= 2
+        //   -3 <= x1 <= 3
+        //   4  <= x2 <= 6
+        //
+        //  x0 + 2x1 -x2 <= 11 --> x0 + 2x1 - x2 + x3 = 11, x3 >= 0
 
-        printf( "Hi!\n" );
+        InputQuery inputQuery;
+        inputQuery.setNumberOfVariables( 4 );
+
+        inputQuery.setLowerBound( 0, 0 );
+        inputQuery.setUpperBound( 0, 2 );
+
+        inputQuery.setLowerBound( 1, -3 );
+        inputQuery.setUpperBound( 1, 3 );
+
+        inputQuery.setLowerBound( 2, 4 );
+        inputQuery.setUpperBound( 2, 6 );
+
+        inputQuery.setLowerBound( 3, 0 );
+
+        InputQuery::Equation equation;
+        equation.addAddend( 1, 0 );
+        equation.addAddend( 2, 1 );
+        equation.addAddend( -1, 2 );
+        equation.addAddend( 1, 3 );
+        equation.setScalar( 11 );
+        equation.markAuxiliaryVariable( 3 );
+        inputQuery.addEquation( equation );
+
+        Engine engine;
+        engine.processInputQuery( inputQuery );
+        engine.solve();
     }
 };
 

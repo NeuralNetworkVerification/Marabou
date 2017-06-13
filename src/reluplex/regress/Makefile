@@ -16,10 +16,12 @@ SOURCES += \
 	Errno.cpp \
 	Error.cpp \
 	FloatUtils.cpp \
+	String.cpp \
 	\
 	BasisFactorization.cpp \
 	Engine.cpp \
 	EtaMatrix.cpp \
+	InputQuery.cpp \
 	Tableau.cpp \
 	TableauFactory.cpp \
 	\
