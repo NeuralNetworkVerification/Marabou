@@ -1,7 +1,8 @@
 ROOT_DIR = ..
 
 SUBDIRS += \
-	tests\
+	tests \
+	regress \
 
 LOCAL_INCLUDES += \
 	$(CONFIGURATION_DIR) \

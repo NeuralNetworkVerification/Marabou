@@ -35,6 +35,12 @@ public:
      */
     void processInputQuery( const InputQuery &inputQuery );
 
+    /*
+      If the query is feasiable and has been successfully solved, this
+      method can be used to extract the solution
+     */
+    void extractSolution( InputQuery &inputQuery );
+
 private:
     AutoTableau _tableau;
 };

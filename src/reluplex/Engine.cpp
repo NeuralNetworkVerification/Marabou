@@ -71,6 +71,12 @@ void Engine::processInputQuery( const InputQuery &inputQuery )
     _tableau->initializeTableau();
 }
 
+void Engine::extractSolution( InputQuery &inputQuery )
+{
+    for ( unsigned i = 0; i < inputQuery.getNumberOfVariables(); ++i )
+        inputQuery.setSolutionValue( i, _tableau->getValue( i ) );
+}
+
 //
 // Local Variables:
 // compile-command: "make -C .. "

@@ -46,6 +46,9 @@ public:
     InputQuery();
     ~InputQuery();
 
+    /*
+      Methods for setting and getting the input part of the query
+    */
     void setNumberOfVariables( unsigned numberOfVariables );
     void setLowerBound( unsigned variable, double bound );
     void setUpperBound( unsigned variable, double bound );
@@ -58,11 +61,20 @@ public:
 
     const List<InputQuery::Equation> &getEquations() const;
 
+    /*
+      Methods for setting and getting the solution
+    */
+
+    void setSolutionValue( unsigned variable, double value );
+    double getSolutionValue( unsigned variable ) const;
+
 private:
     unsigned _numberOfVariables;
     List<InputQuery::Equation> _equations;
     Map<unsigned, double> _lowerBounds;
     Map<unsigned, double> _upperBounds;
+
+    Map<unsigned, double> _solution;
 };
 
 #endif // __InputQuery_h__

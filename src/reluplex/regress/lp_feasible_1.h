@@ -21,6 +21,7 @@ class Lp_Feasible_1
 public:
     void run()
     {
+        printf( "Running lp_feasible_1... " );
         // Simple satisfiable query:
         //   0  <= x0 <= 2
         //   -3 <= x1 <= 3
@@ -52,8 +53,46 @@ public:
         inputQuery.addEquation( equation );
 
         Engine engine;
+
         engine.processInputQuery( inputQuery );
-        engine.solve();
+
+        if ( !engine.solve() )
+        {
+            printf( "\nError! Query is feasible but no solution found\n" );
+            exit( 1 );
+        }
+
+        engine.extractSolution( inputQuery );
+
+        // Sanity test
+        double value = 0;
+
+        double value0 = inputQuery.getSolutionValue( 0 );
+        double value1 = inputQuery.getSolutionValue( 1 );
+        double value2 = inputQuery.getSolutionValue( 2 );
+        double value3 = inputQuery.getSolutionValue( 3 );
+
+        value += 1  * value0;
+        value += 2  * value1;
+        value += -1 * value2;
+        value += 1  * value3;
+
+        if ( value != 11 )
+        {
+            printf( "\nError! The solution does not satisfy the equation\n" );
+            exit( 1 );
+        }
+
+        if ( ( value0 < 0 ) || ( value0 > 2 ) ||
+             ( value1 < -3 ) || ( value1 > 3 ) ||
+             ( value2 < 4 ) || ( value2 > 6 ) ||
+             ( value3 < 0 ) )
+        {
+            printf( "\nError! Values violate the variable bounds\n" );
+            exit( 1 );
+        }
+
+        printf( "Success!\n" );
     }
 };
 

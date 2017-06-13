@@ -119,6 +119,20 @@ const List<InputQuery::Equation> &InputQuery::getEquations() const
     return _equations;
 }
 
+void InputQuery::setSolutionValue( unsigned variable, double value )
+{
+    _solution[variable] = value;
+}
+
+double InputQuery::getSolutionValue( unsigned variable ) const
+{
+    if ( !_solution.exists( variable ) )
+        throw ReluplexError( ReluplexError::VARIABLE_DOESNT_EXIST_IN_SOLUTION,
+                             Stringf( "Variable: %u", variable ).ascii() );
+
+    return _solution.get( variable );
+}
+
 //
 // Local Variables:
 // compile-command: "make -C .. "
