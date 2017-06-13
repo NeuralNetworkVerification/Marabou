@@ -45,6 +45,7 @@ public:
     virtual bool isBasic( unsigned variable ) const = 0;
     virtual void computeCostFunction() = 0;
     virtual const double *getCostFunction() = 0;
+    virtual void dumpCostFunction() const = 0;
     virtual void computeD() = 0;
     virtual void computeAssignment() = 0;
     virtual void dump() const = 0;
