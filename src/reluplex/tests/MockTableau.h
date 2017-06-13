@@ -133,6 +133,7 @@ public:
     bool isBasic( unsigned /* variable */ ) const { return false; }
     void computeCostFunction() {}
     const double *getCostFunction() { return 0; }
+    void dumpCostFunction() const {}
     void computeD() {}
     void computeAssignment() {}
     void dump() const {}

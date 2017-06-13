@@ -21,8 +21,6 @@
 
 Tableau::Tableau()
     : _A( NULL )
-    , _B( NULL )
-    , _AN( NULL )
     , _a( NULL )
     , _d( NULL )
     , _b( NULL )
@@ -48,18 +46,6 @@ Tableau::~Tableau()
     {
         delete[] _A;
         _A = NULL;
-    }
-
-    if ( _B )
-    {
-        delete[] _B;
-        _B = NULL;
-    }
-
-    if ( _AN )
-    {
-        delete[] _AN;
-        _AN = NULL;
     }
 
     if ( _d )
@@ -156,14 +142,6 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     if ( !_A )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::A" );
 
-    _B = new double[m*m];
-    if ( !_B )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::B" );
-
-    _AN = new double[m * (n-m)];
-    if ( !_AN )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::AN" );
-
     _d = new double[m];
     if ( !_d )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::d" );
@@ -243,14 +221,12 @@ void Tableau::initializeTableau()
         {
             _basicIndexToVariable[basicIndex] = i;
             _variableToIndex[i] = basicIndex;
-            memcpy( _B + basicIndex * _m, _A + i * _m, sizeof(double) * _m );
             ++basicIndex;
         }
         else
         {
             _nonBasicIndexToVariable[nonBasicIndex] = i;
             _variableToIndex[i] = nonBasicIndex;
-            memcpy( _AN + nonBasicIndex * _m, _A + i * _m, sizeof(double) * _m );
             ++nonBasicIndex;
         }
     }
@@ -292,7 +268,7 @@ void Tableau::computeAssignment()
     {
         unsigned var = _nonBasicIndexToVariable[i];
         double value = _nonBasicAtUpper[i] ? _upperBounds[var] : _lowerBounds[var];
-        ANColumn = _AN + ( i * _m );
+        ANColumn = _A + ( var * _m );
         for ( unsigned j = 0; j < _m; ++j )
             y[j] -= ANColumn[j] * value;
     }
@@ -376,6 +352,24 @@ const double *Tableau::getCostFunction()
     return _costFunction;
 }
 
+void Tableau::dumpCostFunction() const
+{
+    printf( "Cost function:\n\t" );
+
+    for ( unsigned i = 0; i < _n - _m; ++i )
+    {
+        double coefficient = _costFunction[i];
+        if ( FloatUtils::isZero( coefficient ) )
+            continue;
+
+        if ( FloatUtils::isPositive( coefficient ) )
+            printf( "+" );
+        printf( "%lfx%u ", coefficient, _nonBasicIndexToVariable[i] );
+    }
+
+    printf( "\n" );
+}
+
 bool Tableau::basicOutOfBounds( unsigned basic ) const
 {
     return basicTooHigh( basic ) || basicTooLow( basic );
@@ -449,11 +443,29 @@ void Tableau::computeBasicCosts()
         else
             _basicCosts[i] = 0;
     }
+
+    printf( "Dumping basic costs:\n\t" );
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        if ( FloatUtils::isZero( _basicCosts[i] ) )
+            continue;
+
+        if ( FloatUtils::isPositive( _basicCosts[i] ) )
+            printf( "+" );
+        printf( "%lfx%u ", _basicCosts[i], _basicIndexToVariable[i] );
+    }
+    printf( "\n" );
 }
 
 void Tableau::computeMultipliers()
 {
     _basisFactorization->backwardTransformation( _basicCosts, _multipliers );
+
+    printf( "Dumping multipliers:\n\t" );
+    for ( unsigned i = 0; i < _m; ++i )
+        printf( "%lf ", _multipliers[i] );
+
+    printf( "\n" );
 }
 
 void Tableau::computeReducedCosts()
@@ -461,7 +473,7 @@ void Tableau::computeReducedCosts()
     double *ANColumn;
     for ( unsigned i = 0; i < _n - _m; ++i )
     {
-        ANColumn = _AN + ( i * _m );
+        ANColumn = _A + ( _nonBasicIndexToVariable[i] * _m );
 
         _costFunction[i] = 0;
         for ( unsigned j = 0; j < _m; ++j )
@@ -750,11 +762,22 @@ double Tableau::getChangeRatio() const
 
 void Tableau::computeD()
 {
-    // _a gets the entering variable's column in AN
-    _a = _AN + ( _enteringVariable * _m );
+    // _a gets the entering variable's column in A
+     _a = _A + ( _nonBasicIndexToVariable[_enteringVariable] * _m );
 
     // Compute d = inv(B) * a using the basis factorization
     _basisFactorization->forwardTransformation( _a, _d );
+
+    printf( "Leaving variable selection: dumping a\n\t" );
+    for ( unsigned i = 0; i < _m; ++i )
+        printf( "%lf ", _a[i] );
+    printf( "\n" );
+
+    printf( "Leaving variable selection: dumping d\n\t" );
+    for ( unsigned i = 0; i < _m; ++i )
+        printf( "%lf ", _d[i] );
+
+    printf( "\n" );
 }
 
 bool Tableau::isBasic( unsigned variable ) const
@@ -794,26 +817,6 @@ void Tableau::dump() const
         for ( unsigned j = 0; j < _n; ++j )
         {
             printf( "%5.1lf ", _A[j * _m + i] );
-        }
-        printf( "\n" );
-    }
-
-    printf( "\nDumping B:\n" );
-    for ( unsigned i = 0; i < _m; ++i )
-    {
-        for ( unsigned j = 0; j < _m; ++j )
-        {
-            printf( "%5.1lf ", _B[j * _m + i] );
-        }
-        printf( "\n" );
-    }
-
-    printf( "\nDumping AN:\n" );
-    for ( unsigned i = 0; i < _m; ++i )
-    {
-        for ( unsigned j = 0; j < _n - _m; ++j )
-        {
-            printf( "%5.1lf ", _AN[j * _m + i] );
         }
         printf( "\n" );
     }

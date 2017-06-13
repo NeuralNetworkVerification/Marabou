@@ -135,6 +135,7 @@ public:
     */
     void computeCostFunction();
     const double *getCostFunction();
+    void dumpCostFunction() const;
 
     /*
       Compute _d = inv(B) * a
