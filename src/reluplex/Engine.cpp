@@ -27,7 +27,10 @@ bool Engine::solve()
 
     while ( true )
     {
+        _tableau->computeAssignment();
         _tableau->computeBasicStatus();
+
+        _tableau->dumpAssignment();
 
         if ( !_tableau->existsBasicOutOfBounds() )
             return true;

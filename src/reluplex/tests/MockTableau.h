@@ -136,6 +136,7 @@ public:
     void computeD() {}
     void computeAssignment() {}
     void dump() const {}
+    void dumpAssignment() {}
 };
 
 #endif // __MockTableau_h__

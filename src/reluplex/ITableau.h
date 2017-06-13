@@ -48,6 +48,7 @@ public:
     virtual void computeD() = 0;
     virtual void computeAssignment() = 0;
     virtual void dump() const = 0;
+    virtual void dumpAssignment() = 0;
 };
 
 #endif // __ITableau_h__

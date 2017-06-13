@@ -543,10 +543,17 @@ void Tableau::performPivot()
 
     if ( _leavingVariable == _m )
     {
+        printf( "\n\t\tTableau performing fake pivot. Varibale jumping to opposite bound: %u\n\n",
+                _nonBasicIndexToVariable[_enteringVariable] );
+
         // The entering variable is simply switching to its opposite bound.
         _nonBasicAtUpper[_enteringVariable] = !_nonBasicAtUpper[_enteringVariable];
         return;
     }
+
+    printf( "\n\t\tTableau performing pivot. Entering: %u, Leaving: %u\n\n",
+            _nonBasicIndexToVariable[_enteringVariable],
+            _basicIndexToVariable[_leavingVariable] );
 
     unsigned currentBasic = _basicIndexToVariable[_leavingVariable];
     unsigned currentNonBasic = _nonBasicIndexToVariable[_enteringVariable];
@@ -753,6 +760,30 @@ void Tableau::computeD()
 bool Tableau::isBasic( unsigned variable ) const
 {
     return _basicVariables.exists( variable );
+}
+
+void Tableau::dumpAssignment()
+{
+    printf( "Dumping assignment\n" );
+    for ( unsigned i = 0; i < _n; ++i )
+    {
+        bool basic = _basicVariables.exists( i );
+        printf( "\tx%u  -->  %.5lf [%s]. ", i, getValue( i ), basic ? "B" : "NB" );
+        if ( _lowerBounds[i] != -DBL_MAX )
+            printf( "Range: [ %.5lf, ", _lowerBounds[i] );
+        else
+            printf( "Range: [ -INFTY, " );
+
+        if ( _upperBounds[i] != DBL_MAX )
+            printf( "%.5lf ] ", _upperBounds[i] );
+        else
+            printf( "INFTY ] " );
+
+        if ( basic && basicOutOfBounds( _variableToIndex[i] ) )
+            printf( "*" );
+
+        printf( "\n" );
+    }
 }
 
 void Tableau::dump() const

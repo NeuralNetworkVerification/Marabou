@@ -150,6 +150,7 @@ public:
       Dump the tableau (debug)
     */
     void dump() const;
+    void dumpAssignment();
 
 private:
     /*

@@ -13,11 +13,15 @@
 #include <cstdio>
 
 #include "lp_feasible_1.h"
+#include "lp_feasible_2.h"
 
 int main()
 {
     Lp_Feasible_1 lpf1;
     lpf1.run();
+
+    Lp_Feasible_2 lpf2;
+    lpf2.run();
 }
 
 //
