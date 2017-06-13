@@ -15,6 +15,8 @@
 #include "lp_feasible_1.h"
 #include "lp_feasible_2.h"
 
+#include "lp_infeasible_1.h"
+
 int main()
 {
     Lp_Feasible_1 lpf1;
@@ -22,6 +24,10 @@ int main()
 
     Lp_Feasible_2 lpf2;
     lpf2.run();
+
+
+    Lp_Infeasible_1 lpi1;
+    lpi1.run();
 }
 
 //
