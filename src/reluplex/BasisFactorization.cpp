@@ -12,8 +12,10 @@
 
 #include "BasisFactorization.h"
 #include "EtaMatrix.h"
+#include "FloatUtils.h"
 #include "ReluplexError.h"
 
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
@@ -92,13 +94,17 @@ void BasisFactorization::backwardTransformation( const double *y, double *x )
 
         // Compute the special column
         unsigned columnIndex = (*eta)->_columnIndex;
-        x[columnIndex] = y[columnIndex];
+        x[columnIndex] = tempY[columnIndex];
         for ( unsigned i = 0; i < _m; ++i )
         {
             if ( i != columnIndex )
-                x[columnIndex] -= x[i] * (*eta)->_column[i];
+                x[columnIndex] -= (x[i] * (*eta)->_column[i]);
         }
         x[columnIndex] = x[columnIndex] / (*eta)->_column[columnIndex];
+
+        // To handle -0.0
+        if ( FloatUtils::isZero( x[columnIndex] ) )
+            x[columnIndex] = 0.0;
 
         // The x from this iteration becomes y for the next iteration
         memcpy( tempY, x, sizeof(double) *_m );

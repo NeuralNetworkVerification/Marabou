@@ -153,6 +153,30 @@ public:
         TS_ASSERT_THROWS_NOTHING( basis.backwardTransformation( y4, x4 ) );
         TS_ASSERT_SAME_DATA( x4, expected4, sizeof(double) * 3 );
     }
+
+    void test_backward_transformation_2()
+    {
+        BasisFactorization basis( 3 );
+
+        // E1 = | -1     |
+        //      |  0 1   |
+        //      | -1   1 |
+        double e1[] = { -1, 0, -1 };
+        basis.pushEtaMatrix( 0, e1 );
+
+        double y[] = { 1, 0, -1 };
+        double x[] = { 0, 0, 0 };
+        double expected[] = { 0, 0, -1 };
+
+        //     | -1     |
+        // x * |  0 1   | = | 1 0 -1 |
+        //     | -1   1 |
+        //
+        // --> x = [ 0 0 -1 ]
+
+        TS_ASSERT_THROWS_NOTHING( basis.backwardTransformation( y, x ) );
+        TS_ASSERT_SAME_DATA( x, expected, sizeof(double) * 3 );
+    }
 };
 
 //
