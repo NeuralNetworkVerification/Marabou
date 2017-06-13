@@ -38,7 +38,7 @@ public:
     ~Tableau();
 
     /*
-      Initialize the tableau.
+      Allocate space for the various data structures
       n: total number of variables
       m: number of constraints (rows)
     */
@@ -50,15 +50,23 @@ public:
     void setEntryValue( unsigned row, unsigned column, double value );
 
     /*
-      Set the values of the right hand side vector, b, of size m
+      Set the values of the right hand side vector, b, of size m.
+      Set either the whole vector or a specific entry
     */
     void setRightHandSide( const double *b );
+    void setRightHandSide( unsigned index, double value );
 
     /*
-      Initialize the basis matrix to a certain set of basic variables
-      Non basic variables are set to their lower bounds, assignment is recomputed
+      Mark a variable as basic in the initial basis
+     */
+    void markAsBasic( unsigned variable );
+
+    /*
+      Initialize the tableau matrices (_B and _AN) according to the
+      initial set of basic variables. Assign all non-basic variables
+      to lower bounds and computes the assignment
     */
-    void initializeBasis( const Set<unsigned> &basicVariables );
+    void initializeTableau();
 
     /*
       Get the assignment of a variable, either basic or non-basic

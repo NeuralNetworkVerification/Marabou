@@ -23,7 +23,9 @@ public:
     virtual void setDimensions( unsigned m, unsigned n ) = 0;
     virtual void setEntryValue( unsigned row, unsigned column, double value ) = 0;
     virtual void setRightHandSide( const double *b ) = 0;
-    virtual void initializeBasis( const Set<unsigned> &basicVariables ) = 0;
+    virtual void setRightHandSide( unsigned index, double value ) = 0;
+    virtual void markAsBasic( unsigned variable ) = 0;
+    virtual void initializeTableau() = 0;
     virtual double getValue( unsigned variable ) = 0;
     virtual void setLowerBound( unsigned variable, double value ) = 0;
     virtual void setUpperBound( unsigned variable, double value ) = 0;

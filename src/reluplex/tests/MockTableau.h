@@ -13,6 +13,8 @@
 #ifndef __MockTableau_h__
 #define __MockTableau_h__
 
+#include <cstring>
+
 class MockTableau : public ITableau
 {
 public:
@@ -20,7 +22,20 @@ public:
 	{
 		wasCreated = false;
 		wasDiscarded = false;
+
+        setDimensionsCalled = false;
+        lastRightHandSide = NULL;
+        initializeTableauCalled = false;
 	}
+
+    ~MockTableau()
+    {
+        if ( lastRightHandSide )
+        {
+            delete[] lastRightHandSide;
+            lastRightHandSide = NULL;
+        }
+    }
 
 	bool wasCreated;
 	bool wasDiscarded;
@@ -38,14 +53,70 @@ public:
 		wasDiscarded = true;
 	}
 
+    bool setDimensionsCalled;
+    unsigned lastM;
+    unsigned lastN;
+    void setDimensions( unsigned m, unsigned n )
+    {
+        TS_ASSERT( !initializeTableauCalled );
+        setDimensionsCalled = true;
+        lastRightHandSide = new double[m];
+        lastM = m;
+        lastN = n;
+        lastEntries = new double[m*n];
+        std::fill( lastEntries, lastEntries + ( n * m ), 0.0 );
+    }
 
-    void setDimensions( unsigned /* m */, unsigned /* n */ ) {}
-    void setEntryValue( unsigned /* row */, unsigned /* column */, double /* value */ ) {}
-    void setRightHandSide( const double */* b */ ) {}
-    void initializeBasis( const Set<unsigned> &/* basicVariables */ ) {}
+    double *lastEntries;
+    void setEntryValue( unsigned row, unsigned column, double value )
+    {
+        TS_ASSERT( setDimensionsCalled );
+        lastEntries[(row * lastN) + column] = value;
+    }
+
+    double *lastRightHandSide;
+    void setRightHandSide( const double * b )
+    {
+        TS_ASSERT( setDimensionsCalled );
+        TS_ASSERT( !initializeTableauCalled );
+        memcpy( lastRightHandSide, b, sizeof(double) * lastM );
+    }
+
+    void setRightHandSide( unsigned index, double value )
+    {
+        TS_ASSERT( setDimensionsCalled );
+        TS_ASSERT( !initializeTableauCalled );
+        lastRightHandSide[index] = value;
+    }
+
+    Set<unsigned> lastBasicVariables;
+    void markAsBasic( unsigned variable )
+    {
+        TS_ASSERT( !initializeTableauCalled );
+        lastBasicVariables.insert( variable );
+    }
+
+    bool initializeTableauCalled;
+    void initializeTableau()
+    {
+        TS_ASSERT( !initializeTableauCalled );
+        initializeTableauCalled = true;
+    }
+
     double getValue( unsigned /* variable */ ) { return 0; }
-    void setLowerBound( unsigned /* variable */, double /* value */ ) {}
-    void setUpperBound( unsigned /* variable */, double /* value */ ) {}
+
+    Map<unsigned, double> lastLowerBounds;
+    void setLowerBound( unsigned variable, double value )
+    {
+        lastLowerBounds[variable] = value;
+    }
+
+    Map<unsigned, double> lastUpperBounds;
+    void setUpperBound( unsigned variable, double value )
+    {
+        lastUpperBounds[variable] = value;
+    }
+
     unsigned getBasicStatus( unsigned /* basic */ ) { return 0; }
     bool existsBasicOutOfBounds() const { return false; }
     void computeBasicStatus() {}

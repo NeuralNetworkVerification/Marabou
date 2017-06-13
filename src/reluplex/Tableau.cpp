@@ -226,17 +226,20 @@ void Tableau::setEntryValue( unsigned row, unsigned column, double value )
     _A[(column * _m) + row] = value;
 }
 
-void Tableau::initializeBasis( const Set<unsigned> &basicVariables )
+void Tableau::markAsBasic( unsigned variable )
+{
+    _basicVariables.insert( variable );
+}
+
+void Tableau::initializeTableau()
 {
     unsigned basicIndex = 0;
     unsigned nonBasicIndex = 0;
 
-    _basicVariables = basicVariables;
-
     // Assign variable indices, grab basic columns from A into B
     for ( unsigned i = 0; i < _n; ++i )
     {
-        if ( basicVariables.exists( i ) )
+        if ( _basicVariables.exists( i ) )
         {
             _basicIndexToVariable[basicIndex] = i;
             _variableToIndex[i] = basicIndex;
@@ -360,6 +363,11 @@ double Tableau::getValue( unsigned variable )
 void Tableau::setRightHandSide( const double *b )
 {
     memcpy( _b, b, sizeof(double) * _m );
+}
+
+void Tableau::setRightHandSide( unsigned index, double value )
+{
+    _b[index] = value;
 }
 
 const double *Tableau::getCostFunction()

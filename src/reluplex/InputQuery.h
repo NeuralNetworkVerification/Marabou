@@ -21,7 +21,7 @@ class InputQuery
 public:
     /* A class representing a single input equation. For now, all
     equations are interpreted as equalities, i.e. the sum of all
-    addends plus scalar needs to be equal to 0. */
+    addends equals the scalar */
     struct Equation
     {
     public:
@@ -36,9 +36,11 @@ public:
 
         void addAddend( double coefficient, unsigned variable );
         void setScalar( double scalar );
+        void markAuxiliaryVariable( unsigned auxVariable );
 
         List<Addend> _addends;
         double _scalar;
+        unsigned _auxVariable;
     };
 
     InputQuery();
@@ -53,6 +55,8 @@ public:
     double getNumberOfVariables() const;
     double getLowerBound( unsigned variable ) const;
     double getUpperBound( unsigned variable ) const;
+
+    const List<InputQuery::Equation> &getEquations() const;
 
 private:
     unsigned _numberOfVariables;

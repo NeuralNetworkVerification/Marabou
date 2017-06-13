@@ -32,6 +32,11 @@ void InputQuery::Equation::setScalar( double scalar )
     _scalar = scalar;
 }
 
+void InputQuery::Equation::markAuxiliaryVariable( unsigned auxVariable )
+{
+    _auxVariable = auxVariable;
+}
+
 InputQuery::InputQuery()
 {
 }
@@ -107,6 +112,11 @@ double InputQuery::getUpperBound( unsigned variable ) const
         return DBL_MAX;
 
     return _upperBounds.get( variable );
+}
+
+const List<InputQuery::Equation> &InputQuery::getEquations() const
+{
+    return _equations;
 }
 
 //

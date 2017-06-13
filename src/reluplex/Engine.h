@@ -15,15 +15,25 @@
 
 #include "AutoTableau.h"
 
+class InputQuery;
+
 class Engine
 {
 public:
     Engine();
     ~Engine();
 
-    /* Attempt to find a feasible solution. Returns true if found,
-       false if problem is infeasible. */
+    /*
+      Attempt to find a feasible solution for the input. Returns true
+      if found,  false if infeasible.
+    */
     bool solve();
+
+    /*
+      Process the input query and pass the needed information to the
+      underlying tableau.
+     */
+    void processInputQuery( const InputQuery &inputQuery );
 
 private:
     AutoTableau _tableau;
