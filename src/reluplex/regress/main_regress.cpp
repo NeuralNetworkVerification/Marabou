@@ -25,9 +25,10 @@ int main()
     Lp_Feasible_2 lpf2;
     lpf2.run();
 
+    // Currently goes in an infinite loop
 
-    Lp_Infeasible_1 lpi1;
-    lpi1.run();
+    // Lp_Infeasible_1 lpi1;
+    // lpi1.run();
 }
 
 //

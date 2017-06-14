@@ -36,6 +36,8 @@ bool Engine::solve()
             return true;
 
         _tableau->computeCostFunction();
+        _tableau->dumpCostFunction();
+
         if ( !_tableau->pickEnteringVariable() )
             return false;
 
