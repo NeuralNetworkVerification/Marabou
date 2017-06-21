@@ -19,8 +19,8 @@ class BlandsRule : public EntrySelectionStrategy
 {
 public:
     /*
-      Apply Bland's rule: choose the candidate with the smallest
-      lexicographic index.
+      Apply Bland's rule: choose the candidate associated with the
+      variable that has the smallest lexicographical index.
     */
     unsigned select( const List<unsigned> &candidates, const ITableau &tableau );
 };
