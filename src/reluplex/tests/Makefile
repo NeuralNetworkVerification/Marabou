@@ -18,6 +18,7 @@ SOURCES += \
 	String.cpp \
 	\
 	BasisFactorization.cpp \
+	BlandsRule.cpp \
 	Engine.cpp \
 	EtaMatrix.cpp \
 	Tableau.cpp \
