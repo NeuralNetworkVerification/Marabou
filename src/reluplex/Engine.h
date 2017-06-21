@@ -25,7 +25,7 @@ public:
 
     /*
       Attempt to find a feasible solution for the input. Returns true
-      if found,  false if infeasible.
+      if found, false if infeasible.
     */
     bool solve();
 
@@ -37,7 +37,7 @@ public:
 
     /*
       If the query is feasiable and has been successfully solved, this
-      method can be used to extract the solution
+      method can be used to extract the solution.
      */
     void extractSolution( InputQuery &inputQuery );
 
