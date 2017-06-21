@@ -50,6 +50,7 @@ public:
     virtual void computeAssignment() = 0;
     virtual void dump() const = 0;
     virtual void dumpAssignment() = 0;
+    virtual unsigned nonBasicIndexToVariable( unsigned index ) const = 0;
 };
 
 #endif // __ITableau_h__

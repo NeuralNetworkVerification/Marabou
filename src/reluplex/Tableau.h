@@ -74,6 +74,12 @@ public:
     double getValue( unsigned variable );
 
     /*
+      Given an index of a non-basic variable (in the range [1,n-m]),
+      return the original variable that it corresponds to.
+    */
+    unsigned nonBasicIndexToVariable( unsigned index ) const;
+
+    /*
       Set the lower/upper bounds for a variable
     */
     void setLowerBound( unsigned variable, double value );

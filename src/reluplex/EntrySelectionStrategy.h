@@ -15,6 +15,8 @@
 
 #include "List.h"
 
+class ITableau;
+
 class EntrySelectionStrategy
 {
 public:
@@ -22,9 +24,10 @@ public:
 
     /*
       Choose the entrying variable from the list of eligible-for-entry
-      candidates.
+      candidates. The candidates are given using the internal indices
+      of the tableau, i.e. are in the range [1,n-m].
     */
-    virtual unsigned select( const List<unsigned> &candidates ) = 0;
+    virtual unsigned select( const List<unsigned> &candidates, const ITableau &tableau ) = 0;
 };
 
 #endif // __EntrySelectionStrategy_h__

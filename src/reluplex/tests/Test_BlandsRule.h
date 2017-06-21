@@ -13,6 +13,7 @@
 #include <cxxtest/TestSuite.h>
 
 #include "BlandsRule.h"
+#include "MockTableau.h"
 #include "ReluplexError.h"
 
 #include <string.h>
@@ -26,14 +27,18 @@ class BlandsRuleTestSuite : public CxxTest::TestSuite
 {
 public:
     MockForBlandsRule *mock;
+    MockTableau *tableau;
 
     void setUp()
     {
         TS_ASSERT( mock = new MockForBlandsRule );
+        TS_ASSERT( tableau = new MockTableau );
+
     }
 
     void tearDown()
     {
+        TS_ASSERT_THROWS_NOTHING( delete tableau );
         TS_ASSERT_THROWS_NOTHING( delete mock );
     }
 
@@ -43,21 +48,29 @@ public:
 
         List<unsigned> candidates;
 
-        TS_ASSERT_THROWS_EQUALS( blandsRule.select( candidates ),
+        TS_ASSERT_THROWS_EQUALS( blandsRule.select( candidates, *tableau ),
                                  const ReluplexError &e,
                                  e.getCode(),
                                  ReluplexError::NO_AVAILABLE_CANDIDATES );
 
         candidates.append( 3 );
+        tableau->nextNonBasicIndexToVaribale[3] = 20;
+
         candidates.append( 10 );
+        tableau->nextNonBasicIndexToVaribale[10] = 4;
+
         candidates.append( 2 );
+        tableau->nextNonBasicIndexToVaribale[2] = 10;
+
         candidates.append( 51 );
+        tableau->nextNonBasicIndexToVaribale[51] = 6;
 
-        TS_ASSERT_EQUALS( blandsRule.select( candidates ), 2U );
+        TS_ASSERT_EQUALS( blandsRule.select( candidates, *tableau ), 10U );
 
-        candidates.append( 1 );
+        candidates.append( 100 );
+        tableau->nextNonBasicIndexToVaribale[100] = 1;
 
-        TS_ASSERT_EQUALS( blandsRule.select( candidates ), 1U );
+        TS_ASSERT_EQUALS( blandsRule.select( candidates, *tableau ), 100U );
     }
 };
 

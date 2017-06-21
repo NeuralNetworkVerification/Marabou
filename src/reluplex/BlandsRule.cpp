@@ -11,25 +11,33 @@
  **/
 
 #include "BlandsRule.h"
+#include "ITableau.h"
 #include "ReluplexError.h"
 
-unsigned BlandsRule::select( const List<unsigned> &candidates )
+unsigned BlandsRule::select( const List<unsigned> &candidates, const ITableau &tableau )
 {
     if ( candidates.empty() )
         throw ReluplexError( ReluplexError::NO_AVAILABLE_CANDIDATES, "BlandsRule" );
 
     List<unsigned>::const_iterator it = candidates.begin();
-    unsigned min = *it;
-    ++it;
+    unsigned minIndex = *it;
+    unsigned minVariable = tableau.nonBasicIndexToVariable( minIndex );
 
+    ++it;
+    unsigned variable;
     while ( it != candidates.end() )
     {
-        if ( *it < min )
-            min = *it;
+        variable = tableau.nonBasicIndexToVariable( *it );
+        if ( variable < minVariable )
+        {
+            minIndex = *it;
+            minVariable = variable;
+        }
+
         ++it;
     }
 
-    return min;
+    return minIndex;
 }
 
 //

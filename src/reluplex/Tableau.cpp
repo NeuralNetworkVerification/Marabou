@@ -336,6 +336,11 @@ double Tableau::getValue( unsigned variable )
     return _assignment[_variableToIndex[variable]];
 }
 
+unsigned Tableau::nonBasicIndexToVariable( unsigned index ) const
+{
+    return _nonBasicIndexToVariable[index];
+}
+
 void Tableau::setRightHandSide( const double *b )
 {
     memcpy( _b, b, sizeof(double) * _m );

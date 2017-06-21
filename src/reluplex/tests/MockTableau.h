@@ -13,6 +13,9 @@
 #ifndef __MockTableau_h__
 #define __MockTableau_h__
 
+#include "ITableau.h"
+#include "Map.h"
+
 #include <cstring>
 
 class MockTableau : public ITableau
@@ -138,6 +141,13 @@ public:
     void computeAssignment() {}
     void dump() const {}
     void dumpAssignment() {}
+
+    Map<unsigned, unsigned> nextNonBasicIndexToVaribale;
+    unsigned nonBasicIndexToVariable( unsigned index ) const
+    {
+        TS_ASSERT( nextNonBasicIndexToVaribale.exists( index ) );
+        return nextNonBasicIndexToVaribale.get( index );
+    }
 };
 
 #endif // __MockTableau_h__
