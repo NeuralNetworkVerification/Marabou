@@ -29,7 +29,7 @@ public:
         //   0.5 <= x3  <= 1
 
         //  x0 = x1         --> x0 - x1 + x4 = 0
-        //  x0 = -x2        --> x1 + x2 + x5 = 0
+        //  x0 = -x2        --> x0 + x2 + x5 = 0
         //  x3 = x1 + x2    --> - x1 - x2 + x3 + x6 = 0
 
         InputQuery inputQuery;
@@ -91,7 +91,8 @@ public:
             exit( 1 );
         }
 
-        printf( "Success!\n" );
+        printf( "\nQuery is unsatisfiable\n" );
+        printf( "\nRegression test passed!\n" );
     }
 };
 

@@ -92,7 +92,8 @@ public:
             exit( 1 );
         }
 
-        printf( "Success!\n" );
+        printf( "\nQuery is satisfiable\n" );
+        printf( "\nRegression test passed!\n" );
     }
 };
 

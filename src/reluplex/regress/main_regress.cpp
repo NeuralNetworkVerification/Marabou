@@ -19,16 +19,18 @@
 
 int main()
 {
+    // Sat
+
     Lp_Feasible_1 lpf1;
     lpf1.run();
 
     Lp_Feasible_2 lpf2;
     lpf2.run();
 
-    // Currently goes in an infinite loop
+    // Unsat
 
-    // Lp_Infeasible_1 lpi1;
-    // lpi1.run();
+    Lp_Infeasible_1 lpi1;
+    lpi1.run();
 }
 
 //

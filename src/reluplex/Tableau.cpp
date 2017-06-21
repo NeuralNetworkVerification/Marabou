@@ -706,7 +706,7 @@ void Tableau::pickLeavingVariable( double *d )
             }
         }
 
-        _leavingVariableIncreases = FloatUtils::isNegative( d[_leavingVariable] );
+        _leavingVariableIncreases = FloatUtils::isNegative( d[_enteringVariable] );
     }
     else
     {
@@ -731,7 +731,7 @@ void Tableau::pickLeavingVariable( double *d )
             }
         }
 
-        _leavingVariableIncreases = FloatUtils::isPositive( d[_leavingVariable] );
+        _leavingVariableIncreases = FloatUtils::isPositive( d[_enteringVariable] );
     }
 }
 
