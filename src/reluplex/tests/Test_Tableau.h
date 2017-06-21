@@ -12,8 +12,10 @@
 
 #include <cxxtest/TestSuite.h>
 
+#include "MockEntrySelectionStrategy.h"
 #include "MockErrno.h"
 #include "Tableau.h"
+
 #include <string.h>
 
 class MockForTableau
@@ -25,14 +27,17 @@ class TableauTestSuite : public CxxTest::TestSuite
 {
 public:
     MockForTableau *mock;
+    MockEntrySelectionStrategy *entryStrategy;
 
     void setUp()
     {
         TS_ASSERT( mock = new MockForTableau );
+        TS_ASSERT( entryStrategy = new MockEntrySelectionStrategy );
     }
 
     void tearDown()
     {
+        TS_ASSERT_THROWS_NOTHING( delete entryStrategy );
         TS_ASSERT_THROWS_NOTHING( delete mock );
     }
 
@@ -162,6 +167,7 @@ public:
         TS_ASSERT_EQUALS( tableau->getBasicStatus( 6 ), Tableau::ABOVE_UB );
 
         const double *costFunction;
+        TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
         TS_ASSERT_THROWS_NOTHING( costFunction = tableau->getCostFunction() );
 
         // Expect:
@@ -214,7 +220,9 @@ public:
         // Cost function is: - x1 -  x2 - 2x3 - 2x4
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
-        TS_ASSERT( tableau->pickEnteringVariable() );
+
+        entryStrategy->nextSelectResult = 2u;
+        TS_ASSERT( tableau->pickEnteringVariable( entryStrategy ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
 
         TS_ASSERT_THROWS_NOTHING( delete tableau );
@@ -253,8 +261,8 @@ public:
         TS_ASSERT_EQUALS( tableau->getBasicStatus( 5 ), Tableau::BELOW_LB );
         TS_ASSERT_EQUALS( tableau->getBasicStatus( 6 ), Tableau::BETWEEN );
 
-
         const double *costFunction;
+        TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
         TS_ASSERT_THROWS_NOTHING( costFunction = tableau->getCostFunction() );
         TS_ASSERT_EQUALS( costFunction[0], 1 );
         TS_ASSERT_EQUALS( costFunction[1], 1 );
@@ -264,8 +272,7 @@ public:
         // Cost function is: + x1 + x2 + x3 + x4
         // All these variables are at their lower bounds, so cannot decrease.
 
-        TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
-        TS_ASSERT( !tableau->pickEnteringVariable() );
+        TS_ASSERT( !tableau->pickEnteringVariable( entryStrategy ) );
 
         TS_ASSERT_THROWS_NOTHING( delete tableau );
     }
@@ -304,7 +311,8 @@ public:
         TS_ASSERT_EQUALS( tableau->getBasicStatus( 6 ), Tableau::ABOVE_UB );
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
-        TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable() );
+        entryStrategy->nextSelectResult = 2u;
+        TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable( entryStrategy ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
 
         // Entering variable is 2, and it needs to increase
@@ -399,7 +407,8 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau() );
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
-        TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable() );
+        entryStrategy->nextSelectResult = 2u;
+        TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable( entryStrategy ) );
 
         double d[] = { -1, 0, -0.00001 };
         TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d ) );
@@ -449,7 +458,8 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau() );
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
-        TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable() );
+        entryStrategy->nextSelectResult = 2u;
+        TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable( entryStrategy ) );
 
         double d[] = { 1, 1, 1 };
         // Var 4 will hit its lower bound: constraint is 2

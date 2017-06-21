@@ -19,6 +19,7 @@ SOURCES += \
 	\
 	BasisFactorization.cpp \
 	BlandsRule.cpp \
+	DantzigsRule.cpp \
 	Engine.cpp \
 	EtaMatrix.cpp \
 	Tableau.cpp \

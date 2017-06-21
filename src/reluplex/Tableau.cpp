@@ -12,6 +12,7 @@
 
 #include "BasisFactorization.h"
 #include "Debug.h"
+#include "EntrySelectionStrategy.h"
 #include "FloatUtils.h"
 #include "ReluplexError.h"
 #include "Tableau.h"
@@ -351,9 +352,8 @@ void Tableau::setRightHandSide( unsigned index, double value )
     _b[index] = value;
 }
 
-const double *Tableau::getCostFunction()
+const double *Tableau::getCostFunction() const
 {
-    computeCostFunction();
     return _costFunction;
 }
 
@@ -491,7 +491,7 @@ unsigned Tableau::getBasicStatus( unsigned basic )
     return _basicStatus[_variableToIndex[basic]];
 }
 
-bool Tableau::pickEnteringVariable()
+bool Tableau::pickEnteringVariable( EntrySelectionStrategy *strategy )
 {
     List<unsigned> candidates;
     for ( unsigned i = 0; i < _n - _m; ++i )
@@ -505,24 +505,7 @@ bool Tableau::pickEnteringVariable()
     if ( candidates.empty() )
         return false;
 
-    // Dantzig's rule
-    auto candidate = candidates.begin();
-    unsigned maxIndex = *candidate;
-    double maxValue = FloatUtils::abs( _costFunction[maxIndex] );
-    ++candidate;
-
-    while ( candidate != candidates.end() )
-    {
-        double contenderValue = FloatUtils::abs( _costFunction[*candidate] );
-        if ( FloatUtils::gt( contenderValue, maxValue ) )
-        {
-            maxIndex = *candidate;
-            maxValue = contenderValue;
-        }
-        ++candidate;
-    }
-
-    _enteringVariable = maxIndex;
+    _enteringVariable = strategy->select( candidates, *this );
     return true;
 }
 

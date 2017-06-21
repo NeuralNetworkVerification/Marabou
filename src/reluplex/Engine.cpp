@@ -38,7 +38,7 @@ bool Engine::solve()
         _tableau->computeCostFunction();
         _tableau->dumpCostFunction();
 
-        if ( !_tableau->pickEnteringVariable() )
+        if ( !_tableau->pickEnteringVariable( &_blandsRule ) )
             return false;
 
         _tableau->computeD();

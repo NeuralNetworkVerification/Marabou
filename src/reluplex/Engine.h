@@ -14,6 +14,7 @@
 #define __Engine_h__
 
 #include "AutoTableau.h"
+#include "BlandsRule.h"
 
 class InputQuery;
 
@@ -43,6 +44,7 @@ public:
 
 private:
     AutoTableau _tableau;
+    BlandsRule _blandsRule;
 };
 
 #endif // __Engine_h__

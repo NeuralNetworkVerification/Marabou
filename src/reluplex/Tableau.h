@@ -104,7 +104,7 @@ public:
     /*
       Picks the entering variable.
     */
-    bool pickEnteringVariable();
+    bool pickEnteringVariable( EntrySelectionStrategy *strategy );
     bool eligibleForEntry( unsigned nonBasic );
     unsigned getEnteringVariable() const;
 
@@ -140,7 +140,7 @@ public:
       Compute the cost function
     */
     void computeCostFunction();
-    const double *getCostFunction();
+    const double *getCostFunction() const;
     void dumpCostFunction() const;
 
     /*

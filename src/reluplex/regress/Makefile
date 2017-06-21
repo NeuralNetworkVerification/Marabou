@@ -19,6 +19,7 @@ SOURCES += \
 	String.cpp \
 	\
 	BasisFactorization.cpp \
+	BlandsRule.cpp \
 	Engine.cpp \
 	EtaMatrix.cpp \
 	InputQuery.cpp \
@@ -28,7 +29,8 @@ SOURCES += \
 	main_regress.cpp \
 
 all:
-	./$(TARGET)
+
+#./$(TARGET)
 
 TARGET = run_regress.elf
 

@@ -68,6 +68,9 @@ public:
         lastN = n;
         lastEntries = new double[m*n];
         std::fill( lastEntries, lastEntries + ( n * m ), 0.0 );
+
+        nextCostFunction = new double[n - m];
+        std::fill( nextCostFunction, nextCostFunction + ( n - m ), 0.0 );
     }
 
     double *lastEntries;
@@ -124,7 +127,7 @@ public:
     bool existsBasicOutOfBounds() const { return false; }
     void computeBasicStatus() {}
     void computeBasicStatus( unsigned /* basic */ ) {}
-    bool pickEnteringVariable() { return false; }
+    bool pickEnteringVariable( EntrySelectionStrategy */* strategy */ ) { return false; }
     bool eligibleForEntry( unsigned /* nonBasic */ ) { return false; }
     unsigned getEnteringVariable() const { return 0; }
     void pickLeavingVariable() {};
@@ -135,7 +138,13 @@ public:
     double ratioConstraintPerBasic( unsigned /* basicIndex */, double /* coefficient */, bool /* decrease */ ) { return 0;}
     bool isBasic( unsigned /* variable */ ) const { return false; }
     void computeCostFunction() {}
-    const double *getCostFunction() { return 0; }
+
+    double *nextCostFunction;
+    const double *getCostFunction() const
+    {
+        return nextCostFunction;
+    }
+
     void dumpCostFunction() const {}
     void computeD() {}
     void computeAssignment() {}

@@ -15,6 +15,8 @@
 
 #include "Set.h"
 
+class EntrySelectionStrategy;
+
 class ITableau
 {
 public:
@@ -33,7 +35,7 @@ public:
     virtual bool existsBasicOutOfBounds() const = 0;
     virtual void computeBasicStatus() = 0;
     virtual void computeBasicStatus( unsigned basic ) = 0;
-    virtual bool pickEnteringVariable() = 0;
+    virtual bool pickEnteringVariable( EntrySelectionStrategy *strategy ) = 0;
     virtual bool eligibleForEntry( unsigned nonBasic ) = 0;
     virtual unsigned getEnteringVariable() const = 0;
     virtual void pickLeavingVariable() = 0;
@@ -44,7 +46,7 @@ public:
     virtual double ratioConstraintPerBasic( unsigned basicIndex, double coefficient, bool decrease ) = 0;
     virtual bool isBasic( unsigned variable ) const = 0;
     virtual void computeCostFunction() = 0;
-    virtual const double *getCostFunction() = 0;
+    virtual const double *getCostFunction() const = 0;
     virtual void dumpCostFunction() const = 0;
     virtual void computeD() = 0;
     virtual void computeAssignment() = 0;
