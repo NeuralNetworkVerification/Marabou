@@ -18,7 +18,9 @@ FINDARGS = -iname Makefile \
 		$(XARGS) $(ETAGS)
 
 TAGS:
-	$(GFIND) primal $(FINDARGS) -a
+	$(GFIND) common $(FINDARGS)
+	$(GFIND) configuration $(FINDARGS) -a
+	$(GFIND) reluplex $(FINDARGS) -a
 	$(ETAGS) -a Makefile
 
 include $(ROOT_DIR)/Rules.mk
