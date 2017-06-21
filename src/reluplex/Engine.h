@@ -15,6 +15,7 @@
 
 #include "AutoTableau.h"
 #include "BlandsRule.h"
+#include "DantzigsRule.h"
 
 class InputQuery;
 
@@ -45,6 +46,7 @@ public:
 private:
     AutoTableau _tableau;
     BlandsRule _blandsRule;
+    DantzigsRule _dantzigsRule;
 };
 
 #endif // __Engine_h__
