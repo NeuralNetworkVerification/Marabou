@@ -518,8 +518,17 @@ bool Tableau::eligibleForEntry( unsigned nonBasic )
     //      can increase
     //   2. It has a positive coefficient in the cost function and it
     //      can decrease
+    //
+    // A variable can never enter if its cost coefficient is 0 or if
+    // it's fixed, i.e. its lower and upper bounds are equal.
 
     if ( FloatUtils::isZero( _costFunction[nonBasic] ) )
+        return false;
+
+    double lowerBound = _lowerBounds[_nonBasicIndexToVariable[nonBasic]];
+    double upperBound = _upperBounds[_nonBasicIndexToVariable[nonBasic]];
+
+    if ( FloatUtils::areEqual( lowerBound, upperBound ) )
         return false;
 
     bool positive = FloatUtils::isPositive( _costFunction[nonBasic] );
@@ -581,6 +590,11 @@ double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient
     unsigned basic = _basicIndexToVariable[basicIndex];
     double ratio;
 
+    // Negate the coefficient to go to a more convenient form: basic =
+    // coefficient * nonBasic, as opposed to basic + coefficient *
+    // nonBasic = 0.
+    coefficient = -coefficient;
+
     ASSERT( !FloatUtils::isZero( coefficient ) );
 
     if ( ( FloatUtils::isPositive( coefficient ) && decrease ) ||
@@ -594,13 +608,13 @@ double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient
             // Maximal change: hitting the upper bound
             maxChange = _upperBounds[basic] - _assignment[basicIndex];
         }
-        else if ( _basicStatus[basicIndex] == BasicStatus::BETWEEN )
+        else if ( ( _basicStatus[basicIndex] == BasicStatus::BETWEEN ) ||
+                  ( _basicStatus[basicIndex] == BasicStatus::AT_UB ) )
         {
             // Maximal change: hitting the lower bound
             maxChange = _lowerBounds[basic] - _assignment[basicIndex];
         }
-        else if ( ( _basicStatus[basicIndex] == BasicStatus::AT_UB ) ||
-                  ( _basicStatus[basicIndex] == BasicStatus::AT_LB ) )
+        else if ( _basicStatus[basicIndex] == BasicStatus::AT_LB )
         {
             // Variable is pressed against a bound - can't change!
             maxChange = 0;
@@ -625,13 +639,13 @@ double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient
             // Maximal change: hitting the lower bound
             maxChange = _lowerBounds[basic] - _assignment[basicIndex];
         }
-        else if ( _basicStatus[basicIndex] == BasicStatus::BETWEEN )
+        else if ( ( _basicStatus[basicIndex] == BasicStatus::BETWEEN ) ||
+                  ( _basicStatus[basicIndex] == BasicStatus::AT_LB ) )
         {
             // Maximal change: hitting the upper bound
             maxChange = _upperBounds[basic] - _assignment[basicIndex];
         }
-        else if ( ( _basicStatus[basicIndex] == BasicStatus::AT_UB ) ||
-                  ( _basicStatus[basicIndex] == BasicStatus::AT_LB ) )
+        else if ( _basicStatus[basicIndex] == BasicStatus::AT_UB )
         {
             // Variable is pressed against a bound - can't change!
             maxChange = 0;
@@ -706,7 +720,7 @@ void Tableau::pickLeavingVariable( double *d )
             }
         }
 
-        _leavingVariableIncreases = FloatUtils::isNegative( d[_enteringVariable] );
+        _leavingVariableIncreases = FloatUtils::isPositive( d[_enteringVariable] );
     }
     else
     {
@@ -731,7 +745,7 @@ void Tableau::pickLeavingVariable( double *d )
             }
         }
 
-        _leavingVariableIncreases = FloatUtils::isPositive( d[_enteringVariable] );
+        _leavingVariableIncreases = FloatUtils::isNegative( d[_enteringVariable] );
     }
 }
 

@@ -14,6 +14,7 @@
 #define __Lp_Feasible_1_h__
 
 #include "Engine.h"
+#include "FloatUtils.h"
 #include "InputQuery.h"
 
 class Lp_Feasible_1
@@ -77,7 +78,7 @@ public:
         value += -1 * value2;
         value += 1  * value3;
 
-        if ( value != 11 )
+        if ( !FloatUtils::areEqual( value, 11 ) )
         {
             printf( "\nError! The solution does not satisfy the equation\n" );
             exit( 1 );

@@ -1,4 +1,4 @@
-/*********************                                                        */
+ /*********************                                                        */
 /*! \file Test_Tableau.h
 ** \verbatim
 ** Top contributors (to current version):
@@ -321,7 +321,7 @@ public:
         TS_ASSERT_EQUALS( tableau->getValue( 5 ), 113.0 );
         TS_ASSERT_EQUALS( tableau->getValue( 6 ), 406.0 );
 
-        double d1[] = { 1, 1, 1 };
+        double d1[] = { -1, -1, -1 };
         // Var 4 will hit its lower bound: constraint is 2
         // Var 5 will hit its upper bound: constraint is 1
         // Var 6 poses no constraint
@@ -329,13 +329,13 @@ public:
         TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 5u );
         TS_ASSERT_EQUALS( tableau->getChangeRatio(), 1.0 );
 
-        double d2[] = { 0.5, 0.5, 0.5 };
+        double d2[] = { -0.5, -0.5, -0.5 };
         // d1 scaled by 1/2
         TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d2 ) );
         TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 5u );
         TS_ASSERT_EQUALS( tableau->getChangeRatio(), 2.0 );
 
-        double d3[] = { -1, -1, -1 };
+        double d3[] = { 1, 1, 1 };
         // Var 4 poses no constraint
         // Var 5 will hit its lower bound: constraint is 1
         // Var 6 will hit its upper bound: constraint is 4
@@ -343,7 +343,7 @@ public:
         TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 5u );
         TS_ASSERT_EQUALS( tableau->getChangeRatio(), 1.0 );
 
-        double d4[] = { -1, -0.1, -2 };
+        double d4[] = { 1, 0.1, 2 };
         // Var 4 poses no constraint
         // Var 5 will hit its lower bound: constraint is 10
         // Var 6 will hit its upper bound: constraint is 2
@@ -351,7 +351,7 @@ public:
         TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 6u );
         TS_ASSERT_EQUALS( tableau->getChangeRatio(), 2.0 );
 
-        double d5[] = { -1, 0, -0.5 };
+        double d5[] = { 1, 0, 0.5 };
         // Var 4 poses no constraint
         // Var 5 poses no constraint
         // Var 6 will hit its upper bound: constraint is 8
@@ -359,7 +359,7 @@ public:
         TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 6u );
         TS_ASSERT_EQUALS( tableau->getChangeRatio(), 8.0 );
 
-        double d6[] = { 0.5, 0, -0.1 };
+        double d6[] = { -0.5, 0, 0.1 };
         // Var 4 will hit its lower bound: constraint is 4
         // Var 5 poses no constraint
         // Var 6 will hit its upper bound: constraint is 40
@@ -367,7 +367,7 @@ public:
         TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 4u );
         TS_ASSERT_EQUALS( tableau->getChangeRatio(), 4.0 );
 
-        double d7[] = { -1, 0, -0.00001 };
+        double d7[] = { 1, 0, 0.00001 };
         // The entering variable (2) can change by 9 at most. Here
         // this will be the bound.
         TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d7 ) );
@@ -410,7 +410,7 @@ public:
         entryStrategy->nextSelectResult = 2u;
         TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable( entryStrategy ) );
 
-        double d[] = { -1, 0, -0.00001 };
+        double d[] = { 1, 0, 0.00001 };
         TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d ) );
         TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 2u );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
@@ -461,7 +461,7 @@ public:
         entryStrategy->nextSelectResult = 2u;
         TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable( entryStrategy ) );
 
-        double d[] = { 1, 1, 1 };
+        double d[] = { -1, -1, -1 };
         // Var 4 will hit its lower bound: constraint is 2
         // Var 5 will hit its upper bound: constraint is 1
         // Var 6 poses no constraint
