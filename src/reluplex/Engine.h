@@ -16,6 +16,7 @@
 #include "AutoTableau.h"
 #include "BlandsRule.h"
 #include "DantzigsRule.h"
+#include "Map.h"
 
 class PiecewiseLinearConstraint;
 class InputQuery;
@@ -44,11 +45,42 @@ public:
      */
     void extractSolution( InputQuery &inputQuery );
 
+    /*
+      Get the set of all variables participating in active piecewise
+      linear constraints.
+     */
+    const Set<unsigned> getVarsInPlConstraints();
+
 private:
     AutoTableau _tableau;
     List<PiecewiseLinearConstraint *> _plConstraints;
     BlandsRule _blandsRule;
     DantzigsRule _dantzigsRule;
+    Map<unsigned, double> _plVarAssignment;
+
+    /*
+      Perform a simplex step: compute the cost function, pick the
+      entering and leaving variables and perform a pivot. Return false
+      iff the problem is unsat.
+    */
+    bool performSimplexStep();
+
+    /*
+      Return true iff all variables are within bounds.
+     */
+    bool allVarsWithinBounds() const;
+
+    /*
+      Return true iff all piecewise linear constraints hold.
+    */
+    bool allPlConstraintsHold();
+
+    /*
+      Extract the assignment of all variables that participate in a
+      piecewise linear constraint. Assumes that the tableau assignment
+      has been computed.
+    */
+    void extractPlAssignment();
 };
 
 #endif // __Engine_h__

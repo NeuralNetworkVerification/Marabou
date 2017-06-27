@@ -16,6 +16,7 @@
 #include "InputQuery.h"
 #include "MockErrno.h"
 #include "MockTableauFactory.h"
+#include "ReluConstraint.h"
 
 #include <cfloat>
 #include <string.h>
@@ -98,6 +99,12 @@ public:
         equation2.markAuxiliaryVariable( 4 );
         inputQuery.addEquation( equation2 );
 
+        ReluConstraint *relu1 = new ReluConstraint( 1, 2 );
+        ReluConstraint *relu2 = new ReluConstraint( 2, 4 );
+
+        inputQuery.addPiecewiseLinearConstraint( relu1 );
+        inputQuery.addPiecewiseLinearConstraint( relu2 );
+
         Engine engine;
 
         TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
@@ -159,6 +166,12 @@ public:
 
         TS_ASSERT( tableau->lastUpperBounds.exists( 4 ) );
         TS_ASSERT_EQUALS( tableau->lastUpperBounds[4], 0.0 );
+
+        Set<unsigned> plVars = engine.getVarsInPlConstraints();
+        TS_ASSERT_EQUALS( plVars.size(), 3U );
+        TS_ASSERT( plVars.exists( 1U ) );
+        TS_ASSERT( plVars.exists( 2U ) );
+        TS_ASSERT( plVars.exists( 4U ) );
     }
 };
 
