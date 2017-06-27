@@ -359,7 +359,7 @@ const double *Tableau::getCostFunction() const
 
 void Tableau::dumpCostFunction() const
 {
-    printf( "Cost function:\n\t" );
+    // printf( "Cost function:\n\t" );
 
     for ( unsigned i = 0; i < _n - _m; ++i )
     {
@@ -367,12 +367,12 @@ void Tableau::dumpCostFunction() const
         if ( FloatUtils::isZero( coefficient ) )
             continue;
 
-        if ( FloatUtils::isPositive( coefficient ) )
-            printf( "+" );
-        printf( "%lfx%u ", coefficient, _nonBasicIndexToVariable[i] );
+        // if ( FloatUtils::isPositive( coefficient ) )
+        //     printf( "+" );
+        // printf( "%lfx%u ", coefficient, _nonBasicIndexToVariable[i] );
     }
 
-    printf( "\n" );
+    // printf( "\n" );
 }
 
 bool Tableau::basicOutOfBounds( unsigned basic ) const
@@ -449,28 +449,28 @@ void Tableau::computeBasicCosts()
             _basicCosts[i] = 0;
     }
 
-    printf( "Dumping basic costs:\n\t" );
-    for ( unsigned i = 0; i < _m; ++i )
-    {
-        if ( FloatUtils::isZero( _basicCosts[i] ) )
-            continue;
+    // printf( "Dumping basic costs:\n\t" );
+    // for ( unsigned i = 0; i < _m; ++i )
+    // {
+    //     if ( FloatUtils::isZero( _basicCosts[i] ) )
+    //         continue;
 
-        if ( FloatUtils::isPositive( _basicCosts[i] ) )
-            printf( "+" );
-        printf( "%lfx%u ", _basicCosts[i], _basicIndexToVariable[i] );
-    }
-    printf( "\n" );
+    //     if ( FloatUtils::isPositive( _basicCosts[i] ) )
+    //         printf( "+" );
+    //     printf( "%lfx%u ", _basicCosts[i], _basicIndexToVariable[i] );
+    // }
+    // printf( "\n" );
 }
 
 void Tableau::computeMultipliers()
 {
     _basisFactorization->backwardTransformation( _basicCosts, _multipliers );
 
-    printf( "Dumping multipliers:\n\t" );
-    for ( unsigned i = 0; i < _m; ++i )
-        printf( "%lf ", _multipliers[i] );
+    // printf( "Dumping multipliers:\n\t" );
+    // for ( unsigned i = 0; i < _m; ++i )
+    //     printf( "%lf ", _multipliers[i] );
 
-    printf( "\n" );
+    // printf( "\n" );
 }
 
 void Tableau::computeReducedCosts()
@@ -552,17 +552,17 @@ void Tableau::performPivot()
 
     if ( _leavingVariable == _m )
     {
-        printf( "\n\t\tTableau performing fake pivot. Varibale jumping to opposite bound: %u\n\n",
-                _nonBasicIndexToVariable[_enteringVariable] );
+        // printf( "\n\t\tTableau performing fake pivot. Varibale jumping to opposite bound: %u\n\n",
+        //         _nonBasicIndexToVariable[_enteringVariable] );
 
         // The entering variable is simply switching to its opposite bound.
         _nonBasicAtUpper[_enteringVariable] = !_nonBasicAtUpper[_enteringVariable];
         return;
     }
 
-    printf( "\n\t\tTableau performing pivot. Entering: %u, Leaving: %u\n\n",
-            _nonBasicIndexToVariable[_enteringVariable],
-            _basicIndexToVariable[_leavingVariable] );
+    // printf( "\n\t\tTableau performing pivot. Entering: %u, Leaving: %u\n\n",
+    //         _nonBasicIndexToVariable[_enteringVariable],
+    //         _basicIndexToVariable[_leavingVariable] );
 
     unsigned currentBasic = _basicIndexToVariable[_leavingVariable];
     unsigned currentNonBasic = _nonBasicIndexToVariable[_enteringVariable];
@@ -770,16 +770,16 @@ void Tableau::computeD()
     // Compute d = inv(B) * a using the basis factorization
     _basisFactorization->forwardTransformation( _a, _d );
 
-    printf( "Leaving variable selection: dumping a\n\t" );
-    for ( unsigned i = 0; i < _m; ++i )
-        printf( "%lf ", _a[i] );
-    printf( "\n" );
+    // printf( "Leaving variable selection: dumping a\n\t" );
+    // for ( unsigned i = 0; i < _m; ++i )
+    //     printf( "%lf ", _a[i] );
+    // printf( "\n" );
 
-    printf( "Leaving variable selection: dumping d\n\t" );
-    for ( unsigned i = 0; i < _m; ++i )
-        printf( "%lf ", _d[i] );
+    // printf( "Leaving variable selection: dumping d\n\t" );
+    // for ( unsigned i = 0; i < _m; ++i )
+    //     printf( "%lf ", _d[i] );
 
-    printf( "\n" );
+    // printf( "\n" );
 }
 
 bool Tableau::isBasic( unsigned variable ) const

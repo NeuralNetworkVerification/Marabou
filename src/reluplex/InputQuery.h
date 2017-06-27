@@ -64,7 +64,6 @@ public:
     /*
       Methods for setting and getting the solution
     */
-
     void setSolutionValue( unsigned variable, double value );
     double getSolutionValue( unsigned variable ) const;
 
