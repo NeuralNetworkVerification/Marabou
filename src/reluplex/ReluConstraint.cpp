@@ -26,6 +26,11 @@ bool ReluConstraint::participatingVariable( unsigned variable ) const
     return ( variable == _b ) || ( variable == _f );
 }
 
+List<unsigned> ReluConstraint::getParticiatingVariables() const
+{
+    return List<unsigned>( { _b, _f } );
+}
+
 bool ReluConstraint::satisfied( const Map<unsigned, double> &assignment ) const
 {
     if ( !( assignment.exists( _b ) && assignment.exists( _f ) ) )

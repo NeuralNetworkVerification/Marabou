@@ -27,6 +27,11 @@ public:
     bool participatingVariable( unsigned variable ) const;
 
     /*
+      Get the list of variables participating in this constraint.
+    */
+    List<unsigned> getParticiatingVariables() const;
+
+    /*
       Returns true iff the given assignment satisfies the constraint
     */
     bool satisfied( const Map<unsigned, double> &assignment ) const;

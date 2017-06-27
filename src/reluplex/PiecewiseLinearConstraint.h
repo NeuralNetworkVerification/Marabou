@@ -22,12 +22,17 @@ public:
 
     /*
       Returns true iff the variable participates in this piecewise
-      linear constraint
+      linear constraint.
     */
     virtual bool participatingVariable( unsigned variable ) const = 0;
 
     /*
-      Returns true iff the given assignment satisfies the constraint
+      Get the list of variables participating in this constraint.
+    */
+    virtual List<unsigned> getParticiatingVariables() const = 0;
+
+    /*
+      Returns true iff the given assignment satisfies the constraint.
     */
     virtual bool satisfied( const Map<unsigned, double> &assignment ) const = 0;
 };
