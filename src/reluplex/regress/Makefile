@@ -24,6 +24,7 @@ SOURCES += \
 	Engine.cpp \
 	EtaMatrix.cpp \
 	InputQuery.cpp \
+	ReluConstraint.cpp \
 	Tableau.cpp \
 	TableauFactory.cpp \
 	\

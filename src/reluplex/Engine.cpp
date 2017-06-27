@@ -43,7 +43,8 @@ bool Engine::solve()
             else
             {
                 // Need to fix a broken pl constraint
-                ASSERT( false );
+                printf( "Don't know what to do about broken PL constraints yet!!\n" );
+                exit( 1 );
             }
         }
         else

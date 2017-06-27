@@ -16,6 +16,7 @@
 #include "Engine.h"
 #include "FloatUtils.h"
 #include "InputQuery.h"
+#include "ReluConstraint.h"
 
 class Relu_Feasible_1
 {
@@ -98,6 +99,12 @@ public:
         equation3.setScalar( 0 );
         equation3.markAuxiliaryVariable( 8 );
         inputQuery.addEquation( equation3 );
+
+        ReluConstraint *relu1 = new ReluConstraint( 1, 2 );
+        ReluConstraint *relu2 = new ReluConstraint( 3, 4 );
+
+        inputQuery.addPiecewiseLinearConstraint( relu1 );
+        inputQuery.addPiecewiseLinearConstraint( relu2 );
 
         Engine engine;
 
