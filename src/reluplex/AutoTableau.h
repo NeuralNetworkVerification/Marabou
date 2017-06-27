@@ -40,6 +40,11 @@ public:
 		return _tableau;
 	}
 
+	const ITableau *operator->() const
+	{
+		return _tableau;
+	}
+
 private:
 	ITableau *_tableau;
 };
