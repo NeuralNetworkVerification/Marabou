@@ -10,6 +10,7 @@
  ** directory for licensing information.\endverbatim
  **/
 
+#include "Debug.h"
 #include "Engine.h"
 #include "InputQuery.h"
 #include "PiecewiseLinearConstraint.h"
@@ -33,13 +34,26 @@ bool Engine::solve()
 
         _tableau->dumpAssignment();
 
-        // If all variables are within bounds, we're done
-        if ( !_tableau->existsBasicOutOfBounds() )
-            return true;
+        if ( allVarsWithinBounds() )
+        {
+            // If all variables are within bounds and all PL
+            // constraints hold, we're done
+            if ( allPlConstraintsHold() )
+                return true;
+            else
+            {
+                // Need to fix a broken pl constraint
+                ASSERT( false );
+            }
+        }
+        else
+        {
+            // We have out-of-bounds variables.
 
-        // If a simplex step fails, the query is unsat
-        if ( !performSimplexStep() )
-            return false;
+            // If a simplex step fails, the query is unsat
+            if ( !performSimplexStep() )
+                return false;
+        }
     }
 }
 
