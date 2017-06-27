@@ -21,7 +21,6 @@ ReluConstraint::ReluConstraint( unsigned b, unsigned f )
 {
 }
 
-
 bool ReluConstraint::participatingVariable( unsigned variable ) const
 {
     return ( variable == _b ) || ( variable == _f );

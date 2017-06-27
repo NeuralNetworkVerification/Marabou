@@ -15,6 +15,7 @@
 
 #include "List.h"
 #include "Map.h"
+#include "PiecewiseLinearConstraint.h"
 
 class InputQuery
 {
@@ -61,6 +62,9 @@ public:
 
     const List<InputQuery::Equation> &getEquations() const;
 
+    void addPiecewiseLinearConstraint( PiecewiseLinearConstraint *constraint );
+    const List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints() const;
+
     /*
       Methods for setting and getting the solution
     */
@@ -72,6 +76,7 @@ private:
     List<InputQuery::Equation> _equations;
     Map<unsigned, double> _lowerBounds;
     Map<unsigned, double> _upperBounds;
+    List<PiecewiseLinearConstraint *> _plConstraints;
 
     Map<unsigned, double> _solution;
 };

@@ -43,6 +43,12 @@ InputQuery::InputQuery()
 
 InputQuery::~InputQuery()
 {
+    auto it = _plConstraints.begin();
+    while ( it != _plConstraints.end() )
+    {
+        delete *it;
+        ++it;
+    }
 }
 
 void InputQuery::setNumberOfVariables( unsigned numberOfVariables )
@@ -131,6 +137,16 @@ double InputQuery::getSolutionValue( unsigned variable ) const
                              Stringf( "Variable: %u", variable ).ascii() );
 
     return _solution.get( variable );
+}
+
+void InputQuery::addPiecewiseLinearConstraint( PiecewiseLinearConstraint *constraint )
+{
+    _plConstraints.append( constraint );
+}
+
+const List<PiecewiseLinearConstraint *> &InputQuery::getPiecewiseLinearConstraints() const
+{
+    return _plConstraints;
 }
 
 //
