@@ -36,6 +36,11 @@ public:
     */
     bool satisfied( const Map<unsigned, double> &assignment ) const;
 
+    /*
+      Returns a list of possible fixes for the violated constraint.
+    */
+    List<PiecewiseLinearConstraint::Fix> getPossibleFixes( const Map<unsigned, double> &assignment ) const;
+
 private:
     unsigned _b;
     unsigned _f;

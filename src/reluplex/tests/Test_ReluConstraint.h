@@ -96,6 +96,58 @@ public:
         assignment[b] = 0;
 
         TS_ASSERT( relu.satisfied( assignment ) );
+
+        assignment[f] = 0;
+        assignment[b] = 11;
+
+        TS_ASSERT( !relu.satisfied( assignment ) );
+    }
+
+    void test_relu_fixes()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        ReluConstraint relu( b, f );
+
+        Map<unsigned, double> assignment;
+
+        List<PiecewiseLinearConstraint::Fix> fixes;
+        List<PiecewiseLinearConstraint::Fix>::iterator it;
+
+        assignment[b] = -1;
+        assignment[f] = 1;
+
+        fixes = relu.getPossibleFixes( assignment );
+        it = fixes.begin();
+        TS_ASSERT_EQUALS( it->_variable, b );
+        TS_ASSERT_EQUALS( it->_value, 1 );
+        ++it;
+        TS_ASSERT_EQUALS( it->_variable, f );
+        TS_ASSERT_EQUALS( it->_value, 0 );
+
+
+        assignment[b] = 2;
+        assignment[f] = 1;
+
+        fixes = relu.getPossibleFixes( assignment );
+        it = fixes.begin();
+        TS_ASSERT_EQUALS( it->_variable, b );
+        TS_ASSERT_EQUALS( it->_value, 1 );
+        ++it;
+        TS_ASSERT_EQUALS( it->_variable, f );
+        TS_ASSERT_EQUALS( it->_value, 2 );
+
+        assignment[b] = 11;
+        assignment[f] = 0;
+
+        fixes = relu.getPossibleFixes( assignment );
+        it = fixes.begin();
+        TS_ASSERT_EQUALS( it->_variable, b );
+        TS_ASSERT_EQUALS( it->_value, 0 );
+        ++it;
+        TS_ASSERT_EQUALS( it->_variable, f );
+        TS_ASSERT_EQUALS( it->_value, 11 );
     }
 };
 

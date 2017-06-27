@@ -18,6 +18,23 @@
 class PiecewiseLinearConstraint
 {
 public:
+    /*
+      A possible fix for a violated piecewise linear constraint: a
+      variable whose value should be changed.
+    */
+    struct Fix
+    {
+    public:
+        Fix( unsigned variable, double value )
+            : _variable( variable )
+            , _value( value )
+        {
+        }
+
+        unsigned _variable;
+        double _value;
+    };
+
     virtual ~PiecewiseLinearConstraint() {}
 
     /*
@@ -35,6 +52,12 @@ public:
       Returns true iff the given assignment satisfies the constraint.
     */
     virtual bool satisfied( const Map<unsigned, double> &assignment ) const = 0;
+
+    /*
+      Returns a list of possible fixes for the violated constraint.
+    */
+    virtual List<PiecewiseLinearConstraint::Fix> getPossibleFixes( const Map<unsigned,
+                                                                   double> &assignment ) const = 0;
 };
 
 #endif // __PiecewiseLinearConstraint_h__

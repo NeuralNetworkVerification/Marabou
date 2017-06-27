@@ -44,7 +44,44 @@ bool ReluConstraint::satisfied( const Map<unsigned, double> &assignment ) const
     if ( FloatUtils::isPositive( fValue ) )
         return FloatUtils::areEqual( bValue, fValue );
     else
-        return !FloatUtils::isPositive( fValue );
+        return !FloatUtils::isPositive( bValue );
+}
+
+List<PiecewiseLinearConstraint::Fix> ReluConstraint::getPossibleFixes( const Map<unsigned, double> &assignment ) const
+{
+    ASSERT( !satisfied( assignment ) );
+
+    double bValue = assignment.get( _b );
+    double fValue = assignment.get( _f );
+
+    ASSERT( !FloatUtils::isNegative( fValue ) );
+
+    List<PiecewiseLinearConstraint::Fix> fixes;
+
+    // Possible violations:
+    //   1. f is positive, b is positive, b and f are disequal
+    //   2. f is positive, b is non-positive
+    //   3. f is zero, b is positive
+    if ( FloatUtils::isPositive( fValue ) )
+    {
+        if ( FloatUtils::isPositive( bValue ) )
+        {
+            fixes.append( PiecewiseLinearConstraint::Fix( _b, fValue ) );
+            fixes.append( PiecewiseLinearConstraint::Fix( _f, bValue ) );
+        }
+        else
+        {
+            fixes.append( PiecewiseLinearConstraint::Fix( _b, fValue ) );
+            fixes.append( PiecewiseLinearConstraint::Fix( _f, 0 ) );
+        }
+    }
+    else
+    {
+        fixes.append( PiecewiseLinearConstraint::Fix( _b, 0 ) );
+        fixes.append( PiecewiseLinearConstraint::Fix( _f, bValue ) );
+    }
+
+    return fixes;
 }
 
 //
