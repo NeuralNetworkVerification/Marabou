@@ -17,10 +17,11 @@
 
 #include "lp_infeasible_1.h"
 
-int main()
+#include "relu_feasible_1.h"
+
+void lps()
 {
     // Sat
-
     Lp_Feasible_1 lpf1;
     lpf1.run();
 
@@ -28,9 +29,21 @@ int main()
     lpf2.run();
 
     // Unsat
-
     Lp_Infeasible_1 lpi1;
     lpi1.run();
+}
+
+void relus()
+{
+    Relu_Feasible_1 rf1;
+    rf1.run();
+}
+
+int main()
+{
+    lps();
+
+    // relus();
 }
 
 //
