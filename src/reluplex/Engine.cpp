@@ -12,6 +12,7 @@
 
 #include "Engine.h"
 #include "InputQuery.h"
+#include "PiecewiseLinearConstraint.h"
 
 Engine::Engine()
 {
@@ -75,6 +76,8 @@ void Engine::processInputQuery( const InputQuery &inputQuery )
     }
 
     _tableau->initializeTableau();
+
+    _plConstraints = inputQuery.getPiecewiseLinearConstraints();
 }
 
 void Engine::extractSolution( InputQuery &inputQuery )

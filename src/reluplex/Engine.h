@@ -17,6 +17,7 @@
 #include "BlandsRule.h"
 #include "DantzigsRule.h"
 
+class PiecewiseLinearConstraint;
 class InputQuery;
 
 class Engine
@@ -45,6 +46,7 @@ public:
 
 private:
     AutoTableau _tableau;
+    List<PiecewiseLinearConstraint *> _plConstraints;
     BlandsRule _blandsRule;
     DantzigsRule _dantzigsRule;
 };
