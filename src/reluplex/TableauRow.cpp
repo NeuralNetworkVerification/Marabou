@@ -28,16 +28,14 @@ TableauRow::~TableauRow()
 
 void TableauRow::dump() const
 {
+    for ( unsigned i = 0; i < _size; ++i )
     {
-        for ( unsigned i = 0; i < _size; ++i )
-        {
-            if ( FloatUtils::isZero( _row[i]._coefficient ) )
-                continue;
+        if ( FloatUtils::isZero( _row[i]._coefficient ) )
+            continue;
 
-            printf( "%lf * x%u, ", _row[i]._coefficient, _row[i]._var );
-        }
-        printf( "\n" );
+        printf( "%.15lf * x%u, ", _row[i]._coefficient, _row[i]._var );
     }
+    printf( "\n" );
 }
 
 //
