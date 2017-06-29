@@ -13,6 +13,7 @@
 #include "EtaMatrix.h"
 #include "ReluplexError.h"
 
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
@@ -35,6 +36,16 @@ EtaMatrix::~EtaMatrix()
         delete[] _column;
         _column = NULL;
     }
+}
+
+void EtaMatrix::dump()
+{
+    printf( "Dumping eta matrix\n" );
+    printf( "\tm = %u. column index = %u\n", _m, _columnIndex );
+    printf( "\tcolumn: " );
+    for ( unsigned i = 0; i < _m; ++i )
+        printf( "%lf ", _column[i] );
+    printf( "\n" );
 }
 
 //

@@ -18,6 +18,7 @@ class EtaMatrix
 public:
     EtaMatrix( unsigned m, unsigned index, double *column );
     ~EtaMatrix();
+    void dump();
 
     unsigned _m;
     unsigned _columnIndex;
