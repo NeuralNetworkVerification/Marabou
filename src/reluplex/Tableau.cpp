@@ -32,11 +32,11 @@ Tableau::Tableau()
     , _basicIndexToVariable( NULL )
     , _nonBasicIndexToVariable( NULL )
     , _variableToIndex( NULL )
-    , _nonBasicAtUpper( NULL )
+    , _nonBasicAssignment( NULL )
     , _lowerBounds( NULL )
     , _upperBounds( NULL )
-    , _assignment( NULL )
-    , _assignmentStatus( ASSIGNMENT_INVALID )
+    , _basicAssignment( NULL )
+    , _basicAssignmentStatus( ASSIGNMENT_INVALID )
     , _basicStatus( NULL )
 {
 }
@@ -97,10 +97,10 @@ Tableau::~Tableau()
         _nonBasicIndexToVariable = NULL;
     }
 
-    if ( _nonBasicAtUpper )
+    if ( _nonBasicAssignment )
     {
-        delete[] _nonBasicAtUpper;
-        _nonBasicAtUpper = NULL;
+        delete[] _nonBasicAssignment;
+        _nonBasicAssignment = NULL;
     }
 
     if ( _lowerBounds )
@@ -115,10 +115,10 @@ Tableau::~Tableau()
         _upperBounds = NULL;
     }
 
-    if ( _assignment )
+    if ( _basicAssignment )
     {
-        delete[] _assignment;
-        _assignment = NULL;
+        delete[] _basicAssignment;
+        _basicAssignment = NULL;
     }
 
     if ( _basicStatus )
@@ -175,9 +175,9 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     if ( !_nonBasicIndexToVariable )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::nonBasicIndexToVariable" );
 
-    _nonBasicAtUpper = new bool[n-m];
-    if ( !_nonBasicAtUpper )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::nonBasicValues" );
+    _nonBasicAssignment = new double[n-m];
+    if ( !_nonBasicAssignment )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::nonBasicAssignment" );
 
     _lowerBounds = new double[n];
     if ( !_lowerBounds )
@@ -187,8 +187,8 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     if ( !_upperBounds )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::upperBounds" );
 
-    _assignment = new double[m];
-    if ( !_assignment )
+    _basicAssignment = new double[m];
+    if ( !_basicAssignment )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::assignment" );
 
     _basicStatus = new unsigned[m];
@@ -234,7 +234,8 @@ void Tableau::initializeTableau()
     ASSERT( basicIndex + nonBasicIndex == _n );
 
     // Set non-basics to lower bounds
-    std::fill( _nonBasicAtUpper, _nonBasicAtUpper + _n - _m, false );
+    for ( unsigned i = 0; i < _n - _m; ++i )
+        _nonBasicAssignment[i] = _lowerBounds[_nonBasicIndexToVariable[i]];
 
     // Recompute assignment
     computeAssignment();
@@ -242,7 +243,7 @@ void Tableau::initializeTableau()
 
 void Tableau::computeAssignment()
 {
-    if ( _assignmentStatus == ASSIGNMENT_VALID )
+    if ( _basicAssignmentStatus == ASSIGNMENT_VALID )
         return;
 
     /*
@@ -268,19 +269,20 @@ void Tableau::computeAssignment()
     for ( unsigned i = 0; i < _n - _m; ++i )
     {
         unsigned var = _nonBasicIndexToVariable[i];
-        double value = _nonBasicAtUpper[i] ? _upperBounds[var] : _lowerBounds[var];
+        double value = _nonBasicAssignment[var];
+
         ANColumn = _A + ( var * _m );
         for ( unsigned j = 0; j < _m; ++j )
             y[j] -= ANColumn[j] * value;
     }
 
     // Solve B*xB = y by performing a forward transformation
-    _basisFactorization->forwardTransformation( y, _assignment );
+    _basisFactorization->forwardTransformation( y, _basicAssignment );
 
     delete[] y;
 
     computeBasicStatus();
-    _assignmentStatus = ASSIGNMENT_VALID;
+    _basicAssignmentStatus = ASSIGNMENT_VALID;
 }
 
 void Tableau::computeBasicStatus()
@@ -293,7 +295,7 @@ void Tableau::computeBasicStatus( unsigned basic )
 {
     double ub = _upperBounds[_basicIndexToVariable[basic]];
     double lb = _lowerBounds[_basicIndexToVariable[basic]];
-    double value = _assignment[basic];
+    double value = _basicAssignment[basic];
 
     if ( FloatUtils::gt( value , ub ) )
         _basicStatus[basic] = Tableau::ABOVE_UB;
@@ -326,15 +328,15 @@ double Tableau::getValue( unsigned variable )
         // The values of non-basics can be extracted even if the
         // assignment is invalid
         unsigned index = _variableToIndex[variable];
-        return _nonBasicAtUpper[index] ? _upperBounds[variable] : _lowerBounds[variable];
+        return _nonBasicAssignment[index];
     }
 
     // Values of basic variabels require valid assignments
     // TODO: maybe we should compute just that one variable?
-    if ( _assignmentStatus != ASSIGNMENT_VALID )
+    if ( _basicAssignmentStatus != ASSIGNMENT_VALID )
         computeAssignment();
 
-    return _assignment[_variableToIndex[variable]];
+    return _basicAssignment[_variableToIndex[variable]];
 }
 
 unsigned Tableau::nonBasicIndexToVariable( unsigned index ) const
@@ -518,24 +520,27 @@ bool Tableau::eligibleForEntry( unsigned nonBasic )
     //      can increase
     //   2. It has a positive coefficient in the cost function and it
     //      can decrease
-    //
-    // A variable can never enter if its cost coefficient is 0 or if
-    // it's fixed, i.e. its lower and upper bounds are equal.
 
     if ( FloatUtils::isZero( _costFunction[nonBasic] ) )
-        return false;
-
-    double lowerBound = _lowerBounds[_nonBasicIndexToVariable[nonBasic]];
-    double upperBound = _upperBounds[_nonBasicIndexToVariable[nonBasic]];
-
-    if ( FloatUtils::areEqual( lowerBound, upperBound ) )
         return false;
 
     bool positive = FloatUtils::isPositive( _costFunction[nonBasic] );
 
     return
-        ( positive && _nonBasicAtUpper[nonBasic] ) ||
-        ( !positive && !_nonBasicAtUpper[nonBasic] );
+        ( positive && nonBasicCanDecrease( nonBasic ) ) ||
+        ( !positive && nonBasicCanIncrease( nonBasic ) );
+}
+
+bool Tableau::nonBasicCanIncrease( unsigned nonBasic ) const
+{
+    double max = _upperBounds[_nonBasicIndexToVariable[nonBasic]];
+    return FloatUtils::lt( _nonBasicAssignment[nonBasic], max );
+}
+
+bool Tableau::nonBasicCanDecrease( unsigned nonBasic ) const
+{
+    double min = _lowerBounds[_nonBasicIndexToVariable[nonBasic]];
+    return FloatUtils::gt( _nonBasicAssignment[nonBasic], min );
 }
 
 unsigned Tableau::getEnteringVariable() const
@@ -548,15 +553,18 @@ void Tableau::performPivot()
     // Any kind of pivot invalidates the assignment
     // TODO: we don't really need to invalidate, can update the basis
     // vars based on _d
-    _assignmentStatus = ASSIGNMENT_INVALID;
+    _basicAssignmentStatus = ASSIGNMENT_INVALID;
 
     if ( _leavingVariable == _m )
     {
         // printf( "\n\t\tTableau performing fake pivot. Varibale jumping to opposite bound: %u\n\n",
         //         _nonBasicIndexToVariable[_enteringVariable] );
 
-        // The entering variable is simply switching to its opposite bound.
-        _nonBasicAtUpper[_enteringVariable] = !_nonBasicAtUpper[_enteringVariable];
+        // The entering variable is going to be pressed against its bound.
+        bool decrease = FloatUtils::isPositive( _costFunction[_enteringVariable] );
+        _nonBasicAssignment[_enteringVariable] = decrease ?
+            _lowerBounds[_nonBasicIndexToVariable[_enteringVariable]] :
+            _upperBounds[_nonBasicIndexToVariable[_enteringVariable]];
         return;
     }
 
@@ -578,7 +586,23 @@ void Tableau::performPivot()
     _variableToIndex[currentNonBasic] = _leavingVariable;
 
     // Update value of the old basic (now non-basic) variable
-    _nonBasicAtUpper[_enteringVariable] = _leavingVariableIncreases;
+
+    double nonBasicAssignment;
+    if ( _leavingVariableIncreases )
+    {
+        if ( _basicStatus[_leavingVariable] == Tableau::BELOW_LB )
+            nonBasicAssignment = _lowerBounds[currentBasic];
+        else
+            nonBasicAssignment = _upperBounds[currentBasic];
+    }
+    else
+    {
+        if ( _basicStatus[_leavingVariable] == Tableau::ABOVE_UB )
+            nonBasicAssignment = _upperBounds[currentBasic];
+        else
+            nonBasicAssignment = _lowerBounds[currentBasic];
+    }
+    _nonBasicAssignment[_enteringVariable] = nonBasicAssignment;
 
     // Update the basis factorization. The column corresponding to the
     // leaving variable is the one that has changed
@@ -606,13 +630,13 @@ double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient
         if ( _basicStatus[basicIndex] == BasicStatus::ABOVE_UB )
         {
             // Maximal change: hitting the upper bound
-            maxChange = _upperBounds[basic] - _assignment[basicIndex];
+            maxChange = _upperBounds[basic] - _basicAssignment[basicIndex];
         }
         else if ( ( _basicStatus[basicIndex] == BasicStatus::BETWEEN ) ||
                   ( _basicStatus[basicIndex] == BasicStatus::AT_UB ) )
         {
             // Maximal change: hitting the lower bound
-            maxChange = _lowerBounds[basic] - _assignment[basicIndex];
+            maxChange = _lowerBounds[basic] - _basicAssignment[basicIndex];
         }
         else if ( _basicStatus[basicIndex] == BasicStatus::AT_LB )
         {
@@ -622,7 +646,7 @@ double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient
         else
         {
             // Variable is below its lower bound, no constraint here
-            maxChange = - DBL_MAX - _assignment[basicIndex];
+            maxChange = - DBL_MAX - _basicAssignment[basicIndex];
         }
 
         ratio = maxChange / coefficient;
@@ -637,13 +661,13 @@ double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient
         if ( _basicStatus[basicIndex] == BasicStatus::BELOW_LB )
         {
             // Maximal change: hitting the lower bound
-            maxChange = _lowerBounds[basic] - _assignment[basicIndex];
+            maxChange = _lowerBounds[basic] - _basicAssignment[basicIndex];
         }
         else if ( ( _basicStatus[basicIndex] == BasicStatus::BETWEEN ) ||
                   ( _basicStatus[basicIndex] == BasicStatus::AT_LB ) )
         {
             // Maximal change: hitting the upper bound
-            maxChange = _upperBounds[basic] - _assignment[basicIndex];
+            maxChange = _upperBounds[basic] - _basicAssignment[basicIndex];
         }
         else if ( _basicStatus[basicIndex] == BasicStatus::AT_UB )
         {
@@ -653,7 +677,7 @@ double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient
         else
         {
             // Variable is above its upper bound, no constraint here
-            maxChange = DBL_MAX - _assignment[basicIndex];
+            maxChange = DBL_MAX - _basicAssignment[basicIndex];
         }
 
         ratio = maxChange / coefficient;
@@ -679,13 +703,13 @@ void Tableau::pickLeavingVariable( double *d )
     DEBUG({
         if ( decrease )
         {
-            ASSERTM( _nonBasicAtUpper[_enteringVariable],
-                     "Error! Entering variable needs to decreased but is at its lower bound" );
+            ASSERTM( nonBasicCanDecrease( _enteringVariable ),
+                     "Error! Entering variable needs to decrease but is at its lower bound" );
         }
         else
         {
-            ASSERTM( !_nonBasicAtUpper[_enteringVariable],
-                     "Error! Entering variable needs to decreased but is at its upper bound" );
+            ASSERTM( nonBasicCanIncrease( _enteringVariable ),
+                     "Error! Entering variable needs to increase but is at its upper bound" );
         }
         });
 

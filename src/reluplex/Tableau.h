@@ -107,6 +107,8 @@ public:
     bool pickEnteringVariable( EntrySelectionStrategy *strategy );
     bool eligibleForEntry( unsigned nonBasic );
     unsigned getEnteringVariable() const;
+    bool nonBasicCanIncrease( unsigned nonBasic ) const;
+    bool nonBasicCanDecrease( unsigned nonBasic ) const;
 
     /*
       Pick the leaving variable according to the entering variable.
@@ -229,10 +231,9 @@ private:
     Set<unsigned> _basicVariables;
 
     /*
-      The position of the non basic variables.
-      True at upper bound, false at lower bound
+      The assignment of the non basic variables.
     */
-    bool *_nonBasicAtUpper;
+    double *_nonBasicAssignment;
 
     /*
       Upper and lower bounds for all variables
@@ -243,12 +244,12 @@ private:
     /*
       The current assignment for the basic variables
     */
-    double *_assignment;
+    double *_basicAssignment;
 
     /*
       Status of the current assignment
     */
-    AssignmentStatus _assignmentStatus;
+    AssignmentStatus _basicAssignmentStatus;
 
     /*
       The current status of the basic variabels
