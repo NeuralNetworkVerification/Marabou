@@ -61,9 +61,15 @@ private:
     /*
       Perform a simplex step: compute the cost function, pick the
       entering and leaving variables and perform a pivot. Return false
-      iff the problem is unsat.
+      if the problem is discovered to be unsat.
     */
     bool performSimplexStep();
+
+    /*
+      Fix one of the violated pl constraints return false if the
+      problem is discovered to be unsat.
+    */
+    bool fixViolatedPlConstraint();
 
     /*
       Return true iff all variables are within bounds.

@@ -45,6 +45,7 @@ public:
     virtual void performPivot() = 0;
     virtual double ratioConstraintPerBasic( unsigned basicIndex, double coefficient, bool decrease ) = 0;
     virtual bool isBasic( unsigned variable ) const = 0;
+    virtual void setNonBasicAssignment( unsigned variable, double value ) = 0;
     virtual void computeCostFunction() = 0;
     virtual const double *getCostFunction() const = 0;
     virtual void dumpCostFunction() const = 0;

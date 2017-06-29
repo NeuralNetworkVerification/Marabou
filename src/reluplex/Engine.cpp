@@ -38,14 +38,11 @@ bool Engine::solve()
         {
             // If all variables are within bounds and all PL
             // constraints hold, we're done
+            extractPlAssignment();
             if ( allPlConstraintsHold() )
                 return true;
-            else
-            {
-                // Need to fix a broken pl constraint
-                printf( "Don't know what to do about broken PL constraints yet!!\n" );
-                exit( 1 );
-            }
+            else if ( !fixViolatedPlConstraint() )
+                return false;
         }
         else
         {
@@ -71,6 +68,27 @@ bool Engine::performSimplexStep()
     _tableau->performPivot();
 
     return true;
+}
+
+bool Engine::fixViolatedPlConstraint()
+{
+    for ( const auto &constraint : _plConstraints )
+    {
+        if ( constraint->satisfied( _plVarAssignment ) )
+        {
+            List<PiecewiseLinearConstraint::Fix> fixes = constraint->getPossibleFixes( _plVarAssignment );
+            for ( const auto &fix : fixes )
+            {
+                if ( !_tableau->isBasic( fix._variable ) )
+                {
+                    _tableau->setNonBasicAssignment( fix._variable, fix._value );
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
 }
 
 void Engine::processInputQuery( const InputQuery &inputQuery )
@@ -123,8 +141,6 @@ bool Engine::allVarsWithinBounds() const
 
 bool Engine::allPlConstraintsHold()
 {
-    extractPlAssignment();
-
     for ( const auto &constraint : _plConstraints )
         if ( constraint->satisfied( _plVarAssignment ) )
             return false;

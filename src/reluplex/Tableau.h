@@ -139,6 +139,11 @@ public:
     bool isBasic( unsigned variable ) const;
 
     /*
+      Set the assignment of a non-basic variable to a given value.
+     */
+    void setNonBasicAssignment( unsigned variable, double value );
+
+    /*
       Compute the cost function
     */
     void computeCostFunction();

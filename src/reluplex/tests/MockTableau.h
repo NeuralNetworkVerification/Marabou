@@ -137,6 +137,7 @@ public:
     void performPivot() {}
     double ratioConstraintPerBasic( unsigned /* basicIndex */, double /* coefficient */, bool /* decrease */ ) { return 0;}
     bool isBasic( unsigned /* variable */ ) const { return false; }
+    void setNonBasicAssignment( unsigned /* variable */, double /* value */ ) {}
     void computeCostFunction() {}
 
     double *nextCostFunction;

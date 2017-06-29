@@ -811,6 +811,15 @@ bool Tableau::isBasic( unsigned variable ) const
     return _basicVariables.exists( variable );
 }
 
+void Tableau::setNonBasicAssignment( unsigned variable, double value )
+{
+    ASSERT( !_basicVariables.exists( variable ) );
+
+    unsigned nonBasic = _variableToIndex[variable];
+    _nonBasicAssignment[nonBasic] = value;
+    _basicAssignmentStatus = ASSIGNMENT_INVALID;
+}
+
 void Tableau::dumpAssignment()
 {
     printf( "Dumping assignment\n" );
