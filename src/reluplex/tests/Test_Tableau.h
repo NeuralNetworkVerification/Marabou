@@ -581,11 +581,6 @@ public:
         entryStrategy->nextSelectResult = 2u;
         TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable( entryStrategy ) );
 
-        //        double d[] = { -1, -1, -1 };
-
-        // Var 4 will hit its lower bound: constraint is 2
-        // Var 5 will hit its upper bound: constraint is 1
-        // Var 6 poses no constraint
         TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable() );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
         TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 6u );
@@ -673,7 +668,189 @@ public:
 
     void test_degenerate_pivot()
     {
-        TS_TRACE( "TODO" );
+        Tableau *tableau;
+
+        TS_ASSERT( tableau = new Tableau );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        initializeTableauValues( *tableau );
+
+        for ( unsigned i = 0; i < 4; ++i )
+        {
+            TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( i, 1 ) );
+            TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( i, 10 ) );
+        }
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 4, 219 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 4, 228 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 5, 112 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 5, 114 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 6, 400 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 6, 402 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 4 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 5 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 6 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau() );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->computeAssignment() );
+
+        // Values before the degenerate pivot
+        TS_ASSERT_EQUALS( tableau->getValue( 0 ), 1.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 1 ), 1.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 2 ), 1.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 3 ), 1.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 4 ), 217.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 5 ), 113.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 6 ), 406.0 );
+
+        TS_ASSERT( !tableau->isBasic( 2 ) );
+        TS_ASSERT( tableau->isBasic( 5 ) );
+
+        // Check equations before the pivot
+        TableauRow row( 4 );
+        TableauRow::Entry entry;
+
+        TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 0, &row ) );
+
+        entry = row._row[0];
+        TS_ASSERT_EQUALS( entry._var, 0U );
+        TS_ASSERT_EQUALS( entry._coefficient, -3 );
+
+        entry = row._row[1];
+        TS_ASSERT_EQUALS( entry._var, 1U );
+        TS_ASSERT_EQUALS( entry._coefficient, -2 );
+
+        entry = row._row[2];
+        TS_ASSERT_EQUALS( entry._var, 2U );
+        TS_ASSERT_EQUALS( entry._coefficient, -1 );
+
+        entry = row._row[3];
+        TS_ASSERT_EQUALS( entry._var, 3U );
+        TS_ASSERT_EQUALS( entry._coefficient, -2 );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 1, &row ) );
+
+        entry = row._row[0];
+        TS_ASSERT_EQUALS( entry._var, 0U );
+        TS_ASSERT_EQUALS( entry._coefficient, -1 );
+
+        entry = row._row[1];
+        TS_ASSERT_EQUALS( entry._var, 1U );
+        TS_ASSERT_EQUALS( entry._coefficient, -1 );
+
+        entry = row._row[2];
+        TS_ASSERT_EQUALS( entry._var, 2U );
+        TS_ASSERT_EQUALS( entry._coefficient, -1 );
+
+        entry = row._row[3];
+        TS_ASSERT_EQUALS( entry._var, 3U );
+        TS_ASSERT_EQUALS( entry._coefficient, -1 );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 2, &row ) );
+
+        entry = row._row[0];
+        TS_ASSERT_EQUALS( entry._var, 0U );
+        TS_ASSERT_EQUALS( entry._coefficient, -4 );
+
+        entry = row._row[1];
+        TS_ASSERT_EQUALS( entry._var, 1U );
+        TS_ASSERT_EQUALS( entry._coefficient, -3 );
+
+        entry = row._row[2];
+        TS_ASSERT_EQUALS( entry._var, 2U );
+        TS_ASSERT_EQUALS( entry._coefficient, -3 );
+
+        entry = row._row[3];
+        TS_ASSERT_EQUALS( entry._var, 3U );
+        TS_ASSERT_EQUALS( entry._coefficient, -4 );
+
+        // Nonbasic index #2 --> variable 2
+        // Basic index #1 --> variable 5
+        TS_ASSERT_THROWS_NOTHING( tableau->performDegeneratePivot( 2, 1 ) );
+
+        TS_ASSERT( tableau->isBasic( 2 ) );
+        TS_ASSERT( !tableau->isBasic( 5 ) );
+
+        // Values should be unchanged after the degenerate pivot
+        TS_ASSERT_EQUALS( tableau->getValue( 0 ), 1.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 1 ), 1.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 2 ), 1.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 3 ), 1.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 4 ), 217.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 5 ), 113.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 6 ), 406.0 );
+
+        // Old equations are:
+
+           // x5 = 225 - 3x1 - 2x2 - x3  - 2x4
+           // x6 = 117 -  x1 -  x2 - x3  -  x4
+           // x7 = 420 - 4x1 - 3x2 - 3x3 - 4x4
+
+        // New equations are:
+
+           // x5 = 108 - 2x1 -  x2 + x6  -  x4
+           // x3 = 117 -  x1 -  x2 - x6  -  x4
+           // x7 = 69  -  x1       + 3x6 -  x4
+
+        // Check equations after the pivot
+        TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 0, &row ) );
+
+        row.dump();
+
+        entry = row._row[0];
+        TS_ASSERT_EQUALS( entry._var, 0U );
+        TS_ASSERT_EQUALS( entry._coefficient, -2 );
+
+        entry = row._row[1];
+        TS_ASSERT_EQUALS( entry._var, 1U );
+        TS_ASSERT_EQUALS( entry._coefficient, -1 );
+
+        entry = row._row[2];
+        TS_ASSERT_EQUALS( entry._var, 5U );
+        TS_ASSERT_EQUALS( entry._coefficient, 1 );
+
+        entry = row._row[3];
+        TS_ASSERT_EQUALS( entry._var, 3U );
+        TS_ASSERT_EQUALS( entry._coefficient, -1 );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 1, &row ) );
+
+        entry = row._row[0];
+        TS_ASSERT_EQUALS( entry._var, 0U );
+        TS_ASSERT_EQUALS( entry._coefficient, -1 );
+
+        entry = row._row[1];
+        TS_ASSERT_EQUALS( entry._var, 1U );
+        TS_ASSERT_EQUALS( entry._coefficient, -1 );
+
+        entry = row._row[2];
+        TS_ASSERT_EQUALS( entry._var, 5U );
+        TS_ASSERT_EQUALS( entry._coefficient, -1 );
+
+        entry = row._row[3];
+        TS_ASSERT_EQUALS( entry._var, 3U );
+        TS_ASSERT_EQUALS( entry._coefficient, -1 );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 2, &row ) );
+
+        entry = row._row[0];
+        TS_ASSERT_EQUALS( entry._var, 0U );
+        TS_ASSERT_EQUALS( entry._coefficient, -1 );
+
+        entry = row._row[1];
+        TS_ASSERT_EQUALS( entry._var, 1U );
+        TS_ASSERT_EQUALS( entry._coefficient, 0 );
+
+        entry = row._row[2];
+        TS_ASSERT_EQUALS( entry._var, 5U );
+        TS_ASSERT_EQUALS( entry._coefficient, 3 );
+
+        entry = row._row[3];
+        TS_ASSERT_EQUALS( entry._var, 3U );
+        TS_ASSERT_EQUALS( entry._coefficient, -1 );
     }
 };
 

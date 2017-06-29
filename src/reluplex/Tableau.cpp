@@ -620,6 +620,40 @@ void Tableau::performPivot()
     _basisFactorization->pushEtaMatrix( _leavingVariable, _d );
 }
 
+void Tableau::performDegeneratePivot( unsigned entering, unsigned leaving )
+{
+    _enteringVariable = entering;
+    _leavingVariable = leaving;
+
+    ASSERT( entering < _n - _m );
+    ASSERT( leaving < _m );
+    ASSERT( !basicOutOfBounds( leaving ) );
+
+    // Compute d
+    computeD();
+
+    unsigned currentBasic = _basicIndexToVariable[leaving];
+    unsigned currentNonBasic = _nonBasicIndexToVariable[entering];
+
+    // Update the database
+    _basicVariables.insert( currentNonBasic );
+    _basicVariables.erase( currentBasic );
+
+    // Adjust the tableau indexing
+    _basicIndexToVariable[_leavingVariable] = currentNonBasic;
+    _nonBasicIndexToVariable[_enteringVariable] = currentBasic;
+    _variableToIndex[currentBasic] = _enteringVariable;
+    _variableToIndex[currentNonBasic] = _leavingVariable;
+
+    // Update the basis factorization
+    _basisFactorization->pushEtaMatrix( leaving, _d );
+
+    // Switch assignment values
+    double temp = _basicAssignment[leaving];
+    _basicAssignment[leaving] = _nonBasicAssignment[entering];
+    _nonBasicAssignment[entering] = temp;
+}
+
 double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient, bool decrease )
 {
     unsigned basic = _basicIndexToVariable[basicIndex];
@@ -895,9 +929,7 @@ void Tableau::getTableauRow( unsigned index, TableauRow *row )
     for ( unsigned i = 0; i < _n - _m; ++i )
     {
         row->_row[i]._var = _nonBasicIndexToVariable[i];
-
         ANColumn = _A + ( _nonBasicIndexToVariable[i] * _m );
-
         row->_row[i]._coefficient = 0;
         for ( unsigned j = 0; j < _m; ++j )
             row->_row[i]._coefficient -= ( _multipliers[j] * ANColumn[j] );
