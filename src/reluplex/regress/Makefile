@@ -26,6 +26,7 @@ SOURCES += \
 	InputQuery.cpp \
 	ReluConstraint.cpp \
 	Tableau.cpp \
+	TableauRow.cpp \
 	TableauFactory.cpp \
 	\
 	main_regress.cpp \

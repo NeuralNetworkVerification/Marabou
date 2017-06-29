@@ -16,6 +16,7 @@
 #include "FloatUtils.h"
 #include "ReluplexError.h"
 #include "Tableau.h"
+#include "TableauRow.h"
 
 #include <cfloat>
 #include <string.h>
@@ -59,6 +60,12 @@ Tableau::~Tableau()
     {
         delete[] _b;
         _b = NULL;
+    }
+
+    if ( _unitVector )
+    {
+        delete[] _unitVector;
+        _unitVector = NULL;
     }
 
     if ( _costFunction )
@@ -150,6 +157,10 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     _b = new double[m];
     if ( !_b )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::b" );
+
+    _unitVector = new double[m];
+    if ( !_unitVector )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::unitVector" );
 
     _costFunction = new double[n-m];
     if ( !_costFunction )
@@ -433,7 +444,7 @@ void Tableau::computeCostFunction()
     computeBasicCosts();
 
     // Step 2: compute the multipliers
-    computeMultipliers();
+    computeMultipliers( _basicCosts );
 
     // Step 3: compute reduced costs
     computeReducedCosts();
@@ -464,9 +475,9 @@ void Tableau::computeBasicCosts()
     // printf( "\n" );
 }
 
-void Tableau::computeMultipliers()
+void Tableau::computeMultipliers( double *rowCoefficients )
 {
-    _basisFactorization->backwardTransformation( _basicCosts, _multipliers );
+    _basisFactorization->backwardTransformation( rowCoefficients, _multipliers );
 
     // printf( "Dumping multipliers:\n\t" );
     // for ( unsigned i = 0; i < _m; ++i )
@@ -854,6 +865,42 @@ void Tableau::dump() const
             printf( "%5.1lf ", _A[j * _m + i] );
         }
         printf( "\n" );
+    }
+}
+
+unsigned Tableau::getM() const
+{
+    return _m;
+}
+
+unsigned Tableau::getN() const
+{
+    return _n;
+}
+
+void Tableau::getTableauRow( unsigned index, TableauRow *row )
+{
+    /*
+      Let e denote a unit matrix with 1 in its *index* entry.
+      A row is then computed by: e * inv(B) * -AN. e * inv(B) is
+      solved by invoking BTRAN.
+     */
+
+    std::fill( _unitVector, _unitVector + _m, 0.0 );
+    _unitVector[index] = 1;
+
+    computeMultipliers( _unitVector );
+
+    double *ANColumn;
+    for ( unsigned i = 0; i < _n - _m; ++i )
+    {
+        row->_row[i]._var = _nonBasicIndexToVariable[i];
+
+        ANColumn = _A + ( _nonBasicIndexToVariable[i] * _m );
+
+        row->_row[i]._coefficient = 0;
+        for ( unsigned j = 0; j < _m; ++j )
+            row->_row[i]._coefficient -= ( _multipliers[j] * ANColumn[j] );
     }
 }
 

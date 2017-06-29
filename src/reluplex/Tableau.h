@@ -69,6 +69,12 @@ public:
     void initializeTableau();
 
     /*
+      Get the Tableau's dimensions.
+    */
+    unsigned getM() const;
+    unsigned getN() const;
+
+    /*
       Get the assignment of a variable, either basic or non-basic
     */
     double getValue( unsigned variable );
@@ -166,6 +172,11 @@ public:
     void dump() const;
     void dumpAssignment();
 
+    /*
+      Extract a the index row from the tableau.
+    */
+    void getTableauRow( unsigned index, TableauRow *row );
+
 private:
     /*
       The dimensions of matrix A
@@ -202,6 +213,11 @@ private:
       The right hand side vector of Ax = b
     */
     double *_b;
+
+    /*
+      A unit vector of size m
+    */
+    double *_unitVector;
 
     /*
       The current factorization of the basis
@@ -286,7 +302,7 @@ private:
       Helper functions for calculating the cost
     */
     void computeBasicCosts();
-    void computeMultipliers();
+    void computeMultipliers( double *rowCoefficients );
     void computeReducedCosts();
 
     /*

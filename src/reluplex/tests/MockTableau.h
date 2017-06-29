@@ -158,6 +158,20 @@ public:
         TS_ASSERT( nextNonBasicIndexToVaribale.exists( index ) );
         return nextNonBasicIndexToVaribale.get( index );
     }
+
+    unsigned getM() const
+    {
+        return 0;
+    }
+
+    unsigned getN() const
+    {
+        return 0;
+    }
+
+    void getTableauRow( unsigned /* index */, TableauRow */* row */ )
+    {
+    }
 };
 
 #endif // __MockTableau_h__
