@@ -12,6 +12,7 @@
 
 #include "Debug.h"
 #include "FloatUtils.h"
+#include "FreshVariables.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "ReluConstraint.h"
 #include "ReluplexError.h"
@@ -102,6 +103,11 @@ List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
     Equation activeEquation;
     activeEquation.addAddend( 1, _b );
     activeEquation.addAddend( -1, _f );
+
+    unsigned auxVariable = FreshVariables::getNextVariable();
+    activeEquation.addAddend( 1, auxVariable );
+    activeEquation.markAuxiliaryVariable( auxVariable );
+
     activeEquation.setScalar( 0 );
     activePhase.setEquation( activeEquation );
 
@@ -109,6 +115,10 @@ List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
     inactivePhase.setBoundTightening( _b, upperBound, 0.0 );
     Equation inactiveEquation;
     inactiveEquation.addAddend( 1, _f );
+    auxVariable = FreshVariables::getNextVariable();
+    inactiveEquation.addAddend( 1, auxVariable );
+    inactiveEquation.markAuxiliaryVariable( auxVariable );
+
     inactiveEquation.setScalar( 0 );
     inactivePhase.setEquation( inactiveEquation );
 

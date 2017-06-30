@@ -12,6 +12,7 @@
 
 #include <cxxtest/TestSuite.h>
 
+#include "FreshVariables.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "ReluConstraint.h"
 #include "ReluplexError.h"
@@ -163,6 +164,8 @@ public:
         List<PiecewiseLinearConstraint::Fix> fixes;
         List<PiecewiseLinearConstraint::Fix>::iterator it;
 
+        FreshVariables::setNextVariable( 100 );
+
         List<PiecewiseLinearCaseSplit> splits = relu.getCaseSplits();
 
         Equation activeEquation, inactiveEquation;
@@ -175,7 +178,7 @@ public:
         TS_ASSERT_EQUALS( split->getNewBound(), 0.0 );
 
         activeEquation = split->getEquation();
-        TS_ASSERT_EQUALS( activeEquation._addends.size(), 2U );
+        TS_ASSERT_EQUALS( activeEquation._addends.size(), 3U );
         TS_ASSERT_EQUALS( activeEquation._scalar, 0.0 );
 
         auto addend = activeEquation._addends.begin();
@@ -186,18 +189,28 @@ public:
         TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
         TS_ASSERT_EQUALS( addend->_variable, f );
 
+        ++addend;
+        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, 100U );
+        TS_ASSERT_EQUALS( activeEquation._auxVariable, 100U );
+
         ++split;
         TS_ASSERT_EQUALS( split->getVariable(), b );
         TS_ASSERT_EQUALS( split->getUpperBound(), true );
         TS_ASSERT_EQUALS( split->getNewBound(), 0.0 );
 
         inactiveEquation = split->getEquation();
-        TS_ASSERT_EQUALS( inactiveEquation._addends.size(), 1U );
+        TS_ASSERT_EQUALS( inactiveEquation._addends.size(), 2U );
         TS_ASSERT_EQUALS( inactiveEquation._scalar, 0.0 );
 
         addend = inactiveEquation._addends.begin();
         TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
         TS_ASSERT_EQUALS( addend->_variable, f );
+
+        ++addend;
+        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, 101U );
+        TS_ASSERT_EQUALS( inactiveEquation._auxVariable, 101U );
     }
 };
 
