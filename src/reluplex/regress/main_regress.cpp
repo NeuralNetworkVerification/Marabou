@@ -43,7 +43,7 @@ int main()
 {
     lps();
 
-    // relus();
+    relus();
 }
 
 //
