@@ -42,8 +42,11 @@ void BasisFactorization::freeIfNeeded()
         _B0 = NULL;
     }
 
-    for ( const auto &it : _etas )
-        delete it;
+    List<EtaMatrix *>::iterator it;
+    for ( it = _etas.begin(); it != _etas.end(); ++it )
+        delete *it;
+
+    _etas.clear();
 }
 
 void BasisFactorization::pushEtaMatrix( unsigned columnIndex, double *column )
@@ -125,7 +128,7 @@ void BasisFactorization::storeFactorization( BasisFactorization *other ) const
     memcpy( other->_B0, _B0, sizeof(double) * _m * _m );
 
     for ( const auto &eta : _etas )
-        other->_etas.append( new EtaMatrix( eta->_m, eta->_columnIndex, eta->_column ) );
+        other->pushEtaMatrix( eta->_columnIndex, eta->_column );
 }
 
 void BasisFactorization::restoreFactorization( const BasisFactorization *other )

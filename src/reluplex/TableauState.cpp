@@ -79,7 +79,7 @@ TableauState::~TableauState()
 
     if ( _basisFactorization )
     {
-        delete[] _basisFactorization;
+        delete _basisFactorization;
         _basisFactorization = NULL;
     }
 }
@@ -121,7 +121,7 @@ void TableauState::setDimensions( unsigned m, unsigned n )
     if ( !_variableToIndex )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::variableToIndex" );
 
-    _basisFactorization = new BasisFactorization( _m );
+    _basisFactorization = new BasisFactorization( m );
     if ( !_basisFactorization )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::basisFactorization" );
 }
