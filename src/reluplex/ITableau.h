@@ -55,10 +55,13 @@ public:
     virtual void computeAssignment() = 0;
     virtual void dump() const = 0;
     virtual void dumpAssignment() = 0;
+    virtual void dumpEquations() = 0;
     virtual unsigned nonBasicIndexToVariable( unsigned index ) const = 0;
+    virtual unsigned variableToIndex( unsigned index ) const = 0;
     virtual unsigned getM() const = 0;
     virtual unsigned getN() const = 0;
     virtual void getTableauRow( unsigned index, TableauRow *row ) = 0;
+    virtual void performDegeneratePivot( unsigned entering, unsigned leaving ) = 0;
 };
 
 #endif // __ITableau_h__
