@@ -17,6 +17,7 @@
 #include "Set.h"
 
 class BasisFactorization;
+class TableauState;
 
 class Tableau : public ITableau
 {
@@ -194,6 +195,21 @@ public:
     */
     void getTableauRow( unsigned index, TableauRow *row );
 
+    /*
+      Store and restore the Tableau's state. Needed for case splitting
+      and backtracking. The stored elements are the current:
+
+      - Tableau dimensions
+      - The current matrix A
+      - Lower and upper bounds
+      - Basic variables
+      - Basic and non-basic assignments
+      - The current indexing
+      - The current basis
+    */
+    void storeState( TableauState &state ) const;
+    void restoreState( const TableauState &state );
+
 private:
     /*
       The dimensions of matrix A
@@ -205,16 +221,6 @@ private:
       The matrix
     */
     double *_A;
-
-    /*
-      The basis matrix, which is a subset of A's columns
-    */
-    double *_B;
-
-    /*
-      The non-basic matrix, which is a subset of A's columns
-    */
-    double *_AN;
 
     /*
       A single column matrix from A
@@ -314,6 +320,11 @@ private:
       True if the leaving variable increases, false otherwise
     */
     bool _leavingVariableIncreases;
+
+    /*
+      Free all allocated memory.
+    */
+    void freeMemoryIfNeeded();
 
     /*
       Helper functions for calculating the cost

@@ -34,6 +34,7 @@ SOURCES += \
 	Tableau.cpp \
 	TableauFactory.cpp \
 	TableauRow.cpp \
+	TableauState.cpp \
 	\
 	main_regress.cpp \
 

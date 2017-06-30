@@ -29,6 +29,7 @@ SOURCES += \
 	ReluConstraint.cpp \
 	Tableau.cpp \
 	TableauRow.cpp \
+	TableauState.cpp \
 	\
 	TableauFactory.cpp \
 

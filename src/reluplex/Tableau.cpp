@@ -17,6 +17,7 @@
 #include "ReluplexError.h"
 #include "Tableau.h"
 #include "TableauRow.h"
+#include "TableauState.h"
 
 #include <cfloat>
 #include <string.h>
@@ -43,6 +44,11 @@ Tableau::Tableau()
 }
 
 Tableau::~Tableau()
+{
+    freeMemoryIfNeeded();
+}
+
+void Tableau::freeMemoryIfNeeded()
 {
     if ( _A )
     {
@@ -950,6 +956,59 @@ void Tableau::dumpEquations()
         row.dump();
         printf( "\n" );
     }
+}
+
+void Tableau::storeState( TableauState &state ) const
+{
+    ASSERT( _basicAssignmentStatus == ASSIGNMENT_VALID )
+
+    // Set the dimensions
+    state.setDimensions( _m, _n );
+
+    // Store matrix A
+    memcpy( state._A, _A, sizeof(double) * _n * _m );
+
+    // Store the bounds
+    memcpy( state._lowerBounds, _lowerBounds, sizeof(double) *_n );
+    memcpy( state._upperBounds, _upperBounds, sizeof(double) *_n );
+
+    // Store the assignments
+    memcpy( state._basicAssignment, _basicAssignment, sizeof(double) *_m );
+    memcpy( state._nonBasicAssignment, _nonBasicAssignment, sizeof(double) * ( _n - _m  ) );
+
+    // Store the indices
+    memcpy( state._basicIndexToVariable, _basicIndexToVariable, sizeof(unsigned) * _m );
+    memcpy( state._nonBasicIndexToVariable, _basicIndexToVariable, sizeof(unsigned) * ( _n - _m ) );
+    memcpy( state._variableToIndex, _variableToIndex, sizeof(unsigned) * _n );
+
+    // TODO: Store the basis factorization
+}
+
+void Tableau::restoreState( const TableauState &state )
+{
+    freeMemoryIfNeeded();
+    setDimensions( state._m, state._n );
+
+    // Restore matrix A
+    memcpy( _A, state._A, sizeof(double) * _n * _m );
+
+    // ReStore the bounds
+    memcpy( _lowerBounds, state._lowerBounds, sizeof(double) *_n );
+    memcpy( _upperBounds, state._upperBounds, sizeof(double) *_n );
+
+    // Restore the assignments
+    memcpy( _basicAssignment, state._basicAssignment, sizeof(double) *_m );
+    memcpy( _nonBasicAssignment, state._nonBasicAssignment, sizeof(double) * ( _n - _m  ) );
+
+    // Restore the indices
+    memcpy( _basicIndexToVariable, state._basicIndexToVariable, sizeof(unsigned) * _m );
+    memcpy( _basicIndexToVariable, state._nonBasicIndexToVariable, sizeof(unsigned) * ( _n - _m ) );
+    memcpy( _variableToIndex, state._variableToIndex, sizeof(unsigned) * _n );
+
+    // TODO: Store the basis factorization
+
+    // After a restoration, the assignment is valid
+    _basicAssignmentStatus = ASSIGNMENT_VALID;
 }
 
 //
