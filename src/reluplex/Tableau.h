@@ -86,6 +86,13 @@ public:
     unsigned nonBasicIndexToVariable( unsigned index ) const;
 
     /*
+      Given a variable, returns the index of that variable. The result
+      is in range [1,m] if the variable is basic, or in range [1,n-m]
+      if the variable is non-basic.
+    */
+    unsigned variableToIndex( unsigned index ) const;
+
+    /*
       Set the lower/upper bounds for a variable
     */
     void setLowerBound( unsigned variable, double value );
@@ -180,6 +187,7 @@ public:
     */
     void dump() const;
     void dumpAssignment();
+    void dumpEquations();
 
     /*
       Extract a the index row from the tableau.

@@ -254,9 +254,6 @@ void Tableau::initializeTableau()
 
 void Tableau::computeAssignment()
 {
-    if ( _basicAssignmentStatus == ASSIGNMENT_VALID )
-        return;
-
     /*
       The basic assignment is given by the formula:
 
@@ -280,7 +277,7 @@ void Tableau::computeAssignment()
     for ( unsigned i = 0; i < _n - _m; ++i )
     {
         unsigned var = _nonBasicIndexToVariable[i];
-        double value = _nonBasicAssignment[var];
+        double value = _nonBasicAssignment[i];
 
         ANColumn = _A + ( var * _m );
         for ( unsigned j = 0; j < _m; ++j )
@@ -353,6 +350,11 @@ double Tableau::getValue( unsigned variable )
 unsigned Tableau::nonBasicIndexToVariable( unsigned index ) const
 {
     return _nonBasicIndexToVariable[index];
+}
+
+unsigned Tableau::variableToIndex( unsigned index ) const
+{
+    return _variableToIndex[index];
 }
 
 void Tableau::setRightHandSide( const double *b )
@@ -933,6 +935,20 @@ void Tableau::getTableauRow( unsigned index, TableauRow *row )
         row->_row[i]._coefficient = 0;
         for ( unsigned j = 0; j < _m; ++j )
             row->_row[i]._coefficient -= ( _multipliers[j] * ANColumn[j] );
+    }
+}
+
+void Tableau::dumpEquations()
+{
+    TableauRow row( _n - _m );
+
+    printf( "Dumping tableau equations:\n" );
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        printf( "x%u = ", _basicIndexToVariable[i] );
+        getTableauRow( i, &row );
+        row.dump();
+        printf( "\n" );
     }
 }
 

@@ -151,12 +151,18 @@ public:
     void computeAssignment() {}
     void dump() const {}
     void dumpAssignment() {}
+    void dumpEquations() {}
 
     Map<unsigned, unsigned> nextNonBasicIndexToVaribale;
     unsigned nonBasicIndexToVariable( unsigned index ) const
     {
         TS_ASSERT( nextNonBasicIndexToVaribale.exists( index ) );
         return nextNonBasicIndexToVaribale.get( index );
+    }
+
+    unsigned variableToIndex( unsigned /* index */ ) const
+    {
+        return 0;
     }
 
     unsigned getM() const
@@ -170,6 +176,10 @@ public:
     }
 
     void getTableauRow( unsigned /* index */, TableauRow */* row */ )
+    {
+    }
+
+    void performDegeneratePivot( unsigned /* entering */, unsigned /* leaving */ )
     {
     }
 };

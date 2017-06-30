@@ -697,15 +697,6 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeAssignment() );
 
-        // Values before the degenerate pivot
-        TS_ASSERT_EQUALS( tableau->getValue( 0 ), 1.0 );
-        TS_ASSERT_EQUALS( tableau->getValue( 1 ), 1.0 );
-        TS_ASSERT_EQUALS( tableau->getValue( 2 ), 1.0 );
-        TS_ASSERT_EQUALS( tableau->getValue( 3 ), 1.0 );
-        TS_ASSERT_EQUALS( tableau->getValue( 4 ), 217.0 );
-        TS_ASSERT_EQUALS( tableau->getValue( 5 ), 113.0 );
-        TS_ASSERT_EQUALS( tableau->getValue( 6 ), 406.0 );
-
         TS_ASSERT( !tableau->isBasic( 2 ) );
         TS_ASSERT( tableau->isBasic( 5 ) );
 
@@ -767,14 +758,33 @@ public:
         TS_ASSERT_EQUALS( entry._var, 3U );
         TS_ASSERT_EQUALS( entry._coefficient, -4 );
 
+        // Values before the degenerate pivot
+        TS_ASSERT_EQUALS( tableau->getValue( 0 ), 1.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 1 ), 1.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 2 ), 1.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 3 ), 1.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 4 ), 217.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 5 ), 113.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 6 ), 406.0 );
+
         // Nonbasic index #2 --> variable 2
         // Basic index #1 --> variable 5
         TS_ASSERT_THROWS_NOTHING( tableau->performDegeneratePivot( 2, 1 ) );
-
         TS_ASSERT( tableau->isBasic( 2 ) );
         TS_ASSERT( !tableau->isBasic( 5 ) );
 
         // Values should be unchanged after the degenerate pivot
+        TS_ASSERT_EQUALS( tableau->getValue( 0 ), 1.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 1 ), 1.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 2 ), 1.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 3 ), 1.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 4 ), 217.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 5 ), 113.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 6 ), 406.0 );
+
+        // Recompute the assignment, see that values are still unchanged
+        TS_ASSERT_THROWS_NOTHING( tableau->computeAssignment() );
+
         TS_ASSERT_EQUALS( tableau->getValue( 0 ), 1.0 );
         TS_ASSERT_EQUALS( tableau->getValue( 1 ), 1.0 );
         TS_ASSERT_EQUALS( tableau->getValue( 2 ), 1.0 );
