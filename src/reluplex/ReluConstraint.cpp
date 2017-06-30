@@ -50,6 +50,8 @@ bool ReluConstraint::satisfied( const Map<unsigned, double> &assignment ) const
 List<PiecewiseLinearConstraint::Fix> ReluConstraint::getPossibleFixes( const Map<unsigned, double> &assignment ) const
 {
     ASSERT( !satisfied( assignment ) );
+    ASSERT( assignment.exists( _b ) );
+    ASSERT( assignment.exists( _f ) );
 
     double bValue = assignment.get( _b );
     double fValue = assignment.get( _f );
