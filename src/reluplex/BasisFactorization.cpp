@@ -11,6 +11,7 @@
  **/
 
 #include "BasisFactorization.h"
+#include "Debug.h"
 #include "EtaMatrix.h"
 #include "FloatUtils.h"
 #include "ReluplexError.h"
@@ -29,6 +30,11 @@ BasisFactorization::BasisFactorization( unsigned m )
 }
 
 BasisFactorization::~BasisFactorization()
+{
+    freeIfNeeded();
+}
+
+void BasisFactorization::freeIfNeeded()
 {
     if ( _B0 )
     {
@@ -109,6 +115,32 @@ void BasisFactorization::backwardTransformation( const double *y, double *x )
         // The x from this iteration becomes y for the next iteration
         memcpy( tempY, x, sizeof(double) *_m );
     }
+}
+
+void BasisFactorization::storeFactorization( BasisFactorization *other ) const
+{
+    ASSERT( _m == other->_m );
+    ASSERT( other->_etas.size() == 0 );
+
+    memcpy( other->_B0, _B0, sizeof(double) * _m * _m );
+
+    for ( const auto &eta : _etas )
+        other->_etas.append( new EtaMatrix( eta->_m, eta->_columnIndex, eta->_column ) );
+}
+
+void BasisFactorization::restoreFactorization( const BasisFactorization *other )
+{
+    ASSERT( _m == other->_m );
+
+    for ( const auto &it : _etas )
+        delete it;
+
+    _etas.clear();
+
+    memcpy( _B0, other->_B0, sizeof(double) * _m * _m );
+
+    for ( const auto &eta : other->_etas )
+        _etas.append( new EtaMatrix( eta->_m, eta->_columnIndex, eta->_column ) );
 }
 
 //

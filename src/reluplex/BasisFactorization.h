@@ -23,9 +23,16 @@ public:
     BasisFactorization( unsigned m );
     ~BasisFactorization();
 
-    /* Adds a new eta matrix to the basis factorization. The matrix is
-    the identity matrix with the specified column replaced by the one
-    provided */
+    /*
+      Free any allocated memory.
+    */
+    void freeIfNeeded();
+
+    /*
+      Adds a new eta matrix to the basis factorization. The matrix is
+      the identity matrix with the specified column replaced by the one
+      provided.
+    */
     void pushEtaMatrix( unsigned columnIndex, double *column );
 
     /* Perform a forward transformation, i.e. find x such that x = inv(B) * y,
@@ -65,6 +72,12 @@ public:
 
       Result needs to be of size m */
     void backwardTransformation( const double *y, double *x );
+
+    /*
+      Store and restore the basis factorization.
+    */
+    void storeFactorization( BasisFactorization *other ) const;
+    void restoreFactorization( const BasisFactorization *other );
 
 private:
     unsigned _m;

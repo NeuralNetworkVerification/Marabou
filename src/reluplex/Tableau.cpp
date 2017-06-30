@@ -981,7 +981,8 @@ void Tableau::storeState( TableauState &state ) const
     memcpy( state._nonBasicIndexToVariable, _basicIndexToVariable, sizeof(unsigned) * ( _n - _m ) );
     memcpy( state._variableToIndex, _variableToIndex, sizeof(unsigned) * _n );
 
-    // TODO: Store the basis factorization
+    // Store the basis factorization
+    _basisFactorization->storeFactorization( state._basisFactorization );
 }
 
 void Tableau::restoreState( const TableauState &state )
@@ -1005,7 +1006,8 @@ void Tableau::restoreState( const TableauState &state )
     memcpy( _basicIndexToVariable, state._nonBasicIndexToVariable, sizeof(unsigned) * ( _n - _m ) );
     memcpy( _variableToIndex, state._variableToIndex, sizeof(unsigned) * _n );
 
-    // TODO: Store the basis factorization
+    // Restore the basis factorization
+    _basisFactorization->restoreFactorization( state._basisFactorization );
 
     // After a restoration, the assignment is valid
     _basicAssignmentStatus = ASSIGNMENT_VALID;
