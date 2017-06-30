@@ -38,7 +38,10 @@
 #  define ASSERT(x)                             \
     {                                           \
         if ( !( x ) )                           \
+        {                                       \
+            printf( "Assertion violation!\n" ); \
             exit( 1 );                          \
+        }                                       \
     }
 #else
 #  define ASSERT(x)
