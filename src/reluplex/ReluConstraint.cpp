@@ -12,6 +12,7 @@
 
 #include "Debug.h"
 #include "FloatUtils.h"
+#include "PiecewiseLinearCaseSplit.h"
 #include "ReluConstraint.h"
 #include "ReluplexError.h"
 
@@ -84,6 +85,24 @@ List<PiecewiseLinearConstraint::Fix> ReluConstraint::getPossibleFixes( const Map
     }
 
     return fixes;
+}
+
+List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
+{
+    List<PiecewiseLinearCaseSplit> splits;
+
+    PiecewiseLinearCaseSplit activePhase;
+    PiecewiseLinearCaseSplit inactivePhase;
+
+    bool lowerBound = false;
+    bool upperBound = true;
+    activePhase.setBoundTightening( _b, lowerBound, 0.0 );
+    inactivePhase.setBoundTightening( _b, upperBound, 0.0 );
+
+    splits.append( activePhase );
+    splits.append( inactivePhase );
+
+    return splits;
 }
 
 //

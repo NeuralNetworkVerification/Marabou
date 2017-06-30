@@ -22,9 +22,10 @@ SOURCES += \
 	DantzigsRule.cpp \
 	Engine.cpp \
 	EtaMatrix.cpp \
+	PiecewiseLinearCaseSplit.cpp \
+	ReluConstraint.cpp \
 	Tableau.cpp \
 	TableauRow.cpp \
-	ReluConstraint.cpp \
 	\
 	InputQuery.cpp \
 	TableauFactory.cpp \

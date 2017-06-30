@@ -41,6 +41,14 @@ public:
     */
     List<PiecewiseLinearConstraint::Fix> getPossibleFixes( const Map<unsigned, double> &assignment ) const;
 
+    /*
+      Returns the list of case splits that this piecewise linear
+      constraint breaks into. These splits need to complementary,
+      i.e. if the list is {l1, l2, ..., ln-1, ln},
+      then ~l1 /\ ~l2 /\ ... /\ ~ln-1 --> ln.
+     */
+    List<PiecewiseLinearCaseSplit> getCaseSplits() const;
+
 private:
     unsigned _b;
     unsigned _f;

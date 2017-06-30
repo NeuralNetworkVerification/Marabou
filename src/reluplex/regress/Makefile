@@ -27,10 +27,11 @@ SOURCES += \
 	Engine.cpp \
 	EtaMatrix.cpp \
 	InputQuery.cpp \
+	PiecewiseLinearCaseSplit.cpp \
 	ReluConstraint.cpp \
 	Tableau.cpp \
-	TableauRow.cpp \
 	TableauFactory.cpp \
+	TableauRow.cpp \
 	\
 	main_regress.cpp \
 

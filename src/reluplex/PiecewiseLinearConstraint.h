@@ -15,6 +15,8 @@
 
 #include "Map.h"
 
+class PiecewiseLinearCaseSplit;
+
 class PiecewiseLinearConstraint
 {
 public:
@@ -58,6 +60,14 @@ public:
     */
     virtual List<PiecewiseLinearConstraint::Fix> getPossibleFixes( const Map<unsigned,
                                                                    double> &assignment ) const = 0;
+
+    /*
+      Returns the list of case splits that this piecewise linear
+      constraint breaks into. These splits need to complementary,
+      i.e. if the list is {l1, l2, ..., ln-1, ln},
+      then ~l1 /\ ~l2 /\ ... /\ ~ln-1 --> ln.
+     */
+    virtual List<PiecewiseLinearCaseSplit> getCaseSplits() const = 0;
 };
 
 #endif // __PiecewiseLinearConstraint_h__

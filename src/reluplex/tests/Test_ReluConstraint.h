@@ -12,6 +12,7 @@
 
 #include <cxxtest/TestSuite.h>
 
+#include "PiecewiseLinearCaseSplit.h"
 #include "ReluConstraint.h"
 #include "ReluplexError.h"
 
@@ -148,6 +149,33 @@ public:
         ++it;
         TS_ASSERT_EQUALS( it->_variable, f );
         TS_ASSERT_EQUALS( it->_value, 11 );
+    }
+
+    void test_relu_case_splits()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        ReluConstraint relu( b, f );
+
+        Map<unsigned, double> assignment;
+
+        List<PiecewiseLinearConstraint::Fix> fixes;
+        List<PiecewiseLinearConstraint::Fix>::iterator it;
+
+        List<PiecewiseLinearCaseSplit> splits = relu.getCaseSplits();
+
+        TS_ASSERT_EQUALS( splits.size(), 2U );
+
+        auto split = splits.begin();
+        TS_ASSERT_EQUALS( split->getVariable(), b );
+        TS_ASSERT_EQUALS( split->getUpperBound(), false );
+        TS_ASSERT_EQUALS( split->getNewBound(), 0.0 );
+
+        ++split;
+        TS_ASSERT_EQUALS( split->getVariable(), b );
+        TS_ASSERT_EQUALS( split->getUpperBound(), true );
+        TS_ASSERT_EQUALS( split->getNewBound(), 0.0 );
     }
 };
 
