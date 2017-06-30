@@ -177,6 +177,50 @@ public:
         TS_ASSERT_THROWS_NOTHING( basis.backwardTransformation( y, x ) );
         TS_ASSERT_SAME_DATA( x, expected, sizeof(double) * 3 );
     }
+
+    void test_store_and_restore()
+    {
+        BasisFactorization basis( 3 );
+        BasisFactorization otherBasis( 3 );
+
+        double a1[] = { 1, 1, 3 };
+        double d1[] = { 0, 0, 0 };
+
+        TS_ASSERT_THROWS_NOTHING( basis.forwardTransformation( a1, d1 ) );
+        basis.pushEtaMatrix( 1, a1 );
+
+        basis.storeFactorization( &otherBasis );
+
+        // Do a computation using both basis, see that we get the same result.
+
+        double a2[] = { 3, 1, 4 };
+        double d2[] = { 0, 0, 0 };
+        double d2other[] = { 0, 0, 0 };
+        double expected2[] = { 2, 1, 1 };
+
+        TS_ASSERT_THROWS_NOTHING( basis.forwardTransformation( a2, d2 ) );
+        TS_ASSERT_THROWS_NOTHING( otherBasis.forwardTransformation( a2, d2other ) );
+
+        TS_ASSERT_SAME_DATA( d2, expected2, sizeof(double) * 3 );
+        TS_ASSERT_SAME_DATA( d2other, expected2, sizeof(double) * 3 );
+
+        // Transform the new basis but not the original
+
+        otherBasis.pushEtaMatrix( 0, d2 );
+
+        double a3[] = { 2, 1, 4 };
+        double d3[] = { 0, 0, 0 };
+        double d3other[] = { 0, 0, 0 };
+        double expected3[] = { 0.5, 0.5, 0.5 };
+
+        TS_ASSERT_THROWS_NOTHING( otherBasis.forwardTransformation( a3, d3other ) );
+        TS_ASSERT_SAME_DATA( d3other, expected3, sizeof(double) * 3 );
+
+        // The original basis wasn't modified, so the result should be different
+
+        TS_ASSERT_THROWS_NOTHING( basis.forwardTransformation( a3, d3 ) );
+        TS_ASSERT( memcmp( d3other, d3, sizeof(double) * 3 ) );
+    }
 };
 
 //
