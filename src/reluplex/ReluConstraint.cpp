@@ -96,8 +96,21 @@ List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
 
     bool lowerBound = false;
     bool upperBound = true;
+
+    // Active phase: b >= 0, b - f = 0
     activePhase.setBoundTightening( _b, lowerBound, 0.0 );
+    Equation activeEquation;
+    activeEquation.addAddend( 1, _b );
+    activeEquation.addAddend( -1, _f );
+    activeEquation.setScalar( 0 );
+    activePhase.setEquation( activeEquation );
+
+    // Inactive phase: b <= 0, f = 0
     inactivePhase.setBoundTightening( _b, upperBound, 0.0 );
+    Equation inactiveEquation;
+    inactiveEquation.addAddend( 1, _f );
+    inactiveEquation.setScalar( 0 );
+    inactivePhase.setEquation( inactiveEquation );
 
     splits.append( activePhase );
     splits.append( inactivePhase );

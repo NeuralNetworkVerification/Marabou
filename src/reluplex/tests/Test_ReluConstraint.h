@@ -165,6 +165,8 @@ public:
 
         List<PiecewiseLinearCaseSplit> splits = relu.getCaseSplits();
 
+        Equation activeEquation, inactiveEquation;
+
         TS_ASSERT_EQUALS( splits.size(), 2U );
 
         auto split = splits.begin();
@@ -172,10 +174,30 @@ public:
         TS_ASSERT_EQUALS( split->getUpperBound(), false );
         TS_ASSERT_EQUALS( split->getNewBound(), 0.0 );
 
+        activeEquation = split->getEquation();
+        TS_ASSERT_EQUALS( activeEquation._addends.size(), 2U );
+        TS_ASSERT_EQUALS( activeEquation._scalar, 0.0 );
+
+        auto addend = activeEquation._addends.begin();
+        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, b );
+
+        ++addend;
+        TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, f );
+
         ++split;
         TS_ASSERT_EQUALS( split->getVariable(), b );
         TS_ASSERT_EQUALS( split->getUpperBound(), true );
         TS_ASSERT_EQUALS( split->getNewBound(), 0.0 );
+
+        inactiveEquation = split->getEquation();
+        TS_ASSERT_EQUALS( inactiveEquation._addends.size(), 1U );
+        TS_ASSERT_EQUALS( inactiveEquation._scalar, 0.0 );
+
+        addend = inactiveEquation._addends.begin();
+        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, f );
     }
 };
 
