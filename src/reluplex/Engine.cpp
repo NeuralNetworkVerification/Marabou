@@ -12,6 +12,7 @@
 
 #include "Debug.h"
 #include "Engine.h"
+#include "FreshVariables.h"
 #include "InputQuery.h"
 #include "PiecewiseLinearConstraint.h"
 #include "TableauRow.h"
@@ -148,6 +149,9 @@ void Engine::processInputQuery( const InputQuery &inputQuery )
     unsigned m = equations.size();
     unsigned n = inputQuery.getNumberOfVariables();
     _tableau->setDimensions( m, n );
+
+    // Current variables are [0,..,n-1], so the next variable is n.
+    FreshVariables::setNextVariable( n );
 
     unsigned equationIndex = 0;
     for ( const auto &equation : equations )
