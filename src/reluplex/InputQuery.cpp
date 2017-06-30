@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file InputQuery.h
+/*! \file InputQuery.cpp
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz

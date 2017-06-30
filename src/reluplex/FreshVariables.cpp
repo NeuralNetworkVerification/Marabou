@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file FreshVariables.h
+/*! \file FreshVariables.cpp
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz

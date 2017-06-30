@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file BlandsRule.h
+/*! \file BlandsRule.cpp
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz

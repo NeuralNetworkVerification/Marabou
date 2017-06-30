@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file InputQuery.h
+/*! \file ReluConstraint.cpp
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz

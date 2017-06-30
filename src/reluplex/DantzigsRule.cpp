@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file DantzigsRule.h
+/*! \file DantzigsRule.cpp
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz

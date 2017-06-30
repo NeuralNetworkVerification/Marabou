@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file BasisFactorization.h
+/*! \file BasisFactorization.cpp
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz

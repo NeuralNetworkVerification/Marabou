@@ -13,6 +13,7 @@
 #include <cxxtest/TestSuite.h>
 
 #include "Engine.h"
+#include "FreshVariables.h"
 #include "InputQuery.h"
 #include "MockErrno.h"
 #include "MockTableauFactory.h"
@@ -172,6 +173,8 @@ public:
         TS_ASSERT( plVars.exists( 1U ) );
         TS_ASSERT( plVars.exists( 2U ) );
         TS_ASSERT( plVars.exists( 4U ) );
+
+        TS_ASSERT_EQUALS( FreshVariables::getNextVariable(), 5U );
     }
 };
 

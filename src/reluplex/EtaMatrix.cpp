@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file EtaMatrix.h
+/*! \file EtaMatrix.cpp
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz

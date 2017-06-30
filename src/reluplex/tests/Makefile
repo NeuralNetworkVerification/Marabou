@@ -23,6 +23,7 @@ SOURCES += \
 	Engine.cpp \
 	Equation.cpp \
 	EtaMatrix.cpp \
+	FreshVariables.cpp \
 	InputQuery.cpp \
 	PiecewiseLinearCaseSplit.cpp \
 	ReluConstraint.cpp \

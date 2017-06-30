@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file Tableau.h
+/*! \file Tableau.cpp
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz
