@@ -14,6 +14,7 @@
 #include "Engine.h"
 #include "InputQuery.h"
 #include "PiecewiseLinearConstraint.h"
+#include "TableauRow.h"
 
 Engine::Engine()
 {
@@ -57,6 +58,16 @@ bool Engine::solve()
 
 bool Engine::performSimplexStep()
 {
+    // // Debug
+    // for ( unsigned i = 0; i < _tableau->getM(); ++i )
+    // {
+    //     printf( "Extracting tableau row %u\n", i );
+    //     TableauRow row( _tableau->getN() - _tableau->getM() );
+    //     _tableau->getTableauRow( i, &row );
+    //     row.dump();
+    // }
+    // //
+
     _tableau->computeCostFunction();
     _tableau->dumpCostFunction();
 
@@ -72,23 +83,62 @@ bool Engine::performSimplexStep()
 
 bool Engine::fixViolatedPlConstraint()
 {
+    PiecewiseLinearConstraint *violated = NULL;
     for ( const auto &constraint : _plConstraints )
     {
-        if ( constraint->satisfied( _plVarAssignment ) )
+        if ( !constraint->satisfied( _plVarAssignment ) )
+            violated = constraint;
+    }
+
+    ASSERT( violated );
+
+    List<PiecewiseLinearConstraint::Fix> fixes = violated->getPossibleFixes( _plVarAssignment );
+
+    // First, see if we can fix without pivoting
+    for ( const auto &fix : fixes )
+    {
+        if ( !_tableau->isBasic( fix._variable ) )
         {
-            List<PiecewiseLinearConstraint::Fix> fixes = constraint->getPossibleFixes( _plVarAssignment );
-            for ( const auto &fix : fixes )
-            {
-                if ( !_tableau->isBasic( fix._variable ) )
-                {
-                    _tableau->setNonBasicAssignment( fix._variable, fix._value );
-                    return true;
-                }
-            }
+            _tableau->setNonBasicAssignment( fix._variable, fix._value );
+            return true;
         }
     }
 
-    return false;
+    // No choice, have to pivot
+    PiecewiseLinearConstraint::Fix fix = *fixes.begin();
+    ASSERT( _tableau->isBasic( fix._variable ) );
+
+    TableauRow row( _tableau->getN() - _tableau->getM() );
+    _tableau->getTableauRow( fix._variable, &row );
+
+    unsigned nonBasic;
+    bool done = false;
+    unsigned i = 0;
+    while ( !done && ( i < _tableau->getN() - _tableau->getM() ) )
+    {
+        // TODO: numerical stability. Pick a good candidate.
+        // TODO: guarantee that candidate does not participate in the
+        // same PL constraint?
+        if ( !FloatUtils::isZero( row._row->_coefficient ) )
+        {
+            done = true;
+            nonBasic = row._row->_var;
+        }
+
+        ++i;
+    }
+
+    ASSERT( done );
+    // Switch between nonBasic and the variable we need to fix
+    _tableau->performDegeneratePivot( _tableau->variableToIndex( nonBasic ),
+                                      _tableau->variableToIndex( fix._variable ) );
+
+    ASSERT( !_tableau->isBasic( fix._variable ) );
+    _tableau->setNonBasicAssignment( fix._variable, fix._value );
+    return true;
+
+    // printf( "Could not fix a violated PL constraint\n" );
+    // return false;
 }
 
 void Engine::processInputQuery( const InputQuery &inputQuery )
@@ -142,7 +192,7 @@ bool Engine::allVarsWithinBounds() const
 bool Engine::allPlConstraintsHold()
 {
     for ( const auto &constraint : _plConstraints )
-        if ( constraint->satisfied( _plVarAssignment ) )
+        if ( !constraint->satisfied( _plVarAssignment ) )
             return false;
 
     return true;
@@ -151,7 +201,7 @@ bool Engine::allPlConstraintsHold()
 void Engine::extractPlAssignment()
 {
     for ( auto it : _plVarAssignment )
-        it.second = _tableau->getValue( it.first );
+        _plVarAssignment[it.first] = _tableau->getValue( it.first );
 }
 
 const Set<unsigned> Engine::getVarsInPlConstraints()
