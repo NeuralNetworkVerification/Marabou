@@ -12,26 +12,14 @@
 
 #include "PiecewiseLinearCaseSplit.h"
 
-void PiecewiseLinearCaseSplit::setBoundTightening( unsigned variable, bool upperBound, double newBound )
+void PiecewiseLinearCaseSplit::storeBoundTightening( const Bound &bound )
 {
-    _variable = variable;
-    _upperBound = upperBound;
-    _newBound = newBound;
+    _bounds.append( bound );
 }
 
-unsigned PiecewiseLinearCaseSplit::getVariable() const
+List<PiecewiseLinearCaseSplit::Bound> PiecewiseLinearCaseSplit::getBoundTightenings() const
 {
-    return _variable;
-}
-
-bool PiecewiseLinearCaseSplit::getUpperBound() const
-{
-    return _upperBound;
-}
-
-double PiecewiseLinearCaseSplit::getNewBound() const
-{
-    return _newBound;
+    return _bounds;
 }
 
 void PiecewiseLinearCaseSplit::setEquation( const Equation &equation )

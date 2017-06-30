@@ -18,40 +18,49 @@
 class PiecewiseLinearCaseSplit
 {
 public:
-    /*
-      Store information regarding a bound tightening: which var, which
-      bound, and new bound value.
-    */
-    void setBoundTightening( unsigned variable, bool upperBound, double newBound );
+    struct Bound
+    {
+    public:
+        Bound( unsigned variable, bool upperBound, double newBound )
+            : _variable( variable )
+            , _upperBound( upperBound )
+            , _newBound( newBound )
+        {
+        }
 
-    unsigned getVariable() const;
-    bool getUpperBound() const;
-    double getNewBound() const;
+        /*
+          The variable whos bound is being tightened.
+        */
+        unsigned _variable;
+
+        /*
+          True iff the upper bound is being tightened.
+        */
+        bool _upperBound;
+
+        /*
+          Value of the new bound.
+        */
+        double _newBound;
+    };
+
+    /*
+      Store information regarding a bound tightening.
+    */
+    void storeBoundTightening( const Bound &bound );
+    List<PiecewiseLinearCaseSplit::Bound> getBoundTightenings() const;
 
     /*
       Store information regarding a new equation to be added.
     */
     void setEquation( const Equation &equation );
-
     Equation getEquation() const;
 
 private:
-    /* Bound tightening information. */
-
     /*
-      The variable whos bound is being tightened.
+      Bound tightening information.
     */
-    unsigned _variable;
-
-    /*
-      True iff the upper bound is being tightened.
-    */
-    bool _upperBound;
-
-    /*
-      Value of the new bound.
-    */
-    double _newBound;
+    List<PiecewiseLinearCaseSplit::Bound> _bounds;
 
     /*
       The equation that needs to be added.
