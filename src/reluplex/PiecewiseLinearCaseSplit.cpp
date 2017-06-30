@@ -34,6 +34,16 @@ double PiecewiseLinearCaseSplit::getNewBound() const
     return _newBound;
 }
 
+void PiecewiseLinearCaseSplit::setEquation( const Equation &equation )
+{
+    _equation = equation;
+}
+
+Equation PiecewiseLinearCaseSplit::getEquation() const
+{
+    return _equation;
+}
+
 //
 // Local Variables:
 // compile-command: "make -C .. "

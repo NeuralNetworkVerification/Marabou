@@ -13,6 +13,8 @@
 #ifndef __PiecewiseLinearCaseSplit_h__
 #define __PiecewiseLinearCaseSplit_h__
 
+#include "Equation.h"
+
 class PiecewiseLinearCaseSplit
 {
 public:
@@ -25,6 +27,13 @@ public:
     unsigned getVariable() const;
     bool getUpperBound() const;
     double getNewBound() const;
+
+    /*
+      Store information regarding a new equation to be added.
+    */
+    void setEquation( const Equation &equation );
+
+    Equation getEquation() const;
 
 private:
     /* Bound tightening information. */
@@ -43,6 +52,11 @@ private:
       Value of the new bound.
     */
     double _newBound;
+
+    /*
+      The equation that needs to be added.
+    */
+    Equation _equation;
 };
 
 #endif // __PiecewiseLinearCaseSplit_h__
