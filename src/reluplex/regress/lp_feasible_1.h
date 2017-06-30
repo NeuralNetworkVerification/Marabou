@@ -44,7 +44,7 @@ public:
 
         inputQuery.setLowerBound( 3, 0 );
 
-        InputQuery::Equation equation;
+        Equation equation;
         equation.addAddend( 1, 0 );
         equation.addAddend( 2, 1 );
         equation.addAddend( -1, 2 );

@@ -21,13 +21,14 @@ SOURCES += \
 	BlandsRule.cpp \
 	DantzigsRule.cpp \
 	Engine.cpp \
+	Equation.cpp \
 	EtaMatrix.cpp \
+	InputQuery.cpp \
 	PiecewiseLinearCaseSplit.cpp \
 	ReluConstraint.cpp \
 	Tableau.cpp \
 	TableauRow.cpp \
 	\
-	InputQuery.cpp \
 	TableauFactory.cpp \
 
 all:

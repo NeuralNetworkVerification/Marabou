@@ -82,7 +82,7 @@ public:
         inputQuery.setLowerBound( 3, 0 );
         inputQuery.setUpperBound( 4, 0 );
 
-        InputQuery::Equation equation1;
+        Equation equation1;
         equation1.addAddend( 1, 0 );
         equation1.addAddend( 2, 1 );
         equation1.addAddend( -1, 2 );
@@ -91,7 +91,7 @@ public:
         equation1.markAuxiliaryVariable( 3 );
         inputQuery.addEquation( equation1 );
 
-        InputQuery::Equation equation2;
+        Equation equation2;
         equation2.addAddend( -3, 0 );
         equation2.addAddend( 3, 1 );
         equation2.addAddend( 1, 4 );

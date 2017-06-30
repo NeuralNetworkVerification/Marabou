@@ -13,6 +13,7 @@
 #ifndef __InputQuery_h__
 #define __InputQuery_h__
 
+#include "Equation.h"
 #include "List.h"
 #include "Map.h"
 #include "PiecewiseLinearConstraint.h"
@@ -20,30 +21,6 @@
 class InputQuery
 {
 public:
-    /* A class representing a single input equation. For now, all
-    equations are interpreted as equalities, i.e. the sum of all
-    addends equals the scalar */
-    struct Equation
-    {
-    public:
-        struct Addend
-        {
-        public:
-            Addend( double coefficient, unsigned variable );
-
-            double _coefficient;
-            unsigned _variable;
-        };
-
-        void addAddend( double coefficient, unsigned variable );
-        void setScalar( double scalar );
-        void markAuxiliaryVariable( unsigned auxVariable );
-
-        List<Addend> _addends;
-        double _scalar;
-        unsigned _auxVariable;
-    };
-
     InputQuery();
     ~InputQuery();
 
@@ -60,7 +37,7 @@ public:
     double getLowerBound( unsigned variable ) const;
     double getUpperBound( unsigned variable ) const;
 
-    const List<InputQuery::Equation> &getEquations() const;
+    const List<Equation> &getEquations() const;
 
     void addPiecewiseLinearConstraint( PiecewiseLinearConstraint *constraint );
     const List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints() const;
@@ -73,7 +50,7 @@ public:
 
 private:
     unsigned _numberOfVariables;
-    List<InputQuery::Equation> _equations;
+    List<Equation> _equations;
     Map<unsigned, double> _lowerBounds;
     Map<unsigned, double> _upperBounds;
     List<PiecewiseLinearConstraint *> _plConstraints;

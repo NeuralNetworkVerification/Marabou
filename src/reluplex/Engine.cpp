@@ -143,7 +143,7 @@ bool Engine::fixViolatedPlConstraint()
 
 void Engine::processInputQuery( const InputQuery &inputQuery )
 {
-    const List<InputQuery::Equation> equations( inputQuery.getEquations() );
+    const List<Equation> equations( inputQuery.getEquations() );
 
     unsigned m = equations.size();
     unsigned n = inputQuery.getNumberOfVariables();

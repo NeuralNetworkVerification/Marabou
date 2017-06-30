@@ -16,27 +16,6 @@
 
 #include <cfloat>
 
-InputQuery::Equation::Addend::Addend( double coefficient, unsigned variable )
-    : _coefficient( coefficient )
-    , _variable( variable )
-{
-}
-
-void InputQuery::Equation::addAddend( double coefficient, unsigned variable )
-{
-    _addends.append( Addend( coefficient, variable ) );
-}
-
-void InputQuery::Equation::setScalar( double scalar )
-{
-    _scalar = scalar;
-}
-
-void InputQuery::Equation::markAuxiliaryVariable( unsigned auxVariable )
-{
-    _auxVariable = auxVariable;
-}
-
 InputQuery::InputQuery()
 {
 }
@@ -120,7 +99,7 @@ double InputQuery::getUpperBound( unsigned variable ) const
     return _upperBounds.get( variable );
 }
 
-const List<InputQuery::Equation> &InputQuery::getEquations() const
+const List<Equation> &InputQuery::getEquations() const
 {
     return _equations;
 }

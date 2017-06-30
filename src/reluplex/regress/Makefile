@@ -25,6 +25,7 @@ SOURCES += \
 	BlandsRule.cpp \
 	DantzigsRule.cpp \
 	Engine.cpp \
+	Equation.cpp \
 	EtaMatrix.cpp \
 	InputQuery.cpp \
 	PiecewiseLinearCaseSplit.cpp \
