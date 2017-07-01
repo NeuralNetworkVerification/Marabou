@@ -972,13 +972,16 @@ void Tableau::storeState( TableauState &state ) const
     memcpy( state._lowerBounds, _lowerBounds, sizeof(double) *_n );
     memcpy( state._upperBounds, _upperBounds, sizeof(double) *_n );
 
+    // Basic variables
+    state._basicVariables = _basicVariables;
+
     // Store the assignments
     memcpy( state._basicAssignment, _basicAssignment, sizeof(double) *_m );
     memcpy( state._nonBasicAssignment, _nonBasicAssignment, sizeof(double) * ( _n - _m  ) );
 
     // Store the indices
     memcpy( state._basicIndexToVariable, _basicIndexToVariable, sizeof(unsigned) * _m );
-    memcpy( state._nonBasicIndexToVariable, _basicIndexToVariable, sizeof(unsigned) * ( _n - _m ) );
+    memcpy( state._nonBasicIndexToVariable, _nonBasicIndexToVariable, sizeof(unsigned) * ( _n - _m ) );
     memcpy( state._variableToIndex, _variableToIndex, sizeof(unsigned) * _n );
 
     // Store the basis factorization
@@ -997,19 +1000,23 @@ void Tableau::restoreState( const TableauState &state )
     memcpy( _lowerBounds, state._lowerBounds, sizeof(double) *_n );
     memcpy( _upperBounds, state._upperBounds, sizeof(double) *_n );
 
+    // Basic variables
+    _basicVariables = state._basicVariables;
+
     // Restore the assignments
     memcpy( _basicAssignment, state._basicAssignment, sizeof(double) *_m );
     memcpy( _nonBasicAssignment, state._nonBasicAssignment, sizeof(double) * ( _n - _m  ) );
 
     // Restore the indices
     memcpy( _basicIndexToVariable, state._basicIndexToVariable, sizeof(unsigned) * _m );
-    memcpy( _basicIndexToVariable, state._nonBasicIndexToVariable, sizeof(unsigned) * ( _n - _m ) );
+    memcpy( _nonBasicIndexToVariable, state._nonBasicIndexToVariable, sizeof(unsigned) * ( _n - _m ) );
     memcpy( _variableToIndex, state._variableToIndex, sizeof(unsigned) * _n );
 
     // Restore the basis factorization
     _basisFactorization->restoreFactorization( state._basisFactorization );
 
     // After a restoration, the assignment is valid
+    computeBasicStatus();
     _basicAssignmentStatus = ASSIGNMENT_VALID;
 }
 

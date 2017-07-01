@@ -16,6 +16,7 @@
 #include "MockErrno.h"
 #include "Tableau.h"
 #include "TableauRow.h"
+#include "TableauState.h"
 
 #include <string.h>
 
@@ -861,6 +862,133 @@ public:
         entry = row._row[3];
         TS_ASSERT_EQUALS( entry._var, 3U );
         TS_ASSERT_EQUALS( entry._coefficient, -1 );
+    }
+
+    void test_store_and_restore()
+    {
+        Tableau *tableau;
+
+        TS_ASSERT( tableau = new Tableau );
+
+        // Initialization steps
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        initializeTableauValues( *tableau );
+
+        for ( unsigned i = 0; i < 4; ++i )
+        {
+            TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( i, 1 ) );
+            TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( i, 10 ) );
+        }
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 4, 219 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 4, 228 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 5, 112 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 5, 114 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 6, 400 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 6, 402 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 4 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 5 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 6 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau() );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
+        entryStrategy->nextSelectResult = 2u;
+        TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable( entryStrategy ) );
+
+        double d[] = { -1, -1, -1 };
+        TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d ) );
+        TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
+        TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 5u );
+
+        TS_ASSERT( !tableau->isBasic( 2u ) );
+        TS_ASSERT( tableau->isBasic( 5u ) );
+
+        TS_ASSERT_EQUALS( tableau->getValue( 2u ), 1.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 5u ), 113.0 );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->performPivot() );
+
+        // Check some stuff
+
+        TS_ASSERT( tableau->isBasic( 2u ) );
+        TS_ASSERT( !tableau->isBasic( 5u ) );
+
+        TS_ASSERT_EQUALS( tableau->getValue( 5u ), 114.0 );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->computeAssignment() );
+
+        // Store the tableau
+        TableauState *tableauState;
+        TS_ASSERT( tableauState = new TableauState );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->storeState( *tableauState ) );
+
+        // Do some more stuff
+
+        TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
+        entryStrategy->nextSelectResult = 3u;
+        TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable( entryStrategy ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d ) );
+        TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 3u );
+        TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 4u );
+
+        TS_ASSERT( !tableau->isBasic( 3u ) );
+        TS_ASSERT( tableau->isBasic( 4u ) );
+
+        TS_ASSERT_EQUALS( tableau->getValue( 3u ), 1.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 4u ), 218.0 );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->performPivot() );
+
+        TS_ASSERT_DIFFERS( tableau->getValue( 3u ), 1.0 );
+        TS_ASSERT_DIFFERS( tableau->getValue( 4u ), 218.0 );
+
+        TS_ASSERT( tableau->isBasic( 3u ) );
+        TS_ASSERT( !tableau->isBasic( 4u ) );
+
+        // Now restore the tableau
+
+        TS_ASSERT_THROWS_NOTHING( tableau->restoreState( *tableauState ) );
+
+        // Do some more stuff again
+
+        TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
+        // entryStrategy->nextSelectResult = 3u;
+        // TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable( entryStrategy ) );
+
+        // TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d ) );
+        // TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 3u );
+        // TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 4u );
+
+        // TS_ASSERT( !tableau->isBasic( 3u ) );
+        // TS_ASSERT( tableau->isBasic( 4u ) );
+
+        // TS_ASSERT_EQUALS( tableau->getValue( 3u ), 1.0 );
+        // TS_ASSERT_EQUALS( tableau->getValue( 4u ), 218.0 );
+
+        // TS_ASSERT_THROWS_NOTHING( tableau->performPivot() );
+
+        // TS_ASSERT_DIFFERS( tableau->getValue( 3u ), 1.0 );
+        // TS_ASSERT_DIFFERS( tableau->getValue( 4u ), 218.0 );
+
+        // TS_ASSERT( tableau->isBasic( 3u ) );
+        // TS_ASSERT( !tableau->isBasic( 4u ) );
+
+        // Check that things are restored
+
+        TS_ASSERT( !tableau->isBasic( 3u ) );
+        TS_ASSERT( tableau->isBasic( 4u ) );
+
+        TS_ASSERT_EQUALS( tableau->getValue( 3u ), 1.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 4u ), 218.0 );
+
+        TS_ASSERT_THROWS_NOTHING( delete tableauState );
+        TS_ASSERT_THROWS_NOTHING( delete tableau );
     }
 };
 
