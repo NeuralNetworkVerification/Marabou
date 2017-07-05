@@ -34,16 +34,30 @@ bool Engine::solve()
         _tableau->computeAssignment();
         _tableau->computeBasicStatus();
 
+        // TODO: tighten bounds
+        // TODO: split if necessary
+
         _tableau->dumpAssignment();
 
         if ( allVarsWithinBounds() )
         {
-            // If all variables are within bounds and all PL
-            // constraints hold, we're done
+            // Check the status of the PL constraints
             extractPlAssignment();
+            collectViolatedPlConstraints();
+
+            // If all constraints are satisfied, we are done
             if ( allPlConstraintsHold() )
                 return true;
-            else if ( !fixViolatedPlConstraint() )
+
+            // We have violated piecewise-linear constraints.
+            // Select one to target
+            selectViolatedPlConstraint();
+
+            // Report the violated constraint to the SMT engine
+            reportPlViolation();
+
+            // Attempt to fix the constraint
+            if ( !fixViolatedPlConstraint() )
                 return false;
         }
         else
@@ -193,13 +207,22 @@ bool Engine::allVarsWithinBounds() const
     return !_tableau->existsBasicOutOfBounds();
 }
 
-bool Engine::allPlConstraintsHold()
+void Engine::collectViolatedPlConstraints()
 {
+    _violatedPlConstraints.clear();
     for ( const auto &constraint : _plConstraints )
         if ( !constraint->satisfied( _plVarAssignment ) )
-            return false;
+            _violatedPlConstraints.append( constraint );
+}
 
-    return true;
+bool Engine::allPlConstraintsHold()
+{
+    return _violatedPlConstraints.empty();
+}
+
+void Engine::selectViolatedPlConstraint()
+{
+    _plConstraintToFix = *_violatedPlConstraints.begin();
 }
 
 void Engine::extractPlAssignment()
@@ -211,6 +234,11 @@ void Engine::extractPlAssignment()
 const Set<unsigned> Engine::getVarsInPlConstraints()
 {
     return _plVarAssignment.keys();
+}
+
+void Engine::reportPlViolation()
+{
+    _smtCore.reportViolatedConstraint( _plConstraintToFix );
 }
 
 //

@@ -17,6 +17,7 @@
 #include "BlandsRule.h"
 #include "DantzigsRule.h"
 #include "Map.h"
+#include "SmtCore.h"
 
 class PiecewiseLinearConstraint;
 class InputQuery;
@@ -52,10 +53,41 @@ public:
     const Set<unsigned> getVarsInPlConstraints();
 
 private:
+    /*
+      The tableau object maintains the equations, assignments and bounds.
+    */
     AutoTableau _tableau;
+
+    /*
+      The existing piecewise-linear constraints.
+    */
     List<PiecewiseLinearConstraint *> _plConstraints;
+
+    /*
+      Piecewise linear constraints that are currently violated.
+    */
+    List<PiecewiseLinearConstraint *>_violatedPlConstraints;
+
+    /*
+      A single, violated PL constraint, selected for fixing.
+    */
+    PiecewiseLinearConstraint *_plConstraintToFix;
+
+    /*
+      Pivot selection strategies.
+    */
     BlandsRule _blandsRule;
     DantzigsRule _dantzigsRule;
+
+    /*
+      The SMT engine is in charge of case splitting.
+    */
+    SmtCore _smtCore;
+
+    /*
+      An auxiliary variable, used to collect the part of the
+      assignment that is relevant to the PL constraints.
+    */
     Map<unsigned, double> _plVarAssignment;
 
     /*
@@ -77,9 +109,19 @@ private:
     bool allVarsWithinBounds() const;
 
     /*
+      Collect all violated piecewise linear constraints.
+    */
+    void collectViolatedPlConstraints();
+
+    /*
       Return true iff all piecewise linear constraints hold.
     */
     bool allPlConstraintsHold();
+
+    /*
+      Select a currently-violated LP constraint for fixing
+    */
+    void selectViolatedPlConstraint();
 
     /*
       Extract the assignment of all variables that participate in a
@@ -87,6 +129,11 @@ private:
       has been computed.
     */
     void extractPlAssignment();
+
+    /*
+      Report the violated PL constraint to the SMT engine.
+    */
+    void reportPlViolation();
 };
 
 #endif // __Engine_h__
