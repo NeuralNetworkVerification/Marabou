@@ -185,15 +185,15 @@ public:
         PiecewiseLinearCaseSplit::Bound bound3 = *bound;
 
         TS_ASSERT_EQUALS( bound1._variable, b );
-        TS_ASSERT_EQUALS( bound1._upperBound, false );
+        TS_ASSERT_EQUALS( bound1._boundType, PiecewiseLinearCaseSplit::Bound::LOWER );
         TS_ASSERT_EQUALS( bound1._newBound, 0.0 );
 
         TS_ASSERT_EQUALS( bound2._variable, auxVar );
-        TS_ASSERT_EQUALS( bound2._upperBound, true );
+        TS_ASSERT_EQUALS( bound2._boundType, PiecewiseLinearCaseSplit::Bound::UPPER );
         TS_ASSERT_EQUALS( bound2._newBound, 0.0 );
 
         TS_ASSERT_EQUALS( bound3._variable, auxVar );
-        TS_ASSERT_EQUALS( bound3._upperBound, false );
+        TS_ASSERT_EQUALS( bound3._boundType, PiecewiseLinearCaseSplit::Bound::LOWER );
         TS_ASSERT_EQUALS( bound3._newBound, 0.0 );
 
         activeEquation = split->getEquation();
@@ -226,15 +226,15 @@ public:
         bound3 = *bound;
 
         TS_ASSERT_EQUALS( bound1._variable, b );
-        TS_ASSERT_EQUALS( bound1._upperBound, true );
+        TS_ASSERT_EQUALS( bound1._boundType, PiecewiseLinearCaseSplit::Bound::UPPER );
         TS_ASSERT_EQUALS( bound1._newBound, 0.0 );
 
         TS_ASSERT_EQUALS( bound2._variable, auxVar );
-        TS_ASSERT_EQUALS( bound2._upperBound, true );
+        TS_ASSERT_EQUALS( bound2._boundType, PiecewiseLinearCaseSplit::Bound::UPPER );
         TS_ASSERT_EQUALS( bound2._newBound, 0.0 );
 
         TS_ASSERT_EQUALS( bound3._variable, auxVar );
-        TS_ASSERT_EQUALS( bound3._upperBound, false );
+        TS_ASSERT_EQUALS( bound3._boundType, PiecewiseLinearCaseSplit::Bound::LOWER );
         TS_ASSERT_EQUALS( bound3._newBound, 0.0 );
 
         inactiveEquation = split->getEquation();

@@ -21,9 +21,14 @@ public:
     struct Bound
     {
     public:
-        Bound( unsigned variable, bool upperBound, double newBound )
+        enum Type {
+            LOWER = 0,
+            UPPER = 1,
+        };
+
+        Bound( unsigned variable, Bound::Type boundType, double newBound )
             : _variable( variable )
-            , _upperBound( upperBound )
+            , _boundType( boundType )
             , _newBound( newBound )
         {
         }
@@ -34,9 +39,9 @@ public:
         unsigned _variable;
 
         /*
-          True iff the upper bound is being tightened.
+          Indicates whether this is an upper or a lower bound.
         */
-        bool _upperBound;
+        Bound::Type _boundType;
 
         /*
           Value of the new bound.
