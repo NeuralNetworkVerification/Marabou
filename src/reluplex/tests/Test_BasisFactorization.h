@@ -221,6 +221,54 @@ public:
         TS_ASSERT_THROWS_NOTHING( basis.forwardTransformation( a3, d3 ) );
         TS_ASSERT( memcmp( d3other, d3, sizeof(double) * 3 ) );
     }
+		void test_factorization_pivot()//pivot
+	{
+		BasisFactorization basis ( 3 );
+		int nsq = 9;
+	    int n = 3;
+	    queue <double*> LP;
+	    double A[nsq]={0.,1.,0.,
+						1.,8.,0.,
+						4.,-3.,3.};
+
+		double U[nsq]={0.,1.,0.,
+						1.,8.,0.,
+						4.,-3.,3.};
+
+		basis.factorization ( n, A, LP );
+		double temp[nsq] = {0.};
+		while (!LP.empty()){
+			basis.matrixMultiply(n, LP.front(), U, temp);
+			LP.pop();
+			memcpy(U, temp, sizeof(double) * 9);
+		}
+		TS_ASSERT_SAME_DATA ( A, U, sizeof(double) * 9 );
+	}
+	void test_factorization_textbook()//textbook
+	{
+		BasisFactorization basis ( 4 );
+        int nsq = 16;
+        int n = 4;
+        queue <double*> LP;
+        double A[nsq]= {1., 3., -2., 4.,
+						1., 5., -1., 5., 
+						1., 3., -3., 6.,
+						-1., -3., 3., -8.};
+
+        double U[nsq]= {1., 3., -2., 4.,
+						1., 5., -1., 5., 
+						1., 3., -3., 6.,
+						-1., -3., 3., -8.};
+
+        basis.factorization ( n, A, LP );
+        double temp[nsq] = {0.};
+        while (!LP.empty()){
+            basis.matrixMultiply(n, LP.front(), U, temp);
+            LP.pop();                   
+            memcpy(U, temp, sizeof(double) * 16);                
+        }                                                                               
+        TS_ASSERT_SAME_DATA ( A, U, sizeof(double) * 16 );
+	}
 };
 
 //

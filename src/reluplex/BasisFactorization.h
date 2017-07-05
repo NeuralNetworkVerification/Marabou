@@ -14,6 +14,9 @@
 #define __BasisFactorization_h__
 
 #include "List.h"
+#include <queue>
+
+using std::queue;
 
 class EtaMatrix;
 
@@ -78,11 +81,15 @@ public:
     */
     void storeFactorization( BasisFactorization *other ) const;
     void restoreFactorization( const BasisFactorization *other );
+    void factorization ( int d, double *S, queue<double*> &LP );
 
+    void matrixMultiply ( int d, const double *L, const double *B, double *R);
+	void coutMatrix ( int d, const double *m );
 private:
     unsigned _m;
     double *_B0;
     List<EtaMatrix *> _etas;
+    void rowSwap ( int d, int p, int n, double *A);
 };
 
 #endif // __BasisFactorization_h__
