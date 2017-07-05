@@ -19,6 +19,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <iomanip>
+#include <iostream>
 
 BasisFactorization::BasisFactorization( unsigned m )
     : _m( m )
@@ -142,8 +144,64 @@ void BasisFactorization::restoreFactorization( const BasisFactorization *other )
     for ( const auto &eta : other->_etas )
         _etas.append( new EtaMatrix( eta->_m, eta->_columnIndex, eta->_column ) );
 }
+void BasisFactorization::coutMatrix( int d, const double*m ){
+   std::cout<<'\n';
+   for(int i=0;i<d;++i){
+      for(int j=0;j<d;++j)std::cout<<std::setw(14)<<m[i*d+j];
+      std::cout<<'\n';
+   }
+}
 
-//
+void BasisFactorization::matrixMultiply ( int d, const double *L, const double *B, double *R){
+	for (int n = 0; n < d; ++n){ //columns of U
+		for (int i = 0; i < d; ++i){ // rows of L
+			double sum = 0.;
+			for (int k = 0; k < d; ++k) //can be optimized by replacing d with i + 1
+				sum += L[i*d+k] * B[n+k*d];
+			R[i*d+n]=sum;
+		}
+	}
+}
+
+void BasisFactorization::rowSwap ( int d, int p, int n, double *A){
+    int buf = 0;
+    for (int i = 0; i < d; i++){
+	    buf = A[p*d+i];
+	    A[p*d+i] = A[n*d+i];
+        A[n*d+i] = buf;
+    }
+}
+
+void BasisFactorization::factorization( int d, double*S, queue <double*> &LP){   
+	for (int i = 0; i < d; ++i){
+		double *P = new double[d*d];
+		double *L = new double[d*d];
+		std::fill_n (P, d*d, 0);
+		std::fill_n (L, d*d, 0);
+		for (int a = 0; a < d; ++a){
+				P[a*d+a] = 1.;  
+				L[a*d+a] = 1.;
+		}
+		if (S[i*d+i] == 0){
+			int tempi = i;
+			while (S[tempi*d+i] == 0) tempi++;
+			rowSwap(d, i, tempi, S);
+			rowSwap(d, i, tempi, P);
+		}
+		double div = S[i*d+i];
+		for (int j = i; j < d; ++j){
+			if (j == i) L[j*d+i] = 1/div;
+			else {
+				L[j*d+i] = -S[i+j*d]/div;   
+			}
+		}
+		LP.push(P);
+		LP.push(L);
+		double R[d*d];
+		matrixMultiply( d, L, S, R);
+		memcpy(S, R, sizeof(double)*d*d);
+	}
+}
 // Local Variables:
 // compile-command: "make -C .. "
 // tags-file-name: "../TAGS"
