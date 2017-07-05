@@ -27,6 +27,7 @@ SOURCES += \
 	InputQuery.cpp \
 	PiecewiseLinearCaseSplit.cpp \
 	ReluConstraint.cpp \
+	SmtCore.cpp \
 	Tableau.cpp \
 	TableauRow.cpp \
 	TableauState.cpp \

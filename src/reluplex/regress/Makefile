@@ -31,6 +31,7 @@ SOURCES += \
 	InputQuery.cpp \
 	PiecewiseLinearCaseSplit.cpp \
 	ReluConstraint.cpp \
+	SmtCore.cpp \
 	Tableau.cpp \
 	TableauFactory.cpp \
 	TableauRow.cpp \
