@@ -94,10 +94,19 @@ public:
     unsigned variableToIndex( unsigned index ) const;
 
     /*
-      Set the lower/upper bounds for a variable
+      Set the lower/upper bounds for a variable. These functions are
+      meant to be used as part of the initialization of the tableau.
     */
     void setLowerBound( unsigned variable, double value );
     void setUpperBound( unsigned variable, double value );
+
+    /*
+      Tighten the lower/upper bound for a variable. These functions
+      are meant to be used during the solution process, when a tighter
+      bound has been discovered.
+    */
+    void tightenLowerBound( unsigned variable, double value );
+    void tightenUpperBound( unsigned variable, double value );
 
     /*
       Return the current status of the basic variable

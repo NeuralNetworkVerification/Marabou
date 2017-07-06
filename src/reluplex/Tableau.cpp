@@ -1021,6 +1021,18 @@ void Tableau::restoreState( const TableauState &state )
     _basicAssignmentStatus = ASSIGNMENT_VALID;
 }
 
+void Tableau::tightenLowerBound( unsigned // variable
+                                 , double // value
+                                 )
+{
+}
+
+void Tableau::tightenUpperBound( unsigned // variable
+                                 , double // value
+                                 )
+{
+}
+
 //
 // Local Variables:
 // compile-command: "make -C .. "

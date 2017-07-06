@@ -242,16 +242,14 @@ void Engine::reportPlViolation()
     _smtCore.reportViolatedConstraint( _plConstraintToFix );
 }
 
-void Engine::tightenLowerBound( unsigned // variable
-                        , double // bound
-                        )
+void Engine::tightenLowerBound( unsigned variable, double bound )
 {
+    _tableau->tightenLowerBound( variable, bound );
 }
 
-void Engine::tightenUpperBound( unsigned // variable
-                        , double // bound
-                        )
+void Engine::tightenUpperBound( unsigned variable, double bound )
 {
+    _tableau->tightenUpperBound( variable, bound );
 }
 
 void Engine::addNewEquation( const Equation &// equation

@@ -33,6 +33,8 @@ public:
     virtual double getValue( unsigned variable ) = 0;
     virtual void setLowerBound( unsigned variable, double value ) = 0;
     virtual void setUpperBound( unsigned variable, double value ) = 0;
+    virtual void tightenLowerBound( unsigned variable, double value ) = 0;
+    virtual void tightenUpperBound( unsigned variable, double value ) = 0;
     virtual unsigned getBasicStatus( unsigned basic ) = 0;
     virtual bool existsBasicOutOfBounds() const = 0;
     virtual void computeBasicStatus() = 0;

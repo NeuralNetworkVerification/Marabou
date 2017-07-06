@@ -190,6 +190,14 @@ public:
     void restoreState( const TableauState &/* state */ )
     {
     }
+
+    void tightenLowerBound( unsigned /* variable */, double /* value */ )
+    {
+    }
+
+    void tightenUpperBound( unsigned /* variable */, double /* value */ )
+    {
+    }
 };
 
 #endif // __MockTableau_h__
