@@ -12,6 +12,7 @@
 
 #include "IEngine.h"
 #include "SmtCore.h"
+#include "TableauState.h"
 
 SmtCore::SmtCore( IEngine *engine )
     : _engine( engine )
@@ -40,6 +41,10 @@ bool SmtCore::needToSplit() const
 
 void SmtCore::performSplit()
 {
+    // First, obtain the current state of the tableau
+    TableauState *stateBeforeSplits = new TableauState;
+    _engine->storeTableauState( *stateBeforeSplits );
+
     // Obtain the splits
     List<PiecewiseLinearCaseSplit> splits = _constraintForSplitting->getCaseSplits();
 
@@ -55,7 +60,57 @@ void SmtCore::performSplit()
             _engine->tightenUpperBound( bound._variable, bound._newBound );
     }
 
-    // Store the remaining splits for later
+    // Store the remaining splits on the stack, for later
+    StackEntry stackEntry;
+    stackEntry._tableauState = stateBeforeSplits;
+    ++split;
+    while ( split != splits.end() )
+    {
+        stackEntry._splits.append( *split );
+        ++split;
+    }
+
+    _stack.push( stackEntry );
+}
+
+unsigned SmtCore::getStackDepth() const
+{
+    return _stack.size();
+}
+
+bool SmtCore::popSplit()
+{
+    if ( _stack.empty() )
+        return false;
+
+    StackEntry &stackEntry( _stack.top() );
+
+    // Restore the state of the tableau
+    _engine->restoreTableauState( *stackEntry._tableauState );
+
+    // Apply the new split and erase it from the list
+    auto split = stackEntry._splits.begin();
+    applySplit( *split );
+    stackEntry._splits.erase( split );
+
+    // If there are no splits left, pop this entry
+    if ( stackEntry._splits.size() == 0 )
+        _stack.pop();
+
+    return true;
+}
+
+void SmtCore::applySplit( const PiecewiseLinearCaseSplit &split )
+{
+    _engine->addNewEquation( split.getEquation() );
+    List<PiecewiseLinearCaseSplit::Bound> bounds = split.getBoundTightenings();
+    for ( const auto &bound : bounds )
+    {
+        if ( bound._boundType == PiecewiseLinearCaseSplit::Bound::LOWER )
+            _engine->tightenLowerBound( bound._variable, bound._newBound );
+        else
+            _engine->tightenUpperBound( bound._variable, bound._newBound );
+    }
 }
 
 //

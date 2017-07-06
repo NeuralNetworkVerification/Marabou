@@ -75,14 +75,16 @@ public:
         lastEquations.append( equation );
     }
 
-    void storeTableauState( TableauState &// state
-                            ) const
+    mutable TableauState *lastStoredState;
+    void storeTableauState( TableauState &state ) const
     {
+        lastStoredState = &state;
     }
 
-    void restoreTableauState( const TableauState &// state
-                              )
+    const TableauState *lastRestoredState;
+    void restoreTableauState( const TableauState &state )
     {
+        lastRestoredState = &state;
     }
 };
 

@@ -44,16 +44,33 @@ public:
     */
     void performSplit();
 
+    /*
+      Pop an old split from the stack, and perform a new split as
+      needed. Return true if successful, false if the stack is empty.
+    */
+    bool popSplit();
+
+    /*
+      The current stack depth.
+    */
+    unsigned getStackDepth() const;
+
 private:
     /*
-      A stack entry is just a list of case splits to perform.
+      A stack entry is the tableau state before the split, plus a list
+      of the case splits to perform.
     */
-    typedef List<PiecewiseLinearCaseSplit> Splits;
+    struct StackEntry
+    {
+    public:
+        List<PiecewiseLinearCaseSplit> _splits;
+        TableauState *_tableauState;
+    };
 
     /*
       The case-split stack.
     */
-    Stack<Splits> _stack;
+    Stack<StackEntry> _stack;
 
     /*
       The engine.
@@ -70,6 +87,11 @@ private:
       Count how many times each constraint has been violated.
     */
     Map<PiecewiseLinearConstraint *, unsigned> _constraintToViolationCount;
+
+    /*
+      Apply a case split.
+    */
+    void applySplit( const PiecewiseLinearCaseSplit &split );
 };
 
 #endif // __SmtCore_h__

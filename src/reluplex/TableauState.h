@@ -15,6 +15,8 @@
 
 #include "Set.h"
 
+class BasisFactorization;
+
 class TableauState
 {
     /*

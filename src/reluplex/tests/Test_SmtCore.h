@@ -147,10 +147,15 @@ public:
         for ( unsigned i = 0; i < SmtCore::SPLIT_THRESHOLD; ++i )
             smtCore.reportViolatedConstraint( &constraint );
 
-        TS_ASSERT( smtCore.needToSplit() );
-        TS_ASSERT_THROWS_NOTHING( smtCore.performSplit() );
+        engine->lastStoredState = NULL;
+        engine->lastRestoredState = NULL;
 
-        // Check that Split1 was performed
+        TS_ASSERT( smtCore.needToSplit() );
+        TS_ASSERT_EQUALS( smtCore.getStackDepth(), 0U );
+        TS_ASSERT_THROWS_NOTHING( smtCore.performSplit() );
+        TS_ASSERT_EQUALS( smtCore.getStackDepth(), 1U );
+
+        // Check that Split1 was performed and tableau state was stored
         TS_ASSERT_EQUALS( engine->lastLowerBounds.size(), 1U );
         TS_ASSERT_EQUALS( engine->lastLowerBounds.begin()->_variable, 1U );
         TS_ASSERT_EQUALS( engine->lastLowerBounds.begin()->_bound, 3.0 );
@@ -161,6 +166,71 @@ public:
 
         TS_ASSERT_EQUALS( engine->lastEquations.size(), 1U );
         TS_ASSERT_EQUALS( *engine->lastEquations.begin(), equation1 );
+
+        TS_ASSERT( engine->lastStoredState );
+        TS_ASSERT( !engine->lastRestoredState );
+
+        TableauState *originalState = engine->lastStoredState;
+        engine->lastStoredState = NULL;
+        engine->lastLowerBounds.clear();
+        engine->lastUpperBounds.clear();
+        engine->lastEquations.clear();
+
+        // Pop Split1, check that the tableau was restored and that
+        // a Split2 was performed
+        TS_ASSERT( smtCore.popSplit() );
+        TS_ASSERT_EQUALS( smtCore.getStackDepth(), 1U );
+
+        TS_ASSERT_EQUALS( engine->lastRestoredState, originalState );
+        TS_ASSERT( !engine->lastStoredState );
+        engine->lastRestoredState = NULL;
+
+        TS_ASSERT_EQUALS( engine->lastLowerBounds.size(), 0U );
+
+        TS_ASSERT_EQUALS( engine->lastUpperBounds.size(), 2U );
+        auto it = engine->lastUpperBounds.begin();
+        TS_ASSERT_EQUALS( it->_variable, 2U );
+        TS_ASSERT_EQUALS( it->_bound, 13.0 );
+        ++it;
+        TS_ASSERT_EQUALS( it->_variable, 3U );
+        TS_ASSERT_EQUALS( it->_bound, 25.0 );
+
+        TS_ASSERT_EQUALS( engine->lastEquations.size(), 1U );
+        TS_ASSERT_EQUALS( *engine->lastEquations.begin(), equation2 );
+
+        engine->lastRestoredState = NULL;
+        engine->lastLowerBounds.clear();
+        engine->lastUpperBounds.clear();
+        engine->lastEquations.clear();
+
+        // Pop Split2, check that the tableau was restored and that
+        // a Split3 was performed
+        TS_ASSERT( smtCore.popSplit() );
+        TS_ASSERT_EQUALS( smtCore.getStackDepth(), 0U );
+
+        TS_ASSERT_EQUALS( engine->lastRestoredState, originalState );
+        TS_ASSERT( !engine->lastStoredState );
+        engine->lastRestoredState = NULL;
+
+        TS_ASSERT_EQUALS( engine->lastLowerBounds.size(), 1U );
+        it = engine->lastLowerBounds.begin();
+        TS_ASSERT_EQUALS( it->_variable, 14U );
+        TS_ASSERT_EQUALS( it->_bound, 2.3 );
+
+        TS_ASSERT_EQUALS( engine->lastUpperBounds.size(), 0U );
+
+        TS_ASSERT_EQUALS( engine->lastEquations.size(), 1U );
+        TS_ASSERT_EQUALS( *engine->lastEquations.begin(), equation1 );
+
+        engine->lastRestoredState = NULL;
+        engine->lastLowerBounds.clear();
+        engine->lastUpperBounds.clear();
+        engine->lastEquations.clear();
+
+        // Final pop
+        TS_ASSERT( !smtCore.popSplit() );
+        TS_ASSERT( !engine->lastRestoredState );
+        TS_ASSERT_EQUALS( smtCore.getStackDepth(), 0U );
     }
 };
 
