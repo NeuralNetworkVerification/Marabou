@@ -809,8 +809,6 @@ public:
         // Check equations after the pivot
         TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 0, &row ) );
 
-        row.dump();
-
         entry = row._row[0];
         TS_ASSERT_EQUALS( entry._var, 0U );
         TS_ASSERT_EQUALS( entry._coefficient, -2 );

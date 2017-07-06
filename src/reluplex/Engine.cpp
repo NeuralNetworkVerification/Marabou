@@ -37,7 +37,7 @@ bool Engine::solve()
         // TODO: tighten bounds
         // TODO: split if necessary
 
-        _tableau->dumpAssignment();
+        // _tableau->dumpAssignment();
 
         if ( allVarsWithinBounds() )
         {
