@@ -242,6 +242,33 @@ void Engine::reportPlViolation()
     _smtCore.reportViolatedConstraint( _plConstraintToFix );
 }
 
+void Engine::tightenLowerBound( unsigned // variable
+                        , double // bound
+                        )
+{
+}
+
+void Engine::tightenUpperBound( unsigned // variable
+                        , double // bound
+                        )
+{
+}
+
+void Engine::addNewEquation( const Equation &// equation
+                     )
+{
+}
+
+void Engine::storeTableauState( TableauState &state ) const
+{
+    _tableau->storeState( state );
+}
+
+void Engine::restoreTableauState( const TableauState &state )
+{
+    _tableau->restoreState( state );
+}
+
 //
 // Local Variables:
 // compile-command: "make -C .. "

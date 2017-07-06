@@ -13,11 +13,30 @@
 #ifndef __IEngine_h__
 #define __IEngine_h__
 
+class Equation;
+class TableauState;
 
 class IEngine
 {
 public:
     virtual ~IEngine() {};
+
+    /*
+      Methods for tightening lower/upper variable bounds.
+    */
+    virtual void tightenLowerBound( unsigned variable, double bound ) = 0;
+    virtual void tightenUpperBound( unsigned variable, double bound ) = 0;
+
+    /*
+      Add a new equation to the tableau.
+    */
+    virtual void addNewEquation( const Equation &equation ) = 0;
+
+    /*
+      Methods for storing and restoring the tableau.
+    */
+    virtual void storeTableauState( TableauState &state ) const = 0;
+    virtual void restoreTableauState( const TableauState &state ) = 0;
 };
 
 #endif // __IEngine_h__

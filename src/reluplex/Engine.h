@@ -53,6 +53,23 @@ public:
      */
     const Set<unsigned> getVarsInPlConstraints();
 
+    /*
+      Methods for tightening lower/upper variable bounds.
+    */
+    void tightenLowerBound( unsigned variable, double bound );
+    void tightenUpperBound( unsigned variable, double bound );
+
+    /*
+      Add a new equation to the Tableau.
+    */
+    void addNewEquation( const Equation &equation );
+
+    /*
+      Methods for storing and restoring the tableau.
+    */
+    void storeTableauState( TableauState &state ) const;
+    void restoreTableauState( const TableauState &state );
+
 private:
     /*
       The tableau object maintains the equations, assignments and bounds.
