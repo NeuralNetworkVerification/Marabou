@@ -27,7 +27,7 @@ public:
       candidates. The candidates are given using the internal indices
       of the tableau, i.e. are in the range [1,n-m].
     */
-    virtual unsigned select( const List<unsigned> &candidates, const ITableau &tableau ) = 0;
+    virtual bool select( ITableau &tableau ) = 0;
 };
 
 #endif // __EntrySelectionStrategy_h__

@@ -13,7 +13,7 @@
 #ifndef __ITableau_h__
 #define __ITableau_h__
 
-#include "Set.h"
+#include "List.h"
 
 class EntrySelectionStrategy;
 class Equation;
@@ -63,9 +63,9 @@ public:
     virtual void tightenUpperBound( unsigned variable, double value ) = 0;
     virtual unsigned getBasicStatus( unsigned basic ) = 0;
     virtual bool existsBasicOutOfBounds() const = 0;
+    virtual void setEnteringVariable( unsigned nonBasic ) = 0;
     virtual void computeBasicStatus() = 0;
     virtual void computeBasicStatus( unsigned basic ) = 0;
-    virtual bool pickEnteringVariable( EntrySelectionStrategy *strategy ) = 0;
     virtual bool eligibleForEntry( unsigned nonBasic ) = 0;
     virtual unsigned getEnteringVariable() const = 0;
     virtual void pickLeavingVariable() = 0;
@@ -77,6 +77,9 @@ public:
     virtual bool isBasic( unsigned variable ) const = 0;
     virtual void setNonBasicAssignment( unsigned variable, double value ) = 0;
     virtual void computeCostFunction() = 0;
+    virtual void getCandidates(List<unsigned> &candidates) = 0;
+    virtual void computeMultipliers() = 0;
+    virtual void computeReducedCost(unsigned nonBasic) = 0;
     virtual const double *getCostFunction() const = 0;
     virtual void dumpCostFunction() const = 0;
     virtual void computeD() = 0;

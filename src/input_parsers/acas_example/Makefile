@@ -21,6 +21,7 @@ SOURCES += \
 	BasisFactorization.cpp \
 	BlandsRule.cpp \
 	DantzigsRule.cpp \
+	NestedDantzigsRule.cpp \
 	Engine.cpp \
 	Equation.cpp \
 	EtaMatrix.cpp \

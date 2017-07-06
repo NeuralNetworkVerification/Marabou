@@ -16,6 +16,7 @@
 #include "AutoTableau.h"
 #include "BlandsRule.h"
 #include "DantzigsRule.h"
+#include "NestedDantzigsRule.h"
 #include "IEngine.h"
 #include "Map.h"
 #include "SmtCore.h"
@@ -97,6 +98,7 @@ private:
     */
     BlandsRule _blandsRule;
     DantzigsRule _dantzigsRule;
+    NestedDantzigsRule _nestedDantzigsRule;
 
     /*
       The SMT engine is in charge of case splitting.

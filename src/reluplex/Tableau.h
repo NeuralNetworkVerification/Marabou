@@ -54,6 +54,11 @@ public:
     void setEntryValue( unsigned row, unsigned column, double value );
 
     /*
+      Set which variable will enter the basis
+    */
+    void setEnteringVariable( unsigned nonBasic );
+
+    /*
       Set the values of the right hand side vector, b, of size m.
       Set either the whole vector or a specific entry
     */
@@ -142,7 +147,6 @@ public:
     /*
       Picks the entering variable.
     */
-    bool pickEnteringVariable( EntrySelectionStrategy *strategy );
     bool eligibleForEntry( unsigned nonBasic );
     unsigned getEnteringVariable() const;
     bool nonBasicCanIncrease( unsigned nonBasic ) const;
@@ -194,6 +198,8 @@ public:
       Compute the cost function
     */
     void computeCostFunction();
+    void getCandidates(List<unsigned>& candidates);
+    void computeMultipliers();
     const double *getCostFunction() const;
     void dumpCostFunction() const;
 
@@ -374,6 +380,7 @@ private:
     */
     void computeBasicCosts();
     void computeMultipliers( double *rowCoefficients );
+    void computeReducedCost( unsigned nonBasic );
     void computeReducedCosts();
 
     /*

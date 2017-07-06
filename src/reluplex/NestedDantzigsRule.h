@@ -1,8 +1,8 @@
 /*********************                                                        */
-/*! \file DantzigsRule.h
+/*! \file NestedDantzigsRule.h
 ** \verbatim
 ** Top contributors (to current version):
-**   Guy Katz
+**   Duligur Ibeling
 ** This file is part of the Marabou project.
 ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
 ** in the top-level source directory) and their institutional affiliations.
@@ -10,22 +10,22 @@
 ** directory for licensing information.\endverbatim
 **/
 
-#ifndef __DantzigsRule_h__
-#define __DantzigsRule_h__
+#ifndef __NestedDantzigsRule_h__
+#define __NestedDantzigsRule_h__
 
+#include "Set.h"
 #include "EntrySelectionStrategy.h"
 
-class DantzigsRule : public EntrySelectionStrategy
+class NestedDantzigsRule : public EntrySelectionStrategy
 {
 public:
-    /*
-      Apply Dantzig's rule: choose the candidate associated with the
-      largest coefficient (in absolute value) in the cost function.
-    */
     bool select( ITableau &tableau );
+    void initialize( const ITableau &tableau );
+private:
+	Set<unsigned> _J;
 };
 
-#endif // __DantzigsRule_h__
+#endif // __DevexRule_h__
 
 //
 // Local Variables:

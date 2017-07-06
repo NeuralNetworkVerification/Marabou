@@ -14,10 +14,14 @@
 #include "ITableau.h"
 #include "ReluplexError.h"
 
-unsigned BlandsRule::select( const List<unsigned> &candidates, const ITableau &tableau )
+bool BlandsRule::select( ITableau &tableau )
 {
+    tableau.computeCostFunction();
+    List<unsigned> candidates;
+    tableau.getCandidates(candidates);
+    
     if ( candidates.empty() )
-        throw ReluplexError( ReluplexError::NO_AVAILABLE_CANDIDATES, "BlandsRule" );
+        return false;
 
     List<unsigned>::const_iterator it = candidates.begin();
     unsigned minIndex = *it;
@@ -37,7 +41,8 @@ unsigned BlandsRule::select( const List<unsigned> &candidates, const ITableau &t
         ++it;
     }
 
-    return minIndex;
+    tableau.setEnteringVariable(minIndex);
+    return true;
 }
 
 //

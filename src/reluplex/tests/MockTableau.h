@@ -43,6 +43,24 @@ public:
 	bool wasCreated;
 	bool wasDiscarded;
 
+    List<unsigned> mockCandidates;
+    unsigned mockEnteringVariable;
+
+    void getCandidates(List<unsigned> &candidates)
+    {
+        candidates = mockCandidates;
+    }
+
+    void setEnteringVariable( unsigned nonBasic )
+    {
+        mockEnteringVariable = nonBasic;
+    }
+
+    unsigned getEnteringVariable()
+    {
+        return mockEnteringVariable;
+    }
+
 	void mockConstructor()
 	{
 		TS_ASSERT( !wasCreated );
@@ -139,6 +157,8 @@ public:
     bool isBasic( unsigned /* variable */ ) const { return false; }
     void setNonBasicAssignment( unsigned /* variable */, double /* value */ ) {}
     void computeCostFunction() {}
+    void computeMultipliers() {}
+    void computeReducedCost (unsigned /* variable */) {}
 
     double *nextCostFunction;
     const double *getCostFunction() const
