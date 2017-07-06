@@ -10,6 +10,7 @@
  ** directory for licensing information.\endverbatim
  **/
 
+#include "IEngine.h"
 #include "SmtCore.h"
 
 SmtCore::SmtCore( IEngine *engine )
@@ -39,6 +40,22 @@ bool SmtCore::needToSplit() const
 
 void SmtCore::performSplit()
 {
+    // Obtain the splits
+    List<PiecewiseLinearCaseSplit> splits = _constraintForSplitting->getCaseSplits();
+
+    // Perform the first split: add bounds and equations
+    List<PiecewiseLinearCaseSplit>::iterator split = splits.begin();
+    _engine->addNewEquation( split->getEquation() );
+    List<PiecewiseLinearCaseSplit::Bound> bounds = split->getBoundTightenings();
+    for ( const auto &bound : bounds )
+    {
+        if ( bound._boundType == PiecewiseLinearCaseSplit::Bound::LOWER )
+            _engine->tightenLowerBound( bound._variable, bound._newBound );
+        else
+            _engine->tightenUpperBound( bound._variable, bound._newBound );
+    }
+
+    // Store the remaining splits for later
 }
 
 //

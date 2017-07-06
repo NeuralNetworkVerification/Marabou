@@ -28,6 +28,8 @@ public:
 
         double _coefficient;
         unsigned _variable;
+
+        bool operator==( const Addend &other ) const;
     };
 
     void addAddend( double coefficient, unsigned variable );
@@ -37,6 +39,8 @@ public:
     List<Addend> _addends;
     double _scalar;
     unsigned _auxVariable;
+
+    bool operator==( const Equation &other ) const;
 };
 
 #endif // __Equation_h__

@@ -14,6 +14,7 @@
 
 #include "MockEngine.h"
 #include "MockErrno.h"
+#include "PiecewiseLinearConstraint.h"
 #include "ReluConstraint.h"
 #include "SmtCore.h"
 
@@ -30,6 +31,37 @@ public:
     MockForSmtCore *mock;
     MockEngine *engine;
 
+    class MockConstraint : public PiecewiseLinearConstraint
+    {
+    public:
+        bool participatingVariable( unsigned ) const
+        {
+            return true;
+        }
+
+        List<unsigned> getParticiatingVariables() const
+        {
+            return List<unsigned>();
+        }
+
+        bool satisfied( const Map<unsigned, double> & ) const
+        {
+            return true;
+        }
+
+
+        List<PiecewiseLinearConstraint::Fix> getPossibleFixes( const Map<unsigned, double> & ) const
+        {
+            return List<PiecewiseLinearConstraint::Fix>();
+        }
+
+        List<PiecewiseLinearCaseSplit> nextSplits;
+        List<PiecewiseLinearCaseSplit> getCaseSplits() const
+        {
+            return nextSplits;
+        }
+    };
+
     void setUp()
     {
         TS_ASSERT( mock = new MockForSmtCore );
@@ -44,21 +76,91 @@ public:
 
     void test_need_to_split()
     {
-        ReluConstraint contraint1( 1, 2 );
-        ReluConstraint contraint2( 3, 4 );
+        ReluConstraint constraint1( 1, 2 );
+        ReluConstraint constraint2( 3, 4 );
 
         SmtCore smtCore( engine );
 
         for ( unsigned i = 0; i < SmtCore::SPLIT_THRESHOLD - 1; ++i )
         {
-            smtCore.reportViolatedConstraint( &contraint1 );
+            smtCore.reportViolatedConstraint( &constraint1 );
             TS_ASSERT( !smtCore.needToSplit() );
-            smtCore.reportViolatedConstraint( &contraint2 );
+            smtCore.reportViolatedConstraint( &constraint2 );
             TS_ASSERT( !smtCore.needToSplit() );
         }
 
-        smtCore.reportViolatedConstraint( &contraint2 );
+        smtCore.reportViolatedConstraint( &constraint2 );
         TS_ASSERT( smtCore.needToSplit() );
+    }
+
+    void test_perform_split()
+    {
+        SmtCore smtCore( engine );
+
+        MockConstraint constraint;
+
+        // Split 1
+        PiecewiseLinearCaseSplit split1;
+        PiecewiseLinearCaseSplit::Bound bound1( 1, PiecewiseLinearCaseSplit::Bound::LOWER, 3.0 );
+        PiecewiseLinearCaseSplit::Bound bound2( 1, PiecewiseLinearCaseSplit::Bound::UPPER, 5.0 );
+
+        Equation equation1;
+        equation1.addAddend( 1, 0 );
+        equation1.addAddend( 2, 1 );
+        equation1.addAddend( -1, 2 );
+        equation1.addAddend( 1, 3 );
+        equation1.setScalar( 11 );
+        equation1.markAuxiliaryVariable( 3 );
+
+        split1.storeBoundTightening( bound1 );
+        split1.storeBoundTightening( bound2 );
+        split1.setEquation( equation1 );
+
+        // Split 2
+        PiecewiseLinearCaseSplit split2;
+        PiecewiseLinearCaseSplit::Bound bound3( 2, PiecewiseLinearCaseSplit::Bound::UPPER, 13.0 );
+        PiecewiseLinearCaseSplit::Bound bound4( 3, PiecewiseLinearCaseSplit::Bound::UPPER, 25.0 );
+
+        Equation equation2;
+        equation2.addAddend( -3, 0 );
+        equation2.addAddend( 3, 1 );
+        equation2.addAddend( 1, 4 );
+        equation2.setScalar( -5 );
+        equation2.markAuxiliaryVariable( 4 );
+
+        split2.storeBoundTightening( bound3 );
+        split2.storeBoundTightening( bound4 );
+        split2.setEquation( equation2 );
+
+        // Split 3
+        PiecewiseLinearCaseSplit split3;
+        PiecewiseLinearCaseSplit::Bound bound5( 14, PiecewiseLinearCaseSplit::Bound::LOWER, 2.3 );
+
+        split3.storeBoundTightening( bound5 );
+        split3.setEquation( equation1 );
+
+        // Store the splits
+        constraint.nextSplits.append( split1 );
+        constraint.nextSplits.append( split2 );
+        constraint.nextSplits.append( split3 );
+
+        for ( unsigned i = 0; i < SmtCore::SPLIT_THRESHOLD; ++i )
+            smtCore.reportViolatedConstraint( &constraint );
+
+        TS_ASSERT( smtCore.needToSplit() );
+        TS_ASSERT_THROWS_NOTHING( smtCore.performSplit() );
+
+        // Check that Split1 was performed
+        TS_ASSERT_EQUALS( engine->lastLowerBounds.size(), 1U );
+        TS_ASSERT_EQUALS( engine->lastLowerBounds.begin()->_variable, 1U );
+        TS_ASSERT_EQUALS( engine->lastLowerBounds.begin()->_bound, 3.0 );
+
+        TS_ASSERT_EQUALS( engine->lastUpperBounds.size(), 1U );
+        TS_ASSERT_EQUALS( engine->lastUpperBounds.begin()->_variable, 1U );
+        TS_ASSERT_EQUALS( engine->lastUpperBounds.begin()->_bound, 5.0 );
+
+        TS_ASSERT_EQUALS( engine->lastEquations.size(), 1U );
+        TS_ASSERT_EQUALS( *engine->lastEquations.begin(), equation1 );
     }
 };
 

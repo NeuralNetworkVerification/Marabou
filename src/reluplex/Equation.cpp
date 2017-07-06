@@ -18,6 +18,11 @@ Equation::Addend::Addend( double coefficient, unsigned variable )
 {
 }
 
+bool Equation::Addend::operator==( const Addend &other ) const
+{
+    return ( _coefficient == other._coefficient ) && ( _variable == other._variable );
+}
+
 void Equation::addAddend( double coefficient, unsigned variable )
 {
     _addends.append( Addend( coefficient, variable ) );
@@ -31,6 +36,14 @@ void Equation::setScalar( double scalar )
 void Equation::markAuxiliaryVariable( unsigned auxVariable )
 {
     _auxVariable = auxVariable;
+}
+
+bool Equation::operator==( const Equation &other ) const
+{
+    return
+        ( _addends == other._addends ) &&
+        ( _scalar == other._scalar ) &&
+        ( _auxVariable == other._auxVariable );
 }
 
 //

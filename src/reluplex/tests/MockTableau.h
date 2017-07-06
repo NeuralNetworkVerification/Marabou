@@ -182,6 +182,14 @@ public:
     void performDegeneratePivot( unsigned /* entering */, unsigned /* leaving */ )
     {
     }
+
+    void storeState( TableauState &/* state */ ) const
+    {
+    }
+
+    void restoreState( const TableauState &/* state */ )
+    {
+    }
 };
 
 #endif // __MockTableau_h__

@@ -17,6 +17,7 @@
 
 class EntrySelectionStrategy;
 class TableauRow;
+class TableauState;
 
 class ITableau
 {
@@ -61,6 +62,8 @@ public:
     virtual unsigned getN() const = 0;
     virtual void getTableauRow( unsigned index, TableauRow *row ) = 0;
     virtual void performDegeneratePivot( unsigned entering, unsigned leaving ) = 0;
+    virtual void storeState( TableauState &state ) const = 0;
+    virtual void restoreState( const TableauState &state ) = 0;
 };
 
 #endif // __ITableau_h__
