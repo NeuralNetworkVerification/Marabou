@@ -155,6 +155,7 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     _A = new double[n*m];
     if ( !_A )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::A" );
+    std::fill( _A, _A + ( n * m ), 0.0 );
 
     _d = new double[m];
     if ( !_d )
