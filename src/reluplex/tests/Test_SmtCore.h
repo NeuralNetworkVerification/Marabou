@@ -12,6 +12,7 @@
 
 #include <cxxtest/TestSuite.h>
 
+#include "MockEngine.h"
 #include "MockErrno.h"
 #include "ReluConstraint.h"
 #include "SmtCore.h"
@@ -27,14 +28,17 @@ class SmtCoreTestSuite : public CxxTest::TestSuite
 {
 public:
     MockForSmtCore *mock;
+    MockEngine *engine;
 
     void setUp()
     {
         TS_ASSERT( mock = new MockForSmtCore );
+        TS_ASSERT( engine = new MockEngine );
     }
 
     void tearDown()
     {
+        TS_ASSERT_THROWS_NOTHING( delete engine );
         TS_ASSERT_THROWS_NOTHING( delete mock );
     }
 
@@ -43,7 +47,7 @@ public:
         ReluConstraint contraint1( 1, 2 );
         ReluConstraint contraint2( 3, 4 );
 
-        SmtCore smtCore;
+        SmtCore smtCore( engine );
 
         for ( unsigned i = 0; i < SmtCore::SPLIT_THRESHOLD - 1; ++i )
         {

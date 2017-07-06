@@ -21,7 +21,6 @@ class TableauRow;
 class ITableau
 {
 public:
-
     virtual ~ITableau() {};
 
     virtual void setDimensions( unsigned m, unsigned n ) = 0;

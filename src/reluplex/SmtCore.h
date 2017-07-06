@@ -13,7 +13,11 @@
 #ifndef __SmtCore_h__
 #define __SmtCore_h__
 
+#include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
+#include "Stack.h"
+
+class IEngine;
 
 class SmtCore
 {
@@ -22,7 +26,7 @@ public:
         SPLIT_THRESHOLD = 5,
     };
 
-    SmtCore();
+    SmtCore( IEngine *engine );
 
     /*
       Inform the SMT core that a PL constraint is violated.
@@ -34,7 +38,28 @@ public:
     */
     bool needToSplit() const;
 
+    /*
+      Perform the split according to the constraint marked for
+      splitting. Update bounds, add equations and update the stack.
+    */
+    void performSplit();
+
 private:
+    /*
+      A stack entry is just a list of case splits to perform.
+    */
+    typedef List<PiecewiseLinearCaseSplit> Splits;
+
+    /*
+      The case-split stack.
+    */
+    Stack<Splits> _stack;
+
+    /*
+      The engine.
+    */
+    IEngine *_engine;
+
     /*
       Do we need to perform a split and on which constraint.
     */

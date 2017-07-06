@@ -18,6 +18,7 @@
 #include "TableauRow.h"
 
 Engine::Engine()
+    : _smtCore( this )
 {
 }
 

@@ -16,13 +16,14 @@
 #include "AutoTableau.h"
 #include "BlandsRule.h"
 #include "DantzigsRule.h"
+#include "IEngine.h"
 #include "Map.h"
 #include "SmtCore.h"
 
 class PiecewiseLinearConstraint;
 class InputQuery;
 
-class Engine
+class Engine : public IEngine
 {
 public:
     Engine();

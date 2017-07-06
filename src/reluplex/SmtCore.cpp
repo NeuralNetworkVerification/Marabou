@@ -12,8 +12,9 @@
 
 #include "SmtCore.h"
 
-SmtCore::SmtCore()
-    : _needToSplit( false )
+SmtCore::SmtCore( IEngine *engine )
+    : _engine( engine )
+    , _needToSplit( false )
 {
 }
 
@@ -34,6 +35,10 @@ void SmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
 bool SmtCore::needToSplit() const
 {
     return _needToSplit;
+}
+
+void SmtCore::performSplit()
+{
 }
 
 //
