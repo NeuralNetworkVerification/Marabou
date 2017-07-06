@@ -17,6 +17,7 @@
 #include "Set.h"
 
 class BasisFactorization;
+class Equation;
 class TableauState;
 
 class Tableau : public ITableau
@@ -68,6 +69,12 @@ public:
       to lower bounds and computes the assignment
     */
     void initializeTableau();
+
+    /*
+      A method for adding an additional equation to the tableau. The
+      auxiliary variable in this equation needs to be a fresh variable.
+    */
+    void addEquation( const Equation &equation );
 
     /*
       Get the Tableau's dimensions.
@@ -348,6 +355,11 @@ private:
     bool basicOutOfBounds( unsigned basic ) const;
     bool basicTooHigh( unsigned basic ) const;
     bool basicTooLow( unsigned basic ) const;
+
+    /*
+      Resize the relevant data structures to add a new row to the tableau.
+    */
+    void addRow();
 };
 
 #endif // __Tableau_h__

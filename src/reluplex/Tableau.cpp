@@ -13,6 +13,7 @@
 #include "BasisFactorization.h"
 #include "Debug.h"
 #include "EntrySelectionStrategy.h"
+#include "Equation.h"
 #include "FloatUtils.h"
 #include "ReluplexError.h"
 #include "Tableau.h"
@@ -1031,6 +1032,161 @@ void Tableau::tightenUpperBound( unsigned // variable
                                  , double // value
                                  )
 {
+}
+
+void Tableau::addEquation( const Equation &equation )
+{
+    // The aux variable in the equation has to be a new variable
+    if ( equation._auxVariable != _n )
+        throw ReluplexError( ReluplexError::INVALID_EQUATION_ADDED_TO_TABLEAU );
+
+    // Add an actual row to the talbeau, adjust the data structures
+    addRow();
+
+    // Mark the auxiliary variable as basic, add to indices
+    _basicVariables.insert( equation._auxVariable );
+    _basicIndexToVariable[_m - 1] = equation._auxVariable;
+    _variableToIndex[equation._auxVariable] = _m - 1;
+
+    // For now, assume the new equation doesn't involve basic variables
+    _b[_m - 1] = equation._scalar;
+    for ( const auto &addend : equation._addends )
+        setEntryValue( _m - 1, addend._variable, addend._coefficient );
+}
+
+void Tableau::addRow()
+{
+    unsigned newM = _m + 1;
+    unsigned newN = _n + 1;
+
+    // Allocate a new A, copy the columns of the old A
+    double *newA = new double[newN * newM];
+    if ( !newA )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newA" );
+    std::fill( newA, newA + ( newM * newN ), 0.0 );
+
+    double *AColumn, *newAColumn;
+    for ( unsigned i = 0; i < _n; ++i )
+    {
+        AColumn = _A + ( i * _m );
+        newAColumn = newA + ( i * newM );
+        memcpy( newAColumn, AColumn, _m * sizeof(double) );
+    }
+    delete[] _A;
+    _A = newA;
+
+    // Allocate a new d. Don't need to initialize
+    double *newD = new double[newM];
+    if ( !newD )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newD" );
+    delete[] _d;
+    _d = newD;
+
+    // Allocate a new b and copy the old values
+    double *newB = new double[newM];
+    if ( !newB )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newB" );
+    std::fill( newB + _m, newB + newM, 0.0 );
+    memcpy( newB, _b, _m * sizeof(double) );
+    delete[] _b;
+    _b = newB;
+
+    // Allocate a new unit vector. Don't need to initialize
+    double *newUnitVector = new double[newM];
+    if ( !newUnitVector )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newUnitVector" );
+    delete[] _unitVector;
+    _unitVector = newUnitVector;
+
+    // Allocate a new cost function. Don't need to initialize
+    double *newCostFunction = new double[newN - newM];
+    if ( !newCostFunction )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newCostFunction" );
+    delete[] _costFunction;
+    _costFunction = newCostFunction;
+
+    // Allocate new basic costs. Don't need to initialize
+    double *newBasicCosts = new double[newM];
+    if ( !newBasicCosts )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newBasicCosts" );
+    delete[] _basicCosts;
+    _basicCosts = newBasicCosts;
+
+    // Allocate new multipliers. Don't need to initialize
+    double *newMultipliers = new double[newM];
+    if ( !newMultipliers )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newMultipliers" );
+    delete[] _multipliers;
+    _multipliers = newMultipliers;
+
+    // Allocate new index arrays. Copy old indices, but don't assign indices to new variables yet.
+    unsigned *newBasicIndexToVariable = new unsigned[newM];
+    if ( !newBasicIndexToVariable )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newBasicIndexToVariable" );
+    memcpy( newBasicIndexToVariable, _basicIndexToVariable, _m * sizeof(unsigned) );
+    delete[] _basicIndexToVariable;
+    _basicIndexToVariable = newBasicIndexToVariable;
+
+    unsigned *newVariableToIndex = new unsigned[newN];
+    if ( !newVariableToIndex )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newVariableToIndex" );
+    memcpy( newVariableToIndex, _variableToIndex, _n * sizeof(unsigned) );
+    delete[] _variableToIndex;
+    _variableToIndex = newVariableToIndex;
+
+    unsigned *newNonBasicIndexToVariable = new unsigned[newN - newM];
+    if ( !newNonBasicIndexToVariable )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newNonBasicIndexToVariable" );
+    memcpy( newNonBasicIndexToVariable, _nonBasicIndexToVariable, ( _n - _m ) * sizeof(unsigned) );
+    delete[] _nonBasicIndexToVariable;
+    _nonBasicIndexToVariable = newNonBasicIndexToVariable;
+
+    // Allocate a new non-basic assignment vector, copy old values
+    double *newNonBasicAssignment = new double[newN - newM];
+    if ( !newNonBasicAssignment )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newNonBasicAssignment" );
+    memcpy( newNonBasicAssignment, _nonBasicAssignment, ( _n - _m ) * sizeof(double) );
+    delete[] _nonBasicAssignment;
+    _nonBasicAssignment = newNonBasicAssignment;
+
+    // Allocate a new basic assignment vector, invalidate the assignment
+    double *newBasicAssignment = new double[newM];
+    if ( !newBasicAssignment )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newAssignment" );
+    _basicAssignmentStatus = ASSIGNMENT_INVALID;
+    delete[] _basicAssignment;
+    _basicAssignment = newBasicAssignment;
+
+    unsigned *newBasicStatus = new unsigned[newM];
+    if ( !newBasicStatus )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newBasicStatus" );
+    delete[] _basicStatus;
+    _basicStatus = newBasicStatus;
+
+    // Allocate new lower and upper bound arrays, and copy old values
+    double *newLowerBounds = new double[newN];
+    if ( !newLowerBounds )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newLowerBounds" );
+    memcpy( newLowerBounds, _lowerBounds, _n * sizeof(double) );
+    delete[] _lowerBounds;
+    _lowerBounds = newLowerBounds;
+
+    double *newUpperBounds = new double[newN];
+    if ( !newUpperBounds )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newUpperBounds" );
+    memcpy( newUpperBounds, _upperBounds, _n * sizeof(double) );
+    delete[] _upperBounds;
+    _upperBounds = newUpperBounds;
+
+    // TODO: currently this assumes that there are no stored eta matrices.
+    BasisFactorization *newBasisFactorization = new BasisFactorization( newM );
+    if ( !_basisFactorization )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::basisFactorization" );
+    delete _basisFactorization;
+    _basisFactorization = newBasisFactorization;
+
+    _m = newM;
+    _n = newN;
 }
 
 //

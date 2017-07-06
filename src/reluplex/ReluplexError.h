@@ -23,7 +23,8 @@ public:
         VARIABLE_INDEX_OUT_OF_RANGE = 1,
         VARIABLE_DOESNT_EXIST_IN_SOLUTION = 2,
         NO_AVAILABLE_CANDIDATES = 3,
-        PARTICIPATING_VARIABLES_ABSENT = 4
+        PARTICIPATING_VARIABLES_ABSENT = 4,
+        INVALID_EQUATION_ADDED_TO_TABLEAU = 5,
     };
 
     ReluplexError( ReluplexError::Code code ) : Error( "ReluplexError", (int)code )
