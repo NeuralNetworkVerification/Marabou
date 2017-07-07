@@ -299,6 +299,17 @@ void Tableau::computeAssignment()
 
     computeBasicStatus();
     _basicAssignmentStatus = ASSIGNMENT_VALID;
+
+    // Inform the watchers
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        unsigned variable = _basicIndexToVariable[i];
+        if ( _variableToWatchers.exists( variable ) )
+        {
+            for ( auto &watcher : _variableToWatchers[variable] )
+                watcher->notifyVariableValue( variable, _basicAssignment[i] );
+        }
+    }
 }
 
 void Tableau::computeBasicStatus()

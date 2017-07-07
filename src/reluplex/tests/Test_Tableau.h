@@ -27,6 +27,28 @@ class MockForTableau
 public:
 };
 
+class MockVariableWatcher : public ITableau::VariableWatcher
+{
+public:
+    Map<unsigned, double> lastNotifiedValues;
+    void notifyVariableValue( unsigned variable, double value )
+    {
+        lastNotifiedValues[variable] = value;
+    }
+
+    Map<unsigned, double> lastNotifiedLowerBounds;
+    void notifyLowerBound( unsigned variable, double bound )
+    {
+        lastNotifiedLowerBounds[variable] = bound;
+    }
+
+    Map<unsigned, double> lastNotifiedUpperBounds;
+    void notifyUpperBound( unsigned variable, double bound )
+    {
+        lastNotifiedUpperBounds[variable] = bound;
+    }
+};
+
 class TableauTestSuite : public CxxTest::TestSuite
 {
 public:
@@ -133,6 +155,52 @@ public:
         TS_ASSERT_EQUALS( tableau->getValue( 4 ), 217.0 );
         TS_ASSERT_EQUALS( tableau->getValue( 5 ), 113.0 );
         TS_ASSERT_EQUALS( tableau->getValue( 6 ), 406.0 );
+
+        TS_ASSERT_THROWS_NOTHING( delete tableau );
+    }
+
+    void test_watcher__value_changes()
+    {
+        Tableau *tableau;
+
+        TS_ASSERT( tableau = new Tableau );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        initializeTableauValues( *tableau );
+
+        for ( unsigned i = 0; i < 4; ++i )
+        {
+            TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( i, 1 ) );
+            TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( i, 2 ) );
+        }
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 4, 218 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 4, 228 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 5, 112 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 5, 114 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 6, 400 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 6, 402 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 4 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 5 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 6 ) );
+
+        MockVariableWatcher watcher1;
+        MockVariableWatcher watcher2;
+
+        TS_ASSERT_THROWS_NOTHING( tableau->registerToWatchVariable( &watcher1, 4 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->registerToWatchVariable( &watcher1, 5 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->registerToWatchVariable( &watcher2, 5 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau() );
+
+        // The basic values get computed, so the watchers should be called
+
+        TS_ASSERT_EQUALS( watcher1.lastNotifiedValues[4], 217.0 );
+        TS_ASSERT_EQUALS( watcher1.lastNotifiedValues[5], 113.0 );
+        TS_ASSERT_EQUALS( watcher2.lastNotifiedValues[5], 113.0 );
 
         TS_ASSERT_THROWS_NOTHING( delete tableau );
     }

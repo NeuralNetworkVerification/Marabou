@@ -30,6 +30,7 @@ public:
     */
     class VariableWatcher
     {
+    public:
         /*
           This callback will be invoked when the variable's value
           changes.
