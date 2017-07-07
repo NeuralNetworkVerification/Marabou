@@ -16,6 +16,7 @@
 #include "Set.h"
 
 class EntrySelectionStrategy;
+class Equation;
 class TableauRow;
 class TableauState;
 
@@ -60,6 +61,7 @@ public:
     virtual void dumpEquations() = 0;
     virtual unsigned nonBasicIndexToVariable( unsigned index ) const = 0;
     virtual unsigned variableToIndex( unsigned index ) const = 0;
+    virtual void addEquation( const Equation &equation ) = 0;
     virtual unsigned getM() const = 0;
     virtual unsigned getN() const = 0;
     virtual void getTableauRow( unsigned index, TableauRow *row ) = 0;

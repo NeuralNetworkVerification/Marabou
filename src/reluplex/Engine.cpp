@@ -252,9 +252,9 @@ void Engine::tightenUpperBound( unsigned variable, double bound )
     _tableau->tightenUpperBound( variable, bound );
 }
 
-void Engine::addNewEquation( const Equation &// equation
-                     )
+void Engine::addNewEquation( const Equation &equation )
 {
+    _tableau->addEquation( equation );
 }
 
 void Engine::storeTableauState( TableauState &state ) const

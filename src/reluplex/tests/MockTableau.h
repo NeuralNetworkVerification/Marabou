@@ -165,6 +165,10 @@ public:
         return 0;
     }
 
+    void addEquation( const Equation &/* equation */ )
+    {
+    }
+
     unsigned getM() const
     {
         return 0;
