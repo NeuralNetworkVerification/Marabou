@@ -203,16 +203,17 @@ public:
     {
     }
 
-    Map<unsigned, VariableWatcher *> lastRegisteredVariableToWatcher;
+    typedef Set<VariableWatcher *> Watchers;
+    Map<unsigned, Watchers> lastRegisteredVariableToWatcher;
     void registerToWatchVariable( VariableWatcher *watcher, unsigned variable )
     {
-        lastRegisteredVariableToWatcher[variable] = watcher;
+        lastRegisteredVariableToWatcher[variable].insert( watcher );
     }
 
-    Map<unsigned, VariableWatcher *> lastUnregisteredVariableToWatcher;
+    Map<unsigned, Watchers> lastUnregisteredVariableToWatcher;
     void unregisterToWatchVariable( VariableWatcher *watcher, unsigned variable )
     {
-        lastUnregisteredVariableToWatcher[variable] = watcher;
+        lastUnregisteredVariableToWatcher[variable].insert( watcher );
     }
 };
 

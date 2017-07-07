@@ -174,6 +174,21 @@ public:
         TS_ASSERT( plVars.exists( 2U ) );
         TS_ASSERT( plVars.exists( 4U ) );
 
+        TS_ASSERT_EQUALS( tableau->lastRegisteredVariableToWatcher.size(), 3U );
+        TS_ASSERT( tableau->lastRegisteredVariableToWatcher.exists( 1 ) );
+        TS_ASSERT( tableau->lastRegisteredVariableToWatcher.exists( 2 ) );
+        TS_ASSERT( tableau->lastRegisteredVariableToWatcher.exists( 4 ) );
+
+        TS_ASSERT_EQUALS( tableau->lastRegisteredVariableToWatcher[1].size(), 1U );
+        TS_ASSERT( tableau->lastRegisteredVariableToWatcher[1].exists( relu1 ) );
+
+        TS_ASSERT_EQUALS( tableau->lastRegisteredVariableToWatcher[2].size(), 2U );
+        TS_ASSERT( tableau->lastRegisteredVariableToWatcher[2].exists( relu1 ) );
+        TS_ASSERT( tableau->lastRegisteredVariableToWatcher[2].exists( relu2 ) );
+
+        TS_ASSERT_EQUALS( tableau->lastRegisteredVariableToWatcher[4].size(), 1U );
+        TS_ASSERT( tableau->lastRegisteredVariableToWatcher[4].exists( relu2 ) );
+
         TS_ASSERT_EQUALS( FreshVariables::getNextVariable(), 5U );
     }
 };

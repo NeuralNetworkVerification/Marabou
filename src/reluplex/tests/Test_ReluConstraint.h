@@ -265,8 +265,10 @@ public:
 
         TS_ASSERT_EQUALS( tableau.lastRegisteredVariableToWatcher.size(), 2U );
         TS_ASSERT( tableau.lastUnregisteredVariableToWatcher.empty() );
-        TS_ASSERT_EQUALS( tableau.lastRegisteredVariableToWatcher[b], &relu );
-        TS_ASSERT_EQUALS( tableau.lastRegisteredVariableToWatcher[f], &relu );
+        TS_ASSERT_EQUALS( tableau.lastRegisteredVariableToWatcher[b].size(), 1U );
+        TS_ASSERT( tableau.lastRegisteredVariableToWatcher[b].exists( &relu ) );
+        TS_ASSERT_EQUALS( tableau.lastRegisteredVariableToWatcher[f].size(), 1U );
+        TS_ASSERT( tableau.lastRegisteredVariableToWatcher[f].exists( &relu ) );
 
         tableau.lastRegisteredVariableToWatcher.clear();
 
@@ -274,8 +276,10 @@ public:
 
         TS_ASSERT( tableau.lastRegisteredVariableToWatcher.empty() );
         TS_ASSERT_EQUALS( tableau.lastUnregisteredVariableToWatcher.size(), 2U );
-        TS_ASSERT_EQUALS( tableau.lastUnregisteredVariableToWatcher[b], &relu );
-        TS_ASSERT_EQUALS( tableau.lastUnregisteredVariableToWatcher[f], &relu );
+        TS_ASSERT_EQUALS( tableau.lastUnregisteredVariableToWatcher[b].size(), 1U );
+        TS_ASSERT( tableau.lastUnregisteredVariableToWatcher[b].exists( &relu ) );
+        TS_ASSERT_EQUALS( tableau.lastUnregisteredVariableToWatcher[f].size(), 1U );
+        TS_ASSERT( tableau.lastUnregisteredVariableToWatcher[f].exists( &relu ) );
     }
 };
 

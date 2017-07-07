@@ -194,6 +194,8 @@ void Engine::processInputQuery( const InputQuery &inputQuery )
         List<unsigned> participatingVariables = constraint->getParticiatingVariables();
         for ( const auto &var : participatingVariables )
             _plVarAssignment[var] = 0;
+
+        constraint->registerAsWatcher( _tableau );
     }
 }
 

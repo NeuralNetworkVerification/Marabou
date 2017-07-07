@@ -35,6 +35,11 @@ public:
 		return *_tableau;
 	}
 
+	operator ITableau *()
+	{
+		return _tableau;
+	}
+
 	ITableau *operator->()
 	{
 		return _tableau;
