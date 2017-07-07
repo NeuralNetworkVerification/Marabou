@@ -12,7 +12,9 @@
 
 #include "FloatUtils.h"
 #include <cfloat>
+#include <iomanip>
 #include <math.h>
+#include <sstream>
 
 // https://randomascii.wordpress.com/2012/02/25/comparing-floating-point-numbers-2012-edition/
 // http://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html
@@ -88,6 +90,20 @@ double FloatUtils::min( double x, double y, double epsilon )
 double FloatUtils::max( double x, double y, double epsilon )
 {
     return gt( x, y, epsilon ) ? x : y;
+}
+
+String FloatUtils::doubleToString( double x, unsigned precision )
+{
+    std::ostringstream strout;
+    strout << std::fixed << std::setprecision(precision) << x;
+    std::string str = strout.str();
+    size_t end = str.find_last_not_of( '0' ) + 1;
+    str.erase( end );
+
+    if ( str[str.size() - 1] == '.' )
+        str = str.substr(0, str.size() - 1);
+
+    return str;
 }
 
 //

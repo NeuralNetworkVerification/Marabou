@@ -14,6 +14,7 @@
 #define __FloatUtils_h__
 
 #include "GlobalConfiguration.h"
+#include "String.h"
 
 #include <cfloat>
 
@@ -34,6 +35,8 @@ public:
     static bool lte( double x, double y, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
     static double min( double x, double y, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
     static double max( double x, double y, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
+    static String doubleToString( double x,
+                                  unsigned precision = GlobalConfiguration::DEFAULT_DOUBLE_TO_STRING_PRECISION );
 };
 
 #endif // __FloatUtils_h__
