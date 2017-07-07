@@ -17,6 +17,7 @@ SOURCES += \
 	Errno.cpp \
 	Error.cpp \
 	FloatUtils.cpp \
+	String.cpp \
 	\
 	main.cpp \
 
