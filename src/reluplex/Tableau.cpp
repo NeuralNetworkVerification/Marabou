@@ -686,7 +686,7 @@ void Tableau::performDegeneratePivot( unsigned entering, unsigned leaving )
     // Switch assignment values
     double temp = _basicAssignment[leaving];
     _basicAssignment[leaving] = _nonBasicAssignment[entering];
-    _nonBasicAssignment[entering] = temp;
+    setNonBasicAssignment( currentBasic, temp );
 }
 
 double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient, bool decrease )
