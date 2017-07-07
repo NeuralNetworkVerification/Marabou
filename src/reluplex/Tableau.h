@@ -108,6 +108,12 @@ public:
     void setUpperBound( unsigned variable, double value );
 
     /*
+      Get the lower/upper bounds for a variable.
+    */
+    double getLowerBound( unsigned variable ) const;
+    double getUpperBound( unsigned variable ) const;
+
+    /*
       Tighten the lower/upper bound for a variable. These functions
       are meant to be used during the solution process, when a tighter
       bound has been discovered.

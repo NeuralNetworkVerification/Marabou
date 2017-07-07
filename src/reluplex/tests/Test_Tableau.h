@@ -15,6 +15,7 @@
 #include "Equation.h"
 #include "MockEntrySelectionStrategy.h"
 #include "MockErrno.h"
+#include "ReluplexError.h"
 #include "Tableau.h"
 #include "TableauRow.h"
 #include "TableauState.h"
@@ -1022,10 +1023,7 @@ public:
         // entry for the new variables
 
         TableauRow row( 4 );
-        TS_TRACE( "here" );
         TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 0, &row ) );
-
-        row.dump();
 
         TableauRow::Entry entry;
         entry = row._row[0];
@@ -1043,6 +1041,86 @@ public:
         entry = row._row[3];
         TS_ASSERT_EQUALS( entry._var, 3U );
         TS_ASSERT_EQUALS( entry._coefficient, -2 );
+    }
+
+    void test_tighten_bounds()
+    {
+        Tableau *tableau;
+
+        TS_ASSERT( tableau = new Tableau );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        initializeTableauValues( *tableau );
+
+        for ( unsigned i = 0; i < 4; ++i )
+        {
+            TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( i, 1 ) );
+            TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( i, 10 ) );
+        }
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 4, 218 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 4, 228 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 5, 100 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 5, 114 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 6, 400 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 6, 402 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 4 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 5 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 6 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau() );
+
+        for ( unsigned i = 0; i < 4; ++i )
+        {
+            TS_ASSERT_EQUALS( tableau->getLowerBound( i ), 1 );
+            TS_ASSERT_EQUALS( tableau->getUpperBound( i ), 10 );
+            TS_ASSERT_EQUALS( tableau->getValue( i ), 1.0 );
+        }
+
+        TS_ASSERT_EQUALS( tableau->getValue( 4 ), 217.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 5 ), 113.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 6 ), 406.0 );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->tightenLowerBound( 1, 4 ) );
+
+        for ( unsigned i = 0; i < 4; ++i )
+        {
+            if ( i == 1 )
+                continue;
+
+            TS_ASSERT_EQUALS( tableau->getLowerBound( i ), 1 );
+            TS_ASSERT_EQUALS( tableau->getUpperBound( i ), 10 );
+            TS_ASSERT_EQUALS( tableau->getValue( i ), 1.0 );
+        }
+
+        TS_ASSERT_EQUALS( tableau->getLowerBound( 1 ), 4 );
+        TS_ASSERT_EQUALS( tableau->getUpperBound( 1 ), 10 );
+        TS_ASSERT_EQUALS( tableau->getValue( 1 ), 4.0 );
+
+        TS_ASSERT_THROWS_EQUALS( tableau->tightenLowerBound( 1, 2 ),
+                                 const ReluplexError &error,
+                                 error.getCode(),
+                                 ReluplexError::INVALID_BOUND_TIGHTENING );
+
+        TS_ASSERT_THROWS_EQUALS( tableau->tightenUpperBound( 1, 22 ),
+                                 const ReluplexError &error,
+                                 error.getCode(),
+                                 ReluplexError::INVALID_BOUND_TIGHTENING );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->tightenUpperBound( 1, 8 ) );
+
+        TS_ASSERT_EQUALS( tableau->getLowerBound( 1 ), 4 );
+        TS_ASSERT_EQUALS( tableau->getUpperBound( 1 ), 8 );
+        TS_ASSERT_EQUALS( tableau->getValue( 1 ), 4.0 );
+
+        // Tightening the bounds of basic variables doesn't change their values
+        TS_ASSERT_EQUALS( tableau->getValue( 5 ), 110.0 );
+        TS_ASSERT_THROWS_NOTHING( tableau->tightenLowerBound( 5, 111 ) );
+        TS_ASSERT_EQUALS( tableau->getValue( 5 ), 110.0 );
+
+        TS_ASSERT_THROWS_NOTHING( delete tableau );
     }
 
     void test_todo()

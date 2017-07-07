@@ -337,6 +337,18 @@ void Tableau::setUpperBound( unsigned variable, double value )
     _upperBounds[variable] = value;
 }
 
+double Tableau::getLowerBound( unsigned variable ) const
+{
+    ASSERT( variable < _n );
+    return _lowerBounds[variable];
+}
+
+double Tableau::getUpperBound( unsigned variable ) const
+{
+    ASSERT( variable < _n );
+    return _upperBounds[variable];
+}
+
 double Tableau::getValue( unsigned variable )
 {
     if ( !_basicVariables.exists( variable ) )
@@ -1022,16 +1034,40 @@ void Tableau::restoreState( const TableauState &state )
     _basicAssignmentStatus = ASSIGNMENT_VALID;
 }
 
-void Tableau::tightenLowerBound( unsigned // variable
-                                 , double // value
-                                 )
+void Tableau::tightenLowerBound( unsigned variable, double value )
 {
+    ASSERT( variable < _n );
+
+    if ( !FloatUtils::gt( value, _lowerBounds[variable] ) )
+        throw ReluplexError( ReluplexError::INVALID_BOUND_TIGHTENING );
+
+    _lowerBounds[variable] = value;
+
+    // Ensure that non-basic variables are within bounds
+    if ( !_basicVariables.exists( variable ) )
+    {
+        unsigned index = _variableToIndex[variable];
+        if ( FloatUtils::gt( value, _nonBasicAssignment[index] ) )
+            setNonBasicAssignment( variable, value );
+    }
 }
 
-void Tableau::tightenUpperBound( unsigned // variable
-                                 , double // value
-                                 )
+void Tableau::tightenUpperBound( unsigned variable, double value )
 {
+    ASSERT( variable < _n );
+
+    if ( !FloatUtils::lt( value, _upperBounds[variable] ) )
+        throw ReluplexError( ReluplexError::INVALID_BOUND_TIGHTENING );
+
+    _upperBounds[variable] = value;
+
+    // Ensure that non-basic variables are within bounds
+    if ( !_basicVariables.exists( variable ) )
+    {
+        unsigned index = _variableToIndex[variable];
+        if ( FloatUtils::lt( value, _nonBasicAssignment[index] ) )
+            setNonBasicAssignment( variable, value );
+    }
 }
 
 void Tableau::addEquation( const Equation &equation )

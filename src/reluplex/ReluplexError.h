@@ -25,6 +25,7 @@ public:
         NO_AVAILABLE_CANDIDATES = 3,
         PARTICIPATING_VARIABLES_ABSENT = 4,
         INVALID_EQUATION_ADDED_TO_TABLEAU = 5,
+        INVALID_BOUND_TIGHTENING = 6,
     };
 
     ReluplexError( ReluplexError::Code code ) : Error( "ReluplexError", (int)code )
