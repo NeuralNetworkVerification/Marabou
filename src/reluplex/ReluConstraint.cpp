@@ -23,6 +23,18 @@ ReluConstraint::ReluConstraint( unsigned b, unsigned f )
 {
 }
 
+void ReluConstraint::registerAsWatcher( ITableau *tableau )
+{
+    tableau->registerToWatchVariable( this, _b );
+    tableau->registerToWatchVariable( this, _f );
+}
+
+void ReluConstraint::unregisterAsWatcher( ITableau *tableau )
+{
+    tableau->unregisterToWatchVariable( this, _b );
+    tableau->unregisterToWatchVariable( this, _f );
+}
+
 bool ReluConstraint::participatingVariable( unsigned variable ) const
 {
     return ( variable == _b ) || ( variable == _f );

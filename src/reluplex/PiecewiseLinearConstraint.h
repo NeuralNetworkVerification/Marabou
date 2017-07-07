@@ -14,10 +14,11 @@
 #define __PiecewiseLinearConstraint_h__
 
 #include "Map.h"
+#include "ITableau.h"
 
 class PiecewiseLinearCaseSplit;
 
-class PiecewiseLinearConstraint
+class PiecewiseLinearConstraint : public ITableau::VariableWatcher
 {
 public:
     /*
@@ -38,6 +39,19 @@ public:
     };
 
     virtual ~PiecewiseLinearConstraint() {}
+
+    /*
+      Register/unregister the constraint with a talbeau.
+     */
+    virtual void registerAsWatcher( ITableau *tableau ) = 0;
+    virtual void unregisterAsWatcher( ITableau *tableau ) = 0;
+
+    /*
+      The variable watcher notifcation callbacks.
+    */
+    virtual void notifyVariableValue( unsigned /* variable */, double /* value */ ) {}
+    virtual void notifyLowerBound( unsigned /* variable */, double /* bound */ ) {}
+    virtual void notifyUpperBound( unsigned /* variable */, double /* bound */ ) {}
 
     /*
       Returns true iff the variable participates in this piecewise

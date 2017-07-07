@@ -13,6 +13,7 @@
 #include <cxxtest/TestSuite.h>
 
 #include "FreshVariables.h"
+#include "MockTableau.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "ReluConstraint.h"
 #include "ReluplexError.h"
@@ -249,6 +250,32 @@ public:
         TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
         TS_ASSERT_EQUALS( addend->_variable, 100U );
         TS_ASSERT_EQUALS( inactiveEquation._auxVariable, 100U );
+    }
+
+    void test_register_as_watcher()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        MockTableau tableau;
+
+        ReluConstraint relu( b, f );
+
+        TS_ASSERT_THROWS_NOTHING( relu.registerAsWatcher( &tableau ) );
+
+        TS_ASSERT_EQUALS( tableau.lastRegisteredVariableToWatcher.size(), 2U );
+        TS_ASSERT( tableau.lastUnregisteredVariableToWatcher.empty() );
+        TS_ASSERT_EQUALS( tableau.lastRegisteredVariableToWatcher[b], &relu );
+        TS_ASSERT_EQUALS( tableau.lastRegisteredVariableToWatcher[f], &relu );
+
+        tableau.lastRegisteredVariableToWatcher.clear();
+
+        TS_ASSERT_THROWS_NOTHING( relu.unregisterAsWatcher( &tableau ) );
+
+        TS_ASSERT( tableau.lastRegisteredVariableToWatcher.empty() );
+        TS_ASSERT_EQUALS( tableau.lastUnregisteredVariableToWatcher.size(), 2U );
+        TS_ASSERT_EQUALS( tableau.lastUnregisteredVariableToWatcher[b], &relu );
+        TS_ASSERT_EQUALS( tableau.lastUnregisteredVariableToWatcher[f], &relu );
     }
 };
 

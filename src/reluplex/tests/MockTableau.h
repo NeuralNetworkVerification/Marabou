@@ -203,12 +203,16 @@ public:
     {
     }
 
-    void registerToWatchVariable( VariableWatcher */* watcher */, unsigned /* variable */ )
+    Map<unsigned, VariableWatcher *> lastRegisteredVariableToWatcher;
+    void registerToWatchVariable( VariableWatcher *watcher, unsigned variable )
     {
+        lastRegisteredVariableToWatcher[variable] = watcher;
     }
 
-    void unregisterToWatchVariable( VariableWatcher */* watcher */, unsigned /* variable */ )
+    Map<unsigned, VariableWatcher *> lastUnregisteredVariableToWatcher;
+    void unregisterToWatchVariable( VariableWatcher *watcher, unsigned variable )
     {
+        lastUnregisteredVariableToWatcher[variable] = watcher;
     }
 };
 

@@ -21,6 +21,12 @@ public:
     ReluConstraint( unsigned b, unsigned f );
 
     /*
+      Register/unregister the constraint with a talbeau.
+     */
+    void registerAsWatcher( ITableau *tableau );
+    void unregisterAsWatcher( ITableau *tableau );
+
+    /*
       Returns true iff the variable participates in this piecewise
       linear constraint
     */
