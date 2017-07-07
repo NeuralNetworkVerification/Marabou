@@ -1214,6 +1214,10 @@ void Tableau::addRow()
     delete[] _upperBounds;
     _upperBounds = newUpperBounds;
 
+    // Mark the new variable as unbounded
+    _lowerBounds[_n] = -DBL_MAX;
+    _upperBounds[_n] = DBL_MAX;
+
     // TODO: currently this assumes that there are no stored eta matrices.
     BasisFactorization *newBasisFactorization = new BasisFactorization( newM );
     if ( !_basisFactorization )
@@ -1223,6 +1227,16 @@ void Tableau::addRow()
 
     _m = newM;
     _n = newN;
+}
+
+void Tableau::registerToWatchVariable( VariableWatcher *watcher, unsigned variable )
+{
+    _variableToWatchers[variable].append( watcher );
+}
+
+void Tableau::unregisterToWatchVariable( VariableWatcher *watcher, unsigned variable )
+{
+    _variableToWatchers[variable].erase( watcher );
 }
 
 //

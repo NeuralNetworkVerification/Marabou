@@ -14,6 +14,7 @@
 #define __Tableau_h__
 
 #include "ITableau.h"
+#include "Map.h"
 #include "Set.h"
 
 class BasisFactorization;
@@ -232,7 +233,16 @@ public:
     void storeState( TableauState &state ) const;
     void restoreState( const TableauState &state );
 
+    /*
+      Register or unregister to watch a variable.
+    */
+    void registerToWatchVariable( VariableWatcher *watcher, unsigned variable );
+    void unregisterToWatchVariable( VariableWatcher *watcher, unsigned variable );
+
 private:
+    typedef List<VariableWatcher *> VariableWatchers;
+    Map<unsigned, VariableWatchers> _variableToWatchers;
+
     /*
       The dimensions of matrix A
     */

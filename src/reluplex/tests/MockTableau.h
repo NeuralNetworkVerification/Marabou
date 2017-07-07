@@ -202,6 +202,14 @@ public:
     void tightenUpperBound( unsigned /* variable */, double /* value */ )
     {
     }
+
+    void registerToWatchVariable( VariableWatcher */* watcher */, unsigned /* variable */ )
+    {
+    }
+
+    void unregisterToWatchVariable( VariableWatcher */* watcher */, unsigned /* variable */ )
+    {
+    }
 };
 
 #endif // __MockTableau_h__
