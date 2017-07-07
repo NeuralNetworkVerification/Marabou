@@ -234,7 +234,7 @@ void Tableau::initializeTableau()
     unsigned basicIndex = 0;
     unsigned nonBasicIndex = 0;
 
-    // Assign variable indices, grab basic columns from A into B
+    // Assign variable indices
     for ( unsigned i = 0; i < _n; ++i )
     {
         if ( _basicVariables.exists( i ) )
@@ -254,7 +254,10 @@ void Tableau::initializeTableau()
 
     // Set non-basics to lower bounds
     for ( unsigned i = 0; i < _n - _m; ++i )
-        _nonBasicAssignment[i] = _lowerBounds[_nonBasicIndexToVariable[i]];
+    {
+        unsigned nonBasic = _nonBasicIndexToVariable[i];
+        setNonBasicAssignment( nonBasic, _lowerBounds[nonBasic] );
+    }
 
     // Recompute assignment
     computeAssignment();
@@ -606,9 +609,8 @@ void Tableau::performPivot()
 
         // The entering variable is going to be pressed against its bound.
         bool decrease = FloatUtils::isPositive( _costFunction[_enteringVariable] );
-        _nonBasicAssignment[_enteringVariable] = decrease ?
-            _lowerBounds[_nonBasicIndexToVariable[_enteringVariable]] :
-            _upperBounds[_nonBasicIndexToVariable[_enteringVariable]];
+        unsigned nonBasic = _nonBasicIndexToVariable[_enteringVariable];
+        setNonBasicAssignment( nonBasic, decrease ? _lowerBounds[nonBasic] : _upperBounds[nonBasic] );
         return;
     }
 
@@ -646,7 +648,7 @@ void Tableau::performPivot()
         else
             nonBasicAssignment = _lowerBounds[currentBasic];
     }
-    _nonBasicAssignment[_enteringVariable] = nonBasicAssignment;
+    setNonBasicAssignment( _nonBasicIndexToVariable[_enteringVariable], nonBasicAssignment );
 
     // Update the basis factorization. The column corresponding to the
     // leaving variable is the one that has changed
@@ -896,6 +898,13 @@ void Tableau::setNonBasicAssignment( unsigned variable, double value )
     unsigned nonBasic = _variableToIndex[variable];
     _nonBasicAssignment[nonBasic] = value;
     _basicAssignmentStatus = ASSIGNMENT_INVALID;
+
+    // Inform watchers
+    if ( _variableToWatchers.exists( variable ) )
+    {
+        for ( auto &watcher : _variableToWatchers[variable] )
+            watcher->notifyVariableValue( variable, value );
+    }
 }
 
 void Tableau::dumpAssignment()

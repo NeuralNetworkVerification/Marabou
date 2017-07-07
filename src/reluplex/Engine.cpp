@@ -186,8 +186,6 @@ void Engine::processInputQuery( const InputQuery &inputQuery )
         _tableau->setUpperBound( i, inputQuery.getUpperBound( i ) );
     }
 
-    _tableau->initializeTableau();
-
     _plConstraints = inputQuery.getPiecewiseLinearConstraints();
     for ( const auto &constraint : _plConstraints )
     {
@@ -197,6 +195,8 @@ void Engine::processInputQuery( const InputQuery &inputQuery )
 
         constraint->registerAsWatcher( _tableau );
     }
+
+    _tableau->initializeTableau();
 }
 
 void Engine::extractSolution( InputQuery &inputQuery )
