@@ -65,15 +65,14 @@ public:
     virtual List<unsigned> getParticiatingVariables() const = 0;
 
     /*
-      Returns true iff the given assignment satisfies the constraint.
+      Returns true iff the assignment satisfies the constraint.
     */
-    virtual bool satisfied( const Map<unsigned, double> &assignment ) const = 0;
+    virtual bool satisfied() const = 0;
 
     /*
       Returns a list of possible fixes for the violated constraint.
     */
-    virtual List<PiecewiseLinearConstraint::Fix> getPossibleFixes( const Map<unsigned,
-                                                                   double> &assignment ) const = 0;
+    virtual List<PiecewiseLinearConstraint::Fix> getPossibleFixes() const = 0;
 
     /*
       Returns the list of case splits that this piecewise linear

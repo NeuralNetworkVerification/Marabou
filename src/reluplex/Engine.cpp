@@ -43,7 +43,6 @@ bool Engine::solve()
         if ( allVarsWithinBounds() )
         {
             // Check the status of the PL constraints
-            extractPlAssignment();
             collectViolatedPlConstraints();
 
             // If all constraints are satisfied, we are done
@@ -102,13 +101,13 @@ bool Engine::fixViolatedPlConstraint()
     PiecewiseLinearConstraint *violated = NULL;
     for ( const auto &constraint : _plConstraints )
     {
-        if ( !constraint->satisfied( _plVarAssignment ) )
+        if ( !constraint->satisfied() )
             violated = constraint;
     }
 
     ASSERT( violated );
 
-    List<PiecewiseLinearConstraint::Fix> fixes = violated->getPossibleFixes( _plVarAssignment );
+    List<PiecewiseLinearConstraint::Fix> fixes = violated->getPossibleFixes();
 
     // First, see if we can fix without pivoting
     for ( const auto &fix : fixes )
@@ -188,13 +187,7 @@ void Engine::processInputQuery( const InputQuery &inputQuery )
 
     _plConstraints = inputQuery.getPiecewiseLinearConstraints();
     for ( const auto &constraint : _plConstraints )
-    {
-        List<unsigned> participatingVariables = constraint->getParticiatingVariables();
-        for ( const auto &var : participatingVariables )
-            _plVarAssignment[var] = 0;
-
         constraint->registerAsWatcher( _tableau );
-    }
 
     _tableau->initializeTableau();
 }
@@ -214,7 +207,7 @@ void Engine::collectViolatedPlConstraints()
 {
     _violatedPlConstraints.clear();
     for ( const auto &constraint : _plConstraints )
-        if ( !constraint->satisfied( _plVarAssignment ) )
+        if ( !constraint->satisfied() )
             _violatedPlConstraints.append( constraint );
 }
 
@@ -226,17 +219,6 @@ bool Engine::allPlConstraintsHold()
 void Engine::selectViolatedPlConstraint()
 {
     _plConstraintToFix = *_violatedPlConstraints.begin();
-}
-
-void Engine::extractPlAssignment()
-{
-    for ( auto it : _plVarAssignment )
-        _plVarAssignment[it.first] = _tableau->getValue( it.first );
-}
-
-const Set<unsigned> Engine::getVarsInPlConstraints()
-{
-    return _plVarAssignment.keys();
 }
 
 void Engine::reportPlViolation()
