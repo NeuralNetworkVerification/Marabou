@@ -1215,6 +1215,7 @@ public:
         // which is potentially undesirable. It may be better to keep
         // the current basis, but computing B explicitly and adding
         // another row to it.
+        TS_TRACE( "Make sure all watchers are properply informed when restoring a tabealu" );
     }
 };
 
