@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file AcasParser.h
+/*! \file AcasParser.cpp
 ** \verbatim
 ** Top contributors (to current version):
 **   Guy Katz
@@ -10,22 +10,12 @@
 ** directory for licensing information.\endverbatim
 **/
 
-#ifndef __AcasParser_h__
-#define __AcasParser_h__
+#include "AcasParser.h"
 
-#include "AcasNeuralNetwork.h"
-#include "String.h"
-
-class AcasParser
+AcasParser::AcasParser( const String &path )
+    : _acasNeuralNetwork( path )
 {
-public:
-    AcasParser( const String &path );
-
-private:
-    AcasNeuralNetwork _acasNeuralNetwork;
-};
-
-#endif // __AcasParser_h__
+}
 
 //
 // Local Variables:

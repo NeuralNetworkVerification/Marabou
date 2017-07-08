@@ -10,10 +10,10 @@
 ** directory for licensing information.\endverbatim
 **/
 
+#include "AcasNnet.h"
 #include <cstdio>
-#include <cstring>
 #include <cstdlib>
-#include "nnet.h"
+#include <cstring>
 
 //Take in a .nnet filename with path and load the network from the file
 //Inputs:  filename - const char* that specifies the name and path of file

@@ -14,13 +14,15 @@
 #include "AcasNnet.h"
 #include "FloatUtils.h"
 
+#include <iostream>
+
 AcasNeuralNetwork::AcasNeuralNetwork( const String &path )
     : _network( NULL )
 {
     _network = load_network( path.ascii() );
 }
 
-~AcasNeuralNetwork::AcasNeuralNetwork()
+AcasNeuralNetwork::~AcasNeuralNetwork()
 {
     if ( _network )
     {

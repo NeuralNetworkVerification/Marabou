@@ -13,11 +13,12 @@
 #ifndef __AcasNeuralNetwork_h__
 #define __AcasNeuralNetwork_h__
 
-#include <cassert>
-#include <sstream>
-#include <iomanip>
+#include "AcasNnet.h"
 #include "String.h"
-#include "nnet.h"
+#include "Vector.h"
+#include <cassert>
+#include <iomanip>
+#include <sstream>
 
 class AcasNeuralNetwork
 {
@@ -56,7 +57,7 @@ public:
     void evaluate( const Vector<double> &inputs, Vector<double> &outputs, unsigned outputSize ) const;
 
 private:
-    NNet *_network;
+    AcasNnet *_network;
 };
 
 #endif // __AcasNeuralNetwork_h__
