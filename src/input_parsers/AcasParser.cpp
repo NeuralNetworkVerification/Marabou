@@ -17,6 +17,11 @@ AcasParser::AcasParser( const String &path )
 {
 }
 
+void AcasParser::generateQuery( InputQuery &// inputQuery
+                                )
+{
+}
+
 //
 // Local Variables:
 // compile-command: "make -C .. "

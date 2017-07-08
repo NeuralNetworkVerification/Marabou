@@ -4,6 +4,7 @@ SUBDIRS += \
 
 LOCAL_INCLUDES += \
 	$(CONFIGURATION_DIR) \
+	$(RELUPLEX_DIR) \
 
 LINK_FLAGS += \
 
@@ -17,6 +18,20 @@ SOURCES += \
 	FloatUtils.cpp \
 	String.cpp \
 	\
+	BasisFactorization.cpp \
+	BlandsRule.cpp \
+	DantzigsRule.cpp \
+	Engine.cpp \
+	EtaMatrix.cpp \
+	FreshVariables.cpp \
+	InputQuery.cpp \
+	PiecewiseLinearCaseSplit.cpp \
+	SmtCore.cpp \
+	Tableau.cpp \
+	TableauFactory.cpp \
+	TableauRow.cpp \
+	TableauState.cpp \
+	\
 	main.cpp \
 	../AcasParser.cpp \
 	../AcasNeuralNetwork.cpp \
@@ -27,6 +42,8 @@ TARGET = acas_example.elf
 include $(ROOT_DIR)/Rules.mk
 
 vpath %.cpp $(CONFIGURATION_DIR)
+vpath %.cpp $(RELUPLEX_DIR)
+vpath %.cpp $(RELUPLEX_REAL_DIR)
 vpath %.cpp $(COMMON_DIR)
 vpath %.cpp $(COMMON_REAL_DIR)
 

@@ -14,12 +14,15 @@
 #define __AcasParser_h__
 
 #include "AcasNeuralNetwork.h"
+#include "InputQuery.h"
 #include "String.h"
 
 class AcasParser
 {
 public:
     AcasParser( const String &path );
+
+    void generateQuery( InputQuery &inputQuery );
 
 private:
     AcasNeuralNetwork _acasNeuralNetwork;
