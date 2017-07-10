@@ -11,7 +11,24 @@
 **/
 
 #include "AcasParser.h"
+#include "InputParserError.h"
+#include "InputQuery.h"
 #include "ReluConstraint.h"
+#include "String.h"
+
+AcasParser::NodeIndex::NodeIndex( unsigned layer, unsigned node )
+    : _layer( layer )
+    , _node( node )
+{
+}
+
+bool AcasParser::NodeIndex::operator<( const NodeIndex &other ) const
+{
+    if ( _layer != other._layer )
+        return _layer < other._layer;
+
+    return _node < other._node;
+}
 
 AcasParser::AcasParser( const String &path )
     : _acasNeuralNetwork( path )
@@ -21,13 +38,17 @@ AcasParser::AcasParser( const String &path )
 void AcasParser::generateQuery( InputQuery &inputQuery )
 {
     // First encode the actual network
-    unsigned numberOfLayers = _acasNeuralNetwork.getNumLayers();
+    // _acasNeuralNetwork doesn't count the input layer, so add 1
+    unsigned numberOfLayers = _acasNeuralNetwork.getNumLayers() + 1;
     unsigned inputLayerSize = _acasNeuralNetwork.getLayerSize( 0 );
     unsigned outputLayerSize = _acasNeuralNetwork.getLayerSize( numberOfLayers - 1 );
 
     unsigned numberOfInternalNodes = 0;
     for ( unsigned i = 1; i < numberOfLayers - 1; ++i )
         numberOfInternalNodes += _acasNeuralNetwork.getLayerSize( i );
+
+    printf( "Number of layers: %u. Input layer size: %u. Output layer size: %u. Number of ReLUs: %u\n",
+            numberOfLayers, inputLayerSize, outputLayerSize, numberOfInternalNodes );
 
     // The total number of variables required for the encoding is computed as follows:
     //   1. Each input node appears once
@@ -40,10 +61,6 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
     // variables. We group variables according to this order: f's from
     // layer i, b's from layer i+1, auxiliary variables from layer
     // i+1, and repeat. The
-    Map<NodeIndex, unsigned> nodeToB;
-    Map<NodeIndex, unsigned> nodeToF;
-    Map<NodeIndex, unsigned> nodeToAux;
-
     unsigned currentIndex = 0;
     for ( unsigned i = 1; i < numberOfLayers; ++i )
     {
@@ -53,21 +70,23 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
         // First add the F variables from layer i-1
         for ( unsigned j = 0; j < previousLayerSize; ++j )
         {
-            nodeToF[NodeIndex( i - 1, j )] = currentIndex;
+            printf( "adding nodeToF (%u,%u)\n", i-1, j );
+
+            _nodeToF[NodeIndex( i - 1, j )] = currentIndex;
             ++currentIndex;
         }
 
         // Now add the B variables from layer i
         for ( unsigned j = 0; j < currentLayerSize; ++j )
         {
-            nodeToB[NodeIndex( i, j )] = currentIndex;
+            _nodeToB[NodeIndex( i, j )] = currentIndex;
             ++currentIndex;
         }
 
         // And now the aux variables from layer i
         for ( unsigned j = 0; j < currentLayerSize; ++j )
         {
-            nodeToAux[NodeIndex( i, j )] = currentIndex;
+            _nodeToAux[NodeIndex( i, j )] = currentIndex;
             ++currentIndex;
         }
     }
@@ -80,17 +99,17 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
         double min, max;
         _acasNeuralNetwork.getInputRange( i, min, max );
 
-        inputQuery.setLowerBound( nodeToF[NodeIndex(0, i)], min );
-        inputQuery.setUpperBound( nodeToF[NodeIndex(0, i)], max );
+        inputQuery.setLowerBound( _nodeToF[NodeIndex(0, i)], min );
+        inputQuery.setUpperBound( _nodeToF[NodeIndex(0, i)], max );
     }
 
-    for ( const auto &auxNode : nodeToAux )
+    for ( const auto &auxNode : _nodeToAux )
     {
         inputQuery.setLowerBound( auxNode.second, 0.0 );
         inputQuery.setUpperBound( auxNode.second, 0.0 );
     }
 
-    for ( const auto &fNode : nodeToF )
+    for ( const auto &fNode : _nodeToF )
     {
         inputQuery.setLowerBound( fNode.second, 0.0 );
     }
@@ -106,23 +125,26 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
             Equation equation;
 
             // The auxiliary variable
-            unsigned auxVar = nodeToAux[NodeIndex(layer + 1, target)];
+            unsigned auxVar = _nodeToAux[NodeIndex(layer + 1, target)];
             equation.addAddend( 1.0, auxVar );
             equation.markAuxiliaryVariable( auxVar );
 
             // The b variable
-            unsigned bVar = nodeToB[NodeIndex(layer + 1, target)];
+            unsigned bVar = _nodeToB[NodeIndex(layer + 1, target)];
             equation.addAddend( -1.0, bVar );
 
             // The f variables from the previous layer
             for ( unsigned source = 0; source < _acasNeuralNetwork.getLayerSize( layer ); ++source )
             {
-                unsigned fVar = nodeToF[NodeIndex(layer, source)];
+                unsigned fVar = _nodeToF[NodeIndex(layer, source)];
                 equation.addAddend( _acasNeuralNetwork.getWeight( layer, source, target ), fVar );
             }
 
             // The bias
             equation.setScalar( _acasNeuralNetwork.getBias( layer + 1, target ) );
+
+            // Add the equation to the input query
+            inputQuery.addEquation( equation );
         }
     }
 
@@ -133,12 +155,30 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
 
         for ( unsigned j = 0; j < currentLayerSize; ++j )
         {
-            unsigned b = nodeToB[NodeIndex(i, j)];
-            unsigned f = nodeToF[NodeIndex(i, j)];
+            unsigned b = _nodeToB[NodeIndex(i, j)];
+            unsigned f = _nodeToF[NodeIndex(i, j)];
             PiecewiseLinearConstraint *relu = new ReluConstraint( b, f );
             inputQuery.addPiecewiseLinearConstraint( relu );
         }
     }
+}
+
+unsigned AcasParser::getInputVariable( unsigned index ) const
+{
+    NodeIndex nodeIndex( 0, index );
+    if ( !_nodeToF.exists( nodeIndex ) )
+        throw InputParserError( InputParserError::VARIABLE_INDEX_OUT_OF_RANGE );
+
+    return _nodeToF.get( nodeIndex );
+}
+
+unsigned AcasParser::getOutputVariable( unsigned index ) const
+{
+    NodeIndex nodeIndex( _acasNeuralNetwork.getNumLayers(), index );
+    if ( !_nodeToB.exists( nodeIndex ) )
+        throw InputParserError( InputParserError::VARIABLE_INDEX_OUT_OF_RANGE );
+
+    return _nodeToB.get( nodeIndex );
 }
 
 //

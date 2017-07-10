@@ -13,9 +13,11 @@
 #ifndef __AcasParser_h__
 #define __AcasParser_h__
 
+#include "Map.h"
 #include "AcasNeuralNetwork.h"
-#include "InputQuery.h"
-#include "String.h"
+
+class InputQuery;
+class String;
 
 class AcasParser
 {
@@ -23,30 +25,28 @@ public:
     struct NodeIndex
     {
     public:
-        NodeIndex( unsigned layer, unsigned node )
-            : _layer( layer )
-            , _node( node )
+        NodeIndex( unsigned layer, unsigned node );
+        bool operator<( const NodeIndex &other ) const;
+        bool operator==( const NodeIndex &other ) const
         {
+            return _layer == other._layer && _node == other._node;
         }
 
         unsigned _layer;
         unsigned _node;
-
-        bool operator<( const NodeIndex &other ) const
-        {
-            if ( _layer != other._layer )
-                return _layer < other._layer;
-
-            return _node < other._node;
-        }
     };
 
     AcasParser( const String &path );
-
     void generateQuery( InputQuery &inputQuery );
+
+    unsigned getInputVariable( unsigned index ) const;
+    unsigned getOutputVariable( unsigned index ) const;
 
 private:
     AcasNeuralNetwork _acasNeuralNetwork;
+    Map<NodeIndex, unsigned> _nodeToB;
+    Map<NodeIndex, unsigned> _nodeToF;
+    Map<NodeIndex, unsigned> _nodeToAux;
 };
 
 #endif // __AcasParser_h__

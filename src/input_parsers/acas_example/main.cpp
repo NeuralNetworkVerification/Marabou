@@ -14,6 +14,7 @@
 
 #include "../AcasParser.h"
 #include "Engine.h"
+#include "InputQuery.h"
 
 int main()
 {
@@ -23,6 +24,13 @@ int main()
     AcasParser acasParser( "./ACASXU_run2a_1_1_batch_2000.nnet" );
     acasParser.generateQuery( inputQuery );
 
+    // A simple query: all inputs are fixed to 0
+    for ( unsigned i = 0; i < 5; ++i )
+    {
+        unsigned variable = acasParser.getInputVariable( i );
+        inputQuery.setLowerBound( variable, 0.0 );
+        inputQuery.setUpperBound( variable, 0.0 );
+    }
 
     // Feed the query to the engine
     Engine engine;
@@ -35,6 +43,12 @@ int main()
 
     printf( "Query is sat! Extracting solution...\n" );
     engine.extractSolution( inputQuery );
+
+    for ( unsigned i = 0; i < 5; ++i )
+    {
+        unsigned variable = acasParser.getOutputVariable( i );
+        printf( "Output[%u] = %.15lf\n", i, inputQuery.getSolutionValue( variable ) );
+    }
 
     return 0;
 }
