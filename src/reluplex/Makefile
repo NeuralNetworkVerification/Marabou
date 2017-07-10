@@ -19,9 +19,9 @@ SOURCES += \
 	FloatUtils.cpp \
 	String.cpp \
 	\
-	main.cpp \
 	BasisFactorization.cpp\
 	EtaMatrix.cpp\
+	main.cpp \
 
 TARGET = run_reluplex.elf
 
