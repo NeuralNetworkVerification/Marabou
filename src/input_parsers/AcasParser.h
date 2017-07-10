@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file AutoTableau.h
+/*! \file AcasParser.h
 ** \verbatim
 ** Top contributors (to current version):
 **   Guy Katz
@@ -10,51 +10,25 @@
 ** directory for licensing information.\endverbatim
 **/
 
-#ifndef __AutoTableau_h__
-#define __AutoTableau_h__
+#ifndef __AcasParser_h__
+#define __AcasParser_h__
 
-#include "ITableau.h"
-#include "T/TableauFactory.h"
+#include "AcasNeuralNetwork.h"
+#include "InputQuery.h"
+#include "String.h"
 
-class AutoTableau
+class AcasParser
 {
 public:
-	AutoTableau()
-	{
-		_tableau = T::createTableau();
-	}
+    AcasParser( const String &path );
 
-	~AutoTableau()
-	{
-		T::discardTableau( _tableau );
-		_tableau = 0;
-	}
-
-	operator ITableau &()
-	{
-		return *_tableau;
-	}
-
-	operator ITableau *()
-	{
-		return _tableau;
-	}
-
-	ITableau *operator->()
-	{
-		return _tableau;
-	}
-
-	const ITableau *operator->() const
-	{
-		return _tableau;
-	}
+    void generateQuery( InputQuery &inputQuery );
 
 private:
-	ITableau *_tableau;
+    AcasNeuralNetwork _acasNeuralNetwork;
 };
 
-#endif // __AutoTableau_h__
+#endif // __AcasParser_h__
 
 //
 // Local Variables:

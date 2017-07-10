@@ -14,9 +14,11 @@
 #define __Tableau_h__
 
 #include "ITableau.h"
+#include "Map.h"
 #include "Set.h"
 
 class BasisFactorization;
+class Equation;
 class TableauState;
 
 class Tableau : public ITableau
@@ -70,6 +72,12 @@ public:
     void initializeTableau();
 
     /*
+      A method for adding an additional equation to the tableau. The
+      auxiliary variable in this equation needs to be a fresh variable.
+    */
+    void addEquation( const Equation &equation );
+
+    /*
       Get the Tableau's dimensions.
     */
     unsigned getM() const;
@@ -99,6 +107,12 @@ public:
     */
     void setLowerBound( unsigned variable, double value );
     void setUpperBound( unsigned variable, double value );
+
+    /*
+      Get the lower/upper bounds for a variable.
+    */
+    double getLowerBound( unsigned variable ) const;
+    double getUpperBound( unsigned variable ) const;
 
     /*
       Tighten the lower/upper bound for a variable. These functions
@@ -219,7 +233,16 @@ public:
     void storeState( TableauState &state ) const;
     void restoreState( const TableauState &state );
 
+    /*
+      Register or unregister to watch a variable.
+    */
+    void registerToWatchVariable( VariableWatcher *watcher, unsigned variable );
+    void unregisterToWatchVariable( VariableWatcher *watcher, unsigned variable );
+
 private:
+    typedef List<VariableWatcher *> VariableWatchers;
+    Map<unsigned, VariableWatchers> _variableToWatchers;
+
     /*
       The dimensions of matrix A
     */
@@ -348,6 +371,11 @@ private:
     bool basicOutOfBounds( unsigned basic ) const;
     bool basicTooHigh( unsigned basic ) const;
     bool basicTooLow( unsigned basic ) const;
+
+    /*
+      Resize the relevant data structures to add a new row to the tableau.
+    */
+    void addRow();
 };
 
 #endif // __Tableau_h__

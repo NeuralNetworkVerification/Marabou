@@ -12,8 +12,10 @@
 
 #include <cxxtest/TestSuite.h>
 
+#include "Equation.h"
 #include "MockEntrySelectionStrategy.h"
 #include "MockErrno.h"
+#include "ReluplexError.h"
 #include "Tableau.h"
 #include "TableauRow.h"
 #include "TableauState.h"
@@ -23,6 +25,28 @@
 class MockForTableau
 {
 public:
+};
+
+class MockVariableWatcher : public ITableau::VariableWatcher
+{
+public:
+    Map<unsigned, double> lastNotifiedValues;
+    void notifyVariableValue( unsigned variable, double value )
+    {
+        lastNotifiedValues[variable] = value;
+    }
+
+    Map<unsigned, double> lastNotifiedLowerBounds;
+    void notifyLowerBound( unsigned variable, double bound )
+    {
+        lastNotifiedLowerBounds[variable] = bound;
+    }
+
+    Map<unsigned, double> lastNotifiedUpperBounds;
+    void notifyUpperBound( unsigned variable, double bound )
+    {
+        lastNotifiedUpperBounds[variable] = bound;
+    }
 };
 
 class TableauTestSuite : public CxxTest::TestSuite
@@ -131,6 +155,65 @@ public:
         TS_ASSERT_EQUALS( tableau->getValue( 4 ), 217.0 );
         TS_ASSERT_EQUALS( tableau->getValue( 5 ), 113.0 );
         TS_ASSERT_EQUALS( tableau->getValue( 6 ), 406.0 );
+
+        TS_ASSERT_THROWS_NOTHING( delete tableau );
+    }
+
+    void test_watcher__value_changes()
+    {
+        Tableau *tableau;
+
+        TS_ASSERT( tableau = new Tableau );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        initializeTableauValues( *tableau );
+
+        for ( unsigned i = 0; i < 4; ++i )
+        {
+            TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( i, 1 ) );
+            TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( i, 2 ) );
+        }
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 4, 218 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 4, 228 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 5, 112 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 5, 114 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 6, 400 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 6, 402 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 4 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 5 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 6 ) );
+
+        MockVariableWatcher watcher1;
+        MockVariableWatcher watcher2;
+
+        TS_ASSERT_THROWS_NOTHING( tableau->registerToWatchVariable( &watcher1, 4 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->registerToWatchVariable( &watcher1, 5 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->registerToWatchVariable( &watcher2, 5 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau() );
+
+        // The basic values get computed, so the watchers should be called
+
+        TS_ASSERT_EQUALS( watcher1.lastNotifiedValues[4], 217.0 );
+        TS_ASSERT_EQUALS( watcher1.lastNotifiedValues[5], 113.0 );
+        TS_ASSERT_EQUALS( watcher2.lastNotifiedValues[5], 113.0 );
+
+        MockVariableWatcher watcher3;
+        TS_ASSERT_THROWS_NOTHING( tableau->registerToWatchVariable( &watcher3, 3 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setNonBasicAssignment( 3, 2 ) );
+
+        TS_ASSERT_EQUALS( watcher3.lastNotifiedValues[3], 2.0 );
+
+        watcher3.lastNotifiedValues.clear();
+        TS_ASSERT_THROWS_NOTHING( tableau->unregisterToWatchVariable( &watcher3, 3 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setNonBasicAssignment( 3, 1 ) );
+        //TS_ASSERT_EQUALS( watcher3.lastNotifiedValues[3], 1.0 );
+        TS_ASSERT( watcher3.lastNotifiedValues.empty() );
 
         TS_ASSERT_THROWS_NOTHING( delete tableau );
     }
@@ -977,6 +1060,162 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( delete tableauState );
         TS_ASSERT_THROWS_NOTHING( delete tableau );
+    }
+
+    void test_increase_dimensions()
+    {
+        Tableau *tableau;
+
+        TS_ASSERT( tableau = new Tableau );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        initializeTableauValues( *tableau );
+
+        for ( unsigned i = 0; i < 4; ++i )
+        {
+            TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( i, 1 ) );
+            TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( i, 10 ) );
+        }
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 4, 219 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 4, 228 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 5, 112 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 5, 114 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 6, 400 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 6, 402 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 4 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 5 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 6 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau() );
+
+        // New equation: 2x2 - 4x3 + x8 = 5
+        Equation equation;
+        equation.addAddend( 2, 1 );
+        equation.addAddend( -4, 2 );
+        equation.addAddend( 1, 7 );
+        equation.setScalar( 5 );
+        equation.markAuxiliaryVariable( 7 );
+        TS_ASSERT_THROWS_NOTHING( tableau->addEquation( equation ) );
+
+        // Test that an old row is still compute correctly, with 0
+        // entry for the new variables
+
+        TableauRow row( 4 );
+        TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 0, &row ) );
+
+        TableauRow::Entry entry;
+        entry = row._row[0];
+        TS_ASSERT_EQUALS( entry._var, 0U );
+        TS_ASSERT_EQUALS( entry._coefficient, -3 );
+
+        entry = row._row[1];
+        TS_ASSERT_EQUALS( entry._var, 1U );
+        TS_ASSERT_EQUALS( entry._coefficient, -2 );
+
+        entry = row._row[2];
+        TS_ASSERT_EQUALS( entry._var, 2U );
+        TS_ASSERT_EQUALS( entry._coefficient, -1 );
+
+        entry = row._row[3];
+        TS_ASSERT_EQUALS( entry._var, 3U );
+        TS_ASSERT_EQUALS( entry._coefficient, -2 );
+    }
+
+    void test_tighten_bounds()
+    {
+        Tableau *tableau;
+
+        TS_ASSERT( tableau = new Tableau );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        initializeTableauValues( *tableau );
+
+        for ( unsigned i = 0; i < 4; ++i )
+        {
+            TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( i, 1 ) );
+            TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( i, 10 ) );
+        }
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 4, 218 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 4, 228 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 5, 100 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 5, 114 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 6, 400 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 6, 402 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 4 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 5 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 6 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau() );
+
+        for ( unsigned i = 0; i < 4; ++i )
+        {
+            TS_ASSERT_EQUALS( tableau->getLowerBound( i ), 1 );
+            TS_ASSERT_EQUALS( tableau->getUpperBound( i ), 10 );
+            TS_ASSERT_EQUALS( tableau->getValue( i ), 1.0 );
+        }
+
+        TS_ASSERT_EQUALS( tableau->getValue( 4 ), 217.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 5 ), 113.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 6 ), 406.0 );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->tightenLowerBound( 1, 4 ) );
+
+        for ( unsigned i = 0; i < 4; ++i )
+        {
+            if ( i == 1 )
+                continue;
+
+            TS_ASSERT_EQUALS( tableau->getLowerBound( i ), 1 );
+            TS_ASSERT_EQUALS( tableau->getUpperBound( i ), 10 );
+            TS_ASSERT_EQUALS( tableau->getValue( i ), 1.0 );
+        }
+
+        TS_ASSERT_EQUALS( tableau->getLowerBound( 1 ), 4 );
+        TS_ASSERT_EQUALS( tableau->getUpperBound( 1 ), 10 );
+        TS_ASSERT_EQUALS( tableau->getValue( 1 ), 4.0 );
+
+        TS_ASSERT_THROWS_EQUALS( tableau->tightenLowerBound( 1, 2 ),
+                                 const ReluplexError &error,
+                                 error.getCode(),
+                                 ReluplexError::INVALID_BOUND_TIGHTENING );
+
+        TS_ASSERT_THROWS_EQUALS( tableau->tightenUpperBound( 1, 22 ),
+                                 const ReluplexError &error,
+                                 error.getCode(),
+                                 ReluplexError::INVALID_BOUND_TIGHTENING );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->tightenUpperBound( 1, 8 ) );
+
+        TS_ASSERT_EQUALS( tableau->getLowerBound( 1 ), 4 );
+        TS_ASSERT_EQUALS( tableau->getUpperBound( 1 ), 8 );
+        TS_ASSERT_EQUALS( tableau->getValue( 1 ), 4.0 );
+
+        // Tightening the bounds of basic variables doesn't change their values
+        TS_ASSERT_EQUALS( tableau->getValue( 5 ), 110.0 );
+        TS_ASSERT_THROWS_NOTHING( tableau->tightenLowerBound( 5, 111 ) );
+        TS_ASSERT_EQUALS( tableau->getValue( 5 ), 110.0 );
+
+        TS_ASSERT_THROWS_NOTHING( delete tableau );
+    }
+
+    void test_todo()
+    {
+        TS_TRACE( "When resizing the talbeau, allocate a larger size and only use part of it, "
+                  "instead of increasing it one row at a time?" );
+        TS_TRACE( "Proper handling of the basis factorization when resizing the tableau. Reinitialize B?" );
+        // Explanation: we could just create a fresh basis
+        // factorization, with I as the B0 matrix, but that would mean
+        // switching back to the original set of basic variables,
+        // which is potentially undesirable. It may be better to keep
+        // the current basis, but computing B explicitly and adding
+        // another row to it.
+        TS_TRACE( "Make sure all watchers are properply informed when restoring a tabealu" );
     }
 };
 

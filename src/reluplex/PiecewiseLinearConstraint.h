@@ -14,10 +14,11 @@
 #define __PiecewiseLinearConstraint_h__
 
 #include "Map.h"
+#include "ITableau.h"
 
 class PiecewiseLinearCaseSplit;
 
-class PiecewiseLinearConstraint
+class PiecewiseLinearConstraint : public ITableau::VariableWatcher
 {
 public:
     /*
@@ -40,6 +41,19 @@ public:
     virtual ~PiecewiseLinearConstraint() {}
 
     /*
+      Register/unregister the constraint with a talbeau.
+     */
+    virtual void registerAsWatcher( ITableau *tableau ) = 0;
+    virtual void unregisterAsWatcher( ITableau *tableau ) = 0;
+
+    /*
+      The variable watcher notifcation callbacks.
+    */
+    virtual void notifyVariableValue( unsigned /* variable */, double /* value */ ) {}
+    virtual void notifyLowerBound( unsigned /* variable */, double /* bound */ ) {}
+    virtual void notifyUpperBound( unsigned /* variable */, double /* bound */ ) {}
+
+    /*
       Returns true iff the variable participates in this piecewise
       linear constraint.
     */
@@ -51,15 +65,14 @@ public:
     virtual List<unsigned> getParticiatingVariables() const = 0;
 
     /*
-      Returns true iff the given assignment satisfies the constraint.
+      Returns true iff the assignment satisfies the constraint.
     */
-    virtual bool satisfied( const Map<unsigned, double> &assignment ) const = 0;
+    virtual bool satisfied() const = 0;
 
     /*
       Returns a list of possible fixes for the violated constraint.
     */
-    virtual List<PiecewiseLinearConstraint::Fix> getPossibleFixes( const Map<unsigned,
-                                                                   double> &assignment ) const = 0;
+    virtual List<PiecewiseLinearConstraint::Fix> getPossibleFixes() const = 0;
 
     /*
       Returns the list of case splits that this piecewise linear

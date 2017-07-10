@@ -48,12 +48,6 @@ public:
     void extractSolution( InputQuery &inputQuery );
 
     /*
-      Get the set of all variables participating in active piecewise
-      linear constraints.
-     */
-    const Set<unsigned> getVarsInPlConstraints();
-
-    /*
       Methods for tightening lower/upper variable bounds.
     */
     void tightenLowerBound( unsigned variable, double bound );
@@ -103,12 +97,6 @@ private:
     SmtCore _smtCore;
 
     /*
-      An auxiliary variable, used to collect the part of the
-      assignment that is relevant to the PL constraints.
-    */
-    Map<unsigned, double> _plVarAssignment;
-
-    /*
       Perform a simplex step: compute the cost function, pick the
       entering and leaving variables and perform a pivot. Return false
       if the problem is discovered to be unsat.
@@ -140,13 +128,6 @@ private:
       Select a currently-violated LP constraint for fixing
     */
     void selectViolatedPlConstraint();
-
-    /*
-      Extract the assignment of all variables that participate in a
-      piecewise linear constraint. Assumes that the tableau assignment
-      has been computed.
-    */
-    void extractPlAssignment();
 
     /*
       Report the violated PL constraint to the SMT engine.

@@ -23,6 +23,23 @@ ReluConstraint::ReluConstraint( unsigned b, unsigned f )
 {
 }
 
+void ReluConstraint::registerAsWatcher( ITableau *tableau )
+{
+    tableau->registerToWatchVariable( this, _b );
+    tableau->registerToWatchVariable( this, _f );
+}
+
+void ReluConstraint::unregisterAsWatcher( ITableau *tableau )
+{
+    tableau->unregisterToWatchVariable( this, _b );
+    tableau->unregisterToWatchVariable( this, _f );
+}
+
+void ReluConstraint::notifyVariableValue( unsigned variable, double value )
+{
+    _assignment[variable] = value;
+}
+
 bool ReluConstraint::participatingVariable( unsigned variable ) const
 {
     return ( variable == _b ) || ( variable == _f );
@@ -33,13 +50,13 @@ List<unsigned> ReluConstraint::getParticiatingVariables() const
     return List<unsigned>( { _b, _f } );
 }
 
-bool ReluConstraint::satisfied( const Map<unsigned, double> &assignment ) const
+bool ReluConstraint::satisfied() const
 {
-    if ( !( assignment.exists( _b ) && assignment.exists( _f ) ) )
+    if ( !( _assignment.exists( _b ) && _assignment.exists( _f ) ) )
         throw ReluplexError( ReluplexError::PARTICIPATING_VARIABLES_ABSENT );
 
-    double bValue = assignment.get( _b );
-    double fValue = assignment.get( _f );
+    double bValue = _assignment.get( _b );
+    double fValue = _assignment.get( _f );
 
     ASSERT( !FloatUtils::isNegative( fValue ) );
 
@@ -49,14 +66,14 @@ bool ReluConstraint::satisfied( const Map<unsigned, double> &assignment ) const
         return !FloatUtils::isPositive( bValue );
 }
 
-List<PiecewiseLinearConstraint::Fix> ReluConstraint::getPossibleFixes( const Map<unsigned, double> &assignment ) const
+List<PiecewiseLinearConstraint::Fix> ReluConstraint::getPossibleFixes() const
 {
-    ASSERT( !satisfied( assignment ) );
-    ASSERT( assignment.exists( _b ) );
-    ASSERT( assignment.exists( _f ) );
+    ASSERT( !satisfied() );
+    ASSERT( _assignment.exists( _b ) );
+    ASSERT( _assignment.exists( _f ) );
 
-    double bValue = assignment.get( _b );
-    double fValue = assignment.get( _f );
+    double bValue = _assignment.get( _b );
+    double fValue = _assignment.get( _f );
 
     ASSERT( !FloatUtils::isNegative( fValue ) );
 

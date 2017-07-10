@@ -19,6 +19,8 @@ public:
     static void print();
 
     static const double DEFAULT_EPSILON_FOR_COMPARISONS;
+
+    static const unsigned DEFAULT_DOUBLE_TO_STRING_PRECISION;
 };
 
 #endif // __GlobalConfiguration_h__

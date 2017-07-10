@@ -13,6 +13,7 @@
 #include <cxxtest/TestSuite.h>
 
 #include "FreshVariables.h"
+#include "MockTableau.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "ReluConstraint.h"
 #include "ReluplexError.h"
@@ -61,48 +62,44 @@ public:
         TS_ASSERT( !relu.participatingVariable( 0 ) );
         TS_ASSERT( !relu.participatingVariable( 5 ) );
 
-        Map<unsigned, double> assignment;
-        TS_ASSERT_THROWS_EQUALS( relu.satisfied( assignment ),
+        TS_ASSERT_THROWS_EQUALS( relu.satisfied(),
                                  const ReluplexError &e,
                                  e.getCode(),
                                  ReluplexError::PARTICIPATING_VARIABLES_ABSENT );
 
-        assignment[b] = 1;
-        assignment[f] = 1;
-        assignment[0] = -17;
-        assignment[2] = 5.67;
-        assignment[5] = 0;
+        relu.notifyVariableValue( b, 1 );
+        relu.notifyVariableValue( f, 1 );
 
-        TS_ASSERT( relu.satisfied( assignment ) );
+        TS_ASSERT( relu.satisfied() );
 
-        assignment[f] = 2;
+        relu.notifyVariableValue( f, 2 );
 
-        TS_ASSERT( !relu.satisfied( assignment ) );
+        TS_ASSERT( !relu.satisfied() );
 
-        assignment[b] = 2;
+        relu.notifyVariableValue( b, 2 );
 
-        TS_ASSERT( relu.satisfied( assignment ) );
+        TS_ASSERT( relu.satisfied() );
 
-        assignment[b] = -2;
+        relu.notifyVariableValue( b, -2 );
 
-        TS_ASSERT( !relu.satisfied( assignment ) );
+        TS_ASSERT( !relu.satisfied() );
 
-        assignment[f] = 0;
+        relu.notifyVariableValue( f, 0 );
 
-        TS_ASSERT( relu.satisfied( assignment ) );
+        TS_ASSERT( relu.satisfied() );
 
-        assignment[b] = -3;
+        relu.notifyVariableValue( b, -3 );
 
-        TS_ASSERT( relu.satisfied( assignment ) );
+        TS_ASSERT( relu.satisfied() );
 
-        assignment[b] = 0;
+        relu.notifyVariableValue( b, 0 );
 
-        TS_ASSERT( relu.satisfied( assignment ) );
+        TS_ASSERT( relu.satisfied() );
 
-        assignment[f] = 0;
-        assignment[b] = 11;
+        relu.notifyVariableValue( f, 0 );
+        relu.notifyVariableValue( b, 11 );
 
-        TS_ASSERT( !relu.satisfied( assignment ) );
+        TS_ASSERT( !relu.satisfied() );
     }
 
     void test_relu_fixes()
@@ -112,15 +109,13 @@ public:
 
         ReluConstraint relu( b, f );
 
-        Map<unsigned, double> assignment;
-
         List<PiecewiseLinearConstraint::Fix> fixes;
         List<PiecewiseLinearConstraint::Fix>::iterator it;
 
-        assignment[b] = -1;
-        assignment[f] = 1;
+        relu.notifyVariableValue( b, -1 );
+        relu.notifyVariableValue( f, 1 );
 
-        fixes = relu.getPossibleFixes( assignment );
+        fixes = relu.getPossibleFixes();
         it = fixes.begin();
         TS_ASSERT_EQUALS( it->_variable, b );
         TS_ASSERT_EQUALS( it->_value, 1 );
@@ -128,10 +123,10 @@ public:
         TS_ASSERT_EQUALS( it->_variable, f );
         TS_ASSERT_EQUALS( it->_value, 0 );
 
-        assignment[b] = 2;
-        assignment[f] = 1;
+        relu.notifyVariableValue( b, 2 );
+        relu.notifyVariableValue( f, 1 );
 
-        fixes = relu.getPossibleFixes( assignment );
+        fixes = relu.getPossibleFixes();
         it = fixes.begin();
         TS_ASSERT_EQUALS( it->_variable, b );
         TS_ASSERT_EQUALS( it->_value, 1 );
@@ -139,10 +134,10 @@ public:
         TS_ASSERT_EQUALS( it->_variable, f );
         TS_ASSERT_EQUALS( it->_value, 2 );
 
-        assignment[b] = 11;
-        assignment[f] = 0;
+        relu.notifyVariableValue( b, 11 );
+        relu.notifyVariableValue( f, 0 );
 
-        fixes = relu.getPossibleFixes( assignment );
+        fixes = relu.getPossibleFixes();
         it = fixes.begin();
         TS_ASSERT_EQUALS( it->_variable, b );
         TS_ASSERT_EQUALS( it->_value, 0 );
@@ -249,6 +244,36 @@ public:
         TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
         TS_ASSERT_EQUALS( addend->_variable, 100U );
         TS_ASSERT_EQUALS( inactiveEquation._auxVariable, 100U );
+    }
+
+    void test_register_as_watcher()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        MockTableau tableau;
+
+        ReluConstraint relu( b, f );
+
+        TS_ASSERT_THROWS_NOTHING( relu.registerAsWatcher( &tableau ) );
+
+        TS_ASSERT_EQUALS( tableau.lastRegisteredVariableToWatcher.size(), 2U );
+        TS_ASSERT( tableau.lastUnregisteredVariableToWatcher.empty() );
+        TS_ASSERT_EQUALS( tableau.lastRegisteredVariableToWatcher[b].size(), 1U );
+        TS_ASSERT( tableau.lastRegisteredVariableToWatcher[b].exists( &relu ) );
+        TS_ASSERT_EQUALS( tableau.lastRegisteredVariableToWatcher[f].size(), 1U );
+        TS_ASSERT( tableau.lastRegisteredVariableToWatcher[f].exists( &relu ) );
+
+        tableau.lastRegisteredVariableToWatcher.clear();
+
+        TS_ASSERT_THROWS_NOTHING( relu.unregisterAsWatcher( &tableau ) );
+
+        TS_ASSERT( tableau.lastRegisteredVariableToWatcher.empty() );
+        TS_ASSERT_EQUALS( tableau.lastUnregisteredVariableToWatcher.size(), 2U );
+        TS_ASSERT_EQUALS( tableau.lastUnregisteredVariableToWatcher[b].size(), 1U );
+        TS_ASSERT( tableau.lastUnregisteredVariableToWatcher[b].exists( &relu ) );
+        TS_ASSERT_EQUALS( tableau.lastUnregisteredVariableToWatcher[f].size(), 1U );
+        TS_ASSERT( tableau.lastUnregisteredVariableToWatcher[f].exists( &relu ) );
     }
 };
 

@@ -14,6 +14,7 @@
 #include "GlobalConfiguration.h"
 
 const double GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS = 0.0000000001;
+const unsigned GlobalConfiguration::DEFAULT_DOUBLE_TO_STRING_PRECISION = 10;
 
 void GlobalConfiguration::print()
 {
@@ -21,6 +22,7 @@ void GlobalConfiguration::print()
     printf( "*** Global Configuraiton ***\n" );
     printf( "****************************\n" );
     printf( "  DEFAULT_EPSILON_FOR_COMPARISONS: %lf\n", DEFAULT_EPSILON_FOR_COMPARISONS );
+    printf( "  DEFAULT_DOUBLE_TO_STRING_PRECISION: %u\n", DEFAULT_DOUBLE_TO_STRING_PRECISION );
     printf( "****************************\n" );
 }
 

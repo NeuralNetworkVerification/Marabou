@@ -13,6 +13,7 @@
 #include "BasisFactorization.h"
 #include "Debug.h"
 #include "EntrySelectionStrategy.h"
+#include "Equation.h"
 #include "FloatUtils.h"
 #include "ReluplexError.h"
 #include "Tableau.h"
@@ -233,7 +234,7 @@ void Tableau::initializeTableau()
     unsigned basicIndex = 0;
     unsigned nonBasicIndex = 0;
 
-    // Assign variable indices, grab basic columns from A into B
+    // Assign variable indices
     for ( unsigned i = 0; i < _n; ++i )
     {
         if ( _basicVariables.exists( i ) )
@@ -253,7 +254,10 @@ void Tableau::initializeTableau()
 
     // Set non-basics to lower bounds
     for ( unsigned i = 0; i < _n - _m; ++i )
-        _nonBasicAssignment[i] = _lowerBounds[_nonBasicIndexToVariable[i]];
+    {
+        unsigned nonBasic = _nonBasicIndexToVariable[i];
+        setNonBasicAssignment( nonBasic, _lowerBounds[nonBasic] );
+    }
 
     // Recompute assignment
     computeAssignment();
@@ -298,6 +302,17 @@ void Tableau::computeAssignment()
 
     computeBasicStatus();
     _basicAssignmentStatus = ASSIGNMENT_VALID;
+
+    // Inform the watchers
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        unsigned variable = _basicIndexToVariable[i];
+        if ( _variableToWatchers.exists( variable ) )
+        {
+            for ( auto &watcher : _variableToWatchers[variable] )
+                watcher->notifyVariableValue( variable, _basicAssignment[i] );
+        }
+    }
 }
 
 void Tableau::computeBasicStatus()
@@ -334,6 +349,18 @@ void Tableau::setUpperBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );
     _upperBounds[variable] = value;
+}
+
+double Tableau::getLowerBound( unsigned variable ) const
+{
+    ASSERT( variable < _n );
+    return _lowerBounds[variable];
+}
+
+double Tableau::getUpperBound( unsigned variable ) const
+{
+    ASSERT( variable < _n );
+    return _upperBounds[variable];
 }
 
 double Tableau::getValue( unsigned variable )
@@ -582,9 +609,8 @@ void Tableau::performPivot()
 
         // The entering variable is going to be pressed against its bound.
         bool decrease = FloatUtils::isPositive( _costFunction[_enteringVariable] );
-        _nonBasicAssignment[_enteringVariable] = decrease ?
-            _lowerBounds[_nonBasicIndexToVariable[_enteringVariable]] :
-            _upperBounds[_nonBasicIndexToVariable[_enteringVariable]];
+        unsigned nonBasic = _nonBasicIndexToVariable[_enteringVariable];
+        setNonBasicAssignment( nonBasic, decrease ? _lowerBounds[nonBasic] : _upperBounds[nonBasic] );
         return;
     }
 
@@ -622,7 +648,7 @@ void Tableau::performPivot()
         else
             nonBasicAssignment = _lowerBounds[currentBasic];
     }
-    _nonBasicAssignment[_enteringVariable] = nonBasicAssignment;
+    setNonBasicAssignment( _nonBasicIndexToVariable[_enteringVariable], nonBasicAssignment );
 
     // Update the basis factorization. The column corresponding to the
     // leaving variable is the one that has changed
@@ -660,7 +686,7 @@ void Tableau::performDegeneratePivot( unsigned entering, unsigned leaving )
     // Switch assignment values
     double temp = _basicAssignment[leaving];
     _basicAssignment[leaving] = _nonBasicAssignment[entering];
-    _nonBasicAssignment[entering] = temp;
+    setNonBasicAssignment( currentBasic, temp );
 }
 
 double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient, bool decrease )
@@ -872,6 +898,13 @@ void Tableau::setNonBasicAssignment( unsigned variable, double value )
     unsigned nonBasic = _variableToIndex[variable];
     _nonBasicAssignment[nonBasic] = value;
     _basicAssignmentStatus = ASSIGNMENT_INVALID;
+
+    // Inform watchers
+    if ( _variableToWatchers.exists( variable ) )
+    {
+        for ( auto &watcher : _variableToWatchers[variable] )
+            watcher->notifyVariableValue( variable, value );
+    }
 }
 
 void Tableau::dumpAssignment()
@@ -1021,16 +1054,209 @@ void Tableau::restoreState( const TableauState &state )
     _basicAssignmentStatus = ASSIGNMENT_VALID;
 }
 
-void Tableau::tightenLowerBound( unsigned // variable
-                                 , double // value
-                                 )
+void Tableau::tightenLowerBound( unsigned variable, double value )
 {
+    ASSERT( variable < _n );
+
+    if ( !FloatUtils::gt( value, _lowerBounds[variable] ) )
+        throw ReluplexError( ReluplexError::INVALID_BOUND_TIGHTENING );
+
+    _lowerBounds[variable] = value;
+
+    // Ensure that non-basic variables are within bounds
+    if ( !_basicVariables.exists( variable ) )
+    {
+        unsigned index = _variableToIndex[variable];
+        if ( FloatUtils::gt( value, _nonBasicAssignment[index] ) )
+            setNonBasicAssignment( variable, value );
+    }
 }
 
-void Tableau::tightenUpperBound( unsigned // variable
-                                 , double // value
-                                 )
+void Tableau::tightenUpperBound( unsigned variable, double value )
 {
+    ASSERT( variable < _n );
+
+    if ( !FloatUtils::lt( value, _upperBounds[variable] ) )
+        throw ReluplexError( ReluplexError::INVALID_BOUND_TIGHTENING );
+
+    _upperBounds[variable] = value;
+
+    // Ensure that non-basic variables are within bounds
+    if ( !_basicVariables.exists( variable ) )
+    {
+        unsigned index = _variableToIndex[variable];
+        if ( FloatUtils::lt( value, _nonBasicAssignment[index] ) )
+            setNonBasicAssignment( variable, value );
+    }
+}
+
+void Tableau::addEquation( const Equation &equation )
+{
+    // The aux variable in the equation has to be a new variable
+    if ( equation._auxVariable != _n )
+        throw ReluplexError( ReluplexError::INVALID_EQUATION_ADDED_TO_TABLEAU );
+
+    // Add an actual row to the talbeau, adjust the data structures
+    addRow();
+
+    // Mark the auxiliary variable as basic, add to indices
+    _basicVariables.insert( equation._auxVariable );
+    _basicIndexToVariable[_m - 1] = equation._auxVariable;
+    _variableToIndex[equation._auxVariable] = _m - 1;
+
+    // For now, assume the new equation doesn't involve basic variables
+    _b[_m - 1] = equation._scalar;
+    for ( const auto &addend : equation._addends )
+        setEntryValue( _m - 1, addend._variable, addend._coefficient );
+}
+
+void Tableau::addRow()
+{
+    unsigned newM = _m + 1;
+    unsigned newN = _n + 1;
+
+    // Allocate a new A, copy the columns of the old A
+    double *newA = new double[newN * newM];
+    if ( !newA )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newA" );
+    std::fill( newA, newA + ( newM * newN ), 0.0 );
+
+    double *AColumn, *newAColumn;
+    for ( unsigned i = 0; i < _n; ++i )
+    {
+        AColumn = _A + ( i * _m );
+        newAColumn = newA + ( i * newM );
+        memcpy( newAColumn, AColumn, _m * sizeof(double) );
+    }
+    delete[] _A;
+    _A = newA;
+
+    // Allocate a new d. Don't need to initialize
+    double *newD = new double[newM];
+    if ( !newD )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newD" );
+    delete[] _d;
+    _d = newD;
+
+    // Allocate a new b and copy the old values
+    double *newB = new double[newM];
+    if ( !newB )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newB" );
+    std::fill( newB + _m, newB + newM, 0.0 );
+    memcpy( newB, _b, _m * sizeof(double) );
+    delete[] _b;
+    _b = newB;
+
+    // Allocate a new unit vector. Don't need to initialize
+    double *newUnitVector = new double[newM];
+    if ( !newUnitVector )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newUnitVector" );
+    delete[] _unitVector;
+    _unitVector = newUnitVector;
+
+    // Allocate a new cost function. Don't need to initialize
+    double *newCostFunction = new double[newN - newM];
+    if ( !newCostFunction )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newCostFunction" );
+    delete[] _costFunction;
+    _costFunction = newCostFunction;
+
+    // Allocate new basic costs. Don't need to initialize
+    double *newBasicCosts = new double[newM];
+    if ( !newBasicCosts )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newBasicCosts" );
+    delete[] _basicCosts;
+    _basicCosts = newBasicCosts;
+
+    // Allocate new multipliers. Don't need to initialize
+    double *newMultipliers = new double[newM];
+    if ( !newMultipliers )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newMultipliers" );
+    delete[] _multipliers;
+    _multipliers = newMultipliers;
+
+    // Allocate new index arrays. Copy old indices, but don't assign indices to new variables yet.
+    unsigned *newBasicIndexToVariable = new unsigned[newM];
+    if ( !newBasicIndexToVariable )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newBasicIndexToVariable" );
+    memcpy( newBasicIndexToVariable, _basicIndexToVariable, _m * sizeof(unsigned) );
+    delete[] _basicIndexToVariable;
+    _basicIndexToVariable = newBasicIndexToVariable;
+
+    unsigned *newVariableToIndex = new unsigned[newN];
+    if ( !newVariableToIndex )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newVariableToIndex" );
+    memcpy( newVariableToIndex, _variableToIndex, _n * sizeof(unsigned) );
+    delete[] _variableToIndex;
+    _variableToIndex = newVariableToIndex;
+
+    unsigned *newNonBasicIndexToVariable = new unsigned[newN - newM];
+    if ( !newNonBasicIndexToVariable )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newNonBasicIndexToVariable" );
+    memcpy( newNonBasicIndexToVariable, _nonBasicIndexToVariable, ( _n - _m ) * sizeof(unsigned) );
+    delete[] _nonBasicIndexToVariable;
+    _nonBasicIndexToVariable = newNonBasicIndexToVariable;
+
+    // Allocate a new non-basic assignment vector, copy old values
+    double *newNonBasicAssignment = new double[newN - newM];
+    if ( !newNonBasicAssignment )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newNonBasicAssignment" );
+    memcpy( newNonBasicAssignment, _nonBasicAssignment, ( _n - _m ) * sizeof(double) );
+    delete[] _nonBasicAssignment;
+    _nonBasicAssignment = newNonBasicAssignment;
+
+    // Allocate a new basic assignment vector, invalidate the assignment
+    double *newBasicAssignment = new double[newM];
+    if ( !newBasicAssignment )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newAssignment" );
+    _basicAssignmentStatus = ASSIGNMENT_INVALID;
+    delete[] _basicAssignment;
+    _basicAssignment = newBasicAssignment;
+
+    unsigned *newBasicStatus = new unsigned[newM];
+    if ( !newBasicStatus )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newBasicStatus" );
+    delete[] _basicStatus;
+    _basicStatus = newBasicStatus;
+
+    // Allocate new lower and upper bound arrays, and copy old values
+    double *newLowerBounds = new double[newN];
+    if ( !newLowerBounds )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newLowerBounds" );
+    memcpy( newLowerBounds, _lowerBounds, _n * sizeof(double) );
+    delete[] _lowerBounds;
+    _lowerBounds = newLowerBounds;
+
+    double *newUpperBounds = new double[newN];
+    if ( !newUpperBounds )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newUpperBounds" );
+    memcpy( newUpperBounds, _upperBounds, _n * sizeof(double) );
+    delete[] _upperBounds;
+    _upperBounds = newUpperBounds;
+
+    // Mark the new variable as unbounded
+    _lowerBounds[_n] = -DBL_MAX;
+    _upperBounds[_n] = DBL_MAX;
+
+    // TODO: currently this assumes that there are no stored eta matrices.
+    BasisFactorization *newBasisFactorization = new BasisFactorization( newM );
+    if ( !_basisFactorization )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::basisFactorization" );
+    delete _basisFactorization;
+    _basisFactorization = newBasisFactorization;
+
+    _m = newM;
+    _n = newN;
+}
+
+void Tableau::registerToWatchVariable( VariableWatcher *watcher, unsigned variable )
+{
+    _variableToWatchers[variable].append( watcher );
+}
+
+void Tableau::unregisterToWatchVariable( VariableWatcher *watcher, unsigned variable )
+{
+    _variableToWatchers[variable].erase( watcher );
 }
 
 //

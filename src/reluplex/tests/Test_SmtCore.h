@@ -34,6 +34,14 @@ public:
     class MockConstraint : public PiecewiseLinearConstraint
     {
     public:
+        void registerAsWatcher( ITableau * )
+        {
+        }
+
+        void unregisterAsWatcher( ITableau * )
+        {
+        }
+
         bool participatingVariable( unsigned ) const
         {
             return true;
@@ -44,13 +52,12 @@ public:
             return List<unsigned>();
         }
 
-        bool satisfied( const Map<unsigned, double> & ) const
+        bool satisfied() const
         {
             return true;
         }
 
-
-        List<PiecewiseLinearConstraint::Fix> getPossibleFixes( const Map<unsigned, double> & ) const
+        List<PiecewiseLinearConstraint::Fix> getPossibleFixes() const
         {
             return List<PiecewiseLinearConstraint::Fix>();
         }

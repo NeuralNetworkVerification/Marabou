@@ -16,12 +16,38 @@
 #include "Set.h"
 
 class EntrySelectionStrategy;
+class Equation;
 class TableauRow;
 class TableauState;
 
 class ITableau
 {
 public:
+    /*
+      A class for allowing objects (e.g., piecewise linear
+      constraints) to register and receive updates regarding changes
+      in variable assignments and variable bounds.
+    */
+    class VariableWatcher
+    {
+    public:
+        /*
+          This callback will be invoked when the variable's value
+          changes.
+        */
+        virtual void notifyVariableValue( unsigned variable, double value ) = 0;
+
+        /*
+          These callbacks will be invoked when the variable's
+          lower/upper bounds change.
+        */
+        virtual void notifyLowerBound( unsigned variable, double bound ) = 0;
+        virtual void notifyUpperBound( unsigned variable, double bound ) = 0;
+    };
+
+    virtual void registerToWatchVariable( VariableWatcher *watcher, unsigned variable ) = 0;
+    virtual void unregisterToWatchVariable( VariableWatcher *watcher, unsigned variable ) = 0;
+
     virtual ~ITableau() {};
 
     virtual void setDimensions( unsigned m, unsigned n ) = 0;
@@ -60,6 +86,7 @@ public:
     virtual void dumpEquations() = 0;
     virtual unsigned nonBasicIndexToVariable( unsigned index ) const = 0;
     virtual unsigned variableToIndex( unsigned index ) const = 0;
+    virtual void addEquation( const Equation &equation ) = 0;
     virtual unsigned getM() const = 0;
     virtual unsigned getN() const = 0;
     virtual void getTableauRow( unsigned index, TableauRow *row ) = 0;

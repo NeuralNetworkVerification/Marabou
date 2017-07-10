@@ -21,6 +21,18 @@ public:
     ReluConstraint( unsigned b, unsigned f );
 
     /*
+      Register/unregister the constraint with a talbeau.
+     */
+    void registerAsWatcher( ITableau *tableau );
+    void unregisterAsWatcher( ITableau *tableau );
+
+    /*
+      This callback is invoked when a watched variable's value
+      changes.
+    */
+    void notifyVariableValue( unsigned variable, double value );
+
+    /*
       Returns true iff the variable participates in this piecewise
       linear constraint
     */
@@ -32,14 +44,14 @@ public:
     List<unsigned> getParticiatingVariables() const;
 
     /*
-      Returns true iff the given assignment satisfies the constraint
+      Returns true iff the assignment satisfies the constraint
     */
-    bool satisfied( const Map<unsigned, double> &assignment ) const;
+    bool satisfied() const;
 
     /*
       Returns a list of possible fixes for the violated constraint.
     */
-    List<PiecewiseLinearConstraint::Fix> getPossibleFixes( const Map<unsigned, double> &assignment ) const;
+    List<PiecewiseLinearConstraint::Fix> getPossibleFixes() const;
 
     /*
       Returns the list of case splits that this piecewise linear
@@ -52,6 +64,8 @@ public:
 private:
     unsigned _b;
     unsigned _f;
+
+    Map<unsigned, double> _assignment;
 };
 
 #endif // __ReluConstraint_h__

@@ -165,6 +165,10 @@ public:
         return 0;
     }
 
+    void addEquation( const Equation &/* equation */ )
+    {
+    }
+
     unsigned getM() const
     {
         return 0;
@@ -197,6 +201,19 @@ public:
 
     void tightenUpperBound( unsigned /* variable */, double /* value */ )
     {
+    }
+
+    typedef Set<VariableWatcher *> Watchers;
+    Map<unsigned, Watchers> lastRegisteredVariableToWatcher;
+    void registerToWatchVariable( VariableWatcher *watcher, unsigned variable )
+    {
+        lastRegisteredVariableToWatcher[variable].insert( watcher );
+    }
+
+    Map<unsigned, Watchers> lastUnregisteredVariableToWatcher;
+    void unregisterToWatchVariable( VariableWatcher *watcher, unsigned variable )
+    {
+        lastUnregisteredVariableToWatcher[variable].insert( watcher );
     }
 };
 
