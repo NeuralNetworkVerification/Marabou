@@ -20,6 +20,27 @@
 class AcasParser
 {
 public:
+    struct NodeIndex
+    {
+    public:
+        NodeIndex( unsigned layer, unsigned node )
+            : _layer( layer )
+            , _node( node )
+        {
+        }
+
+        unsigned _layer;
+        unsigned _node;
+
+        bool operator<( const NodeIndex &other ) const
+        {
+            if ( _layer != other._layer )
+                return _layer < other._layer;
+
+            return _node < other._node;
+        }
+    };
+
     AcasParser( const String &path );
 
     void generateQuery( InputQuery &inputQuery );

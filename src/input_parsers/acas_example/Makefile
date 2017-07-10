@@ -22,10 +22,12 @@ SOURCES += \
 	BlandsRule.cpp \
 	DantzigsRule.cpp \
 	Engine.cpp \
+	Equation.cpp \
 	EtaMatrix.cpp \
 	FreshVariables.cpp \
 	InputQuery.cpp \
 	PiecewiseLinearCaseSplit.cpp \
+	ReluConstraint.cpp \
 	SmtCore.cpp \
 	Tableau.cpp \
 	TableauFactory.cpp \

@@ -56,6 +56,11 @@ public:
     */
     void evaluate( const Vector<double> &inputs, Vector<double> &outputs, unsigned outputSize ) const;
 
+    /*
+      Returns the input range [min, max] for the input node specified by index.
+    */
+    void getInputRange( unsigned index, double &min, double &max );
+
 private:
     AcasNnet *_network;
 };
