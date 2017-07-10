@@ -20,6 +20,8 @@ SOURCES += \
 	String.cpp \
 	\
 	main.cpp \
+	BasisFactorization.cpp\
+	EtaMatrix.cpp\
 
 TARGET = run_reluplex.elf
 

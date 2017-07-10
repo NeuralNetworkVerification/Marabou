@@ -81,15 +81,29 @@ public:
     */
     void storeFactorization( BasisFactorization *other ) const;
     void restoreFactorization( const BasisFactorization *other );
-    void factorization ( int d, double *S, queue<double*> &LP );
+    void factorization (double *S );
 
-    void matrixMultiply ( int d, const double *L, const double *B, double *R);
-	void coutMatrix ( int d, const double *m );
+	void setB0 ( double *B0 ); //testing
+    void matrixMultiply (const double *L, const double *B, double *R);
+	void coutMatrix ( const double *m );
+	
+	double *_U;
+	std::vector<double *> _LP;
+	queue<double *> _LPd; //for testing
+	double *_B0;
+	bool _start;
+	bool _factorFlag;
+
 private:
     unsigned _m;
-    double *_B0;
+	double *_I;
     List<EtaMatrix *> _etas;
-    void rowSwap ( int d, int p, int n, double *A);
+    void rowSwap ( int p, int n, double *A);
+	void clear ();
+	void constructIdentity ();
+	void LPMultiplyFront ( const double *L, const double *B, double *R);
+	void LPMultiplyBack ( const double *L, const double *B, double *R);
+	void refactor ();
 };
 
 #endif // __BasisFactorization_h__
