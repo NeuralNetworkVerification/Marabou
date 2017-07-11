@@ -19,9 +19,11 @@
 #include "IEngine.h"
 #include "Map.h"
 #include "SmtCore.h"
+#include "Statistics.h"
 
-class PiecewiseLinearConstraint;
 class InputQuery;
+class PiecewiseLinearConstraint;
+class String;
 
 class Engine : public IEngine
 {
@@ -97,6 +99,11 @@ private:
     SmtCore _smtCore;
 
     /*
+      Collect and print various statistics.
+    */
+    Statistics _statistics;
+
+    /*
       Perform a simplex step: compute the cost function, pick the
       entering and leaving variables and perform a pivot. Return false
       if the problem is discovered to be unsat.
@@ -133,6 +140,11 @@ private:
       Report the violated PL constraint to the SMT engine.
     */
     void reportPlViolation();
+
+    /*
+      Print a message
+    */
+    void log( const String &line ) const;
 };
 
 #endif // __Engine_h__

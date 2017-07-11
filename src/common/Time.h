@@ -13,6 +13,8 @@
 #ifndef __Time_h__
 #define __Time_h__
 
+#include "String.h"
+
 #include <time.h>
 #include <sys/time.h>
 

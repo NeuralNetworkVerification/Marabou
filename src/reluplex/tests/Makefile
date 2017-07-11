@@ -28,9 +28,11 @@ SOURCES += \
 	PiecewiseLinearCaseSplit.cpp \
 	ReluConstraint.cpp \
 	SmtCore.cpp \
+	Statistics.cpp \
 	Tableau.cpp \
 	TableauRow.cpp \
 	TableauState.cpp \
+	Time.cpp \
 	\
 	TableauFactory.cpp \
 

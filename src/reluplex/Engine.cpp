@@ -32,6 +32,8 @@ bool Engine::solve()
 
     while ( true )
     {
+        _statistics.incNumMainLoopIterations();
+
         _tableau->computeAssignment();
         _tableau->computeBasicStatus();
 
@@ -50,7 +52,9 @@ bool Engine::solve()
                 return true;
 
             // We have violated piecewise-linear constraints.
-            // Select one to target
+            _statistics.incNumConstraintFixingSteps();
+
+            // Select a violated constraint as the target
             selectViolatedPlConstraint();
 
             // Report the violated constraint to the SMT engine
@@ -63,6 +67,7 @@ bool Engine::solve()
         else
         {
             // We have out-of-bounds variables.
+            _statistics.incNumSimplexSteps();
 
             // If a simplex step fails, the query is unsat
             if ( !performSimplexStep() )
@@ -249,6 +254,11 @@ void Engine::storeTableauState( TableauState &state ) const
 void Engine::restoreTableauState( const TableauState &state )
 {
     _tableau->restoreState( state );
+}
+
+void Engine::log( const String &line ) const
+{
+    printf( "Engine: %s\n", line.ascii() );
 }
 
 //

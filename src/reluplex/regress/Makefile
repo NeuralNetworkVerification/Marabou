@@ -32,10 +32,12 @@ SOURCES += \
 	PiecewiseLinearCaseSplit.cpp \
 	ReluConstraint.cpp \
 	SmtCore.cpp \
+	Statistics.cpp \
 	Tableau.cpp \
 	TableauFactory.cpp \
 	TableauRow.cpp \
 	TableauState.cpp \
+	Time.cpp \
 	\
 	main_regress.cpp \
 

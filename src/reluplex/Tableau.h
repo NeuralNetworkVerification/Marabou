@@ -16,6 +16,7 @@
 #include "ITableau.h"
 #include "Map.h"
 #include "Set.h"
+#include "Statistics.h"
 
 class BasisFactorization;
 class Equation;
@@ -239,6 +240,11 @@ public:
     void registerToWatchVariable( VariableWatcher *watcher, unsigned variable );
     void unregisterToWatchVariable( VariableWatcher *watcher, unsigned variable );
 
+    /*
+      Have the Tableau start reporting statistics.
+     */
+    void setStatistics( Statistics *statistics );
+
 private:
     typedef List<VariableWatcher *> VariableWatchers;
     Map<unsigned, VariableWatchers> _variableToWatchers;
@@ -352,6 +358,11 @@ private:
       True if the leaving variable increases, false otherwise
     */
     bool _leavingVariableIncreases;
+
+    /*
+      Statistics collection
+    */
+    Statistics *_statistics;
 
     /*
       Free all allocated memory.

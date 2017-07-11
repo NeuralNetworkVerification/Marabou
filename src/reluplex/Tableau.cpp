@@ -41,6 +41,7 @@ Tableau::Tableau()
     , _basicAssignment( NULL )
     , _basicAssignmentStatus( ASSIGNMENT_INVALID )
     , _basicStatus( NULL )
+    , _statistics( NULL )
 {
 }
 
@@ -1257,6 +1258,11 @@ void Tableau::registerToWatchVariable( VariableWatcher *watcher, unsigned variab
 void Tableau::unregisterToWatchVariable( VariableWatcher *watcher, unsigned variable )
 {
     _variableToWatchers[variable].erase( watcher );
+}
+
+void Tableau::setStatistics( Statistics *statistics )
+{
+    _statistics = statistics;
 }
 
 //
