@@ -16,6 +16,7 @@
 #include "InputQuery.h"
 #include "PiecewiseLinearConstraint.h"
 #include "TableauRow.h"
+#include "Time.h"
 
 Engine::Engine()
     : _smtCore( this )
@@ -32,6 +33,8 @@ bool Engine::solve()
 
     while ( true )
     {
+        if ( _statistics.getNumMainLoopIterations() % GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
+            _statistics.print();
         _statistics.incNumMainLoopIterations();
 
         _tableau->computeAssignment();
@@ -67,8 +70,6 @@ bool Engine::solve()
         else
         {
             // We have out-of-bounds variables.
-            _statistics.incNumSimplexSteps();
-
             // If a simplex step fails, the query is unsat
             if ( !performSimplexStep() )
                 return false;
@@ -88,16 +89,26 @@ bool Engine::performSimplexStep()
     // }
     // //
 
+    // Statistics
+    _statistics.incNumSimplexSteps();
+    timeval start = Time::sampleMicro();
+
     _tableau->computeCostFunction();
     _tableau->dumpCostFunction();
 
     if ( !_tableau->pickEnteringVariable( &_dantzigsRule ) )
+    {
+        timeval end = Time::sampleMicro();
+        _statistics.addTimeSimplexSteps( Time::timePassed( start, end ) );
         return false;
+    }
 
     _tableau->computeD();
     _tableau->pickLeavingVariable();
     _tableau->performPivot();
 
+    timeval end = Time::sampleMicro();
+    _statistics.addTimeSimplexSteps( Time::timePassed( start, end ) );
     return true;
 }
 

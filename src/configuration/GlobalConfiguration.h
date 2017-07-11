@@ -21,6 +21,8 @@ public:
     static const double DEFAULT_EPSILON_FOR_COMPARISONS;
 
     static const unsigned DEFAULT_DOUBLE_TO_STRING_PRECISION;
+
+    static const unsigned STATISTICS_PRINTING_FREQUENCY;
 };
 
 #endif // __GlobalConfiguration_h__

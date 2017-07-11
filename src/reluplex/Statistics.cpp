@@ -13,6 +13,14 @@
 #include "Statistics.h"
 #include "Time.h"
 
+Statistics::Statistics()
+    : _numMainLoopIterations( 0 )
+    , _numSimplexSteps( 0 )
+    , _timeSimplexStepsMilli( 0 )
+    , _numConstraintFixingSteps( 0 )
+{
+}
+
 void Statistics::print()
 {
     printf( "\n%s Statistics update:\n", Time::now().ascii() );
@@ -21,6 +29,26 @@ void Statistics::print()
             , _numMainLoopIterations
             , _numSimplexSteps
             , _numConstraintFixingSteps );
+
+    printf( "\tTotal time performing simplex steps: %llu millisectonds. Average: %llu milliseconds\n",
+            _timeSimplexStepsMilli,
+            printAverage( _timeSimplexStepsMilli, _numSimplexSteps ) );
+}
+
+unsigned long long Statistics::printPercents( unsigned long long part, unsigned long long total ) const
+{
+    if ( total == 0 )
+        return 0;
+
+    return 100.0 * part / total;
+}
+
+unsigned long long Statistics::printAverage( unsigned long long part, unsigned long long total ) const
+{
+    if ( total == 0 )
+        return 0;
+
+    return (double)part / total;
 }
 
 void Statistics::incNumMainLoopIterations()
@@ -33,9 +61,19 @@ void Statistics::incNumSimplexSteps()
     ++_numSimplexSteps;
 }
 
+void Statistics::addTimeSimplexSteps( unsigned long long time )
+{
+    _timeSimplexStepsMilli += time;
+}
+
 void Statistics::incNumConstraintFixingSteps()
 {
     ++_numConstraintFixingSteps;
+}
+
+unsigned long long Statistics::getNumMainLoopIterations() const
+{
+    return _numMainLoopIterations;
 }
 
 //

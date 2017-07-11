@@ -18,12 +18,18 @@
 class Statistics
 {
 public:
+    Statistics();
+
     // Print the current statistics
     void print();
 
     void incNumMainLoopIterations();
     void incNumSimplexSteps();
+    void addTimeSimplexSteps( unsigned long long time);
     void incNumConstraintFixingSteps();
+
+    unsigned long long getNumMainLoopIterations() const;
+
 
 private:
     // Number of iterations of the main loop
@@ -33,9 +39,15 @@ private:
     // pivots), performed by the main loop
     unsigned long long _numSimplexSteps;
 
+    // Total time spent on performing simplex steps, in milliseconds
+    unsigned long long _timeSimplexStepsMilli;
+
     // Number of constraint fixing steps, e.g. ReLU corrections,
     // performed by the main loop
     unsigned long long _numConstraintFixingSteps;
+
+    unsigned long long printPercents( unsigned long long part, unsigned long long total ) const;
+    unsigned long long printAverage( unsigned long long part, unsigned long long total ) const;
 };
 
 #endif // __Statistics_h__
