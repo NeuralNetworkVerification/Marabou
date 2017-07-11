@@ -665,7 +665,8 @@ public:
         entryStrategy->nextSelectResult = 2u;
         TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable( entryStrategy ) );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable() );
+        double d[] = { 0, 0, 1 };
+        TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
         TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 6u );
 
