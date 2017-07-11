@@ -21,6 +21,7 @@
 Engine::Engine()
     : _smtCore( this )
 {
+    _smtCore.setStatistics( &_statistics );
 }
 
 Engine::~Engine()

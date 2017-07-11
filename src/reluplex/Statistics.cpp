@@ -18,6 +18,9 @@ Statistics::Statistics()
     , _numSimplexSteps( 0 )
     , _timeSimplexStepsMilli( 0 )
     , _numConstraintFixingSteps( 0 )
+    , _currentStackDepth( 0 )
+    , _numSplits( 0 )
+    , _numPops( 0 )
 {
 }
 
@@ -30,9 +33,14 @@ void Statistics::print()
             , _numSimplexSteps
             , _numConstraintFixingSteps );
 
-    printf( "\tTotal time performing simplex steps: %llu millisectonds. Average: %llu milliseconds\n",
-            _timeSimplexStepsMilli,
-            printAverage( _timeSimplexStepsMilli, _numSimplexSteps ) );
+    printf( "\tTotal time performing simplex steps: %llu millisectonds. Average: %llu milliseconds\n"
+            , _timeSimplexStepsMilli
+            , printAverage( _timeSimplexStepsMilli, _numSimplexSteps ) );
+
+    printf( "\tSMT core: total depth is %u. Number of splits: %u. Number of pops: %u\n"
+            , _currentStackDepth
+            , _numSplits
+            , _numPops );
 }
 
 unsigned long long Statistics::printPercents( unsigned long long part, unsigned long long total ) const
@@ -74,6 +82,21 @@ void Statistics::incNumConstraintFixingSteps()
 unsigned long long Statistics::getNumMainLoopIterations() const
 {
     return _numMainLoopIterations;
+}
+
+void Statistics::setCurrentStackDepth( unsigned depth )
+{
+    _currentStackDepth = depth;
+}
+
+void Statistics::incNumSplits()
+{
+    ++_numSplits;
+}
+
+void Statistics::incNumPops()
+{
+    ++_numPops;
 }
 
 //

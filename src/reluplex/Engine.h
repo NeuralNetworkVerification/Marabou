@@ -68,6 +68,11 @@ public:
 
 private:
     /*
+      Collect and print various statistics.
+    */
+    Statistics _statistics;
+
+    /*
       The tableau object maintains the equations, assignments and bounds.
     */
     AutoTableau _tableau;
@@ -97,11 +102,6 @@ private:
       The SMT engine is in charge of case splitting.
     */
     SmtCore _smtCore;
-
-    /*
-      Collect and print various statistics.
-    */
-    Statistics _statistics;
 
     /*
       Perform a simplex step: compute the cost function, pick the
