@@ -53,6 +53,9 @@ public:
         }
         return !lastCandidates.empty();
     }
+
+    void initialize( const ITableau& /* tableau */ )
+    {}
 };
 
 #endif // __MockEntrySelectionStrategy_h__

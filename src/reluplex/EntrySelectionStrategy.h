@@ -23,11 +23,15 @@ public:
     virtual ~EntrySelectionStrategy() {};
 
     /*
-      Choose the entrying variable from the list of eligible-for-entry
-      candidates. The candidates are given using the internal indices
-      of the tableau, i.e. are in the range [1,n-m].
+      Choose the entrying variable for the given tableau.
     */
     virtual bool select( ITableau &tableau ) = 0;
+    /*
+      Perform any necessary initialization work for this strategy.
+      This is done in the engine after the tableau is set up.
+    */
+    virtual void initialize( const ITableau &tableau ) = 0;
+
 };
 
 #endif // __EntrySelectionStrategy_h__

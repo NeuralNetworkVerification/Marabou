@@ -211,6 +211,8 @@ void Engine::processInputQuery( const InputQuery &inputQuery )
         constraint->registerAsWatcher( _tableau );
 
     _tableau->initializeTableau();
+    _dantzigsRule.initialize(_tableau);
+    _blandsRule.initialize(_tableau);
     _nestedDantzigsRule.initialize(_tableau);
 
 }

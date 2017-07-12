@@ -45,6 +45,9 @@ bool BlandsRule::select( ITableau &tableau )
     return true;
 }
 
+void BlandsRule::initialize( const ITableau & /* tableau */ )
+{}
+
 //
 // Local Variables:
 // compile-command: "make -C .. "

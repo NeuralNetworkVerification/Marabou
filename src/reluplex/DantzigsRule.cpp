@@ -48,6 +48,9 @@ bool DantzigsRule::select( ITableau &tableau )
     return true;
 }
 
+void DantzigsRule::initialize( const ITableau & /* tableau */ )
+{}
+
 //
 // Local Variables:
 // compile-command: "make -C .. "
