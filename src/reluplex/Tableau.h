@@ -95,14 +95,14 @@ public:
     double getValue( unsigned variable );
 
     /*
-      Given an index of a non-basic variable (in the range [1,n-m]),
+      Given an index of a non-basic variable in the range [0,n-m),
       return the original variable that it corresponds to.
     */
     unsigned nonBasicIndexToVariable( unsigned index ) const;
 
     /*
       Given a variable, returns the index of that variable. The result
-      is in range [1,m] if the variable is basic, or in range [1,n-m]
+      is in range [0,m) if the variable is basic, or in range [0,n-m)
       if the variable is non-basic.
     */
     unsigned variableToIndex( unsigned index ) const;
