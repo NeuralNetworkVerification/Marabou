@@ -13,8 +13,8 @@
 #include "AcasParser.h"
 #include "InputParserError.h"
 #include "InputQuery.h"
+#include "MString.h"
 #include "ReluConstraint.h"
-#include "String.h"
 
 AcasParser::NodeIndex::NodeIndex( unsigned layer, unsigned node )
     : _layer( layer )

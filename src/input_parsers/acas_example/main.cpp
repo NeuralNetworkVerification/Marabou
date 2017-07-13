@@ -12,7 +12,7 @@
 
 #include <cstdio>
 
-#include "../AcasParser.h"
+#include "AcasParser.h"
 #include "Engine.h"
 #include "InputQuery.h"
 
