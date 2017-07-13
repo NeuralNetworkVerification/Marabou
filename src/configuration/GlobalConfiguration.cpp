@@ -15,6 +15,7 @@
 
 const double GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS = 0.0000000001;
 const unsigned GlobalConfiguration::DEFAULT_DOUBLE_TO_STRING_PRECISION = 10;
+const unsigned GlobalConfiguration::REFACTORIZATION_THRESHOLD = 10;
 
 void GlobalConfiguration::print()
 {
