@@ -13,7 +13,6 @@ SOURCES += \
 	\
 	ConstSimpleData.cpp \
 	Error.cpp \
-	File.cpp \
 	FloatUtils.cpp \
 	HeapData.cpp \
 	MString.cpp \
