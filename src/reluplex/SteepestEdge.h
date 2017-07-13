@@ -1,3 +1,15 @@
+/*********************                                                        */
+/*! \file SteepestEdge.h
+** \verbatim
+** Top contributors (to current version):
+**   Rachel Lim
+** This file is part of the Marabou project.
+** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
+** in the top-level source directory) and their institutional affiliations.
+** All rights reserved. See the file COPYING in the top-level source
+** directory for licensing information.\endverbatim
+**/
+
 #ifndef __SteepestEdge_h__
 #define __SteepestEdge_h__
 
@@ -13,6 +25,9 @@ public:
     bool select( ITableau &tableau );
     void initialize( const ITableau &tableau );
 
+private:
+    // Helper function to compute gradient of cost function with respect to edge direction
+    double computeGradient( unsigned candidate );
 };
 
 #endif // __SteepestEdge_h__
