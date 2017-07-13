@@ -23,7 +23,6 @@ public:
       largest coefficient (in absolute value) in the cost function.
     */
     bool select( ITableau &tableau );
-    void initialize( const ITableau &tableau );
 
 };
 

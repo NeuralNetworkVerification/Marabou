@@ -19,6 +19,7 @@ public:
     EtaMatrix( unsigned m, unsigned index, double *column );
     ~EtaMatrix();
     void dump();
+	void toMatrix( double *A );
 
     unsigned _m;
     unsigned _columnIndex;

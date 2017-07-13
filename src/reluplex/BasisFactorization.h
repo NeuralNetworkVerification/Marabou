@@ -15,10 +15,13 @@
 
 #include "List.h"
 #include <queue>
+#include "LPContainer.h"
 
 using std::queue;
 
 class EtaMatrix;
+
+class LPContainer;
 
 class BasisFactorization
 {
@@ -81,29 +84,58 @@ public:
     */
     void storeFactorization( BasisFactorization *other ) const;
     void restoreFactorization( const BasisFactorization *other );
+
+	/*
+		S is the basis to be LU factorized. The resuling upper triangular matrix is stored in _U and the 
+		lower triangular and permutation matricies are stored in _LP
+	*/
     void factorization (double *S );
 
-	void setB0 ( double *B0 ); //testing
+	/*
+		For the purposes of testing: here we set B0 to a non-identity matrix and set the _start flag to false, 
+		thus testing the LP and U multiplications
+	*/
+	void setB0( const double *B0 ); //testing
+
+	//LB = R
     void matrixMultiply (const double *L, const double *B, double *R);
+	//prints out matrix m
+
+
+	//swaps row p with row n in matrix A
+    void rowSwap ( int p, int n, double *A);
+
 	void coutMatrix ( const double *m );
-	
-	double *_U;
-	std::vector<double *> _LP;
-	queue<double *> _LPd; //for testing
-	double *_B0;
+	//returns _U
+	double *get_U();
+	//returns _LP
+	std::vector<LPContainer *> get_LP();
+	//returns _B0
+	double *get_B0();
+	//returns _etas
+	List<EtaMatrix *> get_etas();
+
 	bool _start;
 	bool _factorFlag;
 
 private:
+	double *_B0;
+	double *_U;
+	std::vector<LPContainer *> _LP;
     unsigned _m;
-	double *_I;
     List<EtaMatrix *> _etas;
-    void rowSwap ( int p, int n, double *A);
-	void clear ();
-	void constructIdentity ();
-	void LPMultiplyFront ( const double *L, const double *B, double *R);
-	void LPMultiplyBack ( const double *L, const double *B, double *R);
-	void refactor ();
+	double *_I;	
+	void constructIdentity();
+	//swaps column p with column n in matrix A
+	void columnSwap( int p, int n, double *A );
+	void clearLPU();
+	//LB = R, where B is a _m x 1 matrix and L represents a _m x _m lower triangular matrix 
+	void LMultiplyLeft( const EtaMatrix *L, const double *B, double *R);
+	//BL = R, where B is a 1 x _m matrix and L represents a _m x _m lower triangular matrix 
+	void LMultiplyRight( const EtaMatrix *L, const double *B, double *R);
+	//Multiplication needed for factorization method 
+	void LFactorizationMultiply( const EtaMatrix *L, const double *X, double *R );
+	void condenseEtas();
 };
 
 #endif // __BasisFactorization_h__

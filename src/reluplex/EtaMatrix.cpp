@@ -1,4 +1,4 @@
-/*********************                                                        */
+/********************                                                        */
 /*! \file EtaMatrix.cpp
  ** \verbatim
  ** Top contributors (to current version):
@@ -46,6 +46,14 @@ void EtaMatrix::dump()
     for ( unsigned i = 0; i < _m; ++i )
         printf( "%lf ", _column[i] );
     printf( "\n" );
+}
+
+void EtaMatrix::toMatrix( double *A )
+{
+	for (unsigned i = 0; i < _m; ++i){
+		A[i*_m+i] = 1.;
+		A[_columnIndex+i*_m] = _column[i];
+	}
 }
 
 //

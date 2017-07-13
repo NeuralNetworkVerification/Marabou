@@ -22,6 +22,8 @@ public:
 
     static const unsigned DEFAULT_DOUBLE_TO_STRING_PRECISION;
 
+	static const unsigned REFACTORIZATION_THRESHOLD;
+
     static const unsigned STATISTICS_PRINTING_FREQUENCY;
 };
 

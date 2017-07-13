@@ -41,6 +41,7 @@ SOURCES += \
 	TableauState.cpp \
 	\
 	main_regress.cpp \
+	LPContainer.cpp\
 
 all:
 	./$(TARGET)

@@ -26,11 +26,13 @@ public:
       Choose the entrying variable for the given tableau.
     */
     virtual bool select( ITableau &tableau ) = 0;
+
     /*
       Perform any necessary initialization work for this strategy.
       This is done in the engine after the tableau is set up.
     */
-    virtual void initialize( const ITableau &tableau ) = 0;
+    virtual void initialize( const ITableau & /* tableau */ )
+    {};
 
 };
 
