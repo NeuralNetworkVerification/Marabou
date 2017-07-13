@@ -16,6 +16,7 @@
 const double GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS = 0.0000000001;
 const unsigned GlobalConfiguration::DEFAULT_DOUBLE_TO_STRING_PRECISION = 10;
 const unsigned GlobalConfiguration::REFACTORIZATION_THRESHOLD = 10;
+const unsigned GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY = 100;
 
 void GlobalConfiguration::print()
 {
@@ -24,6 +25,7 @@ void GlobalConfiguration::print()
     printf( "****************************\n" );
     printf( "  DEFAULT_EPSILON_FOR_COMPARISONS: %lf\n", DEFAULT_EPSILON_FOR_COMPARISONS );
     printf( "  DEFAULT_DOUBLE_TO_STRING_PRECISION: %u\n", DEFAULT_DOUBLE_TO_STRING_PRECISION );
+    printf( "  STATISTICS_PRINTING_FREQUENCY: %u\n", STATISTICS_PRINTING_FREQUENCY );
     printf( "****************************\n" );
 }
 

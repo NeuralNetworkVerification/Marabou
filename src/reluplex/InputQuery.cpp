@@ -10,8 +10,8 @@
  ** directory for licensing information.\endverbatim
  **/
 
-#include "Stringf.h"
 #include "InputQuery.h"
+#include "MStringf.h"
 #include "ReluplexError.h"
 
 #include <cfloat>

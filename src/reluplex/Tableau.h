@@ -16,6 +16,7 @@
 #include "ITableau.h"
 #include "Map.h"
 #include "Set.h"
+#include "Statistics.h"
 
 class BasisFactorization;
 class Equation;
@@ -51,6 +52,11 @@ public:
       Set the value of a specific entry in the tableau
     */
     void setEntryValue( unsigned row, unsigned column, double value );
+
+    /*
+      Set which variable will enter the basis
+    */
+    void setEnteringVariable( unsigned nonBasic );
 
     /*
       Set the values of the right hand side vector, b, of size m.
@@ -89,14 +95,14 @@ public:
     double getValue( unsigned variable );
 
     /*
-      Given an index of a non-basic variable (in the range [1,n-m]),
+      Given an index of a non-basic variable in the range [0,n-m),
       return the original variable that it corresponds to.
     */
     unsigned nonBasicIndexToVariable( unsigned index ) const;
 
     /*
       Given a variable, returns the index of that variable. The result
-      is in range [1,m] if the variable is basic, or in range [1,n-m]
+      is in range [0,m) if the variable is basic, or in range [0,n-m)
       if the variable is non-basic.
     */
     unsigned variableToIndex( unsigned index ) const;
@@ -141,7 +147,6 @@ public:
     /*
       Picks the entering variable.
     */
-    bool pickEnteringVariable( EntrySelectionStrategy *strategy );
     bool eligibleForEntry( unsigned nonBasic );
     unsigned getEnteringVariable() const;
     bool nonBasicCanIncrease( unsigned nonBasic ) const;
@@ -193,6 +198,8 @@ public:
       Compute the cost function
     */
     void computeCostFunction();
+    void getCandidates(List<unsigned>& candidates);
+    void computeMultipliers();
     const double *getCostFunction() const;
     void dumpCostFunction() const;
 
@@ -238,6 +245,11 @@ public:
     */
     void registerToWatchVariable( VariableWatcher *watcher, unsigned variable );
     void unregisterToWatchVariable( VariableWatcher *watcher, unsigned variable );
+
+    /*
+      Have the Tableau start reporting statistics.
+     */
+    void setStatistics( Statistics *statistics );
 
 private:
     typedef List<VariableWatcher *> VariableWatchers;
@@ -354,6 +366,11 @@ private:
     bool _leavingVariableIncreases;
 
     /*
+      Statistics collection
+    */
+    Statistics *_statistics;
+
+    /*
       Free all allocated memory.
     */
     void freeMemoryIfNeeded();
@@ -363,6 +380,7 @@ private:
     */
     void computeBasicCosts();
     void computeMultipliers( double *rowCoefficients );
+    void computeReducedCost( unsigned nonBasic );
     void computeReducedCosts();
 
     /*

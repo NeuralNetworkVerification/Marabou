@@ -91,6 +91,17 @@ void AcasNeuralNetwork::evaluate( const Vector<double> &inputs, Vector<double> &
     }
 }
 
+void AcasNeuralNetwork::getInputRange( unsigned index, double &min, double &max )
+{
+    max =
+        ( _network->maxes[index] - _network->means[index] )
+        / ( _network->ranges[index] );
+
+    min =
+        ( _network->mins[index] - _network->means[index] )
+        / ( _network->ranges[index] );
+}
+
 //
 // Local Variables:
 // compile-command: "make -C .. "

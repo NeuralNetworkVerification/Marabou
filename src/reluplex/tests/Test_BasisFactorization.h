@@ -285,7 +285,7 @@ public:
 		void test_factorization_pivot()//pivot
 	{
 		BasisFactorization basis ( 3 );
-		int nsq = 9;
+		const int nsq = 9;
 	    //queue <double*> LP;
 	    double A[nsq]={0.,1.,0.,
 						1.,8.,0.,
@@ -317,7 +317,7 @@ public:
 	void test_factorization_textbook()//textbook
 	{
 		BasisFactorization basis ( 4 );
-        int nsq = 16;
+        const int nsq = 16;
         double A[nsq]= {1., 3., -2., 4.,
 						1., 5., -1., 5., 
 						1., 3., -3., 6.,
@@ -336,7 +336,7 @@ public:
 	void test_factorization_box()
 	{
 		BasisFactorization basis ( 3 );
-        int nsq = 9;
+        const int nsq = 9;
         //queue <double*> LP;
         double A[nsq]={1.,2.,4.,4.,5.,7.,7.,8.,9.};
 		double U[nsq]={1.,2.,4.,4.,5.,7.,7.,8.,9.};

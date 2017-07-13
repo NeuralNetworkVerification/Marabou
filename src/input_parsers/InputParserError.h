@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file FloatUtils.h
+/*! \file InputParserError.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz
@@ -10,24 +10,29 @@
  ** directory for licensing information.\endverbatim
  **/
 
-#ifndef __GlobalConfiguration_h__
-#define __GlobalConfiguration_h__
+#ifndef __InputParserError_h__
+#define __InputParserError_h__
 
-class GlobalConfiguration
+#include "Error.h"
+
+class InputParserError : public Error
 {
 public:
-    static void print();
+	enum Code {
+        VARIABLE_INDEX_OUT_OF_RANGE = 0,
+    };
 
-    static const double DEFAULT_EPSILON_FOR_COMPARISONS;
+    InputParserError( InputParserError::Code code ) : Error( "InputParserError", (int)code )
+	{
+	}
 
-    static const unsigned DEFAULT_DOUBLE_TO_STRING_PRECISION;
-
-	static const unsigned REFACTORIZATION_THRESHOLD;
-
-    static const unsigned STATISTICS_PRINTING_FREQUENCY;
+    InputParserError( InputParserError::Code code, const char *userMessage )
+      : Error( "InputParserError", (int)code, userMessage )
+    {
+    }
 };
 
-#endif // __GlobalConfiguration_h__
+#endif // __InputParserError_h__
 
 //
 // Local Variables:

@@ -11,12 +11,11 @@ TEST_FILES = $(wildcard Test_*.h)
 SOURCES += \
 	GlobalConfiguration.cpp \
 	\
-	String.cpp \
-	Error.cpp \
 	ConstSimpleData.cpp \
-	HeapData.cpp \
-	File.cpp \
+	Error.cpp \
 	FloatUtils.cpp \
+	HeapData.cpp \
+	MString.cpp \
 	\
 	../mock/Errno.cpp \
 	../mock/CommonMock.cpp \

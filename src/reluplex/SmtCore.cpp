@@ -15,7 +15,8 @@
 #include "TableauState.h"
 
 SmtCore::SmtCore( IEngine *engine )
-    : _engine( engine )
+    : _statistics( NULL )
+    , _engine( engine )
     , _needToSplit( false )
 {
 }
@@ -41,6 +42,9 @@ bool SmtCore::needToSplit() const
 
 void SmtCore::performSplit()
 {
+    if ( _statistics )
+        _statistics->incNumSplits();
+
     // First, obtain the current state of the tableau
     TableauState *stateBeforeSplits = new TableauState;
     _engine->storeTableauState( *stateBeforeSplits );
@@ -71,6 +75,8 @@ void SmtCore::performSplit()
     }
 
     _stack.push( stackEntry );
+    if ( _statistics )
+        _statistics->setCurrentStackDepth( getStackDepth() );
 }
 
 unsigned SmtCore::getStackDepth() const
@@ -82,6 +88,9 @@ bool SmtCore::popSplit()
 {
     if ( _stack.empty() )
         return false;
+
+    if ( _statistics )
+        _statistics->incNumPops();
 
     StackEntry &stackEntry( _stack.top() );
 
@@ -97,6 +106,9 @@ bool SmtCore::popSplit()
     if ( stackEntry._splits.size() == 0 )
         _stack.pop();
 
+    if ( _statistics )
+        _statistics->setCurrentStackDepth( getStackDepth() );
+
     return true;
 }
 
@@ -111,6 +123,11 @@ void SmtCore::applySplit( const PiecewiseLinearCaseSplit &split )
         else
             _engine->tightenUpperBound( bound._variable, bound._newBound );
     }
+}
+
+void SmtCore::setStatistics( Statistics *statistics )
+{
+    _statistics = statistics;
 }
 
 //

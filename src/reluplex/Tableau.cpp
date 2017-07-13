@@ -41,6 +41,7 @@ Tableau::Tableau()
     , _basicAssignment( NULL )
     , _basicAssignmentStatus( ASSIGNMENT_INVALID )
     , _basicStatus( NULL )
+    , _statistics( NULL )
 {
 }
 
@@ -476,14 +477,19 @@ void Tableau::computeCostFunction()
       evaluation thereof on a specific point.
      */
 
+    computeMultipliers();
+
+    // Step 3: compute reduced costs
+    computeReducedCosts();
+}
+
+void Tableau::computeMultipliers()
+{
     // Step 1: compute basic costs
     computeBasicCosts();
 
     // Step 2: compute the multipliers
     computeMultipliers( _basicCosts );
-
-    // Step 3: compute reduced costs
-    computeReducedCosts();
 }
 
 void Tableau::computeBasicCosts()
@@ -522,16 +528,21 @@ void Tableau::computeMultipliers( double *rowCoefficients )
     // printf( "\n" );
 }
 
+void Tableau::computeReducedCost( unsigned nonBasic )
+{
+    double *ANColumn = _A + ( _nonBasicIndexToVariable[nonBasic] * _m );
+    _costFunction[nonBasic] = 0;
+    for ( unsigned j = 0; j < _m; ++j )
+    {
+        _costFunction[nonBasic] -= ( _multipliers[j] * ANColumn[j] );
+    }
+}
+
 void Tableau::computeReducedCosts()
 {
-    double *ANColumn;
     for ( unsigned i = 0; i < _n - _m; ++i )
     {
-        ANColumn = _A + ( _nonBasicIndexToVariable[i] * _m );
-
-        _costFunction[i] = 0;
-        for ( unsigned j = 0; j < _m; ++j )
-            _costFunction[i] -= ( _multipliers[j] * ANColumn[j] );
+        computeReducedCost(i);
     }
 }
 
@@ -540,22 +551,19 @@ unsigned Tableau::getBasicStatus( unsigned basic )
     return _basicStatus[_variableToIndex[basic]];
 }
 
-bool Tableau::pickEnteringVariable( EntrySelectionStrategy *strategy )
+void Tableau::getCandidates(List<unsigned>& candidates)
 {
-    List<unsigned> candidates;
+    candidates.clear();
     for ( unsigned i = 0; i < _n - _m; ++i )
     {
         if ( eligibleForEntry( i ) )
             candidates.append( i );
     }
+}
 
-    // TODO: is it really the case that no candidates -->
-    // infeasibility? Maybe they canceled out or something?
-    if ( candidates.empty() )
-        return false;
-
-    _enteringVariable = strategy->select( candidates, *this );
-    return true;
+void Tableau::setEnteringVariable( unsigned nonBasic )
+{
+    _enteringVariable = nonBasic;
 }
 
 bool Tableau::eligibleForEntry( unsigned nonBasic )
@@ -1257,6 +1265,11 @@ void Tableau::registerToWatchVariable( VariableWatcher *watcher, unsigned variab
 void Tableau::unregisterToWatchVariable( VariableWatcher *watcher, unsigned variable )
 {
     _variableToWatchers[variable].erase( watcher );
+}
+
+void Tableau::setStatistics( Statistics *statistics )
+{
+    _statistics = statistics;
 }
 
 //

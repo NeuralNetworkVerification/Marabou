@@ -1,8 +1,8 @@
 #include <cxxtest/TestSuite.h>
 
 #include "Error.h"
+#include "MString.h"
 #include "MockErrno.h"
-#include "String.h"
 
 class ErrorTestSuite : public CxxTest::TestSuite
 {

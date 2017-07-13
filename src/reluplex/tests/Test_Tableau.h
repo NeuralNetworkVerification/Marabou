@@ -307,7 +307,10 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
 
         entryStrategy->nextSelectResult = 2u;
-        TS_ASSERT( tableau->pickEnteringVariable( entryStrategy ) );
+
+        // TS_ASSERT( tableau->pickEnteringVariable( entryStrategy ) );
+
+        TS_ASSERT( entryStrategy->select( *tableau ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
 
         TS_ASSERT_THROWS_NOTHING( delete tableau );
@@ -357,7 +360,14 @@ public:
         // Cost function is: + x1 + x2 + x3 + x4
         // All these variables are at their lower bounds, so cannot decrease.
 
-        TS_ASSERT( !tableau->pickEnteringVariable( entryStrategy ) );
+        entryStrategy->nextSelectResult = 2u;
+
+        // TS_ASSERT( tableau->pickEnteringVariable( entryStrategy ) );
+
+        TS_ASSERT( !entryStrategy->select( *tableau ) );
+        TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
+
+        // TS_ASSERT( !tableau->pickEnteringVariable( entryStrategy ) );
 
         TS_ASSERT_THROWS_NOTHING( delete tableau );
     }
@@ -397,7 +407,8 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
         entryStrategy->nextSelectResult = 2u;
-        TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable( entryStrategy ) );
+        // TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable( entryStrategy ) );
+        TS_ASSERT( entryStrategy->select( *tableau ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
 
         // Entering variable is 2, and it needs to increase
@@ -493,7 +504,9 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
         entryStrategy->nextSelectResult = 2u;
-        TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable( entryStrategy ) );
+        TS_ASSERT( entryStrategy->select( *tableau ) );
+        // TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable( entryStrategy ) );
+        TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
 
         double d[] = { 1, 0, 0.00001 };
         TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d ) );
@@ -544,7 +557,9 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
         entryStrategy->nextSelectResult = 2u;
-        TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable( entryStrategy ) );
+        TS_ASSERT( entryStrategy->select( *tableau ) );
+        TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
+        // TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable( entryStrategy ) );
 
         double d[] = { -1, -1, -1 };
         // Var 4 will hit its lower bound: constraint is 2
@@ -663,9 +678,13 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
         entryStrategy->nextSelectResult = 2u;
-        TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable( entryStrategy ) );
+        TS_ASSERT( entryStrategy->select( *tableau ) );
+        TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable() );
+        // TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable( entryStrategy ) );
+
+        double d[] = { 0, 0, 1 };
+        TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
         TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 6u );
 
@@ -978,7 +997,8 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
         entryStrategy->nextSelectResult = 3u;
-        TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable( entryStrategy ) );
+        TS_ASSERT( entryStrategy->select( *tableau ) );
+        // TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable( entryStrategy ) );
 
         TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable() );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 3u );
@@ -1008,7 +1028,8 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
         entryStrategy->nextSelectResult = 2u;
-        TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable( entryStrategy ) );
+        TS_ASSERT( entryStrategy->select( *tableau ) );
+        // TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable( entryStrategy ) );
 
         double d[] = { -1, +1, -1 };
 
@@ -1038,7 +1059,8 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
         entryStrategy->nextSelectResult = 2u;
-        TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable( entryStrategy ) );
+        // TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable( entryStrategy ) );
+        TS_ASSERT( entryStrategy->select( *tableau ) );
 
         TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );

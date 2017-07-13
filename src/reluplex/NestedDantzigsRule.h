@@ -1,8 +1,8 @@
 /*********************                                                        */
-/*! \file BlandsRule.h
+/*! \file NestedDantzigsRule.h
 ** \verbatim
 ** Top contributors (to current version):
-**   Guy Katz
+**   Duligur Ibeling
 ** This file is part of the Marabou project.
 ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
 ** in the top-level source directory) and their institutional affiliations.
@@ -10,23 +10,31 @@
 ** directory for licensing information.\endverbatim
 **/
 
-#ifndef __BlandsRule_h__
-#define __BlandsRule_h__
+#ifndef __NestedDantzigsRule_h__
+#define __NestedDantzigsRule_h__
 
+#include "Set.h"
 #include "EntrySelectionStrategy.h"
 
-class BlandsRule : public EntrySelectionStrategy
+class NestedDantzigsRule : public EntrySelectionStrategy
 {
 public:
-    /*
-      Apply Bland's rule: choose the candidate associated with the
-      variable that has the smallest lexicographical index.
+	/*
+      Apply the nested version of Dantzig's rule: use Dantzig's rule,
+      but restrict the search candidates to a shrinking set of nonbasics.
     */
     bool select( ITableau &tableau );
 
+    /*
+      Initialize nesting set to all nonbasic indices.
+    */
+    virtual void initialize( const ITableau &tableau );
+
+private:
+	Set<unsigned> _J;
 };
 
-#endif // __BlandsRule_h__
+#endif // __NestedDantzigsRule_h__
 
 //
 // Local Variables:

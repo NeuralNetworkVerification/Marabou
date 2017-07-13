@@ -16,10 +16,12 @@
 #include "InputQuery.h"
 #include "PiecewiseLinearConstraint.h"
 #include "TableauRow.h"
+#include "TimeUtils.h"
 
 Engine::Engine()
     : _smtCore( this )
 {
+    _smtCore.setStatistics( &_statistics );
 }
 
 Engine::~Engine()
@@ -32,6 +34,10 @@ bool Engine::solve()
 
     while ( true )
     {
+        if ( _statistics.getNumMainLoopIterations() % GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
+            _statistics.print();
+        _statistics.incNumMainLoopIterations();
+
         _tableau->computeAssignment();
         _tableau->computeBasicStatus();
 
@@ -50,7 +56,9 @@ bool Engine::solve()
                 return true;
 
             // We have violated piecewise-linear constraints.
-            // Select one to target
+            _statistics.incNumConstraintFixingSteps();
+
+            // Select a violated constraint as the target
             selectViolatedPlConstraint();
 
             // Report the violated constraint to the SMT engine
@@ -63,7 +71,6 @@ bool Engine::solve()
         else
         {
             // We have out-of-bounds variables.
-
             // If a simplex step fails, the query is unsat
             if ( !performSimplexStep() )
                 return false;
@@ -83,16 +90,30 @@ bool Engine::performSimplexStep()
     // }
     // //
 
-    _tableau->computeCostFunction();
-    _tableau->dumpCostFunction();
+    // Statistics
+    _statistics.incNumSimplexSteps();
+    timeval start = TimeUtils::sampleMicro();
 
-    if ( !_tableau->pickEnteringVariable( &_dantzigsRule ) )
+    if ( !(_nestedDantzigsRule.select( _tableau )) )
+    {
+        timeval end = TimeUtils::sampleMicro();
+        _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
         return false;
+    }
+
+    // If you use the full pricing Dantzig's rule, need to calculate entire cost function
+    // _tableau->computeCostFunction();
+    // _tableau->dumpCostFunction();
+
+    // if ( !_tableau->pickEnteringVariable( &_dantzigsRule ) )
+    //     return false;
 
     _tableau->computeD();
     _tableau->pickLeavingVariable();
     _tableau->performPivot();
 
+    timeval end = TimeUtils::sampleMicro();
+    _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
     return true;
 }
 
@@ -190,6 +211,10 @@ void Engine::processInputQuery( const InputQuery &inputQuery )
         constraint->registerAsWatcher( _tableau );
 
     _tableau->initializeTableau();
+    _dantzigsRule.initialize(_tableau);
+    _blandsRule.initialize(_tableau);
+    _nestedDantzigsRule.initialize(_tableau);
+
 }
 
 void Engine::extractSolution( InputQuery &inputQuery )
@@ -249,6 +274,11 @@ void Engine::storeTableauState( TableauState &state ) const
 void Engine::restoreTableauState( const TableauState &state )
 {
     _tableau->restoreState( state );
+}
+
+void Engine::log( const String &line ) const
+{
+    printf( "Engine: %s\n", line.ascii() );
 }
 
 //

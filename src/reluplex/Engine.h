@@ -16,12 +16,15 @@
 #include "AutoTableau.h"
 #include "BlandsRule.h"
 #include "DantzigsRule.h"
+#include "NestedDantzigsRule.h"
 #include "IEngine.h"
 #include "Map.h"
 #include "SmtCore.h"
+#include "Statistics.h"
 
-class PiecewiseLinearConstraint;
 class InputQuery;
+class PiecewiseLinearConstraint;
+class String;
 
 class Engine : public IEngine
 {
@@ -66,6 +69,11 @@ public:
 
 private:
     /*
+      Collect and print various statistics.
+    */
+    Statistics _statistics;
+
+    /*
       The tableau object maintains the equations, assignments and bounds.
     */
     AutoTableau _tableau;
@@ -90,6 +98,7 @@ private:
     */
     BlandsRule _blandsRule;
     DantzigsRule _dantzigsRule;
+    NestedDantzigsRule _nestedDantzigsRule;
 
     /*
       The SMT engine is in charge of case splitting.
@@ -133,6 +142,11 @@ private:
       Report the violated PL constraint to the SMT engine.
     */
     void reportPlViolation();
+
+    /*
+      Print a message
+    */
+    void log( const String &line ) const;
 };
 
 #endif // __Engine_h__

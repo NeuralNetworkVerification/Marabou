@@ -13,10 +13,12 @@
 #ifndef __Time_h__
 #define __Time_h__
 
+#include "MString.h"
+
 #include <time.h>
 #include <sys/time.h>
 
-class Time
+class TimeUtils
 {
 public:
     static time_t sample();

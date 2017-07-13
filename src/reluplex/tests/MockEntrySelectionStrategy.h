@@ -14,6 +14,7 @@
 #define __MockEntrySelectionStrategy_h__
 
 #include "EntrySelectionStrategy.h"
+#include "ITableau.h"
 
 class MockEntrySelectionStrategy : public EntrySelectionStrategy
 {
@@ -43,11 +44,18 @@ public:
     List<unsigned> lastCandidates;
     unsigned nextSelectResult;
 
-    unsigned select( const List<unsigned> &candidates, const ITableau &/* tableau */ )
+    bool select( ITableau & tableau )
     {
-        lastCandidates = candidates;
-        return nextSelectResult;
+    	lastCandidates.clear();
+        tableau.getCandidates( lastCandidates );
+        if (!lastCandidates.empty()) {
+	    	tableau.setEnteringVariable(nextSelectResult);
+        }
+        return !lastCandidates.empty();
     }
+
+    void initialize( const ITableau& /* tableau */ )
+    {}
 };
 
 #endif // __MockEntrySelectionStrategy_h__

@@ -12,7 +12,7 @@
 
 #include "ConstSimpleData.h"
 #include "HeapData.h"
-#include "Stringf.h"
+#include "MStringf.h"
 
 ConstSimpleData::ConstSimpleData( const void *data, unsigned size ) : _data( data ), _size( size )
 {

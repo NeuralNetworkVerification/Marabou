@@ -1,6 +1,6 @@
 #include <cxxtest/TestSuite.h>
 
-#include "Stringf.h"
+#include "MStringf.h"
 
 class StringfTestSuite : public CxxTest::TestSuite
 {

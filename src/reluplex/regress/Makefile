@@ -19,7 +19,8 @@ SOURCES += \
 	Errno.cpp \
 	Error.cpp \
 	FloatUtils.cpp \
-	String.cpp \
+	MString.cpp \
+	TimeUtils.cpp \
 	\
 	BasisFactorization.cpp \
 	BlandsRule.cpp \
@@ -29,9 +30,11 @@ SOURCES += \
 	EtaMatrix.cpp \
 	FreshVariables.cpp \
 	InputQuery.cpp \
+	NestedDantzigsRule.cpp \
 	PiecewiseLinearCaseSplit.cpp \
 	ReluConstraint.cpp \
 	SmtCore.cpp \
+	Statistics.cpp \
 	Tableau.cpp \
 	TableauFactory.cpp \
 	TableauRow.cpp \

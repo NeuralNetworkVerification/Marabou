@@ -15,10 +15,15 @@
 #include "ITableau.h"
 #include "ReluplexError.h"
 
-unsigned DantzigsRule::select( const List<unsigned> &candidates, const ITableau &tableau )
+bool DantzigsRule::select( ITableau &tableau )
 {
+    tableau.computeCostFunction();
+
+    List<unsigned> candidates;
+    tableau.getCandidates(candidates);
+
     if ( candidates.empty() )
-        throw ReluplexError( ReluplexError::NO_AVAILABLE_CANDIDATES, "DantzigsRule" );
+        return false;
 
     // Dantzig's rule
     const double *costFunction = tableau.getCostFunction();
@@ -39,7 +44,8 @@ unsigned DantzigsRule::select( const List<unsigned> &candidates, const ITableau 
         ++candidate;
     }
 
-    return maxIndex;
+    tableau.setEnteringVariable(maxIndex);
+    return true;
 }
 
 //

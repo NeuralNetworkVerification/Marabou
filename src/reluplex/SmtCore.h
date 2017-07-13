@@ -16,6 +16,7 @@
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
 #include "Stack.h"
+#include "Statistics.h"
 
 class IEngine;
 
@@ -55,6 +56,11 @@ public:
     */
     unsigned getStackDepth() const;
 
+    /*
+      Have the SMT core start reporting statistics.
+    */
+    void setStatistics( Statistics *statistics );
+
 private:
     /*
       A stack entry is the tableau state before the split, plus a list
@@ -66,6 +72,11 @@ private:
         List<PiecewiseLinearCaseSplit> _splits;
         TableauState *_tableauState;
     };
+
+    /*
+      Collect and print various statistics.
+    */
+    Statistics *_statistics;
 
     /*
       The case-split stack.
