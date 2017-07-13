@@ -19,8 +19,17 @@
 class NestedDantzigsRule : public EntrySelectionStrategy
 {
 public:
+	/*
+      Apply the nested version of Dantzig's rule: use Dantzig's rule,
+      but restrict the search candidates to a shrinking set of nonbasics.
+    */
     bool select( ITableau &tableau );
-    void initialize( const ITableau &tableau );
+
+    /*
+      Initialize nesting set to all nonbasic indices.
+    */
+    virtual void initialize( const ITableau &tableau );
+
 private:
 	Set<unsigned> _J;
 };
