@@ -20,6 +20,7 @@ bool SteepestEdge::select( ITableau &tableau )
     /***************************************************************
      * Chooses most eligible nonbasic variable xN[q] according 
      * to steepest edge pivot selection rules.
+     *
      *                c[j]**2
      *   q = arg max -----------
      *       j in J   gamma[j]
@@ -43,19 +44,21 @@ bool SteepestEdge::select( ITableau &tableau )
     if ( candidates.empty() )
 	return false;
 
-    // TODO: For each candidate, compute the gradient wrt step direction
-    // and pick entering variable 
+    const double *costFunction = tableau.getCostFunction();
+    // TODO: getGamma is not implemented yet
+    //    const double *gamma = tableau.getGamma();
+    const double *gamma = tableau.getCostFunction();
 
     List<unsigned>::const_iterator candidate = candidates.begin();
     unsigned maxIndex = *candidate;
-    double maxValue = computeGradient(*candidate);
+    double maxValue = computeGradient( *candidate, costFunction, gamma );
     ++candidate;
 
     while ( candidate != candidates.end() )
     {
-	double contenderValue = computeGradient(*candidate);
+	double contenderValue = computeGradient( *candidate, costFunction, gamma );
 	// TODO: use FloatUtils::gt( contenderValue, maxValue )
-	if ( contenderValue > contenderValue )
+	if ( contenderValue > maxValue )
 	{
 	    maxIndex = *candidate;
 	    maxValue = contenderValue;
@@ -67,9 +70,27 @@ bool SteepestEdge::select( ITableau &tableau )
     return true;
 }
 
-double SteepestEdge::computeGradient( unsigned candidate )
+double SteepestEdge::computeGradient( const unsigned j, const double *c, const double *gamma )
 {
-    return 0;
+    /* Computes the (square of the) gradient in the step direction of the
+     * j-th nonbasic var.
+     *
+     * Step direction for candidate j,
+     *    p[j] = [ -inv(B)*AN*e[j]; e[j] ]
+     *    (where e[j] is the j-th standard unit vector)
+     *
+     * Let gamma[j] = || p[j] || ** 2
+     *                                      c'*p[j]     c[j]
+     * Gradient of cost function wrt p[j] = -------- = --------
+     *                                      ||p[j]||   ||p[j]||
+     *               
+     * This function returns c[j]**2 / gamma[j]
+     *
+     * Note: gamma[j] is costly to compute from scratch, but after each pivot operation, we 
+     * can update gamma more cheaply using a recurrence relation. See Goldfarb and Reid (1977),
+     * Forrest and Goldfarb (1992).
+     */
+    return (c[j] * c[j]) / gamma[j];
 }
 
 void SteepestEdge::initialize( const ITableau & /* tableau */ )
