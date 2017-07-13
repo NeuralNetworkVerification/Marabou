@@ -22,6 +22,7 @@ Engine::Engine()
     : _smtCore( this )
 {
     _smtCore.setStatistics( &_statistics );
+    _activeStrategy = &_nestedDantzigsRule;
 }
 
 Engine::~Engine()
@@ -94,7 +95,7 @@ bool Engine::performSimplexStep()
     _statistics.incNumSimplexSteps();
     timeval start = TimeUtils::sampleMicro();
 
-    if ( !(_nestedDantzigsRule.select( _tableau )) )
+    if ( !(_activeStrategy->select( _tableau )) )
     {
         timeval end = TimeUtils::sampleMicro();
         _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
@@ -211,10 +212,7 @@ void Engine::processInputQuery( const InputQuery &inputQuery )
         constraint->registerAsWatcher( _tableau );
 
     _tableau->initializeTableau();
-    _dantzigsRule.initialize(_tableau);
-    _blandsRule.initialize(_tableau);
-    _nestedDantzigsRule.initialize(_tableau);
-
+    _activeStrategy->initialize( _tableau );
 }
 
 void Engine::extractSolution( InputQuery &inputQuery )
