@@ -66,7 +66,6 @@ CFLAGS += \
 	-Wextra \
 	-Werror \
 	-Wno-deprecated \
-	-Wno-unused-but-set-variable \
 	-std=c++0x \
 	\
 	-g \
