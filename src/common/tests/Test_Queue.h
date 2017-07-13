@@ -1,8 +1,8 @@
 #include <cxxtest/TestSuite.h>
 
+#include "MString.h"
 #include "MockErrno.h"
 #include "Queue.h"
-#include "String.h"
 
 class QueueTestSuite : public CxxTest::TestSuite
 {

@@ -14,7 +14,7 @@
 #define __FloatUtils_h__
 
 #include "GlobalConfiguration.h"
-#include "String.h"
+#include "MString.h"
 
 #include <cfloat>
 

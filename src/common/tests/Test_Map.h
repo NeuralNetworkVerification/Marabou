@@ -1,8 +1,8 @@
 #include <cxxtest/TestSuite.h>
 
+#include "MString.h"
 #include "Map.h"
 #include "MockErrno.h"
-#include "String.h"
 
 class MapTestSuite : public CxxTest::TestSuite
 {

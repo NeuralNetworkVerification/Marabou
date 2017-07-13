@@ -16,7 +16,7 @@
 #include "InputQuery.h"
 #include "PiecewiseLinearConstraint.h"
 #include "TableauRow.h"
-#include "Time.h"
+#include "TimeUtils.h"
 
 Engine::Engine()
     : _smtCore( this )
@@ -92,12 +92,12 @@ bool Engine::performSimplexStep()
 
     // Statistics
     _statistics.incNumSimplexSteps();
-    timeval start = Time::sampleMicro();
+    timeval start = TimeUtils::sampleMicro();
 
     if ( !(_nestedDantzigsRule.select( _tableau )) )
     {
-        timeval end = Time::sampleMicro();
-        _statistics.addTimeSimplexSteps( Time::timePassed( start, end ) );
+        timeval end = TimeUtils::sampleMicro();
+        _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
         return false;
     }
 
@@ -112,8 +112,8 @@ bool Engine::performSimplexStep()
     _tableau->pickLeavingVariable();
     _tableau->performPivot();
 
-    timeval end = Time::sampleMicro();
-    _statistics.addTimeSimplexSteps( Time::timePassed( start, end ) );
+    timeval end = TimeUtils::sampleMicro();
+    _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
     return true;
 }
 

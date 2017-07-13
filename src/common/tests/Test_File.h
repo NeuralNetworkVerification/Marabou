@@ -1,13 +1,13 @@
 #include <cxxtest/TestSuite.h>
 
-#include "ConstSimpleData.h"
 #include "CommonError.h"
+#include "ConstSimpleData.h"
 #include "File.h"
 #include "HeapData.h"
+#include "MString.h"
+#include "MStringf.h"
 #include "MockErrno.h"
 #include "RealMalloc.h"
-#include "String.h"
-#include "Stringf.h"
 
 #include "T/sys/stat.h"
 #include "T/unistd.h"

@@ -16,7 +16,7 @@
 class ConstSimpleData;
 class HeapData;
 
-#include "String.h"
+#include "MString.h"
 
 class File
 {
