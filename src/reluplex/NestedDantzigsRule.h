@@ -25,7 +25,7 @@ private:
 	Set<unsigned> _J;
 };
 
-#endif // __DevexRule_h__
+#endif // __NestedDantzigsRule_h__
 
 //
 // Local Variables:
