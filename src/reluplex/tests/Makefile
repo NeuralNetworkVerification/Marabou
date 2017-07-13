@@ -15,7 +15,8 @@ SOURCES += \
 	Errno.cpp \
 	Error.cpp \
 	FloatUtils.cpp \
-	String.cpp \
+	MString.cpp \
+	TimeUtils.cpp \
 	\
 	BasisFactorization.cpp \
 	BlandsRule.cpp \
@@ -34,9 +35,9 @@ SOURCES += \
 	Tableau.cpp \
 	TableauRow.cpp \
 	TableauState.cpp \
-	Time.cpp \
 	\
 	TableauFactory.cpp \
+	LPContainer.cpp \
 
 all:
 	./$(TEST_TARGET)

@@ -17,10 +17,11 @@ SOURCES += \
 	Errno.cpp \
 	Error.cpp \
 	FloatUtils.cpp \
-	String.cpp \
+	MString.cpp \
 	\
 	BasisFactorization.cpp\
 	EtaMatrix.cpp\
+	LPContainer.cpp\
 	main.cpp \
 
 TARGET = run_reluplex.elf

@@ -10,7 +10,7 @@
 ** directory for licensing information.\endverbatim
 **/
 
-#include "String.h"
+#include "MString.h"
 
 String::String( Super super ) : _super( super )
 {

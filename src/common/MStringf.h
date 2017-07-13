@@ -13,7 +13,8 @@
 #ifndef __Stringf_h__
 #define __Stringf_h__
 
-#include "String.h"
+#include "MString.h"
+
 #include <cstdarg>
 #include <cstdio>
 

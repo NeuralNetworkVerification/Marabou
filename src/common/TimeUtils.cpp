@@ -10,15 +10,15 @@
 ** directory for licensing information.\endverbatim
 **/
 
-#include "Time.h"
-#include "Stringf.h"
+#include "MStringf.h"
+#include "TimeUtils.h"
 
-time_t Time::sample()
+time_t TimeUtils::sample()
 {
     return time( NULL );
 }
 
-struct timeval Time::sampleMicro()
+struct timeval TimeUtils::sampleMicro()
 {
     struct timeval answer;
     memset( &answer, 0, sizeof(answer) );
@@ -29,7 +29,7 @@ struct timeval Time::sampleMicro()
     return answer;
 }
 
-String Time::timePassed( time_t then, time_t now )
+String TimeUtils::timePassed( time_t then, time_t now )
 {
     time_t difference = now - then;
     struct tm *formattedTime = gmtime( &difference );
@@ -37,7 +37,7 @@ String Time::timePassed( time_t then, time_t now )
     return Stringf( "%02u:%02u:%02u", formattedTime->tm_hour, formattedTime->tm_min, formattedTime->tm_sec );
 }
 
-unsigned Time::timePassed( struct timeval then, struct timeval now )
+unsigned TimeUtils::timePassed( struct timeval then, struct timeval now )
 {
     enum {
         MILLISECONDS_IN_SECOND = 1000,
@@ -58,7 +58,7 @@ unsigned Time::timePassed( struct timeval then, struct timeval now )
     return ( seconds * MILLISECONDS_IN_SECOND ) + ( useconds / MICROSECONDS_IN_MILLISECOND );
 }
 
-String Time::now()
+String TimeUtils::now()
 {
     time_t secodnsSinceEpoch = time( NULL );
     struct tm *formattedTime = localtime( &secodnsSinceEpoch );

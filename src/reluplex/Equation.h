@@ -18,7 +18,7 @@
 /* A class representing a single input equation. For now, all
    equations are interpreted as equalities, i.e. the sum of all
    addends equals the scalar */
-struct Equation
+class Equation
 {
 public:
     struct Addend

@@ -11,7 +11,7 @@
  **/
 
 #include "Statistics.h"
-#include "Time.h"
+#include "TimeUtils.h"
 
 Statistics::Statistics()
     : _numMainLoopIterations( 0 )
@@ -26,7 +26,7 @@ Statistics::Statistics()
 
 void Statistics::print()
 {
-    printf( "\n%s Statistics update:\n", Time::now().ascii() );
+    printf( "\n%s Statistics update:\n", TimeUtils::now().ascii() );
 
     printf( "\tNumber of main loop iterators: %llu (%llu simplex steps, %llu constraint-fixing steps)\n"
             , _numMainLoopIterations

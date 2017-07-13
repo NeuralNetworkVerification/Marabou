@@ -1,6 +1,6 @@
 #include <cxxtest/TestSuite.h>
 
-#include "String.h"
+#include "MString.h"
 
 //template class List<String>;
 

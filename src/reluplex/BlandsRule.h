@@ -23,7 +23,7 @@ public:
       variable that has the smallest lexicographical index.
     */
     bool select( ITableau &tableau );
-    void initialize( const ITableau &tableau );
+
 };
 
 #endif // __BlandsRule_h__

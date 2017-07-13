@@ -1,7 +1,7 @@
 #include <cxxtest/TestSuite.h>
 
+#include "MString.h"
 #include "MockErrno.h"
-#include "String.h"
 #include "Vector.h"
 
 class VectorTestSuite : public CxxTest::TestSuite

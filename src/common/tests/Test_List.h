@@ -1,23 +1,17 @@
 #include <cxxtest/TestSuite.h>
 
-// #include "Error.h"
-// #include "MockErrno.h"
-#include "String.h"
 #include "List.h"
+#include "MString.h"
 
 class ListTestSuite : public CxxTest::TestSuite
 {
 public:
-    // MockErrno *mockErrno;
-
     void setUp()
     {
-        // TS_ASSERT( mockErrno = new MockErrno );
     }
 
     void tearDown()
     {
-        // TS_ASSERT_THROWS_NOTHING( delete mockErrno );
     }
 
     void test_append()
