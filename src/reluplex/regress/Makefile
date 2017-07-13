@@ -30,6 +30,7 @@ SOURCES += \
 	EtaMatrix.cpp \
 	FreshVariables.cpp \
 	InputQuery.cpp \
+	LPContainer.cpp \
 	NestedDantzigsRule.cpp \
 	PiecewiseLinearCaseSplit.cpp \
 	ReluConstraint.cpp \
@@ -41,7 +42,6 @@ SOURCES += \
 	TableauState.cpp \
 	\
 	main_regress.cpp \
-	LPContainer.cpp\
 
 all:
 	./$(TARGET)

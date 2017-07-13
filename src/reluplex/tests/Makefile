@@ -26,6 +26,7 @@ SOURCES += \
 	EtaMatrix.cpp \
 	FreshVariables.cpp \
 	InputQuery.cpp \
+	LPContainer.cpp \
 	NestedDantzigsRule.cpp \
 	PiecewiseLinearCaseSplit.cpp \
 	ReluConstraint.cpp \
@@ -36,7 +37,6 @@ SOURCES += \
 	TableauState.cpp \
 	\
 	TableauFactory.cpp \
-	LPContainer.cpp \
 
 all:
 	./$(TEST_TARGET)
