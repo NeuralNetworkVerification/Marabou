@@ -90,7 +90,7 @@ public:
         TS_ASSERT_SAME_DATA( d3, expected3, sizeof(double) * 3 );
     }
 	
-	void test_forward_factorize() //Same etas as test_backward_transformation()
+	void test_forward_transformation_with_B0() //Same etas as test_backward_transformation()
 	{
 		BasisFactorization basis ( 3 );
 		double e1[] = {1., 1., 3.};
@@ -111,9 +111,9 @@ public:
 		double a[] = {2., -1., 4.};
 		double d[] = {0., 0., 0.};
 		double expected[] = {42, 116, -131};
-
 		basis.forwardTransformation (a, d);
 		TS_ASSERT_SAME_DATA ( d, expected, sizeof(double) * 3 );
+		delete[] nB0;
 		
 	}
 	void test_backward_transformation()
@@ -210,7 +210,7 @@ public:
         TS_ASSERT_SAME_DATA( x, expected, sizeof(double) * 3 );
     }
 	
-	void test_backward_transformation_factorize() //Same etas as test_backward_transformation()
+	void test_backward_transformation_with_B0() //Same etas as test_backward_transformation()
 	{
 		BasisFactorization basis ( 3 );
 		double e1[] = {1., 1., 3.};
@@ -235,10 +235,9 @@ public:
         //     	| 7 8 9	|	|   3 1 |   | 1   1 |   |     0.5 |
         //
         // --> x = [ -6 9 -4 ]
-
-
 		basis.backwardTransformation (y, x);
 		TS_ASSERT_SAME_DATA ( x, expected, sizeof(double) * 3 );
+		delete[] nB0;
 	} 
     void test_store_and_restore()
     {
@@ -297,39 +296,44 @@ public:
 						4.,-3.,3.};
 		
 		basis.factorization ( A );
-		double temp[nsq] = {0.};
-		while (!basis._LPd.empty()){
-			basis.matrixMultiply( basis._LPd.front(), U, temp);
-			basis._LPd.pop();
-			memcpy(U, temp, sizeof(double) * 9);
+		for ( int i = basis.get_LP().size() - 1; i >= 0; --i) {
+				auto container = basis.get_LP().at(i);
+				if ( container->_isP ) {
+					basis.rowSwap( container->_pair->first, container->_pair->second, U );
+				} else {
+					double temp[9];
+					double eta[9];
+					std::fill_n( eta, 9, 0. );
+					container->_eta->toMatrix(eta);
+					//basis.coutMatrix( eta );
+					basis.matrixMultiply( eta, U, temp);
+					memcpy ( U, temp, sizeof(double) * 9);
+				}
 		}
-		TS_ASSERT_SAME_DATA ( basis._U,  U, sizeof(double) * 9 );
+		for (int i = 0; i < 3; ++i) {
+			TS_ASSERT (FloatUtils::areEqual( U[i], basis.get_U()[i]) );
+		}
 	}
 	void test_factorization_textbook()//textbook
 	{
 		BasisFactorization basis ( 4 );
         int nsq = 16;
-        //queue <double*> LP;
         double A[nsq]= {1., 3., -2., 4.,
 						1., 5., -1., 5., 
 						1., 3., -3., 6.,
 						-1., -3., 3., -8.};
 
         double U[nsq]= {1., 3., -2., 4.,
-						1., 5., -1., 5., 
-						1., 3., -3., 6.,
-						-1., -3., 3., -8.};
+						0.,1.,.5,.5,
+						0.,0.,1.,-2.,
+						0.,0.,0.,1.};
 		
         basis.factorization ( A );
-        double temp[nsq] = {0.};
-        while (!basis._LPd.empty()){
-            basis.matrixMultiply( basis._LPd.front(), U, temp);
-            basis._LPd.pop();                   
-            memcpy(U, temp, sizeof(double) * 16);                
-        }                                                                               
-        TS_ASSERT_SAME_DATA ( basis._U,  U, sizeof(double) * 16 );
+    		for (int i = 0; i < 3; ++i) {
+			TS_ASSERT (FloatUtils::areEqual( basis.get_U()[i], U[i]) );
+		}
 	}
-	void test_factorization_box()//textbook
+	void test_factorization_box()
 	{
 		BasisFactorization basis ( 3 );
         int nsq = 9;
@@ -337,39 +341,58 @@ public:
         double A[nsq]={1.,2.,4.,4.,5.,7.,7.,8.,9.};
 		double U[nsq]={1.,2.,4.,4.,5.,7.,7.,8.,9.};
 		basis.factorization ( A );
-        double temp[nsq] = {0.};
-        while (!basis._LPd.empty()){
-            basis.matrixMultiply( basis._LPd.front(), U, temp);
-            basis._LPd.pop();                   
-            memcpy(U, temp, sizeof(double) * 9);                
-        }                                   
-        TS_ASSERT_SAME_DATA ( basis._U,  U, sizeof(double) * 9 );
+        //double temp[nsq] = {0.};
+		for ( int i = basis.get_LP().size() - 1; i >= 0; --i) {
+				auto container = basis.get_LP().at(i);
+				if ( container->_isP ) {
+					basis.rowSwap( container->_pair->first, container->_pair->second, U );
+				} else {
+					double temp[9];
+					double eta[9];
+					std::fill_n( eta, 9, 0. );
+					container->_eta->toMatrix(eta);
+					//basis.coutMatrix( eta );
+					basis.matrixMultiply( eta, U, temp);
+					memcpy ( U, temp, sizeof(double) * 9);
+				}
+		}
+        for (int i = 0; i < 3; ++i) {
+			TS_ASSERT (FloatUtils::areEqual( U[i], basis.get_U()[i]) );
+		}	
 	}
 	void test_refactor()
 	{
 		BasisFactorization basis ( 3 );
+		BasisFactorization bas2 ( 3 );
+		bas2._factorFlag = true;
 		int d = 3;
-		for (int i = 0; i < 15; ++i) {
+		unsigned etaCount = 12;
+		//generate random etas
+		for (unsigned i = 0; i < etaCount; ++i) {
 			double eta_col[d]; 
 			std::fill_n(eta_col, d, 0.); 
 			int col = rand() % d; 
 			for (int j = 0; j < d; ++j) { 
-					eta_col[j] = rand() % (10) - 5; 
+					eta_col[j] = rand() % (13) - 5; 
 			} 
-			for (int i = 0; i < 3; ++i) {
-				//std::cout << eta_col[i] << "  ";
-			}
-			//std::cout << std::endl;
-			basis.pushEtaMatrix ( col, eta_col );
+			basis.pushEtaMatrix( col, eta_col );
+			bas2.pushEtaMatrix( col, eta_col );
 		} 
+
+		//check if etas have disappeared 
+		TS_ASSERT( bas2.get_etas().size() == etaCount - 11 );
 		double a[] = {2., -1., 4.};
-		double x[] = {0., 0., 0.};
-		basis.forwardTransformation ( a, x );
-		double y[] = {0., 0., 0.};
-		basis._factorFlag = true;
-		basis.forwardTransformation ( a, y );
+		double x1[] = {0., 0., 0.};
+		double y1[] = {0., 0., 0.};
+		double x2[] = {0., 0., 0.};
+		double y2[] = {0., 0., 0.};
+		bas2.forwardTransformation( a, x1 );
+		basis.forwardTransformation( a, y1 );
+		bas2.backwardTransformation( a, x2 );
+		basis.backwardTransformation( a, y2 );
 		for (int i = 0; i < 3; ++i) {
-			TS_ASSERT (FloatUtils::areEqual (x[i], y[i]));
+			TS_ASSERT (FloatUtils::areEqual( x1[i], y1[i]) );
+			TS_ASSERT (FloatUtils::areEqual( x2[i], y2[i] ) );
 		}
 	}
 };
