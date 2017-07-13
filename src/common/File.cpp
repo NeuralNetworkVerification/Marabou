@@ -65,7 +65,17 @@ void File::open( Mode openMode )
     int flags;
     mode_t mode;
 
-    setParametersByMode( openMode, flags, mode );
+    if ( openMode == File::MODE_READ )
+        flags = O_RDONLY;
+    else if ( openMode == File::MODE_WRITE_TRUNCATE )
+        flags = O_RDWR | O_CREAT | O_TRUNC;
+    else
+        flags = O_CREAT | O_RDWR | O_APPEND;
+
+    if ( ( openMode == File::MODE_WRITE_APPEND ) || ( openMode == File::MODE_WRITE_TRUNCATE ) )
+        mode = S_IRUSR | S_IWUSR;
+    else
+        mode = (mode_t)NULL;
 
     if ( ( _descriptor = T::open( _path.ascii(), flags, mode ) ) == NO_DESCRIPTOR )
         throw CommonError( CommonError::OPEN_FAILED );
@@ -126,21 +136,6 @@ void File::closeIfNeeded()
         T::close( _descriptor );
         _descriptor = NO_DESCRIPTOR;
     }
-}
-
-void File::setParametersByMode( Mode openMode, int &flags, mode_t &mode )
-{
-    if ( openMode == File::MODE_READ )
-        flags = O_RDONLY;
-    else if ( openMode == File::MODE_WRITE_TRUNCATE )
-        flags = O_RDWR | O_CREAT | O_TRUNC;
-    else
-        flags = O_CREAT | O_RDWR | O_APPEND;
-
-    if ( ( openMode == File::MODE_WRITE_APPEND ) || ( openMode == File::MODE_WRITE_TRUNCATE ) )
-        mode = S_IRUSR | S_IWUSR;
-    else
-        mode = (mode_t)NULL;
 }
 
 //

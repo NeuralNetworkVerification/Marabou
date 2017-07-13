@@ -49,7 +49,6 @@ private:
     String _readLineBuffer;
 
     void closeIfNeeded();
-    void setParametersByMode( Mode openMode, int &flags, mode_t &mode );
 };
 
 #endif // __File_h__
