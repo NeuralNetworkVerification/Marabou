@@ -17,6 +17,7 @@
 
 class EntrySelectionStrategy;
 class Equation;
+class Statistics;
 class TableauRow;
 class TableauState;
 
@@ -97,6 +98,7 @@ public:
     virtual void storeState( TableauState &state ) const = 0;
     virtual void restoreState( const TableauState &state ) = 0;
     virtual void computeBasicCosts() = 0;
+    virtual void setStatistics( Statistics *statistics ) = 0;
 };
 
 #endif // __ITableau_h__

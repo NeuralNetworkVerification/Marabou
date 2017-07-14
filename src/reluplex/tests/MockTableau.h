@@ -238,6 +238,10 @@ public:
     void computeBasicCosts()
     {
     }
+
+    void setStatistics( Statistics */* statistics */ )
+    {
+    }
 };
 
 #endif // __MockTableau_h__

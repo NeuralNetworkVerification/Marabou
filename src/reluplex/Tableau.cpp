@@ -612,6 +612,9 @@ void Tableau::performPivot()
 
     if ( _leavingVariable == _m )
     {
+        if ( _statistics )
+            _statistics->incNumTableauBoundHopping();
+
         // printf( "\n\t\tTableau performing fake pivot. Varibale jumping to opposite bound: %u\n\n",
         //         _nonBasicIndexToVariable[_enteringVariable] );
 
@@ -621,6 +624,9 @@ void Tableau::performPivot()
         setNonBasicAssignment( nonBasic, decrease ? _lowerBounds[nonBasic] : _upperBounds[nonBasic] );
         return;
     }
+
+    if ( _statistics )
+        _statistics->incNumTableauPivots();
 
     // printf( "\n\t\tTableau performing pivot. Entering: %u, Leaving: %u\n\n",
     //         _nonBasicIndexToVariable[_enteringVariable],
@@ -640,7 +646,6 @@ void Tableau::performPivot()
     _variableToIndex[currentNonBasic] = _leavingVariable;
 
     // Update value of the old basic (now non-basic) variable
-
     double nonBasicAssignment;
     if ( _leavingVariableIncreases )
     {
@@ -656,6 +661,11 @@ void Tableau::performPivot()
         else
             nonBasicAssignment = _lowerBounds[currentBasic];
     }
+
+    // Check if the pivot is degenerate and update statistics
+    if ( _statistics && ( nonBasicAssignment == _basicAssignment[currentBasic] ) )
+        _statistics->incNumTableauDegeneratePivots();
+
     setNonBasicAssignment( _nonBasicIndexToVariable[_enteringVariable], nonBasicAssignment );
 
     // Update the basis factorization. The column corresponding to the
@@ -665,6 +675,12 @@ void Tableau::performPivot()
 
 void Tableau::performDegeneratePivot( unsigned entering, unsigned leaving )
 {
+    if ( _statistics )
+    {
+        _statistics->incNumTableauDegeneratePivots();
+        _statistics->incNumTableauDegeneratePivotsByRequest();
+    }
+
     _enteringVariable = entering;
     _leavingVariable = leaving;
 
