@@ -17,6 +17,7 @@
 #include "Map.h"
 #include "Set.h"
 #include "Statistics.h"
+// #include "SteepestEdge.h"
 
 class BasisFactorization;
 class Equation;
@@ -394,6 +395,15 @@ private:
     */
     Statistics *_statistics;
 
+    // Flag for whether or not steepest edge is used.
+    bool _usingSteepestEdge = false;
+    
+    /*
+      Array of gamma values for steepest edge pivot selection. Must be updated with
+      each pivot.
+     */
+    double *_steepestEdgeGamma;
+
     /*
       Free all allocated memory.
     */
@@ -410,6 +420,17 @@ private:
       Resize the relevant data structures to add a new row to the tableau.
     */
     void addRow();
+
+    /*
+      Initialize gamma array at tableau initialization for steepest edge
+      pivot selection
+    */
+    void initializeGamma();
+
+    /*
+      Update gamma array during a pivot
+    */
+    void updateGamma();
 };
 
 #endif // __Tableau_h__

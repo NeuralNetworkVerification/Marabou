@@ -42,6 +42,7 @@ Tableau::Tableau()
     , _basicAssignmentStatus( ASSIGNMENT_INVALID )
     , _basicStatus( NULL )
     , _statistics( NULL )
+    , _steepestEdgeGamma( NULL )
 {
 }
 
@@ -147,6 +148,12 @@ void Tableau::freeMemoryIfNeeded()
         delete _basisFactorization;
         _basisFactorization = NULL;
     }
+
+    if ( _steepestEdgeGamma )
+    {
+	delete[] _steepestEdgeGamma;
+	_steepestEdgeGamma = NULL;
+    }
 }
 
 void Tableau::setDimensions( unsigned m, unsigned n )
@@ -218,6 +225,10 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     _basisFactorization = new BasisFactorization( _m );
     if ( !_basisFactorization )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::basisFactorization" );
+
+    _steepestEdgeGamma = new double[n-m];
+    if ( !_steepestEdgeGamma )
+	throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::steepestEdgeGamma" );
 }
 
 void Tableau::setEntryValue( unsigned row, unsigned column, double value )
@@ -262,6 +273,42 @@ void Tableau::initializeTableau()
 
     // Recompute assignment
     computeAssignment();
+
+    // Initialize gamma values for steepest edge
+    if ( _usingSteepestEdge )
+	initializeGamma();
+}
+
+void Tableau::initializeGamma()
+{
+    /*
+     * Initialize gamma value for each nonbasic variable.
+     *
+     * gamma[i] = ||p[i]||^2
+     *     p[i] = [ -inv(B)*AN*e[i]; e[i] ]
+     *          = [ AN[i]; e[i] ]
+     * where AN[i] is the ith column of the matrix AN
+     */
+    // Initialize gamma value for each nonbasic variable
+    for ( unsigned i = 0; i < _n - _m; ++i )
+    {
+	// Find corresponding column in matrix B
+	unsigned var = _nonBasicIndexToVariable[i];
+	double *ANColumn = _A + ( var * _m); // AN[i]
+
+	// Euclidean norm of vector is sum of square of each element
+	_steepestEdgeGamma[i] = 1.0; // To account for (m+i)th element of p[i]
+	for ( unsigned j = 0; j < _m; ++j )
+	{
+	    // Account for AN[i]
+	    _steepestEdgeGamma[i] += ANColumn[j] * ANColumn[j];
+	}
+    }
+}
+
+void Tableau::updateGamma()
+{
+    // TODO: update gamma values for steepest edge
 }
 
 void Tableau::computeAssignment()
@@ -605,6 +652,9 @@ unsigned Tableau::getEnteringVariable() const
 
 void Tableau::performPivot()
 {
+    // TODO: update gamma here?
+    updateGamma();
+    
     // Any kind of pivot invalidates the assignment
     // TODO: we don't really need to invalidate, can update the basis
     // vars based on _d

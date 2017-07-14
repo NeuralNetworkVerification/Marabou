@@ -86,6 +86,13 @@ public:
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 25U );
      */
     }
+
+    void test_todo()
+    {
+	TS_TRACE( "Selects variables correctly." );
+	TS_TRACE( "Updates gamma values correctly" );
+	TS_TRACE( "Computes gradients correctly" );
+    }
 };
 
 //

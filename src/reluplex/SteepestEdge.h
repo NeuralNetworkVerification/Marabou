@@ -25,15 +25,17 @@ public:
     bool select( ITableau &tableau );
     void initialize( const ITableau &tableau );
 
-    struct SteepestEdgeData
-    {
-	double *gamma; /* double gamma[n - m] */
-    };
-
 private:
     // Helper function to compute gradient of cost function with respect to edge direction
     double computeGradient( const unsigned j, const double *c, const double *gamma );
 };
+
+
+//struct SteepestEdgeData
+//{
+//    double *gamma; /* double gamma[n - m] */
+//};
+
 
 #endif // __SteepestEdge_h__
 
