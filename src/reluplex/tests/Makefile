@@ -36,7 +36,7 @@ SOURCES += \
 	TableauState.cpp \
 	\
 	TableauFactory.cpp \
-	LPContainer.cpp \
+	LPElement.cpp \
 
 all:
 	./$(TEST_TARGET)

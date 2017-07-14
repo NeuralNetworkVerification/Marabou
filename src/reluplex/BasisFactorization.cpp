@@ -16,7 +16,7 @@
 #include "FloatUtils.h"
 #include "ReluplexError.h"
 #include "GlobalConfiguration.h"
-#include "LPContainer.h"
+#include "LPElement.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -30,16 +30,11 @@ BasisFactorization::BasisFactorization( unsigned m )
 {
     _B0 = new double[m*m];
 	_U = new double [m*m];
-	_I = new double [m*m];
-	_start = true;
-	_factorFlag = false;
-	constructIdentity();
+	_factorizationEnabled = true;
     if ( !_B0 )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "BasisFactorization::B0" );
 	if ( !_U )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "BasisFactorization::U" );
-	if ( !_I )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "BasisFactorization::I" );
 }
 
 BasisFactorization::~BasisFactorization()
@@ -49,11 +44,6 @@ BasisFactorization::~BasisFactorization()
 
 void BasisFactorization::freeIfNeeded()
 {
-	if ( _I )
-	{
-		delete[] _I;
-		_I = NULL;
-	}
     if ( _U )
     {
         delete[] _U;
@@ -71,24 +61,29 @@ void BasisFactorization::freeIfNeeded()
         delete *it;
 
     _etas.clear();
+
+	for (unsigned  i = 0; i < _LP.size(); i++)
+		delete _LP.at(i);	
+
+	_LP.clear();
 }
 
-double *BasisFactorization::get_U()
+const double *BasisFactorization::getU() const
 {
 	return _U;
 }
 
-std::vector<LPContainer *> BasisFactorization::get_LP()
+const std::vector<LPElement *> BasisFactorization::getLP() const 
 {
 	return _LP;
 }
 
-double *BasisFactorization::get_B0()
+const double *BasisFactorization::getB0() const
 {
 	return _B0;
 }
 
-List<EtaMatrix *> BasisFactorization::get_etas()
+const List<EtaMatrix *> BasisFactorization::getEtas() const
 {
 	return _etas;
 }
@@ -97,45 +92,36 @@ void BasisFactorization::pushEtaMatrix( unsigned columnIndex, double *column )
 {
     EtaMatrix *matrix = new EtaMatrix( _m, columnIndex, column );
     _etas.append( matrix );
-	if ( _etas.size() > GlobalConfiguration::REFACTORIZATION_THRESHOLD && _factorFlag )
+	if ( _etas.size() > GlobalConfiguration::REFACTORIZATION_THRESHOLD && _factorizationEnabled )
 	{
 		condenseEtas();
 		factorization( _B0 );
 	}
 }
 
-void BasisFactorization::constructIdentity() 
-{
-	std::fill_n(_B0, _m*_m, 0.);
-	for (unsigned i = 0; i < _m; ++i) {
-		_I[i*_m+i] = 1;
-		_B0[i*_m+i] = 1;
-	}
-}	
 
 void BasisFactorization::matrixMultiply( const double *L, const double *B, double *R){
-	for (unsigned n = 0; n < _m; ++n){ //columns of U
-		for (unsigned i = 0; i < _m; ++i){ // rows of L
+	for (unsigned n = 0; n < _m; ++n){ 
+		for (unsigned i = 0; i < _m; ++i){ 
 			double sum = 0.;
-			for (unsigned k = 0; k < _m; ++k) //can be optimized by replacing d with i + 1
+			for (unsigned k = 0; k < _m; ++k) 
 				sum += L[i*_m+k] * B[n+k*_m];
 			R[i*_m+n]=sum;
 		}
 	}
 }
 
-void BasisFactorization::LFactorizationMultiply( const EtaMatrix *L, const double *X, double *R)
+void BasisFactorization::LFactorizationMultiply( const EtaMatrix *L, double *_U )
 {
-    unsigned col = L->_columnIndex;
-    for (unsigned i = 0; i < _m; ++i) {
-        for (unsigned j = 0; j < _m; ++j){
-            if ( j == col ) {
-                R[i+j*_m] = X[i+j*_m] * L->_column[col];
-            } else {
-                R[i+j*_m] = X[i+j*_m] + X[i+col*_m] * L->_column[j];
-            }
+    unsigned colIndex = L->_columnIndex;
+    for (unsigned col = colIndex; col < _m; ++col) {
+        for (unsigned row = colIndex + 1; row < _m; ++row){
+			_U[row*_m+col] += L->_column[row]*_U[colIndex*_m+col];
         }
     }
+	for (unsigned i = colIndex; i < _m; ++i) {
+		_U[colIndex*_m+i] *= L->_column[colIndex];
+	}
 }
 
 void BasisFactorization::LMultiplyRight( const EtaMatrix *L, const double *X, double *R)
@@ -162,15 +148,20 @@ void BasisFactorization::LMultiplyLeft( const EtaMatrix *L, const double *X, dou
 
 void BasisFactorization::setB0( const double *B0 )
 {
-	_start = false;
 	memcpy ( _B0, B0, sizeof(double) * _m * _m);
 	factorization( _B0 );
 }
 
 void BasisFactorization::condenseEtas()
 {
+	double *Y = new double[_m*_m];
+    if ( _LP.empty() ) { 
+        std::fill_n( _B0, _m * _m, 0. ); 
+        for (unsigned row = 0; row < _m; ++row) { 
+            _B0[row*_m+row] = 1.; 
+        }
+    }	
 	for ( auto &eta : _etas) {
-		double *Y = new double[_m*_m];
 		memcpy ( Y, _B0, sizeof(double) * _m * _m );
 		for (unsigned n = 0; n < _m; ++n){ //columns
 				double sum = 0.;
@@ -180,16 +171,15 @@ void BasisFactorization::condenseEtas()
 				_B0[n*_m+eta->_columnIndex] = sum;
 		}
 		delete eta;
-		delete[] Y;
 	}	
+	delete[] Y;
 	_etas.clear();
-	_start = false;
 	clearLPU();
 }
 
 void BasisFactorization::forwardTransformation( const double *y, double *x )
 {
-    if ( _etas.empty() && _start )
+    if ( _etas.empty() && _LP.empty() )
     {
         memcpy( x, y, sizeof(double) * _m );
         return;
@@ -198,7 +188,7 @@ void BasisFactorization::forwardTransformation( const double *y, double *x )
     memcpy( tempY, y, sizeof(double) * _m );
     std::fill( x, x + _m, 0.0 );
 
-	for ( int i = _LP.size() - 1; i >= 0; --i) {
+	for ( int i = _LP.size() - 1; i >= 0; --i) { //multiplication by U 
 		auto container = _LP.at(i);
 		if ( container->_isP ) {
 			double temp = x[container->_pair->first];
@@ -211,7 +201,7 @@ void BasisFactorization::forwardTransformation( const double *y, double *x )
 		}
 	}
 
-	if (!_start) {
+	if ( !_LP.empty() ) { //multiplication by L and P
 		x[_m-1] = tempY[_m-1];
 		for (int i = _m - 2; i >= 0; --i){
 			double sum = 0.;
@@ -223,7 +213,7 @@ void BasisFactorization::forwardTransformation( const double *y, double *x )
 		memcpy ( tempY, x, sizeof(double) * _m );	
 	}
 	
-	for ( const auto &eta : _etas )
+	for ( const auto &eta : _etas ) //multiplication by etas
     {
         x[eta->_columnIndex] = tempY[eta->_columnIndex] / eta->_column[eta->_columnIndex];
 
@@ -245,7 +235,7 @@ void BasisFactorization::forwardTransformation( const double *y, double *x )
 
 void BasisFactorization::backwardTransformation( const double *y, double *x )
 {
-    if ( _etas.empty() && _start )
+    if ( _etas.empty() && _LP.empty() )
     {
         memcpy( x, y, sizeof(double) * _m );
         return;
@@ -278,7 +268,7 @@ void BasisFactorization::backwardTransformation( const double *y, double *x )
         memcpy( tempY, x, sizeof(double) *_m );
     }
 
-	if (!_start) 
+	if ( !_LP.empty() ) //multiplication by U
 	{
 		x[0] = tempY[0];
 		for (unsigned i = 1; i < _m; ++i) {
@@ -290,7 +280,7 @@ void BasisFactorization::backwardTransformation( const double *y, double *x )
 		}
 	}
  
-	for (auto *d : _LP)
+	for (auto *d : _LP) //multiplication by L and P
 	{
 		if ( d->_isP ){
 			double temp = x[d->_pair->first];
@@ -348,57 +338,51 @@ void BasisFactorization::rowSwap( int p, int n, double *A ){
     }
 }
 
-void BasisFactorization::columnSwap( int p, int n, double *A )
-{
-	double buf = 0; 
-	for (unsigned i = 0; i < _m; i++) {
-		buf = A[p+i*_m];
-		A[p+i*_m] = A[n+i*_m];
-		A[n+i*_m] = buf;
-	}
-}
 
 void BasisFactorization::clearLPU()
 {
 	for (unsigned  i = 0; i < _LP.size(); i++)
-	{
-		delete[] _LP.at(i);	
-	}
+		delete _LP.at(i);	
+
 	_LP.clear();
-	std::fill_n (_U, _m*_m, 0);
+	std::fill_n( _U, _m*_m, 0 );
 }
 
 void BasisFactorization::factorization( double *S )
 {   
 	clearLPU();
-	double *M = new double[_m*_m];
-	memcpy ( M, S, sizeof(double) * _m * _m );
+	memcpy ( _U, S, sizeof(double) * _m * _m );
+
 	for (unsigned i = 0; i < _m; ++i){
 		std::pair <int, int> *P = new std::pair <int, int>;
 		double *L_col = new double[_m];
-		if (M[i*_m+i] == 0){
+	
+		if (_U[i*_m+i] == 0){ //check for pivot
 			unsigned tempi = i;
-			while (M[tempi*_m+i] == 0 && tempi < _m) tempi++;
+			
+			while (_U[tempi*_m+i] == 0 && tempi < _m) tempi++;
+			
 			if (tempi == _m) throw ReluplexError( ReluplexError::NO_AVAILABLE_CANDIDATES, "No Pivot" ); 
-			rowSwap(i, tempi, M);
+			
+			rowSwap(i, tempi, _U);
 			P->first = i;
 			P->second = tempi;
-			LPContainer *P_elem = new LPContainer( P, true );
-			_LP.insert( _LP.begin(), P_elem );
+			LPElement *P_elem = new LPElement( NULL, P, true );
+			_LP.insert( _LP.begin(), P_elem ); //add permutation matrix only if necessary
 		}
-		double div = M[i*_m+i];
-		for (unsigned j = i; j < _m; ++j){
+	
+		double div = _U[i*_m+i];
+		for (unsigned j = i; j < _m; ++j){ //Gaussian elimination
 			if (j == i) L_col[j] = 1/div;
-			else L_col[j] = -M[i+j*_m]/div;   
+			else L_col[j] = -_U[i+j*_m]/div;   
 		}
-    	EtaMatrix *L = new EtaMatrix( _m, i, L_col );
-		LPContainer *L_elem = new LPContainer( L, false);
+    	
+		EtaMatrix *L = new EtaMatrix( _m, i, L_col );
+		LPElement *L_elem = new LPElement( L, NULL, false);
 		_LP.insert( _LP.begin(), L_elem );
-		double R[_m*_m];
-		LFactorizationMultiply( L, M, R );
-		memcpy(M, R, sizeof(double)*_m*_m);
+			
+		LFactorizationMultiply( L, _U );
 	}
-	memcpy(_U, M, sizeof(double)*_m*_m);
 }
 // Local Variables:
 // compile-command: "make -C .. "

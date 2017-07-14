@@ -15,13 +15,13 @@
 
 #include "List.h"
 #include <queue>
-#include "LPContainer.h"
+#include "LPElement.h"
 
 using std::queue;
 
 class EtaMatrix;
 
-class LPContainer;
+class LPElement;
 
 class BasisFactorization
 {
@@ -89,7 +89,7 @@ public:
 		S is the basis to be LU factorized. The resuling upper triangular matrix is stored in _U and the 
 		lower triangular and permutation matricies are stored in _LP
 	*/
-    void factorization (double *S );
+    void factorization ( double *S );
 
 	/*
 		For the purposes of testing: here we set B0 to a non-identity matrix and set the _start flag to false, 
@@ -107,34 +107,31 @@ public:
 
 	void coutMatrix ( const double *m );
 	//returns _U
-	double *get_U();
+	const double *getU() const;
 	//returns _LP
-	std::vector<LPContainer *> get_LP();
+	const std::vector<LPElement *> getLP() const;
 	//returns _B0
-	double *get_B0();
+	const double *getB0() const;
 	//returns _etas
-	List<EtaMatrix *> get_etas();
+	const List<EtaMatrix *> getEtas() const;
 
-	bool _start;
-	bool _factorFlag;
+	bool _factorizationEnabled;
 
 private:
 	double *_B0;
 	double *_U;
-	std::vector<LPContainer *> _LP;
+	std::vector<LPElement *> _LP;
     unsigned _m;
     List<EtaMatrix *> _etas;
 	double *_I;	
 	void constructIdentity();
-	//swaps column p with column n in matrix A
-	void columnSwap( int p, int n, double *A );
 	void clearLPU();
 	//LB = R, where B is a _m x 1 matrix and L represents a _m x _m lower triangular matrix 
 	void LMultiplyLeft( const EtaMatrix *L, const double *B, double *R);
 	//BL = R, where B is a 1 x _m matrix and L represents a _m x _m lower triangular matrix 
 	void LMultiplyRight( const EtaMatrix *L, const double *B, double *R);
 	//Multiplication needed for factorization method 
-	void LFactorizationMultiply( const EtaMatrix *L, const double *X, double *R );
+	void LFactorizationMultiply( const EtaMatrix *L, double *U );
 	void condenseEtas();
 };
 
