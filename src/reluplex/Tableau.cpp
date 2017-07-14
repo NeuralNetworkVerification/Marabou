@@ -477,6 +477,10 @@ void Tableau::computeCostFunction()
       evaluation thereof on a specific point.
      */
 
+    // Step 1: compute basic costs
+    computeBasicCosts();
+
+    // Step 2: compute the multipliers
     computeMultipliers();
 
     // Step 3: compute reduced costs
@@ -485,10 +489,6 @@ void Tableau::computeCostFunction()
 
 void Tableau::computeMultipliers()
 {
-    // Step 1: compute basic costs
-    computeBasicCosts();
-
-    // Step 2: compute the multipliers
     computeMultipliers( _basicCosts );
 }
 
@@ -551,7 +551,7 @@ unsigned Tableau::getBasicStatus( unsigned basic )
     return _basicStatus[_variableToIndex[basic]];
 }
 
-void Tableau::getCandidates(List<unsigned>& candidates)
+void Tableau::getEntryCandidates( List<unsigned> &candidates )
 {
     candidates.clear();
     for ( unsigned i = 0; i < _n - _m; ++i )

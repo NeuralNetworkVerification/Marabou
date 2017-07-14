@@ -45,8 +45,7 @@ public:
 
     List<unsigned> mockCandidates;
     unsigned mockEnteringVariable;
-
-    void getCandidates(List<unsigned> &candidates)
+    void getEntryCandidates( List<unsigned> &candidates )
     {
         candidates = mockCandidates;
     }
@@ -234,6 +233,10 @@ public:
     void unregisterToWatchVariable( VariableWatcher *watcher, unsigned variable )
     {
         lastUnregisteredVariableToWatcher[variable].insert( watcher );
+    }
+
+    void computeBasicCosts()
+    {
     }
 };
 

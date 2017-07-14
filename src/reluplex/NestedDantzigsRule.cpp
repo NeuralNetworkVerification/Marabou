@@ -14,13 +14,14 @@
  * Based on "Efficient nested pricing in the simplex method," PQ Pan
  */
 
-#include "NestedDantzigsRule.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
+#include "NestedDantzigsRule.h"
 #include "ReluplexError.h"
 
 bool NestedDantzigsRule::select( ITableau &tableau )
 {
+    tableau.computeBasicCosts();
     tableau.computeMultipliers();
 
     const double *costFunction = tableau.getCostFunction();
@@ -29,10 +30,8 @@ bool NestedDantzigsRule::select( ITableau &tableau )
     for ( auto i : _J )
     {
         tableau.computeReducedCost( i );
-        if( tableau.eligibleForEntry( i ) )
-        {
+        if ( tableau.eligibleForEntry( i ) )
             Jhat.insert(i);
-        }
     }
 
     if ( Jhat.empty() )
@@ -40,17 +39,15 @@ bool NestedDantzigsRule::select( ITableau &tableau )
         unsigned numNonBasic = tableau.getN() - tableau.getM();
         for ( unsigned i = 0; i < numNonBasic; ++i )
         {
-            if ( !_J.exists( i ) ) {
+            if ( !_J.exists( i ) )
+            {
                 tableau.computeReducedCost( i );
-                if ( tableau.eligibleForEntry( i ) ) {
+                if ( tableau.eligibleForEntry( i ) )
                     Jhat.insert( i );
-                }
             }
         }
-	   if ( Jhat.empty() )
-	   {
-	       return false;
-	   }
+        if ( Jhat.empty() )
+            return false;
     }
 
     Set<unsigned>::const_iterator candidate = Jhat.begin();
@@ -79,9 +76,7 @@ void NestedDantzigsRule::initialize( const ITableau &tableau )
     _J.clear();
     unsigned numNonBasic = tableau.getN() - tableau.getM();
     for ( unsigned i = 0; i < numNonBasic; ++i )
-    {
         _J.insert( i );
-    }
 }
 
 //

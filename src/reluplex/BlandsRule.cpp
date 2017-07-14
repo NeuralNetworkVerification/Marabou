@@ -17,9 +17,10 @@
 bool BlandsRule::select( ITableau &tableau )
 {
     tableau.computeCostFunction();
+
     List<unsigned> candidates;
-    tableau.getCandidates(candidates);
-    
+    tableau.getEntryCandidates( candidates );
+
     if ( candidates.empty() )
         return false;
 
@@ -41,7 +42,7 @@ bool BlandsRule::select( ITableau &tableau )
         ++it;
     }
 
-    tableau.setEnteringVariable(minIndex);
+    tableau.setEnteringVariable( minIndex );
     return true;
 }
 
