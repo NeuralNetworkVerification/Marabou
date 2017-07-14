@@ -1,20 +1,33 @@
+/*********************                                                        */
+/*! \file LPElement.cpp
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Derek Huang
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **/
+
 #include "EtaMatrix.h"
 #include "LPElement.h"
 
-#include <utility>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <utility>
 
-LPElement::LPElement( const EtaMatrix *eta, const std::pair<int, int> *pair, bool isP ) 
+LPElement::LPElement( const EtaMatrix *eta, const std::pair<int, int> *pair )
 	: _eta( NULL )
 	, _pair( NULL )
 {
-	_isP = isP;
-	if ( isP ){
+    if ( pair )
+    {
 		_pair = new std::pair<int, int>;
 		memcpy( _pair, pair, sizeof(std::pair<int, int>) );
-	} else 
+	}
+    else
 		_eta = new EtaMatrix( eta->_m, eta->_columnIndex, eta->_column );
 }
 
@@ -25,6 +38,7 @@ LPElement::~LPElement()
 		delete _eta;
 		_eta = NULL;
 	}
+
 	if ( _pair )
 	{
 		delete _pair;
@@ -32,3 +46,10 @@ LPElement::~LPElement()
 	}
 }
 
+//
+// Local Variables:
+// compile-command: "make -C .. "
+// tags-file-name: "../TAGS"
+// c-basic-offset: 4
+// End:
+//
