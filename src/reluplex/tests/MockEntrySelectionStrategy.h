@@ -47,15 +47,13 @@ public:
     bool select( ITableau & tableau )
     {
     	lastCandidates.clear();
-        tableau.getCandidates( lastCandidates );
-        if (!lastCandidates.empty()) {
+        tableau.getEntryCandidates( lastCandidates );
+
+        if ( !lastCandidates.empty() )
 	    	tableau.setEnteringVariable(nextSelectResult);
-        }
+
         return !lastCandidates.empty();
     }
-
-    void initialize( const ITableau& /* tableau */ )
-    {}
 };
 
 #endif // __MockEntrySelectionStrategy_h__

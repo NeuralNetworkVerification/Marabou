@@ -3,8 +3,10 @@ ROOT_DIR = ../..
 SUBDIRS += \
 
 LOCAL_INCLUDES += \
+	.. \
 	$(CONFIGURATION_DIR) \
 	$(RELUPLEX_DIR) \
+
 
 LINK_FLAGS += \
 
@@ -16,17 +18,19 @@ SOURCES += \
 	Errno.cpp \
 	Error.cpp \
 	FloatUtils.cpp \
-	String.cpp \
+	MString.cpp \
+	TimeUtils.cpp \
 	\
 	BasisFactorization.cpp \
 	BlandsRule.cpp \
 	DantzigsRule.cpp \
-	NestedDantzigsRule.cpp \
 	Engine.cpp \
 	Equation.cpp \
 	EtaMatrix.cpp \
 	FreshVariables.cpp \
 	InputQuery.cpp \
+	LPContainer.cpp \
+	NestedDantzigsRule.cpp \
 	PiecewiseLinearCaseSplit.cpp \
 	ReluConstraint.cpp \
 	SmtCore.cpp \
@@ -35,7 +39,6 @@ SOURCES += \
 	TableauFactory.cpp \
 	TableauRow.cpp \
 	TableauState.cpp \
-	Time.cpp \
 	\
 	main.cpp \
 	../AcasParser.cpp \

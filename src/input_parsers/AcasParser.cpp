@@ -13,8 +13,10 @@
 #include "AcasParser.h"
 #include "InputParserError.h"
 #include "InputQuery.h"
+#include "MString.h"
 #include "ReluConstraint.h"
-#include "String.h"
+
+static const double ACAS_INFINITY = 1000000.0;
 
 AcasParser::NodeIndex::NodeIndex( unsigned layer, unsigned node )
     : _layer( layer )
@@ -70,8 +72,6 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
         // First add the F variables from layer i-1
         for ( unsigned j = 0; j < previousLayerSize; ++j )
         {
-            printf( "adding nodeToF (%u,%u)\n", i-1, j );
-
             _nodeToF[NodeIndex( i - 1, j )] = currentIndex;
             ++currentIndex;
         }
@@ -112,6 +112,13 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
     for ( const auto &fNode : _nodeToF )
     {
         inputQuery.setLowerBound( fNode.second, 0.0 );
+        inputQuery.setUpperBound( fNode.second, ACAS_INFINITY );
+    }
+
+    for ( const auto &fNode : _nodeToB )
+    {
+        inputQuery.setLowerBound( fNode.second, -ACAS_INFINITY );
+        inputQuery.setUpperBound( fNode.second, ACAS_INFINITY );
     }
 
     // Next come the actual equations
@@ -165,20 +172,39 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
 
 unsigned AcasParser::getInputVariable( unsigned index ) const
 {
-    NodeIndex nodeIndex( 0, index );
+    return getFVariable( 0, index );
+}
+
+unsigned AcasParser::getOutputVariable( unsigned index ) const
+{
+    return getBVariable( _acasNeuralNetwork.getNumLayers(), index );
+}
+
+unsigned AcasParser::getBVariable( unsigned layer, unsigned index ) const
+{
+    NodeIndex nodeIndex( layer, index );
+    if ( !_nodeToB.exists( nodeIndex ) )
+        throw InputParserError( InputParserError::VARIABLE_INDEX_OUT_OF_RANGE );
+
+    return _nodeToB.get( nodeIndex );
+}
+
+unsigned AcasParser::getFVariable( unsigned layer, unsigned index ) const
+{
+    NodeIndex nodeIndex( layer, index );
     if ( !_nodeToF.exists( nodeIndex ) )
         throw InputParserError( InputParserError::VARIABLE_INDEX_OUT_OF_RANGE );
 
     return _nodeToF.get( nodeIndex );
 }
 
-unsigned AcasParser::getOutputVariable( unsigned index ) const
+unsigned AcasParser::getAuxVariable( unsigned layer, unsigned index ) const
 {
-    NodeIndex nodeIndex( _acasNeuralNetwork.getNumLayers(), index );
-    if ( !_nodeToB.exists( nodeIndex ) )
+    NodeIndex nodeIndex( layer, index );
+    if ( !_nodeToAux.exists( nodeIndex ) )
         throw InputParserError( InputParserError::VARIABLE_INDEX_OUT_OF_RANGE );
 
-    return _nodeToB.get( nodeIndex );
+    return _nodeToAux.get( nodeIndex );
 }
 
 //

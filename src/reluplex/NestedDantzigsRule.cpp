@@ -14,43 +14,40 @@
  * Based on "Efficient nested pricing in the simplex method," PQ Pan
  */
 
-#include "NestedDantzigsRule.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
+#include "NestedDantzigsRule.h"
 #include "ReluplexError.h"
 
 bool NestedDantzigsRule::select( ITableau &tableau )
 {
+    tableau.computeBasicCosts();
     tableau.computeMultipliers();
 
     const double *costFunction = tableau.getCostFunction();
 
     Set<unsigned> Jhat;
-    for (auto i : _J)
+    for ( auto i : _J )
     {
-        tableau.computeReducedCost(i);
-        if(tableau.eligibleForEntry(i))
-        {
+        tableau.computeReducedCost( i );
+        if ( tableau.eligibleForEntry( i ) )
             Jhat.insert(i);
-        }
     }
 
-    if (Jhat.empty())
+    if ( Jhat.empty() )
     {
         unsigned numNonBasic = tableau.getN() - tableau.getM();
-        for (unsigned i = 0; i < numNonBasic; ++i)
+        for ( unsigned i = 0; i < numNonBasic; ++i )
         {
-            if (!_J.exists(i)) {
-                tableau.computeReducedCost(i);
-                if (tableau.eligibleForEntry(i)) {
-                    Jhat.insert(i);
-                }
+            if ( !_J.exists( i ) )
+            {
+                tableau.computeReducedCost( i );
+                if ( tableau.eligibleForEntry( i ) )
+                    Jhat.insert( i );
             }
         }
-	if (Jhat.empty())
-	{
-	    return false;
-	}
+        if ( Jhat.empty() )
+            return false;
     }
 
     Set<unsigned>::const_iterator candidate = Jhat.begin();
@@ -68,9 +65,9 @@ bool NestedDantzigsRule::select( ITableau &tableau )
         ++candidate;
     }
 
-    tableau.setEnteringVariable(*maxIt);
+    tableau.setEnteringVariable( *maxIt );
     _J = Jhat;
-    _J.erase(*maxIt);
+    _J.erase( *maxIt );
     return true;
 }
 
@@ -78,10 +75,8 @@ void NestedDantzigsRule::initialize( const ITableau &tableau )
 {
     _J.clear();
     unsigned numNonBasic = tableau.getN() - tableau.getM();
-    for (unsigned i = 0; i < numNonBasic; ++i)
-    {
-        _J.insert(i);
-    }
+    for ( unsigned i = 0; i < numNonBasic; ++i )
+        _J.insert( i );
 }
 
 //

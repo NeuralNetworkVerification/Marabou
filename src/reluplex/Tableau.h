@@ -195,11 +195,35 @@ public:
     void setNonBasicAssignment( unsigned variable, double value );
 
     /*
-      Compute the cost function
+      Compute the cost function (for all variables).
     */
     void computeCostFunction();
-    void getCandidates(List<unsigned>& candidates);
+
+    /*
+      Get a list of non-basic variables eligible for entry into the
+      basis, i.e. variables that can be changed in a way that would
+      reduce the cost value.
+    */
+    void getEntryCandidates( List<unsigned> &candidates );
+
+    /*
+      Cost-calculating functions.
+    */
+    void computeBasicCosts();
+    void computeReducedCost( unsigned nonBasic );
+    void computeReducedCosts();
+
+    /*
+      Compute the multipliers for a given list of basic costs. If the
+      costs are not specified as input, the function uses the basic
+      costs computed by computeBasicCosts().
+    */
     void computeMultipliers();
+    void computeMultipliers( double *rowCoefficients );
+
+    /*
+      Access the cost function.
+    */
     const double *getCostFunction() const;
     void dumpCostFunction() const;
 
@@ -374,14 +398,6 @@ private:
       Free all allocated memory.
     */
     void freeMemoryIfNeeded();
-
-    /*
-      Helper functions for calculating the cost
-    */
-    void computeBasicCosts();
-    void computeMultipliers( double *rowCoefficients );
-    void computeReducedCost( unsigned nonBasic );
-    void computeReducedCosts();
 
     /*
       True if the basic variable is out of bounds

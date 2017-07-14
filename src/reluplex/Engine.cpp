@@ -22,6 +22,9 @@ Engine::Engine()
     : _smtCore( this )
 {
     _smtCore.setStatistics( &_statistics );
+    _tableau->setStatistics( &_statistics );
+
+    _activeEntryStrategy = &_nestedDantzigsRule;
 }
 
 Engine::~Engine()
@@ -94,22 +97,19 @@ bool Engine::performSimplexStep()
     _statistics.incNumSimplexSteps();
     timeval start = TimeUtils::sampleMicro();
 
-    if ( !(_nestedDantzigsRule.select( _tableau )) )
+    // Pick an entering variable
+    if ( !_activeEntryStrategy->select( _tableau ) )
     {
         timeval end = TimeUtils::sampleMicro();
         _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
         return false;
     }
 
-    // If you use the full pricing Dantzig's rule, need to calculate entire cost function
-    // _tableau->computeCostFunction();
-    // _tableau->dumpCostFunction();
-
-    // if ( !_tableau->pickEnteringVariable( &_dantzigsRule ) )
-    //     return false;
-
+    // Pick a leaving variable
     _tableau->computeD();
     _tableau->pickLeavingVariable();
+
+    // Perform the actual pivot
     _tableau->performPivot();
 
     timeval end = TimeUtils::sampleMicro();
@@ -211,10 +211,7 @@ void Engine::processInputQuery( const InputQuery &inputQuery )
         constraint->registerAsWatcher( _tableau );
 
     _tableau->initializeTableau();
-    _dantzigsRule.initialize(_tableau);
-    _blandsRule.initialize(_tableau);
-    _nestedDantzigsRule.initialize(_tableau);
-
+    _activeEntryStrategy->initialize( _tableau );
 }
 
 void Engine::extractSolution( InputQuery &inputQuery )

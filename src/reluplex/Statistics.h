@@ -35,6 +35,14 @@ public:
     unsigned long long getNumMainLoopIterations() const;
 
     /*
+      Tableau related statistics.
+    */
+    void incNumTableauPivots();
+    void incNumTableauBoundHopping();
+    void incNumTableauDegeneratePivots();
+    void incNumTableauDegeneratePivotsByRequest();
+
+    /*
       Smt core related statistics.
     */
     void setCurrentStackDepth( unsigned depth );
@@ -65,9 +73,24 @@ private:
     // Total number of pops so far
     unsigned _numPops;
 
+    // Total number of tableau pivot operations performed, both
+    // degenerate and non-degenerate
+    unsigned long long _numTableauPivots;
+
+    // Total number of degenerate tableau pivot operations performed
+    unsigned long long _numTableauDegeneratePivots;
+
+    // Total number of degenerate tableau pivot operations performed
+    // by explicit request
+    unsigned long long _numTableauDegeneratePivotsByRequest;
+
+    // Total number of times a non-basic variable hopped to its
+    // opposite bound.
+    unsigned long long _numTableauBoundHopping;
+
     // Printing helpers
-    unsigned long long printPercents( unsigned long long part, unsigned long long total ) const;
-    unsigned long long printAverage( unsigned long long part, unsigned long long total ) const;
+    double printPercents( unsigned long long part, unsigned long long total ) const;
+    double printAverage( unsigned long long part, unsigned long long total ) const;
 };
 
 #endif // __Statistics_h__

@@ -41,6 +41,9 @@ public:
 
     unsigned getInputVariable( unsigned index ) const;
     unsigned getOutputVariable( unsigned index ) const;
+    unsigned getBVariable( unsigned layer, unsigned index ) const;
+    unsigned getFVariable( unsigned layer, unsigned index ) const;
+    unsigned getAuxVariable( unsigned layer, unsigned index ) const;
 
 private:
     AcasNeuralNetwork _acasNeuralNetwork;
