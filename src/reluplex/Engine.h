@@ -99,7 +99,7 @@ private:
     BlandsRule _blandsRule;
     DantzigsRule _dantzigsRule;
     NestedDantzigsRule _nestedDantzigsRule;
-    EntrySelectionStrategy *_activeStrategy;
+    EntrySelectionStrategy *_activeEntryStrategy;
 
     /*
       The SMT engine is in charge of case splitting.

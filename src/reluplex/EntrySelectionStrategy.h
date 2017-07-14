@@ -33,7 +33,6 @@ public:
     */
     virtual void initialize( const ITableau & /* tableau */ )
     {};
-
 };
 
 #endif // __EntrySelectionStrategy_h__
