@@ -801,8 +801,9 @@ void Tableau::pickLeavingVariable( double *d )
         }
         });
 
-    double lb = _lowerBounds[_enteringVariable];
-    double ub = _upperBounds[_enteringVariable];
+    double lb = _lowerBounds[_nonBasicIndexToVariable[_enteringVariable]];
+    double ub = _upperBounds[_nonBasicIndexToVariable[_enteringVariable]];
+    double currentValue = _nonBasicAssignment[_enteringVariable];
 
     // A marker to show that no leaving variable has been selected
     _leavingVariable = _m;
@@ -814,7 +815,7 @@ void Tableau::pickLeavingVariable( double *d )
         // The maximum amount by which the entering variable can
         // decrease, as determined by its bounds. This is a negative
         // value.
-        _changeRatio = lb - ub;
+        _changeRatio = lb - currentValue;
 
         // Iterate over the basics that depend on the entering
         // variable and see if any of them imposes a tighter
@@ -839,7 +840,7 @@ void Tableau::pickLeavingVariable( double *d )
         // The maximum amount by which the entering variable can
         // increase, as determined by its bounds. This is a positive
         // value.
-        _changeRatio = ub - lb;
+        _changeRatio = ub - currentValue;
 
         // Iterate over the basics that depend on the entering
         // variable and see if any of them imposes a tighter
