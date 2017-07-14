@@ -46,6 +46,28 @@ int main()
 
     for ( unsigned i = 0; i < 5; ++i )
     {
+        unsigned variable = acasParser.getInputVariable( i );
+        printf( "Input[%u] = %.15lf\n", i, inputQuery.getSolutionValue( variable ) );
+    }
+
+    for ( unsigned i = 1; i < 7; ++i )
+    {
+        for ( unsigned j = 0; j < 50; ++j )
+        {
+            unsigned b = acasParser.getBVariable( i, j );
+            unsigned f = acasParser.getFVariable( i, j );
+            unsigned aux = acasParser.getAuxVariable( i, j );
+
+            printf( "Node (%u, %u): b = %.15lf, f = %.15lf, aux = %.15lf\n",
+                    i, j,
+                    inputQuery.getSolutionValue( b ),
+                    inputQuery.getSolutionValue( f ),
+                    inputQuery.getSolutionValue( aux ) );
+        }
+    }
+
+    for ( unsigned i = 0; i < 5; ++i )
+    {
         unsigned variable = acasParser.getOutputVariable( i );
         printf( "Output[%u] = %.15lf\n", i, inputQuery.getSolutionValue( variable ) );
     }
