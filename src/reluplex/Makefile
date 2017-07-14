@@ -21,7 +21,7 @@ SOURCES += \
 	\
 	BasisFactorization.cpp\
 	EtaMatrix.cpp\
-	LPContainer.cpp\
+	LPElement.cpp\
 	main.cpp \
 
 TARGET = run_reluplex.elf
