@@ -276,6 +276,10 @@ public:
      */
     void setStatistics( Statistics *statistics );
 
+    void useSteepestEdge( bool flag );
+
+    const double *getSteepestEdgeGamma() const;
+
 private:
     typedef List<VariableWatcher *> VariableWatchers;
     Map<unsigned, VariableWatchers> _variableToWatchers;

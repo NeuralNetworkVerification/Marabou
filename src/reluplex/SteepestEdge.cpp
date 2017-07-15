@@ -45,9 +45,7 @@ bool SteepestEdge::select( ITableau &tableau )
 	return false;
 
     const double *costFunction = tableau.getCostFunction();
-    // TODO: getGamma is not implemented yet
-    //    const double *gamma = tableau.getGamma();
-    const double *gamma = tableau.getCostFunction();
+    const double *gamma = tableau.getSteepestEdgeGamma();
 
     List<unsigned>::const_iterator candidate = candidates.begin();
     unsigned maxIndex = *candidate;
