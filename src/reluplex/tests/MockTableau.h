@@ -172,7 +172,11 @@ public:
     void dump() const {}
     void dumpAssignment() {}
     void dumpEquations() {}
-
+    const double *getSteepestEdgeGamma() const
+    {
+	return 0;
+    }
+    
     Map<unsigned, unsigned> nextNonBasicIndexToVaribale;
     unsigned nonBasicIndexToVariable( unsigned index ) const
     {

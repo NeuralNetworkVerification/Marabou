@@ -279,6 +279,11 @@ void Tableau::initializeTableau()
 	initializeGamma();
 }
 
+const double *Tableau::getSteepestEdgeGamma() const
+{
+    return _steepestEdgeGamma;
+}
+
 void Tableau::initializeGamma()
 {
     /*
@@ -311,6 +316,10 @@ void Tableau::updateGamma()
     // TODO: update gamma values for steepest edge
 }
 
+void Tableau::useSteepestEdge( bool flag )
+{
+    _usingSteepestEdge = flag;
+}
 void Tableau::computeAssignment()
 {
     /*
