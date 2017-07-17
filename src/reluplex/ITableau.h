@@ -67,7 +67,7 @@ public:
     virtual void setEnteringVariable( unsigned nonBasic ) = 0;
     virtual void computeBasicStatus() = 0;
     virtual void computeBasicStatus( unsigned basic ) = 0;
-    virtual bool eligibleForEntry( unsigned nonBasic ) = 0;
+    virtual bool eligibleForEntry( unsigned nonBasic ) const = 0;
     virtual unsigned getEnteringVariable() const = 0;
     virtual void pickLeavingVariable() = 0;
     virtual void pickLeavingVariable( double *d ) = 0;
@@ -78,7 +78,7 @@ public:
     virtual bool isBasic( unsigned variable ) const = 0;
     virtual void setNonBasicAssignment( unsigned variable, double value ) = 0;
     virtual void computeCostFunction() = 0;
-    virtual void getEntryCandidates( List<unsigned> &candidates) = 0;
+    virtual void getEntryCandidates( List<unsigned> &candidates) const = 0;
     virtual void computeMultipliers() = 0;
     virtual void computeReducedCost( unsigned nonBasic ) = 0;
     virtual const double *getCostFunction() const = 0;

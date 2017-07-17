@@ -147,7 +147,7 @@ public:
     /*
       Picks the entering variable.
     */
-    bool eligibleForEntry( unsigned nonBasic );
+    bool eligibleForEntry( unsigned nonBasic ) const;
     unsigned getEnteringVariable() const;
     bool nonBasicCanIncrease( unsigned nonBasic ) const;
     bool nonBasicCanDecrease( unsigned nonBasic ) const;
@@ -204,7 +204,7 @@ public:
       basis, i.e. variables that can be changed in a way that would
       reduce the cost value.
     */
-    void getEntryCandidates( List<unsigned> &candidates );
+    void getEntryCandidates( List<unsigned> &candidates ) const;
 
     /*
       Cost-calculating functions.
