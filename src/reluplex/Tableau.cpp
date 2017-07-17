@@ -299,7 +299,7 @@ void Tableau::initializeGamma()
     {
 	// Find corresponding column in matrix B
 	unsigned var = _nonBasicIndexToVariable[i];
-	double *ANColumn = _A + ( var * _m); // AN[i]
+	double *ANColumn = _A + ( var * _m ); // AN[i]
 
 	// Euclidean norm of vector is sum of square of each element
 	_steepestEdgeGamma[i] = 1.0; // To account for (m+i)th element of p[i]
@@ -313,7 +313,67 @@ void Tableau::initializeGamma()
 
 void Tableau::updateGamma()
 {
-    // TODO: update gamma values for steepest edge
+    /*
+     * Update gamma values used in steepest edge pivot selection when performing a pivot.
+     *
+     * Update rule based on Forrest and Goldfarb
+     * Given entering q, leaving p,
+     *
+     * gammaNew[p] = gamma[q] / alpha[q]**2
+     * gammaNew[j] = gamma[j] - 2*alpha[j]/alpha[q]*nu[j] + (alpha[j]/alpha[q])**2*gamma[q]
+     *   for all other non-basic vars j =/= q
+     *
+     * where 
+     *   alpha[q] = sigma'*A[q]
+     *   nu[j] = w'*A[j]
+     *   A[i] = column of A corresponding to variable i
+     *   B'sigma = e[p]
+     *   BB'w = A[q]
+     *
+     * Additionally, we notice that alpha[i] = i-th component of p-th row of inv(B)*A,
+     * and we never have to compute sigma explicitly. Also, 
+     *   w = inv(B')*inv(B)*A[q], so
+     *   nu[j] = w'*A[j] = (inv(B)*A[q])'*inv(B)*A[j]
+     *
+     * TODO: There seems to be no way in BasisFactorization to solve B'*x = y easily
+     * (you can only solve B*x = y). We do some unnecessary computation here,
+     * computing the non-p rows of inv(B)*A; that may speed it up if we can compute
+     * sigma and w explicitly.
+     */
+    printf("\nPerforming update on gamma...\n");
+    
+    unsigned p = getLeavingVariable();
+    unsigned q = getEnteringVariable();
+    printf("Leaving: %d, Entering: %d\n", p, q);
+
+    // TODO
+    double *ANColumnQ = _A + ( _nonBasicIndexToVariable[q] * _m );
+    
+    // inv(B)*A[q] vector (size m)
+    double *invBAQ = new double[_m];
+    _basisFactorization->forwardTransformation( ANColumnQ, invBAQ );
+    
+    // Compute alphas and nus
+    double *alpha = new double[_n-_m];
+    double *nu = new double[_n-_m];
+    double *work = new double[_m]; // to store inv(B)*A[j]
+    double *ANColumn;
+    for ( unsigned i = 0; i < _n - _m ; ++i )
+    {
+	unsigned var = _nonBasicIndexToVariable[i];
+	ANColumn = _A + ( var * _m );
+
+	_basisFactorization->forwardTransformation( ANColumn, work );
+	alpha[i] = work[p];
+	nu[i] = dotProduct(invBAQ, ANColumn, _m); // TODO
+    }
+    // Compute w: BB'w = A[q]
+    //    unsigned var = _nonBasicIndexToVariable[q];
+    //    double *ANColumnQ = _A + ( var * _m );
+    
+    //
+    //
+    // 
 }
 
 void Tableau::useSteepestEdge( bool flag )

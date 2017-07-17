@@ -94,7 +94,8 @@ bool Engine::performSimplexStep()
     _statistics.incNumSimplexSteps();
     timeval start = TimeUtils::sampleMicro();
 
-    if ( !(_nestedDantzigsRule.select( _tableau )) )
+    //    if ( !(_nestedDantzigsRule.select( _tableau )) )
+        if ( !(_steepestEdgeRule.select( _tableau )) )
     {
         timeval end = TimeUtils::sampleMicro();
         _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );

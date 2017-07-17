@@ -21,6 +21,7 @@
 #include "Map.h"
 #include "SmtCore.h"
 #include "Statistics.h"
+#include "SteepestEdge.h"
 
 class InputQuery;
 class PiecewiseLinearConstraint;
@@ -99,6 +100,7 @@ private:
     BlandsRule _blandsRule;
     DantzigsRule _dantzigsRule;
     NestedDantzigsRule _nestedDantzigsRule;
+    SteepestEdge _steepestEdgeRule;
 
     /*
       The SMT engine is in charge of case splitting.

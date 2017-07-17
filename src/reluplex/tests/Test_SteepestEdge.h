@@ -120,7 +120,11 @@ public:
 	TS_ASSERT_EQUALS( gamma[2], 12.0 );
 	TS_ASSERT_EQUALS( gamma[3], 22.0 );
     }
-    
+
+    void testTableauUpdateGamma()
+    {
+	
+    }
     void test_select()
     {/*
         SteepestEdge dantzigsRule;
