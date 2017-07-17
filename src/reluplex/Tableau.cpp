@@ -551,7 +551,7 @@ unsigned Tableau::getBasicStatus( unsigned basic )
     return _basicStatus[_variableToIndex[basic]];
 }
 
-void Tableau::getEntryCandidates( List<unsigned> &candidates )
+void Tableau::getEntryCandidates( List<unsigned> &candidates ) const
 {
     candidates.clear();
     for ( unsigned i = 0; i < _n - _m; ++i )
@@ -566,7 +566,7 @@ void Tableau::setEnteringVariable( unsigned nonBasic )
     _enteringVariable = nonBasic;
 }
 
-bool Tableau::eligibleForEntry( unsigned nonBasic )
+bool Tableau::eligibleForEntry( unsigned nonBasic ) const
 {
     // A non-basic variable is eligible for entry if one of the two
     //   conditions holds:
