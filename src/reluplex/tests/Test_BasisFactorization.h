@@ -89,8 +89,9 @@ public:
         TS_ASSERT_SAME_DATA( d3, expected3, sizeof(double) * 3 );
     }
 
-	void test_forward_transformation_with_B0() //Same etas as test_backward_transformation()
+	void test_forward_transformation_with_B0()
 	{
+        // Same etas as test_backward_transformation()
 		BasisFactorization basis( 3 );
 		double e1[] = {1., 1., 3.};
 		basis.pushEtaMatrix( 1, e1 );
@@ -203,8 +204,9 @@ public:
         TS_ASSERT_SAME_DATA( x, expected, sizeof(double) * 3 );
     }
 
-	void test_backward_transformation_with_B0() //Same etas as test_backward_transformation()
+	void test_backward_transformation_with_B0()
 	{
+        // Same etas as test_backward_transformation()
 		BasisFactorization basis ( 3 );
 		double e1[] = {1., 1., 3.};
 		basis.pushEtaMatrix ( 1, e1 );
@@ -272,7 +274,7 @@ public:
         TS_ASSERT( memcmp( d3other, d3, sizeof(double) * 3 ) );
     }
 
-    void test_factorization_pivot()//pivot
+    void test_factorization_pivot()
 	{
 		BasisFactorization basis( 3 );
 		const int nsq = 9;
@@ -304,14 +306,13 @@ public:
 		}
 
 		for ( unsigned i = 0; i < 9; ++i )
-        {
 			TS_ASSERT( FloatUtils::areEqual( U[i], basis.getU()[i] ) );
-        }
 	}
 
-	void test_factorization_textbook()//textbook
+	void test_factorization_textbook()
 	{
-		BasisFactorization basis ( 4 );
+        // Textbook example
+		BasisFactorization basis( 4 );
         const int nsq = 16;
         double A[nsq]= {1., 3., -2., 4.,
 						1., 5., -1., 5.,
@@ -324,14 +325,70 @@ public:
 						0.,0.,0.,1.};
 
         basis.factorizeMatrix( A );
-    		for (int i = 0; i < 9; ++i) {
-			TS_ASSERT (FloatUtils::areEqual( basis.getU()[i], U[i]) );
-		}
-	}
+        for ( unsigned i = 0; i < 9; ++i )
+			TS_ASSERT( FloatUtils::areEqual( basis.getU()[i], U[i] ) );
+
+        const List<LPElement *> lps = basis.getLP();
+
+        TS_ASSERT_EQUALS( lps.size(), 4U );
+
+        EtaMatrix *eta;
+
+        auto it = lps.rbegin();
+        TS_ASSERT( (*it)->_eta );
+        TS_ASSERT( !(*it)->_pair );
+        eta = (*it)->_eta;
+        TS_ASSERT_EQUALS( eta->_columnIndex, 0U );
+        double expectedCol1[] = { 1, -1, -1, 1 };
+        for ( unsigned i = 0; i < 4; ++i )
+            TS_ASSERT( FloatUtils::areEqual( eta->_column[i], expectedCol1[i] ) );
+
+        // Matrix is now:
+        //     1  3  -2  4
+        //     0  2  1   1
+        //     0  0  -1  2
+        //     0  0  1   -4
+        ++it;
+        TS_ASSERT( (*it)->_eta );
+        TS_ASSERT( !(*it)->_pair );
+        eta = (*it)->_eta;
+        TS_ASSERT_EQUALS( eta->_columnIndex, 1U );
+        double expectedCol2[] = { 0, 0.5, 0, 0 };
+        for ( unsigned i = 0; i < 4; ++i )
+            TS_ASSERT( FloatUtils::areEqual( eta->_column[i], expectedCol2[i] ) );
+
+        // Matrix is now:
+        //     1  3  -2  4
+        //     0  1  0.5 0.5
+        //     0  0  -1  2
+        //     0  0  1   -4
+        ++it;
+        TS_ASSERT( (*it)->_eta );
+        TS_ASSERT( !(*it)->_pair );
+        eta = (*it)->_eta;
+        TS_ASSERT_EQUALS( eta->_columnIndex, 2U );
+        double expectedCol3[] = { 0, 0, -1, 1 };
+        for ( unsigned i = 0; i < 4; ++i )
+            TS_ASSERT( FloatUtils::areEqual( eta->_column[i], expectedCol3[i] ) );
+
+        // Matrix is now:
+        //     1  3  -2  4
+        //     0  1  0.5 0.5
+        //     0  0  1   -2
+        //     0  0  0   -2
+        ++it;
+        TS_ASSERT( (*it)->_eta );
+        TS_ASSERT( !(*it)->_pair );
+        eta = (*it)->_eta;
+        TS_ASSERT_EQUALS( eta->_columnIndex, 3U );
+        double expectedCol4[] = { 0, 0, 0, -0.5 };
+        for ( unsigned i = 0; i < 4; ++i )
+            TS_ASSERT( FloatUtils::areEqual( eta->_column[i], expectedCol4[i] ) );
+    }
 
 	void test_factorization_box()
 	{
-		BasisFactorization basis ( 3 );
+		BasisFactorization basis( 3 );
         const int nsq = 9;
         double A[nsq]= { 1., 2., 4.,
                          4., 5., 7.,
@@ -365,25 +422,24 @@ public:
 
 	void test_refactor()
 	{
-		BasisFactorization basis ( 3 );
-		BasisFactorization bas2 ( 3 );
+		BasisFactorization basis( 3 );
+		BasisFactorization bas2( 3 );
 		basis.toggleFactorization( false );
 		int d = 3;
 		unsigned etaCount = 12;
-		//generate random etas
 
+		// Generate random etas
 		for (unsigned i = 0; i < etaCount; ++i) {
 			double eta_col[d];
 			std::fill_n(eta_col, d, 0.);
 			int col = rand() % d;
-			for (int j = 0; j < d; ++j) {
-					eta_col[j] = rand() % (13) - 5;
-			}
+			for (int j = 0; j < d; ++j)
+                eta_col[j] = rand() % (13) - 5;
 			basis.pushEtaMatrix( col, eta_col );
 			bas2.pushEtaMatrix( col, eta_col );
 		}
 
-		//check if etas have disappeared
+		// Check if etas have disappeared
 		TS_ASSERT_EQUALS( bas2.getEtas().size(), etaCount - GlobalConfiguration::REFACTORIZATION_THRESHOLD - 1 );
 		double a[] = {2., -1., 4.};
 		double x1[] = {0., 0., 0.};
@@ -394,7 +450,8 @@ public:
 		basis.forwardTransformation( a, y1 );
 		bas2.backwardTransformation( a, x2 );
 		basis.backwardTransformation( a, y2 );
-		for (int i = 0; i < 3; ++i) {
+		for ( unsigned i = 0; i < 3; ++i )
+        {
 			TS_ASSERT (FloatUtils::areEqual( x1[i], y1[i]) );
 			TS_ASSERT (FloatUtils::areEqual( x2[i], y2[i] ) );
 		}
