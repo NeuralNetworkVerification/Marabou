@@ -103,26 +103,26 @@ void BasisFactorization::pushEtaMatrix( unsigned columnIndex, double *column )
 	}
 }
 
-void BasisFactorization::LMultiplyRight( const EtaMatrix *L, const double *X, double *R)
+void BasisFactorization::LMultiplyRight( const EtaMatrix *L, double *X )
 {
-	memcpy( R, X, sizeof(double) * _m );
 	double sum = 0.;
 	for (unsigned i = 0; i < _m; ++i) {
 		sum += L->_column[i] * X[i];
 	}
-	R[L->_columnIndex] = sum;
+	X[L->_columnIndex] = sum;
 }
 
-void BasisFactorization::LMultiplyLeft( const EtaMatrix *L, const double *X, double *R)
+void BasisFactorization::LMultiplyLeft( const EtaMatrix *L, double *X )
 {
-	unsigned col = L->_columnIndex;
-		for (unsigned j = 0; j < _m; ++j){
-			if ( j == col ) {
-				R[j] = X[j] * L->_column[col];
-			} else {
-				R[j] = X[j] + X[col] * L->_column[j];
-			}
-		}
+	    unsigned col = L->_columnIndex;
+		double xCol = X[col];
+        for (unsigned j = 0; j < _m; ++j){
+            if ( j == col ) {
+                X[j] *= L->_column[col];
+            } else {
+                X[j] += xCol * L->_column[j];
+            }
+        }
 }
 
 void BasisFactorization::setB0( const double *B0 )
@@ -145,20 +145,18 @@ void BasisFactorization::condenseEtas()
     // column of B0. The new column is a linear combination of the
     // existing columns of B0, according to the eta column. We perform
     // the computation in place.
-    double *Y = new double[_m*_m];
     for ( const auto &eta : _etas)
     {
-		memcpy ( Y, _B0, sizeof(double) * _m * _m );
-		for (unsigned n = 0; n < _m; ++n){ //columns
-				double sum = 0.;
-				for (unsigned i = 0; i < _m; ++i){ // rows of L
-						sum += Y[n*_m+i] * eta->_column[i];
-				}
-				_B0[n*_m+eta->_columnIndex] = sum;
+		unsigned col = eta->_columnIndex;
+		for (unsigned n = 0; n < _m; ++n){ //rows
+			double sum = 0.0;
+			for (unsigned m = 0; m < _m; ++m){//columns
+				sum += _B0[n * _m + m] * eta->_column[m];
+			}
+			_B0[n * _m + col] = sum; 
 		}
 		delete eta;
 	}
-	delete[] Y;
 	_etas.clear();
 	clearLPU();
 }
@@ -184,11 +182,7 @@ void BasisFactorization::forwardTransformation( const double *y, double *x )
 			x[(*element)->_pair->second] = temp;
 		}
         else
-        {
-			double temp[_m];
-			LMultiplyLeft( (*element)->_eta , tempY, temp);
-			memcpy ( tempY, temp, sizeof(double) * _m);
-		}
+			LMultiplyLeft( (*element)->_eta , tempY );
 	}
 
 	if ( !_LP.empty() ) { //multiplication by L and P
@@ -276,12 +270,8 @@ void BasisFactorization::backwardTransformation( const double *y, double *x )
 			double temp = x[d->_pair->first];
 			x[d->_pair->first] = x[d->_pair->second];
 			x[d->_pair->second] = temp;
-		} else {
-			double temp[_m];
-			LMultiplyRight ( d->_eta, x , temp );
-			memcpy ( x, temp, sizeof(double) * _m );
-		}
-
+		} else 
+			LMultiplyRight ( d->_eta, x );
 	}
 }
 
@@ -382,11 +372,11 @@ void BasisFactorization::factorizeMatrix( double *matrix )
         delete[] LCol;
 
         // Perform the actual elimination step on U
-        LFactorizationMultiply( L, _U );
+        LFactorizationMultiply( L );
 	}
 }
 
-void BasisFactorization::LFactorizationMultiply( const EtaMatrix *L, double *_U )
+void BasisFactorization::LFactorizationMultiply( const EtaMatrix *L )
 {
     unsigned colIndex = L->_columnIndex;
     // First, perform in-place multiplication for all rows below the pivot row
