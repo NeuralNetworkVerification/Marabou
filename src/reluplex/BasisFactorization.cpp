@@ -178,8 +178,6 @@ void BasisFactorization::forwardTransformation( const double *y, double *x )
     // B0 = inv( LmPm ... L1P1 ) * U. The first step is thus to
     // multiply both hands of the equation by P1,L1,...,Pm,Lm on the left
     // to get rid of the L's and P's.
-
-    // Todo: Guy needs to be convinced that we shouldn't be multiplying by LP's in non-reverse order
     for ( auto element = _LP.rbegin(); element != _LP.rend(); ++element )
     {
         if ( (*element)->_pair )
@@ -288,8 +286,6 @@ void BasisFactorization::backwardTransformation( const double *y, double *x )
     // by the L's and P's on the right.
     // x*inv(LP) = x * inv( LmPm ... L1P1 ) = x * inv(P1) * inv(L1) ... * inv(Pm) * inv(Lm),
     // so we undo that LPs in that way.
-
-    // Todo: Guy needs to be convinced that we shouldn't be multiplying by LP's in reverse order
     for ( const auto *d : _LP )
 	{
 		if ( d->_pair )
