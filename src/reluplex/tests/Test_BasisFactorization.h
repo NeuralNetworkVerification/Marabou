@@ -2,6 +2,7 @@
 /*! \file Test_BasisFactorization.h
 ** \verbatim
 ** Top contributors (to current version):
+**   Derek Huang
 **   Guy Katz
 ** This file is part of the Marabou project.
 ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
@@ -12,15 +13,12 @@
 
 #include <cxxtest/TestSuite.h>
 
-#include "MockErrno.h"
-#include <iostream>
 #include "BasisFactorization.h"
-#include <string.h>
-#include <vector>
-#include <EtaMatrix.h>
-#include "List.h"
+#include "EtaMatrix.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
+#include "List.h"
+#include "MockErrno.h"
 
 class MockForBasisFactorization
 {
@@ -216,18 +214,18 @@ public:
         basis.pushEtaMatrix( 2, e3 );
 
 		double nB0[] = {1.,2.,4.,4.,5.,7.,7.,8.,9};
-		basis.setB0 ( nB0 );
+		basis.setB0( nB0 );
 
 		double y[] = {19., 12., 17.};
 		double x[] = {0., 0., 0.};
 		double expected[] = {-6, 9, -4};
 		//     	| 1 2 4	|  	| 1 1   |   | 2     |   | 1   0.5 |
-        //  x *	| 4	5 7 | * |   1   | * | 1	1	| *	|	1 0.5 | = | 19 12 0 |
+        //  x *	| 4	5 7 | * |   1   | * | 1	1	| *	|	1 0.5 | = | 19 12 17 |
         //     	| 7 8 9	|	|   3 1 |   | 1   1 |   |     0.5 |
         //
         // --> x = [ -6 9 -4 ]
-		basis.backwardTransformation (y, x);
-		TS_ASSERT_SAME_DATA ( x, expected, sizeof(double) * 3 );
+		basis.backwardTransformation( y, x );
+		TS_ASSERT_SAME_DATA( x, expected, sizeof(double) * 3 );
 	}
 
     void test_store_and_restore()
