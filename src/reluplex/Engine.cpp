@@ -24,7 +24,8 @@ Engine::Engine()
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
 
-    _activeEntryStrategy = &_nestedDantzigsRule;
+    //    _activeEntryStrategy = &_nestedDantzigsRule;
+    _activeEntryStrategy = &_steepestEdgeRule;
 }
 
 Engine::~Engine()
