@@ -20,6 +20,7 @@
 #include <EtaMatrix.h>
 #include "List.h"
 #include "FloatUtils.h"
+#include "GlobalConfiguration.h"
 
 class MockForBasisFactorization
 {
@@ -325,7 +326,7 @@ public:
 						0.,0.,0.,1.};
 
         basis.factorizeMatrix( A );
-    		for (int i = 0; i < 3; ++i) {
+    		for (int i = 0; i < 9; ++i) {
 			TS_ASSERT (FloatUtils::areEqual( basis.getU()[i], U[i]) );
 		}
 	}
@@ -385,7 +386,7 @@ public:
 		}
 
 		//check if etas have disappeared
-		TS_ASSERT_EQUALS( bas2.getEtas().size(), etaCount - 11 );
+		TS_ASSERT_EQUALS( bas2.getEtas().size(), etaCount - GlobalConfiguration::REFACTORIZATION_THRESHOLD - 1 );
 		double a[] = {2., -1., 4.};
 		double x1[] = {0., 0., 0.};
 		double y1[] = {0., 0., 0.};

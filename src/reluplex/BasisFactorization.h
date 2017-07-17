@@ -165,15 +165,15 @@ private:
 	void clearLPU();
 
 	//LB = R, where B is a _m x 1 matrix and L represents a _m x _m lower triangular matrix
-	void LMultiplyLeft( const EtaMatrix *L, const double *B, double *R);
+	void LMultiplyLeft( const EtaMatrix *L, double *B );
 	//BL = R, where B is a 1 x _m matrix and L represents a _m x _m lower triangular matrix
-	void LMultiplyRight( const EtaMatrix *L, const double *B, double *R);
+	void LMultiplyRight( const EtaMatrix *L, double *B );
 
 	/*
       Multiply matrix U on the left by lower triangular eta matrix L,
       store result in U.
     */
-	void LFactorizationMultiply( const EtaMatrix *L, double *U );
+	void LFactorizationMultiply( const EtaMatrix *L );
 
     /*
       Compute B0 * E1 ... *En for all stored eta matrices, and place
