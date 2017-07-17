@@ -420,6 +420,13 @@ private:
       Update gamma array during a pivot
     */
     void updateGamma();
+
+    /* 
+       Helper function to compute dot product of two vectors of size m
+     */
+    double dotProduct( const double *a, const double *b, unsigned m );
+
+    void printVector( const double *v, unsigned m );
 };
 
 #endif // __Tableau_h__

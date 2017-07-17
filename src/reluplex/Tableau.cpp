@@ -330,56 +330,101 @@ void Tableau::updateGamma()
      *   B'sigma = e[p]
      *   BB'w = A[q]
      *
-     * Additionally, we notice that alpha[i] = i-th component of p-th row of inv(B)*A,
-     * and we never have to compute sigma explicitly. Also, 
+     * Additionally, we notice that alpha[i] = i-th component of p-th row of inv(B)*A =
+     * p-th component of the vector inv(B)*A[i], and we never have to compute sigma 
+     * explicitly. Also, 
      *   w = inv(B')*inv(B)*A[q], so
      *   nu[j] = w'*A[j] = (inv(B)*A[q])'*inv(B)*A[j]
      *
-     * TODO: There seems to be no way in BasisFactorization to solve B'*x = y easily
-     * (you can only solve B*x = y). We do some unnecessary computation here,
-     * computing the non-p rows of inv(B)*A; that may speed it up if we can compute
-     * sigma and w explicitly.
+     * Assuming LU factorization is cached and optimized, this should be just as fast
+     * as computing sigma via forward transform w transposed B matrix.
+     *
+     * TODO: Test the comparative efficiency of the following alternative procedure..
+     * There seems to be no way currently in BasisFactorization to solve B'*x = y easily
+     * (you can only solve B*x = y). We should see if computing sigma and w explicitly speeds
+     * this up.
      */
     printf("\nPerforming update on gamma...\n");
     
-    unsigned p = getLeavingVariable();
-    unsigned q = getEnteringVariable();
-    printf("Leaving: %d, Entering: %d\n", p, q);
+    unsigned p = _enteringVariable;
+    unsigned q = _leavingVariable;
+    double *gamma = _steepestEdgeGamma;
+    printf("p: %d, q: %d\n", p, q);
 
-    // TODO
     double *ANColumnQ = _A + ( _nonBasicIndexToVariable[q] * _m );
     
     // inv(B)*A[q] vector (size m)
-    double *invBAQ = new double[_m];
-    _basisFactorization->forwardTransformation( ANColumnQ, invBAQ );
+    double *invB_Aq = new double[_m];
+    _basisFactorization->forwardTransformation( ANColumnQ, invB_Aq );
     
     // Compute alphas and nus
     double *alpha = new double[_n-_m];
     double *nu = new double[_n-_m];
     double *work = new double[_m]; // to store inv(B)*A[j]
     double *ANColumn;
-    for ( unsigned i = 0; i < _n - _m ; ++i )
+
+    // Store alpha[q]. Compute gamma for entering var separately
+    alpha[q] = invB_Aq[p];
+    printf("invB_Aq: ");
+    printVector( invB_Aq, _m );
+    printf("\n");
+    printf("alpha[q]: %f\n", alpha[q]);
+    
+    gamma[q] = gamma[q] / ( alpha[q] * alpha[q] );
+    // this assumes p replaces q directly and there's no strange sorting of basic/nonbasic vars
+    
+    for ( unsigned j = 0; j < _n - _m; ++j )
     {
-	unsigned var = _nonBasicIndexToVariable[i];
+	// j == q
+	if ( j == q ) continue;
+
+	// j != q
+	unsigned var = _nonBasicIndexToVariable[j];
 	ANColumn = _A + ( var * _m );
 
+	// Compute inv(B)*A[j]
 	_basisFactorization->forwardTransformation( ANColumn, work );
-	alpha[i] = work[p];
-	nu[i] = dotProduct(invBAQ, ANColumn, _m); // TODO
+	alpha[j] = work[p];
+	nu[j] = dotProduct(invB_Aq, work, _m); 	// w'*A[j] = (inv(B)*A[q])'*inv(B)*A[j]
+
+	double alphaBarJ = alpha[j] / alpha[q];
+	gamma[j] = gamma[j] - 2*alphaBarJ*nu[j] + alphaBarJ*alphaBarJ*gamma[q];
     }
-    // Compute w: BB'w = A[q]
-    //    unsigned var = _nonBasicIndexToVariable[q];
-    //    double *ANColumnQ = _A + ( var * _m );
+
+    printf("alpha: [ ");
+    printVector(alpha, _n - _m);
+    printf("]\n");
     
-    //
-    //
-    // 
+    printf("New gamma: [ ");
+    printVector(gamma, _n - _m);
+    printf("]\n");
+}
+
+void Tableau::printVector( const double *v, unsigned m )
+{
+    // For debugging
+    for ( unsigned i = 0; i < m; i++ )
+    {
+	printf( "%f ", v[i] );
+    }    
+}
+
+double Tableau::dotProduct(const double *a, const double *b, unsigned m)
+{
+    // Helper function to multiply two vectors of size m
+    double result = 0;
+    for ( unsigned i = 0; i < m; ++i )
+    {
+	result += a[i] * b[i];
+    }
+    return result;
 }
 
 void Tableau::useSteepestEdge( bool flag )
 {
     _usingSteepestEdge = flag;
 }
+
 void Tableau::computeAssignment()
 {
     /*
@@ -722,7 +767,8 @@ unsigned Tableau::getEnteringVariable() const
 void Tableau::performPivot()
 {
     // TODO: update gamma here?
-    updateGamma();
+    if ( _usingSteepestEdge )
+	updateGamma();
     
     // Any kind of pivot invalidates the assignment
     // TODO: we don't really need to invalidate, can update the basis
