@@ -145,7 +145,10 @@ public:
     void computeBasicStatus() {}
     void computeBasicStatus( unsigned /* basic */ ) {}
     bool pickEnteringVariable( EntrySelectionStrategy */* strategy */ ) { return false; }
-    bool eligibleForEntry( unsigned /* nonBasic */ ) const { return false; }
+    bool eligibleForEntry( unsigned nonBasic ) const
+    {
+        return mockCandidates.exists( nonBasic );
+    }
     unsigned getEnteringVariable() const { return 0; }
     void pickLeavingVariable() {};
     void pickLeavingVariable( double */* d */ ) {}
