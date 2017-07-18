@@ -346,13 +346,16 @@ void Tableau::updateGamma()
      */
     printf("\nPerforming update on gamma...\n");
 
-    unsigned p = _enteringVariable;
-    unsigned q = _leavingVariable;
+    unsigned p = _leavingVariable; // basic -> nonbasic
+    unsigned q = _enteringVariable; // nonbasic -> basic
     double *gamma = _steepestEdgeGamma;
     printf("Initial gamma: ");
     printVector(gamma, _n - _m);
     printf("\n");
-    printf("p: %d, q: %d\n", p, q);
+    printf("numBasic: %d, numNonBasic: %d, p: %d, q: %d\n", _m, _n - _m, p, q);
+    
+    ASSERT( p < _m );
+    ASSERT( q < _n - _m );
 
     double *ANColumnQ = _A + ( _nonBasicIndexToVariable[q] * _m );
     
@@ -390,9 +393,21 @@ void Tableau::updateGamma()
     gamma[q] = gamma[q] / ( alpha[q] * alpha[q] );
     // this assumes p replaces q directly and there's no strange sorting of basic/nonbasic vars
 
-    printf("New gamma: [ ");
+    printf("Basic: ");
+    for( unsigned i = 0; i < _m; ++i )
+	{
+	    printf("%d ", _basicIndexToVariable[i]);
+	}
+    printf("\nNonbasic: ");
+    for( unsigned i = 0; i < _n - _m; ++i )
+	{
+	    printf("%d ", _nonBasicIndexToVariable[i]);
+	}
+    
+    printf("New gamma: ");
+
     printVector(gamma, _n - _m);
-    printf("]\n");
+    printf("\n");
 }
 
 void Tableau::printVector( const double *v, unsigned m )
@@ -760,11 +775,7 @@ unsigned Tableau::getEnteringVariable() const
 }
 
 void Tableau::performPivot()
-{
-    // TODO: update gamma here?
-    if ( _usingSteepestEdge )
-	updateGamma();
-    
+{    
     // Any kind of pivot invalidates the assignment
     // TODO: we don't really need to invalidate, can update the basis
     // vars based on _d
@@ -787,6 +798,10 @@ void Tableau::performPivot()
 
     if ( _statistics )
         _statistics->incNumTableauPivots();
+
+    // Before pivoting, update gamma according to old basis
+    if ( _usingSteepestEdge )
+	updateGamma();
 
     // printf( "\n\t\tTableau performing pivot. Entering: %u, Leaving: %u\n\n",
     //         _nonBasicIndexToVariable[_enteringVariable],
