@@ -295,7 +295,6 @@ public:
                 basis.rowSwap( (*element)->_pair->first, (*element)->_pair->second, U );
             else
             {
-                (*element)->_eta->dump();
                 double temp[9];
                 double eta[9];
                 std::fill_n( eta, 9, 0. );
@@ -423,37 +422,47 @@ public:
 	void test_refactor()
 	{
 		BasisFactorization basis( 3 );
-		BasisFactorization bas2( 3 );
+		BasisFactorization basis2( 3 );
 		basis.toggleFactorization( false );
 		int d = 3;
-		unsigned etaCount = 12;
+		unsigned etaCount = GlobalConfiguration::REFACTORIZATION_THRESHOLD + 2;
+
+        srand( time( 0 ) );
+
+        double etaPool[100];
+        std::fill( etaPool, etaPool + 100, 0.0 );
+
+        for ( unsigned i = 0; i < 100; ++i )
+        {
+            while ( fabs( etaPool[i] ) < 0.001 )
+                etaPool[i] = (float)(rand()) / (float)(RAND_MAX);
+        }
 
 		// Generate random etas
-		for (unsigned i = 0; i < etaCount; ++i) {
-			double eta_col[d];
-			std::fill_n(eta_col, d, 0.);
+		for ( unsigned i = 0; i < etaCount; ++i )
+        {
+            unsigned startingIndex = rand() % ( sizeof(etaPool) / sizeof(double) - 2 );
+            double *etaCol = etaPool + startingIndex;
 			int col = rand() % d;
-			for (int j = 0; j < d; ++j)
-                eta_col[j] = rand() % (13) - 5;
-			basis.pushEtaMatrix( col, eta_col );
-			bas2.pushEtaMatrix( col, eta_col );
+			basis.pushEtaMatrix( col, etaCol );
+			basis2.pushEtaMatrix( col, etaCol );
 		}
 
 		// Check if etas have disappeared
-		TS_ASSERT_EQUALS( bas2.getEtas().size(), etaCount - GlobalConfiguration::REFACTORIZATION_THRESHOLD - 1 );
+		TS_ASSERT_EQUALS( basis2.getEtas().size(), etaCount - GlobalConfiguration::REFACTORIZATION_THRESHOLD - 1 );
 		double a[] = {2., -1., 4.};
 		double x1[] = {0., 0., 0.};
 		double y1[] = {0., 0., 0.};
 		double x2[] = {0., 0., 0.};
 		double y2[] = {0., 0., 0.};
-		bas2.forwardTransformation( a, x1 );
+		basis2.forwardTransformation( a, x1 );
 		basis.forwardTransformation( a, y1 );
-		bas2.backwardTransformation( a, x2 );
+		basis2.backwardTransformation( a, x2 );
 		basis.backwardTransformation( a, y2 );
 		for ( unsigned i = 0; i < 3; ++i )
         {
-			TS_ASSERT (FloatUtils::areEqual( x1[i], y1[i]) );
-			TS_ASSERT (FloatUtils::areEqual( x2[i], y2[i] ) );
+			TS_ASSERT( FloatUtils::areEqual( x1[i], y1[i], 0.001 ) );
+			TS_ASSERT( FloatUtils::areEqual( x2[i], y2[i], 0.001 ) );
 		}
 	}
 
