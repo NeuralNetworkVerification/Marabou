@@ -172,25 +172,26 @@ void BasisFactorization::forwardTransformation( const double *y, double *x )
 
     double *tempY = new double[_m];
     memcpy( tempY, y, sizeof(double) * _m );
-    std::fill( x, x + _m, 0.0 );
 
     // We are solving Bx = y, where B = B0 * E1 ... *En and
-    // B0 = inv( LmPm ... L1P1 ) * U. The first step is thus to
-    // multiply both hands of the equation by P1,L1,...,Pm,Lm on the left
-    // to get rid of the L's and P's.
+    // B0 = inv( LmPm ... L1P1 ) * U. The equation is thus:
+    // inv(P1) * inv(L1) ... * inv(Pm) * inv(Lm) * U * E1 ... * En * x = y.
+    // The first step is to multiply both hands of the equation
+    // by P1,L1,...,Pm,Lm on the left to get rid of the Ls and Ps.
     for ( auto element = _LP.rbegin(); element != _LP.rend(); ++element )
     {
         if ( (*element)->_pair )
         {
-			double temp = x[(*element)->_pair->first];
-			x[(*element)->_pair->first] = x[(*element)->_pair->second];
-			x[(*element)->_pair->second] = temp;
+			double temp = tempY[(*element)->_pair->first];
+			tempY[(*element)->_pair->first] = tempY[(*element)->_pair->second];
+			tempY[(*element)->_pair->second] = temp;
 		}
         else
 			LMultiplyLeft( (*element)->_eta , tempY );
 	}
 
     // We are now left with U * E1 ... * En * x = y. Eliminate U.
+    // We use x as a temporary work area, then update y.
 	if ( !_LP.empty() )
     {
 		x[_m-1] = tempY[_m-1];
@@ -235,7 +236,6 @@ void BasisFactorization::backwardTransformation( const double *y, double *x )
 
     double *tempY = new double[_m];
     memcpy( tempY, y, sizeof(double) * _m );
-    std::fill( x, x + _m, 0.0 );
 
     // We are solving xB = y, where B = B0 * E1 ... * En.
     // The first step is to eliminate the eta matrices and adjust y
@@ -285,7 +285,7 @@ void BasisFactorization::backwardTransformation( const double *y, double *x )
     // We have in x the value for x*inv(LP). We extract the final x by multiplying
     // by the L's and P's on the right.
     // x*inv(LP) = x * inv( LmPm ... L1P1 ) = x * inv(P1) * inv(L1) ... * inv(Pm) * inv(Lm),
-    // so we undo that LPs in that way.
+    // so we undo that LPs in that order.
     for ( const auto *d : _LP )
 	{
 		if ( d->_pair )
@@ -354,23 +354,34 @@ void BasisFactorization::factorizeMatrix( double *matrix )
 
 	for ( unsigned i = 0; i < _m; ++i )
     {
-        // Begin work for the i'th column. Look for a row with a non-zero entry
-		if ( _U[i*_m+i] == 0 )
+        // Begin work for the i'th column.
+        // Employ partial pivoting: find the row with the largest element and swap it to position i
+        // (See discussion at http://www2.lawrence.edu/fast/GREGGJ/Math420/Section_6_2.pdf)
+
+        double largestElement = FloatUtils::abs( _U[i * _m + i] );
+        unsigned bestRowIndex = i;
+
+        for ( unsigned j = i + 1; j < _m; ++j )
         {
-			unsigned goodRow = i;
+            double contender = FloatUtils::abs( _U[j * _m + i] );
+            if ( FloatUtils::gt( contender, largestElement ) )
+            {
+                largestElement = contender;
+                bestRowIndex = j;
+            }
+        }
 
-			while ( ( _U[goodRow * _m + i] == 0 ) && ( goodRow < _m ) )
-                ++goodRow;
+        // No non-zero pivot has been found, matrix cannot be factorized
+        if ( FloatUtils::isZero( largestElement ) )
+            throw ReluplexError( ReluplexError::NO_AVAILABLE_CANDIDATES, "No Pivot" );
 
-            // No pivot has been found, matrix cannot be factorized
-			if ( goodRow == _m )
-                throw ReluplexError( ReluplexError::NO_AVAILABLE_CANDIDATES, "No Pivot" );
-
-            // Swap rows i and goodRow, and store this permutation
-			rowSwap( i, goodRow, _U );
-            std::pair<int, int> *P = new std::pair<int, int>( i, goodRow );
+        // Swap rows i and bestRow (if needed), and store this permutation
+        if ( bestRowIndex != i )
+        {
+            rowSwap( i, bestRowIndex, _U );
+            std::pair<unsigned, unsigned> *P = new std::pair<unsigned, unsigned>( i, bestRowIndex );
             _LP.appendHead( new LPElement( NULL, P ) );
-		}
+        }
 
         // The matrix now has a non-zero value at entry (i,i), so we can perform
         // Gaussian elimination for the subsequent rows

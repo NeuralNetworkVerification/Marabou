@@ -98,16 +98,21 @@ public:
 		double e2[] = {2., 1., 1.};
 		basis.pushEtaMatrix ( 0, e2 );
 		double e3[] = { 0.5, 0.5, 0.5 };
-		basis.pushEtaMatrix ( 2, e3 );
+		basis.pushEtaMatrix( 2, e3 );
 
-		double nB0[] = {1.,2.,4.,4.,5.,7.,7.,8.,9.};
+		double nB0[] = { 1, 2, 4,
+                         4, 5, 7,
+                         7, 8, 9 };
 		basis.setB0( nB0 );
 
-		double a[] = {2., -1., 4.};
-		double d[] = {0., 0., 0.};
-		double expected[] = {42, 116, -131};
-		basis.forwardTransformation (a, d);
-		TS_ASSERT_SAME_DATA ( d, expected, sizeof(double) * 3 );
+		double a[] = { 2., -1., 4. };
+		double d[] = { 0., 0., 0. };
+        double expected[] = { 42, 116, -131 };
+
+		basis.forwardTransformation( a, d );
+
+        for ( unsigned i = 0; i < 3; ++i )
+            TS_ASSERT( FloatUtils::areEqual( d[i], expected[i] ) );
 	}
 
 	void test_backward_transformation()
@@ -207,11 +212,11 @@ public:
 	void test_backward_transformation_with_B0()
 	{
         // Same etas as test_backward_transformation()
-		BasisFactorization basis ( 3 );
+		BasisFactorization basis( 3 );
 		double e1[] = {1., 1., 3.};
-		basis.pushEtaMatrix ( 1, e1 );
+		basis.pushEtaMatrix( 1, e1 );
 		double e2[] = {2., 1., 1.};
-		basis.pushEtaMatrix ( 0, e2 );
+		basis.pushEtaMatrix( 0, e2 );
 		double e3[] = { 0.5, 0.5, 0.5 };
         basis.pushEtaMatrix( 2, e3 );
 
@@ -227,7 +232,9 @@ public:
         //
         // --> x = [ -6 9 -4 ]
 		basis.backwardTransformation( y, x );
-		TS_ASSERT_SAME_DATA( x, expected, sizeof(double) * 3 );
+
+        for ( unsigned i = 0; i < 3; ++i )
+            TS_ASSERT( FloatUtils::areEqual( x[i], expected[i] ) );
 	}
 
     void test_store_and_restore()
@@ -385,7 +392,7 @@ public:
             TS_ASSERT( FloatUtils::areEqual( eta->_column[i], expectedCol4[i] ) );
     }
 
-	void test_factorization_box()
+	void test_factorization_as_black_box()
 	{
 		BasisFactorization basis( 3 );
         const int nsq = 9;
@@ -418,6 +425,88 @@ public:
         for ( unsigned i = 0; i < 9; ++i )
 			TS_ASSERT( FloatUtils::areEqual( U[i], basis.getU()[i] ) );
 	}
+
+    void test_factorization_numerical_stability()
+    {
+        BasisFactorization basis( 3 );
+
+        double A[] =
+            {
+                2, 4, 5,
+                3, -1, 0,
+                0, -10, -2,
+            };
+
+        basis.factorizeMatrix( A );
+        const List<LPElement *> lps = basis.getLP();
+
+        TS_ASSERT_EQUALS( lps.size(), 5U );
+
+        EtaMatrix *eta;
+
+        auto it = lps.rbegin();
+        TS_ASSERT( !(*it)->_eta );
+        TS_ASSERT( (*it)->_pair );
+        TS_ASSERT_EQUALS( (*it)->_pair->first, 0U );
+        TS_ASSERT_EQUALS( (*it)->_pair->second, 1U );
+
+        // Matrix is now:
+        //     3  -1   0
+        //     2  4    5
+        //     0  -10 -2
+
+        ++it;
+        TS_ASSERT( (*it)->_eta );
+        TS_ASSERT( !(*it)->_pair );
+        eta = (*it)->_eta;
+        TS_ASSERT_EQUALS( eta->_columnIndex, 0U );
+        double expectedCol1[] = { 1.0/3, -2.0/3, 0 };
+        for ( unsigned i = 0; i < 3; ++i )
+        {
+            printf( "eta[%u] = %.15lf\n", i, eta->_column[i] );
+            printf( "expected[%u] = %.15lf\n", i, expectedCol1[i] );
+            TS_ASSERT( FloatUtils::areEqual( eta->_column[i], expectedCol1[i] ) );
+        }
+
+        // Matrix is now:
+        //     1 -1/3   0
+        //     0  14/3  5
+        //     0  -10  -2
+
+        ++it;
+        TS_ASSERT( !(*it)->_eta );
+        TS_ASSERT( (*it)->_pair );
+        TS_ASSERT_EQUALS( (*it)->_pair->first, 1U );
+        TS_ASSERT_EQUALS( (*it)->_pair->second, 2U );
+
+        // Matrix is now:
+        //     1 -1/3   0
+        //     0  -10  -2
+        //     0  14/3  5
+
+        ++it;
+        TS_ASSERT( (*it)->_eta );
+        TS_ASSERT( !(*it)->_pair );
+        eta = (*it)->_eta;
+        TS_ASSERT_EQUALS( eta->_columnIndex, 1U );
+        double expectedCol2[] = { 0, -1.0/10, 14.0/30 };
+        for ( unsigned i = 0; i < 3; ++i )
+            TS_ASSERT( FloatUtils::areEqual( eta->_column[i], expectedCol2[i] ) );
+
+        // Matrix is now:
+        //     1 -1/3  0
+        //     0  1   -2
+        //     0  0   122/30
+
+        ++it;
+        TS_ASSERT( (*it)->_eta );
+        TS_ASSERT( !(*it)->_pair );
+        eta = (*it)->_eta;
+        TS_ASSERT_EQUALS( eta->_columnIndex, 2U );
+        double expectedCol3[] = { 0, 0, 30.0/122 };
+        for ( unsigned i = 0; i < 3; ++i )
+            TS_ASSERT( FloatUtils::areEqual( eta->_column[i], expectedCol3[i] ) );
+    }
 
 	void test_refactor()
 	{
