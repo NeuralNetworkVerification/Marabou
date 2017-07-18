@@ -18,14 +18,14 @@
 #include <cstring>
 #include <utility>
 
-LPElement::LPElement( const EtaMatrix *eta, const std::pair<int, int> *pair )
+LPElement::LPElement( const EtaMatrix *eta, const std::pair<unsigned, unsigned> *pair )
 	: _eta( NULL )
 	, _pair( NULL )
 {
     if ( pair )
     {
-		_pair = new std::pair<int, int>;
-		memcpy( _pair, pair, sizeof(std::pair<int, int>) );
+		_pair = new std::pair<unsigned, unsigned>;
+		memcpy( _pair, pair, sizeof(std::pair<unsigned, unsigned>) );
 	}
     else
 		_eta = new EtaMatrix( eta->_m, eta->_columnIndex, eta->_column );
@@ -44,6 +44,18 @@ LPElement::~LPElement()
 		delete _pair;
 		_pair = NULL;
 	}
+}
+
+void LPElement::dump() const
+{
+    printf( "Dumping LP Element:\n" );
+    if ( _pair )
+        printf( "P element: swap rows %u, %u\n", _pair->first, _pair->second );
+    else
+    {
+        printf( "Eta element\n" );
+        _eta->dump();
+    }
 }
 
 //
