@@ -345,10 +345,13 @@ void Tableau::updateGamma()
      * this up.
      */
     printf("\nPerforming update on gamma...\n");
-    
+
     unsigned p = _enteringVariable;
     unsigned q = _leavingVariable;
     double *gamma = _steepestEdgeGamma;
+    printf("Initial gamma: ");
+    printVector(gamma, _n - _m);
+    printf("\n");
     printf("p: %d, q: %d\n", p, q);
 
     double *ANColumnQ = _A + ( _nonBasicIndexToVariable[q] * _m );
@@ -365,14 +368,7 @@ void Tableau::updateGamma()
 
     // Store alpha[q]. Compute gamma for entering var separately
     alpha[q] = invB_Aq[p];
-    printf("invB_Aq: ");
-    printVector( invB_Aq, _m );
-    printf("\n");
-    printf("alpha[q]: %f\n", alpha[q]);
-    
-    gamma[q] = gamma[q] / ( alpha[q] * alpha[q] );
-    // this assumes p replaces q directly and there's no strange sorting of basic/nonbasic vars
-    
+        
     for ( unsigned j = 0; j < _n - _m; ++j )
     {
 	// j == q
@@ -391,10 +387,9 @@ void Tableau::updateGamma()
 	gamma[j] = gamma[j] - 2*alphaBarJ*nu[j] + alphaBarJ*alphaBarJ*gamma[q];
     }
 
-    printf("alpha: [ ");
-    printVector(alpha, _n - _m);
-    printf("]\n");
-    
+    gamma[q] = gamma[q] / ( alpha[q] * alpha[q] );
+    // this assumes p replaces q directly and there's no strange sorting of basic/nonbasic vars
+
     printf("New gamma: [ ");
     printVector(gamma, _n - _m);
     printf("]\n");
