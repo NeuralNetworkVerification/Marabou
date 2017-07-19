@@ -244,19 +244,18 @@ public:
     }
     
     void test_select()
-    {/*
-        SteepestEdge dantzigsRule;
+    {
+        SteepestEdgeRule steepestEdgeRule;
 
         List<unsigned> candidates;
         tableau->mockCandidates = candidates;
-
+	
 	//  TS_ASSERT_THROWS_EQUALS( dantzigsRule.select( candidates, *tableau ),
         //                         const ReluplexError &e,
         //                         e.getCode(),
         //                         ReluplexError::NO_AVAILABLE_CANDIDATES );
 
-        TS_ASSERT( !dantzigsRule.select( *tableau ) );
-
+        TS_ASSERT( !steepestEdgeRule.select( *tableau ) );
         tableau->setDimensions( 10, 100 );
 
         candidates.append( 2 );
@@ -271,28 +270,30 @@ public:
         tableau->nextCostFunction[10] = -15;
         tableau->nextCostFunction[51] = 12;
 
+	tableau->steepestEdgeGamma[2] = 5.0;
+	tableau->steepestEdgeGamma[3] = 2.0;
+	tableau->steepestEdgeGamma[51] = 5.0;
+	
         // These guys are not candidates, so their coefficients don't matter
         tableau->nextCostFunction[14] = 102;
         tableau->nextCostFunction[25] = -1202;
         tableau->nextCostFunction[33] = 10;
 
-        TS_ASSERT( dantzigsRule.select( *tableau ) );
-        TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 10U );
+        TS_ASSERT( steepestEdgeRule.select( *tableau ) );
+	TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 10U );
 
+	tableau->steepestEdgeGamma[51] = 0.5;
+
+	TS_ASSERT( steepestEdgeRule.select( *tableau ) );
+	TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 51U );
+	
         candidates.append( 25 );
 
         tableau->mockCandidates = candidates;
 
-        TS_ASSERT( dantzigsRule.select( *tableau ) );
+        TS_ASSERT( steepestEdgeRule.select( *tableau ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 25U );
-     */
-    }
-
-    void test_todo()
-    {
-	TS_TRACE( "Selects variables correctly." );
-	TS_TRACE( "Updates gamma values correctly" );
-	TS_TRACE( "Computes gradients correctly" );
+	
     }
 };
 

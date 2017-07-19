@@ -89,6 +89,9 @@ public:
 
         nextCostFunction = new double[n - m];
         std::fill( nextCostFunction, nextCostFunction + ( n - m ), 0.0 );
+
+	steepestEdgeGamma = new double[n - m];
+	std::fill( steepestEdgeGamma, steepestEdgeGamma + ( n - m ), 1.0 );
     }
 
     double *lastEntries;
@@ -172,9 +175,11 @@ public:
     void dump() const {}
     void dumpAssignment() {}
     void dumpEquations() {}
+
+    double *steepestEdgeGamma;
     const double *getSteepestEdgeGamma() const
     {
-	return 0;
+	return steepestEdgeGamma;
     }
     
     Map<unsigned, unsigned> nextNonBasicIndexToVaribale;
