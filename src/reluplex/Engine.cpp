@@ -22,6 +22,9 @@ Engine::Engine()
     : _smtCore( this )
 {
     _smtCore.setStatistics( &_statistics );
+    _tableau->setStatistics( &_statistics );
+
+    _activeEntryStrategy = &_nestedDantzigsRule;
 }
 
 Engine::~Engine()
@@ -53,7 +56,10 @@ bool Engine::solve()
 
             // If all constraints are satisfied, we are done
             if ( allPlConstraintsHold() )
+            {
+                _statistics.print();
                 return true;
+            }
 
             // We have violated piecewise-linear constraints.
             _statistics.incNumConstraintFixingSteps();
@@ -66,14 +72,20 @@ bool Engine::solve()
 
             // Attempt to fix the constraint
             if ( !fixViolatedPlConstraint() )
+            {
+                _statistics.print();
                 return false;
+            }
         }
         else
         {
             // We have out-of-bounds variables.
             // If a simplex step fails, the query is unsat
             if ( !performSimplexStep() )
+            {
+                _statistics.print();
                 return false;
+            }
         }
     }
 }
@@ -94,22 +106,19 @@ bool Engine::performSimplexStep()
     _statistics.incNumSimplexSteps();
     timeval start = TimeUtils::sampleMicro();
 
-    if ( !(_nestedDantzigsRule.select( _tableau )) )
+    // Pick an entering variable
+    if ( !_activeEntryStrategy->select( _tableau ) )
     {
         timeval end = TimeUtils::sampleMicro();
         _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
         return false;
     }
 
-    // If you use the full pricing Dantzig's rule, need to calculate entire cost function
-    // _tableau->computeCostFunction();
-    // _tableau->dumpCostFunction();
-
-    // if ( !_tableau->pickEnteringVariable( &_dantzigsRule ) )
-    //     return false;
-
+    // Pick a leaving variable
     _tableau->computeD();
     _tableau->pickLeavingVariable();
+
+    // Perform the actual pivot
     _tableau->performPivot();
 
     timeval end = TimeUtils::sampleMicro();
@@ -155,16 +164,17 @@ bool Engine::fixViolatedPlConstraint()
         // TODO: numerical stability. Pick a good candidate.
         // TODO: guarantee that candidate does not participate in the
         // same PL constraint?
-        if ( !FloatUtils::isZero( row._row->_coefficient ) )
+        if ( !FloatUtils::isZero( row._row[i]._coefficient ) )
         {
             done = true;
-            nonBasic = row._row->_var;
+            nonBasic = row._row[i]._var;
         }
 
         ++i;
     }
 
     ASSERT( done );
+
     // Switch between nonBasic and the variable we need to fix
     _tableau->performDegeneratePivot( _tableau->variableToIndex( nonBasic ),
                                       _tableau->variableToIndex( fix._variable ) );
@@ -172,9 +182,6 @@ bool Engine::fixViolatedPlConstraint()
     ASSERT( !_tableau->isBasic( fix._variable ) );
     _tableau->setNonBasicAssignment( fix._variable, fix._value );
     return true;
-
-    // printf( "Could not fix a violated PL constraint\n" );
-    // return false;
 }
 
 void Engine::processInputQuery( const InputQuery &inputQuery )
@@ -211,10 +218,7 @@ void Engine::processInputQuery( const InputQuery &inputQuery )
         constraint->registerAsWatcher( _tableau );
 
     _tableau->initializeTableau();
-    _dantzigsRule.initialize(_tableau);
-    _blandsRule.initialize(_tableau);
-    _nestedDantzigsRule.initialize(_tableau);
-
+    _activeEntryStrategy->initialize( _tableau );
 }
 
 void Engine::extractSolution( InputQuery &inputQuery )

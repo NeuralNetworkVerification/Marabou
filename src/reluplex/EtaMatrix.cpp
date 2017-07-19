@@ -50,9 +50,10 @@ void EtaMatrix::dump()
 
 void EtaMatrix::toMatrix( double *A )
 {
-	for (unsigned i = 0; i < _m; ++i){
-		A[i*_m+i] = 1.;
-		A[_columnIndex+i*_m] = _column[i];
+	for ( unsigned i = 0; i < _m; ++i )
+    {
+		A[i * _m + i] = 1.;
+		A[_columnIndex + i * _m] = _column[i];
 	}
 }
 

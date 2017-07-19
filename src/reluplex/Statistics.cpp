@@ -21,6 +21,10 @@ Statistics::Statistics()
     , _currentStackDepth( 0 )
     , _numSplits( 0 )
     , _numPops( 0 )
+    , _numTableauPivots( 0 )
+    , _numTableauDegeneratePivots( 0 )
+    , _numTableauDegeneratePivotsByRequest( 0 )
+    , _numTableauBoundHopping( 0 )
 {
 }
 
@@ -28,22 +32,35 @@ void Statistics::print()
 {
     printf( "\n%s Statistics update:\n", TimeUtils::now().ascii() );
 
-    printf( "\tNumber of main loop iterators: %llu (%llu simplex steps, %llu constraint-fixing steps)\n"
+    printf( "\t--- Engine Statistics ---\n" );
+    printf( "\tNumber of main loop iterations: %llu\n"
+            "\t\t%llu iterations were simplex steps. Total time: %llu milli. Average: %lf milli.\n"
+            "\t\t%llu iterations were constraint-fixing steps.\n"
             , _numMainLoopIterations
             , _numSimplexSteps
+            , _timeSimplexStepsMilli
+            , printAverage( _timeSimplexStepsMilli, _numSimplexSteps )
             , _numConstraintFixingSteps );
 
-    printf( "\tTotal time performing simplex steps: %llu millisectonds. Average: %llu milliseconds\n"
-            , _timeSimplexStepsMilli
-            , printAverage( _timeSimplexStepsMilli, _numSimplexSteps ) );
+    printf( "\t--- Tableau Statistics ---\n" );
+    printf( "\tTotal number of pivots performed: %llu\n", _numTableauPivots );
+    printf( "\t\tReal pivots: %llu. Degenerate: %llu (%lf%%)\n"
+            , _numTableauPivots - _numTableauDegeneratePivots
+            , _numTableauDegeneratePivots
+            , printPercents( _numTableauDegeneratePivots, _numTableauPivots ) );
 
-    printf( "\tSMT core: total depth is %u. Number of splits: %u. Number of pops: %u\n"
+    printf( "\t\tDenegerate pivots by request (e.g., to fix a PL constraint): %llu (%lf%%)\n"
+            , _numTableauDegeneratePivotsByRequest
+            , printPercents( _numTableauDegeneratePivotsByRequest, _numTableauDegeneratePivots ) );
+
+    printf( "\t--- SMT Core Statistics ---\n" );
+    printf( "\ttotal depth is %u. Number of splits: %u. Number of pops: %u\n"
             , _currentStackDepth
             , _numSplits
             , _numPops );
 }
 
-unsigned long long Statistics::printPercents( unsigned long long part, unsigned long long total ) const
+double Statistics::printPercents( unsigned long long part, unsigned long long total ) const
 {
     if ( total == 0 )
         return 0;
@@ -51,7 +68,7 @@ unsigned long long Statistics::printPercents( unsigned long long part, unsigned 
     return 100.0 * part / total;
 }
 
-unsigned long long Statistics::printAverage( unsigned long long part, unsigned long long total ) const
+double Statistics::printAverage( unsigned long long part, unsigned long long total ) const
 {
     if ( total == 0 )
         return 0;
@@ -97,6 +114,26 @@ void Statistics::incNumSplits()
 void Statistics::incNumPops()
 {
     ++_numPops;
+}
+
+void Statistics::incNumTableauPivots()
+{
+    ++_numTableauPivots;
+}
+
+void Statistics::incNumTableauBoundHopping()
+{
+    ++_numTableauBoundHopping;
+}
+
+void Statistics::incNumTableauDegeneratePivots()
+{
+    ++_numTableauDegeneratePivots;
+}
+
+void Statistics::incNumTableauDegeneratePivotsByRequest()
+{
+    ++_numTableauDegeneratePivotsByRequest;
 }
 
 //

@@ -14,7 +14,7 @@
 #define __AcasNeuralNetwork_h__
 
 #include "AcasNnet.h"
-#include "String.h"
+#include "MString.h"
 #include "Vector.h"
 #include <cassert>
 #include <iomanip>

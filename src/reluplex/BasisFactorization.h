@@ -2,6 +2,7 @@
 /*! \file BasisFactorization.h
  ** \verbatim
  ** Top contributors (to current version):
+ **   Derek Huang
  **   Guy Katz
  ** This file is part of the Marabou project.
  ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
@@ -13,15 +14,11 @@
 #ifndef __BasisFactorization_h__
 #define __BasisFactorization_h__
 
+#include "LPElement.h"
 #include "List.h"
-#include <queue>
-#include "LPContainer.h"
-
-using std::queue;
 
 class EtaMatrix;
-
-class LPContainer;
+class LPElement;
 
 class BasisFactorization
 {
@@ -37,17 +34,19 @@ public:
     /*
       Adds a new eta matrix to the basis factorization. The matrix is
       the identity matrix with the specified column replaced by the one
-      provided.
+      provided. If the number of stored eta matrices exceeds a certain
+      threshold, re-factorization may occur.
     */
     void pushEtaMatrix( unsigned columnIndex, double *column );
 
-    /* Perform a forward transformation, i.e. find x such that x = inv(B) * y,
-       The solution is found by solving Bx = y.
+    /*
+      Perform a forward transformation, i.e. find x such that x = inv(B) * y,
+      The solution is found by solving Bx = y.
 
-       Bx = (B0 * E1 * E2 ... * En) x = B0 * ( E1 ( ... ( En * x ) ) ) = y
-                                                         -- u_n --
-                                                  ----- u_1 ------
-                                             ------- u_0 ---------
+      Bx = (B0 * E1 * E2 ... * En) x = B0 * ( E1 ( ... ( En * x ) ) ) = y
+                                                        -- u_n --
+                                                 ----- u_1 ------
+                                            ------- u_0 ---------
 
       And the equation is solved iteratively:
       B0     * u0   =   y  --> obtain u0
@@ -57,16 +56,18 @@ public:
 
       For now, assume that B0 = I, so we start with u0 = y.
 
-      Result needs to be of size m */
+      Result needs to be of size m.
+    */
     void forwardTransformation( const double *y, double *x );
 
-    /* Perform a backward transformation, i.e. find x such that x = y * inv(B),
-       The solution is found by solving xB = y.
+    /*
+      Perform a backward transformation, i.e. find x such that x = y * inv(B),
+      The solution is found by solving xB = y.
 
-       xB = x (B0 * E1 * E2 ... * En) = ( ( ( x B0 ) * E1 ... ) En ) = y
-                                             ------- u_n ---------
-                                             --- u_1 ----
-                                             - u_0 -
+      xB = x (B0 * E1 * E2 ... * En) = ( ( ( x B0 ) * E1 ... ) En ) = y
+                                            ------- u_n ---------
+                                            --- u_1 ----
+                                            - u_0 -
 
       And the equation is solved iteratively:
       u_n-1  * En   =  y   --> obtain u_n-1
@@ -76,7 +77,8 @@ public:
 
       For now, assume that B0 = I, so we start with u0 = x.
 
-      Result needs to be of size m */
+      Result needs to be of size m.
+    */
     void backwardTransformation( const double *y, double *x );
 
     /*
@@ -86,55 +88,95 @@ public:
     void restoreFactorization( const BasisFactorization *other );
 
 	/*
-		S is the basis to be LU factorized. The resuling upper triangular matrix is stored in _U and the 
-		lower triangular and permutation matricies are stored in _LP
+      Factorize a matrix into LU form. The resuling upper triangular
+      matrix is stored in _U and the lower triangular and permutation matrices
+      are stored in _LP.
 	*/
-    void factorization (double *S );
+    void factorizeMatrix( double *matrix );
 
 	/*
-		For the purposes of testing: here we set B0 to a non-identity matrix and set the _start flag to false, 
-		thus testing the LP and U multiplications
+      Set B0 to a non-identity matrix and factorize it.
 	*/
-	void setB0( const double *B0 ); //testing
+	void setB0( const double *B0 );
 
-	//LB = R
-    void matrixMultiply (const double *L, const double *B, double *R);
-	//prints out matrix m
+	/*
+      Swap two rows of a matrix.
+    */
+    void rowSwap( unsigned rowOne, unsigned rowTwo, double *matrix );
 
+    /*
+      Getter functions for the various factorization components.
+    */
+	const double *getU() const;
+	const List<LPElement *> getLP() const;
+	const double *getB0() const;
+	const List<EtaMatrix *> getEtas() const;
 
-	//swaps row p with row n in matrix A
-    void rowSwap ( int p, int n, double *A);
+    /*
+      Check/set whether factorization is enabled.
+    */
+    bool factorizationEnabled() const;
+    void toggleFactorization( bool value );
 
-	void coutMatrix ( const double *m );
-	//returns _U
-	double *get_U();
-	//returns _LP
-	std::vector<LPContainer *> get_LP();
-	//returns _B0
-	double *get_B0();
-	//returns _etas
-	List<EtaMatrix *> get_etas();
-
-	bool _start;
-	bool _factorFlag;
+    /*
+      A helper function for matrix multiplication.
+      left * right = result.
+    */
+    static void matrixMultiply( unsigned dimension, const double *left, const double *right, double *result );
 
 private:
+    /*
+      The Basis matrix.
+    */
 	double *_B0;
-	double *_U;
-	std::vector<LPContainer *> _LP;
+
+    /*
+      The dimension of the basis matrix.
+    */
     unsigned _m;
+
+    /*
+      The LU factorization on B0. U is upper triangular, and LP is a
+      sequence of lower triangular eta matrices and permuatation
+      pairs.
+    */
+	double *_U;
+	List<LPElement *> _LP;
+
+    /*
+      A sequence of eta matrices.
+    */
     List<EtaMatrix *> _etas;
-	double *_I;	
-	void constructIdentity();
-	//swaps column p with column n in matrix A
-	void columnSwap( int p, int n, double *A );
+
+    /*
+      A flag that controls whether LU-factorization is enabled or
+      disabled.
+    */
+    bool _factorizationEnabled;
+
+    /*
+      Clear a previous factorization.
+    */
 	void clearLPU();
-	//LB = R, where B is a _m x 1 matrix and L represents a _m x _m lower triangular matrix 
-	void LMultiplyLeft( const EtaMatrix *L, const double *B, double *R);
-	//BL = R, where B is a 1 x _m matrix and L represents a _m x _m lower triangular matrix 
-	void LMultiplyRight( const EtaMatrix *L, const double *B, double *R);
-	//Multiplication needed for factorization method 
-	void LFactorizationMultiply( const EtaMatrix *L, const double *X, double *R );
+
+    /*
+      Helper functions for backward- and forward-transformations.
+      Compute L*X or X*L, where X is vector of length m and L is an (m x m)
+      lower triangular eta matrix.
+    */
+	void LMultiplyLeft( const EtaMatrix *L, double *X );
+    void LMultiplyRight( const EtaMatrix *L, double *X );
+
+	/*
+      Multiply matrix U on the left by lower triangular eta matrix L,
+      store result in U.
+    */
+	void LFactorizationMultiply( const EtaMatrix *L );
+
+    /*
+      Compute B0 * E1 ... *En for all stored eta matrices, and place
+      the result in B0.
+    */
 	void condenseEtas();
 };
 

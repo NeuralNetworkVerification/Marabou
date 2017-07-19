@@ -477,6 +477,10 @@ void Tableau::computeCostFunction()
       evaluation thereof on a specific point.
      */
 
+    // Step 1: compute basic costs
+    computeBasicCosts();
+
+    // Step 2: compute the multipliers
     computeMultipliers();
 
     // Step 3: compute reduced costs
@@ -485,10 +489,6 @@ void Tableau::computeCostFunction()
 
 void Tableau::computeMultipliers()
 {
-    // Step 1: compute basic costs
-    computeBasicCosts();
-
-    // Step 2: compute the multipliers
     computeMultipliers( _basicCosts );
 }
 
@@ -551,7 +551,7 @@ unsigned Tableau::getBasicStatus( unsigned basic )
     return _basicStatus[_variableToIndex[basic]];
 }
 
-void Tableau::getCandidates(List<unsigned>& candidates)
+void Tableau::getEntryCandidates( List<unsigned> &candidates ) const
 {
     candidates.clear();
     for ( unsigned i = 0; i < _n - _m; ++i )
@@ -566,7 +566,7 @@ void Tableau::setEnteringVariable( unsigned nonBasic )
     _enteringVariable = nonBasic;
 }
 
-bool Tableau::eligibleForEntry( unsigned nonBasic )
+bool Tableau::eligibleForEntry( unsigned nonBasic ) const
 {
     // A non-basic variable is eligible for entry if one of the two
     //   conditions holds:
@@ -612,6 +612,9 @@ void Tableau::performPivot()
 
     if ( _leavingVariable == _m )
     {
+        if ( _statistics )
+            _statistics->incNumTableauBoundHopping();
+
         // printf( "\n\t\tTableau performing fake pivot. Varibale jumping to opposite bound: %u\n\n",
         //         _nonBasicIndexToVariable[_enteringVariable] );
 
@@ -621,6 +624,9 @@ void Tableau::performPivot()
         setNonBasicAssignment( nonBasic, decrease ? _lowerBounds[nonBasic] : _upperBounds[nonBasic] );
         return;
     }
+
+    if ( _statistics )
+        _statistics->incNumTableauPivots();
 
     // printf( "\n\t\tTableau performing pivot. Entering: %u, Leaving: %u\n\n",
     //         _nonBasicIndexToVariable[_enteringVariable],
@@ -640,7 +646,6 @@ void Tableau::performPivot()
     _variableToIndex[currentNonBasic] = _leavingVariable;
 
     // Update value of the old basic (now non-basic) variable
-
     double nonBasicAssignment;
     if ( _leavingVariableIncreases )
     {
@@ -656,6 +661,11 @@ void Tableau::performPivot()
         else
             nonBasicAssignment = _lowerBounds[currentBasic];
     }
+
+    // Check if the pivot is degenerate and update statistics
+    if ( _statistics && ( nonBasicAssignment == _basicAssignment[currentBasic] ) )
+        _statistics->incNumTableauDegeneratePivots();
+
     setNonBasicAssignment( _nonBasicIndexToVariable[_enteringVariable], nonBasicAssignment );
 
     // Update the basis factorization. The column corresponding to the
@@ -665,6 +675,12 @@ void Tableau::performPivot()
 
 void Tableau::performDegeneratePivot( unsigned entering, unsigned leaving )
 {
+    if ( _statistics )
+    {
+        _statistics->incNumTableauDegeneratePivots();
+        _statistics->incNumTableauDegeneratePivotsByRequest();
+    }
+
     _enteringVariable = entering;
     _leavingVariable = leaving;
 
@@ -801,8 +817,9 @@ void Tableau::pickLeavingVariable( double *d )
         }
         });
 
-    double lb = _lowerBounds[_enteringVariable];
-    double ub = _upperBounds[_enteringVariable];
+    double lb = _lowerBounds[_nonBasicIndexToVariable[_enteringVariable]];
+    double ub = _upperBounds[_nonBasicIndexToVariable[_enteringVariable]];
+    double currentValue = _nonBasicAssignment[_enteringVariable];
 
     // A marker to show that no leaving variable has been selected
     _leavingVariable = _m;
@@ -814,7 +831,7 @@ void Tableau::pickLeavingVariable( double *d )
         // The maximum amount by which the entering variable can
         // decrease, as determined by its bounds. This is a negative
         // value.
-        _changeRatio = lb - ub;
+        _changeRatio = lb - currentValue;
 
         // Iterate over the basics that depend on the entering
         // variable and see if any of them imposes a tighter
@@ -839,7 +856,7 @@ void Tableau::pickLeavingVariable( double *d )
         // The maximum amount by which the entering variable can
         // increase, as determined by its bounds. This is a positive
         // value.
-        _changeRatio = ub - lb;
+        _changeRatio = ub - currentValue;
 
         // Iterate over the basics that depend on the entering
         // variable and see if any of them imposes a tighter

@@ -13,6 +13,8 @@
 #ifndef __Debug_h__
 #define __Debug_h__
 
+#include <cstdlib>
+
 // #define DEBUG_ON
 
 #ifdef DEBUG_ON

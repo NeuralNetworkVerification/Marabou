@@ -25,6 +25,8 @@ public:
 	static const unsigned REFACTORIZATION_THRESHOLD;
 
     static const unsigned STATISTICS_PRINTING_FREQUENCY;
+
+    static const double NUMERICAL_STABILITY_CONSTANT;
 };
 
 #endif // __GlobalConfiguration_h__

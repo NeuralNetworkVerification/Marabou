@@ -20,7 +20,7 @@ bool DantzigsRule::select( ITableau &tableau )
     tableau.computeCostFunction();
 
     List<unsigned> candidates;
-    tableau.getCandidates(candidates);
+    tableau.getEntryCandidates( candidates );
 
     if ( candidates.empty() )
         return false;
@@ -44,7 +44,7 @@ bool DantzigsRule::select( ITableau &tableau )
         ++candidate;
     }
 
-    tableau.setEnteringVariable(maxIndex);
+    tableau.setEnteringVariable( maxIndex );
     return true;
 }
 
