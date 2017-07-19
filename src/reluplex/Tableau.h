@@ -17,7 +17,6 @@
 #include "Map.h"
 #include "Set.h"
 #include "Statistics.h"
-// #include "SteepestEdge.h"
 
 class BasisFactorization;
 class Equation;
@@ -283,6 +282,11 @@ public:
 
     const double *getSteepestEdgeGamma() const;
 
+    /*
+      Update gamma array during a pivot
+    */
+    void updateGamma();
+
 private:
     typedef List<VariableWatcher *> VariableWatchers;
     Map<unsigned, VariableWatchers> _variableToWatchers;
@@ -403,8 +407,7 @@ private:
     Statistics *_statistics;
 
     // Flag for whether or not steepest edge is used.
-    // TODO
-    bool _usingSteepestEdge = false;
+    bool _usingSteepestEdge = true;
     
     /*
       Array of gamma values for steepest edge pivot selection. Must be updated with
@@ -434,11 +437,6 @@ private:
       pivot selection
     */
     void initializeGamma();
-
-    /*
-      Update gamma array during a pivot
-    */
-    void updateGamma();
 
     /* 
        Helper function to compute dot product of two vectors of size m

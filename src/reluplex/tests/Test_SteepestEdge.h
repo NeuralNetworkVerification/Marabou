@@ -12,9 +12,10 @@
 
 #include <cxxtest/TestSuite.h>
 
-#include "SteepestEdge.h"
+#include "FloatUtils.h"
 #include "MockTableau.h"
 #include "ReluplexError.h"
+#include "SteepestEdge.h"
 #include "Tableau.h"
 
 #include <string.h>
@@ -174,6 +175,7 @@ public:
         */
 	// Try diff combinations of entering and leaving variable and make sure gamma checks out
 
+	// (1) 0, 0
 	Tableau *tableau = newSteepestEdgeTableau();
 	tableau->setEnteringVariable(0); // x1
 	tableau->setLeavingVariable(0); // x5
@@ -195,9 +197,50 @@ public:
 
 	 */
 	
+	tableau->updateGamma();
+	const double *gamma = tableau->getSteepestEdgeGamma();
+
+	TS_ASSERT( FloatUtils::areEqual( gamma[0], 3.0 ) );
+	TS_ASSERT( FloatUtils::areEqual( gamma[1], 5.0/3 ) );
+	TS_ASSERT( FloatUtils::areEqual( gamma[2], 13.0/3 ) );
+	TS_ASSERT( FloatUtils::areEqual( gamma[3], 10.0/3 ) );
+
+	// (2) 0, 1
+	tableau = newSteepestEdgeTableau();
+	tableau->setEnteringVariable(0); // x1
+	tableau->setLeavingVariable(1); // x6
+
+	/*
+	  New equations:
+	  x5 = -126 + 3x6 + x2 + 2x3 + x4
+	  x1 = 117  -  x6 - x2 -  x3 - x4
+	  x7 = -48  + 4x6 + x2 + x3
+
+               | -3 -1 -2 -1 1 0 0 | | x6 |   | -126 |
+          Ax = |  1  1  1  1 0 1 0 | | x2 | = | 117  | = b
+               | -4 -1 -1  0 0 0 1 | | x3 |   | -48  |
+                                              | x4 |
+                                              | x5 |
+                                              | x1 |
+                                              | x7 |
+
+
+	 */
 	
-	/* TODO: write tests */
-	// I've manually checked that it works on the regress cases, but obviously we should have some automatic tests...
+	tableau->updateGamma();
+	gamma = tableau->getSteepestEdgeGamma();
+	// Tests are failing bc floating point comparison is imprecise
+	TS_ASSERT_EQUALS( gamma[0], 27.0 );
+	TS_ASSERT_EQUALS( gamma[1], 4.0 );
+	TS_ASSERT_EQUALS( gamma[2], 7.0 );
+	TS_ASSERT_EQUALS( gamma[3], 3.0 );
+	/*
+	TS_ASSERT( FloatUtils::areEqual( gamma[0], 3.0 ) );
+	TS_ASSERT( FloatUtils::areEqual( gamma[1], 5.0/3 ) );
+	TS_ASSERT( FloatUtils::areEqual( gamma[2], 13.0/3 ) );
+	TS_ASSERT( FloatUtils::areEqual( gamma[3], 10.0/3 ) );
+	*/
+
     }
     
     void test_select()

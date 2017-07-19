@@ -15,7 +15,7 @@
 
 #include "EntrySelectionStrategy.h"
 
-class SteepestEdge : public EntrySelectionStrategy
+class SteepestEdgeRule : public EntrySelectionStrategy
 {
 public:
     /*
@@ -29,12 +29,6 @@ private:
     // Helper function to compute gradient of cost function with respect to edge direction
     double computeGradient( const unsigned j, const double *c, const double *gamma );
 };
-
-
-//struct SteepestEdgeData
-//{
-//    double *gamma; /* double gamma[n - m] */
-//};
 
 
 #endif // __SteepestEdge_h__
