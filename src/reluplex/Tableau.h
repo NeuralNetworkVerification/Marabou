@@ -408,7 +408,7 @@ private:
 
     // Flag for whether or not steepest edge is used.
     bool _usingSteepestEdge = true;
-    
+
     /*
       Array of gamma values for steepest edge pivot selection. Must be updated with
       each pivot.
