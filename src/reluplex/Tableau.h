@@ -17,6 +17,7 @@
 #include "Map.h"
 #include "Set.h"
 #include "Statistics.h"
+#include "BoundTightener.h"
 
 class BasisFactorization;
 class Equation;
@@ -121,13 +122,19 @@ public:
     double getUpperBound( unsigned variable ) const;
 
     /*
+      Returns whether a variable's bounds are valid, i.e. whether
+      its lower bound is strictly less than its upper bound.
+    */
+    bool boundsValid( unsigned variable ) const;
+
+    /*
       Tighten the lower/upper bound for a variable. These functions
       are meant to be used during the solution process, when a tighter
       bound has been discovered.
     */
     void tightenLowerBound( unsigned variable, double value );
     void tightenUpperBound( unsigned variable, double value );
-
+    
     /*
       Return the current status of the basic variable
     */

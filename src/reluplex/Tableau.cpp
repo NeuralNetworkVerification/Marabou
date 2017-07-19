@@ -1079,6 +1079,11 @@ void Tableau::restoreState( const TableauState &state )
     _basicAssignmentStatus = ASSIGNMENT_VALID;
 }
 
+bool Tableau::boundsValid( unsigned variable ) const
+{
+    return FloatUtils::lt( _lowerBounds[variable], _upperBounds[variable] );
+}
+
 void Tableau::tightenLowerBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );
