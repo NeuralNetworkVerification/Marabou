@@ -10,15 +10,15 @@
 ** directory for licensing information.\endverbatim
 **/
 
-#include "SteepestEdge.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
 #include "ReluplexError.h"
+#include "SteepestEdge.h"
 
 bool SteepestEdgeRule::select( ITableau &tableau )
 {
     /***************************************************************
-     * Chooses most eligible nonbasic variable xN[q] according 
+     * Chooses most eligible nonbasic variable xN[q] according
      * to steepest edge pivot selection rules.
      *
      *                c[j]**2
@@ -36,12 +36,12 @@ bool SteepestEdgeRule::select( ITableau &tableau )
     // Calculate entire cost function
     // TODO: integrate with Duligur's partial pricing?
     tableau.computeCostFunction();
-    
+
     List<unsigned> candidates;
-    tableau.getCandidates(candidates);
+    tableau.getEntryCandidates( candidates );
 
     if ( candidates.empty() )
-	return false;
+        return false;
 
     const double *costFunction = tableau.getCostFunction();
     const double *gamma = tableau.getSteepestEdgeGamma();
@@ -53,17 +53,16 @@ bool SteepestEdgeRule::select( ITableau &tableau )
 
     while ( candidate != candidates.end() )
     {
-	double contenderValue = computeGradient( *candidate, costFunction, gamma );
-	// TODO: use FloatUtils::gt( contenderValue, maxValue )
-	if ( contenderValue > maxValue )
-	{
-	    maxIndex = *candidate;
-	    maxValue = contenderValue;
-	}
-	++candidate;
+        double contenderValue = computeGradient( *candidate, costFunction, gamma );
+        if ( FloatUtils::gt( contenderValue, maxValue ) )
+        {
+            maxIndex = *candidate;
+            maxValue = contenderValue;
+        }
+        ++candidate;
     }
 
-    tableau.setEnteringVariable(maxIndex);
+    tableau.setEnteringVariable( maxIndex );
     return true;
 }
 
@@ -80,18 +79,15 @@ double SteepestEdgeRule::computeGradient( const unsigned j, const double *c, con
      *                                      c'*p[j]     c[j]
      * Gradient of cost function wrt p[j] = -------- = --------
      *                                      ||p[j]||   ||p[j]||
-     *               
+     *
      * This function returns c[j]**2 / gamma[j]
      *
-     * Note: gamma[j] is costly to compute from scratch, but after each pivot operation, we 
+     * Note: gamma[j] is costly to compute from scratch, but after each pivot operation, we
      * can update gamma more cheaply using a recurrence relation. See Goldfarb and Reid (1977),
      * Forrest and Goldfarb (1992).
      */
     return (c[j] * c[j]) / gamma[j];
 }
-
-void SteepestEdgeRule::initialize( const ITableau & /* tableau */ )
-{}
 
 //
 // Local Variables:

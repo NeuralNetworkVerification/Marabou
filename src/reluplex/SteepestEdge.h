@@ -23,13 +23,13 @@ public:
       magnitude of the gradient of the cost function with respect to the step direction.
     */
     bool select( ITableau &tableau );
-    void initialize( const ITableau &tableau );
 
 private:
-    // Helper function to compute gradient of cost function with respect to edge direction
+    /*
+      Helper function to compute gradient of cost function with respect to edge direction.
+    */
     double computeGradient( const unsigned j, const double *c, const double *gamma );
 };
-
 
 #endif // __SteepestEdge_h__
 
