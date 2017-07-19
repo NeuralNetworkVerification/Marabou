@@ -34,11 +34,10 @@ bool SteepestEdgeRule::select( ITableau &tableau )
      ***************************************************************/
 
     // Calculate entire cost function
-    // TODO: integrate with Duligur's partial pricing
+    // TODO: integrate with Duligur's partial pricing?
     tableau.computeCostFunction();
     
     List<unsigned> candidates;
-    // TODO: this candidate selection for Dantzig's may not apply here. 
     tableau.getCandidates(candidates);
 
     if ( candidates.empty() )
