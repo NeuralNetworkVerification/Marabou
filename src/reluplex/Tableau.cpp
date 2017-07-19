@@ -737,6 +737,12 @@ void Tableau::setEnteringVariable( unsigned nonBasic )
     _enteringVariable = nonBasic;
 }
 
+void Tableau::setLeavingVariable( unsigned nonBasic )
+{
+    // ONLY FOR TESTING STEEPEST EDGE. NEVER USE THIS! Use pickLeavingVariable instead.
+    _leavingVariable = nonBasic;
+}
+
 bool Tableau::eligibleForEntry( unsigned nonBasic )
 {
     // A non-basic variable is eligible for entry if one of the two
