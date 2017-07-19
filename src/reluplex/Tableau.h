@@ -59,6 +59,9 @@ public:
     */
     void setEnteringVariable( unsigned nonBasic );
 
+    // FOR TESTING ONLY
+    void setLeavingVariable( unsigned nonBasic );
+
     /*
       Set the values of the right hand side vector, b, of size m.
       Set either the whole vector or a specific entry
@@ -401,7 +404,7 @@ private:
 
     // Flag for whether or not steepest edge is used.
     // TODO
-    bool _usingSteepestEdge = true;
+    bool _usingSteepestEdge = false;
     
     /*
       Array of gamma values for steepest edge pivot selection. Must be updated with
