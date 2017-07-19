@@ -15,7 +15,7 @@
 #include "ITableau.h"
 #include "ReluplexError.h"
 
-bool SteepestEdge::select( ITableau &tableau )
+bool SteepestEdgeRule::select( ITableau &tableau )
 {
     /***************************************************************
      * Chooses most eligible nonbasic variable xN[q] according 
@@ -68,7 +68,7 @@ bool SteepestEdge::select( ITableau &tableau )
     return true;
 }
 
-double SteepestEdge::computeGradient( const unsigned j, const double *c, const double *gamma )
+double SteepestEdgeRule::computeGradient( const unsigned j, const double *c, const double *gamma )
 {
     /* Computes the (square of the) gradient in the step direction of the
      * j-th nonbasic var.
@@ -91,7 +91,7 @@ double SteepestEdge::computeGradient( const unsigned j, const double *c, const d
     return (c[j] * c[j]) / gamma[j];
 }
 
-void SteepestEdge::initialize( const ITableau & /* tableau */ )
+void SteepestEdgeRule::initialize( const ITableau & /* tableau */ )
 {}
 
 //

@@ -344,15 +344,15 @@ void Tableau::updateGamma()
      * (you can only solve B*x = y). We should see if computing sigma and w explicitly speeds
      * this up.
      */
-    printf("\nPerforming update on gamma...\n");
+    //    printf("\nPerforming update on gamma...\n");
 
     unsigned p = _leavingVariable; // basic -> nonbasic
     unsigned q = _enteringVariable; // nonbasic -> basic
     double *gamma = _steepestEdgeGamma;
-    printf("Initial gamma: ");
-    printVector(gamma, _n - _m);
-    printf("\n");
-    printf("numBasic: %d, numNonBasic: %d, p: %d, q: %d\n", _m, _n - _m, p, q);
+    //    printf("Initial gamma: ");
+    //    printVector(gamma, _n - _m);
+    //    printf("\n");
+    //    printf("numBasic: %d, numNonBasic: %d, p: %d, q: %d\n", _m, _n - _m, p, q);
     
     ASSERT( p < _m );
     ASSERT( q < _n - _m );
@@ -392,22 +392,10 @@ void Tableau::updateGamma()
 
     gamma[q] = gamma[q] / ( alpha[q] * alpha[q] );
     // this assumes p replaces q directly and there's no strange sorting of basic/nonbasic vars
-
-    printf("Basic: ");
-    for( unsigned i = 0; i < _m; ++i )
-	{
-	    printf("%d ", _basicIndexToVariable[i]);
-	}
-    printf("\nNonbasic: ");
-    for( unsigned i = 0; i < _n - _m; ++i )
-	{
-	    printf("%d ", _nonBasicIndexToVariable[i]);
-	}
     
-    printf("New gamma: ");
-
-    printVector(gamma, _n - _m);
-    printf("\n");
+    //    printf("New gamma: ");
+    //    printVector(gamma, _n - _m);
+    //    printf("\n");
 }
 
 void Tableau::printVector( const double *v, unsigned m )

@@ -100,7 +100,7 @@ private:
     BlandsRule _blandsRule;
     DantzigsRule _dantzigsRule;
     NestedDantzigsRule _nestedDantzigsRule;
-    SteepestEdge _steepestEdgeRule;
+    SteepestEdgeRule _steepestEdgeRule;
 
     /*
       The SMT engine is in charge of case splitting.

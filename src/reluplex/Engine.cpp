@@ -95,7 +95,7 @@ bool Engine::performSimplexStep()
     timeval start = TimeUtils::sampleMicro();
 
     //    if ( !(_nestedDantzigsRule.select( _tableau )) )
-        if ( !(_steepestEdgeRule.select( _tableau )) )
+    if ( !(_steepestEdgeRule.select( _tableau )) )
     {
         timeval end = TimeUtils::sampleMicro();
         _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
@@ -185,7 +185,7 @@ void Engine::processInputQuery( const InputQuery &inputQuery )
     unsigned m = equations.size();
     unsigned n = inputQuery.getNumberOfVariables();
     _tableau->setDimensions( m, n );
-
+    
     // Current variables are [0,..,n-1], so the next variable is n.
     FreshVariables::setNextVariable( n );
 
