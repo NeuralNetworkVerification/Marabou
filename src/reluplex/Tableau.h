@@ -406,8 +406,10 @@ private:
     */
     Statistics *_statistics;
 
-    // Flag for whether or not steepest edge is used.
-    bool _usingSteepestEdge = true;
+    /*
+      Flag for whether or not steepest edge is used.
+    */
+    bool _usingSteepestEdge;
 
     /*
       Array of gamma values for steepest edge pivot selection. Must be updated with
@@ -438,7 +440,7 @@ private:
     */
     void initializeGamma();
 
-    /* 
+    /*
        Helper function to compute dot product of two vectors of size m
      */
     double dotProduct( const double *a, const double *b, unsigned m );
