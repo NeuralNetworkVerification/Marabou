@@ -857,6 +857,10 @@ void Tableau::performDegeneratePivot( unsigned entering, unsigned leaving )
     ASSERT( leaving < _m );
     ASSERT( !basicOutOfBounds( leaving ) );
 
+    // Before pivoting, update gamma according to old basis
+    if ( _usingSteepestEdge )
+	updateGamma();
+
     // Compute d
     computeD();
 
