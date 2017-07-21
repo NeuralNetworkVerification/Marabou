@@ -160,6 +160,7 @@ public:
         TS_ASSERT( smtCore.needToSplit() );
         TS_ASSERT_EQUALS( smtCore.getStackDepth(), 0U );
         TS_ASSERT_THROWS_NOTHING( smtCore.performSplit() );
+        TS_ASSERT( !smtCore.needToSplit() );
         TS_ASSERT_EQUALS( smtCore.getStackDepth(), 1U );
 
         // Check that Split1 was performed and tableau state was stored

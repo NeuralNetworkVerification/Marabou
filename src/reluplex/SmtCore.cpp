@@ -10,6 +10,7 @@
  ** directory for licensing information.\endverbatim
  **/
 
+#include "Debug.h"
 #include "IEngine.h"
 #include "SmtCore.h"
 #include "TableauState.h"
@@ -42,6 +43,9 @@ bool SmtCore::needToSplit() const
 
 void SmtCore::performSplit()
 {
+    ASSERT( _needToSplit );
+    _needToSplit = false;
+
     if ( _statistics )
         _statistics->incNumSplits();
 
