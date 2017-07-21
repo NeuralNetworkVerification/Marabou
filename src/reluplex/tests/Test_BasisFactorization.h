@@ -463,8 +463,6 @@ public:
         double expectedCol1[] = { 1.0/3, -2.0/3, 0 };
         for ( unsigned i = 0; i < 3; ++i )
         {
-            printf( "eta[%u] = %.15lf\n", i, eta->_column[i] );
-            printf( "expected[%u] = %.15lf\n", i, expectedCol1[i] );
             TS_ASSERT( FloatUtils::areEqual( eta->_column[i], expectedCol1[i] ) );
         }
 
