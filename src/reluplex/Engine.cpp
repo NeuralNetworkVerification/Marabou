@@ -24,7 +24,9 @@ Engine::Engine()
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
 
-    _activeEntryStrategy = &_nestedDantzigsRule;
+    //    _activeEntryStrategy = &_nestedDantzigsRule;
+    _activeEntryStrategy = &_dantzigsRule;
+    // _activeEntryStrategy = &_blandsRule;
 }
 
 Engine::~Engine()
@@ -41,13 +43,18 @@ bool Engine::solve()
             _statistics.print();
         _statistics.incNumMainLoopIterations();
 
+        // Perform a case split if needed
+        if ( _smtCore.needToSplit() )
+            _smtCore.performSplit();
+
         _tableau->computeAssignment();
         _tableau->computeBasicStatus();
 
         // TODO: tighten bounds
-        // TODO: split if necessary
 
         // _tableau->dumpAssignment();
+
+        bool needToPop = false;
 
         if ( allVarsWithinBounds() )
         {
@@ -74,7 +81,7 @@ bool Engine::solve()
             if ( !fixViolatedPlConstraint() )
             {
                 _statistics.print();
-                return false;
+                needToPop = true;
             }
         }
         else
@@ -84,8 +91,16 @@ bool Engine::solve()
             if ( !performSimplexStep() )
             {
                 _statistics.print();
-                return false;
+                needToPop = true;
             }
+        }
+
+        if ( needToPop )
+        {
+            // The current query is unsat, and we need to split.
+            // If we're at level 0, the whole query is unsat.
+            if ( !_smtCore.popSplit() )
+                return false;
         }
     }
 }
