@@ -20,11 +20,12 @@ class EtaMatrix;
 class LPElement
 {
 public:
-	LPElement( const EtaMatrix *_eta, const std::pair<int, int> *_pair );
+	LPElement( const EtaMatrix *_eta, const std::pair<unsigned, unsigned> *_pair );
 	~LPElement();
+    void dump() const;
 
 	EtaMatrix *_eta;
-	std::pair<int, int> *_pair;
+	std::pair<unsigned, unsigned> *_pair;
 };
 
 #endif //__LPElement_h__

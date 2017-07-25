@@ -24,7 +24,9 @@ Engine::Engine()
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
 
-    _activeEntryStrategy = &_nestedDantzigsRule;
+    //    _activeEntryStrategy = &_nestedDantzigsRule;
+    _activeEntryStrategy = &_dantzigsRule;
+    // _activeEntryStrategy = &_blandsRule;
 }
 
 Engine::~Engine()
@@ -41,13 +43,18 @@ bool Engine::solve()
             _statistics.print();
         _statistics.incNumMainLoopIterations();
 
+        // Perform a case split if needed
+        if ( _smtCore.needToSplit() )
+            _smtCore.performSplit();
+
         _tableau->computeAssignment();
         _tableau->computeBasicStatus();
 
         // TODO: tighten bounds
-        // TODO: split if necessary
 
         // _tableau->dumpAssignment();
+
+        bool needToPop = false;
 
         if ( allVarsWithinBounds() )
         {
@@ -56,7 +63,10 @@ bool Engine::solve()
 
             // If all constraints are satisfied, we are done
             if ( allPlConstraintsHold() )
+            {
+                _statistics.print();
                 return true;
+            }
 
             // We have violated piecewise-linear constraints.
             _statistics.incNumConstraintFixingSteps();
@@ -69,13 +79,27 @@ bool Engine::solve()
 
             // Attempt to fix the constraint
             if ( !fixViolatedPlConstraint() )
-                return false;
+            {
+                _statistics.print();
+                needToPop = true;
+            }
         }
         else
         {
             // We have out-of-bounds variables.
             // If a simplex step fails, the query is unsat
             if ( !performSimplexStep() )
+            {
+                _statistics.print();
+                needToPop = true;
+            }
+        }
+
+        if ( needToPop )
+        {
+            // The current query is unsat, and we need to split.
+            // If we're at level 0, the whole query is unsat.
+            if ( !_smtCore.popSplit() )
                 return false;
         }
     }
@@ -155,16 +179,17 @@ bool Engine::fixViolatedPlConstraint()
         // TODO: numerical stability. Pick a good candidate.
         // TODO: guarantee that candidate does not participate in the
         // same PL constraint?
-        if ( !FloatUtils::isZero( row._row->_coefficient ) )
+        if ( !FloatUtils::isZero( row._row[i]._coefficient ) )
         {
             done = true;
-            nonBasic = row._row->_var;
+            nonBasic = row._row[i]._var;
         }
 
         ++i;
     }
 
     ASSERT( done );
+
     // Switch between nonBasic and the variable we need to fix
     _tableau->performDegeneratePivot( _tableau->variableToIndex( nonBasic ),
                                       _tableau->variableToIndex( fix._variable ) );
@@ -172,9 +197,6 @@ bool Engine::fixViolatedPlConstraint()
     ASSERT( !_tableau->isBasic( fix._variable ) );
     _tableau->setNonBasicAssignment( fix._variable, fix._value );
     return true;
-
-    // printf( "Could not fix a violated PL constraint\n" );
-    // return false;
 }
 
 void Engine::processInputQuery( const InputQuery &inputQuery )

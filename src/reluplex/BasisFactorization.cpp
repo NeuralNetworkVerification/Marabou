@@ -2,6 +2,7 @@
 /*! \file BasisFactorization.cpp
  ** \verbatim
  ** Top contributors (to current version):
+ **   Derek Huang
  **   Guy Katz
  ** This file is part of the Marabou project.
  ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
@@ -17,12 +18,6 @@
 #include "GlobalConfiguration.h"
 #include "LPElement.h"
 #include "ReluplexError.h"
-
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <iomanip>
-#include <iostream>
 
 BasisFactorization::BasisFactorization( unsigned m )
     : _B0( NULL )
@@ -105,29 +100,28 @@ void BasisFactorization::pushEtaMatrix( unsigned columnIndex, double *column )
 
 void BasisFactorization::LMultiplyRight( const EtaMatrix *L, double *X )
 {
-	double sum = 0.;
-	for (unsigned i = 0; i < _m; ++i) {
+	double sum = 0;
+	for ( unsigned i = 0; i < _m; ++i )
 		sum += L->_column[i] * X[i];
-	}
 	X[L->_columnIndex] = sum;
 }
 
 void BasisFactorization::LMultiplyLeft( const EtaMatrix *L, double *X )
 {
-	    unsigned col = L->_columnIndex;
-		double xCol = X[col];
-        for (unsigned j = 0; j < _m; ++j){
-            if ( j == col ) {
-                X[j] *= L->_column[col];
-            } else {
-                X[j] += xCol * L->_column[j];
-            }
-        }
+    unsigned col = L->_columnIndex;
+    double xCol = X[col];
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        if ( i == col )
+            X[i] *= L->_column[col];
+        else
+            X[i] += xCol * L->_column[i];
+    }
 }
 
 void BasisFactorization::setB0( const double *B0 )
 {
-	memcpy ( _B0, B0, sizeof(double) * _m * _m);
+	memcpy( _B0, B0, sizeof(double) * _m * _m);
 	factorizeMatrix( _B0 );
 }
 
@@ -145,59 +139,75 @@ void BasisFactorization::condenseEtas()
     // column of B0. The new column is a linear combination of the
     // existing columns of B0, according to the eta column. We perform
     // the computation in place.
-    for ( const auto &eta : _etas)
+    for ( const auto &eta : _etas )
     {
 		unsigned col = eta->_columnIndex;
-		for (unsigned n = 0; n < _m; ++n){ //rows
+
+        // Iterate over the rows of B0
+		for ( unsigned i = 0; i < _m; ++i )
+        {
+            // Compute the linear combinations of the columns
 			double sum = 0.0;
-			for (unsigned m = 0; m < _m; ++m){//columns
-				sum += _B0[n * _m + m] * eta->_column[m];
-			}
-			_B0[n * _m + col] = sum; 
+			for ( unsigned j = 0; j < _m; ++j )
+				sum += _B0[i * _m + j] * eta->_column[j];
+            _B0[i * _m + col] = sum;
 		}
+
 		delete eta;
 	}
+
 	_etas.clear();
 	clearLPU();
 }
 
 void BasisFactorization::forwardTransformation( const double *y, double *x )
 {
+    // If there's no LP factorization, it is implied that B0 = I.
+    // Then, because there are no etas, x = y.
     if ( _etas.empty() && _LP.empty() )
     {
         memcpy( x, y, sizeof(double) * _m );
         return;
     }
+
     double *tempY = new double[_m];
     memcpy( tempY, y, sizeof(double) * _m );
-    std::fill( x, x + _m, 0.0 );
 
-    // Multiplication by U
+    // We are solving Bx = y, where B = B0 * E1 ... *En and
+    // B0 = inv( LmPm ... L1P1 ) * U. The equation is thus:
+    // inv(P1) * inv(L1) ... * inv(Pm) * inv(Lm) * U * E1 ... * En * x = y.
+    // The first step is to multiply both hands of the equation
+    // by P1,L1,...,Pm,Lm on the left to get rid of the Ls and Ps.
     for ( auto element = _LP.rbegin(); element != _LP.rend(); ++element )
     {
         if ( (*element)->_pair )
         {
-			double temp = x[(*element)->_pair->first];
-			x[(*element)->_pair->first] = x[(*element)->_pair->second];
-			x[(*element)->_pair->second] = temp;
+			double temp = tempY[(*element)->_pair->first];
+			tempY[(*element)->_pair->first] = tempY[(*element)->_pair->second];
+			tempY[(*element)->_pair->second] = temp;
 		}
         else
 			LMultiplyLeft( (*element)->_eta , tempY );
 	}
 
-	if ( !_LP.empty() ) { //multiplication by L and P
+    // We are now left with U * E1 ... * En * x = y. Eliminate U.
+    // We use x as a temporary work area, then update y.
+	if ( !_LP.empty() )
+    {
 		x[_m-1] = tempY[_m-1];
-		for (int i = _m - 2; i >= 0; --i){
-			double sum = 0.;
-			for (int j = _m - 1; j > i; --j){
-				sum += _U[i*_m+j] * x[j];
-			}
+		for ( int i = _m - 2; i >= 0; --i )
+        {
+			double sum = 0;
+			for ( int j = _m - 1; j > i; --j )
+				sum += _U[i * _m + j] * x[j];
 			x[i] = tempY[i] - sum;
 		}
-		memcpy ( tempY, x, sizeof(double) * _m );
+		memcpy( tempY, x, sizeof(double) * _m );
 	}
 
-	for ( const auto &eta : _etas ) //multiplication by etas
+    // Finally, we are left with E1 * ... * En * x = y.
+    // Eliminate etas one by one.
+	for ( const auto &eta : _etas )
     {
         x[eta->_columnIndex] = tempY[eta->_columnIndex] / eta->_column[eta->_columnIndex];
 
@@ -212,13 +222,12 @@ void BasisFactorization::forwardTransformation( const double *y, double *x )
         // The x from this iteration becomes a for the next iteration
         memcpy( tempY, x, sizeof(double) *_m );
     }
-
 }
-
-
 
 void BasisFactorization::backwardTransformation( const double *y, double *x )
 {
+    // If there's no LP factorization, it is implied that B0 = I.
+    // Then, because there are no etas, x = y.
     if ( _etas.empty() && _LP.empty() )
     {
         memcpy( x, y, sizeof(double) * _m );
@@ -227,8 +236,10 @@ void BasisFactorization::backwardTransformation( const double *y, double *x )
 
     double *tempY = new double[_m];
     memcpy( tempY, y, sizeof(double) * _m );
-    std::fill( x, x + _m, 0.0 );
 
+    // We are solving xB = y, where B = B0 * E1 ... * En.
+    // The first step is to eliminate the eta matrices and adjust y
+    // so that x*B0 = y.
     for ( auto eta = _etas.rbegin(); eta != _etas.rend(); ++eta )
     {
         // x is going to equal y in all entries except columnIndex
@@ -252,26 +263,39 @@ void BasisFactorization::backwardTransformation( const double *y, double *x )
         memcpy( tempY, x, sizeof(double) *_m );
     }
 
-	if ( !_LP.empty() ) //multiplication by U
+    // Now that the Etas are gone, we use the fact that
+    // LmPm ... L1P1 * B0 = U. This can also be written as:
+    // B0 = inv( LmPm ... L1P1 ) * U. Finally, this means that
+    // x * inv( LmPm ... L1P1 ) * U = y.
+
+    // Next step is to eliminate U by setting x'= x*inv(LP), solving x'*U = y,
+    // and storing the solution for x' in x.
+	if ( !_LP.empty() )
 	{
 		x[0] = tempY[0];
-		for (unsigned i = 1; i < _m; ++i) {
-			double sum = 0.;
-			for (unsigned j = 0; j < i; j++) {
-				sum += _U[i+j*_m] * x[j];
-			}
+		for ( unsigned i = 1; i < _m; ++i )
+        {
+			double sum = 0;
+			for ( unsigned j = 0; j < i; ++j )
+				sum += _U[i + j * _m] * x[j];
 			x[i] = tempY[i] - sum;
 		}
 	}
 
-	for (auto *d : _LP) //multiplication by L and P
+    // We have in x the value for x*inv(LP). We extract the final x by multiplying
+    // by the L's and P's on the right.
+    // x*inv(LP) = x * inv( LmPm ... L1P1 ) = x * inv(P1) * inv(L1) ... * inv(Pm) * inv(Lm),
+    // so we undo that LPs in that order.
+    for ( const auto *d : _LP )
 	{
-		if ( d->_pair ){
-			double temp = x[d->_pair->first];
+		if ( d->_pair )
+        {
+            double temp = x[d->_pair->first];
 			x[d->_pair->first] = x[d->_pair->second];
 			x[d->_pair->second] = temp;
-		} else 
-			LMultiplyRight ( d->_eta, x );
+		}
+        else
+			LMultiplyRight( d->_eta, x );
 	}
 }
 
@@ -300,15 +324,6 @@ void BasisFactorization::restoreFactorization( const BasisFactorization *other )
     for ( const auto &eta : other->_etas )
         _etas.append( new EtaMatrix( eta->_m, eta->_columnIndex, eta->_column ) );
 }
-
-// void BasisFactorization::coutMatrix( const double*m )
-// {
-//    std::cout<<'\n';
-//    for (unsigned i = 0; i < _m; ++i){
-//       for (unsigned j = 0; j < _m; ++j)	std::cout << std::setw(14) << m[i*_m+j];
-//       std::cout<<'\n';
-//    }
-// }
 
 void BasisFactorization::rowSwap( unsigned rowOne, unsigned rowTwo, double *matrix )
 {
@@ -339,23 +354,34 @@ void BasisFactorization::factorizeMatrix( double *matrix )
 
 	for ( unsigned i = 0; i < _m; ++i )
     {
-        // Begin work for the i'th column. Look for a row with a non-zero entry
-		if ( _U[i*_m+i] == 0 )
+        // Begin work for the i'th column.
+        // Employ partial pivoting: find the row with the largest element and swap it to position i
+        // (See discussion at http://www2.lawrence.edu/fast/GREGGJ/Math420/Section_6_2.pdf)
+
+        double largestElement = FloatUtils::abs( _U[i * _m + i] );
+        unsigned bestRowIndex = i;
+
+        for ( unsigned j = i + 1; j < _m; ++j )
         {
-			unsigned goodRow = i;
+            double contender = FloatUtils::abs( _U[j * _m + i] );
+            if ( FloatUtils::gt( contender, largestElement ) )
+            {
+                largestElement = contender;
+                bestRowIndex = j;
+            }
+        }
 
-			while ( ( _U[goodRow * _m + i] == 0 ) && ( goodRow < _m ) )
-                ++goodRow;
+        // No non-zero pivot has been found, matrix cannot be factorized
+        if ( FloatUtils::isZero( largestElement ) )
+            throw ReluplexError( ReluplexError::NO_AVAILABLE_CANDIDATES, "No Pivot" );
 
-            // No pivot has been found, matrix cannot be factorized
-			if ( goodRow == _m )
-                throw ReluplexError( ReluplexError::NO_AVAILABLE_CANDIDATES, "No Pivot" );
-
-            // Swap rows i and goodRow, and store this permutation
-			rowSwap( i, goodRow, _U );
-            std::pair<int, int> *P = new std::pair<int, int>( i, goodRow );
+        // Swap rows i and bestRow (if needed), and store this permutation
+        if ( bestRowIndex != i )
+        {
+            rowSwap( i, bestRowIndex, _U );
+            std::pair<unsigned, unsigned> *P = new std::pair<unsigned, unsigned>( i, bestRowIndex );
             _LP.appendHead( new LPElement( NULL, P ) );
-		}
+        }
 
         // The matrix now has a non-zero value at entry (i,i), so we can perform
         // Gaussian elimination for the subsequent rows
