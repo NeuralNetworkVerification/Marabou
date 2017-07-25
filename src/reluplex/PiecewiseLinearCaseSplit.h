@@ -60,7 +60,7 @@ public:
     */
     void addEquation( const Equation &equation );
 
-	List<Equation> getEquation() const;
+	List<Equation> getEquations() const;
 
 private:
     /*

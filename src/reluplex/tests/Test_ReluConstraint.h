@@ -191,7 +191,9 @@ public:
         TS_ASSERT_EQUALS( bound3._boundType, PiecewiseLinearCaseSplit::Bound::LOWER );
         TS_ASSERT_EQUALS( bound3._newBound, 0.0 );
 
-        activeEquation = split->getEquation().front();
+        List<Equation> equations = split->getEquations();
+        TS_ASSERT_EQUALS( equations.size(), 1U );
+        activeEquation = split->getEquations().front();
         TS_ASSERT_EQUALS( activeEquation._addends.size(), 3U );
         TS_ASSERT_EQUALS( activeEquation._scalar, 0.0 );
 
@@ -232,7 +234,9 @@ public:
         TS_ASSERT_EQUALS( bound3._boundType, PiecewiseLinearCaseSplit::Bound::LOWER );
         TS_ASSERT_EQUALS( bound3._newBound, 0.0 );
 
-        inactiveEquation = split->getEquation().front();
+        equations = split->getEquations();
+        TS_ASSERT_EQUALS( equations.size(), 1U );
+        inactiveEquation = split->getEquations().front();
         TS_ASSERT_EQUALS( inactiveEquation._addends.size(), 2U );
         TS_ASSERT_EQUALS( inactiveEquation._scalar, 0.0 );
 

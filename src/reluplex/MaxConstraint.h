@@ -1,3 +1,14 @@
+/*********************                                                        */
+/*! \file MaxConstraint.h
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Derek Huang
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **/
 
 #ifndef __MaxConstraint_h__
 #define __MaxConstraint_h__
@@ -6,8 +17,8 @@
 
 class MaxConstraint : public PiecewiseLinearConstraint
 {
-public: 
-	MaxConstraint( unsigned f, List<unsigned> elems );
+public:
+	MaxConstraint( unsigned f, const List<unsigned> &elements );
 
 	void registerAsWatcher( ITableau *tableau );
     void unregisterAsWatcher( ITableau *tableau );
@@ -50,7 +61,7 @@ public:
 private:
 	unsigned _f;
 	unsigned _maxIndex;
-	List<unsigned> _elems;
+	List<unsigned> _elements;
 
 	List<unsigned> _participating;
 	Map<unsigned, double> _assignment;

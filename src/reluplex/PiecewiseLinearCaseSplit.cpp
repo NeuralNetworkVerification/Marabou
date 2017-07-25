@@ -28,7 +28,7 @@ void PiecewiseLinearCaseSplit::addEquation( const Equation &equation )
 }
 
 
-List<Equation> PiecewiseLinearCaseSplit::getEquation() const
+List<Equation> PiecewiseLinearCaseSplit::getEquations() const
 {
 	return _equations;
 }

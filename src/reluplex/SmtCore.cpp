@@ -58,15 +58,7 @@ void SmtCore::performSplit()
 
     // Perform the first split: add bounds and equations
     List<PiecewiseLinearCaseSplit>::iterator split = splits.begin();
-    _engine->addNewEquation( split->getEquation().front() );
-    List<PiecewiseLinearCaseSplit::Bound> bounds = split->getBoundTightenings();
-    for ( const auto &bound : bounds )
-    {
-        if ( bound._boundType == PiecewiseLinearCaseSplit::Bound::LOWER )
-            _engine->tightenLowerBound( bound._variable, bound._newBound );
-        else
-            _engine->tightenUpperBound( bound._variable, bound._newBound );
-    }
+    applySplit( *split );
 
     // Store the remaining splits on the stack, for later
     StackEntry stackEntry;
@@ -118,7 +110,9 @@ bool SmtCore::popSplit()
 
 void SmtCore::applySplit( const PiecewiseLinearCaseSplit &split )
 {
-    _engine->addNewEquation( split.getEquation().front() );
+    // Guy: if a split includes more than one equation, we want to add all of them, not just one.
+    // Please adjust also the test for smtCore to check this.
+    _engine->addNewEquation( split.getEquations().front() );
     List<PiecewiseLinearCaseSplit::Bound> bounds = split.getBoundTightenings();
     for ( const auto &bound : bounds )
     {
