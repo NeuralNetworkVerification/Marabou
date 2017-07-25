@@ -22,14 +22,15 @@ List<PiecewiseLinearCaseSplit::Bound> PiecewiseLinearCaseSplit::getBoundTighteni
     return _bounds;
 }
 
-void PiecewiseLinearCaseSplit::setEquation( const Equation &equation )
+void PiecewiseLinearCaseSplit::addEquation( const Equation &equation )
 {
-    _equation = equation;
+	_equations.append( equation );
 }
 
-Equation PiecewiseLinearCaseSplit::getEquation() const
+
+List<Equation> PiecewiseLinearCaseSplit::getEquation() const
 {
-    return _equation;
+	return _equations;
 }
 
 //

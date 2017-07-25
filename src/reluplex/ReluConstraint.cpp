@@ -125,7 +125,7 @@ List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
     activeEquation.markAuxiliaryVariable( auxVariable );
 
     activeEquation.setScalar( 0 );
-    activePhase.setEquation( activeEquation );
+    activePhase.addEquation( activeEquation );
 
     // Inactive phase: b <= 0, f = 0
     PiecewiseLinearCaseSplit::Bound inactiveBound( _b, PiecewiseLinearCaseSplit::Bound::UPPER, 0.0 );
@@ -136,7 +136,7 @@ List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
     inactiveEquation.markAuxiliaryVariable( auxVariable );
 
     inactiveEquation.setScalar( 0 );
-    inactivePhase.setEquation( inactiveEquation );
+    inactivePhase.addEquation( inactiveEquation );
 
     // Auxiliary variable bound, needed for either phase
     PiecewiseLinearCaseSplit::Bound auxUpperBound( auxVariable, PiecewiseLinearCaseSplit::Bound::UPPER, 0.0 );

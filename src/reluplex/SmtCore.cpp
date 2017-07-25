@@ -54,7 +54,7 @@ void SmtCore::performSplit()
 
     // Perform the first split: add bounds and equations
     List<PiecewiseLinearCaseSplit>::iterator split = splits.begin();
-    _engine->addNewEquation( split->getEquation() );
+    _engine->addNewEquation( split->getEquation().front() );
     List<PiecewiseLinearCaseSplit::Bound> bounds = split->getBoundTightenings();
     for ( const auto &bound : bounds )
     {
@@ -114,7 +114,7 @@ bool SmtCore::popSplit()
 
 void SmtCore::applySplit( const PiecewiseLinearCaseSplit &split )
 {
-    _engine->addNewEquation( split.getEquation() );
+    _engine->addNewEquation( split.getEquation().front() );
     List<PiecewiseLinearCaseSplit::Bound> bounds = split.getBoundTightenings();
     for ( const auto &bound : bounds )
     {

@@ -58,8 +58,9 @@ public:
     /*
       Store information regarding a new equation to be added.
     */
-    void setEquation( const Equation &equation );
-    Equation getEquation() const;
+    void addEquation( const Equation &equation );
+
+	List<Equation> getEquation() const;
 
 private:
     /*
@@ -70,7 +71,7 @@ private:
     /*
       The equation that needs to be added.
     */
-    Equation _equation;
+    List<Equation> _equations;
 };
 
 #endif // __PiecewiseLinearCaseSplit_h__
