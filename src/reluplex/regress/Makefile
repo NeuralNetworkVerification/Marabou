@@ -42,6 +42,7 @@ SOURCES += \
 	TableauState.cpp \
 	\
 	main_regress.cpp \
+	MaxConstraint.cpp\
 
 all:
 	./$(TARGET)
