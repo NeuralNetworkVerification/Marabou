@@ -56,13 +56,9 @@ public:
         TS_ASSERT_EQUALS( participatingVariables.size(), 9U );
 
 		auto it = participatingVariables.begin();
-		TS_ASSERT_EQUALS( *it, 2U );
+		for ( unsigned i = 1; i < 10; ++i, ++it )
+			TS_ASSERT( max.participatingVariable( i ) );
 
-        // Guy: I didn't understand this. Shouldn't we check that the participatingVariables() include all indices from 1 to 9?
-		std::advance( it, 10 );
-
-        TS_ASSERT( max.participatingVariable( f ) );
-        TS_ASSERT( max.participatingVariable( 8 ) );
         TS_ASSERT( !max.participatingVariable( 20 ) );
         TS_ASSERT( !max.participatingVariable( 15 ) );
 
@@ -87,7 +83,13 @@ public:
 
 		TS_ASSERT( max.satisfied() );
 
-        // Guy: Please check also with more than one element
+		max.notifyVariableValue( 7, 12 );
+
+		TS_ASSERT( !max.satisfied() );
+
+		max.notifyVariableValue( f, 12 );
+
+		TS_ASSERT( max.satisfied() );
 	}
 
 	void test_max_fixes()
@@ -121,11 +123,6 @@ public:
 		it = fixes.begin();
 		TS_ASSERT_EQUALS( it->_variable, f );
 		TS_ASSERT_EQUALS( it->_value, 6 );
-		++it;
-		TS_ASSERT_EQUALS( it->_variable, 2U );
-		TS_ASSERT_EQUALS( it->_value, 4 );
-
-        // Guy: I think the test is wrong - the second fix doesn't satisfy the property because variable 3 is assigned 5
 	}
 
 	void test_max_case_splits()
@@ -141,9 +138,7 @@ public:
 		for ( unsigned i = 2; i < 10; ++i )
 			max.notifyVariableValue( i, i );
 
-        // Guy: lets notify max about f, as well, as this case (where f doesn't have an initial value) should not occur.
-        // This also causes undesired behavior in the code - it attempts to access the value of f, and gets a 0 because it's not in the map.
-        // I added an assertion in the code to ensure this.
+		max.notifyVariableValue( f, 1 );
 
 		Map<unsigned, double> assignment;
 
@@ -165,40 +160,76 @@ public:
 
 		auto bound = bounds.begin();
 
-		PiecewiseLinearCaseSplit::Bound bound1 = *bound;
-		std::advance( bound, 2 );
-		PiecewiseLinearCaseSplit::Bound bound2 = *bound;
-		++bound;
-		//PiecewiseLinearCaseSplit::Bound bound3 = *bound;
+		for (int i = 0; i < 72; ++i, ++bound)
+		{
+			PiecewiseLinearCaseSplit::Bound boundElem = *bound;
+			TS_ASSERT_EQUALS( boundElem._variable, auxVar );
+			if ( i % 9 == 0 )
+			{
+				TS_ASSERT_EQUALS( boundElem._boundType, PiecewiseLinearCaseSplit::Bound::UPPER );
+			}
+			else
+			{
+				TS_ASSERT_EQUALS( boundElem._boundType, PiecewiseLinearCaseSplit::Bound::LOWER );
+			}
+			TS_ASSERT_EQUALS( boundElem._newBound, 0.0 );
+		}
 
-        // Guy: please check that all 72 bounds are as expected. We can do this in a loop.
-		TS_ASSERT_EQUALS( bound1._variable, auxVar );
-		TS_ASSERT_EQUALS( bound1._boundType, PiecewiseLinearCaseSplit::Bound::UPPER );
-		TS_ASSERT_EQUALS( bound1._newBound, 0.0 );
 
-		TS_ASSERT_EQUALS( bound2._variable, auxVar + 1 );
-		TS_ASSERT_EQUALS( bound2._boundType, PiecewiseLinearCaseSplit::Bound::LOWER );
-		TS_ASSERT_EQUALS( bound2._newBound, 0.0 );
-
-        // Likewise for the equations: please check all of them, in a loop.
 		List<Equation> equations = split->getEquations();
 
 		TS_ASSERT_EQUALS( equations.size(), 64U );
 
 		auto cur = equations.begin();
 
-		TS_ASSERT_EQUALS( cur->_addends.size(), 3U );
-		TS_ASSERT_EQUALS( cur->_scalar, 0.0 );
+		for ( unsigned i = 2; i < 10; ++i )
+		{
+			TS_ASSERT_EQUALS( cur->_addends.size(), 3U );
+			TS_ASSERT_EQUALS( cur->_scalar, 0.0 );
 
-		auto addend = cur->_addends.begin();
-		TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
-		TS_ASSERT_EQUALS( addend->_variable, 2U );
+			 auto addend = cur->_addends.begin();
 
-		cur++;
-		auto addend2 = cur->_addends.begin();
-		TS_ASSERT_EQUALS( addend2->_coefficient, 1.0 );
-		TS_ASSERT_EQUALS( addend2->_variable, 3U );
-		TS_ASSERT_EQUALS( cur->_auxVariable, 101U );
+			TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+			TS_ASSERT_EQUALS( addend->_variable, i );
+			
+			++addend;
+
+			TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
+			TS_ASSERT_EQUALS( addend->_variable, f );
+
+			++addend;
+
+			TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+			TS_ASSERT_EQUALS( addend->_variable, 100U );
+
+			++cur;
+
+			for ( unsigned j = 2; j < 10;  ++j )
+			{
+				if ( i == j ) continue;
+
+				TS_ASSERT_EQUALS( cur->_addends.size(), 3U );
+				TS_ASSERT_EQUALS( cur->_scalar, 0.0 );
+
+			 	auto addend = cur->_addends.begin();
+
+				TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+				TS_ASSERT_EQUALS( addend->_variable, j );
+			
+				++addend;
+
+				TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
+				TS_ASSERT_EQUALS( addend->_variable, i );
+
+				++addend;
+
+				TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+				TS_ASSERT_EQUALS( addend->_variable, 100U );
+				
+				++cur;
+
+			}
+		}
 	}
 
 	void test_register_as_watcher()
@@ -213,27 +244,24 @@ public:
 
 		MaxConstraint max( f, elements );
 
-        // Guy: why do we need the loop? A single call to registerAsWatcher should register all the variables
-        // Do one call to registerAsWatcher(), then check that all variables are registered, then a single call to unregisterAsWatcher(),
-        // and check that all were unregistered.
-		for ( int i = 2; i < 10; ++i )
-		{
 			TS_ASSERT_THROWS_NOTHING( max.registerAsWatcher( &tableau ) );
 			TS_ASSERT_EQUALS( tableau.lastRegisteredVariableToWatcher.size(), 9U );
-			TS_ASSERT_EQUALS( tableau.lastRegisteredVariableToWatcher[i].size(), 1U );
-			TS_ASSERT( tableau.lastRegisteredVariableToWatcher[i].exists( &max ) );
-			TS_ASSERT_EQUALS( tableau.lastRegisteredVariableToWatcher[f].size(), 1U );
-			TS_ASSERT( tableau.lastRegisteredVariableToWatcher[f].exists( &max ) );
-
+			for ( int i = 1; i < 10; ++i )
+			{
+				TS_ASSERT_EQUALS( tableau.lastRegisteredVariableToWatcher[i].size(), 1U );
+				TS_ASSERT( tableau.lastRegisteredVariableToWatcher[i].exists( &max ) );
+			}
 			tableau.lastRegisteredVariableToWatcher.clear();
 
 			TS_ASSERT_THROWS_NOTHING( max.unregisterAsWatcher( &tableau ) );
 
 			TS_ASSERT( tableau.lastRegisteredVariableToWatcher.empty() );
 			TS_ASSERT_EQUALS( tableau.lastUnregisteredVariableToWatcher.size(), 9U );
+			for (int i = 1; i < 10; ++i )
+			{
 			TS_ASSERT_EQUALS( tableau.lastUnregisteredVariableToWatcher[i].size(), 1U );
 			TS_ASSERT( tableau.lastUnregisteredVariableToWatcher[i].exists( &max ) );
-		}
+			}
 	}
 };
 

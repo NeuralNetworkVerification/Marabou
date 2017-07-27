@@ -40,14 +40,19 @@ void MaxConstraint::unregisterAsWatcher( ITableau *tableau )
 
 void MaxConstraint::notifyVariableValue( unsigned variable, double value )
 {
-	_assignment[variable] = value;
+	
 
 	if ( variable != _f )
 	{
-        // Guy: if the first disjunct meant to check whether the _assignment is empty? If so, please use _assignment.empty()
-		if ( !_assignment.exists( _maxIndex ) || ( _assignment.exists( _maxIndex ) && _assignment.get( _maxIndex ) < value ) )
-			_maxIndex = variable;
+	//Two conditions for _maxIndex to not exist: either _assignment.size()
+	//equals to 0, or the only element in _assignment is _f. 
+	//Otherwise, we only replace _maxIndex if the value of _maxIndex is less
+	//than the new value.
+		if ( _assignment.size() == 0 || ( _assignment.exists( _f ) && 
+		_assignment.size() == 1 ) || _assignment.get( _maxIndex ) < value ) 
+		_maxIndex = variable;
 	}
+	_assignment[variable] = value;
 }
 
 bool MaxConstraint::participatingVariable( unsigned variable ) const
@@ -74,8 +79,7 @@ bool MaxConstraint::satisfied() const
 		}
 	}*/
 
-    // Again, if the second disjunct is for checking whether _assignment is empty, use _assignment.empty()
-	if ( !( _assignment.exists( _f )  && _assignment.exists( _maxIndex ) ) )
+	if ( !( _assignment.exists( _f )  &&  _assignment.size() > 1 ) )
 		throw ReluplexError( ReluplexError::PARTICIPATING_VARIABLES_ABSENT );
 
 	double fValue = _assignment.get( _f );
@@ -85,9 +89,7 @@ bool MaxConstraint::satisfied() const
 List<PiecewiseLinearConstraint::Fix> MaxConstraint::getPossibleFixes() const
 {
 	ASSERT( !satisfied() );
-	ASSERT(	_assignment.exists( _f ) );
-   // Again, if this assertion is for checking whether _assignment is empty, use _assignment.empty()
-	ASSERT( _assignment.exists( _maxIndex ) );
+	ASSERT( _assignment.exists( _f ) && _assignment.size() > 1 );
 
 	double fValue = _assignment.get( _f );
 	double maxVal = _assignment.get( _maxIndex );
@@ -101,19 +103,18 @@ List<PiecewiseLinearConstraint::Fix> MaxConstraint::getPossibleFixes() const
 	if ( FloatUtils::gt( fValue, maxVal ) )
 	{
 		fixes.append( PiecewiseLinearConstraint::Fix( _f, maxVal ) );
-		fixes.append( PiecewiseLinearConstraint::Fix( _maxIndex, fValue ) );
+		for ( auto elem : _elements )
+		{
+			fixes.append( PiecewiseLinearConstraint::Fix( elem, fValue ) );
+		}
 
-        // Guy: we can propose to increase any of the variables, not just _maxIndex, as a fix here.
 	}
 	else
 	{
         // fValue is less than maxVal
 		fixes.append( PiecewiseLinearConstraint::Fix( _f, maxVal ) );
-		fixes.append( PiecewiseLinearConstraint::Fix( _maxIndex, fValue ) );
-        // Guy: I think the above fix is wrong. What if fVal = 5 and the elements' values are 6 and 7?
-        // This will reduce 7 to 5, but 6 will still be greater than 5, right?
 
-		/*for ( unsigned elem : _elems )
+		/*for ( auto elem : _elements )
 		{
 			if ( _assignment.exists( elem ) && FloatUtils::lt( fValue, _assignment.get( elem ) ) )
 				fixes.append( PiecewiseLinearConstraint::Fix( elem, fValue ) );
@@ -129,19 +130,19 @@ List<PiecewiseLinearCaseSplit> MaxConstraint::getCaseSplits() const
 	List<PiecewiseLinearCaseSplit> splits;
 	PiecewiseLinearCaseSplit maxPhase;
 
+    unsigned auxVariable = FreshVariables::getNextVariable();
+
 	for ( unsigned element : _elements )
 	{
 		if ( _assignment.exists( element ) )
 		{
             // element - f = 0
-            unsigned auxVariable = FreshVariables::getNextVariable();
 
             Equation maxEquation;
 
             maxEquation.addAddend( 1, element );
             maxEquation.addAddend( -1, _f );
-            // Guy: why set auxVariable's coefficient to -1? +1 seems more natural?
-            maxEquation.addAddend( -1, auxVariable );
+            maxEquation.addAddend( 1, auxVariable );
 
             PiecewiseLinearCaseSplit::Bound auxUpperBound( auxVariable, PiecewiseLinearCaseSplit::Bound::UPPER, 0.0 );
             PiecewiseLinearCaseSplit::Bound auxLowerBound( auxVariable, PiecewiseLinearCaseSplit::Bound::LOWER, 0.0 );
@@ -161,20 +162,18 @@ List<PiecewiseLinearCaseSplit> MaxConstraint::getCaseSplits() const
                 if ( element == other )
                     continue;
 
-                unsigned gtAuxVariable = FreshVariables::getNextVariable();
-
                 Equation gtEquation;
 
                 // other - element + aux = 0
                 gtEquation.addAddend( 1, other );
                 gtEquation.addAddend( -1, element );
-                gtEquation.addAddend( 1, gtAuxVariable );
+                gtEquation.addAddend( 1, auxVariable );
 
-                PiecewiseLinearCaseSplit::Bound gtAuxLowerBound( gtAuxVariable, PiecewiseLinearCaseSplit::Bound::LOWER, 0.0 );
+                PiecewiseLinearCaseSplit::Bound gtAuxLowerBound( auxVariable, PiecewiseLinearCaseSplit::Bound::LOWER, 0.0 );
 
                 maxPhase.storeBoundTightening( gtAuxLowerBound );
 
-                gtEquation.markAuxiliaryVariable( gtAuxVariable );
+                gtEquation.markAuxiliaryVariable( auxVariable );
 
                 gtEquation.setScalar( 0 );
 
