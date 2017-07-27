@@ -13,6 +13,7 @@
 #ifndef __MockTableau_h__
 #define __MockTableau_h__
 
+#include "FloatUtils.h"
 #include "ITableau.h"
 #include "Map.h"
 
@@ -129,15 +130,30 @@ public:
     double getValue( unsigned /* variable */ ) { return 0; }
 
     Map<unsigned, double> lastLowerBounds;
+    double getLowerBound( unsigned variable ) const
+    {
+        return lastLowerBounds[variable];
+    }
+
     void setLowerBound( unsigned variable, double value )
     {
         lastLowerBounds[variable] = value;
     }
 
     Map<unsigned, double> lastUpperBounds;
+    double getUpperBound( unsigned variable ) const
+    {
+        return lastUpperBounds[variable];
+    }
+
     void setUpperBound( unsigned variable, double value )
     {
         lastUpperBounds[variable] = value;
+    }
+
+    bool boundsValid( unsigned variable ) const
+    {
+        return FloatUtils::lt( getLowerBound( variable ), getUpperBound( variable ) );
     }
 
     unsigned getBasicStatus( unsigned /* basic */ ) { return 0; }

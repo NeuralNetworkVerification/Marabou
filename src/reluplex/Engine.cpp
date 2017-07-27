@@ -50,13 +50,19 @@ bool Engine::solve()
         _tableau->computeAssignment();
         _tableau->computeBasicStatus();
 
-        // TODO: tighten bounds
+        bool validBounds = _boundTightener.tighten( _tableau );
+
+        // TODO: split if necessary
 
         // _tableau->dumpAssignment();
 
         bool needToPop = false;
-
-        if ( allVarsWithinBounds() )
+        if ( !validBounds )
+        {
+            // Some variable bounds are invalid, so the query is unsat
+            needToPop = true;
+        }
+        else if ( allVarsWithinBounds() )
         {
             // Check the status of the PL constraints
             collectViolatedPlConstraints();
@@ -135,6 +141,9 @@ bool Engine::performSimplexStep()
 
     // Perform the actual pivot
     _tableau->performPivot();
+
+    // Tighten
+    _boundTightener.deriveTightenings( _tableau, _tableau->getEnteringVariable() );
 
     timeval end = TimeUtils::sampleMicro();
     _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );

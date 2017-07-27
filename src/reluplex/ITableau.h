@@ -58,6 +58,9 @@ public:
     virtual void markAsBasic( unsigned variable ) = 0;
     virtual void initializeTableau() = 0;
     virtual double getValue( unsigned variable ) = 0;
+    virtual bool boundsValid( unsigned variable ) const = 0;
+    virtual double getLowerBound( unsigned variable ) const = 0;
+    virtual double getUpperBound( unsigned variable ) const = 0;
     virtual void setLowerBound( unsigned variable, double value ) = 0;
     virtual void setUpperBound( unsigned variable, double value ) = 0;
     virtual void tightenLowerBound( unsigned variable, double value ) = 0;

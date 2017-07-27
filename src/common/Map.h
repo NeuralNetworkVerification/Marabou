@@ -64,7 +64,7 @@ public:
 
     const Value &operator[]( const Key &key ) const
     {
-        return _container[key];
+        return _container.at( key );
     }
 
     const Value &at( const Key &key ) const

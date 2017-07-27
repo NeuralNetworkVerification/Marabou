@@ -20,6 +20,7 @@ SOURCES += \
 	\
 	BasisFactorization.cpp \
 	BlandsRule.cpp \
+	BoundTightener.cpp \
 	DantzigsRule.cpp \
 	Engine.cpp \
 	Equation.cpp \
