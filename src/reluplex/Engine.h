@@ -15,13 +15,13 @@
 
 #include "AutoTableau.h"
 #include "BlandsRule.h"
+#include "BoundTightener.h"
 #include "DantzigsRule.h"
-#include "NestedDantzigsRule.h"
 #include "IEngine.h"
 #include "Map.h"
+#include "NestedDantzigsRule.h"
 #include "SmtCore.h"
 #include "Statistics.h"
-#include "BoundTightener.h"
 
 class InputQuery;
 class PiecewiseLinearConstraint;

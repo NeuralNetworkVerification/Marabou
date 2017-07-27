@@ -13,9 +13,9 @@
 #ifndef __MockTableau_h__
 #define __MockTableau_h__
 
+#include "FloatUtils.h"
 #include "ITableau.h"
 #include "Map.h"
-#include "FloatUtils.h"
 
 #include <cstring>
 
@@ -134,6 +134,7 @@ public:
     {
         return lastLowerBounds[variable];
     }
+
     void setLowerBound( unsigned variable, double value )
     {
         lastLowerBounds[variable] = value;
@@ -144,6 +145,7 @@ public:
     {
         return lastUpperBounds[variable];
     }
+
     void setUpperBound( unsigned variable, double value )
     {
         lastUpperBounds[variable] = value;

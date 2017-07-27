@@ -14,36 +14,39 @@
 #define __BoundTightener_h__
 
 #include "ITableau.h"
-#include "TableauRow.h"
 #include "Queue.h"
+#include "TableauRow.h"
 
 class Tightening
 {
 public:
+	enum BoundType {
+		LB = 0,
+		UB,
+    };
+
+    Tightening( unsigned variable, double value, BoundType type );
+
 	/*
 	  The variable to tighten.
 	*/
-	unsigned variable;
+	unsigned _variable;
 
 	/*
 	  Its new value.
 	*/
-	double value;
+	double _value;
 
 	/*
 	  Whether the tightening tightens the
 	  lower bound or the upper bound.
 	*/
-	enum BoundType {
-		LB = 0,
-		UB,
-    };
-    BoundType type;
-    
+    BoundType _type;
+
 	/*
 	  Tighten this request in the given tableau.
 	*/
-	bool tighten( ITableau& tableau ) const;
+	bool tighten( ITableau &tableau ) const;
 };
 
 class BoundTightener
@@ -53,19 +56,19 @@ public:
 	  Derive and enqueue new bounds for the given basic variable
 	  in the given tableau.
 	*/
-	void deriveTightenings( ITableau& tableau, unsigned variable );
+	void deriveTightenings( ITableau &tableau, unsigned variable );
 
+    /*
+      Tighten all enqueued requests.
+    */
+    bool tighten( ITableau& tableau );
+
+private:
 	/*
 	  Add a given tightening to the queue.
 	*/
-	void enqueueTightening( const Tightening& tightening );
+	void enqueueTightening( const Tightening &tightening );
 
-  /*
-    Tighten all enqueued requests.
-  */
-  bool tighten( ITableau& tableau );
-
-private:
 	Queue<Tightening> _tighteningRequests;
 };
 

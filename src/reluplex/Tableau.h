@@ -17,7 +17,6 @@
 #include "Map.h"
 #include "Set.h"
 #include "Statistics.h"
-#include "BoundTightener.h"
 
 class BasisFactorization;
 class Equation;
@@ -134,7 +133,7 @@ public:
     */
     void tightenLowerBound( unsigned variable, double value );
     void tightenUpperBound( unsigned variable, double value );
-    
+
     /*
       Return the current status of the basic variable
     */

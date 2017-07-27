@@ -12,35 +12,50 @@
 
 #include "BoundTightener.h"
 
-bool Tightening::tighten( ITableau& tableau ) const
+Tightening::Tightening( unsigned variable, double value, BoundType type )
+    : _variable( variable )
+    , _value( value )
+    , _type( type )
 {
-	switch (type) {
-		case Tightening::BoundType::LB:
-			tableau.tightenLowerBound( variable, value );
-			break;
-		case Tightening::BoundType::UB:
-			tableau.tightenUpperBound( variable, value );
-			break;
-	}
-	return tableau.boundsValid( variable );
 }
 
-void BoundTightener::deriveTightenings( ITableau& tableau, unsigned variable )
+bool Tightening::tighten( ITableau &tableau ) const
 {
+	switch ( _type )
+    {
+    case Tightening::BoundType::LB:
+        tableau.tightenLowerBound( _variable, _value );
+        break;
+
+    case Tightening::BoundType::UB:
+        tableau.tightenUpperBound( _variable, _value );
+        break;
+	}
+
+    // Guy: Lets move this logic back to the engine - i.e., let the tightener
+    // tighten, and let the engine ask if the bounds are valid or not.
+	return tableau.boundsValid( _variable );
+}
+
+void BoundTightener::deriveTightenings( ITableau &tableau, unsigned variable )
+{
+    // Extract the variable's row from the tableau
 	unsigned numNonBasic = tableau.getN() - tableau.getM();
 	TableauRow row( numNonBasic );
 	tableau.getTableauRow( variable, &row ); // ???
+
+    // Compute the lower and upper bounds from this row
 	double tightenedLowerBound = 0.0;
 	double tightenedUpperBound = 0.0;
 	for ( unsigned i = 0; i < numNonBasic; ++i )
 	{
-		const TableauRow::Entry& entry = row._row[ i ];
+		const TableauRow::Entry &entry( row._row[i] );
 		unsigned var = entry._var;
 		double coef = entry._coefficient;
 		double currentLowerBound = tableau.getLowerBound( var );
 		double currentUpperBound = tableau.getUpperBound( var );
-		
-		if( FloatUtils::isPositive( coef ) )
+
+		if ( FloatUtils::isPositive( coef ) )
 		{
 			tightenedLowerBound += coef * currentLowerBound;
 			tightenedUpperBound += coef * currentUpperBound;
@@ -52,22 +67,13 @@ void BoundTightener::deriveTightenings( ITableau& tableau, unsigned variable )
 		}
 	}
 
+    // Tighten lower bound if needed
 	if ( FloatUtils::lt( tableau.getLowerBound( variable ), tightenedLowerBound ) )
-	{
-		Tightening tightening;
-		tightening.variable = variable;
-		tightening.value = tightenedLowerBound;
-		tightening.type = Tightening::BoundType::LB;
-		enqueueTightening( tightening );
-	}
+		enqueueTightening( Tightening( variable, tightenedLowerBound, Tightening::LB ) );
+
+    // Tighten upper bound if needed
 	if ( FloatUtils::gt( tableau.getUpperBound( variable ), tightenedUpperBound ) )
-	{
-		Tightening tightening;
-		tightening.variable = variable;
-		tightening.value = tightenedUpperBound;
-		tightening.type = Tightening::BoundType::UB;
-		enqueueTightening( tightening );
-	}
+		enqueueTightening( Tightening( variable, tightenedLowerBound, Tightening::UB ) );
 }
 
 void BoundTightener::enqueueTightening( const Tightening& tightening )
@@ -75,10 +81,11 @@ void BoundTightener::enqueueTightening( const Tightening& tightening )
 	_tighteningRequests.push( tightening );
 }
 
-bool BoundTightener::tighten( ITableau& tableau )
+bool BoundTightener::tighten( ITableau &tableau )
 {
-	while(!_tighteningRequests.empty()) {
-		const Tightening& request = _tighteningRequests.peak();
+	while ( !_tighteningRequests.empty() )
+    {
+		const Tightening &request = _tighteningRequests.peak();
 		bool valid = request.tighten( tableau );
 		_tighteningRequests.pop();
 		if ( !valid )
