@@ -83,6 +83,7 @@ bool BoundTightener::tighten( ITableau& tableau )
 		_tighteningRequests.pop();
 		if ( !valid )
 		{
+			_tighteningRequests.clear();
 			return false;
 		}
 	}
