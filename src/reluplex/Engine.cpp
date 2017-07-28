@@ -35,8 +35,6 @@ Engine::~Engine()
 
 bool Engine::solve()
 {
-    // Todo: If l >= u for some var, fail immediately
-
     while ( true )
     {
         if ( _statistics.getNumMainLoopIterations() % GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
@@ -50,14 +48,14 @@ bool Engine::solve()
         _tableau->computeAssignment();
         _tableau->computeBasicStatus();
 
-        bool validBounds = _boundTightener.tighten( _tableau );
+        _boundTightener.tighten( _tableau );
 
         // TODO: split if necessary
 
         // _tableau->dumpAssignment();
 
         bool needToPop = false;
-        if ( !validBounds )
+        if ( !_tableau->allBoundsValid() )
         {
             // Some variable bounds are invalid, so the query is unsat
             needToPop = true;

@@ -46,7 +46,7 @@ public:
 	/*
 	  Tighten this request in the given tableau.
 	*/
-	bool tighten( ITableau &tableau ) const;
+	void tighten( ITableau &tableau ) const;
 };
 
 class BoundTightener
@@ -58,10 +58,10 @@ public:
 	*/
 	void deriveTightenings( ITableau &tableau, unsigned variable );
 
-    /*
-      Tighten all enqueued requests.
-    */
-    bool tighten( ITableau& tableau );
+  /*
+    Tighten all enqueued requests.
+  */
+  void tighten( ITableau &tableau );
 
 private:
 	/*

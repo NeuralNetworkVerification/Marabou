@@ -151,9 +151,15 @@ public:
         lastUpperBounds[variable] = value;
     }
 
-    bool boundsValid( unsigned variable ) const
+    bool allBoundsValid() const
     {
-        return FloatUtils::lt( getLowerBound( variable ), getUpperBound( variable ) );
+        for ( auto it : lastLowerBounds.keys() )
+        {
+            if ( lastUpperBounds.exists(it) &&
+                !FloatUtils::lte( lastLowerBounds[it], lastUpperBounds[it] ) )
+                    return false;
+        }
+        return true;
     }
 
     unsigned getBasicStatus( unsigned /* basic */ ) { return 0; }

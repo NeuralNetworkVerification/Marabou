@@ -121,10 +121,20 @@ public:
     double getUpperBound( unsigned variable ) const;
 
     /*
+      Recomputes bound valid status for all variables.
+    */
+    void checkBoundsValid();
+
+    /*
       Returns whether a variable's bounds are valid, i.e. whether
-      its lower bound is strictly less than its upper bound.
+      its lower bound is <= its upper bound.
     */
     bool boundsValid( unsigned variable ) const;
+
+    /*
+      Returns whether any variable's bounds are invalid.
+    */
+    bool allBoundsValid() const;
 
     /*
       Tighten the lower/upper bound for a variable. These functions
@@ -358,6 +368,11 @@ private:
     */
     double *_lowerBounds;
     double *_upperBounds;
+
+    /*
+      Whether all variables have valid bounds (l <= u).
+    */
+    bool _boundsValid;
 
     /*
       The current assignment for the basic variables
