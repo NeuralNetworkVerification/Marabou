@@ -109,9 +109,8 @@ List<PiecewiseLinearConstraint::Fix> MaxConstraint::getPossibleFixes() const
 		}
 
 	}
-	else
+	else if ( FloatUtils::lt( fValue, maxVal ) )
 	{
-        // fValue is less than maxVal
 		fixes.append( PiecewiseLinearConstraint::Fix( _f, maxVal ) );
 
 		/*for ( auto elem : _elements )
