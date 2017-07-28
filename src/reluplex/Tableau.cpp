@@ -345,14 +345,12 @@ void Tableau::setLowerBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );
     _lowerBounds[variable] = value;
-    _boundsValid = boundsValid( variable );
 }
 
 void Tableau::setUpperBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );
     _upperBounds[variable] = value;
-    _boundsValid = boundsValid( variable );
 }
 
 double Tableau::getLowerBound( unsigned variable ) const
@@ -1086,21 +1084,22 @@ void Tableau::restoreState( const TableauState &state )
 
 void Tableau::checkBoundsValid()
 {
+    _boundsValid = true;
     for ( unsigned i = 0; i < _n ; ++i )
     {
-        if ( !boundsValid( i ) )
-        {
-            _boundsValid = false;
+        checkBoundsValid( i );
+        if ( !_boundsValid )
             return;
-        }
     }
-    _boundsValid = true;
 }
 
-bool Tableau::boundsValid( unsigned variable ) const
+void Tableau::checkBoundsValid( unsigned variable )
 {
     ASSERT( variable < _n );
-    return FloatUtils::lte( _lowerBounds[variable], _upperBounds[variable] );
+    if ( !FloatUtils::lte( _lowerBounds[variable], _upperBounds[variable] ) )
+    {
+        _boundsValid = false;
+    }
 }
 
 bool Tableau::allBoundsValid() const
@@ -1116,6 +1115,7 @@ void Tableau::tightenLowerBound( unsigned variable, double value )
         throw ReluplexError( ReluplexError::INVALID_BOUND_TIGHTENING );
 
     setLowerBound( variable, value );
+    checkBoundsValid( variable );
 
     // Ensure that non-basic variables are within bounds
     if ( !_basicVariables.exists( variable ) )
@@ -1134,6 +1134,7 @@ void Tableau::tightenUpperBound( unsigned variable, double value )
         throw ReluplexError( ReluplexError::INVALID_BOUND_TIGHTENING );
 
     setUpperBound( variable, value );
+    checkBoundsValid( variable );
 
     // Ensure that non-basic variables are within bounds
     if ( !_basicVariables.exists( variable ) )

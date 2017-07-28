@@ -126,10 +126,10 @@ public:
     void checkBoundsValid();
 
     /*
-      Returns whether a variable's bounds are valid, i.e. whether
-      its lower bound is <= its upper bound.
+      Sets bound valid flag to false if bounds are invalid
+      on the given variable.
     */
-    bool boundsValid( unsigned variable ) const;
+    void checkBoundsValid( unsigned variable );
 
     /*
       Returns whether any variable's bounds are invalid.
