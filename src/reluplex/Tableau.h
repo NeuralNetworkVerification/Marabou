@@ -415,6 +415,13 @@ private:
      */
     double *_steepestEdgeGamma;
 
+    /* 
+       Working variables for updating gamma
+    */
+    double *_alpha;
+    double *_nu;
+    double *_work;
+
     /*
       Free all allocated memory.
     */

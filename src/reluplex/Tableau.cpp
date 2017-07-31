@@ -43,6 +43,9 @@ Tableau::Tableau()
     , _basicStatus( NULL )
     , _statistics( NULL )
     , _steepestEdgeGamma( NULL )
+    , _alpha( NULL )
+    , _nu( NULL )
+    , _work( NULL )
 {
 }
 
@@ -154,6 +157,24 @@ void Tableau::freeMemoryIfNeeded()
 	delete[] _steepestEdgeGamma;
 	_steepestEdgeGamma = NULL;
     }
+
+    if ( _alpha )
+    {
+	delete[] _alpha;
+	_alpha = NULL;
+    }
+    
+    if ( _nu )
+    {
+	delete[] _nu;
+	_nu = NULL;
+    }
+    
+    if ( _work )
+    {
+	delete[] _work;
+	_work = NULL;
+    }
 }
 
 void Tableau::setDimensions( unsigned m, unsigned n )
@@ -229,6 +250,18 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     _steepestEdgeGamma = new double[n-m];
     if ( !_steepestEdgeGamma )
 	throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::steepestEdgeGamma" );
+
+    _alpha = new double[n-m];
+    if ( !_alpha )
+	throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::alpha" );
+    
+    _nu = new double[n-m];
+    if ( !_nu )
+	throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::nu" );
+    
+    _work = new double[m];
+    if ( !_work )
+	throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::work" );
 }
 
 void Tableau::setEntryValue( unsigned row, unsigned column, double value )
@@ -363,10 +396,10 @@ void Tableau::updateGamma()
     double *invB_Aq = new double[_m];
     _basisFactorization->forwardTransformation( ANColumnQ, invB_Aq );
     
-    // Compute alphas and nus
-    double *alpha = new double[_n-_m];
-    double *nu = new double[_n-_m];
-    double *work = new double[_m]; // to store inv(B)*A[j]
+    // Compute alphas and nus. These should be different every update.
+    double *alpha = _alpha;
+    double *nu = _nu;
+    double *work = _work; // to store inv(B)*A[j]
     double *ANColumn;
 
     // Store alpha[q]. Compute gamma for entering var separately
