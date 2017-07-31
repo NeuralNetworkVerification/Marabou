@@ -27,10 +27,12 @@ public:
     void unregisterAsWatcher( ITableau *tableau );
 
     /*
-      This callback is invoked when a watched variable's value
-      changes.
+      These callbacks are invoked when a watched variable's value
+      changes, or when its bounds change.
     */
     void notifyVariableValue( unsigned variable, double value );
+    void notifyLowerBound( unsigned variable, double bound );
+    void notifyUpperBound( unsigned variable, double bound );
 
     /*
       Returns true iff the variable participates in this piecewise
@@ -66,6 +68,8 @@ private:
     unsigned _f;
 
     Map<unsigned, double> _assignment;
+    Map<unsigned, double> _lowerBounds;
+    Map<unsigned, double> _upperBounds;
 };
 
 #endif // __ReluConstraint_h__

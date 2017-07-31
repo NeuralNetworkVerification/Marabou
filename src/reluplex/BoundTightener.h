@@ -16,38 +16,7 @@
 #include "ITableau.h"
 #include "Queue.h"
 #include "TableauRow.h"
-
-class Tightening
-{
-public:
-	enum BoundType {
-		LB = 0,
-		UB,
-    };
-
-    Tightening( unsigned variable, double value, BoundType type );
-
-	/*
-	  The variable to tighten.
-	*/
-	unsigned _variable;
-
-	/*
-	  Its new value.
-	*/
-	double _value;
-
-	/*
-	  Whether the tightening tightens the
-	  lower bound or the upper bound.
-	*/
-    BoundType _type;
-
-	/*
-	  Tighten this request in the given tableau.
-	*/
-	void tighten( ITableau &tableau ) const;
-};
+#include "Tightening.h"
 
 class BoundTightener
 {

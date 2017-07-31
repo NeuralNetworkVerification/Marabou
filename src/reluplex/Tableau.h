@@ -287,6 +287,14 @@ public:
     void unregisterToWatchVariable( VariableWatcher *watcher, unsigned variable );
 
     /*
+      Notify all watchers of the given variable of a value update,
+      or of changes to its bounds.
+    */
+    void notifyVariableValue( unsigned variable, double value );
+    void notifyLowerBound( unsigned variable, double bound );
+    void notifyUpperBound( unsigned variable, double bound );
+
+    /*
       Have the Tableau start reporting statistics.
      */
     void setStatistics( Statistics *statistics );

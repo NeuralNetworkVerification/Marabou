@@ -40,6 +40,16 @@ void ReluConstraint::notifyVariableValue( unsigned variable, double value )
     _assignment[variable] = value;
 }
 
+void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
+{
+    _lowerBounds[variable] = bound;
+}
+
+void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
+{
+    _upperBounds[variable] = bound;
+}
+
 bool ReluConstraint::participatingVariable( unsigned variable ) const
 {
     return ( variable == _b ) || ( variable == _f );
@@ -115,7 +125,7 @@ List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
     unsigned auxVariable = FreshVariables::getNextVariable();
 
     // Active phase: b >= 0, b - f = 0
-    PiecewiseLinearCaseSplit::Bound activeBound( _b, PiecewiseLinearCaseSplit::Bound::LOWER, 0.0 );
+    Tightening activeBound( _b, 0.0, Tightening::LB );
     activePhase.storeBoundTightening( activeBound );
     Equation activeEquation;
     activeEquation.addAddend( 1, _b );
@@ -128,7 +138,7 @@ List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
     activePhase.addEquation( activeEquation );
 
     // Inactive phase: b <= 0, f = 0
-    PiecewiseLinearCaseSplit::Bound inactiveBound( _b, PiecewiseLinearCaseSplit::Bound::UPPER, 0.0 );
+    Tightening inactiveBound( _b, 0.0, Tightening::UB );
     inactivePhase.storeBoundTightening( inactiveBound );
     Equation inactiveEquation;
     inactiveEquation.addAddend( 1, _f );
@@ -139,8 +149,8 @@ List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
     inactivePhase.addEquation( inactiveEquation );
 
     // Auxiliary variable bound, needed for either phase
-    PiecewiseLinearCaseSplit::Bound auxUpperBound( auxVariable, PiecewiseLinearCaseSplit::Bound::UPPER, 0.0 );
-    PiecewiseLinearCaseSplit::Bound auxLowerBound( auxVariable, PiecewiseLinearCaseSplit::Bound::LOWER, 0.0 );
+    Tightening auxUpperBound( auxVariable, 0.0, Tightening::UB );
+    Tightening auxLowerBound( auxVariable, 0.0, Tightening::LB );
 
     inactivePhase.storeBoundTightening( auxUpperBound );
     inactivePhase.storeBoundTightening( auxLowerBound );

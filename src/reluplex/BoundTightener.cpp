@@ -12,27 +12,6 @@
 
 #include "BoundTightener.h"
 
-Tightening::Tightening( unsigned variable, double value, BoundType type )
-    : _variable( variable )
-    , _value( value )
-    , _type( type )
-{
-}
-
-void Tightening::tighten( ITableau &tableau ) const
-{
-	switch ( _type )
-    {
-    case Tightening::BoundType::LB:
-        tableau.tightenLowerBound( _variable, _value );
-        break;
-
-    case Tightening::BoundType::UB:
-        tableau.tightenUpperBound( _variable, _value );
-        break;
-	}
-}
-
 void BoundTightener::deriveTightenings( ITableau &tableau, unsigned variable )
 {
     // Extract the variable's row from the tableau

@@ -14,46 +14,17 @@
 #define __PiecewiseLinearCaseSplit_h__
 
 #include "Equation.h"
+#include "Tightening.h"
 
 class PiecewiseLinearCaseSplit
 {
 public:
-    struct Bound
-    {
-    public:
-        enum Type {
-            LOWER = 0,
-            UPPER = 1,
-        };
-
-        Bound( unsigned variable, Bound::Type boundType, double newBound )
-            : _variable( variable )
-            , _boundType( boundType )
-            , _newBound( newBound )
-        {
-        }
-
-        /*
-          The variable whos bound is being tightened.
-        */
-        unsigned _variable;
-
-        /*
-          Indicates whether this is an upper or a lower bound.
-        */
-        Bound::Type _boundType;
-
-        /*
-          Value of the new bound.
-        */
-        double _newBound;
-    };
 
     /*
       Store information regarding a bound tightening.
     */
-    void storeBoundTightening( const Bound &bound );
-    List<PiecewiseLinearCaseSplit::Bound> getBoundTightenings() const;
+    void storeBoundTightening( const Tightening &tightening );
+    List<Tightening> getBoundTightenings() const;
 
     /*
       Store information regarding a new equation to be added.
@@ -66,7 +37,7 @@ private:
     /*
       Bound tightening information.
     */
-    List<PiecewiseLinearCaseSplit::Bound> _bounds;
+    List<Tightening> _bounds;
 
     /*
       The equation that needs to be added.

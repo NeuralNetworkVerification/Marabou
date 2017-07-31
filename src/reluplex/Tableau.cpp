@@ -308,12 +308,7 @@ void Tableau::computeAssignment()
     // Inform the watchers
     for ( unsigned i = 0; i < _m; ++i )
     {
-        unsigned variable = _basicIndexToVariable[i];
-        if ( _variableToWatchers.exists( variable ) )
-        {
-            for ( auto &watcher : _variableToWatchers[variable] )
-                watcher->notifyVariableValue( variable, _basicAssignment[i] );
-        }
+        notifyVariableValue( _basicIndexToVariable[i], _basicAssignment[i] );
     }
 }
 
@@ -345,12 +340,14 @@ void Tableau::setLowerBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );
     _lowerBounds[variable] = value;
+    notifyLowerBound( variable, value );
 }
 
 void Tableau::setUpperBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );
     _upperBounds[variable] = value;
+    notifyUpperBound( variable, value );
 }
 
 double Tableau::getLowerBound( unsigned variable ) const
@@ -926,11 +923,7 @@ void Tableau::setNonBasicAssignment( unsigned variable, double value )
     _basicAssignmentStatus = ASSIGNMENT_INVALID;
 
     // Inform watchers
-    if ( _variableToWatchers.exists( variable ) )
-    {
-        for ( auto &watcher : _variableToWatchers[variable] )
-            watcher->notifyVariableValue( variable, value );
-    }
+    notifyVariableValue( variable, value );
 }
 
 void Tableau::dumpAssignment()
@@ -1312,6 +1305,33 @@ void Tableau::registerToWatchVariable( VariableWatcher *watcher, unsigned variab
 void Tableau::unregisterToWatchVariable( VariableWatcher *watcher, unsigned variable )
 {
     _variableToWatchers[variable].erase( watcher );
+}
+
+void Tableau::notifyVariableValue( unsigned variable, double value )
+{
+    if ( _variableToWatchers.exists( variable ) )
+    {
+        for ( auto &watcher : _variableToWatchers[variable] )
+            watcher->notifyVariableValue( variable, value );
+    }
+}
+
+void Tableau::notifyLowerBound( unsigned variable, double bound )
+{
+    if ( _variableToWatchers.exists( variable ) )
+    {
+        for ( auto &watcher : _variableToWatchers[variable] )
+            watcher->notifyLowerBound( variable, bound );
+    }
+}
+
+void Tableau::notifyUpperBound( unsigned variable, double bound )
+{
+    if ( _variableToWatchers.exists( variable ) )
+    {
+        for ( auto &watcher : _variableToWatchers[variable] )
+            watcher->notifyUpperBound( variable, bound );
+    }
 }
 
 void Tableau::setStatistics( Statistics *statistics )
