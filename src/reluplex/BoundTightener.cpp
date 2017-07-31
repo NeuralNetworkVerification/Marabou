@@ -48,7 +48,7 @@ void BoundTightener::deriveTightenings( ITableau &tableau, unsigned variable )
 
     // Tighten upper bound if needed
 	if ( FloatUtils::gt( tableau.getUpperBound( variable ), tightenedUpperBound ) )
-		enqueueTightening( Tightening( variable, tightenedLowerBound, Tightening::UB ) );
+		enqueueTightening( Tightening( variable, tightenedUpperBound, Tightening::UB ) );
 }
 
 void BoundTightener::enqueueTightening( const Tightening& tightening )

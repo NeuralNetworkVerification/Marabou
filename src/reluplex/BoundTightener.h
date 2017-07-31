@@ -27,10 +27,10 @@ public:
 	*/
 	void deriveTightenings( ITableau &tableau, unsigned variable );
 
-  /*
-    Tighten all enqueued requests.
-  */
-  void tighten( ITableau &tableau );
+    /*
+      Tighten all enqueued requests.
+    */
+    void tighten( ITableau &tableau );
 
 private:
 	/*
