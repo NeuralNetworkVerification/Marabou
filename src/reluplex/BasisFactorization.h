@@ -58,7 +58,7 @@ public:
 
       Result needs to be of size m.
     */
-    void forwardTransformation( const double *y, double *x );
+    void forwardTransformation( const double *y, double *x ) const;
 
     /*
       Perform a backward transformation, i.e. find x such that x = y * inv(B),
@@ -79,7 +79,7 @@ public:
 
       Result needs to be of size m.
     */
-    void backwardTransformation( const double *y, double *x );
+    void backwardTransformation( const double *y, double *x ) const;
 
     /*
       Store and restore the basis factorization.
@@ -164,8 +164,8 @@ private:
       Compute L*X or X*L, where X is vector of length m and L is an (m x m)
       lower triangular eta matrix.
     */
-	void LMultiplyLeft( const EtaMatrix *L, double *X );
-    void LMultiplyRight( const EtaMatrix *L, double *X );
+	void LMultiplyLeft( const EtaMatrix *L, double *X ) const;
+    void LMultiplyRight( const EtaMatrix *L, double *X ) const;
 
 	/*
       Multiply matrix U on the left by lower triangular eta matrix L,

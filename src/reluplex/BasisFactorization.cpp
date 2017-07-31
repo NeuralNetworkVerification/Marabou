@@ -98,7 +98,7 @@ void BasisFactorization::pushEtaMatrix( unsigned columnIndex, double *column )
 	}
 }
 
-void BasisFactorization::LMultiplyRight( const EtaMatrix *L, double *X )
+void BasisFactorization::LMultiplyRight( const EtaMatrix *L, double *X ) const
 {
 	double sum = 0;
 	for ( unsigned i = 0; i < _m; ++i )
@@ -106,7 +106,7 @@ void BasisFactorization::LMultiplyRight( const EtaMatrix *L, double *X )
 	X[L->_columnIndex] = sum;
 }
 
-void BasisFactorization::LMultiplyLeft( const EtaMatrix *L, double *X )
+void BasisFactorization::LMultiplyLeft( const EtaMatrix *L, double *X ) const
 {
     unsigned col = L->_columnIndex;
     double xCol = X[col];
@@ -160,7 +160,7 @@ void BasisFactorization::condenseEtas()
 	clearLPU();
 }
 
-void BasisFactorization::forwardTransformation( const double *y, double *x )
+void BasisFactorization::forwardTransformation( const double *y, double *x ) const
 {
     // If there's no LP factorization, it is implied that B0 = I.
     // Then, because there are no etas, x = y.
@@ -224,7 +224,7 @@ void BasisFactorization::forwardTransformation( const double *y, double *x )
     }
 }
 
-void BasisFactorization::backwardTransformation( const double *y, double *x )
+void BasisFactorization::backwardTransformation( const double *y, double *x ) const
 {
     // If there's no LP factorization, it is implied that B0 = I.
     // Then, because there are no etas, x = y.
