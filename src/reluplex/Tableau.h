@@ -446,7 +446,7 @@ private:
      */
     double *_steepestEdgeGamma;
 
-    /* 
+    /*
        Working variables for updating gamma
     */
     double *_alpha;

@@ -51,8 +51,6 @@ bool Engine::solve()
 
         _boundTightener.tighten( _tableau );
 
-        // TODO: split if necessary
-
         // _tableau->dumpAssignment();
 
         bool needToPop = false;
@@ -214,7 +212,7 @@ void Engine::processInputQuery( const InputQuery &inputQuery )
     unsigned m = equations.size();
     unsigned n = inputQuery.getNumberOfVariables();
     _tableau->setDimensions( m, n );
-    
+
     // Current variables are [0,..,n-1], so the next variable is n.
     FreshVariables::setNextVariable( n );
 

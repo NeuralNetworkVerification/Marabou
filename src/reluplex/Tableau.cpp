@@ -162,20 +162,20 @@ void Tableau::freeMemoryIfNeeded()
 
     if ( _alpha )
     {
-	delete[] _alpha;
-	_alpha = NULL;
+        delete[] _alpha;
+        _alpha = NULL;
     }
-    
+
     if ( _nu )
     {
-	delete[] _nu;
-	_nu = NULL;
+        delete[] _nu;
+        _nu = NULL;
     }
-    
+
     if ( _work )
     {
-	delete[] _work;
-	_work = NULL;
+        delete[] _work;
+        _work = NULL;
     }
 }
 
@@ -251,19 +251,19 @@ void Tableau::setDimensions( unsigned m, unsigned n )
 
     _steepestEdgeGamma = new double[n-m];
     if ( !_steepestEdgeGamma )
-	throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::steepestEdgeGamma" );
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::steepestEdgeGamma" );
 
     _alpha = new double[n-m];
     if ( !_alpha )
-	throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::alpha" );
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::alpha" );
 
     _nu = new double[n-m];
     if ( !_nu )
-	throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::nu" );
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::nu" );
 
     _work = new double[m];
     if ( !_work )
-	throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::work" );
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::work" );
 }
 
 void Tableau::setEntryValue( unsigned row, unsigned column, double value )
@@ -476,7 +476,7 @@ void Tableau::computeAssignment()
     memcpy( y, _b, sizeof(double) * _m );
 
     // Compute a linear combination of the columns of AN
-    double *ANColumn;
+    const double *ANColumn;
     for ( unsigned i = 0; i < _n - _m; ++i )
     {
         unsigned var = _nonBasicIndexToVariable[i];
@@ -1185,12 +1185,13 @@ void Tableau::getTableauRow( unsigned index, TableauRow *row )
       solved by invoking BTRAN.
     */
 
+    ASSERT( index < _m );
+
     std::fill( _unitVector, _unitVector + _m, 0.0 );
     _unitVector[index] = 1;
-
     computeMultipliers( _unitVector );
 
-    double *ANColumn;
+    const double *ANColumn;
     for ( unsigned i = 0; i < _n - _m; ++i )
     {
         row->_row[i]._var = _nonBasicIndexToVariable[i];

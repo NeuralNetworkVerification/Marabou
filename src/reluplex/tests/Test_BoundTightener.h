@@ -27,7 +27,6 @@ public:
     void setUp()
     {
         TS_ASSERT( mock = new MockForBoundTightener );
-
     }
 
     void tearDown()
