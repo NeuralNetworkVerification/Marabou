@@ -58,7 +58,7 @@ public:
     virtual void markAsBasic( unsigned variable ) = 0;
     virtual void initializeTableau() = 0;
     virtual double getValue( unsigned variable ) = 0;
-    virtual bool boundsValid( unsigned variable ) const = 0;
+    virtual bool allBoundsValid() const = 0;
     virtual double getLowerBound( unsigned variable ) const = 0;
     virtual double getUpperBound( unsigned variable ) const = 0;
     virtual void setLowerBound( unsigned variable, double value ) = 0;
@@ -85,6 +85,8 @@ public:
     virtual void computeMultipliers() = 0;
     virtual void computeReducedCost( unsigned nonBasic ) = 0;
     virtual const double *getCostFunction() const = 0;
+    // TODO: not sure if i'm allowed to add to this virtual class?
+    virtual const double *getSteepestEdgeGamma() const = 0; 
     virtual void dumpCostFunction() const = 0;
     virtual void computeD() = 0;
     virtual void computeAssignment() = 0;

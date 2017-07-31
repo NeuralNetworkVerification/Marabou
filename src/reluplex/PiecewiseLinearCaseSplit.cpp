@@ -12,12 +12,12 @@
 
 #include "PiecewiseLinearCaseSplit.h"
 
-void PiecewiseLinearCaseSplit::storeBoundTightening( const Bound &bound )
+void PiecewiseLinearCaseSplit::storeBoundTightening( const Tightening &tightening )
 {
-    _bounds.append( bound );
+    _bounds.append( tightening );
 }
 
-List<PiecewiseLinearCaseSplit::Bound> PiecewiseLinearCaseSplit::getBoundTightenings() const
+List<Tightening> PiecewiseLinearCaseSplit::getBoundTightenings() const
 {
     return _bounds;
 }

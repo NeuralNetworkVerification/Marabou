@@ -143,8 +143,8 @@ List<PiecewiseLinearCaseSplit> MaxConstraint::getCaseSplits() const
             maxEquation.addAddend( -1, _f );
             maxEquation.addAddend( 1, auxVariable );
 
-            PiecewiseLinearCaseSplit::Bound auxUpperBound( auxVariable, PiecewiseLinearCaseSplit::Bound::UPPER, 0.0 );
-            PiecewiseLinearCaseSplit::Bound auxLowerBound( auxVariable, PiecewiseLinearCaseSplit::Bound::LOWER, 0.0 );
+            Tightening auxUpperBound( auxVariable, 0.0, Tightening::UB );
+            Tightening auxLowerBound( auxVariable, 0.0, Tightening::LB );
 
             maxPhase.storeBoundTightening( auxUpperBound );
             maxPhase.storeBoundTightening( auxLowerBound );
@@ -168,7 +168,7 @@ List<PiecewiseLinearCaseSplit> MaxConstraint::getCaseSplits() const
                 gtEquation.addAddend( -1, element );
                 gtEquation.addAddend( 1, auxVariable );
 
-                PiecewiseLinearCaseSplit::Bound gtAuxLowerBound( auxVariable, PiecewiseLinearCaseSplit::Bound::LOWER, 0.0 );
+                Tightening gtAuxLowerBound( auxVariable, 0.0, Tightening::LB );
 
                 maxPhase.storeBoundTightening( gtAuxLowerBound );
 

@@ -58,6 +58,9 @@ public:
     */
     void setEnteringVariable( unsigned nonBasic );
 
+    // FOR TESTING ONLY
+    void setLeavingVariable( unsigned nonBasic );
+
     /*
       Set the values of the right hand side vector, b, of size m.
       Set either the whole vector or a specific entry
@@ -121,10 +124,20 @@ public:
     double getUpperBound( unsigned variable ) const;
 
     /*
-      Returns whether a variable's bounds are valid, i.e. whether
-      its lower bound is strictly less than its upper bound.
+      Recomputes bound valid status for all variables.
     */
-    bool boundsValid( unsigned variable ) const;
+    void checkBoundsValid();
+
+    /*
+      Sets bound valid flag to false if bounds are invalid
+      on the given variable.
+    */
+    void checkBoundsValid( unsigned variable );
+
+    /*
+      Returns whether any variable's bounds are invalid.
+    */
+    bool allBoundsValid() const;
 
     /*
       Tighten the lower/upper bound for a variable. These functions
@@ -277,9 +290,26 @@ public:
     void unregisterToWatchVariable( VariableWatcher *watcher, unsigned variable );
 
     /*
+      Notify all watchers of the given variable of a value update,
+      or of changes to its bounds.
+    */
+    void notifyVariableValue( unsigned variable, double value );
+    void notifyLowerBound( unsigned variable, double bound );
+    void notifyUpperBound( unsigned variable, double bound );
+
+    /*
       Have the Tableau start reporting statistics.
      */
     void setStatistics( Statistics *statistics );
+
+    void useSteepestEdge( bool flag );
+
+    const double *getSteepestEdgeGamma() const;
+
+    /*
+      Update gamma array during a pivot
+    */
+    void updateGamma();
 
 private:
     typedef List<VariableWatcher *> VariableWatchers;
@@ -360,6 +390,11 @@ private:
     double *_upperBounds;
 
     /*
+      Whether all variables have valid bounds (l <= u).
+    */
+    bool _boundsValid;
+
+    /*
       The current assignment for the basic variables
     */
     double *_basicAssignment;
@@ -401,6 +436,24 @@ private:
     Statistics *_statistics;
 
     /*
+      Flag for whether or not steepest edge is used.
+    */
+    bool _usingSteepestEdge;
+
+    /*
+      Array of gamma values for steepest edge pivot selection. Must be updated with
+      each pivot.
+     */
+    double *_steepestEdgeGamma;
+
+    /*
+       Working variables for updating gamma
+    */
+    double *_alpha;
+    double *_nu;
+    double *_work;
+
+    /*
       Free all allocated memory.
     */
     void freeMemoryIfNeeded();
@@ -416,6 +469,19 @@ private:
       Resize the relevant data structures to add a new row to the tableau.
     */
     void addRow();
+
+    /*
+      Initialize gamma array at tableau initialization for steepest edge
+      pivot selection
+    */
+    void initializeGamma();
+
+    /*
+       Helper function to compute dot product of two vectors of size m
+     */
+    double dotProduct( const double *a, const double *b, unsigned m );
+
+    void printVector( const double *v, unsigned m );
 };
 
 #endif // __Tableau_h__

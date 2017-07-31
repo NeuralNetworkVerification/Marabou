@@ -12,31 +12,6 @@
 
 #include "BoundTightener.h"
 
-Tightening::Tightening( unsigned variable, double value, BoundType type )
-    : _variable( variable )
-    , _value( value )
-    , _type( type )
-{
-}
-
-bool Tightening::tighten( ITableau &tableau ) const
-{
-	switch ( _type )
-    {
-    case Tightening::BoundType::LB:
-        tableau.tightenLowerBound( _variable, _value );
-        break;
-
-    case Tightening::BoundType::UB:
-        tableau.tightenUpperBound( _variable, _value );
-        break;
-	}
-
-    // Guy: Lets move this logic back to the engine - i.e., let the tightener
-    // tighten, and let the engine ask if the bounds are valid or not.
-	return tableau.boundsValid( _variable );
-}
-
 void BoundTightener::deriveTightenings( ITableau &tableau, unsigned variable )
 {
     // Extract the variable's row from the tableau
@@ -73,7 +48,7 @@ void BoundTightener::deriveTightenings( ITableau &tableau, unsigned variable )
 
     // Tighten upper bound if needed
 	if ( FloatUtils::gt( tableau.getUpperBound( variable ), tightenedUpperBound ) )
-		enqueueTightening( Tightening( variable, tightenedLowerBound, Tightening::UB ) );
+		enqueueTightening( Tightening( variable, tightenedUpperBound, Tightening::UB ) );
 }
 
 void BoundTightener::enqueueTightening( const Tightening& tightening )
@@ -81,20 +56,13 @@ void BoundTightener::enqueueTightening( const Tightening& tightening )
 	_tighteningRequests.push( tightening );
 }
 
-bool BoundTightener::tighten( ITableau &tableau )
+void BoundTightener::tighten( ITableau &tableau )
 {
 	while ( !_tighteningRequests.empty() )
     {
-		const Tightening &request = _tighteningRequests.peak();
-		bool valid = request.tighten( tableau );
+		_tighteningRequests.peak().tighten( tableau );
 		_tighteningRequests.pop();
-		if ( !valid )
-		{
-			_tighteningRequests.clear();
-			return false;
-		}
 	}
-	return true;
 }
 
 //

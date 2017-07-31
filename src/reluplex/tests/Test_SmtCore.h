@@ -108,8 +108,8 @@ public:
 
         // Split 1
         PiecewiseLinearCaseSplit split1;
-        PiecewiseLinearCaseSplit::Bound bound1( 1, PiecewiseLinearCaseSplit::Bound::LOWER, 3.0 );
-        PiecewiseLinearCaseSplit::Bound bound2( 1, PiecewiseLinearCaseSplit::Bound::UPPER, 5.0 );
+        Tightening bound1( 1, 3.0, Tightening::LB );
+        Tightening bound2( 1, 5.0, Tightening::UB );
 
         Equation equation1;
         equation1.addAddend( 1, 0 );
@@ -125,8 +125,8 @@ public:
 
         // Split 2
         PiecewiseLinearCaseSplit split2;
-        PiecewiseLinearCaseSplit::Bound bound3( 2, PiecewiseLinearCaseSplit::Bound::UPPER, 13.0 );
-        PiecewiseLinearCaseSplit::Bound bound4( 3, PiecewiseLinearCaseSplit::Bound::UPPER, 25.0 );
+        Tightening bound3( 2, 13.0, Tightening::UB );
+        Tightening bound4( 3, 25.0, Tightening::UB );
 
         Equation equation2;
         equation2.addAddend( -3, 0 );
@@ -141,7 +141,7 @@ public:
 
         // Split 3
         PiecewiseLinearCaseSplit split3;
-        PiecewiseLinearCaseSplit::Bound bound5( 14, PiecewiseLinearCaseSplit::Bound::LOWER, 2.3 );
+        Tightening bound5( 14, 2.3, Tightening::LB );
 
         split3.storeBoundTightening( bound5 );
         split3.addEquation( equation1 );

@@ -89,6 +89,9 @@ public:
 
         nextCostFunction = new double[n - m];
         std::fill( nextCostFunction, nextCostFunction + ( n - m ), 0.0 );
+
+	steepestEdgeGamma = new double[n - m];
+	std::fill( steepestEdgeGamma, steepestEdgeGamma + ( n - m ), 1.0 );
     }
 
     double *lastEntries;
@@ -151,9 +154,15 @@ public:
         lastUpperBounds[variable] = value;
     }
 
-    bool boundsValid( unsigned variable ) const
+    bool allBoundsValid() const
     {
-        return FloatUtils::lt( getLowerBound( variable ), getUpperBound( variable ) );
+        for ( auto it : lastLowerBounds.keys() )
+        {
+            if ( lastUpperBounds.exists(it) &&
+                !FloatUtils::lte( lastLowerBounds[it], lastUpperBounds[it] ) )
+                    return false;
+        }
+        return true;
     }
 
     unsigned getBasicStatus( unsigned /* basic */ ) { return 0; }
@@ -191,6 +200,12 @@ public:
     void dumpAssignment() {}
     void dumpEquations() {}
 
+    double *steepestEdgeGamma;
+    const double *getSteepestEdgeGamma() const
+    {
+	return steepestEdgeGamma;
+    }
+    
     Map<unsigned, unsigned> nextNonBasicIndexToVaribale;
     unsigned nonBasicIndexToVariable( unsigned index ) const
     {

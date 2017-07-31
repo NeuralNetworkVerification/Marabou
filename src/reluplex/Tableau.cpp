@@ -38,10 +38,16 @@ Tableau::Tableau()
     , _nonBasicAssignment( NULL )
     , _lowerBounds( NULL )
     , _upperBounds( NULL )
+    , _boundsValid( true )
     , _basicAssignment( NULL )
     , _basicAssignmentStatus( ASSIGNMENT_INVALID )
     , _basicStatus( NULL )
     , _statistics( NULL )
+    , _usingSteepestEdge( true )
+    , _steepestEdgeGamma( NULL )
+    , _alpha( NULL )
+    , _nu( NULL )
+    , _work( NULL )
 {
 }
 
@@ -147,6 +153,30 @@ void Tableau::freeMemoryIfNeeded()
         delete _basisFactorization;
         _basisFactorization = NULL;
     }
+
+    if ( _steepestEdgeGamma )
+    {
+        delete[] _steepestEdgeGamma;
+        _steepestEdgeGamma = NULL;
+    }
+
+    if ( _alpha )
+    {
+        delete[] _alpha;
+        _alpha = NULL;
+    }
+
+    if ( _nu )
+    {
+        delete[] _nu;
+        _nu = NULL;
+    }
+
+    if ( _work )
+    {
+        delete[] _work;
+        _work = NULL;
+    }
 }
 
 void Tableau::setDimensions( unsigned m, unsigned n )
@@ -218,6 +248,22 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     _basisFactorization = new BasisFactorization( _m );
     if ( !_basisFactorization )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::basisFactorization" );
+
+    _steepestEdgeGamma = new double[n-m];
+    if ( !_steepestEdgeGamma )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::steepestEdgeGamma" );
+
+    _alpha = new double[n-m];
+    if ( !_alpha )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::alpha" );
+
+    _nu = new double[n-m];
+    if ( !_nu )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::nu" );
+
+    _work = new double[m];
+    if ( !_work )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::work" );
 }
 
 void Tableau::setEntryValue( unsigned row, unsigned column, double value )
@@ -262,6 +308,151 @@ void Tableau::initializeTableau()
 
     // Recompute assignment
     computeAssignment();
+
+    // Initialize gamma values for steepest edge
+    if ( _usingSteepestEdge )
+        initializeGamma();
+}
+
+const double *Tableau::getSteepestEdgeGamma() const
+{
+    return _steepestEdgeGamma;
+}
+
+void Tableau::initializeGamma()
+{
+    /*
+     * Initialize gamma value for each nonbasic variable.
+     *
+     * gamma[i] = ||p[i]||^2
+     *     p[i] = [ -inv(B)*AN*e[i]; e[i] ]
+     *          = [ AN[i]; e[i] ]
+     * where AN[i] is the ith column of the matrix AN
+     */
+    // Initialize gamma value for each nonbasic variable
+    for ( unsigned i = 0; i < _n - _m; ++i )
+    {
+        // Find corresponding column in matrix B
+        unsigned var = _nonBasicIndexToVariable[i];
+        double *ANColumn = _A + ( var * _m ); // AN[i]
+
+        // Euclidean norm of vector is sum of square of each element
+        _steepestEdgeGamma[i] = 1.0; // To account for (m+i)th element of p[i]
+        for ( unsigned j = 0; j < _m; ++j )
+        {
+            // Account for AN[i]
+            _steepestEdgeGamma[i] += ANColumn[j] * ANColumn[j];
+        }
+    }
+}
+
+void Tableau::updateGamma()
+{
+    /*
+     * Update gamma values used in steepest edge pivot selection when performing a pivot.
+     *
+     * Update rule based on Forrest and Goldfarb
+     * Given entering q, leaving p,
+     *
+     * gammaNew[p] = gamma[q] / alpha[q]**2
+     * gammaNew[j] = gamma[j] - 2*alpha[j]/alpha[q]*nu[j] + (alpha[j]/alpha[q])**2*gamma[q]
+     *   for all other non-basic vars j =/= q
+     *
+     * where
+     *   alpha[q] = sigma'*A[q]
+     *   nu[j] = w'*A[j]
+     *   A[i] = column of A corresponding to variable i
+     *   B'sigma = e[p]
+     *   BB'w = A[q]
+     *
+     * Additionally, we notice that alpha[i] = i-th component of p-th row of inv(B)*A =
+     * p-th component of the vector inv(B)*A[i], and we never have to compute sigma
+     * explicitly. Also,
+     *   w = inv(B')*inv(B)*A[q], so
+     *   nu[j] = w'*A[j] = (inv(B)*A[q])'*inv(B)*A[j]
+     *
+     * Assuming LU factorization is cached and optimized, this should be just as fast
+     * as computing sigma via forward transform w transposed B matrix.
+     *
+     * TODO: Test the comparative efficiency of the following alternative procedure..
+     * There seems to be no way currently in BasisFactorization to solve B'*x = y easily
+     * (you can only solve B*x = y). We should see if computing sigma and w explicitly speeds
+     * this up.
+     */
+    //    printf("\nPerforming update on gamma...\n");
+
+    unsigned p = _leavingVariable; // basic -> nonbasic
+    unsigned q = _enteringVariable; // nonbasic -> basic
+    double *gamma = _steepestEdgeGamma;
+    //    printf("Initial gamma: ");
+    //    printVector(gamma, _n - _m);
+    //    printf("\n");
+    //    printf("numBasic: %d, numNonBasic: %d, p: %d, q: %d\n", _m, _n - _m, p, q);
+
+    ASSERT( p < _m );
+    ASSERT( q < _n - _m );
+
+    double *ANColumnQ = _A + ( _nonBasicIndexToVariable[q] * _m );
+
+    // inv(B)*A[q] vector (size m)
+    double *invB_Aq = new double[_m];
+    _basisFactorization->forwardTransformation( ANColumnQ, invB_Aq );
+    
+    // Compute alphas and nus. These should be different every update.
+    double *alpha = _alpha;
+    double *nu = _nu;
+    double *work = _work; // to store inv(B)*A[j]
+    double *ANColumn;
+
+    // Store alpha[q]. Compute gamma for entering var separately
+    alpha[q] = invB_Aq[p];
+
+    for ( unsigned j = 0; j < _n - _m; ++j )
+    {
+        // j == q
+        if ( j == q )
+            continue;
+
+        // j != q
+        unsigned var = _nonBasicIndexToVariable[j];
+        ANColumn = _A + ( var * _m );
+
+        // Compute inv(B)*A[j]
+        _basisFactorization->forwardTransformation( ANColumn, work );
+        alpha[j] = work[p];
+        nu[j] = dotProduct(invB_Aq, work, _m); 	// w'*A[j] = (inv(B)*A[q])'*inv(B)*A[j]
+
+        double alphaBarJ = alpha[j] / alpha[q];
+        gamma[j] = gamma[j] - 2*alphaBarJ*nu[j] + alphaBarJ*alphaBarJ*gamma[q];
+    }
+
+    gamma[q] = gamma[q] / ( alpha[q] * alpha[q] );
+    // this assumes p replaces q directly and there's no strange sorting of basic/nonbasic vars
+
+    //    printf("New gamma: ");
+    //    printVector(gamma, _n - _m);
+    //    printf("\n");
+}
+
+void Tableau::printVector( const double *v, unsigned m )
+{
+    // For debugging
+    for ( unsigned i = 0; i < m; i++ )
+        printf( "%f ", v[i] );
+}
+
+double Tableau::dotProduct(const double *a, const double *b, unsigned m)
+{
+    // Helper function to multiply two vectors of size m
+    double result = 0;
+    for ( unsigned i = 0; i < m; ++i )
+        result += a[i] * b[i];
+    return result;
+}
+
+void Tableau::useSteepestEdge( bool flag )
+{
+    _usingSteepestEdge = flag;
 }
 
 void Tableau::computeAssignment()
@@ -269,23 +460,23 @@ void Tableau::computeAssignment()
     /*
       The basic assignment is given by the formula:
 
-       xB = inv(B) * b - inv(B) * AN * xN
-          = inv(B) * ( b - AN * xN )
-                       -----------
-                            y
+      xB = inv(B) * b - inv(B) * AN * xN
+         = inv(B) * ( b - AN * xN )
+                      -----------
+                           y
 
-       where B is the basis matrix, AN is the non-basis matrix, xN are
-       the value of the non basic variables and b is the original
-       right hand side.
+      where B is the basis matrix, AN is the non-basis matrix, xN are
+      the value of the non basic variables and b is the original
+      right hand side.
 
-       We first compute y, and then do an FTRAN pass to solve B*xB = y
+      We first compute y, and then do an FTRAN pass to solve B*xB = y
     */
 
     double *y = new double[_m];
     memcpy( y, _b, sizeof(double) * _m );
 
     // Compute a linear combination of the columns of AN
-    double *ANColumn;
+    const double *ANColumn;
     for ( unsigned i = 0; i < _n - _m; ++i )
     {
         unsigned var = _nonBasicIndexToVariable[i];
@@ -307,12 +498,7 @@ void Tableau::computeAssignment()
     // Inform the watchers
     for ( unsigned i = 0; i < _m; ++i )
     {
-        unsigned variable = _basicIndexToVariable[i];
-        if ( _variableToWatchers.exists( variable ) )
-        {
-            for ( auto &watcher : _variableToWatchers[variable] )
-                watcher->notifyVariableValue( variable, _basicAssignment[i] );
-        }
+        notifyVariableValue( _basicIndexToVariable[i], _basicAssignment[i] );
     }
 }
 
@@ -344,12 +530,14 @@ void Tableau::setLowerBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );
     _lowerBounds[variable] = value;
+    notifyLowerBound( variable, value );
 }
 
 void Tableau::setUpperBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );
     _upperBounds[variable] = value;
+    notifyUpperBound( variable, value );
 }
 
 double Tableau::getLowerBound( unsigned variable ) const
@@ -475,7 +663,7 @@ void Tableau::computeCostFunction()
       we ignore b because the constants don't matter for the cost
       function, and we omit xN because we want the function and not an
       evaluation thereof on a specific point.
-     */
+    */
 
     // Step 1: compute basic costs
     computeBasicCosts();
@@ -566,6 +754,12 @@ void Tableau::setEnteringVariable( unsigned nonBasic )
     _enteringVariable = nonBasic;
 }
 
+void Tableau::setLeavingVariable( unsigned nonBasic )
+{
+    // ONLY FOR TESTING STEEPEST EDGE. NEVER USE THIS! Use pickLeavingVariable instead.
+    _leavingVariable = nonBasic;
+}
+
 bool Tableau::eligibleForEntry( unsigned nonBasic ) const
 {
     // A non-basic variable is eligible for entry if one of the two
@@ -628,6 +822,10 @@ void Tableau::performPivot()
     if ( _statistics )
         _statistics->incNumTableauPivots();
 
+    // Before pivoting, update gamma according to old basis
+    if ( _usingSteepestEdge )
+        updateGamma();
+
     // printf( "\n\t\tTableau performing pivot. Entering: %u, Leaving: %u\n\n",
     //         _nonBasicIndexToVariable[_enteringVariable],
     //         _basicIndexToVariable[_leavingVariable] );
@@ -687,6 +885,10 @@ void Tableau::performDegeneratePivot( unsigned entering, unsigned leaving )
     ASSERT( entering < _n - _m );
     ASSERT( leaving < _m );
     ASSERT( !basicOutOfBounds( leaving ) );
+
+    // Before pivoting, update gamma according to old basis
+    if ( _usingSteepestEdge )
+        updateGamma();
 
     // Compute d
     computeD();
@@ -805,16 +1007,16 @@ void Tableau::pickLeavingVariable( double *d )
     bool decrease = FloatUtils::isPositive( _costFunction[_enteringVariable] );
 
     DEBUG({
-        if ( decrease )
-        {
-            ASSERTM( nonBasicCanDecrease( _enteringVariable ),
-                     "Error! Entering variable needs to decrease but is at its lower bound" );
-        }
-        else
-        {
-            ASSERTM( nonBasicCanIncrease( _enteringVariable ),
-                     "Error! Entering variable needs to increase but is at its upper bound" );
-        }
+            if ( decrease )
+            {
+                ASSERTM( nonBasicCanDecrease( _enteringVariable ),
+                         "Error! Entering variable needs to decrease but is at its lower bound" );
+            }
+            else
+            {
+                ASSERTM( nonBasicCanIncrease( _enteringVariable ),
+                         "Error! Entering variable needs to increase but is at its upper bound" );
+            }
         });
 
     double lb = _lowerBounds[_nonBasicIndexToVariable[_enteringVariable]];
@@ -894,7 +1096,7 @@ double Tableau::getChangeRatio() const
 void Tableau::computeD()
 {
     // _a gets the entering variable's column in A
-     _a = _A + ( _nonBasicIndexToVariable[_enteringVariable] * _m );
+    _a = _A + ( _nonBasicIndexToVariable[_enteringVariable] * _m );
 
     // Compute d = inv(B) * a using the basis factorization
     _basisFactorization->forwardTransformation( _a, _d );
@@ -925,11 +1127,7 @@ void Tableau::setNonBasicAssignment( unsigned variable, double value )
     _basicAssignmentStatus = ASSIGNMENT_INVALID;
 
     // Inform watchers
-    if ( _variableToWatchers.exists( variable ) )
-    {
-        for ( auto &watcher : _variableToWatchers[variable] )
-            watcher->notifyVariableValue( variable, value );
-    }
+    notifyVariableValue( variable, value );
 }
 
 void Tableau::dumpAssignment()
@@ -985,14 +1183,15 @@ void Tableau::getTableauRow( unsigned index, TableauRow *row )
       Let e denote a unit matrix with 1 in its *index* entry.
       A row is then computed by: e * inv(B) * -AN. e * inv(B) is
       solved by invoking BTRAN.
-     */
+    */
+
+    ASSERT( index < _m );
 
     std::fill( _unitVector, _unitVector + _m, 0.0 );
     _unitVector[index] = 1;
-
     computeMultipliers( _unitVector );
 
-    double *ANColumn;
+    const double *ANColumn;
     for ( unsigned i = 0; i < _n - _m; ++i )
     {
         row->_row[i]._var = _nonBasicIndexToVariable[i];
@@ -1021,8 +1220,8 @@ void Tableau::storeState( TableauState &state ) const
 {
     ASSERT( _basicAssignmentStatus == ASSIGNMENT_VALID )
 
-    // Set the dimensions
-    state.setDimensions( _m, _n );
+        // Set the dimensions
+        state.setDimensions( _m, _n );
 
     // Store matrix A
     memcpy( state._A, _A, sizeof(double) * _n * _m );
@@ -1055,9 +1254,11 @@ void Tableau::restoreState( const TableauState &state )
     // Restore matrix A
     memcpy( _A, state._A, sizeof(double) * _n * _m );
 
-    // ReStore the bounds
+    // ReStore the bounds and valid status
+    // TODO: I think valid status can just be set to true
     memcpy( _lowerBounds, state._lowerBounds, sizeof(double) *_n );
     memcpy( _upperBounds, state._upperBounds, sizeof(double) *_n );
+    checkBoundsValid();
 
     // Basic variables
     _basicVariables = state._basicVariables;
@@ -1079,9 +1280,29 @@ void Tableau::restoreState( const TableauState &state )
     _basicAssignmentStatus = ASSIGNMENT_VALID;
 }
 
-bool Tableau::boundsValid( unsigned variable ) const
+void Tableau::checkBoundsValid()
 {
-    return FloatUtils::lte( _lowerBounds[variable], _upperBounds[variable] );
+    _boundsValid = true;
+    for ( unsigned i = 0; i < _n ; ++i )
+    {
+        checkBoundsValid( i );
+        if ( !_boundsValid )
+            return;
+    }
+}
+
+void Tableau::checkBoundsValid( unsigned variable )
+{
+    ASSERT( variable < _n );
+    if ( !FloatUtils::lte( _lowerBounds[variable], _upperBounds[variable] ) )
+    {
+        _boundsValid = false;
+    }
+}
+
+bool Tableau::allBoundsValid() const
+{
+    return _boundsValid;
 }
 
 void Tableau::tightenLowerBound( unsigned variable, double value )
@@ -1091,7 +1312,8 @@ void Tableau::tightenLowerBound( unsigned variable, double value )
     if ( !FloatUtils::gt( value, _lowerBounds[variable] ) )
         throw ReluplexError( ReluplexError::INVALID_BOUND_TIGHTENING );
 
-    _lowerBounds[variable] = value;
+    setLowerBound( variable, value );
+    checkBoundsValid( variable );
 
     // Ensure that non-basic variables are within bounds
     if ( !_basicVariables.exists( variable ) )
@@ -1109,7 +1331,8 @@ void Tableau::tightenUpperBound( unsigned variable, double value )
     if ( !FloatUtils::lt( value, _upperBounds[variable] ) )
         throw ReluplexError( ReluplexError::INVALID_BOUND_TIGHTENING );
 
-    _upperBounds[variable] = value;
+    setUpperBound( variable, value );
+    checkBoundsValid( variable );
 
     // Ensure that non-basic variables are within bounds
     if ( !_basicVariables.exists( variable ) )
@@ -1287,6 +1510,33 @@ void Tableau::registerToWatchVariable( VariableWatcher *watcher, unsigned variab
 void Tableau::unregisterToWatchVariable( VariableWatcher *watcher, unsigned variable )
 {
     _variableToWatchers[variable].erase( watcher );
+}
+
+void Tableau::notifyVariableValue( unsigned variable, double value )
+{
+    if ( _variableToWatchers.exists( variable ) )
+    {
+        for ( auto &watcher : _variableToWatchers[variable] )
+            watcher->notifyVariableValue( variable, value );
+    }
+}
+
+void Tableau::notifyLowerBound( unsigned variable, double bound )
+{
+    if ( _variableToWatchers.exists( variable ) )
+    {
+        for ( auto &watcher : _variableToWatchers[variable] )
+            watcher->notifyLowerBound( variable, bound );
+    }
+}
+
+void Tableau::notifyUpperBound( unsigned variable, double bound )
+{
+    if ( _variableToWatchers.exists( variable ) )
+    {
+        for ( auto &watcher : _variableToWatchers[variable] )
+            watcher->notifyUpperBound( variable, bound );
+    }
 }
 
 void Tableau::setStatistics( Statistics *statistics )

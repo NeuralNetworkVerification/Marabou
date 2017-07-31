@@ -25,7 +25,8 @@ Engine::Engine()
     _tableau->setStatistics( &_statistics );
 
     //    _activeEntryStrategy = &_nestedDantzigsRule;
-    _activeEntryStrategy = &_dantzigsRule;
+    _activeEntryStrategy = &_steepestEdgeRule;
+    // _activeEntryStrategy = &_dantzigsRule;
     // _activeEntryStrategy = &_blandsRule;
 }
 
@@ -35,8 +36,6 @@ Engine::~Engine()
 
 bool Engine::solve()
 {
-    // Todo: If l >= u for some var, fail immediately
-
     while ( true )
     {
         if ( _statistics.getNumMainLoopIterations() % GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
@@ -50,14 +49,12 @@ bool Engine::solve()
         _tableau->computeAssignment();
         _tableau->computeBasicStatus();
 
-        bool validBounds = _boundTightener.tighten( _tableau );
-
-        // TODO: split if necessary
+        _boundTightener.tighten( _tableau );
 
         // _tableau->dumpAssignment();
 
         bool needToPop = false;
-        if ( !validBounds )
+        if ( !_tableau->allBoundsValid() )
         {
             // Some variable bounds are invalid, so the query is unsat
             needToPop = true;
@@ -143,7 +140,7 @@ bool Engine::performSimplexStep()
     _tableau->performPivot();
 
     // Tighten
-    _boundTightener.deriveTightenings( _tableau, _tableau->getEnteringVariable() );
+    //    _boundTightener.deriveTightenings( _tableau, _tableau->getEnteringVariable() );
 
     timeval end = TimeUtils::sampleMicro();
     _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );

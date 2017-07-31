@@ -153,7 +153,7 @@ public:
 		TS_ASSERT_EQUALS( splits.size(), 1U );
 
 		auto split = splits.begin();
-		List<PiecewiseLinearCaseSplit::Bound> bounds = split->getBoundTightenings();
+		List<Tightening> bounds = split->getBoundTightenings();
 
         // For each case split, 2 + 7 = 9 bounds for each element, and we have 8 elements.
 		TS_ASSERT_EQUALS( bounds.size(), 72U );
@@ -162,17 +162,17 @@ public:
 
 		for (int i = 0; i < 72; ++i, ++bound)
 		{
-			PiecewiseLinearCaseSplit::Bound boundElem = *bound;
+			Tightening boundElem = *bound;
 			TS_ASSERT_EQUALS( boundElem._variable, auxVar );
 			if ( i % 9 == 0 )
 			{
-				TS_ASSERT_EQUALS( boundElem._boundType, PiecewiseLinearCaseSplit::Bound::UPPER );
+				TS_ASSERT_EQUALS( boundElem._type, Tightening::UB );
 			}
 			else
 			{
-				TS_ASSERT_EQUALS( boundElem._boundType, PiecewiseLinearCaseSplit::Bound::LOWER );
+				TS_ASSERT_EQUALS( boundElem._type, Tightening::LB );
 			}
-			TS_ASSERT_EQUALS( boundElem._newBound, 0.0 );
+			TS_ASSERT_EQUALS( boundElem._value, 0.0 );
 		}
 
 
