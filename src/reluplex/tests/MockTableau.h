@@ -116,6 +116,11 @@ public:
         lastRightHandSide[index] = value;
     }
 
+    const double *getRightHandSide() const
+    {
+        return lastRightHandSide;
+    }
+
     Set<unsigned> lastBasicVariables;
     void markAsBasic( unsigned variable )
     {

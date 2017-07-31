@@ -590,6 +590,11 @@ void Tableau::setRightHandSide( unsigned index, double value )
     _b[index] = value;
 }
 
+const double *Tableau::getRightHandSide() const
+{
+    return _b;
+}
+
 const double *Tableau::getCostFunction() const
 {
     return _costFunction;

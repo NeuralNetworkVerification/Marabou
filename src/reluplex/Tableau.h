@@ -69,6 +69,11 @@ public:
     void setRightHandSide( unsigned index, double value );
 
     /*
+      Get right hand side vector.
+    */
+    const double *getRightHandSide() const;
+
+    /*
       Mark a variable as basic in the initial basis
      */
     void markAsBasic( unsigned variable );
