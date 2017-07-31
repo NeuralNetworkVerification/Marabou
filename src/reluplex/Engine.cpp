@@ -140,7 +140,7 @@ bool Engine::performSimplexStep()
     _tableau->performPivot();
 
     // Tighten
-    _boundTightener.deriveTightenings( _tableau, _tableau->getEnteringVariable() );
+    //    _boundTightener.deriveTightenings( _tableau, _tableau->getEnteringVariable() );
 
     timeval end = TimeUtils::sampleMicro();
     _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
