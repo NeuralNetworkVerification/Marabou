@@ -41,7 +41,7 @@
     {                                           \
         if ( !( x ) )                           \
         {                                       \
-            printf( "Assertion violation!\n" ); \
+            printf( "Assertion violation! File %s, line %d\n", __FILE__, __LINE__ ); \
             exit( 1 );                          \
         }                                       \
     }
