@@ -79,7 +79,7 @@ public:
       constraint breaks into. These splits need to complementary,
       i.e. if the list is {l1, l2, ..., ln-1, ln},
       then ~l1 /\ ~l2 /\ ... /\ ~ln-1 --> ln.
-     */
+    */
     virtual List<PiecewiseLinearCaseSplit> getCaseSplits() const = 0;
 };
 

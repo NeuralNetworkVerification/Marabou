@@ -26,6 +26,8 @@ Engine::Engine()
 
     //    _activeEntryStrategy = &_nestedDantzigsRule;
     _activeEntryStrategy = &_steepestEdgeRule;
+    // _activeEntryStrategy = &_dantzigsRule;
+    // _activeEntryStrategy = &_blandsRule;
 }
 
 Engine::~Engine()
@@ -34,23 +36,32 @@ Engine::~Engine()
 
 bool Engine::solve()
 {
-    // Todo: If l >= u for some var, fail immediately
-
     while ( true )
     {
         if ( _statistics.getNumMainLoopIterations() % GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
             _statistics.print();
         _statistics.incNumMainLoopIterations();
 
+        // Perform a case split if needed
+        if ( _smtCore.needToSplit() )
+            _smtCore.performSplit();
+
         _tableau->computeAssignment();
         _tableau->computeBasicStatus();
 
-        // TODO: tighten bounds
+        _boundTightener.tighten( _tableau );
+
         // TODO: split if necessary
 
         // _tableau->dumpAssignment();
 
-        if ( allVarsWithinBounds() )
+        bool needToPop = false;
+        if ( !_tableau->allBoundsValid() )
+        {
+            // Some variable bounds are invalid, so the query is unsat
+            needToPop = true;
+        }
+        else if ( allVarsWithinBounds() )
         {
             // Check the status of the PL constraints
             collectViolatedPlConstraints();
@@ -75,7 +86,7 @@ bool Engine::solve()
             if ( !fixViolatedPlConstraint() )
             {
                 _statistics.print();
-                return false;
+                needToPop = true;
             }
         }
         else
@@ -85,8 +96,16 @@ bool Engine::solve()
             if ( !performSimplexStep() )
             {
                 _statistics.print();
-                return false;
+                needToPop = true;
             }
+        }
+
+        if ( needToPop )
+        {
+            // The current query is unsat, and we need to split.
+            // If we're at level 0, the whole query is unsat.
+            if ( !_smtCore.popSplit() )
+                return false;
         }
     }
 }
@@ -121,6 +140,9 @@ bool Engine::performSimplexStep()
 
     // Perform the actual pivot
     _tableau->performPivot();
+
+    // Tighten
+    _boundTightener.deriveTightenings( _tableau, _tableau->getEnteringVariable() );
 
     timeval end = TimeUtils::sampleMicro();
     _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );

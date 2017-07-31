@@ -1,8 +1,8 @@
 /*********************                                                        */
-/*! \file ReluConstraint.h
+/*! \file MaxConstraint.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz
+ **   Derek Huang
  ** This file is part of the Marabou project.
  ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -10,29 +10,24 @@
  ** directory for licensing information.\endverbatim
  **/
 
-#ifndef __ReluConstraint_h__
-#define __ReluConstraint_h__
+#ifndef __MaxConstraint_h__
+#define __MaxConstraint_h__
 
 #include "PiecewiseLinearConstraint.h"
 
-class ReluConstraint : public PiecewiseLinearConstraint
+class MaxConstraint : public PiecewiseLinearConstraint
 {
 public:
-    ReluConstraint( unsigned b, unsigned f );
+	MaxConstraint( unsigned f, const List<unsigned> &elements );
 
-    /*
-      Register/unregister the constraint with a talbeau.
-     */
-    void registerAsWatcher( ITableau *tableau );
+	void registerAsWatcher( ITableau *tableau );
     void unregisterAsWatcher( ITableau *tableau );
 
     /*
-      These callbacks are invoked when a watched variable's value
-      changes, or when its bounds change.
+      This callback is invoked when a watched variable's value
+      changes.
     */
     void notifyVariableValue( unsigned variable, double value );
-    void notifyLowerBound( unsigned variable, double bound );
-    void notifyUpperBound( unsigned variable, double bound );
 
     /*
       Returns true iff the variable participates in this piecewise
@@ -64,15 +59,15 @@ public:
     List<PiecewiseLinearCaseSplit> getCaseSplits() const;
 
 private:
-    unsigned _b;
-    unsigned _f;
+	unsigned _f;
+	unsigned _maxIndex;
+	List<unsigned> _elements;
 
-    Map<unsigned, double> _assignment;
-    Map<unsigned, double> _lowerBounds;
-    Map<unsigned, double> _upperBounds;
+	List<unsigned> _participating;
+	Map<unsigned, double> _assignment;
 };
 
-#endif // __ReluConstraint_h__
+#endif // __MaxConstraint_h__
 
 //
 // Local Variables:

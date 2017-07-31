@@ -38,6 +38,7 @@ Tableau::Tableau()
     , _nonBasicAssignment( NULL )
     , _lowerBounds( NULL )
     , _upperBounds( NULL )
+    , _boundsValid( true )
     , _basicAssignment( NULL )
     , _basicAssignmentStatus( ASSIGNMENT_INVALID )
     , _basicStatus( NULL )
@@ -497,12 +498,7 @@ void Tableau::computeAssignment()
     // Inform the watchers
     for ( unsigned i = 0; i < _m; ++i )
     {
-        unsigned variable = _basicIndexToVariable[i];
-        if ( _variableToWatchers.exists( variable ) )
-        {
-            for ( auto &watcher : _variableToWatchers[variable] )
-                watcher->notifyVariableValue( variable, _basicAssignment[i] );
-        }
+        notifyVariableValue( _basicIndexToVariable[i], _basicAssignment[i] );
     }
 }
 
@@ -534,12 +530,14 @@ void Tableau::setLowerBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );
     _lowerBounds[variable] = value;
+    notifyLowerBound( variable, value );
 }
 
 void Tableau::setUpperBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );
     _upperBounds[variable] = value;
+    notifyUpperBound( variable, value );
 }
 
 double Tableau::getLowerBound( unsigned variable ) const
@@ -1129,11 +1127,7 @@ void Tableau::setNonBasicAssignment( unsigned variable, double value )
     _basicAssignmentStatus = ASSIGNMENT_INVALID;
 
     // Inform watchers
-    if ( _variableToWatchers.exists( variable ) )
-    {
-        for ( auto &watcher : _variableToWatchers[variable] )
-            watcher->notifyVariableValue( variable, value );
-    }
+    notifyVariableValue( variable, value );
 }
 
 void Tableau::dumpAssignment()
@@ -1259,9 +1253,11 @@ void Tableau::restoreState( const TableauState &state )
     // Restore matrix A
     memcpy( _A, state._A, sizeof(double) * _n * _m );
 
-    // ReStore the bounds
+    // ReStore the bounds and valid status
+    // TODO: I think valid status can just be set to true
     memcpy( _lowerBounds, state._lowerBounds, sizeof(double) *_n );
     memcpy( _upperBounds, state._upperBounds, sizeof(double) *_n );
+    checkBoundsValid();
 
     // Basic variables
     _basicVariables = state._basicVariables;
@@ -1283,6 +1279,31 @@ void Tableau::restoreState( const TableauState &state )
     _basicAssignmentStatus = ASSIGNMENT_VALID;
 }
 
+void Tableau::checkBoundsValid()
+{
+    _boundsValid = true;
+    for ( unsigned i = 0; i < _n ; ++i )
+    {
+        checkBoundsValid( i );
+        if ( !_boundsValid )
+            return;
+    }
+}
+
+void Tableau::checkBoundsValid( unsigned variable )
+{
+    ASSERT( variable < _n );
+    if ( !FloatUtils::lte( _lowerBounds[variable], _upperBounds[variable] ) )
+    {
+        _boundsValid = false;
+    }
+}
+
+bool Tableau::allBoundsValid() const
+{
+    return _boundsValid;
+}
+
 void Tableau::tightenLowerBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );
@@ -1290,7 +1311,8 @@ void Tableau::tightenLowerBound( unsigned variable, double value )
     if ( !FloatUtils::gt( value, _lowerBounds[variable] ) )
         throw ReluplexError( ReluplexError::INVALID_BOUND_TIGHTENING );
 
-    _lowerBounds[variable] = value;
+    setLowerBound( variable, value );
+    checkBoundsValid( variable );
 
     // Ensure that non-basic variables are within bounds
     if ( !_basicVariables.exists( variable ) )
@@ -1308,7 +1330,8 @@ void Tableau::tightenUpperBound( unsigned variable, double value )
     if ( !FloatUtils::lt( value, _upperBounds[variable] ) )
         throw ReluplexError( ReluplexError::INVALID_BOUND_TIGHTENING );
 
-    _upperBounds[variable] = value;
+    setUpperBound( variable, value );
+    checkBoundsValid( variable );
 
     // Ensure that non-basic variables are within bounds
     if ( !_basicVariables.exists( variable ) )
@@ -1486,6 +1509,33 @@ void Tableau::registerToWatchVariable( VariableWatcher *watcher, unsigned variab
 void Tableau::unregisterToWatchVariable( VariableWatcher *watcher, unsigned variable )
 {
     _variableToWatchers[variable].erase( watcher );
+}
+
+void Tableau::notifyVariableValue( unsigned variable, double value )
+{
+    if ( _variableToWatchers.exists( variable ) )
+    {
+        for ( auto &watcher : _variableToWatchers[variable] )
+            watcher->notifyVariableValue( variable, value );
+    }
+}
+
+void Tableau::notifyLowerBound( unsigned variable, double bound )
+{
+    if ( _variableToWatchers.exists( variable ) )
+    {
+        for ( auto &watcher : _variableToWatchers[variable] )
+            watcher->notifyLowerBound( variable, bound );
+    }
+}
+
+void Tableau::notifyUpperBound( unsigned variable, double bound )
+{
+    if ( _variableToWatchers.exists( variable ) )
+    {
+        for ( auto &watcher : _variableToWatchers[variable] )
+            watcher->notifyUpperBound( variable, bound );
+    }
 }
 
 void Tableau::setStatistics( Statistics *statistics )

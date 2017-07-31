@@ -24,6 +24,7 @@ SOURCES += \
 	\
 	BasisFactorization.cpp \
 	BlandsRule.cpp \
+	BoundTightener.cpp \
 	DantzigsRule.cpp \
 	Engine.cpp \
 	Equation.cpp \
@@ -43,6 +44,7 @@ SOURCES += \
 	TableauState.cpp \
 	\
 	main_regress.cpp \
+	MaxConstraint.cpp\
 
 all:
 	./$(TARGET)

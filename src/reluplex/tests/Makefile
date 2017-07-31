@@ -20,6 +20,7 @@ SOURCES += \
 	\
 	BasisFactorization.cpp \
 	BlandsRule.cpp \
+	BoundTightener.cpp \
 	DantzigsRule.cpp \
 	Engine.cpp \
 	Equation.cpp \
@@ -38,6 +39,7 @@ SOURCES += \
 	TableauState.cpp \
 	\
 	TableauFactory.cpp \
+	MaxConstraint.cpp\
 
 all:
 	./$(TEST_TARGET)

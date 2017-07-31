@@ -108,8 +108,8 @@ public:
 
         // Split 1
         PiecewiseLinearCaseSplit split1;
-        PiecewiseLinearCaseSplit::Bound bound1( 1, PiecewiseLinearCaseSplit::Bound::LOWER, 3.0 );
-        PiecewiseLinearCaseSplit::Bound bound2( 1, PiecewiseLinearCaseSplit::Bound::UPPER, 5.0 );
+        Tightening bound1( 1, 3.0, Tightening::LB );
+        Tightening bound2( 1, 5.0, Tightening::UB );
 
         Equation equation1;
         equation1.addAddend( 1, 0 );
@@ -121,12 +121,12 @@ public:
 
         split1.storeBoundTightening( bound1 );
         split1.storeBoundTightening( bound2 );
-        split1.setEquation( equation1 );
+        split1.addEquation( equation1 );
 
         // Split 2
         PiecewiseLinearCaseSplit split2;
-        PiecewiseLinearCaseSplit::Bound bound3( 2, PiecewiseLinearCaseSplit::Bound::UPPER, 13.0 );
-        PiecewiseLinearCaseSplit::Bound bound4( 3, PiecewiseLinearCaseSplit::Bound::UPPER, 25.0 );
+        Tightening bound3( 2, 13.0, Tightening::UB );
+        Tightening bound4( 3, 25.0, Tightening::UB );
 
         Equation equation2;
         equation2.addAddend( -3, 0 );
@@ -137,14 +137,14 @@ public:
 
         split2.storeBoundTightening( bound3 );
         split2.storeBoundTightening( bound4 );
-        split2.setEquation( equation2 );
+        split2.addEquation( equation2 );
 
         // Split 3
         PiecewiseLinearCaseSplit split3;
-        PiecewiseLinearCaseSplit::Bound bound5( 14, PiecewiseLinearCaseSplit::Bound::LOWER, 2.3 );
+        Tightening bound5( 14, 2.3, Tightening::LB );
 
         split3.storeBoundTightening( bound5 );
-        split3.setEquation( equation1 );
+        split3.addEquation( equation1 );
 
         // Store the splits
         constraint.nextSplits.append( split1 );
@@ -160,6 +160,7 @@ public:
         TS_ASSERT( smtCore.needToSplit() );
         TS_ASSERT_EQUALS( smtCore.getStackDepth(), 0U );
         TS_ASSERT_THROWS_NOTHING( smtCore.performSplit() );
+        TS_ASSERT( !smtCore.needToSplit() );
         TS_ASSERT_EQUALS( smtCore.getStackDepth(), 1U );
 
         // Check that Split1 was performed and tableau state was stored
@@ -238,6 +239,12 @@ public:
         TS_ASSERT( !smtCore.popSplit() );
         TS_ASSERT( !engine->lastRestoredState );
         TS_ASSERT_EQUALS( smtCore.getStackDepth(), 0U );
+    }
+
+    void test_todo()
+    {
+        // Reason: the inefficiency in resizing the tableau mutliple times
+        TS_TRACE( "add support for adding multiple equations at once, not one-by-one" );
     }
 };
 

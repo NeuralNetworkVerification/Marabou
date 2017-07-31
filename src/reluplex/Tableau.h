@@ -124,6 +124,22 @@ public:
     double getUpperBound( unsigned variable ) const;
 
     /*
+      Recomputes bound valid status for all variables.
+    */
+    void checkBoundsValid();
+
+    /*
+      Sets bound valid flag to false if bounds are invalid
+      on the given variable.
+    */
+    void checkBoundsValid( unsigned variable );
+
+    /*
+      Returns whether any variable's bounds are invalid.
+    */
+    bool allBoundsValid() const;
+
+    /*
       Tighten the lower/upper bound for a variable. These functions
       are meant to be used during the solution process, when a tighter
       bound has been discovered.
@@ -274,6 +290,14 @@ public:
     void unregisterToWatchVariable( VariableWatcher *watcher, unsigned variable );
 
     /*
+      Notify all watchers of the given variable of a value update,
+      or of changes to its bounds.
+    */
+    void notifyVariableValue( unsigned variable, double value );
+    void notifyLowerBound( unsigned variable, double bound );
+    void notifyUpperBound( unsigned variable, double bound );
+
+    /*
       Have the Tableau start reporting statistics.
      */
     void setStatistics( Statistics *statistics );
@@ -364,6 +388,11 @@ private:
     */
     double *_lowerBounds;
     double *_upperBounds;
+
+    /*
+      Whether all variables have valid bounds (l <= u).
+    */
+    bool _boundsValid;
 
     /*
       The current assignment for the basic variables

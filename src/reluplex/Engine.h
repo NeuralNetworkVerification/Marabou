@@ -15,10 +15,11 @@
 
 #include "AutoTableau.h"
 #include "BlandsRule.h"
+#include "BoundTightener.h"
 #include "DantzigsRule.h"
-#include "NestedDantzigsRule.h"
 #include "IEngine.h"
 #include "Map.h"
+#include "NestedDantzigsRule.h"
 #include "SmtCore.h"
 #include "Statistics.h"
 #include "SteepestEdge.h"
@@ -102,6 +103,11 @@ private:
     NestedDantzigsRule _nestedDantzigsRule;
     SteepestEdgeRule _steepestEdgeRule;
     EntrySelectionStrategy *_activeEntryStrategy;
+
+    /*
+      Bound tightener.
+    */
+    BoundTightener _boundTightener;
 
     /*
       The SMT engine is in charge of case splitting.
