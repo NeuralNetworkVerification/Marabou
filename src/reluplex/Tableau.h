@@ -58,6 +58,9 @@ public:
     */
     void setEnteringVariable( unsigned nonBasic );
 
+    // FOR TESTING ONLY
+    void setLeavingVariable( unsigned nonBasic );
+
     /*
       Set the values of the right hand side vector, b, of size m.
       Set either the whole vector or a specific entry
@@ -299,6 +302,15 @@ public:
      */
     void setStatistics( Statistics *statistics );
 
+    void useSteepestEdge( bool flag );
+
+    const double *getSteepestEdgeGamma() const;
+
+    /*
+      Update gamma array during a pivot
+    */
+    void updateGamma();
+
 private:
     typedef List<VariableWatcher *> VariableWatchers;
     Map<unsigned, VariableWatchers> _variableToWatchers;
@@ -424,6 +436,24 @@ private:
     Statistics *_statistics;
 
     /*
+      Flag for whether or not steepest edge is used.
+    */
+    bool _usingSteepestEdge;
+
+    /*
+      Array of gamma values for steepest edge pivot selection. Must be updated with
+      each pivot.
+     */
+    double *_steepestEdgeGamma;
+
+    /* 
+       Working variables for updating gamma
+    */
+    double *_alpha;
+    double *_nu;
+    double *_work;
+
+    /*
       Free all allocated memory.
     */
     void freeMemoryIfNeeded();
@@ -439,6 +469,19 @@ private:
       Resize the relevant data structures to add a new row to the tableau.
     */
     void addRow();
+
+    /*
+      Initialize gamma array at tableau initialization for steepest edge
+      pivot selection
+    */
+    void initializeGamma();
+
+    /*
+       Helper function to compute dot product of two vectors of size m
+     */
+    double dotProduct( const double *a, const double *b, unsigned m );
+
+    void printVector( const double *v, unsigned m );
 };
 
 #endif // __Tableau_h__

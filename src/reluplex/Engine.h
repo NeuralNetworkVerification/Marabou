@@ -22,6 +22,7 @@
 #include "NestedDantzigsRule.h"
 #include "SmtCore.h"
 #include "Statistics.h"
+#include "SteepestEdge.h"
 
 class InputQuery;
 class PiecewiseLinearConstraint;
@@ -68,7 +69,7 @@ public:
     void storeTableauState( TableauState &state ) const;
     void restoreTableauState( const TableauState &state );
 
-private:
+private:    
     /*
       Collect and print various statistics.
     */
@@ -100,6 +101,7 @@ private:
     BlandsRule _blandsRule;
     DantzigsRule _dantzigsRule;
     NestedDantzigsRule _nestedDantzigsRule;
+    SteepestEdgeRule _steepestEdgeRule;
     EntrySelectionStrategy *_activeEntryStrategy;
 
     /*

@@ -37,6 +37,7 @@ SOURCES += \
 	ReluConstraint.cpp \
 	SmtCore.cpp \
 	Statistics.cpp \
+	SteepestEdge.cpp \
 	Tableau.cpp \
 	TableauFactory.cpp \
 	TableauRow.cpp \
