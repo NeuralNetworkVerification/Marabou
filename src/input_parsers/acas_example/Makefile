@@ -23,6 +23,7 @@ SOURCES += \
 	\
 	BasisFactorization.cpp \
 	BlandsRule.cpp \
+	BoundTightener.cpp \
 	DantzigsRule.cpp \
 	Engine.cpp \
 	Equation.cpp \
@@ -35,6 +36,7 @@ SOURCES += \
 	ReluConstraint.cpp \
 	SmtCore.cpp \
 	Statistics.cpp \
+	SteepestEdge.cpp \
 	Tableau.cpp \
 	TableauFactory.cpp \
 	TableauRow.cpp \
