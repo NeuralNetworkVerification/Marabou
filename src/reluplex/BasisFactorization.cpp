@@ -351,6 +351,7 @@ void BasisFactorization::factorizeMatrix( double *matrix )
     // Clear any previous factorization, initialize U
 	clearLPU();
 	memcpy( _U, matrix, sizeof(double) * _m * _m );
+    double *LCol = new double[_m];
 
 	for ( unsigned i = 0; i < _m; ++i )
     {
@@ -373,7 +374,10 @@ void BasisFactorization::factorizeMatrix( double *matrix )
 
         // No non-zero pivot has been found, matrix cannot be factorized
         if ( FloatUtils::isZero( largestElement ) )
+        {
+            delete[] LCol;
             throw ReluplexError( ReluplexError::NO_AVAILABLE_CANDIDATES, "No Pivot" );
+        }
 
         // Swap rows i and bestRow (if needed), and store this permutation
         if ( bestRowIndex != i )
@@ -385,7 +389,6 @@ void BasisFactorization::factorizeMatrix( double *matrix )
 
         // The matrix now has a non-zero value at entry (i,i), so we can perform
         // Gaussian elimination for the subsequent rows
-        double *LCol = new double[_m];
         std::fill_n( LCol, _m, 0 );
         double div = _U[i * _m + i];
         LCol[i] = 1 / div;
@@ -395,11 +398,12 @@ void BasisFactorization::factorizeMatrix( double *matrix )
         // Store the resulting lower-triangular eta matrix
 		EtaMatrix *L = new EtaMatrix( _m, i, LCol );
         _LP.appendHead( new LPElement( L, NULL ) );
-        delete[] LCol;
 
         // Perform the actual elimination step on U
         LFactorizationMultiply( L );
 	}
+
+    delete[] LCol;
 }
 
 void BasisFactorization::LFactorizationMultiply( const EtaMatrix *L )
