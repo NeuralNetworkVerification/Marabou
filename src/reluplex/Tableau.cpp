@@ -28,6 +28,7 @@ Tableau::Tableau()
     , _a( NULL )
     , _d( NULL )
     , _b( NULL )
+    , _rhs( NULL )
     , _basisFactorization( NULL )
     , _costFunction( NULL )
     , _basicCosts( NULL )
@@ -177,6 +178,12 @@ void Tableau::freeMemoryIfNeeded()
         delete[] _work;
         _work = NULL;
     }
+
+    if ( _rhs )
+    {
+        delete[] _rhs;
+        _rhs = NULL;
+    }
 }
 
 void Tableau::setDimensions( unsigned m, unsigned n )
@@ -264,6 +271,10 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     _work = new double[m];
     if ( !_work )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::work" );
+
+    _rhs = new double[m];
+    if ( !_rhs )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::rhs" );
 }
 
 void Tableau::setEntryValue( unsigned row, unsigned column, double value )
@@ -592,7 +603,12 @@ void Tableau::setRightHandSide( unsigned index, double value )
 
 const double *Tableau::getRightHandSide() const
 {
-    return _b;
+    return _rhs;
+}
+
+void Tableau::computeRightHandSide()
+{
+    _basisFactorization->forwardTransformation( _b, _rhs );
 }
 
 const double *Tableau::getCostFunction() const

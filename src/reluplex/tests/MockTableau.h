@@ -121,6 +121,8 @@ public:
         return lastRightHandSide;
     }
 
+    void computeRightHandSide() {}
+
     Set<unsigned> lastBasicVariables;
     void markAsBasic( unsigned variable )
     {

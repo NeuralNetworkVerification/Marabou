@@ -20,11 +20,12 @@ void BoundTightener::deriveTightenings( ITableau &tableau, unsigned variable )
 	tableau.getTableauRow( tableau.variableToIndex( variable ), &row );
 
 	// Get right hand side
-	const double *b = tableau.getRightHandSide();
+	tableau.computeRightHandSide();
+	double constCoef = tableau.getRightHandSide()[tableau.variableToIndex( variable )];
 
     // Compute the lower and upper bounds from this row
-	double tightenedLowerBound = b[tableau.variableToIndex( variable )];
-	double tightenedUpperBound = b[tableau.variableToIndex( variable )];
+	double tightenedLowerBound = constCoef;
+	double tightenedUpperBound = constCoef;
 	for ( unsigned i = 0; i < numNonBasic; ++i )
 	{
 		const TableauRow::Entry &entry( row._row[i] );
