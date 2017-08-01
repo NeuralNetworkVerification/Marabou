@@ -34,7 +34,7 @@ void Statistics::print()
 
     printf( "\t--- Engine Statistics ---\n" );
     printf( "\tNumber of main loop iterations: %llu\n"
-            "\t\t%llu iterations were simplex steps. Total time: %llu milli. Average: %lf milli.\n"
+            "\t\t%llu iterations were simplex steps. Total time: %llu milli. Average: %.2lf milli.\n"
             "\t\t%llu iterations were constraint-fixing steps.\n"
             , _numMainLoopIterations
             , _numSimplexSteps
@@ -44,12 +44,12 @@ void Statistics::print()
 
     printf( "\t--- Tableau Statistics ---\n" );
     printf( "\tTotal number of pivots performed: %llu\n", _numTableauPivots );
-    printf( "\t\tReal pivots: %llu. Degenerate: %llu (%lf%%)\n"
+    printf( "\t\tReal pivots: %llu. Degenerate: %llu (%.2lf%%)\n"
             , _numTableauPivots - _numTableauDegeneratePivots
             , _numTableauDegeneratePivots
             , printPercents( _numTableauDegeneratePivots, _numTableauPivots ) );
 
-    printf( "\t\tDenegerate pivots by request (e.g., to fix a PL constraint): %llu (%lf%%)\n"
+    printf( "\t\tDenegerate pivots by request (e.g., to fix a PL constraint): %llu (%.2lf%%)\n"
             , _numTableauDegeneratePivotsByRequest
             , printPercents( _numTableauDegeneratePivotsByRequest, _numTableauDegeneratePivots ) );
 
