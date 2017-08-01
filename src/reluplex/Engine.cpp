@@ -182,8 +182,9 @@ bool Engine::fixViolatedPlConstraint()
 	List<PiecewiseLinearConstraint::Fix>::iterator it = fixes.begin();
     PiecewiseLinearConstraint::Fix fix = *fixes.begin();
 
-	while ( it != fixes.end() && ( !FloatUtils::gte( fix._value, _tableau->getLowerBound( fix._variable ) ) || 
-		!FloatUtils::lte( fix._value, _tableau->getUpperBound( fix._variable ) ) ) ) 
+	while ( it != fixes.end() && !_tableau->isBasic( fix._variable ) && 
+			( !FloatUtils::gte( fix._value, _tableau->getLowerBound( fix._variable ) ) || 
+			!FloatUtils::lte( fix._value, _tableau->getUpperBound( fix._variable ) ) ) ) 
 	{
 		++it;
 		fix = *it;

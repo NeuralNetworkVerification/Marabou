@@ -19,6 +19,7 @@ class MaxConstraint : public PiecewiseLinearConstraint
 {
 public:
 	MaxConstraint( unsigned f, const List<unsigned> &elements );
+	~MaxConstraint();
 
 	void registerAsWatcher( ITableau *tableau );
     void unregisterAsWatcher( ITableau *tableau );
@@ -63,7 +64,6 @@ private:
 	unsigned _maxIndex;
 	List<unsigned> _elements;
 
-	List<unsigned> _participating;
 	Map<unsigned, double> _assignment;
 };
 

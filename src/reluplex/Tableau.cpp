@@ -1240,7 +1240,7 @@ void Tableau::dumpEquations()
 void Tableau::storeState( TableauState &state ) const
 {
     ASSERT( _basicAssignmentStatus == ASSIGNMENT_VALID )
-
+	
         // Set the dimensions
         state.setDimensions( _m, _n );
 

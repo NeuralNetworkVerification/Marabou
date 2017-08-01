@@ -19,6 +19,11 @@
 
 #include "relu_feasible_1.h"
 
+#include "max_feasible_1.h"
+#include "max_infeasible_1.h"
+
+#include "ReluplexError.h" 
+
 void lps()
 {
     // Sat
@@ -39,11 +44,29 @@ void relus()
     rf1.run();
 }
 
+void max()
+{
+	max_feasible_1 mf1;
+	mf1.run();
+	
+	max_infeasible_1 mf2;
+	mf2.run();
+}
+
 int main()
 {
-    lps();
+    try 
+	{
+		lps();
 
-    relus();
+    	relus();
+
+		max();
+	}
+	catch( const ReluplexError &e )
+	{
+		printf("%u", e.getCode() );
+	}
 }
 
 //
