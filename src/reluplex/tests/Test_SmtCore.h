@@ -145,6 +145,7 @@ public:
 
         split3.storeBoundTightening( bound5 );
         split3.addEquation( equation1 );
+        split3.addEquation( equation2 );
 
         // Store the splits
         constraint.nextSplits.append( split1 );
@@ -227,8 +228,11 @@ public:
 
         TS_ASSERT_EQUALS( engine->lastUpperBounds.size(), 0U );
 
-        TS_ASSERT_EQUALS( engine->lastEquations.size(), 1U );
-        TS_ASSERT_EQUALS( *engine->lastEquations.begin(), equation1 );
+        TS_ASSERT_EQUALS( engine->lastEquations.size(), 2U );
+        auto equation = engine->lastEquations.begin();
+        TS_ASSERT_EQUALS( *equation, equation1 );
+        ++equation;
+        TS_ASSERT_EQUALS( *equation, equation2 );
 
         engine->lastRestoredState = NULL;
         engine->lastLowerBounds.clear();
