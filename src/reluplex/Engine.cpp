@@ -1,4 +1,3 @@
-/*********************                                                        */
 /*! \file Engine.cpp
  ** \verbatim
  ** Top contributors (to current version):
@@ -26,9 +25,9 @@ Engine::Engine()
     _boundTightener.setStatistics( &_statistics );
 
     //    _activeEntryStrategy = &_nestedDantzigsRule;
-    _activeEntryStrategy = &_steepestEdgeRule;
+    //_activeEntryStrategy = &_steepestEdgeRule;
     // _activeEntryStrategy = &_dantzigsRule;
-    // _activeEntryStrategy = &_blandsRule;
+    _activeEntryStrategy = &_blandsRule;
 }
 
 Engine::~Engine()
@@ -44,11 +43,11 @@ bool Engine::solve()
             _statistics.print();
         _statistics.incNumMainLoopIterations();
 
+        _tableau->computeAssignment();
         // Perform a case split if needed
         if ( _smtCore.needToSplit() )
             _smtCore.performSplit();
 
-        _tableau->computeAssignment();
         _tableau->computeBasicStatus();
 
         _boundTightener.tighten( _tableau );
@@ -112,15 +111,16 @@ bool Engine::solve()
 
 bool Engine::performSimplexStep()
 {
-    // // Debug
-    // for ( unsigned i = 0; i < _tableau->getM(); ++i )
-    // {
-    //     printf( "Extracting tableau row %u\n", i );
-    //     TableauRow row( _tableau->getN() - _tableau->getM() );
-    //     _tableau->getTableauRow( i, &row );
-    //     row.dump();
-    // }
-    // //
+    // Debug
+	/*
+    for ( unsigned i = 0; i < _tableau->getM(); ++i )
+    {
+        printf( "Extracting tableau row %u\n", i );
+        TableauRow row( _tableau->getN() - _tableau->getM() );
+        _tableau->getTableauRow( i, &row );
+        row.dump();
+    }*/
+    //
 
     // Statistics
     _statistics.incNumSimplexSteps();
@@ -169,19 +169,40 @@ bool Engine::fixViolatedPlConstraint()
     {
         if ( !_tableau->isBasic( fix._variable ) )
         {
-            _tableau->setNonBasicAssignment( fix._variable, fix._value );
-            return true;
+			if ( FloatUtils::gte( fix._value, _tableau->getLowerBound( fix._variable ) ) &&
+				FloatUtils::lte( fix._value, _tableau->getUpperBound( fix._variable ) ) ) 
+			{
+            	_tableau->setNonBasicAssignment( fix._variable, fix._value );
+            	return true;
+			}
         }
     }
 
     // No choice, have to pivot
+	List<PiecewiseLinearConstraint::Fix>::iterator it = fixes.begin();
     PiecewiseLinearConstraint::Fix fix = *fixes.begin();
+
+	while ( it != fixes.end() && ( !FloatUtils::gte( fix._value, _tableau->getLowerBound( fix._variable ) ) || 
+		!FloatUtils::lte( fix._value, _tableau->getUpperBound( fix._variable ) ) ) ) 
+	{
+		++it;
+		fix = *it;
+	}
+	
+	//if( it == fixes.end() ) return false;
+
     ASSERT( _tableau->isBasic( fix._variable ) );
-
+	
     TableauRow row( _tableau->getN() - _tableau->getM() );
-    _tableau->getTableauRow( fix._variable, &row );
+    _tableau->getTableauRow( _tableau->variableToIndex( fix._variable ), &row );
 
-    unsigned nonBasic;
+	unsigned j = 0;
+    while (  ( j < _tableau->getN() - _tableau->getM() ) )
+	{
+		++j;
+	}
+
+	unsigned nonBasic;
     bool done = false;
     unsigned i = 0;
     while ( !done && ( i < _tableau->getN() - _tableau->getM() ) )
@@ -194,10 +215,16 @@ bool Engine::fixViolatedPlConstraint()
             done = true;
             nonBasic = row._row[i]._var;
         }
-
         ++i;
     }
 
+   /* for ( unsigned i = 0; i < _tableau->getM(); ++i )
+   { 
+        printf( "Extracting tableau row %u\n", i );
+        TableauRow row ( _tableau->getN() - _tableau->getM() );
+        _tableau->getTableauRow( i, &row );
+        row.dump();
+    }*/
     ASSERT( done );
 
     // Switch between nonBasic and the variable we need to fix
