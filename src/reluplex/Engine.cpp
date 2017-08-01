@@ -136,11 +136,13 @@ bool Engine::performSimplexStep()
     _tableau->computeD();
     _tableau->pickLeavingVariable();
 
+    // unsigned enteringVariable = _tableau->getEnteringVariable();
+
     // Perform the actual pivot
     _tableau->performPivot();
 
     // Tighten
-    //    _boundTightener.deriveTightenings( _tableau, _tableau->getEnteringVariable() );
+    // _boundTightener.deriveTightenings( _tableau, enteringVariable );
 
     timeval end = TimeUtils::sampleMicro();
     _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );

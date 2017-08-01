@@ -17,11 +17,14 @@ void BoundTightener::deriveTightenings( ITableau &tableau, unsigned variable )
     // Extract the variable's row from the tableau
 	unsigned numNonBasic = tableau.getN() - tableau.getM();
 	TableauRow row( numNonBasic );
-	tableau.getTableauRow( variable, &row ); // ???
+	tableau.getTableauRow( tableau.variableToIndex( variable ), &row );
+
+	// Get right hand side
+	const double *b = tableau.getRightHandSide();
 
     // Compute the lower and upper bounds from this row
-	double tightenedLowerBound = 0.0;
-	double tightenedUpperBound = 0.0;
+	double tightenedLowerBound = b[tableau.variableToIndex( variable )];
+	double tightenedUpperBound = b[tableau.variableToIndex( variable )];
 	for ( unsigned i = 0; i < numNonBasic; ++i )
 	{
 		const TableauRow::Entry &entry( row._row[i] );
