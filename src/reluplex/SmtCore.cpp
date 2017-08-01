@@ -112,15 +112,18 @@ void SmtCore::applySplit( const PiecewiseLinearCaseSplit &split )
 {
     // Guy: if a split includes more than one equation, we want to add all of them, not just one.
     // Please adjust also the test for smtCore to check this.
-    _engine->addNewEquation( split.getEquations().front() );
-    List<Tightening> bounds = split.getBoundTightenings();
-    for ( const auto &bound : bounds )
-    {
-        if ( bound._type == Tightening::LB )
-            _engine->tightenLowerBound( bound._variable, bound._value );
-        else
-            _engine->tightenUpperBound( bound._variable, bound._value );
-    }
+		for ( auto it:split.getEquations() )
+		{
+				_engine->addNewEquation( it ); 
+		}
+		List<Tightening> bounds = split.getBoundTightenings();
+		for ( const auto &bound : bounds )
+		{
+				if ( bound._type == Tightening::LB )
+						_engine->tightenLowerBound( bound._variable, bound._value );
+				else
+						_engine->tightenUpperBound( bound._variable, bound._value );
+		}
 }
 
 void SmtCore::setStatistics( Statistics *statistics )
