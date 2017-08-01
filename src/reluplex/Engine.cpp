@@ -38,6 +38,7 @@ bool Engine::solve()
 {
     while ( true )
     {
+
         if ( _statistics.getNumMainLoopIterations() % GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
             _statistics.print();
         _statistics.incNumMainLoopIterations();
@@ -136,13 +137,13 @@ bool Engine::performSimplexStep()
     _tableau->computeD();
     _tableau->pickLeavingVariable();
 
-    // unsigned enteringVariable = _tableau->getEnteringVariable();
+    unsigned enteringVariable = _tableau->getEnteringVariable();
 
     // Perform the actual pivot
     _tableau->performPivot();
 
     // Tighten
-    // _boundTightener.deriveTightenings( _tableau, enteringVariable );
+    _boundTightener.deriveTightenings( _tableau, enteringVariable );
 
     timeval end = TimeUtils::sampleMicro();
     _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );

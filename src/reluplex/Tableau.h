@@ -74,6 +74,11 @@ public:
     const double *getRightHandSide() const;
 
     /*
+      Compute right hand side = inv(B) * b.
+    */
+    void computeRightHandSide();
+
+    /*
       Mark a variable as basic in the initial basis
      */
     void markAsBasic( unsigned variable );
@@ -345,6 +350,12 @@ private:
       The right hand side vector of Ax = b
     */
     double *_b;
+
+    /*
+      The current right hand side, inv(B)*b.
+      Recomputed by computeRightHandSide.
+    */
+    double *_rhs;
 
     /*
       A unit vector of size m
