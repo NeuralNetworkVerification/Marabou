@@ -82,9 +82,10 @@ public:
     void backwardTransformation( const double *y, double *x ) const;
 
     /*
-      Store and restore the basis factorization.
+      Store and restore the basis factorization. Storing triggers
+      condesning the etas.
     */
-    void storeFactorization( BasisFactorization *other ) const;
+    void storeFactorization( BasisFactorization *other );
     void restoreFactorization( const BasisFactorization *other );
 
 	/*
