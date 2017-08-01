@@ -29,6 +29,11 @@ BasisFactorization::BasisFactorization( unsigned m )
     if ( !_B0 )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "BasisFactorization::B0" );
 
+    // Initialize B0 to the identity matrix
+    std::fill_n( _B0, _m * _m, 0.0 );
+    for ( unsigned row = 0; row < _m; ++row )
+        _B0[row * _m + row] = 1.0;
+
 	_U = new double[m*m];
 	if ( !_U )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "BasisFactorization::U" );
@@ -127,14 +132,6 @@ void BasisFactorization::setB0( const double *B0 )
 
 void BasisFactorization::condenseEtas()
 {
-    // If there are no Eta matrices stored, B0 becomes the identity matrix
-    if ( _LP.empty() )
-    {
-        std::fill_n( _B0, _m * _m, 0.0 );
-        for ( unsigned row = 0; row < _m; ++row )
-            _B0[row * _m + row] = 1.0;
-    }
-
     // Multiplication by an eta matrix on the right only changes one
     // column of B0. The new column is a linear combination of the
     // existing columns of B0, according to the eta column. We perform
