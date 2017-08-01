@@ -148,7 +148,7 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
             }
 
             // The bias
-            equation.setScalar( _acasNeuralNetwork.getBias( layer + 1, target ) );
+            equation.setScalar( -_acasNeuralNetwork.getBias( layer + 1, target ) );
 
             // Add the equation to the input query
             inputQuery.addEquation( equation );
