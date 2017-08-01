@@ -21,6 +21,8 @@
 class BoundTightener
 {
 public:
+    BoundTightener();
+
 	/*
 	  Derive and enqueue new bounds for the given basic variable
 	  in the given tableau.
@@ -32,6 +34,11 @@ public:
     */
     void tighten( ITableau &tableau );
 
+    /*
+      Have the Bound Tightener start reporting statistics.
+     */
+    void setStatistics( Statistics *statistics );
+
 private:
 	/*
 	  Add a given tightening to the queue.
@@ -39,6 +46,11 @@ private:
 	void enqueueTightening( const Tightening &tightening );
 
 	Queue<Tightening> _tighteningRequests;
+
+    /*
+      Statistics collection
+    */
+    Statistics *_statistics;
 };
 
 #endif // __BoundTightener_h__

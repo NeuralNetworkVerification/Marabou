@@ -11,9 +11,18 @@
  **/
 
 #include "BoundTightener.h"
+#include "Statistics.h"
+
+BoundTightener::BoundTightener()
+    : _statistics( NULL )
+{
+}
 
 void BoundTightener::deriveTightenings( ITableau &tableau, unsigned variable )
 {
+    if ( _statistics )
+        _statistics->incNumRowsExaminedByTightener();
+
     // Extract the variable's row from the tableau
 	unsigned numNonBasic = tableau.getN() - tableau.getM();
 	TableauRow row( numNonBasic );
@@ -66,7 +75,14 @@ void BoundTightener::tighten( ITableau &tableau )
     {
 		_tighteningRequests.peak().tighten( tableau );
 		_tighteningRequests.pop();
+        if ( _statistics )
+            _statistics->incNumTightenedBounds();
 	}
+}
+
+void BoundTightener::setStatistics( Statistics *statistics )
+{
+    _statistics = statistics;
 }
 
 //

@@ -49,6 +49,12 @@ public:
     void incNumSplits();
     void incNumPops();
 
+    /*
+      Bound tightener related statistics.
+    */
+    void incNumTightenedBounds();
+    void incNumRowsExaminedByTightener();
+
 private:
     // Number of iterations of the main loop
     unsigned long long _numMainLoopIterations;
@@ -87,6 +93,12 @@ private:
     // Total number of times a non-basic variable hopped to its
     // opposite bound.
     unsigned long long _numTableauBoundHopping;
+
+    // Number of iterations of the main loop
+    unsigned long long _numTightenedBounds;
+
+    // Number of rows examined by the bound tightener
+    unsigned long long _numRowsExaminedByTightener;
 
     // Printing helpers
     double printPercents( unsigned long long part, unsigned long long total ) const;

@@ -25,6 +25,8 @@ Statistics::Statistics()
     , _numTableauDegeneratePivots( 0 )
     , _numTableauDegeneratePivotsByRequest( 0 )
     , _numTableauBoundHopping( 0 )
+    , _numTightenedBounds( 0 )
+    , _numRowsExaminedByTightener( 0 )
 {
 }
 
@@ -54,10 +56,15 @@ void Statistics::print()
             , printPercents( _numTableauDegeneratePivotsByRequest, _numTableauDegeneratePivots ) );
 
     printf( "\t--- SMT Core Statistics ---\n" );
-    printf( "\ttotal depth is %u. Number of splits: %u. Number of pops: %u\n"
+    printf( "\tTotal depth is %u. Number of splits: %u. Number of pops: %u\n"
             , _currentStackDepth
             , _numSplits
             , _numPops );
+
+    printf( "\t--- Bound Tightener Statistics ---\n" );
+    printf( "\tNumber of tightened bounds: %llu. Number of rows examined: %llu\n"
+            , _numTightenedBounds
+            , _numRowsExaminedByTightener );
 }
 
 double Statistics::printPercents( unsigned long long part, unsigned long long total ) const
@@ -134,6 +141,16 @@ void Statistics::incNumTableauDegeneratePivots()
 void Statistics::incNumTableauDegeneratePivotsByRequest()
 {
     ++_numTableauDegeneratePivotsByRequest;
+}
+
+void Statistics::incNumTightenedBounds()
+{
+    ++_numTightenedBounds;
+}
+
+void Statistics::incNumRowsExaminedByTightener()
+{
+    ++_numRowsExaminedByTightener;
 }
 
 //
