@@ -150,85 +150,85 @@ public:
 
 		List<PiecewiseLinearCaseSplit> splits = max.getCaseSplits();
 
-		TS_ASSERT_EQUALS( splits.size(), 1U );
+		TS_ASSERT_EQUALS( splits.size(), 8U );
 
 		auto split = splits.begin();
-		List<Tightening> bounds = split->getBoundTightenings();
-
-        // For each case split, 2 + 7 = 9 bounds for each element, and we have 8 elements.
-		TS_ASSERT_EQUALS( bounds.size(), 72U );
-
-		auto bound = bounds.begin();
-
-		for (int i = 0; i < 72; ++i, ++bound)
+		for ( unsigned i = 2; i < 10; ++i, ++split )
 		{
-			Tightening boundElem = *bound;
-			TS_ASSERT_EQUALS( boundElem._variable, auxVar );
-			if ( i % 9 == 0 )
-			{
-				TS_ASSERT_EQUALS( boundElem._type, Tightening::UB );
-			}
-			else
-			{
-				TS_ASSERT_EQUALS( boundElem._type, Tightening::LB );
-			}
-			TS_ASSERT_EQUALS( boundElem._value, 0.0 );
-		}
+				List<Tightening> bounds = split->getBoundTightenings();
+
+				// For each case split, 2 + 7 = 9 bounds for each element, and we have 8 elements.
+				TS_ASSERT_EQUALS( bounds.size(), 9U );
+
+				auto bound = bounds.begin();
+
+				for (int i = 0; i < 9; ++i, ++bound)
+				{
+						Tightening boundElem = *bound;
+						if ( i == 0 ) 
+						{
+								TS_ASSERT_EQUALS( boundElem._type, Tightening::UB );
+						}
+						else 
+						{
+								TS_ASSERT_EQUALS( boundElem._type, Tightening::LB );
+						}
+
+						TS_ASSERT_EQUALS( boundElem._value, 0.0 );
+				}
 
 
-		List<Equation> equations = split->getEquations();
+				List<Equation> equations = split->getEquations();
 
-		TS_ASSERT_EQUALS( equations.size(), 64U );
+				TS_ASSERT_EQUALS( equations.size(), 8U );
 
-		auto cur = equations.begin();
-
-		for ( unsigned i = 2; i < 10; ++i )
-		{
-			TS_ASSERT_EQUALS( cur->_addends.size(), 3U );
-			TS_ASSERT_EQUALS( cur->_scalar, 0.0 );
-
-			 auto addend = cur->_addends.begin();
-
-			TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
-			TS_ASSERT_EQUALS( addend->_variable, i );
-			
-			++addend;
-
-			TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
-			TS_ASSERT_EQUALS( addend->_variable, f );
-
-			++addend;
-
-			TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
-			TS_ASSERT_EQUALS( addend->_variable, 100U );
-
-			++cur;
-
-			for ( unsigned j = 2; j < 10;  ++j )
-			{
-				if ( i == j ) continue;
+				auto cur = equations.begin();
 
 				TS_ASSERT_EQUALS( cur->_addends.size(), 3U );
 				TS_ASSERT_EQUALS( cur->_scalar, 0.0 );
 
-			 	auto addend = cur->_addends.begin();
+				auto addend = cur->_addends.begin();
 
 				TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
-				TS_ASSERT_EQUALS( addend->_variable, j );
-			
+				TS_ASSERT_EQUALS( addend->_variable, i );
+
 				++addend;
 
 				TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
-				TS_ASSERT_EQUALS( addend->_variable, i );
+				TS_ASSERT_EQUALS( addend->_variable, f );
 
 				++addend;
 
 				TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
 				TS_ASSERT_EQUALS( addend->_variable, 100U );
-				
+
 				++cur;
 
-			}
+				for ( unsigned j = 2; j < 10;  ++j )
+				{
+						if ( i == j ) continue;
+
+						TS_ASSERT_EQUALS( cur->_addends.size(), 3U );
+						TS_ASSERT_EQUALS( cur->_scalar, 0.0 );
+
+						auto addend = cur->_addends.begin();
+
+						TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+						TS_ASSERT_EQUALS( addend->_variable, j );
+
+						++addend;
+
+						TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
+						TS_ASSERT_EQUALS( addend->_variable, i );
+
+						++addend;
+
+						TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+						TS_ASSERT_EQUALS( addend->_variable, 100U );
+
+						++cur;
+
+				}
 		}
 	}
 

@@ -24,6 +24,11 @@ MaxConstraint::MaxConstraint( unsigned f, const List<unsigned> &elements )
 {
 }
 
+MaxConstraint::~MaxConstraint()
+{
+	_elements.clear();
+}
+
 void MaxConstraint::registerAsWatcher( ITableau *tableau )
 {
 	tableau->registerToWatchVariable( this, _f );
@@ -50,7 +55,7 @@ void MaxConstraint::notifyVariableValue( unsigned variable, double value )
 	//than the new value.
 		if ( _assignment.size() == 0 || ( _assignment.exists( _f ) && 
 		_assignment.size() == 1 ) || _assignment.get( _maxIndex ) < value ) 
-		_maxIndex = variable;
+			_maxIndex = variable;
 	}
 	_assignment[variable] = value;
 }
@@ -69,15 +74,6 @@ List<unsigned> MaxConstraint::getParticiatingVariables() const
 
 bool MaxConstraint::satisfied() const
 {
-	/*bool exists = false;
-	for ( unsigned elem : _elems )
-	{
-		if ( _assignment.exists( elem ) )
-		{
-			exists = true;
-			break;
-		}
-	}*/
 
 	if ( !( _assignment.exists( _f )  &&  _assignment.size() > 1 ) )
 		throw ReluplexError( ReluplexError::PARTICIPATING_VARIABLES_ABSENT );
@@ -127,12 +123,12 @@ List<PiecewiseLinearCaseSplit> MaxConstraint::getCaseSplits() const
     ASSERT(	_assignment.exists( _f ) );
 
 	List<PiecewiseLinearCaseSplit> splits;
-	PiecewiseLinearCaseSplit maxPhase;
 
     unsigned auxVariable = FreshVariables::getNextVariable();
 
 	for ( unsigned element : _elements )
 	{
+		PiecewiseLinearCaseSplit maxPhase;
 		if ( _assignment.exists( element ) )
 		{
             // element - f = 0
@@ -179,9 +175,9 @@ List<PiecewiseLinearCaseSplit> MaxConstraint::getCaseSplits() const
                 maxPhase.addEquation( gtEquation );
             }
 		}
+		splits.append( maxPhase );
 	}
 
-	splits.append( maxPhase );
 
 	return splits;
 }
