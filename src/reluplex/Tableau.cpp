@@ -543,6 +543,7 @@ void Tableau::setLowerBound( unsigned variable, double value )
     ASSERT( variable < _n );
     _lowerBounds[variable] = value;
     notifyLowerBound( variable, value );
+    checkBoundsValid( variable );
 }
 
 void Tableau::setUpperBound( unsigned variable, double value )
@@ -550,6 +551,7 @@ void Tableau::setUpperBound( unsigned variable, double value )
     ASSERT( variable < _n );
     _upperBounds[variable] = value;
     notifyUpperBound( variable, value );
+    checkBoundsValid( variable );
 }
 
 double Tableau::getLowerBound( unsigned variable ) const
@@ -1341,7 +1343,6 @@ void Tableau::tightenLowerBound( unsigned variable, double value )
         throw ReluplexError( ReluplexError::INVALID_BOUND_TIGHTENING );
 
     setLowerBound( variable, value );
-    checkBoundsValid( variable );
 
     // Ensure that non-basic variables are within bounds
     if ( !_basicVariables.exists( variable ) )
@@ -1360,7 +1361,6 @@ void Tableau::tightenUpperBound( unsigned variable, double value )
         throw ReluplexError( ReluplexError::INVALID_BOUND_TIGHTENING );
 
     setUpperBound( variable, value );
-    checkBoundsValid( variable );
 
     // Ensure that non-basic variables are within bounds
     if ( !_basicVariables.exists( variable ) )
@@ -1552,8 +1552,8 @@ void Tableau::addRow()
     _upperBounds = newUpperBounds;
 
     // Mark the new variable as unbounded
-    _lowerBounds[_n] = -DBL_MAX;
-    _upperBounds[_n] = DBL_MAX;
+    _lowerBounds[_n] = FloatUtils::negativeInfinity();
+    _upperBounds[_n] = FloatUtils::infinity();
 
     // TODO: currently this assumes that there are no stored eta matrices.
     BasisFactorization *newBasisFactorization = new BasisFactorization( newM );
