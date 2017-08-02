@@ -263,6 +263,10 @@ public:
     {
     }
 
+    void applySplit( const PiecewiseLinearCaseSplit &/* split */)
+    {
+    }
+
     typedef Set<VariableWatcher *> Watchers;
     Map<unsigned, Watchers> lastRegisteredVariableToWatcher;
     void registerToWatchVariable( VariableWatcher *watcher, unsigned variable )

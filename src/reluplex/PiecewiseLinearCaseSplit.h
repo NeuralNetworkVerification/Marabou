@@ -14,6 +14,7 @@
 #define __PiecewiseLinearCaseSplit_h__
 
 #include "Equation.h"
+#include "IEngine.h"
 #include "Tightening.h"
 
 class PiecewiseLinearCaseSplit
@@ -31,7 +32,13 @@ public:
     */
     void addEquation( const Equation &equation );
 
-	List<Equation> getEquations() const;
+  	List<Equation> getEquations() const;
+
+    // /*
+    //   Checks that this case has no conflicts with the already-given
+    //   lower and upper bounds.
+    // */
+    // bool valid( const Map<unsigned, double> &lowerBounds, const Map<unsigned, double> &upperBounds ) const;
 
 private:
     /*

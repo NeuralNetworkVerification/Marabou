@@ -13,6 +13,7 @@
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "FreshVariables.h"
+#include "ITableau.h"
 #include "MaxConstraint.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "ReluplexError.h"
@@ -31,6 +32,7 @@ MaxConstraint::~MaxConstraint()
 
 void MaxConstraint::registerAsWatcher( ITableau *tableau )
 {
+	_tableau = tableau;
 	tableau->registerToWatchVariable( this, _f );
 	for ( unsigned element : _elements )
 		tableau->registerToWatchVariable( this, element );
@@ -38,9 +40,11 @@ void MaxConstraint::registerAsWatcher( ITableau *tableau )
 
 void MaxConstraint::unregisterAsWatcher( ITableau *tableau )
 {
+	ASSERT( _tableau == tableau );
 	tableau->unregisterToWatchVariable( this, _f );
 	for ( unsigned element : _elements )
 		tableau->unregisterToWatchVariable( this, element );
+	_tableau = NULL;
 }
 
 void MaxConstraint::notifyVariableValue( unsigned variable, double value )

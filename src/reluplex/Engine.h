@@ -69,6 +69,11 @@ public:
     void storeTableauState( TableauState &state ) const;
     void restoreTableauState( const TableauState &state );
 
+    /*
+      Get the tableau.
+    */
+    ITableau *getTableau();
+
 private:    
     /*
       Collect and print various statistics.

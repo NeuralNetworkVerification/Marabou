@@ -20,6 +20,7 @@
 
 class BasisFactorization;
 class Equation;
+class PiecewiseLinearCaseSplit;
 class TableauState;
 
 class Tableau : public ITableau
@@ -306,6 +307,11 @@ public:
     void notifyVariableValue( unsigned variable, double value );
     void notifyLowerBound( unsigned variable, double bound );
     void notifyUpperBound( unsigned variable, double bound );
+
+    /*
+      Apply the bound tightenins and equations from the given split.
+    */
+    void applySplit( const PiecewiseLinearCaseSplit &split );
 
     /*
       Have the Tableau start reporting statistics.

@@ -13,6 +13,7 @@
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "FreshVariables.h"
+#include "ITableau.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "ReluConstraint.h"
 #include "ReluplexError.h"
@@ -21,18 +22,60 @@ ReluConstraint::ReluConstraint( unsigned b, unsigned f )
     : _b( b )
     , _f( f )
 {
+    // split 0 = active phase, split 1 = inactive phase
+
+    // Auxiliary variable bound, needed for either phase
+    unsigned auxVariable = FreshVariables::getNextVariable();
+    Tightening auxUpperBound( auxVariable, 0.0, Tightening::UB );
+    Tightening auxLowerBound( auxVariable, 0.0, Tightening::LB );
+
+    // Active phase: b >= 0, b - f = 0
+    PiecewiseLinearCaseSplit activePhase;
+    Tightening activeBound( _b, 0.0, Tightening::LB );
+    activePhase.storeBoundTightening( activeBound );
+    Equation activeEquation;
+    activeEquation.addAddend( 1, _b );
+    activeEquation.addAddend( -1, _f );
+    activeEquation.addAddend( 1, auxVariable );
+    activeEquation.markAuxiliaryVariable( auxVariable );
+    activeEquation.setScalar( 0 );
+    activePhase.addEquation( activeEquation );
+    activePhase.storeBoundTightening( auxUpperBound );
+    activePhase.storeBoundTightening( auxLowerBound );
+    _splits.append( activePhase );
+
+    // Inactive phase: b <= 0, f = 0
+    PiecewiseLinearCaseSplit inactivePhase;
+    Tightening inactiveBound( _b, 0.0, Tightening::UB );
+    inactivePhase.storeBoundTightening( inactiveBound );
+    Equation inactiveEquation;
+    inactiveEquation.addAddend( 1, _f );
+    inactiveEquation.addAddend( 1, auxVariable );
+    inactiveEquation.markAuxiliaryVariable( auxVariable );
+    inactiveEquation.setScalar( 0 );
+    inactivePhase.addEquation( inactiveEquation );
+    inactivePhase.storeBoundTightening( auxUpperBound );
+    inactivePhase.storeBoundTightening( auxLowerBound );
+    _splits.append( inactivePhase );
+
+    // Initially, we could be in either phase
+    _validSplits.append( _splits[0] );
+    _validSplits.append( _splits[1] );
 }
 
 void ReluConstraint::registerAsWatcher( ITableau *tableau )
 {
+    _tableau = tableau;
     tableau->registerToWatchVariable( this, _b );
     tableau->registerToWatchVariable( this, _f );
 }
 
 void ReluConstraint::unregisterAsWatcher( ITableau *tableau )
 {
+    ASSERT( _tableau == tableau );
     tableau->unregisterToWatchVariable( this, _b );
     tableau->unregisterToWatchVariable( this, _f );
+    _tableau = NULL;
 }
 
 void ReluConstraint::notifyVariableValue( unsigned variable, double value )
@@ -43,11 +86,27 @@ void ReluConstraint::notifyVariableValue( unsigned variable, double value )
 void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
 {
     _lowerBounds[variable] = bound;
+    if ( (variable == _b || variable == _f) && FloatUtils::isPositive( bound ) )
+    {
+        // stuck in active phase
+        _validSplits.clear();
+        _validSplits.append( _splits[0] );
+        ASSERT( _tableau );
+        _tableau->applySplit( _splits[0] );
+    }
 }
 
 void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
 {
     _upperBounds[variable] = bound;
+    if ( (variable == _f) && FloatUtils::isNegative( bound ) )
+    {
+        // stuck in inactive phase
+        _validSplits.clear();
+        _validSplits.append( _splits[1] );
+        ASSERT( _tableau );
+        _tableau->applySplit( _splits[1] );
+    }
 }
 
 bool ReluConstraint::participatingVariable( unsigned variable ) const
@@ -117,51 +176,7 @@ List<PiecewiseLinearConstraint::Fix> ReluConstraint::getPossibleFixes() const
 
 List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
 {
-    List<PiecewiseLinearCaseSplit> splits;
-
-    PiecewiseLinearCaseSplit activePhase;
-    PiecewiseLinearCaseSplit inactivePhase;
-
-    unsigned auxVariable = FreshVariables::getNextVariable();
-
-    // Active phase: b >= 0, b - f = 0
-    Tightening activeBound( _b, 0.0, Tightening::LB );
-    activePhase.storeBoundTightening( activeBound );
-    Equation activeEquation;
-    activeEquation.addAddend( 1, _b );
-    activeEquation.addAddend( -1, _f );
-
-    activeEquation.addAddend( 1, auxVariable );
-    activeEquation.markAuxiliaryVariable( auxVariable );
-
-    activeEquation.setScalar( 0 );
-    activePhase.addEquation( activeEquation );
-
-    // Inactive phase: b <= 0, f = 0
-    Tightening inactiveBound( _b, 0.0, Tightening::UB );
-    inactivePhase.storeBoundTightening( inactiveBound );
-    Equation inactiveEquation;
-    inactiveEquation.addAddend( 1, _f );
-    inactiveEquation.addAddend( 1, auxVariable );
-    inactiveEquation.markAuxiliaryVariable( auxVariable );
-
-    inactiveEquation.setScalar( 0 );
-    inactivePhase.addEquation( inactiveEquation );
-
-    // Auxiliary variable bound, needed for either phase
-    Tightening auxUpperBound( auxVariable, 0.0, Tightening::UB );
-    Tightening auxLowerBound( auxVariable, 0.0, Tightening::LB );
-
-    inactivePhase.storeBoundTightening( auxUpperBound );
-    inactivePhase.storeBoundTightening( auxLowerBound );
-
-    activePhase.storeBoundTightening( auxUpperBound );
-    activePhase.storeBoundTightening( auxLowerBound );
-
-    splits.append( activePhase );
-    splits.append( inactivePhase );
-
-    return splits;
+    return _validSplits;
 }
 
 //

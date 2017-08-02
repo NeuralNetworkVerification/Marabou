@@ -151,15 +151,15 @@ public:
         unsigned b = 1;
         unsigned f = 4;
 
+        unsigned auxVar = 100;
+        FreshVariables::setNextVariable( auxVar );
+
         ReluConstraint relu( b, f );
 
         Map<unsigned, double> assignment;
 
         List<PiecewiseLinearConstraint::Fix> fixes;
         List<PiecewiseLinearConstraint::Fix>::iterator it;
-
-        unsigned auxVar = 100;
-        FreshVariables::setNextVariable( auxVar );
 
         List<PiecewiseLinearCaseSplit> splits = relu.getCaseSplits();
 

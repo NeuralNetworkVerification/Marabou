@@ -14,6 +14,7 @@
 #define __ReluConstraint_h__
 
 #include "PiecewiseLinearConstraint.h"
+#include "Vector.h"
 
 class ReluConstraint : public PiecewiseLinearConstraint
 {
@@ -70,6 +71,9 @@ private:
     Map<unsigned, double> _assignment;
     Map<unsigned, double> _lowerBounds;
     Map<unsigned, double> _upperBounds;
+
+    Vector<PiecewiseLinearCaseSplit> _splits;
+    List<PiecewiseLinearCaseSplit> _validSplits;
 };
 
 #endif // __ReluConstraint_h__

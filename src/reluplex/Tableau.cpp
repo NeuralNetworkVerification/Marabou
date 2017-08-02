@@ -15,6 +15,7 @@
 #include "EntrySelectionStrategy.h"
 #include "Equation.h"
 #include "FloatUtils.h"
+#include "PiecewiseLinearCaseSplit.h"
 #include "ReluplexError.h"
 #include "Tableau.h"
 #include "TableauRow.h"
@@ -1597,6 +1598,21 @@ void Tableau::notifyUpperBound( unsigned variable, double bound )
     {
         for ( auto &watcher : _variableToWatchers[variable] )
             watcher->notifyUpperBound( variable, bound );
+    }
+}
+
+void Tableau::applySplit( const PiecewiseLinearCaseSplit &split )
+{
+    for ( const auto &equation : split.getEquations() )
+        addEquation( equation );
+
+    List<Tightening> bounds = split.getBoundTightenings();
+    for ( const auto &bound : bounds )
+    {
+        if ( bound._type == Tightening::LB )
+            tightenLowerBound( bound._variable, bound._value );
+        else
+            tightenUpperBound( bound._variable, bound._value );
     }
 }
 

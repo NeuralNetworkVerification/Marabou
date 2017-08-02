@@ -55,6 +55,7 @@ void SmtCore::performSplit()
 
     // Obtain the splits
     List<PiecewiseLinearCaseSplit> splits = _constraintForSplitting->getCaseSplits();
+    ASSERT( !splits.empty() );
 
     // Perform the first split: add bounds and equations
     List<PiecewiseLinearCaseSplit>::iterator split = splits.begin();
