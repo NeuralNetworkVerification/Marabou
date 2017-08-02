@@ -115,6 +115,24 @@ public:
         tableau.setRightHandSide( b );
     }
 
+    void test_initialize_bounds()
+    {
+        Tableau *tableau;
+
+        TS_ASSERT( tableau = new Tableau );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        initializeTableauValues( *tableau );
+
+        for ( unsigned i = 0; i < tableau->getN(); ++i )
+        {
+            TS_ASSERT_EQUALS( tableau->getLowerBound( i ), FloatUtils::negativeInfinity() );
+            TS_ASSERT_EQUALS( tableau->getUpperBound( i ), FloatUtils::infinity() );
+        }
+
+        TS_ASSERT_THROWS_NOTHING( delete tableau );
+    }
+
     void test_initalize_basis_get_value()
     {
         Tableau *tableau;

@@ -240,10 +240,12 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     _lowerBounds = new double[n];
     if ( !_lowerBounds )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::lowerBounds" );
+    std::fill_n( _lowerBounds, n, FloatUtils::negativeInfinity() );
 
     _upperBounds = new double[n];
     if ( !_upperBounds )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::upperBounds" );
+    std::fill_n( _upperBounds, n, FloatUtils::infinity() );
 
     _basicAssignment = new double[m];
     if ( !_basicAssignment )
