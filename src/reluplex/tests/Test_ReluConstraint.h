@@ -279,6 +279,61 @@ public:
         TS_ASSERT_EQUALS( tableau.lastUnregisteredVariableToWatcher[f].size(), 1U );
         TS_ASSERT( tableau.lastUnregisteredVariableToWatcher[f].exists( &relu ) );
     }
+
+    void test_fix_active()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        MockTableau tableau;
+
+        ReluConstraint relu( b, f );
+
+        relu.registerAsWatcher( &tableau );
+
+        List<PiecewiseLinearCaseSplit> splits = relu.getCaseSplits();
+        TS_ASSERT_EQUALS( splits.size(), 2U );
+
+        relu.notifyLowerBound( 1, 1.0 );
+        splits = relu.getCaseSplits();
+        TS_ASSERT_EQUALS( splits.size(), 1U );
+
+        relu.unregisterAsWatcher( &tableau );
+
+        relu = ReluConstraint( b, f );
+
+        relu.registerAsWatcher( &tableau );
+
+        splits = relu.getCaseSplits();
+        TS_ASSERT_EQUALS( splits.size(), 2U );
+
+        relu.notifyLowerBound( 4, 1.0 );
+        splits = relu.getCaseSplits();
+        TS_ASSERT_EQUALS( splits.size(), 1U );
+
+        relu.unregisterAsWatcher( &tableau );
+    }
+
+    void test_fix_inactive()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        MockTableau tableau;
+
+        ReluConstraint relu( b, f );
+
+        relu.registerAsWatcher( &tableau );
+
+        List<PiecewiseLinearCaseSplit> splits = relu.getCaseSplits();
+        TS_ASSERT_EQUALS( splits.size(), 2U );
+
+        relu.notifyUpperBound( 4, -1.0 );
+        splits = relu.getCaseSplits();
+        TS_ASSERT_EQUALS( splits.size(), 1U );
+
+        relu.unregisterAsWatcher( &tableau );
+    }
 };
 
 //
