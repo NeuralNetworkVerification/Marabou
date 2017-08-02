@@ -1271,6 +1271,9 @@ void Tableau::storeState( TableauState &state ) const
 
     // Store the basis factorization
     _basisFactorization->storeFactorization( state._basisFactorization );
+
+    // Store the steepest-edge gamma function
+    memcpy( state._steepestEdgeGamma, _steepestEdgeGamma, sizeof(double) * ( _n - _m ) );
 }
 
 void Tableau::restoreState( const TableauState &state )
@@ -1306,6 +1309,9 @@ void Tableau::restoreState( const TableauState &state )
     // Restore the basis factorization
     _basisFactorization->restoreFactorization( state._basisFactorization );
 
+    // Restore the steepest-edge gamma function
+    memcpy( _steepestEdgeGamma, state._steepestEdgeGamma, sizeof(double) * ( _n - _m ) );
+
     // After a restoration, the assignment is valid
     computeBasicStatus();
     _basicAssignmentStatus = ASSIGNMENT_VALID;
@@ -1328,6 +1334,7 @@ void Tableau::checkBoundsValid( unsigned variable )
     if ( !FloatUtils::lte( _lowerBounds[variable], _upperBounds[variable] ) )
     {
         _boundsValid = false;
+        return;
     }
 }
 
@@ -1432,6 +1439,13 @@ void Tableau::addRow()
     unsigned newM = _m + 1;
     unsigned newN = _n + 1;
 
+    /*
+      This function increases the sizes of the data structures used by
+      the tableau to match newM and newN. Notice that newM = _m + 1 and
+      newN = _n + 1, and so newN - newM = _m - _n. Consequently, structures
+      that are of size _m - _n are left as is.
+    */
+
     // Allocate a new A, copy the columns of the old A
     double *newA = new double[newN * newM];
     if ( !newA )
@@ -1472,13 +1486,6 @@ void Tableau::addRow()
     delete[] _unitVector;
     _unitVector = newUnitVector;
 
-    // Allocate a new cost function. Don't need to initialize
-    double *newCostFunction = new double[newN - newM];
-    if ( !newCostFunction )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newCostFunction" );
-    delete[] _costFunction;
-    _costFunction = newCostFunction;
-
     // Allocate new basic costs. Don't need to initialize
     double *newBasicCosts = new double[newM];
     if ( !newBasicCosts )
@@ -1507,21 +1514,6 @@ void Tableau::addRow()
     memcpy( newVariableToIndex, _variableToIndex, _n * sizeof(unsigned) );
     delete[] _variableToIndex;
     _variableToIndex = newVariableToIndex;
-
-    unsigned *newNonBasicIndexToVariable = new unsigned[newN - newM];
-    if ( !newNonBasicIndexToVariable )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newNonBasicIndexToVariable" );
-    memcpy( newNonBasicIndexToVariable, _nonBasicIndexToVariable, ( _n - _m ) * sizeof(unsigned) );
-    delete[] _nonBasicIndexToVariable;
-    _nonBasicIndexToVariable = newNonBasicIndexToVariable;
-
-    // Allocate a new non-basic assignment vector, copy old values
-    double *newNonBasicAssignment = new double[newN - newM];
-    if ( !newNonBasicAssignment )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newNonBasicAssignment" );
-    memcpy( newNonBasicAssignment, _nonBasicAssignment, ( _n - _m ) * sizeof(double) );
-    delete[] _nonBasicAssignment;
-    _nonBasicAssignment = newNonBasicAssignment;
 
     // Allocate a new basic assignment vector, invalidate the assignment
     double *newBasicAssignment = new double[newM];
@@ -1556,12 +1548,28 @@ void Tableau::addRow()
     _lowerBounds[_n] = FloatUtils::negativeInfinity();
     _upperBounds[_n] = FloatUtils::infinity();
 
-    // TODO: currently this assumes that there are no stored eta matrices.
+    // Allocate a larger basis factorization
     BasisFactorization *newBasisFactorization = new BasisFactorization( newM );
-    if ( !_basisFactorization )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::basisFactorization" );
+    if ( !newBasisFactorization )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newBasisFactorization" );
     delete _basisFactorization;
     _basisFactorization = newBasisFactorization;
+
+    // Steepest-edge data structures. Don't need to initialize.
+    // TODO: Don't need to reallocate _steepestEdgeGamma, but may need to re-compute it!
+    // Also don't need to resize _alpha and _nu.
+    double *newWork = new double[newM];
+    if ( !newWork )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newWork" );
+    delete[] _work;
+    _work = newWork;
+
+    // Allocate a larger _rhs. Don't need to initialize.
+    double *newRhs = new double[newM];
+    if ( !newRhs )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newRhs" );
+    delete[] _rhs;
+    _rhs = newRhs;
 
     _m = newM;
     _n = newN;

@@ -1015,7 +1015,7 @@ public:
         tableau->setEnteringVariable( 3u );
         TS_ASSERT( hasCandidates( *tableau ) );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable() );
+        tableau->setLeavingVariable( 3u );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 3u );
         TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 3u );
 
@@ -1330,15 +1330,11 @@ public:
     {
         TS_TRACE( "When resizing the talbeau, allocate a larger size and only use part of it, "
                   "instead of increasing it one row at a time?" );
-        TS_TRACE( "Proper handling of the basis factorization when resizing the tableau. Reinitialize B?" );
-        // Explanation: we could just create a fresh basis
-        // factorization, with I as the B0 matrix, but that would mean
-        // switching back to the original set of basic variables,
-        // which is potentially undesirable. It may be better to keep
-        // the current basis, but computing B explicitly and adding
-        // another row to it.
         TS_TRACE( "Make sure all watchers are properply informed when restoring a tabealu" );
         TS_TRACE( "Make sure steepest edge data structures are stored/restored/resized correctly" );
+        TS_TRACE( "When storing a tableau, include the _boundsValid variable?" );
+        TS_TRACE( "When adding a row, what to do about the gamma function?" );
+        TS_TRACE( "Remove _rhs, put the right hand side in the row structure returned by GetRow" );
     }
 };
 

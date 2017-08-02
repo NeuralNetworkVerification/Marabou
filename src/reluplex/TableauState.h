@@ -94,7 +94,10 @@ public:
     */
     BasisFactorization *_basisFactorization;
 
-    // TODO: Consider gamma variables
+    /*
+      The steepest-edge gamma function
+    */
+    double *_steepestEdgeGamma;
 };
 
 #endif // __TableauState_h__
