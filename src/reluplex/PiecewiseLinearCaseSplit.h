@@ -40,6 +40,11 @@ public:
     // */
     // bool valid( const Map<unsigned, double> &lowerBounds, const Map<unsigned, double> &upperBounds ) const;
 
+    /*
+      Dump the case split - for debugging purposes.
+    */
+    void dump() const;
+
 private:
     /*
       Bound tightening information.

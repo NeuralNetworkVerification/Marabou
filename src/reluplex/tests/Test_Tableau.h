@@ -1335,6 +1335,8 @@ public:
         TS_TRACE( "When storing a tableau, include the _boundsValid variable?" );
         TS_TRACE( "When adding a row, what to do about the gamma function?" );
         TS_TRACE( "Remove _rhs, put the right hand side in the row structure returned by GetRow" );
+        TS_TRACE( "Tableau has an applySplit function, identical to the one in the smt core. "
+                  "Move this joint functionality to the engine?" );
     }
 };
 

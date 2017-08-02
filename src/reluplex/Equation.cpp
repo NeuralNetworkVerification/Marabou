@@ -11,6 +11,7 @@
  **/
 
 #include "Equation.h"
+#include "FloatUtils.h"
 
 Equation::Addend::Addend( double coefficient, unsigned variable )
     : _coefficient( coefficient )
@@ -44,6 +45,22 @@ bool Equation::operator==( const Equation &other ) const
         ( _addends == other._addends ) &&
         ( _scalar == other._scalar ) &&
         ( _auxVariable == other._auxVariable );
+}
+
+void Equation::dump() const
+{
+    for ( const auto &addend : _addends )
+    {
+        if ( FloatUtils::isZero( addend._coefficient ) )
+            continue;
+
+        if ( FloatUtils::isPositive( addend._coefficient ) )
+            printf( "+" );
+
+        printf( "%.2lfx%u ", addend._coefficient, addend._variable );
+    }
+
+    printf( " = %.2lf\n", _scalar );
 }
 
 //

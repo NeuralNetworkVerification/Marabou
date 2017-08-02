@@ -1348,8 +1348,11 @@ void Tableau::tightenLowerBound( unsigned variable, double value )
     ASSERT( variable < _n );
 
     if ( !FloatUtils::gt( value, _lowerBounds[variable] ) )
-        throw ReluplexError( ReluplexError::INVALID_BOUND_TIGHTENING );
-
+        throw ReluplexError( ReluplexError::INVALID_BOUND_TIGHTENING,
+                             Stringf( "tightenLowerBound. Variable: %u. "
+                                      "Old lower bound: %.2lf. "
+                                      "New lower bound: %.2lf",
+                                      variable, _lowerBounds[variable], value ).ascii() );
     setLowerBound( variable, value );
 
     // Ensure that non-basic variables are within bounds
@@ -1366,8 +1369,11 @@ void Tableau::tightenUpperBound( unsigned variable, double value )
     ASSERT( variable < _n );
 
     if ( !FloatUtils::lt( value, _upperBounds[variable] ) )
-        throw ReluplexError( ReluplexError::INVALID_BOUND_TIGHTENING );
-
+        throw ReluplexError( ReluplexError::INVALID_BOUND_TIGHTENING,
+                             Stringf( "tightenUpperBound. Variable: %u. "
+                                      "Old upper bound: %.2lf. "
+                                      "New upper bound: %.2lf",
+                                      variable, _upperBounds[variable], value ).ascii() );
     setUpperBound( variable, value );
 
     // Ensure that non-basic variables are within bounds
