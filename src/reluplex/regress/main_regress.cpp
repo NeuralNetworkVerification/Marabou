@@ -14,6 +14,7 @@
 
 #include "lp_feasible_1.h"
 #include "lp_feasible_2.h"
+#include "lp_feasible_3.h"
 
 #include "lp_infeasible_1.h"
 
@@ -32,6 +33,9 @@ void lps()
 
     Lp_Feasible_2 lpf2;
     lpf2.run();
+    
+    Lp_Feasible_3 lpf3;
+    lpf3.run();
 
     // Unsat
     Lp_Infeasible_1 lpi1;

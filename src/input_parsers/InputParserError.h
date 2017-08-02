@@ -20,6 +20,7 @@ class InputParserError : public Error
 public:
 	enum Code {
         VARIABLE_INDEX_OUT_OF_RANGE = 0,
+	UNEXPECTED_INPUT = 1,
     };
 
     InputParserError( InputParserError::Code code ) : Error( "InputParserError", (int)code )
