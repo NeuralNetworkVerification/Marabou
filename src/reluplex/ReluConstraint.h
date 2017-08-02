@@ -72,8 +72,15 @@ private:
     Map<unsigned, double> _lowerBounds;
     Map<unsigned, double> _upperBounds;
 
-    Vector<PiecewiseLinearCaseSplit> _splits;
-    List<PiecewiseLinearCaseSplit> _validSplits;
+    PiecewiseLinearCaseSplit getInactiveSplit( unsigned auxVariable ) const;
+    PiecewiseLinearCaseSplit getActiveSplit( unsigned auxVariable ) const;
+
+	  enum StuckStatus {
+		  NOT_STUCK = 0,
+		  STUCK_ACTIVE,
+      STUCK_INACTIVE
+    };
+    StuckStatus _stuck;
 };
 
 #endif // __ReluConstraint_h__

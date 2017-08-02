@@ -1286,6 +1286,7 @@ void Tableau::restoreState( const TableauState &state )
 
     // ReStore the bounds and valid status
     // TODO: I think valid status can just be set to true
+    // TODO: should notify all the constraints.
     memcpy( _lowerBounds, state._lowerBounds, sizeof(double) *_n );
     memcpy( _upperBounds, state._upperBounds, sizeof(double) *_n );
     checkBoundsValid();

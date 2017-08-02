@@ -21,46 +21,8 @@
 ReluConstraint::ReluConstraint( unsigned b, unsigned f )
     : _b( b )
     , _f( f )
+    , _stuck( StuckStatus::NOT_STUCK )
 {
-    // split 0 = active phase, split 1 = inactive phase
-
-    // Auxiliary variable bound, needed for either phase
-    unsigned auxVariable = FreshVariables::getNextVariable();
-    Tightening auxUpperBound( auxVariable, 0.0, Tightening::UB );
-    Tightening auxLowerBound( auxVariable, 0.0, Tightening::LB );
-
-    // Active phase: b >= 0, b - f = 0
-    PiecewiseLinearCaseSplit activePhase;
-    Tightening activeBound( _b, 0.0, Tightening::LB );
-    activePhase.storeBoundTightening( activeBound );
-    Equation activeEquation;
-    activeEquation.addAddend( 1, _b );
-    activeEquation.addAddend( -1, _f );
-    activeEquation.addAddend( 1, auxVariable );
-    activeEquation.markAuxiliaryVariable( auxVariable );
-    activeEquation.setScalar( 0 );
-    activePhase.addEquation( activeEquation );
-    activePhase.storeBoundTightening( auxUpperBound );
-    activePhase.storeBoundTightening( auxLowerBound );
-    _splits.append( activePhase );
-
-    // Inactive phase: b <= 0, f = 0
-    PiecewiseLinearCaseSplit inactivePhase;
-    Tightening inactiveBound( _b, 0.0, Tightening::UB );
-    inactivePhase.storeBoundTightening( inactiveBound );
-    Equation inactiveEquation;
-    inactiveEquation.addAddend( 1, _f );
-    inactiveEquation.addAddend( 1, auxVariable );
-    inactiveEquation.markAuxiliaryVariable( auxVariable );
-    inactiveEquation.setScalar( 0 );
-    inactivePhase.addEquation( inactiveEquation );
-    inactivePhase.storeBoundTightening( auxUpperBound );
-    inactivePhase.storeBoundTightening( auxLowerBound );
-    _splits.append( inactivePhase );
-
-    // Initially, we could be in either phase
-    _validSplits.append( _splits[0] );
-    _validSplits.append( _splits[1] );
 }
 
 void ReluConstraint::registerAsWatcher( ITableau *tableau )
@@ -89,10 +51,11 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
     if ( (variable == _b || variable == _f) && FloatUtils::isPositive( bound ) )
     {
         // stuck in active phase
-        _validSplits.clear();
-        _validSplits.append( _splits[0] );
+        // TODO: constraints can also get unstuck (on a restore)
+        _stuck = StuckStatus::STUCK_ACTIVE;
         ASSERT( _tableau );
-        _tableau->applySplit( _splits[0] );
+        unsigned auxVariable = FreshVariables::getNextVariable();
+        _tableau->applySplit( getActiveSplit( auxVariable ) );
     }
 }
 
@@ -102,10 +65,11 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
     if ( (variable == _f) && FloatUtils::isNegative( bound ) )
     {
         // stuck in inactive phase
-        _validSplits.clear();
-        _validSplits.append( _splits[1] );
+        // TODO: constraints can also get unstuck (on a restore)
+        _stuck = StuckStatus::STUCK_INACTIVE;
         ASSERT( _tableau );
-        _tableau->applySplit( _splits[1] );
+        unsigned auxVariable = FreshVariables::getNextVariable();
+        _tableau->applySplit( getInactiveSplit( auxVariable ) );
     }
 }
 
@@ -176,7 +140,54 @@ List<PiecewiseLinearConstraint::Fix> ReluConstraint::getPossibleFixes() const
 
 List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
 {
-    return _validSplits;
+    // Auxiliary variable bound, needed for either phase
+    List<PiecewiseLinearCaseSplit> splits;
+    unsigned auxVariable = FreshVariables::getNextVariable();
+    // TODO: does a stuck relu ever get split?
+    if ( _stuck != StuckStatus::STUCK_INACTIVE )
+        splits.append( getActiveSplit( auxVariable ) );
+    if ( _stuck != StuckStatus::STUCK_ACTIVE )
+        splits.append( getInactiveSplit( auxVariable ) );
+    return splits;
+}
+
+PiecewiseLinearCaseSplit ReluConstraint::getInactiveSplit( unsigned auxVariable ) const
+{
+    // Inactive phase: b <= 0, f = 0
+    PiecewiseLinearCaseSplit inactivePhase;
+    Tightening inactiveBound( _b, 0.0, Tightening::UB );
+    inactivePhase.storeBoundTightening( inactiveBound );
+    Equation inactiveEquation;
+    inactiveEquation.addAddend( 1, _f );
+    inactiveEquation.addAddend( 1, auxVariable );
+    inactiveEquation.markAuxiliaryVariable( auxVariable );
+    inactiveEquation.setScalar( 0 );
+    inactivePhase.addEquation( inactiveEquation );
+    Tightening auxUpperBound( auxVariable, 0.0, Tightening::UB );
+    Tightening auxLowerBound( auxVariable, 0.0, Tightening::LB );
+    inactivePhase.storeBoundTightening( auxUpperBound );
+    inactivePhase.storeBoundTightening( auxLowerBound );
+    return inactivePhase;
+}
+
+PiecewiseLinearCaseSplit ReluConstraint::getActiveSplit( unsigned auxVariable ) const
+{
+    // Active phase: b >= 0, b - f = 0
+    PiecewiseLinearCaseSplit activePhase;
+    Tightening activeBound( _b, 0.0, Tightening::LB );
+    activePhase.storeBoundTightening( activeBound );
+    Equation activeEquation;
+    activeEquation.addAddend( 1, _b );
+    activeEquation.addAddend( -1, _f );
+    activeEquation.addAddend( 1, auxVariable );
+    activeEquation.markAuxiliaryVariable( auxVariable );
+    activeEquation.setScalar( 0 );
+    activePhase.addEquation( activeEquation );
+    Tightening auxUpperBound( auxVariable, 0.0, Tightening::UB );
+    Tightening auxLowerBound( auxVariable, 0.0, Tightening::LB );
+    activePhase.storeBoundTightening( auxUpperBound );
+    activePhase.storeBoundTightening( auxLowerBound );
+    return activePhase;
 }
 
 //
