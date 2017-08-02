@@ -1211,7 +1211,6 @@ public:
         */
 
         // Check the assignment
-        TS_TRACE( "HERE" );
         tableau->computeAssignment();
 
         // Non-Basics
@@ -1222,7 +1221,7 @@ public:
 
         // Basics
         TS_ASSERT_EQUALS( tableau->getValue( 4 ), 218.0 );
-        TS_ASSERT_EQUALS( tableau->getValue( 2 ), 0.01 );
+        TS_ASSERT_EQUALS( tableau->getValue( 2 ), 0.0 );
         TS_ASSERT_EQUALS( tableau->getValue( 6 ), 409.0 );
         TS_ASSERT_EQUALS( tableau->getValue( 7 ), 3.0 ); // 473 - 4 - 6 - 4*114 - 4
 
