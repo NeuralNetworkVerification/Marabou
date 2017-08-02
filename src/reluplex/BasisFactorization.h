@@ -120,6 +120,12 @@ public:
     void toggleFactorization( bool value );
 
     /*
+      Compute B0 * E1 ... *En for all stored eta matrices, and place
+      the result in B0.
+    */
+	void condenseEtas();
+
+    /*
       A helper function for matrix multiplication.
       left * right = result.
     */
@@ -173,12 +179,6 @@ private:
       store result in U.
     */
 	void LFactorizationMultiply( const EtaMatrix *L );
-
-    /*
-      Compute B0 * E1 ... *En for all stored eta matrices, and place
-      the result in B0.
-    */
-	void condenseEtas();
 };
 
 #endif // __BasisFactorization_h__

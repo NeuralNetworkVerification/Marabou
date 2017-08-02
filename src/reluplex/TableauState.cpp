@@ -16,6 +16,7 @@
 
 TableauState::TableauState()
     : _A( NULL )
+    , _b( NULL )
     , _lowerBounds( NULL )
     , _upperBounds( NULL )
     , _basicAssignment( NULL )
@@ -33,6 +34,12 @@ TableauState::~TableauState()
     {
         delete[] _A;
         _A = NULL;
+    }
+
+    if ( _b )
+    {
+        delete[] _b;
+        _b = NULL;
     }
 
     if ( _lowerBounds )
@@ -92,6 +99,10 @@ void TableauState::setDimensions( unsigned m, unsigned n )
     _A = new double[n*m];
     if ( !_A )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::A" );
+
+    _b = new double[m];
+    if ( !_b )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::b" );
 
     _lowerBounds = new double[n];
     if ( !_lowerBounds )

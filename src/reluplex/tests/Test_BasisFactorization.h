@@ -248,8 +248,6 @@ public:
         TS_ASSERT_THROWS_NOTHING( basis.forwardTransformation( a1, d1 ) );
         basis.pushEtaMatrix( 1, a1 );
 
-        basis.storeFactorization( &otherBasis );
-
         // Do a computation using both basis, see that we get the same result.
 
         double a2[] = { 3, 1, 4 };
@@ -257,14 +255,23 @@ public:
         double d2other[] = { 0, 0, 0 };
         double expected2[] = { 2, 1, 1 };
 
+        // First see that storing the basis doesn't destroy the original
         TS_ASSERT_THROWS_NOTHING( basis.forwardTransformation( a2, d2 ) );
+        for ( unsigned i = 0; i < 3; ++i )
+            TS_ASSERT( FloatUtils::areEqual( expected2[i], d2[i] ) );
+
+        basis.storeFactorization( &otherBasis );
+        TS_ASSERT_THROWS_NOTHING( basis.forwardTransformation( a2, d2 ) );
+        for ( unsigned i = 0; i < 3; ++i )
+            TS_ASSERT( FloatUtils::areEqual( expected2[i], d2[i] ) );
+
+        // Then see that the other basis produces the same result
         TS_ASSERT_THROWS_NOTHING( otherBasis.forwardTransformation( a2, d2other ) );
 
-        TS_ASSERT_SAME_DATA( d2, expected2, sizeof(double) * 3 );
-        TS_ASSERT_SAME_DATA( d2other, expected2, sizeof(double) * 3 );
+        for ( unsigned i = 0; i < 3; ++i )
+            TS_ASSERT( FloatUtils::areEqual( expected2[i], d2other[i] ) );
 
         // Transform the new basis but not the original
-
         otherBasis.pushEtaMatrix( 0, d2 );
 
         double a3[] = { 2, 1, 4 };
@@ -273,7 +280,9 @@ public:
         double expected3[] = { 0.5, 0.5, 0.5 };
 
         TS_ASSERT_THROWS_NOTHING( otherBasis.forwardTransformation( a3, d3other ) );
-        TS_ASSERT_SAME_DATA( d3other, expected3, sizeof(double) * 3 );
+
+        for ( unsigned i = 0; i < 3; ++i )
+            TS_ASSERT( FloatUtils::areEqual( expected3[i], d3other[i] ) );
 
         // The original basis wasn't modified, so the result should be different
 

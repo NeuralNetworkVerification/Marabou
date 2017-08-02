@@ -59,7 +59,7 @@ public:
     void setEnteringVariable( unsigned nonBasic );
 
     // FOR TESTING ONLY
-    void setLeavingVariable( unsigned nonBasic );
+    void setLeavingVariable( unsigned basic );
 
     /*
       Set the values of the right hand side vector, b, of size m.
@@ -494,7 +494,7 @@ private:
 
     /*
        Helper function to compute dot product of two vectors of size m
-     */
+    */
     double dotProduct( const double *a, const double *b, unsigned m );
 
     void printVector( const double *v, unsigned m );

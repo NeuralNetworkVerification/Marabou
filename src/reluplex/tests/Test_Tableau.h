@@ -558,7 +558,6 @@ public:
         tableau->setEnteringVariable( 2u );
         TS_ASSERT( hasCandidates( *tableau ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
-        // TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable( entryStrategy ) );
 
         double d[] = { -1, -1, -1 };
         // Var 4 will hit its lower bound: constraint is 2
@@ -1080,7 +1079,7 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete tableau );
     }
 
-    void test_increase_dimensions()
+    void test_add_equation()
     {
         Tableau *tableau;
 
@@ -1109,7 +1108,33 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 6 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau() );
 
-        // New equation: 2x2 - 4x3 + x8 = 5
+        // Do a pivot to shuffle the basis
+        TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
+
+        tableau->setEnteringVariable( 2u );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->computeD() );
+        TS_ASSERT_THROWS_NOTHING( tableau->performPivot() );
+
+        // Variables x3 and x6 have been pivoted
+        TS_ASSERT( tableau->isBasic( 2u ) );
+        TS_ASSERT( !tableau->isBasic( 5u ) );
+
+        /*
+          Current basic variables are: x5, x3, x7
+          Current basis matrix B0 is:
+
+                | 1 -1   |
+           B0 = |   -1   |
+                |   -1 1 |
+
+           Now add a new new equation:
+
+               2x2 - 4x3 + x8 = 5
+
+           Where x8 is a new basic variable
+        */
+
         Equation equation;
         equation.addAddend( 2, 1 );
         equation.addAddend( -4, 2 );
@@ -1118,28 +1143,90 @@ public:
         equation.markAuxiliaryVariable( 7 );
         TS_ASSERT_THROWS_NOTHING( tableau->addEquation( equation ) );
 
-        // Test that an old row is still compute correctly, with 0
-        // entry for the new variables
+        TS_ASSERT( tableau->isBasic( 7u ) );
+
+        /*
+          Test that an old row is still computed correctly, with 0
+          entry for the new variable.
+          Test that the new row is also computed correctly.
+        */
 
         TableauRow row( 4 );
-        TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 0, &row ) );
+        tableau->getTableauRow( 0, &row );
 
+        // Row 0 is the row for x5. Due to the earlier pivot, we expect:
+        //     x5 = 225 - 2x1 - x2 + x6 - x4
         TableauRow::Entry entry;
         entry = row._row[0];
         TS_ASSERT_EQUALS( entry._var, 0U );
-        TS_ASSERT_EQUALS( entry._coefficient, -3 );
+        TS_ASSERT_EQUALS( entry._coefficient, -2.0 );
 
         entry = row._row[1];
         TS_ASSERT_EQUALS( entry._var, 1U );
-        TS_ASSERT_EQUALS( entry._coefficient, -2 );
+        TS_ASSERT_EQUALS( entry._coefficient, -1.0 );
 
         entry = row._row[2];
-        TS_ASSERT_EQUALS( entry._var, 2U );
-        TS_ASSERT_EQUALS( entry._coefficient, -1 );
+        TS_ASSERT_EQUALS( entry._var, 5U );
+        TS_ASSERT_EQUALS( entry._coefficient, 1.0 );
 
         entry = row._row[3];
         TS_ASSERT_EQUALS( entry._var, 3U );
-        TS_ASSERT_EQUALS( entry._coefficient, -2 );
+        TS_ASSERT_EQUALS( entry._coefficient, -1.0 );
+
+        // Row 3 is the new row.
+        //   Originally,  x8 = 5 - 2x2 + 4x3
+        //   But due to the pivot operation from before, x3 is basic.
+        //   It is given by the equation:
+        //      x3 = -x1 -x2 -x6 -x4 + 117
+        //   And so, we expect:
+        //      x8 = 473 - 4x1 - 6x2 -4x6 -4x4
+
+        tableau->getTableauRow( 3, &row );
+
+        row.dump();
+
+        entry = row._row[0];
+        TS_ASSERT_EQUALS( entry._var, 0U );
+        TS_ASSERT_EQUALS( entry._coefficient, -4.0 );
+
+        entry = row._row[1];
+        TS_ASSERT_EQUALS( entry._var, 1U );
+        TS_ASSERT_EQUALS( entry._coefficient, -6.0 );
+
+        entry = row._row[2];
+        TS_ASSERT_EQUALS( entry._var, 5U );
+        TS_ASSERT_EQUALS( entry._coefficient, -4.0 );
+
+        entry = row._row[3];
+        TS_ASSERT_EQUALS( entry._var, 3U );
+        TS_ASSERT_EQUALS( entry._coefficient, -4.0 );
+
+        /*
+          At this point, the equations are:
+
+             x5 = -2x1 - x2 + x6 - x4 + 108
+             x3 =  -x1 - x2 - x6 - x4 + 117
+             x7 =  -x1      +3x6 - x4 + 69
+             x8 = -4x1 -6x2 -4x6 -4x4 + 473
+        */
+
+        // Check the assignment
+        TS_TRACE( "HERE" );
+        tableau->computeAssignment();
+
+        // Non-Basics
+        TS_ASSERT_EQUALS( tableau->getValue( 0 ), 1.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 1 ), 1.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 5 ), 114.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 3 ), 1.0 );
+
+        // Basics
+        TS_ASSERT_EQUALS( tableau->getValue( 4 ), 218.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 2 ), 0.01 );
+        TS_ASSERT_EQUALS( tableau->getValue( 6 ), 409.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 7 ), 3.0 ); // 473 - 4 - 6 - 4*114 - 4
+
+        TS_ASSERT_THROWS_NOTHING( delete tableau );
     }
 
     void test_tighten_bounds()

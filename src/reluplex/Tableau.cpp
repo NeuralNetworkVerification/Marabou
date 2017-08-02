@@ -408,7 +408,7 @@ void Tableau::updateGamma()
     // inv(B)*A[q] vector (size m)
     double *invB_Aq = new double[_m];
     _basisFactorization->forwardTransformation( ANColumnQ, invB_Aq );
-    
+
     // Compute alphas and nus. These should be different every update.
     double *alpha = _alpha;
     double *nu = _nu;
@@ -508,9 +508,7 @@ void Tableau::computeAssignment()
 
     // Inform the watchers
     for ( unsigned i = 0; i < _m; ++i )
-    {
         notifyVariableValue( _basicIndexToVariable[i], _basicAssignment[i] );
-    }
 }
 
 void Tableau::computeBasicStatus()
@@ -775,10 +773,10 @@ void Tableau::setEnteringVariable( unsigned nonBasic )
     _enteringVariable = nonBasic;
 }
 
-void Tableau::setLeavingVariable( unsigned nonBasic )
+void Tableau::setLeavingVariable( unsigned basic )
 {
     // ONLY FOR TESTING STEEPEST EDGE. NEVER USE THIS! Use pickLeavingVariable instead.
-    _leavingVariable = nonBasic;
+    _leavingVariable = basic;
 }
 
 bool Tableau::eligibleForEntry( unsigned nonBasic ) const
@@ -1239,13 +1237,16 @@ void Tableau::dumpEquations()
 
 void Tableau::storeState( TableauState &state ) const
 {
-    ASSERT( _basicAssignmentStatus == ASSIGNMENT_VALID )
+    ASSERT( _basicAssignmentStatus == ASSIGNMENT_VALID );
 
-        // Set the dimensions
-        state.setDimensions( _m, _n );
+    // Set the dimensions
+    state.setDimensions( _m, _n );
 
     // Store matrix A
     memcpy( state._A, _A, sizeof(double) * _n * _m );
+
+    // Store right hand side vector _b
+    memcpy( state._b, _b, sizeof(double) * _m );
 
     // Store the bounds
     memcpy( state._lowerBounds, _lowerBounds, sizeof(double) *_n );
@@ -1274,6 +1275,9 @@ void Tableau::restoreState( const TableauState &state )
 
     // Restore matrix A
     memcpy( _A, state._A, sizeof(double) * _n * _m );
+
+    // Restore right hand side vector _b
+    memcpy( _b, state._b, sizeof(double) * _m );
 
     // ReStore the bounds and valid status
     // TODO: I think valid status can just be set to true
@@ -1370,6 +1374,25 @@ void Tableau::addEquation( const Equation &equation )
     if ( equation._auxVariable != _n )
         throw ReluplexError( ReluplexError::INVALID_EQUATION_ADDED_TO_TABLEAU );
 
+    // Prepare to update the basis factorization.
+    // First condense the Etas so that we can access B0 explicitly
+    _basisFactorization->condenseEtas();
+    const double *oldB0 = _basisFactorization->getB0();
+
+    // Allocate a larger basis factorization and copy the old rows of B0
+    unsigned newM = _m + 1;
+    double *newB0 = new double[newM * newM];
+    for ( unsigned i = 0; i < _m; ++i )
+        memcpy( newB0 + i * newM, oldB0 + i * _m, sizeof(double) * _m );
+
+    // Zero out the new row and column
+    for ( unsigned i = 0; i < newM - 1; ++i )
+    {
+        newB0[( i * newM ) + newM - 1] = 0.0;
+        newB0[( newM - 1 ) * newM + i] = 0.0;
+    }
+    newB0[( newM - 1 ) * newM + newM - 1] = 1.0;
+
     // Add an actual row to the talbeau, adjust the data structures
     addRow();
 
@@ -1378,10 +1401,26 @@ void Tableau::addEquation( const Equation &equation )
     _basicIndexToVariable[_m - 1] = equation._auxVariable;
     _variableToIndex[equation._auxVariable] = _m - 1;
 
-    // For now, assume the new equation doesn't involve basic variables
+    // Populate the new row of A
     _b[_m - 1] = equation._scalar;
     for ( const auto &addend : equation._addends )
+    {
         setEntryValue( _m - 1, addend._variable, addend._coefficient );
+
+        // The new equation is given over the original non-basic variables.
+        // However, some of them may have become basic in previous iterations.
+        // Consequently, the last row of B0 may need to be adjusted.
+        if ( _basicVariables.exists( addend._variable ) )
+        {
+            unsigned index = _variableToIndex[addend._variable];
+            newB0[( newM - 1 ) * newM + index] = addend._coefficient;
+        }
+    }
+
+    // Finally, give the extended B0 matrix to the basis factorization
+    _basisFactorization->setB0( newB0 );
+
+    delete[] newB0;
 }
 
 void Tableau::addRow()
@@ -1402,6 +1441,7 @@ void Tableau::addRow()
         newAColumn = newA + ( i * newM );
         memcpy( newAColumn, AColumn, _m * sizeof(double) );
     }
+
     delete[] _A;
     _A = newA;
 

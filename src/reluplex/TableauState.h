@@ -23,7 +23,8 @@ class TableauState
       A Tableu state includes the following elements:
 
       - Tableau dimensions
-      - The current matrix A
+      - The matrix A
+      - The right hand side vector b
       - Lower and upper bounds
       - Basic variables
       - Basic and non-basic assignments
@@ -46,6 +47,11 @@ public:
       The matrix
     */
     double *_A;
+
+    /*
+      The right hand side
+    */
+    double *_b;
 
     /*
       Upper and lower bounds for all variables
@@ -87,6 +93,8 @@ public:
       The factorization of the basis
     */
     BasisFactorization *_basisFactorization;
+
+    // TODO: Consider gamma variables
 };
 
 #endif // __TableauState_h__
