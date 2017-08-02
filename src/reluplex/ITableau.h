@@ -103,7 +103,6 @@ public:
     virtual void storeState( TableauState &state ) const = 0;
     virtual void restoreState( const TableauState &state ) = 0;
     virtual void computeBasicCosts() = 0;
-    virtual void applySplit( const PiecewiseLinearCaseSplit &split ) = 0;
     virtual void setStatistics( Statistics *statistics ) = 0;
 };
 

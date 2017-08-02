@@ -27,17 +27,14 @@ ReluConstraint::ReluConstraint( unsigned b, unsigned f )
 
 void ReluConstraint::registerAsWatcher( ITableau *tableau )
 {
-    _tableau = tableau;
     tableau->registerToWatchVariable( this, _b );
     tableau->registerToWatchVariable( this, _f );
 }
 
 void ReluConstraint::unregisterAsWatcher( ITableau *tableau )
 {
-    ASSERT( _tableau == tableau );
     tableau->unregisterToWatchVariable( this, _b );
     tableau->unregisterToWatchVariable( this, _f );
-    _tableau = NULL;
 }
 
 void ReluConstraint::notifyVariableValue( unsigned variable, double value )
@@ -53,9 +50,7 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
         // stuck in active phase
         // TODO: constraints can also get unstuck (on a restore)
         _stuck = StuckStatus::STUCK_ACTIVE;
-        ASSERT( _tableau );
-        unsigned auxVariable = FreshVariables::getNextVariable();
-        _tableau->applySplit( getActiveSplit( auxVariable ) );
+        _splits.push( getActiveSplit( FreshVariables::getNextVariable() ) );
     }
 }
 
@@ -67,9 +62,7 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
         // stuck in inactive phase
         // TODO: constraints can also get unstuck (on a restore)
         _stuck = StuckStatus::STUCK_INACTIVE;
-        ASSERT( _tableau );
-        unsigned auxVariable = FreshVariables::getNextVariable();
-        _tableau->applySplit( getInactiveSplit( auxVariable ) );
+        _splits.push( getInactiveSplit( FreshVariables::getNextVariable() ) );
     }
 }
 
@@ -189,6 +182,8 @@ PiecewiseLinearCaseSplit ReluConstraint::getActiveSplit( unsigned auxVariable ) 
     activePhase.storeBoundTightening( auxLowerBound );
     return activePhase;
 }
+
+
 
 //
 // Local Variables:

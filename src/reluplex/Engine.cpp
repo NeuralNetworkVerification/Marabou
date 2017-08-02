@@ -39,7 +39,6 @@ bool Engine::solve()
 {
     while ( true )
     {
-
         if ( _statistics.getNumMainLoopIterations() % GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
             _statistics.print();
         _statistics.incNumMainLoopIterations();
@@ -53,7 +52,7 @@ bool Engine::solve()
 
         _boundTightener.tighten( _tableau );
 
-        // _tableau->dumpAssignment();
+        applyAllConstraintEnqueuedSplits(); // TODO: let's make sure this is the right place to put this
 
         bool needToPop = false;
         if ( !_tableau->allBoundsValid() )
@@ -306,19 +305,9 @@ void Engine::reportPlViolation()
     _smtCore.reportViolatedConstraint( _plConstraintToFix );
 }
 
-void Engine::tightenLowerBound( unsigned variable, double bound )
+void Engine::log( const String &line ) const
 {
-    _tableau->tightenLowerBound( variable, bound );
-}
-
-void Engine::tightenUpperBound( unsigned variable, double bound )
-{
-    _tableau->tightenUpperBound( variable, bound );
-}
-
-void Engine::addNewEquation( const Equation &equation )
-{
-    _tableau->addEquation( equation );
+    printf( "Engine: %s\n", line.ascii() );
 }
 
 void Engine::storeState( EngineState &state ) const
@@ -332,9 +321,35 @@ void Engine::restoreState( const EngineState &state )
     _tableau->restoreState( state._tableauState );
 }
 
-void Engine::log( const String &line ) const
+void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 {
-    printf( "Engine: %s\n", line.ascii() );
+    for ( const auto &equation : split.getEquations() )
+        _tableau->addEquation( equation ); // addNewEquation( equation );
+
+    List<Tightening> bounds = split.getBoundTightenings();
+    for ( const auto &bound : bounds )
+    {
+        if ( bound._type == Tightening::LB )
+            _tableau->tightenLowerBound( bound._variable, bound._value );
+        else
+            _tableau->tightenUpperBound( bound._variable, bound._value );
+    }
+}
+
+void Engine::applyConstraintEnqueuedSplits( PiecewiseLinearConstraint &constraint )
+{
+    Queue<PiecewiseLinearCaseSplit> &splits = constraint.getEnqueuedSplits();
+    while ( !splits.empty() )
+    {
+        applySplit( splits.peak() );
+        splits.pop();
+    }
+}
+
+void Engine::applyAllConstraintEnqueuedSplits()
+{
+    for ( auto &constraint : _plConstraints )
+        applyConstraintEnqueuedSplits( *constraint );
 }
 
 //

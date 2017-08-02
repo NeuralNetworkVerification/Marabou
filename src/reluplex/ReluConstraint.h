@@ -14,7 +14,8 @@
 #define __ReluConstraint_h__
 
 #include "PiecewiseLinearConstraint.h"
-#include "Vector.h"
+#include "Queue.h"
+
 
 class ReluConstraint : public PiecewiseLinearConstraint
 {
@@ -81,6 +82,7 @@ private:
       STUCK_INACTIVE
     };
     StuckStatus _stuck;
+
 };
 
 #endif // __ReluConstraint_h__

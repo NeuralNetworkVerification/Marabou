@@ -59,7 +59,7 @@ void SmtCore::performSplit()
 
     // Perform the first split: add bounds and equations
     List<PiecewiseLinearCaseSplit>::iterator split = splits.begin();
-    applySplit( *split );
+    _engine->applySplit( *split );
 
     // Store the remaining splits on the stack, for later
     StackEntry stackEntry;
@@ -96,7 +96,7 @@ bool SmtCore::popSplit()
 
     // Apply the new split and erase it from the list
     auto split = stackEntry._splits.begin();
-    applySplit( *split );
+    _engine->applySplit( *split );
     stackEntry._splits.erase( split );
 
     // If there are no splits left, pop this entry
@@ -110,21 +110,6 @@ bool SmtCore::popSplit()
         _statistics->setCurrentStackDepth( getStackDepth() );
 
     return true;
-}
-
-void SmtCore::applySplit( const PiecewiseLinearCaseSplit &split )
-{
-    for ( const auto &equation : split.getEquations() )
-        _engine->addNewEquation( equation );
-
-    List<Tightening> bounds = split.getBoundTightenings();
-    for ( const auto &bound : bounds )
-    {
-        if ( bound._type == Tightening::LB )
-            _engine->tightenLowerBound( bound._variable, bound._value );
-        else
-            _engine->tightenUpperBound( bound._variable, bound._value );
-    }
 }
 
 void SmtCore::setStatistics( Statistics *statistics )

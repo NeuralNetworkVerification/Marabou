@@ -13,10 +13,11 @@
 #ifndef __PiecewiseLinearConstraint_h__
 #define __PiecewiseLinearConstraint_h__
 
-#include "Map.h"
 #include "ITableau.h"
+#include "Map.h"
+#include "PiecewiseLinearCaseSplit.h"
+#include "Queue.h"
 
-class PiecewiseLinearCaseSplit;
 class ITableau;
 
 class PiecewiseLinearConstraint : public ITableau::VariableWatcher
@@ -83,7 +84,16 @@ public:
     */
     virtual List<PiecewiseLinearCaseSplit> getCaseSplits() const = 0;
 
-    ITableau *_tableau;
+    /*
+      Accessor for enqueued splits.
+    */
+    Queue<PiecewiseLinearCaseSplit> &getEnqueuedSplits()
+    {
+      return _splits;
+    }
+
+protected:
+    Queue<PiecewiseLinearCaseSplit> _splits;
 };
 
 #endif // __PiecewiseLinearConstraint_h__
