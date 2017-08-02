@@ -11,9 +11,9 @@
  **/
 
 #include "Debug.h"
+#include "EngineState.h"
 #include "IEngine.h"
 #include "SmtCore.h"
-#include "TableauState.h"
 
 SmtCore::SmtCore( IEngine *engine )
     : _statistics( NULL )
@@ -49,9 +49,9 @@ void SmtCore::performSplit()
     if ( _statistics )
         _statistics->incNumSplits();
 
-    // First, obtain the current state of the tableau
-    TableauState *stateBeforeSplits = new TableauState;
-    _engine->storeTableauState( *stateBeforeSplits );
+    // First, obtain the current state of the engine
+    EngineState *stateBeforeSplits = new EngineState;
+    _engine->storeState( *stateBeforeSplits );
 
     // Obtain the splits
     List<PiecewiseLinearCaseSplit> splits = _constraintForSplitting->getCaseSplits();
@@ -63,7 +63,7 @@ void SmtCore::performSplit()
 
     // Store the remaining splits on the stack, for later
     StackEntry stackEntry;
-    stackEntry._tableauState = stateBeforeSplits;
+    stackEntry._engineState = stateBeforeSplits;
     ++split;
     while ( split != splits.end() )
     {
@@ -91,8 +91,8 @@ bool SmtCore::popSplit()
 
     StackEntry &stackEntry( _stack.top() );
 
-    // Restore the state of the tableau
-    _engine->restoreTableauState( *stackEntry._tableauState );
+    // Restore the state of the engine
+    _engine->restoreState( *stackEntry._engineState );
 
     // Apply the new split and erase it from the list
     auto split = stackEntry._splits.begin();
@@ -101,7 +101,10 @@ bool SmtCore::popSplit()
 
     // If there are no splits left, pop this entry
     if ( stackEntry._splits.size() == 0 )
+    {
+        delete stackEntry._engineState;
         _stack.pop();
+    }
 
     if ( _statistics )
         _statistics->setCurrentStackDepth( getStackDepth() );

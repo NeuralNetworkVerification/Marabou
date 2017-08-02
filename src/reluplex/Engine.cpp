@@ -11,6 +11,7 @@
 
 #include "Debug.h"
 #include "Engine.h"
+#include "EngineState.h"
 #include "FreshVariables.h"
 #include "InputQuery.h"
 #include "PiecewiseLinearConstraint.h"
@@ -320,14 +321,14 @@ void Engine::addNewEquation( const Equation &equation )
     _tableau->addEquation( equation );
 }
 
-void Engine::storeTableauState( TableauState &state ) const
+void Engine::storeState( EngineState &state ) const
 {
-    _tableau->storeState( state );
+    _tableau->storeState( state._tableauState );
 }
 
-void Engine::restoreTableauState( const TableauState &state )
+void Engine::restoreState( const EngineState &state )
 {
-    _tableau->restoreState( state );
+    _tableau->restoreState( state._tableauState );
 }
 
 void Engine::log( const String &line ) const

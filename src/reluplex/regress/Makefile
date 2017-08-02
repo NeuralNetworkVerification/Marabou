@@ -27,6 +27,7 @@ SOURCES += \
 	BoundTightener.cpp \
 	DantzigsRule.cpp \
 	Engine.cpp \
+	EngineState.cpp \
 	Equation.cpp \
 	EtaMatrix.cpp \
 	FreshVariables.cpp \

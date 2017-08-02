@@ -24,6 +24,7 @@
 #include "Statistics.h"
 #include "SteepestEdge.h"
 
+class EngineState;
 class InputQuery;
 class PiecewiseLinearConstraint;
 class String;
@@ -64,12 +65,12 @@ public:
     void addNewEquation( const Equation &equation );
 
     /*
-      Methods for storing and restoring the tableau.
+      Methods for storing and restoring the state of the engine.
     */
-    void storeTableauState( TableauState &state ) const;
-    void restoreTableauState( const TableauState &state );
+    void storeState( EngineState &state ) const;
+    void restoreState( const EngineState &state );
 
-private:    
+private:
     /*
       Collect and print various statistics.
     */
