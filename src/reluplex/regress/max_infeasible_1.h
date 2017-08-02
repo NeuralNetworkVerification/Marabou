@@ -1,20 +1,20 @@
-#ifndef __max_feasible_1_h__
-#define __max_feasible_1_h__
+#ifndef __max_infeasible_1_h__
+#define __max_infeasible_1_h__
 
 #include "Engine.h"
 #include "FloatUtils.h"
 #include "InputQuery.h"
 #include "MaxConstraint.h"
 
-class max_feasible_1
+class max_infeasible_1
 {
 public:
 	void run()
 	{
-		printf( "Running max_feasible_1..." );
+		printf( "Running max_infeasible_1..." );
 
-        //   0   <= x0  <= 1
-        //   0   <= x1f
+        //   x0  <= 0
+        //   .5  <= x1f 
 		//	 0	 <= x2f
         //   1/2 <= x3  <= 1
         //
@@ -40,13 +40,14 @@ public:
         InputQuery inputQuery;
         inputQuery.setNumberOfVariables( 9 );
 
-        inputQuery.setLowerBound( 0, 0 );
-        inputQuery.setUpperBound( 0, 1 );
 
-        inputQuery.setLowerBound( 1, -large );
+       	inputQuery.setLowerBound( 0, -large );
+        inputQuery.setUpperBound( 0, 0 );
+
+        inputQuery.setLowerBound( 1, 0.5 );
         inputQuery.setUpperBound( 1, large );
 
-        inputQuery.setLowerBound( 2, 0 );
+		 inputQuery.setLowerBound( 2, 0 );
         inputQuery.setUpperBound( 2, large );
 
         inputQuery.setLowerBound( 3, -large );
@@ -99,69 +100,19 @@ public:
 		Engine engine;
 
 		engine.processInputQuery( inputQuery );
-		if ( !engine.solve() )
+
+		if ( engine.solve() )
         {
-            printf( "\nError! Query is feasible but no solution found\n" );
-            exit( 1 );
-        }
-        engine.extractSolution( inputQuery );
-
-        // Sanity test
-        double value_x0 = inputQuery.getSolutionValue( 0 );
-        double value_x1b = inputQuery.getSolutionValue( 1 );
-        double value_x1f = inputQuery.getSolutionValue( 2 );
-        double value_x2b = inputQuery.getSolutionValue( 3 );
-        double value_x2f = inputQuery.getSolutionValue( 4 );
-        double value_x3 = inputQuery.getSolutionValue( 5 );
-
-
-        if ( !FloatUtils::areEqual( value_x0, value_x1b ) )
-        {
-            printf( "\nError! Equaiton 1 does not hold\n" );
+            printf( "\nError! Query is infeasible but a solution was found\n" );
             exit( 1 );
         }
 
-        if ( !FloatUtils::areEqual( value_x0, -value_x2b ) )
-        {
-            printf( "\nError! Equaiton 2 does not hold\n" );
-            exit( 1 );
-        }
-
-        if ( !FloatUtils::areEqual( value_x3, value_x1f + value_x2f ) )
-        {
-            printf( "\nError! Equaiton 3 does not hold\n" );
-            exit( 1 );
-        }
-
-        if ( FloatUtils::lt( value_x0, 0 ) || FloatUtils::gt( value_x0, 1 ) ||
-             FloatUtils::lt( value_x1f, 0 ) || 
-             FloatUtils::lt( value_x3, 0.5 ) || FloatUtils::gt( value_x3, 1 ) ||
-			 FloatUtils::lt( value_x2f, 0.0 ) )
-        {
-            printf( "\nError! Values violate the variable bounds\n" );
-            exit( 1 );
-        }
-
-       	if ( !FloatUtils::areEqual( FloatUtils::max( value_x2b, 
-		FloatUtils::max( value_x0, value_x2f ) ), value_x2b ) )
-        {
-            printf( "\nError! x_2b violates the max constraint\n" );
-            exit( 1 );
-        }
-
-		if ( !FloatUtils::areEqual( FloatUtils::max( value_x1b, 
-		FloatUtils::max( value_x0, FloatUtils::max( value_x2b, value_x1f ) ) ), value_x3 ) ) 
-		{
-			printf( "\nError! x_3 violates the max constraint\n" );
-			exit( 1 );
-		}
-
-        printf( "\nQuery is satisfiable\n" );
+        printf( "\nQuery is unsatisfiable\n" );
         printf( "\nRegression test passed!\n" );
     }
 };
 
-#endif // __max_feasible_1_h__
+#endif // __max_infeasible_1_h__
 
 //
 // Local Variables:
