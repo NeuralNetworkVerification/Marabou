@@ -116,13 +116,6 @@ public:
         lastRightHandSide[index] = value;
     }
 
-    const double *getRightHandSide() const
-    {
-        return lastRightHandSide;
-    }
-
-    void computeRightHandSide() {}
-
     Set<unsigned> lastBasicVariables;
     void markAsBasic( unsigned variable )
     {
@@ -212,7 +205,7 @@ public:
     {
 	return steepestEdgeGamma;
     }
-    
+
     Map<unsigned, unsigned> nextNonBasicIndexToVaribale;
     unsigned nonBasicIndexToVariable( unsigned index ) const
     {

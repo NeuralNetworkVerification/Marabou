@@ -43,6 +43,7 @@ public:
 
     unsigned _size;
     Entry *_row;
+    double _rightHandSide;
 
     void dump() const;
 };

@@ -656,6 +656,8 @@ public:
         TS_ASSERT_EQUALS( entry._var, 3U );
         TS_ASSERT_EQUALS( entry._coefficient, -2 );
 
+        TS_ASSERT_EQUALS( row._rightHandSide, 225.0 );
+
         TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 1, &row ) );
 
         entry = row._row[0];
@@ -674,6 +676,8 @@ public:
         TS_ASSERT_EQUALS( entry._var, 3U );
         TS_ASSERT_EQUALS( entry._coefficient, -1 );
 
+        TS_ASSERT_EQUALS( row._rightHandSide, 117.0 );
+
         TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 2, &row ) );
 
         entry = row._row[0];
@@ -691,6 +695,8 @@ public:
         entry = row._row[3];
         TS_ASSERT_EQUALS( entry._var, 3U );
         TS_ASSERT_EQUALS( entry._coefficient, -4 );
+
+        TS_ASSERT_EQUALS( row._rightHandSide, 420.0 );
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
         tableau->setEnteringVariable( 2u );
@@ -746,6 +752,7 @@ public:
         TS_ASSERT_EQUALS( entry._var, 3U );
         TS_ASSERT( FloatUtils::areEqual( entry._coefficient, -2.0/3 ) );
 
+        TS_ASSERT_EQUALS( row._rightHandSide, 85.0 );
 
         TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 1, &row ) );
 
@@ -765,6 +772,8 @@ public:
         TS_ASSERT_EQUALS( entry._var, 3U );
         TS_ASSERT( FloatUtils::areEqual( entry._coefficient, 1.0/3 ) );
 
+        TS_ASSERT_EQUALS( row._rightHandSide, -23.0 );
+
 
         TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 2, &row ) );
 
@@ -783,6 +792,8 @@ public:
         entry = row._row[3];
         TS_ASSERT_EQUALS( entry._var, 3U );
         TS_ASSERT( FloatUtils::areEqual( entry._coefficient, -4.0/3 ) );
+
+        TS_ASSERT_EQUALS( row._rightHandSide, 140.0 );
     }
 
     void test_degenerate_pivot()
@@ -1331,10 +1342,8 @@ public:
         TS_TRACE( "When resizing the talbeau, allocate a larger size and only use part of it, "
                   "instead of increasing it one row at a time?" );
         TS_TRACE( "Make sure all watchers are properply informed when restoring a tabealu" );
-        TS_TRACE( "Make sure steepest edge data structures are stored/restored/resized correctly" );
         TS_TRACE( "When storing a tableau, include the _boundsValid variable?" );
         TS_TRACE( "When adding a row, what to do about the gamma function?" );
-        TS_TRACE( "Remove _rhs, put the right hand side in the row structure returned by GetRow" );
         TS_TRACE( "Tableau has an applySplit function, identical to the one in the smt core. "
                   "Move this joint functionality to the engine?" );
     }

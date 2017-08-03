@@ -15,6 +15,7 @@
 #include "EntrySelectionStrategy.h"
 #include "Equation.h"
 #include "FloatUtils.h"
+#include "MStringf.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "ReluplexError.h"
 #include "Tableau.h"
@@ -602,16 +603,6 @@ void Tableau::setRightHandSide( const double *b )
 void Tableau::setRightHandSide( unsigned index, double value )
 {
     _b[index] = value;
-}
-
-const double *Tableau::getRightHandSide() const
-{
-    return _rhs;
-}
-
-void Tableau::computeRightHandSide()
-{
-    _basisFactorization->forwardTransformation( _b, _rhs );
 }
 
 const double *Tableau::getCostFunction() const
@@ -1224,6 +1215,9 @@ void Tableau::getTableauRow( unsigned index, TableauRow *row )
         for ( unsigned j = 0; j < _m; ++j )
             row->_row[i]._coefficient -= ( _multipliers[j] * ANColumn[j] );
     }
+
+    _basisFactorization->forwardTransformation( _b, _rhs );
+    row->_rightHandSide = _rhs[index];
 }
 
 void Tableau::dumpEquations()

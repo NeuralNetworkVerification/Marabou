@@ -35,7 +35,8 @@ void TableauRow::dump() const
 
         printf( "%.2lf * x%u, ", _row[i]._coefficient, _row[i]._var );
     }
-    printf( "\n" );
+
+    printf( "\n\trhs = %.2lf\n", _rightHandSide );
 }
 
 //
