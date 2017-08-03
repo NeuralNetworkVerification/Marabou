@@ -16,6 +16,7 @@
 #include "FloatUtils.h"
 #include "ITableau.h"
 #include "Map.h"
+#include "TableauRow.h"
 
 #include <cstring>
 
@@ -132,34 +133,34 @@ public:
 
     double getValue( unsigned /* variable */ ) { return 0; }
 
-    Map<unsigned, double> lastLowerBounds;
+    Map<unsigned, double> lowerBounds;
     double getLowerBound( unsigned variable ) const
     {
-        return lastLowerBounds[variable];
+        return lowerBounds[variable];
     }
 
     void setLowerBound( unsigned variable, double value )
     {
-        lastLowerBounds[variable] = value;
+        lowerBounds[variable] = value;
     }
 
-    Map<unsigned, double> lastUpperBounds;
+    Map<unsigned, double> upperBounds;
     double getUpperBound( unsigned variable ) const
     {
-        return lastUpperBounds[variable];
+        return upperBounds[variable];
     }
 
     void setUpperBound( unsigned variable, double value )
     {
-        lastUpperBounds[variable] = value;
+        upperBounds[variable] = value;
     }
 
     bool allBoundsValid() const
     {
-        for ( auto it : lastLowerBounds.keys() )
+        for ( auto it : lowerBounds.keys() )
         {
-            if ( lastUpperBounds.exists(it) &&
-                !FloatUtils::lte( lastLowerBounds[it], lastUpperBounds[it] ) )
+            if ( lowerBounds.exists(it) &&
+                !FloatUtils::lte( lowerBounds[it], upperBounds[it] ) )
                     return false;
         }
         return true;
@@ -213,27 +214,39 @@ public:
         return nextNonBasicIndexToVaribale.get( index );
     }
 
-    unsigned variableToIndex( unsigned /* index */ ) const
+    Map<unsigned, unsigned> nextVariableToIndex;
+    unsigned variableToIndex( unsigned index ) const
     {
-        return 0;
+        TS_ASSERT( nextVariableToIndex.exists( index ) );
+        return nextVariableToIndex.at( index );
     }
 
     void addEquation( const Equation &/* equation */ )
     {
     }
 
+    unsigned m;
     unsigned getM() const
     {
-        return 0;
+        return m;
     }
 
+    unsigned n;
     unsigned getN() const
     {
-        return 0;
+        return n;
     }
 
-    void getTableauRow( unsigned /* index */, TableauRow */* row */ )
+    unsigned lastGetRowIndex;
+    TableauRow *nextRow;
+    void getTableauRow( unsigned index, TableauRow *row )
     {
+        lastGetRowIndex = index;
+        TS_ASSERT_EQUALS( row->_size, nextRow->_size );
+
+        for ( unsigned i = 0; i < row->_size; ++i )
+            row->_row[i] = nextRow->_row[i];
+        row->_scalar = nextRow->_scalar;
     }
 
     void performDegeneratePivot( unsigned /* entering */, unsigned /* leaving */ )
@@ -248,12 +261,16 @@ public:
     {
     }
 
-    void tightenLowerBound( unsigned /* variable */, double /* value */ )
+    Map<unsigned, double> tightenedLowerBounds;
+    void tightenLowerBound( unsigned variable, double value )
     {
+        tightenedLowerBounds[variable] = value;
     }
 
-    void tightenUpperBound( unsigned /* variable */, double /* value */ )
+    Map<unsigned, double> tightenedUpperBounds;
+    void tightenUpperBound( unsigned variable, double value )
     {
+        tightenedUpperBounds[variable] = value;
     }
 
     void applySplit( const PiecewiseLinearCaseSplit &/* split */)

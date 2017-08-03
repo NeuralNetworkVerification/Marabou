@@ -20,6 +20,13 @@
 class TableauRow
 {
 public:
+    /*
+      For a given vasic variable xb, a row is the explicit
+      representation as non basic variables:
+
+      xb = scalar + sum_i{ c_i * x_i }
+    */
+
     TableauRow( unsigned size );
     ~TableauRow();
 
@@ -43,7 +50,7 @@ public:
 
     unsigned _size;
     Entry *_row;
-    double _rightHandSide;
+    double _scalar;
 
     void dump() const;
 };

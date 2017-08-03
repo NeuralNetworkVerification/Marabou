@@ -656,7 +656,7 @@ public:
         TS_ASSERT_EQUALS( entry._var, 3U );
         TS_ASSERT_EQUALS( entry._coefficient, -2 );
 
-        TS_ASSERT_EQUALS( row._rightHandSide, 225.0 );
+        TS_ASSERT_EQUALS( row._scalar, 225.0 );
 
         TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 1, &row ) );
 
@@ -676,7 +676,7 @@ public:
         TS_ASSERT_EQUALS( entry._var, 3U );
         TS_ASSERT_EQUALS( entry._coefficient, -1 );
 
-        TS_ASSERT_EQUALS( row._rightHandSide, 117.0 );
+        TS_ASSERT_EQUALS( row._scalar, 117.0 );
 
         TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 2, &row ) );
 
@@ -696,7 +696,7 @@ public:
         TS_ASSERT_EQUALS( entry._var, 3U );
         TS_ASSERT_EQUALS( entry._coefficient, -4 );
 
-        TS_ASSERT_EQUALS( row._rightHandSide, 420.0 );
+        TS_ASSERT_EQUALS( row._scalar, 420.0 );
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
         tableau->setEnteringVariable( 2u );
@@ -752,7 +752,7 @@ public:
         TS_ASSERT_EQUALS( entry._var, 3U );
         TS_ASSERT( FloatUtils::areEqual( entry._coefficient, -2.0/3 ) );
 
-        TS_ASSERT_EQUALS( row._rightHandSide, 85.0 );
+        TS_ASSERT_EQUALS( row._scalar, 85.0 );
 
         TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 1, &row ) );
 
@@ -772,7 +772,7 @@ public:
         TS_ASSERT_EQUALS( entry._var, 3U );
         TS_ASSERT( FloatUtils::areEqual( entry._coefficient, 1.0/3 ) );
 
-        TS_ASSERT_EQUALS( row._rightHandSide, -23.0 );
+        TS_ASSERT_EQUALS( row._scalar, -23.0 );
 
 
         TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 2, &row ) );
@@ -793,7 +793,7 @@ public:
         TS_ASSERT_EQUALS( entry._var, 3U );
         TS_ASSERT( FloatUtils::areEqual( entry._coefficient, -4.0/3 ) );
 
-        TS_ASSERT_EQUALS( row._rightHandSide, 140.0 );
+        TS_ASSERT_EQUALS( row._scalar, 140.0 );
     }
 
     void test_degenerate_pivot()

@@ -30,7 +30,7 @@ Tableau::Tableau()
     , _a( NULL )
     , _d( NULL )
     , _b( NULL )
-    , _rhs( NULL )
+    , _rowScalars( NULL )
     , _basisFactorization( NULL )
     , _costFunction( NULL )
     , _basicCosts( NULL )
@@ -181,10 +181,10 @@ void Tableau::freeMemoryIfNeeded()
         _work = NULL;
     }
 
-    if ( _rhs )
+    if ( _rowScalars )
     {
-        delete[] _rhs;
-        _rhs = NULL;
+        delete[] _rowScalars;
+        _rowScalars = NULL;
     }
 }
 
@@ -276,8 +276,8 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     if ( !_work )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::work" );
 
-    _rhs = new double[m];
-    if ( !_rhs )
+    _rowScalars = new double[m];
+    if ( !_rowScalars )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::rhs" );
 }
 
@@ -1216,8 +1216,8 @@ void Tableau::getTableauRow( unsigned index, TableauRow *row )
             row->_row[i]._coefficient -= ( _multipliers[j] * ANColumn[j] );
     }
 
-    _basisFactorization->forwardTransformation( _b, _rhs );
-    row->_rightHandSide = _rhs[index];
+    _basisFactorization->forwardTransformation( _b, _rowScalars );
+    row->_scalar = _rowScalars[index];
 }
 
 void Tableau::dumpEquations()
@@ -1570,12 +1570,12 @@ void Tableau::addRow()
     delete[] _work;
     _work = newWork;
 
-    // Allocate a larger _rhs. Don't need to initialize.
+    // Allocate a larger _rowScalars. Don't need to initialize.
     double *newRhs = new double[newM];
     if ( !newRhs )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newRhs" );
-    delete[] _rhs;
-    _rhs = newRhs;
+    delete[] _rowScalars;
+    _rowScalars = newRhs;
 
     _m = newM;
     _n = newN;

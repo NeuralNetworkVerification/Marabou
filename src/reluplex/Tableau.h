@@ -348,9 +348,9 @@ private:
     double *_b;
 
     /*
-      Working memory for computing the current right hand side.
+      Working memory for computing the current scalar in a row.
     */
-    double *_rhs;
+    double *_rowScalars;
 
     /*
       A unit vector of size m

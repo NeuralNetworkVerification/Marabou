@@ -29,7 +29,7 @@ void BoundTightener::deriveTightenings( ITableau &tableau, unsigned variable )
 	tableau.getTableauRow( tableau.variableToIndex( variable ), &row );
 
 	// Get right hand side
-    double constCoef = row._rightHandSide;
+    double constCoef = row._scalar;
 
     // Compute the lower and upper bounds from this row
 	double tightenedLowerBound = constCoef;
