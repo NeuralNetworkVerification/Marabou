@@ -1282,12 +1282,10 @@ void Tableau::restoreState( const TableauState &state )
     // Restore right hand side vector _b
     memcpy( _b, state._b, sizeof(double) * _m );
 
-    // ReStore the bounds and valid status
-    // TODO: I think valid status can just be set to true
+    // Restore the bounds and valid status
     // TODO: should notify all the constraints.
     memcpy( _lowerBounds, state._lowerBounds, sizeof(double) *_n );
     memcpy( _upperBounds, state._upperBounds, sizeof(double) *_n );
-    checkBoundsValid();
 
     // Basic variables
     _basicVariables = state._basicVariables;
