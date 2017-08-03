@@ -328,6 +328,7 @@ void Engine::storeState( EngineState &state ) const
 
 void Engine::restoreState( const EngineState &state )
 {
+    _boundTightener.clearStoredTightenings();
     _tableau->restoreState( state._tableauState );
 }
 

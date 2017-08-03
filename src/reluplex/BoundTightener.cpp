@@ -84,6 +84,11 @@ void BoundTightener::setStatistics( Statistics *statistics )
     _statistics = statistics;
 }
 
+void BoundTightener::clearStoredTightenings()
+{
+    _tighteningRequests.clear();
+}
+
 //
 // Local Variables:
 // compile-command: "make -C .. "
