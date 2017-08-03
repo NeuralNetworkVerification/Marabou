@@ -1041,8 +1041,6 @@ void Tableau::pickLeavingVariable( double *d )
     // A marker to show that no leaving variable has been selected
     _leavingVariable = _m;
 
-    // TODO: assuming all coefficient in B are 1
-
     if ( decrease )
     {
         // The maximum amount by which the entering variable can
