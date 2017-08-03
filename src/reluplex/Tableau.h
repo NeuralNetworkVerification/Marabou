@@ -69,16 +69,6 @@ public:
     void setRightHandSide( const double *b );
     void setRightHandSide( unsigned index, double value );
 
-    // /*
-    //   Get right hand side vector.
-    // */
-    // const double *getRightHandSide() const;
-
-    // /*
-    //   Compute right hand side = inv(B) * b.
-    // */
-    // void computeRightHandSide();
-
     /*
       Mark a variable as basic in the initial basis
      */
