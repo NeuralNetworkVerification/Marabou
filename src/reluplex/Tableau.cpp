@@ -1620,9 +1620,6 @@ void Tableau::notifyUpperBound( unsigned variable, double bound )
 
 void Tableau::applySplit( const PiecewiseLinearCaseSplit &split )
 {
-    printf( "Error!!\n" );
-    exit( 1 );
-
     for ( const auto &equation : split.getEquations() )
         addEquation( equation );
 
