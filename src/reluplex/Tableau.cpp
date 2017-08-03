@@ -1268,6 +1268,9 @@ void Tableau::storeState( TableauState &state ) const
 
     // Store the steepest-edge gamma function
     memcpy( state._steepestEdgeGamma, _steepestEdgeGamma, sizeof(double) * ( _n - _m ) );
+
+    // Store the _boundsValid indicator
+    state._boundsValid = _boundsValid;
 }
 
 void Tableau::restoreState( const TableauState &state )
@@ -1305,6 +1308,9 @@ void Tableau::restoreState( const TableauState &state )
 
     // Restore the steepest-edge gamma function
     memcpy( _steepestEdgeGamma, state._steepestEdgeGamma, sizeof(double) * ( _n - _m ) );
+
+    // Restore the _boundsValid indicator
+    _boundsValid = state._boundsValid;
 
     // After a restoration, the assignment is valid
     computeBasicStatus();
@@ -1614,6 +1620,9 @@ void Tableau::notifyUpperBound( unsigned variable, double bound )
 
 void Tableau::applySplit( const PiecewiseLinearCaseSplit &split )
 {
+    printf( "Error!!\n" );
+    exit( 1 );
+
     for ( const auto &equation : split.getEquations() )
         addEquation( equation );
 

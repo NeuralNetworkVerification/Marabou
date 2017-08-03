@@ -98,6 +98,11 @@ public:
       The steepest-edge gamma function
     */
     double *_steepestEdgeGamma;
+
+    /*
+      Indicator whether the bounds are valid
+    */
+    bool _boundsValid;
 };
 
 #endif // __TableauState_h__
