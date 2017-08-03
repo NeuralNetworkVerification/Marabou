@@ -933,7 +933,7 @@ void Tableau::performDegeneratePivot( unsigned entering, unsigned leaving )
 double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient, bool decrease )
 {
     unsigned basic = _basicIndexToVariable[basicIndex];
-    double ratio;
+    double ratio = 0.0;
 
     // Negate the coefficient to go to a more convenient form: basic =
     // coefficient * nonBasic, as opposed to basic + coefficient *
