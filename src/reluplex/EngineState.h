@@ -13,6 +13,8 @@
 #ifndef __EngineState_h__
 #define __EngineState_h__
 
+#include "List.h"
+#include "PiecewiseLinearConstraint.h"
 #include "TableauState.h"
 
 class EngineState
@@ -22,6 +24,7 @@ public:
     ~EngineState();
 
     TableauState _tableauState;
+    List<PiecewiseLinearConstraintState> _plConstraintStates;
 };
 
 #endif // __EngineState_h__

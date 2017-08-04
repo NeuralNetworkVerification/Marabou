@@ -67,6 +67,10 @@ public:
         {
             return nextSplits;
         }
+
+        void storeState( PiecewiseLinearConstraintState &/* state */ ) const {};
+        void restoreState( const PiecewiseLinearConstraintState &/* state */ ) {};
+
     };
 
     void setUp()

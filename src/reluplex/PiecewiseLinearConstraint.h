@@ -20,6 +20,35 @@
 
 class ITableau;
 
+class PiecewiseLinearConstraintStateData
+{
+public:
+  virtual ~PiecewiseLinearConstraintStateData()
+  {
+  }
+};
+
+class PiecewiseLinearConstraintState
+{
+  /*
+    PL constraint saved states include the following:
+    - enqueued splits (tightenings/equations)
+    - any additional data that the specific constraint may want to save
+  */
+public:
+  PiecewiseLinearConstraintState( )
+  : _stateData( NULL )
+  {      
+  }
+  ~PiecewiseLinearConstraintState()
+  {
+    delete _stateData;
+  }
+
+  Queue<PiecewiseLinearCaseSplit> _splits;
+  PiecewiseLinearConstraintStateData* _stateData;
+};
+
 class PiecewiseLinearConstraint : public ITableau::VariableWatcher
 {
 public:
@@ -91,6 +120,14 @@ public:
     {
       return _splits;
     }
+
+    /*
+      Store and restore the constraint's state. Needed for case splitting
+      and backtracking. The stored elements are the fields
+      specified in the PiecewiseLinearConstraintState
+    */
+    virtual void storeState( PiecewiseLinearConstraintState &state ) const = 0;
+    virtual void restoreState( const PiecewiseLinearConstraintState &state ) = 0;
 
 protected:
     Queue<PiecewiseLinearCaseSplit> _splits;

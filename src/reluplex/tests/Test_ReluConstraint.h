@@ -334,6 +334,7 @@ public:
 
         relu.unregisterAsWatcher( &tableau );
     }
+
 };
 
 //

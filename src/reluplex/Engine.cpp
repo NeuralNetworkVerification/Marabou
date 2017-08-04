@@ -313,12 +313,23 @@ void Engine::log( const String &line ) const
 void Engine::storeState( EngineState &state ) const
 {
     _tableau->storeState( state._tableauState );
+    for ( const auto &constraint : _plConstraints )
+    {
+        state._plConstraintStates.append( PiecewiseLinearConstraintState() );
+        constraint->storeState( state._plConstraintStates.back() );
+    }
 }
 
 void Engine::restoreState( const EngineState &state )
 {
     _boundTightener.clearStoredTightenings();
     _tableau->restoreState( state._tableauState );
+    List<PiecewiseLinearConstraintState>::const_iterator it = state._plConstraintStates.begin();
+    for ( const auto &constraint : _plConstraints )
+    {
+        constraint->restoreState( *it );
+        it++;
+    }
 }
 
 void Engine::applySplit( const PiecewiseLinearCaseSplit &split )

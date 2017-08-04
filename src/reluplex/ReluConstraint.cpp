@@ -44,11 +44,9 @@ void ReluConstraint::notifyVariableValue( unsigned variable, double value )
 
 void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
 {
-    _lowerBounds[variable] = bound;
     if ( (variable == _b || variable == _f) && FloatUtils::isPositive( bound ) )
     {
         // stuck in active phase
-        // TODO: constraints can also get unstuck (on a restore)
         _stuck = StuckStatus::STUCK_ACTIVE;
         _splits.push( getActiveSplit( FreshVariables::getNextVariable() ) );
     }
@@ -56,11 +54,9 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
 
 void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
 {
-    _upperBounds[variable] = bound;
     if ( (variable == _f) && FloatUtils::isNegative( bound ) )
     {
         // stuck in inactive phase
-        // TODO: constraints can also get unstuck (on a restore)
         _stuck = StuckStatus::STUCK_INACTIVE;
         _splits.push( getInactiveSplit( FreshVariables::getNextVariable() ) );
     }
@@ -142,6 +138,26 @@ List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
     if ( _stuck != StuckStatus::STUCK_ACTIVE )
         splits.append( getInactiveSplit( auxVariable ) );
     return splits;
+}
+
+void ReluConstraint::storeState( PiecewiseLinearConstraintState &state ) const
+{
+    state._stateData = new ReluConstraintStateData;
+    state._splits = _splits;
+    ReluConstraintStateData *stateData =
+        dynamic_cast<ReluConstraintStateData *>(state._stateData);
+    stateData->_assignment = _assignment;
+    stateData->_stuck = _stuck;
+}
+
+void ReluConstraint::restoreState( const PiecewiseLinearConstraintState &state )
+{
+    _splits = state._splits;
+    const ReluConstraintStateData *stateData =
+        dynamic_cast<const ReluConstraintStateData *>(state._stateData);
+    ASSERT( stateData );
+    _assignment = stateData->_assignment;
+    _stuck = stateData->_stuck;
 }
 
 PiecewiseLinearCaseSplit ReluConstraint::getInactiveSplit( unsigned auxVariable ) const
