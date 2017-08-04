@@ -92,6 +92,11 @@ public:
     void storeState( PiecewiseLinearConstraintState &state ) const;
     void restoreState( const PiecewiseLinearConstraintState &state );
 
+    /*
+      Allocate a ReluConstraintState for storing state.
+    */
+    PiecewiseLinearConstraintState *allocateState() const;
+
 private:
     bool _constraintActive;
     unsigned _b;
@@ -103,9 +108,11 @@ private:
     PiecewiseLinearCaseSplit getActiveSplit( unsigned auxVariable ) const;
 };
 
-class ReluConstraintStateData : public PiecewiseLinearConstraintStateData
+class ReluConstraintState : public PiecewiseLinearConstraintState
 {
 public:
+    ~ReluConstraintState() {}
+
     bool _constraintActive;
     Map<unsigned, double> _assignment;
     ReluConstraint::PhaseStatus _phaseStatus;

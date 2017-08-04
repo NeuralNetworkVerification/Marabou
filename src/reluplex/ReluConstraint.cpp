@@ -149,24 +149,23 @@ List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
 
 void ReluConstraint::storeState( PiecewiseLinearConstraintState &state ) const
 {
-    state._stateData = new ReluConstraintStateData;
-    state._splits = _splits;
-    ReluConstraintStateData *stateData =
-        dynamic_cast<ReluConstraintStateData *>(state._stateData);
-    stateData->_constraintActive = _constraintActive;
-    stateData->_assignment = _assignment;
-    stateData->_phaseStatus = _phaseStatus;
+    ReluConstraintState *reluState = dynamic_cast<ReluConstraintState *>( &state );
+    reluState->_constraintActive = _constraintActive;
+    reluState->_assignment = _assignment;
+    reluState->_phaseStatus = _phaseStatus;
 }
 
 void ReluConstraint::restoreState( const PiecewiseLinearConstraintState &state )
 {
-    _splits = state._splits;
-    const ReluConstraintStateData *stateData =
-        dynamic_cast<const ReluConstraintStateData *>(state._stateData);
-    ASSERT( stateData );
-    _constraintActive = stateData->_constraintActive;
-    _assignment = stateData->_assignment;
-    _phaseStatus = stateData->_phaseStatus;
+    const ReluConstraintState *reluState = dynamic_cast<const ReluConstraintState *>( &state );
+    _constraintActive = reluState->_constraintActive;
+    _assignment = reluState->_assignment;
+    _phaseStatus = reluState->_phaseStatus;
+}
+
+PiecewiseLinearConstraintState *ReluConstraint::allocateState() const
+{
+    return new ReluConstraintState;
 }
 
 PiecewiseLinearCaseSplit ReluConstraint::getInactiveSplit( unsigned auxVariable ) const

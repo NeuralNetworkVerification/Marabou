@@ -20,37 +20,11 @@
 
 class ITableau;
 
-class PiecewiseLinearConstraintStateData
-{
-public:
-    virtual ~PiecewiseLinearConstraintStateData() {}
-};
-
-// TODO: Why do we need 2 separate levels? Why not just "PiecewiseLinearConstraintState"?
 class PiecewiseLinearConstraintState
 {
-    /*
-      PL constraint saved states include the following:
-      - enqueued splits (tightenings/equations)
-      - any additional data that the specific constraint may want to save
-    */
 public:
-    PiecewiseLinearConstraintState( )
-        : _stateData( NULL )
-    {
-    }
-
-    ~PiecewiseLinearConstraintState()
-    {
-        if ( _stateData )
-        {
-            delete _stateData;
-            _stateData = NULL;
-        }
-    }
-
-    Queue<PiecewiseLinearCaseSplit> _splits;
-    PiecewiseLinearConstraintStateData *_stateData;
+    PiecewiseLinearConstraintState() {}
+    virtual ~PiecewiseLinearConstraintState() {}
 };
 
 class PiecewiseLinearConstraint : public ITableau::VariableWatcher
@@ -134,15 +108,18 @@ public:
     virtual PiecewiseLinearCaseSplit getValidCaseSplit() const = 0;
 
     /*
+      Allocate a new state (derived from PiecewiseLinearConstraintState)
+      to save into.
+    */
+    virtual PiecewiseLinearConstraintState *allocateState() const = 0;
+
+    /*
       Store and restore the constraint's state. Needed for case splitting
-      and backtracking. The stored elements are the fields
-      specified in the PiecewiseLinearConstraintState
+      and backtracking.
     */
     virtual void storeState( PiecewiseLinearConstraintState &state ) const = 0;
     virtual void restoreState( const PiecewiseLinearConstraintState &state ) = 0;
 
-protected:
-    Queue<PiecewiseLinearCaseSplit> _splits;
 };
 
 #endif // __PiecewiseLinearConstraint_h__

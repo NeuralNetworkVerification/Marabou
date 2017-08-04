@@ -156,8 +156,6 @@ public:
 
         ReluConstraint relu( b, f );
 
-        Map<unsigned, double> assignment;
-
         List<PiecewiseLinearConstraint::Fix> fixes;
         List<PiecewiseLinearConstraint::Fix>::iterator it;
 
@@ -431,8 +429,6 @@ public:
 
         ReluConstraint relu( b, f );
 
-        Map<unsigned, double> assignment;
-
         List<PiecewiseLinearConstraint::Fix> fixes;
         List<PiecewiseLinearConstraint::Fix>::iterator it;
 
@@ -497,8 +493,6 @@ public:
 
         ReluConstraint relu( b, f );
 
-        Map<unsigned, double> assignment;
-
         List<PiecewiseLinearConstraint::Fix> fixes;
         List<PiecewiseLinearConstraint::Fix>::iterator it;
 
@@ -547,6 +541,53 @@ public:
         TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
         TS_ASSERT_EQUALS( addend->_variable, 100U );
         TS_ASSERT_EQUALS( inactiveEquation._auxVariable, 100U );
+    }
+
+    void test_relu_store_and_restore()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        ReluConstraint relu( b, f );
+
+        relu.notifyVariableValue( b, 1 );
+        relu.notifyVariableValue( f, 2 );
+
+        PiecewiseLinearConstraintState *state = relu.allocateState();
+        relu.storeState( *state );
+        ReluConstraintState *reluState = dynamic_cast<ReluConstraintState *>( state );
+
+        TS_ASSERT( reluState->_constraintActive );
+        TS_ASSERT_EQUALS( reluState->_assignment[b], 1 );
+        TS_ASSERT_EQUALS( reluState->_assignment[f], 2 );
+        TS_ASSERT_EQUALS( reluState->_phaseStatus, ReluConstraint::PhaseStatus::PHASE_NOT_FIXED );
+
+        relu.setActiveConstraint( false );
+        relu.notifyVariableValue( b, 3 );
+        relu.notifyVariableValue( f, 4 );
+        relu.notifyLowerBound( f, 1 );
+
+        PiecewiseLinearConstraintState *state2 = relu.allocateState();
+        relu.storeState( *state2 );
+        ReluConstraintState *reluState2 = dynamic_cast<ReluConstraintState *>( state2 );
+
+        TS_ASSERT( !reluState2->_constraintActive );
+        TS_ASSERT_EQUALS( reluState2->_assignment[b], 3 );
+        TS_ASSERT_EQUALS( reluState2->_assignment[f], 4 );
+        TS_ASSERT_EQUALS( reluState2->_phaseStatus, ReluConstraint::PhaseStatus::PHASE_ACTIVE );
+
+        relu.restoreState( *state );
+        TS_ASSERT( reluState->_constraintActive );
+        TS_ASSERT_EQUALS( reluState->_assignment[b], 1 );
+        TS_ASSERT_EQUALS( reluState->_assignment[f], 2 );
+        TS_ASSERT_EQUALS( reluState->_phaseStatus, ReluConstraint::PhaseStatus::PHASE_NOT_FIXED );
+
+        relu.restoreState( *state2 );
+        TS_ASSERT( !reluState2->_constraintActive );
+        TS_ASSERT_EQUALS( reluState2->_assignment[b], 3 );
+        TS_ASSERT_EQUALS( reluState2->_assignment[f], 4 );
+        TS_ASSERT_EQUALS( reluState2->_phaseStatus, ReluConstraint::PhaseStatus::PHASE_ACTIVE );
+
     }
 };
 

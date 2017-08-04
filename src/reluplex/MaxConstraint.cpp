@@ -205,6 +205,12 @@ void MaxConstraint::restoreState( const PiecewiseLinearConstraintState &/* state
     exit( 1 );
 }
 
+PiecewiseLinearConstraintState *MaxConstraint::allocateState() const
+{
+    printf( "Error! Not yet implemented\n" );
+	exit( 1 );
+}
+
 bool MaxConstraint::phaseFixed() const
 {
     printf( "Error! Not yet implemented\n" );

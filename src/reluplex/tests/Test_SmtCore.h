@@ -85,6 +85,8 @@ public:
             return nextSplits;
         }
 
+        PiecewiseLinearConstraintState *allocateState() const { return NULL; };
+
         void storeState( PiecewiseLinearConstraintState &/* state */ ) const {};
         void restoreState( const PiecewiseLinearConstraintState &/* state */ ) {};
 

@@ -85,13 +85,18 @@ public:
     void storeState( PiecewiseLinearConstraintState &state ) const;
     void restoreState( const PiecewiseLinearConstraintState &state );
 
+    /*
+      Allocate a MaxConstraintState for storing state. (TODO)
+    */
+    PiecewiseLinearConstraintState *allocateState() const;
+
 private:
     bool _constraintActive;
-	unsigned _f;
-	unsigned _maxIndex;
-	List<unsigned> _elements;
+	  unsigned _f;
+  	unsigned _maxIndex;
+	  List<unsigned> _elements;
 
-	Map<unsigned, double> _assignment;
+  	Map<unsigned, double> _assignment;
 };
 
 #endif // __MaxConstraint_h__

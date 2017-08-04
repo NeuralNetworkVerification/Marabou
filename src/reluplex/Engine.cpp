@@ -331,8 +331,8 @@ void Engine::storeState( EngineState &state ) const
     _tableau->storeState( state._tableauState );
     for ( const auto &constraint : _plConstraints )
     {
-        PiecewiseLinearConstraintState constraintState;
-        constraint->storeState( constraintState );
+        PiecewiseLinearConstraintState *constraintState = constraint->allocateState();
+        constraint->storeState( *constraintState );
         state._plConstraintToState[constraint] = constraintState;
     }
 
@@ -354,7 +354,7 @@ void Engine::restoreState( const EngineState &state )
         if ( !state._plConstraintToState.exists( constraint ) )
             throw ReluplexError( ReluplexError::MISSING_PL_CONSTRAINT_STATE );
 
-        constraint->restoreState( state._plConstraintToState[constraint] );
+        constraint->restoreState( *state._plConstraintToState[constraint] );
     }
 
     _numPlConstraintsDisbaledByValidSplits = state._numPlConstraintsDisbaledByValidSplits;
