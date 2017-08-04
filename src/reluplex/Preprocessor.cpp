@@ -4,8 +4,6 @@
 #include "FloatUtils.h"
 #include "InputQuery.h"
 
-#include <cfloat>
-
 Preprocessor::Preprocessor()
 {
 }
@@ -60,10 +58,10 @@ void Preprocessor::tightenBounds( InputQuery &input )
                     }
 
                     //divide by coefficient
-                    if ( FloatUtils::gt( scalarLB / abs( addend._coefficient ), input.getLowerBound( addend._variable ) ) )
-                            input.setLowerBound( addend._variable, scalarLB / abs( addend._coefficient ) );
-                    if ( FloatUtils::lt( scalarUB / abs (addend._coefficient ), input.getUpperBound( addend._variable ) ) )
-                            input.setUpperBound( addend._variable, scalarUB / abs ( addend._coefficient ) );
+                    if ( FloatUtils::gt( scalarLB / FloatUtils::abs( addend._coefficient ), input.getLowerBound( addend._variable ) ) )
+                            input.setLowerBound( addend._variable, scalarLB / FloatUtils::abs( addend._coefficient ) );
+                    if ( FloatUtils::lt( scalarUB / FloatUtils::abs(addend._coefficient ), input.getUpperBound( addend._variable ) ) )
+                            input.setUpperBound( addend._variable, scalarUB / FloatUtils::abs( addend._coefficient ) );
             }
 
             if ( FloatUtils::gt( input.getLowerBound( addend._variable), input.getUpperBound( addend._variable) ) )
