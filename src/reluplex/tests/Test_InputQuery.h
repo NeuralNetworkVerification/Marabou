@@ -103,19 +103,30 @@ public:
 		inputQuery.setLowerBound( 3, 0 );
 		inputQuery.setUpperBound( 3, 0 );
 
+		// x0 + x1 - x2 = 10
 		Equation equation1;
 		equation1.addAddend( 1, 0 );
 		equation1.addAddend( 1, 1 );
 		equation1.addAddend( -1, 2 );
 		equation1.setScalar( 10 );
-		equation1.markAuxiliaryVariable( 3 );
+		equation1.markAuxiliaryVariable( 3 ); // remove
 		inputQuery.addEquation( equation1 );
 		
 		inputQuery.preprocessBounds();
-		
+
+		// x0 = 10 - x1 + x2
+		//
+		// x0.lb = 10 - x1.ub + x2.lb = 10 - 1 + 2 = 11
+		// x0.ub = 10 - x1.lb + x2.ub = 10 - 0 + 3 = 13
+		//
+		// x2 = -10 + x0 + x1
+		//
+		// x2.lb = -10 + x0.lb + x1.lb
+		// x2.ub = -10 + x0.ub + x1.ub
+	      
 		TS_ASSERT_EQUALS( inputQuery.getLowerBound( 0 ), 11 );
 		TS_ASSERT_EQUALS( inputQuery.getUpperBound( 0 ), 13 );
-		
+
 		inputQuery.setLowerBound( 0, 0 );
 		inputQuery.setUpperBound( 0, DBL_MAX );
 		inputQuery.setLowerBound( 1, 0 );
@@ -124,7 +135,13 @@ public:
 		inputQuery.setUpperBound( 2, 3 );
 		inputQuery.setLowerBound( 3, 0 );
 		inputQuery.setUpperBound( 3, 0 );
-		
+
+		// x0.lb = 10 - x1.ub + x2.lb --> Unbounded
+		// x0.ub = 10 - x1.lb + x2.ub = 10 - 0 + 3 = 13
+
+		// x2.lb = -10 + x0.lb + x1.lb = -10 + 0 + 0 = -10
+		// x2.ub = -10 + x0.ub + x1.ub = -10 + 13 + 1 = 4
+
 		inputQuery.preprocessBounds();
 		
 		TS_ASSERT_EQUALS( inputQuery.getLowerBound( 0 ), 0 );
@@ -141,6 +158,9 @@ public:
 		inputQuery.setLowerBound( 3, 0 );
 		inputQuery.setUpperBound( 3, 0 );
 
+		// x0.lb = 10 - x1.ub + x2.lb = 10 - 1 + 2 = 11
+		// x0.ub = 10 - x1.lb + x2.ub --> Unbounded
+
 		inputQuery.preprocessBounds();
 
 		TS_ASSERT_EQUALS( inputQuery.getLowerBound( 0 ), 11 );
@@ -156,6 +176,9 @@ public:
 		inputQuery.setUpperBound( 2, 3 );
 		inputQuery.setLowerBound( 3, 0 );
 		inputQuery.setUpperBound( 3, 0 );
+
+		// x0.lb = 10 - x1.ub + x2.lb --> Unbounded
+		// x0.ub = 10 - x1.lb + x2.ub = 10 - 0 + 3 = 13
 
 		inputQuery.preprocessBounds();
 
