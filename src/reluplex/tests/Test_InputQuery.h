@@ -221,6 +221,31 @@ public:
 		{
 			TS_ASSERT_EQUALS( e.getCode(), 6 );
 		}
+		
+		InputQuery inputQuery2;
+
+		inputQuery2.setNumberOfVariables( 4 );
+		inputQuery2.setLowerBound( 1, 0 );
+		inputQuery2.setUpperBound( 1, 1 );
+		inputQuery2.setLowerBound( 2, 2 );
+		inputQuery2.setUpperBound( 2, 3 );
+		inputQuery2.setLowerBound( 3, 0 );
+		inputQuery2.setUpperBound( 3, 0 );
+
+		// 2 * x0 + x1 - x2 = 10
+		Equation equation2;
+		equation2.addAddend( 2, 0 );
+		equation2.addAddend( 1, 1 );
+		equation2.addAddend( -1, 2 );
+		equation2.setScalar( 10 );
+		equation2.markAuxiliaryVariable( 3 ); // remove
+		inputQuery2.addEquation( equation2 );
+		
+		inputQuery2.preprocessBounds();
+
+		TS_ASSERT_EQUALS( inputQuery2.getLowerBound( 0 ), 5.5 );
+		TS_ASSERT_EQUALS( inputQuery2.getUpperBound( 0 ), 6.5 );
+	
 	}
 };
 

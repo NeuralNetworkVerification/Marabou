@@ -133,10 +133,10 @@ void InputQuery::preprocessBounds()
 {
 	double min = -DBL_MAX;
 	double max = DBL_MAX;
-	bool unbounded = false;
 
 	for ( auto equation : _equations )
 	{
+		bool unbounded = false;
 		for ( auto addend : equation._addends )
 		{
 				if ( getLowerBound( addend._variable ) == min || getUpperBound( addend._variable ) == max )
@@ -145,7 +145,7 @@ void InputQuery::preprocessBounds()
 					if ( getLowerBound( addend._variable ) == min && getUpperBound( addend._variable ) == max )
 					{
 						if ( unbounded )
-							continue;
+							break;	
 						unbounded = true;
 					}
 					//if left-hand side coefficient is negative, [LB, UB] = [-UB, -LB]
@@ -178,15 +178,16 @@ void InputQuery::preprocessBounds()
 						scalarLB = -temp;
 					}
 
-					if ( FloatUtils::gt( scalarLB, getLowerBound( addend._variable ) ) )
-							setLowerBound( addend._variable, scalarLB );
-					if ( FloatUtils::lt( scalarUB, getUpperBound( addend._variable ) ) )
-							setUpperBound( addend._variable, scalarUB );
+					//divide by coefficient
+					if ( FloatUtils::gt( scalarLB / abs( addend._coefficient ), getLowerBound( addend._variable ) ) )
+							setLowerBound( addend._variable, scalarLB / abs( addend._coefficient ) );
+					if ( FloatUtils::lt( scalarUB / abs (addend._coefficient ), getUpperBound( addend._variable ) ) )
+							setUpperBound( addend._variable, scalarUB / abs ( addend._coefficient ) );
 			}
-
 
 			if ( getLowerBound( addend._variable) > getUpperBound( addend._variable) )
 				throw ReluplexError( ReluplexError::INVALID_BOUND_TIGHTENING, "preprocessing bound error" );
+
 		}
 	}
 
