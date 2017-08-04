@@ -100,10 +100,6 @@ private:
     */
     Map<PiecewiseLinearConstraint *, unsigned> _constraintToViolationCount;
 
-    /*
-      Apply a case split.
-    */
-    void applySplit( const PiecewiseLinearCaseSplit &split );
 };
 
 #endif // __SmtCore_h__

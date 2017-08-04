@@ -241,12 +241,12 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     _lowerBounds = new double[n];
     if ( !_lowerBounds )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::lowerBounds" );
-    std::fill_n( _lowerBounds, n, FloatUtils::negativeInfinity() );
+    std::fill_n( _lowerBounds, n, -DBL_MAX );
 
     _upperBounds = new double[n];
     if ( !_upperBounds )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::upperBounds" );
-    std::fill_n( _upperBounds, n, FloatUtils::infinity() );
+    std::fill_n( _upperBounds, n, DBL_MAX );
 
     _basicAssignment = new double[m];
     if ( !_basicAssignment )
@@ -1286,7 +1286,6 @@ void Tableau::restoreState( const TableauState &state )
 
     // ReStore the bounds and valid status
     // TODO: I think valid status can just be set to true
-    // TODO: should notify all the constraints.
     memcpy( _lowerBounds, state._lowerBounds, sizeof(double) *_n );
     memcpy( _upperBounds, state._upperBounds, sizeof(double) *_n );
     checkBoundsValid();
@@ -1551,8 +1550,8 @@ void Tableau::addRow()
     _upperBounds = newUpperBounds;
 
     // Mark the new variable as unbounded
-    _lowerBounds[_n] = FloatUtils::negativeInfinity();
-    _upperBounds[_n] = FloatUtils::infinity();
+    _lowerBounds[_n] = -DBL_MAX;
+    _upperBounds[_n] = DBL_MAX;
 
     // Allocate a larger basis factorization
     BasisFactorization *newBasisFactorization = new BasisFactorization( newM );
@@ -1615,21 +1614,6 @@ void Tableau::notifyUpperBound( unsigned variable, double bound )
     {
         for ( auto &watcher : _variableToWatchers[variable] )
             watcher->notifyUpperBound( variable, bound );
-    }
-}
-
-void Tableau::applySplit( const PiecewiseLinearCaseSplit &split )
-{
-    for ( const auto &equation : split.getEquations() )
-        addEquation( equation );
-
-    List<Tightening> bounds = split.getBoundTightenings();
-    for ( const auto &bound : bounds )
-    {
-        if ( bound._type == Tightening::LB )
-            tightenLowerBound( bound._variable, bound._value );
-        else
-            tightenUpperBound( bound._variable, bound._value );
     }
 }
 

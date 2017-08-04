@@ -54,23 +54,17 @@ public:
     void extractSolution( InputQuery &inputQuery );
 
     /*
-      Methods for tightening lower/upper variable bounds.
-    */
-    void tightenLowerBound( unsigned variable, double bound );
-    void tightenUpperBound( unsigned variable, double bound );
-
-    /*
-      Add a new equation to the Tableau.
-    */
-    void addNewEquation( const Equation &equation );
-
-    /*
       Methods for storing and restoring the state of the engine.
     */
     void storeState( EngineState &state ) const;
     void restoreState( const EngineState &state );
 
 private:
+    /*
+      Add equations and tightenings from a split.
+    */
+    void applySplit( const PiecewiseLinearCaseSplit &split );
+
     /*
       Collect and print various statistics.
     */
@@ -157,6 +151,17 @@ private:
       Print a message
     */
     void log( const String &line ) const;
+
+    /*
+      Apply any splits enqueued in the given constraint.
+    */
+    void applyConstraintEnqueuedSplits( PiecewiseLinearConstraint &constraint );
+
+    /*
+      Apply all splits enqueued in any constraint.
+    */
+    void applyAllConstraintEnqueuedSplits();
+
 };
 
 #endif // __Engine_h__

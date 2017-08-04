@@ -59,6 +59,13 @@ public:
      */
     List<PiecewiseLinearCaseSplit> getCaseSplits() const;
 
+    /*
+      Store and restore the constraint's state. Needed for case splitting
+      and backtracking.
+    */
+    void storeState( PiecewiseLinearConstraintState &/* state */ ) const {};
+    void restoreState( const PiecewiseLinearConstraintState &/* state */ ) {};
+
 private:
 	unsigned _f;
 	unsigned _maxIndex;
