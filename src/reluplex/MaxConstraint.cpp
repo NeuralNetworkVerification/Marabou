@@ -193,6 +193,17 @@ List<PiecewiseLinearCaseSplit> MaxConstraint::getCaseSplits() const
 	return splits;
 }
 
+void MaxConstraint::storeState( PiecewiseLinearConstraintState &/* state */ ) const
+{
+    printf( "Error! Not yet implemented\n" );
+    exit( 1 );
+}
+
+void MaxConstraint::restoreState( const PiecewiseLinearConstraintState &/* state */ )
+{
+    printf( "Error! Not yet implemented\n" );
+    exit( 1 );
+}
 
 bool MaxConstraint::phaseFixed() const
 {

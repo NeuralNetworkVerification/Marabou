@@ -14,7 +14,6 @@
 #define __ReluConstraint_h__
 
 #include "PiecewiseLinearConstraint.h"
-#include "Queue.h"
 
 class ReluConstraint : public PiecewiseLinearConstraint
 {
@@ -107,6 +106,7 @@ private:
 class ReluConstraintStateData : public PiecewiseLinearConstraintStateData
 {
 public:
+    bool _constraintActive;
     Map<unsigned, double> _assignment;
     ReluConstraint::PhaseStatus _phaseStatus;
 };

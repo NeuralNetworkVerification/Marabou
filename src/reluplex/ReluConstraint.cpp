@@ -157,6 +157,7 @@ void ReluConstraint::storeState( PiecewiseLinearConstraintState &state ) const
     state._splits = _splits;
     ReluConstraintStateData *stateData =
         dynamic_cast<ReluConstraintStateData *>(state._stateData);
+    stateData->_constraintActive = _constraintActive;
     stateData->_assignment = _assignment;
     stateData->_phaseStatus = _phaseStatus;
 }
@@ -167,6 +168,7 @@ void ReluConstraint::restoreState( const PiecewiseLinearConstraintState &state )
     const ReluConstraintStateData *stateData =
         dynamic_cast<const ReluConstraintStateData *>(state._stateData);
     ASSERT( stateData );
+    _constraintActive = stateData->_constraintActive;
     _assignment = stateData->_assignment;
     _phaseStatus = stateData->_phaseStatus;
 }
