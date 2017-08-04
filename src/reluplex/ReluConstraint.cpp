@@ -21,7 +21,7 @@
 ReluConstraint::ReluConstraint( unsigned b, unsigned f )
     : _b( b )
     , _f( f )
-    , _stuck( StuckStatus::NOT_STUCK )
+    , _phaseStatus( PhaseStatus::PHASE_NOT_FIXED )
 {
 }
 
@@ -47,7 +47,7 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
     if ( ( variable == _b || variable == _f ) && FloatUtils::isPositive( bound ) )
     {
         // Stuck in active phase
-        _stuck = StuckStatus::STUCK_ACTIVE;
+        _phaseStatus = PhaseStatus::PHASE_ACTIVE;
         _splits.push( getActiveSplit( FreshVariables::getNextVariable() ) );
     }
 }
@@ -57,7 +57,7 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
     if ( ( variable == _f ) && FloatUtils::isNegative( bound ) )
     {
         // stuck in inactive phase
-        _stuck = StuckStatus::STUCK_INACTIVE;
+        _phaseStatus = PhaseStatus::PHASE_INACTIVE;
         _splits.push( getInactiveSplit( FreshVariables::getNextVariable() ) );
     }
 }
@@ -133,9 +133,9 @@ List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
     List<PiecewiseLinearCaseSplit> splits;
     unsigned auxVariable = FreshVariables::getNextVariable();
     // TODO: does a stuck relu ever get split?
-    if ( _stuck != StuckStatus::STUCK_INACTIVE )
+    if ( _phaseStatus != PhaseStatus::PHASE_INACTIVE )
         splits.append( getActiveSplit( auxVariable ) );
-    if ( _stuck != StuckStatus::STUCK_ACTIVE )
+    if ( _phaseStatus != PhaseStatus::PHASE_ACTIVE )
         splits.append( getInactiveSplit( auxVariable ) );
     return splits;
 }
@@ -147,7 +147,7 @@ void ReluConstraint::storeState( PiecewiseLinearConstraintState &state ) const
     ReluConstraintStateData *stateData =
         dynamic_cast<ReluConstraintStateData *>(state._stateData);
     stateData->_assignment = _assignment;
-    stateData->_stuck = _stuck;
+    stateData->_phaseStatus = _phaseStatus;
 }
 
 void ReluConstraint::restoreState( const PiecewiseLinearConstraintState &state )
@@ -157,7 +157,7 @@ void ReluConstraint::restoreState( const PiecewiseLinearConstraintState &state )
         dynamic_cast<const ReluConstraintStateData *>(state._stateData);
     ASSERT( stateData );
     _assignment = stateData->_assignment;
-    _stuck = stateData->_stuck;
+    _phaseStatus = stateData->_phaseStatus;
 }
 
 PiecewiseLinearCaseSplit ReluConstraint::getInactiveSplit( unsigned auxVariable ) const

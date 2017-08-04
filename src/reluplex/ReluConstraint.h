@@ -19,10 +19,10 @@
 class ReluConstraint : public PiecewiseLinearConstraint
 {
 public:
-	  enum StuckStatus {
-		  NOT_STUCK = 0,
-		  STUCK_ACTIVE,
-      STUCK_INACTIVE
+    enum PhaseStatus {
+        PHASE_NOT_FIXED = 0,
+        PHASE_ACTIVE = 1,
+        PHASE_INACTIVE = 2,
     };
 
     ReluConstraint( unsigned b, unsigned f );
@@ -86,14 +86,16 @@ private:
     PiecewiseLinearCaseSplit getInactiveSplit( unsigned auxVariable ) const;
     PiecewiseLinearCaseSplit getActiveSplit( unsigned auxVariable ) const;
 
-    StuckStatus _stuck;
+    PhaseStatus _phaseStatus;
 };
 
 class ReluConstraintStateData : public PiecewiseLinearConstraintStateData
 {
 public:
+    unsigned _b;
+    unsigned _f;
     Map<unsigned, double> _assignment;
-    ReluConstraint::StuckStatus _stuck;
+    ReluConstraint::PhaseStatus _phaseStatus;
 };
 
 #endif // __ReluConstraint_h__
