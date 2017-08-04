@@ -340,6 +340,8 @@ void Engine::storeState( EngineState &state ) const
         constraint->storeState( constraintState );
         state._plConstraintToState[constraint] = constraintState;
     }
+
+    state._numPlConstraintsDisbaledByValidSplits = _numPlConstraintsDisbaledByValidSplits;
 }
 
 void Engine::restoreState( const EngineState &state )
@@ -353,6 +355,8 @@ void Engine::restoreState( const EngineState &state )
 
         constraint->restoreState( state._plConstraintToState[constraint] );
     }
+
+    _numPlConstraintsDisbaledByValidSplits = state._numPlConstraintsDisbaledByValidSplits;
 }
 
 void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
