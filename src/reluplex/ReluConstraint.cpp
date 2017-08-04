@@ -55,22 +55,30 @@ void ReluConstraint::notifyVariableValue( unsigned variable, double value )
 
 void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
 {
-    if ( ( variable == _b || variable == _f ) && FloatUtils::isPositive( bound ) )
-    {
-        // Stuck in active phase
+    if ( variable == _f && FloatUtils::isPositive( bound ) )
         _phaseStatus = PhaseStatus::PHASE_ACTIVE;
-        _splits.push( getActiveSplit( FreshVariables::getNextVariable() ) );
-    }
+    else if ( variable == _b && !FloatUtils::isNegative( bound ) )
+        _phaseStatus = PhaseStatus::PHASE_ACTIVE;
+
+    // if ( ( variable == _b || variable == _f ) && FloatUtils::isPositive( bound ) )
+    // {
+    //     // Stuck in active phase
+    //     _phaseStatus = PhaseStatus::PHASE_ACTIVE;
+    //     _splits.push( getActiveSplit( FreshVariables::getNextVariable() ) );
+    // }
 }
 
 void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
 {
-    if ( ( variable == _f ) && FloatUtils::isNegative( bound ) )
-    {
-        // Stuck in inactive phase
+    if ( ( variable == _f || variable == _b ) && !FloatUtils::isPositive( bound ) )
         _phaseStatus = PhaseStatus::PHASE_INACTIVE;
-        _splits.push( getInactiveSplit( FreshVariables::getNextVariable() ) );
-    }
+
+    // if ( ( variable == _f ) && FloatUtils::isNegative( bound ) )
+    // {
+    //     // Stuck in inactive phase
+    //     _phaseStatus = PhaseStatus::PHASE_INACTIVE;
+    //     _splits.push( getInactiveSplit( FreshVariables::getNextVariable() ) );
+    // }
 }
 
 bool ReluConstraint::participatingVariable( unsigned variable ) const

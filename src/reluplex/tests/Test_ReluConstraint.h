@@ -312,6 +312,8 @@ public:
         TS_ASSERT_EQUALS( splits.size(), 1U );
 
         relu.unregisterAsWatcher( &tableau );
+
+        TS_TRACE( "TODO: check all corner cases" );
     }
 
     void test_fix_inactive()
@@ -333,8 +335,137 @@ public:
         TS_ASSERT_EQUALS( splits.size(), 1U );
 
         relu.unregisterAsWatcher( &tableau );
+
+        TS_TRACE( "TODO: check all corner cases" );
     }
 
+    void test_valid_split_relu_phase_fixed_to_active()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        unsigned auxVar = 100;
+        FreshVariables::setNextVariable( auxVar );
+
+        ReluConstraint relu( b, f );
+
+        Map<unsigned, double> assignment;
+
+        List<PiecewiseLinearConstraint::Fix> fixes;
+        List<PiecewiseLinearConstraint::Fix>::iterator it;
+
+        TS_ASSERT( !relu.phaseFixed() );
+        TS_ASSERT_THROWS_NOTHING( relu.notifyLowerBound( b, 5 ) );
+        TS_ASSERT( relu.phaseFixed() );
+
+        PiecewiseLinearCaseSplit split;
+        TS_ASSERT_THROWS_NOTHING( split = relu.getValidCaseSplit() );
+
+        Equation activeEquation;
+
+        List<Tightening> bounds = split.getBoundTightenings();
+
+        TS_ASSERT_EQUALS( bounds.size(), 3U );
+        auto bound = bounds.begin();
+        Tightening bound1 = *bound;
+        ++bound;
+        Tightening bound2 = *bound;
+        ++bound;
+        Tightening bound3 = *bound;
+
+        TS_ASSERT_EQUALS( bound1._variable, b );
+        TS_ASSERT_EQUALS( bound1._type, Tightening::LB );
+        TS_ASSERT_EQUALS( bound1._value, 0.0 );
+
+        TS_ASSERT_EQUALS( bound2._variable, auxVar );
+        TS_ASSERT_EQUALS( bound2._type, Tightening::UB );
+        TS_ASSERT_EQUALS( bound2._value, 0.0 );
+
+        TS_ASSERT_EQUALS( bound3._variable, auxVar );
+        TS_ASSERT_EQUALS( bound3._type, Tightening::LB );
+        TS_ASSERT_EQUALS( bound3._value, 0.0 );
+
+        List<Equation> equations = split.getEquations();
+        TS_ASSERT_EQUALS( equations.size(), 1U );
+        activeEquation = split.getEquations().front();
+        TS_ASSERT_EQUALS( activeEquation._addends.size(), 3U );
+        TS_ASSERT_EQUALS( activeEquation._scalar, 0.0 );
+
+        auto addend = activeEquation._addends.begin();
+        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, b );
+
+        ++addend;
+        TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, f );
+
+        ++addend;
+        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, 100U );
+        TS_ASSERT_EQUALS( activeEquation._auxVariable, 100U );
+    }
+
+    void test_valid_split_relu_phase_fixed_to_inactive()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        unsigned auxVar = 100;
+        FreshVariables::setNextVariable( auxVar );
+
+        ReluConstraint relu( b, f );
+
+        Map<unsigned, double> assignment;
+
+        List<PiecewiseLinearConstraint::Fix> fixes;
+        List<PiecewiseLinearConstraint::Fix>::iterator it;
+
+        TS_ASSERT( !relu.phaseFixed() );
+        TS_ASSERT_THROWS_NOTHING( relu.notifyUpperBound( b, -2 ) );
+        TS_ASSERT( relu.phaseFixed() );
+
+        PiecewiseLinearCaseSplit split;
+        TS_ASSERT_THROWS_NOTHING( split = relu.getValidCaseSplit() );
+
+        Equation activeEquation;
+
+        List<Tightening> bounds = split.getBoundTightenings();
+
+        TS_ASSERT_EQUALS( bounds.size(), 3U );
+        auto bound = bounds.begin();
+        Tightening bound1 = *bound;
+        ++bound;
+        Tightening bound2 = *bound;
+        ++bound;
+        Tightening bound3 = *bound;
+
+        TS_ASSERT_EQUALS( bound1._variable, b );
+        TS_ASSERT_EQUALS( bound1._type, Tightening::UB );
+        TS_ASSERT_EQUALS( bound1._value, 0.0 );
+
+        TS_ASSERT_EQUALS( bound2._variable, auxVar );
+        TS_ASSERT_EQUALS( bound2._type, Tightening::UB );
+        TS_ASSERT_EQUALS( bound2._value, 0.0 );
+
+        TS_ASSERT_EQUALS( bound3._variable, auxVar );
+        TS_ASSERT_EQUALS( bound3._type, Tightening::LB );
+        TS_ASSERT_EQUALS( bound3._value, 0.0 );
+
+        List<Equation> equations = split.getEquations();
+        TS_ASSERT_EQUALS( equations.size(), 1U );
+        Equation inactiveEquation = split.getEquations().front();
+        TS_ASSERT_EQUALS( inactiveEquation._addends.size(), 2U );
+        TS_ASSERT_EQUALS( inactiveEquation._scalar, 0.0 );
+
+        auto addend = inactiveEquation._addends.begin();
+        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, f );
+
+        ++addend;
+        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, 100U );
+        TS_ASSERT_EQUALS( inactiveEquation._auxVariable, 100U );
+    }
 };
 
 //
