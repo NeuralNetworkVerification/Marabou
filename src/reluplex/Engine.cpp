@@ -326,11 +326,6 @@ void Engine::reportPlViolation()
     _smtCore.reportViolatedConstraint( _plConstraintToFix );
 }
 
-void Engine::log( const String &line ) const
-{
-    printf( "Engine: %s\n", line.ascii() );
-}
-
 void Engine::storeState( EngineState &state ) const
 {
     _tableau->storeState( state._tableauState );
