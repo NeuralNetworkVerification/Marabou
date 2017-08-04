@@ -37,7 +37,9 @@ int main()
             inputQuery.setUpperBound( variable, 0.0 );
         }
 
-        // Feed the query to the engine
+		inputQuery.preprocessBounds();
+
+		// Feed the query to the engine
         Engine engine;
         engine.processInputQuery( inputQuery );
 
@@ -46,6 +48,8 @@ int main()
             printf( "Query is unsat\n" );
             return 0;
         }
+
+		
 
         printf( "Query is sat! Extracting solution...\n" );
         engine.extractSolution( inputQuery );
