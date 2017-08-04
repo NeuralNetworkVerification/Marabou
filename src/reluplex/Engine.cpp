@@ -346,8 +346,14 @@ void Engine::storeState( EngineState &state ) const
 
 void Engine::restoreState( const EngineState &state )
 {
+    log( "Restore state starting" );
+
     _boundTightener.clearStoredTightenings();
+
+    log( "\tRestoring tableau state" );
     _tableau->restoreState( state._tableauState );
+
+    log( "\tRestoring constraint states" );
     for ( const auto &constraint : _plConstraints )
     {
         if ( !state._plConstraintToState.exists( constraint ) )
