@@ -115,6 +115,24 @@ public:
         tableau.setRightHandSide( b );
     }
 
+    void test_initialize_bounds()
+    {
+        Tableau *tableau;
+
+        TS_ASSERT( tableau = new Tableau );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        initializeTableauValues( *tableau );
+
+        for ( unsigned i = 0; i < tableau->getN(); ++i )
+        {
+            TS_ASSERT_EQUALS( tableau->getLowerBound( i ), FloatUtils::negativeInfinity() );
+            TS_ASSERT_EQUALS( tableau->getUpperBound( i ), FloatUtils::infinity() );
+        }
+
+        TS_ASSERT_THROWS_NOTHING( delete tableau );
+    }
+
     void test_initalize_basis_get_value()
     {
         Tableau *tableau;
@@ -558,7 +576,6 @@ public:
         tableau->setEnteringVariable( 2u );
         TS_ASSERT( hasCandidates( *tableau ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
-        // TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable( entryStrategy ) );
 
         double d[] = { -1, -1, -1 };
         // Var 4 will hit its lower bound: constraint is 2
@@ -639,6 +656,8 @@ public:
         TS_ASSERT_EQUALS( entry._var, 3U );
         TS_ASSERT_EQUALS( entry._coefficient, -2 );
 
+        TS_ASSERT_EQUALS( row._scalar, 225.0 );
+
         TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 1, &row ) );
 
         entry = row._row[0];
@@ -657,6 +676,8 @@ public:
         TS_ASSERT_EQUALS( entry._var, 3U );
         TS_ASSERT_EQUALS( entry._coefficient, -1 );
 
+        TS_ASSERT_EQUALS( row._scalar, 117.0 );
+
         TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 2, &row ) );
 
         entry = row._row[0];
@@ -674,6 +695,8 @@ public:
         entry = row._row[3];
         TS_ASSERT_EQUALS( entry._var, 3U );
         TS_ASSERT_EQUALS( entry._coefficient, -4 );
+
+        TS_ASSERT_EQUALS( row._scalar, 420.0 );
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
         tableau->setEnteringVariable( 2u );
@@ -729,6 +752,7 @@ public:
         TS_ASSERT_EQUALS( entry._var, 3U );
         TS_ASSERT( FloatUtils::areEqual( entry._coefficient, -2.0/3 ) );
 
+        TS_ASSERT_EQUALS( row._scalar, 85.0 );
 
         TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 1, &row ) );
 
@@ -748,6 +772,8 @@ public:
         TS_ASSERT_EQUALS( entry._var, 3U );
         TS_ASSERT( FloatUtils::areEqual( entry._coefficient, 1.0/3 ) );
 
+        TS_ASSERT_EQUALS( row._scalar, -23.0 );
+
 
         TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 2, &row ) );
 
@@ -766,6 +792,8 @@ public:
         entry = row._row[3];
         TS_ASSERT_EQUALS( entry._var, 3U );
         TS_ASSERT( FloatUtils::areEqual( entry._coefficient, -4.0/3 ) );
+
+        TS_ASSERT_EQUALS( row._scalar, 140.0 );
     }
 
     void test_degenerate_pivot()
@@ -998,7 +1026,7 @@ public:
         tableau->setEnteringVariable( 3u );
         TS_ASSERT( hasCandidates( *tableau ) );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable() );
+        tableau->setLeavingVariable( 3u );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 3u );
         TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 3u );
 
@@ -1080,7 +1108,7 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete tableau );
     }
 
-    void test_increase_dimensions()
+    void test_add_equation()
     {
         Tableau *tableau;
 
@@ -1109,7 +1137,33 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 6 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau() );
 
-        // New equation: 2x2 - 4x3 + x8 = 5
+        // Do a pivot to shuffle the basis
+        TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
+
+        tableau->setEnteringVariable( 2u );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->computeD() );
+        TS_ASSERT_THROWS_NOTHING( tableau->performPivot() );
+
+        // Variables x3 and x6 have been pivoted
+        TS_ASSERT( tableau->isBasic( 2u ) );
+        TS_ASSERT( !tableau->isBasic( 5u ) );
+
+        /*
+          Current basic variables are: x5, x3, x7
+          Current basis matrix B0 is:
+
+                | 1 -1   |
+           B0 = |   -1   |
+                |   -1 1 |
+
+           Now add a new new equation:
+
+               2x2 - 4x3 + x8 = 5
+
+           Where x8 is a new basic variable
+        */
+
         Equation equation;
         equation.addAddend( 2, 1 );
         equation.addAddend( -4, 2 );
@@ -1118,28 +1172,89 @@ public:
         equation.markAuxiliaryVariable( 7 );
         TS_ASSERT_THROWS_NOTHING( tableau->addEquation( equation ) );
 
-        // Test that an old row is still compute correctly, with 0
-        // entry for the new variables
+        TS_ASSERT( tableau->isBasic( 7u ) );
+
+        /*
+          Test that an old row is still computed correctly, with 0
+          entry for the new variable.
+          Test that the new row is also computed correctly.
+        */
 
         TableauRow row( 4 );
-        TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 0, &row ) );
+        tableau->getTableauRow( 0, &row );
 
+        // Row 0 is the row for x5. Due to the earlier pivot, we expect:
+        //     x5 = 225 - 2x1 - x2 + x6 - x4
         TableauRow::Entry entry;
         entry = row._row[0];
         TS_ASSERT_EQUALS( entry._var, 0U );
-        TS_ASSERT_EQUALS( entry._coefficient, -3 );
+        TS_ASSERT_EQUALS( entry._coefficient, -2.0 );
 
         entry = row._row[1];
         TS_ASSERT_EQUALS( entry._var, 1U );
-        TS_ASSERT_EQUALS( entry._coefficient, -2 );
+        TS_ASSERT_EQUALS( entry._coefficient, -1.0 );
 
         entry = row._row[2];
-        TS_ASSERT_EQUALS( entry._var, 2U );
-        TS_ASSERT_EQUALS( entry._coefficient, -1 );
+        TS_ASSERT_EQUALS( entry._var, 5U );
+        TS_ASSERT_EQUALS( entry._coefficient, 1.0 );
 
         entry = row._row[3];
         TS_ASSERT_EQUALS( entry._var, 3U );
-        TS_ASSERT_EQUALS( entry._coefficient, -2 );
+        TS_ASSERT_EQUALS( entry._coefficient, -1.0 );
+
+        // Row 3 is the new row.
+        //   Originally,  x8 = 5 - 2x2 + 4x3
+        //   But due to the pivot operation from before, x3 is basic.
+        //   It is given by the equation:
+        //      x3 = -x1 -x2 -x6 -x4 + 117
+        //   And so, we expect:
+        //      x8 = 473 - 4x1 - 6x2 -4x6 -4x4
+
+        tableau->getTableauRow( 3, &row );
+
+        row.dump();
+
+        entry = row._row[0];
+        TS_ASSERT_EQUALS( entry._var, 0U );
+        TS_ASSERT_EQUALS( entry._coefficient, -4.0 );
+
+        entry = row._row[1];
+        TS_ASSERT_EQUALS( entry._var, 1U );
+        TS_ASSERT_EQUALS( entry._coefficient, -6.0 );
+
+        entry = row._row[2];
+        TS_ASSERT_EQUALS( entry._var, 5U );
+        TS_ASSERT_EQUALS( entry._coefficient, -4.0 );
+
+        entry = row._row[3];
+        TS_ASSERT_EQUALS( entry._var, 3U );
+        TS_ASSERT_EQUALS( entry._coefficient, -4.0 );
+
+        /*
+          At this point, the equations are:
+
+             x5 = -2x1 - x2 + x6 - x4 + 108
+             x3 =  -x1 - x2 - x6 - x4 + 117
+             x7 =  -x1      +3x6 - x4 + 69
+             x8 = -4x1 -6x2 -4x6 -4x4 + 473
+        */
+
+        // Check the assignment
+        tableau->computeAssignment();
+
+        // Non-Basics
+        TS_ASSERT_EQUALS( tableau->getValue( 0 ), 1.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 1 ), 1.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 5 ), 114.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 3 ), 1.0 );
+
+        // Basics
+        TS_ASSERT_EQUALS( tableau->getValue( 4 ), 218.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 2 ), 0.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 6 ), 409.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 7 ), 3.0 ); // 473 - 4 - 6 - 4*114 - 4
+
+        TS_ASSERT_THROWS_NOTHING( delete tableau );
     }
 
     void test_tighten_bounds()
@@ -1226,15 +1341,10 @@ public:
     {
         TS_TRACE( "When resizing the talbeau, allocate a larger size and only use part of it, "
                   "instead of increasing it one row at a time?" );
-        TS_TRACE( "Proper handling of the basis factorization when resizing the tableau. Reinitialize B?" );
-        // Explanation: we could just create a fresh basis
-        // factorization, with I as the B0 matrix, but that would mean
-        // switching back to the original set of basic variables,
-        // which is potentially undesirable. It may be better to keep
-        // the current basis, but computing B explicitly and adding
-        // another row to it.
         TS_TRACE( "Make sure all watchers are properply informed when restoring a tabealu" );
-        TS_TRACE( "Make sure steepest edge data structures are stored/restored/resized correctly" );
+        TS_TRACE( "When adding a row, what to do about the gamma function?" );
+        TS_TRACE( "Tableau has an applySplit function, identical to the one in the smt core. "
+                  "Move this joint functionality to the engine?" );
     }
 };
 

@@ -17,6 +17,7 @@
 
 class EntrySelectionStrategy;
 class Equation;
+class PiecewiseLinearCaseSplit;
 class Statistics;
 class TableauRow;
 class TableauState;
@@ -55,8 +56,6 @@ public:
     virtual void setEntryValue( unsigned row, unsigned column, double value ) = 0;
     virtual void setRightHandSide( const double *b ) = 0;
     virtual void setRightHandSide( unsigned index, double value ) = 0;
-    virtual void computeRightHandSide() = 0;
-    virtual const double *getRightHandSide() const = 0;
     virtual void markAsBasic( unsigned variable ) = 0;
     virtual void initializeTableau() = 0;
     virtual double getValue( unsigned variable ) = 0;
@@ -87,7 +86,6 @@ public:
     virtual void computeMultipliers() = 0;
     virtual void computeReducedCost( unsigned nonBasic ) = 0;
     virtual const double *getCostFunction() const = 0;
-    // TODO: not sure if i'm allowed to add to this virtual class?
     virtual const double *getSteepestEdgeGamma() const = 0; 
     virtual void dumpCostFunction() const = 0;
     virtual void computeD() = 0;
@@ -105,6 +103,7 @@ public:
     virtual void storeState( TableauState &state ) const = 0;
     virtual void restoreState( const TableauState &state ) = 0;
     virtual void computeBasicCosts() = 0;
+    virtual void applySplit( const PiecewiseLinearCaseSplit &split ) = 0;
     virtual void setStatistics( Statistics *statistics ) = 0;
 };
 

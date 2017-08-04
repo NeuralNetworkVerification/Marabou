@@ -39,6 +39,11 @@ public:
      */
     void setStatistics( Statistics *statistics );
 
+    /*
+      Clear any pending bound tightenings.
+    */
+    void clearStoredTightenings();
+
 private:
 	/*
 	  Add a given tightening to the queue.

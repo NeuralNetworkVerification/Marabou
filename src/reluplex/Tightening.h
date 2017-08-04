@@ -57,12 +57,12 @@ public:
     {
         switch ( _type )
         {
-        case Tightening::BoundType::LB:
-            tableau.tightenLowerBound( _variable, _value );
-            break;
-        case Tightening::BoundType::UB:
-            tableau.tightenUpperBound( _variable, _value );
-            break;
+            case Tightening::BoundType::LB:
+                tableau.tightenLowerBound( _variable, _value );
+                break;
+            case Tightening::BoundType::UB:
+                tableau.tightenUpperBound( _variable, _value );
+                break;
 	    }
     }
 };

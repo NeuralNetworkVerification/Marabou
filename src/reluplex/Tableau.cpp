@@ -15,6 +15,8 @@
 #include "EntrySelectionStrategy.h"
 #include "Equation.h"
 #include "FloatUtils.h"
+#include "MStringf.h"
+#include "PiecewiseLinearCaseSplit.h"
 #include "ReluplexError.h"
 #include "Tableau.h"
 #include "TableauRow.h"
@@ -28,7 +30,7 @@ Tableau::Tableau()
     , _a( NULL )
     , _d( NULL )
     , _b( NULL )
-    , _rhs( NULL )
+    , _rowScalars( NULL )
     , _basisFactorization( NULL )
     , _costFunction( NULL )
     , _basicCosts( NULL )
@@ -179,10 +181,10 @@ void Tableau::freeMemoryIfNeeded()
         _work = NULL;
     }
 
-    if ( _rhs )
+    if ( _rowScalars )
     {
-        delete[] _rhs;
-        _rhs = NULL;
+        delete[] _rowScalars;
+        _rowScalars = NULL;
     }
 }
 
@@ -239,10 +241,12 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     _lowerBounds = new double[n];
     if ( !_lowerBounds )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::lowerBounds" );
+    std::fill_n( _lowerBounds, n, FloatUtils::negativeInfinity() );
 
     _upperBounds = new double[n];
     if ( !_upperBounds )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::upperBounds" );
+    std::fill_n( _upperBounds, n, FloatUtils::infinity() );
 
     _basicAssignment = new double[m];
     if ( !_basicAssignment )
@@ -272,8 +276,8 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     if ( !_work )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::work" );
 
-    _rhs = new double[m];
-    if ( !_rhs )
+    _rowScalars = new double[m];
+    if ( !_rowScalars )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::rhs" );
 }
 
@@ -408,7 +412,7 @@ void Tableau::updateGamma()
     // inv(B)*A[q] vector (size m)
     double *invB_Aq = new double[_m];
     _basisFactorization->forwardTransformation( ANColumnQ, invB_Aq );
-    
+
     // Compute alphas and nus. These should be different every update.
     double *alpha = _alpha;
     double *nu = _nu;
@@ -508,9 +512,7 @@ void Tableau::computeAssignment()
 
     // Inform the watchers
     for ( unsigned i = 0; i < _m; ++i )
-    {
         notifyVariableValue( _basicIndexToVariable[i], _basicAssignment[i] );
-    }
 }
 
 void Tableau::computeBasicStatus()
@@ -542,6 +544,7 @@ void Tableau::setLowerBound( unsigned variable, double value )
     ASSERT( variable < _n );
     _lowerBounds[variable] = value;
     notifyLowerBound( variable, value );
+    checkBoundsValid( variable );
 }
 
 void Tableau::setUpperBound( unsigned variable, double value )
@@ -549,6 +552,7 @@ void Tableau::setUpperBound( unsigned variable, double value )
     ASSERT( variable < _n );
     _upperBounds[variable] = value;
     notifyUpperBound( variable, value );
+    checkBoundsValid( variable );
 }
 
 double Tableau::getLowerBound( unsigned variable ) const
@@ -599,16 +603,6 @@ void Tableau::setRightHandSide( const double *b )
 void Tableau::setRightHandSide( unsigned index, double value )
 {
     _b[index] = value;
-}
-
-const double *Tableau::getRightHandSide() const
-{
-    return _rhs;
-}
-
-void Tableau::computeRightHandSide()
-{
-    _basisFactorization->forwardTransformation( _b, _rhs );
 }
 
 const double *Tableau::getCostFunction() const
@@ -775,10 +769,10 @@ void Tableau::setEnteringVariable( unsigned nonBasic )
     _enteringVariable = nonBasic;
 }
 
-void Tableau::setLeavingVariable( unsigned nonBasic )
+void Tableau::setLeavingVariable( unsigned basic )
 {
     // ONLY FOR TESTING STEEPEST EDGE. NEVER USE THIS! Use pickLeavingVariable instead.
-    _leavingVariable = nonBasic;
+    _leavingVariable = basic;
 }
 
 bool Tableau::eligibleForEntry( unsigned nonBasic ) const
@@ -939,7 +933,7 @@ void Tableau::performDegeneratePivot( unsigned entering, unsigned leaving )
 double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient, bool decrease )
 {
     unsigned basic = _basicIndexToVariable[basicIndex];
-    double ratio;
+    double ratio = 0.0;
 
     // Negate the coefficient to go to a more convenient form: basic =
     // coefficient * nonBasic, as opposed to basic + coefficient *
@@ -1221,6 +1215,9 @@ void Tableau::getTableauRow( unsigned index, TableauRow *row )
         for ( unsigned j = 0; j < _m; ++j )
             row->_row[i]._coefficient -= ( _multipliers[j] * ANColumn[j] );
     }
+
+    _basisFactorization->forwardTransformation( _b, _rowScalars );
+    row->_scalar = _rowScalars[index];
 }
 
 void Tableau::dumpEquations()
@@ -1239,13 +1236,16 @@ void Tableau::dumpEquations()
 
 void Tableau::storeState( TableauState &state ) const
 {
-    ASSERT( _basicAssignmentStatus == ASSIGNMENT_VALID )
-	
-        // Set the dimensions
-        state.setDimensions( _m, _n );
+    ASSERT( _basicAssignmentStatus == ASSIGNMENT_VALID );
+
+    // Set the dimensions
+    state.setDimensions( _m, _n );
 
     // Store matrix A
     memcpy( state._A, _A, sizeof(double) * _n * _m );
+
+    // Store right hand side vector _b
+    memcpy( state._b, _b, sizeof(double) * _m );
 
     // Store the bounds
     memcpy( state._lowerBounds, _lowerBounds, sizeof(double) *_n );
@@ -1265,6 +1265,12 @@ void Tableau::storeState( TableauState &state ) const
 
     // Store the basis factorization
     _basisFactorization->storeFactorization( state._basisFactorization );
+
+    // Store the steepest-edge gamma function
+    memcpy( state._steepestEdgeGamma, _steepestEdgeGamma, sizeof(double) * ( _n - _m ) );
+
+    // Store the _boundsValid indicator
+    state._boundsValid = _boundsValid;
 }
 
 void Tableau::restoreState( const TableauState &state )
@@ -1275,8 +1281,12 @@ void Tableau::restoreState( const TableauState &state )
     // Restore matrix A
     memcpy( _A, state._A, sizeof(double) * _n * _m );
 
+    // Restore right hand side vector _b
+    memcpy( _b, state._b, sizeof(double) * _m );
+
     // ReStore the bounds and valid status
     // TODO: I think valid status can just be set to true
+    // TODO: should notify all the constraints.
     memcpy( _lowerBounds, state._lowerBounds, sizeof(double) *_n );
     memcpy( _upperBounds, state._upperBounds, sizeof(double) *_n );
     checkBoundsValid();
@@ -1295,6 +1305,12 @@ void Tableau::restoreState( const TableauState &state )
 
     // Restore the basis factorization
     _basisFactorization->restoreFactorization( state._basisFactorization );
+
+    // Restore the steepest-edge gamma function
+    memcpy( _steepestEdgeGamma, state._steepestEdgeGamma, sizeof(double) * ( _n - _m ) );
+
+    // Restore the _boundsValid indicator
+    _boundsValid = state._boundsValid;
 
     // After a restoration, the assignment is valid
     computeBasicStatus();
@@ -1318,6 +1334,7 @@ void Tableau::checkBoundsValid( unsigned variable )
     if ( !FloatUtils::lte( _lowerBounds[variable], _upperBounds[variable] ) )
     {
         _boundsValid = false;
+        return;
     }
 }
 
@@ -1331,10 +1348,12 @@ void Tableau::tightenLowerBound( unsigned variable, double value )
     ASSERT( variable < _n );
 
     if ( !FloatUtils::gt( value, _lowerBounds[variable] ) )
-        throw ReluplexError( ReluplexError::INVALID_BOUND_TIGHTENING );
-
+        throw ReluplexError( ReluplexError::INVALID_BOUND_TIGHTENING,
+                             Stringf( "tightenLowerBound. Variable: %u. "
+                                      "Old lower bound: %.2lf. "
+                                      "New lower bound: %.2lf",
+                                      variable, _lowerBounds[variable], value ).ascii() );
     setLowerBound( variable, value );
-    checkBoundsValid( variable );
 
     // Ensure that non-basic variables are within bounds
     if ( !_basicVariables.exists( variable ) )
@@ -1350,10 +1369,12 @@ void Tableau::tightenUpperBound( unsigned variable, double value )
     ASSERT( variable < _n );
 
     if ( !FloatUtils::lt( value, _upperBounds[variable] ) )
-        throw ReluplexError( ReluplexError::INVALID_BOUND_TIGHTENING );
-
+        throw ReluplexError( ReluplexError::INVALID_BOUND_TIGHTENING,
+                             Stringf( "tightenUpperBound. Variable: %u. "
+                                      "Old upper bound: %.2lf. "
+                                      "New upper bound: %.2lf",
+                                      variable, _upperBounds[variable], value ).ascii() );
     setUpperBound( variable, value );
-    checkBoundsValid( variable );
 
     // Ensure that non-basic variables are within bounds
     if ( !_basicVariables.exists( variable ) )
@@ -1370,6 +1391,25 @@ void Tableau::addEquation( const Equation &equation )
     if ( equation._auxVariable != _n )
         throw ReluplexError( ReluplexError::INVALID_EQUATION_ADDED_TO_TABLEAU );
 
+    // Prepare to update the basis factorization.
+    // First condense the Etas so that we can access B0 explicitly
+    _basisFactorization->condenseEtas();
+    const double *oldB0 = _basisFactorization->getB0();
+
+    // Allocate a larger basis factorization and copy the old rows of B0
+    unsigned newM = _m + 1;
+    double *newB0 = new double[newM * newM];
+    for ( unsigned i = 0; i < _m; ++i )
+        memcpy( newB0 + i * newM, oldB0 + i * _m, sizeof(double) * _m );
+
+    // Zero out the new row and column
+    for ( unsigned i = 0; i < newM - 1; ++i )
+    {
+        newB0[( i * newM ) + newM - 1] = 0.0;
+        newB0[( newM - 1 ) * newM + i] = 0.0;
+    }
+    newB0[( newM - 1 ) * newM + newM - 1] = 1.0;
+
     // Add an actual row to the talbeau, adjust the data structures
     addRow();
 
@@ -1378,16 +1418,39 @@ void Tableau::addEquation( const Equation &equation )
     _basicIndexToVariable[_m - 1] = equation._auxVariable;
     _variableToIndex[equation._auxVariable] = _m - 1;
 
-    // For now, assume the new equation doesn't involve basic variables
+    // Populate the new row of A
     _b[_m - 1] = equation._scalar;
     for ( const auto &addend : equation._addends )
+    {
         setEntryValue( _m - 1, addend._variable, addend._coefficient );
+
+        // The new equation is given over the original non-basic variables.
+        // However, some of them may have become basic in previous iterations.
+        // Consequently, the last row of B0 may need to be adjusted.
+        if ( _basicVariables.exists( addend._variable ) )
+        {
+            unsigned index = _variableToIndex[addend._variable];
+            newB0[( newM - 1 ) * newM + index] = addend._coefficient;
+        }
+    }
+
+    // Finally, give the extended B0 matrix to the basis factorization
+    _basisFactorization->setB0( newB0 );
+
+    delete[] newB0;
 }
 
 void Tableau::addRow()
 {
     unsigned newM = _m + 1;
     unsigned newN = _n + 1;
+
+    /*
+      This function increases the sizes of the data structures used by
+      the tableau to match newM and newN. Notice that newM = _m + 1 and
+      newN = _n + 1, and so newN - newM = _m - _n. Consequently, structures
+      that are of size _m - _n are left as is.
+    */
 
     // Allocate a new A, copy the columns of the old A
     double *newA = new double[newN * newM];
@@ -1402,6 +1465,7 @@ void Tableau::addRow()
         newAColumn = newA + ( i * newM );
         memcpy( newAColumn, AColumn, _m * sizeof(double) );
     }
+
     delete[] _A;
     _A = newA;
 
@@ -1427,13 +1491,6 @@ void Tableau::addRow()
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newUnitVector" );
     delete[] _unitVector;
     _unitVector = newUnitVector;
-
-    // Allocate a new cost function. Don't need to initialize
-    double *newCostFunction = new double[newN - newM];
-    if ( !newCostFunction )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newCostFunction" );
-    delete[] _costFunction;
-    _costFunction = newCostFunction;
 
     // Allocate new basic costs. Don't need to initialize
     double *newBasicCosts = new double[newM];
@@ -1463,21 +1520,6 @@ void Tableau::addRow()
     memcpy( newVariableToIndex, _variableToIndex, _n * sizeof(unsigned) );
     delete[] _variableToIndex;
     _variableToIndex = newVariableToIndex;
-
-    unsigned *newNonBasicIndexToVariable = new unsigned[newN - newM];
-    if ( !newNonBasicIndexToVariable )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newNonBasicIndexToVariable" );
-    memcpy( newNonBasicIndexToVariable, _nonBasicIndexToVariable, ( _n - _m ) * sizeof(unsigned) );
-    delete[] _nonBasicIndexToVariable;
-    _nonBasicIndexToVariable = newNonBasicIndexToVariable;
-
-    // Allocate a new non-basic assignment vector, copy old values
-    double *newNonBasicAssignment = new double[newN - newM];
-    if ( !newNonBasicAssignment )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newNonBasicAssignment" );
-    memcpy( newNonBasicAssignment, _nonBasicAssignment, ( _n - _m ) * sizeof(double) );
-    delete[] _nonBasicAssignment;
-    _nonBasicAssignment = newNonBasicAssignment;
 
     // Allocate a new basic assignment vector, invalidate the assignment
     double *newBasicAssignment = new double[newM];
@@ -1509,15 +1551,31 @@ void Tableau::addRow()
     _upperBounds = newUpperBounds;
 
     // Mark the new variable as unbounded
-    _lowerBounds[_n] = -DBL_MAX;
-    _upperBounds[_n] = DBL_MAX;
+    _lowerBounds[_n] = FloatUtils::negativeInfinity();
+    _upperBounds[_n] = FloatUtils::infinity();
 
-    // TODO: currently this assumes that there are no stored eta matrices.
+    // Allocate a larger basis factorization
     BasisFactorization *newBasisFactorization = new BasisFactorization( newM );
-    if ( !_basisFactorization )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::basisFactorization" );
+    if ( !newBasisFactorization )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newBasisFactorization" );
     delete _basisFactorization;
     _basisFactorization = newBasisFactorization;
+
+    // Steepest-edge data structures. Don't need to initialize.
+    // TODO: Don't need to reallocate _steepestEdgeGamma, but may need to re-compute it!
+    // Also don't need to resize _alpha and _nu.
+    double *newWork = new double[newM];
+    if ( !newWork )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newWork" );
+    delete[] _work;
+    _work = newWork;
+
+    // Allocate a larger _rowScalars. Don't need to initialize.
+    double *newRhs = new double[newM];
+    if ( !newRhs )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newRhs" );
+    delete[] _rowScalars;
+    _rowScalars = newRhs;
 
     _m = newM;
     _n = newN;
@@ -1557,6 +1615,21 @@ void Tableau::notifyUpperBound( unsigned variable, double bound )
     {
         for ( auto &watcher : _variableToWatchers[variable] )
             watcher->notifyUpperBound( variable, bound );
+    }
+}
+
+void Tableau::applySplit( const PiecewiseLinearCaseSplit &split )
+{
+    for ( const auto &equation : split.getEquations() )
+        addEquation( equation );
+
+    List<Tightening> bounds = split.getBoundTightenings();
+    for ( const auto &bound : bounds )
+    {
+        if ( bound._type == Tightening::LB )
+            tightenLowerBound( bound._variable, bound._value );
+        else
+            tightenUpperBound( bound._variable, bound._value );
     }
 }
 

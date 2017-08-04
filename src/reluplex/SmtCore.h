@@ -18,6 +18,7 @@
 #include "Stack.h"
 #include "Statistics.h"
 
+class EngineState;
 class IEngine;
 
 class SmtCore
@@ -70,7 +71,7 @@ private:
     {
     public:
         List<PiecewiseLinearCaseSplit> _splits;
-        TableauState *_tableauState;
+        EngineState *_engineState;
     };
 
     /*

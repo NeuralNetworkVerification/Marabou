@@ -16,6 +16,7 @@
 
 TableauState::TableauState()
     : _A( NULL )
+    , _b( NULL )
     , _lowerBounds( NULL )
     , _upperBounds( NULL )
     , _basicAssignment( NULL )
@@ -24,6 +25,7 @@ TableauState::TableauState()
     , _nonBasicIndexToVariable( NULL )
     , _variableToIndex( NULL )
     , _basisFactorization( NULL )
+    , _steepestEdgeGamma( NULL )
 {
 }
 
@@ -33,6 +35,12 @@ TableauState::~TableauState()
     {
         delete[] _A;
         _A = NULL;
+    }
+
+    if ( _b )
+    {
+        delete[] _b;
+        _b = NULL;
     }
 
     if ( _lowerBounds )
@@ -82,6 +90,12 @@ TableauState::~TableauState()
         delete _basisFactorization;
         _basisFactorization = NULL;
     }
+
+    if ( _steepestEdgeGamma )
+    {
+        delete[] _steepestEdgeGamma;
+        _steepestEdgeGamma = NULL;
+    }
 }
 
 void TableauState::setDimensions( unsigned m, unsigned n )
@@ -92,6 +106,10 @@ void TableauState::setDimensions( unsigned m, unsigned n )
     _A = new double[n*m];
     if ( !_A )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::A" );
+
+    _b = new double[m];
+    if ( !_b )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::b" );
 
     _lowerBounds = new double[n];
     if ( !_lowerBounds )
@@ -124,6 +142,10 @@ void TableauState::setDimensions( unsigned m, unsigned n )
     _basisFactorization = new BasisFactorization( m );
     if ( !_basisFactorization )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::basisFactorization" );
+
+    _steepestEdgeGamma = new double[n-m];
+    if ( !_steepestEdgeGamma )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::steepestEdgeGamma" );
 }
 
 //

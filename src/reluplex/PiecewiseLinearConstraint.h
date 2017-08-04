@@ -17,6 +17,7 @@
 #include "ITableau.h"
 
 class PiecewiseLinearCaseSplit;
+class ITableau;
 
 class PiecewiseLinearConstraint : public ITableau::VariableWatcher
 {
@@ -81,6 +82,8 @@ public:
       then ~l1 /\ ~l2 /\ ... /\ ~ln-1 --> ln.
     */
     virtual List<PiecewiseLinearCaseSplit> getCaseSplits() const = 0;
+
+    ITableau *_tableau;
 };
 
 #endif // __PiecewiseLinearConstraint_h__

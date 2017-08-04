@@ -20,6 +20,7 @@
 
 class BasisFactorization;
 class Equation;
+class PiecewiseLinearCaseSplit;
 class TableauState;
 
 class Tableau : public ITableau
@@ -59,7 +60,7 @@ public:
     void setEnteringVariable( unsigned nonBasic );
 
     // FOR TESTING ONLY
-    void setLeavingVariable( unsigned nonBasic );
+    void setLeavingVariable( unsigned basic );
 
     /*
       Set the values of the right hand side vector, b, of size m.
@@ -67,16 +68,6 @@ public:
     */
     void setRightHandSide( const double *b );
     void setRightHandSide( unsigned index, double value );
-
-    /*
-      Get right hand side vector.
-    */
-    const double *getRightHandSide() const;
-
-    /*
-      Compute right hand side = inv(B) * b.
-    */
-    void computeRightHandSide();
 
     /*
       Mark a variable as basic in the initial basis
@@ -308,6 +299,11 @@ public:
     void notifyUpperBound( unsigned variable, double bound );
 
     /*
+      Apply the bound tightenins and equations from the given split.
+    */
+    void applySplit( const PiecewiseLinearCaseSplit &split );
+
+    /*
       Have the Tableau start reporting statistics.
      */
     void setStatistics( Statistics *statistics );
@@ -352,10 +348,9 @@ private:
     double *_b;
 
     /*
-      The current right hand side, inv(B)*b.
-      Recomputed by computeRightHandSide.
+      Working memory for computing the current scalar in a row.
     */
-    double *_rhs;
+    double *_rowScalars;
 
     /*
       A unit vector of size m
@@ -494,7 +489,7 @@ private:
 
     /*
        Helper function to compute dot product of two vectors of size m
-     */
+    */
     double dotProduct( const double *a, const double *b, unsigned m );
 
     void printVector( const double *v, unsigned m );

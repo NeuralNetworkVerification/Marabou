@@ -29,6 +29,11 @@ BasisFactorization::BasisFactorization( unsigned m )
     if ( !_B0 )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "BasisFactorization::B0" );
 
+    // Initialize B0 to the identity matrix
+    std::fill_n( _B0, _m * _m, 0.0 );
+    for ( unsigned row = 0; row < _m; ++row )
+        _B0[row * _m + row] = 1.0;
+
 	_U = new double[m*m];
 	if ( !_U )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "BasisFactorization::U" );
@@ -121,20 +126,12 @@ void BasisFactorization::LMultiplyLeft( const EtaMatrix *L, double *X ) const
 
 void BasisFactorization::setB0( const double *B0 )
 {
-	memcpy( _B0, B0, sizeof(double) * _m * _m);
+	memcpy( _B0, B0, sizeof(double) * _m * _m );
 	factorizeMatrix( _B0 );
 }
 
 void BasisFactorization::condenseEtas()
 {
-    // If there are no Eta matrices stored, B0 becomes the identity matrix
-    if ( _LP.empty() )
-    {
-        std::fill_n( _B0, _m * _m, 0.0 );
-        for ( unsigned row = 0; row < _m; ++row )
-            _B0[row * _m + row] = 1.0;
-    }
-
     // Multiplication by an eta matrix on the right only changes one
     // column of B0. The new column is a linear combination of the
     // existing columns of B0, according to the eta column. We perform
@@ -188,7 +185,7 @@ void BasisFactorization::forwardTransformation( const double *y, double *x ) con
 		}
         else
 			LMultiplyLeft( (*element)->_eta , tempY );
-	}
+    }
 
     // We are now left with U * E1 ... * En * x = y. Eliminate U.
     // We use x as a temporary work area, then update y.
@@ -297,32 +294,6 @@ void BasisFactorization::backwardTransformation( const double *y, double *x ) co
         else
 			LMultiplyRight( d->_eta, x );
 	}
-}
-
-void BasisFactorization::storeFactorization( BasisFactorization *other ) const
-{
-    ASSERT( _m == other->_m );
-    ASSERT( other->_etas.size() == 0 );
-
-    memcpy( other->_B0, _B0, sizeof(double) * _m * _m );
-
-    for ( const auto &eta : _etas )
-        other->pushEtaMatrix( eta->_columnIndex, eta->_column );
-}
-
-void BasisFactorization::restoreFactorization( const BasisFactorization *other )
-{
-    ASSERT( _m == other->_m );
-
-    for ( const auto &it : _etas )
-        delete it;
-
-    _etas.clear();
-
-    memcpy( _B0, other->_B0, sizeof(double) * _m * _m );
-
-    for ( const auto &eta : other->_etas )
-        _etas.append( new EtaMatrix( eta->_m, eta->_columnIndex, eta->_column ) );
 }
 
 void BasisFactorization::rowSwap( unsigned rowOne, unsigned rowTwo, double *matrix )
@@ -446,6 +417,35 @@ bool BasisFactorization::factorizationEnabled() const
 void BasisFactorization::toggleFactorization( bool value )
 {
     _factorizationEnabled = value;
+}
+
+void BasisFactorization::storeFactorization( BasisFactorization *other )
+{
+    ASSERT( _m == other->_m );
+    ASSERT( other->_etas.size() == 0 );
+
+    // In order to reduce space requirements, condense the etas before storing a factorization
+    condenseEtas();
+    factorizeMatrix( _B0 );
+
+    // Now we simply store _B0
+    other->setB0( _B0 );
+}
+
+void BasisFactorization::restoreFactorization( const BasisFactorization *other )
+{
+    ASSERT( _m == other->_m );
+    ASSERT( other->_etas.size() == 0 );
+
+    // Clear any existing data
+    for ( const auto &it : _etas )
+        delete it;
+
+    _etas.clear();
+	clearLPU();
+
+    // Store the new B0 and LU-factorize it
+    setB0( other->_B0 );
 }
 
 //

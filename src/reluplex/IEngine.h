@@ -13,8 +13,8 @@
 #ifndef __IEngine_h__
 #define __IEngine_h__
 
+class EngineState;
 class Equation;
-class TableauState;
 
 class IEngine
 {
@@ -33,10 +33,10 @@ public:
     virtual void addNewEquation( const Equation &equation ) = 0;
 
     /*
-      Methods for storing and restoring the tableau.
+      Methods for storing and restoring the state of the engine.
     */
-    virtual void storeTableauState( TableauState &state ) const = 0;
-    virtual void restoreTableauState( const TableauState &state ) = 0;
+    virtual void storeState( EngineState &state ) const = 0;
+    virtual void restoreState( const EngineState &state ) = 0;
 };
 
 #endif // __IEngine_h__

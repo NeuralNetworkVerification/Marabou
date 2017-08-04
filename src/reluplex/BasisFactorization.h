@@ -82,9 +82,10 @@ public:
     void backwardTransformation( const double *y, double *x ) const;
 
     /*
-      Store and restore the basis factorization.
+      Store and restore the basis factorization. Storing triggers
+      condesning the etas.
     */
-    void storeFactorization( BasisFactorization *other ) const;
+    void storeFactorization( BasisFactorization *other );
     void restoreFactorization( const BasisFactorization *other );
 
 	/*
@@ -117,6 +118,12 @@ public:
     */
     bool factorizationEnabled() const;
     void toggleFactorization( bool value );
+
+    /*
+      Compute B0 * E1 ... *En for all stored eta matrices, and place
+      the result in B0.
+    */
+	void condenseEtas();
 
     /*
       A helper function for matrix multiplication.
@@ -172,12 +179,6 @@ private:
       store result in U.
     */
 	void LFactorizationMultiply( const EtaMatrix *L );
-
-    /*
-      Compute B0 * E1 ... *En for all stored eta matrices, and place
-      the result in B0.
-    */
-	void condenseEtas();
 };
 
 #endif // __BasisFactorization_h__

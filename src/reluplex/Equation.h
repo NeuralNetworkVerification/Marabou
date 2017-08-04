@@ -41,6 +41,8 @@ public:
     unsigned _auxVariable;
 
     bool operator==( const Equation &other ) const;
+
+    void dump() const;
 };
 
 #endif // __Equation_h__

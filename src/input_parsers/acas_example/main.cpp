@@ -81,7 +81,7 @@ int main()
     }
     catch ( const ReluplexError &e )
     {
-        printf( "Caught a ReluplexError. Code: %u\n", e.getCode() );
+        printf( "Caught a ReluplexError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );
         return 0;
     }
 

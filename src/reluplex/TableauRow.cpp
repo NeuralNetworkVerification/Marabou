@@ -33,9 +33,10 @@ void TableauRow::dump() const
         if ( FloatUtils::isZero( _row[i]._coefficient ) )
             continue;
 
-        printf( "%.15lf * x%u, ", _row[i]._coefficient, _row[i]._var );
+        printf( "%.2lf * x%u, ", _row[i]._coefficient, _row[i]._var );
     }
-    printf( "\n" );
+
+    printf( "\n\tscalar = %.2lf\n", _scalar );
 }
 
 //

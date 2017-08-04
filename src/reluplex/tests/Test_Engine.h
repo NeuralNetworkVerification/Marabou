@@ -138,35 +138,35 @@ public:
         TS_ASSERT_EQUALS( tableau->lastEntries[(1*5) + 4], 1 );
 
         // Lower and upper bounds
-        TS_ASSERT( tableau->lastLowerBounds.exists( 0 ) );
-        TS_ASSERT_EQUALS( tableau->lastLowerBounds[0], 0.0 );
+        TS_ASSERT( tableau->lowerBounds.exists( 0 ) );
+        TS_ASSERT_EQUALS( tableau->lowerBounds[0], 0.0 );
 
-        TS_ASSERT( tableau->lastLowerBounds.exists( 1 ) );
-        TS_ASSERT_EQUALS( tableau->lastLowerBounds[1], -3.0 );
+        TS_ASSERT( tableau->lowerBounds.exists( 1 ) );
+        TS_ASSERT_EQUALS( tableau->lowerBounds[1], -3.0 );
 
-        TS_ASSERT( tableau->lastLowerBounds.exists( 2 ) );
-        TS_ASSERT_EQUALS( tableau->lastLowerBounds[2], 4.0 );
+        TS_ASSERT( tableau->lowerBounds.exists( 2 ) );
+        TS_ASSERT_EQUALS( tableau->lowerBounds[2], 4.0 );
 
-        TS_ASSERT( tableau->lastLowerBounds.exists( 3 ) );
-        TS_ASSERT_EQUALS( tableau->lastLowerBounds[3], 0.0 );
+        TS_ASSERT( tableau->lowerBounds.exists( 3 ) );
+        TS_ASSERT_EQUALS( tableau->lowerBounds[3], 0.0 );
 
-        TS_ASSERT( tableau->lastLowerBounds.exists( 4 ) );
-        TS_ASSERT_EQUALS( tableau->lastLowerBounds[4], -DBL_MAX );
+        TS_ASSERT( tableau->lowerBounds.exists( 4 ) );
+        TS_ASSERT_EQUALS( tableau->lowerBounds[4], -DBL_MAX );
 
-        TS_ASSERT( tableau->lastUpperBounds.exists( 0 ) );
-        TS_ASSERT_EQUALS( tableau->lastUpperBounds[0], 2.0 );
+        TS_ASSERT( tableau->upperBounds.exists( 0 ) );
+        TS_ASSERT_EQUALS( tableau->upperBounds[0], 2.0 );
 
-        TS_ASSERT( tableau->lastUpperBounds.exists( 1 ) );
-        TS_ASSERT_EQUALS( tableau->lastUpperBounds[1], 3.0 );
+        TS_ASSERT( tableau->upperBounds.exists( 1 ) );
+        TS_ASSERT_EQUALS( tableau->upperBounds[1], 3.0 );
 
-        TS_ASSERT( tableau->lastUpperBounds.exists( 2 ) );
-        TS_ASSERT_EQUALS( tableau->lastUpperBounds[2], 6.0 );
+        TS_ASSERT( tableau->upperBounds.exists( 2 ) );
+        TS_ASSERT_EQUALS( tableau->upperBounds[2], 6.0 );
 
-        TS_ASSERT( tableau->lastUpperBounds.exists( 3 ) );
-        TS_ASSERT_EQUALS( tableau->lastUpperBounds[3], DBL_MAX );
+        TS_ASSERT( tableau->upperBounds.exists( 3 ) );
+        TS_ASSERT_EQUALS( tableau->upperBounds[3], DBL_MAX );
 
-        TS_ASSERT( tableau->lastUpperBounds.exists( 4 ) );
-        TS_ASSERT_EQUALS( tableau->lastUpperBounds[4], 0.0 );
+        TS_ASSERT( tableau->upperBounds.exists( 4 ) );
+        TS_ASSERT_EQUALS( tableau->upperBounds[4], 0.0 );
 
         TS_ASSERT_EQUALS( tableau->lastRegisteredVariableToWatcher.size(), 3U );
         TS_ASSERT( tableau->lastRegisteredVariableToWatcher.exists( 1 ) );

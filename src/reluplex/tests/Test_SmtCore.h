@@ -179,7 +179,7 @@ public:
         TS_ASSERT( engine->lastStoredState );
         TS_ASSERT( !engine->lastRestoredState );
 
-        TableauState *originalState = engine->lastStoredState;
+        EngineState *originalState = engine->lastStoredState;
         engine->lastStoredState = NULL;
         engine->lastLowerBounds.clear();
         engine->lastUpperBounds.clear();
