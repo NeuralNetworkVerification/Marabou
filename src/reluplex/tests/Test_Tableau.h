@@ -1342,6 +1342,10 @@ public:
         TS_TRACE( "When adding a row, what to do about the gamma function?" );
         TS_TRACE( "Tableau has an applySplit function, identical to the one in the smt core. "
                   "Move this joint functionality to the engine?" );
+        TS_TRACE( "Add tests for gamma function computation, both during normal execution "
+                  "and after adding a row" );
+        TS_TRACE( "Make gamma recomputation more efficient. Do we really need to recompute the "
+                  "whole thing?" );
     }
 };
 
