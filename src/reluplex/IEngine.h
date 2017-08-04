@@ -15,6 +15,7 @@
 
 class EngineState;
 class Equation;
+class PiecewiseLinearCaseSplit;
 
 class IEngine
 {
@@ -22,15 +23,9 @@ public:
     virtual ~IEngine() {};
 
     /*
-      Methods for tightening lower/upper variable bounds.
+      Add equations and apply tightenings from a PL case split.
     */
-    virtual void tightenLowerBound( unsigned variable, double bound ) = 0;
-    virtual void tightenUpperBound( unsigned variable, double bound ) = 0;
-
-    /*
-      Add a new equation to the tableau.
-    */
-    virtual void addNewEquation( const Equation &equation ) = 0;
+    virtual void applySplit( const PiecewiseLinearCaseSplit &split ) = 0;
 
     /*
       Methods for storing and restoring the state of the engine.

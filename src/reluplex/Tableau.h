@@ -299,11 +299,6 @@ public:
     void notifyUpperBound( unsigned variable, double bound );
 
     /*
-      Apply the bound tightenins and equations from the given split.
-    */
-    void applySplit( const PiecewiseLinearCaseSplit &split );
-
-    /*
       Have the Tableau start reporting statistics.
      */
     void setStatistics( Statistics *statistics );

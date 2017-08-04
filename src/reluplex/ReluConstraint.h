@@ -14,11 +14,17 @@
 #define __ReluConstraint_h__
 
 #include "PiecewiseLinearConstraint.h"
-#include "Vector.h"
+#include "Queue.h"
 
 class ReluConstraint : public PiecewiseLinearConstraint
 {
 public:
+	  enum StuckStatus {
+		  NOT_STUCK = 0,
+		  STUCK_ACTIVE,
+      STUCK_INACTIVE
+    };
+
     ReluConstraint( unsigned b, unsigned f );
 
     /*
@@ -64,23 +70,30 @@ public:
      */
     List<PiecewiseLinearCaseSplit> getCaseSplits() const;
 
+    /*
+      Store and restore the constraint's state. Needed for case splitting
+      and backtracking.
+    */
+    void storeState( PiecewiseLinearConstraintState &state ) const;
+    void restoreState( const PiecewiseLinearConstraintState &state );
+
 private:
     unsigned _b;
     unsigned _f;
 
     Map<unsigned, double> _assignment;
-    Map<unsigned, double> _lowerBounds;
-    Map<unsigned, double> _upperBounds;
 
     PiecewiseLinearCaseSplit getInactiveSplit( unsigned auxVariable ) const;
     PiecewiseLinearCaseSplit getActiveSplit( unsigned auxVariable ) const;
 
-	  enum StuckStatus {
-		  NOT_STUCK = 0,
-		  STUCK_ACTIVE,
-      STUCK_INACTIVE
-    };
     StuckStatus _stuck;
+};
+
+class ReluConstraintStateData : public PiecewiseLinearConstraintStateData
+{
+public:
+    Map<unsigned, double> _assignment;
+    ReluConstraint::StuckStatus _stuck;
 };
 
 #endif // __ReluConstraint_h__
