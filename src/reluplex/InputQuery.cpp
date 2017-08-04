@@ -179,10 +179,10 @@ void InputQuery::preprocessBounds()
 					}
 
 					//divide by coefficient
-					if ( FloatUtils::gt( scalarLB / abs( addend._coefficient ), getLowerBound( addend._variable ) ) )
-							setLowerBound( addend._variable, scalarLB / abs( addend._coefficient ) );
-					if ( FloatUtils::lt( scalarUB / abs (addend._coefficient ), getUpperBound( addend._variable ) ) )
-							setUpperBound( addend._variable, scalarUB / abs ( addend._coefficient ) );
+					if ( FloatUtils::gt( scalarLB / FloatUtils::abs( addend._coefficient ), getLowerBound( addend._variable ) ) )
+							setLowerBound( addend._variable, scalarLB / FloatUtils::abs( addend._coefficient ) );
+					if ( FloatUtils::lt( scalarUB / FloatUtils::abs(addend._coefficient ), getUpperBound( addend._variable ) ) )
+							setUpperBound( addend._variable, scalarUB / FloatUtils::abs( addend._coefficient ) );
 			}
 
 			if ( getLowerBound( addend._variable) > getUpperBound( addend._variable) )
