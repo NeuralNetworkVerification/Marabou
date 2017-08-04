@@ -110,6 +110,11 @@ private:
     SmtCore _smtCore;
 
     /*
+      Number of pl constraints disabled by valid splits
+    */
+    unsigned _numPlConstraintsDisbaledByValidSplits;
+
+    /*
       Perform a simplex step: compute the cost function, pick the
       entering and leaving variables and perform a pivot. Return false
       if the problem is discovered to be unsat.

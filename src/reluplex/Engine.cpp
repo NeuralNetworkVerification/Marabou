@@ -21,6 +21,7 @@
 
 Engine::Engine()
     : _smtCore( this )
+    , _numPlConstraintsDisbaledByValidSplits( 0 )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -122,6 +123,9 @@ void Engine::mainLoopStatistics()
         if ( constraint->isActive() )
             ++activeConstraints;
     _statistics.setNumActivePlConstraints( activeConstraints );
+    _statistics.setNumPlValidSplits( _numPlConstraintsDisbaledByValidSplits );
+    _statistics.setNumPlSMTSplits( _plConstraints.size() -
+                                   activeConstraints - _numPlConstraintsDisbaledByValidSplits );
 }
 
 bool Engine::performSimplexStep()
@@ -378,6 +382,7 @@ void Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
     {
         constraint->setActiveConstraint( false );
         applySplit( constraint->getValidCaseSplit() );
+        ++_numPlConstraintsDisbaledByValidSplits;
     }
 }
 

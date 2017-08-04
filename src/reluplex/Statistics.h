@@ -35,6 +35,8 @@ public:
     unsigned long long getNumMainLoopIterations() const;
     void setNumPlConstraints( unsigned numberOfConstraints );
     void setNumActivePlConstraints( unsigned numberOfConstraints );
+    void setNumPlValidSplits( unsigned numberOfSplits );
+    void setNumPlSMTSplits( unsigned numberOfSplits );
 
     /*
       Tableau related statistics.
@@ -61,9 +63,11 @@ private:
     // Number of iterations of the main loop
     unsigned long long _numMainLoopIterations;
 
-    // Number of piecewise linear constraints (active, total)
+    // Number of piecewise linear constraints (active, total, and reason for split)
     unsigned _numPlConstraints;
     unsigned _numActivePlConstraints;
+    unsigned _numPlValidSplits;
+    unsigned _numPlSmtOriginatedSplits;
 
     // Number of simplex steps, i.e. pivots (including degenerate
     // pivots), performed by the main loop
