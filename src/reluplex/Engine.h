@@ -110,6 +110,11 @@ private:
     SmtCore _smtCore;
 
     /*
+      Number of pl constraints disabled by valid splits
+    */
+    unsigned _numPlConstraintsDisbaledByValidSplits;
+
+    /*
       Perform a simplex step: compute the cost function, pick the
       entering and leaving variables and perform a pivot. Return false
       if the problem is discovered to be unsat.
@@ -153,15 +158,15 @@ private:
     void log( const String &line ) const;
 
     /*
-      Apply any splits enqueued in the given constraint.
+      Apply all valid case splits proposed by the constraints.
     */
-    void applyConstraintEnqueuedSplits( PiecewiseLinearConstraint &constraint );
+    void applyAllValidConstraintCaseSplits();
+    void applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constraint );
 
     /*
-      Apply all splits enqueued in any constraint.
+      Update statitstics, print them if needed.
     */
-    void applyAllConstraintEnqueuedSplits();
-
+    void mainLoopStatistics();
 };
 
 #endif // __Engine_h__

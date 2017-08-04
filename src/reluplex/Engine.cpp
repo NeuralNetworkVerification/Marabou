@@ -15,11 +15,13 @@
 #include "FreshVariables.h"
 #include "InputQuery.h"
 #include "PiecewiseLinearConstraint.h"
+#include "ReluplexError.h"
 #include "TableauRow.h"
 #include "TimeUtils.h"
 
 Engine::Engine()
     : _smtCore( this )
+    , _numPlConstraintsDisbaledByValidSplits( 0 )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -39,20 +41,20 @@ bool Engine::solve()
 {
     while ( true )
     {
-        if ( _statistics.getNumMainLoopIterations() % GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
-            _statistics.print();
-        _statistics.incNumMainLoopIterations();
+        mainLoopStatistics();
 
-        _tableau->computeAssignment();
-        // Perform a case split if needed
+        // Apply any pending bound tightenings
+        _boundTightener.tighten( _tableau );
+        // TODO: apply any constraint-entailed bound tightening
+
+        // Perform any pending case splits, valid or SmtCore-initiated
+        applyAllValidConstraintCaseSplits();
         if ( _smtCore.needToSplit() )
             _smtCore.performSplit();
 
+        // Compute the current assignment and basic status
+        _tableau->computeAssignment();
         _tableau->computeBasicStatus();
-
-        _boundTightener.tighten( _tableau );
-
-        applyAllConstraintEnqueuedSplits(); // TODO: let's make sure this is the right place to put this
 
         bool needToPop = false;
         if ( !_tableau->allBoundsValid() )
@@ -107,6 +109,23 @@ bool Engine::solve()
                 return false;
         }
     }
+}
+
+void Engine::mainLoopStatistics()
+{
+    if ( _statistics.getNumMainLoopIterations() % GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
+        _statistics.print();
+
+    _statistics.incNumMainLoopIterations();
+
+    unsigned activeConstraints = 0;
+    for ( const auto &constraint : _plConstraints )
+        if ( constraint->isActive() )
+            ++activeConstraints;
+    _statistics.setNumActivePlConstraints( activeConstraints );
+    _statistics.setNumPlValidSplits( _numPlConstraintsDisbaledByValidSplits );
+    _statistics.setNumPlSMTSplits( _plConstraints.size() -
+                                   activeConstraints - _numPlConstraintsDisbaledByValidSplits );
 }
 
 bool Engine::performSimplexStep()
@@ -269,6 +288,8 @@ void Engine::processInputQuery( const InputQuery &inputQuery )
 
     _tableau->initializeTableau();
     _activeEntryStrategy->initialize( _tableau );
+
+    _statistics.setNumPlConstraints( _plConstraints.size() );
 }
 
 void Engine::extractSolution( InputQuery &inputQuery )
@@ -286,7 +307,7 @@ void Engine::collectViolatedPlConstraints()
 {
     _violatedPlConstraints.clear();
     for ( const auto &constraint : _plConstraints )
-        if ( !constraint->satisfied() )
+        if ( constraint->isActive() && !constraint->satisfied() )
             _violatedPlConstraints.append( constraint );
 }
 
@@ -315,21 +336,27 @@ void Engine::storeState( EngineState &state ) const
     _tableau->storeState( state._tableauState );
     for ( const auto &constraint : _plConstraints )
     {
-        state._plConstraintStates.append( PiecewiseLinearConstraintState() );
-        constraint->storeState( state._plConstraintStates.back() );
+        PiecewiseLinearConstraintState constraintState;
+        constraint->storeState( constraintState );
+        state._plConstraintToState[constraint] = constraintState;
     }
+
+    state._numPlConstraintsDisbaledByValidSplits = _numPlConstraintsDisbaledByValidSplits;
 }
 
 void Engine::restoreState( const EngineState &state )
 {
     _boundTightener.clearStoredTightenings();
     _tableau->restoreState( state._tableauState );
-    List<PiecewiseLinearConstraintState>::const_iterator it = state._plConstraintStates.begin();
     for ( const auto &constraint : _plConstraints )
     {
-        constraint->restoreState( *it );
-        it++;
+        if ( !state._plConstraintToState.exists( constraint ) )
+            throw ReluplexError( ReluplexError::MISSING_PL_CONSTRAINT_STATE );
+
+        constraint->restoreState( state._plConstraintToState[constraint] );
     }
+
+    _numPlConstraintsDisbaledByValidSplits = state._numPlConstraintsDisbaledByValidSplits;
 }
 
 void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
@@ -347,20 +374,20 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
     }
 }
 
-void Engine::applyConstraintEnqueuedSplits( PiecewiseLinearConstraint &constraint )
-{
-    Queue<PiecewiseLinearCaseSplit> &splits = constraint.getEnqueuedSplits();
-    while ( !splits.empty() )
-    {
-        applySplit( splits.peak() );
-        splits.pop();
-    }
-}
-
-void Engine::applyAllConstraintEnqueuedSplits()
+void Engine::applyAllValidConstraintCaseSplits()
 {
     for ( auto &constraint : _plConstraints )
-        applyConstraintEnqueuedSplits( *constraint );
+        applyValidConstraintCaseSplit( constraint );
+}
+
+void Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constraint )
+{
+    if ( constraint->isActive() && constraint->phaseFixed() )
+    {
+        constraint->setActiveConstraint( false );
+        applySplit( constraint->getValidCaseSplit() );
+        ++_numPlConstraintsDisbaledByValidSplits;
+    }
 }
 
 //

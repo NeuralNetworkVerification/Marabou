@@ -19,9 +19,10 @@
 #include "ReluplexError.h"
 
 ReluConstraint::ReluConstraint( unsigned b, unsigned f )
-    : _b( b )
+    : _constraintActive( true )
+    , _b( b )
     , _f( f )
-    , _stuck( StuckStatus::NOT_STUCK )
+    , _phaseStatus( PhaseStatus::PHASE_NOT_FIXED )
 {
 }
 
@@ -37,6 +38,16 @@ void ReluConstraint::unregisterAsWatcher( ITableau *tableau )
     tableau->unregisterToWatchVariable( this, _f );
 }
 
+void ReluConstraint::setActiveConstraint( bool active )
+{
+    _constraintActive = active;
+}
+
+bool ReluConstraint::isActive() const
+{
+    return _constraintActive;
+}
+
 void ReluConstraint::notifyVariableValue( unsigned variable, double value )
 {
     _assignment[variable] = value;
@@ -44,22 +55,30 @@ void ReluConstraint::notifyVariableValue( unsigned variable, double value )
 
 void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
 {
-    if ( (variable == _b || variable == _f) && FloatUtils::isPositive( bound ) )
-    {
-        // stuck in active phase
-        _stuck = StuckStatus::STUCK_ACTIVE;
-        _splits.push( getActiveSplit( FreshVariables::getNextVariable() ) );
-    }
+    if ( variable == _f && FloatUtils::isPositive( bound ) )
+        _phaseStatus = PhaseStatus::PHASE_ACTIVE;
+    else if ( variable == _b && !FloatUtils::isNegative( bound ) )
+        _phaseStatus = PhaseStatus::PHASE_ACTIVE;
+
+    // if ( ( variable == _b || variable == _f ) && FloatUtils::isPositive( bound ) )
+    // {
+    //     // Stuck in active phase
+    //     _phaseStatus = PhaseStatus::PHASE_ACTIVE;
+    //     _splits.push( getActiveSplit( FreshVariables::getNextVariable() ) );
+    // }
 }
 
 void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
 {
-    if ( (variable == _f) && FloatUtils::isNegative( bound ) )
-    {
-        // stuck in inactive phase
-        _stuck = StuckStatus::STUCK_INACTIVE;
-        _splits.push( getInactiveSplit( FreshVariables::getNextVariable() ) );
-    }
+    if ( ( variable == _f || variable == _b ) && !FloatUtils::isPositive( bound ) )
+        _phaseStatus = PhaseStatus::PHASE_INACTIVE;
+
+    // if ( ( variable == _f ) && FloatUtils::isNegative( bound ) )
+    // {
+    //     // Stuck in inactive phase
+    //     _phaseStatus = PhaseStatus::PHASE_INACTIVE;
+    //     _splits.push( getInactiveSplit( FreshVariables::getNextVariable() ) );
+    // }
 }
 
 bool ReluConstraint::participatingVariable( unsigned variable ) const
@@ -129,14 +148,16 @@ List<PiecewiseLinearConstraint::Fix> ReluConstraint::getPossibleFixes() const
 
 List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
 {
+    if ( _phaseStatus != PhaseStatus::PHASE_NOT_FIXED )
+        throw ReluplexError( ReluplexError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
+
     // Auxiliary variable bound, needed for either phase
     List<PiecewiseLinearCaseSplit> splits;
     unsigned auxVariable = FreshVariables::getNextVariable();
-    // TODO: does a stuck relu ever get split?
-    if ( _stuck != StuckStatus::STUCK_INACTIVE )
-        splits.append( getActiveSplit( auxVariable ) );
-    if ( _stuck != StuckStatus::STUCK_ACTIVE )
-        splits.append( getInactiveSplit( auxVariable ) );
+
+    splits.append( getActiveSplit( auxVariable ) );
+    splits.append( getInactiveSplit( auxVariable ) );
+
     return splits;
 }
 
@@ -146,8 +167,9 @@ void ReluConstraint::storeState( PiecewiseLinearConstraintState &state ) const
     state._splits = _splits;
     ReluConstraintStateData *stateData =
         dynamic_cast<ReluConstraintStateData *>(state._stateData);
+    stateData->_constraintActive = _constraintActive;
     stateData->_assignment = _assignment;
-    stateData->_stuck = _stuck;
+    stateData->_phaseStatus = _phaseStatus;
 }
 
 void ReluConstraint::restoreState( const PiecewiseLinearConstraintState &state )
@@ -156,8 +178,9 @@ void ReluConstraint::restoreState( const PiecewiseLinearConstraintState &state )
     const ReluConstraintStateData *stateData =
         dynamic_cast<const ReluConstraintStateData *>(state._stateData);
     ASSERT( stateData );
+    _constraintActive = stateData->_constraintActive;
     _assignment = stateData->_assignment;
-    _stuck = stateData->_stuck;
+    _phaseStatus = stateData->_phaseStatus;
 }
 
 PiecewiseLinearCaseSplit ReluConstraint::getInactiveSplit( unsigned auxVariable ) const
@@ -199,7 +222,22 @@ PiecewiseLinearCaseSplit ReluConstraint::getActiveSplit( unsigned auxVariable ) 
     return activePhase;
 }
 
+bool ReluConstraint::phaseFixed() const
+{
+    return _phaseStatus != PhaseStatus::PHASE_NOT_FIXED;
+}
 
+PiecewiseLinearCaseSplit ReluConstraint::getValidCaseSplit() const
+{
+    ASSERT( _phaseStatus != PhaseStatus::PHASE_NOT_FIXED );
+
+    unsigned auxVariable = FreshVariables::getNextVariable();
+
+    if ( _phaseStatus == PhaseStatus::PHASE_ACTIVE )
+        return getActiveSplit( auxVariable );
+
+    return getInactiveSplit( auxVariable );
+}
 
 //
 // Local Variables:

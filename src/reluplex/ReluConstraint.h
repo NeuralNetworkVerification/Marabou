@@ -14,15 +14,14 @@
 #define __ReluConstraint_h__
 
 #include "PiecewiseLinearConstraint.h"
-#include "Queue.h"
 
 class ReluConstraint : public PiecewiseLinearConstraint
 {
 public:
-	  enum StuckStatus {
-		  NOT_STUCK = 0,
-		  STUCK_ACTIVE,
-      STUCK_INACTIVE
+    enum PhaseStatus {
+        PHASE_NOT_FIXED = 0,
+        PHASE_ACTIVE = 1,
+        PHASE_INACTIVE = 2,
     };
 
     ReluConstraint( unsigned b, unsigned f );
@@ -32,6 +31,12 @@ public:
      */
     void registerAsWatcher( ITableau *tableau );
     void unregisterAsWatcher( ITableau *tableau );
+
+    /*
+      Turn the constraint on/off.
+    */
+    void setActiveConstraint( bool active );
+    bool isActive() const;
 
     /*
       These callbacks are invoked when a watched variable's value
@@ -71,6 +76,16 @@ public:
     List<PiecewiseLinearCaseSplit> getCaseSplits() const;
 
     /*
+      Check if the constraint's phase has been fixed.
+    */
+    bool phaseFixed() const;
+
+    /*
+      If the constraint's phase has been fixed, get the (valid) case split.
+    */
+    PiecewiseLinearCaseSplit getValidCaseSplit() const;
+
+    /*
       Store and restore the constraint's state. Needed for case splitting
       and backtracking.
     */
@@ -78,22 +93,22 @@ public:
     void restoreState( const PiecewiseLinearConstraintState &state );
 
 private:
+    bool _constraintActive;
     unsigned _b;
     unsigned _f;
-
     Map<unsigned, double> _assignment;
+    PhaseStatus _phaseStatus;
 
     PiecewiseLinearCaseSplit getInactiveSplit( unsigned auxVariable ) const;
     PiecewiseLinearCaseSplit getActiveSplit( unsigned auxVariable ) const;
-
-    StuckStatus _stuck;
 };
 
 class ReluConstraintStateData : public PiecewiseLinearConstraintStateData
 {
 public:
+    bool _constraintActive;
     Map<unsigned, double> _assignment;
-    ReluConstraint::StuckStatus _stuck;
+    ReluConstraint::PhaseStatus _phaseStatus;
 };
 
 #endif // __ReluConstraint_h__

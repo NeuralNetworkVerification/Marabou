@@ -1,14 +1,14 @@
 /*********************                                                        */
 /*! \file PiecewiseLinearConstraint.h
- ** \verbatim
- ** Top contributors (to current version):
- **   Guy Katz
- ** This file is part of the Marabou project.
- ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
- ** in the top-level source directory) and their institutional affiliations.
- ** All rights reserved. See the file COPYING in the top-level source
- ** directory for licensing information.\endverbatim
- **/
+** \verbatim
+** Top contributors (to current version):
+**   Guy Katz
+** This file is part of the Marabou project.
+** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
+** in the top-level source directory) and their institutional affiliations.
+** All rights reserved. See the file COPYING in the top-level source
+** directory for licensing information.\endverbatim
+**/
 
 #ifndef __PiecewiseLinearConstraint_h__
 #define __PiecewiseLinearConstraint_h__
@@ -23,30 +23,34 @@ class ITableau;
 class PiecewiseLinearConstraintStateData
 {
 public:
-  virtual ~PiecewiseLinearConstraintStateData()
-  {
-  }
+    virtual ~PiecewiseLinearConstraintStateData() {}
 };
 
+// TODO: Why do we need 2 separate levels? Why not just "PiecewiseLinearConstraintState"?
 class PiecewiseLinearConstraintState
 {
-  /*
-    PL constraint saved states include the following:
-    - enqueued splits (tightenings/equations)
-    - any additional data that the specific constraint may want to save
-  */
+    /*
+      PL constraint saved states include the following:
+      - enqueued splits (tightenings/equations)
+      - any additional data that the specific constraint may want to save
+    */
 public:
-  PiecewiseLinearConstraintState( )
-  : _stateData( NULL )
-  {      
-  }
-  ~PiecewiseLinearConstraintState()
-  {
-    delete _stateData;
-  }
+    PiecewiseLinearConstraintState( )
+        : _stateData( NULL )
+    {
+    }
 
-  Queue<PiecewiseLinearCaseSplit> _splits;
-  PiecewiseLinearConstraintStateData* _stateData;
+    ~PiecewiseLinearConstraintState()
+    {
+        if ( _stateData )
+        {
+            delete _stateData;
+            _stateData = NULL;
+        }
+    }
+
+    Queue<PiecewiseLinearCaseSplit> _splits;
+    PiecewiseLinearConstraintStateData *_stateData;
 };
 
 class PiecewiseLinearConstraint : public ITableau::VariableWatcher
@@ -73,7 +77,7 @@ public:
 
     /*
       Register/unregister the constraint with a talbeau.
-     */
+    */
     virtual void registerAsWatcher( ITableau *tableau ) = 0;
     virtual void unregisterAsWatcher( ITableau *tableau ) = 0;
 
@@ -83,6 +87,12 @@ public:
     virtual void notifyVariableValue( unsigned /* variable */, double /* value */ ) {}
     virtual void notifyLowerBound( unsigned /* variable */, double /* bound */ ) {}
     virtual void notifyUpperBound( unsigned /* variable */, double /* bound */ ) {}
+
+    /*
+      Turn the constraint on/off.
+    */
+    virtual void setActiveConstraint( bool active ) = 0;
+    virtual bool isActive() const = 0;
 
     /*
       Returns true iff the variable participates in this piecewise
@@ -114,12 +124,14 @@ public:
     virtual List<PiecewiseLinearCaseSplit> getCaseSplits() const = 0;
 
     /*
-      Accessor for enqueued splits.
+      Check if the constraint's phase has been fixed.
     */
-    Queue<PiecewiseLinearCaseSplit> &getEnqueuedSplits()
-    {
-      return _splits;
-    }
+    virtual bool phaseFixed() const = 0;
+
+    /*
+      If the constraint's phase has been fixed, get the (valid) case split.
+    */
+    virtual PiecewiseLinearCaseSplit getValidCaseSplit() const = 0;
 
     /*
       Store and restore the constraint's state. Needed for case splitting

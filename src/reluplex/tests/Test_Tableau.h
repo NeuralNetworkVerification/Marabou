@@ -1313,15 +1313,12 @@ public:
         TS_ASSERT_EQUALS( tableau->getUpperBound( 1 ), 10 );
         TS_ASSERT_EQUALS( tableau->getValue( 1 ), 4.0 );
 
-        TS_ASSERT_THROWS_EQUALS( tableau->tightenLowerBound( 1, 2 ),
-                                 const ReluplexError &error,
-                                 error.getCode(),
-                                 ReluplexError::INVALID_BOUND_TIGHTENING );
+        TS_ASSERT_THROWS_NOTHING( tableau->tightenLowerBound( 1, 2 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->tightenUpperBound( 1, 22 ) );
 
-        TS_ASSERT_THROWS_EQUALS( tableau->tightenUpperBound( 1, 22 ),
-                                 const ReluplexError &error,
-                                 error.getCode(),
-                                 ReluplexError::INVALID_BOUND_TIGHTENING );
+        TS_ASSERT_EQUALS( tableau->getLowerBound( 1 ), 4 );
+        TS_ASSERT_EQUALS( tableau->getUpperBound( 1 ), 10 );
+        TS_ASSERT_EQUALS( tableau->getValue( 1 ), 4.0 );
 
         TS_ASSERT_THROWS_NOTHING( tableau->tightenUpperBound( 1, 8 ) );
 

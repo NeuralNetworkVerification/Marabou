@@ -1041,8 +1041,6 @@ void Tableau::pickLeavingVariable( double *d )
     // A marker to show that no leaving variable has been selected
     _leavingVariable = _m;
 
-    // TODO: assuming all coefficient in B are 1
-
     if ( decrease )
     {
         // The maximum amount by which the entering variable can
@@ -1284,11 +1282,10 @@ void Tableau::restoreState( const TableauState &state )
     // Restore right hand side vector _b
     memcpy( _b, state._b, sizeof(double) * _m );
 
-    // ReStore the bounds and valid status
-    // TODO: I think valid status can just be set to true
+    // Restore the bounds and valid status
+    // TODO: should notify all the constraints.
     memcpy( _lowerBounds, state._lowerBounds, sizeof(double) *_n );
     memcpy( _upperBounds, state._upperBounds, sizeof(double) *_n );
-    checkBoundsValid();
 
     // Basic variables
     _basicVariables = state._basicVariables;
@@ -1347,11 +1344,8 @@ void Tableau::tightenLowerBound( unsigned variable, double value )
     ASSERT( variable < _n );
 
     if ( !FloatUtils::gt( value, _lowerBounds[variable] ) )
-        throw ReluplexError( ReluplexError::INVALID_BOUND_TIGHTENING,
-                             Stringf( "tightenLowerBound. Variable: %u. "
-                                      "Old lower bound: %.2lf. "
-                                      "New lower bound: %.2lf",
-                                      variable, _lowerBounds[variable], value ).ascii() );
+        return;
+
     setLowerBound( variable, value );
 
     // Ensure that non-basic variables are within bounds
@@ -1368,11 +1362,8 @@ void Tableau::tightenUpperBound( unsigned variable, double value )
     ASSERT( variable < _n );
 
     if ( !FloatUtils::lt( value, _upperBounds[variable] ) )
-        throw ReluplexError( ReluplexError::INVALID_BOUND_TIGHTENING,
-                             Stringf( "tightenUpperBound. Variable: %u. "
-                                      "Old upper bound: %.2lf. "
-                                      "New upper bound: %.2lf",
-                                      variable, _upperBounds[variable], value ).ascii() );
+        return;
+
     setUpperBound( variable, value );
 
     // Ensure that non-basic variables are within bounds

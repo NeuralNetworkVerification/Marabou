@@ -25,7 +25,9 @@ public:
         NO_AVAILABLE_CANDIDATES = 3,
         PARTICIPATING_VARIABLES_ABSENT = 4,
         INVALID_EQUATION_ADDED_TO_TABLEAU = 5,
-        INVALID_BOUND_TIGHTENING = 6,
+        INVALID_BOUND_TIGHTENING = 6, // Todo: remove
+        MISSING_PL_CONSTRAINT_STATE = 7,
+        REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT = 8,
     };
 
     ReluplexError( ReluplexError::Code code ) : Error( "ReluplexError", (int)code )
