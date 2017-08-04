@@ -130,7 +130,6 @@ const List<PiecewiseLinearConstraint *> &InputQuery::getPiecewiseLinearConstrain
 }
 
 
-
 //
 // Local Variables:
 // compile-command: "make -C .. "

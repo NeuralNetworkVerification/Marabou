@@ -1427,6 +1427,10 @@ void Tableau::addEquation( const Equation &equation )
     // Finally, give the extended B0 matrix to the basis factorization
     _basisFactorization->setB0( newB0 );
 
+    // If using steepest edge, recompute gamma
+    if ( _usingSteepestEdge )
+        recomputeGamma();
+
     delete[] newB0;
 }
 
@@ -1552,8 +1556,7 @@ void Tableau::addRow()
     _basisFactorization = newBasisFactorization;
 
     // Steepest-edge data structures. Don't need to initialize.
-    // TODO: Don't need to reallocate _steepestEdgeGamma, but may need to re-compute it!
-    // Also don't need to resize _alpha and _nu.
+    // Also, don't need to reallocate/initialize _steepestEdgeGamma, _alpha and _nu.
     double *newWork = new double[newM];
     if ( !newWork )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newWork" );
@@ -1569,6 +1572,33 @@ void Tableau::addRow()
 
     _m = newM;
     _n = newN;
+}
+
+void Tableau::recomputeGamma()
+{
+    std::fill( _steepestEdgeGamma, _steepestEdgeGamma + _n - _m, 1.0 );
+    for ( unsigned i = 0; i < _n - _m ; ++i )
+    {
+        // Compute the i'th entry of gamma. This is given by
+        // 1 + |inv(B)*An*ei|^2. We initialized to 1, so add
+        // the rest.
+
+        // An * ei is just the i'th column of An, An[i]
+        unsigned var = _nonBasicIndexToVariable[i];
+        double *ANColumn = _A + ( var * _m );
+
+        // To solve x = inv(B) * An[i] we solve
+        // Bx = An[i] using a forward transformation
+        // Store x in _work.
+        _basisFactorization->forwardTransformation( ANColumn, _work );
+
+        // Now add each entry of x, squared, to gamma
+        for ( unsigned j = 0; j < _m; ++j )
+        {
+            // Account for AN[i]
+            _steepestEdgeGamma[i] += _work[j] * _work[j];
+        }
+    }
 }
 
 void Tableau::registerToWatchVariable( VariableWatcher *watcher, unsigned variable )

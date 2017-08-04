@@ -483,7 +483,13 @@ private:
     void initializeGamma();
 
     /*
-       Helper function to compute dot product of two vectors of size m
+      Recompute the gamma function. Useful after a row has been added to the
+      tableau.
+    */
+    void recomputeGamma();
+
+    /*
+      Helper function to compute dot product of two vectors of size m
     */
     double dotProduct( const double *a, const double *b, unsigned m );
 
