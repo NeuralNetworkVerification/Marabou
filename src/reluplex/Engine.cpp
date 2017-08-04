@@ -390,6 +390,12 @@ void Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
     }
 }
 
+void Engine::log( const String &message )
+{
+    if ( GlobalConfiguration::ENGINE_LOGGING )
+        printf( "Engine: %s\n", message.ascii() );
+}
+
 //
 // Local Variables:
 // compile-command: "make -C .. "

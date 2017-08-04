@@ -33,6 +33,7 @@ void GlobalConfiguration::print()
     printf( "  DEFAULT_DOUBLE_TO_STRING_PRECISION: %u\n", DEFAULT_DOUBLE_TO_STRING_PRECISION );
     printf( "  REFACTORIZATION_THRESHOLD: %u\n", REFACTORIZATION_THRESHOLD );
     printf( "  STATISTICS_PRINTING_FREQUENCY: %u\n", STATISTICS_PRINTING_FREQUENCY );
+    printf( "  NUMERICAL_STABILITY_CONSTANT: %lf\n", NUMERICAL_STABILITY_CONSTANT );
     printf( "****************************\n" );
 }
 
