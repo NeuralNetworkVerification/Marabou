@@ -44,9 +44,9 @@ void ReluConstraint::notifyVariableValue( unsigned variable, double value )
 
 void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
 {
-    if ( (variable == _b || variable == _f) && FloatUtils::isPositive( bound ) )
+    if ( ( variable == _b || variable == _f ) && FloatUtils::isPositive( bound ) )
     {
-        // stuck in active phase
+        // Stuck in active phase
         _stuck = StuckStatus::STUCK_ACTIVE;
         _splits.push( getActiveSplit( FreshVariables::getNextVariable() ) );
     }
@@ -54,7 +54,7 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
 
 void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
 {
-    if ( (variable == _f) && FloatUtils::isNegative( bound ) )
+    if ( ( variable == _f ) && FloatUtils::isNegative( bound ) )
     {
         // stuck in inactive phase
         _stuck = StuckStatus::STUCK_INACTIVE;
@@ -198,8 +198,6 @@ PiecewiseLinearCaseSplit ReluConstraint::getActiveSplit( unsigned auxVariable ) 
     activePhase.storeBoundTightening( auxLowerBound );
     return activePhase;
 }
-
-
 
 //
 // Local Variables:

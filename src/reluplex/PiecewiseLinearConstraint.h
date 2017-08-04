@@ -1,14 +1,14 @@
 /*********************                                                        */
 /*! \file PiecewiseLinearConstraint.h
- ** \verbatim
- ** Top contributors (to current version):
- **   Guy Katz
- ** This file is part of the Marabou project.
- ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
- ** in the top-level source directory) and their institutional affiliations.
- ** All rights reserved. See the file COPYING in the top-level source
- ** directory for licensing information.\endverbatim
- **/
+** \verbatim
+** Top contributors (to current version):
+**   Guy Katz
+** This file is part of the Marabou project.
+** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
+** in the top-level source directory) and their institutional affiliations.
+** All rights reserved. See the file COPYING in the top-level source
+** directory for licensing information.\endverbatim
+**/
 
 #ifndef __PiecewiseLinearConstraint_h__
 #define __PiecewiseLinearConstraint_h__
@@ -23,30 +23,29 @@ class ITableau;
 class PiecewiseLinearConstraintStateData
 {
 public:
-  virtual ~PiecewiseLinearConstraintStateData()
-  {
-  }
+    virtual ~PiecewiseLinearConstraintStateData() {}
 };
 
 class PiecewiseLinearConstraintState
 {
-  /*
-    PL constraint saved states include the following:
-    - enqueued splits (tightenings/equations)
-    - any additional data that the specific constraint may want to save
-  */
+    /*
+      PL constraint saved states include the following:
+      - enqueued splits (tightenings/equations)
+      - any additional data that the specific constraint may want to save
+    */
 public:
-  PiecewiseLinearConstraintState( )
-  : _stateData( NULL )
-  {      
-  }
-  ~PiecewiseLinearConstraintState()
-  {
-    delete _stateData;
-  }
+    PiecewiseLinearConstraintState( )
+        : _stateData( NULL )
+    {
+    }
 
-  Queue<PiecewiseLinearCaseSplit> _splits;
-  PiecewiseLinearConstraintStateData* _stateData;
+    ~PiecewiseLinearConstraintState()
+    {
+        delete _stateData;
+    }
+
+    Queue<PiecewiseLinearCaseSplit> _splits;
+    PiecewiseLinearConstraintStateData* _stateData;
 };
 
 class PiecewiseLinearConstraint : public ITableau::VariableWatcher
@@ -73,7 +72,7 @@ public:
 
     /*
       Register/unregister the constraint with a talbeau.
-     */
+    */
     virtual void registerAsWatcher( ITableau *tableau ) = 0;
     virtual void unregisterAsWatcher( ITableau *tableau ) = 0;
 
@@ -118,7 +117,7 @@ public:
     */
     Queue<PiecewiseLinearCaseSplit> &getEnqueuedSplits()
     {
-      return _splits;
+        return _splits;
     }
 
     /*

@@ -26,6 +26,7 @@ public:
         PARTICIPATING_VARIABLES_ABSENT = 4,
         INVALID_EQUATION_ADDED_TO_TABLEAU = 5,
         INVALID_BOUND_TIGHTENING = 6,
+        MISSING_PL_CONSTRAINT_STATE = 7,
     };
 
     ReluplexError( ReluplexError::Code code ) : Error( "ReluplexError", (int)code )

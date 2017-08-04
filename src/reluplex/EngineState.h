@@ -24,7 +24,7 @@ public:
     ~EngineState();
 
     TableauState _tableauState;
-    List<PiecewiseLinearConstraintState> _plConstraintStates;
+    Map<PiecewiseLinearConstraint *, PiecewiseLinearConstraintState> _plConstraintToState;
 };
 
 #endif // __EngineState_h__

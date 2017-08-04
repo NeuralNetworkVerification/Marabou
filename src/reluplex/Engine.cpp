@@ -15,6 +15,7 @@
 #include "FreshVariables.h"
 #include "InputQuery.h"
 #include "PiecewiseLinearConstraint.h"
+#include "ReluplexError.h"
 #include "TableauRow.h"
 #include "TimeUtils.h"
 
@@ -315,8 +316,9 @@ void Engine::storeState( EngineState &state ) const
     _tableau->storeState( state._tableauState );
     for ( const auto &constraint : _plConstraints )
     {
-        state._plConstraintStates.append( PiecewiseLinearConstraintState() );
-        constraint->storeState( state._plConstraintStates.back() );
+        PiecewiseLinearConstraintState constraintState;
+        constraint->storeState( constraintState );
+        state._plConstraintToState[constraint] = constraintState;
     }
 }
 
@@ -324,11 +326,12 @@ void Engine::restoreState( const EngineState &state )
 {
     _boundTightener.clearStoredTightenings();
     _tableau->restoreState( state._tableauState );
-    List<PiecewiseLinearConstraintState>::const_iterator it = state._plConstraintStates.begin();
     for ( const auto &constraint : _plConstraints )
     {
-        constraint->restoreState( *it );
-        it++;
+        if ( !state._plConstraintToState.exists( constraint ) )
+            throw ReluplexError( ReluplexError::MISSING_PL_CONSTRAINT_STATE );
+
+        constraint->restoreState( state._plConstraintToState[constraint] );
     }
 }
 
