@@ -13,6 +13,7 @@
 #include "InputQuery.h"
 #include "MStringf.h"
 #include "ReluplexError.h"
+#include "FloatUtils.h"
 
 #include <cfloat>
 
@@ -132,6 +133,7 @@ void InputQuery::preprocessBounds()
 {
 	double min = -DBL_MAX;
 	double max = DBL_MAX;
+	bool unbounded = false;
 
 	for ( auto equation : _equations )
 	{
@@ -139,6 +141,15 @@ void InputQuery::preprocessBounds()
 		{
 				if ( getLowerBound( addend._variable ) == min || getUpperBound( addend._variable ) == max )
 				{
+					//cannot tighten bounds if there are 2 variables that are unbounded on both sides
+					if ( getLowerBound( addend._variable ) == min && getUpperBound( addend._variable ) == max )
+					{
+						if ( unbounded )
+							continue;
+						unbounded = true;
+					}
+					//if left-hand side coefficient is negative, [LB, UB] = [-UB, -LB]
+					bool pos =  FloatUtils::isPositive( addend._coefficient );
 
 					double scalarUB = equation._scalar;
 					double scalarLB = equation._scalar;
@@ -147,22 +158,29 @@ void InputQuery::preprocessBounds()
 					{
 						if ( addend._variable == bounded._variable ) continue;
 	
-						if ( bounded._coefficient < 0 )
+						if ( FloatUtils::isNegative( bounded._coefficient ) )
 						{
+							//coefficient is negative--subtract to simulate addition
 							scalarLB -= bounded._coefficient * getLowerBound( bounded._variable );
 							scalarUB -= bounded._coefficient * getUpperBound( bounded._variable );
 						}
-						else if ( bounded._coefficient > 0 )
+						if ( FloatUtils::isPositive( bounded._coefficient ) )
 						{
 							scalarLB -= bounded._coefficient * getUpperBound( bounded._variable );
 							scalarUB -= bounded._coefficient * getLowerBound( bounded._variable );
 						}
 					}
+					
+					if ( !pos )
+					{
+						double temp = scalarUB;
+						scalarUB = -scalarLB;
+						scalarLB = -temp;
+					}
 
-
-					if ( scalarLB > getLowerBound( addend._variable ) )
+					if ( FloatUtils::gt( scalarLB, getLowerBound( addend._variable ) ) )
 							setLowerBound( addend._variable, scalarLB );
-					if ( scalarUB < getUpperBound( addend._variable ) )
+					if ( FloatUtils::lt( scalarUB, getUpperBound( addend._variable ) ) )
 							setUpperBound( addend._variable, scalarUB );
 			}
 

@@ -141,55 +141,86 @@ public:
 
 		// x2.lb = -10 + x0.lb + x1.lb = -10 + 0 + 0 = -10
 		// x2.ub = -10 + x0.ub + x1.ub = -10 + 13 + 1 = 4
+		// 3 is a tighter bound than 4, keep 3 as the upper bound
 
 		inputQuery.preprocessBounds();
 		
 		TS_ASSERT_EQUALS( inputQuery.getLowerBound( 0 ), 0 );
 		TS_ASSERT_EQUALS( inputQuery.getUpperBound( 0 ), 13 );
-		TS_ASSERT_EQUALS( inputQuery.getLowerBound( 2 ), -4 );
+		TS_ASSERT_EQUALS( inputQuery.getLowerBound( 2 ), -10 );
 		TS_ASSERT_EQUALS( inputQuery.getUpperBound( 2 ), 3 );
 		
 		inputQuery.setLowerBound( 0, -DBL_MAX );
 		inputQuery.setUpperBound( 0, 15 );
-		inputQuery.setLowerBound( 1, -3 );
-		inputQuery.setUpperBound( 1, 1 );
+		inputQuery.setLowerBound( 1, 3 );
+		inputQuery.setUpperBound( 1, 3 );
 		inputQuery.setLowerBound( 2, 2 );
 		inputQuery.setUpperBound( 2, DBL_MAX );
 		inputQuery.setLowerBound( 3, 0 );
 		inputQuery.setUpperBound( 3, 0 );
 
-		// x0.lb = 10 - x1.ub + x2.lb = 10 - 1 + 2 = 11
+		// x0.lb = 10 - x1.ub + x2.lb = 10 - 3 + 2 = 9
 		// x0.ub = 10 - x1.lb + x2.ub --> Unbounded
 
+		// x2.lb = -10 + x0.lb + x1.lb = -10 + 9 + 3 = 2
+		// x2.ub = -10 + x0.ub + x1.ub = -10 + 15 + 3 = 8
+	
 		inputQuery.preprocessBounds();
 
-		TS_ASSERT_EQUALS( inputQuery.getLowerBound( 0 ), 11 );
+		TS_ASSERT_EQUALS( inputQuery.getLowerBound( 0 ), 9 );
 		TS_ASSERT_EQUALS( inputQuery.getUpperBound( 0 ), 15 );
 		TS_ASSERT_EQUALS( inputQuery.getLowerBound( 2 ), 2 );
-		TS_ASSERT_EQUALS( inputQuery.getUpperBound( 2 ), 2 );
+		TS_ASSERT_EQUALS( inputQuery.getUpperBound( 2 ), 8 );
 
 		inputQuery.setLowerBound( 0, -DBL_MAX );
 		inputQuery.setUpperBound( 0, 15 );
-		inputQuery.setLowerBound( 1, 0 );
-		inputQuery.setUpperBound( 1, 1 );
+		inputQuery.setLowerBound( 1, -3 );
+		inputQuery.setUpperBound( 1, -2 );
 		inputQuery.setLowerBound( 2, -DBL_MAX );
-		inputQuery.setUpperBound( 2, 3 );
+		inputQuery.setUpperBound( 2, 6 );
 		inputQuery.setLowerBound( 3, 0 );
 		inputQuery.setUpperBound( 3, 0 );
 
 		// x0.lb = 10 - x1.ub + x2.lb --> Unbounded
-		// x0.ub = 10 - x1.lb + x2.ub = 10 - 0 + 3 = 13
+		// x0.ub = 10 - x1.lb + x2.ub = 10 - -3 + 6 = 19
+		// 15 is a tighter bound, keep 15 as the upper bound
+
+		// x2.lb = -10 + x0.lb + x1.lb = Unbounded
+		// x2.ub = -10 + x0.ub + x1.ub = -10 + 15 -2 = 3
 
 		inputQuery.preprocessBounds();
 
 		TS_ASSERT_EQUALS( inputQuery.getLowerBound( 0 ), -DBL_MAX );
-		TS_ASSERT_EQUALS( inputQuery.getUpperBound( 0 ), 13 );
-		TS_ASSERT_EQUALS( inputQuery.getLowerBound( 2 ), -4 );
+		TS_ASSERT_EQUALS( inputQuery.getUpperBound( 0 ), 15 );
+		TS_ASSERT_EQUALS( inputQuery.getLowerBound( 2 ), -DBL_MAX );
 		TS_ASSERT_EQUALS( inputQuery.getUpperBound( 2 ), 3 );
 
+		inputQuery.setLowerBound( 0, -DBL_MAX );
+		inputQuery.setUpperBound( 0, 5 );
+		inputQuery.setLowerBound( 1, -3 );
+		inputQuery.setUpperBound( 1, -2 );
+		inputQuery.setLowerBound( 2, 0 );
+		inputQuery.setUpperBound( 2, 6 );
+		inputQuery.setLowerBound( 3, 0 );
+		inputQuery.setUpperBound( 3, 0 );
 
-		
+		// x0.lb = 10 - x1.ub + x2.lb --> Unbounded
+		// x0.ub = 10 - x1.lb + x2.ub = 10 - -3 + 6 = 19
+		// 5 is a tighter bound, keep 5 as the upper bound
 
+		// x2.lb = -10 + x0.lb + x1.lb = Unbounded
+		// 0 is a tighter bound, keep 0 as the lower bound
+		// x2.ub = -10 + x0.ub + x1.ub = -10 + 5 -2 = -7 
+		// x2 = [0, -7] -> throw error
+
+		try
+		{
+			inputQuery.preprocessBounds();
+		}
+		catch ( const ReluplexError &e )
+		{
+			TS_ASSERT_EQUALS( e.getCode(), 6 );
+		}
 	}
 };
 
