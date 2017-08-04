@@ -153,11 +153,6 @@ private:
     void reportPlViolation();
 
     /*
-      Print a message
-    */
-    void log( const String &line ) const;
-
-    /*
       Apply all valid case splits proposed by the constraints.
     */
     void applyAllValidConstraintCaseSplits();
@@ -167,6 +162,8 @@ private:
       Update statitstics, print them if needed.
     */
     void mainLoopStatistics();
+
+    static void log( const String &message );
 };
 
 #endif // __Engine_h__

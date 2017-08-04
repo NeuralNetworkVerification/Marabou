@@ -19,14 +19,15 @@ public:
     static void print();
 
     static const double DEFAULT_EPSILON_FOR_COMPARISONS;
-
     static const unsigned DEFAULT_DOUBLE_TO_STRING_PRECISION;
-
 	static const unsigned REFACTORIZATION_THRESHOLD;
-
     static const unsigned STATISTICS_PRINTING_FREQUENCY;
-
     static const double NUMERICAL_STABILITY_CONSTANT;
+
+    // Logging
+    static const bool ENGINE_LOGGING;
+    static const bool TABLEAU_LOGGING;
+    static const bool SMT_CORE_LOGGING;
 };
 
 #endif // __GlobalConfiguration_h__

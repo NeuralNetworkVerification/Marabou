@@ -12,7 +12,9 @@
 
 #include "Debug.h"
 #include "EngineState.h"
+#include "GlobalConfiguration.h"
 #include "IEngine.h"
+#include "MString.h"
 #include "SmtCore.h"
 
 SmtCore::SmtCore( IEngine *engine )
@@ -84,6 +86,8 @@ unsigned SmtCore::getStackDepth() const
 
 bool SmtCore::popSplit()
 {
+    log( "Performing a pop" );
+
     if ( _stack.empty() )
         return false;
 
@@ -93,11 +97,17 @@ bool SmtCore::popSplit()
     StackEntry &stackEntry( _stack.top() );
 
     // Restore the state of the engine
+    log( "\tRestoring engine state..." );
     _engine->restoreState( *stackEntry._engineState );
+    log( "\tRestoring engine state - DONE" );
 
     // Apply the new split and erase it from the list
     auto split = stackEntry._splits.begin();
+
+    log( "\tApplying new split..." );
     _engine->applySplit( *split );
+    log( "\tApplying new split - DONE" );
+
     stackEntry._splits.erase( split );
 
     // If there are no splits left, pop this entry
@@ -116,6 +126,12 @@ bool SmtCore::popSplit()
 void SmtCore::setStatistics( Statistics *statistics )
 {
     _statistics = statistics;
+}
+
+void SmtCore::log( const String &message )
+{
+    if ( GlobalConfiguration::SMT_CORE_LOGGING )
+        printf( "SmtCore: %s\n", message.ascii() );
 }
 
 //
