@@ -20,7 +20,8 @@
 #include <algorithm>
 
 MaxConstraint::MaxConstraint( unsigned f, const List<unsigned> &elements )
-	: _f( f )
+	: _constraintActive( true )
+    , _f( f )
 	, _elements( elements )
 {
 }
@@ -44,18 +45,28 @@ void MaxConstraint::unregisterAsWatcher( ITableau *tableau )
 		tableau->unregisterToWatchVariable( this, element );
 }
 
+void MaxConstraint::setActiveConstraint( bool active )
+{
+    _constraintActive = active;
+}
+
+bool MaxConstraint::isActive() const
+{
+    return _constraintActive;
+}
+
 void MaxConstraint::notifyVariableValue( unsigned variable, double value )
 {
-	
+
 
 	if ( variable != _f )
 	{
 	//Two conditions for _maxIndex to not exist: either _assignment.size()
-	//equals to 0, or the only element in _assignment is _f. 
+	//equals to 0, or the only element in _assignment is _f.
 	//Otherwise, we only replace _maxIndex if the value of _maxIndex is less
 	//than the new value.
-		if ( _assignment.size() == 0 || ( _assignment.exists( _f ) && 
-		_assignment.size() == 1 ) || _assignment.get( _maxIndex ) < value ) 
+		if ( _assignment.size() == 0 || ( _assignment.exists( _f ) &&
+		_assignment.size() == 1 ) || _assignment.get( _maxIndex ) < value )
 			_maxIndex = variable;
 	}
 	_assignment[variable] = value;
@@ -179,8 +190,20 @@ List<PiecewiseLinearCaseSplit> MaxConstraint::getCaseSplits() const
 		splits.append( maxPhase );
 	}
 
-
 	return splits;
+}
+
+
+bool MaxConstraint::phaseFixed() const
+{
+    printf( "Error! Not yet implemented\n" );
+    exit( 1 );
+}
+
+PiecewiseLinearCaseSplit MaxConstraint::getValidCaseSplit() const
+{
+    printf( "Error! Not yet implemented\n" );
+    exit( 1 );
 }
 
 //

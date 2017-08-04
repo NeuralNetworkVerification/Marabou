@@ -21,8 +21,17 @@ public:
 	MaxConstraint( unsigned f, const List<unsigned> &elements );
 	~MaxConstraint();
 
+    /*
+      Register/unregister the constraint with a talbeau.
+    */
 	void registerAsWatcher( ITableau *tableau );
     void unregisterAsWatcher( ITableau *tableau );
+
+    /*
+      Turn the constraint on/off.
+    */
+    void setActiveConstraint( bool active );
+    bool isActive() const;
 
     /*
       This callback is invoked when a watched variable's value
@@ -60,6 +69,16 @@ public:
     List<PiecewiseLinearCaseSplit> getCaseSplits() const;
 
     /*
+      Check if the constraint's phase has been fixed.
+    */
+    bool phaseFixed() const;
+
+    /*
+      If the constraint's phase has been fixed, get the (valid) case split.
+    */
+    PiecewiseLinearCaseSplit getValidCaseSplit() const;
+
+    /*
       Store and restore the constraint's state. Needed for case splitting
       and backtracking.
     */
@@ -67,6 +86,7 @@ public:
     void restoreState( const PiecewiseLinearConstraintState &/* state */ ) {};
 
 private:
+    bool _constraintActive;
 	unsigned _f;
 	unsigned _maxIndex;
 	List<unsigned> _elements;

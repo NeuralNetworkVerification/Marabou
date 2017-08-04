@@ -26,6 +26,7 @@ public:
     virtual ~PiecewiseLinearConstraintStateData() {}
 };
 
+// TODO: Why do we need 2 separate levels? Why not just "PiecewiseLinearConstraintState"?
 class PiecewiseLinearConstraintState
 {
     /*
@@ -88,6 +89,12 @@ public:
     virtual void notifyUpperBound( unsigned /* variable */, double /* bound */ ) {}
 
     /*
+      Turn the constraint on/off.
+    */
+    virtual void setActiveConstraint( bool active ) = 0;
+    virtual bool isActive() const = 0;
+
+    /*
       Returns true iff the variable participates in this piecewise
       linear constraint.
     */
@@ -117,12 +124,14 @@ public:
     virtual List<PiecewiseLinearCaseSplit> getCaseSplits() const = 0;
 
     /*
-      Accessor for enqueued splits.
+      Check if the constraint's phase has been fixed.
     */
-    Queue<PiecewiseLinearCaseSplit> &getEnqueuedSplits()
-    {
-        return _splits;
-    }
+    virtual bool phaseFixed() const = 0;
+
+    /*
+      If the constraint's phase has been fixed, get the (valid) case split.
+    */
+    virtual PiecewiseLinearCaseSplit getValidCaseSplit() const = 0;
 
     /*
       Store and restore the constraint's state. Needed for case splitting

@@ -22,7 +22,7 @@
 #include "max_feasible_1.h"
 #include "max_infeasible_1.h"
 
-#include "ReluplexError.h" 
+#include "ReluplexError.h"
 
 void lps()
 {
@@ -48,20 +48,21 @@ void max()
 {
 	max_feasible_1 mf1;
 	mf1.run();
-	
+
 	max_infeasible_1 mf2;
 	mf2.run();
 }
 
 int main()
 {
-    try 
+    try
 	{
 		lps();
 
     	relus();
 
-		max();
+        // Temporarily disabling
+		// max();
 	}
 	catch( const ReluplexError &e )
 	{

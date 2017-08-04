@@ -19,7 +19,8 @@
 #include "ReluplexError.h"
 
 ReluConstraint::ReluConstraint( unsigned b, unsigned f )
-    : _b( b )
+    : _constraintActive( true )
+    , _b( b )
     , _f( f )
     , _phaseStatus( PhaseStatus::PHASE_NOT_FIXED )
 {
@@ -35,6 +36,16 @@ void ReluConstraint::unregisterAsWatcher( ITableau *tableau )
 {
     tableau->unregisterToWatchVariable( this, _b );
     tableau->unregisterToWatchVariable( this, _f );
+}
+
+void ReluConstraint::setActiveConstraint( bool active )
+{
+    _constraintActive = active;
+}
+
+bool ReluConstraint::isActive() const
+{
+    return _constraintActive;
 }
 
 void ReluConstraint::notifyVariableValue( unsigned variable, double value )
@@ -56,7 +67,7 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
 {
     if ( ( variable == _f ) && FloatUtils::isNegative( bound ) )
     {
-        // stuck in inactive phase
+        // Stuck in inactive phase
         _phaseStatus = PhaseStatus::PHASE_INACTIVE;
         _splits.push( getInactiveSplit( FreshVariables::getNextVariable() ) );
     }
@@ -197,6 +208,23 @@ PiecewiseLinearCaseSplit ReluConstraint::getActiveSplit( unsigned auxVariable ) 
     activePhase.storeBoundTightening( auxUpperBound );
     activePhase.storeBoundTightening( auxLowerBound );
     return activePhase;
+}
+
+bool ReluConstraint::phaseFixed() const
+{
+    return _phaseStatus != PhaseStatus::PHASE_NOT_FIXED;
+}
+
+PiecewiseLinearCaseSplit ReluConstraint::getValidCaseSplit() const
+{
+    ASSERT( _phaseStatus != PhaseStatus::PHASE_NOT_FIXED );
+
+    unsigned auxVariable = FreshVariables::getNextVariable();
+
+    if ( _phaseStatus == PhaseStatus::PHASE_ACTIVE )
+        return getActiveSplit( auxVariable );
+
+    return getInactiveSplit( auxVariable );
 }
 
 //

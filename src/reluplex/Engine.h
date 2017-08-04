@@ -153,15 +153,10 @@ private:
     void log( const String &line ) const;
 
     /*
-      Apply any splits enqueued in the given constraint.
+      Apply all valid case splits proposed by the constraints.
     */
-    void applyConstraintEnqueuedSplits( PiecewiseLinearConstraint &constraint );
-
-    /*
-      Apply all splits enqueued in any constraint.
-    */
-    void applyAllConstraintEnqueuedSplits();
-
+    void applyAllValidConstraintCaseSplits();
+    void applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constraint );
 };
 
 #endif // __Engine_h__

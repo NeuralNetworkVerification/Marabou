@@ -42,6 +42,15 @@ public:
         {
         }
 
+        void setActiveConstraint( bool )
+        {
+        }
+
+        bool isActive() const
+        {
+            return true;
+        }
+
         bool participatingVariable( unsigned ) const
         {
             return true;
@@ -71,6 +80,16 @@ public:
         void storeState( PiecewiseLinearConstraintState &/* state */ ) const {};
         void restoreState( const PiecewiseLinearConstraintState &/* state */ ) {};
 
+        bool phaseFixed() const
+        {
+            return true;
+        }
+
+        PiecewiseLinearCaseSplit getValidCaseSplit() const
+        {
+            PiecewiseLinearCaseSplit dontCare;
+            return dontCare;
+        }
     };
 
     void setUp()

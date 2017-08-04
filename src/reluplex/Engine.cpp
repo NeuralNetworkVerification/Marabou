@@ -53,7 +53,8 @@ bool Engine::solve()
 
         _boundTightener.tighten( _tableau );
 
-        applyAllConstraintEnqueuedSplits(); // TODO: let's make sure this is the right place to put this
+        applyAllValidConstraintCaseSplits(); // TODO: let's make sure this is the right place to put this
+        // TODO: apply any constraint-entailed bound tightening
 
         bool needToPop = false;
         if ( !_tableau->allBoundsValid() )
@@ -350,20 +351,20 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
     }
 }
 
-void Engine::applyConstraintEnqueuedSplits( PiecewiseLinearConstraint &constraint )
-{
-    Queue<PiecewiseLinearCaseSplit> &splits = constraint.getEnqueuedSplits();
-    while ( !splits.empty() )
-    {
-        applySplit( splits.peak() );
-        splits.pop();
-    }
-}
-
-void Engine::applyAllConstraintEnqueuedSplits()
+void Engine::applyAllValidConstraintCaseSplits()
 {
     for ( auto &constraint : _plConstraints )
-        applyConstraintEnqueuedSplits( *constraint );
+        applyValidConstraintCaseSplit( constraint );
+}
+
+void Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constraint )
+{
+    if ( constraint->isActive() && constraint->phaseFixed() )
+    {
+        // TODO: add to statistics
+        applySplit( constraint->getValidCaseSplit() );
+        constraint->setActiveConstraint( false );
+    }
 }
 
 //
