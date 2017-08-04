@@ -12,7 +12,9 @@
 
 #include "Debug.h"
 #include "EngineState.h"
+#include "GlobalConfiguration.h"
 #include "IEngine.h"
+#include "MString.h"
 #include "SmtCore.h"
 
 SmtCore::SmtCore( IEngine *engine )
@@ -116,6 +118,12 @@ bool SmtCore::popSplit()
 void SmtCore::setStatistics( Statistics *statistics )
 {
     _statistics = statistics;
+}
+
+void SmtCore::log( const String &message )
+{
+    if ( GlobalConfiguration::SMT_CORE_LOGGING )
+        printf( "SmtCore: %s\n", message.ascii() );
 }
 
 //

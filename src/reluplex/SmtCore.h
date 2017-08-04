@@ -20,6 +20,7 @@
 
 class EngineState;
 class IEngine;
+class String;
 
 class SmtCore
 {
@@ -100,6 +101,7 @@ private:
     */
     Map<PiecewiseLinearConstraint *, unsigned> _constraintToViolationCount;
 
+    static void log( const String &message );
 };
 
 #endif // __SmtCore_h__
