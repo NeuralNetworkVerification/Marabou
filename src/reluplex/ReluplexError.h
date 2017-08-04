@@ -27,6 +27,7 @@ public:
         INVALID_EQUATION_ADDED_TO_TABLEAU = 5,
         INVALID_BOUND_TIGHTENING = 6,
         MISSING_PL_CONSTRAINT_STATE = 7,
+        REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT = 8,
     };
 
     ReluplexError( ReluplexError::Code code ) : Error( "ReluplexError", (int)code )

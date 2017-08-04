@@ -295,8 +295,10 @@ public:
         TS_ASSERT_EQUALS( splits.size(), 2U );
 
         relu.notifyLowerBound( 1, 1.0 );
-        splits = relu.getCaseSplits();
-        TS_ASSERT_EQUALS( splits.size(), 1U );
+        TS_ASSERT_THROWS_EQUALS( splits = relu.getCaseSplits(),
+                                 const ReluplexError &e,
+                                 e.getCode(),
+                                 ReluplexError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
 
         relu.unregisterAsWatcher( &tableau );
 
@@ -308,12 +310,12 @@ public:
         TS_ASSERT_EQUALS( splits.size(), 2U );
 
         relu.notifyLowerBound( 4, 1.0 );
-        splits = relu.getCaseSplits();
-        TS_ASSERT_EQUALS( splits.size(), 1U );
+        TS_ASSERT_THROWS_EQUALS( splits = relu.getCaseSplits(),
+                                 const ReluplexError &e,
+                                 e.getCode(),
+                                 ReluplexError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
 
         relu.unregisterAsWatcher( &tableau );
-
-        TS_TRACE( "TODO: check all corner cases" );
     }
 
     void test_fix_inactive()
@@ -331,12 +333,92 @@ public:
         TS_ASSERT_EQUALS( splits.size(), 2U );
 
         relu.notifyUpperBound( 4, -1.0 );
-        splits = relu.getCaseSplits();
-        TS_ASSERT_EQUALS( splits.size(), 1U );
+        TS_ASSERT_THROWS_EQUALS( splits = relu.getCaseSplits(),
+                                  const ReluplexError &e,
+                                  e.getCode(),
+                                  ReluplexError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
 
         relu.unregisterAsWatcher( &tableau );
+    }
 
-        TS_TRACE( "TODO: check all corner cases" );
+    void test_constraint_phase_gets_fixed()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        MockTableau tableau;
+
+        // Upper bounds
+        {
+            ReluConstraint relu( b, f );
+            TS_ASSERT( !relu.phaseFixed() );
+            relu.notifyUpperBound( b, -1.0 );
+            TS_ASSERT( relu.phaseFixed() );
+        }
+
+        {
+            ReluConstraint relu( b, f );
+            TS_ASSERT( !relu.phaseFixed() );
+            relu.notifyUpperBound( b, 0.0 );
+            TS_ASSERT( relu.phaseFixed() );
+        }
+
+        {
+            ReluConstraint relu( b, f );
+            TS_ASSERT( !relu.phaseFixed() );
+            relu.notifyUpperBound( f, 0.0 );
+            TS_ASSERT( relu.phaseFixed() );
+        }
+
+        {
+            ReluConstraint relu( b, f );
+            TS_ASSERT( !relu.phaseFixed() );
+            relu.notifyUpperBound( b, 3.0 );
+            TS_ASSERT( !relu.phaseFixed() );
+        }
+
+        {
+            ReluConstraint relu( b, f );
+            TS_ASSERT( !relu.phaseFixed() );
+            relu.notifyUpperBound( b, 5.0 );
+            TS_ASSERT( !relu.phaseFixed() );
+        }
+
+        // Lower bounds
+        {
+            ReluConstraint relu( b, f );
+            TS_ASSERT( !relu.phaseFixed() );
+            relu.notifyLowerBound( b, 3.0 );
+            TS_ASSERT( relu.phaseFixed() );
+        }
+
+        {
+            ReluConstraint relu( b, f );
+            TS_ASSERT( !relu.phaseFixed() );
+            relu.notifyLowerBound( b, 0.0 );
+            TS_ASSERT( relu.phaseFixed() );
+        }
+
+        {
+            ReluConstraint relu( b, f );
+            TS_ASSERT( !relu.phaseFixed() );
+            relu.notifyLowerBound( f, 6.0 );
+            TS_ASSERT( relu.phaseFixed() );
+        }
+
+        {
+            ReluConstraint relu( b, f );
+            TS_ASSERT( !relu.phaseFixed() );
+            relu.notifyLowerBound( f, 0.0 );
+            TS_ASSERT( !relu.phaseFixed() );
+        }
+
+        {
+            ReluConstraint relu( b, f );
+            TS_ASSERT( !relu.phaseFixed() );
+            relu.notifyLowerBound( b, -2.0 );
+            TS_ASSERT( !relu.phaseFixed() );
+        }
     }
 
     void test_valid_split_relu_phase_fixed_to_active()
