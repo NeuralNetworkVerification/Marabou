@@ -30,9 +30,11 @@ public:
     */
     void incNumMainLoopIterations();
     void incNumSimplexSteps();
-    void addTimeSimplexSteps( unsigned long long time);
+    void addTimeSimplexSteps( unsigned long long time );
     void incNumConstraintFixingSteps();
     unsigned long long getNumMainLoopIterations() const;
+    void setNumPlConstraints( unsigned numberOfConstraints );
+    void setNumActivePlConstraints( unsigned numberOfConstraints );
 
     /*
       Tableau related statistics.
@@ -58,6 +60,10 @@ public:
 private:
     // Number of iterations of the main loop
     unsigned long long _numMainLoopIterations;
+
+    // Number of piecewise linear constraints (active, total)
+    unsigned _numPlConstraints;
+    unsigned _numActivePlConstraints;
 
     // Number of simplex steps, i.e. pivots (including degenerate
     // pivots), performed by the main loop

@@ -15,6 +15,8 @@
 
 Statistics::Statistics()
     : _numMainLoopIterations( 0 )
+    , _numPlConstraints( 0 )
+    , _numActivePlConstraints( 0 )
     , _numSimplexSteps( 0 )
     , _timeSimplexStepsMilli( 0 )
     , _numConstraintFixingSteps( 0 )
@@ -43,6 +45,9 @@ void Statistics::print()
             , _timeSimplexStepsMilli
             , printAverage( _timeSimplexStepsMilli, _numSimplexSteps )
             , _numConstraintFixingSteps );
+    printf( "\tNumber of active piecewise-linear constraints: %u / %u\n"
+            , _numActivePlConstraints
+            , _numPlConstraints );
 
     printf( "\t--- Tableau Statistics ---\n" );
     printf( "\tTotal number of pivots performed: %llu\n", _numTableauPivots );
@@ -86,6 +91,16 @@ double Statistics::printAverage( unsigned long long part, unsigned long long tot
 void Statistics::incNumMainLoopIterations()
 {
     ++_numMainLoopIterations;
+}
+
+void Statistics::setNumPlConstraints( unsigned numberOfConstraints )
+{
+    _numPlConstraints = numberOfConstraints;
+}
+
+void Statistics::setNumActivePlConstraints( unsigned numberOfConstraints )
+{
+    _numActivePlConstraints = numberOfConstraints;
 }
 
 void Statistics::incNumSimplexSteps()

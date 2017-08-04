@@ -157,6 +157,11 @@ private:
     */
     void applyAllValidConstraintCaseSplits();
     void applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constraint );
+
+    /*
+      Update statitstics, print them if needed.
+    */
+    void mainLoopStatistics();
 };
 
 #endif // __Engine_h__

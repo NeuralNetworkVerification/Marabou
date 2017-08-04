@@ -40,9 +40,7 @@ bool Engine::solve()
 {
     while ( true )
     {
-        if ( _statistics.getNumMainLoopIterations() % GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
-            _statistics.print();
-        _statistics.incNumMainLoopIterations();
+        mainLoopStatistics();
 
         // Apply any pending bound tightenings
         _boundTightener.tighten( _tableau );
@@ -110,6 +108,20 @@ bool Engine::solve()
                 return false;
         }
     }
+}
+
+void Engine::mainLoopStatistics()
+{
+    if ( _statistics.getNumMainLoopIterations() % GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
+        _statistics.print();
+
+    _statistics.incNumMainLoopIterations();
+
+    unsigned activeConstraints = 0;
+    for ( const auto &constraint : _plConstraints )
+        if ( constraint->isActive() )
+            ++activeConstraints;
+    _statistics.setNumActivePlConstraints( activeConstraints );
 }
 
 bool Engine::performSimplexStep()
@@ -272,6 +284,8 @@ void Engine::processInputQuery( const InputQuery &inputQuery )
 
     _tableau->initializeTableau();
     _activeEntryStrategy->initialize( _tableau );
+
+    _statistics.setNumPlConstraints( _plConstraints.size() );
 }
 
 void Engine::extractSolution( InputQuery &inputQuery )
@@ -362,7 +376,6 @@ void Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
 {
     if ( constraint->isActive() && constraint->phaseFixed() )
     {
-        // TODO: add to statistics
         applySplit( constraint->getValidCaseSplit() );
         constraint->setActiveConstraint( false );
     }
