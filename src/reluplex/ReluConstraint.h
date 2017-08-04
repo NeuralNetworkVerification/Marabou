@@ -80,20 +80,16 @@ public:
 private:
     unsigned _b;
     unsigned _f;
-
     Map<unsigned, double> _assignment;
+    PhaseStatus _phaseStatus;
 
     PiecewiseLinearCaseSplit getInactiveSplit( unsigned auxVariable ) const;
     PiecewiseLinearCaseSplit getActiveSplit( unsigned auxVariable ) const;
-
-    PhaseStatus _phaseStatus;
 };
 
 class ReluConstraintStateData : public PiecewiseLinearConstraintStateData
 {
 public:
-    unsigned _b;
-    unsigned _f;
     Map<unsigned, double> _assignment;
     ReluConstraint::PhaseStatus _phaseStatus;
 };

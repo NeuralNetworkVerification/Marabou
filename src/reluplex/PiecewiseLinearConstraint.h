@@ -41,11 +41,15 @@ public:
 
     ~PiecewiseLinearConstraintState()
     {
-        delete _stateData;
+        if ( _stateData )
+        {
+            delete _stateData;
+            _stateData = NULL;
+        }
     }
 
     Queue<PiecewiseLinearCaseSplit> _splits;
-    PiecewiseLinearConstraintStateData* _stateData;
+    PiecewiseLinearConstraintStateData *_stateData;
 };
 
 class PiecewiseLinearConstraint : public ITableau::VariableWatcher
