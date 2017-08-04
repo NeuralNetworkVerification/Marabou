@@ -106,16 +106,6 @@ String FloatUtils::doubleToString( double x, unsigned precision )
     return str;
 }
 
-double FloatUtils::infinity()
-{
-    return DBL_MAX;
-}
-
-double FloatUtils::negativeInfinity()
-{
-    return -DBL_MAX;
-}
-
 //
 // Local Variables:
 // compile-command: "make -C .. "

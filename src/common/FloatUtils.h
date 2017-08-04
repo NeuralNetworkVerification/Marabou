@@ -37,8 +37,6 @@ public:
     static double max( double x, double y, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
     static String doubleToString( double x,
                                   unsigned precision = GlobalConfiguration::DEFAULT_DOUBLE_TO_STRING_PRECISION );
-    static double infinity();
-    static double negativeInfinity();
 };
 
 #endif // __FloatUtils_h__

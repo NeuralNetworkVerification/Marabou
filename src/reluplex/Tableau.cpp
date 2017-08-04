@@ -241,12 +241,12 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     _lowerBounds = new double[n];
     if ( !_lowerBounds )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::lowerBounds" );
-    std::fill_n( _lowerBounds, n, FloatUtils::negativeInfinity() );
+    std::fill_n( _lowerBounds, n, -DBL_MAX );
 
     _upperBounds = new double[n];
     if ( !_upperBounds )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::upperBounds" );
-    std::fill_n( _upperBounds, n, FloatUtils::infinity() );
+    std::fill_n( _upperBounds, n, DBL_MAX );
 
     _basicAssignment = new double[m];
     if ( !_basicAssignment )
@@ -1550,8 +1550,8 @@ void Tableau::addRow()
     _upperBounds = newUpperBounds;
 
     // Mark the new variable as unbounded
-    _lowerBounds[_n] = FloatUtils::negativeInfinity();
-    _upperBounds[_n] = FloatUtils::infinity();
+    _lowerBounds[_n] = -DBL_MAX;
+    _upperBounds[_n] = DBL_MAX;
 
     // Allocate a larger basis factorization
     BasisFactorization *newBasisFactorization = new BasisFactorization( newM );
