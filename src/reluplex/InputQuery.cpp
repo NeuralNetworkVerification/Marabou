@@ -129,69 +129,7 @@ const List<PiecewiseLinearConstraint *> &InputQuery::getPiecewiseLinearConstrain
     return _plConstraints;
 }
 
-void InputQuery::preprocessBounds() 
-{
-	double min = -DBL_MAX;
-	double max = DBL_MAX;
 
-	for ( auto equation : _equations )
-	{
-		bool unbounded = false;
-		for ( auto addend : equation._addends )
-		{
-				if ( getLowerBound( addend._variable ) == min || getUpperBound( addend._variable ) == max )
-				{
-					//cannot tighten bounds if there are 2 variables that are unbounded on both sides
-					if ( getLowerBound( addend._variable ) == min && getUpperBound( addend._variable ) == max )
-					{
-						if ( unbounded )
-							break;	
-						unbounded = true;
-					}
-					//if left-hand side coefficient is negative, [LB, UB] = [-UB, -LB]
-					bool pos =  FloatUtils::isPositive( addend._coefficient );
-
-					double scalarUB = equation._scalar;
-					double scalarLB = equation._scalar;
-
-					for ( auto bounded : equation._addends )
-					{
-						if ( addend._variable == bounded._variable ) continue;
-	
-						if ( FloatUtils::isNegative( bounded._coefficient ) )
-						{
-							//coefficient is negative--subtract to simulate addition
-							scalarLB -= bounded._coefficient * getLowerBound( bounded._variable );
-							scalarUB -= bounded._coefficient * getUpperBound( bounded._variable );
-						}
-						if ( FloatUtils::isPositive( bounded._coefficient ) )
-						{
-							scalarLB -= bounded._coefficient * getUpperBound( bounded._variable );
-							scalarUB -= bounded._coefficient * getLowerBound( bounded._variable );
-						}
-					}
-					
-					if ( !pos )
-					{
-						double temp = scalarUB;
-						scalarUB = -scalarLB;
-						scalarLB = -temp;
-					}
-
-					//divide by coefficient
-					if ( FloatUtils::gt( scalarLB / abs( addend._coefficient ), getLowerBound( addend._variable ) ) )
-							setLowerBound( addend._variable, scalarLB / abs( addend._coefficient ) );
-					if ( FloatUtils::lt( scalarUB / abs (addend._coefficient ), getUpperBound( addend._variable ) ) )
-							setUpperBound( addend._variable, scalarUB / abs ( addend._coefficient ) );
-			}
-
-			if ( getLowerBound( addend._variable) > getUpperBound( addend._variable) )
-				throw ReluplexError( ReluplexError::INVALID_BOUND_TIGHTENING, "preprocessing bound error" );
-
-		}
-	}
-
-}
 
 //
 // Local Variables:

@@ -41,6 +41,7 @@ SOURCES += \
 	\
 	TableauFactory.cpp \
 	MaxConstraint.cpp\
+	Preprocessor.cpp\
 
 all:
 	./$(TEST_TARGET)

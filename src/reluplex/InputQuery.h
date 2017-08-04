@@ -48,7 +48,6 @@ public:
     void setSolutionValue( unsigned variable, double value );
     double getSolutionValue( unsigned variable ) const;
 
-	void preprocessBounds();
 
 private:
     unsigned _numberOfVariables;

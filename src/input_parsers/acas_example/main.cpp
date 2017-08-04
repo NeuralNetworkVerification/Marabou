@@ -16,6 +16,8 @@
 #include "Engine.h"
 #include "InputQuery.h"
 #include "ReluplexError.h"
+#include "Preprocessor.h"
+#include "GlobalConfiguration.h"
 
 int main()
 {
@@ -36,8 +38,11 @@ int main()
             inputQuery.setLowerBound( variable, 0.0 );
             inputQuery.setUpperBound( variable, 0.0 );
         }
-
-		inputQuery.preprocessBounds();
+		if ( GlobalConfiguration::PREPROCESS_FLAG )
+		{
+			Preprocessor preprocess;
+			preprocess.tightenBounds( inputQuery );
+		}
 
 		// Feed the query to the engine
         Engine engine;

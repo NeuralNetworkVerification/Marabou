@@ -23,6 +23,8 @@ SOURCES += \
 	EtaMatrix.cpp\
 	LPElement.cpp\
 	main.cpp \
+	Preprocessor.cpp\
+	InputQuery.cpp\
 
 TARGET = run_reluplex.elf
 

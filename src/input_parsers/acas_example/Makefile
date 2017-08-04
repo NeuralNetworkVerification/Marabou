@@ -47,6 +47,7 @@ SOURCES += \
 	../AcasParser.cpp \
 	../AcasNeuralNetwork.cpp \
 	../AcasNnet.cpp \
+	Preprocessor.cpp\
 
 TARGET = acas_example.elf
 

@@ -24,6 +24,8 @@ public:
     static const unsigned STATISTICS_PRINTING_FREQUENCY;
     static const double NUMERICAL_STABILITY_CONSTANT;
 
+	static const bool PREPROCESS_FLAG;
+
     // Logging
     static const bool ENGINE_LOGGING;
     static const bool TABLEAU_LOGGING;

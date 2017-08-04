@@ -19,6 +19,8 @@ const unsigned GlobalConfiguration::REFACTORIZATION_THRESHOLD = 100;
 const unsigned GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY = 100;
 const double GlobalConfiguration::NUMERICAL_STABILITY_CONSTANT = 0.0001;
 
+const bool GlobalConfiguration::PREPROCESS_FLAG = true;
+
 // Logging
 const bool GlobalConfiguration::ENGINE_LOGGING = false;
 const bool GlobalConfiguration::TABLEAU_LOGGING = false;
