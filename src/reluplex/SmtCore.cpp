@@ -59,6 +59,7 @@ void SmtCore::performSplit()
 
     // Perform the first split: add bounds and equations
     List<PiecewiseLinearCaseSplit>::iterator split = splits.begin();
+    _constraintForSplitting->setActiveConstraint( false );
     _engine->applySplit( *split );
 
     // Store the remaining splits on the stack, for later

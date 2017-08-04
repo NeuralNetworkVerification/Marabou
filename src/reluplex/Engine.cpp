@@ -376,8 +376,8 @@ void Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
 {
     if ( constraint->isActive() && constraint->phaseFixed() )
     {
-        applySplit( constraint->getValidCaseSplit() );
         constraint->setActiveConstraint( false );
+        applySplit( constraint->getValidCaseSplit() );
     }
 }
 

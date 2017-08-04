@@ -34,6 +34,11 @@ public:
     class MockConstraint : public PiecewiseLinearConstraint
     {
     public:
+        MockConstraint()
+        {
+            setActiveWasCalled = false;
+        }
+
         void registerAsWatcher( ITableau * )
         {
         }
@@ -42,8 +47,11 @@ public:
         {
         }
 
-        void setActiveConstraint( bool )
+        bool setActiveWasCalled;
+        void setActiveConstraint( bool active )
         {
+            TS_ASSERT( active == false );
+            setActiveWasCalled = true;
         }
 
         bool isActive() const
@@ -183,7 +191,9 @@ public:
 
         TS_ASSERT( smtCore.needToSplit() );
         TS_ASSERT_EQUALS( smtCore.getStackDepth(), 0U );
+        TS_ASSERT( !constraint.setActiveWasCalled );
         TS_ASSERT_THROWS_NOTHING( smtCore.performSplit() );
+        TS_ASSERT( constraint.setActiveWasCalled );
         TS_ASSERT( !smtCore.needToSplit() );
         TS_ASSERT_EQUALS( smtCore.getStackDepth(), 1U );
 
