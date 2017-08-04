@@ -44,17 +44,18 @@ bool Engine::solve()
             _statistics.print();
         _statistics.incNumMainLoopIterations();
 
-        _tableau->computeAssignment();
-        // Perform a case split if needed
+        // Apply any pending bound tightenings
+        _boundTightener.tighten( _tableau );
+        // TODO: apply any constraint-entailed bound tightening
+
+        // Perform any pending case splits, valid or SmtCore-initiated
+        applyAllValidConstraintCaseSplits();
         if ( _smtCore.needToSplit() )
             _smtCore.performSplit();
 
+        // Compute the current assignment and basic status
+        _tableau->computeAssignment();
         _tableau->computeBasicStatus();
-
-        _boundTightener.tighten( _tableau );
-
-        applyAllValidConstraintCaseSplits(); // TODO: let's make sure this is the right place to put this
-        // TODO: apply any constraint-entailed bound tightening
 
         bool needToPop = false;
         if ( !_tableau->allBoundsValid() )
