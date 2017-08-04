@@ -109,9 +109,8 @@ public:
 		equation1.addAddend( 1, 1 );
 		equation1.addAddend( -1, 2 );
 		equation1.setScalar( 10 );
-		equation1.markAuxiliaryVariable( 3 ); // remove
 		inputQuery.addEquation( equation1 );
-		
+
 		inputQuery.preprocessBounds();
 
 		// x0 = 10 - x1 + x2
@@ -123,7 +122,7 @@ public:
 		//
 		// x2.lb = -10 + x0.lb + x1.lb
 		// x2.ub = -10 + x0.ub + x1.ub
-	      
+
 		TS_ASSERT_EQUALS( inputQuery.getLowerBound( 0 ), 11 );
 		TS_ASSERT_EQUALS( inputQuery.getUpperBound( 0 ), 13 );
 
@@ -144,12 +143,12 @@ public:
 		// 3 is a tighter bound than 4, keep 3 as the upper bound
 
 		inputQuery.preprocessBounds();
-		
+
 		TS_ASSERT_EQUALS( inputQuery.getLowerBound( 0 ), 0 );
 		TS_ASSERT_EQUALS( inputQuery.getUpperBound( 0 ), 13 );
 		TS_ASSERT_EQUALS( inputQuery.getLowerBound( 2 ), -10 );
 		TS_ASSERT_EQUALS( inputQuery.getUpperBound( 2 ), 3 );
-		
+
 		inputQuery.setLowerBound( 0, -DBL_MAX );
 		inputQuery.setUpperBound( 0, 15 );
 		inputQuery.setLowerBound( 1, 3 );
@@ -164,7 +163,7 @@ public:
 
 		// x2.lb = -10 + x0.lb + x1.lb = -10 + 9 + 3 = 2
 		// x2.ub = -10 + x0.ub + x1.ub = -10 + 15 + 3 = 8
-	
+
 		inputQuery.preprocessBounds();
 
 		TS_ASSERT_EQUALS( inputQuery.getLowerBound( 0 ), 9 );
@@ -210,18 +209,14 @@ public:
 
 		// x2.lb = -10 + x0.lb + x1.lb = Unbounded
 		// 0 is a tighter bound, keep 0 as the lower bound
-		// x2.ub = -10 + x0.ub + x1.ub = -10 + 5 -2 = -7 
+		// x2.ub = -10 + x0.ub + x1.ub = -10 + 5 -2 = -7
 		// x2 = [0, -7] -> throw error
 
-		try
-		{
-			inputQuery.preprocessBounds();
-		}
-		catch ( const ReluplexError &e )
-		{
-			TS_ASSERT_EQUALS( e.getCode(), 6 );
-		}
-		
+        TS_ASSERT_THROWS_EQUALS( inputQuery.preprocessBounds(),
+                                 const ReluplexError &e,
+                                 e.getCode(),
+                                 ReluplexError::INVALID_BOUND_TIGHTENING );
+
 		InputQuery inputQuery2;
 
 		inputQuery2.setNumberOfVariables( 4 );
@@ -233,19 +228,23 @@ public:
 		inputQuery2.setUpperBound( 3, 0 );
 
 		// 2 * x0 + x1 - x2 = 10
+        //
+        // x0 = 5 - 1/2 x1 + 1/2 x2
+        //
+        // x0.lb = 5 - 1/2 x1.ub + 1/2 x2.lb = 5 - 1/2 + 1 = 5.5
+        // x0.ub = 5 - 1/2 x1.lb + 1/2 x2.ub = 5 - 0 + 1.5 = 6.5
+
 		Equation equation2;
 		equation2.addAddend( 2, 0 );
 		equation2.addAddend( 1, 1 );
 		equation2.addAddend( -1, 2 );
 		equation2.setScalar( 10 );
-		equation2.markAuxiliaryVariable( 3 ); // remove
 		inputQuery2.addEquation( equation2 );
-		
+
 		inputQuery2.preprocessBounds();
 
 		TS_ASSERT_EQUALS( inputQuery2.getLowerBound( 0 ), 5.5 );
 		TS_ASSERT_EQUALS( inputQuery2.getUpperBound( 0 ), 6.5 );
-	
 	}
 };
 
