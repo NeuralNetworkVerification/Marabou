@@ -21,10 +21,10 @@ SOURCES += \
 	\
 	BasisFactorization.cpp\
 	EtaMatrix.cpp\
-	LPElement.cpp\
-	main.cpp \
-	Preprocessor.cpp\
 	InputQuery.cpp\
+	LPElement.cpp\
+	Preprocessor.cpp\
+	main.cpp \
 
 TARGET = run_reluplex.elf
 

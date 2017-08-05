@@ -34,6 +34,7 @@ SOURCES += \
 	LPElement.cpp \
 	NestedDantzigsRule.cpp \
 	PiecewiseLinearCaseSplit.cpp \
+	Preprocessor.cpp \
 	ReluConstraint.cpp \
 	SmtCore.cpp \
 	Statistics.cpp \
@@ -47,7 +48,6 @@ SOURCES += \
 	../AcasParser.cpp \
 	../AcasNeuralNetwork.cpp \
 	../AcasNnet.cpp \
-	Preprocessor.cpp\
 
 TARGET = acas_example.elf
 

@@ -33,8 +33,10 @@ SOURCES += \
 	FreshVariables.cpp \
 	InputQuery.cpp \
 	LPElement.cpp \
+	MaxConstraint.cpp \
 	NestedDantzigsRule.cpp \
 	PiecewiseLinearCaseSplit.cpp \
+	Preprocessor.cpp \
 	ReluConstraint.cpp \
 	SmtCore.cpp \
 	Statistics.cpp \
@@ -45,7 +47,6 @@ SOURCES += \
 	TableauState.cpp \
 	\
 	main_regress.cpp \
-	MaxConstraint.cpp\
 
 all:
 	./$(TARGET)

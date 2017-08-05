@@ -31,6 +31,7 @@ SOURCES += \
 	LPElement.cpp \
 	NestedDantzigsRule.cpp \
 	PiecewiseLinearCaseSplit.cpp \
+	Preprocessor.cpp\
 	ReluConstraint.cpp \
 	SmtCore.cpp \
 	Statistics.cpp \
@@ -41,7 +42,6 @@ SOURCES += \
 	\
 	TableauFactory.cpp \
 	MaxConstraint.cpp\
-	Preprocessor.cpp\
 
 all:
 	./$(TEST_TARGET)
