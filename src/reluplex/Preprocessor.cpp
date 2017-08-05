@@ -69,7 +69,7 @@ void Preprocessor::tightenBounds( InputQuery &input )
                 printf( "%lf x%u is in range [%lf, %lf]\n", addend._coefficient,
                         addend._variable, scalarLB, scalarUB );
 
-                // We now that lb < ax < ub. We want to divide by a, but the sign is imporant.
+                // We know that lb < ax < ub. We want to divide by a, but we care about the sign
                 // If a is positive: lb/a < x < ub/a
                 // If a is negative: lb/a > x > ub/a
                 scalarLB = scalarLB / addend._coefficient;
