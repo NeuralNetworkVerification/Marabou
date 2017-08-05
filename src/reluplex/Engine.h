@@ -45,7 +45,8 @@ public:
       Process the input query and pass the needed information to the
       underlying tableau.
      */
-    void processInputQuery( const InputQuery &inputQuery );
+    void processInputQuery( InputQuery &inputQuery );
+    void processInputQuery( InputQuery &inputQuery, bool preprocess );
 
     /*
       If the query is feasiable and has been successfully solved, this

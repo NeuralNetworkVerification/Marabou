@@ -129,6 +129,20 @@ const List<PiecewiseLinearConstraint *> &InputQuery::getPiecewiseLinearConstrain
     return _plConstraints;
 }
 
+unsigned InputQuery::countInfiniteBounds()
+{
+    unsigned result = 0;
+
+    for ( const auto &lowerBound : _lowerBounds )
+        if ( lowerBound.second == -DBL_MAX )
+            ++result;
+
+    for ( const auto &upperBound : _upperBounds )
+        if ( upperBound.second == DBL_MAX )
+            ++result;
+
+    return result;
+}
 
 //
 // Local Variables:

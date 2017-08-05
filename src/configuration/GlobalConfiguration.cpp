@@ -18,8 +18,7 @@ const unsigned GlobalConfiguration::DEFAULT_DOUBLE_TO_STRING_PRECISION = 10;
 const unsigned GlobalConfiguration::REFACTORIZATION_THRESHOLD = 100;
 const unsigned GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY = 100;
 const double GlobalConfiguration::NUMERICAL_STABILITY_CONSTANT = 0.0001;
-
-const bool GlobalConfiguration::PREPROCESS_FLAG = true;
+const bool GlobalConfiguration::PREPROCESS_INPUT_QUERY = true;
 
 // Logging
 const bool GlobalConfiguration::ENGINE_LOGGING = false;
@@ -36,6 +35,7 @@ void GlobalConfiguration::print()
     printf( "  REFACTORIZATION_THRESHOLD: %u\n", REFACTORIZATION_THRESHOLD );
     printf( "  STATISTICS_PRINTING_FREQUENCY: %u\n", STATISTICS_PRINTING_FREQUENCY );
     printf( "  NUMERICAL_STABILITY_CONSTANT: %lf\n", NUMERICAL_STABILITY_CONSTANT );
+    printf( "  PREPROCESS_INPUT_QUERY: %s\n", PREPROCESS_INPUT_QUERY ? "Yes" : "No" );
     printf( "****************************\n" );
 }
 

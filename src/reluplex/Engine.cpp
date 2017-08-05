@@ -14,7 +14,9 @@
 #include "EngineState.h"
 #include "FreshVariables.h"
 #include "InputQuery.h"
+#include "MStringf.h"
 #include "PiecewiseLinearConstraint.h"
+#include "Preprocessor.h"
 #include "ReluplexError.h"
 #include "TableauRow.h"
 #include "TimeUtils.h"
@@ -253,8 +255,22 @@ bool Engine::fixViolatedPlConstraint()
     return true;
 }
 
-void Engine::processInputQuery( const InputQuery &inputQuery )
+void Engine::processInputQuery( InputQuery &inputQuery )
 {
+    processInputQuery( inputQuery, GlobalConfiguration::PREPROCESS_INPUT_QUERY );
+}
+
+void Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
+{
+    if ( preprocess )
+    {
+        log( Stringf( "Number of infinite bounds in the input query before preprocessing: %u",
+                      inputQuery.countInfiniteBounds() ) );
+        Preprocessor().tightenBounds( inputQuery );
+        log( Stringf( "Number of infinite bounds in the input query after preprocessing: %u",
+                  inputQuery.countInfiniteBounds() ) );
+    }
+
     const List<Equation> equations( inputQuery.getEquations() );
 
     unsigned m = equations.size();

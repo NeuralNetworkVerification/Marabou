@@ -38,11 +38,6 @@ int main()
             inputQuery.setLowerBound( variable, 0.0 );
             inputQuery.setUpperBound( variable, 0.0 );
         }
-		if ( GlobalConfiguration::PREPROCESS_FLAG )
-		{
-			Preprocessor preprocess;
-			preprocess.tightenBounds( inputQuery );
-		}
 
 		// Feed the query to the engine
         Engine engine;
@@ -53,8 +48,6 @@ int main()
             printf( "Query is unsat\n" );
             return 0;
         }
-
-		
 
         printf( "Query is sat! Extracting solution...\n" );
         engine.extractSolution( inputQuery );

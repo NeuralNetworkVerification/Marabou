@@ -43,11 +43,15 @@ public:
     const List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints() const;
 
     /*
-      Methods for setting and getting the solution
+      Methods for setting and getting the solution.
     */
     void setSolutionValue( unsigned variable, double value );
     double getSolutionValue( unsigned variable ) const;
 
+    /*
+      Count the number of infinite bounds in the input query.
+    */
+    unsigned countInfiniteBounds();
 
 private:
     unsigned _numberOfVariables;

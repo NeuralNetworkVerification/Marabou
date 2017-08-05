@@ -108,7 +108,7 @@ public:
 
         Engine engine;
 
-        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery, false ) );
         TS_ASSERT( tableau->initializeTableauCalled );
 
         TS_ASSERT_EQUALS( tableau->lastM, 2U );

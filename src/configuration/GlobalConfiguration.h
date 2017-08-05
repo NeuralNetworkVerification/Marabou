@@ -23,8 +23,7 @@ public:
 	static const unsigned REFACTORIZATION_THRESHOLD;
     static const unsigned STATISTICS_PRINTING_FREQUENCY;
     static const double NUMERICAL_STABILITY_CONSTANT;
-
-	static const bool PREPROCESS_FLAG;
+	static const bool PREPROCESS_INPUT_QUERY;
 
     // Logging
     static const bool ENGINE_LOGGING;
