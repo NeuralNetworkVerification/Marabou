@@ -185,6 +185,11 @@ public:
 
         TS_ASSERT_EQUALS( FreshVariables::getNextVariable(), 5U );
     }
+
+    void test_todo()
+    {
+        TS_TRACE( "Future work: Guarantee correct behavior even when some variable is unbounded\n" );
+    }
 };
 
 //

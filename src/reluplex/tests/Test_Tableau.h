@@ -1212,8 +1212,6 @@ public:
 
         tableau->getTableauRow( 3, &row );
 
-        row.dump();
-
         entry = row._row[0];
         TS_ASSERT_EQUALS( entry._var, 0U );
         TS_ASSERT_EQUALS( entry._coefficient, -4.0 );

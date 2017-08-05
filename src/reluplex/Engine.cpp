@@ -268,8 +268,11 @@ void Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
                       inputQuery.countInfiniteBounds() ) );
         Preprocessor().tightenBounds( inputQuery );
         log( Stringf( "Number of infinite bounds in the input query after preprocessing: %u",
-                  inputQuery.countInfiniteBounds() ) );
+                      inputQuery.countInfiniteBounds() ) );
     }
+
+    if ( inputQuery.countInfiniteBounds() != 0 )
+        throw ReluplexError( ReluplexError::UNBOUNDED_VARIABLES_NOT_YET_SUPPORTED );
 
     const List<Equation> equations( inputQuery.getEquations() );
 
