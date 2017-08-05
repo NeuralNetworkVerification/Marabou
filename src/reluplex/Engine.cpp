@@ -356,6 +356,9 @@ void Engine::storeState( EngineState &state ) const
     }
 
     state._numPlConstraintsDisbaledByValidSplits = _numPlConstraintsDisbaledByValidSplits;
+
+    state._nextAuxVariable = FreshVariables::getNextVariable();
+    FreshVariables::setNextVariable( state._nextAuxVariable );
 }
 
 void Engine::restoreState( const EngineState &state )
@@ -377,6 +380,8 @@ void Engine::restoreState( const EngineState &state )
     }
 
     _numPlConstraintsDisbaledByValidSplits = state._numPlConstraintsDisbaledByValidSplits;
+
+    FreshVariables::setNextVariable( state._nextAuxVariable );
 }
 
 void Engine::applySplit( const PiecewiseLinearCaseSplit &split )

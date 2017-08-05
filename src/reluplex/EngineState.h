@@ -27,6 +27,8 @@ public:
     Map<PiecewiseLinearConstraint *, PiecewiseLinearConstraintState *> _plConstraintToState;
 
     unsigned _numPlConstraintsDisbaledByValidSplits;
+
+    unsigned _nextAuxVariable;
 };
 
 #endif // __EngineState_h__

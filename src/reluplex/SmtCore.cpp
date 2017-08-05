@@ -51,13 +51,13 @@ void SmtCore::performSplit()
     if ( _statistics )
         _statistics->incNumSplits();
 
-    // First, obtain the current state of the engine
-    EngineState *stateBeforeSplits = new EngineState;
-    _engine->storeState( *stateBeforeSplits );
-
     // Obtain the splits
     List<PiecewiseLinearCaseSplit> splits = _constraintForSplitting->getCaseSplits();
     ASSERT( !splits.empty() );
+
+    // Obtain the current state of the engine
+    EngineState *stateBeforeSplits = new EngineState;
+    _engine->storeState( *stateBeforeSplits );
 
     // Perform the first split: add bounds and equations
     List<PiecewiseLinearCaseSplit>::iterator split = splits.begin();

@@ -587,7 +587,6 @@ public:
         TS_ASSERT_EQUALS( reluState2->_assignment[b], 3 );
         TS_ASSERT_EQUALS( reluState2->_assignment[f], 4 );
         TS_ASSERT_EQUALS( reluState2->_phaseStatus, ReluConstraint::PhaseStatus::PHASE_ACTIVE );
-
     }
 };
 
