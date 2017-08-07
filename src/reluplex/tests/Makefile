@@ -22,6 +22,7 @@ SOURCES += \
 	BlandsRule.cpp \
 	BoundTightener.cpp \
 	DantzigsRule.cpp \
+	DegradationChecker.cpp \
 	Engine.cpp \
 	EngineState.cpp \
 	Equation.cpp \
