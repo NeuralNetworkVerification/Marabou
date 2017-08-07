@@ -10,6 +10,7 @@
  ** directory for licensing information.\endverbatim
  **/
 
+#include "FloatUtils.h"
 #include "Statistics.h"
 #include "TimeUtils.h"
 
@@ -19,6 +20,8 @@ Statistics::Statistics()
     , _numActivePlConstraints( 0 )
     , _numPlValidSplits( 0 )
     , _numPlSmtOriginatedSplits( 0 )
+    , _currentDegradation( 0.0 )
+    , _maxDegradation( 0.0 )
     , _numSimplexSteps( 0 )
     , _timeSimplexStepsMilli( 0 )
     , _numConstraintFixingSteps( 0 )
@@ -53,6 +56,10 @@ void Statistics::print()
             , _numPlConstraints
             , _numPlValidSplits
             , _numPlSmtOriginatedSplits
+            );
+    printf( "\tLast reported degradation: %.5lf. Max degradation so far: %.5lf\n"
+            , _currentDegradation
+            , _maxDegradation
             );
 
     printf( "\t--- Tableau Statistics ---\n" );
@@ -182,6 +189,13 @@ void Statistics::incNumTightenedBounds()
 void Statistics::incNumRowsExaminedByTightener()
 {
     ++_numRowsExaminedByTightener;
+}
+
+void Statistics::setCurrentDegradation( double degradation )
+{
+    _currentDegradation = degradation;
+    if ( FloatUtils::gt( _currentDegradation, _maxDegradation ) )
+        _maxDegradation = _currentDegradation;
 }
 
 //

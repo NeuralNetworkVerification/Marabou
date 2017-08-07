@@ -13,6 +13,7 @@
 #include "DantzigsRule.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
+#include "MStringf.h"
 #include "ReluplexError.h"
 
 bool DantzigsRule::select( ITableau &tableau )
@@ -27,6 +28,21 @@ bool DantzigsRule::select( ITableau &tableau )
 
     // Dantzig's rule
     const double *costFunction = tableau.getCostFunction();
+
+    unsigned n = tableau.getN();
+    unsigned m = tableau.getM();
+
+    String cost;
+    for ( unsigned i = 0; i < n - m; ++i )
+    {
+        if ( FloatUtils::isZero( costFunction[i] ) )
+            continue;
+
+        if ( FloatUtils::isPositive( costFunction[i] ) )
+             cost += "+";
+        cost += Stringf( "%.3lf*nb[%u] ", costFunction[i], i );
+    }
+    log( Stringf( "Cost function: %s\n", cost.ascii() ) );
 
     List<unsigned>::const_iterator candidate = candidates.begin();
     unsigned maxIndex = *candidate;
@@ -44,8 +60,16 @@ bool DantzigsRule::select( ITableau &tableau )
         ++candidate;
     }
 
+    log( Stringf( "Largest coefficient: %.3lf. Corresponding variable: %u\n", maxValue, maxIndex ) );
+
     tableau.setEnteringVariable( maxIndex );
     return true;
+}
+
+void DantzigsRule::log( const String &message )
+{
+    if ( GlobalConfiguration::DANTZIGS_RULE_LOGGING )
+        printf( "DantzigsRule: %s\n", message.ascii() );
 }
 
 //

@@ -831,7 +831,7 @@ void Tableau::performPivot()
         log( Stringf( "Performing 'fake' pivot. Variable x%u jumping to %s bound",
                       _nonBasicIndexToVariable[_enteringVariable],
                       decrease ? "LOWER" : "UPPER" ) );
-        log( Stringf( "Current value: %.3lf. Range: [%.3lf, %.3lf]",
+        log( Stringf( "Current value: %.3lf. Range: [%.3lf, %.3lf]\n",
                       _nonBasicAssignment[_enteringVariable],
                       _lowerBounds[nonBasic], _upperBounds[nonBasic] ) );
 
@@ -852,7 +852,7 @@ void Tableau::performPivot()
     log( Stringf( "Tableau performing pivot. Entering: %u, Leaving: %u",
                   _nonBasicIndexToVariable[_enteringVariable],
                   _basicIndexToVariable[_leavingVariable] ) );
-    log( Stringf( "Leaving variable %s. Current value: %.3lf. Range: [%.3lf, %.3lf]",
+    log( Stringf( "Leaving variable %s. Current value: %.3lf. Range: [%.3lf, %.3lf]\n",
                   _leavingVariableIncreases ? "increases" : "decreases",
                   _basicAssignment[_leavingVariable],
                   _lowerBounds[currentBasic], _upperBounds[currentBasic] ) );

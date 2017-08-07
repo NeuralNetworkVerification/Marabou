@@ -131,7 +131,12 @@ public:
         initializeTableauCalled = true;
     }
 
-    double getValue( unsigned /* variable */ ) { return 0; }
+    Map<unsigned, double> nextValues;
+    double getValue( unsigned variable )
+    {
+        TS_ASSERT( nextValues.exists( variable ) );
+        return nextValues[variable];
+    }
 
     Map<unsigned, double> lowerBounds;
     double getLowerBound( unsigned variable ) const

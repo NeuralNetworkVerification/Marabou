@@ -17,6 +17,7 @@
 #include "BlandsRule.h"
 #include "BoundTightener.h"
 #include "DantzigsRule.h"
+#include "DegradationChecker.h"
 #include "IEngine.h"
 #include "Map.h"
 #include "NestedDantzigsRule.h"
@@ -111,9 +112,14 @@ private:
     SmtCore _smtCore;
 
     /*
-      Number of pl constraints disabled by valid splits
+      Number of pl constraints disabled by valid splits.
     */
     unsigned _numPlConstraintsDisbaledByValidSplits;
+
+    /*
+      Degradation checker.
+    */
+    DegradationChecker _degradationChecker;
 
     /*
       Perform a simplex step: compute the cost function, pick the
@@ -163,6 +169,11 @@ private:
       Update statitstics, print them if needed.
     */
     void mainLoopStatistics();
+
+    /*
+      Check the current degradation, if needed.
+    */
+    void checkDegradation();
 
     static void log( const String &message );
 };

@@ -44,6 +44,7 @@ bool Engine::solve()
     while ( true )
     {
         mainLoopStatistics();
+        checkDegradation();
 
         // Apply any pending bound tightenings
         _boundTightener.tighten( _tableau );
@@ -274,6 +275,8 @@ void Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
     if ( inputQuery.countInfiniteBounds() != 0 )
         throw ReluplexError( ReluplexError::UNBOUNDED_VARIABLES_NOT_YET_SUPPORTED );
 
+    _degradationChecker.storeEquations( inputQuery );
+
     const List<Equation> equations( inputQuery.getEquations() );
 
     unsigned m = equations.size();
@@ -386,17 +389,30 @@ void Engine::restoreState( const EngineState &state )
 
 void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 {
+    log( "" );
+    log( "Applying a split.\nEquations:" );
     for ( const auto &equation : split.getEquations() )
-        _tableau->addEquation( equation ); // addNewEquation( equation );
+    {
+        _tableau->addEquation( equation );
+        // equation.dump();
+    }
 
+    log( "Bounds:" );
     List<Tightening> bounds = split.getBoundTightenings();
     for ( const auto &bound : bounds )
     {
         if ( bound._type == Tightening::LB )
+        {
+            log( Stringf( "x%u: lower bound set to %.3lf", bound._variable, bound._value ) );
             _tableau->tightenLowerBound( bound._variable, bound._value );
+        }
         else
+        {
+            log( Stringf( "x%u: upper bound set to %.3lf", bound._variable, bound._value ) );
             _tableau->tightenUpperBound( bound._variable, bound._value );
+        }
     }
+    log( "Done with split\n" );
 }
 
 void Engine::applyAllValidConstraintCaseSplits()
@@ -418,6 +434,15 @@ void Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
         log( Stringf( "A constraint has become valid. Dumping constraint: %s",
                       constraintString.ascii() ) );
     }
+}
+
+void Engine::checkDegradation()
+{
+    if ( _statistics.getNumMainLoopIterations() % GlobalConfiguration::DEGRADATION_CHECKING_FREQUENCY != 0 )
+        return;
+
+    double degradation = _degradationChecker.computeDegradation( *_tableau );
+    _statistics.setCurrentDegradation( degradation );
 }
 
 void Engine::log( const String &message )

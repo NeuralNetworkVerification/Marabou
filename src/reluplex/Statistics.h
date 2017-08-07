@@ -37,6 +37,7 @@ public:
     void setNumActivePlConstraints( unsigned numberOfConstraints );
     void setNumPlValidSplits( unsigned numberOfSplits );
     void setNumPlSMTSplits( unsigned numberOfSplits );
+    void setCurrentDegradation( double degradation );
 
     /*
       Tableau related statistics.
@@ -68,6 +69,10 @@ private:
     unsigned _numActivePlConstraints;
     unsigned _numPlValidSplits;
     unsigned _numPlSmtOriginatedSplits;
+
+    // Degradation
+    double _currentDegradation;
+    double _maxDegradation;
 
     // Number of simplex steps, i.e. pivots (including degenerate
     // pivots), performed by the main loop

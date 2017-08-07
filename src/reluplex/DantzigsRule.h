@@ -15,6 +15,8 @@
 
 #include "EntrySelectionStrategy.h"
 
+class String;
+
 class DantzigsRule : public EntrySelectionStrategy
 {
 public:
@@ -24,6 +26,7 @@ public:
     */
     bool select( ITableau &tableau );
 
+    static void log( const String &message );
 };
 
 #endif // __DantzigsRule_h__

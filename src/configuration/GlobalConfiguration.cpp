@@ -19,11 +19,13 @@ const unsigned GlobalConfiguration::REFACTORIZATION_THRESHOLD = 100;
 const unsigned GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY = 100;
 const double GlobalConfiguration::NUMERICAL_STABILITY_CONSTANT = 0.0001;
 const bool GlobalConfiguration::PREPROCESS_INPUT_QUERY = true;
+const unsigned GlobalConfiguration::DEGRADATION_CHECKING_FREQUENCY = 10;
 
 // Logging
 const bool GlobalConfiguration::ENGINE_LOGGING = false;
 const bool GlobalConfiguration::TABLEAU_LOGGING = false;
 const bool GlobalConfiguration::SMT_CORE_LOGGING = false;
+const bool GlobalConfiguration::DANTZIGS_RULE_LOGGING = false;
 
 void GlobalConfiguration::print()
 {
@@ -36,6 +38,7 @@ void GlobalConfiguration::print()
     printf( "  STATISTICS_PRINTING_FREQUENCY: %u\n", STATISTICS_PRINTING_FREQUENCY );
     printf( "  NUMERICAL_STABILITY_CONSTANT: %lf\n", NUMERICAL_STABILITY_CONSTANT );
     printf( "  PREPROCESS_INPUT_QUERY: %s\n", PREPROCESS_INPUT_QUERY ? "Yes" : "No" );
+    printf( "  DEGRADATION_CHECKING_FREQUENCY: %u\n", DEGRADATION_CHECKING_FREQUENCY );
     printf( "****************************\n" );
 }
 

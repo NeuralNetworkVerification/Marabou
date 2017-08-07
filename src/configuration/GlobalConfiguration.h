@@ -24,11 +24,13 @@ public:
     static const unsigned STATISTICS_PRINTING_FREQUENCY;
     static const double NUMERICAL_STABILITY_CONSTANT;
 	static const bool PREPROCESS_INPUT_QUERY;
+    static const unsigned DEGRADATION_CHECKING_FREQUENCY;
 
     // Logging
     static const bool ENGINE_LOGGING;
     static const bool TABLEAU_LOGGING;
     static const bool SMT_CORE_LOGGING;
+    static const bool DANTZIGS_RULE_LOGGING;
 };
 
 #endif // __GlobalConfiguration_h__
