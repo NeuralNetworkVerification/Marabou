@@ -42,8 +42,7 @@ public:
     {
         BoundTightener tightener;
 
-        tableau->n = 5;
-        tableau->m = 2;
+        tableau->setDimensions( 2, 5 );
 
         TableauRow row( 3 );
         // 1 - x0 - x1 + 2x2
@@ -88,8 +87,7 @@ public:
     {
         BoundTightener tightener;
 
-        tableau->n = 5;
-        tableau->m = 2;
+        tableau->setDimensions( 2, 5 );
 
         TableauRow row( 3 );
         // 1 - x0 - x1 + 2x2
@@ -132,8 +130,7 @@ public:
     {
         BoundTightener tightener;
 
-        tableau->n = 5;
-        tableau->m = 2;
+        tableau->setDimensions( 2, 5 );
 
         TableauRow row( 3 );
         // 1 - x0 - x1 + 2x2
@@ -176,8 +173,7 @@ public:
     {
         BoundTightener tightener;
 
-        tableau->n = 5;
-        tableau->m = 2;
+        tableau->setDimensions( 2, 5 );
 
         TableauRow row( 3 );
         // 1 - x0 - x1 + 2x2

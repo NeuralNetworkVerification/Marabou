@@ -91,7 +91,6 @@ public:
                                  e.getCode(),
                                  ReluplexError::VARIABLE_INDEX_OUT_OF_RANGE );
     }
-	
 };
 
 //

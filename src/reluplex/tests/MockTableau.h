@@ -91,8 +91,8 @@ public:
         nextCostFunction = new double[n - m];
         std::fill( nextCostFunction, nextCostFunction + ( n - m ), 0.0 );
 
-	steepestEdgeGamma = new double[n - m];
-	std::fill( steepestEdgeGamma, steepestEdgeGamma + ( n - m ), 1.0 );
+        steepestEdgeGamma = new double[n - m];
+        std::fill( steepestEdgeGamma, steepestEdgeGamma + ( n - m ), 1.0 );
     }
 
     double *lastEntries;
@@ -225,16 +225,14 @@ public:
     {
     }
 
-    unsigned m;
     unsigned getM() const
     {
-        return m;
+        return lastM;
     }
 
-    unsigned n;
     unsigned getN() const
     {
-        return n;
+        return lastN;
     }
 
     unsigned lastGetRowIndex;
