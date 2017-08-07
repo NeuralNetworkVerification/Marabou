@@ -13,6 +13,7 @@
 #ifndef __ReluConstraint_h__
 #define __ReluConstraint_h__
 
+#include "Map.h"
 #include "PiecewiseLinearConstraint.h"
 
 class ReluConstraint : public PiecewiseLinearConstraint
@@ -96,6 +97,11 @@ public:
       Allocate a ReluConstraintState for storing state.
     */
     PiecewiseLinearConstraintState *allocateState() const;
+
+    /*
+      Dump the current state of the constraint.
+    */
+    void dump( String &output ) const;
 
 private:
     bool _constraintActive;

@@ -412,6 +412,11 @@ void Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
         constraint->setActiveConstraint( false );
         applySplit( constraint->getValidCaseSplit() );
         ++_numPlConstraintsDisbaledByValidSplits;
+
+        String constraintString;
+        constraint->dump( constraintString );
+        log( Stringf( "A constraint has become valid. Dumping constraint: %s",
+                      constraintString.ascii() ) );
     }
 }
 

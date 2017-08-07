@@ -13,6 +13,7 @@
 #ifndef __MaxConstraint_h__
 #define __MaxConstraint_h__
 
+#include "Map.h"
 #include "PiecewiseLinearConstraint.h"
 
 class MaxConstraint : public PiecewiseLinearConstraint
@@ -92,9 +93,9 @@ public:
 
 private:
     bool _constraintActive;
-	  unsigned _f;
+    unsigned _f;
   	unsigned _maxIndex;
-	  List<unsigned> _elements;
+    List<unsigned> _elements;
 
   	Map<unsigned, double> _assignment;
 };

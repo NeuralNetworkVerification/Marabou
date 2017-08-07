@@ -14,6 +14,7 @@
 #define __EngineState_h__
 
 #include "List.h"
+#include "Map.h"
 #include "PiecewiseLinearConstraint.h"
 #include "TableauState.h"
 

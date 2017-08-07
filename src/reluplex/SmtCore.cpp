@@ -51,9 +51,13 @@ void SmtCore::performSplit()
     if ( _statistics )
         _statistics->incNumSplits();
 
-    // Obtain the splits
+    // Before storing the state of the engine, we:
+    //   1. Obtain the splits. This increments the AuxVariable counter before it
+    //      is stored as part of the EngineState.
+    //   2. Disable the constraint, so that it is marked as disbaled in the EngineState.
     List<PiecewiseLinearCaseSplit> splits = _constraintForSplitting->getCaseSplits();
     ASSERT( !splits.empty() );
+    _constraintForSplitting->setActiveConstraint( false );
 
     // Obtain the current state of the engine
     EngineState *stateBeforeSplits = new EngineState;
@@ -61,7 +65,6 @@ void SmtCore::performSplit()
 
     // Perform the first split: add bounds and equations
     List<PiecewiseLinearCaseSplit>::iterator split = splits.begin();
-    _constraintForSplitting->setActiveConstraint( false );
     _engine->applySplit( *split );
 
     // Store the remaining splits on the stack, for later

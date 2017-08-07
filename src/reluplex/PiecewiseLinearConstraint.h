@@ -14,11 +14,10 @@
 #define __PiecewiseLinearConstraint_h__
 
 #include "ITableau.h"
-#include "Map.h"
 #include "PiecewiseLinearCaseSplit.h"
-#include "Queue.h"
 
 class ITableau;
+class String;
 
 class PiecewiseLinearConstraintState
 {
@@ -120,6 +119,10 @@ public:
     virtual void storeState( PiecewiseLinearConstraintState &state ) const = 0;
     virtual void restoreState( const PiecewiseLinearConstraintState &state ) = 0;
 
+    /*
+      Dump the current state of the constraint.
+    */
+    virtual void dump( String & ) const {}
 };
 
 #endif // __PiecewiseLinearConstraint_h__

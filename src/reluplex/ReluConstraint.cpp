@@ -14,6 +14,7 @@
 #include "FloatUtils.h"
 #include "FreshVariables.h"
 #include "ITableau.h"
+#include "MStringf.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "ReluConstraint.h"
 #include "ReluplexError.h"
@@ -222,6 +223,14 @@ PiecewiseLinearCaseSplit ReluConstraint::getValidCaseSplit() const
         return getActiveSplit( auxVariable );
 
     return getInactiveSplit( auxVariable );
+}
+
+void ReluConstraint::dump( String &output ) const
+{
+    output = Stringf( "ReluConstraint: x%u = ReLU( x%u ). Active? %s. PhaseStatus = %u",
+                      _f, _b,
+                      _constraintActive ? "Yes" : "No",
+                      _phaseStatus );
 }
 
 //
