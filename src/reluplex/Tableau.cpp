@@ -824,12 +824,17 @@ void Tableau::performPivot()
         if ( _statistics )
             _statistics->incNumTableauBoundHopping();
 
-        // printf( "\n\t\tTableau performing fake pivot. Varibale jumping to opposite bound: %u\n\n",
-        //         _nonBasicIndexToVariable[_enteringVariable] );
-
         // The entering variable is going to be pressed against its bound.
         bool decrease = FloatUtils::isPositive( _costFunction[_enteringVariable] );
         unsigned nonBasic = _nonBasicIndexToVariable[_enteringVariable];
+
+        log( Stringf( "Performing 'fake' pivot. Variable x%u jumping to %s bound",
+                      _nonBasicIndexToVariable[_enteringVariable],
+                      decrease ? "LOWER" : "UPPER" ) );
+        log( Stringf( "Current value: %.3lf. Range: [%.3lf, %.3lf]",
+                      _nonBasicAssignment[_enteringVariable],
+                      _lowerBounds[nonBasic], _upperBounds[nonBasic] ) );
+
         setNonBasicAssignment( nonBasic, decrease ? _lowerBounds[nonBasic] : _upperBounds[nonBasic] );
         return;
     }
@@ -841,12 +846,16 @@ void Tableau::performPivot()
     if ( _usingSteepestEdge )
         updateGamma();
 
-    // printf( "\n\t\tTableau performing pivot. Entering: %u, Leaving: %u\n\n",
-    //         _nonBasicIndexToVariable[_enteringVariable],
-    //         _basicIndexToVariable[_leavingVariable] );
-
     unsigned currentBasic = _basicIndexToVariable[_leavingVariable];
     unsigned currentNonBasic = _nonBasicIndexToVariable[_enteringVariable];
+
+    log( Stringf( "Tableau performing pivot. Entering: %u, Leaving: %u",
+                  _nonBasicIndexToVariable[_enteringVariable],
+                  _basicIndexToVariable[_leavingVariable] ) );
+    log( Stringf( "Leaving variable %s. Current value: %.3lf. Range: [%.3lf, %.3lf]",
+                  _leavingVariableIncreases ? "increases" : "decreases",
+                  _basicAssignment[_leavingVariable],
+                  _lowerBounds[currentBasic], _upperBounds[currentBasic] ) );
 
     // Update the database
     _basicVariables.insert( currentNonBasic );
@@ -1641,6 +1650,12 @@ void Tableau::notifyUpperBound( unsigned variable, double bound )
 void Tableau::setStatistics( Statistics *statistics )
 {
     _statistics = statistics;
+}
+
+void Tableau::log( const String &message )
+{
+    if ( GlobalConfiguration::TABLEAU_LOGGING )
+        printf( "Tableau: %s\n", message.ascii() );
 }
 
 //

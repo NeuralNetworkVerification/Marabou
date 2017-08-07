@@ -14,6 +14,7 @@
 #define __Tableau_h__
 
 #include "ITableau.h"
+#include "MString.h"
 #include "Map.h"
 #include "Set.h"
 #include "Statistics.h"
@@ -494,6 +495,8 @@ private:
     double dotProduct( const double *a, const double *b, unsigned m );
 
     void printVector( const double *v, unsigned m );
+
+    static void log( const String &message );
 };
 
 #endif // __Tableau_h__
