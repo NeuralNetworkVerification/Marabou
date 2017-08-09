@@ -24,7 +24,7 @@ def main(input_dir, output_dir):
 	recursively_compare(input_dir, output_dir)
 
 if __name__ == "__main__":
-	if len(sys.argv) < 2:
+	if len(sys.argv) <= 2:
 		print "Need to supply input arguments: directory to read .mps files from, output directory for tmp logs, e.g."
 		print "> python compare_all.py <DIR WITH MPS FILES> <DIR FOR OUTPUT FILES>"
 		exit(1)
