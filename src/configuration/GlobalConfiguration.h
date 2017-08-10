@@ -31,6 +31,7 @@ public:
     static const bool TABLEAU_LOGGING;
     static const bool SMT_CORE_LOGGING;
     static const bool DANTZIGS_RULE_LOGGING;
+    static const bool BASIS_FACTORIZATION_LOGGING;
 };
 
 #endif // __GlobalConfiguration_h__

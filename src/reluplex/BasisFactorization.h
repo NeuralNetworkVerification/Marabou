@@ -16,6 +16,7 @@
 
 #include "LPElement.h"
 #include "List.h"
+#include "MString.h"
 
 class EtaMatrix;
 class LPElement;
@@ -179,6 +180,8 @@ private:
       store result in U.
     */
 	void LFactorizationMultiply( const EtaMatrix *L );
+
+    static void log( const String &message );
 };
 
 #endif // __BasisFactorization_h__

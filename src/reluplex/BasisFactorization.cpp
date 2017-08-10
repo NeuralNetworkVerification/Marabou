@@ -17,6 +17,7 @@
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
 #include "LPElement.h"
+#include "MStringf.h"
 #include "ReluplexError.h"
 
 BasisFactorization::BasisFactorization( unsigned m )
@@ -108,6 +109,10 @@ void BasisFactorization::LMultiplyRight( const EtaMatrix *L, double *X ) const
 	double sum = 0;
 	for ( unsigned i = 0; i < _m; ++i )
 		sum += L->_column[i] * X[i];
+
+    if ( FloatUtils::isZero( sum ) )
+        sum = 0.0;
+
 	X[L->_columnIndex] = sum;
 }
 
@@ -121,6 +126,9 @@ void BasisFactorization::LMultiplyLeft( const EtaMatrix *L, double *X ) const
             X[i] *= L->_column[col];
         else
             X[i] += xCol * L->_column[i];
+
+        if ( FloatUtils::isZero( X[i] ) )
+            X[i] = 0.0;
     }
 }
 
@@ -147,6 +155,10 @@ void BasisFactorization::condenseEtas()
 			double sum = 0.0;
 			for ( unsigned j = 0; j < _m; ++j )
 				sum += _B0[i * _m + j] * eta->_column[j];
+
+            if ( FloatUtils::isZero( sum ) )
+                sum = 0.0;
+
             _B0[i * _m + col] = sum;
 		}
 
@@ -198,7 +210,10 @@ void BasisFactorization::forwardTransformation( const double *y, double *x ) con
 			for ( int j = _m - 1; j > i; --j )
 				sum += _U[i * _m + j] * x[j];
 			x[i] = tempY[i] - sum;
-		}
+
+            if ( FloatUtils::isZero( x[i] ) )
+                x[i] = 0.0;
+        }
 		memcpy( tempY, x, sizeof(double) * _m );
 	}
 
@@ -207,14 +222,24 @@ void BasisFactorization::forwardTransformation( const double *y, double *x ) con
 	for ( const auto &eta : _etas )
     {
         x[eta->_columnIndex] = tempY[eta->_columnIndex] / eta->_column[eta->_columnIndex];
+        if ( FloatUtils::isZero( x[eta->_columnIndex] ) )
+            x[eta->_columnIndex] = 0.0;
 
         // Solve the rows above columnIndex
         for ( unsigned i = eta->_columnIndex + 1; i < _m; ++i )
+        {
             x[i] = tempY[i] - ( x[eta->_columnIndex] * eta->_column[i] );
+            if ( FloatUtils::isZero( x[i] ) )
+                x[i] = 0.0;
+        }
 
         // Solve the rows below columnIndex
         for ( int i = eta->_columnIndex - 1; i >= 0; i-- )
+        {
             x[i] = tempY[i] - ( x[eta->_columnIndex] * eta->_column[i] );
+            if ( FloatUtils::isZero( x[i] ) )
+                x[i] = 0.0;
+        }
 
         // The x from this iteration becomes a for the next iteration
         memcpy( tempY, x, sizeof(double) *_m );
@@ -252,7 +277,6 @@ void BasisFactorization::backwardTransformation( const double *y, double *x ) co
         }
         x[columnIndex] = x[columnIndex] / (*eta)->_column[columnIndex];
 
-        // To handle -0.0
         if ( FloatUtils::isZero( x[columnIndex] ) )
             x[columnIndex] = 0.0;
 
@@ -276,6 +300,9 @@ void BasisFactorization::backwardTransformation( const double *y, double *x ) co
 			for ( unsigned j = 0; j < i; ++j )
 				sum += _U[i + j * _m] * x[j];
 			x[i] = tempY[i] - sum;
+
+            if ( FloatUtils::isZero( x[i] ) )
+                x[i] = 0.0;
 		}
 	}
 
@@ -364,7 +391,7 @@ void BasisFactorization::factorizeMatrix( double *matrix )
         double div = _U[i * _m + i];
         LCol[i] = 1 / div;
 		for ( unsigned j = i + 1; j < _m; ++j )
-            LCol[j] = -_U[ i + j * _m] / div;
+            LCol[j] = -_U[i + j * _m] / div;
 
         // Store the resulting lower-triangular eta matrix
 		EtaMatrix *L = new EtaMatrix( _m, i, LCol );
@@ -381,17 +408,20 @@ void BasisFactorization::LFactorizationMultiply( const EtaMatrix *L )
 {
     unsigned colIndex = L->_columnIndex;
     // First, perform in-place multiplication for all rows below the pivot row
-    for ( unsigned col = colIndex; col < _m; ++col )
+    for ( unsigned row = colIndex + 1; row < _m; ++row )
     {
-        for ( unsigned row = colIndex + 1; row < _m; ++row )
+        _U[row * _m + colIndex] = 0.0;
+        for ( unsigned col = colIndex + 1; col < _m; ++col )
             _U[row * _m + col] += L->_column[row] * _U[colIndex * _m + col];
     }
 
     // Finally, perform the multiplication for the pivot row
     // itself. We change this row last because it is required for all
     // previous multiplication operations.
-	for ( unsigned i = colIndex; i < _m; ++i )
+	for ( unsigned i = colIndex + 1; i < _m; ++i )
 		_U[colIndex * _m + i] *= L->_column[colIndex];
+
+    _U[colIndex * _m + colIndex] = 1.0;
 }
 
 void BasisFactorization::matrixMultiply( unsigned dimension, const double *left, const double *right, double *result )
@@ -446,6 +476,12 @@ void BasisFactorization::restoreFactorization( const BasisFactorization *other )
 
     // Store the new B0 and LU-factorize it
     setB0( other->_B0 );
+}
+
+void BasisFactorization::log( const String &message )
+{
+    if ( GlobalConfiguration::BASIS_FACTORIZATION_LOGGING )
+        printf( "BasisFactorization: %s\n", message.ascii() );
 }
 
 //
