@@ -18,6 +18,7 @@ const unsigned GlobalConfiguration::DEFAULT_DOUBLE_TO_STRING_PRECISION = 10;
 const unsigned GlobalConfiguration::REFACTORIZATION_THRESHOLD = 100;
 const unsigned GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY = 100;
 const double GlobalConfiguration::NUMERICAL_STABILITY_CONSTANT = 0.0001;
+const double GlobalConfiguration::BOUND_COMPARISON_TOLERANCE = 0.001;
 const bool GlobalConfiguration::PREPROCESS_INPUT_QUERY = true;
 const unsigned GlobalConfiguration::DEGRADATION_CHECKING_FREQUENCY = 10;
 
@@ -33,11 +34,12 @@ void GlobalConfiguration::print()
     printf( "****************************\n" );
     printf( "*** Global Configuraiton ***\n" );
     printf( "****************************\n" );
-    printf( "  DEFAULT_EPSILON_FOR_COMPARISONS: %lf\n", DEFAULT_EPSILON_FOR_COMPARISONS );
+    printf( "  DEFAULT_EPSILON_FOR_COMPARISONS: %.15lf\n", DEFAULT_EPSILON_FOR_COMPARISONS );
     printf( "  DEFAULT_DOUBLE_TO_STRING_PRECISION: %u\n", DEFAULT_DOUBLE_TO_STRING_PRECISION );
     printf( "  REFACTORIZATION_THRESHOLD: %u\n", REFACTORIZATION_THRESHOLD );
     printf( "  STATISTICS_PRINTING_FREQUENCY: %u\n", STATISTICS_PRINTING_FREQUENCY );
-    printf( "  NUMERICAL_STABILITY_CONSTANT: %lf\n", NUMERICAL_STABILITY_CONSTANT );
+    printf( "  NUMERICAL_STABILITY_CONSTANT: %.15lf\n", NUMERICAL_STABILITY_CONSTANT );
+    printf( "  BOUND_COMPARISON_TOLERANCE: %.15lf\n", BOUND_COMPARISON_TOLERANCE );
     printf( "  PREPROCESS_INPUT_QUERY: %s\n", PREPROCESS_INPUT_QUERY ? "Yes" : "No" );
     printf( "  DEGRADATION_CHECKING_FREQUENCY: %u\n", DEGRADATION_CHECKING_FREQUENCY );
     printf( "****************************\n" );

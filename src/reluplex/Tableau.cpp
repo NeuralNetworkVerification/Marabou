@@ -527,13 +527,13 @@ void Tableau::computeBasicStatus( unsigned basic )
     double lb = _lowerBounds[_basicIndexToVariable[basic]];
     double value = _basicAssignment[basic];
 
-    if ( FloatUtils::gt( value , ub ) )
+    if ( FloatUtils::gt( value , ub, GlobalConfiguration::BOUND_COMPARISON_TOLERANCE ) )
         _basicStatus[basic] = Tableau::ABOVE_UB;
-    else if ( FloatUtils::lt( value , lb ) )
+    else if ( FloatUtils::lt( value , lb, GlobalConfiguration::BOUND_COMPARISON_TOLERANCE ) )
         _basicStatus[basic] = Tableau::BELOW_LB;
-    else if ( FloatUtils::areEqual( ub, value ) )
+    else if ( FloatUtils::areEqual( ub, value, GlobalConfiguration::BOUND_COMPARISON_TOLERANCE ) )
         _basicStatus[basic] = Tableau::AT_UB;
-    else if ( FloatUtils::areEqual( lb, value ) )
+    else if ( FloatUtils::areEqual( lb, value, GlobalConfiguration::BOUND_COMPARISON_TOLERANCE ) )
         _basicStatus[basic] = Tableau::AT_LB;
     else
         _basicStatus[basic] = Tableau::BETWEEN;

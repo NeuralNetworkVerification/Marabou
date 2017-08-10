@@ -23,6 +23,7 @@ public:
 	static const unsigned REFACTORIZATION_THRESHOLD;
     static const unsigned STATISTICS_PRINTING_FREQUENCY;
     static const double NUMERICAL_STABILITY_CONSTANT;
+    static const double BOUND_COMPARISON_TOLERANCE;
 	static const bool PREPROCESS_INPUT_QUERY;
     static const unsigned DEGRADATION_CHECKING_FREQUENCY;
 
