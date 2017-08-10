@@ -29,6 +29,7 @@ int main()
         // AcasParser acasParser( "./ACASXU_run2a_1_1_batch_2000.nnet" );
         // AcasParser acasParser( "ACASXU_run2a_1_1_tiny.nnet" );
         AcasParser acasParser( "ACASXU_run2a_1_1_tiny_2.nnet" );
+        // AcasParser acasParser( "ACASXU_run2a_1_1_tiny_3.nnet" );
         acasParser.generateQuery( inputQuery );
 
         // A simple query: all inputs are fixed to 0

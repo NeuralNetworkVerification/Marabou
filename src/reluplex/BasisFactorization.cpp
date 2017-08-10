@@ -99,6 +99,7 @@ void BasisFactorization::pushEtaMatrix( unsigned columnIndex, double *column )
 
 	if ( ( _etas.size() > GlobalConfiguration::REFACTORIZATION_THRESHOLD ) && _factorizationEnabled )
 	{
+        log( "Number of etas exceeds threshold. Condensing and refactoring\n" );
 		condenseEtas();
 		factorizeMatrix( _B0 );
 	}
