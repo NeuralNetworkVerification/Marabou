@@ -161,6 +161,8 @@ bool Engine::performSimplexStep()
 
     unsigned enteringVariable = _tableau->getEnteringVariable();
 
+    _activeEntryStrategy->prePivotHook( _tableau );
+
     // Perform the actual pivot
     _tableau->performPivot();
 

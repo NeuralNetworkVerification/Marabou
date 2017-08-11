@@ -32,6 +32,12 @@ public:
       Choose the entrying variable for the given tableau.
     */
     virtual bool select( ITableau &tableau ) = 0;
+
+    /*
+      This hook gets called after the entering and leaving variables
+      have been selected, but before the actual pivot.
+    */
+    virtual void prePivotHook( const ITableau & ) {};
 };
 
 #endif // __EntrySelectionStrategy_h__
