@@ -736,17 +736,13 @@ void Tableau::computeReducedCost( unsigned nonBasic )
     double *ANColumn = _A + ( _nonBasicIndexToVariable[nonBasic] * _m );
     _costFunction[nonBasic] = 0;
     for ( unsigned j = 0; j < _m; ++j )
-    {
         _costFunction[nonBasic] -= ( _multipliers[j] * ANColumn[j] );
-    }
 }
 
 void Tableau::computeReducedCosts()
 {
     for ( unsigned i = 0; i < _n - _m; ++i )
-    {
         computeReducedCost(i);
-    }
 }
 
 unsigned Tableau::getBasicStatus( unsigned basic )

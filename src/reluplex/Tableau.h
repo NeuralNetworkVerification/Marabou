@@ -56,7 +56,8 @@ public:
     void setEntryValue( unsigned row, unsigned column, double value );
 
     /*
-      Set which variable will enter the basis
+      Set which variable will enter the basis. The input is the
+      index of the non basic variable, in the range [0, n-m).
     */
     void setEnteringVariable( unsigned nonBasic );
 
