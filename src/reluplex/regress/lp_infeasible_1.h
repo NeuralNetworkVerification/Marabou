@@ -59,26 +59,26 @@ public:
         Equation equation1;
         equation1.addAddend( 1, 0 );
         equation1.addAddend( -1, 1 );
-        equation1.addAddend( 1, 4 );
+        equation1.addAuxAddend( 1 );
         equation1.setScalar( 0 );
-        equation1.markAuxiliaryVariable( 4 );
+        equation1.markAuxVariable( 4 );
         inputQuery.addEquation( equation1 );
 
         Equation equation2;
         equation2.addAddend( 1, 0 );
         equation2.addAddend( 1, 2 );
-        equation2.addAddend( 1, 5 );
+        equation2.addAuxAddend( 1 );
         equation2.setScalar( 0 );
-        equation2.markAuxiliaryVariable( 5 );
+        equation2.markAuxVariable( 5 );
         inputQuery.addEquation( equation2 );
 
         Equation equation3;
         equation3.addAddend( -1, 1 );
         equation3.addAddend( -1, 2 );
         equation3.addAddend( 1, 3 );
-        equation3.addAddend( 1, 6 );
+        equation3.addAuxAddend( 1 );
         equation3.setScalar( 0 );
-        equation3.markAuxiliaryVariable( 6 );
+        equation3.markAuxVariable( 6 );
         inputQuery.addEquation( equation3 );
 
         Engine engine;

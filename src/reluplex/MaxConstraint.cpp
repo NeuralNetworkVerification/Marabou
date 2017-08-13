@@ -153,8 +153,6 @@ List<PiecewiseLinearCaseSplit> MaxConstraint::getCaseSplits() const
 
 	List<PiecewiseLinearCaseSplit> splits;
 
-    unsigned auxVariable = FreshVariables::getNextVariable();
-
 	for ( unsigned element : _elements )
 	{
 		PiecewiseLinearCaseSplit maxPhase;
@@ -166,15 +164,13 @@ List<PiecewiseLinearCaseSplit> MaxConstraint::getCaseSplits() const
 
             maxEquation.addAddend( 1, element );
             maxEquation.addAddend( -1, _f );
-            maxEquation.addAddend( 1, auxVariable );
+            maxEquation.addAuxAddend( 1 );
 
-            Tightening auxUpperBound( auxVariable, 0.0, Tightening::UB );
-            Tightening auxLowerBound( auxVariable, 0.0, Tightening::LB );
+            Tightening auxUpperBound( 0, 0.0, Tightening::UB );
+            Tightening auxLowerBound( 0, 0.0, Tightening::LB );
 
-            maxPhase.storeBoundTightening( auxUpperBound );
-            maxPhase.storeBoundTightening( auxLowerBound );
-
-            maxEquation.markAuxiliaryVariable( auxVariable );
+            maxPhase.storeAuxBoundTightening( auxUpperBound );
+            maxPhase.storeAuxBoundTightening( auxLowerBound );
 
             maxEquation.setScalar( 0 );
 
@@ -191,13 +187,11 @@ List<PiecewiseLinearCaseSplit> MaxConstraint::getCaseSplits() const
                 // other - element + aux = 0
                 gtEquation.addAddend( 1, other );
                 gtEquation.addAddend( -1, element );
-                gtEquation.addAddend( 1, auxVariable );
+                gtEquation.addAuxAddend( 1 );
 
-                Tightening gtAuxLowerBound( auxVariable, 0.0, Tightening::LB );
+                Tightening gtAuxLowerBound( 0, 0.0, Tightening::LB );
 
-                maxPhase.storeBoundTightening( gtAuxLowerBound );
-
-                gtEquation.markAuxiliaryVariable( auxVariable );
+                maxPhase.storeAuxBoundTightening( gtAuxLowerBound );
 
                 gtEquation.setScalar( 0 );
 

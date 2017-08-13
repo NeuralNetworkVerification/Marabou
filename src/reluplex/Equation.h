@@ -32,13 +32,19 @@ public:
         bool operator==( const Addend &other ) const;
     };
 
+    Equation()
+        : _auxCoefficient( 0.0 )
+    {}
+
     void addAddend( double coefficient, unsigned variable );
+    void addAuxAddend( double coefficient );
     void setScalar( double scalar );
-    void markAuxiliaryVariable( unsigned auxVariable );
+    void markAuxVariable( unsigned auxVariable );
 
     List<Addend> _addends;
     double _scalar;
     unsigned _auxVariable;
+    double _auxCoefficient;
 
     bool operator==( const Equation &other ) const;
 

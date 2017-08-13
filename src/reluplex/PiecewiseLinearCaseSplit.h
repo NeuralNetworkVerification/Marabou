@@ -28,10 +28,15 @@ public:
     List<Tightening> getBoundTightenings() const;
 
     /*
+      Store information regarding an auxiliary variable bound tightening.
+    */
+    void storeAuxBoundTightening( const Tightening &tightening );
+    List<Tightening> getAuxBoundTightenings() const;
+
+    /*
       Store information regarding a new equation to be added.
     */
     void addEquation( const Equation &equation );
-
   	List<Equation> getEquations() const;
 
     // /*
@@ -50,6 +55,11 @@ private:
       Bound tightening information.
     */
     List<Tightening> _bounds;
+
+    /*
+      Auxiliary variable bound tightening information.
+    */
+    List<Tightening> _auxBounds;
 
     /*
       The equation that needs to be added.

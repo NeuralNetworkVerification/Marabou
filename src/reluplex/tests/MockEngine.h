@@ -15,6 +15,7 @@
 
 #include "IEngine.h"
 #include "List.h"
+#include "FreshVariables.h"
 #include "PiecewiseLinearCaseSplit.h"
 
 class MockEngine : public IEngine
@@ -63,11 +64,22 @@ public:
     List<Equation> lastEquations;
     void applySplit( const PiecewiseLinearCaseSplit &split )
     {
-        for ( const auto &equation : split.getEquations() )
+        unsigned auxVariable = FreshVariables::getNextVariable();
+        for ( auto &equation : split.getEquations() )
+        {
+            equation.markAuxVariable( auxVariable );
             lastEquations.append( equation );
-
+        }
+    
         List<Tightening> bounds = split.getBoundTightenings();
-        for ( const auto &bound : bounds )
+        List<Tightening> auxBounds = split.getAuxBoundTightenings();
+        for ( auto &bound : auxBounds )
+        {
+            bound._variable = auxVariable;
+            bounds.append( bound );
+        }
+    
+        for ( auto &bound : bounds )
         {
             if ( bound._type == Tightening::LB )
                 lastLowerBounds.append( Bound( bound._variable, bound._value ) );

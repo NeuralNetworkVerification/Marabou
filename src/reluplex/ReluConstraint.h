@@ -109,8 +109,8 @@ private:
     unsigned _b;
     PhaseStatus _phaseStatus;
 
-    PiecewiseLinearCaseSplit getInactiveSplit( unsigned auxVariable ) const;
-    PiecewiseLinearCaseSplit getActiveSplit( unsigned auxVariable ) const;
+    PiecewiseLinearCaseSplit getInactiveSplit() const;
+    PiecewiseLinearCaseSplit getActiveSplit() const;
 };
 
 class ReluConstraintState : public PiecewiseLinearConstraintState

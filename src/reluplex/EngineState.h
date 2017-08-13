@@ -27,7 +27,7 @@ public:
     TableauState _tableauState;
     Map<PiecewiseLinearConstraint *, PiecewiseLinearConstraintState *> _plConstraintToState;
 
-    unsigned _numPlConstraintsDisbaledByValidSplits;
+    unsigned _numPlConstraintsDisabledByValidSplits;
 
     unsigned _nextAuxVariable;
 };
