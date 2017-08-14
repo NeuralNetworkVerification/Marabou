@@ -165,11 +165,11 @@ public:
 				for (int i = 0; i < 9; ++i, ++bound)
 				{
 						Tightening boundElem = *bound;
-						if ( i == 0 ) 
+						if ( i == 0 )
 						{
 								TS_ASSERT_EQUALS( boundElem._type, Tightening::UB );
 						}
-						else 
+						else
 						{
 								TS_ASSERT_EQUALS( boundElem._type, Tightening::LB );
 						}
@@ -263,6 +263,11 @@ public:
 			TS_ASSERT( tableau.lastUnregisteredVariableToWatcher[i].exists( &max ) );
 			}
 	}
+
+    void test_max_duplicate()
+    {
+        TS_TRACE( "TODO: add a test for duplicate" );
+    }
 };
 
 //

@@ -574,7 +574,7 @@ public:
                 TS_ASSERT_EQUALS( tightening._value, 2 );
                 TS_ASSERT_EQUALS( tightening._type, Tightening::LB );
             }
-            ++size;            
+            ++size;
             entailedTightenings.pop();
         }
         TS_ASSERT_EQUALS( size, 2U );
@@ -672,7 +672,7 @@ public:
                 TS_ASSERT_EQUALS( tightening._value, 1 );
                 TS_ASSERT_EQUALS( tightening._type, Tightening::LB );
             }
-            ++size;            
+            ++size;
             entailedTightenings.pop();
         }
         TS_ASSERT_EQUALS( size, 1U );
@@ -689,7 +689,7 @@ public:
         TS_ASSERT( reluState->_assignment == reluState3->_assignment );
         TS_ASSERT( reluState->_phaseStatus == reluState3->_phaseStatus );
         TS_ASSERT( reluState3->_entailedTightenings.empty() );
-        
+
         relu.restoreState( *state2 );
         TS_ASSERT( !relu.isActive() );
         TS_ASSERT( relu.phaseFixed() );
@@ -716,7 +716,26 @@ public:
         TS_ASSERT( reluState2->_assignment == reluState4->_assignment );
         TS_ASSERT( reluState2->_phaseStatus == reluState4->_phaseStatus );
         TS_ASSERT( !reluState4->_entailedTightenings.empty() );
-        
+
+    }
+
+    void test_relu_duplicate()
+    {
+        ReluConstraint *relu1 = new ReluConstraint( 4, 6 );
+        relu1->setActiveConstraint( false );
+        relu1->notifyVariableValue( 4, 1.0 );
+        relu1->notifyVariableValue( 6, 1.0 );
+        relu1->notifyUpperBound( 6, 8.0 );
+
+        PiecewiseLinearConstraint *relu2 = relu1->duplicateConstraint();
+
+        relu1->notifyVariableValue( 4, -2 );
+        TS_ASSERT_THROWS_NOTHING( delete relu1 );
+
+        TS_ASSERT( !relu2->isActive() );
+        TS_ASSERT( relu2->satisfied() );
+
+        TS_ASSERT_THROWS_NOTHING( delete relu2 );
     }
 };
 
