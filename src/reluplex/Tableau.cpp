@@ -824,6 +824,11 @@ unsigned Tableau::getEnteringVariable() const
     return _nonBasicIndexToVariable[_enteringVariable];
 }
 
+bool Tableau::performingFakePivot() const
+{
+    return _leavingVariable == _m;
+}
+
 void Tableau::performPivot()
 {
     // Any kind of pivot invalidates the assignment
@@ -1154,6 +1159,8 @@ const double *Tableau::getChangeColumn() const
 
 void Tableau::computePivotRow()
 {
+    ASSERT( _leavingVariable < _m );
+
     std::fill( _unitVector, _unitVector + _m, 0.0 );
     _unitVector[_leavingVariable] = 1;
     computeMultipliers( _unitVector );

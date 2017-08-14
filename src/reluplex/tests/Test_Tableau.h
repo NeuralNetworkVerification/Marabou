@@ -591,6 +591,12 @@ public:
         TS_ASSERT_EQUALS( tableau->getValue( 2u ), 1.0 );
         TS_ASSERT_EQUALS( tableau->getValue( 5u ), 113.0 );
 
+        TS_ASSERT_THROWS_NOTHING( tableau->computePivotRow() );
+        const double *pivotRow = tableau->getPivotRow();
+        // x3 = 117 -x1 -x2 -x6 -x4
+        for ( unsigned i = 0; i < 4; ++i )
+            TS_ASSERT( FloatUtils::areEqual( pivotRow[i], -1.0 ) );
+
         TS_ASSERT_THROWS_NOTHING( tableau->performPivot() );
 
         TS_ASSERT( tableau->isBasic( 2u ) );

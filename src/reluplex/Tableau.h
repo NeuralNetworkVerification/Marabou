@@ -197,6 +197,12 @@ public:
     double getChangeRatio() const;
 
     /*
+      Returns true iff the current iteration is a fake pivot, i.e. the
+      entering variable jumping from one bound to the other.
+    */
+    bool performingFakePivot() const;
+
+    /*
       Performs the pivot operation after the entering and leaving
       variables have been selected
     */

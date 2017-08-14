@@ -186,6 +186,11 @@ public:
     unsigned getLeavingVariable() const { return 0; }
     double getChangeRatio() const { return 0; }
     void performPivot() {}
+    bool performingFakePivot() const
+    {
+        return false;
+    }
+
     double ratioConstraintPerBasic( unsigned /* basicIndex */, double /* coefficient */, bool /* decrease */ ) { return 0;}
     bool isBasic( unsigned /* variable */ ) const { return false; }
     void setNonBasicAssignment( unsigned /* variable */, double /* value */ ) {}

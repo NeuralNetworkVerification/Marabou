@@ -77,6 +77,7 @@ public:
     virtual void pickLeavingVariable( double *d ) = 0;
     virtual unsigned getLeavingVariable() const = 0;
     virtual double getChangeRatio() const = 0;
+    virtual bool performingFakePivot() const = 0;
     virtual void performPivot() = 0;
     virtual double ratioConstraintPerBasic( unsigned basicIndex, double coefficient, bool decrease ) = 0;
     virtual bool isBasic( unsigned variable ) const = 0;
