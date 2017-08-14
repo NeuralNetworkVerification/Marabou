@@ -30,15 +30,17 @@ PiecewiseLinearConstraint *ReluConstraint::duplicateConstraint() const
 {
     ReluConstraint *clone = new ReluConstraint( _b, _f );
 
-  	// Common PiecewiseLinearConstraint state.
-    clone->_constraintActive = _constraintActive;
-    clone->_assignment = _assignment;
-    clone->_lowerBounds = _lowerBounds;
-    clone->_upperBounds = _upperBounds;
-    clone->_entailedTightenings = _entailedTightenings;
+    *clone = *this;
+    
+  	// // Common PiecewiseLinearConstraint state.
+    // clone->_constraintActive = _constraintActive;
+    // clone->_assignment = _assignment;
+    // clone->_lowerBounds = _lowerBounds;
+    // clone->_upperBounds = _upperBounds;
+    // clone->_entailedTightenings = _entailedTightenings;
 
-    // ReluConstraint-specific state.
-    clone->_phaseStatus = _phaseStatus;
+    // // ReluConstraint-specific state.
+    // clone->_phaseStatus = _phaseStatus;
 
     return clone;
 }

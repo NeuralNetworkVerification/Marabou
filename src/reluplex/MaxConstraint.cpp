@@ -34,16 +34,18 @@ PiecewiseLinearConstraint *MaxConstraint::duplicateConstraint() const
 {
     MaxConstraint *clone = new MaxConstraint( _f, _elements );
 
-	// Common PiecewiseLinearConstraint state.
-    clone->_constraintActive = _constraintActive;
-    clone->_assignment = _assignment;
-    clone->_lowerBounds = _lowerBounds;
-	clone->_upperBounds = _upperBounds;
-	clone->_entailedTightenings = _entailedTightenings;	
+	*clone = *this;
+	
+	// // Common PiecewiseLinearConstraint state.
+    // clone->_constraintActive = _constraintActive;
+    // clone->_assignment = _assignment;
+    // clone->_lowerBounds = _lowerBounds;
+	// clone->_upperBounds = _upperBounds;
+	// clone->_entailedTightenings = _entailedTightenings;	
 
-	// MaxConstraint-specific state.
-    clone->_maxIndex = _maxIndex;
-	clone->_eliminated = _eliminated;
+	// // MaxConstraint-specific state.
+    // clone->_maxIndex = _maxIndex;
+	// clone->_eliminated = _eliminated;
 
     return clone;
 }
