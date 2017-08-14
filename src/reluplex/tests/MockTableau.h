@@ -200,7 +200,7 @@ public:
     }
 
     void dumpCostFunction() const {}
-    void computeD() {}
+    void computeChangeColumn() {}
     void computeAssignment() {}
     void dump() const {}
     void dumpAssignment() {}

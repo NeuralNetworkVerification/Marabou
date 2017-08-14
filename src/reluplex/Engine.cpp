@@ -156,10 +156,12 @@ bool Engine::performSimplexStep()
     }
 
     // Pick a leaving variable
-    _tableau->computeD();
+    _tableau->computeChangeColumn();
     _tableau->pickLeavingVariable();
 
     unsigned enteringVariable = _tableau->getEnteringVariable();
+
+    _activeEntryStrategy->prePivotHook( _tableau );
 
     // Perform the actual pivot
     _tableau->performPivot();

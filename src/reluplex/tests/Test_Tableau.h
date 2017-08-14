@@ -716,7 +716,7 @@ public:
         TS_ASSERT_EQUALS( tableau->getValue( 2u ), 1.0 );
         TS_ASSERT_EQUALS( tableau->getValue( 6u ), 406.0 );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->computeD() );
+        TS_ASSERT_THROWS_NOTHING( tableau->computeChangeColumn() );
         TS_ASSERT_THROWS_NOTHING( tableau->performPivot() );
 
         TS_ASSERT( tableau->isBasic( 2u ) );
@@ -1142,7 +1142,7 @@ public:
 
         tableau->setEnteringVariable( 2u );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->computeD() );
+        TS_ASSERT_THROWS_NOTHING( tableau->computeChangeColumn() );
         TS_ASSERT_THROWS_NOTHING( tableau->performPivot() );
 
         // Variables x3 and x6 have been pivoted

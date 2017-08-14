@@ -28,7 +28,7 @@
 Tableau::Tableau()
     : _A( NULL )
     , _a( NULL )
-    , _d( NULL )
+    , _changeColumn( NULL )
     , _b( NULL )
     , _rowScalars( NULL )
     , _basisFactorization( NULL )
@@ -67,10 +67,10 @@ void Tableau::freeMemoryIfNeeded()
         _A = NULL;
     }
 
-    if ( _d )
+    if ( _changeColumn )
     {
-        delete[] _d;
-        _d = NULL;
+        delete[] _changeColumn;
+        _changeColumn = NULL;
     }
 
     if ( _b )
@@ -198,9 +198,9 @@ void Tableau::setDimensions( unsigned m, unsigned n )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::A" );
     std::fill( _A, _A + ( n * m ), 0.0 );
 
-    _d = new double[m];
-    if ( !_d )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::d" );
+    _changeColumn = new double[m];
+    if ( !_changeColumn )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::changeColumn" );
 
     _b = new double[m];
     if ( !_b )
@@ -736,17 +736,13 @@ void Tableau::computeReducedCost( unsigned nonBasic )
     double *ANColumn = _A + ( _nonBasicIndexToVariable[nonBasic] * _m );
     _costFunction[nonBasic] = 0;
     for ( unsigned j = 0; j < _m; ++j )
-    {
         _costFunction[nonBasic] -= ( _multipliers[j] * ANColumn[j] );
-    }
 }
 
 void Tableau::computeReducedCosts()
 {
     for ( unsigned i = 0; i < _n - _m; ++i )
-    {
         computeReducedCost(i);
-    }
 }
 
 unsigned Tableau::getBasicStatus( unsigned basic )
@@ -892,7 +888,7 @@ void Tableau::performPivot()
 
     // Update the basis factorization. The column corresponding to the
     // leaving variable is the one that has changed
-    _basisFactorization->pushEtaMatrix( _leavingVariable, _d );
+    _basisFactorization->pushEtaMatrix( _leavingVariable, _changeColumn );
 }
 
 void Tableau::performDegeneratePivot( unsigned entering, unsigned leaving )
@@ -914,8 +910,8 @@ void Tableau::performDegeneratePivot( unsigned entering, unsigned leaving )
     if ( _usingSteepestEdge )
         updateGamma();
 
-    // Compute d
-    computeD();
+    // Compute change column
+    computeChangeColumn();
 
     unsigned currentBasic = _basicIndexToVariable[leaving];
     unsigned currentNonBasic = _nonBasicIndexToVariable[entering];
@@ -931,7 +927,7 @@ void Tableau::performDegeneratePivot( unsigned entering, unsigned leaving )
     _variableToIndex[currentNonBasic] = _leavingVariable;
 
     // Update the basis factorization
-    _basisFactorization->pushEtaMatrix( leaving, _d );
+    _basisFactorization->pushEtaMatrix( leaving, _changeColumn );
 
     // Switch assignment values
     double temp = _basicAssignment[leaving];
@@ -1022,10 +1018,10 @@ double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient
 
 void Tableau::pickLeavingVariable()
 {
-    pickLeavingVariable( _d );
+    pickLeavingVariable( _changeColumn );
 }
 
-void Tableau::pickLeavingVariable( double *d )
+void Tableau::pickLeavingVariable( double *changeColumn )
 {
     ASSERT( !FloatUtils::isZero( _costFunction[_enteringVariable] ) );
     bool decrease = FloatUtils::isPositive( _costFunction[_enteringVariable] );
@@ -1062,9 +1058,9 @@ void Tableau::pickLeavingVariable( double *d )
         // constraint.
         for ( unsigned i = 0; i < _m; ++i )
         {
-            if ( !FloatUtils::isZero( d[i] ) )
+            if ( !FloatUtils::isZero( changeColumn[i] ) )
             {
-                double ratio = ratioConstraintPerBasic( i, d[i], decrease );
+                double ratio = ratioConstraintPerBasic( i, changeColumn[i], decrease );
                 if ( ratio > _changeRatio )
                 {
                     _changeRatio = ratio;
@@ -1073,7 +1069,7 @@ void Tableau::pickLeavingVariable( double *d )
             }
         }
 
-        _leavingVariableIncreases = FloatUtils::isPositive( d[_enteringVariable] );
+        _leavingVariableIncreases = FloatUtils::isPositive( changeColumn[_enteringVariable] );
     }
     else
     {
@@ -1087,9 +1083,9 @@ void Tableau::pickLeavingVariable( double *d )
         // constraint.
         for ( unsigned i = 0; i < _m; ++i )
         {
-            if ( !FloatUtils::isZero( d[i] ) )
+            if ( !FloatUtils::isZero( changeColumn[i] ) )
             {
-                double ratio = ratioConstraintPerBasic( i, d[i], decrease );
+                double ratio = ratioConstraintPerBasic( i, changeColumn[i], decrease );
                 if ( ratio < _changeRatio )
                 {
                     _changeRatio = ratio;
@@ -1098,7 +1094,7 @@ void Tableau::pickLeavingVariable( double *d )
             }
         }
 
-        _leavingVariableIncreases = FloatUtils::isNegative( d[_enteringVariable] );
+        _leavingVariableIncreases = FloatUtils::isNegative( changeColumn[_enteringVariable] );
     }
 }
 
@@ -1115,13 +1111,13 @@ double Tableau::getChangeRatio() const
     return _changeRatio;
 }
 
-void Tableau::computeD()
+void Tableau::computeChangeColumn()
 {
     // _a gets the entering variable's column in A
     _a = _A + ( _nonBasicIndexToVariable[_enteringVariable] * _m );
 
     // Compute d = inv(B) * a using the basis factorization
-    _basisFactorization->forwardTransformation( _a, _d );
+    _basisFactorization->forwardTransformation( _a, _changeColumn );
 
     // printf( "Leaving variable selection: dumping a\n\t" );
     // for ( unsigned i = 0; i < _m; ++i )
@@ -1473,11 +1469,11 @@ void Tableau::addRow()
     _A = newA;
 
     // Allocate a new d. Don't need to initialize
-    double *newD = new double[newM];
-    if ( !newD )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newD" );
-    delete[] _d;
-    _d = newD;
+    double *newChangeColumn = new double[newM];
+    if ( !newChangeColumn )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newChangeColumn" );
+    delete[] _changeColumn;
+    _changeColumn = newChangeColumn;
 
     // Allocate a new b and copy the old values
     double *newB = new double[newM];

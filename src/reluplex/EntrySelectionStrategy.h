@@ -23,16 +23,21 @@ public:
     virtual ~EntrySelectionStrategy() {};
 
     /*
+      Perform any necessary initialization work for this strategy.
+      This is done in the engine after the tableau is set up.
+    */
+    virtual void initialize( const ITableau & /* tableau */ ) {};
+
+    /*
       Choose the entrying variable for the given tableau.
     */
     virtual bool select( ITableau &tableau ) = 0;
 
     /*
-      Perform any necessary initialization work for this strategy.
-      This is done in the engine after the tableau is set up.
+      This hook gets called after the entering and leaving variables
+      have been selected, but before the actual pivot.
     */
-    virtual void initialize( const ITableau & /* tableau */ )
-    {};
+    virtual void prePivotHook( const ITableau & ) {};
 };
 
 #endif // __EntrySelectionStrategy_h__

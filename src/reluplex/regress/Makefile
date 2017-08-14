@@ -38,6 +38,7 @@ SOURCES += \
 	NestedDantzigsRule.cpp \
 	PiecewiseLinearCaseSplit.cpp \
 	Preprocessor.cpp \
+	ProjectedSteepestEdge.cpp \
 	ReluConstraint.cpp \
 	SmtCore.cpp \
 	Statistics.cpp \

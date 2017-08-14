@@ -28,7 +28,7 @@ public:
     /*
       Initialize nesting set to all nonbasic indices.
     */
-    virtual void initialize( const ITableau &tableau );
+    void initialize( const ITableau &tableau );
 
 private:
 	Set<unsigned> _J;
