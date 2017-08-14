@@ -580,11 +580,9 @@ public:
         TS_ASSERT_EQUALS( size, 2U );
 
         // The following upper bounds should imply (in order)
-        // f <= 0, f <= 5, b <= 0, b <= 6, f <= 0
-        relu.notifyUpperBound( b, 0 );
+        // f <= 5, b <= 0, f <= 0
         relu.notifyUpperBound( b, 5 );
         relu.notifyUpperBound( f, 0 );
-        relu.notifyUpperBound( f, 6 );
         relu.notifyUpperBound( b, -1 );
 
         entailedTightenings = relu.getEntailedTightenings();
@@ -595,28 +593,16 @@ public:
             if ( size == 0 )
             {
                 TS_ASSERT_EQUALS( tightening._variable, f );
-                TS_ASSERT_EQUALS( tightening._value, 0 );
+                TS_ASSERT_EQUALS( tightening._value, 5 );
                 TS_ASSERT_EQUALS( tightening._type, Tightening::UB );
             }
             else if ( size == 1 )
             {
-                TS_ASSERT_EQUALS( tightening._variable, f );
-                TS_ASSERT_EQUALS( tightening._value, 5 );
-                TS_ASSERT_EQUALS( tightening._type, Tightening::UB );
-            }
-            else if ( size == 2 )
-            {
                 TS_ASSERT_EQUALS( tightening._variable, b );
                 TS_ASSERT_EQUALS( tightening._value, 0 );
                 TS_ASSERT_EQUALS( tightening._type, Tightening::UB );
             }
-            else if ( size == 3 )
-            {
-                TS_ASSERT_EQUALS( tightening._variable, b );
-                TS_ASSERT_EQUALS( tightening._value, 6 );
-                TS_ASSERT_EQUALS( tightening._type, Tightening::UB );
-            }
-            else if ( size == 4 )
+            else if ( size == 2 )
             {
                 TS_ASSERT_EQUALS( tightening._variable, f );
                 TS_ASSERT_EQUALS( tightening._value, 0 );
@@ -625,7 +611,7 @@ public:
             ++size;
             entailedTightenings.pop();
         }
-        TS_ASSERT_EQUALS( size, 5U );
+        TS_ASSERT_EQUALS( size, 3U );
     }
 
     void test_relu_store_and_restore()

@@ -56,6 +56,11 @@ void ReluConstraint::notifyVariableValue( unsigned variable, double value )
 
 void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
 {
+    if ( _lowerBounds.exists( variable ) && !FloatUtils::gt( bound, _lowerBounds[variable] ) )
+        return;
+
+    _lowerBounds[variable] = bound;
+
     // f >= c implies b >= c for any c > 0
     // b >= c implies f >= c for any c >= 0, but the c = 0 case is unneeded
     if ( variable == _f && FloatUtils::isPositive( bound ) )
@@ -73,6 +78,11 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
 
 void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
 {
+    if ( _upperBounds.exists( variable ) && !FloatUtils::lt( bound, _upperBounds[variable] ) )
+        return;
+
+    _upperBounds[variable] = bound;
+
     // b <= c implies f <= c for any c >= 0
     // f <= c implies b <= c for any c >= 0
     if ( variable == _b && !FloatUtils::isNegative( bound ) )
@@ -175,20 +185,24 @@ List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
 
 void ReluConstraint::storeState( PiecewiseLinearConstraintState &state ) const
 {
+    PiecewiseLinearConstraint::storeState( state );
     ReluConstraintState *reluState = dynamic_cast<ReluConstraintState *>( &state );
     reluState->_constraintActive = _constraintActive;
     reluState->_assignment = _assignment;
+    reluState->_lowerBounds = _lowerBounds;
+    reluState->_upperBounds = _upperBounds;
     reluState->_phaseStatus = _phaseStatus;
-    reluState->_entailedTightenings = _entailedTightenings;
 }
 
 void ReluConstraint::restoreState( const PiecewiseLinearConstraintState &state )
 {
+    PiecewiseLinearConstraint::restoreState( state );
     const ReluConstraintState *reluState = dynamic_cast<const ReluConstraintState *>( &state );
     _constraintActive = reluState->_constraintActive;
     _assignment = reluState->_assignment;
+    _lowerBounds = reluState->_lowerBounds;
+    _upperBounds = reluState->_upperBounds;    
     _phaseStatus = reluState->_phaseStatus;
-    _entailedTightenings = reluState->_entailedTightenings;
 }
 
 PiecewiseLinearConstraintState *ReluConstraint::allocateState() const
@@ -282,10 +296,10 @@ void ReluConstraint::eliminateVar( unsigned var, double val )
 
 	if ( var == _f )
 	{
-	        ASSERT( FloatUtils::gte( val, 0 ) );
+	    ASSERT( FloatUtils::gte( val, 0 ) );
 	}
 
-	if ( val > 0 )
+	if ( FloatUtils::gt( val, 0 ) )
 	{
 		_phaseStatus = PhaseStatus::PHASE_ACTIVE;
 		_assignment[_f] = val;
