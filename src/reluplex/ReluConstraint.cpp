@@ -57,7 +57,7 @@ void ReluConstraint::notifyVariableValue( unsigned variable, double value )
 void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
 {
     // f >= c implies b >= c for any c > 0
-    // b >= c implies f >= c for any c >= 0
+    // b >= c implies f >= c for any c >= 0, but the c = 0 case is unneeded
     if ( variable == _f && FloatUtils::isPositive( bound ) )
     {
         _phaseStatus = PhaseStatus::PHASE_ACTIVE;
@@ -66,7 +66,8 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
     else if ( variable == _b && !FloatUtils::isNegative( bound ) )
     {
         _phaseStatus = PhaseStatus::PHASE_ACTIVE;
-        _entailedTightenings.push( Tightening( _f, bound, Tightening::LB ) );        
+        if ( FloatUtils::isPositive( bound ) )
+            _entailedTightenings.push( Tightening( _f, bound, Tightening::LB ) );        
     }
 }
 
