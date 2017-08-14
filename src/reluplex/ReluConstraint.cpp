@@ -266,10 +266,10 @@ void ReluConstraint::changeVarAssign( unsigned prevVar, unsigned newVar )
 
 	if ( _assignment.exists( prevVar ) )
 	{
-		_assignment[newVar] = _assignment.get( prevVar );		
+		_assignment[newVar] = _assignment.get( prevVar );
 		_assignment.erase( prevVar );
 	}
-	
+
 	if ( prevVar == _b )
 		_b = newVar;
 	else
@@ -279,16 +279,18 @@ void ReluConstraint::changeVarAssign( unsigned prevVar, unsigned newVar )
 void ReluConstraint::eliminateVar( unsigned var, double val )
 {
 	ASSERT( var == _b || var == _f );
-	
+
 	if ( var == _f )
-		ASSERT( FloatUtils::gte( val, 0 ) );
+	{
+	        ASSERT( FloatUtils::gte( val, 0 ) );
+	}
 
 	if ( val > 0 )
 	{
 		_phaseStatus = PhaseStatus::PHASE_ACTIVE;
 		_assignment[_f] = val;
 	}
-	else 
+	else
 	{
 		_phaseStatus = PhaseStatus::PHASE_INACTIVE;
 		_assignment[_f] = 0;
