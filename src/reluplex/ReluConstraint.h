@@ -118,6 +118,8 @@ private:
     unsigned _b;
     unsigned _f;
     Map<unsigned, double> _assignment;
+    Map<unsigned, double> _lowerBounds;
+    Map<unsigned, double> _upperBounds;
     PhaseStatus _phaseStatus;
 
     PiecewiseLinearCaseSplit getInactiveSplit( unsigned auxVariable ) const;
@@ -131,8 +133,9 @@ public:
 
     bool _constraintActive;
     Map<unsigned, double> _assignment;
+    Map<unsigned, double> _lowerBounds;
+    Map<unsigned, double> _upperBounds;
     ReluConstraint::PhaseStatus _phaseStatus;
-    Queue<Tightening> _entailedTightenings;
 };
 
 #endif // __ReluConstraint_h__
