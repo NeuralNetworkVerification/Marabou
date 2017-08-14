@@ -34,12 +34,16 @@ PiecewiseLinearConstraint *MaxConstraint::duplicateConstraint() const
 {
     MaxConstraint *clone = new MaxConstraint( _f, _elements );
 
+	// Common PiecewiseLinearConstraint state.
     clone->_constraintActive = _constraintActive;
-    clone->_maxIndex = _maxIndex;
     clone->_assignment = _assignment;
-    clone->_lowerBound = _lowerBound;
-    clone->_upperBound = _upperBound;
-    clone->_eliminated = _eliminated;
+    clone->_lowerBounds = _lowerBounds;
+	clone->_upperBounds = _upperBounds;
+	clone->_entailedTightenings = _entailedTightenings;	
+
+	// MaxConstraint-specific state.
+    clone->_maxIndex = _maxIndex;
+	clone->_eliminated = _eliminated;
 
     return clone;
 }
@@ -60,8 +64,6 @@ void MaxConstraint::unregisterAsWatcher( ITableau *tableau )
 
 void MaxConstraint::notifyVariableValue( unsigned variable, double value )
 {
-
-
 	if ( variable != _f )
 	{
 	//Two conditions for _maxIndex to not exist: either _assignment.size()

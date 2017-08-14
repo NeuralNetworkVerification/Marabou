@@ -186,6 +186,7 @@ public:
 
 protected:
     unsigned _f;
+    
     bool _constraintActive;
     Map<unsigned, double> _assignment;
     Map<unsigned, double> _lowerBounds;
