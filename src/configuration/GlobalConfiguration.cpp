@@ -22,6 +22,9 @@ const double GlobalConfiguration::BOUND_COMPARISON_TOLERANCE = 0.001;
 const bool GlobalConfiguration::PREPROCESS_INPUT_QUERY = true;
 const unsigned GlobalConfiguration::DEGRADATION_CHECKING_FREQUENCY = 10;
 
+const unsigned GlobalConfiguration::PSE_ITERATIONS_BEFORE_RESET = 1000;
+const double GlobalConfiguration::PSE_GAMMA_ERROR_THRESHOLD = 0.001;
+
 // Logging
 const bool GlobalConfiguration::ENGINE_LOGGING = false;
 const bool GlobalConfiguration::TABLEAU_LOGGING = false;
@@ -42,6 +45,8 @@ void GlobalConfiguration::print()
     printf( "  BOUND_COMPARISON_TOLERANCE: %.15lf\n", BOUND_COMPARISON_TOLERANCE );
     printf( "  PREPROCESS_INPUT_QUERY: %s\n", PREPROCESS_INPUT_QUERY ? "Yes" : "No" );
     printf( "  DEGRADATION_CHECKING_FREQUENCY: %u\n", DEGRADATION_CHECKING_FREQUENCY );
+    printf( "  PSE_ITERATIONS_BEFORE_RESET: %u\n", PSE_ITERATIONS_BEFORE_RESET );
+    printf( "  PSE_GAMMA_ERROR_THRESHOLD: %.15lf\n", PSE_GAMMA_ERROR_THRESHOLD );
     printf( "****************************\n" );
 }
 

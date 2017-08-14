@@ -32,10 +32,15 @@ public:
     bool select( ITableau &tableau );
 
     /*
-      Use this hook to update gamma according to the entering and leaving
-      variables.
+      We use this hook to update gamma according to the entering
+      and leaving variables.
     */
-    void prePivotHook( const ITableau &tableau );
+    void prePivotHook( const ITableau &tableau, bool fakePivot );
+
+    /*
+      We use this hook to reset the reference space if needed.
+    */
+    void postPivotHook( const ITableau &tableau, bool fakePivot );
 
 private:
     /*
@@ -58,6 +63,16 @@ private:
     */
     unsigned _m;
     unsigned _n;
+
+    /*
+      Remaining iterations before resetting the reference space.
+    */
+    unsigned _iterationsBeforeReset;
+
+    /*
+      The error in gamma compuated in the previous iteration.
+    */
+    double _errorInGamma;
 
     /*
       Reset the reference space and gamma, according to the current non-basic variables.

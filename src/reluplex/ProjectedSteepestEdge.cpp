@@ -20,6 +20,8 @@ ProjectedSteepestEdgeRule::ProjectedSteepestEdgeRule()
     : _referenceSpace( NULL )
     , _gamma( NULL )
     , _work( NULL )
+    , _iterationsBeforeReset( GlobalConfiguration::PSE_ITERATIONS_BEFORE_RESET )
+    , _errorInGamma( 0.0 )
 {
 }
 
@@ -76,6 +78,8 @@ void ProjectedSteepestEdgeRule::resetReferenceSpace( const ITableau &tableau )
             _referenceSpace[i] = true;
         }
     }
+
+    _iterationsBeforeReset = GlobalConfiguration::PSE_ITERATIONS_BEFORE_RESET;
 }
 
 bool ProjectedSteepestEdgeRule::select( ITableau &tableau )
@@ -129,8 +133,12 @@ bool ProjectedSteepestEdgeRule::select( ITableau &tableau )
     return true;
 }
 
-void ProjectedSteepestEdgeRule::prePivotHook( const ITableau &tableau )
+void ProjectedSteepestEdgeRule::prePivotHook( const ITableau &tableau, bool fakePivot )
 {
+    // If the pivot is fake, gamma does not need to be updated
+    if ( fakePivot )
+        return;
+
     // When this hook is called, the entering and leaving variables have
     // already been determined. This are the actual varaibles, not the indices.
     unsigned entering = tableau.getEnteringVariable();
@@ -144,11 +152,8 @@ void ProjectedSteepestEdgeRule::prePivotHook( const ITableau &tableau )
 
     // Update gamma[entering] to the accurate value, taking the pivot into account
     double accurateGamma;
-    double error = computeAccurateGamma( accurateGamma, tableau );
+    _errorInGamma = computeAccurateGamma( accurateGamma, tableau );
     _gamma[enteringIndex] = accurateGamma / ( changeColumn[leavingIndex] * changeColumn[leavingIndex] );
-
-    // TODO: high error may reset the reference space?
-    printf( "Error: %lf\n", error );
 
     unsigned m = tableau.getM();
     unsigned n = tableau.getN();
@@ -160,15 +165,16 @@ void ProjectedSteepestEdgeRule::prePivotHook( const ITableau &tableau )
     const double *AColumn;
 
     // Compute GLPK's u vector
-    for ( unsigned i = 0; i < m; ++i )
-    {
-        unsigned basicVariable = tableau.basicIndexToVariable( i );
-        if ( _referenceSpace[basicVariable] )
-            _work[i] = changeColumn[i];
-        else
-            _work[i] = 0.0;
-    }
-    // tableau.backwardTransformation
+    // for ( unsigned i = 0; i < m; ++i )
+    // {
+    //     unsigned basicVariable = tableau.basicIndexToVariable( i );
+    //     if ( _referenceSpace[basicVariable] )
+    //         _work[i] = changeColumn[i];
+    //     else
+    //         _work[i] = 0.0;
+    // }
+
+    tableau.backwardTransformation( tableau.getRightHandSide(), _work );
 
     // Update gamma[i] for all i != enteringIndex
     for ( unsigned i = 0; i < n - m; ++i )
@@ -214,6 +220,28 @@ double ProjectedSteepestEdgeRule::computeAccurateGamma( double &accurateGamma, c
     }
 
     return FloatUtils::abs( ( accurateGamma - _gamma[entering] ) / ( 1.0 + accurateGamma ) );
+}
+
+void ProjectedSteepestEdgeRule::postPivotHook( const ITableau &tableau, bool fakePivot )
+{
+    // If the pivot is fake, no need to reset the reference space.
+    if ( fakePivot )
+        return;
+
+    // If the iteration limit has been exhausted, reset the reference space
+    --_iterationsBeforeReset;
+    if ( _iterationsBeforeReset == 0 )
+    {
+        resetReferenceSpace( tableau );
+        return;
+    }
+
+    // If the error is too great, reset the reference space.
+    if ( FloatUtils::gt( _errorInGamma, GlobalConfiguration::PSE_GAMMA_ERROR_THRESHOLD ) )
+    {
+        resetReferenceSpace( tableau );
+        return;
+    }
 }
 
 //

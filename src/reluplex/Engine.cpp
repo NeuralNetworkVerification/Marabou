@@ -160,15 +160,17 @@ bool Engine::performSimplexStep()
     // Pick a leaving variable
     _tableau->computeChangeColumn();
     _tableau->pickLeavingVariable();
-    if ( !_tableau->performingFakePivot() )
+
+    bool fakePivot = _tableau->performingFakePivot();
+    if ( !fakePivot )
         _tableau->computePivotRow();
 
     unsigned enteringVariable = _tableau->getEnteringVariable();
 
-    _activeEntryStrategy->prePivotHook( _tableau );
-
     // Perform the actual pivot
+    _activeEntryStrategy->prePivotHook( _tableau, fakePivot );
     _tableau->performPivot();
+    _activeEntryStrategy->postPivotHook( _tableau, fakePivot );
 
     // Tighten
     _boundTightener.deriveTightenings( _tableau, enteringVariable );
