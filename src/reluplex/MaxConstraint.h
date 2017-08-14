@@ -23,6 +23,11 @@ public:
 	~MaxConstraint();
 
     /*
+      Return a clone of the constraint.
+    */
+    PiecewiseLinearConstraint *duplicateConstraint() const;
+
+    /*
       Register/unregister the constraint with a talbeau.
     */
 	void registerAsWatcher( ITableau *tableau );

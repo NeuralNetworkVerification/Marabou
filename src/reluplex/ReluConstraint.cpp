@@ -27,6 +27,17 @@ ReluConstraint::ReluConstraint( unsigned b, unsigned f )
 {
 }
 
+PiecewiseLinearConstraint *ReluConstraint::duplicateConstraint() const
+{
+    ReluConstraint *clone = new ReluConstraint( _b, _f );
+
+    clone->_constraintActive = _constraintActive;
+    clone->_assignment = _assignment;
+    clone->_phaseStatus = _phaseStatus;
+
+    return clone;
+}
+
 void ReluConstraint::registerAsWatcher( ITableau *tableau )
 {
     tableau->registerToWatchVariable( this, _b );
@@ -67,7 +78,7 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
     {
         _phaseStatus = PhaseStatus::PHASE_ACTIVE;
         if ( FloatUtils::isPositive( bound ) )
-            _entailedTightenings.push( Tightening( _f, bound, Tightening::LB ) );        
+            _entailedTightenings.push( Tightening( _f, bound, Tightening::LB ) );
     }
 }
 

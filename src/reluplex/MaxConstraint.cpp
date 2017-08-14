@@ -31,6 +31,20 @@ MaxConstraint::~MaxConstraint()
 	_elements.clear();
 }
 
+PiecewiseLinearConstraint *MaxConstraint::duplicateConstraint() const
+{
+    MaxConstraint *clone = new MaxConstraint( _f, _elements );
+
+    clone->_constraintActive = _constraintActive;
+    clone->_maxIndex = _maxIndex;
+    clone->_assignment = _assignment;
+    clone->_lowerBound = _lowerBound;
+    clone->_upperBound = _upperBound;
+    clone->_eliminated = _eliminated;
+
+    return clone;
+}
+
 void MaxConstraint::registerAsWatcher( ITableau *tableau )
 {
 	tableau->registerToWatchVariable( this, _f );
@@ -249,13 +263,13 @@ void MaxConstraint::changeVarAssign( unsigned prevVar, unsigned newVar )
 		_upperBound[newVar] = _upperBound.get( prevVar );
 		_assignment.erase( prevVar );
 	}
-	
+
 	if ( prevVar == _maxIndex )
 		_maxIndex = newVar;
 
 	if ( prevVar == _f )
 		_f = newVar;
-	else 
+	else
 	{
 		_elements.erase( prevVar );
 		_elements.append( newVar );
@@ -264,8 +278,8 @@ void MaxConstraint::changeVarAssign( unsigned prevVar, unsigned newVar )
 
 void MaxConstraint::eliminateVar( unsigned var, double val )
 {
-	_eliminated.insert( var );	
-	val++;	
+	_eliminated.insert( var );
+	val++;
 }
 
 //

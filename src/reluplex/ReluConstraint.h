@@ -27,6 +27,11 @@ public:
     ReluConstraint( unsigned b, unsigned f );
 
     /*
+      Return a clone of the constraint.
+    */
+    PiecewiseLinearConstraint *duplicateConstraint() const;
+
+    /*
       Register/unregister the constraint with a talbeau.
      */
     void registerAsWatcher( ITableau *tableau );
@@ -107,7 +112,7 @@ public:
 	void changeVarAssign( unsigned prevVar, unsigned newVar );
 
 	void eliminateVar( unsigned var, double val );
-    
+
 private:
     bool _constraintActive;
     unsigned _b;

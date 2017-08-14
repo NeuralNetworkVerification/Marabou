@@ -53,6 +53,12 @@ public:
     */
     unsigned countInfiniteBounds();
 
+    /*
+      Assignment operator and copy constructor, duplicate the constraints.
+    */
+    InputQuery &operator=( const InputQuery &other );
+    InputQuery( const InputQuery &other );
+
 private:
     unsigned _numberOfVariables;
     List<Equation> _equations;

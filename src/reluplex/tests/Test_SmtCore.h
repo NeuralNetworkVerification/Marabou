@@ -39,6 +39,11 @@ public:
             setActiveWasCalled = false;
         }
 
+        PiecewiseLinearConstraint *duplicateConstraint() const
+        {
+            return NULL;
+        }
+
         void registerAsWatcher( ITableau * )
         {
         }

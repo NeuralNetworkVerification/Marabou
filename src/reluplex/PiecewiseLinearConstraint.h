@@ -51,6 +51,11 @@ public:
     virtual ~PiecewiseLinearConstraint() {}
 
     /*
+      Return a clone of the constraint.
+    */
+    virtual PiecewiseLinearConstraint *duplicateConstraint() const = 0;
+
+    /*
       Register/unregister the constraint with a talbeau.
     */
     virtual void registerAsWatcher( ITableau *tableau ) = 0;
