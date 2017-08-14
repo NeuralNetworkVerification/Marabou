@@ -15,11 +15,8 @@
 
 #include "ITableau.h"
 #include "PiecewiseLinearCaseSplit.h"
-<<<<<<< HEAD
 #include "Map.h"
-=======
 #include "Queue.h"
->>>>>>> Tighter bound derivation for relu.
 
 class ITableau;
 class String;

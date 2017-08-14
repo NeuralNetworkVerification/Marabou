@@ -646,6 +646,7 @@ public:
         TS_ASSERT_EQUALS( reluState->_assignment[b], 1 );
         TS_ASSERT_EQUALS( reluState->_assignment[f], 2 );
         TS_ASSERT_EQUALS( reluState->_phaseStatus, ReluConstraint::PhaseStatus::PHASE_NOT_FIXED );
+        TS_ASSERT( reluState->_entailedTightenings.empty() );
 
         relu.setActiveConstraint( false );
         relu.notifyVariableValue( b, 3 );
@@ -660,18 +661,62 @@ public:
         TS_ASSERT_EQUALS( reluState2->_assignment[b], 3 );
         TS_ASSERT_EQUALS( reluState2->_assignment[f], 4 );
         TS_ASSERT_EQUALS( reluState2->_phaseStatus, ReluConstraint::PhaseStatus::PHASE_ACTIVE );
+        Queue<Tightening> entailedTightenings = reluState2->_entailedTightenings;
+        unsigned size = 0;
+        while ( !entailedTightenings.empty() )
+        {
+            const Tightening &tightening = entailedTightenings.peak();
+            if ( size == 0 )
+            {
+                TS_ASSERT_EQUALS( tightening._variable, b );
+                TS_ASSERT_EQUALS( tightening._value, 1 );
+                TS_ASSERT_EQUALS( tightening._type, Tightening::LB );
+            }
+            ++size;            
+            entailedTightenings.pop();
+        }
+        TS_ASSERT_EQUALS( size, 1U );
 
         relu.restoreState( *state );
-        TS_ASSERT( reluState->_constraintActive );
-        TS_ASSERT_EQUALS( reluState->_assignment[b], 1 );
-        TS_ASSERT_EQUALS( reluState->_assignment[f], 2 );
-        TS_ASSERT_EQUALS( reluState->_phaseStatus, ReluConstraint::PhaseStatus::PHASE_NOT_FIXED );
+        TS_ASSERT( relu.isActive() );
+        TS_ASSERT( !relu.phaseFixed() );
+        TS_ASSERT( relu.getEntailedTightenings().empty() );
 
+        PiecewiseLinearConstraintState *state3 = relu.allocateState();
+        relu.storeState( *state3 );
+        ReluConstraintState *reluState3 = dynamic_cast<ReluConstraintState *>( state3 );
+        TS_ASSERT( reluState->_constraintActive == reluState3->_constraintActive );
+        TS_ASSERT( reluState->_assignment == reluState3->_assignment );
+        TS_ASSERT( reluState->_phaseStatus == reluState3->_phaseStatus );
+        TS_ASSERT( reluState3->_entailedTightenings.empty() );
+        
         relu.restoreState( *state2 );
-        TS_ASSERT( !reluState2->_constraintActive );
-        TS_ASSERT_EQUALS( reluState2->_assignment[b], 3 );
-        TS_ASSERT_EQUALS( reluState2->_assignment[f], 4 );
-        TS_ASSERT_EQUALS( reluState2->_phaseStatus, ReluConstraint::PhaseStatus::PHASE_ACTIVE );
+        TS_ASSERT( !relu.isActive() );
+        TS_ASSERT( relu.phaseFixed() );
+        entailedTightenings = relu.getEntailedTightenings();
+        size = 0;
+        while ( !entailedTightenings.empty() )
+        {
+            const Tightening &tightening = entailedTightenings.peak();
+            if ( size == 0 )
+            {
+                TS_ASSERT_EQUALS( tightening._variable, b );
+                TS_ASSERT_EQUALS( tightening._value, 1 );
+                TS_ASSERT_EQUALS( tightening._type, Tightening::LB );
+            }
+            ++size;
+            entailedTightenings.pop();
+        }
+        TS_ASSERT_EQUALS( size, 1U );
+
+        PiecewiseLinearConstraintState *state4 = relu.allocateState();
+        relu.storeState( *state4 );
+        ReluConstraintState *reluState4 = dynamic_cast<ReluConstraintState *>( state4 );
+        TS_ASSERT( reluState2->_constraintActive == reluState4->_constraintActive );
+        TS_ASSERT( reluState2->_assignment == reluState4->_assignment );
+        TS_ASSERT( reluState2->_phaseStatus == reluState4->_phaseStatus );
+        TS_ASSERT( !reluState4->_entailedTightenings.empty() );
+        
     }
 };
 
