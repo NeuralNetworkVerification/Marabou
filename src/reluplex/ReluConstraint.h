@@ -38,12 +38,6 @@ public:
     void unregisterAsWatcher( ITableau *tableau );
 
     /*
-      Turn the constraint on/off.
-    */
-    void setActiveConstraint( bool active );
-    bool isActive() const;
-
-    /*
       These callbacks are invoked when a watched variable's value
       changes, or when its bounds change.
     */
@@ -61,8 +55,6 @@ public:
       Get the list of variables participating in this constraint.
     */
     List<unsigned> getParticiatingVariables() const;
-
-	unsigned getF() const;
 
     /*
       Returns true iff the assignment satisfies the constraint
@@ -109,17 +101,12 @@ public:
     */
     void dump( String &output ) const;
 
-	void changeVarAssign( unsigned prevVar, unsigned newVar );
+  	void changeVarAssign( unsigned prevVar, unsigned newVar );
 
-	void eliminateVar( unsigned var, double val );
-
+	  void eliminateVar( unsigned var, double val );
+    
 private:
-    bool _constraintActive;
     unsigned _b;
-    unsigned _f;
-    Map<unsigned, double> _assignment;
-    Map<unsigned, double> _lowerBounds;
-    Map<unsigned, double> _upperBounds;
     PhaseStatus _phaseStatus;
 
     PiecewiseLinearCaseSplit getInactiveSplit( unsigned auxVariable ) const;
@@ -131,10 +118,6 @@ class ReluConstraintState : public PiecewiseLinearConstraintState
 public:
     ~ReluConstraintState() {}
 
-    bool _constraintActive;
-    Map<unsigned, double> _assignment;
-    Map<unsigned, double> _lowerBounds;
-    Map<unsigned, double> _upperBounds;
     ReluConstraint::PhaseStatus _phaseStatus;
 };
 

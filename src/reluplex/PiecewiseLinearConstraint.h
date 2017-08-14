@@ -27,6 +27,10 @@ public:
     PiecewiseLinearConstraintState() {}
     virtual ~PiecewiseLinearConstraintState() {}
 
+    bool _constraintActive;
+    Map<unsigned, double> _assignment;
+    Map<unsigned, double> _lowerBounds;
+    Map<unsigned, double> _upperBounds;
     Queue<Tightening> _entailedTightenings;
 };
 
@@ -50,6 +54,11 @@ public:
         double _value;
     };
 
+    PiecewiseLinearConstraint( unsigned f )
+        : _f( f )
+        , _constraintActive( true )
+    {
+    }
     virtual ~PiecewiseLinearConstraint() {}
 
     /*
@@ -73,8 +82,14 @@ public:
     /*
       Turn the constraint on/off.
     */
-    virtual void setActiveConstraint( bool active ) = 0;
-    virtual bool isActive() const = 0;
+    virtual void setActiveConstraint( bool active )
+    {
+        _constraintActive = active;
+    }
+    virtual bool isActive() const
+    {
+        return _constraintActive;
+    }
 
     /*
       Returns true iff the variable participates in this piecewise
@@ -87,10 +102,13 @@ public:
     */
     virtual List<unsigned> getParticiatingVariables() const = 0;
 
-	/*
-	  Return the target variable
-	*/
-	virtual unsigned getF() const = 0;
+  	/*
+	    Return the target variable
+  	*/
+    virtual unsigned getF() const
+    {
+      return _f;
+    }
 
     /*
       Returns true iff the assignment satisfies the constraint.
@@ -132,11 +150,19 @@ public:
     */
     virtual void storeState( PiecewiseLinearConstraintState &state ) const
     {
-      state._entailedTightenings = _entailedTightenings;
+        state._constraintActive = _constraintActive;
+        state._assignment = _assignment;
+        state._lowerBounds = _lowerBounds;
+        state._upperBounds = _upperBounds;
+        state._entailedTightenings = _entailedTightenings;
     }
     virtual void restoreState( const PiecewiseLinearConstraintState &state )
     {
-      _entailedTightenings = state._entailedTightenings;
+        _constraintActive = state._constraintActive;
+        _assignment = state._assignment;
+        _lowerBounds = state._lowerBounds;
+        _upperBounds = state._upperBounds;
+        _entailedTightenings = state._entailedTightenings;
     }
 
     /*
@@ -155,12 +181,16 @@ public:
     */
     Queue<Tightening> &getEntailedTightenings()
     {
-      return _entailedTightenings;
+        return _entailedTightenings;
     }
 
 protected:
+    unsigned _f;
+    bool _constraintActive;
+    Map<unsigned, double> _assignment;
+    Map<unsigned, double> _lowerBounds;
+    Map<unsigned, double> _upperBounds;
     Queue<Tightening> _entailedTightenings;
-
 };
 
 #endif // __PiecewiseLinearConstraint_h__

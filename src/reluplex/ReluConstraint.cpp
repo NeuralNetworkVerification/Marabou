@@ -20,9 +20,8 @@
 #include "ReluplexError.h"
 
 ReluConstraint::ReluConstraint( unsigned b, unsigned f )
-    : _constraintActive( true )
+    : PiecewiseLinearConstraint( f )
     , _b( b )
-    , _f( f )
     , _phaseStatus( PhaseStatus::PHASE_NOT_FIXED )
 {
 }
@@ -48,16 +47,6 @@ void ReluConstraint::unregisterAsWatcher( ITableau *tableau )
 {
     tableau->unregisterToWatchVariable( this, _b );
     tableau->unregisterToWatchVariable( this, _f );
-}
-
-void ReluConstraint::setActiveConstraint( bool active )
-{
-    _constraintActive = active;
-}
-
-bool ReluConstraint::isActive() const
-{
-    return _constraintActive;
 }
 
 void ReluConstraint::notifyVariableValue( unsigned variable, double value )
@@ -117,11 +106,6 @@ bool ReluConstraint::participatingVariable( unsigned variable ) const
 List<unsigned> ReluConstraint::getParticiatingVariables() const
 {
     return List<unsigned>( { _b, _f } );
-}
-
-unsigned ReluConstraint::getF() const
-{
-	return _f;
 }
 
 bool ReluConstraint::satisfied() const
@@ -198,10 +182,6 @@ void ReluConstraint::storeState( PiecewiseLinearConstraintState &state ) const
 {
     PiecewiseLinearConstraint::storeState( state );
     ReluConstraintState *reluState = dynamic_cast<ReluConstraintState *>( &state );
-    reluState->_constraintActive = _constraintActive;
-    reluState->_assignment = _assignment;
-    reluState->_lowerBounds = _lowerBounds;
-    reluState->_upperBounds = _upperBounds;
     reluState->_phaseStatus = _phaseStatus;
 }
 
@@ -209,10 +189,6 @@ void ReluConstraint::restoreState( const PiecewiseLinearConstraintState &state )
 {
     PiecewiseLinearConstraint::restoreState( state );
     const ReluConstraintState *reluState = dynamic_cast<const ReluConstraintState *>( &state );
-    _constraintActive = reluState->_constraintActive;
-    _assignment = reluState->_assignment;
-    _lowerBounds = reluState->_lowerBounds;
-    _upperBounds = reluState->_upperBounds;    
     _phaseStatus = reluState->_phaseStatus;
 }
 

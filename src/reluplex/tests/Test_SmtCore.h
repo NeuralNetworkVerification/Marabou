@@ -35,8 +35,9 @@ public:
     {
     public:
         MockConstraint()
+            : PiecewiseLinearConstraint( 1 )
+            , setActiveWasCalled( false )
         {
-            setActiveWasCalled = false;
         }
 
         PiecewiseLinearConstraint *duplicateConstraint() const
@@ -52,7 +53,7 @@ public:
         {
         }
 
-        bool setActiveWasCalled;
+        bool setActiveWasCalled;        
         void setActiveConstraint( bool active )
         {
             TS_ASSERT( active == false );
