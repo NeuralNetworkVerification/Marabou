@@ -250,9 +250,11 @@ public:
     void dumpCostFunction() const;
 
     /*
-      Compute _d = inv(B) * a
+      Compute the "change column" d, given by inv(B) * a. This is the column
+      that tells us the change rates for the basic variables, when the entering
+      variable changes.
     */
-    void computeD();
+    void computeChangeColumn();
 
     /*
       Compute the basic assignment
@@ -337,7 +339,7 @@ private:
     /*
       Used to compute inv(B)*a
     */
-    double *_d;
+    double *_changeColumn;
 
     /*
       The right hand side vector of Ax = b

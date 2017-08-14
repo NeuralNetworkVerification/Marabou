@@ -156,7 +156,7 @@ bool Engine::performSimplexStep()
     }
 
     // Pick a leaving variable
-    _tableau->computeD();
+    _tableau->computeChangeColumn();
     _tableau->pickLeavingVariable();
 
     unsigned enteringVariable = _tableau->getEnteringVariable();

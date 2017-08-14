@@ -86,9 +86,9 @@ public:
     virtual void computeMultipliers() = 0;
     virtual void computeReducedCost( unsigned nonBasic ) = 0;
     virtual const double *getCostFunction() const = 0;
-    virtual const double *getSteepestEdgeGamma() const = 0; 
+    virtual const double *getSteepestEdgeGamma() const = 0;
     virtual void dumpCostFunction() const = 0;
-    virtual void computeD() = 0;
+    virtual void computeChangeColumn() = 0;
     virtual void computeAssignment() = 0;
     virtual void dump() const = 0;
     virtual void dumpAssignment() = 0;
