@@ -57,7 +57,6 @@ public:
     */
     List<unsigned> getParticiatingVariables() const;
 
-	unsigned getF() const;
 
     /*
       Returns true iff the assignment satisfies the constraint
@@ -104,7 +103,7 @@ public:
     */
     void dump( String &output ) const;
 
-	void changeVarAssign( unsigned prevVar, unsigned newVar );
+	void updateVarIndex( unsigned prevVar, unsigned newVar );
 
 	void eliminateVar( unsigned var, double val );
     

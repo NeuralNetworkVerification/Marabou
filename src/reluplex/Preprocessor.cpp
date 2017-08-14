@@ -155,18 +155,22 @@ void Preprocessor::eliminateVariables()
 		else 
 			indexAssignment[i] = i - offset;
 	}
-	for ( auto equation = _input.getEquations().begin(); equation != _input.getEquations().end(); ++equation )
+	for ( auto &equation : _input.getEquations() )
 	{
-		int changeLimit = equation->_addends.size();
-		for ( auto addend = equation->_addends.begin(); addend != equation->_addends.end(); )
+		int changeLimit = equation._addends.size();
+		//necessary to remove addends
+		for ( auto addend = equation._addends.begin(); addend != equation._addends.end(); )
 		{
 			if ( changeLimit == 0 ) 
 				break;
 
 			if ( rmVariables.exists(  addend->_variable ) )
 			{
-				equation->setScalar( equation->_scalar - addend->_coefficient * rmVariables.get( addend->_variable ) );
-				equation->_addends.erase( addend++ );
+				equation.setScalar( equation._scalar - addend->_coefficient * rmVariables.get( addend->_variable ) );
+				auto temp = ++addend;
+				--addend;
+				equation._addends.erase( addend );
+				addend = temp;
 			}
 			else 
 			{
@@ -185,7 +189,7 @@ void Preprocessor::eliminateVariables()
 			if ( indexAssignment.get( var ) == -1 )
 				pl->eliminateVar( var, rmVariables.get( var ) );
 			else if ( indexAssignment.get( var ) != var ) 
-				pl->changeVarAssign( var, indexAssignment.get( var ) );
+				pl->updateVarIndex( var, indexAssignment.get( var ) );
 		}
 	}
 	_input.setNumberOfVariables( _input.getNumberOfVariables() - rmVariables.size() );

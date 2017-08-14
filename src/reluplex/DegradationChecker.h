@@ -22,7 +22,7 @@ class InputQuery;
 class DegradationChecker
 {
 public:
-    void storeEquations( InputQuery &query );
+    void storeEquations( const InputQuery &query );
     double computeDegradation( ITableau &tableau ) const;
 
 private:

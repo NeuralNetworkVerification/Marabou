@@ -78,10 +78,6 @@ List<unsigned> ReluConstraint::getParticiatingVariables() const
     return List<unsigned>( { _b, _f } );
 }
 
-unsigned ReluConstraint::getF() const
-{
-	return _f;
-}
 
 bool ReluConstraint::satisfied() const
 {
@@ -238,7 +234,7 @@ void ReluConstraint::dump( String &output ) const
                       _phaseStatus );
 }
 
-void ReluConstraint::changeVarAssign( unsigned prevVar, unsigned newVar )
+void ReluConstraint::updateVarIndex( unsigned prevVar, unsigned newVar )
 {
 	ASSERT( prevVar == _b || prevVar == _f );
 

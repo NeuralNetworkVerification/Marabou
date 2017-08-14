@@ -105,6 +105,11 @@ List<Equation> &InputQuery::getEquations()
     return _equations;
 }
 
+const List<Equation> &InputQuery::getEquations() const
+{
+    return _equations;
+}
+
 void InputQuery::setSolutionValue( unsigned variable, double value )
 {
     _solution[variable] = value;

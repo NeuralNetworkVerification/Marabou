@@ -79,10 +79,6 @@ public:
     */
     virtual List<unsigned> getParticiatingVariables() const = 0;
 
-	/*
-	  Return the target variable
-	*/
-	virtual unsigned getF() const = 0;
 
     /*
       Returns true iff the assignment satisfies the constraint.
@@ -130,7 +126,7 @@ public:
     */
     virtual void dump( String & ) const {}
 
-	virtual void changeVarAssign( unsigned prevVar, unsigned newVar) = 0;
+	virtual void updateVarIndex( unsigned prevVar, unsigned newVar) = 0;
 
 	virtual void eliminateVar( unsigned var, double val) = 0;
 

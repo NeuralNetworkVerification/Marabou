@@ -37,7 +37,8 @@ public:
     double getLowerBound( unsigned variable ) const;
     double getUpperBound( unsigned variable ) const;
 
-    List<Equation> &getEquations();
+    const List<Equation> &getEquations() const;
+	List<Equation> &getEquations();
 
     void addPiecewiseLinearConstraint( PiecewiseLinearConstraint *constraint );
     const List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints() const;

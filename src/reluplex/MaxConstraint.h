@@ -52,7 +52,6 @@ public:
       Get the list of variables participating in this constraint.
     */
     List<unsigned> getParticiatingVariables() const;
-	unsigned getF() const;
 
     /*
       Returns true iff the assignment satisfies the constraint
@@ -94,7 +93,7 @@ public:
     */
     PiecewiseLinearConstraintState *allocateState() const;
 
-	void changeVarAssign( unsigned prevVar, unsigned newVar );
+	void updateVarIndex( unsigned prevVar, unsigned newVar );
 
 	void eliminateVar( unsigned var, double val );
 

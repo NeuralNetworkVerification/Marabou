@@ -94,10 +94,6 @@ List<unsigned> MaxConstraint::getParticiatingVariables() const
 	return temp;
 }
 
-unsigned MaxConstraint::getF() const
-{
-	return _f;
-}
 
 bool MaxConstraint::satisfied() const
 {
@@ -238,7 +234,7 @@ PiecewiseLinearCaseSplit MaxConstraint::getValidCaseSplit() const
     exit( 1 );
 }
 
-void MaxConstraint::changeVarAssign( unsigned prevVar, unsigned newVar )
+void MaxConstraint::updateVarIndex( unsigned prevVar, unsigned newVar )
 {
 	ASSERT( participatingVariable( prevVar ) );
 

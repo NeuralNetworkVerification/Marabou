@@ -69,10 +69,6 @@ public:
             return List<unsigned>();
         }
 
-		unsigned getF() const
-		{
-			return 1;
-		}
 
         bool satisfied() const
         {
@@ -106,7 +102,7 @@ public:
             return dontCare;
         }
 
-		void changeVarAssign( unsigned, unsigned )
+		void updateVarIndex( unsigned, unsigned )
 		{
 		}
 
