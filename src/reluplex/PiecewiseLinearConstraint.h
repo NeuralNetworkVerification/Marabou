@@ -16,6 +16,7 @@
 #include "ITableau.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "Map.h"
+#include "Queue.h"
 
 class ITableau;
 class String;
@@ -130,11 +131,23 @@ public:
     */
     virtual void dump( String & ) const {}
 
-	virtual void changeVarAssign( unsigned prevVar, unsigned newVar) = 0;
+	  virtual void changeVarAssign( unsigned prevVar, unsigned newVar) = 0;
 
-	virtual void eliminateVar( unsigned var, double val) = 0;
+  	virtual void eliminateVar( unsigned var, double val) = 0;
 
-	virtual void deriveTighterBounds( Map<unsigned, double> &, Map<unsigned, double> & ){};
+  	virtual void deriveTighterBounds( Map<unsigned, double> &, Map<unsigned, double> & ){};
+
+    /*
+      Get the tightenings entailed by the constraint.
+    */
+    Queue<Tightening> &getEntailedTightenings()
+    {
+      return _entailedTightenings;
+    }
+
+protected:
+    Queue<Tightening> _entailedTightenings;
+
 };
 
 #endif // __PiecewiseLinearConstraint_h__
