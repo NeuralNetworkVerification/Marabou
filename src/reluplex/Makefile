@@ -20,14 +20,16 @@ SOURCES += \
 	MString.cpp \
 	\
 	BasisFactorization.cpp\
+	Equation.cpp\
 	EtaMatrix.cpp\
+	FreshVariables.cpp \
 	InputQuery.cpp\
 	LPElement.cpp\
-	Preprocessor.cpp\
+	MaxConstraint.cpp \
+	PiecewiseLinearCaseSplit.cpp \
+	Preprocessor.cpp \
+	ReluConstraint.cpp \
 	main.cpp \
-	Equation.cpp\
-	MaxConstraint.cpp\
-	ReluConstraint.cpp\
 
 TARGET = run_reluplex.elf
 
