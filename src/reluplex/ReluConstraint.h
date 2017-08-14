@@ -127,6 +127,7 @@ public:
     bool _constraintActive;
     Map<unsigned, double> _assignment;
     ReluConstraint::PhaseStatus _phaseStatus;
+    Queue<Tightening> _entailedTightenings;
 };
 
 #endif // __ReluConstraint_h__

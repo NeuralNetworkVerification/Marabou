@@ -162,6 +162,11 @@ private:
     void reportPlViolation();
 
     /*
+      Apply any bound tightenings entailed by the constraints.
+    */
+    void applyAllConstraintTightenings();
+
+    /*
       Apply all valid case splits proposed by the constraints.
     */
     void applyAllValidConstraintCaseSplits();

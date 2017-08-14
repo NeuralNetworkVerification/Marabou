@@ -57,13 +57,26 @@ void ReluConstraint::notifyVariableValue( unsigned variable, double value )
 void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
 {
     if ( variable == _f && FloatUtils::isPositive( bound ) )
+    {
         _phaseStatus = PhaseStatus::PHASE_ACTIVE;
+        // f >= c implies b >= c for c > 0
+        _entailedTightenings.push( Tightening( _b, bound, Tightening::LB ) );
+    }
     else if ( variable == _b && !FloatUtils::isNegative( bound ) )
+    {
+        // b >= c implies f >= c for c >= 0
         _phaseStatus = PhaseStatus::PHASE_ACTIVE;
+        _entailedTightenings.push( Tightening( _f, bound, Tightening::LB ) );        
+    }
 }
 
 void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
 {
+    if ( variable == _b && !FloatUtils::isNegative( bound ) )
+        _entailedTightenings.push( Tightening( _f, bound, Tightening::UB ) );
+    else if ( variable == _f && !FloatUtils::isNegative( bound ) )
+        _entailedTightenings.push( Tightening( _b, bound, Tightening::UB ) );
+    
     if ( ( variable == _f || variable == _b ) && !FloatUtils::isPositive( bound ) )
         _phaseStatus = PhaseStatus::PHASE_INACTIVE;
 }
@@ -159,6 +172,7 @@ void ReluConstraint::storeState( PiecewiseLinearConstraintState &state ) const
     reluState->_constraintActive = _constraintActive;
     reluState->_assignment = _assignment;
     reluState->_phaseStatus = _phaseStatus;
+    reluState->_entailedTightenings = _entailedTightenings;
 }
 
 void ReluConstraint::restoreState( const PiecewiseLinearConstraintState &state )
@@ -167,6 +181,7 @@ void ReluConstraint::restoreState( const PiecewiseLinearConstraintState &state )
     _constraintActive = reluState->_constraintActive;
     _assignment = reluState->_assignment;
     _phaseStatus = reluState->_phaseStatus;
+    _entailedTightenings = reluState->_entailedTightenings;
 }
 
 PiecewiseLinearConstraintState *ReluConstraint::allocateState() const

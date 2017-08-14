@@ -48,7 +48,9 @@ bool Engine::solve()
 
         // Apply any pending bound tightenings
         _boundTightener.tighten( _tableau );
-        // TODO: apply any constraint-entailed bound tightening
+
+        // Apply constraint-entailed bound tightenings
+        applyAllConstraintTightenings();
 
         // Perform any pending case splits, valid or SmtCore-initiated
         applyAllValidConstraintCaseSplits();
@@ -417,6 +419,20 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
         }
     }
     log( "Done with split\n" );
+}
+
+void Engine::applyAllConstraintTightenings()
+{
+    for ( auto &constraint : _plConstraints )
+    {
+        Queue<Tightening> &entailedTightenings = constraint->getEntailedTightenings();
+        while ( !entailedTightenings.empty() )
+        {
+            entailedTightenings.peak().tighten( _tableau );
+            entailedTightenings.pop();
+            // TODO: do we want statistics to track this bound tightening?
+        }
+    }
 }
 
 void Engine::applyAllValidConstraintCaseSplits()

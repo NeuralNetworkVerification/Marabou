@@ -23,11 +23,11 @@ class BoundTightener
 public:
     BoundTightener();
 
-	/*
-	  Derive and enqueue new bounds for the given basic variable
-	  in the given tableau.
-	*/
-	void deriveTightenings( ITableau &tableau, unsigned variable );
+	  /*
+	    Derive and enqueue new bounds for the given basic variable
+	    in the given tableau.
+	  */
+	  void deriveTightenings( ITableau &tableau, unsigned variable );
 
     /*
       Tighten all enqueued requests.
@@ -45,12 +45,12 @@ public:
     void clearStoredTightenings();
 
 private:
-	/*
-	  Add a given tightening to the queue.
-	*/
-	void enqueueTightening( const Tightening &tightening );
+  	/*
+	    Add a given tightening to the queue.
+	  */
+	  void enqueueTightening( const Tightening &tightening );
 
-	Queue<Tightening> _tighteningRequests;
+	  Queue<Tightening> _tighteningRequests;
 
     /*
       Statistics collection
