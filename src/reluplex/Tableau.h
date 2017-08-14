@@ -65,11 +65,18 @@ public:
     void setLeavingVariable( unsigned basic );
 
     /*
-      Set the values of the right hand side vector, b, of size m.
+      Set/get the values of the right hand side vector, b, of size m.
       Set either the whole vector or a specific entry
     */
     void setRightHandSide( const double *b );
     void setRightHandSide( unsigned index, double value );
+    const double *getRightHandSide() const;
+
+    /*
+      Perform backward/forward transformations using the basis factorization.
+    */
+    void forwardTransformation( const double *y, double *x ) const;
+    void backwardTransformation( const double *y, double *x ) const;
 
     /*
       Mark a variable as basic in the initial basis
@@ -105,6 +112,12 @@ public:
       return the original variable that it corresponds to.
     */
     unsigned nonBasicIndexToVariable( unsigned index ) const;
+
+    /*
+      Given an index of a basic variable in the range [0,m),
+      return the original variable that it corresponds to.
+    */
+    unsigned basicIndexToVariable( unsigned index ) const;
 
     /*
       Given a variable, returns the index of that variable. The result
@@ -255,6 +268,13 @@ public:
       variable changes.
     */
     void computeChangeColumn();
+    const double *getChangeColumn() const;
+
+    /*
+      Compute the pivot row.
+    */
+    void computePivotRow();
+    const double *getPivotRow() const;
 
     /*
       Compute the basic assignment
@@ -269,9 +289,14 @@ public:
     void dumpEquations();
 
     /*
-      Extract a the index row from the tableau.
+      Extract a row from the tableau.
     */
     void getTableauRow( unsigned index, TableauRow *row );
+
+    /*
+      Extract a columnf from the original matrix A.
+    */
+    const double *getAColumn( unsigned index ) const;
 
     /*
       Store and restore the Tableau's state. Needed for case splitting
@@ -340,6 +365,11 @@ private:
       Used to compute inv(B)*a
     */
     double *_changeColumn;
+
+    /*
+      Used to store the pivot row
+    */
+    double *_pivotRow;
 
     /*
       The right hand side vector of Ax = b

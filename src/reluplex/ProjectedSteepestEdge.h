@@ -22,7 +22,7 @@ public:
     ~ProjectedSteepestEdgeRule();
 
     /*
-      Allocate data structures according to the size of the tableau.
+      Allocate and initialize data structures according to the size of the tableau.
     */
     void initialize( const ITableau &tableau );
 
@@ -30,6 +30,12 @@ public:
       Apply the projected steepest edge pivot selection rule.
     */
     bool select( ITableau &tableau );
+
+    /*
+      Use this hook to update gamma according to the entering and leaving
+      variables.
+    */
+    void prePivotHook( const ITableau &tableau );
 
 private:
     /*
@@ -53,9 +59,16 @@ private:
     unsigned _m;
     unsigned _n;
 
+    /*
+      Reset the reference space and gamma, according to the current non-basic variables.
+    */
     void resetReferenceSpace( const ITableau &tableau );
 
-
+    /*
+      Compute the accurate value of gamma for the given index, and measure the error
+      when compared to the approximate gamma.
+    */
+    double computeAccurateGamma( double &accurateGamma, const ITableau &tableau );
 };
 
 #endif // __ProjectedSteepestEdge_h__

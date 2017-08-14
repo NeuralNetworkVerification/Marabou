@@ -60,6 +60,8 @@ void ProjectedSteepestEdgeRule::initialize( const ITableau &tableau )
     _work = new double[_m];
     if ( !_work )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "ProjectedSteepestEdgeRule::work" );
+
+    resetReferenceSpace( tableau );
 }
 
 void ProjectedSteepestEdgeRule::resetReferenceSpace( const ITableau &tableau )
@@ -101,13 +103,17 @@ bool ProjectedSteepestEdgeRule::select( ITableau &tableau )
 
     auto it = candidates.begin();
     unsigned bestCandidate = *it;
-    double bestValue = ( costFunction[*it] * costFunction[*it] ) / _gamma[*it];
+    double gammaValue = _gamma[*it];
+    double bestValue =
+        FloatUtils::isZero( gammaValue ) ? 0 : ( costFunction[*it] * costFunction[*it] ) / _gamma[*it];
     ++it;
 
     while ( it != candidates.end() )
     {
         unsigned contender = *it;
-        double contenderValue = ( costFunction[*it] * costFunction[*it] ) / _gamma[*it];
+        gammaValue = _gamma[*it];
+        double contenderValue =
+            FloatUtils::isZero( gammaValue ) ? 0 : ( costFunction[*it] * costFunction[*it] ) / _gamma[*it];
 
         if ( FloatUtils::gt( contenderValue, bestValue ) )
         {
@@ -121,6 +127,93 @@ bool ProjectedSteepestEdgeRule::select( ITableau &tableau )
     tableau.setEnteringVariable( bestCandidate );
 
     return true;
+}
+
+void ProjectedSteepestEdgeRule::prePivotHook( const ITableau &tableau )
+{
+    // When this hook is called, the entering and leaving variables have
+    // already been determined. This are the actual varaibles, not the indices.
+    unsigned entering = tableau.getEnteringVariable();
+    unsigned enteringIndex = tableau.variableToIndex( entering );
+    unsigned leaving = tableau.getLeavingVariable();
+    unsigned leavingIndex = tableau.variableToIndex( leaving );
+
+    const double *changeColumn = tableau.getChangeColumn();
+    const double *pivotRow = tableau.getPivotRow();
+    // TODO: when if leaving == _m, indicating a fake pivot?
+
+    // Update gamma[entering] to the accurate value, taking the pivot into account
+    double accurateGamma;
+    double error = computeAccurateGamma( accurateGamma, tableau );
+    _gamma[enteringIndex] = accurateGamma / ( changeColumn[leavingIndex] * changeColumn[leavingIndex] );
+
+    // TODO: high error may reset the reference space?
+    printf( "Error: %lf\n", error );
+
+    unsigned m = tableau.getM();
+    unsigned n = tableau.getN();
+
+    // TODO: make sure that there's no hidden minus in glpk's row computation
+
+    // Auxiliary variables
+    double r, s, t1, t2;
+    const double *AColumn;
+
+    // Compute GLPK's u vector
+    for ( unsigned i = 0; i < m; ++i )
+    {
+        unsigned basicVariable = tableau.basicIndexToVariable( i );
+        if ( _referenceSpace[basicVariable] )
+            _work[i] = changeColumn[i];
+        else
+            _work[i] = 0.0;
+    }
+    // tableau.backwardTransformation
+
+    // Update gamma[i] for all i != enteringIndex
+    for ( unsigned i = 0; i < n - m; ++i )
+    {
+        if ( i == enteringIndex )
+            continue;
+
+        if ( FloatUtils::isZero( pivotRow[i] ) )
+            continue;
+
+        r = pivotRow[i] / changeColumn[leavingIndex];
+
+        /* compute inner product s[j] = N'[j] * u, where N[j] = A[k]
+         * is constraint matrix column corresponding to xN[j] */
+        unsigned nonBasicIndex = tableau.nonBasicIndexToVariable( i );
+        AColumn = tableau.getAColumn( nonBasicIndex );
+        s = 0.0;
+        for ( unsigned j = 0; j < m; ++j )
+            s += AColumn[j] * _work[j];
+
+        /* compute new gamma[j] */
+        t1 = _gamma[i] + r * ( r * accurateGamma + s + s );
+        t2 = ( ( _referenceSpace[nonBasicIndex] ? 1.0 : 0.0 ) +
+               ( _referenceSpace[enteringIndex] ? 1.0 : 0.0 ) * r * r );
+        _gamma[i] = ( t1 >= t2 ? t1 : t2 );
+    }
+}
+
+double ProjectedSteepestEdgeRule::computeAccurateGamma( double &accurateGamma, const ITableau &tableau )
+{
+    unsigned entering = tableau.getEnteringVariable();
+    unsigned m = tableau.getM();
+    const double *changeColumn = tableau.getChangeColumn();
+
+    // Is the entering variable in the reference space?
+    accurateGamma = _referenceSpace[entering] ? 1.0 : 0.0;
+
+    for ( unsigned i = 0; i < m; ++i )
+    {
+        unsigned basic = tableau.basicIndexToVariable( i );
+        if ( _referenceSpace[basic] )
+            accurateGamma += ( changeColumn[i] * changeColumn[i] );
+    }
+
+    return FloatUtils::abs( ( accurateGamma - _gamma[entering] ) / ( 1.0 + accurateGamma ) );
 }
 
 //

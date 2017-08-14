@@ -201,6 +201,17 @@ public:
 
     void dumpCostFunction() const {}
     void computeChangeColumn() {}
+    const double *getChangeColumn() const
+    {
+        return NULL;
+    }
+
+    void computePivotRow() {}
+    const double *getPivotRow() const
+    {
+        return NULL;
+    }
+
     void computeAssignment() {}
     void dump() const {}
     void dumpAssignment() {}
@@ -212,11 +223,18 @@ public:
 	return steepestEdgeGamma;
     }
 
-    Map<unsigned, unsigned> nextNonBasicIndexToVaribale;
+    Map<unsigned, unsigned> nextNonBasicIndexToVariable;
     unsigned nonBasicIndexToVariable( unsigned index ) const
     {
-        TS_ASSERT( nextNonBasicIndexToVaribale.exists( index ) );
-        return nextNonBasicIndexToVaribale.get( index );
+        TS_ASSERT( nextNonBasicIndexToVariable.exists( index ) );
+        return nextNonBasicIndexToVariable.get( index );
+    }
+
+    Map<unsigned, unsigned> nextBasicIndexToVariable;
+    unsigned basicIndexToVariable( unsigned index ) const
+    {
+        TS_ASSERT( nextBasicIndexToVariable.exists( index ) );
+        return nextBasicIndexToVariable.get( index );
     }
 
     Map<unsigned, unsigned> nextVariableToIndex;
@@ -250,6 +268,11 @@ public:
         for ( unsigned i = 0; i < row->_size; ++i )
             row->_row[i] = nextRow->_row[i];
         row->_scalar = nextRow->_scalar;
+    }
+
+    const double *getAColumn( unsigned ) const
+    {
+        return NULL;
     }
 
     void performDegeneratePivot( unsigned /* entering */, unsigned /* leaving */ )
@@ -300,6 +323,14 @@ public:
     void setStatistics( Statistics */* statistics */ )
     {
     }
+
+    const double *getRightHandSide() const
+    {
+        return NULL;
+    }
+
+    void forwardTransformation( const double *, double * ) const {}
+    void backwardTransformation( const double *, double * ) const {}
 };
 
 #endif // __MockTableau_h__
