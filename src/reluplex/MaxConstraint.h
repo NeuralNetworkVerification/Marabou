@@ -39,6 +39,8 @@ public:
       changes.
     */
     void notifyVariableValue( unsigned variable, double value );
+	void notifyLowerBound( unsigned variable, double value );
+	void notifyUpperBound( unsigned variable, double value );
 
     /*
       Returns true iff the variable participates in this piecewise
@@ -50,6 +52,7 @@ public:
       Get the list of variables participating in this constraint.
     */
     List<unsigned> getParticiatingVariables() const;
+	unsigned getF() const;
 
     /*
       Returns true iff the assignment satisfies the constraint
@@ -91,6 +94,10 @@ public:
     */
     PiecewiseLinearConstraintState *allocateState() const;
 
+	void changeVarAssign( unsigned prevVar, unsigned newVar );
+
+	void eliminateVar( unsigned var, double val );
+
 private:
     bool _constraintActive;
     unsigned _f;
@@ -98,6 +105,9 @@ private:
     List<unsigned> _elements;
 
   	Map<unsigned, double> _assignment;
+	Map<unsigned, double> _lowerBound;
+	Map<unsigned, double> _upperBound;
+	Set<unsigned> _eliminated;
 };
 
 #endif // __MaxConstraint_h__

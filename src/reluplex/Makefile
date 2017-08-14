@@ -25,6 +25,9 @@ SOURCES += \
 	LPElement.cpp\
 	Preprocessor.cpp\
 	main.cpp \
+	Equation.cpp\
+	MaxConstraint.cpp\
+	ReluConstraint.cpp\
 
 TARGET = run_reluplex.elf
 

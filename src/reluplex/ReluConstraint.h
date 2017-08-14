@@ -1,7 +1,6 @@
 /*********************                                                        */
 /*! \file ReluConstraint.h
- ** \verbatim
- ** Top contributors (to current version):
+ ** \verbatim ** Top contributors (to current version):
  **   Guy Katz
  ** This file is part of the Marabou project.
  ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
@@ -58,6 +57,8 @@ public:
     */
     List<unsigned> getParticiatingVariables() const;
 
+	unsigned getF() const;
+
     /*
       Returns true iff the assignment satisfies the constraint
     */
@@ -103,6 +104,10 @@ public:
     */
     void dump( String &output ) const;
 
+	void changeVarAssign( unsigned prevVar, unsigned newVar );
+
+	void eliminateVar( unsigned var, double val );
+    
 private:
     bool _constraintActive;
     unsigned _b;

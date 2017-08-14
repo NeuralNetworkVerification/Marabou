@@ -14,7 +14,7 @@
 #include "FloatUtils.h"
 #include "InputQuery.h"
 
-void DegradationChecker::storeEquations( const InputQuery &query )
+void DegradationChecker::storeEquations( InputQuery &query )
 {
     _equations = query.getEquations();
 }

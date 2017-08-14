@@ -78,6 +78,11 @@ List<unsigned> ReluConstraint::getParticiatingVariables() const
     return List<unsigned>( { _b, _f } );
 }
 
+unsigned ReluConstraint::getF() const
+{
+	return _f;
+}
+
 bool ReluConstraint::satisfied() const
 {
     if ( !( _assignment.exists( _b ) && _assignment.exists( _f ) ) )
@@ -231,6 +236,41 @@ void ReluConstraint::dump( String &output ) const
                       _f, _b,
                       _constraintActive ? "Yes" : "No",
                       _phaseStatus );
+}
+
+void ReluConstraint::changeVarAssign( unsigned prevVar, unsigned newVar )
+{
+	ASSERT( prevVar == _b || prevVar == _f );
+
+	if ( _assignment.exists( prevVar ) )
+	{
+		_assignment[newVar] = _assignment.get( prevVar );		
+		_assignment.erase( prevVar );
+	}
+	
+	if ( prevVar == _b )
+		_b = newVar;
+	else
+		_f = newVar;
+}
+
+void ReluConstraint::eliminateVar( unsigned var, double val )
+{
+	ASSERT( var == _b || var == _f );
+	
+	if ( var == _f )
+		ASSERT( FloatUtils::gte( val, 0 ) );
+
+	if ( val > 0 )
+	{
+		_phaseStatus = PhaseStatus::PHASE_ACTIVE;
+		_assignment[_f] = val;
+	}
+	else 
+	{
+		_phaseStatus = PhaseStatus::PHASE_INACTIVE;
+		_assignment[_f] = 0;
+	}
 }
 
 //

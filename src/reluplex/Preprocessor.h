@@ -22,7 +22,15 @@
 class Preprocessor
 {
 public:
-	void tightenBounds( InputQuery &input );
+	Preprocessor( InputQuery input ); 
+		
+	void tightenBounds(); 
+	void tightenPL();
+	void eliminateVariables(); 
+	InputQuery getInputQuery();
+	
+	bool _hasTightened;
+	InputQuery _input;
 };
 
 #endif // __Preprocessor_h__

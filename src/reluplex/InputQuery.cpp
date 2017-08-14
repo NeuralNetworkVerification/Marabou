@@ -100,7 +100,7 @@ double InputQuery::getUpperBound( unsigned variable ) const
     return _upperBounds.get( variable );
 }
 
-const List<Equation> &InputQuery::getEquations() const
+List<Equation> &InputQuery::getEquations()
 {
     return _equations;
 }

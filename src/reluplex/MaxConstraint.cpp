@@ -66,10 +66,20 @@ void MaxConstraint::notifyVariableValue( unsigned variable, double value )
 	//Otherwise, we only replace _maxIndex if the value of _maxIndex is less
 	//than the new value.
 		if ( _assignment.size() == 0 || ( _assignment.exists( _f ) &&
-		_assignment.size() == 1 ) || _assignment.get( _maxIndex ) < value )
-			_maxIndex = variable;
+	   		 _assignment.size() == 1 ) || _assignment.get( _maxIndex ) < value )
+			 _maxIndex = variable;
 	}
 	_assignment[variable] = value;
+}
+
+void MaxConstraint::notifyLowerBound( unsigned variable, double value )
+{
+	_lowerBound[variable] = value;
+}
+
+void MaxConstraint::notifyUpperBound( unsigned variable, double value )
+{
+	_upperBound[variable] = value;
 }
 
 bool MaxConstraint::participatingVariable( unsigned variable ) const
@@ -82,6 +92,11 @@ List<unsigned> MaxConstraint::getParticiatingVariables() const
 	List<unsigned> temp = _elements;
 	temp.append( _f );
 	return temp;
+}
+
+unsigned MaxConstraint::getF() const
+{
+	return _f;
 }
 
 bool MaxConstraint::satisfied() const
@@ -221,6 +236,36 @@ PiecewiseLinearCaseSplit MaxConstraint::getValidCaseSplit() const
 {
     printf( "Error! Not yet implemented\n" );
     exit( 1 );
+}
+
+void MaxConstraint::changeVarAssign( unsigned prevVar, unsigned newVar )
+{
+	ASSERT( participatingVariable( prevVar ) );
+
+	if ( _assignment.exists( prevVar ) )
+	{
+		_assignment[newVar] = _assignment.get( prevVar );
+		_lowerBound[newVar] = _lowerBound.get( prevVar  );
+		_upperBound[newVar] = _upperBound.get( prevVar );
+		_assignment.erase( prevVar );
+	}
+	
+	if ( prevVar == _maxIndex )
+		_maxIndex = newVar;
+
+	if ( prevVar == _f )
+		_f = newVar;
+	else 
+	{
+		_elements.erase( prevVar );
+		_elements.append( newVar );
+	}
+}
+
+void MaxConstraint::eliminateVar( unsigned var, double val )
+{
+	_eliminated.insert( var );	
+	val++;	
 }
 
 //

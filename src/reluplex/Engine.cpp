@@ -267,9 +267,11 @@ void Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
     {
         log( Stringf( "Number of infinite bounds in the input query before preprocessing: %u",
                       inputQuery.countInfiniteBounds() ) );
-        Preprocessor().tightenBounds( inputQuery );
+		Preprocessor process( inputQuery );
+		process.tightenBounds();
+		InputQuery processed = process.getInputQuery();
         log( Stringf( "Number of infinite bounds in the input query after preprocessing: %u",
-                      inputQuery.countInfiniteBounds() ) );
+                      processed.countInfiniteBounds() ) );
     }
 
     if ( inputQuery.countInfiniteBounds() != 0 )

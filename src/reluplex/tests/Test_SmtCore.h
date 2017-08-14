@@ -69,6 +69,11 @@ public:
             return List<unsigned>();
         }
 
+		unsigned getF() const
+		{
+			return 1;
+		}
+
         bool satisfied() const
         {
             return true;
@@ -100,6 +105,14 @@ public:
             PiecewiseLinearCaseSplit dontCare;
             return dontCare;
         }
+
+		void changeVarAssign( unsigned, unsigned )
+		{
+		}
+
+		void eliminateVar( unsigned, double )
+		{
+		}
     };
 
     void setUp()
