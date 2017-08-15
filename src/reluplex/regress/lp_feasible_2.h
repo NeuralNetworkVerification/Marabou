@@ -59,6 +59,7 @@ public:
         equation1.addAddend( -1, 2 );
         equation1.addAuxAddend( 1 );
         equation1.setScalar( 11 );
+        equation1.markAuxiliaryVariable( 3 );
         inputQuery.addEquation( equation1 );
 
         Equation equation2;
