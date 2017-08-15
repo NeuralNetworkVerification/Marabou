@@ -101,7 +101,7 @@ public:
     */
     void dump( String &output ) const;
 
-	void updateVarIndex( unsigned prevVar, unsigned newVar );
+	  void updateVarIndex( unsigned prevVar, unsigned newVar );
 
 	  void eliminateVar( unsigned var, double val );
     
@@ -116,9 +116,12 @@ private:
 class ReluConstraintState : public PiecewiseLinearConstraintState
 {
 public:
+    ReluConstraintState()
+        : _savedConstraint( 0, 0 )
+    {}
     ~ReluConstraintState() {}
 
-    ReluConstraint::PhaseStatus _phaseStatus;
+    ReluConstraint _savedConstraint;
 };
 
 #endif // __ReluConstraint_h__

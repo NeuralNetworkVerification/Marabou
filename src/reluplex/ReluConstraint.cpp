@@ -29,19 +29,7 @@ ReluConstraint::ReluConstraint( unsigned b, unsigned f )
 PiecewiseLinearConstraint *ReluConstraint::duplicateConstraint() const
 {
     ReluConstraint *clone = new ReluConstraint( _b, _f );
-
     *clone = *this;
-    
-  	// // Common PiecewiseLinearConstraint state.
-    // clone->_constraintActive = _constraintActive;
-    // clone->_assignment = _assignment;
-    // clone->_lowerBounds = _lowerBounds;
-    // clone->_upperBounds = _upperBounds;
-    // clone->_entailedTightenings = _entailedTightenings;
-
-    // // ReluConstraint-specific state.
-    // clone->_phaseStatus = _phaseStatus;
-
     return clone;
 }
 
@@ -187,16 +175,14 @@ List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
 
 void ReluConstraint::storeState( PiecewiseLinearConstraintState &state ) const
 {
-    PiecewiseLinearConstraint::storeState( state );
     ReluConstraintState *reluState = dynamic_cast<ReluConstraintState *>( &state );
-    reluState->_phaseStatus = _phaseStatus;
+    reluState->_savedConstraint = *this;
 }
 
 void ReluConstraint::restoreState( const PiecewiseLinearConstraintState &state )
 {
-    PiecewiseLinearConstraint::restoreState( state );
     const ReluConstraintState *reluState = dynamic_cast<const ReluConstraintState *>( &state );
-    _phaseStatus = reluState->_phaseStatus;
+    *this = reluState->_savedConstraint;
 }
 
 PiecewiseLinearConstraintState *ReluConstraint::allocateState() const

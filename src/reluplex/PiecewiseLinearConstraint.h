@@ -27,11 +27,6 @@ public:
     PiecewiseLinearConstraintState() {}
     virtual ~PiecewiseLinearConstraintState() {}
 
-    bool _constraintActive;
-    Map<unsigned, double> _assignment;
-    Map<unsigned, double> _lowerBounds;
-    Map<unsigned, double> _upperBounds;
-    Queue<Tightening> _entailedTightenings;
 };
 
 class PiecewiseLinearConstraint : public ITableau::VariableWatcher
@@ -140,22 +135,8 @@ public:
       Store and restore the constraint's state. Needed for case splitting
       and backtracking.
     */
-    virtual void storeState( PiecewiseLinearConstraintState &state ) const
-    {
-        state._constraintActive = _constraintActive;
-        state._assignment = _assignment;
-        state._lowerBounds = _lowerBounds;
-        state._upperBounds = _upperBounds;
-        state._entailedTightenings = _entailedTightenings;
-    }
-    virtual void restoreState( const PiecewiseLinearConstraintState &state )
-    {
-        _constraintActive = state._constraintActive;
-        _assignment = state._assignment;
-        _lowerBounds = state._lowerBounds;
-        _upperBounds = state._upperBounds;
-        _entailedTightenings = state._entailedTightenings;
-    }
+    virtual void storeState( PiecewiseLinearConstraintState &state ) const = 0;
+    virtual void restoreState( const PiecewiseLinearConstraintState &state ) = 0;
 
     /*
       Dump the current state of the constraint.
