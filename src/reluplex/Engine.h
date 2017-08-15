@@ -131,10 +131,9 @@ private:
     bool performSimplexStep();
 
     /*
-      Fix one of the violated pl constraints return false if the
-      problem is discovered to be unsat.
+      Attempt to fix one of the violated pl constraints.
     */
-    bool fixViolatedPlConstraint();
+    void fixViolatedPlConstraintIfPossible();
 
     /*
       Return true iff all variables are within bounds.
