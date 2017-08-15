@@ -167,37 +167,22 @@ public:
         // First split
         auto split = splits.begin();
         List<Tightening> bounds = split->getBoundTightenings();
-        List<Tightening> auxBounds = split->getAuxBoundTightenings();
 
         unsigned auxVariable = FreshVariables::getNextVariable();
         TS_ASSERT_EQUALS( auxVar, auxVariable );
 
         TS_ASSERT_EQUALS( bounds.size(), 1U );
-        TS_ASSERT_EQUALS( auxBounds.size(), 2U );
         auto bound = bounds.begin();
         Tightening bound1 = *bound;
-        bound = auxBounds.begin();
-        Tightening bound2 = *bound;
-        bound2._variable = auxVariable;
-        ++bound;
-        Tightening bound3 = *bound;
-        bound3._variable = auxVariable;
 
         TS_ASSERT_EQUALS( bound1._variable, b );
         TS_ASSERT_EQUALS( bound1._type, Tightening::LB );
         TS_ASSERT_EQUALS( bound1._value, 0.0 );
 
-        TS_ASSERT_EQUALS( bound2._variable, auxVar );
-        TS_ASSERT_EQUALS( bound2._type, Tightening::UB );
-        TS_ASSERT_EQUALS( bound2._value, 0.0 );
-
-        TS_ASSERT_EQUALS( bound3._variable, auxVar );
-        TS_ASSERT_EQUALS( bound3._type, Tightening::LB );
-        TS_ASSERT_EQUALS( bound3._value, 0.0 );
-
-        List<Equation> equations = split->getEquations();
+        auto equations = split->getEquations();
         TS_ASSERT_EQUALS( equations.size(), 1U );
-        activeEquation = split->getEquations().front();
+        activeEquation = split->getEquations().front().first();
+        activeEquation.addAddend( -1, auxVariable );
         activeEquation.markAuxiliaryVariable( auxVariable );
         TS_ASSERT_EQUALS( activeEquation._addends.size(), 3U );
         TS_ASSERT_EQUALS( activeEquation._scalar, 0.0 );
@@ -211,41 +196,26 @@ public:
         TS_ASSERT_EQUALS( addend->_variable, f );
 
         ++addend;
-        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
         TS_ASSERT_EQUALS( addend->_variable, 100U );
         TS_ASSERT_EQUALS( activeEquation._auxVariable, 100U );
 
         // Second split
         ++split;
         bounds = split->getBoundTightenings();
-        auxBounds = split->getAuxBoundTightenings();
 
         TS_ASSERT_EQUALS( bounds.size(), 1U );
-        TS_ASSERT_EQUALS( auxBounds.size(), 2U );
         bound = bounds.begin();
         bound1 = *bound;
-        bound = auxBounds.begin();
-        bound2 = *bound;
-        bound2._variable = auxVariable;
-        ++bound;
-        bound3 = *bound;
-        bound3._variable = auxVariable;
 
         TS_ASSERT_EQUALS( bound1._variable, b );
         TS_ASSERT_EQUALS( bound1._type, Tightening::UB );
         TS_ASSERT_EQUALS( bound1._value, 0.0 );
 
-        TS_ASSERT_EQUALS( bound2._variable, auxVar );
-        TS_ASSERT_EQUALS( bound2._type, Tightening::UB );
-        TS_ASSERT_EQUALS( bound2._value, 0.0 );
-
-        TS_ASSERT_EQUALS( bound3._variable, auxVar );
-        TS_ASSERT_EQUALS( bound3._type, Tightening::LB );
-        TS_ASSERT_EQUALS( bound3._value, 0.0 );
-
         equations = split->getEquations();
         TS_ASSERT_EQUALS( equations.size(), 1U );
-        inactiveEquation = split->getEquations().front();
+        inactiveEquation = split->getEquations().front().first();
+        inactiveEquation.addAddend( -1, auxVariable );
         inactiveEquation.markAuxiliaryVariable( auxVariable );
         TS_ASSERT_EQUALS( inactiveEquation._addends.size(), 2U );
         TS_ASSERT_EQUALS( inactiveEquation._scalar, 0.0 );
@@ -255,7 +225,7 @@ public:
         TS_ASSERT_EQUALS( addend->_variable, f );
 
         ++addend;
-        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
         TS_ASSERT_EQUALS( addend->_variable, 100U );
         TS_ASSERT_EQUALS( inactiveEquation._auxVariable, 100U );
     }
@@ -454,38 +424,23 @@ public:
         Equation activeEquation;
 
         List<Tightening> bounds = split.getBoundTightenings();
-        List<Tightening> auxBounds = split.getAuxBoundTightenings();
 
         unsigned auxVariable = FreshVariables::getNextVariable();
 
         TS_ASSERT_EQUALS( auxVar, auxVariable );
 
         TS_ASSERT_EQUALS( bounds.size(), 1U );
-        TS_ASSERT_EQUALS( auxBounds.size(), 2U );        
         auto bound = bounds.begin();
         Tightening bound1 = *bound;
-        bound = auxBounds.begin();
-        Tightening bound2 = *bound;
-        bound2._variable = auxVariable;
-        ++bound;
-        Tightening bound3 = *bound;
-        bound3._variable = auxVariable;
 
         TS_ASSERT_EQUALS( bound1._variable, b );
         TS_ASSERT_EQUALS( bound1._type, Tightening::LB );
         TS_ASSERT_EQUALS( bound1._value, 0.0 );
 
-        TS_ASSERT_EQUALS( bound2._variable, auxVar );
-        TS_ASSERT_EQUALS( bound2._type, Tightening::UB );
-        TS_ASSERT_EQUALS( bound2._value, 0.0 );
-
-        TS_ASSERT_EQUALS( bound3._variable, auxVar );
-        TS_ASSERT_EQUALS( bound3._type, Tightening::LB );
-        TS_ASSERT_EQUALS( bound3._value, 0.0 );
-
-        List<Equation> equations = split.getEquations();
+        auto equations = split.getEquations();
         TS_ASSERT_EQUALS( equations.size(), 1U );
-        activeEquation = split.getEquations().front();
+        activeEquation = split.getEquations().front().first();
+        activeEquation.addAddend( -1, auxVariable );
         activeEquation.markAuxiliaryVariable( auxVariable );
         TS_ASSERT_EQUALS( activeEquation._addends.size(), 3U );
         TS_ASSERT_EQUALS( activeEquation._scalar, 0.0 );
@@ -499,7 +454,7 @@ public:
         TS_ASSERT_EQUALS( addend->_variable, f );
 
         ++addend;
-        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
         TS_ASSERT_EQUALS( addend->_variable, 100U );
         TS_ASSERT_EQUALS( activeEquation._auxVariable, 100U );
     }
@@ -527,38 +482,23 @@ public:
         Equation activeEquation;
 
         List<Tightening> bounds = split.getBoundTightenings();
-        List<Tightening> auxBounds = split.getAuxBoundTightenings();
 
         unsigned auxVariable = FreshVariables::getNextVariable();
 
         TS_ASSERT_EQUALS( auxVariable, auxVar );
 
         TS_ASSERT_EQUALS( bounds.size(), 1U );
-        TS_ASSERT_EQUALS( auxBounds.size(), 2U );
         auto bound = bounds.begin();
         Tightening bound1 = *bound;
-        bound = auxBounds.begin();
-        Tightening bound2 = *bound;
-        bound2._variable = auxVariable;
-        ++bound;
-        Tightening bound3 = *bound;
-        bound3._variable = auxVariable;
 
         TS_ASSERT_EQUALS( bound1._variable, b );
         TS_ASSERT_EQUALS( bound1._type, Tightening::UB );
         TS_ASSERT_EQUALS( bound1._value, 0.0 );
 
-        TS_ASSERT_EQUALS( bound2._variable, auxVar );
-        TS_ASSERT_EQUALS( bound2._type, Tightening::UB );
-        TS_ASSERT_EQUALS( bound2._value, 0.0 );
-
-        TS_ASSERT_EQUALS( bound3._variable, auxVar );
-        TS_ASSERT_EQUALS( bound3._type, Tightening::LB );
-        TS_ASSERT_EQUALS( bound3._value, 0.0 );
-
-        List<Equation> equations = split.getEquations();
+        auto equations = split.getEquations();
         TS_ASSERT_EQUALS( equations.size(), 1U );
-        Equation inactiveEquation = split.getEquations().front();
+        Equation inactiveEquation = split.getEquations().front().first();
+        inactiveEquation.addAddend( -1, auxVariable );
         inactiveEquation.markAuxiliaryVariable( auxVariable );
         TS_ASSERT_EQUALS( inactiveEquation._addends.size(), 2U );
         TS_ASSERT_EQUALS( inactiveEquation._scalar, 0.0 );
@@ -568,7 +508,7 @@ public:
         TS_ASSERT_EQUALS( addend->_variable, f );
 
         ++addend;
-        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
         TS_ASSERT_EQUALS( addend->_variable, 100U );
         TS_ASSERT_EQUALS( inactiveEquation._auxVariable, 100U );
     }

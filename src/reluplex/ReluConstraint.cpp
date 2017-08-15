@@ -207,18 +207,13 @@ PiecewiseLinearConstraintState *ReluConstraint::allocateState() const
 PiecewiseLinearCaseSplit ReluConstraint::getInactiveSplit() const
 {
     // Inactive phase: b <= 0, f = 0
+    // Need to fix f because the bound might not be a tightening
     PiecewiseLinearCaseSplit inactivePhase;
-    Tightening inactiveBound( _b, 0.0, Tightening::UB );
-    inactivePhase.storeBoundTightening( inactiveBound );
+    inactivePhase.storeBoundTightening( Tightening( _b, 0.0, Tightening::UB ) );
     Equation inactiveEquation;
     inactiveEquation.addAddend( 1, _f );
-    inactiveEquation.addAuxAddend( 1 );
     inactiveEquation.setScalar( 0 );
-    inactivePhase.addEquation( inactiveEquation );
-    Tightening auxUpperBound( 0, 0.0, Tightening::UB );
-    Tightening auxLowerBound( 0, 0.0, Tightening::LB );
-    inactivePhase.storeAuxBoundTightening( auxUpperBound );
-    inactivePhase.storeAuxBoundTightening( auxLowerBound );
+    inactivePhase.addEquation( inactiveEquation, PiecewiseLinearCaseSplit::EQ );
     return inactivePhase;
 }
 
@@ -226,18 +221,12 @@ PiecewiseLinearCaseSplit ReluConstraint::getActiveSplit() const
 {
     // Active phase: b >= 0, b - f = 0
     PiecewiseLinearCaseSplit activePhase;
-    Tightening activeBound( _b, 0.0, Tightening::LB );
-    activePhase.storeBoundTightening( activeBound );
+    activePhase.storeBoundTightening( Tightening( _b, 0.0, Tightening::LB ) );
     Equation activeEquation;
     activeEquation.addAddend( 1, _b );
     activeEquation.addAddend( -1, _f );
-    activeEquation.addAuxAddend( 1 );
     activeEquation.setScalar( 0 );
-    activePhase.addEquation( activeEquation );
-    Tightening auxUpperBound( 0, 0.0, Tightening::UB );
-    Tightening auxLowerBound( 0, 0.0, Tightening::LB );
-    activePhase.storeAuxBoundTightening( auxUpperBound );
-    activePhase.storeAuxBoundTightening( auxLowerBound );
+    activePhase.addEquation( activeEquation, PiecewiseLinearCaseSplit::EQ );
     return activePhase;
 }
 

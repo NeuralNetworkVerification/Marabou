@@ -392,11 +392,11 @@ void MpsParser::setEqn( Equation &eqn, unsigned eqnIndex, unsigned auxVarIndex )
 
     for ( it = coeffs.begin(); it != coeffs.end(); ++ it)
     {
-	eqn.addAddend( it->second, it->first ); // val, index
+		eqn.addAddend( it->second, it->first ); // val, index
     }
 
     // Aux variable
-    eqn.addAuxAddend( 1 );
+    eqn.addAddend( 1, auxVarIndex );
     eqn.markAuxiliaryVariable( auxVarIndex );
 
     // Rhs

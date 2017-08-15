@@ -386,23 +386,26 @@ void Engine::restoreState( const EngineState &state )
 void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 {
     log( "" );
-    log( "Applying a split.\nEquations:" );
+    log( "Applying a split. " );
 
-    unsigned auxVariable = FreshVariables::getNextVariable();
-    for ( auto &equation : split.getEquations() )
+    List<Tightening> bounds = split.getBoundTightenings();
+    List<Pair<Equation, PiecewiseLinearCaseSplit::EquationType> > equations = split.getEquations();
+    for ( auto &it : equations )
     {
+        Equation equation = it.first();
+        unsigned auxVariable = FreshVariables::getNextVariable();
+        equation.addAddend( -1, auxVariable );
         equation.markAuxiliaryVariable( auxVariable );
         _tableau->addEquation( equation );
-        // equation.dump();
-    }
-
-    log( "Bounds:" );
-    List<Tightening> bounds = split.getBoundTightenings();
-    List<Tightening> auxBounds = split.getAuxBoundTightenings();
-    for ( auto &bound : auxBounds )
-    {
-        bound._variable = auxVariable;
-        bounds.append( bound );
+        PiecewiseLinearCaseSplit::EquationType type = it.second();
+        if ( type != PiecewiseLinearCaseSplit::GE )
+        {
+            bounds.append( Tightening( auxVariable, 0.0, Tightening::UB ) );
+        }
+        if ( type != PiecewiseLinearCaseSplit::LE )
+        {
+            bounds.append( Tightening( auxVariable, 0.0, Tightening::LB ) );
+        }
     }
 
     for ( auto &bound : bounds )

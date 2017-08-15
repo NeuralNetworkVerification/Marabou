@@ -15,11 +15,17 @@
 
 #include "Equation.h"
 #include "IEngine.h"
+#include "Pair.h"
 #include "Tightening.h"
 
 class PiecewiseLinearCaseSplit
 {
 public:
+    enum EquationType {
+        EQ = 0,
+        GE = 1,
+        LE = 2
+    };
 
     /*
       Store information regarding a bound tightening.
@@ -28,22 +34,10 @@ public:
     List<Tightening> getBoundTightenings() const;
 
     /*
-      Store information regarding an auxiliary variable bound tightening.
-    */
-    void storeAuxBoundTightening( const Tightening &tightening );
-    List<Tightening> getAuxBoundTightenings() const;
-
-    /*
       Store information regarding a new equation to be added.
     */
-    void addEquation( const Equation &equation );
-  	List<Equation> getEquations() const;
-
-    // /*
-    //   Checks that this case has no conflicts with the already-given
-    //   lower and upper bounds.
-    // */
-    // bool valid( const Map<unsigned, double> &lowerBounds, const Map<unsigned, double> &upperBounds ) const;
+    void addEquation( const Equation &equation, EquationType type );
+  	List<Pair<Equation, EquationType> > getEquations() const;
 
     /*
       Dump the case split - for debugging purposes.
@@ -57,14 +51,10 @@ private:
     List<Tightening> _bounds;
 
     /*
-      Auxiliary variable bound tightening information.
-    */
-    List<Tightening> _auxBounds;
-
-    /*
       The equation that needs to be added.
     */
-    List<Equation> _equations;
+    List<Pair<Equation, EquationType> > _equations;
+
 };
 
 #endif // __PiecewiseLinearCaseSplit_h__
