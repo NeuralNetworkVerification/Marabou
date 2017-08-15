@@ -12,10 +12,11 @@
 
 #include <cxxtest/TestSuite.h>
 
+#include "Engine.h"
 #include "InputQuery.h"
 #include "MockErrno.h"
+#include "ReluConstraint.h"
 #include "ReluplexError.h"
-#include "Engine.h"
 
 #include <string.h>
 
@@ -89,6 +90,52 @@ public:
                                  const ReluplexError &e,
                                  e.getCode(),
                                  ReluplexError::VARIABLE_INDEX_OUT_OF_RANGE );
+    }
+
+    void test_equality_operator()
+    {
+        ReluConstraint *relu1 = new ReluConstraint( 3, 5 );
+
+        InputQuery *inputQuery = new InputQuery;
+
+        inputQuery->setNumberOfVariables( 5 );
+        inputQuery->setLowerBound( 2, -4 );
+        inputQuery->setUpperBound( 2, 55 );
+        inputQuery->addPiecewiseLinearConstraint( relu1 );
+
+        InputQuery inputQuery2 = *inputQuery;
+
+        TS_ASSERT_EQUALS( inputQuery2.getNumberOfVariables(), 5U );
+        TS_ASSERT_EQUALS( inputQuery2.getLowerBound( 2 ), -4 );
+        TS_ASSERT_EQUALS( inputQuery2.getUpperBound( 2 ), 55 );
+
+        auto constraints = inputQuery2.getPiecewiseLinearConstraints();
+
+        TS_ASSERT_EQUALS( constraints.size(), 1U );
+        ReluConstraint *constraint = (ReluConstraint *)*constraints.begin();
+
+        TS_ASSERT_DIFFERS( constraint, relu1 ); // Different pointers
+
+        TS_ASSERT( constraint->participatingVariable( 3 ) );
+        TS_ASSERT( constraint->participatingVariable( 5 ) );
+
+        inputQuery2 = *inputQuery; // Repeat the assignment
+
+        delete inputQuery;
+
+        TS_ASSERT_EQUALS( inputQuery2.getNumberOfVariables(), 5U );
+        TS_ASSERT_EQUALS( inputQuery2.getLowerBound( 2 ), -4 );
+        TS_ASSERT_EQUALS( inputQuery2.getUpperBound( 2 ), 55 );
+
+        constraints = inputQuery2.getPiecewiseLinearConstraints();
+
+        TS_ASSERT_EQUALS( constraints.size(), 1U );
+        constraint = (ReluConstraint *)*constraints.begin();
+
+        TS_ASSERT_DIFFERS( constraint, relu1 ); // Different pointers
+
+        TS_ASSERT( constraint->participatingVariable( 3 ) );
+        TS_ASSERT( constraint->participatingVariable( 5 ) );
     }
 };
 

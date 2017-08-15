@@ -89,11 +89,7 @@ bool Engine::solve()
             reportPlViolation();
 
             // Attempt to fix the constraint
-            if ( !fixViolatedPlConstraint() )
-            {
-                _statistics.print();
-                needToPop = true;
-            }
+            fixViolatedPlConstraintIfPossible();
         }
         else
         {
@@ -160,8 +156,6 @@ bool Engine::performSimplexStep()
     // Pick a leaving variable
     _tableau->computeChangeColumn();
     _tableau->pickLeavingVariable();
-    if ( !_tableau->performingFakePivot() )
-        _tableau->computePivotRow();
 
     bool fakePivot = _tableau->performingFakePivot();
     if ( !fakePivot )
@@ -182,7 +176,7 @@ bool Engine::performSimplexStep()
     return true;
 }
 
-bool Engine::fixViolatedPlConstraint()
+void Engine::fixViolatedPlConstraintIfPossible()
 {
     PiecewiseLinearConstraint *violated = NULL;
     for ( const auto &constraint : _plConstraints )
@@ -204,33 +198,29 @@ bool Engine::fixViolatedPlConstraint()
                  FloatUtils::lte( fix._value, _tableau->getUpperBound( fix._variable ) ) )
 			{
             	_tableau->setNonBasicAssignment( fix._variable, fix._value );
-            	return true;
+            	return;
 			}
         }
     }
 
     // No choice, have to pivot
 	List<PiecewiseLinearConstraint::Fix>::iterator it = fixes.begin();
-    PiecewiseLinearConstraint::Fix fix = *fixes.begin();
-
-	while ( it != fixes.end() && !_tableau->isBasic( fix._variable ) &&
-			( !FloatUtils::gte( fix._value, _tableau->getLowerBound( fix._variable ) ) ||
-              !FloatUtils::lte( fix._value, _tableau->getUpperBound( fix._variable ) ) ) )
+	while ( it != fixes.end() && !_tableau->isBasic( it->_variable ) &&
+			( !FloatUtils::gte( it->_value, _tableau->getLowerBound( it->_variable ) ) ||
+              !FloatUtils::lte( it->_value, _tableau->getUpperBound( it->_variable ) ) ) )
 	{
 		++it;
-		fix = *it;
 	}
 
-	//if( it == fixes.end() ) return false;
+    // If we couldn't find an eligible fix, give up
+    if ( it == fixes.end() )
+        return;
 
+    PiecewiseLinearConstraint::Fix fix = *it;
     ASSERT( _tableau->isBasic( fix._variable ) );
 
     TableauRow row( _tableau->getN() - _tableau->getM() );
     _tableau->getTableauRow( _tableau->variableToIndex( fix._variable ), &row );
-
-	unsigned j = 0;
-    while ( ( j < _tableau->getN() - _tableau->getM() ) )
-		++j;
 
 	unsigned nonBasic;
     bool done = false;
@@ -248,13 +238,6 @@ bool Engine::fixViolatedPlConstraint()
         ++i;
     }
 
-   /* for ( unsigned i = 0; i < _tableau->getM(); ++i )
-   {
-        printf( "Extracting tableau row %u\n", i );
-        TableauRow row ( _tableau->getN() - _tableau->getM() );
-        _tableau->getTableauRow( i, &row );
-        row.dump();
-    }*/
     ASSERT( done );
 
     // Switch between nonBasic and the variable we need to fix
@@ -263,7 +246,6 @@ bool Engine::fixViolatedPlConstraint()
 
     ASSERT( !_tableau->isBasic( fix._variable ) );
     _tableau->setNonBasicAssignment( fix._variable, fix._value );
-    return true;
 }
 
 void Engine::processInputQuery( InputQuery &inputQuery )

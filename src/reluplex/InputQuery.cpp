@@ -21,12 +21,7 @@ InputQuery::InputQuery()
 
 InputQuery::~InputQuery()
 {
-    auto it = _plConstraints.begin();
-    while ( it != _plConstraints.end() )
-    {
-        delete *it;
-        ++it;
-    }
+    freeConstraintsIfNeeded();
 }
 
 void InputQuery::setNumberOfVariables( unsigned numberOfVariables )
@@ -155,6 +150,7 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
     _upperBounds = other._upperBounds;
     _solution = other._solution;
 
+    freeConstraintsIfNeeded();
     for ( const auto &constraint : other._plConstraints )
         _plConstraints.append( constraint->duplicateConstraint() );
 
@@ -164,6 +160,14 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
 InputQuery::InputQuery( const InputQuery &other )
 {
     *this = other;
+}
+
+void InputQuery::freeConstraintsIfNeeded()
+{
+    for ( auto &it : _plConstraints )
+        delete it;
+
+    _plConstraints.clear();
 }
 
 //

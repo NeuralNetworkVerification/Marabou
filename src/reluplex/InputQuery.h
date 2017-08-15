@@ -68,6 +68,11 @@ private:
     List<PiecewiseLinearConstraint *> _plConstraints;
 
     Map<unsigned, double> _solution;
+
+    /*
+      Free any stored pl constraints.
+    */
+    void freeConstraintsIfNeeded();
 };
 
 #endif // __InputQuery_h__
