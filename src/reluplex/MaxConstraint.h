@@ -19,28 +19,27 @@
 class MaxConstraint : public PiecewiseLinearConstraint
 {
 public:
-	MaxConstraint( unsigned f, const List<unsigned> &elements );
-	~MaxConstraint();
+  	MaxConstraint( unsigned f, const List<unsigned> &elements );
+  	~MaxConstraint();
+
+    /*
+      Return a clone of the constraint.
+    */
+    PiecewiseLinearConstraint *duplicateConstraint() const;
 
     /*
       Register/unregister the constraint with a talbeau.
     */
-	void registerAsWatcher( ITableau *tableau );
+	  void registerAsWatcher( ITableau *tableau );
     void unregisterAsWatcher( ITableau *tableau );
-
-    /*
-      Turn the constraint on/off.
-    */
-    void setActiveConstraint( bool active );
-    bool isActive() const;
 
     /*
       This callback is invoked when a watched variable's value
       changes.
     */
     void notifyVariableValue( unsigned variable, double value );
-	void notifyLowerBound( unsigned variable, double value );
-	void notifyUpperBound( unsigned variable, double value );
+  	void notifyLowerBound( unsigned variable, double value );
+  	void notifyUpperBound( unsigned variable, double value );
 
     /*
       Returns true iff the variable participates in this piecewise
@@ -97,16 +96,12 @@ public:
 
 	void eliminateVar( unsigned var, double val );
 
+
 private:
-    bool _constraintActive;
-    unsigned _f;
   	unsigned _maxIndex;
     List<unsigned> _elements;
 
-  	Map<unsigned, double> _assignment;
-	Map<unsigned, double> _lowerBound;
-	Map<unsigned, double> _upperBound;
-	Set<unsigned> _eliminated;
+	  Set<unsigned> _eliminated;
 };
 
 #endif // __MaxConstraint_h__

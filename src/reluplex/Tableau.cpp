@@ -29,6 +29,7 @@ Tableau::Tableau()
     : _A( NULL )
     , _a( NULL )
     , _changeColumn( NULL )
+    , _pivotRow( NULL )
     , _b( NULL )
     , _rowScalars( NULL )
     , _basisFactorization( NULL )
@@ -71,6 +72,12 @@ void Tableau::freeMemoryIfNeeded()
     {
         delete[] _changeColumn;
         _changeColumn = NULL;
+    }
+
+    if ( _pivotRow )
+    {
+        delete[] _pivotRow;
+        _pivotRow = NULL;
     }
 
     if ( _b )
@@ -201,6 +208,10 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     _changeColumn = new double[m];
     if ( !_changeColumn )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::changeColumn" );
+
+    _pivotRow = new double[n-m];
+    if ( !_pivotRow )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::pivotRow" );
 
     _b = new double[m];
     if ( !_b )
@@ -585,6 +596,11 @@ double Tableau::getValue( unsigned variable )
     return _basicAssignment[_variableToIndex[variable]];
 }
 
+unsigned Tableau::basicIndexToVariable( unsigned index ) const
+{
+    return _basicIndexToVariable[index];
+}
+
 unsigned Tableau::nonBasicIndexToVariable( unsigned index ) const
 {
     return _nonBasicIndexToVariable[index];
@@ -806,6 +822,11 @@ bool Tableau::nonBasicCanDecrease( unsigned nonBasic ) const
 unsigned Tableau::getEnteringVariable() const
 {
     return _nonBasicIndexToVariable[_enteringVariable];
+}
+
+bool Tableau::performingFakePivot() const
+{
+    return _leavingVariable == _m;
 }
 
 void Tableau::performPivot()
@@ -1131,6 +1152,34 @@ void Tableau::computeChangeColumn()
     // printf( "\n" );
 }
 
+const double *Tableau::getChangeColumn() const
+{
+    return _changeColumn;
+}
+
+void Tableau::computePivotRow()
+{
+    ASSERT( _leavingVariable < _m );
+
+    std::fill( _unitVector, _unitVector + _m, 0.0 );
+    _unitVector[_leavingVariable] = 1;
+    computeMultipliers( _unitVector );
+
+    const double *ANColumn;
+    for ( unsigned i = 0; i < _n - _m; ++i )
+    {
+        ANColumn = _A + ( _nonBasicIndexToVariable[i] * _m );
+        _pivotRow[i] = 0;
+        for ( unsigned j = 0; j < _m; ++j )
+            _pivotRow[i] -= ( _multipliers[j] * ANColumn[j] );
+    }
+}
+
+const double *Tableau::getPivotRow() const
+{
+    return _pivotRow;
+}
+
 bool Tableau::isBasic( unsigned variable ) const
 {
     return _basicVariables.exists( variable );
@@ -1221,6 +1270,11 @@ void Tableau::getTableauRow( unsigned index, TableauRow *row )
 
     _basisFactorization->forwardTransformation( _b, _rowScalars );
     row->_scalar = _rowScalars[index];
+}
+
+const double *Tableau::getAColumn( unsigned index ) const
+{
+    return _A + ( index * _m );
 }
 
 void Tableau::dumpEquations()
@@ -1468,7 +1522,7 @@ void Tableau::addRow()
     delete[] _A;
     _A = newA;
 
-    // Allocate a new d. Don't need to initialize
+    // Allocate a new changeColumn. Don't need to initialize
     double *newChangeColumn = new double[newM];
     if ( !newChangeColumn )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newChangeColumn" );
@@ -1643,6 +1697,21 @@ void Tableau::notifyUpperBound( unsigned variable, double bound )
     }
 }
 
+const double *Tableau::getRightHandSide() const
+{
+    return _b;
+}
+
+void Tableau::forwardTransformation( const double *y, double *x ) const
+{
+    _basisFactorization->forwardTransformation( y, x );
+}
+
+void Tableau::backwardTransformation( const double *y, double *x ) const
+{
+    _basisFactorization->backwardTransformation( y, x );
+}
+
 void Tableau::setStatistics( Statistics *statistics )
 {
     _statistics = statistics;
@@ -1653,6 +1722,7 @@ void Tableau::log( const String &message )
     if ( GlobalConfiguration::TABLEAU_LOGGING )
         printf( "Tableau: %s\n", message.ascii() );
 }
+
 
 //
 // Local Variables:

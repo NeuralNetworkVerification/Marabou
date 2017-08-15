@@ -149,6 +149,25 @@ unsigned InputQuery::countInfiniteBounds()
     return result;
 }
 
+InputQuery &InputQuery::operator=( const InputQuery &other )
+{
+    _numberOfVariables = other._numberOfVariables;
+    _equations = other._equations;
+    _lowerBounds = other._lowerBounds;
+    _upperBounds = other._upperBounds;
+    _solution = other._solution;
+
+    for ( const auto &constraint : other._plConstraints )
+        _plConstraints.append( constraint->duplicateConstraint() );
+
+    return *this;
+}
+
+InputQuery::InputQuery( const InputQuery &other )
+{
+    *this = other;
+}
+
 //
 // Local Variables:
 // compile-command: "make -C .. "

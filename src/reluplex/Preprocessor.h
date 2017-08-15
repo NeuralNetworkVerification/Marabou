@@ -24,6 +24,7 @@ class Preprocessor
 public:
 	Preprocessor( InputQuery input ); 
 		
+	void tightenEquationsAndPL();
 	void tightenBounds(); 
 	void tightenPL();
 	void eliminateVariables(); 

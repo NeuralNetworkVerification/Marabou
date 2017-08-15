@@ -20,8 +20,7 @@
 #include <algorithm>
 
 MaxConstraint::MaxConstraint( unsigned f, const List<unsigned> &elements )
-	: _constraintActive( true )
-    , _f( f )
+	: PiecewiseLinearConstraint( f )
 	, _elements( elements )
 {
 }
@@ -29,6 +28,26 @@ MaxConstraint::MaxConstraint( unsigned f, const List<unsigned> &elements )
 MaxConstraint::~MaxConstraint()
 {
 	_elements.clear();
+}
+
+PiecewiseLinearConstraint *MaxConstraint::duplicateConstraint() const
+{
+    MaxConstraint *clone = new MaxConstraint( _f, _elements );
+
+	*clone = *this;
+	
+	// // Common PiecewiseLinearConstraint state.
+    // clone->_constraintActive = _constraintActive;
+    // clone->_assignment = _assignment;
+    // clone->_lowerBounds = _lowerBounds;
+	// clone->_upperBounds = _upperBounds;
+	// clone->_entailedTightenings = _entailedTightenings;	
+
+	// // MaxConstraint-specific state.
+    // clone->_maxIndex = _maxIndex;
+	// clone->_eliminated = _eliminated;
+
+    return clone;
 }
 
 void MaxConstraint::registerAsWatcher( ITableau *tableau )
@@ -45,20 +64,8 @@ void MaxConstraint::unregisterAsWatcher( ITableau *tableau )
 		tableau->unregisterToWatchVariable( this, element );
 }
 
-void MaxConstraint::setActiveConstraint( bool active )
-{
-    _constraintActive = active;
-}
-
-bool MaxConstraint::isActive() const
-{
-    return _constraintActive;
-}
-
 void MaxConstraint::notifyVariableValue( unsigned variable, double value )
 {
-
-
 	if ( variable != _f )
 	{
 	//Two conditions for _maxIndex to not exist: either _assignment.size()
@@ -74,12 +81,12 @@ void MaxConstraint::notifyVariableValue( unsigned variable, double value )
 
 void MaxConstraint::notifyLowerBound( unsigned variable, double value )
 {
-	_lowerBound[variable] = value;
+	_lowerBounds[variable] = value;
 }
 
 void MaxConstraint::notifyUpperBound( unsigned variable, double value )
 {
-	_upperBound[variable] = value;
+	_upperBounds[variable] = value;
 }
 
 bool MaxConstraint::participatingVariable( unsigned variable ) const
@@ -93,7 +100,6 @@ List<unsigned> MaxConstraint::getParticiatingVariables() const
 	temp.append( _f );
 	return temp;
 }
-
 
 bool MaxConstraint::satisfied() const
 {
@@ -241,27 +247,25 @@ void MaxConstraint::updateVarIndex( unsigned prevVar, unsigned newVar )
 	if ( _assignment.exists( prevVar ) )
 	{
 		_assignment[newVar] = _assignment.get( prevVar );
-		_lowerBound[newVar] = _lowerBound.get( prevVar  );
-		_upperBound[newVar] = _upperBound.get( prevVar );
+		_lowerBounds[newVar] = _lowerBounds.get( prevVar  );
+		_upperBounds[newVar] = _upperBounds.get( prevVar );
 		_assignment.erase( prevVar );
 	}
-	
+
 	if ( prevVar == _maxIndex )
 		_maxIndex = newVar;
 
 	if ( prevVar == _f )
 		_f = newVar;
-	else 
+	else
 	{
 		_elements.erase( prevVar );
 		_elements.append( newVar );
 	}
 }
 
-void MaxConstraint::eliminateVar( unsigned var, double val )
+void MaxConstraint::eliminateVar( unsigned, double )
 {
-	_eliminated.insert( var );	
-	val++;	
 }
 
 //

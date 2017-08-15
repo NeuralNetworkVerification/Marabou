@@ -27,16 +27,15 @@ public:
     ReluConstraint( unsigned b, unsigned f );
 
     /*
+      Return a clone of the constraint.
+    */
+    PiecewiseLinearConstraint *duplicateConstraint() const;
+
+    /*
       Register/unregister the constraint with a talbeau.
      */
     void registerAsWatcher( ITableau *tableau );
     void unregisterAsWatcher( ITableau *tableau );
-
-    /*
-      Turn the constraint on/off.
-    */
-    void setActiveConstraint( bool active );
-    bool isActive() const;
 
     /*
       These callbacks are invoked when a watched variable's value
@@ -56,7 +55,6 @@ public:
       Get the list of variables participating in this constraint.
     */
     List<unsigned> getParticiatingVariables() const;
-
 
     /*
       Returns true iff the assignment satisfies the constraint
@@ -105,13 +103,10 @@ public:
 
 	void updateVarIndex( unsigned prevVar, unsigned newVar );
 
-	void eliminateVar( unsigned var, double val );
+	  void eliminateVar( unsigned var, double val );
     
 private:
-    bool _constraintActive;
     unsigned _b;
-    unsigned _f;
-    Map<unsigned, double> _assignment;
     PhaseStatus _phaseStatus;
 
     PiecewiseLinearCaseSplit getInactiveSplit( unsigned auxVariable ) const;
@@ -123,8 +118,6 @@ class ReluConstraintState : public PiecewiseLinearConstraintState
 public:
     ~ReluConstraintState() {}
 
-    bool _constraintActive;
-    Map<unsigned, double> _assignment;
     ReluConstraint::PhaseStatus _phaseStatus;
 };
 

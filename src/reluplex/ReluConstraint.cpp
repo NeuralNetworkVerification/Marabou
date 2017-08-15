@@ -20,11 +20,29 @@
 #include "ReluplexError.h"
 
 ReluConstraint::ReluConstraint( unsigned b, unsigned f )
-    : _constraintActive( true )
+    : PiecewiseLinearConstraint( f )
     , _b( b )
-    , _f( f )
     , _phaseStatus( PhaseStatus::PHASE_NOT_FIXED )
 {
+}
+
+PiecewiseLinearConstraint *ReluConstraint::duplicateConstraint() const
+{
+    ReluConstraint *clone = new ReluConstraint( _b, _f );
+
+    *clone = *this;
+    
+  	// // Common PiecewiseLinearConstraint state.
+    // clone->_constraintActive = _constraintActive;
+    // clone->_assignment = _assignment;
+    // clone->_lowerBounds = _lowerBounds;
+    // clone->_upperBounds = _upperBounds;
+    // clone->_entailedTightenings = _entailedTightenings;
+
+    // // ReluConstraint-specific state.
+    // clone->_phaseStatus = _phaseStatus;
+
+    return clone;
 }
 
 void ReluConstraint::registerAsWatcher( ITableau *tableau )
@@ -39,16 +57,6 @@ void ReluConstraint::unregisterAsWatcher( ITableau *tableau )
     tableau->unregisterToWatchVariable( this, _f );
 }
 
-void ReluConstraint::setActiveConstraint( bool active )
-{
-    _constraintActive = active;
-}
-
-bool ReluConstraint::isActive() const
-{
-    return _constraintActive;
-}
-
 void ReluConstraint::notifyVariableValue( unsigned variable, double value )
 {
     _assignment[variable] = value;
@@ -56,14 +64,44 @@ void ReluConstraint::notifyVariableValue( unsigned variable, double value )
 
 void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
 {
+    if ( _lowerBounds.exists( variable ) && !FloatUtils::gt( bound, _lowerBounds[variable] ) )
+        return;
+
+    _lowerBounds[variable] = bound;
+
+    // f >= c implies b >= c for any c > 0
+    // b >= c implies f >= c for any c >= 0, but the c = 0 case is unneeded
     if ( variable == _f && FloatUtils::isPositive( bound ) )
+    {
         _phaseStatus = PhaseStatus::PHASE_ACTIVE;
+        _entailedTightenings.push( Tightening( _b, bound, Tightening::LB ) );
+    }
     else if ( variable == _b && !FloatUtils::isNegative( bound ) )
+    {
         _phaseStatus = PhaseStatus::PHASE_ACTIVE;
+        if ( FloatUtils::isPositive( bound ) )
+            _entailedTightenings.push( Tightening( _f, bound, Tightening::LB ) );
+    }
 }
 
 void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
 {
+    if ( _upperBounds.exists( variable ) && !FloatUtils::lt( bound, _upperBounds[variable] ) )
+        return;
+
+    _upperBounds[variable] = bound;
+
+    // b <= c implies f <= c for any c >= 0
+    // f <= c implies b <= c for any c >= 0
+    if ( variable == _b && !FloatUtils::isNegative( bound ) )
+        _entailedTightenings.push( Tightening( _f, bound, Tightening::UB ) );
+    else if ( variable == _f && !FloatUtils::isNegative( bound ) )
+        _entailedTightenings.push( Tightening( _b, bound, Tightening::UB ) );
+
+    // b <= c implies f <= 0 for any c < 0
+    if ( variable == _b && FloatUtils::isNegative( bound ) )
+        _entailedTightenings.push( Tightening( _f, 0.0, Tightening::UB ) );
+
     if ( ( variable == _f || variable == _b ) && !FloatUtils::isPositive( bound ) )
         _phaseStatus = PhaseStatus::PHASE_INACTIVE;
 }
@@ -77,7 +115,6 @@ List<unsigned> ReluConstraint::getParticiatingVariables() const
 {
     return List<unsigned>( { _b, _f } );
 }
-
 
 bool ReluConstraint::satisfied() const
 {
@@ -151,17 +188,15 @@ List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
 
 void ReluConstraint::storeState( PiecewiseLinearConstraintState &state ) const
 {
+    PiecewiseLinearConstraint::storeState( state );
     ReluConstraintState *reluState = dynamic_cast<ReluConstraintState *>( &state );
-    reluState->_constraintActive = _constraintActive;
-    reluState->_assignment = _assignment;
     reluState->_phaseStatus = _phaseStatus;
 }
 
 void ReluConstraint::restoreState( const PiecewiseLinearConstraintState &state )
 {
+    PiecewiseLinearConstraint::restoreState( state );
     const ReluConstraintState *reluState = dynamic_cast<const ReluConstraintState *>( &state );
-    _constraintActive = reluState->_constraintActive;
-    _assignment = reluState->_assignment;
     _phaseStatus = reluState->_phaseStatus;
 }
 
@@ -240,10 +275,10 @@ void ReluConstraint::updateVarIndex( unsigned prevVar, unsigned newVar )
 
 	if ( _assignment.exists( prevVar ) )
 	{
-		_assignment[newVar] = _assignment.get( prevVar );		
+		_assignment[newVar] = _assignment.get( prevVar );
 		_assignment.erase( prevVar );
 	}
-	
+
 	if ( prevVar == _b )
 		_b = newVar;
 	else
@@ -253,19 +288,19 @@ void ReluConstraint::updateVarIndex( unsigned prevVar, unsigned newVar )
 void ReluConstraint::eliminateVar( unsigned var, double val )
 {
 	ASSERT( var == _b || var == _f );
-	
-	if ( var == _f )
-		ASSERT( FloatUtils::gte( val, 0 ) );
 
-	if ( val > 0 )
+	if ( var == _f )
+	{
+	    ASSERT( FloatUtils::gte( val, 0 ) );
+	}
+
+	if ( FloatUtils::gt( val, 0 ) )
 	{
 		_phaseStatus = PhaseStatus::PHASE_ACTIVE;
-		_assignment[_f] = val;
 	}
-	else 
+	else
 	{
 		_phaseStatus = PhaseStatus::PHASE_INACTIVE;
-		_assignment[_f] = 0;
 	}
 }
 

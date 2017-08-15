@@ -16,6 +16,7 @@
 #include "Preprocessor.h"
 #include "ReluplexError.h"
 #include "Map.h"
+#include "Tightening.h"
 
 Preprocessor::Preprocessor( InputQuery input )
 {
@@ -28,11 +29,20 @@ InputQuery Preprocessor::getInputQuery()
 	return _input;
 }
 
+void Preprocessor::tightenEquationsAndPL()
+{
+	while ( _hasTightened )
+	{
+		tightenBounds();
+		tightenPL();
+		_hasTightened = false; 
+	}
+}
+
 void Preprocessor::tightenBounds() 
 {
-
 	double min = -DBL_MAX;
-    double max = DBL_MAX;
+	double max = DBL_MAX;
 
     for ( const auto &equation : _input.getEquations() )
     {
@@ -111,25 +121,29 @@ void Preprocessor::tightenBounds()
 	
 void Preprocessor::tightenPL()
 {
-	Map<unsigned, double> LB;
-	Map<unsigned, double> UB;
-
-	for ( unsigned i = 0; i < _input.getNumberOfVariables(); ++i )
-	{
-		LB[i] = _input.getLowerBound( i );
-		UB[i] = _input.getUpperBound( i );
-	}
-	
 	
 	for ( auto pl : _input.getPiecewiseLinearConstraints() )
 	{
-		pl->deriveTighterBounds( LB, UB );
 		for (auto var : pl->getParticiatingVariables() )
 		{
-			if ( _input.getLowerBound( var ) != LB.get( var ) )
-				pl->notifyLowerBound( var, LB.get( var ) );
-			if ( _input.getUpperBound( var ) != UB.get( var ) )
-				pl->notifyUpperBound( var, UB.get( var ) );
+			pl->notifyLowerBound( var, _input.getLowerBound( var ) ); 
+			pl->notifyUpperBound( var, _input.getUpperBound( var ) );
+		}
+
+		while ( !pl->getEntailedTightenings().empty() )
+		{
+			auto tighten = pl->getEntailedTightenings().peak();
+			if ( tighten._type == Tightening::LB )
+			{
+				if ( FloatUtils::gt( tighten._value, _input.getLowerBound( tighten._variable ) ) )
+					_input.setLowerBound( tighten._variable, tighten._value );
+			}
+			else 
+			{
+				if ( FloatUtils::lt( tighten._value, _input.getUpperBound( tighten._variable ) ) )
+					_input.setUpperBound( tighten._variable, tighten._value );
+			}
+			pl->getEntailedTightenings().pop();
 		}
 	}
 }
@@ -157,6 +171,7 @@ void Preprocessor::eliminateVariables()
 	}
 	for ( auto &equation : _input.getEquations() )
 	{
+		int nRm = equation._addends.size(); 
 		int changeLimit = equation._addends.size();
 		//necessary to remove addends
 		for ( auto addend = equation._addends.begin(); addend != equation._addends.end(); )
@@ -171,6 +186,7 @@ void Preprocessor::eliminateVariables()
 				--addend;
 				equation._addends.erase( addend );
 				addend = temp;
+				++nRm;
 			}
 			else 
 			{
@@ -181,6 +197,8 @@ void Preprocessor::eliminateVariables()
 			--changeLimit;
 			++addend;
 		}
+		if ( nRm == 0 )
+			_input.getEquations().erase( equation );
 	}
 	for ( auto pl : _input.getPiecewiseLinearConstraints() )
 	{

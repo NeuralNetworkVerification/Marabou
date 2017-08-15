@@ -16,6 +16,7 @@
 #include "ITableau.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "Map.h"
+#include "Queue.h"
 
 class ITableau;
 class String;
@@ -25,6 +26,12 @@ class PiecewiseLinearConstraintState
 public:
     PiecewiseLinearConstraintState() {}
     virtual ~PiecewiseLinearConstraintState() {}
+
+    bool _constraintActive;
+    Map<unsigned, double> _assignment;
+    Map<unsigned, double> _lowerBounds;
+    Map<unsigned, double> _upperBounds;
+    Queue<Tightening> _entailedTightenings;
 };
 
 class PiecewiseLinearConstraint : public ITableau::VariableWatcher
@@ -47,7 +54,17 @@ public:
         double _value;
     };
 
+    PiecewiseLinearConstraint( unsigned f )
+        : _f( f )
+        , _constraintActive( true )
+    {
+    }
     virtual ~PiecewiseLinearConstraint() {}
+
+    /*
+      Return a clone of the constraint.
+    */
+    virtual PiecewiseLinearConstraint *duplicateConstraint() const = 0;
 
     /*
       Register/unregister the constraint with a talbeau.
@@ -65,8 +82,14 @@ public:
     /*
       Turn the constraint on/off.
     */
-    virtual void setActiveConstraint( bool active ) = 0;
-    virtual bool isActive() const = 0;
+    virtual void setActiveConstraint( bool active )
+    {
+        _constraintActive = active;
+    }
+    virtual bool isActive() const
+    {
+        return _constraintActive;
+    }
 
     /*
       Returns true iff the variable participates in this piecewise
@@ -78,7 +101,6 @@ public:
       Get the list of variables participating in this constraint.
     */
     virtual List<unsigned> getParticiatingVariables() const = 0;
-
 
     /*
       Returns true iff the assignment satisfies the constraint.
@@ -118,8 +140,22 @@ public:
       Store and restore the constraint's state. Needed for case splitting
       and backtracking.
     */
-    virtual void storeState( PiecewiseLinearConstraintState &state ) const = 0;
-    virtual void restoreState( const PiecewiseLinearConstraintState &state ) = 0;
+    virtual void storeState( PiecewiseLinearConstraintState &state ) const
+    {
+        state._constraintActive = _constraintActive;
+        state._assignment = _assignment;
+        state._lowerBounds = _lowerBounds;
+        state._upperBounds = _upperBounds;
+        state._entailedTightenings = _entailedTightenings;
+    }
+    virtual void restoreState( const PiecewiseLinearConstraintState &state )
+    {
+        _constraintActive = state._constraintActive;
+        _assignment = state._assignment;
+        _lowerBounds = state._lowerBounds;
+        _upperBounds = state._upperBounds;
+        _entailedTightenings = state._entailedTightenings;
+    }
 
     /*
       Dump the current state of the constraint.
@@ -128,9 +164,26 @@ public:
 
 	virtual void updateVarIndex( unsigned prevVar, unsigned newVar) = 0;
 
-	virtual void eliminateVar( unsigned var, double val) = 0;
+  	virtual void eliminateVar( unsigned var, double val) = 0;
 
-	virtual void deriveTighterBounds( Map<unsigned, double> &, Map<unsigned, double> & ){};
+  	virtual void deriveTighterBounds( Map<unsigned, double> &, Map<unsigned, double> & ){};
+
+    /*
+      Get the tightenings entailed by the constraint.
+    */
+    Queue<Tightening> &getEntailedTightenings()
+    {
+        return _entailedTightenings;
+    }
+
+protected:
+    unsigned _f;
+    
+    bool _constraintActive;
+    Map<unsigned, double> _assignment;
+    Map<unsigned, double> _lowerBounds;
+    Map<unsigned, double> _upperBounds;
+    Queue<Tightening> _entailedTightenings;
 };
 
 #endif // __PiecewiseLinearConstraint_h__
