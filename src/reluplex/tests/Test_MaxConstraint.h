@@ -52,7 +52,7 @@ public:
 		MaxConstraint max( f, elements );
 
 		List<unsigned> participatingVariables;
-        TS_ASSERT_THROWS_NOTHING( participatingVariables = max.getParticiatingVariables() );
+        TS_ASSERT_THROWS_NOTHING( participatingVariables = max.getParticipatingVariables() );
         TS_ASSERT_EQUALS( participatingVariables.size(), 9U );
 
 		auto it = participatingVariables.begin();

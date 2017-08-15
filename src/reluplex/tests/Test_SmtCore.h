@@ -70,7 +70,7 @@ public:
             return true;
         }
 
-        List<unsigned> getParticiatingVariables() const
+        List<unsigned> getParticipatingVariables() const
         {
             return List<unsigned>();
         }

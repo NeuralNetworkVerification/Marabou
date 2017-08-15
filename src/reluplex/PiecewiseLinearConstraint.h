@@ -100,7 +100,7 @@ public:
     /*
       Get the list of variables participating in this constraint.
     */
-    virtual List<unsigned> getParticiatingVariables() const = 0;
+    virtual List<unsigned> getParticipatingVariables() const = 0;
 
   	/*
 	    Return the target variable

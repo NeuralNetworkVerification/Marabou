@@ -124,7 +124,7 @@ void Preprocessor::tightenPL()
 	for ( auto pl : _input.getPiecewiseLinearConstraints() )
 	{
 		pl->deriveTighterBounds( LB, UB );
-		for (auto var : pl->getParticiatingVariables() )
+		for (auto var : pl->getParticipatingVariables() )
 		{
 			if ( _input.getLowerBound( var ) != LB.get( var ) )
 				pl->notifyLowerBound( var, LB.get( var ) );
@@ -180,7 +180,7 @@ void Preprocessor::eliminateVariables()
 	}
 	for ( auto pl : _input.getPiecewiseLinearConstraints() )
 	{
-		for ( auto var : pl->getParticiatingVariables() )
+		for ( auto var : pl->getParticipatingVariables() )
 		{
 			if ( indexAssignment.get( var ) == -1 )
 				pl->eliminateVar( var, rmVariables.get( var ) );

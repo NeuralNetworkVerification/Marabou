@@ -49,7 +49,7 @@ public:
         ReluConstraint relu( b, f );
 
         List<unsigned> participatingVariables;
-        TS_ASSERT_THROWS_NOTHING( participatingVariables = relu.getParticiatingVariables() );
+        TS_ASSERT_THROWS_NOTHING( participatingVariables = relu.getParticipatingVariables() );
         TS_ASSERT_EQUALS( participatingVariables.size(), 2U );
         auto it = participatingVariables.begin();
         TS_ASSERT_EQUALS( *it, b );

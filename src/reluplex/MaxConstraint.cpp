@@ -94,7 +94,7 @@ bool MaxConstraint::participatingVariable( unsigned variable ) const
     return ( variable == _f ) || _elements.exists( variable );
 }
 
-List<unsigned> MaxConstraint::getParticiatingVariables() const
+List<unsigned> MaxConstraint::getParticipatingVariables() const
 {
 	List<unsigned> temp = _elements;
 	temp.append( _f );

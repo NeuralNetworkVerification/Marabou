@@ -50,7 +50,7 @@ public:
     /*
       Get the list of variables participating in this constraint.
     */
-    List<unsigned> getParticiatingVariables() const;
+    List<unsigned> getParticipatingVariables() const;
 
     /*
       Returns true iff the assignment satisfies the constraint

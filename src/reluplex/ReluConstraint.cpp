@@ -111,7 +111,7 @@ bool ReluConstraint::participatingVariable( unsigned variable ) const
     return ( variable == _b ) || ( variable == _f );
 }
 
-List<unsigned> ReluConstraint::getParticiatingVariables() const
+List<unsigned> ReluConstraint::getParticipatingVariables() const
 {
     return List<unsigned>( { _b, _f } );
 }
