@@ -27,6 +27,9 @@ public:
 	static const bool PREPROCESS_INPUT_QUERY;
     static const unsigned DEGRADATION_CHECKING_FREQUENCY;
 
+    static const unsigned PSE_ITERATIONS_BEFORE_RESET;
+    static const double PSE_GAMMA_ERROR_THRESHOLD;
+
     // Logging
     static const bool ENGINE_LOGGING;
     static const bool TABLEAU_LOGGING;

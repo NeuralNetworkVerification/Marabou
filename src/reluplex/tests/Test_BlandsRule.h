@@ -57,16 +57,16 @@ public:
         TS_ASSERT( !blandsRule.select(*tableau) );
 
         candidates.append( 3 );
-        tableau->nextNonBasicIndexToVaribale[3] = 20;
+        tableau->nextNonBasicIndexToVariable[3] = 20;
 
         candidates.append( 10 );
-        tableau->nextNonBasicIndexToVaribale[10] = 4;
+        tableau->nextNonBasicIndexToVariable[10] = 4;
 
         candidates.append( 2 );
-        tableau->nextNonBasicIndexToVaribale[2] = 10;
+        tableau->nextNonBasicIndexToVariable[2] = 10;
 
         candidates.append( 51 );
-        tableau->nextNonBasicIndexToVaribale[51] = 6;
+        tableau->nextNonBasicIndexToVariable[51] = 6;
 
         tableau->mockCandidates = candidates;
 
@@ -76,7 +76,7 @@ public:
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 10U );
 
         candidates.append( 100 );
-        tableau->nextNonBasicIndexToVaribale[100] = 1;
+        tableau->nextNonBasicIndexToVariable[100] = 1;
 
         tableau->mockCandidates = candidates;
 

@@ -37,7 +37,12 @@ public:
       This hook gets called after the entering and leaving variables
       have been selected, but before the actual pivot.
     */
-    virtual void prePivotHook( const ITableau & ) {};
+    virtual void prePivotHook( const ITableau &/* tableau */, bool /* fakePivot */ ) {};
+
+    /*
+      This hook gets called the pivot operation has been performed.
+    */
+    virtual void postPivotHook( const ITableau &/* tableau */, bool /* fakePivot */ ) {};
 };
 
 #endif // __EntrySelectionStrategy_h__

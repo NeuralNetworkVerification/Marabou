@@ -17,7 +17,6 @@
 #include "ReluplexError.h"
 #include "Engine.h"
 
-#include <cfloat>
 #include <string.h>
 
 class MockForInputQuery
@@ -45,13 +44,13 @@ public:
         InputQuery inputQuery;
 
         TS_ASSERT_THROWS_NOTHING( inputQuery.setNumberOfVariables( 5 ) );
-        TS_ASSERT_EQUALS( inputQuery.getLowerBound( 3 ), -DBL_MAX );
+        TS_ASSERT_EQUALS( inputQuery.getLowerBound( 3 ), FloatUtils::negativeInfinity() );
         TS_ASSERT_THROWS_NOTHING( inputQuery.setLowerBound( 3, -3 ) );
         TS_ASSERT_EQUALS( inputQuery.getLowerBound( 3 ), -3 );
         TS_ASSERT_THROWS_NOTHING( inputQuery.setLowerBound( 3, 5 ) );
         TS_ASSERT_EQUALS( inputQuery.getLowerBound( 3 ), 5 );
 
-        TS_ASSERT_EQUALS( inputQuery.getLowerBound( 2 ), -DBL_MAX );
+        TS_ASSERT_EQUALS( inputQuery.getLowerBound( 2 ), FloatUtils::negativeInfinity() );
         TS_ASSERT_THROWS_NOTHING( inputQuery.setLowerBound( 2, 4 ) );
         TS_ASSERT_EQUALS( inputQuery.getLowerBound( 2 ), 4 );
 
@@ -71,13 +70,13 @@ public:
         InputQuery inputQuery;
 
         TS_ASSERT_THROWS_NOTHING( inputQuery.setNumberOfVariables( 5 ) );
-        TS_ASSERT_EQUALS( inputQuery.getUpperBound( 2 ), DBL_MAX );
+        TS_ASSERT_EQUALS( inputQuery.getUpperBound( 2 ), FloatUtils::infinity() );
         TS_ASSERT_THROWS_NOTHING( inputQuery.setUpperBound( 2, -4 ) );
         TS_ASSERT_EQUALS( inputQuery.getUpperBound( 2 ), -4 );
         TS_ASSERT_THROWS_NOTHING( inputQuery.setUpperBound( 2, 55 ) );
         TS_ASSERT_EQUALS( inputQuery.getUpperBound( 2 ), 55 );
 
-        TS_ASSERT_EQUALS( inputQuery.getUpperBound( 0 ), DBL_MAX );
+        TS_ASSERT_EQUALS( inputQuery.getUpperBound( 0 ), FloatUtils::infinity() );
         TS_ASSERT_THROWS_NOTHING( inputQuery.setUpperBound( 0, 1 ) );
         TS_ASSERT_EQUALS( inputQuery.getUpperBound( 0 ), 1 );
 

@@ -77,6 +77,7 @@ public:
     virtual void pickLeavingVariable( double *d ) = 0;
     virtual unsigned getLeavingVariable() const = 0;
     virtual double getChangeRatio() const = 0;
+    virtual bool performingFakePivot() const = 0;
     virtual void performPivot() = 0;
     virtual double ratioConstraintPerBasic( unsigned basicIndex, double coefficient, bool decrease ) = 0;
     virtual bool isBasic( unsigned variable ) const = 0;
@@ -89,21 +90,29 @@ public:
     virtual const double *getSteepestEdgeGamma() const = 0;
     virtual void dumpCostFunction() const = 0;
     virtual void computeChangeColumn() = 0;
+    virtual const double *getChangeColumn() const = 0;
+    virtual void computePivotRow() = 0;
+    virtual const double *getPivotRow() const = 0;
     virtual void computeAssignment() = 0;
     virtual void dump() const = 0;
     virtual void dumpAssignment() = 0;
     virtual void dumpEquations() = 0;
     virtual unsigned nonBasicIndexToVariable( unsigned index ) const = 0;
+    virtual unsigned basicIndexToVariable( unsigned index ) const = 0;
     virtual unsigned variableToIndex( unsigned index ) const = 0;
     virtual void addEquation( const Equation &equation ) = 0;
     virtual unsigned getM() const = 0;
     virtual unsigned getN() const = 0;
     virtual void getTableauRow( unsigned index, TableauRow *row ) = 0;
+    virtual const double *getAColumn( unsigned index ) const = 0;
     virtual void performDegeneratePivot( unsigned entering, unsigned leaving ) = 0;
     virtual void storeState( TableauState &state ) const = 0;
     virtual void restoreState( const TableauState &state ) = 0;
     virtual void computeBasicCosts() = 0;
     virtual void setStatistics( Statistics *statistics ) = 0;
+    virtual const double *getRightHandSide() const = 0;
+    virtual void forwardTransformation( const double *y, double *x ) const = 0;
+    virtual void backwardTransformation( const double *y, double *x ) const = 0;
 };
 
 #endif // __ITableau_h__

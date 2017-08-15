@@ -11,7 +11,6 @@
 **/
 
 #include "FloatUtils.h"
-#include <cfloat>
 #include <iomanip>
 #include <math.h>
 #include <sstream>
@@ -90,6 +89,16 @@ double FloatUtils::min( double x, double y, double epsilon )
 double FloatUtils::max( double x, double y, double epsilon )
 {
     return gt( x, y, epsilon ) ? x : y;
+}
+
+double FloatUtils::infinity()
+{
+    return DBL_MAX;
+}
+
+double FloatUtils::negativeInfinity()
+{
+    return -DBL_MAX;
 }
 
 String FloatUtils::doubleToString( double x, unsigned precision )

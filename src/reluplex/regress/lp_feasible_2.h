@@ -57,7 +57,7 @@ public:
         equation1.addAddend( 1, 0 );
         equation1.addAddend( 2, 1 );
         equation1.addAddend( -1, 2 );
-        equation1.addAddend( 1, 3 );
+        equation1.addAuxAddend( 1 );
         equation1.setScalar( 11 );
         equation1.markAuxiliaryVariable( 3 );
         inputQuery.addEquation( equation1 );
@@ -65,7 +65,7 @@ public:
         Equation equation2;
         equation2.addAddend( -3, 0 );
         equation2.addAddend( 3, 1 );
-        equation2.addAddend( 1, 4 );
+        equation2.addAuxAddend( 1 );
         equation2.setScalar( -5 );
         equation2.markAuxiliaryVariable( 4 );
         inputQuery.addEquation( equation2 );

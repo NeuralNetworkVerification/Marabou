@@ -116,7 +116,7 @@ private:
     /*
       Number of pl constraints disabled by valid splits.
     */
-    unsigned _numPlConstraintsDisbaledByValidSplits;
+    unsigned _numPlConstraintsDisabledByValidSplits;
 
     /*
       Degradation checker.
@@ -160,6 +160,11 @@ private:
       Report the violated PL constraint to the SMT engine.
     */
     void reportPlViolation();
+
+    /*
+      Apply any bound tightenings entailed by the constraints.
+    */
+    void applyAllConstraintTightenings();
 
     /*
       Apply all valid case splits proposed by the constraints.

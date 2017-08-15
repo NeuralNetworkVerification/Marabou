@@ -126,8 +126,8 @@ public:
 
         for ( unsigned i = 0; i < tableau->getN(); ++i )
         {
-            TS_ASSERT_EQUALS( tableau->getLowerBound( i ), -DBL_MAX );
-            TS_ASSERT_EQUALS( tableau->getUpperBound( i ), DBL_MAX );
+            TS_ASSERT_EQUALS( tableau->getLowerBound( i ), FloatUtils::negativeInfinity() );
+            TS_ASSERT_EQUALS( tableau->getUpperBound( i ), FloatUtils::infinity() );
         }
 
         TS_ASSERT_THROWS_NOTHING( delete tableau );
@@ -590,6 +590,12 @@ public:
 
         TS_ASSERT_EQUALS( tableau->getValue( 2u ), 1.0 );
         TS_ASSERT_EQUALS( tableau->getValue( 5u ), 113.0 );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->computePivotRow() );
+        const double *pivotRow = tableau->getPivotRow();
+        // x3 = 117 -x1 -x2 -x6 -x4
+        for ( unsigned i = 0; i < 4; ++i )
+            TS_ASSERT( FloatUtils::areEqual( pivotRow[i], -1.0 ) );
 
         TS_ASSERT_THROWS_NOTHING( tableau->performPivot() );
 
@@ -1167,7 +1173,7 @@ public:
         Equation equation;
         equation.addAddend( 2, 1 );
         equation.addAddend( -4, 2 );
-        equation.addAddend( 1, 7 );
+        equation.addAuxAddend( 1 );
         equation.setScalar( 5 );
         equation.markAuxiliaryVariable( 7 );
         TS_ASSERT_THROWS_NOTHING( tableau->addEquation( equation ) );

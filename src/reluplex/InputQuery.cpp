@@ -15,8 +15,6 @@
 #include "ReluplexError.h"
 #include "FloatUtils.h"
 
-#include <cfloat>
-
 InputQuery::InputQuery()
 {
 }
@@ -80,7 +78,7 @@ double InputQuery::getLowerBound( unsigned variable ) const
     }
 
     if ( !_lowerBounds.exists( variable ) )
-        return -DBL_MAX;
+        return FloatUtils::negativeInfinity();
 
     return _lowerBounds.get( variable );
 }
@@ -95,7 +93,7 @@ double InputQuery::getUpperBound( unsigned variable ) const
     }
 
     if ( !_upperBounds.exists( variable ) )
-        return DBL_MAX;
+        return FloatUtils::infinity();
 
     return _upperBounds.get( variable );
 }
@@ -139,11 +137,11 @@ unsigned InputQuery::countInfiniteBounds()
     unsigned result = 0;
 
     for ( const auto &lowerBound : _lowerBounds )
-        if ( lowerBound.second == -DBL_MAX )
+        if ( lowerBound.second == FloatUtils::negativeInfinity() )
             ++result;
 
     for ( const auto &upperBound : _upperBounds )
-        if ( upperBound.second == DBL_MAX )
+        if ( upperBound.second == FloatUtils::infinity() )
             ++result;
 
     return result;

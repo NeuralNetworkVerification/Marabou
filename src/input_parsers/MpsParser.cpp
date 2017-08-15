@@ -396,7 +396,7 @@ void MpsParser::setEqn( Equation &eqn, unsigned eqnIndex, unsigned auxVarIndex )
     }
 
     // Aux variable
-    eqn.addAddend( 1, auxVarIndex );
+    eqn.addAuxAddend( 1 );
     eqn.markAuxiliaryVariable( auxVarIndex );
 
     // Rhs

@@ -19,7 +19,6 @@
 #include "MockTableauFactory.h"
 #include "ReluConstraint.h"
 
-#include <cfloat>
 #include <string.h>
 
 class MockForEngine :
@@ -87,7 +86,7 @@ public:
         equation1.addAddend( 1, 0 );
         equation1.addAddend( 2, 1 );
         equation1.addAddend( -1, 2 );
-        equation1.addAddend( 1, 3 );
+        equation1.addAuxAddend( 1 );
         equation1.setScalar( 11 );
         equation1.markAuxiliaryVariable( 3 );
         inputQuery.addEquation( equation1 );
@@ -95,9 +94,9 @@ public:
         Equation equation2;
         equation2.addAddend( -3, 0 );
         equation2.addAddend( 3, 1 );
-        equation2.addAddend( 1, 4 );
+        equation2.addAuxAddend( 1 );
         equation2.setScalar( -5 );
-        equation2.markAuxiliaryVariable( 4 );
+        equation2.markAuxiliaryVariable( 4 );        
         inputQuery.addEquation( equation2 );
 
         ReluConstraint *relu1 = new ReluConstraint( 1, 2 );
@@ -151,7 +150,7 @@ public:
         TS_ASSERT_EQUALS( tableau->lowerBounds[3], 0.0 );
 
         TS_ASSERT( tableau->lowerBounds.exists( 4 ) );
-        TS_ASSERT_EQUALS( tableau->lowerBounds[4], -DBL_MAX );
+        TS_ASSERT_EQUALS( tableau->lowerBounds[4], FloatUtils::negativeInfinity() );
 
         TS_ASSERT( tableau->upperBounds.exists( 0 ) );
         TS_ASSERT_EQUALS( tableau->upperBounds[0], 2.0 );
@@ -163,7 +162,7 @@ public:
         TS_ASSERT_EQUALS( tableau->upperBounds[2], 6.0 );
 
         TS_ASSERT( tableau->upperBounds.exists( 3 ) );
-        TS_ASSERT_EQUALS( tableau->upperBounds[3], DBL_MAX );
+        TS_ASSERT_EQUALS( tableau->upperBounds[3], FloatUtils::infinity() );
 
         TS_ASSERT( tableau->upperBounds.exists( 4 ) );
         TS_ASSERT_EQUALS( tableau->upperBounds[4], 0.0 );

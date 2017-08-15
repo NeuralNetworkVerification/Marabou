@@ -41,8 +41,8 @@ void Preprocessor::tightenEquationsAndPL()
 
 void Preprocessor::tightenBounds() 
 {
-	double min = -DBL_MAX;
-	double max = DBL_MAX;
+	double min = FloatUtils::negativeInfinity();
+    double max = FloatUtils::infinity();
 
     for ( const auto &equation : _input.getEquations() )
     {
@@ -202,7 +202,7 @@ void Preprocessor::eliminateVariables()
 	}
 	for ( auto pl : _input.getPiecewiseLinearConstraints() )
 	{
-		for ( auto var : pl->getParticiatingVariables() )
+		for ( auto var : pl->getParticipatingVariables() )
 		{
 			if ( indexAssignment.get( var ) == -1 )
 				pl->eliminateVar( var, rmVariables.get( var ) );

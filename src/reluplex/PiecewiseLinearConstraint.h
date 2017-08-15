@@ -100,7 +100,7 @@ public:
     /*
       Get the list of variables participating in this constraint.
     */
-    virtual List<unsigned> getParticiatingVariables() const = 0;
+    virtual List<unsigned> getParticipatingVariables() const = 0;
 
     /*
       Returns true iff the assignment satisfies the constraint.
@@ -162,7 +162,11 @@ public:
     */
     virtual void dump( String & ) const {}
 
+<<<<<<< HEAD
 	virtual void updateVarIndex( unsigned prevVar, unsigned newVar) = 0;
+=======
+	  virtual void changeVarAssign( unsigned prevVar, unsigned newVar) = 0;
+>>>>>>> ccaedfb3105fcd1f994fc4813adb3aa32c6a4ddf
 
   	virtual void eliminateVar( unsigned var, double val) = 0;
 

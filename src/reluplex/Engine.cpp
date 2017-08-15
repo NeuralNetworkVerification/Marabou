@@ -23,7 +23,7 @@
 
 Engine::Engine()
     : _smtCore( this )
-    , _numPlConstraintsDisbaledByValidSplits( 0 )
+    , _numPlConstraintsDisabledByValidSplits( 0 )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -128,9 +128,9 @@ void Engine::mainLoopStatistics()
         if ( constraint->isActive() )
             ++activeConstraints;
     _statistics.setNumActivePlConstraints( activeConstraints );
-    _statistics.setNumPlValidSplits( _numPlConstraintsDisbaledByValidSplits );
+    _statistics.setNumPlValidSplits( _numPlConstraintsDisabledByValidSplits );
     _statistics.setNumPlSMTSplits( _plConstraints.size() -
-                                   activeConstraints - _numPlConstraintsDisbaledByValidSplits );
+                                   activeConstraints - _numPlConstraintsDisabledByValidSplits );
 }
 
 bool Engine::performSimplexStep()
@@ -163,12 +163,16 @@ bool Engine::performSimplexStep()
     if ( !_tableau->performingFakePivot() )
         _tableau->computePivotRow();
 
+    bool fakePivot = _tableau->performingFakePivot();
+    if ( !fakePivot )
+        _tableau->computePivotRow();
+
     unsigned enteringVariable = _tableau->getEnteringVariable();
 
-    _activeEntryStrategy->prePivotHook( _tableau );
-
     // Perform the actual pivot
+    _activeEntryStrategy->prePivotHook( _tableau, fakePivot );
     _tableau->performPivot();
+    _activeEntryStrategy->postPivotHook( _tableau, fakePivot );
 
     // Tighten
     _boundTightener.deriveTightenings( _tableau, enteringVariable );
@@ -368,7 +372,7 @@ void Engine::storeState( EngineState &state ) const
         state._plConstraintToState[constraint] = constraintState;
     }
 
-    state._numPlConstraintsDisbaledByValidSplits = _numPlConstraintsDisbaledByValidSplits;
+    state._numPlConstraintsDisabledByValidSplits = _numPlConstraintsDisabledByValidSplits;
 
     state._nextAuxVariable = FreshVariables::getNextVariable();
     FreshVariables::setNextVariable( state._nextAuxVariable );
@@ -392,7 +396,7 @@ void Engine::restoreState( const EngineState &state )
         constraint->restoreState( *state._plConstraintToState[constraint] );
     }
 
-    _numPlConstraintsDisbaledByValidSplits = state._numPlConstraintsDisbaledByValidSplits;
+    _numPlConstraintsDisabledByValidSplits = state._numPlConstraintsDisabledByValidSplits;
 
     FreshVariables::setNextVariable( state._nextAuxVariable );
 }
@@ -401,15 +405,25 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 {
     log( "" );
     log( "Applying a split.\nEquations:" );
-    for ( const auto &equation : split.getEquations() )
+
+    unsigned auxVariable = FreshVariables::getNextVariable();
+    for ( auto &equation : split.getEquations() )
     {
+        equation.markAuxiliaryVariable( auxVariable );
         _tableau->addEquation( equation );
         // equation.dump();
     }
 
     log( "Bounds:" );
     List<Tightening> bounds = split.getBoundTightenings();
-    for ( const auto &bound : bounds )
+    List<Tightening> auxBounds = split.getAuxBoundTightenings();
+    for ( auto &bound : auxBounds )
+    {
+        bound._variable = auxVariable;
+        bounds.append( bound );
+    }
+
+    for ( auto &bound : bounds )
     {
         if ( bound._type == Tightening::LB )
         {
@@ -422,6 +436,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
             _tableau->tightenUpperBound( bound._variable, bound._value );
         }
     }
+
     log( "Done with split\n" );
 }
 
@@ -451,7 +466,7 @@ void Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
     {
         constraint->setActiveConstraint( false );
         applySplit( constraint->getValidCaseSplit() );
-        ++_numPlConstraintsDisbaledByValidSplits;
+        ++_numPlConstraintsDisabledByValidSplits;
 
         String constraintString;
         constraint->dump( constraintString );

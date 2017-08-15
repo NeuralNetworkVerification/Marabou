@@ -18,7 +18,6 @@
 #include "PiecewiseLinearCaseSplit.h"
 #include "ReluplexError.h"
 
-#include <cfloat>
 #include <string.h>
 
 class MockForMaxConstraint
@@ -52,7 +51,7 @@ public:
 		MaxConstraint max( f, elements );
 
 		List<unsigned> participatingVariables;
-        TS_ASSERT_THROWS_NOTHING( participatingVariables = max.getParticiatingVariables() );
+        TS_ASSERT_THROWS_NOTHING( participatingVariables = max.getParticipatingVariables() );
         TS_ASSERT_EQUALS( participatingVariables.size(), 9U );
 
 		auto it = participatingVariables.begin();
@@ -152,24 +151,29 @@ public:
 
 		TS_ASSERT_EQUALS( splits.size(), 8U );
 
+		unsigned auxVariable = FreshVariables::getNextVariable();
+		TS_ASSERT_EQUALS( auxVariable, 100U );
+
 		auto split = splits.begin();
 		for ( unsigned i = 2; i < 10; ++i, ++split )
 		{
 				List<Tightening> bounds = split->getBoundTightenings();
+				List<Tightening> auxBounds = split->getAuxBoundTightenings();
 
 				// For each case split, 2 + 7 = 9 bounds for each element, and we have 8 elements.
-				TS_ASSERT_EQUALS( bounds.size(), 9U );
+				TS_ASSERT_EQUALS( bounds.size(), 0U );
+				TS_ASSERT_EQUALS( auxBounds.size(), 9U );
 
-				auto bound = bounds.begin();
+				auto bound = auxBounds.begin();
 
 				for (int i = 0; i < 9; ++i, ++bound)
 				{
 						Tightening boundElem = *bound;
-						if ( i == 0 ) 
+						if ( i == 0 )
 						{
 								TS_ASSERT_EQUALS( boundElem._type, Tightening::UB );
 						}
-						else 
+						else
 						{
 								TS_ASSERT_EQUALS( boundElem._type, Tightening::LB );
 						}
@@ -177,8 +181,9 @@ public:
 						TS_ASSERT_EQUALS( boundElem._value, 0.0 );
 				}
 
-
 				List<Equation> equations = split->getEquations();
+				for ( auto &equation : equations )
+					equation.markAuxiliaryVariable( auxVariable );
 
 				TS_ASSERT_EQUALS( equations.size(), 8U );
 
@@ -263,6 +268,11 @@ public:
 			TS_ASSERT( tableau.lastUnregisteredVariableToWatcher[i].exists( &max ) );
 			}
 	}
+
+    void test_max_duplicate()
+    {
+        TS_TRACE( "TODO: add a test for duplicate" );
+    }
 };
 
 //

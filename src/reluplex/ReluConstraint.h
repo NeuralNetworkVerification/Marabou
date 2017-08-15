@@ -54,7 +54,7 @@ public:
     /*
       Get the list of variables participating in this constraint.
     */
-    List<unsigned> getParticiatingVariables() const;
+    List<unsigned> getParticipatingVariables() const;
 
     /*
       Returns true iff the assignment satisfies the constraint
@@ -101,7 +101,11 @@ public:
     */
     void dump( String &output ) const;
 
+<<<<<<< HEAD
 	void updateVarIndex( unsigned prevVar, unsigned newVar );
+=======
+  	void changeVarAssign( unsigned prevVar, unsigned newVar );
+>>>>>>> ccaedfb3105fcd1f994fc4813adb3aa32c6a4ddf
 
 	  void eliminateVar( unsigned var, double val );
     
@@ -109,8 +113,8 @@ private:
     unsigned _b;
     PhaseStatus _phaseStatus;
 
-    PiecewiseLinearCaseSplit getInactiveSplit( unsigned auxVariable ) const;
-    PiecewiseLinearCaseSplit getActiveSplit( unsigned auxVariable ) const;
+    PiecewiseLinearCaseSplit getInactiveSplit() const;
+    PiecewiseLinearCaseSplit getActiveSplit() const;
 };
 
 class ReluConstraintState : public PiecewiseLinearConstraintState
