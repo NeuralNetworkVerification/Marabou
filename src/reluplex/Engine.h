@@ -25,6 +25,7 @@
 #include "SmtCore.h"
 #include "Statistics.h"
 #include "SteepestEdge.h"
+#include "InputQuery.h"
 
 class EngineState;
 class InputQuery;
@@ -92,6 +93,11 @@ private:
       A single, violated PL constraint, selected for fixing.
     */
     PiecewiseLinearConstraint *_plConstraintToFix;
+
+	/*
+	  Preprocessed InputQuery
+	*/
+	InputQuery _processed;	
 
     /*
       Pivot selection strategies.
@@ -183,6 +189,7 @@ private:
     void checkDegradation();
 
     static void log( const String &message );
+
 };
 
 #endif // __Engine_h__

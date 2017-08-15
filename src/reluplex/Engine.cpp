@@ -273,28 +273,28 @@ void Engine::processInputQuery( InputQuery &inputQuery )
 
 void Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 {
-	InputQuery processed = inputQuery;
+	_processed = inputQuery;
     if ( preprocess )
     {
         log( Stringf( "Number of infinite bounds in the input query before preprocessing: %u",
                       inputQuery.countInfiniteBounds() ) );
 		Preprocessor process( inputQuery );
-		process.tightenBounds();
+		process.tightenEquationsAndPL();
 		InputQuery preprocessed = process.getInputQuery();
         log( Stringf( "Number of infinite bounds in the input query after preprocessing: %u",
                       preprocessed.countInfiniteBounds() ) );
-		processed = preprocessed;
+		_processed = preprocessed;
     }
 
-    if ( processed.countInfiniteBounds() != 0 )
+    if ( _processed.countInfiniteBounds() != 0 )
         throw ReluplexError( ReluplexError::UNBOUNDED_VARIABLES_NOT_YET_SUPPORTED );
 
-    _degradationChecker.storeEquations( processed );
+    _degradationChecker.storeEquations( _processed );
 
-    const List<Equation> equations( processed.getEquations() );
+    const List<Equation> equations( _processed.getEquations() );
 
     unsigned m = equations.size();
-    unsigned n = processed.getNumberOfVariables();
+    unsigned n = _processed.getNumberOfVariables();
     _tableau->setDimensions( m, n );
 
     // Current variables are [0,..,n-1], so the next variable is n.
@@ -314,11 +314,11 @@ void Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
     for ( unsigned i = 0; i < n; ++i )
     {
-        _tableau->setLowerBound( i, processed.getLowerBound( i ) );
-        _tableau->setUpperBound( i, processed.getUpperBound( i ) );
+        _tableau->setLowerBound( i, _processed.getLowerBound( i ) );
+        _tableau->setUpperBound( i, _processed.getUpperBound( i ) );
     }
 
-    _plConstraints = processed.getPiecewiseLinearConstraints();
+    _plConstraints = _processed.getPiecewiseLinearConstraints();
     for ( const auto &constraint : _plConstraints )
         constraint->registerAsWatcher( _tableau );
 
