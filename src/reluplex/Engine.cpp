@@ -405,7 +405,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
     unsigned auxVariable = FreshVariables::getNextVariable();
     for ( auto &equation : split.getEquations() )
     {
-        equation.markAuxVariable( auxVariable );
+        equation.markAuxiliaryVariable( auxVariable );
         _tableau->addEquation( equation );
         // equation.dump();
     }

@@ -228,7 +228,7 @@ public:
 
         TS_ASSERT_EQUALS( engine->lastEquations.size(), 1U );
         Equation equation4 = equation1;
-        equation4.markAuxVariable( FreshVariables::getNextVariable() - 1 );
+        equation4.markAuxiliaryVariable( FreshVariables::getNextVariable() - 1 );
         TS_ASSERT_EQUALS( *engine->lastEquations.begin(), equation4 );
 
         TS_ASSERT( engine->lastStoredState );
@@ -261,7 +261,7 @@ public:
 
         TS_ASSERT_EQUALS( engine->lastEquations.size(), 1U );
         Equation equation5 = equation2;
-        equation5.markAuxVariable( FreshVariables::getNextVariable() - 1 );
+        equation5.markAuxiliaryVariable( FreshVariables::getNextVariable() - 1 );
         TS_ASSERT_EQUALS( *engine->lastEquations.begin(), equation5 );
 
         engine->lastRestoredState = NULL;
@@ -288,11 +288,11 @@ public:
         TS_ASSERT_EQUALS( engine->lastEquations.size(), 2U );
         auto equation = engine->lastEquations.begin();
         Equation equation6 = equation1;
-        equation6.markAuxVariable( FreshVariables::getNextVariable() - 1 );
+        equation6.markAuxiliaryVariable( FreshVariables::getNextVariable() - 1 );
         TS_ASSERT_EQUALS( *equation, equation6 );
         ++equation;
         Equation equation7 = equation2;
-        equation7.markAuxVariable( FreshVariables::getNextVariable() - 2 );
+        equation7.markAuxiliaryVariable( FreshVariables::getNextVariable() - 2 );
         TS_ASSERT_EQUALS( *equation, equation7 );
 
         engine->lastRestoredState = NULL;

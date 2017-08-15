@@ -39,7 +39,7 @@ public:
     void addAddend( double coefficient, unsigned variable );
     void addAuxAddend( double coefficient );
     void setScalar( double scalar );
-    void markAuxVariable( unsigned auxVariable );
+    void markAuxiliaryVariable( unsigned auxVariable );
 
     List<Addend> _addends;
     double _scalar;

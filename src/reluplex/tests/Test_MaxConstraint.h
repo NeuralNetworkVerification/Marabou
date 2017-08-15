@@ -184,7 +184,7 @@ public:
 
 				List<Equation> equations = split->getEquations();
 				for ( auto &equation : equations )
-					equation.markAuxVariable( auxVariable );
+					equation.markAuxiliaryVariable( auxVariable );
 
 				TS_ASSERT_EQUALS( equations.size(), 8U );
 

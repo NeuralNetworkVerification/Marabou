@@ -40,7 +40,7 @@ void Equation::setScalar( double scalar )
     _scalar = scalar;
 }
 
-void Equation::markAuxVariable( unsigned auxVariable )
+void Equation::markAuxiliaryVariable( unsigned auxVariable )
 {
     _auxVariable = auxVariable;
     addAddend( _auxCoefficient, _auxVariable );

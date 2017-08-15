@@ -67,7 +67,7 @@ public:
         unsigned auxVariable = FreshVariables::getNextVariable();
         for ( auto &equation : split.getEquations() )
         {
-            equation.markAuxVariable( auxVariable );
+            equation.markAuxiliaryVariable( auxVariable );
             lastEquations.append( equation );
         }
     

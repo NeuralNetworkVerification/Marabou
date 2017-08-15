@@ -66,7 +66,7 @@ public:
         equation2.addAddend( 3, 1 );
         equation2.addAuxAddend( 1 );
         equation2.setScalar( -5 );
-        equation2.markAuxVariable( 4 );
+        equation2.markAuxiliaryVariable( 4 );
         inputQuery.addEquation( equation2 );
 
         Engine engine;

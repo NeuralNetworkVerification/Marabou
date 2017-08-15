@@ -80,7 +80,7 @@ public:
         equation1.addAddend( -1, 1 );
         equation1.addAuxAddend( 1 );
         equation1.setScalar( 0 );
-        equation1.markAuxVariable( 6 );
+        equation1.markAuxiliaryVariable( 6 );
         inputQuery.addEquation( equation1 );
 
         Equation equation2;
@@ -88,7 +88,7 @@ public:
         equation2.addAddend( 1, 3 );
         equation2.addAuxAddend( 1 );
         equation2.setScalar( 0 );
-        equation2.markAuxVariable( 7 );
+        equation2.markAuxiliaryVariable( 7 );
         inputQuery.addEquation( equation2 );
 
         Equation equation3;
@@ -97,7 +97,7 @@ public:
         equation3.addAddend( -1, 5 );
         equation3.addAuxAddend( 1 );
         equation3.setScalar( 0 );
-        equation3.markAuxVariable( 8 );
+        equation3.markAuxiliaryVariable( 8 );
         inputQuery.addEquation( equation3 );
 
         ReluConstraint *relu1 = new ReluConstraint( 1, 2 );

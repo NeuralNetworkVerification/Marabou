@@ -50,7 +50,7 @@ public:
         equation.addAddend( -1, 2 );
         equation.addAuxAddend( 1 );
         equation.setScalar( 11 );
-        equation.markAuxVariable( 3 );
+        equation.markAuxiliaryVariable( 3 );
         inputQuery.addEquation( equation );
 
         Engine engine;

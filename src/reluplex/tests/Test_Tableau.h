@@ -1175,7 +1175,7 @@ public:
         equation.addAddend( -4, 2 );
         equation.addAuxAddend( 1 );
         equation.setScalar( 5 );
-        equation.markAuxVariable( 7 );
+        equation.markAuxiliaryVariable( 7 );
         TS_ASSERT_THROWS_NOTHING( tableau->addEquation( equation ) );
 
         TS_ASSERT( tableau->isBasic( 7u ) );

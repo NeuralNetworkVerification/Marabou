@@ -134,7 +134,7 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
             // The auxiliary variable
             unsigned auxVar = _nodeToAux[NodeIndex(layer + 1, target)];
             equation.addAuxAddend( 1.0 );
-            equation.markAuxVariable( auxVar );
+            equation.markAuxiliaryVariable( auxVar );
 
             // The b variable
             unsigned bVar = _nodeToB[NodeIndex(layer + 1, target)];

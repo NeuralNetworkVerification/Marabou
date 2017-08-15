@@ -199,7 +199,7 @@ public:
         List<Equation> equations = split->getEquations();
         TS_ASSERT_EQUALS( equations.size(), 1U );
         activeEquation = split->getEquations().front();
-        activeEquation.markAuxVariable( auxVariable );
+        activeEquation.markAuxiliaryVariable( auxVariable );
         TS_ASSERT_EQUALS( activeEquation._addends.size(), 3U );
         TS_ASSERT_EQUALS( activeEquation._scalar, 0.0 );
 
@@ -247,7 +247,7 @@ public:
         equations = split->getEquations();
         TS_ASSERT_EQUALS( equations.size(), 1U );
         inactiveEquation = split->getEquations().front();
-        inactiveEquation.markAuxVariable( auxVariable );
+        inactiveEquation.markAuxiliaryVariable( auxVariable );
         TS_ASSERT_EQUALS( inactiveEquation._addends.size(), 2U );
         TS_ASSERT_EQUALS( inactiveEquation._scalar, 0.0 );
 
@@ -487,7 +487,7 @@ public:
         List<Equation> equations = split.getEquations();
         TS_ASSERT_EQUALS( equations.size(), 1U );
         activeEquation = split.getEquations().front();
-        activeEquation.markAuxVariable( auxVariable );
+        activeEquation.markAuxiliaryVariable( auxVariable );
         TS_ASSERT_EQUALS( activeEquation._addends.size(), 3U );
         TS_ASSERT_EQUALS( activeEquation._scalar, 0.0 );
 
@@ -560,7 +560,7 @@ public:
         List<Equation> equations = split.getEquations();
         TS_ASSERT_EQUALS( equations.size(), 1U );
         Equation inactiveEquation = split.getEquations().front();
-        inactiveEquation.markAuxVariable( auxVariable );
+        inactiveEquation.markAuxiliaryVariable( auxVariable );
         TS_ASSERT_EQUALS( inactiveEquation._addends.size(), 2U );
         TS_ASSERT_EQUALS( inactiveEquation._scalar, 0.0 );
 
