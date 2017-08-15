@@ -124,7 +124,7 @@ void Preprocessor::tightenPL()
 	
 	for ( auto pl : _input.getPiecewiseLinearConstraints() )
 	{
-		for (auto var : pl->getParticiatingVariables() )
+		for (auto var : pl->getParticipatingVariables() )
 		{
 			pl->notifyLowerBound( var, _input.getLowerBound( var ) ); 
 			pl->notifyUpperBound( var, _input.getUpperBound( var ) );

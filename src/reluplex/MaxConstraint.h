@@ -92,11 +92,7 @@ public:
     */
     PiecewiseLinearConstraintState *allocateState() const;
 
-<<<<<<< HEAD
 	void updateVarIndex( unsigned prevVar, unsigned newVar );
-=======
-  	void changeVarAssign( unsigned prevVar, unsigned newVar );
->>>>>>> ccaedfb3105fcd1f994fc4813adb3aa32c6a4ddf
 
 	  void eliminateVar( unsigned var, double val );
 
