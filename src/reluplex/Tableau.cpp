@@ -22,7 +22,6 @@
 #include "TableauRow.h"
 #include "TableauState.h"
 
-#include <cfloat>
 #include <string.h>
 
 Tableau::Tableau()
@@ -252,12 +251,12 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     _lowerBounds = new double[n];
     if ( !_lowerBounds )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::lowerBounds" );
-    std::fill_n( _lowerBounds, n, -DBL_MAX );
+    std::fill_n( _lowerBounds, n, FloatUtils::negativeInfinity() );
 
     _upperBounds = new double[n];
     if ( !_upperBounds )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::upperBounds" );
-    std::fill_n( _upperBounds, n, DBL_MAX );
+    std::fill_n( _upperBounds, n, FloatUtils::infinity() );
 
     _basicAssignment = new double[m];
     if ( !_basicAssignment )
@@ -993,7 +992,7 @@ double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient
         else
         {
             // Variable is below its lower bound, no constraint here
-            maxChange = - DBL_MAX - _basicAssignment[basicIndex];
+            maxChange = FloatUtils::negativeInfinity() - _basicAssignment[basicIndex];
         }
 
         ratio = maxChange / coefficient;
@@ -1024,7 +1023,7 @@ double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient
         else
         {
             // Variable is above its upper bound, no constraint here
-            maxChange = DBL_MAX - _basicAssignment[basicIndex];
+            maxChange = FloatUtils::infinity() - _basicAssignment[basicIndex];
         }
 
         ratio = maxChange / coefficient;
@@ -1204,12 +1203,12 @@ void Tableau::dumpAssignment()
     {
         bool basic = _basicVariables.exists( i );
         printf( "\tx%u  -->  %.5lf [%s]. ", i, getValue( i ), basic ? "B" : "NB" );
-        if ( _lowerBounds[i] != -DBL_MAX )
+        if ( _lowerBounds[i] != FloatUtils::negativeInfinity() )
             printf( "Range: [ %.5lf, ", _lowerBounds[i] );
         else
             printf( "Range: [ -INFTY, " );
 
-        if ( _upperBounds[i] != DBL_MAX )
+        if ( _upperBounds[i] != FloatUtils::infinity() )
             printf( "%.5lf ] ", _upperBounds[i] );
         else
             printf( "INFTY ] " );
@@ -1604,8 +1603,8 @@ void Tableau::addRow()
     _upperBounds = newUpperBounds;
 
     // Mark the new variable as unbounded
-    _lowerBounds[_n] = -DBL_MAX;
-    _upperBounds[_n] = DBL_MAX;
+    _lowerBounds[_n] = FloatUtils::negativeInfinity();
+    _upperBounds[_n] = FloatUtils::infinity();
 
     // Allocate a larger basis factorization
     BasisFactorization *newBasisFactorization = new BasisFactorization( newM );

@@ -18,7 +18,6 @@
 #include "PiecewiseLinearCaseSplit.h"
 #include "ReluplexError.h"
 
-#include <cfloat>
 #include <string.h>
 
 class MockForMaxConstraint

@@ -31,8 +31,8 @@ InputQuery Preprocessor::getInputQuery()
 void Preprocessor::tightenBounds() 
 {
 
-	double min = -DBL_MAX;
-    double max = DBL_MAX;
+	double min = FloatUtils::negativeInfinity();
+    double max = FloatUtils::infinity();
 
     for ( const auto &equation : _input.getEquations() )
     {

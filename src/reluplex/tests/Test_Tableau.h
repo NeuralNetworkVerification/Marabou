@@ -126,8 +126,8 @@ public:
 
         for ( unsigned i = 0; i < tableau->getN(); ++i )
         {
-            TS_ASSERT_EQUALS( tableau->getLowerBound( i ), -DBL_MAX );
-            TS_ASSERT_EQUALS( tableau->getUpperBound( i ), DBL_MAX );
+            TS_ASSERT_EQUALS( tableau->getLowerBound( i ), FloatUtils::negativeInfinity() );
+            TS_ASSERT_EQUALS( tableau->getUpperBound( i ), FloatUtils::infinity() );
         }
 
         TS_ASSERT_THROWS_NOTHING( delete tableau );

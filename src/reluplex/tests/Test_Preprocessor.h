@@ -17,7 +17,6 @@
 #include "ReluplexError.h"
 #include "Engine.h"
 
-#include <cfloat>
 #include <string.h>
 
 class MockForPreprocessor
@@ -78,10 +77,10 @@ public:
         TS_ASSERT_EQUALS( processed.getUpperBound( 0 ), 13 );
 
         preprocess._input.setLowerBound( 0, 0 );
-        preprocess._input.setUpperBound( 0, DBL_MAX );
+        preprocess._input.setUpperBound( 0, FloatUtils::infinity() );
         preprocess._input.setLowerBound( 1, 0 );
         preprocess._input.setUpperBound( 1, 1 );
-        preprocess._input.setLowerBound( 2, -DBL_MAX );
+        preprocess._input.setLowerBound( 2, FloatUtils::negativeInfinity() );
         preprocess._input.setUpperBound( 2, 3 );
         preprocess._input.setLowerBound( 3, 0 );
         preprocess._input.setUpperBound( 3, 0 );
@@ -101,12 +100,12 @@ public:
         TS_ASSERT_EQUALS( processed.getLowerBound( 2 ), -10 );
 		TS_ASSERT_EQUALS( processed.getUpperBound( 2 ), 3 );
 
-        preprocess._input.setLowerBound( 0, -DBL_MAX );
+        preprocess._input.setLowerBound( 0, FloatUtils::negativeInfinity() );
         preprocess._input.setUpperBound( 0, 15 );
         preprocess._input.setLowerBound( 1, 3 );
         preprocess._input.setUpperBound( 1, 3 );
         preprocess._input.setLowerBound( 2, 2 );
-        preprocess._input.setUpperBound( 2, DBL_MAX );
+        preprocess._input.setUpperBound( 2, FloatUtils::infinity() );
         preprocess._input.setLowerBound( 3, 0 );
         preprocess._input.setUpperBound( 3, 0 );
 
@@ -124,11 +123,11 @@ public:
         TS_ASSERT_EQUALS( processed.getLowerBound( 2 ), 2 );
         TS_ASSERT_EQUALS( processed.getUpperBound( 2 ), 8 );
 
-        preprocess._input.setLowerBound( 0, -DBL_MAX );
+        preprocess._input.setLowerBound( 0, FloatUtils::negativeInfinity() );
         preprocess._input.setUpperBound( 0, 15 );
         preprocess._input.setLowerBound( 1, -3 );
         preprocess._input.setUpperBound( 1, -2 );
-        preprocess._input.setLowerBound( 2, -DBL_MAX );
+        preprocess._input.setLowerBound( 2, FloatUtils::negativeInfinity() );
         preprocess._input.setUpperBound( 2, 6 );
         preprocess._input.setLowerBound( 3, 0 );
         preprocess._input.setUpperBound( 3, 0 );
@@ -143,12 +142,12 @@ public:
         preprocess.tightenBounds();
 		processed = preprocess.getInputQuery();
 
-        TS_ASSERT_EQUALS( processed.getLowerBound( 0 ), -DBL_MAX );
+        TS_ASSERT_EQUALS( processed.getLowerBound( 0 ), FloatUtils::negativeInfinity() );
         TS_ASSERT_EQUALS( processed.getUpperBound( 0 ), 15 );
-        TS_ASSERT_EQUALS( processed.getLowerBound( 2 ), -DBL_MAX );
+        TS_ASSERT_EQUALS( processed.getLowerBound( 2 ), FloatUtils::negativeInfinity() );
         TS_ASSERT_EQUALS( processed.getUpperBound( 2 ), 3 );
 
-        preprocess._input.setLowerBound( 0, -DBL_MAX );
+        preprocess._input.setLowerBound( 0, FloatUtils::negativeInfinity() );
         preprocess._input.setUpperBound( 0, 5 );
         preprocess._input.setLowerBound( 1, -3 );
         preprocess._input.setUpperBound( 1, -2 );

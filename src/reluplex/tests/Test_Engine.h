@@ -19,7 +19,6 @@
 #include "MockTableauFactory.h"
 #include "ReluConstraint.h"
 
-#include <cfloat>
 #include <string.h>
 
 class MockForEngine :
@@ -151,7 +150,7 @@ public:
         TS_ASSERT_EQUALS( tableau->lowerBounds[3], 0.0 );
 
         TS_ASSERT( tableau->lowerBounds.exists( 4 ) );
-        TS_ASSERT_EQUALS( tableau->lowerBounds[4], -DBL_MAX );
+        TS_ASSERT_EQUALS( tableau->lowerBounds[4], FloatUtils::negativeInfinity() );
 
         TS_ASSERT( tableau->upperBounds.exists( 0 ) );
         TS_ASSERT_EQUALS( tableau->upperBounds[0], 2.0 );
@@ -163,7 +162,7 @@ public:
         TS_ASSERT_EQUALS( tableau->upperBounds[2], 6.0 );
 
         TS_ASSERT( tableau->upperBounds.exists( 3 ) );
-        TS_ASSERT_EQUALS( tableau->upperBounds[3], DBL_MAX );
+        TS_ASSERT_EQUALS( tableau->upperBounds[3], FloatUtils::infinity() );
 
         TS_ASSERT( tableau->upperBounds.exists( 4 ) );
         TS_ASSERT_EQUALS( tableau->upperBounds[4], 0.0 );
