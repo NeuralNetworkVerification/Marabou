@@ -160,8 +160,6 @@ bool Engine::performSimplexStep()
     // Pick a leaving variable
     _tableau->computeChangeColumn();
     _tableau->pickLeavingVariable();
-    if ( !_tableau->performingFakePivot() )
-        _tableau->computePivotRow();
 
     bool fakePivot = _tableau->performingFakePivot();
     if ( !fakePivot )
