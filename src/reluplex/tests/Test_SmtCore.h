@@ -45,6 +45,10 @@ public:
             return NULL;
         }
 
+        void restoreState( const PiecewiseLinearConstraint */* state */ )
+        {
+        }
+
         void registerAsWatcher( ITableau * )
         {
         }
@@ -91,11 +95,6 @@ public:
         {
             return nextSplits;
         }
-
-        PiecewiseLinearConstraintState *allocateState() const { return NULL; };
-
-        void storeState( PiecewiseLinearConstraintState &/* state */ ) const {};
-        void restoreState( const PiecewiseLinearConstraintState &/* state */ ) {};
 
         bool phaseFixed() const
         {

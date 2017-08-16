@@ -21,14 +21,6 @@
 class ITableau;
 class String;
 
-class PiecewiseLinearConstraintState
-{
-public:
-    PiecewiseLinearConstraintState() {}
-    virtual ~PiecewiseLinearConstraintState() {}
-
-};
-
 class PiecewiseLinearConstraint : public ITableau::VariableWatcher
 {
 public:
@@ -60,6 +52,13 @@ public:
       Return a clone of the constraint.
     */
     virtual PiecewiseLinearConstraint *duplicateConstraint() const = 0;
+
+    /*
+      Restore the state of this constraint from the given one.
+      We have this function in order to take advantage of the polymorphically
+      correct assignment operator.
+    */
+    virtual void restoreState( const PiecewiseLinearConstraint *state ) = 0;
 
     /*
       Register/unregister the constraint with a talbeau.
@@ -126,28 +125,13 @@ public:
     virtual PiecewiseLinearCaseSplit getValidCaseSplit() const = 0;
 
     /*
-      Allocate a new state (derived from PiecewiseLinearConstraintState)
-      to save into.
-    */
-    virtual PiecewiseLinearConstraintState *allocateState() const = 0;
-
-    /*
-      Store and restore the constraint's state. Needed for case splitting
-      and backtracking.
-    */
-    virtual void storeState( PiecewiseLinearConstraintState &state ) const = 0;
-    virtual void restoreState( const PiecewiseLinearConstraintState &state ) = 0;
-
-    /*
       Dump the current state of the constraint.
     */
     virtual void dump( String & ) const {}
 
-	virtual void updateVarIndex( unsigned prevVar, unsigned newVar) = 0;
+  	virtual void updateVarIndex( unsigned prevVar, unsigned newVar ) = 0;
 
-  	virtual void eliminateVar( unsigned var, double val) = 0;
-
-  	virtual void deriveTighterBounds( Map<unsigned, double> &, Map<unsigned, double> & ){};
+  	virtual void eliminateVar( unsigned var, double val ) = 0;
 
     /*
       Get the tightenings entailed by the constraint.

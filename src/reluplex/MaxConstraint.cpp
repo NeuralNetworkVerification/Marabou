@@ -40,6 +40,12 @@ PiecewiseLinearConstraint *MaxConstraint::duplicateConstraint() const
     return clone;
 }
 
+void MaxConstraint::restoreState( const PiecewiseLinearConstraint *state )
+{
+	const MaxConstraint *max = dynamic_cast<const MaxConstraint *>( state );
+	*this = *max;
+}
+
 void MaxConstraint::registerAsWatcher( ITableau *tableau )
 {
 	tableau->registerToWatchVariable( this, _f );
@@ -203,23 +209,6 @@ List<PiecewiseLinearCaseSplit> MaxConstraint::getCaseSplits() const
 			splits.append( getSplit( element ) );
 	}
 	return splits;
-}
-
-void MaxConstraint::storeState( PiecewiseLinearConstraintState &state ) const
-{
-    MaxConstraintState *maxState = dynamic_cast<MaxConstraintState *>( &state );
-	maxState->_savedConstraint = *this;
-}
-
-void MaxConstraint::restoreState( const PiecewiseLinearConstraintState &state )
-{
-    const MaxConstraintState *maxState = dynamic_cast<const MaxConstraintState *>( &state );
-    *this = maxState->_savedConstraint;
-}
-
-PiecewiseLinearConstraintState *MaxConstraint::allocateState() const
-{
-    return new MaxConstraintState;
 }
 
 bool MaxConstraint::phaseFixed() const

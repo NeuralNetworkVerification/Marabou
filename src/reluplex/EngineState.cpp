@@ -20,7 +20,7 @@ EngineState::~EngineState()
 {
     for ( auto &kv : _plConstraintToState )
     {
-        PiecewiseLinearConstraintState *state = kv.second;
+        PiecewiseLinearConstraint *state = kv.second;
         if ( state )
         {
             delete state;

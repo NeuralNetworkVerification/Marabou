@@ -33,6 +33,12 @@ PiecewiseLinearConstraint *ReluConstraint::duplicateConstraint() const
     return clone;
 }
 
+void ReluConstraint::restoreState( const PiecewiseLinearConstraint *state )
+{
+    const ReluConstraint *relu = dynamic_cast<const ReluConstraint *>( state );
+    *this = *relu;
+}
+
 void ReluConstraint::registerAsWatcher( ITableau *tableau )
 {
     tableau->registerToWatchVariable( this, _b );
@@ -171,23 +177,6 @@ List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
     splits.append( getInactiveSplit() );
 
     return splits;
-}
-
-void ReluConstraint::storeState( PiecewiseLinearConstraintState &state ) const
-{
-    ReluConstraintState *reluState = dynamic_cast<ReluConstraintState *>( &state );
-    reluState->_savedConstraint = *this;
-}
-
-void ReluConstraint::restoreState( const PiecewiseLinearConstraintState &state )
-{
-    const ReluConstraintState *reluState = dynamic_cast<const ReluConstraintState *>( &state );
-    *this = reluState->_savedConstraint;
-}
-
-PiecewiseLinearConstraintState *ReluConstraint::allocateState() const
-{
-    return new ReluConstraintState;
 }
 
 PiecewiseLinearCaseSplit ReluConstraint::getInactiveSplit() const

@@ -349,9 +349,7 @@ void Engine::storeState( EngineState &state ) const
     _tableau->storeState( state._tableauState );
     for ( const auto &constraint : _plConstraints )
     {
-        PiecewiseLinearConstraintState *constraintState = constraint->allocateState();
-        constraint->storeState( *constraintState );
-        state._plConstraintToState[constraint] = constraintState;
+        state._plConstraintToState[constraint] = constraint->duplicateConstraint();
     }
 
     state._numPlConstraintsDisabledByValidSplits = _numPlConstraintsDisabledByValidSplits;
@@ -370,12 +368,12 @@ void Engine::restoreState( const EngineState &state )
     _tableau->restoreState( state._tableauState );
 
     log( "\tRestoring constraint states" );
-    for ( const auto &constraint : _plConstraints )
+    for ( auto &constraint : _plConstraints )
     {
         if ( !state._plConstraintToState.exists( constraint ) )
             throw ReluplexError( ReluplexError::MISSING_PL_CONSTRAINT_STATE );
 
-        constraint->restoreState( *state._plConstraintToState[constraint] );
+        constraint->restoreState( state._plConstraintToState[constraint] );
     }
 
     _numPlConstraintsDisabledByValidSplits = state._numPlConstraintsDisabledByValidSplits;

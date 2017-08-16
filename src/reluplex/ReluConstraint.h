@@ -32,6 +32,11 @@ public:
     PiecewiseLinearConstraint *duplicateConstraint() const;
 
     /*
+      Restore the state of this constraint from the given one.
+    */
+    void restoreState( const PiecewiseLinearConstraint *state );
+
+    /*
       Register/unregister the constraint with a talbeau.
      */
     void registerAsWatcher( ITableau *tableau );
@@ -85,18 +90,6 @@ public:
     PiecewiseLinearCaseSplit getValidCaseSplit() const;
 
     /*
-      Store and restore the constraint's state. Needed for case splitting
-      and backtracking.
-    */
-    void storeState( PiecewiseLinearConstraintState &state ) const;
-    void restoreState( const PiecewiseLinearConstraintState &state );
-
-    /*
-      Allocate a ReluConstraintState for storing state.
-    */
-    PiecewiseLinearConstraintState *allocateState() const;
-
-    /*
       Dump the current state of the constraint.
     */
     void dump( String &output ) const;
@@ -111,17 +104,6 @@ private:
 
     PiecewiseLinearCaseSplit getInactiveSplit() const;
     PiecewiseLinearCaseSplit getActiveSplit() const;
-};
-
-class ReluConstraintState : public PiecewiseLinearConstraintState
-{
-public:
-    ReluConstraintState()
-        : _savedConstraint( 0, 0 )
-    {}
-    ~ReluConstraintState() {}
-
-    ReluConstraint _savedConstraint;
 };
 
 #endif // __ReluConstraint_h__
