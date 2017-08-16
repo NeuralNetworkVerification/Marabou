@@ -48,7 +48,7 @@ public:
         equation.addAddend( 1, 0 );
         equation.addAddend( 2, 1 );
         equation.addAddend( -1, 2 );
-        equation.addAuxAddend( 1 );
+        equation.addAddend( 1, 3 );
         equation.setScalar( 11 );
         equation.markAuxiliaryVariable( 3 );
         inputQuery.addEquation( equation );

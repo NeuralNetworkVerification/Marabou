@@ -163,12 +163,11 @@ public:
         equation1.addAddend( 1, 0 );
         equation1.addAddend( 2, 1 );
         equation1.addAddend( -1, 2 );
-        equation1.addAuxAddend( 1 );
         equation1.setScalar( 11 );
 
         split1.storeBoundTightening( bound1 );
         split1.storeBoundTightening( bound2 );
-        split1.addEquation( equation1 );
+        split1.addEquation( equation1, PiecewiseLinearCaseSplit::EQ );
 
         // Split 2
         PiecewiseLinearCaseSplit split2;
@@ -178,20 +177,19 @@ public:
         Equation equation2;
         equation2.addAddend( -3, 0 );
         equation2.addAddend( 3, 1 );
-        equation2.addAuxAddend( 1 );
         equation2.setScalar( -5 );
 
         split2.storeBoundTightening( bound3 );
         split2.storeBoundTightening( bound4 );
-        split2.addEquation( equation2 );
+        split2.addEquation( equation2, PiecewiseLinearCaseSplit::EQ );
 
         // Split 3
         PiecewiseLinearCaseSplit split3;
         Tightening bound5( 14, 2.3, Tightening::LB );
 
         split3.storeBoundTightening( bound5 );
-        split3.addEquation( equation1 );
-        split3.addEquation( equation2 );
+        split3.addEquation( equation1, PiecewiseLinearCaseSplit::EQ );
+        split3.addEquation( equation2, PiecewiseLinearCaseSplit::EQ );
 
         // Store the splits
         constraint.nextSplits.append( split1 );
@@ -214,17 +212,19 @@ public:
         TS_ASSERT_EQUALS( smtCore.getStackDepth(), 1U );
 
         // Check that Split1 was performed and tableau state was stored
-        TS_ASSERT_EQUALS( engine->lastLowerBounds.size(), 1U );
+        TS_ASSERT_EQUALS( engine->lastLowerBounds.size(), 2U );
         TS_ASSERT_EQUALS( engine->lastLowerBounds.begin()->_variable, 1U );
         TS_ASSERT_EQUALS( engine->lastLowerBounds.begin()->_bound, 3.0 );
 
-        TS_ASSERT_EQUALS( engine->lastUpperBounds.size(), 1U );
+        TS_ASSERT_EQUALS( engine->lastUpperBounds.size(), 2U );
         TS_ASSERT_EQUALS( engine->lastUpperBounds.begin()->_variable, 1U );
         TS_ASSERT_EQUALS( engine->lastUpperBounds.begin()->_bound, 5.0 );
 
         TS_ASSERT_EQUALS( engine->lastEquations.size(), 1U );
         Equation equation4 = equation1;
-        equation4.markAuxiliaryVariable( FreshVariables::getNextVariable() - 1 );
+        unsigned auxVar4 = FreshVariables::getNextVariable() - 1;
+        equation4.addAddend( -1, auxVar4 );
+        equation4.markAuxiliaryVariable( auxVar4 );
         TS_ASSERT_EQUALS( *engine->lastEquations.begin(), equation4 );
 
         TS_ASSERT( engine->lastStoredState );
@@ -245,9 +245,9 @@ public:
         TS_ASSERT( !engine->lastStoredState );
         engine->lastRestoredState = NULL;
 
-        TS_ASSERT_EQUALS( engine->lastLowerBounds.size(), 0U );
+        TS_ASSERT_EQUALS( engine->lastLowerBounds.size(), 1U );
 
-        TS_ASSERT_EQUALS( engine->lastUpperBounds.size(), 2U );
+        TS_ASSERT_EQUALS( engine->lastUpperBounds.size(), 3U );
         auto it = engine->lastUpperBounds.begin();
         TS_ASSERT_EQUALS( it->_variable, 2U );
         TS_ASSERT_EQUALS( it->_bound, 13.0 );
@@ -257,7 +257,9 @@ public:
 
         TS_ASSERT_EQUALS( engine->lastEquations.size(), 1U );
         Equation equation5 = equation2;
-        equation5.markAuxiliaryVariable( FreshVariables::getNextVariable() - 1 );
+        unsigned auxVar5 = FreshVariables::getNextVariable() - 1;
+        equation5.addAddend( -1, auxVar5 );
+        equation5.markAuxiliaryVariable( auxVar5 );
         TS_ASSERT_EQUALS( *engine->lastEquations.begin(), equation5 );
 
         engine->lastRestoredState = NULL;
@@ -274,21 +276,25 @@ public:
         TS_ASSERT( !engine->lastStoredState );
         engine->lastRestoredState = NULL;
 
-        TS_ASSERT_EQUALS( engine->lastLowerBounds.size(), 1U );
+        TS_ASSERT_EQUALS( engine->lastLowerBounds.size(), 3U );
         it = engine->lastLowerBounds.begin();
         TS_ASSERT_EQUALS( it->_variable, 14U );
         TS_ASSERT_EQUALS( it->_bound, 2.3 );
 
-        TS_ASSERT_EQUALS( engine->lastUpperBounds.size(), 0U );
+        TS_ASSERT_EQUALS( engine->lastUpperBounds.size(), 2U );
 
         TS_ASSERT_EQUALS( engine->lastEquations.size(), 2U );
         auto equation = engine->lastEquations.begin();
         Equation equation6 = equation1;
-        equation6.markAuxiliaryVariable( FreshVariables::getNextVariable() - 1 );
+        unsigned auxVar6 = FreshVariables::getNextVariable() - 2;
+        equation6.addAddend( -1, auxVar6 );
+        equation6.markAuxiliaryVariable( auxVar6 );
         TS_ASSERT_EQUALS( *equation, equation6 );
         ++equation;
         Equation equation7 = equation2;
-        equation7.markAuxiliaryVariable( FreshVariables::getNextVariable() - 2 );
+        unsigned auxVar7 = FreshVariables::getNextVariable() - 2;
+        equation7.addAddend( -1, auxVar7 );
+        equation7.markAuxiliaryVariable( auxVar7 );
         TS_ASSERT_EQUALS( *equation, equation7 );
 
         engine->lastRestoredState = NULL;

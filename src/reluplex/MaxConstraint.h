@@ -19,7 +19,7 @@
 class MaxConstraint : public PiecewiseLinearConstraint
 {
 public:
-  	MaxConstraint( unsigned f, const List<unsigned> &elements );
+  	MaxConstraint( unsigned f, const Set<unsigned> &elements );
   	~MaxConstraint();
 
     /*
@@ -99,9 +99,39 @@ public:
 
 private:
   	unsigned _maxIndex;
-    List<unsigned> _elements;
+    Set<unsigned> _elements;
+    Set<unsigned> _eliminated;
+    double _minLowerBound;
+    double _maxUpperBound;
+    bool _phaseFixed;
+    unsigned _fixedPhase;
+    
+    /*
+      Returns the phase where variable argMax has maximum value.
+    */
+    PiecewiseLinearCaseSplit getSplit( unsigned argMax ) const;
 
-	  Set<unsigned> _eliminated;
+    /*
+      Returns the minimum of the lower bounds of all elements.
+    */
+    double getMinLowerBound() const;
+
+    /*
+      Returns the maximum of the upper bounds of all elements.
+    */
+    double getMaxUpperBound() const;
+
+};
+
+class MaxConstraintState : public PiecewiseLinearConstraintState
+{
+public:
+    MaxConstraintState()
+        : _savedConstraint( 0, Set<unsigned>() )
+    {}
+    ~MaxConstraintState() {}
+
+    MaxConstraint _savedConstraint;
 };
 
 #endif // __MaxConstraint_h__

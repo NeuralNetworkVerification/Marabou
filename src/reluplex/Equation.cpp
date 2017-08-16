@@ -30,11 +30,6 @@ void Equation::addAddend( double coefficient, unsigned variable )
     _addends.append( Addend( coefficient, variable ) );
 }
 
-void Equation::addAuxAddend( double coefficient )
-{
-    _auxCoefficient = coefficient;
-}
-
 void Equation::setScalar( double scalar )
 {
     _scalar = scalar;
@@ -43,7 +38,6 @@ void Equation::setScalar( double scalar )
 void Equation::markAuxiliaryVariable( unsigned auxVariable )
 {
     _auxVariable = auxVariable;
-    addAddend( _auxCoefficient, _auxVariable );
 }
 
 bool Equation::operator==( const Equation &other ) const

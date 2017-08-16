@@ -23,22 +23,12 @@ List<Tightening> PiecewiseLinearCaseSplit::getBoundTightenings() const
     return _bounds;
 }
 
-void PiecewiseLinearCaseSplit::storeAuxBoundTightening( const Tightening &tightening )
+void PiecewiseLinearCaseSplit::addEquation( const Equation &equation, EquationType type )
 {
-    _auxBounds.append( tightening );
+	_equations.append( Pair<Equation, EquationType>( equation, type ) );
 }
 
-List<Tightening> PiecewiseLinearCaseSplit::getAuxBoundTightenings() const
-{
-    return _auxBounds;
-}
-
-void PiecewiseLinearCaseSplit::addEquation( const Equation &equation )
-{
-	_equations.append( equation );
-}
-
-List<Equation> PiecewiseLinearCaseSplit::getEquations() const
+List<Pair<Equation, PiecewiseLinearCaseSplit::EquationType> > PiecewiseLinearCaseSplit::getEquations() const
 {
 	return _equations;
 }
@@ -57,7 +47,7 @@ void PiecewiseLinearCaseSplit::dump() const
     for ( const auto &equation : _equations )
     {
         printf( "\t\t" );
-        equation.dump();
+        equation.first().dump();
     }
 }
 

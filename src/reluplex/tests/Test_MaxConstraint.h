@@ -43,10 +43,10 @@ public:
     void test_max_constraint()
     {
 		unsigned f = 1;
-		List<unsigned> elements;
+		Set<unsigned> elements;
 
 		for ( unsigned i = 2; i < 10; ++i )
-			elements.append( i );
+			elements.insert( i );
 
 		MaxConstraint max( f, elements );
 
@@ -94,10 +94,10 @@ public:
 	void test_max_fixes()
 	{
         unsigned f = 1;
-		List<unsigned> elements;
+		Set<unsigned> elements;
 
 		for ( unsigned i = 2; i < 10; ++i )
-			elements.append( i );
+			elements.insert( i );
 
 		MaxConstraint max( f, elements );
 
@@ -127,10 +127,10 @@ public:
 	void test_max_case_splits()
 	{
 		unsigned f = 1;
-		List<unsigned> elements;
+		Set<unsigned> elements;
 
 		for ( unsigned i = 2; i < 10; ++i )
-			elements.append( i );
+			elements.insert( i );
 
 		MaxConstraint max( f, elements );
 
@@ -158,32 +158,21 @@ public:
 		for ( unsigned i = 2; i < 10; ++i, ++split )
 		{
 				List<Tightening> bounds = split->getBoundTightenings();
-				List<Tightening> auxBounds = split->getAuxBoundTightenings();
+				//List<Tightening> auxBounds = split->getAuxBoundTightenings();
 
 				// For each case split, 2 + 7 = 9 bounds for each element, and we have 8 elements.
 				TS_ASSERT_EQUALS( bounds.size(), 0U );
-				TS_ASSERT_EQUALS( auxBounds.size(), 9U );
 
-				auto bound = auxBounds.begin();
+				auto equationPairs = split->getEquations();
+				List<Equation> equations;
+				for ( auto &pair : equationPairs )
+					equations.append( pair.first() );
 
-				for (int i = 0; i < 9; ++i, ++bound)
+				for ( auto &equation: equations )
 				{
-						Tightening boundElem = *bound;
-						if ( i == 0 )
-						{
-								TS_ASSERT_EQUALS( boundElem._type, Tightening::UB );
-						}
-						else
-						{
-								TS_ASSERT_EQUALS( boundElem._type, Tightening::LB );
-						}
-
-						TS_ASSERT_EQUALS( boundElem._value, 0.0 );
-				}
-
-				List<Equation> equations = split->getEquations();
-				for ( auto &equation : equations )
+					equation.addAddend( -1, auxVariable );
 					equation.markAuxiliaryVariable( auxVariable );
+				}
 
 				TS_ASSERT_EQUALS( equations.size(), 8U );
 
@@ -204,7 +193,7 @@ public:
 
 				++addend;
 
-				TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+				TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
 				TS_ASSERT_EQUALS( addend->_variable, 100U );
 
 				++cur;
@@ -218,17 +207,17 @@ public:
 
 						auto addend = cur->_addends.begin();
 
-						TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+						TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
 						TS_ASSERT_EQUALS( addend->_variable, j );
 
 						++addend;
 
-						TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
+						TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
 						TS_ASSERT_EQUALS( addend->_variable, i );
 
 						++addend;
 
-						TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+						TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
 						TS_ASSERT_EQUALS( addend->_variable, 100U );
 
 						++cur;
@@ -240,12 +229,12 @@ public:
 	void test_register_as_watcher()
 	{
 		unsigned f = 1;
-		List<unsigned> elements;
+		Set<unsigned> elements;
 
 		MockTableau tableau;
 
 		for ( unsigned i = 2; i < 10; ++i )
-			elements.append( i );
+			elements.insert( i );
 
 		MaxConstraint max( f, elements );
 

@@ -19,9 +19,12 @@
 #include "ReluplexError.h"
 #include <algorithm>
 
-MaxConstraint::MaxConstraint( unsigned f, const List<unsigned> &elements )
+MaxConstraint::MaxConstraint( unsigned f, const Set<unsigned> &elements )
 	: PiecewiseLinearConstraint( f )
 	, _elements( elements )
+	, _minLowerBound( FloatUtils::infinity() )
+	, _maxUpperBound( FloatUtils::negativeInfinity() )
+	, _phaseFixed( false )
 {
 }
 
@@ -33,20 +36,7 @@ MaxConstraint::~MaxConstraint()
 PiecewiseLinearConstraint *MaxConstraint::duplicateConstraint() const
 {
     MaxConstraint *clone = new MaxConstraint( _f, _elements );
-
 	*clone = *this;
-	
-	// // Common PiecewiseLinearConstraint state.
-    // clone->_constraintActive = _constraintActive;
-    // clone->_assignment = _assignment;
-    // clone->_lowerBounds = _lowerBounds;
-	// clone->_upperBounds = _upperBounds;
-	// clone->_entailedTightenings = _entailedTightenings;	
-
-	// // MaxConstraint-specific state.
-    // clone->_maxIndex = _maxIndex;
-	// clone->_eliminated = _eliminated;
-
     return clone;
 }
 
@@ -79,14 +69,68 @@ void MaxConstraint::notifyVariableValue( unsigned variable, double value )
 	_assignment[variable] = value;
 }
 
+double MaxConstraint::getMinLowerBound() const
+{
+	return (_lowerBounds.keys() == _elements) ? _minLowerBound : FloatUtils::negativeInfinity();
+}
+
+double MaxConstraint::getMaxUpperBound() const
+{
+	return (_upperBounds.keys() == _elements) ? _maxUpperBound : FloatUtils::infinity();
+}
+
 void MaxConstraint::notifyLowerBound( unsigned variable, double value )
 {
+	if ( _lowerBounds.exists( variable ) && !FloatUtils::gt( value, _lowerBounds[variable] ) )
+		return;
+
 	_lowerBounds[variable] = value;
+
+	if ( FloatUtils::lt( value, _minLowerBound ) )
+	{
+		_minLowerBound = value;
+		_entailedTightenings.push( Tightening( _f, _minLowerBound, Tightening::LB ) );
+	}
+
+	// If all elements except this one are bounded above and this lower bound is greater, then phase is fixed.
+	if ( _elements.exists( variable ) )
+	{
+		double maxUpperBound = FloatUtils::negativeInfinity();
+		Set<unsigned> elements = _elements;
+		elements.erase( variable );
+		for ( auto otherVariable : elements )
+		{
+			if ( _upperBounds.exists( otherVariable ) && FloatUtils::gt( _upperBounds[otherVariable], maxUpperBound ) )
+			{
+				maxUpperBound = _upperBounds[otherVariable];
+			}
+			else
+			{
+				maxUpperBound = FloatUtils::infinity();
+				break;
+			}
+		}
+
+		if ( FloatUtils::gt( value, getMaxUpperBound() ) )
+		{
+			_phaseFixed = true;
+			_fixedPhase = variable;
+		}
+	}
 }
 
 void MaxConstraint::notifyUpperBound( unsigned variable, double value )
 {
+    if ( _upperBounds.exists( variable ) && !FloatUtils::lt( value, _upperBounds[variable] ) )
+		return;
+
 	_upperBounds[variable] = value;
+
+	if ( FloatUtils::gt( value, _maxUpperBound ) )
+	{
+		_maxUpperBound = value;
+		_entailedTightenings.push( Tightening( _f, _maxUpperBound, Tightening::UB ) );
+	}
 }
 
 bool MaxConstraint::participatingVariable( unsigned variable ) const
@@ -96,14 +140,15 @@ bool MaxConstraint::participatingVariable( unsigned variable ) const
 
 List<unsigned> MaxConstraint::getParticipatingVariables() const
 {
-	List<unsigned> temp = _elements;
+	List<unsigned> temp;
+	for ( auto element : _elements )
+		temp.append( element );
 	temp.append( _f );
 	return temp;
 }
 
 bool MaxConstraint::satisfied() const
 {
-
 	if ( !( _assignment.exists( _f )  &&  _assignment.size() > 1 ) )
 		throw ReluplexError( ReluplexError::PARTICIPATING_VARIABLES_ABSENT );
 
@@ -152,86 +197,68 @@ List<PiecewiseLinearCaseSplit> MaxConstraint::getCaseSplits() const
     ASSERT(	_assignment.exists( _f ) );
 
 	List<PiecewiseLinearCaseSplit> splits;
-
 	for ( unsigned element : _elements )
 	{
-		PiecewiseLinearCaseSplit maxPhase;
 		if ( _assignment.exists( element ) )
-		{
-            // element - f = 0
-
-            Equation maxEquation;
-
-            maxEquation.addAddend( 1, element );
-            maxEquation.addAddend( -1, _f );
-            maxEquation.addAuxAddend( 1 );
-
-            Tightening auxUpperBound( 0, 0.0, Tightening::UB );
-            Tightening auxLowerBound( 0, 0.0, Tightening::LB );
-
-            maxPhase.storeAuxBoundTightening( auxUpperBound );
-            maxPhase.storeAuxBoundTightening( auxLowerBound );
-
-            maxEquation.setScalar( 0 );
-
-            maxPhase.addEquation( maxEquation );
-
-            for ( unsigned other : _elements )
-            {
-                // element >= other
-                if ( element == other )
-                    continue;
-
-                Equation gtEquation;
-
-                // other - element + aux = 0
-                gtEquation.addAddend( 1, other );
-                gtEquation.addAddend( -1, element );
-                gtEquation.addAuxAddend( 1 );
-
-                Tightening gtAuxLowerBound( 0, 0.0, Tightening::LB );
-
-                maxPhase.storeAuxBoundTightening( gtAuxLowerBound );
-
-                gtEquation.setScalar( 0 );
-
-                maxPhase.addEquation( gtEquation );
-            }
-		}
-		splits.append( maxPhase );
+			splits.append( getSplit( element ) );
 	}
-
 	return splits;
 }
 
-void MaxConstraint::storeState( PiecewiseLinearConstraintState &/* state */ ) const
+void MaxConstraint::storeState( PiecewiseLinearConstraintState &state ) const
 {
-    printf( "Error! Not yet implemented\n" );
-    exit( 1 );
+    MaxConstraintState *maxState = dynamic_cast<MaxConstraintState *>( &state );
+	maxState->_savedConstraint = *this;
 }
 
-void MaxConstraint::restoreState( const PiecewiseLinearConstraintState &/* state */ )
+void MaxConstraint::restoreState( const PiecewiseLinearConstraintState &state )
 {
-    printf( "Error! Not yet implemented\n" );
-    exit( 1 );
+    const MaxConstraintState *maxState = dynamic_cast<const MaxConstraintState *>( &state );
+    *this = maxState->_savedConstraint;
 }
 
 PiecewiseLinearConstraintState *MaxConstraint::allocateState() const
 {
-    printf( "Error! Not yet implemented\n" );
-	exit( 1 );
+    return new MaxConstraintState;
 }
 
 bool MaxConstraint::phaseFixed() const
 {
-    printf( "Error! Not yet implemented\n" );
-    exit( 1 );
+	return _phaseFixed;
 }
 
 PiecewiseLinearCaseSplit MaxConstraint::getValidCaseSplit() const
 {
-    printf( "Error! Not yet implemented\n" );
-    exit( 1 );
+	return getSplit( _fixedPhase );
+}
+
+PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const
+{
+	ASSERT( _assignment.exists( argMax ) );
+	PiecewiseLinearCaseSplit maxPhase;
+
+	// maxArg - f = 0
+	Equation maxEquation;
+	maxEquation.addAddend( 1, argMax );
+	maxEquation.addAddend( -1, _f );
+	maxEquation.setScalar( 0 );
+	maxPhase.addEquation( maxEquation, PiecewiseLinearCaseSplit::EQ );
+
+	for ( unsigned other : _elements )
+	{
+		if ( argMax == other )
+			continue;
+
+		Equation gtEquation;
+
+		// argMax >= other
+		gtEquation.addAddend( -1, other );
+		gtEquation.addAddend( 1, argMax );
+		gtEquation.setScalar( 0 );
+		maxPhase.addEquation( gtEquation, PiecewiseLinearCaseSplit::GE );
+	}
+	
+	return maxPhase;
 }
 
 void MaxConstraint::updateVarIndex( unsigned prevVar, unsigned newVar )
@@ -254,7 +281,7 @@ void MaxConstraint::updateVarIndex( unsigned prevVar, unsigned newVar )
 	else
 	{
 		_elements.erase( prevVar );
-		_elements.append( newVar );
+		_elements.insert( newVar );
 	}
 }
 
