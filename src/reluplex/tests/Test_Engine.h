@@ -60,7 +60,6 @@ public:
 
     void test_process_input_query()
     {
-	/*
         //   0  <= x0 <= 2
         //   -3 <= x1 <= 3
         //   4  <= x2 <= 6
@@ -174,17 +173,37 @@ public:
         TS_ASSERT( tableau->lastRegisteredVariableToWatcher.exists( 4 ) );
 
         TS_ASSERT_EQUALS( tableau->lastRegisteredVariableToWatcher[1].size(), 1U );
-        TS_ASSERT( tableau->lastRegisteredVariableToWatcher[1].exists( relu1 ) );
+
+		auto watcher1 = ( ( ReluConstraint * ) ( * tableau->lastRegisteredVariableToWatcher[1].begin() ) )->getParticipatingVariables();
+       	TS_ASSERT( watcher1 == relu1->getParticipatingVariables() );
 
         TS_ASSERT_EQUALS( tableau->lastRegisteredVariableToWatcher[2].size(), 2U );
-        TS_ASSERT( tableau->lastRegisteredVariableToWatcher[2].exists( relu1 ) );
-        TS_ASSERT( tableau->lastRegisteredVariableToWatcher[2].exists( relu2 ) );
+		auto it = tableau->lastRegisteredVariableToWatcher[2].begin();
+		auto watcher2 = ( ( ReluConstraint * ) ( * it  ) )->getParticipatingVariables();
+		it++;
+		auto watcher3 = ( ( ReluConstraint * ) ( * it  ) )->getParticipatingVariables();
+
+		if ( watcher2 == relu1->getParticipatingVariables() )
+		{
+			TS_ASSERT( watcher3 == relu2->getParticipatingVariables() );
+		}
+		else if ( watcher2 == relu2->getParticipatingVariables() )
+		{
+			TS_ASSERT( watcher3 == relu1->getParticipatingVariables() );
+		}
+		else
+		{
+			TS_ASSERT( false );
+		}
 
         TS_ASSERT_EQUALS( tableau->lastRegisteredVariableToWatcher[4].size(), 1U );
-        TS_ASSERT( tableau->lastRegisteredVariableToWatcher[4].exists( relu2 ) );
+
+		auto watcher4 = ( ( ReluConstraint * ) ( * tableau->lastRegisteredVariableToWatcher[4].begin() ) )->getParticipatingVariables();
+
+
+       	TS_ASSERT( watcher4 == relu2->getParticipatingVariables() );
 
         TS_ASSERT_EQUALS( FreshVariables::getNextVariable(), 5U );
-		*/
     }
 
     void test_todo()
