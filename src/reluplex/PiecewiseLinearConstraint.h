@@ -41,10 +41,8 @@ public:
         double _value;
     };
 
-    PiecewiseLinearConstraint()
-        : _constraintActive( true )
-    {
-    }
+    PiecewiseLinearConstraint();
+
     virtual ~PiecewiseLinearConstraint() {}
 
     /*
@@ -140,13 +138,19 @@ public:
         return _entailedTightenings;
     }
 
-protected:
+    void setStatistics( Statistics *statistics );
 
+protected:
     bool _constraintActive;
     Map<unsigned, double> _assignment;
     Map<unsigned, double> _lowerBounds;
     Map<unsigned, double> _upperBounds;
     Queue<Tightening> _entailedTightenings;
+
+    /*
+      Statistics collection
+    */
+    Statistics *_statistics;
 };
 
 #endif // __PiecewiseLinearConstraint_h__

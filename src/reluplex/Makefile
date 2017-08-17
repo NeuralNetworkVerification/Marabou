@@ -27,6 +27,7 @@ SOURCES += \
 	LPElement.cpp\
 	MaxConstraint.cpp \
 	PiecewiseLinearCaseSplit.cpp \
+	PiecewiseLinearConstraint.cpp \
 	Preprocessor.cpp \
 	ReluConstraint.cpp \
 	main.cpp \

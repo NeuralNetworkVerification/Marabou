@@ -60,6 +60,8 @@ public:
     void incNumTightenedBounds();
     void incNumRowsExaminedByRowTightener();
     void incNumBoundsProposedByRowTightener();
+    void incNumBoundNotificationsPlConstraints();
+    void incNumBoundsProposedByPlConstraints();
 
 private:
     // Number of iterations of the main loop
@@ -118,6 +120,12 @@ private:
 
     // Number of bound tightenings proposed by the row tightener
     unsigned long long _numBoundsProposedByRowTightener;
+
+    // Number of bound notifications sent to pl constraints
+    unsigned long long _numBoundNotificationsToPlConstraints;
+
+    // Number of bound tightenings proposed by the pl constraints
+    unsigned long long _numBoundsProposedByPlConstraints;
 
     // Printing helpers
     double printPercents( unsigned long long part, unsigned long long total ) const;

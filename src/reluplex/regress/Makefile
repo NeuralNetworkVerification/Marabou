@@ -37,6 +37,7 @@ SOURCES += \
 	MaxConstraint.cpp \
 	NestedDantzigsRule.cpp \
 	PiecewiseLinearCaseSplit.cpp \
+	PiecewiseLinearConstraint.cpp \
 	Preprocessor.cpp \
 	ProjectedSteepestEdge.cpp \
 	ReluConstraint.cpp \

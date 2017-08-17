@@ -35,6 +35,8 @@ Statistics::Statistics()
     , _numTightenedBounds( 0 )
     , _numRowsExaminedByRowTightener( 0 )
     , _numBoundsProposedByRowTightener( 0 )
+    , _numBoundNotificationsToPlConstraints( 0 )
+    , _numBoundsProposedByPlConstraints( 0 )
 {
 }
 
@@ -85,6 +87,9 @@ void Statistics::print()
     printf( "\t\tNumber of rows examined by row tightener: %llu. Tightenings proposed: %llu\n"
             , _numRowsExaminedByRowTightener
             , _numBoundsProposedByRowTightener );
+    printf( "\t\tNumber of bound notifications sent to PL constraints: %llu. Tightenings proposed: %llu\n"
+            , _numBoundNotificationsToPlConstraints
+            , _numBoundsProposedByPlConstraints );
 }
 
 double Statistics::printPercents( unsigned long long part, unsigned long long total ) const
@@ -196,6 +201,16 @@ void Statistics::incNumRowsExaminedByRowTightener()
 void Statistics::incNumBoundsProposedByRowTightener()
 {
     ++_numBoundsProposedByRowTightener;
+}
+
+void Statistics::incNumBoundNotificationsPlConstraints()
+{
+    ++_numBoundNotificationsToPlConstraints;
+}
+
+void Statistics::incNumBoundsProposedByPlConstraints()
+{
+    ++_numBoundsProposedByPlConstraints;
 }
 
 void Statistics::setCurrentDegradation( double degradation )
