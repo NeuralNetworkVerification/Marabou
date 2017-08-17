@@ -69,6 +69,7 @@ public:
     virtual unsigned getBasicStatus( unsigned basic ) = 0;
     virtual bool existsBasicOutOfBounds() const = 0;
     virtual void setEnteringVariable( unsigned nonBasic ) = 0;
+    virtual void setLeavingVariable( unsigned basic ) = 0;
     virtual void computeBasicStatus() = 0;
     virtual void computeBasicStatus( unsigned basic ) = 0;
     virtual bool eligibleForEntry( unsigned nonBasic ) const = 0;
@@ -105,7 +106,7 @@ public:
     virtual unsigned getN() const = 0;
     virtual void getTableauRow( unsigned index, TableauRow *row ) = 0;
     virtual const double *getAColumn( unsigned index ) const = 0;
-    virtual void performDegeneratePivot( unsigned entering, unsigned leaving ) = 0;
+    virtual void performDegeneratePivot() = 0;
     virtual void storeState( TableauState &state ) const = 0;
     virtual void restoreState( const TableauState &state ) = 0;
     virtual void computeBasicCosts() = 0;

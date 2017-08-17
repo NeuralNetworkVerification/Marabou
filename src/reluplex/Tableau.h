@@ -61,7 +61,10 @@ public:
     */
     void setEnteringVariable( unsigned nonBasic );
 
-    // FOR TESTING ONLY
+    /*
+      Set which variable will leave the basis. The input is the
+      index of the basic variable, in the range [0, m).
+    */
     void setLeavingVariable( unsigned basic );
 
     /*
@@ -215,7 +218,7 @@ public:
       variable. Assignment values are unchanged (and the assignment is
       remains valid).
      */
-    void performDegeneratePivot( unsigned entering, unsigned leaving );
+    void performDegeneratePivot();
 
     /*
       Calculate the ratio constraint for the entering variable

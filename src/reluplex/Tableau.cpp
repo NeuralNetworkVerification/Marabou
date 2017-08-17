@@ -782,7 +782,6 @@ void Tableau::setEnteringVariable( unsigned nonBasic )
 
 void Tableau::setLeavingVariable( unsigned basic )
 {
-    // ONLY FOR TESTING STEEPEST EDGE. NEVER USE THIS! Use pickLeavingVariable instead.
     _leavingVariable = basic;
 }
 
@@ -911,7 +910,7 @@ void Tableau::performPivot()
     _basisFactorization->pushEtaMatrix( _leavingVariable, _changeColumn );
 }
 
-void Tableau::performDegeneratePivot( unsigned entering, unsigned leaving )
+void Tableau::performDegeneratePivot()
 {
     if ( _statistics )
     {
@@ -919,12 +918,9 @@ void Tableau::performDegeneratePivot( unsigned entering, unsigned leaving )
         _statistics->incNumTableauDegeneratePivotsByRequest();
     }
 
-    _enteringVariable = entering;
-    _leavingVariable = leaving;
-
-    ASSERT( entering < _n - _m );
-    ASSERT( leaving < _m );
-    ASSERT( !basicOutOfBounds( leaving ) );
+    ASSERT( _enteringVariable < _n - _m );
+    ASSERT( _leavingVariable < _m );
+    ASSERT( !basicOutOfBounds( _leavingVariable ) );
 
     // Before pivoting, update gamma according to old basis
     if ( _usingSteepestEdge )
@@ -933,8 +929,8 @@ void Tableau::performDegeneratePivot( unsigned entering, unsigned leaving )
     // Compute change column
     computeChangeColumn();
 
-    unsigned currentBasic = _basicIndexToVariable[leaving];
-    unsigned currentNonBasic = _nonBasicIndexToVariable[entering];
+    unsigned currentBasic = _basicIndexToVariable[_leavingVariable];
+    unsigned currentNonBasic = _nonBasicIndexToVariable[_enteringVariable];
 
     // Update the database
     _basicVariables.insert( currentNonBasic );
@@ -947,11 +943,11 @@ void Tableau::performDegeneratePivot( unsigned entering, unsigned leaving )
     _variableToIndex[currentNonBasic] = _leavingVariable;
 
     // Update the basis factorization
-    _basisFactorization->pushEtaMatrix( leaving, _changeColumn );
+    _basisFactorization->pushEtaMatrix( _leavingVariable, _changeColumn );
 
     // Switch assignment values
-    double temp = _basicAssignment[leaving];
-    _basicAssignment[leaving] = _nonBasicAssignment[entering];
+    double temp = _basicAssignment[_leavingVariable];
+    _basicAssignment[_leavingVariable] = _nonBasicAssignment[_enteringVariable];
     setNonBasicAssignment( currentBasic, temp );
 }
 

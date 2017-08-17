@@ -251,8 +251,12 @@ void Engine::fixViolatedPlConstraintIfPossible()
     ASSERT( done );
 
     // Switch between nonBasic and the variable we need to fix
-    _tableau->performDegeneratePivot( _tableau->variableToIndex( nonBasic ),
-                                      _tableau->variableToIndex( fix._variable ) );
+    _tableau->setEnteringVariable( _tableau->variableToIndex( nonBasic ) );
+    _tableau->setLeavingVariable( _tableau->variableToIndex( fix._variable ) );
+
+    _activeEntryStrategy->prePivotHook( _tableau, false );
+    _tableau->performDegeneratePivot();
+    _activeEntryStrategy->prePivotHook( _tableau, false );
 
     ASSERT( !_tableau->isBasic( fix._variable ) );
     _tableau->setNonBasicAssignment( fix._variable, fix._value );

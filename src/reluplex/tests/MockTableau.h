@@ -57,6 +57,10 @@ public:
         mockEnteringVariable = nonBasic;
     }
 
+    void setLeavingVariable( unsigned /* basic */ )
+    {
+    }
+
     unsigned getEnteringVariable()
     {
         return mockEnteringVariable;
@@ -280,7 +284,7 @@ public:
         return NULL;
     }
 
-    void performDegeneratePivot( unsigned /* entering */, unsigned /* leaving */ )
+    void performDegeneratePivot()
     {
     }
 

@@ -905,7 +905,9 @@ public:
 
         // Nonbasic index #2 --> variable 2
         // Basic index #1 --> variable 5
-        TS_ASSERT_THROWS_NOTHING( tableau->performDegeneratePivot( 2, 1 ) );
+        tableau->setEnteringVariable( 2 );
+        tableau->setLeavingVariable( 1 );
+        TS_ASSERT_THROWS_NOTHING( tableau->performDegeneratePivot() );
         TS_ASSERT( tableau->isBasic( 2 ) );
         TS_ASSERT( !tableau->isBasic( 5 ) );
 

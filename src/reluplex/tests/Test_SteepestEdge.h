@@ -35,7 +35,6 @@ public:
     {
         TS_ASSERT( mock = new MockForSteepestEdge );
         TS_ASSERT( tableau = new MockTableau );
-
     }
 
     void tearDown()
