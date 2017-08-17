@@ -41,9 +41,8 @@ public:
         double _value;
     };
 
-    PiecewiseLinearConstraint( unsigned f )
-        : _f( f )
-        , _constraintActive( true )
+    PiecewiseLinearConstraint()
+        : _constraintActive( true )
     {
     }
     virtual ~PiecewiseLinearConstraint() {}
@@ -142,8 +141,7 @@ public:
     }
 
 protected:
-    unsigned _f;
-    
+
     bool _constraintActive;
     Map<unsigned, double> _assignment;
     Map<unsigned, double> _lowerBounds;

@@ -99,7 +99,7 @@ public:
 	  void eliminateVar( unsigned var, double val );
     
 private:
-    unsigned _b;
+    unsigned _b, _f;
     PhaseStatus _phaseStatus;
 
     PiecewiseLinearCaseSplit getInactiveSplit() const;

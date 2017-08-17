@@ -20,8 +20,8 @@
 #include "ReluplexError.h"
 
 ReluConstraint::ReluConstraint( unsigned b, unsigned f )
-    : PiecewiseLinearConstraint( f )
-    , _b( b )
+    : _b( b )
+    , _f( f )
     , _phaseStatus( PhaseStatus::PHASE_NOT_FIXED )
 {
 }
