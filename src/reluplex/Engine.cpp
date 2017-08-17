@@ -30,7 +30,8 @@ Engine::Engine()
     _boundTightener.setStatistics( &_statistics );
 
     // _activeEntryStrategy = &_nestedDantzigsRule;
-    _activeEntryStrategy = &_steepestEdgeRule;
+    // _activeEntryStrategy = &_steepestEdgeRule;
+    _activeEntryStrategy = &_projectedSteepestEdgeRule;
     // _activeEntryStrategy = &_dantzigsRule;
     // _activeEntryStrategy = &_blandsRule;
 }
