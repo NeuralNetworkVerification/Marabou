@@ -169,26 +169,34 @@ public:
 
         TS_ASSERT_EQUALS( splits.size(), 2U );
 
-        // First split
-        auto split = splits.begin();
-        List<Tightening> bounds = split->getBoundTightenings();
+        List<PiecewiseLinearCaseSplit>::iterator split1 = splits.begin();
+        List<PiecewiseLinearCaseSplit>::iterator split2 = split1;
+        ++split2;
 
-        unsigned auxVariable = FreshVariables::getNextVariable();
-        TS_ASSERT_EQUALS( auxVar, auxVariable );
+        TS_ASSERT( isActiveSplit( b, f, auxVar, split1 ) || isActiveSplit( b, f, auxVar, split2 ) );
+        TS_ASSERT( isInactiveSplit( b, f, auxVar, split1 ) || isInactiveSplit( b, f, auxVar, split2 ) );
+    }
+
+    bool isActiveSplit( unsigned b, unsigned f, unsigned auxVar, List<PiecewiseLinearCaseSplit>::iterator &split )
+    {
+        List<Tightening> bounds = split->getBoundTightenings();
 
         TS_ASSERT_EQUALS( bounds.size(), 1U );
         auto bound = bounds.begin();
         Tightening bound1 = *bound;
 
         TS_ASSERT_EQUALS( bound1._variable, b );
-        TS_ASSERT_EQUALS( bound1._type, Tightening::LB );
         TS_ASSERT_EQUALS( bound1._value, 0.0 );
 
+        if ( bound1._type != Tightening::LB )
+            return false;
+
+        Equation activeEquation;
         auto equations = split->getEquations();
         TS_ASSERT_EQUALS( equations.size(), 1U );
         activeEquation = split->getEquations().front().first();
-        activeEquation.addAddend( -1, auxVariable );
-        activeEquation.markAuxiliaryVariable( auxVariable );
+        activeEquation.addAddend( -1, auxVar );
+        activeEquation.markAuxiliaryVariable( auxVar );
         TS_ASSERT_EQUALS( activeEquation._addends.size(), 3U );
         TS_ASSERT_EQUALS( activeEquation._scalar, 0.0 );
 
@@ -205,27 +213,34 @@ public:
         TS_ASSERT_EQUALS( addend->_variable, 100U );
         TS_ASSERT_EQUALS( activeEquation._auxVariable, 100U );
 
+        return true;
+    }
+
+    bool isInactiveSplit( unsigned b, unsigned f, unsigned auxVar, List<PiecewiseLinearCaseSplit>::iterator &split )
+    {
         // Second split
-        ++split;
-        bounds = split->getBoundTightenings();
+        auto bounds = split->getBoundTightenings();
 
         TS_ASSERT_EQUALS( bounds.size(), 1U );
-        bound = bounds.begin();
-        bound1 = *bound;
+        auto bound = bounds.begin();
+        Tightening bound1 = *bound;
 
         TS_ASSERT_EQUALS( bound1._variable, b );
-        TS_ASSERT_EQUALS( bound1._type, Tightening::UB );
         TS_ASSERT_EQUALS( bound1._value, 0.0 );
 
-        equations = split->getEquations();
+        if ( bound1._type != Tightening::UB )
+            return false;
+
+        Equation inactiveEquation;
+        auto equations = split->getEquations();
         TS_ASSERT_EQUALS( equations.size(), 1U );
         inactiveEquation = split->getEquations().front().first();
-        inactiveEquation.addAddend( -1, auxVariable );
-        inactiveEquation.markAuxiliaryVariable( auxVariable );
+        inactiveEquation.addAddend( -1, auxVar );
+        inactiveEquation.markAuxiliaryVariable( auxVar );
         TS_ASSERT_EQUALS( inactiveEquation._addends.size(), 2U );
         TS_ASSERT_EQUALS( inactiveEquation._scalar, 0.0 );
 
-        addend = inactiveEquation._addends.begin();
+        auto addend = inactiveEquation._addends.begin();
         TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
         TS_ASSERT_EQUALS( addend->_variable, f );
 
@@ -233,6 +248,8 @@ public:
         TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
         TS_ASSERT_EQUALS( addend->_variable, 100U );
         TS_ASSERT_EQUALS( inactiveEquation._auxVariable, 100U );
+
+        return true;
     }
 
     void test_register_as_watcher()
