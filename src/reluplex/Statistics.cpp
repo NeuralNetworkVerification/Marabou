@@ -33,7 +33,8 @@ Statistics::Statistics()
     , _numTableauDegeneratePivotsByRequest( 0 )
     , _numTableauBoundHopping( 0 )
     , _numTightenedBounds( 0 )
-    , _numRowsExaminedByTightener( 0 )
+    , _numRowsExaminedByRowTightener( 0 )
+    , _numBoundsProposedByRowTightener( 0 )
 {
 }
 
@@ -79,10 +80,11 @@ void Statistics::print()
             , _numSplits
             , _numPops );
 
-    printf( "\t--- Bound Tightener Statistics ---\n" );
-    printf( "\tNumber of tightened bounds: %llu. Number of rows examined: %llu\n"
-            , _numTightenedBounds
-            , _numRowsExaminedByTightener );
+    printf( "\t--- Bound Tighetning Statistics ---\n" );
+    printf( "\tNumber of tightened bounds: %llu.\n", _numTightenedBounds );
+    printf( "\t\tNumber of rows examined by row tightener: %llu. Tightenings proposed: %llu\n"
+            , _numRowsExaminedByRowTightener
+            , _numBoundsProposedByRowTightener );
 }
 
 double Statistics::printPercents( unsigned long long part, unsigned long long total ) const
@@ -186,9 +188,14 @@ void Statistics::incNumTightenedBounds()
     ++_numTightenedBounds;
 }
 
-void Statistics::incNumRowsExaminedByTightener()
+void Statistics::incNumRowsExaminedByRowTightener()
 {
-    ++_numRowsExaminedByTightener;
+    ++_numRowsExaminedByRowTightener;
+}
+
+void Statistics::incNumBoundsProposedByRowTightener()
+{
+    ++_numBoundsProposedByRowTightener;
 }
 
 void Statistics::setCurrentDegradation( double degradation )

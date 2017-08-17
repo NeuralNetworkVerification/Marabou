@@ -118,7 +118,10 @@ bool Engine::solve()
             // The current query is unsat, and we need to split.
             // If we're at level 0, the whole query is unsat.
             if ( !_smtCore.popSplit() )
+            {
+                _statistics.print();
                 return false;
+            }
         }
     }
 }

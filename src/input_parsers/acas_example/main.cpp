@@ -46,11 +46,11 @@ int main()
 
         if ( !engine.solve() )
         {
-            printf( "Query is unsat\n" );
+            printf( "\n\nQuery is unsat\n" );
             return 0;
         }
 
-        printf( "Query is sat! Extracting solution...\n" );
+        printf( "\n\nQuery is sat! Extracting solution...\n" );
         engine.extractSolution( inputQuery );
 
         Vector<double> inputs;

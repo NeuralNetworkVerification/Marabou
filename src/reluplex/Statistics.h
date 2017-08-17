@@ -55,10 +55,11 @@ public:
     void incNumPops();
 
     /*
-      Bound tightener related statistics.
+      Bound tightening related statistics.
     */
     void incNumTightenedBounds();
-    void incNumRowsExaminedByTightener();
+    void incNumRowsExaminedByRowTightener();
+    void incNumBoundsProposedByRowTightener();
 
 private:
     // Number of iterations of the main loop
@@ -112,8 +113,11 @@ private:
     // Number of iterations of the main loop
     unsigned long long _numTightenedBounds;
 
-    // Number of rows examined by the bound tightener
-    unsigned long long _numRowsExaminedByTightener;
+    // Number of rows examined by the row tightener
+    unsigned long long _numRowsExaminedByRowTightener;
+
+    // Number of bound tightenings proposed by the row tightener
+    unsigned long long _numBoundsProposedByRowTightener;
 
     // Printing helpers
     double printPercents( unsigned long long part, unsigned long long total ) const;

@@ -1400,6 +1400,9 @@ void Tableau::tightenLowerBound( unsigned variable, double value )
     if ( !FloatUtils::gt( value, _lowerBounds[variable] ) )
         return;
 
+    if ( _statistics )
+        _statistics->incNumTightenedBounds();
+
     setLowerBound( variable, value );
 
     // Ensure that non-basic variables are within bounds
@@ -1417,6 +1420,9 @@ void Tableau::tightenUpperBound( unsigned variable, double value )
 
     if ( !FloatUtils::lt( value, _upperBounds[variable] ) )
         return;
+
+    if ( _statistics )
+        _statistics->incNumTightenedBounds();
 
     setUpperBound( variable, value );
 
