@@ -11,6 +11,7 @@
 **/
 
 #include "PiecewiseLinearConstraint.h"
+#include "Statistics.h"
 
 PiecewiseLinearConstraint::PiecewiseLinearConstraint()
     : _constraintActive( true )
@@ -21,6 +22,14 @@ PiecewiseLinearConstraint::PiecewiseLinearConstraint()
 void PiecewiseLinearConstraint::setStatistics( Statistics *statistics )
 {
     _statistics = statistics;
+}
+
+void PiecewiseLinearConstraint::pushTightening( const Tightening &tightening )
+{
+    _entailedTightenings.push( tightening );
+
+    if ( _statistics )
+        _statistics->incNumBoundsProposedByPlConstraints();
 }
 
 //

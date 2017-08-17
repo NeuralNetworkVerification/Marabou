@@ -151,6 +151,11 @@ protected:
       Statistics collection
     */
     Statistics *_statistics;
+
+    /*
+      Add a bound tightening to the queue.
+    */
+    void pushTightening( const Tightening &tightening );
 };
 
 #endif // __PiecewiseLinearConstraint_h__
