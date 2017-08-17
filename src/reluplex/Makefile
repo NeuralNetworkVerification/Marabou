@@ -30,6 +30,8 @@ SOURCES += \
 	PiecewiseLinearConstraint.cpp \
 	Preprocessor.cpp \
 	ReluConstraint.cpp \
+	Statistics.cpp \
+	TimeUtils.cpp \
 	main.cpp \
 
 TARGET = run_reluplex.elf
