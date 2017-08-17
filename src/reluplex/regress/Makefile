@@ -29,6 +29,7 @@ SOURCES += \
 	DegradationChecker.cpp \
 	Engine.cpp \
 	EngineState.cpp \
+	EntrySelectionStrategy.cpp \
 	Equation.cpp \
 	EtaMatrix.cpp \
 	FreshVariables.cpp \

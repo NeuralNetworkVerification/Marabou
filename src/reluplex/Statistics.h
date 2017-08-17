@@ -63,6 +63,12 @@ public:
     void incNumBoundNotificationsPlConstraints();
     void incNumBoundsProposedByPlConstraints();
 
+    /*
+      Projected Steepest Edge related statistics.
+    */
+    void pseIncNumIterations();
+    void pseIncNumResetReferenceSpace();
+
 private:
     // Number of iterations of the main loop
     unsigned long long _numMainLoopIterations;
@@ -126,6 +132,10 @@ private:
 
     // Number of bound tightenings proposed by the pl constraints
     unsigned long long _numBoundsProposedByPlConstraints;
+
+    // Projected steepest edge statistics
+    unsigned long long _pseNumIterations;
+    unsigned long long _pseNumResetReferenceSpace;
 
     // Printing helpers
     double printPercents( unsigned long long part, unsigned long long total ) const;

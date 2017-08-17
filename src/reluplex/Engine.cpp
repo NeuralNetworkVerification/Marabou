@@ -34,6 +34,8 @@ Engine::Engine()
     _activeEntryStrategy = &_projectedSteepestEdgeRule;
     // _activeEntryStrategy = &_dantzigsRule;
     // _activeEntryStrategy = &_blandsRule;
+
+    _activeEntryStrategy->setStatistics( &_statistics );
 }
 
 Engine::~Engine()

@@ -16,10 +16,12 @@
 #include "List.h"
 
 class ITableau;
+class Statistics;
 
 class EntrySelectionStrategy
 {
 public:
+    EntrySelectionStrategy();
     virtual ~EntrySelectionStrategy() {};
 
     /*
@@ -48,6 +50,17 @@ public:
       This hook is called when the tableau has been resized.
     */
     virtual void resizeHook( const ITableau &/* tableau */ ) {};
+
+    /*
+      For reporting statistics
+    */
+    void setStatistics( Statistics *statistics );
+
+protected:
+    /*
+      Statistics collection
+    */
+    Statistics *_statistics;
 };
 
 #endif // __EntrySelectionStrategy_h__

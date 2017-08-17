@@ -16,6 +16,7 @@
 #include "MString.h"
 #include "ProjectedSteepestEdge.h"
 #include "ReluplexError.h"
+#include "Statistics.h"
 
 ProjectedSteepestEdgeRule::ProjectedSteepestEdgeRule()
     : _referenceSpace( NULL )
@@ -85,6 +86,9 @@ void ProjectedSteepestEdgeRule::resetReferenceSpace( const ITableau &tableau )
     }
 
     _iterationsUntilReset = GlobalConfiguration::PSE_ITERATIONS_BEFORE_RESET;
+
+    if ( _statistics )
+        _statistics->pseIncNumResetReferenceSpace();
 }
 
 bool ProjectedSteepestEdgeRule::select( ITableau &tableau )
@@ -115,13 +119,6 @@ bool ProjectedSteepestEdgeRule::select( ITableau &tableau )
       is maximal.
     */
 
-    // Debug
-    for ( const auto &it : candidates )
-    {
-        ASSERT( it < _n - _m );
-    }
-
-    //
     auto it = candidates.begin();
     unsigned bestCandidate = *it;
     double gammaValue = _gamma[*it];
@@ -146,6 +143,9 @@ bool ProjectedSteepestEdgeRule::select( ITableau &tableau )
     }
 
     tableau.setEnteringVariable( bestCandidate );
+
+    if ( _statistics )
+        _statistics->pseIncNumIterations();
 
     return true;
 }

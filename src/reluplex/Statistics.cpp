@@ -37,6 +37,8 @@ Statistics::Statistics()
     , _numBoundsProposedByRowTightener( 0 )
     , _numBoundNotificationsToPlConstraints( 0 )
     , _numBoundsProposedByPlConstraints( 0 )
+    , _pseNumIterations( 0 )
+    , _pseNumResetReferenceSpace( 0 )
 {
 }
 
@@ -44,7 +46,7 @@ void Statistics::print()
 {
     printf( "\n%s Statistics update:\n", TimeUtils::now().ascii() );
 
-    printf( "\t--- Engine Statistics ---\n" );
+    printf( "   --- Engine Statistics ---\n" );
     printf( "\tNumber of main loop iterations: %llu\n"
             "\t\t%llu iterations were simplex steps. Total time: %llu milli. Average: %.2lf milli.\n"
             "\t\t%llu iterations were constraint-fixing steps.\n"
@@ -65,7 +67,7 @@ void Statistics::print()
             , _maxDegradation
             );
 
-    printf( "\t--- Tableau Statistics ---\n" );
+    printf( "   --- Tableau Statistics ---\n" );
     printf( "\tTotal number of pivots performed: %llu\n", _numTableauPivots );
     printf( "\t\tReal pivots: %llu. Degenerate: %llu (%.2lf%%)\n"
             , _numTableauPivots - _numTableauDegeneratePivots
@@ -76,13 +78,13 @@ void Statistics::print()
             , _numTableauDegeneratePivotsByRequest
             , printPercents( _numTableauDegeneratePivotsByRequest, _numTableauDegeneratePivots ) );
 
-    printf( "\t--- SMT Core Statistics ---\n" );
+    printf( "   --- SMT Core Statistics ---\n" );
     printf( "\tTotal depth is %u. Number of splits: %u. Number of pops: %u\n"
             , _currentStackDepth
             , _numSplits
             , _numPops );
 
-    printf( "\t--- Bound Tighetning Statistics ---\n" );
+    printf( "   --- Bound Tighetning Statistics ---\n" );
     printf( "\tNumber of tightened bounds: %llu.\n", _numTightenedBounds );
     printf( "\t\tNumber of rows examined by row tightener: %llu. Tightenings proposed: %llu\n"
             , _numRowsExaminedByRowTightener
@@ -90,6 +92,13 @@ void Statistics::print()
     printf( "\t\tNumber of bound notifications sent to PL constraints: %llu. Tightenings proposed: %llu\n"
             , _numBoundNotificationsToPlConstraints
             , _numBoundsProposedByPlConstraints );
+
+    printf( "   --- Projected Steepest Edge Statistics ---\n" );
+    printf( "\tNumber of iterations: %llu.\n", _pseNumIterations );
+    printf( "\tNumber of resets to reference space: %llu. Avg. iterations per reset: %u\n"
+            , _pseNumResetReferenceSpace
+            , _pseNumResetReferenceSpace > 0 ?
+            (unsigned)((double)_pseNumIterations / _pseNumResetReferenceSpace) : 0 );
 }
 
 double Statistics::printPercents( unsigned long long part, unsigned long long total ) const
@@ -211,6 +220,16 @@ void Statistics::incNumBoundNotificationsPlConstraints()
 void Statistics::incNumBoundsProposedByPlConstraints()
 {
     ++_numBoundsProposedByPlConstraints;
+}
+
+void Statistics::pseIncNumIterations()
+{
+    ++_pseNumIterations;
+}
+
+void Statistics::pseIncNumResetReferenceSpace()
+{
+    ++_pseNumResetReferenceSpace;
 }
 
 void Statistics::setCurrentDegradation( double degradation )
