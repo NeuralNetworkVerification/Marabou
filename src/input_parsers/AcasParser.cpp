@@ -211,6 +211,12 @@ unsigned AcasParser::getAuxVariable( unsigned layer, unsigned index ) const
     return _nodeToAux.get( nodeIndex );
 }
 
+void AcasParser::evaluate( const Vector<double> &inputs, Vector<double> &outputs ) const
+{
+    _acasNeuralNetwork.evaluate( inputs, outputs,
+                                 _acasNeuralNetwork.getLayerSize( _acasNeuralNetwork.getNumLayers() ) );
+}
+
 //
 // Local Variables:
 // compile-command: "make -C .. "

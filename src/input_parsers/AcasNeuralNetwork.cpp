@@ -60,7 +60,7 @@ int AcasNeuralNetwork::getNumLayers() const
     return _network->numLayers;
 }
 
-unsigned AcasNeuralNetwork::getLayerSize( unsigned layer )
+unsigned AcasNeuralNetwork::getLayerSize( unsigned layer ) const
 {
     return (unsigned)_network->layerSizes[layer];
 }
