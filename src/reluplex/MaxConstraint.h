@@ -91,6 +91,7 @@ public:
 
 
 private:
+    unsigned _f;
   	unsigned _maxIndex;
     Set<unsigned> _elements;
     Set<unsigned> _eliminated;

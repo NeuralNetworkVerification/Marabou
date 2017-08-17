@@ -20,7 +20,7 @@
 #include <algorithm>
 
 MaxConstraint::MaxConstraint( unsigned f, const Set<unsigned> &elements )
-	: PiecewiseLinearConstraint( f )
+	: _f( f )
 	, _elements( elements )
 	, _minLowerBound( FloatUtils::infinity() )
 	, _maxUpperBound( FloatUtils::negativeInfinity() )

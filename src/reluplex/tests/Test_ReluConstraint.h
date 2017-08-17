@@ -210,16 +210,15 @@ public:
 
         ++addend;
         TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
-        TS_ASSERT_EQUALS( addend->_variable, 100U );
-        TS_ASSERT_EQUALS( activeEquation._auxVariable, 100U );
+        TS_ASSERT_EQUALS( addend->_variable, auxVar );
+        TS_ASSERT_EQUALS( activeEquation._auxVariable, auxVar );
 
         return true;
     }
 
     bool isInactiveSplit( unsigned b, unsigned f, unsigned auxVar, List<PiecewiseLinearCaseSplit>::iterator &split )
     {
-        // Second split
-        auto bounds = split->getBoundTightenings();
+        List<Tightening> bounds = split->getBoundTightenings();
 
         TS_ASSERT_EQUALS( bounds.size(), 1U );
         auto bound = bounds.begin();
@@ -246,8 +245,8 @@ public:
 
         ++addend;
         TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
-        TS_ASSERT_EQUALS( addend->_variable, 100U );
-        TS_ASSERT_EQUALS( inactiveEquation._auxVariable, 100U );
+        TS_ASSERT_EQUALS( addend->_variable, auxVar );
+        TS_ASSERT_EQUALS( inactiveEquation._auxVariable, auxVar );
 
         return true;
     }

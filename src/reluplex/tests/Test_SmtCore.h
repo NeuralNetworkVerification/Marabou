@@ -35,8 +35,7 @@ public:
     {
     public:
         MockConstraint()
-            : PiecewiseLinearConstraint( 1 )
-            , setActiveWasCalled( false )
+            : setActiveWasCalled( false )
         {
         }
 
