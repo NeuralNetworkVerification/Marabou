@@ -180,7 +180,9 @@ bool Engine::performSimplexStep()
     _activeEntryStrategy->postPivotHook( _tableau, fakePivot );
 
     // Tighten
-    _boundTightener.deriveTightenings( _tableau, enteringVariable );
+    // TODO: reuse the already-computed row in bound tightener
+    if ( !fakePivot )
+        _boundTightener.deriveTightenings( _tableau, enteringVariable );
 
     timeval end = TimeUtils::sampleMicro();
     _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
