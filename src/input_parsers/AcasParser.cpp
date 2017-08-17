@@ -111,8 +111,12 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
 
     for ( const auto &fNode : _nodeToF )
     {
-        inputQuery.setLowerBound( fNode.second, 0.0 );
-        inputQuery.setUpperBound( fNode.second, ACAS_INFINITY );
+        // Be careful not to override the bounds for the input layer
+        if ( fNode.first._layer != 0 )
+        {
+            inputQuery.setLowerBound( fNode.second, 0.0 );
+            inputQuery.setUpperBound( fNode.second, ACAS_INFINITY );
+        }
     }
 
     for ( const auto &fNode : _nodeToB )
