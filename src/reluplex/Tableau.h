@@ -302,7 +302,7 @@ public:
     /*
       Extract a columnf from the original matrix A.
     */
-    const double *getAColumn( unsigned index ) const;
+    const double *getAColumn( unsigned variable ) const;
 
     /*
       Store and restore the Tableau's state. Needed for case splitting

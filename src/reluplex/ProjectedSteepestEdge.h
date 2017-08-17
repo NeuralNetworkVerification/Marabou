@@ -42,11 +42,16 @@ public:
     */
     void postPivotHook( const ITableau &tableau, bool fakePivot );
 
+    /*
+      This hook is called when the tableau has been resized.
+    */
+    void resizeHook( const ITableau &tableau );
+
 private:
     /*
       Indicates whether a variable, basic or non basic, is in the reference space.
     */
-    bool *_referenceSpace;
+    char *_referenceSpace;
 
     /*
       The steepest edge gamma function.
@@ -67,7 +72,7 @@ private:
     /*
       Remaining iterations before resetting the reference space.
     */
-    unsigned _iterationsBeforeReset;
+    unsigned _iterationsUntilReset;
 
     /*
       The error in gamma compuated in the previous iteration.
@@ -84,6 +89,13 @@ private:
       when compared to the approximate gamma.
     */
     double computeAccurateGamma( double &accurateGamma, const ITableau &tableau );
+
+    /*
+      Free all data structures.
+    */
+    void freeIfNeeded();
+
+    static void log( const String &message );
 };
 
 #endif // __ProjectedSteepestEdge_h__

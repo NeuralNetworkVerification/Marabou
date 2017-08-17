@@ -46,7 +46,7 @@ Tableau::Tableau()
     , _basicAssignmentStatus( ASSIGNMENT_INVALID )
     , _basicStatus( NULL )
     , _statistics( NULL )
-    , _usingSteepestEdge( true )
+    , _usingSteepestEdge( false )
     , _steepestEdgeGamma( NULL )
     , _alpha( NULL )
     , _nu( NULL )
@@ -1271,9 +1271,9 @@ void Tableau::getTableauRow( unsigned index, TableauRow *row )
     row->_scalar = _rowScalars[index];
 }
 
-const double *Tableau::getAColumn( unsigned index ) const
+const double *Tableau::getAColumn( unsigned variable ) const
 {
-    return _A + ( index * _m );
+    return _A + ( variable * _m );
 }
 
 void Tableau::dumpEquations()

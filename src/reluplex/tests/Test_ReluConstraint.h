@@ -95,6 +95,11 @@ public:
 
         TS_ASSERT( relu.satisfied() );
 
+        relu.notifyVariableValue( 4, -1 );
+
+        // A relu cannot be satisfied if f is negative
+        TS_ASSERT( !relu.satisfied() );
+
         relu.notifyVariableValue( f, 0 );
         relu.notifyVariableValue( b, 11 );
 
@@ -220,7 +225,7 @@ public:
         TS_ASSERT_EQUALS( inactiveEquation._addends.size(), 2U );
         TS_ASSERT_EQUALS( inactiveEquation._scalar, 0.0 );
 
-        addend = inactiveEquation._addends.begin();        
+        addend = inactiveEquation._addends.begin();
         TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
         TS_ASSERT_EQUALS( addend->_variable, f );
 

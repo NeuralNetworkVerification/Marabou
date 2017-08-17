@@ -43,6 +43,11 @@ public:
       This hook gets called the pivot operation has been performed.
     */
     virtual void postPivotHook( const ITableau &/* tableau */, bool /* fakePivot */ ) {};
+
+    /*
+      This hook is called when the tableau has been resized.
+    */
+    virtual void resizeHook( const ITableau &/* tableau */ ) {};
 };
 
 #endif // __EntrySelectionStrategy_h__

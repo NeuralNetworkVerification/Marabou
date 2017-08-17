@@ -118,7 +118,8 @@ bool ReluConstraint::satisfied() const
     double bValue = _assignment.get( _b );
     double fValue = _assignment.get( _f );
 
-    ASSERT( !FloatUtils::isNegative( fValue ) );
+    if ( FloatUtils::isNegative( fValue ) )
+        return false;
 
     if ( FloatUtils::isPositive( fValue ) )
         return FloatUtils::areEqual( bValue, fValue );
@@ -173,8 +174,8 @@ List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
     // Auxiliary variable bound, needed for either phase
     List<PiecewiseLinearCaseSplit> splits;
 
-    splits.append( getActiveSplit() );
     splits.append( getInactiveSplit() );
+    splits.append( getActiveSplit() );
 
     return splits;
 }

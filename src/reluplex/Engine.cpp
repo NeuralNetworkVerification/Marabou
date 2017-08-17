@@ -52,14 +52,24 @@ bool Engine::solve()
         // Apply constraint-entailed bound tightenings
         applyAllConstraintTightenings();
 
-        // Perform any pending case splits, valid or SmtCore-initiated
+        // Perform any valid case splits
         applyAllValidConstraintCaseSplits();
-        if ( _smtCore.needToSplit() )
-            _smtCore.performSplit();
 
         // Compute the current assignment and basic status
         _tableau->computeAssignment();
         _tableau->computeBasicStatus();
+
+        // Perform any SmtCore-initiated case splits
+        if ( _smtCore.needToSplit() )
+        {
+            _smtCore.performSplit();
+
+            // TODO: We get wrong answers if we don't recompute. But, we also
+            // want to compute before performSplit(), so that the corrent
+            // assignment is stored with the state.
+            _tableau->computeAssignment();
+            _tableau->computeBasicStatus();
+        }
 
         bool needToPop = false;
         if ( !_tableau->allBoundsValid() )
@@ -394,7 +404,10 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
         unsigned auxVariable = FreshVariables::getNextVariable();
         equation.addAddend( -1, auxVariable );
         equation.markAuxiliaryVariable( auxVariable );
+
         _tableau->addEquation( equation );
+        _activeEntryStrategy->resizeHook( _tableau );
+
         PiecewiseLinearCaseSplit::EquationType type = it.second();
         if ( type != PiecewiseLinearCaseSplit::GE )
         {

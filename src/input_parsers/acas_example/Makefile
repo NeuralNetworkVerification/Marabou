@@ -12,6 +12,9 @@ LINK_FLAGS += \
 
 LOCAL_LIBRARIES += \
 
+CFLAGS += \
+	-DDEBUG_ON \
+
 SOURCES += \
 	GlobalConfiguration.cpp \
 	\
