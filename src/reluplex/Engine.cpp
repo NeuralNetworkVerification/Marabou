@@ -34,9 +34,6 @@ Engine::Engine()
     _activeEntryStrategy = &_projectedSteepestEdgeRule;
     // _activeEntryStrategy = &_dantzigsRule;
     // _activeEntryStrategy = &_blandsRule;
-
-    for ( auto &constraint : _plConstraints )
-        constraint->setStatistics( &_statistics );
 }
 
 Engine::~Engine()
@@ -325,7 +322,10 @@ void Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
     _plConstraints = _processed.getPiecewiseLinearConstraints();
     for ( const auto &constraint : _plConstraints )
+    {
         constraint->registerAsWatcher( _tableau );
+        constraint->setStatistics( &_statistics );
+    }
 
     _tableau->initializeTableau();
     _activeEntryStrategy->initialize( _tableau );
