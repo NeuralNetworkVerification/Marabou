@@ -13,7 +13,7 @@
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
-#include "MString.h"
+#include "MStringf.h"
 #include "ProjectedSteepestEdge.h"
 #include "ReluplexError.h"
 #include "Statistics.h"
@@ -21,7 +21,8 @@
 ProjectedSteepestEdgeRule::ProjectedSteepestEdgeRule()
     : _referenceSpace( NULL )
     , _gamma( NULL )
-    , _work( NULL )
+    , _work1( NULL )
+    , _work2( NULL )
     , _iterationsUntilReset( GlobalConfiguration::PSE_ITERATIONS_BEFORE_RESET )
     , _errorInGamma( 0.0 )
 {
@@ -46,10 +47,16 @@ void ProjectedSteepestEdgeRule::freeIfNeeded()
         _gamma = NULL;
     }
 
-    if ( _work )
+    if ( _work1 )
     {
-        delete[] _work;
-        _work = NULL;
+        delete[] _work1;
+        _work1 = NULL;
+    }
+
+    if ( _work2 )
+    {
+        delete[] _work2;
+        _work2 = NULL;
     }
 }
 
@@ -68,9 +75,13 @@ void ProjectedSteepestEdgeRule::initialize( const ITableau &tableau )
     if ( !_gamma )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "ProjectedSteepestEdgeRule::gamma" );
 
-    _work = new double[_m];
-    if ( !_work )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "ProjectedSteepestEdgeRule::work" );
+    _work1 = new double[_m];
+    if ( !_work1 )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "ProjectedSteepestEdgeRule::work1" );
+
+    _work2 = new double[_m];
+    if ( !_work2 )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "ProjectedSteepestEdgeRule::work2" );
 
     resetReferenceSpace( tableau );
 }
@@ -131,7 +142,7 @@ bool ProjectedSteepestEdgeRule::select( ITableau &tableau )
         unsigned contender = *it;
         gammaValue = _gamma[*it];
         double contenderValue =
-            FloatUtils::isZero( gammaValue ) ? 0 : ( costFunction[*it] * costFunction[*it] ) / _gamma[*it];
+            !FloatUtils::isPositive( gammaValue ) ? 0 : ( costFunction[*it] * costFunction[*it] ) / _gamma[*it];
 
         if ( FloatUtils::gt( contenderValue, bestValue ) )
         {
@@ -185,16 +196,16 @@ void ProjectedSteepestEdgeRule::prePivotHook( const ITableau &tableau, bool fake
     const double *AColumn;
 
     // Compute GLPK's u vector
-    // for ( unsigned i = 0; i < m; ++i )
-    // {
-    //     unsigned basicVariable = tableau.basicIndexToVariable( i );
-    //     if ( _referenceSpace[basicVariable] )
-    //         _work[i] = changeColumn[i];
-    //     else
-    //         _work[i] = 0.0;
-    // }
+    for ( unsigned i = 0; i < m; ++i )
+    {
+        unsigned basicVariable = tableau.basicIndexToVariable( i );
+        if ( _referenceSpace[basicVariable] )
+            _work1[i] = changeColumn[i];
+        else
+            _work1[i] = 0.0;
+    }
 
-    tableau.backwardTransformation( tableau.getRightHandSide(), _work );
+    tableau.backwardTransformation( _work1, _work2 );
 
     // Update gamma[i] for all i != enteringIndex
     for ( unsigned i = 0; i < n - m; ++i )
@@ -213,7 +224,7 @@ void ProjectedSteepestEdgeRule::prePivotHook( const ITableau &tableau, bool fake
         AColumn = tableau.getAColumn( nonBasic );
         s = 0.0;
         for ( unsigned j = 0; j < m; ++j )
-            s += AColumn[j] * _work[j];
+            s += AColumn[j] * _work2[j];
 
         /* compute new gamma[j] */
         t1 = _gamma[i] + r * ( r * accurateGamma + s + s );
@@ -241,7 +252,7 @@ double ProjectedSteepestEdgeRule::computeAccurateGamma( double &accurateGamma, c
             accurateGamma += ( changeColumn[i] * changeColumn[i] );
     }
 
-    return FloatUtils::abs( ( accurateGamma - _gamma[entering] ) / ( 1.0 + accurateGamma ) );
+    return FloatUtils::abs( accurateGamma - _gamma[entering] ) / ( 1.0 + accurateGamma );
 }
 
 void ProjectedSteepestEdgeRule::postPivotHook( const ITableau &tableau, bool fakePivot )
@@ -267,7 +278,7 @@ void ProjectedSteepestEdgeRule::postPivotHook( const ITableau &tableau, bool fak
     // If the error is too great, reset the reference space.
     if ( FloatUtils::gt( _errorInGamma, GlobalConfiguration::PSE_GAMMA_ERROR_THRESHOLD ) )
     {
-        log( "PostPivotHook reseting ref space (degradation)" );
+        log( Stringf( "PostPivotHook reseting ref space (degradation). Error = %.15lf", _errorInGamma ) );
         resetReferenceSpace( tableau );
         return;
     }

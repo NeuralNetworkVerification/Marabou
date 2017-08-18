@@ -46,7 +46,7 @@ void Statistics::print()
 {
     printf( "\n%s Statistics update:\n", TimeUtils::now().ascii() );
 
-    printf( "   --- Engine Statistics ---\n" );
+    printf( "\t--- Engine Statistics ---\n" );
     printf( "\tNumber of main loop iterations: %llu\n"
             "\t\t%llu iterations were simplex steps. Total time: %llu milli. Average: %.2lf milli.\n"
             "\t\t%llu iterations were constraint-fixing steps.\n"
@@ -67,7 +67,7 @@ void Statistics::print()
             , _maxDegradation
             );
 
-    printf( "   --- Tableau Statistics ---\n" );
+    printf( "\t--- Tableau Statistics ---\n" );
     printf( "\tTotal number of pivots performed: %llu\n", _numTableauPivots );
     printf( "\t\tReal pivots: %llu. Degenerate: %llu (%.2lf%%)\n"
             , _numTableauPivots - _numTableauDegeneratePivots
@@ -78,13 +78,13 @@ void Statistics::print()
             , _numTableauDegeneratePivotsByRequest
             , printPercents( _numTableauDegeneratePivotsByRequest, _numTableauDegeneratePivots ) );
 
-    printf( "   --- SMT Core Statistics ---\n" );
+    printf( "\t--- SMT Core Statistics ---\n" );
     printf( "\tTotal depth is %u. Number of splits: %u. Number of pops: %u\n"
             , _currentStackDepth
             , _numSplits
             , _numPops );
 
-    printf( "   --- Bound Tighetning Statistics ---\n" );
+    printf( "\t--- Bound Tighetning Statistics ---\n" );
     printf( "\tNumber of tightened bounds: %llu.\n", _numTightenedBounds );
     printf( "\t\tNumber of rows examined by row tightener: %llu. Tightenings proposed: %llu\n"
             , _numRowsExaminedByRowTightener
@@ -93,7 +93,7 @@ void Statistics::print()
             , _numBoundNotificationsToPlConstraints
             , _numBoundsProposedByPlConstraints );
 
-    printf( "   --- Projected Steepest Edge Statistics ---\n" );
+    printf( "\t--- Projected Steepest Edge Statistics ---\n" );
     printf( "\tNumber of iterations: %llu.\n", _pseNumIterations );
     printf( "\tNumber of resets to reference space: %llu. Avg. iterations per reset: %u\n"
             , _pseNumResetReferenceSpace

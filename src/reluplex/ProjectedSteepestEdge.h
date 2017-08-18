@@ -61,7 +61,8 @@ private:
     /*
       Work space.
     */
-    double *_work;
+    double *_work1;
+    double *_work2;
 
     /*
       Tableau dimensions.
