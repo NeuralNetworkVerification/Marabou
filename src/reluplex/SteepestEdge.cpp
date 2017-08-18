@@ -15,7 +15,7 @@
 #include "ReluplexError.h"
 #include "SteepestEdge.h"
 
-bool SteepestEdgeRule::select( ITableau &tableau )
+bool SteepestEdgeRule::select( ITableau &tableau, const Set<unsigned> &excluded )
 {
     /***************************************************************
      * Chooses most eligible nonbasic variable xN[q] according
@@ -36,6 +36,15 @@ bool SteepestEdgeRule::select( ITableau &tableau )
     // TODO: integrate with Duligur's partial pricing?
     List<unsigned> candidates;
     tableau.getEntryCandidates( candidates );
+
+    List<unsigned>::iterator it = candidates.begin();
+    while ( it != candidates.end() )
+    {
+        if ( excluded.exists( *it ) )
+            it = candidates.erase( it );
+        else
+            ++it;
+    }
 
     if ( candidates.empty() )
         return false;

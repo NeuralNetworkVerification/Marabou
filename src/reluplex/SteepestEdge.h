@@ -22,7 +22,7 @@ public:
       Apply steepest edge pivot selection rule: choose the candidate that maximizes the
       magnitude of the gradient of the cost function with respect to the step direction.
     */
-    bool select( ITableau &tableau );
+    bool select( ITableau &tableau, const Set<unsigned> &excluded );
 
 private:
     /*

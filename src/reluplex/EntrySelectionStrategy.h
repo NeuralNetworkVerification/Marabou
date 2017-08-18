@@ -14,6 +14,7 @@
 #define __EntrySelectionStrategy_h__
 
 #include "List.h"
+#include "Set.h"
 
 class ITableau;
 class Statistics;
@@ -31,9 +32,10 @@ public:
     virtual void initialize( const ITableau & /* tableau */ ) {};
 
     /*
-      Choose the entrying variable for the given tableau.
+      Choose the entrying variable for the given tableau. Do not pick
+      a variable from the excluded set.
     */
-    virtual bool select( ITableau &tableau ) = 0;
+    virtual bool select( ITableau &tableau, const Set<unsigned> &excluded ) = 0;
 
     /*
       This hook gets called after the entering and leaving variables

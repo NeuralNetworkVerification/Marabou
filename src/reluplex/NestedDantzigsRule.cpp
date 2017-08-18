@@ -19,7 +19,7 @@
 #include "NestedDantzigsRule.h"
 #include "ReluplexError.h"
 
-bool NestedDantzigsRule::select( ITableau &tableau )
+bool NestedDantzigsRule::select( ITableau &tableau, const Set<unsigned> &/* excluded */ )
 {
     const double *costFunction = tableau.getCostFunction();
 

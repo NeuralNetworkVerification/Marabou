@@ -151,9 +151,21 @@ bool Engine::performSimplexStep()
     _statistics.incNumSimplexSteps();
     timeval start = TimeUtils::sampleMicro();
 
+    /*
+      In order to increase numerical stability, we attempt to pick a
+      "good" entering/leaving combination, by trying to avoid tiny pivot
+      values. We do this as follows:
+
+      1. Pick an entering variable according to the strategy in use.
+      2. Find the entailed leaving variable.
+      3. If the combination is bad, go back to (1) and find the
+         next-best entering variable.
+    */
+    Set<unsigned> excludedEnteringVariables;
+
     // Pick an entering variable
     _tableau->computeCostFunction();
-    if ( !_activeEntryStrategy->select( _tableau ) )
+    if ( !_activeEntryStrategy->select( _tableau, excludedEnteringVariables ) )
     {
         timeval end = TimeUtils::sampleMicro();
         _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );

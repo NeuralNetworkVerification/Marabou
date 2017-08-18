@@ -15,6 +15,8 @@
 
 #include "EntrySelectionStrategy.h"
 
+class String;
+
 class ProjectedSteepestEdgeRule : public EntrySelectionStrategy
 {
 public:
@@ -29,7 +31,7 @@ public:
     /*
       Apply the projected steepest edge pivot selection rule.
     */
-    bool select( ITableau &tableau );
+    bool select( ITableau &tableau, const Set<unsigned> &excluded );
 
     /*
       We use this hook to update gamma according to the entering
