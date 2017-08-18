@@ -57,10 +57,6 @@ public:
         mockEnteringVariable = nonBasic;
     }
 
-    void setLeavingVariable( unsigned /* basic */ )
-    {
-    }
-
     unsigned getEnteringVariable()
     {
         return mockEnteringVariable;
@@ -187,7 +183,9 @@ public:
     unsigned getEnteringVariable() const { return 0; }
     void pickLeavingVariable() {};
     void pickLeavingVariable( double */* d */ ) {}
-    unsigned getLeavingVariable() const { return 0; }
+    unsigned mockLeavingVariable;
+    void setLeavingVariable( unsigned basic ) { mockLeavingVariable = basic; }
+    unsigned getLeavingVariable() const { return mockLeavingVariable; }
     double getChangeRatio() const { return 0; }
     void performPivot() {}
     bool performingFakePivot() const
@@ -215,10 +213,14 @@ public:
         return NULL;
     }
 
-    void computePivotRow() {}
-    const double *getPivotRow() const
+    TableauRow *nextPivotRow;
+    void computePivotRow()
     {
-        return NULL;
+        getTableauRow( mockLeavingVariable, nextPivotRow );
+    }
+    const TableauRow *getPivotRow() const
+    {
+        return nextPivotRow;
     }
 
     void computeAssignment() {}

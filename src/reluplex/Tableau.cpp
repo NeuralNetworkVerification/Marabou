@@ -75,7 +75,7 @@ void Tableau::freeMemoryIfNeeded()
 
     if ( _pivotRow )
     {
-        delete[] _pivotRow;
+        delete _pivotRow;
         _pivotRow = NULL;
     }
 
@@ -208,7 +208,7 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     if ( !_changeColumn )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::changeColumn" );
 
-    _pivotRow = new double[n-m];
+    _pivotRow = new TableauRow( n-m );
     if ( !_pivotRow )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::pivotRow" );
 
@@ -1154,23 +1154,10 @@ const double *Tableau::getChangeColumn() const
 
 void Tableau::computePivotRow()
 {
-    ASSERT( _leavingVariable < _m );
-
-    std::fill( _unitVector, _unitVector + _m, 0.0 );
-    _unitVector[_leavingVariable] = 1;
-    computeMultipliers( _unitVector );
-
-    const double *ANColumn;
-    for ( unsigned i = 0; i < _n - _m; ++i )
-    {
-        ANColumn = _A + ( _nonBasicIndexToVariable[i] * _m );
-        _pivotRow[i] = 0;
-        for ( unsigned j = 0; j < _m; ++j )
-            _pivotRow[i] -= ( _multipliers[j] * ANColumn[j] );
-    }
+    getTableauRow( _leavingVariable, _pivotRow );
 }
 
-const double *Tableau::getPivotRow() const
+const TableauRow *Tableau::getPivotRow() const
 {
     return _pivotRow;
 }
@@ -1502,8 +1489,8 @@ void Tableau::addRow()
     /*
       This function increases the sizes of the data structures used by
       the tableau to match newM and newN. Notice that newM = _m + 1 and
-      newN = _n + 1, and so newN - newM = _m - _n. Consequently, structures
-      that are of size _m - _n are left as is.
+      newN = _n + 1, and so newN - newM = _n - _m. Consequently, structures
+      that are of size _n - _m are left as is.
     */
 
     // Allocate a new A, copy the columns of the old A

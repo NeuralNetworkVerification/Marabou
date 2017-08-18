@@ -11,6 +11,7 @@
  **/
 
 #include "BoundTightener.h"
+#include "Debug.h"
 #include "Statistics.h"
 
 BoundTightener::BoundTightener()
@@ -18,15 +19,13 @@ BoundTightener::BoundTightener()
 {
 }
 
-void BoundTightener::deriveTightenings( ITableau &tableau, unsigned variable )
+void BoundTightener::deriveTightenings( ITableau &tableau )
 {
     if ( _statistics )
         _statistics->incNumRowsExaminedByRowTightener();
 
     // Extract the variable's row from the tableau
-	unsigned numNonBasic = tableau.getN() - tableau.getM();
-	TableauRow row( numNonBasic );
-	tableau.getTableauRow( tableau.variableToIndex( variable ), &row );
+    const TableauRow &row = *tableau.getPivotRow();
 
 	// Get right hand side
     double constCoef = row._scalar;
@@ -34,6 +33,8 @@ void BoundTightener::deriveTightenings( ITableau &tableau, unsigned variable )
     // Compute the lower and upper bounds from this row
 	double tightenedLowerBound = constCoef;
 	double tightenedUpperBound = constCoef;
+
+	unsigned numNonBasic = tableau.getN() - tableau.getM();
 	for ( unsigned i = 0; i < numNonBasic; ++i )
 	{
 		const TableauRow::Entry &entry( row._row[i] );
@@ -54,21 +55,24 @@ void BoundTightener::deriveTightenings( ITableau &tableau, unsigned variable )
 		}
 	}
 
+	unsigned leavingVariable = tableau.getLeavingVariable();
+
     // Tighten lower bound if needed
-	if ( FloatUtils::lt( tableau.getLowerBound( variable ), tightenedLowerBound ) )
+	if ( FloatUtils::lt( tableau.getLowerBound( leavingVariable ), tightenedLowerBound ) )
     {
-        enqueueTightening( Tightening( variable, tightenedLowerBound, Tightening::LB ) );
+        enqueueTightening( Tightening( leavingVariable, tightenedLowerBound, Tightening::LB ) );
         if ( _statistics )
             _statistics->incNumBoundsProposedByRowTightener();
     }
 
     // Tighten upper bound if needed
-	if ( FloatUtils::gt( tableau.getUpperBound( variable ), tightenedUpperBound ) )
+	if ( FloatUtils::gt( tableau.getUpperBound( leavingVariable ), tightenedUpperBound ) )
     {
-        enqueueTightening( Tightening( variable, tightenedUpperBound, Tightening::UB ) );
+        enqueueTightening( Tightening( leavingVariable, tightenedUpperBound, Tightening::UB ) );
         if ( _statistics )
             _statistics->incNumBoundsProposedByRowTightener();
     }
+
 }
 
 void BoundTightener::enqueueTightening( const Tightening& tightening )

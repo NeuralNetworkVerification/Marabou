@@ -23,11 +23,11 @@ class BoundTightener
 public:
     BoundTightener();
 
-    /*
-      Derive and enqueue new bounds for the given basic variable
-      in the given tableau.
-    */
-    void deriveTightenings( ITableau &tableau, unsigned variable );
+	  /*
+	    Derive and enqueue new bounds for the given basic variable
+	    in the given tableau.
+	  */
+	  void deriveTightenings( ITableau &tableau );
 
     /*
       Tighten all enqueued requests.
