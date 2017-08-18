@@ -177,12 +177,6 @@ bool Engine::performSimplexStep()
     if ( !fakePivot )
         _tableau->computePivotRow();
 
-    unsigned enteringVariable = _tableau->getEnteringVariable();
-    // enteringVariable = nbitv[ev]
-
-    
-    // getLeavingVariable() = bitv[lv]
-
     // Perform the actual pivot
     _activeEntryStrategy->prePivotHook( _tableau, fakePivot );
     _tableau->performPivot();
@@ -190,9 +184,7 @@ bool Engine::performSimplexStep()
 
     // Tighten
     if ( !fakePivot )
-        _boundTightener.deriveTightenings( _tableau, enteringVariable );
-
-    // entering var row sohuld be leaving var row (pivot row) before performPivot
+        _boundTightener.deriveTightenings( _tableau );
 
     timeval end = TimeUtils::sampleMicro();
     _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );

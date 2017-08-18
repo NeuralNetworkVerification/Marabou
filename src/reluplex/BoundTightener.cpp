@@ -19,19 +19,8 @@ BoundTightener::BoundTightener()
 {
 }
 
-void BoundTightener::deriveTightenings( ITableau &tableau, unsigned variable, bool check )
+void BoundTightener::deriveTightenings( ITableau &tableau )
 {
-			unsigned asfd = 0;
-	if (check) 
-	{
-		asfd = 1;
-		ASSERT( variable == tableau.getLeavingVariable() );		
-	}
-
-	printf("%u\n", asfd );
-
-	variable = tableau.getLeavingVariable();
-
     if ( _statistics )
         _statistics->incNumRowsExaminedByRowTightener();
 
@@ -66,21 +55,24 @@ void BoundTightener::deriveTightenings( ITableau &tableau, unsigned variable, bo
 		}
 	}
 
+	unsigned leavingVariable = tableau.getLeavingVariable();
+
     // Tighten lower bound if needed
-	if ( FloatUtils::lt( tableau.getLowerBound( variable ), tightenedLowerBound ) )
+	if ( FloatUtils::lt( tableau.getLowerBound( leavingVariable ), tightenedLowerBound ) )
     {
-        enqueueTightening( Tightening( variable, tightenedLowerBound, Tightening::LB ) );
+        enqueueTightening( Tightening( leavingVariable, tightenedLowerBound, Tightening::LB ) );
         if ( _statistics )
             _statistics->incNumBoundsProposedByRowTightener();
     }
 
     // Tighten upper bound if needed
-	if ( FloatUtils::gt( tableau.getUpperBound( variable ), tightenedUpperBound ) )
+	if ( FloatUtils::gt( tableau.getUpperBound( leavingVariable ), tightenedUpperBound ) )
     {
-        enqueueTightening( Tightening( variable, tightenedUpperBound, Tightening::UB ) );
+        enqueueTightening( Tightening( leavingVariable, tightenedUpperBound, Tightening::UB ) );
         if ( _statistics )
             _statistics->incNumBoundsProposedByRowTightener();
     }
+
 }
 
 void BoundTightener::enqueueTightening( const Tightening& tightening )

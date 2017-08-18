@@ -69,7 +69,7 @@ public:
         tableau->nextPivotRow = &row;
         tableau->mockLeavingVariable = 4;
 
-        TS_ASSERT_THROWS_NOTHING( tightener.deriveTightenings( *tableau, 4, false ) );
+        TS_ASSERT_THROWS_NOTHING( tightener.deriveTightenings( *tableau ) );
         TS_ASSERT_THROWS_NOTHING( tightener.tighten( *tableau ) );
 
         // Lower and upper bounds should have been tightened
@@ -114,7 +114,7 @@ public:
         tableau->nextPivotRow = &row;
         tableau->mockLeavingVariable = 4;
 
-        TS_ASSERT_THROWS_NOTHING( tightener.deriveTightenings( *tableau, 4, false ) );
+        TS_ASSERT_THROWS_NOTHING( tightener.deriveTightenings( *tableau ) );
         TS_ASSERT_THROWS_NOTHING( tightener.tighten( *tableau ) );
 
         // Lower and upper bounds should have been tightened
@@ -159,7 +159,7 @@ public:
         tableau->nextPivotRow = &row;
         tableau->mockLeavingVariable = 4;
 
-        TS_ASSERT_THROWS_NOTHING( tightener.deriveTightenings( *tableau, 4, false ) );
+        TS_ASSERT_THROWS_NOTHING( tightener.deriveTightenings( *tableau ) );
         TS_ASSERT_THROWS_NOTHING( tightener.tighten( *tableau ) );
 
         // Lower and upper bounds should have been tightened
@@ -202,7 +202,7 @@ public:
         tableau->nextPivotRow = &row;
         tableau->mockLeavingVariable = 4;
 
-        TS_ASSERT_THROWS_NOTHING( tightener.deriveTightenings( *tableau, 4, false ) );
+        TS_ASSERT_THROWS_NOTHING( tightener.deriveTightenings( *tableau ) );
         TS_ASSERT_THROWS_NOTHING( tightener.tighten( *tableau ) );
 
         // Lower and upper bounds should have been tightened
