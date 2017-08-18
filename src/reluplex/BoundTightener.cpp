@@ -19,13 +19,17 @@ BoundTightener::BoundTightener()
 {
 }
 
-void BoundTightener::deriveTightenings( ITableau &tableau )
+void BoundTightener::deriveTightenings( ITableau &tableau, unsigned leavingVariable )
 {
     if ( _statistics )
         _statistics->incNumRowsExaminedByRowTightener();
 
     // Extract the variable's row from the tableau
-    const TableauRow &row = *tableau.getPivotRow();
+	unsigned numNonBasic = tableau.getN() - tableau.getM();
+	TableauRow row( numNonBasic );
+	tableau.getTableauRow( tableau.variableToIndex( leavingVariable ), &row );
+
+    // const TableauRow &row = *tableau.getPivotRow();
 
 	// Get right hand side
     double constCoef = row._scalar;
@@ -34,7 +38,6 @@ void BoundTightener::deriveTightenings( ITableau &tableau )
 	double tightenedLowerBound = constCoef;
 	double tightenedUpperBound = constCoef;
 
-	unsigned numNonBasic = tableau.getN() - tableau.getM();
 	for ( unsigned i = 0; i < numNonBasic; ++i )
 	{
 		const TableauRow::Entry &entry( row._row[i] );
@@ -55,7 +58,7 @@ void BoundTightener::deriveTightenings( ITableau &tableau )
 		}
 	}
 
-	unsigned leavingVariable = tableau.getLeavingVariable();
+	// unsigned leavingVariable = tableau.getLeavingVariable();
 
     // Tighten lower bound if needed
 	if ( FloatUtils::lt( tableau.getLowerBound( leavingVariable ), tightenedLowerBound ) )
@@ -72,7 +75,6 @@ void BoundTightener::deriveTightenings( ITableau &tableau )
         if ( _statistics )
             _statistics->incNumBoundsProposedByRowTightener();
     }
-
 }
 
 void BoundTightener::enqueueTightening( const Tightening& tightening )
