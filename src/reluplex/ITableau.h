@@ -93,7 +93,7 @@ public:
     virtual void computeChangeColumn() = 0;
     virtual const double *getChangeColumn() const = 0;
     virtual void computePivotRow() = 0;
-    virtual const double *getPivotRow() const = 0;
+    virtual const TableauRow *getPivotRow() const = 0;
     virtual void computeAssignment() = 0;
     virtual void dump() const = 0;
     virtual void dumpAssignment() = 0;

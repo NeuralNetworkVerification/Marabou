@@ -26,6 +26,11 @@ TableauRow::~TableauRow()
     delete[] _row;
 }
 
+double TableauRow::operator[] (unsigned index) const
+{
+    return _row[index]._coefficient;
+}
+
 void TableauRow::dump() const
 {
     for ( unsigned i = 0; i < _size; ++i )

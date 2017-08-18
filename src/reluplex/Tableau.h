@@ -283,7 +283,7 @@ public:
       Compute the pivot row.
     */
     void computePivotRow();
-    const double *getPivotRow() const;
+    const TableauRow *getPivotRow() const;
 
     /*
       Compute the basic assignment
@@ -378,7 +378,7 @@ private:
     /*
       Used to store the pivot row
     */
-    double *_pivotRow;
+    TableauRow *_pivotRow;
 
     /*
       The right hand side vector of Ax = b

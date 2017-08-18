@@ -11,6 +11,7 @@
  **/
 
 #include "BoundTightener.h"
+#include "Debug.h"
 #include "Statistics.h"
 
 BoundTightener::BoundTightener()
@@ -18,15 +19,24 @@ BoundTightener::BoundTightener()
 {
 }
 
-void BoundTightener::deriveTightenings( ITableau &tableau, unsigned variable )
+void BoundTightener::deriveTightenings( ITableau &tableau, unsigned variable, bool check )
 {
+			unsigned asfd = 0;
+	if (check) 
+	{
+		asfd = 1;
+		ASSERT( variable == tableau.getLeavingVariable() );		
+	}
+
+	printf("%u\n", asfd );
+
+	variable = tableau.getLeavingVariable();
+
     if ( _statistics )
         _statistics->incNumRowsExaminedByRowTightener();
 
     // Extract the variable's row from the tableau
-	unsigned numNonBasic = tableau.getN() - tableau.getM();
-	TableauRow row( numNonBasic );
-	tableau.getTableauRow( tableau.variableToIndex( variable ), &row );
+    const TableauRow &row = *tableau.getPivotRow();
 
 	// Get right hand side
     double constCoef = row._scalar;
@@ -34,6 +44,8 @@ void BoundTightener::deriveTightenings( ITableau &tableau, unsigned variable )
     // Compute the lower and upper bounds from this row
 	double tightenedLowerBound = constCoef;
 	double tightenedUpperBound = constCoef;
+
+	unsigned numNonBasic = tableau.getN() - tableau.getM();
 	for ( unsigned i = 0; i < numNonBasic; ++i )
 	{
 		const TableauRow::Entry &entry( row._row[i] );

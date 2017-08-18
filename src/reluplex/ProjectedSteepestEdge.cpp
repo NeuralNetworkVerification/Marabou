@@ -17,6 +17,7 @@
 #include "ProjectedSteepestEdge.h"
 #include "ReluplexError.h"
 #include "Statistics.h"
+#include "TableauRow.h"
 
 ProjectedSteepestEdgeRule::ProjectedSteepestEdgeRule()
     : _referenceSpace( NULL )
@@ -168,7 +169,7 @@ void ProjectedSteepestEdgeRule::prePivotHook( const ITableau &tableau, bool fake
     unsigned leavingIndex = tableau.variableToIndex( leaving );
 
     const double *changeColumn = tableau.getChangeColumn();
-    const double *pivotRow = tableau.getPivotRow();
+    const TableauRow &pivotRow = *tableau.getPivotRow();
 
     // Update gamma[entering] to the accurate value, taking the pivot into account
     double accurateGamma;
