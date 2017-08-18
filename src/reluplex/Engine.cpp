@@ -147,21 +147,12 @@ void Engine::mainLoopStatistics()
 
 bool Engine::performSimplexStep()
 {
-    // Debug
-    // for ( unsigned i = 0; i < _tableau->getM(); ++i )
-    // {
-    //     printf( "Extracting tableau row %u\n", i );
-    //     TableauRow row( _tableau->getN() - _tableau->getM() );
-    //     _tableau->getTableauRow( i, &row );
-    //     row.dump();
-    // }
-    //
-
     // Statistics
     _statistics.incNumSimplexSteps();
     timeval start = TimeUtils::sampleMicro();
 
     // Pick an entering variable
+    _tableau->computeCostFunction();
     if ( !_activeEntryStrategy->select( _tableau ) )
     {
         timeval end = TimeUtils::sampleMicro();

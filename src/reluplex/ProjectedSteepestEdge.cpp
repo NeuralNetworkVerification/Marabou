@@ -105,8 +105,6 @@ void ProjectedSteepestEdgeRule::resetReferenceSpace( const ITableau &tableau )
 
 bool ProjectedSteepestEdgeRule::select( ITableau &tableau )
 {
-    tableau.computeCostFunction();
-
     // Obtain the list of eligible non-basic variables to consider
     List<unsigned> candidates;
     tableau.getEntryCandidates( candidates );

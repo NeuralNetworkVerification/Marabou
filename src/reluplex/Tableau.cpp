@@ -757,7 +757,7 @@ void Tableau::computeReducedCost( unsigned nonBasic )
 void Tableau::computeReducedCosts()
 {
     for ( unsigned i = 0; i < _n - _m; ++i )
-        computeReducedCost(i);
+        computeReducedCost( i );
 }
 
 unsigned Tableau::getBasicStatus( unsigned basic )

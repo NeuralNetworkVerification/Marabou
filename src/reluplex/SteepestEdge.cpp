@@ -33,10 +33,7 @@ bool SteepestEdgeRule::select( ITableau &tableau )
      * Sets entering variable of the tableau to q.
      ***************************************************************/
 
-    // Calculate entire cost function
     // TODO: integrate with Duligur's partial pricing?
-    tableau.computeCostFunction();
-
     List<unsigned> candidates;
     tableau.getEntryCandidates( candidates );
 

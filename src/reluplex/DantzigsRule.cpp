@@ -18,8 +18,6 @@
 
 bool DantzigsRule::select( ITableau &tableau )
 {
-    tableau.computeCostFunction();
-
     List<unsigned> candidates;
     tableau.getEntryCandidates( candidates );
 
