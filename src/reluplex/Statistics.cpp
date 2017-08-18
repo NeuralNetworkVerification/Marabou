@@ -31,6 +31,8 @@ Statistics::Statistics()
     , _numTableauPivots( 0 )
     , _numTableauDegeneratePivots( 0 )
     , _numTableauDegeneratePivotsByRequest( 0 )
+    , _numSimplexPivotSelectionsIgnoredForStability( 0 )
+    , _numSimplexUnstablePivots( 0 )
     , _numTableauBoundHopping( 0 )
     , _numTightenedBounds( 0 )
     , _numRowsExaminedByRowTightener( 0 )
@@ -66,6 +68,10 @@ void Statistics::print()
             , _currentDegradation
             , _maxDegradation
             );
+    printf( "\tNumber of simplex pivots we attempted to skip beacuse of instability: %llu. "
+            "Unstable pivots performed anyway: %llu\n"
+            , _numSimplexPivotSelectionsIgnoredForStability
+            , _numSimplexUnstablePivots );
 
     printf( "\t--- Tableau Statistics ---\n" );
     printf( "\tTotal number of pivots performed: %llu\n", _numTableauPivots );
@@ -195,6 +201,16 @@ void Statistics::incNumTableauDegeneratePivots()
 void Statistics::incNumTableauDegeneratePivotsByRequest()
 {
     ++_numTableauDegeneratePivotsByRequest;
+}
+
+void Statistics::incNumSimplexPivotSelectionsIgnoredForStability()
+{
+    ++_numSimplexPivotSelectionsIgnoredForStability;
+}
+
+void Statistics::incNumSimplexUnstablePivots()
+{
+    ++_numSimplexUnstablePivots;
 }
 
 void Statistics::incNumTightenedBounds()

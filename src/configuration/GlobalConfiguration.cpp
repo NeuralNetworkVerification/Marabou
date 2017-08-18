@@ -17,10 +17,11 @@ const double GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS = 0.0000000001
 const unsigned GlobalConfiguration::DEFAULT_DOUBLE_TO_STRING_PRECISION = 10;
 const unsigned GlobalConfiguration::REFACTORIZATION_THRESHOLD = 100;
 const unsigned GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY = 100;
-const double GlobalConfiguration::NUMERICAL_STABILITY_CONSTANT = 0.0001;
 const double GlobalConfiguration::BOUND_COMPARISON_TOLERANCE = 0.001;
 const bool GlobalConfiguration::PREPROCESS_INPUT_QUERY = true;
 const unsigned GlobalConfiguration::DEGRADATION_CHECKING_FREQUENCY = 10;
+const double GlobalConfiguration::ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD = 0.0001;
+const unsigned GlobalConfiguration::MAX_SIMPLEX_PIVOT_SEARCH_ITERATIONS = 5;
 
 const unsigned GlobalConfiguration::PSE_ITERATIONS_BEFORE_RESET = 1000;
 const double GlobalConfiguration::PSE_GAMMA_ERROR_THRESHOLD = 0.001;
@@ -42,10 +43,12 @@ void GlobalConfiguration::print()
     printf( "  DEFAULT_DOUBLE_TO_STRING_PRECISION: %u\n", DEFAULT_DOUBLE_TO_STRING_PRECISION );
     printf( "  REFACTORIZATION_THRESHOLD: %u\n", REFACTORIZATION_THRESHOLD );
     printf( "  STATISTICS_PRINTING_FREQUENCY: %u\n", STATISTICS_PRINTING_FREQUENCY );
-    printf( "  NUMERICAL_STABILITY_CONSTANT: %.15lf\n", NUMERICAL_STABILITY_CONSTANT );
     printf( "  BOUND_COMPARISON_TOLERANCE: %.15lf\n", BOUND_COMPARISON_TOLERANCE );
     printf( "  PREPROCESS_INPUT_QUERY: %s\n", PREPROCESS_INPUT_QUERY ? "Yes" : "No" );
     printf( "  DEGRADATION_CHECKING_FREQUENCY: %u\n", DEGRADATION_CHECKING_FREQUENCY );
+    printf( "  ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD: %.15lf\n", ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD );
+    printf( "  MAX_SIMPLEX_PIVOT_SEARCH_ITERATIONS: %u\n", MAX_SIMPLEX_PIVOT_SEARCH_ITERATIONS );
+
     printf( "  PSE_ITERATIONS_BEFORE_RESET: %u\n", PSE_ITERATIONS_BEFORE_RESET );
     printf( "  PSE_GAMMA_ERROR_THRESHOLD: %.15lf\n", PSE_GAMMA_ERROR_THRESHOLD );
     printf( "****************************\n" );

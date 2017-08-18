@@ -46,6 +46,8 @@ public:
     void incNumTableauBoundHopping();
     void incNumTableauDegeneratePivots();
     void incNumTableauDegeneratePivotsByRequest();
+    void incNumSimplexPivotSelectionsIgnoredForStability();
+    void incNumSimplexUnstablePivots();
 
     /*
       Smt core related statistics.
@@ -113,6 +115,14 @@ private:
     // Total number of degenerate tableau pivot operations performed
     // by explicit request
     unsigned long long _numTableauDegeneratePivotsByRequest;
+
+    // Total number of entering/leaving variable pairs ignored because their pivot
+    // element was too small
+    unsigned long long _numSimplexPivotSelectionsIgnoredForStability;
+
+    // Total number of times in which an unstable simplex pivot was performed, because
+    // no better option could be found.
+    unsigned long long _numSimplexUnstablePivots;
 
     // Total number of times a non-basic variable hopped to its
     // opposite bound.

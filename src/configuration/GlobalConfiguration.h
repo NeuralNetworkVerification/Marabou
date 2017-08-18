@@ -18,17 +18,40 @@ class GlobalConfiguration
 public:
     static void print();
 
+    // The default epsilon used for comparing doubles
     static const double DEFAULT_EPSILON_FOR_COMPARISONS;
+
+    // The precision level when convering doubles to strings
     static const unsigned DEFAULT_DOUBLE_TO_STRING_PRECISION;
+
+    // The number of accumualted eta matrices, after which the basis will be refactorized
 	static const unsigned REFACTORIZATION_THRESHOLD;
+
+    // How often should the main loop print statistics?
     static const unsigned STATISTICS_PRINTING_FREQUENCY;
-    static const double NUMERICAL_STABILITY_CONSTANT;
+
+    // Tolerance when checking whether the value computed for a basic variable is out of bounds
     static const double BOUND_COMPARISON_TOLERANCE;
+
+    // Toggle query-preprocessing on/off
 	static const bool PREPROCESS_INPUT_QUERY;
+
+    // How often should the main loop check the current degradation?
     static const unsigned DEGRADATION_CHECKING_FREQUENCY;
 
+    // If a pivot element in a simplex element is smaller than this threshold, the engine will attempt
+    // to pick another element.
+    static const double ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD;
+
+    // How many potential pivots should the engine inspect (at most) in every simplex iteration?
+    static const unsigned MAX_SIMPLEX_PIVOT_SEARCH_ITERATIONS;
+
+    // How often should projected steepest edge reset the reference space?
     static const unsigned PSE_ITERATIONS_BEFORE_RESET;
+
+    // An error threshold which, when crossed, causes projected steepest edge to reset the reference space
     static const double PSE_GAMMA_ERROR_THRESHOLD;
+
 
     // Logging
     static const bool ENGINE_LOGGING;

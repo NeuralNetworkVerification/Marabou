@@ -161,22 +161,79 @@ bool Engine::performSimplexStep()
       3. If the combination is bad, go back to (1) and find the
          next-best entering variable.
     */
+    _tableau->computeCostFunction();
+
+    bool haveCandidate = false;
+    unsigned bestEntering;
+    double bestPivotEntry = 0.0;
+    unsigned tries = GlobalConfiguration::MAX_SIMPLEX_PIVOT_SEARCH_ITERATIONS;
     Set<unsigned> excludedEnteringVariables;
 
-    // Pick an entering variable
-    _tableau->computeCostFunction();
-    if ( !_activeEntryStrategy->select( _tableau, excludedEnteringVariables ) )
+    while ( tries > 0 )
+    {
+        --tries;
+
+        // Attempt to pick the best entering variable from the available candidates
+        if ( !_activeEntryStrategy->select( _tableau, excludedEnteringVariables ) )
+        {
+            // No additional candidates can be found.
+            break;
+        }
+
+        // We have a candidate!
+        haveCandidate = true;
+
+        // We don't want to re-consider this candidate in future
+        // iterations
+        excludedEnteringVariables.insert( _tableau->getEnteringVariable() );
+
+        // Pick a leaving variable
+        _tableau->computeChangeColumn();
+        _tableau->pickLeavingVariable();
+
+        // A fake pivot always wins
+        if ( _tableau->performingFakePivot() )
+        {
+            bestEntering = _tableau->getEnteringVariable();
+            break;
+        }
+
+        // Is the newly found pivot better than the stored one?
+        unsigned leavingIndex = _tableau->variableToIndex( _tableau->getLeavingVariable() );
+        double pivotEntry = FloatUtils::abs( _tableau->getChangeColumn()[leavingIndex] );
+        if ( FloatUtils::gt( pivotEntry, bestPivotEntry ) )
+        {
+            bestEntering = _tableau->getEnteringVariable();
+            bestPivotEntry = pivotEntry;
+        }
+
+        // If the pivot is greater than the sought-after threshold, we
+        // are done.
+        if ( FloatUtils::gte( bestPivotEntry, GlobalConfiguration::ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD ) )
+            break;
+        else
+            _statistics.incNumSimplexPivotSelectionsIgnoredForStability();
+    }
+
+    // If we don't have any candidates, this simplex step has failed -
+    // return false.
+    if ( !haveCandidate )
     {
         timeval end = TimeUtils::sampleMicro();
         _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
         return false;
     }
 
-    // Pick a leaving variable
+    // Set the best choice in the tableau
+    _tableau->setEnteringVariable( _tableau->variableToIndex( bestEntering ) );
     _tableau->computeChangeColumn();
     _tableau->pickLeavingVariable();
 
     bool fakePivot = _tableau->performingFakePivot();
+
+    if ( !fakePivot && FloatUtils::lt( bestPivotEntry, GlobalConfiguration::ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD ) )
+        _statistics.incNumSimplexUnstablePivots();
+
     if ( !fakePivot )
         _tableau->computePivotRow();
 
