@@ -49,6 +49,11 @@ public:
     */
     void resizeHook( const ITableau &tableau );
 
+    /*
+      For debugging purposes.
+    */
+    double getGamma( unsigned index ) const;
+
 private:
     /*
       Indicates whether a variable, basic or non basic, is in the reference space.

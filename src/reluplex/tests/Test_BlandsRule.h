@@ -66,11 +66,11 @@ public:
         tableau->mockCandidates = candidates;
 
         TS_ASSERT( blandsRule.select( *tableau, excluded ) );
-        TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 10U );
+        TS_ASSERT_EQUALS( tableau->mockEnteringVariable, 10U );
 
         excluded.insert( 10 );
         TS_ASSERT( blandsRule.select( *tableau, excluded ) );
-        TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 51U );
+        TS_ASSERT_EQUALS( tableau->mockEnteringVariable, 51U );
         excluded.clear();
 
         candidates.append( 100 );
@@ -81,8 +81,7 @@ public:
         // TS_ASSERT_EQUALS( blandsRule.select( candidates, *tableau ), 100U );
 
         TS_ASSERT( blandsRule.select( *tableau, excluded ) );
-        TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 100U );
-
+        TS_ASSERT_EQUALS( tableau->mockEnteringVariable, 100U );
     }
 };
 

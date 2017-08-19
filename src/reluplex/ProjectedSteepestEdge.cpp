@@ -197,8 +197,6 @@ void ProjectedSteepestEdgeRule::prePivotHook( const ITableau &tableau, bool fake
     unsigned m = tableau.getM();
     unsigned n = tableau.getN();
 
-    // TODO: make sure that there's no hidden minus in glpk's row computation
-
     // Auxiliary variables
     double r, s, t1, t2;
     const double *AColumn;
@@ -208,7 +206,7 @@ void ProjectedSteepestEdgeRule::prePivotHook( const ITableau &tableau, bool fake
     {
         unsigned basicVariable = tableau.basicIndexToVariable( i );
         if ( _referenceSpace[basicVariable] )
-            _work1[i] = changeColumn[i];
+            _work1[i] -= changeColumn[i];
         else
             _work1[i] = 0.0;
     }
@@ -224,7 +222,7 @@ void ProjectedSteepestEdgeRule::prePivotHook( const ITableau &tableau, bool fake
         if ( FloatUtils::isZero( pivotRow[i] ) )
             continue;
 
-        r = pivotRow[i] / changeColumn[leavingIndex];
+        r = pivotRow[i] / -changeColumn[leavingIndex];
 
         /* compute inner product s[j] = N'[j] * u, where N[j] = A[k]
          * is constraint matrix column corresponding to xN[j] */
@@ -247,6 +245,7 @@ void ProjectedSteepestEdgeRule::prePivotHook( const ITableau &tableau, bool fake
 double ProjectedSteepestEdgeRule::computeAccurateGamma( double &accurateGamma, const ITableau &tableau )
 {
     unsigned entering = tableau.getEnteringVariable();
+    unsigned enteringIndex = tableau.variableToIndex( entering );
     unsigned m = tableau.getM();
     const double *changeColumn = tableau.getChangeColumn();
 
@@ -260,7 +259,7 @@ double ProjectedSteepestEdgeRule::computeAccurateGamma( double &accurateGamma, c
             accurateGamma += ( changeColumn[i] * changeColumn[i] );
     }
 
-    return FloatUtils::abs( accurateGamma - _gamma[entering] ) / ( 1.0 + accurateGamma );
+    return FloatUtils::abs( accurateGamma - _gamma[enteringIndex] ) / ( 1.0 + accurateGamma );
 }
 
 void ProjectedSteepestEdgeRule::postPivotHook( const ITableau &tableau, bool fakePivot )
@@ -303,6 +302,11 @@ void ProjectedSteepestEdgeRule::log( const String &message )
 {
     if ( GlobalConfiguration::PROJECTED_STEEPEST_EDGE_LOGGING )
         printf( "Projected SE: %s\n", message.ascii() );
+}
+
+double ProjectedSteepestEdgeRule::getGamma( unsigned index ) const
+{
+    return _gamma[index];
 }
 
 //

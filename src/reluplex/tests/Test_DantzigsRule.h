@@ -72,11 +72,11 @@ public:
         tableau->nextCostFunction[33] = 10;
 
         TS_ASSERT( dantzigsRule.select( *tableau, excluded ) );
-        TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 10U );
+        TS_ASSERT_EQUALS( tableau->mockEnteringVariable, 10U );
 
         excluded.insert( 10 );
         TS_ASSERT( dantzigsRule.select( *tableau, excluded ) );
-        TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 51U );
+        TS_ASSERT_EQUALS( tableau->mockEnteringVariable, 51U );
         excluded.clear();
 
         candidates.append( 25 );
@@ -84,7 +84,7 @@ public:
         tableau->mockCandidates = candidates;
 
         TS_ASSERT( dantzigsRule.select( *tableau, excluded ) );
-        TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 25U );
+        TS_ASSERT_EQUALS( tableau->mockEnteringVariable, 25U );
     }
 };
 

@@ -26,7 +26,7 @@ TableauRow::~TableauRow()
     delete[] _row;
 }
 
-double TableauRow::operator[] (unsigned index) const
+double TableauRow::operator[]( unsigned index ) const
 {
     return _row[index]._coefficient;
 }

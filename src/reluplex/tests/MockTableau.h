@@ -31,7 +31,14 @@ public:
         setDimensionsCalled = false;
         lastRightHandSide = NULL;
         initializeTableauCalled = false;
-	}
+
+        lastBtranInput = NULL;
+        nextBtranOutput = NULL;
+
+        lastEntries = NULL ;
+        nextCostFunction = NULL;
+        steepestEdgeGamma = NULL;
+    }
 
     ~MockTableau()
     {
@@ -39,6 +46,36 @@ public:
         {
             delete[] lastRightHandSide;
             lastRightHandSide = NULL;
+        }
+
+        if ( lastBtranInput )
+        {
+            delete[] lastBtranInput;
+            lastBtranInput = NULL;
+        }
+
+        if ( nextBtranOutput )
+        {
+            delete[] nextBtranOutput;
+            nextBtranOutput = NULL;
+        }
+
+        if ( lastEntries )
+        {
+            delete[] lastEntries;
+            lastEntries = NULL;
+        }
+
+        if ( nextCostFunction )
+        {
+            delete[] nextCostFunction;
+            nextCostFunction = NULL;
+        }
+
+        if ( steepestEdgeGamma )
+        {
+            delete[] steepestEdgeGamma;
+            steepestEdgeGamma = NULL;
         }
     }
 
@@ -55,11 +92,6 @@ public:
     void setEnteringVariable( unsigned nonBasic )
     {
         mockEnteringVariable = nonBasic;
-    }
-
-    unsigned getEnteringVariable()
-    {
-        return mockEnteringVariable;
     }
 
 	void mockConstructor()
@@ -93,6 +125,9 @@ public:
 
         steepestEdgeGamma = new double[n - m];
         std::fill( steepestEdgeGamma, steepestEdgeGamma + ( n - m ), 1.0 );
+
+        lastBtranInput = new double[m];
+        nextBtranOutput = new double[m];
     }
 
     double *lastEntries;
@@ -180,12 +215,27 @@ public:
     {
         return mockCandidates.exists( nonBasic );
     }
-    unsigned getEnteringVariable() const { return 0; }
+
+    unsigned nextEnteringVariable;
+    unsigned getEnteringVariable() const
+    {
+        return nextEnteringVariable;
+    }
+
     void pickLeavingVariable() {};
     void pickLeavingVariable( double */* d */ ) {}
+
     unsigned mockLeavingVariable;
-    void setLeavingVariable( unsigned basic ) { mockLeavingVariable = basic; }
-    unsigned getLeavingVariable() const { return mockLeavingVariable; }
+    void setLeavingVariable( unsigned basic )
+    {
+        mockLeavingVariable = basic;
+    }
+
+    unsigned getLeavingVariable() const
+    {
+        return mockLeavingVariable;
+    }
+
     double getChangeRatio() const { return 0; }
     void performPivot() {}
     bool performingFakePivot() const
@@ -208,9 +258,11 @@ public:
 
     void dumpCostFunction() const {}
     void computeChangeColumn() {}
+
+    double *nextChangeColumn;
     const double *getChangeColumn() const
     {
-        return NULL;
+        return nextChangeColumn;
     }
 
     TableauRow *nextPivotRow;
@@ -218,6 +270,7 @@ public:
     {
         getTableauRow( mockLeavingVariable, nextPivotRow );
     }
+
     const TableauRow *getPivotRow() const
     {
         return nextPivotRow;
@@ -281,9 +334,12 @@ public:
         row->_scalar = nextRow->_scalar;
     }
 
-    const double *getAColumn( unsigned ) const
+    Map<unsigned, const double *> nextAColumn;
+    const double *getAColumn( unsigned index ) const
     {
-        return NULL;
+        TS_ASSERT( nextAColumn.exists( index ) );
+        TS_ASSERT( nextAColumn.get( index ) );
+        return nextAColumn.get( index );
     }
 
     void performDegeneratePivot()
@@ -341,7 +397,14 @@ public:
     }
 
     void forwardTransformation( const double *, double * ) const {}
-    void backwardTransformation( const double *, double * ) const {}
+
+    mutable double *lastBtranInput;
+    double *nextBtranOutput;
+    void backwardTransformation( const double *input, double *output ) const
+    {
+        memcpy( lastBtranInput, input, lastM * sizeof(double) );
+        memcpy( output, nextBtranOutput, lastM * sizeof(double) );
+    }
 };
 
 #endif // __MockTableau_h__

@@ -52,7 +52,7 @@ public:
     Entry *_row;
     double _scalar;
 
-    double operator[] (unsigned index) const;
+    double operator[]( unsigned index ) const;
 
     void dump() const;
 };
