@@ -15,6 +15,8 @@
 
 #include "EntrySelectionStrategy.h"
 
+class String;
+
 class ProjectedSteepestEdgeRule : public EntrySelectionStrategy
 {
 public:
@@ -29,7 +31,7 @@ public:
     /*
       Apply the projected steepest edge pivot selection rule.
     */
-    bool select( ITableau &tableau );
+    bool select( ITableau &tableau, const Set<unsigned> &excluded );
 
     /*
       We use this hook to update gamma according to the entering
@@ -42,11 +44,16 @@ public:
     */
     void postPivotHook( const ITableau &tableau, bool fakePivot );
 
+    /*
+      This hook is called when the tableau has been resized.
+    */
+    void resizeHook( const ITableau &tableau );
+
 private:
     /*
       Indicates whether a variable, basic or non basic, is in the reference space.
     */
-    bool *_referenceSpace;
+    char *_referenceSpace;
 
     /*
       The steepest edge gamma function.
@@ -56,7 +63,8 @@ private:
     /*
       Work space.
     */
-    double *_work;
+    double *_work1;
+    double *_work2;
 
     /*
       Tableau dimensions.
@@ -67,7 +75,7 @@ private:
     /*
       Remaining iterations before resetting the reference space.
     */
-    unsigned _iterationsBeforeReset;
+    unsigned _iterationsUntilReset;
 
     /*
       The error in gamma compuated in the previous iteration.
@@ -84,6 +92,13 @@ private:
       when compared to the approximate gamma.
     */
     double computeAccurateGamma( double &accurateGamma, const ITableau &tableau );
+
+    /*
+      Free all data structures.
+    */
+    void freeIfNeeded();
+
+    static void log( const String &message );
 };
 
 #endif // __ProjectedSteepestEdge_h__

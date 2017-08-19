@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file EngineState.cpp
+/*! \file EntrySelectionStrategy.cpp
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz
@@ -10,23 +10,18 @@
  ** directory for licensing information.\endverbatim
  **/
 
-#include "EngineState.h"
+#include "EntrySelectionStrategy.h"
 
-EngineState::EngineState()
+#include <cstring>
+
+EntrySelectionStrategy::EntrySelectionStrategy()
+    : _statistics( NULL )
 {
 }
 
-EngineState::~EngineState()
+void EntrySelectionStrategy::setStatistics( Statistics *statistics )
 {
-    for ( auto &kv : _plConstraintToState )
-    {
-        PiecewiseLinearConstraint *state = kv.second;
-        if ( state )
-        {
-            delete state;
-            kv.second = NULL;
-        }
-    }
+    _statistics = statistics;
 }
 
 //

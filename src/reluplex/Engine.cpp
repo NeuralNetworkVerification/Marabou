@@ -30,9 +30,12 @@ Engine::Engine()
     _boundTightener.setStatistics( &_statistics );
 
     // _activeEntryStrategy = &_nestedDantzigsRule;
-    _activeEntryStrategy = &_steepestEdgeRule;
+    // _activeEntryStrategy = &_steepestEdgeRule;
+    _activeEntryStrategy = &_projectedSteepestEdgeRule;
     // _activeEntryStrategy = &_dantzigsRule;
     // _activeEntryStrategy = &_blandsRule;
+
+    _activeEntryStrategy->setStatistics( &_statistics );
 }
 
 Engine::~Engine()
@@ -52,14 +55,24 @@ bool Engine::solve()
         // Apply constraint-entailed bound tightenings
         applyAllConstraintTightenings();
 
-        // Perform any pending case splits, valid or SmtCore-initiated
+        // Perform any valid case splits
         applyAllValidConstraintCaseSplits();
-        if ( _smtCore.needToSplit() )
-            _smtCore.performSplit();
 
         // Compute the current assignment and basic status
         _tableau->computeAssignment();
         _tableau->computeBasicStatus();
+
+        // Perform any SmtCore-initiated case splits
+        if ( _smtCore.needToSplit() )
+        {
+            _smtCore.performSplit();
+
+            // TODO: We get wrong answers if we don't recompute. But, we also
+            // want to compute before performSplit(), so that the corrent
+            // assignment is stored with the state.
+            _tableau->computeAssignment();
+            _tableau->computeBasicStatus();
+        }
 
         bool needToPop = false;
         if ( !_tableau->allBoundsValid() )
@@ -107,7 +120,10 @@ bool Engine::solve()
             // The current query is unsat, and we need to split.
             // If we're at level 0, the whole query is unsat.
             if ( !_smtCore.popSplit() )
+            {
+                _statistics.print();
                 return false;
+            }
         }
     }
 }
@@ -131,33 +147,93 @@ void Engine::mainLoopStatistics()
 
 bool Engine::performSimplexStep()
 {
-    // Debug
-    // for ( unsigned i = 0; i < _tableau->getM(); ++i )
-    // {
-    //     printf( "Extracting tableau row %u\n", i );
-    //     TableauRow row( _tableau->getN() - _tableau->getM() );
-    //     _tableau->getTableauRow( i, &row );
-    //     row.dump();
-    // }
-    //
-
     // Statistics
     _statistics.incNumSimplexSteps();
     timeval start = TimeUtils::sampleMicro();
 
-    // Pick an entering variable
-    if ( !_activeEntryStrategy->select( _tableau ) )
+    /*
+      In order to increase numerical stability, we attempt to pick a
+      "good" entering/leaving combination, by trying to avoid tiny pivot
+      values. We do this as follows:
+
+      1. Pick an entering variable according to the strategy in use.
+      2. Find the entailed leaving variable.
+      3. If the combination is bad, go back to (1) and find the
+         next-best entering variable.
+    */
+    _tableau->computeCostFunction();
+
+    bool haveCandidate = false;
+    unsigned bestEntering;
+    double bestPivotEntry = 0.0;
+    unsigned tries = GlobalConfiguration::MAX_SIMPLEX_PIVOT_SEARCH_ITERATIONS;
+    Set<unsigned> excludedEnteringVariables;
+
+    while ( tries > 0 )
+    {
+        --tries;
+
+        // Attempt to pick the best entering variable from the available candidates
+        if ( !_activeEntryStrategy->select( _tableau, excludedEnteringVariables ) )
+        {
+            // No additional candidates can be found.
+            break;
+        }
+
+        // We have a candidate!
+        haveCandidate = true;
+
+        // We don't want to re-consider this candidate in future
+        // iterations
+        excludedEnteringVariables.insert( _tableau->getEnteringVariable() );
+
+        // Pick a leaving variable
+        _tableau->computeChangeColumn();
+        _tableau->pickLeavingVariable();
+
+        // A fake pivot always wins
+        if ( _tableau->performingFakePivot() )
+        {
+            bestEntering = _tableau->getEnteringVariable();
+            break;
+        }
+
+        // Is the newly found pivot better than the stored one?
+        unsigned leavingIndex = _tableau->variableToIndex( _tableau->getLeavingVariable() );
+        double pivotEntry = FloatUtils::abs( _tableau->getChangeColumn()[leavingIndex] );
+        if ( FloatUtils::gt( pivotEntry, bestPivotEntry ) )
+        {
+            bestEntering = _tableau->getEnteringVariable();
+            bestPivotEntry = pivotEntry;
+        }
+
+        // If the pivot is greater than the sought-after threshold, we
+        // are done.
+        if ( FloatUtils::gte( bestPivotEntry, GlobalConfiguration::ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD ) )
+            break;
+        else
+            _statistics.incNumSimplexPivotSelectionsIgnoredForStability();
+    }
+
+    // If we don't have any candidates, this simplex step has failed -
+    // return false.
+    if ( !haveCandidate )
     {
         timeval end = TimeUtils::sampleMicro();
         _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
         return false;
     }
 
-    // Pick a leaving variable
+    // Set the best choice in the tableau
+    _tableau->setEnteringVariable( _tableau->variableToIndex( bestEntering ) );
     _tableau->computeChangeColumn();
     _tableau->pickLeavingVariable();
 
     bool fakePivot = _tableau->performingFakePivot();
+
+    if ( !fakePivot && FloatUtils::lt( bestPivotEntry, GlobalConfiguration::ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD ) )
+        _statistics.incNumSimplexUnstablePivots();
+
     if ( !fakePivot )
         _tableau->computePivotRow();
 
@@ -169,7 +245,8 @@ bool Engine::performSimplexStep()
     _activeEntryStrategy->postPivotHook( _tableau, fakePivot );
 
     // Tighten
-    _boundTightener.deriveTightenings( _tableau, enteringVariable );
+    if ( !fakePivot )
+        _boundTightener.deriveTightenings( _tableau, enteringVariable );
 
     timeval end = TimeUtils::sampleMicro();
     _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
@@ -241,8 +318,12 @@ void Engine::fixViolatedPlConstraintIfPossible()
     ASSERT( done );
 
     // Switch between nonBasic and the variable we need to fix
-    _tableau->performDegeneratePivot( _tableau->variableToIndex( nonBasic ),
-                                      _tableau->variableToIndex( fix._variable ) );
+    _tableau->setEnteringVariable( _tableau->variableToIndex( nonBasic ) );
+    _tableau->setLeavingVariable( _tableau->variableToIndex( fix._variable ) );
+
+    _activeEntryStrategy->prePivotHook( _tableau, false );
+    _tableau->performDegeneratePivot();
+    _activeEntryStrategy->prePivotHook( _tableau, false );
 
     ASSERT( !_tableau->isBasic( fix._variable ) );
     _tableau->setNonBasicAssignment( fix._variable, fix._value );
@@ -302,7 +383,10 @@ void Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
     _plConstraints = _processed.getPiecewiseLinearConstraints();
     for ( const auto &constraint : _plConstraints )
+    {
         constraint->registerAsWatcher( _tableau );
+        constraint->setStatistics( &_statistics );
+    }
 
     _tableau->initializeTableau();
     _activeEntryStrategy->initialize( _tableau );
@@ -349,9 +433,7 @@ void Engine::storeState( EngineState &state ) const
     _tableau->storeState( state._tableauState );
     for ( const auto &constraint : _plConstraints )
     {
-        PiecewiseLinearConstraintState *constraintState = constraint->allocateState();
-        constraint->storeState( *constraintState );
-        state._plConstraintToState[constraint] = constraintState;
+        state._plConstraintToState[constraint] = constraint->duplicateConstraint();
     }
 
     state._numPlConstraintsDisabledByValidSplits = _numPlConstraintsDisabledByValidSplits;
@@ -370,12 +452,12 @@ void Engine::restoreState( const EngineState &state )
     _tableau->restoreState( state._tableauState );
 
     log( "\tRestoring constraint states" );
-    for ( const auto &constraint : _plConstraints )
+    for ( auto &constraint : _plConstraints )
     {
         if ( !state._plConstraintToState.exists( constraint ) )
             throw ReluplexError( ReluplexError::MISSING_PL_CONSTRAINT_STATE );
 
-        constraint->restoreState( *state._plConstraintToState[constraint] );
+        constraint->restoreState( state._plConstraintToState[constraint] );
     }
 
     _numPlConstraintsDisabledByValidSplits = state._numPlConstraintsDisabledByValidSplits;
@@ -396,7 +478,10 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
         unsigned auxVariable = FreshVariables::getNextVariable();
         equation.addAddend( -1, auxVariable );
         equation.markAuxiliaryVariable( auxVariable );
+
         _tableau->addEquation( equation );
+        _activeEntryStrategy->resizeHook( _tableau );
+
         PiecewiseLinearCaseSplit::EquationType type = it.second();
         if ( type != PiecewiseLinearCaseSplit::GE )
         {

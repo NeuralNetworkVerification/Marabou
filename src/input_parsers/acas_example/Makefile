@@ -12,6 +12,9 @@ LINK_FLAGS += \
 
 LOCAL_LIBRARIES += \
 
+CFLAGS += \
+	-DDEBUG_ON \
+
 SOURCES += \
 	GlobalConfiguration.cpp \
 	\
@@ -28,6 +31,7 @@ SOURCES += \
 	DegradationChecker.cpp \
 	Engine.cpp \
 	EngineState.cpp \
+	EntrySelectionStrategy.cpp \
 	Equation.cpp \
 	EtaMatrix.cpp \
 	FreshVariables.cpp \
@@ -35,6 +39,7 @@ SOURCES += \
 	LPElement.cpp \
 	NestedDantzigsRule.cpp \
 	PiecewiseLinearCaseSplit.cpp \
+	PiecewiseLinearConstraint.cpp \
 	Preprocessor.cpp \
 	ProjectedSteepestEdge.cpp \
 	ReluConstraint.cpp \

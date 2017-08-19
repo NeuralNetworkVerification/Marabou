@@ -46,6 +46,8 @@ public:
     void incNumTableauBoundHopping();
     void incNumTableauDegeneratePivots();
     void incNumTableauDegeneratePivotsByRequest();
+    void incNumSimplexPivotSelectionsIgnoredForStability();
+    void incNumSimplexUnstablePivots();
 
     /*
       Smt core related statistics.
@@ -55,10 +57,19 @@ public:
     void incNumPops();
 
     /*
-      Bound tightener related statistics.
+      Bound tightening related statistics.
     */
     void incNumTightenedBounds();
-    void incNumRowsExaminedByTightener();
+    void incNumRowsExaminedByRowTightener();
+    void incNumBoundsProposedByRowTightener();
+    void incNumBoundNotificationsPlConstraints();
+    void incNumBoundsProposedByPlConstraints();
+
+    /*
+      Projected Steepest Edge related statistics.
+    */
+    void pseIncNumIterations();
+    void pseIncNumResetReferenceSpace();
 
 private:
     // Number of iterations of the main loop
@@ -105,6 +116,14 @@ private:
     // by explicit request
     unsigned long long _numTableauDegeneratePivotsByRequest;
 
+    // Total number of entering/leaving variable pairs ignored because their pivot
+    // element was too small
+    unsigned long long _numSimplexPivotSelectionsIgnoredForStability;
+
+    // Total number of times in which an unstable simplex pivot was performed, because
+    // no better option could be found.
+    unsigned long long _numSimplexUnstablePivots;
+
     // Total number of times a non-basic variable hopped to its
     // opposite bound.
     unsigned long long _numTableauBoundHopping;
@@ -112,8 +131,21 @@ private:
     // Number of iterations of the main loop
     unsigned long long _numTightenedBounds;
 
-    // Number of rows examined by the bound tightener
-    unsigned long long _numRowsExaminedByTightener;
+    // Number of rows examined by the row tightener
+    unsigned long long _numRowsExaminedByRowTightener;
+
+    // Number of bound tightenings proposed by the row tightener
+    unsigned long long _numBoundsProposedByRowTightener;
+
+    // Number of bound notifications sent to pl constraints
+    unsigned long long _numBoundNotificationsToPlConstraints;
+
+    // Number of bound tightenings proposed by the pl constraints
+    unsigned long long _numBoundsProposedByPlConstraints;
+
+    // Projected steepest edge statistics
+    unsigned long long _pseNumIterations;
+    unsigned long long _pseNumResetReferenceSpace;
 
     // Printing helpers
     double printPercents( unsigned long long part, unsigned long long total ) const;

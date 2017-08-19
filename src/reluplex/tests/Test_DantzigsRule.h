@@ -46,15 +46,11 @@ public:
     {
         DantzigsRule dantzigsRule;
 
+        Set<unsigned> excluded;
         List<unsigned> candidates;
         tableau->mockCandidates = candidates;
 
-	//  TS_ASSERT_THROWS_EQUALS( dantzigsRule.select( candidates, *tableau ),
-        //                         const ReluplexError &e,
-        //                         e.getCode(),
-        //                         ReluplexError::NO_AVAILABLE_CANDIDATES );
-
-        TS_ASSERT( !dantzigsRule.select( *tableau ) );
+        TS_ASSERT( !dantzigsRule.select( *tableau, excluded ) );
 
         tableau->setDimensions( 10, 100 );
 
@@ -75,16 +71,20 @@ public:
         tableau->nextCostFunction[25] = -1202;
         tableau->nextCostFunction[33] = 10;
 
-        TS_ASSERT( dantzigsRule.select( *tableau ) );
+        TS_ASSERT( dantzigsRule.select( *tableau, excluded ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 10U );
+
+        excluded.insert( 10 );
+        TS_ASSERT( dantzigsRule.select( *tableau, excluded ) );
+        TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 51U );
+        excluded.clear();
 
         candidates.append( 25 );
 
         tableau->mockCandidates = candidates;
 
-        TS_ASSERT( dantzigsRule.select( *tableau ) );
+        TS_ASSERT( dantzigsRule.select( *tableau, excluded ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 25U );
-
     }
 };
 

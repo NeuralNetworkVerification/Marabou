@@ -27,8 +27,11 @@ SOURCES += \
 	LPElement.cpp\
 	MaxConstraint.cpp \
 	PiecewiseLinearCaseSplit.cpp \
+	PiecewiseLinearConstraint.cpp \
 	Preprocessor.cpp \
 	ReluConstraint.cpp \
+	Statistics.cpp \
+	TimeUtils.cpp \
 	main.cpp \
 
 TARGET = run_reluplex.elf

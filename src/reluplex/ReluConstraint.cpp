@@ -20,8 +20,8 @@
 #include "ReluplexError.h"
 
 ReluConstraint::ReluConstraint( unsigned b, unsigned f )
-    : PiecewiseLinearConstraint( f )
-    , _b( b )
+    : _b( b )
+    , _f( f )
     , _phaseStatus( PhaseStatus::PHASE_NOT_FIXED )
 {
 }
@@ -31,6 +31,12 @@ PiecewiseLinearConstraint *ReluConstraint::duplicateConstraint() const
     ReluConstraint *clone = new ReluConstraint( _b, _f );
     *clone = *this;
     return clone;
+}
+
+void ReluConstraint::restoreState( const PiecewiseLinearConstraint *state )
+{
+    const ReluConstraint *relu = dynamic_cast<const ReluConstraint *>( state );
+    *this = *relu;
 }
 
 void ReluConstraint::registerAsWatcher( ITableau *tableau )
@@ -52,7 +58,7 @@ void ReluConstraint::notifyVariableValue( unsigned variable, double value )
 
 void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
 {
-    if ( _lowerBounds.exists( variable ) && !FloatUtils::gt( bound, _lowerBounds[variable] ) )
+	 if ( _lowerBounds.exists( variable ) && !FloatUtils::gt( bound, _lowerBounds[variable] ) )
         return;
 
     _lowerBounds[variable] = bound;
@@ -62,15 +68,13 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
     if ( variable == _f && FloatUtils::isPositive( bound ) )
     {
         _phaseStatus = PhaseStatus::PHASE_ACTIVE;
-		if ( ( _lowerBounds.exists( _b ) && FloatUtils::gt( _lowerBounds.get( _f ), _lowerBounds.get( _b ) ) )
-			 || !_lowerBounds.exists( _b ) )
-        	_entailedTightenings.push( Tightening( _b, bound, Tightening::LB ) );
+        pushTightening( Tightening( _b, bound, Tightening::LB ) );
     }
     else if ( variable == _b && !FloatUtils::isNegative( bound ) )
     {
         _phaseStatus = PhaseStatus::PHASE_ACTIVE;
         if ( FloatUtils::isPositive( bound ) )
-            _entailedTightenings.push( Tightening( _f, bound, Tightening::LB ) );
+            pushTightening( Tightening( _f, bound, Tightening::LB ) );
     }
 }
 
@@ -84,13 +88,13 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
     // b <= c implies f <= c for any c >= 0
     // f <= c implies b <= c for any c >= 0
     if ( variable == _b && !FloatUtils::isNegative( bound ) )
-        _entailedTightenings.push( Tightening( _f, bound, Tightening::UB ) );
+        pushTightening( Tightening( _f, bound, Tightening::UB ) );
     else if ( variable == _f && !FloatUtils::isNegative( bound ) )
-        _entailedTightenings.push( Tightening( _b, bound, Tightening::UB ) );
+        pushTightening( Tightening( _b, bound, Tightening::UB ) );
 
     // b <= c implies f <= 0 for any c < 0
     if ( variable == _b && FloatUtils::isNegative( bound ) )
-        _entailedTightenings.push( Tightening( _f, 0.0, Tightening::UB ) );
+        pushTightening( Tightening( _f, 0.0, Tightening::UB ) );
 
     if ( ( variable == _f || variable == _b ) && !FloatUtils::isPositive( bound ) )
         _phaseStatus = PhaseStatus::PHASE_INACTIVE;
@@ -114,7 +118,8 @@ bool ReluConstraint::satisfied() const
     double bValue = _assignment.get( _b );
     double fValue = _assignment.get( _f );
 
-    ASSERT( !FloatUtils::isNegative( fValue ) );
+    if ( FloatUtils::isNegative( fValue ) )
+        return false;
 
     if ( FloatUtils::isPositive( fValue ) )
         return FloatUtils::areEqual( bValue, fValue );
@@ -169,27 +174,10 @@ List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
     // Auxiliary variable bound, needed for either phase
     List<PiecewiseLinearCaseSplit> splits;
 
-    splits.append( getActiveSplit() );
     splits.append( getInactiveSplit() );
+    splits.append( getActiveSplit() );
 
     return splits;
-}
-
-void ReluConstraint::storeState( PiecewiseLinearConstraintState &state ) const
-{
-    ReluConstraintState *reluState = dynamic_cast<ReluConstraintState *>( &state );
-    reluState->_savedConstraint = *this;
-}
-
-void ReluConstraint::restoreState( const PiecewiseLinearConstraintState &state )
-{
-    const ReluConstraintState *reluState = dynamic_cast<const ReluConstraintState *>( &state );
-    *this = reluState->_savedConstraint;
-}
-
-PiecewiseLinearConstraintState *ReluConstraint::allocateState() const
-{
-    return new ReluConstraintState;
 }
 
 PiecewiseLinearCaseSplit ReluConstraint::getInactiveSplit() const

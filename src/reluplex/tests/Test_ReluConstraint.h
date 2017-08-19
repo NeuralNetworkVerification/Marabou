@@ -95,6 +95,11 @@ public:
 
         TS_ASSERT( relu.satisfied() );
 
+        relu.notifyVariableValue( 4, -1 );
+
+        // A relu cannot be satisfied if f is negative
+        TS_ASSERT( !relu.satisfied() );
+
         relu.notifyVariableValue( f, 0 );
         relu.notifyVariableValue( b, 11 );
 
@@ -164,26 +169,34 @@ public:
 
         TS_ASSERT_EQUALS( splits.size(), 2U );
 
-        // First split
-        auto split = splits.begin();
-        List<Tightening> bounds = split->getBoundTightenings();
+        List<PiecewiseLinearCaseSplit>::iterator split1 = splits.begin();
+        List<PiecewiseLinearCaseSplit>::iterator split2 = split1;
+        ++split2;
 
-        unsigned auxVariable = FreshVariables::getNextVariable();
-        TS_ASSERT_EQUALS( auxVar, auxVariable );
+        TS_ASSERT( isActiveSplit( b, f, auxVar, split1 ) || isActiveSplit( b, f, auxVar, split2 ) );
+        TS_ASSERT( isInactiveSplit( b, f, auxVar, split1 ) || isInactiveSplit( b, f, auxVar, split2 ) );
+    }
+
+    bool isActiveSplit( unsigned b, unsigned f, unsigned auxVar, List<PiecewiseLinearCaseSplit>::iterator &split )
+    {
+        List<Tightening> bounds = split->getBoundTightenings();
 
         TS_ASSERT_EQUALS( bounds.size(), 1U );
         auto bound = bounds.begin();
         Tightening bound1 = *bound;
 
         TS_ASSERT_EQUALS( bound1._variable, b );
-        TS_ASSERT_EQUALS( bound1._type, Tightening::LB );
         TS_ASSERT_EQUALS( bound1._value, 0.0 );
 
+        if ( bound1._type != Tightening::LB )
+            return false;
+
+        Equation activeEquation;
         auto equations = split->getEquations();
         TS_ASSERT_EQUALS( equations.size(), 1U );
         activeEquation = split->getEquations().front().first();
-        activeEquation.addAddend( -1, auxVariable );
-        activeEquation.markAuxiliaryVariable( auxVariable );
+        activeEquation.addAddend( -1, auxVar );
+        activeEquation.markAuxiliaryVariable( auxVar );
         TS_ASSERT_EQUALS( activeEquation._addends.size(), 3U );
         TS_ASSERT_EQUALS( activeEquation._scalar, 0.0 );
 
@@ -197,37 +210,45 @@ public:
 
         ++addend;
         TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
-        TS_ASSERT_EQUALS( addend->_variable, 100U );
-        TS_ASSERT_EQUALS( activeEquation._auxVariable, 100U );
+        TS_ASSERT_EQUALS( addend->_variable, auxVar );
+        TS_ASSERT_EQUALS( activeEquation._auxVariable, auxVar );
 
-        // Second split
-        ++split;
-        bounds = split->getBoundTightenings();
+        return true;
+    }
+
+    bool isInactiveSplit( unsigned b, unsigned f, unsigned auxVar, List<PiecewiseLinearCaseSplit>::iterator &split )
+    {
+        List<Tightening> bounds = split->getBoundTightenings();
 
         TS_ASSERT_EQUALS( bounds.size(), 1U );
-        bound = bounds.begin();
-        bound1 = *bound;
+        auto bound = bounds.begin();
+        Tightening bound1 = *bound;
 
         TS_ASSERT_EQUALS( bound1._variable, b );
-        TS_ASSERT_EQUALS( bound1._type, Tightening::UB );
         TS_ASSERT_EQUALS( bound1._value, 0.0 );
 
-        equations = split->getEquations();
+        if ( bound1._type != Tightening::UB )
+            return false;
+
+        Equation inactiveEquation;
+        auto equations = split->getEquations();
         TS_ASSERT_EQUALS( equations.size(), 1U );
         inactiveEquation = split->getEquations().front().first();
-        inactiveEquation.addAddend( -1, auxVariable );
-        inactiveEquation.markAuxiliaryVariable( auxVariable );
+        inactiveEquation.addAddend( -1, auxVar );
+        inactiveEquation.markAuxiliaryVariable( auxVar );
         TS_ASSERT_EQUALS( inactiveEquation._addends.size(), 2U );
         TS_ASSERT_EQUALS( inactiveEquation._scalar, 0.0 );
 
-        addend = inactiveEquation._addends.begin();        
+        auto addend = inactiveEquation._addends.begin();
         TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
         TS_ASSERT_EQUALS( addend->_variable, f );
 
         ++addend;
         TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
-        TS_ASSERT_EQUALS( addend->_variable, 100U );
-        TS_ASSERT_EQUALS( inactiveEquation._auxVariable, 100U );
+        TS_ASSERT_EQUALS( addend->_variable, auxVar );
+        TS_ASSERT_EQUALS( inactiveEquation._auxVariable, auxVar );
+
+        return true;
     }
 
     void test_register_as_watcher()
@@ -584,87 +605,7 @@ public:
         TS_ASSERT_EQUALS( size, 3U );
     }
 
-    void test_relu_store_and_restore()
-    {
-        unsigned b = 1;
-        unsigned f = 4;
-
-        ReluConstraint relu( b, f );
-
-        relu.notifyVariableValue( b, 1 );
-        relu.notifyVariableValue( f, 2 );
-
-        PiecewiseLinearConstraintState *state = relu.allocateState();
-        relu.storeState( *state );
-        ReluConstraintState *reluState = dynamic_cast<ReluConstraintState *>( state );
-
-        TS_ASSERT( reluState->_savedConstraint.isActive() );
-        TS_ASSERT( !reluState->_savedConstraint.phaseFixed() );
-
-        relu.setActiveConstraint( false );
-        relu.notifyVariableValue( b, 3 );
-        relu.notifyVariableValue( f, 4 );
-        relu.notifyLowerBound( f, 1 );
-
-        PiecewiseLinearConstraintState *state2 = relu.allocateState();
-        relu.storeState( *state2 );
-        ReluConstraintState *reluState2 = dynamic_cast<ReluConstraintState *>( state2 );
-
-        TS_ASSERT( !reluState2->_savedConstraint.isActive() );
-        TS_ASSERT( reluState2->_savedConstraint.phaseFixed() );
-        Queue<Tightening> entailedTightenings = reluState2->_savedConstraint.getEntailedTightenings();
-        unsigned size = 0;
-        while ( !entailedTightenings.empty() )
-        {
-            const Tightening &tightening = entailedTightenings.peak();
-            if ( size == 0 )
-            {
-                TS_ASSERT_EQUALS( tightening._variable, b );
-                TS_ASSERT_EQUALS( tightening._value, 1 );
-                TS_ASSERT_EQUALS( tightening._type, Tightening::LB );
-            }
-            ++size;
-            entailedTightenings.pop();
-        }
-        TS_ASSERT_EQUALS( size, 1U );
-
-        relu.restoreState( *state );
-        TS_ASSERT( relu.isActive() );
-        TS_ASSERT( !relu.phaseFixed() );
-        TS_ASSERT( relu.getEntailedTightenings().empty() );
-
-        PiecewiseLinearConstraintState *state3 = relu.allocateState();
-        relu.storeState( *state3 );
-        ReluConstraintState *reluState3 = dynamic_cast<ReluConstraintState *>( state3 );
-        TS_ASSERT( memcmp( &reluState, &reluState3, sizeof(ReluConstraintState) ) );
-
-        relu.restoreState( *state2 );
-        TS_ASSERT( !relu.isActive() );
-        TS_ASSERT( relu.phaseFixed() );
-        entailedTightenings = relu.getEntailedTightenings();
-        size = 0;
-        while ( !entailedTightenings.empty() )
-        {
-            const Tightening &tightening = entailedTightenings.peak();
-            if ( size == 0 )
-            {
-                TS_ASSERT_EQUALS( tightening._variable, b );
-                TS_ASSERT_EQUALS( tightening._value, 1 );
-                TS_ASSERT_EQUALS( tightening._type, Tightening::LB );
-            }
-            ++size;
-            entailedTightenings.pop();
-        }
-        TS_ASSERT_EQUALS( size, 1U );
-
-        PiecewiseLinearConstraintState *state4 = relu.allocateState();
-        relu.storeState( *state4 );
-        ReluConstraintState *reluState4 = dynamic_cast<ReluConstraintState *>( state4 );
-        TS_ASSERT( memcmp( &reluState2, &reluState4, sizeof(ReluConstraintState) ) );
-
-    }
-
-    void test_relu_duplicate()
+    void test_relu_duplicate_and_restore()
     {
         ReluConstraint *relu1 = new ReluConstraint( 4, 6 );
         relu1->setActiveConstraint( false );
@@ -675,10 +616,13 @@ public:
         PiecewiseLinearConstraint *relu2 = relu1->duplicateConstraint();
 
         relu1->notifyVariableValue( 4, -2 );
-        TS_ASSERT_THROWS_NOTHING( delete relu1 );
+        TS_ASSERT( !relu1->satisfied() );
 
         TS_ASSERT( !relu2->isActive() );
         TS_ASSERT( relu2->satisfied() );
+
+        relu2->restoreState( relu1 );
+        TS_ASSERT( !relu2->satisfied() );
 
         TS_ASSERT_THROWS_NOTHING( delete relu2 );
     }

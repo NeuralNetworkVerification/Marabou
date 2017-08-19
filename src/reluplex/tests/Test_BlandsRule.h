@@ -33,7 +33,6 @@ public:
     {
         TS_ASSERT( mock = new MockForBlandsRule );
         TS_ASSERT( tableau = new MockTableau );
-
     }
 
     void tearDown()
@@ -46,15 +45,11 @@ public:
     {
         BlandsRule blandsRule;
 
+        Set<unsigned> excluded;
         List<unsigned> candidates;
         tableau->mockCandidates = candidates;
 
-        // TS_ASSERT_THROWS_EQUALS( blandsRule.select( candidates, *tableau ),
-        //                          const ReluplexError &e,
-        //                          e.getCode(),
-        //                          ReluplexError::NO_AVAILABLE_CANDIDATES );
-
-        TS_ASSERT( !blandsRule.select(*tableau) );
+        TS_ASSERT( !blandsRule.select( *tableau, excluded ) );
 
         candidates.append( 3 );
         tableau->nextNonBasicIndexToVariable[3] = 20;
@@ -70,10 +65,13 @@ public:
 
         tableau->mockCandidates = candidates;
 
-        // TS_ASSERT_EQUALS( blandsRule.select( candidates, *tableau ), 10U );
-
-        TS_ASSERT( blandsRule.select( *tableau ) );
+        TS_ASSERT( blandsRule.select( *tableau, excluded ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 10U );
+
+        excluded.insert( 10 );
+        TS_ASSERT( blandsRule.select( *tableau, excluded ) );
+        TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 51U );
+        excluded.clear();
 
         candidates.append( 100 );
         tableau->nextNonBasicIndexToVariable[100] = 1;
@@ -82,7 +80,7 @@ public:
 
         // TS_ASSERT_EQUALS( blandsRule.select( candidates, *tableau ), 100U );
 
-        TS_ASSERT( blandsRule.select( *tableau ) );
+        TS_ASSERT( blandsRule.select( *tableau, excluded ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 100U );
 
     }

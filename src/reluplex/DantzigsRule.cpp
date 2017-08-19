@@ -16,12 +16,19 @@
 #include "MStringf.h"
 #include "ReluplexError.h"
 
-bool DantzigsRule::select( ITableau &tableau )
+bool DantzigsRule::select( ITableau &tableau, const Set<unsigned> &excluded )
 {
-    tableau.computeCostFunction();
-
     List<unsigned> candidates;
     tableau.getEntryCandidates( candidates );
+
+    List<unsigned>::iterator it = candidates.begin();
+    while ( it != candidates.end() )
+    {
+        if ( excluded.exists( *it ) )
+            it = candidates.erase( it );
+        else
+            ++it;
+    }
 
     if ( candidates.empty() )
         return false;

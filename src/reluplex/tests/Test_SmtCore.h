@@ -35,14 +35,17 @@ public:
     {
     public:
         MockConstraint()
-            : PiecewiseLinearConstraint( 1 )
-            , setActiveWasCalled( false )
+            : setActiveWasCalled( false )
         {
         }
 
         PiecewiseLinearConstraint *duplicateConstraint() const
         {
             return NULL;
+        }
+
+        void restoreState( const PiecewiseLinearConstraint */* state */ )
+        {
         }
 
         void registerAsWatcher( ITableau * )
@@ -91,11 +94,6 @@ public:
         {
             return nextSplits;
         }
-
-        PiecewiseLinearConstraintState *allocateState() const { return NULL; };
-
-        void storeState( PiecewiseLinearConstraintState &/* state */ ) const {};
-        void restoreState( const PiecewiseLinearConstraintState &/* state */ ) {};
 
         bool phaseFixed() const
         {

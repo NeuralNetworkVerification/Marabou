@@ -31,9 +31,16 @@ Statistics::Statistics()
     , _numTableauPivots( 0 )
     , _numTableauDegeneratePivots( 0 )
     , _numTableauDegeneratePivotsByRequest( 0 )
+    , _numSimplexPivotSelectionsIgnoredForStability( 0 )
+    , _numSimplexUnstablePivots( 0 )
     , _numTableauBoundHopping( 0 )
     , _numTightenedBounds( 0 )
-    , _numRowsExaminedByTightener( 0 )
+    , _numRowsExaminedByRowTightener( 0 )
+    , _numBoundsProposedByRowTightener( 0 )
+    , _numBoundNotificationsToPlConstraints( 0 )
+    , _numBoundsProposedByPlConstraints( 0 )
+    , _pseNumIterations( 0 )
+    , _pseNumResetReferenceSpace( 0 )
 {
 }
 
@@ -61,6 +68,10 @@ void Statistics::print()
             , _currentDegradation
             , _maxDegradation
             );
+    printf( "\tNumber of simplex pivots we attempted to skip beacuse of instability: %llu. "
+            "Unstable pivots performed anyway: %llu\n"
+            , _numSimplexPivotSelectionsIgnoredForStability
+            , _numSimplexUnstablePivots );
 
     printf( "\t--- Tableau Statistics ---\n" );
     printf( "\tTotal number of pivots performed: %llu\n", _numTableauPivots );
@@ -79,10 +90,21 @@ void Statistics::print()
             , _numSplits
             , _numPops );
 
-    printf( "\t--- Bound Tightener Statistics ---\n" );
-    printf( "\tNumber of tightened bounds: %llu. Number of rows examined: %llu\n"
-            , _numTightenedBounds
-            , _numRowsExaminedByTightener );
+    printf( "\t--- Bound Tighetning Statistics ---\n" );
+    printf( "\tNumber of tightened bounds: %llu.\n", _numTightenedBounds );
+    printf( "\t\tNumber of rows examined by row tightener: %llu. Tightenings proposed: %llu\n"
+            , _numRowsExaminedByRowTightener
+            , _numBoundsProposedByRowTightener );
+    printf( "\t\tNumber of bound notifications sent to PL constraints: %llu. Tightenings proposed: %llu\n"
+            , _numBoundNotificationsToPlConstraints
+            , _numBoundsProposedByPlConstraints );
+
+    printf( "\t--- Projected Steepest Edge Statistics ---\n" );
+    printf( "\tNumber of iterations: %llu.\n", _pseNumIterations );
+    printf( "\tNumber of resets to reference space: %llu. Avg. iterations per reset: %u\n"
+            , _pseNumResetReferenceSpace
+            , _pseNumResetReferenceSpace > 0 ?
+            (unsigned)((double)_pseNumIterations / _pseNumResetReferenceSpace) : 0 );
 }
 
 double Statistics::printPercents( unsigned long long part, unsigned long long total ) const
@@ -181,14 +203,49 @@ void Statistics::incNumTableauDegeneratePivotsByRequest()
     ++_numTableauDegeneratePivotsByRequest;
 }
 
+void Statistics::incNumSimplexPivotSelectionsIgnoredForStability()
+{
+    ++_numSimplexPivotSelectionsIgnoredForStability;
+}
+
+void Statistics::incNumSimplexUnstablePivots()
+{
+    ++_numSimplexUnstablePivots;
+}
+
 void Statistics::incNumTightenedBounds()
 {
     ++_numTightenedBounds;
 }
 
-void Statistics::incNumRowsExaminedByTightener()
+void Statistics::incNumRowsExaminedByRowTightener()
 {
-    ++_numRowsExaminedByTightener;
+    ++_numRowsExaminedByRowTightener;
+}
+
+void Statistics::incNumBoundsProposedByRowTightener()
+{
+    ++_numBoundsProposedByRowTightener;
+}
+
+void Statistics::incNumBoundNotificationsPlConstraints()
+{
+    ++_numBoundNotificationsToPlConstraints;
+}
+
+void Statistics::incNumBoundsProposedByPlConstraints()
+{
+    ++_numBoundsProposedByPlConstraints;
+}
+
+void Statistics::pseIncNumIterations()
+{
+    ++_pseNumIterations;
+}
+
+void Statistics::pseIncNumResetReferenceSpace()
+{
+    ++_pseNumResetReferenceSpace;
 }
 
 void Statistics::setCurrentDegradation( double degradation )

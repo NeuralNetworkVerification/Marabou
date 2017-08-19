@@ -46,17 +46,19 @@ int main()
 
         if ( !engine.solve() )
         {
-            printf( "Query is unsat\n" );
+            printf( "\n\nQuery is unsat\n" );
             return 0;
         }
 
-        printf( "Query is sat! Extracting solution...\n" );
+        printf( "\n\nQuery is sat! Extracting solution...\n" );
         engine.extractSolution( inputQuery );
 
+        Vector<double> inputs;
         for ( unsigned i = 0; i < 5; ++i )
         {
             unsigned variable = acasParser.getInputVariable( i );
             printf( "Input[%u] = %.15lf\n", i, inputQuery.getSolutionValue( variable ) );
+            inputs.append( inputQuery.getSolutionValue( variable ) );
         }
 
         for ( unsigned i = 0; i < 5; ++i )
@@ -72,11 +74,19 @@ int main()
                     inputQuery.getSolutionValue( aux ) );
         }
 
+        // Run the inputs through the real network, to evaluate the error
+        Vector<double> outputs;
+        acasParser.evaluate( inputs, outputs );
+        double error = 0.0;
+
         for ( unsigned i = 0; i < 5; ++i )
         {
             unsigned variable = acasParser.getOutputVariable( i );
             printf( "Output[%u] = %.15lf\n", i, inputQuery.getSolutionValue( variable ) );
+            error += FloatUtils::abs( outputs[i] - inputQuery.getSolutionValue( variable ) );
         }
+
+        printf( "\nTotal error: %.15lf\n", error );
     }
     catch ( const ReluplexError &e )
     {

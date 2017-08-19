@@ -20,7 +20,7 @@
 #include <algorithm>
 
 MaxConstraint::MaxConstraint( unsigned f, const Set<unsigned> &elements )
-	: PiecewiseLinearConstraint( f )
+	: _f( f )
 	, _elements( elements )
 	, _minLowerBound( FloatUtils::negativeInfinity() )
 	, _maxUpperBound( FloatUtils::negativeInfinity() )
@@ -38,6 +38,12 @@ PiecewiseLinearConstraint *MaxConstraint::duplicateConstraint() const
     MaxConstraint *clone = new MaxConstraint( _f, _elements );
 	*clone = *this;
     return clone;
+}
+
+void MaxConstraint::restoreState( const PiecewiseLinearConstraint *state )
+{
+	const MaxConstraint *max = dynamic_cast<const MaxConstraint *>( state );
+	*this = *max;
 }
 
 void MaxConstraint::registerAsWatcher( ITableau *tableau )
@@ -266,23 +272,6 @@ List<PiecewiseLinearCaseSplit> MaxConstraint::getCaseSplits() const
 			splits.append( getSplit( element ) );
 	}
 	return splits;
-}
-
-void MaxConstraint::storeState( PiecewiseLinearConstraintState &state ) const
-{
-    MaxConstraintState *maxState = dynamic_cast<MaxConstraintState *>( &state );
-	maxState->_savedConstraint = *this;
-}
-
-void MaxConstraint::restoreState( const PiecewiseLinearConstraintState &state )
-{
-    const MaxConstraintState *maxState = dynamic_cast<const MaxConstraintState *>( &state );
-    *this = maxState->_savedConstraint;
-}
-
-PiecewiseLinearConstraintState *MaxConstraint::allocateState() const
-{
-    return new MaxConstraintState;
 }
 
 bool MaxConstraint::phaseFixed() const

@@ -592,10 +592,11 @@ public:
         TS_ASSERT_EQUALS( tableau->getValue( 5u ), 113.0 );
 
         TS_ASSERT_THROWS_NOTHING( tableau->computePivotRow() );
-        const double *pivotRow = tableau->getPivotRow();
+        const TableauRow &pivotRow = *tableau->getPivotRow();
         // x3 = 117 -x1 -x2 -x6 -x4
         for ( unsigned i = 0; i < 4; ++i )
             TS_ASSERT( FloatUtils::areEqual( pivotRow[i], -1.0 ) );
+        TS_ASSERT( FloatUtils::areEqual( pivotRow._scalar, 117.0 ) );
 
         TS_ASSERT_THROWS_NOTHING( tableau->performPivot() );
 
@@ -905,7 +906,9 @@ public:
 
         // Nonbasic index #2 --> variable 2
         // Basic index #1 --> variable 5
-        TS_ASSERT_THROWS_NOTHING( tableau->performDegeneratePivot( 2, 1 ) );
+        tableau->setEnteringVariable( 2 );
+        tableau->setLeavingVariable( 1 );
+        TS_ASSERT_THROWS_NOTHING( tableau->performDegeneratePivot() );
         TS_ASSERT( tableau->isBasic( 2 ) );
         TS_ASSERT( !tableau->isBasic( 5 ) );
 
@@ -1343,13 +1346,8 @@ public:
         TS_TRACE( "When resizing the talbeau, allocate a larger size and only use part of it, "
                   "instead of increasing it one row at a time?" );
         TS_TRACE( "Make sure all watchers are properply informed when restoring a tabealu" );
-        TS_TRACE( "When adding a row, what to do about the gamma function?" );
-        TS_TRACE( "Tableau has an applySplit function, identical to the one in the smt core. "
-                  "Move this joint functionality to the engine?" );
         TS_TRACE( "Add tests for gamma function computation, both during normal execution "
                   "and after adding a row" );
-        TS_TRACE( "Make gamma recomputation more efficient. Do we really need to recompute the "
-                  "whole thing?" );
     }
 };
 

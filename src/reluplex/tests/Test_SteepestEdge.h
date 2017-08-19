@@ -35,7 +35,6 @@ public:
     {
         TS_ASSERT( mock = new MockForSteepestEdge );
         TS_ASSERT( tableau = new MockTableau );
-
     }
 
     void tearDown()
@@ -242,15 +241,11 @@ public:
     {
         SteepestEdgeRule steepestEdgeRule;
 
+        Set<unsigned> excluded;
         List<unsigned> candidates;
         tableau->mockCandidates = candidates;
 
-        //  TS_ASSERT_THROWS_EQUALS( dantzigsRule.select( candidates, *tableau ),
-        //                         const ReluplexError &e,
-        //                         e.getCode(),
-        //                         ReluplexError::NO_AVAILABLE_CANDIDATES );
-
-        TS_ASSERT( !steepestEdgeRule.select( *tableau ) );
+        TS_ASSERT( !steepestEdgeRule.select( *tableau, excluded ) );
         tableau->setDimensions( 10, 100 );
 
         candidates.append( 2 );
@@ -274,19 +269,19 @@ public:
         tableau->nextCostFunction[25] = -1202;
         tableau->nextCostFunction[33] = 10;
 
-        TS_ASSERT( steepestEdgeRule.select( *tableau ) );
+        TS_ASSERT( steepestEdgeRule.select( *tableau, excluded ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 10U );
 
         tableau->steepestEdgeGamma[51] = 0.5;
 
-        TS_ASSERT( steepestEdgeRule.select( *tableau ) );
+        TS_ASSERT( steepestEdgeRule.select( *tableau, excluded ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 51U );
 
         candidates.append( 25 );
 
         tableau->mockCandidates = candidates;
 
-        TS_ASSERT( steepestEdgeRule.select( *tableau ) );
+        TS_ASSERT( steepestEdgeRule.select( *tableau, excluded ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 25U );
     }
 };

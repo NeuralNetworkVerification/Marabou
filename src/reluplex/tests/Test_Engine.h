@@ -58,7 +58,7 @@ public:
         TS_ASSERT( tableau->wasDiscarded );
     }
 
-    void test_process_input_query()
+    void xtest_process_input_query()
     {
         //   0  <= x0 <= 2
         //   -3 <= x1 <= 3

@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file DantzigsRule.h
+/*! \file PiecewiseLinearConstraint.cpp
 ** \verbatim
 ** Top contributors (to current version):
 **   Guy Katz
@@ -10,26 +10,27 @@
 ** directory for licensing information.\endverbatim
 **/
 
-#ifndef __DantzigsRule_h__
-#define __DantzigsRule_h__
+#include "PiecewiseLinearConstraint.h"
+#include "Statistics.h"
 
-#include "EntrySelectionStrategy.h"
-
-class String;
-
-class DantzigsRule : public EntrySelectionStrategy
+PiecewiseLinearConstraint::PiecewiseLinearConstraint()
+    : _constraintActive( true )
+    , _statistics( NULL )
 {
-public:
-    /*
-      Apply Dantzig's rule: choose the candidate associated with the
-      largest coefficient (in absolute value) in the cost function.
-    */
-    bool select( ITableau &tableau, const Set<unsigned> &excluded );
+}
 
-    static void log( const String &message );
-};
+void PiecewiseLinearConstraint::setStatistics( Statistics *statistics )
+{
+    _statistics = statistics;
+}
 
-#endif // __DantzigsRule_h__
+void PiecewiseLinearConstraint::pushTightening( const Tightening &tightening )
+{
+    _entailedTightenings.push( tightening );
+
+    if ( _statistics )
+        _statistics->incNumBoundsProposedByPlConstraints();
+}
 
 //
 // Local Variables:

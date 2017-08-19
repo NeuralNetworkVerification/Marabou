@@ -61,7 +61,10 @@ public:
     */
     void setEnteringVariable( unsigned nonBasic );
 
-    // FOR TESTING ONLY
+    /*
+      Set which variable will leave the basis. The input is the
+      index of the basic variable, in the range [0, m).
+    */
     void setLeavingVariable( unsigned basic );
 
     /*
@@ -215,7 +218,7 @@ public:
       variable. Assignment values are unchanged (and the assignment is
       remains valid).
      */
-    void performDegeneratePivot( unsigned entering, unsigned leaving );
+    void performDegeneratePivot();
 
     /*
       Calculate the ratio constraint for the entering variable
@@ -280,7 +283,7 @@ public:
       Compute the pivot row.
     */
     void computePivotRow();
-    const double *getPivotRow() const;
+    const TableauRow *getPivotRow() const;
 
     /*
       Compute the basic assignment
@@ -302,7 +305,7 @@ public:
     /*
       Extract a columnf from the original matrix A.
     */
-    const double *getAColumn( unsigned index ) const;
+    const double *getAColumn( unsigned variable ) const;
 
     /*
       Store and restore the Tableau's state. Needed for case splitting
@@ -375,7 +378,7 @@ private:
     /*
       Used to store the pivot row
     */
-    double *_pivotRow;
+    TableauRow *_pivotRow;
 
     /*
       The right hand side vector of Ax = b

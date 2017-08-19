@@ -28,6 +28,11 @@ public:
     PiecewiseLinearConstraint *duplicateConstraint() const;
 
     /*
+      Restore the state of this constraint from the given one.
+    */
+    void restoreState( const PiecewiseLinearConstraint *state );
+
+    /*
       Register/unregister the constraint with a talbeau.
     */
 	  void registerAsWatcher( ITableau *tableau );
@@ -80,19 +85,7 @@ public:
     */
     PiecewiseLinearCaseSplit getValidCaseSplit() const;
 
-    /*
-      Store and restore the constraint's state. Needed for case splitting
-      and backtracking.
-    */
-    void storeState( PiecewiseLinearConstraintState &state ) const;
-    void restoreState( const PiecewiseLinearConstraintState &state );
-
-    /*
-      Allocate a MaxConstraintState for storing state. (TODO)
-    */
-    PiecewiseLinearConstraintState *allocateState() const;
-
-	void updateVarIndex( unsigned prevVar, unsigned newVar );
+  	void updateVarIndex( unsigned prevVar, unsigned newVar );
 
 	void eliminateVar( unsigned var, double val );
 
@@ -103,6 +96,7 @@ public:
 	void preprocessBounds( unsigned variable, double value, Tightening::BoundType type );
 
 private:
+    unsigned _f;
   	unsigned _maxIndex;
     Set<unsigned> _elements;
     Set<unsigned> _eliminated;
@@ -131,17 +125,6 @@ private:
 	void setUpperBound( unsigned variable, double value );
 
 
-};
-
-class MaxConstraintState : public PiecewiseLinearConstraintState
-{
-public:
-    MaxConstraintState()
-        : _savedConstraint( 0, Set<unsigned>() )
-    {}
-    ~MaxConstraintState() {}
-
-    MaxConstraint _savedConstraint;
 };
 
 #endif // __MaxConstraint_h__

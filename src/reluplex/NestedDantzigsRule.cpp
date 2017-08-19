@@ -19,19 +19,15 @@
 #include "NestedDantzigsRule.h"
 #include "ReluplexError.h"
 
-bool NestedDantzigsRule::select( ITableau &tableau )
+bool NestedDantzigsRule::select( ITableau &tableau, const Set<unsigned> &/* excluded */ )
 {
-    tableau.computeBasicCosts();
-    tableau.computeMultipliers();
-
     const double *costFunction = tableau.getCostFunction();
 
     Set<unsigned> Jhat;
-    for ( auto i : _J )
+    for ( const auto &i : _J )
     {
-        tableau.computeReducedCost( i );
         if ( tableau.eligibleForEntry( i ) )
-            Jhat.insert(i);
+            Jhat.insert( i );
     }
 
     if ( Jhat.empty() )
@@ -41,11 +37,11 @@ bool NestedDantzigsRule::select( ITableau &tableau )
         {
             if ( !_J.exists( i ) )
             {
-                tableau.computeReducedCost( i );
                 if ( tableau.eligibleForEntry( i ) )
                     Jhat.insert( i );
             }
         }
+
         if ( Jhat.empty() )
             return false;
     }

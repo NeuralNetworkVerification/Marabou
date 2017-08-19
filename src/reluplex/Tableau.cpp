@@ -46,7 +46,7 @@ Tableau::Tableau()
     , _basicAssignmentStatus( ASSIGNMENT_INVALID )
     , _basicStatus( NULL )
     , _statistics( NULL )
-    , _usingSteepestEdge( true )
+    , _usingSteepestEdge( false )
     , _steepestEdgeGamma( NULL )
     , _alpha( NULL )
     , _nu( NULL )
@@ -75,7 +75,7 @@ void Tableau::freeMemoryIfNeeded()
 
     if ( _pivotRow )
     {
-        delete[] _pivotRow;
+        delete _pivotRow;
         _pivotRow = NULL;
     }
 
@@ -208,7 +208,7 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     if ( !_changeColumn )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::changeColumn" );
 
-    _pivotRow = new double[n-m];
+    _pivotRow = new TableauRow( n-m );
     if ( !_pivotRow )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::pivotRow" );
 
@@ -757,7 +757,7 @@ void Tableau::computeReducedCost( unsigned nonBasic )
 void Tableau::computeReducedCosts()
 {
     for ( unsigned i = 0; i < _n - _m; ++i )
-        computeReducedCost(i);
+        computeReducedCost( i );
 }
 
 unsigned Tableau::getBasicStatus( unsigned basic )
@@ -782,7 +782,6 @@ void Tableau::setEnteringVariable( unsigned nonBasic )
 
 void Tableau::setLeavingVariable( unsigned basic )
 {
-    // ONLY FOR TESTING STEEPEST EDGE. NEVER USE THIS! Use pickLeavingVariable instead.
     _leavingVariable = basic;
 }
 
@@ -911,7 +910,7 @@ void Tableau::performPivot()
     _basisFactorization->pushEtaMatrix( _leavingVariable, _changeColumn );
 }
 
-void Tableau::performDegeneratePivot( unsigned entering, unsigned leaving )
+void Tableau::performDegeneratePivot()
 {
     if ( _statistics )
     {
@@ -919,12 +918,9 @@ void Tableau::performDegeneratePivot( unsigned entering, unsigned leaving )
         _statistics->incNumTableauDegeneratePivotsByRequest();
     }
 
-    _enteringVariable = entering;
-    _leavingVariable = leaving;
-
-    ASSERT( entering < _n - _m );
-    ASSERT( leaving < _m );
-    ASSERT( !basicOutOfBounds( leaving ) );
+    ASSERT( _enteringVariable < _n - _m );
+    ASSERT( _leavingVariable < _m );
+    ASSERT( !basicOutOfBounds( _leavingVariable ) );
 
     // Before pivoting, update gamma according to old basis
     if ( _usingSteepestEdge )
@@ -933,8 +929,8 @@ void Tableau::performDegeneratePivot( unsigned entering, unsigned leaving )
     // Compute change column
     computeChangeColumn();
 
-    unsigned currentBasic = _basicIndexToVariable[leaving];
-    unsigned currentNonBasic = _nonBasicIndexToVariable[entering];
+    unsigned currentBasic = _basicIndexToVariable[_leavingVariable];
+    unsigned currentNonBasic = _nonBasicIndexToVariable[_enteringVariable];
 
     // Update the database
     _basicVariables.insert( currentNonBasic );
@@ -947,11 +943,11 @@ void Tableau::performDegeneratePivot( unsigned entering, unsigned leaving )
     _variableToIndex[currentNonBasic] = _leavingVariable;
 
     // Update the basis factorization
-    _basisFactorization->pushEtaMatrix( leaving, _changeColumn );
+    _basisFactorization->pushEtaMatrix( _leavingVariable, _changeColumn );
 
     // Switch assignment values
-    double temp = _basicAssignment[leaving];
-    _basicAssignment[leaving] = _nonBasicAssignment[entering];
+    double temp = _basicAssignment[_leavingVariable];
+    _basicAssignment[_leavingVariable] = _nonBasicAssignment[_enteringVariable];
     setNonBasicAssignment( currentBasic, temp );
 }
 
@@ -1158,23 +1154,10 @@ const double *Tableau::getChangeColumn() const
 
 void Tableau::computePivotRow()
 {
-    ASSERT( _leavingVariable < _m );
-
-    std::fill( _unitVector, _unitVector + _m, 0.0 );
-    _unitVector[_leavingVariable] = 1;
-    computeMultipliers( _unitVector );
-
-    const double *ANColumn;
-    for ( unsigned i = 0; i < _n - _m; ++i )
-    {
-        ANColumn = _A + ( _nonBasicIndexToVariable[i] * _m );
-        _pivotRow[i] = 0;
-        for ( unsigned j = 0; j < _m; ++j )
-            _pivotRow[i] -= ( _multipliers[j] * ANColumn[j] );
-    }
+    getTableauRow( _leavingVariable, _pivotRow );
 }
 
-const double *Tableau::getPivotRow() const
+const TableauRow *Tableau::getPivotRow() const
 {
     return _pivotRow;
 }
@@ -1271,9 +1254,9 @@ void Tableau::getTableauRow( unsigned index, TableauRow *row )
     row->_scalar = _rowScalars[index];
 }
 
-const double *Tableau::getAColumn( unsigned index ) const
+const double *Tableau::getAColumn( unsigned variable ) const
 {
-    return _A + ( index * _m );
+    return _A + ( variable * _m );
 }
 
 void Tableau::dumpEquations()
@@ -1404,6 +1387,9 @@ void Tableau::tightenLowerBound( unsigned variable, double value )
     if ( !FloatUtils::gt( value, _lowerBounds[variable] ) )
         return;
 
+    if ( _statistics )
+        _statistics->incNumTightenedBounds();
+
     setLowerBound( variable, value );
 
     // Ensure that non-basic variables are within bounds
@@ -1421,6 +1407,9 @@ void Tableau::tightenUpperBound( unsigned variable, double value )
 
     if ( !FloatUtils::lt( value, _upperBounds[variable] ) )
         return;
+
+    if ( _statistics )
+        _statistics->incNumTightenedBounds();
 
     setUpperBound( variable, value );
 
@@ -1500,8 +1489,8 @@ void Tableau::addRow()
     /*
       This function increases the sizes of the data structures used by
       the tableau to match newM and newN. Notice that newM = _m + 1 and
-      newN = _n + 1, and so newN - newM = _m - _n. Consequently, structures
-      that are of size _m - _n are left as is.
+      newN = _n + 1, and so newN - newM = _n - _m. Consequently, structures
+      that are of size _n - _m are left as is.
     */
 
     // Allocate a new A, copy the columns of the old A
@@ -1684,6 +1673,9 @@ void Tableau::notifyLowerBound( unsigned variable, double bound )
     {
         for ( auto &watcher : _variableToWatchers[variable] )
             watcher->notifyLowerBound( variable, bound );
+
+        if ( _statistics )
+            _statistics->incNumBoundNotificationsPlConstraints();
     }
 }
 
@@ -1693,6 +1685,9 @@ void Tableau::notifyUpperBound( unsigned variable, double bound )
     {
         for ( auto &watcher : _variableToWatchers[variable] )
             watcher->notifyUpperBound( variable, bound );
+
+        if ( _statistics )
+            _statistics->incNumBoundNotificationsPlConstraints();
     }
 }
 

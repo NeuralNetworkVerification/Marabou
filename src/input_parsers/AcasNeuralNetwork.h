@@ -37,7 +37,7 @@ public:
     /*
       Returns the size of a specified layer.
     */
-    unsigned getLayerSize( unsigned layer );
+    unsigned getLayerSize( unsigned layer ) const;
 
     /*
       Returns the weight of the edge between two neurons.

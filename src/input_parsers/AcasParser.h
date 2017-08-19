@@ -45,6 +45,8 @@ public:
     unsigned getFVariable( unsigned layer, unsigned index ) const;
     unsigned getAuxVariable( unsigned layer, unsigned index ) const;
 
+    void evaluate( const Vector<double> &inputs, Vector<double> &outputs ) const;
+
 private:
     AcasNeuralNetwork _acasNeuralNetwork;
     Map<NodeIndex, unsigned> _nodeToB;

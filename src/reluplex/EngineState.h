@@ -25,7 +25,7 @@ public:
     ~EngineState();
 
     TableauState _tableauState;
-    Map<PiecewiseLinearConstraint *, PiecewiseLinearConstraintState *> _plConstraintToState;
+    Map<PiecewiseLinearConstraint *, PiecewiseLinearConstraint *> _plConstraintToState;
 
     unsigned _numPlConstraintsDisabledByValidSplits;
 
