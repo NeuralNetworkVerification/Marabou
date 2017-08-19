@@ -22,7 +22,7 @@
 MaxConstraint::MaxConstraint( unsigned f, const Set<unsigned> &elements )
 	: PiecewiseLinearConstraint( f )
 	, _elements( elements )
-	, _minLowerBound( FloatUtils::infinity() )
+	, _minLowerBound( FloatUtils::negativeInfinity() )
 	, _maxUpperBound( FloatUtils::negativeInfinity() )
 	, _phaseFixed( false )
 {
@@ -116,7 +116,7 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
 			_phaseFixed = true;
 			_fixedPhase = variable;
 		}
-	}
+	}	
 }
 
 void MaxConstraint::notifyUpperBound( unsigned variable, double value )
@@ -130,6 +130,69 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
 	{
 		_maxUpperBound = value;
 		_entailedTightenings.push( Tightening( _f, _maxUpperBound, Tightening::UB ) );
+	}
+}
+
+void MaxConstraint::preprocessBounds( unsigned variable, double value, Tightening::BoundType type )
+{
+	if ( type == Tightening::LB )
+		setLowerBound( variable, value );
+	else 
+		setUpperBound( variable, value );
+}
+
+void MaxConstraint::setLowerBound( unsigned variable, double value )
+{
+	if ( _lowerBounds.exists( variable ) && !FloatUtils::gt( value, _lowerBounds[variable] ) )
+		return;
+
+	_lowerBounds[variable] = value;
+}
+
+void MaxConstraint::setUpperBound( unsigned variable, double value ) 
+{
+    if ( _upperBounds.exists( variable ) && !FloatUtils::lt( value, _upperBounds[variable] ) )
+		return;
+
+	_upperBounds[variable] = value;
+}
+
+void MaxConstraint::updateBounds() 
+{
+	double fLB = _lowerBounds.get( _f );
+	double fUB = _upperBounds.get( _f );
+	double maxUB = FloatUtils::negativeInfinity();
+	double minLB = FloatUtils::negativeInfinity();
+
+	for ( auto key : _upperBounds.keys() )
+	{
+		if ( key == _f ) continue;
+		maxUB = FloatUtils::max( _upperBounds.get( key ), maxUB );
+	}
+	for ( auto key : _lowerBounds.keys() )
+	{
+		if ( key == _f ) continue;
+		minLB = FloatUtils::max( _lowerBounds.get( key ), minLB );
+	}
+	if ( FloatUtils::gt( maxUB, fUB ) )
+	{
+		tightenPL( Tightening( _f, fUB, Tightening::UB ) );
+		_entailedTightenings.push( Tightening( _f, fUB, Tightening::UB ) );
+	}		
+	else if ( FloatUtils::lt( maxUB, fUB ) )
+	{
+		_upperBounds[_f] = maxUB;
+		_entailedTightenings.push( Tightening( _f, maxUB, Tightening::UB ) );
+	}
+	if ( FloatUtils::lt( minLB, fLB ) )
+	{
+		tightenPL( Tightening( _f, fLB, Tightening::LB ) );
+		_entailedTightenings.push( Tightening( _f, fLB, Tightening::LB ) );
+	}
+	else if ( FloatUtils::gt( minLB, fLB ) )
+	{
+		_lowerBounds[_f] = minLB;
+		_entailedTightenings.push( Tightening( _f, minLB, Tightening::LB ) );
 	}
 }
 
@@ -287,6 +350,50 @@ void MaxConstraint::updateVarIndex( unsigned prevVar, unsigned newVar )
 
 void MaxConstraint::eliminateVar( unsigned, double )
 {
+	//if ( var > _assignment.get( _
+}
+
+void MaxConstraint::tightenPL( Tightening tighten )
+{
+
+	if ( tighten._variable == _f )
+	{
+		//std::cout<<"tighten value in constraint: "<<tighten._value<<std::endl;
+		if ( tighten._type == Tightening::LB && FloatUtils::gte( tighten._value, _lowerBounds[_f] ) )
+		{
+			for ( auto key : _lowerBounds.keys() )
+			{
+				if ( key == _f ) continue;	
+				if ( FloatUtils::areEqual( _lowerBounds.get( key ), tighten._value ) )
+				{
+					//notifyLowerBound( key, tighten._value );
+					_lowerBounds[key] = tighten._value;
+					_entailedTightenings.push( Tightening( key, tighten._value, Tightening::LB ) );
+				}
+			}
+		}
+		else if ( tighten._type == Tightening::UB && FloatUtils::lte( tighten._value, _upperBounds[_f] ) ) 
+		{
+			for ( auto key : _upperBounds.keys() )
+			{
+				if ( key == _f ) continue;	
+				if ( FloatUtils::gt( _upperBounds.get( key ), tighten._value ) )
+				{
+					//notifyUpperBound( key, tighten._value );
+					_upperBounds[key] = tighten._value;
+					_entailedTightenings.push( Tightening( key, tighten._value, Tightening::UB ) );
+				}
+			}
+		}
+	}
+	/*else
+	{
+		if ( tighten._type == Tightening::LB ) 
+			notifyLowerBound( tighten._variable, tighten._value );
+		else 
+			notifyUpperBound( tighten._variable, tighten._value );
+	}
+	*/
 }
 
 //

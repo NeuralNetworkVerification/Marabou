@@ -94,8 +94,13 @@ public:
 
 	void updateVarIndex( unsigned prevVar, unsigned newVar );
 
-	  void eliminateVar( unsigned var, double val );
+	void eliminateVar( unsigned var, double val );
 
+	void tightenPL( Tightening tighten );
+	
+	void updateBounds();
+
+	void preprocessBounds( unsigned variable, double value, Tightening::BoundType type );
 
 private:
   	unsigned _maxIndex;
@@ -120,6 +125,11 @@ private:
       Returns the maximum of the upper bounds of all elements.
     */
     double getMaxUpperBound() const;
+
+	void setLowerBound( unsigned variable, double value );
+
+	void setUpperBound( unsigned variable, double value );
+
 
 };
 

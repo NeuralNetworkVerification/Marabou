@@ -62,7 +62,9 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
     if ( variable == _f && FloatUtils::isPositive( bound ) )
     {
         _phaseStatus = PhaseStatus::PHASE_ACTIVE;
-        _entailedTightenings.push( Tightening( _b, bound, Tightening::LB ) );
+		if ( ( _lowerBounds.exists( _b ) && FloatUtils::gt( _lowerBounds.get( _f ), _lowerBounds.get( _b ) ) )
+			 || !_lowerBounds.exists( _b ) )
+        	_entailedTightenings.push( Tightening( _b, bound, Tightening::LB ) );
     }
     else if ( variable == _b && !FloatUtils::isNegative( bound ) )
     {
@@ -274,6 +276,37 @@ void ReluConstraint::eliminateVar( unsigned var, double val )
 	}
 }
 
+void ReluConstraint::tightenPL( Tightening tighten )
+{
+	if ( FloatUtils::gt( _lowerBounds.get( _f ), _lowerBounds.get( _b ) ) )
+	{
+		
+	}
+	if ( tighten._type == Tightening::LB )
+	{
+		double LB = FloatUtils::max( tighten._value, FloatUtils::max( _lowerBounds.get( _f ), _lowerBounds.get( _b ) ) );
+		if ( FloatUtils::gt( LB, _lowerBounds.get( _f ) ) )
+			notifyLowerBound( _f, tighten._value );
+		if ( FloatUtils::gt( LB, _lowerBounds.get( _b ) ) )
+				notifyLowerBound( _b, tighten._value );
+	}
+	else 
+	{
+		double UB = FloatUtils::min( tighten._value, FloatUtils::min( _upperBounds.get( _f ), _upperBounds.get( _b ) ) );
+		if ( FloatUtils::lt( UB, _upperBounds.get( _f ) ) )
+			notifyUpperBound( _f, tighten._value );
+		if ( FloatUtils::lt( UB, _upperBounds.get( _b ) ) )
+			notifyUpperBound( _b, tighten._value );
+	}
+}
+
+void ReluConstraint::preprocessBounds( unsigned variable, double value, Tightening::BoundType type )
+{
+	if ( type == Tightening::LB )
+		notifyLowerBound( variable, value );
+	else 
+		notifyUpperBound( variable, value );
+}
 //
 // Local Variables:
 // compile-command: "make -C .. "
