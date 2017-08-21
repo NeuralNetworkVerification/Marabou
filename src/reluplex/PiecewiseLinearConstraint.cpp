@@ -19,6 +19,11 @@ PiecewiseLinearConstraint::PiecewiseLinearConstraint()
 {
 }
 
+Queue<Tightening> &PiecewiseLinearConstraint::getEntailedTightenings()
+{
+    return _entailedTightenings;
+}
+
 void PiecewiseLinearConstraint::setStatistics( Statistics *statistics )
 {
     _statistics = statistics;

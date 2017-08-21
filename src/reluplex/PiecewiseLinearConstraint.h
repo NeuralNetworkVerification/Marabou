@@ -141,10 +141,7 @@ public:
     /*
       Get the tightenings entailed by the constraint.
     */
-    Queue<Tightening> &getEntailedTightenings()
-    {
-        return _entailedTightenings;
-    }
+    Queue<Tightening> &getEntailedTightenings();
 
     void setStatistics( Statistics *statistics );
 

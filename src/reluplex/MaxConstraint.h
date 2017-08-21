@@ -35,7 +35,7 @@ public:
     /*
       Register/unregister the constraint with a talbeau.
     */
-	  void registerAsWatcher( ITableau *tableau );
+    void registerAsWatcher( ITableau *tableau );
     void unregisterAsWatcher( ITableau *tableau );
 
     /*
@@ -90,7 +90,7 @@ public:
 	void eliminateVar( unsigned var, double val );
 
 	void tightenPL( Tightening tighten );
-	
+
 	void updateBounds();
 
 	void preprocessBounds( unsigned variable, double value, Tightening::BoundType type );
@@ -104,7 +104,7 @@ private:
     double _maxUpperBound;
     bool _phaseFixed;
     unsigned _fixedPhase;
-    
+
     /*
       Returns the phase where variable argMax has maximum value.
     */

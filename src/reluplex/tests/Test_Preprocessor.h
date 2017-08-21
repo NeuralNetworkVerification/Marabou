@@ -195,7 +195,7 @@ public:
         equation2.addAddend( -1, 2 );
         equation2.setScalar( 10 );
         inputQuery2.addEquation( equation2 );
-		
+
 		Preprocessor preprocess2( inputQuery2 );
 		preprocess2.tightenBounds();
 		InputQuery processed2 = preprocess2.getInputQuery();
@@ -203,6 +203,7 @@ public:
         TS_ASSERT_EQUALS( processed2.getLowerBound( 0 ), 5.5 );
         TS_ASSERT_EQUALS( processed2.getUpperBound( 0 ), 6.5 );
 	}
+
 	void test_tighten_pl()
 	{
         InputQuery inputQuery;
@@ -228,7 +229,7 @@ public:
         //
         // x0.lb = 5 - 1/2 x1.ub + 1/2 x2.lb = 5 - 1/2 + 1 = 5.5
         // x0.ub = 5 - 1/2 x1.lb + 1/2 x2.ub = 5 - 0 + 1.5 = 6.5
-		// 
+		//
 		// x5 = Relu( 0, x0 )
 		// x5.lb = 5.5
 		// x5.ub = 6.5
@@ -290,7 +291,7 @@ public:
 		preprocess2.tightenPL();
 		InputQuery processed2 = preprocess2.getInputQuery();
 
-		// x0 = Relu( 0, x1 ) 
+		// x0 = Relu( 0, x1 )
 		// x0 = [0, 10]
 		// x1 = [-inf, +inf]
 		// x1.lb = -inf

@@ -13,9 +13,9 @@
 #include "FloatUtils.h"
 #include "InputQuery.h"
 #include "MStringf.h"
+#include "Map.h"
 #include "Preprocessor.h"
 #include "ReluplexError.h"
-#include "Map.h"
 #include "Tightening.h"
 
 Preprocessor::Preprocessor( InputQuery input )
@@ -35,11 +35,11 @@ void Preprocessor::tightenEquationsAndPL()
 	{
 		tightenBounds();
 		tightenPL();
-		_hasTightened = false; 
+		_hasTightened = false;
 	}
 }
 
-void Preprocessor::tightenBounds() 
+void Preprocessor::tightenBounds()
 {
 	double min = FloatUtils::negativeInfinity();
     double max = FloatUtils::infinity();
@@ -118,16 +118,17 @@ void Preprocessor::tightenBounds()
         }
     }
 }
-	
+
 void Preprocessor::tightenPL()
 {
 	for ( auto pl : _input.getPiecewiseLinearConstraints() )
 	{
-		for (auto var : pl->getParticipatingVariables() )
+		for ( auto var : pl->getParticipatingVariables() )
 		{
 			pl->preprocessBounds( var, _input.getLowerBound( var ), Tightening::LB );
 			pl->preprocessBounds( var, _input.getUpperBound( var ), Tightening::UB );
 		}
+
 		pl->updateBounds();
 		while ( !pl->getEntailedTightenings().empty() )
 		{
@@ -135,45 +136,43 @@ void Preprocessor::tightenPL()
 			pl->tightenPL( tighten );
 			if ( tighten._type == Tightening::LB )
 				_input.setLowerBound( tighten._variable, tighten._value );
-			else 
+			else
 				_input.setUpperBound( tighten._variable, tighten._value );
 			pl->getEntailedTightenings().pop();
 		}
 	}
 }
 
-void Preprocessor::eliminateVariables() 
+void Preprocessor::eliminateVariables()
 {
 	Map< unsigned, double > rmVariables;
 	for ( unsigned i = 0; i < _input.getNumberOfVariables(); ++i )
 	{
-			if ( FloatUtils::areEqual( _input.getLowerBound( i ), _input.getUpperBound( i ) ) )
-			{
-				rmVariables[i] = _input.getLowerBound( i );
-			}
+        if ( FloatUtils::areEqual( _input.getLowerBound( i ), _input.getUpperBound( i ) ) )
+            rmVariables[i] = _input.getLowerBound( i );
 	}
+
 	int offset = 0;
-	Map< unsigned, double > indexAssignment;
+	Map<unsigned, double> indexAssignment;
 	for ( unsigned i = 0; i < _input.getNumberOfVariables(); ++i )
 	{
 		if ( rmVariables.exists( i ) )
-		{
 			++offset;
-		}
-		else 
+		else
 			indexAssignment[i] = i - offset;
 	}
+
 	for ( auto &equation : _input.getEquations() )
 	{
-		int nRm = equation._addends.size(); 
+		int nRm = equation._addends.size();
 		int changeLimit = equation._addends.size();
 		//necessary to remove addends
 		for ( auto addend = equation._addends.begin(); addend != equation._addends.end(); )
 		{
-			if ( changeLimit == 0 ) 
+			if ( changeLimit == 0 )
 				break;
 
-			if ( rmVariables.exists(  addend->_variable ) )
+			if ( rmVariables.exists( addend->_variable ) )
 			{
 				equation.setScalar( equation._scalar - addend->_coefficient * rmVariables.get( addend->_variable ) );
 				auto temp = ++addend;
@@ -182,7 +181,7 @@ void Preprocessor::eliminateVariables()
 				addend = temp;
 				++nRm;
 			}
-			else 
+			else
 			{
 				_input.setLowerBound( indexAssignment.get( addend->_variable ), _input.getLowerBound( addend->_variable ) );
 				_input.setUpperBound( indexAssignment.get( addend->_variable ), _input.getUpperBound( addend->_variable ) );
@@ -200,7 +199,7 @@ void Preprocessor::eliminateVariables()
 		{
 			if ( indexAssignment.get( var ) == -1 )
 				pl->eliminateVar( var, rmVariables.get( var ) );
-			else if ( indexAssignment.get( var ) != var ) 
+			else if ( indexAssignment.get( var ) != var )
 				pl->updateVarIndex( var, indexAssignment.get( var ) );
 		}
 	}
