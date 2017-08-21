@@ -104,6 +104,27 @@ public:
         relu.notifyVariableValue( b, 11 );
 
         TS_ASSERT( !relu.satisfied() );
+
+        // Changing variable indices
+        relu.notifyVariableValue( b, 1 );
+        relu.notifyVariableValue( f, 1 );
+        TS_ASSERT( relu.satisfied() );
+
+        unsigned newB = 12;
+        unsigned newF = 14;
+
+        TS_ASSERT_THROWS_NOTHING( relu.updateVariableIndex( b, newB ) );
+        TS_ASSERT_THROWS_NOTHING( relu.updateVariableIndex( f, newF ) );
+
+        TS_ASSERT( relu.satisfied() );
+
+        relu.notifyVariableValue( newF, 2 );
+
+        TS_ASSERT( !relu.satisfied() );
+
+        relu.notifyVariableValue( newB, 2 );
+
+        TS_ASSERT( relu.satisfied() );
     }
 
     void test_relu_fixes()
@@ -625,6 +646,120 @@ public:
         TS_ASSERT( !relu2->satisfied() );
 
         TS_ASSERT_THROWS_NOTHING( delete relu2 );
+    }
+
+    void test_eliminate_variable_active()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        unsigned auxVar = 100;
+        FreshVariables::setNextVariable( auxVar );
+
+        MockTableau tableau;
+
+        ReluConstraint relu( b, f );
+
+        relu.registerAsWatcher( &tableau );
+
+        TS_ASSERT( !relu.phaseFixed() );
+        TS_ASSERT_THROWS_NOTHING( relu.eliminateVariable( b, 5 ) );
+        TS_ASSERT( relu.phaseFixed() );
+
+        PiecewiseLinearCaseSplit split;
+        TS_ASSERT_THROWS_NOTHING( split = relu.getValidCaseSplit() );
+
+        Equation activeEquation;
+
+        List<Tightening> bounds = split.getBoundTightenings();
+
+        unsigned auxVariable = FreshVariables::getNextVariable();
+
+        TS_ASSERT_EQUALS( auxVar, auxVariable );
+
+        TS_ASSERT_EQUALS( bounds.size(), 1U );
+        auto bound = bounds.begin();
+        Tightening bound1 = *bound;
+
+        TS_ASSERT_EQUALS( bound1._variable, b );
+        TS_ASSERT_EQUALS( bound1._type, Tightening::LB );
+        TS_ASSERT_EQUALS( bound1._value, 0.0 );
+
+        auto equations = split.getEquations();
+        TS_ASSERT_EQUALS( equations.size(), 1U );
+        activeEquation = split.getEquations().front().first();
+        activeEquation.addAddend( -1, auxVariable );
+        activeEquation.markAuxiliaryVariable( auxVariable );
+        TS_ASSERT_EQUALS( activeEquation._addends.size(), 3U );
+        TS_ASSERT_EQUALS( activeEquation._scalar, 0.0 );
+
+        auto addend = activeEquation._addends.begin();
+        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, b );
+
+        ++addend;
+        TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, f );
+
+        ++addend;
+        TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, 100U );
+        TS_ASSERT_EQUALS( activeEquation._auxVariable, 100U );
+    }
+
+    void test_eliminate_variable_inactive()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        unsigned auxVar = 100;
+        FreshVariables::setNextVariable( auxVar );
+
+        MockTableau tableau;
+
+        ReluConstraint relu( b, f );
+
+        relu.registerAsWatcher( &tableau );
+
+        TS_ASSERT( !relu.phaseFixed() );
+        TS_ASSERT_THROWS_NOTHING( relu.eliminateVariable( f, 0 ) );
+        TS_ASSERT( relu.phaseFixed() );
+
+        PiecewiseLinearCaseSplit split;
+        TS_ASSERT_THROWS_NOTHING( split = relu.getValidCaseSplit() );
+
+        Equation activeEquation;
+
+        List<Tightening> bounds = split.getBoundTightenings();
+
+        unsigned auxVariable = FreshVariables::getNextVariable();
+
+        TS_ASSERT_EQUALS( auxVariable, auxVar );
+
+        TS_ASSERT_EQUALS( bounds.size(), 1U );
+        auto bound = bounds.begin();
+        Tightening bound1 = *bound;
+
+        TS_ASSERT_EQUALS( bound1._variable, b );
+        TS_ASSERT_EQUALS( bound1._type, Tightening::UB );
+        TS_ASSERT_EQUALS( bound1._value, 0.0 );
+
+        auto equations = split.getEquations();
+        TS_ASSERT_EQUALS( equations.size(), 1U );
+        Equation inactiveEquation = split.getEquations().front().first();
+        inactiveEquation.addAddend( -1, auxVariable );
+        inactiveEquation.markAuxiliaryVariable( auxVariable );
+        TS_ASSERT_EQUALS( inactiveEquation._addends.size(), 2U );
+        TS_ASSERT_EQUALS( inactiveEquation._scalar, 0.0 );
+
+        auto addend = inactiveEquation._addends.begin();
+        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, f );
+
+        ++addend;
+        TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, 100U );
+        TS_ASSERT_EQUALS( inactiveEquation._auxVariable, 100U );
     }
 };
 

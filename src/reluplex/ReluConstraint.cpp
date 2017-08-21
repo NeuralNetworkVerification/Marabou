@@ -245,14 +245,25 @@ void ReluConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 		_f = newIndex;
 }
 
-void ReluConstraint::eliminateVariable( unsigned variable, double fixedValue )
+void ReluConstraint::eliminateVariable( __attribute__((unused)) unsigned variable, double fixedValue )
 {
 	ASSERT( variable == _b || variable == _f );
 
-	if ( variable == _f )
-    {
-        ASSERT( FloatUtils::gte( fixedValue, 0 ) );
-    }
+    DEBUG({
+            if ( variable == _f )
+            {
+                ASSERT( FloatUtils::gte( fixedValue, 0 ) );
+            }
+
+            if ( FloatUtils::gt( fixedValue, 0 ) )
+            {
+                ASSERT( _phaseStatus != PHASE_INACTIVE );
+            }
+            else
+            {
+                ASSERT( _phaseStatus != PHASE_ACTIVE );
+            }
+        });
 
 	if ( FloatUtils::gt( fixedValue, 0 ) )
 		_phaseStatus = PhaseStatus::PHASE_ACTIVE;
