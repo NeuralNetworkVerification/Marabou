@@ -69,7 +69,7 @@ bool DantzigsRule::select( ITableau &tableau, const Set<unsigned> &excluded )
 
     log( Stringf( "Largest coefficient: %.3lf. Corresponding variable: %u\n", maxValue, maxIndex ) );
 
-    tableau.setEnteringVariable( maxIndex );
+    tableau.setEnteringVariableIndex( maxIndex );
     return true;
 }
 

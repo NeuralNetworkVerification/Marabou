@@ -327,7 +327,7 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
 
-        tableau->setEnteringVariable( 2u );
+        tableau->setEnteringVariableIndex( 2u );
 
         TS_ASSERT( hasCandidates( *tableau ) );
 
@@ -380,7 +380,7 @@ public:
         // Cost function is: + x1 + x2 + x3 + x4
         // All these variables are at their lower bounds, so cannot decrease.
 
-        tableau->setEnteringVariable( 2u );
+        tableau->setEnteringVariableIndex( 2u );
 
         TS_ASSERT( !hasCandidates( *tableau ) );
 
@@ -425,7 +425,7 @@ public:
         TS_ASSERT_EQUALS( tableau->getBasicStatus( 6 ), Tableau::ABOVE_UB );
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
-        tableau->setEnteringVariable( 2u );
+        tableau->setEnteringVariableIndex( 2u );
         TS_ASSERT( hasCandidates( *tableau ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
 
@@ -521,7 +521,7 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau() );
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
-        tableau->setEnteringVariable( 2u );
+        tableau->setEnteringVariableIndex( 2u );
         TS_ASSERT( hasCandidates( *tableau ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
 
@@ -573,7 +573,7 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau() );
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
-        tableau->setEnteringVariable( 2u );
+        tableau->setEnteringVariableIndex( 2u );
         TS_ASSERT( hasCandidates( *tableau ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
 
@@ -706,7 +706,7 @@ public:
         TS_ASSERT_EQUALS( row._scalar, 420.0 );
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
-        tableau->setEnteringVariable( 2u );
+        tableau->setEnteringVariableIndex( 2u );
         TS_ASSERT( hasCandidates( *tableau ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
 
@@ -906,8 +906,8 @@ public:
 
         // Nonbasic index #2 --> variable 2
         // Basic index #1 --> variable 5
-        tableau->setEnteringVariable( 2 );
-        tableau->setLeavingVariable( 1 );
+        tableau->setEnteringVariableIndex( 2 );
+        tableau->setLeavingVariableIndex( 1 );
         TS_ASSERT_THROWS_NOTHING( tableau->performDegeneratePivot() );
         TS_ASSERT( tableau->isBasic( 2 ) );
         TS_ASSERT( !tableau->isBasic( 5 ) );
@@ -1032,10 +1032,10 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau() );
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
-        tableau->setEnteringVariable( 3u );
+        tableau->setEnteringVariableIndex( 3u );
         TS_ASSERT( hasCandidates( *tableau ) );
 
-        tableau->setLeavingVariable( 3u );
+        tableau->setLeavingVariableIndex( 3u );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 3u );
         TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 3u );
 
@@ -1062,7 +1062,7 @@ public:
         // Do some more stuff
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
-        tableau->setEnteringVariable( 2u );
+        tableau->setEnteringVariableIndex( 2u );
         TS_ASSERT( hasCandidates( *tableau ) );
 
         double d[] = { -1, +1, -1 };
@@ -1092,7 +1092,7 @@ public:
         // Do some more stuff again
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
-        tableau->setEnteringVariable( 2u );
+        tableau->setEnteringVariableIndex( 2u );
         TS_ASSERT( hasCandidates( *tableau ) );
 
         TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d ) );
@@ -1149,7 +1149,7 @@ public:
         // Do a pivot to shuffle the basis
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
 
-        tableau->setEnteringVariable( 2u );
+        tableau->setEnteringVariableIndex( 2u );
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeChangeColumn() );
         TS_ASSERT_THROWS_NOTHING( tableau->performPivot() );

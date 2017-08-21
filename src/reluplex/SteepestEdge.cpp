@@ -68,7 +68,7 @@ bool SteepestEdgeRule::select( ITableau &tableau, const Set<unsigned> &excluded 
         ++candidate;
     }
 
-    tableau.setEnteringVariable( maxIndex );
+    tableau.setEnteringVariableIndex( maxIndex );
     return true;
 }
 

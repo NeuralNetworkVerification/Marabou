@@ -61,7 +61,7 @@ bool NestedDantzigsRule::select( ITableau &tableau, const Set<unsigned> &/* excl
         ++candidate;
     }
 
-    tableau.setEnteringVariable( *maxIt );
+    tableau.setEnteringVariableIndex( *maxIt );
     _J = Jhat;
     _J.erase( *maxIt );
     return true;

@@ -59,13 +59,13 @@ public:
       Set which variable will enter the basis. The input is the
       index of the non basic variable, in the range [0, n-m).
     */
-    void setEnteringVariable( unsigned nonBasic );
+    void setEnteringVariableIndex( unsigned nonBasic );
 
     /*
       Set which variable will leave the basis. The input is the
       index of the basic variable, in the range [0, m).
     */
-    void setLeavingVariable( unsigned basic );
+    void setLeavingVariableIndex( unsigned basic );
 
     /*
       Set/get the values of the right hand side vector, b, of size m.
@@ -187,6 +187,7 @@ public:
     */
     bool eligibleForEntry( unsigned nonBasic ) const;
     unsigned getEnteringVariable() const;
+    unsigned getEnteringVariableIndex() const;
     bool nonBasicCanIncrease( unsigned nonBasic ) const;
     bool nonBasicCanDecrease( unsigned nonBasic ) const;
 
@@ -197,6 +198,7 @@ public:
     void pickLeavingVariable();
     void pickLeavingVariable( double *d );
     unsigned getLeavingVariable() const;
+    unsigned getLeavingVariableIndex() const;
     double getChangeRatio() const;
 
     /*

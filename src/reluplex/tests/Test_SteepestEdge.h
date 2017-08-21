@@ -176,8 +176,8 @@ public:
 
         // (1) 0, 0
         Tableau *tableau = newSteepestEdgeTableau();
-        tableau->setEnteringVariable( 0 ); // x1
-        tableau->setLeavingVariable( 0 ); // x5
+        tableau->setEnteringVariableIndex( 0 ); // x1
+        tableau->setLeavingVariableIndex( 0 ); // x5
 
         /*
           New equations:
@@ -204,8 +204,8 @@ public:
 
         // (2) 0, 1
         tableau = newSteepestEdgeTableau();
-        tableau->setEnteringVariable(0); // x1
-        tableau->setLeavingVariable(1); // x6
+        tableau->setEnteringVariableIndex(0); // x1
+        tableau->setLeavingVariableIndex(1); // x6
 
         /*
           New equations:
