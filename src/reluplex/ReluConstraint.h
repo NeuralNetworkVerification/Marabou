@@ -94,9 +94,13 @@ public:
     */
     void dump( String &output ) const;
 
-	  void updateVarIndex( unsigned prevVar, unsigned newVar );
+	void updateVarIndex( unsigned prevVar, unsigned newVar );
 
-	  void eliminateVar( unsigned var, double val );
+	void eliminateVar( unsigned var, double val );
+
+	void tightenPL( Tightening tighten );
+
+	void preprocessBounds( unsigned variable, double value, Tightening::BoundType type );
     
 private:
     unsigned _b, _f;

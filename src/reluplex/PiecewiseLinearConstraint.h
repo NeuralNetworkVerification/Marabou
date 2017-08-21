@@ -17,6 +17,7 @@
 #include "PiecewiseLinearCaseSplit.h"
 #include "Map.h"
 #include "Queue.h"
+#include "Tightening.h" 
 
 class ITableau;
 class String;
@@ -127,6 +128,12 @@ public:
     virtual void dump( String & ) const {}
 
   	virtual void updateVarIndex( unsigned prevVar, unsigned newVar ) = 0;
+
+  	virtual void updateBounds() {};
+
+	virtual void preprocessBounds( unsigned variable, double value, Tightening::BoundType type ) = 0;
+
+	virtual void tightenPL( Tightening tighten ) = 0;
 
   	virtual void eliminateVar( unsigned var, double val ) = 0;
 

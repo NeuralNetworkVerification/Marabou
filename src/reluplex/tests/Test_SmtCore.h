@@ -113,6 +113,14 @@ public:
 		void eliminateVar( unsigned, double )
 		{
 		}
+
+		void tightenPL( Tightening )
+		{
+		}
+
+		void preprocessBounds( unsigned, double, Tightening::BoundType )
+		{
+		}
     };
 
     void setUp()
