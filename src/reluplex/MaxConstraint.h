@@ -85,15 +85,19 @@ public:
     */
     PiecewiseLinearCaseSplit getValidCaseSplit() const;
 
-  	void updateVarIndex( unsigned prevVar, unsigned newVar );
-
-	void eliminateVar( unsigned var, double val );
-
 	void tightenPL( Tightening tighten );
 
 	void updateBounds();
 
 	void preprocessBounds( unsigned variable, double value, Tightening::BoundType type );
+
+    /*
+      Preprocessing related functions, to inform that a variable has been eliminated completely
+      because it was fixed to some value, or that a variable's index has changed (e.g., x4 is now
+      called x2).
+    */
+    void eliminateVariable( unsigned variable, double fixedValue );
+    void updateVariableIndex( unsigned oldIndex, unsigned newIndex );
 
 private:
     unsigned _f;

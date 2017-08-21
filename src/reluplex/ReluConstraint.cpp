@@ -229,46 +229,42 @@ void ReluConstraint::dump( String &output ) const
                       _phaseStatus );
 }
 
-void ReluConstraint::updateVarIndex( unsigned prevVar, unsigned newVar )
+void ReluConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
-	ASSERT( prevVar == _b || prevVar == _f );
+	ASSERT( oldIndex == _b || oldIndex == _f );
 
-	if ( _assignment.exists( prevVar ) )
+	if ( _assignment.exists( oldIndex ) )
 	{
-		_assignment[newVar] = _assignment.get( prevVar );
-		_assignment.erase( prevVar );
+		_assignment[newIndex] = _assignment.get( oldIndex );
+		_assignment.erase( oldIndex );
 	}
 
-	if ( prevVar == _b )
-		_b = newVar;
+	if ( oldIndex == _b )
+		_b = newIndex;
 	else
-		_f = newVar;
+		_f = newIndex;
 }
 
-void ReluConstraint::eliminateVar( unsigned var, double val )
+void ReluConstraint::eliminateVariable( unsigned variable, double fixedValue )
 {
-	ASSERT( var == _b || var == _f );
+	ASSERT( variable == _b || variable == _f );
 
-	if ( var == _f )
-	{
-	    ASSERT( FloatUtils::gte( val, 0 ) );
-	}
+	if ( variable == _f )
+    {
+        ASSERT( FloatUtils::gte( fixedValue, 0 ) );
+    }
 
-	if ( FloatUtils::gt( val, 0 ) )
-	{
+	if ( FloatUtils::gt( fixedValue, 0 ) )
 		_phaseStatus = PhaseStatus::PHASE_ACTIVE;
-	}
 	else
-	{
 		_phaseStatus = PhaseStatus::PHASE_INACTIVE;
-	}
 }
 
 void ReluConstraint::tightenPL( Tightening tighten )
 {
 	if ( FloatUtils::gt( _lowerBounds.get( _f ), _lowerBounds.get( _b ) ) )
 	{
-		
+
 	}
 	if ( tighten._type == Tightening::LB )
 	{
@@ -278,7 +274,7 @@ void ReluConstraint::tightenPL( Tightening tighten )
 		if ( FloatUtils::gt( LB, _lowerBounds.get( _b ) ) )
 				notifyLowerBound( _b, tighten._value );
 	}
-	else 
+	else
 	{
 		double UB = FloatUtils::min( tighten._value, FloatUtils::min( _upperBounds.get( _f ), _upperBounds.get( _b ) ) );
 		if ( FloatUtils::lt( UB, _upperBounds.get( _f ) ) )
@@ -292,7 +288,7 @@ void ReluConstraint::preprocessBounds( unsigned variable, double value, Tighteni
 {
 	if ( type == Tightening::LB )
 		notifyLowerBound( variable, value );
-	else 
+	else
 		notifyUpperBound( variable, value );
 }
 //

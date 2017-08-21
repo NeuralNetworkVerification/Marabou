@@ -65,7 +65,7 @@ public:
     virtual void unregisterAsWatcher( ITableau *tableau ) = 0;
 
     /*
-      The variable watcher notifcation callbacks.
+      The variable watcher notifcation callbacks, about a change in a variable's value or bounds.
     */
     virtual void notifyVariableValue( unsigned /* variable */, double /* value */ ) {}
     virtual void notifyLowerBound( unsigned /* variable */, double /* bound */ ) {}
@@ -128,15 +128,19 @@ public:
     */
     virtual void dump( String & ) const {}
 
-  	virtual void updateVarIndex( unsigned prevVar, unsigned newVar ) = 0;
-
   	virtual void updateBounds() {};
 
 	virtual void preprocessBounds( unsigned variable, double value, Tightening::BoundType type ) = 0;
 
 	virtual void tightenPL( Tightening tighten ) = 0;
 
-  	virtual void eliminateVar( unsigned var, double val ) = 0;
+    /*
+      Preprocessing related functions, to inform that a variable has been eliminated completely
+      because it was fixed to some value, or that a variable's index has changed (e.g., x4 is now
+      called x2).
+    */
+    virtual void eliminateVariable( unsigned variable, double fixedValue ) = 0;
+    virtual void updateVariableIndex( unsigned oldIndex, unsigned newIndex ) = 0;
 
     /*
       Get the tightenings entailed by the constraint.

@@ -56,7 +56,7 @@ public:
         {
         }
 
-        bool setActiveWasCalled;        
+        bool setActiveWasCalled;
         void setActiveConstraint( bool active )
         {
             TS_ASSERT( active == false );
@@ -106,11 +106,11 @@ public:
             return dontCare;
         }
 
-		void updateVarIndex( unsigned, unsigned )
+		void updateVariableIndex( unsigned, unsigned )
 		{
 		}
 
-		void eliminateVar( unsigned, double )
+		void eliminateVariable( unsigned, double )
 		{
 		}
 

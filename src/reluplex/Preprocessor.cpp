@@ -198,9 +198,9 @@ void Preprocessor::eliminateVariables()
 		for ( auto var : pl->getParticipatingVariables() )
 		{
 			if ( indexAssignment.get( var ) == -1 )
-				pl->eliminateVar( var, rmVariables.get( var ) );
+				pl->eliminateVariable( var, rmVariables.get( var ) );
 			else if ( indexAssignment.get( var ) != var )
-				pl->updateVarIndex( var, indexAssignment.get( var ) );
+				pl->updateVariableIndex( var, indexAssignment.get( var ) );
 		}
 	}
 	_input.setNumberOfVariables( _input.getNumberOfVariables() - rmVariables.size() );
