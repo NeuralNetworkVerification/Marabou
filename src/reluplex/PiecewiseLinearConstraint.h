@@ -128,12 +128,6 @@ public:
     */
     virtual void dump( String & ) const {}
 
-  	virtual void updateBounds() {};
-
-	virtual void preprocessBounds( unsigned variable, double value, Tightening::BoundType type ) = 0;
-
-	virtual void tightenPL( Tightening tighten ) = 0;
-
     /*
       Preprocessing related functions, to inform that a variable has been eliminated completely
       because it was fixed to some value, or that a variable's index has changed (e.g., x4 is now
@@ -145,7 +139,7 @@ public:
     /*
       Get the tightenings entailed by the constraint.
     */
-    Queue<Tightening> &getEntailedTightenings();
+    virtual void getEntailedTightenings( List<Tightening> &tightenings ) const = 0;
 
     void setStatistics( Statistics *statistics );
 
@@ -154,17 +148,11 @@ protected:
     Map<unsigned, double> _assignment;
     Map<unsigned, double> _lowerBounds;
     Map<unsigned, double> _upperBounds;
-    Queue<Tightening> _entailedTightenings;
 
     /*
       Statistics collection
     */
     Statistics *_statistics;
-
-    /*
-      Add a bound tightening to the queue.
-    */
-    void pushTightening( const Tightening &tightening );
 };
 
 #endif // __PiecewiseLinearConstraint_h__

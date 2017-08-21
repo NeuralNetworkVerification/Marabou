@@ -336,7 +336,20 @@ void Engine::processInputQuery( InputQuery &inputQuery )
 
 void Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 {
-	_preprocessedQuery = inputQuery;
+    _preprocessedQuery = inputQuery;
+
+    // Inform the PL constraints of the initial variable bounds
+    for ( const auto &plConstraint : _preprocessedQuery.getPiecewiseLinearConstraints() )
+    {
+        List<unsigned> variables = plConstraint->getParticipatingVariables();
+        for ( unsigned variable : variables )
+        {
+            plConstraint->notifyLowerBound( variable, _preprocessedQuery.getLowerBound( variable ) );
+            plConstraint->notifyUpperBound( variable, _preprocessedQuery.getUpperBound( variable ) );
+        }
+    }
+
+    // If processing is enabled, invoke the preprocessor
     if ( preprocess )
     {
         log( Stringf( "Number of infinite bounds in the input query before preprocessing: %u",
@@ -512,16 +525,12 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 
 void Engine::applyAllConstraintTightenings()
 {
+    List<Tightening> entailedTightenings;
     for ( auto &constraint : _plConstraints )
-    {
-        Queue<Tightening> &entailedTightenings = constraint->getEntailedTightenings();
-        while ( !entailedTightenings.empty() )
-        {
-            entailedTightenings.peak().tighten( _tableau );
-            entailedTightenings.pop();
-            // TODO: do we want statistics to track this bound tightening?
-        }
-    }
+        constraint->getEntailedTightenings( entailedTightenings );
+
+    for ( const auto &tightening : entailedTightenings )
+        tightening.tighten( _tableau );
 }
 
 void Engine::applyAllValidConstraintCaseSplits()

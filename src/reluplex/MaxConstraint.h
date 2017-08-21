@@ -99,6 +99,11 @@ public:
     void eliminateVariable( unsigned variable, double fixedValue );
     void updateVariableIndex( unsigned oldIndex, unsigned newIndex );
 
+    /*
+      Get the tightenings entailed by the constraint.
+    */
+    void getEntailedTightenings( List<Tightening> &tightenings ) const;
+
 private:
     unsigned _f;
   	unsigned _maxIndex;

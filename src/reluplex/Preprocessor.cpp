@@ -121,26 +121,26 @@ void Preprocessor::tightenBounds()
 
 void Preprocessor::tightenPL()
 {
-	for ( auto pl : _input.getPiecewiseLinearConstraints() )
-	{
-		for ( auto var : pl->getParticipatingVariables() )
-		{
-			pl->preprocessBounds( var, _input.getLowerBound( var ), Tightening::LB );
-			pl->preprocessBounds( var, _input.getUpperBound( var ), Tightening::UB );
-		}
+	// for ( auto pl : _input.getPiecewiseLinearConstraints() )
+	// {
+	// 	for ( auto var : pl->getParticipatingVariables() )
+	// 	{
+	// 		pl->preprocessBounds( var, _input.getLowerBound( var ), Tightening::LB );
+	// 		pl->preprocessBounds( var, _input.getUpperBound( var ), Tightening::UB );
+	// 	}
 
-		pl->updateBounds();
-		while ( !pl->getEntailedTightenings().empty() )
-		{
-			auto tighten = pl->getEntailedTightenings().peak();
-			pl->tightenPL( tighten );
-			if ( tighten._type == Tightening::LB )
-				_input.setLowerBound( tighten._variable, tighten._value );
-			else
-				_input.setUpperBound( tighten._variable, tighten._value );
-			pl->getEntailedTightenings().pop();
-		}
-	}
+	// 	pl->updateBounds();
+	// 	while ( !pl->getEntailedTightenings().empty() )
+	// 	{
+	// 		auto tighten = pl->getEntailedTightenings().peak();
+	// 		pl->tightenPL( tighten );
+	// 		if ( tighten._type == Tightening::LB )
+	// 			_input.setLowerBound( tighten._variable, tighten._value );
+	// 		else
+	// 			_input.setUpperBound( tighten._variable, tighten._value );
+	// 		pl->getEntailedTightenings().pop();
+	// 	}
+	// }
 }
 
 void Preprocessor::eliminateVariables()

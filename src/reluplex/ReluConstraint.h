@@ -90,21 +90,22 @@ public:
     PiecewiseLinearCaseSplit getValidCaseSplit() const;
 
     /*
-      Dump the current state of the constraint.
-    */
-    void dump( String &output ) const;
-
-	void tightenPL( Tightening tighten );
-
-	void preprocessBounds( unsigned variable, double value, Tightening::BoundType type );
-
-    /*
       Preprocessing related functions, to inform that a variable has been eliminated completely
       because it was fixed to some value, or that a variable's index has changed (e.g., x4 is now
       called x2).
     */
     void eliminateVariable( unsigned variable, double fixedValue );
     void updateVariableIndex( unsigned oldIndex, unsigned newIndex );
+
+    /*
+      Get the tightenings entailed by the constraint.
+    */
+    void getEntailedTightenings( List<Tightening> &tightenings ) const;
+
+    /*
+      Dump the current state of the constraint.
+    */
+    void dump( String &output ) const;
 
 private:
     unsigned _b, _f;

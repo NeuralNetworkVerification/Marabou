@@ -63,19 +63,10 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
 
     _lowerBounds[variable] = bound;
 
-    // f >= c implies b >= c for any c > 0
-    // b >= c implies f >= c for any c >= 0, but the c = 0 case is unneeded
     if ( variable == _f && FloatUtils::isPositive( bound ) )
-    {
         _phaseStatus = PhaseStatus::PHASE_ACTIVE;
-        pushTightening( Tightening( _b, bound, Tightening::LB ) );
-    }
     else if ( variable == _b && !FloatUtils::isNegative( bound ) )
-    {
         _phaseStatus = PhaseStatus::PHASE_ACTIVE;
-        if ( FloatUtils::isPositive( bound ) )
-            pushTightening( Tightening( _f, bound, Tightening::LB ) );
-    }
 }
 
 void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
@@ -84,17 +75,6 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
         return;
 
     _upperBounds[variable] = bound;
-
-    // b <= c implies f <= c for any c >= 0
-    // f <= c implies b <= c for any c >= 0
-    if ( variable == _b && !FloatUtils::isNegative( bound ) )
-        pushTightening( Tightening( _f, bound, Tightening::UB ) );
-    else if ( variable == _f && !FloatUtils::isNegative( bound ) )
-        pushTightening( Tightening( _b, bound, Tightening::UB ) );
-
-    // b <= c implies f <= 0 for any c < 0
-    if ( variable == _b && FloatUtils::isNegative( bound ) )
-        pushTightening( Tightening( _f, 0.0, Tightening::UB ) );
 
     if ( ( variable == _f || variable == _b ) && !FloatUtils::isPositive( bound ) )
         _phaseStatus = PhaseStatus::PHASE_INACTIVE;
@@ -271,37 +251,51 @@ void ReluConstraint::eliminateVariable( __attribute__((unused)) unsigned variabl
 		_phaseStatus = PhaseStatus::PHASE_INACTIVE;
 }
 
-void ReluConstraint::tightenPL( Tightening tighten )
+void ReluConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
 {
-	if ( FloatUtils::gt( _lowerBounds.get( _f ), _lowerBounds.get( _b ) ) )
-	{
+    ASSERT( _lowerBounds.exists( _b ) && _lowerBounds.exists( _f ) &&
+            _upperBounds.exists( _b ) && _upperBounds.exists( _f ) );
 
-	}
-	if ( tighten._type == Tightening::LB )
-	{
-		double LB = FloatUtils::max( tighten._value, FloatUtils::max( _lowerBounds.get( _f ), _lowerBounds.get( _b ) ) );
-		if ( FloatUtils::gt( LB, _lowerBounds.get( _f ) ) )
-			notifyLowerBound( _f, tighten._value );
-		if ( FloatUtils::gt( LB, _lowerBounds.get( _b ) ) )
-				notifyLowerBound( _b, tighten._value );
-	}
-	else
-	{
-		double UB = FloatUtils::min( tighten._value, FloatUtils::min( _upperBounds.get( _f ), _upperBounds.get( _b ) ) );
-		if ( FloatUtils::lt( UB, _upperBounds.get( _f ) ) )
-			notifyUpperBound( _f, tighten._value );
-		if ( FloatUtils::lt( UB, _upperBounds.get( _b ) ) )
-			notifyUpperBound( _b, tighten._value );
-	}
+    // Upper bounds
+    double bUpperBound = _upperBounds[_b];
+    double fUpperBound = _upperBounds[_f];
+
+    double minBound =
+        FloatUtils::lt( bUpperBound, fUpperBound ) ? bUpperBound : fUpperBound;
+
+    if ( !FloatUtils::isNegative( minBound ) )
+    {
+        // The minimal bound is non-negative. Should match for both f and b.
+        if ( FloatUtils::lt( minBound, bUpperBound ) )
+            tightenings.append( Tightening( _b, minBound, Tightening::UB ) );
+        else if ( FloatUtils::lt( minBound, fUpperBound ) )
+            tightenings.append( Tightening( _f, minBound, Tightening::UB ) );
+    }
+    else
+    {
+        // The minimal bound is negative. This has to be b's upper bound.
+        if ( !FloatUtils::isZero( fUpperBound ) )
+            tightenings.append( Tightening( _f, 0.0, Tightening::UB ) );
+    }
+
+    // Lower bounds
+    double bLowerBound = _lowerBounds[_b];
+    double fLowerBound = _lowerBounds[_f];
+
+    // Lower bounds are entailed between f and b only if they are strictly positive, and otherwise ignored.
+    if ( FloatUtils::isPositive( fLowerBound ) )
+    {
+        if ( FloatUtils::lt( bLowerBound, fLowerBound ) )
+            tightenings.append( Tightening( _b, fLowerBound, Tightening::LB ) );
+    }
+
+    if ( FloatUtils::isPositive( bLowerBound ) )
+    {
+        if ( FloatUtils::lt( fLowerBound, bLowerBound ) )
+            tightenings.append( Tightening( _f, bLowerBound, Tightening::LB ) );
+    }
 }
 
-void ReluConstraint::preprocessBounds( unsigned variable, double value, Tightening::BoundType type )
-{
-	if ( type == Tightening::LB )
-		notifyLowerBound( variable, value );
-	else
-		notifyUpperBound( variable, value );
-}
 //
 // Local Variables:
 // compile-command: "make -C .. "

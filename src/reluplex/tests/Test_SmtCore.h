@@ -121,6 +121,10 @@ public:
 		void preprocessBounds( unsigned, double, Tightening::BoundType )
 		{
 		}
+
+        void getEntailedTightenings( List<Tightening> & ) const
+        {
+        }
     };
 
     void setUp()
