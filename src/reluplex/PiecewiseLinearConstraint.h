@@ -14,10 +14,10 @@
 #define __PiecewiseLinearConstraint_h__
 
 #include "ITableau.h"
-#include "PiecewiseLinearCaseSplit.h"
 #include "Map.h"
+#include "PiecewiseLinearCaseSplit.h"
 #include "Queue.h"
-#include "Tightening.h" 
+#include "Tightening.h"
 
 class ITableau;
 class String;
@@ -78,6 +78,7 @@ public:
     {
         _constraintActive = active;
     }
+
     virtual bool isActive() const
     {
         return _constraintActive;

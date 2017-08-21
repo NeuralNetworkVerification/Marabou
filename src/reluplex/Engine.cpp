@@ -336,28 +336,28 @@ void Engine::processInputQuery( InputQuery &inputQuery )
 
 void Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 {
-	_processed = inputQuery;
+	_preprocessedQuery = inputQuery;
     if ( preprocess )
     {
         log( Stringf( "Number of infinite bounds in the input query before preprocessing: %u",
                       inputQuery.countInfiniteBounds() ) );
-		Preprocessor process( inputQuery );
-		process.tightenEquationsAndPL();
-		InputQuery preprocessed = process.getInputQuery();
+		Preprocessor preprocessor( inputQuery );
+		preprocessor.tightenEquationsAndPL();
+		InputQuery preprocessed = preprocessor.getInputQuery();
         log( Stringf( "Number of infinite bounds in the input query after preprocessing: %u",
                       preprocessed.countInfiniteBounds() ) );
-		_processed = preprocessed;
+		_preprocessedQuery = preprocessed;
     }
 
-    if ( _processed.countInfiniteBounds() != 0 )
+    if ( _preprocessedQuery.countInfiniteBounds() != 0 )
         throw ReluplexError( ReluplexError::UNBOUNDED_VARIABLES_NOT_YET_SUPPORTED );
 
-    _degradationChecker.storeEquations( _processed );
+    _degradationChecker.storeEquations( _preprocessedQuery );
 
-    const List<Equation> equations( _processed.getEquations() );
+    const List<Equation> equations( _preprocessedQuery.getEquations() );
 
     unsigned m = equations.size();
-    unsigned n = _processed.getNumberOfVariables();
+    unsigned n = _preprocessedQuery.getNumberOfVariables();
     _tableau->setDimensions( m, n );
 
     // Current variables are [0,..,n-1], so the next variable is n.
@@ -377,11 +377,11 @@ void Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
     for ( unsigned i = 0; i < n; ++i )
     {
-        _tableau->setLowerBound( i, _processed.getLowerBound( i ) );
-        _tableau->setUpperBound( i, _processed.getUpperBound( i ) );
+        _tableau->setLowerBound( i, _preprocessedQuery.getLowerBound( i ) );
+        _tableau->setUpperBound( i, _preprocessedQuery.getUpperBound( i ) );
     }
 
-    _plConstraints = _processed.getPiecewiseLinearConstraints();
+    _plConstraints = _preprocessedQuery.getPiecewiseLinearConstraints();
     for ( const auto &constraint : _plConstraints )
     {
         constraint->registerAsWatcher( _tableau );

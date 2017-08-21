@@ -97,7 +97,7 @@ private:
 	/*
 	  Preprocessed InputQuery
 	*/
-	InputQuery _processed;	
+	InputQuery _preprocessedQuery;
 
     /*
       Pivot selection strategies.
