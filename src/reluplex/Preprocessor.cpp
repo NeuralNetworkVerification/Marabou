@@ -18,15 +18,32 @@
 #include "ReluplexError.h"
 #include "Tightening.h"
 
-Preprocessor::Preprocessor( InputQuery input )
+Preprocessor::Preprocessor( const InputQuery &query )
+    : _preprocessed( query )
+	, _hasTightened( false )
 {
-	_input = input;
-	_hasTightened = false;
+}
+
+InputQuery Preprocessor::preprocess()
+{
+    /*
+      Do the preprocessing steps:
+
+      Until saturation:
+        1. Tighten bounds using equations
+        2. Tighten bounds using pl constraints
+
+      Then, eliminate fixed variables.
+    */
+
+    tightenPL();
+
+    return _preprocessed;
 }
 
 InputQuery Preprocessor::getInputQuery()
 {
-	return _input;
+	return _preprocessed;
 }
 
 void Preprocessor::tightenEquationsAndPL()
@@ -44,21 +61,21 @@ void Preprocessor::tightenBounds()
 	double min = FloatUtils::negativeInfinity();
     double max = FloatUtils::infinity();
 
-    for ( const auto &equation : _input.getEquations() )
+    for ( const auto &equation : _preprocessed.getEquations() )
     {
         bool sawUnboundedVariable = false;
         for ( const auto &addend : equation._addends )
         {
             // Look for unbounded variables
-            if ( _input.getLowerBound( addend._variable ) == min ||
-                 _input.getUpperBound( addend._variable ) == max )
+            if ( _preprocessed.getLowerBound( addend._variable ) == min ||
+                 _preprocessed.getUpperBound( addend._variable ) == max )
             {
 				_hasTightened = true;
 
                 // If an equation has two addends that are unbounded on both sides,
                 // no bounds can be tightened
-                if ( _input.getLowerBound( addend._variable ) == min &&
-                     _input.getUpperBound( addend._variable ) == max )
+                if ( _preprocessed.getLowerBound( addend._variable ) == min &&
+                     _preprocessed.getUpperBound( addend._variable ) == max )
                 {
                     // Give up on this equation
                     if ( sawUnboundedVariable )
@@ -83,13 +100,13 @@ void Preprocessor::tightenBounds()
 
                     if ( FloatUtils::isNegative( bounded._coefficient ) )
                     {
-                        scalarLB -= bounded._coefficient * _input.getLowerBound( bounded._variable );
-                        scalarUB -= bounded._coefficient * _input.getUpperBound( bounded._variable );
+                        scalarLB -= bounded._coefficient * _preprocessed.getLowerBound( bounded._variable );
+                        scalarUB -= bounded._coefficient * _preprocessed.getUpperBound( bounded._variable );
                     }
                     if ( FloatUtils::isPositive( bounded._coefficient ) )
                     {
-                        scalarLB -= bounded._coefficient * _input.getUpperBound( bounded._variable );
-                        scalarUB -= bounded._coefficient * _input.getLowerBound( bounded._variable );
+                        scalarLB -= bounded._coefficient * _preprocessed.getUpperBound( bounded._variable );
+                        scalarUB -= bounded._coefficient * _preprocessed.getLowerBound( bounded._variable );
                     }
                 }
 
@@ -106,14 +123,14 @@ void Preprocessor::tightenBounds()
                     scalarLB = temp;
                 }
 
-                if ( FloatUtils::gt( scalarLB, _input.getLowerBound( addend._variable ) ) )
-                    _input.setLowerBound( addend._variable, scalarLB );
-                if ( FloatUtils::lt( scalarUB, _input.getUpperBound( addend._variable ) ) )
-                    _input.setUpperBound( addend._variable, scalarUB );
+                if ( FloatUtils::gt( scalarLB, _preprocessed.getLowerBound( addend._variable ) ) )
+                    _preprocessed.setLowerBound( addend._variable, scalarLB );
+                if ( FloatUtils::lt( scalarUB, _preprocessed.getUpperBound( addend._variable ) ) )
+                    _preprocessed.setUpperBound( addend._variable, scalarUB );
             }
 
-            if ( FloatUtils::gt( _input.getLowerBound( addend._variable ),
-                                 _input.getUpperBound( addend._variable ) ) )
+            if ( FloatUtils::gt( _preprocessed.getLowerBound( addend._variable ),
+                                 _preprocessed.getUpperBound( addend._variable ) ) )
                 throw ReluplexError( ReluplexError::INVALID_BOUND_TIGHTENING, "Preprocessing bound error" );
         }
     }
@@ -121,40 +138,39 @@ void Preprocessor::tightenBounds()
 
 void Preprocessor::tightenPL()
 {
-	// for ( auto pl : _input.getPiecewiseLinearConstraints() )
-	// {
-	// 	for ( auto var : pl->getParticipatingVariables() )
-	// 	{
-	// 		pl->preprocessBounds( var, _input.getLowerBound( var ), Tightening::LB );
-	// 		pl->preprocessBounds( var, _input.getUpperBound( var ), Tightening::UB );
-	// 	}
+	for ( auto &constraint : _preprocessed.getPiecewiseLinearConstraints() )
+	{
+		for ( unsigned variable : constraint->getParticipatingVariables() )
+		{
+			constraint->notifyLowerBound( variable, _preprocessed.getLowerBound( variable ) );
+			constraint->notifyUpperBound( variable, _preprocessed.getUpperBound( variable ) );
+		}
 
-	// 	pl->updateBounds();
-	// 	while ( !pl->getEntailedTightenings().empty() )
-	// 	{
-	// 		auto tighten = pl->getEntailedTightenings().peak();
-	// 		pl->tightenPL( tighten );
-	// 		if ( tighten._type == Tightening::LB )
-	// 			_input.setLowerBound( tighten._variable, tighten._value );
-	// 		else
-	// 			_input.setUpperBound( tighten._variable, tighten._value );
-	// 		pl->getEntailedTightenings().pop();
-	// 	}
-	// }
+        List<Tightening> tightenings;
+        constraint->getEntailedTightenings( tightenings );
+
+        for ( const auto &tightening : tightenings )
+		{
+			if ( tightening._type == Tightening::LB )
+				_preprocessed.setLowerBound( tightening._variable, tightening._value );
+			else
+				_preprocessed.setUpperBound( tightening._variable, tightening._value );
+		}
+	}
 }
 
 void Preprocessor::eliminateVariables()
 {
 	Map< unsigned, double > rmVariables;
-	for ( unsigned i = 0; i < _input.getNumberOfVariables(); ++i )
+	for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
 	{
-        if ( FloatUtils::areEqual( _input.getLowerBound( i ), _input.getUpperBound( i ) ) )
-            rmVariables[i] = _input.getLowerBound( i );
+        if ( FloatUtils::areEqual( _preprocessed.getLowerBound( i ), _preprocessed.getUpperBound( i ) ) )
+            rmVariables[i] = _preprocessed.getLowerBound( i );
 	}
 
 	int offset = 0;
 	Map<unsigned, double> indexAssignment;
-	for ( unsigned i = 0; i < _input.getNumberOfVariables(); ++i )
+	for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
 	{
 		if ( rmVariables.exists( i ) )
 			++offset;
@@ -162,7 +178,7 @@ void Preprocessor::eliminateVariables()
 			indexAssignment[i] = i - offset;
 	}
 
-	for ( auto &equation : _input.getEquations() )
+	for ( auto &equation : _preprocessed.getEquations() )
 	{
 		int nRm = equation._addends.size();
 		int changeLimit = equation._addends.size();
@@ -183,17 +199,17 @@ void Preprocessor::eliminateVariables()
 			}
 			else
 			{
-				_input.setLowerBound( indexAssignment.get( addend->_variable ), _input.getLowerBound( addend->_variable ) );
-				_input.setUpperBound( indexAssignment.get( addend->_variable ), _input.getUpperBound( addend->_variable ) );
+				_preprocessed.setLowerBound( indexAssignment.get( addend->_variable ), _preprocessed.getLowerBound( addend->_variable ) );
+				_preprocessed.setUpperBound( indexAssignment.get( addend->_variable ), _preprocessed.getUpperBound( addend->_variable ) );
 				addend->_variable = indexAssignment.get( addend->_variable );
 			}
 			--changeLimit;
 			++addend;
 		}
 		if ( nRm == 0 )
-			_input.getEquations().erase( equation );
+			_preprocessed.getEquations().erase( equation );
 	}
-	for ( auto pl : _input.getPiecewiseLinearConstraints() )
+	for ( auto pl : _preprocessed.getPiecewiseLinearConstraints() )
 	{
 		for ( auto var : pl->getParticipatingVariables() )
 		{
@@ -203,9 +219,8 @@ void Preprocessor::eliminateVariables()
 				pl->updateVariableIndex( var, indexAssignment.get( var ) );
 		}
 	}
-	_input.setNumberOfVariables( _input.getNumberOfVariables() - rmVariables.size() );
+	_preprocessed.setNumberOfVariables( _preprocessed.getNumberOfVariables() - rmVariables.size() );
 }
-
 
 //
 // Local Variables:

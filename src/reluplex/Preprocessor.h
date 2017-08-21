@@ -22,16 +22,21 @@
 class Preprocessor
 {
 public:
-	Preprocessor( InputQuery input ); 
-		
+	Preprocessor( const InputQuery &query );
+
+    /*
+      Main method of this class: preprocess the input query
+    */
+    InputQuery preprocess();
+
 	void tightenEquationsAndPL();
-	void tightenBounds(); 
+	void tightenBounds();
 	void tightenPL();
-	void eliminateVariables(); 
+	void eliminateVariables();
 	InputQuery getInputQuery();
-	
+
+    InputQuery _preprocessed;
 	bool _hasTightened;
-	InputQuery _input;
 };
 
 #endif // __Preprocessor_h__

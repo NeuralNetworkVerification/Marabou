@@ -78,14 +78,14 @@ public:
         TS_ASSERT_EQUALS( processed.getLowerBound( 0 ), 11 );
         TS_ASSERT_EQUALS( processed.getUpperBound( 0 ), 13 );
 
-        preprocess._input.setLowerBound( 0, 0 );
-        preprocess._input.setUpperBound( 0, FloatUtils::infinity() );
-        preprocess._input.setLowerBound( 1, 0 );
-        preprocess._input.setUpperBound( 1, 1 );
-        preprocess._input.setLowerBound( 2, FloatUtils::negativeInfinity() );
-        preprocess._input.setUpperBound( 2, 3 );
-        preprocess._input.setLowerBound( 3, 0 );
-        preprocess._input.setUpperBound( 3, 0 );
+        inputQuery.setLowerBound( 0, 0 );
+        inputQuery.setUpperBound( 0, FloatUtils::infinity() );
+        inputQuery.setLowerBound( 1, 0 );
+        inputQuery.setUpperBound( 1, 1 );
+        inputQuery.setLowerBound( 2, FloatUtils::negativeInfinity() );
+        inputQuery.setUpperBound( 2, 3 );
+        inputQuery.setLowerBound( 3, 0 );
+        inputQuery.setUpperBound( 3, 0 );
 
         // x0.lb = 10 - x1.ub + x2.lb --> Unbounded
         // x0.ub = 10 - x1.lb + x2.ub = 10 - 0 + 3 = 13
@@ -94,22 +94,23 @@ public:
         // x2.ub = -10 + x0.ub + x1.ub = -10 + 13 + 1 = 4
         // 3 is a tighter bound than 4, keep 3 as the upper bound
 
-        preprocess.tightenBounds();
-		processed = preprocess.getInputQuery();
+        Preprocessor preprocess2( inputQuery );
+        preprocess2.tightenBounds();
+		processed = preprocess2.getInputQuery();
 
         TS_ASSERT_EQUALS( processed.getLowerBound( 0 ), 0 );
         TS_ASSERT_EQUALS( processed.getUpperBound( 0 ), 13 );
         TS_ASSERT_EQUALS( processed.getLowerBound( 2 ), -10 );
 		TS_ASSERT_EQUALS( processed.getUpperBound( 2 ), 3 );
 
-        preprocess._input.setLowerBound( 0, FloatUtils::negativeInfinity() );
-        preprocess._input.setUpperBound( 0, 15 );
-        preprocess._input.setLowerBound( 1, 3 );
-        preprocess._input.setUpperBound( 1, 3 );
-        preprocess._input.setLowerBound( 2, 2 );
-        preprocess._input.setUpperBound( 2, FloatUtils::infinity() );
-        preprocess._input.setLowerBound( 3, 0 );
-        preprocess._input.setUpperBound( 3, 0 );
+        inputQuery.setLowerBound( 0, FloatUtils::negativeInfinity() );
+        inputQuery.setUpperBound( 0, 15 );
+        inputQuery.setLowerBound( 1, 3 );
+        inputQuery.setUpperBound( 1, 3 );
+        inputQuery.setLowerBound( 2, 2 );
+        inputQuery.setUpperBound( 2, FloatUtils::infinity() );
+        inputQuery.setLowerBound( 3, 0 );
+        inputQuery.setUpperBound( 3, 0 );
 
         // x0.lb = 10 - x1.ub + x2.lb = 10 - 3 + 2 = 9
         // x0.ub = 10 - x1.lb + x2.ub --> Unbounded
@@ -117,22 +118,23 @@ public:
         // x2.lb = -10 + x0.lb + x1.lb = -10 + 9 + 3 = 2
         // x2.ub = -10 + x0.ub + x1.ub = -10 + 15 + 3 = 8
 
-        preprocess.tightenBounds();
-		processed = preprocess.getInputQuery();
+        Preprocessor preprocess3( inputQuery );
+        preprocess3.tightenBounds();
+		processed = preprocess3.getInputQuery();
 
         TS_ASSERT_EQUALS( processed.getLowerBound( 0 ), 9 );
         TS_ASSERT_EQUALS( processed.getUpperBound( 0 ), 15 );
         TS_ASSERT_EQUALS( processed.getLowerBound( 2 ), 2 );
         TS_ASSERT_EQUALS( processed.getUpperBound( 2 ), 8 );
 
-        preprocess._input.setLowerBound( 0, FloatUtils::negativeInfinity() );
-        preprocess._input.setUpperBound( 0, 15 );
-        preprocess._input.setLowerBound( 1, -3 );
-        preprocess._input.setUpperBound( 1, -2 );
-        preprocess._input.setLowerBound( 2, FloatUtils::negativeInfinity() );
-        preprocess._input.setUpperBound( 2, 6 );
-        preprocess._input.setLowerBound( 3, 0 );
-        preprocess._input.setUpperBound( 3, 0 );
+        inputQuery.setLowerBound( 0, FloatUtils::negativeInfinity() );
+        inputQuery.setUpperBound( 0, 15 );
+        inputQuery.setLowerBound( 1, -3 );
+        inputQuery.setUpperBound( 1, -2 );
+        inputQuery.setLowerBound( 2, FloatUtils::negativeInfinity() );
+        inputQuery.setUpperBound( 2, 6 );
+        inputQuery.setLowerBound( 3, 0 );
+        inputQuery.setUpperBound( 3, 0 );
 
         // x0.lb = 10 - x1.ub + x2.lb --> Unbounded
         // x0.ub = 10 - x1.lb + x2.ub = 10 - -3 + 6 = 19
@@ -141,22 +143,23 @@ public:
         // x2.lb = -10 + x0.lb + x1.lb = Unbounded
         // x2.ub = -10 + x0.ub + x1.ub = -10 + 15 -2 = 3
 
-        preprocess.tightenBounds();
-		processed = preprocess.getInputQuery();
+        Preprocessor preprocess4( inputQuery );
+        preprocess4.tightenBounds();
+		processed = preprocess4.getInputQuery();
 
         TS_ASSERT_EQUALS( processed.getLowerBound( 0 ), FloatUtils::negativeInfinity() );
         TS_ASSERT_EQUALS( processed.getUpperBound( 0 ), 15 );
         TS_ASSERT_EQUALS( processed.getLowerBound( 2 ), FloatUtils::negativeInfinity() );
         TS_ASSERT_EQUALS( processed.getUpperBound( 2 ), 3 );
 
-        preprocess._input.setLowerBound( 0, FloatUtils::negativeInfinity() );
-        preprocess._input.setUpperBound( 0, 5 );
-        preprocess._input.setLowerBound( 1, -3 );
-        preprocess._input.setUpperBound( 1, -2 );
-        preprocess._input.setLowerBound( 2, 0 );
-        preprocess._input.setUpperBound( 2, 6 );
-        preprocess._input.setLowerBound( 3, 0 );
-        preprocess._input.setUpperBound( 3, 0 );
+        inputQuery.setLowerBound( 0, FloatUtils::negativeInfinity() );
+        inputQuery.setUpperBound( 0, 5 );
+        inputQuery.setLowerBound( 1, -3 );
+        inputQuery.setUpperBound( 1, -2 );
+        inputQuery.setLowerBound( 2, 0 );
+        inputQuery.setUpperBound( 2, 6 );
+        inputQuery.setLowerBound( 3, 0 );
+        inputQuery.setUpperBound( 3, 0 );
 
         // x0.lb = 10 - x1.ub + x2.lb --> Unbounded
         // x0.ub = 10 - x1.lb + x2.ub = 10 - -3 + 6 = 19
@@ -167,7 +170,9 @@ public:
         // x2.ub = -10 + x0.ub + x1.ub = -10 + 5 -2 = -7
         // x2 = [0, -7] -> throw error
 
-        TS_ASSERT_THROWS_EQUALS( preprocess.tightenBounds(),
+        Preprocessor preprocess5( inputQuery );
+
+        TS_ASSERT_THROWS_EQUALS( preprocess5.tightenBounds(),
                                  const ReluplexError &e,
                                  e.getCode(),
                                  ReluplexError::INVALID_BOUND_TIGHTENING );
@@ -180,7 +185,6 @@ public:
         inputQuery2.setUpperBound( 2, 3 );
         inputQuery2.setLowerBound( 3, 0 );
         inputQuery2.setUpperBound( 3, 0 );
-
 
         // 2 * x0 + x1 - x2 = 10
         //
@@ -196,12 +200,12 @@ public:
         equation2.setScalar( 10 );
         inputQuery2.addEquation( equation2 );
 
-		Preprocessor preprocess2( inputQuery2 );
-		preprocess2.tightenBounds();
-		InputQuery processed2 = preprocess2.getInputQuery();
+		Preprocessor preprocess6( inputQuery2 );
+		preprocess6.tightenBounds();
+		processed = preprocess6.getInputQuery();
 
-        TS_ASSERT_EQUALS( processed2.getLowerBound( 0 ), 5.5 );
-        TS_ASSERT_EQUALS( processed2.getUpperBound( 0 ), 6.5 );
+        TS_ASSERT_EQUALS( processed.getLowerBound( 0 ), 5.5 );
+        TS_ASSERT_EQUALS( processed.getUpperBound( 0 ), 6.5 );
 	}
 
 	void test_tighten_pl()

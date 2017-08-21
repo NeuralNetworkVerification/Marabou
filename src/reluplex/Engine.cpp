@@ -336,31 +336,22 @@ void Engine::processInputQuery( InputQuery &inputQuery )
 
 void Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 {
-    _preprocessedQuery = inputQuery;
-
     // Inform the PL constraints of the initial variable bounds
-    for ( const auto &plConstraint : _preprocessedQuery.getPiecewiseLinearConstraints() )
+    for ( const auto &plConstraint : inputQuery.getPiecewiseLinearConstraints() )
     {
         List<unsigned> variables = plConstraint->getParticipatingVariables();
         for ( unsigned variable : variables )
         {
-            plConstraint->notifyLowerBound( variable, _preprocessedQuery.getLowerBound( variable ) );
-            plConstraint->notifyUpperBound( variable, _preprocessedQuery.getUpperBound( variable ) );
+            plConstraint->notifyLowerBound( variable, inputQuery.getLowerBound( variable ) );
+            plConstraint->notifyUpperBound( variable, inputQuery.getUpperBound( variable ) );
         }
     }
 
     // If processing is enabled, invoke the preprocessor
     if ( preprocess )
-    {
-        log( Stringf( "Number of infinite bounds in the input query before preprocessing: %u",
-                      inputQuery.countInfiniteBounds() ) );
-		Preprocessor preprocessor( inputQuery );
-		preprocessor.tightenEquationsAndPL();
-		InputQuery preprocessed = preprocessor.getInputQuery();
-        log( Stringf( "Number of infinite bounds in the input query after preprocessing: %u",
-                      preprocessed.countInfiniteBounds() ) );
-		_preprocessedQuery = preprocessed;
-    }
+        _preprocessedQuery = Preprocessor( inputQuery ).preprocess();
+    else
+        _preprocessedQuery = inputQuery;
 
     if ( _preprocessedQuery.countInfiniteBounds() != 0 )
         throw ReluplexError( ReluplexError::UNBOUNDED_VARIABLES_NOT_YET_SUPPORTED );
