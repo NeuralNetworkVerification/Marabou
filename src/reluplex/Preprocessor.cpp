@@ -95,6 +95,9 @@ bool Preprocessor::tightenBounds()
                 // We first compute the lower and upper bounds for the expression c - sum (bi * xi)
                 double scalarUB = equation._scalar;
                 double scalarLB = equation._scalar;
+                bool validLB = true;
+                bool validUB = true;
+
                 for ( auto bounded : equation._addends )
                 {
                     if ( addend._variable == bounded._variable )
@@ -102,36 +105,73 @@ bool Preprocessor::tightenBounds()
 
                     if ( FloatUtils::isNegative( bounded._coefficient ) )
                     {
-                        scalarLB -= bounded._coefficient * _preprocessed.getLowerBound( bounded._variable );
-                        scalarUB -= bounded._coefficient * _preprocessed.getUpperBound( bounded._variable );
+                        if ( validLB )
+                        {
+                            double boundedLB = _preprocessed.getLowerBound( bounded._variable );
+                            if ( FloatUtils::isFinite( boundedLB ) )
+                                scalarLB -= bounded._coefficient * boundedLB;
+                            else
+                                validLB = false;
+                        }
+
+                        if ( validUB )
+                        {
+                            double boundedUB = _preprocessed.getUpperBound( bounded._variable );
+                            if ( FloatUtils::isFinite( boundedUB ) )
+                                scalarUB -= bounded._coefficient * boundedUB;
+                            else
+                                validUB = false;
+                        }
                     }
+
                     if ( FloatUtils::isPositive( bounded._coefficient ) )
                     {
-                        scalarLB -= bounded._coefficient * _preprocessed.getUpperBound( bounded._variable );
-                        scalarUB -= bounded._coefficient * _preprocessed.getLowerBound( bounded._variable );
+                        if ( validLB )
+                        {
+                            double boundedUB = _preprocessed.getUpperBound( bounded._variable );
+                            if ( FloatUtils::isFinite( boundedUB ) )
+                                scalarLB -= bounded._coefficient * boundedUB;
+                            else
+                                validLB = false;
+                        }
+
+                        if ( validUB )
+                        {
+                            double boundedLB = _preprocessed.getLowerBound( bounded._variable );
+                            if ( FloatUtils::isFinite( boundedLB ) )
+                                scalarUB -= bounded._coefficient * boundedLB;
+                            else
+                                validUB = false;
+                        }
                     }
                 }
 
                 // We know that lb < ax < ub. We want to divide by a, but we care about the sign
                 // If a is positive: lb/a < x < ub/a
                 // If a is negative: lb/a > x > ub/a
-                scalarLB = scalarLB / addend._coefficient;
-                scalarUB = scalarUB / addend._coefficient;
+                if ( validLB )
+                    scalarLB = scalarLB / addend._coefficient;
+                if ( validUB )
+                    scalarUB = scalarUB / addend._coefficient;
 
                 if ( FloatUtils::isNegative( addend._coefficient ) )
                 {
                     double temp = scalarUB;
                     scalarUB = scalarLB;
                     scalarLB = temp;
+
+                    bool tempValid = validUB;
+                    validUB = validLB;
+                    validLB = tempValid;
                 }
 
-                if ( FloatUtils::gt( scalarLB, _preprocessed.getLowerBound( addend._variable ) ) )
+                if ( validLB && FloatUtils::gt( scalarLB, _preprocessed.getLowerBound( addend._variable ) ) )
                 {
                     tighterBoundFound = true;
                     _preprocessed.setLowerBound( addend._variable, scalarLB );
                 }
 
-                if ( FloatUtils::lt( scalarUB, _preprocessed.getUpperBound( addend._variable ) ) )
+                if ( validUB && FloatUtils::lt( scalarUB, _preprocessed.getUpperBound( addend._variable ) ) )
                 {
                     tighterBoundFound = true;
                     _preprocessed.setUpperBound( addend._variable, scalarUB );

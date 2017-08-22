@@ -11,12 +11,11 @@
 **/
 
 #include "AcasParser.h"
+#include "FloatUtils.h"
 #include "InputParserError.h"
 #include "InputQuery.h"
 #include "MString.h"
 #include "ReluConstraint.h"
-
-static const double ACAS_INFINITY = 1000000.0;
 
 AcasParser::NodeIndex::NodeIndex( unsigned layer, unsigned node )
     : _layer( layer )
@@ -115,20 +114,20 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
         if ( fNode.first._layer != 0 )
         {
             inputQuery.setLowerBound( fNode.second, 0.0 );
-            inputQuery.setUpperBound( fNode.second, ACAS_INFINITY );
+            inputQuery.setUpperBound( fNode.second, FloatUtils::infinity() );
         }
     }
 
     for ( const auto &fNode : _nodeToB )
     {
-        inputQuery.setLowerBound( fNode.second, -ACAS_INFINITY );
-        inputQuery.setUpperBound( fNode.second, ACAS_INFINITY );
+        inputQuery.setLowerBound( fNode.second, FloatUtils::negativeInfinity() );
+        inputQuery.setUpperBound( fNode.second, FloatUtils::infinity() );
     }
 
     // Next come the actual equations
     for ( unsigned layer = 0; layer < numberOfLayers - 1; ++layer )
     {
-        unsigned targetLayerSize = _acasNeuralNetwork.getLayerSize( layer + 1 );;
+        unsigned targetLayerSize = _acasNeuralNetwork.getLayerSize( layer + 1 );
         for ( unsigned target = 0; target < targetLayerSize; ++target )
         {
             // This will represent the equation:

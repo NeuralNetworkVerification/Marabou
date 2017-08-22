@@ -61,6 +61,11 @@ bool FloatUtils::isNegative( double x, double epsilon )
     return ( !isZero( x, epsilon ) ) && ( x < 0.0 );
 }
 
+bool FloatUtils::isFinite( double x )
+{
+    return ( x != infinity() ) && ( x != negativeInfinity() );
+}
+
 bool FloatUtils::gt( double x, double y, double epsilon )
 {
     return isPositive( x - y, epsilon );

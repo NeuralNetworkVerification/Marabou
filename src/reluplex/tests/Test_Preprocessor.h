@@ -61,7 +61,7 @@ public:
         equation1.setScalar( 10 );
         inputQuery.addEquation( equation1 );
 
-		Preprocessor preprocess( inputQuery );
+        Preprocessor preprocess( inputQuery );
         preprocess.tightenBounds();
 		InputQuery processed = preprocess.getInputQuery();
 
