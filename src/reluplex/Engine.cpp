@@ -245,9 +245,6 @@ bool Engine::performSimplexStep()
     _tableau->performPivot();
     _activeEntryStrategy->postPivotHook( _tableau, fakePivot );
 
-    ASSERT( enteringVariable == _tableau->getLeavingVariable() );
-    ASSERT( leavingVariable == _tableau->getEnteringVariable() );
-
     // Tighten
     if ( !fakePivot )
         _boundTightener.deriveTightenings( _tableau );
