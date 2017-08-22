@@ -27,21 +27,33 @@ class MockForEngine :
 public:
 };
 
+class MockEntrySelectionStrategy : public EntrySelectionStrategy
+{
+public:
+    bool select( ITableau &, const Set<unsigned> & )
+    {
+        return true;
+    }
+};
+
 class EngineTestSuite : public CxxTest::TestSuite
 {
 public:
     MockForEngine *mock;
     MockTableau *tableau;
+    MockEntrySelectionStrategy *entryStrategy;
 
     void setUp()
     {
         TS_ASSERT( mock = new MockForEngine );
+        TS_ASSERT( entryStrategy = new MockEntrySelectionStrategy );
 
         tableau = &( mock->mockTableau );
     }
 
     void tearDown()
     {
+        TS_ASSERT_THROWS_NOTHING( delete entryStrategy );
         TS_ASSERT_THROWS_NOTHING( delete mock );
     }
 
@@ -106,6 +118,8 @@ public:
         inputQuery.addPiecewiseLinearConstraint( relu2 );
 
         Engine engine;
+
+        engine.setEntrySelectionStrategy( entryStrategy );
 
         TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery, false ) );
         TS_ASSERT( tableau->initializeTableauCalled );

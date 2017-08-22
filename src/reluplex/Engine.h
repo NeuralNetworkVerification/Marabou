@@ -63,6 +63,11 @@ public:
     void storeState( EngineState &state ) const;
     void restoreState( const EngineState &state );
 
+    /*
+      Set the entry selection strategy.
+    */
+    void setEntrySelectionStrategy( EntrySelectionStrategy *strategy );
+
 private:
     /*
       Add equations and tightenings from a split.

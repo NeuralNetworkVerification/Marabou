@@ -199,7 +199,7 @@ bool Engine::performSimplexStep()
         }
 
         // Is the newly found pivot better than the stored one?
-        unsigned leavingIndex = _tableau->variableToIndex( _tableau->getLeavingVariable() );
+        unsigned leavingIndex = _tableau->getLeavingVariableIndex();
         double pivotEntry = FloatUtils::abs( _tableau->getChangeColumn()[leavingIndex] );
         if ( FloatUtils::gt( pivotEntry, bestPivotEntry ) )
         {
@@ -555,6 +555,11 @@ void Engine::checkDegradation()
 
     double degradation = _degradationChecker.computeDegradation( *_tableau );
     _statistics.setCurrentDegradation( degradation );
+}
+
+void Engine::setEntrySelectionStrategy( EntrySelectionStrategy *strategy )
+{
+    _activeEntryStrategy = strategy;
 }
 
 void Engine::log( const String &message )
