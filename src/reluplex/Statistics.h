@@ -14,6 +14,7 @@
 #define __Statistics_h__
 
 #include "List.h"
+#include "TimeUtils.h"
 
 class Statistics
 {
@@ -24,6 +25,11 @@ public:
       Print the current statistics.
     */
     void print();
+
+    /*
+      Set starting time.
+    */
+    void stampStartingTime();
 
     /*
       Engine related statistics.
@@ -72,6 +78,9 @@ public:
     void pseIncNumResetReferenceSpace();
 
 private:
+    // Initial timestamp
+    timeval _startTime;
+
     // Number of iterations of the main loop
     unsigned long long _numMainLoopIterations;
 

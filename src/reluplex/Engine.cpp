@@ -44,6 +44,8 @@ Engine::~Engine()
 
 bool Engine::solve()
 {
+    _statistics.stampStartingTime();
+
     while ( true )
     {
         mainLoopStatistics();

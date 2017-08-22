@@ -48,6 +48,16 @@ void Statistics::print()
 {
     printf( "\n%s Statistics update:\n", TimeUtils::now().ascii() );
 
+    timeval now = TimeUtils::sampleMicro();
+
+    unsigned milliPassed = TimeUtils::timePassed( _startTime, now );
+    unsigned seconds = milliPassed / 1000;
+    unsigned minutes = seconds / 60;
+    unsigned hours = minutes / 60;
+
+    printf( "\tTime elapsed: %u milli (%02u:%02u:%02u)\n",
+            TimeUtils::timePassed( _startTime, now ), hours, minutes - ( hours * 60 ), seconds - ( minutes * 60 ) );
+
     printf( "\t--- Engine Statistics ---\n" );
     printf( "\tNumber of main loop iterations: %llu\n"
             "\t\t%llu iterations were simplex steps. Total time: %llu milli. Average: %.2lf milli.\n"
@@ -253,6 +263,11 @@ void Statistics::setCurrentDegradation( double degradation )
     _currentDegradation = degradation;
     if ( FloatUtils::gt( _currentDegradation, _maxDegradation ) )
         _maxDegradation = _currentDegradation;
+}
+
+void Statistics::stampStartingTime()
+{
+    _startTime = TimeUtils::sampleMicro();
 }
 
 //

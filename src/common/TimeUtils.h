@@ -10,8 +10,8 @@
  ** directory for licensing information.\endverbatim
  **/
 
-#ifndef __Time_h__
-#define __Time_h__
+#ifndef __TimeUtils_h__
+#define __TimeUtils_h__
 
 #include "MString.h"
 
@@ -30,7 +30,7 @@ public:
     static String now();
 };
 
-#endif // __Time_h__
+#endif // __TimeUtils_h__
 
 //
 // Local Variables:
