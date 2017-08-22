@@ -336,6 +336,10 @@ void Engine::processInputQuery( InputQuery &inputQuery )
 
 void Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 {
+    log( "processInputQuery starting\n" );
+
+    timeval start = TimeUtils::sampleMicro();
+
     // Inform the PL constraints of the initial variable bounds
     for ( const auto &plConstraint : inputQuery.getPiecewiseLinearConstraints() )
     {
@@ -398,6 +402,11 @@ void Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
     _activeEntryStrategy->initialize( _tableau );
 
     _statistics.setNumPlConstraints( _plConstraints.size() );
+
+    timeval end = TimeUtils::sampleMicro();
+    _statistics.setPreprocessingTime( TimeUtils::timePassed( start, end ) );
+
+    log( "processInputQuery done\n" );
 }
 
 void Engine::extractSolution( InputQuery &inputQuery )

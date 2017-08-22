@@ -50,13 +50,26 @@ void Statistics::print()
 
     timeval now = TimeUtils::sampleMicro();
 
-    unsigned milliPassed = TimeUtils::timePassed( _startTime, now );
-    unsigned seconds = milliPassed / 1000;
+    unsigned long long mainLoopMilli = TimeUtils::timePassed( _startTime, now );
+    unsigned long long totalMilli = mainLoopMilli + _preprocessingTimeMilli;
+
+    unsigned seconds = totalMilli / 1000;
     unsigned minutes = seconds / 60;
     unsigned hours = minutes / 60;
+    printf( "\tTotal time elapsed: %llu milli (%02u:%02u:%02u)\n",
+            totalMilli, hours, minutes - ( hours * 60 ), seconds - ( minutes * 60 ) );
 
-    printf( "\tTime elapsed: %u milli (%02u:%02u:%02u)\n",
-            TimeUtils::timePassed( _startTime, now ), hours, minutes - ( hours * 60 ), seconds - ( minutes * 60 ) );
+    seconds = mainLoopMilli / 1000;
+    minutes = seconds / 60;
+    hours = minutes / 60;
+    printf( "\t\tMain loop: %llu milli (%02u:%02u:%02u)\n",
+            mainLoopMilli, hours, minutes - ( hours * 60 ), seconds - ( minutes * 60 ) );
+
+    seconds = _preprocessingTimeMilli / 1000;
+    minutes = seconds / 60;
+    hours = minutes / 60;
+    printf( "\t\tPreprocessing time: %llu milli (%02u:%02u:%02u)\n",
+            _preprocessingTimeMilli, hours, minutes - ( hours * 60 ), seconds - ( minutes * 60 ) );
 
     printf( "\t--- Engine Statistics ---\n" );
     printf( "\tNumber of main loop iterations: %llu\n"
@@ -263,6 +276,11 @@ void Statistics::setCurrentDegradation( double degradation )
     _currentDegradation = degradation;
     if ( FloatUtils::gt( _currentDegradation, _maxDegradation ) )
         _maxDegradation = _currentDegradation;
+}
+
+void Statistics::setPreprocessingTime( unsigned long long milli )
+{
+    _preprocessingTimeMilli = milli;
 }
 
 void Statistics::stampStartingTime()

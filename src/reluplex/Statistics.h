@@ -27,9 +27,14 @@ public:
     void print();
 
     /*
-      Set starting time.
+      Set starting time of the main loop.
     */
     void stampStartingTime();
+
+    /*
+      Set the time preprocessing took.
+    */
+    void setPreprocessingTime( unsigned long long milli );
 
     /*
       Engine related statistics.
@@ -80,6 +85,9 @@ public:
 private:
     // Initial timestamp
     timeval _startTime;
+
+    // Preprocessing time
+    unsigned long long _preprocessingTimeMilli;
 
     // Number of iterations of the main loop
     unsigned long long _numMainLoopIterations;

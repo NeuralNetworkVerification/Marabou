@@ -26,7 +26,7 @@ public:
     static String timePassed( time_t then, time_t now );
 
     // Return time in milliseconds
-    static unsigned timePassed( struct timeval then, struct timeval now );
+    static unsigned long long timePassed( struct timeval then, struct timeval now );
     static String now();
 };
 

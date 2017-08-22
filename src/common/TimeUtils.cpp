@@ -37,7 +37,7 @@ String TimeUtils::timePassed( time_t then, time_t now )
     return Stringf( "%02u:%02u:%02u", formattedTime->tm_hour, formattedTime->tm_min, formattedTime->tm_sec );
 }
 
-unsigned TimeUtils::timePassed( struct timeval then, struct timeval now )
+unsigned long long TimeUtils::timePassed( struct timeval then, struct timeval now )
 {
     enum {
         MILLISECONDS_IN_SECOND = 1000,
