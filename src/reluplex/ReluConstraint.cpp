@@ -203,10 +203,13 @@ PiecewiseLinearCaseSplit ReluConstraint::getValidCaseSplit() const
 
 void ReluConstraint::dump( String &output ) const
 {
-    output = Stringf( "ReluConstraint: x%u = ReLU( x%u ). Active? %s. PhaseStatus = %u",
+    output = Stringf( "ReluConstraint: x%u = ReLU( x%u ). Active? %s. PhaseStatus = %u. "
+                      "b in [%lf, %lf]. f in [%lf, %lf]",
                       _f, _b,
                       _constraintActive ? "Yes" : "No",
-                      _phaseStatus );
+                      _phaseStatus,
+                      _lowerBounds[_b], _upperBounds[_b], _lowerBounds[_f], _upperBounds[_f]
+                      );
 }
 
 void ReluConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )

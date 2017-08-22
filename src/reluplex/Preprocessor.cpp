@@ -36,7 +36,12 @@ InputQuery Preprocessor::preprocess()
       Then, eliminate fixed variables.
     */
 
-    tightenPL();
+    bool continueTightening = true;
+    while ( continueTightening )
+    {
+        continueTightening = tightenBounds();
+        continueTightening = tightenPL() || continueTightening;
+    }
 
     return _preprocessed;
 }
@@ -56,11 +61,14 @@ void Preprocessor::tightenEquationsAndPL()
 	}
 }
 
-void Preprocessor::tightenBounds()
+bool Preprocessor::tightenBounds()
 {
+    bool tighterBoundFound = false;
+
 	double min = FloatUtils::negativeInfinity();
     double max = FloatUtils::infinity();
 
+    unsigned eqNumber = 1;
     for ( const auto &equation : _preprocessed.getEquations() )
     {
         bool sawUnboundedVariable = false;
@@ -70,8 +78,6 @@ void Preprocessor::tightenBounds()
             if ( _preprocessed.getLowerBound( addend._variable ) == min ||
                  _preprocessed.getUpperBound( addend._variable ) == max )
             {
-				_hasTightened = true;
-
                 // If an equation has two addends that are unbounded on both sides,
                 // no bounds can be tightened
                 if ( _preprocessed.getLowerBound( addend._variable ) == min &&
@@ -79,10 +85,7 @@ void Preprocessor::tightenBounds()
                 {
                     // Give up on this equation
                     if ( sawUnboundedVariable )
-					{
-						_hasTightened = false;
                         break;
-					}
 
                     sawUnboundedVariable = true;
                 }
@@ -124,9 +127,16 @@ void Preprocessor::tightenBounds()
                 }
 
                 if ( FloatUtils::gt( scalarLB, _preprocessed.getLowerBound( addend._variable ) ) )
+                {
+                    tighterBoundFound = true;
                     _preprocessed.setLowerBound( addend._variable, scalarLB );
+                }
+
                 if ( FloatUtils::lt( scalarUB, _preprocessed.getUpperBound( addend._variable ) ) )
+                {
+                    tighterBoundFound = true;
                     _preprocessed.setUpperBound( addend._variable, scalarUB );
+                }
             }
 
             if ( FloatUtils::gt( _preprocessed.getLowerBound( addend._variable ),
@@ -134,10 +144,14 @@ void Preprocessor::tightenBounds()
                 throw ReluplexError( ReluplexError::INVALID_BOUND_TIGHTENING, "Preprocessing bound error" );
         }
     }
+
+    return tighterBoundFound;
 }
 
-void Preprocessor::tightenPL()
+bool Preprocessor::tightenPL()
 {
+    bool tighterBoundFound = false;
+
 	for ( auto &constraint : _preprocessed.getPiecewiseLinearConstraints() )
 	{
 		for ( unsigned variable : constraint->getParticipatingVariables() )
@@ -151,12 +165,22 @@ void Preprocessor::tightenPL()
 
         for ( const auto &tightening : tightenings )
 		{
-			if ( tightening._type == Tightening::LB )
-				_preprocessed.setLowerBound( tightening._variable, tightening._value );
-			else
-				_preprocessed.setUpperBound( tightening._variable, tightening._value );
+			if ( ( tightening._type == Tightening::LB ) &&
+                 FloatUtils::gt( tightening._value, _preprocessed.getLowerBound( tightening._variable ) ) )
+            {
+                tighterBoundFound = true;
+                _preprocessed.setLowerBound( tightening._variable, tightening._value );
+            }
+
+			else if ( FloatUtils::lt( tightening._value, _preprocessed.getUpperBound( tightening._variable ) ) )
+            {
+                tighterBoundFound = true;
+                _preprocessed.setUpperBound( tightening._variable, tightening._value );
+            }
 		}
 	}
+
+    return tighterBoundFound;
 }
 
 void Preprocessor::eliminateVariables()
@@ -199,8 +223,10 @@ void Preprocessor::eliminateVariables()
 			}
 			else
 			{
-				_preprocessed.setLowerBound( indexAssignment.get( addend->_variable ), _preprocessed.getLowerBound( addend->_variable ) );
-				_preprocessed.setUpperBound( indexAssignment.get( addend->_variable ), _preprocessed.getUpperBound( addend->_variable ) );
+				_preprocessed.setLowerBound( indexAssignment.get( addend->_variable ),
+                                             _preprocessed.getLowerBound( addend->_variable ) );
+				_preprocessed.setUpperBound( indexAssignment.get( addend->_variable ),
+                                             _preprocessed.getUpperBound( addend->_variable ) );
 				addend->_variable = indexAssignment.get( addend->_variable );
 			}
 			--changeLimit;

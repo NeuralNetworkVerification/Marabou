@@ -30,8 +30,8 @@ public:
     InputQuery preprocess();
 
 	void tightenEquationsAndPL();
-	void tightenBounds();
-	void tightenPL();
+	bool tightenBounds();
+	bool tightenPL();
 	void eliminateVariables();
 	InputQuery getInputQuery();
 

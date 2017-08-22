@@ -353,8 +353,10 @@ void Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
     else
         _preprocessedQuery = inputQuery;
 
-    if ( _preprocessedQuery.countInfiniteBounds() != 0 )
-        throw ReluplexError( ReluplexError::UNBOUNDED_VARIABLES_NOT_YET_SUPPORTED );
+    unsigned infiniteBounds = _preprocessedQuery.countInfiniteBounds();
+    if ( infiniteBounds != 0 )
+        throw ReluplexError( ReluplexError::UNBOUNDED_VARIABLES_NOT_YET_SUPPORTED,
+                             Stringf( "Error! Have %u infinite bounds", infiniteBounds ).ascii() );
 
     _degradationChecker.storeEquations( _preprocessedQuery );
 
@@ -521,7 +523,10 @@ void Engine::applyAllConstraintTightenings()
         constraint->getEntailedTightenings( entailedTightenings );
 
     for ( const auto &tightening : entailedTightenings )
+    {
+        _statistics.incNumBoundsProposedByPlConstraints();
         tightening.tighten( _tableau );
+    }
 }
 
 void Engine::applyAllValidConstraintCaseSplits()
