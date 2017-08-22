@@ -68,7 +68,6 @@ bool Preprocessor::tightenBounds()
 	double min = FloatUtils::negativeInfinity();
     double max = FloatUtils::infinity();
 
-    unsigned eqNumber = 1;
     for ( const auto &equation : _preprocessed.getEquations() )
     {
         bool sawUnboundedVariable = false;
