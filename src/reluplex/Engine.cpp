@@ -237,9 +237,6 @@ bool Engine::performSimplexStep()
     if ( !fakePivot )
         _tableau->computePivotRow();
 
-    unsigned enteringVariable = _tableau->getEnteringVariable();
-    unsigned leavingVariable = _tableau->getLeavingVariable();
-
     // Perform the actual pivot
     _activeEntryStrategy->prePivotHook( _tableau, fakePivot );
     _tableau->performPivot();
