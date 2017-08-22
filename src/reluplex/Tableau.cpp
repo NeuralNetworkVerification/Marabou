@@ -775,12 +775,12 @@ void Tableau::getEntryCandidates( List<unsigned> &candidates ) const
     }
 }
 
-void Tableau::setEnteringVariable( unsigned nonBasic )
+void Tableau::setEnteringVariableIndex( unsigned nonBasic )
 {
     _enteringVariable = nonBasic;
 }
 
-void Tableau::setLeavingVariable( unsigned basic )
+void Tableau::setLeavingVariableIndex( unsigned basic )
 {
     _leavingVariable = basic;
 }
@@ -820,6 +820,16 @@ bool Tableau::nonBasicCanDecrease( unsigned nonBasic ) const
 unsigned Tableau::getEnteringVariable() const
 {
     return _nonBasicIndexToVariable[_enteringVariable];
+}
+
+unsigned Tableau::getEnteringVariableIndex() const
+{
+    return _enteringVariable;
+}
+
+unsigned Tableau::getLeavingVariableIndex() const
+{
+    return _leavingVariable;
 }
 
 bool Tableau::performingFakePivot() const

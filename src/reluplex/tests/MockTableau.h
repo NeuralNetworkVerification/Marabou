@@ -89,7 +89,7 @@ public:
         candidates = mockCandidates;
     }
 
-    void setEnteringVariable( unsigned nonBasic )
+    void setEnteringVariableIndex( unsigned nonBasic )
     {
         mockEnteringVariable = nonBasic;
     }
@@ -222,16 +222,27 @@ public:
         return nextEnteringVariable;
     }
 
+    unsigned nextEnteringVariableIndex;
+    unsigned getEnteringVariableIndex() const
+    {
+        return nextEnteringVariableIndex;
+    }
+
     void pickLeavingVariable() {};
     void pickLeavingVariable( double */* d */ ) {}
 
     unsigned mockLeavingVariable;
-    void setLeavingVariable( unsigned basic )
+    void setLeavingVariableIndex( unsigned basic )
     {
         mockLeavingVariable = basic;
     }
 
     unsigned getLeavingVariable() const
+    {
+        return mockLeavingVariable;
+    }
+
+    unsigned getLeavingVariableIndex() const
     {
         return mockLeavingVariable;
     }

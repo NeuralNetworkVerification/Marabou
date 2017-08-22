@@ -225,7 +225,7 @@ bool Engine::performSimplexStep()
     }
 
     // Set the best choice in the tableau
-    _tableau->setEnteringVariable( _tableau->variableToIndex( bestEntering ) );
+    _tableau->setEnteringVariableIndex( _tableau->variableToIndex( bestEntering ) );
     _tableau->computeChangeColumn();
     _tableau->pickLeavingVariable();
 
@@ -237,8 +237,6 @@ bool Engine::performSimplexStep()
     if ( !fakePivot )
         _tableau->computePivotRow();
 
-    unsigned enteringVariable = _tableau->getEnteringVariable();
-
     // Perform the actual pivot
     _activeEntryStrategy->prePivotHook( _tableau, fakePivot );
     _tableau->performPivot();
@@ -246,7 +244,7 @@ bool Engine::performSimplexStep()
 
     // Tighten
     if ( !fakePivot )
-        _boundTightener.deriveTightenings( _tableau, enteringVariable );
+        _boundTightener.deriveTightenings( _tableau );
 
     timeval end = TimeUtils::sampleMicro();
     _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
@@ -318,8 +316,8 @@ void Engine::fixViolatedPlConstraintIfPossible()
     ASSERT( done );
 
     // Switch between nonBasic and the variable we need to fix
-    _tableau->setEnteringVariable( _tableau->variableToIndex( nonBasic ) );
-    _tableau->setLeavingVariable( _tableau->variableToIndex( fix._variable ) );
+    _tableau->setEnteringVariableIndex( _tableau->variableToIndex( nonBasic ) );
+    _tableau->setLeavingVariableIndex( _tableau->variableToIndex( fix._variable ) );
 
     _activeEntryStrategy->prePivotHook( _tableau, false );
     _tableau->performDegeneratePivot();

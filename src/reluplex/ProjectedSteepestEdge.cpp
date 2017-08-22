@@ -161,7 +161,7 @@ bool ProjectedSteepestEdgeRule::select( ITableau &tableau, const Set<unsigned> &
         ++it;
     }
 
-    tableau.setEnteringVariable( bestCandidate );
+    tableau.setEnteringVariableIndex( bestCandidate );
 
     if ( _statistics )
         _statistics->pseIncNumIterations();

@@ -49,7 +49,7 @@ bool BlandsRule::select( ITableau &tableau, const Set<unsigned> &excluded )
         ++it;
     }
 
-    tableau.setEnteringVariable( minIndex );
+    tableau.setEnteringVariableIndex( minIndex );
     return true;
 }
 
