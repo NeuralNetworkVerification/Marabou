@@ -66,7 +66,7 @@ int main()
     	relus();
 
         // Temporarily disabling
-		// max();
+		 max();
 	}
 	catch( const ReluplexError &e )
 	{

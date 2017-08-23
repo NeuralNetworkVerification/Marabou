@@ -254,7 +254,7 @@ void ReluConstraint::eliminateVariable( __attribute__((unused)) unsigned variabl
 		_phaseStatus = PhaseStatus::PHASE_INACTIVE;
 }
 
-void ReluConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
+void ReluConstraint::getEntailedTightenings( List<Tightening> &tightenings )
 {
     ASSERT( _lowerBounds.exists( _b ) && _lowerBounds.exists( _f ) &&
             _upperBounds.exists( _b ) && _upperBounds.exists( _f ) );
@@ -297,6 +297,10 @@ void ReluConstraint::getEntailedTightenings( List<Tightening> &tightenings ) con
         if ( FloatUtils::lt( fLowerBound, bLowerBound ) )
             tightenings.append( Tightening( _f, bLowerBound, Tightening::LB ) );
     }
+}
+
+void ReluConstraint::tightenPL( Tightening, List<Tightening>& )
+{
 }
 
 //

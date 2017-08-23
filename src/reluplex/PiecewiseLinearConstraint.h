@@ -139,9 +139,11 @@ public:
     /*
       Get the tightenings entailed by the constraint.
     */
-    virtual void getEntailedTightenings( List<Tightening> &tightenings ) const = 0;
+    virtual void getEntailedTightenings( List<Tightening> &tightenings )  = 0;
 
     void setStatistics( Statistics *statistics );
+
+	virtual void tightenPL( Tightening tightening, List<Tightening> & tightenings ) = 0;
 
 protected:
     bool _constraintActive;

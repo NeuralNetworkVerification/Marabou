@@ -210,145 +210,145 @@ public:
 
 	void test_tighten_pl()
 	{
-        // InputQuery inputQuery;
-		// inputQuery.setNumberOfVariables( 7 );
-        // inputQuery.setLowerBound( 1, 0 );
-        // inputQuery.setUpperBound( 1, 1 );
-        // inputQuery.setLowerBound( 2, 2 );
-        // inputQuery.setUpperBound( 2, 3 );
-        // inputQuery.setLowerBound( 3, 0 );
-        // inputQuery.setUpperBound( 3, 0 );
-		// inputQuery.setLowerBound( 4, 5 );
-		// inputQuery.setUpperBound( 4, 7 );
+         InputQuery inputQuery;
+		 inputQuery.setNumberOfVariables( 7 );
+         inputQuery.setLowerBound( 1, 0 );
+         inputQuery.setUpperBound( 1, 1 );
+         inputQuery.setLowerBound( 2, 2 );
+         inputQuery.setUpperBound( 2, 3 );
+         inputQuery.setLowerBound( 3, 0 );
+         inputQuery.setUpperBound( 3, 0 );
+		 inputQuery.setLowerBound( 4, 5 );
+		 inputQuery.setUpperBound( 4, 7 );
 
-		// ReluConstraint *relu = new ReluConstraint( 5, 0 );
-		// MaxConstraint *max = new MaxConstraint( 6, Set<unsigned>( { 4, 0 } ) );
-		// inputQuery.addPiecewiseLinearConstraint( relu );
-		// inputQuery.addPiecewiseLinearConstraint( max );
+		 ReluConstraint *relu = new ReluConstraint( 5, 0 );
+		 MaxConstraint *max = new MaxConstraint( 6, Set<unsigned>( { 4, 0 } ) );
+		 inputQuery.addPiecewiseLinearConstraint( relu );
+		 inputQuery.addPiecewiseLinearConstraint( max );
 
 
-        // // 2 * x0 + x1 - x2 = 10
-        // //
-        // // x0 = 5 - 1/2 x1 + 1/2 x2
-        // //
-        // // x0.lb = 5 - 1/2 x1.ub + 1/2 x2.lb = 5 - 1/2 + 1 = 5.5
-        // // x0.ub = 5 - 1/2 x1.lb + 1/2 x2.ub = 5 - 0 + 1.5 = 6.5
-		// //
-		// // x5 = Relu( 0, x0 )
-		// // x5.lb = 5.5
-		// // x5.ub = 6.5
-		// //
-		// // x6 = Max( x0, x4 )
-		// // x6.lb = 5.5
-		// // x6.ub = 7
+         // 2 * x0 + x1 - x2 = 10
+         //
+         // x0 = 5 - 1/2 x1 + 1/2 x2
+         //
+         // x0.lb = 5 - 1/2 x1.ub + 1/2 x2.lb = 5 - 1/2 + 1 = 5.5
+         // x0.ub = 5 - 1/2 x1.lb + 1/2 x2.ub = 5 - 0 + 1.5 = 6.5
+		 //
+		 // x5 = Relu( 0, x0 )
+		 // x5.lb = 5.5
+		 // x5.ub = 6.5
+		 //
+		 // x6 = Max( x0, x4 )
+		 // x6.lb = 5.5
+		 // x6.ub = 7
 
-        // Equation equation;
-        // equation.addAddend( 2, 0 );
-        // equation.addAddend( 1, 1 );
-        // equation.addAddend( -1, 2 );
-        // equation.setScalar( 10 );
-        // inputQuery.addEquation( equation );
+         Equation equation;
+         equation.addAddend( 2, 0 );
+         equation.addAddend( 1, 1 );
+         equation.addAddend( -1, 2 );
+         equation.setScalar( 10 );
+         inputQuery.addEquation( equation );
 
-		// Preprocessor preprocess( inputQuery );
-		// preprocess.tightenBounds();
-		// preprocess.tightenPL();
+		 Preprocessor preprocess( inputQuery );
+		 preprocess.tightenBounds();
+		 preprocess.tightenPL();
 
-		// InputQuery processed = preprocess.getInputQuery();
-        // TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 0 ), 5.5 ) );
-        // TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 0 ), 6.5 ) );
-		// TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 5 ), 5.5 ) );
-		// TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 5 ), 6.5 ) );
-		// TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 6 ), 5.5 ) );
-		// TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 6 ), 7 ) );
+		 InputQuery processed = preprocess.getInputQuery();
+         TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 0 ), 5.5 ) );
+         TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 0 ), 6.5 ) );
+		 TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 5 ), 5.5 ) );
+		 TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 5 ), 6.5 ) );
+		 TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 6 ), 5.5 ) );
+		 TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 6 ), 7 ) );
 
-		// InputQuery inputQuery2;
-		// inputQuery2.setNumberOfVariables( 17 );
-		// inputQuery2.setLowerBound( 0, 0 );
-		// inputQuery2.setUpperBound( 0, 10 );
-        // inputQuery2.setLowerBound( 2, 5 );
-        // inputQuery2.setUpperBound( 2, 13 );
-        // inputQuery2.setUpperBound( 3, 10 );
-   		// inputQuery2.setLowerBound( 4, 4 );
-		// inputQuery2.setLowerBound( 5, 0 );
-		// inputQuery2.setUpperBound( 5, 1 );
-		// inputQuery2.setLowerBound( 6, 0 );
-		// inputQuery2.setUpperBound( 6, 2 );
-		// inputQuery2.setLowerBound( 7, -1 );
-		// inputQuery2.setUpperBound( 7, 0 );
-		// inputQuery2.setLowerBound( 8, 0 );
-		// inputQuery2.setUpperBound( 8, 2 );
-		// inputQuery2.setLowerBound( 9, 0 );
-		// inputQuery2.setUpperBound( 9, 1 );
-		// inputQuery2.setLowerBound( 10, -1 );
-		// inputQuery2.setUpperBound( 10, 0 );
+		 InputQuery inputQuery2;
+		 inputQuery2.setNumberOfVariables( 17 );
+		 inputQuery2.setLowerBound( 0, 0 );
+		 inputQuery2.setUpperBound( 0, 10 );
+         inputQuery2.setLowerBound( 2, 5 );
+         inputQuery2.setUpperBound( 2, 13 );
+         inputQuery2.setUpperBound( 3, 10 );
+   		 inputQuery2.setLowerBound( 4, 4 );
+		 inputQuery2.setLowerBound( 5, 0 );
+		 inputQuery2.setUpperBound( 5, 1 );
+		 inputQuery2.setLowerBound( 6, 0 );
+		 inputQuery2.setUpperBound( 6, 2 );
+		 inputQuery2.setLowerBound( 7, -1 );
+		 inputQuery2.setUpperBound( 7, 0 );
+		 inputQuery2.setLowerBound( 8, 0 );
+		 inputQuery2.setUpperBound( 8, 2 );
+		 inputQuery2.setLowerBound( 9, 0 );
+		 inputQuery2.setUpperBound( 9, 1 );
+		 inputQuery2.setLowerBound( 10, -1 );
+		 inputQuery2.setUpperBound( 10, 0 );
 
-		// ReluConstraint *relu2 = new ReluConstraint( 0, 1 );
-		// MaxConstraint *max2 = new MaxConstraint( 2, Set<unsigned>( { 4, 3 } ) );
-		// MaxConstraint *max3 = new MaxConstraint( 5, Set<unsigned>( { 6, 7 } ) );
-		// MaxConstraint *max4 = new MaxConstraint( 8, Set<unsigned>( { 9, 10} ) );
-		// inputQuery2.addPiecewiseLinearConstraint( relu2 );
-		// inputQuery2.addPiecewiseLinearConstraint( max2 );
-		// inputQuery2.addPiecewiseLinearConstraint( max3 );
-		// inputQuery2.addPiecewiseLinearConstraint( max4 );
+		 ReluConstraint *relu2 = new ReluConstraint( 0, 1 );
+		 MaxConstraint *max2 = new MaxConstraint( 2, Set<unsigned>( { 4, 3 } ) );
+		 MaxConstraint *max3 = new MaxConstraint( 5, Set<unsigned>( { 6, 7 } ) );
+		 MaxConstraint *max4 = new MaxConstraint( 8, Set<unsigned>( { 9, 10} ) );
+		 inputQuery2.addPiecewiseLinearConstraint( relu2 );
+		 inputQuery2.addPiecewiseLinearConstraint( max2 );
+		 inputQuery2.addPiecewiseLinearConstraint( max3 );
+		 inputQuery2.addPiecewiseLinearConstraint( max4 );
 
-		// Preprocessor preprocess2( inputQuery2 );
-		// preprocess2.tightenPL();
-		// InputQuery processed2 = preprocess2.getInputQuery();
+		 Preprocessor preprocess2( inputQuery2 );
+		 preprocess2.tightenPL();
+		 InputQuery processed2 = preprocess2.getInputQuery();
 
-		// // x0 = Relu( 0, x1 )
-		// // x0 = [0, 10]
-		// // x1 = [-inf, +inf]
-		// // x1.lb = -inf
-		// // x1.ub = 10
-		// //
-		// // x2 = Max( x3, x4 )
-		// // x2 = [5, 13]
-		// // x3 = [-inf, 10]
-		// // x4 = [4, inf]
-		// // x2.lb = 5
-		// // x2.ub = 13
-		// // x3.lb = -inf
-		// // x3.ub = 10
-		// // x4.lb = 4
-		// // x4.ub = 13
-		// //
-		// // x5 = Max( x6, x7 )
-		// // x5 = [0, 1]
-		// // x6 = [0, 2]
-		// // x7 = [-1, 0]
-		// // x5.lb = 0
-		// // x5.ub = 1
-		// // x6.lb = 0
-		// // x6.ub = 1
-		// //
-		// // x8 = Max( x9, x10 )
-		// // x8 = [0, 2]
-		// // x9 = [0, 1]
-		// // x10 = [-1, 0]
-		// // x8.lb = 0
-		// // x8.ub = 1
-		// TS_ASSERT( FloatUtils::areEqual( processed2.getLowerBound( 0 ), 0 ) );
-		// TS_ASSERT( FloatUtils::areEqual( processed2.getUpperBound( 0  ), 10 ) );
-		// TS_ASSERT( FloatUtils::areEqual( processed2.getLowerBound( 1 ), FloatUtils::negativeInfinity() ) );
-		// TS_ASSERT( FloatUtils::areEqual( processed2.getUpperBound( 1 ), 10 ) );
-		// TS_ASSERT( FloatUtils::areEqual( processed2.getLowerBound( 2 ), 5 ) );
-		// TS_ASSERT( FloatUtils::areEqual( processed2.getUpperBound( 2 ), 13 ) );
-		// TS_ASSERT( FloatUtils::areEqual( processed2.getLowerBound( 3 ), FloatUtils::negativeInfinity() ) );
-		// TS_ASSERT( FloatUtils::areEqual( processed2.getUpperBound( 3 ), 10 ) );
-		// TS_ASSERT( FloatUtils::areEqual( processed2.getLowerBound( 4 ), 4 ) );
-		// TS_ASSERT( FloatUtils::areEqual( processed2.getUpperBound( 4 ), 13 ) );
-		// TS_ASSERT( FloatUtils::areEqual( processed2.getLowerBound( 5 ), 0 ) );
-		// TS_ASSERT( FloatUtils::areEqual( processed2.getUpperBound( 5 ), 1 ) );
-		// TS_ASSERT( FloatUtils::areEqual( processed2.getLowerBound( 6 ), 0 ) );
-		// TS_ASSERT( FloatUtils::areEqual( processed2.getUpperBound( 6 ), 1 ) );
-		// TS_ASSERT( FloatUtils::areEqual( processed2.getLowerBound( 7 ), -1 ) );
-		// TS_ASSERT( FloatUtils::areEqual( processed2.getUpperBound( 7 ), 0 ) );
-		// TS_ASSERT( FloatUtils::areEqual( processed2.getLowerBound( 8 ), 0 ) );
-		// TS_ASSERT( FloatUtils::areEqual( processed2.getUpperBound( 8 ), 1 ) );
-		// TS_ASSERT( FloatUtils::areEqual( processed2.getLowerBound( 9 ), 0 ) );
-		// TS_ASSERT( FloatUtils::areEqual( processed2.getUpperBound( 9 ), 1 ) );
-		// TS_ASSERT( FloatUtils::areEqual( processed2.getLowerBound( 10 ), -1 ) );
-		// TS_ASSERT( FloatUtils::areEqual( processed2.getUpperBound( 10 ), 0 ) );
+		 // x0 = Relu( 0, x1 )
+		 // x0 = [0, 10]
+		 // x1 = [-inf, +inf]
+		 // x1.lb = -inf
+		 // x1.ub = 10
+		 //
+		 // x2 = Max( x3, x4 )
+		 // x2 = [5, 13]
+		 // x3 = [-inf, 10]
+		 // x4 = [4, inf]
+		 // x2.lb = 5
+		 // x2.ub = 13
+		 // x3.lb = -inf
+		 // x3.ub = 10
+		 // x4.lb = 4
+		 // x4.ub = 13
+		 //
+		 // x5 = Max( x6, x7 )
+		 // x5 = [0, 1]
+		 // x6 = [0, 2]
+		 // x7 = [-1, 0]
+		 // x5.lb = 0
+		 // x5.ub = 1
+		 // x6.lb = 0
+		 // x6.ub = 1
+		 //
+		 // x8 = Max( x9, x10 )
+		 // x8 = [0, 2]
+		 // x9 = [0, 1]
+		 // x10 = [-1, 0]
+		 // x8.lb = 0
+		 // x8.ub = 1
+		 TS_ASSERT( FloatUtils::areEqual( processed2.getLowerBound( 0 ), 0 ) );
+		 TS_ASSERT( FloatUtils::areEqual( processed2.getUpperBound( 0  ), 10 ) );
+		 TS_ASSERT( FloatUtils::areEqual( processed2.getLowerBound( 1 ), FloatUtils::negativeInfinity() ) );
+		 TS_ASSERT( FloatUtils::areEqual( processed2.getUpperBound( 1 ), 10 ) );
+		 TS_ASSERT( FloatUtils::areEqual( processed2.getLowerBound( 2 ), 5 ) );
+		 TS_ASSERT( FloatUtils::areEqual( processed2.getUpperBound( 2 ), 13 ) );
+		 TS_ASSERT( FloatUtils::areEqual( processed2.getLowerBound( 3 ), FloatUtils::negativeInfinity() ) );
+		 TS_ASSERT( FloatUtils::areEqual( processed2.getUpperBound( 3 ), 10 ) );
+		 TS_ASSERT( FloatUtils::areEqual( processed2.getLowerBound( 4 ), 4 ) );
+		 TS_ASSERT( FloatUtils::areEqual( processed2.getUpperBound( 4 ), 13 ) );
+		 TS_ASSERT( FloatUtils::areEqual( processed2.getLowerBound( 5 ), 0 ) );
+		 TS_ASSERT( FloatUtils::areEqual( processed2.getUpperBound( 5 ), 1 ) );
+		 TS_ASSERT( FloatUtils::areEqual( processed2.getLowerBound( 6 ), 0 ) );
+		 TS_ASSERT( FloatUtils::areEqual( processed2.getUpperBound( 6 ), 1 ) );
+		 TS_ASSERT( FloatUtils::areEqual( processed2.getLowerBound( 7 ), -1 ) );
+		 TS_ASSERT( FloatUtils::areEqual( processed2.getUpperBound( 7 ), 0 ) );
+		 TS_ASSERT( FloatUtils::areEqual( processed2.getLowerBound( 8 ), 0 ) );
+		 TS_ASSERT( FloatUtils::areEqual( processed2.getUpperBound( 8 ), 1 ) );
+		 TS_ASSERT( FloatUtils::areEqual( processed2.getLowerBound( 9 ), 0 ) );
+		 TS_ASSERT( FloatUtils::areEqual( processed2.getUpperBound( 9 ), 1 ) );
+		 TS_ASSERT( FloatUtils::areEqual( processed2.getLowerBound( 10 ), -1 ) );
+		 TS_ASSERT( FloatUtils::areEqual( processed2.getUpperBound( 10 ), 0 ) );
 	}
 
 	void test_eliminate_variables()
@@ -408,7 +408,117 @@ public:
 		TS_ASSERT( FloatUtils::areEqual( processed.getEquations().back()._addends.size(), 1 ) );
 		TS_ASSERT( FloatUtils::areEqual( processed.getEquations().back()._addends.front()._variable, 1 ) );
 	}
+	void test_saturation()
+	{
+		InputQuery inputQuery;
 
+		inputQuery.setNumberOfVariables( 5 );
+		inputQuery.setLowerBound( 1, 0 );
+		inputQuery.setUpperBound( 1, 5 );
+		inputQuery.setUpperBound( 2, 3 );
+		inputQuery.setLowerBound( 3, 1 );
+		inputQuery.setUpperBound( 3, 5 );
+
+		MaxConstraint *max = new MaxConstraint( 1, Set<unsigned>( { 0, 3 } ) );
+		inputQuery.addPiecewiseLinearConstraint( max );
+		Equation equation1;
+		equation1.addAddend( 1, 0 );
+		equation1.addAddend( 1, 1 );
+		equation1.addAddend( 1, 2 );
+		equation1.setScalar( 10 );
+		inputQuery.addEquation( equation1 );
+
+		// x0 + x1 + x2 = 10
+		// x1 = Max( x0, x3 )
+		// x0 = [-inf, inf]
+		// x1 = [0, 5]
+		// x2 = [-inf, 3]
+		// x3 = [1, 5]
+		// 
+		// tighten equation bounds
+		// x0 = 10 - x1 - x2
+		// x0 = [2, inf]
+		//
+		// tighten max bounds
+		// [0, 5] = Max( [2, inf], [1, 5] )
+		// result
+		// [2, 5] = Max( [2, 5], [1, 5] )
+		//
+		// tighten equation bounds
+		// [2, 5] + [2, 5] + [-inf, 3] = 10
+		// x2 = 10 - [2, 5] - [2, 5]
+		// x2 = [0, 3] 
+		// 3 is tighter than 6, keep 3
+		//
+		// x0 = [2, 5]
+		// x1 = [2, 5]
+		// x2 = [0, 3]
+		// x3 = [1. 5] 
+
+		Preprocessor preprocess( inputQuery );
+		InputQuery project = preprocess.preprocess();
+
+		TS_ASSERT( FloatUtils::areEqual( project.getLowerBound( 0 ), 2 ) );
+		TS_ASSERT( FloatUtils::areEqual( project.getUpperBound( 0 ), 5 ) );
+		TS_ASSERT( FloatUtils::areEqual( project.getLowerBound( 1 ), 2 ) );
+		TS_ASSERT( FloatUtils::areEqual( project.getUpperBound( 1 ), 5 ) );
+		TS_ASSERT( FloatUtils::areEqual( project.getLowerBound( 2 ), 0 ) );
+		TS_ASSERT( FloatUtils::areEqual( project.getUpperBound( 2 ), 3 ) );
+		TS_ASSERT( FloatUtils::areEqual( project.getLowerBound( 3 ), 1 ) );
+		TS_ASSERT( FloatUtils::areEqual( project.getUpperBound( 3 ), 5 ) );
+		
+		InputQuery inputQuery2;
+
+		inputQuery2.setNumberOfVariables( 5 );
+		inputQuery2.setLowerBound( 1, 0 );
+		inputQuery2.setUpperBound( 1, 6 );
+		inputQuery2.setUpperBound( 2, 3 );
+
+		Equation equation;
+		equation.addAddend( 1, 0 );
+		equation.addAddend( 1, 1 );
+		equation.addAddend( 1, 2 );
+		equation.setScalar( 10 );
+		inputQuery2.addEquation( equation1 );
+
+		ReluConstraint *relu = new ReluConstraint( 1, 0 );
+		inputQuery2.addPiecewiseLinearConstraint( relu );
+		
+		// x0 + x1 + x2 = 10
+		// x1 = Relu( 0, x0 )
+		// x0 = [-inf, inf]
+		// x1 = [0, 6]
+		// x2 = [-inf, 3]
+		// 
+		// tighten equation bounds
+		// x0 = 10 - x1 - x2
+		// x0 = [1, inf]
+		//
+		// tighten relu bounds
+		// [0, 6] = Relu( 0, [1, inf] )
+		// result
+		// [1, 6] = Relu( 0, [1, 6] )
+		//
+		// tighten equation bounds
+		// [1, 6] + [1, 6] + [-inf, 3] = 10
+		// x2 = 10 - [1, 6] - [1, 6]
+		// x2 = [-2, 3] 
+		// 3 is tighter than 8, keep 3
+		//
+		// x0 = [1, 6]
+		// x1 = [1, 6]
+		// x2 = [-2, 3]
+
+		Preprocessor preprocess2( inputQuery2 );
+		InputQuery reluInput = preprocess2.preprocess();
+		
+		TS_ASSERT( FloatUtils::areEqual( reluInput.getLowerBound( 0 ), 1 ) );
+		TS_ASSERT( FloatUtils::areEqual( reluInput.getUpperBound( 0 ), 6 ) );
+		TS_ASSERT( FloatUtils::areEqual( reluInput.getLowerBound( 1 ), 1 ) );
+		TS_ASSERT( FloatUtils::areEqual( reluInput.getUpperBound( 1 ), 6 ) );
+		TS_ASSERT( FloatUtils::areEqual( reluInput.getLowerBound( 2 ), -2 ) );
+		TS_ASSERT( FloatUtils::areEqual( reluInput.getUpperBound( 2 ), 3 ) );
+	}
 };
 
 //
