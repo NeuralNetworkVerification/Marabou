@@ -187,7 +187,7 @@ bool Engine::performSimplexStep()
 
         // We don't want to re-consider this candidate in future
         // iterations
-        excludedEnteringVariables.insert( _tableau->getEnteringVariable() );
+        excludedEnteringVariables.insert( _tableau->getEnteringVariableIndex() );
 
         // Pick a leaving variable
         _tableau->computeChangeColumn();
