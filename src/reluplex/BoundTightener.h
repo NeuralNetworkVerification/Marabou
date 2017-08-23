@@ -46,11 +46,11 @@ public:
 
 private:
   	/*
-	    Add a given tightening to the queue.
-	  */
-	  void enqueueTightening( const Tightening &tightening );
+      Add a given tightening to the queue.
+    */
+    void enqueueTightening( const Tightening &tightening );
 
-	  Queue<Tightening> _tighteningRequests;
+    Queue<Tightening> _tighteningRequests;
 
     /*
       Statistics collection

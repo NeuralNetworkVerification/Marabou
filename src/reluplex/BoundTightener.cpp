@@ -21,29 +21,29 @@ BoundTightener::BoundTightener()
 
 void BoundTightener::deriveTightenings( ITableau &tableau )
 {
-	
 	if ( _statistics )
         _statistics->incNumRowsExaminedByRowTightener();
-
-    // Extract the variable's row from the tableau
-	unsigned numNonBasic = tableau.getN() - tableau.getM();
-	unsigned enteringIndex = tableau.getEnteringVariableIndex();
 
 	// The entering/leaving assignments are reversed because these are called post-pivot.
 	unsigned enteringVariable = tableau.getLeavingVariable();
 	unsigned leavingVariable = tableau.getEnteringVariable();
-	
+
 	const TableauRow &row = *tableau.getPivotRow();
-	
+
+    unsigned enteringIndex = tableau.getEnteringVariableIndex();
 	double enteringCoef = row[enteringIndex];
 
-	// pre pivot row says
-	// leaving = enteringCoef * entering + sum ci xi + b
-	// where sum runs over nonbasic vars (that are not entering).
-	// rearrange to
-	// entering = leaving / enteringCoef - sum ci/enteringCoef xi
-	// - b / enteringCoef
-	
+	/*
+      The pre-pivot row says:
+
+         leaving = enteringCoef * entering + sum ci xi + b
+
+      where sum runs over nonbasic vars (that are not entering).
+      Rearrange to
+
+         entering = leaving / enteringCoef - sum ci/enteringCoef xi - b / enteringCoef
+    */
+
 	// Get right hand side
     double constCoef = -row._scalar / enteringCoef;
 
@@ -51,6 +51,7 @@ void BoundTightener::deriveTightenings( ITableau &tableau )
 	double tightenedLowerBound = constCoef;
 	double tightenedUpperBound = constCoef;
 
+    unsigned numNonBasic = tableau.getN() - tableau.getM();
 	for ( unsigned i = 0; i < numNonBasic; ++i )
 	{
 		const TableauRow::Entry &entry( row._row[i] );

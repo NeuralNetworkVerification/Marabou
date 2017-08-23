@@ -10,8 +10,8 @@
  ** directory for licensing information.\endverbatim
  **/
 
-#ifndef __Time_h__
-#define __Time_h__
+#ifndef __TimeUtils_h__
+#define __TimeUtils_h__
 
 #include "MString.h"
 
@@ -26,11 +26,11 @@ public:
     static String timePassed( time_t then, time_t now );
 
     // Return time in milliseconds
-    static unsigned timePassed( struct timeval then, struct timeval now );
+    static unsigned long long timePassed( struct timeval then, struct timeval now );
     static String now();
 };
 
-#endif // __Time_h__
+#endif // __TimeUtils_h__
 
 //
 // Local Variables:

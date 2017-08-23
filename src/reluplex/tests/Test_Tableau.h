@@ -908,6 +908,8 @@ public:
         // Basic index #1 --> variable 5
         tableau->setEnteringVariableIndex( 2 );
         tableau->setLeavingVariableIndex( 1 );
+        tableau->computeChangeColumn();
+
         TS_ASSERT_THROWS_NOTHING( tableau->performDegeneratePivot() );
         TS_ASSERT( tableau->isBasic( 2 ) );
         TS_ASSERT( !tableau->isBasic( 5 ) );

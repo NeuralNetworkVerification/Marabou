@@ -33,6 +33,10 @@ public:
     // Tolerance when checking whether the value computed for a basic variable is out of bounds
     static const double BOUND_COMPARISON_TOLERANCE;
 
+    // Tolerance when checking whether a basic variable depends on a non-basic variable, by looking
+    // at the change column, as part of a pivot operation.
+    static const double PIVOT_CHANGE_COLUMN_TOLERANCE;
+
     // Toggle query-preprocessing on/off
 	static const bool PREPROCESS_INPUT_QUERY;
 

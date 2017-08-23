@@ -142,7 +142,8 @@ bool ProjectedSteepestEdgeRule::select( ITableau &tableau, const Set<unsigned> &
     unsigned bestCandidate = *it;
     double gammaValue = _gamma[*it];
     double bestValue =
-        FloatUtils::isZero( gammaValue ) ? 0 : ( costFunction[*it] * costFunction[*it] ) / _gamma[*it];
+        !FloatUtils::isPositive( gammaValue ) ? 0 : ( costFunction[*it] * costFunction[*it] ) / _gamma[*it];
+
     ++it;
 
     while ( it != candidates.end() )
@@ -235,8 +236,8 @@ void ProjectedSteepestEdgeRule::prePivotHook( const ITableau &tableau, bool fake
         /* compute new gamma[j] */
         t1 = _gamma[i] + r * ( r * accurateGamma + s + s );
         t2 = ( ( _referenceSpace[nonBasic] ? 1.0 : 0.0 ) +
-               ( _referenceSpace[entering] ? 1.0 : 0.0 ) * r * r );
-        _gamma[i] = ( t1 >= t2 ? t1 : t2 );
+               ( ( _referenceSpace[entering] ? 1.0 : 0.0 ) * r * r ) );
+        _gamma[i] = FloatUtils::max( t1, t2 );
     }
 
     log( "PrePivotHook done" );

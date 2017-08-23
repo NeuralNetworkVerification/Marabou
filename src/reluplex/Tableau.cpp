@@ -936,9 +936,6 @@ void Tableau::performDegeneratePivot()
     if ( _usingSteepestEdge )
         updateGamma();
 
-    // Compute change column
-    computeChangeColumn();
-
     unsigned currentBasic = _basicIndexToVariable[_leavingVariable];
     unsigned currentNonBasic = _nonBasicIndexToVariable[_enteringVariable];
 
@@ -1084,7 +1081,7 @@ void Tableau::pickLeavingVariable( double *changeColumn )
         // constraint.
         for ( unsigned i = 0; i < _m; ++i )
         {
-            if ( !FloatUtils::isZero( changeColumn[i] ) )
+            if ( !FloatUtils::isZero( changeColumn[i], GlobalConfiguration::PIVOT_CHANGE_COLUMN_TOLERANCE ) )
             {
                 double ratio = ratioConstraintPerBasic( i, changeColumn[i], decrease );
                 if ( ratio > _changeRatio )

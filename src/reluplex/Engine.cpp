@@ -44,6 +44,8 @@ Engine::~Engine()
 
 bool Engine::solve()
 {
+    _statistics.stampStartingTime();
+
     while ( true )
     {
         mainLoopStatistics();
@@ -297,27 +299,33 @@ void Engine::fixViolatedPlConstraintIfPossible()
     TableauRow row( _tableau->getN() - _tableau->getM() );
     _tableau->getTableauRow( _tableau->variableToIndex( fix._variable ), &row );
 
-	unsigned nonBasic;
-    bool done = false;
-    unsigned i = 0;
-    while ( !done && ( i < _tableau->getN() - _tableau->getM() ) )
+    // Pick the variable with the largest coefficient in this row for pivoting,
+    // to increase numerical stability.
+    unsigned bestCandidate = row._row[0]._var;
+    unsigned bestValue = FloatUtils::abs( row._row[0]._coefficient );
+
+    unsigned n = _tableau->getN();
+    unsigned m = _tableau->getM();
+    for ( unsigned i = 1; i < n - m; ++i )
     {
-        // TODO: numerical stability. Pick a good candidate.
-        // TODO: guarantee that candidate does not participate in the
-        // same PL constraint?
-        if ( !FloatUtils::isZero( row._row[i]._coefficient ) )
+        double contenderValue = FloatUtils::abs( row._row[i]._coefficient );
+        if ( FloatUtils::gt( contenderValue, bestValue ) )
         {
-            done = true;
-            nonBasic = row._row[i]._var;
+            bestValue = contenderValue;
+            bestCandidate = row._row[i]._var;
         }
-        ++i;
     }
 
-    ASSERT( done );
+    ASSERT( !FloatUtils::isZero( bestValue ) );
 
     // Switch between nonBasic and the variable we need to fix
-    _tableau->setEnteringVariableIndex( _tableau->variableToIndex( nonBasic ) );
+    _tableau->setEnteringVariableIndex( _tableau->variableToIndex( bestCandidate ) );
     _tableau->setLeavingVariableIndex( _tableau->variableToIndex( fix._variable ) );
+
+    // Make sure the change column and pivot row are up-to-date - strategies
+    // such as projected steepest edge need these for their internal updates.
+    _tableau->computeChangeColumn();
+    _tableau->computePivotRow();
 
     _activeEntryStrategy->prePivotHook( _tableau, false );
     _tableau->performDegeneratePivot();
@@ -334,6 +342,10 @@ void Engine::processInputQuery( InputQuery &inputQuery )
 
 void Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 {
+    log( "processInputQuery starting\n" );
+
+    timeval start = TimeUtils::sampleMicro();
+
     // Inform the PL constraints of the initial variable bounds
     for ( const auto &plConstraint : inputQuery.getPiecewiseLinearConstraints() )
     {
@@ -396,6 +408,11 @@ void Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
     _activeEntryStrategy->initialize( _tableau );
 
     _statistics.setNumPlConstraints( _plConstraints.size() );
+
+    timeval end = TimeUtils::sampleMicro();
+    _statistics.setPreprocessingTime( TimeUtils::timePassed( start, end ) );
+
+    log( "processInputQuery done\n" );
 }
 
 void Engine::extractSolution( InputQuery &inputQuery )
