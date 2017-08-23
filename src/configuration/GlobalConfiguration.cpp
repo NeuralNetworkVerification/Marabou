@@ -18,6 +18,7 @@ const unsigned GlobalConfiguration::DEFAULT_DOUBLE_TO_STRING_PRECISION = 10;
 const unsigned GlobalConfiguration::REFACTORIZATION_THRESHOLD = 100;
 const unsigned GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY = 100;
 const double GlobalConfiguration::BOUND_COMPARISON_TOLERANCE = 0.001;
+const double GlobalConfiguration::PIVOT_CHANGE_COLUMN_TOLERANCE = 0.000000001;
 const bool GlobalConfiguration::PREPROCESS_INPUT_QUERY = true;
 const unsigned GlobalConfiguration::DEGRADATION_CHECKING_FREQUENCY = 10;
 const double GlobalConfiguration::ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD = 0.0001;
@@ -44,6 +45,7 @@ void GlobalConfiguration::print()
     printf( "  REFACTORIZATION_THRESHOLD: %u\n", REFACTORIZATION_THRESHOLD );
     printf( "  STATISTICS_PRINTING_FREQUENCY: %u\n", STATISTICS_PRINTING_FREQUENCY );
     printf( "  BOUND_COMPARISON_TOLERANCE: %.15lf\n", BOUND_COMPARISON_TOLERANCE );
+    printf( "  PIVOT_CHANGE_COLUMN_TOLERANCE: %.15lf\n", PIVOT_CHANGE_COLUMN_TOLERANCE );
     printf( "  PREPROCESS_INPUT_QUERY: %s\n", PREPROCESS_INPUT_QUERY ? "Yes" : "No" );
     printf( "  DEGRADATION_CHECKING_FREQUENCY: %u\n", DEGRADATION_CHECKING_FREQUENCY );
     printf( "  ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD: %.15lf\n", ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD );

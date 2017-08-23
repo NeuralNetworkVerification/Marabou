@@ -1084,7 +1084,7 @@ void Tableau::pickLeavingVariable( double *changeColumn )
         // constraint.
         for ( unsigned i = 0; i < _m; ++i )
         {
-            if ( !FloatUtils::isZero( changeColumn[i] ) )
+            if ( !FloatUtils::isZero( changeColumn[i], GlobalConfiguration::PIVOT_CHANGE_COLUMN_TOLERANCE ) )
             {
                 double ratio = ratioConstraintPerBasic( i, changeColumn[i], decrease );
                 if ( ratio > _changeRatio )
