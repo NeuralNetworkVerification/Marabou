@@ -936,9 +936,6 @@ void Tableau::performDegeneratePivot()
     if ( _usingSteepestEdge )
         updateGamma();
 
-    // Compute change column
-    computeChangeColumn();
-
     unsigned currentBasic = _basicIndexToVariable[_leavingVariable];
     unsigned currentNonBasic = _nonBasicIndexToVariable[_enteringVariable];
 
