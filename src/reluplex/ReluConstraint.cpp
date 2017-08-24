@@ -151,7 +151,6 @@ List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
     if ( _phaseStatus != PhaseStatus::PHASE_NOT_FIXED )
         throw ReluplexError( ReluplexError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
 
-    // Auxiliary variable bound, needed for either phase
     List<PiecewiseLinearCaseSplit> splits;
 
     splits.append( getInactiveSplit() );
