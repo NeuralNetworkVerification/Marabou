@@ -1149,11 +1149,11 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau() );
 
         // Do a pivot to shuffle the basis
-        TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
-
         tableau->setEnteringVariableIndex( 2u );
-
+        TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
         TS_ASSERT_THROWS_NOTHING( tableau->computeChangeColumn() );
+        tableau->pickLeavingVariable();
+
         TS_ASSERT_THROWS_NOTHING( tableau->performPivot() );
 
         // Variables x3 and x6 have been pivoted
@@ -1164,9 +1164,9 @@ public:
           Current basic variables are: x5, x3, x7
           Current basis matrix B0 is:
 
-                | 1 -1   |
-           B0 = |   -1   |
-                |   -1 1 |
+                | 1 1   |
+           B0 = |   1   |
+                |   1 1 |
 
            Now add a new new equation:
 
@@ -1254,14 +1254,14 @@ public:
         // Non-Basics
         TS_ASSERT_EQUALS( tableau->getValue( 0 ), 1.0 );
         TS_ASSERT_EQUALS( tableau->getValue( 1 ), 1.0 );
-        TS_ASSERT_EQUALS( tableau->getValue( 5 ), 114.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 5 ), 112.0 );
         TS_ASSERT_EQUALS( tableau->getValue( 3 ), 1.0 );
 
         // Basics
-        TS_ASSERT_EQUALS( tableau->getValue( 4 ), 218.0 );
-        TS_ASSERT_EQUALS( tableau->getValue( 2 ), 0.0 );
-        TS_ASSERT_EQUALS( tableau->getValue( 6 ), 409.0 );
-        TS_ASSERT_EQUALS( tableau->getValue( 7 ), 3.0 ); // 473 - 4 - 6 - 4*114 - 4
+        TS_ASSERT_EQUALS( tableau->getValue( 4 ), 216.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 2 ), 2.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 6 ), 403.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 7 ), 11.0 ); // 473 - 4 - 6 - 4 - 4*112
 
         TS_ASSERT_THROWS_NOTHING( delete tableau );
     }
