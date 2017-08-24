@@ -69,7 +69,7 @@ bool Engine::solve()
             _smtCore.performSplit();
 
             // TODO: We get wrong answers if we don't recompute. But, we also
-            // want to compute before performSplit(), so that the corrent
+            // want to compute before performSplit(), so that the correct
             // assignment is stored with the state.
             _tableau->computeAssignment();
             _tableau->computeBasicStatus();
@@ -162,6 +162,7 @@ bool Engine::performSimplexStep()
       3. If the combination is bad, go back to (1) and find the
          next-best entering variable.
     */
+
     _tableau->computeCostFunction();
 
     bool haveCandidate = false;
