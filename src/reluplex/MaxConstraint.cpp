@@ -163,50 +163,47 @@ void MaxConstraint::setUpperBound( unsigned variable, double value )
 	_upperBounds[variable] = value;
 }
 
-void MaxConstraint::getEntailedTightenings( List<Tightening> &// tightenings
-                                            ) const
+void MaxConstraint::getEntailedTightenings( List<Tightening> & tightenings ) 
 {
-    printf( "getEntailedTightenings not implemented yet for Max!\n" );
-    exit( 1 );
+	 double fLB = _lowerBounds.get( _f );
+	 double fUB = _upperBounds.get( _f );
+	 double maxUB = FloatUtils::negativeInfinity();
+	 double minLB = FloatUtils::negativeInfinity();
+
+	 for ( auto key : _upperBounds.keys() )
+	 {
+	 	if ( key == _f ) continue;
+	 	maxUB = FloatUtils::max( _upperBounds.get( key ), maxUB );
+	 }
+	 for ( auto key : _lowerBounds.keys() )
+	 {
+	 	if ( key == _f ) continue;
+	 	minLB = FloatUtils::max( _lowerBounds.get( key ), minLB );
+	 }
+	 if ( FloatUtils::gte( maxUB, fUB ) )
+	 {
+	 	tightenPL( Tightening( _f, fUB, Tightening::UB ), tightenings );
+	 	tightenings.append( Tightening( _f, fUB, Tightening::UB ) );
+	 }
+	 else if ( FloatUtils::lt( maxUB, fUB ) )
+	 {
+	 	_upperBounds[_f] = maxUB;
+	 	tightenings.append( Tightening( _f, maxUB, Tightening::UB ) );
+	 }
+	 if ( FloatUtils::lt( minLB, fLB ) )
+	 {
+	 	tightenPL( Tightening( _f, fLB, Tightening::LB ), tightenings );
+	 	tightenings.append( Tightening( _f, fLB, Tightening::LB ) );
+	 }
+	 else if ( FloatUtils::gt( minLB, fLB ) )
+	 {
+	 	_lowerBounds[_f] = minLB;
+	 	tightenings.append( Tightening( _f, minLB, Tightening::LB ) );
+	 }
 }
 
 void MaxConstraint::updateBounds()
 {
-	// double fLB = _lowerBounds.get( _f );
-	// double fUB = _upperBounds.get( _f );
-	// double maxUB = FloatUtils::negativeInfinity();
-	// double minLB = FloatUtils::negativeInfinity();
-
-	// for ( auto key : _upperBounds.keys() )
-	// {
-	// 	if ( key == _f ) continue;
-	// 	maxUB = FloatUtils::max( _upperBounds.get( key ), maxUB );
-	// }
-	// for ( auto key : _lowerBounds.keys() )
-	// {
-	// 	if ( key == _f ) continue;
-	// 	minLB = FloatUtils::max( _lowerBounds.get( key ), minLB );
-	// }
-	// if ( FloatUtils::gt( maxUB, fUB ) )
-	// {
-	// 	tightenPL( Tightening( _f, fUB, Tightening::UB ) );
-	// 	_entailedTightenings.push( Tightening( _f, fUB, Tightening::UB ) );
-	// }
-	// else if ( FloatUtils::lt( maxUB, fUB ) )
-	// {
-	// 	_upperBounds[_f] = maxUB;
-	// 	_entailedTightenings.push( Tightening( _f, maxUB, Tightening::UB ) );
-	// }
-	// if ( FloatUtils::lt( minLB, fLB ) )
-	// {
-	// 	tightenPL( Tightening( _f, fLB, Tightening::LB ) );
-	// 	_entailedTightenings.push( Tightening( _f, fLB, Tightening::LB ) );
-	// }
-	// else if ( FloatUtils::gt( minLB, fLB ) )
-	// {
-	// 	_lowerBounds[_f] = minLB;
-	// 	_entailedTightenings.push( Tightening( _f, minLB, Tightening::LB ) );
-	// }
 }
 
 bool MaxConstraint::participatingVariable( unsigned variable ) const
@@ -346,51 +343,47 @@ void MaxConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 
 void MaxConstraint::eliminateVariable( unsigned, double )
 {
-	//if ( var > _assignment.get( _
+/*
+	_eliminated.insert( var );
+	_lowerBounds[var] = value;
+	_upperBounds[var] = value;
+	if ( var == _f ) 
+		return;
+
+	if ( FloatUtils::gt( value, _lowerBounds.get( _f ) ) )
+		_lowerBounds[_f] = value;
+*/	
 }
 
-void MaxConstraint::tightenPL( Tightening // tighten
-                               )
+void MaxConstraint::tightenPL( Tightening tighten, List<Tightening> & tightenings )
 {
-
-	// if ( tighten._variable == _f )
-	// {
-	// 	//std::cout<<"tighten value in constraint: "<<tighten._value<<std::endl;
-	// 	if ( tighten._type == Tightening::LB && FloatUtils::gte( tighten._value, _lowerBounds[_f] ) )
-	// 	{
-	// 		for ( auto key : _lowerBounds.keys() )
-	// 		{
-	// 			if ( key == _f ) continue;
-	// 			if ( FloatUtils::areEqual( _lowerBounds.get( key ), tighten._value ) )
-	// 			{
-	// 				//notifyLowerBound( key, tighten._value );
-	// 				_lowerBounds[key] = tighten._value;
-	// 				_entailedTightenings.push( Tightening( key, tighten._value, Tightening::LB ) );
-	// 			}
-	// 		}
-	// 	}
-	// 	else if ( tighten._type == Tightening::UB && FloatUtils::lte( tighten._value, _upperBounds[_f] ) )
-	// 	{
-	// 		for ( auto key : _upperBounds.keys() )
-	// 		{
-	// 			if ( key == _f ) continue;
-	// 			if ( FloatUtils::gt( _upperBounds.get( key ), tighten._value ) )
-	// 			{
-	// 				//notifyUpperBound( key, tighten._value );
-	// 				_upperBounds[key] = tighten._value;
-	// 				_entailedTightenings.push( Tightening( key, tighten._value, Tightening::UB ) );
-	// 			}
-	// 		}
-	// 	}
-	// }
-	// /*else
-	// {
-	// 	if ( tighten._type == Tightening::LB )
-	// 		notifyLowerBound( tighten._variable, tighten._value );
-	// 	else
-	// 		notifyUpperBound( tighten._variable, tighten._value );
-	// }
-	// */
+	 if ( tighten._variable == _f )
+	 {
+	 	if ( tighten._type == Tightening::LB && FloatUtils::gte( tighten._value, _lowerBounds[_f] ) )
+	 	{
+	 		for ( auto key : _lowerBounds.keys() )
+	 		{
+	 			if ( key == _f ) continue;
+	 			if ( FloatUtils::areEqual( _lowerBounds.get( key ), tighten._value ) )
+	 			{
+	 				_lowerBounds[key] = tighten._value;
+	 				tightenings.append( Tightening( key, tighten._value, Tightening::LB ) );
+	 			}
+	 		}
+	 	}
+	 	else if ( tighten._type == Tightening::UB && FloatUtils::lte( tighten._value, _upperBounds[_f] ) )
+	 	{
+	 		for ( auto key : _upperBounds.keys() )
+	 		{
+	 			if ( key == _f ) continue;
+	 			if ( FloatUtils::gt( _upperBounds.get( key ), tighten._value ) )
+	 			{
+	 				_upperBounds[key] = tighten._value;
+	 				tightenings.append( Tightening( key, tighten._value, Tightening::UB ) );
+	 			}
+	 		}
+	 	}
+	 }
 }
 
 //

@@ -114,7 +114,7 @@ public:
 		{
 		}
 
-		void tightenPL( Tightening )
+		void tightenPL( Tightening, List<Tightening>& )
 		{
 		}
 
@@ -122,7 +122,7 @@ public:
 		{
 		}
 
-        void getEntailedTightenings( List<Tightening> & ) const
+        void getEntailedTightenings( List<Tightening> & ) 
         {
         }
     };

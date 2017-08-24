@@ -122,6 +122,11 @@ void InputQuery::addPiecewiseLinearConstraint( PiecewiseLinearConstraint *constr
     _plConstraints.append( constraint );
 }
 
+List<PiecewiseLinearConstraint *> &InputQuery::getPiecewiseLinearConstraints()
+{
+    return _plConstraints;
+}
+
 const List<PiecewiseLinearConstraint *> &InputQuery::getPiecewiseLinearConstraints() const
 {
     return _plConstraints;

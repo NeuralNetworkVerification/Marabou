@@ -20,7 +20,6 @@
 
 Preprocessor::Preprocessor( const InputQuery &query )
     : _preprocessed( query )
-	, _hasTightened( false )
 {
 }
 
@@ -42,23 +41,12 @@ InputQuery Preprocessor::preprocess()
         continueTightening = tightenBounds();
         continueTightening = tightenPL() || continueTightening;
     }
-
-    return _preprocessed;
+	return _preprocessed;
 }
 
 InputQuery Preprocessor::getInputQuery()
 {
 	return _preprocessed;
-}
-
-void Preprocessor::tightenEquationsAndPL()
-{
-	while ( _hasTightened )
-	{
-		tightenBounds();
-		tightenPL();
-		_hasTightened = false;
-	}
 }
 
 bool Preprocessor::tightenBounds()
@@ -182,7 +170,7 @@ bool Preprocessor::tightenBounds()
                                  _preprocessed.getUpperBound( addend._variable ) ) )
                 throw ReluplexError( ReluplexError::INVALID_BOUND_TIGHTENING, "Preprocessing bound error" );
         }
-    }
+    } 
 
     return tighterBoundFound;
 }
@@ -204,6 +192,7 @@ bool Preprocessor::tightenPL()
 
         for ( const auto &tightening : tightenings )
 		{
+			constraint->tightenPL( tightening, tightenings );
 			if ( ( tightening._type == Tightening::LB ) &&
                  FloatUtils::gt( tightening._value, _preprocessed.getLowerBound( tightening._variable ) ) )
             {
@@ -211,7 +200,8 @@ bool Preprocessor::tightenPL()
                 _preprocessed.setLowerBound( tightening._variable, tightening._value );
             }
 
-			else if ( FloatUtils::lt( tightening._value, _preprocessed.getUpperBound( tightening._variable ) ) )
+			else if ( ( tightening._type == Tightening::UB ) &&
+				 FloatUtils::lt( tightening._value, _preprocessed.getUpperBound( tightening._variable ) ) )
             {
                 tighterBoundFound = true;
                 _preprocessed.setUpperBound( tightening._variable, tightening._value );
@@ -271,8 +261,12 @@ void Preprocessor::eliminateVariables()
 			--changeLimit;
 			++addend;
 		}
-		if ( nRm == 0 )
+		if ( equation._addends.size() == 0 )
+		{
+			if ( !FloatUtils::isZero( equation._scalar ) )
+                throw ReluplexError( ReluplexError::EQUATION_INVALID, "variables eliminated incorrectly" );
 			_preprocessed.getEquations().erase( equation );
+		}
 	}
 	for ( auto pl : _preprocessed.getPiecewiseLinearConstraints() )
 	{

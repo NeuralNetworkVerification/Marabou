@@ -42,6 +42,7 @@ public:
 
     void addPiecewiseLinearConstraint( PiecewiseLinearConstraint *constraint );
     const List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints() const;
+	List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints();
 
     /*
       Methods for setting and getting the solution.

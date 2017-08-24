@@ -100,12 +100,14 @@ public:
     /*
       Get the tightenings entailed by the constraint.
     */
-    void getEntailedTightenings( List<Tightening> &tightenings ) const;
+    void getEntailedTightenings( List<Tightening> &tightenings );
 
     /*
       Dump the current state of the constraint.
     */
     void dump( String &output ) const;
+
+	void tightenPL( Tightening tighten, List<Tightening>& tightenings);
 
 private:
     unsigned _b, _f;
