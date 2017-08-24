@@ -24,7 +24,6 @@
 #include "ProjectedSteepestEdge.h"
 #include "SmtCore.h"
 #include "Statistics.h"
-#include "SteepestEdge.h"
 #include "InputQuery.h"
 
 class EngineState;
@@ -110,7 +109,6 @@ private:
     BlandsRule _blandsRule;
     DantzigsRule _dantzigsRule;
     NestedDantzigsRule _nestedDantzigsRule;
-    SteepestEdgeRule _steepestEdgeRule;
     ProjectedSteepestEdgeRule _projectedSteepestEdgeRule;
     EntrySelectionStrategy *_activeEntryStrategy;
 

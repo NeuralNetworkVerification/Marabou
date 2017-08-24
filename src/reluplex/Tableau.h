@@ -345,12 +345,10 @@ public:
 
     void useSteepestEdge( bool flag );
 
-    const double *getSteepestEdgeGamma() const;
-
     /*
-      Update gamma array during a pivot
+      Compute the current sum of infeasibilities
     */
-    void updateGamma();
+    double getSumOfInfeasibilities() const;
 
 private:
     typedef List<VariableWatcher *> VariableWatchers;
@@ -492,19 +490,6 @@ private:
     bool _usingSteepestEdge;
 
     /*
-      Array of gamma values for steepest edge pivot selection. Must be updated with
-      each pivot.
-     */
-    double *_steepestEdgeGamma;
-
-    /*
-       Working variables for updating gamma
-    */
-    double *_alpha;
-    double *_nu;
-    double *_work;
-
-    /*
       Free all allocated memory.
     */
     void freeMemoryIfNeeded();
@@ -520,18 +505,6 @@ private:
       Resize the relevant data structures to add a new row to the tableau.
     */
     void addRow();
-
-    /*
-      Initialize gamma array at tableau initialization for steepest edge
-      pivot selection
-    */
-    void initializeGamma();
-
-    /*
-      Recompute the gamma function. Useful after a row has been added to the
-      tableau.
-    */
-    void recomputeGamma();
 
     /*
       Helper function to compute dot product of two vectors of size m

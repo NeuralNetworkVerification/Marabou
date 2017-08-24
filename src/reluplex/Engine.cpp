@@ -30,9 +30,8 @@ Engine::Engine()
     _boundTightener.setStatistics( &_statistics );
 
     // _activeEntryStrategy = &_nestedDantzigsRule;
-    // _activeEntryStrategy = &_steepestEdgeRule;
-    _activeEntryStrategy = &_projectedSteepestEdgeRule;
-    // _activeEntryStrategy = &_dantzigsRule;
+     _activeEntryStrategy = &_projectedSteepestEdgeRule;
+     // _activeEntryStrategy = &_dantzigsRule;
     // _activeEntryStrategy = &_blandsRule;
 
     _activeEntryStrategy->setStatistics( &_statistics );
@@ -119,7 +118,7 @@ bool Engine::solve()
 
         if ( needToPop )
         {
-            // The current query is unsat, and we need to split.
+            // The current query is unsat, and we need to pop.
             // If we're at level 0, the whole query is unsat.
             if ( !_smtCore.popSplit() )
             {

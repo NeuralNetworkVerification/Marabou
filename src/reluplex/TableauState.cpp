@@ -25,7 +25,6 @@ TableauState::TableauState()
     , _nonBasicIndexToVariable( NULL )
     , _variableToIndex( NULL )
     , _basisFactorization( NULL )
-    , _steepestEdgeGamma( NULL )
 {
 }
 
@@ -90,12 +89,6 @@ TableauState::~TableauState()
         delete _basisFactorization;
         _basisFactorization = NULL;
     }
-
-    if ( _steepestEdgeGamma )
-    {
-        delete[] _steepestEdgeGamma;
-        _steepestEdgeGamma = NULL;
-    }
 }
 
 void TableauState::setDimensions( unsigned m, unsigned n )
@@ -142,10 +135,6 @@ void TableauState::setDimensions( unsigned m, unsigned n )
     _basisFactorization = new BasisFactorization( m );
     if ( !_basisFactorization )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::basisFactorization" );
-
-    _steepestEdgeGamma = new double[n-m];
-    if ( !_steepestEdgeGamma )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::steepestEdgeGamma" );
 }
 
 //

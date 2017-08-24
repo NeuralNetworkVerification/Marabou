@@ -37,7 +37,6 @@ public:
 
         lastEntries = NULL ;
         nextCostFunction = NULL;
-        steepestEdgeGamma = NULL;
     }
 
     ~MockTableau()
@@ -70,12 +69,6 @@ public:
         {
             delete[] nextCostFunction;
             nextCostFunction = NULL;
-        }
-
-        if ( steepestEdgeGamma )
-        {
-            delete[] steepestEdgeGamma;
-            steepestEdgeGamma = NULL;
         }
     }
 
@@ -122,9 +115,6 @@ public:
 
         nextCostFunction = new double[n - m];
         std::fill( nextCostFunction, nextCostFunction + ( n - m ), 0.0 );
-
-        steepestEdgeGamma = new double[n - m];
-        std::fill( steepestEdgeGamma, steepestEdgeGamma + ( n - m ), 1.0 );
 
         lastBtranInput = new double[m];
         nextBtranOutput = new double[m];
@@ -292,12 +282,6 @@ public:
     void dumpAssignment() {}
     void dumpEquations() {}
 
-    double *steepestEdgeGamma;
-    const double *getSteepestEdgeGamma() const
-    {
-	return steepestEdgeGamma;
-    }
-
     Map<unsigned, unsigned> nextNonBasicIndexToVariable;
     unsigned nonBasicIndexToVariable( unsigned index ) const
     {
@@ -415,6 +399,11 @@ public:
     {
         memcpy( lastBtranInput, input, lastM * sizeof(double) );
         memcpy( output, nextBtranOutput, lastM * sizeof(double) );
+    }
+
+    double getSumOfInfeasibilities() const
+    {
+        return 0;
     }
 };
 
