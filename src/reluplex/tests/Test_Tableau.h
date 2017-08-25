@@ -781,7 +781,6 @@ public:
 
         TS_ASSERT_EQUALS( row._scalar, -23.0 );
 
-
         TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 2, &row ) );
 
         entry = row._row[0];

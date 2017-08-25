@@ -162,13 +162,9 @@ List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
 PiecewiseLinearCaseSplit ReluConstraint::getInactiveSplit() const
 {
     // Inactive phase: b <= 0, f = 0
-    // Need to fix f because the bound might not be a tightening
     PiecewiseLinearCaseSplit inactivePhase;
     inactivePhase.storeBoundTightening( Tightening( _b, 0.0, Tightening::UB ) );
-    Equation inactiveEquation;
-    inactiveEquation.addAddend( 1, _f );
-    inactiveEquation.setScalar( 0 );
-    inactivePhase.addEquation( inactiveEquation, PiecewiseLinearCaseSplit::EQ );
+    inactivePhase.storeBoundTightening( Tightening( _f, 0.0, Tightening::UB ) );
     return inactivePhase;
 }
 

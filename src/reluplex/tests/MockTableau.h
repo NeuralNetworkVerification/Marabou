@@ -405,6 +405,14 @@ public:
     {
         return 0;
     }
+
+    void assignIndexToBasicVariable( unsigned /* variable */, unsigned /* index */ )
+    {
+    }
+
+    void verifyInvariants()
+    {
+    }
 };
 
 #endif // __MockTableau_h__

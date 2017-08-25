@@ -257,28 +257,27 @@ void Tableau::markAsBasic( unsigned variable )
     _basicVariables.insert( variable );
 }
 
+void Tableau::assignIndexToBasicVariable( unsigned variable, unsigned index )
+{
+    _basicIndexToVariable[index] = variable;
+    _variableToIndex[variable] = index;
+}
+
 void Tableau::initializeTableau()
 {
-    unsigned basicIndex = 0;
     unsigned nonBasicIndex = 0;
 
     // Assign variable indices
     for ( unsigned i = 0; i < _n; ++i )
     {
-        if ( _basicVariables.exists( i ) )
-        {
-            _basicIndexToVariable[basicIndex] = i;
-            _variableToIndex[i] = basicIndex;
-            ++basicIndex;
-        }
-        else
+        if ( !_basicVariables.exists( i ) )
         {
             _nonBasicIndexToVariable[nonBasicIndex] = i;
             _variableToIndex[i] = nonBasicIndex;
             ++nonBasicIndex;
         }
     }
-    ASSERT( basicIndex + nonBasicIndex == _n );
+    ASSERT( nonBasicIndex == _n - _m );
 
     // Set non-basics to lower bounds
     for ( unsigned i = 0; i < _n - _m; ++i )
@@ -1515,6 +1514,23 @@ void Tableau::log( const String &message )
 {
     if ( GlobalConfiguration::TABLEAU_LOGGING )
         printf( "Tableau: %s\n", message.ascii() );
+}
+
+void Tableau::verifyInvariants()
+{
+    for ( unsigned i = 0; i < _n - _m; ++i )
+    {
+        unsigned var = _nonBasicIndexToVariable[i];
+        if ( !( FloatUtils::gte( _nonBasicAssignment[i], _lowerBounds[var] ) &&
+                FloatUtils::lte( _nonBasicAssignment[i], _upperBounds[var] ) ) )
+        {
+            printf( "Tableau test invariants: bound violation!\n" );
+            printf( "Variable %u (non-basic #%u). Assignment: %lf. Range: [%lf, %lf]\n",
+                    var, i, _nonBasicAssignment[i], _lowerBounds[var], _upperBounds[var] );
+
+            exit( 1 );
+        }
+    }
 }
 
 //

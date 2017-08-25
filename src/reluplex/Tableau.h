@@ -89,9 +89,11 @@ public:
     /*
       Initialize the tableau matrices (_B and _AN) according to the
       initial set of basic variables. Assign all non-basic variables
-      to lower bounds and computes the assignment
+      to lower bounds and computes the assignment. Assign the initial basic
+      indices according to the equations.
     */
     void initializeTableau();
+    void assignIndexToBasicVariable( unsigned variable, unsigned index );
 
     /*
       A method for adding an additional equation to the tableau. The
@@ -343,8 +345,6 @@ public:
      */
     void setStatistics( Statistics *statistics );
 
-    void useSteepestEdge( bool flag );
-
     /*
       Compute the current sum of infeasibilities
     */
@@ -485,11 +485,6 @@ private:
     Statistics *_statistics;
 
     /*
-      Flag for whether or not steepest edge is used.
-    */
-    bool _usingSteepestEdge;
-
-    /*
       Free all allocated memory.
     */
     void freeMemoryIfNeeded();
@@ -506,14 +501,12 @@ private:
     */
     void addRow();
 
-    /*
-      Helper function to compute dot product of two vectors of size m
-    */
-    double dotProduct( const double *a, const double *b, unsigned m );
-
-    void printVector( const double *v, unsigned m );
-
     static void log( const String &message );
+
+    /*
+      For debugging purposes only
+    */
+    void verifyInvariants();
 };
 
 #endif // __Tableau_h__

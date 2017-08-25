@@ -101,6 +101,7 @@ public:
     virtual void dumpEquations() = 0;
     virtual unsigned nonBasicIndexToVariable( unsigned index ) const = 0;
     virtual unsigned basicIndexToVariable( unsigned index ) const = 0;
+    virtual void assignIndexToBasicVariable( unsigned variable, unsigned index ) = 0;
     virtual unsigned variableToIndex( unsigned index ) const = 0;
     virtual void addEquation( const Equation &equation ) = 0;
     virtual unsigned getM() const = 0;
@@ -116,6 +117,7 @@ public:
     virtual void forwardTransformation( const double *y, double *x ) const = 0;
     virtual void backwardTransformation( const double *y, double *x ) const = 0;
     virtual double getSumOfInfeasibilities() const = 0;
+    virtual void verifyInvariants() = 0;
 };
 
 #endif // __ITableau_h__
