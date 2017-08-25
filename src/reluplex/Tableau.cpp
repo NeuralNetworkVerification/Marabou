@@ -46,7 +46,6 @@ Tableau::Tableau()
     , _basicAssignmentStatus( ASSIGNMENT_INVALID )
     , _basicStatus( NULL )
     , _statistics( NULL )
-    , _usingSteepestEdge( false )
 {
 }
 
@@ -288,27 +287,6 @@ void Tableau::initializeTableau()
 
     // Recompute assignment
     computeAssignment();
-}
-
-void Tableau::printVector( const double *v, unsigned m )
-{
-    // For debugging
-    for ( unsigned i = 0; i < m; i++ )
-        printf( "%f ", v[i] );
-}
-
-double Tableau::dotProduct(const double *a, const double *b, unsigned m)
-{
-    // Helper function to multiply two vectors of size m
-    double result = 0;
-    for ( unsigned i = 0; i < m; ++i )
-        result += a[i] * b[i];
-    return result;
-}
-
-void Tableau::useSteepestEdge( bool flag )
-{
-    _usingSteepestEdge = flag;
 }
 
 void Tableau::computeAssignment()
