@@ -30,8 +30,8 @@ Engine::Engine()
     _boundTightener.setStatistics( &_statistics );
 
     // _activeEntryStrategy = &_nestedDantzigsRule;
-     _activeEntryStrategy = &_projectedSteepestEdgeRule;
-     // _activeEntryStrategy = &_dantzigsRule;
+    _activeEntryStrategy = &_projectedSteepestEdgeRule;
+    // _activeEntryStrategy = &_dantzigsRule;
     // _activeEntryStrategy = &_blandsRule;
 
     _activeEntryStrategy->setStatistics( &_statistics );
@@ -388,6 +388,7 @@ void Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         for ( const auto &addend : equation._addends )
             _tableau->setEntryValue( equationIndex, addend._variable, addend._coefficient );
 
+        _tableau->assignIndexToBasicVariable( equation._auxVariable, equationIndex );
         ++equationIndex;
     }
 
@@ -453,9 +454,7 @@ void Engine::storeState( EngineState &state ) const
 {
     _tableau->storeState( state._tableauState );
     for ( const auto &constraint : _plConstraints )
-    {
         state._plConstraintToState[constraint] = constraint->duplicateConstraint();
-    }
 
     state._numPlConstraintsDisabledByValidSplits = _numPlConstraintsDisabledByValidSplits;
 
