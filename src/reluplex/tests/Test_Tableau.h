@@ -111,6 +111,10 @@ public:
         tableau.setEntryValue( 2, 5, 0 );
         tableau.setEntryValue( 2, 6, 1 );
 
+        tableau.assignIndexToBasicVariable( 4, 0 );
+        tableau.assignIndexToBasicVariable( 5, 1 );
+        tableau.assignIndexToBasicVariable( 6, 2 );
+
         double b[3] = { 225, 117, 420 };
         tableau.setRightHandSide( b );
     }
