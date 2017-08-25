@@ -31,6 +31,7 @@ SOURCES += \
 	FreshVariables.cpp \
 	InputQuery.cpp \
 	LPElement.cpp \
+	MaxConstraint.cpp \
 	NestedDantzigsRule.cpp \
 	PiecewiseLinearCaseSplit.cpp \
 	PiecewiseLinearConstraint.cpp \
@@ -44,7 +45,7 @@ SOURCES += \
 	TableauState.cpp \
 	\
 	TableauFactory.cpp \
-	MaxConstraint.cpp\
+	ProjectedSteepestEdgeFactory.cpp \
 
 all:
 	./$(TEST_TARGET)

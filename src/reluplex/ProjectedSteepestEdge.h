@@ -13,11 +13,9 @@
 #ifndef __ProjectedSteepestEdge_h__
 #define __ProjectedSteepestEdge_h__
 
-#include "EntrySelectionStrategy.h"
+#include "IProjectedSteepestEdge.h"
 
-class String;
-
-class ProjectedSteepestEdgeRule : public EntrySelectionStrategy
+class ProjectedSteepestEdgeRule : public IProjectedSteepestEdgeRule
 {
 public:
     ProjectedSteepestEdgeRule();

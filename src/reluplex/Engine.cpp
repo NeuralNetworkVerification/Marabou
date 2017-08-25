@@ -30,7 +30,7 @@ Engine::Engine()
     _boundTightener.setStatistics( &_statistics );
 
     // _activeEntryStrategy = &_nestedDantzigsRule;
-    _activeEntryStrategy = &_projectedSteepestEdgeRule;
+    _activeEntryStrategy = _projectedSteepestEdgeRule;
     // _activeEntryStrategy = &_dantzigsRule;
     // _activeEntryStrategy = &_blandsRule;
 
@@ -302,7 +302,7 @@ void Engine::fixViolatedPlConstraintIfPossible()
     // Pick the variable with the largest coefficient in this row for pivoting,
     // to increase numerical stability.
     unsigned bestCandidate = row._row[0]._var;
-    unsigned bestValue = FloatUtils::abs( row._row[0]._coefficient );
+    double bestValue = FloatUtils::abs( row._row[0]._coefficient );
 
     unsigned n = _tableau->getN();
     unsigned m = _tableau->getM();
@@ -571,11 +571,6 @@ void Engine::checkDegradation()
 
     double degradation = _degradationChecker.computeDegradation( *_tableau );
     _statistics.setCurrentDegradation( degradation );
-}
-
-void Engine::setEntrySelectionStrategy( EntrySelectionStrategy *strategy )
-{
-    _activeEntryStrategy = strategy;
 }
 
 void Engine::log( const String &message )

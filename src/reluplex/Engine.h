@@ -21,7 +21,7 @@
 #include "IEngine.h"
 #include "Map.h"
 #include "NestedDantzigsRule.h"
-#include "ProjectedSteepestEdge.h"
+#include "AutoProjectedSteepestEdge.h"
 #include "SmtCore.h"
 #include "Statistics.h"
 #include "InputQuery.h"
@@ -61,11 +61,6 @@ public:
     */
     void storeState( EngineState &state ) const;
     void restoreState( const EngineState &state );
-
-    /*
-      Set the entry selection strategy.
-    */
-    void setEntrySelectionStrategy( EntrySelectionStrategy *strategy );
 
 private:
     /*
@@ -109,7 +104,7 @@ private:
     BlandsRule _blandsRule;
     DantzigsRule _dantzigsRule;
     NestedDantzigsRule _nestedDantzigsRule;
-    ProjectedSteepestEdgeRule _projectedSteepestEdgeRule;
+    AutoProjectedSteepestEdgeRule _projectedSteepestEdgeRule;
     EntrySelectionStrategy *_activeEntryStrategy;
 
     /*
@@ -191,7 +186,6 @@ private:
     void checkDegradation();
 
     static void log( const String &message );
-
 };
 
 #endif // __Engine_h__
