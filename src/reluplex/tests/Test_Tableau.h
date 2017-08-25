@@ -1025,7 +1025,7 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 4, 219 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 4, 228 ) );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 5, 112 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 5, 111 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 5, 114 ) );
 
         TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 6, 200 ) );
@@ -1065,12 +1065,11 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau->storeState( *tableauState ) );
 
         // Do some more stuff
-
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
         tableau->setEnteringVariableIndex( 2u );
         TS_ASSERT( hasCandidates( *tableau ) );
 
-        double d[] = { -1, +1, -1 };
+        double d[] = { -1, +2, -1 };
 
         TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
@@ -1351,8 +1350,6 @@ public:
         TS_TRACE( "When resizing the talbeau, allocate a larger size and only use part of it, "
                   "instead of increasing it one row at a time?" );
         TS_TRACE( "Make sure all watchers are properply informed when restoring a tabealu" );
-        TS_TRACE( "Add tests for gamma function computation, both during normal execution "
-                  "and after adding a row" );
     }
 };
 

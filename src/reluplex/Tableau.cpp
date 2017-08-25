@@ -436,7 +436,7 @@ const double *Tableau::getCostFunction() const
 
 void Tableau::dumpCostFunction() const
 {
-    // printf( "Cost function:\n\t" );
+    printf( "Cost function:\n\t" );
 
     for ( unsigned i = 0; i < _n - _m; ++i )
     {
@@ -444,12 +444,12 @@ void Tableau::dumpCostFunction() const
         if ( FloatUtils::isZero( coefficient ) )
             continue;
 
-        // if ( FloatUtils::isPositive( coefficient ) )
-        //     printf( "+" );
-        // printf( "%lfx%u ", coefficient, _nonBasicIndexToVariable[i] );
+        if ( FloatUtils::isPositive( coefficient ) )
+            printf( "+" );
+        printf( "%lfx%u ", coefficient, _nonBasicIndexToVariable[i] );
     }
 
-    // printf( "\n" );
+    printf( "\n" );
 }
 
 bool Tableau::basicOutOfBounds( unsigned basic ) const
@@ -893,7 +893,7 @@ void Tableau::pickLeavingVariable( double *changeColumn )
             }
         }
 
-        _leavingVariableIncreases = FloatUtils::isPositive( changeColumn[_enteringVariable] );
+        _leavingVariableIncreases = FloatUtils::isPositive( changeColumn[_leavingVariable] );
     }
     else
     {
@@ -918,7 +918,7 @@ void Tableau::pickLeavingVariable( double *changeColumn )
             }
         }
 
-        _leavingVariableIncreases = FloatUtils::isNegative( changeColumn[_enteringVariable] );
+        _leavingVariableIncreases = FloatUtils::isNegative( changeColumn[_leavingVariable] );
     }
 }
 
