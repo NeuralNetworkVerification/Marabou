@@ -41,6 +41,7 @@ SOURCES += \
 	PiecewiseLinearConstraint.cpp \
 	Preprocessor.cpp \
 	ProjectedSteepestEdge.cpp \
+	ProjectedSteepestEdgeFactory.cpp \
 	ReluConstraint.cpp \
 	SmtCore.cpp \
 	Statistics.cpp \
