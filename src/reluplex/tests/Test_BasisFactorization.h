@@ -19,6 +19,7 @@
 #include "GlobalConfiguration.h"
 #include "List.h"
 #include "MockErrno.h"
+#include "ReluplexError.h"
 
 class MockForBasisFactorization
 {
@@ -594,6 +595,168 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( BasisFactorization::matrixMultiply( 3, left, right, result ) );
         TS_ASSERT_SAME_DATA( result, expectedResult, sizeof(double) * 9 );
+    }
+
+    void test_invert_B0_fail()
+    {
+        BasisFactorization basis( 3 );
+
+        double B0[] = { 1, 0, 0,
+                        0, 1, 0,
+                        0, 0, 1 };
+
+        basis.setB0( B0 );
+
+        double a1[] = { 1, 1, 3 };
+        basis.pushEtaMatrix( 1, a1 );
+
+        double result[9];
+
+        TS_ASSERT_THROWS_EQUALS( basis.invertB0( result ),
+                                 const ReluplexError &e,
+                                 e.getCode(),
+                                 ReluplexError::CANT_INVERT_BASIS_BECAUSE_OF_ETAS );
+    }
+
+    void test_invert_B0()
+    {
+        BasisFactorization basis( 3 );
+
+        {
+            double B0[] = { 1, 0, 0,
+                            0, 1, 0,
+                            0, 0, 1 };
+
+            double expectedInverse[] = { 1, 0, 0,
+                                         0, 1, 0,
+                                         0, 0, 1 };
+
+            double result[9];
+
+            basis.setB0( B0 );
+            TS_ASSERT_THROWS_NOTHING( basis.invertB0( result ) );
+
+            for ( unsigned i = 0; i < sizeof(result) / sizeof(double); ++i )
+            {
+                TS_ASSERT( FloatUtils::areEqual( result[i], expectedInverse[i] ) );
+            }
+        }
+
+        {
+            // No B0 set implicity means B0 is the identity matrix
+            double expectedInverse[] = { 1, 0, 0,
+                                         0, 1, 0,
+                                         0, 0, 1 };
+
+            double result[9];
+
+            TS_ASSERT_THROWS_NOTHING( basis.invertB0( result ) );
+
+            for ( unsigned i = 0; i < sizeof(result) / sizeof(double); ++i )
+            {
+                TS_ASSERT( FloatUtils::areEqual( result[i], expectedInverse[i] ) );
+            }
+        }
+
+        {
+            double B0[] = { 3, 0, 0,
+                            0, -4, 0,
+                            0, 0, 2 };
+
+            double expectedInverse[] = { 1.0 / 3, 0,     0,
+                                         0,       -0.25, 0,
+                                         0,       0,     0.5 };
+
+            double result[9];
+
+            basis.setB0( B0 );
+            TS_ASSERT_THROWS_NOTHING( basis.invertB0( result ) );
+
+            for ( unsigned i = 0; i < sizeof(result) / sizeof(double); ++i )
+            {
+                TSM_ASSERT( i, FloatUtils::areEqual( result[i], expectedInverse[i] ) );
+            }
+        }
+
+        {
+            double B0[] = { 2, 0, 3,
+                            -1, 2, 1,
+                            0, 3, 4 };
+
+            double expectedInverse[] = {  5,  9, -6,
+                                          4,  8, -5,
+                                         -3, -6,  4 };
+
+            double result[9];
+
+            basis.setB0( B0 );
+            TS_ASSERT_THROWS_NOTHING( basis.invertB0( result ) );
+
+            for ( unsigned i = 0; i < sizeof(result) / sizeof(double); ++i )
+            {
+                TSM_ASSERT( i, FloatUtils::areEqual( result[i], expectedInverse[i] ) );
+            }
+        }
+
+        {
+            double B0[] = { 7, -3, -3,
+                            -1, 1, 0,
+                            -1, 0, 1 };
+
+            double expectedInverse[] = { 1, 3, 3,
+                                         1, 4, 3,
+                                         1, 3, 4 };
+
+            double result[9];
+
+            basis.setB0( B0 );
+            TS_ASSERT_THROWS_NOTHING( basis.invertB0( result ) );
+
+            for ( unsigned i = 0; i < sizeof(result) / sizeof(double); ++i )
+            {
+                TSM_ASSERT( i, FloatUtils::areEqual( result[i], expectedInverse[i] ) );
+            }
+
+            basis.setB0( expectedInverse );
+            TS_ASSERT_THROWS_NOTHING( basis.invertB0( result ) );
+
+            for ( unsigned i = 0; i < sizeof(result) / sizeof(double); ++i )
+            {
+                TSM_ASSERT( i, FloatUtils::areEqual( result[i], B0[i] ) );
+            }
+        }
+
+        {
+            BasisFactorization basis( 4 );
+
+            double B0[] = { 1, 1, 1, 0,
+                            0, 3, 1, 2,
+                            2, 3, 1, 0,
+                            1, 0, 2, 1 };
+
+            double expectedInverse[] = { -3, -0.5, 1.5, 1,
+                                         1, 0.25, -0.25, -0.5,
+                                         3, 0.25, -1.25, -0.5,
+                                         -3, 0, 1, 1, };
+
+            double result[16];
+
+            basis.setB0( B0 );
+            TS_ASSERT_THROWS_NOTHING( basis.invertB0( result ) );
+
+            for ( unsigned i = 0; i < sizeof(result) / sizeof(double); ++i )
+            {
+                TSM_ASSERT( i, FloatUtils::areEqual( result[i], expectedInverse[i] ) );
+            }
+
+            basis.setB0( expectedInverse );
+            TS_ASSERT_THROWS_NOTHING( basis.invertB0( result ) );
+
+            for ( unsigned i = 0; i < sizeof(result) / sizeof(double); ++i )
+            {
+                TSM_ASSERT( i, FloatUtils::areEqual( result[i], B0[i] ) );
+            }
+        }
     }
 };
 

@@ -479,6 +479,76 @@ void BasisFactorization::restoreFactorization( const BasisFactorization *other )
     setB0( other->_B0 );
 }
 
+void BasisFactorization::invertB0( double *result )
+{
+    if ( !_etas.empty() )
+        throw ReluplexError( ReluplexError::CANT_INVERT_BASIS_BECAUSE_OF_ETAS );
+
+    ASSERT( result );
+
+    // Initialize the result to the identity matrix
+    for ( unsigned i = 0; i < _m; ++i )
+        for ( unsigned j = 0; j < _m; ++j )
+            result[i * _m + j] = ( i == j ) ? 1.0 : 0.0;
+
+    if ( _LP.empty() )
+    {
+        DEBUG({
+                // Assert B0 is the identity matrix.
+                for ( unsigned i = 0; i < _m; ++i )
+                    for ( unsigned j = 0; j < _m; ++j )
+                        ASSERT( _B0[i * _m + j] == ( i == j ) ? 1.0 : 0.0 );
+            });
+
+        return;
+    }
+
+    // Apply the LP operations to the result
+    for ( List<LPElement *>::const_reverse_iterator it = _LP.rbegin(); it != _LP.rend(); ++it )
+    {
+        const LPElement *element = *it;
+
+        if ( element->_pair )
+        {
+            printf( "Rowswap: %u, %u\n", element->_pair->first, element->_pair->second );
+            rowSwap( element->_pair->first, element->_pair->second, result );
+        }
+        else
+        {
+            element->_eta->dump();
+
+            unsigned colIndex = element->_eta->_columnIndex;
+
+            // First, perform in-place multiplication for all rows below the pivot row
+            for ( unsigned row = colIndex + 1; row < _m; ++row )
+            {
+                for ( unsigned col = 0; col < _m; ++col )
+                    result[row * _m + col] += element->_eta->_column[row] * result[colIndex * _m + col];
+            }
+
+            // Finally, perform the multiplication for the pivot row
+            // itself. We change this row last because it is required for all
+            // previous multiplication operations.
+            for ( unsigned i = 0; i < _m; ++i )
+                result[colIndex * _m + i] *= element->_eta->_column[colIndex];
+        }
+    }
+
+    // Apply the U operations to the result
+    for ( int col = _m - 1; col > 0; --col )
+    {
+        for ( int row = col - 1; row >= 0; --row )
+        {
+            double uElement = _U[row * _m + col];
+            if ( FloatUtils::isZero( uElement ) )
+                continue;
+
+            for ( unsigned k = 0; k < _m; ++k )
+                result[row * _m + k] += -uElement * result[col * _m + k];
+        }
+    }
+}
+
 void BasisFactorization::log( const String &message )
 {
     if ( GlobalConfiguration::BASIS_FACTORIZATION_LOGGING )
