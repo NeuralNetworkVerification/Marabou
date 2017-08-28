@@ -547,7 +547,11 @@ void Engine::applyAllRowTightenings()
     for ( const auto &tightening : rowTightenings )
     {
         _statistics.incNumBoundsProposedByRowTightener();
-        tightening.tighten( _tableau );
+
+        if ( tightening._type == Tightening::LB )
+            _tableau->tightenLowerBound( tightening._variable, tightening._value );
+        else
+            _tableau->tightenUpperBound( tightening._variable, tightening._value );
     }
 }
 
@@ -560,7 +564,11 @@ void Engine::applyAllConstraintTightenings()
     for ( const auto &tightening : entailedTightenings )
     {
         _statistics.incNumBoundsProposedByPlConstraints();
-        tightening.tighten( _tableau );
+
+        if ( tightening._type == Tightening::LB )
+            _tableau->tightenLowerBound( tightening._variable, tightening._value );
+        else
+            _tableau->tightenUpperBound( tightening._variable, tightening._value );
     }
 }
 
