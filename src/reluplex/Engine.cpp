@@ -509,17 +509,16 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 
         _tableau->addEquation( equation );
         _activeEntryStrategy->resizeHook( _tableau );
+        _tableau->registerToWatchVariable( _rowBoundTightener, auxVariable );
 
         PiecewiseLinearCaseSplit::EquationType type = it.second();
         if ( type != PiecewiseLinearCaseSplit::GE )
-        {
             bounds.append( Tightening( auxVariable, 0.0, Tightening::UB ) );
-        }
         if ( type != PiecewiseLinearCaseSplit::LE )
-        {
             bounds.append( Tightening( auxVariable, 0.0, Tightening::LB ) );
-        }
     }
+
+    _rowBoundTightener->initialize( _tableau );
 
     for ( auto &bound : bounds )
     {
@@ -535,9 +534,10 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
         }
     }
 
+    _rowBoundTightener->reset( _tableau );
+
     log( "Done with split\n" );
 }
-
 
 void Engine::applyAllRowTightenings()
 {

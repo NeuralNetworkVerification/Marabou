@@ -18,6 +18,7 @@
 #include "PiecewiseLinearCaseSplit.h"
 #include "ReluConstraint.h"
 #include "ReluplexError.h"
+#include "Statistics.h"
 
 ReluConstraint::ReluConstraint( unsigned b, unsigned f )
     : _b( b )
@@ -58,7 +59,10 @@ void ReluConstraint::notifyVariableValue( unsigned variable, double value )
 
 void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
 {
-	 if ( _lowerBounds.exists( variable ) && !FloatUtils::gt( bound, _lowerBounds[variable] ) )
+    if ( _statistics )
+        _statistics->incNumBoundNotificationsPlConstraints();
+
+    if ( _lowerBounds.exists( variable ) && !FloatUtils::gt( bound, _lowerBounds[variable] ) )
         return;
 
     _lowerBounds[variable] = bound;
@@ -71,6 +75,9 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
 
 void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
 {
+    if ( _statistics )
+        _statistics->incNumBoundNotificationsPlConstraints();
+
     if ( _upperBounds.exists( variable ) && !FloatUtils::lt( bound, _upperBounds[variable] ) )
         return;
 

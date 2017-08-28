@@ -1441,9 +1441,6 @@ void Tableau::notifyLowerBound( unsigned variable, double bound )
     {
         for ( auto &watcher : _variableToWatchers[variable] )
             watcher->notifyLowerBound( variable, bound );
-
-        if ( _statistics )
-            _statistics->incNumBoundNotificationsPlConstraints();
     }
 }
 
@@ -1453,9 +1450,6 @@ void Tableau::notifyUpperBound( unsigned variable, double bound )
     {
         for ( auto &watcher : _variableToWatchers[variable] )
             watcher->notifyUpperBound( variable, bound );
-
-        if ( _statistics )
-            _statistics->incNumBoundNotificationsPlConstraints();
     }
 }
 
