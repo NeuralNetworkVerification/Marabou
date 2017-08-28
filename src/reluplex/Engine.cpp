@@ -27,7 +27,7 @@ Engine::Engine()
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
-    _boundTightener.setStatistics( &_statistics );
+    _rowBoundTightener->setStatistics( &_statistics );
 
     // _activeEntryStrategy = &_nestedDantzigsRule;
     _activeEntryStrategy = _projectedSteepestEdgeRule;
@@ -50,8 +50,8 @@ bool Engine::solve()
         mainLoopStatistics();
         checkDegradation();
 
-        // Apply any pending bound tightenings
-        _boundTightener.tighten( _tableau );
+        // Apply any row-entailed bound tightenings
+        applyAllRowTightenings();
 
         // Apply constraint-entailed bound tightenings
         applyAllConstraintTightenings();
@@ -246,7 +246,7 @@ bool Engine::performSimplexStep()
 
     // Tighten
     if ( !fakePivot )
-        _boundTightener.deriveTightenings( _tableau );
+        _rowBoundTightener->examinePivotRow( _tableau );
 
     timeval end = TimeUtils::sampleMicro();
     _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
@@ -376,6 +376,8 @@ void Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
     unsigned n = _preprocessedQuery.getNumberOfVariables();
     _tableau->setDimensions( m, n );
 
+    _rowBoundTightener->initialize( _tableau );
+
     // Current variables are [0,..,n-1], so the next variable is n.
     FreshVariables::setNextVariable( n );
 
@@ -397,6 +399,10 @@ void Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         _tableau->setLowerBound( i, _preprocessedQuery.getLowerBound( i ) );
         _tableau->setUpperBound( i, _preprocessedQuery.getUpperBound( i ) );
     }
+
+    for ( unsigned i = 0; i < n; ++i )
+        _tableau->registerToWatchVariable( _rowBoundTightener, i );
+    _rowBoundTightener->reset( _tableau );
 
     _plConstraints = _preprocessedQuery.getPiecewiseLinearConstraints();
     for ( const auto &constraint : _plConstraints )
@@ -466,8 +472,6 @@ void Engine::restoreState( const EngineState &state )
 {
     log( "Restore state starting" );
 
-    _boundTightener.clearStoredTightenings();
-
     log( "\tRestoring tableau state" );
     _tableau->restoreState( state._tableauState );
 
@@ -481,6 +485,10 @@ void Engine::restoreState( const EngineState &state )
     }
 
     _numPlConstraintsDisabledByValidSplits = state._numPlConstraintsDisabledByValidSplits;
+
+    // Make sure the bound tightner is initialized to the correct size
+    _rowBoundTightener->initialize( _tableau );
+    _rowBoundTightener->reset( _tableau );
 
     FreshVariables::setNextVariable( state._nextAuxVariable );
 }
@@ -528,6 +536,19 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
     }
 
     log( "Done with split\n" );
+}
+
+
+void Engine::applyAllRowTightenings()
+{
+    List<Tightening> rowTightenings;
+    _rowBoundTightener->getRowTightenings( rowTightenings );
+
+    for ( const auto &tightening : rowTightenings )
+    {
+        _statistics.incNumBoundsProposedByRowTightener();
+        tightening.tighten( _tableau );
+    }
 }
 
 void Engine::applyAllConstraintTightenings()

@@ -337,6 +337,12 @@ public:
         return nextAColumn.get( index );
     }
 
+    const double *getA() const
+    {
+        TS_ASSERT( false );
+        return NULL;
+    }
+
     void performDegeneratePivot()
     {
     }
@@ -365,17 +371,17 @@ public:
     {
     }
 
-    typedef Set<VariableWatcher *> Watchers;
+    typedef List<VariableWatcher *> Watchers;
     Map<unsigned, Watchers> lastRegisteredVariableToWatcher;
     void registerToWatchVariable( VariableWatcher *watcher, unsigned variable )
     {
-        lastRegisteredVariableToWatcher[variable].insert( watcher );
+        lastRegisteredVariableToWatcher[variable].append( watcher );
     }
 
     Map<unsigned, Watchers> lastUnregisteredVariableToWatcher;
     void unregisterToWatchVariable( VariableWatcher *watcher, unsigned variable )
     {
-        lastUnregisteredVariableToWatcher[variable].insert( watcher );
+        lastUnregisteredVariableToWatcher[variable].append( watcher );
     }
 
     void computeBasicCosts()

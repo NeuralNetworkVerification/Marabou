@@ -37,14 +37,14 @@ public:
           This callback will be invoked when the variable's value
           changes.
         */
-        virtual void notifyVariableValue( unsigned variable, double value ) = 0;
+        virtual void notifyVariableValue( unsigned /* variable */, double /* value */ ) {}
 
         /*
           These callbacks will be invoked when the variable's
           lower/upper bounds change.
         */
-        virtual void notifyLowerBound( unsigned variable, double bound ) = 0;
-        virtual void notifyUpperBound( unsigned variable, double bound ) = 0;
+        virtual void notifyLowerBound( unsigned /* variable */, double /* bound */ ) {}
+        virtual void notifyUpperBound( unsigned /* variable */, double /* bound */ ) {}
     };
 
     virtual void registerToWatchVariable( VariableWatcher *watcher, unsigned variable ) = 0;
@@ -108,6 +108,7 @@ public:
     virtual unsigned getN() const = 0;
     virtual void getTableauRow( unsigned index, TableauRow *row ) = 0;
     virtual const double *getAColumn( unsigned index ) const = 0;
+    virtual const double *getA() const = 0;
     virtual void performDegeneratePivot() = 0;
     virtual void storeState( TableauState &state ) const = 0;
     virtual void restoreState( const TableauState &state ) = 0;

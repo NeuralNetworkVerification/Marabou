@@ -13,18 +13,18 @@
 #ifndef __Engine_h__
 #define __Engine_h__
 
+#include "AutoProjectedSteepestEdge.h"
+#include "AutoRowBoundTightener.h"
 #include "AutoTableau.h"
 #include "BlandsRule.h"
-#include "BoundTightener.h"
 #include "DantzigsRule.h"
 #include "DegradationChecker.h"
 #include "IEngine.h"
+#include "InputQuery.h"
 #include "Map.h"
 #include "NestedDantzigsRule.h"
-#include "AutoProjectedSteepestEdge.h"
 #include "SmtCore.h"
 #include "Statistics.h"
-#include "InputQuery.h"
 
 class EngineState;
 class InputQuery;
@@ -110,7 +110,7 @@ private:
     /*
       Bound tightener.
     */
-    BoundTightener _boundTightener;
+    AutoRowBoundTightener _rowBoundTightener;
 
     /*
       The SMT engine is in charge of case splitting.
@@ -163,6 +163,11 @@ private:
       Report the violated PL constraint to the SMT engine.
     */
     void reportPlViolation();
+
+    /*
+      Apply any bound tightenings found by the row tightener.
+    */
+    void applyAllRowTightenings();
 
     /*
       Apply any bound tightenings entailed by the constraints.

@@ -1062,6 +1062,11 @@ void Tableau::getTableauRow( unsigned index, TableauRow *row )
     row->_scalar = _rowScalars[index];
 }
 
+const double *Tableau::getA() const
+{
+    return _A;
+}
+
 const double *Tableau::getAColumn( unsigned variable ) const
 {
     return _A + ( variable * _m );

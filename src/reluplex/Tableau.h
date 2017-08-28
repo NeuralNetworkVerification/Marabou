@@ -307,8 +307,9 @@ public:
     void getTableauRow( unsigned index, TableauRow *row );
 
     /*
-      Extract a columnf from the original matrix A.
+      Get the original constraint matrix A or a column thereof.
     */
+    const double *getA() const;
     const double *getAColumn( unsigned variable ) const;
 
     /*

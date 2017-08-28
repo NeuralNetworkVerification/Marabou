@@ -24,7 +24,6 @@ SOURCES += \
 	\
 	BasisFactorization.cpp \
 	BlandsRule.cpp \
-	BoundTightener.cpp \
 	DantzigsRule.cpp \
 	DegradationChecker.cpp \
 	Engine.cpp \
@@ -43,6 +42,8 @@ SOURCES += \
 	ProjectedSteepestEdge.cpp \
 	ProjectedSteepestEdgeFactory.cpp \
 	ReluConstraint.cpp \
+	RowBoundTightener.cpp \
+	RowBoundTightenerFactory.cpp \
 	SmtCore.cpp \
 	Statistics.cpp \
 	Tableau.cpp \

@@ -13,6 +13,7 @@
 #include <cxxtest/TestSuite.h>
 
 #include "Engine.h"
+#include "FloatUtils.h"
 #include "InputQuery.h"
 #include "MockErrno.h"
 #include "ReluConstraint.h"

@@ -17,6 +17,7 @@
 #include "InputQuery.h"
 #include "MockErrno.h"
 #include "MockProjectedSteepestEdgeFactory.h"
+#include "MockRowBoundTightenerFactory.h"
 #include "MockTableauFactory.h"
 #include "ReluConstraint.h"
 
@@ -24,7 +25,8 @@
 
 class MockForEngine :
     public MockTableauFactory,
-    public MockProjectedSteepestEdgeRuleFactory
+    public MockProjectedSteepestEdgeRuleFactory,
+    public MockRowBoundTightenerFactory
 {
 public:
 };
@@ -34,12 +36,14 @@ class EngineTestSuite : public CxxTest::TestSuite
 public:
     MockForEngine *mock;
     MockTableau *tableau;
+    MockRowBoundTightener *rowTightener;
 
     void setUp()
     {
         TS_ASSERT( mock = new MockForEngine );
 
         tableau = &( mock->mockTableau );
+        rowTightener = &( mock->mockRowBoundTightener );
     }
 
     void tearDown()
@@ -111,6 +115,7 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery, false ) );
         TS_ASSERT( tableau->initializeTableauCalled );
+        TS_ASSERT( rowTightener->initializeWasCalled );
 
         TS_ASSERT_EQUALS( tableau->lastM, 2U );
         TS_ASSERT_EQUALS( tableau->lastN, 5U );
@@ -169,18 +174,24 @@ public:
         TS_ASSERT( tableau->upperBounds.exists( 4 ) );
         TS_ASSERT_EQUALS( tableau->upperBounds[4], 0.0 );
 
-        TS_ASSERT_EQUALS( tableau->lastRegisteredVariableToWatcher.size(), 3U );
+        TS_ASSERT_EQUALS( tableau->lastRegisteredVariableToWatcher.size(), 5U );
+        TS_ASSERT( tableau->lastRegisteredVariableToWatcher.exists( 0 ) );
         TS_ASSERT( tableau->lastRegisteredVariableToWatcher.exists( 1 ) );
         TS_ASSERT( tableau->lastRegisteredVariableToWatcher.exists( 2 ) );
+        TS_ASSERT( tableau->lastRegisteredVariableToWatcher.exists( 3 ) );
         TS_ASSERT( tableau->lastRegisteredVariableToWatcher.exists( 4 ) );
 
-        TS_ASSERT_EQUALS( tableau->lastRegisteredVariableToWatcher[1].size(), 1U );
-
-		auto watcher1 = ( ( ReluConstraint * ) ( * tableau->lastRegisteredVariableToWatcher[1].begin() ) )->getParticipatingVariables();
+        TS_ASSERT_EQUALS( tableau->lastRegisteredVariableToWatcher[1].size(), 2U );
+        auto it = tableau->lastRegisteredVariableToWatcher[1].begin();
+        TS_ASSERT_EQUALS( *it, rowTightener );
+        ++it;
+        auto watcher1 = ( ( ReluConstraint * ) ( * it ) )->getParticipatingVariables();
        	TS_ASSERT( watcher1 == relu1->getParticipatingVariables() );
 
-        TS_ASSERT_EQUALS( tableau->lastRegisteredVariableToWatcher[2].size(), 2U );
-		auto it = tableau->lastRegisteredVariableToWatcher[2].begin();
+        TS_ASSERT_EQUALS( tableau->lastRegisteredVariableToWatcher[2].size(), 3U );
+        it = tableau->lastRegisteredVariableToWatcher[2].begin();
+        TS_ASSERT_EQUALS( *it, rowTightener );
+        ++it;
 		auto watcher2 = ( ( ReluConstraint * ) ( * it  ) )->getParticipatingVariables();
 		it++;
 		auto watcher3 = ( ( ReluConstraint * ) ( * it  ) )->getParticipatingVariables();
@@ -198,10 +209,11 @@ public:
 			TS_ASSERT( false );
 		}
 
-        TS_ASSERT_EQUALS( tableau->lastRegisteredVariableToWatcher[4].size(), 1U );
-
-		auto watcher4 = ( ( ReluConstraint * ) ( * tableau->lastRegisteredVariableToWatcher[4].begin() ) )->getParticipatingVariables();
-
+        TS_ASSERT_EQUALS( tableau->lastRegisteredVariableToWatcher[4].size(), 2U );
+        it = tableau->lastRegisteredVariableToWatcher[4].begin();
+        TS_ASSERT_EQUALS( *it, rowTightener );
+        ++it;
+		auto watcher4 = ( ( ReluConstraint * ) ( * it ) )->getParticipatingVariables();
 
        	TS_ASSERT( watcher4 == relu2->getParticipatingVariables() );
 
