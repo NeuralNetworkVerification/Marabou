@@ -510,7 +510,6 @@ void BasisFactorization::invertB0( double *result )
 
         if ( element->_pair )
         {
-            printf( "Rowswap: %u, %u\n", element->_pair->first, element->_pair->second );
             rowSwap( element->_pair->first, element->_pair->second, result );
         }
         else

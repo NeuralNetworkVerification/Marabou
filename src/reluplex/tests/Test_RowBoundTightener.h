@@ -38,184 +38,214 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete mock );
     }
 
-    void test_todo()
+    void test_pivot_row__both_bounds_tightened()
     {
-        TS_TRACE( "Restore tests" );
+        RowBoundTightener tightener;
+
+        tableau->setDimensions( 2, 5 );
+        tightener.initialize( *tableau );
+
+        // Current bounds:
+        //  0 <= x0 <= 0
+        //    5  <= x1 <= 10
+        //    -2 <= x2 <= 3
+        //  -100 <= x4 <= 100
+        tableau->setLowerBound( 0, -200 );
+        tableau->setUpperBound( 0, 200 );
+        tableau->setLowerBound( 1, 5 );
+        tableau->setUpperBound( 1, 10 );
+        tableau->setLowerBound( 2, -2 );
+        tableau->setUpperBound( 2, 3 );
+        tableau->setLowerBound( 3, -5 );
+        tableau->setUpperBound( 3, 5 );
+        tableau->setLowerBound( 4, -100 );
+        tableau->setUpperBound( 4, 100 );
+
+        tightener.reset( *tableau );
+
+        TableauRow row( 3 );
+        // 1 - x0 - x1 + 2x2
+        row._row[0] = TableauRow::Entry( 0, -1 );
+        row._row[1] = TableauRow::Entry( 1, -1 );
+        row._row[2] = TableauRow::Entry( 2, 2 );
+        row._scalar = 1;
+        tableau->nextRow = &row;
+
+        tableau->nextPivotRow = &row;
+        tableau->mockLeavingVariable = 0;
+        tableau->nextEnteringVariable = 4;
+        tableau->nextEnteringVariableIndex = 0;
+
+        // 1 - x0 - x1 + 2x2 = x4 (pre pivot)
+        // x0 entering, x4 leaving
+        // x0 = 1 - x1 + 2 x2 - x4
+
+        TS_ASSERT_THROWS_NOTHING( tightener.examinePivotRow( *tableau ) );
+
+        List<Tightening> tightenings;
+        TS_ASSERT_THROWS_NOTHING( tightener.getRowTightenings( tightenings ) );
+
+        // Lower and upper bounds should have been tightened
+        TS_ASSERT_EQUALS( tightenings.size(), 2U );
+        auto lower = *tightenings.begin();
+        auto upper = *tightenings.rbegin();
+
+        TS_ASSERT_EQUALS( lower._variable, 0U );
+        TS_ASSERT_EQUALS( lower._type, Tightening::LB );
+        TS_ASSERT_EQUALS( upper._variable, 0U );
+        TS_ASSERT_EQUALS( upper._type, Tightening::UB );
+
+        // LB -> 1 - 10 - 4 -100
+        // UB -> 1 - 5 + 6 + 100
+        TS_ASSERT_EQUALS( lower._value, -113 );
+        TS_ASSERT_EQUALS( upper._value, 102 );
     }
 
-    // void xtest_both_bounds_tightened()
-    // {
-    //     RowBoundTightener tightener;
+    void test_pivot_row__just_upper_tightend()
+    {
+        RowBoundTightener tightener;
 
-    //     tableau->setDimensions( 2, 5 );
+        tableau->setDimensions( 2, 5 );
+        tightener.initialize( *tableau );
 
-    //     TableauRow row( 3 );
-    //     // 1 - x0 - x1 + 2x2
-    //     row._row[0] = TableauRow::Entry( 0, -1 );
-    //     row._row[1] = TableauRow::Entry( 1, -1 );
-    //     row._row[2] = TableauRow::Entry( 2, 2 );
-    //     row._scalar = 1;
-    //     tableau->nextRow = &row;
+        // Current bounds:
+        //    0  <= x0 <= 0
+        //    5  <= x1 <= 10
+        //    -2 <= x2 <= 3
+        //    -10 <= x4 <= 100
+        tableau->setLowerBound( 0, 0 );
+        tableau->setUpperBound( 0, 200 );
+        tableau->setLowerBound( 1, 5 );
+        tableau->setUpperBound( 1, 10 );
+        tableau->setLowerBound( 2, -2 );
+        tableau->setUpperBound( 2, 3 );
+        tableau->setLowerBound( 3, -5 );
+        tableau->setUpperBound( 3, 5 );
+        tableau->setLowerBound( 4, 0 );
+        tableau->setUpperBound( 4, 0 );
 
-    //     // Current bounds:
-    //     //  0 <= x0 <= 0
-    //     //    5  <= x1 <= 10
-    //     //    -2 <= x2 <= 3
-    //     //  -100 <= x4 <= 100
-    //     tableau->setLowerBound( 0, -200 );
-    //     tableau->setUpperBound( 0, 200 );
-    //     tableau->setLowerBound( 1, 5 );
-    //     tableau->setUpperBound( 1, 10 );
-    //     tableau->setLowerBound( 2, -2 );
-    //     tableau->setUpperBound( 2, 3 );
-    //     tableau->setLowerBound( 4, -100 );
-    //     tableau->setUpperBound( 4, 100 );
+        tightener.reset( *tableau );
 
-    //     tableau->nextPivotRow = &row;
-    //     tableau->mockLeavingVariable = 0;
-    //     tableau->nextEnteringVariable = 4;
-    //     tableau->nextEnteringVariableIndex = 0;
+        TableauRow row( 3 );
+        // 1 - x0 - x1 + 2x2
+        row._row[0] = TableauRow::Entry( 0, -1 );
+        row._row[1] = TableauRow::Entry( 1, -1 );
+        row._row[2] = TableauRow::Entry( 2, 2 );
+        row._scalar = 1;
+        tableau->nextRow = &row;
 
-    //     // 1 - x0 - x1 + 2x2 = x4 (pre pivot)
-    //     // x0 entering, x4 leaving
-    //     // x0 = 1 - x1 + 2 x2 - x4
+        tableau->nextPivotRow = &row;
+        tableau->mockLeavingVariable = 0;
+        tableau->nextEnteringVariable = 4;
+        tableau->nextEnteringVariableIndex = 0;
 
-    //     TS_ASSERT_THROWS_NOTHING( tightener.examinePivotRow( *tableau ) );
-    //     TS_ASSERT_THROWS_NOTHING( tightener.tighten( *tableau ) );
+        TS_ASSERT_THROWS_NOTHING( tightener.examinePivotRow( *tableau ) );
 
-    //     // Lower and upper bounds should have been tightened
-    //     TS_ASSERT_EQUALS( tableau->tightenedLowerBounds.size(), 1U );
-    //     TS_ASSERT_EQUALS( tableau->tightenedUpperBounds.size(), 1U );
-    //     TS_ASSERT( tableau->tightenedLowerBounds.exists( 0U ) );
-    //     TS_ASSERT( tableau->tightenedUpperBounds.exists( 0U ) );
+        List<Tightening> tightenings;
+        TS_ASSERT_THROWS_NOTHING( tightener.getRowTightenings( tightenings ) );
 
-    //     // LB -> 1 - 10 - 4 -100
-    //     // UB -> 1 - 5 + 6 + 100
-    //     TS_ASSERT_EQUALS( tableau->tightenedLowerBounds[0], -113 );
-    //     TS_ASSERT_EQUALS( tableau->tightenedUpperBounds[0], 102 );
-    // }
+        // Lower and upper bounds should have been tightened
+        TS_ASSERT_EQUALS( tightenings.size(), 1U );
+        auto upper = *tightenings.begin();
 
-    // void xtest_just_upper_tightend()
-    // {
-    //     RowBoundTightener tightener;
+        TS_ASSERT_EQUALS( upper._variable, 0U );
+        TS_ASSERT_EQUALS( upper._type, Tightening::UB );
 
-    //     tableau->setDimensions( 2, 5 );
+        // Lower: 1 - 10 - 4, Upper: 1 - 5 + 6
+        TS_ASSERT_EQUALS( upper._value, 2 );
+    }
 
-    //     TableauRow row( 3 );
-    //     // 1 - x0 - x1 + 2x2
-    //     row._row[0] = TableauRow::Entry( 0, -1 );
-    //     row._row[1] = TableauRow::Entry( 1, -1 );
-    //     row._row[2] = TableauRow::Entry( 2, 2 );
-    //     row._scalar = 1;
-    //     tableau->nextRow = &row;
+    void test_pivot_row__just_lower_tightend()
+    {
+        RowBoundTightener tightener;
 
-    //     // Current bounds:
-    //     //    0  <= x0 <= 0
-    //     //    5  <= x1 <= 10
-    //     //    -2 <= x2 <= 3
-    //     //    -10 <= x4 <= 100
-    //     tableau->setLowerBound( 0, 0 );
-    //     tableau->setUpperBound( 0, 200 );
-    //     tableau->setLowerBound( 1, 5 );
-    //     tableau->setUpperBound( 1, 10 );
-    //     tableau->setLowerBound( 2, -2 );
-    //     tableau->setUpperBound( 2, 3 );
-    //     tableau->setLowerBound( 4, 0 );
-    //     tableau->setUpperBound( 4, 0 );
+        tableau->setDimensions( 2, 5 );
+        tightener.initialize( *tableau );
 
-    //     tableau->nextPivotRow = &row;
-    //     tableau->mockLeavingVariable = 0;
-    //     tableau->nextEnteringVariable = 4;
-    //     tableau->nextEnteringVariableIndex = 0;
+        tableau->setLowerBound( 0, -200 );
+        tableau->setUpperBound( 0, 0 );
+        tableau->setLowerBound( 1, 5 );
+        tableau->setUpperBound( 1, 10 );
+        tableau->setLowerBound( 2, -2 );
+        tableau->setUpperBound( 2, 3 );
+        tableau->setLowerBound( 3, -5 );
+        tableau->setUpperBound( 3, 5 );
+        tableau->setLowerBound( 4, 0 );
+        tableau->setUpperBound( 4, 0 );
 
-    //     TS_ASSERT_THROWS_NOTHING( tightener.examinePivotRow( *tableau ) );
-    //     TS_ASSERT_THROWS_NOTHING( tightener.tighten( *tableau ) );
+        tightener.reset( *tableau );
 
-    //     TS_ASSERT( tableau->tightenedLowerBounds.empty() );
-    //     TS_ASSERT_EQUALS( tableau->tightenedUpperBounds.size(), 1U );
-    //     TS_ASSERT( tableau->tightenedUpperBounds.exists( 0U ) );
+        TableauRow row( 3 );
+        // 1 - x0 - x1 + 2x2
+        row._row[0] = TableauRow::Entry( 0, -1 );
+        row._row[1] = TableauRow::Entry( 1, -1 );
+        row._row[2] = TableauRow::Entry( 2, 2 );
+        row._scalar = 1;
+        tableau->nextRow = &row;
 
-    //     // Lower: 1 - 10 - 4, Upper: 1 - 5 + 6
-    //     TS_ASSERT_EQUALS( tableau->tightenedUpperBounds[0], 2 );
-    // }
+        tableau->setLeavingVariableIndex( 4 );
 
-    // void xtest_just_lower_tightend()
-    // {
-    //     RowBoundTightener tightener;
+        tableau->nextPivotRow = &row;
+        tableau->mockLeavingVariable = 0;
+        tableau->nextEnteringVariable = 4;
+        tableau->nextEnteringVariableIndex = 0;
 
-    //     tableau->setDimensions( 2, 5 );
+        TS_ASSERT_THROWS_NOTHING( tightener.examinePivotRow( *tableau ) );
 
-    //     TableauRow row( 3 );
-    //     // 1 - x0 - x1 + 2x2
-    //     row._row[0] = TableauRow::Entry( 0, -1 );
-    //     row._row[1] = TableauRow::Entry( 1, -1 );
-    //     row._row[2] = TableauRow::Entry( 2, 2 );
-    //     row._scalar = 1;
-    //     tableau->nextRow = &row;
+        List<Tightening> tightenings;
+        TS_ASSERT_THROWS_NOTHING( tightener.getRowTightenings( tightenings ) );
 
-    //     tableau->setLowerBound( 0, -200 );
-    //     tableau->setUpperBound( 0, 0 );
-    //     tableau->setLowerBound( 1, 5 );
-    //     tableau->setUpperBound( 1, 10 );
-    //     tableau->setLowerBound( 2, -2 );
-    //     tableau->setUpperBound( 2, 3 );
-    //     tableau->setLowerBound( 4, 0 );
-    //     tableau->setUpperBound( 4, 0 );
+        // Lower and upper bounds should have been tightened
+        TS_ASSERT_EQUALS( tightenings.size(), 1U );
+        auto lower = *tightenings.begin();
 
-    //     tableau->setLeavingVariableIndex( 4 );
+        TS_ASSERT_EQUALS( lower._variable, 0U );
+        TS_ASSERT_EQUALS( lower._type, Tightening::LB );
 
-    //     tableau->nextPivotRow = &row;
-    //     tableau->mockLeavingVariable = 0;
-    //     tableau->nextEnteringVariable = 4;
-    //     tableau->nextEnteringVariableIndex = 0;
+        // Lower: 1 - 10 - 4, Lower: 1 - 5 + 6
+        TS_ASSERT_EQUALS( lower._value, -13 );
+    }
 
-    //     TS_ASSERT_THROWS_NOTHING( tightener.examinePivotRow( *tableau ) );
-    //     TS_ASSERT_THROWS_NOTHING( tightener.tighten( *tableau ) );
+    void test_pivot_row__nothing_tightened()
+    {
+        RowBoundTightener tightener;
 
-    //     // Lower and upper bounds should have been tightened
-    //     TS_ASSERT_EQUALS( tableau->tightenedLowerBounds.size(), 1U );
-    //     TS_ASSERT( tableau->tightenedUpperBounds.empty() );
-    //     TS_ASSERT( tableau->tightenedLowerBounds.exists( 0U ) );
+        tableau->setDimensions( 2, 5 );
+        tightener.initialize( *tableau );
 
-    //     // Lower: 1 - 10 - 4, Upper: 1 - 5 + 6
-    //     TS_ASSERT_EQUALS( tableau->tightenedLowerBounds[0], -13 );
-    // }
+        tableau->setLowerBound( 0, -112 );
+        tableau->setUpperBound( 0, 101 );
+        tableau->setLowerBound( 1, 5 );
+        tableau->setUpperBound( 1, 10 );
+        tableau->setLowerBound( 2, -2 );
+        tableau->setUpperBound( 2, 3 );
+        tableau->setLowerBound( 3, -5 );
+        tableau->setUpperBound( 3, 5 );
+        tableau->setLowerBound( 4, -100 );
+        tableau->setUpperBound( 4, 100 );
 
-    // void xtest_nothing_tightened()
-    // {
-    //     RowBoundTightener tightener;
+        tightener.reset( *tableau );
 
-    //     tableau->setDimensions( 2, 5 );
+        TableauRow row( 3 );
+        // 1 - x0 - x1 + 2x2
+        row._row[0] = TableauRow::Entry( 0, -1 );
+        row._row[1] = TableauRow::Entry( 1, -1 );
+        row._row[2] = TableauRow::Entry( 2, 2 );
+        row._scalar = 1;
+        tableau->nextRow = &row;
 
-    //     TableauRow row( 3 );
-    //     // 1 - x0 - x1 + 2x2
-    //     row._row[0] = TableauRow::Entry( 0, -1 );
-    //     row._row[1] = TableauRow::Entry( 1, -1 );
-    //     row._row[2] = TableauRow::Entry( 2, 2 );
-    //     row._scalar = 1;
-    //     tableau->nextRow = &row;
+        tableau->nextPivotRow = &row;
+        tableau->mockLeavingVariable = 0;
+        tableau->nextEnteringVariable = 4;
+        tableau->nextEnteringVariableIndex = 0;
 
-    //     tableau->setLowerBound( 0, -112 );
-    //     tableau->setUpperBound( 0, 101 );
-    //     tableau->setLowerBound( 1, 5 );
-    //     tableau->setUpperBound( 1, 10 );
-    //     tableau->setLowerBound( 2, -2 );
-    //     tableau->setUpperBound( 2, 3 );
-    //     tableau->setLowerBound( 4, -100 );
-    //     tableau->setUpperBound( 4, 100 );
+        TS_ASSERT_THROWS_NOTHING( tightener.examinePivotRow( *tableau ) );
 
-    //     tableau->nextPivotRow = &row;
-    //     tableau->mockLeavingVariable = 0;
-    //     tableau->nextEnteringVariable = 4;
-    //     tableau->nextEnteringVariableIndex = 0;
+        List<Tightening> tightenings;
+        TS_ASSERT_THROWS_NOTHING( tightener.getRowTightenings( tightenings ) );
 
-    //     TS_ASSERT_THROWS_NOTHING( tightener.examinePivotRow( *tableau ) );
-    //     TS_ASSERT_THROWS_NOTHING( tightener.tighten( *tableau ) );
-
-    //     // Lower and upper bounds should have been tightened
-    //     TS_ASSERT( tableau->tightenedLowerBounds.empty() );
-    //     TS_ASSERT( tableau->tightenedUpperBounds.empty() );
-    // }
+        TS_ASSERT( tightenings.empty() );
+    }
 };
 
 //
