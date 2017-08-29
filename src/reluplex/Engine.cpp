@@ -50,6 +50,8 @@ bool Engine::solve()
         mainLoopStatistics();
         checkDegradation();
 
+        tightenBoundsOnConstraintMatrix();
+
         // Apply any row-entailed bound tightenings
         applyAllRowTightenings();
 
@@ -600,6 +602,16 @@ void Engine::checkDegradation()
 
     double degradation = _degradationChecker.computeDegradation( *_tableau );
     _statistics.setCurrentDegradation( degradation );
+}
+
+void Engine::tightenBoundsOnConstraintMatrix()
+{
+    if ( _statistics.getNumMainLoopIterations() %
+         GlobalConfiguration::BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY == 0 )
+    {
+        _rowBoundTightener->examineConstraintMatrix( _tableau, true );
+        _statistics.incNumBoundTighteningOnConstraintMatrix();
+    }
 }
 
 void Engine::log( const String &message )

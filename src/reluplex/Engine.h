@@ -190,6 +190,11 @@ private:
     */
     void checkDegradation();
 
+    /*
+      Perform bound tightening on the constraint matrix A.
+    */
+    void tightenBoundsOnConstraintMatrix();
+
     static void log( const String &message );
 };
 
