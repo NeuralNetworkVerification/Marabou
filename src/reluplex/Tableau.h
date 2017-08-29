@@ -29,10 +29,10 @@ class Tableau : public ITableau
 public:
     enum BasicStatus {
         BELOW_LB = 0,
-        AT_LB,
-        BETWEEN,
-        AT_UB,
-        ABOVE_UB,
+        AT_LB = 1,
+        BETWEEN = 2,
+        AT_UB = 3,
+        ABOVE_UB = 4,
     };
 
     enum AssignmentStatus {
@@ -510,6 +510,8 @@ private:
       For debugging purposes only
     */
     void verifyInvariants();
+
+    static String basicStatusToString( unsigned status );
 };
 
 #endif // __Tableau_h__

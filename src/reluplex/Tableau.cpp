@@ -715,7 +715,7 @@ void Tableau::performPivot()
     }
 
     // Check if the pivot is degenerate and update statistics
-    if ( _statistics && ( nonBasicAssignment == _basicAssignment[currentBasic] ) )
+    if ( _statistics && FloatUtils::isZero( _changeRatio ) )
         _statistics->incNumTableauDegeneratePivots();
 
     setNonBasicAssignment( _nonBasicIndexToVariable[_enteringVariable], nonBasicAssignment );
@@ -1522,6 +1522,29 @@ void Tableau::verifyInvariants()
             exit( 1 );
         }
     }
+}
+
+String Tableau::basicStatusToString( unsigned status )
+{
+    switch ( status )
+    {
+    case BELOW_LB:
+        return "BELOW_LB";
+
+    case AT_LB:
+        return "AT_LB";
+
+    case BETWEEN:
+        return "BETWEEN";
+
+    case AT_UB:
+        return "AT_UB";
+
+    case ABOVE_UB:
+        return "ABOVE_UB";
+    }
+
+    return "UNKNOWN";
 }
 
 //
