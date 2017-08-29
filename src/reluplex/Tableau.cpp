@@ -682,10 +682,16 @@ void Tableau::performPivot()
     log( Stringf( "Tableau performing pivot. Entering: %u, Leaving: %u",
                   _nonBasicIndexToVariable[_enteringVariable],
                   _basicIndexToVariable[_leavingVariable] ) );
-    log( Stringf( "Leaving variable %s. Current value: %.3lf. Range: [%.3lf, %.3lf]\n",
+    log( Stringf( "Leaving variable %s. Current value: %.3lf. Range: [%.3lf, %.3lf]",
                   _leavingVariableIncreases ? "increases" : "decreases",
                   _basicAssignment[_leavingVariable],
                   _lowerBounds[currentBasic], _upperBounds[currentBasic] ) );
+    log( Stringf( "Entering variable %s. Current value: %.3lf. Range: [%.3lf, %.3lf]",
+                  FloatUtils::isNegative( _costFunction[_enteringVariable] ) ?
+                  "increases" : "decreases",
+                  _nonBasicAssignment[_enteringVariable],
+                  _lowerBounds[currentNonBasic], _upperBounds[currentNonBasic] ) );
+    log( Stringf( "Change ratio is: %.15lf\n", _changeRatio ) );
 
     // Update the database
     _basicVariables.insert( currentNonBasic );
@@ -713,6 +719,10 @@ void Tableau::performPivot()
         else
             nonBasicAssignment = _lowerBounds[currentBasic];
     }
+
+    // log( Stringf( "Leaving variable status: %s. New assignment: %.15lf. Old assignment: %.15lf\n",
+    //               basicStatusToString( _basicStatus[_leavingVariable] ).ascii(),
+    //               nonBasicAssignment, _basicAssignment[_leavingVariable] ) );
 
     // Check if the pivot is degenerate and update statistics
     if ( _statistics && FloatUtils::isZero( _changeRatio ) )
