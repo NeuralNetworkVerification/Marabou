@@ -128,7 +128,7 @@ bool RowBoundTightener::tightenOnSingleRow( const ITableau &tableau, unsigned ro
     unsigned n = tableau.getN();
     unsigned m = tableau.getM();
 
-    unsigned tightenedCoefficient = A[varBeingTightened * m + row];
+    double tightenedCoefficient = A[varBeingTightened * m + row];
     if ( FloatUtils::isZero( tightenedCoefficient ) )
         return false;
 
@@ -143,7 +143,7 @@ bool RowBoundTightener::tightenOnSingleRow( const ITableau &tableau, unsigned ro
         if ( i == varBeingTightened )
             continue;
 
-		double coefficient = A[i * m + row] / tightenedCoefficient;
+		double coefficient = -A[i * m + row] / tightenedCoefficient;
 
 		if ( FloatUtils::isPositive( coefficient ) )
 		{
@@ -152,10 +152,10 @@ bool RowBoundTightener::tightenOnSingleRow( const ITableau &tableau, unsigned ro
 		}
 		else if ( FloatUtils::isNegative( coefficient ) )
 		{
-			tightenedLowerBound += coefficient * _lowerBounds[i];
-			tightenedUpperBound += coefficient * _upperBounds[i];
+			tightenedLowerBound += coefficient * _upperBounds[i];
+			tightenedUpperBound += coefficient * _lowerBounds[i];
 		}
-	}
+    }
 
     // Tighten lower bound if needed
 	if ( FloatUtils::lt( _lowerBounds[varBeingTightened], tightenedLowerBound ) )

@@ -337,10 +337,10 @@ public:
         return nextAColumn.get( index );
     }
 
+    double *A;
     const double *getA() const
     {
-        TS_ASSERT( false );
-        return NULL;
+        return A;
     }
 
     void performDegeneratePivot()
@@ -392,9 +392,10 @@ public:
     {
     }
 
+    double *b;
     const double *getRightHandSide() const
     {
-        return NULL;
+        return b;
     }
 
     void forwardTransformation( const double *, double * ) const {}

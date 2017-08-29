@@ -246,6 +246,151 @@ public:
 
         TS_ASSERT( tightenings.empty() );
     }
+
+    void test_examine_constraint_matrix_single_equation()
+    {
+        RowBoundTightener tightener;
+
+        tableau->setDimensions( 1, 5 );
+        tightener.initialize( *tableau );
+
+        tableau->setLowerBound( 0, 0 );
+        tableau->setUpperBound( 0, 3 );
+        tableau->setLowerBound( 1, -1 );
+        tableau->setUpperBound( 1, 2 );
+        tableau->setLowerBound( 2, 4 );
+        tableau->setUpperBound( 2, 5 );
+        tableau->setLowerBound( 3, 0 );
+        tableau->setUpperBound( 3, 1 );
+        tableau->setLowerBound( 4, 2 );
+        tableau->setUpperBound( 4, 2 );
+
+        /*
+           A = | 1 -2 0  1 2 | , b = | 1  |
+
+           Equation:
+                x0 -2x1     +x3  +2x4 = 1
+
+           Ranges:
+                x0: [0, 3]
+                x1: [-1, 2]
+                x2: [4, 5]
+                x3: [0, 1]
+                x4: [2, 2]
+
+           The equation gives us that x0 <= 1
+                                      x1 >= 1.5
+        */
+
+        tightener.reset( *tableau );
+
+        double A[] = { 1, -2, 0, 1, 2 };
+        double b[] = { 1 };
+
+        tableau->A = A;
+        tableau->b = b;
+
+        TS_ASSERT_THROWS_NOTHING( tightener.examineConstraintMatrix( *tableau, false ) );
+
+        List<Tightening> tightenings;
+        TS_ASSERT_THROWS_NOTHING( tightener.getRowTightenings( tightenings ) );
+        TS_ASSERT_EQUALS( tightenings.size(), 2U );
+
+        auto it = tightenings.begin();
+
+        TS_ASSERT_EQUALS( it->_variable, 0U );
+        TS_ASSERT( FloatUtils::areEqual( it->_value, 1.0 ) );
+        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+
+        ++it;
+
+        TS_ASSERT_EQUALS( it->_variable, 1U );
+        TS_ASSERT( FloatUtils::areEqual( it->_value, 1.5 ) );
+        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
+    }
+
+    void test_examine_constraint_matrix_multiple_equations()
+    {
+        RowBoundTightener tightener;
+
+        tableau->setDimensions( 2, 5 );
+        tightener.initialize( *tableau );
+
+        tableau->setLowerBound( 0, 0 );
+        tableau->setUpperBound( 0, 3 );
+        tableau->setLowerBound( 1, -1 );
+        tableau->setUpperBound( 1, 2 );
+        tableau->setLowerBound( 2, -10 );
+        tableau->setUpperBound( 2, 10 );
+        tableau->setLowerBound( 3, 0 );
+        tableau->setUpperBound( 3, 1 );
+        tableau->setLowerBound( 4, 2 );
+        tableau->setUpperBound( 4, 2 );
+
+        /*
+               | 1 -2 0  1 2 | ,     | 1  |
+           A = | 0 -2 1  0 0 | , b = | -2 |
+
+
+           Equations:
+                x0 -2x1      +x3  +2x4 = 1
+                   -2x1 + x2           = -2
+
+           Ranges:
+                x0: [0, 3]
+                x1: [-1, 2]
+                x2: [-10, 10]
+                x3: [0, 1]
+                x4: [2, 2]
+
+           Equation 1 gives us that x0 <= 1
+                                    x1 >= 1.5
+           Equation 2 gives us that x2 <= 2, >= 1
+        */
+
+        tightener.reset( *tableau );
+
+        double A[] = { 1, 0,
+                       -2, -2,
+                       0, 1,
+                       1, 0,
+                       2, 0 };
+
+        double b[] = { 1, -2 };
+
+        tableau->A = A;
+        tableau->b = b;
+
+        TS_ASSERT_THROWS_NOTHING( tightener.examineConstraintMatrix( *tableau, false ) );
+
+        List<Tightening> tightenings;
+        TS_ASSERT_THROWS_NOTHING( tightener.getRowTightenings( tightenings ) );
+        TS_ASSERT_EQUALS( tightenings.size(), 4U );
+
+        auto it = tightenings.begin();
+
+        TS_ASSERT_EQUALS( it->_variable, 0U );
+        TS_ASSERT( FloatUtils::areEqual( it->_value, 1.0 ) );
+        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+
+        ++it;
+
+        TS_ASSERT_EQUALS( it->_variable, 1U );
+        TS_ASSERT( FloatUtils::areEqual( it->_value, 1.5 ) );
+        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
+
+        ++it;
+
+        TS_ASSERT_EQUALS( it->_variable, 2U );
+        TS_ASSERT( FloatUtils::areEqual( it->_value, 1 ) );
+        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
+
+        ++it;
+
+        TS_ASSERT_EQUALS( it->_variable, 2U );
+        TS_ASSERT( FloatUtils::areEqual( it->_value, 2 ) );
+        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+    }
 };
 
 //

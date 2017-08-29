@@ -514,8 +514,6 @@ void BasisFactorization::invertB0( double *result )
         }
         else
         {
-            element->_eta->dump();
-
             unsigned colIndex = element->_eta->_columnIndex;
 
             // First, perform in-place multiplication for all rows below the pivot row
