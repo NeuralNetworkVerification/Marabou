@@ -402,8 +402,7 @@ void Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         _tableau->setUpperBound( i, _preprocessedQuery.getUpperBound( i ) );
     }
 
-    for ( unsigned i = 0; i < n; ++i )
-        _tableau->registerToWatchVariable( _rowBoundTightener, i );
+    _tableau->registerToWatchAllVariables( _rowBoundTightener );
     _rowBoundTightener->reset( _tableau );
 
     _plConstraints = _preprocessedQuery.getPiecewiseLinearConstraints();
@@ -511,7 +510,6 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 
         _tableau->addEquation( equation );
         _activeEntryStrategy->resizeHook( _tableau );
-        _tableau->registerToWatchVariable( _rowBoundTightener, auxVariable );
 
         PiecewiseLinearCaseSplit::EquationType type = it.second();
         if ( type != PiecewiseLinearCaseSplit::GE )

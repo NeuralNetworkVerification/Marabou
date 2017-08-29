@@ -47,6 +47,7 @@ public:
         virtual void notifyUpperBound( unsigned /* variable */, double /* bound */ ) {}
     };
 
+    virtual void registerToWatchAllVariables( VariableWatcher *watcher ) = 0;
     virtual void registerToWatchVariable( VariableWatcher *watcher, unsigned variable ) = 0;
     virtual void unregisterToWatchVariable( VariableWatcher *watcher, unsigned variable ) = 0;
 

@@ -371,6 +371,10 @@ public:
     {
     }
 
+    void registerToWatchAllVariables( VariableWatcher */* watcher */ )
+    {
+    }
+
     typedef List<VariableWatcher *> Watchers;
     Map<unsigned, Watchers> lastRegisteredVariableToWatcher;
     void registerToWatchVariable( VariableWatcher *watcher, unsigned variable )

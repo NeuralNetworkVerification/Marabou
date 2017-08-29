@@ -330,6 +330,7 @@ public:
     /*
       Register or unregister to watch a variable.
     */
+    void registerToWatchAllVariables( VariableWatcher *watcher );
     void registerToWatchVariable( VariableWatcher *watcher, unsigned variable );
     void unregisterToWatchVariable( VariableWatcher *watcher, unsigned variable );
 
@@ -354,6 +355,7 @@ public:
 private:
     typedef List<VariableWatcher *> VariableWatchers;
     Map<unsigned, VariableWatchers> _variableToWatchers;
+    List<VariableWatcher *> _globalWatchers;
 
     /*
       The dimensions of matrix A

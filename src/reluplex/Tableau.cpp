@@ -1426,8 +1426,16 @@ void Tableau::unregisterToWatchVariable( VariableWatcher *watcher, unsigned vari
     _variableToWatchers[variable].erase( watcher );
 }
 
+void Tableau::registerToWatchAllVariables( VariableWatcher *watcher )
+{
+    _globalWatchers.append( watcher );
+}
+
 void Tableau::notifyVariableValue( unsigned variable, double value )
 {
+    for ( auto &watcher : _globalWatchers )
+        watcher->notifyVariableValue( variable, value );
+
     if ( _variableToWatchers.exists( variable ) )
     {
         for ( auto &watcher : _variableToWatchers[variable] )
@@ -1437,6 +1445,9 @@ void Tableau::notifyVariableValue( unsigned variable, double value )
 
 void Tableau::notifyLowerBound( unsigned variable, double bound )
 {
+    for ( auto &watcher : _globalWatchers )
+        watcher->notifyLowerBound( variable, bound );
+
     if ( _variableToWatchers.exists( variable ) )
     {
         for ( auto &watcher : _variableToWatchers[variable] )
@@ -1446,6 +1457,9 @@ void Tableau::notifyLowerBound( unsigned variable, double bound )
 
 void Tableau::notifyUpperBound( unsigned variable, double bound )
 {
+    for ( auto &watcher : _globalWatchers )
+        watcher->notifyUpperBound( variable, bound );
+
     if ( _variableToWatchers.exists( variable ) )
     {
         for ( auto &watcher : _variableToWatchers[variable] )
