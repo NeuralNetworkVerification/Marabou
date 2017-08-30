@@ -17,6 +17,7 @@
 #include "MaxConstraint.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "ReluplexError.h"
+#include "Statistics.h"
 #include <algorithm>
 
 MaxConstraint::MaxConstraint( unsigned f, const Set<unsigned> &elements )
@@ -87,6 +88,9 @@ double MaxConstraint::getMaxUpperBound() const
 
 void MaxConstraint::notifyLowerBound( unsigned variable, double value )
 {
+    if ( _statistics )
+        _statistics->incNumBoundNotificationsPlConstraints();
+
 	if ( _lowerBounds.exists( variable ) && !FloatUtils::gt( value, _lowerBounds[variable] ) )
 		return;
 
@@ -136,6 +140,9 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
 
 void MaxConstraint::notifyUpperBound( unsigned variable, double value )
 {
+    if ( _statistics )
+        _statistics->incNumBoundNotificationsPlConstraints();
+
     if ( _upperBounds.exists( variable ) && !FloatUtils::lt( value, _upperBounds[variable] ) )
 		return;
 

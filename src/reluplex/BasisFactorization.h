@@ -127,6 +127,12 @@ public:
 	void condenseEtas();
 
     /*
+      Compute the inverse of B0, using the LP factorization already stored.
+      This can only be done when B0 is "fresh", i.e. when there are no stored etas.
+     */
+    void invertB0( double *result );
+
+    /*
       A helper function for matrix multiplication.
       left * right = result.
     */

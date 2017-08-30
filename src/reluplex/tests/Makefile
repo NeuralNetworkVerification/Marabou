@@ -20,7 +20,6 @@ SOURCES += \
 	\
 	BasisFactorization.cpp \
 	BlandsRule.cpp \
-	BoundTightener.cpp \
 	DantzigsRule.cpp \
 	DegradationChecker.cpp \
 	Engine.cpp \
@@ -31,21 +30,22 @@ SOURCES += \
 	FreshVariables.cpp \
 	InputQuery.cpp \
 	LPElement.cpp \
+	MaxConstraint.cpp \
 	NestedDantzigsRule.cpp \
 	PiecewiseLinearCaseSplit.cpp \
 	PiecewiseLinearConstraint.cpp \
 	Preprocessor.cpp \
 	ProjectedSteepestEdge.cpp \
+	ProjectedSteepestEdgeFactory.cpp \
 	ReluConstraint.cpp \
+	RowBoundTightener.cpp \
+	RowBoundTightenerFactory.cpp \
 	SmtCore.cpp \
 	Statistics.cpp \
-	SteepestEdge.cpp \
 	Tableau.cpp \
+	TableauFactory.cpp \
 	TableauRow.cpp \
 	TableauState.cpp \
-	\
-	TableauFactory.cpp \
-	MaxConstraint.cpp\
 
 all:
 	./$(TEST_TARGET)

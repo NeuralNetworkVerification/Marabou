@@ -75,6 +75,7 @@ public:
     void incNumBoundsProposedByRowTightener();
     void incNumBoundNotificationsPlConstraints();
     void incNumBoundsProposedByPlConstraints();
+    void incNumBoundTighteningOnConstraintMatrix();
 
     /*
       Projected Steepest Edge related statistics.
@@ -159,6 +160,9 @@ private:
 
     // Number of bound tightenings proposed by the pl constraints
     unsigned long long _numBoundsProposedByPlConstraints;
+
+    // Number of bound tightening rounds performed on the constraint matrix.
+    unsigned long long _numBoundTighteningsOnConstraintMatrix;
 
     // Projected steepest edge statistics
     unsigned long long _pseNumIterations;

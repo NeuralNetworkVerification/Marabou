@@ -12,6 +12,7 @@
 
 #include <cxxtest/TestSuite.h>
 
+#include "GlobalConfiguration.h"
 #include "MockEngine.h"
 #include "MockErrno.h"
 #include "PiecewiseLinearConstraint.h"
@@ -122,7 +123,7 @@ public:
 		{
 		}
 
-        void getEntailedTightenings( List<Tightening> & ) 
+        void getEntailedTightenings( List<Tightening> & ) const
         {
         }
     };
@@ -146,7 +147,7 @@ public:
 
         SmtCore smtCore( engine );
 
-        for ( unsigned i = 0; i < SmtCore::SPLIT_THRESHOLD - 1; ++i )
+        for ( unsigned i = 0; i < GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD - 1; ++i )
         {
             smtCore.reportViolatedConstraint( &constraint1 );
             TS_ASSERT( !smtCore.needToSplit() );
@@ -206,7 +207,7 @@ public:
         constraint.nextSplits.append( split2 );
         constraint.nextSplits.append( split3 );
 
-        for ( unsigned i = 0; i < SmtCore::SPLIT_THRESHOLD; ++i )
+        for ( unsigned i = 0; i < GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD; ++i )
             smtCore.reportViolatedConstraint( &constraint );
 
         engine->lastStoredState = NULL;

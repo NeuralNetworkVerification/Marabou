@@ -39,6 +39,7 @@ Statistics::Statistics()
     , _numBoundsProposedByRowTightener( 0 )
     , _numBoundNotificationsToPlConstraints( 0 )
     , _numBoundsProposedByPlConstraints( 0 )
+    , _numBoundTighteningsOnConstraintMatrix( 0 )
     , _pseNumIterations( 0 )
     , _pseNumResetReferenceSpace( 0 )
 {
@@ -121,6 +122,8 @@ void Statistics::print()
     printf( "\t\tNumber of bound notifications sent to PL constraints: %llu. Tightenings proposed: %llu\n"
             , _numBoundNotificationsToPlConstraints
             , _numBoundsProposedByPlConstraints );
+    printf( "\t\tNumber of bound tightening rounds on the entire constraint matrix: %llu\n"
+            , _numBoundTighteningsOnConstraintMatrix );
 
     printf( "\t--- Projected Steepest Edge Statistics ---\n" );
     printf( "\tNumber of iterations: %llu.\n", _pseNumIterations );
@@ -259,6 +262,11 @@ void Statistics::incNumBoundNotificationsPlConstraints()
 void Statistics::incNumBoundsProposedByPlConstraints()
 {
     ++_numBoundsProposedByPlConstraints;
+}
+
+void Statistics::incNumBoundTighteningOnConstraintMatrix()
+{
+    ++_numBoundTighteningsOnConstraintMatrix;
 }
 
 void Statistics::pseIncNumIterations()

@@ -25,10 +25,6 @@ class String;
 class SmtCore
 {
 public:
-    enum {
-        SPLIT_THRESHOLD = 5,
-    };
-
     SmtCore( IEngine *engine );
 
     /*

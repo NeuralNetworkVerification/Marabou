@@ -45,26 +45,6 @@ public:
 	  lower bound or the upper bound.
 	*/
     BoundType _type;
-
-    // TODO: the function below really belongs in ITableau,
-    // but it shouldn't be pure virtual, since it
-    // just calls the pure virtaul functions tightenLB/UB.
-    // can we make ITableau not an interface?
-    /*
-	  Tighten this request in the given tableau.
-	*/
-	void tighten( ITableau &tableau ) const
-    {
-        switch ( _type )
-        {
-            case Tightening::BoundType::LB:
-                tableau.tightenLowerBound( _variable, _value );
-                break;
-            case Tightening::BoundType::UB:
-                tableau.tightenUpperBound( _variable, _value );
-                break;
-	    }
-    }
 };
 
 #endif // __Tightening_h__

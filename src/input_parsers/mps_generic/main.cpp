@@ -9,19 +9,19 @@
  **/
 
 // Evoke this file by calling ./mps_gensol.elf <MPS FILENAME>
-#include <cstdio>
 
-#include "MpsParser.h"
 #include "Engine.h"
 #include "InputQuery.h"
+#include "MpsParser.h"
+#include <cstdio>
 
 int main( int argc, char *argv[] )
 {
     if ( argc != 2 )
     {
-	printf("Invalid invocation. Please supply an MPS file to read as follows:\n\
+        printf("Invalid invocation. Please supply an MPS file to read as follows:\n\
                 \t$ mps_gensol.elf <FILENAME >\nNow exiting program.\n");
-	return 0;
+        return 0;
     }
 
     char *filename = argv[1];
@@ -36,8 +36,8 @@ int main( int argc, char *argv[] )
     engine.processInputQuery( inputQuery );
     if ( !engine.solve() )
     {
-	printf( "\nStatus:\tUNSAT\n" );
-	return 0;
+        printf( "\nStatus:\tUNSAT\n" );
+        return 0;
     }
 
     printf( "Status:\tSAT\n\n" );
@@ -49,23 +49,23 @@ int main( int argc, char *argv[] )
     printf("\tNAME\tVAL\t\tLB\t\tUB\n");
     for ( unsigned i = 0; i < numEqns; ++i )
     {
-	// Print row i
-	printf("\t%s\t%s\t%s\t%s\n", mpsParser.getEqnName( i ).ascii(),
-	       mpsParser.getEqnValue( i, inputQuery ).ascii(),
-	       mpsParser.getEqnLB( i ).ascii(),
-	       mpsParser.getEqnUB( i ).ascii());
+        // Print row i
+        printf("\t%s\t%s\t%s\t%s\n", mpsParser.getEqnName( i ).ascii(),
+               mpsParser.getEqnValue( i, inputQuery ).ascii(),
+               mpsParser.getEqnLB( i ).ascii(),
+               mpsParser.getEqnUB( i ).ascii());
     }
-    
+
     unsigned numVars = mpsParser.getNumVars();
     // print columns
     printf("COLUMNS:\n");
     printf("\tNAME\tVAL\t\tLB\t\tUB\n");
     for ( unsigned i = 0; i < numVars; ++i )
     {
-	printf("\t%s\t%f\t%s\t%s\n", mpsParser.getVarName( i ).ascii(),
-	       inputQuery.getSolutionValue( i ),
-	       mpsParser.getLowerBound( i ).ascii(),
-	       mpsParser.getUpperBound( i ).ascii());
+        printf("\t%s\t%f\t%s\t%s\n", mpsParser.getVarName( i ).ascii(),
+               inputQuery.getSolutionValue( i ),
+               mpsParser.getLowerBound( i ).ascii(),
+               mpsParser.getUpperBound( i ).ascii());
     }
     return 0;
 }

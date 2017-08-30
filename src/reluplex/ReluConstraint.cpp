@@ -18,6 +18,7 @@
 #include "PiecewiseLinearCaseSplit.h"
 #include "ReluConstraint.h"
 #include "ReluplexError.h"
+#include "Statistics.h"
 
 ReluConstraint::ReluConstraint( unsigned b, unsigned f )
     : _b( b )
@@ -58,7 +59,10 @@ void ReluConstraint::notifyVariableValue( unsigned variable, double value )
 
 void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
 {
-	 if ( _lowerBounds.exists( variable ) && !FloatUtils::gt( bound, _lowerBounds[variable] ) )
+    if ( _statistics )
+        _statistics->incNumBoundNotificationsPlConstraints();
+
+    if ( _lowerBounds.exists( variable ) && !FloatUtils::gt( bound, _lowerBounds[variable] ) )
         return;
 
     _lowerBounds[variable] = bound;
@@ -71,6 +75,9 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
 
 void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
 {
+    if ( _statistics )
+        _statistics->incNumBoundNotificationsPlConstraints();
+
     if ( _upperBounds.exists( variable ) && !FloatUtils::lt( bound, _upperBounds[variable] ) )
         return;
 
@@ -151,7 +158,6 @@ List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
     if ( _phaseStatus != PhaseStatus::PHASE_NOT_FIXED )
         throw ReluplexError( ReluplexError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
 
-    // Auxiliary variable bound, needed for either phase
     List<PiecewiseLinearCaseSplit> splits;
 
     splits.append( getInactiveSplit() );
@@ -163,13 +169,9 @@ List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
 PiecewiseLinearCaseSplit ReluConstraint::getInactiveSplit() const
 {
     // Inactive phase: b <= 0, f = 0
-    // Need to fix f because the bound might not be a tightening
     PiecewiseLinearCaseSplit inactivePhase;
     inactivePhase.storeBoundTightening( Tightening( _b, 0.0, Tightening::UB ) );
-    Equation inactiveEquation;
-    inactiveEquation.addAddend( 1, _f );
-    inactiveEquation.setScalar( 0 );
-    inactivePhase.addEquation( inactiveEquation, PiecewiseLinearCaseSplit::EQ );
+    inactivePhase.storeBoundTightening( Tightening( _f, 0.0, Tightening::UB ) );
     return inactivePhase;
 }
 

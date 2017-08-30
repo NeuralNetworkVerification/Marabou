@@ -50,12 +50,17 @@ public:
     // How many potential pivots should the engine inspect (at most) in every simplex iteration?
     static const unsigned MAX_SIMPLEX_PIVOT_SEARCH_ITERATIONS;
 
+    // The number of violations of a constraints after which the SMT core will initiate a case split
+    static const unsigned CONSTRAINT_VIOLATION_THRESHOLD;
+
+    // How often should we perform full bound tightening, on the entire contraints matrix A.
+    static const unsigned BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY;
+
     // How often should projected steepest edge reset the reference space?
     static const unsigned PSE_ITERATIONS_BEFORE_RESET;
 
     // An error threshold which, when crossed, causes projected steepest edge to reset the reference space
     static const double PSE_GAMMA_ERROR_THRESHOLD;
-
 
     // Logging
     static const bool ENGINE_LOGGING;

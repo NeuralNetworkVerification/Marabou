@@ -27,11 +27,10 @@ Engine::Engine()
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
-    _boundTightener.setStatistics( &_statistics );
+    _rowBoundTightener->setStatistics( &_statistics );
 
     // _activeEntryStrategy = &_nestedDantzigsRule;
-    // _activeEntryStrategy = &_steepestEdgeRule;
-    _activeEntryStrategy = &_projectedSteepestEdgeRule;
+    _activeEntryStrategy = _projectedSteepestEdgeRule;
     // _activeEntryStrategy = &_dantzigsRule;
     // _activeEntryStrategy = &_blandsRule;
 
@@ -51,8 +50,10 @@ bool Engine::solve()
         mainLoopStatistics();
         checkDegradation();
 
-        // Apply any pending bound tightenings
-        _boundTightener.tighten( _tableau );
+        tightenBoundsOnConstraintMatrix();
+
+        // Apply any row-entailed bound tightenings
+        applyAllRowTightenings();
 
         // Apply constraint-entailed bound tightenings
         applyAllConstraintTightenings();
@@ -70,7 +71,7 @@ bool Engine::solve()
             _smtCore.performSplit();
 
             // TODO: We get wrong answers if we don't recompute. But, we also
-            // want to compute before performSplit(), so that the corrent
+            // want to compute before performSplit(), so that the correct
             // assignment is stored with the state.
             _tableau->computeAssignment();
             _tableau->computeBasicStatus();
@@ -119,7 +120,7 @@ bool Engine::solve()
 
         if ( needToPop )
         {
-            // The current query is unsat, and we need to split.
+            // The current query is unsat, and we need to pop.
             // If we're at level 0, the whole query is unsat.
             if ( !_smtCore.popSplit() )
             {
@@ -163,6 +164,7 @@ bool Engine::performSimplexStep()
       3. If the combination is bad, go back to (1) and find the
          next-best entering variable.
     */
+
     _tableau->computeCostFunction();
 
     bool haveCandidate = false;
@@ -187,7 +189,7 @@ bool Engine::performSimplexStep()
 
         // We don't want to re-consider this candidate in future
         // iterations
-        excludedEnteringVariables.insert( _tableau->getEnteringVariable() );
+        excludedEnteringVariables.insert( _tableau->getEnteringVariableIndex() );
 
         // Pick a leaving variable
         _tableau->computeChangeColumn();
@@ -246,7 +248,7 @@ bool Engine::performSimplexStep()
 
     // Tighten
     if ( !fakePivot )
-        _boundTightener.deriveTightenings( _tableau );
+        _rowBoundTightener->examinePivotRow( _tableau );
 
     timeval end = TimeUtils::sampleMicro();
     _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
@@ -302,7 +304,7 @@ void Engine::fixViolatedPlConstraintIfPossible()
     // Pick the variable with the largest coefficient in this row for pivoting,
     // to increase numerical stability.
     unsigned bestCandidate = row._row[0]._var;
-    unsigned bestValue = FloatUtils::abs( row._row[0]._coefficient );
+    double bestValue = FloatUtils::abs( row._row[0]._coefficient );
 
     unsigned n = _tableau->getN();
     unsigned m = _tableau->getM();
@@ -376,6 +378,8 @@ void Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
     unsigned n = _preprocessedQuery.getNumberOfVariables();
     _tableau->setDimensions( m, n );
 
+    _rowBoundTightener->initialize( _tableau );
+
     // Current variables are [0,..,n-1], so the next variable is n.
     FreshVariables::setNextVariable( n );
 
@@ -388,6 +392,7 @@ void Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         for ( const auto &addend : equation._addends )
             _tableau->setEntryValue( equationIndex, addend._variable, addend._coefficient );
 
+        _tableau->assignIndexToBasicVariable( equation._auxVariable, equationIndex );
         ++equationIndex;
     }
 
@@ -396,6 +401,9 @@ void Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         _tableau->setLowerBound( i, _preprocessedQuery.getLowerBound( i ) );
         _tableau->setUpperBound( i, _preprocessedQuery.getUpperBound( i ) );
     }
+
+    _tableau->registerToWatchAllVariables( _rowBoundTightener );
+    _rowBoundTightener->reset( _tableau );
 
     _plConstraints = _preprocessedQuery.getPiecewiseLinearConstraints();
     for ( const auto &constraint : _plConstraints )
@@ -453,9 +461,7 @@ void Engine::storeState( EngineState &state ) const
 {
     _tableau->storeState( state._tableauState );
     for ( const auto &constraint : _plConstraints )
-    {
         state._plConstraintToState[constraint] = constraint->duplicateConstraint();
-    }
 
     state._numPlConstraintsDisabledByValidSplits = _numPlConstraintsDisabledByValidSplits;
 
@@ -466,8 +472,6 @@ void Engine::storeState( EngineState &state ) const
 void Engine::restoreState( const EngineState &state )
 {
     log( "Restore state starting" );
-
-    _boundTightener.clearStoredTightenings();
 
     log( "\tRestoring tableau state" );
     _tableau->restoreState( state._tableauState );
@@ -482,6 +486,10 @@ void Engine::restoreState( const EngineState &state )
     }
 
     _numPlConstraintsDisabledByValidSplits = state._numPlConstraintsDisabledByValidSplits;
+
+    // Make sure the bound tightner is initialized to the correct size
+    _rowBoundTightener->initialize( _tableau );
+    _rowBoundTightener->reset( _tableau );
 
     FreshVariables::setNextVariable( state._nextAuxVariable );
 }
@@ -505,14 +513,12 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 
         PiecewiseLinearCaseSplit::EquationType type = it.second();
         if ( type != PiecewiseLinearCaseSplit::GE )
-        {
             bounds.append( Tightening( auxVariable, 0.0, Tightening::UB ) );
-        }
         if ( type != PiecewiseLinearCaseSplit::LE )
-        {
             bounds.append( Tightening( auxVariable, 0.0, Tightening::LB ) );
-        }
     }
+
+    _rowBoundTightener->initialize( _tableau );
 
     for ( auto &bound : bounds )
     {
@@ -528,7 +534,25 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
         }
     }
 
+    _rowBoundTightener->reset( _tableau );
+
     log( "Done with split\n" );
+}
+
+void Engine::applyAllRowTightenings()
+{
+    List<Tightening> rowTightenings;
+    _rowBoundTightener->getRowTightenings( rowTightenings );
+
+    for ( const auto &tightening : rowTightenings )
+    {
+        _statistics.incNumBoundsProposedByRowTightener();
+
+        if ( tightening._type == Tightening::LB )
+            _tableau->tightenLowerBound( tightening._variable, tightening._value );
+        else
+            _tableau->tightenUpperBound( tightening._variable, tightening._value );
+    }
 }
 
 void Engine::applyAllConstraintTightenings()
@@ -540,7 +564,11 @@ void Engine::applyAllConstraintTightenings()
     for ( const auto &tightening : entailedTightenings )
     {
         _statistics.incNumBoundsProposedByPlConstraints();
-        tightening.tighten( _tableau );
+
+        if ( tightening._type == Tightening::LB )
+            _tableau->tightenLowerBound( tightening._variable, tightening._value );
+        else
+            _tableau->tightenUpperBound( tightening._variable, tightening._value );
     }
 }
 
@@ -574,9 +602,14 @@ void Engine::checkDegradation()
     _statistics.setCurrentDegradation( degradation );
 }
 
-void Engine::setEntrySelectionStrategy( EntrySelectionStrategy *strategy )
+void Engine::tightenBoundsOnConstraintMatrix()
 {
-    _activeEntryStrategy = strategy;
+    if ( _statistics.getNumMainLoopIterations() %
+         GlobalConfiguration::BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY == 0 )
+    {
+        _rowBoundTightener->examineConstraintMatrix( _tableau, true );
+        _statistics.incNumBoundTighteningOnConstraintMatrix();
+    }
 }
 
 void Engine::log( const String &message )

@@ -95,11 +95,6 @@ public:
     BasisFactorization *_basisFactorization;
 
     /*
-      The steepest-edge gamma function
-    */
-    double *_steepestEdgeGamma;
-
-    /*
       Indicator whether the bounds are valid
     */
     bool _boundsValid;

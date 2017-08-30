@@ -37,7 +37,6 @@ public:
 
         lastEntries = NULL ;
         nextCostFunction = NULL;
-        steepestEdgeGamma = NULL;
     }
 
     ~MockTableau()
@@ -70,12 +69,6 @@ public:
         {
             delete[] nextCostFunction;
             nextCostFunction = NULL;
-        }
-
-        if ( steepestEdgeGamma )
-        {
-            delete[] steepestEdgeGamma;
-            steepestEdgeGamma = NULL;
         }
     }
 
@@ -122,9 +115,6 @@ public:
 
         nextCostFunction = new double[n - m];
         std::fill( nextCostFunction, nextCostFunction + ( n - m ), 0.0 );
-
-        steepestEdgeGamma = new double[n - m];
-        std::fill( steepestEdgeGamma, steepestEdgeGamma + ( n - m ), 1.0 );
 
         lastBtranInput = new double[m];
         nextBtranOutput = new double[m];
@@ -292,12 +282,6 @@ public:
     void dumpAssignment() {}
     void dumpEquations() {}
 
-    double *steepestEdgeGamma;
-    const double *getSteepestEdgeGamma() const
-    {
-	return steepestEdgeGamma;
-    }
-
     Map<unsigned, unsigned> nextNonBasicIndexToVariable;
     unsigned nonBasicIndexToVariable( unsigned index ) const
     {
@@ -353,6 +337,12 @@ public:
         return nextAColumn.get( index );
     }
 
+    double *A;
+    const double *getA() const
+    {
+        return A;
+    }
+
     void performDegeneratePivot()
     {
     }
@@ -381,17 +371,21 @@ public:
     {
     }
 
-    typedef Set<VariableWatcher *> Watchers;
+    void registerToWatchAllVariables( VariableWatcher */* watcher */ )
+    {
+    }
+
+    typedef List<VariableWatcher *> Watchers;
     Map<unsigned, Watchers> lastRegisteredVariableToWatcher;
     void registerToWatchVariable( VariableWatcher *watcher, unsigned variable )
     {
-        lastRegisteredVariableToWatcher[variable].insert( watcher );
+        lastRegisteredVariableToWatcher[variable].append( watcher );
     }
 
     Map<unsigned, Watchers> lastUnregisteredVariableToWatcher;
     void unregisterToWatchVariable( VariableWatcher *watcher, unsigned variable )
     {
-        lastUnregisteredVariableToWatcher[variable].insert( watcher );
+        lastUnregisteredVariableToWatcher[variable].append( watcher );
     }
 
     void computeBasicCosts()
@@ -402,9 +396,10 @@ public:
     {
     }
 
+    double *b;
     const double *getRightHandSide() const
     {
-        return NULL;
+        return b;
     }
 
     void forwardTransformation( const double *, double * ) const {}
@@ -415,6 +410,19 @@ public:
     {
         memcpy( lastBtranInput, input, lastM * sizeof(double) );
         memcpy( output, nextBtranOutput, lastM * sizeof(double) );
+    }
+
+    double getSumOfInfeasibilities() const
+    {
+        return 0;
+    }
+
+    void assignIndexToBasicVariable( unsigned /* variable */, unsigned /* index */ )
+    {
+    }
+
+    void verifyInvariants()
+    {
     }
 };
 

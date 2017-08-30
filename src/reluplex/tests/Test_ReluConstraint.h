@@ -195,14 +195,13 @@ public:
         ++split2;
 
         TS_ASSERT( isActiveSplit( b, f, auxVar, split1 ) || isActiveSplit( b, f, auxVar, split2 ) );
-        TS_ASSERT( isInactiveSplit( b, f, auxVar, split1 ) || isInactiveSplit( b, f, auxVar, split2 ) );
+        TS_ASSERT( isInactiveSplit( b, f, split1 ) || isInactiveSplit( b, f, split2 ) );
     }
 
     bool isActiveSplit( unsigned b, unsigned f, unsigned auxVar, List<PiecewiseLinearCaseSplit>::iterator &split )
     {
         List<Tightening> bounds = split->getBoundTightenings();
 
-        TS_ASSERT_EQUALS( bounds.size(), 1U );
         auto bound = bounds.begin();
         Tightening bound1 = *bound;
 
@@ -211,6 +210,8 @@ public:
 
         if ( bound1._type != Tightening::LB )
             return false;
+
+        TS_ASSERT_EQUALS( bounds.size(), 1U );
 
         Equation activeEquation;
         auto equations = split->getEquations();
@@ -237,11 +238,10 @@ public:
         return true;
     }
 
-    bool isInactiveSplit( unsigned b, unsigned f, unsigned auxVar, List<PiecewiseLinearCaseSplit>::iterator &split )
+    bool isInactiveSplit( unsigned b, unsigned f, List<PiecewiseLinearCaseSplit>::iterator &split )
     {
         List<Tightening> bounds = split->getBoundTightenings();
 
-        TS_ASSERT_EQUALS( bounds.size(), 1U );
         auto bound = bounds.begin();
         Tightening bound1 = *bound;
 
@@ -251,23 +251,17 @@ public:
         if ( bound1._type != Tightening::UB )
             return false;
 
-        Equation inactiveEquation;
+        TS_ASSERT_EQUALS( bounds.size(), 2U );
+
+        ++bound;
+        Tightening bound2 = *bound;
+
+        TS_ASSERT_EQUALS( bound2._variable, f );
+        TS_ASSERT_EQUALS( bound2._value, 0.0 );
+        TS_ASSERT_EQUALS( bound2._type, Tightening::UB );
+
         auto equations = split->getEquations();
-        TS_ASSERT_EQUALS( equations.size(), 1U );
-        inactiveEquation = split->getEquations().front().first();
-        inactiveEquation.addAddend( -1, auxVar );
-        inactiveEquation.markAuxiliaryVariable( auxVar );
-        TS_ASSERT_EQUALS( inactiveEquation._addends.size(), 2U );
-        TS_ASSERT_EQUALS( inactiveEquation._scalar, 0.0 );
-
-        auto addend = inactiveEquation._addends.begin();
-        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
-        TS_ASSERT_EQUALS( addend->_variable, f );
-
-        ++addend;
-        TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
-        TS_ASSERT_EQUALS( addend->_variable, auxVar );
-        TS_ASSERT_EQUALS( inactiveEquation._auxVariable, auxVar );
+        TS_ASSERT( equations.empty() );
 
         return true;
     }
@@ -529,7 +523,7 @@ public:
 
         TS_ASSERT_EQUALS( auxVariable, auxVar );
 
-        TS_ASSERT_EQUALS( bounds.size(), 1U );
+        TS_ASSERT_EQUALS( bounds.size(), 2U );
         auto bound = bounds.begin();
         Tightening bound1 = *bound;
 
@@ -537,22 +531,15 @@ public:
         TS_ASSERT_EQUALS( bound1._type, Tightening::UB );
         TS_ASSERT_EQUALS( bound1._value, 0.0 );
 
+        ++bound;
+        Tightening bound2 = *bound;
+
+        TS_ASSERT_EQUALS( bound2._variable, f );
+        TS_ASSERT_EQUALS( bound2._value, 0.0 );
+        TS_ASSERT_EQUALS( bound2._type, Tightening::UB );
+
         auto equations = split.getEquations();
-        TS_ASSERT_EQUALS( equations.size(), 1U );
-        Equation inactiveEquation = split.getEquations().front().first();
-        inactiveEquation.addAddend( -1, auxVariable );
-        inactiveEquation.markAuxiliaryVariable( auxVariable );
-        TS_ASSERT_EQUALS( inactiveEquation._addends.size(), 2U );
-        TS_ASSERT_EQUALS( inactiveEquation._scalar, 0.0 );
-
-        auto addend = inactiveEquation._addends.begin();
-        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
-        TS_ASSERT_EQUALS( addend->_variable, f );
-
-        ++addend;
-        TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
-        TS_ASSERT_EQUALS( addend->_variable, 100U );
-        TS_ASSERT_EQUALS( inactiveEquation._auxVariable, 100U );
+        TS_ASSERT( equations.empty() );
     }
 
     void test_relu_entailed_tightenings()
@@ -630,7 +617,7 @@ public:
         TS_ASSERT_EQUALS( tightening._type, Tightening::UB );
     }
 
-    void xtest_relu_duplicate_and_restore()
+    void test_relu_duplicate_and_restore()
     {
         ReluConstraint *relu1 = new ReluConstraint( 4, 6 );
         relu1->setActiveConstraint( false );
@@ -652,7 +639,7 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete relu2 );
     }
 
-    void xtest_eliminate_variable_active()
+    void test_eliminate_variable_active()
     {
         unsigned b = 1;
         unsigned f = 4;
@@ -711,7 +698,7 @@ public:
         TS_ASSERT_EQUALS( activeEquation._auxVariable, 100U );
     }
 
-    void xtest_eliminate_variable_inactive()
+    void test_eliminate_variable_inactive()
     {
         unsigned b = 1;
         unsigned f = 4;
@@ -740,7 +727,7 @@ public:
 
         TS_ASSERT_EQUALS( auxVariable, auxVar );
 
-        TS_ASSERT_EQUALS( bounds.size(), 1U );
+        TS_ASSERT_EQUALS( bounds.size(), 2U );
         auto bound = bounds.begin();
         Tightening bound1 = *bound;
 
@@ -748,22 +735,15 @@ public:
         TS_ASSERT_EQUALS( bound1._type, Tightening::UB );
         TS_ASSERT_EQUALS( bound1._value, 0.0 );
 
+        ++bound;
+        Tightening bound2 = *bound;
+
+        TS_ASSERT_EQUALS( bound2._variable, f );
+        TS_ASSERT_EQUALS( bound2._type, Tightening::UB );
+        TS_ASSERT_EQUALS( bound2._value, 0.0 );
+
         auto equations = split.getEquations();
-        TS_ASSERT_EQUALS( equations.size(), 1U );
-        Equation inactiveEquation = split.getEquations().front().first();
-        inactiveEquation.addAddend( -1, auxVariable );
-        inactiveEquation.markAuxiliaryVariable( auxVariable );
-        TS_ASSERT_EQUALS( inactiveEquation._addends.size(), 2U );
-        TS_ASSERT_EQUALS( inactiveEquation._scalar, 0.0 );
-
-        auto addend = inactiveEquation._addends.begin();
-        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
-        TS_ASSERT_EQUALS( addend->_variable, f );
-
-        ++addend;
-        TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
-        TS_ASSERT_EQUALS( addend->_variable, 100U );
-        TS_ASSERT_EQUALS( inactiveEquation._auxVariable, 100U );
+        TS_ASSERT( equations.empty() );
     }
 };
 

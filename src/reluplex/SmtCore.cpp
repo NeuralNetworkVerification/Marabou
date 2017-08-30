@@ -31,7 +31,7 @@ void SmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
 
     ++_constraintToViolationCount[constraint];
 
-    if ( _constraintToViolationCount[constraint] >= SPLIT_THRESHOLD )
+    if ( _constraintToViolationCount[constraint] >= GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD )
     {
         _needToSplit = true;
         _constraintForSplitting = constraint;

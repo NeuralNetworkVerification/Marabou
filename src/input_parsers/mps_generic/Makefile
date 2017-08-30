@@ -26,8 +26,10 @@ SOURCES += \
 	BlandsRule.cpp \
 	BoundTightener.cpp \
 	DantzigsRule.cpp \
+	DegradationChecker.cpp \
 	Engine.cpp \
 	EngineState.cpp \
+	EntrySelectionStrategy.cpp \
 	Equation.cpp \
 	EtaMatrix.cpp \
 	FreshVariables.cpp \
@@ -35,10 +37,12 @@ SOURCES += \
 	LPElement.cpp \
 	NestedDantzigsRule.cpp \
 	PiecewiseLinearCaseSplit.cpp \
+	PiecewiseLinearConstraint.cpp \
+	Preprocessor.cpp \
+	ProjectedSteepestEdge.cpp \
 	ReluConstraint.cpp \
 	SmtCore.cpp \
 	Statistics.cpp \
-	SteepestEdge.cpp \
 	Tableau.cpp \
 	TableauFactory.cpp \
 	TableauRow.cpp \
@@ -46,9 +50,6 @@ SOURCES += \
 	\
 	main.cpp \
 	../MpsParser.cpp \
-	../AcasParser.cpp \
-	../AcasNeuralNetwork.cpp \
-	../AcasNnet.cpp \
 
 TARGET = mps_gensol.elf
 

@@ -37,16 +37,17 @@ public:
           This callback will be invoked when the variable's value
           changes.
         */
-        virtual void notifyVariableValue( unsigned variable, double value ) = 0;
+        virtual void notifyVariableValue( unsigned /* variable */, double /* value */ ) {}
 
         /*
           These callbacks will be invoked when the variable's
           lower/upper bounds change.
         */
-        virtual void notifyLowerBound( unsigned variable, double bound ) = 0;
-        virtual void notifyUpperBound( unsigned variable, double bound ) = 0;
+        virtual void notifyLowerBound( unsigned /* variable */, double /* bound */ ) {}
+        virtual void notifyUpperBound( unsigned /* variable */, double /* bound */ ) {}
     };
 
+    virtual void registerToWatchAllVariables( VariableWatcher *watcher ) = 0;
     virtual void registerToWatchVariable( VariableWatcher *watcher, unsigned variable ) = 0;
     virtual void unregisterToWatchVariable( VariableWatcher *watcher, unsigned variable ) = 0;
 
@@ -74,11 +75,11 @@ public:
     virtual void computeBasicStatus( unsigned basic ) = 0;
     virtual bool eligibleForEntry( unsigned nonBasic ) const = 0;
     virtual unsigned getEnteringVariable() const = 0;
-    virtual unsigned getEnteringVariableIndex() const = 0;    
+    virtual unsigned getEnteringVariableIndex() const = 0;
     virtual void pickLeavingVariable() = 0;
     virtual void pickLeavingVariable( double *d ) = 0;
     virtual unsigned getLeavingVariable() const = 0;
-    virtual unsigned getLeavingVariableIndex() const = 0;        
+    virtual unsigned getLeavingVariableIndex() const = 0;
     virtual double getChangeRatio() const = 0;
     virtual bool performingFakePivot() const = 0;
     virtual void performPivot() = 0;
@@ -90,7 +91,6 @@ public:
     virtual void computeMultipliers() = 0;
     virtual void computeReducedCost( unsigned nonBasic ) = 0;
     virtual const double *getCostFunction() const = 0;
-    virtual const double *getSteepestEdgeGamma() const = 0;
     virtual void dumpCostFunction() const = 0;
     virtual void computeChangeColumn() = 0;
     virtual const double *getChangeColumn() const = 0;
@@ -102,12 +102,14 @@ public:
     virtual void dumpEquations() = 0;
     virtual unsigned nonBasicIndexToVariable( unsigned index ) const = 0;
     virtual unsigned basicIndexToVariable( unsigned index ) const = 0;
+    virtual void assignIndexToBasicVariable( unsigned variable, unsigned index ) = 0;
     virtual unsigned variableToIndex( unsigned index ) const = 0;
     virtual void addEquation( const Equation &equation ) = 0;
     virtual unsigned getM() const = 0;
     virtual unsigned getN() const = 0;
     virtual void getTableauRow( unsigned index, TableauRow *row ) = 0;
     virtual const double *getAColumn( unsigned index ) const = 0;
+    virtual const double *getA() const = 0;
     virtual void performDegeneratePivot() = 0;
     virtual void storeState( TableauState &state ) const = 0;
     virtual void restoreState( const TableauState &state ) = 0;
@@ -116,6 +118,8 @@ public:
     virtual const double *getRightHandSide() const = 0;
     virtual void forwardTransformation( const double *y, double *x ) const = 0;
     virtual void backwardTransformation( const double *y, double *x ) const = 0;
+    virtual double getSumOfInfeasibilities() const = 0;
+    virtual void verifyInvariants() = 0;
 };
 
 #endif // __ITableau_h__

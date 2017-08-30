@@ -29,10 +29,10 @@ class Tableau : public ITableau
 public:
     enum BasicStatus {
         BELOW_LB = 0,
-        AT_LB,
-        BETWEEN,
-        AT_UB,
-        ABOVE_UB,
+        AT_LB = 1,
+        BETWEEN = 2,
+        AT_UB = 3,
+        ABOVE_UB = 4,
     };
 
     enum AssignmentStatus {
@@ -89,9 +89,11 @@ public:
     /*
       Initialize the tableau matrices (_B and _AN) according to the
       initial set of basic variables. Assign all non-basic variables
-      to lower bounds and computes the assignment
+      to lower bounds and computes the assignment. Assign the initial basic
+      indices according to the equations.
     */
     void initializeTableau();
+    void assignIndexToBasicVariable( unsigned variable, unsigned index );
 
     /*
       A method for adding an additional equation to the tableau. The
@@ -305,8 +307,9 @@ public:
     void getTableauRow( unsigned index, TableauRow *row );
 
     /*
-      Extract a columnf from the original matrix A.
+      Get the original constraint matrix A or a column thereof.
     */
+    const double *getA() const;
     const double *getAColumn( unsigned variable ) const;
 
     /*
@@ -327,6 +330,7 @@ public:
     /*
       Register or unregister to watch a variable.
     */
+    void registerToWatchAllVariables( VariableWatcher *watcher );
     void registerToWatchVariable( VariableWatcher *watcher, unsigned variable );
     void unregisterToWatchVariable( VariableWatcher *watcher, unsigned variable );
 
@@ -343,18 +347,15 @@ public:
      */
     void setStatistics( Statistics *statistics );
 
-    void useSteepestEdge( bool flag );
-
-    const double *getSteepestEdgeGamma() const;
-
     /*
-      Update gamma array during a pivot
+      Compute the current sum of infeasibilities
     */
-    void updateGamma();
+    double getSumOfInfeasibilities() const;
 
 private:
     typedef List<VariableWatcher *> VariableWatchers;
     Map<unsigned, VariableWatchers> _variableToWatchers;
+    List<VariableWatcher *> _globalWatchers;
 
     /*
       The dimensions of matrix A
@@ -487,24 +488,6 @@ private:
     Statistics *_statistics;
 
     /*
-      Flag for whether or not steepest edge is used.
-    */
-    bool _usingSteepestEdge;
-
-    /*
-      Array of gamma values for steepest edge pivot selection. Must be updated with
-      each pivot.
-     */
-    double *_steepestEdgeGamma;
-
-    /*
-       Working variables for updating gamma
-    */
-    double *_alpha;
-    double *_nu;
-    double *_work;
-
-    /*
       Free all allocated memory.
     */
     void freeMemoryIfNeeded();
@@ -521,26 +504,14 @@ private:
     */
     void addRow();
 
-    /*
-      Initialize gamma array at tableau initialization for steepest edge
-      pivot selection
-    */
-    void initializeGamma();
-
-    /*
-      Recompute the gamma function. Useful after a row has been added to the
-      tableau.
-    */
-    void recomputeGamma();
-
-    /*
-      Helper function to compute dot product of two vectors of size m
-    */
-    double dotProduct( const double *a, const double *b, unsigned m );
-
-    void printVector( const double *v, unsigned m );
-
     static void log( const String &message );
+
+    /*
+      For debugging purposes only
+    */
+    void verifyInvariants();
+
+    static String basicStatusToString( unsigned status );
 };
 
 #endif // __Tableau_h__

@@ -13,19 +13,18 @@
 #ifndef __Engine_h__
 #define __Engine_h__
 
+#include "AutoProjectedSteepestEdge.h"
+#include "AutoRowBoundTightener.h"
 #include "AutoTableau.h"
 #include "BlandsRule.h"
-#include "BoundTightener.h"
 #include "DantzigsRule.h"
 #include "DegradationChecker.h"
 #include "IEngine.h"
+#include "InputQuery.h"
 #include "Map.h"
 #include "NestedDantzigsRule.h"
-#include "ProjectedSteepestEdge.h"
 #include "SmtCore.h"
 #include "Statistics.h"
-#include "SteepestEdge.h"
-#include "InputQuery.h"
 
 class EngineState;
 class InputQuery;
@@ -62,11 +61,6 @@ public:
     */
     void storeState( EngineState &state ) const;
     void restoreState( const EngineState &state );
-
-    /*
-      Set the entry selection strategy.
-    */
-    void setEntrySelectionStrategy( EntrySelectionStrategy *strategy );
 
 private:
     /*
@@ -110,14 +104,13 @@ private:
     BlandsRule _blandsRule;
     DantzigsRule _dantzigsRule;
     NestedDantzigsRule _nestedDantzigsRule;
-    SteepestEdgeRule _steepestEdgeRule;
-    ProjectedSteepestEdgeRule _projectedSteepestEdgeRule;
+    AutoProjectedSteepestEdgeRule _projectedSteepestEdgeRule;
     EntrySelectionStrategy *_activeEntryStrategy;
 
     /*
       Bound tightener.
     */
-    BoundTightener _boundTightener;
+    AutoRowBoundTightener _rowBoundTightener;
 
     /*
       The SMT engine is in charge of case splitting.
@@ -172,6 +165,11 @@ private:
     void reportPlViolation();
 
     /*
+      Apply any bound tightenings found by the row tightener.
+    */
+    void applyAllRowTightenings();
+
+    /*
       Apply any bound tightenings entailed by the constraints.
     */
     void applyAllConstraintTightenings();
@@ -192,8 +190,12 @@ private:
     */
     void checkDegradation();
 
-    static void log( const String &message );
+    /*
+      Perform bound tightening on the constraint matrix A.
+    */
+    void tightenBoundsOnConstraintMatrix();
 
+    static void log( const String &message );
 };
 
 #endif // __Engine_h__
