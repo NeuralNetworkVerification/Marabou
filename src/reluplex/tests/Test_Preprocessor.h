@@ -355,7 +355,7 @@ public:
 	{
 		InputQuery inputQuery;
 
-        inputQuery.setNumberOfVariables( 4 );
+        inputQuery.setNumberOfVariables( 10 );
 		inputQuery.setLowerBound( 0, 1 );
 		inputQuery.setUpperBound( 0, 1 );
         inputQuery.setLowerBound( 1, 0 );
@@ -364,6 +364,18 @@ public:
         inputQuery.setUpperBound( 2, 3 );
 		inputQuery.setLowerBound( 3, 5 );
 		inputQuery.setUpperBound( 3, 5 );
+		inputQuery.setLowerBound( 4, 0 );
+		inputQuery.setUpperBound( 4, 10 );
+		inputQuery.setLowerBound( 5, 0 );
+		inputQuery.setUpperBound( 5, 10 );
+		inputQuery.setLowerBound( 6, 5 );
+		inputQuery.setUpperBound( 6, 5 );
+		inputQuery.setLowerBound( 7, 0 );
+		inputQuery.setUpperBound( 7, 9 );
+		inputQuery.setLowerBound( 8, 0 );
+		inputQuery.setUpperBound( 8, 9 );
+		inputQuery.setLowerBound( 9, 0 );
+		inputQuery.setUpperBound( 9, 9 );
 
         // x0 + x1 + x3 = 10
         Equation equation1;
@@ -375,19 +387,23 @@ public:
 
 		// x2 + x3 = 6
 		Equation equation2;
-		equation2.addAddend( 1, 2 );
 		equation2.addAddend( 1, 3 );
+		equation2.addAddend( 1, 2 );
 		equation2.setScalar( 6 );
 		inputQuery.addEquation( equation2 );
 
+		MaxConstraint *max = new MaxConstraint( 4, Set<unsigned>( {5, 6, 7 } ) );
+		ReluConstraint *relu = new ReluConstraint( 4, 5 );
+		inputQuery.addPiecewiseLinearConstraint( max );
+		inputQuery.addPiecewiseLinearConstraint( relu );
+
 		Preprocessor preprocess( inputQuery );
-
+		preprocess.preprocess();	
         preprocess.eliminateVariables();
-
 		InputQuery processed = preprocess.getInputQuery();
 
 		//eliminate variables x0, x3 because UB = LB
-		TS_ASSERT_EQUALS( processed.getNumberOfVariables(), 2U );
+		TS_ASSERT_EQUALS( processed.getNumberOfVariables(), 7U );
 
 		//	x0 + x1 + x3 = 10
 		//	x1 + x3 = 10 - x0 = 9
@@ -398,7 +414,6 @@ public:
 		TS_ASSERT( FloatUtils::areEqual( processed.getEquations().front()._scalar, 4 ) );
 		TS_ASSERT( FloatUtils::areEqual( processed.getEquations().front()._addends.size(), 1 ) );
 		TS_ASSERT( FloatUtils::areEqual( processed.getEquations().front()._addends.front()._variable, 0 ) );
-
 		//	x2 + x3 = 6
 		//	x1 + x3 = 6
 		//	x1 = 6 - x3 = 1
@@ -407,6 +422,16 @@ public:
 		TS_ASSERT( FloatUtils::areEqual( processed.getEquations().back()._scalar, 1 ) );
 		TS_ASSERT( FloatUtils::areEqual( processed.getEquations().back()._addends.size(), 1 ) );
 		TS_ASSERT( FloatUtils::areEqual( processed.getEquations().back()._addends.front()._variable, 1 ) );
+
+		TS_ASSERT_EQUALS( processed.getPiecewiseLinearConstraints().front()->getParticipatingVariables().size(), 3U );
+		TS_ASSERT_EQUALS( processed.getPiecewiseLinearConstraints().back()->getParticipatingVariables().size(), 2U );
+		
+		TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 2 ), 5 ) );
+		TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 2 ), 10 ) );
+		TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 3 ), 5 ) );
+		TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 3 ), 10 ) );
+		TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 4 ), 0 ) );
+		TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 4 ), 9 ) );
 	}
 	void test_saturation()
 	{

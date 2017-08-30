@@ -145,9 +145,11 @@ public:
 
 	virtual void tightenPL( Tightening tightening, List<Tightening> & tightenings ) = 0;
 
+	bool _removePL;
+
 protected:
     bool _constraintActive;
-    Map<unsigned, double> _assignment;
+	Map<unsigned, double> _assignment;
     Map<unsigned, double> _lowerBounds;
     Map<unsigned, double> _upperBounds;
 

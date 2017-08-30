@@ -226,7 +226,10 @@ void Preprocessor::eliminateVariables()
 	for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
 	{
 		if ( rmVariables.exists( i ) )
+		{
 			++offset;
+			indexAssignment[i] = -1;
+		}
 		else
 			indexAssignment[i] = i - offset;
 	}
@@ -250,16 +253,13 @@ void Preprocessor::eliminateVariables()
 				addend = temp;
 				++nRm;
 			}
-			else
+			else 
 			{
-				_preprocessed.setLowerBound( indexAssignment.get( addend->_variable ),
-                                             _preprocessed.getLowerBound( addend->_variable ) );
-				_preprocessed.setUpperBound( indexAssignment.get( addend->_variable ),
-                                             _preprocessed.getUpperBound( addend->_variable ) );
 				addend->_variable = indexAssignment.get( addend->_variable );
+				++addend;
 			}
+
 			--changeLimit;
-			++addend;
 		}
 		if ( equation._addends.size() == 0 )
 		{
@@ -268,14 +268,34 @@ void Preprocessor::eliminateVariables()
 			_preprocessed.getEquations().erase( equation );
 		}
 	}
-	for ( auto pl : _preprocessed.getPiecewiseLinearConstraints() )
+	for ( auto key : indexAssignment.keys() )
 	{
-		for ( auto var : pl->getParticipatingVariables() )
+		if ( indexAssignment.get( key ) != -1 )
 		{
-			if ( indexAssignment.get( var ) == -1 )
-				pl->eliminateVariable( var, rmVariables.get( var ) );
-			else if ( indexAssignment.get( var ) != var )
-				pl->updateVariableIndex( var, indexAssignment.get( var ) );
+			_preprocessed.setLowerBound( indexAssignment.get( key ),
+                                         _preprocessed.getLowerBound( key ) );
+			_preprocessed.setUpperBound( indexAssignment.get( key ),
+                                         _preprocessed.getUpperBound( key ) );
+		}
+	}
+	auto const  PLConstraints = _preprocessed.getPiecewiseLinearConstraints();
+	for ( auto pl : PLConstraints )
+	{
+		auto participatingVar = pl->getParticipatingVariables();
+		for ( auto key : indexAssignment.keys() )
+		{
+			if ( participatingVar.exists( key ) )
+			{
+				if ( indexAssignment[key] == -1 )
+					pl->eliminateVariable( key, rmVariables.get( key ) );
+				else if ( indexAssignment.get( key ) != key )
+					pl->updateVariableIndex( key, indexAssignment.get( key ) );
+			}
+		}
+		if ( pl->_removePL )
+		{
+			//_preprocessed.getPiecewiseLinearConstraints().erase( pl );
+			//TODO: remove PL
 		}
 	}
 	_preprocessed.setNumberOfVariables( _preprocessed.getNumberOfVariables() - rmVariables.size() );

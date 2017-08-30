@@ -67,7 +67,7 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
         _phaseStatus = PhaseStatus::PHASE_ACTIVE;
     else if ( variable == _b && !FloatUtils::isNegative( bound ) )
         _phaseStatus = PhaseStatus::PHASE_ACTIVE;
-}
+ }
 
 void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
 {

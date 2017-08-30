@@ -85,7 +85,7 @@ public:
     */
     PiecewiseLinearCaseSplit getValidCaseSplit() const;
 
-	void tightenPL( Tightening tighten );
+	void tightenPL( Tightening tighten, List<Tightening> & tightenings );
 
 	void updateBounds();
 
@@ -102,13 +102,14 @@ public:
     /*
       Get the tightenings entailed by the constraint.
     */
-    void getEntailedTightenings( List<Tightening> &tightenings ) const;
+    void getEntailedTightenings( List<Tightening> &tightenings );
 
 private:
     unsigned _f;
   	unsigned _maxIndex;
     Set<unsigned> _elements;
     Set<unsigned> _eliminated;
+	unsigned _maxElim;
     double _minLowerBound;
     double _maxUpperBound;
     bool _phaseFixed;

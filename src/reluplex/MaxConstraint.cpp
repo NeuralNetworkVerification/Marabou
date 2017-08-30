@@ -92,6 +92,15 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
 
 	_lowerBounds[variable] = value;
 
+	_minLowerBound = FloatUtils::max( _minLowerBound, value );
+
+	if ( FloatUtils::gt( value, getMaxUpperBound() ) )
+	{
+		_phaseFixed = true;
+		_fixedPhase = variable;
+	}
+	
+	_minLowerBound = FloatUtils::min( value, _minLowerBound );
 	// if ( FloatUtils::lt( value, _minLowerBound ) )
 	// {
 	// 	_minLowerBound = value;
@@ -132,6 +141,7 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
 
 	_upperBounds[variable] = value;
 
+	_maxUpperBound = FloatUtils::max( value, _maxUpperBound );
 	// if ( FloatUtils::gt( value, _maxUpperBound ) )
 	// {
 	// 	_maxUpperBound = value;
@@ -319,19 +329,8 @@ PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const
 
 void MaxConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
-	ASSERT( participatingVariable( oldIndex ) );
-
-	if ( _assignment.exists( oldIndex ) )
-	{
-		_assignment[newIndex] = _assignment.get( oldIndex );
-		_lowerBounds[newIndex] = _lowerBounds.get( oldIndex );
-		_upperBounds[newIndex] = _upperBounds.get( oldIndex );
-		_assignment.erase( oldIndex );
-	}
-
-	if ( oldIndex == _maxIndex )
-		_maxIndex = newIndex;
-
+	_lowerBounds[newIndex] = _lowerBounds[oldIndex];
+	_upperBounds[newIndex] = _upperBounds[newIndex];
 	if ( oldIndex == _f )
 		_f = newIndex;
 	else
@@ -339,20 +338,28 @@ void MaxConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 		_elements.erase( oldIndex );
 		_elements.insert( newIndex );
 	}
+
 }
 
-void MaxConstraint::eliminateVariable( unsigned, double )
+void MaxConstraint::eliminateVariable( unsigned var, double value )
 {
-/*
-	_eliminated.insert( var );
+	/*if ( _eliminated.size() == 0 || ( _eliminated.size() > 0 && FloatUtils::gt( value, _lowerBounds[_maxElim] ) ) )
+	{
+		_maxElim = var;
+		_lowerBounds[_f] = FloatUtils::max( value, _lowerBounds[_f] );
+	}*/
+
 	_lowerBounds[var] = value;
 	_upperBounds[var] = value;
-	if ( var == _f ) 
-		return;
 
-	if ( FloatUtils::gt( value, _lowerBounds.get( _f ) ) )
+	if ( _lowerBounds.exists( _f) && FloatUtils::gt( value, _lowerBounds.get( _f ) ) )
 		_lowerBounds[_f] = value;
-*/	
+
+	_eliminated.insert( var );
+	_elements.erase( var );
+
+	if ( var == _f || getParticipatingVariables().size() == 1)
+		_removePL = true;
 }
 
 void MaxConstraint::tightenPL( Tightening tighten, List<Tightening> & tightenings )
