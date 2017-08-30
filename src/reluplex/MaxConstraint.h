@@ -85,8 +85,6 @@ public:
     */
     PiecewiseLinearCaseSplit getValidCaseSplit() const;
 
-	void tightenPL( Tightening tighten, List<Tightening> & tightenings );
-
 	void updateBounds();
 
 	void preprocessBounds( unsigned variable, double value, Tightening::BoundType type );
@@ -102,7 +100,7 @@ public:
     /*
       Get the tightenings entailed by the constraint.
     */
-    void getEntailedTightenings( List<Tightening> &tightenings );
+    void getEntailedTightenings( List<Tightening> &tightenings ) const;
 
 private:
     unsigned _f;
@@ -134,7 +132,7 @@ private:
 
 	void setUpperBound( unsigned variable, double value );
 
-
+	void tightenPL( Tightening tighten, List<Tightening> & tightenings );
 };
 
 #endif // __MaxConstraint_h__

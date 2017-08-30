@@ -115,10 +115,6 @@ public:
 		{
 		}
 
-		void tightenPL( Tightening, List<Tightening>& )
-		{
-		}
-
 		void preprocessBounds( unsigned, double, Tightening::BoundType )
 		{
 		}

@@ -41,6 +41,7 @@ InputQuery Preprocessor::preprocess()
         continueTightening = tightenBounds();
         continueTightening = tightenPL() || continueTightening;
     }
+
 	return _preprocessed;
 }
 
@@ -170,7 +171,7 @@ bool Preprocessor::tightenBounds()
                                  _preprocessed.getUpperBound( addend._variable ) ) )
                 throw ReluplexError( ReluplexError::INVALID_BOUND_TIGHTENING, "Preprocessing bound error" );
         }
-    } 
+    }
 
     return tighterBoundFound;
 }
@@ -192,7 +193,6 @@ bool Preprocessor::tightenPL()
 
         for ( const auto &tightening : tightenings )
 		{
-			constraint->tightenPL( tightening, tightenings );
 			if ( ( tightening._type == Tightening::LB ) &&
                  FloatUtils::gt( tightening._value, _preprocessed.getLowerBound( tightening._variable ) ) )
             {
@@ -253,7 +253,7 @@ void Preprocessor::eliminateVariables()
 				addend = temp;
 				++nRm;
 			}
-			else 
+			else
 			{
 				addend->_variable = indexAssignment.get( addend->_variable );
 				++addend;

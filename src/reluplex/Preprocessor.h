@@ -30,19 +30,22 @@ public:
     InputQuery preprocess();
 
 	/*
-	 Preprocess the bounds of variables in equations
+      Preprocess the bounds of variables in equations
 	*/
 	bool tightenBounds();
-	/*
-	 Preprocess the bounds of variables in PL constraints
+
+    /*
+      Preprocess the bounds of variables in PL constraints
 	*/
 	bool tightenPL();
-	/*
-	 Eliminate variables from equations and PL constraints where LB = UB
+
+    /*
+      Eliminate variables from equations and PL constraints where LB = UB
 	*/
 	void eliminateVariables();
-	/*
-	 Return the preprocessed input query
+
+    /*
+      Return the preprocessed input query
 	*/
 	InputQuery getInputQuery();
 
