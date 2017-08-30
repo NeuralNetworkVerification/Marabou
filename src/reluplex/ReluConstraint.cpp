@@ -160,8 +160,28 @@ List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
 
     List<PiecewiseLinearCaseSplit> splits;
 
-    splits.append( getInactiveSplit() );
-    splits.append( getActiveSplit() );
+    // If we have existing knowledge about the assignment, use it to
+    // influence the order of splits
+    if ( _assignment.exists( _f ) )
+    {
+        if ( FloatUtils::isPositive( _assignment[_f] ) )
+        {
+            splits.append( getActiveSplit() );
+            splits.append( getInactiveSplit() );
+        }
+        else
+        {
+            splits.append( getInactiveSplit() );
+            splits.append( getActiveSplit() );
+        }
+    }
+    else
+    {
+        // Default: start with the inactive case, because it doesn't
+        // introduce a new equation and is hence computationally cheaper.
+        splits.append( getInactiveSplit() );
+        splits.append( getActiveSplit() );
+    }
 
     return splits;
 }
