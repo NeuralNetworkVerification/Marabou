@@ -290,8 +290,10 @@ public:
     const TableauRow *getPivotRow() const;
 
     /*
-      Compute the basic assignment
+      Compute the basic assignment. The guarded version only
+      re-computes if the current assignment is marked as invalid.
     */
+    void computeAssignmentIfNeeded();
     void computeAssignment();
 
     /*

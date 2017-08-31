@@ -62,7 +62,7 @@ bool Engine::solve()
         applyAllValidConstraintCaseSplits();
 
         // Compute the current assignment and basic status
-        _tableau->computeAssignment();
+        _tableau->computeAssignmentIfNeeded();
         _tableau->computeBasicStatus();
 
         // Perform any SmtCore-initiated case splits

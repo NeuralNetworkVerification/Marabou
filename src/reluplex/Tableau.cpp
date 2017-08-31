@@ -289,6 +289,12 @@ void Tableau::initializeTableau()
     computeAssignment();
 }
 
+void Tableau::computeAssignmentIfNeeded()
+{
+    if ( _basicAssignmentStatus == ASSIGNMENT_INVALID )
+        computeAssignment();
+}
+
 void Tableau::computeAssignment()
 {
     /*
@@ -1624,17 +1630,6 @@ void Tableau::updateAssignmentForPivot()
         // we can calculate by how much the entering variable is going
         // to change.
         double nonBasicDelta = basicDelta / -_changeColumn[_leavingVariable];
-
-        DEBUG({
-                if ( FloatUtils::isPositive( _costFunction[_enteringVariable] ) )
-                {
-                    ASSERT( !FloatUtils::isPositive( nonBasicDelta ) );
-                }
-                else
-                {
-                    ASSERT( !FloatUtils::isNegative( nonBasicDelta ) );
-                }
-            });
 
         // Update all the other basic variables
         for ( unsigned i = 0; i < _m; ++i )

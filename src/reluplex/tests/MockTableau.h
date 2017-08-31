@@ -277,6 +277,7 @@ public:
         return nextPivotRow;
     }
 
+    void computeAssignmentIfNeeded() {}
     void computeAssignment() {}
     void dump() const {}
     void dumpAssignment() {}
