@@ -648,11 +648,6 @@ bool Tableau::performingFakePivot() const
 
 void Tableau::performPivot()
 {
-    // Any kind of pivot invalidates the assignment
-    // TODO: we don't really need to invalidate, can update the basis
-    // vars based on _d
-    _basicAssignmentStatus = ASSIGNMENT_INVALID;
-
     if ( _leavingVariable == _m )
     {
         if ( _statistics )
@@ -669,7 +664,7 @@ void Tableau::performPivot()
                       _nonBasicAssignment[_enteringVariable],
                       _lowerBounds[nonBasic], _upperBounds[nonBasic] ) );
 
-        setNonBasicAssignment( nonBasic, decrease ? _lowerBounds[nonBasic] : _upperBounds[nonBasic] );
+        updateAssignmentForPivot();
         return;
     }
 
@@ -682,16 +677,21 @@ void Tableau::performPivot()
     log( Stringf( "Tableau performing pivot. Entering: %u, Leaving: %u",
                   _nonBasicIndexToVariable[_enteringVariable],
                   _basicIndexToVariable[_leavingVariable] ) );
-    log( Stringf( "Leaving variable %s. Current value: %.3lf. Range: [%.3lf, %.3lf]",
+    log( Stringf( "Leaving variable %s. Current value: %.15lf. Range: [%.15lf, %.15lf]",
                   _leavingVariableIncreases ? "increases" : "decreases",
                   _basicAssignment[_leavingVariable],
                   _lowerBounds[currentBasic], _upperBounds[currentBasic] ) );
-    log( Stringf( "Entering variable %s. Current value: %.3lf. Range: [%.3lf, %.3lf]",
+    log( Stringf( "Entering variable %s. Current value: %.15lf. Range: [%.15lf, %.15lf]",
                   FloatUtils::isNegative( _costFunction[_enteringVariable] ) ?
                   "increases" : "decreases",
                   _nonBasicAssignment[_enteringVariable],
                   _lowerBounds[currentNonBasic], _upperBounds[currentNonBasic] ) );
-    log( Stringf( "Change ratio is: %.15lf\n", _changeRatio ) );
+    log( Stringf( "Change ratio is: %.15lf", _changeRatio ) );
+    // printf( "Dumping pivot row:\n" );
+    // _pivotRow->dump();
+    // printf( "\n" );
+
+    updateAssignmentForPivot();
 
     // Update the database
     _basicVariables.insert( currentNonBasic );
@@ -703,32 +703,9 @@ void Tableau::performPivot()
     _variableToIndex[currentBasic] = _enteringVariable;
     _variableToIndex[currentNonBasic] = _leavingVariable;
 
-    // Update value of the old basic (now non-basic) variable
-    double nonBasicAssignment;
-    if ( _leavingVariableIncreases )
-    {
-        if ( _basicStatus[_leavingVariable] == Tableau::BELOW_LB )
-            nonBasicAssignment = _lowerBounds[currentBasic];
-        else
-            nonBasicAssignment = _upperBounds[currentBasic];
-    }
-    else
-    {
-        if ( _basicStatus[_leavingVariable] == Tableau::ABOVE_UB )
-            nonBasicAssignment = _upperBounds[currentBasic];
-        else
-            nonBasicAssignment = _lowerBounds[currentBasic];
-    }
-
-    // log( Stringf( "Leaving variable status: %s. New assignment: %.15lf. Old assignment: %.15lf\n",
-    //               basicStatusToString( _basicStatus[_leavingVariable] ).ascii(),
-    //               nonBasicAssignment, _basicAssignment[_leavingVariable] ) );
-
     // Check if the pivot is degenerate and update statistics
-    if ( _statistics && FloatUtils::isZero( _changeRatio ) )
+    if ( FloatUtils::isZero( _changeRatio ) && _statistics )
         _statistics->incNumTableauDegeneratePivots();
-
-    setNonBasicAssignment( _nonBasicIndexToVariable[_enteringVariable], nonBasicAssignment );
 
     // Update the basis factorization. The column corresponding to the
     // leaving variable is the one that has changed
@@ -763,10 +740,11 @@ void Tableau::performDegeneratePivot()
     // Update the basis factorization
     _basisFactorization->pushEtaMatrix( _leavingVariable, _changeColumn );
 
-    // Switch assignment values
+    // Switch assignment values. No call to notify is required,
+    // because values haven't changed.
     double temp = _basicAssignment[_leavingVariable];
     _basicAssignment[_leavingVariable] = _nonBasicAssignment[_enteringVariable];
-    setNonBasicAssignment( currentBasic, temp );
+    _nonBasicAssignment[_enteringVariable] = temp;
 }
 
 double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient, bool decrease )
@@ -1555,6 +1533,131 @@ String Tableau::basicStatusToString( unsigned status )
     }
 
     return "UNKNOWN";
+}
+
+void Tableau::updateAssignmentForPivot()
+{
+    /*
+      This method is invoked when the non-basic _enteringVariable and
+      basic _leaving variable are about to be swapped. We adjust their
+      values prior to actually switching their indices. We also update
+      any other basic variables variables that are affected by this change.
+
+      Specifically, we the following steps:
+
+      1. Update _nonBasicAssignment[_enteringVariable] to the new
+      value that the leaving variable will have after the swap. This
+      is determined using the _leavingVariableIncreases flag and the
+      current status of the leaving variable.
+
+      2. Update _basicAssignment[_leavingVariable] to the new value
+      that the entering variable will have after the swap. This is
+      determined using the change in value of the leaving variable,
+      and the appropriate entry in the change column.
+
+      3. Update the assignment for any basic variables that depend on
+      the entering variable, using the change column.
+
+
+      If the pivot is fake (non-basic hopping to other bound), we just
+      update the affected basics and the non-basic itself.
+    */
+
+    if ( performingFakePivot() )
+    {
+        // A non-basic is hopping from one bound to the other.
+
+        bool nonBasicDecreases = FloatUtils::isPositive( _costFunction[_enteringVariable] );
+        unsigned nonBasic = _nonBasicIndexToVariable[_enteringVariable];
+
+        double nonBasicDelta;
+        if ( nonBasicDecreases )
+            nonBasicDelta = _lowerBounds[nonBasic] - _nonBasicAssignment[_enteringVariable];
+        else
+            nonBasicDelta = _upperBounds[nonBasic] - _nonBasicAssignment[_enteringVariable];
+
+        // Update all the affected basic variables
+        for ( unsigned i = 0; i < _m; ++i )
+        {
+            if ( FloatUtils::isZero( _changeColumn[i] ) )
+                 continue;
+
+            _basicAssignment[i] -= _changeColumn[i] * nonBasicDelta;
+            notifyVariableValue( _basicIndexToVariable[i], _basicAssignment[i] );
+        }
+
+        // Update the assignment for the non-basic variable
+        _nonBasicAssignment[_enteringVariable] = nonBasicDecreases ? _lowerBounds[nonBasic] : _upperBounds[nonBasic];
+        notifyVariableValue( nonBasic, _nonBasicAssignment[_enteringVariable] );
+    }
+    else
+    {
+        // An actual pivot is taking place.
+
+        // Discover by how much the leaving variable is going to change
+        double basicDelta;
+        unsigned currentBasic = _basicIndexToVariable[_leavingVariable];
+        double currentBasicValue = _basicAssignment[_leavingVariable];
+        bool basicGoingToUpperBound;
+
+        if ( _leavingVariableIncreases )
+        {
+            if ( _basicStatus[_leavingVariable] == Tableau::BELOW_LB )
+                basicGoingToUpperBound = false;
+            else
+                basicGoingToUpperBound = true;
+        }
+        else
+        {
+            if ( _basicStatus[_leavingVariable] == Tableau::ABOVE_UB )
+                basicGoingToUpperBound = true;
+            else
+                basicGoingToUpperBound = false;
+        }
+
+        if ( basicGoingToUpperBound )
+            basicDelta = _upperBounds[currentBasic] - currentBasicValue;
+        else
+            basicDelta = _lowerBounds[currentBasic] - currentBasicValue;
+
+        // Now that we know by how much the leaving variable changes,
+        // we can calculate by how much the entering variable is going
+        // to change.
+        double nonBasicDelta = basicDelta / -_changeColumn[_leavingVariable];
+
+        DEBUG({
+                if ( FloatUtils::isPositive( _costFunction[_enteringVariable] ) )
+                {
+                    ASSERT( !FloatUtils::isPositive( nonBasicDelta ) );
+                }
+                else
+                {
+                    ASSERT( !FloatUtils::isNegative( nonBasicDelta ) );
+                }
+            });
+
+        // Update all the other basic variables
+        for ( unsigned i = 0; i < _m; ++i )
+        {
+            if ( i == _leavingVariable )
+                continue;
+
+            if ( FloatUtils::isZero( _changeColumn[i] ) )
+                 continue;
+
+            _basicAssignment[i] -= _changeColumn[i] * nonBasicDelta;
+            notifyVariableValue( _basicIndexToVariable[i], _basicAssignment[i] );
+        }
+
+        // Update the assignment for the entering variable
+        _basicAssignment[_leavingVariable] = _nonBasicAssignment[_enteringVariable] + nonBasicDelta;
+        notifyVariableValue( _nonBasicIndexToVariable[_enteringVariable], _basicAssignment[_leavingVariable] );
+
+        // Update the assignment for the leaving variable
+        _nonBasicAssignment[_enteringVariable] =
+            basicGoingToUpperBound ? _upperBounds[currentBasic] : _lowerBounds[currentBasic];
+        notifyVariableValue( currentBasic, _nonBasicAssignment[_enteringVariable] );
+    }
 }
 
 //

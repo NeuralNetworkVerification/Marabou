@@ -504,6 +504,12 @@ private:
     */
     void addRow();
 
+    /*
+      Update the variable assignment to reflect a pivot operation,
+      without re-computing it from scratch.
+     */
+    void updateAssignmentForPivot();
+
     static void log( const String &message );
 
     /*
