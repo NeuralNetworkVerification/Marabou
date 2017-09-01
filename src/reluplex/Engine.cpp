@@ -50,17 +50,6 @@ bool Engine::solve()
         mainLoopStatistics();
         checkDegradation();
 
-        tightenBoundsOnConstraintMatrix();
-
-        // Apply any row-entailed bound tightenings
-        applyAllRowTightenings();
-
-        // Apply constraint-entailed bound tightenings
-        applyAllConstraintTightenings();
-
-        // Perform any valid case splits
-        applyAllValidConstraintCaseSplits();
-
         // Compute the current assignment and basic status
         _tableau->computeAssignmentIfNeeded();
         _tableau->computeBasicStatus();
@@ -85,6 +74,8 @@ bool Engine::solve()
         }
         else if ( allVarsWithinBounds() )
         {
+            // The linear portion of the problem has been solved.
+
             // Check the status of the PL constraints
             collectViolatedPlConstraints();
 
@@ -106,6 +97,13 @@ bool Engine::solve()
 
             // Attempt to fix the constraint
             fixViolatedPlConstraintIfPossible();
+
+            // Finally, take this opporunity to tighten any bounds
+            // and perform any valid case splits.
+            tightenBoundsOnConstraintMatrix();
+            applyAllRowTightenings();
+            applyAllConstraintTightenings();
+            applyAllValidConstraintCaseSplits();
         }
         else
         {

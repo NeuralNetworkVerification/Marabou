@@ -38,6 +38,7 @@ public:
         MockConstraint()
             : setActiveWasCalled( false )
         {
+            nextIsActive = true;
         }
 
         PiecewiseLinearConstraint *duplicateConstraint() const
@@ -64,9 +65,10 @@ public:
             setActiveWasCalled = true;
         }
 
+        bool nextIsActive;
         bool isActive() const
         {
-            return true;
+            return nextIsActive;
         }
 
         bool participatingVariable( unsigned ) const
@@ -313,6 +315,71 @@ public:
         TS_ASSERT( !smtCore.popSplit() );
         TS_ASSERT( !engine->lastRestoredState );
         TS_ASSERT_EQUALS( smtCore.getStackDepth(), 0U );
+    }
+
+    void test_perform_split__inactive_constraint()
+    {
+        SmtCore smtCore( engine );
+
+        MockConstraint constraint;
+
+        // Split 1
+        PiecewiseLinearCaseSplit split1;
+        Tightening bound1( 1, 3.0, Tightening::LB );
+        Tightening bound2( 1, 5.0, Tightening::UB );
+
+        Equation equation1;
+        equation1.addAddend( 1, 0 );
+        equation1.addAddend( 2, 1 );
+        equation1.addAddend( -1, 2 );
+        equation1.setScalar( 11 );
+
+        split1.storeBoundTightening( bound1 );
+        split1.storeBoundTightening( bound2 );
+        split1.addEquation( equation1, PiecewiseLinearCaseSplit::EQ );
+
+        // Split 2
+        PiecewiseLinearCaseSplit split2;
+        Tightening bound3( 2, 13.0, Tightening::UB );
+        Tightening bound4( 3, 25.0, Tightening::UB );
+
+        Equation equation2;
+        equation2.addAddend( -3, 0 );
+        equation2.addAddend( 3, 1 );
+        equation2.setScalar( -5 );
+
+        split2.storeBoundTightening( bound3 );
+        split2.storeBoundTightening( bound4 );
+        split2.addEquation( equation2, PiecewiseLinearCaseSplit::EQ );
+
+        // Split 3
+        PiecewiseLinearCaseSplit split3;
+        Tightening bound5( 14, 2.3, Tightening::LB );
+
+        split3.storeBoundTightening( bound5 );
+        split3.addEquation( equation1, PiecewiseLinearCaseSplit::EQ );
+        split3.addEquation( equation2, PiecewiseLinearCaseSplit::EQ );
+
+        // Store the splits
+        constraint.nextSplits.append( split1 );
+        constraint.nextSplits.append( split2 );
+        constraint.nextSplits.append( split3 );
+
+        for ( unsigned i = 0; i < GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD; ++i )
+            smtCore.reportViolatedConstraint( &constraint );
+
+        constraint.nextIsActive = false;
+
+        TS_ASSERT( smtCore.needToSplit() );
+        TS_ASSERT_THROWS_NOTHING( smtCore.performSplit() );
+        TS_ASSERT( !smtCore.needToSplit() );
+
+        // Check that no split was performed
+
+        TS_ASSERT( engine->lastLowerBounds.empty() );
+        TS_ASSERT( engine->lastUpperBounds.empty() );
+        TS_ASSERT( engine->lastEquations.empty() );
+        TS_ASSERT( !engine->lastStoredState );
     }
 
     void test_todo()

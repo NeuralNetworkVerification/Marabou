@@ -46,6 +46,17 @@ bool SmtCore::needToSplit() const
 void SmtCore::performSplit()
 {
     ASSERT( _needToSplit );
+
+    // Maybe the constraint has already become inactive - if so, ignore
+    if ( !_constraintForSplitting->isActive() )
+    {
+        _needToSplit = false;
+        _constraintToViolationCount[_constraintForSplitting] = 0;
+        _constraintForSplitting = NULL;
+        return;
+    }
+
+    ASSERT( _constraintForSplitting->isActive() );
     _needToSplit = false;
 
     if ( _statistics )

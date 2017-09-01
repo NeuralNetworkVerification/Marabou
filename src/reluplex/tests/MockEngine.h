@@ -21,11 +21,13 @@
 class MockEngine : public IEngine
 {
 public:
-	MockEngine()
-	{
-		wasCreated = false;
-		wasDiscarded = false;
-	}
+    MockEngine()
+    {
+        wasCreated = false;
+        wasDiscarded = false;
+
+        lastStoredState = NULL;
+    }
 
     ~MockEngine()
     {
@@ -83,7 +85,7 @@ public:
                 bounds.append( Tightening( auxVariable, 0.0, Tightening::LB ) );
             }
         }
-    
+
         for ( auto &bound : bounds )
         {
             if ( bound._type == Tightening::LB )
