@@ -787,7 +787,7 @@ double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient
             // Variable is formally pressed against a bound. However,
             // maybe it's in the tolerance zone but still greater than
             // the bound.
-            maxChange = _lowerBounds[basicIndex] - _basicAssignment[basicIndex];
+            maxChange = _lowerBounds[basic] - _basicAssignment[basicIndex];
             if ( !FloatUtils::isNegative( maxChange ) )
                 maxChange = 0;
         }
@@ -797,6 +797,7 @@ double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient
             maxChange = FloatUtils::negativeInfinity() - _basicAssignment[basicIndex];
         }
 
+        ASSERT( !FloatUtils::isPositive( maxChange ) );
         ratio = maxChange / coefficient;
     }
     else if ( ( FloatUtils::isPositive( coefficient ) && !decrease ) ||
@@ -822,7 +823,7 @@ double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient
             // Variable is formally pressed against a bound. However,
             // maybe it's in the tolerance zone but still greater than
             // the bound.
-            maxChange = _upperBounds[basicIndex] - _basicAssignment[basicIndex];
+            maxChange = _upperBounds[basic] - _basicAssignment[basicIndex];
             if ( !FloatUtils::isPositive( maxChange ) )
                 maxChange = 0;
         }
@@ -832,6 +833,7 @@ double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient
             maxChange = FloatUtils::infinity() - _basicAssignment[basicIndex];
         }
 
+        ASSERT( !FloatUtils::isNegative( maxChange ) );
         ratio = maxChange / coefficient;
     }
     else
