@@ -692,7 +692,7 @@ void Tableau::performPivot()
                   "increases" : "decreases",
                   _nonBasicAssignment[_enteringVariable],
                   _lowerBounds[currentNonBasic], _upperBounds[currentNonBasic] ) );
-    log( Stringf( "Change ratio is: %.15lf", _changeRatio ) );
+    log( Stringf( "Change ratio is: %.15lf\n", _changeRatio ) );
     // printf( "Dumping pivot row:\n" );
     // _pivotRow->dump();
     // printf( "\n" );
@@ -784,8 +784,12 @@ double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient
         }
         else if ( _basicStatus[basicIndex] == BasicStatus::AT_LB )
         {
-            // Variable is pressed against a bound - can't change!
-            maxChange = 0;
+            // Variable is formally pressed against a bound. However,
+            // maybe it's in the tolerance zone but still greater than
+            // the bound.
+            maxChange = _lowerBounds[basicIndex] - _basicAssignment[basicIndex];
+            if ( !FloatUtils::isNegative( maxChange ) )
+                maxChange = 0;
         }
         else
         {
@@ -815,8 +819,12 @@ double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient
         }
         else if ( _basicStatus[basicIndex] == BasicStatus::AT_UB )
         {
-            // Variable is pressed against a bound - can't change!
-            maxChange = 0;
+            // Variable is formally pressed against a bound. However,
+            // maybe it's in the tolerance zone but still greater than
+            // the bound.
+            maxChange = _upperBounds[basicIndex] - _basicAssignment[basicIndex];
+            if ( !FloatUtils::isPositive( maxChange ) )
+                maxChange = 0;
         }
         else
         {

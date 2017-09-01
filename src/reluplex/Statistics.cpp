@@ -88,7 +88,7 @@ void Statistics::print()
             , _numPlValidSplits
             , _numPlSmtOriginatedSplits
             );
-    printf( "\tLast reported degradation: %.5lf. Max degradation so far: %.5lf\n"
+    printf( "\tLast reported degradation: %.10lf. Max degradation so far: %.10lf\n"
             , _currentDegradation
             , _maxDegradation
             );
