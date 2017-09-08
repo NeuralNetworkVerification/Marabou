@@ -1,0 +1,4 @@
+*.d
+*.obj
+TAGS
+/src/engine/tests/Engine.tests
