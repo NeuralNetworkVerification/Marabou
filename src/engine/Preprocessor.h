@@ -22,35 +22,28 @@
 class Preprocessor
 {
 public:
-	Preprocessor( const InputQuery &query );
-
     /*
       Main method of this class: preprocess the input query
     */
-    InputQuery preprocess();
+    InputQuery preprocess( const InputQuery &query );
 
+private:
 	/*
-      Preprocess the bounds of variables in equations
+      Tighten bounds using the linear equations
 	*/
-	bool tightenBounds();
+	bool processEquations();
 
     /*
-      Preprocess the bounds of variables in PL constraints
+      Tighten the bounds using the piecewise linear constraints
 	*/
-	bool tightenPL();
+	bool processConstraints();
 
     /*
-      Eliminate variables from equations and PL constraints where LB = UB
+      Eliminate any variables that have become files
 	*/
 	void eliminateVariables();
 
-    /*
-      Return the preprocessed input query
-	*/
-	InputQuery getInputQuery();
-
     InputQuery _preprocessed;
-	bool _hasTightened;
 };
 
 #endif // __Preprocessor_h__

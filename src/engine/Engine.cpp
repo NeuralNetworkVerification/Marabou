@@ -359,7 +359,7 @@ void Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
     // If processing is enabled, invoke the preprocessor
     if ( preprocess )
-        _preprocessedQuery = Preprocessor( inputQuery ).preprocess();
+        _preprocessedQuery = Preprocessor().preprocess( inputQuery );
     else
         _preprocessedQuery = inputQuery;
 
