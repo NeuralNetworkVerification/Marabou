@@ -8,6 +8,8 @@ SRC_DIR           = $(ROOT_DIR)/src
 TOOLS_DIR	  = $(PROJECT_DIR)/tools
 CXXTEST_DIR 	  = $(TOOLS_DIR)/cxxtest
 
+INPUT_PARSER_DIR  = $(SRC_DIR)/input_parsers
+
 COMMON_DIR 	  = $(SRC_DIR)/common
 COMMON_MOCK_DIR   = $(COMMON_DIR)/mock
 COMMON_REAL_DIR   = $(COMMON_DIR)/real

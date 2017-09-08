@@ -5,6 +5,7 @@ SUBDIRS += \
 LOCAL_INCLUDES += \
 	$(CONFIGURATION_DIR) \
 	$(ENGINE_DIR) \
+	$(INPUT_PARSER_DIR) \
 
 LINK_FLAGS += \
 
@@ -22,6 +23,9 @@ SOURCES += \
 	MString.cpp \
 	TimeUtils.cpp \
 	\
+	AcasNeuralNetwork.cpp \
+	AcasNnet.cpp \
+	AcasParser.cpp \
 	BasisFactorization.cpp \
 	BlandsRule.cpp \
 	DantzigsRule.cpp \
@@ -65,7 +69,7 @@ vpath %.cpp $(COMMON_DIR)
 vpath %.cpp $(COMMON_REAL_DIR)
 vpath %.cpp $(ENGINE_DIR)
 vpath %.cpp $(ENGINE_REAL_DIR)
-
+vpath %.cpp $(INPUT_PARSER_DIR)
 #
 # Local Variables:
 # compile-command: "make -C .. "

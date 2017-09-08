@@ -13,18 +13,16 @@
 #include <cstdio>
 
 #include "RegressUtils.h"
+#include "ReluplexError.h"
 
+#include "acas_1_1_fixed_input.h"
+#include "acas_2_2_fixed_input.h"
 #include "lp_feasible_1.h"
 #include "lp_feasible_2.h"
-
 #include "lp_infeasible_1.h"
-
-#include "relu_feasible_1.h"
-
 #include "max_feasible_1.h"
 #include "max_infeasible_1.h"
-
-#include "ReluplexError.h"
+#include "relu_feasible_1.h"
 
 void lps()
 {
@@ -48,6 +46,12 @@ void relus()
     printTitle( "ReLUs / Sat" );
     Relu_Feasible_1 rf1;
     rf1.run();
+
+    Acas_1_1_Fixed_Input acas_1_1_fixed_input;
+    acas_1_1_fixed_input.run();
+
+    Acas_2_2_Fixed_Input acas_2_2_fixed_input;
+    acas_2_2_fixed_input.run();
 }
 
 void max()
