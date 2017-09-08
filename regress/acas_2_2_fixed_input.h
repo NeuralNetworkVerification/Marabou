@@ -26,7 +26,7 @@ class Acas_2_2_Fixed_Input
 public:
     void run()
     {
-        int outputStream = redirectOutputToFile( "logs/lp_feasible_2.txt" );
+        int outputStream = redirectOutputToFile( "logs/acas_2_2_fixed_input.txt" );
 
         InputQuery inputQuery;
         AcasParser acasParser( "./acas_nnet/ACASXU_run2a_2_2_batch_2000.nnet" );

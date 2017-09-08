@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file acas_1_1_fixed_input.h
+/*! \file acas_1_1_no_constraints.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz
@@ -10,8 +10,8 @@
  ** directory for licensing information.\endverbatim
  **/
 
-#ifndef __Acas_1_1_Fixed_Input_h__
-#define __Acas_1_1_Fixed_Input_h__
+#ifndef __Acas_1_1_No_Constraints_h__
+#define __Acas_1_1_No_Constraints_h__
 
 #include "AcasParser.h"
 #include "Engine.h"
@@ -21,24 +21,16 @@
 #include "Preprocessor.h"
 #include "ReluplexError.h"
 
-class Acas_1_1_Fixed_Input
+class Acas_1_1_No_Constraints
 {
 public:
     void run()
     {
-        int outputStream = redirectOutputToFile( "logs/acas_1_1_fixed_input.txt" );
+        int outputStream = redirectOutputToFile( "logs/acas_1_1_no_constraints.txt" );
 
         InputQuery inputQuery;
         AcasParser acasParser( "./acas_nnet/ACASXU_run2a_1_1_batch_2000.nnet" );
         acasParser.generateQuery( inputQuery );
-
-        // A simple query: all inputs are fixed to 0
-        for ( unsigned i = 0; i < 5; ++i )
-        {
-            unsigned variable = acasParser.getInputVariable( i );
-            inputQuery.setLowerBound( variable, 0.0 );
-            inputQuery.setUpperBound( variable, 0.0 );
-        }
 
         timeval start = TimeUtils::sampleMicro();
 
@@ -52,7 +44,7 @@ public:
 
         if ( !result )
         {
-            printFailed( "acas_1_1_fixed_input", start, end );
+            printFailed( "acas_1_1_no_constraints", start, end );
             return;
         }
 
@@ -79,13 +71,13 @@ public:
         }
 
         if ( FloatUtils::gt( maxError, 0.00001 ) )
-            printFailed( "acas_1_1_fixed_input", start, end );
+            printFailed( "acas_1_1_no_constraints", start, end );
         else
-            printPassed( "acas_1_1_fixed_input", start, end );
+            printPassed( "acas_1_1_no_constraints", start, end );
     }
 };
 
-#endif // __Acas_1_1_Fixed_Input_h__
+#endif // __Acas_1_1_No_Constraints_h__
 
 //
 // Local Variables:

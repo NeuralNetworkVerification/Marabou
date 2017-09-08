@@ -106,7 +106,7 @@ public:
 		inputQuery.addPiecewiseLinearConstraint( max1 );
 		inputQuery.addPiecewiseLinearConstraint( max2 );
 
-        int outputStream = redirectOutputToFile( "logs/lp_feasible_2.txt" );
+        int outputStream = redirectOutputToFile( "logs/max_feasible_1.txt" );
 
         timeval start = TimeUtils::sampleMicro();
 

@@ -104,7 +104,7 @@ public:
         inputQuery.addPiecewiseLinearConstraint( relu1 );
         inputQuery.addPiecewiseLinearConstraint( relu2 );
 
-        int outputStream = redirectOutputToFile( "logs/lp_feasible_2.txt" );
+        int outputStream = redirectOutputToFile( "logs/relu_feasible_1.txt" );
 
         timeval start = TimeUtils::sampleMicro();
 
