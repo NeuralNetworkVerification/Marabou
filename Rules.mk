@@ -104,7 +104,8 @@ DEPS = $(SOURCES:%.cpp=%.d)
 OBJECTS = $(SOURCES:%.cpp=%.obj)
 
 %.elf: $(OBJECTS)
-	$(LINK) $(LINK_FLAGS) -o $@ $^ $(addprefix -l, $(SYSTEM_LIBRARIES)) $(addprefix -l, $(LOCAL_LIBRARIES))
+	@echo "LD\t" $@
+	@$(LINK) $(LINK_FLAGS) -o $@ $^ $(addprefix -l, $(SYSTEM_LIBRARIES)) $(addprefix -l, $(LOCAL_LIBRARIES))
 
 .PRECIOUS: %.obj
 
