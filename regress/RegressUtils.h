@@ -54,7 +54,7 @@ void printFailed( const String &test, timeval start, timeval end )
     printf( CYN "\t Test: " RESET " %s ", test.ascii() );
     for ( unsigned i = test.length(); i < 20; ++i )
         printf( " " );
-    printf( " -- " GRN " FAILED " RESET );
+    printf( " -- " RED " FAILED " RESET );
 
     unsigned long long milli = TimeUtils::timePassed( start, end );
     unsigned seconds = milli / 1000;
