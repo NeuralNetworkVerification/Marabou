@@ -11,6 +11,7 @@
  **/
 
 #include "FloatUtils.h"
+#include "InfeasibleQueryException.h"
 #include "InputQuery.h"
 #include "MStringf.h"
 #include "Map.h"
@@ -18,7 +19,7 @@
 #include "ReluplexError.h"
 #include "Tightening.h"
 
-InputQuery Preprocessor::preprocess( const InputQuery &query )
+InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariableElimination )
 {
     _preprocessed = query;
 
@@ -38,6 +39,9 @@ InputQuery Preprocessor::preprocess( const InputQuery &query )
         continueTightening = processEquations();
         continueTightening = processConstraints() || continueTightening;
     }
+
+    if ( attemptVariableElimination )
+        eliminateFixedVariables();
 
 	return _preprocessed;
 }
@@ -183,93 +187,100 @@ bool Preprocessor::processConstraints()
     return tighterBoundFound;
 }
 
-void Preprocessor::eliminateVariables()
+void Preprocessor::eliminateFixedVariables()
 {
-// 	Map< unsigned, double > rmVariables;
-// 	for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
-// 	{
-//         if ( FloatUtils::areEqual( _preprocessed.getLowerBound( i ), _preprocessed.getUpperBound( i ) ) )
-//             rmVariables[i] = _preprocessed.getLowerBound( i );
-// 	}
+    // First, collect the variables that have become fixed, and their fixed values
+	Map<unsigned, double> fixedVariables;
+	for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
+	{
+        if ( FloatUtils::areEqual( _preprocessed.getLowerBound( i ), _preprocessed.getUpperBound( i ) ) )
+            fixedVariables[i] = _preprocessed.getLowerBound( i );
+	}
 
-// 	int offset = 0;
-// 	Map<unsigned, double> indexAssignment;
-// 	for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
-// 	{
-// 		if ( rmVariables.exists( i ) )
-// 		{
-// 			++offset;
-// 			indexAssignment[i] = -1;
-// 		}
-// 		else
-// 			indexAssignment[i] = i - offset;
-// 	}
+    // If there's nothing to eliminate, we're done
+    if ( fixedVariables.empty() )
+        return;
 
-// 	for ( auto &equation : _preprocessed.getEquations() )
-// 	{
-// 		int nRm = equation._addends.size();
-// 		int changeLimit = equation._addends.size();
-// 		//necessary to remove addends
-// 		for ( auto addend = equation._addends.begin(); addend != equation._addends.end(); )
-// 		{
-// 			if ( changeLimit == 0 )
-// 				break;
+    // Compute the new variable indices, after the elimination of fixed variables
+    Map<unsigned, unsigned> oldIndexToNewIndex;
 
-// 			if ( rmVariables.exists( addend->_variable ) )
-// 			{
-// 				equation.setScalar( equation._scalar - addend->_coefficient * rmVariables.get( addend->_variable ) );
-// 				auto temp = ++addend;
-// 				--addend;
-// 				equation._addends.erase( addend );
-// 				addend = temp;
-// 				++nRm;
-// 			}
-// 			else
-// 			{
-// 				addend->_variable = indexAssignment.get( addend->_variable );
-// 				++addend;
-// 			}
+ 	int offset = 0;
+	for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
+	{
+		if ( fixedVariables.exists( i ) )
+			++offset;
+		else
+			fixedVariables[i] = i - offset;
+	}
 
-// 			--changeLimit;
-// 		}
-// 		if ( equation._addends.size() == 0 )
-// 		{
-// 			if ( !FloatUtils::isZero( equation._scalar ) )
-//                 throw ReluplexError( ReluplexError::EQUATION_INVALID, "variables eliminated incorrectly" );
-// 			_preprocessed.getEquations().erase( equation );
-// 		}
-// 	}
-// 	for ( auto key : indexAssignment.keys() )
-// 	{
-// 		if ( indexAssignment.get( key ) != -1 )
-// 		{
-// 			_preprocessed.setLowerBound( indexAssignment.get( key ),
-//                                          _preprocessed.getLowerBound( key ) );
-// 			_preprocessed.setUpperBound( indexAssignment.get( key ),
-//                                          _preprocessed.getUpperBound( key ) );
-// 		}
-// 	}
-// 	auto const  PLConstraints = _preprocessed.getPiecewiseLinearConstraints();
-// 	for ( auto pl : PLConstraints )
-// 	{
-// 		auto participatingVar = pl->getParticipatingVariables();
-// 		for ( auto key : indexAssignment.keys() )
-// 		{
-// 			if ( participatingVar.exists( key ) )
-// 			{
-// 				if ( indexAssignment[key] == -1 )
-// 					pl->eliminateVariable( key, rmVariables.get( key ) );
-// 				else if ( indexAssignment.get( key ) != key )
-// 					pl->updateVariableIndex( key, indexAssignment.get( key ) );
-// 			}
-// 		}
-// 		if ( pl->_removePL )
-// 		{
-// 			//_preprocessed.getPiecewiseLinearConstraints().erase( pl );
-// 			//TODO: remove PL
-// 		}
-// 	}
-// 	_preprocessed.setNumberOfVariables( _preprocessed.getNumberOfVariables() - rmVariables.size() );
+    // Next, eliminate the fixed variables from the equations
+    List<Equation> &equations( _preprocessed.getEquations() );
+    List<Equation>::iterator equation = equations.begin();
+
+    while ( equation != equations.end() )
+	{
+        // Each equation is of the form sum(addends) = scalar. So, any fixed variable
+        // needs to be subtracted from the scalar.
+        List<Equation::Addend>::iterator addend = equation->_addends.begin();
+        while ( addend != equation->_addends.end() )
+        {
+            if ( fixedVariables.exists( addend->_variable ) )
+            {
+                // Addend has to go...
+                double constant = fixedVariables[addend->_variable] * addend->_coefficient;
+                equation->_scalar -= constant;
+                addend = equation->_addends.erase( addend );
+            }
+            else
+            {
+                // Adjust the addend's variable index
+                addend->_variable = oldIndexToNewIndex[addend->_variable];
+                ++addend;
+            }
+        }
+
+        // If all the addends have been removed, we remove the entire equation.
+        // Overwise, we are done here.
+        if ( equation->_addends.empty() )
+        {
+            // No addends left, scalar should be 0
+            if ( !FloatUtils::isZero( equation->_scalar ) )
+                throw InfeasibleQueryException();
+            else
+                equation = equations.erase( equation );
+        }
+        else
+            ++equation;
+	}
+
+    // Let the piecewise-lienar constraints know of any eliminated variables and
+    // change in indices.
+    for ( const auto &constraint : _preprocessed.getPiecewiseLinearConstraints() )
+	{
+		List<unsigned> participatingVariables = constraint->getParticipatingVariables();
+        for ( unsigned variable : participatingVariables )
+        {
+            if ( fixedVariables.exists( variable ) )
+                constraint->eliminateVariable( variable, fixedVariables[variable] );
+            else if ( oldIndexToNewIndex[variable] != variable )
+                constraint->updateVariableIndex( variable, oldIndexToNewIndex[variable] );
+        }
+	}
+
+    // Update the lower/upper bound maps
+    for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
+	{
+        if ( fixedVariables.exists( i ) )
+            continue;
+
+        _preprocessed.setLowerBound( oldIndexToNewIndex[i], _preprocessed.getLowerBound( i ) );
+        _preprocessed.setUpperBound( oldIndexToNewIndex[i], _preprocessed.getUpperBound( i ) );
+	}
+
+    // Adjust the number of variables in the query
+    _preprocessed.setNumberOfVariables( _preprocessed.getNumberOfVariables() - fixedVariables.size() );
+
+    // TODO: need to maintain the mappings, for extracting the solutions
 }
 
 //

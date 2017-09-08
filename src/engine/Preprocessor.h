@@ -25,7 +25,7 @@ public:
     /*
       Main method of this class: preprocess the input query
     */
-    InputQuery preprocess( const InputQuery &query );
+    InputQuery preprocess( const InputQuery &query, bool attemptVariableElimination = false );
 
 private:
 	/*
@@ -41,7 +41,7 @@ private:
     /*
       Eliminate any variables that have become files
 	*/
-	void eliminateVariables();
+	void eliminateFixedVariables();
 
     InputQuery _preprocessed;
 };
