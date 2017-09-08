@@ -156,13 +156,13 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
 	// }
 }
 
-void MaxConstraint::preprocessBounds( unsigned variable, double value, Tightening::BoundType type )
-{
-	if ( type == Tightening::LB )
-		setLowerBound( variable, value );
-	else
-		setUpperBound( variable, value );
-}
+// void MaxConstraint::preprocessBounds( unsigned variable, double value, Tightening::BoundType type )
+// {
+// 	if ( type == Tightening::LB )
+// 		setLowerBound( variable, value );
+// 	else
+// 		setUpperBound( variable, value );
+// }
 
 void MaxConstraint::setLowerBound( unsigned variable, double value )
 {
@@ -182,46 +182,54 @@ void MaxConstraint::setUpperBound( unsigned variable, double value )
 
 void MaxConstraint::getEntailedTightenings( List<Tightening> & tightenings ) const
 {
+    // Lower and upper bounds for the f variable
     double fLB = _lowerBounds.get( _f );
     double fUB = _upperBounds.get( _f );
-    double maxUB = FloatUtils::negativeInfinity();
-    double minLB = FloatUtils::negativeInfinity();
 
-    for ( auto key : _upperBounds.keys() )
+    // Compute the maximal bounds (lower and upper) for the elements
+    double maxElementLB = FloatUtils::negativeInfinity();
+    double maxElementUB = FloatUtils::negativeInfinity();
+
+    for ( const auto &element : _elements )
     {
-	 	if ( key == _f ) continue;
-	 	maxUB = FloatUtils::max( _upperBounds.get( key ), maxUB );
+        if ( !_lowerBounds.exists( element ) )
+            maxElementLB = FloatUtils::infinity();
+        else
+            maxElementLB = FloatUtils::max( _lowerBounds[element], maxElementLB );
+
+        if ( !_upperBounds.exists( element ) )
+            maxElementUB = FloatUtils::infinity();
+        else
+            maxElementUB = FloatUtils::max( _upperBounds[element], maxElementUB );
     }
-    for ( auto key : _lowerBounds.keys() )
+
+    // fUB and maxElementUB need to be equal. If not, the lower of the two wins.
+    if ( FloatUtils::areDisequal( fUB, maxElementUB ) )
     {
-	 	if ( key == _f ) continue;
-	 	minLB = FloatUtils::max( _lowerBounds.get( key ), minLB );
+        if ( FloatUtils::gt( fUB, maxElementUB ) )
+        {
+            tightenings.append( Tightening( _f, maxElementUB, Tightening::UB ) );
+        }
+        else
+        {
+            for ( const auto &element : _elements )
+            {
+                if ( !_upperBounds.exists( element ) || FloatUtils::gt( _upperBounds[element], fUB ) )
+                    tightenings.append( Tightening( element, fUB, Tightening::UB ) );
+            }
+        }
     }
-    if ( FloatUtils::gte( maxUB, fUB ) )
-    {
-        // tightenPL( Tightening( _f, fUB, Tightening::UB ), tightenings );
-	 	tightenings.append( Tightening( _f, fUB, Tightening::UB ) );
-    }
-    else if ( FloatUtils::lt( maxUB, fUB ) )
-    {
-	 	// _upperBounds[_f] = maxUB;
-	 	tightenings.append( Tightening( _f, maxUB, Tightening::UB ) );
-    }
-    if ( FloatUtils::lt( minLB, fLB ) )
-    {
-	 	// tightenPL( Tightening( _f, fLB, Tightening::LB ), tightenings );
-	 	tightenings.append( Tightening( _f, fLB, Tightening::LB ) );
-    }
-    else if ( FloatUtils::gt( minLB, fLB ) )
-    {
-	 	// _lowerBounds[_f] = minLB;
-	 	tightenings.append( Tightening( _f, minLB, Tightening::LB ) );
-    }
+
+    // fLB cannot be smaller than maxElementLB
+    if ( FloatUtils::lt( fLB, maxElementLB ) )
+        tightenings.append( Tightening( _f, maxElementLB, Tightening::LB ) );
+
+    // TODO: can we derive additional bounds?
 }
 
-void MaxConstraint::updateBounds()
-{
-}
+// void MaxConstraint::updateBounds()
+// {
+// }
 
 bool MaxConstraint::participatingVariable( unsigned variable ) const
 {

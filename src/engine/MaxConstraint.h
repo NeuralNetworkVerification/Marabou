@@ -19,8 +19,9 @@
 class MaxConstraint : public PiecewiseLinearConstraint
 {
 public:
-  	MaxConstraint( unsigned f, const Set<unsigned> &elements );
   	~MaxConstraint();
+
+    MaxConstraint( unsigned f, const Set<unsigned> &elements );
 
     /*
       Return a clone of the constraint.
@@ -85,9 +86,9 @@ public:
     */
     PiecewiseLinearCaseSplit getValidCaseSplit() const;
 
-	void updateBounds();
+	// void updateBounds();
 
-	void preprocessBounds( unsigned variable, double value, Tightening::BoundType type );
+	// void preprocessBounds( unsigned variable, double value, Tightening::BoundType type );
 
     /*
       Preprocessing related functions, to inform that a variable has been eliminated completely
