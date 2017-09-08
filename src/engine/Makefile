@@ -1,8 +1,7 @@
-ROOT_DIR = ..
+ROOT_DIR = ../..
 
 SUBDIRS += \
 	tests \
-	regress \
 
 LOCAL_INCLUDES += \
 	$(CONFIGURATION_DIR) \
@@ -44,8 +43,8 @@ vpath %.cpp $(COMMON_REAL_DIR)
 
 #
 # Local Variables:
-# compile-command: "make -C .. "
-# tags-file-name: "../TAGS"
+# compile-command: "make -C ../.. "
+# tags-file-name: "../../TAGS"
 # c-basic-offset: 4
 # End:
 #

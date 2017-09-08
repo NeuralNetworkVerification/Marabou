@@ -17,6 +17,8 @@
 #include "MString.h"
 #include "ReluConstraint.h"
 
+static bool USE_SLACK_VARIABLES = false;
+
 AcasParser::NodeIndex::NodeIndex( unsigned layer, unsigned node )
     : _layer( layer )
     , _node( node )
@@ -56,6 +58,17 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
     //   2. Each internal node has a B variable, an F variable, and an auxiliary varibale
     //   3. Each output node appears once and also has an auxiliary variable
     unsigned numberOfVariables = inputLayerSize + ( 3 * numberOfInternalNodes ) + ( 2 * outputLayerSize );
+
+    if ( USE_SLACK_VARIABLES )
+    {
+        // An extra slack variable for each relu node
+        numberOfVariables += numberOfInternalNodes;
+        printf( "number of internal nodes: %u\n", numberOfInternalNodes );
+
+    }
+
+    printf( "Total number of variables: %u\n", numberOfVariables );
+
     inputQuery.setNumberOfVariables( numberOfVariables );
 
     // Next, we want to map each node to its corresponding
@@ -88,6 +101,18 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
             _nodeToAux[NodeIndex( i, j )] = currentIndex;
             ++currentIndex;
         }
+
+        // And the slack variables for any relu nodes
+        if ( USE_SLACK_VARIABLES && ( i < numberOfLayers - 1 ) )
+        {
+            for ( unsigned j = 0; j < currentLayerSize; ++j )
+            {
+                printf( "Adding slack equation for node (%u, %u)\n", i, j );
+
+                _nodeToSlack[NodeIndex( i, j )] = currentIndex;
+                ++currentIndex;
+            }
+        }
     }
 
     // Now we set the variable bounds. Input bounds are
@@ -100,12 +125,21 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
 
         inputQuery.setLowerBound( _nodeToF[NodeIndex(0, i)], min );
         inputQuery.setUpperBound( _nodeToF[NodeIndex(0, i)], max );
+
+        printf( "Parser setting bounds for input %u: [%.15lf, %.15lf]\n", i, min, max );
     }
 
     for ( const auto &auxNode : _nodeToAux )
     {
         inputQuery.setLowerBound( auxNode.second, 0.0 );
         inputQuery.setUpperBound( auxNode.second, 0.0 );
+    }
+
+    for ( const auto &slackNode : _nodeToSlack )
+    {
+        // A slack node represents f - b + aux = 0, so aux is non-positive
+        inputQuery.setLowerBound( slackNode.second, FloatUtils::negativeInfinity() );
+        inputQuery.setUpperBound( slackNode.second, 0.0 );
     }
 
     for ( const auto &fNode : _nodeToF )
@@ -157,6 +191,33 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
             inputQuery.addEquation( equation );
         }
     }
+
+    // And the slack variable equations
+    for ( const auto &slackNode : _nodeToSlack )
+    {
+        // A slack node represents f - b + aux == 0
+
+        Equation equation;
+
+        unsigned fVar = _nodeToF[slackNode.first];
+        unsigned bVar = _nodeToB[slackNode.first];
+        unsigned auxVar = slackNode.second;
+
+        printf( "b: %u, f: %u, slack: %u\n", bVar, fVar, auxVar );
+
+        equation.addAddend( 1.0, auxVar );
+        equation.markAuxiliaryVariable( auxVar );
+
+        equation.addAddend( 1, fVar );
+        equation.addAddend( -1, bVar );
+        equation.setScalar( 0 );
+
+        equation.dump();
+
+        inputQuery.addEquation( equation );
+    }
+
+
 
     // Add the ReLU constraints
     for ( unsigned i = 1; i < numberOfLayers - 1; ++i )
@@ -210,6 +271,15 @@ unsigned AcasParser::getAuxVariable( unsigned layer, unsigned index ) const
     return _nodeToAux.get( nodeIndex );
 }
 
+unsigned AcasParser::getSlackVariable( unsigned layer, unsigned index ) const
+{
+    NodeIndex nodeIndex( layer, index );
+    if ( !_nodeToSlack.exists( nodeIndex ) )
+        throw InputParserError( InputParserError::VARIABLE_INDEX_OUT_OF_RANGE, "Slacks" );
+
+    return _nodeToSlack.get( nodeIndex );
+}
+
 void AcasParser::evaluate( const Vector<double> &inputs, Vector<double> &outputs ) const
 {
     _acasNeuralNetwork.evaluate( inputs, outputs,
@@ -218,8 +288,8 @@ void AcasParser::evaluate( const Vector<double> &inputs, Vector<double> &outputs
 
 //
 // Local Variables:
-// compile-command: "make -C .. "
-// tags-file-name: "../TAGS"
+// compile-command: "make -C ../.. "
+// tags-file-name: "../../TAGS"
 // c-basic-offset: 4
 // End:
 //

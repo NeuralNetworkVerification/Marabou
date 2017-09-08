@@ -312,8 +312,8 @@ double ProjectedSteepestEdgeRule::getGamma( unsigned index ) const
 
 //
 // Local Variables:
-// compile-command: "make -C .. "
-// tags-file-name: "../TAGS"
+// compile-command: "make -C ../.. "
+// tags-file-name: "../../TAGS"
 // c-basic-offset: 4
 // End:
 //

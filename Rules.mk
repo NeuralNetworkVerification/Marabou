@@ -2,8 +2,8 @@
 # Places
 #
 
-SRC_DIR           = $(ROOT_DIR)
-PROJECT_DIR       = $(ROOT_DIR)/..
+PROJECT_DIR       = $(ROOT_DIR)
+SRC_DIR           = $(ROOT_DIR)/src
 
 TOOLS_DIR	  = $(PROJECT_DIR)/tools
 CXXTEST_DIR 	  = $(TOOLS_DIR)/cxxtest
@@ -13,12 +13,14 @@ COMMON_MOCK_DIR   = $(COMMON_DIR)/mock
 COMMON_REAL_DIR   = $(COMMON_DIR)/real
 COMMON_TEST_DIR   = $(COMMON_DIR)/tests
 
-RELUPLEX_DIR      = $(SRC_DIR)/reluplex
-RELUPLEX_MOCK_DIR = $(RELUPLEX_DIR)/mock
-RELUPLEX_REAL_DIR = $(RELUPLEX_DIR)/real
-RELUPLEX_TEST_DIR = $(RELUPLEX_DIR)/tests
+ENGINE_DIR        = $(SRC_DIR)/engine
+ENGINE_MOCK_DIR   = $(ENGINE_DIR)/mock
+ENGINE_REAL_DIR   = $(ENGINE_DIR)/real
+ENGINE_TEST_DIR   = $(ENGINE_DIR)/tests
 
 CONFIGURATION_DIR = $(SRC_DIR)/configuration
+
+REGRESS_DIR	  = $(PROJECT_DIR)/regress
 
 #
 # Utilities

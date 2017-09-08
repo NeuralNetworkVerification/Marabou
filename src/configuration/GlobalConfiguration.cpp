@@ -20,7 +20,7 @@ const unsigned GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY = 100;
 const double GlobalConfiguration::BOUND_COMPARISON_TOLERANCE = 0.001;
 const double GlobalConfiguration::PIVOT_CHANGE_COLUMN_TOLERANCE = 0.000000001;
 const bool GlobalConfiguration::PREPROCESS_INPUT_QUERY = true;
-const unsigned GlobalConfiguration::DEGRADATION_CHECKING_FREQUENCY = 10;
+const unsigned GlobalConfiguration::DEGRADATION_CHECKING_FREQUENCY = 1;
 const double GlobalConfiguration::ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD = 0.0001;
 const unsigned GlobalConfiguration::MAX_SIMPLEX_PIVOT_SEARCH_ITERATIONS = 5;
 const unsigned GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD = 20;
@@ -61,8 +61,8 @@ void GlobalConfiguration::print()
 
 //
 // Local Variables:
-// compile-command: "make -C .. "
-// tags-file-name: "../TAGS"
+// compile-command: "make -C ../.. "
+// tags-file-name: "../../TAGS"
 // c-basic-offset: 4
 // End:
 //

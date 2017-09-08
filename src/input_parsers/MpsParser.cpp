@@ -8,21 +8,21 @@
 ** directory for licensing information.\endverbatim
 **/
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
 #include "FloatUtils.h"
 #include "InputParserError.h"
 #include "InputQuery.h"
-#include "MpsParser.h"
 #include "MString.h"
+#include "MpsParser.h"
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 MpsParser::MpsParser( const char *filename )
 {
     // Parses a MPS format file
     parse( filename );
 }
- 
+
 unsigned MpsParser::getNumVars() const
 {
     return _numVars;
@@ -124,7 +124,7 @@ void MpsParser::parse( const char* filename )
     }
 
     parseRemainingBounds();
-    
+
     delete[] buffer;
 }
 
@@ -154,10 +154,10 @@ void MpsParser::parseBounds( const char *token )
     }
     strtok( NULL, DELIM ); // bound name, ignore
     String var = String( strtok( NULL, DELIM ) ); // column name
-    
+
     unsigned varIndex = _varToIndex[var];
     double value = atof( strtok( NULL, DELIM ) ); // bound value
-    
+
     // Log bounds for each different bound type
     if ( strcmp( token, "UP" ) == 0) {
 	if ( !_varToUpperBounds.exists(varIndex) || FloatUtils::gt(_varToUpperBounds[varIndex], value ) ) {
@@ -199,7 +199,7 @@ void MpsParser::parseRhs( const char *token )
     {
 	unsigned eqnIndex = _eqnToIndex[String( token )];
 	token = strtok( NULL, DELIM); // value
-	
+
 	_eqnToRhs[eqnIndex] = atof( token );
 	token = strtok( NULL, DELIM); // next eqn name
     }
@@ -297,7 +297,7 @@ void MpsParser::parseColumn( const char *token )
 void MpsParser::parseRow( const char *token )
 {
     unsigned eqnIndex = _numEqns;
-    
+
     char *nameC = strtok( NULL, "\t\n ");
     //    printf("%s: %s\n", token, nameC);
 
@@ -355,7 +355,7 @@ void MpsParser::setEqns( InputQuery &inputQuery )
 	    printf("Ignoring objective. TODO: transform optval into another constraint.\n");
 	    continue;
 	}
-	
+
 	Equation eqn;
 
 	unsigned auxVarIndex = eqnIndex + _numVars; // TODO: obj function doesn't have aux var
@@ -378,7 +378,7 @@ void MpsParser::setEqns( InputQuery &inputQuery )
 	    break;
 	    // TODO: transform the optval into another constraint
 	}
-	
+
 	// Add eqn to inputQuery
 	inputQuery.addEquation( eqn );
 
@@ -405,8 +405,8 @@ void MpsParser::setEqn( Equation &eqn, unsigned eqnIndex, unsigned auxVarIndex )
 
 //
 // Local Variables:
-// compile-command: "make -C .. "
-// tags-file-name: "../TAGS"
+// compile-command: "make -C ../.. "
+// tags-file-name: "../../TAGS"
 // c-basic-offset: 4
 // End:
 //

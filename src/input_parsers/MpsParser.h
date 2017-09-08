@@ -27,7 +27,7 @@ public:
         G, // greater than or equal
         N, // no restriction
     };
-    
+
     MpsParser( const char *filename );
     void generateQuery( InputQuery &inputQuery );
 
@@ -61,11 +61,11 @@ private:
     void parseRanges( const char *token );
     void parseBounds( const char *token );
     void parseRemainingBounds();
-    
+
     void setBounds( InputQuery &inputQuery );
     void setEqns( InputQuery &inputQuery );
     void setEqn( Equation &eqn, unsigned eqnIndex, unsigned auxVarIndex );
-    
+
     const char *DELIM = "\n\t ";
     unsigned _numVars = 0;
     unsigned _numEqns = 0;
@@ -74,7 +74,7 @@ private:
     Map<unsigned, unsigned> _eqnToRowType;
     Map<unsigned, Map<unsigned, double>> _eqnToCoeffs; // Eqn: {Var: Coeff, ...}
     Map<unsigned, double> _eqnToRhs;
-    
+
     Map<String, unsigned> _varToIndex;
     Map<unsigned, String> _indexToVar;
     Map<unsigned, double> _varToUpperBounds;
@@ -87,8 +87,8 @@ private:
 
 //
 // Local Variables:
-// compile-command: "make -C .. "
-// tags-file-name: "../TAGS"
+// compile-command: "make -C ../.. "
+// tags-file-name: "../../TAGS"
 // c-basic-offset: 4
 // End:
 //

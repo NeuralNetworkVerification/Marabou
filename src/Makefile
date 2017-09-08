@@ -1,34 +1,16 @@
-ROOT_DIR = .
+ROOT_DIR = ..
 
 SUBDIRS += \
 	common \
-	reluplex \
-
-all:
-	@echo Done
-
-.PHONY: TAGS
-
-FINDARGS = -iname Makefile \
-		-or -iname \*.mk \
-		-or -iname \*.h \
-		-or -iname \*.cpp \
-		-or -iname \*.c | \
-		$(GREP) -v TestRunner | \
-		$(XARGS) $(ETAGS)
-
-TAGS:
-	$(GFIND) common $(FINDARGS)
-	$(GFIND) configuration $(FINDARGS) -a
-	$(GFIND) reluplex $(FINDARGS) -a
-	$(ETAGS) -a Makefile
+	engine \
+	input_parsers \
 
 include $(ROOT_DIR)/Rules.mk
 
 #
 # Local Variables:
-# compile-command: "make -C . "
-# tags-file-name: "./TAGS"
+# compile-command: "make -C .. "
+# tags-file-name: "../TAGS"
 # c-basic-offset: 4
 # End:
 #

@@ -1,4 +1,4 @@
-ROOT_DIR = ../..
+ROOT_DIR = ../../..
 
 TEST_TARGET = CommonTests.tests
 
@@ -30,8 +30,8 @@ vpath %.cpp $(COMMON_DIR)
 
 #
 # Local Variables:
-# compile-command: "make -C ../.. "
-# tags-file-name: "../../TAGS"
+# compile-command: "make -C ../../.. "
+# tags-file-name: "../../../TAGS"
 # c-basic-offset: 4
 # End:
 #
