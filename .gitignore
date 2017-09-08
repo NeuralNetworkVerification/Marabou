@@ -3,3 +3,4 @@
 TAGS
 /src/engine/tests/Engine.tests
 *~
+/src/input_parsers/mps_generic/mps_gensol.elf
