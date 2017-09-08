@@ -2,10 +2,14 @@ ROOT_DIR = .
 
 SUBDIRS += \
 	src \
-	regress \
 
 all:
 	@echo Done
+
+.PHONY: regress
+
+regress:
+	make -C regress
 
 .PHONY: TAGS
 

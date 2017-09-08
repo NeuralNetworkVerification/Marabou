@@ -23,8 +23,6 @@ class Relu_Feasible_1
 public:
     void run()
     {
-        printf( "Running relu_feasible_1... " );
-
         // The example from the CAV'17 paper:
         //   0   <= x0  <= 1
         //   0   <= x1f
@@ -106,19 +104,29 @@ public:
         inputQuery.addPiecewiseLinearConstraint( relu1 );
         inputQuery.addPiecewiseLinearConstraint( relu2 );
 
+        int outputStream = redirectOutputToFile( "logs/lp_feasible_2.txt" );
+
+        timeval start = TimeUtils::sampleMicro();
+
         Engine engine;
-
         engine.processInputQuery( inputQuery );
+        bool result = engine.solve();
 
-        if ( !engine.solve() )
+        timeval end = TimeUtils::sampleMicro();
+
+        restoreOutputStream( outputStream );
+
+        if ( !result )
         {
-            printf( "\nError! Query is feasible but no solution found\n" );
-            exit( 1 );
+            printFailed( "relu_feasible_1", start, end );
+            return;
         }
 
         engine.extractSolution( inputQuery );
 
+        bool correctSolution = true;
         // Sanity test
+
         double value_x0 = inputQuery.getSolutionValue( 0 );
         double value_x1b = inputQuery.getSolutionValue( 1 );
         double value_x1f = inputQuery.getSolutionValue( 2 );
@@ -127,45 +135,35 @@ public:
         double value_x3 = inputQuery.getSolutionValue( 5 );
 
         if ( !FloatUtils::areEqual( value_x0, value_x1b ) )
-        {
-            printf( "\nError! Equaiton 1 does not hold\n" );
-            exit( 1 );
-        }
+            correctSolution = false;
 
         if ( !FloatUtils::areEqual( value_x0, -value_x2b ) )
-        {
-            printf( "\nError! Equaiton 2 does not hold\n" );
-            exit( 1 );
-        }
+            correctSolution = false;
 
         if ( !FloatUtils::areEqual( value_x3, value_x1f + value_x2f ) )
-        {
-            printf( "\nError! Equaiton 3 does not hold\n" );
-            exit( 1 );
-        }
+            correctSolution = false;
 
         if ( FloatUtils::lt( value_x0, 0 ) || FloatUtils::gt( value_x0, 1 ) ||
              FloatUtils::lt( value_x1f, 0 ) || FloatUtils::lt( value_x2f, 0 ) ||
              FloatUtils::lt( value_x3, 0.5 ) || FloatUtils::gt( value_x3, 1 ) )
         {
-            printf( "\nError! Values violate the variable bounds\n" );
-            exit( 1 );
+            correctSolution = false;
         }
 
         if ( FloatUtils::isPositive( value_x1f ) && !FloatUtils::areEqual( value_x1b, value_x1f ) )
         {
-            printf( "\nError! x1 violates the relu constraint\n" );
-            exit( 1 );
+            correctSolution = false;
         }
 
         if ( FloatUtils::isPositive( value_x2f ) && !FloatUtils::areEqual( value_x2b, value_x2f ) )
         {
-            printf( "\nError! x2 violates the relu constraint\n" );
-            exit( 1 );
+            correctSolution = false;
         }
 
-        printf( "\nQuery is satisfiable\n" );
-        printf( "\nRegression test passed!\n" );
+        if ( !correctSolution )
+            printFailed( "relu_feasible_1", start, end );
+        else
+            printPassed( "relu_feasible_1", start, end );
     }
 };
 
@@ -173,8 +171,8 @@ public:
 
 //
 // Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
+// compile-command: "make -C .. "
+// tags-file-name: "../TAGS"
 // c-basic-offset: 4
 // End:
 //

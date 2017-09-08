@@ -1,18 +1,28 @@
-#ifndef __max_feasible_1_h__
-#define __max_feasible_1_h__
+/*********************                                                        */
+/*! \file Max_Feasible_1.h
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Derek Huang
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **/
+
+#ifndef __Max_Feasible_1_h__
+#define __Max_Feasible_1_h__
 
 #include "Engine.h"
 #include "FloatUtils.h"
 #include "InputQuery.h"
 #include "MaxConstraint.h"
 
-class max_feasible_1
+class Max_Feasible_1
 {
 public:
 	void run()
 	{
-		printf( "Running max_feasible_1..." );
-
         //   0   <= x0  <= 1
         //   0   <= x1f
 		//	 0	 <= x2f
@@ -64,7 +74,7 @@ public:
         inputQuery.setUpperBound( 7, 0 );
         inputQuery.setLowerBound( 8, 0 );
         inputQuery.setUpperBound( 8, 0 );
-		
+
  		Equation equation1;
         equation1.addAddend( 1, 0 );
         equation1.addAddend( -1, 1 );
@@ -89,24 +99,36 @@ public:
         equation3.setScalar( 0 );
         equation3.markAuxiliaryVariable( 8 );
         inputQuery.addEquation( equation3 );
-		
+
 		MaxConstraint *max1 = new MaxConstraint( 5, Set<unsigned>( { 0, 2, 3 } ) );
 		MaxConstraint *max2 = new MaxConstraint( 3, Set<unsigned>( { 0, 4 } ) );
 
 		inputQuery.addPiecewiseLinearConstraint( max1 );
 		inputQuery.addPiecewiseLinearConstraint( max2 );
 
-		Engine engine;
+        int outputStream = redirectOutputToFile( "logs/lp_feasible_2.txt" );
 
-		engine.processInputQuery( inputQuery );
-		if ( !engine.solve() )
+        timeval start = TimeUtils::sampleMicro();
+
+        Engine engine;
+        engine.processInputQuery( inputQuery );
+        bool result = engine.solve();
+
+        timeval end = TimeUtils::sampleMicro();
+
+        restoreOutputStream( outputStream );
+
+        if ( !result )
         {
-            printf( "\nError! Query is feasible but no solution found\n" );
-            exit( 1 );
+            printFailed( "max_feasible_1", start, end );
+            return;
         }
+
         engine.extractSolution( inputQuery );
 
+        bool correctSolution = true;
         // Sanity test
+
         double value_x0 = inputQuery.getSolutionValue( 0 );
         double value_x1b = inputQuery.getSolutionValue( 1 );
         double value_x1f = inputQuery.getSolutionValue( 2 );
@@ -116,60 +138,47 @@ public:
 
 
         if ( !FloatUtils::areEqual( value_x0, value_x1b ) )
-        {
-            printf( "\nError! Equaiton 1 does not hold\n" );
-            exit( 1 );
-        }
+            correctSolution = false;
 
         if ( !FloatUtils::areEqual( value_x0, -value_x2b ) )
-        {
-            printf( "\nError! Equaiton 2 does not hold\n" );
-            exit( 1 );
-        }
+            correctSolution = false;
 
         if ( !FloatUtils::areEqual( value_x3, value_x1f + value_x2f ) )
-        {
-            printf( "\nError! Equaiton 3 does not hold\n" );
-            exit( 1 );
-        }
+            correctSolution = false;
 
         if ( FloatUtils::lt( value_x0, 0 ) || FloatUtils::gt( value_x0, 1 ) ||
-             FloatUtils::lt( value_x1f, 0 ) || 
+             FloatUtils::lt( value_x1f, 0 ) ||
              FloatUtils::lt( value_x3, 0.5 ) || FloatUtils::gt( value_x3, 1 ) ||
 			 FloatUtils::lt( value_x2f, 0.0 ) )
         {
-            printf( "\nError! Values violate the variable bounds\n" );
-            exit( 1 );
+            correctSolution = false;
         }
 
-       	if ( !FloatUtils::areEqual( FloatUtils::max( value_x2b, 
-		FloatUtils::max( value_x0, value_x2f ) ), value_x2b ) )
+       	if ( !FloatUtils::areEqual
+             ( FloatUtils::max( value_x2b, FloatUtils::max( value_x0, value_x2f ) ), value_x2b ) )
         {
-            printf( "\nError! x_2b violates the max constraint\n" );
-            exit( 1 );
+            correctSolution = false;
         }
 
-		if ( !FloatUtils::areEqual( FloatUtils::max( value_x1b, 
-		FloatUtils::max( value_x0, FloatUtils::max( value_x2b, value_x1f ) ) ), value_x3 ) ) 
+		if ( !FloatUtils::areEqual
+             ( FloatUtils::max( value_x1b, FloatUtils::max( value_x0, FloatUtils::max( value_x2b, value_x1f ) ) ), value_x3 ) )
 		{
-			printf( "\nError! x_3 violates the max constraint\n" );
-			exit( 1 );
+            correctSolution = false;
 		}
 
-        printf( "\nQuery is satisfiable\n" );
-        printf( "\nRegression test passed!\n" );
+        if ( !correctSolution )
+            printFailed( "max_feasible_1", start, end );
+        else
+            printPassed( "max_feasible_1", start, end );
     }
 };
 
-#endif // __max_feasible_1_h__
+#endif // __Max_Feasible_1_h__
 
 //
 // Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
+// compile-command: "make -C .. "
+// tags-file-name: "../TAGS"
 // c-basic-offset: 4
 // End:
 //
-
-
-

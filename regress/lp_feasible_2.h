@@ -29,7 +29,6 @@ public:
         //  x0 + 2x1 -x2 <= 11 --> x0 + 2x1 - x2 + x3 = 11, x3 >= 0
         //  -3x0 + 3x1  >= -5 --> -3x0 + 3x1 + x4 = -5, x4 <= 0
 
-        printf( "Running lp_feasible_2... " );
         // Simple satisfiable query:
         //   0  <= x0 <= 2
         //   -3 <= x1 <= 3
@@ -70,18 +69,27 @@ public:
         equation2.markAuxiliaryVariable( 4 );
         inputQuery.addEquation( equation2 );
 
+        int outputStream = redirectOutputToFile( "logs/lp_feasible_2.txt" );
+
+        timeval start = TimeUtils::sampleMicro();
+
         Engine engine;
-
         engine.processInputQuery( inputQuery );
+        bool result = engine.solve();
 
-        if ( !engine.solve() )
+        timeval end = TimeUtils::sampleMicro();
+
+        restoreOutputStream( outputStream );
+
+        if ( !result )
         {
-            printf( "\nError! Query is feasible but no solution found\n" );
-            exit( 1 );
+            printFailed( "lp_feasible_2", start, end );
+            return;
         }
 
         engine.extractSolution( inputQuery );
 
+        bool correctSolution = true;
         // Sanity test
 
         double value0 = inputQuery.getSolutionValue( 0 );
@@ -96,20 +104,14 @@ public:
         value += -1 * value2;
         value += 1  * value3;
         if ( !FloatUtils::areEqual( value, 11 ) )
-        {
-            printf( "\nError! The solution does not satisfy the first equation\n" );
-            exit( 1 );
-        }
+            correctSolution = false;
 
         value = 0;
         value += -3  * value0;
         value += 3  * value1;
         value += 1  * value4;
         if ( !FloatUtils::areEqual( value, -5 ) )
-        {
-            printf( "\nError! The solution does not satisfy the second equation\n" );
-            exit( 1 );
-        }
+            correctSolution = false;
 
         if ( ( value0 < 0 ) || ( value0 > 2 ) ||
              ( value1 < -3 ) || ( value1 > 3 ) ||
@@ -117,12 +119,13 @@ public:
              ( value3 < 0 ) ||
              ( value4 > 0 ) )
         {
-            printf( "\nError! Values violate the variable bounds\n" );
-            exit( 1 );
+            correctSolution = false;
         }
 
-        printf( "\nQuery is satisfiable\n" );
-        printf( "\nRegression test passed!\n" );
+        if ( !correctSolution )
+            printFailed( "lp_feasible_2", start, end );
+        else
+            printPassed( "lp_feasible_2", start, end );
     }
 };
 
@@ -130,8 +133,8 @@ public:
 
 //
 // Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
+// compile-command: "make -C .. "
+// tags-file-name: "../TAGS"
 // c-basic-offset: 4
 // End:
 //

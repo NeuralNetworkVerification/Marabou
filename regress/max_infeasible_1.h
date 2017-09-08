@@ -1,20 +1,30 @@
-#ifndef __max_infeasible_1_h__
-#define __max_infeasible_1_h__
+/*********************                                                        */
+/*! \file Max_Infeasible_1.h
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Derek Huang
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **/
+
+#ifndef __Max_Infeasible_1_h__
+#define __Max_Infeasible_1_h__
 
 #include "Engine.h"
 #include "FloatUtils.h"
 #include "InputQuery.h"
 #include "MaxConstraint.h"
 
-class max_infeasible_1
+class Max_Infeasible_1
 {
 public:
 	void run()
 	{
-		printf( "Running max_infeasible_1..." );
-
         //   x0  <= 0
-        //   .5  <= x1f 
+        //   .5  <= x1f
 		//	 0	 <= x2f
         //   1/2 <= x3  <= 1
         //
@@ -65,7 +75,7 @@ public:
         inputQuery.setUpperBound( 7, 0 );
         inputQuery.setLowerBound( 8, 0 );
         inputQuery.setUpperBound( 8, 0 );
-		
+
  		Equation equation1;
         equation1.addAddend( 1, 0 );
         equation1.addAddend( -1, 1 );
@@ -90,37 +100,38 @@ public:
         equation3.setScalar( 0 );
         equation3.markAuxiliaryVariable( 8 );
         inputQuery.addEquation( equation3 );
-		
+
 		MaxConstraint *max1 = new MaxConstraint( 5, Set<unsigned>( { 0, 2, 3 } ) );
 		MaxConstraint *max2 = new MaxConstraint( 3, Set<unsigned>( { 0, 4 } ) );
 
 		inputQuery.addPiecewiseLinearConstraint( max1 );
 		inputQuery.addPiecewiseLinearConstraint( max2 );
 
-		Engine engine;
+        int outputStream = redirectOutputToFile( "logs/lp_feasible_2.txt" );
 
-		engine.processInputQuery( inputQuery );
+        timeval start = TimeUtils::sampleMicro();
 
-		if ( engine.solve() )
-        {
-            printf( "\nError! Query is infeasible but a solution was found\n" );
-            exit( 1 );
-        }
+        Engine engine;
+        engine.processInputQuery( inputQuery );
+        bool result = engine.solve();
 
-        printf( "\nQuery is unsatisfiable\n" );
-        printf( "\nRegression test passed!\n" );
+        timeval end = TimeUtils::sampleMicro();
+
+        restoreOutputStream( outputStream );
+
+        if ( result )
+            printFailed( "max_infeasible_1", start, end );
+        else
+            printPassed( "max_infeasible_1", start, end );
     }
 };
 
-#endif // __max_infeasible_1_h__
+#endif // __Max_Infeasible_1_h__
 
 //
 // Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
+// compile-command: "make -C .. "
+// tags-file-name: "../TAGS"
 // c-basic-offset: 4
 // End:
 //
-
-
-

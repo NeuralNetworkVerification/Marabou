@@ -12,9 +12,10 @@
 
 #include <cstdio>
 
+#include "RegressUtils.h"
+
 #include "lp_feasible_1.h"
 #include "lp_feasible_2.h"
-// #include "lp_feasible_3.h"
 
 #include "lp_infeasible_1.h"
 
@@ -27,33 +28,35 @@
 
 void lps()
 {
-    // Sat
+    printTitle( "Pure LP / Sat" );
     Lp_Feasible_1 lpf1;
     lpf1.run();
 
     Lp_Feasible_2 lpf2;
     lpf2.run();
-    
+
     // Lp_Feasible_3 lpf3;
     // lpf3.run();
 
-    // Unsat
+    printTitle( "Pure LP / Unsat" );
     Lp_Infeasible_1 lpi1;
     lpi1.run();
 }
 
 void relus()
 {
+    printTitle( "ReLUs / Sat" );
     Relu_Feasible_1 rf1;
     rf1.run();
 }
 
 void max()
 {
-	max_feasible_1 mf1;
+    printTitle( "Maxes / Sat" );
+	Max_Feasible_1 mf1;
 	mf1.run();
 
-	max_infeasible_1 mf2;
+	Max_Infeasible_1 mf2;
 	mf2.run();
 }
 
@@ -66,18 +69,20 @@ int main()
     	relus();
 
         // Temporarily disabling
-		 max();
+        max();
+
+        printf( "\n\n" );
 	}
 	catch( const ReluplexError &e )
 	{
-		printf("%u", e.getCode() );
+		printf( "%u", e.getCode() );
 	}
 }
 
 //
 // Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
+// compile-command: "make -C .. "
+// tags-file-name: "../TAGS"
 // c-basic-offset: 4
 // End:
 //

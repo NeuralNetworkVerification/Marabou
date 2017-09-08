@@ -22,7 +22,6 @@ class Lp_Feasible_1
 public:
     void run()
     {
-        printf( "Running lp_feasible_1... " );
         // Simple satisfiable query:
         //   0  <= x0 <= 2
         //   -3 <= x1 <= 3
@@ -53,17 +52,27 @@ public:
         equation.markAuxiliaryVariable( 3 );
         inputQuery.addEquation( equation );
 
+        int outputStream = redirectOutputToFile( "logs/lp_feasible_1.txt" );
+
+        timeval start = TimeUtils::sampleMicro();
+
         Engine engine;
-
         engine.processInputQuery( inputQuery );
+        bool result = engine.solve();
 
-        if ( !engine.solve() )
+        timeval end = TimeUtils::sampleMicro();
+
+        restoreOutputStream( outputStream );
+
+        if ( !result )
         {
-            printf( "\nError! Query is feasible but no solution found\n" );
-            exit( 1 );
+            printFailed( "lp_feasible_1", start, end );
+            return;
         }
 
         engine.extractSolution( inputQuery );
+
+        bool correctSolution = true;
 
         // Sanity test
         double value = 0;
@@ -79,22 +88,20 @@ public:
         value += 1  * value3;
 
         if ( !FloatUtils::areEqual( value, 11 ) )
-        {
-            printf( "\nError! The solution does not satisfy the equation\n" );
-            exit( 1 );
-        }
+            correctSolution = false;
 
         if ( ( value0 < 0 ) || ( value0 > 2 ) ||
              ( value1 < -3 ) || ( value1 > 3 ) ||
              ( value2 < 4 ) || ( value2 > 6 ) ||
              ( value3 < 0 ) )
         {
-            printf( "\nError! Values violate the variable bounds\n" );
-            exit( 1 );
+            correctSolution = false;
         }
 
-        printf( "\nQuery is satisfiable\n" );
-        printf( "\nRegression test passed!\n" );
+        if ( !correctSolution )
+            printFailed( "lp_feasible_1", start, end );
+        else
+            printPassed( "lp_feasible_1", start, end );
     }
 };
 
@@ -102,8 +109,8 @@ public:
 
 //
 // Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
+// compile-command: "make -C .. "
+// tags-file-name: "../TAGS"
 // c-basic-offset: 4
 // End:
 //

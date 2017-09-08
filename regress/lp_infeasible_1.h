@@ -21,7 +21,6 @@ class Lp_Infeasible_1
 public:
     void run()
     {
-        printf( "Running lp_infeasible_1... " );
         // Simple infeasible query:
         //   0   <= x0  <= 1
         //   0   <= x1  <= 1
@@ -81,18 +80,22 @@ public:
         equation3.markAuxiliaryVariable( 6 );
         inputQuery.addEquation( equation3 );
 
+        int outputStream = redirectOutputToFile( "logs/lp_infeasible_1.txt" );
+
+        timeval start = TimeUtils::sampleMicro();
+
         Engine engine;
-
         engine.processInputQuery( inputQuery );
+        bool result = engine.solve();
 
-        if ( engine.solve() )
-        {
-            printf( "\nError! Query is infeasible but a solution was found\n" );
-            exit( 1 );
-        }
+        timeval end = TimeUtils::sampleMicro();
 
-        printf( "\nQuery is unsatisfiable\n" );
-        printf( "\nRegression test passed!\n" );
+        restoreOutputStream( outputStream );
+
+        if ( result )
+            printFailed( "lp_infeasible_1", start, end );
+        else
+            printPassed( "lp_infeasible_1", start, end );
     }
 };
 
@@ -100,8 +103,8 @@ public:
 
 //
 // Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
+// compile-command: "make -C .. "
+// tags-file-name: "../TAGS"
 // c-basic-offset: 4
 // End:
 //
