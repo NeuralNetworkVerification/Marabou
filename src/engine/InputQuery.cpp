@@ -58,7 +58,7 @@ void InputQuery::addEquation( const Equation &equation )
     _equations.append( equation );
 }
 
-double InputQuery::getNumberOfVariables() const
+unsigned InputQuery::getNumberOfVariables() const
 {
     return _numberOfVariables;
 }

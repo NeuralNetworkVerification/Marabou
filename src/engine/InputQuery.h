@@ -33,7 +33,7 @@ public:
 
     void addEquation( const Equation &equation );
 
-    double getNumberOfVariables() const;
+    unsigned getNumberOfVariables() const;
     double getLowerBound( unsigned variable ) const;
     double getUpperBound( unsigned variable ) const;
 

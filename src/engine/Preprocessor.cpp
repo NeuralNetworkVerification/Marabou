@@ -144,7 +144,9 @@ bool Preprocessor::processEquations()
 
             if ( FloatUtils::gt( _preprocessed.getLowerBound( varBeingTightened._variable ),
                                  _preprocessed.getUpperBound( varBeingTightened._variable ) ) )
-                throw ReluplexError( ReluplexError::INVALID_BOUND_TIGHTENING, "Preprocessing bound error" );
+            {
+                throw InfeasibleQueryException();
+            }
         }
     }
 
@@ -210,7 +212,7 @@ void Preprocessor::eliminateFixedVariables()
 		if ( fixedVariables.exists( i ) )
 			++offset;
 		else
-			fixedVariables[i] = i - offset;
+			oldIndexToNewIndex[i] = i - offset;
 	}
 
     // Next, eliminate the fixed variables from the equations
