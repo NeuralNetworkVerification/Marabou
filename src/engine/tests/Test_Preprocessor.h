@@ -61,6 +61,7 @@ public:
         equation1.addAddend( 1, 1 );
         equation1.addAddend( -1, 2 );
         equation1.setScalar( 10 );
+        equation1.markAuxiliaryVariable( 0 );
         inputQuery.addEquation( equation1 );
 
         InputQuery processed = Preprocessor().preprocess( inputQuery );
@@ -187,6 +188,7 @@ public:
         equation2.addAddend( 1, 1 );
         equation2.addAddend( -1, 2 );
         equation2.setScalar( 10 );
+        equation2.markAuxiliaryVariable( 1 );
         inputQuery2.addEquation( equation2 );
 
         processed = Preprocessor().preprocess( inputQuery2 );
@@ -370,6 +372,7 @@ public:
         equation1.addAddend( 1, 1 );
         equation1.addAddend( 1, 3 );
         equation1.setScalar( 10 );
+        equation1.markAuxiliaryVariable( 0 );
         inputQuery.addEquation( equation1 );
 
 		// x2 + x3 = 6
@@ -377,6 +380,7 @@ public:
 		equation2.addAddend( 1, 7 );
 		equation2.addAddend( 1, 8 );
 		equation2.setScalar( 12 );
+        equation2.markAuxiliaryVariable( 7 );
 		inputQuery.addEquation( equation2 );
 
 		InputQuery processed = Preprocessor().preprocess( inputQuery, true );

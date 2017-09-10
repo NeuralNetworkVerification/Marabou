@@ -239,14 +239,14 @@ void Preprocessor::eliminateFixedVariables()
             if ( _fixedVariables.exists( addend->_variable ) )
             {
                 // Addend has to go...
-                double constant = _fixedVariables[addend->_variable] * addend->_coefficient;
+                double constant = _fixedVariables.at( addend->_variable ) * addend->_coefficient;
                 equation->_scalar -= constant;
                 addend = equation->_addends.erase( addend );
             }
             else
             {
                 // Adjust the addend's variable index
-                addend->_variable = _oldIndexToNewIndex[addend->_variable];
+                addend->_variable = _oldIndexToNewIndex.at( addend->_variable );
                 ++addend;
             }
         }
@@ -255,6 +255,7 @@ void Preprocessor::eliminateFixedVariables()
         // unless the equation has no addends left
         if ( !equation->_addends.empty() )
         {
+
             if ( _fixedVariables.exists( equation->_auxVariable ) )
             {
                 bool found = false;
@@ -280,7 +281,7 @@ void Preprocessor::eliminateFixedVariables()
             }
             else
             {
-                equation->_auxVariable = _oldIndexToNewIndex[equation->_auxVariable];
+                equation->_auxVariable = _oldIndexToNewIndex.at( equation->_auxVariable );
             }
 
             auxiliaryVariables.insert( equation->_auxVariable );
@@ -308,9 +309,9 @@ void Preprocessor::eliminateFixedVariables()
         for ( unsigned variable : participatingVariables )
         {
             if ( _fixedVariables.exists( variable ) )
-                constraint->eliminateVariable( variable, _fixedVariables[variable] );
-            else if ( _oldIndexToNewIndex[variable] != variable )
-                constraint->updateVariableIndex( variable, _oldIndexToNewIndex[variable] );
+                constraint->eliminateVariable( variable, _fixedVariables.at( variable ) );
+            else if ( _oldIndexToNewIndex.at( variable ) != variable )
+                constraint->updateVariableIndex( variable, _oldIndexToNewIndex.at( variable ) );
         }
 	}
 
@@ -320,8 +321,8 @@ void Preprocessor::eliminateFixedVariables()
         if ( _fixedVariables.exists( i ) )
             continue;
 
-        _preprocessed.setLowerBound( _oldIndexToNewIndex[i], _preprocessed.getLowerBound( i ) );
-        _preprocessed.setUpperBound( _oldIndexToNewIndex[i], _preprocessed.getUpperBound( i ) );
+        _preprocessed.setLowerBound( _oldIndexToNewIndex.at( i ), _preprocessed.getLowerBound( i ) );
+        _preprocessed.setUpperBound( _oldIndexToNewIndex.at( i ), _preprocessed.getUpperBound( i ) );
 	}
 
     // Adjust the number of variables in the query
