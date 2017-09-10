@@ -251,36 +251,40 @@ void Preprocessor::eliminateFixedVariables()
             }
         }
 
-        // If the auxiliary variable has been eliminated, pick a new one
-        if ( _fixedVariables.exists( equation->_auxVariable ) )
+        // If the auxiliary variable has been eliminated, pick a new one,
+        // unless the equation has no addends left
+        if ( !equation->_addends.empty() )
         {
-            bool found = false;
-            addend = equation->_addends.begin();
-            while ( !found && ( addend != equation->_addends.end() ) )
+            if ( _fixedVariables.exists( equation->_auxVariable ) )
             {
-                // A variable can't be aux for two equations
-                if ( !auxiliaryVariables.exists( addend->_variable ) )
+                bool found = false;
+                addend = equation->_addends.begin();
+                while ( !found && ( addend != equation->_addends.end() ) )
                 {
-                    // This variable is free, grab it
-                    equation->_auxVariable = addend->_variable;
-                    found = true;
+                    // A variable can't be aux for two equations
+                    if ( !auxiliaryVariables.exists( addend->_variable ) )
+                    {
+                        // This variable is free, grab it
+                        equation->_auxVariable = addend->_variable;
+                        found = true;
+                    }
+
+                    ++addend;
                 }
 
-                ++addend;
+                if ( !found )
+                {
+                    // Couldn't find a new auxiliary variable!
+                    throw ReluplexError( ReluplexError::PREPROCESSOR_CANT_FIND_NEW_AUXILIARY_VAR );
+                }
             }
-
-            if ( !found )
+            else
             {
-                // Couldn't find a new auxiliary variable!
-                throw ReluplexError( ReluplexError::PREPROCESSOR_CANT_FIND_NEW_AUXILIARY_VAR );
+                equation->_auxVariable = _oldIndexToNewIndex[equation->_auxVariable];
             }
-        }
-        else
-        {
-            equation->_auxVariable = _oldIndexToNewIndex[equation->_auxVariable];
-        }
 
-        auxiliaryVariables.insert( equation->_auxVariable );
+            auxiliaryVariables.insert( equation->_auxVariable );
+        }
 
         // If all the addends have been removed, we remove the entire equation.
         // Overwise, we are done here.
