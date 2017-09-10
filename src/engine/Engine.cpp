@@ -13,6 +13,7 @@
 #include "Engine.h"
 #include "EngineState.h"
 #include "FreshVariables.h"
+#include "InfeasibleQueryException.h"
 #include "InputQuery.h"
 #include "MStringf.h"
 #include "PiecewiseLinearConstraint.h"
@@ -24,10 +25,12 @@
 Engine::Engine()
     : _smtCore( this )
     , _numPlConstraintsDisabledByValidSplits( 0 )
+    , _preprocessingEnabled( false )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
     _rowBoundTightener->setStatistics( &_statistics );
+    _preprocessor.setStatistics( &_statistics );
 
     // _activeEntryStrategy = &_nestedDantzigsRule;
     _activeEntryStrategy = _projectedSteepestEdgeRule;
@@ -45,87 +48,96 @@ bool Engine::solve()
 {
     _statistics.stampStartingTime();
 
-    while ( true )
+    try
     {
-        mainLoopStatistics();
-        checkDegradation();
 
-        // Compute the current assignment and basic status
-        _tableau->computeAssignmentIfNeeded();
-        _tableau->computeBasicStatus();
-
-        // Perform any SmtCore-initiated case splits
-        if ( _smtCore.needToSplit() )
+        while ( true )
         {
-            _smtCore.performSplit();
+            mainLoopStatistics();
+            checkDegradation();
 
-            // TODO: We get wrong answers if we don't recompute. But, we also
-            // want to compute before performSplit(), so that the correct
-            // assignment is stored with the state.
-            _tableau->computeAssignment();
+            // Compute the current assignment and basic status
+            _tableau->computeAssignmentIfNeeded();
             _tableau->computeBasicStatus();
-        }
 
-        bool needToPop = false;
-        if ( !_tableau->allBoundsValid() )
-        {
-            // Some variable bounds are invalid, so the query is unsat
-            needToPop = true;
-        }
-        else if ( allVarsWithinBounds() )
-        {
-            // The linear portion of the problem has been solved.
-
-            // Check the status of the PL constraints
-            collectViolatedPlConstraints();
-
-            // If all constraints are satisfied, we are done
-            if ( allPlConstraintsHold() )
+            // Perform any SmtCore-initiated case splits
+            if ( _smtCore.needToSplit() )
             {
-                _statistics.print();
-                return true;
+                _smtCore.performSplit();
+
+                // TODO: We get wrong answers if we don't recompute. But, we also
+                // want to compute before performSplit(), so that the correct
+                // assignment is stored with the state.
+                _tableau->computeAssignment();
+                _tableau->computeBasicStatus();
             }
 
-            // We have violated piecewise-linear constraints.
-            _statistics.incNumConstraintFixingSteps();
-
-            // Select a violated constraint as the target
-            selectViolatedPlConstraint();
-
-            // Report the violated constraint to the SMT engine
-            reportPlViolation();
-
-            // Attempt to fix the constraint
-            fixViolatedPlConstraintIfPossible();
-
-            // Finally, take this opporunity to tighten any bounds
-            // and perform any valid case splits.
-            tightenBoundsOnConstraintMatrix();
-            applyAllRowTightenings();
-            applyAllConstraintTightenings();
-            applyAllValidConstraintCaseSplits();
-        }
-        else
-        {
-            // We have out-of-bounds variables.
-            // If a simplex step fails, the query is unsat
-            if ( !performSimplexStep() )
+            bool needToPop = false;
+            if ( !_tableau->allBoundsValid() )
             {
-                _statistics.print();
+                // Some variable bounds are invalid, so the query is unsat
                 needToPop = true;
             }
-        }
-
-        if ( needToPop )
-        {
-            // The current query is unsat, and we need to pop.
-            // If we're at level 0, the whole query is unsat.
-            if ( !_smtCore.popSplit() )
+            else if ( allVarsWithinBounds() )
             {
-                _statistics.print();
-                return false;
+                // The linear portion of the problem has been solved.
+
+                // Check the status of the PL constraints
+                collectViolatedPlConstraints();
+
+                // If all constraints are satisfied, we are done
+                if ( allPlConstraintsHold() )
+                {
+                    _statistics.print();
+                    return true;
+                }
+
+                // We have violated piecewise-linear constraints.
+                _statistics.incNumConstraintFixingSteps();
+
+                // Select a violated constraint as the target
+                selectViolatedPlConstraint();
+
+                // Report the violated constraint to the SMT engine
+                reportPlViolation();
+
+                // Attempt to fix the constraint
+                fixViolatedPlConstraintIfPossible();
+
+                // Finally, take this opporunity to tighten any bounds
+                // and perform any valid case splits.
+                tightenBoundsOnConstraintMatrix();
+                applyAllRowTightenings();
+                applyAllConstraintTightenings();
+                applyAllValidConstraintCaseSplits();
+            }
+            else
+            {
+                // We have out-of-bounds variables.
+                // If a simplex step fails, the query is unsat
+                if ( !performSimplexStep() )
+                {
+                    _statistics.print();
+                    needToPop = true;
+                }
+            }
+
+            if ( needToPop )
+            {
+                // The current query is unsat, and we need to pop.
+                // If we're at level 0, the whole query is unsat.
+                if ( !_smtCore.popSplit() )
+                {
+                    _statistics.print();
+                    return false;
+                }
             }
         }
+    }
+    catch ( const InfeasibleQueryException & )
+    {
+        _statistics.print();
+        return false;
     }
 }
 
@@ -258,7 +270,7 @@ void Engine::fixViolatedPlConstraintIfPossible()
     PiecewiseLinearConstraint *violated = NULL;
     for ( const auto &constraint : _plConstraints )
     {
-        if ( !constraint->satisfied() )
+        if ( constraint->isActive() && !constraint->satisfied() )
             violated = constraint;
     }
 
@@ -335,96 +347,118 @@ void Engine::fixViolatedPlConstraintIfPossible()
     _tableau->setNonBasicAssignment( fix._variable, fix._value );
 }
 
-void Engine::processInputQuery( InputQuery &inputQuery )
+bool Engine::processInputQuery( InputQuery &inputQuery )
 {
-    processInputQuery( inputQuery, GlobalConfiguration::PREPROCESS_INPUT_QUERY );
+    return processInputQuery( inputQuery, GlobalConfiguration::PREPROCESS_INPUT_QUERY );
 }
 
-void Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
+bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 {
     log( "processInputQuery starting\n" );
 
-    timeval start = TimeUtils::sampleMicro();
-
-    // Inform the PL constraints of the initial variable bounds
-    for ( const auto &plConstraint : inputQuery.getPiecewiseLinearConstraints() )
+    try
     {
-        List<unsigned> variables = plConstraint->getParticipatingVariables();
-        for ( unsigned variable : variables )
+        timeval start = TimeUtils::sampleMicro();
+
+        // Inform the PL constraints of the initial variable bounds
+        for ( const auto &plConstraint : inputQuery.getPiecewiseLinearConstraints() )
         {
-            plConstraint->notifyLowerBound( variable, inputQuery.getLowerBound( variable ) );
-            plConstraint->notifyUpperBound( variable, inputQuery.getUpperBound( variable ) );
+            List<unsigned> variables = plConstraint->getParticipatingVariables();
+            for ( unsigned variable : variables )
+            {
+                plConstraint->notifyLowerBound( variable, inputQuery.getLowerBound( variable ) );
+                plConstraint->notifyUpperBound( variable, inputQuery.getUpperBound( variable ) );
+            }
         }
+
+        // If processing is enabled, invoke the preprocessor
+        _preprocessingEnabled = preprocess;
+        if ( _preprocessingEnabled )
+            _preprocessedQuery = _preprocessor.preprocess( inputQuery );
+        else
+            _preprocessedQuery = inputQuery;
+
+        unsigned infiniteBounds = _preprocessedQuery.countInfiniteBounds();
+        if ( infiniteBounds != 0 )
+            throw ReluplexError( ReluplexError::UNBOUNDED_VARIABLES_NOT_YET_SUPPORTED,
+                                 Stringf( "Error! Have %u infinite bounds", infiniteBounds ).ascii() );
+
+        _degradationChecker.storeEquations( _preprocessedQuery );
+
+        const List<Equation> equations( _preprocessedQuery.getEquations() );
+
+        unsigned m = equations.size();
+        unsigned n = _preprocessedQuery.getNumberOfVariables();
+        _tableau->setDimensions( m, n );
+
+        _rowBoundTightener->initialize( _tableau );
+
+        // Current variables are [0,..,n-1], so the next variable is n.
+        FreshVariables::setNextVariable( n );
+
+        unsigned equationIndex = 0;
+        for ( const auto &equation : equations )
+        {
+            _tableau->markAsBasic( equation._auxVariable );
+            _tableau->setRightHandSide( equationIndex, equation._scalar );
+
+            for ( const auto &addend : equation._addends )
+                _tableau->setEntryValue( equationIndex, addend._variable, addend._coefficient );
+
+            _tableau->assignIndexToBasicVariable( equation._auxVariable, equationIndex );
+            ++equationIndex;
+        }
+
+        for ( unsigned i = 0; i < n; ++i )
+        {
+            _tableau->setLowerBound( i, _preprocessedQuery.getLowerBound( i ) );
+            _tableau->setUpperBound( i, _preprocessedQuery.getUpperBound( i ) );
+        }
+
+        _tableau->registerToWatchAllVariables( _rowBoundTightener );
+        _rowBoundTightener->reset( _tableau );
+
+        _plConstraints = _preprocessedQuery.getPiecewiseLinearConstraints();
+        for ( const auto &constraint : _plConstraints )
+        {
+            constraint->registerAsWatcher( _tableau );
+            constraint->setStatistics( &_statistics );
+        }
+
+        _tableau->initializeTableau();
+        _activeEntryStrategy->initialize( _tableau );
+
+        _statistics.setNumPlConstraints( _plConstraints.size() );
+
+        timeval end = TimeUtils::sampleMicro();
+        _statistics.setPreprocessingTime( TimeUtils::timePassed( start, end ) );
+
+        log( "processInputQuery done\n" );
     }
-
-    // If processing is enabled, invoke the preprocessor
-    if ( preprocess )
-        _preprocessedQuery = Preprocessor().preprocess( inputQuery );
-    else
-        _preprocessedQuery = inputQuery;
-
-    unsigned infiniteBounds = _preprocessedQuery.countInfiniteBounds();
-    if ( infiniteBounds != 0 )
-        throw ReluplexError( ReluplexError::UNBOUNDED_VARIABLES_NOT_YET_SUPPORTED,
-                             Stringf( "Error! Have %u infinite bounds", infiniteBounds ).ascii() );
-
-    _degradationChecker.storeEquations( _preprocessedQuery );
-
-    const List<Equation> equations( _preprocessedQuery.getEquations() );
-
-    unsigned m = equations.size();
-    unsigned n = _preprocessedQuery.getNumberOfVariables();
-    _tableau->setDimensions( m, n );
-
-    _rowBoundTightener->initialize( _tableau );
-
-    // Current variables are [0,..,n-1], so the next variable is n.
-    FreshVariables::setNextVariable( n );
-
-    unsigned equationIndex = 0;
-    for ( const auto &equation : equations )
+    catch ( const InfeasibleQueryException & )
     {
-        _tableau->markAsBasic( equation._auxVariable );
-        _tableau->setRightHandSide( equationIndex, equation._scalar );
-
-        for ( const auto &addend : equation._addends )
-            _tableau->setEntryValue( equationIndex, addend._variable, addend._coefficient );
-
-        _tableau->assignIndexToBasicVariable( equation._auxVariable, equationIndex );
-        ++equationIndex;
+        return false;
     }
 
-    for ( unsigned i = 0; i < n; ++i )
-    {
-        _tableau->setLowerBound( i, _preprocessedQuery.getLowerBound( i ) );
-        _tableau->setUpperBound( i, _preprocessedQuery.getUpperBound( i ) );
-    }
-
-    _tableau->registerToWatchAllVariables( _rowBoundTightener );
-    _rowBoundTightener->reset( _tableau );
-
-    _plConstraints = _preprocessedQuery.getPiecewiseLinearConstraints();
-    for ( const auto &constraint : _plConstraints )
-    {
-        constraint->registerAsWatcher( _tableau );
-        constraint->setStatistics( &_statistics );
-    }
-
-    _tableau->initializeTableau();
-    _activeEntryStrategy->initialize( _tableau );
-
-    _statistics.setNumPlConstraints( _plConstraints.size() );
-
-    timeval end = TimeUtils::sampleMicro();
-    _statistics.setPreprocessingTime( TimeUtils::timePassed( start, end ) );
-
-    log( "processInputQuery done\n" );
+    return true;
 }
 
 void Engine::extractSolution( InputQuery &inputQuery )
 {
     for ( unsigned i = 0; i < inputQuery.getNumberOfVariables(); ++i )
-        inputQuery.setSolutionValue( i, _tableau->getValue( i ) );
+    {
+        if ( _preprocessingEnabled )
+        {
+            if ( _preprocessor.variableIsFixed( i ) )
+                inputQuery.setSolutionValue( i, _preprocessor.getFixedValue( i ) );
+            else
+                inputQuery.setSolutionValue( i, _tableau->getValue( _preprocessor.getNewIndex( i ) ) );
+        }
+        else
+        {
+            inputQuery.setSolutionValue( i, _tableau->getValue( i ) );
+        }
+    }
 }
 
 bool Engine::allVarsWithinBounds() const

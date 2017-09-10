@@ -29,8 +29,9 @@ public:
         MISSING_PL_CONSTRAINT_STATE = 7,
         REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT = 8,
         UNBOUNDED_VARIABLES_NOT_YET_SUPPORTED = 9,
-		EQUATION_INVALID = 10,
+        EQUATION_INVALID = 10,
         CANT_INVERT_BASIS_BECAUSE_OF_ETAS = 11,
+        PREPROCESSOR_CANT_FIND_NEW_AUXILIARY_VAR = 12,
     };
 
     ReluplexError( ReluplexError::Code code ) : Error( "ReluplexError", (int)code )

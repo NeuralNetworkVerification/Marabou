@@ -42,6 +42,8 @@ Statistics::Statistics()
     , _numBoundTighteningsOnConstraintMatrix( 0 )
     , _pseNumIterations( 0 )
     , _pseNumResetReferenceSpace( 0 )
+    , _ppNumEliminatedVars( 0 )
+    , _ppNumTighteningIterations( 0 )
 {
 }
 
@@ -71,6 +73,12 @@ void Statistics::print()
     hours = minutes / 60;
     printf( "\t\tPreprocessing time: %llu milli (%02u:%02u:%02u)\n",
             _preprocessingTimeMilli, hours, minutes - ( hours * 60 ), seconds - ( minutes * 60 ) );
+
+    printf( "\t--- Preprocessor Statistics ---\n" );
+    printf( "\tNumber of preprocessor bound-tightening loop iterations: %u\n",
+            _ppNumTighteningIterations );
+    printf( "\tNumber of eliminated variables: %u\n",
+            _ppNumEliminatedVars );
 
     printf( "\t--- Engine Statistics ---\n" );
     printf( "\tNumber of main loop iterations: %llu\n"
@@ -295,6 +303,17 @@ void Statistics::stampStartingTime()
 {
     _startTime = TimeUtils::sampleMicro();
 }
+
+void Statistics::ppSetNumEliminatedVars( unsigned eliminatedVars )
+{
+    _ppNumEliminatedVars = eliminatedVars;
+}
+
+void Statistics::ppIncNumTighteningIterations()
+{
+    ++_ppNumTighteningIterations;
+}
+
 
 //
 // Local Variables:

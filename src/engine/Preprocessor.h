@@ -22,10 +22,28 @@
 class Preprocessor
 {
 public:
+    Preprocessor();
+
     /*
       Main method of this class: preprocess the input query
     */
     InputQuery preprocess( const InputQuery &query, bool attemptVariableElimination = false );
+
+    /*
+      Have the preprocessor start reporting statistics.
+    */
+    void setStatistics( Statistics *statistics );
+
+    /*
+      Obtain the values of variabels that have become fixed.
+    */
+    bool variableIsFixed( unsigned index ) const;
+    double getFixedValue( unsigned index ) const;
+
+    /*
+      Obtain the new index of a variable.
+    */
+    unsigned getNewIndex( unsigned oldIndex ) const;
 
 private:
 	/*
@@ -44,6 +62,23 @@ private:
 	void eliminateFixedVariables();
 
     InputQuery _preprocessed;
+
+    /*
+      Statistics collection
+    */
+    Statistics *_statistics;
+
+    /*
+      Variables that have become fixed during preprocessing, and the
+      values that they have been fixed to.
+    */
+    Map<unsigned, double> _fixedVariables;
+
+    /*
+      Mapping of old variable indices to new varibale indices, if
+      indices were changed during preprocessing.
+    */
+    Map<unsigned, unsigned> _oldIndexToNewIndex;
 };
 
 #endif // __Preprocessor_h__

@@ -85,7 +85,14 @@ public:
         timeval start = TimeUtils::sampleMicro();
 
         Engine engine;
-        engine.processInputQuery( inputQuery );
+        if ( !engine.processInputQuery( inputQuery ) )
+        {
+            restoreOutputStream( outputStream );
+            timeval end = TimeUtils::sampleMicro();
+            printPassed( "lp_infeasible_1", start, end );
+            return;
+        }
+
         bool result = engine.solve();
 
         timeval end = TimeUtils::sampleMicro();

@@ -83,6 +83,12 @@ public:
     void pseIncNumIterations();
     void pseIncNumResetReferenceSpace();
 
+    /*
+      Preprocessor statistics.
+    */
+    void ppSetNumEliminatedVars( unsigned eliminatedVars );
+    void ppIncNumTighteningIterations();
+
 private:
     // Initial timestamp
     timeval _startTime;
@@ -167,6 +173,10 @@ private:
     // Projected steepest edge statistics
     unsigned long long _pseNumIterations;
     unsigned long long _pseNumResetReferenceSpace;
+
+    // Preprocessor counters
+    unsigned _ppNumEliminatedVars;
+    unsigned _ppNumTighteningIterations;
 
     // Printing helpers
     double printPercents( unsigned long long part, unsigned long long total ) const;

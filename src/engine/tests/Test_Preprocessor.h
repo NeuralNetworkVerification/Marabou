@@ -116,7 +116,7 @@ public:
         // x2.lb = -10 + x0.lb + x1.lb = -10 + 9 + 3 = 2
         // x2.ub = -10 + x0.ub + x1.ub = -10 + 15 + 3 = 8
 
-        processed = Preprocessor().preprocess( inputQuery );
+        processed = Preprocessor().preprocess( inputQuery, false );
 
         TS_ASSERT_EQUALS( processed.getLowerBound( 0 ), 9 );
         TS_ASSERT_EQUALS( processed.getUpperBound( 0 ), 15 );
@@ -139,7 +139,7 @@ public:
         // x2.lb = -10 + x0.lb + x1.lb = Unbounded
         // x2.ub = -10 + x0.ub + x1.ub = -10 + 15 -2 = 3
 
-        processed = Preprocessor().preprocess( inputQuery );
+        processed = Preprocessor().preprocess( inputQuery, false );
 
         TS_ASSERT_EQUALS( processed.getLowerBound( 0 ), FloatUtils::negativeInfinity() );
         TS_ASSERT_EQUALS( processed.getUpperBound( 0 ), 15 );
@@ -229,7 +229,7 @@ public:
 		 inputQuery.addPiecewiseLinearConstraint( max2 );
 		 inputQuery.addPiecewiseLinearConstraint( max3 );
 
-         InputQuery processed = Preprocessor().preprocess( inputQuery );
+         InputQuery processed = Preprocessor().preprocess( inputQuery, false );
 
 		 // x1 = Relu( x0 ) = max( 0, x0 )
 		 // x1 \in [0, 10]
@@ -328,7 +328,7 @@ public:
          equation.setScalar( 10 );
          inputQuery.addEquation( equation );
 
-		 InputQuery processed = Preprocessor().preprocess( inputQuery );
+		 InputQuery processed = Preprocessor().preprocess( inputQuery, false );
 
          TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 0 ), 5.5 ) );
          TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 0 ), 6.5 ) );

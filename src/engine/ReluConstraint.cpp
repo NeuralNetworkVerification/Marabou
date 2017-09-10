@@ -23,8 +23,8 @@
 ReluConstraint::ReluConstraint( unsigned b, unsigned f )
     : _b( b )
     , _f( f )
-    , _phaseStatus( PhaseStatus::PHASE_NOT_FIXED )
 {
+    setPhaseStatue( PhaseStatus::PHASE_NOT_FIXED );
 }
 
 PiecewiseLinearConstraint *ReluConstraint::duplicateConstraint() const
@@ -68,9 +68,9 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
     _lowerBounds[variable] = bound;
 
     if ( variable == _f && FloatUtils::isPositive( bound ) )
-        _phaseStatus = PhaseStatus::PHASE_ACTIVE;
+        setPhaseStatue( PhaseStatus::PHASE_ACTIVE );
     else if ( variable == _b && !FloatUtils::isNegative( bound ) )
-        _phaseStatus = PhaseStatus::PHASE_ACTIVE;
+        setPhaseStatue( PhaseStatus::PHASE_ACTIVE );
  }
 
 void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
@@ -84,7 +84,7 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
     _upperBounds[variable] = bound;
 
     if ( ( variable == _f || variable == _b ) && !FloatUtils::isPositive( bound ) )
-        _phaseStatus = PhaseStatus::PHASE_INACTIVE;
+        setPhaseStatue( PhaseStatus::PHASE_INACTIVE );
 }
 
 bool ReluConstraint::participatingVariable( unsigned variable ) const
@@ -225,11 +225,11 @@ PiecewiseLinearCaseSplit ReluConstraint::getValidCaseSplit() const
 
 void ReluConstraint::dump( String &output ) const
 {
-    output = Stringf( "ReluConstraint: x%u = ReLU( x%u ). Active? %s. PhaseStatus = %u. "
+    output = Stringf( "ReluConstraint: x%u = ReLU( x%u ). Active? %s. PhaseStatus = %u (%s). "
                       "b in [%lf, %lf]. f in [%lf, %lf]",
                       _f, _b,
                       _constraintActive ? "Yes" : "No",
-                      _phaseStatus,
+                      _phaseStatus, phaseToString( _phaseStatus ).ascii(),
                       _lowerBounds[_b], _upperBounds[_b], _lowerBounds[_f], _upperBounds[_f]
                       );
 }
@@ -242,6 +242,18 @@ void ReluConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 	{
 		_assignment[newIndex] = _assignment.get( oldIndex );
 		_assignment.erase( oldIndex );
+	}
+
+	if ( _lowerBounds.exists( oldIndex ) )
+	{
+		_lowerBounds[newIndex] = _lowerBounds.get( oldIndex );
+		_lowerBounds.erase( oldIndex );
+	}
+
+	if ( _upperBounds.exists( oldIndex ) )
+	{
+		_upperBounds[newIndex] = _upperBounds.get( oldIndex );
+		_upperBounds.erase( oldIndex );
 	}
 
 	if ( oldIndex == _b )
@@ -271,9 +283,9 @@ void ReluConstraint::eliminateVariable( __attribute__((unused)) unsigned variabl
         });
 
 	if ( FloatUtils::gt( fixedValue, 0 ) )
-		_phaseStatus = PhaseStatus::PHASE_ACTIVE;
+        setPhaseStatue( PhaseStatus::PHASE_ACTIVE );
 	else
-		_phaseStatus = PhaseStatus::PHASE_INACTIVE;
+        setPhaseStatue( PhaseStatus::PHASE_INACTIVE );
 }
 
 void ReluConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
@@ -319,6 +331,30 @@ void ReluConstraint::getEntailedTightenings( List<Tightening> &tightenings ) con
         if ( FloatUtils::lt( fLowerBound, bLowerBound ) )
             tightenings.append( Tightening( _f, bLowerBound, Tightening::LB ) );
     }
+}
+
+String ReluConstraint::phaseToString( PhaseStatus phase )
+{
+    switch ( phase )
+    {
+    case PHASE_NOT_FIXED:
+        return "PHASE_NOT_FIXED";
+
+    case PHASE_ACTIVE:
+        return "PHASE_ACTIVE";
+
+    case PHASE_INACTIVE:
+        return "PHASE_INACTIVE";
+
+    default:
+        return "UNKNOWN";
+    }
+};
+
+void ReluConstraint::setPhaseStatue( PhaseStatus phaseStatus )
+{
+    _phaseStatus = phaseStatus;
+    setActiveConstraint( !phaseFixed() );
 }
 
 //

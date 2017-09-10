@@ -113,6 +113,13 @@ private:
 
     PiecewiseLinearCaseSplit getInactiveSplit() const;
     PiecewiseLinearCaseSplit getActiveSplit() const;
+
+    /*
+      Set the phase status, notify parent class.
+    */
+    void setPhaseStatue( PhaseStatus phaseStatus );
+
+    static String phaseToString( PhaseStatus phase );
 };
 
 #endif // __ReluConstraint_h__

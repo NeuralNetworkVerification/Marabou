@@ -23,6 +23,7 @@
 #include "InputQuery.h"
 #include "Map.h"
 #include "NestedDantzigsRule.h"
+#include "Preprocessor.h"
 #include "SmtCore.h"
 #include "Statistics.h"
 
@@ -45,10 +46,11 @@ public:
 
     /*
       Process the input query and pass the needed information to the
-      underlying tableau.
+      underlying tableau. Return false if query is found to be infeasible,
+      true otherwise.
      */
-    void processInputQuery( InputQuery &inputQuery );
-    void processInputQuery( InputQuery &inputQuery, bool preprocess );
+    bool processInputQuery( InputQuery &inputQuery );
+    bool processInputQuery( InputQuery &inputQuery, bool preprocess );
 
     /*
       If the query is feasiable and has been successfully solved, this
@@ -126,6 +128,16 @@ private:
       Degradation checker.
     */
     DegradationChecker _degradationChecker;
+
+    /*
+      Query preprocessor.
+    */
+    Preprocessor _preprocessor;
+
+    /*
+      Is preprocessing enabled?
+    */
+    bool _preprocessingEnabled;
 
     /*
       Perform a simplex step: compute the cost function, pick the

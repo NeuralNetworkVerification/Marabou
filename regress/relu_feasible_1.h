@@ -109,7 +109,14 @@ public:
         timeval start = TimeUtils::sampleMicro();
 
         Engine engine;
-        engine.processInputQuery( inputQuery );
+        if ( !engine.processInputQuery( inputQuery ) )
+        {
+            timeval end = TimeUtils::sampleMicro();
+            restoreOutputStream( outputStream );
+            printFailed( "relu_feasible_1", start, end );
+            return;
+        }
+
         bool result = engine.solve();
 
         timeval end = TimeUtils::sampleMicro();

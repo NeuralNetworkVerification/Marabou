@@ -285,6 +285,23 @@ void Tableau::initializeTableau()
         setNonBasicAssignment( nonBasic, _lowerBounds[nonBasic] );
     }
 
+    // Initialize B0
+    double *B0 = new double[_m * _n];
+    if ( !B0 )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::initializeTableau::B0" );
+
+    for ( unsigned row = 0; row < _m; ++row )
+    {
+        for ( unsigned col = 0; col < _m; ++col )
+        {
+            // B0 is row-major, and A is col-major.
+            B0[_m * row + col] = _A[_m * _basicIndexToVariable[col] + row];
+        }
+    }
+
+    _basisFactorization->setB0( B0 );
+    delete[] B0;
+
     // Recompute assignment
     computeAssignment();
 }

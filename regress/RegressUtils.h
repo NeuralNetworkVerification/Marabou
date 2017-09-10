@@ -52,7 +52,7 @@ void printTitle( const String &title )
 void printFailed( const String &test, timeval start, timeval end )
 {
     printf( CYN "\t Test: " RESET " %s ", test.ascii() );
-    for ( unsigned i = test.length(); i < 20; ++i )
+    for ( unsigned i = test.length(); i < 25; ++i )
         printf( " " );
     printf( " -- " RED " FAILED " RESET );
 

@@ -17,7 +17,13 @@
 #include "Map.h"
 #include "Preprocessor.h"
 #include "ReluplexError.h"
+#include "Statistics.h"
 #include "Tightening.h"
+
+Preprocessor::Preprocessor()
+    : _statistics( NULL )
+{
+}
 
 InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariableElimination )
 {
@@ -38,6 +44,9 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     {
         continueTightening = processEquations();
         continueTightening = processConstraints() || continueTightening;
+
+        if ( _statistics )
+            _statistics->ppIncNumTighteningIterations();
     }
 
     if ( attemptVariableElimination )
@@ -192,33 +201,34 @@ bool Preprocessor::processConstraints()
 void Preprocessor::eliminateFixedVariables()
 {
     // First, collect the variables that have become fixed, and their fixed values
-	Map<unsigned, double> fixedVariables;
 	for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
 	{
         if ( FloatUtils::areEqual( _preprocessed.getLowerBound( i ), _preprocessed.getUpperBound( i ) ) )
-            fixedVariables[i] = _preprocessed.getLowerBound( i );
+            _fixedVariables[i] = _preprocessed.getLowerBound( i );
 	}
 
     // If there's nothing to eliminate, we're done
-    if ( fixedVariables.empty() )
+    if ( _fixedVariables.empty() )
         return;
 
-    // Compute the new variable indices, after the elimination of fixed variables
-    Map<unsigned, unsigned> oldIndexToNewIndex;
+    if ( _statistics )
+        _statistics->ppSetNumEliminatedVars( _fixedVariables.size() );
 
+    // Compute the new variable indices, after the elimination of fixed variables
  	int offset = 0;
 	for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
 	{
-		if ( fixedVariables.exists( i ) )
-			++offset;
-		else
-			oldIndexToNewIndex[i] = i - offset;
+        if ( _fixedVariables.exists( i ) )
+            ++offset;
+        else
+            _oldIndexToNewIndex[i] = i - offset;
 	}
 
     // Next, eliminate the fixed variables from the equations
     List<Equation> &equations( _preprocessed.getEquations() );
     List<Equation>::iterator equation = equations.begin();
 
+    Set<unsigned> auxiliaryVariables;
     while ( equation != equations.end() )
 	{
         // Each equation is of the form sum(addends) = scalar. So, any fixed variable
@@ -226,20 +236,51 @@ void Preprocessor::eliminateFixedVariables()
         List<Equation::Addend>::iterator addend = equation->_addends.begin();
         while ( addend != equation->_addends.end() )
         {
-            if ( fixedVariables.exists( addend->_variable ) )
+            if ( _fixedVariables.exists( addend->_variable ) )
             {
                 // Addend has to go...
-                double constant = fixedVariables[addend->_variable] * addend->_coefficient;
+                double constant = _fixedVariables[addend->_variable] * addend->_coefficient;
                 equation->_scalar -= constant;
                 addend = equation->_addends.erase( addend );
             }
             else
             {
                 // Adjust the addend's variable index
-                addend->_variable = oldIndexToNewIndex[addend->_variable];
+                addend->_variable = _oldIndexToNewIndex[addend->_variable];
                 ++addend;
             }
         }
+
+        // If the auxiliary variable has been eliminated, pick a new one
+        if ( _fixedVariables.exists( equation->_auxVariable ) )
+        {
+            bool found = false;
+            addend = equation->_addends.begin();
+            while ( !found && ( addend != equation->_addends.end() ) )
+            {
+                // A variable can't be aux for two equations
+                if ( !auxiliaryVariables.exists( addend->_variable ) )
+                {
+                    // This variable is free, grab it
+                    equation->_auxVariable = addend->_variable;
+                    found = true;
+                }
+
+                ++addend;
+            }
+
+            if ( !found )
+            {
+                // Couldn't find a new auxiliary variable!
+                throw ReluplexError( ReluplexError::PREPROCESSOR_CANT_FIND_NEW_AUXILIARY_VAR );
+            }
+        }
+        else
+        {
+            equation->_auxVariable = _oldIndexToNewIndex[equation->_auxVariable];
+        }
+
+        auxiliaryVariables.insert( equation->_auxVariable );
 
         // If all the addends have been removed, we remove the entire equation.
         // Overwise, we are done here.
@@ -262,27 +303,48 @@ void Preprocessor::eliminateFixedVariables()
 		List<unsigned> participatingVariables = constraint->getParticipatingVariables();
         for ( unsigned variable : participatingVariables )
         {
-            if ( fixedVariables.exists( variable ) )
-                constraint->eliminateVariable( variable, fixedVariables[variable] );
-            else if ( oldIndexToNewIndex[variable] != variable )
-                constraint->updateVariableIndex( variable, oldIndexToNewIndex[variable] );
+            if ( _fixedVariables.exists( variable ) )
+                constraint->eliminateVariable( variable, _fixedVariables[variable] );
+            else if ( _oldIndexToNewIndex[variable] != variable )
+                constraint->updateVariableIndex( variable, _oldIndexToNewIndex[variable] );
         }
 	}
 
     // Update the lower/upper bound maps
     for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
 	{
-        if ( fixedVariables.exists( i ) )
+        if ( _fixedVariables.exists( i ) )
             continue;
 
-        _preprocessed.setLowerBound( oldIndexToNewIndex[i], _preprocessed.getLowerBound( i ) );
-        _preprocessed.setUpperBound( oldIndexToNewIndex[i], _preprocessed.getUpperBound( i ) );
+        _preprocessed.setLowerBound( _oldIndexToNewIndex[i], _preprocessed.getLowerBound( i ) );
+        _preprocessed.setUpperBound( _oldIndexToNewIndex[i], _preprocessed.getUpperBound( i ) );
 	}
 
     // Adjust the number of variables in the query
-    _preprocessed.setNumberOfVariables( _preprocessed.getNumberOfVariables() - fixedVariables.size() );
+    _preprocessed.setNumberOfVariables( _preprocessed.getNumberOfVariables() - _fixedVariables.size() );
+}
 
-    // TODO: need to maintain the mappings, for extracting the solutions
+bool Preprocessor::variableIsFixed( unsigned index ) const
+{
+    return _fixedVariables.exists( index );
+}
+
+double Preprocessor::getFixedValue( unsigned index ) const
+{
+    return _fixedVariables.at( index );
+}
+
+unsigned Preprocessor::getNewIndex( unsigned oldIndex ) const
+{
+    if ( _oldIndexToNewIndex.exists( oldIndex ) )
+        return _oldIndexToNewIndex.at( oldIndex );
+
+    return oldIndex;
+}
+
+void Preprocessor::setStatistics( Statistics *statistics )
+{
+    _statistics = statistics;
 }
 
 //

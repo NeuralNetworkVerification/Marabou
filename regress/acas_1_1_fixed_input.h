@@ -43,7 +43,14 @@ public:
         timeval start = TimeUtils::sampleMicro();
 
         Engine engine;
-        engine.processInputQuery( inputQuery );
+        if ( !engine.processInputQuery( inputQuery ) )
+        {
+            timeval end = TimeUtils::sampleMicro();
+            restoreOutputStream( outputStream );
+            printFailed( "acas_1_1_fixed_input", start, end );
+            return;
+        }
+
         bool result = engine.solve();
 
         timeval end = TimeUtils::sampleMicro();
