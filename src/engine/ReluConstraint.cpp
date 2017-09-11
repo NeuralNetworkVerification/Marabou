@@ -354,7 +354,6 @@ String ReluConstraint::phaseToString( PhaseStatus phase )
 void ReluConstraint::setPhaseStatue( PhaseStatus phaseStatus )
 {
     _phaseStatus = phaseStatus;
-    setActiveConstraint( !phaseFixed() );
 }
 
 //
