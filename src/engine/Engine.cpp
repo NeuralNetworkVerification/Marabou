@@ -50,7 +50,6 @@ bool Engine::solve()
 
     try
     {
-
         while ( true )
         {
             mainLoopStatistics();
@@ -267,13 +266,8 @@ bool Engine::performSimplexStep()
 
 void Engine::fixViolatedPlConstraintIfPossible()
 {
-    PiecewiseLinearConstraint *violated = NULL;
-    for ( const auto &constraint : _plConstraints )
-    {
-        if ( constraint->isActive() && !constraint->satisfied() )
-            violated = constraint;
-    }
-
+    ASSERT( !_violatedPlConstraints.empty() );
+    PiecewiseLinearConstraint *violated = *_violatedPlConstraints.begin();
     ASSERT( violated );
 
     List<PiecewiseLinearConstraint::Fix> fixes = violated->getPossibleFixes();
