@@ -76,7 +76,6 @@ int main()
 
     	relus();
 
-        // Temporarily disabling
         max();
 
         printf( "\n\n" );

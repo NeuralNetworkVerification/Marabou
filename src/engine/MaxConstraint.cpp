@@ -408,6 +408,11 @@ void MaxConstraint::tightenPL( Tightening tighten, List<Tightening> &tightenings
     }
 }
 
+bool MaxConstraint::constraintDisabledByVariableElimination() const
+{
+    return false;
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

@@ -112,7 +112,7 @@ public:
         timeval start = TimeUtils::sampleMicro();
 
         Engine engine;
-        if ( !engine.processInputQuery( inputQuery ) )
+        if ( !engine.processInputQuery( inputQuery, false ) )
         {
             restoreOutputStream( outputStream );
             timeval end = TimeUtils::sampleMicro();

@@ -103,6 +103,12 @@ public:
     */
     void getEntailedTightenings( List<Tightening> &tightenings ) const;
 
+    /*
+      Return true if and only if the constraint has been made meaningless due to
+      variable eliminiation and should be eliminated.
+    */
+    bool constraintDisabledByVariableElimination() const;
+
 private:
     unsigned _f;
   	unsigned _maxIndex;

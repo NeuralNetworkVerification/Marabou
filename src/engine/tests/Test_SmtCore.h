@@ -124,6 +124,11 @@ public:
         void getEntailedTightenings( List<Tightening> & ) const
         {
         }
+
+        bool constraintDisabledByVariableElimination() const
+        {
+            return false;
+        }
     };
 
     void setUp()

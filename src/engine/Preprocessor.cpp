@@ -313,6 +313,9 @@ void Preprocessor::eliminateFixedVariables()
             else if ( _oldIndexToNewIndex.at( variable ) != variable )
                 constraint->updateVariableIndex( variable, _oldIndexToNewIndex.at( variable ) );
         }
+
+        if ( constraint->constraintDisabledByVariableElimination() )
+            constraint->setActiveConstraint( false );
 	}
 
     // Update the lower/upper bound maps

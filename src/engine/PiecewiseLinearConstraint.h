@@ -141,6 +141,12 @@ public:
     */
     virtual void getEntailedTightenings( List<Tightening> &tightenings ) const = 0;
 
+    /*
+      Return true if and only if the constraint has been made meaningless due to
+      variable eliminiation and should be eliminated.
+    */
+    virtual bool constraintDisabledByVariableElimination() const = 0;
+
     void setStatistics( Statistics *statistics );
 
 	bool _removePL;

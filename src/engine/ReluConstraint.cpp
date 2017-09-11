@@ -23,6 +23,7 @@
 ReluConstraint::ReluConstraint( unsigned b, unsigned f )
     : _b( b )
     , _f( f )
+    , _haveEliminatedVariables( false )
 {
     setPhaseStatue( PhaseStatus::PHASE_NOT_FIXED );
 }
@@ -286,6 +287,8 @@ void ReluConstraint::eliminateVariable( __attribute__((unused)) unsigned variabl
         setPhaseStatue( PhaseStatus::PHASE_ACTIVE );
 	else
         setPhaseStatue( PhaseStatus::PHASE_INACTIVE );
+
+    _haveEliminatedVariables = true;
 }
 
 void ReluConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
@@ -354,6 +357,11 @@ String ReluConstraint::phaseToString( PhaseStatus phase )
 void ReluConstraint::setPhaseStatue( PhaseStatus phaseStatus )
 {
     _phaseStatus = phaseStatus;
+}
+
+bool ReluConstraint::constraintDisabledByVariableElimination() const
+{
+    return _haveEliminatedVariables;
 }
 
 //

@@ -103,6 +103,12 @@ public:
     void getEntailedTightenings( List<Tightening> &tightenings ) const;
 
     /*
+      Return true if and only if the constraint has been made meaningless due to
+      variable eliminiation and should be eliminated.
+    */
+    bool constraintDisabledByVariableElimination() const;
+
+    /*
       Dump the current state of the constraint.
     */
     void dump( String &output ) const;
@@ -113,6 +119,8 @@ private:
 
     PiecewiseLinearCaseSplit getInactiveSplit() const;
     PiecewiseLinearCaseSplit getActiveSplit() const;
+
+    bool _haveEliminatedVariables;
 
     /*
       Set the phase status, notify parent class.
