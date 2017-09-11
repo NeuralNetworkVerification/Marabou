@@ -27,7 +27,7 @@ public:
     /*
       Main method of this class: preprocess the input query
     */
-    InputQuery preprocess( const InputQuery &query, bool attemptVariableElimination = false );
+    InputQuery preprocess( const InputQuery &query, bool attemptVariableElimination = true );
 
     /*
       Have the preprocessor start reporting statistics.
