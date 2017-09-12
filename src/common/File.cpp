@@ -78,7 +78,7 @@ void File::open( Mode openMode )
         mode = (mode_t)NULL;
 
     if ( ( _descriptor = T::open( _path.ascii(), flags, mode ) ) == NO_DESCRIPTOR )
-        throw CommonError( CommonError::OPEN_FAILED );
+        throw CommonError( CommonError::OPEN_FAILED, _path.ascii() );
 }
 
 void File::write( const String &line )
