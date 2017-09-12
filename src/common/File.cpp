@@ -117,7 +117,16 @@ String File::readLine( char lineSeparatingChar )
         char buffer[SIZE_OF_BUFFER + 1];
         int n = T::read( _descriptor, buffer, sizeof(char) * SIZE_OF_BUFFER );
         if ( ( n == -1 ) || ( n == 0 ) )
+        {
+            if ( _readLineBuffer != "" )
+            {
+                String result = _readLineBuffer;
+                _readLineBuffer = "";
+                return result;
+            }
+
             throw CommonError( CommonError::READ_FAILED );
+        }
 
         buffer[n] = 0;
         _readLineBuffer += buffer;
