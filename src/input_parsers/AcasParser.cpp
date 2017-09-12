@@ -217,8 +217,6 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
         inputQuery.addEquation( equation );
     }
 
-
-
     // Add the ReLU constraints
     for ( unsigned i = 1; i < numberOfLayers - 1; ++i )
     {
