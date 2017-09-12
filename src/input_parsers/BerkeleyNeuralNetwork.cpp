@@ -105,22 +105,8 @@ void BerkeleyNeuralNetwork::parseFile()
     _outputVars = Set<unsigned>::difference( _allVars, _allRhsVars );
 
     printf( "Input vars: count = %u\n", _inputVars.size() );
-    // for ( const auto &it : _inputVars )
-    //     printf( "\t%u\n", it );
 
     printf( "Output vars: count = %u\n", _outputVars.size() );
-    // for ( const auto &it : _outputVars )
-    //     printf( "\t%u\n", it );
-
-    // Debug
-    for ( unsigned i = 0; i < _allVars.size(); ++i )
-    {
-        if ( !_allVars.exists( i ) )
-        {
-            printf( "Error! Gap in variables. Missing: %u\n", i );
-            exit( 1 );
-        }
-    }
 }
 
 void BerkeleyNeuralNetwork::processLine( const String &line )
@@ -200,8 +186,6 @@ void BerkeleyNeuralNetwork::processEquationLine( const String &line )
     List<String> rhsTokens = ( secondToken.trim() ).tokenize( "+" );
 
     for ( it = rhsTokens.begin(); it != rhsTokens.end(); ++it )
-    // it = rhsTokens.begin();
-    // for ( unsigned i = 0; i < rhsTokens.size(); ++i )
     {
         String token = it->trim();
 
@@ -236,8 +220,6 @@ void BerkeleyNeuralNetwork::processEquationLine( const String &line )
             else
                 equation._constant = atof( token.ascii() );
         }
-
-        // ++it;
     }
 
     _equations.append( equation );

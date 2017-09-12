@@ -26,21 +26,36 @@ int main()
     {
         // Extract an input query from the network
         InputQuery inputQuery;
-
         BerkeleyParser berkeleyParser( "./madry_network/model" );
         berkeleyParser.generateQuery( inputQuery );
 
-        // A simple query: all inputs are fixed to 0
-        // for ( unsigned i = 0; i < 5; ++i )
-        // {
-        //     unsigned variable = acasParser.getInputVariable( i );
-        //     inputQuery.setLowerBound( variable, 0.0 );
-        //     inputQuery.setUpperBound( variable, 0.0 );
-        // }
+        // Run one of the examples through the network
+        File fixedInputFile( "./madry_network/real_0_adv_0.in" );
+        fixedInputFile.open( File::MODE_READ );
+        String line = fixedInputFile.readLine();
+        List<String> tokens = line.tokenize( " " );
+        if ( tokens.size() != 784 )
+        {
+            printf( "Error! Input size != 784 (= %u)\n", tokens.size() );
+            exit( 1 );
+        }
 
-		// Feed the query to the engine
+        unsigned count = 0;
+        for ( const auto &token : tokens )
+        {
+            double bound = atof( token.ascii() );
+            inputQuery.setLowerBound( count, bound );
+            inputQuery.setUpperBound( count, bound );
+            ++count;
+        }
+
+        // Feed the query to the engine
         Engine engine;
-        engine.processInputQuery( inputQuery );
+        if ( !engine.processInputQuery( inputQuery ) )
+        {
+            printf( "Error! Preprocessing failed\n" );
+            exit( 1 );
+        }
 
         if ( !engine.solve() )
         {
@@ -51,13 +66,16 @@ int main()
         printf( "\n\nQuery is sat! Extracting solution...\n" );
         engine.extractSolution( inputQuery );
 
-        // Vector<double> inputs;
-        // for ( unsigned i = 0; i < 5; ++i )
-        // {
-        //     unsigned variable = acasParser.getInputVariable( i );
-        //     printf( "Input[%u] = %.15lf\n", i, inputQuery.getSolutionValue( variable ) );
-        //     inputs.append( inputQuery.getSolutionValue( variable ) );
-        // }
+        for ( unsigned i = 0; i < 784; ++i )
+            printf( "Input[%u] = %.15lf\n", i, inputQuery.getSolutionValue( i ) );
+
+        Set<unsigned> outputVariables = berkeleyParser.getOutputVariables();
+        count = 0;
+        for ( unsigned outputVariable : outputVariables )
+        {
+            printf( "Output[%u] = %.15lf\n", count, inputQuery.getSolutionValue( outputVariable ) );
+            ++count;
+        }
 
         // // for ( unsigned i = 0; i < 5; ++i )
         // // {

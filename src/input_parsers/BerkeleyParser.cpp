@@ -95,6 +95,11 @@ void BerkeleyParser::generateQuery( InputQuery &inputQuery )
     }
 }
 
+Set<unsigned> BerkeleyParser::getOutputVariables() const
+{
+    return _berkeleyNeuralNetwork.getOutputVariables();
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "
