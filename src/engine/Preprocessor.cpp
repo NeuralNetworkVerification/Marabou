@@ -139,20 +139,23 @@ bool Preprocessor::processEquations()
                 validLB = tempValid;
             }
 
-            if ( validLB && FloatUtils::gt( scalarLB, _preprocessed.getLowerBound( varBeingTightened._variable ) ) )
+            if ( validLB && FloatUtils::gt( scalarLB, _preprocessed.getLowerBound( varBeingTightened._variable ),
+                                            GlobalConfiguration::BOUND_COMPARISON_TOLERANCE ) )
             {
                 tighterBoundFound = true;
                 _preprocessed.setLowerBound( varBeingTightened._variable, scalarLB );
             }
 
-            if ( validUB && FloatUtils::lt( scalarUB, _preprocessed.getUpperBound( varBeingTightened._variable ) ) )
+            if ( validUB && FloatUtils::lt( scalarUB, _preprocessed.getUpperBound( varBeingTightened._variable ),
+                                            GlobalConfiguration::BOUND_COMPARISON_TOLERANCE ) )
             {
                 tighterBoundFound = true;
                 _preprocessed.setUpperBound( varBeingTightened._variable, scalarUB );
             }
 
             if ( FloatUtils::gt( _preprocessed.getLowerBound( varBeingTightened._variable ),
-                                 _preprocessed.getUpperBound( varBeingTightened._variable ) ) )
+                                 _preprocessed.getUpperBound( varBeingTightened._variable ),
+                                 GlobalConfiguration::BOUND_COMPARISON_TOLERANCE ) )
             {
                 throw InfeasibleQueryException();
             }
