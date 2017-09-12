@@ -4,3 +4,4 @@ TAGS
 /src/engine/tests/Engine.tests
 *~
 /src/input_parsers/mps_generic/mps_gensol.elf
+/src/input_parsers/berkeley_example/berkeley_example.elf
