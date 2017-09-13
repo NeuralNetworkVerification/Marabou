@@ -58,6 +58,7 @@ SOURCES += \
 	main_regress.cpp \
 
 all:
+	./run_regress.elf
 
 TARGET = run_regress.elf
 
