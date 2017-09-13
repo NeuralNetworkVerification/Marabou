@@ -798,6 +798,11 @@ double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient
         {
             // Maximal change: hitting the lower bound
             maxChange = _lowerBounds[basic] - _basicAssignment[basicIndex];
+
+            // Protect against corner cases where LB = UB, variable is "AT_UB" but
+            // due to the tolerance is in fact below LB, and the change becomes positive.
+            if ( !FloatUtils::isNegative( maxChange ) )
+                maxChange = 0;
         }
         else if ( _basicStatus[basicIndex] == BasicStatus::AT_LB )
         {
@@ -834,6 +839,12 @@ double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient
         {
             // Maximal change: hitting the upper bound
             maxChange = _upperBounds[basic] - _basicAssignment[basicIndex];
+
+            // Protect against corner cases where LB = UB, variable is "AT_LB" but
+            // due to the tolerance is in fact above UB, and the change becomes negative.
+            if ( !FloatUtils::isPositive( maxChange ) )
+                maxChange = 0;
+
         }
         else if ( _basicStatus[basicIndex] == BasicStatus::AT_UB )
         {
