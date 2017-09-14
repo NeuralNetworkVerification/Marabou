@@ -31,6 +31,7 @@ Tableau::Tableau()
     , _pivotRow( NULL )
     , _b( NULL )
     , _rowScalars( NULL )
+    , _unitVector( NULL )
     , _basisFactorization( NULL )
     , _costFunction( NULL )
     , _basicCosts( NULL )
@@ -925,7 +926,9 @@ void Tableau::pickLeavingVariable( double *changeColumn )
             }
         }
 
-        _leavingVariableIncreases = FloatUtils::isPositive( changeColumn[_leavingVariable] );
+        // Only perform this check if pivot isn't fake
+        if ( _leavingVariable != _m )
+            _leavingVariableIncreases = FloatUtils::isPositive( changeColumn[_leavingVariable] );
     }
     else
     {
@@ -950,7 +953,9 @@ void Tableau::pickLeavingVariable( double *changeColumn )
             }
         }
 
-        _leavingVariableIncreases = FloatUtils::isNegative( changeColumn[_leavingVariable] );
+        // Only perform this check if pivot isn't fake
+        if ( _leavingVariable != _m )
+            _leavingVariableIncreases = FloatUtils::isNegative( changeColumn[_leavingVariable] );
     }
 }
 

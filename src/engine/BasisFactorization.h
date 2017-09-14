@@ -169,6 +169,12 @@ private:
     bool _factorizationEnabled;
 
     /*
+      Working space
+    */
+    double *_tempY;
+    double *_LCol;
+
+    /*
       Clear a previous factorization.
     */
 	void clearLPU();

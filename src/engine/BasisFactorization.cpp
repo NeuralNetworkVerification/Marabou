@@ -25,6 +25,8 @@ BasisFactorization::BasisFactorization( unsigned m )
 	, _m( m )
     , _U( NULL )
     , _factorizationEnabled( true )
+    , _tempY( NULL )
+    , _LCol( NULL )
 {
     _B0 = new double[m*m];
     if ( !_B0 )
@@ -38,6 +40,14 @@ BasisFactorization::BasisFactorization( unsigned m )
 	_U = new double[m*m];
 	if ( !_U )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "BasisFactorization::U" );
+
+    _tempY = new double[m];
+    if ( !_tempY )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "BasisFactorization::tempY" );
+
+    _LCol = new double[m];
+    if ( !_LCol )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "BasisFactorization::LCol" );
 }
 
 BasisFactorization::~BasisFactorization()
@@ -58,6 +68,18 @@ void BasisFactorization::freeIfNeeded()
 		delete[] _B0;
 		_B0 = NULL;
 	}
+
+    if ( _tempY )
+    {
+        delete[] _tempY;
+        _tempY = NULL;
+    }
+
+    if ( _LCol )
+    {
+        delete[] _LCol;
+        _LCol = NULL;
+    }
 
     List<EtaMatrix *>::iterator it;
     for ( it = _etas.begin(); it != _etas.end(); ++it )
@@ -180,8 +202,7 @@ void BasisFactorization::forwardTransformation( const double *y, double *x ) con
         return;
     }
 
-    double *tempY = new double[_m];
-    memcpy( tempY, y, sizeof(double) * _m );
+    memcpy( _tempY, y, sizeof(double) * _m );
 
     // We are solving Bx = y, where B = B0 * E1 ... *En and
     // B0 = inv( LmPm ... L1P1 ) * U. The equation is thus:
@@ -192,44 +213,44 @@ void BasisFactorization::forwardTransformation( const double *y, double *x ) con
     {
         if ( (*element)->_pair )
         {
-			double temp = tempY[(*element)->_pair->first];
-			tempY[(*element)->_pair->first] = tempY[(*element)->_pair->second];
-			tempY[(*element)->_pair->second] = temp;
+			double temp = _tempY[(*element)->_pair->first];
+			_tempY[(*element)->_pair->first] = _tempY[(*element)->_pair->second];
+			_tempY[(*element)->_pair->second] = temp;
 		}
         else
-			LMultiplyLeft( (*element)->_eta , tempY );
+			LMultiplyLeft( (*element)->_eta , _tempY );
     }
 
     // We are now left with U * E1 ... * En * x = y. Eliminate U.
     // We use x as a temporary work area, then update y.
 	if ( !_LP.empty() )
     {
-		x[_m-1] = tempY[_m-1];
+		x[_m-1] = _tempY[_m-1];
 		for ( int i = _m - 2; i >= 0; --i )
         {
 			double sum = 0;
 			for ( int j = _m - 1; j > i; --j )
 				sum += _U[i * _m + j] * x[j];
-			x[i] = tempY[i] - sum;
+			x[i] = _tempY[i] - sum;
 
             if ( FloatUtils::isZero( x[i] ) )
                 x[i] = 0.0;
         }
-		memcpy( tempY, x, sizeof(double) * _m );
+		memcpy( _tempY, x, sizeof(double) * _m );
 	}
 
     // Finally, we are left with E1 * ... * En * x = y.
     // Eliminate etas one by one.
 	for ( const auto &eta : _etas )
     {
-        x[eta->_columnIndex] = tempY[eta->_columnIndex] / eta->_column[eta->_columnIndex];
+        x[eta->_columnIndex] = _tempY[eta->_columnIndex] / eta->_column[eta->_columnIndex];
         if ( FloatUtils::isZero( x[eta->_columnIndex] ) )
             x[eta->_columnIndex] = 0.0;
 
         // Solve the rows above columnIndex
         for ( unsigned i = eta->_columnIndex + 1; i < _m; ++i )
         {
-            x[i] = tempY[i] - ( x[eta->_columnIndex] * eta->_column[i] );
+            x[i] = _tempY[i] - ( x[eta->_columnIndex] * eta->_column[i] );
             if ( FloatUtils::isZero( x[i] ) )
                 x[i] = 0.0;
         }
@@ -237,13 +258,13 @@ void BasisFactorization::forwardTransformation( const double *y, double *x ) con
         // Solve the rows below columnIndex
         for ( int i = eta->_columnIndex - 1; i >= 0; i-- )
         {
-            x[i] = tempY[i] - ( x[eta->_columnIndex] * eta->_column[i] );
+            x[i] = _tempY[i] - ( x[eta->_columnIndex] * eta->_column[i] );
             if ( FloatUtils::isZero( x[i] ) )
                 x[i] = 0.0;
         }
 
         // The x from this iteration becomes a for the next iteration
-        memcpy( tempY, x, sizeof(double) *_m );
+        memcpy( _tempY, x, sizeof(double) *_m );
     }
 }
 
@@ -257,8 +278,7 @@ void BasisFactorization::backwardTransformation( const double *y, double *x ) co
         return;
     }
 
-    double *tempY = new double[_m];
-    memcpy( tempY, y, sizeof(double) * _m );
+    memcpy( _tempY, y, sizeof(double) * _m );
 
     // We are solving xB = y, where B = B0 * E1 ... * En.
     // The first step is to eliminate the eta matrices and adjust y
@@ -266,11 +286,11 @@ void BasisFactorization::backwardTransformation( const double *y, double *x ) co
     for ( auto eta = _etas.rbegin(); eta != _etas.rend(); ++eta )
     {
         // x is going to equal y in all entries except columnIndex
-        memcpy( x, tempY, sizeof(double) * _m );
+        memcpy( x, _tempY, sizeof(double) * _m );
 
         // Compute the special column
         unsigned columnIndex = (*eta)->_columnIndex;
-        x[columnIndex] = tempY[columnIndex];
+        x[columnIndex] = _tempY[columnIndex];
         for ( unsigned i = 0; i < _m; ++i )
         {
             if ( i != columnIndex )
@@ -282,7 +302,7 @@ void BasisFactorization::backwardTransformation( const double *y, double *x ) co
             x[columnIndex] = 0.0;
 
         // The x from this iteration becomes y for the next iteration
-        memcpy( tempY, x, sizeof(double) *_m );
+        memcpy( _tempY, x, sizeof(double) *_m );
     }
 
     // Now that the Etas are gone, we use the fact that
@@ -294,13 +314,13 @@ void BasisFactorization::backwardTransformation( const double *y, double *x ) co
     // and storing the solution for x' in x.
 	if ( !_LP.empty() )
 	{
-		x[0] = tempY[0];
+		x[0] = _tempY[0];
 		for ( unsigned i = 1; i < _m; ++i )
         {
 			double sum = 0;
 			for ( unsigned j = 0; j < i; ++j )
 				sum += _U[i + j * _m] * x[j];
-			x[i] = tempY[i] - sum;
+			x[i] = _tempY[i] - sum;
 
             if ( FloatUtils::isZero( x[i] ) )
                 x[i] = 0.0;
@@ -350,7 +370,6 @@ void BasisFactorization::factorizeMatrix( double *matrix )
     // Clear any previous factorization, initialize U
 	clearLPU();
 	memcpy( _U, matrix, sizeof(double) * _m * _m );
-    double *LCol = new double[_m];
 
 	for ( unsigned i = 0; i < _m; ++i )
     {
@@ -373,10 +392,7 @@ void BasisFactorization::factorizeMatrix( double *matrix )
 
         // No non-zero pivot has been found, matrix cannot be factorized
         if ( FloatUtils::isZero( largestElement ) )
-        {
-            delete[] LCol;
             throw ReluplexError( ReluplexError::NO_AVAILABLE_CANDIDATES, "No Pivot" );
-        }
 
         // Swap rows i and bestRow (if needed), and store this permutation
         if ( bestRowIndex != i )
@@ -388,21 +404,19 @@ void BasisFactorization::factorizeMatrix( double *matrix )
 
         // The matrix now has a non-zero value at entry (i,i), so we can perform
         // Gaussian elimination for the subsequent rows
-        std::fill_n( LCol, _m, 0 );
+        std::fill_n( _LCol, _m, 0 );
         double div = _U[i * _m + i];
-        LCol[i] = 1 / div;
+        _LCol[i] = 1 / div;
 		for ( unsigned j = i + 1; j < _m; ++j )
-            LCol[j] = -_U[i + j * _m] / div;
+            _LCol[j] = -_U[i + j * _m] / div;
 
         // Store the resulting lower-triangular eta matrix
-		EtaMatrix *L = new EtaMatrix( _m, i, LCol );
+        EtaMatrix *L = new EtaMatrix( _m, i, _LCol );
         _LP.appendHead( new LPElement( L, NULL ) );
 
         // Perform the actual elimination step on U
         LFactorizationMultiply( L );
 	}
-
-    delete[] LCol;
 }
 
 void BasisFactorization::LFactorizationMultiply( const EtaMatrix *L )

@@ -18,17 +18,16 @@
 #include <cstring>
 #include <utility>
 
-LPElement::LPElement( const EtaMatrix *eta, const std::pair<unsigned, unsigned> *pair )
+LPElement::LPElement( EtaMatrix *eta, std::pair<unsigned, unsigned> *pair )
 	: _eta( NULL )
 	, _pair( NULL )
 {
+    ASSERT( eta || pair );
+
     if ( pair )
-    {
-		_pair = new std::pair<unsigned, unsigned>;
-		memcpy( _pair, pair, sizeof(std::pair<unsigned, unsigned>) );
-	}
+        _pair = pair;
     else
-		_eta = new EtaMatrix( eta->_m, eta->_columnIndex, eta->_column );
+        _eta = eta;
 }
 
 LPElement::~LPElement()
