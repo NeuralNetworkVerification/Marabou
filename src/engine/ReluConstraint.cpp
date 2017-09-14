@@ -55,6 +55,9 @@ void ReluConstraint::unregisterAsWatcher( ITableau *tableau )
 
 void ReluConstraint::notifyVariableValue( unsigned variable, double value )
 {
+    if ( FloatUtils::isZero( value, GlobalConfiguration::BOUND_COMPARISON_TOLERANCE ) )
+        value = 0.0;
+
     _assignment[variable] = value;
 }
 
@@ -110,7 +113,7 @@ bool ReluConstraint::satisfied() const
         return false;
 
     if ( FloatUtils::isPositive( fValue ) )
-        return FloatUtils::areEqual( bValue, fValue );
+        return FloatUtils::areEqual( bValue, fValue, GlobalConfiguration::BOUND_COMPARISON_TOLERANCE );
     else
         return !FloatUtils::isPositive( bValue );
 }
@@ -270,7 +273,7 @@ void ReluConstraint::eliminateVariable( __attribute__((unused)) unsigned variabl
     DEBUG({
             if ( variable == _f )
             {
-                ASSERT( FloatUtils::gte( fixedValue, 0 ) );
+                ASSERT( FloatUtils::gte( fixedValue, 0.0 ) );
             }
 
             if ( FloatUtils::gt( fixedValue, 0 ) )
