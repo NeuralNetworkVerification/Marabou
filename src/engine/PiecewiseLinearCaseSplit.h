@@ -54,7 +54,6 @@ private:
       The equation that needs to be added.
     */
     List<Pair<Equation, EquationType> > _equations;
-
 };
 
 #endif // __PiecewiseLinearCaseSplit_h__

@@ -26,6 +26,7 @@ class SmtCore
 {
 public:
     SmtCore( IEngine *engine );
+    ~SmtCore();
 
     /*
       Inform the SMT core that a PL constraint is violated.

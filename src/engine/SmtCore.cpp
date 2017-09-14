@@ -24,6 +24,17 @@ SmtCore::SmtCore( IEngine *engine )
 {
 }
 
+SmtCore::~SmtCore()
+{
+    while ( !_stack.empty() )
+    {
+        StackEntry &stackEntry( _stack.top() );
+        delete stackEntry._engineState;
+        stackEntry._engineState = NULL;
+        _stack.pop();
+    }
+}
+
 void SmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
 {
     if ( !_constraintToViolationCount.exists( constraint ) )
