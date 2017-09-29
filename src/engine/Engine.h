@@ -140,6 +140,11 @@ private:
     bool _preprocessingEnabled;
 
     /*
+      Work memory (of size m)
+    */
+    double *_work;
+
+    /*
       Perform a simplex step: compute the cost function, pick the
       entering and leaving variables and perform a pivot. Return false
       if the problem is discovered to be unsat.
@@ -206,6 +211,11 @@ private:
       Perform bound tightening on the constraint matrix A.
     */
     void tightenBoundsOnConstraintMatrix();
+
+    /*
+      Adjust the size of the work memory. Should be called when m changes.
+    */
+    void adjustWorkMemorySize();
 
     static void log( const String &message );
 };

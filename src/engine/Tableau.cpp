@@ -994,6 +994,11 @@ const double *Tableau::getChangeColumn() const
     return _changeColumn;
 }
 
+void Tableau::setChangeColumn( const double *column )
+{
+    memcpy( _changeColumn, column, _m * sizeof(double) );
+}
+
 void Tableau::computePivotRow()
 {
     getTableauRow( _leavingVariable, _pivotRow );
@@ -1589,7 +1594,7 @@ void Tableau::updateAssignmentForPivot()
       values prior to actually switching their indices. We also update
       any other basic variables variables that are affected by this change.
 
-      Specifically, we the following steps:
+      Specifically, we perform the following steps:
 
       1. Update _nonBasicAssignment[_enteringVariable] to the new
       value that the leaving variable will have after the swap. This

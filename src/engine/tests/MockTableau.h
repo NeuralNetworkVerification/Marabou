@@ -266,6 +266,10 @@ public:
         return nextChangeColumn;
     }
 
+    void setChangeColumn( const double * )
+    {
+    }
+
     TableauRow *nextPivotRow;
     void computePivotRow()
     {

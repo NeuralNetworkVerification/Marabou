@@ -26,6 +26,7 @@ Engine::Engine()
     : _smtCore( this )
     , _numPlConstraintsDisabledByValidSplits( 0 )
     , _preprocessingEnabled( false )
+    , _work( NULL )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -42,6 +43,24 @@ Engine::Engine()
 
 Engine::~Engine()
 {
+    if ( _work )
+    {
+        delete[] _work;
+        _work = NULL;
+    }
+}
+
+void Engine::adjustWorkMemorySize()
+{
+    if ( _work )
+    {
+        delete[] _work;
+        _work = NULL;
+    }
+
+    _work = new double[_tableau->getM()];
+    if ( !_work )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Engine::work" );
 }
 
 bool Engine::solve()
@@ -181,6 +200,7 @@ bool Engine::performSimplexStep()
     double bestPivotEntry = 0.0;
     unsigned tries = GlobalConfiguration::MAX_SIMPLEX_PIVOT_SEARCH_ITERATIONS;
     Set<unsigned> excludedEnteringVariables;
+    unsigned bestLeaving;
 
     while ( tries > 0 )
     {
@@ -208,6 +228,8 @@ bool Engine::performSimplexStep()
         if ( _tableau->performingFakePivot() )
         {
             bestEntering = _tableau->getEnteringVariable();
+            bestLeaving = _tableau->getLeavingVariable();
+            memcpy( _work, _tableau->getChangeColumn(), sizeof(double) * _tableau->getM() );
             break;
         }
 
@@ -218,6 +240,8 @@ bool Engine::performSimplexStep()
         {
             bestEntering = _tableau->getEnteringVariable();
             bestPivotEntry = pivotEntry;
+            bestLeaving = _tableau->getLeavingVariable();
+            memcpy( _work, _tableau->getChangeColumn(), sizeof(double) * _tableau->getM() );
         }
 
         // If the pivot is greater than the sought-after threshold, we
@@ -239,12 +263,13 @@ bool Engine::performSimplexStep()
 
     // Set the best choice in the tableau
     _tableau->setEnteringVariableIndex( _tableau->variableToIndex( bestEntering ) );
-    _tableau->computeChangeColumn();
-    _tableau->pickLeavingVariable();
+    _tableau->setLeavingVariableIndex( _tableau->variableToIndex( bestLeaving ) );
+    _tableau->setChangeColumn( _work );
 
     bool fakePivot = _tableau->performingFakePivot();
 
-    if ( !fakePivot && FloatUtils::lt( bestPivotEntry, GlobalConfiguration::ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD ) )
+    if ( !fakePivot &&
+         FloatUtils::lt( bestPivotEntry, GlobalConfiguration::ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD ) )
         _statistics.incNumSimplexUnstablePivots();
 
     if ( !fakePivot )
@@ -385,6 +410,8 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         unsigned n = _preprocessedQuery.getNumberOfVariables();
         _tableau->setDimensions( m, n );
 
+        adjustWorkMemorySize();
+
         _rowBoundTightener->initialize( _tableau );
 
         // Current variables are [0,..,n-1], so the next variable is n.
@@ -517,6 +544,8 @@ void Engine::restoreState( const EngineState &state )
     _rowBoundTightener->initialize( _tableau );
     _rowBoundTightener->reset( _tableau );
 
+    adjustWorkMemorySize();
+
     FreshVariables::setNextVariable( state._nextAuxVariable );
 }
 
@@ -543,6 +572,8 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
         if ( type != PiecewiseLinearCaseSplit::LE )
             bounds.append( Tightening( auxVariable, 0.0, Tightening::LB ) );
     }
+
+    adjustWorkMemorySize();
 
     _rowBoundTightener->initialize( _tableau );
 

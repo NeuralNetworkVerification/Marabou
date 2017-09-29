@@ -94,6 +94,7 @@ public:
     virtual void dumpCostFunction() const = 0;
     virtual void computeChangeColumn() = 0;
     virtual const double *getChangeColumn() const = 0;
+    virtual void setChangeColumn( const double *column ) = 0;
     virtual void computePivotRow() = 0;
     virtual const TableauRow *getPivotRow() const = 0;
     virtual void computeAssignmentIfNeeded() = 0;

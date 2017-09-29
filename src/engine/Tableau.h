@@ -279,9 +279,12 @@ public:
       Compute the "change column" d, given by inv(B) * a. This is the column
       that tells us the change rates for the basic variables, when the entering
       variable changes.
+
+      Can also get the column or manually set it.
     */
     void computeChangeColumn();
     const double *getChangeColumn() const;
+    void setChangeColumn( const double *column );
 
     /*
       Compute the pivot row.
