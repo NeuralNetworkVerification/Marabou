@@ -711,6 +711,8 @@ void Tableau::performPivot()
     _variableToIndex[currentBasic] = _enteringVariable;
     _variableToIndex[currentNonBasic] = _leavingVariable;
 
+    computeBasicStatus( _leavingVariable );
+
     // Check if the pivot is degenerate and update statistics
     if ( FloatUtils::isZero( _changeRatio ) && _statistics )
         _statistics->incNumTableauDegeneratePivots();
@@ -753,6 +755,7 @@ void Tableau::performDegeneratePivot()
     double temp = _basicAssignment[_leavingVariable];
     _basicAssignment[_leavingVariable] = _nonBasicAssignment[_enteringVariable];
     _nonBasicAssignment[_enteringVariable] = temp;
+    computeBasicStatus( _leavingVariable );
 }
 
 double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient, bool decrease )
@@ -1240,12 +1243,14 @@ void Tableau::tightenLowerBound( unsigned variable, double value )
     setLowerBound( variable, value );
 
     // Ensure that non-basic variables are within bounds
+    unsigned index = _variableToIndex[variable];
     if ( !_basicVariables.exists( variable ) )
     {
-        unsigned index = _variableToIndex[variable];
         if ( FloatUtils::gt( value, _nonBasicAssignment[index] ) )
             setNonBasicAssignment( variable, value, true );
     }
+    else
+        computeBasicStatus( index );
 }
 
 void Tableau::tightenUpperBound( unsigned variable, double value )
@@ -1261,12 +1266,14 @@ void Tableau::tightenUpperBound( unsigned variable, double value )
     setUpperBound( variable, value );
 
     // Ensure that non-basic variables are within bounds
+    unsigned index = _variableToIndex[variable];
     if ( !_basicVariables.exists( variable ) )
     {
-        unsigned index = _variableToIndex[variable];
         if ( FloatUtils::lt( value, _nonBasicAssignment[index] ) )
             setNonBasicAssignment( variable, value, true );
     }
+    else
+        computeBasicStatus( index );
 }
 
 void Tableau::addEquation( const Equation &equation )
