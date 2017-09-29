@@ -391,9 +391,9 @@ private:
     double *_b;
 
     /*
-      Working memory for computing the current scalar in a row.
+      Working memory (of size m).
     */
-    double *_rowScalars;
+    double *_work;
 
     /*
       A unit vector of size m

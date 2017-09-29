@@ -30,7 +30,7 @@ Tableau::Tableau()
     , _changeColumn( NULL )
     , _pivotRow( NULL )
     , _b( NULL )
-    , _rowScalars( NULL )
+    , _work( NULL )
     , _unitVector( NULL )
     , _basisFactorization( NULL )
     , _costFunction( NULL )
@@ -159,10 +159,10 @@ void Tableau::freeMemoryIfNeeded()
         _basisFactorization = NULL;
     }
 
-    if ( _rowScalars )
+    if ( _work )
     {
-        delete[] _rowScalars;
-        _rowScalars = NULL;
+        delete[] _work;
+        _work = NULL;
     }
 }
 
@@ -242,9 +242,9 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     if ( !_basisFactorization )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::basisFactorization" );
 
-    _rowScalars = new double[m];
-    if ( !_rowScalars )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::rhs" );
+    _work = new double[m];
+    if ( !_work )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::work" );
 }
 
 void Tableau::setEntryValue( unsigned row, unsigned column, double value )
@@ -327,11 +327,10 @@ void Tableau::computeAssignment()
       the value of the non basic variables and b is the original
       right hand side.
 
-      We first compute y, and then do an FTRAN pass to solve B*xB = y
+      We first compute y (stored in _work), and then do an FTRAN pass to solve B*xB = y
     */
 
-    double *y = new double[_m];
-    memcpy( y, _b, sizeof(double) * _m );
+    memcpy( _work, _b, sizeof(double) * _m );
 
     // Compute a linear combination of the columns of AN
     const double *ANColumn;
@@ -342,13 +341,11 @@ void Tableau::computeAssignment()
 
         ANColumn = _A + ( var * _m );
         for ( unsigned j = 0; j < _m; ++j )
-            y[j] -= ANColumn[j] * value;
+            _work[j] -= ANColumn[j] * value;
     }
 
     // Solve B*xB = y by performing a forward transformation
-    _basisFactorization->forwardTransformation( y, _basicAssignment );
-
-    delete[] y;
+    _basisFactorization->forwardTransformation( _work, _basicAssignment );
 
     computeBasicStatus();
     _basicAssignmentStatus = ASSIGNMENT_VALID;
@@ -1095,8 +1092,8 @@ void Tableau::getTableauRow( unsigned index, TableauRow *row )
             row->_row[i]._coefficient -= ( _multipliers[j] * ANColumn[j] );
     }
 
-    _basisFactorization->forwardTransformation( _b, _rowScalars );
-    row->_scalar = _rowScalars[index];
+    _basisFactorization->forwardTransformation( _b, _work );
+    row->_scalar = _work[index];
 }
 
 const double *Tableau::getA() const
@@ -1442,12 +1439,12 @@ void Tableau::addRow()
     delete _basisFactorization;
     _basisFactorization = newBasisFactorization;
 
-    // Allocate a larger _rowScalars. Don't need to initialize.
-    double *newRhs = new double[newM];
-    if ( !newRhs )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newRhs" );
-    delete[] _rowScalars;
-    _rowScalars = newRhs;
+    // Allocate a larger _work. Don't need to initialize.
+    double *newWork = new double[newM];
+    if ( !newWork )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newWork" );
+    delete[] _work;
+    _work = newWork;
 
     _m = newM;
     _n = newN;
