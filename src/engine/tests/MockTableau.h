@@ -246,7 +246,7 @@ public:
 
     double ratioConstraintPerBasic( unsigned /* basicIndex */, double /* coefficient */, bool /* decrease */ ) { return 0;}
     bool isBasic( unsigned /* variable */ ) const { return false; }
-    void setNonBasicAssignment( unsigned /* variable */, double /* value */ ) {}
+    void setNonBasicAssignment( unsigned /* variable */, double /* value */, bool /* updateBasics */ ) {}
     void computeCostFunction() {}
     void computeMultipliers() {}
     void computeReducedCost (unsigned /* variable */) {}
@@ -281,7 +281,6 @@ public:
         return nextPivotRow;
     }
 
-    void computeAssignmentIfNeeded() {}
     void computeAssignment() {}
     void dump() const {}
     void dumpAssignment() {}

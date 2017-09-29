@@ -74,21 +74,9 @@ bool Engine::solve()
             mainLoopStatistics();
             checkDegradation();
 
-            // Compute the current assignment and basic status
-            _tableau->computeAssignmentIfNeeded();
-            _tableau->computeBasicStatus();
-
             // Perform any SmtCore-initiated case splits
             if ( _smtCore.needToSplit() )
-            {
                 _smtCore.performSplit();
-
-                // TODO: We get wrong answers if we don't recompute. But, we also
-                // want to compute before performSplit(), so that the correct
-                // assignment is stored with the state.
-                _tableau->computeAssignment();
-                _tableau->computeBasicStatus();
-            }
 
             bool needToPop = false;
             if ( !_tableau->allBoundsValid() )
@@ -99,7 +87,6 @@ bool Engine::solve()
             else if ( allVarsWithinBounds() )
             {
                 // The linear portion of the problem has been solved.
-
                 // Check the status of the PL constraints
                 collectViolatedPlConstraints();
 
@@ -305,7 +292,7 @@ void Engine::fixViolatedPlConstraintIfPossible()
 			if ( FloatUtils::gte( fix._value, _tableau->getLowerBound( fix._variable ) ) &&
                  FloatUtils::lte( fix._value, _tableau->getUpperBound( fix._variable ) ) )
 			{
-            	_tableau->setNonBasicAssignment( fix._variable, fix._value );
+            	_tableau->setNonBasicAssignment( fix._variable, fix._value, true );
             	return;
 			}
         }
@@ -363,7 +350,7 @@ void Engine::fixViolatedPlConstraintIfPossible()
     _activeEntryStrategy->prePivotHook( _tableau, false );
 
     ASSERT( !_tableau->isBasic( fix._variable ) );
-    _tableau->setNonBasicAssignment( fix._variable, fix._value );
+    _tableau->setNonBasicAssignment( fix._variable, fix._value, true );
 }
 
 bool Engine::processInputQuery( InputQuery &inputQuery )

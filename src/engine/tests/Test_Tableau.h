@@ -230,13 +230,13 @@ public:
         MockVariableWatcher watcher3;
         TS_ASSERT_THROWS_NOTHING( tableau->registerToWatchVariable( &watcher3, 3 ) );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->setNonBasicAssignment( 3, 2 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setNonBasicAssignment( 3, 2, false ) );
 
         TS_ASSERT_EQUALS( watcher3.lastNotifiedValues[3], 2.0 );
 
         watcher3.lastNotifiedValues.clear();
         TS_ASSERT_THROWS_NOTHING( tableau->unregisterToWatchVariable( &watcher3, 3 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->setNonBasicAssignment( 3, 1 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setNonBasicAssignment( 3, 1, false ) );
         //TS_ASSERT_EQUALS( watcher3.lastNotifiedValues[3], 1.0 );
         TS_ASSERT( watcher3.lastNotifiedValues.empty() );
 

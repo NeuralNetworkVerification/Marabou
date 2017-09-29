@@ -44,7 +44,6 @@ Tableau::Tableau()
     , _upperBounds( NULL )
     , _boundsValid( true )
     , _basicAssignment( NULL )
-    , _basicAssignmentStatus( ASSIGNMENT_INVALID )
     , _basicStatus( NULL )
     , _statistics( NULL )
 {
@@ -279,11 +278,11 @@ void Tableau::initializeTableau()
     }
     ASSERT( nonBasicIndex == _n - _m );
 
-    // Set non-basics to lower bounds
+    // Set non-basics to lower bounds, don't update basics - they will be computed later
     for ( unsigned i = 0; i < _n - _m; ++i )
     {
         unsigned nonBasic = _nonBasicIndexToVariable[i];
-        setNonBasicAssignment( nonBasic, _lowerBounds[nonBasic] );
+        setNonBasicAssignment( nonBasic, _lowerBounds[nonBasic], false );
     }
 
     // Initialize B0
@@ -305,12 +304,6 @@ void Tableau::initializeTableau()
 
     // Recompute assignment
     computeAssignment();
-}
-
-void Tableau::computeAssignmentIfNeeded()
-{
-    if ( _basicAssignmentStatus == ASSIGNMENT_INVALID )
-        computeAssignment();
 }
 
 void Tableau::computeAssignment()
@@ -348,7 +341,6 @@ void Tableau::computeAssignment()
     _basisFactorization->forwardTransformation( _work, _basicAssignment );
 
     computeBasicStatus();
-    _basicAssignmentStatus = ASSIGNMENT_VALID;
 
     // Inform the watchers
     for ( unsigned i = 0; i < _m; ++i )
@@ -416,11 +408,6 @@ double Tableau::getValue( unsigned variable )
         unsigned index = _variableToIndex[variable];
         return _nonBasicAssignment[index];
     }
-
-    // Values of basic variabels require valid assignments
-    // TODO: maybe we should compute just that one variable?
-    if ( _basicAssignmentStatus != ASSIGNMENT_VALID )
-        computeAssignment();
 
     return _basicAssignment[_variableToIndex[variable]];
 }
@@ -1014,16 +1001,33 @@ bool Tableau::isBasic( unsigned variable ) const
     return _basicVariables.exists( variable );
 }
 
-void Tableau::setNonBasicAssignment( unsigned variable, double value )
+void Tableau::setNonBasicAssignment( unsigned variable, double value, bool updateBasics )
 {
     ASSERT( !_basicVariables.exists( variable ) );
 
     unsigned nonBasic = _variableToIndex[variable];
+    double delta = value - _nonBasicAssignment[nonBasic];
     _nonBasicAssignment[nonBasic] = value;
-    _basicAssignmentStatus = ASSIGNMENT_INVALID;
-
-    // Inform watchers
     notifyVariableValue( variable, value );
+
+    // If we don't need to update the basics, we are done
+    if ( !updateBasics )
+        return;
+
+    // Treat this like a form of fake pivot and compute the change column
+    _enteringVariable = nonBasic;
+    computeChangeColumn();
+
+    // Update all the affected basic variables
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        if ( FloatUtils::isZero( _changeColumn[i] ) )
+            continue;
+
+        _basicAssignment[i] -= _changeColumn[i] * delta;
+        notifyVariableValue( _basicIndexToVariable[i], _basicAssignment[i] );
+        computeBasicStatus( i );
+    }
 }
 
 void Tableau::dumpAssignment()
@@ -1127,8 +1131,6 @@ void Tableau::dumpEquations()
 
 void Tableau::storeState( TableauState &state ) const
 {
-    ASSERT( _basicAssignmentStatus == ASSIGNMENT_VALID );
-
     // Set the dimensions
     state.setDimensions( _m, _n );
 
@@ -1197,7 +1199,6 @@ void Tableau::restoreState( const TableauState &state )
 
     // After a restoration, the assignment is valid
     computeBasicStatus();
-    _basicAssignmentStatus = ASSIGNMENT_VALID;
 }
 
 void Tableau::checkBoundsValid()
@@ -1243,7 +1244,7 @@ void Tableau::tightenLowerBound( unsigned variable, double value )
     {
         unsigned index = _variableToIndex[variable];
         if ( FloatUtils::gt( value, _nonBasicAssignment[index] ) )
-            setNonBasicAssignment( variable, value );
+            setNonBasicAssignment( variable, value, true );
     }
 }
 
@@ -1264,7 +1265,7 @@ void Tableau::tightenUpperBound( unsigned variable, double value )
     {
         unsigned index = _variableToIndex[variable];
         if ( FloatUtils::lt( value, _nonBasicAssignment[index] ) )
-            setNonBasicAssignment( variable, value );
+            setNonBasicAssignment( variable, value, true );
     }
 }
 
@@ -1301,11 +1302,18 @@ void Tableau::addEquation( const Equation &equation )
     _basicIndexToVariable[_m - 1] = equation._auxVariable;
     _variableToIndex[equation._auxVariable] = _m - 1;
 
-    // Populate the new row of A
+    // Populate the new row of A, compute the assignment for the new basic variable
     _b[_m - 1] = equation._scalar;
+    _basicAssignment[_m - 1] = equation._scalar;
+    double auxCoefficient;
     for ( const auto &addend : equation._addends )
     {
         setEntryValue( _m - 1, addend._variable, addend._coefficient );
+
+        if ( addend._variable == equation._auxVariable )
+            auxCoefficient = addend._coefficient;
+        else
+            _basicAssignment[_m - 1] -= addend._coefficient * getValue( addend._variable );
 
         // The new equation is given over the original non-basic variables.
         // However, some of them may have become basic in previous iterations.
@@ -1316,6 +1324,9 @@ void Tableau::addEquation( const Equation &equation )
             newB0[( newM - 1 ) * newM + index] = addend._coefficient;
         }
     }
+    _basicAssignment[_m - 1] = _basicAssignment[_m - 1] / auxCoefficient;
+    notifyVariableValue( _basicIndexToVariable[_m - 1], _basicAssignment[_m - 1] );
+    computeBasicStatus( _m - 1 );
 
     // Finally, give the extended B0 matrix to the basis factorization
     _basisFactorization->setB0( newB0 );
@@ -1404,11 +1415,11 @@ void Tableau::addRow()
     delete[] _variableToIndex;
     _variableToIndex = newVariableToIndex;
 
-    // Allocate a new basic assignment vector, invalidate the assignment
+    // Allocate a new basic assignment vector, copy old values
     double *newBasicAssignment = new double[newM];
     if ( !newBasicAssignment )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newAssignment" );
-    _basicAssignmentStatus = ASSIGNMENT_INVALID;
+    memcpy( newBasicAssignment, _basicAssignment, sizeof(double) * _m );
     delete[] _basicAssignment;
     _basicAssignment = newBasicAssignment;
 
@@ -1635,6 +1646,7 @@ void Tableau::updateAssignmentForPivot()
 
             _basicAssignment[i] -= _changeColumn[i] * nonBasicDelta;
             notifyVariableValue( _basicIndexToVariable[i], _basicAssignment[i] );
+            computeBasicStatus( i );
         }
 
         // Update the assignment for the non-basic variable
@@ -1687,6 +1699,7 @@ void Tableau::updateAssignmentForPivot()
 
             _basicAssignment[i] -= _changeColumn[i] * nonBasicDelta;
             notifyVariableValue( _basicIndexToVariable[i], _basicAssignment[i] );
+            computeBasicStatus( i );
         }
 
         // Update the assignment for the entering variable

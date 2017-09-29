@@ -35,11 +35,6 @@ public:
         ABOVE_UB = 4,
     };
 
-    enum AssignmentStatus {
-        ASSIGNMENT_INVALID,
-        ASSIGNMENT_VALID,
-    };
-
     Tableau();
     ~Tableau();
 
@@ -179,6 +174,11 @@ public:
     bool existsBasicOutOfBounds() const;
 
     /*
+      Compute the basic assignment from scratch.
+    */
+    void computeAssignment();
+
+    /*
       Compute the status of the basic variable based on current assignment
     */
     void computeBasicStatus();
@@ -239,8 +239,9 @@ public:
 
     /*
       Set the assignment of a non-basic variable to a given value.
-     */
-    void setNonBasicAssignment( unsigned variable, double value );
+      If updateBasics is true, also update any basic variables that depend on this non-basic.
+    */
+    void setNonBasicAssignment( unsigned variable, double value, bool updateBasics );
 
     /*
       Compute the cost function (for all variables).
@@ -291,13 +292,6 @@ public:
     */
     void computePivotRow();
     const TableauRow *getPivotRow() const;
-
-    /*
-      Compute the basic assignment. The guarded version only
-      re-computes if the current assignment is marked as invalid.
-    */
-    void computeAssignmentIfNeeded();
-    void computeAssignment();
 
     /*
       Dump the tableau (debug)
@@ -455,11 +449,6 @@ private:
       The current assignment for the basic variables
     */
     double *_basicAssignment;
-
-    /*
-      Status of the current assignment
-    */
-    AssignmentStatus _basicAssignmentStatus;
 
     /*
       The current status of the basic variabels

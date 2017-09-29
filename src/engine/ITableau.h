@@ -85,7 +85,7 @@ public:
     virtual void performPivot() = 0;
     virtual double ratioConstraintPerBasic( unsigned basicIndex, double coefficient, bool decrease ) = 0;
     virtual bool isBasic( unsigned variable ) const = 0;
-    virtual void setNonBasicAssignment( unsigned variable, double value ) = 0;
+    virtual void setNonBasicAssignment( unsigned variable, double value, bool updateBasics ) = 0;
     virtual void computeCostFunction() = 0;
     virtual void getEntryCandidates( List<unsigned> &candidates ) const = 0;
     virtual void computeMultipliers() = 0;
@@ -97,7 +97,6 @@ public:
     virtual void setChangeColumn( const double *column ) = 0;
     virtual void computePivotRow() = 0;
     virtual const TableauRow *getPivotRow() const = 0;
-    virtual void computeAssignmentIfNeeded() = 0;
     virtual void computeAssignment() = 0;
     virtual void dump() const = 0;
     virtual void dumpAssignment() = 0;
