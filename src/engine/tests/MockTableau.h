@@ -421,6 +421,11 @@ public:
         return 0;
     }
 
+    bool needToRecomputCostFunction() const
+    {
+        return true;
+    }
+
     void assignIndexToBasicVariable( unsigned /* variable */, unsigned /* index */ )
     {
     }

@@ -1350,6 +1350,8 @@ public:
         TS_TRACE( "When resizing the talbeau, allocate a larger size and only use part of it, "
                   "instead of increasing it one row at a time?" );
         TS_TRACE( "Make sure all watchers are properply informed when restoring a tabealu" );
+        TS_TRACE( "Recomputing the cost function: more clever handling for row addition and "
+                  "the setNonBasic() case?" );
     }
 };
 

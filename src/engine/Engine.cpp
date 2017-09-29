@@ -180,7 +180,8 @@ bool Engine::performSimplexStep()
          next-best entering variable.
     */
 
-    _tableau->computeCostFunction();
+    if ( _tableau->needToRecomputCostFunction() )
+        _tableau->computeCostFunction();
 
     bool haveCandidate = false;
     unsigned bestEntering;

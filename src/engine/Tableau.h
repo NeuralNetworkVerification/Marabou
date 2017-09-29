@@ -249,6 +249,12 @@ public:
     void computeCostFunction();
 
     /*
+      Updat the cost function for an adjacement basis. Requires the
+      change column and pivot row to have been computed previously.
+    */
+    void updateCostFunctionForPivot();
+
+    /*
       Get a list of non-basic variables eligible for entry into the
       basis, i.e. variables that can be changed in a way that would
       reduce the cost value.
@@ -350,6 +356,11 @@ public:
       Compute the current sum of infeasibilities
     */
     double getSumOfInfeasibilities() const;
+
+    /*
+      Does the cost functio need to be recomputed?
+    */
+    bool needToRecomputCostFunction() const;
 
 private:
     typedef List<VariableWatcher *> VariableWatchers;
@@ -475,6 +486,11 @@ private:
       True if the leaving variable increases, false otherwise
     */
     bool _leavingVariableIncreases;
+
+    /*
+      True iff the cost function is currently invalid and needs to be recomputed
+    */
+    bool _needToRecomputeCostFunction;
 
     /*
       Statistics collection
