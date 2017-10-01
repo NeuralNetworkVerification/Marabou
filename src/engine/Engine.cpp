@@ -71,6 +71,8 @@ bool Engine::solve()
     {
         while ( true )
         {
+            DEBUG( _tableau->verifyInvariants() );
+
             mainLoopStatistics();
             checkDegradation();
 
@@ -215,8 +217,8 @@ bool Engine::performSimplexStep()
         // A fake pivot always wins
         if ( _tableau->performingFakePivot() )
         {
-            bestEntering = _tableau->getEnteringVariable();
-            bestLeaving = _tableau->getLeavingVariable();
+            bestEntering = _tableau->getEnteringVariableIndex();
+            bestLeaving = _tableau->getLeavingVariableIndex();
             memcpy( _work, _tableau->getChangeColumn(), sizeof(double) * _tableau->getM() );
             break;
         }
@@ -226,9 +228,9 @@ bool Engine::performSimplexStep()
         double pivotEntry = FloatUtils::abs( _tableau->getChangeColumn()[leavingIndex] );
         if ( FloatUtils::gt( pivotEntry, bestPivotEntry ) )
         {
-            bestEntering = _tableau->getEnteringVariable();
+            bestEntering = _tableau->getEnteringVariableIndex();
             bestPivotEntry = pivotEntry;
-            bestLeaving = _tableau->getLeavingVariable();
+            bestLeaving = leavingIndex;
             memcpy( _work, _tableau->getChangeColumn(), sizeof(double) * _tableau->getM() );
         }
 
@@ -250,8 +252,8 @@ bool Engine::performSimplexStep()
     }
 
     // Set the best choice in the tableau
-    _tableau->setEnteringVariableIndex( _tableau->variableToIndex( bestEntering ) );
-    _tableau->setLeavingVariableIndex( _tableau->variableToIndex( bestLeaving ) );
+    _tableau->setEnteringVariableIndex( bestEntering );
+    _tableau->setLeavingVariableIndex( bestLeaving );
     _tableau->setChangeColumn( _work );
 
     bool fakePivot = _tableau->performingFakePivot();
@@ -542,6 +544,8 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
     log( "" );
     log( "Applying a split. " );
 
+    DEBUG( _tableau->verifyInvariants() );
+
     List<Tightening> bounds = split.getBoundTightenings();
     List<Pair<Equation, PiecewiseLinearCaseSplit::EquationType> > equations = split.getEquations();
     for ( auto &it : equations )
@@ -581,6 +585,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 
     _rowBoundTightener->reset( _tableau );
 
+    DEBUG( _tableau->verifyInvariants() );
     log( "Done with split\n" );
 }
 

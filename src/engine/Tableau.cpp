@@ -648,6 +648,14 @@ unsigned Tableau::getEnteringVariableIndex() const
     return _enteringVariable;
 }
 
+unsigned Tableau::getLeavingVariable() const
+{
+    if ( _leavingVariable == _m )
+        return _nonBasicIndexToVariable[_enteringVariable];
+
+    return _basicIndexToVariable[_leavingVariable];
+}
+
 unsigned Tableau::getLeavingVariableIndex() const
 {
     return _leavingVariable;
@@ -951,14 +959,6 @@ void Tableau::pickLeavingVariable( double *changeColumn )
         if ( _leavingVariable != _m )
             _leavingVariableIncreases = FloatUtils::isNegative( changeColumn[_leavingVariable] );
     }
-}
-
-unsigned Tableau::getLeavingVariable() const
-{
-    if ( _leavingVariable == _m )
-        return _nonBasicIndexToVariable[_enteringVariable];
-
-    return _basicIndexToVariable[_leavingVariable];
 }
 
 double Tableau::getChangeRatio() const
@@ -1347,6 +1347,12 @@ void Tableau::addEquation( const Equation &equation )
         }
     }
     _basicAssignment[_m - 1] = _basicAssignment[_m - 1] / auxCoefficient;
+
+    DEBUG( FloatUtils::wellFormed( _basicAssignment[_m - 1] ) );
+
+    if ( FloatUtils::isZero( _basicAssignment[_m - 1] ) )
+        _basicAssignment[_m - 1] = 0.0;
+
     notifyVariableValue( _basicIndexToVariable[_m - 1], _basicAssignment[_m - 1] );
     computeBasicStatus( _m - 1 );
 
@@ -1448,6 +1454,7 @@ void Tableau::addRow()
     unsigned *newBasicStatus = new unsigned[newM];
     if ( !newBasicStatus )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newBasicStatus" );
+    memcpy( newBasicStatus, _basicStatus, sizeof(unsigned) * _m );
     delete[] _basicStatus;
     _basicStatus = newBasicStatus;
 
@@ -1581,6 +1588,28 @@ void Tableau::log( const String &message )
 
 void Tableau::verifyInvariants()
 {
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        if ( !FloatUtils::wellFormed( _basicAssignment[i] ) )
+        {
+            printf( "Assignment for basic variable %u (index %u) is not well formed: %.15lf\n",
+                    _basicIndexToVariable[i],
+                    i,
+                    _basicAssignment[i] );
+            exit( 1 );
+        }
+    }
+
+    for ( unsigned i = 0; i < _n - _m; ++i )
+    {
+        if ( !FloatUtils::wellFormed( _nonBasicAssignment[i] ) )
+        {
+            printf( "Assignment for non-basic variable is not well formed: %.15lf\n",
+                    _nonBasicAssignment[i] );
+            exit( 1 );
+        }
+    }
+
     for ( unsigned i = 0; i < _n - _m; ++i )
     {
         unsigned var = _nonBasicIndexToVariable[i];
@@ -1592,6 +1621,25 @@ void Tableau::verifyInvariants()
                     var, i, _nonBasicAssignment[i], _lowerBounds[var], _upperBounds[var] );
 
             exit( 1 );
+        }
+    }
+
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        unsigned currentStatus = _basicStatus[i];
+        computeBasicStatus( i );
+        if ( _basicStatus[i] != currentStatus )
+        {
+            printf( "Error! Status[%u] was %s, but when recomputed got %s\n",
+                    i,
+                    basicStatusToString( currentStatus ).ascii(),
+                    basicStatusToString( _basicStatus[i] ).ascii() );
+            printf( "Variable: x%u, index: %u. Value: %.15lf, range: [%.15lf, %.15lf]\n",
+                    _basicIndexToVariable[i],
+                    i,
+                    _basicAssignment[i],
+                    _lowerBounds[_basicIndexToVariable[i]],
+                    _upperBounds[_basicIndexToVariable[i]] );
         }
     }
 }
