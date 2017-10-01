@@ -1,6 +1,7 @@
 #include <cxxtest/TestSuite.h>
 
 #include "FloatUtils.h"
+#include <math.h>
 
 class FloatUtilsTestSuite : public CxxTest::TestSuite
 {
@@ -46,6 +47,27 @@ public:
         TS_ASSERT_EQUALS( FloatUtils::doubleToString( 0.1321211, 3 ), String( "0.132" ) );
         TS_ASSERT_EQUALS( FloatUtils::doubleToString( -0.52 ), String( "-0.52" ) );
         TS_ASSERT_EQUALS( FloatUtils::doubleToString( 3.14 ), String( "3.14" ) );
+    }
+
+    void test_well_formed()
+    {
+        TS_ASSERT( FloatUtils::wellFormed( -1 ) );
+        TS_ASSERT( !FloatUtils::wellFormed( sqrt( -1 ) ) );
+        TS_ASSERT( !FloatUtils::wellFormed( 5.0 / 0.0 ) );
+    }
+
+    void test_isnan()
+    {
+        TS_ASSERT( !FloatUtils::isNan( -1 ) );
+        TS_ASSERT( FloatUtils::isNan( sqrt( -1 ) ) );
+        TS_ASSERT( !FloatUtils::isNan( 5.0 / 0.0 ) );
+    }
+
+    void test_isinf()
+    {
+        TS_ASSERT( !FloatUtils::isInf( -1 ) );
+        TS_ASSERT( !FloatUtils::isInf( sqrt( -1 ) ) );
+        TS_ASSERT( FloatUtils::isInf( 5.0 / 0.0 ) );
     }
 };
 

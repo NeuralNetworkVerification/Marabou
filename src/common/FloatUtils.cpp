@@ -120,6 +120,21 @@ String FloatUtils::doubleToString( double x, unsigned precision )
     return str;
 }
 
+bool FloatUtils::wellFormed( double x )
+{
+    return !isNan( x ) && !isInf( x );
+}
+
+bool FloatUtils::isNan( double x )
+{
+    return isnan( x );
+}
+
+bool FloatUtils::isInf( double x )
+{
+    return isinf( x );
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

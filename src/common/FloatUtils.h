@@ -40,6 +40,10 @@ public:
     static bool isFinite( double x );
     static String doubleToString( double x,
                                   unsigned precision = GlobalConfiguration::DEFAULT_DOUBLE_TO_STRING_PRECISION );
+
+    static bool wellFormed( double x );
+    static bool isNan( double x );
+    static bool isInf( double x );
 };
 
 #endif // __FloatUtils_h__
