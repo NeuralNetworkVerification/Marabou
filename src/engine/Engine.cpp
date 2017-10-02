@@ -33,11 +33,7 @@ Engine::Engine()
     _rowBoundTightener->setStatistics( &_statistics );
     _preprocessor.setStatistics( &_statistics );
 
-    // _activeEntryStrategy = &_nestedDantzigsRule;
     _activeEntryStrategy = _projectedSteepestEdgeRule;
-    // _activeEntryStrategy = &_dantzigsRule;
-    // _activeEntryStrategy = &_blandsRule;
-
     _activeEntryStrategy->setStatistics( &_statistics );
 }
 
