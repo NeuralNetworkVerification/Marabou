@@ -362,6 +362,16 @@ public:
     */
     bool needToRecomputCostFunction() const;
 
+    /*
+      Methods for accessing the basis matrix if it's available,
+      and extracting from it explicit equations.
+
+      These equations correspond to: B * xB + An * xN = b
+    */
+    bool basisMatrixAvailable() const;
+    void getBasisEquations( List<Equation *> &equations ) const;
+    Equation *getBasisEquation( unsigned row ) const;
+
 private:
     typedef List<VariableWatcher *> VariableWatchers;
     Map<unsigned, VariableWatchers> _variableToWatchers;

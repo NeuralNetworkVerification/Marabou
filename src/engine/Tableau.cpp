@@ -1830,6 +1830,50 @@ bool Tableau::needToRecomputCostFunction() const
     return _needToRecomputeCostFunction;
 }
 
+bool Tableau::basisMatrixAvailable() const
+{
+    return _basisFactorization->explicitBasisAvailable();
+}
+
+void Tableau::getBasisEquations( List<Equation *> &equations ) const
+{
+    ASSERT( basisMatrixAvailable() );
+
+    for ( unsigned i = 0; i < _m; ++i )
+        equations.append( getBasisEquation( i ) );
+}
+
+Equation *Tableau::getBasisEquation( unsigned row ) const
+{
+    Equation *equation = new Equation;
+
+    // Add the scalar
+    equation->setScalar( _b[row] );
+
+    // Add the basic variables
+    const double *b0 = _basisFactorization->getB0();
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        unsigned basicVariable = _basicIndexToVariable[i];
+        double coefficient = b0[_m * row + i];
+
+        if ( !FloatUtils::isZero( coefficient ) )
+            equation->addAddend( coefficient, basicVariable );
+    }
+
+    // Add the non-basic variables
+    for ( unsigned i = 0; i < _n - _m; ++i )
+    {
+        unsigned nonBasicVariable = _nonBasicIndexToVariable[i];
+        double coefficient = _A[nonBasicVariable * _m + row];
+
+        if ( !FloatUtils::isZero( coefficient ) )
+            equation->addAddend( coefficient, nonBasicVariable );
+    }
+
+    return equation;
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

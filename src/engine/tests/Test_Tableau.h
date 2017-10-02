@@ -1345,6 +1345,176 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete tableau );
     }
 
+    void test_get_basis_equations()
+    {
+        Tableau *tableau;
+
+        TS_ASSERT( tableau = new Tableau );
+
+        // Start with the usual tableau, and cause a non-fake pivot
+        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        initializeTableauValues( *tableau );
+
+        for ( unsigned i = 0; i < 4; ++i )
+        {
+            TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( i, 1 ) );
+            TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( i, 10 ) );
+        }
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 4, 219 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 4, 228 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 5, 112 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 5, 114 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 6, 400 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 6, 402 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 4 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 5 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 6 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau() );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
+        tableau->setEnteringVariableIndex( 2u );
+        TS_ASSERT( hasCandidates( *tableau ) );
+        TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable() );
+        TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 5u );
+        tableau->computeChangeColumn();
+        TS_ASSERT_THROWS_NOTHING( tableau->performPivot() );
+
+        // A bit hackish: store the tableau state, because this causes
+        // the basis matrix to be available afterwards
+
+        TS_ASSERT( !tableau->basisMatrixAvailable() );
+        TableauState dontCare;
+        tableau->storeState( dontCare );
+        TS_ASSERT( tableau->basisMatrixAvailable() );
+
+        /*
+          Original situation:
+
+               | 3 2 1 2 1 0 0 | | x1 |   | 225 |
+          Ax = | 1 1 1 1 0 1 0 | | x2 | = | 117 | = b
+               | 4 3 3 4 0 0 1 | | x3 |   | 420 |
+                                 | x4 |
+                                 | x5 |
+                                 | x6 |
+                                 | x7 |
+
+           x5 = 225 - 3x1 - 2x2 - x3  - 2x4
+           x6 = 117 -  x1 -  x2 - x3  -  x4
+           x7 = 420 - 4x1 - 3x2 - 3x3 - 4x4
+
+           We've swapped x3 and x6. The change column for x3 is:
+
+              [ 1 1 3 ]
+
+           And so the new matrices are:
+
+                  x5 x3 x7           x1 x2 x6 x4
+
+                |  1  1  0 |       |  3  2  0  2 |
+           B0 = |  0  1  0 |  AN = |  1  1  1  1 |
+                |  0  3  1 |       |  4  3  0  4 |
+
+           And the equations are:
+
+             x5  + x3 + 3x1 + 2x2 + 2x4  = 225
+             x3  + x1 + x2  + x6  + x4   = 117
+             3x3 + x7 + 4x1 + 3x2 + 4x4  = 420
+        */
+
+        List<Equation *> equations;
+        TS_ASSERT_THROWS_NOTHING( tableau->getBasisEquations( equations ) );
+        TS_ASSERT_EQUALS( equations.size(), 3u );
+
+        auto it = equations.begin();
+        Equation *eq1 = *it;
+        ++it;
+        Equation *eq2 = *it;
+        ++it;
+        Equation *eq3 = *it;
+
+        eq1->dump();
+
+        // Check equation 1
+        TS_ASSERT_EQUALS( eq1->_scalar, 225.0 );
+        TS_ASSERT_EQUALS( eq1->_addends.size(), 5u );
+
+        auto addend = eq1->_addends.begin();
+        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, 4u );
+
+        ++addend;
+        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, 2u );
+
+        ++addend;
+        TS_ASSERT_EQUALS( addend->_coefficient, 3.0 );
+        TS_ASSERT_EQUALS( addend->_variable, 0u );
+
+        ++addend;
+        TS_ASSERT_EQUALS( addend->_coefficient, 2.0 );
+        TS_ASSERT_EQUALS( addend->_variable, 1u );
+
+        ++addend;
+        TS_ASSERT_EQUALS( addend->_coefficient, 2.0 );
+        TS_ASSERT_EQUALS( addend->_variable, 3u );
+
+        // Check equation 2
+        TS_ASSERT_EQUALS( eq2->_scalar, 117.0 );
+        TS_ASSERT_EQUALS( eq2->_addends.size(), 5u );
+
+        addend = eq2->_addends.begin();
+        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, 2u );
+
+        ++addend;
+        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, 0u );
+
+        ++addend;
+        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, 1u );
+
+        ++addend;
+        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, 5u );
+
+        ++addend;
+        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, 3u );
+
+        // Check equation 3
+        TS_ASSERT_EQUALS( eq3->_scalar, 420.0 );
+        TS_ASSERT_EQUALS( eq3->_addends.size(), 5u );
+
+        addend = eq3->_addends.begin();
+        TS_ASSERT_EQUALS( addend->_coefficient, 3.0 );
+        TS_ASSERT_EQUALS( addend->_variable, 2u );
+
+        ++addend;
+        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, 6u );
+
+        ++addend;
+        TS_ASSERT_EQUALS( addend->_coefficient, 4.0 );
+        TS_ASSERT_EQUALS( addend->_variable, 0u );
+
+        ++addend;
+        TS_ASSERT_EQUALS( addend->_coefficient, 3.0 );
+        TS_ASSERT_EQUALS( addend->_variable, 1u );
+
+        ++addend;
+        TS_ASSERT_EQUALS( addend->_coefficient, 4.0 );
+        TS_ASSERT_EQUALS( addend->_variable, 3u );
+
+        TS_ASSERT_THROWS_NOTHING( delete tableau );
+    }
+
     void test_todo()
     {
         TS_TRACE( "When resizing the talbeau, allocate a larger size and only use part of it, "
