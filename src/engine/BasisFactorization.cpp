@@ -566,6 +566,11 @@ void BasisFactorization::log( const String &message )
         printf( "BasisFactorization: %s\n", message.ascii() );
 }
 
+bool BasisFactorization::explicitBasisAvailable() const
+{
+    return _etas.empty();
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

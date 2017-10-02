@@ -127,6 +127,11 @@ public:
 	void condenseEtas();
 
     /*
+      Return true iff the basis matrix B0 is explicitly available.
+    */
+    bool explicitBasisAvailable() const;
+
+    /*
       Compute the inverse of B0, using the LP factorization already stored.
       This can only be done when B0 is "fresh", i.e. when there are no stored etas.
      */

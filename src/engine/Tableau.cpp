@@ -707,9 +707,6 @@ void Tableau::performPivot()
                   _nonBasicAssignment[_enteringVariable],
                   _lowerBounds[currentNonBasic], _upperBounds[currentNonBasic] ) );
     log( Stringf( "Change ratio is: %.15lf\n", _changeRatio ) );
-    // printf( "Dumping pivot row:\n" );
-    // _pivotRow->dump();
-    // printf( "\n" );
 
     updateAssignmentForPivot();
     updateCostFunctionForPivot();
