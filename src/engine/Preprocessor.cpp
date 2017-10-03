@@ -258,7 +258,6 @@ void Preprocessor::eliminateFixedVariables()
         // unless the equation has no addends left
         if ( !equation->_addends.empty() )
         {
-
             if ( _fixedVariables.exists( equation->_auxVariable ) )
             {
                 bool found = false;
@@ -318,7 +317,10 @@ void Preprocessor::eliminateFixedVariables()
         }
 
         if ( constraint->constraintDisabledByVariableElimination() )
+        {
             constraint->setActiveConstraint( false );
+            _statistics->ppIncNumDisabledConstraints();
+        }
 	}
 
     // Update the lower/upper bound maps
