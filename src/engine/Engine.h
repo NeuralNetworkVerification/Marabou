@@ -152,10 +152,9 @@ private:
 
     /*
       Perform a simplex step: compute the cost function, pick the
-      entering and leaving variables and perform a pivot. Return false
-      if the problem is discovered to be unsat.
+      entering and leaving variables and perform a pivot.
     */
-    bool performSimplexStep();
+    void performSimplexStep();
 
     /*
       Attempt to fix one of the violated pl constraints.

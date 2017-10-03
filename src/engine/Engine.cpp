@@ -63,9 +63,9 @@ bool Engine::solve()
 {
     _statistics.stampStartingTime();
 
-    try
+    while ( true )
     {
-        while ( true )
+        try
         {
             DEBUG( _tableau->verifyInvariants() );
 
@@ -79,11 +79,10 @@ bool Engine::solve()
             if ( _smtCore.needToSplit() )
                 _smtCore.performSplit();
 
-            bool needToPop = false;
             if ( !_tableau->allBoundsValid() )
             {
                 // Some variable bounds are invalid, so the query is unsat
-                needToPop = true;
+                throw InfeasibleQueryException();
             }
             else if ( allVarsWithinBounds() )
             {
@@ -120,30 +119,19 @@ bool Engine::solve()
             else
             {
                 // We have out-of-bounds variables.
-                // If a simplex step fails, the query is unsat
-                if ( !performSimplexStep() )
-                {
-                    _statistics.print();
-                    needToPop = true;
-                }
-            }
-
-            if ( needToPop )
-            {
-                // The current query is unsat, and we need to pop.
-                // If we're at level 0, the whole query is unsat.
-                if ( !_smtCore.popSplit() )
-                {
-                    _statistics.print();
-                    return false;
-                }
+                performSimplexStep();
             }
         }
-    }
-    catch ( const InfeasibleQueryException & )
-    {
-        _statistics.print();
-        return false;
+        catch ( const InfeasibleQueryException & )
+        {
+            // The current query is unsat, and we need to pop.
+            // If we're at level 0, the whole query is unsat.
+            if ( !_smtCore.popSplit() )
+            {
+                _statistics.print();
+                return false;
+            }
+        }
     }
 }
 
@@ -158,13 +146,14 @@ void Engine::mainLoopStatistics()
     for ( const auto &constraint : _plConstraints )
         if ( constraint->isActive() )
             ++activeConstraints;
+
     _statistics.setNumActivePlConstraints( activeConstraints );
     _statistics.setNumPlValidSplits( _numPlConstraintsDisabledByValidSplits );
     _statistics.setNumPlSMTSplits( _plConstraints.size() -
                                    activeConstraints - _numPlConstraintsDisabledByValidSplits );
 }
 
-bool Engine::performSimplexStep()
+void Engine::performSimplexStep()
 {
     // Statistics
     _statistics.incNumSimplexSteps();
@@ -247,7 +236,7 @@ bool Engine::performSimplexStep()
     {
         timeval end = TimeUtils::sampleMicro();
         _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
-        return false;
+        throw InfeasibleQueryException();
     }
 
     // Set the best choice in the tableau
@@ -275,7 +264,6 @@ bool Engine::performSimplexStep()
 
     timeval end = TimeUtils::sampleMicro();
     _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
-    return true;
 }
 
 void Engine::fixViolatedPlConstraintIfPossible()
