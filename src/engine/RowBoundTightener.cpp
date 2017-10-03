@@ -118,6 +118,9 @@ bool RowBoundTightener::onePassOverBasisMatrix( const ITableau &tableau )
             if ( tightenOnSingleEquation( *equation, addend ) )
                 result = true;
 
+    for ( const auto &equation : basisEquations )
+        delete equation;
+
     return result;
 }
 
