@@ -62,6 +62,9 @@ public:
     // An error threshold which, when crossed, causes projected steepest edge to reset the reference space
     static const double PSE_GAMMA_ERROR_THRESHOLD;
 
+    // When doing bound tightening using the explicit basis matrix, should the basis matrix be inverted?
+    static const bool EXPLICIT_BASIS_BOUND_TIGHTENING_INVERT_BASIS;
+
     // Logging
     static const bool ENGINE_LOGGING;
     static const bool TABLEAU_LOGGING;

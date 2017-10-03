@@ -29,6 +29,8 @@ const unsigned GlobalConfiguration::BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENC
 const unsigned GlobalConfiguration::PSE_ITERATIONS_BEFORE_RESET = 1000;
 const double GlobalConfiguration::PSE_GAMMA_ERROR_THRESHOLD = 0.001;
 
+const bool GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_INVERT_BASIS = true;
+
 // Logging
 const bool GlobalConfiguration::ENGINE_LOGGING = false;
 const bool GlobalConfiguration::TABLEAU_LOGGING = false;
