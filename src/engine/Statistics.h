@@ -88,6 +88,7 @@ public:
     */
     void ppSetNumEliminatedVars( unsigned eliminatedVars );
     void ppIncNumTighteningIterations();
+    void ppIncNumDisabledConstraints();
 
 private:
     // Initial timestamp
@@ -120,8 +121,9 @@ private:
     // performed by the main loop
     unsigned long long _numConstraintFixingSteps;
 
-    // Current stack depth in the SMT core
+    // Current and max stack depth in the SMT core
     unsigned _currentStackDepth;
+    unsigned _maxStackDepth;
 
     // Total number of splits so far
     unsigned _numSplits;
@@ -177,6 +179,7 @@ private:
     // Preprocessor counters
     unsigned _ppNumEliminatedVars;
     unsigned _ppNumTighteningIterations;
+    unsigned _ppNumDisabledConstraints;
 
     // Printing helpers
     double printPercents( unsigned long long part, unsigned long long total ) const;

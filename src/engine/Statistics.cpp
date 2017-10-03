@@ -26,6 +26,7 @@ Statistics::Statistics()
     , _timeSimplexStepsMilli( 0 )
     , _numConstraintFixingSteps( 0 )
     , _currentStackDepth( 0 )
+    , _maxStackDepth( 0 )
     , _numSplits( 0 )
     , _numPops( 0 )
     , _numTableauPivots( 0 )
@@ -44,6 +45,7 @@ Statistics::Statistics()
     , _pseNumResetReferenceSpace( 0 )
     , _ppNumEliminatedVars( 0 )
     , _ppNumTighteningIterations( 0 )
+    , _ppNumDisabledConstraints( 0 )
 {
 }
 
@@ -79,6 +81,8 @@ void Statistics::print()
             _ppNumTighteningIterations );
     printf( "\tNumber of eliminated variables: %u\n",
             _ppNumEliminatedVars );
+    printf( "\tNumber of constraints disabled due to variable elimination: %u\n",
+            _ppNumDisabledConstraints );
 
     printf( "\t--- Engine Statistics ---\n" );
     printf( "\tNumber of main loop iterations: %llu\n"
@@ -121,6 +125,8 @@ void Statistics::print()
             , _currentStackDepth
             , _numSplits
             , _numPops );
+    printf( "\tMax stack depth: %u\n"
+            , _maxStackDepth );
 
     printf( "\t--- Bound Tighetning Statistics ---\n" );
     printf( "\tNumber of tightened bounds: %llu.\n", _numTightenedBounds );
@@ -205,6 +211,9 @@ unsigned long long Statistics::getNumMainLoopIterations() const
 void Statistics::setCurrentStackDepth( unsigned depth )
 {
     _currentStackDepth = depth;
+
+    if ( _currentStackDepth > _maxStackDepth )
+        _maxStackDepth = _currentStackDepth;
 }
 
 void Statistics::incNumSplits()
@@ -314,6 +323,10 @@ void Statistics::ppIncNumTighteningIterations()
     ++_ppNumTighteningIterations;
 }
 
+void Statistics::ppIncNumDisabledConstraints()
+{
+    ++_ppNumDisabledConstraints;
+}
 
 //
 // Local Variables:
