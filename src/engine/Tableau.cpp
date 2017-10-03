@@ -1613,8 +1613,12 @@ void Tableau::verifyInvariants()
     for ( unsigned i = 0; i < _n - _m; ++i )
     {
         unsigned var = _nonBasicIndexToVariable[i];
-        if ( !( FloatUtils::gte( _nonBasicAssignment[i], _lowerBounds[var] ) &&
-                FloatUtils::lte( _nonBasicAssignment[i], _upperBounds[var] ) ) )
+        if ( !( FloatUtils::gte( _nonBasicAssignment[i],
+                                 _lowerBounds[var],
+                                 GlobalConfiguration::BOUND_COMPARISON_TOLERANCE ) &&
+                FloatUtils::lte( _nonBasicAssignment[i],
+                                 _upperBounds[var],
+                                 GlobalConfiguration::BOUND_COMPARISON_TOLERANCE ) ) )
         {
             printf( "Tableau test invariants: bound violation!\n" );
             printf( "Variable %u (non-basic #%u). Assignment: %lf. Range: [%lf, %lf]\n",
