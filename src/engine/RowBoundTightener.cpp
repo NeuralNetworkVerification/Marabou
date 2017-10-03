@@ -91,6 +91,102 @@ void RowBoundTightener::freeMemoryIfNeeded()
     }
 }
 
+void RowBoundTightener::examineBasisMatrix( const ITableau &tableau, bool untilSaturation )
+{
+    bool newBoundsLearned;
+
+    /*
+      If working until saturation, do single passes over the matrix until no new bounds
+      are learned. Otherwise, just do a single pass.
+    */
+    do
+    {
+        newBoundsLearned = onePassOverBasisMatrix( tableau );
+    }
+    while ( untilSaturation && newBoundsLearned );
+}
+
+bool RowBoundTightener::onePassOverBasisMatrix( const ITableau &tableau )
+{
+    bool result = false;
+
+    List<Equation *> basisEquations;
+    tableau.getBasisEquations( basisEquations );
+    for ( const auto &equation : basisEquations )
+        for ( const auto &addend : equation->_addends )
+            if ( tightenOnSingleEquation( *equation, addend ) )
+                result = true;
+
+    return result;
+}
+
+bool RowBoundTightener::tightenOnSingleEquation( Equation &equation,
+                                                 Equation::Addend varBeingTightened )
+{
+    ASSERT( !FloatUtils::isZero( varBeingTightened._coefficient ) );
+    bool foundNewBound = false;
+
+    // The equation is of the form a * varBeingTightened + sum (bi * xi) = c,
+    // or: a * varBeingTightened = c - sum (bi * xi)
+
+    // We first compute the lower and upper bounds for the expression c - sum (bi * xi)
+    double upperBound = equation._scalar;
+    double lowerBound = equation._scalar;
+
+    for ( auto addend : equation._addends )
+    {
+        if ( varBeingTightened._variable == addend._variable )
+            continue;
+
+        double addendLB = _lowerBounds[addend._variable];
+        double addendUB = _upperBounds[addend._variable];
+
+        if ( FloatUtils::isNegative( addend._coefficient ) )
+        {
+            lowerBound -= addend._coefficient * addendLB;
+            upperBound -= addend._coefficient * addendUB;
+        }
+
+        if ( FloatUtils::isPositive( addend._coefficient ) )
+        {
+            lowerBound -= addend._coefficient * addendUB;
+            upperBound -= addend._coefficient * addendLB;
+        }
+    }
+
+    // We know that lb < a * varBeingTightened < ub.
+    // We want to divide by a, but we care about the sign:
+    //    If a is positive: lb/a < x < ub/a
+    //    If a is negative: lb/a > x > ub/a
+    lowerBound = lowerBound / varBeingTightened._coefficient;
+    upperBound = upperBound / varBeingTightened._coefficient;
+
+    if ( FloatUtils::isNegative( varBeingTightened._coefficient ) )
+    {
+        double temp = upperBound;
+        upperBound = lowerBound;
+        lowerBound = temp;
+    }
+
+    // Tighten lower bound if needed
+    if ( FloatUtils::lt( _lowerBounds[varBeingTightened._variable], lowerBound ) )
+    {
+        _lowerBounds[varBeingTightened._variable] = lowerBound;
+        _tightenedLower[varBeingTightened._variable] = true;
+        foundNewBound = true;
+    }
+
+    // Tighten upper bound if needed
+    if ( FloatUtils::gt( _upperBounds[varBeingTightened._variable], upperBound ) )
+    {
+        _upperBounds[varBeingTightened._variable] = upperBound;
+        _tightenedUpper[varBeingTightened._variable] = true;
+        foundNewBound = true;
+    }
+
+    return foundNewBound;
+}
+
 void RowBoundTightener::examineConstraintMatrix( const ITableau &tableau, bool untilSaturation )
 {
     bool newBoundsLearned;
@@ -115,13 +211,15 @@ bool RowBoundTightener::onePassOverConstraintMatrix( const ITableau &tableau )
 
     for ( unsigned i = 0; i < m; ++i )
         for ( unsigned j = 0; j < n; ++j )
-            if ( tightenOnSingleRow( tableau, i, j ) )
+            if ( tightenOnSingleConstraintRow( tableau, i, j ) )
                 result = true;
 
     return result;
 }
 
-bool RowBoundTightener::tightenOnSingleRow( const ITableau &tableau, unsigned row, unsigned varBeingTightened )
+bool RowBoundTightener::tightenOnSingleConstraintRow( const ITableau &tableau,
+                                                      unsigned row,
+                                                      unsigned varBeingTightened )
 {
     const double *A = tableau.getA();
     const double *b = tableau.getRightHandSide();

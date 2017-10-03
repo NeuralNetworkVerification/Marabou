@@ -13,6 +13,7 @@
 #ifndef __RowBoundTightener_h__
 #define __RowBoundTightener_h__
 
+#include "Equation.h"
 #include "IRowBoundTightener.h"
 #include "ITableau.h"
 #include "Queue.h"
@@ -41,6 +42,14 @@ public:
     */
     void notifyLowerBound( unsigned variable, double bound );
     void notifyUpperBound( unsigned variable, double bound );
+
+    /*
+      Derive and enqueue new bounds for all varaibles, using the
+      explicit basis matrix B0 that should be available through the
+      tableau. Can also do this until saturation, meaning that we
+      continue until no new bounds are learned.
+     */
+    void examineBasisMatrix( const ITableau &tableau, bool untilSaturation );
 
     /*
       Derive and enqueue new bounds for all varaibles, using the
@@ -92,6 +101,21 @@ private:
     void freeMemoryIfNeeded();
 
     /*
+      Do a single pass over the basis matrix and derive any
+      tighter bounds. Return true if new bounds are learned, false
+      otherwise.
+    */
+    bool onePassOverBasisMatrix( const ITableau &tableau );
+
+    /*
+      Process the basis row and attempt to derive tighter
+      lower/upper bounds for the specified variable. Return true iff
+      a tighter bound has been found.
+     */
+    bool tightenOnSingleEquation( Equation &equation,
+                                  Equation::Addend varBeingTightened );
+
+    /*
       Do a single pass over the constraint matrix and derive any
       tighter bounds. Return true if new bounds are learned, false
       otherwise.
@@ -103,7 +127,9 @@ private:
       lower/upper bounds for the specified variable. Return true iff
       a tighter bound has been found.
      */
-    bool tightenOnSingleRow( const ITableau &tableau, unsigned row, unsigned varBeingTightened );
+    bool tightenOnSingleConstraintRow( const ITableau &tableau,
+                                       unsigned row,
+                                       unsigned varBeingTightened );
 };
 
 #endif // __RowBoundTightener_h__
