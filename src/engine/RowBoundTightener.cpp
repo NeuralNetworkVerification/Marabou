@@ -10,9 +10,10 @@
  ** directory for licensing information.\endverbatim
  **/
 
-#include "RowBoundTightener.h"
 #include "Debug.h"
+#include "InfeasibleQueryException.h"
 #include "ReluplexError.h"
+#include "RowBoundTightener.h"
 #include "Statistics.h"
 
 RowBoundTightener::RowBoundTightener()
@@ -184,6 +185,10 @@ bool RowBoundTightener::tightenOnSingleEquation( Equation &equation,
         foundNewBound = true;
     }
 
+    if ( FloatUtils::gt( _lowerBounds[varBeingTightened._variable],
+                         _upperBounds[varBeingTightened._variable] ) )
+        throw InfeasibleQueryException();
+
     return foundNewBound;
 }
 
@@ -271,6 +276,9 @@ bool RowBoundTightener::tightenOnSingleConstraintRow( const ITableau &tableau,
         foundNewBound = true;
     }
 
+    if ( FloatUtils::gt( _lowerBounds[varBeingTightened], _upperBounds[varBeingTightened] ) )
+        throw InfeasibleQueryException();
+
     return foundNewBound;
 }
 
@@ -348,6 +356,9 @@ void RowBoundTightener::examinePivotRow( ITableau &tableau )
         _upperBounds[enteringVariable] = tightenedUpperBound;
         _tightenedUpper[enteringVariable] = true;
     }
+
+    if ( FloatUtils::gt( _lowerBounds[enteringVariable], _upperBounds[enteringVariable] ) )
+        throw InfeasibleQueryException();
 }
 
 void RowBoundTightener::getRowTightenings( List<Tightening> &tightenings ) const
