@@ -367,10 +367,13 @@ public:
       and extracting from it explicit equations.
 
       These equations correspond to: B * xB + An * xN = b
+
+      Can also extract the inverse basis matrix.
     */
     bool basisMatrixAvailable() const;
     void getBasisEquations( List<Equation *> &equations ) const;
     Equation *getBasisEquation( unsigned row ) const;
+    double *getInverseBasisMatrix();
 
 private:
     typedef List<VariableWatcher *> VariableWatchers;

@@ -1881,6 +1881,15 @@ Equation *Tableau::getBasisEquation( unsigned row ) const
     return equation;
 }
 
+double *Tableau::getInverseBasisMatrix()
+{
+    ASSERT( basisMatrixAvailable() );
+
+    double *result = new double[_m * _m];
+    _basisFactorization->invertB0( result );
+    return result;
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "
