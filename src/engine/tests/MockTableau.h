@@ -433,6 +433,20 @@ public:
     void verifyInvariants()
     {
     }
+
+    bool basisMatrixAvailable() const
+    {
+        return true;
+    }
+
+    void getBasisEquations( List<Equation *> &/* equations */ ) const
+    {
+    }
+
+    Equation *getBasisEquation( unsigned /* row */ ) const
+    {
+        return NULL;
+    }
 };
 
 #endif // __MockTableau_h__

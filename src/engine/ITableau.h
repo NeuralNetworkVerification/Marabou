@@ -122,6 +122,9 @@ public:
     virtual double getSumOfInfeasibilities() const = 0;
     virtual bool needToRecomputCostFunction() const = 0;
     virtual void verifyInvariants() = 0;
+    virtual bool basisMatrixAvailable() const = 0;
+    virtual void getBasisEquations( List<Equation *> &equations ) const = 0;
+    virtual Equation *getBasisEquation( unsigned row ) const = 0;
 };
 
 #endif // __ITableau_h__

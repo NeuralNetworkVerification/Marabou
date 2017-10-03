@@ -71,6 +71,12 @@ private:
     void applySplit( const PiecewiseLinearCaseSplit &split );
 
     /*
+      Perform bound tightening operations that require
+      access to the explicit basis matrix.
+    */
+    void explicitBasisBoundTightening();
+
+    /*
       Collect and print various statistics.
     */
     Statistics _statistics;

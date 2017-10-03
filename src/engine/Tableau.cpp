@@ -1589,10 +1589,13 @@ void Tableau::verifyInvariants()
     {
         if ( !FloatUtils::wellFormed( _basicAssignment[i] ) )
         {
-            printf( "Assignment for basic variable %u (index %u) is not well formed: %.15lf\n",
+            printf( "Assignment for basic variable %u (index %u) is not well formed: %.15lf. "
+                    "Range: [%.15lf, %.15lf]\n",
                     _basicIndexToVariable[i],
                     i,
-                    _basicAssignment[i] );
+                    _basicAssignment[i],
+                    _lowerBounds[_basicIndexToVariable[i]],
+                    _upperBounds[_basicIndexToVariable[i]] );
             exit( 1 );
         }
     }

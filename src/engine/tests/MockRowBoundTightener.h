@@ -55,6 +55,7 @@ public:
     void reset( const ITableau &/* tableau */ ) {}
     void notifyLowerBound( unsigned /* variable */, double /* bound */ ) {}
     void notifyUpperBound( unsigned /* variable */, double /* bound */ ) {}
+    void examineBasisMatrix( const ITableau &/* tableau */, bool /* untilSaturation */ ) {}
     void examineConstraintMatrix( const ITableau &/* tableau */, bool /* untilSaturation */ ) {}
     void examinePivotRow( ITableau &/* tableau */ ) {}
     void getRowTightenings( List<Tightening> &/* tightenings */ ) const {}

@@ -72,6 +72,9 @@ bool Engine::solve()
             mainLoopStatistics();
             checkDegradation();
 
+            if ( _tableau->basisMatrixAvailable() )
+                explicitBasisBoundTightening();
+
             // Perform any SmtCore-initiated case splits
             if ( _smtCore.needToSplit() )
                 _smtCore.performSplit();
@@ -656,6 +659,11 @@ void Engine::tightenBoundsOnConstraintMatrix()
         _rowBoundTightener->examineConstraintMatrix( _tableau, true );
         _statistics.incNumBoundTighteningOnConstraintMatrix();
     }
+}
+
+void Engine::explicitBasisBoundTightening()
+{
+    _rowBoundTightener->examineBasisMatrix( _tableau, true );
 }
 
 void Engine::log( const String &message )
