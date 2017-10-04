@@ -92,6 +92,56 @@ void RowBoundTightener::freeMemoryIfNeeded()
     }
 }
 
+void RowBoundTightener::examineInvertedBasisMatrix( const ITableau &tableau
+                                                    , bool //untilSaturation
+                                                    )
+{
+    /*
+      Roughly (the dimensions don't add up):
+
+         xB = inv(B)*b - inv(B)*An
+
+      We compute one row at a time.
+    */
+
+    unsigned n = tableau.getN();
+    unsigned m = tableau.getM();
+    List<TableauRow *> rows;
+
+    const double *b = tableau.getRightHandSide();
+    const double *invB = tableau.getInverseBasisMatrix();
+
+    for ( unsigned i = 0; i < m; ++i )
+    {
+        TableauRow *row = new TableauRow( n - m );
+        // First, compute the scalar, using inv(B)*b
+        row->_scalar = 0;
+        for ( unsigned j = 0; j < m; ++j )
+            row->_scalar += ( invB[i*m + j] * b[j] );
+
+        // Now update the row's coefficient for basic variable i
+        for ( unsigned j = 0; j < n - m; ++j )
+        {
+            row->_row[i]._var = tableau.nonBasicIndexToVariable( i );
+
+            // Dot product of the j'th row of inv(B) with the appropriate
+            // column of An
+            const double *ANColumn = tableau.getAColumn( row->_row[i]._var );
+            row->_row[i]._coefficient = 0;
+            for ( unsigned k = 0; k < m; ++k )
+                row->_row[i]._coefficient -= ( invB[i*m + k] * ANColumn[k] );
+        }
+
+        // The row is ready
+        rows.append( row );
+    }
+
+    for ( const auto &row : rows )
+        delete row;
+
+    delete[] invB;
+}
+
 void RowBoundTightener::examineBasisMatrix( const ITableau &tableau, bool untilSaturation )
 {
     bool newBoundsLearned;

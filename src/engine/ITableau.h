@@ -125,6 +125,7 @@ public:
     virtual bool basisMatrixAvailable() const = 0;
     virtual void getBasisEquations( List<Equation *> &equations ) const = 0;
     virtual Equation *getBasisEquation( unsigned row ) const = 0;
+    virtual double *getInverseBasisMatrix() const = 0;
 };
 
 #endif // __ITableau_h__

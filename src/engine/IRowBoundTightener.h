@@ -41,6 +41,14 @@ public:
 
     /*
       Derive and enqueue new bounds for all varaibles, using the
+      inverse of the explicit basis matrix, inv(B0), which should be available
+      through the tableau. Can also do this until saturation, meaning that we
+      continue until no new bounds are learned.
+     */
+    virtual void examineInvertedBasisMatrix( const ITableau &tableau, bool untilSaturation ) = 0;
+
+    /*
+      Derive and enqueue new bounds for all varaibles, using the
       original constraint matrix A and right hands side vector b. Can
       also do this until saturation, meaning that we continue until no
       new bounds are learned.

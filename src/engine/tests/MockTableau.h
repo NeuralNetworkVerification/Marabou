@@ -447,6 +447,11 @@ public:
     {
         return NULL;
     }
+
+    double *getInverseBasisMatrix() const
+    {
+        return NULL;
+    }
 };
 
 #endif // __MockTableau_h__

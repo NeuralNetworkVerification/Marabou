@@ -373,7 +373,7 @@ public:
     bool basisMatrixAvailable() const;
     void getBasisEquations( List<Equation *> &equations ) const;
     Equation *getBasisEquation( unsigned row ) const;
-    double *getInverseBasisMatrix();
+    double *getInverseBasisMatrix() const;
 
 private:
     typedef List<VariableWatcher *> VariableWatchers;

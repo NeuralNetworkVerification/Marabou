@@ -651,7 +651,10 @@ void Engine::tightenBoundsOnConstraintMatrix()
 
 void Engine::explicitBasisBoundTightening()
 {
-    _rowBoundTightener->examineBasisMatrix( _tableau, true );
+    if ( GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_INVERT_BASIS )
+        _rowBoundTightener->examineInvertedBasisMatrix( _tableau, true );
+    else
+        _rowBoundTightener->examineBasisMatrix( _tableau, true );
 }
 
 void Engine::log( const String &message )

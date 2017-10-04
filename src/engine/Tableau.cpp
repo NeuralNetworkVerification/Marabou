@@ -1881,7 +1881,7 @@ Equation *Tableau::getBasisEquation( unsigned row ) const
     return equation;
 }
 
-double *Tableau::getInverseBasisMatrix()
+double *Tableau::getInverseBasisMatrix() const
 {
     ASSERT( basisMatrixAvailable() );
 
