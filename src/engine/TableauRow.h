@@ -25,6 +25,8 @@ public:
       representation as non basic variables:
 
       xb = scalar + sum_i{ c_i * x_i }
+
+      The basic variable is stored as lhs.
     */
 
     TableauRow( unsigned size );
@@ -51,6 +53,7 @@ public:
     unsigned _size;
     Entry *_row;
     double _scalar;
+    unsigned _lhs;
 
     double operator[]( unsigned index ) const;
 

@@ -1117,6 +1117,8 @@ void Tableau::getTableauRow( unsigned index, TableauRow *row )
 
     _basisFactorization->forwardTransformation( _b, _work );
     row->_scalar = _work[index];
+
+    row->_lhs = _basicIndexToVariable[index];
 }
 
 const double *Tableau::getA() const
