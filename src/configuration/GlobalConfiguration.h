@@ -37,8 +37,12 @@ public:
     // at the change column, as part of a pivot operation.
     static const double PIVOT_CHANGE_COLUMN_TOLERANCE;
 
-    // Toggle query-preprocessing on/off
+    // Toggle query-preprocessing on/off.
 	static const bool PREPROCESS_INPUT_QUERY;
+
+    // Assuming the preprocessor is on, toggle whether or not it will attempt to perform variable
+    // elimination.
+    static const bool PREPROCESSOR_ELIMINATE_VARIABLES;
 
     // How often should the main loop check the current degradation?
     static const unsigned DEGRADATION_CHECKING_FREQUENCY;

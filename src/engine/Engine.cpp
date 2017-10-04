@@ -370,7 +370,8 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         // If processing is enabled, invoke the preprocessor
         _preprocessingEnabled = preprocess;
         if ( _preprocessingEnabled )
-            _preprocessedQuery = _preprocessor.preprocess( inputQuery );
+            _preprocessedQuery = _preprocessor.preprocess
+                ( inputQuery, GlobalConfiguration::PREPROCESSOR_ELIMINATE_VARIABLES );
         else
             _preprocessedQuery = inputQuery;
 
