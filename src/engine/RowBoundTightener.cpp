@@ -122,14 +122,14 @@ void RowBoundTightener::examineInvertedBasisMatrix( const ITableau &tableau
         // Now update the row's coefficient for basic variable i
         for ( unsigned j = 0; j < n - m; ++j )
         {
-            row->_row[i]._var = tableau.nonBasicIndexToVariable( i );
+            row->_row[j]._var = tableau.nonBasicIndexToVariable( j );
 
-            // Dot product of the j'th row of inv(B) with the appropriate
+            // Dot product of the i'th row of inv(B) with the appropriate
             // column of An
-            const double *ANColumn = tableau.getAColumn( row->_row[i]._var );
-            row->_row[i]._coefficient = 0;
+            const double *ANColumn = tableau.getAColumn( row->_row[j]._var );
+            row->_row[j]._coefficient = 0;
             for ( unsigned k = 0; k < m; ++k )
-                row->_row[i]._coefficient -= ( invB[i*m + k] * ANColumn[k] );
+                row->_row[j]._coefficient -= ( invB[i*m + k] * ANColumn[k] );
         }
 
         // The row is ready
