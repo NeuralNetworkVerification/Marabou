@@ -138,6 +138,20 @@ private:
     bool tightenOnSingleConstraintRow( const ITableau &tableau,
                                        unsigned row,
                                        unsigned varBeingTightened );
+
+    /*
+      Do a single pass over the inverted basis rows and derive any
+      tighter bounds. Return true if new bounds are learned, false
+      otherwise.
+    */
+    bool onePassOverInvertedBasisRows( const ITableau &tableau, List<TableauRow *> &rows );
+
+    /*
+      Process the inverted basis row and attempt to derive tighter
+      lower/upper bounds for the specified variable. Return true iff
+      a tighter bound has been found.
+    */
+    bool tightenOnSingleInvertedBasisRow( const ITableau &tableau, TableauRow &row );
 };
 
 #endif // __RowBoundTightener_h__

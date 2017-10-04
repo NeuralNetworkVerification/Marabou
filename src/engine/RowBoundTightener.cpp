@@ -92,9 +92,7 @@ void RowBoundTightener::freeMemoryIfNeeded()
     }
 }
 
-void RowBoundTightener::examineInvertedBasisMatrix( const ITableau &tableau
-                                                    , bool //untilSaturation
-                                                    )
+void RowBoundTightener::examineInvertedBasisMatrix( const ITableau &tableau, bool untilSaturation )
 {
     /*
       Roughly (the dimensions don't add up):
@@ -132,14 +130,179 @@ void RowBoundTightener::examineInvertedBasisMatrix( const ITableau &tableau
                 row->_row[j]._coefficient -= ( invB[i*m + k] * ANColumn[k] );
         }
 
+        // Store the lhs variable
+        row->_lhs = tableau.basicIndexToVariable( i );
+
         // The row is ready
         rows.append( row );
     }
+
+    // We now have all the rows, can use them for tightening
+    bool newBoundsLearned;
+    do
+    {
+        newBoundsLearned = onePassOverInvertedBasisRows( tableau, rows );
+    }
+    while ( untilSaturation && newBoundsLearned );
 
     for ( const auto &row : rows )
         delete row;
 
     delete[] invB;
+}
+
+bool RowBoundTightener::onePassOverInvertedBasisRows( const ITableau &tableau, List<TableauRow *> &rows )
+{
+    bool result = false;
+
+    for ( const auto &row : rows )
+        if ( tightenOnSingleInvertedBasisRow( tableau, *row ) )
+            result = true;
+
+    return result;
+}
+
+bool RowBoundTightener::tightenOnSingleInvertedBasisRow( const ITableau &tableau, TableauRow &row )
+{
+	/*
+      A row is of the form
+
+         y = sum ci xi + b
+
+      We wish to tighten once for y, but also once for every x.
+    */
+    unsigned n = tableau.getN();
+    unsigned m = tableau.getM();
+
+    bool foundNewBound = false;
+
+    // Start with a pass for y
+    unsigned y = row._lhs;
+    double upperBound = row._scalar;
+    double lowerBound = row._scalar;
+
+    unsigned xi, xj;
+    double ci, cj;
+    double addendLB, addendUB;
+
+    for ( unsigned i = 0; i < n - m; ++i )
+    {
+        ci = row[i];
+
+        if ( FloatUtils::isZero( ci ) )
+            continue;
+
+        xi = row._row[i]._var;
+        addendLB = _lowerBounds[xi];
+        addendUB = _upperBounds[xi];
+
+        if ( FloatUtils::isPositive( ci ) )
+        {
+            lowerBound += ci * addendLB;
+            upperBound += ci * addendUB;
+        }
+        else
+        {
+            lowerBound += ci * addendUB;
+            upperBound += ci * addendLB;
+        }
+    }
+
+    if ( FloatUtils::lt( _lowerBounds[y], lowerBound ) )
+    {
+        _lowerBounds[y] = lowerBound;
+        _tightenedLower[y] = true;
+        foundNewBound = true;
+    }
+
+    if ( FloatUtils::gt( _upperBounds[y], upperBound ) )
+    {
+        _upperBounds[y] = upperBound;
+        _tightenedUpper[y] = true;
+        foundNewBound = true;
+    }
+
+    if ( FloatUtils::gt( _lowerBounds[y], _upperBounds[y] ) )
+        throw InfeasibleQueryException();
+
+    // Next, do a pass for each of the rhs variables.
+    // For this, we transform the equation into:
+    //
+    // ci xi = y - sum cj xj - b
+
+    for ( unsigned i = 0; i < n - m; ++i )
+    {
+        ci = row[i];
+        xi = row._row[i]._var;
+
+        if ( FloatUtils::isZero( ci ) )
+            continue;
+
+        // Start with the scalar
+        upperBound = -row._scalar;
+        lowerBound = -row._scalar;
+
+        // Add y
+        upperBound += _upperBounds[y];
+        lowerBound += _lowerBounds[y];
+
+        // Now add the remaining variables, ignoring xi
+        for ( unsigned j = 0; j < n - m; ++j )
+        {
+            if ( j == i )
+                continue;
+
+            xj = row._row[j]._var;
+            cj = row[j];
+
+            if ( FloatUtils::isZero( cj ) )
+                 continue;
+
+            addendLB = _lowerBounds[xj];
+            addendUB = _upperBounds[xj];
+
+            if ( FloatUtils::isNegative( cj ) )
+            {
+                lowerBound -= cj * addendLB;
+                upperBound -= cj * addendUB;
+            }
+            else
+            {
+                lowerBound -= cj * addendUB;
+                upperBound -= cj * addendLB;
+            }
+        }
+
+        // Now divide everything by ci, switching signs if needed.
+        lowerBound = lowerBound / ci;
+        upperBound = upperBound / ci;
+
+        if ( FloatUtils::isNegative( ci ) )
+        {
+            double temp = upperBound;
+            upperBound = lowerBound;
+            lowerBound = temp;
+        }
+
+        if ( FloatUtils::lt( _lowerBounds[xi], lowerBound ) )
+        {
+            _lowerBounds[xi] = lowerBound;
+            _tightenedLower[xi] = true;
+            foundNewBound = true;
+        }
+
+        if ( FloatUtils::gt( _upperBounds[xi], upperBound ) )
+        {
+            _upperBounds[xi] = upperBound;
+            _tightenedUpper[xi] = true;
+            foundNewBound = true;
+        }
+
+        if ( FloatUtils::gt( _lowerBounds[xi], _upperBounds[xi] ) )
+            throw InfeasibleQueryException();
+    }
+
+    return foundNewBound;
 }
 
 void RowBoundTightener::examineBasisMatrix( const ITableau &tableau, bool untilSaturation )
