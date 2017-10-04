@@ -1326,7 +1326,7 @@ void Tableau::addEquation( const Equation &equation )
     // Populate the new row of A, compute the assignment for the new basic variable
     _b[_m - 1] = equation._scalar;
     _basicAssignment[_m - 1] = equation._scalar;
-    double auxCoefficient;
+    double auxCoefficient = 0.0;
     for ( const auto &addend : equation._addends )
     {
         setEntryValue( _m - 1, addend._variable, addend._coefficient );
@@ -1345,6 +1345,8 @@ void Tableau::addEquation( const Equation &equation )
             newB0[( newM - 1 ) * newM + index] = addend._coefficient;
         }
     }
+    DEBUG( !FloatUtils::isZero( auxCoefficient ) );
+
     _basicAssignment[_m - 1] = _basicAssignment[_m - 1] / auxCoefficient;
 
     DEBUG( FloatUtils::wellFormed( _basicAssignment[_m - 1] ) );
@@ -1622,6 +1624,12 @@ void Tableau::verifyInvariants()
                                  _upperBounds[var],
                                  GlobalConfiguration::BOUND_COMPARISON_TOLERANCE ) ) )
         {
+            // This behavior is okay iff lb > ub, and this is going to be caught
+            // soon anyway
+
+            if ( FloatUtils::gt( _lowerBounds[var], _upperBounds[var] ) )
+                continue;
+
             printf( "Tableau test invariants: bound violation!\n" );
             printf( "Variable %u (non-basic #%u). Assignment: %lf. Range: [%lf, %lf]\n",
                     var, i, _nonBasicAssignment[i], _lowerBounds[var], _upperBounds[var] );

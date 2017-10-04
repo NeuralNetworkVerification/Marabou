@@ -174,11 +174,11 @@ void Engine::performSimplexStep()
         _tableau->computeCostFunction();
 
     bool haveCandidate = false;
-    unsigned bestEntering;
+    unsigned bestEntering = 0;
     double bestPivotEntry = 0.0;
     unsigned tries = GlobalConfiguration::MAX_SIMPLEX_PIVOT_SEARCH_ITERATIONS;
     Set<unsigned> excludedEnteringVariables;
-    unsigned bestLeaving;
+    unsigned bestLeaving = 0;
 
     while ( tries > 0 )
     {
