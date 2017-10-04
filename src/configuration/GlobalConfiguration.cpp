@@ -26,7 +26,7 @@ const unsigned GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD = 20;
 const unsigned GlobalConfiguration::BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY = 100;
 
 const bool GlobalConfiguration::PREPROCESS_INPUT_QUERY = true;
-const bool GlobalConfiguration::PREPROCESSOR_ELIMINATE_VARIABLES = false;
+const bool GlobalConfiguration::PREPROCESSOR_ELIMINATE_VARIABLES = true;
 
 const unsigned GlobalConfiguration::PSE_ITERATIONS_BEFORE_RESET = 1000;
 const double GlobalConfiguration::PSE_GAMMA_ERROR_THRESHOLD = 0.001;
