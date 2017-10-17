@@ -63,6 +63,10 @@ bool Engine::solve()
 {
     _statistics.stampStartingTime();
 
+    printf( "\nEngine::solve: Initial statistics\n" );
+    mainLoopStatistics();
+    printf( "\n---\n" );
+
     while ( true )
     {
         try
@@ -93,6 +97,7 @@ bool Engine::solve()
                 // If all constraints are satisfied, we are done
                 if ( allPlConstraintsHold() )
                 {
+                    printf( "\nEngine::solve: SAT assignment found\n" );
                     _statistics.print();
                     return true;
                 }
@@ -128,6 +133,7 @@ bool Engine::solve()
             // If we're at level 0, the whole query is unsat.
             if ( !_smtCore.popSplit() )
             {
+                printf( "\nEngine::solve: UNSAT query\n" );
                 _statistics.print();
                 return false;
             }
@@ -137,11 +143,6 @@ bool Engine::solve()
 
 void Engine::mainLoopStatistics()
 {
-    if ( _statistics.getNumMainLoopIterations() % GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
-        _statistics.print();
-
-    _statistics.incNumMainLoopIterations();
-
     unsigned activeConstraints = 0;
     for ( const auto &constraint : _plConstraints )
         if ( constraint->isActive() )
@@ -151,6 +152,11 @@ void Engine::mainLoopStatistics()
     _statistics.setNumPlValidSplits( _numPlConstraintsDisabledByValidSplits );
     _statistics.setNumPlSMTSplits( _plConstraints.size() -
                                    activeConstraints - _numPlConstraintsDisabledByValidSplits );
+
+    if ( _statistics.getNumMainLoopIterations() % GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
+        _statistics.print();
+
+    _statistics.incNumMainLoopIterations();
 }
 
 void Engine::performSimplexStep()
