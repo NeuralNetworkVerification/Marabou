@@ -241,6 +241,10 @@ void ReluConstraint::dump( String &output ) const
 void ReluConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
 	ASSERT( oldIndex == _b || oldIndex == _f );
+    ASSERT( !_assignment.exists( newIndex ) &&
+            !_lowerBounds.exists( newIndex ) &&
+            !_upperBounds.exists( newIndex ) &&
+            newIndex != _b && newIndex != _f );
 
 	if ( _assignment.exists( oldIndex ) )
 	{
