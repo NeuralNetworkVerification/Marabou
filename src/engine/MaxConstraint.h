@@ -93,21 +93,17 @@ public:
     /*
       Preprocessing related functions, to inform that a variable has been eliminated completely
       because it was fixed to some value, or that a variable's index has changed (e.g., x4 is now
-      called x2).
+      called x2). constraintObsolete() returns true iff and the constraint has become obsolote
+      as a result of variable eliminations.
     */
     void eliminateVariable( unsigned variable, double fixedValue );
     void updateVariableIndex( unsigned oldIndex, unsigned newIndex );
+    bool constraintObsolete() const;
 
     /*
       Get the tightenings entailed by the constraint.
     */
     void getEntailedTightenings( List<Tightening> &tightenings ) const;
-
-    /*
-      Return true if and only if the constraint has been made meaningless due to
-      variable eliminiation and should be eliminated.
-    */
-    bool constraintDisabledByVariableElimination() const;
 
 private:
     unsigned _f;

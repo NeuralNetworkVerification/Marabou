@@ -25,7 +25,7 @@ ReluConstraint::ReluConstraint( unsigned b, unsigned f )
     , _f( f )
     , _haveEliminatedVariables( false )
 {
-    setPhaseStatue( PhaseStatus::PHASE_NOT_FIXED );
+    setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
 }
 
 PiecewiseLinearConstraint *ReluConstraint::duplicateConstraint() const
@@ -72,9 +72,9 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
     _lowerBounds[variable] = bound;
 
     if ( variable == _f && FloatUtils::isPositive( bound ) )
-        setPhaseStatue( PhaseStatus::PHASE_ACTIVE );
+        setPhaseStatus( PhaseStatus::PHASE_ACTIVE );
     else if ( variable == _b && !FloatUtils::isNegative( bound ) )
-        setPhaseStatue( PhaseStatus::PHASE_ACTIVE );
+        setPhaseStatus( PhaseStatus::PHASE_ACTIVE );
  }
 
 void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
@@ -88,7 +88,7 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
     _upperBounds[variable] = bound;
 
     if ( ( variable == _f || variable == _b ) && !FloatUtils::isPositive( bound ) )
-        setPhaseStatue( PhaseStatus::PHASE_INACTIVE );
+        setPhaseStatus( PhaseStatus::PHASE_INACTIVE );
 }
 
 bool ReluConstraint::participatingVariable( unsigned variable ) const
@@ -266,7 +266,8 @@ void ReluConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 		_f = newIndex;
 }
 
-void ReluConstraint::eliminateVariable( __attribute__((unused)) unsigned variable, double fixedValue )
+void ReluConstraint::eliminateVariable( __attribute__((unused)) unsigned variable,
+                                        __attribute__((unused)) double fixedValue )
 {
 	ASSERT( variable == _b || variable == _f );
 
@@ -286,12 +287,13 @@ void ReluConstraint::eliminateVariable( __attribute__((unused)) unsigned variabl
             }
         });
 
-	if ( FloatUtils::gt( fixedValue, 0 ) )
-        setPhaseStatue( PhaseStatus::PHASE_ACTIVE );
-	else
-        setPhaseStatue( PhaseStatus::PHASE_INACTIVE );
-
+    // In a ReLU constraint, if a variable is removed the entire constraint can be discarded.
     _haveEliminatedVariables = true;
+}
+
+bool ReluConstraint::constraintObsolete() const
+{
+    return _haveEliminatedVariables;
 }
 
 void ReluConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
@@ -357,14 +359,9 @@ String ReluConstraint::phaseToString( PhaseStatus phase )
     }
 };
 
-void ReluConstraint::setPhaseStatue( PhaseStatus phaseStatus )
+void ReluConstraint::setPhaseStatus( PhaseStatus phaseStatus )
 {
     _phaseStatus = phaseStatus;
-}
-
-bool ReluConstraint::constraintDisabledByVariableElimination() const
-{
-    return _haveEliminatedVariables;
 }
 
 //

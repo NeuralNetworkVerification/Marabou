@@ -45,7 +45,7 @@ Statistics::Statistics()
     , _pseNumResetReferenceSpace( 0 )
     , _ppNumEliminatedVars( 0 )
     , _ppNumTighteningIterations( 0 )
-    , _ppNumDisabledConstraints( 0 )
+    , _ppNumConstraintsRemoved( 0 )
 {
 }
 
@@ -81,8 +81,8 @@ void Statistics::print()
             _ppNumTighteningIterations );
     printf( "\tNumber of eliminated variables: %u\n",
             _ppNumEliminatedVars );
-    printf( "\tNumber of constraints disabled due to variable elimination: %u\n",
-            _ppNumDisabledConstraints );
+    printf( "\tNumber of constraints removed due to variable elimination: %u\n",
+            _ppNumConstraintsRemoved );
 
     printf( "\t--- Engine Statistics ---\n" );
     printf( "\tNumber of main loop iterations: %llu\n"
@@ -94,7 +94,8 @@ void Statistics::print()
             , printAverage( _timeSimplexStepsMilli, _numSimplexSteps )
             , _numConstraintFixingSteps );
     printf( "\tNumber of active piecewise-linear constraints: %u / %u\n"
-            "\t\tConstraints disabled by valid splits: %u. By smt-originated splits: %u\n"
+            "\t\tConstraints disabled by valid splits: %u. "
+            "By smt-originated splits: %u\n"
             , _numActivePlConstraints
             , _numPlConstraints
             , _numPlValidSplits
@@ -323,9 +324,9 @@ void Statistics::ppIncNumTighteningIterations()
     ++_ppNumTighteningIterations;
 }
 
-void Statistics::ppIncNumDisabledConstraints()
+void Statistics::ppIncNumConstraintsRemoved()
 {
-    ++_ppNumDisabledConstraints;
+    ++_ppNumConstraintsRemoved;
 }
 
 //

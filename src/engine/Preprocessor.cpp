@@ -303,23 +303,36 @@ void Preprocessor::eliminateFixedVariables()
             ++equation;
 	}
 
-    // Let the piecewise-lienar constraints know of any eliminated variables and
-    // change in indices.
-    for ( const auto &constraint : _preprocessed.getPiecewiseLinearConstraints() )
+    // Let the piecewise-linear constraints know of any eliminate variables, and remove
+    // the constraints themselves if they become obsolete.
+    List<PiecewiseLinearConstraint *> &constraints( _preprocessed.getPiecewiseLinearConstraints() );
+    List<PiecewiseLinearConstraint *>::iterator constraint = constraints.begin();
+    while ( constraint != constraints.end() )
+    {
+        List<unsigned> participatingVariables = (*constraint)->getParticipatingVariables();
+        for ( unsigned variable : participatingVariables )
+        {
+            if ( _fixedVariables.exists( variable ) )
+                (*constraint)->eliminateVariable( variable, _fixedVariables.at( variable ) );
+        }
+
+        if ( (*constraint)->constraintObsolete() )
+        {
+            _statistics->ppIncNumConstraintsRemoved();
+            constraint = constraints.erase( constraint );
+        }
+        else
+            ++constraint;
+	}
+
+    // Let the remaining piecewise-lienar constraints know of any changes in indices.
+    for ( const auto &constraint : constraints )
 	{
 		List<unsigned> participatingVariables = constraint->getParticipatingVariables();
         for ( unsigned variable : participatingVariables )
         {
-            if ( _fixedVariables.exists( variable ) )
-                constraint->eliminateVariable( variable, _fixedVariables.at( variable ) );
-            else if ( _oldIndexToNewIndex.at( variable ) != variable )
+            if ( _oldIndexToNewIndex.at( variable ) != variable )
                 constraint->updateVariableIndex( variable, _oldIndexToNewIndex.at( variable ) );
-        }
-
-        if ( constraint->constraintDisabledByVariableElimination() )
-        {
-            constraint->setActiveConstraint( false );
-            _statistics->ppIncNumDisabledConstraints();
         }
 	}
 

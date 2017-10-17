@@ -356,6 +356,11 @@ void MaxConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 
 }
 
+bool MaxConstraint::constraintObsolete() const
+{
+    return false;
+}
+
 void MaxConstraint::eliminateVariable( unsigned var, double value )
 {
 	/*if ( _eliminated.size() == 0 || ( _eliminated.size() > 0 && FloatUtils::gt( value, _lowerBounds[_maxElim] ) ) )
@@ -406,11 +411,6 @@ void MaxConstraint::tightenPL( Tightening tighten, List<Tightening> &tightenings
 	 		}
 	 	}
     }
-}
-
-bool MaxConstraint::constraintDisabledByVariableElimination() const
-{
-    return false;
 }
 
 //

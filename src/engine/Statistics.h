@@ -88,7 +88,7 @@ public:
     */
     void ppSetNumEliminatedVars( unsigned eliminatedVars );
     void ppIncNumTighteningIterations();
-    void ppIncNumDisabledConstraints();
+    void ppIncNumConstraintsRemoved();
 
 private:
     // Initial timestamp
@@ -179,7 +179,7 @@ private:
     // Preprocessor counters
     unsigned _ppNumEliminatedVars;
     unsigned _ppNumTighteningIterations;
-    unsigned _ppNumDisabledConstraints;
+    unsigned _ppNumConstraintsRemoved;
 
     // Printing helpers
     double printPercents( unsigned long long part, unsigned long long total ) const;
