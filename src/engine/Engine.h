@@ -157,6 +157,12 @@ private:
     void performSimplexStep();
 
     /*
+      Perform a constraint-fixing step: select a violated piece-wise
+      linear constraint and attempt to fix it.
+    */
+    void performConstraintFixingStep();
+
+    /*
       Attempt to fix one of the violated pl constraints.
     */
     void fixViolatedPlConstraintIfPossible();

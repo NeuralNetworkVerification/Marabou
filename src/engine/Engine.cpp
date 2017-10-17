@@ -103,16 +103,7 @@ bool Engine::solve()
                 }
 
                 // We have violated piecewise-linear constraints.
-                _statistics.incNumConstraintFixingSteps();
-
-                // Select a violated constraint as the target
-                selectViolatedPlConstraint();
-
-                // Report the violated constraint to the SMT engine
-                reportPlViolation();
-
-                // Attempt to fix the constraint
-                fixViolatedPlConstraintIfPossible();
+                performConstraintFixingStep();
 
                 // Finally, take this opporunity to tighten any bounds
                 // and perform any valid case splits.
@@ -157,6 +148,25 @@ void Engine::mainLoopStatistics()
         _statistics.print();
 
     _statistics.incNumMainLoopIterations();
+}
+
+void Engine::performConstraintFixingStep()
+{
+    // Statistics
+    _statistics.incNumConstraintFixingSteps();
+    timeval start = TimeUtils::sampleMicro();
+
+    // Select a violated constraint as the target
+    selectViolatedPlConstraint();
+
+    // Report the violated constraint to the SMT engine
+    reportPlViolation();
+
+    // Attempt to fix the constraint
+    fixViolatedPlConstraintIfPossible();
+
+    timeval end = TimeUtils::sampleMicro();
+    _statistics.addTimeConstraintFixingSteps( TimeUtils::timePassed( start, end ) );
 }
 
 void Engine::performSimplexStep()

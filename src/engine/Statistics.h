@@ -42,6 +42,7 @@ public:
     void incNumMainLoopIterations();
     void incNumSimplexSteps();
     void addTimeSimplexSteps( unsigned long long time );
+    void addTimeConstraintFixingSteps( unsigned long long time );
     void incNumConstraintFixingSteps();
     unsigned long long getNumMainLoopIterations() const;
     void setNumPlConstraints( unsigned numberOfConstraints );
@@ -116,6 +117,9 @@ private:
 
     // Total time spent on performing simplex steps, in milliseconds
     unsigned long long _timeSimplexStepsMilli;
+
+    // Total time spent on performing constraint fixing steps, in milliseconds
+    unsigned long long _timeConstraintFixingStepsMilli;
 
     // Number of constraint fixing steps, e.g. ReLU corrections,
     // performed by the main loop

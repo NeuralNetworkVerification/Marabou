@@ -24,6 +24,7 @@ Statistics::Statistics()
     , _maxDegradation( 0.0 )
     , _numSimplexSteps( 0 )
     , _timeSimplexStepsMilli( 0 )
+    , _timeConstraintFixingStepsMilli( 0 )
     , _numConstraintFixingSteps( 0 )
     , _currentStackDepth( 0 )
     , _maxStackDepth( 0 )
@@ -87,12 +88,16 @@ void Statistics::print()
     printf( "\t--- Engine Statistics ---\n" );
     printf( "\tNumber of main loop iterations: %llu\n"
             "\t\t%llu iterations were simplex steps. Total time: %llu milli. Average: %.2lf milli.\n"
-            "\t\t%llu iterations were constraint-fixing steps.\n"
+            "\t\t%llu iterations were constraint-fixing steps. "
+            "Total time: %llu milli. Average: %.2lf milli\n"
             , _numMainLoopIterations
             , _numSimplexSteps
             , _timeSimplexStepsMilli
             , printAverage( _timeSimplexStepsMilli, _numSimplexSteps )
-            , _numConstraintFixingSteps );
+            , _numConstraintFixingSteps
+            , _timeConstraintFixingStepsMilli
+            , printAverage( _timeConstraintFixingStepsMilli, _numConstraintFixingSteps )
+            );
     printf( "\tNumber of active piecewise-linear constraints: %u / %u\n"
             "\t\tConstraints disabled by valid splits: %u. "
             "By smt-originated splits: %u\n"
@@ -197,6 +202,11 @@ void Statistics::incNumSimplexSteps()
 void Statistics::addTimeSimplexSteps( unsigned long long time )
 {
     _timeSimplexStepsMilli += time;
+}
+
+void Statistics::addTimeConstraintFixingSteps( unsigned long long time )
+{
+    _timeConstraintFixingStepsMilli += time;
 }
 
 void Statistics::incNumConstraintFixingSteps()
