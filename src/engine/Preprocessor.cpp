@@ -303,7 +303,7 @@ void Preprocessor::eliminateFixedVariables()
             ++equation;
 	}
 
-    // Let the piecewise-linear constraints know of any eliminate variables, and remove
+    // Let the piecewise-linear constraints know of any eliminated variables, and remove
     // the constraints themselves if they become obsolete.
     List<PiecewiseLinearConstraint *> &constraints( _preprocessed.getPiecewiseLinearConstraints() );
     List<PiecewiseLinearConstraint *>::iterator constraint = constraints.begin();
