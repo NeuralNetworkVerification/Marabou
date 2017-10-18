@@ -81,6 +81,7 @@ void SmtCore::performSplit()
     //   2. Disable the constraint, so that it is marked as disbaled in the EngineState.
     List<PiecewiseLinearCaseSplit> splits = _constraintForSplitting->getCaseSplits();
     ASSERT( !splits.empty() );
+    ASSERT( splits.size() >= 2 ); // Not really necessary, can add code to handle this case.
     _constraintForSplitting->setActiveConstraint( false );
 
     // Obtain the current state of the engine
