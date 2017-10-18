@@ -10,6 +10,7 @@
  ** directory for licensing information.\endverbatim
  **/
 
+#include "Debug.h"
 #include "FloatUtils.h"
 #include "InfeasibleQueryException.h"
 #include "InputQuery.h"
@@ -258,7 +259,8 @@ void Preprocessor::eliminateFixedVariables()
         // unless the equation has no addends left
         if ( !equation->_addends.empty() )
         {
-            if ( _fixedVariables.exists( equation->_auxVariable ) )
+            if ( _fixedVariables.exists( equation->_auxVariable ) ||
+                 auxiliaryVariables.exists( _oldIndexToNewIndex.at( equation->_auxVariable ) ) )
             {
                 bool found = false;
                 addend = equation->_addends.begin();
@@ -293,7 +295,8 @@ void Preprocessor::eliminateFixedVariables()
         // Overwise, we are done here.
         if ( equation->_addends.empty() )
         {
-            _statistics->ppIncNumEquationsRemoved();
+            if ( _statistics )
+                _statistics->ppIncNumEquationsRemoved();
 
             // No addends left, scalar should be 0
             if ( !FloatUtils::isZero( equation->_scalar ) )
@@ -304,6 +307,8 @@ void Preprocessor::eliminateFixedVariables()
         else
             ++equation;
 	}
+
+    ASSERT( auxiliaryVariables.size() == equations.size() );
 
     // Let the piecewise-linear constraints know of any eliminated variables, and remove
     // the constraints themselves if they become obsolete.
