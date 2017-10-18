@@ -47,6 +47,7 @@ Statistics::Statistics()
     , _ppNumEliminatedVars( 0 )
     , _ppNumTighteningIterations( 0 )
     , _ppNumConstraintsRemoved( 0 )
+    , _ppNumEquationsRemoved( 0 )
     , _totalTimePerformingValidCaseSplits( 0 )
     , _totalNumberOfValidCaseSplits( 0 )
     , _totalTimeExplicitBasisBoundTightening( 0 )
@@ -137,6 +138,8 @@ void Statistics::print()
             _ppNumEliminatedVars );
     printf( "\tNumber of constraints removed due to variable elimination: %u\n",
             _ppNumConstraintsRemoved );
+    printf( "\tNumber of equations removed due to variable elimination: %u\n",
+            _ppNumEquationsRemoved );
 
     printf( "\t--- Engine Statistics ---\n" );
     printf( "\tNumber of main loop iterations: %llu\n"
@@ -390,6 +393,11 @@ void Statistics::ppIncNumTighteningIterations()
 void Statistics::ppIncNumConstraintsRemoved()
 {
     ++_ppNumConstraintsRemoved;
+}
+
+void Statistics::ppIncNumEquationsRemoved()
+{
+    ++_ppNumEquationsRemoved;
 }
 
 void Statistics::addTimeForValidCaseSplit( unsigned long long time )

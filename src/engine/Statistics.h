@@ -95,6 +95,7 @@ public:
     void ppSetNumEliminatedVars( unsigned eliminatedVars );
     void ppIncNumTighteningIterations();
     void ppIncNumConstraintsRemoved();
+    void ppIncNumEquationsRemoved();
 
 private:
     // Initial timestamp
@@ -189,6 +190,7 @@ private:
     unsigned _ppNumEliminatedVars;
     unsigned _ppNumTighteningIterations;
     unsigned _ppNumConstraintsRemoved;
+    unsigned _ppNumEquationsRemoved;
 
     // Total amount of time spent performing valid case splits
     unsigned long long _totalTimePerformingValidCaseSplits;

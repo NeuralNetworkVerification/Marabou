@@ -293,6 +293,8 @@ void Preprocessor::eliminateFixedVariables()
         // Overwise, we are done here.
         if ( equation->_addends.empty() )
         {
+            _statistics->ppIncNumEquationsRemoved();
+
             // No addends left, scalar should be 0
             if ( !FloatUtils::isZero( equation->_scalar ) )
                 throw InfeasibleQueryException();
