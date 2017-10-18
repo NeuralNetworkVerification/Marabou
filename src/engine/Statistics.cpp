@@ -166,8 +166,8 @@ void Statistics::print()
             , _currentDegradation
             , _maxDegradation
             );
-    printf( "\tNumber of simplex pivots we attempted to skip beacuse of instability: %llu. "
-            "Unstable pivots performed anyway: %llu\n"
+    printf( "\tNumber of simplex pivots we attempted to skip beacuse of instability: %llu.\n"
+            "\tUnstable pivots performed anyway: %llu\n"
             , _numSimplexPivotSelectionsIgnoredForStability
             , _numSimplexUnstablePivots );
 
