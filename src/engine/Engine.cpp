@@ -108,8 +108,7 @@ bool Engine::solve()
                 // Finally, take this opporunity to tighten any bounds
                 // and perform any valid case splits.
                 tightenBoundsOnConstraintMatrix();
-                applyAllRowTightenings();
-                applyAllConstraintTightenings();
+                applyAllBoundTightenings();
                 applyAllValidConstraintCaseSplits();
             }
             else
@@ -626,6 +625,17 @@ void Engine::applyAllConstraintTightenings()
     }
 }
 
+void Engine::applyAllBoundTightenings()
+{
+    timeval start = TimeUtils::sampleMicro();
+
+    applyAllRowTightenings();
+    applyAllConstraintTightenings();
+
+    timeval end = TimeUtils::sampleMicro();
+    _statistics.addTimeForApplyingStoredTightenings( TimeUtils::timePassed( start, end ) );
+}
+
 void Engine::applyAllValidConstraintCaseSplits()
 {
     for ( auto &constraint : _plConstraints )
@@ -636,6 +646,8 @@ void Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
 {
     if ( constraint->isActive() && constraint->phaseFixed() )
     {
+        timeval start = TimeUtils::sampleMicro();
+
         constraint->setActiveConstraint( false );
         applySplit( constraint->getValidCaseSplit() );
         ++_numPlConstraintsDisabledByValidSplits;
@@ -644,6 +656,9 @@ void Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
         constraint->dump( constraintString );
         log( Stringf( "A constraint has become valid. Dumping constraint: %s",
                       constraintString.ascii() ) );
+
+        timeval end = TimeUtils::sampleMicro();
+        _statistics.addTimeForValidCaseSplit( TimeUtils::timePassed( start, end ) );
     }
 }
 
@@ -658,20 +673,30 @@ void Engine::checkDegradation()
 
 void Engine::tightenBoundsOnConstraintMatrix()
 {
+    timeval start = TimeUtils::sampleMicro();
+
     if ( _statistics.getNumMainLoopIterations() %
          GlobalConfiguration::BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY == 0 )
     {
         _rowBoundTightener->examineConstraintMatrix( _tableau, true );
         _statistics.incNumBoundTighteningOnConstraintMatrix();
     }
+
+    timeval end = TimeUtils::sampleMicro();
+    _statistics.addTimeForConstraintMatrixBoundTightening( TimeUtils::timePassed( start, end ) );
 }
 
 void Engine::explicitBasisBoundTightening()
 {
+    timeval start = TimeUtils::sampleMicro();
+
     if ( GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_INVERT_BASIS )
-        _rowBoundTightener->examineInvertedBasisMatrix( _tableau, true );
+        _rowBoundTightener->examineInvertedBasisMatrix( _tableau, false );
     else
-        _rowBoundTightener->examineBasisMatrix( _tableau, true );
+        _rowBoundTightener->examineBasisMatrix( _tableau, false );
+
+    timeval end = TimeUtils::sampleMicro();
+    _statistics.addTimeForExplicitBasisBoundTightening( TimeUtils::timePassed( start, end ) );
 }
 
 void Engine::log( const String &message )

@@ -47,6 +47,12 @@ Statistics::Statistics()
     , _ppNumEliminatedVars( 0 )
     , _ppNumTighteningIterations( 0 )
     , _ppNumConstraintsRemoved( 0 )
+    , _totalTimePerformingValidCaseSplits( 0 )
+    , _totalNumberOfValidCaseSplits( 0 )
+    , _totalTimeExplicitBasisBoundTightening( 0 )
+    , _totalTimeConstraintMatrixBoundTightening( 0 )
+    , _totalTimeApplyingStoredTightenings( 0 )
+    , _totalTimeSmtCore( 0 )
 {
 }
 
@@ -62,6 +68,8 @@ void Statistics::print()
     unsigned seconds = totalMilli / 1000;
     unsigned minutes = seconds / 60;
     unsigned hours = minutes / 60;
+
+    printf( "\t--- Time Statistics ---\n" );
     printf( "\tTotal time elapsed: %llu milli (%02u:%02u:%02u)\n",
             totalMilli, hours, minutes - ( hours * 60 ), seconds - ( minutes * 60 ) );
 
@@ -76,6 +84,51 @@ void Statistics::print()
     hours = minutes / 60;
     printf( "\t\tPreprocessing time: %llu milli (%02u:%02u:%02u)\n",
             _preprocessingTimeMilli, hours, minutes - ( hours * 60 ), seconds - ( minutes * 60 ) );
+
+    printf( "\tBreakdown for main loop:\n" );
+    printf( "\t\t[%.2lf%%] Simplex steps: %llu milli\n"
+            , printPercents( _timeSimplexStepsMilli, mainLoopMilli )
+            , _timeSimplexStepsMilli
+            );
+    printf( "\t\t[%.2lf%%] Constraint-fixing steps: %llu milli\n"
+            , printPercents( _timeConstraintFixingStepsMilli, mainLoopMilli )
+            , _timeConstraintFixingStepsMilli
+            );
+    printf( "\t\t[%.2lf%%] Valid case splits: %llu milli. Average per split: %.2lf milli\n"
+            , printPercents( _totalTimePerformingValidCaseSplits, mainLoopMilli )
+            , _totalTimePerformingValidCaseSplits
+            , printAverage( _totalTimePerformingValidCaseSplits, _totalNumberOfValidCaseSplits )
+            );
+    printf( "\t\t[%.2lf%%] Explicit-basis bound tightening: %llu milli\n"
+            , printPercents( _totalTimeExplicitBasisBoundTightening, mainLoopMilli )
+            , _totalTimeExplicitBasisBoundTightening
+            );
+    printf( "\t\t[%.2lf%%] Constraint-matrix bound tightening: %llu milli\n"
+            , printPercents( _totalTimeConstraintMatrixBoundTightening, mainLoopMilli )
+            , _totalTimeConstraintMatrixBoundTightening
+            );
+    printf( "\t\t[%.2lf%%] Applying stored bound-tightening: %llu milli\n"
+            , printPercents( _totalTimeApplyingStoredTightenings, mainLoopMilli )
+            , _totalTimeApplyingStoredTightenings
+            );
+
+    printf( "\t\t[%.2lf%%] SMT core: %llu milli\n"
+            , printPercents( _totalTimeSmtCore, mainLoopMilli )
+            , _totalTimeSmtCore
+            );
+
+    unsigned long long total =
+        _timeSimplexStepsMilli +
+        _timeConstraintFixingStepsMilli +
+        _totalTimePerformingValidCaseSplits +
+        _totalTimeExplicitBasisBoundTightening +
+        _totalTimeConstraintMatrixBoundTightening +
+        _totalTimeApplyingStoredTightenings +
+        _totalTimeSmtCore;
+    printf( "\t\t[%.2lf%%] Unaccounted for: %llu milli\n"
+            , printPercents( mainLoopMilli - total, mainLoopMilli )
+            , mainLoopMilli - total
+            );
 
     printf( "\t--- Preprocessor Statistics ---\n" );
     printf( "\tNumber of preprocessor bound-tightening loop iterations: %u\n",
@@ -337,6 +390,32 @@ void Statistics::ppIncNumTighteningIterations()
 void Statistics::ppIncNumConstraintsRemoved()
 {
     ++_ppNumConstraintsRemoved;
+}
+
+void Statistics::addTimeForValidCaseSplit( unsigned long long time )
+{
+    _totalTimePerformingValidCaseSplits += time;
+    ++_totalNumberOfValidCaseSplits;
+}
+
+void Statistics::addTimeForExplicitBasisBoundTightening( unsigned long long time )
+{
+    _totalTimeExplicitBasisBoundTightening += time;
+}
+
+void Statistics::addTimeForConstraintMatrixBoundTightening( unsigned long long time )
+{
+    _totalTimeConstraintMatrixBoundTightening += time;
+}
+
+void Statistics::addTimeForApplyingStoredTightenings( unsigned long long time )
+{
+    _totalTimeApplyingStoredTightenings += time;
+}
+
+void Statistics::addTimeSmtCore( unsigned long long time )
+{
+    _totalTimeSmtCore += time;
 }
 
 //

@@ -67,6 +67,8 @@ void SmtCore::performSplit()
         return;
     }
 
+    timeval start = TimeUtils::sampleMicro();
+
     ASSERT( _constraintForSplitting->isActive() );
     _needToSplit = false;
 
@@ -101,7 +103,11 @@ void SmtCore::performSplit()
 
     _stack.push( stackEntry );
     if ( _statistics )
+    {
         _statistics->setCurrentStackDepth( getStackDepth() );
+        timeval end = TimeUtils::sampleMicro();
+        _statistics->addTimeSmtCore( TimeUtils::timePassed( start, end ) );
+    }
 }
 
 unsigned SmtCore::getStackDepth() const
@@ -115,6 +121,8 @@ bool SmtCore::popSplit()
 
     if ( _stack.empty() )
         return false;
+
+    timeval start = TimeUtils::sampleMicro();
 
     if ( _statistics )
         _statistics->incNumPops();
@@ -143,7 +151,11 @@ bool SmtCore::popSplit()
     }
 
     if ( _statistics )
+    {
         _statistics->setCurrentStackDepth( getStackDepth() );
+        timeval end = TimeUtils::sampleMicro();
+        _statistics->addTimeSmtCore( TimeUtils::timePassed( start, end ) );
+    }
 
     return true;
 }

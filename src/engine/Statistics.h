@@ -50,6 +50,10 @@ public:
     void setNumPlValidSplits( unsigned numberOfSplits );
     void setNumPlSMTSplits( unsigned numberOfSplits );
     void setCurrentDegradation( double degradation );
+    void addTimeForValidCaseSplit( unsigned long long time );
+    void addTimeForExplicitBasisBoundTightening( unsigned long long time );
+    void addTimeForConstraintMatrixBoundTightening( unsigned long long time );
+    void addTimeForApplyingStoredTightenings( unsigned long long time );
 
     /*
       Tableau related statistics.
@@ -67,6 +71,7 @@ public:
     void setCurrentStackDepth( unsigned depth );
     void incNumSplits();
     void incNumPops();
+    void addTimeSmtCore( unsigned long long time );
 
     /*
       Bound tightening related statistics.
@@ -184,6 +189,25 @@ private:
     unsigned _ppNumEliminatedVars;
     unsigned _ppNumTighteningIterations;
     unsigned _ppNumConstraintsRemoved;
+
+    // Total amount of time spent performing valid case splits
+    unsigned long long _totalTimePerformingValidCaseSplits;
+
+    // Total number of valid case splits performed so far (including in other branches
+    // of the search tree, that have since been popped)
+    unsigned _totalNumberOfValidCaseSplits;
+
+    // Total amount of time spent performing explicit-basis bound tightening
+    unsigned long long _totalTimeExplicitBasisBoundTightening;
+
+    // Total amount of time spent performing constraint-matrix bound tightening
+    unsigned long long _totalTimeConstraintMatrixBoundTightening;
+
+    // Total amount of time spent applying previously stored bound tightenings
+    unsigned long long _totalTimeApplyingStoredTightenings;
+
+    // Total amount of time spent within the SMT core
+    unsigned long long _totalTimeSmtCore;
 
     // Printing helpers
     double printPercents( unsigned long long part, unsigned long long total ) const;

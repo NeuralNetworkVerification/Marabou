@@ -193,6 +193,12 @@ private:
     void reportPlViolation();
 
     /*
+      Apply all bound tightenings (row and matrix-based) in
+      the queue.
+    */
+    void applyAllBoundTightenings();
+
+    /*
       Apply any bound tightenings found by the row tightener.
     */
     void applyAllRowTightenings();
