@@ -116,6 +116,8 @@ private:
     bool _phaseFixed;
     unsigned _fixedPhase;
 
+    bool _removePL;
+
     /*
       Returns the phase where variable argMax has maximum value.
     */

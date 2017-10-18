@@ -145,8 +145,6 @@ public:
 
     void setStatistics( Statistics *statistics );
 
-	bool _removePL;
-
 protected:
     bool _constraintActive;
 	Map<unsigned, double> _assignment;
