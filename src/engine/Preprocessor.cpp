@@ -207,7 +207,9 @@ void Preprocessor::eliminateFixedVariables()
     // First, collect the variables that have become fixed, and their fixed values
 	for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
 	{
-        if ( FloatUtils::areEqual( _preprocessed.getLowerBound( i ), _preprocessed.getUpperBound( i ) ) )
+        if ( FloatUtils::areEqual( _preprocessed.getLowerBound( i ),
+                                   _preprocessed.getUpperBound( i ),
+                                   GlobalConfiguration::BOUND_COMPARISON_TOLERANCE ) )
             _fixedVariables[i] = _preprocessed.getLowerBound( i );
 	}
 
