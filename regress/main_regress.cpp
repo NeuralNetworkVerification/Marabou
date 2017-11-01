@@ -64,8 +64,10 @@ void max()
 	Max_Feasible_1 mf1;
 	mf1.run();
 
-	Max_Infeasible_1 mf2;
-	mf2.run();
+    printTitle( "Maxes / Unsat" );
+
+	Max_Infeasible_1 mfi1;
+	mfi1.run();
 }
 
 int main()
