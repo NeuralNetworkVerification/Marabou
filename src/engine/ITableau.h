@@ -25,6 +25,12 @@ class TableauState;
 class ITableau
 {
 public:
+    enum CostFunctionStatus {
+        COST_FUNCTION_INVALID = 0,
+        COST_FUNCTION_JUST_COMPUTED = 1,
+        COST_FUNCTION_UPDATED = 2,
+    };
+
     /*
       A class for allowing objects (e.g., piecewise linear
       constraints) to register and receive updates regarding changes
@@ -120,7 +126,7 @@ public:
     virtual void forwardTransformation( const double *y, double *x ) const = 0;
     virtual void backwardTransformation( const double *y, double *x ) const = 0;
     virtual double getSumOfInfeasibilities() const = 0;
-    virtual bool needToRecomputCostFunction() const = 0;
+    virtual CostFunctionStatus getCostFunctionStatus() const = 0;
     virtual void verifyInvariants() = 0;
     virtual bool basisMatrixAvailable() const = 0;
     virtual void getBasisEquations( List<Equation *> &equations ) const = 0;

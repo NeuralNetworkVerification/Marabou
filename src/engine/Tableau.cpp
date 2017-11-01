@@ -45,7 +45,7 @@ Tableau::Tableau()
     , _boundsValid( true )
     , _basicAssignment( NULL )
     , _basicStatus( NULL )
-    , _costFunctionStatus( Tableau::COST_FUNCTION_INVALID )
+    , _costFunctionStatus( ITableau::COST_FUNCTION_INVALID )
     , _statistics( NULL )
 {
 }
@@ -523,7 +523,7 @@ void Tableau::computeCostFunction()
     // Step 3: compute reduced costs
     computeReducedCosts();
 
-    _costFunctionStatus = Tableau::COST_FUNCTION_JUST_COMPUTED;
+    _costFunctionStatus = ITableau::COST_FUNCTION_JUST_COMPUTED;
 }
 
 void Tableau::computeMultipliers()
@@ -1040,7 +1040,7 @@ void Tableau::setNonBasicAssignment( unsigned variable, double value, bool updat
         // If these updates resulted in a change to the status of some basic variable,
         // the cost function is invalidated
         if ( oldStatus != _basicStatus[i] )
-            _costFunctionStatus = Tableau::COST_FUNCTION_INVALID;
+            _costFunctionStatus = ITableau::COST_FUNCTION_INVALID;
     }
 }
 
@@ -1214,7 +1214,7 @@ void Tableau::restoreState( const TableauState &state )
     _boundsValid = state._boundsValid;
 
     computeBasicStatus();
-    _costFunctionStatus = Tableau::COST_FUNCTION_INVALID;
+    _costFunctionStatus = ITableau::COST_FUNCTION_INVALID;
 }
 
 void Tableau::checkBoundsValid()
@@ -1316,7 +1316,7 @@ void Tableau::addEquation( const Equation &equation )
 
     // Add an actual row to the talbeau, adjust the data structures
     addRow();
-    _costFunctionStatus = Tableau::COST_FUNCTION_INVALID;
+    _costFunctionStatus = ITableau::COST_FUNCTION_INVALID;
 
     // Mark the auxiliary variable as basic, add to indices
     _basicVariables.insert( equation._auxVariable );
@@ -1825,7 +1825,6 @@ void Tableau::updateCostFunctionForPivot()
 
     // Update the cost of the new non-basic
     double pivotElement = -_changeColumn[_leavingVariable];
-    //    ASSERT( !FloatUtils::isZero( pivotElement ) );
     _costFunction[_enteringVariable] /= pivotElement;
 
     for ( unsigned i = 0; i < _n - _m; ++i )
@@ -1858,11 +1857,13 @@ void Tableau::updateCostFunctionForPivot()
 
     // The entering variable is within range, so its basic cost is 0
     _basicCosts[_leavingVariable] = 0;
+
+    _costFunctionStatus = ITableau::COST_FUNCTION_UPDATED;
 }
 
-bool Tableau::needToRecomputCostFunction() const
+ITableau::CostFunctionStatus Tableau::getCostFunctionStatus() const
 {
-    return _costFunctionStatus == Tableau::COST_FUNCTION_INVALID;
+    return _costFunctionStatus;
 }
 
 bool Tableau::basisMatrixAvailable() const

@@ -185,7 +185,7 @@ void Engine::performSimplexStep()
          next-best entering variable.
     */
 
-    if ( _tableau->needToRecomputCostFunction() )
+    if ( _tableau->getCostFunctionStatus() == ITableau::COST_FUNCTION_INVALID )
         _tableau->computeCostFunction();
 
     bool haveCandidate = false;

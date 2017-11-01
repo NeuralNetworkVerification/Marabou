@@ -421,9 +421,9 @@ public:
         return 0;
     }
 
-    bool needToRecomputCostFunction() const
+    CostFunctionStatus getCostFunctionStatus() const
     {
-        return true;
+        return ITableau::COST_FUNCTION_JUST_COMPUTED;
     }
 
     void assignIndexToBasicVariable( unsigned /* variable */, unsigned /* index */ )

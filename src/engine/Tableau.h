@@ -35,12 +35,6 @@ public:
         ABOVE_UB = 4,
     };
 
-    enum CostFunctionStatus {
-        COST_FUNCTION_INVALID = 0,
-        COST_FUNCTION_JUST_COMPUTED = 1,
-        COST_FUNCTION_UPDATED = 2,
-    };
-
     Tableau();
     ~Tableau();
 
@@ -364,9 +358,9 @@ public:
     double getSumOfInfeasibilities() const;
 
     /*
-      Does the cost functio need to be recomputed?
+      The current state of the cost function.
     */
-    bool needToRecomputCostFunction() const;
+    CostFunctionStatus getCostFunctionStatus() const;
 
     /*
       Methods for accessing the basis matrix if it's available,
