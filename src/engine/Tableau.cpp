@@ -1872,9 +1872,6 @@ void Tableau::updateCostFunctionForPivot()
     // the case. Adjust the non-basic cost.
     _costFunction[_enteringVariable] -= _basicCosts[_leavingVariable];
 
-    // The entering variable is within range, so its basic cost is 0
-    _basicCosts[_leavingVariable] = 0;
-
     _costFunctionStatus = ITableau::COST_FUNCTION_UPDATED;
 }
 
