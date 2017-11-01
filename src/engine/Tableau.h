@@ -361,6 +361,7 @@ public:
       The current state of the cost function.
     */
     CostFunctionStatus getCostFunctionStatus() const;
+    void setCostFunctionStatus( ITableau::CostFunctionStatus status );
 
     /*
       Methods for accessing the basis matrix if it's available,

@@ -362,15 +362,30 @@ void Tableau::computeBasicStatus( unsigned basic )
     double value = _basicAssignment[basic];
 
     if ( FloatUtils::gt( value , ub, GlobalConfiguration::BOUND_COMPARISON_TOLERANCE ) )
+    {
         _basicStatus[basic] = Tableau::ABOVE_UB;
+        _basicCosts[basic] = 1;
+    }
     else if ( FloatUtils::lt( value , lb, GlobalConfiguration::BOUND_COMPARISON_TOLERANCE ) )
+    {
         _basicStatus[basic] = Tableau::BELOW_LB;
+        _basicCosts[basic] = -1;
+    }
     else if ( FloatUtils::areEqual( ub, value, GlobalConfiguration::BOUND_COMPARISON_TOLERANCE ) )
+    {
         _basicStatus[basic] = Tableau::AT_UB;
+        _basicCosts[basic] = 0;
+    }
     else if ( FloatUtils::areEqual( lb, value, GlobalConfiguration::BOUND_COMPARISON_TOLERANCE ) )
+    {
         _basicStatus[basic] = Tableau::AT_LB;
+        _basicCosts[basic] = 0;
+    }
     else
+    {
         _basicStatus[basic] = Tableau::BETWEEN;
+        _basicCosts[basic] = 0;
+    }
 }
 
 void Tableau::setLowerBound( unsigned variable, double value )
@@ -1654,6 +1669,8 @@ void Tableau::verifyInvariants()
                     _basicAssignment[i],
                     _lowerBounds[_basicIndexToVariable[i]],
                     _upperBounds[_basicIndexToVariable[i]] );
+
+            exit( 1 );
         }
     }
 }
@@ -1864,6 +1881,11 @@ void Tableau::updateCostFunctionForPivot()
 ITableau::CostFunctionStatus Tableau::getCostFunctionStatus() const
 {
     return _costFunctionStatus;
+}
+
+void Tableau::setCostFunctionStatus( ITableau::CostFunctionStatus status )
+{
+    _costFunctionStatus = status;
 }
 
 bool Tableau::basisMatrixAvailable() const

@@ -127,6 +127,7 @@ public:
     virtual void backwardTransformation( const double *y, double *x ) const = 0;
     virtual double getSumOfInfeasibilities() const = 0;
     virtual CostFunctionStatus getCostFunctionStatus() const = 0;
+    virtual void setCostFunctionStatus( CostFunctionStatus status ) = 0;
     virtual void verifyInvariants() = 0;
     virtual bool basisMatrixAvailable() const = 0;
     virtual void getBasisEquations( List<Equation *> &equations ) const = 0;

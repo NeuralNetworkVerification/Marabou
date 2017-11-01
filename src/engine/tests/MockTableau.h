@@ -257,6 +257,10 @@ public:
         return nextCostFunction;
     }
 
+    void setCostFunctionStatus( ITableau::CostFunctionStatus /* status */ )
+    {
+    }
+
     void dumpCostFunction() const {}
     void computeChangeColumn() {}
 

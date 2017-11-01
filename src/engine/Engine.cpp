@@ -245,13 +245,24 @@ void Engine::performSimplexStep()
             _statistics.incNumSimplexPivotSelectionsIgnoredForStability();
     }
 
-    // If we don't have any candidates, this simplex step has failed -
-    // return false.
+    // If we don't have any candidates, this simplex step has failed.
     if ( !haveCandidate )
     {
-        timeval end = TimeUtils::sampleMicro();
-        _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
-        throw InfeasibleQueryException();
+        if ( _tableau->getCostFunctionStatus() != ITableau::COST_FUNCTION_JUST_COMPUTED )
+        {
+            // This failure might have resulted from a corrupt cost function.
+            ASSERT( _tableau->getCostFunctionStatus() == ITableau::COST_FUNCTION_UPDATED );
+            _tableau->setCostFunctionStatus( ITableau::COST_FUNCTION_INVALID );
+            return;
+        }
+        else
+        {
+            // Cost function is fresh --- failure is real.
+            timeval end = TimeUtils::sampleMicro();
+            _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
+            printf( "Simplex step failure!\n" );
+            throw InfeasibleQueryException();
+        }
     }
 
     // Set the best choice in the tableau
