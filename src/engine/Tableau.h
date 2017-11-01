@@ -35,6 +35,12 @@ public:
         ABOVE_UB = 4,
     };
 
+    enum CostFunctionStatus {
+        COST_FUNCTION_INVALID = 0,
+        COST_FUNCTION_JUST_COMPUTED = 1,
+        COST_FUNCTION_UPDATED = 2,
+    };
+
     Tableau();
     ~Tableau();
 
@@ -501,9 +507,9 @@ private:
     bool _leavingVariableIncreases;
 
     /*
-      True iff the cost function is currently invalid and needs to be recomputed
+      The status of the cost function
     */
-    bool _needToRecomputeCostFunction;
+    CostFunctionStatus _costFunctionStatus;
 
     /*
       Statistics collection
