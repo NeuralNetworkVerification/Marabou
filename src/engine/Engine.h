@@ -64,6 +64,8 @@ public:
     void storeState( EngineState &state ) const;
     void restoreState( const EngineState &state );
 
+    const Statistics *getStatistics() const;
+
 private:
     /*
       Add equations and tightenings from a split.

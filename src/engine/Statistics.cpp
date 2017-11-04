@@ -30,6 +30,7 @@ Statistics::Statistics()
     , _maxStackDepth( 0 )
     , _numSplits( 0 )
     , _numPops( 0 )
+    , _numVisitedTreeStates( 1 )
     , _numTableauPivots( 0 )
     , _numTableauDegeneratePivots( 0 )
     , _numTableauDegeneratePivotsByRequest( 0 )
@@ -183,8 +184,9 @@ void Statistics::print()
             , printPercents( _numTableauDegeneratePivotsByRequest, _numTableauDegeneratePivots ) );
 
     printf( "\t--- SMT Core Statistics ---\n" );
-    printf( "\tTotal depth is %u. Number of splits: %u. Number of pops: %u\n"
+    printf( "\tTotal depth is %u. Total visited states: %u. Number of splits: %u. Number of pops: %u\n"
             , _currentStackDepth
+            , _numVisitedTreeStates
             , _numSplits
             , _numPops );
     printf( "\tMax stack depth: %u\n"
@@ -283,6 +285,11 @@ void Statistics::setCurrentStackDepth( unsigned depth )
         _maxStackDepth = _currentStackDepth;
 }
 
+unsigned Statistics::getMaxStackDepth() const
+{
+    return _maxStackDepth;
+}
+
 void Statistics::incNumSplits()
 {
     ++_numSplits;
@@ -291,6 +298,11 @@ void Statistics::incNumSplits()
 void Statistics::incNumPops()
 {
     ++_numPops;
+}
+
+unsigned Statistics::getNumPops() const
+{
+    return _numPops;
 }
 
 void Statistics::incNumTableauPivots()
@@ -424,6 +436,16 @@ void Statistics::addTimeForApplyingStoredTightenings( unsigned long long time )
 void Statistics::addTimeSmtCore( unsigned long long time )
 {
     _totalTimeSmtCore += time;
+}
+
+void Statistics::incNumVisitedTreeStates()
+{
+    ++_numVisitedTreeStates;
+}
+
+unsigned Statistics::getNumVisitedTreeStates() const
+{
+    return _numVisitedTreeStates;
 }
 
 //

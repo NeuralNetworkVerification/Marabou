@@ -72,6 +72,10 @@ public:
     void incNumSplits();
     void incNumPops();
     void addTimeSmtCore( unsigned long long time );
+    void incNumVisitedTreeStates();
+    unsigned getMaxStackDepth() const;
+    unsigned getNumPops() const;
+    unsigned getNumVisitedTreeStates() const;
 
     /*
       Bound tightening related statistics.
@@ -140,6 +144,9 @@ private:
 
     // Total number of pops so far
     unsigned _numPops;
+
+    // Total number of states in the search tree visited so far
+    unsigned _numVisitedTreeStates;
 
     // Total number of tableau pivot operations performed, both
     // degenerate and non-degenerate

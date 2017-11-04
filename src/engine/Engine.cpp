@@ -710,6 +710,11 @@ void Engine::explicitBasisBoundTightening()
     _statistics.addTimeForExplicitBasisBoundTightening( TimeUtils::timePassed( start, end ) );
 }
 
+const Statistics *Engine::getStatistics() const
+{
+    return &_statistics;
+}
+
 void Engine::log( const String &message )
 {
     if ( GlobalConfiguration::ENGINE_LOGGING )

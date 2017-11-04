@@ -73,7 +73,10 @@ void SmtCore::performSplit()
     _needToSplit = false;
 
     if ( _statistics )
+    {
         _statistics->incNumSplits();
+        _statistics->incNumVisitedTreeStates();
+    }
 
     // Before storing the state of the engine, we:
     //   1. Obtain the splits. This increments the AuxVariable counter before it
@@ -126,7 +129,12 @@ bool SmtCore::popSplit()
     timeval start = TimeUtils::sampleMicro();
 
     if ( _statistics )
+    {
         _statistics->incNumPops();
+        // A pop always sends us to a state that we haven't seen before - whether
+        // from a sibling split, or from a lower level of the tree.
+        _statistics->incNumVisitedTreeStates();
+    }
 
     StackEntry &stackEntry( _stack.top() );
 
