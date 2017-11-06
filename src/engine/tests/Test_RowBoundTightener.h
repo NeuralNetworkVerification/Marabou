@@ -43,7 +43,6 @@ public:
         RowBoundTightener tightener;
 
         tableau->setDimensions( 2, 5 );
-        tightener.initialize( *tableau );
 
         // Current bounds:
         //  0 <= x0 <= 0
@@ -61,7 +60,7 @@ public:
         tableau->setLowerBound( 4, -100 );
         tableau->setUpperBound( 4, 100 );
 
-        tightener.reset( *tableau );
+        tightener.initialize( *tableau );
 
         TableauRow row( 3 );
         // 1 - x0 - x1 + 2x2
@@ -106,7 +105,6 @@ public:
         RowBoundTightener tightener;
 
         tableau->setDimensions( 2, 5 );
-        tightener.initialize( *tableau );
 
         // Current bounds:
         //    0  <= x0 <= 0
@@ -124,7 +122,7 @@ public:
         tableau->setLowerBound( 4, 0 );
         tableau->setUpperBound( 4, 0 );
 
-        tightener.reset( *tableau );
+        tightener.initialize( *tableau );
 
         TableauRow row( 3 );
         // 1 - x0 - x1 + 2x2
@@ -160,7 +158,6 @@ public:
         RowBoundTightener tightener;
 
         tableau->setDimensions( 2, 5 );
-        tightener.initialize( *tableau );
 
         tableau->setLowerBound( 0, -200 );
         tableau->setUpperBound( 0, 0 );
@@ -173,7 +170,7 @@ public:
         tableau->setLowerBound( 4, 0 );
         tableau->setUpperBound( 4, 0 );
 
-        tightener.reset( *tableau );
+        tightener.initialize( *tableau );
 
         TableauRow row( 3 );
         // 1 - x0 - x1 + 2x2
@@ -211,7 +208,6 @@ public:
         RowBoundTightener tightener;
 
         tableau->setDimensions( 2, 5 );
-        tightener.initialize( *tableau );
 
         tableau->setLowerBound( 0, -112 );
         tableau->setUpperBound( 0, 101 );
@@ -224,7 +220,7 @@ public:
         tableau->setLowerBound( 4, -100 );
         tableau->setUpperBound( 4, 100 );
 
-        tightener.reset( *tableau );
+        tightener.initialize( *tableau );
 
         TableauRow row( 3 );
         // 1 - x0 - x1 + 2x2
@@ -252,7 +248,6 @@ public:
         RowBoundTightener tightener;
 
         tableau->setDimensions( 1, 5 );
-        tightener.initialize( *tableau );
 
         tableau->setLowerBound( 0, 0 );
         tableau->setUpperBound( 0, 3 );
@@ -282,7 +277,7 @@ public:
                                       x1 >= 1.5
         */
 
-        tightener.reset( *tableau );
+        tightener.initialize( *tableau );
 
         double A[] = { 1, -2, 0, 1, 2 };
         double b[] = { 1 };
@@ -314,7 +309,6 @@ public:
         RowBoundTightener tightener;
 
         tableau->setDimensions( 2, 5 );
-        tightener.initialize( *tableau );
 
         tableau->setLowerBound( 0, 0 );
         tableau->setUpperBound( 0, 3 );
@@ -348,7 +342,7 @@ public:
            Equation 2 gives us that x2 <= 2, >= 1
         */
 
-        tightener.reset( *tableau );
+        tightener.initialize( *tableau );
 
         double A[] = { 1, 0,
                        -2, -2,

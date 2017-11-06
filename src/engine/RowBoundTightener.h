@@ -27,14 +27,10 @@ public:
     ~RowBoundTightener();
 
     /*
-      Allocate internal work memory according to the tableau size.
+      Allocate internal work memory according to the tableau size and
+      initialize tightest lower/upper bounds using the talbeau.
     */
     void initialize( const ITableau &tableau );
-
-    /*
-      Initialize tightest lower/upper bounds using the talbeau.
-    */
-    void reset( const ITableau &talbeau );
 
     /*
       Callbacks from the Tableau, to inform of bounds tightened by,

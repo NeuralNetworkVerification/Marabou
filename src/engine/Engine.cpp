@@ -416,8 +416,6 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         adjustWorkMemorySize();
 
-        _rowBoundTightener->initialize( _tableau );
-
         // Current variables are [0,..,n-1], so the next variable is n.
         FreshVariables::setNextVariable( n );
 
@@ -441,7 +439,8 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         }
 
         _tableau->registerToWatchAllVariables( _rowBoundTightener );
-        _rowBoundTightener->reset( _tableau );
+
+        _rowBoundTightener->initialize( _tableau );
 
         _plConstraints = _preprocessedQuery.getPiecewiseLinearConstraints();
         for ( const auto &constraint : _plConstraints )
@@ -546,7 +545,6 @@ void Engine::restoreState( const EngineState &state )
 
     // Make sure the bound tightner is initialized to the correct size
     _rowBoundTightener->initialize( _tableau );
-    _rowBoundTightener->reset( _tableau );
 
     adjustWorkMemorySize();
 
@@ -596,8 +594,6 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
             _tableau->tightenUpperBound( bound._variable, bound._value );
         }
     }
-
-    _rowBoundTightener->reset( _tableau );
 
     DEBUG( _tableau->verifyInvariants() );
     log( "Done with split\n" );

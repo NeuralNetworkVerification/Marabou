@@ -46,10 +46,7 @@ void RowBoundTightener::initialize( const ITableau &tableau )
     _tightenedUpper = new bool[_n];
     if ( !_tightenedUpper )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "RowBoundTightener::tightenedUpper" );
-}
 
-void RowBoundTightener::reset( const ITableau &tableau )
-{
     std::fill( _tightenedLower, _tightenedLower + _n, false );
     std::fill( _tightenedUpper, _tightenedUpper + _n, false );
 

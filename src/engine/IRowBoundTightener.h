@@ -22,14 +22,10 @@ public:
     virtual ~IRowBoundTightener() {};
 
     /*
-      Allocate internal work memory according to the tableau size.
+      Allocate internal work memory according to the tableau size and
+      initialize tightest lower/upper bounds using the talbeau.
     */
     virtual void initialize( const ITableau &tableau ) = 0;
-
-    /*
-      Initialize tightest lower/upper bounds using the talbeau.
-    */
-    virtual void reset( const ITableau &talbeau ) = 0;
 
     /*
       Derive and enqueue new bounds for all varaibles, using the
