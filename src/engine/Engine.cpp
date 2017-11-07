@@ -260,7 +260,6 @@ void Engine::performSimplexStep()
             // Cost function is fresh --- failure is real.
             timeval end = TimeUtils::sampleMicro();
             _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
-            printf( "Simplex step failure!\n" );
             throw InfeasibleQueryException();
         }
     }
