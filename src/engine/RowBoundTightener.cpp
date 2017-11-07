@@ -173,35 +173,60 @@ bool RowBoundTightener::tightenOnSingleInvertedBasisRow( const ITableau &tableau
 
     bool foundNewBound = false;
 
+    // Compute ci * lb, ci * ub, flag signs for all entries
+    enum {
+        ZERO = 0,
+        POSITIVE = 1,
+        NEGATIVE = 2,
+    };
+
+    double *ciTimesLb = new double[n-m];
+    double *ciTimesUb = new double[n-m];
+    char *ciSign = new char[n-m];
+
+    for ( unsigned i = 0; i < n - m; ++i )
+    {
+        double ci = row[i];
+
+        if ( FloatUtils::isZero( ci ) )
+            ciSign[i] = ZERO;
+        else if ( FloatUtils::isPositive( ci ) )
+            ciSign[i] = POSITIVE;
+        else
+            ciSign[i] = NEGATIVE;
+
+        if ( ciSign[i] == ZERO )
+        {
+            ciTimesLb[i] = 0;
+            ciTimesUb[i] = 0;
+            continue;
+        }
+
+        unsigned xi = row._row[i]._var;
+
+        ciTimesLb[i] = ci * _lowerBounds[xi];
+        ciTimesUb[i] = ci * _upperBounds[xi];
+    }
+
     // Start with a pass for y
     unsigned y = row._lhs;
     double upperBound = row._scalar;
     double lowerBound = row._scalar;
 
-    unsigned xi, xj;
-    double ci, cj;
-    double addendLB, addendUB;
+    unsigned xi;
+    double ci;
 
     for ( unsigned i = 0; i < n - m; ++i )
     {
-        ci = row[i];
-
-        if ( FloatUtils::isZero( ci ) )
-            continue;
-
-        xi = row._row[i]._var;
-        addendLB = _lowerBounds[xi];
-        addendUB = _upperBounds[xi];
-
-        if ( FloatUtils::isPositive( ci ) )
+        if ( ciSign[i] == POSITIVE )
         {
-            lowerBound += ci * addendLB;
-            upperBound += ci * addendUB;
+            lowerBound += ciTimesLb[i];
+            upperBound += ciTimesUb[i];
         }
         else
         {
-            lowerBound += ci * addendUB;
-            upperBound += ci * addendLB;
+            lowerBound += ciTimesUb[i];
+            upperBound += ciTimesLb[i];
         }
     }
 
@@ -229,11 +254,10 @@ bool RowBoundTightener::tightenOnSingleInvertedBasisRow( const ITableau &tableau
 
     for ( unsigned i = 0; i < n - m; ++i )
     {
-        ci = row[i];
-        xi = row._row[i]._var;
-
-        if ( FloatUtils::isZero( ci ) )
+        if ( ciSign[i] == ZERO )
             continue;
+
+        xi = row._row[i]._var;
 
         // Start with the scalar
         upperBound = -row._scalar;
@@ -249,32 +273,24 @@ bool RowBoundTightener::tightenOnSingleInvertedBasisRow( const ITableau &tableau
             if ( j == i )
                 continue;
 
-            xj = row._row[j]._var;
-            cj = row[j];
-
-            if ( FloatUtils::isZero( cj ) )
-                 continue;
-
-            addendLB = _lowerBounds[xj];
-            addendUB = _upperBounds[xj];
-
-            if ( FloatUtils::isNegative( cj ) )
+            if ( ciSign[j] == NEGATIVE )
             {
-                lowerBound -= cj * addendLB;
-                upperBound -= cj * addendUB;
+                lowerBound -= ciTimesLb[j];
+                upperBound -= ciTimesUb[j];
             }
             else
             {
-                lowerBound -= cj * addendUB;
-                upperBound -= cj * addendLB;
+                lowerBound -= ciTimesUb[j];
+                upperBound -= ciTimesLb[j];
             }
         }
 
         // Now divide everything by ci, switching signs if needed.
+        ci = row[i];
         lowerBound = lowerBound / ci;
         upperBound = upperBound / ci;
 
-        if ( FloatUtils::isNegative( ci ) )
+        if ( ciSign[i] == NEGATIVE )
         {
             double temp = upperBound;
             upperBound = lowerBound;
