@@ -207,7 +207,7 @@ void ProjectedSteepestEdgeRule::prePivotHook( const ITableau &tableau, bool fake
     {
         unsigned basicVariable = tableau.basicIndexToVariable( i );
         if ( _referenceSpace[basicVariable] )
-            _work1[i] -= changeColumn[i];
+            _work1[i] = -changeColumn[i];
         else
             _work1[i] = 0.0;
     }
