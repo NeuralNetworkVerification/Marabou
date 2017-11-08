@@ -104,7 +104,7 @@ public:
 
 private:
     // Initial timestamp
-    timeval _startTime;
+    struct timespec _startTime;
 
     // Preprocessing time
     unsigned long long _preprocessingTimeMilli;

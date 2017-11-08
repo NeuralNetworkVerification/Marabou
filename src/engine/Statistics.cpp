@@ -63,7 +63,7 @@ void Statistics::print()
 {
     printf( "\n%s Statistics update:\n", TimeUtils::now().ascii() );
 
-    timeval now = TimeUtils::sampleMicro();
+    struct timespec now = TimeUtils::sampleMicro();
 
     unsigned long long totalElapsed = TimeUtils::timePassed( _startTime, now );
 

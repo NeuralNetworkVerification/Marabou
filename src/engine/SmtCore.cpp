@@ -67,7 +67,7 @@ void SmtCore::performSplit()
         return;
     }
 
-    timeval start = TimeUtils::sampleMicro();
+    struct timespec start = TimeUtils::sampleMicro();
 
     ASSERT( _constraintForSplitting->isActive() );
     _needToSplit = false;
@@ -109,7 +109,7 @@ void SmtCore::performSplit()
     if ( _statistics )
     {
         _statistics->setCurrentStackDepth( getStackDepth() );
-        timeval end = TimeUtils::sampleMicro();
+        struct timespec end = TimeUtils::sampleMicro();
         _statistics->addTimeSmtCore( TimeUtils::timePassed( start, end ) );
     }
 }
@@ -126,7 +126,7 @@ bool SmtCore::popSplit()
     if ( _stack.empty() )
         return false;
 
-    timeval start = TimeUtils::sampleMicro();
+    struct timespec start = TimeUtils::sampleMicro();
 
     if ( _statistics )
     {
@@ -162,7 +162,7 @@ bool SmtCore::popSplit()
     if ( _statistics )
     {
         _statistics->setCurrentStackDepth( getStackDepth() );
-        timeval end = TimeUtils::sampleMicro();
+        struct timespec end = TimeUtils::sampleMicro();
         _statistics->addTimeSmtCore( TimeUtils::timePassed( start, end ) );
     }
 

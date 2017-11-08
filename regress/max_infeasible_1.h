@@ -109,20 +109,20 @@ public:
 
         int outputStream = redirectOutputToFile( "logs/max_infeasible_1.txt" );
 
-        timeval start = TimeUtils::sampleMicro();
+        struct timespec start = TimeUtils::sampleMicro();
 
         Engine engine;
         if ( !engine.processInputQuery( inputQuery, false ) )
         {
             restoreOutputStream( outputStream );
-            timeval end = TimeUtils::sampleMicro();
+            struct timespec end = TimeUtils::sampleMicro();
             printPassed( "max_infeasible_1", start, end );
             return;
         }
 
         bool result = engine.solve();
 
-        timeval end = TimeUtils::sampleMicro();
+        struct timespec end = TimeUtils::sampleMicro();
 
         restoreOutputStream( outputStream );
 

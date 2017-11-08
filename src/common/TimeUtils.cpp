@@ -13,49 +13,25 @@
 #include "MStringf.h"
 #include "TimeUtils.h"
 
-time_t TimeUtils::sample()
+struct timespec TimeUtils::sampleMicro()
 {
-    return time( NULL );
+    struct timespec now;
+    clock_gettime( CLOCK_MONOTONIC, &now );
+    return now;
 }
 
-struct timeval TimeUtils::sampleMicro()
-{
-    struct timeval answer;
-    memset( &answer, 0, sizeof(answer) );
-    struct timezone *DONT_CARE_TIME_ZONE = 0;
-
-    gettimeofday( &answer, DONT_CARE_TIME_ZONE );
-
-    return answer;
-}
-
-String TimeUtils::timePassed( time_t then, time_t now )
-{
-    time_t difference = now - then;
-    struct tm *formattedTime = gmtime( &difference );
-
-    return Stringf( "%02u:%02u:%02u", formattedTime->tm_hour, formattedTime->tm_min, formattedTime->tm_sec );
-}
-
-unsigned long long TimeUtils::timePassed( struct timeval then, struct timeval now )
+unsigned long long TimeUtils::timePassed( const struct timespec &then,
+                                          const struct timespec &now )
 {
     enum {
         MILLISECONDS_IN_SECOND = 1000,
-        MICROSECONDS_IN_MILLISECOND = 1000,
-        MICROSECONDS_IN_SECOND = 1000000,
+        NANOSECONDS_IN_MILLISECOND = 1000000,
     };
 
-    unsigned long seconds = now.tv_sec - then.tv_sec;
-    unsigned long useconds;
-    if ( now.tv_usec > then.tv_usec )
-        useconds = now.tv_usec - then.tv_usec;
-    else
-    {
-        useconds = MICROSECONDS_IN_SECOND + ( now.tv_usec - then.tv_usec );
-        --seconds;
-    }
+    unsigned long long secondsAsMilli = ( now.tv_sec - then.tv_sec ) * MILLISECONDS_IN_SECOND;
+    unsigned long long nanoAsMilli = ( now.tv_nsec - then.tv_nsec ) / NANOSECONDS_IN_MILLISECOND;
 
-    return ( seconds * MILLISECONDS_IN_SECOND ) + ( useconds / MICROSECONDS_IN_MILLISECOND );
+    return secondsAsMilli + nanoAsMilli;
 }
 
 String TimeUtils::now()

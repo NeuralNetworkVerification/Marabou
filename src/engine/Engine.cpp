@@ -67,10 +67,10 @@ bool Engine::solve()
     mainLoopStatistics();
     printf( "\n---\n" );
 
-    timeval mainLoopStart = TimeUtils::sampleMicro();
+    struct timespec mainLoopStart = TimeUtils::sampleMicro();
     while ( true )
     {
-        timeval mainLoopEnd = TimeUtils::sampleMicro();
+        struct timespec mainLoopEnd = TimeUtils::sampleMicro();
         _statistics.addTimeMainLoop( TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
         mainLoopStart = mainLoopEnd;
 
@@ -158,7 +158,7 @@ void Engine::performConstraintFixingStep()
 {
     // Statistics
     _statistics.incNumConstraintFixingSteps();
-    timeval start = TimeUtils::sampleMicro();
+    struct timespec start = TimeUtils::sampleMicro();
 
     // Select a violated constraint as the target
     selectViolatedPlConstraint();
@@ -169,7 +169,7 @@ void Engine::performConstraintFixingStep()
     // Attempt to fix the constraint
     fixViolatedPlConstraintIfPossible();
 
-    timeval end = TimeUtils::sampleMicro();
+    struct timespec end = TimeUtils::sampleMicro();
     _statistics.addTimeConstraintFixingSteps( TimeUtils::timePassed( start, end ) );
 }
 
@@ -177,7 +177,7 @@ void Engine::performSimplexStep()
 {
     // Statistics
     _statistics.incNumSimplexSteps();
-    timeval start = TimeUtils::sampleMicro();
+    struct timespec start = TimeUtils::sampleMicro();
 
     /*
       In order to increase numerical stability, we attempt to pick a
@@ -258,14 +258,14 @@ void Engine::performSimplexStep()
             // This failure might have resulted from a corrupt cost function.
             ASSERT( _tableau->getCostFunctionStatus() == ITableau::COST_FUNCTION_UPDATED );
             _tableau->setCostFunctionStatus( ITableau::COST_FUNCTION_INVALID );
-            timeval end = TimeUtils::sampleMicro();
+            struct timespec end = TimeUtils::sampleMicro();
             _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
             return;
         }
         else
         {
             // Cost function is fresh --- failure is real.
-            timeval end = TimeUtils::sampleMicro();
+            struct timespec end = TimeUtils::sampleMicro();
             _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
             throw InfeasibleQueryException();
         }
@@ -294,7 +294,7 @@ void Engine::performSimplexStep()
     if ( !fakePivot )
         _rowBoundTightener->examinePivotRow( _tableau );
 
-    timeval end = TimeUtils::sampleMicro();
+    struct timespec end = TimeUtils::sampleMicro();
     _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
 }
 
@@ -386,7 +386,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
     try
     {
-        timeval start = TimeUtils::sampleMicro();
+        struct timespec start = TimeUtils::sampleMicro();
 
         // Inform the PL constraints of the initial variable bounds
         for ( const auto &plConstraint : inputQuery.getPiecewiseLinearConstraints() )
@@ -460,7 +460,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         _statistics.setNumPlConstraints( _plConstraints.size() );
 
-        timeval end = TimeUtils::sampleMicro();
+        struct timespec end = TimeUtils::sampleMicro();
         _statistics.setPreprocessingTime( TimeUtils::timePassed( start, end ) );
 
         log( "processInputQuery done\n" );
@@ -640,12 +640,12 @@ void Engine::applyAllConstraintTightenings()
 
 void Engine::applyAllBoundTightenings()
 {
-    timeval start = TimeUtils::sampleMicro();
+    struct timespec start = TimeUtils::sampleMicro();
 
     applyAllRowTightenings();
     applyAllConstraintTightenings();
 
-    timeval end = TimeUtils::sampleMicro();
+    struct timespec end = TimeUtils::sampleMicro();
     _statistics.addTimeForApplyingStoredTightenings( TimeUtils::timePassed( start, end ) );
 }
 
@@ -659,7 +659,7 @@ void Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
 {
     if ( constraint->isActive() && constraint->phaseFixed() )
     {
-        timeval start = TimeUtils::sampleMicro();
+        struct timespec start = TimeUtils::sampleMicro();
 
         constraint->setActiveConstraint( false );
         applySplit( constraint->getValidCaseSplit() );
@@ -670,7 +670,7 @@ void Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
         log( Stringf( "A constraint has become valid. Dumping constraint: %s",
                       constraintString.ascii() ) );
 
-        timeval end = TimeUtils::sampleMicro();
+        struct timespec end = TimeUtils::sampleMicro();
         _statistics.addTimeForValidCaseSplit( TimeUtils::timePassed( start, end ) );
     }
 }
@@ -686,7 +686,7 @@ void Engine::checkDegradation()
 
 void Engine::tightenBoundsOnConstraintMatrix()
 {
-    timeval start = TimeUtils::sampleMicro();
+    struct timespec start = TimeUtils::sampleMicro();
 
     if ( _statistics.getNumMainLoopIterations() %
          GlobalConfiguration::BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY == 0 )
@@ -695,20 +695,20 @@ void Engine::tightenBoundsOnConstraintMatrix()
         _statistics.incNumBoundTighteningOnConstraintMatrix();
     }
 
-    timeval end = TimeUtils::sampleMicro();
+    struct timespec end = TimeUtils::sampleMicro();
     _statistics.addTimeForConstraintMatrixBoundTightening( TimeUtils::timePassed( start, end ) );
 }
 
 void Engine::explicitBasisBoundTightening()
 {
-    timeval start = TimeUtils::sampleMicro();
+    struct timespec start = TimeUtils::sampleMicro();
 
     if ( GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_INVERT_BASIS )
         _rowBoundTightener->examineInvertedBasisMatrix( _tableau, false );
     else
         _rowBoundTightener->examineBasisMatrix( _tableau, false );
 
-    timeval end = TimeUtils::sampleMicro();
+    struct timespec end = TimeUtils::sampleMicro();
     _statistics.addTimeForExplicitBasisBoundTightening( TimeUtils::timePassed( start, end ) );
 }
 

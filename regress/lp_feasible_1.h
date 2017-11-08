@@ -54,12 +54,12 @@ public:
 
         int outputStream = redirectOutputToFile( "logs/lp_feasible_1.txt" );
 
-        timeval start = TimeUtils::sampleMicro();
+        struct timespec start = TimeUtils::sampleMicro();
 
         Engine engine;
         if ( !engine.processInputQuery( inputQuery ) )
         {
-            timeval end = TimeUtils::sampleMicro();
+            struct timespec end = TimeUtils::sampleMicro();
             restoreOutputStream( outputStream );
             printFailed( "lp_feasible_1", start, end );
             return;
@@ -67,7 +67,7 @@ public:
 
         bool result = engine.solve();
 
-        timeval end = TimeUtils::sampleMicro();
+        struct timespec end = TimeUtils::sampleMicro();
 
         restoreOutputStream( outputStream );
 

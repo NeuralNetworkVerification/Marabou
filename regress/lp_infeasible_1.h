@@ -82,20 +82,20 @@ public:
 
         int outputStream = redirectOutputToFile( "logs/lp_infeasible_1.txt" );
 
-        timeval start = TimeUtils::sampleMicro();
+        struct timespec start = TimeUtils::sampleMicro();
 
         Engine engine;
         if ( !engine.processInputQuery( inputQuery ) )
         {
             restoreOutputStream( outputStream );
-            timeval end = TimeUtils::sampleMicro();
+            struct timespec end = TimeUtils::sampleMicro();
             printPassed( "lp_infeasible_1", start, end );
             return;
         }
 
         bool result = engine.solve();
 
-        timeval end = TimeUtils::sampleMicro();
+        struct timespec end = TimeUtils::sampleMicro();
 
         restoreOutputStream( outputStream );
 

@@ -108,12 +108,12 @@ public:
 
         int outputStream = redirectOutputToFile( "logs/max_feasible_1.txt" );
 
-        timeval start = TimeUtils::sampleMicro();
+        struct timespec start = TimeUtils::sampleMicro();
 
         Engine engine;
         if ( !engine.processInputQuery( inputQuery, false ) )
         {
-            timeval end = TimeUtils::sampleMicro();
+            struct timespec end = TimeUtils::sampleMicro();
             restoreOutputStream( outputStream );
             printFailed( "max_feasible_1", start, end );
             return;
@@ -121,7 +121,7 @@ public:
 
         bool result = engine.solve();
 
-        timeval end = TimeUtils::sampleMicro();
+        struct timespec end = TimeUtils::sampleMicro();
 
         restoreOutputStream( outputStream );
 

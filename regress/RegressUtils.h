@@ -49,7 +49,7 @@ void printTitle( const String &title )
     printf( RESET "\n\n" );
 }
 
-void printFailed( const String &test, timeval start, timeval end )
+void printFailed( const String &test, struct timespec start, struct timespec end )
 {
     printf( CYN "\t Test: " RESET " %s ", test.ascii() );
     for ( unsigned i = test.length(); i < 25; ++i )
@@ -63,7 +63,7 @@ void printFailed( const String &test, timeval start, timeval end )
     printf( "[%02u:%02u:%02u] (%llu milli)\n", hours, minutes - ( hours * 60 ), seconds - ( minutes * 60 ), milli );
 }
 
-void printPassed( const String &test, timeval start, timeval end )
+void printPassed( const String &test, struct timespec start, struct timespec end )
 {
     printf( CYN "\t Test: " RESET " %s ", test.ascii() );
     for ( unsigned i = test.length(); i < 25; ++i )

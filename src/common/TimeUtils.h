@@ -21,12 +21,9 @@
 class TimeUtils
 {
 public:
-    static time_t sample();
-    static struct timeval sampleMicro();
-    static String timePassed( time_t then, time_t now );
-
-    // Return time in milliseconds
-    static unsigned long long timePassed( struct timeval then, struct timeval now );
+    static struct timespec sampleMicro();
+    static unsigned long long timePassed( const struct timespec &then,
+                                          const struct timespec &now );
     static String now();
 };
 

@@ -40,12 +40,12 @@ public:
             inputQuery.setUpperBound( variable, 0.0 );
         }
 
-        timeval start = TimeUtils::sampleMicro();
+        struct timespec start = TimeUtils::sampleMicro();
 
         Engine engine;
         if ( !engine.processInputQuery( inputQuery ) )
         {
-            timeval end = TimeUtils::sampleMicro();
+            struct timespec end = TimeUtils::sampleMicro();
             restoreOutputStream( outputStream );
             printFailed( "acas_1_1_fixed_input", start, end );
             return;
@@ -53,7 +53,7 @@ public:
 
         bool result = engine.solve();
 
-        timeval end = TimeUtils::sampleMicro();
+        struct timespec end = TimeUtils::sampleMicro();
 
         restoreOutputStream( outputStream );
 
