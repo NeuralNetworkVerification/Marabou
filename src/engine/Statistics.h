@@ -41,6 +41,7 @@ public:
     */
     void incNumMainLoopIterations();
     void incNumSimplexSteps();
+    void addTimeMainLoop( unsigned long long time );
     void addTimeSimplexSteps( unsigned long long time );
     void addTimeConstraintFixingSteps( unsigned long long time );
     void incNumConstraintFixingSteps();
@@ -127,6 +128,9 @@ private:
 
     // Total time spent on performing simplex steps, in milliseconds
     unsigned long long _timeSimplexStepsMilli;
+
+    // Total time spent in the main loop, in milliseconds
+    unsigned long long _timeMainLoopMilli;
 
     // Total time spent on performing constraint fixing steps, in milliseconds
     unsigned long long _timeConstraintFixingStepsMilli;

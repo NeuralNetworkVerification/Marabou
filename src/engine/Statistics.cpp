@@ -24,6 +24,7 @@ Statistics::Statistics()
     , _maxDegradation( 0.0 )
     , _numSimplexSteps( 0 )
     , _timeSimplexStepsMilli( 0 )
+    , _timeMainLoopMilli( 0 )
     , _timeConstraintFixingStepsMilli( 0 )
     , _numConstraintFixingSteps( 0 )
     , _currentStackDepth( 0 )
@@ -64,22 +65,21 @@ void Statistics::print()
 
     timeval now = TimeUtils::sampleMicro();
 
-    unsigned long long mainLoopMilli = TimeUtils::timePassed( _startTime, now );
-    unsigned long long totalMilli = mainLoopMilli + _preprocessingTimeMilli;
+    unsigned long long totalElapsed = TimeUtils::timePassed( _startTime, now );
 
-    unsigned seconds = totalMilli / 1000;
+    unsigned seconds = totalElapsed / 1000;
     unsigned minutes = seconds / 60;
     unsigned hours = minutes / 60;
 
     printf( "\t--- Time Statistics ---\n" );
     printf( "\tTotal time elapsed: %llu milli (%02u:%02u:%02u)\n",
-            totalMilli, hours, minutes - ( hours * 60 ), seconds - ( minutes * 60 ) );
+            totalElapsed, hours, minutes - ( hours * 60 ), seconds - ( minutes * 60 ) );
 
-    seconds = mainLoopMilli / 1000;
+    seconds = _timeMainLoopMilli / 1000;
     minutes = seconds / 60;
     hours = minutes / 60;
     printf( "\t\tMain loop: %llu milli (%02u:%02u:%02u)\n",
-            mainLoopMilli, hours, minutes - ( hours * 60 ), seconds - ( minutes * 60 ) );
+            _timeMainLoopMilli, hours, minutes - ( hours * 60 ), seconds - ( minutes * 60 ) );
 
     seconds = _preprocessingTimeMilli / 1000;
     minutes = seconds / 60;
@@ -89,33 +89,33 @@ void Statistics::print()
 
     printf( "\tBreakdown for main loop:\n" );
     printf( "\t\t[%.2lf%%] Simplex steps: %llu milli\n"
-            , printPercents( _timeSimplexStepsMilli, mainLoopMilli )
+            , printPercents( _timeSimplexStepsMilli, _timeMainLoopMilli )
             , _timeSimplexStepsMilli
             );
     printf( "\t\t[%.2lf%%] Constraint-fixing steps: %llu milli\n"
-            , printPercents( _timeConstraintFixingStepsMilli, mainLoopMilli )
+            , printPercents( _timeConstraintFixingStepsMilli, _timeMainLoopMilli )
             , _timeConstraintFixingStepsMilli
             );
     printf( "\t\t[%.2lf%%] Valid case splits: %llu milli. Average per split: %.2lf milli\n"
-            , printPercents( _totalTimePerformingValidCaseSplits, mainLoopMilli )
+            , printPercents( _totalTimePerformingValidCaseSplits, _timeMainLoopMilli )
             , _totalTimePerformingValidCaseSplits
             , printAverage( _totalTimePerformingValidCaseSplits, _totalNumberOfValidCaseSplits )
             );
     printf( "\t\t[%.2lf%%] Explicit-basis bound tightening: %llu milli\n"
-            , printPercents( _totalTimeExplicitBasisBoundTightening, mainLoopMilli )
+            , printPercents( _totalTimeExplicitBasisBoundTightening, _timeMainLoopMilli )
             , _totalTimeExplicitBasisBoundTightening
             );
     printf( "\t\t[%.2lf%%] Constraint-matrix bound tightening: %llu milli\n"
-            , printPercents( _totalTimeConstraintMatrixBoundTightening, mainLoopMilli )
+            , printPercents( _totalTimeConstraintMatrixBoundTightening, _timeMainLoopMilli )
             , _totalTimeConstraintMatrixBoundTightening
             );
     printf( "\t\t[%.2lf%%] Applying stored bound-tightening: %llu milli\n"
-            , printPercents( _totalTimeApplyingStoredTightenings, mainLoopMilli )
+            , printPercents( _totalTimeApplyingStoredTightenings, _timeMainLoopMilli )
             , _totalTimeApplyingStoredTightenings
             );
 
     printf( "\t\t[%.2lf%%] SMT core: %llu milli\n"
-            , printPercents( _totalTimeSmtCore, mainLoopMilli )
+            , printPercents( _totalTimeSmtCore, _timeMainLoopMilli )
             , _totalTimeSmtCore
             );
 
@@ -128,8 +128,8 @@ void Statistics::print()
         _totalTimeApplyingStoredTightenings +
         _totalTimeSmtCore;
     printf( "\t\t[%.2lf%%] Unaccounted for: %llu milli\n"
-            , printPercents( mainLoopMilli - total, mainLoopMilli )
-            , mainLoopMilli - total
+            , printPercents( _timeMainLoopMilli - total, _timeMainLoopMilli )
+            , _timeMainLoopMilli - total
             );
 
     printf( "\t--- Preprocessor Statistics ---\n" );
@@ -260,6 +260,11 @@ void Statistics::incNumSimplexSteps()
 void Statistics::addTimeSimplexSteps( unsigned long long time )
 {
     _timeSimplexStepsMilli += time;
+}
+
+void Statistics::addTimeMainLoop( unsigned long long time )
+{
+    _timeMainLoopMilli += time;
 }
 
 void Statistics::addTimeConstraintFixingSteps( unsigned long long time )

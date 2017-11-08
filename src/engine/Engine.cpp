@@ -35,6 +35,8 @@ Engine::Engine()
 
     _activeEntryStrategy = _projectedSteepestEdgeRule;
     _activeEntryStrategy->setStatistics( &_statistics );
+
+    _statistics.stampStartingTime();
 }
 
 Engine::~Engine()
@@ -61,14 +63,17 @@ void Engine::adjustWorkMemorySize()
 
 bool Engine::solve()
 {
-    _statistics.stampStartingTime();
-
     printf( "\nEngine::solve: Initial statistics\n" );
     mainLoopStatistics();
     printf( "\n---\n" );
 
+    timeval mainLoopStart = TimeUtils::sampleMicro();
     while ( true )
     {
+        timeval mainLoopEnd = TimeUtils::sampleMicro();
+        _statistics.addTimeMainLoop( TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
+        mainLoopStart = mainLoopEnd;
+
         try
         {
             DEBUG( _tableau->verifyInvariants() );
@@ -253,6 +258,8 @@ void Engine::performSimplexStep()
             // This failure might have resulted from a corrupt cost function.
             ASSERT( _tableau->getCostFunctionStatus() == ITableau::COST_FUNCTION_UPDATED );
             _tableau->setCostFunctionStatus( ITableau::COST_FUNCTION_INVALID );
+            timeval end = TimeUtils::sampleMicro();
+            _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
             return;
         }
         else
