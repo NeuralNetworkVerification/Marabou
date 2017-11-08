@@ -189,23 +189,22 @@ bool RowBoundTightener::tightenOnSingleInvertedBasisRow( const ITableau &tableau
         double ci = row[i];
 
         if ( FloatUtils::isZero( ci ) )
-            ciSign[i] = ZERO;
-        else if ( FloatUtils::isPositive( ci ) )
-            ciSign[i] = POSITIVE;
-        else
-            ciSign[i] = NEGATIVE;
-
-        if ( ciSign[i] == ZERO )
         {
+            ciSign[i] = ZERO;
             ciTimesLb[i] = 0;
             ciTimesUb[i] = 0;
             continue;
         }
 
-        unsigned xi = row._row[i]._var;
+        if ( FloatUtils::isPositive( ci ) )
+            ciSign[i] = POSITIVE;
+        else
+            ciSign[i] = NEGATIVE;
 
+        unsigned xi = row._row[i]._var;
         ciTimesLb[i] = ci * _lowerBounds[xi];
         ciTimesUb[i] = ci * _upperBounds[xi];
+
     }
 
     // Start with a pass for y
@@ -248,40 +247,58 @@ bool RowBoundTightener::tightenOnSingleInvertedBasisRow( const ITableau &tableau
         throw InfeasibleQueryException();
 
     // Next, do a pass for each of the rhs variables.
-    // For this, we transform the equation into:
+    // For this, we wish to logically transform the equation into:
     //
-    // ci xi = y - sum cj xj - b
+    //     xi = 1/ci * ( y - sum cj xj - b )
+    //
+    // And then compute the upper/lower bounds for xi.
+    //
+    // However, for efficiency, we compute the lower and upper
+    // bounds of the expression:
+    //
+    //         y - sum ci xi - b
+    //
+    // Then, when we consider xi we adjust the computed lower and upper
+    // boudns accordingly.
 
-    double lbInit = -row._scalar + _lowerBounds[y];
-    double ubInit = -row._scalar + _upperBounds[y];
+    double auxLb = _lowerBounds[y] - row._scalar;
+    double auxUb = _upperBounds[y] - row._scalar;
 
+    // Now add ALL xi's
     for ( unsigned i = 0; i < n - m; ++i )
     {
+        if ( ciSign[i] == NEGATIVE )
+        {
+            auxLb -= ciTimesLb[i];
+            auxUb -= ciTimesUb[i];
+        }
+        else
+        {
+            auxLb -= ciTimesUb[i];
+            auxUb -= ciTimesLb[i];
+        }
+    }
+
+    // Now consider each individual xi
+    for ( unsigned i = 0; i < n - m; ++i )
+    {
+        // If ci = 0, nothing to do.
         if ( ciSign[i] == ZERO )
             continue;
 
-        xi = row._row[i]._var;
+        lowerBound = auxLb;
+        upperBound = auxUb;
 
-        // Start with the scalar and y
-        upperBound = ubInit;
-        lowerBound = lbInit;
-
-        // Now add the remaining variables, ignoring xi
-        for ( unsigned j = 0; j < n - m; ++j )
+        // Adjust the aux bounds to remove xi
+        if ( ciSign[i] == NEGATIVE )
         {
-            if ( j == i )
-                continue;
-
-            if ( ciSign[j] == NEGATIVE )
-            {
-                lowerBound -= ciTimesLb[j];
-                upperBound -= ciTimesUb[j];
-            }
-            else
-            {
-                lowerBound -= ciTimesUb[j];
-                upperBound -= ciTimesLb[j];
-            }
+            lowerBound += ciTimesLb[i];
+            upperBound += ciTimesUb[i];
+        }
+        else
+        {
+            lowerBound += ciTimesUb[i];
+            upperBound += ciTimesLb[i];
         }
 
         // Now divide everything by ci, switching signs if needed.
@@ -296,6 +313,8 @@ bool RowBoundTightener::tightenOnSingleInvertedBasisRow( const ITableau &tableau
             lowerBound = temp;
         }
 
+        // If a tighter bound is found, store it
+        xi = row._row[i]._var;
         if ( FloatUtils::lt( _lowerBounds[xi], lowerBound ) )
         {
             _lowerBounds[xi] = lowerBound;
@@ -313,6 +332,10 @@ bool RowBoundTightener::tightenOnSingleInvertedBasisRow( const ITableau &tableau
         if ( FloatUtils::gt( _lowerBounds[xi], _upperBounds[xi] ) )
             throw InfeasibleQueryException();
     }
+
+    delete[] ciTimesLb;
+    delete[] ciTimesUb;
+    delete[] ciSign;
 
     return foundNewBound;
 }
