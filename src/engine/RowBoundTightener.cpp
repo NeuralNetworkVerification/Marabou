@@ -252,6 +252,9 @@ bool RowBoundTightener::tightenOnSingleInvertedBasisRow( const ITableau &tableau
     //
     // ci xi = y - sum cj xj - b
 
+    double lbInit = -row._scalar + _lowerBounds[y];
+    double ubInit = -row._scalar + _upperBounds[y];
+
     for ( unsigned i = 0; i < n - m; ++i )
     {
         if ( ciSign[i] == ZERO )
@@ -259,13 +262,9 @@ bool RowBoundTightener::tightenOnSingleInvertedBasisRow( const ITableau &tableau
 
         xi = row._row[i]._var;
 
-        // Start with the scalar
-        upperBound = -row._scalar;
-        lowerBound = -row._scalar;
-
-        // Add y
-        upperBound += _upperBounds[y];
-        lowerBound += _lowerBounds[y];
+        // Start with the scalar and y
+        upperBound = ubInit;
+        lowerBound = lbInit;
 
         // Now add the remaining variables, ignoring xi
         for ( unsigned j = 0; j < n - m; ++j )
