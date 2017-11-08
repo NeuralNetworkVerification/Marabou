@@ -134,18 +134,29 @@ void RowBoundTightener::examineInvertedBasisMatrix( const ITableau &tableau, boo
         rows.append( row );
     }
 
-    // We now have all the rows, can use them for tightening
-    bool newBoundsLearned;
-    do
+    delete[] invB;
+
+    // We now have all the rows, can use them for tightening.
+    // The tightening procedure may throw an exception, in which case we need
+    // to release the rows.
+    try
     {
-        newBoundsLearned = onePassOverInvertedBasisRows( tableau, rows );
+        bool newBoundsLearned;
+        do
+        {
+            newBoundsLearned = onePassOverInvertedBasisRows( tableau, rows );
+        }
+        while ( untilSaturation && newBoundsLearned );
     }
-    while ( untilSaturation && newBoundsLearned );
+    catch ( const Error &e )
+    {
+        for ( const auto &row : rows )
+            delete row;
+        throw e;
+    }
 
     for ( const auto &row : rows )
         delete row;
-
-    delete[] invB;
 }
 
 bool RowBoundTightener::onePassOverInvertedBasisRows( const ITableau &tableau, List<TableauRow *> &rows )
