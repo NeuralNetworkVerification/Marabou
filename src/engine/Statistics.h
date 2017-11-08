@@ -107,7 +107,7 @@ private:
     struct timespec _startTime;
 
     // Preprocessing time
-    unsigned long long _preprocessingTimeMilli;
+    unsigned long long _preprocessingTimeMicro;
 
     // Number of iterations of the main loop
     unsigned long long _numMainLoopIterations;
@@ -126,14 +126,14 @@ private:
     // pivots), performed by the main loop
     unsigned long long _numSimplexSteps;
 
-    // Total time spent on performing simplex steps, in milliseconds
-    unsigned long long _timeSimplexStepsMilli;
+    // Total time spent on performing simplex steps, in microseconds
+    unsigned long long _timeSimplexStepsMicro;
 
-    // Total time spent in the main loop, in milliseconds
-    unsigned long long _timeMainLoopMilli;
+    // Total time spent in the main loop, in microseconds
+    unsigned long long _timeMainLoopMicro;
 
-    // Total time spent on performing constraint fixing steps, in milliseconds
-    unsigned long long _timeConstraintFixingStepsMilli;
+    // Total time spent on performing constraint fixing steps, in microseconds
+    unsigned long long _timeConstraintFixingStepsMicro;
 
     // Number of constraint fixing steps, e.g. ReLU corrections,
     // performed by the main loop
@@ -204,23 +204,23 @@ private:
     unsigned _ppNumEquationsRemoved;
 
     // Total amount of time spent performing valid case splits
-    unsigned long long _totalTimePerformingValidCaseSplits;
+    unsigned long long _totalTimePerformingValidCaseSplitsMicro;
 
     // Total number of valid case splits performed so far (including in other branches
     // of the search tree, that have since been popped)
     unsigned _totalNumberOfValidCaseSplits;
 
     // Total amount of time spent performing explicit-basis bound tightening
-    unsigned long long _totalTimeExplicitBasisBoundTightening;
+    unsigned long long _totalTimeExplicitBasisBoundTighteningMicro;
 
     // Total amount of time spent performing constraint-matrix bound tightening
-    unsigned long long _totalTimeConstraintMatrixBoundTightening;
+    unsigned long long _totalTimeConstraintMatrixBoundTighteningMicro;
 
     // Total amount of time spent applying previously stored bound tightenings
-    unsigned long long _totalTimeApplyingStoredTightenings;
+    unsigned long long _totalTimeApplyingStoredTighteningsMicro;
 
     // Total amount of time spent within the SMT core
-    unsigned long long _totalTimeSmtCore;
+    unsigned long long _totalTimeSmtCoreMicro;
 
     // Printing helpers
     double printPercents( unsigned long long part, unsigned long long total ) const;

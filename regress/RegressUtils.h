@@ -56,11 +56,11 @@ void printFailed( const String &test, struct timespec start, struct timespec end
         printf( " " );
     printf( " -- " RED " FAILED " RESET );
 
-    unsigned long long milli = TimeUtils::timePassed( start, end );
-    unsigned seconds = milli / 1000;
+    unsigned long long micro = TimeUtils::timePassed( start, end );
+    unsigned seconds = micro / 1000000;
     unsigned minutes = seconds / 60;
     unsigned hours = minutes / 60;
-    printf( "[%02u:%02u:%02u] (%llu milli)\n", hours, minutes - ( hours * 60 ), seconds - ( minutes * 60 ), milli );
+    printf( "[%02u:%02u:%02u] (%llu milli)\n", hours, minutes - ( hours * 60 ), seconds - ( minutes * 60 ), micro / 1000 );
 }
 
 void printPassed( const String &test, struct timespec start, struct timespec end )
@@ -70,11 +70,11 @@ void printPassed( const String &test, struct timespec start, struct timespec end
         printf( " " );
     printf( " -- " GRN " PASSED " RESET );
 
-    unsigned long long milli = TimeUtils::timePassed( start, end );
-    unsigned seconds = milli / 1000;
+    unsigned long long micro = TimeUtils::timePassed( start, end );
+    unsigned seconds = micro / 1000000;
     unsigned minutes = seconds / 60;
     unsigned hours = minutes / 60;
-    printf( "[%02u:%02u:%02u] (%llu milli)\n", hours, minutes - ( hours * 60 ), seconds - ( minutes * 60 ), milli );
+    printf( "[%02u:%02u:%02u] (%llu milli)\n", hours, minutes - ( hours * 60 ), seconds - ( minutes * 60 ), micro / 1000 );
 }
 
 int redirectOutputToFile( const String &outputFilePath )

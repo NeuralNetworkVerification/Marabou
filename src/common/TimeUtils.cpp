@@ -24,14 +24,14 @@ unsigned long long TimeUtils::timePassed( const struct timespec &then,
                                           const struct timespec &now )
 {
     enum {
-        MILLISECONDS_IN_SECOND = 1000,
-        NANOSECONDS_IN_MILLISECOND = 1000000,
+        MICROSECONDS_IN_SECOND = 1000000,
+        NANOSECONDS_IN_MICROSECOND = 1000,
     };
 
-    unsigned long long secondsAsMilli = ( now.tv_sec - then.tv_sec ) * MILLISECONDS_IN_SECOND;
-    unsigned long long nanoAsMilli = ( now.tv_nsec - then.tv_nsec ) / NANOSECONDS_IN_MILLISECOND;
+    unsigned long long secondsAsMicro = ( now.tv_sec - then.tv_sec ) * MICROSECONDS_IN_SECOND;
+    unsigned long long nanoAsMicro = ( now.tv_nsec - then.tv_nsec ) / NANOSECONDS_IN_MICROSECOND;
 
-    return secondsAsMilli + nanoAsMilli;
+    return secondsAsMicro + nanoAsMicro;
 }
 
 String TimeUtils::now()

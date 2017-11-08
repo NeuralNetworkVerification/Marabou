@@ -23,9 +23,9 @@ Statistics::Statistics()
     , _currentDegradation( 0.0 )
     , _maxDegradation( 0.0 )
     , _numSimplexSteps( 0 )
-    , _timeSimplexStepsMilli( 0 )
-    , _timeMainLoopMilli( 0 )
-    , _timeConstraintFixingStepsMilli( 0 )
+    , _timeSimplexStepsMicro( 0 )
+    , _timeMainLoopMicro( 0 )
+    , _timeConstraintFixingStepsMicro( 0 )
     , _numConstraintFixingSteps( 0 )
     , _currentStackDepth( 0 )
     , _maxStackDepth( 0 )
@@ -50,12 +50,12 @@ Statistics::Statistics()
     , _ppNumTighteningIterations( 0 )
     , _ppNumConstraintsRemoved( 0 )
     , _ppNumEquationsRemoved( 0 )
-    , _totalTimePerformingValidCaseSplits( 0 )
+    , _totalTimePerformingValidCaseSplitsMicro( 0 )
     , _totalNumberOfValidCaseSplits( 0 )
-    , _totalTimeExplicitBasisBoundTightening( 0 )
-    , _totalTimeConstraintMatrixBoundTightening( 0 )
-    , _totalTimeApplyingStoredTightenings( 0 )
-    , _totalTimeSmtCore( 0 )
+    , _totalTimeExplicitBasisBoundTighteningMicro( 0 )
+    , _totalTimeConstraintMatrixBoundTighteningMicro( 0 )
+    , _totalTimeApplyingStoredTighteningsMicro( 0 )
+    , _totalTimeSmtCoreMicro( 0 )
 {
 }
 
@@ -67,69 +67,78 @@ void Statistics::print()
 
     unsigned long long totalElapsed = TimeUtils::timePassed( _startTime, now );
 
-    unsigned seconds = totalElapsed / 1000;
+    unsigned seconds = totalElapsed / 1000000;
     unsigned minutes = seconds / 60;
     unsigned hours = minutes / 60;
 
     printf( "\t--- Time Statistics ---\n" );
     printf( "\tTotal time elapsed: %llu milli (%02u:%02u:%02u)\n",
-            totalElapsed, hours, minutes - ( hours * 60 ), seconds - ( minutes * 60 ) );
+            totalElapsed / 1000, hours, minutes - ( hours * 60 ), seconds - ( minutes * 60 ) );
 
-    seconds = _timeMainLoopMilli / 1000;
+    seconds = _timeMainLoopMicro / 1000000;
     minutes = seconds / 60;
     hours = minutes / 60;
     printf( "\t\tMain loop: %llu milli (%02u:%02u:%02u)\n",
-            _timeMainLoopMilli, hours, minutes - ( hours * 60 ), seconds - ( minutes * 60 ) );
+            _timeMainLoopMicro / 1000, hours, minutes - ( hours * 60 ), seconds - ( minutes * 60 ) );
 
-    seconds = _preprocessingTimeMilli / 1000;
+    seconds = _preprocessingTimeMicro / 1000000;
     minutes = seconds / 60;
     hours = minutes / 60;
     printf( "\t\tPreprocessing time: %llu milli (%02u:%02u:%02u)\n",
-            _preprocessingTimeMilli, hours, minutes - ( hours * 60 ), seconds - ( minutes * 60 ) );
+            _preprocessingTimeMicro / 1000, hours, minutes - ( hours * 60 ), seconds - ( minutes * 60 ) );
+
+    unsigned long long totalUnknown = totalElapsed - _timeMainLoopMicro - _preprocessingTimeMicro;
+
+    seconds = totalUnknown / 1000000;
+    minutes = seconds / 60;
+    hours = minutes / 60;
+    printf( "\t\tUnknown: %llu milli (%02u:%02u:%02u)\n",
+            totalUnknown / 1000, hours, minutes - ( hours * 60 ), seconds - ( minutes * 60 ) );
 
     printf( "\tBreakdown for main loop:\n" );
     printf( "\t\t[%.2lf%%] Simplex steps: %llu milli\n"
-            , printPercents( _timeSimplexStepsMilli, _timeMainLoopMilli )
-            , _timeSimplexStepsMilli
+            , printPercents( _timeSimplexStepsMicro, _timeMainLoopMicro )
+            , _timeSimplexStepsMicro / 1000
             );
     printf( "\t\t[%.2lf%%] Constraint-fixing steps: %llu milli\n"
-            , printPercents( _timeConstraintFixingStepsMilli, _timeMainLoopMilli )
-            , _timeConstraintFixingStepsMilli
+            , printPercents( _timeConstraintFixingStepsMicro, _timeMainLoopMicro )
+            , _timeConstraintFixingStepsMicro / 1000
             );
     printf( "\t\t[%.2lf%%] Valid case splits: %llu milli. Average per split: %.2lf milli\n"
-            , printPercents( _totalTimePerformingValidCaseSplits, _timeMainLoopMilli )
-            , _totalTimePerformingValidCaseSplits
-            , printAverage( _totalTimePerformingValidCaseSplits, _totalNumberOfValidCaseSplits )
+            , printPercents( _totalTimePerformingValidCaseSplitsMicro, _timeMainLoopMicro )
+            , _totalTimePerformingValidCaseSplitsMicro / 1000
+            , printAverage( _totalTimePerformingValidCaseSplitsMicro / 1000,
+                            _totalNumberOfValidCaseSplits )
             );
     printf( "\t\t[%.2lf%%] Explicit-basis bound tightening: %llu milli\n"
-            , printPercents( _totalTimeExplicitBasisBoundTightening, _timeMainLoopMilli )
-            , _totalTimeExplicitBasisBoundTightening
+            , printPercents( _totalTimeExplicitBasisBoundTighteningMicro, _timeMainLoopMicro )
+            , _totalTimeExplicitBasisBoundTighteningMicro / 1000
             );
     printf( "\t\t[%.2lf%%] Constraint-matrix bound tightening: %llu milli\n"
-            , printPercents( _totalTimeConstraintMatrixBoundTightening, _timeMainLoopMilli )
-            , _totalTimeConstraintMatrixBoundTightening
+            , printPercents( _totalTimeConstraintMatrixBoundTighteningMicro, _timeMainLoopMicro )
+            , _totalTimeConstraintMatrixBoundTighteningMicro / 1000
             );
     printf( "\t\t[%.2lf%%] Applying stored bound-tightening: %llu milli\n"
-            , printPercents( _totalTimeApplyingStoredTightenings, _timeMainLoopMilli )
-            , _totalTimeApplyingStoredTightenings
+            , printPercents( _totalTimeApplyingStoredTighteningsMicro, _timeMainLoopMicro )
+            , _totalTimeApplyingStoredTighteningsMicro / 1000
             );
 
     printf( "\t\t[%.2lf%%] SMT core: %llu milli\n"
-            , printPercents( _totalTimeSmtCore, _timeMainLoopMilli )
-            , _totalTimeSmtCore
+            , printPercents( _totalTimeSmtCoreMicro, _timeMainLoopMicro )
+            , _totalTimeSmtCoreMicro / 1000
             );
 
     unsigned long long total =
-        _timeSimplexStepsMilli +
-        _timeConstraintFixingStepsMilli +
-        _totalTimePerformingValidCaseSplits +
-        _totalTimeExplicitBasisBoundTightening +
-        _totalTimeConstraintMatrixBoundTightening +
-        _totalTimeApplyingStoredTightenings +
-        _totalTimeSmtCore;
+        _timeSimplexStepsMicro +
+        _timeConstraintFixingStepsMicro +
+        _totalTimePerformingValidCaseSplitsMicro +
+        _totalTimeExplicitBasisBoundTighteningMicro +
+        _totalTimeConstraintMatrixBoundTighteningMicro +
+        _totalTimeApplyingStoredTighteningsMicro +
+        _totalTimeSmtCoreMicro;
     printf( "\t\t[%.2lf%%] Unaccounted for: %llu milli\n"
-            , printPercents( _timeMainLoopMilli - total, _timeMainLoopMilli )
-            , _timeMainLoopMilli - total
+            , printPercents( _timeMainLoopMicro - total, _timeMainLoopMicro )
+            , ( _timeMainLoopMicro - total ) / 1000
             );
 
     printf( "\t--- Preprocessor Statistics ---\n" );
@@ -149,11 +158,11 @@ void Statistics::print()
             "Total time: %llu milli. Average: %.2lf milli\n"
             , _numMainLoopIterations
             , _numSimplexSteps
-            , _timeSimplexStepsMilli
-            , printAverage( _timeSimplexStepsMilli, _numSimplexSteps )
+            , _timeSimplexStepsMicro / 1000
+            , printAverage( _timeSimplexStepsMicro / 1000, _numSimplexSteps )
             , _numConstraintFixingSteps
-            , _timeConstraintFixingStepsMilli
-            , printAverage( _timeConstraintFixingStepsMilli, _numConstraintFixingSteps )
+            , _timeConstraintFixingStepsMicro / 1000
+            , printAverage( _timeConstraintFixingStepsMicro / 1000, _numConstraintFixingSteps )
             );
     printf( "\tNumber of active piecewise-linear constraints: %u / %u\n"
             "\t\tConstraints disabled by valid splits: %u. "
@@ -259,17 +268,17 @@ void Statistics::incNumSimplexSteps()
 
 void Statistics::addTimeSimplexSteps( unsigned long long time )
 {
-    _timeSimplexStepsMilli += time;
+    _timeSimplexStepsMicro += time;
 }
 
 void Statistics::addTimeMainLoop( unsigned long long time )
 {
-    _timeMainLoopMilli += time;
+    _timeMainLoopMicro += time;
 }
 
 void Statistics::addTimeConstraintFixingSteps( unsigned long long time )
 {
-    _timeConstraintFixingStepsMilli += time;
+    _timeConstraintFixingStepsMicro += time;
 }
 
 void Statistics::incNumConstraintFixingSteps()
@@ -387,9 +396,9 @@ void Statistics::setCurrentDegradation( double degradation )
         _maxDegradation = _currentDegradation;
 }
 
-void Statistics::setPreprocessingTime( unsigned long long milli )
+void Statistics::setPreprocessingTime( unsigned long long micro )
 {
-    _preprocessingTimeMilli = milli;
+    _preprocessingTimeMicro = micro;
 }
 
 void Statistics::stampStartingTime()
@@ -419,28 +428,28 @@ void Statistics::ppIncNumEquationsRemoved()
 
 void Statistics::addTimeForValidCaseSplit( unsigned long long time )
 {
-    _totalTimePerformingValidCaseSplits += time;
+    _totalTimePerformingValidCaseSplitsMicro += time;
     ++_totalNumberOfValidCaseSplits;
 }
 
 void Statistics::addTimeForExplicitBasisBoundTightening( unsigned long long time )
 {
-    _totalTimeExplicitBasisBoundTightening += time;
+    _totalTimeExplicitBasisBoundTighteningMicro += time;
 }
 
 void Statistics::addTimeForConstraintMatrixBoundTightening( unsigned long long time )
 {
-    _totalTimeConstraintMatrixBoundTightening += time;
+    _totalTimeConstraintMatrixBoundTighteningMicro += time;
 }
 
 void Statistics::addTimeForApplyingStoredTightenings( unsigned long long time )
 {
-    _totalTimeApplyingStoredTightenings += time;
+    _totalTimeApplyingStoredTighteningsMicro += time;
 }
 
 void Statistics::addTimeSmtCore( unsigned long long time )
 {
-    _totalTimeSmtCore += time;
+    _totalTimeSmtCoreMicro += time;
 }
 
 void Statistics::incNumVisitedTreeStates()
