@@ -148,11 +148,12 @@ void RowBoundTightener::examineInvertedBasisMatrix( const ITableau &tableau, boo
         }
         while ( untilSaturation && newBoundsLearned );
     }
-    catch ( const Error &e )
+    catch ( ... )
     {
         for ( const auto &row : rows )
             delete row;
-        throw e;
+
+        throw;
     }
 
     for ( const auto &row : rows )
