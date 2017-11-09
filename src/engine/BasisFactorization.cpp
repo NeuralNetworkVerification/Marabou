@@ -18,6 +18,7 @@
 #include "GlobalConfiguration.h"
 #include "LPElement.h"
 #include "MStringf.h"
+#include "MalformedBasisException.h"
 #include "ReluplexError.h"
 
 BasisFactorization::BasisFactorization( unsigned m )
@@ -392,7 +393,7 @@ void BasisFactorization::factorizeMatrix( double *matrix )
 
         // No non-zero pivot has been found, matrix cannot be factorized
         if ( FloatUtils::isZero( largestElement ) )
-            throw ReluplexError( ReluplexError::NO_AVAILABLE_CANDIDATES, "No Pivot" );
+            throw MalformedBasisException();
 
         // Swap rows i and bestRow (if needed), and store this permutation
         if ( bestRowIndex != i )

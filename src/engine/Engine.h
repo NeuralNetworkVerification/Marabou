@@ -67,6 +67,12 @@ public:
     const Statistics *getStatistics() const;
 
 private:
+    enum RestorationStatus {
+        RESTORATION_NOT_NEEDED = 0,
+        RESTORATION_NEEDED = 1,
+        RESTORATION_JUST_PERFORMED = 2,
+    };
+
     /*
       Add equations and tightenings from a split.
     */
@@ -153,6 +159,11 @@ private:
     double *_work;
 
     /*
+      Restoration status.
+    */
+    RestorationStatus _restorationStatus;
+
+    /*
       Perform a simplex step: compute the cost function, pick the
       entering and leaving variables and perform a pivot.
     */
@@ -235,6 +246,11 @@ private:
       Adjust the size of the work memory. Should be called when m changes.
     */
     void adjustWorkMemorySize();
+
+    /*
+      Restore the tableau from the original version.
+    */
+    void performTableauRestoration();
 
     static void log( const String &message );
 };

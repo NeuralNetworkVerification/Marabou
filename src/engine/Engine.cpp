@@ -16,6 +16,7 @@
 #include "InfeasibleQueryException.h"
 #include "InputQuery.h"
 #include "MStringf.h"
+#include "MalformedBasisException.h"
 #include "PiecewiseLinearConstraint.h"
 #include "Preprocessor.h"
 #include "ReluplexError.h"
@@ -27,6 +28,7 @@ Engine::Engine()
     , _numPlConstraintsDisabledByValidSplits( 0 )
     , _preprocessingEnabled( false )
     , _work( NULL )
+    , _restorationStatus( RESTORATION_NOT_NEEDED )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -79,21 +81,31 @@ bool Engine::solve()
             DEBUG( _tableau->verifyInvariants() );
 
             mainLoopStatistics();
+
+            // Possible restoration due to degradation or malformed tableau
             checkDegradation();
+            if ( _restorationStatus == Engine::RESTORATION_NEEDED )
+                performTableauRestoration();
+            else
+                _restorationStatus = Engine::RESTORATION_NOT_NEEDED;
 
             if ( _tableau->basisMatrixAvailable() )
                 explicitBasisBoundTightening();
 
             // Perform any SmtCore-initiated case splits
             if ( _smtCore.needToSplit() )
+            {
                 _smtCore.performSplit();
+                continue;
+            }
 
             if ( !_tableau->allBoundsValid() )
             {
                 // Some variable bounds are invalid, so the query is unsat
                 throw InfeasibleQueryException();
             }
-            else if ( allVarsWithinBounds() )
+
+            if ( allVarsWithinBounds() )
             {
                 // The linear portion of the problem has been solved.
                 // Check the status of the PL constraints
@@ -115,12 +127,20 @@ bool Engine::solve()
                 tightenBoundsOnConstraintMatrix();
                 applyAllBoundTightenings();
                 applyAllValidConstraintCaseSplits();
+
+                continue;
             }
-            else
-            {
-                // We have out-of-bounds variables.
-                performSimplexStep();
-            }
+
+            // We have out-of-bounds variables.
+            performSimplexStep();
+            continue;
+        }
+        catch ( const MalformedBasisException & )
+        {
+            if ( _restorationStatus == Engine::RESTORATION_JUST_PERFORMED )
+                throw ReluplexError( ReluplexError::CANNOT_RESTORE_TABLEAU );
+
+            _restorationStatus = Engine::RESTORATION_NEEDED;
         }
         catch ( const InfeasibleQueryException & )
         {
@@ -690,6 +710,9 @@ void Engine::checkDegradation()
     double degradation = _degradationChecker.computeDegradation( *_tableau );
     _statistics.setCurrentDegradation( degradation );
 
+    if ( FloatUtils::gt( degradation, GlobalConfiguration::DEGRADATION_THRESHOLD ) )
+         _restorationStatus = Engine::RESTORATION_NEEDED;
+
     struct timespec end = TimeUtils::sampleMicro();
     _statistics.addTimeForDegradationChecking( TimeUtils::timePassed( start, end ) );
 }
@@ -720,6 +743,17 @@ void Engine::explicitBasisBoundTightening()
 
     struct timespec end = TimeUtils::sampleMicro();
     _statistics.addTimeForExplicitBasisBoundTightening( TimeUtils::timePassed( start, end ) );
+}
+
+void Engine::performTableauRestoration()
+{
+    // Two consecutive restorations are now allowed
+    if ( _restorationStatus == Engine::RESTORATION_JUST_PERFORMED )
+        throw ReluplexError( ReluplexError::CANNOT_RESTORE_TABLEAU );
+
+    _restorationStatus = Engine::RESTORATION_JUST_PERFORMED;
+
+    exit( 1 );
 }
 
 const Statistics *Engine::getStatistics() const

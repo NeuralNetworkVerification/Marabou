@@ -47,6 +47,9 @@ public:
     // How often should the main loop check the current degradation?
     static const unsigned DEGRADATION_CHECKING_FREQUENCY;
 
+    // The threshold of degradation above which restoration is required
+    static const double DEGRADATION_THRESHOLD;
+
     // If a pivot element in a simplex element is smaller than this threshold, the engine will attempt
     // to pick another element.
     static const double ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD;
