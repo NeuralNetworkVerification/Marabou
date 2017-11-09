@@ -51,8 +51,10 @@ Statistics::Statistics()
     , _ppNumConstraintsRemoved( 0 )
     , _ppNumEquationsRemoved( 0 )
     , _totalTimePerformingValidCaseSplitsMicro( 0 )
+    , _totalTimeHandlingStatisticsMicro( 0 )
     , _totalNumberOfValidCaseSplits( 0 )
     , _totalTimeExplicitBasisBoundTighteningMicro( 0 )
+    , _totalTimeDegradationChecking( 0 )
     , _totalTimeConstraintMatrixBoundTighteningMicro( 0 )
     , _totalTimeApplyingStoredTighteningsMicro( 0 )
     , _totalTimeSmtCoreMicro( 0 )
@@ -100,6 +102,22 @@ void Statistics::print()
             , printPercents( _timeSimplexStepsMicro, _timeMainLoopMicro )
             , _timeSimplexStepsMicro / 1000
             );
+    printf( "\t\t[%.2lf%%] Explicit-basis bound tightening: %llu milli\n"
+            , printPercents( _totalTimeExplicitBasisBoundTighteningMicro, _timeMainLoopMicro )
+            , _totalTimeExplicitBasisBoundTighteningMicro / 1000
+            );
+    printf( "\t\t[%.2lf%%] Constraint-matrix bound tightening: %llu milli\n"
+            , printPercents( _totalTimeConstraintMatrixBoundTighteningMicro, _timeMainLoopMicro )
+            , _totalTimeConstraintMatrixBoundTighteningMicro / 1000
+            );
+    printf( "\t\t[%.2lf%%] Degradation checking: %llu milli\n"
+            , printPercents( _totalTimeDegradationChecking, _timeMainLoopMicro )
+            , _totalTimeDegradationChecking / 1000
+            );
+    printf( "\t\t[%.2lf%%] Statistics handling: %llu milli\n"
+            , printPercents( _totalTimeHandlingStatisticsMicro, _timeMainLoopMicro )
+            , _totalTimeHandlingStatisticsMicro / 1000
+            );
     printf( "\t\t[%.2lf%%] Constraint-fixing steps: %llu milli\n"
             , printPercents( _timeConstraintFixingStepsMicro, _timeMainLoopMicro )
             , _timeConstraintFixingStepsMicro / 1000
@@ -109,14 +127,6 @@ void Statistics::print()
             , _totalTimePerformingValidCaseSplitsMicro / 1000
             , printAverage( _totalTimePerformingValidCaseSplitsMicro / 1000,
                             _totalNumberOfValidCaseSplits )
-            );
-    printf( "\t\t[%.2lf%%] Explicit-basis bound tightening: %llu milli\n"
-            , printPercents( _totalTimeExplicitBasisBoundTighteningMicro, _timeMainLoopMicro )
-            , _totalTimeExplicitBasisBoundTighteningMicro / 1000
-            );
-    printf( "\t\t[%.2lf%%] Constraint-matrix bound tightening: %llu milli\n"
-            , printPercents( _totalTimeConstraintMatrixBoundTighteningMicro, _timeMainLoopMicro )
-            , _totalTimeConstraintMatrixBoundTighteningMicro / 1000
             );
     printf( "\t\t[%.2lf%%] Applying stored bound-tightening: %llu milli\n"
             , printPercents( _totalTimeApplyingStoredTighteningsMicro, _timeMainLoopMicro )
@@ -132,7 +142,9 @@ void Statistics::print()
         _timeSimplexStepsMicro +
         _timeConstraintFixingStepsMicro +
         _totalTimePerformingValidCaseSplitsMicro +
+        _totalTimeHandlingStatisticsMicro +
         _totalTimeExplicitBasisBoundTighteningMicro +
+        _totalTimeDegradationChecking +
         _totalTimeConstraintMatrixBoundTighteningMicro +
         _totalTimeApplyingStoredTighteningsMicro +
         _totalTimeSmtCoreMicro;
@@ -432,9 +444,19 @@ void Statistics::addTimeForValidCaseSplit( unsigned long long time )
     ++_totalNumberOfValidCaseSplits;
 }
 
+void Statistics::addTimeForStatistics( unsigned long long time )
+{
+    _totalTimeHandlingStatisticsMicro += time;
+}
+
 void Statistics::addTimeForExplicitBasisBoundTightening( unsigned long long time )
 {
     _totalTimeExplicitBasisBoundTighteningMicro += time;
+}
+
+void Statistics::addTimeForDegradationChecking( unsigned long long time )
+{
+    _totalTimeDegradationChecking += time;
 }
 
 void Statistics::addTimeForConstraintMatrixBoundTightening( unsigned long long time )

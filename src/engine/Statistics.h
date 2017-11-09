@@ -52,8 +52,10 @@ public:
     void setNumPlSMTSplits( unsigned numberOfSplits );
     void setCurrentDegradation( double degradation );
     void addTimeForValidCaseSplit( unsigned long long time );
+    void addTimeForStatistics( unsigned long long time );
     void addTimeForExplicitBasisBoundTightening( unsigned long long time );
     void addTimeForConstraintMatrixBoundTightening( unsigned long long time );
+    void addTimeForDegradationChecking( unsigned long long time );
     void addTimeForApplyingStoredTightenings( unsigned long long time );
 
     /*
@@ -206,12 +208,18 @@ private:
     // Total amount of time spent performing valid case splits
     unsigned long long _totalTimePerformingValidCaseSplitsMicro;
 
+    // Total amount of time handling statistics printing
+    unsigned long long _totalTimeHandlingStatisticsMicro;
+
     // Total number of valid case splits performed so far (including in other branches
     // of the search tree, that have since been popped)
     unsigned _totalNumberOfValidCaseSplits;
 
     // Total amount of time spent performing explicit-basis bound tightening
     unsigned long long _totalTimeExplicitBasisBoundTighteningMicro;
+
+    // Total amount of time spent on degradation checking
+    unsigned long long _totalTimeDegradationChecking;
 
     // Total amount of time spent performing constraint-matrix bound tightening
     unsigned long long _totalTimeConstraintMatrixBoundTighteningMicro;

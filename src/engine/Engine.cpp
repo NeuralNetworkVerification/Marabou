@@ -138,6 +138,8 @@ bool Engine::solve()
 
 void Engine::mainLoopStatistics()
 {
+    struct timespec start = TimeUtils::sampleMicro();
+
     unsigned activeConstraints = 0;
     for ( const auto &constraint : _plConstraints )
         if ( constraint->isActive() )
@@ -152,6 +154,9 @@ void Engine::mainLoopStatistics()
         _statistics.print();
 
     _statistics.incNumMainLoopIterations();
+
+    struct timespec end = TimeUtils::sampleMicro();
+    _statistics.addTimeForStatistics( TimeUtils::timePassed( start, end ) );
 }
 
 void Engine::performConstraintFixingStep()
@@ -677,11 +682,16 @@ void Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
 
 void Engine::checkDegradation()
 {
+    struct timespec start = TimeUtils::sampleMicro();
+
     if ( _statistics.getNumMainLoopIterations() % GlobalConfiguration::DEGRADATION_CHECKING_FREQUENCY != 0 )
         return;
 
     double degradation = _degradationChecker.computeDegradation( *_tableau );
     _statistics.setCurrentDegradation( degradation );
+
+    struct timespec end = TimeUtils::sampleMicro();
+    _statistics.addTimeForDegradationChecking( TimeUtils::timePassed( start, end ) );
 }
 
 void Engine::tightenBoundsOnConstraintMatrix()
