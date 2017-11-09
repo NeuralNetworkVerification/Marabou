@@ -574,10 +574,10 @@ void Engine::restoreState( const EngineState &state )
 
     _numPlConstraintsDisabledByValidSplits = state._numPlConstraintsDisabledByValidSplits;
 
-    // Make sure the bound tightner is initialized to the correct size
+    // Make sure the data structures are initialized to the correct size
     _rowBoundTightener->initialize( _tableau );
-
     adjustWorkMemorySize();
+    _activeEntryStrategy->resizeHook( _tableau );
 
     FreshVariables::setNextVariable( state._nextAuxVariable );
 }
@@ -753,6 +753,7 @@ void Engine::performTableauRestoration()
 
     _restorationStatus = Engine::RESTORATION_JUST_PERFORMED;
 
+    printf( "\n\n\tShould restore, but not yet supported...\n" );
     exit( 1 );
 }
 
