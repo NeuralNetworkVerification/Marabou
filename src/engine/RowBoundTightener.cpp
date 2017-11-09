@@ -106,41 +106,39 @@ void RowBoundTightener::examineInvertedBasisMatrix( const ITableau &tableau, boo
     const double *b = tableau.getRightHandSide();
     const double *invB = tableau.getInverseBasisMatrix();
 
-    for ( unsigned i = 0; i < m; ++i )
-    {
-        TableauRow *row = new TableauRow( n - m );
-        // First, compute the scalar, using inv(B)*b
-        row->_scalar = 0;
-        for ( unsigned j = 0; j < m; ++j )
-            row->_scalar += ( invB[i*m + j] * b[j] );
-
-        // Now update the row's coefficient for basic variable i
-        for ( unsigned j = 0; j < n - m; ++j )
-        {
-            row->_row[j]._var = tableau.nonBasicIndexToVariable( j );
-
-            // Dot product of the i'th row of inv(B) with the appropriate
-            // column of An
-            const double *ANColumn = tableau.getAColumn( row->_row[j]._var );
-            row->_row[j]._coefficient = 0;
-            for ( unsigned k = 0; k < m; ++k )
-                row->_row[j]._coefficient -= ( invB[i*m + k] * ANColumn[k] );
-        }
-
-        // Store the lhs variable
-        row->_lhs = tableau.basicIndexToVariable( i );
-
-        // The row is ready
-        rows.append( row );
-    }
-
-    delete[] invB;
-
-    // We now have all the rows, can use them for tightening.
-    // The tightening procedure may throw an exception, in which case we need
-    // to release the rows.
     try
     {
+        for ( unsigned i = 0; i < m; ++i )
+        {
+            TableauRow *row = new TableauRow( n - m );
+            // First, compute the scalar, using inv(B)*b
+            row->_scalar = 0;
+            for ( unsigned j = 0; j < m; ++j )
+                row->_scalar += ( invB[i*m + j] * b[j] );
+
+            // Now update the row's coefficient for basic variable i
+            for ( unsigned j = 0; j < n - m; ++j )
+            {
+                row->_row[j]._var = tableau.nonBasicIndexToVariable( j );
+
+                // Dot product of the i'th row of inv(B) with the appropriate
+                // column of An
+                const double *ANColumn = tableau.getAColumn( row->_row[j]._var );
+                row->_row[j]._coefficient = 0;
+                for ( unsigned k = 0; k < m; ++k )
+                    row->_row[j]._coefficient -= ( invB[i*m + k] * ANColumn[k] );
+            }
+
+            // Store the lhs variable
+            row->_lhs = tableau.basicIndexToVariable( i );
+
+            // The row is ready
+            rows.append( row );
+        }
+
+        // We now have all the rows, can use them for tightening.
+        // The tightening procedure may throw an exception, in which case we need
+        // to release the rows.
         bool newBoundsLearned;
         do
         {
@@ -152,12 +150,14 @@ void RowBoundTightener::examineInvertedBasisMatrix( const ITableau &tableau, boo
     {
         for ( const auto &row : rows )
             delete row;
+        delete[] invB;
 
         throw;
     }
 
     for ( const auto &row : rows )
         delete row;
+    delete[] invB;
 }
 
 bool RowBoundTightener::onePassOverInvertedBasisRows( const ITableau &tableau, List<TableauRow *> &rows )
