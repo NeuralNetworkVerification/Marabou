@@ -256,7 +256,12 @@ bool RowBoundTightener::tightenOnSingleInvertedBasisRow( const ITableau &tableau
     }
 
     if ( FloatUtils::gt( _lowerBounds[y], _upperBounds[y] ) )
+    {
+        delete[] ciTimesLb;
+        delete[] ciTimesUb;
+        delete[] ciSign;
         throw InfeasibleQueryException();
+    }
 
     // Next, do a pass for each of the rhs variables.
     // For this, we wish to logically transform the equation into:
@@ -342,7 +347,12 @@ bool RowBoundTightener::tightenOnSingleInvertedBasisRow( const ITableau &tableau
         }
 
         if ( FloatUtils::gt( _lowerBounds[xi], _upperBounds[xi] ) )
+        {
+            delete[] ciTimesLb;
+            delete[] ciTimesUb;
+            delete[] ciSign;
             throw InfeasibleQueryException();
+        }
     }
 
     delete[] ciTimesLb;
