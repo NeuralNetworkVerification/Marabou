@@ -28,10 +28,10 @@ SmtCore::~SmtCore()
 {
     while ( !_stack.empty() )
     {
-        StackEntry &stackEntry( _stack.top() );
+        StackEntry &stackEntry( _stack.back() );
         delete stackEntry._engineState;
         stackEntry._engineState = NULL;
-        _stack.pop();
+        _stack.popBack();
     }
 }
 
@@ -106,7 +106,7 @@ void SmtCore::performSplit()
         ++split;
     }
 
-    _stack.push( stackEntry );
+    _stack.append( stackEntry );
     if ( _statistics )
     {
         _statistics->setCurrentStackDepth( getStackDepth() );
@@ -138,16 +138,16 @@ bool SmtCore::popSplit()
     }
 
     // Remove any entries that have no alternatives
-    while ( _stack.top()._alternativeSplits.empty() )
+    while ( _stack.back()._alternativeSplits.empty() )
     {
-        delete _stack.top()._engineState;
-        _stack.pop();
+        delete _stack.back()._engineState;
+        _stack.popBack();
 
         if ( _stack.empty() )
             return false;
     }
 
-    StackEntry &stackEntry( _stack.top() );
+    StackEntry &stackEntry( _stack.back() );
 
     // Restore the state of the engine
     log( "\tRestoring engine state..." );
@@ -182,7 +182,7 @@ void SmtCore::resetReportedViolations()
 
 void SmtCore::registerImpliedValidSplit( PiecewiseLinearCaseSplit &validSplit )
 {
-    StackEntry &stackEntry( _stack.top() );
+    StackEntry &stackEntry( _stack.back() );
     stackEntry._impliedValidSplits.append( validSplit );
 }
 
