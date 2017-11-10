@@ -1938,6 +1938,11 @@ double *Tableau::getInverseBasisMatrix() const
     return result;
 }
 
+Set<unsigned> Tableau::getBasicVariables() const
+{
+    return _basicVariables;
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

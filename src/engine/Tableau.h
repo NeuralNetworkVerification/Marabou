@@ -63,6 +63,11 @@ public:
     void setLeavingVariableIndex( unsigned basic );
 
     /*
+      Get the current set of basic variables
+    */
+    Set<unsigned> getBasicVariables() const;
+
+    /*
       Set/get the values of the right hand side vector, b, of size m.
       Set either the whole vector or a specific entry
     */
