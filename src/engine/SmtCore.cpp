@@ -169,6 +169,12 @@ bool SmtCore::popSplit()
     return true;
 }
 
+void SmtCore::resetReportedViolations()
+{
+    _constraintToViolationCount.clear();
+    _needToSplit = false;
+}
+
 void SmtCore::setStatistics( Statistics *statistics )
 {
     _statistics = statistics;

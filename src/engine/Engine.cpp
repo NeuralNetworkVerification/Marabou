@@ -581,6 +581,9 @@ void Engine::restoreState( const EngineState &state )
     adjustWorkMemorySize();
     _activeEntryStrategy->resizeHook( _tableau );
 
+    // Reset the violation counts in the SMT core
+    _smtCore.resetReportedViolations();
+
     FreshVariables::setNextVariable( state._nextAuxVariable );
 }
 

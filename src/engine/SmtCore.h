@@ -34,6 +34,11 @@ public:
     void reportViolatedConstraint( PiecewiseLinearConstraint *constraint );
 
     /*
+      Reset all reported violation counts.
+    */
+    void resetReportedViolations();
+
+    /*
       Returns true iff the SMT core wants to perform a case split.
     */
     bool needToSplit() const;
