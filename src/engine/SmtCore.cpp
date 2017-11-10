@@ -26,13 +26,13 @@ SmtCore::SmtCore( IEngine *engine )
 
 SmtCore::~SmtCore()
 {
-    while ( !_stack.empty() )
+    for ( const auto &stackEntry : _stack )
     {
-        StackEntry &stackEntry( _stack.back() );
-        delete stackEntry._engineState;
-        stackEntry._engineState = NULL;
-        _stack.popBack();
+        delete stackEntry->_engineState;
+        delete stackEntry;
     }
+
+    _stack.clear();
 }
 
 void SmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
@@ -91,18 +91,18 @@ void SmtCore::performSplit()
     EngineState *stateBeforeSplits = new EngineState;
     _engine->storeState( *stateBeforeSplits );
 
-    StackEntry stackEntry;
+    StackEntry *stackEntry = new StackEntry;
     // Perform the first split: add bounds and equations
     List<PiecewiseLinearCaseSplit>::iterator split = splits.begin();
     _engine->applySplit( *split );
-    stackEntry._activeSplit = *split;
+    stackEntry->_activeSplit = *split;
 
     // Store the remaining splits on the stack, for later
-    stackEntry._engineState = stateBeforeSplits;
+    stackEntry->_engineState = stateBeforeSplits;
     ++split;
     while ( split != splits.end() )
     {
-        stackEntry._alternativeSplits.append( *split );
+        stackEntry->_alternativeSplits.append( *split );
         ++split;
     }
 
@@ -138,31 +138,32 @@ bool SmtCore::popSplit()
     }
 
     // Remove any entries that have no alternatives
-    while ( _stack.back()._alternativeSplits.empty() )
+    while ( _stack.back()->_alternativeSplits.empty() )
     {
-        delete _stack.back()._engineState;
+        delete _stack.back()->_engineState;
+        delete _stack.back();
         _stack.popBack();
 
         if ( _stack.empty() )
             return false;
     }
 
-    StackEntry &stackEntry( _stack.back() );
+    StackEntry *stackEntry = _stack.back();
 
     // Restore the state of the engine
     log( "\tRestoring engine state..." );
-    _engine->restoreState( *stackEntry._engineState );
+    _engine->restoreState( *(stackEntry->_engineState) );
     log( "\tRestoring engine state - DONE" );
 
     // Apply the new split and erase it from the list
-    auto split = stackEntry._alternativeSplits.begin();
+    auto split = stackEntry->_alternativeSplits.begin();
 
     log( "\tApplying new split..." );
     _engine->applySplit( *split );
     log( "\tApplying new split - DONE" );
 
-    stackEntry._activeSplit = *split;
-    stackEntry._alternativeSplits.erase( split );
+    stackEntry->_activeSplit = *split;
+    stackEntry->_alternativeSplits.erase( split );
 
     if ( _statistics )
     {
@@ -182,8 +183,8 @@ void SmtCore::resetReportedViolations()
 
 void SmtCore::registerImpliedValidSplit( PiecewiseLinearCaseSplit &validSplit )
 {
-    StackEntry &stackEntry( _stack.back() );
-    stackEntry._impliedValidSplits.append( validSplit );
+    StackEntry *stackEntry = _stack.back();
+    stackEntry->_impliedValidSplits.append( validSplit );
 }
 
 void SmtCore::allSplitsSoFar( List<PiecewiseLinearCaseSplit> &result ) const
@@ -191,8 +192,8 @@ void SmtCore::allSplitsSoFar( List<PiecewiseLinearCaseSplit> &result ) const
     result.clear();
     for ( const auto &it : _stack )
     {
-        result.append( it._activeSplit );
-        for ( const auto &impliedSplit : it._impliedValidSplits )
+        result.append( it->_activeSplit );
+        for ( const auto &impliedSplit : it->_impliedValidSplits )
             result.append( impliedSplit );
     }
 }

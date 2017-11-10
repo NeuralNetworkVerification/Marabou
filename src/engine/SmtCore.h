@@ -99,7 +99,7 @@ private:
     /*
       The case-split stack.
     */
-    List<StackEntry> _stack;
+    List<StackEntry *> _stack;
 
     /*
       The engine.
