@@ -61,19 +61,27 @@ public:
     unsigned getStackDepth() const;
 
     /*
+      Let the smt core know of an implied valid case split that was discovered.
+    */
+    void registerImpliedValidSplit( PiecewiseLinearCaseSplit &validSplit );
+
+    /*
       Have the SMT core start reporting statistics.
     */
     void setStatistics( Statistics *statistics );
 
 private:
     /*
-      A stack entry is the tableau state before the split, plus a list
-      of the case splits to perform.
+      A stack entry consists of the engine state before the split,
+      the active split, the alternative splits (in case of backtrack),
+      and also any implied splits that were discovered subsequently.
     */
     struct StackEntry
     {
     public:
-        List<PiecewiseLinearCaseSplit> _splits;
+        PiecewiseLinearCaseSplit _activeSplit;
+        List<PiecewiseLinearCaseSplit> _impliedValidSplits;
+        List<PiecewiseLinearCaseSplit> _alternativeSplits;
         EngineState *_engineState;
     };
 

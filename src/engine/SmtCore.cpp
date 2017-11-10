@@ -91,17 +91,18 @@ void SmtCore::performSplit()
     EngineState *stateBeforeSplits = new EngineState;
     _engine->storeState( *stateBeforeSplits );
 
+    StackEntry stackEntry;
     // Perform the first split: add bounds and equations
     List<PiecewiseLinearCaseSplit>::iterator split = splits.begin();
     _engine->applySplit( *split );
+    stackEntry._activeSplit = *split;
 
     // Store the remaining splits on the stack, for later
-    StackEntry stackEntry;
     stackEntry._engineState = stateBeforeSplits;
     ++split;
     while ( split != splits.end() )
     {
-        stackEntry._splits.append( *split );
+        stackEntry._alternativeSplits.append( *split );
         ++split;
     }
 
@@ -136,6 +137,16 @@ bool SmtCore::popSplit()
         _statistics->incNumVisitedTreeStates();
     }
 
+    // Remove any entries that have no alternatives
+    while ( _stack.top()._alternativeSplits.empty() )
+    {
+        delete _stack.top()._engineState;
+        _stack.pop();
+
+        if ( _stack.empty() )
+            return false;
+    }
+
     StackEntry &stackEntry( _stack.top() );
 
     // Restore the state of the engine
@@ -144,20 +155,14 @@ bool SmtCore::popSplit()
     log( "\tRestoring engine state - DONE" );
 
     // Apply the new split and erase it from the list
-    auto split = stackEntry._splits.begin();
+    auto split = stackEntry._alternativeSplits.begin();
 
     log( "\tApplying new split..." );
     _engine->applySplit( *split );
     log( "\tApplying new split - DONE" );
 
-    stackEntry._splits.erase( split );
-
-    // If there are no splits left, pop this entry
-    if ( stackEntry._splits.size() == 0 )
-    {
-        delete stackEntry._engineState;
-        _stack.pop();
-    }
+    stackEntry._activeSplit = *split;
+    stackEntry._alternativeSplits.erase( split );
 
     if ( _statistics )
     {
@@ -173,6 +178,12 @@ void SmtCore::resetReportedViolations()
 {
     _constraintToViolationCount.clear();
     _needToSplit = false;
+}
+
+void SmtCore::registerImpliedValidSplit( PiecewiseLinearCaseSplit &validSplit )
+{
+    StackEntry &stackEntry( _stack.top() );
+    stackEntry._impliedValidSplits.append( validSplit );
 }
 
 void SmtCore::setStatistics( Statistics *statistics )

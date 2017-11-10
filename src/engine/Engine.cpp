@@ -692,7 +692,9 @@ void Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
         struct timespec start = TimeUtils::sampleMicro();
 
         constraint->setActiveConstraint( false );
-        applySplit( constraint->getValidCaseSplit() );
+        PiecewiseLinearCaseSplit validSplit = constraint->getValidCaseSplit();
+        _smtCore.registerImpliedValidSplit( validSplit );
+        applySplit( validSplit );
         ++_numPlConstraintsDisabledByValidSplits;
 
         String constraintString;

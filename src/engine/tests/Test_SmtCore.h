@@ -284,7 +284,7 @@ public:
         // Pop Split2, check that the tableau was restored and that
         // a Split3 was performed
         TS_ASSERT( smtCore.popSplit() );
-        TS_ASSERT_EQUALS( smtCore.getStackDepth(), 0U );
+        TS_ASSERT_EQUALS( smtCore.getStackDepth(), 1U );
 
         TS_ASSERT_EQUALS( engine->lastRestoredState, originalState );
         TS_ASSERT( !engine->lastStoredState );
