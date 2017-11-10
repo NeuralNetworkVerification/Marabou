@@ -756,10 +756,9 @@ void Engine::performPrecisionRestoration()
     if ( _restorationStatus == Engine::RESTORATION_JUST_PERFORMED )
         throw ReluplexError( ReluplexError::CANNOT_RESTORE_TABLEAU );
 
-    _restorationStatus = Engine::RESTORATION_JUST_PERFORMED;
+    _precisionRestorer.restorePrecision( *this, *_tableau );
 
-    printf( "\n\n\tShould restore, but not yet supported...\n" );
-    exit( 1 );
+    _restorationStatus = Engine::RESTORATION_JUST_PERFORMED;
 }
 
 void Engine::storeInitialEngineState()

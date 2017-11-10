@@ -185,6 +185,16 @@ public:
         upperBounds[variable] = value;
     }
 
+    const double *getLowerBounds() const
+    {
+        return NULL;
+    }
+
+    const double *getUpperBounds() const
+    {
+        return NULL;
+    }
+
     bool allBoundsValid() const
     {
         for ( auto it : lowerBounds.keys() )
@@ -225,6 +235,11 @@ public:
     void setLeavingVariableIndex( unsigned basic )
     {
         mockLeavingVariable = basic;
+    }
+
+    Set<unsigned> getBasicVariables() const
+    {
+        return Set<unsigned>();
     }
 
     unsigned getLeavingVariable() const

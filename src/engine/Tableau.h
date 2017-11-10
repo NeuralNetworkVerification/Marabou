@@ -145,6 +145,12 @@ public:
     double getUpperBound( unsigned variable ) const;
 
     /*
+      Get all lower and upper bounds.
+    */
+    const double *getLowerBounds() const;
+    const double *getUpperBounds() const;
+
+    /*
       Recomputes bound valid status for all variables.
     */
     void checkBoundsValid();

@@ -20,6 +20,8 @@ class PrecisionRestorer
 public:
     void storeInitialEngineState( const IEngine &engine );
 
+    void restorePrecision( IEngine &engine, ITableau &tableau );
+
 private:
     EngineState _initialEngineState;
 };

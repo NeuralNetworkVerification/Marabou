@@ -10,11 +10,82 @@
  ** directory for licensing information.\endverbatim
  **/
 
+#include "Debug.h"
+#include "FloatUtils.h"
 #include "PrecisionRestorer.h"
 
 void PrecisionRestorer::storeInitialEngineState( const IEngine &engine )
 {
     engine.storeState( _initialEngineState );
+}
+
+void PrecisionRestorer::restorePrecision( IEngine &engine, ITableau &tableau )
+{
+    // Store the dimensions, bounds and basic variables in the current tableau, before restoring it
+    unsigned targetM = tableau.getM();
+    unsigned targetN = tableau.getN();
+
+    Set<unsigned> shouldBeBasic = tableau.getBasicVariables();
+
+    double *lowerBounds = new double[targetN];
+    double *upperBounds = new double[targetN];
+    memcpy( lowerBounds, tableau.getLowerBounds(), sizeof(double) * targetN );
+    memcpy( upperBounds, tableau.getUpperBounds(), sizeof(double) * targetN );
+
+    // Restore engine and tableau to their original form
+    engine.restoreState( _initialEngineState );
+
+    // Re-add equations, make sure any valid splits are made
+
+    ASSERT( tableau.getN() == targetN );
+    ASSERT( tableau.getM() == targetM );
+
+    // At this point, the tableau has the appropriate dimensions. Restore the variable bounds
+    // and basic variables.
+
+    // Begin adjusting the basic variables
+    Set<unsigned> basicAfterRestoration = tableau.getBasicVariables();
+    Set<unsigned> needToBeBasic = Set<unsigned>::difference( shouldBeBasic, basicAfterRestoration );
+
+    for ( unsigned variable : needToBeBasic )
+    {
+        /* This variable is currently non-basic. We attempt to make it basic by computing
+           its column and finding a basic variable that shouldn't be basic. Then we can
+           pivot these two variables. */
+
+        unsigned enteringIndex = tableau.variableToIndex( variable );
+        tableau.setEnteringVariableIndex( enteringIndex );
+
+        tableau.computeChangeColumn();
+        const double *changeColumn = tableau.getChangeColumn();
+
+        // Find a variable that is basic but should be non-basic
+        bool done = false;
+        unsigned i = 0;
+        while ( !done && ( i < targetM ) )
+        {
+            if ( !FloatUtils::isZero( changeColumn[i] ) )
+            {
+                unsigned basic = tableau.basicIndexToVariable( i );
+                if ( !shouldBeBasic.exists( basic ) )
+                {
+                    tableau.setLeavingVariableIndex( i );
+                    tableau.performDegeneratePivot();
+                    done = true;
+                }
+            }
+
+            ++i;
+        }
+    }
+
+    // Tighten bounds if needed. The tableau will ignore these bounds if
+    // tighter bounds are already known, somehow.
+    for ( unsigned i = 0; i < targetN; ++i )
+    {
+        tableau.tightenLowerBound( i, lowerBounds[i] );
+        tableau.tightenUpperBound( i, upperBounds[i] );
+    }
 }
 
 //

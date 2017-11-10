@@ -14,6 +14,7 @@
 #define __ITableau_h__
 
 #include "List.h"
+#include "Set.h"
 
 class EntrySelectionStrategy;
 class Equation;
@@ -69,6 +70,8 @@ public:
     virtual bool allBoundsValid() const = 0;
     virtual double getLowerBound( unsigned variable ) const = 0;
     virtual double getUpperBound( unsigned variable ) const = 0;
+    virtual const double *getLowerBounds() const = 0;
+    virtual const double *getUpperBounds() const = 0;
     virtual void setLowerBound( unsigned variable, double value ) = 0;
     virtual void setUpperBound( unsigned variable, double value ) = 0;
     virtual void tightenLowerBound( unsigned variable, double value ) = 0;
@@ -77,6 +80,7 @@ public:
     virtual bool existsBasicOutOfBounds() const = 0;
     virtual void setEnteringVariableIndex( unsigned nonBasic ) = 0;
     virtual void setLeavingVariableIndex( unsigned basic ) = 0;
+    virtual Set<unsigned> getBasicVariables() const = 0;
     virtual void computeBasicStatus() = 0;
     virtual void computeBasicStatus( unsigned basic ) = 0;
     virtual bool eligibleForEntry( unsigned nonBasic ) const = 0;

@@ -416,6 +416,16 @@ double Tableau::getUpperBound( unsigned variable ) const
     return _upperBounds[variable];
 }
 
+const double *Tableau::getLowerBounds() const
+{
+    return _lowerBounds;
+}
+
+const double *Tableau::getUpperBounds() const
+{
+    return _upperBounds;
+}
+
 double Tableau::getValue( unsigned variable )
 {
     if ( !_basicVariables.exists( variable ) )
