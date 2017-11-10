@@ -186,6 +186,17 @@ void SmtCore::registerImpliedValidSplit( PiecewiseLinearCaseSplit &validSplit )
     stackEntry._impliedValidSplits.append( validSplit );
 }
 
+void SmtCore::allSplitsSoFar( List<PiecewiseLinearCaseSplit> &result ) const
+{
+    result.clear();
+    for ( const auto &it : _stack )
+    {
+        result.append( it._activeSplit );
+        for ( const auto &impliedSplit : it._impliedValidSplits )
+            result.append( impliedSplit );
+    }
+}
+
 void SmtCore::setStatistics( Statistics *statistics )
 {
     _statistics = statistics;

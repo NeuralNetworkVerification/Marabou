@@ -387,6 +387,103 @@ public:
         TS_ASSERT( !engine->lastStoredState );
     }
 
+    void test_all_splits_so_far()
+    {
+        SmtCore smtCore( engine );
+
+        MockConstraint constraint;
+
+        // Split 1
+        PiecewiseLinearCaseSplit split1;
+        Tightening bound1( 1, 3.0, Tightening::LB );
+        Tightening bound2( 1, 5.0, Tightening::UB );
+
+        Equation equation1;
+        equation1.addAddend( 1, 0 );
+        equation1.addAddend( 2, 1 );
+        equation1.addAddend( -1, 2 );
+        equation1.setScalar( 11 );
+
+        split1.storeBoundTightening( bound1 );
+        split1.storeBoundTightening( bound2 );
+        split1.addEquation( equation1, PiecewiseLinearCaseSplit::EQ );
+
+        // Split 2
+        PiecewiseLinearCaseSplit split2;
+        Tightening bound3( 2, 13.0, Tightening::UB );
+        Tightening bound4( 3, 25.0, Tightening::UB );
+
+        Equation equation2;
+        equation2.addAddend( -3, 0 );
+        equation2.addAddend( 3, 1 );
+        equation2.setScalar( -5 );
+
+        split2.storeBoundTightening( bound3 );
+        split2.storeBoundTightening( bound4 );
+        split2.addEquation( equation2, PiecewiseLinearCaseSplit::EQ );
+
+        // Store the splits
+        constraint.nextSplits.append( split1 );
+        constraint.nextSplits.append( split2 );
+
+        for ( unsigned i = 0; i < GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD; ++i )
+            smtCore.reportViolatedConstraint( &constraint );
+
+        constraint.nextIsActive = true;
+
+        TS_ASSERT( smtCore.needToSplit() );
+        TS_ASSERT_THROWS_NOTHING( smtCore.performSplit() );
+        TS_ASSERT( !smtCore.needToSplit() );
+
+        // Register a valid split
+
+        // Split 3
+        PiecewiseLinearCaseSplit split3;
+        Tightening bound5( 14, 2.3, Tightening::LB );
+
+        TS_ASSERT_THROWS_NOTHING( smtCore.registerImpliedValidSplit( split3 ) );
+
+        // Do another real split
+
+        MockConstraint constraint2;
+
+        // Split 4
+        PiecewiseLinearCaseSplit split4;
+        Tightening bound6( 7, 3.0, Tightening::LB );
+        split4.storeBoundTightening( bound6 );
+
+        PiecewiseLinearCaseSplit split5;
+        Tightening bound7( 8, 13.0, Tightening::UB );
+        split5.storeBoundTightening( bound7 );
+
+        constraint2.nextSplits.append( split4 );
+        constraint2.nextSplits.append( split5 );
+
+        for ( unsigned i = 0; i < GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD; ++i )
+            smtCore.reportViolatedConstraint( &constraint2 );
+
+        constraint2.nextIsActive = true;
+
+        TS_ASSERT( smtCore.needToSplit() );
+        TS_ASSERT_THROWS_NOTHING( smtCore.performSplit() );
+        TS_ASSERT( !smtCore.needToSplit() );
+
+        // Check that everything is received in the correct order
+        List<PiecewiseLinearCaseSplit> allSplitsSoFar;
+        TS_ASSERT_THROWS_NOTHING( smtCore.allSplitsSoFar( allSplitsSoFar ) );
+
+        TS_ASSERT_EQUALS( allSplitsSoFar.size(), 3U );
+
+        auto it = allSplitsSoFar.begin();
+        TS_ASSERT_EQUALS( *it, split1 );
+
+        ++it;
+        TS_ASSERT_EQUALS( *it, split3 );
+
+        ++it;
+        TS_ASSERT_EQUALS( *it, split4 );
+    }
+
     void test_todo()
     {
         // Reason: the inefficiency in resizing the tableau mutliple times
