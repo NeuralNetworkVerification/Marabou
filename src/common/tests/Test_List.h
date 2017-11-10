@@ -2,16 +2,21 @@
 
 #include "List.h"
 #include "MString.h"
+#include "MockErrno.h"
 
 class ListTestSuite : public CxxTest::TestSuite
 {
 public:
+    MockErrno *mockErrno;
+
     void setUp()
     {
+        TS_ASSERT( mockErrno = new MockErrno );
     }
 
     void tearDown()
     {
+        TS_ASSERT_THROWS_NOTHING( delete mockErrno );
     }
 
     void test_append()
@@ -215,6 +220,42 @@ public:
 
         ++it;
         TS_ASSERT_EQUALS( it, a.rend() );
+    }
+
+    void test_pop_back()
+    {
+        List<int> a;
+
+        a.append( 1 );
+        a.append( 2 );
+        a.append( 3 );
+
+        a.popBack();
+
+        auto it = a.begin();
+        TS_ASSERT_EQUALS( *it, 1 );
+
+        ++it;
+        TS_ASSERT_EQUALS( *it, 2 );
+
+        ++it;
+        TS_ASSERT_EQUALS( it, a.end() );
+
+        a.popBack();
+
+        it = a.begin();
+        TS_ASSERT_EQUALS( *it, 1 );
+
+        ++it;
+        TS_ASSERT_EQUALS( it, a.end() );
+
+        a.popBack();
+        TS_ASSERT( a.empty() );
+
+        TS_ASSERT_THROWS_EQUALS( a.popBack(),
+                                 const CommonError &e,
+                                 e.getCode(),
+                                 CommonError::LIST_IS_EMPTY );
     }
 };
 

@@ -13,6 +13,8 @@
 #ifndef __List_h__
 #define __List_h__
 
+#include "CommonError.h"
+
 #include <list>
 
 template<class T>
@@ -151,6 +153,14 @@ public:
     const T &back() const
     {
         return _container.back();
+    }
+
+    void popBack()
+    {
+        if ( empty() )
+            throw CommonError( CommonError::LIST_IS_EMPTY );
+
+        _container.pop_back();
     }
 
     bool operator==( const List<T> &other ) const

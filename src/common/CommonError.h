@@ -31,6 +31,7 @@ public:
         OPEN_FAILED = 9,
         WRITE_FAILED = 10,
         READ_FAILED = 11,
+        LIST_IS_EMPTY = 12,
     };
 
     CommonError( CommonError::Code code ) : Error( "CommonError", (int)code )
