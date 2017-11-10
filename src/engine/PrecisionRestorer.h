@@ -15,12 +15,14 @@
 
 #include "EngineState.h"
 
+class SmtCore;
+
 class PrecisionRestorer
 {
 public:
     void storeInitialEngineState( const IEngine &engine );
 
-    void restorePrecision( IEngine &engine, ITableau &tableau );
+    void restorePrecision( IEngine &engine, ITableau &tableau, SmtCore &smtCore );
 
 private:
     EngineState _initialEngineState;

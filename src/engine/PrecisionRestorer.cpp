@@ -13,13 +13,14 @@
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "PrecisionRestorer.h"
+#include "SmtCore.h"
 
 void PrecisionRestorer::storeInitialEngineState( const IEngine &engine )
 {
     engine.storeState( _initialEngineState );
 }
 
-void PrecisionRestorer::restorePrecision( IEngine &engine, ITableau &tableau )
+void PrecisionRestorer::restorePrecision( IEngine &engine, ITableau &tableau, SmtCore &smtCore )
 {
     // Store the dimensions, bounds and basic variables in the current tableau, before restoring it
     unsigned targetM = tableau.getM();
@@ -32,18 +33,28 @@ void PrecisionRestorer::restorePrecision( IEngine &engine, ITableau &tableau )
     memcpy( lowerBounds, tableau.getLowerBounds(), sizeof(double) * targetN );
     memcpy( upperBounds, tableau.getUpperBounds(), sizeof(double) * targetN );
 
+#ifdef DEBUG_ON
+    EngineState targetEngineState;
+    engine.storeState( targetEngineState );
+#endif
+
+    // Store the case splits performed so far
+    List<PiecewiseLinearCaseSplit> targetSplits;
+    smtCore.allSplitsSoFar( targetSplits );
+
     // Restore engine and tableau to their original form
     engine.restoreState( _initialEngineState );
 
-    // Re-add equations, make sure any valid splits are made
-
-    ASSERT( tableau.getN() == targetN );
-    ASSERT( tableau.getM() == targetM );
+    // Re-add all splits, which will restore variables and equations
+    for ( const auto &split : targetSplits )
+        engine.applySplit( split );
 
     // At this point, the tableau has the appropriate dimensions. Restore the variable bounds
     // and basic variables.
 
-    // Begin adjusting the basic variables
+    ASSERT( tableau.getN() == targetN );
+    ASSERT( tableau.getM() == targetM );
+
     Set<unsigned> basicAfterRestoration = tableau.getBasicVariables();
     Set<unsigned> needToBeBasic = Set<unsigned>::difference( shouldBeBasic, basicAfterRestoration );
 
@@ -86,6 +97,27 @@ void PrecisionRestorer::restorePrecision( IEngine &engine, ITableau &tableau )
         tableau.tightenLowerBound( i, lowerBounds[i] );
         tableau.tightenUpperBound( i, upperBounds[i] );
     }
+
+    DEBUG({
+            // Same dimensions
+            ASSERT( tableau.getN() == targetN );
+            ASSERT( tableau.getM() == targetM );
+
+            // Constraints should be in the same state before and after restoration
+            for ( const auto &pair : targetEngineState._plConstraintToState )
+            {
+                ASSERT( pair.second->isActive() == pair.first->isActive() );
+                ASSERT( pair.second->phaseFixed() == pair.first->phaseFixed() );
+                ASSERT( pair.second->constraintObsolete() == pair.first->constraintObsolete() );
+            }
+
+            EngineState currentEngineState;
+            engine.storeState( targetEngineState );
+
+            ASSERT( currentEngineState._nextAuxVariable == targetEngineState._nextAuxVariable );
+            ASSERT( currentEngineState._numPlConstraintsDisabledByValidSplits ==
+                    targetEngineState._numPlConstraintsDisabledByValidSplits );
+        });
 }
 
 //

@@ -22,6 +22,7 @@ Statistics::Statistics()
     , _numPlSmtOriginatedSplits( 0 )
     , _currentDegradation( 0.0 )
     , _maxDegradation( 0.0 )
+    , _numPreceisionRestorations( 0 )
     , _numSimplexSteps( 0 )
     , _timeSimplexStepsMicro( 0 )
     , _timeMainLoopMicro( 0 )
@@ -55,6 +56,7 @@ Statistics::Statistics()
     , _totalNumberOfValidCaseSplits( 0 )
     , _totalTimeExplicitBasisBoundTighteningMicro( 0 )
     , _totalTimeDegradationChecking( 0 )
+    , _totalTimePrecisionRestoration( 0 )
     , _totalTimeConstraintMatrixBoundTighteningMicro( 0 )
     , _totalTimeApplyingStoredTighteningsMicro( 0 )
     , _totalTimeSmtCoreMicro( 0 )
@@ -114,6 +116,10 @@ void Statistics::print()
             , printPercents( _totalTimeDegradationChecking, _timeMainLoopMicro )
             , _totalTimeDegradationChecking / 1000
             );
+    printf( "\t\t[%.2lf%%] Precision restoration: %llu milli\n"
+            , printPercents( _totalTimePrecisionRestoration, _timeMainLoopMicro )
+            , _totalTimePrecisionRestoration / 1000
+            );
     printf( "\t\t[%.2lf%%] Statistics handling: %llu milli\n"
             , printPercents( _totalTimeHandlingStatisticsMicro, _timeMainLoopMicro )
             , _totalTimeHandlingStatisticsMicro / 1000
@@ -145,6 +151,7 @@ void Statistics::print()
         _totalTimeHandlingStatisticsMicro +
         _totalTimeExplicitBasisBoundTighteningMicro +
         _totalTimeDegradationChecking +
+        _totalTimePrecisionRestoration +
         _totalTimeConstraintMatrixBoundTighteningMicro +
         _totalTimeApplyingStoredTighteningsMicro +
         _totalTimeSmtCoreMicro;
@@ -184,9 +191,11 @@ void Statistics::print()
             , _numPlValidSplits
             , _numPlSmtOriginatedSplits
             );
-    printf( "\tLast reported degradation: %.10lf. Max degradation so far: %.10lf\n"
+    printf( "\tLast reported degradation: %.10lf. Max degradation so far: %.10lf. "
+            "Restorations so far: %u\n"
             , _currentDegradation
             , _maxDegradation
+            , _numPreceisionRestorations
             );
     printf( "\tNumber of simplex pivots we attempted to skip beacuse of instability: %llu.\n"
             "\tUnstable pivots performed anyway: %llu\n"
@@ -276,6 +285,11 @@ void Statistics::setNumPlSMTSplits( unsigned numberOfSplits )
 void Statistics::incNumSimplexSteps()
 {
     ++_numSimplexSteps;
+}
+
+void Statistics::incNumPrecisionRestorations()
+{
+    ++_numPreceisionRestorations;
 }
 
 void Statistics::addTimeSimplexSteps( unsigned long long time )
@@ -457,6 +471,11 @@ void Statistics::addTimeForExplicitBasisBoundTightening( unsigned long long time
 void Statistics::addTimeForDegradationChecking( unsigned long long time )
 {
     _totalTimeDegradationChecking += time;
+}
+
+void Statistics::addTimeForPrecisionRestoration( unsigned long long time )
+{
+    _totalTimePrecisionRestoration += time;
 }
 
 void Statistics::addTimeForConstraintMatrixBoundTightening( unsigned long long time )

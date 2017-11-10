@@ -56,7 +56,9 @@ public:
     void addTimeForExplicitBasisBoundTightening( unsigned long long time );
     void addTimeForConstraintMatrixBoundTightening( unsigned long long time );
     void addTimeForDegradationChecking( unsigned long long time );
+    void addTimeForPrecisionRestoration( unsigned long long time );
     void addTimeForApplyingStoredTightenings( unsigned long long time );
+    void incNumPrecisionRestorations();
 
     /*
       Tableau related statistics.
@@ -120,9 +122,10 @@ private:
     unsigned _numPlValidSplits;
     unsigned _numPlSmtOriginatedSplits;
 
-    // Degradation
+    // Degradation and restorations
     double _currentDegradation;
     double _maxDegradation;
+    unsigned _numPreceisionRestorations;
 
     // Number of simplex steps, i.e. pivots (including degenerate
     // pivots), performed by the main loop
@@ -220,6 +223,9 @@ private:
 
     // Total amount of time spent on degradation checking
     unsigned long long _totalTimeDegradationChecking;
+
+    // Total amount of time spent on precision restoration
+    unsigned long long _totalTimePrecisionRestoration;
 
     // Total amount of time spent performing constraint-matrix bound tightening
     unsigned long long _totalTimeConstraintMatrixBoundTighteningMicro;

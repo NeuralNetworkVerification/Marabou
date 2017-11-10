@@ -595,7 +595,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
     DEBUG( _tableau->verifyInvariants() );
 
     List<Tightening> bounds = split.getBoundTightenings();
-    List<Pair<Equation, PiecewiseLinearCaseSplit::EquationType> > equations = split.getEquations();
+    List<Pair<Equation, PiecewiseLinearCaseSplit::EquationType>> equations = split.getEquations();
     for ( auto &it : equations )
     {
         Equation equation = it.first();
@@ -758,7 +758,12 @@ void Engine::performPrecisionRestoration()
     if ( _restorationStatus == Engine::RESTORATION_JUST_PERFORMED )
         throw ReluplexError( ReluplexError::CANNOT_RESTORE_TABLEAU );
 
-    _precisionRestorer.restorePrecision( *this, *_tableau );
+    struct timespec start = TimeUtils::sampleMicro();
+    _precisionRestorer.restorePrecision( *this, *_tableau, _smtCore );
+    struct timespec end = TimeUtils::sampleMicro();
+    _statistics.addTimeForPrecisionRestoration( TimeUtils::timePassed( start, end ) );
+
+    _statistics.incNumPrecisionRestorations();
 
     _restorationStatus = Engine::RESTORATION_JUST_PERFORMED;
 }
