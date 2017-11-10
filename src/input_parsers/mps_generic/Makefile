@@ -37,6 +37,7 @@ SOURCES += \
 	NestedDantzigsRule.cpp \
 	PiecewiseLinearCaseSplit.cpp \
 	PiecewiseLinearConstraint.cpp \
+	PrecisionRestorer.cpp \
 	Preprocessor.cpp \
 	ProjectedSteepestEdge.cpp \
 	ProjectedSteepestEdgeFactory.cpp \

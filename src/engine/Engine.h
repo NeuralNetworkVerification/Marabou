@@ -23,6 +23,7 @@
 #include "InputQuery.h"
 #include "Map.h"
 #include "NestedDantzigsRule.h"
+#include "PrecisionRestorer.h"
 #include "Preprocessor.h"
 #include "SmtCore.h"
 #include "Statistics.h"
@@ -67,7 +68,7 @@ public:
     const Statistics *getStatistics() const;
 
 private:
-    enum RestorationStatus {
+    enum PrecisionRestorationStatus {
         RESTORATION_NOT_NEEDED = 0,
         RESTORATION_NEEDED = 1,
         RESTORATION_JUST_PERFORMED = 2,
@@ -161,7 +162,12 @@ private:
     /*
       Restoration status.
     */
-    RestorationStatus _restorationStatus;
+    PrecisionRestorationStatus _restorationStatus;
+
+    /*
+      Used to restore tableau precision when degradation becomes excessive.
+    */
+    PrecisionRestorer _precisionRestorer;
 
     /*
       Perform a simplex step: compute the cost function, pick the
@@ -248,9 +254,11 @@ private:
     void adjustWorkMemorySize();
 
     /*
+      Store the original engine state within the precision restorer.
       Restore the tableau from the original version.
     */
-    void performTableauRestoration();
+    void storeInitialEngineState();
+    void performPrecisionRestoration();
 
     static void log( const String &message );
 };

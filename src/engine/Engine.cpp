@@ -65,6 +65,8 @@ void Engine::adjustWorkMemorySize()
 
 bool Engine::solve()
 {
+    storeInitialEngineState();
+
     printf( "\nEngine::solve: Initial statistics\n" );
     mainLoopStatistics();
     printf( "\n---\n" );
@@ -85,7 +87,7 @@ bool Engine::solve()
             // Possible restoration due to degradation or malformed tableau
             checkDegradation();
             if ( _restorationStatus == Engine::RESTORATION_NEEDED )
-                performTableauRestoration();
+                performPrecisionRestoration();
             else
                 _restorationStatus = Engine::RESTORATION_NOT_NEEDED;
 
@@ -745,7 +747,7 @@ void Engine::explicitBasisBoundTightening()
     _statistics.addTimeForExplicitBasisBoundTightening( TimeUtils::timePassed( start, end ) );
 }
 
-void Engine::performTableauRestoration()
+void Engine::performPrecisionRestoration()
 {
     // Two consecutive restorations are now allowed
     if ( _restorationStatus == Engine::RESTORATION_JUST_PERFORMED )
@@ -755,6 +757,11 @@ void Engine::performTableauRestoration()
 
     printf( "\n\n\tShould restore, but not yet supported...\n" );
     exit( 1 );
+}
+
+void Engine::storeInitialEngineState()
+{
+    _precisionRestorer.storeInitialEngineState( *this );
 }
 
 const Statistics *Engine::getStatistics() const
