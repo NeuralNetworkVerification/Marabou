@@ -51,6 +51,11 @@ void PiecewiseLinearCaseSplit::dump() const
     }
 }
 
+bool PiecewiseLinearCaseSplit::operator==( const PiecewiseLinearCaseSplit &other ) const
+{
+    return ( _bounds == other._bounds ) && ( _equations == other._equations );
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

@@ -20,7 +20,7 @@ class Tightening
 public:
 	enum BoundType {
 		LB = 0,
-		UB,
+		UB = 1,
     };
 
     Tightening( unsigned variable, double value, BoundType type )
@@ -45,6 +45,17 @@ public:
 	  lower bound or the upper bound.
 	*/
     BoundType _type;
+
+    /*
+      Equality operator.
+    */
+    bool operator==( const Tightening &other ) const
+    {
+        return
+            ( _variable == other._variable ) &&
+            ( _value == other._value ) &&
+            ( _type == other._type );
+    }
 };
 
 #endif // __Tightening_h__

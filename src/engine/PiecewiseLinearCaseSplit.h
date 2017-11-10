@@ -44,6 +44,11 @@ public:
     */
     void dump() const;
 
+    /*
+      Equality operator.
+    */
+    bool operator==( const PiecewiseLinearCaseSplit &other ) const;
+
 private:
     /*
       Bound tightening information.
