@@ -63,7 +63,7 @@ public:
     /*
       Let the smt core know of an implied valid case split that was discovered.
     */
-    void registerImpliedValidSplit( PiecewiseLinearCaseSplit &validSplit );
+    void recordImpliedValidSplit( PiecewiseLinearCaseSplit &validSplit );
 
     /*
       Return a list of all splits performed so far, both SMT-originating and valid ones,
@@ -90,6 +90,11 @@ private:
         List<PiecewiseLinearCaseSplit> _alternativeSplits;
         EngineState *_engineState;
     };
+
+    /*
+      Valid splits that were implied by level 0 of the stack.
+    */
+    List<PiecewiseLinearCaseSplit> _impliedValidSplitsAtRoot;
 
     /*
       Collect and print various statistics.

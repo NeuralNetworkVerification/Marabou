@@ -181,15 +181,21 @@ void SmtCore::resetReportedViolations()
     _needToSplit = false;
 }
 
-void SmtCore::registerImpliedValidSplit( PiecewiseLinearCaseSplit &validSplit )
+void SmtCore::recordImpliedValidSplit( PiecewiseLinearCaseSplit &validSplit )
 {
-    StackEntry *stackEntry = _stack.back();
-    stackEntry->_impliedValidSplits.append( validSplit );
+    if ( _stack.empty() )
+        _impliedValidSplitsAtRoot.append( validSplit );
+    else
+        _stack.back()->_impliedValidSplits.append( validSplit );
 }
 
 void SmtCore::allSplitsSoFar( List<PiecewiseLinearCaseSplit> &result ) const
 {
     result.clear();
+
+    for ( const auto &it : _impliedValidSplitsAtRoot )
+        result.append( it );
+
     for ( const auto &it : _stack )
     {
         result.append( it->_activeSplit );

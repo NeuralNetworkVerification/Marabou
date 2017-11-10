@@ -693,7 +693,7 @@ void Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
 
         constraint->setActiveConstraint( false );
         PiecewiseLinearCaseSplit validSplit = constraint->getValidCaseSplit();
-        _smtCore.registerImpliedValidSplit( validSplit );
+        _smtCore.recordImpliedValidSplit( validSplit );
         applySplit( validSplit );
         ++_numPlConstraintsDisabledByValidSplits;
 

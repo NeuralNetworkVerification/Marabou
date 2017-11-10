@@ -441,7 +441,7 @@ public:
         PiecewiseLinearCaseSplit split3;
         Tightening bound5( 14, 2.3, Tightening::LB );
 
-        TS_ASSERT_THROWS_NOTHING( smtCore.registerImpliedValidSplit( split3 ) );
+        TS_ASSERT_THROWS_NOTHING( smtCore.recordImpliedValidSplit( split3 ) );
 
         // Do another real split
 
