@@ -158,6 +158,9 @@ bool SmtCore::popSplit()
     // Apply the new split and erase it from the list
     auto split = stackEntry->_alternativeSplits.begin();
 
+    // Erase any valid splits that were learned using the split we just popped
+    stackEntry->_impliedValidSplits.clear();
+
     log( "\tApplying new split..." );
     _engine->applySplit( *split );
     log( "\tApplying new split - DONE" );
