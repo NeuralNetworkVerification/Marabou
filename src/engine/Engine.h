@@ -64,6 +64,7 @@ public:
     */
     void storeState( EngineState &state ) const;
     void restoreState( const EngineState &state );
+    void setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints );
 
     const Statistics *getStatistics() const;
 

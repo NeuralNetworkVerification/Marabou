@@ -1239,7 +1239,7 @@ void Tableau::restoreState( const TableauState &state )
     _boundsValid = state._boundsValid;
 
     computeBasicStatus();
-    _costFunctionStatus = ITableau::COST_FUNCTION_INVALID;
+    computeCostFunction();
 }
 
 void Tableau::checkBoundsValid()

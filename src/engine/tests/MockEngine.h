@@ -110,6 +110,10 @@ public:
     {
         lastRestoredState = &state;
     }
+
+    void setNumPlConstraintsDisabledByValidSplits( unsigned /* numConstraints */ )
+    {
+    }
 };
 
 #endif // __MockEngine_h__

@@ -19,6 +19,11 @@ unsigned FreshVariables::getNextVariable()
     return _nextVariable++;
 }
 
+unsigned FreshVariables::peakNextVariable()
+{
+    return _nextVariable;
+}
+
 void FreshVariables::setNextVariable( unsigned value )
 {
     _nextVariable = value;

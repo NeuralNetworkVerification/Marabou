@@ -18,6 +18,7 @@ class FreshVariables
 public:
     static unsigned getNextVariable();
     static void setNextVariable( unsigned value );
+    static unsigned peakNextVariable();
 
 private:
     static unsigned _nextVariable;

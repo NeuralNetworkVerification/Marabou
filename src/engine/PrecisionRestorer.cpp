@@ -33,10 +33,8 @@ void PrecisionRestorer::restorePrecision( IEngine &engine, ITableau &tableau, Sm
     memcpy( lowerBounds, tableau.getLowerBounds(), sizeof(double) * targetN );
     memcpy( upperBounds, tableau.getUpperBounds(), sizeof(double) * targetN );
 
-#ifdef DEBUG_ON
     EngineState targetEngineState;
     engine.storeState( targetEngineState );
-#endif
 
     // Store the case splits performed so far
     List<PiecewiseLinearCaseSplit> targetSplits;
@@ -81,7 +79,7 @@ void PrecisionRestorer::restorePrecision( IEngine &engine, ITableau &tableau, Sm
                 if ( !shouldBeBasic.exists( basic ) )
                 {
                     tableau.setLeavingVariableIndex( i );
-                    tableau.performDegeneratePivot();
+                    tableau.performPivot();
                     done = true;
                 }
             }
@@ -98,6 +96,13 @@ void PrecisionRestorer::restorePrecision( IEngine &engine, ITableau &tableau, Sm
         tableau.tightenUpperBound( i, upperBounds[i] );
     }
 
+    // Restore constraint status
+    for ( const auto &pair : targetEngineState._plConstraintToState )
+        pair.first->setActiveConstraint( pair.second->isActive() );
+
+    engine.setNumPlConstraintsDisabledByValidSplits
+        ( targetEngineState._numPlConstraintsDisabledByValidSplits );
+
     DEBUG({
             // Same dimensions
             ASSERT( tableau.getN() == targetN );
@@ -112,7 +117,7 @@ void PrecisionRestorer::restorePrecision( IEngine &engine, ITableau &tableau, Sm
             }
 
             EngineState currentEngineState;
-            engine.storeState( targetEngineState );
+            engine.storeState( currentEngineState );
 
             ASSERT( currentEngineState._nextAuxVariable == targetEngineState._nextAuxVariable );
             ASSERT( currentEngineState._numPlConstraintsDisabledByValidSplits ==

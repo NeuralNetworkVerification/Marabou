@@ -554,8 +554,7 @@ void Engine::storeState( EngineState &state ) const
 
     state._numPlConstraintsDisabledByValidSplits = _numPlConstraintsDisabledByValidSplits;
 
-    state._nextAuxVariable = FreshVariables::getNextVariable();
-    FreshVariables::setNextVariable( state._nextAuxVariable );
+    state._nextAuxVariable = FreshVariables::peakNextVariable();
 }
 
 void Engine::restoreState( const EngineState &state )
@@ -585,6 +584,11 @@ void Engine::restoreState( const EngineState &state )
     _smtCore.resetReportedViolations();
 
     FreshVariables::setNextVariable( state._nextAuxVariable );
+}
+
+void Engine::setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints )
+{
+    _numPlConstraintsDisabledByValidSplits = numConstraints;
 }
 
 void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
@@ -718,7 +722,7 @@ void Engine::checkDegradation()
     _statistics.setCurrentDegradation( degradation );
 
     if ( FloatUtils::gt( degradation, GlobalConfiguration::DEGRADATION_THRESHOLD ) )
-         _restorationStatus = Engine::RESTORATION_NEEDED;
+        _restorationStatus = Engine::RESTORATION_NEEDED;
 
     struct timespec end = TimeUtils::sampleMicro();
     _statistics.addTimeForDegradationChecking( TimeUtils::timePassed( start, end ) );
