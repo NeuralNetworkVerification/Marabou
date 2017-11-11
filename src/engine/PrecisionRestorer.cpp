@@ -122,6 +122,8 @@ void PrecisionRestorer::restorePrecision( IEngine &engine, ITableau &tableau, Sm
             ASSERT( currentEngineState._nextAuxVariable == targetEngineState._nextAuxVariable );
             ASSERT( currentEngineState._numPlConstraintsDisabledByValidSplits ==
                     targetEngineState._numPlConstraintsDisabledByValidSplits );
+
+            tableau.verifyInvariants();
         });
 }
 
