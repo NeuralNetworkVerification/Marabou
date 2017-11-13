@@ -33,98 +33,111 @@ void PrecisionRestorer::restorePrecision( IEngine &engine, ITableau &tableau, Sm
     memcpy( lowerBounds, tableau.getLowerBounds(), sizeof(double) * targetN );
     memcpy( upperBounds, tableau.getUpperBounds(), sizeof(double) * targetN );
 
-    EngineState targetEngineState;
-    engine.storeState( targetEngineState );
-
-    // Store the case splits performed so far
-    List<PiecewiseLinearCaseSplit> targetSplits;
-    smtCore.allSplitsSoFar( targetSplits );
-
-    // Restore engine and tableau to their original form
-    engine.restoreState( _initialEngineState );
-
-    // Re-add all splits, which will restore variables and equations
-    for ( const auto &split : targetSplits )
-        engine.applySplit( split );
-
-    // At this point, the tableau has the appropriate dimensions. Restore the variable bounds
-    // and basic variables.
-
-    ASSERT( tableau.getN() == targetN );
-    ASSERT( tableau.getM() == targetM );
-
-    Set<unsigned> basicAfterRestoration = tableau.getBasicVariables();
-    Set<unsigned> needToBeBasic = Set<unsigned>::difference( shouldBeBasic, basicAfterRestoration );
-
-    for ( unsigned variable : needToBeBasic )
+    try
     {
-        /* This variable is currently non-basic. We attempt to make it basic by computing
-           its column and finding a basic variable that shouldn't be basic. Then we can
-           pivot these two variables. */
+        EngineState targetEngineState;
+        engine.storeState( targetEngineState );
 
-        unsigned enteringIndex = tableau.variableToIndex( variable );
-        tableau.setEnteringVariableIndex( enteringIndex );
+        // Store the case splits performed so far
+        List<PiecewiseLinearCaseSplit> targetSplits;
+        smtCore.allSplitsSoFar( targetSplits );
 
-        tableau.computeChangeColumn();
-        const double *changeColumn = tableau.getChangeColumn();
+        // Restore engine and tableau to their original form
+        engine.restoreState( _initialEngineState );
 
-        // Find a variable that is basic but should be non-basic
-        bool done = false;
-        unsigned i = 0;
-        while ( !done && ( i < targetM ) )
+        // Re-add all splits, which will restore variables and equations
+        for ( const auto &split : targetSplits )
+            engine.applySplit( split );
+
+        // At this point, the tableau has the appropriate dimensions. Restore the variable bounds
+        // and basic variables.
+
+        ASSERT( tableau.getN() == targetN );
+        ASSERT( tableau.getM() == targetM );
+
+        Set<unsigned> basicAfterRestoration = tableau.getBasicVariables();
+        Set<unsigned> needToBeBasic = Set<unsigned>::difference( shouldBeBasic, basicAfterRestoration );
+
+        for ( unsigned variable : needToBeBasic )
         {
-            if ( !FloatUtils::isZero( changeColumn[i] ) )
+            /* This variable is currently non-basic. We attempt to make it basic by computing
+               its column and finding a basic variable that shouldn't be basic. Then we can
+               pivot these two variables. */
+
+            unsigned enteringIndex = tableau.variableToIndex( variable );
+            tableau.setEnteringVariableIndex( enteringIndex );
+
+            tableau.computeChangeColumn();
+            const double *changeColumn = tableau.getChangeColumn();
+
+            // Find a variable that is basic but should be non-basic
+            bool done = false;
+            unsigned i = 0;
+            while ( !done && ( i < targetM ) )
             {
-                unsigned basic = tableau.basicIndexToVariable( i );
-                if ( !shouldBeBasic.exists( basic ) )
+                if ( !FloatUtils::isZero( changeColumn[i] ) )
                 {
-                    tableau.setLeavingVariableIndex( i );
-                    tableau.performPivot();
-                    done = true;
+                    unsigned basic = tableau.basicIndexToVariable( i );
+                    if ( !shouldBeBasic.exists( basic ) )
+                    {
+                        tableau.setLeavingVariableIndex( i );
+                        tableau.performPivot();
+                        done = true;
+                    }
                 }
-            }
 
-            ++i;
+                ++i;
+            }
         }
-    }
 
-    // Tighten bounds if needed. The tableau will ignore these bounds if
-    // tighter bounds are already known, somehow.
-    for ( unsigned i = 0; i < targetN; ++i )
+        // Tighten bounds if needed. The tableau will ignore these bounds if
+        // tighter bounds are already known, somehow.
+        for ( unsigned i = 0; i < targetN; ++i )
+        {
+            tableau.tightenLowerBound( i, lowerBounds[i] );
+            tableau.tightenUpperBound( i, upperBounds[i] );
+        }
+
+        // Restore constraint status
+        for ( const auto &pair : targetEngineState._plConstraintToState )
+            pair.first->setActiveConstraint( pair.second->isActive() );
+
+        engine.setNumPlConstraintsDisabledByValidSplits
+            ( targetEngineState._numPlConstraintsDisabledByValidSplits );
+
+        DEBUG({
+                // Same dimensions
+                ASSERT( tableau.getN() == targetN );
+                ASSERT( tableau.getM() == targetM );
+
+                // Constraints should be in the same state before and after restoration
+                for ( const auto &pair : targetEngineState._plConstraintToState )
+                {
+                    ASSERT( pair.second->isActive() == pair.first->isActive() );
+                    ASSERT( pair.second->phaseFixed() == pair.first->phaseFixed() );
+                    ASSERT( pair.second->constraintObsolete() == pair.first->constraintObsolete() );
+                }
+
+                EngineState currentEngineState;
+                engine.storeState( currentEngineState );
+
+                ASSERT( currentEngineState._nextAuxVariable == targetEngineState._nextAuxVariable );
+                ASSERT( currentEngineState._numPlConstraintsDisabledByValidSplits ==
+                        targetEngineState._numPlConstraintsDisabledByValidSplits );
+
+                tableau.verifyInvariants();
+            });
+    }
+    catch ( ... )
     {
-        tableau.tightenLowerBound( i, lowerBounds[i] );
-        tableau.tightenUpperBound( i, upperBounds[i] );
+        delete[] lowerBounds;
+        delete[] upperBounds;
+
+        throw;
     }
 
-    // Restore constraint status
-    for ( const auto &pair : targetEngineState._plConstraintToState )
-        pair.first->setActiveConstraint( pair.second->isActive() );
-
-    engine.setNumPlConstraintsDisabledByValidSplits
-        ( targetEngineState._numPlConstraintsDisabledByValidSplits );
-
-    DEBUG({
-            // Same dimensions
-            ASSERT( tableau.getN() == targetN );
-            ASSERT( tableau.getM() == targetM );
-
-            // Constraints should be in the same state before and after restoration
-            for ( const auto &pair : targetEngineState._plConstraintToState )
-            {
-                ASSERT( pair.second->isActive() == pair.first->isActive() );
-                ASSERT( pair.second->phaseFixed() == pair.first->phaseFixed() );
-                ASSERT( pair.second->constraintObsolete() == pair.first->constraintObsolete() );
-            }
-
-            EngineState currentEngineState;
-            engine.storeState( currentEngineState );
-
-            ASSERT( currentEngineState._nextAuxVariable == targetEngineState._nextAuxVariable );
-            ASSERT( currentEngineState._numPlConstraintsDisabledByValidSplits ==
-                    targetEngineState._numPlConstraintsDisabledByValidSplits );
-
-            tableau.verifyInvariants();
-        });
+    delete[] lowerBounds;
+    delete[] upperBounds;
 }
 
 //
