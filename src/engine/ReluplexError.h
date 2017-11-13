@@ -32,6 +32,7 @@ public:
         EQUATION_INVALID = 10,
         CANT_INVERT_BASIS_BECAUSE_OF_ETAS = 11,
         PREPROCESSOR_CANT_FIND_NEW_AUXILIARY_VAR = 12,
+        RESTORATION_FAILED_TO_RESTORE_PRECISION = 13,
     };
 
     ReluplexError( ReluplexError::Code code ) : Error( "ReluplexError", (int)code )

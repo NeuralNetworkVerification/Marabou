@@ -240,9 +240,10 @@ private:
     void mainLoopStatistics();
 
     /*
-      Check the current degradation, if needed.
+      Check if the current degradation is high
     */
-    void checkDegradation();
+    bool shouldCheckDegradation();
+    bool highDegradation();
 
     /*
       Perform bound tightening on the constraint matrix A.

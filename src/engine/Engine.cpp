@@ -85,8 +85,8 @@ bool Engine::solve()
             mainLoopStatistics();
 
             // Possible restoration due to degradation or malformed tableau
-            checkDegradation();
-            if ( _restorationStatus == Engine::RESTORATION_NEEDED )
+            if ( ( _restorationStatus == Engine::RESTORATION_NEEDED ) ||
+                 ( shouldCheckDegradation() && highDegradation() ) )
                 performPrecisionRestoration();
             else
                 _restorationStatus = Engine::RESTORATION_NOT_NEEDED;
@@ -139,7 +139,8 @@ bool Engine::solve()
         }
         catch ( const MalformedBasisException & )
         {
-            if ( _restorationStatus == Engine::RESTORATION_JUST_PERFORMED )
+            if ( ( _restorationStatus == Engine::RESTORATION_JUST_PERFORMED ) ||
+                 ( _restorationStatus == Engine::RESTORATION_NEEDED ) )
                 throw ReluplexError( ReluplexError::CANNOT_RESTORE_TABLEAU );
 
             _restorationStatus = Engine::RESTORATION_NEEDED;
@@ -711,21 +712,25 @@ void Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
     }
 }
 
-void Engine::checkDegradation()
+bool Engine::shouldCheckDegradation()
+{
+    return _statistics.getNumMainLoopIterations() %
+        GlobalConfiguration::DEGRADATION_CHECKING_FREQUENCY == 0 ;
+}
+
+bool Engine::highDegradation()
 {
     struct timespec start = TimeUtils::sampleMicro();
-
-    if ( _statistics.getNumMainLoopIterations() % GlobalConfiguration::DEGRADATION_CHECKING_FREQUENCY != 0 )
-        return;
 
     double degradation = _degradationChecker.computeDegradation( *_tableau );
     _statistics.setCurrentDegradation( degradation );
 
-    if ( FloatUtils::gt( degradation, GlobalConfiguration::DEGRADATION_THRESHOLD ) )
-        _restorationStatus = Engine::RESTORATION_NEEDED;
+    bool result = FloatUtils::gt( degradation, GlobalConfiguration::DEGRADATION_THRESHOLD );
 
     struct timespec end = TimeUtils::sampleMicro();
     _statistics.addTimeForDegradationChecking( TimeUtils::timePassed( start, end ) );
+
+    return result;
 }
 
 void Engine::tightenBoundsOnConstraintMatrix()
@@ -758,10 +763,6 @@ void Engine::explicitBasisBoundTightening()
 
 void Engine::performPrecisionRestoration()
 {
-    // Two consecutive restorations are now allowed
-    if ( _restorationStatus == Engine::RESTORATION_JUST_PERFORMED )
-        throw ReluplexError( ReluplexError::CANNOT_RESTORE_TABLEAU );
-
     struct timespec start = TimeUtils::sampleMicro();
     _precisionRestorer.restorePrecision( *this, *_tableau, _smtCore );
     struct timespec end = TimeUtils::sampleMicro();
@@ -770,6 +771,9 @@ void Engine::performPrecisionRestoration()
     _statistics.incNumPrecisionRestorations();
 
     _restorationStatus = Engine::RESTORATION_JUST_PERFORMED;
+
+    if ( highDegradation() )
+        throw ReluplexError( ReluplexError::RESTORATION_FAILED_TO_RESTORE_PRECISION );
 }
 
 void Engine::storeInitialEngineState()
