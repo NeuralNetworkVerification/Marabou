@@ -1370,11 +1370,11 @@ void Tableau::addEquation( const Equation &equation )
             newB0[( newM - 1 ) * newM + index] = addend._coefficient;
         }
     }
-    DEBUG( !FloatUtils::isZero( auxCoefficient ) );
+    ASSERT( !FloatUtils::isZero( auxCoefficient ) );
 
     _basicAssignment[_m - 1] = _basicAssignment[_m - 1] / auxCoefficient;
 
-    DEBUG( FloatUtils::wellFormed( _basicAssignment[_m - 1] ) );
+    ASSERT( FloatUtils::wellFormed( _basicAssignment[_m - 1] ) );
 
     if ( FloatUtils::isZero( _basicAssignment[_m - 1] ) )
         _basicAssignment[_m - 1] = 0.0;

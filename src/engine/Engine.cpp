@@ -139,6 +139,10 @@ bool Engine::solve()
         }
         catch ( const MalformedBasisException & )
         {
+            // Debug
+            printf( "MalformedBasisException caught!\n" );
+            //
+
             if ( ( _restorationStatus == Engine::RESTORATION_JUST_PERFORMED ) ||
                  ( _restorationStatus == Engine::RESTORATION_NEEDED ) )
                 throw ReluplexError( ReluplexError::CANNOT_RESTORE_TABLEAU );
@@ -730,6 +734,11 @@ bool Engine::highDegradation()
     struct timespec end = TimeUtils::sampleMicro();
     _statistics.addTimeForDegradationChecking( TimeUtils::timePassed( start, end ) );
 
+    // Debug
+    if ( result )
+        printf( "High degradation found!\n" );
+    //
+
     return result;
 }
 
@@ -764,6 +773,11 @@ void Engine::explicitBasisBoundTightening()
 void Engine::performPrecisionRestoration()
 {
     struct timespec start = TimeUtils::sampleMicro();
+
+    // debug
+    double before = _degradationChecker.computeDegradation( *_tableau );
+    //
+
     _precisionRestorer.restorePrecision( *this, *_tableau, _smtCore );
     struct timespec end = TimeUtils::sampleMicro();
     _statistics.addTimeForPrecisionRestoration( TimeUtils::timePassed( start, end ) );
@@ -771,6 +785,13 @@ void Engine::performPrecisionRestoration()
     _statistics.incNumPrecisionRestorations();
 
     _restorationStatus = Engine::RESTORATION_JUST_PERFORMED;
+
+    // debug
+    double after = _degradationChecker.computeDegradation( *_tableau );
+    printf( "Performing precision restoration. Degradation before: %.15lf. After: %.15lf\n",
+            before,
+            after );
+    //
 
     if ( highDegradation() )
         throw ReluplexError( ReluplexError::RESTORATION_FAILED_TO_RESTORE_PRECISION );

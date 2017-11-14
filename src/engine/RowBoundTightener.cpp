@@ -208,15 +208,11 @@ bool RowBoundTightener::tightenOnSingleInvertedBasisRow( const ITableau &tableau
             continue;
         }
 
-        if ( FloatUtils::isPositive( ci ) )
-            ciSign[i] = POSITIVE;
-        else
-            ciSign[i] = NEGATIVE;
+        ciSign[i] = FloatUtils::isPositive( ci ) ? POSITIVE : NEGATIVE;
 
         unsigned xi = row._row[i]._var;
         ciTimesLb[i] = ci * _lowerBounds[xi];
         ciTimesUb[i] = ci * _upperBounds[xi];
-
     }
 
     // Start with a pass for y
