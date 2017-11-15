@@ -20,9 +20,17 @@ class SmtCore;
 class PrecisionRestorer
 {
 public:
+    enum RestoreBasics {
+        RESTORE_BASICS = 0,
+        DO_NOT_RESTORE_BASICS = 1,
+    };
+
     void storeInitialEngineState( const IEngine &engine );
 
-    void restorePrecision( IEngine &engine, ITableau &tableau, SmtCore &smtCore );
+    void restorePrecision( IEngine &engine,
+                           ITableau &tableau,
+                           SmtCore &smtCore,
+                           RestoreBasics restoreBasics );
 
 private:
     EngineState _initialEngineState;

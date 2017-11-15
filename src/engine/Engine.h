@@ -69,10 +69,10 @@ public:
     const Statistics *getStatistics() const;
 
 private:
-    enum PrecisionRestorationStatus {
+    enum BasisRestorationStatus {
         RESTORATION_NOT_NEEDED = 0,
-        RESTORATION_NEEDED = 1,
-        RESTORATION_JUST_PERFORMED = 2,
+        STRONG_RESTORATION_NEEDED = 1,
+        WEAK_RESTORATION_NEEDED = 2
     };
 
     /*
@@ -163,7 +163,7 @@ private:
     /*
       Restoration status.
     */
-    PrecisionRestorationStatus _restorationStatus;
+    BasisRestorationStatus _basisRestorationStatus;
 
     /*
       Used to restore tableau precision when degradation becomes excessive.
@@ -260,7 +260,8 @@ private:
       Restore the tableau from the original version.
     */
     void storeInitialEngineState();
-    void performPrecisionRestoration();
+    void performPrecisionRestoration( PrecisionRestorer::RestoreBasics restoreBasics );
+    bool basisRestorationNeeded() const;
 
     static void log( const String &message );
 };

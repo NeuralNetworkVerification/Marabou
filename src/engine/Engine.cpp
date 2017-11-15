@@ -28,7 +28,7 @@ Engine::Engine()
     , _numPlConstraintsDisabledByValidSplits( 0 )
     , _preprocessingEnabled( false )
     , _work( NULL )
-    , _restorationStatus( RESTORATION_NOT_NEEDED )
+    , _basisRestorationStatus( Engine::RESTORATION_NOT_NEEDED )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -84,12 +84,30 @@ bool Engine::solve()
 
             mainLoopStatistics();
 
-            // Possible restoration due to degradation or malformed tableau
-            if ( ( _restorationStatus == Engine::RESTORATION_NEEDED ) ||
-                 ( shouldCheckDegradation() && highDegradation() ) )
-                performPrecisionRestoration();
+            // If the basis has become malformed, we need to restore it
+            if ( basisRestorationNeeded() )
+            {
+                // Debug
+                printf( "doing basis restoration. Current restoration state: %u\n",
+                        _basisRestorationStatus );
+                //
+
+                if ( _basisRestorationStatus == Engine::STRONG_RESTORATION_NEEDED )
+                    performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
+                else
+                    performPrecisionRestoration( PrecisionRestorer::DO_NOT_RESTORE_BASICS );
+
+                continue;
+            }
             else
-                _restorationStatus = Engine::RESTORATION_NOT_NEEDED;
+                _basisRestorationStatus = Engine::RESTORATION_NOT_NEEDED;
+
+            // Possible restoration due to preceision degradation
+            if ( shouldCheckDegradation() && highDegradation() )
+            {
+                performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
+                continue;
+            }
 
             if ( _tableau->basisMatrixAvailable() )
                 explicitBasisBoundTightening();
@@ -143,11 +161,12 @@ bool Engine::solve()
             printf( "MalformedBasisException caught!\n" );
             //
 
-            if ( ( _restorationStatus == Engine::RESTORATION_JUST_PERFORMED ) ||
-                 ( _restorationStatus == Engine::RESTORATION_NEEDED ) )
+            if ( _basisRestorationStatus == Engine::RESTORATION_NOT_NEEDED )
+                _basisRestorationStatus = Engine::STRONG_RESTORATION_NEEDED;
+            else if ( _basisRestorationStatus == Engine::STRONG_RESTORATION_NEEDED )
+                _basisRestorationStatus = Engine::WEAK_RESTORATION_NEEDED;
+            else
                 throw ReluplexError( ReluplexError::CANNOT_RESTORE_TABLEAU );
-
-            _restorationStatus = Engine::RESTORATION_NEEDED;
         }
         catch ( const InfeasibleQueryException & )
         {
@@ -770,7 +789,7 @@ void Engine::explicitBasisBoundTightening()
     _statistics.addTimeForExplicitBasisBoundTightening( TimeUtils::timePassed( start, end ) );
 }
 
-void Engine::performPrecisionRestoration()
+void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics restoreBasics )
 {
     struct timespec start = TimeUtils::sampleMicro();
 
@@ -778,13 +797,11 @@ void Engine::performPrecisionRestoration()
     double before = _degradationChecker.computeDegradation( *_tableau );
     //
 
-    _precisionRestorer.restorePrecision( *this, *_tableau, _smtCore );
+    _precisionRestorer.restorePrecision( *this, *_tableau, _smtCore, restoreBasics );
     struct timespec end = TimeUtils::sampleMicro();
     _statistics.addTimeForPrecisionRestoration( TimeUtils::timePassed( start, end ) );
 
     _statistics.incNumPrecisionRestorations();
-
-    _restorationStatus = Engine::RESTORATION_JUST_PERFORMED;
 
     // debug
     double after = _degradationChecker.computeDegradation( *_tableau );
@@ -800,6 +817,13 @@ void Engine::performPrecisionRestoration()
 void Engine::storeInitialEngineState()
 {
     _precisionRestorer.storeInitialEngineState( *this );
+}
+
+bool Engine::basisRestorationNeeded() const
+{
+    return
+        _basisRestorationStatus == Engine::STRONG_RESTORATION_NEEDED ||
+        _basisRestorationStatus == Engine::WEAK_RESTORATION_NEEDED;
 }
 
 const Statistics *Engine::getStatistics() const

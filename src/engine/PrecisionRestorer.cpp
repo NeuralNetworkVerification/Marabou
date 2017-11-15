@@ -20,7 +20,10 @@ void PrecisionRestorer::storeInitialEngineState( const IEngine &engine )
     engine.storeState( _initialEngineState );
 }
 
-void PrecisionRestorer::restorePrecision( IEngine &engine, ITableau &tableau, SmtCore &smtCore )
+void PrecisionRestorer::restorePrecision( IEngine &engine,
+                                          ITableau &tableau,
+                                          SmtCore &smtCore,
+                                          RestoreBasics restoreBasics )
 {
     // Store the dimensions, bounds and basic variables in the current tableau, before restoring it
     unsigned targetM = tableau.getM();
@@ -55,38 +58,41 @@ void PrecisionRestorer::restorePrecision( IEngine &engine, ITableau &tableau, Sm
         ASSERT( tableau.getN() == targetN );
         ASSERT( tableau.getM() == targetM );
 
-        Set<unsigned> basicAfterRestoration = tableau.getBasicVariables();
-        Set<unsigned> needToBeBasic = Set<unsigned>::difference( shouldBeBasic, basicAfterRestoration );
-
-        for ( unsigned variable : needToBeBasic )
+        if ( restoreBasics == RESTORE_BASICS )
         {
-            /* This variable is currently non-basic. We attempt to make it basic by computing
-               its column and finding a basic variable that shouldn't be basic. Then we can
-               pivot these two variables. */
+            Set<unsigned> basicAfterRestoration = tableau.getBasicVariables();
+            Set<unsigned> needToBeBasic = Set<unsigned>::difference( shouldBeBasic, basicAfterRestoration );
 
-            unsigned enteringIndex = tableau.variableToIndex( variable );
-            tableau.setEnteringVariableIndex( enteringIndex );
-
-            tableau.computeChangeColumn();
-            const double *changeColumn = tableau.getChangeColumn();
-
-            // Find a variable that is basic but should be non-basic
-            bool done = false;
-            unsigned i = 0;
-            while ( !done && ( i < targetM ) )
+            for ( unsigned variable : needToBeBasic )
             {
-                if ( !FloatUtils::isZero( changeColumn[i] ) )
-                {
-                    unsigned basic = tableau.basicIndexToVariable( i );
-                    if ( !shouldBeBasic.exists( basic ) )
-                    {
-                        tableau.setLeavingVariableIndex( i );
-                        tableau.performPivot();
-                        done = true;
-                    }
-                }
+                /* This variable is currently non-basic. We attempt to make it basic by computing
+                   its column and finding a basic variable that shouldn't be basic. Then we can
+                   pivot these two variables. */
 
-                ++i;
+                unsigned enteringIndex = tableau.variableToIndex( variable );
+                tableau.setEnteringVariableIndex( enteringIndex );
+
+                tableau.computeChangeColumn();
+                const double *changeColumn = tableau.getChangeColumn();
+
+                // Find a variable that is basic but should be non-basic
+                bool done = false;
+                unsigned i = 0;
+                while ( !done && ( i < targetM ) )
+                {
+                    if ( !FloatUtils::isZero( changeColumn[i] ) )
+                    {
+                        unsigned basic = tableau.basicIndexToVariable( i );
+                        if ( !shouldBeBasic.exists( basic ) )
+                        {
+                            tableau.setLeavingVariableIndex( i );
+                            tableau.performPivot();
+                            done = true;
+                        }
+                    }
+
+                    ++i;
+                }
             }
         }
 
