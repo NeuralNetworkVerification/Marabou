@@ -58,109 +58,211 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
 
 bool Preprocessor::processEquations()
 {
+    enum {
+        ZERO = 0,
+        POSITIVE = 1,
+        NEGATIVE = 2,
+        INFINITE = 3,
+    };
+
     bool tighterBoundFound = false;
 
     for ( const auto &equation : _preprocessed.getEquations() )
     {
-        for ( const auto &varBeingTightened : equation._addends )
+        // The equation is of the form sum (ci * xi) - b = 0
+
+        unsigned maxVar = equation._addends.begin()->_variable;
+        for ( const auto &addend : equation._addends )
         {
-            // The equation is of the form a * varBeingTightened + sum (bi * xi) = c,
-            // or: a * varBeingTightened = c - sum (bi * xi)
+            if ( addend._variable > maxVar )
+                maxVar = addend._variable;
+        }
 
-            // We first compute the lower and upper bounds for the expression c - sum (bi * xi)
-            double scalarUB = equation._scalar;
-            double scalarLB = equation._scalar;
-            bool validLB = true;
-            bool validUB = true;
+        ++maxVar;
 
-            for ( auto addend : equation._addends )
+        double *ciTimesLb = new double[maxVar];
+        double *ciTimesUb = new double[maxVar];
+        char *ciSign = new char[maxVar];
+
+        Set<unsigned> excludedFromLB;
+        Set<unsigned> excludedFromUB;
+
+        unsigned xi;
+        double xiLB;
+        double xiUB;
+        double ci;
+        double lowerBound;
+        double upperBound;
+        bool validLb;
+        bool validUb;
+
+        // The first goal is to compute the LB and UB of: sum (ci * xi) - b = 0
+        // For this we first identify unbounded variables
+        double auxLb = -equation._scalar;
+        double auxUb = -equation._scalar;
+        for ( const auto &addend : equation._addends )
+        {
+            ci = addend._coefficient;
+            xi = addend._variable;
+
+            if ( FloatUtils::isZero( ci ) )
             {
-                if ( varBeingTightened._variable == addend._variable )
-                    continue;
+                ciSign[xi] = ZERO;
+                ciTimesLb[xi] = 0;
+                ciTimesUb[xi] = 0;
+                continue;
+            }
 
-                if ( FloatUtils::isNegative( addend._coefficient ) )
+            ciSign[xi] = FloatUtils::isPositive( ci ) ? POSITIVE : NEGATIVE;
+
+            xiLB = _preprocessed.getLowerBound( xi );
+            xiUB = _preprocessed.getUpperBound( xi );
+
+            if ( FloatUtils::isFinite( xiLB ) )
+            {
+                ciTimesLb[xi] = ci * xiLB;
+                if ( ciSign[xi] == POSITIVE )
+                    auxLb += ciTimesLb[xi];
+                else
+                    auxUb += ciTimesLb[xi];
+            }
+            else
+            {
+                if ( FloatUtils::isPositive( ci ) )
+                    excludedFromLB.insert( xi );
+                else
+                    excludedFromUB.insert( xi );
+            }
+
+            if ( FloatUtils::isFinite( xiUB ) )
+            {
+                ciTimesUb[xi] = ci * xiUB;
+                if ( ciSign[xi] == POSITIVE )
+                    auxUb += ciTimesUb[xi];
+                else
+                    auxLb += ciTimesUb[xi];
+            }
+            else
+            {
+                if ( FloatUtils::isPositive( ci ) )
+                    excludedFromUB.insert( xi );
+                else
+                    excludedFromLB.insert( xi );
+            }
+        }
+
+        // Now, go over each addend in sum (ci * xi) - b = 0, and see what can be done
+        for ( const auto &addend : equation._addends )
+        {
+            ci = addend._coefficient;
+            xi = addend._variable;
+
+            // If ci = 0, nothing to do.
+            if ( ciSign[xi] == ZERO )
+                continue;
+
+            /*
+              The expression for xi is:
+
+                   xi = ( -1/ci ) * ( sum_{j\neqi} ( cj * xj ) - b )
+
+              We use the previously computed auxLb and auxUb and adjust them because
+              xi is removed from the sum. We also need to pay attention to the sign of ci,
+              and to the presence of infinite bounds.
+
+              We can compute a LB if:
+                1. ci is negative, and no vars except xi were excluded from the auxLb
+                2. ci is positive, and no vars except xi were excluded from the auxUb
+
+              And vice-versa for UB.
+            */
+            if ( ciSign[xi] == NEGATIVE )
+            {
+                validLb =
+                    excludedFromLB.empty() ||
+                    ( excludedFromLB.size() == 1 && excludedFromLB.exists( xi ) );
+                validUb =
+                    excludedFromUB.empty() ||
+                    ( excludedFromUB.size() == 1 && excludedFromUB.exists( xi ) );
+            }
+            else
+            {
+                validLb =
+                    excludedFromUB.empty() ||
+                    ( excludedFromUB.size() == 1 && excludedFromUB.exists( xi ) );
+                validUb =
+                    excludedFromLB.empty() ||
+                    ( excludedFromLB.size() == 1 && excludedFromLB.exists( xi ) );
+            }
+
+            // Now compute the actul bounds and see if they are tighter
+            if ( validLb )
+            {
+                if ( ciSign[xi] == NEGATIVE )
                 {
-                    if ( validLB )
-                    {
-                        double addendLB = _preprocessed.getLowerBound( addend._variable );
-                        if ( FloatUtils::isFinite( addendLB ) )
-                            scalarLB -= addend._coefficient * addendLB;
-                        else
-                            validLB = false;
-                    }
-
-                    if ( validUB )
-                    {
-                        double addendUB = _preprocessed.getUpperBound( addend._variable );
-                        if ( FloatUtils::isFinite( addendUB ) )
-                            scalarUB -= addend._coefficient * addendUB;
-                        else
-                            validUB = false;
-                    }
+                    lowerBound = auxLb;
+                    if ( !excludedFromLB.exists( xi ) )
+                        lowerBound -= ciTimesUb[xi];
+                }
+                else
+                {
+                    lowerBound = auxUb;
+                    if ( !excludedFromUB.exists( xi ) )
+                        lowerBound -= ciTimesUb[xi];
                 }
 
-                if ( FloatUtils::isPositive( addend._coefficient ) )
-                {
-                    if ( validLB )
-                    {
-                        double addendUB = _preprocessed.getUpperBound( addend._variable );
-                        if ( FloatUtils::isFinite( addendUB ) )
-                            scalarLB -= addend._coefficient * addendUB;
-                        else
-                            validLB = false;
-                    }
+                lowerBound /= -ci;
 
-                    if ( validUB )
-                    {
-                        double addendLB = _preprocessed.getLowerBound( addend._variable );
-                        if ( FloatUtils::isFinite( addendLB ) )
-                            scalarUB -= addend._coefficient * addendLB;
-                        else
-                            validUB = false;
-                    }
+                if ( FloatUtils::gt( lowerBound,
+                                     _preprocessed.getLowerBound( xi ),
+                                     GlobalConfiguration::BOUND_COMPARISON_TOLERANCE ) )
+                {
+                    tighterBoundFound = true;
+                    _preprocessed.setLowerBound( xi, lowerBound );
                 }
             }
 
-            // We know that lb < a * varBeingTightened < ub. We want to divide by a, but we care about the sign
-            // If a is positive: lb/a < x < ub/a
-            // If a is negative: lb/a > x > ub/a
-            if ( validLB )
-                scalarLB = scalarLB / varBeingTightened._coefficient;
-            if ( validUB )
-                scalarUB = scalarUB / varBeingTightened._coefficient;
-
-            if ( FloatUtils::isNegative( varBeingTightened._coefficient ) )
+            if ( validUb )
             {
-                double temp = scalarUB;
-                scalarUB = scalarLB;
-                scalarLB = temp;
+                if ( ciSign[xi] == NEGATIVE )
+                {
+                    upperBound = auxUb;
+                    if ( !excludedFromUB.exists( xi ) )
+                        upperBound -= ciTimesLb[xi];
+                }
+                else
+                {
+                    upperBound = auxLb;
+                    if ( !excludedFromLB.exists( xi ) )
+                        upperBound -= ciTimesLb[xi];
+                }
 
-                bool tempValid = validUB;
-                validUB = validLB;
-                validLB = tempValid;
+                upperBound /= -ci;
+
+                if ( FloatUtils::lt( upperBound,
+                                     _preprocessed.getUpperBound( xi ),
+                                     GlobalConfiguration::BOUND_COMPARISON_TOLERANCE ) )
+                {
+                    tighterBoundFound = true;
+                    _preprocessed.setUpperBound( xi, upperBound );
+                }
             }
 
-            if ( validLB && FloatUtils::gt( scalarLB, _preprocessed.getLowerBound( varBeingTightened._variable ),
-                                            GlobalConfiguration::BOUND_COMPARISON_TOLERANCE ) )
-            {
-                tighterBoundFound = true;
-                _preprocessed.setLowerBound( varBeingTightened._variable, scalarLB );
-            }
-
-            if ( validUB && FloatUtils::lt( scalarUB, _preprocessed.getUpperBound( varBeingTightened._variable ),
-                                            GlobalConfiguration::BOUND_COMPARISON_TOLERANCE ) )
-            {
-                tighterBoundFound = true;
-                _preprocessed.setUpperBound( varBeingTightened._variable, scalarUB );
-            }
-
-            if ( FloatUtils::gt( _preprocessed.getLowerBound( varBeingTightened._variable ),
-                                 _preprocessed.getUpperBound( varBeingTightened._variable ),
+            if ( FloatUtils::gt( _preprocessed.getLowerBound( xi ),
+                                 _preprocessed.getUpperBound( xi ),
                                  GlobalConfiguration::BOUND_COMPARISON_TOLERANCE ) )
             {
+                delete[] ciTimesLb;
+                delete[] ciTimesUb;
+                delete[] ciSign;
+
                 throw InfeasibleQueryException();
             }
         }
+
+        delete[] ciTimesLb;
+        delete[] ciTimesUb;
+        delete[] ciSign;
     }
 
     return tighterBoundFound;

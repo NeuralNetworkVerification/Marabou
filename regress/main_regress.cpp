@@ -34,9 +34,6 @@ void lps()
     Lp_Feasible_2 lpf2;
     lpf2.run();
 
-    // Lp_Feasible_3 lpf3;
-    // lpf3.run();
-
     printTitle( "Pure LP / Unsat" );
     Lp_Infeasible_1 lpi1;
     lpi1.run();
