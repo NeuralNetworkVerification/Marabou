@@ -31,6 +31,13 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     _preprocessed = query;
 
     /*
+      Initial work: if needed, have the PL constraints add their additional
+      equations to the pool.
+    */
+    if ( GlobalConfiguration::PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS )
+        addPlAuxiliaryEquations();
+
+    /*
       Do the preprocessing steps:
 
       Until saturation:
@@ -482,6 +489,38 @@ unsigned Preprocessor::getNewIndex( unsigned oldIndex ) const
 void Preprocessor::setStatistics( Statistics *statistics )
 {
     _statistics = statistics;
+}
+
+void Preprocessor::addPlAuxiliaryEquations()
+{
+    // First, collect all the new equations
+    const List<PiecewiseLinearConstraint *> &plConstraints
+        ( _preprocessed.getPiecewiseLinearConstraints() );
+
+    List<Equation> newEquations;
+    for ( const auto &constraint : plConstraints )
+        constraint->getAuxiliaryEquations( newEquations );
+
+    // Update the number of variables: new aux variable per equation
+    unsigned oldNumberOfVariables = _preprocessed.getNumberOfVariables();
+    unsigned newNumberOfVariables = oldNumberOfVariables + newEquations.size();
+
+    _preprocessed.setNumberOfVariables( newNumberOfVariables );
+
+    unsigned newAuxVar = oldNumberOfVariables;
+    for ( Equation equation : newEquations )
+    {
+        // Add the auxiliary variable to the equation
+        equation.markAuxiliaryVariable( newAuxVar );
+        equation.addAddend( 1.0, newAuxVar );
+
+        // For now, all new equations are interpreted as \geq 0,
+        // so the auxiliary variable needs to be non-positive.
+        _preprocessed.setUpperBound( newAuxVar, 0.0 );
+        _preprocessed.addEquation( equation );
+
+        ++newAuxVar;
+    }
 }
 
 //

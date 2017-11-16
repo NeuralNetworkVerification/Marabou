@@ -115,6 +115,12 @@ public:
     */
     void dump( String &output ) const;
 
+    /*
+      For preprocessing: get any auxiliary equations that this constraint would
+      like to add to the equation pool.
+    */
+    void getAuxiliaryEquations( List<Equation> &newEquations ) const;
+
 private:
     unsigned _b, _f;
     PhaseStatus _phaseStatus;

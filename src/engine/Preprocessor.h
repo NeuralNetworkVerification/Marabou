@@ -61,6 +61,14 @@ private:
 	*/
 	void eliminateFixedVariables();
 
+    /*
+      Call on the PL constraints to add any auxiliary equations
+    */
+    void addPlAuxiliaryEquations();
+
+    /*
+      The preprocessed query
+    */
     InputQuery _preprocessed;
 
     /*

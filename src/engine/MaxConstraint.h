@@ -105,6 +105,12 @@ public:
     */
     void getEntailedTightenings( List<Tightening> &tightenings ) const;
 
+    /*
+      For preprocessing: get any auxiliary equations that this constraint would
+      like to add to the equation pool.
+    */
+    void getAuxiliaryEquations( List<Equation> &newEquations ) const;
+
 private:
     unsigned _f;
   	unsigned _maxIndex;

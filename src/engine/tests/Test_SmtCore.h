@@ -129,6 +129,10 @@ public:
         void getEntailedTightenings( List<Tightening> & ) const
         {
         }
+
+        void getAuxiliaryEquations( List<Equation> &/* newEquations */ ) const
+        {
+        }
     };
 
     void setUp()

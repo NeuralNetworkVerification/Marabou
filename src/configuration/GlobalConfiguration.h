@@ -44,6 +44,10 @@ public:
     // elimination.
     static const bool PREPROCESSOR_ELIMINATE_VARIABLES;
 
+    // Assuming the preprocessor is on, toggle whether or not PL constraints will be called upon
+    // to add auxiliary variables and equations.
+    static const bool PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS;
+
     // How often should the main loop check the current degradation?
     static const unsigned DEGRADATION_CHECKING_FREQUENCY;
 

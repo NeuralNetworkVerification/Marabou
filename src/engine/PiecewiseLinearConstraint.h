@@ -14,11 +14,13 @@
 #define __PiecewiseLinearConstraint_h__
 
 #include "ITableau.h"
+#include "List.h"
 #include "Map.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "Queue.h"
 #include "Tightening.h"
 
+class Equation;
 class ITableau;
 class String;
 
@@ -144,6 +146,12 @@ public:
     virtual void getEntailedTightenings( List<Tightening> &tightenings ) const = 0;
 
     void setStatistics( Statistics *statistics );
+
+    /*
+      For preprocessing: get any auxiliary equations that this constraint would
+      like to add to the equation pool.
+    */
+    virtual void getAuxiliaryEquations( List<Equation> &newEquations ) const = 0;
 
 protected:
     bool _constraintActive;

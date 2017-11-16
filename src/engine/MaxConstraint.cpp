@@ -413,6 +413,10 @@ void MaxConstraint::tightenPL( Tightening tighten, List<Tightening> &tightenings
     }
 }
 
+void MaxConstraint::getAuxiliaryEquations( List<Equation> &/* newEquations */ ) const
+{
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "
