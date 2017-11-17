@@ -375,6 +375,12 @@ public:
     void setCostFunctionStatus( ITableau::CostFunctionStatus status );
 
     /*
+      The current state of the basic assignment
+    */
+    BasicAssignmentStatus getBasicAssignmentStatus() const;
+    void setBasicAssignmentStatus( ITableau::BasicAssignmentStatus status );
+
+    /*
       Methods for accessing the basis matrix if it's available,
       and extracting from it explicit equations.
 
@@ -516,6 +522,11 @@ private:
       The status of the cost function
     */
     CostFunctionStatus _costFunctionStatus;
+
+    /*
+      The status of the basic assignment
+    */
+    BasicAssignmentStatus _basicAssignmentStatus;
 
     /*
       Statistics collection

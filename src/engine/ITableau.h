@@ -32,6 +32,12 @@ public:
         COST_FUNCTION_UPDATED = 2,
     };
 
+    enum BasicAssignmentStatus {
+        BASIC_ASSIGNMENT_INVALID = 0,
+        BASIC_ASSIGNMENT_JUST_COMPUTED = 1,
+        BASIC_ASSIGNMENT_UPDATED = 2,
+    };
+
     /*
       A class for allowing objects (e.g., piecewise linear
       constraints) to register and receive updates regarding changes

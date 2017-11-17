@@ -46,6 +46,7 @@ Tableau::Tableau()
     , _basicAssignment( NULL )
     , _basicStatus( NULL )
     , _costFunctionStatus( ITableau::COST_FUNCTION_INVALID )
+    , _basicAssignmentStatus( ITableau::BASIC_ASSIGNMENT_INVALID )
     , _statistics( NULL )
 {
 }
@@ -343,6 +344,8 @@ void Tableau::computeAssignment()
     _basisFactorization->forwardTransformation( _work, _basicAssignment );
 
     computeBasicStatus();
+
+    _basicAssignmentStatus = ITableau::BASIC_ASSIGNMENT_JUST_COMPUTED;
 
     // Inform the watchers
     for ( unsigned i = 0; i < _m; ++i )
@@ -1066,6 +1069,8 @@ void Tableau::setNonBasicAssignment( unsigned variable, double value, bool updat
         // the cost function is invalidated
         if ( oldStatus != _basicStatus[i] )
             _costFunctionStatus = ITableau::COST_FUNCTION_INVALID;
+
+        _basicAssignmentStatus = ITableau::BASIC_ASSIGNMENT_UPDATED;
     }
 }
 
@@ -1191,6 +1196,7 @@ void Tableau::storeState( TableauState &state ) const
     // Store the assignments
     memcpy( state._basicAssignment, _basicAssignment, sizeof(double) *_m );
     memcpy( state._nonBasicAssignment, _nonBasicAssignment, sizeof(double) * ( _n - _m  ) );
+    state._basicAssignmentStatus = _basicAssignmentStatus;
 
     // Store the indices
     memcpy( state._basicIndexToVariable, _basicIndexToVariable, sizeof(unsigned) * _m );
@@ -1226,6 +1232,7 @@ void Tableau::restoreState( const TableauState &state )
     // Restore the assignments
     memcpy( _basicAssignment, state._basicAssignment, sizeof(double) *_m );
     memcpy( _nonBasicAssignment, state._nonBasicAssignment, sizeof(double) * ( _n - _m  ) );
+    _basicAssignmentStatus = state._basicAssignmentStatus;
 
     // Restore the indices
     memcpy( _basicIndexToVariable, state._basicIndexToVariable, sizeof(unsigned) * _m );
@@ -1238,7 +1245,7 @@ void Tableau::restoreState( const TableauState &state )
     // Restore the _boundsValid indicator
     _boundsValid = state._boundsValid;
 
-    computeBasicStatus();
+    computeAssignment();
     computeCostFunction();
 }
 
@@ -1736,6 +1743,8 @@ void Tableau::updateAssignmentForPivot()
       update the affected basics and the non-basic itself.
     */
 
+    _basicAssignmentStatus = ITableau::BASIC_ASSIGNMENT_UPDATED;
+
     if ( performingFakePivot() )
     {
         // A non-basic is hopping from one bound to the other.
@@ -1893,6 +1902,16 @@ ITableau::CostFunctionStatus Tableau::getCostFunctionStatus() const
 void Tableau::setCostFunctionStatus( ITableau::CostFunctionStatus status )
 {
     _costFunctionStatus = status;
+}
+
+ITableau::BasicAssignmentStatus Tableau::getBasicAssignmentStatus() const
+{
+    return _basicAssignmentStatus;
+}
+
+void Tableau::setBasicAssignmentStatus( ITableau::BasicAssignmentStatus status )
+{
+    _basicAssignmentStatus = status;
 }
 
 bool Tableau::basisMatrixAvailable() const

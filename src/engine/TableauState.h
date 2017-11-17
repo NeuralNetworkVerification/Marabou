@@ -13,6 +13,7 @@
 #ifndef __TableauState_h__
 #define __TableauState_h__
 
+#include "ITableau.h"
 #include "Set.h"
 
 class BasisFactorization;
@@ -28,6 +29,7 @@ class TableauState
       - Lower and upper bounds
       - Basic variables
       - Basic and non-basic assignments
+      - Basic assignment status
       - The current indexing
       - The current basis
     */
@@ -73,6 +75,11 @@ public:
       The assignment of the non basic variables.
     */
     double *_nonBasicAssignment;
+
+    /*
+      The status of the basic assignment.
+    */
+    ITableau::BasicAssignmentStatus _basicAssignmentStatus;
 
     /*
       Mapping between basic variables and indices (length m)
