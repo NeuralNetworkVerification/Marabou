@@ -35,6 +35,10 @@ const double GlobalConfiguration::PSE_GAMMA_ERROR_THRESHOLD = 0.001;
 
 const bool GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_INVERT_BASIS = true;
 
+// Relu-specific parameters
+const bool GlobalConfiguration::RELU_PP_F_MINUS_B_CONSTRAINTS = true;
+const bool GlobalConfiguration::RELU_PP_NON_NEG_MINUS_F_CONSTRAINTS = true;
+
 // Logging
 const bool GlobalConfiguration::ENGINE_LOGGING = false;
 const bool GlobalConfiguration::TABLEAU_LOGGING = false;
@@ -54,14 +58,24 @@ void GlobalConfiguration::print()
     printf( "  STATISTICS_PRINTING_FREQUENCY: %u\n", STATISTICS_PRINTING_FREQUENCY );
     printf( "  BOUND_COMPARISON_TOLERANCE: %.15lf\n", BOUND_COMPARISON_TOLERANCE );
     printf( "  PIVOT_CHANGE_COLUMN_TOLERANCE: %.15lf\n", PIVOT_CHANGE_COLUMN_TOLERANCE );
-    printf( "  PREPROCESS_INPUT_QUERY: %s\n", PREPROCESS_INPUT_QUERY ? "Yes" : "No" );
     printf( "  DEGRADATION_CHECKING_FREQUENCY: %u\n", DEGRADATION_CHECKING_FREQUENCY );
+    printf( "  DEGRADATION_THRESHOLD: %.15lf\n", DEGRADATION_THRESHOLD );
     printf( "  ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD: %.15lf\n", ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD );
     printf( "  MAX_SIMPLEX_PIVOT_SEARCH_ITERATIONS: %u\n", MAX_SIMPLEX_PIVOT_SEARCH_ITERATIONS );
     printf( "  CONSTRAINT_VIOLATION_THRESHOLD: %u\n", CONSTRAINT_VIOLATION_THRESHOLD );
-
+    printf( "  BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY: %u\n",
+            BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY );
+    printf( "  PREPROCESS_INPUT_QUERY: %s\n", PREPROCESS_INPUT_QUERY ? "Yes" : "No" );
+    printf( "  PREPROCESSOR_ELIMINATE_VARIABLES: %s\n", PREPROCESSOR_ELIMINATE_VARIABLES ? "Yes" : "No" );
+    printf( "  PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS: %s\n",
+            PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS ? "Yes" : "No" );
     printf( "  PSE_ITERATIONS_BEFORE_RESET: %u\n", PSE_ITERATIONS_BEFORE_RESET );
     printf( "  PSE_GAMMA_ERROR_THRESHOLD: %.15lf\n", PSE_GAMMA_ERROR_THRESHOLD );
+    printf( "  EXPLICIT_BASIS_BOUND_TIGHTENING_INVERT_BASIS: %s\n",
+            EXPLICIT_BASIS_BOUND_TIGHTENING_INVERT_BASIS ? "Yes" : "No" );
+    printf( "  RELU_PP_F_MINUS_B_CONSTRAINTS: %s\n", RELU_PP_F_MINUS_B_CONSTRAINTS ? "Yes" : "No" );
+    printf( "  RELU_PP_NON_NEG_MINUS_F_CONSTRAINTS: %s\n",
+            RELU_PP_NON_NEG_MINUS_F_CONSTRAINTS ? "Yes" : "No" );
     printf( "****************************\n" );
 }
 

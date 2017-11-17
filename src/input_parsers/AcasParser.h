@@ -13,8 +13,8 @@
 #ifndef __AcasParser_h__
 #define __AcasParser_h__
 
-#include "Map.h"
 #include "AcasNeuralNetwork.h"
+#include "Map.h"
 
 class InputQuery;
 class String;
