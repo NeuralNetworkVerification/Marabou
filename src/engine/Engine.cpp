@@ -131,9 +131,18 @@ bool Engine::solve()
                 // Check the status of the PL constraints
                 collectViolatedPlConstraints();
 
-                // If all constraints are satisfied, we are done
+                // If all constraints are satisfied, we are possibly done
                 if ( allPlConstraintsHold() )
                 {
+                    if ( _tableau->getBasicAssignmentStatus() !=
+                         ITableau::BASIC_ASSIGNMENT_JUST_COMPUTED )
+                    {
+                        printf( "Before declaring SAT, recomputing...\n" );
+                        // Make sure that the assignment is precise before declaring success
+                        _tableau->computeAssignment();
+                        continue;
+                    }
+
                     printf( "\nEngine::solve: SAT assignment found\n" );
                     _statistics.print();
                     return true;
@@ -309,6 +318,14 @@ void Engine::performSimplexStep()
             // This failure might have resulted from a corrupt cost function.
             ASSERT( _tableau->getCostFunctionStatus() == ITableau::COST_FUNCTION_UPDATED );
             _tableau->setCostFunctionStatus( ITableau::COST_FUNCTION_INVALID );
+            struct timespec end = TimeUtils::sampleMicro();
+            _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
+            return;
+        }
+        else if ( _tableau->getBasicAssignmentStatus() != ITableau::BASIC_ASSIGNMENT_JUST_COMPUTED )
+        {
+            // This failure might have resulted from a corrupt basic assignment.
+            _tableau->computeAssignment();
             struct timespec end = TimeUtils::sampleMicro();
             _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
             return;

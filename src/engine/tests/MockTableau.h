@@ -276,6 +276,15 @@ public:
     {
     }
 
+    BasicAssignmentStatus getBasicAssignmentStatus() const
+    {
+        return BASIC_ASSIGNMENT_INVALID;
+    }
+
+    void setBasicAssignmentStatus( ITableau::BasicAssignmentStatus /* status */ )
+    {
+    }
+
     void dumpCostFunction() const {}
     void computeChangeColumn() {}
 

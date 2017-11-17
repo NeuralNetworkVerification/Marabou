@@ -138,6 +138,8 @@ public:
     virtual double getSumOfInfeasibilities() const = 0;
     virtual CostFunctionStatus getCostFunctionStatus() const = 0;
     virtual void setCostFunctionStatus( CostFunctionStatus status ) = 0;
+    virtual BasicAssignmentStatus getBasicAssignmentStatus() const = 0;
+    virtual void setBasicAssignmentStatus( ITableau::BasicAssignmentStatus status ) = 0;
     virtual void verifyInvariants() = 0;
     virtual bool basisMatrixAvailable() const = 0;
     virtual void getBasisEquations( List<Equation *> &equations ) const = 0;
