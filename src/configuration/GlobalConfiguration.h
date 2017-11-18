@@ -83,10 +83,6 @@ public:
     static const bool DANTZIGS_RULE_LOGGING;
     static const bool BASIS_FACTORIZATION_LOGGING;
     static const bool PROJECTED_STEEPEST_EDGE_LOGGING;
-
-    // Relu-specific configuration
-    static const bool RELU_PP_F_MINUS_B_CONSTRAINTS;
-    static const bool RELU_PP_NON_NEG_MINUS_F_CONSTRAINTS;
 };
 
 #endif // __GlobalConfiguration_h__

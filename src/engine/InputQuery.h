@@ -36,6 +36,8 @@ public:
     unsigned getNumberOfVariables() const;
     double getLowerBound( unsigned variable ) const;
     double getUpperBound( unsigned variable ) const;
+    const Map<unsigned, double> &getLowerBounds() const;
+    const Map<unsigned, double> &getUpperBounds() const;
 
     const List<Equation> &getEquations() const;
 	List<Equation> &getEquations();

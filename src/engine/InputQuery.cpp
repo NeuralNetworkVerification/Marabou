@@ -175,6 +175,16 @@ void InputQuery::freeConstraintsIfNeeded()
     _plConstraints.clear();
 }
 
+const Map<unsigned, double> &InputQuery::getLowerBounds() const
+{
+    return _lowerBounds;
+}
+
+const Map<unsigned, double> &InputQuery::getUpperBounds() const
+{
+    return _upperBounds;
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

@@ -35,10 +35,6 @@ const double GlobalConfiguration::PSE_GAMMA_ERROR_THRESHOLD = 0.001;
 
 const bool GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_INVERT_BASIS = true;
 
-// Relu-specific parameters
-const bool GlobalConfiguration::RELU_PP_F_MINUS_B_CONSTRAINTS = true;
-const bool GlobalConfiguration::RELU_PP_NON_NEG_MINUS_F_CONSTRAINTS = true;
-
 // Logging
 const bool GlobalConfiguration::ENGINE_LOGGING = false;
 const bool GlobalConfiguration::TABLEAU_LOGGING = false;
@@ -73,9 +69,6 @@ void GlobalConfiguration::print()
     printf( "  PSE_GAMMA_ERROR_THRESHOLD: %.15lf\n", PSE_GAMMA_ERROR_THRESHOLD );
     printf( "  EXPLICIT_BASIS_BOUND_TIGHTENING_INVERT_BASIS: %s\n",
             EXPLICIT_BASIS_BOUND_TIGHTENING_INVERT_BASIS ? "Yes" : "No" );
-    printf( "  RELU_PP_F_MINUS_B_CONSTRAINTS: %s\n", RELU_PP_F_MINUS_B_CONSTRAINTS ? "Yes" : "No" );
-    printf( "  RELU_PP_NON_NEG_MINUS_F_CONSTRAINTS: %s\n",
-            RELU_PP_NON_NEG_MINUS_F_CONSTRAINTS ? "Yes" : "No" );
     printf( "****************************\n" );
 }
 
