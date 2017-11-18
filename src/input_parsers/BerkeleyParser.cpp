@@ -93,11 +93,80 @@ void BerkeleyParser::generateQuery( InputQuery &inputQuery )
         marabouEquation.setScalar( berkeleyEquation._constant );
         inputQuery.addEquation( marabouEquation );
     }
+
+    // List<Equation> auxiliaryEquations;
+    // addAuxiliaryEquations( auxiliaryEquations );
+    // printf( "BerkeleyParser dumping %u auxiliaryEquations:\n", auxiliaryEquations.size() );
+    // for ( const auto &aux : auxiliaryEquations )
+    // {
+    //     aux.dump();
+    // }
 }
 
 Set<unsigned> BerkeleyParser::getOutputVariables() const
 {
     return _berkeleyNeuralNetwork.getOutputVariables();
+}
+
+void BerkeleyParser::addAuxiliaryEquations( List<Equation> &auxiliaryEquations )
+{
+    // Go over the F variables, and look for inner layers
+    for ( const auto &fToB : _berkeleyNeuralNetwork.getFToB() )
+        addAuxiliaryEquation( fToB.first, fToB.second, auxiliaryEquations );
+}
+
+void BerkeleyParser::addAuxiliaryEquation( unsigned xf, unsigned xb, List<Equation> &auxiliaryEquations )
+{
+    Set<unsigned> inputVariables = _berkeleyNeuralNetwork.getInputVariables();
+
+    // Find the equation for xb
+    for ( const auto &eq : _berkeleyNeuralNetwork.getEquations() )
+    {
+        if ( eq._lhs == xb )
+        {
+            /*
+              xb is given as: xb = sum(ci xi) + bias.
+
+              We can assume that xi's are non negative if they are input variables,
+              in which case they are in the range [0,1], or if they are the
+              outputs of previous ReLUs.
+
+              We construct the equation:
+
+              xf = sum(cj xj) + max(bias, 0)
+
+              where cj are those ci coefficients that are non-negative.
+            */
+
+            Equation equation;
+            for ( const auto &addend : eq._rhs )
+            {
+                if ( ( _berkeleyNeuralNetwork.getInputVariables().exists( addend._var ) ) ||
+                     ( _berkeleyNeuralNetwork.getFToB().exists( addend._var ) ) )
+                {
+                    if ( FloatUtils::isPositive( addend._coefficient ) )
+                        equation.addAddend( addend._coefficient, addend._var );
+                }
+            }
+
+            // If we couldn't find any viable addends, skips
+            if ( equation._addends.empty() )
+                return;
+
+            equation.addAddend( -1.0, xf );
+
+            if ( FloatUtils::isPositive( eq._constant ) )
+                equation.setScalar( eq._constant );
+            else
+                equation.setScalar( 0.0 );
+
+            auxiliaryEquations.append( equation );
+            return;
+        }
+    }
+
+    printf( "Error!! Couldn't find an equation for one of the B's\n" );
+    exit( 1 );
 }
 
 //

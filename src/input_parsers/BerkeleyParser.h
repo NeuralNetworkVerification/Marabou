@@ -13,9 +13,11 @@
 #ifndef __BerkeleyParser_h__
 #define __BerkeleyParser_h__
 
-#include "Map.h"
 #include "BerkeleyNeuralNetwork.h"
+#include "List.h"
+#include "Map.h"
 
+class Equation;
 class InputQuery;
 class String;
 
@@ -45,6 +47,9 @@ public:
 
 private:
     BerkeleyNeuralNetwork _berkeleyNeuralNetwork;
+
+    void addAuxiliaryEquations( List<Equation> &auxiliaryEquations );
+    void addAuxiliaryEquation( unsigned xf, unsigned xb, List<Equation> &auxiliaryEquations );
 };
 
 #endif // __BerkeleyParser_h__
