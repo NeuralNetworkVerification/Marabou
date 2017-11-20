@@ -36,8 +36,9 @@ AcasNnet *load_network(const char* filename)
     AcasNnet *nnet = new AcasNnet();
 
     //Read int parameters of neural network
-    line=fgets(buffer,bufferSize,fstream); //skip header line
     line=fgets(buffer,bufferSize,fstream);
+    while (strstr(line, "//")!=NULL)
+        line=fgets(buffer,bufferSize,fstream); //skip header lines
     record = strtok(line,",\n");
     nnet->numLayers    = atoi(record);
     nnet->inputSize    = atoi(strtok(NULL,",\n"));
