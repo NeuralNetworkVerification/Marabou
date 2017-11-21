@@ -80,7 +80,8 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
                 unsigned i = 0;
                 while ( !done && ( i < targetM ) )
                 {
-                    if ( !FloatUtils::isZero( changeColumn[i] ) )
+                    if ( FloatUtils::gte( FloatUtils::abs( changeColumn[i] ),
+                                          GlobalConfiguration::ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD ) )
                     {
                         unsigned basic = tableau.basicIndexToVariable( i );
                         if ( !shouldBeBasic.exists( basic ) )
