@@ -1,4 +1,6 @@
-Neural Network File Format by Kyle Julian, Stanford 2016
+// The contents of this file are licensed under the Creative Commons
+// Attribution 4.0 International License: https://creativecommons.org/licenses/by/4.0/
+// Neural Network File Format by Kyle Julian, Stanford 2016
 7,5,5,50,
 5,50,50,50,50,50,50,5,
 0,
