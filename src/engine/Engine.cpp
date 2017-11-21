@@ -595,9 +595,16 @@ void Engine::reportPlViolation()
     _smtCore.reportViolatedConstraint( _plConstraintToFix );
 }
 
-void Engine::storeState( EngineState &state ) const
+void Engine::storeState( EngineState &state, bool storeAlsoTableauState ) const
 {
-    _tableau->storeState( state._tableauState );
+    if ( storeAlsoTableauState )
+    {
+        _tableau->storeState( state._tableauState );
+        state._tableauStateIsStored = true;
+    }
+    else
+        state._tableauStateIsStored = false;
+
     for ( const auto &constraint : _plConstraints )
         state._plConstraintToState[constraint] = constraint->duplicateConstraint();
 
@@ -609,6 +616,9 @@ void Engine::storeState( EngineState &state ) const
 void Engine::restoreState( const EngineState &state )
 {
     log( "Restore state starting" );
+
+    if ( !state._tableauStateIsStored )
+        throw ReluplexError( ReluplexError::RESTORING_ENGINE_FROM_INVALID_STATE );
 
     log( "\tRestoring tableau state" );
     _tableau->restoreState( state._tableauState );

@@ -33,6 +33,7 @@ public:
         PREPROCESSOR_CANT_FIND_NEW_AUXILIARY_VAR = 11,
         RESTORATION_FAILED_TO_RESTORE_PRECISION = 12,
         CANNOT_RESTORE_TABLEAU = 13,
+        RESTORING_ENGINE_FROM_INVALID_STATE = 14,
     };
 
     ReluplexError( ReluplexError::Code code ) : Error( "ReluplexError", (int)code )

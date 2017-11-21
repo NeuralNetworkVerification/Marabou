@@ -100,7 +100,7 @@ public:
     }
 
     mutable EngineState *lastStoredState;
-    void storeState( EngineState &state ) const
+    void storeState( EngineState &state, bool /* storeAlsoTableauState */ ) const
     {
         lastStoredState = &state;
     }

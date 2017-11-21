@@ -89,7 +89,7 @@ void SmtCore::performSplit()
 
     // Obtain the current state of the engine
     EngineState *stateBeforeSplits = new EngineState;
-    _engine->storeState( *stateBeforeSplits );
+    _engine->storeState( *stateBeforeSplits, true );
 
     StackEntry *stackEntry = new StackEntry;
     // Perform the first split: add bounds and equations

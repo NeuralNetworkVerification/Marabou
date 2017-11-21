@@ -24,11 +24,21 @@ public:
     EngineState();
     ~EngineState();
 
+    /*
+      The state of the tableau
+    */
+    bool _tableauStateIsStored;
     TableauState _tableauState;
-    Map<PiecewiseLinearConstraint *, PiecewiseLinearConstraint *> _plConstraintToState;
 
+    /*
+      The state of each of the PL constraints
+    */
+    Map<PiecewiseLinearConstraint *, PiecewiseLinearConstraint *> _plConstraintToState;
     unsigned _numPlConstraintsDisabledByValidSplits;
 
+    /*
+      Next auxiliary varibale
+    */
     unsigned _nextAuxVariable;
 };
 
