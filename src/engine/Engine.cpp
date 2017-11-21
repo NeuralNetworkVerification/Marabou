@@ -845,8 +845,26 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
             after );
     //
 
-    if ( highDegradation() )
-        throw ReluplexError( ReluplexError::RESTORATION_FAILED_TO_RESTORE_PRECISION );
+    if ( highDegradation() && ( restoreBasics == PrecisionRestorer::RESTORE_BASICS ) )
+    {
+        // First round, with basic restoration, still resulted in high degradation.
+        // Try again!
+        start = TimeUtils::sampleMicro();
+        _precisionRestorer.restorePrecision( *this, *_tableau, _smtCore,
+                                             PrecisionRestorer::DO_NOT_RESTORE_BASICS );
+        end = TimeUtils::sampleMicro();
+        _statistics.addTimeForPrecisionRestoration( TimeUtils::timePassed( start, end ) );
+        _statistics.incNumPrecisionRestorations();
+
+        // debug
+        double afterSecond = _degradationChecker.computeDegradation( *_tableau );
+        printf( "Performing 2nd precision restoration. Degradation before: %.15lf. After: %.15lf\n",
+                after,
+                afterSecond );
+
+        if ( highDegradation() )
+            throw ReluplexError( ReluplexError::RESTORATION_FAILED_TO_RESTORE_PRECISION );
+    }
 }
 
 void Engine::storeInitialEngineState()
