@@ -28,7 +28,8 @@ Engine::Engine()
     , _numPlConstraintsDisabledByValidSplits( 0 )
     , _preprocessingEnabled( false )
     , _work( NULL )
-    , _basisRestorationStatus( Engine::RESTORATION_NOT_NEEDED )
+    , _basisRestorationRequired( Engine::RESTORATION_NOT_NEEDED )
+    , _basisRestorationPerformed( Engine::NO_RESTORATION_PERFORMED )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -88,19 +89,29 @@ bool Engine::solve()
             if ( basisRestorationNeeded() )
             {
                 // Debug
-                printf( "doing basis restoration. Current restoration state: %u\n",
-                        _basisRestorationStatus );
+                printf( "doing basis restoration. Current restoration required: %u. Performed: %u\n",
+                        _basisRestorationRequired,
+                        _basisRestorationPerformed );
                 //
 
-                if ( _basisRestorationStatus == Engine::STRONG_RESTORATION_NEEDED )
+                if ( _basisRestorationRequired == Engine::STRONG_RESTORATION_NEEDED )
+                {
                     performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
+                    _basisRestorationPerformed = Engine::PERFORMED_STRONG_RESTORATION;
+                }
                 else
+                {
                     performPrecisionRestoration( PrecisionRestorer::DO_NOT_RESTORE_BASICS );
+                    _basisRestorationPerformed = Engine::PERFORMED_WEAK_RESTORATION;
+                }
+
+                _basisRestorationRequired = Engine::RESTORATION_NOT_NEEDED;
 
                 continue;
             }
-            else
-                _basisRestorationStatus = Engine::RESTORATION_NOT_NEEDED;
+
+            // Restoration is not required
+            _basisRestorationPerformed = Engine::NO_RESTORATION_PERFORMED;
 
             // Possible restoration due to preceision degradation
             if ( shouldCheckDegradation() && highDegradation() )
@@ -170,10 +181,10 @@ bool Engine::solve()
             printf( "MalformedBasisException caught!\n" );
             //
 
-            if ( _basisRestorationStatus == Engine::RESTORATION_NOT_NEEDED )
-                _basisRestorationStatus = Engine::STRONG_RESTORATION_NEEDED;
-            else if ( _basisRestorationStatus == Engine::STRONG_RESTORATION_NEEDED )
-                _basisRestorationStatus = Engine::WEAK_RESTORATION_NEEDED;
+            if ( _basisRestorationPerformed == Engine::NO_RESTORATION_PERFORMED )
+                _basisRestorationRequired = Engine::STRONG_RESTORATION_NEEDED;
+            else if ( _basisRestorationPerformed == Engine::PERFORMED_STRONG_RESTORATION )
+                _basisRestorationRequired = Engine::WEAK_RESTORATION_NEEDED;
             else
                 throw ReluplexError( ReluplexError::CANNOT_RESTORE_TABLEAU );
         }
@@ -875,8 +886,8 @@ void Engine::storeInitialEngineState()
 bool Engine::basisRestorationNeeded() const
 {
     return
-        _basisRestorationStatus == Engine::STRONG_RESTORATION_NEEDED ||
-        _basisRestorationStatus == Engine::WEAK_RESTORATION_NEEDED;
+        _basisRestorationRequired == Engine::STRONG_RESTORATION_NEEDED ||
+        _basisRestorationRequired == Engine::WEAK_RESTORATION_NEEDED;
 }
 
 const Statistics *Engine::getStatistics() const

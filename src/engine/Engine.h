@@ -69,10 +69,16 @@ public:
     const Statistics *getStatistics() const;
 
 private:
-    enum BasisRestorationStatus {
+    enum BasisRestorationRequired {
         RESTORATION_NOT_NEEDED = 0,
         STRONG_RESTORATION_NEEDED = 1,
         WEAK_RESTORATION_NEEDED = 2
+    };
+
+    enum BasisRestorationPerformed {
+        NO_RESTORATION_PERFORMED = 0,
+        PERFORMED_STRONG_RESTORATION = 1,
+        PERFORMED_WEAK_RESTORATION = 2,
     };
 
     /*
@@ -163,7 +169,8 @@ private:
     /*
       Restoration status.
     */
-    BasisRestorationStatus _basisRestorationStatus;
+    BasisRestorationRequired _basisRestorationRequired;
+    BasisRestorationPerformed _basisRestorationPerformed;
 
     /*
       Used to restore tableau precision when degradation becomes excessive.
