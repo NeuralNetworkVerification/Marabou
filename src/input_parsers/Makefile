@@ -4,6 +4,7 @@ SUBDIRS += \
 	acas_example \
 	berkeley_example \
 	mps_generic \
+    tensorflow_parser \
 
 include $(ROOT_DIR)/Rules.mk
 

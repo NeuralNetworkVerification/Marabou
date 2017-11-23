@@ -24,6 +24,8 @@ CONFIGURATION_DIR = $(SRC_DIR)/configuration
 
 REGRESS_DIR	  = $(PROJECT_DIR)/regress
 
+TENSORFLOW_DIR = $(INPUT_PARSER_DIR)/tensorflow_parser
+
 #
 # Utilities
 #
@@ -68,7 +70,6 @@ CFLAGS += \
 	-MMD \
 	-Wall \
 	-Wextra \
-	-Werror \
 	-Wno-deprecated \
 	-std=c++0x \
 	\
