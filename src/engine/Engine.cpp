@@ -478,9 +478,10 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             }
         }
 
-        log( Stringf( "Input query (before preprocessing): %u equations, %u variables\n",
-                      inputQuery.getEquations().size(),
-                      inputQuery.getNumberOfVariables() ) );
+        printf( "Engine::processInputQuery: Input query (before preprocessing): "
+                "%u equations, %u variables\n",
+                inputQuery.getEquations().size(),
+                inputQuery.getNumberOfVariables() );
 
         // If processing is enabled, invoke the preprocessor
         _preprocessingEnabled = preprocess;
@@ -490,9 +491,10 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         else
             _preprocessedQuery = inputQuery;
 
-        log( Stringf( "Input query (after preprocessing): %u equations, %u variables\n",
-                      inputQuery.getEquations().size(),
-                      inputQuery.getNumberOfVariables() ) );
+        printf( "Engine::processInputQuery: Input query (after preprocessing): "
+                "%u equations, %u variables\n",
+                _preprocessedQuery.getEquations().size(),
+                _preprocessedQuery.getNumberOfVariables() );
 
         unsigned infiniteBounds = _preprocessedQuery.countInfiniteBounds();
         if ( infiniteBounds != 0 )
