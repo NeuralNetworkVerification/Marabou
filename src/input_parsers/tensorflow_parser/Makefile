@@ -15,6 +15,7 @@ LOCAL_LIBRARIES += \
     tensorflow_cc \
 
 CFLAGS += \
+    -Wno-unused-parameter \
     -DDEBUG_ON \
 
 SOURCES += \
