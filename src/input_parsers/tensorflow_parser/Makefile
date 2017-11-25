@@ -10,6 +10,7 @@ LOCAL_INCLUDES += \
 
 LINK_FLAGS += \
     -Llib_tf \
+    -Xlinker -rpath=lib_tf \
 
 LOCAL_LIBRARIES += \
     tensorflow_cc \
