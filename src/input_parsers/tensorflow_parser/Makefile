@@ -9,9 +9,10 @@ LOCAL_INCLUDES += \
     $(TENSORFLOW_DIR)/include_tf \
 
 LINK_FLAGS += \
+    -Llib_tf \
 
 LOCAL_LIBRARIES += \
-    tensorflow_cc_small \
+    tensorflow_cc \
 
 CFLAGS += \
     -DDEBUG_ON \
