@@ -27,7 +27,7 @@ int main()
         // Extract an input query from the network
         InputQuery inputQuery;
 
-        TfParser tfParser("./models/graph_test.pb"); 
+        TfParser tfParser("./models/graph_test.pb");
 
         tfParser.generateQuery( inputQuery );
 
@@ -43,11 +43,12 @@ int main()
         //inputQuery.setLowerBound( tfParser.getOutputVariable(1), 1.0 );
         //inputQuery.setUpperBound( tfParser.getOutputVariable(1), 1.0 );
 
-		
+
         // Feed the query to the engine
         Engine engine;
-        engine.processInputQuery( inputQuery );
-        if ( !engine.solve() )
+
+        bool sat = engine.processInputQuery( inputQuery ) && engine.solve();
+        if ( !sat )
         {
             printf( "\n\nQuery is unsat\n" );
             return 0;
