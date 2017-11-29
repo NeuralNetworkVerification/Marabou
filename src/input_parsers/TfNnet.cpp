@@ -181,33 +181,34 @@ TfNnet *load_network(const char* filename) {
   // The variables are the network weights/biases/etc that we are interested in
   
   //std::cout << SummarizeGraphDef(graph_def); //This line prints out all nodes in the graph
-  std::cout << "VARIABLES:\n";
+  //std::cout << "VARIABLES:\n";
   for (int i=0; i < node_count; i++) {
     auto n = graph_def.node(i);
     if (n.op().find("Const") != std::string::npos) {
       varNames.push_back(n.name());
-      std::cout << n.name();
-      std::cout << "\n";
+      //std::cout << n.name();
+      //std::cout << "\n";
     } else if (n.op().find("Placeholder") != std::string::npos) {
       nnet->input_names.push_back(n.name());
     }
   }
-  std::cout << "\n";  
+  //std::cout << "\n";  
    
   // Extract data from tensorflow tensors  
   std::map<string, Eigen::Tensor<float,2>> varValuesMatrix;
   std::map<string, Eigen::Tensor<float,1>> varValuesVector;
-  std::cout << "HERE 1\n";
   convertTensorData(session,varNames,varValuesMatrix,varValuesVector);
-  printVariables(varValuesMatrix,varValuesVector);
-  std::cout << SummarizeGraphDef(graph_def);  
+  //printVariables(varValuesMatrix,varValuesVector);
+  //std::cout << SummarizeGraphDef(graph_def);  
     
+  /*
   std::cout << "VARIABLE NAMES:\n";
   for (unsigned j=0; j<varNames.size(); j++){
       std::cout << varNames[j];
       std::cout << "\n";
   }
   std::cout << "\n";
+  */
 
   // Loop through graph and order weights and biases correctly for a dense ReLU network  
   // We assume that the graph only uses:
@@ -290,7 +291,7 @@ TfNnet *load_network(const char* filename) {
   nnet->session = session;
   
   // Print out Variables of network, if desired
-  printVariables(nnet->num_inputs,nnet->weights,nnet->biases,nnet->activations);
+  // printVariables(nnet->num_inputs,nnet->weights,nnet->biases,nnet->activations);
 
   return nnet;
 }

@@ -27,19 +27,19 @@ int main()
         // Extract an input query from the network
         InputQuery inputQuery;
 
-        TfParser tfParser("./models/graph_test.pb");
+        TfParser tfParser("./models/graph_test_medium.pb");
 
         tfParser.generateQuery( inputQuery );
 
         // A simple query: all inputs are fixed to 0
-        inputQuery.setLowerBound( tfParser.getInputVariable(0), 0.0 );
-        inputQuery.setUpperBound( tfParser.getInputVariable(0), 0.0 );
-        inputQuery.setLowerBound( tfParser.getInputVariable(1), 1.0 );
-        inputQuery.setUpperBound( tfParser.getInputVariable(1), 1.0 );
+        inputQuery.setLowerBound( tfParser.getInputVariable(0), -10.0 );
+        inputQuery.setUpperBound( tfParser.getInputVariable(0), 10.0 );
+        inputQuery.setLowerBound( tfParser.getInputVariable(1), -10.0 );
+        inputQuery.setUpperBound( tfParser.getInputVariable(1), 10.0 );
 
 
-        //inputQuery.setLowerBound( tfParser.getOutputVariable(0), 0.0 );
-        inputQuery.setUpperBound( tfParser.getOutputVariable(0), 8.0 );
+        inputQuery.setLowerBound( tfParser.getOutputVariable(1), 194.0 );
+        inputQuery.setUpperBound( tfParser.getOutputVariable(1), 210.0 );
         //inputQuery.setLowerBound( tfParser.getOutputVariable(1), 1.0 );
         //inputQuery.setUpperBound( tfParser.getOutputVariable(1), 1.0 );
 
