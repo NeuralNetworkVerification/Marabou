@@ -116,7 +116,7 @@ void RowBoundTightener::examineInvertedBasisMatrix( const ITableau &tableau, boo
             for ( unsigned j = 0; j < m; ++j )
                 row->_scalar += ( invB[i*m + j] * b[j] );
 
-            // Now update the row's coefficient for basic variable i
+            // Now update the row's coefficients for basic variable i
             for ( unsigned j = 0; j < n - m; ++j )
             {
                 row->_row[j]._var = tableau.nonBasicIndexToVariable( j );

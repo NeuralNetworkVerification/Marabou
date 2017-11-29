@@ -220,9 +220,7 @@ bool Preprocessor::processEquations()
 
                 lowerBound /= -ci;
 
-                if ( FloatUtils::gt( lowerBound,
-                                     _preprocessed.getLowerBound( xi ),
-                                     GlobalConfiguration::BOUND_COMPARISON_TOLERANCE ) )
+                if ( FloatUtils::gt( lowerBound, _preprocessed.getLowerBound( xi ) ) )
                 {
                     tighterBoundFound = true;
                     _preprocessed.setLowerBound( xi, lowerBound );
@@ -246,18 +244,14 @@ bool Preprocessor::processEquations()
 
                 upperBound /= -ci;
 
-                if ( FloatUtils::lt( upperBound,
-                                     _preprocessed.getUpperBound( xi ),
-                                     GlobalConfiguration::BOUND_COMPARISON_TOLERANCE ) )
+                if ( FloatUtils::lt( upperBound, _preprocessed.getUpperBound( xi ) ) )
                 {
                     tighterBoundFound = true;
                     _preprocessed.setUpperBound( xi, upperBound );
                 }
             }
 
-            if ( FloatUtils::gt( _preprocessed.getLowerBound( xi ),
-                                 _preprocessed.getUpperBound( xi ),
-                                 GlobalConfiguration::BOUND_COMPARISON_TOLERANCE ) )
+            if ( FloatUtils::gt( _preprocessed.getLowerBound( xi ), _preprocessed.getUpperBound( xi ) ) )
             {
                 delete[] ciTimesLb;
                 delete[] ciTimesUb;
@@ -316,9 +310,7 @@ void Preprocessor::eliminateFixedVariables()
     // First, collect the variables that have become fixed, and their fixed values
 	for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
 	{
-        if ( FloatUtils::areEqual( _preprocessed.getLowerBound( i ),
-                                   _preprocessed.getUpperBound( i ),
-                                   GlobalConfiguration::BOUND_COMPARISON_TOLERANCE ) )
+        if ( FloatUtils::areEqual( _preprocessed.getLowerBound( i ), _preprocessed.getUpperBound( i ) ) )
             _fixedVariables[i] = _preprocessed.getLowerBound( i );
 	}
 
@@ -459,6 +451,8 @@ void Preprocessor::eliminateFixedVariables()
 	{
         if ( _fixedVariables.exists( i ) )
             continue;
+
+        ASSERT( _oldIndexToNewIndex.at( i ) <= i );
 
         _preprocessed.setLowerBound( _oldIndexToNewIndex.at( i ), _preprocessed.getLowerBound( i ) );
         _preprocessed.setUpperBound( _oldIndexToNewIndex.at( i ), _preprocessed.getUpperBound( i ) );

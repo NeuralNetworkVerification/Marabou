@@ -407,8 +407,6 @@ public:
     void test_todo()
     {
         TS_TRACE( "In test_variable_elimination, test something about updated bounds and updated PL constraints" );
-        TS_TRACE( "Maintain mapping for extracting the solution after preprocessing" );
-        TS_TRACE( "Change variable elimination to ON by default?" );
     }
 };
 

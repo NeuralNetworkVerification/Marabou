@@ -155,9 +155,10 @@ void Statistics::print()
         _totalTimeConstraintMatrixBoundTighteningMicro +
         _totalTimeApplyingStoredTighteningsMicro +
         _totalTimeSmtCoreMicro;
+
     printf( "\t\t[%.2lf%%] Unaccounted for: %llu milli\n"
             , printPercents( _timeMainLoopMicro - total, _timeMainLoopMicro )
-            , ( _timeMainLoopMicro - total ) / 1000
+            , _timeMainLoopMicro > total ? ( _timeMainLoopMicro - total ) / 1000 : 0
             );
 
     printf( "\t--- Preprocessor Statistics ---\n" );
