@@ -166,6 +166,9 @@ bool Engine::solve()
                 // and perform any valid case splits.
                 tightenBoundsOnConstraintMatrix();
                 applyAllBoundTightenings();
+                // For debugging purposes
+                checkBoundCompliancyWithDebugSolution();
+
                 applyAllValidConstraintCaseSplits();
 
                 continue;
@@ -324,19 +327,19 @@ void Engine::performSimplexStep()
     // If we don't have any candidates, this simplex step has failed.
     if ( !haveCandidate )
     {
-        if ( _tableau->getCostFunctionStatus() != ITableau::COST_FUNCTION_JUST_COMPUTED )
+        if ( _tableau->getBasicAssignmentStatus() != ITableau::BASIC_ASSIGNMENT_JUST_COMPUTED )
         {
-            // This failure might have resulted from a corrupt cost function.
-            ASSERT( _tableau->getCostFunctionStatus() == ITableau::COST_FUNCTION_UPDATED );
-            _tableau->setCostFunctionStatus( ITableau::COST_FUNCTION_INVALID );
+            // This failure might have resulted from a corrupt basic assignment.
+            _tableau->computeAssignment();
             struct timespec end = TimeUtils::sampleMicro();
             _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
             return;
         }
-        else if ( _tableau->getBasicAssignmentStatus() != ITableau::BASIC_ASSIGNMENT_JUST_COMPUTED )
+        else if ( _tableau->getCostFunctionStatus() != ITableau::COST_FUNCTION_JUST_COMPUTED )
         {
-            // This failure might have resulted from a corrupt basic assignment.
-            _tableau->computeAssignment();
+            // This failure might have resulted from a corrupt cost function.
+            ASSERT( _tableau->getCostFunctionStatus() == ITableau::COST_FUNCTION_UPDATED );
+            _tableau->setCostFunctionStatus( ITableau::COST_FUNCTION_INVALID );
             struct timespec end = TimeUtils::sampleMicro();
             _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
             return;
@@ -370,7 +373,8 @@ void Engine::performSimplexStep()
     _activeEntryStrategy->postPivotHook( _tableau, fakePivot );
 
     // Tighten
-    if ( !fakePivot )
+    if ( !fakePivot &&
+         FloatUtils::lt( bestPivotEntry, GlobalConfiguration::ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD ) )
         _rowBoundTightener->examinePivotRow( _tableau );
 
     struct timespec end = TimeUtils::sampleMicro();
@@ -558,6 +562,8 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
     {
         return false;
     }
+
+    _smtCore.storeDebuggingSolution( _preprocessedQuery._debuggingSolution );
 
     return true;
 }
@@ -850,6 +856,7 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
     _statistics.addTimeForPrecisionRestoration( TimeUtils::timePassed( start, end ) );
 
     _statistics.incNumPrecisionRestorations();
+    _rowBoundTightener->clear( _tableau );
 
     // debug
     double after = _degradationChecker.computeDegradation( *_tableau );
@@ -868,6 +875,8 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
         end = TimeUtils::sampleMicro();
         _statistics.addTimeForPrecisionRestoration( TimeUtils::timePassed( start, end ) );
         _statistics.incNumPrecisionRestorations();
+
+        _rowBoundTightener->clear( _tableau );
 
         // debug
         double afterSecond = _degradationChecker.computeDegradation( *_tableau );
@@ -901,6 +910,39 @@ void Engine::log( const String &message )
 {
     if ( GlobalConfiguration::ENGINE_LOGGING )
         printf( "Engine: %s\n", message.ascii() );
+}
+
+void Engine::checkBoundCompliancyWithDebugSolution()
+{
+    if ( _smtCore.checkSkewFromDebuggingSolution() )
+    {
+        // The stack is compliant, we should not have learned any non-compliant bounds
+        for ( const auto &var : _preprocessedQuery._debuggingSolution )
+        {
+            // printf( "Looking at var %u\n", var.first );
+
+            if ( FloatUtils::gt( _tableau->getLowerBound( var.first ), var.second, 1e-5 ) )
+            {
+                printf( "Error! The stack is compliant, but learned an non-compliant bound: "
+                        "Solution for %u is %.15lf, but learned lower bound %.15lf\n",
+                        var.first,
+                        var.second,
+                        _tableau->getLowerBound( var.first ) );
+                throw ReluplexError( ReluplexError::DEBUGGING_ERROR );
+            }
+
+            if ( FloatUtils::lt( _tableau->getUpperBound( var.first ), var.second, 1e-5 ) )
+            {
+                printf( "Error! The stack is compliant, but learned an non-compliant bound: "
+                        "Solution for %u is %.15lf, but learned upper bound %.15lf\n",
+                        var.first,
+                        var.second,
+                        _tableau->getUpperBound( var.first ) );
+
+                throw ReluplexError( ReluplexError::DEBUGGING_ERROR );
+            }
+        }
+    }
 }
 
 //

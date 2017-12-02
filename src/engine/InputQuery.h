@@ -63,6 +63,12 @@ public:
     InputQuery &operator=( const InputQuery &other );
     InputQuery( const InputQuery &other );
 
+    /*
+      For debugging purposes only - store a correct possible solution
+    */
+    void storeDebuggingSolution( unsigned variable, double value );
+    Map<unsigned, double> _debuggingSolution;
+
 private:
     unsigned _numberOfVariables;
     List<Equation> _equations;

@@ -271,6 +271,13 @@ private:
     bool basisRestorationNeeded() const;
 
     static void log( const String &message );
+
+    /*
+      For debugging purposes:
+      Check that the current lower and upper bounds are consistent
+      with the stored solution
+    */
+    void checkBoundCompliancyWithDebugSolution();
 };
 
 #endif // __Engine_h__

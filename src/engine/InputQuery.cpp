@@ -154,6 +154,7 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
     _lowerBounds = other._lowerBounds;
     _upperBounds = other._upperBounds;
     _solution = other._solution;
+    _debuggingSolution = other._debuggingSolution;
 
     freeConstraintsIfNeeded();
     for ( const auto &constraint : other._plConstraints )
@@ -183,6 +184,11 @@ const Map<unsigned, double> &InputQuery::getLowerBounds() const
 const Map<unsigned, double> &InputQuery::getUpperBounds() const
 {
     return _upperBounds;
+}
+
+void InputQuery::storeDebuggingSolution( unsigned variable, double value )
+{
+    _debuggingSolution[variable] = value;
 }
 
 //

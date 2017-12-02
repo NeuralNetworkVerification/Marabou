@@ -57,6 +57,18 @@ void RowBoundTightener::initialize( const ITableau &tableau )
     }
 }
 
+void RowBoundTightener::clear( const ITableau &tableau )
+{
+    std::fill( _tightenedLower, _tightenedLower + _n, false );
+    std::fill( _tightenedUpper, _tightenedUpper + _n, false );
+
+    for ( unsigned i = 0; i < _n; ++i )
+    {
+        _lowerBounds[i] = tableau.getLowerBound( i );
+        _upperBounds[i] = tableau.getUpperBound( i );
+    }
+}
+
 RowBoundTightener::~RowBoundTightener()
 {
     freeMemoryIfNeeded();

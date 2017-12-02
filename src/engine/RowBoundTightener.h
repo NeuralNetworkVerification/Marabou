@@ -33,6 +33,11 @@ public:
     void initialize( const ITableau &tableau );
 
     /*
+      Clear all learned bounds, without reallocating memory.
+    */
+    void clear( const ITableau &tableau );
+
+    /*
       Callbacks from the Tableau, to inform of bounds tightened by,
       e.g., the PL constraints.
     */

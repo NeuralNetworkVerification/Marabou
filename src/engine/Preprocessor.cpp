@@ -458,6 +458,34 @@ void Preprocessor::eliminateFixedVariables()
         _preprocessed.setUpperBound( _oldIndexToNewIndex.at( i ), _preprocessed.getUpperBound( i ) );
 	}
 
+    // Make any adjustments in the stored debugging solution, if needed
+    for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
+    {
+        if ( _preprocessed._debuggingSolution.exists( i ) )
+        {
+            if ( _fixedVariables.exists( i ) )
+            {
+                if ( !FloatUtils::areEqual( _fixedVariables[i], _preprocessed._debuggingSolution[i] ) )
+                    throw ReluplexError( ReluplexError::DEBUGGING_ERROR,
+                                         Stringf( "Variable %u fixed to %.5lf, "
+                                                  "contradicts possible solution %.5lf",
+                                                  i,
+                                                  _fixedVariables[i],
+                                                  _preprocessed._debuggingSolution[i] ).ascii() );
+
+                _preprocessed._debuggingSolution.erase( i );
+            }
+            else
+            {
+                _preprocessed._debuggingSolution[_oldIndexToNewIndex[i]] =
+                    _preprocessed._debuggingSolution[i];
+
+                if ( _oldIndexToNewIndex[i] != i )
+                    _preprocessed._debuggingSolution.erase( i );
+            }
+        }
+    }
+
     // Adjust the number of variables in the query
     _preprocessed.setNumberOfVariables( _preprocessed.getNumberOfVariables() - _fixedVariables.size() );
 }

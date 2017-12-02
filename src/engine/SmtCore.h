@@ -76,6 +76,13 @@ public:
     */
     void setStatistics( Statistics *statistics );
 
+    /*
+      For debugging purposes only - store a correct possible solution
+    */
+    void storeDebuggingSolution( const Map<unsigned, double> &debuggingSolution );
+    bool checkSkewFromDebuggingSolution();
+    bool splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split, String &error ) const;
+
 private:
     /*
       A stack entry consists of the engine state before the split,
@@ -123,6 +130,11 @@ private:
     Map<PiecewiseLinearConstraint *, unsigned> _constraintToViolationCount;
 
     static void log( const String &message );
+
+    /*
+      For debugging purposes only
+    */
+    Map<unsigned, double> _debuggingSolution;
 };
 
 #endif // __SmtCore_h__

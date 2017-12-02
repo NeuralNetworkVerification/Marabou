@@ -28,6 +28,11 @@ public:
     virtual void initialize( const ITableau &tableau ) = 0;
 
     /*
+      Clear all learned bounds, without reallocating memory.
+    */
+    virtual void clear( const ITableau &tableau ) = 0;
+
+    /*
       Derive and enqueue new bounds for all varaibles, using the
       explicit basis matrix B0 that should be available through the
       tableau. Can also do this until saturation, meaning that we

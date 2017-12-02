@@ -12,9 +12,11 @@
 
 #include "Debug.h"
 #include "EngineState.h"
+#include "FloatUtils.h"
 #include "GlobalConfiguration.h"
 #include "IEngine.h"
-#include "MString.h"
+#include "MStringf.h"
+#include "ReluplexError.h"
 #include "SmtCore.h"
 
 SmtCore::SmtCore( IEngine *engine )
@@ -138,14 +140,29 @@ bool SmtCore::popSplit()
     }
 
     // Remove any entries that have no alternatives
+    String error;
     while ( _stack.back()->_alternativeSplits.empty() )
     {
+        if ( checkSkewFromDebuggingSolution() )
+        {
+            // Pops should not occur from a compliant stack!
+            printf( "Error! Popping from a compliant stack\n" );
+            throw ReluplexError( ReluplexError::DEBUGGING_ERROR );
+        }
+
         delete _stack.back()->_engineState;
         delete _stack.back();
         _stack.popBack();
 
         if ( _stack.empty() )
             return false;
+    }
+
+    if ( checkSkewFromDebuggingSolution() )
+    {
+        // Pops should not occur from a compliant stack!
+        printf( "Error! Popping from a compliant stack\n" );
+        throw ReluplexError( ReluplexError::DEBUGGING_ERROR );
     }
 
     StackEntry *stackEntry = _stack.back();
@@ -175,6 +192,8 @@ bool SmtCore::popSplit()
         _statistics->addTimeSmtCore( TimeUtils::timePassed( start, end ) );
     }
 
+    checkSkewFromDebuggingSolution();
+
     return true;
 }
 
@@ -190,6 +209,8 @@ void SmtCore::recordImpliedValidSplit( PiecewiseLinearCaseSplit &validSplit )
         _impliedValidSplitsAtRoot.append( validSplit );
     else
         _stack.back()->_impliedValidSplits.append( validSplit );
+
+    checkSkewFromDebuggingSolution();
 }
 
 void SmtCore::allSplitsSoFar( List<PiecewiseLinearCaseSplit> &result ) const
@@ -216,6 +237,104 @@ void SmtCore::log( const String &message )
 {
     if ( GlobalConfiguration::SMT_CORE_LOGGING )
         printf( "SmtCore: %s\n", message.ascii() );
+}
+
+void SmtCore::storeDebuggingSolution( const Map<unsigned, double> &debuggingSolution )
+{
+    _debuggingSolution = debuggingSolution;
+}
+
+// Return true if stack is currently compliant, false otherwise
+// If there is no stored solution, return false --- incompliant.
+bool SmtCore::checkSkewFromDebuggingSolution()
+{
+    if ( _debuggingSolution.empty() )
+        return false;
+
+    String error;
+
+    // First check that the valid splits implied at the root level are okay
+    for ( const auto &split : _impliedValidSplitsAtRoot )
+    {
+        if ( !splitAllowsStoredSolution( split, error ) )
+        {
+            printf( "Error with one of the splits implied at root level:\n\t%s\n", error.ascii() );
+            throw ReluplexError( ReluplexError::DEBUGGING_ERROR );
+        }
+    }
+
+    // Now go over the stack from oldest to newest and check that each level is compliant
+    for ( const auto &stackEntry : _stack )
+    {
+        // If the active split is non-compliant but there are alternatives, that's fine
+        if ( !splitAllowsStoredSolution( stackEntry->_activeSplit, error ) )
+        {
+            if ( stackEntry->_alternativeSplits.empty() )
+            {
+                printf( "Error! Have a split that is non-compliant with the stored solution, "
+                        "without alternatives:\n\t%s\n", error.ascii() );
+                throw ReluplexError( ReluplexError::DEBUGGING_ERROR );
+            }
+
+            // Active split is non-compliant but this is fine, because there are alternatives. We're done.
+            return false;
+        }
+
+        // Did we learn any valid splits that are non-compliant?
+        for ( auto const &split : stackEntry->_impliedValidSplits )
+        {
+            if ( !splitAllowsStoredSolution( split, error ) )
+            {
+                printf( "Error with one of the splits implied at this stack level:\n\t%s\n",
+                        error.ascii() );
+                throw ReluplexError( ReluplexError::DEBUGGING_ERROR );
+            }
+        }
+    }
+
+    // No problems were detected, the stack is compliant with the stored solution
+    return true;
+}
+
+bool SmtCore::splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split, String &error ) const
+{
+    // False if the split prevents one of the values in the stored solution, true otherwise.
+    error = "";
+    if ( _debuggingSolution.empty() )
+        return true;
+
+    for ( const auto bound : split.getBoundTightenings() )
+    {
+        unsigned variable = bound._variable;
+
+        // If the possible solution doesn't care about this variable,
+        // ignore it
+        if ( !_debuggingSolution.exists( variable ) )
+            continue;
+
+        // Otherwise, check that the bound is consistent with the solution
+        double solutionValue = _debuggingSolution[variable];
+        double boundValue = bound._value;
+
+        if ( ( bound._type == Tightening::LB ) && FloatUtils::gt( boundValue, solutionValue ) )
+        {
+            error = Stringf( "Variable %u: new LB is %.5lf, which contradicts possible solution %.5lf",
+                             variable,
+                             boundValue,
+                             solutionValue );
+            return false;
+        }
+        else if ( ( bound._type == Tightening::UB ) && FloatUtils::lt( boundValue, solutionValue ) )
+        {
+            error = Stringf( "Variable %u: new UB is %.5lf, which contradicts possible solution %.5lf",
+                             variable,
+                             boundValue,
+                             solutionValue );
+            return false;
+        }
+    }
+
+    return true;
 }
 
 //

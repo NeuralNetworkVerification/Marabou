@@ -52,6 +52,7 @@ public:
         initializeWasCalled = true;
     }
 
+    void clear( const ITableau &/* tableau */ ) {}
     void notifyLowerBound( unsigned /* variable */, double /* bound */ ) {}
     void notifyUpperBound( unsigned /* variable */, double /* bound */ ) {}
     void examineBasisMatrix( const ITableau &/* tableau */, bool /* untilSaturation */ ) {}
