@@ -267,6 +267,25 @@ void Engine::performSimplexStep()
     if ( _tableau->getCostFunctionStatus() == ITableau::COST_FUNCTION_INVALID )
         _tableau->computeCostFunction();
 
+    DEBUG({
+            // Since we're performing a simplex step, there are out-of-bounds variables.
+            // Therefore, the cost function should not be zero.
+            const double *costFunction = _tableau->getCostFunction();
+            unsigned size = _tableau->getN() - _tableau->getM();
+            bool found = false;
+            for ( unsigned i = 0; i < size; ++i )
+            {
+                if ( !FloatUtils::isZero( costFunction[i] ) )
+                {
+                    found = true;
+                    break;
+                }
+            }
+
+            if ( !found )
+                throw ReluplexError( ReluplexError::DEBUGGING_ERROR, "Have OOB vars but cost function is zero" );
+        });
+
     bool haveCandidate = false;
     unsigned bestEntering = 0;
     double bestPivotEntry = 0.0;
@@ -349,6 +368,14 @@ void Engine::performSimplexStep()
             // Cost function is fresh --- failure is real.
             struct timespec end = TimeUtils::sampleMicro();
             _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
+
+            printf( "\tEngine: Simplex step failed, throwing an InfeasibleQueryException\n" );
+            printf( "Dumping cost function\n" );
+            _tableau->dumpCostFunction();
+            printf( "Dumping assignment\n" );
+            _tableau->dumpAssignment();
+
+
             throw InfeasibleQueryException();
         }
     }
