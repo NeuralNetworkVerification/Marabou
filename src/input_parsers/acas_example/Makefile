@@ -25,6 +25,7 @@ SOURCES += \
 	\
 	BasisFactorization.cpp \
 	BlandsRule.cpp \
+	ConstraintMatrixAnalyzer.cpp \
 	DantzigsRule.cpp \
 	DegradationChecker.cpp \
 	Engine.cpp \

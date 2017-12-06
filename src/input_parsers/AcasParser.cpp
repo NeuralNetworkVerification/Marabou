@@ -17,8 +17,6 @@
 #include "MString.h"
 #include "ReluConstraint.h"
 
-static bool USE_SLACK_VARIABLES = false;
-
 AcasParser::NodeIndex::NodeIndex( unsigned layer, unsigned node )
     : _layer( layer )
     , _node( node )
@@ -58,15 +56,6 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
     //   2. Each internal node has a B variable, an F variable, and an auxiliary varibale
     //   3. Each output node appears once and also has an auxiliary variable
     unsigned numberOfVariables = inputLayerSize + ( 3 * numberOfInternalNodes ) + ( 2 * outputLayerSize );
-
-    if ( USE_SLACK_VARIABLES )
-    {
-        // An extra slack variable for each relu node
-        numberOfVariables += numberOfInternalNodes;
-        printf( "number of internal nodes: %u\n", numberOfInternalNodes );
-
-    }
-
     printf( "Total number of variables: %u\n", numberOfVariables );
 
     inputQuery.setNumberOfVariables( numberOfVariables );
@@ -100,18 +89,6 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
         {
             _nodeToAux[NodeIndex( i, j )] = currentIndex;
             ++currentIndex;
-        }
-
-        // And the slack variables for any relu nodes
-        if ( USE_SLACK_VARIABLES && ( i < numberOfLayers - 1 ) )
-        {
-            for ( unsigned j = 0; j < currentLayerSize; ++j )
-            {
-                printf( "Adding slack equation for node (%u, %u)\n", i, j );
-
-                _nodeToSlack[NodeIndex( i, j )] = currentIndex;
-                ++currentIndex;
-            }
         }
     }
 
@@ -165,7 +142,7 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
         for ( unsigned target = 0; target < targetLayerSize; ++target )
         {
             // This will represent the equation:
-            //   sum fs - b + aux = -bias
+            //   sum aux - b + fs = -bias
             Equation equation;
 
             // The auxiliary variable

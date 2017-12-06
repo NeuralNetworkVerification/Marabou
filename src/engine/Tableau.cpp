@@ -1295,7 +1295,14 @@ void Tableau::tightenLowerBound( unsigned variable, double value )
             setNonBasicAssignment( variable, value, true );
     }
     else
+    {
+        // Recompute the status of an affected basic variable
+        // If the status changes, invalidate the cost function
+        unsigned oldStatus = _basicStatus[index];
         computeBasicStatus( index );
+        if ( _basicStatus[index] != oldStatus )
+            _costFunctionStatus = ITableau::COST_FUNCTION_INVALID;
+    }
 }
 
 void Tableau::tightenUpperBound( unsigned variable, double value )
@@ -1318,7 +1325,14 @@ void Tableau::tightenUpperBound( unsigned variable, double value )
             setNonBasicAssignment( variable, value, true );
     }
     else
+    {
+        // Recompute the status of an affected basic variable
+        // If the status changes, invalidate the cost function
+        unsigned oldStatus = _basicStatus[index];
         computeBasicStatus( index );
+        if ( _basicStatus[index] != oldStatus )
+            _costFunctionStatus = ITableau::COST_FUNCTION_INVALID;
+    }
 }
 
 void Tableau::addEquation( const Equation &equation )
