@@ -15,6 +15,7 @@
 #include "Engine.h"
 #include "FreshVariables.h"
 #include "InputQuery.h"
+#include "MockCostFunctionManagerFactory.h"
 #include "MockErrno.h"
 #include "MockProjectedSteepestEdgeFactory.h"
 #include "MockRowBoundTightenerFactory.h"
@@ -26,7 +27,8 @@
 class MockForEngine :
     public MockTableauFactory,
     public MockProjectedSteepestEdgeRuleFactory,
-    public MockRowBoundTightenerFactory
+    public MockRowBoundTightenerFactory,
+    public MockCostFunctionManagerFactory
 {
 public:
 };

@@ -13,11 +13,11 @@
 #ifndef __Engine_h__
 #define __Engine_h__
 
+#include "AutoCostFunctionManager.h"
 #include "AutoProjectedSteepestEdge.h"
 #include "AutoRowBoundTightener.h"
 #include "AutoTableau.h"
 #include "BlandsRule.h"
-#include "CostFunctionManager.h"
 #include "DantzigsRule.h"
 #include "DegradationChecker.h"
 #include "IEngine.h"
@@ -181,7 +181,7 @@ private:
     /*
       Cost function manager.
     */
-    CostFunctionManager _costFunctionManager;
+    AutoCostFunctionManager _costFunctionManager;
 
     /*
       Perform a simplex step: compute the cost function, pick the

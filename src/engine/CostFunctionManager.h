@@ -13,9 +13,11 @@
 #ifndef __CostFunctionManager_h__
 #define __CostFunctionManager_h__
 
+#include "ICostFunctionManager.h"
+
 class ITableau;
 
-class CostFunctionManager
+class CostFunctionManager : public ICostFunctionManager
 {
 public:
     CostFunctionManager( ITableau *talbeau );

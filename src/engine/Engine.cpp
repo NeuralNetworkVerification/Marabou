@@ -601,6 +601,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         }
 
         _tableau->initializeTableau();
+        _costFunctionManager->initialize();
         _activeEntryStrategy->initialize( _tableau );
 
         _statistics.setNumPlConstraints( _plConstraints.size() );

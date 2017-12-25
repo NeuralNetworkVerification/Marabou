@@ -22,6 +22,7 @@ SOURCES += \
 	BlandsRule.cpp \
 	ConstraintMatrixAnalyzer.cpp \
 	CostFunctionManager.cpp \
+	CostFunctionManagerFactory.cpp \
 	DantzigsRule.cpp \
 	DegradationChecker.cpp \
 	Engine.cpp \
