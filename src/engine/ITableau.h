@@ -140,6 +140,9 @@ public:
     virtual void setCostFunctionStatus( CostFunctionStatus status ) = 0;
     virtual BasicAssignmentStatus getBasicAssignmentStatus() const = 0;
     virtual void setBasicAssignmentStatus( ITableau::BasicAssignmentStatus status ) = 0;
+    virtual bool basicOutOfBounds( unsigned basic ) const = 0;
+    virtual bool basicTooHigh( unsigned basic ) const = 0;
+    virtual bool basicTooLow( unsigned basic ) const = 0;
     virtual void verifyInvariants() = 0;
     virtual bool basisMatrixAvailable() const = 0;
     virtual void getBasisEquations( List<Equation *> &equations ) const = 0;

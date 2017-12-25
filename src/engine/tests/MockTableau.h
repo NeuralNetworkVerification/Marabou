@@ -285,6 +285,21 @@ public:
     {
     }
 
+    bool basicOutOfBounds( unsigned /* basic */ ) const
+    {
+        return false;
+    }
+
+    bool basicTooHigh( unsigned /* basic */ ) const
+    {
+        return false;
+    }
+
+    bool basicTooLow( unsigned /* basic */ ) const
+    {
+        return false;
+    }
+
     void dumpCostFunction() const {}
     void computeChangeColumn() {}
 

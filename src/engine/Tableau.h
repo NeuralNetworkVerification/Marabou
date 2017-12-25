@@ -381,6 +381,13 @@ public:
     void setBasicAssignmentStatus( ITableau::BasicAssignmentStatus status );
 
     /*
+      True if the basic variable is out of bounds
+    */
+    bool basicOutOfBounds( unsigned basic ) const;
+    bool basicTooHigh( unsigned basic ) const;
+    bool basicTooLow( unsigned basic ) const;
+
+    /*
       Methods for accessing the basis matrix if it's available,
       and extracting from it explicit equations.
 
@@ -537,13 +544,6 @@ private:
       Free all allocated memory.
     */
     void freeMemoryIfNeeded();
-
-    /*
-      True if the basic variable is out of bounds
-    */
-    bool basicOutOfBounds( unsigned basic ) const;
-    bool basicTooHigh( unsigned basic ) const;
-    bool basicTooLow( unsigned basic ) const;
 
     /*
       Resize the relevant data structures to add a new row to the tableau.

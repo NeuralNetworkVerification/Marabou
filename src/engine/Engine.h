@@ -17,6 +17,7 @@
 #include "AutoRowBoundTightener.h"
 #include "AutoTableau.h"
 #include "BlandsRule.h"
+#include "CostFunctionManager.h"
 #include "DantzigsRule.h"
 #include "DegradationChecker.h"
 #include "IEngine.h"
@@ -176,6 +177,11 @@ private:
       Used to restore tableau precision when degradation becomes excessive.
     */
     PrecisionRestorer _precisionRestorer;
+
+    /*
+      Cost function manager.
+    */
+    CostFunctionManager _costFunctionManager;
 
     /*
       Perform a simplex step: compute the cost function, pick the

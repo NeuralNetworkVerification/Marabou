@@ -31,6 +31,7 @@ Engine::Engine()
     , _work( NULL )
     , _basisRestorationRequired( Engine::RESTORATION_NOT_NEEDED )
     , _basisRestorationPerformed( Engine::NO_RESTORATION_PERFORMED )
+    , _costFunctionManager( _tableau )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -560,6 +561,27 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             _tableau->assignIndexToBasicVariable( equation._auxVariable, equationIndex );
             ++equationIndex;
         }
+
+        /*
+          // Placeholder: better constraint matrix analysis as part
+          // of the preprocessing phase.
+          {
+            // New debug code
+            ConstraintMatrixAnalyzer analyzer;
+            analyzer.analyze( _tableau->getA(), _tableau->getM(), _tableau->getN() );
+            if ( analyzer.getRank() != _tableau->getM() )
+            {
+                printf( "Warning!! Contraint matrix rank is %u (out of %u)\n",
+                        analyzer.getRank(), _tableau->getM() );
+            }
+            else
+            {
+                printf( "Constraint matrix rank is %u, with %u equations\n",
+                        analyzer.getRank(), _tableau->getM() );
+            }
+
+        }
+        */
 
         for ( unsigned i = 0; i < n; ++i )
         {
