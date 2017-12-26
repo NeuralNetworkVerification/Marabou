@@ -285,22 +285,24 @@ public:
     {
     }
 
-    bool basicOutOfBounds( unsigned /* basic */ ) const
+    Set<unsigned> nextBasicTooHigh;
+    Set<unsigned> nextBasicTooLow;
+
+    bool basicOutOfBounds( unsigned basic ) const
     {
-        return false;
+        return basicTooLow( basic ) || basicTooHigh( basic );
     }
 
-    bool basicTooHigh( unsigned /* basic */ ) const
+    bool basicTooHigh( unsigned basic ) const
     {
-        return false;
+        return nextBasicTooHigh.exists( basic );
     }
 
-    bool basicTooLow( unsigned /* basic */ ) const
+    bool basicTooLow( unsigned basic ) const
     {
-        return false;
+        return nextBasicTooLow.exists( basic );
     }
 
-    void dumpCostFunction() const {}
     void computeChangeColumn() {}
 
     double *nextChangeColumn;

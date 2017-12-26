@@ -291,7 +291,6 @@ public:
       Access the cost function.
     */
     const double *getCostFunction() const;
-    void dumpCostFunction() const;
 
     /*
       Compute the "change column" d, given by inv(B) * a. This is the column

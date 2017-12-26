@@ -20,11 +20,21 @@ class ITableau;
 class CostFunctionManager : public ICostFunctionManager
 {
 public:
+    enum CostFunctionStatus {
+        COST_FUNCTION_INVALID = 0,
+        COST_FUNCTION_JUST_COMPUTED = 1,
+        COST_FUNCTION_UPDATED = 2,
+    };
+
     CostFunctionManager( ITableau *talbeau );
     ~CostFunctionManager();
 
     void initialize();
     void computeLinearCostFunction();
+    void dumpCostFunction() const;
+    const double *getCostFucntion() const;
+
+    CostFunctionManager::CostFunctionStatus getCostFunctionStatus();
 
 private:
     /*
@@ -44,6 +54,11 @@ private:
     */
     unsigned _n;
     unsigned _m;
+
+    /*
+      Status of the cost function.
+    */
+    CostFunctionStatus _costFunctionStatus;
 
     /*
       Free memory.

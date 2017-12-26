@@ -11,6 +11,7 @@
  **/
 
 #include "CostFunctionManager.h"
+#include "FloatUtils.h"
 #include "ITableau.h"
 #include "ReluplexError.h"
 
@@ -21,6 +22,7 @@ CostFunctionManager::CostFunctionManager( ITableau *talbeau )
     , _multipliers( NULL )
     , _n( 0 )
     , _m( 0 )
+    , _costFunctionStatus( COST_FUNCTION_INVALID )
 {
 }
 
@@ -101,6 +103,8 @@ void CostFunctionManager::computeLinearCostFunction()
     computeBasicOOBCosts();
     computeMultipliers();
     computeReducedCosts();
+
+    _costFunctionStatus = COST_FUNCTION_JUST_COMPUTED;
 }
 
 void CostFunctionManager::computeBasicOOBCosts()
@@ -134,6 +138,34 @@ void CostFunctionManager::computeReducedCost( unsigned nonBasic )
     _costFunction[nonBasic] = 0;
     for ( unsigned j = 0; j < _m; ++j )
         _costFunction[nonBasic] -= ( _multipliers[j] * ANColumn[j] );
+}
+
+void CostFunctionManager::dumpCostFunction() const
+{
+    printf( "Cost function:\n\t" );
+
+    for ( unsigned i = 0; i < _n - _m; ++i )
+    {
+        double coefficient = _costFunction[i];
+        if ( FloatUtils::isZero( coefficient ) )
+            continue;
+
+        if ( FloatUtils::isPositive( coefficient ) )
+            printf( "+" );
+        printf( "%lfx%u ", coefficient, _tableau->nonBasicIndexToVariable( i ) );
+    }
+
+    printf( "\n" );
+}
+
+CostFunctionManager::CostFunctionStatus CostFunctionManager::getCostFunctionStatus()
+{
+    return _costFunctionStatus;
+}
+
+const double *CostFunctionManager::getCostFucntion() const
+{
+    return _costFunction;
 }
 
 //

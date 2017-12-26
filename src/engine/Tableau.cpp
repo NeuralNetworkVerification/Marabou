@@ -472,24 +472,6 @@ const double *Tableau::getCostFunction() const
     return _costFunction;
 }
 
-void Tableau::dumpCostFunction() const
-{
-    printf( "Cost function:\n\t" );
-
-    for ( unsigned i = 0; i < _n - _m; ++i )
-    {
-        double coefficient = _costFunction[i];
-        if ( FloatUtils::isZero( coefficient ) )
-            continue;
-
-        if ( FloatUtils::isPositive( coefficient ) )
-            printf( "+" );
-        printf( "%lfx%u ", coefficient, _nonBasicIndexToVariable[i] );
-    }
-
-    printf( "\n" );
-}
-
 bool Tableau::basicOutOfBounds( unsigned basic ) const
 {
     return basicTooHigh( basic ) || basicTooLow( basic );

@@ -291,7 +291,7 @@ void Engine::performSimplexStep()
                     printf( "Error! Have OOB vars but cost function is zero.\n"
                             "Recomputing cost function. New one is:\n" );
                     _tableau->computeCostFunction();
-                    _tableau->dumpCostFunction();
+                    // _tableau->dumpCostFunction(); TODO: switch to cost function manager here
                     throw ReluplexError( ReluplexError::DEBUGGING_ERROR,
                                          "Have OOB vars but cost function is zero" );
                 }
