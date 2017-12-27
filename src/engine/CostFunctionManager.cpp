@@ -35,10 +35,10 @@ CostFunctionManager::~CostFunctionManager()
 
 void CostFunctionManager::freeMemoryIfNeeded()
 {
-    if ( _costFunction )
+    if ( _multipliers )
     {
-        delete[] _costFunction;
-        _costFunction = NULL;
+        delete[] _multipliers;
+        _multipliers = NULL;
     }
 
     if ( _basicCosts )
@@ -47,10 +47,10 @@ void CostFunctionManager::freeMemoryIfNeeded()
         _basicCosts = NULL;
     }
 
-    if ( _multipliers )
+    if ( _costFunction )
     {
-        delete[] _multipliers;
-        _multipliers = NULL;
+        delete[] _costFunction;
+        _costFunction = NULL;
     }
 }
 
@@ -210,24 +210,6 @@ void CostFunctionManager::updateCostFunctionForPivot( unsigned enteringVariableI
     }
 
     unsigned leavingVariableStatus = _tableau->getBasicStatusByIndex( leavingVariableIndex );
-
-    DEBUG({
-            if ( FloatUtils::isPositive( _basicCosts[leavingVariableIndex] ) )
-            {
-                ASSERT( leavingVariableStatus == ITableau::ABOVE_UB );
-            }
-            else if ( FloatUtils::isNegative( _basicCosts[leavingVariableIndex] ) )
-            {
-                ASSERT( leavingVariableStatus == ITableau::BELOW_LB );
-            }
-            else
-            {
-                ASSERT( ( leavingVariableStatus == ITableau::AT_LB ) ||
-                        ( leavingVariableStatus == ITableau::BETWEEN ) ||
-                        ( leavingVariableStatus == ITableau::AT_UB ) );
-
-            }
-        });
 
     // Update the basic cost for the leaving variable, which may have changed
     // since we last computed it

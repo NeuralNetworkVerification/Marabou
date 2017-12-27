@@ -1345,8 +1345,6 @@ void Tableau::addRow()
     delete[] _multipliers;
     _multipliers = newMultipliers;
 
-    _costFunctionManager->initialize();
-
     // Allocate new index arrays. Copy old indices, but don't assign indices to new variables yet.
     unsigned *newBasicIndexToVariable = new unsigned[newM];
     if ( !newBasicIndexToVariable )
@@ -1412,6 +1410,7 @@ void Tableau::addRow()
 
     _m = newM;
     _n = newN;
+    _costFunctionManager->initialize();
 }
 
 void Tableau::registerToWatchVariable( VariableWatcher *watcher, unsigned variable )
