@@ -42,7 +42,6 @@ SOURCES += \
 	InputQuery.cpp \
 	LPElement.cpp \
 	MaxConstraint.cpp \
-	NestedDantzigsRule.cpp \
 	PiecewiseLinearCaseSplit.cpp \
 	PiecewiseLinearConstraint.cpp \
 	PrecisionRestorer.cpp \
@@ -74,6 +73,7 @@ vpath %.cpp $(COMMON_REAL_DIR)
 vpath %.cpp $(ENGINE_DIR)
 vpath %.cpp $(ENGINE_REAL_DIR)
 vpath %.cpp $(INPUT_PARSER_DIR)
+
 #
 # Local Variables:
 # compile-command: "make -C .. "

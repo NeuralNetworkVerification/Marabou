@@ -88,7 +88,7 @@ public:
 
         // Each entry of the cost function is a negated dot product of the multiplier vector
         // and the appropriate column from the constraint matrix
-        const double *costFucntion = manager->getCostFucntion();
+        const double *costFucntion = manager->getCostFunction();
 
         // Entry 0: multipliers * columnTwo
         TS_ASSERT_EQUALS( costFucntion[0], -( 0 + 2 + 0 ) );

@@ -14,6 +14,7 @@
 #define __MockCostFunctionManager_h__
 
 #include "ICostFunctionManager.h"
+#include "ITableau.h"
 
 #include <cstring>
 
@@ -27,10 +28,14 @@ public:
 
         initializeWasCalled = false;
         lastTableau = NULL;
+        nextCostFunction = NULL;
+        computeLinearCostFunctionCalled = false;
     }
 
     ~MockCostFunctionManager()
     {
+        if ( nextCostFunction )
+            delete[] nextCostFunction;
     }
 
 	bool wasCreated;
@@ -56,6 +61,52 @@ public:
     void initialize()
     {
         initializeWasCalled = true;
+    }
+
+    ICostFunctionManager::CostFunctionStatus getCostFunctionStatus() const
+    {
+        return ICostFunctionManager::COST_FUNCTION_INVALID;
+    }
+
+    void setCostFunctionStatus( ICostFunctionManager::CostFunctionStatus /* status */ )
+    {
+    }
+
+    bool computeLinearCostFunctionCalled;
+    void computeLinearCostFunction()
+    {
+        computeLinearCostFunctionCalled = true;
+    }
+
+    double *nextCostFunction;
+    const double *getCostFunction() const
+    {
+        return nextCostFunction;
+    }
+
+    void dumpCostFunction() const
+    {
+    }
+
+    void updateCostFunctionForPivot( unsigned /* enteringVariableIndex */,
+                                     unsigned /* leavingVariableIndex */,
+                                     double /* pivotElement */,
+                                     const TableauRow */* pivotRow */ )
+    {
+    }
+
+    bool costFunctionInvalid() const
+    {
+        return true;
+    }
+
+    bool costFunctionJustComputed() const
+    {
+        return false;
+    }
+
+    void invalidateCostFunction()
+    {
     }
 };
 

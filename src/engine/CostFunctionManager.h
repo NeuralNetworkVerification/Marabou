@@ -20,21 +20,46 @@ class ITableau;
 class CostFunctionManager : public ICostFunctionManager
 {
 public:
-    enum CostFunctionStatus {
-        COST_FUNCTION_INVALID = 0,
-        COST_FUNCTION_JUST_COMPUTED = 1,
-        COST_FUNCTION_UPDATED = 2,
-    };
-
     CostFunctionManager( ITableau *talbeau );
     ~CostFunctionManager();
 
+    /*
+      Initialize the data structures according to the tableau's dimensions.
+    */
     void initialize();
-    void computeLinearCostFunction();
-    void dumpCostFunction() const;
-    const double *getCostFucntion() const;
 
-    CostFunctionManager::CostFunctionStatus getCostFunctionStatus();
+    /*
+      Compute the linear cost function, from scratch.
+    */
+    void computeLinearCostFunction();
+
+    /*
+      Get the current  cost function.
+    */
+    const double *getCostFunction() const;
+
+    /*
+      Get/set the status of the cost function
+    */
+    ICostFunctionManager::CostFunctionStatus getCostFunctionStatus() const;
+    void setCostFunctionStatus( ICostFunctionManager::CostFunctionStatus status );
+    bool costFunctionInvalid() const;
+    bool costFunctionJustComputed() const;
+    void invalidateCostFunction();
+
+    /*
+      Update the cost fucntion just before a coming pivot step, to avoid having to compute
+      it from scratch afterwards.
+    */
+    void updateCostFunctionForPivot( unsigned enteringVariableIndex,
+                                     unsigned leavingVariableIndex,
+                                     double pivotElement,
+                                     const TableauRow *pivotRow );
+
+    /*
+      For debugging purposes: dump the cost function.
+    */
+    void dumpCostFunction() const;
 
 private:
     /*

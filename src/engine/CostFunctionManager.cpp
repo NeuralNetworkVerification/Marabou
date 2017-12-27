@@ -11,9 +11,11 @@
  **/
 
 #include "CostFunctionManager.h"
+#include "Debug.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
 #include "ReluplexError.h"
+#include "TableauRow.h"
 
 CostFunctionManager::CostFunctionManager( ITableau *talbeau )
     : _tableau( talbeau )
@@ -104,7 +106,7 @@ void CostFunctionManager::computeLinearCostFunction()
     computeMultipliers();
     computeReducedCosts();
 
-    _costFunctionStatus = COST_FUNCTION_JUST_COMPUTED;
+    _costFunctionStatus = ICostFunctionManager::COST_FUNCTION_JUST_COMPUTED;
 }
 
 void CostFunctionManager::computeBasicOOBCosts()
@@ -158,14 +160,109 @@ void CostFunctionManager::dumpCostFunction() const
     printf( "\n" );
 }
 
-CostFunctionManager::CostFunctionStatus CostFunctionManager::getCostFunctionStatus()
+ICostFunctionManager::CostFunctionStatus CostFunctionManager::getCostFunctionStatus() const
 {
     return _costFunctionStatus;
 }
 
-const double *CostFunctionManager::getCostFucntion() const
+void CostFunctionManager::setCostFunctionStatus( ICostFunctionManager::CostFunctionStatus status )
+{
+    _costFunctionStatus = status;
+}
+
+const double *CostFunctionManager::getCostFunction() const
 {
     return _costFunction;
+}
+
+void CostFunctionManager::updateCostFunctionForPivot( unsigned enteringVariableIndex,
+                                                      unsigned leavingVariableIndex,
+                                                      double pivotElement,
+                                                      const TableauRow *pivotRow )
+{
+    /*
+      This method is invoked when the non-basic _enteringVariable and
+      basic _leaving variable are about to be swapped. It updates the
+      reduced costs, without recomputing them from scratch.
+
+      Suppose the pivot row is y = 5x + 3z, where x is entering and y
+      is leaving. This corresponds to a new equation, x = 1/5y - 3/5z.
+      If the previous cost for x was 10, then the new cost for y should
+      be ( 10 / pivotElement ) = 10 / 5 = 2. This means that 2 units of y
+      have the same cost as 10 units of x.
+
+      However, now that we have 2 units of y, we have actually added 6 units
+      of z to the overall cost - so the price of z needs to be adjusted by -6.
+
+      Finally, we need to adjust the cost to reflect the pivot operation itself.
+      The entering variable was, and remains, within bounds. The leaving variable
+      is pressed against one of its bounds. So, if it was previously out-of-bounds
+      (and contributed to the cost function), this needs to be removed.
+    */
+
+    // Update the cost of the new non-basic
+    _costFunction[enteringVariableIndex] /= pivotElement;
+
+    for ( unsigned i = 0; i < _n - _m; ++i )
+    {
+        if ( i != enteringVariableIndex )
+            _costFunction[i] -= (*pivotRow)[i] * _costFunction[enteringVariableIndex];
+    }
+
+    unsigned leavingVariableStatus = _tableau->getBasicStatusByIndex( leavingVariableIndex );
+
+    DEBUG({
+            if ( FloatUtils::isPositive( _basicCosts[leavingVariableIndex] ) )
+            {
+                ASSERT( leavingVariableStatus == ITableau::ABOVE_UB );
+            }
+            else if ( FloatUtils::isNegative( _basicCosts[leavingVariableIndex] ) )
+            {
+                ASSERT( leavingVariableStatus == ITableau::BELOW_LB );
+            }
+            else
+            {
+                ASSERT( ( leavingVariableStatus == ITableau::AT_LB ) ||
+                        ( leavingVariableStatus == ITableau::BETWEEN ) ||
+                        ( leavingVariableStatus == ITableau::AT_UB ) );
+
+            }
+        });
+
+    // Update the basic cost for the leaving variable, which may have changed
+    // since we last computed it
+    switch ( leavingVariableStatus )
+    {
+    case ITableau::ABOVE_UB:
+        _basicCosts[leavingVariableIndex] = 1;
+        break;
+    case ITableau::BELOW_LB:
+        _basicCosts[leavingVariableIndex] = -1;
+        break;
+    default:
+        _basicCosts[leavingVariableIndex] = 0;
+        break;
+    }
+
+    // If the leaving variable was previously out of bounds, this is no longer
+    // the case. Adjust the non-basic cost.
+    _costFunction[enteringVariableIndex] -= _basicCosts[leavingVariableIndex];
+    _costFunctionStatus = ICostFunctionManager::COST_FUNCTION_UPDATED;
+}
+
+bool CostFunctionManager::costFunctionInvalid() const
+{
+    return _costFunctionStatus == ICostFunctionManager::COST_FUNCTION_INVALID;
+}
+
+void CostFunctionManager::invalidateCostFunction()
+{
+    _costFunctionStatus = ICostFunctionManager::COST_FUNCTION_INVALID;
+}
+
+bool CostFunctionManager::costFunctionJustComputed() const
+{
+    return _costFunctionStatus == ICostFunctionManager::COST_FUNCTION_JUST_COMPUTED;
 }
 
 //

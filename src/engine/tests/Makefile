@@ -34,7 +34,6 @@ SOURCES += \
 	InputQuery.cpp \
 	LPElement.cpp \
 	MaxConstraint.cpp \
-	NestedDantzigsRule.cpp \
 	PiecewiseLinearCaseSplit.cpp \
 	PiecewiseLinearConstraint.cpp \
 	PrecisionRestorer.cpp \

@@ -23,7 +23,6 @@
 #include "IEngine.h"
 #include "InputQuery.h"
 #include "Map.h"
-#include "NestedDantzigsRule.h"
 #include "PrecisionRestorer.h"
 #include "Preprocessor.h"
 #include "SmtCore.h"
@@ -128,7 +127,6 @@ private:
     */
     BlandsRule _blandsRule;
     DantzigsRule _dantzigsRule;
-    NestedDantzigsRule _nestedDantzigsRule;
     AutoProjectedSteepestEdgeRule _projectedSteepestEdgeRule;
     EntrySelectionStrategy *_activeEntryStrategy;
 

@@ -15,6 +15,7 @@
 #include "EntrySelectionStrategy.h"
 #include "Equation.h"
 #include "FloatUtils.h"
+#include "ICostFunctionManager.h"
 #include "MStringf.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "ReluplexError.h"
@@ -33,8 +34,6 @@ Tableau::Tableau()
     , _work( NULL )
     , _unitVector( NULL )
     , _basisFactorization( NULL )
-    , _costFunction( NULL )
-    , _basicCosts( NULL )
     , _multipliers( NULL )
     , _basicIndexToVariable( NULL )
     , _nonBasicIndexToVariable( NULL )
@@ -45,9 +44,9 @@ Tableau::Tableau()
     , _boundsValid( true )
     , _basicAssignment( NULL )
     , _basicStatus( NULL )
-    , _costFunctionStatus( ITableau::COST_FUNCTION_INVALID )
     , _basicAssignmentStatus( ITableau::BASIC_ASSIGNMENT_INVALID )
     , _statistics( NULL )
+    , _costFunctionManager( NULL )
 {
 }
 
@@ -86,18 +85,6 @@ void Tableau::freeMemoryIfNeeded()
     {
         delete[] _unitVector;
         _unitVector = NULL;
-    }
-
-    if ( _costFunction )
-    {
-        delete[] _costFunction;
-        _costFunction = NULL;
-    }
-
-    if ( _basicCosts )
-    {
-        delete[] _basicCosts;
-        _basicCosts = NULL;
     }
 
     if ( _multipliers )
@@ -192,14 +179,6 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     _unitVector = new double[m];
     if ( !_unitVector )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::unitVector" );
-
-    _costFunction = new double[n-m];
-    if ( !_costFunction )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::costFunction" );
-
-    _basicCosts = new double[m];
-    if ( !_basicCosts )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::basicCosts" );
 
     _multipliers = new double[m];
     if ( !_multipliers )
@@ -304,9 +283,8 @@ void Tableau::initializeTableau()
     _basisFactorization->setB0( B0 );
     delete[] B0;
 
-    // Compute assignment and cost function
+    // Compute assignment
     computeAssignment();
-    computeCostFunction();
 }
 
 void Tableau::computeAssignment()
@@ -367,27 +345,22 @@ void Tableau::computeBasicStatus( unsigned basic )
     if ( FloatUtils::gt( value , ub, GlobalConfiguration::BOUND_COMPARISON_TOLERANCE ) )
     {
         _basicStatus[basic] = Tableau::ABOVE_UB;
-        _basicCosts[basic] = 1;
     }
     else if ( FloatUtils::lt( value , lb, GlobalConfiguration::BOUND_COMPARISON_TOLERANCE ) )
     {
         _basicStatus[basic] = Tableau::BELOW_LB;
-        _basicCosts[basic] = -1;
     }
     else if ( FloatUtils::areEqual( ub, value, GlobalConfiguration::BOUND_COMPARISON_TOLERANCE ) )
     {
         _basicStatus[basic] = Tableau::AT_UB;
-        _basicCosts[basic] = 0;
     }
     else if ( FloatUtils::areEqual( lb, value, GlobalConfiguration::BOUND_COMPARISON_TOLERANCE ) )
     {
         _basicStatus[basic] = Tableau::AT_LB;
-        _basicCosts[basic] = 0;
     }
     else
     {
         _basicStatus[basic] = Tableau::BETWEEN;
-        _basicCosts[basic] = 0;
     }
 }
 
@@ -469,7 +442,7 @@ void Tableau::setRightHandSide( unsigned index, double value )
 
 const double *Tableau::getCostFunction() const
 {
-    return _costFunction;
+    return _costFunctionManager->getCostFunction();
 }
 
 bool Tableau::basicOutOfBounds( unsigned basic ) const
@@ -498,97 +471,12 @@ bool Tableau::existsBasicOutOfBounds() const
 
 void Tableau::computeCostFunction()
 {
-    /*
-      The cost function is computed in three steps:
-
-      1. Compute the basic costs c.
-         These costs indicate whether a basic variable's row in
-         the tableau should be added as is (variable too great;
-         cost = 1), should be added negatively (variable is too
-         small; cost = -1), or should be ignored (variable
-         within bounds; cost = 0).
-
-      2. Compute the multipliers p.
-         p = c' * inv(B)
-         This is solved by invoking BTRAN for pB = c'
-
-      3. Compute the non-basic (reduced) costs.
-         These are given by -p * AN
-
-      Comment: the correctness follows from the fact that
-
-      xB = inv(B)(b - AN xN)
-
-      we ignore b because the constants don't matter for the cost
-      function, and we omit xN because we want the function and not an
-      evaluation thereof on a specific point.
-    */
-
-    // Step 1: compute basic costs
-    computeBasicCosts();
-
-    // Step 2: compute the multipliers
-    computeMultipliers();
-
-    // Step 3: compute reduced costs
-    computeReducedCosts();
-
-    _costFunctionStatus = ITableau::COST_FUNCTION_JUST_COMPUTED;
-}
-
-void Tableau::computeMultipliers()
-{
-    computeMultipliers( _basicCosts );
-}
-
-void Tableau::computeBasicCosts()
-{
-    for ( unsigned i = 0; i < _m; ++i )
-    {
-        if ( basicTooLow( i ) )
-            _basicCosts[i] = -1;
-        else if ( basicTooHigh( i ) )
-            _basicCosts[i] = 1;
-        else
-            _basicCosts[i] = 0;
-    }
-
-    // printf( "Dumping basic costs:\n\t" );
-    // for ( unsigned i = 0; i < _m; ++i )
-    // {
-    //     if ( FloatUtils::isZero( _basicCosts[i] ) )
-    //         continue;
-
-    //     if ( FloatUtils::isPositive( _basicCosts[i] ) )
-    //         printf( "+" );
-    //     printf( "%lfx%u ", _basicCosts[i], _basicIndexToVariable[i] );
-    // }
-    // printf( "\n" );
+    _costFunctionManager->computeLinearCostFunction();
 }
 
 void Tableau::computeMultipliers( double *rowCoefficients )
 {
     _basisFactorization->backwardTransformation( rowCoefficients, _multipliers );
-
-    // printf( "Dumping multipliers:\n\t" );
-    // for ( unsigned i = 0; i < _m; ++i )
-    //     printf( "%lf ", _multipliers[i] );
-
-    // printf( "\n" );
-}
-
-void Tableau::computeReducedCost( unsigned nonBasic )
-{
-    double *ANColumn = _A + ( _nonBasicIndexToVariable[nonBasic] * _m );
-    _costFunction[nonBasic] = 0;
-    for ( unsigned j = 0; j < _m; ++j )
-        _costFunction[nonBasic] -= ( _multipliers[j] * ANColumn[j] );
-}
-
-void Tableau::computeReducedCosts()
-{
-    for ( unsigned i = 0; i < _n - _m; ++i )
-        computeReducedCost( i );
 }
 
 unsigned Tableau::getBasicStatus( unsigned basic )
@@ -596,12 +484,18 @@ unsigned Tableau::getBasicStatus( unsigned basic )
     return _basicStatus[_variableToIndex[basic]];
 }
 
+unsigned Tableau::getBasicStatusByIndex( unsigned basicIndex )
+{
+    return _basicStatus[basicIndex];
+}
+
 void Tableau::getEntryCandidates( List<unsigned> &candidates ) const
 {
     candidates.clear();
+    const double *costFunction = _costFunctionManager->getCostFunction();
     for ( unsigned i = 0; i < _n - _m; ++i )
     {
-        if ( eligibleForEntry( i ) )
+        if ( eligibleForEntry( i, costFunction ) )
             candidates.append( i );
     }
 }
@@ -616,7 +510,7 @@ void Tableau::setLeavingVariableIndex( unsigned basic )
     _leavingVariable = basic;
 }
 
-bool Tableau::eligibleForEntry( unsigned nonBasic ) const
+bool Tableau::eligibleForEntry( unsigned nonBasic, const double *costFunction ) const
 {
     // A non-basic variable is eligible for entry if one of the two
     //   conditions holds:
@@ -626,10 +520,10 @@ bool Tableau::eligibleForEntry( unsigned nonBasic ) const
     //   2. It has a positive coefficient in the cost function and it
     //      can decrease
 
-    if ( FloatUtils::isZero( _costFunction[nonBasic] ) )
+    if ( FloatUtils::isZero( costFunction[nonBasic] ) )
         return false;
 
-    bool positive = FloatUtils::isPositive( _costFunction[nonBasic] );
+    bool positive = FloatUtils::isPositive( costFunction[nonBasic] );
 
     return
         ( positive && nonBasicCanDecrease( nonBasic ) ) ||
@@ -684,7 +578,8 @@ void Tableau::performPivot()
             _statistics->incNumTableauBoundHopping();
 
         // The entering variable is going to be pressed against its bound.
-        bool decrease = FloatUtils::isPositive( _costFunction[_enteringVariable] );
+        bool decrease =
+            FloatUtils::isPositive( _costFunctionManager->getCostFunction()[_enteringVariable] );
         unsigned nonBasic = _nonBasicIndexToVariable[_enteringVariable];
 
         log( Stringf( "Performing 'fake' pivot. Variable x%u jumping to %s bound",
@@ -712,7 +607,7 @@ void Tableau::performPivot()
                   _basicAssignment[_leavingVariable],
                   _lowerBounds[currentBasic], _upperBounds[currentBasic] ) );
     log( Stringf( "Entering variable %s. Current value: %.15lf. Range: [%.15lf, %.15lf]",
-                  FloatUtils::isNegative( _costFunction[_enteringVariable] ) ?
+                  FloatUtils::isNegative( _costFunctionManager->getCostFunction()[_enteringVariable] ) ?
                   "increases" : "decreases",
                   _nonBasicAssignment[_enteringVariable],
                   _lowerBounds[currentNonBasic], _upperBounds[currentNonBasic] ) );
@@ -889,8 +784,8 @@ void Tableau::pickLeavingVariable()
 
 void Tableau::pickLeavingVariable( double *changeColumn )
 {
-    ASSERT( !FloatUtils::isZero( _costFunction[_enteringVariable] ) );
-    bool decrease = FloatUtils::isPositive( _costFunction[_enteringVariable] );
+    ASSERT( !FloatUtils::isZero( _costFunctionManager->getCostFunction()[_enteringVariable] ) );
+    bool decrease = FloatUtils::isPositive( _costFunctionManager->getCostFunction()[_enteringVariable] );
 
     DEBUG({
             if ( decrease )
@@ -1050,7 +945,7 @@ void Tableau::setNonBasicAssignment( unsigned variable, double value, bool updat
         // If these updates resulted in a change to the status of some basic variable,
         // the cost function is invalidated
         if ( oldStatus != _basicStatus[i] )
-            _costFunctionStatus = ITableau::COST_FUNCTION_INVALID;
+            _costFunctionManager->invalidateCostFunction();
 
         _basicAssignmentStatus = ITableau::BASIC_ASSIGNMENT_UPDATED;
     }
@@ -1283,7 +1178,7 @@ void Tableau::tightenLowerBound( unsigned variable, double value )
         unsigned oldStatus = _basicStatus[index];
         computeBasicStatus( index );
         if ( _basicStatus[index] != oldStatus )
-            _costFunctionStatus = ITableau::COST_FUNCTION_INVALID;
+            _costFunctionManager->invalidateCostFunction();
     }
 }
 
@@ -1313,7 +1208,7 @@ void Tableau::tightenUpperBound( unsigned variable, double value )
         unsigned oldStatus = _basicStatus[index];
         computeBasicStatus( index );
         if ( _basicStatus[index] != oldStatus )
-            _costFunctionStatus = ITableau::COST_FUNCTION_INVALID;
+            _costFunctionManager->invalidateCostFunction();
     }
 }
 
@@ -1344,7 +1239,7 @@ void Tableau::addEquation( const Equation &equation )
 
     // Add an actual row to the talbeau, adjust the data structures
     addRow();
-    _costFunctionStatus = ITableau::COST_FUNCTION_INVALID;
+    _costFunctionManager->invalidateCostFunction();
 
     // Mark the auxiliary variable as basic, add to indices
     _basicVariables.insert( equation._auxVariable );
@@ -1443,19 +1338,14 @@ void Tableau::addRow()
     delete[] _unitVector;
     _unitVector = newUnitVector;
 
-    // Allocate new basic costs. Don't need to initialize
-    double *newBasicCosts = new double[newM];
-    if ( !newBasicCosts )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newBasicCosts" );
-    delete[] _basicCosts;
-    _basicCosts = newBasicCosts;
-
     // Allocate new multipliers. Don't need to initialize
     double *newMultipliers = new double[newM];
     if ( !newMultipliers )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newMultipliers" );
     delete[] _multipliers;
     _multipliers = newMultipliers;
+
+    _costFunctionManager->initialize();
 
     // Allocate new index arrays. Copy old indices, but don't assign indices to new variables yet.
     unsigned *newBasicIndexToVariable = new unsigned[newM];
@@ -1745,7 +1635,8 @@ void Tableau::updateAssignmentForPivot()
     {
         // A non-basic is hopping from one bound to the other.
 
-        bool nonBasicDecreases = FloatUtils::isPositive( _costFunction[_enteringVariable] );
+        bool nonBasicDecreases =
+            FloatUtils::isPositive( _costFunctionManager->getCostFunction()[_enteringVariable] );
         unsigned nonBasic = _nonBasicIndexToVariable[_enteringVariable];
 
         double nonBasicDelta;
@@ -1831,73 +1722,15 @@ void Tableau::updateAssignmentForPivot()
 
 void Tableau::updateCostFunctionForPivot()
 {
-    /*
-      This method is invoked when the non-basic _enteringVariable and
-      basic _leaving variable are about to be swapped. It updates the
-      reduced costs, without recomputing them from scratch.
-
-      Suppose the pivot row is y = 5x + 3z, where x is entering and y
-      is leaving. This corresponds to a new equation, x = 1/5y - 3/5z.
-      If the previous cost for x was 10, then the new cost for y should
-      be ( 10 / pivotElement ) = 10 / 5 = 2. This means that 2 units of y
-      have the same cost as 10 units of x.
-
-      However, now that we have 2 units of y, we have actually added 6 units
-      of z to the overall cost - so the price of z needs to be adjusted by -6.
-
-      Finally, we need to adjust the cost to reflect the pivot operation itself.
-      The entering variable was, and remains, within bounds. The leaving variable
-      is pressed against one of its bounds. So, if it was previously out-of-bounds
-      (and contributed to the cost function), this needs to be removed.
-    */
-
     // If the pivot is fake, the cost function does not change
     if ( performingFakePivot() )
         return;
 
-    // Update the cost of the new non-basic
     double pivotElement = -_changeColumn[_leavingVariable];
-    _costFunction[_enteringVariable] /= pivotElement;
-
-    for ( unsigned i = 0; i < _n - _m; ++i )
-    {
-        if ( i != _enteringVariable )
-            _costFunction[i] -= (*_pivotRow)[i] * _costFunction[_enteringVariable];
-    }
-
-    DEBUG({
-            if ( FloatUtils::isPositive( _basicCosts[_leavingVariable] ) )
-            {
-                ASSERT( _basicStatus[_leavingVariable] == ABOVE_UB );
-            }
-            else if ( FloatUtils::isNegative( _basicCosts[_leavingVariable] ) )
-            {
-                ASSERT( _basicStatus[_leavingVariable] == BELOW_LB );
-            }
-            else
-            {
-                ASSERT( ( _basicStatus[_leavingVariable] == AT_LB ) ||
-                        ( _basicStatus[_leavingVariable] == BETWEEN ) ||
-                        ( _basicStatus[_leavingVariable] == AT_UB ) );
-
-            }
-        });
-
-    // If the leaving variable was previously out of bounds, this is no longer
-    // the case. Adjust the non-basic cost.
-    _costFunction[_enteringVariable] -= _basicCosts[_leavingVariable];
-
-    _costFunctionStatus = ITableau::COST_FUNCTION_UPDATED;
-}
-
-ITableau::CostFunctionStatus Tableau::getCostFunctionStatus() const
-{
-    return _costFunctionStatus;
-}
-
-void Tableau::setCostFunctionStatus( ITableau::CostFunctionStatus status )
-{
-    _costFunctionStatus = status;
+    _costFunctionManager->updateCostFunctionForPivot( _enteringVariable,
+                                                      _leavingVariable,
+                                                      pivotElement,
+                                                      _pivotRow );
 }
 
 ITableau::BasicAssignmentStatus Tableau::getBasicAssignmentStatus() const
@@ -1966,6 +1799,11 @@ double *Tableau::getInverseBasisMatrix() const
 Set<unsigned> Tableau::getBasicVariables() const
 {
     return _basicVariables;
+}
+
+void Tableau::registerCostFunctionManager( ICostFunctionManager *costFunctionManager )
+{
+    _costFunctionManager = costFunctionManager;
 }
 
 //

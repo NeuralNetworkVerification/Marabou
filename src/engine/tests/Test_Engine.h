@@ -124,6 +124,8 @@ public:
         TS_ASSERT( costFunctionManager->initializeWasCalled );
         TS_ASSERT( rowTightener->initializeWasCalled );
 
+        TS_ASSERT_EQUALS( tableau->lastCostFunctionManager, costFunctionManager );
+
         TS_ASSERT_EQUALS( tableau->lastM, 2U );
         TS_ASSERT_EQUALS( tableau->lastN, 5U );
 

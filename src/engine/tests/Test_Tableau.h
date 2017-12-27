@@ -13,6 +13,7 @@
 #include <cxxtest/TestSuite.h>
 
 #include "Equation.h"
+#include "MockCostFunctionManager.h"
 #include "MockErrno.h"
 #include "ReluplexError.h"
 #include "Tableau.h"
@@ -243,64 +244,15 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete tableau );
     }
 
-    void test_initalize_basis_get_cost_function()
-    {
-        Tableau *tableau;
-
-        TS_ASSERT( tableau = new Tableau );
-
-        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
-        initializeTableauValues( *tableau );
-
-        for ( unsigned i = 0; i < 4; ++i )
-        {
-            TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( i, 1 ) );
-            TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( i, 2 ) );
-        }
-
-        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 4, 218 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 4, 228 ) );
-
-        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 5, 112 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 5, 114 ) );
-
-        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 6, 400 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 6, 402 ) );
-
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 4 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 5 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 6 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau() );
-
-        TS_ASSERT_EQUALS( tableau->getBasicStatus( 4 ), Tableau::BELOW_LB );
-        TS_ASSERT_EQUALS( tableau->getBasicStatus( 5 ), Tableau::BETWEEN );
-        TS_ASSERT_EQUALS( tableau->getBasicStatus( 6 ), Tableau::ABOVE_UB );
-
-        const double *costFunction;
-        TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
-        TS_ASSERT_THROWS_NOTHING( costFunction = tableau->getCostFunction() );
-
-        // Expect:
-        // cost = - x5 + x7
-        //      = + 3x1 + 2x2 +  x3 + 2x4
-        //        - 4x1 - 3x2 - 3x3 - 4x4
-        //      = -  x1 -  x2 - 2x3 - 2x4
-
-        TS_ASSERT_EQUALS( costFunction[0], -1 );
-        TS_ASSERT_EQUALS( costFunction[1], -1 );
-        TS_ASSERT_EQUALS( costFunction[2], -2 );
-        TS_ASSERT_EQUALS( costFunction[3], -2 );
-
-        TS_ASSERT_THROWS_NOTHING( delete tableau );
-    }
-
     void test_get_entering_variable__have_eligible_variables()
     {
         Tableau *tableau;
+        MockCostFunctionManager costFunctionManager;
 
         TS_ASSERT( tableau = new Tableau );
 
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
 
         for ( unsigned i = 0; i < 4; ++i )
@@ -327,9 +279,15 @@ public:
         TS_ASSERT_EQUALS( tableau->getBasicStatus( 5 ), Tableau::BETWEEN );
         TS_ASSERT_EQUALS( tableau->getBasicStatus( 6 ), Tableau::ABOVE_UB );
 
-        // Cost function is: - x1 -  x2 - 2x3 - 2x4
-
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
+        TS_ASSERT( costFunctionManager.computeLinearCostFunctionCalled );
+
+        // Cost function is: - x1 -  x2 - 2x3 - 2x4
+        costFunctionManager.nextCostFunction = new double[4];
+        costFunctionManager.nextCostFunction[0] = -1;
+        costFunctionManager.nextCostFunction[1] = -1;
+        costFunctionManager.nextCostFunction[2] = -2;
+        costFunctionManager.nextCostFunction[3] = -2;
 
         tableau->setEnteringVariableIndex( 2u );
 
@@ -343,10 +301,12 @@ public:
     void test_get_entering_variable__no_eligible_variables()
     {
         Tableau *tableau;
+        MockCostFunctionManager costFunctionManager;
 
         TS_ASSERT( tableau = new Tableau );
 
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
 
         for ( unsigned i = 0; i < 4; ++i )
@@ -373,16 +333,15 @@ public:
         TS_ASSERT_EQUALS( tableau->getBasicStatus( 5 ), Tableau::BELOW_LB );
         TS_ASSERT_EQUALS( tableau->getBasicStatus( 6 ), Tableau::BETWEEN );
 
-        const double *costFunction;
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
-        TS_ASSERT_THROWS_NOTHING( costFunction = tableau->getCostFunction() );
-        TS_ASSERT_EQUALS( costFunction[0], 1 );
-        TS_ASSERT_EQUALS( costFunction[1], 1 );
-        TS_ASSERT_EQUALS( costFunction[2], 1 );
-        TS_ASSERT_EQUALS( costFunction[3], 1 );
 
         // Cost function is: + x1 + x2 + x3 + x4
         // All these variables are at their lower bounds, so cannot decrease.
+        costFunctionManager.nextCostFunction = new double[4];
+        costFunctionManager.nextCostFunction[0] = 1;
+        costFunctionManager.nextCostFunction[1] = 1;
+        costFunctionManager.nextCostFunction[2] = 1;
+        costFunctionManager.nextCostFunction[3] = 1;
 
         tableau->setEnteringVariableIndex( 2u );
 
@@ -390,18 +349,18 @@ public:
 
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
 
-        // TS_ASSERT( !tableau->pickEnteringVariable( entryStrategy ) );
-
         TS_ASSERT_THROWS_NOTHING( delete tableau );
     }
 
     void test_get_get_leaving_variable()
     {
         Tableau *tableau;
+        MockCostFunctionManager costFunctionManager;
 
         TS_ASSERT( tableau = new Tableau );
 
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
 
         for ( unsigned i = 0; i < 4; ++i )
@@ -429,6 +388,13 @@ public:
         TS_ASSERT_EQUALS( tableau->getBasicStatus( 6 ), Tableau::ABOVE_UB );
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
+
+        costFunctionManager.nextCostFunction = new double[4];
+        costFunctionManager.nextCostFunction[0] = -1;
+        costFunctionManager.nextCostFunction[1] = -1;
+        costFunctionManager.nextCostFunction[2] = -1;
+        costFunctionManager.nextCostFunction[3] = -1;
+
         tableau->setEnteringVariableIndex( 2u );
         TS_ASSERT( hasCandidates( *tableau ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
@@ -498,10 +464,12 @@ public:
     void test_perform_pivot_nonbasic_goes_to_opposite_bound()
     {
         Tableau *tableau;
+        MockCostFunctionManager costFunctionManager;
 
         TS_ASSERT( tableau = new Tableau );
 
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
 
         for ( unsigned i = 0; i < 4; ++i )
@@ -525,6 +493,12 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau() );
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
+        costFunctionManager.nextCostFunction = new double[4];
+        costFunctionManager.nextCostFunction[0] = -1;
+        costFunctionManager.nextCostFunction[1] = -1;
+        costFunctionManager.nextCostFunction[2] = -1;
+        costFunctionManager.nextCostFunction[3] = -1;
+
         tableau->setEnteringVariableIndex( 2u );
         TS_ASSERT( hasCandidates( *tableau ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
@@ -550,10 +524,12 @@ public:
     void test_perform_pivot_nonbasic_becomes_basic()
     {
         Tableau *tableau;
+        MockCostFunctionManager costFunctionManager;
 
         TS_ASSERT( tableau = new Tableau );
 
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
 
         for ( unsigned i = 0; i < 4; ++i )
@@ -577,6 +553,12 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau() );
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
+        costFunctionManager.nextCostFunction = new double[4];
+        costFunctionManager.nextCostFunction[0] = -1;
+        costFunctionManager.nextCostFunction[1] = -1;
+        costFunctionManager.nextCostFunction[2] = -1;
+        costFunctionManager.nextCostFunction[3] = -1;
+
         tableau->setEnteringVariableIndex( 2u );
         TS_ASSERT( hasCandidates( *tableau ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
@@ -616,10 +598,12 @@ public:
     void test_get_row()
     {
         Tableau *tableau;
+        MockCostFunctionManager costFunctionManager;
 
         TS_ASSERT( tableau = new Tableau );
 
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
 
         for ( unsigned i = 0; i < 4; ++i )
@@ -710,11 +694,15 @@ public:
         TS_ASSERT_EQUALS( row._scalar, 420.0 );
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
+        costFunctionManager.nextCostFunction = new double[4];
+        costFunctionManager.nextCostFunction[0] = -1;
+        costFunctionManager.nextCostFunction[1] = -1;
+        costFunctionManager.nextCostFunction[2] = -1;
+        costFunctionManager.nextCostFunction[3] = -1;
+
         tableau->setEnteringVariableIndex( 2u );
         TS_ASSERT( hasCandidates( *tableau ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
-
-        // TS_ASSERT_THROWS_NOTHING( tableau->pickEnteringVariable( entryStrategy ) );
 
         double d[] = { 0, 0, 1 };
         TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d ) );
@@ -809,10 +797,12 @@ public:
     void test_degenerate_pivot()
     {
         Tableau *tableau;
+        MockCostFunctionManager costFunctionManager;
 
         TS_ASSERT( tableau = new Tableau );
 
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
 
         for ( unsigned i = 0; i < 4; ++i )
@@ -1008,12 +998,14 @@ public:
     void test_store_and_restore()
     {
         Tableau *tableau;
+        MockCostFunctionManager costFunctionManager;
 
         TS_ASSERT( tableau = new Tableau );
 
         // Initialization steps
 
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
 
         for ( unsigned i = 0; i < 4; ++i )
@@ -1037,6 +1029,12 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau() );
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
+        costFunctionManager.nextCostFunction = new double[4];
+        costFunctionManager.nextCostFunction[0] = -1;
+        costFunctionManager.nextCostFunction[1] = -1;
+        costFunctionManager.nextCostFunction[2] = -1;
+        costFunctionManager.nextCostFunction[3] = -1;
+
         tableau->setEnteringVariableIndex( 3u );
         TS_ASSERT( hasCandidates( *tableau ) );
 
@@ -1124,10 +1122,12 @@ public:
     void test_add_equation()
     {
         Tableau *tableau;
+        MockCostFunctionManager costFunctionManager;
 
         TS_ASSERT( tableau = new Tableau );
 
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
 
         for ( unsigned i = 0; i < 4; ++i )
@@ -1153,6 +1153,12 @@ public:
         // Do a pivot to shuffle the basis
         tableau->setEnteringVariableIndex( 2u );
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
+        costFunctionManager.nextCostFunction = new double[4];
+        costFunctionManager.nextCostFunction[0] = -1;
+        costFunctionManager.nextCostFunction[1] = -1;
+        costFunctionManager.nextCostFunction[2] = -1;
+        costFunctionManager.nextCostFunction[3] = -1;
+
         TS_ASSERT_THROWS_NOTHING( tableau->computeChangeColumn() );
         tableau->pickLeavingVariable();
 
@@ -1271,10 +1277,12 @@ public:
     void test_tighten_bounds()
     {
         Tableau *tableau;
+        MockCostFunctionManager costFunctionManager;
 
         TS_ASSERT( tableau = new Tableau );
 
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
 
         for ( unsigned i = 0; i < 4; ++i )
@@ -1348,11 +1356,13 @@ public:
     void test_get_basis_equations()
     {
         Tableau *tableau;
+        MockCostFunctionManager costFunctionManager;
 
         TS_ASSERT( tableau = new Tableau );
 
         // Start with the usual tableau, and cause a non-fake pivot
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
 
         for ( unsigned i = 0; i < 4; ++i )
@@ -1376,6 +1386,12 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau() );
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
+        costFunctionManager.nextCostFunction = new double[4];
+        costFunctionManager.nextCostFunction[0] = -1;
+        costFunctionManager.nextCostFunction[1] = -1;
+        costFunctionManager.nextCostFunction[2] = -1;
+        costFunctionManager.nextCostFunction[3] = -1;
+
         tableau->setEnteringVariableIndex( 2u );
         TS_ASSERT( hasCandidates( *tableau ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );

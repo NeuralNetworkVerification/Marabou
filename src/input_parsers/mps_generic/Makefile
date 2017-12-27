@@ -37,7 +37,6 @@ SOURCES += \
 	FreshVariables.cpp \
 	InputQuery.cpp \
 	LPElement.cpp \
-	NestedDantzigsRule.cpp \
 	PiecewiseLinearCaseSplit.cpp \
 	PiecewiseLinearConstraint.cpp \
 	PrecisionRestorer.cpp \

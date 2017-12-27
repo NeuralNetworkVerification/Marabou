@@ -21,20 +21,13 @@
 
 class BasisFactorization;
 class Equation;
+class ICostFunctionManager;
 class PiecewiseLinearCaseSplit;
 class TableauState;
 
 class Tableau : public ITableau
 {
 public:
-    enum BasicStatus {
-        BELOW_LB = 0,
-        AT_LB = 1,
-        BETWEEN = 2,
-        AT_UB = 3,
-        ABOVE_UB = 4,
-    };
-
     Tableau();
     ~Tableau();
 
@@ -178,6 +171,7 @@ public:
       Return the current status of the basic variable
     */
     unsigned getBasicStatus( unsigned basic );
+    unsigned getBasicStatusByIndex( unsigned basicIndex );
 
     /*
       True if there exists some out-of-bounds basic
@@ -198,7 +192,7 @@ public:
     /*
       Picks the entering variable.
     */
-    bool eligibleForEntry( unsigned nonBasic ) const;
+    bool eligibleForEntry( unsigned nonBasic, const double *costFunction ) const;
     unsigned getEnteringVariable() const;
     unsigned getEnteringVariableIndex() const;
     bool nonBasicCanIncrease( unsigned nonBasic ) const;
@@ -273,18 +267,8 @@ public:
     void getEntryCandidates( List<unsigned> &candidates ) const;
 
     /*
-      Cost-calculating functions.
+      Compute the multipliers for a given list of row coefficient.
     */
-    void computeBasicCosts();
-    void computeReducedCost( unsigned nonBasic );
-    void computeReducedCosts();
-
-    /*
-      Compute the multipliers for a given list of basic costs. If the
-      costs are not specified as input, the function uses the basic
-      costs computed by computeBasicCosts().
-    */
-    void computeMultipliers();
     void computeMultipliers( double *rowCoefficients );
 
     /*
@@ -350,6 +334,11 @@ public:
     void unregisterToWatchVariable( VariableWatcher *watcher, unsigned variable );
 
     /*
+      Register the cost function manager.
+    */
+    void registerCostFunctionManager( ICostFunctionManager *costFunctionManager );
+
+    /*
       Notify all watchers of the given variable of a value update,
       or of changes to its bounds.
     */
@@ -366,12 +355,6 @@ public:
       Compute the current sum of infeasibilities
     */
     double getSumOfInfeasibilities() const;
-
-    /*
-      The current state of the cost function.
-    */
-    CostFunctionStatus getCostFunctionStatus() const;
-    void setCostFunctionStatus( ITableau::CostFunctionStatus status );
 
     /*
       The current state of the basic assignment
@@ -451,10 +434,8 @@ private:
     BasisFactorization *_basisFactorization;
 
     /*
-      The cost function and auxiliary variable for computing it
+      The multiplier vector
     */
-    double *_costFunction;
-    double *_basicCosts;
     double *_multipliers;
 
     /*
@@ -525,11 +506,6 @@ private:
     bool _leavingVariableIncreases;
 
     /*
-      The status of the cost function
-    */
-    CostFunctionStatus _costFunctionStatus;
-
-    /*
       The status of the basic assignment
     */
     BasicAssignmentStatus _basicAssignmentStatus;
@@ -538,6 +514,11 @@ private:
       Statistics collection
     */
     Statistics *_statistics;
+
+    /*
+      The cost function manager
+    */
+    ICostFunctionManager *_costFunctionManager;
 
     /*
       Free all allocated memory.

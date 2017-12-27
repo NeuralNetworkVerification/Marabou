@@ -37,6 +37,8 @@ public:
 
         lastEntries = NULL ;
         nextCostFunction = NULL;
+
+        lastCostFunctionManager = NULL;
     }
 
     ~MockTableau()
@@ -207,11 +209,13 @@ public:
     }
 
     unsigned getBasicStatus( unsigned /* basic */ ) { return 0; }
+    unsigned getBasicStatusByIndex( unsigned /* basicIndex */ ) { return 0; }
+
     bool existsBasicOutOfBounds() const { return false; }
     void computeBasicStatus() {}
     void computeBasicStatus( unsigned /* basic */ ) {}
     bool pickEnteringVariable( EntrySelectionStrategy */* strategy */ ) { return false; }
-    bool eligibleForEntry( unsigned nonBasic ) const
+    bool eligibleForEntry( unsigned nonBasic, const double */* costFunction */ ) const
     {
         return mockCandidates.exists( nonBasic );
     }
@@ -263,17 +267,12 @@ public:
     bool isBasic( unsigned /* variable */ ) const { return false; }
     void setNonBasicAssignment( unsigned /* variable */, double /* value */, bool /* updateBasics */ ) {}
     void computeCostFunction() {}
-    void computeMultipliers() {}
     void computeReducedCost (unsigned /* variable */) {}
 
     double *nextCostFunction;
     const double *getCostFunction() const
     {
         return nextCostFunction;
-    }
-
-    void setCostFunctionStatus( ITableau::CostFunctionStatus /* status */ )
-    {
     }
 
     BasicAssignmentStatus getBasicAssignmentStatus() const
@@ -424,6 +423,12 @@ public:
     {
     }
 
+    ICostFunctionManager *lastCostFunctionManager;
+    void registerCostFunctionManager( ICostFunctionManager *costFunctionManager )
+    {
+        lastCostFunctionManager = costFunctionManager;
+    }
+
     typedef List<VariableWatcher *> Watchers;
     Map<unsigned, Watchers> lastRegisteredVariableToWatcher;
     void registerToWatchVariable( VariableWatcher *watcher, unsigned variable )
@@ -464,11 +469,6 @@ public:
     double getSumOfInfeasibilities() const
     {
         return 0;
-    }
-
-    CostFunctionStatus getCostFunctionStatus() const
-    {
-        return ITableau::COST_FUNCTION_JUST_COMPUTED;
     }
 
     void assignIndexToBasicVariable( unsigned /* variable */, unsigned /* index */ )

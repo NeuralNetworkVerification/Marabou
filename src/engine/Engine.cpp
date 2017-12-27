@@ -266,15 +266,15 @@ void Engine::performSimplexStep()
          next-best entering variable.
     */
 
-    if ( _tableau->getCostFunctionStatus() == ITableau::COST_FUNCTION_INVALID )
-        _tableau->computeCostFunction();
+    if ( _costFunctionManager->costFunctionInvalid() )
+        _costFunctionManager->computeLinearCostFunction();
 
     DEBUG({
             // Since we're performing a simplex step, there are out-of-bounds variables.
             // Therefore, if the cost function is fresh, it should not be zero.
-            if ( _tableau->getCostFunctionStatus() == ITableau::COST_FUNCTION_JUST_COMPUTED )
+            if ( _costFunctionManager->costFunctionJustComputed() )
             {
-                const double *costFunction = _tableau->getCostFunction();
+                const double *costFunction = _costFunctionManager->getCostFunction();
                 unsigned size = _tableau->getN() - _tableau->getM();
                 bool found = false;
                 for ( unsigned i = 0; i < size; ++i )
@@ -290,8 +290,8 @@ void Engine::performSimplexStep()
                 {
                     printf( "Error! Have OOB vars but cost function is zero.\n"
                             "Recomputing cost function. New one is:\n" );
-                    _tableau->computeCostFunction();
-                    // _tableau->dumpCostFunction(); TODO: switch to cost function manager here
+                    _costFunctionManager->computeLinearCostFunction();
+                    _costFunctionManager->dumpCostFunction();
                     throw ReluplexError( ReluplexError::DEBUGGING_ERROR,
                                          "Have OOB vars but cost function is zero" );
                 }
@@ -366,11 +366,12 @@ void Engine::performSimplexStep()
             _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
             return;
         }
-        else if ( _tableau->getCostFunctionStatus() != ITableau::COST_FUNCTION_JUST_COMPUTED )
+        else if ( !_costFunctionManager->costFunctionJustComputed() )
         {
             // This failure might have resulted from a corrupt cost function.
-            ASSERT( _tableau->getCostFunctionStatus() == ITableau::COST_FUNCTION_UPDATED );
-            _tableau->setCostFunctionStatus( ITableau::COST_FUNCTION_INVALID );
+            ASSERT( _costFunctionManager->getCostFunctionStatus() ==
+                    ICostFunctionManager::COST_FUNCTION_UPDATED );
+            _costFunctionManager->invalidateCostFunction();
             struct timespec end = TimeUtils::sampleMicro();
             _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
             return;
@@ -602,6 +603,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         _tableau->initializeTableau();
         _costFunctionManager->initialize();
+        _tableau->registerCostFunctionManager( _costFunctionManager );
         _activeEntryStrategy->initialize( _tableau );
 
         _statistics.setNumPlConstraints( _plConstraints.size() );

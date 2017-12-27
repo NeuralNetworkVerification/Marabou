@@ -13,12 +13,33 @@
 #ifndef __ICostFunctionManager_h__
 #define __ICostFunctionManager_h__
 
+class TableauRow;
+
 class ICostFunctionManager
 {
 public:
+    enum CostFunctionStatus {
+        COST_FUNCTION_INVALID = 0,
+        COST_FUNCTION_JUST_COMPUTED = 1,
+        COST_FUNCTION_UPDATED = 2,
+    };
+
     virtual ~ICostFunctionManager() {};
 
     virtual void initialize() = 0;
+    virtual ICostFunctionManager::CostFunctionStatus getCostFunctionStatus() const = 0;
+    virtual void computeLinearCostFunction() = 0;
+    virtual const double *getCostFunction() const = 0;
+    virtual void dumpCostFunction() const = 0;
+    virtual void setCostFunctionStatus( ICostFunctionManager::CostFunctionStatus status ) = 0;
+    virtual void updateCostFunctionForPivot( unsigned enteringVariableIndex,
+                                             unsigned leavingVariableIndex,
+                                             double pivotElement,
+                                             const TableauRow *pivotRow ) = 0;
+
+    virtual bool costFunctionInvalid() const = 0;
+    virtual bool costFunctionJustComputed() const = 0;
+    virtual void invalidateCostFunction() = 0;
 };
 
 #endif // __ICostFunctionManager_h__

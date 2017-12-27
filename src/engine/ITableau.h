@@ -18,6 +18,7 @@
 
 class EntrySelectionStrategy;
 class Equation;
+class ICostFunctionManager;
 class PiecewiseLinearCaseSplit;
 class Statistics;
 class TableauRow;
@@ -26,6 +27,14 @@ class TableauState;
 class ITableau
 {
 public:
+    enum BasicStatus {
+        BELOW_LB = 0,
+        AT_LB = 1,
+        BETWEEN = 2,
+        AT_UB = 3,
+        ABOVE_UB = 4,
+    };
+
     enum CostFunctionStatus {
         COST_FUNCTION_INVALID = 0,
         COST_FUNCTION_JUST_COMPUTED = 1,
@@ -64,6 +73,8 @@ public:
     virtual void registerToWatchVariable( VariableWatcher *watcher, unsigned variable ) = 0;
     virtual void unregisterToWatchVariable( VariableWatcher *watcher, unsigned variable ) = 0;
 
+    virtual void registerCostFunctionManager( ICostFunctionManager *costFunctionManager ) = 0;
+
     virtual ~ITableau() {};
 
     virtual void setDimensions( unsigned m, unsigned n ) = 0;
@@ -83,13 +94,14 @@ public:
     virtual void tightenLowerBound( unsigned variable, double value ) = 0;
     virtual void tightenUpperBound( unsigned variable, double value ) = 0;
     virtual unsigned getBasicStatus( unsigned basic ) = 0;
+    virtual unsigned getBasicStatusByIndex( unsigned basicIndex ) = 0;
     virtual bool existsBasicOutOfBounds() const = 0;
     virtual void setEnteringVariableIndex( unsigned nonBasic ) = 0;
     virtual void setLeavingVariableIndex( unsigned basic ) = 0;
     virtual Set<unsigned> getBasicVariables() const = 0;
     virtual void computeBasicStatus() = 0;
     virtual void computeBasicStatus( unsigned basic ) = 0;
-    virtual bool eligibleForEntry( unsigned nonBasic ) const = 0;
+    virtual bool eligibleForEntry( unsigned nonBasic, const double *costFunction ) const = 0;
     virtual unsigned getEnteringVariable() const = 0;
     virtual unsigned getEnteringVariableIndex() const = 0;
     virtual void pickLeavingVariable() = 0;
@@ -104,8 +116,6 @@ public:
     virtual void setNonBasicAssignment( unsigned variable, double value, bool updateBasics ) = 0;
     virtual void computeCostFunction() = 0;
     virtual void getEntryCandidates( List<unsigned> &candidates ) const = 0;
-    virtual void computeMultipliers() = 0;
-    virtual void computeReducedCost( unsigned nonBasic ) = 0;
     virtual const double *getCostFunction() const = 0;
     virtual void computeChangeColumn() = 0;
     virtual const double *getChangeColumn() const = 0;
@@ -129,14 +139,11 @@ public:
     virtual void performDegeneratePivot() = 0;
     virtual void storeState( TableauState &state ) const = 0;
     virtual void restoreState( const TableauState &state ) = 0;
-    virtual void computeBasicCosts() = 0;
     virtual void setStatistics( Statistics *statistics ) = 0;
     virtual const double *getRightHandSide() const = 0;
     virtual void forwardTransformation( const double *y, double *x ) const = 0;
     virtual void backwardTransformation( const double *y, double *x ) const = 0;
     virtual double getSumOfInfeasibilities() const = 0;
-    virtual CostFunctionStatus getCostFunctionStatus() const = 0;
-    virtual void setCostFunctionStatus( CostFunctionStatus status ) = 0;
     virtual BasicAssignmentStatus getBasicAssignmentStatus() const = 0;
     virtual void setBasicAssignmentStatus( ITableau::BasicAssignmentStatus status ) = 0;
     virtual bool basicOutOfBounds( unsigned basic ) const = 0;
