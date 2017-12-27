@@ -712,6 +712,7 @@ void Engine::restoreState( const EngineState &state )
     _rowBoundTightener->initialize( _tableau );
     adjustWorkMemorySize();
     _activeEntryStrategy->resizeHook( _tableau );
+    _costFunctionManager->initialize();
 
     // Reset the violation counts in the SMT core
     _smtCore.resetReportedViolations();

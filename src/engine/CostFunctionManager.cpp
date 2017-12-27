@@ -72,6 +72,8 @@ void CostFunctionManager::initialize()
     _multipliers = new double[_m];
     if ( !_multipliers )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "CostFunctionManager::multipliers" );
+
+    invalidateCostFunction();
 }
 
 void CostFunctionManager::computeLinearCostFunction()
@@ -199,6 +201,9 @@ void CostFunctionManager::updateCostFunctionForPivot( unsigned enteringVariableI
       is pressed against one of its bounds. So, if it was previously out-of-bounds
       (and contributed to the cost function), this needs to be removed.
     */
+
+    ASSERT( _tableau->getM() == _m );
+    ASSERT( _tableau->getN() == _n );
 
     // Update the cost of the new non-basic
     _costFunction[enteringVariableIndex] /= pivotElement;
