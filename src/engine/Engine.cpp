@@ -90,12 +90,6 @@ bool Engine::solve()
             // If the basis has become malformed, we need to restore it
             if ( basisRestorationNeeded() )
             {
-                // Debug
-                printf( "doing basis restoration. Current restoration required: %u. Performed: %u\n",
-                        _basisRestorationRequired,
-                        _basisRestorationPerformed );
-                //
-
                 if ( _basisRestorationRequired == Engine::STRONG_RESTORATION_NEEDED )
                 {
                     performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
