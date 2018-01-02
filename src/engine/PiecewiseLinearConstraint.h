@@ -153,6 +153,16 @@ public:
     */
     virtual void getAuxiliaryEquations( List<Equation> &newEquations ) const = 0;
 
+    /*
+      Ask the piecewise linear constraint to contribute a component to the cost
+      function. If implemented, this component should be empty when the constraint is
+      satisfied or inactive, and should be non-empty otherwise. Minimizing the returned
+      equation should then lead to the constraint being "closer to satisfied".
+    */
+    virtual void getCostFunctionComponent( Map<unsigned, double> &/* cost */ ) const
+    {
+    }
+
 protected:
     bool _constraintActive;
 	Map<unsigned, double> _assignment;

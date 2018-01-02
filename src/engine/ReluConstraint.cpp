@@ -379,6 +379,66 @@ void ReluConstraint::getAuxiliaryEquations( List<Equation> &newEquations ) const
     newEquations.append( equation );
 }
 
+void ReluConstraint::getCostFunctionComponent( Map<unsigned, double> &cost ) const
+{
+    // This should not be called for inactive constraints
+    ASSERT( isActive() );
+
+    // If the constraint is satisfied, fixed or has OOB components,
+    // it contributes nothing
+    if ( satisfied() || phaseFixed() || haveOutOfBoundVariables() )
+        return;
+
+    // Both variables are within bounds and the constraint is not
+    // satisfied or fixed.
+    double bValue = _assignment.get( _b );
+    double fValue = _assignment.get( _f );
+
+    if ( !cost.exists( _f ) )
+        cost[_f] = 0;
+
+    // Case 1: b is non-positive, f is not zero. Cost: f
+    if ( !FloatUtils::isPositive( bValue ) )
+    {
+        ASSERT( !FloatUtils::isZero( fValue ) );
+        cost[_f] = cost[_f] + 1;
+        return;
+    }
+
+    ASSERT( !FloatUtils::isNegative( bValue ) );
+    ASSERT( !FloatUtils::isNegative( fValue ) );
+
+    if ( !cost.exists( _b ) )
+        cost[_b] = 0;
+
+    // Case 2: both non-negative, not equal, b > f. Cost: b - f
+    if ( FloatUtils::gt( bValue, fValue ) )
+    {
+        cost[_b] = cost[_b] + 1;
+        cost[_f] = cost[_f] - 1;
+        return;
+    }
+
+    // Case 3: both non-negative, not equal, f > b. Cost: f - b
+    cost[_b] = cost[_b] - 1;
+    cost[_f] = cost[_f] + 1;
+    return;
+}
+
+bool ReluConstraint::haveOutOfBoundVariables() const
+{
+    double bValue = _assignment.get( _b );
+    double fValue = _assignment.get( _f );
+
+    if ( FloatUtils::gt( _lowerBounds[_b], bValue ) || FloatUtils::lt( _upperBounds[_b], bValue ) )
+        return true;
+
+    if ( FloatUtils::gt( _lowerBounds[_f], fValue ) || FloatUtils::lt( _upperBounds[_f], fValue ) )
+        return true;
+
+    return false;
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

@@ -105,12 +105,6 @@ public:
     void getEntailedTightenings( List<Tightening> &tightenings ) const;
 
     /*
-      Return true if and only if the constraint has been made meaningless due to
-      variable eliminiation and should be eliminated.
-    */
-    bool constraintDisabledByVariableElimination() const;
-
-    /*
       Dump the current state of the constraint.
     */
     void dump( String &output ) const;
@@ -120,6 +114,14 @@ public:
       like to add to the equation pool.
     */
     void getAuxiliaryEquations( List<Equation> &newEquations ) const;
+
+    /*
+      Ask the piecewise linear constraint to contribute a component to the cost
+      function. If implemented, this component should be empty when the constraint is
+      satisfied or inactive, and should be non-empty otherwise. Minimizing the returned
+      equation should then lead to the constraint being "closer to satisfied".
+    */
+    virtual void getCostFunctionComponent( Map<unsigned, double> &cost ) const;
 
 private:
     unsigned _b, _f;
@@ -136,6 +138,11 @@ private:
     void setPhaseStatus( PhaseStatus phaseStatus );
 
     static String phaseToString( PhaseStatus phase );
+
+    /*
+      Return true iff b or f are out of bounds.
+    */
+    bool haveOutOfBoundVariables() const;
 };
 
 #endif // __ReluConstraint_h__
