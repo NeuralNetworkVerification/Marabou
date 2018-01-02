@@ -76,10 +76,47 @@ void CostFunctionManager::initialize()
     invalidateCostFunction();
 }
 
-void CostFunctionManager::computeLinearCostFunction()
+void CostFunctionManager::computeCostFunction( const Map<unsigned, double> &heuristicCost )
 {
     /*
-      The linear cost function is computed in three steps:
+      A heuristic-based cost function is computed by computing the core
+      cost function and adding to it the provided heuristic cost.
+
+      The heuristic cost may include variables that are basic and variables
+      that are non-basic. The basic variables are added to the vector of basic
+      costs, which is normally used in computing the core cost fuction.
+      Afterwards, once the modified core cost function has been computed,
+      the remaining, non-basic variables are added.
+    */
+
+    // Reset cost function
+    std::fill( _costFunction, _costFunction + _n - _m, 0.0 );
+
+    // Compute the core basic costs
+    computeBasicOOBCosts();
+
+    // Iterate over the heuristic costs. Add any basic variables to the basic
+    // cost vector, and the rest directly to the cost function.
+    for ( const auto &variableCost : heuristicCost )
+    {
+        unsigned variable = variableCost.first;
+        double cost = variableCost.second;
+        unsigned variableIndex = _tableau->variableToIndex( variable );
+        if ( _tableau->isBasic( variable ) )
+            _basicCosts[variableIndex] += cost;
+        else
+            _costFunction[variableIndex] += cost;
+    }
+
+    // Complete the calculation of the modified core cost function
+    computeMultipliers();
+    computeReducedCosts();
+}
+
+void CostFunctionManager::computeCoreCostFunction()
+{
+    /*
+      The core cost function is computed in three steps:
 
       1. Compute the basic costs c.
          These costs indicate whether a basic variable's row in
@@ -103,6 +140,8 @@ void CostFunctionManager::computeLinearCostFunction()
       function, and we omit xN because we want the function and not an
       evaluation thereof on a specific point.
     */
+
+    std::fill( _costFunction, _costFunction + _n - _m, 0.0 );
 
     computeBasicOOBCosts();
     computeMultipliers();
@@ -139,7 +178,6 @@ void CostFunctionManager::computeReducedCost( unsigned nonBasic )
 {
     unsigned nonBasicIndex = _tableau->nonBasicIndexToVariable( nonBasic );
     const double *ANColumn = _tableau->getAColumn( nonBasicIndex );
-    _costFunction[nonBasic] = 0;
     for ( unsigned j = 0; j < _m; ++j )
         _costFunction[nonBasic] -= ( _multipliers[j] * ANColumn[j] );
 }

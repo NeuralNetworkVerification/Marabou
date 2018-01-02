@@ -29,7 +29,7 @@ public:
         initializeWasCalled = false;
         lastTableau = NULL;
         nextCostFunction = NULL;
-        computeLinearCostFunctionCalled = false;
+        computeCoreCostFunctionCalled = false;
     }
 
     ~MockCostFunctionManager()
@@ -72,10 +72,10 @@ public:
     {
     }
 
-    bool computeLinearCostFunctionCalled;
-    void computeLinearCostFunction()
+    bool computeCoreCostFunctionCalled;
+    void computeCoreCostFunction()
     {
-        computeLinearCostFunctionCalled = true;
+        computeCoreCostFunctionCalled = true;
     }
 
     double *nextCostFunction;

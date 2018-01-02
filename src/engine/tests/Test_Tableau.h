@@ -280,7 +280,7 @@ public:
         TS_ASSERT_EQUALS( tableau->getBasicStatus( 6 ), Tableau::ABOVE_UB );
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
-        TS_ASSERT( costFunctionManager.computeLinearCostFunctionCalled );
+        TS_ASSERT( costFunctionManager.computeCoreCostFunctionCalled );
 
         // Cost function is: - x1 -  x2 - 2x3 - 2x4
         costFunctionManager.nextCostFunction = new double[4];

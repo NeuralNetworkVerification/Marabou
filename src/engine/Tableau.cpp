@@ -471,7 +471,7 @@ bool Tableau::existsBasicOutOfBounds() const
 
 void Tableau::computeCostFunction()
 {
-    _costFunctionManager->computeLinearCostFunction();
+    _costFunctionManager->computeCoreCostFunction();
 }
 
 void Tableau::computeMultipliers( double *rowCoefficients )

@@ -14,6 +14,7 @@
 #define __CostFunctionManager_h__
 
 #include "ICostFunctionManager.h"
+#include "Map.h"
 
 class ITableau;
 
@@ -29,12 +30,15 @@ public:
     void initialize();
 
     /*
-      Compute the linear cost function, from scratch.
+      Compute the cost function, from scratch.
+      Either compute just the core cost function, or add to it also
+      a heuristic-based component.
     */
-    void computeLinearCostFunction();
+    void computeCostFunction( const Map<unsigned, double> &heuristicCost );
+    void computeCoreCostFunction();
 
     /*
-      Get the current  cost function.
+      Get the current cost function.
     */
     const double *getCostFunction() const;
 

@@ -261,7 +261,7 @@ void Engine::performSimplexStep()
     */
 
     if ( _costFunctionManager->costFunctionInvalid() )
-        _costFunctionManager->computeLinearCostFunction();
+        _costFunctionManager->computeCoreCostFunction();
 
     DEBUG({
             // Since we're performing a simplex step, there are out-of-bounds variables.
@@ -284,7 +284,7 @@ void Engine::performSimplexStep()
                 {
                     printf( "Error! Have OOB vars but cost function is zero.\n"
                             "Recomputing cost function. New one is:\n" );
-                    _costFunctionManager->computeLinearCostFunction();
+                    _costFunctionManager->computeCoreCostFunction();
                     _costFunctionManager->dumpCostFunction();
                     throw ReluplexError( ReluplexError::DEBUGGING_ERROR,
                                          "Have OOB vars but cost function is zero" );

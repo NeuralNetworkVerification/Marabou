@@ -80,7 +80,7 @@ public:
         tableau.nextBasicTooHigh.insert( 0 );
         tableau.nextBasicTooLow.insert( 1 );
 
-        TS_ASSERT_THROWS_NOTHING( manager->computeLinearCostFunction() );
+        TS_ASSERT_THROWS_NOTHING( manager->computeCoreCostFunction() );
 
         // Basic costs should be [ 1, -1, 0 ], and this should have been sent to BTRAN.
         double expectedBTranInput[] = { 1, -1, 0 };
