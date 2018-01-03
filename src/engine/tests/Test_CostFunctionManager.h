@@ -51,7 +51,7 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete manager );
     }
 
-    void test_compute_linear_cost_function()
+    void test_compute_core_cost_function()
     {
         CostFunctionManager *manager;
         MockTableau tableau;
@@ -94,6 +94,64 @@ public:
         TS_ASSERT_EQUALS( costFucntion[0], -( 0 + 2 + 0 ) );
         // Entry 1: multipliers * columnZero
         TS_ASSERT_EQUALS( costFucntion[1], -( 0 - 2 - 6 ) );
+
+        TS_ASSERT_THROWS_NOTHING( delete manager );
+    }
+
+    void test_compute_cost_function()
+    {
+        CostFunctionManager *manager;
+        MockTableau tableau;
+
+        unsigned n = 5;
+        unsigned m = 3;
+        tableau.setDimensions( m, n );
+
+        TS_ASSERT( manager = new CostFunctionManager( &tableau ) );
+        TS_ASSERT_THROWS_NOTHING( manager->initialize() );
+
+        // Prepare the intermediate information needed for cost function computation:
+        // 1. The multipliers
+        double multipliers[3] = { 0, 2, -3 };
+        memcpy( tableau.nextBtranOutput, multipliers, sizeof(double) * 3 );
+        // 2. Mapping from non-basic indices to original variables
+        tableau.nextNonBasicIndexToVariable[0] = 2;
+        tableau.nextNonBasicIndexToVariable[1] = 0;
+        // 3. Constraint matrix columns for non basic variables
+        double columnZero[] = { 1, -1, 2 };
+        double columnTwo[] = { 3, 1, 0 };
+        tableau.nextAColumn[0] = columnZero;
+        tableau.nextAColumn[2] = columnTwo;
+
+        // We have 3 basic variables. One is too high, one too low, one within bounds.
+        tableau.nextBasicTooHigh.insert( 0 );
+        tableau.nextBasicTooLow.insert( 1 );
+
+        // The heuristic costs change a basic var and a non-basic variable
+        Map<unsigned, double> heuristicCost;
+        // Variable 2 is basic #0
+        tableau.nextVariableToIndex[2] = 0;
+        heuristicCost[2] = 1;
+        tableau.nextIsBasic.insert( 2 );
+        // Variable 3 is non-basic #1
+        tableau.nextVariableToIndex[3] = 1;
+        heuristicCost[3] = 4;
+
+        TS_TRACE( "HERE" );
+        TS_ASSERT_THROWS_NOTHING( manager->computeCostFunction( heuristicCost ) );
+
+        // Basic costs should be [ 2, -1, 0 ], and this should have been sent to BTRAN.
+        double expectedBTranInput[] = { 2, -1, 0 };
+        TS_ASSERT_SAME_DATA( tableau.lastBtranInput, expectedBTranInput, sizeof(double) * m );
+
+        // Each entry of the cost function is a negated dot product of the multiplier vector
+        // and the appropriate column from the constraint matrix
+        const double *costFucntion = manager->getCostFunction();
+
+        // Entry 0: multipliers * columnTwo
+        TS_ASSERT_EQUALS( costFucntion[0], -( 0 + 2 + 0 ) );
+        // Entry 1: multipliers * columnZero + heuristic cost
+        TS_ASSERT_EQUALS( costFucntion[1], -( 0 - 2 - 6 ) + 4 );
 
         TS_ASSERT_THROWS_NOTHING( delete manager );
     }

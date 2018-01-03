@@ -78,6 +78,10 @@ public:
         computeCoreCostFunctionCalled = true;
     }
 
+    void computeCostFunction( const Map<unsigned, double> &/* heuristicCost */ )
+    {
+    }
+
     double *nextCostFunction;
     const double *getCostFunction() const
     {

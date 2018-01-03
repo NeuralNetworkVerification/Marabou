@@ -264,7 +264,13 @@ public:
     }
 
     double ratioConstraintPerBasic( unsigned /* basicIndex */, double /* coefficient */, bool /* decrease */ ) { return 0;}
-    bool isBasic( unsigned /* variable */ ) const { return false; }
+
+    Set<unsigned> nextIsBasic;
+    bool isBasic( unsigned variable ) const
+    {
+        return nextIsBasic.exists( variable );
+    }
+
     void setNonBasicAssignment( unsigned /* variable */, double /* value */, bool /* updateBasics */ ) {}
     void computeCostFunction() {}
     void computeReducedCost (unsigned /* variable */) {}

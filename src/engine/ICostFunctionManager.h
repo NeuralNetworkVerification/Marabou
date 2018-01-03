@@ -13,6 +13,8 @@
 #ifndef __ICostFunctionManager_h__
 #define __ICostFunctionManager_h__
 
+#include "Map.h"
+
 class TableauRow;
 
 class ICostFunctionManager
@@ -28,6 +30,7 @@ public:
 
     virtual void initialize() = 0;
     virtual ICostFunctionManager::CostFunctionStatus getCostFunctionStatus() const = 0;
+    virtual void computeCostFunction( const Map<unsigned, double> &heuristicCost ) = 0;
     virtual void computeCoreCostFunction() = 0;
     virtual const double *getCostFunction() const = 0;
     virtual void dumpCostFunction() const = 0;
