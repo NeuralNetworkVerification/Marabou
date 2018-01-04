@@ -181,7 +181,7 @@ void ProjectedSteepestEdgeRule::prePivotHook( const ITableau &tableau, bool fake
     }
 
     // When this hook is called, the entering and leaving variables have
-    // already been determined. This are the actual varaibles, not the indices.
+    // already been determined. These are the actual varaibles, not the indices.
     unsigned entering = tableau.getEnteringVariable();
     unsigned enteringIndex = tableau.variableToIndex( entering );
     unsigned leaving = tableau.getLeavingVariable();
