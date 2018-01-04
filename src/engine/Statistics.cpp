@@ -214,6 +214,8 @@ void Statistics::print()
             , _numTableauDegeneratePivotsByRequest
             , printPercents( _numTableauDegeneratePivotsByRequest, _numTableauDegeneratePivots ) );
 
+    printf( "\t\tFake pivots: %llu\n", _numTableauBoundHopping );
+
     printf( "\t--- SMT Core Statistics ---\n" );
     printf( "\tTotal depth is %u. Total visited states: %u. Number of splits: %u. Number of pops: %u\n"
             , _currentStackDepth
