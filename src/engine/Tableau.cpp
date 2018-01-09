@@ -280,7 +280,7 @@ void Tableau::initializeTableau()
         }
     }
 
-    _basisFactorization->setB0( B0 );
+    _basisFactorization->setBasis( B0 );
     delete[] B0;
 
     // Compute assignment
@@ -1220,8 +1220,8 @@ void Tableau::addEquation( const Equation &equation )
 
     // Prepare to update the basis factorization.
     // First condense the Etas so that we can access B0 explicitly
-    _basisFactorization->condenseEtas();
-    const double *oldB0 = _basisFactorization->getB0();
+    _basisFactorization->makeExplicitBasisAvailable();
+    const double *oldB0 = _basisFactorization->getBasis();
 
     // Allocate a larger basis factorization and copy the old rows of B0
     unsigned newM = _m + 1;
@@ -1281,7 +1281,7 @@ void Tableau::addEquation( const Equation &equation )
     computeBasicStatus( _m - 1 );
 
     // Finally, give the extended B0 matrix to the basis factorization
-    _basisFactorization->setB0( newB0 );
+    _basisFactorization->setBasis( newB0 );
 
     delete[] newB0;
 }
@@ -1763,7 +1763,7 @@ Equation *Tableau::getBasisEquation( unsigned row ) const
     equation->setScalar( _b[row] );
 
     // Add the basic variables
-    const double *b0 = _basisFactorization->getB0();
+    const double *b0 = _basisFactorization->getBasis();
     for ( unsigned i = 0; i < _m; ++i )
     {
         unsigned basicVariable = _basicIndexToVariable[i];
@@ -1791,7 +1791,7 @@ double *Tableau::getInverseBasisMatrix() const
     ASSERT( basisMatrixAvailable() );
 
     double *result = new double[_m * _m];
-    _basisFactorization->invertB0( result );
+    _basisFactorization->invertBasis( result );
     return result;
 }
 

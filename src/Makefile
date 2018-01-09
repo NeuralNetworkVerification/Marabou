@@ -2,6 +2,7 @@ ROOT_DIR = ..
 
 SUBDIRS += \
 	common \
+	basis_factorization \
 	engine \
 	input_parsers \
 

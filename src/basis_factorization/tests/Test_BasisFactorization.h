@@ -21,6 +21,21 @@
 #include "MockErrno.h"
 #include "BasisFactorizationError.h"
 
+void matrixMultiply( unsigned dimension, const double *left, const double *right, double *result )
+{
+    for ( unsigned leftRow = 0; leftRow < dimension; ++leftRow )
+    {
+        for ( unsigned rightCol = 0; rightCol < dimension; ++rightCol )
+        {
+            double sum = 0;
+			for ( unsigned i = 0; i < dimension; ++i )
+				sum += left[leftRow * dimension + i] * right[i * dimension + rightCol];
+
+			result[leftRow * dimension + rightCol] = sum;
+		}
+	}
+}
+
 class MockForBasisFactorization
 {
 public:
@@ -104,7 +119,7 @@ public:
 		double nB0[] = { 1, 2, 4,
                          4, 5, 7,
                          7, 8, 9 };
-		basis.setB0( nB0 );
+		basis.setBasis( nB0 );
 
 		double a[] = { 2., -1., 4. };
 		double d[] = { 0., 0., 0. };
@@ -222,7 +237,7 @@ public:
         basis.pushEtaMatrix( 2, e3 );
 
 		double nB0[] = {1.,2.,4.,4.,5.,7.,7.,8.,9};
-		basis.setB0( nB0 );
+		basis.setBasis( nB0 );
 
 		double y[] = {19., 12., 17.};
 		double x[] = {0., 0., 0.};
@@ -316,7 +331,7 @@ public:
                 double eta[9];
                 std::fill_n( eta, 9, 0. );
                 (*element)->_eta->toMatrix(eta);
-                basis.matrixMultiply( 3, eta, U, temp );
+                matrixMultiply( 3, eta, U, temp );
                 memcpy( U, temp, sizeof(double) * 9 );
             }
 		}
@@ -427,7 +442,7 @@ public:
                 double eta[9];
                 std::fill_n( eta, 9, 0. );
                 (*element)->_eta->toMatrix(eta);
-                basis.matrixMultiply( 3, eta, U, temp );
+                matrixMultiply( 3, eta, U, temp );
                 memcpy( U, temp, sizeof(double) * 9);
             }
 		}
@@ -593,7 +608,7 @@ public:
 
         double result[9];
 
-        TS_ASSERT_THROWS_NOTHING( BasisFactorization::matrixMultiply( 3, left, right, result ) );
+        matrixMultiply( 3, left, right, result );
         TS_ASSERT_SAME_DATA( result, expectedResult, sizeof(double) * 9 );
     }
 
@@ -605,14 +620,14 @@ public:
                         0, 1, 0,
                         0, 0, 1 };
 
-        basis.setB0( B0 );
+        basis.setBasis( B0 );
 
         double a1[] = { 1, 1, 3 };
         basis.pushEtaMatrix( 1, a1 );
 
         double result[9];
 
-        TS_ASSERT_THROWS_EQUALS( basis.invertB0( result ),
+        TS_ASSERT_THROWS_EQUALS( basis.invertBasis( result ),
                                  const BasisFactorizationError &e,
                                  e.getCode(),
                                  BasisFactorizationError::CANT_INVERT_BASIS_BECAUSE_OF_ETAS );
@@ -633,8 +648,8 @@ public:
 
             double result[9];
 
-            basis.setB0( B0 );
-            TS_ASSERT_THROWS_NOTHING( basis.invertB0( result ) );
+            basis.setBasis( B0 );
+            TS_ASSERT_THROWS_NOTHING( basis.invertBasis( result ) );
 
             for ( unsigned i = 0; i < sizeof(result) / sizeof(double); ++i )
             {
@@ -650,7 +665,7 @@ public:
 
             double result[9];
 
-            TS_ASSERT_THROWS_NOTHING( basis.invertB0( result ) );
+            TS_ASSERT_THROWS_NOTHING( basis.invertBasis( result ) );
 
             for ( unsigned i = 0; i < sizeof(result) / sizeof(double); ++i )
             {
@@ -669,8 +684,8 @@ public:
 
             double result[9];
 
-            basis.setB0( B0 );
-            TS_ASSERT_THROWS_NOTHING( basis.invertB0( result ) );
+            basis.setBasis( B0 );
+            TS_ASSERT_THROWS_NOTHING( basis.invertBasis( result ) );
 
             for ( unsigned i = 0; i < sizeof(result) / sizeof(double); ++i )
             {
@@ -689,8 +704,8 @@ public:
 
             double result[9];
 
-            basis.setB0( B0 );
-            TS_ASSERT_THROWS_NOTHING( basis.invertB0( result ) );
+            basis.setBasis( B0 );
+            TS_ASSERT_THROWS_NOTHING( basis.invertBasis( result ) );
 
             for ( unsigned i = 0; i < sizeof(result) / sizeof(double); ++i )
             {
@@ -709,16 +724,16 @@ public:
 
             double result[9];
 
-            basis.setB0( B0 );
-            TS_ASSERT_THROWS_NOTHING( basis.invertB0( result ) );
+            basis.setBasis( B0 );
+            TS_ASSERT_THROWS_NOTHING( basis.invertBasis( result ) );
 
             for ( unsigned i = 0; i < sizeof(result) / sizeof(double); ++i )
             {
                 TSM_ASSERT( i, FloatUtils::areEqual( result[i], expectedInverse[i] ) );
             }
 
-            basis.setB0( expectedInverse );
-            TS_ASSERT_THROWS_NOTHING( basis.invertB0( result ) );
+            basis.setBasis( expectedInverse );
+            TS_ASSERT_THROWS_NOTHING( basis.invertBasis( result ) );
 
             for ( unsigned i = 0; i < sizeof(result) / sizeof(double); ++i )
             {
@@ -741,16 +756,16 @@ public:
 
             double result[16];
 
-            basis.setB0( B0 );
-            TS_ASSERT_THROWS_NOTHING( basis.invertB0( result ) );
+            basis.setBasis( B0 );
+            TS_ASSERT_THROWS_NOTHING( basis.invertBasis( result ) );
 
             for ( unsigned i = 0; i < sizeof(result) / sizeof(double); ++i )
             {
                 TSM_ASSERT( i, FloatUtils::areEqual( result[i], expectedInverse[i] ) );
             }
 
-            basis.setB0( expectedInverse );
-            TS_ASSERT_THROWS_NOTHING( basis.invertB0( result ) );
+            basis.setBasis( expectedInverse );
+            TS_ASSERT_THROWS_NOTHING( basis.invertBasis( result ) );
 
             for ( unsigned i = 0; i < sizeof(result) / sizeof(double); ++i )
             {

@@ -19,7 +19,7 @@
 #include "Set.h"
 #include "Statistics.h"
 
-class BasisFactorization;
+class IBasisFactorization;
 class Equation;
 class ICostFunctionManager;
 class PiecewiseLinearCaseSplit;
@@ -431,7 +431,7 @@ private:
     /*
       The current factorization of the basis
     */
-    BasisFactorization *_basisFactorization;
+    IBasisFactorization *_basisFactorization;
 
     /*
       The multiplier vector

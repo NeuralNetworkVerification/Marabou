@@ -14,6 +14,8 @@
 #ifndef __BasisFactorization_h__
 #define __BasisFactorization_h__
 
+#include "IBasisFactorization.h"
+
 #include "LPElement.h"
 #include "List.h"
 #include "MString.h"
@@ -21,7 +23,7 @@
 class EtaMatrix;
 class LPElement;
 
-class BasisFactorization
+class BasisFactorization : public IBasisFactorization
 {
 public:
     BasisFactorization( unsigned m );
@@ -86,8 +88,8 @@ public:
       Store and restore the basis factorization. Storing triggers
       condesning the etas.
     */
-    void storeFactorization( BasisFactorization *other );
-    void restoreFactorization( const BasisFactorization *other );
+    void storeFactorization( IBasisFactorization *other );
+    void restoreFactorization( const IBasisFactorization *other );
 
 	/*
       Factorize a matrix into LU form. The resuling upper triangular
@@ -99,20 +101,12 @@ public:
 	/*
       Set B0 to a non-identity matrix and factorize it.
 	*/
-	void setB0( const double *B0 );
+	void setBasis( const double *B );
 
 	/*
       Swap two rows of a matrix.
     */
     void rowSwap( unsigned rowOne, unsigned rowTwo, double *matrix );
-
-    /*
-      Getter functions for the various factorization components.
-    */
-	const double *getU() const;
-	const List<LPElement *> getLP() const;
-	const double *getB0() const;
-	const List<EtaMatrix *> getEtas() const;
 
     /*
       Check/set whether factorization is enabled.
@@ -132,16 +126,33 @@ public:
     bool explicitBasisAvailable() const;
 
     /*
+      Make the basis explicitly available
+    */
+    void makeExplicitBasisAvailable();
+
+    /*
+      Get the explicit basis matrix
+    */
+    const double *getBasis() const;
+
+    /*
       Compute the inverse of B0, using the LP factorization already stored.
       This can only be done when B0 is "fresh", i.e. when there are no stored etas.
      */
-    void invertB0( double *result );
+    void invertBasis( double *result );
+
+
+public:
+    /*
+      Functions made public strictly for testing, not part of the interface
+    */
 
     /*
-      A helper function for matrix multiplication.
-      left * right = result.
+      Getter functions for the various factorization components.
     */
-    static void matrixMultiply( unsigned dimension, const double *left, const double *right, double *result );
+	const double *getU() const;
+	const List<LPElement *> getLP() const;
+	const List<EtaMatrix *> getEtas() const;
 
 private:
     /*
