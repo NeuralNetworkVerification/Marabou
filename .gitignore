@@ -5,3 +5,5 @@ TAGS
 *~
 /src/input_parsers/mps_generic/mps_gensol.elf
 /src/input_parsers/berkeley_example/berkeley_example.elf
+/src/basis_factorization/tests/basis_factorization.tests
+/src/basis_factorization/tests/runner.cxx

@@ -14,12 +14,12 @@
 #include <cxxtest/TestSuite.h>
 
 #include "BasisFactorization.h"
-#include "BasisFactorizationError.h"
 #include "EtaMatrix.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
 #include "List.h"
 #include "MockErrno.h"
+#include "BasisFactorizationError.h"
 
 class MockForBasisFactorization
 {

@@ -137,7 +137,6 @@ public:
         tableau.nextVariableToIndex[3] = 1;
         heuristicCost[3] = 4;
 
-        TS_TRACE( "HERE" );
         TS_ASSERT_THROWS_NOTHING( manager->computeCostFunction( heuristicCost ) );
 
         // Basic costs should be [ 2, -1, 0 ], and this should have been sent to BTRAN.

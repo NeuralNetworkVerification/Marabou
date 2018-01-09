@@ -4,6 +4,7 @@ TEST_TARGET = Engine.tests
 
 LOCAL_INCLUDES += \
 	.. \
+	$(BASIS_FACTORIZATION_DIR) \
 	$(COMMON_TEST_DIR) \
 	$(CONFIGURATION_DIR) \
 
@@ -58,9 +59,10 @@ CFLAGS += \
 
 include $(ROOT_DIR)/Rules.mk
 
-vpath %.cpp $(CONFIGURATION_DIR)
+vpath %.cpp $(BASIS_FACTORIZATION_DIR)
 vpath %.cpp $(COMMON_DIR)
 vpath %.cpp $(COMMON_REAL_DIR)
+vpath %.cpp $(CONFIGURATION_DIR)
 vpath %.cpp $(ENGINE_DIR)
 vpath %.cpp $(ENGINE_MOCK_DIR)
 

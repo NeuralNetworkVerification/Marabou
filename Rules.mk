@@ -22,6 +22,8 @@ ENGINE_TEST_DIR   = $(ENGINE_DIR)/tests
 
 CONFIGURATION_DIR = $(SRC_DIR)/configuration
 
+BASIS_FACTORIZATION_DIR = $(SRC_DIR)/basis_factorization
+
 REGRESS_DIR	  = $(PROJECT_DIR)/regress
 
 #

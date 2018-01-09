@@ -3,6 +3,7 @@ ROOT_DIR = ..
 SUBDIRS += \
 
 LOCAL_INCLUDES += \
+	$(BASIS_FACTORIZATION_DIR) \
 	$(CONFIGURATION_DIR) \
 	$(ENGINE_DIR) \
 	$(INPUT_PARSER_DIR) \
@@ -67,6 +68,7 @@ TARGET = run_regress.elf
 
 include $(ROOT_DIR)/Rules.mk
 
+vpath %.cpp $(BASIS_FACTORIZATION_DIR)
 vpath %.cpp $(CONFIGURATION_DIR)
 vpath %.cpp $(COMMON_DIR)
 vpath %.cpp $(COMMON_REAL_DIR)

@@ -12,6 +12,7 @@
  **/
 
 #include "BasisFactorization.h"
+#include "BasisFactorizationError.h"
 #include "Debug.h"
 #include "EtaMatrix.h"
 #include "FloatUtils.h"
@@ -19,7 +20,6 @@
 #include "LPElement.h"
 #include "MStringf.h"
 #include "MalformedBasisException.h"
-#include "ReluplexError.h"
 
 BasisFactorization::BasisFactorization( unsigned m )
     : _B0( NULL )
@@ -31,7 +31,7 @@ BasisFactorization::BasisFactorization( unsigned m )
 {
     _B0 = new double[m*m];
     if ( !_B0 )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "BasisFactorization::B0" );
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "BasisFactorization::B0" );
 
     // Initialize B0 to the identity matrix
     std::fill_n( _B0, _m * _m, 0.0 );
@@ -40,15 +40,15 @@ BasisFactorization::BasisFactorization( unsigned m )
 
 	_U = new double[m*m];
 	if ( !_U )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "BasisFactorization::U" );
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "BasisFactorization::U" );
 
     _tempY = new double[m];
     if ( !_tempY )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "BasisFactorization::tempY" );
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "BasisFactorization::tempY" );
 
     _LCol = new double[m];
     if ( !_LCol )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "BasisFactorization::LCol" );
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "BasisFactorization::LCol" );
 }
 
 BasisFactorization::~BasisFactorization()
@@ -497,7 +497,7 @@ void BasisFactorization::restoreFactorization( const BasisFactorization *other )
 void BasisFactorization::invertB0( double *result )
 {
     if ( !_etas.empty() )
-        throw ReluplexError( ReluplexError::CANT_INVERT_BASIS_BECAUSE_OF_ETAS );
+        throw BasisFactorizationError( BasisFactorizationError::CANT_INVERT_BASIS_BECAUSE_OF_ETAS );
 
     ASSERT( result );
 

@@ -11,7 +11,7 @@
  **/
 
 #include "EtaMatrix.h"
-#include "ReluplexError.h"
+#include "BasisFactorizationError.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -24,7 +24,7 @@ EtaMatrix::EtaMatrix( unsigned m, unsigned index, double *column )
 {
     _column = new double[_m];
     if ( !_column )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "EtaMatrix::column" );
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "EtaMatrix::column" );
 
     memcpy( _column, column, sizeof(double) * _m );
 }

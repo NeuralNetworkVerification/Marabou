@@ -4,9 +4,9 @@ SUBDIRS += \
 
 LOCAL_INCLUDES += \
 	.. \
+	$(BASIS_FACTORIZATION_DIR) \
 	$(CONFIGURATION_DIR) \
 	$(ENGINE_DIR) \
-
 
 LINK_FLAGS += \
 
@@ -60,6 +60,7 @@ TARGET = mps_gensol.elf
 
 include $(ROOT_DIR)/Rules.mk
 
+vpath %.cpp $(BASIS_FACTORIZATION_DIR)
 vpath %.cpp $(CONFIGURATION_DIR)
 vpath %.cpp $(ENGINE_DIR)
 vpath %.cpp $(ENGINE_REAL_DIR)
