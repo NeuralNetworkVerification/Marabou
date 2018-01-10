@@ -10,12 +10,12 @@
  ** directory for licensing information.\endverbatim
  **/
 
+#include "BasisFactorizationFactory.h"
 #include "Debug.h"
 #include "EntrySelectionStrategy.h"
 #include "Equation.h"
 #include "FloatUtils.h"
 #include "ICostFunctionManager.h"
-#include "LUFactorization.h"
 #include "MStringf.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "ReluplexError.h"
@@ -218,7 +218,7 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     if ( !_basicStatus )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::basicStatus" );
 
-    _basisFactorization = new LUFactorization( _m );
+    _basisFactorization = BasisFactorizationFactory::createBasisFactorization( _m );
     if ( !_basisFactorization )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::basisFactorization" );
 
@@ -1395,7 +1395,8 @@ void Tableau::addRow()
     _upperBounds[_n] = FloatUtils::infinity();
 
     // Allocate a larger basis factorization
-    IBasisFactorization *newBasisFactorization = new LUFactorization( newM );
+    IBasisFactorization *newBasisFactorization =
+        BasisFactorizationFactory::createBasisFactorization( newM );
     if ( !newBasisFactorization )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newBasisFactorization" );
     delete _basisFactorization;

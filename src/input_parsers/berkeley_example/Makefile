@@ -28,6 +28,7 @@ SOURCES += \
 	MString.cpp \
 	TimeUtils.cpp \
 	\
+	BasisFactorizationFactory.cpp \
 	BlandsRule.cpp \
 	ConstraintMatrixAnalyzer.cpp \
 	CostFunctionManager.cpp \

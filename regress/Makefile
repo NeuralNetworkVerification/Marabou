@@ -27,6 +27,7 @@ SOURCES += \
 	AcasNeuralNetwork.cpp \
 	AcasNnet.cpp \
 	AcasParser.cpp \
+	BasisFactorizationFactory.cpp \
 	BlandsRule.cpp \
 	ConstraintMatrixAnalyzer.cpp \
 	CostFunctionManager.cpp \

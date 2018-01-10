@@ -10,7 +10,7 @@
  ** directory for licensing information.\endverbatim
  **/
 
-#include "LUFactorization.h"
+#include "BasisFactorizationFactory.h"
 #include "ReluplexError.h"
 #include "TableauState.h"
 
@@ -132,7 +132,7 @@ void TableauState::setDimensions( unsigned m, unsigned n )
     if ( !_variableToIndex )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::variableToIndex" );
 
-    _basisFactorization = new LUFactorization( m );
+    _basisFactorization = BasisFactorizationFactory::createBasisFactorization( m );
     if ( !_basisFactorization )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::basisFactorization" );
 }

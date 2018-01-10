@@ -26,6 +26,7 @@ TAGS:
 	$(GFIND) src/configuration $(FINDARGS) -a
 	$(GFIND) src/engine $(FINDARGS) -a
 	$(GFIND) src/input_parsers $(FINDARGS) -a
+	$(GFIND) src/basis_factorization $(FINDARGS) -a
 	$(ETAGS) -a Makefile
 
 include $(ROOT_DIR)/Rules.mk
