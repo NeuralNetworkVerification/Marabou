@@ -36,6 +36,7 @@ SOURCES += \
 	EntrySelectionStrategy.cpp \
 	Equation.cpp \
 	EtaMatrix.cpp \
+	ForrestTomlinFactorization.cpp \
 	FreshVariables.cpp \
 	InputQuery.cpp \
 	LPElement.cpp \

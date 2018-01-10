@@ -10,12 +10,22 @@
  ** directory for licensing information.\endverbatim
  **/
 
+#include "BasisFactorizationError.h"
 #include "BasisFactorizationFactory.h"
+#include "ForrestTomlinFactorization.h"
+#include "GlobalConfiguration.h"
 #include "LUFactorization.h"
 
 IBasisFactorization *BasisFactorizationFactory::createBasisFactorization( unsigned basisSize )
 {
-    return new LUFactorization( basisSize );
+    if ( GlobalConfiguration::BASIS_FACTORIZATION_TYPE ==
+         GlobalConfiguration::LU_FACTORIZATION )
+        return new LUFactorization( basisSize );
+    else if ( GlobalConfiguration::BASIS_FACTORIZATION_TYPE ==
+              GlobalConfiguration::FORREST_TOMLIN_FACTORIZATION )
+        return new ForrestTomlinFactorization( basisSize );
+
+    throw BasisFactorizationError( BasisFactorizationError::UNKNOWN_BASIS_FACTORIZATION_TYPE );
 }
 
 //

@@ -21,6 +21,7 @@ public:
 	enum Code {
         ALLOCATION_FAILED = 0,
         CANT_INVERT_BASIS_BECAUSE_OF_ETAS = 1,
+        UNKNOWN_BASIS_FACTORIZATION_TYPE = 2,
     };
 
     BasisFactorizationError( BasisFactorizationError::Code code ) :
