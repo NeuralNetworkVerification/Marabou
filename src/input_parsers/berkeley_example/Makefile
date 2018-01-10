@@ -28,6 +28,7 @@ SOURCES += \
 	MString.cpp \
 	TimeUtils.cpp \
 	\
+	AlmostDiagonalMatrix.cpp \
 	BasisFactorizationFactory.cpp \
 	BlandsRule.cpp \
 	ConstraintMatrixAnalyzer.cpp \
@@ -45,6 +46,7 @@ SOURCES += \
 	InputQuery.cpp \
 	LPElement.cpp \
 	LUFactorization.cpp \
+	PermutationMatrix.cpp \
 	PiecewiseLinearCaseSplit.cpp \
 	PiecewiseLinearConstraint.cpp \
 	PrecisionRestorer.cpp \

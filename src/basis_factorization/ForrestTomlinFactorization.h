@@ -13,7 +13,11 @@
 #ifndef __ForrestTomlinFactorization_h__
 #define __ForrestTomlinFactorization_h__
 
+#include "AlmostDiagonalMatrix.h"
 #include "IBasisFactorization.h"
+#include "LPElement.h"
+#include "List.h"
+#include "PermutationMatrix.h"
 
 class ForrestTomlinFactorization : public IBasisFactorization
 {
@@ -48,8 +52,9 @@ public:
     void restoreFactorization( const IBasisFactorization *other );
 
 	/*
-      Set the basis matrix.
-	*/
+      Set the basis matrix. This clears the previous factorization,
+      and triggers a factorization into LU format of the matrix.
+    */
 	void setBasis( const double *B );
 
     /*
@@ -77,6 +82,29 @@ public:
       Compute the inverse of B (should only be called when B is explicitly available).
      */
     void invertBasis( double *result );
+
+private:
+    /*
+      The dimension of the basis matrix.
+    */
+    unsigned _m;
+
+    /*
+      Forrest-Tomlin factorization looks like this:
+
+      Am...A1 * LsPs...L1P1B = Q * Um...U1 * R
+
+      Where:
+      - The A matrices are "almost-diagonal", i.e. diagonal matrices
+        with one extra entry off the diagonal.
+      - The L, P and U matrices are as in a usual LU factorization
+      - Q and R are permutation matrices
+    */
+    List<AlmostDiagonalMatrix *> _As;
+    List<LPElement *> _LPs;
+    PermutationMatrix _Q;
+    List<EtaMatrix *> _U;
+    PermutationMatrix _R;
 };
 
 #endif // __ForrestTomlinFactorization_h__

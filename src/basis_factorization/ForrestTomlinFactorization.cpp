@@ -13,7 +13,9 @@
 #include "ForrestTomlinFactorization.h"
 #include <cstdlib>
 
-ForrestTomlinFactorization::ForrestTomlinFactorization( unsigned /* m */ )
+ForrestTomlinFactorization::ForrestTomlinFactorization( unsigned m )
+    : _Q( m )
+    , _R( m )
 {
 }
 
