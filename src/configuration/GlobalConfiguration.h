@@ -24,9 +24,6 @@ public:
     // The precision level when convering doubles to strings
     static const unsigned DEFAULT_DOUBLE_TO_STRING_PRECISION;
 
-    // The number of accumualted eta matrices, after which the basis will be refactorized
-	static const unsigned REFACTORIZATION_THRESHOLD;
-
     // How often should the main loop print statistics?
     static const unsigned STATISTICS_PRINTING_FREQUENCY;
 
@@ -73,10 +70,26 @@ public:
     // An error threshold which, when crossed, causes projected steepest edge to reset the reference space
     static const double PSE_GAMMA_ERROR_THRESHOLD;
 
+    /*
+      Basis factorization options
+    */
+
     // When doing bound tightening using the explicit basis matrix, should the basis matrix be inverted?
     static const bool EXPLICIT_BASIS_BOUND_TIGHTENING_INVERT_BASIS;
 
-    // Logging
+    // The number of accumualted eta matrices, after which the basis will be refactorized
+	static const unsigned REFACTORIZATION_THRESHOLD;
+
+    // The kind of basis factorization algorithm in use
+    enum BasisFactorizationType {
+        LU_FACTORIZATION,
+        FORREST_TOMLIN_FACTORIZATION,
+    };
+    static const BasisFactorizationType BASIS_FACTORIZATION_TYPE;
+
+    /*
+      Logging options
+    */
     static const bool ENGINE_LOGGING;
     static const bool TABLEAU_LOGGING;
     static const bool SMT_CORE_LOGGING;

@@ -10,12 +10,12 @@
  ** directory for licensing information.\endverbatim
  **/
 
-#include <cstdio>
 #include "GlobalConfiguration.h"
+#include "MString.h"
+#include <cstdio>
 
 const double GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS = 0.0000000001;
 const unsigned GlobalConfiguration::DEFAULT_DOUBLE_TO_STRING_PRECISION = 10;
-const unsigned GlobalConfiguration::REFACTORIZATION_THRESHOLD = 100;
 const unsigned GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY = 100;
 const double GlobalConfiguration::BOUND_COMPARISON_TOLERANCE = 0.001;
 const double GlobalConfiguration::PIVOT_CHANGE_COLUMN_TOLERANCE = 0.000000001;
@@ -34,6 +34,9 @@ const unsigned GlobalConfiguration::PSE_ITERATIONS_BEFORE_RESET = 1000;
 const double GlobalConfiguration::PSE_GAMMA_ERROR_THRESHOLD = 0.001;
 
 const bool GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_INVERT_BASIS = true;
+const unsigned GlobalConfiguration::REFACTORIZATION_THRESHOLD = 100;
+const GlobalConfiguration::BasisFactorizationType GlobalConfiguration::BASIS_FACTORIZATION_TYPE =
+    GlobalConfiguration::LU_FACTORIZATION;
 
 // Logging
 const bool GlobalConfiguration::ENGINE_LOGGING = false;
@@ -50,7 +53,6 @@ void GlobalConfiguration::print()
     printf( "****************************\n" );
     printf( "  DEFAULT_EPSILON_FOR_COMPARISONS: %.15lf\n", DEFAULT_EPSILON_FOR_COMPARISONS );
     printf( "  DEFAULT_DOUBLE_TO_STRING_PRECISION: %u\n", DEFAULT_DOUBLE_TO_STRING_PRECISION );
-    printf( "  REFACTORIZATION_THRESHOLD: %u\n", REFACTORIZATION_THRESHOLD );
     printf( "  STATISTICS_PRINTING_FREQUENCY: %u\n", STATISTICS_PRINTING_FREQUENCY );
     printf( "  BOUND_COMPARISON_TOLERANCE: %.15lf\n", BOUND_COMPARISON_TOLERANCE );
     printf( "  PIVOT_CHANGE_COLUMN_TOLERANCE: %.15lf\n", PIVOT_CHANGE_COLUMN_TOLERANCE );
@@ -69,6 +71,18 @@ void GlobalConfiguration::print()
     printf( "  PSE_GAMMA_ERROR_THRESHOLD: %.15lf\n", PSE_GAMMA_ERROR_THRESHOLD );
     printf( "  EXPLICIT_BASIS_BOUND_TIGHTENING_INVERT_BASIS: %s\n",
             EXPLICIT_BASIS_BOUND_TIGHTENING_INVERT_BASIS ? "Yes" : "No" );
+    printf( "  REFACTORIZATION_THRESHOLD: %u\n", REFACTORIZATION_THRESHOLD );
+
+    String basisFactorizationType;
+    if ( GlobalConfiguration::BASIS_FACTORIZATION_TYPE == GlobalConfiguration::LU_FACTORIZATION )
+        basisFactorizationType = "LU_FACTORIZATION";
+    else if ( GlobalConfiguration::BASIS_FACTORIZATION_TYPE ==
+              GlobalConfiguration::FORREST_TOMLIN_FACTORIZATION )
+        basisFactorizationType = "FORREST_TOMLIN_FACTORIZATION";
+    else
+        basisFactorizationType = "Unknown";
+
+    printf( "  BASIS_FACTORIZATION_TYPE: %s\n", basisFactorizationType.ascii() );
     printf( "****************************\n" );
 }
 
