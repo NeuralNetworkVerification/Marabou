@@ -18,38 +18,9 @@ SOURCES += \
 	MString.cpp \
 	TimeUtils.cpp \
 	\
-	BasisFactorization.cpp \
-	LPElement.cpp \
 	EtaMatrix.cpp \
-
-	# BlandsRule.cpp \
-	# ConstraintMatrixAnalyzer.cpp \
-	# CostFunctionManager.cpp \
-	# CostFunctionManagerFactory.cpp \
-	# DantzigsRule.cpp \
-	# DegradationChecker.cpp \
-	# Engine.cpp \
-	# EngineState.cpp \
-	# EntrySelectionStrategy.cpp \
-	# Equation.cpp \
-	# FreshVariables.cpp \
-	# InputQuery.cpp \
-	# MaxConstraint.cpp \
-	# PiecewiseLinearCaseSplit.cpp \
-	# PiecewiseLinearConstraint.cpp \
-	# PrecisionRestorer.cpp \
-	# Preprocessor.cpp \
-	# ProjectedSteepestEdge.cpp \
-	# ProjectedSteepestEdgeFactory.cpp \
-	# ReluConstraint.cpp \
-	# RowBoundTightener.cpp \
-	# RowBoundTightenerFactory.cpp \
-	# SmtCore.cpp \
-	# Statistics.cpp \
-	# Tableau.cpp \
-	# TableauFactory.cpp \
-	# TableauRow.cpp \
-	# TableauState.cpp \
+	LPElement.cpp \
+	LUFactorization.cpp \
 
 all:
 	./$(TEST_TARGET)

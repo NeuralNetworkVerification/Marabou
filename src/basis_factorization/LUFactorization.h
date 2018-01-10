@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file BasisFactorization.h
+/*! \file LUFactorization.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Derek Huang
@@ -11,11 +11,10 @@
  ** directory for licensing information.\endverbatim
  **/
 
-#ifndef __BasisFactorization_h__
-#define __BasisFactorization_h__
+#ifndef __LUFactorization_h__
+#define __LUFactorization_h__
 
 #include "IBasisFactorization.h"
-
 #include "LPElement.h"
 #include "List.h"
 #include "MString.h"
@@ -23,11 +22,11 @@
 class EtaMatrix;
 class LPElement;
 
-class BasisFactorization : public IBasisFactorization
+class LUFactorization : public IBasisFactorization
 {
 public:
-    BasisFactorization( unsigned m );
-    ~BasisFactorization();
+    LUFactorization( unsigned m );
+    ~LUFactorization();
 
     /*
       Free any allocated memory.
@@ -212,7 +211,7 @@ private:
     static void log( const String &message );
 };
 
-#endif // __BasisFactorization_h__
+#endif // __LUFactorization_h__
 
 //
 // Local Variables:

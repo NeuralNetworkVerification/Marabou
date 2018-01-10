@@ -16,7 +16,7 @@
 #include "ITableau.h"
 #include "Set.h"
 
-class BasisFactorization;
+class IBasisFactorization;
 
 class TableauState
 {
@@ -99,7 +99,7 @@ public:
     /*
       The factorization of the basis
     */
-    BasisFactorization *_basisFactorization;
+    IBasisFactorization *_basisFactorization;
 
     /*
       Indicator whether the bounds are valid

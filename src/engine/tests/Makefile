@@ -19,7 +19,6 @@ SOURCES += \
 	MString.cpp \
 	TimeUtils.cpp \
 	\
-	BasisFactorization.cpp \
 	BlandsRule.cpp \
 	ConstraintMatrixAnalyzer.cpp \
 	CostFunctionManager.cpp \
@@ -34,6 +33,7 @@ SOURCES += \
 	FreshVariables.cpp \
 	InputQuery.cpp \
 	LPElement.cpp \
+	LUFactorization.cpp \
 	MaxConstraint.cpp \
 	PiecewiseLinearCaseSplit.cpp \
 	PiecewiseLinearConstraint.cpp \

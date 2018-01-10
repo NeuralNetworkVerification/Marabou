@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file BasisFactorization.cpp
+/*! \file LUFactorization.cpp
  ** \verbatim
  ** Top contributors (to current version):
  **   Derek Huang
@@ -11,17 +11,17 @@
  ** directory for licensing information.\endverbatim
  **/
 
-#include "BasisFactorization.h"
 #include "BasisFactorizationError.h"
 #include "Debug.h"
 #include "EtaMatrix.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
 #include "LPElement.h"
+#include "LUFactorization.h"
 #include "MStringf.h"
 #include "MalformedBasisException.h"
 
-BasisFactorization::BasisFactorization( unsigned m )
+LUFactorization::LUFactorization( unsigned m )
     : _B0( NULL )
 	, _m( m )
     , _U( NULL )
@@ -31,7 +31,7 @@ BasisFactorization::BasisFactorization( unsigned m )
 {
     _B0 = new double[m*m];
     if ( !_B0 )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "BasisFactorization::B0" );
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "LUFactorization::B0" );
 
     // Initialize B0 to the identity matrix
     std::fill_n( _B0, _m * _m, 0.0 );
@@ -40,23 +40,23 @@ BasisFactorization::BasisFactorization( unsigned m )
 
 	_U = new double[m*m];
 	if ( !_U )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "BasisFactorization::U" );
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "LUFactorization::U" );
 
     _tempY = new double[m];
     if ( !_tempY )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "BasisFactorization::tempY" );
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "LUFactorization::tempY" );
 
     _LCol = new double[m];
     if ( !_LCol )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "BasisFactorization::LCol" );
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "LUFactorization::LCol" );
 }
 
-BasisFactorization::~BasisFactorization()
+LUFactorization::~LUFactorization()
 {
     freeIfNeeded();
 }
 
-void BasisFactorization::freeIfNeeded()
+void LUFactorization::freeIfNeeded()
 {
     if ( _U )
     {
@@ -95,27 +95,27 @@ void BasisFactorization::freeIfNeeded()
 	_LP.clear();
 }
 
-const double *BasisFactorization::getU() const
+const double *LUFactorization::getU() const
 {
 	return _U;
 }
 
-const List<LPElement *> BasisFactorization::getLP() const
+const List<LPElement *> LUFactorization::getLP() const
 {
 	return _LP;
 }
 
-const double *BasisFactorization::getBasis() const
+const double *LUFactorization::getBasis() const
 {
 	return _B0;
 }
 
-const List<EtaMatrix *> BasisFactorization::getEtas() const
+const List<EtaMatrix *> LUFactorization::getEtas() const
 {
 	return _etas;
 }
 
-void BasisFactorization::pushEtaMatrix( unsigned columnIndex, double *column )
+void LUFactorization::pushEtaMatrix( unsigned columnIndex, double *column )
 {
     EtaMatrix *matrix = new EtaMatrix( _m, columnIndex, column );
     _etas.append( matrix );
@@ -128,7 +128,7 @@ void BasisFactorization::pushEtaMatrix( unsigned columnIndex, double *column )
 	}
 }
 
-void BasisFactorization::LMultiplyRight( const EtaMatrix *L, double *X ) const
+void LUFactorization::LMultiplyRight( const EtaMatrix *L, double *X ) const
 {
 	double sum = 0;
 	for ( unsigned i = 0; i < _m; ++i )
@@ -140,7 +140,7 @@ void BasisFactorization::LMultiplyRight( const EtaMatrix *L, double *X ) const
 	X[L->_columnIndex] = sum;
 }
 
-void BasisFactorization::LMultiplyLeft( const EtaMatrix *L, double *X ) const
+void LUFactorization::LMultiplyLeft( const EtaMatrix *L, double *X ) const
 {
     unsigned col = L->_columnIndex;
     double xCol = X[col];
@@ -156,13 +156,13 @@ void BasisFactorization::LMultiplyLeft( const EtaMatrix *L, double *X ) const
     }
 }
 
-void BasisFactorization::setBasis( const double *B )
+void LUFactorization::setBasis( const double *B )
 {
 	memcpy( _B0, B, sizeof(double) * _m * _m );
 	factorizeMatrix( _B0 );
 }
 
-void BasisFactorization::condenseEtas()
+void LUFactorization::condenseEtas()
 {
     // Multiplication by an eta matrix on the right only changes one
     // column of B0. The new column is a linear combination of the
@@ -193,7 +193,7 @@ void BasisFactorization::condenseEtas()
 	clearLPU();
 }
 
-void BasisFactorization::forwardTransformation( const double *y, double *x ) const
+void LUFactorization::forwardTransformation( const double *y, double *x ) const
 {
     // If there's no LP factorization, it is implied that B0 = I.
     // Then, because there are no etas, x = y.
@@ -269,7 +269,7 @@ void BasisFactorization::forwardTransformation( const double *y, double *x ) con
     }
 }
 
-void BasisFactorization::backwardTransformation( const double *y, double *x ) const
+void LUFactorization::backwardTransformation( const double *y, double *x ) const
 {
     // If there's no LP factorization, it is implied that B0 = I.
     // Then, because there are no etas, x = y.
@@ -345,7 +345,7 @@ void BasisFactorization::backwardTransformation( const double *y, double *x ) co
 	}
 }
 
-void BasisFactorization::rowSwap( unsigned rowOne, unsigned rowTwo, double *matrix )
+void LUFactorization::rowSwap( unsigned rowOne, unsigned rowTwo, double *matrix )
 {
     double temp = 0;
     for ( unsigned i = 0; i < _m; i++ )
@@ -356,7 +356,7 @@ void BasisFactorization::rowSwap( unsigned rowOne, unsigned rowTwo, double *matr
     }
 }
 
-void BasisFactorization::clearLPU()
+void LUFactorization::clearLPU()
 {
     List<LPElement *>::iterator element;
     for ( element = _LP.begin(); element != _LP.end(); ++element )
@@ -366,7 +366,7 @@ void BasisFactorization::clearLPU()
 	std::fill_n( _U, _m*_m, 0 );
 }
 
-void BasisFactorization::factorizeMatrix( double *matrix )
+void LUFactorization::factorizeMatrix( double *matrix )
 {
     // Clear any previous factorization, initialize U
 	clearLPU();
@@ -420,7 +420,7 @@ void BasisFactorization::factorizeMatrix( double *matrix )
 	}
 }
 
-void BasisFactorization::LFactorizationMultiply( const EtaMatrix *L )
+void LUFactorization::LFactorizationMultiply( const EtaMatrix *L )
 {
     unsigned colIndex = L->_columnIndex;
     // First, perform in-place multiplication for all rows below the pivot row
@@ -440,37 +440,37 @@ void BasisFactorization::LFactorizationMultiply( const EtaMatrix *L )
     _U[colIndex * _m + colIndex] = 1.0;
 }
 
-bool BasisFactorization::factorizationEnabled() const
+bool LUFactorization::factorizationEnabled() const
 {
     return _factorizationEnabled;
 }
 
-void BasisFactorization::toggleFactorization( bool value )
+void LUFactorization::toggleFactorization( bool value )
 {
     _factorizationEnabled = value;
 }
 
-void BasisFactorization::storeFactorization( IBasisFactorization *other )
+void LUFactorization::storeFactorization( IBasisFactorization *other )
 {
-    BasisFactorization *otherBasisFactorization = (BasisFactorization *)other;
+    LUFactorization *otherLUFactorization = (LUFactorization *)other;
 
-    ASSERT( _m == otherBasisFactorization->_m );
-    ASSERT( otherBasisFactorization->_etas.size() == 0 );
+    ASSERT( _m == otherLUFactorization->_m );
+    ASSERT( otherLUFactorization->_etas.size() == 0 );
 
     // In order to reduce space requirements, condense the etas before storing a factorization
     condenseEtas();
     factorizeMatrix( _B0 );
 
     // Now we simply store _B0
-    otherBasisFactorization->setBasis( _B0 );
+    otherLUFactorization->setBasis( _B0 );
 }
 
-void BasisFactorization::restoreFactorization( const IBasisFactorization *other )
+void LUFactorization::restoreFactorization( const IBasisFactorization *other )
 {
-    const BasisFactorization *otherBasisFactorization = (const BasisFactorization *)other;
+    const LUFactorization *otherLUFactorization = (const LUFactorization *)other;
 
-    ASSERT( _m == otherBasisFactorization->_m );
-    ASSERT( otherBasisFactorization->_etas.size() == 0 );
+    ASSERT( _m == otherLUFactorization->_m );
+    ASSERT( otherLUFactorization->_etas.size() == 0 );
 
     // Clear any existing data
     for ( const auto &it : _etas )
@@ -480,10 +480,10 @@ void BasisFactorization::restoreFactorization( const IBasisFactorization *other 
 	clearLPU();
 
     // Store the new B0 and LU-factorize it
-    setBasis( otherBasisFactorization->_B0 );
+    setBasis( otherLUFactorization->_B0 );
 }
 
-void BasisFactorization::invertBasis( double *result )
+void LUFactorization::invertBasis( double *result )
 {
     if ( !_etas.empty() )
         throw BasisFactorizationError( BasisFactorizationError::CANT_INVERT_BASIS_BECAUSE_OF_ETAS );
@@ -550,18 +550,18 @@ void BasisFactorization::invertBasis( double *result )
     }
 }
 
-void BasisFactorization::log( const String &message )
+void LUFactorization::log( const String &message )
 {
     if ( GlobalConfiguration::BASIS_FACTORIZATION_LOGGING )
-        printf( "BasisFactorization: %s\n", message.ascii() );
+        printf( "LUFactorization: %s\n", message.ascii() );
 }
 
-bool BasisFactorization::explicitBasisAvailable() const
+bool LUFactorization::explicitBasisAvailable() const
 {
     return _etas.empty();
 }
 
-void BasisFactorization::makeExplicitBasisAvailable()
+void LUFactorization::makeExplicitBasisAvailable()
 {
     condenseEtas();
 }
