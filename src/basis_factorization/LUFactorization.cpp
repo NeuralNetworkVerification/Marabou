@@ -25,7 +25,6 @@ LUFactorization::LUFactorization( unsigned m )
     : _B0( NULL )
 	, _m( m )
     , _U( NULL )
-    , _factorizationEnabled( true )
     , _tempY( NULL )
     , _LCol( NULL )
 {
@@ -120,7 +119,7 @@ void LUFactorization::pushEtaMatrix( unsigned columnIndex, double *column )
     EtaMatrix *matrix = new EtaMatrix( _m, columnIndex, column );
     _etas.append( matrix );
 
-	if ( ( _etas.size() > GlobalConfiguration::REFACTORIZATION_THRESHOLD ) && _factorizationEnabled )
+	if ( ( _etas.size() > GlobalConfiguration::REFACTORIZATION_THRESHOLD ) && factorizationEnabled() )
 	{
         log( "Number of etas exceeds threshold. Condensing and refactoring\n" );
 		condenseEtas();
@@ -438,16 +437,6 @@ void LUFactorization::LFactorizationMultiply( const EtaMatrix *L )
 		_U[colIndex * _m + i] *= L->_column[colIndex];
 
     _U[colIndex * _m + colIndex] = 1.0;
-}
-
-bool LUFactorization::factorizationEnabled() const
-{
-    return _factorizationEnabled;
-}
-
-void LUFactorization::toggleFactorization( bool value )
-{
-    _factorizationEnabled = value;
 }
 
 void LUFactorization::storeFactorization( IBasisFactorization *other )

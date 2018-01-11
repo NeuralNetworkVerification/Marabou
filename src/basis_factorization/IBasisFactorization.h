@@ -19,6 +19,11 @@ class IBasisFactorization
       This is the interfact class for a basis factorization.
     */
 public:
+    IBasisFactorization()
+        : _factorizationEnabled( true )
+    {
+    }
+
     virtual ~IBasisFactorization() {}
 
     /*
@@ -55,8 +60,15 @@ public:
     /*
       Control/check whether factorization is enabled.
     */
-    virtual bool factorizationEnabled() const = 0;
-    virtual void toggleFactorization( bool value ) = 0;
+    bool factorizationEnabled() const
+    {
+        return _factorizationEnabled;
+    }
+
+    void toggleFactorization( bool value )
+    {
+        _factorizationEnabled = value;
+    }
 
     /*
       Return true iff the basis matrix B is explicitly available.
@@ -77,6 +89,13 @@ public:
       Compute the inverse of B (should only be called when B is explicitly available).
      */
     virtual void invertBasis( double *result ) = 0;
+
+private:
+    /*
+      A flag that controls whether factorization is enabled or
+      disabled.
+    */
+    bool _factorizationEnabled;
 };
 
 #endif // __IBasisFactorization_h__

@@ -108,12 +108,6 @@ public:
     void rowSwap( unsigned rowOne, unsigned rowTwo, double *matrix );
 
     /*
-      Check/set whether factorization is enabled.
-    */
-    bool factorizationEnabled() const;
-    void toggleFactorization( bool value );
-
-    /*
       Compute B0 * E1 ... *En for all stored eta matrices, and place
       the result in B0.
     */
@@ -176,12 +170,6 @@ private:
       A sequence of eta matrices.
     */
     List<EtaMatrix *> _etas;
-
-    /*
-      A flag that controls whether LU-factorization is enabled or
-      disabled.
-    */
-    bool _factorizationEnabled;
 
     /*
       Working space

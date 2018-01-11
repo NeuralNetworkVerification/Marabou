@@ -174,7 +174,6 @@ void ForrestTomlinFactorization::initialLUFactorization()
 
         // Store the resulting lower-triangular eta matrix
         EtaMatrix *L = new EtaMatrix( _m, i, _workColumn );
-        L->dump();
 
         _LP.appendHead( new LPElement( L, NULL ) );
 
@@ -205,15 +204,6 @@ void ForrestTomlinFactorization::initialLUFactorization()
             _workColumn[j] = _workMatrix[j * _m + i];
         _U.appendHead( new EtaMatrix( _m, i, _workColumn ) );
     }
-}
-
-bool ForrestTomlinFactorization::factorizationEnabled() const
-{
-    return true;
-}
-
-void ForrestTomlinFactorization::toggleFactorization( bool /* value */ )
-{
 }
 
 bool ForrestTomlinFactorization::explicitBasisAvailable() const

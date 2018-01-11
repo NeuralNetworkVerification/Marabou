@@ -56,6 +56,25 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete mock );
     }
 
+    void test_factorization_enabled_disabled()
+    {
+        LUFactorization *basis;
+
+        TS_ASSERT( basis = new LUFactorization( 3 ) );
+
+        TS_ASSERT( basis->factorizationEnabled() );
+
+        TS_ASSERT_THROWS_NOTHING( basis->toggleFactorization( false ) );
+
+        TS_ASSERT( !basis->factorizationEnabled() );
+
+        TS_ASSERT_THROWS_NOTHING( basis->toggleFactorization( true ) );
+
+        TS_ASSERT( basis->factorizationEnabled() );
+
+        TS_ASSERT_THROWS_NOTHING( delete basis );
+    }
+
     void test_forward_transformation()
     {
         LUFactorization basis( 3 );

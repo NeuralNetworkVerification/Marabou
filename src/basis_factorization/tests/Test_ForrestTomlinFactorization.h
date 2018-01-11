@@ -50,9 +50,23 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete mock );
     }
 
-    void test_dummy()
+    void test_factorization_enabled_disabled()
     {
-        TS_ASSERT( 1 );
+        ForrestTomlinFactorization *ft;
+
+        TS_ASSERT( ft = new ForrestTomlinFactorization( 3 ) );
+
+        TS_ASSERT( ft->factorizationEnabled() );
+
+        TS_ASSERT_THROWS_NOTHING( ft->toggleFactorization( false ) );
+
+        TS_ASSERT( !ft->factorizationEnabled() );
+
+        TS_ASSERT_THROWS_NOTHING( ft->toggleFactorization( true ) );
+
+        TS_ASSERT( ft->factorizationEnabled() );
+
+        TS_ASSERT_THROWS_NOTHING( delete ft );
     }
 
     void test_set_basis()
@@ -155,7 +169,6 @@ public:
         const List<EtaMatrix *> *U = ft->getU();
         TS_ASSERT_EQUALS( U->size(), 3U );
         auto uIt = U->begin();
-        (*uIt)->dump();
         TS_ASSERT_EQUALS( **uIt, expectedU4 );
         ++uIt;
         TS_ASSERT_EQUALS( **uIt, expectedU3 );

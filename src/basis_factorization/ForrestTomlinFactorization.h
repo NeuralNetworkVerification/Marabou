@@ -58,12 +58,6 @@ public:
 	void setBasis( const double *B );
 
     /*
-      Control/check whether factorization is enabled.
-    */
-    bool factorizationEnabled() const;
-    void toggleFactorization( bool value );
-
-    /*
       Return true iff the basis matrix B is explicitly available.
     */
     bool explicitBasisAvailable() const;
