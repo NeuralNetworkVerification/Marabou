@@ -83,6 +83,16 @@ public:
      */
     void invertBasis( double *result );
 
+public:
+    /*
+      For testing purposes only
+    */
+    const PermutationMatrix *getQ() const;
+    const PermutationMatrix *getR() const;
+    const List<EtaMatrix *> *getU() const;
+    const List<LPElement *> *getLP() const;
+    const List<AlmostDiagonalMatrix *> *getA() const;
+
 private:
     /*
       The dimension of the basis matrix.
@@ -90,21 +100,43 @@ private:
     unsigned _m;
 
     /*
+      The current basis matrix B
+    */
+	double *_B;
+
+    /*
       Forrest-Tomlin factorization looks like this:
 
-      Am...A1 * LsPs...L1P1B = Q * Um...U1 * R
+      Am...A1 * Ls...L1B = Q * Um...U1 * R
 
       Where:
       - The A matrices are "almost-diagonal", i.e. diagonal matrices
         with one extra entry off the diagonal.
-      - The L, P and U matrices are as in a usual LU factorization
+      - The L and U matrices are as in a usual LU factorization
       - Q and R are permutation matrices
     */
-    List<AlmostDiagonalMatrix *> _As;
-    List<LPElement *> _LPs;
+    List<AlmostDiagonalMatrix *> _A;
+    List<LPElement *> _LP;
     PermutationMatrix _Q;
     List<EtaMatrix *> _U;
     PermutationMatrix _R;
+
+    /*
+      Work memory
+    */
+    double *_workMatrix;
+    double *_workColumn;
+
+    /*
+      After a new basis matrix is set, initialize the LU factorization
+    */
+    void clearFactorization();
+    void initialLUFactorization();
+
+	/*
+      Swap two rows of a matrix.
+    */
+    void rowSwap( unsigned rowOne, unsigned rowTwo, double *matrix );
 };
 
 #endif // __ForrestTomlinFactorization_h__

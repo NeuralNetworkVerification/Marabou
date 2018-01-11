@@ -22,17 +22,22 @@ class PermutationMatrix
     */
 public:
     PermutationMatrix( unsigned m );
+    ~PermutationMatrix();
 
-private:
+    /*
+      Reset the permutation to the identity permutation
+    */
+    void resetToIdentity();
+
     /*
       The dimension of the matrix
     */
     unsigned _m;
 
     /*
-      The diagonal entries
+      The row permutation ordering
     */
-    List<unsigned> _ordering;
+    unsigned *_ordering;
 };
 
 #endif // __PermutationMatrix_h__

@@ -10,8 +10,9 @@
  ** directory for licensing information.\endverbatim
  **/
 
-#include "EtaMatrix.h"
 #include "BasisFactorizationError.h"
+#include "EtaMatrix.h"
+#include "FloatUtils.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -27,6 +28,38 @@ EtaMatrix::EtaMatrix( unsigned m, unsigned index, double *column )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "EtaMatrix::column" );
 
     memcpy( _column, column, sizeof(double) * _m );
+}
+
+EtaMatrix::EtaMatrix( const EtaMatrix &other )
+    : _m( other._m )
+    , _columnIndex( other._columnIndex )
+    , _column( NULL )
+{
+    _column = new double[_m];
+    if ( !_column )
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "EtaMatrix::column" );
+
+    memcpy( _column, other._column, sizeof(double) * _m );
+}
+
+EtaMatrix &EtaMatrix::operator=( const EtaMatrix &other )
+{
+    _m = other._m;
+    _columnIndex = other._columnIndex;
+
+    if ( _column )
+    {
+        delete[] _column;
+        _column = NULL;
+    }
+
+    _column = new double[_m];
+    if ( !_column )
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "EtaMatrix::column" );
+
+    memcpy( _column, other._column, sizeof(double) * _m );
+
+    return *this;
 }
 
 EtaMatrix::~EtaMatrix()
@@ -55,6 +88,21 @@ void EtaMatrix::toMatrix( double *A )
 		A[i * _m + i] = 1.;
 		A[_columnIndex + i * _m] = _column[i];
 	}
+}
+
+bool EtaMatrix::operator==( const EtaMatrix &other ) const
+{
+    if ( _m != other._m )
+        return false;
+
+    if ( _columnIndex != other._columnIndex )
+        return false;
+
+    for ( unsigned i = 0; i < _m; ++i )
+        if ( !FloatUtils::areEqual( _column[i], other._column[i] ) )
+            return false;
+
+    return true;
 }
 
 //

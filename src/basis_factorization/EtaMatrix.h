@@ -17,9 +17,14 @@ class EtaMatrix
 {
 public:
     EtaMatrix( unsigned m, unsigned index, double *column );
+    EtaMatrix( const EtaMatrix &other );
+    EtaMatrix &operator=( const EtaMatrix &other );
+
     ~EtaMatrix();
     void dump();
 	void toMatrix( double *A );
+
+    bool operator==( const EtaMatrix &other ) const;
 
     unsigned _m;
     unsigned _columnIndex;

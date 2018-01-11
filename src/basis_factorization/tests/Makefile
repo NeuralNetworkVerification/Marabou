@@ -18,9 +18,12 @@ SOURCES += \
 	MString.cpp \
 	TimeUtils.cpp \
 	\
+	AlmostDiagonalMatrix.cpp \
 	EtaMatrix.cpp \
+	ForrestTomlinFactorization.cpp \
 	LPElement.cpp \
 	LUFactorization.cpp \
+	PermutationMatrix.cpp \
 
 all:
 	./$(TEST_TARGET)

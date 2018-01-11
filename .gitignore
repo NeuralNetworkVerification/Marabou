@@ -8,3 +8,4 @@ TAGS
 /src/basis_factorization/tests/basis_factorization.tests
 /src/basis_factorization/tests/runner.cxx
 /src/basis_factorization/tests/cxxtest_Test_LUFactorization.cxx
+/src/basis_factorization/tests/cxxtest_Test_ForrestTomlinFactorization.cxx

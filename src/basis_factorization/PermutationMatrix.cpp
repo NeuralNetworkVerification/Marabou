@@ -10,11 +10,35 @@
  ** directory for licensing information.\endverbatim
  **/
 
+#include "BasisFactorizationError.h"
 #include "PermutationMatrix.h"
+#include <cstdlib>
 
 PermutationMatrix::PermutationMatrix( unsigned m )
     : _m( m )
+    , _ordering( NULL )
 {
+    _ordering = new unsigned[m];
+    if ( !_ordering )
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                       "PermutationMatrix::ordering" );
+
+    resetToIdentity();
+}
+
+PermutationMatrix::~PermutationMatrix()
+{
+    if ( _ordering )
+    {
+        delete[] _ordering;
+        _ordering = NULL;
+    }
+}
+
+void PermutationMatrix::resetToIdentity()
+{
+    for ( unsigned i = 0; i < _m; ++i )
+        _ordering[i] = i;
 }
 
 //
