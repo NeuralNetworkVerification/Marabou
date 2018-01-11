@@ -87,6 +87,10 @@ public:
     const List<LPElement *> *getLP() const;
     const List<AlmostDiagonalMatrix *> *getA() const;
 
+    void pushA( AlmostDiagonalMatrix *matrix );
+    void setQ( const PermutationMatrix &Q );
+    void setR( const PermutationMatrix &R );
+
 private:
     /*
       The dimension of the basis matrix.

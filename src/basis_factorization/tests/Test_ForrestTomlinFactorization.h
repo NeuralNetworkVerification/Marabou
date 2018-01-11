@@ -33,7 +33,7 @@ public:
 
     bool isIdentityPermutation( const PermutationMatrix *matrix )
     {
-        for ( unsigned i = 0; i < matrix->_m; ++i )
+        for ( unsigned i = 0; i < matrix->getM(); ++i )
             if ( matrix->_ordering[i] != i )
                 return false;
 

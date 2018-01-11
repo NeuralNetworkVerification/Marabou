@@ -23,6 +23,7 @@ class PermutationMatrix
 public:
     PermutationMatrix( unsigned m );
     ~PermutationMatrix();
+    PermutationMatrix &operator=( const PermutationMatrix &other );
 
     /*
       Reset the permutation to the identity permutation
@@ -30,14 +31,25 @@ public:
     void resetToIdentity();
 
     /*
-      The dimension of the matrix
+      Produce the inverse of the permutation matrix
     */
-    unsigned _m;
+    PermutationMatrix *invert() const;
+
+    /*
+      Return the matrix size
+    */
+    unsigned getM() const;
 
     /*
       The row permutation ordering
     */
     unsigned *_ordering;
+
+private:
+    /*
+      The dimension of the matrix
+    */
+    unsigned _m;
 };
 
 #endif // __PermutationMatrix_h__

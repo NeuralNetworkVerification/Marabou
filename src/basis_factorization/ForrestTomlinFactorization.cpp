@@ -256,6 +256,21 @@ void ForrestTomlinFactorization::rowSwap( unsigned rowOne, unsigned rowTwo, doub
     memcpy( matrix + (rowTwo * _m), _workColumn,  sizeof(double) * _m );
 }
 
+void ForrestTomlinFactorization::pushA( AlmostDiagonalMatrix *matrix )
+{
+    _A.appendHead( matrix );
+}
+
+void ForrestTomlinFactorization::setQ( const PermutationMatrix &Q )
+{
+    _Q = Q;
+}
+
+void ForrestTomlinFactorization::setR( const PermutationMatrix &R )
+{
+    _R = R;
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

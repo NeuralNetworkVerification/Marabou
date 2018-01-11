@@ -13,10 +13,12 @@
 #include "BasisFactorizationError.h"
 #include "PermutationMatrix.h"
 #include <cstdlib>
+#include <cstring>
+#include <cstdio>
 
 PermutationMatrix::PermutationMatrix( unsigned m )
-    : _m( m )
-    , _ordering( NULL )
+    : _ordering( NULL )
+    , _m( m )
 {
     _ordering = new unsigned[m];
     if ( !_ordering )
@@ -39,6 +41,38 @@ void PermutationMatrix::resetToIdentity()
 {
     for ( unsigned i = 0; i < _m; ++i )
         _ordering[i] = i;
+}
+
+PermutationMatrix &PermutationMatrix::operator=( const PermutationMatrix &other )
+{
+    if ( _m != other._m )
+    {
+        _m = other._m;
+
+        if ( _ordering )
+            delete[] _ordering;
+
+        _ordering = new unsigned[_m];
+    }
+
+    memcpy( _ordering, other._ordering, sizeof(unsigned) * _m );
+
+    return *this;
+}
+
+PermutationMatrix *PermutationMatrix::invert() const
+{
+    PermutationMatrix *inverse = new PermutationMatrix( _m );
+
+    for ( unsigned i = 0; i < _m; ++i )
+        inverse->_ordering[_ordering[i]] = i;
+
+    return inverse;
+}
+
+unsigned PermutationMatrix::getM() const
+{
+    return _m;
 }
 
 //
