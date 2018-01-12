@@ -18,6 +18,16 @@
 class AlmostIdentityMatrix
 {
 public:
+    AlmostIdentityMatrix()
+        : _identity( true )
+    {
+    }
+
+    /*
+      True iff this is the identity matrix.
+    */
+    bool _identity;
+
     unsigned _row;
     unsigned _column;
     double _value;

@@ -84,10 +84,11 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( ft->setBasis( basisMatrix ) );
 
-        // LU factorization should have occurred. There should be no A
-        // matrices, and Q and R should be the identity permutation.
+        // LU factorization should have occurred. All A matrices should
+        // be the identity, and Q and R should be the identity permutation.
 
-        TS_ASSERT( ft->getA()->empty() );
+        for ( unsigned i = 0; i < 4; ++i )
+            TS_ASSERT( ft->getA()[i]._identity );
         TS_ASSERT( isIdentityPermutation( ft->getQ() ) );
         TS_ASSERT( isIdentityPermutation( ft->getR() ) );
 
@@ -205,10 +206,11 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( ft->setBasis( basisMatrix ) );
 
-        // LU factorization should have occurred. There should be no A
-        // matrices, and Q and R should be the identity permutation.
+        // LU factorization should have occurred. All A matrices should
+        // be the identity, and Q and R should be the identity permutation.
 
-        TS_ASSERT( ft->getA()->empty() );
+        for ( unsigned i = 0; i < 4; ++i )
+            TS_ASSERT( ft->getA()[i]._identity );
         TS_ASSERT( isIdentityPermutation( ft->getQ() ) );
         TS_ASSERT( isIdentityPermutation( ft->getR() ) );
 
@@ -406,17 +408,19 @@ public:
         ft->setR( R );
 
         AlmostIdentityMatrix A1;
+        A1._identity = false;
         A1._row = 1;
         A1._column = 3;
         A1._value = 3;
 
         AlmostIdentityMatrix A2;
+        A2._identity = false;
         A2._row = 2;
         A2._column = 0;
         A2._value = -2;
 
-        ft->pushA( A1 );
-        ft->pushA( A2 );
+        ft->setA( 0, A1 );
+        ft->setA( 2, A2 );
 
         {
             /*
@@ -536,17 +540,19 @@ public:
         ft->setR( R );
 
         AlmostIdentityMatrix A1;
+        A1._identity = false;
         A1._row = 1;
         A1._column = 3;
         A1._value = 3;
 
         AlmostIdentityMatrix A2;
+        A2._identity = false;
         A2._row = 2;
         A2._column = 0;
         A2._value = -2;
 
-        ft->pushA( A1 );
-        ft->pushA( A2 );
+        ft->setA( 0, A1 );
+        ft->setA( 2, A2 );
 
         {
             /*

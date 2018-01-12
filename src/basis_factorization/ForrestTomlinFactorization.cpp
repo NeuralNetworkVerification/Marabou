@@ -32,6 +32,11 @@ ForrestTomlinFactorization::ForrestTomlinFactorization( unsigned m )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
                                        "ForrestTomlinFactorization::B" );
 
+    _A = new AlmostIdentityMatrix[m];
+    if ( !_A )
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                       "ForrestTomlinFactorization::A" );
+
     _workMatrix = new double[m * m];
     if ( !_workMatrix )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
@@ -56,6 +61,12 @@ ForrestTomlinFactorization::~ForrestTomlinFactorization()
 		_B = NULL;
 	}
 
+	if ( _A )
+	{
+		delete[] _A;
+		_A = NULL;
+	}
+
 	if ( _workMatrix )
 	{
 		delete[] _workMatrix;
@@ -78,8 +89,6 @@ ForrestTomlinFactorization::~ForrestTomlinFactorization()
     for ( uIt = _U.begin(); uIt != _U.end(); ++uIt )
         delete *uIt;
     _U.clear();
-
-    _A.clear();
 
     List<LPElement *>::iterator lpIt;
     for ( lpIt = _LP.begin(); lpIt != _LP.end(); ++lpIt )
@@ -143,12 +152,15 @@ void ForrestTomlinFactorization::forwardTransformation( const double *y, double 
     }
 
     // Mutiply by the As
-    for ( auto a = _A.rbegin(); a != _A.rend(); ++ a )
+    for ( unsigned i = 0; i < _m; ++i )
     {
-        _workVector[a->_row] += ( a->_value * _workVector[a->_column] );
+        if ( _A[i]._identity )
+            continue;
 
-        if ( FloatUtils::isZero( _workVector[a->_row] ) )
-            _workVector[a->_row] = 0.0;
+        _workVector[_A[i]._row] += ( _A[i]._value * _workVector[_A[i]._column] );
+
+        if ( FloatUtils::isZero( _workVector[_A[i]._row] ) )
+            _workVector[_A[i]._row] = 0.0;
     }
 
     // Multiply by inv(Q)
@@ -250,10 +262,13 @@ void ForrestTomlinFactorization::backwardTransformation( const double *y, double
     delete invQ;
 
     // Mutiply by the As
-    for ( const auto &a : _A )
+    for ( int i = _m - 1; i >= 0; --i )
     {
-        columnIndex = a._column;
-        x[columnIndex] += ( a._value * x[a._row] );
+        if ( _A[i]._identity )
+            continue;
+
+        columnIndex = _A[i]._column;
+        x[columnIndex] += ( _A[i]._value * x[_A[i]._row] );
 
         if ( FloatUtils::isZero( x[columnIndex] ) )
             x[columnIndex] = 0.0;
@@ -308,8 +323,6 @@ void ForrestTomlinFactorization::clearFactorization()
         delete *uIt;
     _U.clear();
 
-    _A.clear();
-
     List<LPElement *>::iterator lpIt;
     for ( lpIt = _LP.begin(); lpIt != _LP.end(); ++lpIt )
         delete *lpIt;
@@ -317,6 +330,9 @@ void ForrestTomlinFactorization::clearFactorization()
 
     _Q.resetToIdentity();
     _R.resetToIdentity();
+
+    for ( unsigned i = 0; i < _m; ++i )
+        _A[i]._identity = true;
 }
 
 void ForrestTomlinFactorization::initialLUFactorization()
@@ -438,9 +454,9 @@ const List<LPElement *> *ForrestTomlinFactorization::getLP() const
     return &_LP;
 }
 
-const List<AlmostIdentityMatrix> *ForrestTomlinFactorization::getA() const
+const AlmostIdentityMatrix *ForrestTomlinFactorization::getA() const
 {
-    return &_A;
+    return _A;
 }
 
 void ForrestTomlinFactorization::rowSwap( unsigned rowOne, unsigned rowTwo, double *matrix )
@@ -450,9 +466,9 @@ void ForrestTomlinFactorization::rowSwap( unsigned rowOne, unsigned rowTwo, doub
     memcpy( matrix + (rowTwo * _m), _workVector,  sizeof(double) * _m );
 }
 
-void ForrestTomlinFactorization::pushA( const AlmostIdentityMatrix &matrix )
+void ForrestTomlinFactorization::setA( unsigned index, const AlmostIdentityMatrix &matrix )
 {
-    _A.appendHead( matrix );
+    _A[index] = matrix;
 }
 
 void ForrestTomlinFactorization::setQ( const PermutationMatrix &Q )

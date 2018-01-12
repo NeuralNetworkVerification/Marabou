@@ -85,9 +85,9 @@ public:
     const PermutationMatrix *getR() const;
     const List<EtaMatrix *> *getU() const;
     const List<LPElement *> *getLP() const;
-    const List<AlmostIdentityMatrix> *getA() const;
+    const AlmostIdentityMatrix *getA() const;
 
-    void pushA( const AlmostIdentityMatrix &matrix );
+    void setA( unsigned index, const AlmostIdentityMatrix &matrix );
     void setQ( const PermutationMatrix &Q );
     void setR( const PermutationMatrix &R );
 
@@ -113,7 +113,7 @@ private:
       - The L and U matrices are as in a usual LU factorization
       - Q and R are permutation matrices
     */
-    List<AlmostIdentityMatrix> _A;
+    AlmostIdentityMatrix *_A;
     List<LPElement *> _LP;
     PermutationMatrix _Q;
     List<EtaMatrix *> _U;
