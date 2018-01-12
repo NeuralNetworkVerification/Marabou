@@ -85,9 +85,9 @@ public:
     const PermutationMatrix *getR() const;
     const List<EtaMatrix *> *getU() const;
     const List<LPElement *> *getLP() const;
-    const List<AlmostDiagonalMatrix *> *getA() const;
+    const List<AlmostDiagonalMatrix> *getA() const;
 
-    void pushA( AlmostDiagonalMatrix *matrix );
+    void pushA( const AlmostDiagonalMatrix &matrix );
     void setQ( const PermutationMatrix &Q );
     void setR( const PermutationMatrix &R );
 
@@ -105,7 +105,7 @@ private:
     /*
       Forrest-Tomlin factorization looks like this:
 
-      Am...A1 * Ls...L1B = Q * Um...U1 * R
+      Am...A1 * LsPs...L1P1 * B = Q * Um...U1 * R
 
       Where:
       - The A matrices are "almost-diagonal", i.e. diagonal matrices
@@ -113,7 +113,7 @@ private:
       - The L and U matrices are as in a usual LU factorization
       - Q and R are permutation matrices
     */
-    List<AlmostDiagonalMatrix *> _A;
+    List<AlmostDiagonalMatrix> _A;
     List<LPElement *> _LP;
     PermutationMatrix _Q;
     List<EtaMatrix *> _U;
@@ -123,7 +123,8 @@ private:
       Work memory
     */
     double *_workMatrix;
-    double *_workColumn;
+    double *_workVector;
+    double *_workW;
 
     /*
       After a new basis matrix is set, initialize the LU factorization

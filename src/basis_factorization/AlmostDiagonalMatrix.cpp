@@ -12,11 +12,6 @@
 
 #include "AlmostDiagonalMatrix.h"
 
-AlmostDiagonalMatrix::AlmostDiagonalMatrix( unsigned m )
-    : _m( m )
-{
-}
-
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

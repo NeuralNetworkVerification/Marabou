@@ -50,6 +50,12 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete mock );
     }
 
+    void test_todo()
+    {
+        TS_TRACE( "Rename: AlmostDiagonalMatrix --> AlmostIdentityMatrix, "
+                  "if indeed diagonal is always 1s" );
+    }
+
     void test_factorization_enabled_disabled()
     {
         ForrestTomlinFactorization *ft;
@@ -104,7 +110,7 @@ public:
             0,   0, -1,  2,
             0,   0,  1, -4,
 
-            So L1 has the column (1, -1, -1, 1)
+          So L1 has the column (1, -1, -1, 1)
         */
         double expectedL1Col[] = { 1, -1, -1, 1 };
         EtaMatrix expectedL1( 4, 0, expectedL1Col );
@@ -150,7 +156,7 @@ public:
             0,   0,    1,  -2,
             0,   0,    0,  1,
 
-            So L3 has the column (0, 0, 0, -0.5)
+            So L4 has the column (0, 0, 0, -0.5)
         */
         double expectedL4Col[] = { 0, 0, 0, -0.5 };
         EtaMatrix expectedL4( 4, 3, expectedL4Col );
@@ -324,6 +330,136 @@ public:
         TS_ASSERT_EQUALS( *((*lIt)->_pair), P1pair );
 
         TS_ASSERT_THROWS_NOTHING( delete ft );
+    }
+
+    void test_forward_transformation()
+    {
+        ForrestTomlinFactorization *ft;
+
+        TS_ASSERT( ft = new ForrestTomlinFactorization( 4 ) );
+
+        double basisMatrix[16] = {
+            1,   3, -2,  4,
+            1,   5, -1,  5,
+            1,   3, -3,  6,
+            -1, -3,  3, -8,
+        };
+
+        TS_ASSERT_THROWS_NOTHING( ft->setBasis( basisMatrix ) );
+
+        /*
+          The factorization of this matrix gives:
+
+          L1 = |  1 0 0 0 |     L2 = | 1 0   0 0 |
+               | -1 1 0 0 |          | 0 1/2 0 0 |
+               | -1 0 1 0 |          | 0 0   1 0 |
+               |  1 0 0 1 |          | 0 0   0 1 |
+
+          L3 = | 1 0 0  0 |     L4 = | 1 0 0    0 |
+               | 0 1 0  0 |          | 0 1 0    0 |
+               | 0 0 -1 0 |          | 0 0 1    0 |
+               | 0 0 1  1 |          | 0 0 0 -1/2 |
+
+
+          U4 = | 1 0 0   4 |    U3 = | 1 0 -2  0 |
+               | 0 1 0 1/2 |         | 0 1 1/2 0 |
+               | 0 0 1  -2 |         | 0 0 1   0 |
+               | 0 0 0   1 |         | 0 0 0   1 |
+
+          U2 = | 1 3 0 0 |
+               | 0 1 0 0 |
+               | 0 0 0 0 |
+               | 0 0 0 1 |
+        */
+
+        {
+            double expectedX[4] = { 1, 2, 1, 1 };
+            double y[4] = { 9, 15, 10, -12 };
+            double x[4];
+
+            TS_ASSERT_THROWS_NOTHING( ft->forwardTransformation( y, x ) );
+            for ( unsigned i = 0; i < 4; ++i )
+                TS_ASSERT( FloatUtils::areEqual( x[i], expectedX[i] ) );
+        }
+
+        /*
+          Now manually add A, Q and R.
+
+          Q = | 0 1 0 0 |   R = | 1 0 0 0 |
+              | 1 0 0 0 |       | 0 1 0 0 |
+              | 0 0 0 1 |       | 0 0 0 1 |
+              | 0 0 1 0 |       | 0 0 1 0 |
+
+          A1 = | 1 0 0 0 |  A2 = | 1  0 0 0 |
+               | 0 1 0 3 |       | 0  1 0 0 |
+               | 0 0 1 0 |       | -2 0 1 0 |
+               | 0 0 0 1 |       | 0  0 0 1 |
+        */
+
+        PermutationMatrix Q( 4 );
+        Q._ordering[0] = 1;
+        Q._ordering[1] = 0;
+        Q._ordering[2] = 3;
+        Q._ordering[3] = 2;
+
+        PermutationMatrix R( 4 );
+        R._ordering[0] = 0;
+        R._ordering[1] = 1;
+        R._ordering[2] = 3;
+        R._ordering[3] = 2;
+
+        ft->setQ( Q );
+        ft->setR( R );
+
+        AlmostDiagonalMatrix A1;
+        A1._row = 1;
+        A1._column = 3;
+        A1._value = 3;
+
+        AlmostDiagonalMatrix A2;
+        A2._row = 2;
+        A2._column = 0;
+        A2._value = -2;
+
+        ft->pushA( A1 );
+        ft->pushA( A2 );
+
+        {
+            /*
+              Should hold:
+
+              Q * U4U3U2 * R * x = A2A1 * L4L3L2L1 * y
+
+              Manually checking gives:
+
+              | 0 1 1/2 1/2 | * x = | 1       0    0    0 | * y
+              | 1 3   4  -2 |       | -1/2  1/2 -3/2 -3/2 |
+              | 0 0   1   0 |       | -1      0   -1    0 |
+              | 0 0  -2   1 |       | 0       0 -1/2 -1/2 |
+
+              Or:
+
+              x = inv( | 0 1 1/2 1/2 | ) * | 1       0    0    0 | * y
+                       | 1 3   4  -2 |     | -1/2  1/2 -3/2 -3/2 |
+                       | 0 0   1   0 |     | -1      0   -1    0 |
+                       | 0 0  -2   1 |     | 0       0 -1/2 -1/2 |
+
+                = | -8  1/2 -31/4 -13/4 | * y
+                  | 5/2   0   7/4   1/4 |
+                  | -1    0    -1     0 |
+                  | -2    0  -5/2  -1/2 |
+            */
+
+            double expectedX[4] = { -3.75, 2.25, -1, -1.5 };
+
+            double y[4] = { 1, 2, 0, -1 };
+            double x[4];
+
+            TS_ASSERT_THROWS_NOTHING( ft->forwardTransformation( y, x ) );
+
+            for ( unsigned i = 0; i < 4; ++i )
+                TS_ASSERT( FloatUtils::areEqual( x[i], expectedX[i] ) );
+        }
     }
 };
 

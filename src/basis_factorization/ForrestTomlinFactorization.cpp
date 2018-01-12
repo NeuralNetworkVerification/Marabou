@@ -24,7 +24,8 @@ ForrestTomlinFactorization::ForrestTomlinFactorization( unsigned m )
     , _Q( m )
     , _R( m )
     , _workMatrix( NULL )
-    , _workColumn( NULL )
+    , _workVector( NULL )
+    , _workW( NULL )
 {
     _B = new double[m * m];
     if ( !_B )
@@ -36,10 +37,15 @@ ForrestTomlinFactorization::ForrestTomlinFactorization( unsigned m )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
                                        "ForrestTomlinFactorization::workMatrix" );
 
-    _workColumn = new double[m];
-    if ( !_workColumn )
+    _workVector = new double[m];
+    if ( !_workVector )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
-                                       "ForrestTomlinFactorization::workColumn" );
+                                       "ForrestTomlinFactorization::workVector" );
+
+    _workW = new double[m];
+    if ( !_workW )
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                       "ForrestTomlinFactorization::workW" );
 }
 
 ForrestTomlinFactorization::~ForrestTomlinFactorization()
@@ -56,10 +62,16 @@ ForrestTomlinFactorization::~ForrestTomlinFactorization()
 		_workMatrix = NULL;
 	}
 
-    if ( _workColumn )
+    if ( _workVector )
     {
-        delete[] _workColumn;
-        _workColumn = NULL;
+        delete[] _workVector;
+        _workVector = NULL;
+    }
+
+    if ( _workW )
+    {
+        delete[] _workW;
+        _workW = NULL;
     }
 
     List<EtaMatrix *>::iterator uIt;
@@ -67,9 +79,6 @@ ForrestTomlinFactorization::~ForrestTomlinFactorization()
         delete *uIt;
     _U.clear();
 
-    List<AlmostDiagonalMatrix *>::iterator aIt;
-    for ( aIt = _A.begin(); aIt != _A.end(); ++aIt )
-        delete *aIt;
     _A.clear();
 
     List<LPElement *>::iterator lpIt;
@@ -82,8 +91,99 @@ void ForrestTomlinFactorization::pushEtaMatrix( unsigned /* columnIndex */, doub
 {
 }
 
-void ForrestTomlinFactorization::forwardTransformation( const double */* y */, double */* x */ ) const
+void ForrestTomlinFactorization::forwardTransformation( const double *y, double *x ) const
 {
+    /*
+      The goal is to find x such that Bx = y.
+      We know that the following equation holds:
+
+           Am...A1 * LsPs...L1P1 * B = Q * Um...U1 * R
+
+      We find x in 2 steps:
+
+      1. Find w such that
+
+             w = inv(Q) * Am...A1 * LsPs...L1P1 * y
+
+      2. Find x such that
+
+             Um....U1 * R * x = w
+    */
+
+    /****
+    Step 1: Find w such that:  w = inv(Q) * Am...A1 * LsPs...L1P1 * y
+    ****/
+
+    memcpy( _workVector, y, sizeof(double) * _m );
+
+    // Multiply y by Ps and Ls
+    for ( auto lp = _LP.rbegin(); lp != _LP.rend(); ++lp )
+    {
+        if ( (*lp)->_pair )
+        {
+			double temp = _workVector[(*lp)->_pair->first];
+			_workVector[(*lp)->_pair->first] = _workVector[(*lp)->_pair->second];
+			_workVector[(*lp)->_pair->second] = temp;
+		}
+        else
+        {
+            unsigned col = (*lp)->_eta->_columnIndex;
+            double diagonEntry = _workVector[col];
+            for ( unsigned i = 0; i < _m; ++i )
+            {
+                if ( i == col )
+                    _workVector[i] *= (*lp)->_eta->_column[col];
+                else
+                    _workVector[i] += diagonEntry * (*lp)->_eta->_column[i];
+
+                if ( FloatUtils::isZero( _workVector[i] ) )
+                    _workVector[i] = 0.0;
+            }
+        }
+    }
+
+    // Mutiply by the As
+    for ( auto a = _A.rbegin(); a != _A.rend(); ++ a )
+    {
+        _workVector[a->_row] += ( a->_value * _workVector[a->_column] );
+
+        if ( FloatUtils::isZero( _workVector[a->_row] ) )
+            _workVector[a->_row] = 0.0;
+    }
+
+    // Multiply by inv(Q)
+    PermutationMatrix *invQ = _Q.invert();
+    for ( unsigned i = 0; i < _m; ++i )
+        _workW[invQ->_ordering[i]] = _workVector[i];
+
+    /****
+    Step 2: Find x such that:  Um....U1 * R * x = w
+    ****/
+
+    // Eliminate the U's
+    for ( const auto &u : _U )
+    {
+        // Handle the special row of U first
+        _workVector[u->_columnIndex] = _workW[u->_columnIndex] / u->_column[u->_columnIndex];
+
+        // Handle the remaining rows
+        for ( unsigned i = 0; i < _m; ++i )
+        {
+            if ( i == u->_columnIndex )
+                continue;
+
+            _workVector[i] = _workW[i] - ( u->_column[i] * _workVector[u->_columnIndex] );
+            if ( FloatUtils::isZero( _workVector[i] ) )
+                _workVector[i] = 0.0;
+        }
+
+        memcpy( _workW, _workVector, sizeof(double) * _m );
+    }
+
+    // We are now left with Rx = w (for our modified w). Multiply by inv(R) and be done.
+    PermutationMatrix *invR = _R.invert();
+    for ( unsigned i = 0; i < _m; ++i )
+        x[invR->_ordering[i]] = _workW[i];
 }
 
 void ForrestTomlinFactorization::backwardTransformation( const double */* y */, double */* x */ ) const
@@ -111,9 +211,6 @@ void ForrestTomlinFactorization::clearFactorization()
         delete *uIt;
     _U.clear();
 
-    List<AlmostDiagonalMatrix *>::iterator aIt;
-    for ( aIt = _A.begin(); aIt != _A.end(); ++aIt )
-        delete *aIt;
     _A.clear();
 
     List<LPElement *>::iterator lpIt;
@@ -166,14 +263,14 @@ void ForrestTomlinFactorization::initialLUFactorization()
 
         // The matrix now has a non-zero value at entry (i,i), so we can perform
         // Gaussian elimination for the subsequent rows
-        std::fill_n( _workColumn, _m, 0 );
+        std::fill_n( _workVector, _m, 0 );
         double div = _workMatrix[i * _m + i];
-        _workColumn[i] = 1 / div;
+        _workVector[i] = 1 / div;
 		for ( unsigned j = i + 1; j < _m; ++j )
-            _workColumn[j] = -_workMatrix[i + j * _m] / div;
+            _workVector[j] = -_workMatrix[i + j * _m] / div;
 
         // Store the resulting lower-triangular eta matrix
-        EtaMatrix *L = new EtaMatrix( _m, i, _workColumn );
+        EtaMatrix *L = new EtaMatrix( _m, i, _workVector );
 
         _LP.appendHead( new LPElement( L, NULL ) );
 
@@ -199,10 +296,10 @@ void ForrestTomlinFactorization::initialLUFactorization()
     for ( unsigned i = 1; i < _m; ++i )
     {
         // Copy the i'th column (column 0 is an identity column, can skip)
-        std::fill_n( _workColumn, _m, 0 );
+        std::fill_n( _workVector, _m, 0 );
         for ( unsigned j = 0; j <= i; ++j )
-            _workColumn[j] = _workMatrix[j * _m + i];
-        _U.appendHead( new EtaMatrix( _m, i, _workColumn ) );
+            _workVector[j] = _workMatrix[j * _m + i];
+        _U.appendHead( new EtaMatrix( _m, i, _workVector ) );
     }
 }
 
@@ -244,19 +341,19 @@ const List<LPElement *> *ForrestTomlinFactorization::getLP() const
     return &_LP;
 }
 
-const List<AlmostDiagonalMatrix *> *ForrestTomlinFactorization::getA() const
+const List<AlmostDiagonalMatrix> *ForrestTomlinFactorization::getA() const
 {
     return &_A;
 }
 
 void ForrestTomlinFactorization::rowSwap( unsigned rowOne, unsigned rowTwo, double *matrix )
 {
-    memcpy( _workColumn, matrix + (rowOne * _m), sizeof(double) * _m );
+    memcpy( _workVector, matrix + (rowOne * _m), sizeof(double) * _m );
     memcpy( matrix + (rowOne * _m), matrix + (rowTwo * _m), sizeof(double) * _m );
-    memcpy( matrix + (rowTwo * _m), _workColumn,  sizeof(double) * _m );
+    memcpy( matrix + (rowTwo * _m), _workVector,  sizeof(double) * _m );
 }
 
-void ForrestTomlinFactorization::pushA( AlmostDiagonalMatrix *matrix )
+void ForrestTomlinFactorization::pushA( const AlmostDiagonalMatrix &matrix )
 {
     _A.appendHead( matrix );
 }

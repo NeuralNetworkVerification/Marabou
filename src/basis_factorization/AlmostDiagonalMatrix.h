@@ -17,26 +17,7 @@
 
 class AlmostDiagonalMatrix
 {
-    /*
-      A diagonal matrix with one extra off-diagonal entry
-    */
 public:
-    AlmostDiagonalMatrix( unsigned m );
-
-private:
-    /*
-      The dimension of the matrix
-    */
-    unsigned _m;
-
-    /*
-      The diagonal entries
-    */
-    List<double> _diagonal;
-
-    /*
-      The single, non-diagonal entry
-    */
     unsigned _row;
     unsigned _column;
     double _value;
