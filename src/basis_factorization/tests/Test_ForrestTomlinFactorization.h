@@ -362,7 +362,7 @@ public:
 
           U2 = | 1 3 0 0 |
                | 0 1 0 0 |
-               | 0 0 0 0 |
+               | 0 0 1 0 |
                | 0 0 0 1 |
         */
 
@@ -450,6 +450,147 @@ public:
             double x[4];
 
             TS_ASSERT_THROWS_NOTHING( ft->forwardTransformation( y, x ) );
+
+            for ( unsigned i = 0; i < 4; ++i )
+                TS_ASSERT( FloatUtils::areEqual( x[i], expectedX[i] ) );
+        }
+    }
+
+    void test_backward_transformation()
+    {
+        ForrestTomlinFactorization *ft;
+
+        TS_ASSERT( ft = new ForrestTomlinFactorization( 4 ) );
+
+        double basisMatrix[16] = {
+            1,   3, -2,  4,
+            1,   5, -1,  5,
+            1,   3, -3,  6,
+            -1, -3,  3, -8,
+        };
+
+        TS_ASSERT_THROWS_NOTHING( ft->setBasis( basisMatrix ) );
+
+        /*
+          The factorization of this matrix gives:
+
+          L1 = |  1 0 0 0 |     L2 = | 1 0   0 0 |
+               | -1 1 0 0 |          | 0 1/2 0 0 |
+               | -1 0 1 0 |          | 0 0   1 0 |
+               |  1 0 0 1 |          | 0 0   0 1 |
+
+          L3 = | 1 0 0  0 |     L4 = | 1 0 0    0 |
+               | 0 1 0  0 |          | 0 1 0    0 |
+               | 0 0 -1 0 |          | 0 0 1    0 |
+               | 0 0 1  1 |          | 0 0 0 -1/2 |
+
+
+          U4 = | 1 0 0   4 |    U3 = | 1 0 -2  0 |
+               | 0 1 0 1/2 |         | 0 1 1/2 0 |
+               | 0 0 1  -2 |         | 0 0 1   0 |
+               | 0 0 0   1 |         | 0 0 0   1 |
+
+          U2 = | 1 3 0 0 |
+               | 0 1 0 0 |
+               | 0 0 1 0 |
+               | 0 0 0 1 |
+        */
+
+        {
+            double expectedX[4] = { 1, 2, 1, 1 };
+            double y[4] = { 3, 13, -4, 12 };
+            double x[4];
+
+            TS_ASSERT_THROWS_NOTHING( ft->backwardTransformation( y, x ) );
+            for ( unsigned i = 0; i < 4; ++i )
+                TS_ASSERT( FloatUtils::areEqual( x[i], expectedX[i] ) );
+        }
+
+        /*
+          Now manually add A, Q and R.
+
+          Q = | 0 1 0 0 |   R = | 1 0 0 0 |
+              | 1 0 0 0 |       | 0 1 0 0 |
+              | 0 0 0 1 |       | 0 0 0 1 |
+              | 0 0 1 0 |       | 0 0 1 0 |
+
+          A1 = | 1 0 0 0 |  A2 = | 1  0 0 0 |
+               | 0 1 0 3 |       | 0  1 0 0 |
+               | 0 0 1 0 |       | -2 0 1 0 |
+               | 0 0 0 1 |       | 0  0 0 1 |
+        */
+
+        PermutationMatrix Q( 4 );
+        Q._ordering[0] = 1;
+        Q._ordering[1] = 0;
+        Q._ordering[2] = 3;
+        Q._ordering[3] = 2;
+
+        PermutationMatrix R( 4 );
+        R._ordering[0] = 0;
+        R._ordering[1] = 1;
+        R._ordering[2] = 3;
+        R._ordering[3] = 2;
+
+        ft->setQ( Q );
+        ft->setR( R );
+
+        AlmostIdentityMatrix A1;
+        A1._row = 1;
+        A1._column = 3;
+        A1._value = 3;
+
+        AlmostIdentityMatrix A2;
+        A2._row = 2;
+        A2._column = 0;
+        A2._value = -2;
+
+        ft->pushA( A1 );
+        ft->pushA( A2 );
+
+        {
+            /*
+              Should hold:
+
+              x = y * inv(R) * inv(Um...U1) * inv(Q) * Am...A1 * LsPs...L1p1
+
+              Manually checking gives:
+
+              Am...A1 * LsPs...L1p1 = | 1      0    0    0 |
+                                      | -1/2 1/2 -3/2 -3/2 |
+                                      | -1     0   -1    0 |
+                                      | 0      0 -1/2 -1/2 |
+
+              inv(Um...U1) = | 1 -3  7/2  9/2 |
+                             | 0  1 -1/2 -3/2 |
+                             | 0  0    1    2 |
+                             | 0  0    0    1 |
+
+
+              inv(Q) = | 0 1 0 0 |   inv(R) = | 1 0 0 0 |
+                       | 1 0 0 0 |            | 0 1 0 0 |
+                       | 0 0 0 1 |            | 0 0 0 1 |
+                       | 0 0 1 0 |            | 0 0 1 0 |
+
+              inv(R) * inv(Um...U1) * inv(Q) = | -3 1  9/2  7/2 |
+                                               |  1 0 -3/2 -1/2 |
+                                               |  0 0    1    0 |
+                                               |  0 0    2    1 |
+
+              Or:
+
+              x = y * |  -8 1/2 -31/4 -13/4 |
+                      | 5/2   0   7/4   1/4 |
+                      | -1    0    -1     0 |
+                      | -2    0  -5/2  -1/2 |
+            */
+
+            double expectedX[4] = { -1, 1.0/2, -7.0/4, -9.0/4 };
+
+            double y[4] = { 1, 2, 0, -1 };
+            double x[4];
+
+            TS_ASSERT_THROWS_NOTHING( ft->backwardTransformation( y, x ) );
 
             for ( unsigned i = 0; i < 4; ++i )
                 TS_ASSERT( FloatUtils::areEqual( x[i], expectedX[i] ) );

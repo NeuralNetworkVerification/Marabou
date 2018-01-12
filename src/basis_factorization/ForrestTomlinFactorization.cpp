@@ -155,6 +155,7 @@ void ForrestTomlinFactorization::forwardTransformation( const double *y, double 
     PermutationMatrix *invQ = _Q.invert();
     for ( unsigned i = 0; i < _m; ++i )
         _workW[invQ->_ordering[i]] = _workVector[i];
+    delete invQ;
 
     /****
     Step 2: Find x such that:  Um....U1 * R * x = w
@@ -184,10 +185,106 @@ void ForrestTomlinFactorization::forwardTransformation( const double *y, double 
     PermutationMatrix *invR = _R.invert();
     for ( unsigned i = 0; i < _m; ++i )
         x[invR->_ordering[i]] = _workW[i];
+    delete invR;
 }
 
-void ForrestTomlinFactorization::backwardTransformation( const double */* y */, double */* x */ ) const
+void ForrestTomlinFactorization::backwardTransformation( const double *y, double *x ) const
 {
+    /*
+      The goal is to find x such that xB = y.
+      We know that the following equation holds:
+
+      Am...A1 * LsPs...L1P1 * B = Q * Um...U1 * R
+
+      We find x in 2 steps:
+
+      1. Find v such that
+
+      v * Um...U1 = y * inv(R)
+
+      2. Find x such that
+
+      x = v * inv(Q) * Am...A1 * LsPs...L1P1
+    */
+
+    unsigned columnIndex;
+
+    /****
+         Step 1: Find v such that:  v * Um...U1 = y * inv(R)
+    ****/
+
+    // Multiply y by inv(R), store in _workVector
+    PermutationMatrix *invR = _R.invert();
+    for ( unsigned i = 0; i < _m; ++i )
+        _workVector[invR->_ordering[i]] = y[i];
+    delete invR;
+
+    // Eliminate the U's
+    for ( auto u = _U.rbegin(); u != _U.rend(); ++u )
+    {
+        columnIndex = (*u)->_columnIndex;
+
+        // Only one entry of _workVector is changed by the undoing of each u
+        for ( unsigned i = 0; i < _m; ++i )
+        {
+            if ( i == columnIndex )
+                continue;
+
+            _workVector[columnIndex] -= ( (*u)->_column[i] * _workVector[i] );
+        }
+
+        _workVector[columnIndex] /= (*u)->_column[columnIndex];
+
+        if ( FloatUtils::isZero( _workVector[columnIndex] ) )
+            _workVector[columnIndex] = 0.0;
+    }
+
+    /****
+    Step 2: x = v * inv(Q) * Am...A1 * LsPs...L1P1
+    ****/
+
+    // Multiply by inv(Q)
+    PermutationMatrix *invQ = _Q.invert();
+    for ( unsigned i = 0; i < _m; ++i )
+        x[invQ->_ordering[i]] = _workVector[i];
+    delete invQ;
+
+    // Mutiply by the As
+    for ( const auto &a : _A )
+    {
+        columnIndex = a._column;
+        x[columnIndex] += ( a._value * x[a._row] );
+
+        if ( FloatUtils::isZero( x[columnIndex] ) )
+            x[columnIndex] = 0.0;
+    }
+
+    // Multiply y by Ps and Ls
+    for ( const auto &lp : _LP )
+    {
+        if ( lp->_pair )
+        {
+			double temp = x[lp->_pair->first];
+			x[lp->_pair->first] = x[lp->_pair->second];
+			x[lp->_pair->second] = temp;
+		}
+        else
+        {
+            columnIndex = lp->_eta->_columnIndex;
+
+            x[columnIndex] *= lp->_eta->_column[columnIndex];
+            for ( unsigned i = 0; i < _m; ++i )
+            {
+                if ( i == columnIndex )
+                    continue;
+
+                x[columnIndex] += ( lp->_eta->_column[i] * x[i] );
+            }
+
+            if ( FloatUtils::isZero( x[columnIndex] ) )
+                x[columnIndex] = 0.0;
+        }
+    }
 }
 
 void ForrestTomlinFactorization::storeFactorization( IBasisFactorization */* other */ )
