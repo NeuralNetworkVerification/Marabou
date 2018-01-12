@@ -50,12 +50,6 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete mock );
     }
 
-    void test_todo()
-    {
-        TS_TRACE( "Rename: AlmostDiagonalMatrix --> AlmostIdentityMatrix, "
-                  "if indeed diagonal is always 1s" );
-    }
-
     void test_factorization_enabled_disabled()
     {
         ForrestTomlinFactorization *ft;
@@ -411,12 +405,12 @@ public:
         ft->setQ( Q );
         ft->setR( R );
 
-        AlmostDiagonalMatrix A1;
+        AlmostIdentityMatrix A1;
         A1._row = 1;
         A1._column = 3;
         A1._value = 3;
 
-        AlmostDiagonalMatrix A2;
+        AlmostIdentityMatrix A2;
         A2._row = 2;
         A2._column = 0;
         A2._value = -2;

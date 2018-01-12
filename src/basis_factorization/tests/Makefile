@@ -18,7 +18,6 @@ SOURCES += \
 	MString.cpp \
 	TimeUtils.cpp \
 	\
-	AlmostDiagonalMatrix.cpp \
 	EtaMatrix.cpp \
 	ForrestTomlinFactorization.cpp \
 	LPElement.cpp \

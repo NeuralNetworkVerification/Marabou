@@ -13,7 +13,7 @@
 #ifndef __ForrestTomlinFactorization_h__
 #define __ForrestTomlinFactorization_h__
 
-#include "AlmostDiagonalMatrix.h"
+#include "AlmostIdentityMatrix.h"
 #include "IBasisFactorization.h"
 #include "LPElement.h"
 #include "List.h"
@@ -85,9 +85,9 @@ public:
     const PermutationMatrix *getR() const;
     const List<EtaMatrix *> *getU() const;
     const List<LPElement *> *getLP() const;
-    const List<AlmostDiagonalMatrix> *getA() const;
+    const List<AlmostIdentityMatrix> *getA() const;
 
-    void pushA( const AlmostDiagonalMatrix &matrix );
+    void pushA( const AlmostIdentityMatrix &matrix );
     void setQ( const PermutationMatrix &Q );
     void setR( const PermutationMatrix &R );
 
@@ -113,7 +113,7 @@ private:
       - The L and U matrices are as in a usual LU factorization
       - Q and R are permutation matrices
     */
-    List<AlmostDiagonalMatrix> _A;
+    List<AlmostIdentityMatrix> _A;
     List<LPElement *> _LP;
     PermutationMatrix _Q;
     List<EtaMatrix *> _U;

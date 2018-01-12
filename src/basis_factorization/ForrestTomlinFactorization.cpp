@@ -341,7 +341,7 @@ const List<LPElement *> *ForrestTomlinFactorization::getLP() const
     return &_LP;
 }
 
-const List<AlmostDiagonalMatrix> *ForrestTomlinFactorization::getA() const
+const List<AlmostIdentityMatrix> *ForrestTomlinFactorization::getA() const
 {
     return &_A;
 }
@@ -353,7 +353,7 @@ void ForrestTomlinFactorization::rowSwap( unsigned rowOne, unsigned rowTwo, doub
     memcpy( matrix + (rowTwo * _m), _workVector,  sizeof(double) * _m );
 }
 
-void ForrestTomlinFactorization::pushA( const AlmostDiagonalMatrix &matrix )
+void ForrestTomlinFactorization::pushA( const AlmostIdentityMatrix &matrix )
 {
     _A.appendHead( matrix );
 }

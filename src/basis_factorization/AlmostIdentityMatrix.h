@@ -1,5 +1,5 @@
-/********************                                                        */
-/*! \file AlmostDiagonalMatrix.cpp
+/*********************                                                        */
+/*! \file AlmostIdentityMatrix.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz
@@ -10,7 +10,20 @@
  ** directory for licensing information.\endverbatim
  **/
 
-#include "AlmostDiagonalMatrix.h"
+#ifndef __AlmostIdentityMatrix_h__
+#define __AlmostIdentityMatrix_h__
+
+#include "List.h"
+
+class AlmostIdentityMatrix
+{
+public:
+    unsigned _row;
+    unsigned _column;
+    double _value;
+};
+
+#endif // __AlmostIdentityMatrix_h__
 
 //
 // Local Variables:

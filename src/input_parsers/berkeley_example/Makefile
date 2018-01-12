@@ -28,7 +28,6 @@ SOURCES += \
 	MString.cpp \
 	TimeUtils.cpp \
 	\
-	AlmostDiagonalMatrix.cpp \
 	BasisFactorizationFactory.cpp \
 	BlandsRule.cpp \
 	ConstraintMatrixAnalyzer.cpp \
