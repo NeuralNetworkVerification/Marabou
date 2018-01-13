@@ -30,6 +30,20 @@ EtaMatrix::EtaMatrix( unsigned m, unsigned index, double *column )
     memcpy( _column, column, sizeof(double) * _m );
 }
 
+EtaMatrix::EtaMatrix( unsigned m, unsigned index )
+    : _m( m )
+    , _columnIndex( index )
+    , _column( NULL )
+{
+    _column = new double[_m];
+    if ( !_column )
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "EtaMatrix::column" );
+
+    std::fill( _column, _column + _m, 0.0 );
+
+    _column[_columnIndex] = 1.0;
+}
+
 EtaMatrix::EtaMatrix( const EtaMatrix &other )
     : _m( other._m )
     , _columnIndex( other._columnIndex )
@@ -103,6 +117,12 @@ bool EtaMatrix::operator==( const EtaMatrix &other ) const
             return false;
 
     return true;
+}
+
+void EtaMatrix::resetToIdentity()
+{
+    std::fill( _column, _column + _m, 0.0 );
+    _column[_columnIndex] = 1.0;
 }
 
 //

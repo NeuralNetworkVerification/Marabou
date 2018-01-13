@@ -19,6 +19,17 @@
 #include "List.h"
 #include "PermutationMatrix.h"
 
+/*
+  Forrest-Tomlin factorization looks like this:
+
+  Am...A1 * LsPs...L1P1 * B = Q * Um...U1 * R
+
+  Where:
+  - The A matrices are "almost-diagonal", i.e. diagonal matrices
+  with one extra entry off the diagonal.
+  - The L and U matrices are as in a usual LU factorization
+  - Q and R are permutation matrices
+*/
 class ForrestTomlinFactorization : public IBasisFactorization
 {
 public:
@@ -83,7 +94,7 @@ public:
     */
     const PermutationMatrix *getQ() const;
     const PermutationMatrix *getR() const;
-    const List<EtaMatrix *> *getU() const;
+    const EtaMatrix **getU() const;
     const List<LPElement *> *getLP() const;
     const AlmostIdentityMatrix *getA() const;
 
@@ -103,20 +114,12 @@ private:
 	double *_B;
 
     /*
-      Forrest-Tomlin factorization looks like this:
-
-      Am...A1 * LsPs...L1P1 * B = Q * Um...U1 * R
-
-      Where:
-      - The A matrices are "almost-diagonal", i.e. diagonal matrices
-        with one extra entry off the diagonal.
-      - The L and U matrices are as in a usual LU factorization
-      - Q and R are permutation matrices
+      The components of the Forrest-Tomlin factorization.
     */
     AlmostIdentityMatrix *_A;
     List<LPElement *> _LP;
     PermutationMatrix _Q;
-    List<EtaMatrix *> _U;
+    EtaMatrix **_U;
     PermutationMatrix _R;
 
     /*

@@ -17,12 +17,20 @@ class EtaMatrix
 {
 public:
     EtaMatrix( unsigned m, unsigned index, double *column );
+
+    /*
+      Initializees the matrix to the identity matrix
+    */
+    EtaMatrix( unsigned m, unsigned index );
+
     EtaMatrix( const EtaMatrix &other );
     EtaMatrix &operator=( const EtaMatrix &other );
 
     ~EtaMatrix();
     void dump();
 	void toMatrix( double *A );
+
+    void resetToIdentity();
 
     bool operator==( const EtaMatrix &other ) const;
 

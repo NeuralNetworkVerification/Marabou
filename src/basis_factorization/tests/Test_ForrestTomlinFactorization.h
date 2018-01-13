@@ -166,15 +166,16 @@ public:
         double expectedU2Col[] = { 3, 1, 0, 0 };
         EtaMatrix expectedU2( 4, 1, expectedU2Col );
 
+        double expectedU1Col[] = { 1, 0, 0, 0 };
+        EtaMatrix expectedU1( 4, 0, expectedU1Col );
+
         // Check that the FT object got it right
-        const List<EtaMatrix *> *U = ft->getU();
-        TS_ASSERT_EQUALS( U->size(), 3U );
-        auto uIt = U->begin();
-        TS_ASSERT_EQUALS( **uIt, expectedU4 );
-        ++uIt;
-        TS_ASSERT_EQUALS( **uIt, expectedU3 );
-        ++uIt;
-        TS_ASSERT_EQUALS( **uIt, expectedU2 );
+        const EtaMatrix **U = ft->getU();
+
+        TS_ASSERT_EQUALS( *U[3], expectedU4 );
+        TS_ASSERT_EQUALS( *U[2], expectedU3 );
+        TS_ASSERT_EQUALS( *U[1], expectedU2 );
+        TS_ASSERT_EQUALS( *U[0], expectedU1 );
 
         const List<LPElement *> *LP = ft->getLP();
         TS_ASSERT_EQUALS( LP->size(), 4U );
@@ -301,15 +302,15 @@ public:
         double expectedU2Col[] = { 3, 1, 0, 0 };
         EtaMatrix expectedU2( 4, 1, expectedU2Col );
 
+        double expectedU1Col[] = { 1, 0, 0, 0 };
+        EtaMatrix expectedU1( 4, 0, expectedU1Col );
+
         // Check that the FT object got it right
-        const List<EtaMatrix *> *U = ft->getU();
-        TS_ASSERT_EQUALS( U->size(), 3U );
-        auto uIt = U->begin();
-        TS_ASSERT_EQUALS( **uIt, expectedU4 );
-        ++uIt;
-        TS_ASSERT_EQUALS( **uIt, expectedU3 );
-        ++uIt;
-        TS_ASSERT_EQUALS( **uIt, expectedU2 );
+        const EtaMatrix **U = ft->getU();
+        TS_ASSERT_EQUALS( *U[3], expectedU4 );
+        TS_ASSERT_EQUALS( *U[2], expectedU3 );
+        TS_ASSERT_EQUALS( *U[1], expectedU2 );
+        TS_ASSERT_EQUALS( *U[0], expectedU1 );
 
         const List<LPElement *> *LP = ft->getLP();
         TS_ASSERT_EQUALS( LP->size(), 5U );

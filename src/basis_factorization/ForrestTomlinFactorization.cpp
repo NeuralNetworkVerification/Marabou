@@ -21,7 +21,9 @@
 ForrestTomlinFactorization::ForrestTomlinFactorization( unsigned m )
     : _m( m )
     , _B( NULL )
+    , _A( NULL )
     , _Q( m )
+    , _U( NULL )
     , _R( m )
     , _workMatrix( NULL )
     , _workVector( NULL )
@@ -36,6 +38,19 @@ ForrestTomlinFactorization::ForrestTomlinFactorization( unsigned m )
     if ( !_A )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
                                        "ForrestTomlinFactorization::A" );
+
+    _U = new EtaMatrix *[m];
+    if ( !_U )
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                       "ForrestTomlinFactorization::U" );
+
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        _U[i] = new EtaMatrix( _m, i );
+        if ( !_U[i] )
+            throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                           "ForrestTomlinFactorization::U[i]" );
+    }
 
     _workMatrix = new double[m * m];
     if ( !_workMatrix )
@@ -67,6 +82,21 @@ ForrestTomlinFactorization::~ForrestTomlinFactorization()
 		_A = NULL;
 	}
 
+	if ( _U )
+	{
+        for ( unsigned i = 0; i < _m; ++i )
+        {
+            if ( _U[i] )
+            {
+                delete _U[i];
+                _U[i] = NULL;
+            }
+        }
+
+		delete[] _U;
+		_U = NULL;
+	}
+
 	if ( _workMatrix )
 	{
 		delete[] _workMatrix;
@@ -84,11 +114,6 @@ ForrestTomlinFactorization::~ForrestTomlinFactorization()
         delete[] _workW;
         _workW = NULL;
     }
-
-    List<EtaMatrix *>::iterator uIt;
-    for ( uIt = _U.begin(); uIt != _U.end(); ++uIt )
-        delete *uIt;
-    _U.clear();
 
     List<LPElement *>::iterator lpIt;
     for ( lpIt = _LP.begin(); lpIt != _LP.end(); ++lpIt )
@@ -174,20 +199,21 @@ void ForrestTomlinFactorization::forwardTransformation( const double *y, double 
     ****/
 
     // Eliminate the U's
-    for ( const auto &u : _U )
+    for ( int i = _m - 1; i >= 0; --i )
     {
         // Handle the special row of U first
-        _workVector[u->_columnIndex] = _workW[u->_columnIndex] / u->_column[u->_columnIndex];
+        _workVector[_U[i]->_columnIndex] =
+            _workW[_U[i]->_columnIndex] / _U[i]->_column[_U[i]->_columnIndex];
 
         // Handle the remaining rows
-        for ( unsigned i = 0; i < _m; ++i )
+        for ( unsigned j = 0; j < _m; ++j )
         {
-            if ( i == u->_columnIndex )
+            if ( j == _U[i]->_columnIndex )
                 continue;
 
-            _workVector[i] = _workW[i] - ( u->_column[i] * _workVector[u->_columnIndex] );
-            if ( FloatUtils::isZero( _workVector[i] ) )
-                _workVector[i] = 0.0;
+            _workVector[j] = _workW[j] - ( _U[i]->_column[j] * _workVector[_U[i]->_columnIndex] );
+            if ( FloatUtils::isZero( _workVector[j] ) )
+                _workVector[j] = 0.0;
         }
 
         memcpy( _workW, _workVector, sizeof(double) * _m );
@@ -232,20 +258,20 @@ void ForrestTomlinFactorization::backwardTransformation( const double *y, double
     delete invR;
 
     // Eliminate the U's
-    for ( auto u = _U.rbegin(); u != _U.rend(); ++u )
+    for ( unsigned i = 0; i < _m; ++i )
     {
-        columnIndex = (*u)->_columnIndex;
+        columnIndex = _U[i]->_columnIndex;
 
         // Only one entry of _workVector is changed by the undoing of each u
-        for ( unsigned i = 0; i < _m; ++i )
+        for ( unsigned j = 0; j < _m; ++j )
         {
-            if ( i == columnIndex )
+            if ( j == columnIndex )
                 continue;
 
-            _workVector[columnIndex] -= ( (*u)->_column[i] * _workVector[i] );
+            _workVector[columnIndex] -= ( _U[i]->_column[j] * _workVector[j] );
         }
 
-        _workVector[columnIndex] /= (*u)->_column[columnIndex];
+        _workVector[columnIndex] /= _U[i]->_column[columnIndex];
 
         if ( FloatUtils::isZero( _workVector[columnIndex] ) )
             _workVector[columnIndex] = 0.0;
@@ -318,11 +344,6 @@ void ForrestTomlinFactorization::setBasis( const double *B )
 
 void ForrestTomlinFactorization::clearFactorization()
 {
-    List<EtaMatrix *>::iterator uIt;
-    for ( uIt = _U.begin(); uIt != _U.end(); ++uIt )
-        delete *uIt;
-    _U.clear();
-
     List<LPElement *>::iterator lpIt;
     for ( lpIt = _LP.begin(); lpIt != _LP.end(); ++lpIt )
         delete *lpIt;
@@ -332,7 +353,10 @@ void ForrestTomlinFactorization::clearFactorization()
     _R.resetToIdentity();
 
     for ( unsigned i = 0; i < _m; ++i )
+    {
         _A[i]._identity = true;
+        _U[i]->resetToIdentity();
+    }
 }
 
 void ForrestTomlinFactorization::initialLUFactorization()
@@ -408,11 +432,13 @@ void ForrestTomlinFactorization::initialLUFactorization()
     // Extract the U matrices
     for ( unsigned i = 1; i < _m; ++i )
     {
+        EtaMatrix *u = _U[i];
         // Copy the i'th column (column 0 is an identity column, can skip)
-        std::fill_n( _workVector, _m, 0 );
+        // U is always upper triangular, so don't need to clear below
+        // the diagonal.
+
         for ( unsigned j = 0; j <= i; ++j )
-            _workVector[j] = _workMatrix[j * _m + i];
-        _U.appendHead( new EtaMatrix( _m, i, _workVector ) );
+            u->_column[j] = _workMatrix[j * _m + i];
     }
 }
 
@@ -444,9 +470,9 @@ const PermutationMatrix *ForrestTomlinFactorization::getR() const
     return &_R;
 }
 
-const List<EtaMatrix *> *ForrestTomlinFactorization::getU() const
+const EtaMatrix **ForrestTomlinFactorization::getU() const
 {
-    return &_U;
+    return (const EtaMatrix **)_U;
 }
 
 const List<LPElement *> *ForrestTomlinFactorization::getLP() const
