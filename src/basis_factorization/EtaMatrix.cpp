@@ -18,7 +18,7 @@
 #include <cstdlib>
 #include <cstring>
 
-EtaMatrix::EtaMatrix( unsigned m, unsigned index, double *column )
+EtaMatrix::EtaMatrix( unsigned m, unsigned index, const double *column )
     : _m( m )
     , _columnIndex( index )
     , _column( NULL )

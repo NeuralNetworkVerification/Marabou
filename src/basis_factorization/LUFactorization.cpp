@@ -114,7 +114,7 @@ const List<EtaMatrix *> LUFactorization::getEtas() const
 	return _etas;
 }
 
-void LUFactorization::pushEtaMatrix( unsigned columnIndex, double *column )
+void LUFactorization::pushEtaMatrix( unsigned columnIndex, const double *column )
 {
     EtaMatrix *matrix = new EtaMatrix( _m, columnIndex, column );
     _etas.append( matrix );

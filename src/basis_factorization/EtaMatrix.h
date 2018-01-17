@@ -16,7 +16,7 @@
 class EtaMatrix
 {
 public:
-    EtaMatrix( unsigned m, unsigned index, double *column );
+    EtaMatrix( unsigned m, unsigned index, const double *column );
 
     /*
       Initializees the matrix to the identity matrix

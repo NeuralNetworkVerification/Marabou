@@ -603,6 +603,220 @@ public:
                 TS_ASSERT( FloatUtils::areEqual( x[i], expectedX[i] ) );
         }
     }
+
+    void test_push_eta_matrix_refactorization()
+    {
+        TS_TRACE( "TODO: Make this test pass!\n" );
+        return; // Remove this
+
+        ForrestTomlinFactorization *ft;
+
+        TS_ASSERT( ft = new ForrestTomlinFactorization( 4 ) );
+
+        // B = | 1   3 -2  4 |
+        //     | 1   5 -1  5 |
+        //     | 1   3 -3  6 |
+        //     | -1 -3  3 -8 |
+        double basisMatrix[16] = {
+            1,   3, -2,  4,
+            1,   5, -1,  5,
+            1,   3, -3,  6,
+            -1, -3,  3, -8,
+        };
+
+        TS_ASSERT_THROWS_NOTHING( ft->setBasis( basisMatrix ) );
+
+        // E1 = | 1 -4     |
+        //      |    2     |
+        //      |    0 1   |
+        //      | 0  3 0 1 |
+        double a1[] = { -4, 2, 0, 3 };
+        ft->pushEtaMatrix( 1, a1 );
+
+        // B * E1 = | 1   14 -2  4 |
+        //          | 1   21 -1  5 |
+        //          | 1   20 -3  6 |
+        //          | -1 -26  3 -8 |
+
+        /*
+          Previous factorization:
+
+          L1 = |  1 0 0 0 |     L2 = | 1 0   0 0 |
+               | -1 1 0 0 |          | 0 1/2 0 0 |
+               | -1 0 1 0 |          | 0 0   1 0 |
+               |  1 0 0 1 |          | 0 0   0 1 |
+
+          L3 = | 1 0 0  0 |     L4 = | 1 0 0    0 |
+               | 0 1 0  0 |          | 0 1 0    0 |
+               | 0 0 -1 0 |          | 0 0 1    0 |
+               | 0 0 1  1 |          | 0 0 0 -1/2 |
+
+
+          U4 = | 1 0 0   4 |    U3 = | 1 0 -2  0 |
+               | 0 1 0 1/2 |         | 0 1 1/2 0 |
+               | 0 0 1  -2 |         | 0 0 1   0 |
+               | 0 0 0   1 |         | 0 0 0   1 |
+
+          U2 = | 1 3 0 0 |
+               | 0 1 0 0 |
+               | 0 0 1 0 |
+               | 0 0 0 1 |
+
+          With A, Q and R all the identity matrices.
+
+          After E1 is pushed, the factorization is updated as follows:
+
+          V = URE * inv(R) = U*E = | 1 3  -2   4 | * | 1 -4     |
+                                   | 0 1 1/2 1/2 |   |    2     |
+                                   | 0 0   1  -2 |   |    0 1   |
+                                   | 0 0   0   1 |   |    3   1 |
+
+                                 = | 1  14  -2   4 |
+                                   | 0 7/2 1/2 1/2 |
+                                   | 0  -6   1  -2 |
+                                   | 0   3   0   1 |
+
+          We now pick Q' and R' = inv(Q') that transfer the bump column
+          to be a bump row:
+
+          Q' = | 1 0 0 0 |    R' = | 1 0 0 0 |
+               | 0 0 1 0 |         | 0 0 0 1 |
+               | 0 0 0 1 |         | 0 1 0 0 |
+               | 0 1 0 0 |         | 0 0 1 0 |
+
+          Q'VR' = | 1  -2   4  14 |
+                  | 0   1  -2  -6 |
+                  | 0   0   1   3 |
+                  | 0 1/2 1/2 7/2 |
+
+          This dictates the values of the almost-diagonal matrices:
+
+          A1' = I,
+
+          A2' = | 1    0 0 0 |  A3' = | 1 0    0 0 |
+                | 0    1 0 0 |        | 0 1    0 0 |
+                | 0    0 1 0 |        | 0 0    1 0 |
+                | 0 -1/2 0 1 |        | 0 0 -3/2 1 |
+
+          A4' = | 1 0 0 0   |
+                | 0 1 0 0   |
+                | 0 0 1 0   |
+                | 0 0 0 1/4 |
+
+          And of U':
+
+          U' = | 1  -2   4  14 |
+               | 0  1   -2  -6 |
+               | 0  0    1   3 |
+               | 0  0    0   1 |
+
+
+          And this gives us the new values of the factorization:
+
+          U'' = U'
+          Q'' = Q * inv(Q') = I * inv(Q') = | 1 0 0 0 |
+                                            | 0 0 0 1 |
+                                            | 0 1 0 0 |
+                                            | 0 0 1 0 |
+
+          R'' = inv(R') * R = inv(R') * I = | 1 0 0 0 |
+                                            | 0 0 1 0 |
+                                            | 0 0 0 1 |
+                                            | 0 1 0 0 |
+
+          A4'' = Q'' A4' inv(Q'') = | 1 0   0 0 |
+                                    | 0 1/4 0 0 |
+                                    | 0 0   1 0 |
+                                    | 0 0   0 1 |
+
+          A3'' = Q'' A3' inv(Q'') = | 1 0 0   0  |
+                                    | 0 1 0 -3/2 |
+                                    | 0 0 1   0  |
+                                    | 0 0 0   1  |
+
+          A2'' = Q'' A2' inv(Q'') = | 1 0    0 0 |
+                                    | 0 1 -1/2 0 |
+                                    | 0 0    1 0 |
+                                    | 0 0    0 1 |
+
+          A1'' = I
+
+          The Ls and Ps are unchanged.
+        */
+
+        double expectedL1Col[] = { 1, -1, -1, 1 };
+        EtaMatrix expectedL1( 4, 0, expectedL1Col );
+        double expectedL2Col[] = { 0, 0.5, 0, 0 };
+        EtaMatrix expectedL2( 4, 1, expectedL2Col );
+        double expectedL3Col[] = { 0, 0, -1, 1 };
+        EtaMatrix expectedL3( 4, 2, expectedL3Col );
+        double expectedL4Col[] = { 0, 0, 0, -0.5 };
+        EtaMatrix expectedL4( 4, 3, expectedL4Col );
+
+        const List<LPElement *> *LP = ft->getLP();
+        TS_ASSERT_EQUALS( LP->size(), 4U );
+        auto lIt = LP->begin();
+        TS_ASSERT( (*lIt)->_eta );
+        TS_ASSERT_EQUALS( *((*lIt)->_eta), expectedL4 );
+        ++lIt;
+        TS_ASSERT_EQUALS( *((*lIt)->_eta), expectedL3 );
+        ++lIt;
+        TS_ASSERT_EQUALS( *((*lIt)->_eta), expectedL2 );
+        ++lIt;
+        TS_ASSERT_EQUALS( *((*lIt)->_eta), expectedL1 );
+
+        double expectedU4Col[] = { 14, -6, 3, 1 };
+        EtaMatrix expectedU4( 4, 3, expectedU4Col );
+
+        double expectedU3Col[] = { 4, -2, 1, 0 };
+        EtaMatrix expectedU3( 4, 2, expectedU3Col );
+
+        double expectedU2Col[] = { -2, 1, 0, 0 };
+        EtaMatrix expectedU2( 4, 1, expectedU2Col );
+
+        double expectedU1Col[] = { 1, 0, 0, 0 };
+        EtaMatrix expectedU1( 4, 0, expectedU1Col );
+
+        const EtaMatrix **U = ft->getU();
+        TS_ASSERT_EQUALS( *U[3], expectedU4 );
+        TS_ASSERT_EQUALS( *U[2], expectedU3 );
+        TS_ASSERT_EQUALS( *U[1], expectedU2 );
+        TS_ASSERT_EQUALS( *U[0], expectedU1 );
+
+        const PermutationMatrix *Q = ft->getQ();
+        const PermutationMatrix *R = ft->getR();
+
+        TS_ASSERT_EQUALS( Q->_ordering[0], 0U );
+        TS_ASSERT_EQUALS( Q->_ordering[1], 3U );
+        TS_ASSERT_EQUALS( Q->_ordering[2], 1U );
+        TS_ASSERT_EQUALS( Q->_ordering[3], 2U );
+
+        TS_ASSERT_EQUALS( R->_ordering[0], 0U );
+        TS_ASSERT_EQUALS( R->_ordering[1], 2U );
+        TS_ASSERT_EQUALS( R->_ordering[2], 3U );
+        TS_ASSERT_EQUALS( R->_ordering[3], 1U );
+
+        const AlmostIdentityMatrix *A = ft->getA();
+
+        TS_ASSERT( A[0]._identity );
+
+        TS_ASSERT( !A[1]._identity );
+        TS_ASSERT_EQUALS( A[1]._row, 3U );
+        TS_ASSERT_EQUALS( A[1]._column, 1U );
+        TS_ASSERT( FloatUtils::areEqual( A[1]._value, -0.5 ) );
+
+        TS_ASSERT( !A[2]._identity );
+        TS_ASSERT_EQUALS( A[2]._row, 3U );
+        TS_ASSERT_EQUALS( A[2]._column, 2U );
+        TS_ASSERT( FloatUtils::areEqual( A[2]._value, -1.5 ) );
+
+        TS_ASSERT( !A[3]._identity );
+        TS_ASSERT_EQUALS( A[3]._row, 3U );
+        TS_ASSERT_EQUALS( A[3]._column, 3U );
+        TS_ASSERT( FloatUtils::areEqual( A[3]._value, 0.25 ) );
+
+        TS_ASSERT_THROWS_NOTHING( delete ft );
+    }
 };
 
 //

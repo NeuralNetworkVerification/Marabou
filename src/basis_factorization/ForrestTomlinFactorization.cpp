@@ -121,8 +121,26 @@ ForrestTomlinFactorization::~ForrestTomlinFactorization()
 	_LP.clear();
 }
 
-void ForrestTomlinFactorization::pushEtaMatrix( unsigned /* columnIndex */, double */* column */ )
+void ForrestTomlinFactorization::pushEtaMatrix( unsigned /* columnIndex */, const double */* column */ )
 {
+    /*
+      The first step is to compute V = URE * inv(R). V differs from U in just
+      one column.
+
+      TODO: don't need to recompute this - see book!
+    */
+
+    // This is the eta column index, modified by inv(R). If row i is mapped to columnIndex
+    // in R, then columnIndex will be mapped to i in inv(R).
+    // unsigned newColumnInUIndex;
+    // for ( unsigned i = 0; i < _m; ++i )
+    // {
+    //     if ( _R->_ordering[i] == columnIndex )
+    //     {
+    //         newColumnInUIndex = i;
+    //         break;
+    //     }
+    // }
 }
 
 void ForrestTomlinFactorization::forwardTransformation( const double *y, double *x ) const

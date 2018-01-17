@@ -39,7 +39,7 @@ public:
       provided. If the number of stored eta matrices exceeds a certain
       threshold, re-factorization may occur.
     */
-    void pushEtaMatrix( unsigned columnIndex, double *column );
+    void pushEtaMatrix( unsigned columnIndex, const double *column );
 
     /*
       Perform a forward transformation, i.e. find x such that x = inv(B) * y,

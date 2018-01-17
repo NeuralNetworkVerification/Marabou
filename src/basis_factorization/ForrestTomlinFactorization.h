@@ -42,7 +42,7 @@ public:
       basis is multiplied on the right. This eta matrix is represented
       by the column index and column vector.
     */
-    void pushEtaMatrix( unsigned columnIndex, double *column );
+    void pushEtaMatrix( unsigned columnIndex, const double *column );
 
     /*
       Perform a forward transformation, i.e. find x such that Bx = y.
