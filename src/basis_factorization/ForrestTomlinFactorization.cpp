@@ -462,7 +462,7 @@ void ForrestTomlinFactorization::initialLUFactorization()
 
 bool ForrestTomlinFactorization::explicitBasisAvailable() const
 {
-    return true;
+    return false;
 }
 
 void ForrestTomlinFactorization::makeExplicitBasisAvailable()
