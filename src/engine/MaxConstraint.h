@@ -1,14 +1,14 @@
 /*********************                                                        */
 /*! \file MaxConstraint.h
- ** \verbatim
- ** Top contributors (to current version):
- **   Derek Huang
- ** This file is part of the Marabou project.
- ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
- ** in the top-level source directory) and their institutional affiliations.
- ** All rights reserved. See the file COPYING in the top-level source
- ** directory for licensing information.\endverbatim
- **/
+** \verbatim
+** Top contributors (to current version):
+**   Derek Huang
+** This file is part of the Marabou project.
+** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
+** in the top-level source directory) and their institutional affiliations.
+** All rights reserved. See the file COPYING in the top-level source
+** directory for licensing information.\endverbatim
+**/
 
 #ifndef __MaxConstraint_h__
 #define __MaxConstraint_h__
@@ -18,8 +18,8 @@
 
 class MaxConstraint : public PiecewiseLinearConstraint
 {
-public:
-  	~MaxConstraint();
+ public:
+    ~MaxConstraint();
 
     MaxConstraint( unsigned f, const Set<unsigned> &elements );
 
@@ -44,8 +44,8 @@ public:
       changes.
     */
     void notifyVariableValue( unsigned variable, double value );
-  	void notifyLowerBound( unsigned variable, double value );
-  	void notifyUpperBound( unsigned variable, double value );
+    void notifyLowerBound( unsigned variable, double value );
+    void notifyUpperBound( unsigned variable, double value );
 
     /*
       Returns true iff the variable participates in this piecewise
@@ -73,7 +73,7 @@ public:
       constraint breaks into. These splits need to complementary,
       i.e. if the list is {l1, l2, ..., ln-1, ln},
       then ~l1 /\ ~l2 /\ ... /\ ~ln-1 --> ln.
-     */
+    */
     List<PiecewiseLinearCaseSplit> getCaseSplits() const;
 
     /*
@@ -86,9 +86,9 @@ public:
     */
     PiecewiseLinearCaseSplit getValidCaseSplit() const;
 
-	// void updateBounds();
+    // void updateBounds();
 
-	// void preprocessBounds( unsigned variable, double value, Tightening::BoundType type );
+    // void preprocessBounds( unsigned variable, double value, Tightening::BoundType type );
 
     /*
       Preprocessing related functions, to inform that a variable has been eliminated completely
@@ -111,12 +111,12 @@ public:
     */
     void getAuxiliaryEquations( List<Equation> &newEquations ) const;
 
-private:
+ private:
     unsigned _f;
-  	unsigned _maxIndex;
+    unsigned _maxIndex;
     Set<unsigned> _elements;
     Set<unsigned> _eliminated;
-	unsigned _maxElim;
+    unsigned _maxElim;
     double _minLowerBound;
     double _maxUpperBound;
     bool _phaseFixed;
@@ -139,11 +139,11 @@ private:
     */
     double getMaxUpperBound() const;
 
-	void setLowerBound( unsigned variable, double value );
+    void setLowerBound( unsigned variable, double value );
 
-	void setUpperBound( unsigned variable, double value );
+    void setUpperBound( unsigned variable, double value );
 
-	void tightenPL( Tightening tighten, List<Tightening> & tightenings );
+    void tightenPL( Tightening tighten, List<Tightening> & tightenings );
 };
 
 #endif // __MaxConstraint_h__
