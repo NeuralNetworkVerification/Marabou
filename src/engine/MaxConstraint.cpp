@@ -101,14 +101,30 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
 }
 
 void MaxConstraint::checkForFixedPhaseOnAlterationToBounds() {
-
-    double maxLowerBound = FloatUtils::negativeInfinity();
     // Compute the maximum lowest bound among all elements.
-    for (const element : elements) {
-	if (_lowerBounds.exists(element)) {
-	    // Semantics of lower bound not present?
+    double maxLowerBound = FloatUtils::negativeInfinity();
+    unsigned maxLowerBoundElement = 0;
+    for (const unsigned element : _elements) {
+	// At the time this API is called, the lower bound is guaranteed to exist
+	// for all elements.
+	if (_lowerBounds.exists(element) &&
+            FloatUtils::lt(maxLowerBound, _lowerBounds[element])) {
+	    maxLowerBound = _lowerBounds[element];
+	    maxLowerBoundElement = element;
 	}
     }
+
+    // Check to see if it is greater than the upper bound of all other elements.
+    _phaseFixed = true;
+    for (const unsigned element : _elements) {
+	if (_upperBounds.exists(element) &&
+	    element != maxLowerBoundElement &&
+	    FloatUtils::lt(maxLowerBound, _upperBounds[element])) {
+	    _phaseFixed = false;
+	    break;
+	}
+    }
+    _fixedPhase = maxLowerBoundElement;
 }
 
 void MaxConstraint::getEntailedTightenings( List<Tightening> & tightenings ) const
