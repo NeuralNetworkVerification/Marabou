@@ -1,0 +1,101 @@
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+#include <map>
+#include <vector>
+#include <string>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include "Engine.h"
+#include "InputQuery.h"
+#include "ReluplexError.h"
+#include "FloatUtils.h"
+#include "PiecewiseLinearConstraint.h"
+#include "ReluConstraint.h"
+
+namespace py = pybind11;
+
+int redirectOutputToFile(std::string outputFilePath){
+    // Redirect standard output to a file
+    int outputFile = open(outputFilePath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if ( outputFile < 0 )
+    {
+        printf( "Error redirecting output to file\n");
+        exit( 1 );
+    }
+
+    int outputStream = dup( STDOUT_FILENO );
+    if (outputStream < 0)
+    {
+        printf( "Error duplicating standard output\n" );
+        exit(1);
+    }
+
+    if ( dup2( outputFile, STDOUT_FILENO ) < 0 )
+    {
+        printf("Error duplicating to standard output\n");
+        exit(1);
+    }
+
+    close( outputFile );
+    return outputStream;
+}
+
+void restoreOutputStream(int outputStream)
+{
+    // Restore standard output
+    fflush( stdout );
+    if (dup2( outputStream, STDOUT_FILENO ) < 0){
+        printf( "Error restoring output stream\n" );
+        exit( 1 );
+    }
+    close(outputStream);
+}
+
+std::map<int, double> solve(InputQuery inputQuery, std::string redirect=""){
+	// Arguments: InputQuery object, filename to redirect output
+    // Returns: map from variable number to value
+    std::map<int, double> ret;
+    int output=-1;
+    if(redirect.length()>0)
+        output=redirectOutputToFile(redirect);
+    try{
+		Engine engine;
+        if(!engine.processInputQuery(inputQuery)) return ret;
+        
+        if(!engine.solve()) return ret;
+        
+        engine.extractSolution(inputQuery);
+        for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); i++)
+        	ret[i] = inputQuery.getSolutionValue(i);
+    }
+    catch(const ReluplexError &e){
+        printf( "Caught a ReluplexError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );
+        return ret;
+    }
+    if(output != -1)
+        restoreOutputStream(output);
+    return ret;
+}
+
+// Code necessary to generate Python library
+// Describes which classes and functions are exposed to API
+PYBIND11_MODULE(MarabouCore, m) {
+    m.doc() = "Marabou API Library";
+    m.def("solve", &solve, "Takes in a description of the InputQuery and returns the solution");
+    py::class_<InputQuery>(m, "InputQuery")
+        .def(py::init())
+        .def("setUpperBound", &InputQuery::setUpperBound)
+        .def("setLowerBound", &InputQuery::setLowerBound)
+        .def("getUpperBound", &InputQuery::getUpperBound)
+        .def("getLowerBound", &InputQuery::getLowerBound)
+        .def("setNumberOfVariables", &InputQuery::setNumberOfVariables)
+        .def("addEquation", &InputQuery::addEquation)
+        .def("addReluConstraint", &InputQuery::addReluConstraint);
+    py::class_<Equation>(m, "Equation")
+        .def(py::init())
+        .def("addAddend", &Equation::addAddend)
+        .def("setScalar", &Equation::setScalar)
+        .def("markAuxiliaryVariable", &Equation::markAuxiliaryVariable);
+}
