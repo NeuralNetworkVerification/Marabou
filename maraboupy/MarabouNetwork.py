@@ -4,8 +4,7 @@ import numpy as np
 class MarabouNetwork:
     """
     Abstract class representing general Marabou network
-    Defines functions common to MarabouNetworkNnet and MarabouNetworkTF.
-    Extendable to other input parsers.
+    Defines functions common to MarabouNetworkNnet and MarabouNetworkTF
     """
     def __init__(self):
         """
@@ -90,7 +89,7 @@ class MarabouNetwork:
 
         for r in self.reluList:
             assert r[1] < self.numVars and r[0] < self.numVars
-            ipq.addReluConstraint(r[0], r[1])
+            MarabouCore.addReluConstraint(ipq, r[0], r[1])
         
         for l in self.lowerBounds:
             assert l < self.numVars

@@ -53,6 +53,11 @@ void restoreOutputStream(int outputStream)
     close(outputStream);
 }
 
+void addReluConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
+    PiecewiseLinearConstraint* r = new ReluConstraint(var1, var2);
+    ipq.addPiecewiseLinearConstraint(r);
+}
+
 std::map<int, double> solve(InputQuery inputQuery, std::string redirect=""){
 	// Arguments: InputQuery object, filename to redirect output
     // Returns: map from variable number to value
@@ -84,6 +89,7 @@ std::map<int, double> solve(InputQuery inputQuery, std::string redirect=""){
 PYBIND11_MODULE(MarabouCore, m) {
     m.doc() = "Marabou API Library";
     m.def("solve", &solve, "Takes in a description of the InputQuery and returns the solution");
+    m.def("addReluConstraint", &addReluConstraint, "Add a Relu constraint to the InputQuery");
     py::class_<InputQuery>(m, "InputQuery")
         .def(py::init())
         .def("setUpperBound", &InputQuery::setUpperBound)
@@ -91,8 +97,7 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def("getUpperBound", &InputQuery::getUpperBound)
         .def("getLowerBound", &InputQuery::getLowerBound)
         .def("setNumberOfVariables", &InputQuery::setNumberOfVariables)
-        .def("addEquation", &InputQuery::addEquation)
-        .def("addReluConstraint", &InputQuery::addReluConstraint);
+        .def("addEquation", &InputQuery::addEquation);
     py::class_<Equation>(m, "Equation")
         .def(py::init())
         .def("addAddend", &Equation::addAddend)

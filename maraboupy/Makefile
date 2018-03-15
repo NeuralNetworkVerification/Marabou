@@ -9,6 +9,7 @@ LOCAL_INCLUDES += \
 	$(BASIS_FACTORIZATION_DIR) \
 	$(CONFIGURATION_DIR) \
 	$(ENGINE_DIR) \
+	$(PYBIND11_INCLUDES) \
 
 LINK_FLAGS += \
 
@@ -67,7 +68,14 @@ SOURCES += \
 
 TARGET = $(API_NAME)
 
-include Rules.mk
+include ../Rules.mk
+
+COMPILE = c++ -std=c++11 -O3 -fPIC $(PYBIND11_INCLUDES)
+LINK 	= c++ -std=c++11 -O3 -fPIC -shared -Wl,-undefined,dynamic_lookup $(PYBIND11_INCLUDES)
+
+$(TARGET): $(OBJECTS)
+	@echo "LD\t" $@
+	@$(LINK) $(LINK_FLAGS) -o $@ $^ $(addprefix -l, $(SYSTEM_LIBRARIES)) $(addprefix -l, $(LOCAL_LIBRARIES))
 
 vpath %.cpp $(BASIS_FACTORIZATION_DIR)
 vpath %.cpp $(CONFIGURATION_DIR)

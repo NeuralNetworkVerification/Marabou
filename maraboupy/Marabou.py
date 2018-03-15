@@ -3,7 +3,7 @@ from .MarabouNetworkNNet import *
 from .MarabouNetworkTF import *
 
 def read_nnet(filename):
-	"""
+    """
     Constructs a MarabouNetworkNnet object from a .nnet file
 
     Args:
@@ -15,7 +15,7 @@ def read_nnet(filename):
 
 
 def read_tf(filename, inputName=None, outputName=None):
-	"""
+    """
     Constructs a MarabouNetworkTF object from a frozen Tensorflow protobuf
 
     Args:
