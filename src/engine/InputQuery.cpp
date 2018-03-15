@@ -14,7 +14,6 @@
 #include "MStringf.h"
 #include "ReluplexError.h"
 #include "FloatUtils.h"
-#include "ReluConstraint.h"
 
 InputQuery::InputQuery()
 {
@@ -116,12 +115,6 @@ double InputQuery::getSolutionValue( unsigned variable ) const
                              Stringf( "Variable: %u", variable ).ascii() );
 
     return _solution.get( variable );
-}
-
-void InputQuery::addReluConstraint(unsigned var1, unsigned var2)
-{
-    PiecewiseLinearConstraint* r = new ReluConstraint(var1, var2);
-    addPiecewiseLinearConstraint(r);
 }
 
 void InputQuery::addPiecewiseLinearConstraint( PiecewiseLinearConstraint *constraint )

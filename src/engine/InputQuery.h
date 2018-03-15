@@ -42,7 +42,6 @@ public:
     const List<Equation> &getEquations() const;
 	List<Equation> &getEquations();
 
-    void addReluConstraint(unsigned var1, unsigned var2);
     void addPiecewiseLinearConstraint( PiecewiseLinearConstraint *constraint );
     const List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints() const;
 	List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints();
