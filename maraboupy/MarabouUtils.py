@@ -57,7 +57,7 @@ def addEquality(network, vars, coeffs, scalar):
     network.addEquation(e)
 
 def addInequality(network, vars, coeffs, scalar):
-"""
+    """
     Function to conveniently add inequality constraint to network
     \sum_i vars_i*coeffs_i <= scalar
     Arguments:

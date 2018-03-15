@@ -7,25 +7,25 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
     Class that implements a MarabouNetwork from an NNet file.
     """
     def __init__ (self, filename):
-    """
-    Constructs a MarabouNetworkNNet object from an .nnet file.
+        """
+        Constructs a MarabouNetworkNNet object from an .nnet file.
 
-    Args:
-        filename: path to the .nnet file.
-    Attributes:
-        numLayers        (int) The number of layers in the network
-        layerSizes       (list of ints) Layer sizes.   
-        inputSize        (int) Size of the input.
-        outputSize       (int) Size of the output.
-        maxLayersize     (int) Size of largest layer. 
-        inputMinimums    (list of floats) Minimum value for each input.
-        inputMaximums    (list of floats) Maximum value for each input.
-        inputMeans       (list of floats) Mean value for each input.
-        inputRanges      (list of floats) Range for each input
-        weights          (list of list of lists) Outer index corresponds to layer
-                            number.
-        biases           (list of lists) Outer index corresponds to layer number.
-    """
+        Args:
+            filename: path to the .nnet file.
+        Attributes:
+            numLayers        (int) The number of layers in the network
+            layerSizes       (list of ints) Layer sizes.   
+            inputSize        (int) Size of the input.
+            outputSize       (int) Size of the output.
+            maxLayersize     (int) Size of largest layer. 
+            inputMinimums    (list of floats) Minimum value for each input.
+            inputMaximums    (list of floats) Maximum value for each input.
+            inputMeans       (list of floats) Mean value for each input.
+            inputRanges      (list of floats) Range for each input
+            weights          (list of list of lists) Outer index corresponds to layer
+                                number.
+            biases           (list of lists) Outer index corresponds to layer number.
+        """
         super().__init__()
 
         # read the file and load values
