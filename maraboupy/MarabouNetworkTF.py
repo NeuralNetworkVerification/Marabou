@@ -37,7 +37,7 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         Constructs a MarabouNetworkTF object from a frozen Tensorflow protobuf
 
         Args:
-            filename: (string) path to the .nnet file.
+            filename: (string) path to the .pb file.
             inputName: (string) optional, name of operation corresponding to input
             outputName: (string) optional, name of operation corresponding to output
         """
