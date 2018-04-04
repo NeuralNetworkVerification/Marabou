@@ -409,11 +409,7 @@ void Engine::performSimplexStep()
 
 void Engine::fixViolatedPlConstraintIfPossible()
 {
-    ASSERT( !_violatedPlConstraints.empty() );
-    PiecewiseLinearConstraint *violated = *_violatedPlConstraints.begin();
-    ASSERT( violated );
-
-    List<PiecewiseLinearConstraint::Fix> fixes = violated->getPossibleFixes();
+    List<PiecewiseLinearConstraint::Fix> fixes = _plConstraintToFix->getPossibleFixes();
 
     // First, see if we can fix without pivoting
     for ( const auto &fix : fixes )
@@ -655,7 +651,9 @@ bool Engine::allPlConstraintsHold()
 
 void Engine::selectViolatedPlConstraint()
 {
+    ASSERT( !_violatedPlConstraints.empty() );
     _plConstraintToFix = *_violatedPlConstraints.begin();
+    ASSERT( _plConstraintToFix );
 }
 
 void Engine::reportPlViolation()
