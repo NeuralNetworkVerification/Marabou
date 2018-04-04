@@ -1,5 +1,6 @@
 import numpy as np
 from tensorflow.python.framework import tensor_util
+from tensorflow.python.framework import graph_util
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
@@ -9,17 +10,21 @@ from . import MarabouUtils
 from . import MarabouNetwork
 
 class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
-    def __init__(self, filename, inputName=None, outputName=None):
+    def __init__(self, filename, inputName=None, outputName=None, savedModel=False, savedModelTags=[]):
         """
-        Constructs a MarabouNetworkTF object from a frozen Tensorflow protobuf
+        Constructs a MarabouNetworkTF object from a frozen Tensorflow protobuf or SavedModel
 
         Args:
-            filename: (string) path to the .nnet file.
+            filename: (string) If savedModel is false, path to the frozen graph .pb file.
+                               If savedModel is true, path to SavedModel folder, which
+                               contains .pb file and variables subdirectory.
             inputName: (string) optional, name of operation corresponding to input.
             outputName: (string) optional, name of operation corresponding to output.
+            savedModel: (bool) If false, load frozen graph. If true, load SavedModel object.
+            savedModelTags: (list of strings) If loading a SavedModel, the user must specify tags used.
         """
         super().__init__()
-        self.readFromPb(filename, inputName, outputName)
+        self.readFromPb(filename, inputName, outputName, savedModel, savedModelTags)
     
     def clear(self):
         """
@@ -32,23 +37,41 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         self.outputOp = None
         self.sess = None
 
-    def readFromPb(self, filename, inputName, outputName):
+    def readFromPb(self, filename, inputName, outputName, savedModel, savedModelTags):
         """
-        Constructs a MarabouNetworkTF object from a frozen Tensorflow protobuf
+        Constructs a MarabouNetworkTF object from a frozen Tensorflow protobuf or SavedModel
 
         Args:
-            filename: (string) path to the .pb file.
-            inputName: (string) optional, name of operation corresponding to input
-            outputName: (string) optional, name of operation corresponding to output
+            filename: (string) If savedModel is false, path to the frozen graph .pb file.
+                               If savedModel is true, path to SavedModel folder, which
+                               contains .pb file and variables subdirectory.
+            inputName: (string) optional, name of operation corresponding to input.
+            outputName: (string) optional, name of operation corresponding to output.
+            savedModel: (bool) If false, load frozen graph. If true, load SavedModel object.
+            savedModelTags: (list of strings) If loading a SavedModel, the user must specify tags used.
         """
-        ### Read protobuf file and begin session ###
-        with tf.gfile.GFile(filename, "rb") as f:
-            graph_def = tf.GraphDef()
-            graph_def.ParseFromString(f.read())
-        with tf.Graph().as_default() as graph:
-            tf.import_graph_def(graph_def, name="")
-        self.sess = tf.Session(graph=graph)
-        ### END reading protobuf ###
+        
+        if savedModel:
+            ### Read SavedModel ###
+            sess = tf.Session()
+            tf.saved_model.loader.load(sess, savedModelTags, filename)
+            
+            ### Simplify graph using outputName, which must be specified for SavedModel ###
+            simp_graph_def = graph_util.convert_variables_to_constants(sess,sess.graph.as_graph_def(),[outputName])  
+            with tf.Graph().as_default() as graph:
+                tf.import_graph_def(simp_graph_def, name="")
+            self.sess = tf.Session(graph=graph)
+            ### End reading SavedModel
+            
+        else:
+            ### Read protobuf file and begin session ###
+            with tf.gfile.GFile(filename, "rb") as f:
+                graph_def = tf.GraphDef()
+                graph_def.ParseFromString(f.read())
+            with tf.Graph().as_default() as graph:
+                tf.import_graph_def(graph_def, name="")
+            self.sess = tf.Session(graph=graph)
+            ### END reading protobuf ###
 
         ### Find operations corresponding to input and output ###
         if inputName:
@@ -78,8 +101,11 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         Arguments:
             op: (tf.op) Representing input
         """
-        shape = tuple(op.outputs[0].shape.as_list())
-        self.shapeMap[op] = shape
+        try:
+            shape = tuple(op.outputs[0].shape.as_list())
+            self.shapeMap[op] = shape
+        except:
+            self.shapeMap[op] = [None]
         self.inputOp = op
         self.inputVars = self.opToVarArray(self.inputOp)
 
@@ -89,8 +115,11 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         Arguments:
             op: (tf.op) Representing output
         """
-        shape = tuple(op.outputs[0].shape.as_list())
-        self.shapeMap[op] = shape
+        try:
+            shape = tuple(op.outputs[0].shape.as_list())
+            self.shapeMap[op] = shape
+        except:
+            self.shapeMap[op] = [None]
         self.outputOp = op
         self.outputVars = self.opToVarArray(self.outputOp)    
 
