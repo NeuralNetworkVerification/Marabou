@@ -25,4 +25,4 @@ def read_tf(filename, inputName=None, outputName=None):
     Returns:
         marabouNetworkTF: (MarabouNetworkTF) representing network
     """
-    return MarabouNetworkTF(filename)
+    return MarabouNetworkTF(filename, inputName, outputName)
