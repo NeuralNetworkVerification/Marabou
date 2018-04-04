@@ -146,7 +146,6 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         ### END finding number of new variables ###
 
         v = np.array([self.getNewVariable() for _ in range(size)]).reshape(shape)
-        self.numVars += size
         self.varMap[x] = v
         return v
         
