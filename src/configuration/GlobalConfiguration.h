@@ -76,6 +76,10 @@ public:
     // When doing bound tightening using the explicit basis matrix, should the basis matrix be inverted?
     static const bool EXPLICIT_BASIS_BOUND_TIGHTENING_INVERT_BASIS;
 
+    // Use a heuristic-based cost function to help guide the search towards feasible solutions.
+    static const bool USE_HEURISTIC_COST_FUNCTION;
+    static const bool COST_FUNCTION_EXPERIMENTAL;
+
     // Logging
     static const bool ENGINE_LOGGING;
     static const bool TABLEAU_LOGGING;

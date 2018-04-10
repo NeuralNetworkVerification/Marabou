@@ -35,9 +35,12 @@ const double GlobalConfiguration::PSE_GAMMA_ERROR_THRESHOLD = 0.001;
 
 const bool GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_INVERT_BASIS = true;
 
+const bool GlobalConfiguration::USE_HEURISTIC_COST_FUNCTION = true;
+const bool GlobalConfiguration::COST_FUNCTION_EXPERIMENTAL = true;
+
 // Logging
 const bool GlobalConfiguration::ENGINE_LOGGING = false;
-const bool GlobalConfiguration::TABLEAU_LOGGING = false;
+const bool GlobalConfiguration::TABLEAU_LOGGING = true;
 const bool GlobalConfiguration::SMT_CORE_LOGGING = false;
 const bool GlobalConfiguration::DANTZIGS_RULE_LOGGING = false;
 const bool GlobalConfiguration::BASIS_FACTORIZATION_LOGGING = false;

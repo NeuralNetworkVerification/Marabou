@@ -876,16 +876,15 @@ void Tableau::computeChangeColumn()
     // Compute d = inv(B) * a using the basis factorization
     _basisFactorization->forwardTransformation( _a, _changeColumn );
 
-    // printf( "Leaving variable selection: dumping a\n\t" );
-    // for ( unsigned i = 0; i < _m; ++i )
-    //     printf( "%lf ", _a[i] );
-    // printf( "\n" );
+    printf( "Dumping change column for entering variable x%u\n\t",
+            _nonBasicIndexToVariable[_enteringVariable] );
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        if ( !FloatUtils::isZero( _changeColumn[i] ) )
+            printf( "%.2lf x%u, ", _changeColumn[i], _basicIndexToVariable[i] );
+    }
 
-    // printf( "Leaving variable selection: dumping d\n\t" );
-    // for ( unsigned i = 0; i < _m; ++i )
-    //     printf( "%lf ", _d[i] );
-
-    // printf( "\n" );
+    printf( "\n" );
 }
 
 const double *Tableau::getChangeColumn() const

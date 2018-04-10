@@ -260,8 +260,50 @@ void Engine::performSimplexStep()
          next-best entering variable.
     */
 
-    if ( _costFunctionManager->costFunctionInvalid() )
-        _costFunctionManager->computeCoreCostFunction();
+    if ( GlobalConfiguration::COST_FUNCTION_EXPERIMENTAL )
+    {
+        // In experimental mode, we always re-compute the cost function - either
+        // core or heuristic based.
+        if ( GlobalConfiguration::USE_HEURISTIC_COST_FUNCTION )
+        {
+            Map<unsigned, double> heuristicCost;
+            for ( const auto &constraint : _plConstraints )
+                if ( constraint->isActive() && !constraint->satisfied() )
+                    constraint->getCostFunctionComponent( heuristicCost );
+
+            _costFunctionManager->computeCostFunction( heuristicCost );
+            printf( "\n" );
+            _costFunctionManager->dumpCostFunction();
+            printf( "\n" );
+            printf( "Dumping basic variables:\n" );
+            for ( unsigned i = 0; i < _tableau->getN(); ++i )
+            {
+                if ( _tableau->isBasic( i ) )
+                    printf( "\tx%u\n", i );
+            }
+            printf( "\n" );
+
+            printf( "Dumping equation for x88 (if basic)\n" );
+            if ( _tableau->isBasic( 88 ) )
+            {
+                TableauRow row( _tableau->getN() - _tableau->getM() );
+                _tableau->getTableauRow( _tableau->variableToIndex( 88 ), &row );
+                row.dump();
+            }
+            printf( "\n" );
+
+        }
+        else
+        {
+            _costFunctionManager->computeCoreCostFunction();
+        }
+    }
+    else
+    {
+        // If not in experimental mode, re-compute only if we need to.
+        if ( _costFunctionManager->costFunctionInvalid() )
+            _costFunctionManager->computeCoreCostFunction();
+    }
 
     DEBUG({
             // Since we're performing a simplex step, there are out-of-bounds variables.

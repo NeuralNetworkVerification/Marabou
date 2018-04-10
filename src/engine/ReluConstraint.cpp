@@ -381,49 +381,127 @@ void ReluConstraint::getAuxiliaryEquations( List<Equation> &newEquations ) const
 
 void ReluConstraint::getCostFunctionComponent( Map<unsigned, double> &cost ) const
 {
+
+    double bValue = _assignment.get( _b );
+    double fValue = _assignment.get( _f );
+
+    printf( "Relu constraint. b: %u, bValue: %.2lf. f: %u, fValue: %.2lf. ",
+            _b, bValue, _f, fValue );
+
     // This should not be called for inactive constraints
     ASSERT( isActive() );
 
     // If the constraint is satisfied, fixed or has OOB components,
     // it contributes nothing
     if ( satisfied() || phaseFixed() || haveOutOfBoundVariables() )
+    {
+        // printf( "Ignoring\n" );
+        printf( "\n" );
         return;
+    }
 
     // Both variables are within bounds and the constraint is not
     // satisfied or fixed.
-    double bValue = _assignment.get( _b );
-    double fValue = _assignment.get( _f );
-
-    if ( !cost.exists( _f ) )
-        cost[_f] = 0;
 
     // Case 1: b is non-positive, f is not zero. Cost: f
     if ( !FloatUtils::isPositive( bValue ) )
     {
         ASSERT( !FloatUtils::isZero( fValue ) );
+
+        if ( !cost.exists( _f ) )
+            cost[_f] = 0;
+
         cost[_f] = cost[_f] + 1;
+        printf( "contributing: f\n" );
         return;
     }
 
     ASSERT( !FloatUtils::isNegative( bValue ) );
     ASSERT( !FloatUtils::isNegative( fValue ) );
 
-    if ( !cost.exists( _b ) )
-        cost[_b] = 0;
-
-    // Case 2: both non-negative, not equal, b > f. Cost: b - f
-    if ( FloatUtils::gt( bValue, fValue ) )
+    // Both b and f are non-negative. We only add a cost
+    // if one of them is pressed against a bound, to prevent cycling.
+    if ( FloatUtils::areEqual( bValue, _lowerBounds[_b] ) )
     {
-        cost[_b] = cost[_b] + 1;
-        cost[_f] = cost[_f] - 1;
-        return;
+        // b is at its lower bound, f should be decreased
+        if ( !cost.exists( _f ) )
+            cost[_f] = 0;
+        printf( "contributing: f\n" );
+        cost[_f] = cost[_f] + 1;
     }
-
-    // Case 3: both non-negative, not equal, f > b. Cost: f - b
-    cost[_b] = cost[_b] - 1;
-    cost[_f] = cost[_f] + 1;
-    return;
+    else if ( FloatUtils::areEqual( bValue, _upperBounds[_b] ) )
+    {
+        // b is at its upper bound, f should be increased
+        if ( !cost.exists( _f ) )
+            cost[_f] = 0;
+        printf( "contributing: -f\n" );
+        cost[_f] = cost[_f] - 1;
+    }
+    else if ( FloatUtils::areEqual( fValue, _lowerBounds[_f] ) )
+    {
+        // f is at its lower bound, b should be decreased
+        if ( !cost.exists( _b ) )
+            cost[_b] = 0;
+        printf( "contributing: b\n" );
+        cost[_b] = cost[_b] + 1;
+    }
+    else if ( FloatUtils::areEqual( fValue, _upperBounds[_f] ) )
+    {
+        // f is at its upper bound, b should be increased
+        if ( !cost.exists( _b ) )
+            cost[_b] = 0;
+        printf( "contributing: -b\n" );
+        cost[_b] = cost[_b] - 1;
+    }
+    else
+        printf( "\n" );
 }
+
+// void ReluConstraint::getCostFunctionComponent( Map<unsigned, double> &cost ) const
+// {
+//     // This should not be called for inactive constraints
+//     ASSERT( isActive() );
+
+//     // If the constraint is satisfied, fixed or has OOB components,
+//     // it contributes nothing
+//     if ( satisfied() || phaseFixed() || haveOutOfBoundVariables() )
+//         return;
+
+//     // Both variables are within bounds and the constraint is not
+//     // satisfied or fixed.
+//     double bValue = _assignment.get( _b );
+//     double fValue = _assignment.get( _f );
+
+//     if ( !cost.exists( _f ) )
+//         cost[_f] = 0;
+
+//     // Case 1: b is non-positive, f is not zero. Cost: f
+//     if ( !FloatUtils::isPositive( bValue ) )
+//     {
+//         ASSERT( !FloatUtils::isZero( fValue ) );
+//         cost[_f] = cost[_f] + 1;
+//         return;
+//     }
+
+//     ASSERT( !FloatUtils::isNegative( bValue ) );
+//     ASSERT( !FloatUtils::isNegative( fValue ) );
+
+//     if ( !cost.exists( _b ) )
+//         cost[_b] = 0;
+
+//     // Case 2: both non-negative, not equal, b > f. Cost: b - f
+//     if ( FloatUtils::gt( bValue, fValue ) )
+//     {
+//         cost[_b] = cost[_b] + 1;
+//         cost[_f] = cost[_f] - 1;
+//         return;
+//     }
+
+//     // Case 3: both non-negative, not equal, f > b. Cost: f - b
+//     cost[_b] = cost[_b] - 1;
+//     cost[_f] = cost[_f] + 1;
+//     return;
+// }
 
 bool ReluConstraint::haveOutOfBoundVariables() const
 {

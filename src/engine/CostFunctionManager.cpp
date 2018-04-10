@@ -89,6 +89,8 @@ void CostFunctionManager::computeCostFunction( const Map<unsigned, double> &heur
       the remaining, non-basic variables are added.
     */
 
+    // printf( "Number of addends from heurstic: %u\n", heuristicCost.size() );
+
     // Reset cost function
     std::fill( _costFunction, _costFunction + _n - _m, 0.0 );
 
@@ -111,10 +113,15 @@ void CostFunctionManager::computeCostFunction( const Map<unsigned, double> &heur
     // Complete the calculation of the modified core cost function
     computeMultipliers();
     computeReducedCosts();
+
+    // So that it doesn't count as "fresh" for declaring UNSAT
+    _costFunctionStatus = ICostFunctionManager::COST_FUNCTION_UPDATED;
 }
 
 void CostFunctionManager::computeCoreCostFunction()
 {
+    //    printf( "Compute CORE called\n" );
+
     /*
       The core cost function is computed in three steps:
 
