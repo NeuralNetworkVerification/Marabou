@@ -71,7 +71,7 @@ PermutationMatrix *PermutationMatrix::invert() const
     return inverse;
 }
 
-unsigned PermutationMatrix::findIndexOfRow( unsigned row )
+unsigned PermutationMatrix::findIndexOfRow( unsigned row ) const
 {
     ASSERT( row < _m );
 

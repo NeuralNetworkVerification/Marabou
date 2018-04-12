@@ -28,7 +28,9 @@ ForrestTomlinFactorization::ForrestTomlinFactorization( unsigned m )
     , _workMatrix( NULL )
     , _workVector( NULL )
     , _workW( NULL )
-    , _lastStoredW( NULL )
+    , _workQ( m )
+    , _workR( m )
+    , _storedW( NULL )
 {
     _B = new double[m * m];
     if ( !_B )
@@ -67,10 +69,10 @@ ForrestTomlinFactorization::ForrestTomlinFactorization( unsigned m )
     if ( !_workW )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
                                        "ForrestTomlinFactorization::workW" );
-    _lastStoredW = new double[m];
-    if ( !_lastStoredW )
+    _storedW = new double[m];
+    if ( !_storedW )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
-                                       "ForrestTomlinFactorization::lastStoredW" );
+                                       "ForrestTomlinFactorization::storedW" );
 }
 
 ForrestTomlinFactorization::~ForrestTomlinFactorization()
@@ -120,10 +122,10 @@ ForrestTomlinFactorization::~ForrestTomlinFactorization()
         _workW = NULL;
     }
 
-    if ( _lastStoredW )
+    if ( _storedW )
     {
-        delete[] _lastStoredW;
-        _lastStoredW = NULL;
+        delete[] _storedW;
+        _storedW = NULL;
     }
 
     List<LPElement *>::iterator lpIt;
@@ -132,26 +134,74 @@ ForrestTomlinFactorization::~ForrestTomlinFactorization()
 	_LP.clear();
 }
 
-void ForrestTomlinFactorization::pushEtaMatrix( unsigned /* columnIndex */, const double */* column */ )
+void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const double */* column */ )
 {
     /*
       The first step is to compute V = URE * inv(R). V differs from U in just
-      one column.
-
-      TODO: don't need to recompute this - see book!
+      one column. This column should have already been found during the previous
+      forward transformation, in which case it is stored as _storedW.
+      The index of this changed column, depends on R.
     */
 
-    // This is the eta column index, modified by inv(R). If row i is mapped to columnIndex
-    // in R, then columnIndex will be mapped to i in inv(R).
-    // unsigned newColumnInUIndex;
-    // for ( unsigned i = 0; i < _m; ++i )
-    // {
-    //     if ( _R->_ordering[i] == columnIndex )
-    //     {
-    //         newColumnInUIndex = i;
-    //         break;
-    //     }
-    // }
+    // Extract the index of the changed U column, and update it to _storedW.
+    unsigned indexOfChangedUColumn = _R.findIndexOfRow( columnIndex );
+    memcpy( _U[indexOfChangedUColumn - 1]->_column, _storedW, sizeof(double) * _m );
+
+    /*
+      V is upper triangular except for one column. We pick workQ and workR
+      so that workQ * V * workR is upper triangular except for the last row.
+    */
+    _workQ.resetToIdentity();
+    for ( unsigned i = indexOfChangedUColumn; i < _m - 1; ++i )
+        _workQ._ordering[i] = i + 1;
+    _workQ._ordering[_m - 1] = indexOfChangedUColumn;
+
+    // TODO: R is just the transpose of Q
+    PermutationMatrix *invertedQ = _workQ.invert();
+    _workR = *invertedQ;
+    delete invertedQ;
+
+    /*
+      Now we have workQ * V * workR that is upper triangular except the last row.
+      We construct a new sequence of AlmostIdentityMatrices that make it upper
+      triangular.
+    */
+
+    // Start by resetting the old matrices
+    for ( unsigned i = 0; i < _m; ++i )
+        _A[i]._identity = true;
+
+    // Now, go adjust these matrices according to the last row
+    // of workQ * V * workR, which is of course not stored explicitly.
+    for ( unsigned i = indexOfChangedUColumn; i < _m; ++i )
+    {
+        // Initialize to the non-modified bump value, according to the
+        // permutations. This is cell (m,i).
+        unsigned originalRow = _workQ._ordering[_m - 1];
+        unsigned originalCol = _workQ._ordering[i];
+
+        double bumpValue = _U[originalCol]->_column[originalRow];
+            // V[originalRow * _m + originalCol];
+
+        for ( unsigned j = indexOfChangedUColumn; j < i; ++i )
+        {
+            if ( !_A[j]._identity )
+                bumpValue += _A[j]._value * _U[_workQ._ordering[_A[j]._column]]->_column[_workQ._ordering[_A[j]._column]];
+                    //V[_workQ._ordering[_A[j]._col] * _m + _workQ._ordering[_A[j]._col]];
+        }
+
+        // If the bump value is zero, nothing needs to be done
+        if ( FloatUtils::isZero( bumpValue ) )
+            continue;
+
+        // Now we want to zero out the bump value using an A matrix
+        double diagonalValue = _U[_workQ._ordering[i]]->_column[_workQ._ordering[i]];
+            // V[_workQ._ordering[i] * m + _workQ[_ordering[i]]];
+        _A[i]._row = _m - 1;
+        _A[i]._column = i;
+        _A[i]._value = bumpValue / diagonalValue;
+        _A[i]._identity = false;
+    }
 }
 
 void ForrestTomlinFactorization::forwardTransformation( const double *y, double *x ) const
@@ -226,7 +276,7 @@ void ForrestTomlinFactorization::forwardTransformation( const double *y, double 
     /****
     Intermediate step: store w for later use
     ****/
-    memcpy( _lastStoredW, _workW, sizeof(double) * _m );
+    memcpy( _storedW, _workW, sizeof(double) * _m );
 
     /****
     Step 2: Find x such that:  Um....U1 * R * x = w

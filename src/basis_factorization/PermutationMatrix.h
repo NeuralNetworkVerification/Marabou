@@ -39,7 +39,7 @@ public:
       Return the index of an identity row in this
       permuation matrix.
     */
-    unsigned findIndexOfRow( unsigned row );
+    unsigned findIndexOfRow( unsigned row ) const;
 
     /*
       Return the matrix size

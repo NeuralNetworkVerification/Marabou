@@ -128,13 +128,15 @@ private:
     double *_workMatrix;
     double *_workVector;
     double *_workW;
+    PermutationMatrix _workQ;
+    PermutationMatrix _workR;
 
     /*
       This is a vector that is naturally computed as part of the forward
       transformation performed to find the change column for a pivot step.
       It is also used when an eta matrix is pushed.
     */
-    double *_lastStoredW;
+    double *_storedW;
 
     /*
       After a new basis matrix is set, initialize the LU factorization
