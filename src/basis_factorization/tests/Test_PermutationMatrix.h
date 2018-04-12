@@ -127,6 +127,27 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( delete invP2 );
     }
+
+    void test_find_index_of_row()
+    {
+        PermutationMatrix p( 4 );
+
+        p._ordering[0] = 0;
+        p._ordering[1] = 3;
+        p._ordering[2] = 1;
+        p._ordering[3] = 2;
+
+        TS_ASSERT_EQUALS( p.findIndexOfRow( 0 ), 0U );
+        TS_ASSERT_EQUALS( p.findIndexOfRow( 1 ), 2U );
+        TS_ASSERT_EQUALS( p.findIndexOfRow( 2 ), 3U );
+        TS_ASSERT_EQUALS( p.findIndexOfRow( 3 ), 1U );
+
+        p._ordering[3] = 1;
+        TS_ASSERT_THROWS_EQUALS( p.findIndexOfRow( 2 ),
+                                 const BasisFactorizationError &e,
+                                 e.getCode(),
+                                 BasisFactorizationError::CORRUPT_PERMUATION_MATRIX );
+    }
 };
 
 //

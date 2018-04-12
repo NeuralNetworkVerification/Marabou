@@ -11,10 +11,11 @@
  **/
 
 #include "BasisFactorizationError.h"
+#include "Debug.h"
 #include "PermutationMatrix.h"
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <cstdio>
 
 PermutationMatrix::PermutationMatrix( unsigned m )
     : _ordering( NULL )
@@ -68,6 +69,17 @@ PermutationMatrix *PermutationMatrix::invert() const
         inverse->_ordering[_ordering[i]] = i;
 
     return inverse;
+}
+
+unsigned PermutationMatrix::findIndexOfRow( unsigned row )
+{
+    ASSERT( row < _m );
+
+    for ( unsigned i = 0; i < _m; ++i )
+        if ( _ordering[i] == row )
+            return i;
+
+    throw BasisFactorizationError( BasisFactorizationError::CORRUPT_PERMUATION_MATRIX );
 }
 
 unsigned PermutationMatrix::getM() const

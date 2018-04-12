@@ -36,6 +36,12 @@ public:
     PermutationMatrix *invert() const;
 
     /*
+      Return the index of an identity row in this
+      permuation matrix.
+    */
+    unsigned findIndexOfRow( unsigned row );
+
+    /*
       Return the matrix size
     */
     unsigned getM() const;
