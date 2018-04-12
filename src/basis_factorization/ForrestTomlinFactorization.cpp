@@ -28,6 +28,7 @@ ForrestTomlinFactorization::ForrestTomlinFactorization( unsigned m )
     , _workMatrix( NULL )
     , _workVector( NULL )
     , _workW( NULL )
+    , _lastStoredW( NULL )
 {
     _B = new double[m * m];
     if ( !_B )
@@ -66,6 +67,10 @@ ForrestTomlinFactorization::ForrestTomlinFactorization( unsigned m )
     if ( !_workW )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
                                        "ForrestTomlinFactorization::workW" );
+    _lastStoredW = new double[m];
+    if ( !_lastStoredW )
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                       "ForrestTomlinFactorization::lastStoredW" );
 }
 
 ForrestTomlinFactorization::~ForrestTomlinFactorization()
@@ -113,6 +118,12 @@ ForrestTomlinFactorization::~ForrestTomlinFactorization()
     {
         delete[] _workW;
         _workW = NULL;
+    }
+
+    if ( _lastStoredW )
+    {
+        delete[] _lastStoredW;
+        _lastStoredW = NULL;
     }
 
     List<LPElement *>::iterator lpIt;
@@ -211,6 +222,11 @@ void ForrestTomlinFactorization::forwardTransformation( const double *y, double 
     for ( unsigned i = 0; i < _m; ++i )
         _workW[invQ->_ordering[i]] = _workVector[i];
     delete invQ;
+
+    /****
+    Intermediate step: store w for later use
+    ****/
+    memcpy( _lastStoredW, _workW, sizeof(double) * _m );
 
     /****
     Step 2: Find x such that:  Um....U1 * R * x = w
