@@ -81,6 +81,8 @@ public:
     unsigned getMaxStackDepth() const;
     unsigned getNumPops() const;
     unsigned getNumVisitedTreeStates() const;
+    unsigned getNumSplits() const;
+    unsigned long long getTotalTime() const;
 
     /*
       Bound tightening related statistics.
