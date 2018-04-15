@@ -136,19 +136,19 @@ ForrestTomlinFactorization::~ForrestTomlinFactorization()
 void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const double */* column */ )
 {
     /*
-      The first step is to compute V = URE * inv(R). V differs from U in just
+      The first step is to compute V = U * invQ * E * Q. V differs from U in just
       one column. This column should have already been found during the previous
       forward transformation, in which case it is stored as _storedW.
-      The index of this changed column, depends on R.
+      The index of this changed column, depends on Q.
     */
 
     // Extract the index of the changed U column, and update it to _storedW.
-    unsigned indexOfChangedUColumn = _invQ.findIndexOfRow( columnIndex );
+    unsigned indexOfChangedUColumn = _Q.findIndexOfRow( columnIndex );
     memcpy( _U[indexOfChangedUColumn - 1]->_column, _storedW, sizeof(double) * _m );
 
     /*
-      V is upper triangular except for one column. We pick workQ and workR
-      so that workQ * V * workR is upper triangular except for the last row.
+      V is upper triangular except for one column. We pick workQ
+      so that workQ * V * invWorkQ is upper triangular except for the last row.
     */
     _workQ.resetToIdentity();
     for ( unsigned i = indexOfChangedUColumn; i < _m - 1; ++i )
@@ -156,7 +156,7 @@ void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const doub
     _workQ._ordering[_m - 1] = indexOfChangedUColumn;
 
     /*
-      Now we have workQ * V * workR that is upper triangular except the last row.
+      Now we have workQ * V * invWorkQ that is upper triangular except the last row.
       We construct a new sequence of AlmostIdentityMatrices that make it upper
       triangular.
     */
@@ -175,13 +175,11 @@ void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const doub
         unsigned originalCol = _workQ._ordering[i];
 
         double bumpValue = _U[originalCol]->_column[originalRow];
-            // V[originalRow * _m + originalCol];
 
         for ( unsigned j = indexOfChangedUColumn; j < i; ++i )
         {
             if ( !_A[j]._identity )
                 bumpValue += _A[j]._value * _U[_workQ._ordering[_A[j]._column]]->_column[_workQ._ordering[_A[j]._column]];
-                    //V[_workQ._ordering[_A[j]._col] * _m + _workQ._ordering[_A[j]._col]];
         }
 
         // If the bump value is zero, nothing needs to be done
@@ -190,7 +188,7 @@ void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const doub
 
         // Now we want to zero out the bump value using an A matrix
         double diagonalValue = _U[_workQ._ordering[i]]->_column[_workQ._ordering[i]];
-            // V[_workQ._ordering[i] * m + _workQ[_ordering[i]]];
+
         _A[i]._row = _m - 1;
         _A[i]._column = i;
         _A[i]._value = bumpValue / diagonalValue;
