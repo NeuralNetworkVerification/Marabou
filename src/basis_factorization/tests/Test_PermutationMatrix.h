@@ -126,6 +126,16 @@ public:
         TS_ASSERT_EQUALS( invP2->_ordering[4], 1U );
 
         TS_ASSERT_THROWS_NOTHING( delete invP2 );
+
+        PermutationMatrix otherInvP2( 5 );
+
+        p2.invert( otherInvP2 );
+
+        TS_ASSERT_EQUALS( otherInvP2._ordering[0], 3U );
+        TS_ASSERT_EQUALS( otherInvP2._ordering[1], 4U );
+        TS_ASSERT_EQUALS( otherInvP2._ordering[2], 0U );
+        TS_ASSERT_EQUALS( otherInvP2._ordering[3], 2U );
+        TS_ASSERT_EQUALS( otherInvP2._ordering[4], 1U );
     }
 
     void test_find_index_of_row()

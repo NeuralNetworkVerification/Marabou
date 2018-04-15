@@ -23,13 +23,12 @@ ForrestTomlinFactorization::ForrestTomlinFactorization( unsigned m )
     , _B( NULL )
     , _A( NULL )
     , _Q( m )
+    , _invQ( m )
     , _U( NULL )
-    , _R( m )
     , _workMatrix( NULL )
     , _workVector( NULL )
     , _workW( NULL )
     , _workQ( m )
-    , _workR( m )
     , _storedW( NULL )
 {
     _B = new double[m * m];
@@ -144,7 +143,7 @@ void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const doub
     */
 
     // Extract the index of the changed U column, and update it to _storedW.
-    unsigned indexOfChangedUColumn = _R.findIndexOfRow( columnIndex );
+    unsigned indexOfChangedUColumn = _invQ.findIndexOfRow( columnIndex );
     memcpy( _U[indexOfChangedUColumn - 1]->_column, _storedW, sizeof(double) * _m );
 
     /*
@@ -155,11 +154,6 @@ void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const doub
     for ( unsigned i = indexOfChangedUColumn; i < _m - 1; ++i )
         _workQ._ordering[i] = i + 1;
     _workQ._ordering[_m - 1] = indexOfChangedUColumn;
-
-    // TODO: R is just the transpose of Q
-    PermutationMatrix *invertedQ = _workQ.invert();
-    _workR = *invertedQ;
-    delete invertedQ;
 
     /*
       Now we have workQ * V * workR that is upper triangular except the last row.
@@ -210,7 +204,7 @@ void ForrestTomlinFactorization::forwardTransformation( const double *y, double 
       The goal is to find x such that Bx = y.
       We know that the following equation holds:
 
-           Am...A1 * LsPs...L1P1 * B = Q * Um...U1 * R
+           Am...A1 * LsPs...L1P1 * B = Q * Um...U1 * invQ
 
       We find x in 2 steps:
 
@@ -268,10 +262,8 @@ void ForrestTomlinFactorization::forwardTransformation( const double *y, double 
     }
 
     // Multiply by inv(Q)
-    PermutationMatrix *invQ = _Q.invert();
     for ( unsigned i = 0; i < _m; ++i )
-        _workW[invQ->_ordering[i]] = _workVector[i];
-    delete invQ;
+        _workW[_invQ._ordering[i]] = _workVector[i];
 
     /****
     Intermediate step: store w for later use
@@ -279,7 +271,7 @@ void ForrestTomlinFactorization::forwardTransformation( const double *y, double 
     memcpy( _storedW, _workW, sizeof(double) * _m );
 
     /****
-    Step 2: Find x such that:  Um....U1 * R * x = w
+    Step 2: Find x such that:  Um....U1 * invQ * x = w
     ****/
 
     // Eliminate the U's
@@ -303,11 +295,10 @@ void ForrestTomlinFactorization::forwardTransformation( const double *y, double 
         memcpy( _workW, _workVector, sizeof(double) * _m );
     }
 
-    // We are now left with Rx = w (for our modified w). Multiply by inv(R) and be done.
-    PermutationMatrix *invR = _R.invert();
+
+    // We are now left with invQ x = w (for our modified w). Multiply by Q and be done.
     for ( unsigned i = 0; i < _m; ++i )
-        x[invR->_ordering[i]] = _workW[i];
-    delete invR;
+        x[_Q._ordering[i]] = _workW[i];
 }
 
 void ForrestTomlinFactorization::backwardTransformation( const double *y, double *x ) const
@@ -316,30 +307,28 @@ void ForrestTomlinFactorization::backwardTransformation( const double *y, double
       The goal is to find x such that xB = y.
       We know that the following equation holds:
 
-      Am...A1 * LsPs...L1P1 * B = Q * Um...U1 * R
+      Am...A1 * LsPs...L1P1 * B = Q * Um...U1 * invQ
 
       We find x in 2 steps:
 
       1. Find v such that
 
-      v * Um...U1 = y * inv(R)
+      v * Um...U1 = y * Q
 
       2. Find x such that
 
-      x = v * inv(Q) * Am...A1 * LsPs...L1P1
+      x = v * invQ * Am...A1 * LsPs...L1P1
     */
 
     unsigned columnIndex;
 
     /****
-         Step 1: Find v such that:  v * Um...U1 = y * inv(R)
+         Step 1: Find v such that:  v * Um...U1 = y * Q
     ****/
 
-    // Multiply y by inv(R), store in _workVector
-    PermutationMatrix *invR = _R.invert();
+    // Multiply y by Q, store in _workVector
     for ( unsigned i = 0; i < _m; ++i )
-        _workVector[invR->_ordering[i]] = y[i];
-    delete invR;
+        _workVector[_Q._ordering[i]] = y[i];
 
     // Eliminate the U's
     for ( unsigned i = 0; i < _m; ++i )
@@ -362,14 +351,12 @@ void ForrestTomlinFactorization::backwardTransformation( const double *y, double
     }
 
     /****
-    Step 2: x = v * inv(Q) * Am...A1 * LsPs...L1P1
+    Step 2: x = v * invQ * Am...A1 * LsPs...L1P1
     ****/
 
-    // Multiply by inv(Q)
-    PermutationMatrix *invQ = _Q.invert();
+    // Multiply by invQ
     for ( unsigned i = 0; i < _m; ++i )
-        x[invQ->_ordering[i]] = _workVector[i];
-    delete invQ;
+        x[_invQ._ordering[i]] = _workVector[i];
 
     // Mutiply by the As
     for ( int i = _m - 1; i >= 0; --i )
@@ -434,7 +421,7 @@ void ForrestTomlinFactorization::clearFactorization()
 	_LP.clear();
 
     _Q.resetToIdentity();
-    _R.resetToIdentity();
+    _invQ.resetToIdentity();
 
     for ( unsigned i = 0; i < _m; ++i )
     {
@@ -549,9 +536,9 @@ const PermutationMatrix *ForrestTomlinFactorization::getQ() const
     return &_Q;
 }
 
-const PermutationMatrix *ForrestTomlinFactorization::getR() const
+const PermutationMatrix *ForrestTomlinFactorization::getInvQ() const
 {
-    return &_R;
+    return &_invQ;
 }
 
 const EtaMatrix **ForrestTomlinFactorization::getU() const
@@ -584,11 +571,7 @@ void ForrestTomlinFactorization::setA( unsigned index, const AlmostIdentityMatri
 void ForrestTomlinFactorization::setQ( const PermutationMatrix &Q )
 {
     _Q = Q;
-}
-
-void ForrestTomlinFactorization::setR( const PermutationMatrix &R )
-{
-    _R = R;
+    _Q.invert( _invQ );
 }
 
 //

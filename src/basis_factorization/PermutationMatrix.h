@@ -34,6 +34,7 @@ public:
       Produce the inverse of the permutation matrix
     */
     PermutationMatrix *invert() const;
+    void invert( PermutationMatrix &inv ) const;
 
     /*
       Return the index of an identity row in this

@@ -22,13 +22,13 @@
 /*
   Forrest-Tomlin factorization looks like this:
 
-  Am...A1 * LsPs...L1P1 * B = Q * Um...U1 * R
+  Am...A1 * LsPs...L1P1 * B = Q * Um...U1 * inv(Q)
 
   Where:
   - The A matrices are "almost-diagonal", i.e. diagonal matrices
   with one extra entry off the diagonal.
   - The L and U matrices are as in a usual LU factorization
-  - Q and R are permutation matrices
+  - Q (and inv(Q)) are permutation matrices
 */
 class ForrestTomlinFactorization : public IBasisFactorization
 {
@@ -93,14 +93,13 @@ public:
       For testing purposes only
     */
     const PermutationMatrix *getQ() const;
-    const PermutationMatrix *getR() const;
+    const PermutationMatrix *getInvQ() const;
     const EtaMatrix **getU() const;
     const List<LPElement *> *getLP() const;
     const AlmostIdentityMatrix *getA() const;
 
     void setA( unsigned index, const AlmostIdentityMatrix &matrix );
     void setQ( const PermutationMatrix &Q );
-    void setR( const PermutationMatrix &R );
 
 private:
     /*
@@ -119,8 +118,8 @@ private:
     AlmostIdentityMatrix *_A;
     List<LPElement *> _LP;
     PermutationMatrix _Q;
+    PermutationMatrix _invQ;
     EtaMatrix **_U;
-    PermutationMatrix _R;
 
     /*
       Work memory
@@ -129,7 +128,6 @@ private:
     double *_workVector;
     double *_workW;
     PermutationMatrix _workQ;
-    PermutationMatrix _workR;
 
     /*
       This is a vector that is naturally computed as part of the forward

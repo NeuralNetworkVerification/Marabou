@@ -90,7 +90,7 @@ public:
         for ( unsigned i = 0; i < 4; ++i )
             TS_ASSERT( ft->getA()[i]._identity );
         TS_ASSERT( isIdentityPermutation( ft->getQ() ) );
-        TS_ASSERT( isIdentityPermutation( ft->getR() ) );
+        TS_ASSERT( isIdentityPermutation( ft->getInvQ() ) );
 
         /*
           First step of the diagonlization:
@@ -213,7 +213,7 @@ public:
         for ( unsigned i = 0; i < 4; ++i )
             TS_ASSERT( ft->getA()[i]._identity );
         TS_ASSERT( isIdentityPermutation( ft->getQ() ) );
-        TS_ASSERT( isIdentityPermutation( ft->getR() ) );
+        TS_ASSERT( isIdentityPermutation( ft->getInvQ() ) );
 
         /*
           First step of the diagonlization:
@@ -380,12 +380,12 @@ public:
         }
 
         /*
-          Now manually add A, Q and R.
+          Now manually add A and Q
 
-          Q = | 0 1 0 0 |   R = | 1 0 0 0 |
-              | 1 0 0 0 |       | 0 1 0 0 |
-              | 0 0 0 1 |       | 0 0 0 1 |
-              | 0 0 1 0 |       | 0 0 1 0 |
+          Q = | 0 1 0 0 |   R = invQ = Q
+              | 1 0 0 0 |
+              | 0 0 0 1 |
+              | 0 0 1 0 |
 
           A1 = | 1 0 0 0 |  A2 = | 1  0 0 0 |
                | 0 1 0 3 |       | 0  1 0 0 |
@@ -399,14 +399,7 @@ public:
         Q._ordering[2] = 3;
         Q._ordering[3] = 2;
 
-        PermutationMatrix R( 4 );
-        R._ordering[0] = 0;
-        R._ordering[1] = 1;
-        R._ordering[2] = 3;
-        R._ordering[3] = 2;
-
         ft->setQ( Q );
-        ft->setR( R );
 
         AlmostIdentityMatrix A1;
         A1._identity = false;
@@ -431,25 +424,30 @@ public:
 
               Manually checking gives:
 
-              | 0 1 1/2 1/2 | * x = | 1       0    0    0 | * y
-              | 1 3   4  -2 |       | -1/2  1/2 -3/2 -3/2 |
+              | 1 0 1/2 1/2 | * x = | 1       0    0    0 | * y
+              | 3 1   4  -2 |       | -1/2  1/2 -3/2 -3/2 |
               | 0 0   1   0 |       | -1      0   -1    0 |
               | 0 0  -2   1 |       | 0       0 -1/2 -1/2 |
 
               Or:
 
-              x = inv( | 0 1 1/2 1/2 | ) * | 1       0    0    0 | * y
-                       | 1 3   4  -2 |     | -1/2  1/2 -3/2 -3/2 |
+              x = inv( | 1 0 1/2 1/2 | ) * | 1       0    0    0 | * y
+                       | 3 1   4  -2 |     | -1/2  1/2 -3/2 -3/2 |
                        | 0 0   1   0 |     | -1      0   -1    0 |
                        | 0 0  -2   1 |     | 0       0 -1/2 -1/2 |
 
-                = | -8  1/2 -31/4 -13/4 | * y
-                  | 5/2   0   7/4   1/4 |
-                  | -1    0    -1     0 |
-                  | -2    0  -5/2  -1/2 |
+                = | 1 0  -3/2 -1/2 | * | 1       0    0    0 | * y
+                  | -3 1  9/2  7/2 |   | -1/2  1/2 -3/2 -3/2 |
+                  | 0 0     1    0 |   | -1      0   -1    0 |
+                  | 0 0     2    1 |   | 0       0 -1/2 -1/2 |
+
+                = | 5/2   0   7/4   1/4 | * y
+                  |  -8 1/2 -31/4 -13/4 |
+                  |  -1   0    -1     0 |
+                  |  -2   0  -5/2  -1/2 |
             */
 
-            double expectedX[4] = { -3.75, 2.25, -1, -1.5 };
+            double expectedX[4] = { 2.25, -3.75, -1, -1.5 };
 
             double y[4] = { 1, 2, 0, -1 };
             double x[4];
@@ -512,12 +510,12 @@ public:
         }
 
         /*
-          Now manually add A, Q and R.
+          Now manually add A and Q.
 
-          Q = | 0 1 0 0 |   R = | 1 0 0 0 |
-              | 1 0 0 0 |       | 0 1 0 0 |
-              | 0 0 0 1 |       | 0 0 0 1 |
-              | 0 0 1 0 |       | 0 0 1 0 |
+          Q = | 0 1 0 0 |   invQ = Q
+              | 1 0 0 0 |
+              | 0 0 0 1 |
+              | 0 0 1 0 |
 
           A1 = | 1 0 0 0 |  A2 = | 1  0 0 0 |
                | 0 1 0 3 |       | 0  1 0 0 |
@@ -531,14 +529,7 @@ public:
         Q._ordering[2] = 3;
         Q._ordering[3] = 2;
 
-        PermutationMatrix R( 4 );
-        R._ordering[0] = 0;
-        R._ordering[1] = 1;
-        R._ordering[2] = 3;
-        R._ordering[3] = 2;
-
         ft->setQ( Q );
-        ft->setR( R );
 
         AlmostIdentityMatrix A1;
         A1._identity = false;
@@ -559,7 +550,7 @@ public:
             /*
               Should hold:
 
-              x = y * inv(R) * inv(Um...U1) * inv(Q) * Am...A1 * LsPs...L1p1
+              x = y * Q * inv(Um...U1) * invQ * Am...A1 * LsPs...L1p1
 
               Manually checking gives:
 
@@ -574,30 +565,38 @@ public:
                              | 0  0    0    1 |
 
 
-              inv(Q) = | 0 1 0 0 |   inv(R) = | 1 0 0 0 |
-                       | 1 0 0 0 |            | 0 1 0 0 |
-                       | 0 0 0 1 |            | 0 0 0 1 |
-                       | 0 0 1 0 |            | 0 0 1 0 |
+              Q = invQ = | 0 1 0 0 |
+                         | 1 0 0 0 |
+                         | 0 0 0 1 |
+                         | 0 0 1 0 |
 
-              inv(R) * inv(Um...U1) * inv(Q) = | -3 1  9/2  7/2 |
-                                               |  1 0 -3/2 -1/2 |
-                                               |  0 0    1    0 |
-                                               |  0 0    2    1 |
+              Q * inv(Um...U1) * invQ = | 1  0 -3/2  -1/2 |
+                                        | -3 1  9/2   7/2 |
+                                        | 0  0    1     0 |
+                                        | 0  0    2     1 |
 
               Or:
 
-              x = y * |  -8 1/2 -31/4 -13/4 |
-                      | 5/2   0   7/4   1/4 |
-                      | -1    0    -1     0 |
-                      | -2    0  -5/2  -1/2 |
+              x = y * | 1  0 -3/2  -1/2 | * |    1   0    0    0 |
+                      | -3 1  9/2   7/2 |   | -1/2 1/2 -3/2 -3/2 |
+                      | 0  0    1     0 |   |   -1   0   -1    0 |
+                      | 0  0    2     1 |   |    0   0 -1/2 -1/2 |
+
+                = y * | 5/2   0   7/4   1/4 |
+                      |  -8 1/2 -31/4 -13/4 |
+                      |  -1   0    -1     0 |
+                      |  -2   0  -5/2  -1/2 |
             */
 
-            double expectedX[4] = { -1, 1.0/2, -7.0/4, -9.0/4 };
+            double expectedX[4] = { -11.5, 1, -11.25, -5.75 };
 
             double y[4] = { 1, 2, 0, -1 };
             double x[4];
 
             TS_ASSERT_THROWS_NOTHING( ft->backwardTransformation( y, x ) );
+
+            for ( unsigned i = 0; i < 4; ++i )
+                printf( "x[%i] = %lf\n", i, x[i] );
 
             for ( unsigned i = 0; i < 4; ++i )
                 TS_ASSERT( FloatUtils::areEqual( x[i], expectedX[i] ) );
@@ -784,17 +783,17 @@ public:
         TS_ASSERT_EQUALS( *U[0], expectedU1 );
 
         const PermutationMatrix *Q = ft->getQ();
-        const PermutationMatrix *R = ft->getR();
+        const PermutationMatrix *invQ = ft->getInvQ();
 
         TS_ASSERT_EQUALS( Q->_ordering[0], 0U );
         TS_ASSERT_EQUALS( Q->_ordering[1], 3U );
         TS_ASSERT_EQUALS( Q->_ordering[2], 1U );
         TS_ASSERT_EQUALS( Q->_ordering[3], 2U );
 
-        TS_ASSERT_EQUALS( R->_ordering[0], 0U );
-        TS_ASSERT_EQUALS( R->_ordering[1], 2U );
-        TS_ASSERT_EQUALS( R->_ordering[2], 3U );
-        TS_ASSERT_EQUALS( R->_ordering[3], 1U );
+        TS_ASSERT_EQUALS( invQ->_ordering[0], 0U );
+        TS_ASSERT_EQUALS( invQ->_ordering[1], 2U );
+        TS_ASSERT_EQUALS( invQ->_ordering[2], 3U );
+        TS_ASSERT_EQUALS( invQ->_ordering[3], 1U );
 
         const AlmostIdentityMatrix *A = ft->getA();
 

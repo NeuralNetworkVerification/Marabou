@@ -71,6 +71,12 @@ PermutationMatrix *PermutationMatrix::invert() const
     return inverse;
 }
 
+void PermutationMatrix::invert( PermutationMatrix &inv ) const
+{
+    for ( unsigned i = 0; i < _m; ++i )
+        inv._ordering[_ordering[i]] = i;
+}
+
 unsigned PermutationMatrix::findIndexOfRow( unsigned row ) const
 {
     ASSERT( row < _m );
