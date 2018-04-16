@@ -125,9 +125,12 @@ class MarabouNetwork:
             verbose: (bool) whether to print out solution
         Returns:
             vals: (dict: int->float) empty if UNSAT, else SATisfying solution
+            stats: (Statistics) a Statistics object as defined in Marabou,
+                    it has multiple methods that provide information related
+                    to how an input query was solved.
         """
         ipq = self.getMarabouQuery()
-        vals = MarabouCore.solve(ipq, filename)
+        vals, stats = MarabouCore.solve(ipq, filename)
         if verbose:
             if len(vals)==0:
                     print("UNSAT")
@@ -140,7 +143,7 @@ class MarabouNetwork:
                 for i in range(self.outputVars.size):
                     print("output {} = {}".format(i, vals[self.outputVars.item(i)]))
 
-        return vals
+        return [vals, stats]
 
     def evaluateWithMarabou(self, inputValues, filename="evaluateWithMarabou.log"):
         """
