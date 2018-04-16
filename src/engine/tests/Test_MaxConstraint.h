@@ -179,7 +179,6 @@ public:
 		for ( unsigned i = 2; i < 10; ++i, ++split )
 		{
             List<Tightening> bounds = split->getBoundTightenings();
-            //List<Tightening> auxBounds = split->getAuxBoundTightenings();
 
             // Since no upper bounds known for any of the variables, no bounds
             TS_ASSERT_EQUALS( bounds.size(), 0U );
@@ -242,12 +241,12 @@ public:
                 TS_ASSERT_EQUALS( addend->_variable, 100U );
 
                 ++cur;
-
             }
 		}
 	}
 
-	void test_max_phase_fixed(){
+	void test_max_phase_fixed()
+    {
 		unsigned f = 1;
 		Set<unsigned> elements;
 
@@ -273,7 +272,8 @@ public:
 		TS_ASSERT(max.phaseFixed());
 	}
 
-	void test_max_obsolete(){
+	void test_max_obsolete()
+    {
 		unsigned f = 1;
 		Set<unsigned> elements;
 
@@ -322,7 +322,7 @@ public:
 
 		TS_ASSERT( tableau.lastRegisteredVariableToWatcher.empty() );
 		TS_ASSERT_EQUALS( tableau.lastUnregisteredVariableToWatcher.size(), 9U );
-		for (int i = 1; i < 10; ++i )
+		for ( int i = 1; i < 10; ++i )
 		{
             TS_ASSERT_EQUALS( tableau.lastUnregisteredVariableToWatcher[i].size(), 1U );
             TS_ASSERT( tableau.lastUnregisteredVariableToWatcher[i].exists( &max ) );
