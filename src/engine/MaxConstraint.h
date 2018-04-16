@@ -86,10 +86,6 @@ class MaxConstraint : public PiecewiseLinearConstraint
     */
     PiecewiseLinearCaseSplit getValidCaseSplit() const;
 
-    // void updateBounds();
-
-    // void preprocessBounds( unsigned variable, double value, Tightening::BoundType type );
-
     /*
       Preprocessing related functions, to inform that a variable has been eliminated completely
       because it was fixed to some value, or that a variable's index has changed (e.g., x4 is now
@@ -123,7 +119,9 @@ class MaxConstraint : public PiecewiseLinearConstraint
 
     bool _removePL;
 
-    // Check whether the phase has been fixed.
+    /*
+      Check whether the phase has been fixed.
+    */
     void checkForFixedPhaseOnAlterationToBounds();
 
     /*

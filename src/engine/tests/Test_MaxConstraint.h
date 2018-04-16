@@ -188,6 +188,13 @@ public:
             for ( auto &pair : equationPairs )
                 equations.append( pair.first() );
 
+            /*
+              Guy:
+              I'm not sure there should be any reference to the aux variables in this
+              test. The equation is left without the aux variable when it leaves the max
+              constraint, and the aux variable is later added by the engine.
+              Therefore, no need to add them for the test.
+            */
             for ( auto &equation: equations )
             {
                 equation.addAddend( -1, auxVariable );
@@ -256,20 +263,24 @@ public:
 		MaxConstraint max( f, elements );
 
 		// all variables initially between 1 and 10
-		for (unsigned i = 2; i<10; i++){
-			max.notifyUpperBound(i, 10);
-			max.notifyLowerBound(i, 1);
+		for ( unsigned i = 2; i < 10; i++ )
+        {
+			max.notifyUpperBound( i, 10 );
+			max.notifyLowerBound( i, 1 );
 		}
 
-		TS_ASSERT(!max.phaseFixed());
+		TS_ASSERT( !max.phaseFixed() );
 
 		// set x_2 to be at least 6, others to be at most 5
-		max.notifyLowerBound(2, 6);
-		for(unsigned i = 3; i<10; i++)
-			max.notifyUpperBound(i, 5);
+		max.notifyLowerBound( 2, 6 );
+		for( unsigned i = 3; i < 10; i++ )
+			max.notifyUpperBound( i, 5 );
 
 		// now, phase should be fixed to x_2
-		TS_ASSERT(max.phaseFixed());
+		TS_ASSERT( max.phaseFixed() );
+
+        // Guy: maybe also get the valud case split and see that it's
+        // the correct one?
 	}
 
 	void test_max_obsolete()
@@ -284,17 +295,18 @@ public:
 
 		MaxConstraint max( f, elements );
 
-		TS_ASSERT(!max.constraintObsolete());
-		for ( unsigned i = 2; i<10; ++i)
-			max.eliminateVariable(i, 0);
-		TS_ASSERT(max.constraintObsolete());
+		TS_ASSERT( !max.constraintObsolete() );
+		for ( unsigned i = 2; i < 10; ++i )
+			max.eliminateVariable( i, 0 );
+		TS_ASSERT( max.constraintObsolete() );
 
-		MaxConstraint max2(f, elements);
-		for(unsigned i = 3; i<10; i++)
-			max2.eliminateVariable(i, 0);
-		TS_ASSERT(!max2.constraintObsolete());
-		max2.eliminateVariable(1, 0);
-		TS_ASSERT(max2.constraintObsolete());
+		MaxConstraint max2( f, elements );
+		for(unsigned i = 3; i < 10; i++ )
+			max2.eliminateVariable( i, 0 );
+
+		TS_ASSERT( !max2.constraintObsolete() );
+		max2.eliminateVariable( 1, 0 );
+		TS_ASSERT( max2.constraintObsolete() );
 	}
 
 	void test_register_as_watcher()

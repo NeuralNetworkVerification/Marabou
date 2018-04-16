@@ -25,8 +25,8 @@ MaxConstraint::MaxConstraint( unsigned f, const Set<unsigned> &elements )
     : _f( f )
     , _elements( elements )
     , _phaseFixed( false )
-    , _maxLowerBound(FloatUtils::negativeInfinity())
-    , _removePL(false)
+    , _maxLowerBound( FloatUtils::negativeInfinity() )
+    , _removePL( false )
 {
 }
 
@@ -70,7 +70,7 @@ void MaxConstraint::notifyVariableValue( unsigned variable, double value )
 	    // equals to 0, or the only element in _assignment is _f.
 	    // Otherwise, we only replace _maxIndex if the value of _maxIndex is less
 	    // than the new value.
-	    if ( _assignment.size() == 0 ||
+	    if ( _assignment.empty() ||
              ( _assignment.exists( _f ) && _assignment.size() == 1 ) ||
              _assignment.get( _maxIndex ) < value )
             _maxIndex = variable;
@@ -95,10 +95,10 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
         for ( auto element : _elements )
         {
             if( _upperBounds.exists( element ) &&
-                FloatUtils::lt(_upperBounds[element], value) )
-                toRemove.append(element);
+                FloatUtils::lt( _upperBounds[element], value ) )
+                toRemove.append( element );
         }
-        for ( unsigned removeVar: toRemove )
+        for ( unsigned removeVar : toRemove )
         {
             if ( _lowerBounds.exists( removeVar ) )
                 _lowerBounds.erase( removeVar );
@@ -106,6 +106,9 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
                 _upperBounds.erase( removeVar );
             _elements.erase( removeVar );
             _eliminated.insert( removeVar );
+
+            // Guy: what about erasing from _assignment?
+            //      What if _maxIndex has been erased?
         }
     }
 
@@ -130,6 +133,9 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
             _upperBounds.erase( variable );
         _elements.erase( variable );
         _eliminated.insert( variable );
+
+        // Guy: what about erasing from _assignment?
+        //      What if _maxIndex has been erased?
     }
 
     checkForFixedPhaseOnAlterationToBounds();
@@ -137,7 +143,7 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
 
 void MaxConstraint::checkForFixedPhaseOnAlterationToBounds()
 {
-    // Compute the maximum lowest bound among all elements.
+    // Compute the maximum lower bound among all elements.
     double maxLowerBound = FloatUtils::negativeInfinity();
     unsigned maxLowerBoundElement = 0;
     for ( const unsigned element : _elements )
@@ -153,6 +159,12 @@ void MaxConstraint::checkForFixedPhaseOnAlterationToBounds()
     }
 
     // Check to see if it is greater than the upper bound of all other elements.
+
+    // Guy: It seems like we say phase fixed if for all elements,
+    // !( maxLowerBound < upperBoundOfElement).
+    // What happens if we have two variables with the same lower bound, which
+    // happens to be maximal? We could get phaseFixed, even though it is not.
+    // (If I am correct, we should add a unit test to catch this behavior).
     _phaseFixed = true;
     for ( const unsigned element : _elements )
     {
@@ -164,7 +176,8 @@ void MaxConstraint::checkForFixedPhaseOnAlterationToBounds()
             break;
         }
     }
-    if( _phaseFixed )
+
+    if ( _phaseFixed )
         _fixedPhase = maxLowerBoundElement;
 }
 
@@ -215,10 +228,6 @@ void MaxConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
     // TODO: can we derive additional bounds?
 }
 
-// void MaxConstraint::updateBounds()
-// {
-// }
-
 bool MaxConstraint::participatingVariable( unsigned variable ) const
 {
     return ( variable == _f ) || _elements.exists( variable );
@@ -226,11 +235,11 @@ bool MaxConstraint::participatingVariable( unsigned variable ) const
 
 List<unsigned> MaxConstraint::getParticipatingVariables() const
 {
-    List<unsigned> temp;
+    List<unsigned> result;
     for ( auto element : _elements )
-        temp.append( element );
-    temp.append( _f );
-    return temp;
+        result.append( element );
+    result.append( _f );
+    return result;
 }
 
 bool MaxConstraint::satisfied() const
@@ -263,18 +272,21 @@ List<PiecewiseLinearConstraint::Fix> MaxConstraint::getPossibleFixes() const
 		{
 		    fixes.append( PiecewiseLinearConstraint::Fix( elem, fValue ) );
 		}
-
 	}
     else if ( FloatUtils::lt( fValue, maxVal ) )
 	{
 	    fixes.append( PiecewiseLinearConstraint::Fix( _f, maxVal ) );
 
-	    /*for ( auto elem : _elements )
-	      {
-	      if ( _assignment.exists( elem ) && FloatUtils::lt( fValue, _assignment.get( elem ) ) )
-	      fixes.append( PiecewiseLinearConstraint::Fix( elem, fValue ) );
-	      }*/
+        /* Guy: there is another case we could consider: when the
+           constraint is almost satisfied, but there is one variable whose
+           value is greater than fValue. Then we could decrease that variable.
+
+           However, the semantics is that we do not have to propose all possible
+           fixes here, so the code is correct even without this. Still, leaving
+           this as a todo.
+        */
 	}
+
     return fixes;
 }
 
@@ -352,7 +364,6 @@ void MaxConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 	    _elements.erase( oldIndex );
 	    _elements.insert( newIndex );
 	}
-
 }
 
 bool MaxConstraint::constraintObsolete() const
@@ -362,20 +373,12 @@ bool MaxConstraint::constraintObsolete() const
 
 void MaxConstraint::eliminateVariable( unsigned var, double value )
 {
-    /*if ( _eliminated.size() == 0 || ( _eliminated.size() > 0 && FloatUtils::gt( value, _lowerBounds[_maxElim] ) ) )
-      {
-      _maxElim = var;
-      _lowerBounds[_f] = FloatUtils::max( value, _lowerBounds[_f] );
-      }*/
+    if( _lowerBounds.exists( var ) )
+        _lowerBounds.erase( var );
+    if( _upperBounds.exists( var ) )
+        _upperBounds.erase( var );
 
-    //_lowerBounds[var] = value;
-    //_upperBounds[var] = value;
-    if(_lowerBounds.exists(var))
-        _lowerBounds.erase(var);
-    if(_upperBounds.exists(var))
-        _upperBounds.erase(var);
-
-    if ( !_lowerBounds.exists(_f) ||
+    if ( !_lowerBounds.exists( _f ) ||
          FloatUtils::lt( value, _lowerBounds.get( _f ) ) )
         _lowerBounds[_f] = value;
 
@@ -388,6 +391,9 @@ void MaxConstraint::eliminateVariable( unsigned var, double value )
         _removePL = true;
 }
 
+/*
+  Guy: remove this function altoghter?
+*/
 void MaxConstraint::tightenPL( Tightening tighten, List<Tightening> &tightenings )
 {
     // for now just make sure this is never called
@@ -419,6 +425,7 @@ void MaxConstraint::tightenPL( Tightening tighten, List<Tightening> &tightenings
 	 		}
 	 	}
 	}
+
     checkForFixedPhaseOnAlterationToBounds();
 }
 
