@@ -162,7 +162,7 @@ public:
 		Map<unsigned, double> assignment;
 
 		List<PiecewiseLinearConstraint::Fix> fixes;
-		
+
 		unsigned auxVar = 100;
 		FreshVariables::setNextVariable( auxVar );
 
@@ -178,72 +178,72 @@ public:
 		auto split = splits.begin();
 		for ( unsigned i = 2; i < 10; ++i, ++split )
 		{
-				List<Tightening> bounds = split->getBoundTightenings();
-				//List<Tightening> auxBounds = split->getAuxBoundTightenings();
+            List<Tightening> bounds = split->getBoundTightenings();
+            //List<Tightening> auxBounds = split->getAuxBoundTightenings();
 
-				// Since no upper bounds known for any of the variables, no bounds
-				TS_ASSERT_EQUALS( bounds.size(), 0U );
+            // Since no upper bounds known for any of the variables, no bounds
+            TS_ASSERT_EQUALS( bounds.size(), 0U );
 
-				auto equationPairs = split->getEquations();
-				List<Equation> equations;
-				for ( auto &pair : equationPairs )
-					equations.append( pair.first() );
+            auto equationPairs = split->getEquations();
+            List<Equation> equations;
+            for ( auto &pair : equationPairs )
+                equations.append( pair.first() );
 
-				for ( auto &equation: equations )
-				{
-					equation.addAddend( -1, auxVariable );
-					equation.markAuxiliaryVariable( auxVariable );
-				}
+            for ( auto &equation: equations )
+            {
+                equation.addAddend( -1, auxVariable );
+                equation.markAuxiliaryVariable( auxVariable );
+            }
 
-				TS_ASSERT_EQUALS( equations.size(), 8U );
+            TS_ASSERT_EQUALS( equations.size(), 8U );
 
-				auto cur = equations.begin();
+            auto cur = equations.begin();
 
-				TS_ASSERT_EQUALS( cur->_addends.size(), 3U );
-				TS_ASSERT_EQUALS( cur->_scalar, 0.0 );
+            TS_ASSERT_EQUALS( cur->_addends.size(), 3U );
+            TS_ASSERT_EQUALS( cur->_scalar, 0.0 );
 
-				auto addend = cur->_addends.begin();
+            auto addend = cur->_addends.begin();
 
-				TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
-				TS_ASSERT_EQUALS( addend->_variable, i );
+            TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+            TS_ASSERT_EQUALS( addend->_variable, i );
 
-				++addend;
+            ++addend;
 
-				TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
-				TS_ASSERT_EQUALS( addend->_variable, f );
+            TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
+            TS_ASSERT_EQUALS( addend->_variable, f );
 
-				++addend;
+            ++addend;
 
-				TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
-				TS_ASSERT_EQUALS( addend->_variable, 100U );
+            TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
+            TS_ASSERT_EQUALS( addend->_variable, 100U );
 
-				++cur;
+            ++cur;
 
-				for ( unsigned j = 2; j < 10;  ++j )
-				{
-						if ( i == j ) continue;
+            for ( unsigned j = 2; j < 10;  ++j )
+            {
+                if ( i == j ) continue;
 
-						TS_ASSERT_EQUALS( cur->_addends.size(), 3U );
-						TS_ASSERT_EQUALS( cur->_scalar, 0.0 );
+                TS_ASSERT_EQUALS( cur->_addends.size(), 3U );
+                TS_ASSERT_EQUALS( cur->_scalar, 0.0 );
 
-						auto addend = cur->_addends.begin();
+                auto addend = cur->_addends.begin();
 
-						TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
-						TS_ASSERT_EQUALS( addend->_variable, j );
+                TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
+                TS_ASSERT_EQUALS( addend->_variable, j );
 
-						++addend;
+                ++addend;
 
-						TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
-						TS_ASSERT_EQUALS( addend->_variable, i );
+                TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+                TS_ASSERT_EQUALS( addend->_variable, i );
 
-						++addend;
+                ++addend;
 
-						TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
-						TS_ASSERT_EQUALS( addend->_variable, 100U );
+                TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
+                TS_ASSERT_EQUALS( addend->_variable, 100U );
 
-						++cur;
+                ++cur;
 
-				}
+            }
 		}
 	}
 
@@ -324,8 +324,8 @@ public:
 		TS_ASSERT_EQUALS( tableau.lastUnregisteredVariableToWatcher.size(), 9U );
 		for (int i = 1; i < 10; ++i )
 		{
-		TS_ASSERT_EQUALS( tableau.lastUnregisteredVariableToWatcher[i].size(), 1U );
-		TS_ASSERT( tableau.lastUnregisteredVariableToWatcher[i].exists( &max ) );
+            TS_ASSERT_EQUALS( tableau.lastUnregisteredVariableToWatcher[i].size(), 1U );
+            TS_ASSERT( tableau.lastUnregisteredVariableToWatcher[i].exists( &max ) );
 		}
 	}
 
