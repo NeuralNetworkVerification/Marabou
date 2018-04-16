@@ -23,8 +23,6 @@
 MaxConstraint::MaxConstraint( unsigned f, const Set<unsigned> &elements )
     : _f( f )
     , _elements( elements )
-    , _minLowerBound( FloatUtils::negativeInfinity() )
-    , _maxUpperBound( FloatUtils::negativeInfinity() )
     , _phaseFixed( false )
 {
 }
@@ -76,16 +74,6 @@ void MaxConstraint::notifyVariableValue( unsigned variable, double value )
     _assignment[variable] = value;
 }
 
-double MaxConstraint::getMinLowerBound() const
-{
-    return (_lowerBounds.keys() == _elements) ? _minLowerBound : FloatUtils::negativeInfinity();
-}
-
-double MaxConstraint::getMaxUpperBound() const
-{
-    return (_upperBounds.keys() == _elements) ? _maxUpperBound : FloatUtils::infinity();
-}
-
 void MaxConstraint::notifyLowerBound( unsigned variable, double value )
 {
     if ( _statistics )
@@ -96,46 +84,7 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
 
     _lowerBounds[variable] = value;
 
-    _minLowerBound = FloatUtils::max( _minLowerBound, value );
-
-    if ( FloatUtils::gt( value, getMaxUpperBound() ) )
-	{
-	    _phaseFixed = true;
-	    _fixedPhase = variable;
-	}
-
-    _minLowerBound = FloatUtils::min( value, _minLowerBound );
-    // if ( FloatUtils::lt( value, _minLowerBound ) )
-    // {
-    // 	_minLowerBound = value;
-    // 	_entailedTightenings.push( Tightening( _f, _minLowerBound, Tightening::LB ) );
-    // }
-
-    // // If all elements except this one are bounded above and this lower bound is greater, then phase is fixed.
-    // if ( _elements.exists( variable ) )
-    // {
-    // 	double maxUpperBound = FloatUtils::negativeInfinity();
-    // 	Set<unsigned> elements = _elements;
-    // 	elements.erase( variable );
-    // 	for ( auto otherVariable : elements )
-    // 	{
-    // 		if ( _upperBounds.exists( otherVariable ) && FloatUtils::gt( _upperBounds[otherVariable], maxUpperBound ) )
-    // 		{
-    // 			maxUpperBound = _upperBounds[otherVariable];
-    // 		}
-    // 		else
-    // 		{
-    // 			maxUpperBound = FloatUtils::infinity();
-    // 			break;
-    // 		}
-    // 	}
-
-    // 	if ( FloatUtils::gt( value, getMaxUpperBound() ) )
-    // 	{
-    // 		_phaseFixed = true;
-    // 		_fixedPhase = variable;
-    // 	}
-    // }
+    checkForFixedPhaseOnAlterationToBounds();
 }
 
 void MaxConstraint::notifyUpperBound( unsigned variable, double value )
@@ -148,36 +97,34 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
 
     _upperBounds[variable] = value;
 
-    _maxUpperBound = FloatUtils::max( value, _maxUpperBound );
-    // if ( FloatUtils::gt( value, _maxUpperBound ) )
-    // {
-    // 	_maxUpperBound = value;
-    // 	_entailedTightenings.push( Tightening( _f, _maxUpperBound, Tightening::UB ) );
-    // }
+    checkForFixedPhaseOnAlterationToBounds();
 }
 
-// void MaxConstraint::preprocessBounds( unsigned variable, double value, Tightening::BoundType type )
-// {
-// 	if ( type == Tightening::LB )
-// 		setLowerBound( variable, value );
-// 	else
-// 		setUpperBound( variable, value );
-// }
+void MaxConstraint::checkForFixedPhaseOnAlterationToBounds() {
+    // Compute the maximum lowest bound among all elements.
+    double maxLowerBound = FloatUtils::negativeInfinity();
+    unsigned maxLowerBoundElement = 0;
+    for (const unsigned element : _elements) {
+	// At the time this API is called, the lower bound is guaranteed to exist
+	// for all elements.
+	if (_lowerBounds.exists(element) &&
+            FloatUtils::lt(maxLowerBound, _lowerBounds[element])) {
+	    maxLowerBound = _lowerBounds[element];
+	    maxLowerBoundElement = element;
+	}
+    }
 
-void MaxConstraint::setLowerBound( unsigned variable, double value )
-{
-    if ( _lowerBounds.exists( variable ) && !FloatUtils::gt( value, _lowerBounds[variable] ) )
-	return;
-
-    _lowerBounds[variable] = value;
-}
-
-void MaxConstraint::setUpperBound( unsigned variable, double value )
-{
-    if ( _upperBounds.exists( variable ) && !FloatUtils::lt( value, _upperBounds[variable] ) )
-	return;
-
-    _upperBounds[variable] = value;
+    // Check to see if it is greater than the upper bound of all other elements.
+    _phaseFixed = true;
+    for (const unsigned element : _elements) {
+	if (_upperBounds.exists(element) &&
+	    element != maxLowerBoundElement &&
+	    FloatUtils::lt(maxLowerBound, _upperBounds[element])) {
+	    _phaseFixed = false;
+	    break;
+	}
+    }
+    _fixedPhase = maxLowerBoundElement;
 }
 
 void MaxConstraint::getEntailedTightenings( List<Tightening> & tightenings ) const

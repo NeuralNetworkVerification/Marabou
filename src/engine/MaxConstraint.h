@@ -117,31 +117,18 @@ class MaxConstraint : public PiecewiseLinearConstraint
     Set<unsigned> _elements;
     Set<unsigned> _eliminated;
     unsigned _maxElim;
-    double _minLowerBound;
-    double _maxUpperBound;
     bool _phaseFixed;
     unsigned _fixedPhase;
 
     bool _removePL;
 
+    // Check whether the phase has been fixed.
+    void checkForFixedPhaseOnAlterationToBounds();
+
     /*
       Returns the phase where variable argMax has maximum value.
     */
     PiecewiseLinearCaseSplit getSplit( unsigned argMax ) const;
-
-    /*
-      Returns the minimum of the lower bounds of all elements.
-    */
-    double getMinLowerBound() const;
-
-    /*
-      Returns the maximum of the upper bounds of all elements.
-    */
-    double getMaxUpperBound() const;
-
-    void setLowerBound( unsigned variable, double value );
-
-    void setUpperBound( unsigned variable, double value );
 
     void tightenPL( Tightening tighten, List<Tightening> & tightenings );
 };
