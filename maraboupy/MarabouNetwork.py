@@ -19,6 +19,7 @@ class MarabouNetwork:
         self.numVars = 0
         self.equList = []
         self.reluList = []
+        self.maxList = []
         self.lowerBounds = dict()
         self.upperBounds = dict()
         self.inputVars = np.array([])
@@ -69,6 +70,15 @@ class MarabouNetwork:
         """
         self.reluList += [(v1, v2)]
     
+    def addMaxConstraint(self, elements, v):
+        """
+        Function to add a new Relu constraint
+        Arguments:
+            elements: (set of int) variable representing input to max constraint
+            v: (int) variable representing output of max constraint
+        """
+        self.maxList += [(elements, v)]
+
     def getMarabouQuery(self):
         """
         Function to convert network into Marabou Query
@@ -91,6 +101,12 @@ class MarabouNetwork:
             assert r[1] < self.numVars and r[0] < self.numVars
             MarabouCore.addReluConstraint(ipq, r[0], r[1])
         
+        for m in self.maxList:
+            assert m[1] < self.numVars
+            for e in m[0]:
+                assert e < self.numVars
+            MarabouCore.addMaxConstraint(ipq, m[0], m[1])
+
         for l in self.lowerBounds:
             assert l < self.numVars
             ipq.setLowerBound(l, self.lowerBounds[l])
@@ -109,12 +125,9 @@ class MarabouNetwork:
             verbose: (bool) whether to print out solution
         Returns:
             vals: (dict: int->float) empty if UNSAT, else SATisfying solution
-            stats: (Statistics) a Statistics object as defined in Marabou,
-                    it has multiple methods that provide information related
-                    to how an input query was solved.
         """
         ipq = self.getMarabouQuery()
-        vals, stats = MarabouCore.solve(ipq, filename)
+        vals = MarabouCore.solve(ipq, filename)
         if verbose:
             if len(vals)==0:
                     print("UNSAT")
@@ -127,7 +140,7 @@ class MarabouNetwork:
                 for i in range(self.outputVars.size):
                     print("output {} = {}".format(i, vals[self.outputVars.item(i)]))
 
-        return [vals, stats]
+        return vals
 
     def evaluateWithMarabou(self, inputValues, filename="evaluateWithMarabou.log"):
         """

@@ -341,12 +341,10 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
 
     def maxpoolEquations(self, op):
         """         
-        Partially implemented function to generate maxpooling equations
+        Function to generate maxpooling equations
         Arguments:
             op: (tf.op) representing maxpool operation
         """
-        raise NotImplementedError
-
         ### Get variables and constants of inputs ###
         input_ops = [i.op for i in op.inputs]
         prevValues = [self.getValues(i) for i in input_ops]
@@ -360,12 +358,22 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         for i in range(curValues.shape[1]):
             for j in range(curValues.shape[2]):
                 for k in range(curValues.shape[3]):
-                    maxVars = []
+                    maxVars = set()
                     for di in range(strides[1]*i, strides[1]*i + ksize[1]):
                         for dj in range(strides[2]*j, strides[2]*j + ksize[2]):
                             if di < prevValues.shape[1] and dj < prevValues.shape[2]:
-                                maxVars += [prevValues[0][di][dj][k]]
-                    self.maxList += [curValues[0][i][j][k], maxVars]
+                                maxVars.insert([prevValues[0][di][dj][k]])
+                    self.addMaxConstraint(maxVars, curValues[0][i][j][k])
+                    for maxVar in maxVars:
+                        e = MarabouUtils.Equation()
+                        e.addAddend(1.0, maxVar)
+                        e.addAddend(-1.0, curValues[0][i][j][k])
+                        e.setScalar(0.0)
+                        aux = self.getNewVariable()
+                        e.addAddend(1.0, aux)
+                        e.markAuxiliaryVariable(aux)
+                        self.setLowerBound(aux, 0.0)
+                        self.addEquation(e)
 
     def makeNeuronEquations(self, op): 
         """
