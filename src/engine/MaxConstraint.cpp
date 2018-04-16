@@ -14,6 +14,7 @@
 #include "FloatUtils.h"
 #include "FreshVariables.h"
 #include "ITableau.h"
+#include "List.h"
 #include "MaxConstraint.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "ReluplexError.h"
@@ -23,9 +24,9 @@
 MaxConstraint::MaxConstraint( unsigned f, const Set<unsigned> &elements )
     : _f( f )
     , _elements( elements )
-    , _minLowerBound( FloatUtils::negativeInfinity() )
-    , _maxUpperBound( FloatUtils::negativeInfinity() )
     , _phaseFixed( false )
+    , _maxLowerBound(FloatUtils::negativeInfinity())
+    , _removePL(false)
 {
 }
 
@@ -69,21 +70,12 @@ void MaxConstraint::notifyVariableValue( unsigned variable, double value )
 	    // equals to 0, or the only element in _assignment is _f.
 	    // Otherwise, we only replace _maxIndex if the value of _maxIndex is less
 	    // than the new value.
-	    if ( _assignment.size() == 0 || ( _assignment.exists( _f ) &&
-					      _assignment.size() == 1 ) || _assignment.get( _maxIndex ) < value )
+	    if ( _assignment.size() == 0 ||
+           ( _assignment.exists( _f ) && _assignment.size() == 1 ) ||
+           _assignment.get( _maxIndex ) < value )
 		_maxIndex = variable;
 	}
     _assignment[variable] = value;
-}
-
-double MaxConstraint::getMinLowerBound() const
-{
-    return (_lowerBounds.keys() == _elements) ? _minLowerBound : FloatUtils::negativeInfinity();
-}
-
-double MaxConstraint::getMaxUpperBound() const
-{
-    return (_upperBounds.keys() == _elements) ? _maxUpperBound : FloatUtils::infinity();
 }
 
 void MaxConstraint::notifyLowerBound( unsigned variable, double value )
@@ -95,47 +87,26 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
 	return;
 
     _lowerBounds[variable] = value;
+    
+    if(FloatUtils::gt(value, _maxLowerBound)){
+        _maxLowerBound = value;
+        List<unsigned> toRemove;
+        for(auto element: _elements){
+            if(_upperBounds.exists(element) &&
+                FloatUtils::lt(_upperBounds[element], value) )
+                toRemove.append(element);
+        }
+        for(unsigned removeVar: toRemove){
+            if(_lowerBounds.exists(removeVar))
+                _lowerBounds.erase(removeVar);
+            if(_upperBounds.exists(removeVar))
+                _upperBounds.erase(removeVar);
+            _elements.erase(removeVar);
+            _eliminated.insert(removeVar);
+        }
+    }
 
-    _minLowerBound = FloatUtils::max( _minLowerBound, value );
-
-    if ( FloatUtils::gt( value, getMaxUpperBound() ) )
-	{
-	    _phaseFixed = true;
-	    _fixedPhase = variable;
-	}
-
-    _minLowerBound = FloatUtils::min( value, _minLowerBound );
-    // if ( FloatUtils::lt( value, _minLowerBound ) )
-    // {
-    // 	_minLowerBound = value;
-    // 	_entailedTightenings.push( Tightening( _f, _minLowerBound, Tightening::LB ) );
-    // }
-
-    // // If all elements except this one are bounded above and this lower bound is greater, then phase is fixed.
-    // if ( _elements.exists( variable ) )
-    // {
-    // 	double maxUpperBound = FloatUtils::negativeInfinity();
-    // 	Set<unsigned> elements = _elements;
-    // 	elements.erase( variable );
-    // 	for ( auto otherVariable : elements )
-    // 	{
-    // 		if ( _upperBounds.exists( otherVariable ) && FloatUtils::gt( _upperBounds[otherVariable], maxUpperBound ) )
-    // 		{
-    // 			maxUpperBound = _upperBounds[otherVariable];
-    // 		}
-    // 		else
-    // 		{
-    // 			maxUpperBound = FloatUtils::infinity();
-    // 			break;
-    // 		}
-    // 	}
-
-    // 	if ( FloatUtils::gt( value, getMaxUpperBound() ) )
-    // 	{
-    // 		_phaseFixed = true;
-    // 		_fixedPhase = variable;
-    // 	}
-    // }
+    checkForFixedPhaseOnAlterationToBounds();
 }
 
 void MaxConstraint::notifyUpperBound( unsigned variable, double value )
@@ -148,36 +119,44 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
 
     _upperBounds[variable] = value;
 
-    _maxUpperBound = FloatUtils::max( value, _maxUpperBound );
-    // if ( FloatUtils::gt( value, _maxUpperBound ) )
-    // {
-    // 	_maxUpperBound = value;
-    // 	_entailedTightenings.push( Tightening( _f, _maxUpperBound, Tightening::UB ) );
-    // }
+    if(FloatUtils::lt(value, _maxLowerBound)){
+        if(_lowerBounds.exists(variable))
+            _lowerBounds.erase(variable);
+        if(_upperBounds.exists(variable))
+            _upperBounds.erase(variable);
+        _elements.erase(variable);
+        _eliminated.insert(variable);
+    }
+
+    checkForFixedPhaseOnAlterationToBounds();
 }
 
-// void MaxConstraint::preprocessBounds( unsigned variable, double value, Tightening::BoundType type )
-// {
-// 	if ( type == Tightening::LB )
-// 		setLowerBound( variable, value );
-// 	else
-// 		setUpperBound( variable, value );
-// }
+void MaxConstraint::checkForFixedPhaseOnAlterationToBounds() {
+    // Compute the maximum lowest bound among all elements.
+    double maxLowerBound = FloatUtils::negativeInfinity();
+    unsigned maxLowerBoundElement = 0;
+    for (const unsigned element : _elements) {
+	// At the time this API is called, the lower bound is guaranteed to exist
+	// for all elements.
+	if (_lowerBounds.exists(element) &&
+            FloatUtils::lt(maxLowerBound, _lowerBounds[element])) {
+	    maxLowerBound = _lowerBounds[element];
+	    maxLowerBoundElement = element;
+	}
+    }
 
-void MaxConstraint::setLowerBound( unsigned variable, double value )
-{
-    if ( _lowerBounds.exists( variable ) && !FloatUtils::gt( value, _lowerBounds[variable] ) )
-	return;
-
-    _lowerBounds[variable] = value;
-}
-
-void MaxConstraint::setUpperBound( unsigned variable, double value )
-{
-    if ( _upperBounds.exists( variable ) && !FloatUtils::lt( value, _upperBounds[variable] ) )
-	return;
-
-    _upperBounds[variable] = value;
+    // Check to see if it is greater than the upper bound of all other elements.
+    _phaseFixed = true;
+    for (const unsigned element : _elements) {
+	if (_upperBounds.exists(element) &&
+	    element != maxLowerBoundElement &&
+	    FloatUtils::lt(maxLowerBound, _upperBounds[element])) {
+	    _phaseFixed = false;
+	    break;
+	}
+    }
+    if(_phaseFixed)
+        _fixedPhase = maxLowerBoundElement;
 }
 
 void MaxConstraint::getEntailedTightenings( List<Tightening> & tightenings ) const
@@ -310,6 +289,7 @@ bool MaxConstraint::phaseFixed() const
 
 PiecewiseLinearCaseSplit MaxConstraint::getValidCaseSplit() const
 {
+    ASSERT(_phaseFixed);
     return getSplit( _fixedPhase );
 }
 
@@ -325,6 +305,9 @@ PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const
     maxEquation.setScalar( 0 );
     maxPhase.addEquation( maxEquation, PiecewiseLinearCaseSplit::EQ );
 
+    // store bound tightenings as well
+    // go over all other elements;
+    // their upper bound cannot exceed upper bound of argmax    
     for ( unsigned other : _elements )
 	{
 	    if ( argMax == other )
@@ -337,6 +320,12 @@ PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const
 	    gtEquation.addAddend( 1, argMax );
 	    gtEquation.setScalar( 0 );
 	    maxPhase.addEquation( gtEquation, PiecewiseLinearCaseSplit::GE );
+
+        if(_upperBounds.exists(argMax)){
+            if (!_upperBounds.exists(other) || 
+                FloatUtils::gt(_upperBounds[other], _upperBounds[argMax]))
+                maxPhase.storeBoundTightening(Tightening(other, _upperBounds[argMax], Tightening::UB));
+        }
 	}
 
     return maxPhase;
@@ -345,7 +334,7 @@ PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const
 void MaxConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
     _lowerBounds[newIndex] = _lowerBounds[oldIndex];
-    _upperBounds[newIndex] = _upperBounds[newIndex];
+    _upperBounds[newIndex] = _upperBounds[oldIndex];
     if ( oldIndex == _f )
 	_f = newIndex;
     else
@@ -358,7 +347,7 @@ void MaxConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 
 bool MaxConstraint::constraintObsolete() const
 {
-    return false;
+    return _removePL;
 }
 
 void MaxConstraint::eliminateVariable( unsigned var, double value )
@@ -369,14 +358,21 @@ void MaxConstraint::eliminateVariable( unsigned var, double value )
       _lowerBounds[_f] = FloatUtils::max( value, _lowerBounds[_f] );
       }*/
 
-    _lowerBounds[var] = value;
-    _upperBounds[var] = value;
+    //_lowerBounds[var] = value;
+    //_upperBounds[var] = value;
+    if(_lowerBounds.exists(var))
+        _lowerBounds.erase(var);
+    if(_upperBounds.exists(var))
+        _upperBounds.erase(var);
 
-    if ( _lowerBounds.exists( _f) && FloatUtils::gt( value, _lowerBounds.get( _f ) ) )
-	_lowerBounds[_f] = value;
+    if ( !_lowerBounds.exists(_f) ||
+            FloatUtils::lt(value, _lowerBounds.get(_f)))
+	   _lowerBounds[_f] = value;
 
     _eliminated.insert( var );
     _elements.erase( var );
+
+    checkForFixedPhaseOnAlterationToBounds();
 
     if ( var == _f || getParticipatingVariables().size() == 1)
 	_removePL = true;
@@ -384,6 +380,8 @@ void MaxConstraint::eliminateVariable( unsigned var, double value )
 
 void MaxConstraint::tightenPL( Tightening tighten, List<Tightening> &tightenings )
 {
+    // for now just make sure this is never called
+    ASSERT(false);
     if ( tighten._variable == _f )
 	{
 	    if ( tighten._type == Tightening::LB && FloatUtils::gte( tighten._value, _lowerBounds[_f] ) )
@@ -411,6 +409,7 @@ void MaxConstraint::tightenPL( Tightening tighten, List<Tightening> &tightenings
 	 		}
 	 	}
 	}
+    checkForFixedPhaseOnAlterationToBounds();
 }
 
 void MaxConstraint::getAuxiliaryEquations( List<Equation> &/* newEquations */ ) const
