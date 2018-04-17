@@ -128,6 +128,7 @@ private:
     double *_workVector;
     double *_workW;
     PermutationMatrix _workQ;
+    PermutationMatrix _invWorkQ;
 
     /*
       This is a vector that is naturally computed as part of the forward

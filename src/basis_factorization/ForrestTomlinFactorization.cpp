@@ -29,6 +29,7 @@ ForrestTomlinFactorization::ForrestTomlinFactorization( unsigned m )
     , _workVector( NULL )
     , _workW( NULL )
     , _workQ( m )
+    , _invWorkQ( m )
     , _storedW( NULL )
 {
     _B = new double[m * m];
@@ -155,6 +156,8 @@ void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const doub
         _workQ._ordering[i] = i + 1;
     _workQ._ordering[_m - 1] = indexOfChangedUColumn;
 
+    _workQ.invert( _invWorkQ );
+
     /*
       Now we have workQ * V * invWorkQ that is upper triangular except the last row.
       We construct a new sequence of AlmostIdentityMatrices that make it upper
@@ -193,6 +196,34 @@ void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const doub
         _A[i]._column = i;
         _A[i]._value = bumpValue / diagonalValue;
         _A[i]._identity = false;
+    }
+
+    /*
+      At this point we have that Am...A1 * workQ * V * invWorkQ is upper triangular.
+      We now do the textbook update to the store elements.
+    */
+
+    // Update _Q to _Q * _invWorkQ. All permutation matrices are stored
+    // row-wise, so this means permuting invQ's rows.
+
+    unsigned *ordering = new unsigned[_m];
+    for ( unsigned i = 0; i < _m; ++i )
+        ordering[i] = _invWorkQ._ordering[_Q._ordering[i]];
+    for ( unsigned i = 0; i < _m; ++i )
+        _Q._ordering[i] = ordering[i];
+    delete[] ordering;
+
+    // Recompute invQ
+    _Q.invert( _invQ );
+
+    // Ai = _Q * Ai * _invQ, for all i
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        if ( !_A[i]._identity )
+        {
+            _A[i]._row = _Q._ordering[_A[i]._row];
+            _A[i]._column = _invQ._ordering[_A[i]._column];
+        }
     }
 }
 
