@@ -355,9 +355,11 @@ void ForrestTomlinFactorization::backwardTransformation( const double *y, double
          Step 1: Find v such that:  v * Um...U1 = y * Q
     ****/
 
-    // Multiply y by Q, store in _workVector
+    // Multiply y by Q, store in _workVector.
+    // Note: this is easier to do with a column-wise representation of Q,
+    // which is just the row-wise representation of invQ.
     for ( unsigned i = 0; i < _m; ++i )
-        _workVector[_Q._ordering[i]] = y[i];
+        _workVector[_invQ._ordering[i]] = y[i];
 
     // Eliminate the U's
     for ( unsigned i = 0; i < _m; ++i )
@@ -384,8 +386,10 @@ void ForrestTomlinFactorization::backwardTransformation( const double *y, double
     ****/
 
     // Multiply by invQ
+    // Note: this is easier to do with a column-wise representation of invQ,
+    // which is just the row-wise representation of Q.
     for ( unsigned i = 0; i < _m; ++i )
-        x[_invQ._ordering[i]] = _workVector[i];
+        x[_Q._ordering[i]] = _workVector[i];
 
     // Mutiply by the As
     for ( int i = _m - 1; i >= 0; --i )
