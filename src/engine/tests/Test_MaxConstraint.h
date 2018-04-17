@@ -114,13 +114,13 @@ public:
 		MaxConstraint max( f, elements );
 
 		// f = max(x_2 ... x_9)
-		// f = 7, x_2 = 6, x_3 = 5
+		// f = 7, x_2 = 6, x_3 = 4
 		List<PiecewiseLinearConstraint::Fix> fixes;
 		List<PiecewiseLinearConstraint::Fix>::iterator it;
 
 		max.notifyVariableValue( f, 7 );
 		max.notifyVariableValue( 2, 6 );
-		max.notifyVariableValue( 3, 5 );
+		max.notifyVariableValue( 3, 4 );
 
 		// possible fixes: set f to 6, x_2 to 7, x_3 to 7
 		fixes = max.getPossibleFixes();
@@ -134,13 +134,17 @@ public:
 		TS_ASSERT_EQUALS( it->_variable, 3U );
 		TS_ASSERT_EQUALS( it->_value, 7 );
 
-		max.notifyVariableValue( f, 4 );
-		// now f = 4, x_2 = 6, x_3 = 5
-		// only thing to do is set f to maxIndex, which is x_2 = 6
+		max.notifyVariableValue( f, 5 );
+		// now f = 5, x_2 = 6, x_3 = 4
+		// set f to 6, or x_2 to 5
 		fixes = max.getPossibleFixes();
 		it = fixes.begin();
 		TS_ASSERT_EQUALS( it->_variable, f );
 		TS_ASSERT_EQUALS( it->_value, 6 );
+
+		++it;
+		TS_ASSERT_EQUALS ( it->_variable, 2U );
+		TS_ASSERT_EQUALS ( it->_value, 5 );
 	}
 
 	void test_max_case_splits()
@@ -163,17 +167,10 @@ public:
 
 		List<PiecewiseLinearConstraint::Fix> fixes;
 
-		unsigned auxVar = 100;
-		FreshVariables::setNextVariable( auxVar );
-
 		List<PiecewiseLinearCaseSplit> splits = max.getCaseSplits();
 
 		// there are 8 possible phases
 		TS_ASSERT_EQUALS( splits.size(), 8U );
-
-		// this process should not have created any new variables
-		unsigned auxVariable = FreshVariables::getNextVariable();
-		TS_ASSERT_EQUALS( auxVariable, 100U );
 
 		auto split = splits.begin();
 		for ( unsigned i = 2; i < 10; ++i, ++split )
@@ -184,31 +181,16 @@ public:
             TS_ASSERT_EQUALS( bounds.size(), 0U );
 
             auto equationPairs = split->getEquations();
-            List<Equation> equations;
-            for ( auto &pair : equationPairs )
-                equations.append( pair.first() );
 
-            /*
-              Guy:
-              I'm not sure there should be any reference to the aux variables in this
-              test. The equation is left without the aux variable when it leaves the max
-              constraint, and the aux variable is later added by the engine.
-              Therefore, no need to add them for the test.
-            */
-            for ( auto &equation: equations )
-            {
-                equation.addAddend( -1, auxVariable );
-                equation.markAuxiliaryVariable( auxVariable );
-            }
+            TS_ASSERT_EQUALS( equationPairs.size(), 8U );
 
-            TS_ASSERT_EQUALS( equations.size(), 8U );
+            auto cur = equationPairs.begin();
 
-            auto cur = equations.begin();
+            TS_ASSERT_EQUALS( cur->first()._addends.size(), 2U );
+            TS_ASSERT_EQUALS( cur->first()._scalar, 0.0 );
+            TS_ASSERT_EQUALS( cur->second(), PiecewiseLinearCaseSplit::EQ)
 
-            TS_ASSERT_EQUALS( cur->_addends.size(), 3U );
-            TS_ASSERT_EQUALS( cur->_scalar, 0.0 );
-
-            auto addend = cur->_addends.begin();
+            auto addend = cur->first()._addends.begin();
 
             TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
             TS_ASSERT_EQUALS( addend->_variable, i );
@@ -218,21 +200,17 @@ public:
             TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
             TS_ASSERT_EQUALS( addend->_variable, f );
 
-            ++addend;
-
-            TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
-            TS_ASSERT_EQUALS( addend->_variable, 100U );
-
             ++cur;
 
             for ( unsigned j = 2; j < 10;  ++j )
             {
                 if ( i == j ) continue;
 
-                TS_ASSERT_EQUALS( cur->_addends.size(), 3U );
-                TS_ASSERT_EQUALS( cur->_scalar, 0.0 );
+                TS_ASSERT_EQUALS( cur->first()._addends.size(), 2U );
+                TS_ASSERT_EQUALS( cur->first()._scalar, 0.0 );
+                TS_ASSERT_EQUALS( cur->second(), PiecewiseLinearCaseSplit::GE)
 
-                auto addend = cur->_addends.begin();
+                auto addend = cur->first()._addends.begin();
 
                 TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
                 TS_ASSERT_EQUALS( addend->_variable, j );
@@ -241,11 +219,6 @@ public:
 
                 TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
                 TS_ASSERT_EQUALS( addend->_variable, i );
-
-                ++addend;
-
-                TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
-                TS_ASSERT_EQUALS( addend->_variable, 100U );
 
                 ++cur;
             }
@@ -276,11 +249,32 @@ public:
 		for( unsigned i = 3; i < 10; i++ )
 			max.notifyUpperBound( i, 5 );
 
-		// now, phase should be fixed to x_2
+		// now, phase should be fixed to x_2; all other variables should be removed
 		TS_ASSERT( max.phaseFixed() );
+		TS_ASSERT_EQUALS( max.getParticipatingVariables().size(), 2U );
 
-        // Guy: maybe also get the valud case split and see that it's
-        // the correct one?
+        max.notifyVariableValue( 2, 7);
+
+        PiecewiseLinearCaseSplit validSplit = max.getValidCaseSplit();
+		auto equationPairs = validSplit.getEquations();
+
+        TS_ASSERT_EQUALS( equationPairs.size(), 1U );
+
+        auto cur = equationPairs.begin();
+        TS_ASSERT_EQUALS( cur->first()._addends.size(), 2U );
+        TS_ASSERT_EQUALS( cur->first()._scalar, 0.0 );
+        TS_ASSERT_EQUALS( cur->second(), PiecewiseLinearCaseSplit::EQ)
+
+        auto addend = cur->first()._addends.begin();
+
+        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, 2U );
+
+        ++addend;
+
+        TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, f );
+
 	}
 
 	void test_max_obsolete()

@@ -115,7 +115,7 @@ class MaxConstraint : public PiecewiseLinearConstraint
     unsigned _maxElim;
     bool _phaseFixed;
     unsigned _fixedPhase;
-    float _maxLowerBound;
+    double _maxLowerBound;
 
     bool _removePL;
 
