@@ -596,18 +596,12 @@ public:
             TS_ASSERT_THROWS_NOTHING( ft->backwardTransformation( y, x ) );
 
             for ( unsigned i = 0; i < 4; ++i )
-                printf( "x[%i] = %lf\n", i, x[i] );
-
-            for ( unsigned i = 0; i < 4; ++i )
                 TS_ASSERT( FloatUtils::areEqual( x[i], expectedX[i] ) );
         }
     }
 
     void test_push_eta_matrix_refactorization()
     {
-        TS_TRACE( "TODO: Make this test pass!\n" );
-        return; // Remove this
-
         ForrestTomlinFactorization *ft;
 
         TS_ASSERT( ft = new ForrestTomlinFactorization( 4 ) );
@@ -630,6 +624,10 @@ public:
         //      |    0 1   |
         //      | 0  3 0 1 |
         double a1[] = { -4, 2, 0, 3 };
+
+        double w[] = { 14, 3.5, -6, 3 };
+        ft->setStoredW( w );
+
         ft->pushEtaMatrix( 1, a1 );
 
         // B * E1 = | 1   14 -2  4 |
@@ -700,7 +698,7 @@ public:
           A4' = | 1 0 0 0   |
                 | 0 1 0 0   |
                 | 0 0 1 0   |
-                | 0 0 0 1/4 |
+                | 0 0 0 1/2 |
 
           And of U':
 
@@ -724,7 +722,7 @@ public:
                                             | 0 1 0 0 |
 
           A4'' = Q'' A4' inv(Q'') = | 1 0   0 0 |
-                                    | 0 1/4 0 0 |
+                                    | 0 1/2 0 0 |
                                     | 0 0   1 0 |
                                     | 0 0   0 1 |
 
@@ -777,6 +775,7 @@ public:
         EtaMatrix expectedU1( 4, 0, expectedU1Col );
 
         const EtaMatrix **U = ft->getU();
+
         TS_ASSERT_EQUALS( *U[3], expectedU4 );
         TS_ASSERT_EQUALS( *U[2], expectedU3 );
         TS_ASSERT_EQUALS( *U[1], expectedU2 );
@@ -800,19 +799,19 @@ public:
         TS_ASSERT( A[0]._identity );
 
         TS_ASSERT( !A[1]._identity );
-        TS_ASSERT_EQUALS( A[1]._row, 3U );
-        TS_ASSERT_EQUALS( A[1]._column, 1U );
+        TS_ASSERT_EQUALS( A[1]._row, 1U );
+        TS_ASSERT_EQUALS( A[1]._column, 2U );
         TS_ASSERT( FloatUtils::areEqual( A[1]._value, -0.5 ) );
 
         TS_ASSERT( !A[2]._identity );
-        TS_ASSERT_EQUALS( A[2]._row, 3U );
-        TS_ASSERT_EQUALS( A[2]._column, 2U );
+        TS_ASSERT_EQUALS( A[2]._row, 1U );
+        TS_ASSERT_EQUALS( A[2]._column, 3U );
         TS_ASSERT( FloatUtils::areEqual( A[2]._value, -1.5 ) );
 
         TS_ASSERT( !A[3]._identity );
-        TS_ASSERT_EQUALS( A[3]._row, 3U );
-        TS_ASSERT_EQUALS( A[3]._column, 3U );
-        TS_ASSERT( FloatUtils::areEqual( A[3]._value, 0.25 ) );
+        TS_ASSERT_EQUALS( A[3]._row, 1U );
+        TS_ASSERT_EQUALS( A[3]._column, 1U );
+        TS_ASSERT( FloatUtils::areEqual( A[3]._value, 0.5 ) );
 
         TS_ASSERT_THROWS_NOTHING( delete ft );
     }

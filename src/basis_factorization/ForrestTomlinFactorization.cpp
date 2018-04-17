@@ -137,26 +137,27 @@ ForrestTomlinFactorization::~ForrestTomlinFactorization()
 void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const double */* column */ )
 {
     /*
-      The first step is to compute V = U * invQ * E * Q. V differs from U in just
-      one column. This column should have already been found during the previous
-      forward transformation, in which case it is stored as _storedW.
-      The index of this changed column, depends on Q.
+      Let V = U * invQ * E * Q.
+      V differs from U in just one column. The index of this column
+      determines the new permutation matrix workQ
     */
+    unsigned indexOfChangedUColumn = _invQ._ordering[columnIndex];
 
-    // Extract the index of the changed U column, and update it to _storedW.
-    unsigned indexOfChangedUColumn = _Q.findIndexOfRow( columnIndex );
-    memcpy( _U[indexOfChangedUColumn - 1]->_column, _storedW, sizeof(double) * _m );
-
-    /*
-      V is upper triangular except for one column. We pick workQ
-      so that workQ * V * invWorkQ is upper triangular except for the last row.
-    */
     _workQ.resetToIdentity();
     for ( unsigned i = indexOfChangedUColumn; i < _m - 1; ++i )
         _workQ._ordering[i] = i + 1;
     _workQ._ordering[_m - 1] = indexOfChangedUColumn;
-
     _workQ.invert( _invWorkQ );
+
+    /*
+      The next step is to compute the A matrices. For this, we need V,
+      which is obtained by replacing the column of U with the previously stored
+      w.
+
+      We use the U array to temporarily store V for the computation, although
+      it is not upper triangular.
+    */
+    memcpy( _U[indexOfChangedUColumn]->_column, _storedW, sizeof(double) * _m );
 
     /*
       Now we have workQ * V * invWorkQ that is upper triangular except the last row.
@@ -176,32 +177,77 @@ void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const doub
         // permutations. This is cell (m,i).
         unsigned originalRow = _workQ._ordering[_m - 1];
         unsigned originalCol = _workQ._ordering[i];
-
         double bumpValue = _U[originalCol]->_column[originalRow];
 
-        for ( unsigned j = indexOfChangedUColumn; j < i; ++i )
+        for ( unsigned j = indexOfChangedUColumn; j < i; ++j )
         {
+            /*
+              We adjust for each previous column, j.
+              For each such column we need to add A[j]'s value, times
+              entry (_A[j]._column, i) of V.
+              To find this entry we go through the permutations.
+            */
+
             if ( !_A[j]._identity )
-                bumpValue += _A[j]._value * _U[_workQ._ordering[_A[j]._column]]->_column[_workQ._ordering[_A[j]._column]];
+                bumpValue += _A[j]._value *
+                    _U[_workQ._ordering[i]]->_column[_workQ._ordering[_A[j]._column]];
         }
 
         // If the bump value is zero, nothing needs to be done
-        if ( FloatUtils::isZero( bumpValue ) )
+        if ( FloatUtils::isZero( bumpValue ) && i < _m - 1 )
+            continue;
+        if ( FloatUtils::areEqual( bumpValue, 1 ) && i == _m - 1 )
             continue;
 
-        // Now we want to zero out the bump value using an A matrix
-        double diagonalValue = _U[_workQ._ordering[i]]->_column[_workQ._ordering[i]];
-
+        // Now we want to zero out the bump value using an A matrix.
+        // We need entry (i,i) of V, and again we got through the permutations.
         _A[i]._row = _m - 1;
         _A[i]._column = i;
-        _A[i]._value = bumpValue / diagonalValue;
         _A[i]._identity = false;
+
+        if ( i < _m - 1 )
+        {
+            double diagonalValue = _U[_workQ._ordering[i]]->_column[_workQ._ordering[i]];
+            _A[i]._value = - bumpValue / diagonalValue;
+        }
+        else
+        {
+            _A[i]._value = 1 / bumpValue;
+        }
     }
 
     /*
       At this point we have that Am...A1 * workQ * V * invWorkQ is upper triangular.
-      We now do the textbook update to the store elements.
+      We now do the textbook update to the stored elements.
     */
+
+    // Update the Us to their new upper triangular form, according to the
+    // permutation matrices.
+
+    // Column permutations: the column that was changed becomes the last column.
+    EtaMatrix *temp = _U[indexOfChangedUColumn];
+    for ( unsigned i = indexOfChangedUColumn; i < _m - 1; ++i )
+    {
+        _U[i] = _U[i + 1];
+        _U[i]->_columnIndex = i;
+    }
+
+    _U[_m - 1] = temp;
+    _U[_m - 1]->_columnIndex = _m - 1;
+
+    // Row permutations: the row with the change index is erased, other rows move up,
+    // and we add the identity row in the end
+    for ( unsigned i = 0; i < _m - 1; ++i )
+    {
+        for ( unsigned j = indexOfChangedUColumn; j < i + 1; ++j )
+            _U[i]->_column[j] = _U[i]->_column[j + 1];
+
+        _U[i]->_column[i + 1] = 0;
+    }
+
+    for ( unsigned j = indexOfChangedUColumn; j < _m - 1; ++j )
+        _U[_m - 1]->_column[j] = _U[_m - 1]->_column[j + 1];
+    _U[_m - 1]->_column[_m - 1] = 1;
 
     // Update _Q to _Q * _invWorkQ. All permutation matrices are stored
     // row-wise, so this means permuting invQ's rows.
@@ -221,7 +267,7 @@ void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const doub
     {
         if ( !_A[i]._identity )
         {
-            _A[i]._row = _Q._ordering[_A[i]._row];
+            _A[i]._row = _invQ._ordering[_A[i]._row];
             _A[i]._column = _invQ._ordering[_A[i]._column];
         }
     }
@@ -605,6 +651,24 @@ void ForrestTomlinFactorization::setQ( const PermutationMatrix &Q )
 {
     _Q = Q;
     _Q.invert( _invQ );
+}
+
+void ForrestTomlinFactorization::dumpU()
+{
+    printf( "Dumping U:\n" );
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        for ( unsigned j = 0; j < _m; ++j )
+        {
+            printf( "%6.2lf ", _U[j]->_column[i] );
+        }
+        printf( "\n" );
+    }
+}
+
+void ForrestTomlinFactorization::setStoredW( const double *w )
+{
+    memcpy( _storedW, w, sizeof(double) * _m );
 }
 
 //

@@ -100,6 +100,7 @@ public:
 
     void setA( unsigned index, const AlmostIdentityMatrix &matrix );
     void setQ( const PermutationMatrix &Q );
+    void setStoredW( const double *w );
 
 private:
     /*
@@ -147,6 +148,11 @@ private:
       Swap two rows of a matrix.
     */
     void rowSwap( unsigned rowOne, unsigned rowTwo, double *matrix );
+
+    /*
+      Debug
+    */
+    void dumpU();
 };
 
 #endif // __ForrestTomlinFactorization_h__

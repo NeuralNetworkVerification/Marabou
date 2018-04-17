@@ -157,6 +157,13 @@ public:
                                  const BasisFactorizationError &e,
                                  e.getCode(),
                                  BasisFactorizationError::CORRUPT_PERMUATION_MATRIX );
+
+        p.resetToIdentity();
+
+        TS_ASSERT_EQUALS( p.findIndexOfRow( 0 ), 0U );
+        TS_ASSERT_EQUALS( p.findIndexOfRow( 1 ), 1U );
+        TS_ASSERT_EQUALS( p.findIndexOfRow( 2 ), 2U );
+        TS_ASSERT_EQUALS( p.findIndexOfRow( 3 ), 3U );
     }
 };
 
