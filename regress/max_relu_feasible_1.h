@@ -18,7 +18,6 @@
 #include "InputQuery.h"
 #include "MaxConstraint.h"
 #include "ReluConstraint.h"
-#include <iostream>
 
 class Max_Relu_Feasible_1
 {
@@ -26,12 +25,24 @@ public:
 	void run()
 	{
         // a, b, c side lengths
+        // form valid triangle iff |a-b| <= c <= a+b
 
-        // d = |a-b| = max(a-b, b-a)
-        // t = Relu(d-c) + Relu(c-a-b)
+        // x0: a
+        // x1: b
+        // x2: c
+        // x3: a-b; equation1 x3 - x0 + x1 + x11 = 0, x11 aux
+        // x4: b-a, equation2 x4 - x1 + x0 + x12 = 0, x12 aux
+        // x5: |a-b| = max(x3, x4)
+        // x6: |a-b|-c; equation3 x6 -x5 + x2 + x13 = 0, x13 aux
+        // x7: 0 iff |a-b| <= c, x7 = Relu(x6)
+        // x8: c-a-b; equation4 x8 - x2 + x1 + x0 + x14 = 0, x14 aux
+        // x9: 0 iff c <= a+b, x9 = Relu(x8)
+        // x10:0 iff both conditions satisfied, equation5 x10 -x7-x9+x15=0, x15 aux
+
+        // thus, x10 = 0 iff there exists a,b,c satisfying triangle inequality
 
         InputQuery inputQuery;
-        inputQuery.setNumberOfVariables( 20 );
+        inputQuery.setNumberOfVariables( 16 );
 
         inputQuery.setLowerBound( 0, 1 ); // a
         inputQuery.setUpperBound( 0, 2 );
@@ -39,6 +50,9 @@ public:
         inputQuery.setUpperBound( 1, 2 );
         inputQuery.setLowerBound( 2, 1 ); // c
         inputQuery.setUpperBound( 2, 2 );
+        inputQuery.setLowerBound( 10, 0 ); // assert that x10 == 0
+        inputQuery.setUpperBound( 10, 0 ); // ie, triangle inequality satisfied
+
 
         for ( unsigned i = 11; i < 16; ++i )
         {
@@ -66,22 +80,6 @@ public:
         
         MaxConstraint* max1 = new MaxConstraint( 5, Set<unsigned>( { 3, 4 } ) ) ;
         inputQuery.addPiecewiseLinearConstraint( max1 ); // x5 is |a-b|
-        Equation maxEquation1;
-        maxEquation1.addAddend( -1, 5 );
-        maxEquation1.addAddend( 1, 3 );
-        maxEquation1.addAddend( 1, 16 );
-        maxEquation1.markAuxiliaryVariable( 16 );
-        maxEquation1.setScalar( 0 );
-        inputQuery.addEquation( maxEquation1 );
-        inputQuery.setLowerBound( 16, 0 );
-        Equation maxEquation2;
-        maxEquation2.addAddend( -1, 5 );
-        maxEquation2.addAddend( 1, 4 );
-        maxEquation2.addAddend( 1, 17 );
-        maxEquation2.markAuxiliaryVariable( 17 );
-        maxEquation2.setScalar( 0 );
-        inputQuery.addEquation( maxEquation2 );
-        inputQuery.setLowerBound( 17, 0 );
         
         Equation equation3;
         equation3.addAddend( -1, 5 );
@@ -91,19 +89,11 @@ public:
         equation3.setScalar( 0 );
         equation3.markAuxiliaryVariable( 13 );
         inputQuery.addEquation( equation3 ); // x6 is |a-b|-c
-        
+
         ReluConstraint* relu1 = new ReluConstraint( 6, 7 );
         inputQuery.addPiecewiseLinearConstraint( relu1 ); // x7 is Relu(|a-b|-c)
         inputQuery.setLowerBound( 7, 0 );
-        Equation reluEquation1;
-        reluEquation1.addAddend( 1, 6 );
-        reluEquation1.addAddend( -1, 7 );
-        reluEquation1.addAddend( 1, 18 );
-        reluEquation1.markAuxiliaryVariable( 18 );
-        reluEquation1.setScalar( 0 );
-        inputQuery.addEquation( reluEquation1 );
-        inputQuery.setLowerBound( 18, 0 );
-        
+
         Equation equation4;
         equation4.addAddend( 1, 0 );
         equation4.addAddend( 1, 1 );
@@ -117,15 +107,7 @@ public:
         ReluConstraint* relu2 = new ReluConstraint( 8, 9 );
         inputQuery.addPiecewiseLinearConstraint( relu2 ); // x9 is Relu(c-a-b)
         inputQuery.setLowerBound( 9, 0 );
-        Equation reluEquation2;
-        reluEquation2.addAddend( 1, 8 );
-        reluEquation2.addAddend( -1, 9 );
-        reluEquation2.addAddend( 1, 19 );
-        reluEquation2.markAuxiliaryVariable( 19 );
-        reluEquation2.setScalar( 0 );
-        inputQuery.addEquation( reluEquation2 );
-        inputQuery.setLowerBound( 19, 0 );
-        
+
         Equation equation5;
         equation5.addAddend( -1, 7 );
         equation5.addAddend( -1, 9 );
@@ -135,15 +117,13 @@ public:
         equation5.markAuxiliaryVariable( 15 );
         inputQuery.addEquation( equation5 ); // x10 is == 0 iff triangle inequality satisfied
 
-        inputQuery.setLowerBound( 10, 0 ); // assert that x10 == 0
-        inputQuery.setUpperBound( 10, 0 );
-
         int outputStream = redirectOutputToFile( "logs/max_relu_feasible_1.txt" );
 
         struct timespec start = TimeUtils::sampleMicro();
         
         Engine engine;
-        if ( !engine.processInputQuery( inputQuery ) )
+        bool whetherToPreprocess = true; // change here rather than GlobalConfig
+        if ( !engine.processInputQuery( inputQuery, whetherToPreprocess ) )
         {
             struct timespec end = TimeUtils::sampleMicro();
             restoreOutputStream( outputStream );
@@ -170,7 +150,6 @@ public:
         double value_a = inputQuery.getSolutionValue( 0 );
         double value_b = inputQuery.getSolutionValue( 1 );
         double value_c = inputQuery.getSolutionValue( 2 );
-        std::cout<<"W "<<value_a<<" "<<value_b<<" "<<value_c<<std::endl;
         double largest = value_a;
         if ( value_b > largest )
             largest = value_b;
