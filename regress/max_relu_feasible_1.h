@@ -33,11 +33,11 @@ public:
         InputQuery inputQuery;
         inputQuery.setNumberOfVariables( 20 );
 
-        inputQuery.setLowerBound( 0, 0.001 ); // a
+        inputQuery.setLowerBound( 0, 0 ); // a
         inputQuery.setUpperBound( 0, 1 );
-        inputQuery.setLowerBound( 1, 0.001 ); // b
+        inputQuery.setLowerBound( 1, 0 ); // b
         inputQuery.setUpperBound( 1, 1 );
-        inputQuery.setLowerBound( 2, 0.001 ); // c
+        inputQuery.setLowerBound( 2, 0 ); // c
         inputQuery.setUpperBound( 2, 1 );
 
         // inputQuery.setLowerBound( 0, 0.5 ); // a

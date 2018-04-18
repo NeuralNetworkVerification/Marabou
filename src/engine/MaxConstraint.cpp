@@ -83,6 +83,9 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
     if ( _statistics )
         _statistics->incNumBoundNotificationsPlConstraints();
 
+    if ( !_elements.exists( variable ) && variable != _f )
+        return;
+
     if ( _lowerBounds.exists( variable ) && !FloatUtils::gt( value, _lowerBounds[variable] ) )
         return;
 
@@ -127,7 +130,7 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
         }
     }
 
-    if (_elements.exists( variable ) &&
+    if (_elements.exists( variable ) && variable != _maxIndex && 
         _lowerBounds.exists( variable ) && _upperBounds.exists( variable ) &&
         FloatUtils::areEqual( _lowerBounds[variable], _upperBounds[variable] ) )
         eliminateVariable( variable, _lowerBounds[variable] );
@@ -138,6 +141,9 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
 {
     if ( _statistics )
         _statistics->incNumBoundNotificationsPlConstraints();
+
+    if ( !_elements.exists( variable ) && variable != _f )
+        return;
 
     if ( _upperBounds.exists( variable ) && !FloatUtils::lt( value, _upperBounds[variable] ) )
         return;
@@ -174,7 +180,7 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
         }
     }
 
-    if (_elements.exists( variable ) &&
+    if (_elements.exists( variable ) && variable != _maxIndex && 
         _lowerBounds.exists( variable ) && _upperBounds.exists( variable ) &&
         FloatUtils::areEqual( _lowerBounds[variable], _upperBounds[variable] ) )
         eliminateVariable( variable, _lowerBounds[variable] );
