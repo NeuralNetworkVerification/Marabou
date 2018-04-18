@@ -440,8 +440,17 @@ void MaxConstraint::eliminateVariable( unsigned var, double value )
         _removePL = true;
 }
 
-void MaxConstraint::getAuxiliaryEquations( List<Equation> &/* newEquations */ ) const
+void MaxConstraint::getAuxiliaryEquations( List<Equation> & newEquations ) const
 {
+    for ( unsigned elem: _elements )
+    {
+        // interpreted as >= 0 by preprocessor
+        Equation equ;
+        equ.addAddend( 1.0, _f );
+        equ.addAddend( -1.0, elem );
+        equ.setScalar( 0 );
+        newEquations.append( equ );
+    }
 }
 
 //
