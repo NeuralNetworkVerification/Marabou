@@ -72,7 +72,7 @@ class MarabouNetwork:
     
     def addMaxConstraint(self, elements, v):
         """
-        Function to add a new Relu constraint
+        Function to add a new Max constraint
         Arguments:
             elements: (set of int) variable representing input to max constraint
             v: (int) variable representing output of max constraint

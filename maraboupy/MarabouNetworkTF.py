@@ -364,16 +364,6 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
                             if di < prevValues.shape[1] and dj < prevValues.shape[2]:
                                 maxVars.insert([prevValues[0][di][dj][k]])
                     self.addMaxConstraint(maxVars, curValues[0][i][j][k])
-                    for maxVar in maxVars:
-                        e = MarabouUtils.Equation()
-                        e.addAddend(1.0, maxVar)
-                        e.addAddend(-1.0, curValues[0][i][j][k])
-                        e.setScalar(0.0)
-                        aux = self.getNewVariable()
-                        e.addAddend(1.0, aux)
-                        e.markAuxiliaryVariable(aux)
-                        self.setLowerBound(aux, 0.0)
-                        self.addEquation(e)
 
     def makeNeuronEquations(self, op): 
         """
