@@ -33,25 +33,12 @@ public:
         InputQuery inputQuery;
         inputQuery.setNumberOfVariables( 20 );
 
-        inputQuery.setLowerBound( 0, 0 ); // a
-        inputQuery.setUpperBound( 0, 1 );
-        inputQuery.setLowerBound( 1, 0 ); // b
-        inputQuery.setUpperBound( 1, 1 );
-        inputQuery.setLowerBound( 2, 0 ); // c
-        inputQuery.setUpperBound( 2, 1 );
-
-        // inputQuery.setLowerBound( 0, 0.5 ); // a
-        // inputQuery.setUpperBound( 0, 0.5 );
-        // inputQuery.setLowerBound( 1, 0.5 ); // b
-        // inputQuery.setUpperBound( 1, 0.5 );
-        // inputQuery.setLowerBound( 2, 0.5 ); // c
-        // inputQuery.setUpperBound( 2, 0.5 );
-        
- 		// for ( unsigned i = 3; i < 10; ++i )
-   //      {
-   //          inputQuery.setLowerBound( i, -1000 );
-   //          inputQuery.setUpperBound( i, 1000 );
-   //      }
+        inputQuery.setLowerBound( 0, 1 ); // a
+        inputQuery.setUpperBound( 0, 2 );
+        inputQuery.setLowerBound( 1, 1 ); // b
+        inputQuery.setUpperBound( 1, 2 );
+        inputQuery.setLowerBound( 2, 1 ); // c
+        inputQuery.setUpperBound( 2, 2 );
 
         for ( unsigned i = 11; i < 16; ++i )
         {
@@ -87,7 +74,6 @@ public:
         maxEquation1.setScalar( 0 );
         inputQuery.addEquation( maxEquation1 );
         inputQuery.setLowerBound( 16, 0 );
-        // inputQuery.setUpperBound( 16, 1000 );
         Equation maxEquation2;
         maxEquation2.addAddend( -1, 5 );
         maxEquation2.addAddend( 1, 4 );
@@ -96,8 +82,7 @@ public:
         maxEquation2.setScalar( 0 );
         inputQuery.addEquation( maxEquation2 );
         inputQuery.setLowerBound( 17, 0 );
-        // inputQuery.setUpperBound( 17, 1000 );
-
+        
         Equation equation3;
         equation3.addAddend( -1, 5 );
         equation3.addAddend( 1, 2 );
@@ -109,6 +94,7 @@ public:
         
         ReluConstraint* relu1 = new ReluConstraint( 6, 7 );
         inputQuery.addPiecewiseLinearConstraint( relu1 ); // x7 is Relu(|a-b|-c)
+        inputQuery.setLowerBound( 7, 0 );
         Equation reluEquation1;
         reluEquation1.addAddend( 1, 6 );
         reluEquation1.addAddend( -1, 7 );
@@ -117,8 +103,7 @@ public:
         reluEquation1.setScalar( 0 );
         inputQuery.addEquation( reluEquation1 );
         inputQuery.setLowerBound( 18, 0 );
-        // inputQuery.setUpperBound( 18, 1000 );
-
+        
         Equation equation4;
         equation4.addAddend( 1, 0 );
         equation4.addAddend( 1, 1 );
@@ -131,6 +116,7 @@ public:
         
         ReluConstraint* relu2 = new ReluConstraint( 8, 9 );
         inputQuery.addPiecewiseLinearConstraint( relu2 ); // x9 is Relu(c-a-b)
+        inputQuery.setLowerBound( 9, 0 );
         Equation reluEquation2;
         reluEquation2.addAddend( 1, 8 );
         reluEquation2.addAddend( -1, 9 );
@@ -139,16 +125,15 @@ public:
         reluEquation2.setScalar( 0 );
         inputQuery.addEquation( reluEquation2 );
         inputQuery.setLowerBound( 19, 0 );
-        // inputQuery.setUpperBound( 19, 1000 );
-
+        
         Equation equation5;
-        equation5.addAddend( -1, 0 );
-        equation5.addAddend( -1, 1 );
+        equation5.addAddend( -1, 7 );
+        equation5.addAddend( -1, 9 );
         equation5.addAddend( 1, 10 );
         equation5.addAddend( 1, 15 );
         equation5.setScalar( 0 );
         equation5.markAuxiliaryVariable( 15 );
-        inputQuery.addEquation( equation5 ); // x10 is == 0 iff trianlge inequality satisfied
+        inputQuery.addEquation( equation5 ); // x10 is == 0 iff triangle inequality satisfied
 
         inputQuery.setLowerBound( 10, 0 ); // assert that x10 == 0
         inputQuery.setUpperBound( 10, 0 );
@@ -157,7 +142,6 @@ public:
 
         struct timespec start = TimeUtils::sampleMicro();
         
-        std::cout<<"Before preprocessing"<<std::endl;
         Engine engine;
         if ( !engine.processInputQuery( inputQuery ) )
         {
@@ -166,8 +150,7 @@ public:
             printFailed( "max_relu_feasible_1 preprocessing", start, end );
             return;
         }
-        std::cout<<"After preprocessing"<<std::endl;
-
+        
         bool result = engine.solve();
 
         struct timespec end = TimeUtils::sampleMicro();
@@ -187,7 +170,7 @@ public:
         double value_a = inputQuery.getSolutionValue( 0 );
         double value_b = inputQuery.getSolutionValue( 1 );
         double value_c = inputQuery.getSolutionValue( 2 );
-        
+        std::cout<<"W "<<value_a<<" "<<value_b<<" "<<value_c<<std::endl;
         double largest = value_a;
         if ( value_b > largest )
             largest = value_b;
