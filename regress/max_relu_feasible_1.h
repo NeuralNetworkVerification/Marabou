@@ -45,11 +45,11 @@ public:
         inputQuery.setNumberOfVariables( 16 );
 
         inputQuery.setLowerBound( 0, 1 ); // a
-        inputQuery.setUpperBound( 0, 2 );
-        inputQuery.setLowerBound( 1, 1 ); // b
-        inputQuery.setUpperBound( 1, 2 );
-        inputQuery.setLowerBound( 2, 1 ); // c
-        inputQuery.setUpperBound( 2, 2 );
+        inputQuery.setUpperBound( 0, 3 );
+        inputQuery.setLowerBound( 1, 2 ); // b
+        inputQuery.setUpperBound( 1, 4);
+        inputQuery.setLowerBound( 2, 5 ); // c
+        inputQuery.setUpperBound( 2, 0 );
         inputQuery.setLowerBound( 10, 0 ); // assert that x10 == 0
         inputQuery.setUpperBound( 10, 0 ); // ie, triangle inequality satisfied
 

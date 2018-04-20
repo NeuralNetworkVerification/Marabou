@@ -81,11 +81,11 @@ int main()
 {
     try
 	{
-		lps();
+		// lps();
 
-    	relus();
+    	// relus();
 
-        max();
+        // max();
 
         max_relu();
 
