@@ -174,11 +174,11 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
             output_variables.append(self.layerSizes[0] + offset + i + 3*hidden_layers[-1])
             aux_variables.append(self.layerSizes[0] + offset + i + 3*hidden_layers[-1] + self.layerSizes[-1])
 
-        self.inputVars = np.array(input_variables)
+        self.inputVars = np.array([input_variables])
         self.b_variables = b_variables
         self.f_variables = f_variables
         self.aux_variables = aux_variables
-        self.outputVars = np.array(output_variables)
+        self.outputVars = np.array([output_variables])
 
     """
     Compute the variable number for the b variables in that correspond to the
