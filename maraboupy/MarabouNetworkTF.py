@@ -325,8 +325,8 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         ### END getting inputs ###
         
         ### Generate actual equations ###
-        # for i in range(len(prev)):
-        #     self.addRelu(prev[i], cur[i])
+        for i in range(len(prev)):
+            self.addRelu(prev[i], cur[i])
         #     e = MarabouUtils.Equation()
         #     e.addAddend(1.0, prev[i])
         #     e.addAddend(-1.0, cur[i])
@@ -336,8 +336,8 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         #     e.markAuxiliaryVariable(aux)
         #     self.setLowerBound(aux, 0.0)
         #     self.addEquation(e)
-        # for f in cur:
-        #     self.setLowerBound(f, 0.0)
+        for f in cur:
+            self.setLowerBound(f, 0.0)
 
     def maxpoolEquations(self, op):
         """         
