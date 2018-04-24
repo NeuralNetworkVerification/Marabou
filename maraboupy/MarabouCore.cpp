@@ -2,6 +2,7 @@
 #include <pybind11/stl.h>
 #include <map>
 #include <vector>
+#include <set>
 #include <string>
 #include <utility>
 #include <unistd.h>
@@ -12,8 +13,10 @@
 #include "InputQuery.h"
 #include "ReluplexError.h"
 #include "FloatUtils.h"
+#include "MaxConstraint.h"
 #include "PiecewiseLinearConstraint.h"
 #include "ReluConstraint.h"
+#include "Set.h"
 
 namespace py = pybind11;
 
@@ -59,6 +62,14 @@ void addReluConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
     ipq.addPiecewiseLinearConstraint(r);
 }
 
+void addMaxConstraint(InputQuery& ipq, std::set<unsigned> elements, unsigned v){
+    Set<unsigned> e;
+    for(unsigned var: elements)
+        e.insert(var);
+    PiecewiseLinearConstraint* m = new MaxConstraint(v, e);
+    ipq.addPiecewiseLinearConstraint(m);
+}
+
 std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::string redirect=""){
     // Arguments: InputQuery object, filename to redirect output
     // Returns: map from variable number to value
@@ -93,6 +104,7 @@ PYBIND11_MODULE(MarabouCore, m) {
     m.doc() = "Marabou API Library";
     m.def("solve", &solve, "Takes in a description of the InputQuery and returns the solution");
     m.def("addReluConstraint", &addReluConstraint, "Add a Relu constraint to the InputQuery");
+    m.def("addMaxConstraint", &addMaxConstraint, "Add a Max constraint to the InputQuery");
     py::class_<InputQuery>(m, "InputQuery")
         .def(py::init())
         .def("setUpperBound", &InputQuery::setUpperBound)
