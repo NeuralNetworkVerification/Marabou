@@ -478,12 +478,63 @@ void ForrestTomlinFactorization::backwardTransformation( const double *y, double
     }
 }
 
-void ForrestTomlinFactorization::storeFactorization( IBasisFactorization */* other */ )
+void ForrestTomlinFactorization::storeFactorization( IBasisFactorization *other )
 {
+    ForrestTomlinFactorization *otherFTFactorization = (ForrestTomlinFactorization *)other;
+
+    ASSERT( _m == otherFTFactorization->_m );
+
+    // Copy the non-pointer elements
+    otherFTFactorization->_Q = _Q;
+    otherFTFactorization->_invQ = _invQ;
+
+    // Copy the basis matrix and its factorization
+    memcpy( otherFTFactorization->_B, _B, sizeof(double) * _m * _m );
+
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        otherFTFactorization->_A[i] = _A[i];
+        otherFTFactorization->_U[i] = _U[i];
+    }
+
+    List<LPElement *>::iterator lpIt;
+    for ( lpIt = otherFTFactorization->_LP.begin(); lpIt != otherFTFactorization->_LP.end(); ++lpIt )
+        delete *lpIt;
+	otherFTFactorization->_LP.clear();
+
+    for ( const auto &lp : _LP )
+        otherFTFactorization->_LP.append( lp->duplicate() );
+
+    // We assume that this function is not invoked in the middle of, e.g., a pivot operation,
+    // so we don't store the temporary data structures.
 }
 
-void ForrestTomlinFactorization::restoreFactorization( const IBasisFactorization */* other */ )
+void ForrestTomlinFactorization::restoreFactorization( const IBasisFactorization *other )
 {
+    ForrestTomlinFactorization *otherFTFactorization = (ForrestTomlinFactorization *)other;
+
+    ASSERT( _m == otherFTFactorization->_m );
+
+    // Copy the non-pointer elements
+    _Q = otherFTFactorization->_Q;
+    _invQ = otherFTFactorization->_invQ;
+
+    // Copy the basis matrix and its factorization
+    memcpy( _B, otherFTFactorization->_B, sizeof(double) * _m * _m );
+
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        _A[i] = otherFTFactorization->_A[i];
+        _U[i] = otherFTFactorization->_U[i];
+    }
+
+    List<LPElement *>::iterator lpIt;
+    for ( lpIt = _LP.begin(); lpIt != _LP.end(); ++lpIt )
+        delete *lpIt;
+	_LP.clear();
+
+    for ( const auto &lp : otherFTFactorization->_LP )
+        _LP.append( lp->duplicate() );
 }
 
 void ForrestTomlinFactorization::setBasis( const double *B )

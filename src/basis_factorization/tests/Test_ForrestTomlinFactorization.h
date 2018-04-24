@@ -815,6 +815,48 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( delete ft );
     }
+
+    void test_store_and_restore()
+    {
+        ForrestTomlinFactorization *ft;
+
+        TS_ASSERT( ft = new ForrestTomlinFactorization( 4 ) );
+
+        double basisMatrix[16] = {
+            1,   3, -2,  4,
+            1,   5, -1,  5,
+            1,   3, -3,  6,
+            -1, -3,  3, -8,
+        };
+
+        TS_ASSERT_THROWS_NOTHING( ft->setBasis( basisMatrix ) );
+
+        double a1[] = { -4, 2, 0, 3 };
+        double w[] = { 14, 3.5, -6, 3 };
+        ft->setStoredW( w );
+        ft->pushEtaMatrix( 1, a1 );
+
+        ForrestTomlinFactorization *ft2 = new ForrestTomlinFactorization( 4 );
+        ForrestTomlinFactorization *ft3 = new ForrestTomlinFactorization( 4 );
+
+        ft->storeFactorization( ft2 );
+        ft3->restoreFactorization( ft2 );
+
+        double y[] = { 1.25, 3.85, -4.5, 17 };
+        double x1[4];
+        double x2[4];
+        double x3[4];
+
+        TS_ASSERT_THROWS_NOTHING( ft->forwardTransformation( y, x1 ) );
+        TS_ASSERT_THROWS_NOTHING( ft2->forwardTransformation( y, x2 ) );
+        TS_ASSERT_THROWS_NOTHING( ft3->forwardTransformation( y, x3 ) );
+
+        for ( unsigned i = 0; i < 4; ++i )
+        {
+            TS_ASSERT_EQUALS( x1[i], x2[i] );
+            TS_ASSERT_EQUALS( x1[i], x3[i] );
+        }
+    }
 };
 
 //
