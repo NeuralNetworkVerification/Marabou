@@ -654,7 +654,88 @@ void ForrestTomlinFactorization::makeExplicitBasisAvailable()
 
 const double *ForrestTomlinFactorization::getBasis() const
 {
-    return NULL;
+    /*
+
+      We know that the following equation holds:
+
+      Am...A1 * LsPs...L1P1 * B = Q * Um...U1 * invQ
+
+      Or:
+
+      B = inv( Am...A1 * LsPs...L1P1 ) * Q * Um...U1 * invQ
+        = inv(P1)inv(L1) ... inv(Ps)inv(LS) * inv(A1)...inv(Am)
+          * Q * Um...U1 * invQ
+
+    */
+
+    // Start by computing: Um...U1 * invQ.
+    std::fill_n( _workMatrix, _m * _m, 0.0 );
+    for ( unsigned i = 0; i < _m; ++i )
+        _workMatrix[i * _m + _invQ._ordering[i]] = 1.0;
+
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        for ( unsigned row = 0; row < _U[i]->_columnIndex; ++row )
+            for ( unsigned col = 0; col < _m; ++col )
+                _workMatrix[row * _m + col] += _U[i]->_column[row] * _workMatrix[_U[i]->_columnIndex * _m + row];
+
+        for ( unsigned col = 0; col < _m; ++col )
+            _workMatrix[_U[i]->_columnIndex * _m + col] *= _U[i]->_column[_U[i]->_columnIndex];
+    }
+
+    // Permute the rows according to Q
+    for ( unsigned i = 0; i < _m; ++i )
+        memcpy( _B + ( i * _m ), _workMatrix + ( _Q._ordering[i] * _m ), sizeof(double) * _m );
+
+    // Multiply by the inverse As. An inverse of an almost identity matrix
+    // is just that matrix with its special value negated.
+    for ( int i = _m - 1; i >= 0; --i )
+    {
+        if ( !_A[i]._identity )
+        {
+            for ( unsigned j = 0; j < _m; ++j )
+                _B[_A[i]._row * _m + j] -= _B[_A[i]._column * _m + j];
+        }
+    }
+
+    double *temp = new double[_m];
+    // Multiply by inverted Ps and Ls
+    for ( const auto &lp : _LP )
+    {
+        // The inverse of a general permutation matrix is its transpose.
+        // However, since these are permutations of just two rows, the
+        // transpose is equal to the original - so no need to invert.
+        if ( lp->_pair )
+        {
+            memcpy( temp, _B + (lp->_pair->first * _m), sizeof(double) * _m );
+            memcpy( _B + (lp->_pair->first * _m), _B + (lp->_pair->second * _m), sizeof(double) * _m );
+            memcpy( _B + (lp->_pair->second * _m), temp,  sizeof(double) * _m );
+		}
+        else
+        {
+            // The inverse of an eta matrix is an eta matrix with the special
+            // column negated and divided by the diagonal entry. The only
+            // exception is the diagonal entry itself, which is just the
+            // inverse of the original diagonal entry.
+            EtaMatrix *eta = lp->_eta;
+            double etaDiagonalEntry = 1 / eta->_column[eta->_columnIndex];
+
+            for ( unsigned row = eta->_columnIndex + 1; row < _m; ++row )
+            {
+                for ( unsigned col = 0; col < _m; ++col )
+                {
+                    _B[row * _m + col] -=
+                        eta->_column[row] * etaDiagonalEntry * _B[eta->_columnIndex * _m + col];
+                }
+            }
+
+            for ( unsigned col = 0; col < _m; ++col )
+                _B[eta->_columnIndex * _m + col] *= etaDiagonalEntry;
+        }
+    }
+
+    delete []temp;
+    return _B;
 }
 
 void ForrestTomlinFactorization::invertBasis( double */* result */ )
