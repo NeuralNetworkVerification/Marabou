@@ -79,6 +79,38 @@ class MarabouNetwork:
         """
         self.maxList += [(elements, v)]
 
+    def lowerBoundExists(self, x):
+        """
+        Function to check whether lower bound for a variable is known
+        Arguments:
+            x: (int) variable to check
+        """
+        return x in self.lowerBounds
+
+    def upperBoundExists(self, x):
+        """
+        Function to check whether upper bound for a variable is known
+        Arguments:
+            x: (int) variable to check
+        """
+        return x in self.upperBounds
+
+    def participatesInPLConstraint(self, x):
+        """
+        Function to check whether variable participates in any piecewise linear constraint in this network
+        Arguments:
+            x: (int) variable to check
+        """
+        # ReLUs
+        fs, bs = zip(*self.reluList)
+        if x in fs or x in bs:
+            return True
+        # Max constraints
+        for elems, var in self.maxList:
+            if x in elems or x==var:
+                return True
+        return False
+
     def getMarabouQuery(self):
         """
         Function to convert network into Marabou Query

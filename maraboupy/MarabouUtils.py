@@ -7,6 +7,7 @@ class Equation:
         Construct empty equation
         """
         self.addendList = []
+        self.participatingVariables = set()
         self.auxVar = None
         self.scalar = None
     
@@ -34,6 +35,39 @@ class Equation:
             aux: (int) variable number of variable to mark
         """
         self.auxVar = aux
+
+    def getParticipatingVariables(self):
+        """
+        Returns set of variables participating in this equation
+        """
+        return self.participatingVariables
+
+    def participatingVariable(self, var):
+        """
+        Check if the variable participates in this equation
+        Arguments:
+            var: (int) variable number to check
+        """
+        return var in self.getParticipatingVariables()
+
+    def replaceVariable(self, x, xprime, c):
+        """
+        Replace x with xprime + c
+        Arguments:
+            x: (int) old variable to be replaced in this equation
+            xprime: (int) new variable to be added, does not participate in this equation
+            c: (float) difference between old and new variable
+        """
+        assert self.participatingVariable(x)
+        assert not self.participatingVariable(xprime)
+        assert self.auxVar != x and self.auxVar != xprime
+        for i in range(len(self.addendList)):
+            if self.addendList[i][1] == x:
+                break
+        self.addendList[i][1] = xprime
+        self.setScalar(self.scalar - self.addendList[i][0]*c)
+        self.participatingVariables.remove(x)
+        self.participatingVariables.update([xprime])
 
 def addEquality(network, vars, coeffs, scalar):
     """
