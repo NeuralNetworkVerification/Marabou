@@ -64,12 +64,11 @@ class Equation:
         assert self.auxVar != x and self.auxVar != xprime
         for i in range(len(self.addendList)):
             if self.addendList[i][1] == x:
-                break
-        coeff = self.addendList[i][0]
-        self.addendList[i] = (coeff, xprime)
-        self.setScalar(self.scalar - coeff*c)
-        self.participatingVariables.remove(x)
-        self.participatingVariables.update([xprime])
+                coeff = self.addendList[i][0]
+                self.addendList[i] = (coeff, xprime)
+                self.setScalar(self.scalar - coeff*c)
+                self.participatingVariables.remove(x)
+                self.participatingVariables.update([xprime])
 
 def addEquality(network, vars, coeffs, scalar):
     """

@@ -256,9 +256,9 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             # replace x only if it does not occur anywhere else in the system
             if self.lowerBoundExists(x) or self.upperBoundExists(x) or self.participatesInPLConstraint(x):
                 e = MarabouUtils.Equation()
-                e.addAddend(1, x)
-                e.addAddend(-1, xprime)
-                e.setScalar(-c)
+                e.addAddend(1.0, x)
+                e.addAddend(-1.0, xprime)
+                e.setScalar(c)
                 aux = self.getNewVariable()
                 self.setLowerBound(aux, 0.0)
                 self.setUpperBound(aux, 0.0)
@@ -266,8 +266,8 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
                 self.addEquation(e)
             else:
                 biasAddUpdates[x] = (xprime, c)
-                self.setLowerBound(x, 0)
-                self.setUpperBound(x, 0)
+                self.setLowerBound(x, 0.0)
+                self.setUpperBound(x, 0.0)
 
         for equ in self.equList:
             participating = equ.getParticipatingVariables()
