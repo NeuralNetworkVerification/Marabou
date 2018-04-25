@@ -857,6 +857,65 @@ public:
             TS_ASSERT_EQUALS( x1[i], x3[i] );
         }
     }
+
+    void test_get_basis()
+    {
+        ForrestTomlinFactorization *ft;
+
+        TS_ASSERT( ft = new ForrestTomlinFactorization( 4 ) );
+
+        // B = | 1   3 -2  4 |
+        //     | 1   5 -1  5 |
+        //     | 1   3 -3  6 |
+        //     | -1 -3  3 -8 |
+        double basisMatrix[16] = {
+            1,   3, -2,  4,
+            1,   5, -1,  5,
+            1,   3, -3,  6,
+            -1, -3,  3, -8,
+        };
+
+        TS_ASSERT_THROWS_NOTHING( ft->setBasis( basisMatrix ) );
+
+        TS_ASSERT( ft->explicitBasisAvailable() );
+        const double *basis;
+        TS_ASSERT_THROWS_NOTHING( basis = ft->getBasis() );
+        for ( unsigned i = 0; i < 16; ++i )
+            TS_ASSERT( FloatUtils::areEqual( basisMatrix[i], basis[i] ) );
+
+        // E1 = | 1 -4     |
+        //      |    2     |
+        //      |    0 1   |
+        //      | 0  3 0 1 |
+        double a1[] = { -4, 2, 0, 3 };
+        double w[] = { 14, 3.5, -6, 3 };
+        ft->setStoredW( w );
+        ft->pushEtaMatrix( 1, a1 );
+
+        // B * E1 = | 1   14 -2  4 |
+        //          | 1   21 -1  5 |
+        //          | 1   20 -3  6 |
+        //          | -1 -26  3 -8 |
+
+        double expectedB[16] = {
+            1,   14, -2,  4,
+            1,   21, -1,  5,
+            1,   20, -3,  6,
+            -1, -26,  3, -8,
+        };
+
+        TS_ASSERT( !ft->explicitBasisAvailable() );
+        TS_ASSERT_THROWS_NOTHING( ft->makeExplicitBasisAvailable() );
+        TS_ASSERT( ft->explicitBasisAvailable() );
+
+        TS_ASSERT_THROWS_NOTHING( basis = ft->getBasis() );
+        for ( unsigned i = 0; i < 16; ++i )
+        {
+            TS_ASSERT( FloatUtils::areEqual( expectedB[i], basis[i] ) );
+        }
+
+        TS_ASSERT_THROWS_NOTHING( delete ft );
+    }
 };
 
 //

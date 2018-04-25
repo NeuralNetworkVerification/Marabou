@@ -680,7 +680,7 @@ void ForrestTomlinFactorization::makeExplicitBasisAvailable()
     {
         for ( unsigned row = 0; row < _U[i]->_columnIndex; ++row )
             for ( unsigned col = 0; col < _m; ++col )
-                _workMatrix[row * _m + col] += _U[i]->_column[row] * _workMatrix[_U[i]->_columnIndex * _m + row];
+                _workMatrix[row * _m + col] += _U[i]->_column[row] * _workMatrix[_U[i]->_columnIndex * _m + col];
 
         for ( unsigned col = 0; col < _m; ++col )
             _workMatrix[_U[i]->_columnIndex * _m + col] *= _U[i]->_column[_U[i]->_columnIndex];
