@@ -25,6 +25,7 @@ ForrestTomlinFactorization::ForrestTomlinFactorization( unsigned m )
     , _Q( m )
     , _invQ( m )
     , _U( NULL )
+    , _explicitBasisAvailable( false )
     , _workMatrix( NULL )
     , _workVector( NULL )
     , _workW( NULL )
@@ -136,6 +137,9 @@ ForrestTomlinFactorization::~ForrestTomlinFactorization()
 
 void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const double */* column */ )
 {
+    // Pushing an eta matrix invalidates the explicit basis
+    _explicitBasisAvailable = false;
+
     /*
       Let V = U * invQ * E * Q.
       V differs from U in just one column. The index of this column
@@ -487,6 +491,7 @@ void ForrestTomlinFactorization::storeFactorization( IBasisFactorization *other 
     // Copy the non-pointer elements
     otherFTFactorization->_Q = _Q;
     otherFTFactorization->_invQ = _invQ;
+    otherFTFactorization->_explicitBasisAvailable = _explicitBasisAvailable;
 
     // Copy the basis matrix and its factorization
     memcpy( otherFTFactorization->_B, _B, sizeof(double) * _m * _m );
@@ -518,6 +523,7 @@ void ForrestTomlinFactorization::restoreFactorization( const IBasisFactorization
     // Copy the non-pointer elements
     _Q = otherFTFactorization->_Q;
     _invQ = otherFTFactorization->_invQ;
+    _explicitBasisAvailable = otherFTFactorization->_explicitBasisAvailable;
 
     // Copy the basis matrix and its factorization
     memcpy( _B, otherFTFactorization->_B, sizeof(double) * _m * _m );
@@ -541,6 +547,7 @@ void ForrestTomlinFactorization::setBasis( const double *B )
 {
     memcpy( _B, B, sizeof(double) * _m * _m );
 	initialLUFactorization();
+    _explicitBasisAvailable = true;
 }
 
 void ForrestTomlinFactorization::clearFactorization()
@@ -645,17 +652,14 @@ void ForrestTomlinFactorization::initialLUFactorization()
 
 bool ForrestTomlinFactorization::explicitBasisAvailable() const
 {
-    return false;
+    return _explicitBasisAvailable;
 }
 
 void ForrestTomlinFactorization::makeExplicitBasisAvailable()
 {
-}
-
-const double *ForrestTomlinFactorization::getBasis() const
-{
+    if ( explicitBasisAvailable() )
+        return;
     /*
-
       We know that the following equation holds:
 
       Am...A1 * LsPs...L1P1 * B = Q * Um...U1 * invQ
@@ -665,7 +669,6 @@ const double *ForrestTomlinFactorization::getBasis() const
       B = inv( Am...A1 * LsPs...L1P1 ) * Q * Um...U1 * invQ
         = inv(P1)inv(L1) ... inv(Ps)inv(LS) * inv(A1)...inv(Am)
           * Q * Um...U1 * invQ
-
     */
 
     // Start by computing: Um...U1 * invQ.
@@ -735,6 +738,12 @@ const double *ForrestTomlinFactorization::getBasis() const
     }
 
     delete []temp;
+    _explicitBasisAvailable = true;
+}
+
+const double *ForrestTomlinFactorization::getBasis() const
+{
+    ASSERT( _explicitBasisAvailable );
     return _B;
 }
 

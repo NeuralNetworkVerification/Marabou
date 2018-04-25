@@ -123,6 +123,11 @@ private:
     EtaMatrix **_U;
 
     /*
+      Indicates whether the explicit basis matrix is available.
+    */
+    bool _explicitBasisAvailable;
+
+    /*
       Work memory
     */
     double *_workMatrix;
