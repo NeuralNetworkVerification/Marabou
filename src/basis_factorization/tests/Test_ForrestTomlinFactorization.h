@@ -916,6 +916,78 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( delete ft );
     }
+
+    void test_invert_basis()
+    {
+        TS_TRACE( "TODO: make test pass" );
+        return;
+
+        ForrestTomlinFactorization *ft;
+
+        TS_ASSERT( ft = new ForrestTomlinFactorization( 4 ) );
+
+        // B = | 1   3 -2  4 |
+        //     | 1   5 -1  5 |
+        //     | 1   3 -3  6 |
+        //     | -1 -3  3 -8 |
+        double basisMatrix[16] = {
+            1,   3, -2,  4,
+            1,   5, -1,  5,
+            1,   3, -3,  6,
+            -1, -3,  3, -8,
+        };
+
+        TS_ASSERT_THROWS_NOTHING( ft->setBasis( basisMatrix ) );
+
+        // invB = |  6 -3/2 -23/4 -9/4 |
+        //        | -1  1/2   5/4  3/4 |
+        //        |  1    0    -2   -1 |
+        //        |  0    0  -1/2 -1/2 |
+        double expectedInvB1[] = {
+                6, -3.0/2, -23.0/4, -9.0/4,
+                -1, -1.0/2, 5.0/4, 3.0/4,
+                1, 0, -2, -1,
+                0, 0, -1.0/2, -1.0/2,
+        };
+
+        double invB[16];
+
+        TS_ASSERT_THROWS_NOTHING( ft->invertBasis( invB ) );
+        for ( unsigned i = 0; i < 16; ++i )
+            TS_ASSERT( FloatUtils::areEqual( invB[i], expectedInvB1[i] ) );
+
+        // E1 = | 1 -4     |
+        //      |    2     |
+        //      |    0 1   |
+        //      | 0  3 0 1 |
+        double a1[] = { -4, 2, 0, 3 };
+        double w[] = { 14, 3.5, -6, 3 };
+        ft->setStoredW( w );
+        ft->pushEtaMatrix( 1, a1 );
+
+        // B * E1 = | 1   14 -2  4 |
+        //          | 1   21 -1  5 |
+        //          | 1   20 -3  6 |
+        //          | -1 -26  3 -8 |
+
+        // invB = |  4   -1/2 -13/4  -3/4 |
+        //        | -1/2  1/4   5/8   3/8 |
+        //        |  1      0    -2    -1 |
+        //        |  3/2 -3/4 -19/8 -13/8 |
+
+        double expectedInvB2[] = {
+            4, -1.0/2, -13.0/4, -3.0/4,
+            -1.0/2, 1.0/4, 5.0/8, 3.0/8,
+            1, 0, -2, -1,
+            3.0/2, -3.0/4, -19.0/8, -13.0/8,
+        };
+
+        TS_ASSERT_THROWS_NOTHING( ft->invertBasis( invB ) );
+        for ( unsigned i = 0; i < 16; ++i )
+            TS_ASSERT( FloatUtils::areEqual( invB[i], expectedInvB2[i] ) );
+
+        TS_ASSERT_THROWS_NOTHING( delete ft );
+    }
 };
 
 //

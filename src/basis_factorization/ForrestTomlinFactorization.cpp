@@ -756,8 +756,88 @@ const double *ForrestTomlinFactorization::getBasis() const
     return _B;
 }
 
-void ForrestTomlinFactorization::invertBasis( double */* result */ )
+void ForrestTomlinFactorization::invertBasis( double *result )
 {
+    /*
+      We know that the following equation holds:
+
+      Am...A1 * LsPs...L1P1 * B = Q * Um...U1 * invQ
+
+      Or:
+
+      Am...A1 * LsPs...L1P1 = Q * Um...U1 * invQ * invB
+
+      Or:
+
+      invB = inv(Q * Um...U1 * invQ) * Am...A1 * LsPs...L1P1
+           = Q * invU1 * ... invUm * invQ * Am...A1 * LsPs...L1P1
+    */
+
+    ASSERT( result );
+
+    // Initialize to identity matrix
+    std::fill_n( result, _m * _m, 0.0 );
+    for ( unsigned i = 0; i < _m; ++i )
+        result[i * _m + i] = 1;
+
+    // TODO: the L and P matrices do not change, so can
+    // compute this once and for all when the basis is set.
+
+    // Multiply by Ls and Ps
+    double *temp = new double[_m];
+    for ( auto lpElement = _LP.rbegin(); lpElement != _LP.rend(); ++lpElement )
+    {
+        LPElement *lp = *lpElement;
+
+        if ( lp->_pair )
+        {
+            // Row permutations
+            memcpy( temp, result + (lp->_pair->first * _m), sizeof(double) * _m );
+            memcpy( result + (lp->_pair->first * _m), result + (lp->_pair->second * _m), sizeof(double) * _m );
+            memcpy( result + (lp->_pair->second * _m), temp,  sizeof(double) * _m );
+		}
+        else
+        {
+            // Multiply by a lower triangular eta matrix.
+            EtaMatrix *eta = lp->_eta;
+            double etaDiagonalEntry = eta->_column[eta->_columnIndex];
+
+            for ( unsigned row = eta->_columnIndex + 1; row < _m; ++row )
+                for ( unsigned col = 0; col < _m; ++col )
+                    result[row * _m + col] += ( eta->_column[row] * result[eta->_columnIndex * _m + col] );
+
+            for ( unsigned col = 0; col < _m; ++col )
+                result[eta->_columnIndex * _m + col] *= etaDiagonalEntry;
+        }
+    }
+
+    // Permute the rows according to invQ
+    for ( unsigned i = 0; i < _m; ++i )
+        memcpy( _workMatrix + ( i * _m ), result + ( _invQ._ordering[i] * _m ), sizeof(double) * _m );
+
+    // Multiply by inverted Us.
+    for ( int i = _m - 1; i >= 0; --i )
+    {
+        // The inverse of an eta matrix is an eta matrix with the special
+        // column negated and divided by the diagonal entry. The only
+        // exception is the diagonal entry itself, which is just the
+        // inverse of the original diagonal entry.
+        double etaDiagonalEntry = 1 / _U[i]->_column[_U[i]->_columnIndex];
+
+        for ( unsigned row = 0; row < _U[i]->_columnIndex; ++row )
+            for ( unsigned col = 0; col < _m; ++col )
+                _workMatrix[row * _m + col] -=
+                    ( _workMatrix[_U[i]->_columnIndex * _m + col] * _U[i]->_column[row] * etaDiagonalEntry );
+
+        for ( unsigned col = 0; col < _m; ++col )
+            _workMatrix[_U[i]->_columnIndex * _m + col] *= etaDiagonalEntry;
+    }
+
+    // Permute the rows according to Q
+    for ( unsigned i = 0; i < _m; ++i )
+        memcpy( result + ( i * _m ), _workMatrix + ( _Q._ordering[i] * _m ), sizeof(double) * _m );
+
+    delete []temp;
 }
 
 const PermutationMatrix *ForrestTomlinFactorization::getQ() const
