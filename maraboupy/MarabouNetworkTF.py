@@ -241,8 +241,9 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         ### END getting inputs ###
 
         ### Do not generate equations, as these can be eliminated ###
-        # prevVars = curVars - prevConst
-        self.biasAddRelations += [(prevVars[i], curVars[i], -prevConsts[i])]
+        for i in range(len(prevVars)):
+            # prevVars = curVars - prevConst
+            self.biasAddRelations += [(prevVars[i], curVars[i], -prevConsts[i])]
 
     def processBiasAddRelations(self):
         """
@@ -265,6 +266,8 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
                 self.addEquation(e)
             else:
                 biasAddUpdates[x] = (xprime, c)
+                self.setLowerBound(x, 0)
+                self.setUpperBound(x, 0)
 
         for equ in self.equList:
             participating = equ.getParticipatingVariables()

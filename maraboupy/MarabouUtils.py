@@ -27,6 +27,7 @@ class Equation:
             x: (int) variable number of variable in addend
         """
         self.addendList += [(c, x)]
+        self.participatingVariables.update([x])
 
     def markAuxiliaryVariable(self, aux):
         """
@@ -64,8 +65,9 @@ class Equation:
         for i in range(len(self.addendList)):
             if self.addendList[i][1] == x:
                 break
-        self.addendList[i][1] = xprime
-        self.setScalar(self.scalar - self.addendList[i][0]*c)
+        coeff = self.addendList[i][0]
+        self.addendList[i] = (coeff, xprime)
+        self.setScalar(self.scalar - coeff*c)
         self.participatingVariables.remove(x)
         self.participatingVariables.update([xprime])
 
