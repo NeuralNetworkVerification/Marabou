@@ -57,7 +57,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         # Set all the bounds defined in the .nnet file
 
         # Set input variable bounds
-        for i, i_var in enumerate(self.inputVars):
+        for i, i_var in enumerate(self.inputVars[0]):
             self.setLowerBound(i_var, self.getInputMinimum(i_var))
             self.setUpperBound(i_var, self.getInputMaximum(i_var))
 
