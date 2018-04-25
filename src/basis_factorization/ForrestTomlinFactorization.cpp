@@ -691,13 +691,22 @@ void ForrestTomlinFactorization::makeExplicitBasisAvailable()
         memcpy( _B + ( i * _m ), _workMatrix + ( _Q._ordering[i] * _m ), sizeof(double) * _m );
 
     // Multiply by the inverse As. An inverse of an almost identity matrix
-    // is just that matrix with its special value negated.
+    // is just that matrix with its special value negated (unless that
+    // matrix is diagonal.
     for ( int i = _m - 1; i >= 0; --i )
     {
-        if ( !_A[i]._identity )
+        if ( _A[i]._identity )
+            continue;
+
+        if ( _A[i]._row == _A[i]._column )
         {
             for ( unsigned j = 0; j < _m; ++j )
-                _B[_A[i]._row * _m + j] -= _B[_A[i]._column * _m + j];
+                _B[_A[i]._row * _m + j] *= ( 1 / _A[i]._value );
+        }
+        else
+        {
+            for ( unsigned j = 0; j < _m; ++j )
+                _B[_A[i]._row * _m + j] -= _B[_A[i]._column * _m + j] * _A[i]._value;
         }
     }
 
@@ -794,7 +803,7 @@ void ForrestTomlinFactorization::setQ( const PermutationMatrix &Q )
     _Q.invert( _invQ );
 }
 
-void ForrestTomlinFactorization::dumpU()
+void ForrestTomlinFactorization::dumpU() const
 {
     printf( "Dumping U:\n" );
     for ( unsigned i = 0; i < _m; ++i )
@@ -805,6 +814,46 @@ void ForrestTomlinFactorization::dumpU()
         }
         printf( "\n" );
     }
+}
+
+void ForrestTomlinFactorization::dump() const
+{
+    printf( "*** Dumping FT factorization ***\n\n" );
+
+    printf( "Dumping As:\n" );
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        if ( _A[i]._identity )
+            printf( "\tA%u = I\n", i );
+        else
+            printf( "\tA%u = < %u, %u, %.5lf >\n", i, _A[i]._row, _A[i]._column, _A[i]._value );
+    }
+
+    printf( "\nDumping LPs:\n" );
+    unsigned count = 0;
+    for ( const auto &lp : _LP )
+    {
+        printf( "LP[%i]:\n", _LP.size() - 1 - count );
+        ++count;
+        lp->dump();
+    }
+    printf( "\n\n" );
+
+    printf( "Dumping Us:\n" );
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        printf( "U[%u]:\n", i );
+        _U[i]->dump();
+        printf( "\n" );
+    }
+
+    printf( "\nDumping Q:\n" );
+    _Q.dump();
+
+    printf( "\nDumping invQ:\n" );
+    _invQ.dump();
+
+    printf( "*** Done dumping FT factorization ***\n\no" );
 }
 
 void ForrestTomlinFactorization::setStoredW( const double *w )

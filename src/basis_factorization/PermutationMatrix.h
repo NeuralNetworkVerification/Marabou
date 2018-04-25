@@ -52,6 +52,11 @@ public:
     */
     unsigned *_ordering;
 
+    /*
+      Debugging
+    */
+    void dump() const;
+
 private:
     /*
       The dimension of the matrix

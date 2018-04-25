@@ -93,6 +93,22 @@ unsigned PermutationMatrix::getM() const
     return _m;
 }
 
+void PermutationMatrix::dump() const
+{
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        for ( unsigned j = 0; j < _m; ++j )
+        {
+            if ( _ordering[i] == j )
+                printf( "1 " );
+            else
+                printf( "0 " );
+        }
+        printf( "\n" );
+    }
+    printf( "\n" );
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

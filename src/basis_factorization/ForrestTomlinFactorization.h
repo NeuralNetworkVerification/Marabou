@@ -157,7 +157,8 @@ private:
     /*
       Debug
     */
-    void dumpU();
+    void dump() const;
+    void dumpU() const;
 };
 
 #endif // __ForrestTomlinFactorization_h__
