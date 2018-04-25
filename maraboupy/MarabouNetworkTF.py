@@ -24,7 +24,7 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             savedModelTags: (list of strings) If loading a SavedModel, the user must specify tags used.
         """
         super().__init__()
-        self.biasAddRelations = dict()
+        self.biasAddRelations = list()
         self.readFromPb(filename, inputName, outputName, savedModel, savedModelTags)
         self.processBiasAddRelations()
     
@@ -241,47 +241,37 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         ### END getting inputs ###
 
         ### Do not generate equations, as these can be eliminated ###
-        # curVar = prevVars + prevConst
-        self.biasAddRelations += [(curVars[i], prevVars[i], prevConsts[i])]
+        # prevVars = curVars - prevConst
+        self.biasAddRelations += [(prevVars[i], curVars[i], -prevConsts[i])]
 
     def processBiasAddRelations(self):
         """
         Either add an equation representing a bias add,
         Or eliminate one of the two variables in every other relation
         """
-
-        def canReplace(x):
-            """
-            Returns whether we can easily replace the variable x
-            Arguments:
-                x: (int) variable to be replaced
-            """
-            if self.lowerBoundExists(x) or self.upperBoundExists(x):
-                return False
-            if self.participatesInPLConstraint(x):
-                return False
-
         biasAddUpdates = dict()
-        for (curVar, prevVar, const) in self.biasAddRelations:
-            if not canReplace(newVar) or not canReplace(oldVar):
+        for (x, xprime, c) in self.biasAddRelations:
+            # x = xprime + c
+            # replace x only if it does not occur anywhere else in the system
+            if self.lowerBoundExists(x) or self.upperBoundExists(x) or self.participatesInPLConstraint(x):
                 e = MarabouUtils.Equation()
-                e.addAddend(1, prevVar)
-                e.addAddend(-1, curVar)
-                e.setScalar(-const)
+                e.addAddend(1, x)
+                e.addAddend(-1, xprime)
+                e.setScalar(-c)
                 aux = self.getNewVariable()
                 self.setLowerBound(aux, 0.0)
                 self.setUpperBound(aux, 0.0)
                 e.markAuxiliaryVariable(aux)
                 self.addEquation(e)
             else:
-                biasAddUpdates[curVar] = (prevVar, const)
+                biasAddUpdates[x] = (xprime, c)
 
         for equ in self.equList:
             participating = equ.getParticipatingVariables()
-            for p in participating:
-                if p in biasAddUpdates:
-                    curVar, const = self.biasAddUpdates[p]
-                    equ.replaceVariable(p, curVar, const)
+            for x in participating:
+                if x in biasAddUpdates: # if a variable to remove is part of this equation
+                    xprime, c = biasAddUpdates[x]
+                    equ.replaceVariable(x, xprime, c)
 
     def conv2DEquations(self, op):
         """
