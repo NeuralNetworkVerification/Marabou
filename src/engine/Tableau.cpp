@@ -1750,7 +1750,8 @@ bool Tableau::basisMatrixAvailable() const
 
 void Tableau::getBasisEquations( List<Equation *> &equations ) const
 {
-    ASSERT( basisMatrixAvailable() );
+    if ( !basisMatrixAvailable() )
+        _basisFactorization->makeExplicitBasisAvailable();
 
     for ( unsigned i = 0; i < _m; ++i )
         equations.append( getBasisEquation( i ) );

@@ -36,7 +36,7 @@ const double GlobalConfiguration::PSE_GAMMA_ERROR_THRESHOLD = 0.001;
 const bool GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_INVERT_BASIS = true;
 const unsigned GlobalConfiguration::REFACTORIZATION_THRESHOLD = 100;
 const GlobalConfiguration::BasisFactorizationType GlobalConfiguration::BASIS_FACTORIZATION_TYPE =
-    GlobalConfiguration::LU_FACTORIZATION;
+    GlobalConfiguration::FORREST_TOMLIN_FACTORIZATION;
 
 // Logging
 const bool GlobalConfiguration::ENGINE_LOGGING = false;

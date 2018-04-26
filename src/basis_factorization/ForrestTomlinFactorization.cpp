@@ -499,13 +499,13 @@ void ForrestTomlinFactorization::storeFactorization( IBasisFactorization *other 
     for ( unsigned i = 0; i < _m; ++i )
     {
         otherFTFactorization->_A[i] = _A[i];
-        otherFTFactorization->_U[i] = _U[i];
+        *(otherFTFactorization->_U[i]) = *_U[i];
     }
 
     List<LPElement *>::iterator lpIt;
     for ( lpIt = otherFTFactorization->_LP.begin(); lpIt != otherFTFactorization->_LP.end(); ++lpIt )
         delete *lpIt;
-	otherFTFactorization->_LP.clear();
+    otherFTFactorization->_LP.clear();
 
     for ( const auto &lp : _LP )
         otherFTFactorization->_LP.append( lp->duplicate() );
@@ -531,13 +531,13 @@ void ForrestTomlinFactorization::restoreFactorization( const IBasisFactorization
     for ( unsigned i = 0; i < _m; ++i )
     {
         _A[i] = otherFTFactorization->_A[i];
-        _U[i] = otherFTFactorization->_U[i];
+        *_U[i] = *(otherFTFactorization->_U[i]);
     }
 
     List<LPElement *>::iterator lpIt;
     for ( lpIt = _LP.begin(); lpIt != _LP.end(); ++lpIt )
         delete *lpIt;
-	_LP.clear();
+    _LP.clear();
 
     for ( const auto &lp : otherFTFactorization->_LP )
         _LP.append( lp->duplicate() );

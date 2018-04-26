@@ -704,22 +704,27 @@ public:
         TS_ASSERT( hasCandidates( *tableau ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
 
-        double d[] = { 0, 0, 1 };
-        TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->computeChangeColumn() );
+
+        const double expectedChangeColumn[] = { 1.0, 1.0, 3.0 };
+        for ( unsigned i = 0; i < 3; ++i )
+            TS_ASSERT( FloatUtils::areEqual( tableau->getChangeColumn()[i], expectedChangeColumn[i] ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable() );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
-        TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 6u );
+        TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 5u );
 
         TS_ASSERT( !tableau->isBasic( 2u ) );
-        TS_ASSERT( tableau->isBasic( 6u ) );
+        TS_ASSERT( tableau->isBasic( 5u ) );
 
         TS_ASSERT_EQUALS( tableau->getValue( 2u ), 1.0 );
-        TS_ASSERT_EQUALS( tableau->getValue( 6u ), 406.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 5u ), 113.0 );
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeChangeColumn() );
         TS_ASSERT_THROWS_NOTHING( tableau->performPivot() );
 
         TS_ASSERT( tableau->isBasic( 2u ) );
-        TS_ASSERT( !tableau->isBasic( 6u ) );
+        TS_ASSERT( !tableau->isBasic( 5u ) );
 
         // Old equations are:
 
@@ -729,69 +734,69 @@ public:
 
         // New equations are:
 
-           // x5 = 85  - 5/3 x1 - x2 + 1/3 x7 - 2/3 x4
-           // x6 = -23 + 1/3 x1 -    + 1/3 x7 + 1/3 x4
-           // x3 = 140 - 4/3 x1 - x2 - 1/3 x7 - 4/3 x4
+           // x5 = 108 - 2x1 -  x2 + x6  -  x4
+           // x3 = 117 -  x1 -  x2 - x6  -  x4
+           // x7 =  69 -  x1       + 3x6 -  x4
 
         TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 0, &row ) );
 
         entry = row._row[0];
         TS_ASSERT_EQUALS( entry._var, 0U );
-        TS_ASSERT( FloatUtils::areEqual( entry._coefficient, -5.0/3 ) );
+        TS_ASSERT( FloatUtils::areEqual( entry._coefficient, -2 ) );
 
         entry = row._row[1];
         TS_ASSERT_EQUALS( entry._var, 1U );
         TS_ASSERT( FloatUtils::areEqual( entry._coefficient, -1 ) );
 
         entry = row._row[2];
-        TS_ASSERT_EQUALS( entry._var, 6U );
-        TS_ASSERT( FloatUtils::areEqual( entry._coefficient, 1.0/3 ) );
+        TS_ASSERT_EQUALS( entry._var, 5U );
+        TS_ASSERT( FloatUtils::areEqual( entry._coefficient, 1 ) );
 
         entry = row._row[3];
         TS_ASSERT_EQUALS( entry._var, 3U );
-        TS_ASSERT( FloatUtils::areEqual( entry._coefficient, -2.0/3 ) );
+        TS_ASSERT( FloatUtils::areEqual( entry._coefficient, -1 ) );
 
-        TS_ASSERT_EQUALS( row._scalar, 85.0 );
+        TS_ASSERT_EQUALS( row._scalar, 108.0 );
 
         TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 1, &row ) );
 
         entry = row._row[0];
         TS_ASSERT_EQUALS( entry._var, 0U );
-        TS_ASSERT( FloatUtils::areEqual( entry._coefficient, 1.0/3 ) );
+        TS_ASSERT( FloatUtils::areEqual( entry._coefficient, -1 ) );
 
         entry = row._row[1];
         TS_ASSERT_EQUALS( entry._var, 1U );
-        TS_ASSERT( FloatUtils::areEqual( entry._coefficient, 0.0 ) );
+        TS_ASSERT( FloatUtils::areEqual( entry._coefficient, -1 ) );
 
         entry = row._row[2];
-        TS_ASSERT_EQUALS( entry._var, 6U );
-        TS_ASSERT( FloatUtils::areEqual( entry._coefficient, 1.0/3 ) );
+        TS_ASSERT_EQUALS( entry._var, 5U );
+        TS_ASSERT( FloatUtils::areEqual( entry._coefficient, -1 ) );
 
         entry = row._row[3];
         TS_ASSERT_EQUALS( entry._var, 3U );
-        TS_ASSERT( FloatUtils::areEqual( entry._coefficient, 1.0/3 ) );
+        TS_ASSERT( FloatUtils::areEqual( entry._coefficient, -1 ) );
 
-        TS_ASSERT_EQUALS( row._scalar, -23.0 );
+        TS_ASSERT_EQUALS( row._scalar, 117.0 );
 
         TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 2, &row ) );
 
         entry = row._row[0];
         TS_ASSERT_EQUALS( entry._var, 0U );
-        TS_ASSERT( FloatUtils::areEqual( entry._coefficient, -4.0/3 ) );
+        TS_ASSERT( FloatUtils::areEqual( entry._coefficient, -1 ) );
 
         entry = row._row[1];
         TS_ASSERT_EQUALS( entry._var, 1U );
-        TS_ASSERT( FloatUtils::areEqual( entry._coefficient, -1.0 ) );
+        TS_ASSERT( FloatUtils::areEqual( entry._coefficient, 0 ) );
 
         entry = row._row[2];
-        TS_ASSERT_EQUALS( entry._var, 6U );
-        TS_ASSERT( FloatUtils::areEqual( entry._coefficient, -1.0/3 ) );
+        TS_ASSERT_EQUALS( entry._var, 5U );
+        TS_ASSERT( FloatUtils::areEqual( entry._coefficient, 3 ) );
 
         entry = row._row[3];
         TS_ASSERT_EQUALS( entry._var, 3U );
-        TS_ASSERT( FloatUtils::areEqual( entry._coefficient, -4.0/3 ) );
+        TS_ASSERT( FloatUtils::areEqual( entry._coefficient, -1 ) );
 
-        TS_ASSERT_EQUALS( row._scalar, 140.0 );
+        TS_ASSERT_EQUALS( row._scalar, 69 );
     }
 
     void test_degenerate_pivot()
@@ -1017,7 +1022,7 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 4, 219 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 4, 228 ) );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 5, 111 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 5, 111.5 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 5, 114 ) );
 
         TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 6, 200 ) );
@@ -1035,8 +1040,9 @@ public:
         costFunctionManager.nextCostFunction[2] = -1;
         costFunctionManager.nextCostFunction[3] = -1;
 
-        tableau->setEnteringVariableIndex( 3u );
         TS_ASSERT( hasCandidates( *tableau ) );
+        tableau->setEnteringVariableIndex( 3u );
+        tableau->computeChangeColumn();
 
         tableau->setLeavingVariableIndex( 3u );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 3u );
@@ -1065,11 +1071,10 @@ public:
         // Do some more stuff
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
         tableau->setEnteringVariableIndex( 2u );
-        TS_ASSERT( hasCandidates( *tableau ) );
 
-        double d[] = { -1, +2, -1 };
+        tableau->computeChangeColumn();
 
-        TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable() );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
         TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 5u );
 
@@ -1088,16 +1093,14 @@ public:
         TS_ASSERT( !tableau->isBasic( 5u ) );
 
         // Now restore the tableau
-
         TS_ASSERT_THROWS_NOTHING( tableau->restoreState( *tableauState ) );
 
         // Do some more stuff again
-
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
         tableau->setEnteringVariableIndex( 2u );
-        TS_ASSERT( hasCandidates( *tableau ) );
+        tableau->computeChangeColumn();
 
-        TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable() );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
         TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 5u );
 
@@ -1400,14 +1403,6 @@ public:
         TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 5u );
         tableau->computeChangeColumn();
         TS_ASSERT_THROWS_NOTHING( tableau->performPivot() );
-
-        // A bit hackish: store the tableau state, because this causes
-        // the basis matrix to be available afterwards
-
-        TS_ASSERT( !tableau->basisMatrixAvailable() );
-        TableauState dontCare;
-        tableau->storeState( dontCare );
-        TS_ASSERT( tableau->basisMatrixAvailable() );
 
         /*
           Original situation:
