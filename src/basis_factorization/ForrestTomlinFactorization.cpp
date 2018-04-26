@@ -811,6 +811,24 @@ void ForrestTomlinFactorization::invertBasis( double *result )
         }
     }
 
+    // Multiply by the As.
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        if ( _A[i]._identity )
+            continue;
+
+        if ( _A[i]._row == _A[i]._column )
+        {
+            for ( unsigned j = 0; j < _m; ++j )
+                result[_A[i]._row * _m + j] *= _A[i]._value;
+        }
+        else
+        {
+            for ( unsigned j = 0; j < _m; ++j )
+                result[_A[i]._row * _m + j] += result[_A[i]._column * _m + j] * _A[i]._value;
+        }
+    }
+
     // Permute the rows according to invQ
     for ( unsigned i = 0; i < _m; ++i )
         memcpy( _workMatrix + ( i * _m ), result + ( _invQ._ordering[i] * _m ), sizeof(double) * _m );

@@ -919,9 +919,6 @@ public:
 
     void test_invert_basis()
     {
-        TS_TRACE( "TODO: make test pass" );
-        return;
-
         ForrestTomlinFactorization *ft;
 
         TS_ASSERT( ft = new ForrestTomlinFactorization( 4 ) );
@@ -945,7 +942,7 @@ public:
         //        |  0    0  -1/2 -1/2 |
         double expectedInvB1[] = {
                 6, -3.0/2, -23.0/4, -9.0/4,
-                -1, -1.0/2, 5.0/4, 3.0/4,
+                -1, 1.0/2, 5.0/4, 3.0/4,
                 1, 0, -2, -1,
                 0, 0, -1.0/2, -1.0/2,
         };
