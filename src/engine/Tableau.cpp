@@ -1789,8 +1789,6 @@ Equation *Tableau::getBasisEquation( unsigned row ) const
 
 double *Tableau::getInverseBasisMatrix() const
 {
-    ASSERT( basisMatrixAvailable() );
-
     double *result = new double[_m * _m];
     _basisFactorization->invertBasis( result );
     return result;
