@@ -3,6 +3,7 @@
 #include <map>
 #include <vector>
 #include <string>
+#include <utility>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -58,30 +59,32 @@ void addReluConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
     ipq.addPiecewiseLinearConstraint(r);
 }
 
-std::map<int, double> solve(InputQuery inputQuery, std::string redirect=""){
-	// Arguments: InputQuery object, filename to redirect output
+std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::string redirect=""){
+    // Arguments: InputQuery object, filename to redirect output
     // Returns: map from variable number to value
     std::map<int, double> ret;
+    Statistics retStats;
     int output=-1;
     if(redirect.length()>0)
         output=redirectOutputToFile(redirect);
     try{
-		Engine engine;
-        if(!engine.processInputQuery(inputQuery)) return ret;
+        Engine engine;
+        if(!engine.processInputQuery(inputQuery)) return std::make_pair(ret, *(engine.getStatistics()));
         
-        if(!engine.solve()) return ret;
+        if(!engine.solve()) return std::make_pair(ret, *(engine.getStatistics()));
         
         engine.extractSolution(inputQuery);
+        retStats = *(engine.getStatistics());
         for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); i++)
-        	ret[i] = inputQuery.getSolutionValue(i);
+            ret[i] = inputQuery.getSolutionValue(i);
     }
     catch(const ReluplexError &e){
         printf( "Caught a ReluplexError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );
-        return ret;
+        return std::make_pair(ret, retStats);
     }
     if(output != -1)
         restoreOutputStream(output);
-    return ret;
+    return std::make_pair(ret, retStats);
 }
 
 // Code necessary to generate Python library
@@ -103,4 +106,12 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def("addAddend", &Equation::addAddend)
         .def("setScalar", &Equation::setScalar)
         .def("markAuxiliaryVariable", &Equation::markAuxiliaryVariable);
+    py::class_<Statistics>(m, "Statistics")
+        .def("getMaxStackDepth", &Statistics::getMaxStackDepth)
+        .def("getNumPops", &Statistics::getNumPops)
+        .def("getNumVisitedTreeStates", &Statistics::getNumVisitedTreeStates)
+        .def("getNumSplits", &Statistics::getNumSplits)
+        .def("getTotalTime", &Statistics::getTotalTime);
+
+
 }

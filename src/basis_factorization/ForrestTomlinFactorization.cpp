@@ -132,7 +132,7 @@ ForrestTomlinFactorization::~ForrestTomlinFactorization()
     List<LPElement *>::iterator lpIt;
     for ( lpIt = _LP.begin(); lpIt != _LP.end(); ++lpIt )
         delete *lpIt;
-	_LP.clear();
+    _LP.clear();
 }
 
 void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const double */* column */ )
@@ -555,7 +555,7 @@ void ForrestTomlinFactorization::clearFactorization()
     List<LPElement *>::iterator lpIt;
     for ( lpIt = _LP.begin(); lpIt != _LP.end(); ++lpIt )
         delete *lpIt;
-	_LP.clear();
+    _LP.clear();
 
     _Q.resetToIdentity();
     _invQ.resetToIdentity();

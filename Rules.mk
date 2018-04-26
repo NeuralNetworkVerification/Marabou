@@ -72,8 +72,6 @@ CFLAGS += \
 	-Wextra \
 	-Werror \
 	-Wno-deprecated \
-	-Wno-misleading-indentation \
-	-Wno-terminate \
 	-std=c++0x \
 	\
 	-g \

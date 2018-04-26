@@ -506,6 +506,28 @@ unsigned Statistics::getNumVisitedTreeStates() const
     return _numVisitedTreeStates;
 }
 
+unsigned Statistics::getNumSplits() const
+{
+    return _numSplits;
+}
+
+unsigned long long Statistics::getTotalTime() const
+{
+        unsigned long long total =
+        _timeSimplexStepsMicro +
+        _timeConstraintFixingStepsMicro +
+        _totalTimePerformingValidCaseSplitsMicro +
+        _totalTimeHandlingStatisticsMicro +
+        _totalTimeExplicitBasisBoundTighteningMicro +
+        _totalTimeDegradationChecking +
+        _totalTimePrecisionRestoration +
+        _totalTimeConstraintMatrixBoundTighteningMicro +
+        _totalTimeApplyingStoredTighteningsMicro +
+        _totalTimeSmtCoreMicro;
+        // total is in micro seconds
+    return total / 1000;
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "
