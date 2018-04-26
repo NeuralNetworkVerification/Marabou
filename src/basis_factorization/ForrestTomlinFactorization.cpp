@@ -780,9 +780,6 @@ void ForrestTomlinFactorization::invertBasis( double *result )
     for ( unsigned i = 0; i < _m; ++i )
         result[i * _m + i] = 1;
 
-    // TODO: the L and P matrices do not change, so can
-    // compute this once and for all when the basis is set.
-
     // Multiply by Ls and Ps
     double *temp = new double[_m];
     for ( auto lpElement = _LP.rbegin(); lpElement != _LP.rend(); ++lpElement )

@@ -985,6 +985,13 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( delete ft );
     }
+
+    void test_todo()
+    {
+        TS_TRACE( "TODO: Ls and Ps do not change, so compute LsPs...L1P1 "
+                  "and inv(P1)inv(L1) ... inv(Ps)inv(LS) once and for all "
+                  "for getBasis and invertBasis" );
+    }
 };
 
 //
