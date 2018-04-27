@@ -452,11 +452,14 @@ bool Tableau::basicOutOfBounds( unsigned basic ) const
 
 bool Tableau::basicTooLow( unsigned basic ) const
 {
+    ASSERT( basic < _m );
+
     return _basicStatus[basic] == Tableau::BELOW_LB;
 }
 
 bool Tableau::basicTooHigh( unsigned basic ) const
 {
+    ASSERT( basic < _m );
     return _basicStatus[basic] == Tableau::ABOVE_UB;
 }
 
@@ -572,6 +575,9 @@ bool Tableau::performingFakePivot() const
 
 void Tableau::performPivot()
 {
+    ASSERT( _leavingVariable <= _m );
+    ASSERT( _enteringVariable < _n - _m );
+
     if ( _leavingVariable == _m )
     {
         if ( _statistics )
@@ -1123,6 +1129,7 @@ void Tableau::restoreState( const TableauState &state )
     _boundsValid = state._boundsValid;
 
     computeAssignment();
+    _costFunctionManager->initialize();
     computeCostFunction();
 }
 
