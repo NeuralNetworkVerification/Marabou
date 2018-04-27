@@ -453,7 +453,6 @@ bool Tableau::basicOutOfBounds( unsigned basic ) const
 bool Tableau::basicTooLow( unsigned basic ) const
 {
     ASSERT( basic < _m );
-
     return _basicStatus[basic] == Tableau::BELOW_LB;
 }
 

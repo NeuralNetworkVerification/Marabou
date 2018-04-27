@@ -71,6 +71,7 @@ CFLAGS += \
 	-Wall \
 	-Wextra \
 	-Werror \
+	-Wno-error=terminate \
 	-Wno-deprecated \
 	-std=c++0x \
 	\
