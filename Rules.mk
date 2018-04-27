@@ -46,6 +46,12 @@ UNZIP	= unzip
 TESTGEN = $(CXXTEST_DIR)/cxxtestgen.pl
 
 #
+# Compiler version check
+#
+
+GCCVERSION = $(shell g++ --version | grep ^g++ | sed 's/^.* //g')
+
+#
 # Unzipping
 #
 
@@ -71,11 +77,14 @@ CFLAGS += \
 	-Wall \
 	-Wextra \
 	-Werror \
-	-Wno-error=terminate \
 	-Wno-deprecated \
 	-std=c++0x \
 	\
 	-g \
+
+ifeq "$(GCCVERSION)" "7.3.0"
+	CFLAGS += -Wno-terminate
+endif
 
 %.obj: %.cpp
 	@echo "CC\t" $@
