@@ -1064,10 +1064,11 @@ public:
 
         // Do some more stuff
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
-        tableau->setEnteringVariableIndex( tableau->variableToIndex( 2u ) );
+        tableau->setEnteringVariableIndex( 2u );
         TS_ASSERT( hasCandidates( *tableau ) );
 
         double d[] = { -1, +2, -1 };
+        tableau->setChangeColumn( d );
 
         TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
@@ -1094,8 +1095,10 @@ public:
         // Do some more stuff again
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
-        tableau->setEnteringVariableIndex( 2u );
+        tableau->setEnteringVariableIndex( tableau->variableToIndex( 2u ) );
         TS_ASSERT( hasCandidates( *tableau ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->computeChangeColumn() );
 
         TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
