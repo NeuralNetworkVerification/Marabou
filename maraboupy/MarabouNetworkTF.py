@@ -24,7 +24,9 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             savedModelTags: (list of strings) If loading a SavedModel, the user must specify tags used.
         """
         super().__init__()
+        self.biasAddRelations = list()
         self.readFromPb(filename, inputName, outputName, savedModel, savedModelTags)
+        self.processBiasAddRelations()
     
     def clear(self):
         """
@@ -36,6 +38,7 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         self.inputOp = None
         self.outputOp = None
         self.sess = None
+        self.biasAddRelations = list()
 
     def readFromPb(self, filename, inputName, outputName, savedModel, savedModelTags):
         """
@@ -237,17 +240,41 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         assert len(prevVars)==len(curVars) and len(curVars)==len(prevConsts)
         ### END getting inputs ###
 
-        ### Generate actual equations ###
-        for i in range(len(curVars)):
-            e = MarabouUtils.Equation()
-            e.addAddend(1, prevVars[i])
-            e.addAddend(-1, curVars[i])
-            e.setScalar(-prevConsts[i])
-            aux = self.getNewVariable()
-            self.setLowerBound(aux, 0.0)
-            self.setUpperBound(aux, 0.0)
-            e.markAuxiliaryVariable(aux)
-            self.addEquation(e)
+        ### Do not generate equations, as these can be eliminated ###
+        for i in range(len(prevVars)):
+            # prevVars = curVars - prevConst
+            self.biasAddRelations += [(prevVars[i], curVars[i], -prevConsts[i])]
+
+    def processBiasAddRelations(self):
+        """
+        Either add an equation representing a bias add,
+        Or eliminate one of the two variables in every other relation
+        """
+        biasAddUpdates = dict()
+        for (x, xprime, c) in self.biasAddRelations:
+            # x = xprime + c
+            # replace x only if it does not occur anywhere else in the system
+            if self.lowerBoundExists(x) or self.upperBoundExists(x) or self.participatesInPLConstraint(x):
+                e = MarabouUtils.Equation()
+                e.addAddend(1.0, x)
+                e.addAddend(-1.0, xprime)
+                e.setScalar(c)
+                aux = self.getNewVariable()
+                self.setLowerBound(aux, 0.0)
+                self.setUpperBound(aux, 0.0)
+                e.markAuxiliaryVariable(aux)
+                self.addEquation(e)
+            else:
+                biasAddUpdates[x] = (xprime, c)
+                self.setLowerBound(x, 0.0)
+                self.setUpperBound(x, 0.0)
+
+        for equ in self.equList:
+            participating = equ.getParticipatingVariables()
+            for x in participating:
+                if x in biasAddUpdates: # if a variable to remove is part of this equation
+                    xprime, c = biasAddUpdates[x]
+                    equ.replaceVariable(x, xprime, c)
 
     def conv2DEquations(self, op):
         """
