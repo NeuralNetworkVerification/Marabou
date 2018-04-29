@@ -82,10 +82,6 @@ CFLAGS += \
 	\
 	-g \
 
-ifeq "$(GCCVERSION)" "7.3.0"
-	CFLAGS += -Wno-terminate
-endif
-
 %.obj: %.cpp
 	@echo "CC\t" $@
 	@$(COMPILE) -c -o $@ $< $(CFLAGS) $(addprefix -I, $(LOCAL_INCLUDES))
@@ -128,6 +124,10 @@ endif
 #
 
 ifneq ($(TEST_TARGET),)
+
+ifeq "$(GCCVERSION)" "7.3.0"
+	CXXFLAGS += -Wno-terminate
+endif
 
 OBJECTS = $(SOURCES:%.cpp=%.obj)
 
