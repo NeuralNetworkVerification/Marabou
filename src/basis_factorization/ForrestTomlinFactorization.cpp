@@ -293,7 +293,7 @@ void ForrestTomlinFactorization::forwardTransformation( const double *y, double 
 
       2. Find x such that
 
-             Um....U1 * R * x = w
+             Um....U1 * invQ * x = w
     */
 
     /****
@@ -314,13 +314,12 @@ void ForrestTomlinFactorization::forwardTransformation( const double *y, double 
         else
         {
             unsigned col = (*lp)->_eta->_columnIndex;
-            double diagonEntry = _workVector[col];
-            for ( unsigned i = 0; i < _m; ++i )
+            double diagonalEntry = _workVector[col];
+
+            _workVector[col] *= (*lp)->_eta->_column[col];
+            for ( unsigned i = col + 1; i < _m; ++i )
             {
-                if ( i == col )
-                    _workVector[i] *= (*lp)->_eta->_column[col];
-                else
-                    _workVector[i] += diagonEntry * (*lp)->_eta->_column[i];
+                _workVector[i] += diagonalEntry * (*lp)->_eta->_column[i];
 
                 if ( FloatUtils::isZero( _workVector[i] ) )
                     _workVector[i] = 0.0;
@@ -334,15 +333,21 @@ void ForrestTomlinFactorization::forwardTransformation( const double *y, double 
         if ( _A[i]._identity )
             continue;
 
-        _workVector[_A[i]._row] += ( _A[i]._value * _workVector[_A[i]._column] );
-
-        if ( FloatUtils::isZero( _workVector[_A[i]._row] ) )
-            _workVector[_A[i]._row] = 0.0;
+        if ( _A[i]._column == _A[i]._row )
+        {
+            _workVector[_A[i]._column] *= _A[i]._value;
+        }
+        else
+        {
+            _workVector[_A[i]._row] += ( _A[i]._value * _workVector[_A[i]._column] );
+            if ( FloatUtils::isZero( _workVector[_A[i]._row] ) )
+                _workVector[_A[i]._row] = 0.0;
+        }
     }
 
     // Multiply by inv(Q)
     for ( unsigned i = 0; i < _m; ++i )
-        _workW[_invQ._ordering[i]] = _workVector[i];
+        _workW[i] = _workVector[_invQ._ordering[i]];
 
     /****
     Step 2: Find x such that:  Um....U1 * invQ * x = w
@@ -351,28 +356,19 @@ void ForrestTomlinFactorization::forwardTransformation( const double *y, double 
     // Eliminate the U's
     for ( int i = _m - 1; i >= 0; --i )
     {
-        // Handle the special row of U first
-        _workVector[_U[i]->_columnIndex] =
-            _workW[_U[i]->_columnIndex] / _U[i]->_column[_U[i]->_columnIndex];
-
-        // Handle the remaining rows
-        for ( unsigned j = 0; j < _m; ++j )
+        double diagonalEntry = _workW[_U[i]->_columnIndex];
+        for ( unsigned j = 0; j < _U[i]->_columnIndex; ++j )
         {
-            if ( j == _U[i]->_columnIndex )
-                continue;
+            _workW[j] -= _U[i]->_column[j] * diagonalEntry;
 
-            _workVector[j] = _workW[j] - ( _U[i]->_column[j] * _workVector[_U[i]->_columnIndex] );
-            if ( FloatUtils::isZero( _workVector[j] ) )
-                _workVector[j] = 0.0;
+            if ( FloatUtils::isZero( _workW[j] ) )
+                _workW[j] = 0.0;
         }
-
-        memcpy( _workW, _workVector, sizeof(double) * _m );
     }
-
 
     // We are now left with invQ x = w (for our modified w). Multiply by Q and be done.
     for ( unsigned i = 0; i < _m; ++i )
-        x[_Q._ordering[i]] = _workW[i];
+        x[i] = _workW[_Q._ordering[i]];
 }
 
 void ForrestTomlinFactorization::backwardTransformation( const double *y, double *x ) const
@@ -404,7 +400,7 @@ void ForrestTomlinFactorization::backwardTransformation( const double *y, double
     // Note: this is easier to do with a column-wise representation of Q,
     // which is just the row-wise representation of invQ.
     for ( unsigned i = 0; i < _m; ++i )
-        _workVector[_invQ._ordering[i]] = y[i];
+        _workVector[i] = y[_invQ._ordering[i]];
 
     // Eliminate the U's
     for ( unsigned i = 0; i < _m; ++i )
@@ -420,7 +416,7 @@ void ForrestTomlinFactorization::backwardTransformation( const double *y, double
             _workVector[columnIndex] -= ( _U[i]->_column[j] * _workVector[j] );
         }
 
-        _workVector[columnIndex] /= _U[i]->_column[columnIndex];
+        ASSERT( FloatUtils::areEqual( _U[i]->_column[columnIndex], 1.0 ) );
 
         if ( FloatUtils::isZero( _workVector[columnIndex] ) )
             _workVector[columnIndex] = 0.0;
@@ -434,7 +430,7 @@ void ForrestTomlinFactorization::backwardTransformation( const double *y, double
     // Note: this is easier to do with a column-wise representation of invQ,
     // which is just the row-wise representation of Q.
     for ( unsigned i = 0; i < _m; ++i )
-        x[_Q._ordering[i]] = _workVector[i];
+        x[i] = _workVector[_Q._ordering[i]];
 
     // Mutiply by the As
     for ( int i = _m - 1; i >= 0; --i )
@@ -443,10 +439,16 @@ void ForrestTomlinFactorization::backwardTransformation( const double *y, double
             continue;
 
         columnIndex = _A[i]._column;
-        x[columnIndex] += ( _A[i]._value * x[_A[i]._row] );
-
-        if ( FloatUtils::isZero( x[columnIndex] ) )
-            x[columnIndex] = 0.0;
+        if ( columnIndex == _A[i]._row )
+        {
+            x[columnIndex] *= _A[i]._value;
+        }
+        else
+        {
+            x[columnIndex] += ( _A[i]._value * x[_A[i]._row] );
+            if ( FloatUtils::isZero( x[columnIndex] ) )
+                x[columnIndex] = 0.0;
+        }
     }
 
     // Multiply y by Ps and Ls
