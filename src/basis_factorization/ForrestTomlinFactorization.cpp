@@ -31,7 +31,6 @@ ForrestTomlinFactorization::ForrestTomlinFactorization( unsigned m )
     , _workW( NULL )
     , _workQ( m )
     , _invWorkQ( m )
-    , _storedW( NULL )
 {
     _B = new double[m * m];
     if ( !_B )
@@ -70,10 +69,6 @@ ForrestTomlinFactorization::ForrestTomlinFactorization( unsigned m )
     if ( !_workW )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
                                        "ForrestTomlinFactorization::workW" );
-    _storedW = new double[m];
-    if ( !_storedW )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
-                                       "ForrestTomlinFactorization::storedW" );
 }
 
 ForrestTomlinFactorization::~ForrestTomlinFactorization()
@@ -123,19 +118,13 @@ ForrestTomlinFactorization::~ForrestTomlinFactorization()
         _workW = NULL;
     }
 
-    if ( _storedW )
-    {
-        delete[] _storedW;
-        _storedW = NULL;
-    }
-
     List<LPElement *>::iterator lpIt;
     for ( lpIt = _LP.begin(); lpIt != _LP.end(); ++lpIt )
         delete *lpIt;
     _LP.clear();
 }
 
-void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const double */* column */ )
+void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const double *column )
 {
     // Pushing an eta matrix invalidates the explicit basis
     _explicitBasisAvailable = false;
@@ -155,13 +144,24 @@ void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const doub
 
     /*
       The next step is to compute the A matrices. For this, we need V,
-      which is obtained by replacing the column of U with the previously stored
-      w.
+      which is obtained by replacing the column of U with
+      w = Um...U1 * R * d, where d is the change column.
 
       We use the U array to temporarily store V for the computation, although
       it is not upper triangular.
     */
-    memcpy( _U[indexOfChangedUColumn]->_column, _storedW, sizeof(double) * _m );
+    for ( unsigned i = 0; i < _m; ++i )
+        _workVector[i] = column[_invQ._ordering[i]];
+
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        // Multiply _workVector by Ui
+        ASSERT( _U[i]->_column[_U[i]->_columnIndex] == 1 );
+        for ( unsigned j = 0; j < _U[i]->_columnIndex; ++j )
+            _workVector[j] += ( _workVector[_U[i]->_columnIndex] * _U[i]->_column[j] );
+    }
+
+    memcpy( _U[indexOfChangedUColumn]->_column, _workVector, sizeof(double) * _m );
 
     /*
       Now we have workQ * V * invWorkQ that is upper triangular except the last row.
@@ -343,11 +343,6 @@ void ForrestTomlinFactorization::forwardTransformation( const double *y, double 
     // Multiply by inv(Q)
     for ( unsigned i = 0; i < _m; ++i )
         _workW[_invQ._ordering[i]] = _workVector[i];
-
-    /****
-    Intermediate step: store w for later use
-    ****/
-    memcpy( _storedW, _workW, sizeof(double) * _m );
 
     /****
     Step 2: Find x such that:  Um....U1 * invQ * x = w
@@ -949,11 +944,6 @@ void ForrestTomlinFactorization::dump() const
     _invQ.dump();
 
     printf( "*** Done dumping FT factorization ***\n\no" );
-}
-
-void ForrestTomlinFactorization::setStoredW( const double *w )
-{
-    memcpy( _storedW, w, sizeof(double) * _m );
 }
 
 //

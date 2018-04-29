@@ -625,9 +625,6 @@ public:
         //      | 0  3 0 1 |
         double a1[] = { -4, 2, 0, 3 };
 
-        double w[] = { 14, 3.5, -6, 3 };
-        ft->setStoredW( w );
-
         ft->pushEtaMatrix( 1, a1 );
 
         // B * E1 = | 1   14 -2  4 |
@@ -832,8 +829,6 @@ public:
         TS_ASSERT_THROWS_NOTHING( ft->setBasis( basisMatrix ) );
 
         double a1[] = { -4, 2, 0, 3 };
-        double w[] = { 14, 3.5, -6, 3 };
-        ft->setStoredW( w );
         ft->pushEtaMatrix( 1, a1 );
 
         ForrestTomlinFactorization *ft2 = new ForrestTomlinFactorization( 4 );
@@ -888,8 +883,6 @@ public:
         //      |    0 1   |
         //      | 0  3 0 1 |
         double a1[] = { -4, 2, 0, 3 };
-        double w[] = { 14, 3.5, -6, 3 };
-        ft->setStoredW( w );
         ft->pushEtaMatrix( 1, a1 );
 
         // B * E1 = | 1   14 -2  4 |
@@ -958,8 +951,6 @@ public:
         //      |    0 1   |
         //      | 0  3 0 1 |
         double a1[] = { -4, 2, 0, 3 };
-        double w[] = { 14, 3.5, -6, 3 };
-        ft->setStoredW( w );
         ft->pushEtaMatrix( 1, a1 );
 
         // B * E1 = | 1   14 -2  4 |

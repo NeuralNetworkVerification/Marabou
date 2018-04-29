@@ -100,7 +100,6 @@ public:
 
     void setA( unsigned index, const AlmostIdentityMatrix &matrix );
     void setQ( const PermutationMatrix &Q );
-    void setStoredW( const double *w );
 
 private:
     /*
@@ -135,13 +134,6 @@ private:
     double *_workW;
     PermutationMatrix _workQ;
     PermutationMatrix _invWorkQ;
-
-    /*
-      This is a vector that is naturally computed as part of the forward
-      transformation performed to find the change column for a pivot step.
-      It is also used when an eta matrix is pushed.
-    */
-    double *_storedW;
 
     /*
       After a new basis matrix is set, initialize the LU factorization
