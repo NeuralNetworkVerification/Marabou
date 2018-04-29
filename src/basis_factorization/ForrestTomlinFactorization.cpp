@@ -145,7 +145,7 @@ void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const doub
     /*
       The next step is to compute the A matrices. For this, we need V,
       which is obtained by replacing the column of U with
-      w = Um...U1 * R * d, where d is the change column.
+      w = Um...U1 * invQ * d, where d is the change column.
 
       We use the U array to temporarily store V for the computation, although
       it is not upper triangular.
@@ -678,9 +678,6 @@ void ForrestTomlinFactorization::makeExplicitBasisAvailable()
         for ( unsigned row = 0; row < _U[i]->_columnIndex; ++row )
             for ( unsigned col = 0; col < _m; ++col )
                 _workMatrix[row * _m + col] += _U[i]->_column[row] * _workMatrix[_U[i]->_columnIndex * _m + col];
-
-        for ( unsigned col = 0; col < _m; ++col )
-            _workMatrix[_U[i]->_columnIndex * _m + col] *= _U[i]->_column[_U[i]->_columnIndex];
     }
 
     // Permute the rows according to Q
@@ -833,16 +830,15 @@ void ForrestTomlinFactorization::invertBasis( double *result )
         // The inverse of an eta matrix is an eta matrix with the special
         // column negated and divided by the diagonal entry. The only
         // exception is the diagonal entry itself, which is just the
-        // inverse of the original diagonal entry.
-        double etaDiagonalEntry = 1 / _U[i]->_column[_U[i]->_columnIndex];
+        // inverse of the original diagonal entry. However, for U
+        // matrices, we know the diagonals are always 1.
+
+        ASSERT( FloatUtils::areEqual( _U[i]->_column[_U[i]->_columnIndex], 1 ) );
 
         for ( unsigned row = 0; row < _U[i]->_columnIndex; ++row )
             for ( unsigned col = 0; col < _m; ++col )
                 _workMatrix[row * _m + col] -=
-                    ( _workMatrix[_U[i]->_columnIndex * _m + col] * _U[i]->_column[row] * etaDiagonalEntry );
-
-        for ( unsigned col = 0; col < _m; ++col )
-            _workMatrix[_U[i]->_columnIndex * _m + col] *= etaDiagonalEntry;
+                    ( _workMatrix[_U[i]->_columnIndex * _m + col] * _U[i]->_column[row] );
     }
 
     // Permute the rows according to Q
