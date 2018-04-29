@@ -89,7 +89,7 @@ CFLAGS += \
 
 %.obj: %.cxx
 	@echo "CC\t" $@
-	@$(COMPILE) -c -o $@ $< $(CFLAGS) $(addprefix -I, $(LOCAL_INCLUDES))
+	@$(COMPILE) -c -o $@ $< $(CFLAGS) $(CXXFLAGS) $(addprefix -I, $(LOCAL_INCLUDES))
 
 #
 # Linking C/C++
