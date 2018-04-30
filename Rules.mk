@@ -1,4 +1,10 @@
 #
+# Use bash
+#
+
+# SHELL	:= /bin/bash
+
+#
 # Places
 #
 
@@ -46,10 +52,13 @@ UNZIP	= unzip
 TESTGEN = $(CXXTEST_DIR)/cxxtestgen.pl
 
 #
-# Compiler version check
+# g++ version check
 #
 
-GCCVERSION = $(shell g++ --version | grep ^g++ | sed 's/^.* //g')
+GPPVERSION = $(shell $(COMPILE) --version | grep ^g++ | sed 's/^.* //g')
+GPPVERSION_MAJOR = $(shell echo $(GPPVERSION) | cut -f1 -d.)
+GPPVERSION_MINOR = $(shell echo $(GPPVERSION) | cut -f2 -d.)
+GPPVERSION_GTE_6_1 := $(shell [ $(GPPVERSION_MAJOR) -gt 6 -o \( $(GPPVERSION_MAJOR) -eq 6 -a $(GPPVERSION_MINOR) -ge 1 \) ] && echo true)
 
 #
 # Unzipping
@@ -125,7 +134,7 @@ endif
 
 ifneq ($(TEST_TARGET),)
 
-ifeq "$(GCCVERSION)" "7.3.0"
+ifeq ($(GPPVERSION_GTE_6_1),true)
 	CXXFLAGS += -Wno-terminate
 endif
 
