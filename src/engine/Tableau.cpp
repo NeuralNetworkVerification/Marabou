@@ -1123,6 +1123,7 @@ void Tableau::restoreState( const TableauState &state )
     _boundsValid = state._boundsValid;
 
     computeAssignment();
+    _costFunctionManager->initialize();
     computeCostFunction();
 }
 
