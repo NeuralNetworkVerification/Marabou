@@ -1101,6 +1101,7 @@ public:
         tableau->computeChangeColumn();
 
         TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable() );
+
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
         TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 5u );
 
@@ -1399,9 +1400,9 @@ public:
         TS_ASSERT( hasCandidates( *tableau ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
 
+        tableau->computeChangeColumn();
         TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable() );
         TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 5u );
-        tableau->computeChangeColumn();
         TS_ASSERT_THROWS_NOTHING( tableau->performPivot() );
 
         /*

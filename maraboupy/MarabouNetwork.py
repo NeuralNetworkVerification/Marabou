@@ -19,6 +19,7 @@ class MarabouNetwork:
         self.numVars = 0
         self.equList = []
         self.reluList = []
+        self.maxList = []
         self.lowerBounds = dict()
         self.upperBounds = dict()
         self.inputVars = np.array([])
@@ -69,6 +70,47 @@ class MarabouNetwork:
         """
         self.reluList += [(v1, v2)]
     
+    def addMaxConstraint(self, elements, v):
+        """
+        Function to add a new Max constraint
+        Arguments:
+            elements: (set of int) variable representing input to max constraint
+            v: (int) variable representing output of max constraint
+        """
+        self.maxList += [(elements, v)]
+
+    def lowerBoundExists(self, x):
+        """
+        Function to check whether lower bound for a variable is known
+        Arguments:
+            x: (int) variable to check
+        """
+        return x in self.lowerBounds
+
+    def upperBoundExists(self, x):
+        """
+        Function to check whether upper bound for a variable is known
+        Arguments:
+            x: (int) variable to check
+        """
+        return x in self.upperBounds
+
+    def participatesInPLConstraint(self, x):
+        """
+        Function to check whether variable participates in any piecewise linear constraint in this network
+        Arguments:
+            x: (int) variable to check
+        """
+        # ReLUs
+        fs, bs = zip(*self.reluList)
+        if x in fs or x in bs:
+            return True
+        # Max constraints
+        for elems, var in self.maxList:
+            if x in elems or x==var:
+                return True
+        return False
+
     def getMarabouQuery(self):
         """
         Function to convert network into Marabou Query
@@ -91,6 +133,12 @@ class MarabouNetwork:
             assert r[1] < self.numVars and r[0] < self.numVars
             MarabouCore.addReluConstraint(ipq, r[0], r[1])
         
+        for m in self.maxList:
+            assert m[1] < self.numVars
+            for e in m[0]:
+                assert e < self.numVars
+            MarabouCore.addMaxConstraint(ipq, m[0], m[1])
+
         for l in self.lowerBounds:
             assert l < self.numVars
             ipq.setLowerBound(l, self.lowerBounds[l])
