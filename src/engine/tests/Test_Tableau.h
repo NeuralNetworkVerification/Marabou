@@ -1095,7 +1095,7 @@ public:
         // Do some more stuff again
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
-        tableau->setEnteringVariableIndex( tableau->variableToIndex( 2u ) );
+        tableau->setEnteringVariableIndex( 2u );
         TS_ASSERT( hasCandidates( *tableau ) );
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeChangeColumn() );
