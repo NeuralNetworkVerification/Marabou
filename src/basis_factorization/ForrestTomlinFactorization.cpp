@@ -134,7 +134,7 @@ void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const doub
       V differs from U in just one column. The index of this column
       determines the new permutation matrix workQ
     */
-    unsigned indexOfChangedUColumn = _invQ._ordering[columnIndex];
+    unsigned indexOfChangedUColumn = _invQ.findIndexOfRow( columnIndex );
 
     _workQ.resetToIdentity();
     for ( unsigned i = indexOfChangedUColumn; i < _m - 1; ++i )
