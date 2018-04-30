@@ -30,8 +30,16 @@ REGRESS_DIR	  = $(PROJECT_DIR)/regress
 # Utilities
 #
 
-COMPILE = g++
-LINK 	= g++
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+	COMPILER = g++
+endif
+ifeq ($(UNAME_S),Darwin)
+	COMPILER = clang++
+endif
+
+COMPILE = $(COMPILER)
+LINK 	= $(COMPILER)
 RM	= rm
 GFIND 	= find
 ETAGS	= etags
@@ -44,15 +52,6 @@ TAR	= tar
 UNZIP	= unzip
 
 TESTGEN = $(CXXTEST_DIR)/cxxtestgen.pl
-
-#
-# g++ version check
-#
-
-GPPVERSION = $(shell $(COMPILE) --version | grep ^g++ | sed 's/^.* //g')
-GPPVERSION_MAJOR = $(shell echo $(GPPVERSION) | cut -f1 -d.)
-GPPVERSION_MINOR = $(shell echo $(GPPVERSION) | cut -f2 -d.)
-GPPVERSION_GTE_6_1 := $(shell [ $(GPPVERSION_MAJOR) -gt 6 -o \( $(GPPVERSION_MAJOR) -eq 6 -a $(GPPVERSION_MINOR) -ge 1 \) ] && echo true)
 
 #
 # Unzipping
@@ -128,8 +127,14 @@ endif
 
 ifneq ($(TEST_TARGET),)
 
-ifeq ($(GPPVERSION_GTE_6_1),true)
-	CXXFLAGS += -Wno-terminate
+ifeq ($(COMPILER),g++)
+	GPPVERSION = $(shell $(COMPILE) --version | grep ^g++ | sed 's/^.* //g')
+	GPPVERSION_MAJOR = $(shell echo $(GPPVERSION) | cut -f1 -d.)
+	GPPVERSION_MINOR = $(shell echo $(GPPVERSION) | cut -f2 -d.)
+	GPPVERSION_GTE_6_1 := $(shell [ $(GPPVERSION_MAJOR) -gt 6 -o \( $(GPPVERSION_MAJOR) -eq 6 -a $(GPPVERSION_MINOR) -ge 1 \) ] && echo true)
+	ifeq ($(GPPVERSION_GTE_6_1),true)
+		CXXFLAGS += -Wno-terminate
+	endif
 endif
 
 OBJECTS = $(SOURCES:%.cpp=%.obj)
