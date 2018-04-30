@@ -1,10 +1,4 @@
 #
-# Use bash
-#
-
-# SHELL	:= /bin/bash
-
-#
 # Places
 #
 
