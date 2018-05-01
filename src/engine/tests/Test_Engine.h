@@ -76,8 +76,8 @@ public:
         //   -3 <= x1 <= 3
         //   4  <= x2 <= 6
         //
-        //  x0 + 2x1 -x2 <= 11 --> x0 + 2x1 - x2 + x3 = 11, x3 >= 0
-        //  -3x0 + 3x1  >= -5 --> -3x0 + 3x1 + x4 = -5, x4 <= 0
+        //  x0 + 2x1 -x2 <= 11 --> x0 + 2x1 - x2 + x3 = 11, 100 >= x3 >= 0
+        //  -3x0 + 3x1  >= -5 --> -3x0 + 3x1 + x4 = -5, -100 <= x4 <= 0
 
         InputQuery inputQuery;
         inputQuery.setNumberOfVariables( 5 );
@@ -92,6 +92,9 @@ public:
         inputQuery.setUpperBound( 2, 6 );
 
         inputQuery.setLowerBound( 3, 0 );
+        inputQuery.setUpperBound( 3, 100 );
+
+        inputQuery.setLowerBound( 4, -100 );
         inputQuery.setUpperBound( 4, 0 );
 
         Equation equation1;
@@ -166,7 +169,7 @@ public:
         TS_ASSERT_EQUALS( tableau->lowerBounds[3], 0.0 );
 
         TS_ASSERT( tableau->lowerBounds.exists( 4 ) );
-        TS_ASSERT_EQUALS( tableau->lowerBounds[4], FloatUtils::negativeInfinity() );
+        TS_ASSERT_EQUALS( tableau->lowerBounds[4], -100.0 );
 
         TS_ASSERT( tableau->upperBounds.exists( 0 ) );
         TS_ASSERT_EQUALS( tableau->upperBounds[0], 2.0 );
@@ -178,7 +181,7 @@ public:
         TS_ASSERT_EQUALS( tableau->upperBounds[2], 6.0 );
 
         TS_ASSERT( tableau->upperBounds.exists( 3 ) );
-        TS_ASSERT_EQUALS( tableau->upperBounds[3], FloatUtils::infinity() );
+        TS_ASSERT_EQUALS( tableau->upperBounds[3], 100.0 );
 
         TS_ASSERT( tableau->upperBounds.exists( 4 ) );
         TS_ASSERT_EQUALS( tableau->upperBounds[4], 0.0 );
