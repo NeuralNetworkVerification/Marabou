@@ -44,12 +44,12 @@ public:
         InputQuery inputQuery;
         inputQuery.setNumberOfVariables( 16 );
 
-        inputQuery.setLowerBound( 0, 1 ); // a
-        inputQuery.setUpperBound( 0, 3 );
-        inputQuery.setLowerBound( 1, 2 ); // b
-        inputQuery.setUpperBound( 1, 4);
-        inputQuery.setLowerBound( 2, 5 ); // c
-        inputQuery.setUpperBound( 2, 0 );
+        inputQuery.setLowerBound( 0, 0 ); // a
+        inputQuery.setUpperBound( 0, 1 );
+        inputQuery.setLowerBound( 1, 0 ); // b
+        inputQuery.setUpperBound( 1, 1);
+        inputQuery.setLowerBound( 2, 0 ); // c
+        inputQuery.setUpperBound( 2, 1 );
         inputQuery.setLowerBound( 10, 0 ); // assert that x10 == 0
         inputQuery.setUpperBound( 10, 0 ); // ie, triangle inequality satisfied
 
