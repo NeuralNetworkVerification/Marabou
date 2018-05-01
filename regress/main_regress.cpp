@@ -81,13 +81,13 @@ int main()
 {
     try
 	{
-		// lps();
+		lps();
 
-    	// relus();
+    	relus();
 
-        // max();
+        max();
 
-        max_relu();
+        // max_relu(); Do not run until B0 fix is merged
 
         printf( "\n\n" );
 	}
