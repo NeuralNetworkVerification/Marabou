@@ -281,16 +281,16 @@ void Tableau::initializeTableau()
     }
 
     // Debug
-    printf( "Dumping B0:\n" );
-    for ( unsigned row = 0; row < _m; ++row )
-    {
-        for ( unsigned col = 0; col < _m; ++col )
-        {
-            printf( "\t%5.lf", B0[_m*row + col] );
-        }
-        printf( "\n" );
-    }
-    printf( "\n\n" );
+    // printf( "Dumping B0:\n" );
+    // for ( unsigned row = 0; row < _m; ++row )
+    // {
+    //     for ( unsigned col = 0; col < _m; ++col )
+    //     {
+    //         printf( "\t%5.lf", B0[_m*row + col] );
+    //     }
+    //     printf( "\n" );
+    // }
+    // printf( "\n\n" );
     // End debug
 
     _basisFactorization->setBasis( B0 );
