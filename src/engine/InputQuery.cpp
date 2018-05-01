@@ -144,6 +144,14 @@ unsigned InputQuery::countInfiniteBounds()
         if ( upperBound.second == FloatUtils::infinity() )
             ++result;
 
+    for ( unsigned i = 0; i < _numberOfVariables; ++i )
+    {
+        if ( !_lowerBounds.exists( i ) )
+            ++result;
+        if ( !_upperBounds.exists( i ) )
+            ++result;
+    }
+
     return result;
 }
 

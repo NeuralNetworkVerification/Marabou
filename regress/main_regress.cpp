@@ -23,6 +23,7 @@
 #include "lp_infeasible_1.h"
 #include "max_feasible_1.h"
 #include "max_infeasible_1.h"
+#include "max_relu_feasible_1.h"
 #include "relu_feasible_1.h"
 
 void lps()
@@ -67,6 +68,15 @@ void max()
 	mfi1.run();
 }
 
+void max_relu()
+{
+    printTitle( "Max_Relu / Sat" );
+    Max_Relu_Feasible_1 mrf1;
+    mrf1.run();
+
+    printTitle( "Max_Relu / Unsat");
+}
+
 int main()
 {
     try
@@ -76,6 +86,8 @@ int main()
     	relus();
 
         max();
+
+        // max_relu(); Do not run until B0 fix is merged
 
         printf( "\n\n" );
 	}

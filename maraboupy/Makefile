@@ -47,6 +47,8 @@ SOURCES += \
 	InputQuery.cpp \
 	LPElement.cpp \
 	LUFactorization.cpp \
+	MarabouCore.cpp \
+	MaxConstraint.cpp \
 	PermutationMatrix.cpp \
 	PiecewiseLinearCaseSplit.cpp \
 	PiecewiseLinearConstraint.cpp \
@@ -64,7 +66,7 @@ SOURCES += \
 	TableauRow.cpp \
 	TableauState.cpp \
 	\
-	MarabouCore.cpp \
+	
 
 TARGET = $(API_NAME)
 
