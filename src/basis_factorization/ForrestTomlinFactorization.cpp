@@ -200,6 +200,9 @@ void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const doub
         // If the bump value is zero, nothing needs to be done
         if ( FloatUtils::isZero( bumpValue ) && i < _m - 1 )
             continue;
+
+        // If the bump value is 1 and this is the diagonal entry
+        // already, nothing needs to be done
         if ( FloatUtils::areEqual( bumpValue, 1 ) && i == _m - 1 )
             continue;
 
