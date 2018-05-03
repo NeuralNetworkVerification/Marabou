@@ -198,12 +198,12 @@ void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const doub
         }
 
         // If the bump value is zero, nothing needs to be done
-        if ( FloatUtils::isZero( bumpValue ) && i < _m - 1 )
+        if ( FloatUtils::isZero( bumpValue ) && ( i < _m - 1 ) )
             continue;
 
         // If the bump value is 1 and this is the diagonal entry
         // already, nothing needs to be done
-        if ( FloatUtils::areEqual( bumpValue, 1 ) && i == _m - 1 )
+        if ( FloatUtils::areEqual( bumpValue, 1 ) && ( i == _m - 1  ) )
             continue;
 
         // Now we want to zero out the bump value using an A matrix.
@@ -215,10 +215,12 @@ void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const doub
         if ( i < _m - 1 )
         {
             double diagonalValue = _U[_workQ._ordering[i]]->_column[_workQ._ordering[i]];
+            ASSERT( !FloatUtils::isZero( diagonalValue ) );
             _A[i]._value = - bumpValue / diagonalValue;
         }
         else
         {
+            ASSERT( !FloatUtils::isZero( bumpValue ) );
             _A[i]._value = 1 / bumpValue;
         }
     }
@@ -244,7 +246,7 @@ void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const doub
 
     // Row permutations: the row with the change index is erased, other rows move up,
     // and we add the identity row in the end
-    for ( unsigned i = 0; i < _m - 1; ++i )
+    for ( unsigned i = indexOfChangedUColumn; i < _m - 1; ++i )
     {
         for ( unsigned j = indexOfChangedUColumn; j < i + 1; ++j )
             _U[i]->_column[j] = _U[i]->_column[j + 1];
