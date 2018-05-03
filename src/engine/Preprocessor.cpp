@@ -60,7 +60,7 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     if ( attemptVariableElimination )
         eliminateFixedVariables();
 
-	return _preprocessed;
+    return _preprocessed;
 }
 
 bool Preprocessor::processEquations()

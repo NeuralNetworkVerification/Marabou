@@ -1068,6 +1068,7 @@ public:
         TS_ASSERT( hasCandidates( *tableau ) );
 
         double d[] = { -1, +2, -1 };
+        tableau->setChangeColumn( d );
 
         TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
@@ -1096,6 +1097,8 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
         tableau->setEnteringVariableIndex( 2u );
         TS_ASSERT( hasCandidates( *tableau ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->computeChangeColumn() );
 
         TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
@@ -1396,9 +1399,9 @@ public:
         TS_ASSERT( hasCandidates( *tableau ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
 
+        tableau->computeChangeColumn();
         TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable() );
         TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 5u );
-        tableau->computeChangeColumn();
         TS_ASSERT_THROWS_NOTHING( tableau->performPivot() );
 
         // A bit hackish: store the tableau state, because this causes

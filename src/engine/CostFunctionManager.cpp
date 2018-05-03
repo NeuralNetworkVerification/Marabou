@@ -17,8 +17,8 @@
 #include "ReluplexError.h"
 #include "TableauRow.h"
 
-CostFunctionManager::CostFunctionManager( ITableau *talbeau )
-    : _tableau( talbeau )
+CostFunctionManager::CostFunctionManager( ITableau *tableau )
+    : _tableau( tableau )
     , _costFunction( NULL )
     , _basicCosts( NULL )
     , _multipliers( NULL )

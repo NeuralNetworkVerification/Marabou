@@ -37,7 +37,7 @@ LUFactorization::LUFactorization( unsigned m )
     for ( unsigned row = 0; row < _m; ++row )
         _B0[row * _m + row] = 1.0;
 
-	_U = new double[m*m];
+    _U = new double[m*m];
 	if ( !_U )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "LUFactorization::U" );
 
@@ -91,7 +91,7 @@ void LUFactorization::freeIfNeeded()
     for ( element = _LP.begin(); element != _LP.end(); ++element )
         delete *element;
 
-	_LP.clear();
+    _LP.clear();
 }
 
 const double *LUFactorization::getU() const
@@ -136,7 +136,7 @@ void LUFactorization::LMultiplyRight( const EtaMatrix *L, double *X ) const
     if ( FloatUtils::isZero( sum ) )
         sum = 0.0;
 
-	X[L->_columnIndex] = sum;
+    X[L->_columnIndex] = sum;
 }
 
 void LUFactorization::LMultiplyLeft( const EtaMatrix *L, double *X ) const
@@ -360,7 +360,7 @@ void LUFactorization::clearLPU()
     List<LPElement *>::iterator element;
     for ( element = _LP.begin(); element != _LP.end(); ++element )
         delete *element;
-	_LP.clear();
+    _LP.clear();
 
 	std::fill_n( _U, _m*_m, 0 );
 }

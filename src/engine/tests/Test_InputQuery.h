@@ -138,6 +138,20 @@ public:
         TS_ASSERT( constraint->participatingVariable( 3 ) );
         TS_ASSERT( constraint->participatingVariable( 5 ) );
     }
+
+    void test_infinite_bounds()
+    {
+
+        InputQuery *inputQuery = new InputQuery;
+
+        inputQuery->setNumberOfVariables( 5 );
+        inputQuery->setLowerBound( 2, -4 );
+        inputQuery->setUpperBound( 2, 55 );
+        inputQuery->setUpperBound( 3, FloatUtils::infinity() );
+
+
+        TS_ASSERT_EQUALS( inputQuery->countInfiniteBounds(), 8U );
+    }
 };
 
 //

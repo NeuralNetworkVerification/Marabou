@@ -186,7 +186,7 @@ void Statistics::print()
             );
     printf( "\tNumber of active piecewise-linear constraints: %u / %u\n"
             "\t\tConstraints disabled by valid splits: %u. "
-            "By smt-originated splits: %u\n"
+            "By SMT-originated splits: %u\n"
             , _numActivePlConstraints
             , _numPlConstraints
             , _numPlValidSplits
@@ -198,7 +198,7 @@ void Statistics::print()
             , _maxDegradation
             , _numPreceisionRestorations
             );
-    printf( "\tNumber of simplex pivots we attempted to skip beacuse of instability: %llu.\n"
+    printf( "\tNumber of simplex pivots we attempted to skip because of instability: %llu.\n"
             "\tUnstable pivots performed anyway: %llu\n"
             , _numSimplexPivotSelectionsIgnoredForStability
             , _numSimplexUnstablePivots );
@@ -210,7 +210,7 @@ void Statistics::print()
             , _numTableauDegeneratePivots
             , printPercents( _numTableauDegeneratePivots, _numTableauPivots ) );
 
-    printf( "\t\tDenegerate pivots by request (e.g., to fix a PL constraint): %llu (%.2lf%%)\n"
+    printf( "\t\tDegenerate pivots by request (e.g., to fix a PL constraint): %llu (%.2lf%%)\n"
             , _numTableauDegeneratePivotsByRequest
             , printPercents( _numTableauDegeneratePivotsByRequest, _numTableauDegeneratePivots ) );
 
@@ -225,7 +225,7 @@ void Statistics::print()
     printf( "\tMax stack depth: %u\n"
             , _maxStackDepth );
 
-    printf( "\t--- Bound Tighetning Statistics ---\n" );
+    printf( "\t--- Bound Tightening Statistics ---\n" );
     printf( "\tNumber of tightened bounds: %llu.\n", _numTightenedBounds );
     printf( "\t\tNumber of rows examined by row tightener: %llu. Tightenings proposed: %llu\n"
             , _numRowsExaminedByRowTightener
@@ -504,6 +504,28 @@ void Statistics::incNumVisitedTreeStates()
 unsigned Statistics::getNumVisitedTreeStates() const
 {
     return _numVisitedTreeStates;
+}
+
+unsigned Statistics::getNumSplits() const
+{
+    return _numSplits;
+}
+
+unsigned long long Statistics::getTotalTime() const
+{
+        unsigned long long total =
+        _timeSimplexStepsMicro +
+        _timeConstraintFixingStepsMicro +
+        _totalTimePerformingValidCaseSplitsMicro +
+        _totalTimeHandlingStatisticsMicro +
+        _totalTimeExplicitBasisBoundTighteningMicro +
+        _totalTimeDegradationChecking +
+        _totalTimePrecisionRestoration +
+        _totalTimeConstraintMatrixBoundTighteningMicro +
+        _totalTimeApplyingStoredTighteningsMicro +
+        _totalTimeSmtCoreMicro;
+        // total is in micro seconds
+    return total / 1000;
 }
 
 //
