@@ -1764,8 +1764,7 @@ bool Tableau::basisMatrixAvailable() const
 
 void Tableau::getBasisEquations( List<Equation *> &equations ) const
 {
-    if ( !basisMatrixAvailable() )
-        _basisFactorization->makeExplicitBasisAvailable();
+    ASSERT( basisMatrixAvailable() );
 
     for ( unsigned i = 0; i < _m; ++i )
         equations.append( getBasisEquation( i ) );
@@ -1804,6 +1803,8 @@ Equation *Tableau::getBasisEquation( unsigned row ) const
 
 double *Tableau::getInverseBasisMatrix() const
 {
+    ASSERT( basisMatrixAvailable() );
+
     double *result = new double[_m * _m];
     _basisFactorization->invertBasis( result );
     return result;
