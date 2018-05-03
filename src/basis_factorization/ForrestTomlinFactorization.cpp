@@ -272,6 +272,10 @@ void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const doub
 
     // Finally, append the new As to the list
     _A.append( newAs );
+
+    // If the number of A matrices is too great, condense them.
+    if ( _A.size() > GlobalConfiguration::REFACTORIZATION_THRESHOLD )
+        makeExplicitBasisAvailable();
 }
 
 void ForrestTomlinFactorization::forwardTransformation( const double *y, double *x ) const
