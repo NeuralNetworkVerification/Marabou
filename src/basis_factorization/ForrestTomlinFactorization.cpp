@@ -21,7 +21,6 @@
 ForrestTomlinFactorization::ForrestTomlinFactorization( unsigned m )
     : _m( m )
     , _B( NULL )
-    , _A( NULL )
     , _Q( m )
     , _invQ( m )
     , _U( NULL )
@@ -36,11 +35,6 @@ ForrestTomlinFactorization::ForrestTomlinFactorization( unsigned m )
     if ( !_B )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
                                        "ForrestTomlinFactorization::B" );
-
-    _A = new AlmostIdentityMatrix[m];
-    if ( !_A )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
-                                       "ForrestTomlinFactorization::A" );
 
     _U = new EtaMatrix *[m];
     if ( !_U )
@@ -77,12 +71,6 @@ ForrestTomlinFactorization::~ForrestTomlinFactorization()
 	{
 		delete[] _B;
 		_B = NULL;
-	}
-
-	if ( _A )
-	{
-		delete[] _A;
-		_A = NULL;
 	}
 
 	if ( _U )
@@ -122,6 +110,11 @@ ForrestTomlinFactorization::~ForrestTomlinFactorization()
     for ( lpIt = _LP.begin(); lpIt != _LP.end(); ++lpIt )
         delete *lpIt;
     _LP.clear();
+
+    List<AlmostIdentityMatrix *>::iterator aIt;
+    for ( aIt = _A.begin(); aIt != _A.end(); ++aIt )
+        delete *aIt;
+    _A.clear();
 }
 
 void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const double *column )
@@ -169,9 +162,7 @@ void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const doub
       triangular.
     */
 
-    // Start by resetting the old matrices
-    for ( unsigned i = 0; i < _m; ++i )
-        _A[i]._identity = true;
+    List<AlmostIdentityMatrix *> newAs;
 
     // Now, go adjust these matrices according to the last row
     // of workQ * V * workR, which is of course not stored explicitly.
@@ -183,7 +174,7 @@ void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const doub
         unsigned originalCol = _workQ._ordering[i];
         double bumpValue = _U[originalCol]->_column[originalRow];
 
-        for ( unsigned j = indexOfChangedUColumn; j < i; ++j )
+        for ( const auto &a : newAs )
         {
             /*
               We adjust for each previous column, j.
@@ -192,9 +183,8 @@ void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const doub
               To find this entry we go through the permutations.
             */
 
-            if ( !_A[j]._identity )
-                bumpValue += _A[j]._value *
-                    _U[_workQ._ordering[i]]->_column[_workQ._ordering[_A[j]._column]];
+            bumpValue += a->_value *
+                _U[_workQ._ordering[i]]->_column[_workQ._ordering[a->_column]];
         }
 
         // If the bump value is zero, nothing needs to be done
@@ -208,25 +198,27 @@ void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const doub
 
         // Now we want to zero out the bump value using an A matrix.
         // We need entry (i,i) of V, and again we got through the permutations.
-        _A[i]._row = _m - 1;
-        _A[i]._column = i;
-        _A[i]._identity = false;
+        AlmostIdentityMatrix *newA = new AlmostIdentityMatrix;
+        newA->_row = _m - 1;
+        newA->_column = i;
 
         if ( i < _m - 1 )
         {
             double diagonalValue = _U[_workQ._ordering[i]]->_column[_workQ._ordering[i]];
             ASSERT( !FloatUtils::isZero( diagonalValue ) );
-            _A[i]._value = - bumpValue / diagonalValue;
+            newA->_value = - bumpValue / diagonalValue;
         }
         else
         {
             ASSERT( !FloatUtils::isZero( bumpValue ) );
-            _A[i]._value = 1 / bumpValue;
+            newA->_value = 1 / bumpValue;
         }
+
+        newAs.append( newA );
     }
 
     /*
-      At this point we have that Am...A1 * workQ * V * invWorkQ is upper triangular.
+      At this point we have that Ak...A1 * workQ * V * invWorkQ is upper triangular.
       We now do the textbook update to the stored elements.
     */
 
@@ -271,15 +263,15 @@ void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const doub
     // Recompute invQ
     _Q.invert( _invQ );
 
-    // Ai = _Q * Ai * _invQ, for all i
-    for ( unsigned i = 0; i < _m; ++i )
+    // Ai = _Q * Ai * _invQ, for all new A matrices
+    for ( const auto &a : newAs )
     {
-        if ( !_A[i]._identity )
-        {
-            _A[i]._row = _invQ._ordering[_A[i]._row];
-            _A[i]._column = _invQ._ordering[_A[i]._column];
-        }
+        a->_row = _invQ._ordering[a->_row];
+        a->_column = _invQ._ordering[a->_column];
     }
+
+    // Finally, append the new As to the list
+    _A.append( newAs );
 }
 
 void ForrestTomlinFactorization::forwardTransformation( const double *y, double *x ) const
@@ -288,13 +280,13 @@ void ForrestTomlinFactorization::forwardTransformation( const double *y, double 
       The goal is to find x such that Bx = y.
       We know that the following equation holds:
 
-           Am...A1 * LsPs...L1P1 * B = Q * Um...U1 * invQ
+           Ak...A1 * LsPs...L1P1 * B = Q * Um...U1 * invQ
 
       We find x in 2 steps:
 
       1. Find w such that
 
-             w = inv(Q) * Am...A1 * LsPs...L1P1 * y
+             w = inv(Q) * Ak...A1 * LsPs...L1P1 * y
 
       2. Find x such that
 
@@ -302,7 +294,7 @@ void ForrestTomlinFactorization::forwardTransformation( const double *y, double 
     */
 
     /****
-    Step 1: Find w such that:  w = inv(Q) * Am...A1 * LsPs...L1P1 * y
+    Step 1: Find w such that:  w = inv(Q) * Ak...A1 * LsPs...L1P1 * y
     ****/
 
     memcpy( _workVector, y, sizeof(double) * _m );
@@ -333,20 +325,17 @@ void ForrestTomlinFactorization::forwardTransformation( const double *y, double 
     }
 
     // Mutiply by the As
-    for ( unsigned i = 0; i < _m; ++i )
+    for ( const auto &a : _A )
     {
-        if ( _A[i]._identity )
-            continue;
-
-        if ( _A[i]._column == _A[i]._row )
+        if ( a->_column == a->_row )
         {
-            _workVector[_A[i]._column] *= _A[i]._value;
+            _workVector[a->_column] *= a->_value;
         }
         else
         {
-            _workVector[_A[i]._row] += ( _A[i]._value * _workVector[_A[i]._column] );
-            if ( FloatUtils::isZero( _workVector[_A[i]._row] ) )
-                _workVector[_A[i]._row] = 0.0;
+            _workVector[a->_row] += ( a->_value * _workVector[a->_column] );
+            if ( FloatUtils::isZero( _workVector[a->_row] ) )
+                _workVector[a->_row] = 0.0;
         }
     }
 
@@ -355,7 +344,7 @@ void ForrestTomlinFactorization::forwardTransformation( const double *y, double 
         _workW[i] = _workVector[_invQ._ordering[i]];
 
     /****
-    Step 2: Find x such that:  Um....U1 * invQ * x = w
+    Step 2: Find x such that: Um....U1 * invQ * x = w
     ****/
 
     // Eliminate the U's
@@ -382,7 +371,7 @@ void ForrestTomlinFactorization::backwardTransformation( const double *y, double
       The goal is to find x such that xB = y.
       We know that the following equation holds:
 
-      Am...A1 * LsPs...L1P1 * B = Q * Um...U1 * invQ
+      Ak...A1 * LsPs...L1P1 * B = Q * Um...U1 * invQ
 
       We find x in 2 steps:
 
@@ -392,7 +381,7 @@ void ForrestTomlinFactorization::backwardTransformation( const double *y, double
 
       2. Find x such that
 
-      x = v * invQ * Am...A1 * LsPs...L1P1
+      x = v * invQ * Ak...A1 * LsPs...L1P1
     */
 
     unsigned columnIndex;
@@ -428,7 +417,7 @@ void ForrestTomlinFactorization::backwardTransformation( const double *y, double
     }
 
     /****
-    Step 2: x = v * invQ * Am...A1 * LsPs...L1P1
+    Step 2: x = v * invQ * Ak...A1 * LsPs...L1P1
     ****/
 
     // Multiply by invQ
@@ -438,19 +427,16 @@ void ForrestTomlinFactorization::backwardTransformation( const double *y, double
         x[i] = _workVector[_Q._ordering[i]];
 
     // Mutiply by the As
-    for ( int i = _m - 1; i >= 0; --i )
+    for ( auto a = _A.rbegin(); a != _A.rend(); ++a )
     {
-        if ( _A[i]._identity )
-            continue;
-
-        columnIndex = _A[i]._column;
-        if ( columnIndex == _A[i]._row )
+        columnIndex = (*a)->_column;
+        if ( columnIndex == (*a)->_row )
         {
-            x[columnIndex] *= _A[i]._value;
+            x[columnIndex] *= (*a)->_value;
         }
         else
         {
-            x[columnIndex] += ( _A[i]._value * x[_A[i]._row] );
+            x[columnIndex] += ( (*a)->_value * x[(*a)->_row] );
             if ( FloatUtils::isZero( x[columnIndex] ) )
                 x[columnIndex] = 0.0;
         }
@@ -499,10 +485,7 @@ void ForrestTomlinFactorization::storeFactorization( IBasisFactorization *other 
     memcpy( otherFTFactorization->_B, _B, sizeof(double) * _m * _m );
 
     for ( unsigned i = 0; i < _m; ++i )
-    {
-        otherFTFactorization->_A[i] = _A[i];
         *(otherFTFactorization->_U[i]) = *_U[i];
-    }
 
     List<LPElement *>::iterator lpIt;
     for ( lpIt = otherFTFactorization->_LP.begin(); lpIt != otherFTFactorization->_LP.end(); ++lpIt )
@@ -511,6 +494,14 @@ void ForrestTomlinFactorization::storeFactorization( IBasisFactorization *other 
 
     for ( const auto &lp : _LP )
         otherFTFactorization->_LP.append( lp->duplicate() );
+
+    List<AlmostIdentityMatrix *>::iterator aIt;
+    for ( aIt = otherFTFactorization->_A.begin(); aIt != otherFTFactorization->_A.end(); ++aIt )
+        delete *aIt;
+    otherFTFactorization->_A.clear();
+
+    for ( const auto &a : _A )
+        otherFTFactorization->_A.append( new AlmostIdentityMatrix( *a ) );
 
     // We assume that this function is not invoked in the middle of, e.g., a pivot operation,
     // so we don't store the temporary data structures.
@@ -531,10 +522,7 @@ void ForrestTomlinFactorization::restoreFactorization( const IBasisFactorization
     memcpy( _B, otherFTFactorization->_B, sizeof(double) * _m * _m );
 
     for ( unsigned i = 0; i < _m; ++i )
-    {
-        _A[i] = otherFTFactorization->_A[i];
         *_U[i] = *(otherFTFactorization->_U[i]);
-    }
 
     List<LPElement *>::iterator lpIt;
     for ( lpIt = _LP.begin(); lpIt != _LP.end(); ++lpIt )
@@ -543,10 +531,19 @@ void ForrestTomlinFactorization::restoreFactorization( const IBasisFactorization
 
     for ( const auto &lp : otherFTFactorization->_LP )
         _LP.append( lp->duplicate() );
+
+    List<AlmostIdentityMatrix *>::iterator aIt;
+    for ( aIt = _A.begin(); aIt != _A.end(); ++aIt )
+        delete *aIt;
+    _A.clear();
+
+    for ( const auto &a : otherFTFactorization->_A )
+        _A.append( new AlmostIdentityMatrix( *a ) );
 }
 
 void ForrestTomlinFactorization::setBasis( const double *B )
 {
+    clearFactorization();
     memcpy( _B, B, sizeof(double) * _m * _m );
 	initialLUFactorization();
     _explicitBasisAvailable = true;
@@ -559,14 +556,16 @@ void ForrestTomlinFactorization::clearFactorization()
         delete *lpIt;
     _LP.clear();
 
+    List<AlmostIdentityMatrix *>::iterator aIt;
+    for ( aIt = _A.begin(); aIt != _A.end(); ++aIt )
+        delete *aIt;
+    _A.clear();
+
     _Q.resetToIdentity();
     _invQ.resetToIdentity();
 
     for ( unsigned i = 0; i < _m; ++i )
-    {
-        _A[i]._identity = true;
         _U[i]->resetToIdentity();
-    }
 }
 
 void ForrestTomlinFactorization::initialLUFactorization()
@@ -664,12 +663,12 @@ void ForrestTomlinFactorization::makeExplicitBasisAvailable()
     /*
       We know that the following equation holds:
 
-      Am...A1 * LsPs...L1P1 * B = Q * Um...U1 * invQ
+      Ak...A1 * LsPs...L1P1 * B = Q * Um...U1 * invQ
 
       Or:
 
-      B = inv( Am...A1 * LsPs...L1P1 ) * Q * Um...U1 * invQ
-        = inv(P1)inv(L1) ... inv(Ps)inv(LS) * inv(A1)...inv(Am)
+      B = inv( Ak...A1 * LsPs...L1P1 ) * Q * Um...U1 * invQ
+        = inv(P1)inv(L1) ... inv(Ps)inv(LS) * inv(A1)...inv(Ak)
           * Q * Um...U1 * invQ
     */
 
@@ -692,20 +691,17 @@ void ForrestTomlinFactorization::makeExplicitBasisAvailable()
     // Multiply by the inverse As. An inverse of an almost identity matrix
     // is just that matrix with its special value negated (unless that
     // matrix is diagonal.
-    for ( int i = _m - 1; i >= 0; --i )
+    for ( auto a = _A.rbegin(); a != _A.rend(); ++a )
     {
-        if ( _A[i]._identity )
-            continue;
-
-        if ( _A[i]._row == _A[i]._column )
+        if ( (*a)->_row == (*a)->_column )
         {
             for ( unsigned j = 0; j < _m; ++j )
-                _B[_A[i]._row * _m + j] *= ( 1 / _A[i]._value );
+                _B[(*a)->_row * _m + j] *= ( 1 / (*a)->_value );
         }
         else
         {
             for ( unsigned j = 0; j < _m; ++j )
-                _B[_A[i]._row * _m + j] -= _B[_A[i]._column * _m + j] * _A[i]._value;
+                _B[(*a)->_row * _m + j] -= _B[(*a)->_column * _m + j] * (*a)->_value;
         }
     }
 
@@ -746,6 +742,9 @@ void ForrestTomlinFactorization::makeExplicitBasisAvailable()
     }
 
     delete []temp;
+
+    clearFactorization();
+	initialLUFactorization();
     _explicitBasisAvailable = true;
 }
 
@@ -757,100 +756,74 @@ const double *ForrestTomlinFactorization::getBasis() const
 
 void ForrestTomlinFactorization::invertBasis( double *result )
 {
+    if ( !_explicitBasisAvailable )
+        throw BasisFactorizationError( BasisFactorizationError::CANT_INVERT_BASIS_BECAUSE_BASIS_ISNT_AVAILABLE );
+
     /*
-      We know that the following equation holds:
-
-      Am...A1 * LsPs...L1P1 * B = Q * Um...U1 * invQ
-
-      Or:
-
-      Am...A1 * LsPs...L1P1 = Q * Um...U1 * invQ * invB
-
-      Or:
-
-      invB = inv(Q * Um...U1 * invQ) * Am...A1 * LsPs...L1P1
-           = Q * invU1 * ... invUm * invQ * Am...A1 * LsPs...L1P1
+      We have a simple LU factorization of the basis, and we can use
+      it to compute the inverse.
     */
 
     ASSERT( result );
 
-    // Initialize to identity matrix
-    std::fill_n( result, _m * _m, 0.0 );
+    // Initialize the result to the identity matrix
     for ( unsigned i = 0; i < _m; ++i )
-        result[i * _m + i] = 1;
+        for ( unsigned j = 0; j < _m; ++j )
+            result[i * _m + j] = ( i == j ) ? 1.0 : 0.0;
 
-    // Multiply by Ls and Ps
-    double *temp = new double[_m];
-    for ( auto lpElement = _LP.rbegin(); lpElement != _LP.rend(); ++lpElement )
+    if ( _LP.empty() )
     {
-        LPElement *lp = *lpElement;
+        DEBUG({
+                // Assert B is the identity matrix.
+                for ( unsigned i = 0; i < _m; ++i )
+                    for ( unsigned j = 0; j < _m; ++j )
+                        ASSERT( _B[i * _m + j] == ( i == j ) ? 1.0 : 0.0 );
+            });
 
-        if ( lp->_pair )
+        return;
+    }
+
+    // Apply the LP operations to the result
+    for ( auto it = _LP.rbegin(); it != _LP.rend(); ++it )
+    {
+        const LPElement *element = *it;
+
+        if ( element->_pair )
         {
-            // Row permutations
-            memcpy( temp, result + (lp->_pair->first * _m), sizeof(double) * _m );
-            memcpy( result + (lp->_pair->first * _m), result + (lp->_pair->second * _m), sizeof(double) * _m );
-            memcpy( result + (lp->_pair->second * _m), temp,  sizeof(double) * _m );
-		}
+            rowSwap( element->_pair->first, element->_pair->second, result );
+        }
         else
         {
-            // Multiply by a lower triangular eta matrix.
-            EtaMatrix *eta = lp->_eta;
-            double etaDiagonalEntry = eta->_column[eta->_columnIndex];
+            unsigned colIndex = element->_eta->_columnIndex;
 
-            for ( unsigned row = eta->_columnIndex + 1; row < _m; ++row )
+            // First, perform in-place multiplication for all rows below the pivot row
+            for ( unsigned row = colIndex + 1; row < _m; ++row )
+            {
                 for ( unsigned col = 0; col < _m; ++col )
-                    result[row * _m + col] += ( eta->_column[row] * result[eta->_columnIndex * _m + col] );
+                    result[row * _m + col] += element->_eta->_column[row] * result[colIndex * _m + col];
+            }
 
-            for ( unsigned col = 0; col < _m; ++col )
-                result[eta->_columnIndex * _m + col] *= etaDiagonalEntry;
+            // Finally, perform the multiplication for the pivot row
+            // itself. We change this row last because it is required for all
+            // previous multiplication operations.
+            for ( unsigned i = 0; i < _m; ++i )
+                result[colIndex * _m + i] *= element->_eta->_column[colIndex];
         }
     }
 
-    // Multiply by the As.
-    for ( unsigned i = 0; i < _m; ++i )
+    // Apply the U operations to the result
+    for ( int col = _m - 1; col > 0; --col )
     {
-        if ( _A[i]._identity )
-            continue;
+        for ( int row = col - 1; row >= 0; --row )
+        {
+            double uElement = _U[col]->_column[row];
+            if ( FloatUtils::isZero( uElement ) )
+                continue;
 
-        if ( _A[i]._row == _A[i]._column )
-        {
-            for ( unsigned j = 0; j < _m; ++j )
-                result[_A[i]._row * _m + j] *= _A[i]._value;
-        }
-        else
-        {
-            for ( unsigned j = 0; j < _m; ++j )
-                result[_A[i]._row * _m + j] += result[_A[i]._column * _m + j] * _A[i]._value;
+            for ( unsigned k = 0; k < _m; ++k )
+                result[row * _m + k] += -uElement * result[col * _m + k];
         }
     }
-
-    // Permute the rows according to invQ
-    for ( unsigned i = 0; i < _m; ++i )
-        memcpy( _workMatrix + ( i * _m ), result + ( _invQ._ordering[i] * _m ), sizeof(double) * _m );
-
-    // Multiply by inverted Us.
-    for ( int i = _m - 1; i >= 0; --i )
-    {
-        // The inverse of an eta matrix is an eta matrix with the special
-        // column negated and divided by the diagonal entry. The only
-        // exception is the diagonal entry itself, which is just the
-        // inverse of the original diagonal entry. However, for U
-        // matrices, we know the diagonals are always 1.
-
-        ASSERT( FloatUtils::areEqual( _U[i]->_column[_U[i]->_columnIndex], 1 ) );
-
-        for ( unsigned row = 0; row < _U[i]->_columnIndex; ++row )
-            for ( unsigned col = 0; col < _m; ++col )
-                _workMatrix[row * _m + col] -=
-                    ( _workMatrix[_U[i]->_columnIndex * _m + col] * _U[i]->_column[row] );
-    }
-
-    // Permute the rows according to Q
-    for ( unsigned i = 0; i < _m; ++i )
-        memcpy( result + ( i * _m ), _workMatrix + ( _Q._ordering[i] * _m ), sizeof(double) * _m );
-
-    delete []temp;
 }
 
 const PermutationMatrix *ForrestTomlinFactorization::getQ() const
@@ -873,9 +846,9 @@ const List<LPElement *> *ForrestTomlinFactorization::getLP() const
     return &_LP;
 }
 
-const AlmostIdentityMatrix *ForrestTomlinFactorization::getA() const
+const List<AlmostIdentityMatrix *> *ForrestTomlinFactorization::getA() const
 {
-    return _A;
+    return &_A;
 }
 
 void ForrestTomlinFactorization::rowSwap( unsigned rowOne, unsigned rowTwo, double *matrix )
@@ -885,9 +858,9 @@ void ForrestTomlinFactorization::rowSwap( unsigned rowOne, unsigned rowTwo, doub
     memcpy( matrix + (rowTwo * _m), _workVector,  sizeof(double) * _m );
 }
 
-void ForrestTomlinFactorization::setA( unsigned index, const AlmostIdentityMatrix &matrix )
+void ForrestTomlinFactorization::pushA( const AlmostIdentityMatrix &matrix )
 {
-    _A[index] = matrix;
+    _A.append( new AlmostIdentityMatrix( matrix ) );
 }
 
 void ForrestTomlinFactorization::setQ( const PermutationMatrix &Q )
@@ -914,16 +887,15 @@ void ForrestTomlinFactorization::dump() const
     printf( "*** Dumping FT factorization ***\n\n" );
 
     printf( "Dumping As:\n" );
-    for ( unsigned i = 0; i < _m; ++i )
+    unsigned count = 0;
+    for ( const auto &a : _A )
     {
-        if ( _A[i]._identity )
-            printf( "\tA%u = I\n", i );
-        else
-            printf( "\tA%u = < %u, %u, %.5lf >\n", i, _A[i]._row, _A[i]._column, _A[i]._value );
+        printf( "\tA%u = < %u, %u, %.5lf >\n", count, a->_row, a->_column, a->_value );
+        ++count;
     }
 
     printf( "\nDumping LPs:\n" );
-    unsigned count = 0;
+    count = 0;
     for ( const auto &lp : _LP )
     {
         printf( "LP[%i]:\n", _LP.size() - 1 - count );

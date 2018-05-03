@@ -84,11 +84,10 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( ft->setBasis( basisMatrix ) );
 
-        // LU factorization should have occurred. All A matrices should
-        // be the identity, and Q and R should be the identity permutation.
+        // LU factorization should have occurred. There should be no A matrices,
+        // and Q and R should be the identity permutation.
 
-        for ( unsigned i = 0; i < 4; ++i )
-            TS_ASSERT( ft->getA()[i]._identity );
+        TS_ASSERT( ft->getA()->empty() );
         TS_ASSERT( isIdentityPermutation( ft->getQ() ) );
         TS_ASSERT( isIdentityPermutation( ft->getInvQ() ) );
 
@@ -207,11 +206,10 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( ft->setBasis( basisMatrix ) );
 
-        // LU factorization should have occurred. All A matrices should
-        // be the identity, and Q and R should be the identity permutation.
+        // LU factorization should have occurred. There should be no A matrices,
+        // and Q and R should be the identity permutation.
 
-        for ( unsigned i = 0; i < 4; ++i )
-            TS_ASSERT( ft->getA()[i]._identity );
+        TS_ASSERT( ft->getA()->empty() );
         TS_ASSERT( isIdentityPermutation( ft->getQ() ) );
         TS_ASSERT( isIdentityPermutation( ft->getInvQ() ) );
 
@@ -402,19 +400,17 @@ public:
         ft->setQ( Q );
 
         AlmostIdentityMatrix A1;
-        A1._identity = false;
         A1._row = 1;
         A1._column = 3;
         A1._value = 3;
 
         AlmostIdentityMatrix A2;
-        A2._identity = false;
         A2._row = 2;
         A2._column = 0;
         A2._value = -2;
 
-        ft->setA( 0, A1 );
-        ft->setA( 2, A2 );
+        ft->pushA( A1 );
+        ft->pushA( A2 );
 
         {
             /*
@@ -532,29 +528,27 @@ public:
         ft->setQ( Q );
 
         AlmostIdentityMatrix A1;
-        A1._identity = false;
         A1._row = 1;
         A1._column = 3;
         A1._value = 3;
 
         AlmostIdentityMatrix A2;
-        A2._identity = false;
         A2._row = 2;
         A2._column = 0;
         A2._value = -2;
 
-        ft->setA( 0, A1 );
-        ft->setA( 2, A2 );
+        ft->pushA( A1 );
+        ft->pushA( A2 );
 
         {
             /*
               Should hold:
 
-              x = y * Q * inv(Um...U1) * invQ * Am...A1 * LsPs...L1p1
+              x = y * Q * inv(Um...U1) * invQ * Ak...A1 * LsPs...L1p1
 
               Manually checking gives:
 
-              Am...A1 * LsPs...L1p1 = | 1      0    0    0 |
+              Ak...A1 * LsPs...L1p1 = | 1      0    0    0 |
                                       | -1/2 1/2 -3/2 -3/2 |
                                       | -1     0   -1    0 |
                                       | 0      0 -1/2 -1/2 |
@@ -791,24 +785,25 @@ public:
         TS_ASSERT_EQUALS( invQ->_ordering[2], 3U );
         TS_ASSERT_EQUALS( invQ->_ordering[3], 1U );
 
-        const AlmostIdentityMatrix *A = ft->getA();
+        const List<AlmostIdentityMatrix *> *A = ft->getA();
 
-        TS_ASSERT( A[0]._identity );
+        TS_ASSERT_EQUALS( A->size(), 3U );
 
-        TS_ASSERT( !A[1]._identity );
-        TS_ASSERT_EQUALS( A[1]._row, 1U );
-        TS_ASSERT_EQUALS( A[1]._column, 2U );
-        TS_ASSERT( FloatUtils::areEqual( A[1]._value, -0.5 ) );
+        auto it = A->begin();
 
-        TS_ASSERT( !A[2]._identity );
-        TS_ASSERT_EQUALS( A[2]._row, 1U );
-        TS_ASSERT_EQUALS( A[2]._column, 3U );
-        TS_ASSERT( FloatUtils::areEqual( A[2]._value, -1.5 ) );
+        TS_ASSERT_EQUALS( (*it)->_row, 1U );
+        TS_ASSERT_EQUALS( (*it)->_column, 2U );
+        TS_ASSERT( FloatUtils::areEqual( (*it)->_value, -0.5 ) );
 
-        TS_ASSERT( !A[3]._identity );
-        TS_ASSERT_EQUALS( A[3]._row, 1U );
-        TS_ASSERT_EQUALS( A[3]._column, 1U );
-        TS_ASSERT( FloatUtils::areEqual( A[3]._value, 0.5 ) );
+        ++it;
+        TS_ASSERT_EQUALS( (*it)->_row, 1U );
+        TS_ASSERT_EQUALS( (*it)->_column, 3U );
+        TS_ASSERT( FloatUtils::areEqual( (*it)->_value, -1.5 ) );
+
+        ++it;
+        TS_ASSERT_EQUALS( (*it)->_row, 1U );
+        TS_ASSERT_EQUALS( (*it)->_column, 1U );
+        TS_ASSERT( FloatUtils::areEqual( (*it)->_value, 0.5 ) );
 
         TS_ASSERT_THROWS_NOTHING( delete ft );
     }
@@ -970,18 +965,18 @@ public:
             3.0/2, -3.0/4, -19.0/8, -13.0/8,
         };
 
+        TS_ASSERT_THROWS_EQUALS( ft->invertBasis( invB ),
+                                 const BasisFactorizationError &e,
+                                 e.getCode(),
+                                 BasisFactorizationError::CANT_INVERT_BASIS_BECAUSE_BASIS_ISNT_AVAILABLE );
+
+        TS_ASSERT_THROWS_NOTHING( ft->makeExplicitBasisAvailable() );
+
         TS_ASSERT_THROWS_NOTHING( ft->invertBasis( invB ) );
         for ( unsigned i = 0; i < 16; ++i )
             TS_ASSERT( FloatUtils::areEqual( invB[i], expectedInvB2[i] ) );
 
         TS_ASSERT_THROWS_NOTHING( delete ft );
-    }
-
-    void test_todo()
-    {
-        TS_TRACE( "TODO: Ls and Ps do not change, so compute LsPs...L1P1 "
-                  "and inv(P1)inv(L1) ... inv(Ps)inv(LS) once and for all "
-                  "for getBasis and invertBasis" );
     }
 };
 

@@ -109,6 +109,17 @@ void PermutationMatrix::dump() const
     printf( "\n" );
 }
 
+bool PermutationMatrix::isIdentity() const
+{
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        if ( _ordering[i] != i )
+            return false;
+    }
+
+    return true;
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

@@ -22,7 +22,7 @@
 /*
   Forrest-Tomlin factorization looks like this:
 
-  Am...A1 * LsPs...L1P1 * B = Q * Um...U1 * inv(Q)
+  Ak...A1 * LsPs...L1P1 * B = Q * Um...U1 * inv(Q)
 
   Where:
   - The A matrices are "almost-diagonal", i.e. diagonal matrices
@@ -96,9 +96,9 @@ public:
     const PermutationMatrix *getInvQ() const;
     const EtaMatrix **getU() const;
     const List<LPElement *> *getLP() const;
-    const AlmostIdentityMatrix *getA() const;
+    const List<AlmostIdentityMatrix *> *getA() const;
 
-    void setA( unsigned index, const AlmostIdentityMatrix &matrix );
+    void pushA( const AlmostIdentityMatrix &matrix );
     void setQ( const PermutationMatrix &Q );
 
 private:
@@ -115,11 +115,13 @@ private:
     /*
       The components of the Forrest-Tomlin factorization.
     */
-    AlmostIdentityMatrix *_A;
-    List<LPElement *> _LP;
     PermutationMatrix _Q;
     PermutationMatrix _invQ;
     EtaMatrix **_U;
+    // P1 is the last element of the list
+    List<LPElement *> _LP;
+    // A1 is the first element of the list
+    List<AlmostIdentityMatrix *>_A;
 
     /*
       Indicates whether the explicit basis matrix is available.
@@ -146,6 +148,7 @@ private:
     */
     void rowSwap( unsigned rowOne, unsigned rowTwo, double *matrix );
 
+public:
     /*
       Debug
     */
