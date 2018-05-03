@@ -76,12 +76,12 @@ equation3.setScalar(0)
 equation3.markAuxiliaryVariable(8)
 inputQuery.addEquation(equation3)
 
-inputQuery.addReluConstraint(1, 2)
-inputQuery.addReluConstraint(3, 4)
+MarabouCore.addReluConstraint(inputQuery,1,2)
+MarabouCore.addReluConstraint(inputQuery,3,4)
 
-results = MarabouCore.solve(inputQuery, "")
-if len(results)>0:
+vars1, stats1 = MarabouCore.solve(inputQuery, "")
+if len(vars1)>0:
 	print("SAT")
-	print(results)
+	print(vars1)
 else:
 	print("UNSAT")
