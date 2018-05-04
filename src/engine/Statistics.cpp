@@ -22,7 +22,7 @@ Statistics::Statistics()
     , _numPlSmtOriginatedSplits( 0 )
     , _currentDegradation( 0.0 )
     , _maxDegradation( 0.0 )
-    , _numPreceisionRestorations( 0 )
+    , _numPrecisionRestorations( 0 )
     , _numSimplexSteps( 0 )
     , _timeSimplexStepsMicro( 0 )
     , _timeMainLoopMicro( 0 )
@@ -186,7 +186,7 @@ void Statistics::print()
             );
     printf( "\tNumber of active piecewise-linear constraints: %u / %u\n"
             "\t\tConstraints disabled by valid splits: %u. "
-            "By smt-originated splits: %u\n"
+            "By SMT-originated splits: %u\n"
             , _numActivePlConstraints
             , _numPlConstraints
             , _numPlValidSplits
@@ -196,9 +196,9 @@ void Statistics::print()
             "Restorations so far: %u\n"
             , _currentDegradation
             , _maxDegradation
-            , _numPreceisionRestorations
+            , _numPrecisionRestorations
             );
-    printf( "\tNumber of simplex pivots we attempted to skip beacuse of instability: %llu.\n"
+    printf( "\tNumber of simplex pivots we attempted to skip because of instability: %llu.\n"
             "\tUnstable pivots performed anyway: %llu\n"
             , _numSimplexPivotSelectionsIgnoredForStability
             , _numSimplexUnstablePivots );
@@ -210,7 +210,7 @@ void Statistics::print()
             , _numTableauDegeneratePivots
             , printPercents( _numTableauDegeneratePivots, _numTableauPivots ) );
 
-    printf( "\t\tDenegerate pivots by request (e.g., to fix a PL constraint): %llu (%.2lf%%)\n"
+    printf( "\t\tDegenerate pivots by request (e.g., to fix a PL constraint): %llu (%.2lf%%)\n"
             , _numTableauDegeneratePivotsByRequest
             , printPercents( _numTableauDegeneratePivotsByRequest, _numTableauDegeneratePivots ) );
 
@@ -225,7 +225,7 @@ void Statistics::print()
     printf( "\tMax stack depth: %u\n"
             , _maxStackDepth );
 
-    printf( "\t--- Bound Tighetning Statistics ---\n" );
+    printf( "\t--- Bound Tightening Statistics ---\n" );
     printf( "\tNumber of tightened bounds: %llu.\n", _numTightenedBounds );
     printf( "\t\tNumber of rows examined by row tightener: %llu. Tightenings proposed: %llu\n"
             , _numRowsExaminedByRowTightener
@@ -292,7 +292,7 @@ void Statistics::incNumSimplexSteps()
 
 void Statistics::incNumPrecisionRestorations()
 {
-    ++_numPreceisionRestorations;
+    ++_numPrecisionRestorations;
 }
 
 void Statistics::addTimeSimplexSteps( unsigned long long time )
@@ -509,6 +509,31 @@ unsigned Statistics::getNumVisitedTreeStates() const
 unsigned Statistics::getNumSplits() const
 {
     return _numSplits;
+}
+
+unsigned long long Statistics::getNumTableauPivots() const
+{
+    return _numTableauPivots;
+}
+
+double Statistics::getMaxDegradation() const
+{
+    return _maxDegradation;
+}
+
+unsigned Statistics::getNumPrecisionRestorations() const
+{
+    return _numPrecisionRestorations;
+}
+
+unsigned long long Statistics::getNumSimplexPivotSelectionsIgnoredForStability() const
+{
+    return _numSimplexPivotSelectionsIgnoredForStability;
+}
+
+unsigned long long Statistics::getNumSimplexUnstablePivots() const
+{
+    return _numSimplexUnstablePivots;
 }
 
 unsigned long long Statistics::getTotalTime() const

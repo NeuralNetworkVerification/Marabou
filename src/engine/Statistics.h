@@ -59,6 +59,8 @@ public:
     void addTimeForPrecisionRestoration( unsigned long long time );
     void addTimeForApplyingStoredTightenings( unsigned long long time );
     void incNumPrecisionRestorations();
+    double getMaxDegradation() const;
+    unsigned getNumPrecisionRestorations() const;
 
     /*
       Tableau related statistics.
@@ -69,6 +71,9 @@ public:
     void incNumTableauDegeneratePivotsByRequest();
     void incNumSimplexPivotSelectionsIgnoredForStability();
     void incNumSimplexUnstablePivots();
+    unsigned long long getNumTableauPivots() const;
+    unsigned long long getNumSimplexPivotSelectionsIgnoredForStability() const;
+    unsigned long long getNumSimplexUnstablePivots() const;
 
     /*
       Smt core related statistics.
@@ -127,7 +132,7 @@ private:
     // Degradation and restorations
     double _currentDegradation;
     double _maxDegradation;
-    unsigned _numPreceisionRestorations;
+    unsigned _numPrecisionRestorations;
 
     // Number of simplex steps, i.e. pivots (including degenerate
     // pivots), performed by the main loop

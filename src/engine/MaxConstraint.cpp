@@ -96,7 +96,7 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
         _maxLowerBound = value;
         List<unsigned> toRemove;
         double maxValueNotRemoved = FloatUtils::negativeInfinity();
-        unsigned maxVarNotRemoved;
+        unsigned maxVarNotRemoved=0;
         for ( auto element : _elements )
         {
             if ( _upperBounds.exists( element ) &&
@@ -164,7 +164,7 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
         if ( variable == _maxIndex )
         {
             double maxValueNotRemoved = FloatUtils::negativeInfinity();
-            unsigned maxVarNotRemoved;
+            unsigned maxVarNotRemoved=0;
             for (auto elem: _elements )
             {
                 if ( _assignment.exists( elem ) &&
