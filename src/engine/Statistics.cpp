@@ -22,7 +22,7 @@ Statistics::Statistics()
     , _numPlSmtOriginatedSplits( 0 )
     , _currentDegradation( 0.0 )
     , _maxDegradation( 0.0 )
-    , _numPreceisionRestorations( 0 )
+    , _numPrecisionRestorations( 0 )
     , _numSimplexSteps( 0 )
     , _timeSimplexStepsMicro( 0 )
     , _timeMainLoopMicro( 0 )
@@ -196,7 +196,7 @@ void Statistics::print()
             "Restorations so far: %u\n"
             , _currentDegradation
             , _maxDegradation
-            , _numPreceisionRestorations
+            , _numPrecisionRestorations
             );
     printf( "\tNumber of simplex pivots we attempted to skip because of instability: %llu.\n"
             "\tUnstable pivots performed anyway: %llu\n"
@@ -292,7 +292,7 @@ void Statistics::incNumSimplexSteps()
 
 void Statistics::incNumPrecisionRestorations()
 {
-    ++_numPreceisionRestorations;
+    ++_numPrecisionRestorations;
 }
 
 void Statistics::addTimeSimplexSteps( unsigned long long time )
@@ -509,6 +509,31 @@ unsigned Statistics::getNumVisitedTreeStates() const
 unsigned Statistics::getNumSplits() const
 {
     return _numSplits;
+}
+
+unsigned long long Statistics::getNumTableauPivots() const
+{
+    return _numTableauPivots;
+}
+
+double Statistics::getMaxDegradation() const
+{
+    return _maxDegradation;
+}
+
+unsigned Statistics::getNumPrecisionRestorations() const
+{
+    return _numPrecisionRestorations;
+}
+
+unsigned long long Statistics::getNumSimplexPivotSelectionsIgnoredForStability() const
+{
+    return _numSimplexPivotSelectionsIgnoredForStability;
+}
+
+unsigned long long Statistics::getNumSimplexUnstablePivots() const
+{
+    return _numSimplexUnstablePivots;
 }
 
 unsigned long long Statistics::getTotalTime() const
