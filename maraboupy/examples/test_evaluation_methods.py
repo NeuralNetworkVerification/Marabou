@@ -207,7 +207,7 @@ for eq in equation_objects:
 
 #add the relus
 for relu in relus:
-    ipq.addReluConstraint(relu[0], relu[1])
+    MarabouCore.addReluConstraint(ipq, relu[0], relu[1])
 
 #add the network bounds
 
@@ -229,14 +229,7 @@ for aux_var in aux_variables:
 for f_var in f_variables:
     ipq.setLowerBound(f_var, 0.0)
 
-
-#add the property boudns
-
-#ipq.setLowerBound( output_variables[0], 0.5 );
-#print("OUTPUT VARIABLE FOR BOUND: {}".format(output_variables[0]))
-
-#CHECK THE EVAL
-
+#add the property bounds
 input0 = -0.328422874212265
 input1 = 0.40932923555374146
 input2 = -0.017379289492964745
@@ -265,30 +258,11 @@ ipq.setLowerBound(input_variables[4], input4)
 ipq.setUpperBound(input_variables[4], input4)
 
 
-#Input[0] = -0.328422877151060
-#Input[1] = 0.413358209042742
-#Input[2] = -0.013607140388665
-#Input[3] = -0.304152412046139
-#Input[4] = -0.300504199489204
-
-
-input0 = -0.328422874212265
-input1 = 0.40932923555374146
-input2 = -0.017379289492964745
-input3 = -0.2747684121131897
-input4 = -0.30628132820129395
-
-output0 = 0.5
-output1 = -0.18876336514949799
-output2 = 0.8081545233726501
-output3 = -2.764213800430298
-output4 = -0.12992984056472778
-
 numvars = numberOfVariables(layerSizes)
 
 ipq.setNumberOfVariables(numvars)
 
-vals = MarabouCore.solve(ipq, "dump")
+vals, stats = MarabouCore.solve(ipq, "dump")
 if len(vals)==0:
     print("UNSAT")
 else:
