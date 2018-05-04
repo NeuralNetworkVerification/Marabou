@@ -32,15 +32,4 @@ for i in range(1, len(outputVars)):
     MarabouUtils.addInequality(network, [outputVars[0], outputVars[i]], [1, -1],0)
 
 print("Solving...")
-vals = network.solve("")
-if len(vals)==0:
-    print("UNSAT")
-else:
-    print("SAT")
-    print("Input Values:")
-    for i in range(inputVars.size):
-        print("%d: %.4e" % (i, vals[inputVars[i]]))
-              
-    print("\nOutput Values:")
-    for i in range(outputVars.size):
-        print("%d: %.4e" % (i, vals[outputVars[i]]))
+vals, stats = network.solve("")
