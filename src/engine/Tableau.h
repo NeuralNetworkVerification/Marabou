@@ -380,6 +380,7 @@ public:
       Can also extract the inverse basis matrix.
     */
     bool basisMatrixAvailable() const;
+    void makeBasisMatrixAvailable();
     void getBasisEquations( List<Equation *> &equations ) const;
     Equation *getBasisEquation( unsigned row ) const;
     double *getInverseBasisMatrix() const;

@@ -1757,6 +1757,11 @@ void Tableau::setBasicAssignmentStatus( ITableau::BasicAssignmentStatus status )
     _basicAssignmentStatus = status;
 }
 
+void Tableau::makeBasisMatrixAvailable()
+{
+    return _basisFactorization->makeExplicitBasisAvailable();
+}
+
 bool Tableau::basisMatrixAvailable() const
 {
     return _basisFactorization->explicitBasisAvailable();

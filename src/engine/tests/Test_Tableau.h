@@ -1440,6 +1440,7 @@ public:
         */
 
         List<Equation *> equations;
+        TS_ASSERT_THROWS_NOTHING( tableau->makeBasisMatrixAvailable() );
         TS_ASSERT_THROWS_NOTHING( tableau->getBasisEquations( equations ) );
         TS_ASSERT_EQUALS( equations.size(), 3u );
 
