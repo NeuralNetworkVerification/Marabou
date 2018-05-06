@@ -136,6 +136,7 @@ private:
     double *_workW;
     PermutationMatrix _workQ;
     PermutationMatrix _invWorkQ;
+    unsigned *_workOrdering;
 
     /*
       After a new basis matrix is set, initialize the LU factorization

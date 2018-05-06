@@ -30,6 +30,7 @@ ForrestTomlinFactorization::ForrestTomlinFactorization( unsigned m )
     , _workW( NULL )
     , _workQ( m )
     , _invWorkQ( m )
+    , _workOrdering( NULL )
 {
     _B = new double[m * m];
     if ( !_B )
@@ -63,6 +64,11 @@ ForrestTomlinFactorization::ForrestTomlinFactorization( unsigned m )
     if ( !_workW )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
                                        "ForrestTomlinFactorization::workW" );
+
+    _workOrdering = new unsigned[m];
+    if ( !_workOrdering )
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                       "ForrestTomlinFactorization::workOrdering" );
 }
 
 ForrestTomlinFactorization::~ForrestTomlinFactorization()
@@ -104,6 +110,12 @@ ForrestTomlinFactorization::~ForrestTomlinFactorization()
     {
         delete[] _workW;
         _workW = NULL;
+    }
+
+    if ( _workOrdering )
+    {
+        delete[] _workOrdering;
+        _workOrdering = NULL;
     }
 
     List<LPElement *>::iterator lpIt;
@@ -253,12 +265,10 @@ void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const doub
     // Update _Q to _Q * _invWorkQ. All permutation matrices are stored
     // row-wise, so this means permuting invQ's rows.
 
-    unsigned *ordering = new unsigned[_m];
     for ( unsigned i = 0; i < _m; ++i )
-        ordering[i] = _invWorkQ._ordering[_Q._ordering[i]];
+        _workOrdering[i] = _invWorkQ._ordering[_Q._ordering[i]];
     for ( unsigned i = 0; i < _m; ++i )
-        _Q._ordering[i] = ordering[i];
-    delete[] ordering;
+        _Q._ordering[i] = _workOrdering[i];
 
     // Recompute invQ
     _Q.invert( _invQ );
@@ -709,7 +719,6 @@ void ForrestTomlinFactorization::makeExplicitBasisAvailable()
         }
     }
 
-    double *temp = new double[_m];
     // Multiply by inverted Ps and Ls
     for ( const auto &lp : _LP )
     {
@@ -718,9 +727,9 @@ void ForrestTomlinFactorization::makeExplicitBasisAvailable()
         // transpose is equal to the original - so no need to invert.
         if ( lp->_pair )
         {
-            memcpy( temp, _B + (lp->_pair->first * _m), sizeof(double) * _m );
+            memcpy( _workVector, _B + (lp->_pair->first * _m), sizeof(double) * _m );
             memcpy( _B + (lp->_pair->first * _m), _B + (lp->_pair->second * _m), sizeof(double) * _m );
-            memcpy( _B + (lp->_pair->second * _m), temp,  sizeof(double) * _m );
+            memcpy( _B + (lp->_pair->second * _m), _workVector,  sizeof(double) * _m );
 		}
         else
         {
@@ -744,8 +753,6 @@ void ForrestTomlinFactorization::makeExplicitBasisAvailable()
                 _B[eta->_columnIndex * _m + col] *= etaDiagonalEntry;
         }
     }
-
-    delete []temp;
 
     clearFactorization();
 	initialLUFactorization();
