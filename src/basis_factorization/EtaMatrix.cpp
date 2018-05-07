@@ -85,7 +85,7 @@ EtaMatrix::~EtaMatrix()
     }
 }
 
-void EtaMatrix::dump()
+void EtaMatrix::dump() const
 {
     printf( "Dumping eta matrix\n" );
     printf( "\tm = %u. column index = %u\n", _m, _columnIndex );

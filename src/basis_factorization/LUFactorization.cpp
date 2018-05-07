@@ -188,8 +188,9 @@ void LUFactorization::condenseEtas()
 		delete eta;
 	}
 
-	_etas.clear();
-	clearLPU();
+    _etas.clear();
+    clearLPU();
+    factorizeMatrix( _B0 );
 }
 
 void LUFactorization::forwardTransformation( const double *y, double *x ) const

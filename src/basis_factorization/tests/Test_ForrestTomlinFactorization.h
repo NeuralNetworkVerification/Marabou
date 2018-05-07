@@ -84,13 +84,12 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( ft->setBasis( basisMatrix ) );
 
-        // LU factorization should have occurred. All A matrices should
-        // be the identity, and Q and R should be the identity permutation.
+        // LU factorization should have occurred. There should be no A matrices,
+        // and Q and R should be the identity permutation.
 
-        for ( unsigned i = 0; i < 4; ++i )
-            TS_ASSERT( ft->getA()[i]._identity );
+        TS_ASSERT( ft->getA()->empty() );
         TS_ASSERT( isIdentityPermutation( ft->getQ() ) );
-        TS_ASSERT( isIdentityPermutation( ft->getR() ) );
+        TS_ASSERT( isIdentityPermutation( ft->getInvQ() ) );
 
         /*
           First step of the diagonlization:
@@ -207,13 +206,12 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( ft->setBasis( basisMatrix ) );
 
-        // LU factorization should have occurred. All A matrices should
-        // be the identity, and Q and R should be the identity permutation.
+        // LU factorization should have occurred. There should be no A matrices,
+        // and Q and R should be the identity permutation.
 
-        for ( unsigned i = 0; i < 4; ++i )
-            TS_ASSERT( ft->getA()[i]._identity );
+        TS_ASSERT( ft->getA()->empty() );
         TS_ASSERT( isIdentityPermutation( ft->getQ() ) );
-        TS_ASSERT( isIdentityPermutation( ft->getR() ) );
+        TS_ASSERT( isIdentityPermutation( ft->getInvQ() ) );
 
         /*
           First step of the diagonlization:
@@ -380,12 +378,12 @@ public:
         }
 
         /*
-          Now manually add A, Q and R.
+          Now manually add A and Q
 
-          Q = | 0 1 0 0 |   R = | 1 0 0 0 |
-              | 1 0 0 0 |       | 0 1 0 0 |
-              | 0 0 0 1 |       | 0 0 0 1 |
-              | 0 0 1 0 |       | 0 0 1 0 |
+          Q = | 0 1 0 0 |   R = invQ = Q
+              | 1 0 0 0 |
+              | 0 0 0 1 |
+              | 0 0 1 0 |
 
           A1 = | 1 0 0 0 |  A2 = | 1  0 0 0 |
                | 0 1 0 3 |       | 0  1 0 0 |
@@ -399,29 +397,20 @@ public:
         Q._ordering[2] = 3;
         Q._ordering[3] = 2;
 
-        PermutationMatrix R( 4 );
-        R._ordering[0] = 0;
-        R._ordering[1] = 1;
-        R._ordering[2] = 3;
-        R._ordering[3] = 2;
-
         ft->setQ( Q );
-        ft->setR( R );
 
         AlmostIdentityMatrix A1;
-        A1._identity = false;
         A1._row = 1;
         A1._column = 3;
         A1._value = 3;
 
         AlmostIdentityMatrix A2;
-        A2._identity = false;
         A2._row = 2;
         A2._column = 0;
         A2._value = -2;
 
-        ft->setA( 0, A1 );
-        ft->setA( 2, A2 );
+        ft->pushA( A1 );
+        ft->pushA( A2 );
 
         {
             /*
@@ -431,25 +420,30 @@ public:
 
               Manually checking gives:
 
-              | 0 1 1/2 1/2 | * x = | 1       0    0    0 | * y
-              | 1 3   4  -2 |       | -1/2  1/2 -3/2 -3/2 |
+              | 1 0 1/2 1/2 | * x = | 1       0    0    0 | * y
+              | 3 1   4  -2 |       | -1/2  1/2 -3/2 -3/2 |
               | 0 0   1   0 |       | -1      0   -1    0 |
               | 0 0  -2   1 |       | 0       0 -1/2 -1/2 |
 
               Or:
 
-              x = inv( | 0 1 1/2 1/2 | ) * | 1       0    0    0 | * y
-                       | 1 3   4  -2 |     | -1/2  1/2 -3/2 -3/2 |
+              x = inv( | 1 0 1/2 1/2 | ) * | 1       0    0    0 | * y
+                       | 3 1   4  -2 |     | -1/2  1/2 -3/2 -3/2 |
                        | 0 0   1   0 |     | -1      0   -1    0 |
                        | 0 0  -2   1 |     | 0       0 -1/2 -1/2 |
 
-                = | -8  1/2 -31/4 -13/4 | * y
-                  | 5/2   0   7/4   1/4 |
-                  | -1    0    -1     0 |
-                  | -2    0  -5/2  -1/2 |
+                = | 1 0  -3/2 -1/2 | * | 1       0    0    0 | * y
+                  | -3 1  9/2  7/2 |   | -1/2  1/2 -3/2 -3/2 |
+                  | 0 0     1    0 |   | -1      0   -1    0 |
+                  | 0 0     2    1 |   | 0       0 -1/2 -1/2 |
+
+                = | 5/2   0   7/4   1/4 | * y
+                  |  -8 1/2 -31/4 -13/4 |
+                  |  -1   0    -1     0 |
+                  |  -2   0  -5/2  -1/2 |
             */
 
-            double expectedX[4] = { -3.75, 2.25, -1, -1.5 };
+            double expectedX[4] = { 2.25, -3.75, -1, -1.5 };
 
             double y[4] = { 1, 2, 0, -1 };
             double x[4];
@@ -512,12 +506,12 @@ public:
         }
 
         /*
-          Now manually add A, Q and R.
+          Now manually add A and Q.
 
-          Q = | 0 1 0 0 |   R = | 1 0 0 0 |
-              | 1 0 0 0 |       | 0 1 0 0 |
-              | 0 0 0 1 |       | 0 0 0 1 |
-              | 0 0 1 0 |       | 0 0 1 0 |
+          Q = | 0 1 0 0 |   invQ = Q
+              | 1 0 0 0 |
+              | 0 0 0 1 |
+              | 0 0 1 0 |
 
           A1 = | 1 0 0 0 |  A2 = | 1  0 0 0 |
                | 0 1 0 3 |       | 0  1 0 0 |
@@ -531,39 +525,30 @@ public:
         Q._ordering[2] = 3;
         Q._ordering[3] = 2;
 
-        PermutationMatrix R( 4 );
-        R._ordering[0] = 0;
-        R._ordering[1] = 1;
-        R._ordering[2] = 3;
-        R._ordering[3] = 2;
-
         ft->setQ( Q );
-        ft->setR( R );
 
         AlmostIdentityMatrix A1;
-        A1._identity = false;
         A1._row = 1;
         A1._column = 3;
         A1._value = 3;
 
         AlmostIdentityMatrix A2;
-        A2._identity = false;
         A2._row = 2;
         A2._column = 0;
         A2._value = -2;
 
-        ft->setA( 0, A1 );
-        ft->setA( 2, A2 );
+        ft->pushA( A1 );
+        ft->pushA( A2 );
 
         {
             /*
               Should hold:
 
-              x = y * inv(R) * inv(Um...U1) * inv(Q) * Am...A1 * LsPs...L1p1
+              x = y * Q * inv(Um...U1) * invQ * Ak...A1 * LsPs...L1p1
 
               Manually checking gives:
 
-              Am...A1 * LsPs...L1p1 = | 1      0    0    0 |
+              Ak...A1 * LsPs...L1p1 = | 1      0    0    0 |
                                       | -1/2 1/2 -3/2 -3/2 |
                                       | -1     0   -1    0 |
                                       | 0      0 -1/2 -1/2 |
@@ -574,25 +559,30 @@ public:
                              | 0  0    0    1 |
 
 
-              inv(Q) = | 0 1 0 0 |   inv(R) = | 1 0 0 0 |
-                       | 1 0 0 0 |            | 0 1 0 0 |
-                       | 0 0 0 1 |            | 0 0 0 1 |
-                       | 0 0 1 0 |            | 0 0 1 0 |
+              Q = invQ = | 0 1 0 0 |
+                         | 1 0 0 0 |
+                         | 0 0 0 1 |
+                         | 0 0 1 0 |
 
-              inv(R) * inv(Um...U1) * inv(Q) = | -3 1  9/2  7/2 |
-                                               |  1 0 -3/2 -1/2 |
-                                               |  0 0    1    0 |
-                                               |  0 0    2    1 |
+              Q * inv(Um...U1) * invQ = | 1  0 -3/2  -1/2 |
+                                        | -3 1  9/2   7/2 |
+                                        | 0  0    1     0 |
+                                        | 0  0    2     1 |
 
               Or:
 
-              x = y * |  -8 1/2 -31/4 -13/4 |
-                      | 5/2   0   7/4   1/4 |
-                      | -1    0    -1     0 |
-                      | -2    0  -5/2  -1/2 |
+              x = y * | 1  0 -3/2  -1/2 | * |    1   0    0    0 |
+                      | -3 1  9/2   7/2 |   | -1/2 1/2 -3/2 -3/2 |
+                      | 0  0    1     0 |   |   -1   0   -1    0 |
+                      | 0  0    2     1 |   |    0   0 -1/2 -1/2 |
+
+                = y * | 5/2   0   7/4   1/4 |
+                      |  -8 1/2 -31/4 -13/4 |
+                      |  -1   0    -1     0 |
+                      |  -2   0  -5/2  -1/2 |
             */
 
-            double expectedX[4] = { -1, 1.0/2, -7.0/4, -9.0/4 };
+            double expectedX[4] = { -11.5, 1, -11.25, -5.75 };
 
             double y[4] = { 1, 2, 0, -1 };
             double x[4];
@@ -606,9 +596,6 @@ public:
 
     void test_push_eta_matrix_refactorization()
     {
-        TS_TRACE( "TODO: Make this test pass!\n" );
-        return; // Remove this
-
         ForrestTomlinFactorization *ft;
 
         TS_ASSERT( ft = new ForrestTomlinFactorization( 4 ) );
@@ -631,6 +618,7 @@ public:
         //      |    0 1   |
         //      | 0  3 0 1 |
         double a1[] = { -4, 2, 0, 3 };
+
         ft->pushEtaMatrix( 1, a1 );
 
         // B * E1 = | 1   14 -2  4 |
@@ -701,7 +689,7 @@ public:
           A4' = | 1 0 0 0   |
                 | 0 1 0 0   |
                 | 0 0 1 0   |
-                | 0 0 0 1/4 |
+                | 0 0 0 1/2 |
 
           And of U':
 
@@ -725,7 +713,7 @@ public:
                                             | 0 1 0 0 |
 
           A4'' = Q'' A4' inv(Q'') = | 1 0   0 0 |
-                                    | 0 1/4 0 0 |
+                                    | 0 1/2 0 0 |
                                     | 0 0   1 0 |
                                     | 0 0   0 1 |
 
@@ -778,42 +766,215 @@ public:
         EtaMatrix expectedU1( 4, 0, expectedU1Col );
 
         const EtaMatrix **U = ft->getU();
+
         TS_ASSERT_EQUALS( *U[3], expectedU4 );
         TS_ASSERT_EQUALS( *U[2], expectedU3 );
         TS_ASSERT_EQUALS( *U[1], expectedU2 );
         TS_ASSERT_EQUALS( *U[0], expectedU1 );
 
         const PermutationMatrix *Q = ft->getQ();
-        const PermutationMatrix *R = ft->getR();
+        const PermutationMatrix *invQ = ft->getInvQ();
 
         TS_ASSERT_EQUALS( Q->_ordering[0], 0U );
         TS_ASSERT_EQUALS( Q->_ordering[1], 3U );
         TS_ASSERT_EQUALS( Q->_ordering[2], 1U );
         TS_ASSERT_EQUALS( Q->_ordering[3], 2U );
 
-        TS_ASSERT_EQUALS( R->_ordering[0], 0U );
-        TS_ASSERT_EQUALS( R->_ordering[1], 2U );
-        TS_ASSERT_EQUALS( R->_ordering[2], 3U );
-        TS_ASSERT_EQUALS( R->_ordering[3], 1U );
+        TS_ASSERT_EQUALS( invQ->_ordering[0], 0U );
+        TS_ASSERT_EQUALS( invQ->_ordering[1], 2U );
+        TS_ASSERT_EQUALS( invQ->_ordering[2], 3U );
+        TS_ASSERT_EQUALS( invQ->_ordering[3], 1U );
 
-        const AlmostIdentityMatrix *A = ft->getA();
+        const List<AlmostIdentityMatrix *> *A = ft->getA();
 
-        TS_ASSERT( A[0]._identity );
+        TS_ASSERT_EQUALS( A->size(), 3U );
 
-        TS_ASSERT( !A[1]._identity );
-        TS_ASSERT_EQUALS( A[1]._row, 3U );
-        TS_ASSERT_EQUALS( A[1]._column, 1U );
-        TS_ASSERT( FloatUtils::areEqual( A[1]._value, -0.5 ) );
+        auto it = A->begin();
 
-        TS_ASSERT( !A[2]._identity );
-        TS_ASSERT_EQUALS( A[2]._row, 3U );
-        TS_ASSERT_EQUALS( A[2]._column, 2U );
-        TS_ASSERT( FloatUtils::areEqual( A[2]._value, -1.5 ) );
+        TS_ASSERT_EQUALS( (*it)->_row, 1U );
+        TS_ASSERT_EQUALS( (*it)->_column, 2U );
+        TS_ASSERT( FloatUtils::areEqual( (*it)->_value, -0.5 ) );
 
-        TS_ASSERT( !A[3]._identity );
-        TS_ASSERT_EQUALS( A[3]._row, 3U );
-        TS_ASSERT_EQUALS( A[3]._column, 3U );
-        TS_ASSERT( FloatUtils::areEqual( A[3]._value, 0.25 ) );
+        ++it;
+        TS_ASSERT_EQUALS( (*it)->_row, 1U );
+        TS_ASSERT_EQUALS( (*it)->_column, 3U );
+        TS_ASSERT( FloatUtils::areEqual( (*it)->_value, -1.5 ) );
+
+        ++it;
+        TS_ASSERT_EQUALS( (*it)->_row, 1U );
+        TS_ASSERT_EQUALS( (*it)->_column, 1U );
+        TS_ASSERT( FloatUtils::areEqual( (*it)->_value, 0.5 ) );
+
+        TS_ASSERT_THROWS_NOTHING( delete ft );
+    }
+
+    void test_store_and_restore()
+    {
+        ForrestTomlinFactorization *ft;
+
+        TS_ASSERT( ft = new ForrestTomlinFactorization( 4 ) );
+
+        double basisMatrix[16] = {
+            1,   3, -2,  4,
+            1,   5, -1,  5,
+            1,   3, -3,  6,
+            -1, -3,  3, -8,
+        };
+
+        TS_ASSERT_THROWS_NOTHING( ft->setBasis( basisMatrix ) );
+
+        double a1[] = { -4, 2, 0, 3 };
+        ft->pushEtaMatrix( 1, a1 );
+
+        ForrestTomlinFactorization *ft2 = new ForrestTomlinFactorization( 4 );
+        ForrestTomlinFactorization *ft3 = new ForrestTomlinFactorization( 4 );
+
+        ft->storeFactorization( ft2 );
+        ft3->restoreFactorization( ft2 );
+
+        double y[] = { 1.25, 3.85, -4.5, 17 };
+        double x1[4];
+        double x2[4];
+        double x3[4];
+
+        TS_ASSERT_THROWS_NOTHING( ft->forwardTransformation( y, x1 ) );
+        TS_ASSERT_THROWS_NOTHING( ft2->forwardTransformation( y, x2 ) );
+        TS_ASSERT_THROWS_NOTHING( ft3->forwardTransformation( y, x3 ) );
+
+        for ( unsigned i = 0; i < 4; ++i )
+        {
+            TS_ASSERT_EQUALS( x1[i], x2[i] );
+            TS_ASSERT_EQUALS( x1[i], x3[i] );
+        }
+    }
+
+    void test_get_basis()
+    {
+        ForrestTomlinFactorization *ft;
+
+        TS_ASSERT( ft = new ForrestTomlinFactorization( 4 ) );
+
+        // B = | 1   3 -2  4 |
+        //     | 1   5 -1  5 |
+        //     | 1   3 -3  6 |
+        //     | -1 -3  3 -8 |
+        double basisMatrix[16] = {
+            1,   3, -2,  4,
+            1,   5, -1,  5,
+            1,   3, -3,  6,
+            -1, -3,  3, -8,
+        };
+
+        TS_ASSERT_THROWS_NOTHING( ft->setBasis( basisMatrix ) );
+
+        TS_ASSERT( ft->explicitBasisAvailable() );
+        const double *basis;
+        TS_ASSERT_THROWS_NOTHING( basis = ft->getBasis() );
+        for ( unsigned i = 0; i < 16; ++i )
+            TS_ASSERT( FloatUtils::areEqual( basisMatrix[i], basis[i] ) );
+
+        // E1 = | 1 -4     |
+        //      |    2     |
+        //      |    0 1   |
+        //      | 0  3 0 1 |
+        double a1[] = { -4, 2, 0, 3 };
+        ft->pushEtaMatrix( 1, a1 );
+
+        // B * E1 = | 1   14 -2  4 |
+        //          | 1   21 -1  5 |
+        //          | 1   20 -3  6 |
+        //          | -1 -26  3 -8 |
+
+        double expectedB[16] = {
+            1,   14, -2,  4,
+            1,   21, -1,  5,
+            1,   20, -3,  6,
+            -1, -26,  3, -8,
+        };
+
+        TS_ASSERT( !ft->explicitBasisAvailable() );
+        TS_ASSERT_THROWS_NOTHING( ft->makeExplicitBasisAvailable() );
+        TS_ASSERT( ft->explicitBasisAvailable() );
+
+        TS_ASSERT_THROWS_NOTHING( basis = ft->getBasis() );
+        for ( unsigned i = 0; i < 16; ++i )
+        {
+            TS_ASSERT( FloatUtils::areEqual( expectedB[i], basis[i] ) );
+        }
+
+        TS_ASSERT_THROWS_NOTHING( delete ft );
+    }
+
+    void test_invert_basis()
+    {
+        ForrestTomlinFactorization *ft;
+
+        TS_ASSERT( ft = new ForrestTomlinFactorization( 4 ) );
+
+        // B = | 1   3 -2  4 |
+        //     | 1   5 -1  5 |
+        //     | 1   3 -3  6 |
+        //     | -1 -3  3 -8 |
+        double basisMatrix[16] = {
+            1,   3, -2,  4,
+            1,   5, -1,  5,
+            1,   3, -3,  6,
+            -1, -3,  3, -8,
+        };
+
+        TS_ASSERT_THROWS_NOTHING( ft->setBasis( basisMatrix ) );
+
+        // invB = |  6 -3/2 -23/4 -9/4 |
+        //        | -1  1/2   5/4  3/4 |
+        //        |  1    0    -2   -1 |
+        //        |  0    0  -1/2 -1/2 |
+        double expectedInvB1[] = {
+                6, -3.0/2, -23.0/4, -9.0/4,
+                -1, 1.0/2, 5.0/4, 3.0/4,
+                1, 0, -2, -1,
+                0, 0, -1.0/2, -1.0/2,
+        };
+
+        double invB[16];
+
+        TS_ASSERT_THROWS_NOTHING( ft->invertBasis( invB ) );
+        for ( unsigned i = 0; i < 16; ++i )
+            TS_ASSERT( FloatUtils::areEqual( invB[i], expectedInvB1[i] ) );
+
+        // E1 = | 1 -4     |
+        //      |    2     |
+        //      |    0 1   |
+        //      | 0  3 0 1 |
+        double a1[] = { -4, 2, 0, 3 };
+        ft->pushEtaMatrix( 1, a1 );
+
+        // B * E1 = | 1   14 -2  4 |
+        //          | 1   21 -1  5 |
+        //          | 1   20 -3  6 |
+        //          | -1 -26  3 -8 |
+
+        // invB = |  4   -1/2 -13/4  -3/4 |
+        //        | -1/2  1/4   5/8   3/8 |
+        //        |  1      0    -2    -1 |
+        //        |  3/2 -3/4 -19/8 -13/8 |
+
+        double expectedInvB2[] = {
+            4, -1.0/2, -13.0/4, -3.0/4,
+            -1.0/2, 1.0/4, 5.0/8, 3.0/8,
+            1, 0, -2, -1,
+            3.0/2, -3.0/4, -19.0/8, -13.0/8,
+        };
+
+        TS_ASSERT_THROWS_EQUALS( ft->invertBasis( invB ),
+                                 const BasisFactorizationError &e,
+                                 e.getCode(),
+                                 BasisFactorizationError::CANT_INVERT_BASIS_BECAUSE_BASIS_ISNT_AVAILABLE );
+
+        TS_ASSERT_THROWS_NOTHING( ft->makeExplicitBasisAvailable() );
+
+        TS_ASSERT_THROWS_NOTHING( ft->invertBasis( invB ) );
+        for ( unsigned i = 0; i < 16; ++i )
+            TS_ASSERT( FloatUtils::areEqual( invB[i], expectedInvB2[i] ) );
 
         TS_ASSERT_THROWS_NOTHING( delete ft );
     }

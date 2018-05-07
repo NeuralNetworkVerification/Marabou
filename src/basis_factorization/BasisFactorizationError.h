@@ -22,6 +22,8 @@ public:
         ALLOCATION_FAILED = 0,
         CANT_INVERT_BASIS_BECAUSE_OF_ETAS = 1,
         UNKNOWN_BASIS_FACTORIZATION_TYPE = 2,
+        CORRUPT_PERMUATION_MATRIX = 3,
+        CANT_INVERT_BASIS_BECAUSE_BASIS_ISNT_AVAILABLE = 4,
     };
 
     BasisFactorizationError( BasisFactorizationError::Code code ) :
