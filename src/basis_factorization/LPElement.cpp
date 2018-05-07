@@ -57,6 +57,20 @@ void LPElement::dump() const
     }
 }
 
+LPElement *LPElement::duplicate() const
+{
+    EtaMatrix *newEta = NULL;
+    std::pair<unsigned, unsigned> *newPair = NULL;
+
+    if ( _eta )
+        newEta = new EtaMatrix( *_eta );
+
+    if ( _pair )
+        newPair = new std::pair<unsigned, unsigned>( *_pair );
+
+    return new LPElement( newEta, newPair );
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

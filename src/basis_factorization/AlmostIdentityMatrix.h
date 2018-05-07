@@ -18,19 +18,29 @@
 class AlmostIdentityMatrix
 {
 public:
-    AlmostIdentityMatrix()
-        : _identity( true )
-    {
-    }
-
-    /*
-      True iff this is the identity matrix.
-    */
-    bool _identity;
-
     unsigned _row;
     unsigned _column;
     double _value;
+
+    AlmostIdentityMatrix()
+    {
+    }
+
+    AlmostIdentityMatrix( const AlmostIdentityMatrix &other )
+        : _row( other._row )
+        , _column( other._column )
+        , _value( other._value )
+    {
+    }
+
+    AlmostIdentityMatrix &operator=( const AlmostIdentityMatrix &other )
+    {
+        _row = other._row;
+        _column = other._column;
+        _value = other._value;
+
+        return *this;
+    }
 };
 
 #endif // __AlmostIdentityMatrix_h__

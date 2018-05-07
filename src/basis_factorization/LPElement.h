@@ -25,6 +25,8 @@ public:
 	~LPElement();
     void dump() const;
 
+    LPElement *duplicate() const;
+
 	EtaMatrix *_eta;
 	std::pair<unsigned, unsigned> *_pair;
 };

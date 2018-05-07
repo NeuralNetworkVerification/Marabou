@@ -26,14 +26,23 @@ public:
     PermutationMatrix &operator=( const PermutationMatrix &other );
 
     /*
-      Reset the permutation to the identity permutation
+      Reset the permutation to the identity permutation, or check
+      if the permutation is the identity
     */
     void resetToIdentity();
+    bool isIdentity() const;
 
     /*
       Produce the inverse of the permutation matrix
     */
     PermutationMatrix *invert() const;
+    void invert( PermutationMatrix &inv ) const;
+
+    /*
+      Return the index of an identity row in this
+      permuation matrix.
+    */
+    unsigned findIndexOfRow( unsigned row ) const;
 
     /*
       Return the matrix size
@@ -44,6 +53,11 @@ public:
       The row permutation ordering
     */
     unsigned *_ordering;
+
+    /*
+      Debugging
+    */
+    void dump() const;
 
 private:
     /*
