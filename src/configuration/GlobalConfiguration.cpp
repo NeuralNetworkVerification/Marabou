@@ -40,7 +40,7 @@ const GlobalConfiguration::BasisFactorizationType GlobalConfiguration::BASIS_FAC
 
 // Logging
 const bool GlobalConfiguration::ENGINE_LOGGING = false;
-const bool GlobalConfiguration::TABLEAU_LOGGING = false;
+const bool GlobalConfiguration::TABLEAU_LOGGING = true;
 const bool GlobalConfiguration::SMT_CORE_LOGGING = false;
 const bool GlobalConfiguration::DANTZIGS_RULE_LOGGING = false;
 const bool GlobalConfiguration::BASIS_FACTORIZATION_LOGGING = false;

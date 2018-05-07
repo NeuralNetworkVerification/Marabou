@@ -612,6 +612,9 @@ void Tableau::performPivot()
     unsigned currentBasic = _basicIndexToVariable[_leavingVariable];
     unsigned currentNonBasic = _nonBasicIndexToVariable[_enteringVariable];
 
+    double leavingValueBeforePivot = _basicAssignment[_leavingVariable];
+    double enteringValueBeforePivot = _nonBasicAssignment[_enteringVariable];
+
     log( Stringf( "Tableau performing pivot. Entering: %u, Leaving: %u",
                   _nonBasicIndexToVariable[_enteringVariable],
                   _basicIndexToVariable[_leavingVariable] ) );
@@ -627,6 +630,10 @@ void Tableau::performPivot()
     log( Stringf( "Change ratio is: %.15lf\n", _changeRatio ) );
 
     updateAssignmentForPivot();
+
+    double leavingValueAfterPivot = _nonBasicAssignment[_enteringVariable];
+    double enteringValueAfterPivot = _basicAssignment[_leavingVariable];
+
     updateCostFunctionForPivot();
 
     // Update the database
@@ -642,7 +649,20 @@ void Tableau::performPivot()
     computeBasicStatus( _leavingVariable );
 
     // Check if the pivot is degenerate and update statistics
-    if ( FloatUtils::isZero( _changeRatio ) && _statistics )
+
+    bool enteringUnchanged = FloatUtils::areEqual( enteringValueBeforePivot, enteringValueAfterPivot );
+    bool leavingUnchanged = FloatUtils::areEqual( leavingValueBeforePivot, leavingValueAfterPivot );
+    bool degenerate = enteringUnchanged || leavingUnchanged;// = FloatUtils::isZero( _changeRatio ) ;
+
+    if ( degenerate )
+    {
+        printf("degen eb %lf ea %lf lb %lf la %lf \n", enteringValueBeforePivot, enteringValueAfterPivot, leavingValueBeforePivot, leavingValueAfterPivot );
+        ASSERT( enteringUnchanged );
+        ASSERT( leavingUnchanged );
+        ASSERT( FloatUtils::isZero( _changeRatio ) );
+    }
+
+    if ( degenerate && _statistics )
         _statistics->incNumTableauDegeneratePivots();
 
     // Update the basis factorization. The column corresponding to the
@@ -654,6 +674,7 @@ void Tableau::performDegeneratePivot()
 {
     if ( _statistics )
     {
+        _statistics->incNumTableauPivots();
         _statistics->incNumTableauDegeneratePivots();
         _statistics->incNumTableauDegeneratePivotsByRequest();
     }
