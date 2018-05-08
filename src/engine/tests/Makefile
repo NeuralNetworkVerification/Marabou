@@ -17,6 +17,7 @@ SOURCES += \
 	Error.cpp \
 	FloatUtils.cpp \
 	MString.cpp \
+	SignalHandler.cpp \
 	TimeUtils.cpp \
 	\
 	BasisFactorizationFactory.cpp \

@@ -22,6 +22,7 @@ SOURCES += \
 	Error.cpp \
 	FloatUtils.cpp \
 	MString.cpp \
+	SignalHandler.cpp \
 	TimeUtils.cpp \
 	\
 	AcasNeuralNetwork.cpp \

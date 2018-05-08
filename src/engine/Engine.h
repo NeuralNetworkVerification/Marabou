@@ -25,6 +25,7 @@
 #include "Map.h"
 #include "PrecisionRestorer.h"
 #include "Preprocessor.h"
+#include "SignalHandler.h"
 #include "SmtCore.h"
 #include "Statistics.h"
 
@@ -33,7 +34,7 @@ class InputQuery;
 class PiecewiseLinearConstraint;
 class String;
 
-class Engine : public IEngine
+class Engine : public IEngine, public SignalHandler::Signalable
 {
 public:
     Engine();
@@ -65,6 +66,11 @@ public:
     void storeState( EngineState &state, bool storeAlsoTableauState ) const;
     void restoreState( const EngineState &state );
     void setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints );
+
+    /*
+      A request from the user to terminate
+    */
+    void quitSignal();
 
     const Statistics *getStatistics() const;
 
@@ -180,6 +186,11 @@ private:
       Cost function manager.
     */
     AutoCostFunctionManager _costFunctionManager;
+
+    /*
+      Indicates a user request to quit
+    */
+    bool _quitRequested;
 
     /*
       Perform a simplex step: compute the cost function, pick the
