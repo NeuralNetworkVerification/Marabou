@@ -26,6 +26,7 @@ SOURCES += \
 	FloatUtils.cpp \
 	HeapData.cpp \
 	MString.cpp \
+	SignalHandler.cpp \
 	TimeUtils.cpp \
 	\
 	BasisFactorizationFactory.cpp \
