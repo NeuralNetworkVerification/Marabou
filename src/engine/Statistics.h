@@ -71,6 +71,7 @@ public:
     void incNumTableauDegeneratePivotsByRequest();
     void incNumSimplexPivotSelectionsIgnoredForStability();
     void incNumSimplexUnstablePivots();
+    void addTimePivots( unsigned long long time );
     unsigned long long getNumTableauPivots() const;
     unsigned long long getNumSimplexPivotSelectionsIgnoredForStability() const;
     unsigned long long getNumSimplexUnstablePivots() const;
@@ -174,6 +175,9 @@ private:
     // Total number of degenerate tableau pivot operations performed
     // by explicit request
     unsigned long long _numTableauDegeneratePivotsByRequest;
+
+    // Total time for performing pivots (both real and degenrate), in microseconds
+    unsigned long long _timePivotsMicro;
 
     // Total number of entering/leaving variable pairs ignored because their pivot
     // element was too small

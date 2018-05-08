@@ -36,6 +36,7 @@ Statistics::Statistics()
     , _numTableauPivots( 0 )
     , _numTableauDegeneratePivots( 0 )
     , _numTableauDegeneratePivotsByRequest( 0 )
+    , _timePivotsMicro( 0 )
     , _numSimplexPivotSelectionsIgnoredForStability( 0 )
     , _numSimplexUnstablePivots( 0 )
     , _numTableauBoundHopping( 0 )
@@ -214,7 +215,10 @@ void Statistics::print()
             , _numTableauDegeneratePivotsByRequest
             , printPercents( _numTableauDegeneratePivotsByRequest, _numTableauDegeneratePivots ) );
 
-    printf( "\t\tFake pivots: %llu\n", _numTableauBoundHopping );
+    printf( "\t\tAverage time per pivot: %.2lf milli\n",
+            printAverage( _timePivotsMicro / 1000, _numTableauPivots ) );
+
+    printf( "\tTotal number of fake pivots performed: %llu\n", _numTableauBoundHopping );
 
     printf( "\t--- SMT Core Statistics ---\n" );
     printf( "\tTotal depth is %u. Total visited states: %u. Number of splits: %u. Number of pops: %u\n"
@@ -366,6 +370,11 @@ void Statistics::incNumTableauDegeneratePivots()
 void Statistics::incNumTableauDegeneratePivotsByRequest()
 {
     ++_numTableauDegeneratePivotsByRequest;
+}
+
+void Statistics::addTimePivots( unsigned long long time )
+{
+    _timePivotsMicro += time;
 }
 
 void Statistics::incNumSimplexPivotSelectionsIgnoredForStability()
