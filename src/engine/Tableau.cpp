@@ -606,8 +606,13 @@ void Tableau::performPivot()
         return;
     }
 
+    struct timespec pivotStart;
+
     if ( _statistics )
+    {
+        pivotStart = TimeUtils::sampleMicro();
         _statistics->incNumTableauPivots();
+    }
 
     unsigned currentBasic = _basicIndexToVariable[_leavingVariable];
     unsigned currentNonBasic = _nonBasicIndexToVariable[_enteringVariable];
@@ -649,12 +654,20 @@ void Tableau::performPivot()
     // Update the basis factorization. The column corresponding to the
     // leaving variable is the one that has changed
     _basisFactorization->pushEtaMatrix( _leavingVariable, _changeColumn );
+
+    if ( _statistics )
+    {
+        struct timespec pivotEnd = TimeUtils::sampleMicro();
+        _statistics->addTimePivots( TimeUtils::timePassed( pivotStart, pivotEnd ) );
+    }
 }
 
 void Tableau::performDegeneratePivot()
 {
+    struct timespec pivotStart;
     if ( _statistics )
     {
+        pivotStart = TimeUtils::sampleMicro();
         _statistics->incNumTableauPivots();
         _statistics->incNumTableauDegeneratePivots();
         _statistics->incNumTableauDegeneratePivotsByRequest();
@@ -688,6 +701,12 @@ void Tableau::performDegeneratePivot()
     _basicAssignment[_leavingVariable] = _nonBasicAssignment[_enteringVariable];
     _nonBasicAssignment[_enteringVariable] = temp;
     computeBasicStatus( _leavingVariable );
+
+    if ( _statistics )
+    {
+        struct timespec pivotEnd = TimeUtils::sampleMicro();
+        _statistics->addTimePivots( TimeUtils::timePassed( pivotStart, pivotEnd ) );
+    }
 }
 
 double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient, bool decrease )
