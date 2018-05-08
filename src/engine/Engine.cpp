@@ -32,6 +32,7 @@ Engine::Engine()
     , _basisRestorationRequired( Engine::RESTORATION_NOT_NEEDED )
     , _basisRestorationPerformed( Engine::NO_RESTORATION_PERFORMED )
     , _costFunctionManager( _tableau )
+    , _quitRequested( false )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -68,6 +69,9 @@ void Engine::adjustWorkMemorySize()
 
 bool Engine::solve()
 {
+    SignalHandler::getInstance()->initialize();
+    SignalHandler::getInstance()->registerClient( this );
+
     storeInitialEngineState();
 
     printf( "\nEngine::solve: Initial statistics\n" );
@@ -80,6 +84,16 @@ bool Engine::solve()
         struct timespec mainLoopEnd = TimeUtils::sampleMicro();
         _statistics.addTimeMainLoop( TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
         mainLoopStart = mainLoopEnd;
+
+        if ( _quitRequested )
+        {
+            printf( "\n\nEngine: quitting due to external request...\n\n" );
+            printf( "Final statistics:\n" );
+            _statistics.print();
+
+            // Todo: return a separate exit code for tiemouts
+            return false;
+        }
 
         try
         {
@@ -991,6 +1005,11 @@ void Engine::checkBoundCompliancyWithDebugSolution()
             }
         }
     }
+}
+
+void Engine::quitSignal()
+{
+    _quitRequested = true;
 }
 
 //
