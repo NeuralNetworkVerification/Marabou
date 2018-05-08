@@ -627,6 +627,7 @@ void Tableau::performPivot()
     log( Stringf( "Change ratio is: %.15lf\n", _changeRatio ) );
 
     updateAssignmentForPivot();
+
     updateCostFunctionForPivot();
 
     // Update the database
@@ -654,6 +655,7 @@ void Tableau::performDegeneratePivot()
 {
     if ( _statistics )
     {
+        _statistics->incNumTableauPivots();
         _statistics->incNumTableauDegeneratePivots();
         _statistics->incNumTableauDegeneratePivotsByRequest();
     }
