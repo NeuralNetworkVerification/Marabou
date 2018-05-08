@@ -46,6 +46,17 @@ public:
         TS_ASSERT( ft = new ForrestTomlinFactorization( 4 ) );
         TS_ASSERT( lu = new LUFactorization( 4 ) );
 
+        double B[] =
+            {
+                2, 0, 3, -4,
+                0, 1, 10, 0,
+                -3, 4.5, 1, 1,
+                0, 0, 2, 2
+            };
+
+        TS_ASSERT_THROWS_NOTHING( ft->setBasis( B ) );
+        TS_ASSERT_THROWS_NOTHING( lu->setBasis( B ) );
+
         double y[4] = { 9, 15, 10, -12 };
         double x1[4];
         double x2[4];

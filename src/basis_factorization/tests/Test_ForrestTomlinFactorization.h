@@ -188,6 +188,48 @@ public:
         ++lIt;
         TS_ASSERT_EQUALS( *((*lIt)->_eta), expectedL1 );
 
+        /*
+          L4 = | 1 0 0    0 |
+               | 0 1 0    0 |
+               | 0 0 1    0 |
+               | 0 0 0 -0.5 |
+
+          L3 = | 1 0  0 0 |
+               | 0 1  0 0 |
+               | 0 0 -1 0 |
+               | 0 0  1 1 |
+
+          L2 = | 1 0   0 0 |
+               | 0 0.5 0 0 |
+               | 0 0   1 0 |
+               | 0 0   0 1 |
+
+          L1 = |  1 0 0 0 |
+               | -1 1 0 0 |
+               | -1 0 1 0 |
+               |  1 0 0 1 |
+
+         InvLP = inv( L4L3L2L1 )
+
+               = inv( | 1    0      0    0 | )
+                      | -0.5 0.5    0    0 |
+                      | 1    0     -1    0 |
+                      | 0    0   -0.5 -0.5 |
+
+               = | 1  0  0  0 |
+                 | 1  2  0  0 |
+                 | 1  0 -1  0 |
+                 | -1 0  1 -2 |
+        */
+        double expectedInvLP[] =
+            { 1, 0, 0, 0,
+              1, 2, 0, 0,
+              1, 0, -1, 0,
+              -1, 0, 1, - 2};
+
+        for ( unsigned i = 0; i < 16; ++i )
+            TS_ASSERT( FloatUtils::areEqual( expectedInvLP[i], ft->getInvLP()[i] ) );
+
         TS_ASSERT_THROWS_NOTHING( delete ft );
     }
 
