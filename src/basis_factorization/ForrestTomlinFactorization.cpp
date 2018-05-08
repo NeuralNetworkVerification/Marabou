@@ -533,6 +533,8 @@ void ForrestTomlinFactorization::storeFactorization( IBasisFactorization *other 
     for ( const auto &lp : _LP )
         otherFTFactorization->_LP.append( lp->duplicate() );
 
+    memcpy( otherFTFactorization->_invLP, _invLP, sizeof(double) * _m * _m );
+
     List<AlmostIdentityMatrix *>::iterator aIt;
     for ( aIt = otherFTFactorization->_A.begin(); aIt != otherFTFactorization->_A.end(); ++aIt )
         delete *aIt;
@@ -569,6 +571,8 @@ void ForrestTomlinFactorization::restoreFactorization( const IBasisFactorization
 
     for ( const auto &lp : otherFTFactorization->_LP )
         _LP.append( lp->duplicate() );
+
+    memcpy( _invLP, otherFTFactorization->_invLP, sizeof(double) * _m * _m );
 
     List<AlmostIdentityMatrix *>::iterator aIt;
     for ( aIt = _A.begin(); aIt != _A.end(); ++aIt )
