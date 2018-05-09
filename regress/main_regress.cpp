@@ -52,8 +52,8 @@ void relus()
     Acas_2_2_Fixed_Input acas_2_2_fixed_input;
     acas_2_2_fixed_input.run();
 
-    Acas_1_1_No_Constraints acas_1_1_no_constraints;
-    acas_1_1_no_constraints.run();
+    // Acas_1_1_No_Constraints acas_1_1_no_constraints;
+    // acas_1_1_no_constraints.run();
 }
 
 void max()
@@ -73,8 +73,6 @@ void max_relu()
     printTitle( "Max_Relu / Sat" );
     Max_Relu_Feasible_1 mrf1;
     mrf1.run();
-
-    printTitle( "Max_Relu / Unsat");
 }
 
 int main()
@@ -87,7 +85,7 @@ int main()
 
         max();
 
-        // max_relu(); Do not run until B0 fix is merged
+        max_relu();
 
         printf( "\n\n" );
 	}
