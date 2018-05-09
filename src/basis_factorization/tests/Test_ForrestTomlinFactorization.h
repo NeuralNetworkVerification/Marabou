@@ -192,48 +192,6 @@ public:
         ++lIt;
         TS_ASSERT_EQUALS( *((*lIt)->_eta), expectedL1 );
 
-        /*
-          L4 = | 1 0 0    0 |
-               | 0 1 0    0 |
-               | 0 0 1    0 |
-               | 0 0 0 -0.5 |
-
-          L3 = | 1 0  0 0 |
-               | 0 1  0 0 |
-               | 0 0 -1 0 |
-               | 0 0  1 1 |
-
-          L2 = | 1 0   0 0 |
-               | 0 0.5 0 0 |
-               | 0 0   1 0 |
-               | 0 0   0 1 |
-
-          L1 = |  1 0 0 0 |
-               | -1 1 0 0 |
-               | -1 0 1 0 |
-               |  1 0 0 1 |
-
-         InvLP = inv( L4L3L2L1 )
-
-               = inv( | 1    0      0    0 | )
-                      | -0.5 0.5    0    0 |
-                      | 1    0     -1    0 |
-                      | 0    0   -0.5 -0.5 |
-
-               = | 1  0  0  0 |
-                 | 1  2  0  0 |
-                 | 1  0 -1  0 |
-                 | -1 0  1 -2 |
-        */
-        double expectedInvLP[] =
-            { 1, 0, 0, 0,
-              1, 2, 0, 0,
-              1, 0, -1, 0,
-              -1, 0, 1, - 2};
-
-        for ( unsigned i = 0; i < 16; ++i )
-            TS_ASSERT( FloatUtils::areEqual( expectedInvLP[i], ft->getInvLP()[i] ) );
-
         TS_ASSERT_THROWS_NOTHING( delete ft );
     }
 
@@ -938,6 +896,8 @@ public:
             -1, -26,  3, -8,
         };
 
+        oracle->storeBasis( 4, expectedB );
+
         TS_ASSERT( !ft->explicitBasisAvailable() );
         TS_ASSERT_THROWS_NOTHING( ft->makeExplicitBasisAvailable() );
         TS_ASSERT( ft->explicitBasisAvailable() );
@@ -998,6 +958,15 @@ public:
         //          | 1   21 -1  5 |
         //          | 1   20 -3  6 |
         //          | -1 -26  3 -8 |
+
+        double expectedB[16] = {
+            1,   14, -2,  4,
+            1,   21, -1,  5,
+            1,   20, -3,  6,
+            -1, -26,  3, -8,
+        };
+
+        oracle->storeBasis( 4, expectedB );
 
         // invB = |  4   -1/2 -13/4  -3/4 |
         //        | -1/2  1/4   5/8   3/8 |

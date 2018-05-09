@@ -18,7 +18,35 @@
 class MockColumnOracle : public IBasisFactorization::BasisColumnOracle
 {
 public:
-    const double *_basis;
+    MockColumnOracle()
+        : _basis( NULL )
+    {
+    }
+
+    ~MockColumnOracle()
+    {
+        if ( _basis )
+        {
+            delete[] _basis;
+            _basis = NULL;
+        }
+    }
+
+    void storeBasis( unsigned m, const double *basis )
+    {
+        _m = m;
+        _basis = new double[_m * _m];
+
+        for ( unsigned row = 0; row < _m; ++row )
+        {
+            for ( unsigned column = 0; column < _m; ++column )
+            {
+                _basis[column * _m + row] = basis[row * _m + column];
+            }
+        }
+    }
+
+    double *_basis;
     unsigned _m;
 
     const double *getColumnOfBasis( unsigned column ) const

@@ -102,7 +102,6 @@ public:
     const EtaMatrix **getU() const;
     const List<LPElement *> *getLP() const;
     const List<AlmostIdentityMatrix *> *getA() const;
-    const double *getInvLP() const;
 
     void pushA( const AlmostIdentityMatrix &matrix );
     void setQ( const PermutationMatrix &Q );
@@ -128,13 +127,6 @@ private:
     List<LPElement *> _LP;
     // A1 is the first element of the list
     List<AlmostIdentityMatrix *>_A;
-
-    /*
-      A helper matrix to facilitate computing the explicit basis.
-      This matrix stores:
-      inv(P1)inv(L1) ... inv(Ps)inv(LS)
-    */
-    double *_invLP;
 
     /*
       Indicates whether the explicit basis matrix is available.

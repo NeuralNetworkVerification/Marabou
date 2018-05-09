@@ -147,6 +147,11 @@ public:
 	const List<LPElement *> getLP() const;
 	const List<EtaMatrix *> getEtas() const;
 
+    /*
+      Debug
+    */
+    void dump() const;
+
 private:
     /*
       The Basis matrix.

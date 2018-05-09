@@ -557,6 +557,34 @@ void LUFactorization::makeExplicitBasisAvailable()
     condenseEtas();
 }
 
+void LUFactorization::dump() const
+{
+    printf( "*** Dumping LU factorization ***\n\n" );
+
+    printf( "\nDumping LPs:\n" );
+    unsigned count = 0;
+    for ( const auto &lp : _LP )
+    {
+        printf( "LP[%i]:\n", _LP.size() - 1 - count );
+        ++count;
+        lp->dump();
+    }
+    printf( "\n\n" );
+
+    printf( "Dumping Us:\n" );
+    for ( unsigned col = 0; col < _m; ++col )
+    {
+        printf( "U[%u]:\n", col );
+        for ( unsigned i = 0; i < _m; ++i )
+        {
+            printf( "\t%lf\n", _U[i * _m + col] );
+        }
+        printf( "\n" );
+    }
+
+    printf( "*** Done dumping LU factorization ***\n\n" );
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "
