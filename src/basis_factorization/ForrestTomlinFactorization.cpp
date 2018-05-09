@@ -18,8 +18,9 @@
 #include <cstdlib>
 #include <cstring>
 
-ForrestTomlinFactorization::ForrestTomlinFactorization( unsigned m )
-    : _m( m )
+ForrestTomlinFactorization::ForrestTomlinFactorization( unsigned m, const BasisColumnOracle &basisColumnOracle )
+    : IBasisFactorization( basisColumnOracle )
+    , _m( m )
     , _B( NULL )
     , _Q( m )
     , _invQ( m )
@@ -309,7 +310,9 @@ void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const doub
 
     // If the number of A matrices is too great, condense them.
     if ( _A.size() > GlobalConfiguration::REFACTORIZATION_THRESHOLD )
-        makeExplicitBasisAvailable();
+        refactorizeBasis();
+
+    //    makeExplicitBasisAvailable();
 }
 
 void ForrestTomlinFactorization::forwardTransformation( const double *y, double *x ) const
@@ -752,6 +755,10 @@ void ForrestTomlinFactorization::makeExplicitBasisAvailable()
 {
     if ( explicitBasisAvailable() )
         return;
+
+    refactorizeBasis();
+    return;
+
     /*
       We know that the following equation holds:
 
@@ -994,6 +1001,20 @@ void ForrestTomlinFactorization::dump() const
 const double *ForrestTomlinFactorization::getInvLP() const
 {
     return _invLP;
+}
+
+void ForrestTomlinFactorization::refactorizeBasis()
+{
+    for ( unsigned column = 0; column < _m; ++column )
+    {
+        const double *basisColumn = _basisColumnOracle->getColumnOfBasis( column );
+        for ( unsigned row = 0; row < _m; ++row )
+            _B[row * _m + column] = basisColumn[row];
+    }
+
+    clearFactorization();
+    initialLUFactorization();
+    _explicitBasisAvailable = true;
 }
 
 //

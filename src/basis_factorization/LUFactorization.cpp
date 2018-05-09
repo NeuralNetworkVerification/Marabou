@@ -21,8 +21,9 @@
 #include "MStringf.h"
 #include "MalformedBasisException.h"
 
-LUFactorization::LUFactorization( unsigned m )
-    : _B0( NULL )
+LUFactorization::LUFactorization( unsigned m, const BasisColumnOracle &basisColumnOracle )
+    : IBasisFactorization( basisColumnOracle )
+    , _B0( NULL )
 	, _m( m )
     , _U( NULL )
     , _tempY( NULL )

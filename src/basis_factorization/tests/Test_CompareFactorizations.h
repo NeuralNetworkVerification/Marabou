@@ -16,6 +16,7 @@
 #include "FloatUtils.h"
 #include "ForrestTomlinFactorization.h"
 #include "LUFactorization.h"
+#include "MockColumnOracle.h"
 #include "MockErrno.h"
 
 class MockForCompareFactorizations
@@ -27,14 +28,17 @@ class CompareFactorizationsTestSuite : public CxxTest::TestSuite
 {
 public:
     MockForCompareFactorizations *mock;
+    MockColumnOracle *oracle;
 
     void setUp()
     {
         TS_ASSERT( mock = new MockForCompareFactorizations );
+        TS_ASSERT( oracle = new MockColumnOracle );
     }
 
     void tearDown()
     {
+        TS_ASSERT_THROWS_NOTHING( delete oracle );
         TS_ASSERT_THROWS_NOTHING( delete mock );
     }
 
@@ -43,8 +47,8 @@ public:
         ForrestTomlinFactorization *ft;
         LUFactorization *lu;
 
-        TS_ASSERT( ft = new ForrestTomlinFactorization( 4 ) );
-        TS_ASSERT( lu = new LUFactorization( 4 ) );
+        TS_ASSERT( ft = new ForrestTomlinFactorization( 4, *oracle ) );
+        TS_ASSERT( lu = new LUFactorization( 4, *oracle ) );
 
         double B[] =
             {

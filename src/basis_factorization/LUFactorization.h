@@ -25,7 +25,7 @@ class LPElement;
 class LUFactorization : public IBasisFactorization
 {
 public:
-    LUFactorization( unsigned m );
+    LUFactorization( unsigned m, const BasisColumnOracle &basisColumnOracle );
     ~LUFactorization();
 
     /*

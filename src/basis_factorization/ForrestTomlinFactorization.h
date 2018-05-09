@@ -33,7 +33,7 @@
 class ForrestTomlinFactorization : public IBasisFactorization
 {
 public:
-    ForrestTomlinFactorization( unsigned m );
+    ForrestTomlinFactorization( unsigned m, const BasisColumnOracle &basisColumnOracle );
     ~ForrestTomlinFactorization();
 
     /*
@@ -87,6 +87,11 @@ public:
       Compute the inverse of B (should only be called when B is explicitly available).
      */
     void invertBasis( double *result );
+
+    /*
+      Obtain the basis matrix from the oracle and compute a fresh factorization
+    */
+    void refactorizeBasis();
 
 public:
     /*
