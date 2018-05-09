@@ -132,10 +132,10 @@ public:
         TS_ASSERT_EQUALS( tableau->lastM, 2U );
         TS_ASSERT_EQUALS( tableau->lastN, 5U );
 
-        // Variables 3 and 4 should be marked as basic
+        // Variables 0 and 1 should be marked as basic
         TS_ASSERT_EQUALS( tableau->lastBasicVariables.size(), 2U );
-        TS_ASSERT( tableau->lastBasicVariables.exists( 3 ) );
-        TS_ASSERT( tableau->lastBasicVariables.exists( 4 ) );
+        TS_ASSERT( tableau->lastBasicVariables.exists( 0 ) );
+        TS_ASSERT( tableau->lastBasicVariables.exists( 1 ) );
 
         // Right hand side scalars
         TS_ASSERT( tableau->lastRightHandSide );
