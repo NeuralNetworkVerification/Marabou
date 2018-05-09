@@ -15,6 +15,7 @@
 #include "Engine.h"
 #include "FreshVariables.h"
 #include "InputQuery.h"
+#include "MockConstraintMatrixAnalyzerFactory.h"
 #include "MockCostFunctionManagerFactory.h"
 #include "MockErrno.h"
 #include "MockProjectedSteepestEdgeFactory.h"
@@ -28,7 +29,8 @@ class MockForEngine :
     public MockTableauFactory,
     public MockProjectedSteepestEdgeRuleFactory,
     public MockRowBoundTightenerFactory,
-    public MockCostFunctionManagerFactory
+    public MockCostFunctionManagerFactory,
+    public MockConstraintMatrixAnalyzerFactory
 {
 public:
 };
@@ -40,6 +42,7 @@ public:
     MockTableau *tableau;
     MockCostFunctionManager *costFunctionManager;
     MockRowBoundTightener *rowTightener;
+    MockConstraintMatrixAnalyzer *constraintMatrixAnalyzer;
 
     void setUp()
     {
@@ -48,6 +51,7 @@ public:
         tableau = &( mock->mockTableau );
         costFunctionManager = &( mock->mockCostFunctionManager );
         rowTightener = &( mock->mockRowBoundTightener );
+        constraintMatrixAnalyzer = &( mock->mockConstraintMatrixAnalyzer );
     }
 
     void tearDown()
@@ -120,9 +124,13 @@ public:
         inputQuery.addPiecewiseLinearConstraint( relu1 );
         inputQuery.addPiecewiseLinearConstraint( relu2 );
 
+        constraintMatrixAnalyzer->nextIndependentColumns.append( 0 );
+        constraintMatrixAnalyzer->nextIndependentColumns.append( 1 );
+
         Engine engine;
 
         TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery, false ) );
+
         TS_ASSERT( tableau->initializeTableauCalled );
         TS_ASSERT( costFunctionManager->initializeWasCalled );
         TS_ASSERT( rowTightener->initializeWasCalled );

@@ -9,7 +9,7 @@
  ** directory for licensing information.\endverbatim
  **/
 
-#include "ConstraintMatrixAnalyzer.h"
+#include "AutoConstraintMatrixAnalyzer.h"
 #include "Debug.h"
 #include "Engine.h"
 #include "EngineState.h"
@@ -567,16 +567,16 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         // Placeholder: better constraint matrix analysis as part
         // of the preprocessing phase.
 
-        ConstraintMatrixAnalyzer analyzer;
-        analyzer.analyze( _tableau->getA(), _tableau->getM(), _tableau->getN() );
+        AutoConstraintMatrixAnalyzer analyzer;
+        analyzer->analyze( _tableau->getA(), _tableau->getM(), _tableau->getN() );
 
-        if ( analyzer.getRank() != _tableau->getM() )
+        if ( analyzer->getRank() != _tableau->getM() )
         {
             printf( "Warning!! Contraint matrix rank is %u (out of %u)\n",
-                    analyzer.getRank(), _tableau->getM() );
+                    analyzer->getRank(), _tableau->getM() );
         }
 
-        List<unsigned> independentColumns = analyzer.getIndependentColumns();
+        List<unsigned> independentColumns = analyzer->getIndependentColumns();
 
         unsigned assigned = 0;
         for( unsigned basicVar : independentColumns )
