@@ -19,8 +19,19 @@ class IBasisFactorization
       This is the interfact class for a basis factorization.
     */
 public:
-    IBasisFactorization()
+    /*
+      A callback for obtaining columns of the basis matrix
+    */
+    class BasisColumnOracle
+    {
+    public:
+        virtual ~BasisColumnOracle() {}
+        virtual const double *getColumnOfBasis( unsigned column ) const = 0;
+    };
+
+    IBasisFactorization( const BasisColumnOracle &basisColumnOracle )
         : _factorizationEnabled( true )
+        , _basisColumnOracle( &basisColumnOracle )
     {
     }
 
@@ -96,6 +107,9 @@ private:
       disabled.
     */
     bool _factorizationEnabled;
+
+protected:
+    const BasisColumnOracle *_basisColumnOracle;
 };
 
 #endif // __IBasisFactorization_h__

@@ -16,6 +16,7 @@
 #include "FloatUtils.h"
 #include "ForrestTomlinFactorization.h"
 #include "LUFactorization.h"
+#include "MockColumnOracle.h"
 #include "MockErrno.h"
 
 class MockForCompareFactorizations
@@ -27,14 +28,17 @@ class CompareFactorizationsTestSuite : public CxxTest::TestSuite
 {
 public:
     MockForCompareFactorizations *mock;
+    MockColumnOracle *oracle;
 
     void setUp()
     {
         TS_ASSERT( mock = new MockForCompareFactorizations );
+        TS_ASSERT( oracle = new MockColumnOracle );
     }
 
     void tearDown()
     {
+        TS_ASSERT_THROWS_NOTHING( delete oracle );
         TS_ASSERT_THROWS_NOTHING( delete mock );
     }
 
@@ -43,8 +47,8 @@ public:
         ForrestTomlinFactorization *ft;
         LUFactorization *lu;
 
-        TS_ASSERT( ft = new ForrestTomlinFactorization( 4 ) );
-        TS_ASSERT( lu = new LUFactorization( 4 ) );
+        TS_ASSERT( ft = new ForrestTomlinFactorization( 4, *oracle ) );
+        TS_ASSERT( lu = new LUFactorization( 4, *oracle ) );
 
         double B[] =
             {
@@ -87,7 +91,18 @@ public:
         for ( unsigned i = 0; i < 4; ++i )
             TS_ASSERT( FloatUtils::areEqual( x1[i], x2[i] ) );
 
+
+        double basisAtThisPoint[] = {
+            2, -20, 64, -4,
+            0, 2, 96, 0,
+            -3, 24, -45, 1,
+            0, 6, 14, 2,
+        };
+
+        oracle->storeBasis( 4, basisAtThisPoint );
+
         ft->makeExplicitBasisAvailable();
+        lu->makeExplicitBasisAvailable();
 
         TS_ASSERT_THROWS_NOTHING( ft->forwardTransformation( y, x1 ) );
         TS_ASSERT_THROWS_NOTHING( lu->forwardTransformation( y, x2 ) );

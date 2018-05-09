@@ -16,9 +16,10 @@
 #include "BasisFactorizationError.h"
 #include "EtaMatrix.h"
 #include "FloatUtils.h"
-#include "GlobalConfiguration.h"
 #include "ForrestTomlinFactorization.h"
+#include "GlobalConfiguration.h"
 #include "List.h"
+#include "MockColumnOracle.h"
 #include "MockErrno.h"
 
 class MockForForrestTomlinFactorization
@@ -30,6 +31,7 @@ class ForrestTomlinFactorizationTestSuite : public CxxTest::TestSuite
 {
 public:
     MockForForrestTomlinFactorization *mock;
+    MockColumnOracle *oracle;
 
     bool isIdentityPermutation( const PermutationMatrix *matrix )
     {
@@ -43,10 +45,12 @@ public:
     void setUp()
     {
         TS_ASSERT( mock = new MockForForrestTomlinFactorization );
+        TS_ASSERT( oracle = new MockColumnOracle );
     }
 
     void tearDown()
     {
+        TS_ASSERT_THROWS_NOTHING( delete oracle );
         TS_ASSERT_THROWS_NOTHING( delete mock );
     }
 
@@ -54,7 +58,7 @@ public:
     {
         ForrestTomlinFactorization *ft;
 
-        TS_ASSERT( ft = new ForrestTomlinFactorization( 3 ) );
+        TS_ASSERT( ft = new ForrestTomlinFactorization( 3, *oracle ) );
 
         TS_ASSERT( ft->factorizationEnabled() );
 
@@ -73,7 +77,7 @@ public:
     {
         ForrestTomlinFactorization *ft;
 
-        TS_ASSERT( ft = new ForrestTomlinFactorization( 4 ) );
+        TS_ASSERT( ft = new ForrestTomlinFactorization( 4, *oracle ) );
 
         double basisMatrix[16] = {
             1,   3, -2,  4,
@@ -188,48 +192,6 @@ public:
         ++lIt;
         TS_ASSERT_EQUALS( *((*lIt)->_eta), expectedL1 );
 
-        /*
-          L4 = | 1 0 0    0 |
-               | 0 1 0    0 |
-               | 0 0 1    0 |
-               | 0 0 0 -0.5 |
-
-          L3 = | 1 0  0 0 |
-               | 0 1  0 0 |
-               | 0 0 -1 0 |
-               | 0 0  1 1 |
-
-          L2 = | 1 0   0 0 |
-               | 0 0.5 0 0 |
-               | 0 0   1 0 |
-               | 0 0   0 1 |
-
-          L1 = |  1 0 0 0 |
-               | -1 1 0 0 |
-               | -1 0 1 0 |
-               |  1 0 0 1 |
-
-         InvLP = inv( L4L3L2L1 )
-
-               = inv( | 1    0      0    0 | )
-                      | -0.5 0.5    0    0 |
-                      | 1    0     -1    0 |
-                      | 0    0   -0.5 -0.5 |
-
-               = | 1  0  0  0 |
-                 | 1  2  0  0 |
-                 | 1  0 -1  0 |
-                 | -1 0  1 -2 |
-        */
-        double expectedInvLP[] =
-            { 1, 0, 0, 0,
-              1, 2, 0, 0,
-              1, 0, -1, 0,
-              -1, 0, 1, - 2};
-
-        for ( unsigned i = 0; i < 16; ++i )
-            TS_ASSERT( FloatUtils::areEqual( expectedInvLP[i], ft->getInvLP()[i] ) );
-
         TS_ASSERT_THROWS_NOTHING( delete ft );
     }
 
@@ -237,7 +199,7 @@ public:
     {
         ForrestTomlinFactorization *ft;
 
-        TS_ASSERT( ft = new ForrestTomlinFactorization( 4 ) );
+        TS_ASSERT( ft = new ForrestTomlinFactorization( 4, *oracle ) );
 
         double basisMatrix[16] = {
             1,   4,  -2,  4,
@@ -373,7 +335,7 @@ public:
     {
         ForrestTomlinFactorization *ft;
 
-        TS_ASSERT( ft = new ForrestTomlinFactorization( 4 ) );
+        TS_ASSERT( ft = new ForrestTomlinFactorization( 4, *oracle ) );
 
         double basisMatrix[16] = {
             1,   3, -2,  4,
@@ -501,7 +463,7 @@ public:
     {
         ForrestTomlinFactorization *ft;
 
-        TS_ASSERT( ft = new ForrestTomlinFactorization( 4 ) );
+        TS_ASSERT( ft = new ForrestTomlinFactorization( 4, *oracle ) );
 
         double basisMatrix[16] = {
             1,   3, -2,  4,
@@ -640,7 +602,7 @@ public:
     {
         ForrestTomlinFactorization *ft;
 
-        TS_ASSERT( ft = new ForrestTomlinFactorization( 4 ) );
+        TS_ASSERT( ft = new ForrestTomlinFactorization( 4, *oracle ) );
 
         // B = | 1   3 -2  4 |
         //     | 1   5 -1  5 |
@@ -854,7 +816,7 @@ public:
     {
         ForrestTomlinFactorization *ft;
 
-        TS_ASSERT( ft = new ForrestTomlinFactorization( 4 ) );
+        TS_ASSERT( ft = new ForrestTomlinFactorization( 4, *oracle ) );
 
         double basisMatrix[16] = {
             1,   3, -2,  4,
@@ -868,8 +830,8 @@ public:
         double a1[] = { -4, 2, 0, 3 };
         ft->pushEtaMatrix( 1, a1 );
 
-        ForrestTomlinFactorization *ft2 = new ForrestTomlinFactorization( 4 );
-        ForrestTomlinFactorization *ft3 = new ForrestTomlinFactorization( 4 );
+        ForrestTomlinFactorization *ft2 = new ForrestTomlinFactorization( 4, *oracle );
+        ForrestTomlinFactorization *ft3 = new ForrestTomlinFactorization( 4, *oracle );
 
         ft->storeFactorization( ft2 );
         ft3->restoreFactorization( ft2 );
@@ -894,7 +856,7 @@ public:
     {
         ForrestTomlinFactorization *ft;
 
-        TS_ASSERT( ft = new ForrestTomlinFactorization( 4 ) );
+        TS_ASSERT( ft = new ForrestTomlinFactorization( 4, *oracle ) );
 
         // B = | 1   3 -2  4 |
         //     | 1   5 -1  5 |
@@ -934,6 +896,8 @@ public:
             -1, -26,  3, -8,
         };
 
+        oracle->storeBasis( 4, expectedB );
+
         TS_ASSERT( !ft->explicitBasisAvailable() );
         TS_ASSERT_THROWS_NOTHING( ft->makeExplicitBasisAvailable() );
         TS_ASSERT( ft->explicitBasisAvailable() );
@@ -951,7 +915,7 @@ public:
     {
         ForrestTomlinFactorization *ft;
 
-        TS_ASSERT( ft = new ForrestTomlinFactorization( 4 ) );
+        TS_ASSERT( ft = new ForrestTomlinFactorization( 4, *oracle ) );
 
         // B = | 1   3 -2  4 |
         //     | 1   5 -1  5 |
@@ -994,6 +958,15 @@ public:
         //          | 1   21 -1  5 |
         //          | 1   20 -3  6 |
         //          | -1 -26  3 -8 |
+
+        double expectedB[16] = {
+            1,   14, -2,  4,
+            1,   21, -1,  5,
+            1,   20, -3,  6,
+            -1, -26,  3, -8,
+        };
+
+        oracle->storeBasis( 4, expectedB );
 
         // invB = |  4   -1/2 -13/4  -3/4 |
         //        | -1/2  1/4   5/8   3/8 |
