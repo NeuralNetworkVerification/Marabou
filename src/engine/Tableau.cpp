@@ -218,7 +218,7 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     if ( !_basicStatus )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::basicStatus" );
 
-    _basisFactorization = BasisFactorizationFactory::createBasisFactorization( _m );
+    _basisFactorization = BasisFactorizationFactory::createBasisFactorization( _m, *this );
     if ( !_basisFactorization )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::basisFactorization" );
 
@@ -1089,7 +1089,7 @@ void Tableau::dumpEquations()
 void Tableau::storeState( TableauState &state ) const
 {
     // Set the dimensions
-    state.setDimensions( _m, _n );
+    state.setDimensions( _m, _n, *this );
 
     // Store matrix A
     memcpy( state._A, _A, sizeof(double) * _n * _m );
@@ -1431,7 +1431,7 @@ void Tableau::addRow()
 
     // Allocate a larger basis factorization
     IBasisFactorization *newBasisFactorization =
-        BasisFactorizationFactory::createBasisFactorization( newM );
+        BasisFactorizationFactory::createBasisFactorization( newM, *this );
     if ( !newBasisFactorization )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newBasisFactorization" );
     delete _basisFactorization;
@@ -1844,6 +1844,13 @@ Set<unsigned> Tableau::getBasicVariables() const
 void Tableau::registerCostFunctionManager( ICostFunctionManager *costFunctionManager )
 {
     _costFunctionManager = costFunctionManager;
+}
+
+const double *Tableau::getColumnOfBasis( unsigned column ) const
+{
+    ASSERT( column < _m );
+    unsigned variable = _basicIndexToVariable[column];
+    return _A + ( variable * _m );
 }
 
 //

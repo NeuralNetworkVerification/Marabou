@@ -18,13 +18,13 @@
 #include <cstdlib>
 #include <cstring>
 
-ForrestTomlinFactorization::ForrestTomlinFactorization( unsigned m )
-    : _m( m )
+ForrestTomlinFactorization::ForrestTomlinFactorization( unsigned m, const BasisColumnOracle &basisColumnOracle )
+    : IBasisFactorization( basisColumnOracle )
+    , _m( m )
     , _B( NULL )
     , _Q( m )
     , _invQ( m )
     , _U( NULL )
-    , _invLP( NULL )
     , _explicitBasisAvailable( false )
     , _workMatrix( NULL )
     , _workVector( NULL )
@@ -42,11 +42,6 @@ ForrestTomlinFactorization::ForrestTomlinFactorization( unsigned m )
     if ( !_U )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
                                        "ForrestTomlinFactorization::U" );
-
-    _invLP = new double[m * m];
-    if ( !_invLP )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
-                                       "ForrestTomlinFactorization::invLPx" );
 
     for ( unsigned i = 0; i < _m; ++i )
     {
@@ -81,11 +76,6 @@ ForrestTomlinFactorization::ForrestTomlinFactorization( unsigned m )
     for ( unsigned row = 0; row < _m; ++row )
         _B[row * _m + row] = 1.0;
 
-    // Also, invLP = I
-    std::fill_n( _invLP, _m * _m, 0.0 );
-    for ( unsigned row = 0; row < _m; ++row )
-        _invLP[row * _m + row] = 1.0;
-
     // Us, Q and invQ are all initialized to the identity matrix anyway.
 }
 
@@ -111,12 +101,6 @@ ForrestTomlinFactorization::~ForrestTomlinFactorization()
 		delete[] _U;
 		_U = NULL;
 	}
-
-    if ( _invLP )
-    {
-        delete[] _invLP;
-        _invLP = NULL;
-    }
 
     if ( _workMatrix )
 	{
@@ -309,7 +293,7 @@ void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const doub
 
     // If the number of A matrices is too great, condense them.
     if ( _A.size() > GlobalConfiguration::REFACTORIZATION_THRESHOLD )
-        makeExplicitBasisAvailable();
+        refactorizeBasis();
 }
 
 void ForrestTomlinFactorization::forwardTransformation( const double *y, double *x ) const
@@ -533,8 +517,6 @@ void ForrestTomlinFactorization::storeFactorization( IBasisFactorization *other 
     for ( const auto &lp : _LP )
         otherFTFactorization->_LP.append( lp->duplicate() );
 
-    memcpy( otherFTFactorization->_invLP, _invLP, sizeof(double) * _m * _m );
-
     List<AlmostIdentityMatrix *>::iterator aIt;
     for ( aIt = otherFTFactorization->_A.begin(); aIt != otherFTFactorization->_A.end(); ++aIt )
         delete *aIt;
@@ -571,8 +553,6 @@ void ForrestTomlinFactorization::restoreFactorization( const IBasisFactorization
 
     for ( const auto &lp : otherFTFactorization->_LP )
         _LP.append( lp->duplicate() );
-
-    memcpy( _invLP, otherFTFactorization->_invLP, sizeof(double) * _m * _m );
 
     List<AlmostIdentityMatrix *>::iterator aIt;
     for ( aIt = _A.begin(); aIt != _A.end(); ++aIt )
@@ -691,56 +671,6 @@ void ForrestTomlinFactorization::initialLUFactorization()
         for ( unsigned j = 0; j <= i; ++j )
             u->_column[j] = _workMatrix[j * _m + i];
     }
-
-    // Compute inv(P1)inv(L1) ... inv(Ps)inv(LS) for later.
-
-    // Initialize to the identity matrix
-    std::fill_n( _invLP, _m * _m, 0 );
-    for ( unsigned i = 0; i < _m; ++i )
-        _invLP[i*_m + i] = 1.0;
-
-    // Multiply by inverted Ps and Ls
-    for ( auto lp = _LP.rbegin(); lp != _LP.rend(); ++lp )
-    {
-        if ( (*lp)->_pair )
-        {
-            // The inverse of a general permutation matrix is its transpose.
-            // However, since these are permutations of just two rows, the
-            // transpose is equal to the original - so no need to invert.
-            // Multiplying on the right permutes columns.
-            double temp;
-            unsigned first = (*lp)->_pair->first;
-            unsigned second = (*lp)->_pair->second;
-
-            for ( unsigned i = 0; i < _m; ++i )
-            {
-                temp = _invLP[i * _m + first];
-                _invLP[i * _m + first] = _invLP[i * _m + second];
-                _invLP[i * _m + second] = temp;
-            }
-		}
-        else
-        {
-            // The inverse of an eta matrix is an eta matrix with the special
-            // column negated and divided by the diagonal entry. The only
-            // exception is the diagonal entry itself, which is just the
-            // inverse of the original diagonal entry.
-            EtaMatrix *eta = (*lp)->_eta;
-            unsigned columnIndex = eta->_columnIndex;
-            double etaDiagonalEntry = 1 / eta->_column[columnIndex];
-
-            for ( unsigned row = 0; row < _m; ++row )
-            {
-                for ( unsigned col = columnIndex + 1; col < _m; ++col )
-                {
-                    _invLP[row * _m + columnIndex] -=
-                        ( eta->_column[col] * _invLP[row * _m + col] );
-                }
-
-                _invLP[row * _m + columnIndex] *= etaDiagonalEntry;
-            }
-        }
-    }
 }
 
 bool ForrestTomlinFactorization::explicitBasisAvailable() const
@@ -752,70 +682,8 @@ void ForrestTomlinFactorization::makeExplicitBasisAvailable()
 {
     if ( explicitBasisAvailable() )
         return;
-    /*
-      We know that the following equation holds:
 
-      Ak...A1 * LsPs...L1P1 * B = Q * Um...U1 * invQ
-
-      Or:
-
-      B = inv( Ak...A1 * LsPs...L1P1 ) * Q * Um...U1 * invQ
-        = inv(P1)inv(L1) ... inv(Ps)inv(LS) * inv(A1)...inv(Ak)
-          * Q * Um...U1 * invQ
-    */
-
-    // Start with the already-computed inv(P1)inv(L1) ... inv(Ps)inv(LS)
-    memcpy( _B, _invLP, sizeof(double) * _m * _m );
-
-    // Multiply by the inverse As. An inverse of an almost identity matrix
-    // is just that matrix with its special value negated (unless that
-    // matrix is diagonal.
-    for ( const auto &a : _A )
-    {
-        if ( a->_row == a->_column )
-        {
-            for ( unsigned j = 0; j < _m; ++j )
-                _B[j * _m + a->_column] *= ( 1 / a->_value );
-        }
-        else
-        {
-            for ( unsigned j = 0; j < _m; ++j )
-                _B[j * _m + a->_column] -= _B[j * _m + a->_row] * a->_value;
-        }
-    }
-
-    // Permute columns according to Q
-    for ( unsigned i = 0; i < _m; ++i )
-    {
-        unsigned columnToCopy = _invQ._ordering[i];
-        for ( unsigned j = 0; j < _m; ++j )
-            _workMatrix[j * _m + i] = _B[j * _m + columnToCopy];
-    }
-
-    // Multiply by Um...U1
-    for ( int i = _m - 1; i >= 0; --i )
-    {
-        for ( unsigned row = 0; row < _m; ++row )
-        {
-            for ( unsigned j = 0; j < _U[i]->_columnIndex; ++j )
-            {
-                _workMatrix[row * _m + _U[i]->_columnIndex] +=
-                    ( _U[i]->_column[j] * _workMatrix[row * _m + j] );
-            }
-        }
-    }
-
-    // Permute columns according to invQ
-    for ( unsigned i = 0; i < _m; ++i )
-    {
-        unsigned columnToCopy = _Q._ordering[i];
-        for ( unsigned j = 0; j < _m; ++j )
-            _B[j * _m + i] = _workMatrix[j * _m + columnToCopy];
-    }
-
-    clearFactorization();
-    initialLUFactorization();
-    _explicitBasisAvailable = true;
+    refactorizeBasis();
 }
 
 const double *ForrestTomlinFactorization::getBasis() const
@@ -988,12 +856,21 @@ void ForrestTomlinFactorization::dump() const
     printf( "\nDumping invQ:\n" );
     _invQ.dump();
 
-    printf( "*** Done dumping FT factorization ***\n\no" );
+    printf( "*** Done dumping FT factorization ***\n\n" );
 }
 
-const double *ForrestTomlinFactorization::getInvLP() const
+void ForrestTomlinFactorization::refactorizeBasis()
 {
-    return _invLP;
+    for ( unsigned column = 0; column < _m; ++column )
+    {
+        const double *basisColumn = _basisColumnOracle->getColumnOfBasis( column );
+        for ( unsigned row = 0; row < _m; ++row )
+            _B[row * _m + column] = basisColumn[row];
+    }
+
+    clearFactorization();
+    initialLUFactorization();
+    _explicitBasisAvailable = true;
 }
 
 //

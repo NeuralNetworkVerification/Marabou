@@ -13,10 +13,9 @@
 #ifndef __TableauState_h__
 #define __TableauState_h__
 
+#include "IBasisFactorization.h"
 #include "ITableau.h"
 #include "Set.h"
-
-class IBasisFactorization;
 
 class TableauState
 {
@@ -37,7 +36,7 @@ public:
     TableauState();
     ~TableauState();
 
-    void setDimensions( unsigned m, unsigned n );
+    void setDimensions( unsigned m, unsigned n, const IBasisFactorization::BasisColumnOracle &oracle );
 
     /*
       The dimensions of matrix A

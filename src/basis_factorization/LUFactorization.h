@@ -25,7 +25,7 @@ class LPElement;
 class LUFactorization : public IBasisFactorization
 {
 public:
-    LUFactorization( unsigned m );
+    LUFactorization( unsigned m, const BasisColumnOracle &basisColumnOracle );
     ~LUFactorization();
 
     /*
@@ -108,12 +108,6 @@ public:
     void rowSwap( unsigned rowOne, unsigned rowTwo, double *matrix );
 
     /*
-      Compute B0 * E1 ... *En for all stored eta matrices, and place
-      the result in B0.
-    */
-	void condenseEtas();
-
-    /*
       Return true iff the basis matrix B0 is explicitly available.
     */
     bool explicitBasisAvailable() const;
@@ -122,6 +116,7 @@ public:
       Make the basis explicitly available
     */
     void makeExplicitBasisAvailable();
+    void refactorizeBasis();
 
     /*
       Get the explicit basis matrix
@@ -146,6 +141,11 @@ public:
 	const double *getU() const;
 	const List<LPElement *> getLP() const;
 	const List<EtaMatrix *> getEtas() const;
+
+    /*
+      Debug
+    */
+    void dump() const;
 
 private:
     /*
@@ -180,7 +180,7 @@ private:
     /*
       Clear a previous factorization.
     */
-	void clearLPU();
+	void clearFactorization();
 
     /*
       Helper functions for backward- and forward-transformations.
