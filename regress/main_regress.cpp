@@ -52,8 +52,8 @@ void relus()
     Acas_2_2_Fixed_Input acas_2_2_fixed_input;
     acas_2_2_fixed_input.run();
 
-    // Acas_1_1_No_Constraints acas_1_1_no_constraints;
-    // acas_1_1_no_constraints.run();
+    Acas_1_1_No_Constraints acas_1_1_no_constraints;
+    acas_1_1_no_constraints.run();
 }
 
 void max()

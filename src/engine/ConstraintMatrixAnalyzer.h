@@ -40,6 +40,7 @@ private:
     unsigned _n;
     unsigned _rank;
     bool _logging;
+    List<unsigned> _independentColumns;
 
     /*
       Helper functions for performing Gaussian elimination.

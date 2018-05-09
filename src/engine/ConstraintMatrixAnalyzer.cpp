@@ -109,6 +109,7 @@ void ConstraintMatrixAnalyzer::gaussianElimination()
                 _matrix[i * _n + j] += (factor * _matrix[_rank * _n + j]);
         }
 
+        _independentColumns.append(currentColumn);
         ++currentColumn;
         ++_rank;
     }
@@ -118,17 +119,7 @@ void ConstraintMatrixAnalyzer::gaussianElimination()
 
 List<unsigned> ConstraintMatrixAnalyzer::getIndependentColumns() const
 {
-    List<unsigned> columns;
-    unsigned currentColumn = 0;
-    unsigned currentRow = 0;
-    while(currentColumn < _n && currentRow < _m){
-        if(!FloatUtils::isZero(_matrix[currentRow*_n + currentColumn])){
-            columns.append(currentColumn);
-            currentColumn++;
-        }
-        currentRow++;
-    }
-    return columns;
+    return _independentColumns;
 }
 
 void ConstraintMatrixAnalyzer::swapRows( unsigned i, unsigned j )
