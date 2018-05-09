@@ -553,40 +553,37 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         // Current variables are [0,..,n-1], so the next variable is n.
         FreshVariables::setNextVariable( n );
-
         unsigned equationIndex = 0;
         for ( const auto &equation : equations )
         {
-            _tableau->markAsBasic( equation._auxVariable );
             _tableau->setRightHandSide( equationIndex, equation._scalar );
 
             for ( const auto &addend : equation._addends )
                 _tableau->setEntryValue( equationIndex, addend._variable, addend._coefficient );
 
-            _tableau->assignIndexToBasicVariable( equation._auxVariable, equationIndex );
             ++equationIndex;
         }
 
-        /*
-          // Placeholder: better constraint matrix analysis as part
-          // of the preprocessing phase.
-          {
-            // New debug code
-            ConstraintMatrixAnalyzer analyzer;
-            analyzer.analyze( _tableau->getA(), _tableau->getM(), _tableau->getN() );
-            if ( analyzer.getRank() != _tableau->getM() )
-            {
-                printf( "Warning!! Contraint matrix rank is %u (out of %u)\n",
-                        analyzer.getRank(), _tableau->getM() );
-            }
-            else
-            {
-                printf( "Constraint matrix rank is %u, with %u equations\n",
-                        analyzer.getRank(), _tableau->getM() );
-            }
+        // Placeholder: better constraint matrix analysis as part
+        // of the preprocessing phase.
 
+        ConstraintMatrixAnalyzer analyzer;
+        analyzer.analyze( _tableau->getA(), _tableau->getM(), _tableau->getN() );
+
+        if ( analyzer.getRank() != _tableau->getM() )
+        {
+            printf( "Warning!! Contraint matrix rank is %u (out of %u)\n",
+                    analyzer.getRank(), _tableau->getM() );
         }
-        */
+
+        List<unsigned> independentColumns = analyzer.getIndependentColumns();
+
+        unsigned assigned = 0;
+        for(unsigned basicVar: independentColumns){
+            _tableau->markAsBasic(basicVar);
+            _tableau->assignIndexToBasicVariable(basicVar, assigned);
+            assigned++;
+        }
 
         for ( unsigned i = 0; i < n; ++i )
         {

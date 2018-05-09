@@ -12,6 +12,7 @@
 
 #ifndef __ConstraintMatrixAnalyzer_h__
 #define __ConstraintMatrixAnalyzer_h__
+#include "List.h"
 
 class String;
 
@@ -30,6 +31,7 @@ public:
     void analyze( const double *matrix, unsigned m, unsigned n );
     const double *getCanonicalForm();
     unsigned getRank() const;
+    List<unsigned> getIndependentColumns() const;
 
 private:
     double *_matrix;
