@@ -109,7 +109,7 @@ void ConstraintMatrixAnalyzer::gaussianElimination()
                 _matrix[i * _n + j] += (factor * _matrix[_rank * _n + j]);
         }
 
-        _independentColumns.append(currentColumn);
+        _independentColumns.append( currentColumn );
         ++currentColumn;
         ++_rank;
     }

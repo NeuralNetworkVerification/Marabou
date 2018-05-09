@@ -579,9 +579,10 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         List<unsigned> independentColumns = analyzer.getIndependentColumns();
 
         unsigned assigned = 0;
-        for(unsigned basicVar: independentColumns){
-            _tableau->markAsBasic(basicVar);
-            _tableau->assignIndexToBasicVariable(basicVar, assigned);
+        for( unsigned basicVar : independentColumns )
+        {
+            _tableau->markAsBasic( basicVar );
+            _tableau->assignIndexToBasicVariable( basicVar, assigned );
             assigned++;
         }
 
