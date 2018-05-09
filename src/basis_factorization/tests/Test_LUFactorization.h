@@ -146,7 +146,7 @@ public:
 
 		double a[] = { 2., -1., 4. };
 		double d[] = { 0., 0., 0. };
-        double expected[] = { 42, 116, -131 };
+        double expected[] = { -20, 27, -8 };
 
 		basis.forwardTransformation( a, d );
 
@@ -264,12 +264,13 @@ public:
 
 		double y[] = {19., 12., 17.};
 		double x[] = {0., 0., 0.};
-		double expected[] = {-6, 9, -4};
-		//     	| 1 2 4	|  	| 1 1   |   | 2     |   | 1   0.5 |
-        //  x *	| 4	5 7 | * |   1   | * | 1	1	| *	|	1 0.5 | = | 19 12 17 |
-        //     	| 7 8 9	|	|   3 1 |   | 1   1 |   |     0.5 |
+		double expected[] = { -104.0/3, 140.0/3, -19 };
+
+		//     	| 1 2 4	|
+        //  x *	| 4	5 7 | = | 19 12 17 |
+        //     	| 7 8 9	|
         //
-        // --> x = [ -6 9 -4 ]
+        // --> x = [ -104/3, 140/3, -19 ]
 		basis.backwardTransformation( y, x );
 
         for ( unsigned i = 0; i < 3; ++i )
@@ -286,6 +287,14 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( basis.forwardTransformation( a1, d1 ) );
         basis.pushEtaMatrix( 1, a1 );
+
+        // Save the expected basis after this push
+        double currentBasis[] = {
+            1, 1, 0,
+            0, 1, 0,
+            0, 3, 1
+        };
+        oracle->storeBasis( 3, currentBasis );
 
         // Do a computation using both basis, see that we get the same result.
 
@@ -554,11 +563,8 @@ public:
             TS_ASSERT( FloatUtils::areEqual( eta->_column[i], expectedCol3[i] ) );
     }
 
-	void xtest_refactor()
+	void test_refactor()
 	{
-        // TODO: this test fails when the REFACTORIZATION_THRESHOLD is too great (> 10 or so).
-        // Disabling for now.
-
 		LUFactorization basis( 3, *oracle );
 		LUFactorization basis2( 3, *oracle );
 		basis.toggleFactorization( false );
@@ -578,6 +584,13 @@ public:
                 etaPool[i] = (float)(rand()) / (float)(RAND_MAX);
         }
 
+        double dummyBasis[] = {
+            1, 2, 0,
+            0, 5, 0,
+            0, 8, 9,
+        };
+        oracle->storeBasis( 3, dummyBasis );
+
 		// Generate random etas
 		for ( unsigned i = 0; i < etaCount; ++i )
         {
@@ -590,20 +603,6 @@ public:
 
 		// Check if etas have disappeared
 		TS_ASSERT_EQUALS( basis2.getEtas().size(), etaCount - GlobalConfiguration::REFACTORIZATION_THRESHOLD - 1 );
-		double a[] = {2., -1., 4.};
-		double x1[] = {0., 0., 0.};
-		double y1[] = {0., 0., 0.};
-		double x2[] = {0., 0., 0.};
-		double y2[] = {0., 0., 0.};
-		basis2.forwardTransformation( a, x1 );
-		basis.forwardTransformation( a, y1 );
-		basis2.backwardTransformation( a, x2 );
-		basis.backwardTransformation( a, y2 );
-		for ( unsigned i = 0; i < 3; ++i )
-        {
-			TS_ASSERT( FloatUtils::areEqual( x1[i], y1[i], 0.001 ) );
-			TS_ASSERT( FloatUtils::areEqual( x2[i], y2[i], 0.001 ) );
-		}
 	}
 
     void test_matrix_multiply()

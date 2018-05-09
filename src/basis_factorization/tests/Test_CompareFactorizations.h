@@ -91,7 +91,18 @@ public:
         for ( unsigned i = 0; i < 4; ++i )
             TS_ASSERT( FloatUtils::areEqual( x1[i], x2[i] ) );
 
+
+        double basisAtThisPoint[] = {
+            2, -20, 64, -4,
+            0, 2, 96, 0,
+            -3, 24, -45, 1,
+            0, 6, 14, 2,
+        };
+
+        oracle->storeBasis( 4, basisAtThisPoint );
+
         ft->makeExplicitBasisAvailable();
+        lu->makeExplicitBasisAvailable();
 
         TS_ASSERT_THROWS_NOTHING( ft->forwardTransformation( y, x1 ) );
         TS_ASSERT_THROWS_NOTHING( lu->forwardTransformation( y, x2 ) );
