@@ -65,6 +65,7 @@ SOURCES += \
 	TableauFactory.cpp \
 	TableauRow.cpp \
 	TableauState.cpp \
+	SignalHandler.cpp \
 	\
 	
 
