@@ -896,10 +896,12 @@ void Engine::explicitBasisBoundTightening()
 {
     struct timespec start = TimeUtils::sampleMicro();
 
-    if ( GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_INVERT_BASIS )
-        _rowBoundTightener->examineInvertedBasisMatrix( _tableau, false );
-    else
-        _rowBoundTightener->examineBasisMatrix( _tableau, false );
+    _rowBoundTightener->explicitBasisBoundTightening( _tableau );
+
+    // if ( GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_INVERT_BASIS )
+    //     _rowBoundTightener->examineInvertedBasisMatrix( _tableau, false );
+    // else
+    //     _rowBoundTightener->examineBasisMatrix( _tableau, false );
 
     struct timespec end = TimeUtils::sampleMicro();
     _statistics.addTimeForExplicitBasisBoundTightening( TimeUtils::timePassed( start, end ) );

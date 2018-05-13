@@ -72,6 +72,8 @@ public:
       Have the Bound Tightener start reporting statistics.
      */
     virtual void setStatistics( Statistics *statistics ) = 0;
+
+    virtual void explicitBasisBoundTightening( const ITableau &tableau ) = 0;
 };
 
 #endif // __IRowBoundTightener_h__

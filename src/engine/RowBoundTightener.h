@@ -52,6 +52,8 @@ public:
      */
     void examineBasisMatrix( const ITableau &tableau, bool untilSaturation );
 
+    void explicitBasisBoundTightening( const ITableau &tableau );
+
     /*
       Derive and enqueue new bounds for all varaibles, using the
       inverse of the explicit basis matrix, inv(B0), which should be available
@@ -146,6 +148,7 @@ private:
       otherwise.
     */
     bool onePassOverInvertedBasisRows( const ITableau &tableau, List<TableauRow *> &rows );
+    bool onePassOverInvertedBasisRows( const ITableau &tableau, TableauRow **rows, unsigned m );
 
     /*
       Process the inverted basis row and attempt to derive tighter
