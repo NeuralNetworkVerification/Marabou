@@ -42,10 +42,13 @@ Statistics::Statistics()
     , _numTableauBoundHopping( 0 )
     , _numTightenedBounds( 0 )
     , _numRowsExaminedByRowTightener( 0 )
-    , _numBoundsProposedByRowTightener( 0 )
+    , _numTighteningsFromRows( 0 )
+    , _numBoundTighteningsOnExplicitBasis( 0 )
+    , _numTighteningsFromExplicitBasis( 0 )
     , _numBoundNotificationsToPlConstraints( 0 )
     , _numBoundsProposedByPlConstraints( 0 )
     , _numBoundTighteningsOnConstraintMatrix( 0 )
+    , _numTighteningsFromConstraintMatrix( 0 )
     , _pseNumIterations( 0 )
     , _pseNumResetReferenceSpace( 0 )
     , _ppNumEliminatedVars( 0 )
@@ -231,14 +234,22 @@ void Statistics::print()
 
     printf( "\t--- Bound Tightening Statistics ---\n" );
     printf( "\tNumber of tightened bounds: %llu.\n", _numTightenedBounds );
-    printf( "\t\tNumber of rows examined by row tightener: %llu. Tightenings proposed: %llu\n"
+    printf( "\t\tNumber of rows examined by row tightener: %llu. Consequent tightenings: %llu\n"
             , _numRowsExaminedByRowTightener
-            , _numBoundsProposedByRowTightener );
+            , _numTighteningsFromRows );
+
+    printf( "\t\tNumber of explicit basis matrices examined by row tightener: %llu. Consequent tightenings: %llu\n"
+            , _numBoundTighteningsOnExplicitBasis
+            , _numTighteningsFromExplicitBasis );
+
+    printf( "\t\tNumber of bound tightening rounds on the entire constraint matrix: %llu. "
+            "Consequent tightenings: %llu\n"
+            , _numBoundTighteningsOnConstraintMatrix
+            , _numTighteningsFromConstraintMatrix );
+
     printf( "\t\tNumber of bound notifications sent to PL constraints: %llu. Tightenings proposed: %llu\n"
             , _numBoundNotificationsToPlConstraints
             , _numBoundsProposedByPlConstraints );
-    printf( "\t\tNumber of bound tightening rounds on the entire constraint matrix: %llu\n"
-            , _numBoundTighteningsOnConstraintMatrix );
 
     printf( "\t--- Projected Steepest Edge Statistics ---\n" );
     printf( "\tNumber of iterations: %llu.\n", _pseNumIterations );
@@ -397,9 +408,19 @@ void Statistics::incNumRowsExaminedByRowTightener()
     ++_numRowsExaminedByRowTightener;
 }
 
-void Statistics::incNumBoundsProposedByRowTightener()
+void Statistics::incNumTighteningsFromRows()
 {
-    ++_numBoundsProposedByRowTightener;
+    ++_numTighteningsFromRows;
+}
+
+void Statistics::incNumBoundTighteningsOnExplicitBasis()
+{
+    ++_numBoundTighteningsOnExplicitBasis;
+}
+
+void Statistics::incNumTighteningsFromExplicitBasis( unsigned increment )
+{
+    _numTighteningsFromExplicitBasis += increment;
 }
 
 void Statistics::incNumBoundNotificationsPlConstraints()
@@ -415,6 +436,11 @@ void Statistics::incNumBoundsProposedByPlConstraints()
 void Statistics::incNumBoundTighteningOnConstraintMatrix()
 {
     ++_numBoundTighteningsOnConstraintMatrix;
+}
+
+void Statistics::incNumTighteningsFromConstraintMatrix( unsigned increment )
+{
+    _numTighteningsFromConstraintMatrix += increment;
 }
 
 void Statistics::pseIncNumIterations()

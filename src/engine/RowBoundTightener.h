@@ -130,25 +130,23 @@ private:
 
     /*
       Do a single pass over the basis matrix and derive any
-      tighter bounds. Return true if new bounds are learned, false
-      otherwise.
+      tighter bounds. Return the number of new bounds are learned.
     */
-    bool onePassOverBasisMatrix( const ITableau &tableau );
+    unsigned onePassOverBasisMatrix( const ITableau &tableau );
 
     /*
       Process the basis row and attempt to derive tighter
-      lower/upper bounds for the specified variable. Return true iff
-      a tighter bound has been found.
+      lower/upper bounds for the specified variable. Return the number of
+      tighter bounds that have been found.
      */
-    bool tightenOnSingleEquation( Equation &equation,
-                                  Equation::Addend varBeingTightened );
+    unsigned tightenOnSingleEquation( Equation &equation,
+                                      Equation::Addend varBeingTightened );
 
     /*
       Do a single pass over the constraint matrix and derive any
-      tighter bounds. Return true if new bounds are learned, false
-      otherwise.
+      tighter bounds. Return the number of new bounds learned.
     */
-    bool onePassOverConstraintMatrix( const ITableau &tableau );
+    unsigned onePassOverConstraintMatrix( const ITableau &tableau );
 
     /*
       Process the tableau row and attempt to derive tighter
@@ -161,17 +159,16 @@ private:
 
     /*
       Do a single pass over the inverted basis rows and derive any
-      tighter bounds. Return true if new bounds are learned, false
-      otherwise.
+      tighter bounds. Return the number of new bounds learned.
     */
-    bool onePassOverInvertedBasisRows( const ITableau &tableau );
+    unsigned onePassOverInvertedBasisRows( const ITableau &tableau );
 
     /*
       Process the inverted basis row and attempt to derive tighter
-      lower/upper bounds for the specified variable. Return true iff
-      a tighter bound has been found.
+      lower/upper bounds for the specified variable. Return the number
+      of tighter bounds found.
     */
-    bool tightenOnSingleInvertedBasisRow( const ITableau &tableau, TableauRow &row );
+    unsigned tightenOnSingleInvertedBasisRow( const ITableau &tableau, TableauRow &row );
 };
 
 #endif // __RowBoundTightener_h__

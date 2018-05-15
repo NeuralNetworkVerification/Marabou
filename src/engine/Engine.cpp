@@ -786,8 +786,6 @@ void Engine::applyAllRowTightenings()
 
     for ( const auto &tightening : rowTightenings )
     {
-        _statistics.incNumBoundsProposedByRowTightener();
-
         if ( tightening._type == Tightening::LB )
             _tableau->tightenLowerBound( tightening._variable, tightening._value );
         else
@@ -897,6 +895,8 @@ void Engine::explicitBasisBoundTightening()
     struct timespec start = TimeUtils::sampleMicro();
 
     bool saturation = GlobalConfiguration::EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION;
+
+    _statistics.incNumBoundTighteningsOnExplicitBasis();
 
     switch ( GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE )
     {

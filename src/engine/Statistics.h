@@ -94,11 +94,18 @@ public:
       Bound tightening related statistics.
     */
     void incNumTightenedBounds();
+
     void incNumRowsExaminedByRowTightener();
-    void incNumBoundsProposedByRowTightener();
+    void incNumTighteningsFromRows();
+
+    void incNumBoundTighteningOnConstraintMatrix();
+    void incNumTighteningsFromConstraintMatrix( unsigned increment = 1 );
+
+    void incNumBoundTighteningsOnExplicitBasis();
+    void incNumTighteningsFromExplicitBasis( unsigned increment = 1 );
+
     void incNumBoundNotificationsPlConstraints();
     void incNumBoundsProposedByPlConstraints();
-    void incNumBoundTighteningOnConstraintMatrix();
 
     /*
       Projected Steepest Edge related statistics.
@@ -191,14 +198,19 @@ private:
     // opposite bound.
     unsigned long long _numTableauBoundHopping;
 
-    // Number of iterations of the main loop
+    // Total number of all bound tightenings preformed in the tableau.
+    // This combines tightenings from all sources: rows, basis, PL constraints, etc.
     unsigned long long _numTightenedBounds;
 
-    // Number of rows examined by the row tightener
+    // Number of pivot rows examined by the row tightener, and consequent tightenings
+    // proposed.
     unsigned long long _numRowsExaminedByRowTightener;
+    unsigned long long _numTighteningsFromRows;
 
-    // Number of bound tightenings proposed by the row tightener
-    unsigned long long _numBoundsProposedByRowTightener;
+    // Number of explicit basis matrices examined by the row tightener, and consequent
+    // tightenings proposed.
+    unsigned long long _numBoundTighteningsOnExplicitBasis;
+    unsigned long long _numTighteningsFromExplicitBasis;
 
     // Number of bound notifications sent to pl constraints
     unsigned long long _numBoundNotificationsToPlConstraints;
@@ -206,8 +218,10 @@ private:
     // Number of bound tightenings proposed by the pl constraints
     unsigned long long _numBoundsProposedByPlConstraints;
 
-    // Number of bound tightening rounds performed on the constraint matrix.
+    // Number of bound tightening rounds performed on the constraint matrix, and
+    // consequent tightenings proposed.
     unsigned long long _numBoundTighteningsOnConstraintMatrix;
+    unsigned long long _numTighteningsFromConstraintMatrix;
 
     // Projected steepest edge statistics
     unsigned long long _pseNumIterations;
