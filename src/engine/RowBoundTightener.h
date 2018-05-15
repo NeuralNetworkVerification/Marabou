@@ -114,6 +114,9 @@ private:
     */
     TableauRow **_rows;
     double *_z;
+    double *_ciTimesLb;
+    double *_ciTimesUb;
+    char *_ciSign;
 
     /*
       Statistics collection

@@ -23,6 +23,9 @@ RowBoundTightener::RowBoundTightener()
     , _tightenedUpper( NULL )
     , _rows( NULL )
     , _z( NULL )
+    , _ciTimesLb( NULL )
+    , _ciTimesUb( NULL )
+    , _ciSign( NULL )
     , _statistics( NULL )
 {
 }
@@ -75,6 +78,10 @@ void RowBoundTightener::initialize( const ITableau &tableau )
 
         _z = new double[_m];
     }
+
+    _ciTimesLb = new double[_n - _m];
+    _ciTimesUb = new double[_n - _m];
+    _ciSign = new char[_n - _m];
 }
 
 void RowBoundTightener::clear( const ITableau &tableau )
@@ -132,6 +139,24 @@ void RowBoundTightener::freeMemoryIfNeeded()
     {
         delete[] _z;
         _z = NULL;
+    }
+
+    if ( _ciTimesLb )
+    {
+        delete[] _ciTimesLb;
+        _ciTimesLb = NULL;
+    }
+
+    if ( _ciTimesUb )
+    {
+        delete[] _ciTimesUb;
+        _ciTimesUb = NULL;
+    }
+
+    if ( _ciSign )
+    {
+        delete[] _ciSign;
+        _ciSign = NULL;
     }
 }
 
@@ -269,27 +294,23 @@ bool RowBoundTightener::tightenOnSingleInvertedBasisRow( const ITableau &tableau
         NEGATIVE = 2,
     };
 
-    double *ciTimesLb = new double[n-m];
-    double *ciTimesUb = new double[n-m];
-    char *ciSign = new char[n-m];
-
     for ( unsigned i = 0; i < n - m; ++i )
     {
         double ci = row[i];
 
         if ( FloatUtils::isZero( ci ) )
         {
-            ciSign[i] = ZERO;
-            ciTimesLb[i] = 0;
-            ciTimesUb[i] = 0;
+            _ciSign[i] = ZERO;
+            _ciTimesLb[i] = 0;
+            _ciTimesUb[i] = 0;
             continue;
         }
 
-        ciSign[i] = FloatUtils::isPositive( ci ) ? POSITIVE : NEGATIVE;
+        _ciSign[i] = FloatUtils::isPositive( ci ) ? POSITIVE : NEGATIVE;
 
         unsigned xi = row._row[i]._var;
-        ciTimesLb[i] = ci * _lowerBounds[xi];
-        ciTimesUb[i] = ci * _upperBounds[xi];
+        _ciTimesLb[i] = ci * _lowerBounds[xi];
+        _ciTimesUb[i] = ci * _upperBounds[xi];
     }
 
     // Start with a pass for y
@@ -302,15 +323,15 @@ bool RowBoundTightener::tightenOnSingleInvertedBasisRow( const ITableau &tableau
 
     for ( unsigned i = 0; i < n - m; ++i )
     {
-        if ( ciSign[i] == POSITIVE )
+        if ( _ciSign[i] == POSITIVE )
         {
-            lowerBound += ciTimesLb[i];
-            upperBound += ciTimesUb[i];
+            lowerBound += _ciTimesLb[i];
+            upperBound += _ciTimesUb[i];
         }
         else
         {
-            lowerBound += ciTimesUb[i];
-            upperBound += ciTimesLb[i];
+            lowerBound += _ciTimesUb[i];
+            upperBound += _ciTimesLb[i];
         }
     }
 
@@ -329,12 +350,7 @@ bool RowBoundTightener::tightenOnSingleInvertedBasisRow( const ITableau &tableau
     }
 
     if ( FloatUtils::gt( _lowerBounds[y], _upperBounds[y] ) )
-    {
-        delete[] ciTimesLb;
-        delete[] ciTimesUb;
-        delete[] ciSign;
         throw InfeasibleQueryException();
-    }
 
     // Next, do a pass for each of the rhs variables.
     // For this, we wish to logically transform the equation into:
@@ -357,15 +373,15 @@ bool RowBoundTightener::tightenOnSingleInvertedBasisRow( const ITableau &tableau
     // Now add ALL xi's
     for ( unsigned i = 0; i < n - m; ++i )
     {
-        if ( ciSign[i] == NEGATIVE )
+        if ( _ciSign[i] == NEGATIVE )
         {
-            auxLb -= ciTimesLb[i];
-            auxUb -= ciTimesUb[i];
+            auxLb -= _ciTimesLb[i];
+            auxUb -= _ciTimesUb[i];
         }
         else
         {
-            auxLb -= ciTimesUb[i];
-            auxUb -= ciTimesLb[i];
+            auxLb -= _ciTimesUb[i];
+            auxUb -= _ciTimesLb[i];
         }
     }
 
@@ -373,22 +389,22 @@ bool RowBoundTightener::tightenOnSingleInvertedBasisRow( const ITableau &tableau
     for ( unsigned i = 0; i < n - m; ++i )
     {
         // If ci = 0, nothing to do.
-        if ( ciSign[i] == ZERO )
+        if ( _ciSign[i] == ZERO )
             continue;
 
         lowerBound = auxLb;
         upperBound = auxUb;
 
         // Adjust the aux bounds to remove xi
-        if ( ciSign[i] == NEGATIVE )
+        if ( _ciSign[i] == NEGATIVE )
         {
-            lowerBound += ciTimesLb[i];
-            upperBound += ciTimesUb[i];
+            lowerBound += _ciTimesLb[i];
+            upperBound += _ciTimesUb[i];
         }
         else
         {
-            lowerBound += ciTimesUb[i];
-            upperBound += ciTimesLb[i];
+            lowerBound += _ciTimesUb[i];
+            upperBound += _ciTimesLb[i];
         }
 
         // Now divide everything by ci, switching signs if needed.
@@ -396,7 +412,7 @@ bool RowBoundTightener::tightenOnSingleInvertedBasisRow( const ITableau &tableau
         lowerBound = lowerBound / ci;
         upperBound = upperBound / ci;
 
-        if ( ciSign[i] == NEGATIVE )
+        if ( _ciSign[i] == NEGATIVE )
         {
             double temp = upperBound;
             upperBound = lowerBound;
@@ -420,17 +436,8 @@ bool RowBoundTightener::tightenOnSingleInvertedBasisRow( const ITableau &tableau
         }
 
         if ( FloatUtils::gt( _lowerBounds[xi], _upperBounds[xi] ) )
-        {
-            delete[] ciTimesLb;
-            delete[] ciTimesUb;
-            delete[] ciSign;
             throw InfeasibleQueryException();
-        }
     }
-
-    delete[] ciTimesLb;
-    delete[] ciTimesUb;
-    delete[] ciSign;
 
     return foundNewBound;
 }
