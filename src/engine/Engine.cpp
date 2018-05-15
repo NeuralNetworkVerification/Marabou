@@ -414,7 +414,7 @@ void Engine::performSimplexStep()
 
     // Tighten
     if ( !fakePivot &&
-         FloatUtils::lt( bestPivotEntry, GlobalConfiguration::ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD ) )
+         FloatUtils::gte( bestPivotEntry, GlobalConfiguration::ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD ) )
         _rowBoundTightener->examinePivotRow( _tableau );
 
     struct timespec end = TimeUtils::sampleMicro();
