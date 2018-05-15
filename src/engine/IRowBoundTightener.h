@@ -49,6 +49,15 @@ public:
     virtual void examineInvertedBasisMatrix( const ITableau &tableau, bool untilSaturation ) = 0;
 
     /*
+      Derive and enqueue new bounds for all varaibles, implicitly using the
+      inverse of the explicit basis matrix, inv(B0), which should be available
+      through the tableau. Inv(B0) is not computed directly --- instead, the computation
+      is performed via FTRANs. Can also do this until saturation, meaning that we
+      continue until no new bounds are learned.
+    */
+    virtual void examineImplicitInvertedBasisMatrix( const ITableau &tableau, bool untilSaturation ) = 0;
+
+    /*
       Derive and enqueue new bounds for all varaibles, using the
       original constraint matrix A and right hands side vector b. Can
       also do this until saturation, meaning that we continue until no
@@ -72,8 +81,6 @@ public:
       Have the Bound Tightener start reporting statistics.
      */
     virtual void setStatistics( Statistics *statistics ) = 0;
-
-    virtual void explicitBasisBoundTightening( const ITableau &tableau ) = 0;
 };
 
 #endif // __IRowBoundTightener_h__

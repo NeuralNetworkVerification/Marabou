@@ -21,6 +21,8 @@ RowBoundTightener::RowBoundTightener()
     , _upperBounds( NULL )
     , _tightenedLower( NULL )
     , _tightenedUpper( NULL )
+    , _rows( NULL )
+    , _z( NULL )
     , _statistics( NULL )
 {
 }
@@ -30,6 +32,7 @@ void RowBoundTightener::initialize( const ITableau &tableau )
     freeMemoryIfNeeded();
 
     _n = tableau.getN();
+    _m = tableau.getM();
 
     _lowerBounds = new double[_n];
     if ( !_lowerBounds )
@@ -54,6 +57,23 @@ void RowBoundTightener::initialize( const ITableau &tableau )
     {
         _lowerBounds[i] = tableau.getLowerBound( i );
         _upperBounds[i] = tableau.getUpperBound( i );
+    }
+
+    if ( GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE ==
+         GlobalConfiguration::COMPUTE_INVERTED_BASIS_MATRIX )
+    {
+        _rows = new TableauRow *[_m];
+        for ( unsigned i = 0; i < _m; ++i )
+            _rows[i] = new TableauRow( _n - _m );
+    }
+    else if ( GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE ==
+              GlobalConfiguration::USE_IMPLICIT_INVERTED_BASIS_MATRIX )
+    {
+        _rows = new TableauRow *[_m];
+        for ( unsigned i = 0; i < _m; ++i )
+            _rows[i] = new TableauRow( _n - _m );
+
+        _z = new double[_m];
     }
 }
 
@@ -99,86 +119,62 @@ void RowBoundTightener::freeMemoryIfNeeded()
         delete[] _tightenedUpper;
         _tightenedUpper = NULL;
     }
+
+    if ( _rows )
+    {
+        for ( unsigned i = 0; i < _m; ++i )
+            delete _rows[i];
+        delete[] _rows;
+        _rows = NULL;
+    }
+
+    if ( _z )
+    {
+        delete[] _z;
+        _z = NULL;
+    }
 }
 
-void RowBoundTightener::explicitBasisBoundTightening( const ITableau &tableau )
+void RowBoundTightener::examineImplicitInvertedBasisMatrix( const ITableau &tableau, bool untilSaturation )
 {
     /*
       Roughly (the dimensions don't add up):
 
          xB = inv(B)*b - inv(B)*An
-
-      We compute one row at a time.
     */
-    unsigned n = tableau.getN();
-    unsigned m = tableau.getM();
-    TableauRow **rows;
-    double *z;
 
-    try
+    // Find z = inv(B) * b, by solving the forward transformation Bz = b
+    tableau.forwardTransformation( tableau.getRightHandSide(), _z );
+    for ( unsigned i = 0; i < _m; ++i )
     {
-
-        // Allocate all m rows from the get-go
-        rows = new TableauRow *[m];
-        for ( unsigned i = 0; i < m; ++i )
-            rows[i] = new TableauRow( n - m );
-
-        // Find z = inv(B) * b, by solving the forward transformation Bz = b
-        z = new double[m];
-        tableau.forwardTransformation( tableau.getRightHandSide(), z );
-        for ( unsigned i = 0; i < m; ++i )
-        {
-            rows[i]->_scalar = z[i];
-            rows[i]->_lhs = tableau.basicIndexToVariable( i );
-        }
-
-        // const double *b = tableau.getRightHandSide();
-        // const double *invB = tableau.getInverseBasisMatrix();
-
-        // Now, go over the columns of the constraint martrix, perform an FTRAN
-        // for each of them, and populate the rows.
-
-        for ( unsigned i = 0; i < n - m; ++i )
-        {
-            unsigned nonBasic = tableau.nonBasicIndexToVariable( i );
-            const double *ANColumn = tableau.getAColumn( nonBasic );
-            tableau.forwardTransformation( ANColumn, z );
-
-            for ( unsigned j = 0; j < m; ++j )
-            {
-                rows[j]->_row[i]._var = nonBasic;
-                rows[j]->_row[i]._coefficient = -z[j];
-            }
-        }
-
-        // We now have all the rows, can use them for tightening.
-        // The tightening procedure may throw an exception, in which case we need
-        // to release the rows.
-        bool newBoundsLearned;
-        bool untilSaturation = false;
-
-
-        do
-        {
-            newBoundsLearned = onePassOverInvertedBasisRows( tableau, rows, m );
-        }
-        while ( untilSaturation && newBoundsLearned );
-    }
-    catch ( ... )
-    {
-        for ( unsigned i = 0; i < m; ++i )
-            delete rows[i];
-        delete[] rows;
-
-        delete[] z;
-        throw;
+        _rows[i]->_scalar = _z[i];
+        _rows[i]->_lhs = tableau.basicIndexToVariable( i );
     }
 
-    for ( unsigned i = 0; i < m; ++i )
-        delete rows[i];
-    delete[] rows;
+    // Now, go over the columns of the constraint martrix, perform an FTRAN
+    // for each of them, and populate the rows.
+    for ( unsigned i = 0; i < _n - _m; ++i )
+    {
+        unsigned nonBasic = tableau.nonBasicIndexToVariable( i );
+        const double *ANColumn = tableau.getAColumn( nonBasic );
+        tableau.forwardTransformation( ANColumn, _z );
 
-    delete[] z;
+        for ( unsigned j = 0; j < _m; ++j )
+        {
+            _rows[j]->_row[i]._var = nonBasic;
+            _rows[j]->_row[i]._coefficient = -_z[j];
+        }
+    }
+
+    // We now have all the rows, can use them for tightening.
+    // The tightening procedure may throw an exception, in which case we need
+    // to release the rows.
+    bool newBoundsLearned;
+    do
+    {
+        newBoundsLearned = onePassOverInvertedBasisRows( tableau );
+    }
+    while ( untilSaturation && newBoundsLearned );
 }
 
 void RowBoundTightener::examineInvertedBasisMatrix( const ITableau &tableau, bool untilSaturation )
@@ -191,25 +187,21 @@ void RowBoundTightener::examineInvertedBasisMatrix( const ITableau &tableau, boo
       We compute one row at a time.
     */
 
-    unsigned n = tableau.getN();
-    unsigned m = tableau.getM();
-    List<TableauRow *> rows;
-
     const double *b = tableau.getRightHandSide();
     const double *invB = tableau.getInverseBasisMatrix();
 
     try
     {
-        for ( unsigned i = 0; i < m; ++i )
+        for ( unsigned i = 0; i < _m; ++i )
         {
-            TableauRow *row = new TableauRow( n - m );
+            TableauRow *row = _rows[i];
             // First, compute the scalar, using inv(B)*b
             row->_scalar = 0;
-            for ( unsigned j = 0; j < m; ++j )
-                row->_scalar += ( invB[i*m + j] * b[j] );
+            for ( unsigned j = 0; j < _m; ++j )
+                row->_scalar += ( invB[i * _m + j] * b[j] );
 
             // Now update the row's coefficients for basic variable i
-            for ( unsigned j = 0; j < n - m; ++j )
+            for ( unsigned j = 0; j < _n - _m; ++j )
             {
                 row->_row[j]._var = tableau.nonBasicIndexToVariable( j );
 
@@ -217,15 +209,12 @@ void RowBoundTightener::examineInvertedBasisMatrix( const ITableau &tableau, boo
                 // column of An
                 const double *ANColumn = tableau.getAColumn( row->_row[j]._var );
                 row->_row[j]._coefficient = 0;
-                for ( unsigned k = 0; k < m; ++k )
-                    row->_row[j]._coefficient -= ( invB[i*m + k] * ANColumn[k] );
+                for ( unsigned k = 0; k < _m; ++k )
+                    row->_row[j]._coefficient -= ( invB[i * _m + k] * ANColumn[k] );
             }
 
             // Store the lhs variable
             row->_lhs = tableau.basicIndexToVariable( i );
-
-            // The row is ready
-            rows.append( row );
         }
 
         // We now have all the rows, can use them for tightening.
@@ -235,42 +224,25 @@ void RowBoundTightener::examineInvertedBasisMatrix( const ITableau &tableau, boo
         bool newBoundsLearned;
         do
         {
-            newBoundsLearned = onePassOverInvertedBasisRows( tableau, rows );
+            newBoundsLearned = onePassOverInvertedBasisRows( tableau );
         }
         while ( untilSaturation && newBoundsLearned );
     }
     catch ( ... )
     {
-        for ( const auto &row : rows )
-            delete row;
         delete[] invB;
-
         throw;
     }
 
-    for ( const auto &row : rows )
-        delete row;
     delete[] invB;
 }
 
-bool RowBoundTightener::onePassOverInvertedBasisRows( const ITableau &tableau, TableauRow **rows, unsigned m )
+bool RowBoundTightener::onePassOverInvertedBasisRows( const ITableau &tableau )
 {
     bool result = false;
 
-    for ( unsigned i = 0; i < m; ++i )
-        if ( tightenOnSingleInvertedBasisRow( tableau, *( rows[i] ) ) )
-            result = true;
-
-    return result;
-}
-
-
-bool RowBoundTightener::onePassOverInvertedBasisRows( const ITableau &tableau, List<TableauRow *> &rows )
-{
-    bool result = false;
-
-    for ( const auto &row : rows )
-        if ( tightenOnSingleInvertedBasisRow( tableau, *row ) )
+    for ( unsigned i = 0; i < _m; ++i )
+        if ( tightenOnSingleInvertedBasisRow( tableau, *( _rows[i] ) ) )
             result = true;
 
     return result;

@@ -61,8 +61,7 @@ public:
     void examinePivotRow( ITableau &/* tableau */ ) {}
     void getRowTightenings( List<Tightening> &/* tightenings */ ) const {}
     void setStatistics( Statistics */* statistics */ ) {}
-
-    void explicitBasisBoundTightening( const ITableau &/* tableau */ ) {}
+    void examineImplicitInvertedBasisMatrix( const ITableau &/* tableau */, bool /* untilSaturation */ ) {}
 };
 
 #endif // __MockRowBoundTightener_h__
