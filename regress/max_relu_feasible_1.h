@@ -44,12 +44,12 @@ public:
         InputQuery inputQuery;
         inputQuery.setNumberOfVariables( 16 );
 
-        inputQuery.setLowerBound( 0, 0 ); // a
-        inputQuery.setUpperBound( 0, 1 );
-        inputQuery.setLowerBound( 1, 0 ); // b
-        inputQuery.setUpperBound( 1, 1);
-        inputQuery.setLowerBound( 2, 0 ); // c
-        inputQuery.setUpperBound( 2, 1 );
+        inputQuery.setLowerBound( 0, 1 ); // a
+        inputQuery.setUpperBound( 0, 5 );
+        inputQuery.setLowerBound( 1, 1 ); // b
+        inputQuery.setUpperBound( 1, 5);
+        inputQuery.setLowerBound( 2, 1 ); // c
+        inputQuery.setUpperBound( 2, 5 );
         inputQuery.setLowerBound( 10, 0 ); // assert that x10 == 0
         inputQuery.setUpperBound( 10, 0 ); // ie, triangle inequality satisfied
 
@@ -86,7 +86,7 @@ public:
         equation3.addAddend( 1, 2 );
         equation3.addAddend( 1, 6 );
         equation3.addAddend( 1, 13 );
-        equation3.setScalar( 0 );
+        equation3.setScalar( 0.001 );
         equation3.markAuxiliaryVariable( 13 );
         inputQuery.addEquation( equation3 ); // x6 is |a-b|-c
 
@@ -100,7 +100,7 @@ public:
         equation4.addAddend( -1, 2 );
         equation4.addAddend( 1, 8 );
         equation4.addAddend( 1, 14 );
-        equation4.setScalar( 0 );
+        equation4.setScalar( 0.001 );
         equation4.markAuxiliaryVariable( 14 );
         inputQuery.addEquation( equation4 ); // x8 is c-a-b
         
@@ -142,7 +142,6 @@ public:
             printFailed( "max_relu_feasible_1 solving", start, end );
             return;
         }
-
         engine.extractSolution( inputQuery );
         // sanity check
         bool correctSolution = true;

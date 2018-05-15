@@ -23,6 +23,7 @@ SOURCES += \
 	BasisFactorizationFactory.cpp \
 	BlandsRule.cpp \
 	ConstraintMatrixAnalyzer.cpp \
+	ConstraintMatrixAnalyzerFactory.cpp \
 	CostFunctionManager.cpp \
 	CostFunctionManagerFactory.cpp \
 	DantzigsRule.cpp \
