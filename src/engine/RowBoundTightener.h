@@ -61,6 +61,15 @@ public:
     void examineInvertedBasisMatrix( const ITableau &tableau, bool untilSaturation );
 
     /*
+      Derive and enqueue new bounds for all varaibles, implicitly using the
+      inverse of the explicit basis matrix, inv(B0), which should be available
+      through the tableau. Inv(B0) is not computed directly --- instead, the computation
+      is performed via FTRANs. Can also do this until saturation, meaning that we
+      continue until no new bounds are learned.
+     */
+    void examineImplicitInvertedBasisMatrix( const ITableau &tableau, bool untilSaturation );
+
+    /*
       Derive and enqueue new bounds for all varaibles, using the
       original constraint matrix A and right hands side vector b. Can
       also do this until saturation, meaning that we continue until no
@@ -87,6 +96,7 @@ public:
 
 private:
     unsigned _n;
+    unsigned _m;
 
     /*
       Work space for the tightener to derive tighter bounds. These
@@ -98,6 +108,12 @@ private:
     double *_upperBounds;
     bool *_tightenedLower;
     bool *_tightenedUpper;
+
+    /*
+      Work space for the inverted basis matrix tighteners
+    */
+    TableauRow **_rows;
+    double *_z;
 
     /*
       Statistics collection
@@ -145,7 +161,7 @@ private:
       tighter bounds. Return true if new bounds are learned, false
       otherwise.
     */
-    bool onePassOverInvertedBasisRows( const ITableau &tableau, List<TableauRow *> &rows );
+    bool onePassOverInvertedBasisRows( const ITableau &tableau );
 
     /*
       Process the inverted basis row and attempt to derive tighter

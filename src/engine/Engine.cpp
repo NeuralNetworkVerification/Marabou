@@ -414,7 +414,7 @@ void Engine::performSimplexStep()
 
     // Tighten
     if ( !fakePivot &&
-         FloatUtils::lt( bestPivotEntry, GlobalConfiguration::ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD ) )
+         FloatUtils::gte( bestPivotEntry, GlobalConfiguration::ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD ) )
         _rowBoundTightener->examinePivotRow( _tableau );
 
     struct timespec end = TimeUtils::sampleMicro();
@@ -894,10 +894,22 @@ void Engine::explicitBasisBoundTightening()
 {
     struct timespec start = TimeUtils::sampleMicro();
 
-    if ( GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_INVERT_BASIS )
-        _rowBoundTightener->examineInvertedBasisMatrix( _tableau, false );
-    else
-        _rowBoundTightener->examineBasisMatrix( _tableau, false );
+    bool saturation = GlobalConfiguration::EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION;
+
+    switch ( GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE )
+    {
+    case GlobalConfiguration::USE_BASIS_MATRIX:
+        _rowBoundTightener->examineBasisMatrix( _tableau, saturation );
+        break;
+
+    case GlobalConfiguration::COMPUTE_INVERTED_BASIS_MATRIX:
+        _rowBoundTightener->examineInvertedBasisMatrix( _tableau, saturation );
+        break;
+
+    case GlobalConfiguration::USE_IMPLICIT_INVERTED_BASIS_MATRIX:
+        _rowBoundTightener->examineImplicitInvertedBasisMatrix( _tableau, saturation );
+        break;
+    }
 
     struct timespec end = TimeUtils::sampleMicro();
     _statistics.addTimeForExplicitBasisBoundTightening( TimeUtils::timePassed( start, end ) );
