@@ -405,17 +405,15 @@ void Engine::performSimplexStep()
         _statistics.incNumSimplexUnstablePivots();
 
     if ( !fakePivot )
+    {
         _tableau->computePivotRow();
+        _rowBoundTightener->examinePivotRow( _tableau );
+    }
 
     // Perform the actual pivot
     _activeEntryStrategy->prePivotHook( _tableau, fakePivot );
     _tableau->performPivot();
     _activeEntryStrategy->postPivotHook( _tableau, fakePivot );
-
-    // Tighten
-    if ( !fakePivot &&
-         FloatUtils::gte( bestPivotEntry, GlobalConfiguration::ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD ) )
-        _rowBoundTightener->examinePivotRow( _tableau );
 
     struct timespec end = TimeUtils::sampleMicro();
     _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
@@ -784,8 +782,6 @@ void Engine::applyAllRowTightenings()
 
     for ( const auto &tightening : rowTightenings )
     {
-        _statistics.incNumBoundsProposedByRowTightener();
-
         if ( tightening._type == Tightening::LB )
             _tableau->tightenLowerBound( tightening._variable, tightening._value );
         else
@@ -895,6 +891,8 @@ void Engine::explicitBasisBoundTightening()
     struct timespec start = TimeUtils::sampleMicro();
 
     bool saturation = GlobalConfiguration::EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION;
+
+    _statistics.incNumBoundTighteningsOnExplicitBasis();
 
     switch ( GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE )
     {
