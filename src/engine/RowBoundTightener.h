@@ -153,9 +153,7 @@ private:
       lower/upper bounds for the specified variable. Return the number of
       tighter bounds found.
      */
-    unsigned tightenOnSingleConstraintRow( const ITableau &tableau,
-                                           unsigned row,
-                                           unsigned varBeingTightened );
+    unsigned tightenOnSingleConstraintRow( const ITableau &tableau, unsigned row );
 
     /*
       Do a single pass over the inverted basis rows and derive any
