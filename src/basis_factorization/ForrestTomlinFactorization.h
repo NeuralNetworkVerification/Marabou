@@ -64,7 +64,7 @@ public:
 
 	/*
       Set the basis matrix. This clears the previous factorization,
-      and triggers a factorization into LU format of the matrix.
+      and triggers a factorization into FT format of the matrix.
     */
 	void setBasis( const double *B );
 
