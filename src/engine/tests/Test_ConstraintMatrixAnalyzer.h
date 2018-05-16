@@ -239,6 +239,91 @@ public:
             TS_ASSERT_THROWS_NOTHING( delete analyzer );
         }
     }
+
+    void test_independent_columns()
+    {
+        {
+            ConstraintMatrixAnalyzer *analyzer;
+            TS_ASSERT( analyzer = new ConstraintMatrixAnalyzer );
+
+            double A1[] = {
+                1, 0, 0, 0, 0,
+                0, 1, 0, 0, 0,
+                0, 0, 1, 0, 0,
+            };
+
+            double A1t[sizeof(A1) / sizeof(double)];
+            memcpy( A1t, A1, sizeof(A1) );
+            transpose( A1t, 3, 5 );
+
+            TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1t, 3, 5 ) );
+
+            List<unsigned> cols = analyzer->getIndependentColumns();
+            TS_ASSERT_EQUALS(cols.size(), 3U);
+            auto it = cols.begin();
+            TS_ASSERT_EQUALS(*it, 0U);
+            it++;
+            TS_ASSERT_EQUALS(*it, 1U);
+            it++;
+            TS_ASSERT_EQUALS(*it, 2U);
+            it++;
+            TS_ASSERT_THROWS_NOTHING( delete analyzer );
+        }
+        {
+            ConstraintMatrixAnalyzer *analyzer;
+            TS_ASSERT( analyzer = new ConstraintMatrixAnalyzer );
+
+            double A1[] = {
+                0, 1, 0, 0, 0,
+                0, 0, 1, 1, 0,
+                0, 0, 0, 0, 1,
+            };
+
+            double A1t[sizeof(A1) / sizeof(double)];
+            memcpy( A1t, A1, sizeof(A1) );
+            transpose( A1t, 3, 5 );
+
+            TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1t, 3, 5 ) );
+
+            List<unsigned> cols = analyzer->getIndependentColumns();
+            TS_ASSERT_EQUALS(cols.size(), 3U);
+            auto it = cols.begin();
+            TS_ASSERT_EQUALS(*it, 1U);
+            it++;
+            TS_ASSERT_EQUALS(*it, 2U);
+            it++;
+            TS_ASSERT_EQUALS(*it, 4U);
+            it++;
+            TS_ASSERT_THROWS_NOTHING( delete analyzer );
+        }
+        {
+            ConstraintMatrixAnalyzer *analyzer;
+            TS_ASSERT( analyzer = new ConstraintMatrixAnalyzer );
+
+            double A1[] = {
+                1, 0, 0, 0, 0,
+                0, 1, 1, 1, 0,
+                0, 0, 0, 0, 1,
+            };
+
+            double A1t[sizeof(A1) / sizeof(double)];
+            memcpy( A1t, A1, sizeof(A1) );
+            transpose( A1t, 3, 5 );
+
+            TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1t, 3, 5 ) );
+
+            List<unsigned> cols = analyzer->getIndependentColumns();
+            TS_ASSERT_EQUALS(cols.size(), 3U);
+            auto it = cols.begin();
+            TS_ASSERT_EQUALS(*it, 0U);
+            it++;
+            TS_ASSERT_EQUALS(*it, 1U);
+            it++;
+            TS_ASSERT_EQUALS(*it, 4U);
+            it++;
+            TS_ASSERT_THROWS_NOTHING( delete analyzer );
+        }
+    }
 };
 
 //

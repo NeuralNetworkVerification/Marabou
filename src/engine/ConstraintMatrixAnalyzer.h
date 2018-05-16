@@ -13,9 +13,12 @@
 #ifndef __ConstraintMatrixAnalyzer_h__
 #define __ConstraintMatrixAnalyzer_h__
 
+#include "IConstraintMatrixAnalyzer.h"
+#include "List.h"
+
 class String;
 
-class ConstraintMatrixAnalyzer
+class ConstraintMatrixAnalyzer : public IConstraintMatrixAnalyzer
 {
 public:
     ConstraintMatrixAnalyzer();
@@ -30,6 +33,7 @@ public:
     void analyze( const double *matrix, unsigned m, unsigned n );
     const double *getCanonicalForm();
     unsigned getRank() const;
+    List<unsigned> getIndependentColumns() const;
 
 private:
     double *_matrix;
@@ -38,6 +42,7 @@ private:
     unsigned _n;
     unsigned _rank;
     bool _logging;
+    List<unsigned> _independentColumns;
 
     /*
       Helper functions for performing Gaussian elimination.

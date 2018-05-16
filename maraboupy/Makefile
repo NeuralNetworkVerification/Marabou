@@ -33,6 +33,7 @@ SOURCES += \
 	BasisFactorizationFactory.cpp \
 	BlandsRule.cpp \
 	ConstraintMatrixAnalyzer.cpp \
+	ConstraintMatrixAnalyzerFactory.cpp \
 	CostFunctionManager.cpp \
 	CostFunctionManagerFactory.cpp \
 	DantzigsRule.cpp \
@@ -65,6 +66,7 @@ SOURCES += \
 	TableauFactory.cpp \
 	TableauRow.cpp \
 	TableauState.cpp \
+	SignalHandler.cpp \
 	\
 	
 

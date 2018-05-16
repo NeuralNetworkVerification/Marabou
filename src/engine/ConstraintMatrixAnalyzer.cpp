@@ -12,6 +12,7 @@
 
 #include "ConstraintMatrixAnalyzer.h"
 #include "FloatUtils.h"
+#include "List.h"
 #include "MStringf.h"
 
 ConstraintMatrixAnalyzer::ConstraintMatrixAnalyzer()
@@ -108,11 +109,17 @@ void ConstraintMatrixAnalyzer::gaussianElimination()
                 _matrix[i * _n + j] += (factor * _matrix[_rank * _n + j]);
         }
 
+        _independentColumns.append( currentColumn );
         ++currentColumn;
         ++_rank;
     }
 
     dumpMatrix( "Elimination finished" );
+}
+
+List<unsigned> ConstraintMatrixAnalyzer::getIndependentColumns() const
+{
+    return _independentColumns;
 }
 
 void ConstraintMatrixAnalyzer::swapRows( unsigned i, unsigned j )
