@@ -819,16 +819,19 @@ void Engine::applyAllBoundTightenings()
 
 void Engine::applyAllValidConstraintCaseSplits()
 {
+    struct timespec start = TimeUtils::sampleMicro();
+
     for ( auto &constraint : _plConstraints )
         applyValidConstraintCaseSplit( constraint );
+
+    struct timespec end = TimeUtils::sampleMicro();
+    _statistics.addTimeForValidCaseSplit( TimeUtils::timePassed( start, end ) );
 }
 
 void Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constraint )
 {
     if ( constraint->isActive() && constraint->phaseFixed() )
     {
-        struct timespec start = TimeUtils::sampleMicro();
-
         constraint->setActiveConstraint( false );
         PiecewiseLinearCaseSplit validSplit = constraint->getValidCaseSplit();
         _smtCore.recordImpliedValidSplit( validSplit );
@@ -839,9 +842,6 @@ void Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
         constraint->dump( constraintString );
         log( Stringf( "A constraint has become valid. Dumping constraint: %s",
                       constraintString.ascii() ) );
-
-        struct timespec end = TimeUtils::sampleMicro();
-        _statistics.addTimeForValidCaseSplit( TimeUtils::timePassed( start, end ) );
     }
 }
 

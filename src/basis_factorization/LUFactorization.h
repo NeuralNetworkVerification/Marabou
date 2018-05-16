@@ -98,9 +98,11 @@ public:
     void factorizeMatrix( double *matrix );
 
 	/*
-      Set B0 to a non-identity matrix and factorize it.
+      Set B0 to a non-identity matrix (or have it retrieved from the oracle),
+      and then factorize it.
 	*/
 	void setBasis( const double *B );
+    void refactorizeBasis();
 
 	/*
       Swap two rows of a matrix.
@@ -116,7 +118,6 @@ public:
       Make the basis explicitly available
     */
     void makeExplicitBasisAvailable();
-    void refactorizeBasis();
 
     /*
       Get the explicit basis matrix

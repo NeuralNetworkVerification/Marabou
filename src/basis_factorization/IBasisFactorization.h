@@ -64,9 +64,11 @@ public:
     virtual void restoreFactorization( const IBasisFactorization *other ) = 0;
 
 	/*
-      Set the basis matrix.
+      Set the basis matrix, or ask the basis factorization to obtain it
+      itself (through the previously-provided oracle).
 	*/
-	virtual void setBasis( const double *B ) = 0;
+    virtual void setBasis( const double *B ) = 0;
+    virtual void refactorizeBasis() = 0;
 
     /*
       Control/check whether factorization is enabled.
