@@ -150,12 +150,12 @@ private:
 
     /*
       Process the tableau row and attempt to derive tighter
-      lower/upper bounds for the specified variable. Return true iff
-      a tighter bound has been found.
+      lower/upper bounds for the specified variable. Return the number of
+      tighter bounds found.
      */
-    bool tightenOnSingleConstraintRow( const ITableau &tableau,
-                                       unsigned row,
-                                       unsigned varBeingTightened );
+    unsigned tightenOnSingleConstraintRow( const ITableau &tableau,
+                                           unsigned row,
+                                           unsigned varBeingTightened );
 
     /*
       Do a single pass over the inverted basis rows and derive any
@@ -168,7 +168,7 @@ private:
       lower/upper bounds for the specified variable. Return the number
       of tighter bounds found.
     */
-    unsigned tightenOnSingleInvertedBasisRow( const ITableau &tableau, TableauRow &row );
+    unsigned tightenOnSingleInvertedBasisRow( const ITableau &tableau, const TableauRow &row );
 };
 
 #endif // __RowBoundTightener_h__

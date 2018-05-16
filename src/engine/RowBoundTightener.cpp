@@ -278,7 +278,7 @@ unsigned RowBoundTightener::onePassOverInvertedBasisRows( const ITableau &tablea
     return newBounds;
 }
 
-unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const ITableau &tableau, TableauRow &row )
+unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const ITableau &tableau, const TableauRow &row )
 {
 	/*
       A row is of the form
@@ -585,8 +585,8 @@ unsigned RowBoundTightener::onePassOverConstraintMatrix( const ITableau &tableau
 }
 
 unsigned RowBoundTightener::tightenOnSingleConstraintRow( const ITableau &tableau,
-                                                      unsigned row,
-                                                      unsigned varBeingTightened )
+                                                          unsigned row,
+                                                          unsigned varBeingTightened )
 {
     const double *A = tableau.getA();
     const double *b = tableau.getRightHandSide();
@@ -649,82 +649,11 @@ void RowBoundTightener::examinePivotRow( ITableau &tableau )
 	if ( _statistics )
         _statistics->incNumRowsExaminedByRowTightener();
 
-	// The entering/leaving assignments are reversed because these are called post-pivot.
-	unsigned enteringVariable = tableau.getLeavingVariable();
-	unsigned leavingVariable = tableau.getEnteringVariable();
+    const TableauRow &row = *tableau.getPivotRow();
+    unsigned newBoundsLearned = tightenOnSingleInvertedBasisRow( tableau, row );
 
-	const TableauRow &row = *tableau.getPivotRow();
-
-    unsigned enteringIndex = tableau.getEnteringVariableIndex();
-	double enteringCoef = row[enteringIndex];
-
-	/*
-      The pre-pivot row says:
-
-         leaving = enteringCoef * entering + sum ci xi + b
-
-      where sum runs over nonbasic vars (that are not entering).
-      Rearrange to
-
-         entering = leaving / enteringCoef - sum ci/enteringCoef xi - b / enteringCoef
-    */
-
-	// Get right hand side
-    double constCoef = -row._scalar / enteringCoef;
-
-    // Compute the lower and upper bounds from this row
-	double tightenedLowerBound = constCoef;
-	double tightenedUpperBound = constCoef;
-
-    unsigned numNonBasic = tableau.getN() - tableau.getM();
-	for ( unsigned i = 0; i < numNonBasic; ++i )
-	{
-		const TableauRow::Entry &entry( row._row[i] );
-		unsigned var = entry._var;
-		double coef = -entry._coefficient / enteringCoef;
-		// Reuse the pass of this loop on the entering index
-		// to account for the leaving / enteringCoef term above.
-		if ( i == enteringIndex )
-		{
-			var = leavingVariable;
-			coef = 1.0 / enteringCoef;
-		}
-
-		double currentLowerBound = tableau.getLowerBound( var );
-		double currentUpperBound = tableau.getUpperBound( var );
-
-		if ( FloatUtils::isPositive( coef ) )
-		{
-			tightenedLowerBound += coef * currentLowerBound;
-			tightenedUpperBound += coef * currentUpperBound;
-		}
-		else if ( FloatUtils::isNegative( coef ) )
-		{
-			tightenedLowerBound += coef * currentUpperBound;
-			tightenedUpperBound += coef * currentLowerBound;
-		}
-	}
-
-    // Tighten lower bound if needed
-	if ( FloatUtils::lt( _lowerBounds[enteringVariable], tightenedLowerBound ) )
-    {
-        _lowerBounds[enteringVariable] = tightenedLowerBound;
-        _tightenedLower[enteringVariable] = true;
-        if ( _statistics )
-            _statistics->incNumTighteningsFromRows();
-    }
-
-    // Tighten upper bound if needed
-	if ( FloatUtils::gt( _upperBounds[enteringVariable], tightenedUpperBound ) )
-    {
-        _upperBounds[enteringVariable] = tightenedUpperBound;
-        _tightenedUpper[enteringVariable] = true;
-        if ( _statistics )
-            _statistics->incNumTighteningsFromRows();
-    }
-
-    if ( FloatUtils::gt( _lowerBounds[enteringVariable], _upperBounds[enteringVariable] ) )
-        throw InfeasibleQueryException();
+    if ( _statistics && ( newBoundsLearned > 0 ) )
+        _statistics->incNumTighteningsFromRows( newBoundsLearned );
 }
 
 void RowBoundTightener::getRowTightenings( List<Tightening> &tightenings ) const

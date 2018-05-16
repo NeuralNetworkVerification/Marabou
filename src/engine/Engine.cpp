@@ -405,17 +405,15 @@ void Engine::performSimplexStep()
         _statistics.incNumSimplexUnstablePivots();
 
     if ( !fakePivot )
+    {
         _tableau->computePivotRow();
+        _rowBoundTightener->examinePivotRow( _tableau );
+    }
 
     // Perform the actual pivot
     _activeEntryStrategy->prePivotHook( _tableau, fakePivot );
     _tableau->performPivot();
     _activeEntryStrategy->postPivotHook( _tableau, fakePivot );
-
-    // Tighten
-    if ( !fakePivot &&
-         FloatUtils::gte( bestPivotEntry, GlobalConfiguration::ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD ) )
-        _rowBoundTightener->examinePivotRow( _tableau );
 
     struct timespec end = TimeUtils::sampleMicro();
     _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );

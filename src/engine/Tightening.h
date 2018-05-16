@@ -56,6 +56,14 @@ public:
             ( _value == other._value ) &&
             ( _type == other._type );
     }
+
+    void dump() const
+    {
+        printf( "Tightening: x%u %s %.2lf\n",
+                _variable,
+                _type == LB ? ">=" : "<=",
+                _value );
+    }
 };
 
 #endif // __Tightening_h__

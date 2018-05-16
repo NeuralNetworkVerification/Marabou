@@ -96,7 +96,7 @@ public:
     void incNumTightenedBounds();
 
     void incNumRowsExaminedByRowTightener();
-    void incNumTighteningsFromRows();
+    void incNumTighteningsFromRows( unsigned increment = 1 );
 
     void incNumBoundTighteningOnConstraintMatrix();
     void incNumTighteningsFromConstraintMatrix( unsigned increment = 1 );

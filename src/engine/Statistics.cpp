@@ -408,9 +408,9 @@ void Statistics::incNumRowsExaminedByRowTightener()
     ++_numRowsExaminedByRowTightener;
 }
 
-void Statistics::incNumTighteningsFromRows()
+void Statistics::incNumTighteningsFromRows( unsigned increment )
 {
-    ++_numTighteningsFromRows;
+    _numTighteningsFromRows += increment;
 }
 
 void Statistics::incNumBoundTighteningsOnExplicitBasis()
