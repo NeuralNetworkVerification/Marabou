@@ -175,7 +175,6 @@ private:
     /*
       Working space
     */
-    double *_tempY;
     double *_LCol;
 
     /*
