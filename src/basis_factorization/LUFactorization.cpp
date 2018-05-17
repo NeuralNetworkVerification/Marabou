@@ -305,7 +305,10 @@ void LUFactorization::clearFactorization()
     _LP.clear();
 
 	std::fill_n( _U, _m*_m, 0 );
-
+	
+	List<EtaMatrix *>::iterator it;
+    for ( it = _etas.begin(); it != _etas.end(); ++it )
+        delete *it;
     _etas.clear();
 }
 
