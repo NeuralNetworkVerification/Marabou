@@ -235,9 +235,7 @@ void MaxConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
 
     for ( const auto &element : _elements )
 	{
-	    if ( !_lowerBounds.exists( element ) )
-            maxElementLB = FloatUtils::infinity();
-	    else
+	    if ( _lowerBounds.exists( element ) )
             maxElementLB = FloatUtils::max( _lowerBounds[element], maxElementLB );
 
 	    if ( !_upperBounds.exists( element ) )
