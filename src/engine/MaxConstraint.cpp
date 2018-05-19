@@ -91,7 +91,7 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
 
     _lowerBounds[variable] = value;
 
-    if ( FloatUtils::gt( value, _maxLowerBound ) )
+    if ( _elements.exists(variable) && FloatUtils::gt( value, _maxLowerBound ) )
     {
         _maxLowerBound = value;
         List<unsigned> toRemove;
@@ -150,7 +150,7 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
 
     _upperBounds[variable] = value;
 
-    if ( FloatUtils::lt( value, _maxLowerBound ) )
+    if ( _elements.exists(variable) && FloatUtils::lt( value, _maxLowerBound ) )
     {
         if ( _lowerBounds.exists( variable ) )
             _lowerBounds.erase( variable );
@@ -426,7 +426,7 @@ void MaxConstraint::eliminateVariable( unsigned var, double value )
         _upperBounds.erase( var );
 
     if ( !_lowerBounds.exists( _f ) ||
-         FloatUtils::lt( value, _lowerBounds.get( _f ) ) )
+         FloatUtils::gt( value, _lowerBounds.get( _f ) ) )
         _lowerBounds[_f] = value;
 
     _eliminated.insert( var );
