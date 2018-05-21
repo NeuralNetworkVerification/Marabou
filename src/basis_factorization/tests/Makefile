@@ -1,5 +1,7 @@
 ROOT_DIR = ../../..
 
+include $(ROOT_DIR)/Places.mk
+
 TEST_TARGET = basis_factorization.tests
 
 LOCAL_INCLUDES += \
@@ -9,20 +11,18 @@ LOCAL_INCLUDES += \
 
 TEST_FILES = $(wildcard Test_*.h)
 
+include $(BASIS_FACTORIZATION_DIR)/Sources.mk
+include $(COMMON_DIR)/Sources.mk
+include $(COMMON_REAL_DIR)/Sources.mk
+include $(CONFIGURATION_DIR)/Sources.mk
+
+vpath %.cpp $(BASIS_FACTORIZATION_DIR)
+vpath %.cpp $(COMMON_DIR)
+vpath %.cpp $(COMMON_REAL_DIR)
+vpath %.cpp $(CONFIGURATION_DIR)
+
 SOURCES += \
-	GlobalConfiguration.cpp \
 	\
-	Errno.cpp \
-	Error.cpp \
-	FloatUtils.cpp \
-	MString.cpp \
-	TimeUtils.cpp \
-	\
-	EtaMatrix.cpp \
-	ForrestTomlinFactorization.cpp \
-	LPElement.cpp \
-	LUFactorization.cpp \
-	PermutationMatrix.cpp \
 
 all:
 	./$(TEST_TARGET)
@@ -31,13 +31,6 @@ CFLAGS += \
 	-DDEBUG_ON \
 
 include $(ROOT_DIR)/Rules.mk
-
-vpath %.cpp $(BASIS_FACTORIZATION_DIR)
-vpath %.cpp $(CONFIGURATION_DIR)
-vpath %.cpp $(COMMON_DIR)
-vpath %.cpp $(COMMON_REAL_DIR)
-vpath %.cpp $(ENGINE_DIR)
-vpath %.cpp $(ENGINE_MOCK_DIR)
 
 #
 # Local Variables:
