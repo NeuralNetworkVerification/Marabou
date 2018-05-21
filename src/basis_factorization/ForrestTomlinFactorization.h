@@ -22,18 +22,18 @@
 /*
   Forrest-Tomlin factorization looks like this:
 
-  Am...A1 * LsPs...L1P1 * B = Q * Um...U1 * R
+  Ak...A1 * LsPs...L1P1 * B = Q * Um...U1 * inv(Q)
 
   Where:
   - The A matrices are "almost-diagonal", i.e. diagonal matrices
   with one extra entry off the diagonal.
   - The L and U matrices are as in a usual LU factorization
-  - Q and R are permutation matrices
+  - Q (and inv(Q)) are permutation matrices
 */
 class ForrestTomlinFactorization : public IBasisFactorization
 {
 public:
-    ForrestTomlinFactorization( unsigned m );
+    ForrestTomlinFactorization( unsigned m, const BasisColumnOracle &basisColumnOracle );
     ~ForrestTomlinFactorization();
 
     /*
@@ -64,7 +64,7 @@ public:
 
 	/*
       Set the basis matrix. This clears the previous factorization,
-      and triggers a factorization into LU format of the matrix.
+      and triggers a factorization into FT format of the matrix.
     */
 	void setBasis( const double *B );
 
@@ -88,19 +88,23 @@ public:
      */
     void invertBasis( double *result );
 
+    /*
+      Obtain the basis matrix from the oracle and compute a fresh factorization
+    */
+    void refactorizeBasis();
+
 public:
     /*
       For testing purposes only
     */
     const PermutationMatrix *getQ() const;
-    const PermutationMatrix *getR() const;
+    const PermutationMatrix *getInvQ() const;
     const EtaMatrix **getU() const;
     const List<LPElement *> *getLP() const;
-    const AlmostIdentityMatrix *getA() const;
+    const List<AlmostIdentityMatrix *> *getA() const;
 
-    void setA( unsigned index, const AlmostIdentityMatrix &matrix );
+    void pushA( const AlmostIdentityMatrix &matrix );
     void setQ( const PermutationMatrix &Q );
-    void setR( const PermutationMatrix &R );
 
 private:
     /*
@@ -116,11 +120,18 @@ private:
     /*
       The components of the Forrest-Tomlin factorization.
     */
-    AlmostIdentityMatrix *_A;
-    List<LPElement *> _LP;
     PermutationMatrix _Q;
+    PermutationMatrix _invQ;
     EtaMatrix **_U;
-    PermutationMatrix _R;
+    // P1 is the last element of the list
+    List<LPElement *> _LP;
+    // A1 is the first element of the list
+    List<AlmostIdentityMatrix *>_A;
+
+    /*
+      Indicates whether the explicit basis matrix is available.
+    */
+    bool _explicitBasisAvailable;
 
     /*
       Work memory
@@ -128,6 +139,9 @@ private:
     double *_workMatrix;
     double *_workVector;
     double *_workW;
+    PermutationMatrix _workQ;
+    PermutationMatrix _invWorkQ;
+    unsigned *_workOrdering;
 
     /*
       After a new basis matrix is set, initialize the LU factorization
@@ -139,6 +153,13 @@ private:
       Swap two rows of a matrix.
     */
     void rowSwap( unsigned rowOne, unsigned rowTwo, double *matrix );
+
+public:
+    /*
+      Debug
+    */
+    void dump() const;
+    void dumpU() const;
 };
 
 #endif // __ForrestTomlinFactorization_h__

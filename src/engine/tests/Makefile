@@ -1,5 +1,7 @@
 ROOT_DIR = ../../..
 
+include $(ROOT_DIR)/Places.mk
+
 TEST_TARGET = Engine.tests
 
 LOCAL_INCLUDES += \
@@ -10,49 +12,19 @@ LOCAL_INCLUDES += \
 
 TEST_FILES = $(wildcard Test_*.h)
 
-SOURCES += \
-	GlobalConfiguration.cpp \
-	\
-	Errno.cpp \
-	Error.cpp \
-	FloatUtils.cpp \
-	MString.cpp \
-	TimeUtils.cpp \
-	\
-	BasisFactorizationFactory.cpp \
-	BlandsRule.cpp \
-	ConstraintMatrixAnalyzer.cpp \
-	CostFunctionManager.cpp \
-	CostFunctionManagerFactory.cpp \
-	DantzigsRule.cpp \
-	DegradationChecker.cpp \
-	Engine.cpp \
-	EngineState.cpp \
-	EntrySelectionStrategy.cpp \
-	Equation.cpp \
-	EtaMatrix.cpp \
-	ForrestTomlinFactorization.cpp \
-	FreshVariables.cpp \
-	InputQuery.cpp \
-	LPElement.cpp \
-	LUFactorization.cpp \
-	MaxConstraint.cpp \
-	PermutationMatrix.cpp \
-	PiecewiseLinearCaseSplit.cpp \
-	PiecewiseLinearConstraint.cpp \
-	PrecisionRestorer.cpp \
-	Preprocessor.cpp \
-	ProjectedSteepestEdge.cpp \
-	ProjectedSteepestEdgeFactory.cpp \
-	ReluConstraint.cpp \
-	RowBoundTightener.cpp \
-	RowBoundTightenerFactory.cpp \
-	SmtCore.cpp \
-	Statistics.cpp \
-	Tableau.cpp \
-	TableauFactory.cpp \
-	TableauRow.cpp \
-	TableauState.cpp \
+include $(BASIS_FACTORIZATION_DIR)/Sources.mk
+include $(COMMON_DIR)/Sources.mk
+include $(COMMON_REAL_DIR)/Sources.mk
+include $(CONFIGURATION_DIR)/Sources.mk
+include $(ENGINE_DIR)/Sources.mk
+include $(ENGINE_MOCK_DIR)/Sources.mk
+
+vpath %.cpp $(BASIS_FACTORIZATION_DIR)
+vpath %.cpp $(COMMON_DIR)
+vpath %.cpp $(COMMON_REAL_DIR)
+vpath %.cpp $(CONFIGURATION_DIR)
+vpath %.cpp $(ENGINE_DIR)
+vpath %.cpp $(ENGINE_MOCK_DIR)
 
 all:
 	./$(TEST_TARGET)
@@ -61,13 +33,6 @@ CFLAGS += \
 	-DDEBUG_ON \
 
 include $(ROOT_DIR)/Rules.mk
-
-vpath %.cpp $(BASIS_FACTORIZATION_DIR)
-vpath %.cpp $(COMMON_DIR)
-vpath %.cpp $(COMMON_REAL_DIR)
-vpath %.cpp $(CONFIGURATION_DIR)
-vpath %.cpp $(ENGINE_DIR)
-vpath %.cpp $(ENGINE_MOCK_DIR)
 
 #
 # Local Variables:

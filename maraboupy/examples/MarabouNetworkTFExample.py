@@ -19,35 +19,13 @@ outputVars = network.outputVars[0]
 
 # Set input bounds
 network.setLowerBound(inputVars[0],-10.0)
-network.setUpperBound(inputVars[0], -10.0)
+network.setUpperBound(inputVars[0], 10.0)
 network.setLowerBound(inputVars[1],-10.0)
-network.setUpperBound(inputVars[1], -10.0)
+network.setUpperBound(inputVars[1], 10.0)
 
 # Set output bounds
 network.setLowerBound(outputVars[1], 194.0)
 network.setUpperBound(outputVars[1], 210.0)
 
 # Call to C++ Marabou solver
-vals = network.solve("marabou.log")
-
-# Print results
-if len(vals)==0:
-    print("UNSAT")
-else:
-    print("SAT")
-    print("Input Values:")
-    for i in range(inputVars.size):
-        print("%d: %.4e" % (i, vals[inputVars[i]]))
-              
-    print("\nOutput Values:")
-    for i in range(outputVars.size):
-        print("%d: %.4e" % (i, vals[outputVars[i]]))
-
-    inputValues = [vals[x] for x in inputVars]
-    outputValues = [vals[x] for x in outputVars]
-    error = network.findError(inputValues)
-    print("\nError norm:")
-    print(np.linalg.norm(error))
-
-
-
+vals, stats = network.solve("marabou.log")

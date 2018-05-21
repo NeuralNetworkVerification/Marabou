@@ -21,11 +21,11 @@
 #include "MStringf.h"
 #include "MalformedBasisException.h"
 
-LUFactorization::LUFactorization( unsigned m )
-    : _B0( NULL )
+LUFactorization::LUFactorization( unsigned m, const BasisColumnOracle &basisColumnOracle )
+    : IBasisFactorization( basisColumnOracle )
+    , _B0( NULL )
 	, _m( m )
     , _U( NULL )
-    , _tempY( NULL )
     , _LCol( NULL )
 {
     _B0 = new double[m*m];
@@ -40,10 +40,6 @@ LUFactorization::LUFactorization( unsigned m )
     _U = new double[m*m];
 	if ( !_U )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "LUFactorization::U" );
-
-    _tempY = new double[m];
-    if ( !_tempY )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "LUFactorization::tempY" );
 
     _LCol = new double[m];
     if ( !_LCol )
@@ -68,12 +64,6 @@ void LUFactorization::freeIfNeeded()
 		delete[] _B0;
 		_B0 = NULL;
 	}
-
-    if ( _tempY )
-    {
-        delete[] _tempY;
-        _tempY = NULL;
-    }
 
     if ( _LCol )
     {
@@ -121,88 +111,55 @@ void LUFactorization::pushEtaMatrix( unsigned columnIndex, const double *column 
 
 	if ( ( _etas.size() > GlobalConfiguration::REFACTORIZATION_THRESHOLD ) && factorizationEnabled() )
 	{
-        log( "Number of etas exceeds threshold. Condensing and refactoring\n" );
-		condenseEtas();
-		factorizeMatrix( _B0 );
+        log( "Number of etas exceeds threshold. Refactoring basis\n" );
+        refactorizeBasis();
 	}
 }
 
-void LUFactorization::LMultiplyRight( const EtaMatrix *L, double *X ) const
+void LUFactorization::LMultiplyRight( const EtaMatrix *L, double *x ) const
 {
-	double sum = 0;
-	for ( unsigned i = 0; i < _m; ++i )
-		sum += L->_column[i] * X[i];
+    unsigned columnIndex = L->_columnIndex;
+    x[columnIndex] *= L->_column[columnIndex];
 
-    if ( FloatUtils::isZero( sum ) )
-        sum = 0.0;
+	for ( unsigned i = columnIndex + 1; i < _m; ++i )
+		x[columnIndex] += L->_column[i] * x[i];
 
-    X[L->_columnIndex] = sum;
+    if ( FloatUtils::isZero( x[columnIndex] ) )
+        x[columnIndex] = 0.0;
 }
 
-void LUFactorization::LMultiplyLeft( const EtaMatrix *L, double *X ) const
+void LUFactorization::LMultiplyLeft( const EtaMatrix *L, double *x ) const
 {
     unsigned col = L->_columnIndex;
-    double xCol = X[col];
-    for ( unsigned i = 0; i < _m; ++i )
-    {
-        if ( i == col )
-            X[i] *= L->_column[col];
-        else
-            X[i] += xCol * L->_column[i];
+    double xCol = x[col];
 
-        if ( FloatUtils::isZero( X[i] ) )
-            X[i] = 0.0;
+    for ( unsigned i = col + 1; i < _m; ++i )
+    {
+        x[i] += xCol * L->_column[i];
+        if ( FloatUtils::isZero( x[i] ) )
+            x[i] = 0.0;
     }
+
+    x[col] *= L->_column[col];
 }
 
 void LUFactorization::setBasis( const double *B )
 {
 	memcpy( _B0, B, sizeof(double) * _m * _m );
+    clearFactorization();
 	factorizeMatrix( _B0 );
-}
-
-void LUFactorization::condenseEtas()
-{
-    // Multiplication by an eta matrix on the right only changes one
-    // column of B0. The new column is a linear combination of the
-    // existing columns of B0, according to the eta column. We perform
-    // the computation in place.
-    for ( const auto &eta : _etas )
-    {
-		unsigned col = eta->_columnIndex;
-
-        // Iterate over the rows of B0
-		for ( unsigned i = 0; i < _m; ++i )
-        {
-            // Compute the linear combinations of the columns
-			double sum = 0.0;
-			for ( unsigned j = 0; j < _m; ++j )
-				sum += _B0[i * _m + j] * eta->_column[j];
-
-            if ( FloatUtils::isZero( sum ) )
-                sum = 0.0;
-
-            _B0[i * _m + col] = sum;
-		}
-
-		delete eta;
-	}
-
-	_etas.clear();
-	clearLPU();
 }
 
 void LUFactorization::forwardTransformation( const double *y, double *x ) const
 {
+    memcpy( x, y, sizeof(double) * _m );
+
     // If there's no LP factorization, it is implied that B0 = I.
     // Then, because there are no etas, x = y.
     if ( _etas.empty() && _LP.empty() )
     {
-        memcpy( x, y, sizeof(double) * _m );
         return;
     }
-
-    memcpy( _tempY, y, sizeof(double) * _m );
 
     // We are solving Bx = y, where B = B0 * E1 ... *En and
     // B0 = inv( LmPm ... L1P1 ) * U. The equation is thus:
@@ -213,96 +170,84 @@ void LUFactorization::forwardTransformation( const double *y, double *x ) const
     {
         if ( (*element)->_pair )
         {
-			double temp = _tempY[(*element)->_pair->first];
-			_tempY[(*element)->_pair->first] = _tempY[(*element)->_pair->second];
-			_tempY[(*element)->_pair->second] = temp;
+			double temp = x[(*element)->_pair->first];
+			x[(*element)->_pair->first] = x[(*element)->_pair->second];
+			x[(*element)->_pair->second] = temp;
 		}
         else
-			LMultiplyLeft( (*element)->_eta , _tempY );
+			LMultiplyLeft( (*element)->_eta , x );
     }
 
     // We are now left with U * E1 ... * En * x = y. Eliminate U.
-    // We use x as a temporary work area, then update y.
-	if ( !_LP.empty() )
+    // U can be regarded as Um * Um-1 ... * U1, where Ui indicates
+    // an eta matrix whose ith column is the same as U's.
+    // The inverse of each Ui is the same matrix with its non-diagonal
+    // elements negated.
+    if ( !_LP.empty() )
     {
-		x[_m-1] = _tempY[_m-1];
-		for ( int i = _m - 2; i >= 0; --i )
+        for ( int i = _m - 2; i >= 0; --i )
         {
-			double sum = 0;
-			for ( int j = _m - 1; j > i; --j )
-				sum += _U[i * _m + j] * x[j];
-			x[i] = _tempY[i] - sum;
+            for ( int j = _m - 1; j > i; --j )
+                x[i] -= _U[i * _m + j] * x[j];
 
             if ( FloatUtils::isZero( x[i] ) )
                 x[i] = 0.0;
         }
-		memcpy( _tempY, x, sizeof(double) * _m );
-	}
+    }
 
     // Finally, we are left with E1 * ... * En * x = y.
     // Eliminate etas one by one.
-	for ( const auto &eta : _etas )
+    for ( const auto &eta : _etas )
     {
-        x[eta->_columnIndex] = _tempY[eta->_columnIndex] / eta->_column[eta->_columnIndex];
+        double inverseDiagonal = 1 / eta->_column[eta->_columnIndex];
+        double factor = x[eta->_columnIndex] * inverseDiagonal;
+
+        // Solve all non-diagonal rows
+        for ( unsigned i = 0; i < _m; ++i )
+        {
+            if ( i == eta->_columnIndex )
+                continue;
+
+            x[i] -= ( factor * eta->_column[i] );
+            if ( FloatUtils::isZero( x[i] ) )
+                x[i] = 0.0;
+        }
+
+        // Handle the digonal element
+        x[eta->_columnIndex] *= inverseDiagonal;
         if ( FloatUtils::isZero( x[eta->_columnIndex] ) )
             x[eta->_columnIndex] = 0.0;
-
-        // Solve the rows above columnIndex
-        for ( unsigned i = eta->_columnIndex + 1; i < _m; ++i )
-        {
-            x[i] = _tempY[i] - ( x[eta->_columnIndex] * eta->_column[i] );
-            if ( FloatUtils::isZero( x[i] ) )
-                x[i] = 0.0;
-        }
-
-        // Solve the rows below columnIndex
-        for ( int i = eta->_columnIndex - 1; i >= 0; i-- )
-        {
-            x[i] = _tempY[i] - ( x[eta->_columnIndex] * eta->_column[i] );
-            if ( FloatUtils::isZero( x[i] ) )
-                x[i] = 0.0;
-        }
-
-        // The x from this iteration becomes a for the next iteration
-        memcpy( _tempY, x, sizeof(double) *_m );
     }
 }
 
 void LUFactorization::backwardTransformation( const double *y, double *x ) const
 {
+    memcpy( x, y, sizeof(double) * _m );
+
     // If there's no LP factorization, it is implied that B0 = I.
     // Then, because there are no etas, x = y.
     if ( _etas.empty() && _LP.empty() )
     {
-        memcpy( x, y, sizeof(double) * _m );
         return;
     }
-
-    memcpy( _tempY, y, sizeof(double) * _m );
 
     // We are solving xB = y, where B = B0 * E1 ... * En.
     // The first step is to eliminate the eta matrices and adjust y
     // so that x*B0 = y.
     for ( auto eta = _etas.rbegin(); eta != _etas.rend(); ++eta )
     {
-        // x is going to equal y in all entries except columnIndex
-        memcpy( x, _tempY, sizeof(double) * _m );
-
-        // Compute the special column
+        // The only entry in y that changes is columnIndex
         unsigned columnIndex = (*eta)->_columnIndex;
-        x[columnIndex] = _tempY[columnIndex];
         for ( unsigned i = 0; i < _m; ++i )
         {
             if ( i != columnIndex )
                 x[columnIndex] -= (x[i] * (*eta)->_column[i]);
         }
+
         x[columnIndex] = x[columnIndex] / (*eta)->_column[columnIndex];
 
         if ( FloatUtils::isZero( x[columnIndex] ) )
             x[columnIndex] = 0.0;
-
-        // The x from this iteration becomes y for the next iteration
-        memcpy( _tempY, x, sizeof(double) *_m );
     }
 
     // Now that the Etas are gone, we use the fact that
@@ -314,13 +259,10 @@ void LUFactorization::backwardTransformation( const double *y, double *x ) const
     // and storing the solution for x' in x.
 	if ( !_LP.empty() )
 	{
-		x[0] = _tempY[0];
 		for ( unsigned i = 1; i < _m; ++i )
         {
-			double sum = 0;
 			for ( unsigned j = 0; j < i; ++j )
-				sum += _U[i + j * _m] * x[j];
-			x[i] = _tempY[i] - sum;
+                x[i] -= _U[i + j * _m] * x[j];
 
             if ( FloatUtils::isZero( x[i] ) )
                 x[i] = 0.0;
@@ -355,7 +297,7 @@ void LUFactorization::rowSwap( unsigned rowOne, unsigned rowTwo, double *matrix 
     }
 }
 
-void LUFactorization::clearLPU()
+void LUFactorization::clearFactorization()
 {
     List<LPElement *>::iterator element;
     for ( element = _LP.begin(); element != _LP.end(); ++element )
@@ -363,12 +305,16 @@ void LUFactorization::clearLPU()
     _LP.clear();
 
 	std::fill_n( _U, _m*_m, 0 );
+	
+	List<EtaMatrix *>::iterator it;
+    for ( it = _etas.begin(); it != _etas.end(); ++it )
+        delete *it;
+    _etas.clear();
 }
 
 void LUFactorization::factorizeMatrix( double *matrix )
 {
-    // Clear any previous factorization, initialize U
-	clearLPU();
+    // Initialize U
 	memcpy( _U, matrix, sizeof(double) * _m * _m );
 
 	for ( unsigned i = 0; i < _m; ++i )
@@ -446,12 +392,15 @@ void LUFactorization::storeFactorization( IBasisFactorization *other )
     ASSERT( _m == otherLUFactorization->_m );
     ASSERT( otherLUFactorization->_etas.size() == 0 );
 
-    // In order to reduce space requirements, condense the etas before storing a factorization
-    condenseEtas();
-    factorizeMatrix( _B0 );
+    // In order to reduce space requirements (for the etas), compute a fresh refactorization
+    if ( !_etas.empty() )
+        refactorizeBasis();
 
-    // Now we simply store _B0
-    otherLUFactorization->setBasis( _B0 );
+    // Store the new basis and factorization
+    memcpy( otherLUFactorization->_B0, _B0, sizeof(double) * _m * _m );
+    memcpy( otherLUFactorization->_U, _U, sizeof(double) * _m * _m );
+    for ( const auto &it : _LP )
+        otherLUFactorization->_LP.append( it->duplicate() );
 }
 
 void LUFactorization::restoreFactorization( const IBasisFactorization *other )
@@ -462,14 +411,13 @@ void LUFactorization::restoreFactorization( const IBasisFactorization *other )
     ASSERT( otherLUFactorization->_etas.size() == 0 );
 
     // Clear any existing data
-    for ( const auto &it : _etas )
-        delete it;
+    clearFactorization();
 
-    _etas.clear();
-	clearLPU();
-
-    // Store the new B0 and LU-factorize it
-    setBasis( otherLUFactorization->_B0 );
+    // Store the new basis and factorization
+    memcpy( _B0, otherLUFactorization->_B0, sizeof(double) * _m * _m );
+    memcpy( _U, otherLUFactorization->_U, sizeof(double) * _m * _m );
+    for ( const auto &it : otherLUFactorization->_LP )
+        _LP.append( it->duplicate() );
 }
 
 void LUFactorization::invertBasis( double *result )
@@ -552,7 +500,56 @@ bool LUFactorization::explicitBasisAvailable() const
 
 void LUFactorization::makeExplicitBasisAvailable()
 {
-    condenseEtas();
+    refactorizeBasis();
+}
+
+void LUFactorization::dump() const
+{
+    printf( "*** Dumping LU factorization ***\n\n" );
+
+    printf( "\nDumping LPs:\n" );
+    unsigned count = 0;
+    for ( const auto &lp : _LP )
+    {
+        printf( "LP[%i]:\n", _LP.size() - 1 - count );
+        ++count;
+        lp->dump();
+    }
+    printf( "\n\n" );
+
+    printf( "Dumping Us:\n" );
+    for ( unsigned col = 0; col < _m; ++col )
+    {
+        printf( "U[%u]:\n", col );
+        for ( unsigned i = 0; i < _m; ++i )
+        {
+            printf( "\t%lf\n", _U[i * _m + col] );
+        }
+        printf( "\n" );
+    }
+
+    printf( "Dumping etas:\n" );
+    for ( const auto &eta : _etas )
+    {
+        eta->dump();
+        printf( "\n" );
+    }
+
+    printf( "*** Done dumping LU factorization ***\n\n" );
+}
+
+void LUFactorization::refactorizeBasis()
+{
+    clearFactorization();
+
+    for ( unsigned column = 0; column < _m; ++column )
+    {
+        const double *basisColumn = _basisColumnOracle->getColumnOfBasis( column );
+        for ( unsigned row = 0; row < _m; ++row )
+            _B0[row * _m + column] = basisColumn[row];
+    }
+
+    factorizeMatrix( _B0 );
 }
 
 //

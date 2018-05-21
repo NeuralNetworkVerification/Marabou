@@ -25,7 +25,7 @@ class LPElement;
 class LUFactorization : public IBasisFactorization
 {
 public:
-    LUFactorization( unsigned m );
+    LUFactorization( unsigned m, const BasisColumnOracle &basisColumnOracle );
     ~LUFactorization();
 
     /*
@@ -98,20 +98,16 @@ public:
     void factorizeMatrix( double *matrix );
 
 	/*
-      Set B0 to a non-identity matrix and factorize it.
+      Set B0 to a non-identity matrix (or have it retrieved from the oracle),
+      and then factorize it.
 	*/
 	void setBasis( const double *B );
+    void refactorizeBasis();
 
 	/*
       Swap two rows of a matrix.
     */
     void rowSwap( unsigned rowOne, unsigned rowTwo, double *matrix );
-
-    /*
-      Compute B0 * E1 ... *En for all stored eta matrices, and place
-      the result in B0.
-    */
-	void condenseEtas();
 
     /*
       Return true iff the basis matrix B0 is explicitly available.
@@ -147,6 +143,11 @@ public:
 	const List<LPElement *> getLP() const;
 	const List<EtaMatrix *> getEtas() const;
 
+    /*
+      Debug
+    */
+    void dump() const;
+
 private:
     /*
       The Basis matrix.
@@ -174,13 +175,12 @@ private:
     /*
       Working space
     */
-    double *_tempY;
     double *_LCol;
 
     /*
       Clear a previous factorization.
     */
-	void clearLPU();
+	void clearFactorization();
 
     /*
       Helper functions for backward- and forward-transformations.

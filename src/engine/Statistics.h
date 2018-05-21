@@ -59,6 +59,8 @@ public:
     void addTimeForPrecisionRestoration( unsigned long long time );
     void addTimeForApplyingStoredTightenings( unsigned long long time );
     void incNumPrecisionRestorations();
+    double getMaxDegradation() const;
+    unsigned getNumPrecisionRestorations() const;
 
     /*
       Tableau related statistics.
@@ -69,6 +71,10 @@ public:
     void incNumTableauDegeneratePivotsByRequest();
     void incNumSimplexPivotSelectionsIgnoredForStability();
     void incNumSimplexUnstablePivots();
+    void addTimePivots( unsigned long long time );
+    unsigned long long getNumTableauPivots() const;
+    unsigned long long getNumSimplexPivotSelectionsIgnoredForStability() const;
+    unsigned long long getNumSimplexUnstablePivots() const;
 
     /*
       Smt core related statistics.
@@ -88,11 +94,18 @@ public:
       Bound tightening related statistics.
     */
     void incNumTightenedBounds();
+
     void incNumRowsExaminedByRowTightener();
-    void incNumBoundsProposedByRowTightener();
+    void incNumTighteningsFromRows( unsigned increment = 1 );
+
+    void incNumBoundTighteningOnConstraintMatrix();
+    void incNumTighteningsFromConstraintMatrix( unsigned increment = 1 );
+
+    void incNumBoundTighteningsOnExplicitBasis();
+    void incNumTighteningsFromExplicitBasis( unsigned increment = 1 );
+
     void incNumBoundNotificationsPlConstraints();
     void incNumBoundsProposedByPlConstraints();
-    void incNumBoundTighteningOnConstraintMatrix();
 
     /*
       Projected Steepest Edge related statistics.
@@ -127,7 +140,7 @@ private:
     // Degradation and restorations
     double _currentDegradation;
     double _maxDegradation;
-    unsigned _numPreceisionRestorations;
+    unsigned _numPrecisionRestorations;
 
     // Number of simplex steps, i.e. pivots (including degenerate
     // pivots), performed by the main loop
@@ -170,6 +183,9 @@ private:
     // by explicit request
     unsigned long long _numTableauDegeneratePivotsByRequest;
 
+    // Total time for performing pivots (both real and degenrate), in microseconds
+    unsigned long long _timePivotsMicro;
+
     // Total number of entering/leaving variable pairs ignored because their pivot
     // element was too small
     unsigned long long _numSimplexPivotSelectionsIgnoredForStability;
@@ -182,14 +198,19 @@ private:
     // opposite bound.
     unsigned long long _numTableauBoundHopping;
 
-    // Number of iterations of the main loop
+    // Total number of all bound tightenings preformed in the tableau.
+    // This combines tightenings from all sources: rows, basis, PL constraints, etc.
     unsigned long long _numTightenedBounds;
 
-    // Number of rows examined by the row tightener
+    // Number of pivot rows examined by the row tightener, and consequent tightenings
+    // proposed.
     unsigned long long _numRowsExaminedByRowTightener;
+    unsigned long long _numTighteningsFromRows;
 
-    // Number of bound tightenings proposed by the row tightener
-    unsigned long long _numBoundsProposedByRowTightener;
+    // Number of explicit basis matrices examined by the row tightener, and consequent
+    // tightenings proposed.
+    unsigned long long _numBoundTighteningsOnExplicitBasis;
+    unsigned long long _numTighteningsFromExplicitBasis;
 
     // Number of bound notifications sent to pl constraints
     unsigned long long _numBoundNotificationsToPlConstraints;
@@ -197,8 +218,10 @@ private:
     // Number of bound tightenings proposed by the pl constraints
     unsigned long long _numBoundsProposedByPlConstraints;
 
-    // Number of bound tightening rounds performed on the constraint matrix.
+    // Number of bound tightening rounds performed on the constraint matrix, and
+    // consequent tightenings proposed.
     unsigned long long _numBoundTighteningsOnConstraintMatrix;
+    unsigned long long _numTighteningsFromConstraintMatrix;
 
     // Projected steepest edge statistics
     unsigned long long _pseNumIterations;

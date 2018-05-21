@@ -16,14 +16,14 @@
 #include "GlobalConfiguration.h"
 #include "LUFactorization.h"
 
-IBasisFactorization *BasisFactorizationFactory::createBasisFactorization( unsigned basisSize )
+IBasisFactorization *BasisFactorizationFactory::createBasisFactorization( unsigned basisSize, const IBasisFactorization::BasisColumnOracle &basisColumnOracle )
 {
     if ( GlobalConfiguration::BASIS_FACTORIZATION_TYPE ==
          GlobalConfiguration::LU_FACTORIZATION )
-        return new LUFactorization( basisSize );
+        return new LUFactorization( basisSize, basisColumnOracle );
     else if ( GlobalConfiguration::BASIS_FACTORIZATION_TYPE ==
               GlobalConfiguration::FORREST_TOMLIN_FACTORIZATION )
-        return new ForrestTomlinFactorization( basisSize );
+        return new ForrestTomlinFactorization( basisSize, basisColumnOracle );
 
     throw BasisFactorizationError( BasisFactorizationError::UNKNOWN_BASIS_FACTORIZATION_TYPE );
 }

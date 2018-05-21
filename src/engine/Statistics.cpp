@@ -22,7 +22,7 @@ Statistics::Statistics()
     , _numPlSmtOriginatedSplits( 0 )
     , _currentDegradation( 0.0 )
     , _maxDegradation( 0.0 )
-    , _numPreceisionRestorations( 0 )
+    , _numPrecisionRestorations( 0 )
     , _numSimplexSteps( 0 )
     , _timeSimplexStepsMicro( 0 )
     , _timeMainLoopMicro( 0 )
@@ -36,15 +36,19 @@ Statistics::Statistics()
     , _numTableauPivots( 0 )
     , _numTableauDegeneratePivots( 0 )
     , _numTableauDegeneratePivotsByRequest( 0 )
+    , _timePivotsMicro( 0 )
     , _numSimplexPivotSelectionsIgnoredForStability( 0 )
     , _numSimplexUnstablePivots( 0 )
     , _numTableauBoundHopping( 0 )
     , _numTightenedBounds( 0 )
     , _numRowsExaminedByRowTightener( 0 )
-    , _numBoundsProposedByRowTightener( 0 )
+    , _numTighteningsFromRows( 0 )
+    , _numBoundTighteningsOnExplicitBasis( 0 )
+    , _numTighteningsFromExplicitBasis( 0 )
     , _numBoundNotificationsToPlConstraints( 0 )
     , _numBoundsProposedByPlConstraints( 0 )
     , _numBoundTighteningsOnConstraintMatrix( 0 )
+    , _numTighteningsFromConstraintMatrix( 0 )
     , _pseNumIterations( 0 )
     , _pseNumResetReferenceSpace( 0 )
     , _ppNumEliminatedVars( 0 )
@@ -196,7 +200,7 @@ void Statistics::print()
             "Restorations so far: %u\n"
             , _currentDegradation
             , _maxDegradation
-            , _numPreceisionRestorations
+            , _numPrecisionRestorations
             );
     printf( "\tNumber of simplex pivots we attempted to skip because of instability: %llu.\n"
             "\tUnstable pivots performed anyway: %llu\n"
@@ -214,7 +218,10 @@ void Statistics::print()
             , _numTableauDegeneratePivotsByRequest
             , printPercents( _numTableauDegeneratePivotsByRequest, _numTableauDegeneratePivots ) );
 
-    printf( "\t\tFake pivots: %llu\n", _numTableauBoundHopping );
+    printf( "\t\tAverage time per pivot: %.2lf milli\n",
+            printAverage( _timePivotsMicro / 1000, _numTableauPivots ) );
+
+    printf( "\tTotal number of fake pivots performed: %llu\n", _numTableauBoundHopping );
 
     printf( "\t--- SMT Core Statistics ---\n" );
     printf( "\tTotal depth is %u. Total visited states: %u. Number of splits: %u. Number of pops: %u\n"
@@ -227,14 +234,22 @@ void Statistics::print()
 
     printf( "\t--- Bound Tightening Statistics ---\n" );
     printf( "\tNumber of tightened bounds: %llu.\n", _numTightenedBounds );
-    printf( "\t\tNumber of rows examined by row tightener: %llu. Tightenings proposed: %llu\n"
+    printf( "\t\tNumber of rows examined by row tightener: %llu. Consequent tightenings: %llu\n"
             , _numRowsExaminedByRowTightener
-            , _numBoundsProposedByRowTightener );
+            , _numTighteningsFromRows );
+
+    printf( "\t\tNumber of explicit basis matrices examined by row tightener: %llu. Consequent tightenings: %llu\n"
+            , _numBoundTighteningsOnExplicitBasis
+            , _numTighteningsFromExplicitBasis );
+
+    printf( "\t\tNumber of bound tightening rounds on the entire constraint matrix: %llu. "
+            "Consequent tightenings: %llu\n"
+            , _numBoundTighteningsOnConstraintMatrix
+            , _numTighteningsFromConstraintMatrix );
+
     printf( "\t\tNumber of bound notifications sent to PL constraints: %llu. Tightenings proposed: %llu\n"
             , _numBoundNotificationsToPlConstraints
             , _numBoundsProposedByPlConstraints );
-    printf( "\t\tNumber of bound tightening rounds on the entire constraint matrix: %llu\n"
-            , _numBoundTighteningsOnConstraintMatrix );
 
     printf( "\t--- Projected Steepest Edge Statistics ---\n" );
     printf( "\tNumber of iterations: %llu.\n", _pseNumIterations );
@@ -292,7 +307,7 @@ void Statistics::incNumSimplexSteps()
 
 void Statistics::incNumPrecisionRestorations()
 {
-    ++_numPreceisionRestorations;
+    ++_numPrecisionRestorations;
 }
 
 void Statistics::addTimeSimplexSteps( unsigned long long time )
@@ -368,6 +383,11 @@ void Statistics::incNumTableauDegeneratePivotsByRequest()
     ++_numTableauDegeneratePivotsByRequest;
 }
 
+void Statistics::addTimePivots( unsigned long long time )
+{
+    _timePivotsMicro += time;
+}
+
 void Statistics::incNumSimplexPivotSelectionsIgnoredForStability()
 {
     ++_numSimplexPivotSelectionsIgnoredForStability;
@@ -388,9 +408,19 @@ void Statistics::incNumRowsExaminedByRowTightener()
     ++_numRowsExaminedByRowTightener;
 }
 
-void Statistics::incNumBoundsProposedByRowTightener()
+void Statistics::incNumTighteningsFromRows( unsigned increment )
 {
-    ++_numBoundsProposedByRowTightener;
+    _numTighteningsFromRows += increment;
+}
+
+void Statistics::incNumBoundTighteningsOnExplicitBasis()
+{
+    ++_numBoundTighteningsOnExplicitBasis;
+}
+
+void Statistics::incNumTighteningsFromExplicitBasis( unsigned increment )
+{
+    _numTighteningsFromExplicitBasis += increment;
 }
 
 void Statistics::incNumBoundNotificationsPlConstraints()
@@ -406,6 +436,11 @@ void Statistics::incNumBoundsProposedByPlConstraints()
 void Statistics::incNumBoundTighteningOnConstraintMatrix()
 {
     ++_numBoundTighteningsOnConstraintMatrix;
+}
+
+void Statistics::incNumTighteningsFromConstraintMatrix( unsigned increment )
+{
+    _numTighteningsFromConstraintMatrix += increment;
 }
 
 void Statistics::pseIncNumIterations()
@@ -509,6 +544,31 @@ unsigned Statistics::getNumVisitedTreeStates() const
 unsigned Statistics::getNumSplits() const
 {
     return _numSplits;
+}
+
+unsigned long long Statistics::getNumTableauPivots() const
+{
+    return _numTableauPivots;
+}
+
+double Statistics::getMaxDegradation() const
+{
+    return _maxDegradation;
+}
+
+unsigned Statistics::getNumPrecisionRestorations() const
+{
+    return _numPrecisionRestorations;
+}
+
+unsigned long long Statistics::getNumSimplexPivotSelectionsIgnoredForStability() const
+{
+    return _numSimplexPivotSelectionsIgnoredForStability;
+}
+
+unsigned long long Statistics::getNumSimplexUnstablePivots() const
+{
+    return _numSimplexUnstablePivots;
 }
 
 unsigned long long Statistics::getTotalTime() const

@@ -123,7 +123,10 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def("getNumPops", &Statistics::getNumPops)
         .def("getNumVisitedTreeStates", &Statistics::getNumVisitedTreeStates)
         .def("getNumSplits", &Statistics::getNumSplits)
-        .def("getTotalTime", &Statistics::getTotalTime);
-
-
+        .def("getTotalTime", &Statistics::getTotalTime)
+        .def("getNumTableauPivots", &Statistics::getNumTableauPivots)
+        .def("getMaxDegradation", &Statistics::getMaxDegradation)
+        .def("getNumPrecisionRestorations", &Statistics::getNumPrecisionRestorations)
+        .def("getNumSimplexPivotSelectionsIgnoredForStability", &Statistics::getNumSimplexPivotSelectionsIgnoredForStability)
+        .def("getNumSimplexUnstablePivots", &Statistics::getNumSimplexUnstablePivots);
 }

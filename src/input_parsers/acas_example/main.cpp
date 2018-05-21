@@ -60,9 +60,9 @@ int main()
 
 		// Feed the query to the engine
         Engine engine;
-        engine.processInputQuery( inputQuery );
+        bool preprocess = engine.processInputQuery( inputQuery );
 
-        if ( !engine.solve() )
+        if ( !preprocess || !engine.solve() )
         {
             printf( "\n\nQuery is unsat\n" );
             return 0;

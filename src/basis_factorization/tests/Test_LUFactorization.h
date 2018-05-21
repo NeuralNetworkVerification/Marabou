@@ -19,6 +19,7 @@
 #include "GlobalConfiguration.h"
 #include "LUFactorization.h"
 #include "List.h"
+#include "MockColumnOracle.h"
 #include "MockErrno.h"
 
 void matrixMultiply( unsigned dimension, const double *left, const double *right, double *result )
@@ -45,14 +46,17 @@ class LUFactorizationTestSuite : public CxxTest::TestSuite
 {
 public:
     MockForLUFactorization *mock;
+    MockColumnOracle *oracle;
 
     void setUp()
     {
         TS_ASSERT( mock = new MockForLUFactorization );
+        TS_ASSERT( oracle = new MockColumnOracle );
     }
 
     void tearDown()
     {
+        TS_ASSERT_THROWS_NOTHING( delete oracle );
         TS_ASSERT_THROWS_NOTHING( delete mock );
     }
 
@@ -60,7 +64,7 @@ public:
     {
         LUFactorization *basis;
 
-        TS_ASSERT( basis = new LUFactorization( 3 ) );
+        TS_ASSERT( basis = new LUFactorization( 3, *oracle ) );
 
         TS_ASSERT( basis->factorizationEnabled() );
 
@@ -77,7 +81,7 @@ public:
 
     void test_forward_transformation()
     {
-        LUFactorization basis( 3 );
+        LUFactorization basis( 3, *oracle );
 
         // If no eta matrices are provided, d = a
         double a1[] = { 1, 1, 3 };
@@ -127,7 +131,7 @@ public:
 	void test_forward_transformation_with_B0()
 	{
         // Same etas as test_backward_transformation()
-		LUFactorization basis( 3 );
+		LUFactorization basis( 3, *oracle );
 		double e1[] = {1., 1., 3.};
 		basis.pushEtaMatrix( 1, e1 );
 		double e2[] = {2., 1., 1.};
@@ -142,7 +146,7 @@ public:
 
 		double a[] = { 2., -1., 4. };
 		double d[] = { 0., 0., 0. };
-        double expected[] = { 42, 116, -131 };
+        double expected[] = { -20, 27, -8 };
 
 		basis.forwardTransformation( a, d );
 
@@ -152,7 +156,7 @@ public:
 
 	void test_backward_transformation()
     {
-        LUFactorization basis( 3 );
+        LUFactorization basis( 3, *oracle );
 
         // If no eta matrices are provided, x = y
         double y1[] = { 1, 2, 3 };
@@ -222,7 +226,7 @@ public:
 
     void test_backward_transformation_2()
     {
-        LUFactorization basis( 3 );
+        LUFactorization basis( 3, *oracle );
 
         // E1 = | -1     |
         //      |  0 1   |
@@ -247,7 +251,7 @@ public:
 	void test_backward_transformation_with_B0()
 	{
         // Same etas as test_backward_transformation()
-		LUFactorization basis( 3 );
+		LUFactorization basis( 3, *oracle );
 		double e1[] = {1., 1., 3.};
 		basis.pushEtaMatrix( 1, e1 );
 		double e2[] = {2., 1., 1.};
@@ -260,12 +264,13 @@ public:
 
 		double y[] = {19., 12., 17.};
 		double x[] = {0., 0., 0.};
-		double expected[] = {-6, 9, -4};
-		//     	| 1 2 4	|  	| 1 1   |   | 2     |   | 1   0.5 |
-        //  x *	| 4	5 7 | * |   1   | * | 1	1	| *	|	1 0.5 | = | 19 12 17 |
-        //     	| 7 8 9	|	|   3 1 |   | 1   1 |   |     0.5 |
+		double expected[] = { -104.0/3, 140.0/3, -19 };
+
+		//     	| 1 2 4	|
+        //  x *	| 4	5 7 | = | 19 12 17 |
+        //     	| 7 8 9	|
         //
-        // --> x = [ -6 9 -4 ]
+        // --> x = [ -104/3, 140/3, -19 ]
 		basis.backwardTransformation( y, x );
 
         for ( unsigned i = 0; i < 3; ++i )
@@ -274,14 +279,22 @@ public:
 
     void test_store_and_restore()
     {
-        LUFactorization basis( 3 );
-        LUFactorization otherBasis( 3 );
+        LUFactorization basis( 3, *oracle );
+        LUFactorization otherBasis( 3, *oracle );
 
         double a1[] = { 1, 1, 3 };
         double d1[] = { 0, 0, 0 };
 
         TS_ASSERT_THROWS_NOTHING( basis.forwardTransformation( a1, d1 ) );
         basis.pushEtaMatrix( 1, a1 );
+
+        // Save the expected basis after this push
+        double currentBasis[] = {
+            1, 1, 0,
+            0, 1, 0,
+            0, 3, 1
+        };
+        oracle->storeBasis( 3, currentBasis );
 
         // Do a computation using both basis, see that we get the same result.
 
@@ -327,7 +340,7 @@ public:
 
     void test_factorization_pivot()
 	{
-		LUFactorization basis( 3 );
+		LUFactorization basis( 3, *oracle );
 		const int nsq = 9;
 
 	    double A[nsq]= {0., 1. , 0.,
@@ -362,7 +375,7 @@ public:
 	void test_factorization_textbook()
 	{
         // Textbook example
-		LUFactorization basis( 4 );
+		LUFactorization basis( 4, *oracle );
         const int nsq = 16;
         double A[nsq]= {1., 3., -2., 4.,
 						1., 5., -1., 5.,
@@ -438,7 +451,7 @@ public:
 
 	void test_factorization_as_black_box()
 	{
-		LUFactorization basis( 3 );
+		LUFactorization basis( 3, *oracle );
         const int nsq = 9;
         double A[nsq]= { 1., 2., 4.,
                          4., 5., 7.,
@@ -472,7 +485,7 @@ public:
 
     void test_factorization_numerical_stability()
     {
-        LUFactorization basis( 3 );
+        LUFactorization basis( 3, *oracle );
 
         double A[] =
             {
@@ -550,13 +563,10 @@ public:
             TS_ASSERT( FloatUtils::areEqual( eta->_column[i], expectedCol3[i] ) );
     }
 
-	void xtest_refactor()
+	void test_refactor()
 	{
-        // TODO: this test fails when the REFACTORIZATION_THRESHOLD is too great (> 10 or so).
-        // Disabling for now.
-
-		LUFactorization basis( 3 );
-		LUFactorization basis2( 3 );
+		LUFactorization basis( 3, *oracle );
+		LUFactorization basis2( 3, *oracle );
 		basis.toggleFactorization( false );
 		int d = 3;
 		unsigned etaCount = GlobalConfiguration::REFACTORIZATION_THRESHOLD + 2;
@@ -574,6 +584,13 @@ public:
                 etaPool[i] = (float)(rand()) / (float)(RAND_MAX);
         }
 
+        double dummyBasis[] = {
+            1, 2, 0,
+            0, 5, 0,
+            0, 8, 9,
+        };
+        oracle->storeBasis( 3, dummyBasis );
+
 		// Generate random etas
 		for ( unsigned i = 0; i < etaCount; ++i )
         {
@@ -586,20 +603,6 @@ public:
 
 		// Check if etas have disappeared
 		TS_ASSERT_EQUALS( basis2.getEtas().size(), etaCount - GlobalConfiguration::REFACTORIZATION_THRESHOLD - 1 );
-		double a[] = {2., -1., 4.};
-		double x1[] = {0., 0., 0.};
-		double y1[] = {0., 0., 0.};
-		double x2[] = {0., 0., 0.};
-		double y2[] = {0., 0., 0.};
-		basis2.forwardTransformation( a, x1 );
-		basis.forwardTransformation( a, y1 );
-		basis2.backwardTransformation( a, x2 );
-		basis.backwardTransformation( a, y2 );
-		for ( unsigned i = 0; i < 3; ++i )
-        {
-			TS_ASSERT( FloatUtils::areEqual( x1[i], y1[i], 0.001 ) );
-			TS_ASSERT( FloatUtils::areEqual( x2[i], y2[i], 0.001 ) );
-		}
 	}
 
     void test_matrix_multiply()
@@ -633,7 +636,7 @@ public:
 
     void test_invert_B0_fail()
     {
-        LUFactorization basis( 3 );
+        LUFactorization basis( 3, *oracle );
 
         double B0[] = { 1, 0, 0,
                         0, 1, 0,
@@ -654,7 +657,7 @@ public:
 
     void test_invert_B0()
     {
-        LUFactorization basis( 3 );
+        LUFactorization basis( 3, *oracle );
 
         {
             double B0[] = { 1, 0, 0,
@@ -761,7 +764,7 @@ public:
         }
 
         {
-            LUFactorization basis( 4 );
+            LUFactorization basis( 4, *oracle );
 
             double B0[] = { 1, 1, 1, 0,
                             0, 3, 1, 2,

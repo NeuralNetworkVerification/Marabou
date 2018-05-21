@@ -218,7 +218,7 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     if ( !_basicStatus )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::basicStatus" );
 
-    _basisFactorization = BasisFactorizationFactory::createBasisFactorization( _m );
+    _basisFactorization = BasisFactorizationFactory::createBasisFactorization( _m, *this );
     if ( !_basisFactorization )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::basisFactorization" );
 
@@ -266,35 +266,8 @@ void Tableau::initializeTableau()
         setNonBasicAssignment( nonBasic, _lowerBounds[nonBasic], false );
     }
 
-    // Initialize B0
-    double *B0 = new double[_m * _n];
-    if ( !B0 )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::initializeTableau::B0" );
-
-    for ( unsigned row = 0; row < _m; ++row )
-    {
-        for ( unsigned col = 0; col < _m; ++col )
-        {
-            // B0 is row-major, and A is col-major.
-            B0[_m * row + col] = _A[_m * _basicIndexToVariable[col] + row];
-        }
-    }
-
-    // Debug
-    // printf( "Dumping B0:\n" );
-    // for ( unsigned row = 0; row < _m; ++row )
-    // {
-    //     for ( unsigned col = 0; col < _m; ++col )
-    //     {
-    //         printf( "\t%5.lf", B0[_m*row + col] );
-    //     }
-    //     printf( "\n" );
-    // }
-    // printf( "\n\n" );
-    // End debug
-
-    _basisFactorization->setBasis( B0 );
-    delete[] B0;
+    // Factorize the basis
+    _basisFactorization->refactorizeBasis();
 
     // Compute assignment
     computeAssignment();
@@ -606,8 +579,13 @@ void Tableau::performPivot()
         return;
     }
 
+    struct timespec pivotStart;
+
     if ( _statistics )
+    {
+        pivotStart = TimeUtils::sampleMicro();
         _statistics->incNumTableauPivots();
+    }
 
     unsigned currentBasic = _basicIndexToVariable[_leavingVariable];
     unsigned currentNonBasic = _nonBasicIndexToVariable[_enteringVariable];
@@ -627,6 +605,7 @@ void Tableau::performPivot()
     log( Stringf( "Change ratio is: %.15lf\n", _changeRatio ) );
 
     updateAssignmentForPivot();
+
     updateCostFunctionForPivot();
 
     // Update the database
@@ -648,12 +627,21 @@ void Tableau::performPivot()
     // Update the basis factorization. The column corresponding to the
     // leaving variable is the one that has changed
     _basisFactorization->pushEtaMatrix( _leavingVariable, _changeColumn );
+
+    if ( _statistics )
+    {
+        struct timespec pivotEnd = TimeUtils::sampleMicro();
+        _statistics->addTimePivots( TimeUtils::timePassed( pivotStart, pivotEnd ) );
+    }
 }
 
 void Tableau::performDegeneratePivot()
 {
+    struct timespec pivotStart;
     if ( _statistics )
     {
+        pivotStart = TimeUtils::sampleMicro();
+        _statistics->incNumTableauPivots();
         _statistics->incNumTableauDegeneratePivots();
         _statistics->incNumTableauDegeneratePivotsByRequest();
     }
@@ -686,6 +674,12 @@ void Tableau::performDegeneratePivot()
     _basicAssignment[_leavingVariable] = _nonBasicAssignment[_enteringVariable];
     _nonBasicAssignment[_enteringVariable] = temp;
     computeBasicStatus( _leavingVariable );
+
+    if ( _statistics )
+    {
+        struct timespec pivotEnd = TimeUtils::sampleMicro();
+        _statistics->addTimePivots( TimeUtils::timePassed( pivotStart, pivotEnd ) );
+    }
 }
 
 double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient, bool decrease )
@@ -1068,7 +1062,7 @@ void Tableau::dumpEquations()
 void Tableau::storeState( TableauState &state ) const
 {
     // Set the dimensions
-    state.setDimensions( _m, _n );
+    state.setDimensions( _m, _n, *this );
 
     // Store matrix A
     memcpy( state._A, _A, sizeof(double) * _n * _m );
@@ -1232,27 +1226,10 @@ void Tableau::addEquation( const Equation &equation )
     if ( equation._auxVariable != _n )
         throw ReluplexError( ReluplexError::INVALID_EQUATION_ADDED_TO_TABLEAU );
 
-    // Prepare to update the basis factorization.
-    // First condense the Etas so that we can access B0 explicitly
-    _basisFactorization->makeExplicitBasisAvailable();
-    const double *oldB0 = _basisFactorization->getBasis();
-
-    // Allocate a larger basis factorization and copy the old rows of B0
-    unsigned newM = _m + 1;
-    double *newB0 = new double[newM * newM];
-    for ( unsigned i = 0; i < _m; ++i )
-        memcpy( newB0 + i * newM, oldB0 + i * _m, sizeof(double) * _m );
-
-    // Zero out the new row and column
-    for ( unsigned i = 0; i < newM - 1; ++i )
-    {
-        newB0[( i * newM ) + newM - 1] = 0.0;
-        newB0[( newM - 1 ) * newM + i] = 0.0;
-    }
-    newB0[( newM - 1 ) * newM + newM - 1] = 1.0;
-
     // Add an actual row to the talbeau, adjust the data structures
     addRow();
+
+    // Invalidate the cost function, so that it is recomputed in the next iteration.
     _costFunctionManager->invalidateCostFunction();
 
     // Mark the auxiliary variable as basic, add to indices
@@ -1272,32 +1249,21 @@ void Tableau::addEquation( const Equation &equation )
             auxCoefficient = addend._coefficient;
         else
             _basicAssignment[_m - 1] -= addend._coefficient * getValue( addend._variable );
-
-        // The new equation is given over the original non-basic variables.
-        // However, some of them may have become basic in previous iterations.
-        // Consequently, the last row of B0 may need to be adjusted.
-        if ( _basicVariables.exists( addend._variable ) )
-        {
-            unsigned index = _variableToIndex[addend._variable];
-            newB0[( newM - 1 ) * newM + index] = addend._coefficient;
-        }
     }
+
     ASSERT( !FloatUtils::isZero( auxCoefficient ) );
-
     _basicAssignment[_m - 1] = _basicAssignment[_m - 1] / auxCoefficient;
-
     ASSERT( FloatUtils::wellFormed( _basicAssignment[_m - 1] ) );
 
     if ( FloatUtils::isZero( _basicAssignment[_m - 1] ) )
         _basicAssignment[_m - 1] = 0.0;
 
+    // Refactorize the basis
+    _basisFactorization->refactorizeBasis();
+
+    // Notify about the new variable's assignment and compute its status
     notifyVariableValue( _basicIndexToVariable[_m - 1], _basicAssignment[_m - 1] );
     computeBasicStatus( _m - 1 );
-
-    // Finally, give the extended B0 matrix to the basis factorization
-    _basisFactorization->setBasis( newB0 );
-
-    delete[] newB0;
 }
 
 void Tableau::addRow()
@@ -1410,7 +1376,7 @@ void Tableau::addRow()
 
     // Allocate a larger basis factorization
     IBasisFactorization *newBasisFactorization =
-        BasisFactorizationFactory::createBasisFactorization( newM );
+        BasisFactorizationFactory::createBasisFactorization( newM, *this );
     if ( !newBasisFactorization )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newBasisFactorization" );
     delete _basisFactorization;
@@ -1757,6 +1723,11 @@ void Tableau::setBasicAssignmentStatus( ITableau::BasicAssignmentStatus status )
     _basicAssignmentStatus = status;
 }
 
+void Tableau::makeBasisMatrixAvailable()
+{
+    return _basisFactorization->makeExplicitBasisAvailable();
+}
+
 bool Tableau::basisMatrixAvailable() const
 {
     return _basisFactorization->explicitBasisAvailable();
@@ -1818,6 +1789,13 @@ Set<unsigned> Tableau::getBasicVariables() const
 void Tableau::registerCostFunctionManager( ICostFunctionManager *costFunctionManager )
 {
     _costFunctionManager = costFunctionManager;
+}
+
+const double *Tableau::getColumnOfBasis( unsigned column ) const
+{
+    ASSERT( column < _m );
+    unsigned variable = _basicIndexToVariable[column];
+    return _A + ( variable * _m );
 }
 
 //

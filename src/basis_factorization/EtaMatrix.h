@@ -27,7 +27,7 @@ public:
     EtaMatrix &operator=( const EtaMatrix &other );
 
     ~EtaMatrix();
-    void dump();
+    void dump() const;
 	void toMatrix( double *A );
 
     void resetToIdentity();

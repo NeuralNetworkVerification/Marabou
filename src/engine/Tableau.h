@@ -13,19 +13,19 @@
 #ifndef __Tableau_h__
 #define __Tableau_h__
 
+#include "IBasisFactorization.h"
 #include "ITableau.h"
 #include "MString.h"
 #include "Map.h"
 #include "Set.h"
 #include "Statistics.h"
 
-class IBasisFactorization;
 class Equation;
 class ICostFunctionManager;
 class PiecewiseLinearCaseSplit;
 class TableauState;
 
-class Tableau : public ITableau
+class Tableau : public ITableau, public IBasisFactorization::BasisColumnOracle
 {
 public:
     Tableau();
@@ -370,17 +370,22 @@ public:
     bool basicTooLow( unsigned basic ) const;
 
     /*
-      Methods for accessing the basis matrix if it's available,
-      and extracting from it explicit equations.
+      Methods for accessing the basis matrix and extracting
+      from it explicit equations. These operations may be
+      costly if the explicit basis is not available - this
+      also depends on the basis factorization in use.
 
       These equations correspond to: B * xB + An * xN = b
 
       Can also extract the inverse basis matrix.
     */
     bool basisMatrixAvailable() const;
+    void makeBasisMatrixAvailable();
     void getBasisEquations( List<Equation *> &equations ) const;
     Equation *getBasisEquation( unsigned row ) const;
     double *getInverseBasisMatrix() const;
+
+    const double *getColumnOfBasis( unsigned column ) const;
 
 private:
     typedef List<VariableWatcher *> VariableWatchers;

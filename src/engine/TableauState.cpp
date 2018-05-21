@@ -91,7 +91,7 @@ TableauState::~TableauState()
     }
 }
 
-void TableauState::setDimensions( unsigned m, unsigned n )
+void TableauState::setDimensions( unsigned m, unsigned n, const IBasisFactorization::BasisColumnOracle &oracle )
 {
     _m = m;
     _n = n;
@@ -132,7 +132,7 @@ void TableauState::setDimensions( unsigned m, unsigned n )
     if ( !_variableToIndex )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::variableToIndex" );
 
-    _basisFactorization = BasisFactorizationFactory::createBasisFactorization( m );
+    _basisFactorization = BasisFactorizationFactory::createBasisFactorization( m, oracle );
     if ( !_basisFactorization )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::basisFactorization" );
 }

@@ -61,6 +61,15 @@ public:
     void examineInvertedBasisMatrix( const ITableau &tableau, bool untilSaturation );
 
     /*
+      Derive and enqueue new bounds for all varaibles, implicitly using the
+      inverse of the explicit basis matrix, inv(B0), which should be available
+      through the tableau. Inv(B0) is not computed directly --- instead, the computation
+      is performed via FTRANs. Can also do this until saturation, meaning that we
+      continue until no new bounds are learned.
+     */
+    void examineImplicitInvertedBasisMatrix( const ITableau &tableau, bool untilSaturation );
+
+    /*
       Derive and enqueue new bounds for all varaibles, using the
       original constraint matrix A and right hands side vector b. Can
       also do this until saturation, meaning that we continue until no
@@ -87,6 +96,7 @@ public:
 
 private:
     unsigned _n;
+    unsigned _m;
 
     /*
       Work space for the tightener to derive tighter bounds. These
@@ -100,6 +110,15 @@ private:
     bool *_tightenedUpper;
 
     /*
+      Work space for the inverted basis matrix tighteners
+    */
+    TableauRow **_rows;
+    double *_z;
+    double *_ciTimesLb;
+    double *_ciTimesUb;
+    char *_ciSign;
+
+    /*
       Statistics collection
     */
     Statistics *_statistics;
@@ -111,48 +130,43 @@ private:
 
     /*
       Do a single pass over the basis matrix and derive any
-      tighter bounds. Return true if new bounds are learned, false
-      otherwise.
+      tighter bounds. Return the number of new bounds are learned.
     */
-    bool onePassOverBasisMatrix( const ITableau &tableau );
+    unsigned onePassOverBasisMatrix( const ITableau &tableau );
 
     /*
       Process the basis row and attempt to derive tighter
-      lower/upper bounds for the specified variable. Return true iff
-      a tighter bound has been found.
+      lower/upper bounds for the specified variable. Return the number of
+      tighter bounds that have been found.
      */
-    bool tightenOnSingleEquation( Equation &equation,
-                                  Equation::Addend varBeingTightened );
+    unsigned tightenOnSingleEquation( Equation &equation,
+                                      Equation::Addend varBeingTightened );
 
     /*
       Do a single pass over the constraint matrix and derive any
-      tighter bounds. Return true if new bounds are learned, false
-      otherwise.
+      tighter bounds. Return the number of new bounds learned.
     */
-    bool onePassOverConstraintMatrix( const ITableau &tableau );
+    unsigned onePassOverConstraintMatrix( const ITableau &tableau );
 
     /*
       Process the tableau row and attempt to derive tighter
-      lower/upper bounds for the specified variable. Return true iff
-      a tighter bound has been found.
+      lower/upper bounds for the specified variable. Return the number of
+      tighter bounds found.
      */
-    bool tightenOnSingleConstraintRow( const ITableau &tableau,
-                                       unsigned row,
-                                       unsigned varBeingTightened );
+    unsigned tightenOnSingleConstraintRow( const ITableau &tableau, unsigned row );
 
     /*
       Do a single pass over the inverted basis rows and derive any
-      tighter bounds. Return true if new bounds are learned, false
-      otherwise.
+      tighter bounds. Return the number of new bounds learned.
     */
-    bool onePassOverInvertedBasisRows( const ITableau &tableau, List<TableauRow *> &rows );
+    unsigned onePassOverInvertedBasisRows( const ITableau &tableau );
 
     /*
       Process the inverted basis row and attempt to derive tighter
-      lower/upper bounds for the specified variable. Return true iff
-      a tighter bound has been found.
+      lower/upper bounds for the specified variable. Return the number
+      of tighter bounds found.
     */
-    bool tightenOnSingleInvertedBasisRow( const ITableau &tableau, TableauRow &row );
+    unsigned tightenOnSingleInvertedBasisRow( const ITableau &tableau, const TableauRow &row );
 };
 
 #endif // __RowBoundTightener_h__
