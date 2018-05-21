@@ -1,5 +1,7 @@
 ROOT_DIR = ../../..
 
+include $(ROOT_DIR)/Places.mk
+
 SUBDIRS += \
 
 LOCAL_INCLUDES += \
@@ -12,65 +14,27 @@ LINK_FLAGS += \
 
 LOCAL_LIBRARIES += \
 
+include $(BASIS_FACTORIZATION_DIR)/Sources.mk
+include $(COMMON_DIR)/Sources.mk
+include $(COMMON_REAL_DIR)/Sources.mk
+include $(CONFIGURATION_DIR)/Sources.mk
+include $(ENGINE_DIR)/Sources.mk
+include $(ENGINE_REAL_DIR)/Sources.mk
+
+vpath %.cpp $(BASIS_FACTORIZATION_DIR)
+vpath %.cpp $(COMMON_DIR)
+vpath %.cpp $(COMMON_REAL_DIR)
+vpath %.cpp $(CONFIGURATION_DIR)
+vpath %.cpp $(ENGINE_DIR)
+vpath %.cpp $(ENGINE_REAL_DIR)
+
 SOURCES += \
-	GlobalConfiguration.cpp \
-	\
-	Errno.cpp \
-	Error.cpp \
-	Equation.cpp \
-	FloatUtils.cpp \
-	MString.cpp \
-	SignalHandler.cpp \
-	TimeUtils.cpp \
-	\
-	BasisFactorizationFactory.cpp \
-	BlandsRule.cpp \
-	ConstraintMatrixAnalyzer.cpp \
-	ConstraintMatrixAnalyzerFactory.cpp \
-	CostFunctionManager.cpp \
-	CostFunctionManagerFactory.cpp \
-	DantzigsRule.cpp \
-	DegradationChecker.cpp \
-	Engine.cpp \
-	EngineState.cpp \
-	EntrySelectionStrategy.cpp \
-	Equation.cpp \
-	EtaMatrix.cpp \
-	ForrestTomlinFactorization.cpp \
-	FreshVariables.cpp \
-	InputQuery.cpp \
-	LPElement.cpp \
-	LUFactorization.cpp \
-	PermutationMatrix.cpp \
-	PiecewiseLinearCaseSplit.cpp \
-	PiecewiseLinearConstraint.cpp \
-	PrecisionRestorer.cpp \
-	Preprocessor.cpp \
-	ProjectedSteepestEdge.cpp \
-	ProjectedSteepestEdgeFactory.cpp \
-	ReluConstraint.cpp \
-	RowBoundTightener.cpp \
-	RowBoundTightenerFactory.cpp \
-	SmtCore.cpp \
-	Statistics.cpp \
-	Tableau.cpp \
-	TableauFactory.cpp \
-	TableauRow.cpp \
-	TableauState.cpp \
-	\
 	main.cpp \
 	../MpsParser.cpp \
 
 TARGET = mps_gensol.elf
 
 include $(ROOT_DIR)/Rules.mk
-
-vpath %.cpp $(BASIS_FACTORIZATION_DIR)
-vpath %.cpp $(CONFIGURATION_DIR)
-vpath %.cpp $(ENGINE_DIR)
-vpath %.cpp $(ENGINE_REAL_DIR)
-vpath %.cpp $(COMMON_DIR)
-vpath %.cpp $(COMMON_REAL_DIR)
 
 #
 # Local Variables:
