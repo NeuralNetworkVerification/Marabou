@@ -1,5 +1,7 @@
 ROOT_DIR = ../
 
+include ../Places.mk
+
 SUBDIRS += \
 
 PYBIND11_INCLUDES = $(shell python3 -m pybind11 --includes)
@@ -21,54 +23,22 @@ CFLAGS += \
 SUFFIX = $(shell python3-config --extension-suffix)
 API_NAME = $(addprefix MarabouCore, $(SUFFIX))
 
+include $(BASIS_FACTORIZATION_DIR)/Sources.mk
+include $(COMMON_DIR)/Sources.mk
+include $(COMMON_REAL_DIR)/Sources.mk
+include $(CONFIGURATION_DIR)/Sources.mk
+include $(ENGINE_DIR)/Sources.mk
+include $(ENGINE_REAL_DIR)/Sources.mk
+
+vpath %.cpp $(BASIS_FACTORIZATION_DIR)
+vpath %.cpp $(COMMON_DIR)
+vpath %.cpp $(COMMON_REAL_DIR)
+vpath %.cpp $(CONFIGURATION_DIR)
+vpath %.cpp $(ENGINE_DIR)
+vpath %.cpp $(ENGINE_REAL_DIR)
+
 SOURCES += \
-	GlobalConfiguration.cpp \
 	\
-	Errno.cpp \
-	Error.cpp \
-	FloatUtils.cpp \
-	MString.cpp \
-	TimeUtils.cpp \
-	\
-	BasisFactorizationFactory.cpp \
-	BlandsRule.cpp \
-	ConstraintMatrixAnalyzer.cpp \
-	ConstraintMatrixAnalyzerFactory.cpp \
-	CostFunctionManager.cpp \
-	CostFunctionManagerFactory.cpp \
-	DantzigsRule.cpp \
-	DegradationChecker.cpp \
-	Engine.cpp \
-	EngineState.cpp \
-	EntrySelectionStrategy.cpp \
-	Equation.cpp \
-	EtaMatrix.cpp \
-	ForrestTomlinFactorization.cpp \
-	FreshVariables.cpp \
-	InputQuery.cpp \
-	LPElement.cpp \
-	LUFactorization.cpp \
-	MarabouCore.cpp \
-	MaxConstraint.cpp \
-	PermutationMatrix.cpp \
-	PiecewiseLinearCaseSplit.cpp \
-	PiecewiseLinearConstraint.cpp \
-	PrecisionRestorer.cpp \
-	Preprocessor.cpp \
-	ProjectedSteepestEdge.cpp \
-	ProjectedSteepestEdgeFactory.cpp \
-	ReluConstraint.cpp \
-	RowBoundTightener.cpp \
-	RowBoundTightenerFactory.cpp \
-	SmtCore.cpp \
-	Statistics.cpp \
-	Tableau.cpp \
-	TableauFactory.cpp \
-	TableauRow.cpp \
-	TableauState.cpp \
-	SignalHandler.cpp \
-	\
-	
 
 TARGET = $(API_NAME)
 
@@ -80,13 +50,6 @@ LINK 	= c++ -std=c++11 -O3 -fPIC -shared -Wl,-undefined,dynamic_lookup $(PYBIND1
 $(TARGET): $(OBJECTS)
 	@echo "LD\t" $@
 	@$(LINK) $(LINK_FLAGS) -o $@ $^ $(addprefix -l, $(SYSTEM_LIBRARIES)) $(addprefix -l, $(LOCAL_LIBRARIES))
-
-vpath %.cpp $(BASIS_FACTORIZATION_DIR)
-vpath %.cpp $(CONFIGURATION_DIR)
-vpath %.cpp $(ENGINE_DIR)
-vpath %.cpp $(ENGINE_REAL_DIR)
-vpath %.cpp $(COMMON_DIR)
-vpath %.cpp $(COMMON_REAL_DIR)
 
 #
 # Local Variables:
