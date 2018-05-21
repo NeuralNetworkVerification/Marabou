@@ -68,12 +68,9 @@ public:
         row._row[1] = TableauRow::Entry( 1, -1 );
         row._row[2] = TableauRow::Entry( 2, 2 );
         row._scalar = 1;
-        tableau->nextRow = &row;
+        row._lhs = 4;
 
         tableau->nextPivotRow = &row;
-        tableau->mockLeavingVariable = 0;
-        tableau->nextEnteringVariable = 4;
-        tableau->nextEnteringVariableIndex = 0;
 
         // 1 - x0 - x1 + 2x2 = x4 (pre pivot)
         // x0 entering, x4 leaving
@@ -86,18 +83,21 @@ public:
 
         // Lower and upper bounds should have been tightened
         TS_ASSERT_EQUALS( tightenings.size(), 2U );
-        auto lower = *tightenings.begin();
-        auto upper = *tightenings.rbegin();
 
-        TS_ASSERT_EQUALS( lower._variable, 0U );
-        TS_ASSERT_EQUALS( lower._type, Tightening::LB );
-        TS_ASSERT_EQUALS( upper._variable, 0U );
-        TS_ASSERT_EQUALS( upper._type, Tightening::UB );
+        auto lower = tightenings.begin();
+        while ( ( lower != tightenings.end() ) && !( ( lower->_variable == 0 ) && ( lower->_type == Tightening::LB ) ) )
+            ++lower;
+        TS_ASSERT( lower != tightenings.end() );
+
+        auto upper = tightenings.begin();
+        while ( ( upper != tightenings.end() ) && !( ( upper->_variable == 0 ) && ( upper->_type == Tightening::UB ) ) )
+            ++upper;
+        TS_ASSERT( upper != tightenings.end() );
 
         // LB -> 1 - 10 - 4 -100
         // UB -> 1 - 5 + 6 + 100
-        TS_ASSERT_EQUALS( lower._value, -113 );
-        TS_ASSERT_EQUALS( upper._value, 102 );
+        TS_ASSERT_EQUALS( lower->_value, -113 );
+        TS_ASSERT_EQUALS( upper->_value, 102 );
     }
 
     void test_pivot_row__just_upper_tightend()
@@ -130,27 +130,25 @@ public:
         row._row[1] = TableauRow::Entry( 1, -1 );
         row._row[2] = TableauRow::Entry( 2, 2 );
         row._scalar = 1;
-        tableau->nextRow = &row;
+        row._lhs = 4;
 
         tableau->nextPivotRow = &row;
-        tableau->mockLeavingVariable = 0;
-        tableau->nextEnteringVariable = 4;
-        tableau->nextEnteringVariableIndex = 0;
 
         TS_ASSERT_THROWS_NOTHING( tightener.examinePivotRow( *tableau ) );
 
         List<Tightening> tightenings;
         TS_ASSERT_THROWS_NOTHING( tightener.getRowTightenings( tightenings ) );
 
-        // Lower and upper bounds should have been tightened
-        TS_ASSERT_EQUALS( tightenings.size(), 1U );
-        auto upper = *tightenings.begin();
+        auto upper = tightenings.begin();
+        while ( ( upper != tightenings.end() ) && !( ( upper->_variable == 0 ) && ( upper->_type == Tightening::UB ) ) )
+            ++upper;
+        TS_ASSERT( upper != tightenings.end() );
 
-        TS_ASSERT_EQUALS( upper._variable, 0U );
-        TS_ASSERT_EQUALS( upper._type, Tightening::UB );
+        TS_ASSERT_EQUALS( upper->_variable, 0U );
+        TS_ASSERT_EQUALS( upper->_type, Tightening::UB );
 
         // Lower: 1 - 10 - 4, Upper: 1 - 5 + 6
-        TS_ASSERT_EQUALS( upper._value, 2 );
+        TS_ASSERT_EQUALS( upper->_value, 2 );
     }
 
     void test_pivot_row__just_lower_tightend()
@@ -178,14 +176,9 @@ public:
         row._row[1] = TableauRow::Entry( 1, -1 );
         row._row[2] = TableauRow::Entry( 2, 2 );
         row._scalar = 1;
-        tableau->nextRow = &row;
-
-        tableau->setLeavingVariableIndex( 4 );
+        row._lhs = 4;
 
         tableau->nextPivotRow = &row;
-        tableau->mockLeavingVariable = 0;
-        tableau->nextEnteringVariable = 4;
-        tableau->nextEnteringVariableIndex = 0;
 
         TS_ASSERT_THROWS_NOTHING( tightener.examinePivotRow( *tableau ) );
 
@@ -228,12 +221,9 @@ public:
         row._row[1] = TableauRow::Entry( 1, -1 );
         row._row[2] = TableauRow::Entry( 2, 2 );
         row._scalar = 1;
-        tableau->nextRow = &row;
+        row._lhs = 4;
 
         tableau->nextPivotRow = &row;
-        tableau->mockLeavingVariable = 0;
-        tableau->nextEnteringVariable = 4;
-        tableau->nextEnteringVariableIndex = 0;
 
         TS_ASSERT_THROWS_NOTHING( tightener.examinePivotRow( *tableau ) );
 

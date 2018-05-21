@@ -15,6 +15,7 @@
 #include "Engine.h"
 #include "FreshVariables.h"
 #include "InputQuery.h"
+#include "MockConstraintMatrixAnalyzerFactory.h"
 #include "MockCostFunctionManagerFactory.h"
 #include "MockErrno.h"
 #include "MockProjectedSteepestEdgeFactory.h"
@@ -28,7 +29,8 @@ class MockForEngine :
     public MockTableauFactory,
     public MockProjectedSteepestEdgeRuleFactory,
     public MockRowBoundTightenerFactory,
-    public MockCostFunctionManagerFactory
+    public MockCostFunctionManagerFactory,
+    public MockConstraintMatrixAnalyzerFactory
 {
 public:
 };
@@ -40,6 +42,7 @@ public:
     MockTableau *tableau;
     MockCostFunctionManager *costFunctionManager;
     MockRowBoundTightener *rowTightener;
+    MockConstraintMatrixAnalyzer *constraintMatrixAnalyzer;
 
     void setUp()
     {
@@ -48,6 +51,7 @@ public:
         tableau = &( mock->mockTableau );
         costFunctionManager = &( mock->mockCostFunctionManager );
         rowTightener = &( mock->mockRowBoundTightener );
+        constraintMatrixAnalyzer = &( mock->mockConstraintMatrixAnalyzer );
     }
 
     void tearDown()
@@ -120,9 +124,13 @@ public:
         inputQuery.addPiecewiseLinearConstraint( relu1 );
         inputQuery.addPiecewiseLinearConstraint( relu2 );
 
+        constraintMatrixAnalyzer->nextIndependentColumns.append( 0 );
+        constraintMatrixAnalyzer->nextIndependentColumns.append( 1 );
+
         Engine engine;
 
         TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery, false ) );
+
         TS_ASSERT( tableau->initializeTableauCalled );
         TS_ASSERT( costFunctionManager->initializeWasCalled );
         TS_ASSERT( rowTightener->initializeWasCalled );
@@ -132,10 +140,10 @@ public:
         TS_ASSERT_EQUALS( tableau->lastM, 2U );
         TS_ASSERT_EQUALS( tableau->lastN, 5U );
 
-        // Variables 3 and 4 should be marked as basic
+        // Variables 0 and 1 should be marked as basic
         TS_ASSERT_EQUALS( tableau->lastBasicVariables.size(), 2U );
-        TS_ASSERT( tableau->lastBasicVariables.exists( 3 ) );
-        TS_ASSERT( tableau->lastBasicVariables.exists( 4 ) );
+        TS_ASSERT( tableau->lastBasicVariables.exists( 0 ) );
+        TS_ASSERT( tableau->lastBasicVariables.exists( 1 ) );
 
         // Right hand side scalars
         TS_ASSERT( tableau->lastRightHandSide );

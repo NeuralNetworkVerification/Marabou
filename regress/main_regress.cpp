@@ -73,8 +73,6 @@ void max_relu()
     printTitle( "Max_Relu / Sat" );
     Max_Relu_Feasible_1 mrf1;
     mrf1.run();
-
-    printTitle( "Max_Relu / Unsat");
 }
 
 int main()
@@ -87,7 +85,7 @@ int main()
 
         max();
 
-        // max_relu(); Do not run until B0 fix is merged
+        max_relu();
 
         printf( "\n\n" );
 	}

@@ -9,7 +9,7 @@
  ** directory for licensing information.\endverbatim
  **/
 
-#include "ConstraintMatrixAnalyzer.h"
+#include "AutoConstraintMatrixAnalyzer.h"
 #include "Debug.h"
 #include "Engine.h"
 #include "EngineState.h"
@@ -405,17 +405,15 @@ void Engine::performSimplexStep()
         _statistics.incNumSimplexUnstablePivots();
 
     if ( !fakePivot )
+    {
         _tableau->computePivotRow();
+        _rowBoundTightener->examinePivotRow( _tableau );
+    }
 
     // Perform the actual pivot
     _activeEntryStrategy->prePivotHook( _tableau, fakePivot );
     _tableau->performPivot();
     _activeEntryStrategy->postPivotHook( _tableau, fakePivot );
-
-    // Tighten
-    if ( !fakePivot &&
-         FloatUtils::lt( bestPivotEntry, GlobalConfiguration::ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD ) )
-        _rowBoundTightener->examinePivotRow( _tableau );
 
     struct timespec end = TimeUtils::sampleMicro();
     _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
@@ -553,40 +551,38 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         // Current variables are [0,..,n-1], so the next variable is n.
         FreshVariables::setNextVariable( n );
-
         unsigned equationIndex = 0;
         for ( const auto &equation : equations )
         {
-            _tableau->markAsBasic( equation._auxVariable );
             _tableau->setRightHandSide( equationIndex, equation._scalar );
 
             for ( const auto &addend : equation._addends )
                 _tableau->setEntryValue( equationIndex, addend._variable, addend._coefficient );
 
-            _tableau->assignIndexToBasicVariable( equation._auxVariable, equationIndex );
             ++equationIndex;
         }
 
-        /*
-          // Placeholder: better constraint matrix analysis as part
-          // of the preprocessing phase.
-          {
-            // New debug code
-            ConstraintMatrixAnalyzer analyzer;
-            analyzer.analyze( _tableau->getA(), _tableau->getM(), _tableau->getN() );
-            if ( analyzer.getRank() != _tableau->getM() )
-            {
-                printf( "Warning!! Contraint matrix rank is %u (out of %u)\n",
-                        analyzer.getRank(), _tableau->getM() );
-            }
-            else
-            {
-                printf( "Constraint matrix rank is %u, with %u equations\n",
-                        analyzer.getRank(), _tableau->getM() );
-            }
+        // Placeholder: better constraint matrix analysis as part
+        // of the preprocessing phase.
 
+        AutoConstraintMatrixAnalyzer analyzer;
+        analyzer->analyze( _tableau->getA(), _tableau->getM(), _tableau->getN() );
+
+        if ( analyzer->getRank() != _tableau->getM() )
+        {
+            printf( "Warning!! Contraint matrix rank is %u (out of %u)\n",
+                    analyzer->getRank(), _tableau->getM() );
         }
-        */
+
+        List<unsigned> independentColumns = analyzer->getIndependentColumns();
+
+        unsigned assigned = 0;
+        for( unsigned basicVar : independentColumns )
+        {
+            _tableau->markAsBasic( basicVar );
+            _tableau->assignIndexToBasicVariable( basicVar, assigned );
+            assigned++;
+        }
 
         for ( unsigned i = 0; i < n; ++i )
         {
@@ -786,8 +782,6 @@ void Engine::applyAllRowTightenings()
 
     for ( const auto &tightening : rowTightenings )
     {
-        _statistics.incNumBoundsProposedByRowTightener();
-
         if ( tightening._type == Tightening::LB )
             _tableau->tightenLowerBound( tightening._variable, tightening._value );
         else
@@ -825,16 +819,19 @@ void Engine::applyAllBoundTightenings()
 
 void Engine::applyAllValidConstraintCaseSplits()
 {
+    struct timespec start = TimeUtils::sampleMicro();
+
     for ( auto &constraint : _plConstraints )
         applyValidConstraintCaseSplit( constraint );
+
+    struct timespec end = TimeUtils::sampleMicro();
+    _statistics.addTimeForValidCaseSplit( TimeUtils::timePassed( start, end ) );
 }
 
 void Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constraint )
 {
     if ( constraint->isActive() && constraint->phaseFixed() )
     {
-        struct timespec start = TimeUtils::sampleMicro();
-
         constraint->setActiveConstraint( false );
         PiecewiseLinearCaseSplit validSplit = constraint->getValidCaseSplit();
         _smtCore.recordImpliedValidSplit( validSplit );
@@ -845,9 +842,6 @@ void Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
         constraint->dump( constraintString );
         log( Stringf( "A constraint has become valid. Dumping constraint: %s",
                       constraintString.ascii() ) );
-
-        struct timespec end = TimeUtils::sampleMicro();
-        _statistics.addTimeForValidCaseSplit( TimeUtils::timePassed( start, end ) );
     }
 }
 
@@ -896,10 +890,24 @@ void Engine::explicitBasisBoundTightening()
 {
     struct timespec start = TimeUtils::sampleMicro();
 
-    if ( GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_INVERT_BASIS )
-        _rowBoundTightener->examineInvertedBasisMatrix( _tableau, false );
-    else
-        _rowBoundTightener->examineBasisMatrix( _tableau, false );
+    bool saturation = GlobalConfiguration::EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION;
+
+    _statistics.incNumBoundTighteningsOnExplicitBasis();
+
+    switch ( GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE )
+    {
+    case GlobalConfiguration::USE_BASIS_MATRIX:
+        _rowBoundTightener->examineBasisMatrix( _tableau, saturation );
+        break;
+
+    case GlobalConfiguration::COMPUTE_INVERTED_BASIS_MATRIX:
+        _rowBoundTightener->examineInvertedBasisMatrix( _tableau, saturation );
+        break;
+
+    case GlobalConfiguration::USE_IMPLICIT_INVERTED_BASIS_MATRIX:
+        _rowBoundTightener->examineImplicitInvertedBasisMatrix( _tableau, saturation );
+        break;
+    }
 
     struct timespec end = TimeUtils::sampleMicro();
     _statistics.addTimeForExplicitBasisBoundTightening( TimeUtils::timePassed( start, end ) );

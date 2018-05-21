@@ -71,11 +71,27 @@ public:
     static const double PSE_GAMMA_ERROR_THRESHOLD;
 
     /*
-      Basis factorization options
+      Bound tightening options
     */
 
+    enum ExplicitBasisBoundTighteningType {
+        // Use the basis matrix without inverting it
+        USE_BASIS_MATRIX = 0,
+        // Compute the inverse basis matrix and use it
+        COMPUTE_INVERTED_BASIS_MATRIX = 1,
+        // Use the inverted basis matrix without using it, via transformations
+        USE_IMPLICIT_INVERTED_BASIS_MATRIX = 2,
+    };
+
     // When doing bound tightening using the explicit basis matrix, should the basis matrix be inverted?
-    static const bool EXPLICIT_BASIS_BOUND_TIGHTENING_INVERT_BASIS;
+    static const ExplicitBasisBoundTighteningType EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE;
+
+    // When doing explicit bound tightening, should we repeat until saturation?
+    static const bool EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION;
+
+    /*
+      Basis factorization options
+    */
 
     // The number of accumualted eta matrices, after which the basis will be refactorized
 	static const unsigned REFACTORIZATION_THRESHOLD;

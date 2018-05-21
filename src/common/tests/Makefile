@@ -1,5 +1,7 @@
 ROOT_DIR = ../../..
 
+include $(ROOT_DIR)/Places.mk
+
 TEST_TARGET = CommonTests.tests
 
 LOCAL_INCLUDES += \
@@ -8,15 +10,13 @@ LOCAL_INCLUDES += \
 
 TEST_FILES = $(wildcard Test_*.h)
 
+include $(COMMON_DIR)/Sources.mk
+include $(CONFIGURATION_DIR)/Sources.mk
+
+vpath %.cpp $(COMMON_DIR)
+vpath %.cpp $(CONFIGURATION_DIR)
+
 SOURCES += \
-	GlobalConfiguration.cpp \
-	\
-	ConstSimpleData.cpp \
-	Error.cpp \
-	FloatUtils.cpp \
-	HeapData.cpp \
-	MString.cpp \
-	\
 	../mock/Errno.cpp \
 	../mock/CommonMock.cpp \
 
@@ -24,9 +24,6 @@ all:
 	./$(TEST_TARGET)
 
 include $(ROOT_DIR)/Rules.mk
-
-vpath %.cpp $(CONFIGURATION_DIR)
-vpath %.cpp $(COMMON_DIR)
 
 #
 # Local Variables:

@@ -33,7 +33,10 @@ const bool GlobalConfiguration::PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS = 
 const unsigned GlobalConfiguration::PSE_ITERATIONS_BEFORE_RESET = 1000;
 const double GlobalConfiguration::PSE_GAMMA_ERROR_THRESHOLD = 0.001;
 
-const bool GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_INVERT_BASIS = true;
+const GlobalConfiguration::ExplicitBasisBoundTighteningType GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE =
+    GlobalConfiguration::COMPUTE_INVERTED_BASIS_MATRIX;
+const bool GlobalConfiguration::EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION = false;
+
 const unsigned GlobalConfiguration::REFACTORIZATION_THRESHOLD = 100;
 const GlobalConfiguration::BasisFactorizationType GlobalConfiguration::BASIS_FACTORIZATION_TYPE =
     GlobalConfiguration::LU_FACTORIZATION;
@@ -69,8 +72,30 @@ void GlobalConfiguration::print()
             PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS ? "Yes" : "No" );
     printf( "  PSE_ITERATIONS_BEFORE_RESET: %u\n", PSE_ITERATIONS_BEFORE_RESET );
     printf( "  PSE_GAMMA_ERROR_THRESHOLD: %.15lf\n", PSE_GAMMA_ERROR_THRESHOLD );
-    printf( "  EXPLICIT_BASIS_BOUND_TIGHTENING_INVERT_BASIS: %s\n",
-            EXPLICIT_BASIS_BOUND_TIGHTENING_INVERT_BASIS ? "Yes" : "No" );
+
+    String basisBoundTighteningType;
+    switch ( EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE )
+    {
+    case USE_BASIS_MATRIX:
+        basisBoundTighteningType = "Use basis matrix";
+        break;
+
+    case COMPUTE_INVERTED_BASIS_MATRIX:
+        basisBoundTighteningType = "Compute inverted basis matrix";
+        break;
+
+    case USE_IMPLICIT_INVERTED_BASIS_MATRIX:
+        basisBoundTighteningType = "Use implicit inverted basis matrix";
+        break;
+
+    default:
+        basisBoundTighteningType = "Unknown";
+        break;
+    }
+
+    printf( "  EXPLICIT_BASIS_BOUND_TIGHTENING_INVERT_BASIS: %s\n", basisBoundTighteningType.ascii() );
+    printf( "  EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION: %s\n",
+            EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION ? "Yes" : "No" );
     printf( "  REFACTORIZATION_THRESHOLD: %u\n", REFACTORIZATION_THRESHOLD );
 
     String basisFactorizationType;
