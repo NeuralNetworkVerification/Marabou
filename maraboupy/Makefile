@@ -39,6 +39,7 @@ vpath %.cpp $(ENGINE_REAL_DIR)
 
 SOURCES += \
 	\
+	MarabouCore.cpp \
 
 TARGET = $(API_NAME)
 
