@@ -832,16 +832,16 @@ void Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
 {
     if ( constraint->isActive() && constraint->phaseFixed() )
     {
+        String constraintString;
+        constraint->dump( constraintString );
+        log( Stringf( "A constraint has become valid. Dumping constraint: %s",
+                      constraintString.ascii() ) );
+
         constraint->setActiveConstraint( false );
         PiecewiseLinearCaseSplit validSplit = constraint->getValidCaseSplit();
         _smtCore.recordImpliedValidSplit( validSplit );
         applySplit( validSplit );
         ++_numPlConstraintsDisabledByValidSplits;
-
-        String constraintString;
-        constraint->dump( constraintString );
-        log( Stringf( "A constraint has become valid. Dumping constraint: %s",
-                      constraintString.ascii() ) );
     }
 }
 
