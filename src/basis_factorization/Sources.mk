@@ -2,6 +2,7 @@ SOURCES += \
 	BasisFactorizationFactory.cpp \
 	EtaMatrix.cpp \
 	ForrestTomlinFactorization.cpp \
+	GaussianEliminator.cpp \
 	LPElement.cpp \
 	LUFactorization.cpp \
 	PermutationMatrix.cpp \
