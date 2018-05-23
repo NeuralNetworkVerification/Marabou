@@ -23,7 +23,7 @@ public:
 		wasCreated = false;
 		wasDiscarded = false;
 
-        initializeWasCalled = false;
+        setDimensionsWasCalled = false;
     }
 
     ~MockRowBoundTightener()
@@ -48,10 +48,14 @@ public:
 		wasDiscarded = true;
 	}
 
-    bool initializeWasCalled;
-    void initialize()
+    bool setDimensionsWasCalled;
+    void setDimensions()
     {
-        initializeWasCalled = true;
+        setDimensionsWasCalled = true;
+    }
+
+    void resetBounds()
+    {
     }
 
     void clear() {}

@@ -16,16 +16,20 @@
 #include "ITableau.h"
 #include "Tightening.h"
 
-class IRowBoundTightener : public ITableau::VariableWatcher
+class IRowBoundTightener : public ITableau::VariableWatcher, public ITableau::ResizeWatcher
 {
 public:
     virtual ~IRowBoundTightener() {};
 
     /*
-      Allocate internal work memory according to the tableau size and
-      initialize tightest lower/upper bounds using the talbeau.
+      Allocate internal work memory according to the tableau size.
     */
-    virtual void initialize() = 0;
+    virtual void setDimensions() = 0;
+
+    /*
+      Initialize tightest lower/upper bounds using the talbeau.
+    */
+    virtual void resetBounds() = 0;
 
     /*
       Clear all learned bounds, without reallocating memory.

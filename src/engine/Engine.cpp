@@ -570,7 +570,9 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         }
 
         _tableau->registerToWatchAllVariables( _rowBoundTightener );
-        _rowBoundTightener->initialize();
+        _tableau->registerResizeWatcher( _rowBoundTightener );
+
+        _rowBoundTightener->setDimensions();
 
         _plConstraints = _preprocessedQuery.getPiecewiseLinearConstraints();
         for ( const auto &constraint : _plConstraints )
@@ -702,7 +704,7 @@ void Engine::restoreState( const EngineState &state )
     _numPlConstraintsDisabledByValidSplits = state._numPlConstraintsDisabledByValidSplits;
 
     // Make sure the data structures are initialized to the correct size
-    _rowBoundTightener->initialize();
+    _rowBoundTightener->setDimensions();
     adjustWorkMemorySize();
     _activeEntryStrategy->resizeHook( _tableau );
     _costFunctionManager->initialize();
@@ -746,7 +748,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 
     adjustWorkMemorySize();
 
-    _rowBoundTightener->initialize();
+    _rowBoundTightener->resetBounds();
 
     for ( auto &bound : bounds )
     {

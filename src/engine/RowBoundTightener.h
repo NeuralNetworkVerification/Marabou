@@ -27,10 +27,14 @@ public:
     ~RowBoundTightener();
 
     /*
-      Allocate internal work memory according to the tableau size and
-      initialize tightest lower/upper bounds using the talbeau.
+      Allocate internal work memory according to the tableau size
     */
-    void initialize();
+    void setDimensions();
+
+    /*
+      Initialize tightest lower/upper bounds using the talbeau.
+    */
+    void resetBounds();
 
     /*
       Clear all learned bounds, without reallocating memory.
@@ -45,7 +49,7 @@ public:
     void notifyUpperBound( unsigned variable, double bound );
 
     /*
-      Callbacks from the Tableau, to inform of a change in dimesions
+      Callback from the Tableau, to inform of a change in dimensions
     */
     void notifyDimensionChange( unsigned m, unsigned n );
 

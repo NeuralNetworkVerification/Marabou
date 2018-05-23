@@ -11,6 +11,7 @@
  **/
 
 #include "BasisFactorizationFactory.h"
+#include "ConstraintMatrixAnalyzer.h"
 #include "Debug.h"
 #include "EntrySelectionStrategy.h"
 #include "Equation.h"
@@ -1243,6 +1244,47 @@ void Tableau::addEquation( const Equation &equation )
     // Invalidate the cost function, so that it is recomputed in the next iteration.
     _costFunctionManager->invalidateCostFunction();
 
+    // All variables except the new one have finite bounds. Use this to compute
+    // finite bounds for the new variable.
+    double lb = equation._scalar;
+    double ub = equation._scalar;
+    double auxCoefficient;
+    double coefficient;
+    unsigned variable;
+    for ( const auto &addend : equation._addends )
+    {
+        coefficient = addend._coefficient;
+        variable = addend._variable;
+        if ( variable == equation._auxVariable )
+        {
+            auxCoefficient = coefficient;
+        }
+        else
+        {
+            if ( FloatUtils::isPositive( coefficient ) )
+            {
+                lb -= coefficient * _upperBounds[variable];
+                ub -= coefficient * _lowerBounds[variable];
+            }
+            else
+            {
+                lb -= coefficient * _lowerBounds[variable];
+                ub -= coefficient * _upperBounds[variable];
+            }
+        }
+
+        if ( FloatUtils::isPositive( auxCoefficient ) )
+        {
+            setLowerBound( equation._auxVariable, lb / auxCoefficient );
+            setUpperBound( equation._auxVariable, ub / auxCoefficient );
+        }
+        else
+        {
+            setLowerBound( equation._auxVariable, ub / auxCoefficient );
+            setUpperBound( equation._auxVariable, lb / auxCoefficient );
+        }
+    }
+
     // Populate the new row of A and b
     _b[_m - 1] = equation._scalar;
     for ( const auto &addend : equation._addends )
@@ -1251,8 +1293,8 @@ void Tableau::addEquation( const Equation &equation )
     /*
       Attempt to make the auxiliary variable the new basic variable.
       This usually works.
-      If it doesn't, compute a new set of basic variables (which is more
-      computationally expensive)
+      If it doesn't, compute a new set of basic variables and re-initialize
+      the tableau (which is more computationally expensive)
     */
     _basicIndexToVariable[_m - 1] = equation._auxVariable;
     _variableToIndex[equation._auxVariable] = _m - 1;
@@ -1295,19 +1337,20 @@ void Tableau::addEquation( const Equation &equation )
     }
     else
     {
-        // ConstraintMatrixAnalyzer analyzer;
-        // analyzer.analyze( _A, _m, _n );
-        // List<unsigned> independentColumns = analyzer->getIndependentColumns();
+        ConstraintMatrixAnalyzer analyzer;
+        analyzer.analyze( _A, _m, _n );
+        List<unsigned> independentColumns = analyzer.getIndependentColumns();
 
-        // Need to assign basic variables and initialize a whole bunch of stuff...
+        try
+        {
+            initializeTableau( independentColumns );
+        }
+        catch ( MalformedBasisException & )
+        {
+            log( "addEquation failed - could not refactorize basis" );
+            throw ReluplexError( ReluplexError::FAILURE_TO_ADD_NEW_EQUATION );
+        }
     }
-
-    // if ( !factorizationSuccessful )
-    // {
-    //     printf( "Out of candidates, terminating\n" );
-    //     log( "addEquation failed - could not refactorize basis" );
-    //     throw ReluplexError( ReluplexError::FAILURE_TO_ADD_NEW_EQUATION );
-    // }
 }
 
 void Tableau::addRow()
@@ -1436,6 +1479,9 @@ void Tableau::addRow()
     _m = newM;
     _n = newN;
     _costFunctionManager->initialize();
+
+    for ( const auto &watcher : _resizeWatchers )
+        watcher->notifyDimensionChange( _m, _n );
 }
 
 void Tableau::registerToWatchVariable( VariableWatcher *watcher, unsigned variable )
@@ -1451,6 +1497,11 @@ void Tableau::unregisterToWatchVariable( VariableWatcher *watcher, unsigned vari
 void Tableau::registerToWatchAllVariables( VariableWatcher *watcher )
 {
     _globalWatchers.append( watcher );
+}
+
+void Tableau::registerResizeWatcher( ResizeWatcher *watcher )
+{
+    _resizeWatchers.append( watcher );
 }
 
 void Tableau::notifyVariableValue( unsigned variable, double value )

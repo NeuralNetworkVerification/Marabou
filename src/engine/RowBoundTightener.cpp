@@ -31,7 +31,7 @@ RowBoundTightener::RowBoundTightener( const ITableau &tableau )
 {
 }
 
-void RowBoundTightener::initialize()
+void RowBoundTightener::setDimensions()
 {
     freeMemoryIfNeeded();
 
@@ -54,14 +54,7 @@ void RowBoundTightener::initialize()
     if ( !_tightenedUpper )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "RowBoundTightener::tightenedUpper" );
 
-    std::fill( _tightenedLower, _tightenedLower + _n, false );
-    std::fill( _tightenedUpper, _tightenedUpper + _n, false );
-
-    for ( unsigned i = 0; i < _n; ++i )
-    {
-        _lowerBounds[i] = _tableau.getLowerBound( i );
-        _upperBounds[i] = _tableau.getUpperBound( i );
-    }
+    resetBounds();
 
     if ( GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE ==
          GlobalConfiguration::COMPUTE_INVERTED_BASIS_MATRIX )
@@ -83,6 +76,18 @@ void RowBoundTightener::initialize()
     _ciTimesLb = new double[_n];
     _ciTimesUb = new double[_n];
     _ciSign = new char[_n];
+}
+
+void RowBoundTightener::resetBounds()
+{
+    std::fill( _tightenedLower, _tightenedLower + _n, false );
+    std::fill( _tightenedUpper, _tightenedUpper + _n, false );
+
+    for ( unsigned i = 0; i < _n; ++i )
+    {
+        _lowerBounds[i] = _tableau.getLowerBound( i );
+        _upperBounds[i] = _tableau.getUpperBound( i );
+    }
 }
 
 void RowBoundTightener::clear()
@@ -779,6 +784,7 @@ void RowBoundTightener::notifyUpperBound( unsigned variable, double bound )
 
 void RowBoundTightener::notifyDimensionChange( unsigned /* m */ , unsigned /* n */ )
 {
+    setDimensions();
 }
 
 //

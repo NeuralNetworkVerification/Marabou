@@ -432,6 +432,12 @@ public:
     {
     }
 
+    Set<ResizeWatcher *> lastResizeWatchers;
+    void registerResizeWatcher( ResizeWatcher *watcher )
+    {
+        lastResizeWatchers.insert( watcher );
+    }
+
     ICostFunctionManager *lastCostFunctionManager;
     void registerCostFunctionManager( ICostFunctionManager *costFunctionManager )
     {

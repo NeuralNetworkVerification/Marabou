@@ -67,7 +67,11 @@ public:
         */
         virtual void notifyLowerBound( unsigned /* variable */, double /* bound */ ) {}
         virtual void notifyUpperBound( unsigned /* variable */, double /* bound */ ) {}
+    };
 
+    class ResizeWatcher
+    {
+    public:
         /*
           This callback will be invoked when the tableau size changes,
           typically when new variables are added.
@@ -78,6 +82,8 @@ public:
     virtual void registerToWatchAllVariables( VariableWatcher *watcher ) = 0;
     virtual void registerToWatchVariable( VariableWatcher *watcher, unsigned variable ) = 0;
     virtual void unregisterToWatchVariable( VariableWatcher *watcher, unsigned variable ) = 0;
+
+    virtual void registerResizeWatcher( ResizeWatcher *watcher ) = 0;
 
     virtual void registerCostFunctionManager( ICostFunctionManager *costFunctionManager ) = 0;
 

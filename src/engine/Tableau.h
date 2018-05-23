@@ -334,6 +334,11 @@ public:
     void unregisterToWatchVariable( VariableWatcher *watcher, unsigned variable );
 
     /*
+      Register to watch for tableau dimension changes.
+    */
+    void registerResizeWatcher( ResizeWatcher *watcher );
+
+    /*
       Register the cost function manager.
     */
     void registerCostFunctionManager( ICostFunctionManager *costFunctionManager );
@@ -388,9 +393,17 @@ public:
     const double *getColumnOfBasis( unsigned column ) const;
 
 private:
+    /*
+      Variable watchers
+    */
     typedef List<VariableWatcher *> VariableWatchers;
     Map<unsigned, VariableWatchers> _variableToWatchers;
     List<VariableWatcher *> _globalWatchers;
+
+    /*
+      Resize watchers
+    */
+    List<ResizeWatcher *> _resizeWatchers;
 
     /*
       The dimensions of matrix A
