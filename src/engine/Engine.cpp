@@ -25,7 +25,8 @@
 #include "TimeUtils.h"
 
 Engine::Engine()
-    : _smtCore( this )
+    : _rowBoundTightener( *_tableau )
+    , _smtCore( this )
     , _numPlConstraintsDisabledByValidSplits( 0 )
     , _preprocessingEnabled( false )
     , _work( NULL )
@@ -407,7 +408,7 @@ void Engine::performSimplexStep()
     if ( !fakePivot )
     {
         _tableau->computePivotRow();
-        _rowBoundTightener->examinePivotRow( _tableau );
+        _rowBoundTightener->examinePivotRow();
     }
 
     // Perform the actual pivot
@@ -569,7 +570,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         }
 
         _tableau->registerToWatchAllVariables( _rowBoundTightener );
-        _rowBoundTightener->initialize( _tableau );
+        _rowBoundTightener->initialize();
 
         _plConstraints = _preprocessedQuery.getPiecewiseLinearConstraints();
         for ( const auto &constraint : _plConstraints )
@@ -701,7 +702,7 @@ void Engine::restoreState( const EngineState &state )
     _numPlConstraintsDisabledByValidSplits = state._numPlConstraintsDisabledByValidSplits;
 
     // Make sure the data structures are initialized to the correct size
-    _rowBoundTightener->initialize( _tableau );
+    _rowBoundTightener->initialize();
     adjustWorkMemorySize();
     _activeEntryStrategy->resizeHook( _tableau );
     _costFunctionManager->initialize();
@@ -745,7 +746,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 
     adjustWorkMemorySize();
 
-    _rowBoundTightener->initialize( _tableau );
+    _rowBoundTightener->initialize();
 
     for ( auto &bound : bounds )
     {
@@ -868,7 +869,7 @@ void Engine::tightenBoundsOnConstraintMatrix()
     if ( _statistics.getNumMainLoopIterations() %
          GlobalConfiguration::BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY == 0 )
     {
-        _rowBoundTightener->examineConstraintMatrix( _tableau, true );
+        _rowBoundTightener->examineConstraintMatrix( true );
         _statistics.incNumBoundTighteningOnConstraintMatrix();
     }
 
@@ -887,15 +888,15 @@ void Engine::explicitBasisBoundTightening()
     switch ( GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE )
     {
     case GlobalConfiguration::USE_BASIS_MATRIX:
-        _rowBoundTightener->examineBasisMatrix( _tableau, saturation );
+        _rowBoundTightener->examineBasisMatrix( saturation );
         break;
 
     case GlobalConfiguration::COMPUTE_INVERTED_BASIS_MATRIX:
-        _rowBoundTightener->examineInvertedBasisMatrix( _tableau, saturation );
+        _rowBoundTightener->examineInvertedBasisMatrix( saturation );
         break;
 
     case GlobalConfiguration::USE_IMPLICIT_INVERTED_BASIS_MATRIX:
-        _rowBoundTightener->examineImplicitInvertedBasisMatrix( _tableau, saturation );
+        _rowBoundTightener->examineImplicitInvertedBasisMatrix( saturation );
         break;
     }
 
@@ -916,7 +917,7 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
     _statistics.addTimeForPrecisionRestoration( TimeUtils::timePassed( start, end ) );
 
     _statistics.incNumPrecisionRestorations();
-    _rowBoundTightener->clear( _tableau );
+    _rowBoundTightener->clear();
 
     // debug
     double after = _degradationChecker.computeDegradation( *_tableau );
@@ -936,7 +937,7 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
         _statistics.addTimeForPrecisionRestoration( TimeUtils::timePassed( start, end ) );
         _statistics.incNumPrecisionRestorations();
 
-        _rowBoundTightener->clear( _tableau );
+        _rowBoundTightener->clear();
 
         // debug
         double afterSecond = _degradationChecker.computeDegradation( *_tableau );

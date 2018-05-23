@@ -32,11 +32,13 @@ public:
 
 	bool wasCreated;
 	bool wasDiscarded;
+    const ITableau *lastTableau;
 
-	void mockConstructor()
+	void mockConstructor( const ITableau &tableau )
 	{
 		TS_ASSERT( !wasCreated );
 		wasCreated = true;
+        lastTableau = &tableau;
 	}
 
 	void mockDestructor()
@@ -47,21 +49,21 @@ public:
 	}
 
     bool initializeWasCalled;
-    void initialize( const ITableau &/* tableau */ )
+    void initialize()
     {
         initializeWasCalled = true;
     }
 
-    void clear( const ITableau &/* tableau */ ) {}
+    void clear() {}
     void notifyLowerBound( unsigned /* variable */, double /* bound */ ) {}
     void notifyUpperBound( unsigned /* variable */, double /* bound */ ) {}
-    void examineBasisMatrix( const ITableau &/* tableau */, bool /* untilSaturation */ ) {}
-    void examineInvertedBasisMatrix( const ITableau &/* tableau */, bool /* untilSaturation */ ) {}
-    void examineConstraintMatrix( const ITableau &/* tableau */, bool /* untilSaturation */ ) {}
-    void examinePivotRow( ITableau &/* tableau */ ) {}
+    void examineBasisMatrix( bool /* untilSaturation */ ) {}
+    void examineInvertedBasisMatrix( bool /* untilSaturation */ ) {}
+    void examineConstraintMatrix( bool /* untilSaturation */ ) {}
+    void examinePivotRow() {}
     void getRowTightenings( List<Tightening> &/* tightenings */ ) const {}
     void setStatistics( Statistics */* statistics */ ) {}
-    void examineImplicitInvertedBasisMatrix( const ITableau &/* tableau */, bool /* untilSaturation */ ) {}
+    void examineImplicitInvertedBasisMatrix( bool /* untilSaturation */ ) {}
 };
 
 #endif // __MockRowBoundTightener_h__

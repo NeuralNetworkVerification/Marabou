@@ -23,19 +23,19 @@
 class RowBoundTightener : public IRowBoundTightener
 {
 public:
-    RowBoundTightener();
+    RowBoundTightener( const ITableau &tableau );
     ~RowBoundTightener();
 
     /*
       Allocate internal work memory according to the tableau size and
       initialize tightest lower/upper bounds using the talbeau.
     */
-    void initialize( const ITableau &tableau );
+    void initialize();
 
     /*
       Clear all learned bounds, without reallocating memory.
     */
-    void clear( const ITableau &tableau );
+    void clear();
 
     /*
       Callbacks from the Tableau, to inform of bounds tightened by,
@@ -45,12 +45,17 @@ public:
     void notifyUpperBound( unsigned variable, double bound );
 
     /*
+      Callbacks from the Tableau, to inform of a change in dimesions
+    */
+    void notifyDimensionChange( unsigned m, unsigned n );
+
+    /*
       Derive and enqueue new bounds for all varaibles, using the
       explicit basis matrix B0 that should be available through the
       tableau. Can also do this until saturation, meaning that we
       continue until no new bounds are learned.
      */
-    void examineBasisMatrix( const ITableau &tableau, bool untilSaturation );
+    void examineBasisMatrix( bool untilSaturation );
 
     /*
       Derive and enqueue new bounds for all varaibles, using the
@@ -58,7 +63,7 @@ public:
       through the tableau. Can also do this until saturation, meaning that we
       continue until no new bounds are learned.
      */
-    void examineInvertedBasisMatrix( const ITableau &tableau, bool untilSaturation );
+    void examineInvertedBasisMatrix( bool untilSaturation );
 
     /*
       Derive and enqueue new bounds for all varaibles, implicitly using the
@@ -67,7 +72,7 @@ public:
       is performed via FTRANs. Can also do this until saturation, meaning that we
       continue until no new bounds are learned.
      */
-    void examineImplicitInvertedBasisMatrix( const ITableau &tableau, bool untilSaturation );
+    void examineImplicitInvertedBasisMatrix( bool untilSaturation );
 
     /*
       Derive and enqueue new bounds for all varaibles, using the
@@ -75,14 +80,14 @@ public:
       also do this until saturation, meaning that we continue until no
       new bounds are learned.
     */
-    void examineConstraintMatrix( const ITableau &tableau, bool untilSaturation );
+    void examineConstraintMatrix( bool untilSaturation );
 
     /*
       Derive and enqueue new bounds immedaitely following a pivot
       operation in the given tableau. The tightening is performed for
       the entering variable (which is now basic).
     */
-    void examinePivotRow( ITableau &tableau );
+    void examinePivotRow();
 
     /*
       Get the tightenings entailed by the constraint.
@@ -95,6 +100,7 @@ public:
     void setStatistics( Statistics *statistics );
 
 private:
+    const ITableau &_tableau;
     unsigned _n;
     unsigned _m;
 
@@ -132,7 +138,7 @@ private:
       Do a single pass over the basis matrix and derive any
       tighter bounds. Return the number of new bounds are learned.
     */
-    unsigned onePassOverBasisMatrix( const ITableau &tableau );
+    unsigned onePassOverBasisMatrix();
 
     /*
       Process the basis row and attempt to derive tighter
@@ -146,27 +152,27 @@ private:
       Do a single pass over the constraint matrix and derive any
       tighter bounds. Return the number of new bounds learned.
     */
-    unsigned onePassOverConstraintMatrix( const ITableau &tableau );
+    unsigned onePassOverConstraintMatrix();
 
     /*
       Process the tableau row and attempt to derive tighter
       lower/upper bounds for the specified variable. Return the number of
       tighter bounds found.
      */
-    unsigned tightenOnSingleConstraintRow( const ITableau &tableau, unsigned row );
+    unsigned tightenOnSingleConstraintRow( unsigned row );
 
     /*
       Do a single pass over the inverted basis rows and derive any
       tighter bounds. Return the number of new bounds learned.
     */
-    unsigned onePassOverInvertedBasisRows( const ITableau &tableau );
+    unsigned onePassOverInvertedBasisRows();
 
     /*
       Process the inverted basis row and attempt to derive tighter
       lower/upper bounds for the specified variable. Return the number
       of tighter bounds found.
     */
-    unsigned tightenOnSingleInvertedBasisRow( const ITableau &tableau, const TableauRow &row );
+    unsigned tightenOnSingleInvertedBasisRow( const TableauRow &row );
 };
 
 #endif // __RowBoundTightener_h__

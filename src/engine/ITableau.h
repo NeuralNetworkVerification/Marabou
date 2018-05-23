@@ -67,6 +67,12 @@ public:
         */
         virtual void notifyLowerBound( unsigned /* variable */, double /* bound */ ) {}
         virtual void notifyUpperBound( unsigned /* variable */, double /* bound */ ) {}
+
+        /*
+          This callback will be invoked when the tableau size changes,
+          typically when new variables are added.
+        */
+        virtual void notifyDimensionChange( unsigned /* m */, unsigned /* n */ ) {}
     };
 
     virtual void registerToWatchAllVariables( VariableWatcher *watcher ) = 0;

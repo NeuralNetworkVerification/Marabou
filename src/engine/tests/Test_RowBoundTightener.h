@@ -40,7 +40,7 @@ public:
 
     void test_pivot_row__both_bounds_tightened()
     {
-        RowBoundTightener tightener;
+        RowBoundTightener tightener( *tableau );
 
         tableau->setDimensions( 2, 5 );
 
@@ -60,7 +60,7 @@ public:
         tableau->setLowerBound( 4, -100 );
         tableau->setUpperBound( 4, 100 );
 
-        tightener.initialize( *tableau );
+        tightener.initialize();
 
         TableauRow row( 3 );
         // 1 - x0 - x1 + 2x2
@@ -76,7 +76,7 @@ public:
         // x0 entering, x4 leaving
         // x0 = 1 - x1 + 2 x2 - x4
 
-        TS_ASSERT_THROWS_NOTHING( tightener.examinePivotRow( *tableau ) );
+        TS_ASSERT_THROWS_NOTHING( tightener.examinePivotRow() );
 
         List<Tightening> tightenings;
         TS_ASSERT_THROWS_NOTHING( tightener.getRowTightenings( tightenings ) );
@@ -102,7 +102,7 @@ public:
 
     void test_pivot_row__just_upper_tightend()
     {
-        RowBoundTightener tightener;
+        RowBoundTightener tightener( *tableau );
 
         tableau->setDimensions( 2, 5 );
 
@@ -122,7 +122,7 @@ public:
         tableau->setLowerBound( 4, 0 );
         tableau->setUpperBound( 4, 0 );
 
-        tightener.initialize( *tableau );
+        tightener.initialize();
 
         TableauRow row( 3 );
         // 1 - x0 - x1 + 2x2
@@ -134,7 +134,7 @@ public:
 
         tableau->nextPivotRow = &row;
 
-        TS_ASSERT_THROWS_NOTHING( tightener.examinePivotRow( *tableau ) );
+        TS_ASSERT_THROWS_NOTHING( tightener.examinePivotRow() );
 
         List<Tightening> tightenings;
         TS_ASSERT_THROWS_NOTHING( tightener.getRowTightenings( tightenings ) );
@@ -153,7 +153,7 @@ public:
 
     void test_pivot_row__just_lower_tightend()
     {
-        RowBoundTightener tightener;
+        RowBoundTightener tightener( *tableau );
 
         tableau->setDimensions( 2, 5 );
 
@@ -168,7 +168,7 @@ public:
         tableau->setLowerBound( 4, 0 );
         tableau->setUpperBound( 4, 0 );
 
-        tightener.initialize( *tableau );
+        tightener.initialize();
 
         TableauRow row( 3 );
         // 1 - x0 - x1 + 2x2
@@ -180,7 +180,7 @@ public:
 
         tableau->nextPivotRow = &row;
 
-        TS_ASSERT_THROWS_NOTHING( tightener.examinePivotRow( *tableau ) );
+        TS_ASSERT_THROWS_NOTHING( tightener.examinePivotRow() );
 
         List<Tightening> tightenings;
         TS_ASSERT_THROWS_NOTHING( tightener.getRowTightenings( tightenings ) );
@@ -198,7 +198,7 @@ public:
 
     void test_pivot_row__nothing_tightened()
     {
-        RowBoundTightener tightener;
+        RowBoundTightener tightener( *tableau );
 
         tableau->setDimensions( 2, 5 );
 
@@ -213,7 +213,7 @@ public:
         tableau->setLowerBound( 4, -100 );
         tableau->setUpperBound( 4, 100 );
 
-        tightener.initialize( *tableau );
+        tightener.initialize();
 
         TableauRow row( 3 );
         // 1 - x0 - x1 + 2x2
@@ -225,7 +225,7 @@ public:
 
         tableau->nextPivotRow = &row;
 
-        TS_ASSERT_THROWS_NOTHING( tightener.examinePivotRow( *tableau ) );
+        TS_ASSERT_THROWS_NOTHING( tightener.examinePivotRow() );
 
         List<Tightening> tightenings;
         TS_ASSERT_THROWS_NOTHING( tightener.getRowTightenings( tightenings ) );
@@ -235,7 +235,7 @@ public:
 
     void test_examine_constraint_matrix_single_equation()
     {
-        RowBoundTightener tightener;
+        RowBoundTightener tightener( *tableau );
 
         tableau->setDimensions( 1, 5 );
 
@@ -267,7 +267,7 @@ public:
                                       x1 >= 1.5
         */
 
-        tightener.initialize( *tableau );
+        tightener.initialize();
 
         double A[] = { 1, -2, 0, 1, 2 };
         double b[] = { 1 };
@@ -275,7 +275,7 @@ public:
         tableau->A = A;
         tableau->b = b;
 
-        TS_ASSERT_THROWS_NOTHING( tightener.examineConstraintMatrix( *tableau, false ) );
+        TS_ASSERT_THROWS_NOTHING( tightener.examineConstraintMatrix( false ) );
 
         List<Tightening> tightenings;
         TS_ASSERT_THROWS_NOTHING( tightener.getRowTightenings( tightenings ) );
@@ -296,7 +296,7 @@ public:
 
     void test_examine_constraint_matrix_multiple_equations()
     {
-        RowBoundTightener tightener;
+        RowBoundTightener tightener( *tableau );
 
         tableau->setDimensions( 2, 5 );
 
@@ -332,7 +332,7 @@ public:
            Equation 2 gives us that x2 <= 2, >= 1
         */
 
-        tightener.initialize( *tableau );
+        tightener.initialize();
 
         double A[] = { 1, 0,
                        -2, -2,
@@ -345,7 +345,7 @@ public:
         tableau->A = A;
         tableau->b = b;
 
-        TS_ASSERT_THROWS_NOTHING( tightener.examineConstraintMatrix( *tableau, false ) );
+        TS_ASSERT_THROWS_NOTHING( tightener.examineConstraintMatrix( false ) );
 
         List<Tightening> tightenings;
         TS_ASSERT_THROWS_NOTHING( tightener.getRowTightenings( tightenings ) );
