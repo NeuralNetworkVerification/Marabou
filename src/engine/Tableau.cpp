@@ -1331,17 +1331,6 @@ void Tableau::addEquation( const Equation &equation )
         if ( FloatUtils::isZero( _basicAssignment[_m - 1] ) )
             _basicAssignment[_m - 1] = 0.0;
 
-        // Refactorize the basis
-        try
-        {
-            _basisFactorization->refactorizeBasis();
-        }
-        catch ( MalformedBasisException & )
-        {
-            log( "addEquation failed - could not refactorize basis" );
-            throw ReluplexError( ReluplexError::FAILURE_TO_ADD_NEW_EQUATION );
-        }
-
         // Notify about the new variable's assignment and compute its status
         notifyVariableValue( _basicIndexToVariable[_m - 1], _basicAssignment[_m - 1] );
         computeBasicStatus( _m - 1 );
