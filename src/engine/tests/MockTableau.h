@@ -152,10 +152,13 @@ public:
     }
 
     bool initializeTableauCalled;
-    void initializeTableau()
+    void initializeTableau( const List<unsigned> &initialBasicVariables )
     {
         TS_ASSERT( !initializeTableauCalled );
         initializeTableauCalled = true;
+
+        for ( const auto &basic : initialBasicVariables )
+            lastBasicVariables.insert( basic );
     }
 
     Map<unsigned, double> nextValues;
@@ -427,6 +430,12 @@ public:
 
     void registerToWatchAllVariables( VariableWatcher */* watcher */ )
     {
+    }
+
+    Set<ResizeWatcher *> lastResizeWatchers;
+    void registerResizeWatcher( ResizeWatcher *watcher )
+    {
+        lastResizeWatchers.insert( watcher );
     }
 
     ICostFunctionManager *lastCostFunctionManager;
