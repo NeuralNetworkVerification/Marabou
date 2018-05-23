@@ -562,6 +562,22 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             ++equationIndex;
         }
 
+        for ( unsigned i = 0; i < n; ++i )
+        {
+            _tableau->setLowerBound( i, _preprocessedQuery.getLowerBound( i ) );
+            _tableau->setUpperBound( i, _preprocessedQuery.getUpperBound( i ) );
+        }
+
+        _tableau->registerToWatchAllVariables( _rowBoundTightener );
+        _rowBoundTightener->initialize( _tableau );
+
+        _plConstraints = _preprocessedQuery.getPiecewiseLinearConstraints();
+        for ( const auto &constraint : _plConstraints )
+        {
+            constraint->registerAsWatcher( _tableau );
+            constraint->setStatistics( &_statistics );
+        }
+
         // Placeholder: better constraint matrix analysis as part
         // of the preprocessing phase.
 
@@ -573,35 +589,9 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             printf( "Warning!! Contraint matrix rank is %u (out of %u)\n",
                     analyzer->getRank(), _tableau->getM() );
         }
-
         List<unsigned> independentColumns = analyzer->getIndependentColumns();
+        _tableau->initializeTableau( independentColumns );
 
-        unsigned assigned = 0;
-        for( unsigned basicVar : independentColumns )
-        {
-            _tableau->markAsBasic( basicVar );
-            _tableau->assignIndexToBasicVariable( basicVar, assigned );
-            assigned++;
-        }
-
-        for ( unsigned i = 0; i < n; ++i )
-        {
-            _tableau->setLowerBound( i, _preprocessedQuery.getLowerBound( i ) );
-            _tableau->setUpperBound( i, _preprocessedQuery.getUpperBound( i ) );
-        }
-
-        _tableau->registerToWatchAllVariables( _rowBoundTightener );
-
-        _rowBoundTightener->initialize( _tableau );
-
-        _plConstraints = _preprocessedQuery.getPiecewiseLinearConstraints();
-        for ( const auto &constraint : _plConstraints )
-        {
-            constraint->registerAsWatcher( _tableau );
-            constraint->setStatistics( &_statistics );
-        }
-
-        _tableau->initializeTableau();
         _costFunctionManager->initialize();
         _tableau->registerCostFunctionManager( _costFunctionManager );
         _activeEntryStrategy->initialize( _tableau );

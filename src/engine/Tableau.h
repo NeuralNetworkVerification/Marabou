@@ -85,7 +85,7 @@ public:
       to lower bounds and computes the assignment. Assign the initial basic
       indices according to the equations.
     */
-    void initializeTableau();
+    void initializeTableau( const List<unsigned> &initialBasicVariables );
     void assignIndexToBasicVariable( unsigned variable, unsigned index );
 
     /*

@@ -152,10 +152,13 @@ public:
     }
 
     bool initializeTableauCalled;
-    void initializeTableau()
+    void initializeTableau( const List<unsigned> &initialBasicVariables )
     {
         TS_ASSERT( !initializeTableauCalled );
         initializeTableauCalled = true;
+
+        for ( const auto &basic : initialBasicVariables )
+            lastBasicVariables.insert( basic );
     }
 
     Map<unsigned, double> nextValues;

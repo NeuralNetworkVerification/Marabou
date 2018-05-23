@@ -244,11 +244,21 @@ void Tableau::assignIndexToBasicVariable( unsigned variable, unsigned index )
     _variableToIndex[variable] = index;
 }
 
-void Tableau::initializeTableau()
+void Tableau::initializeTableau( const List<unsigned> &initialBasicVariables )
 {
-    unsigned nonBasicIndex = 0;
+    _basicVariables.clear();
 
-    // Assign variable indices
+    // Assign the basic indices
+    unsigned basicIndex = 0;
+    for( unsigned basicVar : initialBasicVariables )
+    {
+        markAsBasic( basicVar );
+        assignIndexToBasicVariable( basicVar, basicIndex );
+        ++basicIndex;
+    }
+
+    // Assign the non-basic indices
+    unsigned nonBasicIndex = 0;
     for ( unsigned i = 0; i < _n; ++i )
     {
         if ( !_basicVariables.exists( i ) )
@@ -1233,46 +1243,71 @@ void Tableau::addEquation( const Equation &equation )
     // Invalidate the cost function, so that it is recomputed in the next iteration.
     _costFunctionManager->invalidateCostFunction();
 
-    // Mark the auxiliary variable as basic, add to indices
-    _basicVariables.insert( equation._auxVariable );
-    _basicIndexToVariable[_m - 1] = equation._auxVariable;
-    _variableToIndex[equation._auxVariable] = _m - 1;
-
-    // Populate the new row of A, compute the assignment for the new basic variable
+    // Populate the new row of A and b
     _b[_m - 1] = equation._scalar;
-    _basicAssignment[_m - 1] = equation._scalar;
-    double auxCoefficient = 0.0;
     for ( const auto &addend : equation._addends )
-    {
         setEntryValue( _m - 1, addend._variable, addend._coefficient );
 
-        if ( addend._variable == equation._auxVariable )
-            auxCoefficient = addend._coefficient;
-        else
-            _basicAssignment[_m - 1] -= addend._coefficient * getValue( addend._variable );
-    }
+    /*
+      Attempt to make the auxiliary variable the new basic variable.
+      This usually works.
+      If it doesn't, compute a new set of basic variables (which is more
+      computationally expensive)
+    */
+    _basicIndexToVariable[_m - 1] = equation._auxVariable;
+    _variableToIndex[equation._auxVariable] = _m - 1;
+    _basicVariables.insert( equation._auxVariable );
 
-    ASSERT( !FloatUtils::isZero( auxCoefficient ) );
-    _basicAssignment[_m - 1] = _basicAssignment[_m - 1] / auxCoefficient;
-    ASSERT( FloatUtils::wellFormed( _basicAssignment[_m - 1] ) );
-
-    if ( FloatUtils::isZero( _basicAssignment[_m - 1] ) )
-        _basicAssignment[_m - 1] = 0.0;
-
-    // Refactorize the basis
+    // Attempt to refactorize the basis
+    bool factorizationSuccessful = true;
     try
     {
         _basisFactorization->refactorizeBasis();
     }
     catch ( MalformedBasisException & )
     {
-        log( "addEquation failed - could not refactorize basis" );
-        throw ReluplexError( ReluplexError::FAILURE_TO_ADD_NEW_EQUATION );
+        factorizationSuccessful = false;
     }
 
-    // Notify about the new variable's assignment and compute its status
-    notifyVariableValue( _basicIndexToVariable[_m - 1], _basicAssignment[_m - 1] );
-    computeBasicStatus( _m - 1 );
+    if ( factorizationSuccessful )
+    {
+        _basicAssignment[_m - 1] = equation._scalar;
+        double auxCoefficient = 0.0;
+        for ( const auto &addend : equation._addends )
+        {
+            if ( addend._variable == equation._auxVariable )
+                auxCoefficient = addend._coefficient;
+            else
+                _basicAssignment[_m - 1] -= addend._coefficient * getValue( addend._variable );
+        }
+
+        ASSERT( !FloatUtils::isZero( auxCoefficient ) );
+        _basicAssignment[_m - 1] = _basicAssignment[_m - 1] / auxCoefficient;
+        ASSERT( FloatUtils::wellFormed( _basicAssignment[_m - 1] ) );
+
+        if ( FloatUtils::isZero( _basicAssignment[_m - 1] ) )
+            _basicAssignment[_m - 1] = 0.0;
+
+        // Notify about the new variable's assignment and compute its status
+        notifyVariableValue( _basicIndexToVariable[_m - 1], _basicAssignment[_m - 1] );
+        computeBasicStatus( _m - 1 );
+        return;
+    }
+    else
+    {
+        // ConstraintMatrixAnalyzer analyzer;
+        // analyzer.analyze( _A, _m, _n );
+        // List<unsigned> independentColumns = analyzer->getIndependentColumns();
+
+        // Need to assign basic variables and initialize a whole bunch of stuff...
+    }
+
+    // if ( !factorizationSuccessful )
+    // {
+    //     printf( "Out of candidates, terminating\n" );
+    //     log( "addEquation failed - could not refactorize basis" );
+    //     throw ReluplexError( ReluplexError::FAILURE_TO_ADD_NEW_EQUATION );
+    // }
 }
 
 void Tableau::addRow()
