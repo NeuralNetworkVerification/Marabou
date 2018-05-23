@@ -16,21 +16,25 @@
 #include "ITableau.h"
 #include "Tightening.h"
 
-class IRowBoundTightener : public ITableau::VariableWatcher
+class IRowBoundTightener : public ITableau::VariableWatcher, public ITableau::ResizeWatcher
 {
 public:
     virtual ~IRowBoundTightener() {};
 
     /*
-      Allocate internal work memory according to the tableau size and
-      initialize tightest lower/upper bounds using the talbeau.
+      Allocate internal work memory according to the tableau size.
     */
-    virtual void initialize( const ITableau &tableau ) = 0;
+    virtual void setDimensions() = 0;
+
+    /*
+      Initialize tightest lower/upper bounds using the talbeau.
+    */
+    virtual void resetBounds() = 0;
 
     /*
       Clear all learned bounds, without reallocating memory.
     */
-    virtual void clear( const ITableau &tableau ) = 0;
+    virtual void clear() = 0;
 
     /*
       Derive and enqueue new bounds for all varaibles, using the
@@ -38,7 +42,7 @@ public:
       tableau. Can also do this until saturation, meaning that we
       continue until no new bounds are learned.
      */
-    virtual void examineBasisMatrix( const ITableau &tableau, bool untilSaturation ) = 0;
+    virtual void examineBasisMatrix( bool untilSaturation ) = 0;
 
     /*
       Derive and enqueue new bounds for all varaibles, using the
@@ -46,7 +50,7 @@ public:
       through the tableau. Can also do this until saturation, meaning that we
       continue until no new bounds are learned.
      */
-    virtual void examineInvertedBasisMatrix( const ITableau &tableau, bool untilSaturation ) = 0;
+    virtual void examineInvertedBasisMatrix( bool untilSaturation ) = 0;
 
     /*
       Derive and enqueue new bounds for all varaibles, implicitly using the
@@ -55,7 +59,7 @@ public:
       is performed via FTRANs. Can also do this until saturation, meaning that we
       continue until no new bounds are learned.
     */
-    virtual void examineImplicitInvertedBasisMatrix( const ITableau &tableau, bool untilSaturation ) = 0;
+    virtual void examineImplicitInvertedBasisMatrix( bool untilSaturation ) = 0;
 
     /*
       Derive and enqueue new bounds for all varaibles, using the
@@ -63,14 +67,14 @@ public:
       also do this until saturation, meaning that we continue until no
       new bounds are learned.
     */
-    virtual void examineConstraintMatrix( const ITableau &tableau, bool untilSaturation ) = 0;
+    virtual void examineConstraintMatrix( bool untilSaturation ) = 0;
 
     /*
       Derive and enqueue new bounds immedaitely following a pivot
       operation in the given tableau. The tightening is performed for
       the entering variable (which is now basic).
     */
-    virtual void examinePivotRow( ITableau &tableau ) = 0;
+    virtual void examinePivotRow() = 0;
 
     /*
       Get the tightenings entailed by the constraint.
