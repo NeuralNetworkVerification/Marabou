@@ -18,6 +18,7 @@
 /* A class representing a single input equation. For now, all
    equations are interpreted as equalities, i.e. the sum of all
    addends equals the scalar */
+//
 class Equation
 {
 public:
