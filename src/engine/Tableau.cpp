@@ -1251,10 +1251,12 @@ void Tableau::addEquation( const Equation &equation )
     double auxCoefficient;
     double coefficient;
     unsigned variable;
+
     for ( const auto &addend : equation._addends )
     {
         coefficient = addend._coefficient;
         variable = addend._variable;
+
         if ( variable == equation._auxVariable )
         {
             auxCoefficient = coefficient;
@@ -1272,17 +1274,16 @@ void Tableau::addEquation( const Equation &equation )
                 ub -= coefficient * _upperBounds[variable];
             }
         }
-
-        if ( FloatUtils::isPositive( auxCoefficient ) )
-        {
-            setLowerBound( equation._auxVariable, lb / auxCoefficient );
-            setUpperBound( equation._auxVariable, ub / auxCoefficient );
-        }
-        else
-        {
-            setLowerBound( equation._auxVariable, ub / auxCoefficient );
-            setUpperBound( equation._auxVariable, lb / auxCoefficient );
-        }
+    }
+    if ( FloatUtils::isPositive( auxCoefficient ) )
+    {
+        setLowerBound( equation._auxVariable, lb / auxCoefficient );
+        setUpperBound( equation._auxVariable, ub / auxCoefficient );
+    }
+    else
+    {
+        setLowerBound( equation._auxVariable, ub / auxCoefficient );
+        setUpperBound( equation._auxVariable, lb / auxCoefficient );
     }
 
     // Populate the new row of A and b
