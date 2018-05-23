@@ -162,10 +162,8 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 6, 400 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 6, 402 ) );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 4 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 5 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 6 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau() );
+        List<unsigned> basics = { 4, 5, 6 };
+        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau( basics ) );
 
         // All non-basics are set to lower bounds.
         TS_ASSERT_EQUALS( tableau->getValue( 0 ), 1.0 );
@@ -209,10 +207,6 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 6, 400 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 6, 402 ) );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 4 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 5 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 6 ) );
-
         MockVariableWatcher watcher1;
         MockVariableWatcher watcher2;
 
@@ -220,7 +214,8 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau->registerToWatchVariable( &watcher1, 5 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->registerToWatchVariable( &watcher2, 5 ) );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau() );
+        List<unsigned> basics = { 4, 5, 6 };
+        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau( basics ) );
 
         // The basic values get computed, so the watchers should be called
 
@@ -270,10 +265,8 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 6, 400 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 6, 402 ) );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 4 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 5 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 6 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau() );
+        List<unsigned> basics = { 4, 5, 6 };
+        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau( basics ) );
 
         TS_ASSERT_EQUALS( tableau->getBasicStatus( 4 ), Tableau::BELOW_LB );
         TS_ASSERT_EQUALS( tableau->getBasicStatus( 5 ), Tableau::BETWEEN );
@@ -324,10 +317,8 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 6, 400 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 6, 412 ) );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 4 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 5 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 6 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau() );
+        List<unsigned> basics = { 4, 5, 6 };
+        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau( basics ) );
 
         TS_ASSERT_EQUALS( tableau->getBasicStatus( 4 ), Tableau::BETWEEN );
         TS_ASSERT_EQUALS( tableau->getBasicStatus( 5 ), Tableau::BELOW_LB );
@@ -378,10 +369,8 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 6, 400 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 6, 402 ) );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 4 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 5 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 6 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau() );
+        List<unsigned> basics = { 4, 5, 6 };
+        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau( basics ) );
 
         TS_ASSERT_EQUALS( tableau->getBasicStatus( 4 ), Tableau::BELOW_LB );
         TS_ASSERT_EQUALS( tableau->getBasicStatus( 5 ), Tableau::BETWEEN );
@@ -487,10 +476,8 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 6, 400 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 6, 402 ) );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 4 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 5 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 6 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau() );
+        List<unsigned> basics = { 4, 5, 6 };
+        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau( basics ) );
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
         costFunctionManager.nextCostFunction = new double[4];
@@ -547,10 +534,8 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 6, 400 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 6, 402 ) );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 4 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 5 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 6 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau() );
+        List<unsigned> basics = { 4, 5, 6 };
+        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau( basics ) );
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
         costFunctionManager.nextCostFunction = new double[4];
@@ -621,10 +606,8 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 6, 400 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 6, 402 ) );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 4 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 5 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 6 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau() );
+        List<unsigned> basics = { 4, 5, 6 };
+        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau( basics ) );
 
         TableauRow row( 4 );
 
@@ -825,10 +808,8 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 6, 400 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 6, 402 ) );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 4 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 5 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 6 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau() );
+        List<unsigned> basics = { 4, 5, 6 };
+        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau( basics ) );
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeAssignment() );
 
@@ -1028,10 +1009,8 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 6, 200 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 6, 202 ) );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 4 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 5 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 6 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau() );
+        List<unsigned> basics = { 4, 5, 6 };
+        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau( basics ) );
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
         costFunctionManager.nextCostFunction = new double[4];
@@ -1149,10 +1128,8 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 6, 400 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 6, 402 ) );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 4 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 5 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 6 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau() );
+        List<unsigned> basics = { 4, 5, 6 };
+        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau( basics ) );
 
         // Do a pivot to shuffle the basis
         tableau->setEnteringVariableIndex( 2u );
@@ -1304,10 +1281,8 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 6, 400 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 6, 402 ) );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 4 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 5 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 6 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau() );
+        List<unsigned> basics = { 4, 5, 6 };
+        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau( basics ) );
 
         for ( unsigned i = 0; i < 4; ++i )
         {
@@ -1384,10 +1359,8 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 6, 400 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 6, 402 ) );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 4 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 5 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->markAsBasic( 6 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau() );
+        List<unsigned> basics = { 4, 5, 6 };
+        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau( basics ) );
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
         costFunctionManager.nextCostFunction = new double[4];

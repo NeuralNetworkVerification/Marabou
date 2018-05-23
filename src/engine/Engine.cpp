@@ -25,7 +25,8 @@
 #include "TimeUtils.h"
 
 Engine::Engine()
-    : _smtCore( this )
+    : _rowBoundTightener( *_tableau )
+    , _smtCore( this )
     , _numPlConstraintsDisabledByValidSplits( 0 )
     , _preprocessingEnabled( false )
     , _work( NULL )
@@ -407,7 +408,7 @@ void Engine::performSimplexStep()
     if ( !fakePivot )
     {
         _tableau->computePivotRow();
-        _rowBoundTightener->examinePivotRow( _tableau );
+        _rowBoundTightener->examinePivotRow();
     }
 
     // Perform the actual pivot
@@ -562,6 +563,24 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             ++equationIndex;
         }
 
+        for ( unsigned i = 0; i < n; ++i )
+        {
+            _tableau->setLowerBound( i, _preprocessedQuery.getLowerBound( i ) );
+            _tableau->setUpperBound( i, _preprocessedQuery.getUpperBound( i ) );
+        }
+
+        _tableau->registerToWatchAllVariables( _rowBoundTightener );
+        _tableau->registerResizeWatcher( _rowBoundTightener );
+
+        _rowBoundTightener->setDimensions();
+
+        _plConstraints = _preprocessedQuery.getPiecewiseLinearConstraints();
+        for ( const auto &constraint : _plConstraints )
+        {
+            constraint->registerAsWatcher( _tableau );
+            constraint->setStatistics( &_statistics );
+        }
+
         // Placeholder: better constraint matrix analysis as part
         // of the preprocessing phase.
 
@@ -573,35 +592,9 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             printf( "Warning!! Contraint matrix rank is %u (out of %u)\n",
                     analyzer->getRank(), _tableau->getM() );
         }
-
         List<unsigned> independentColumns = analyzer->getIndependentColumns();
+        _tableau->initializeTableau( independentColumns );
 
-        unsigned assigned = 0;
-        for( unsigned basicVar : independentColumns )
-        {
-            _tableau->markAsBasic( basicVar );
-            _tableau->assignIndexToBasicVariable( basicVar, assigned );
-            assigned++;
-        }
-
-        for ( unsigned i = 0; i < n; ++i )
-        {
-            _tableau->setLowerBound( i, _preprocessedQuery.getLowerBound( i ) );
-            _tableau->setUpperBound( i, _preprocessedQuery.getUpperBound( i ) );
-        }
-
-        _tableau->registerToWatchAllVariables( _rowBoundTightener );
-
-        _rowBoundTightener->initialize( _tableau );
-
-        _plConstraints = _preprocessedQuery.getPiecewiseLinearConstraints();
-        for ( const auto &constraint : _plConstraints )
-        {
-            constraint->registerAsWatcher( _tableau );
-            constraint->setStatistics( &_statistics );
-        }
-
-        _tableau->initializeTableau();
         _costFunctionManager->initialize();
         _tableau->registerCostFunctionManager( _costFunctionManager );
         _activeEntryStrategy->initialize( _tableau );
@@ -711,7 +704,7 @@ void Engine::restoreState( const EngineState &state )
     _numPlConstraintsDisabledByValidSplits = state._numPlConstraintsDisabledByValidSplits;
 
     // Make sure the data structures are initialized to the correct size
-    _rowBoundTightener->initialize( _tableau );
+    _rowBoundTightener->setDimensions();
     adjustWorkMemorySize();
     _activeEntryStrategy->resizeHook( _tableau );
     _costFunctionManager->initialize();
@@ -755,7 +748,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 
     adjustWorkMemorySize();
 
-    _rowBoundTightener->initialize( _tableau );
+    _rowBoundTightener->resetBounds();
 
     for ( auto &bound : bounds )
     {
@@ -878,7 +871,7 @@ void Engine::tightenBoundsOnConstraintMatrix()
     if ( _statistics.getNumMainLoopIterations() %
          GlobalConfiguration::BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY == 0 )
     {
-        _rowBoundTightener->examineConstraintMatrix( _tableau, true );
+        _rowBoundTightener->examineConstraintMatrix( true );
         _statistics.incNumBoundTighteningOnConstraintMatrix();
     }
 
@@ -897,15 +890,15 @@ void Engine::explicitBasisBoundTightening()
     switch ( GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE )
     {
     case GlobalConfiguration::USE_BASIS_MATRIX:
-        _rowBoundTightener->examineBasisMatrix( _tableau, saturation );
+        _rowBoundTightener->examineBasisMatrix( saturation );
         break;
 
     case GlobalConfiguration::COMPUTE_INVERTED_BASIS_MATRIX:
-        _rowBoundTightener->examineInvertedBasisMatrix( _tableau, saturation );
+        _rowBoundTightener->examineInvertedBasisMatrix( saturation );
         break;
 
     case GlobalConfiguration::USE_IMPLICIT_INVERTED_BASIS_MATRIX:
-        _rowBoundTightener->examineImplicitInvertedBasisMatrix( _tableau, saturation );
+        _rowBoundTightener->examineImplicitInvertedBasisMatrix( saturation );
         break;
     }
 
@@ -926,7 +919,7 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
     _statistics.addTimeForPrecisionRestoration( TimeUtils::timePassed( start, end ) );
 
     _statistics.incNumPrecisionRestorations();
-    _rowBoundTightener->clear( _tableau );
+    _rowBoundTightener->clear();
 
     // debug
     double after = _degradationChecker.computeDegradation( *_tableau );
@@ -946,7 +939,7 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
         _statistics.addTimeForPrecisionRestoration( TimeUtils::timePassed( start, end ) );
         _statistics.incNumPrecisionRestorations();
 
-        _rowBoundTightener->clear( _tableau );
+        _rowBoundTightener->clear();
 
         // debug
         double afterSecond = _degradationChecker.computeDegradation( *_tableau );
