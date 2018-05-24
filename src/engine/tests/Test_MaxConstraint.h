@@ -12,7 +12,6 @@
 
 #include <cxxtest/TestSuite.h>
 
-#include "FreshVariables.h"
 #include "MaxConstraint.h"
 #include "MockTableau.h"
 #include "PiecewiseLinearCaseSplit.h"

@@ -12,7 +12,6 @@
 
 #include "Debug.h"
 #include "FloatUtils.h"
-#include "FreshVariables.h"
 #include "ITableau.h"
 #include "MStringf.h"
 #include "PiecewiseLinearCaseSplit.h"

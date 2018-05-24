@@ -220,7 +220,6 @@ public:
         engine->lastStoredState = NULL;
         engine->lastRestoredState = NULL;
 
-        FreshVariables::setNextVariable( 3 );
         TS_ASSERT( smtCore.needToSplit() );
         TS_ASSERT_EQUALS( smtCore.getStackDepth(), 0U );
         TS_ASSERT( !constraint.setActiveWasCalled );

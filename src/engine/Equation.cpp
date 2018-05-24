@@ -12,7 +12,6 @@
 
 #include "Equation.h"
 #include "FloatUtils.h"
-#include "FreshVariables.h"
 
 Equation::Addend::Addend( double coefficient, unsigned variable )
     : _coefficient( coefficient )

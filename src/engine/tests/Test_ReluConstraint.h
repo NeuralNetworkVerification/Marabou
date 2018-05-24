@@ -12,7 +12,6 @@
 
 #include <cxxtest/TestSuite.h>
 
-#include "FreshVariables.h"
 #include "MockTableau.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "ReluConstraint.h"
@@ -434,9 +433,6 @@ public:
         unsigned b = 1;
         unsigned f = 4;
 
-        unsigned auxVar = 100;
-        FreshVariables::setNextVariable( auxVar );
-
         ReluConstraint relu( b, f );
 
         List<PiecewiseLinearConstraint::Fix> fixes;
@@ -452,10 +448,6 @@ public:
         Equation activeEquation;
 
         List<Tightening> bounds = split.getBoundTightenings();
-
-        unsigned auxVariable = FreshVariables::getNextVariable();
-
-        TS_ASSERT_EQUALS( auxVar, auxVariable );
 
         TS_ASSERT_EQUALS( bounds.size(), 1U );
         auto bound = bounds.begin();
@@ -487,9 +479,6 @@ public:
         unsigned b = 1;
         unsigned f = 4;
 
-        unsigned auxVar = 100;
-        FreshVariables::setNextVariable( auxVar );
-
         ReluConstraint relu( b, f );
 
         List<PiecewiseLinearConstraint::Fix> fixes;
@@ -505,10 +494,6 @@ public:
         Equation activeEquation;
 
         List<Tightening> bounds = split.getBoundTightenings();
-
-        unsigned auxVariable = FreshVariables::getNextVariable();
-
-        TS_ASSERT_EQUALS( auxVariable, auxVar );
 
         TS_ASSERT_EQUALS( bounds.size(), 2U );
         auto bound = bounds.begin();
@@ -630,9 +615,6 @@ public:
     {
         unsigned b = 1;
         unsigned f = 4;
-
-        unsigned auxVar = 100;
-        FreshVariables::setNextVariable( auxVar );
 
         MockTableau tableau;
 

@@ -15,7 +15,6 @@
 
 #include "IEngine.h"
 #include "List.h"
-#include "FreshVariables.h"
 #include "PiecewiseLinearCaseSplit.h"
 
 class MockEngine : public IEngine

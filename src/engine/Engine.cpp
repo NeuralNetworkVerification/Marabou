@@ -13,7 +13,6 @@
 #include "Debug.h"
 #include "Engine.h"
 #include "EngineState.h"
-#include "FreshVariables.h"
 #include "InfeasibleQueryException.h"
 #include "InputQuery.h"
 #include "MStringf.h"
@@ -550,8 +549,6 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         adjustWorkMemorySize();
 
-        // Current variables are [0,..,n-1], so the next variable is n.
-        FreshVariables::setNextVariable( n );
         unsigned equationIndex = 0;
         for ( const auto &equation : equations )
         {
@@ -681,8 +678,6 @@ void Engine::storeState( EngineState &state, bool storeAlsoTableauState ) const
         state._plConstraintToState[constraint] = constraint->duplicateConstraint();
 
     state._numPlConstraintsDisabledByValidSplits = _numPlConstraintsDisabledByValidSplits;
-
-    state._nextAuxVariable = FreshVariables::peakNextVariable();
 }
 
 void Engine::restoreState( const EngineState &state )
@@ -714,8 +709,6 @@ void Engine::restoreState( const EngineState &state )
 
     // Reset the violation counts in the SMT core
     _smtCore.resetReportedViolations();
-
-    FreshVariables::setNextVariable( state._nextAuxVariable );
 }
 
 void Engine::setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints )
