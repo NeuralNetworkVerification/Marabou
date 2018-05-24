@@ -21,12 +21,6 @@
 class PiecewiseLinearCaseSplit
 {
 public:
-    enum EquationType {
-        EQ = 0,
-        GE = 1,
-        LE = 2
-    };
-
     /*
       Store information regarding a bound tightening.
     */
@@ -36,8 +30,8 @@ public:
     /*
       Store information regarding a new equation to be added.
     */
-    void addEquation( const Equation &equation, EquationType type );
-  	List<Pair<Equation, EquationType> > getEquations() const;
+    void addEquation( const Equation &equation );
+  	List<Equation> getEquations() const;
 
     /*
       Dump the case split - for debugging purposes.
@@ -58,7 +52,7 @@ private:
     /*
       The equation that needs to be added.
     */
-    List<Pair<Equation, EquationType> > _equations;
+    List<Equation> _equations;
 };
 
 #endif // __PiecewiseLinearCaseSplit_h__

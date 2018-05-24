@@ -35,11 +35,6 @@ public:
     */
     Map<PiecewiseLinearConstraint *, PiecewiseLinearConstraint *> _plConstraintToState;
     unsigned _numPlConstraintsDisabledByValidSplits;
-
-    /*
-      Next auxiliary varibale
-    */
-    unsigned _nextAuxVariable;
 };
 
 #endif // __EngineState_h__

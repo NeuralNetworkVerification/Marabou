@@ -128,7 +128,6 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
                 EngineState currentEngineState;
                 engine.storeState( currentEngineState, false );
 
-                ASSERT( currentEngineState._nextAuxVariable == targetEngineState._nextAuxVariable );
                 ASSERT( currentEngineState._numPlConstraintsDisabledByValidSplits ==
                         targetEngineState._numPlConstraintsDisabledByValidSplits );
 

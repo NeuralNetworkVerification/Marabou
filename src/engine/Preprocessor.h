@@ -46,6 +46,11 @@ public:
     unsigned getNewIndex( unsigned oldIndex ) const;
 
 private:
+    /*
+      Transform all equations of type GE or LE to type EQ.
+    */
+    void makeAllEquationsEqualities();
+
 	/*
       Tighten bounds using the linear equations
 	*/

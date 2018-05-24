@@ -18,10 +18,16 @@
 /* A class representing a single input equation. For now, all
    equations are interpreted as equalities, i.e. the sum of all
    addends equals the scalar */
-//
+
 class Equation
 {
 public:
+    enum EquationType {
+        EQ = 0,
+        GE = 1,
+        LE = 2
+    };
+
     struct Addend
     {
     public:
@@ -33,13 +39,15 @@ public:
         bool operator==( const Addend &other ) const;
     };
 
+    Equation();
+    Equation( EquationType type );
+
     void addAddend( double coefficient, unsigned variable );
     void setScalar( double scalar );
-    void markAuxiliaryVariable( unsigned auxVariable );
 
     List<Addend> _addends;
     double _scalar;
-    unsigned _auxVariable;
+    EquationType _type;
 
     bool operator==( const Equation &other ) const;
 
