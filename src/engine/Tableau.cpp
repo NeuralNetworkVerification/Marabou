@@ -1249,13 +1249,11 @@ unsigned Tableau::addEquation( const Equation &equation )
     // finite bounds for the new variable.
     double lb = equation._scalar;
     double ub = equation._scalar;
-    double coefficient;
-    unsigned variable;
 
     for ( const auto &addend : equation._addends )
     {
-        coefficient = addend._coefficient;
-        variable = addend._variable;
+        double coefficient = addend._coefficient;
+        unsigned variable = addend._variable;
 
         if ( FloatUtils::isPositive( coefficient ) )
         {
