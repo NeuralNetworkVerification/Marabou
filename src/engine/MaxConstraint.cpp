@@ -130,9 +130,9 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
         }
     }
 
-    if (_elements.exists( variable ) && variable != _maxIndex && 
-        _lowerBounds.exists( variable ) && _upperBounds.exists( variable ) &&
-        FloatUtils::areEqual( _lowerBounds[variable], _upperBounds[variable] ) )
+    if ( _elements.exists( variable ) && variable != _maxIndex &&
+         _lowerBounds.exists( variable ) && _upperBounds.exists( variable ) &&
+         FloatUtils::areEqual( _lowerBounds[variable], _upperBounds[variable] ) )
         eliminateVariable( variable, _lowerBounds[variable] );
     checkForFixedPhaseOnAlterationToBounds();
 }
@@ -154,7 +154,7 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
     {
         if ( _lowerBounds.exists( variable ) )
             _lowerBounds.erase( variable );
-        if (_upperBounds.exists( variable ) )
+        if ( _upperBounds.exists( variable ) )
             _upperBounds.erase( variable );
         if ( _assignment.exists ( variable ) )
             _assignment.erase ( variable );
@@ -180,9 +180,9 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
         }
     }
 
-    if (_elements.exists( variable ) && variable != _maxIndex && 
-        _lowerBounds.exists( variable ) && _upperBounds.exists( variable ) &&
-        FloatUtils::areEqual( _lowerBounds[variable], _upperBounds[variable] ) )
+    if ( _elements.exists( variable ) && variable != _maxIndex &&
+         _lowerBounds.exists( variable ) && _upperBounds.exists( variable ) &&
+         FloatUtils::areEqual( _lowerBounds[variable], _upperBounds[variable] ) )
         eliminateVariable( variable, _lowerBounds[variable] );
 
     checkForFixedPhaseOnAlterationToBounds();
@@ -322,15 +322,15 @@ List<PiecewiseLinearConstraint::Fix> MaxConstraint::getPossibleFixes() const
 
         unsigned greaterVar;
         unsigned numGreater = 0;
-        for (auto elem: _elements )
+        for ( auto elem: _elements )
         {
-            if (_assignment.exists(elem) && FloatUtils::gt( _assignment[elem], fValue ) )
+            if ( _assignment.exists( elem ) && FloatUtils::gt( _assignment[elem], fValue ) )
             {
                 numGreater++;
                 greaterVar = elem;
             }
         }
-        if ( numGreater == 1)
+        if ( numGreater == 1 )
         {
             fixes.append( PiecewiseLinearConstraint::Fix( greaterVar, fValue ) );
         }
@@ -369,11 +369,11 @@ PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const
     PiecewiseLinearCaseSplit maxPhase;
 
     // maxArg - f = 0
-    Equation maxEquation;
+    Equation maxEquation( Equation::EQ );
     maxEquation.addAddend( 1, argMax );
     maxEquation.addAddend( -1, _f );
     maxEquation.setScalar( 0 );
-    maxPhase.addEquation( maxEquation, PiecewiseLinearCaseSplit::EQ );
+    maxPhase.addEquation( maxEquation );
 
     // store bound tightenings as well
     // go over all other elements;
@@ -383,13 +383,13 @@ PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const
 	    if ( argMax == other )
             continue;
 
-	    Equation gtEquation;
+	    Equation gtEquation( Equation::GE );
 
 	    // argMax >= other
 	    gtEquation.addAddend( -1, other );
 	    gtEquation.addAddend( 1, argMax );
 	    gtEquation.setScalar( 0 );
-	    maxPhase.addEquation( gtEquation, PiecewiseLinearCaseSplit::GE );
+	    maxPhase.addEquation( gtEquation );
 
         if ( _upperBounds.exists( argMax ) )
         {
@@ -444,8 +444,7 @@ void MaxConstraint::getAuxiliaryEquations( List<Equation> & newEquations ) const
 {
     for ( unsigned elem: _elements )
     {
-        // interpreted as >= 0 by preprocessor
-        Equation equ;
+        Equation equ( Equation::GE );
         equ.addAddend( 1.0, _f );
         equ.addAddend( -1.0, elem );
         equ.setScalar( 0 );

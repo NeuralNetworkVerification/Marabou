@@ -26,11 +26,9 @@ void BerkeleyParser::generateQuery( InputQuery &inputQuery )
 
     // The total number of variables required for the encoding is computed as follows:
     //   1. One for every variable that's part of the query
-    //   2. One auxiliary variable for every equation in the query
 
     unsigned numberOfVariables =
-        _berkeleyNeuralNetwork.getNumVariables() +
-        _berkeleyNeuralNetwork.getNumEquations();
+        _berkeleyNeuralNetwork.getNumVariables();
 
     printf( "Total number of Marabou variables: %u\n", numberOfVariables );
 
@@ -70,14 +68,6 @@ void BerkeleyParser::generateQuery( InputQuery &inputQuery )
     {
         Equation marabouEquation;
 
-        unsigned auxVar = berkeleyEquation._index + _berkeleyNeuralNetwork.getNumVariables();
-        marabouEquation.markAuxiliaryVariable( auxVar );
-        marabouEquation.addAddend( 1, auxVar );
-
-        // Set the bounds for all auxiliary variables to 0
-        inputQuery.setLowerBound( auxVar, 0.0 );
-        inputQuery.setUpperBound( auxVar, 0.0 );
-
         // The Berkeley equation is of the form y = x1 + x2 + x3 + c.
         // The Marabou equation is of the form y - x1 - x2 - x3 = c.
         unsigned lhs = berkeleyEquation._lhs;
@@ -93,14 +83,6 @@ void BerkeleyParser::generateQuery( InputQuery &inputQuery )
         marabouEquation.setScalar( berkeleyEquation._constant );
         inputQuery.addEquation( marabouEquation );
     }
-
-    // List<Equation> auxiliaryEquations;
-    // addAuxiliaryEquations( auxiliaryEquations );
-    // printf( "BerkeleyParser dumping %u auxiliaryEquations:\n", auxiliaryEquations.size() );
-    // for ( const auto &aux : auxiliaryEquations )
-    // {
-    //     aux.dump();
-    // }
 }
 
 Set<unsigned> BerkeleyParser::getOutputVariables() const

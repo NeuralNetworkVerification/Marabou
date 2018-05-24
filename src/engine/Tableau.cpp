@@ -1232,11 +1232,12 @@ void Tableau::tightenUpperBound( unsigned variable, double value )
     }
 }
 
-void Tableau::addEquation( const Equation &equation )
+unsigned Tableau::addEquation( const Equation &equation )
 {
-    // The aux variable in the equation has to be a new variable
-    if ( equation._auxVariable != _n )
-        throw ReluplexError( ReluplexError::INVALID_EQUATION_ADDED_TO_TABLEAU );
+    // The fresh auxiliary variable assigned to the equation is _n.
+    // This variable is implicitly added to the equation, with
+    // coefficient 1.
+    unsigned auxVariable = _n;
 
     // Add an actual row to the talbeau, adjust the data structures
     addRow();
@@ -1248,7 +1249,6 @@ void Tableau::addEquation( const Equation &equation )
     // finite bounds for the new variable.
     double lb = equation._scalar;
     double ub = equation._scalar;
-    double auxCoefficient;
     double coefficient;
     unsigned variable;
 
@@ -1257,39 +1257,26 @@ void Tableau::addEquation( const Equation &equation )
         coefficient = addend._coefficient;
         variable = addend._variable;
 
-        if ( variable == equation._auxVariable )
+        if ( FloatUtils::isPositive( coefficient ) )
         {
-            auxCoefficient = coefficient;
+            lb -= coefficient * _upperBounds[variable];
+            ub -= coefficient * _lowerBounds[variable];
         }
         else
         {
-            if ( FloatUtils::isPositive( coefficient ) )
-            {
-                lb -= coefficient * _upperBounds[variable];
-                ub -= coefficient * _lowerBounds[variable];
-            }
-            else
-            {
-                lb -= coefficient * _lowerBounds[variable];
-                ub -= coefficient * _upperBounds[variable];
-            }
+            lb -= coefficient * _lowerBounds[variable];
+            ub -= coefficient * _upperBounds[variable];
         }
     }
-    if ( FloatUtils::isPositive( auxCoefficient ) )
-    {
-        setLowerBound( equation._auxVariable, lb / auxCoefficient );
-        setUpperBound( equation._auxVariable, ub / auxCoefficient );
-    }
-    else
-    {
-        setLowerBound( equation._auxVariable, ub / auxCoefficient );
-        setUpperBound( equation._auxVariable, lb / auxCoefficient );
-    }
+
+    setLowerBound( auxVariable, lb );
+    setUpperBound( auxVariable, ub );
 
     // Populate the new row of A and b
     _b[_m - 1] = equation._scalar;
     for ( const auto &addend : equation._addends )
         setEntryValue( _m - 1, addend._variable, addend._coefficient );
+    setEntryValue( _m - 1, auxVariable, 1 );
 
     /*
       Attempt to make the auxiliary variable the new basic variable.
@@ -1297,9 +1284,9 @@ void Tableau::addEquation( const Equation &equation )
       If it doesn't, compute a new set of basic variables and re-initialize
       the tableau (which is more computationally expensive)
     */
-    _basicIndexToVariable[_m - 1] = equation._auxVariable;
-    _variableToIndex[equation._auxVariable] = _m - 1;
-    _basicVariables.insert( equation._auxVariable );
+    _basicIndexToVariable[_m - 1] = auxVariable;
+    _variableToIndex[auxVariable] = _m - 1;
+    _basicVariables.insert( auxVariable );
 
     // Attempt to refactorize the basis
     bool factorizationSuccessful = true;
@@ -1314,18 +1301,13 @@ void Tableau::addEquation( const Equation &equation )
 
     if ( factorizationSuccessful )
     {
+        // Compute the assignment for the new basic variable
         _basicAssignment[_m - 1] = equation._scalar;
-        double auxCoefficient = 0.0;
         for ( const auto &addend : equation._addends )
         {
-            if ( addend._variable == equation._auxVariable )
-                auxCoefficient = addend._coefficient;
-            else
-                _basicAssignment[_m - 1] -= addend._coefficient * getValue( addend._variable );
+            _basicAssignment[_m - 1] -= addend._coefficient * getValue( addend._variable );
         }
 
-        ASSERT( !FloatUtils::isZero( auxCoefficient ) );
-        _basicAssignment[_m - 1] = _basicAssignment[_m - 1] / auxCoefficient;
         ASSERT( FloatUtils::wellFormed( _basicAssignment[_m - 1] ) );
 
         if ( FloatUtils::isZero( _basicAssignment[_m - 1] ) )
@@ -1334,7 +1316,6 @@ void Tableau::addEquation( const Equation &equation )
         // Notify about the new variable's assignment and compute its status
         notifyVariableValue( _basicIndexToVariable[_m - 1], _basicAssignment[_m - 1] );
         computeBasicStatus( _m - 1 );
-        return;
     }
     else
     {
@@ -1352,6 +1333,8 @@ void Tableau::addEquation( const Equation &equation )
             throw ReluplexError( ReluplexError::FAILURE_TO_ADD_NEW_EQUATION );
         }
     }
+
+    return auxVariable;
 }
 
 void Tableau::addRow()

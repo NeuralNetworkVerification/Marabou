@@ -555,6 +555,9 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         unsigned equationIndex = 0;
         for ( const auto &equation : equations )
         {
+            if ( equation._type != Equation::EQ )
+                throw ReluplexError( ReluplexError::NON_EQUALITY_INPUT_EQUATIONS_NOT_YET_SUPPORTED );
+
             _tableau->setRightHandSide( equationIndex, equation._scalar );
 
             for ( const auto &addend : equation._addends )
@@ -728,22 +731,31 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
     DEBUG( _tableau->verifyInvariants() );
 
     List<Tightening> bounds = split.getBoundTightenings();
-    List<Pair<Equation, PiecewiseLinearCaseSplit::EquationType>> equations = split.getEquations();
-    for ( auto &it : equations )
+    List<Equation> equations = split.getEquations();
+    for ( auto &equation : equations )
     {
-        Equation equation = it.first();
-        unsigned auxVariable = FreshVariables::getNextVariable();
-        equation.addAddend( -1, auxVariable );
-        equation.markAuxiliaryVariable( auxVariable );
-
-        _tableau->addEquation( equation );
+        unsigned auxVariable = _tableau->addEquation( equation );
         _activeEntryStrategy->resizeHook( _tableau );
 
-        PiecewiseLinearCaseSplit::EquationType type = it.second();
-        if ( type != PiecewiseLinearCaseSplit::GE )
+        switch ( equation._type )
+        {
+        case Equation::GE:
             bounds.append( Tightening( auxVariable, 0.0, Tightening::UB ) );
-        if ( type != PiecewiseLinearCaseSplit::LE )
+            break;
+
+        case Equation::LE:
             bounds.append( Tightening( auxVariable, 0.0, Tightening::LB ) );
+            break;
+
+        case Equation::EQ:
+            bounds.append( Tightening( auxVariable, 0.0, Tightening::LB ) );
+            bounds.append( Tightening( auxVariable, 0.0, Tightening::UB ) );
+            break;
+
+        default:
+            ASSERT( false );
+            break;
+        }
     }
 
     adjustWorkMemorySize();

@@ -1167,9 +1167,7 @@ public:
         Equation equation;
         equation.addAddend( 2, 1 );
         equation.addAddend( -4, 2 );
-        equation.addAddend( 1, 7 );
         equation.setScalar( 5 );
-        equation.markAuxiliaryVariable( 7 );
         TS_ASSERT_THROWS_NOTHING( tableau->addEquation( equation ) );
 
         TS_ASSERT( tableau->isBasic( 7u ) );

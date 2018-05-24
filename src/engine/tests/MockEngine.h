@@ -70,20 +70,7 @@ public:
         auto equations = split.getEquations();
         for ( auto &it : equations )
         {
-            Equation equation = it.first();
-            unsigned auxVariable = FreshVariables::getNextVariable();
-            equation.addAddend( -1, auxVariable );
-            equation.markAuxiliaryVariable( auxVariable );
-            lastEquations.append( equation );
-            PiecewiseLinearCaseSplit::EquationType type = it.second();
-            if ( type != PiecewiseLinearCaseSplit::GE )
-            {
-                bounds.append( Tightening( auxVariable, 0.0, Tightening::UB ) );
-            }
-            if ( type != PiecewiseLinearCaseSplit::LE )
-            {
-                bounds.append( Tightening( auxVariable, 0.0, Tightening::LB ) );
-            }
+            lastEquations.append( it );
         }
 
         for ( auto &bound : bounds )

@@ -61,7 +61,6 @@ public:
         equation1.addAddend( 1, 1 );
         equation1.addAddend( -1, 2 );
         equation1.setScalar( 10 );
-        equation1.markAuxiliaryVariable( 0 );
         inputQuery.addEquation( equation1 );
 
         InputQuery processed = Preprocessor().preprocess( inputQuery );
@@ -188,7 +187,6 @@ public:
         equation2.addAddend( 1, 1 );
         equation2.addAddend( -1, 2 );
         equation2.setScalar( 10 );
-        equation2.markAuxiliaryVariable( 1 );
         inputQuery2.addEquation( equation2 );
 
         processed = Preprocessor().preprocess( inputQuery2 );
@@ -372,7 +370,6 @@ public:
         equation1.addAddend( 1, 1 );
         equation1.addAddend( 1, 3 );
         equation1.setScalar( 10 );
-        equation1.markAuxiliaryVariable( 0 );
         inputQuery.addEquation( equation1 );
 
 		// x2 + x3 = 6
@@ -380,7 +377,6 @@ public:
 		equation2.addAddend( 1, 7 );
 		equation2.addAddend( 1, 8 );
 		equation2.setScalar( 12 );
-        equation2.markAuxiliaryVariable( 7 );
 		inputQuery.addEquation( equation2 );
 
 		InputQuery processed = Preprocessor().preprocess( inputQuery, true );
@@ -403,6 +399,54 @@ public:
 
         TS_ASSERT_EQUALS( preprocessedEquation._scalar, 12.0 );
 	}
+
+    void test_all_equations_become_equalities()
+    {
+        InputQuery inputQuery;
+
+        inputQuery.setNumberOfVariables( 3 );
+        inputQuery.setLowerBound( 0, 1 );
+        inputQuery.setUpperBound( 0, 1 );
+        inputQuery.setLowerBound( 1, 0 );
+        inputQuery.setUpperBound( 1, 5 );
+        inputQuery.setLowerBound( 2, 2 );
+        inputQuery.setUpperBound( 2, 3 );
+
+        // x0 + -3x1 + 4x2 >= 10
+        Equation equation1( Equation::GE );
+        equation1.addAddend( 1, 0 );
+        equation1.addAddend( -3, 1 );
+        equation1.addAddend( 4, 2 );
+        equation1.setScalar( 10 );
+        inputQuery.addEquation( equation1 );
+
+        TS_TRACE( "Start" );
+
+        InputQuery processed = Preprocessor().preprocess( inputQuery, false );
+        TS_TRACE( "End" );
+
+        TS_ASSERT_EQUALS( processed.getNumberOfVariables(), 4U );
+
+        Equation eq = processed.getEquations().front();
+
+        TS_ASSERT_EQUALS( eq._type, Equation::EQ );
+        TS_ASSERT_EQUALS( eq._scalar, 10.0 );
+
+        TS_ASSERT_EQUALS( eq._addends.size(), 4U );
+
+        auto it = eq._addends.begin();
+        TS_ASSERT_EQUALS( it->_coefficient, 1 );
+        TS_ASSERT_EQUALS( it->_variable, 0U );
+        ++it;
+        TS_ASSERT_EQUALS( it->_coefficient, -3 );
+        TS_ASSERT_EQUALS( it->_variable, 1U );
+        ++it;
+        TS_ASSERT_EQUALS( it->_coefficient, 4 );
+        TS_ASSERT_EQUALS( it->_variable, 2U );
+        ++it;
+        TS_ASSERT_EQUALS( it->_coefficient, 1 );
+        TS_ASSERT_EQUALS( it->_variable, 3U );
+    }
 
     void test_todo()
     {

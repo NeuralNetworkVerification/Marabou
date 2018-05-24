@@ -25,6 +25,16 @@ bool Equation::Addend::operator==( const Addend &other ) const
     return ( _coefficient == other._coefficient ) && ( _variable == other._variable );
 }
 
+Equation::Equation()
+    : _type( Equation::EQ )
+{
+}
+
+Equation::Equation( EquationType type )
+    : _type( type )
+{
+}
+
 void Equation::addAddend( double coefficient, unsigned variable )
 {
     _addends.append( Addend( coefficient, variable ) );
@@ -35,17 +45,12 @@ void Equation::setScalar( double scalar )
     _scalar = scalar;
 }
 
-void Equation::markAuxiliaryVariable( unsigned auxVariable )
-{
-    _auxVariable = auxVariable;
-}
-
 bool Equation::operator==( const Equation &other ) const
 {
     return
         ( _addends == other._addends ) &&
         ( _scalar == other._scalar ) &&
-        ( _auxVariable == other._auxVariable );
+        ( _type == other._type );
 }
 
 void Equation::dump() const
@@ -61,7 +66,22 @@ void Equation::dump() const
         printf( "%.2lfx%u ", addend._coefficient, addend._variable );
     }
 
-    printf( " = %.2lf\n", _scalar );
+    switch ( _type )
+    {
+    case Equation::GE:
+        printf( " >= " );
+        break;
+
+    case Equation::LE:
+        printf( " <= " );
+        break;
+
+    case Equation::EQ:
+        printf( " = " );
+        break;
+    }
+
+    printf( "%.2lf\n", _scalar );
 }
 
 //
