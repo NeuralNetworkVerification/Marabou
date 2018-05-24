@@ -12,7 +12,6 @@
 
 #include <cxxtest/TestSuite.h>
 
-#include "FreshVariables.h"
 #include "MaxConstraint.h"
 #include "MockTableau.h"
 #include "PiecewiseLinearCaseSplit.h"
@@ -180,17 +179,17 @@ public:
             // Since no upper bounds known for any of the variables, no bounds
             TS_ASSERT_EQUALS( bounds.size(), 0U );
 
-            auto equationPairs = split->getEquations();
+            auto equations = split->getEquations();
 
-            TS_ASSERT_EQUALS( equationPairs.size(), 8U );
+            TS_ASSERT_EQUALS( equations.size(), 8U );
 
-            auto cur = equationPairs.begin();
+            auto cur = equations.begin();
 
-            TS_ASSERT_EQUALS( cur->first()._addends.size(), 2U );
-            TS_ASSERT_EQUALS( cur->first()._scalar, 0.0 );
-            TS_ASSERT_EQUALS( cur->second(), PiecewiseLinearCaseSplit::EQ)
+            TS_ASSERT_EQUALS( cur->_addends.size(), 2U );
+            TS_ASSERT_EQUALS( cur->_scalar, 0.0 );
+            TS_ASSERT_EQUALS( cur->_type, Equation::EQ );
 
-            auto addend = cur->first()._addends.begin();
+            auto addend = cur->_addends.begin();
 
             TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
             TS_ASSERT_EQUALS( addend->_variable, i );
@@ -206,11 +205,11 @@ public:
             {
                 if ( i == j ) continue;
 
-                TS_ASSERT_EQUALS( cur->first()._addends.size(), 2U );
-                TS_ASSERT_EQUALS( cur->first()._scalar, 0.0 );
-                TS_ASSERT_EQUALS( cur->second(), PiecewiseLinearCaseSplit::GE)
+                TS_ASSERT_EQUALS( cur->_addends.size(), 2U );
+                TS_ASSERT_EQUALS( cur->_scalar, 0.0 );
+                TS_ASSERT_EQUALS( cur->_type, Equation::GE );
 
-                auto addend = cur->first()._addends.begin();
+                auto addend = cur->_addends.begin();
 
                 TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
                 TS_ASSERT_EQUALS( addend->_variable, j );
@@ -256,16 +255,16 @@ public:
         max.notifyVariableValue( 2, 7);
 
         PiecewiseLinearCaseSplit validSplit = max.getValidCaseSplit();
-		auto equationPairs = validSplit.getEquations();
+		auto equations = validSplit.getEquations();
 
-        TS_ASSERT_EQUALS( equationPairs.size(), 1U );
+        TS_ASSERT_EQUALS( equations.size(), 1U );
 
-        auto cur = equationPairs.begin();
-        TS_ASSERT_EQUALS( cur->first()._addends.size(), 2U );
-        TS_ASSERT_EQUALS( cur->first()._scalar, 0.0 );
-        TS_ASSERT_EQUALS( cur->second(), PiecewiseLinearCaseSplit::EQ)
+        auto cur = equations.begin();
+        TS_ASSERT_EQUALS( cur->_addends.size(), 2U );
+        TS_ASSERT_EQUALS( cur->_scalar, 0.0 );
+        TS_ASSERT_EQUALS( cur->_type, Equation::EQ );
 
-        auto addend = cur->first()._addends.begin();
+        auto addend = cur->_addends.begin();
 
         TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
         TS_ASSERT_EQUALS( addend->_variable, 2U );
@@ -274,7 +273,6 @@ public:
 
         TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
         TS_ASSERT_EQUALS( addend->_variable, f );
-
 	}
 
 	void test_max_obsolete()

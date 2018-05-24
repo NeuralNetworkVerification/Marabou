@@ -3,7 +3,6 @@ ROOT_DIR = ../..
 SUBDIRS += \
 	acas_example \
 	berkeley_example \
-	mps_generic \
 
 include $(ROOT_DIR)/Rules.mk
 

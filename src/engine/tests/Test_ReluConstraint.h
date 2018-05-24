@@ -12,7 +12,6 @@
 
 #include <cxxtest/TestSuite.h>
 
-#include "FreshVariables.h"
 #include "MockTableau.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "ReluConstraint.h"
@@ -176,9 +175,6 @@ public:
         unsigned b = 1;
         unsigned f = 4;
 
-        unsigned auxVar = 100;
-        FreshVariables::setNextVariable( auxVar );
-
         ReluConstraint relu( b, f );
 
         List<PiecewiseLinearConstraint::Fix> fixes;
@@ -194,11 +190,11 @@ public:
         List<PiecewiseLinearCaseSplit>::iterator split2 = split1;
         ++split2;
 
-        TS_ASSERT( isActiveSplit( b, f, auxVar, split1 ) || isActiveSplit( b, f, auxVar, split2 ) );
+        TS_ASSERT( isActiveSplit( b, f, split1 ) || isActiveSplit( b, f, split2 ) );
         TS_ASSERT( isInactiveSplit( b, f, split1 ) || isInactiveSplit( b, f, split2 ) );
     }
 
-    bool isActiveSplit( unsigned b, unsigned f, unsigned auxVar, List<PiecewiseLinearCaseSplit>::iterator &split )
+    bool isActiveSplit( unsigned b, unsigned f, List<PiecewiseLinearCaseSplit>::iterator &split )
     {
         List<Tightening> bounds = split->getBoundTightenings();
 
@@ -216,10 +212,8 @@ public:
         Equation activeEquation;
         auto equations = split->getEquations();
         TS_ASSERT_EQUALS( equations.size(), 1U );
-        activeEquation = split->getEquations().front().first();
-        activeEquation.addAddend( -1, auxVar );
-        activeEquation.markAuxiliaryVariable( auxVar );
-        TS_ASSERT_EQUALS( activeEquation._addends.size(), 3U );
+        activeEquation = split->getEquations().front();
+        TS_ASSERT_EQUALS( activeEquation._addends.size(), 2U );
         TS_ASSERT_EQUALS( activeEquation._scalar, 0.0 );
 
         auto addend = activeEquation._addends.begin();
@@ -230,10 +224,7 @@ public:
         TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
         TS_ASSERT_EQUALS( addend->_variable, f );
 
-        ++addend;
-        TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
-        TS_ASSERT_EQUALS( addend->_variable, auxVar );
-        TS_ASSERT_EQUALS( activeEquation._auxVariable, auxVar );
+        TS_ASSERT_EQUALS( activeEquation._type, Equation::EQ );
 
         return true;
     }
@@ -442,9 +433,6 @@ public:
         unsigned b = 1;
         unsigned f = 4;
 
-        unsigned auxVar = 100;
-        FreshVariables::setNextVariable( auxVar );
-
         ReluConstraint relu( b, f );
 
         List<PiecewiseLinearConstraint::Fix> fixes;
@@ -461,10 +449,6 @@ public:
 
         List<Tightening> bounds = split.getBoundTightenings();
 
-        unsigned auxVariable = FreshVariables::getNextVariable();
-
-        TS_ASSERT_EQUALS( auxVar, auxVariable );
-
         TS_ASSERT_EQUALS( bounds.size(), 1U );
         auto bound = bounds.begin();
         Tightening bound1 = *bound;
@@ -475,10 +459,8 @@ public:
 
         auto equations = split.getEquations();
         TS_ASSERT_EQUALS( equations.size(), 1U );
-        activeEquation = split.getEquations().front().first();
-        activeEquation.addAddend( -1, auxVariable );
-        activeEquation.markAuxiliaryVariable( auxVariable );
-        TS_ASSERT_EQUALS( activeEquation._addends.size(), 3U );
+        activeEquation = split.getEquations().front();
+        TS_ASSERT_EQUALS( activeEquation._addends.size(), 2U );
         TS_ASSERT_EQUALS( activeEquation._scalar, 0.0 );
 
         auto addend = activeEquation._addends.begin();
@@ -489,19 +471,13 @@ public:
         TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
         TS_ASSERT_EQUALS( addend->_variable, f );
 
-        ++addend;
-        TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
-        TS_ASSERT_EQUALS( addend->_variable, 100U );
-        TS_ASSERT_EQUALS( activeEquation._auxVariable, 100U );
+        TS_ASSERT_EQUALS( activeEquation._type, Equation::EQ );
     }
 
     void test_valid_split_relu_phase_fixed_to_inactive()
     {
         unsigned b = 1;
         unsigned f = 4;
-
-        unsigned auxVar = 100;
-        FreshVariables::setNextVariable( auxVar );
 
         ReluConstraint relu( b, f );
 
@@ -518,10 +494,6 @@ public:
         Equation activeEquation;
 
         List<Tightening> bounds = split.getBoundTightenings();
-
-        unsigned auxVariable = FreshVariables::getNextVariable();
-
-        TS_ASSERT_EQUALS( auxVariable, auxVar );
 
         TS_ASSERT_EQUALS( bounds.size(), 2U );
         auto bound = bounds.begin();
@@ -643,9 +615,6 @@ public:
     {
         unsigned b = 1;
         unsigned f = 4;
-
-        unsigned auxVar = 100;
-        FreshVariables::setNextVariable( auxVar );
 
         MockTableau tableau;
 

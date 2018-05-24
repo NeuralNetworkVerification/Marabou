@@ -12,7 +12,6 @@
 
 #include "Debug.h"
 #include "FloatUtils.h"
-#include "FreshVariables.h"
 #include "ITableau.h"
 #include "MStringf.h"
 #include "PiecewiseLinearCaseSplit.h"
@@ -204,11 +203,11 @@ PiecewiseLinearCaseSplit ReluConstraint::getActiveSplit() const
     // Active phase: b >= 0, b - f = 0
     PiecewiseLinearCaseSplit activePhase;
     activePhase.storeBoundTightening( Tightening( _b, 0.0, Tightening::LB ) );
-    Equation activeEquation;
+    Equation activeEquation( Equation::EQ );
     activeEquation.addAddend( 1, _b );
     activeEquation.addAddend( -1, _f );
     activeEquation.setScalar( 0 );
-    activePhase.addEquation( activeEquation, PiecewiseLinearCaseSplit::EQ );
+    activePhase.addEquation( activeEquation );
     return activePhase;
 }
 
@@ -371,9 +370,9 @@ void ReluConstraint::setPhaseStatus( PhaseStatus phaseStatus )
 void ReluConstraint::getAuxiliaryEquations( List<Equation> &newEquations ) const
 {
     // Add the equation: f >= b, or f - b >= 0
-    Equation equation;
+    Equation equation( Equation::GE );
     equation.addAddend( 1.0, _f );
-    equation.addAddend( -1-.0, _b );
+    equation.addAddend( -1.0, _b );
     equation.setScalar( 0 );
 
     newEquations.append( equation );

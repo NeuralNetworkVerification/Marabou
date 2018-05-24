@@ -90,9 +90,10 @@ public:
 
     /*
       A method for adding an additional equation to the tableau. The
-      auxiliary variable in this equation needs to be a fresh variable.
+      method returns the index of the fresh auxiliary variable assigned
+      to the equation
     */
-    void addEquation( const Equation &equation );
+    unsigned addEquation( const Equation &equation );
 
     /*
       Get the Tableau's dimensions.

@@ -53,17 +53,16 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
 
     // The total number of variables required for the encoding is computed as follows:
     //   1. Each input node appears once
-    //   2. Each internal node has a B variable, an F variable, and an auxiliary varibale
-    //   3. Each output node appears once and also has an auxiliary variable
-    unsigned numberOfVariables = inputLayerSize + ( 3 * numberOfInternalNodes ) + ( 2 * outputLayerSize );
+    //   2. Each internal node has a B variable and an F variable
+    //   3. Each output node appears once
+    unsigned numberOfVariables = inputLayerSize + ( 2 * numberOfInternalNodes ) + outputLayerSize;
     printf( "Total number of variables: %u\n", numberOfVariables );
 
     inputQuery.setNumberOfVariables( numberOfVariables );
 
     // Next, we want to map each node to its corresponding
     // variables. We group variables according to this order: f's from
-    // layer i, b's from layer i+1, auxiliary variables from layer
-    // i+1, and repeat. The
+    // layer i, b's from layer i+1, and repeat.
     unsigned currentIndex = 0;
     for ( unsigned i = 1; i < numberOfLayers; ++i )
     {
@@ -83,18 +82,11 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
             _nodeToB[NodeIndex( i, j )] = currentIndex;
             ++currentIndex;
         }
-
-        // And now the aux variables from layer i
-        for ( unsigned j = 0; j < currentLayerSize; ++j )
-        {
-            _nodeToAux[NodeIndex( i, j )] = currentIndex;
-            ++currentIndex;
-        }
     }
 
     // Now we set the variable bounds. Input bounds are
-    // given as part of the network. Auxiliary variables are set to
-    // 0. B variables are unbounded, and F variables are non-negative.
+    // given as part of the network. B variables are
+    // unbounded, and F variables are non-negative.
     for ( unsigned i = 0; i < inputLayerSize; ++i )
     {
         double min, max;
@@ -104,19 +96,6 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
         inputQuery.setUpperBound( _nodeToF[NodeIndex(0, i)], max );
 
         printf( "Parser setting bounds for input %u: [%.15lf, %.15lf]\n", i, min, max );
-    }
-
-    for ( const auto &auxNode : _nodeToAux )
-    {
-        inputQuery.setLowerBound( auxNode.second, 0.0 );
-        inputQuery.setUpperBound( auxNode.second, 0.0 );
-    }
-
-    for ( const auto &slackNode : _nodeToSlack )
-    {
-        // A slack node represents f - b + aux = 0, so aux is non-positive
-        inputQuery.setLowerBound( slackNode.second, FloatUtils::negativeInfinity() );
-        inputQuery.setUpperBound( slackNode.second, 0.0 );
     }
 
     for ( const auto &fNode : _nodeToF )
@@ -142,13 +121,8 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
         for ( unsigned target = 0; target < targetLayerSize; ++target )
         {
             // This will represent the equation:
-            //   sum aux - b + fs = -bias
+            //   sum - b + fs = -bias
             Equation equation;
-
-            // The auxiliary variable
-            unsigned auxVar = _nodeToAux[NodeIndex(layer + 1, target)];
-            equation.addAddend( 1.0, auxVar );
-            equation.markAuxiliaryVariable( auxVar );
 
             // The b variable
             unsigned bVar = _nodeToB[NodeIndex(layer + 1, target)];
@@ -167,31 +141,6 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
             // Add the equation to the input query
             inputQuery.addEquation( equation );
         }
-    }
-
-    // And the slack variable equations
-    for ( const auto &slackNode : _nodeToSlack )
-    {
-        // A slack node represents f - b + aux == 0
-
-        Equation equation;
-
-        unsigned fVar = _nodeToF[slackNode.first];
-        unsigned bVar = _nodeToB[slackNode.first];
-        unsigned auxVar = slackNode.second;
-
-        printf( "b: %u, f: %u, slack: %u\n", bVar, fVar, auxVar );
-
-        equation.addAddend( 1.0, auxVar );
-        equation.markAuxiliaryVariable( auxVar );
-
-        equation.addAddend( 1, fVar );
-        equation.addAddend( -1, bVar );
-        equation.setScalar( 0 );
-
-        equation.dump();
-
-        inputQuery.addEquation( equation );
     }
 
     // Add the ReLU constraints
@@ -235,24 +184,6 @@ unsigned AcasParser::getFVariable( unsigned layer, unsigned index ) const
         throw InputParserError( InputParserError::VARIABLE_INDEX_OUT_OF_RANGE );
 
     return _nodeToF.get( nodeIndex );
-}
-
-unsigned AcasParser::getAuxVariable( unsigned layer, unsigned index ) const
-{
-    NodeIndex nodeIndex( layer, index );
-    if ( !_nodeToAux.exists( nodeIndex ) )
-        throw InputParserError( InputParserError::VARIABLE_INDEX_OUT_OF_RANGE );
-
-    return _nodeToAux.get( nodeIndex );
-}
-
-unsigned AcasParser::getSlackVariable( unsigned layer, unsigned index ) const
-{
-    NodeIndex nodeIndex( layer, index );
-    if ( !_nodeToSlack.exists( nodeIndex ) )
-        throw InputParserError( InputParserError::VARIABLE_INDEX_OUT_OF_RANGE, "Slacks" );
-
-    return _nodeToSlack.get( nodeIndex );
 }
 
 void AcasParser::evaluate( const Vector<double> &inputs, Vector<double> &outputs ) const

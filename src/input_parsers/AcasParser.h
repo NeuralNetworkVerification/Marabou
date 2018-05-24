@@ -43,8 +43,6 @@ public:
     unsigned getOutputVariable( unsigned index ) const;
     unsigned getBVariable( unsigned layer, unsigned index ) const;
     unsigned getFVariable( unsigned layer, unsigned index ) const;
-    unsigned getAuxVariable( unsigned layer, unsigned index ) const;
-    unsigned getSlackVariable( unsigned layer, unsigned index ) const;
 
     void evaluate( const Vector<double> &inputs, Vector<double> &outputs ) const;
 
@@ -52,8 +50,6 @@ private:
     AcasNeuralNetwork _acasNeuralNetwork;
     Map<NodeIndex, unsigned> _nodeToB;
     Map<NodeIndex, unsigned> _nodeToF;
-    Map<NodeIndex, unsigned> _nodeToAux;
-    Map<NodeIndex, unsigned> _nodeToSlack;
 };
 
 #endif // __AcasParser_h__

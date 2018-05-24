@@ -177,7 +177,7 @@ public:
         Tightening bound1( 1, 3.0, Tightening::LB );
         Tightening bound2( 1, 5.0, Tightening::UB );
 
-        Equation equation1;
+        Equation equation1( Equation::EQ );
         equation1.addAddend( 1, 0 );
         equation1.addAddend( 2, 1 );
         equation1.addAddend( -1, 2 );
@@ -185,29 +185,29 @@ public:
 
         split1.storeBoundTightening( bound1 );
         split1.storeBoundTightening( bound2 );
-        split1.addEquation( equation1, PiecewiseLinearCaseSplit::EQ );
+        split1.addEquation( equation1 );
 
         // Split 2
         PiecewiseLinearCaseSplit split2;
         Tightening bound3( 2, 13.0, Tightening::UB );
         Tightening bound4( 3, 25.0, Tightening::UB );
 
-        Equation equation2;
+        Equation equation2( Equation::EQ );
         equation2.addAddend( -3, 0 );
         equation2.addAddend( 3, 1 );
         equation2.setScalar( -5 );
 
         split2.storeBoundTightening( bound3 );
         split2.storeBoundTightening( bound4 );
-        split2.addEquation( equation2, PiecewiseLinearCaseSplit::EQ );
+        split2.addEquation( equation2 );
 
         // Split 3
         PiecewiseLinearCaseSplit split3;
         Tightening bound5( 14, 2.3, Tightening::LB );
 
         split3.storeBoundTightening( bound5 );
-        split3.addEquation( equation1, PiecewiseLinearCaseSplit::EQ );
-        split3.addEquation( equation2, PiecewiseLinearCaseSplit::EQ );
+        split3.addEquation( equation1 );
+        split3.addEquation( equation2 );
 
         // Store the splits
         constraint.nextSplits.append( split1 );
@@ -220,7 +220,6 @@ public:
         engine->lastStoredState = NULL;
         engine->lastRestoredState = NULL;
 
-        FreshVariables::setNextVariable( 3 );
         TS_ASSERT( smtCore.needToSplit() );
         TS_ASSERT_EQUALS( smtCore.getStackDepth(), 0U );
         TS_ASSERT( !constraint.setActiveWasCalled );
@@ -230,19 +229,16 @@ public:
         TS_ASSERT_EQUALS( smtCore.getStackDepth(), 1U );
 
         // Check that Split1 was performed and tableau state was stored
-        TS_ASSERT_EQUALS( engine->lastLowerBounds.size(), 2U );
+        TS_ASSERT_EQUALS( engine->lastLowerBounds.size(), 1U );
         TS_ASSERT_EQUALS( engine->lastLowerBounds.begin()->_variable, 1U );
         TS_ASSERT_EQUALS( engine->lastLowerBounds.begin()->_bound, 3.0 );
 
-        TS_ASSERT_EQUALS( engine->lastUpperBounds.size(), 2U );
+        TS_ASSERT_EQUALS( engine->lastUpperBounds.size(), 1U );
         TS_ASSERT_EQUALS( engine->lastUpperBounds.begin()->_variable, 1U );
         TS_ASSERT_EQUALS( engine->lastUpperBounds.begin()->_bound, 5.0 );
 
         TS_ASSERT_EQUALS( engine->lastEquations.size(), 1U );
         Equation equation4 = equation1;
-        unsigned auxVar4 = FreshVariables::getNextVariable() - 1;
-        equation4.addAddend( -1, auxVar4 );
-        equation4.markAuxiliaryVariable( auxVar4 );
         TS_ASSERT_EQUALS( *engine->lastEquations.begin(), equation4 );
 
         TS_ASSERT( engine->lastStoredState );
@@ -263,9 +259,9 @@ public:
         TS_ASSERT( !engine->lastStoredState );
         engine->lastRestoredState = NULL;
 
-        TS_ASSERT_EQUALS( engine->lastLowerBounds.size(), 1U );
+        TS_ASSERT( engine->lastLowerBounds.empty() );
 
-        TS_ASSERT_EQUALS( engine->lastUpperBounds.size(), 3U );
+        TS_ASSERT_EQUALS( engine->lastUpperBounds.size(), 2U );
         auto it = engine->lastUpperBounds.begin();
         TS_ASSERT_EQUALS( it->_variable, 2U );
         TS_ASSERT_EQUALS( it->_bound, 13.0 );
@@ -275,9 +271,6 @@ public:
 
         TS_ASSERT_EQUALS( engine->lastEquations.size(), 1U );
         Equation equation5 = equation2;
-        unsigned auxVar5 = FreshVariables::getNextVariable() - 1;
-        equation5.addAddend( -1, auxVar5 );
-        equation5.markAuxiliaryVariable( auxVar5 );
         TS_ASSERT_EQUALS( *engine->lastEquations.begin(), equation5 );
 
         engine->lastRestoredState = NULL;
@@ -294,25 +287,19 @@ public:
         TS_ASSERT( !engine->lastStoredState );
         engine->lastRestoredState = NULL;
 
-        TS_ASSERT_EQUALS( engine->lastLowerBounds.size(), 3U );
+        TS_ASSERT_EQUALS( engine->lastLowerBounds.size(), 1U );
         it = engine->lastLowerBounds.begin();
         TS_ASSERT_EQUALS( it->_variable, 14U );
         TS_ASSERT_EQUALS( it->_bound, 2.3 );
 
-        TS_ASSERT_EQUALS( engine->lastUpperBounds.size(), 2U );
+        TS_ASSERT( engine->lastUpperBounds.empty() );
 
         TS_ASSERT_EQUALS( engine->lastEquations.size(), 2U );
         auto equation = engine->lastEquations.begin();
         Equation equation6 = equation1;
-        unsigned auxVar6 = FreshVariables::getNextVariable() - 2;
-        equation6.addAddend( -1, auxVar6 );
-        equation6.markAuxiliaryVariable( auxVar6 );
         TS_ASSERT_EQUALS( *equation, equation6 );
         ++equation;
         Equation equation7 = equation2;
-        unsigned auxVar7 = FreshVariables::getNextVariable() - 2;
-        equation7.addAddend( -1, auxVar7 );
-        equation7.markAuxiliaryVariable( auxVar7 );
         TS_ASSERT_EQUALS( *equation, equation7 );
 
         engine->lastRestoredState = NULL;
@@ -337,7 +324,7 @@ public:
         Tightening bound1( 1, 3.0, Tightening::LB );
         Tightening bound2( 1, 5.0, Tightening::UB );
 
-        Equation equation1;
+        Equation equation1( Equation::EQ );
         equation1.addAddend( 1, 0 );
         equation1.addAddend( 2, 1 );
         equation1.addAddend( -1, 2 );
@@ -345,29 +332,29 @@ public:
 
         split1.storeBoundTightening( bound1 );
         split1.storeBoundTightening( bound2 );
-        split1.addEquation( equation1, PiecewiseLinearCaseSplit::EQ );
+        split1.addEquation( equation1 );
 
         // Split 2
         PiecewiseLinearCaseSplit split2;
         Tightening bound3( 2, 13.0, Tightening::UB );
         Tightening bound4( 3, 25.0, Tightening::UB );
 
-        Equation equation2;
+        Equation equation2( Equation::EQ );
         equation2.addAddend( -3, 0 );
         equation2.addAddend( 3, 1 );
         equation2.setScalar( -5 );
 
         split2.storeBoundTightening( bound3 );
         split2.storeBoundTightening( bound4 );
-        split2.addEquation( equation2, PiecewiseLinearCaseSplit::EQ );
+        split2.addEquation( equation2 );
 
         // Split 3
         PiecewiseLinearCaseSplit split3;
         Tightening bound5( 14, 2.3, Tightening::LB );
 
         split3.storeBoundTightening( bound5 );
-        split3.addEquation( equation1, PiecewiseLinearCaseSplit::EQ );
-        split3.addEquation( equation2, PiecewiseLinearCaseSplit::EQ );
+        split3.addEquation( equation1 );
+        split3.addEquation( equation2 );
 
         // Store the splits
         constraint.nextSplits.append( split1 );
@@ -402,7 +389,7 @@ public:
         Tightening bound1( 1, 3.0, Tightening::LB );
         Tightening bound2( 1, 5.0, Tightening::UB );
 
-        Equation equation1;
+        Equation equation1( Equation::EQ );
         equation1.addAddend( 1, 0 );
         equation1.addAddend( 2, 1 );
         equation1.addAddend( -1, 2 );
@@ -410,21 +397,21 @@ public:
 
         split1.storeBoundTightening( bound1 );
         split1.storeBoundTightening( bound2 );
-        split1.addEquation( equation1, PiecewiseLinearCaseSplit::EQ );
+        split1.addEquation( equation1 );
 
         // Split 2
         PiecewiseLinearCaseSplit split2;
         Tightening bound3( 2, 13.0, Tightening::UB );
         Tightening bound4( 3, 25.0, Tightening::UB );
 
-        Equation equation2;
+        Equation equation2( Equation::EQ );
         equation2.addAddend( -3, 0 );
         equation2.addAddend( 3, 1 );
         equation2.setScalar( -5 );
 
         split2.storeBoundTightening( bound3 );
         split2.storeBoundTightening( bound4 );
-        split2.addEquation( equation2, PiecewiseLinearCaseSplit::EQ );
+        split2.addEquation( equation2 );
 
         // Store the splits
         constraint.nextSplits.append( split1 );

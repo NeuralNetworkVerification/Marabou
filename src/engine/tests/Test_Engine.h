@@ -13,7 +13,6 @@
 #include <cxxtest/TestSuite.h>
 
 #include "Engine.h"
-#include "FreshVariables.h"
 #include "InputQuery.h"
 #include "MockConstraintMatrixAnalyzerFactory.h"
 #include "MockCostFunctionManagerFactory.h"
@@ -107,7 +106,6 @@ public:
         equation1.addAddend( -1, 2 );
         equation1.addAddend( 1, 3 );
         equation1.setScalar( 11 );
-        equation1.markAuxiliaryVariable( 3 );
         inputQuery.addEquation( equation1 );
 
         Equation equation2;
@@ -115,7 +113,6 @@ public:
         equation2.addAddend( 3, 1 );
         equation2.addAddend( 1, 4 );
         equation2.setScalar( -5 );
-        equation2.markAuxiliaryVariable( 4 );
         inputQuery.addEquation( equation2 );
 
         ReluConstraint *relu1 = new ReluConstraint( 1, 2 );
@@ -231,8 +228,6 @@ public:
 		auto watcher4 = ( ( ReluConstraint * ) ( * it ) )->getParticipatingVariables();
 
        	TS_ASSERT( watcher4 == relu2->getParticipatingVariables() );
-
-        TS_ASSERT_EQUALS( FreshVariables::getNextVariable(), 5U );
     }
 
     void test_todo()

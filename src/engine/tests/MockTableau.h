@@ -360,8 +360,10 @@ public:
         return nextVariableToIndex.at( index );
     }
 
-    void addEquation( const Equation &/* equation */ )
+    unsigned nextAuxVar;
+    unsigned addEquation( const Equation &/* equation */ )
     {
+        return nextAuxVar;
     }
 
     unsigned getM() const
