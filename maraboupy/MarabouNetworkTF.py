@@ -215,10 +215,6 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
                     e.addAddend(B[k][j], A[i][k])
                 e.addAddend(-1, curValues[i][j])
                 e.setScalar(0.0)
-                aux = self.getNewVariable()
-                self.setLowerBound(aux, 0.0)
-                self.setUpperBound(aux, 0.0)
-                e.markAuxiliaryVariable(aux)
                 self.addEquation(e)
 
     def biasAddEquations(self, op):
@@ -259,10 +255,6 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
                 e.addAddend(1.0, x)
                 e.addAddend(-1.0, xprime)
                 e.setScalar(c)
-                aux = self.getNewVariable()
-                self.setLowerBound(aux, 0.0)
-                self.setUpperBound(aux, 0.0)
-                e.markAuxiliaryVariable(aux)
                 self.addEquation(e)
             else:
                 biasAddUpdates[x] = (xprime, c)
@@ -329,10 +321,6 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
                     # Add output variable
                     e.addAddend(-1, curValues[0][i][j][k])
                     e.setScalar(0.0)
-                    aux = self.getNewVariable()
-                    self.setLowerBound(aux, 0.0)
-                    self.setUpperBound(aux, 0.0)
-                    e.markAuxiliaryVariable(aux)
                     self.addEquation(e)
 
     def reluEquations(self, op):
@@ -354,15 +342,6 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         ### Generate actual equations ###
         for i in range(len(prev)):
             self.addRelu(prev[i], cur[i])
-        #     e = MarabouUtils.Equation()
-        #     e.addAddend(1.0, prev[i])
-        #     e.addAddend(-1.0, cur[i])
-        #     e.setScalar(0.0)
-        #     aux = self.getNewVariable()
-        #     e.addAddend(1.0, aux)
-        #     e.markAuxiliaryVariable(aux)
-        #     self.setLowerBound(aux, 0.0)
-        #     self.addEquation(e)
         for f in cur:
             self.setLowerBound(f, 0.0)
 
