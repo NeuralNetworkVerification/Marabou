@@ -14,6 +14,8 @@
 #include "MStringf.h"
 #include "ReluplexError.h"
 #include "FloatUtils.h"
+#include <iostream>
+#include <fstream>
 
 InputQuery::InputQuery()
 {
@@ -197,6 +199,36 @@ const Map<unsigned, double> &InputQuery::getUpperBounds() const
 void InputQuery::storeDebuggingSolution( unsigned variable, double value )
 {
     _debuggingSolution[variable] = value;
+}
+
+void InputQuery::printQuery(std::string fileName)
+{
+   std::ofstream queryFile;
+   queryFile.open(fileName);
+   queryFile << "Equations:\n";
+   unsigned i = 0;
+   for (List<Equation>::iterator eq_iter = _equations.begin(); eq_iter != _equations.end(); eq_iter++)
+   {
+       Equation e = *eq_iter;
+       queryFile << Stringf( "Equation %04u: ", i ).ascii();
+       for (List<Equation::Addend>::iterator add_iter = e._addends.begin(); add_iter != e._addends.end(); add_iter++)
+       {
+          Equation::Addend a = *add_iter;
+          queryFile << Stringf( "(%04u, %.6f), ", a._variable, a._coefficient).ascii();         
+       }
+       
+       queryFile << Stringf("\n\tScalar: %.6f,\n\tAux Variable: %04u,\n", e._scalar, e._auxVariable).ascii();
+       i+=1;
+   }
+    
+   queryFile << "\nBounds:\n";
+   for (Map<unsigned, double>::iterator it = _lowerBounds.begin(); it != _lowerBounds.end(); it++)
+   {
+       queryFile << Stringf( "%04d: (%.6f, %.6f)\n", it->first, it->second, _upperBounds[it->first]).ascii();
+   }
+    
+   // Future: _plConstraints
+   queryFile.close();
 }
 
 //

@@ -68,6 +68,8 @@ public:
     */
     void storeDebuggingSolution( unsigned variable, double value );
     Map<unsigned, double> _debuggingSolution;
+    
+    void printQuery(std::string fileName);
 
 private:
     unsigned _numberOfVariables;

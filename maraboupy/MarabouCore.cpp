@@ -112,7 +112,8 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def("getUpperBound", &InputQuery::getUpperBound)
         .def("getLowerBound", &InputQuery::getLowerBound)
         .def("setNumberOfVariables", &InputQuery::setNumberOfVariables)
-        .def("addEquation", &InputQuery::addEquation);
+        .def("addEquation", &InputQuery::addEquation)
+        .def("printQuery", &InputQuery::printQuery);
     py::class_<Equation> eq(m, "Equation");
     eq.def(py::init());
     eq.def(py::init<Equation::EquationType>());
