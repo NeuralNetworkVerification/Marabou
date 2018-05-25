@@ -66,7 +66,6 @@ public:
         equation1.addAddend( 1, 3 );
         equation1.addAddend( 1, 11 );
         equation1.setScalar( 0 );
-        equation1.markAuxiliaryVariable( 11 );
         inputQuery.addEquation( equation1 ); // x3 is a-b
 
         Equation equation2;
@@ -75,19 +74,17 @@ public:
         equation2.addAddend( 1, 4 );
         equation2.addAddend( 1, 12 );
         equation2.setScalar( 0 );
-        equation2.markAuxiliaryVariable( 12 );
         inputQuery.addEquation( equation2 ); // x4 is b-a
-        
+
         MaxConstraint* max1 = new MaxConstraint( 5, Set<unsigned>( { 3, 4 } ) ) ;
         inputQuery.addPiecewiseLinearConstraint( max1 ); // x5 is |a-b|
-        
+
         Equation equation3;
         equation3.addAddend( -1, 5 );
         equation3.addAddend( 1, 2 );
         equation3.addAddend( 1, 6 );
         equation3.addAddend( 1, 13 );
         equation3.setScalar( 0.001 );
-        equation3.markAuxiliaryVariable( 13 );
         inputQuery.addEquation( equation3 ); // x6 is |a-b|-c
 
         ReluConstraint* relu1 = new ReluConstraint( 6, 7 );
@@ -101,9 +98,8 @@ public:
         equation4.addAddend( 1, 8 );
         equation4.addAddend( 1, 14 );
         equation4.setScalar( 0.001 );
-        equation4.markAuxiliaryVariable( 14 );
         inputQuery.addEquation( equation4 ); // x8 is c-a-b
-        
+
         ReluConstraint* relu2 = new ReluConstraint( 8, 9 );
         inputQuery.addPiecewiseLinearConstraint( relu2 ); // x9 is Relu(c-a-b)
         inputQuery.setLowerBound( 9, 0 );
@@ -114,13 +110,12 @@ public:
         equation5.addAddend( 1, 10 );
         equation5.addAddend( 1, 15 );
         equation5.setScalar( 0 );
-        equation5.markAuxiliaryVariable( 15 );
         inputQuery.addEquation( equation5 ); // x10 is == 0 iff triangle inequality satisfied
 
         int outputStream = redirectOutputToFile( "logs/max_relu_feasible_1.txt" );
 
         struct timespec start = TimeUtils::sampleMicro();
-        
+
         Engine engine;
         bool whetherToPreprocess = true; // change here rather than GlobalConfig
         if ( !engine.processInputQuery( inputQuery, whetherToPreprocess ) )
@@ -130,7 +125,7 @@ public:
             printFailed( "max_relu_feasible_1 preprocessing", start, end );
             return;
         }
-        
+
         bool result = engine.solve();
 
         struct timespec end = TimeUtils::sampleMicro();
@@ -145,7 +140,7 @@ public:
         engine.extractSolution( inputQuery );
         // sanity check
         bool correctSolution = true;
-        
+
         double value_a = inputQuery.getSolutionValue( 0 );
         double value_b = inputQuery.getSolutionValue( 1 );
         double value_c = inputQuery.getSolutionValue( 2 );

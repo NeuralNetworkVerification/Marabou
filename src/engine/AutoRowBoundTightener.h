@@ -19,9 +19,9 @@
 class AutoRowBoundTightener
 {
 public:
-	AutoRowBoundTightener()
+	AutoRowBoundTightener( const ITableau &tableau )
 	{
-		_rowBoundTightener = T::createRowBoundTightener();
+		_rowBoundTightener = T::createRowBoundTightener( tableau );
 	}
 
 	~AutoRowBoundTightener()

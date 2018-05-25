@@ -49,7 +49,6 @@ public:
         equation.addAddend( -1, 2 );
         equation.addAddend( 1, 3 );
         equation.setScalar( 11 );
-        equation.markAuxiliaryVariable( 3 );
         inputQuery.addEquation( equation );
 
         int outputStream = redirectOutputToFile( "logs/lp_feasible_1.txt" );

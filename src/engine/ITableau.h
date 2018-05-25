@@ -69,9 +69,21 @@ public:
         virtual void notifyUpperBound( unsigned /* variable */, double /* bound */ ) {}
     };
 
+    class ResizeWatcher
+    {
+    public:
+        /*
+          This callback will be invoked when the tableau size changes,
+          typically when new variables are added.
+        */
+        virtual void notifyDimensionChange( unsigned /* m */, unsigned /* n */ ) {}
+    };
+
     virtual void registerToWatchAllVariables( VariableWatcher *watcher ) = 0;
     virtual void registerToWatchVariable( VariableWatcher *watcher, unsigned variable ) = 0;
     virtual void unregisterToWatchVariable( VariableWatcher *watcher, unsigned variable ) = 0;
+
+    virtual void registerResizeWatcher( ResizeWatcher *watcher ) = 0;
 
     virtual void registerCostFunctionManager( ICostFunctionManager *costFunctionManager ) = 0;
 
@@ -82,7 +94,7 @@ public:
     virtual void setRightHandSide( const double *b ) = 0;
     virtual void setRightHandSide( unsigned index, double value ) = 0;
     virtual void markAsBasic( unsigned variable ) = 0;
-    virtual void initializeTableau() = 0;
+    virtual void initializeTableau( const List<unsigned> &initialBasicVariables ) = 0;
     virtual double getValue( unsigned variable ) = 0;
     virtual bool allBoundsValid() const = 0;
     virtual double getLowerBound( unsigned variable ) const = 0;
@@ -130,7 +142,7 @@ public:
     virtual unsigned basicIndexToVariable( unsigned index ) const = 0;
     virtual void assignIndexToBasicVariable( unsigned variable, unsigned index ) = 0;
     virtual unsigned variableToIndex( unsigned index ) const = 0;
-    virtual void addEquation( const Equation &equation ) = 0;
+    virtual unsigned addEquation( const Equation &equation ) = 0;
     virtual unsigned getM() const = 0;
     virtual unsigned getN() const = 0;
     virtual void getTableauRow( unsigned index, TableauRow *row ) = 0;

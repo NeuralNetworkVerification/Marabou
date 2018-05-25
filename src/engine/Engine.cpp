@@ -13,7 +13,6 @@
 #include "Debug.h"
 #include "Engine.h"
 #include "EngineState.h"
-#include "FreshVariables.h"
 #include "InfeasibleQueryException.h"
 #include "InputQuery.h"
 #include "MStringf.h"
@@ -25,7 +24,8 @@
 #include "TimeUtils.h"
 
 Engine::Engine()
-    : _smtCore( this )
+    : _rowBoundTightener( *_tableau )
+    , _smtCore( this )
     , _numPlConstraintsDisabledByValidSplits( 0 )
     , _preprocessingEnabled( false )
     , _work( NULL )
@@ -407,7 +407,7 @@ void Engine::performSimplexStep()
     if ( !fakePivot )
     {
         _tableau->computePivotRow();
-        _rowBoundTightener->examinePivotRow( _tableau );
+        _rowBoundTightener->examinePivotRow();
     }
 
     // Perform the actual pivot
@@ -549,17 +549,36 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         adjustWorkMemorySize();
 
-        // Current variables are [0,..,n-1], so the next variable is n.
-        FreshVariables::setNextVariable( n );
         unsigned equationIndex = 0;
         for ( const auto &equation : equations )
         {
+            if ( equation._type != Equation::EQ )
+                throw ReluplexError( ReluplexError::NON_EQUALITY_INPUT_EQUATIONS_NOT_YET_SUPPORTED );
+
             _tableau->setRightHandSide( equationIndex, equation._scalar );
 
             for ( const auto &addend : equation._addends )
                 _tableau->setEntryValue( equationIndex, addend._variable, addend._coefficient );
 
             ++equationIndex;
+        }
+
+        for ( unsigned i = 0; i < n; ++i )
+        {
+            _tableau->setLowerBound( i, _preprocessedQuery.getLowerBound( i ) );
+            _tableau->setUpperBound( i, _preprocessedQuery.getUpperBound( i ) );
+        }
+
+        _tableau->registerToWatchAllVariables( _rowBoundTightener );
+        _tableau->registerResizeWatcher( _rowBoundTightener );
+
+        _rowBoundTightener->setDimensions();
+
+        _plConstraints = _preprocessedQuery.getPiecewiseLinearConstraints();
+        for ( const auto &constraint : _plConstraints )
+        {
+            constraint->registerAsWatcher( _tableau );
+            constraint->setStatistics( &_statistics );
         }
 
         // Placeholder: better constraint matrix analysis as part
@@ -573,35 +592,9 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             printf( "Warning!! Contraint matrix rank is %u (out of %u)\n",
                     analyzer->getRank(), _tableau->getM() );
         }
-
         List<unsigned> independentColumns = analyzer->getIndependentColumns();
+        _tableau->initializeTableau( independentColumns );
 
-        unsigned assigned = 0;
-        for( unsigned basicVar : independentColumns )
-        {
-            _tableau->markAsBasic( basicVar );
-            _tableau->assignIndexToBasicVariable( basicVar, assigned );
-            assigned++;
-        }
-
-        for ( unsigned i = 0; i < n; ++i )
-        {
-            _tableau->setLowerBound( i, _preprocessedQuery.getLowerBound( i ) );
-            _tableau->setUpperBound( i, _preprocessedQuery.getUpperBound( i ) );
-        }
-
-        _tableau->registerToWatchAllVariables( _rowBoundTightener );
-
-        _rowBoundTightener->initialize( _tableau );
-
-        _plConstraints = _preprocessedQuery.getPiecewiseLinearConstraints();
-        for ( const auto &constraint : _plConstraints )
-        {
-            constraint->registerAsWatcher( _tableau );
-            constraint->setStatistics( &_statistics );
-        }
-
-        _tableau->initializeTableau();
         _costFunctionManager->initialize();
         _tableau->registerCostFunctionManager( _costFunctionManager );
         _activeEntryStrategy->initialize( _tableau );
@@ -685,8 +678,6 @@ void Engine::storeState( EngineState &state, bool storeAlsoTableauState ) const
         state._plConstraintToState[constraint] = constraint->duplicateConstraint();
 
     state._numPlConstraintsDisabledByValidSplits = _numPlConstraintsDisabledByValidSplits;
-
-    state._nextAuxVariable = FreshVariables::peakNextVariable();
 }
 
 void Engine::restoreState( const EngineState &state )
@@ -711,15 +702,13 @@ void Engine::restoreState( const EngineState &state )
     _numPlConstraintsDisabledByValidSplits = state._numPlConstraintsDisabledByValidSplits;
 
     // Make sure the data structures are initialized to the correct size
-    _rowBoundTightener->initialize( _tableau );
+    _rowBoundTightener->setDimensions();
     adjustWorkMemorySize();
     _activeEntryStrategy->resizeHook( _tableau );
     _costFunctionManager->initialize();
 
     // Reset the violation counts in the SMT core
     _smtCore.resetReportedViolations();
-
-    FreshVariables::setNextVariable( state._nextAuxVariable );
 }
 
 void Engine::setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints )
@@ -735,27 +724,36 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
     DEBUG( _tableau->verifyInvariants() );
 
     List<Tightening> bounds = split.getBoundTightenings();
-    List<Pair<Equation, PiecewiseLinearCaseSplit::EquationType>> equations = split.getEquations();
-    for ( auto &it : equations )
+    List<Equation> equations = split.getEquations();
+    for ( auto &equation : equations )
     {
-        Equation equation = it.first();
-        unsigned auxVariable = FreshVariables::getNextVariable();
-        equation.addAddend( -1, auxVariable );
-        equation.markAuxiliaryVariable( auxVariable );
-
-        _tableau->addEquation( equation );
+        unsigned auxVariable = _tableau->addEquation( equation );
         _activeEntryStrategy->resizeHook( _tableau );
 
-        PiecewiseLinearCaseSplit::EquationType type = it.second();
-        if ( type != PiecewiseLinearCaseSplit::GE )
+        switch ( equation._type )
+        {
+        case Equation::GE:
             bounds.append( Tightening( auxVariable, 0.0, Tightening::UB ) );
-        if ( type != PiecewiseLinearCaseSplit::LE )
+            break;
+
+        case Equation::LE:
             bounds.append( Tightening( auxVariable, 0.0, Tightening::LB ) );
+            break;
+
+        case Equation::EQ:
+            bounds.append( Tightening( auxVariable, 0.0, Tightening::LB ) );
+            bounds.append( Tightening( auxVariable, 0.0, Tightening::UB ) );
+            break;
+
+        default:
+            ASSERT( false );
+            break;
+        }
     }
 
     adjustWorkMemorySize();
 
-    _rowBoundTightener->initialize( _tableau );
+    _rowBoundTightener->resetBounds();
 
     for ( auto &bound : bounds )
     {
@@ -832,16 +830,16 @@ void Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
 {
     if ( constraint->isActive() && constraint->phaseFixed() )
     {
+        String constraintString;
+        constraint->dump( constraintString );
+        log( Stringf( "A constraint has become valid. Dumping constraint: %s",
+                      constraintString.ascii() ) );
+
         constraint->setActiveConstraint( false );
         PiecewiseLinearCaseSplit validSplit = constraint->getValidCaseSplit();
         _smtCore.recordImpliedValidSplit( validSplit );
         applySplit( validSplit );
         ++_numPlConstraintsDisabledByValidSplits;
-
-        String constraintString;
-        constraint->dump( constraintString );
-        log( Stringf( "A constraint has become valid. Dumping constraint: %s",
-                      constraintString.ascii() ) );
     }
 }
 
@@ -878,7 +876,7 @@ void Engine::tightenBoundsOnConstraintMatrix()
     if ( _statistics.getNumMainLoopIterations() %
          GlobalConfiguration::BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY == 0 )
     {
-        _rowBoundTightener->examineConstraintMatrix( _tableau, true );
+        _rowBoundTightener->examineConstraintMatrix( true );
         _statistics.incNumBoundTighteningOnConstraintMatrix();
     }
 
@@ -897,15 +895,15 @@ void Engine::explicitBasisBoundTightening()
     switch ( GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE )
     {
     case GlobalConfiguration::USE_BASIS_MATRIX:
-        _rowBoundTightener->examineBasisMatrix( _tableau, saturation );
+        _rowBoundTightener->examineBasisMatrix( saturation );
         break;
 
     case GlobalConfiguration::COMPUTE_INVERTED_BASIS_MATRIX:
-        _rowBoundTightener->examineInvertedBasisMatrix( _tableau, saturation );
+        _rowBoundTightener->examineInvertedBasisMatrix( saturation );
         break;
 
     case GlobalConfiguration::USE_IMPLICIT_INVERTED_BASIS_MATRIX:
-        _rowBoundTightener->examineImplicitInvertedBasisMatrix( _tableau, saturation );
+        _rowBoundTightener->examineImplicitInvertedBasisMatrix( saturation );
         break;
     }
 
@@ -926,7 +924,7 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
     _statistics.addTimeForPrecisionRestoration( TimeUtils::timePassed( start, end ) );
 
     _statistics.incNumPrecisionRestorations();
-    _rowBoundTightener->clear( _tableau );
+    _rowBoundTightener->clear();
 
     // debug
     double after = _degradationChecker.computeDegradation( *_tableau );
@@ -946,7 +944,7 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
         _statistics.addTimeForPrecisionRestoration( TimeUtils::timePassed( start, end ) );
         _statistics.incNumPrecisionRestorations();
 
-        _rowBoundTightener->clear( _tableau );
+        _rowBoundTightener->clear();
 
         // debug
         double afterSecond = _degradationChecker.computeDegradation( *_tableau );

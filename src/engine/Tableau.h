@@ -85,14 +85,15 @@ public:
       to lower bounds and computes the assignment. Assign the initial basic
       indices according to the equations.
     */
-    void initializeTableau();
+    void initializeTableau( const List<unsigned> &initialBasicVariables );
     void assignIndexToBasicVariable( unsigned variable, unsigned index );
 
     /*
       A method for adding an additional equation to the tableau. The
-      auxiliary variable in this equation needs to be a fresh variable.
+      method returns the index of the fresh auxiliary variable assigned
+      to the equation
     */
-    void addEquation( const Equation &equation );
+    unsigned addEquation( const Equation &equation );
 
     /*
       Get the Tableau's dimensions.
@@ -334,6 +335,11 @@ public:
     void unregisterToWatchVariable( VariableWatcher *watcher, unsigned variable );
 
     /*
+      Register to watch for tableau dimension changes.
+    */
+    void registerResizeWatcher( ResizeWatcher *watcher );
+
+    /*
       Register the cost function manager.
     */
     void registerCostFunctionManager( ICostFunctionManager *costFunctionManager );
@@ -388,9 +394,17 @@ public:
     const double *getColumnOfBasis( unsigned column ) const;
 
 private:
+    /*
+      Variable watchers
+    */
     typedef List<VariableWatcher *> VariableWatchers;
     Map<unsigned, VariableWatchers> _variableToWatchers;
     List<VariableWatcher *> _globalWatchers;
+
+    /*
+      Resize watchers
+    */
+    List<ResizeWatcher *> _resizeWatchers;
 
     /*
       The dimensions of matrix A

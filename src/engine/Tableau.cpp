@@ -11,12 +11,14 @@
  **/
 
 #include "BasisFactorizationFactory.h"
+#include "ConstraintMatrixAnalyzer.h"
 #include "Debug.h"
 #include "EntrySelectionStrategy.h"
 #include "Equation.h"
 #include "FloatUtils.h"
 #include "ICostFunctionManager.h"
 #include "MStringf.h"
+#include "MalformedBasisException.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "ReluplexError.h"
 #include "Tableau.h"
@@ -243,11 +245,21 @@ void Tableau::assignIndexToBasicVariable( unsigned variable, unsigned index )
     _variableToIndex[variable] = index;
 }
 
-void Tableau::initializeTableau()
+void Tableau::initializeTableau( const List<unsigned> &initialBasicVariables )
 {
-    unsigned nonBasicIndex = 0;
+    _basicVariables.clear();
 
-    // Assign variable indices
+    // Assign the basic indices
+    unsigned basicIndex = 0;
+    for( unsigned basicVar : initialBasicVariables )
+    {
+        markAsBasic( basicVar );
+        assignIndexToBasicVariable( basicVar, basicIndex );
+        ++basicIndex;
+    }
+
+    // Assign the non-basic indices
+    unsigned nonBasicIndex = 0;
     for ( unsigned i = 0; i < _n; ++i )
     {
         if ( !_basicVariables.exists( i ) )
@@ -1220,11 +1232,12 @@ void Tableau::tightenUpperBound( unsigned variable, double value )
     }
 }
 
-void Tableau::addEquation( const Equation &equation )
+unsigned Tableau::addEquation( const Equation &equation )
 {
-    // The aux variable in the equation has to be a new variable
-    if ( equation._auxVariable != _n )
-        throw ReluplexError( ReluplexError::INVALID_EQUATION_ADDED_TO_TABLEAU );
+    // The fresh auxiliary variable assigned to the equation is _n.
+    // This variable is implicitly added to the equation, with
+    // coefficient 1.
+    unsigned auxVariable = _n;
 
     // Add an actual row to the talbeau, adjust the data structures
     addRow();
@@ -1232,38 +1245,94 @@ void Tableau::addEquation( const Equation &equation )
     // Invalidate the cost function, so that it is recomputed in the next iteration.
     _costFunctionManager->invalidateCostFunction();
 
-    // Mark the auxiliary variable as basic, add to indices
-    _basicVariables.insert( equation._auxVariable );
-    _basicIndexToVariable[_m - 1] = equation._auxVariable;
-    _variableToIndex[equation._auxVariable] = _m - 1;
+    // All variables except the new one have finite bounds. Use this to compute
+    // finite bounds for the new variable.
+    double lb = equation._scalar;
+    double ub = equation._scalar;
 
-    // Populate the new row of A, compute the assignment for the new basic variable
-    _b[_m - 1] = equation._scalar;
-    _basicAssignment[_m - 1] = equation._scalar;
-    double auxCoefficient = 0.0;
     for ( const auto &addend : equation._addends )
     {
-        setEntryValue( _m - 1, addend._variable, addend._coefficient );
+        double coefficient = addend._coefficient;
+        unsigned variable = addend._variable;
 
-        if ( addend._variable == equation._auxVariable )
-            auxCoefficient = addend._coefficient;
+        if ( FloatUtils::isPositive( coefficient ) )
+        {
+            lb -= coefficient * _upperBounds[variable];
+            ub -= coefficient * _lowerBounds[variable];
+        }
         else
-            _basicAssignment[_m - 1] -= addend._coefficient * getValue( addend._variable );
+        {
+            lb -= coefficient * _lowerBounds[variable];
+            ub -= coefficient * _upperBounds[variable];
+        }
     }
 
-    ASSERT( !FloatUtils::isZero( auxCoefficient ) );
-    _basicAssignment[_m - 1] = _basicAssignment[_m - 1] / auxCoefficient;
-    ASSERT( FloatUtils::wellFormed( _basicAssignment[_m - 1] ) );
+    setLowerBound( auxVariable, lb );
+    setUpperBound( auxVariable, ub );
 
-    if ( FloatUtils::isZero( _basicAssignment[_m - 1] ) )
-        _basicAssignment[_m - 1] = 0.0;
+    // Populate the new row of A and b
+    _b[_m - 1] = equation._scalar;
+    for ( const auto &addend : equation._addends )
+        setEntryValue( _m - 1, addend._variable, addend._coefficient );
+    setEntryValue( _m - 1, auxVariable, 1 );
 
-    // Refactorize the basis
-    _basisFactorization->refactorizeBasis();
+    /*
+      Attempt to make the auxiliary variable the new basic variable.
+      This usually works.
+      If it doesn't, compute a new set of basic variables and re-initialize
+      the tableau (which is more computationally expensive)
+    */
+    _basicIndexToVariable[_m - 1] = auxVariable;
+    _variableToIndex[auxVariable] = _m - 1;
+    _basicVariables.insert( auxVariable );
 
-    // Notify about the new variable's assignment and compute its status
-    notifyVariableValue( _basicIndexToVariable[_m - 1], _basicAssignment[_m - 1] );
-    computeBasicStatus( _m - 1 );
+    // Attempt to refactorize the basis
+    bool factorizationSuccessful = true;
+    try
+    {
+        _basisFactorization->refactorizeBasis();
+    }
+    catch ( MalformedBasisException & )
+    {
+        factorizationSuccessful = false;
+    }
+
+    if ( factorizationSuccessful )
+    {
+        // Compute the assignment for the new basic variable
+        _basicAssignment[_m - 1] = equation._scalar;
+        for ( const auto &addend : equation._addends )
+        {
+            _basicAssignment[_m - 1] -= addend._coefficient * getValue( addend._variable );
+        }
+
+        ASSERT( FloatUtils::wellFormed( _basicAssignment[_m - 1] ) );
+
+        if ( FloatUtils::isZero( _basicAssignment[_m - 1] ) )
+            _basicAssignment[_m - 1] = 0.0;
+
+        // Notify about the new variable's assignment and compute its status
+        notifyVariableValue( _basicIndexToVariable[_m - 1], _basicAssignment[_m - 1] );
+        computeBasicStatus( _m - 1 );
+    }
+    else
+    {
+        ConstraintMatrixAnalyzer analyzer;
+        analyzer.analyze( _A, _m, _n );
+        List<unsigned> independentColumns = analyzer.getIndependentColumns();
+
+        try
+        {
+            initializeTableau( independentColumns );
+        }
+        catch ( MalformedBasisException & )
+        {
+            log( "addEquation failed - could not refactorize basis" );
+            throw ReluplexError( ReluplexError::FAILURE_TO_ADD_NEW_EQUATION );
+        }
+    }
+
+    return auxVariable;
 }
 
 void Tableau::addRow()
@@ -1392,6 +1461,9 @@ void Tableau::addRow()
     _m = newM;
     _n = newN;
     _costFunctionManager->initialize();
+
+    for ( const auto &watcher : _resizeWatchers )
+        watcher->notifyDimensionChange( _m, _n );
 }
 
 void Tableau::registerToWatchVariable( VariableWatcher *watcher, unsigned variable )
@@ -1407,6 +1479,11 @@ void Tableau::unregisterToWatchVariable( VariableWatcher *watcher, unsigned vari
 void Tableau::registerToWatchAllVariables( VariableWatcher *watcher )
 {
     _globalWatchers.append( watcher );
+}
+
+void Tableau::registerResizeWatcher( ResizeWatcher *watcher )
+{
+    _resizeWatchers.append( watcher );
 }
 
 void Tableau::notifyVariableValue( unsigned variable, double value )

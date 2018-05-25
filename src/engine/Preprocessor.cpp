@@ -38,6 +38,12 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
         addPlAuxiliaryEquations();
 
     /*
+      Next, make sure all equations are of type EQUALITY. If not, turn them
+      into one.
+    */
+    makeAllEquationsEqualities();
+
+    /*
       Do the preprocessing steps:
 
       Until saturation:
@@ -63,6 +69,28 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     return _preprocessed;
 }
 
+void Preprocessor::makeAllEquationsEqualities()
+{
+    for ( auto &equation : _preprocessed.getEquations() )
+    {
+        if ( equation._type == Equation::EQ )
+            continue;
+
+        unsigned auxVariable = _preprocessed.getNumberOfVariables();
+        _preprocessed.setNumberOfVariables( auxVariable + 1 );
+
+        // Auxiliary variables are always added with coefficient 1
+        if ( equation._type == Equation::GE )
+            _preprocessed.setUpperBound( auxVariable, 0 );
+        else
+            _preprocessed.setLowerBound( auxVariable, 0 );
+
+        equation._type = Equation::EQ;
+
+        equation.addAddend( 1, auxVariable );
+    }
+}
+
 bool Preprocessor::processEquations()
 {
     enum {
@@ -76,7 +104,8 @@ bool Preprocessor::processEquations()
 
     for ( const auto &equation : _preprocessed.getEquations() )
     {
-        // The equation is of the form sum (ci * xi) - b = 0
+        // The equation is of the form sum (ci * xi) - b ? 0
+        Equation::EquationType type = equation._type;
 
         unsigned maxVar = equation._addends.begin()->_variable;
         for ( const auto &addend : equation._addends )
@@ -103,7 +132,7 @@ bool Preprocessor::processEquations()
         bool validLb;
         bool validUb;
 
-        // The first goal is to compute the LB and UB of: sum (ci * xi) - b = 0
+        // The first goal is to compute the LB and UB of: sum (ci * xi) - b
         // For this we first identify unbounded variables
         double auxLb = -equation._scalar;
         double auxUb = -equation._scalar;
@@ -158,7 +187,7 @@ bool Preprocessor::processEquations()
             }
         }
 
-        // Now, go over each addend in sum (ci * xi) - b = 0, and see what can be done
+        // Now, go over each addend in sum (ci * xi) - b ? 0, and see what can be done
         for ( const auto &addend : equation._addends )
         {
             ci = addend._coefficient;
@@ -171,38 +200,48 @@ bool Preprocessor::processEquations()
             /*
               The expression for xi is:
 
-                   xi = ( -1/ci ) * ( sum_{j\neqi} ( cj * xj ) - b )
+                   xi ? ( -1/ci ) * ( sum_{j\neqi} ( cj * xj ) - b )
 
               We use the previously computed auxLb and auxUb and adjust them because
               xi is removed from the sum. We also need to pay attention to the sign of ci,
               and to the presence of infinite bounds.
 
-              We can compute a LB if:
+              Assuming "?" stands for equality, we can compute a LB if:
                 1. ci is negative, and no vars except xi were excluded from the auxLb
                 2. ci is positive, and no vars except xi were excluded from the auxUb
 
               And vice-versa for UB.
+
+              In case "?" is GE or LE, only one direction can be computed.
             */
             if ( ciSign[xi] == NEGATIVE )
             {
                 validLb =
-                    excludedFromLB.empty() ||
-                    ( excludedFromLB.size() == 1 && excludedFromLB.exists( xi ) );
+                    ( ( type == Equation::LE ) || ( type == Equation::EQ ) )
+                    &&
+                    ( excludedFromLB.empty() ||
+                      ( excludedFromLB.size() == 1 && excludedFromLB.exists( xi ) ) );
                 validUb =
-                    excludedFromUB.empty() ||
-                    ( excludedFromUB.size() == 1 && excludedFromUB.exists( xi ) );
+                    ( ( type == Equation::GE ) || ( type == Equation::EQ ) )
+                    &&
+                    ( excludedFromUB.empty() ||
+                      ( excludedFromUB.size() == 1 && excludedFromUB.exists( xi ) ) );
             }
             else
             {
                 validLb =
-                    excludedFromUB.empty() ||
-                    ( excludedFromUB.size() == 1 && excludedFromUB.exists( xi ) );
+                    ( ( type == Equation::GE ) || ( type == Equation::EQ ) )
+                    &&
+                    ( excludedFromUB.empty() ||
+                      ( excludedFromUB.size() == 1 && excludedFromUB.exists( xi ) ) );
                 validUb =
-                    excludedFromLB.empty() ||
-                    ( excludedFromLB.size() == 1 && excludedFromLB.exists( xi ) );
+                    ( ( type == Equation::LE ) || ( type == Equation::EQ ) )
+                    &&
+                    ( excludedFromLB.empty() ||
+                      ( excludedFromLB.size() == 1 && excludedFromLB.exists( xi ) ) );
             }
 
-            // Now compute the actul bounds and see if they are tighter
+            // Now compute the actual bounds and see if they are tighter
             if ( validLb )
             {
                 if ( ciSign[xi] == NEGATIVE )
@@ -335,7 +374,6 @@ void Preprocessor::eliminateFixedVariables()
     List<Equation> &equations( _preprocessed.getEquations() );
     List<Equation>::iterator equation = equations.begin();
 
-    Set<unsigned> auxiliaryVariables;
     while ( equation != equations.end() )
 	{
         // Each equation is of the form sum(addends) = scalar. So, any fixed variable
@@ -358,42 +396,6 @@ void Preprocessor::eliminateFixedVariables()
             }
         }
 
-        // If the auxiliary variable has been eliminated, pick a new one,
-        // unless the equation has no addends left
-        if ( !equation->_addends.empty() )
-        {
-            if ( _fixedVariables.exists( equation->_auxVariable ) ||
-                 auxiliaryVariables.exists( _oldIndexToNewIndex.at( equation->_auxVariable ) ) )
-            {
-                bool found = false;
-                addend = equation->_addends.begin();
-                while ( !found && ( addend != equation->_addends.end() ) )
-                {
-                    // A variable can't be aux for two equations
-                    if ( !auxiliaryVariables.exists( addend->_variable ) )
-                    {
-                        // This variable is free, grab it
-                        equation->_auxVariable = addend->_variable;
-                        found = true;
-                    }
-
-                    ++addend;
-                }
-
-                if ( !found )
-                {
-                    // Couldn't find a new auxiliary variable!
-                    throw ReluplexError( ReluplexError::PREPROCESSOR_CANT_FIND_NEW_AUXILIARY_VAR );
-                }
-            }
-            else
-            {
-                equation->_auxVariable = _oldIndexToNewIndex.at( equation->_auxVariable );
-            }
-
-            auxiliaryVariables.insert( equation->_auxVariable );
-        }
-
         // If all the addends have been removed, we remove the entire equation.
         // Overwise, we are done here.
         if ( equation->_addends.empty() )
@@ -410,8 +412,6 @@ void Preprocessor::eliminateFixedVariables()
         else
             ++equation;
 	}
-
-    ASSERT( auxiliaryVariables.size() == equations.size() );
 
     // Let the piecewise-linear constraints know of any eliminated variables, and remove
     // the constraints themselves if they become obsolete.
@@ -523,26 +523,8 @@ void Preprocessor::addPlAuxiliaryEquations()
     for ( const auto &constraint : plConstraints )
         constraint->getAuxiliaryEquations( newEquations );
 
-    // Update the number of variables: new aux variable per equation
-    unsigned oldNumberOfVariables = _preprocessed.getNumberOfVariables();
-    unsigned newNumberOfVariables = oldNumberOfVariables + newEquations.size();
-
-    _preprocessed.setNumberOfVariables( newNumberOfVariables );
-
-    unsigned newAuxVar = oldNumberOfVariables;
     for ( Equation equation : newEquations )
-    {
-        // Add the auxiliary variable to the equation
-        equation.markAuxiliaryVariable( newAuxVar );
-        equation.addAddend( 1.0, newAuxVar );
-
-        // For now, all new equations are interpreted as \geq 0,
-        // so the auxiliary variable needs to be non-positive.
-        _preprocessed.setUpperBound( newAuxVar, 0.0 );
         _preprocessed.addEquation( equation );
-
-        ++newAuxVar;
-    }
 }
 
 //

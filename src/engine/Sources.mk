@@ -8,7 +8,6 @@ SOURCES += \
 	EngineState.cpp \
 	EntrySelectionStrategy.cpp \
 	Equation.cpp \
-	FreshVariables.cpp \
 	InputQuery.cpp \
 	MaxConstraint.cpp \
 	PiecewiseLinearCaseSplit.cpp \
