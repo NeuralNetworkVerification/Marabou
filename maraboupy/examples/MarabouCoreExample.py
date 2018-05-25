@@ -6,9 +6,9 @@ from maraboupy import MarabouCore
 #   0   <= x2f
 #   1/2 <= x3  <= 1
 #
-#  x0 - x1b = 0        -->  x0 - x1b + x6 = 0
-#  x0 + x2b = 0        -->  x0 + x2b + x7 = 0
-#  x1f + x2f - x3 = 0  -->  x1f + x2f - x3 + x8 = 0
+#  x0 - x1b = 0
+#  x0 + x2b = 0
+#  x1f + x2f - x3 = 0
 #
 #  x2f = Relu(x2b)
 #  x3f = Relu(x3b)
@@ -24,7 +24,7 @@ large = 10.0
 
 inputQuery = MarabouCore.InputQuery()
 
-inputQuery.setNumberOfVariables(9)
+inputQuery.setNumberOfVariables(6)
 
 inputQuery.setLowerBound(0, 0)
 inputQuery.setUpperBound(0, 1)
@@ -44,36 +44,23 @@ inputQuery.setUpperBound(4, large)
 inputQuery.setLowerBound(5, 0.5)
 inputQuery.setUpperBound(5, 1)
 
-inputQuery.setLowerBound(6, 0)
-inputQuery.setUpperBound(6, 0)
-inputQuery.setLowerBound(7, 0)
-inputQuery.setUpperBound(7, 0)
-inputQuery.setLowerBound(8, 0)
-inputQuery.setUpperBound(8, 0)
-
 equation1 = MarabouCore.Equation()
 equation1.addAddend(1, 0)
 equation1.addAddend(-1, 1)
-equation1.addAddend(1, 6)
 equation1.setScalar(0)
-equation1.markAuxiliaryVariable(6)
 inputQuery.addEquation(equation1)
 
 equation2 = MarabouCore.Equation()
 equation2.addAddend(1, 0)
 equation2.addAddend(1, 3)
-equation2.addAddend(1, 7)
 equation2.setScalar(0)
-equation2.markAuxiliaryVariable(7)
 inputQuery.addEquation(equation2)
 
 equation3 = MarabouCore.Equation()
 equation3.addAddend(1, 2)
 equation3.addAddend(1, 4)
 equation3.addAddend(-1, 5)
-equation3.addAddend(1, 8)
 equation3.setScalar(0)
-equation3.markAuxiliaryVariable(8)
 inputQuery.addEquation(equation3)
 
 MarabouCore.addReluConstraint(inputQuery,1,2)

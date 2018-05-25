@@ -1,16 +1,18 @@
+from . import MarabouCore
+
 class Equation:
     """
     Python class to conveniently represent MarabouCore.Equation
     """
-    def __init__(self):
+    def __init__(self, EquationType=MarabouCore.Equation.EQ):
         """
         Construct empty equation
         """
         self.addendList = []
         self.participatingVariables = set()
-        self.auxVar = None
         self.scalar = None
-    
+        self.EquationType = EquationType
+
     def setScalar(self, x):
         """
         Set scalar of equation
@@ -28,14 +30,6 @@ class Equation:
         """
         self.addendList += [(c, x)]
         self.participatingVariables.update([x])
-
-    def markAuxiliaryVariable(self, aux):
-        """
-        Mark variable as auxiliary for this equation
-        Arguments:
-            aux: (int) variable number of variable to mark
-        """
-        self.auxVar = aux
 
     def getParticipatingVariables(self):
         """
@@ -61,7 +55,6 @@ class Equation:
         """
         assert self.participatingVariable(x)
         assert not self.participatingVariable(xprime)
-        assert self.auxVar != x and self.auxVar != xprime
         for i in range(len(self.addendList)):
             if self.addendList[i][1] == x:
                 coeff = self.addendList[i][0]
@@ -85,10 +78,6 @@ def addEquality(network, vars, coeffs, scalar):
     for i in range(len(vars)):
         e.addAddend(coeffs[i], vars[i])
     e.setScalar(scalar)
-    aux = network.getNewVariable()
-    network.setLowerBound(aux, 0.0)
-    network.setUpperBound(aux, 0.0)
-    e.markAuxiliaryVariable(aux)
     network.addEquation(e)
 
 def addInequality(network, vars, coeffs, scalar):
@@ -102,12 +91,8 @@ def addInequality(network, vars, coeffs, scalar):
         scalar: (float) representing RHS of equation
     """
     assert len(vars)==len(coeffs)
-    e = Equation()
+    e = Equation(MarabouCore.Equation.LE)
     for i in range(len(vars)):
         e.addAddend(coeffs[i], vars[i])
     e.setScalar(scalar)
-    aux = network.getNewVariable()
-    network.setLowerBound(aux, 0.0)
-    e.markAuxiliaryVariable(aux)
-    e.addAddend(1.0, aux)
     network.addEquation(e)
