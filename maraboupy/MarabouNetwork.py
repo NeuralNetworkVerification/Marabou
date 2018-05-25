@@ -121,11 +121,10 @@ class MarabouNetwork:
         ipq.setNumberOfVariables(self.numVars)
         
         for e in self.equList:
-            eq = MarabouCore.Equation()
+            eq = MarabouCore.Equation(e.EquationType)
             for (c, v) in e.addendList:
                 assert v < self.numVars
                 eq.addAddend(c, v)
-            eq.markAuxiliaryVariable(e.auxVar)
             eq.setScalar(e.scalar)
             ipq.addEquation(eq)
 
@@ -165,10 +164,9 @@ class MarabouNetwork:
         vals, stats = MarabouCore.solve(ipq, filename)
         if verbose:
             if len(vals)==0:
-                    print("UNSAT")
+                print("UNSAT")
             else:
                 print("SAT")
-               #print(vals)
                 for i in range(self.inputVars.size):
                     print("input {} = {}".format(i, vals[self.inputVars.item(i)]))
 

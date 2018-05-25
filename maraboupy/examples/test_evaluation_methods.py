@@ -57,7 +57,6 @@ def variableRanges(layerSizes):
     input_variables = []
     b_variables = []
     f_variables = []
-    aux_variables = []
     output_variables = []
     
     input_variables = [i for i in range(layerSizes[0])]
@@ -66,18 +65,16 @@ def variableRanges(layerSizes):
     
     for layer, hidden_layer_length in enumerate(hidden_layers):
         for i in range(hidden_layer_length):
-            offset = sum([x*3 for x in hidden_layers[:layer]])
+            offset = sum([x*2 for x in hidden_layers[:layer]])
             
             b_variables.append(layerSizes[0] + offset + i)
-            aux_variables.append(layerSizes[0] + offset + i+hidden_layer_length)
-            f_variables.append(layerSizes[0] + offset + i+2*hidden_layer_length)
+            f_variables.append(layerSizes[0] + offset + i+hidden_layer_length)
     
     #final layer
     for i in range(layerSizes[-1]):
-        offset = sum([x*3 for x in hidden_layers[:len(hidden_layers) - 1]])
-        output_variables.append(layerSizes[0] + offset + i + 3*hidden_layers[-1])
-        aux_variables.append(layerSizes[0] + offset + i + 3*hidden_layers[-1] + layerSizes[-1])
-    return input_variables, b_variables, f_variables, aux_variables, output_variables
+        offset = sum([x*2 for x in hidden_layers[:len(hidden_layers) - 1]])
+        output_variables.append(layerSizes[0] + offset + i + 2*hidden_layers[-1])
+    return input_variables, b_variables, f_variables, output_variables
 
 
 def nodeTo_b(layer, node):
@@ -85,17 +82,7 @@ def nodeTo_b(layer, node):
     assert(node < layerSizes[layer])
     
     offset = layerSizes[0]
-    offset += sum([x*3 for x in layerSizes[1:layer]])
-    
-    return offset + node
-
-def nodeTo_aux(layer, node):
-    assert(0 < layer)
-    assert(node < layerSizes[layer])
-    
-    offset = layerSizes[0]
-    offset += sum([x*3 for x in layerSizes[1:layer]])
-    offset += layerSizes[layer]
+    offset += sum([x*2 for x in layerSizes[1:layer]])
     
     return offset + node
 
@@ -107,8 +94,8 @@ def nodeTo_f(layer, node):
         return node
     else:
         offset = layerSizes[0]
-        offset += sum([x*3 for x in layerSizes[1:layer]])
-        offset += 2*layerSizes[layer]
+        offset += sum([x*2 for x in layerSizes[1:layer]])
+        offset += layerSizes[layer]
 
         return offset + node
 
@@ -132,10 +119,6 @@ def buildEquations(layerSizes):
                 equation.addAddend(weights[layer-1][node][previous_node], nodeTo_f(layer-1, previous_node))
                 equations_aux[equations_count].append([nodeTo_f(layer-1, previous_node), weights[layer-1][node][previous_node]])
             
-            equation.addAddend(1.0, nodeTo_aux(layer, node))
-            equation.markAuxiliaryVariable(nodeTo_aux(layer, node))
-            equations_aux[equations_count].append([nodeTo_aux(layer, node), 1.0])
-            
             equation.addAddend(-1.0, nodeTo_b(layer, node))
             equations_aux[equations_count].append([nodeTo_b(layer, node), -1.0])
             
@@ -157,7 +140,7 @@ def findRelus(layerSizes):
     return relus
 
 def numberOfVariables(layerSizes):
-    return layerSizes[0] + 3*sum(layerSizes[1:-1]) + 2*layerSizes[-1]
+    return layerSizes[0] + 2*sum(layerSizes[1:-1]) + layerSizes[-1]
 
 def getInputMinimum(input):
     return (inputMinimums[input] - inputMeans[input]) / inputRanges[input]
@@ -187,8 +170,7 @@ print(layerSizes)
 
 equation_objects = buildEquations(layerSizes) 
 
-input_variables, b_variables, f_variables,\
- aux_variables, output_variables = variableRanges(layerSizes)
+input_variables, b_variables, f_variables, output_variables = variableRanges(layerSizes)
 
 relus = findRelus(layerSizes)
 
@@ -219,12 +201,6 @@ for i, i_var in enumerate(input_variables):
     print("INPUT MINIMUMS: {}".format(getInputMinimum(i_var)))
     ipq.setUpperBound(i_var, getInputMaximum(i_var))
     print("INPUT MAXIMUMS: {}".format(getInputMaximum(i_var)))
-
-#aux variables
-for aux_var in aux_variables:
-    ipq.setLowerBound(aux_var, 0.0)
-    ipq.setUpperBound(aux_var, 0.0)
-
 
 for f_var in f_variables:
     ipq.setLowerBound(f_var, 0.0)
