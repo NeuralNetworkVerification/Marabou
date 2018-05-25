@@ -452,7 +452,8 @@ void Engine::fixViolatedPlConstraintIfPossible()
                 found = true;
             }
         }
-        if (!found){
+        if ( !found )
+        {
             ++it;
         }
     }
