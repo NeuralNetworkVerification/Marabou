@@ -205,8 +205,20 @@ void InputQuery::printQuery(std::string fileName)
 {
    std::ofstream queryFile;
    queryFile.open(fileName);
+   queryFile << Stringf( "Total Variables1:  %04u \n", std::distance(_lowerBounds.begin(), _lowerBounds.end())).ascii();
+   queryFile << Stringf( "Total Variables2:  %04u \n", _numberOfVariables).ascii();
+   queryFile << Stringf( "Total Variables3:  %04u \n", _lowerBounds.size()).ascii();
+   queryFile << Stringf( "Total Equations:  %04u \n", std::distance(_equations.begin(), _equations.end())).ascii();
+
+   queryFile << "\nBounds:\n";
+   for (Map<unsigned, double>::iterator it = _lowerBounds.begin(); it != _lowerBounds.end(); it++)
+   {
+       queryFile << Stringf( "%04d: (%.6f, %.6f)\n", it->first, it->second, _upperBounds[it->first]).ascii();
+   }
+  
    queryFile << "Equations:\n";
    unsigned i = 0;
+
    for (List<Equation>::iterator eq_iter = _equations.begin(); eq_iter != _equations.end(); eq_iter++)
    {
        Equation e = *eq_iter;
@@ -217,16 +229,9 @@ void InputQuery::printQuery(std::string fileName)
           queryFile << Stringf( "(%04u, %.6f), ", a._variable, a._coefficient).ascii();         
        }
        
-       queryFile << Stringf("\n\tScalar: %.6f,\n\tAux Variable: %04u,\n", e._scalar, e._auxVariable).ascii();
+       //queryFile << Stringf("\n\tScalar: %.6f,\n\tAux Variable: %04u,\n", e._scalar, e._auxVariable).ascii();
        i+=1;
    }
-    
-   queryFile << "\nBounds:\n";
-   for (Map<unsigned, double>::iterator it = _lowerBounds.begin(); it != _lowerBounds.end(); it++)
-   {
-       queryFile << Stringf( "%04d: (%.6f, %.6f)\n", it->first, it->second, _upperBounds[it->first]).ascii();
-   }
-    
    // Future: _plConstraints
    queryFile.close();
 }
