@@ -277,6 +277,37 @@ public:
 
 	}
 
+	void test_max_var_elims()
+	{
+		unsigned f = 1;
+		Set<unsigned> elements;
+
+		
+		elements.insert( 2 );
+		elements.insert( 3 );
+
+		MaxConstraint max( f, elements );
+
+		max.notifyUpperBound( 2, 8 );
+		max.notifyLowerBound( 2, 1 );
+		max.notifyUpperBound( 3, 6 );
+		max.notifyLowerBound( 3, 1 );
+
+		max.notifyUpperBound( 1, 10 );
+		max.notifyLowerBound( 1, 0 );
+		TS_ASSERT( max.getParticipatingVariables().exists(2) );
+		TS_ASSERT( max.getParticipatingVariables().exists(3) );
+
+		max.notifyLowerBound( 1, 6 );
+		TS_ASSERT( max.getParticipatingVariables().exists(2) );
+		TS_ASSERT( max.getParticipatingVariables().exists(3) );
+
+		max.notifyLowerBound( 2, 7 );
+		TS_ASSERT( max.getParticipatingVariables().exists(2) );
+		TS_ASSERT( !max.getParticipatingVariables().exists(3) );				
+
+	}
+
 	void test_max_obsolete()
     {
 		unsigned f = 1;
