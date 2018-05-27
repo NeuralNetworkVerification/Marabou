@@ -12,7 +12,9 @@
 
 #include "Debug.h"
 #include "FloatUtils.h"
+#include "MalformedBasisException.h"
 #include "PrecisionRestorer.h"
+#include "ReluplexError.h"
 #include "SmtCore.h"
 
 void PrecisionRestorer::storeInitialEngineState( const IEngine &engine )
@@ -60,40 +62,18 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
 
         if ( restoreBasics == RESTORE_BASICS )
         {
-            Set<unsigned> basicAfterRestoration = tableau.getBasicVariables();
-            Set<unsigned> needToBeBasic = Set<unsigned>::difference( shouldBeBasic, basicAfterRestoration );
+            List<unsigned> shouldBeBasicList;
+            for ( const auto &basic : shouldBeBasic )
+                shouldBeBasicList.append( basic );
 
-            for ( unsigned variable : needToBeBasic )
+            try
             {
-                /* This variable is currently non-basic. We attempt to make it basic by computing
-                   its column and finding a basic variable that shouldn't be basic. Then we can
-                   pivot these two variables. */
-
-                unsigned enteringIndex = tableau.variableToIndex( variable );
-                tableau.setEnteringVariableIndex( enteringIndex );
-
-                tableau.computeChangeColumn();
-                const double *changeColumn = tableau.getChangeColumn();
-
-                // Find a variable that is basic but should be non-basic
-                bool done = false;
-                unsigned i = 0;
-                while ( !done && ( i < targetM ) )
-                {
-                    if ( FloatUtils::gte( FloatUtils::abs( changeColumn[i] ),
-                                          GlobalConfiguration::ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD ) )
-                    {
-                        unsigned basic = tableau.basicIndexToVariable( i );
-                        if ( !shouldBeBasic.exists( basic ) )
-                        {
-                            tableau.setLeavingVariableIndex( i );
-                            tableau.performPivot();
-                            done = true;
-                        }
-                    }
-
-                    ++i;
-                }
+                tableau.initializeTableau( shouldBeBasicList );
+            }
+            catch ( MalformedBasisException & )
+            {
+                throw ReluplexError( ReluplexError::RESTORATION_FAILED_TO_REFACTORIZE_BASIS,
+                                     "Precision restoration failed - could not refactorize basis after setting basics" );
             }
         }
 
