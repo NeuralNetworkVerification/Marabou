@@ -102,9 +102,10 @@ class MarabouNetwork:
             x: (int) variable to check
         """
         # ReLUs
-        fs, bs = zip(*self.reluList)
-        if x in fs or x in bs:
-            return True
+        if self.reluList:
+            fs, bs = zip(*self.reluList)
+            if x in fs or x in bs:
+                return True
         # Max constraints
         for elems, var in self.maxList:
             if x in elems or x==var:
