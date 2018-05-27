@@ -976,7 +976,8 @@ void Tableau::dumpAssignment()
     for ( unsigned i = 0; i < _n; ++i )
     {
         bool basic = _basicVariables.exists( i );
-        printf( "\tx%u  -->  %.5lf [%s]. ", i, getValue( i ), basic ? "B" : "NB" );
+        printf( "\tx%u (index: %u)  -->  %.5lf [%s]. ", i, _variableToIndex[i],
+                getValue( i ), basic ? "B" : "NB" );
         if ( _lowerBounds[i] != FloatUtils::negativeInfinity() )
             printf( "Range: [ %.5lf, ", _lowerBounds[i] );
         else
@@ -1688,6 +1689,17 @@ void Tableau::updateAssignmentForPivot()
 
     _basicAssignmentStatus = ITableau::BASIC_ASSIGNMENT_UPDATED;
 
+    // If the change ratio is 0, just maintain the current assignment
+    if ( FloatUtils::isZero( _changeRatio ) )
+    {
+        double basicAssignment = _basicAssignment[_leavingVariable];
+        double nonBasicAssignment = _nonBasicAssignment[_enteringVariable];
+
+        _basicAssignment[_leavingVariable] = nonBasicAssignment;
+        _nonBasicAssignment[_enteringVariable] = basicAssignment;
+        return;
+    }
+
     if ( performingFakePivot() )
     {
         // A non-basic is hopping from one bound to the other.
@@ -1759,7 +1771,7 @@ void Tableau::updateAssignmentForPivot()
                 continue;
 
             if ( FloatUtils::isZero( _changeColumn[i] ) )
-                 continue;
+                continue;
 
             _basicAssignment[i] -= _changeColumn[i] * nonBasicDelta;
             notifyVariableValue( _basicIndexToVariable[i], _basicAssignment[i] );

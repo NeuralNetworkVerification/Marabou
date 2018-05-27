@@ -1023,7 +1023,8 @@ public:
         tableau->setEnteringVariableIndex( 3u );
         tableau->computeChangeColumn();
 
-        tableau->setLeavingVariableIndex( 3u );
+        tableau->pickLeavingVariable();
+
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 3u );
         TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 3u );
 
