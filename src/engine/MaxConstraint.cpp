@@ -130,9 +130,9 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
         }
     }
 
-    if (_elements.exists( variable ) && variable != _maxIndex && 
-        _lowerBounds.exists( variable ) && _upperBounds.exists( variable ) &&
-        FloatUtils::areEqual( _lowerBounds[variable], _upperBounds[variable] ) )
+    if ( _elements.exists( variable ) && variable != _maxIndex &&
+         _lowerBounds.exists( variable ) && _upperBounds.exists( variable ) &&
+         FloatUtils::areEqual( _lowerBounds[variable], _upperBounds[variable] ) )
         eliminateVariable( variable, _lowerBounds[variable] );
     checkForFixedPhaseOnAlterationToBounds();
 }
@@ -180,9 +180,9 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
         }
     }
 
-    if (_elements.exists( variable ) && variable != _maxIndex && 
-        _lowerBounds.exists( variable ) && _upperBounds.exists( variable ) &&
-        FloatUtils::areEqual( _lowerBounds[variable], _upperBounds[variable] ) )
+    if ( _elements.exists( variable ) && variable != _maxIndex &&
+         _lowerBounds.exists( variable ) && _upperBounds.exists( variable ) &&
+         FloatUtils::areEqual( _lowerBounds[variable], _upperBounds[variable] ) )
         eliminateVariable( variable, _lowerBounds[variable] );
 
     checkForFixedPhaseOnAlterationToBounds();
@@ -226,21 +226,21 @@ void MaxConstraint::checkForFixedPhaseOnAlterationToBounds()
 void MaxConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
 {
     // Lower and upper bounds for the f variable
-    double fLB = _lowerBounds.get( _f );
-    double fUB = _upperBounds.get( _f );
+    double fLB = _lowerBounds.exists( _f ) ? _lowerBounds.get( _f ) : FloatUtils::negativeInfinity();
+    double fUB = _upperBounds.exists( _f ) ? _upperBounds.get( _f ) : FloatUtils::infinity();
 
     // Compute the maximal bounds (lower and upper) for the elements
     double maxElementLB = FloatUtils::negativeInfinity();
     double maxElementUB = FloatUtils::negativeInfinity();
 
     for ( const auto &element : _elements )
-	{
-	    if ( _lowerBounds.exists( element ) )
+    {
+        if ( _lowerBounds.exists( element ) )
             maxElementLB = FloatUtils::max( _lowerBounds[element], maxElementLB );
 
-	    if ( !_upperBounds.exists( element ) )
+        if ( !_upperBounds.exists( element ) )
             maxElementUB = FloatUtils::infinity();
-	    else
+        else
             maxElementUB = FloatUtils::max( _upperBounds[element], maxElementUB );
 	}
 
