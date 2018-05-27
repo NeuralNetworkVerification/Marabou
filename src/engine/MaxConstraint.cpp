@@ -90,21 +90,21 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
 
     _lowerBounds[variable] = value;
 
-    if ( FloatUtils::gt( value, _maxLowerBound ) )
+    if ( _elements.exists(variable) && FloatUtils::gt( value, _maxLowerBound ) )
     {
         _maxLowerBound = value;
         List<unsigned> toRemove;
         double maxValueNotRemoved = FloatUtils::negativeInfinity();
-        unsigned maxVarNotRemoved=0;
+        unsigned maxVarNotRemoved = 0;
         for ( auto element : _elements )
         {
             if ( _upperBounds.exists( element ) &&
-                FloatUtils::lt( _upperBounds[element], value ) )
+                 FloatUtils::lt( _upperBounds[element], value ) )
             {
                 toRemove.append( element );
             }
             else if ( _assignment.exists( element ) &&
-                FloatUtils::gt( _assignment[element], maxValueNotRemoved ) )
+                      FloatUtils::gt( _assignment[element], maxValueNotRemoved ) )
             {
                 maxValueNotRemoved = _assignment[element];
                 maxVarNotRemoved = element;
@@ -125,7 +125,8 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
         {
             if ( FloatUtils::isFinite( maxValueNotRemoved ) )
                 _maxIndex = maxVarNotRemoved;
-            else _maxIndex = *( _elements.begin() );
+            else
+                _maxIndex = *( _elements.begin() );
         }
     }
 
@@ -133,6 +134,7 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
          _lowerBounds.exists( variable ) && _upperBounds.exists( variable ) &&
          FloatUtils::areEqual( _lowerBounds[variable], _upperBounds[variable] ) )
         eliminateVariable( variable, _lowerBounds[variable] );
+
     checkForFixedPhaseOnAlterationToBounds();
 }
 
@@ -149,7 +151,7 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
 
     _upperBounds[variable] = value;
 
-    if ( FloatUtils::lt( value, _maxLowerBound ) )
+    if ( _elements.exists( variable ) && FloatUtils::lt( value, _maxLowerBound ) )
     {
         if ( _lowerBounds.exists( variable ) )
             _lowerBounds.erase( variable );
@@ -163,11 +165,11 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
         if ( variable == _maxIndex )
         {
             double maxValueNotRemoved = FloatUtils::negativeInfinity();
-            unsigned maxVarNotRemoved=0;
-            for (auto elem: _elements )
+            unsigned maxVarNotRemoved = 0;
+            for ( auto elem : _elements )
             {
                 if ( _assignment.exists( elem ) &&
-                    FloatUtils::gt( _assignment[elem], maxValueNotRemoved ) )
+                     FloatUtils::gt( _assignment[elem], maxValueNotRemoved ) )
                 {
                     maxValueNotRemoved = _assignment[elem];
                     maxVarNotRemoved = elem;
@@ -175,7 +177,8 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
             }
             if ( FloatUtils::isFinite( maxValueNotRemoved ) )
                 _maxIndex = maxVarNotRemoved;
-            else _maxIndex = *( _elements.begin() );
+            else
+                _maxIndex = *( _elements.begin() );
         }
     }
 
@@ -225,23 +228,21 @@ void MaxConstraint::checkForFixedPhaseOnAlterationToBounds()
 void MaxConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
 {
     // Lower and upper bounds for the f variable
-    double fLB = _lowerBounds.get( _f );
-    double fUB = _upperBounds.get( _f );
+    double fLB = _lowerBounds.exists( _f ) ? _lowerBounds.get( _f ) : FloatUtils::negativeInfinity();
+    double fUB = _upperBounds.exists( _f ) ? _upperBounds.get( _f ) : FloatUtils::infinity();
 
     // Compute the maximal bounds (lower and upper) for the elements
     double maxElementLB = FloatUtils::negativeInfinity();
     double maxElementUB = FloatUtils::negativeInfinity();
 
     for ( const auto &element : _elements )
-	{
-	    if ( !_lowerBounds.exists( element ) )
-            maxElementLB = FloatUtils::infinity();
-	    else
+    {
+        if ( _lowerBounds.exists( element ) )
             maxElementLB = FloatUtils::max( _lowerBounds[element], maxElementLB );
 
-	    if ( !_upperBounds.exists( element ) )
+        if ( !_upperBounds.exists( element ) )
             maxElementUB = FloatUtils::infinity();
-	    else
+        else
             maxElementUB = FloatUtils::max( _upperBounds[element], maxElementUB );
 	}
 
@@ -421,13 +422,13 @@ bool MaxConstraint::constraintObsolete() const
 
 void MaxConstraint::eliminateVariable( unsigned var, double value )
 {
-    if( _lowerBounds.exists( var ) )
+    if ( _lowerBounds.exists( var ) )
         _lowerBounds.erase( var );
-    if( _upperBounds.exists( var ) )
+    if ( _upperBounds.exists( var ) )
         _upperBounds.erase( var );
 
     if ( !_lowerBounds.exists( _f ) ||
-         FloatUtils::lt( value, _lowerBounds.get( _f ) ) )
+         FloatUtils::gt( value, _lowerBounds.get( _f ) ) )
         _lowerBounds[_f] = value;
 
     _eliminated.insert( var );
