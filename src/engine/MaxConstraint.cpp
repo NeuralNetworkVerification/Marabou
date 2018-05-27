@@ -423,9 +423,9 @@ bool MaxConstraint::constraintObsolete() const
 
 void MaxConstraint::eliminateVariable( unsigned var, double value )
 {
-    if( _lowerBounds.exists( var ) )
+    if ( _lowerBounds.exists( var ) )
         _lowerBounds.erase( var );
-    if( _upperBounds.exists( var ) )
+    if ( _upperBounds.exists( var ) )
         _upperBounds.erase( var );
 
     if ( !_lowerBounds.exists( _f ) ||
