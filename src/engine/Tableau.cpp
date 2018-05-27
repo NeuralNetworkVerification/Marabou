@@ -410,6 +410,8 @@ double Tableau::getValue( unsigned variable )
         return _nonBasicAssignment[index];
     }
 
+    ASSERT( _basicAssignmentStatus != ITableau::BASIC_ASSIGNMENT_INVALID );
+
     return _basicAssignment[_variableToIndex[variable]];
 }
 
