@@ -70,6 +70,7 @@ public:
     Map<unsigned, double> _debuggingSolution;
     
     void printQuery(std::string fileName);
+    void loadQueury(std::string fileName);
 
 private:
     unsigned _numberOfVariables;

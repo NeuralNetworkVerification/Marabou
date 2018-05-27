@@ -438,6 +438,13 @@ bool ReluConstraint::haveOutOfBoundVariables() const
     return false;
 }
 
+String ReluConstraint::serializeToString() const {
+    String output = "relu,";
+    output += std::to_string(_f) + ",";
+    output += std::to_string(_b);
+    return output;
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

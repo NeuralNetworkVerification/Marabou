@@ -123,6 +123,12 @@ public:
     */
     virtual void getCostFunctionComponent( Map<unsigned, double> &cost ) const;
 
+    /*
+      Returns string with shape:
+      relu, _f, _b
+    */
+    String serializeToString() const;
+
 private:
     unsigned _b, _f;
     PhaseStatus _phaseStatus;

@@ -107,6 +107,12 @@ class MaxConstraint : public PiecewiseLinearConstraint
     */
     void getAuxiliaryEquations( List<Equation> &newEquations ) const;
 
+    /*
+      Returns string with shape:
+      max, _f, element_1, element_2, ... , element_n
+    */
+    String serializeToString() const;
+
  private:
     unsigned _f;
     unsigned _maxIndex;

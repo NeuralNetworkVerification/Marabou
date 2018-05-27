@@ -163,6 +163,13 @@ public:
     {
     }
 
+    /*
+      Produce string representation nof the piecewise linear constraint.
+      This representation conntrains only the information necessary to reproduce it
+      but does not account for state or change in state during execution.
+    */
+    virtual String serializeToString() const;
+
 protected:
     bool _constraintActive;
 	Map<unsigned, double> _assignment;

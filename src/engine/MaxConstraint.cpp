@@ -451,6 +451,16 @@ void MaxConstraint::getAuxiliaryEquations( List<Equation> & newEquations ) const
     }
 }
 
+String MaxConstraint::serializeToString() const {
+    String output = "max,";
+    output += std::to_string(_f);
+    for ( auto element : _elements )
+        {
+        output +=  "," + std::to_string(element);
+        }
+    return output;
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

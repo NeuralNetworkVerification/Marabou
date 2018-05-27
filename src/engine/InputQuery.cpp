@@ -203,38 +203,61 @@ void InputQuery::storeDebuggingSolution( unsigned variable, double value )
 
 void InputQuery::printQuery(std::string fileName)
 {
-   std::ofstream queryFile;
-   queryFile.open(fileName);
-   queryFile << Stringf( "Total Variables1:  %04u \n", std::distance(_lowerBounds.begin(), _lowerBounds.end())).ascii();
-   queryFile << Stringf( "Total Variables2:  %04u \n", _numberOfVariables).ascii();
-   queryFile << Stringf( "Total Variables3:  %04u \n", _lowerBounds.size()).ascii();
-   queryFile << Stringf( "Total Equations:  %04u \n", std::distance(_equations.begin(), _equations.end())).ascii();
+  std::ofstream queryFile;
+  queryFile.open(fileName);
+  queryFile << Stringf( "Total Variables1:  %04u \n", std::distance(_lowerBounds.begin(), _lowerBounds.end())).ascii();
+  queryFile << Stringf( "Total Variables2:  %04u \n", _numberOfVariables).ascii();
+  queryFile << Stringf( "Total Variables3:  %04u \n", _lowerBounds.size()).ascii();
+  queryFile << Stringf( "Total Equations:  %04u \n", std::distance(_equations.begin(), _equations.end())).ascii();
 
-   queryFile << "\nBounds:\n";
-   for (Map<unsigned, double>::iterator it = _lowerBounds.begin(); it != _lowerBounds.end(); it++)
-   {
-       queryFile << Stringf( "%04d: (%.6f, %.6f)\n", it->first, it->second, _upperBounds[it->first]).ascii();
-   }
-  
-   queryFile << "Equations:\n";
-   unsigned i = 0;
+  queryFile << Stringf( "Total Constraitns1:  %04u \n", _plConstraints.size()).ascii();
 
-   for (List<Equation>::iterator eq_iter = _equations.begin(); eq_iter != _equations.end(); eq_iter++)
-   {
-       Equation e = *eq_iter;
-       queryFile << Stringf( "Equation %04u: ", i ).ascii();
-       for (List<Equation::Addend>::iterator add_iter = e._addends.begin(); add_iter != e._addends.end(); add_iter++)
-       {
-          Equation::Addend a = *add_iter;
-          queryFile << Stringf( "(%04u, %.6f), ", a._variable, a._coefficient).ascii();         
-       }
-       
-       //queryFile << Stringf("\n\tScalar: %.6f,\n\tAux Variable: %04u,\n", e._scalar, e._auxVariable).ascii();
-       i+=1;
-   }
-   // Future: _plConstraints
-   queryFile.close();
+
+  queryFile << "\nBounds:\n";
+  for (Map<unsigned, double>::iterator it = _lowerBounds.begin(); it != _lowerBounds.end(); it++)
+  {
+     queryFile << Stringf( "%04d: (%.6f, %.6f)\n", it->first, it->second, _upperBounds[it->first]).ascii();
+  }
+
+  queryFile << "Equations:\n";
+  unsigned i = 0;
+
+  for (List<Equation>::iterator eq_iter = _equations.begin(); eq_iter != _equations.end(); eq_iter++)
+  {
+    Equation e = *eq_iter;
+    queryFile << Stringf( "\nEquation %04u: ", i ).ascii();
+    for (List<Equation::Addend>::iterator add_iter = e._addends.begin(); add_iter != e._addends.end(); add_iter++)
+    {
+      Equation::Addend a = *add_iter;
+      queryFile << Stringf( "(%04u, %.6f), ", a._variable, a._coefficient).ascii();         
+    }
+    queryFile << Stringf(" Scalar: %.6f ", e._scalar).ascii();
+    queryFile << Stringf(" Type: %01u ", e._type).ascii();
+     //queryFile << Stringf("\n\tScalar: %.6f,\n\tAux Variable: %04u,\n", e._scalar, e._auxVariable).ascii();
+     i+=1;
+  }
+/*
+  queryFile << "Constraints:\n";
+  unsigned j = 0;
+  //for (const auto plc_iter = _plConstraints.begin(); plc_iter != _plConstraints.end(); plc_iter++)
+  for ( const auto &constraint : _plConstraints )
+  {
+    (void) constraint;
+    queryFile << Stringf( "\nConstraint %04u: ", j ).ascii();
+    //PiecewiseLinearConstraint plc = *(*plc_iter);
+    //queryFile << (*plc_iter)->serializeToString();
+    //queryFile << constraint->serializeToString();
+  j++;
+  }
+*/
+
+  // Future: _plConstraints
+  queryFile.close();
 }
+
+//void InputQuery::loadQuery(std::string filename){
+//  (void)
+//}
 
 //
 // Local Variables:
