@@ -155,6 +155,23 @@ unsigned InputQuery::countInfiniteBounds()
     return result;
 }
 
+void InputQuery::removeIdenticalVariable( unsigned v1, unsigned v2 )
+{
+    // replace v1 with v2 everywhere
+    
+    // update lower and upper bounds
+
+    for ( const auto &equation : getEquations() )
+        equation.removeIdenticalVariable( v1, v2 );
+    for ( const auto &plConstraint : getPiecewiseLinearConstraints() )
+        plConstraint.removeIdenticalVariable( v1, v2 );
+}
+
+void InputQuery::removeEquation( Equation e )
+{
+    _equations.erase( e );
+}
+
 InputQuery &InputQuery::operator=( const InputQuery &other )
 {
     _numberOfVariables = other._numberOfVariables;

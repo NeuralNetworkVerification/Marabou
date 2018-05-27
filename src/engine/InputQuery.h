@@ -58,6 +58,16 @@ public:
     unsigned countInfiniteBounds();
 
     /*
+      Eliminate a variable if known to be identical to another
+    */
+    void removeIdenticalVariable(unsigned v1, unsigned v2);
+
+    /*
+      Remove an equation from equation list
+    */
+    void removeEquation(Equation e);
+
+    /*
       Assignment operator and copy constructor, duplicate the constraints.
     */
     InputQuery &operator=( const InputQuery &other );

@@ -58,6 +58,7 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     {
         continueTightening = processEquations();
         continueTightening = processConstraints() || continueTightening;
+        continueTightening = processIdenticalVariables() || continueTightening;
 
         if ( _statistics )
             _statistics->ppIncNumTighteningIterations();
@@ -342,6 +343,35 @@ bool Preprocessor::processConstraints()
 	}
 
     return tighterBoundFound;
+}
+
+bool Preprocessor::processIdenticalVariables()
+{
+    // find distinct v1 and v2 which are exactly equal to each other
+    unsigned v1=0, v2=0;
+    Equation equToRemove = Equation();
+    for ( const auto &equation : _preprocessed.getEquations() )
+    {
+        if ( equation._addends.size() != 2 || equation._type != Equation::EQ )
+            continue;
+        auto term1 = equation._addends.front();
+        auto term2 = equation._addends.back();
+        if ( FloatUtils::areDisequal(term1._coefficient, -term2._coefficient) ||
+             FloatUtils::areDisequal(equation._scalar, 0.0) )
+            continue;
+        if (term1._variable == term2._variable )
+            continue;
+        v1 = term1._variable;
+        v2 = term2._variable;
+        equToRemove = equation;
+        break;
+    }
+    if ( v1 == v2 )
+        return false;
+    // found v1 and v2 which are equal
+    _preprocessed.removeEquation(equToRemove);
+    _preprocessed.removeIdenticalVariable(v1, v2);
+    return true;
 }
 
 void Preprocessor::eliminateFixedVariables()

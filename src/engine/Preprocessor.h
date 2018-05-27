@@ -61,6 +61,11 @@ private:
 	*/
 	bool processConstraints();
 
+  /*
+    If there exists an equation x = x', replace all instances of x with x'
+  */
+  bool processIdenticalVariables();
+
     /*
       Eliminate any variables that have become files
 	*/
