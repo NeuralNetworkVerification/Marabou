@@ -168,7 +168,7 @@ public:
       This representation conntrains only the information necessary to reproduce it
       but does not account for state or change in state during execution.
     */
-    virtual String serializeToString() const;
+    virtual String serializeToString() const = 0;
 
 protected:
     bool _constraintActive;

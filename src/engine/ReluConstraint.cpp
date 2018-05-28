@@ -313,7 +313,7 @@ void ReluConstraint::getEntailedTightenings( List<Tightening> &tightenings ) con
 
     if ( !FloatUtils::isNegative( minBound ) )
     {
-        // The minimal bound is non-negative. Should match for both f and b.
+        // The minimal bou nd is non-negative. Should match for both f and b.
         if ( FloatUtils::lt( minBound, bUpperBound ) )
             tightenings.append( Tightening( _b, minBound, Tightening::UB ) );
         else if ( FloatUtils::lt( minBound, fUpperBound ) )
@@ -439,10 +439,7 @@ bool ReluConstraint::haveOutOfBoundVariables() const
 }
 
 String ReluConstraint::serializeToString() const {
-    String output = "relu,";
-    output += std::to_string(_f) + ",";
-    output += std::to_string(_b);
-    return output;
+    return Stringf( "relu,%u,%u",_f, _b);
 }
 
 //

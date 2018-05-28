@@ -236,7 +236,7 @@ void InputQuery::printQuery(std::string fileName)
      //queryFile << Stringf("\n\tScalar: %.6f,\n\tAux Variable: %04u,\n", e._scalar, e._auxVariable).ascii();
      i+=1;
   }
-/*
+
   queryFile << "Constraints:\n";
   unsigned j = 0;
   //for (const auto plc_iter = _plConstraints.begin(); plc_iter != _plConstraints.end(); plc_iter++)
@@ -246,10 +246,11 @@ void InputQuery::printQuery(std::string fileName)
     queryFile << Stringf( "\nConstraint %04u: ", j ).ascii();
     //PiecewiseLinearConstraint plc = *(*plc_iter);
     //queryFile << (*plc_iter)->serializeToString();
-    //queryFile << constraint->serializeToString();
+    auto aux = constraint->serializeToString().ascii();
+    queryFile << aux;
   j++;
   }
-*/
+
 
   // Future: _plConstraints
   queryFile.close();

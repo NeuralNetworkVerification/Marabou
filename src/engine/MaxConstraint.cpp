@@ -13,6 +13,7 @@
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
+#include "MStringf.h"
 #include "List.h"
 #include "MaxConstraint.h"
 #include "PiecewiseLinearCaseSplit.h"
@@ -452,11 +453,10 @@ void MaxConstraint::getAuxiliaryEquations( List<Equation> & newEquations ) const
 }
 
 String MaxConstraint::serializeToString() const {
-    String output = "max,";
-    output += std::to_string(_f);
+    Stringf output = Stringf("max,%u", _f);
     for ( auto element : _elements )
         {
-        output +=  "," + std::to_string(element);
+        output += Stringf(",%u", element);
         }
     return output;
 }
