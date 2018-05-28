@@ -50,9 +50,12 @@ public:
     unsigned getM() const;
 
     /*
-      The row permutation ordering
+      The row permutation ordering, and its inverse.
+      _ordering[i] = j implies that entry [i,j] is 1,
+      and _invOrdering[j] = i is equivalent
     */
     unsigned *_ordering;
+    unsigned *_invOrdering;
 
     /*
       Debugging

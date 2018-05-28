@@ -28,6 +28,16 @@ public:
     ~GaussianEliminator();
 
     /*
+      The class' main method: perform LU-factorization of a given matrix A,
+      provided in row-wise format. Store the results in the provided LUFactors.
+    */
+    LUFactors *run();
+
+    unsigned choosePivot( unsigned column );
+
+    /// Older code
+
+    /*
       The classes main method: factorize matrix A, given in row-major format,
       into a matrix U and a sequence of L and P matrices, such that:
 
@@ -37,12 +47,19 @@ public:
       - The rowHeaders array indicates the orders of the rows of U, where the i'th
         row is stored in the rowHeaders[i] location in memory
     */
-    void factorize( List<LPElement *> *lp,
-                    double *U,
-                    unsigned *rowHeaders,
-                    FactorizationStrategy factorizationStrategy = PARTIAL_PIVOTING );
+    // void factorize( List<LPElement *> *lp,
+    //                 double *U,
+    //                 unsigned *rowHeaders,
+    //                 FactorizationStrategy factorizationStrategy = PARTIAL_PIVOTING );
 
 private:
+    LUFactors *_luFactors;
+
+    unsigned _pivotRow;
+    unsigned _pivotColumn;
+
+    unsigned _eliminationStep;
+
     /*
       The (square) matrix being factorized and its dimension
     */
@@ -53,13 +70,13 @@ private:
       Given a column with element in indices [columnIndex, .., _m], choose the next pivot according to
       the factorization strategy.
     */
-    unsigned choosePivotElement( unsigned columnIndex, FactorizationStrategy factorizationStrategy );
+    // unsigned choosePivotElement( unsigned columnIndex, FactorizationStrategy factorizationStrategy );
 
     /*
       Work memory
     */
-    double *_pivotColumn;
-    double *_LCol;
+    // double *_pivotColumn;
+    // double *_LCol;
 };
 
 #endif // __GaussianEliminator_h__
