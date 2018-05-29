@@ -438,8 +438,9 @@ bool ReluConstraint::haveOutOfBoundVariables() const
     return false;
 }
 
+// format: relu,f,b
 String ReluConstraint::serializeToString() const {
-    return Stringf( "relu,%u,%u",_f, _b);
+    return Stringf("relu,%u,%u", _f, _b);
 }
 
 //

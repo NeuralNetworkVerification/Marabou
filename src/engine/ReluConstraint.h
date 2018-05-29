@@ -25,6 +25,7 @@ public:
     };
 
     ReluConstraint( unsigned b, unsigned f );
+    ReluConstraint(String serial_relu);
 
     /*
       Return a clone of the constraint.

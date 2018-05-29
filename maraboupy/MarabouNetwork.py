@@ -175,6 +175,34 @@ class MarabouNetwork:
 
         return [vals, stats]
 
+    def loadQuery(self, filename="", verbose=True):
+        """
+        Function to solve query represented by this network
+        Arguments:
+            filename: (string) path to redirect output to
+            verbose: (bool) whether to print out solution
+        Returns:
+            vals: (dict: int->float) empty if UNSAT, else SATisfying solution
+            stats: (Statistics) a Statistics object as defined in Marabou,
+                    it has multiple methods that provide information related
+                    to how an input query was solved.
+        """
+        #ipq = self.getMarabouQuery()
+        ipq = MarabouCore.loadQuery(filename)
+        vals, stats = MarabouCore.solve(ipq, filename)
+        if verbose:
+            if len(vals)==0:
+                print("UNSAT")
+            else:
+                print("SAT")
+                for i in range(self.inputVars.size):
+                    print("input {} = {}".format(i, vals[self.inputVars.item(i)]))
+
+                for i in range(self.outputVars.size):
+                    print("output {} = {}".format(i, vals[self.outputVars.item(i)]))
+
+        return [vals, stats]
+
     def evaluateWithMarabou(self, inputValues, filename="evaluateWithMarabou.log"):
         """
         Function to evaluate network at a given point using Marabou as solver
