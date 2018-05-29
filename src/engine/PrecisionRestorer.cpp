@@ -60,20 +60,45 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
         ASSERT( tableau.getN() == targetN );
         ASSERT( tableau.getM() == targetM );
 
+        Set<unsigned> currentBasics = tableau.getBasicVariables();
+
         if ( restoreBasics == RESTORE_BASICS )
         {
             List<unsigned> shouldBeBasicList;
             for ( const auto &basic : shouldBeBasic )
                 shouldBeBasicList.append( basic );
 
+            bool failed = false;
             try
             {
                 tableau.initializeTableau( shouldBeBasicList );
             }
             catch ( MalformedBasisException & )
             {
-                throw ReluplexError( ReluplexError::RESTORATION_FAILED_TO_REFACTORIZE_BASIS,
-                                     "Precision restoration failed - could not refactorize basis after setting basics" );
+                failed = true;
+                printf( "\n\tNew case: basic restoration failed!\n" );
+            }
+
+            if ( failed )
+            {
+                printf( "\n\tNew case: attemping restoration without basics\n" );
+                // The "restoreBasics" set leads to a malformed basis.
+                // Try again without this part of the restoration
+                shouldBeBasicList.clear();
+                for ( const auto &basic : currentBasics )
+                    shouldBeBasicList.append( basic );
+
+                try
+                {
+                    tableau.initializeTableau( shouldBeBasicList );
+                    printf( "\n\tNew case: second restoration successful!\n" );
+                }
+                catch ( MalformedBasisException & )
+                {
+                    printf( "\n\tNew case: second restoration also failed :(\n" );
+                    throw ReluplexError( ReluplexError::RESTORATION_FAILED_TO_REFACTORIZE_BASIS,
+                                         "Precision restoration failed - could not refactorize basis after setting basics" );
+                }
             }
         }
 
