@@ -1697,7 +1697,9 @@ void Tableau::updateAssignmentForPivot()
         // This should only happen when the basic variable is pressed against
         // one of its bounds
         ASSERT( _basicStatus[_leavingVariable] == Tableau::AT_UB ||
-                _basicStatus[_leavingVariable] == Tableau::AT_LB );
+                _basicStatus[_leavingVariable] == Tableau::AT_LB ||
+                _basicStatus[_leavingVariable] == Tableau::BETWEEN
+                );
 
         double basicAssignment = _basicAssignment[_leavingVariable];
         double nonBasicAssignment = _nonBasicAssignment[_enteringVariable];
