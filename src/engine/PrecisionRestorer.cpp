@@ -60,20 +60,41 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
         ASSERT( tableau.getN() == targetN );
         ASSERT( tableau.getM() == targetM );
 
+        Set<unsigned> currentBasics = tableau.getBasicVariables();
+
         if ( restoreBasics == RESTORE_BASICS )
         {
             List<unsigned> shouldBeBasicList;
             for ( const auto &basic : shouldBeBasic )
                 shouldBeBasicList.append( basic );
 
+            bool failed = false;
             try
             {
                 tableau.initializeTableau( shouldBeBasicList );
             }
             catch ( MalformedBasisException & )
             {
-                throw ReluplexError( ReluplexError::RESTORATION_FAILED_TO_REFACTORIZE_BASIS,
-                                     "Precision restoration failed - could not refactorize basis after setting basics" );
+                failed = true;
+            }
+
+            if ( failed )
+            {
+                // The "restoreBasics" set leads to a malformed basis.
+                // Try again without this part of the restoration
+                shouldBeBasicList.clear();
+                for ( const auto &basic : currentBasics )
+                    shouldBeBasicList.append( basic );
+
+                try
+                {
+                    tableau.initializeTableau( shouldBeBasicList );
+                }
+                catch ( MalformedBasisException & )
+                {
+                    throw ReluplexError( ReluplexError::RESTORATION_FAILED_TO_REFACTORIZE_BASIS,
+                                         "Precision restoration failed - could not refactorize basis after setting basics" );
+                }
             }
         }
 
