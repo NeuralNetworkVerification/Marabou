@@ -30,6 +30,17 @@ MaxConstraint::MaxConstraint( unsigned f, const Set<unsigned> &elements )
 {
 }
 
+MaxConstraint::MaxConstraint(String serial_max){
+    auto values = serial_max.tokenize(",");
+    Set<unsigned> elements;
+    auto values_iter = values.begin();
+    std::advance(values_iter, 1);
+    for (; values_iter != values.end(); ++values_iter){
+        elements.insert(atoi(values_iter->ascii()));
+    }
+    MaxConstraint(atoi(values.front().ascii()), elements);
+}
+
 MaxConstraint::~MaxConstraint()
 {
     _elements.clear();
@@ -451,7 +462,7 @@ void MaxConstraint::getAuxiliaryEquations( List<Equation> & newEquations ) const
         newEquations.append( equ );
     }
 }
-
+// format: max,f,element_1,element_2,element_3,...
 String MaxConstraint::serializeToString() const {
     Stringf output = Stringf("max,%u", _f);
     for ( auto element : _elements )
