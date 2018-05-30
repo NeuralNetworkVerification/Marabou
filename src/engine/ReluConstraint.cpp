@@ -19,6 +19,10 @@
 #include "ReluplexError.h"
 #include "Statistics.h"
 
+#include <string>
+#include <sstream>
+#include <iostream>
+
 ReluConstraint::ReluConstraint( unsigned b, unsigned f )
     : _b( b )
     , _f( f )
@@ -26,6 +30,18 @@ ReluConstraint::ReluConstraint( unsigned b, unsigned f )
 {
     setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
 }
+ReluConstraint::ReluConstraint(String serial_relu)
+{
+    
+    //std::istringstream iss(serial_relu);
+    //std::vector<std::string> serial_vec(std::istream_iterator<std::string>{iss},
+    //                             std::istream_iterator<std::string>());
+
+    auto values = serial_relu.tokenize(",");
+
+    ReluConstraint(atoi(values.front().ascii()), atoi(values.back().ascii()));
+}
+
 
 PiecewiseLinearConstraint *ReluConstraint::duplicateConstraint() const
 {

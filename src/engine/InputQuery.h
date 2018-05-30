@@ -69,8 +69,8 @@ public:
     void storeDebuggingSolution( unsigned variable, double value );
     Map<unsigned, double> _debuggingSolution;
     
-    void printQuery(std::string fileName);
-    void loadQueury(std::string fileName);
+    void saveQuery(std::string fileName);
+    //void loadQueury(std::string fileName);
 
 private:
     unsigned _numberOfVariables;
