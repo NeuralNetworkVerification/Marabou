@@ -213,6 +213,9 @@ void InputQuery::saveQuery(std::string fileName)
   //Amount of variables
   queryFile << Stringf( "%u\n", _numberOfVariables).ascii();
 
+  //Amount of Bounds
+  queryFile << Stringf( "%u\n", std::distance(_lowerBounds.begin(), _lowerBounds.end())).ascii();
+
   //Amount of Equations
   queryFile << Stringf( "%u\n", _equations.size()).ascii();
 

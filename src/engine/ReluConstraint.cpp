@@ -32,17 +32,13 @@ ReluConstraint::ReluConstraint( unsigned b, unsigned f )
 }
 ReluConstraint::ReluConstraint(String serial_relu)
 {
-    
-    //std::istringstream iss(serial_relu);
-    //std::vector<std::string> serial_vec(std::istream_iterator<std::string>{iss},
-    //                             std::istream_iterator<std::string>());
-
     auto values = serial_relu.tokenize(",");
-
-    ReluConstraint(atoi(values.front().ascii()), atoi(values.back().ascii()));
+    //ReluConstraint(atoi(values.back().ascii()), atoi(values.front().ascii()));
+    _b = atoi(values.back().ascii());
+    _f = atoi(values.front().ascii());
+    _haveEliminatedVariables = false;
+    setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
 }
-
-
 PiecewiseLinearConstraint *ReluConstraint::duplicateConstraint() const
 {
     ReluConstraint *clone = new ReluConstraint( _b, _f );
