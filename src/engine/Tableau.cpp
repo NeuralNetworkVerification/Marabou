@@ -1723,24 +1723,8 @@ void Tableau::updateAssignmentForPivot()
 
         double basicAssignment = _basicAssignment[_leavingVariable];
         double nonBasicAssignment = _nonBasicAssignment[_enteringVariable];
-
-        // Due to numerical stability, it may be that the basic variable
-        // is slightly too low or too great. If so, adjust it.
-        double lb = _lowerBounds[_basicIndexToVariable[_leavingVariable]];
-        double ub = _upperBounds[_basicIndexToVariable[_leavingVariable]];
-
-        if ( FloatUtils::lt( basicAssignment, lb ) )
-        {
-            basicAssignment = lb;
-        }
-        else if ( FloatUtils::gt( basicAssignment, ub ) )
-        {
-            basicAssignment = ub;
-        }
-
         _basicAssignment[_leavingVariable] = nonBasicAssignment;
         _nonBasicAssignment[_enteringVariable] = basicAssignment;
-
         return;
     }
 
