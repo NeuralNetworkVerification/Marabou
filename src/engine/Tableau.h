@@ -208,6 +208,7 @@ public:
     unsigned getLeavingVariable() const;
     unsigned getLeavingVariableIndex() const;
     double getChangeRatio() const;
+    void setChangeRatio( double changeRatio );
 
     /*
       Returns true iff the current iteration is a fake pivot, i.e. the
