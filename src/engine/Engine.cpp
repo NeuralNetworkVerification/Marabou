@@ -312,6 +312,7 @@ void Engine::performSimplexStep()
     unsigned tries = GlobalConfiguration::MAX_SIMPLEX_PIVOT_SEARCH_ITERATIONS;
     Set<unsigned> excludedEnteringVariables;
     unsigned bestLeaving = 0;
+    double bestChangeRatio = 0.0;
 
     while ( tries > 0 )
     {
@@ -340,6 +341,7 @@ void Engine::performSimplexStep()
         {
             bestEntering = _tableau->getEnteringVariableIndex();
             bestLeaving = _tableau->getLeavingVariableIndex();
+            bestChangeRatio = _tableau->getChangeRatio();
             memcpy( _work, _tableau->getChangeColumn(), sizeof(double) * _tableau->getM() );
             break;
         }
@@ -352,6 +354,7 @@ void Engine::performSimplexStep()
             bestEntering = _tableau->getEnteringVariableIndex();
             bestPivotEntry = pivotEntry;
             bestLeaving = leavingIndex;
+            bestChangeRatio = _tableau->getChangeRatio();
             memcpy( _work, _tableau->getChangeColumn(), sizeof(double) * _tableau->getM() );
         }
 
@@ -397,6 +400,7 @@ void Engine::performSimplexStep()
     _tableau->setEnteringVariableIndex( bestEntering );
     _tableau->setLeavingVariableIndex( bestLeaving );
     _tableau->setChangeColumn( _work );
+    _tableau->setChangeRatio( bestChangeRatio );
 
     bool fakePivot = _tableau->performingFakePivot();
 
