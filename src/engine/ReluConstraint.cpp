@@ -325,7 +325,7 @@ void ReluConstraint::getEntailedTightenings( List<Tightening> &tightenings ) con
 
     if ( !FloatUtils::isNegative( minBound ) )
     {
-        // The minimal bou nd is non-negative. Should match for both f and b.
+        // The minimal bound is non-negative. Should match for both f and b.
         if ( FloatUtils::lt( minBound, bUpperBound ) )
             tightenings.append( Tightening( _b, minBound, Tightening::UB ) );
         else if ( FloatUtils::lt( minBound, fUpperBound ) )
