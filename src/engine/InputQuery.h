@@ -68,8 +68,9 @@ public:
     */
     void storeDebuggingSolution( unsigned variable, double value );
     Map<unsigned, double> _debuggingSolution;
-    
-    void saveQuery(std::string fileName);
+
+    // TODO: add comment about function, remove commented-out function
+    void saveQuery( const String &fileName );
     //void loadQueury(std::string fileName);
 
 private:

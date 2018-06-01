@@ -32,8 +32,8 @@ vpath %.cpp $(ENGINE_DIR)
 vpath %.cpp $(ENGINE_REAL_DIR)
 
 SOURCES += \
-	main.cpp \
 	QueryLoader.cpp \
+	main.cpp \
 
 TARGET = query_loader.elf
 
