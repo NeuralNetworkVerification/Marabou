@@ -33,11 +33,8 @@ ReluConstraint::ReluConstraint( unsigned b, unsigned f )
 ReluConstraint::ReluConstraint(String serial_relu)
 {
     auto values = serial_relu.tokenize(",");
-    //ReluConstraint(atoi(values.back().ascii()), atoi(values.front().ascii()));
-    _b = atoi(values.back().ascii());
-    _f = atoi(values.front().ascii());
-    _haveEliminatedVariables = false;
-    setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
+    *(this)=ReluConstraint(atoi(values.back().ascii()), atoi(values.front().ascii()));
+
 }
 PiecewiseLinearConstraint *ReluConstraint::duplicateConstraint() const
 {

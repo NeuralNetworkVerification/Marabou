@@ -38,10 +38,10 @@ InputQuery load_query(const char* filename){
     record = strtok(line,"\n");
     int numConstraints = atoi(record);
 
-    printf("Number of variables: %u\n", numVars);
-    printf("Number of bounds: %u\n", numBounds);
-    printf("Number of equations: %u\n", numEquations);
-    printf("Number of constraints: %u\n", numConstraints);
+    //printf("Number of variables: %u\n", numVars);
+    //printf("Number of bounds: %u\n", numBounds);
+    //printf("Number of equations: %u\n", numEquations);
+    //printf("Number of constraints: %u\n", numConstraints);
 
     inputquery.setNumberOfVariables(numVars);
 
@@ -50,10 +50,10 @@ InputQuery load_query(const char* filename){
         //first bound
         line=fgets(buffer,bufferSize,fstream);
         int var_to_bound = atoi(strtok(line,","));
-        float l = atof(strtok(NULL,","));
-        float u = atof(strtok(NULL,","));
+        double l = atof(strtok(NULL,","));
+        double u = atof(strtok(NULL,","));
 
-        printf("Var: %u L:%f, U:%f\n", var_to_bound,l,u);
+        //printf("Var: %u L:%f, U:%f\n", var_to_bound,l,u);
 
         inputquery.setLowerBound(var_to_bound, l);
         inputquery.setUpperBound(var_to_bound, u);
@@ -64,24 +64,30 @@ InputQuery load_query(const char* filename){
         
         line = fgets(buffer, bufferSize, fstream);
         int eq_number = atoi(strtok(line,","));
+        (void) eq_number;
         int eq_type = atoi(strtok(NULL,","));
-        float eq_scalar = atof(strtok(NULL,","));
+        double eq_scalar = atof(strtok(NULL,","));
 
         Equation::EquationType type;
-        switch(eq_type) {
-            case 0 : type = Equation::EQ;
-            case 1 : type = Equation::GE;
-            case 2 : type = Equation::LE;
+        type = Equation::EQ;
+
+        if(eq_type == 0){
+            type = Equation::EQ;
+        } else if (eq_type == 1){
+            type = Equation::GE;
+        } else if (eq_type ==2){
+            type = Equation::LE;
         }
+
         Equation equation(type);
         equation.setScalar(eq_scalar);
-        printf("Equation No: %u, Type: %u, Scalar: %f\n", eq_number, eq_type, eq_scalar);
+        //printf("Equation No: %u, Type: %d, Scalar: %f\n", eq_number, eq_type, eq_scalar);
         auto token_v = strtok(NULL,",");
         auto token_c = strtok(NULL,",");
         while(token_v != NULL){
             int var_no = atoi(token_v);
-            float coeff = atof(token_c);
-            printf("Var:%u \t coeff:%f\n",var_no,coeff);
+            double coeff = atof(token_c);
+            //printf("Var:%u \t coeff:%f\n",var_no,coeff);
             //int
             equation.addAddend(coeff, var_no);
             token_v = strtok(NULL, ",");
@@ -91,24 +97,19 @@ InputQuery load_query(const char* filename){
     }
 
     // Constraints
-    for(int i=0; i<5; i++){
+    for(int i=0; i<numConstraints; i++){
         line = fgets(buffer, bufferSize, fstream);
         int co_no = atoi(strtok(line,","));
+        (void) co_no;
         String co_type = String(strtok(NULL,","));
-        printf("C_no: %u\t Type:%s\n", co_no,co_type.ascii());
-
+        //printf("C_no: %u\t Type:%s\n", co_no,co_type.ascii());
+        String serial_constraint = String(strtok(NULL,""));
         if(co_type == "relu"){
-            // Relu Constraint
-            String serial_relu = String(strtok(NULL,""));
-            printf("serial relu: %s", serial_relu.ascii());
-
-            ReluConstraint relu(serial_relu);
-            printf("NEW SERIAL:\n%s\n", relu.serializeToString().ascii());
-
-            PiecewiseLinearConstraint* r = new ReluConstraint(serial_relu);
+            PiecewiseLinearConstraint* r = new ReluConstraint(serial_constraint);
             inputquery.addPiecewiseLinearConstraint(r);
         } else if (co_type == "max"){
-            // Max Constraint
+            PiecewiseLinearConstraint* r = new MaxConstraint(serial_constraint);
+            inputquery.addPiecewiseLinearConstraint(r);
         }
     }
 

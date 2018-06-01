@@ -38,13 +38,7 @@ MaxConstraint::MaxConstraint(String serial_max){
     for (; values_iter != values.end(); ++values_iter){
         elements.insert(atoi(values_iter->ascii()));
     }
-    //MaxConstraint(atoi(values.front().ascii()), elements);
-
-    _f = atoi(values.front().ascii());
-    _elements = elements;
-    _phaseFixed = false;
-    _maxLowerBound = FloatUtils::negativeInfinity();
-    _removePL = false;
+    *(this)=MaxConstraint(atoi(values.front().ascii()), elements);
 }
 
 MaxConstraint::~MaxConstraint()

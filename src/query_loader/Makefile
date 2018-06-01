@@ -34,8 +34,6 @@ vpath %.cpp $(ENGINE_REAL_DIR)
 SOURCES += \
 	main.cpp \
 	QueryLoader.cpp \
-#	../AcasNeuralNetwork.cpp \
-#	../AcasNnet.cpp \
 
 TARGET = query_loader.elf
 

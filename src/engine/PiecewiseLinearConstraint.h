@@ -45,6 +45,12 @@ public:
     };
 
     PiecewiseLinearConstraint();
+    /*
+      This constructor should take in a string produced by serializeToString()
+      without the constraint identifier token and construct the corresponding
+      constraint.
+    */
+    PiecewiseLinearConstraint(String);
 
     virtual ~PiecewiseLinearConstraint() {}
 
@@ -164,9 +170,11 @@ public:
     }
 
     /*
-      Produce string representation nof the piecewise linear constraint.
+      Produce string representation of the piecewise linear constraint.
       This representation conntrains only the information necessary to reproduce it
-      but does not account for state or change in state during execution.
+      but does not account for state or change in state during execution. Additionally
+      the first string before a comma has the contraint type identifier 
+      (ie. "relu", "max", etc)
     */
     virtual String serializeToString() const = 0;
 
