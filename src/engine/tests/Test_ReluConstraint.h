@@ -626,6 +626,14 @@ public:
         TS_ASSERT_THROWS_NOTHING( relu.eliminateVariable( b, 5 ) );
         TS_ASSERT( relu.constraintObsolete() );
     }
+
+    void test_serialize_and_unserialize()
+    {
+        // Guy: todo: add a test that serialized and unserialzies, and check that
+        // the returned constraint is correct. Likewise for max constraint.
+
+        TS_TRACE( "TODO" );
+    }
 };
 
 //

@@ -13,8 +13,8 @@
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
-#include "MStringf.h"
 #include "List.h"
+#include "MStringf.h"
 #include "MaxConstraint.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "ReluplexError.h"
@@ -30,15 +30,19 @@ MaxConstraint::MaxConstraint( unsigned f, const Set<unsigned> &elements )
 {
 }
 
-MaxConstraint::MaxConstraint(String serial_max){
-    auto values = serial_max.tokenize(",");
+MaxConstraint::MaxConstraint( const String &serializedMax )
+{
+    List<String> values = serializedMax.tokenize( "," );
+
+    auto valuesIter = values.begin();
+    unsigned f = atoi( valuesIter->ascii() );
+    ++valuesIter;
+
     Set<unsigned> elements;
-    auto values_iter = values.begin();
-    std::advance(values_iter, 1);
-    for (; values_iter != values.end(); ++values_iter){
-        elements.insert(atoi(values_iter->ascii()));
-    }
-    *(this)=MaxConstraint(atoi(values.front().ascii()), elements);
+    for ( ; valuesIter != values.end(); ++valuesIter )
+        elements.insert( atoi( valuesIter->ascii() ) );
+
+    *(this) = MaxConstraint( f, elements );
 }
 
 MaxConstraint::~MaxConstraint()
@@ -463,13 +467,13 @@ void MaxConstraint::getAuxiliaryEquations( List<Equation> & newEquations ) const
         newEquations.append( equ );
     }
 }
-// format: max,f,element_1,element_2,element_3,...
-String MaxConstraint::serializeToString() const {
-    Stringf output = Stringf("max,%u", _f);
-    for ( auto element : _elements )
-        {
-        output += Stringf(",%u", element);
-        }
+
+String MaxConstraint::serializeToString() const
+{
+    // Output format: max,f,element_1,element_2,element_3,...
+    Stringf output = Stringf( "max,%u", _f );
+    for ( const auto &element : _elements )
+        output += Stringf( ",%u", element );
     return output;
 }
 

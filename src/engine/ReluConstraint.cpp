@@ -19,10 +19,6 @@
 #include "ReluplexError.h"
 #include "Statistics.h"
 
-#include <string>
-#include <sstream>
-#include <iostream>
-
 ReluConstraint::ReluConstraint( unsigned b, unsigned f )
     : _b( b )
     , _f( f )
@@ -30,12 +26,29 @@ ReluConstraint::ReluConstraint( unsigned b, unsigned f )
 {
     setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
 }
-ReluConstraint::ReluConstraint(String serial_relu)
-{
-    auto values = serial_relu.tokenize(",");
-    *(this)=ReluConstraint(atoi(values.back().ascii()), atoi(values.front().ascii()));
 
+ReluConstraint::ReluConstraint( const String &serializedRelu )
+    : _haveEliminatedVariables( false )
+{
+    /*
+      Guy: unclear: in the comment about
+
+          String serializeToString() const;
+
+      you wrote:
+
+          Returns string with shape: relu, _f, _b
+
+      But here it looks more like a f,b? where's the relu,?
+    */
+
+    List<String> values = serializedRelu.tokenize( "," );
+    _b = atoi( values.back().ascii() );
+    _f = atoi( values.front().ascii() );
+
+    setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
 }
+
 PiecewiseLinearConstraint *ReluConstraint::duplicateConstraint() const
 {
     ReluConstraint *clone = new ReluConstraint( _b, _f );
@@ -447,9 +460,10 @@ bool ReluConstraint::haveOutOfBoundVariables() const
     return false;
 }
 
-// format: relu,f,b
-String ReluConstraint::serializeToString() const {
-    return Stringf("relu,%u,%u", _f, _b);
+String ReluConstraint::serializeToString() const
+{
+    // Output format is: relu,f,b
+    return Stringf( "relu,%u,%u", _f, _b );
 }
 
 //

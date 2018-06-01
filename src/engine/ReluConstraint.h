@@ -25,7 +25,7 @@ public:
     };
 
     ReluConstraint( unsigned b, unsigned f );
-    ReluConstraint(String serial_relu);
+    ReluConstraint( const String &serializedRelu );
 
     /*
       Return a clone of the constraint.
@@ -125,8 +125,7 @@ public:
     virtual void getCostFunctionComponent( Map<unsigned, double> &cost ) const;
 
     /*
-      Returns string with shape:
-      relu, _f, _b
+      Returns string with shape: relu, _f, _b
     */
     String serializeToString() const;
 

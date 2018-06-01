@@ -22,7 +22,7 @@ class MaxConstraint : public PiecewiseLinearConstraint
     ~MaxConstraint();
 
     MaxConstraint( unsigned f, const Set<unsigned> &elements );
-    MaxConstraint(String serial_max);
+    MaxConstraint( const String &serializedMax );
 
     /*
       Return a clone of the constraint.
