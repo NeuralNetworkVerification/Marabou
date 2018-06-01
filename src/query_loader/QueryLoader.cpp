@@ -1,13 +1,18 @@
+#include "Equation.h"
+#include "InputQuery.h"
+#include "MStringf.h"
+#include "MaxConstraint.h"
 #include "QueryLoader.h"
+#include "ReluConstraint.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
-#include "MStringf.h"
-#include "InputQuery.h"
-#include "Equation.h"
-#include "ReluConstraint.h"
-#include "MaxConstraint.h"
+
+// TODO: please use our File.h and MString.h classes
+// for file access and string manipulation
+
+// TODO: add a unit test for a sanity check
 
 InputQuery load_query(const char* filename){
     InputQuery inputquery;
@@ -18,7 +23,10 @@ InputQuery load_query(const char* filename){
     }
 
     int bufferSize = 10240;
+
+    // Guy: TODO: should buffer be deleted afterwards?
     char *buffer = new char[bufferSize];
+
     char *record, *line;
     //int i=0, layer=0, row=0, j=0, param=0;
     //AcasNnet *nnet = new AcasNnet();
@@ -61,7 +69,7 @@ InputQuery load_query(const char* filename){
 
     // Equations
     for(int i=0; i<numEquations; i++){
-        
+
         line = fgets(buffer, bufferSize, fstream);
         int eq_number = atoi(strtok(line,","));
         (void) eq_number;
@@ -113,6 +121,14 @@ InputQuery load_query(const char* filename){
         }
     }
 
-    //printf(Stringf( "Num Variables:%u", numVars).ascii());    
+    //printf(Stringf( "Num Variables:%u", numVars).ascii());
     return inputquery;
 }
+
+//
+// Local Variables:
+// compile-command: "make -C ../.. "
+// tags-file-name: "../../TAGS"
+// c-basic-offset: 4
+// End:
+//

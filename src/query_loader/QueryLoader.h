@@ -1,21 +1,23 @@
-
 #ifndef __QueryLoader_h__
 #define __QueryLoader_h__
 
 #include "InputQuery.h"
 
-class QueryLoader {
+// Guy: TODO: please add comments.
+// Why is the function load_query outside of the class? You can make it static if you like.
+class QueryLoader
+{
 public:
-    //string filename;
+    // String filename;
     int numVars;
     int numEquations;
     int numConstraints;
 };
 
-//Functions Implemented
-InputQuery load_query(const char *filename);
+// Functions Implemented
+InputQuery load_query( const char *filename );
 
-#endif // __AcasNnet_h__
+#endif // __QueryLoader_h__
 
 //
 // Local Variables:
