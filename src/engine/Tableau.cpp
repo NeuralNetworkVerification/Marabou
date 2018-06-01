@@ -410,6 +410,8 @@ double Tableau::getValue( unsigned variable )
         return _nonBasicAssignment[index];
     }
 
+    ASSERT( _basicAssignmentStatus != ITableau::BASIC_ASSIGNMENT_INVALID );
+
     return _basicAssignment[_variableToIndex[variable]];
 }
 
@@ -887,6 +889,11 @@ double Tableau::getChangeRatio() const
     return _changeRatio;
 }
 
+void Tableau::setChangeRatio( double changeRatio )
+{
+    _changeRatio = changeRatio;
+}
+
 void Tableau::computeChangeColumn()
 {
     // _a gets the entering variable's column in A
@@ -976,7 +983,8 @@ void Tableau::dumpAssignment()
     for ( unsigned i = 0; i < _n; ++i )
     {
         bool basic = _basicVariables.exists( i );
-        printf( "\tx%u  -->  %.5lf [%s]. ", i, getValue( i ), basic ? "B" : "NB" );
+        printf( "\tx%u (index: %u)  -->  %.5lf [%s]. ", i, _variableToIndex[i],
+                getValue( i ), basic ? "B" : "NB" );
         if ( _lowerBounds[i] != FloatUtils::negativeInfinity() )
             printf( "Range: [ %.5lf, ", _lowerBounds[i] );
         else
@@ -1688,6 +1696,38 @@ void Tableau::updateAssignmentForPivot()
 
     _basicAssignmentStatus = ITableau::BASIC_ASSIGNMENT_UPDATED;
 
+    // If the change ratio is 0, just maintain the current assignment
+    if ( FloatUtils::isZero( _changeRatio ) )
+    {
+        ASSERT( !performingFakePivot() );
+
+        DEBUG({
+                // This should only happen when the basic variable is pressed against
+                // one of its bounds
+                if ( !( _basicStatus[_leavingVariable] == Tableau::AT_UB ||
+                        _basicStatus[_leavingVariable] == Tableau::AT_LB ||
+                        _basicStatus[_leavingVariable] == Tableau::BETWEEN
+                        ) )
+                {
+                    printf( "Assertion violation!\n" );
+                    printf( "Basic (leaving) variable is: %u\n", _basicIndexToVariable[_leavingVariable] );
+                    printf( "Basic assignment: %.10lf. Bounds: [%.10lf, %.10lf]\n",
+                            _basicAssignment[_leavingVariable],
+                            _lowerBounds[_basicIndexToVariable[_leavingVariable]],
+                            _upperBounds[_basicIndexToVariable[_leavingVariable]] );
+                    printf( "Basic status: %u\n", _basicStatus[_leavingVariable] );
+                    printf( "leavingVariableIncreases = %s", _leavingVariableIncreases ? "yes" : "no" );
+                    exit( 1 );
+                }
+            });
+
+        double basicAssignment = _basicAssignment[_leavingVariable];
+        double nonBasicAssignment = _nonBasicAssignment[_enteringVariable];
+        _basicAssignment[_leavingVariable] = nonBasicAssignment;
+        _nonBasicAssignment[_enteringVariable] = basicAssignment;
+        return;
+    }
+
     if ( performingFakePivot() )
     {
         // A non-basic is hopping from one bound to the other.
@@ -1759,7 +1799,7 @@ void Tableau::updateAssignmentForPivot()
                 continue;
 
             if ( FloatUtils::isZero( _changeColumn[i] ) )
-                 continue;
+                continue;
 
             _basicAssignment[i] -= _changeColumn[i] * nonBasicDelta;
             notifyVariableValue( _basicIndexToVariable[i], _basicAssignment[i] );

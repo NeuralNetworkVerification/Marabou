@@ -312,6 +312,7 @@ void Engine::performSimplexStep()
     unsigned tries = GlobalConfiguration::MAX_SIMPLEX_PIVOT_SEARCH_ITERATIONS;
     Set<unsigned> excludedEnteringVariables;
     unsigned bestLeaving = 0;
+    double bestChangeRatio = 0.0;
 
     while ( tries > 0 )
     {
@@ -340,6 +341,7 @@ void Engine::performSimplexStep()
         {
             bestEntering = _tableau->getEnteringVariableIndex();
             bestLeaving = _tableau->getLeavingVariableIndex();
+            bestChangeRatio = _tableau->getChangeRatio();
             memcpy( _work, _tableau->getChangeColumn(), sizeof(double) * _tableau->getM() );
             break;
         }
@@ -352,6 +354,7 @@ void Engine::performSimplexStep()
             bestEntering = _tableau->getEnteringVariableIndex();
             bestPivotEntry = pivotEntry;
             bestLeaving = leavingIndex;
+            bestChangeRatio = _tableau->getChangeRatio();
             memcpy( _work, _tableau->getChangeColumn(), sizeof(double) * _tableau->getM() );
         }
 
@@ -397,6 +400,7 @@ void Engine::performSimplexStep()
     _tableau->setEnteringVariableIndex( bestEntering );
     _tableau->setLeavingVariableIndex( bestLeaving );
     _tableau->setChangeColumn( _work );
+    _tableau->setChangeRatio( bestChangeRatio );
 
     bool fakePivot = _tableau->performingFakePivot();
 
@@ -423,7 +427,8 @@ void Engine::fixViolatedPlConstraintIfPossible()
 {
     List<PiecewiseLinearConstraint::Fix> fixes = _plConstraintToFix->getPossibleFixes();
 
-    // First, see if we can fix without pivoting
+    // First, see if we can fix without pivoting. We are looking for a fix concerning a
+    // non-basic variable, that doesn't set that variable out-of-bounds.
     for ( const auto &fix : fixes )
     {
         if ( !_tableau->isBasic( fix._variable ) )
@@ -437,17 +442,28 @@ void Engine::fixViolatedPlConstraintIfPossible()
         }
     }
 
-    // No choice, have to pivot
-	List<PiecewiseLinearConstraint::Fix>::iterator it = fixes.begin();
-	while ( it != fixes.end() && !_tableau->isBasic( it->_variable ) &&
-			( !FloatUtils::gte( it->_value, _tableau->getLowerBound( it->_variable ) ) ||
-              !FloatUtils::lte( it->_value, _tableau->getUpperBound( it->_variable ) ) ) )
-	{
-		++it;
-	}
+    // No choice, have to pivot. Look for a fix concerning a basic variable, that
+    // doesn't set that variable out-of-bounds.
+    bool found = false;
+    auto it = fixes.begin();
+    while ( !found && it != fixes.end() )
+    {
+        if ( _tableau->isBasic( it->_variable ) )
+        {
+			if ( FloatUtils::gte( it->_value, _tableau->getLowerBound( it->_variable ) ) &&
+                 FloatUtils::lte( it->_value, _tableau->getUpperBound( it->_variable ) ) )
+			{
+                found = true;
+            }
+        }
+        if ( !found )
+        {
+            ++it;
+        }
+    }
 
     // If we couldn't find an eligible fix, give up
-    if ( it == fixes.end() )
+    if ( !found )
         return;
 
     PiecewiseLinearConstraint::Fix fix = *it;

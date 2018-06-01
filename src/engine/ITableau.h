@@ -121,6 +121,7 @@ public:
     virtual unsigned getLeavingVariable() const = 0;
     virtual unsigned getLeavingVariableIndex() const = 0;
     virtual double getChangeRatio() const = 0;
+    virtual void setChangeRatio( double changeRatio ) = 0;
     virtual bool performingFakePivot() const = 0;
     virtual void performPivot() = 0;
     virtual double ratioConstraintPerBasic( unsigned basicIndex, double coefficient, bool decrease ) = 0;
