@@ -45,14 +45,6 @@ public:
     };
 
     PiecewiseLinearConstraint();
-
-    /*
-      This constructor should take in a string produced by serializeToString()
-      without the constraint identifier token and construct the corresponding
-      constraint.
-    */
-    PiecewiseLinearConstraint( const String &serialized );
-
     virtual ~PiecewiseLinearConstraint() {}
 
     /*

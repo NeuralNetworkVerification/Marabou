@@ -41,13 +41,6 @@ public:
             nextIsActive = true;
         }
 
-        MockConstraint(String input)
-            : setActiveWasCalled( false )
-        {
-            nextIsActive = true;
-            (void) input;
-        }
-
         PiecewiseLinearConstraint *duplicateConstraint() const
         {
             return NULL;
@@ -141,7 +134,8 @@ public:
         {
         }
 
-        String serializeToString() const {
+        String serializeToString() const
+        {
             return "";
         }
     };
