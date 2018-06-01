@@ -41,6 +41,13 @@ public:
             nextIsActive = true;
         }
 
+        MockConstraint(String input)
+            : setActiveWasCalled( false )
+        {
+            nextIsActive = true;
+            (void) input;
+        }
+
         PiecewiseLinearConstraint *duplicateConstraint() const
         {
             return NULL;
@@ -132,6 +139,10 @@ public:
 
         void getAuxiliaryEquations( List<Equation> &/* newEquations */ ) const
         {
+        }
+
+        String serializeToString() const {
+            return "";
         }
     };
 
