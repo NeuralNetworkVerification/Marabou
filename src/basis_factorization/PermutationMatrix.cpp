@@ -145,13 +145,31 @@ bool PermutationMatrix::isIdentity() const
     return true;
 }
 
-void PermutationMatrix::swap( unsigned a, unsigned b )
+void PermutationMatrix::swapRows( unsigned a, unsigned b )
 {
+    if ( a == b )
+        return;
+
     unsigned tempA = _rowOrdering[a];
     unsigned tempB = _rowOrdering[b];
 
     _rowOrdering[a] = tempB;
     _rowOrdering[b] = tempA;
+
+    _columnOrdering[tempB] = a;
+    _columnOrdering[tempA] = b;
+}
+
+void PermutationMatrix::swapColumns( unsigned a, unsigned b )
+{
+    if ( a == b )
+        return;
+
+    unsigned tempA = _columnOrdering[a];
+    unsigned tempB = _columnOrdering[b];
+
+    _columnOrdering[a] = tempB;
+    _columnOrdering[b] = tempA;
 
     _rowOrdering[tempB] = a;
     _rowOrdering[tempA] = b;

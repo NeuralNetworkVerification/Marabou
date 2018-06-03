@@ -75,9 +75,12 @@ void GaussianEliminator::permute()
     */
 
     // Translate V-indices to U-indices
-    // unsigned i = _luFactors->_P._ordering[_pivotRow];
-    // unsigned j = _luFactors->_Q._invOrdering[_pivotRow];
+    unsigned uRow = _luFactors->_P._rowOrdering[_pivotRow];
+    unsigned uColumn = _luFactors->_Q._columnOrdering[_pivotColumn];
 
+    // Move U[uRow, uColumn] to U[k,k] (because U = P'VQ')
+    _luFactors->_P.swapColumns( uRow, _eliminationStep );
+    _luFactors->_Q.swapRows( uColumn, _eliminationStep );
 }
 
 LUFactors *GaussianEliminator::run()
@@ -106,8 +109,12 @@ LUFactors *GaussianEliminator::run()
         */
         permute();
 
-        // We perform operations on matrix V, and store new scalars in matrix F
-        // to maintain the main equality A = FV.
+        /*
+          Step 3:
+          -------
+          Perform the actual elimination on U, while maintaining the
+          equation A = FV.
+        */
         eliminate();
     }
 
@@ -186,6 +193,10 @@ void GaussianEliminator::choosePivot()
 
 void GaussianEliminator::eliminate()
 {
+    /*
+      Eliminate all entries below the pivot element U[k,k]
+      We know that V[_pivotRow, _pivotColumn] = U[k,k].
+    */
 }
 
 // unsigned GaussianEliminator::choosePivotElement( unsigned columnIndex, FactorizationStrategy factorizationStrategy )

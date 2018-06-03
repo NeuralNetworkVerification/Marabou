@@ -33,9 +33,10 @@ public:
     bool isIdentity() const;
 
     /*
-      Change the permutation so that two rows are swapped
+      Change the permutation so that two rows/columns are swapped
     */
-    void swap( unsigned a, unsigned b );
+    void swapRows( unsigned a, unsigned b );
+    void swapColumns( unsigned a, unsigned b );
 
     /*
       Produce the inverse of the permutation matrix
