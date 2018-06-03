@@ -629,10 +629,16 @@ public:
 
     void test_serialize_and_unserialize()
     {
-        // Guy: todo: add a test that serialized and unserialzies, and check that
-        // the returned constraint is correct. Likewise for max constraint.
+        unsigned b = 42;
+        unsigned f = 7;
 
-        TS_TRACE( "TODO" );
+        ReluConstraint original_relu( b, f );
+        String original_serialized = original_relu.serializeToString();
+        original_serialized.replace("relu,","");
+        ReluConstraint recovered_relu(original_serialized);
+
+        TS_ASSERT_EQUALS(original_relu.serializeToString(),
+                         recovered_relu.serializeToString());
     }
 };
 

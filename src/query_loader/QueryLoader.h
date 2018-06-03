@@ -12,10 +12,12 @@ public:
     int numVars;
     int numEquations;
     int numConstraints;
+
+    static InputQuery loadQuery( const char *filename );
 };
 
 // Functions Implemented
-InputQuery load_query( const char *filename );
+
 
 #endif // __QueryLoader_h__
 

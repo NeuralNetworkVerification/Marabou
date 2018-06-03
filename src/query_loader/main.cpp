@@ -10,7 +10,7 @@
 
 int main()
 {
-    InputQuery inputQuery = load_query( "test_TF" );
+    InputQuery inputQuery = QueryLoader::loadQuery( "test_TF" );
     inputQuery.saveQuery( "test_TF_AFTER" );
 }
 

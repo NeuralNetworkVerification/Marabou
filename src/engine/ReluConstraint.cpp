@@ -40,6 +40,19 @@ ReluConstraint::ReluConstraint( const String &serializedRelu )
           Returns string with shape: relu, _f, _b
 
       But here it looks more like a f,b? where's the relu,?
+
+    Chris: What I was trying to say is that it will literally print
+            the word "relu" at the beginning of the line so that the 
+            QueryLoader has a way to identify which constructor to call.
+            The QueryLoader then strips the first token and comma and dispatches
+            the rest of the line to the constructor.
+            For example relu(3,6) would be come "relu,6,3"
+            The processor will then call ReluConstraint(3,6) because it
+            identified the word "relu" at the beginning of the line.
+
+            I also opted for relu,f,b instead of relu,b,f which may seem more
+            intuitive because for max we have max,f,element1,element2,... so 
+            I opted for consistency across constraint types.
     */
 
     List<String> values = serializedRelu.tokenize( "," );

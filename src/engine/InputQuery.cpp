@@ -208,10 +208,6 @@ void InputQuery::saveQuery( const String &fileName )
     queryFile.open( fileName.ascii() );
 
     // GENERAL QUERY INFORMATION
-    // inspect that this does not match
-    //queryFile << Stringf( "Total Variables1:  %04u \n", std::distance(_lowerBounds.begin(), _lowerBounds.end())).ascii();
-    //
-
     //Amount of variables
     queryFile << Stringf( "%u\n", _numberOfVariables).ascii();
 
@@ -261,18 +257,12 @@ void InputQuery::saveQuery( const String &fileName )
         //constraint number
         //queryFile << Stringf( "\nConstraint %04u: ", j ).ascii();
         queryFile << Stringf( "\n%u,", j).ascii();
-        //auto aux =
         queryFile << constraint->serializeToString().ascii();
         j++;
     }
 
-
-    // Future: _plConstraints
     queryFile.close();
 
-
-    //void InputQuery::loadQuery(std::string filename){
-    //  (void)
 }
 
 //

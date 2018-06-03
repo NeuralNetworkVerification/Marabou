@@ -69,9 +69,10 @@ public:
     void storeDebuggingSolution( unsigned variable, double value );
     Map<unsigned, double> _debuggingSolution;
 
-    // TODO: add comment about function, remove commented-out function
+    /*
+      Serializes the query to a file which can then be loaded using QueryLoader.
+    */
     void saveQuery( const String &fileName );
-    //void loadQueury(std::string fileName);
 
 private:
     unsigned _numberOfVariables;

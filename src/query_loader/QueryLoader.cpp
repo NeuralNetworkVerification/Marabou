@@ -4,17 +4,19 @@
 #include "MaxConstraint.h"
 #include "QueryLoader.h"
 #include "ReluConstraint.h"
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <iostream>
 
 // TODO: please use our File.h and MString.h classes
 // for file access and string manipulation
 
+// Oh I had left unnecessary includes, I believe all the string fucntionality
+// that I am using comes from MString. I was following the patterns in
+// the original AcasNnet parser, is the file handling incorrect? 
+// I can switch to File.h but I think that would require pretty much redoing
+// all of the logic (I can do it without a problem but need a bit more time).
+
 // TODO: add a unit test for a sanity check
 
-InputQuery load_query(const char* filename){
+InputQuery QueryLoader::loadQuery(const char* filename){
     InputQuery inputquery;
     FILE *fstream = fopen(filename,"r");
     if (fstream == NULL)
@@ -25,6 +27,7 @@ InputQuery load_query(const char* filename){
     int bufferSize = 10240;
 
     // Guy: TODO: should buffer be deleted afterwards?
+    // Chris: Done.
     char *buffer = new char[bufferSize];
 
     char *record, *line;
@@ -121,6 +124,7 @@ InputQuery load_query(const char* filename){
         }
     }
 
+    delete[] buffer;
     //printf(Stringf( "Num Variables:%u", numVars).ascii());
     return inputquery;
 }
