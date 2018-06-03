@@ -10,12 +10,11 @@
  ** directory for licensing information.\endverbatim
  **/
 
+#include "File.h"
+#include "FloatUtils.h"
 #include "InputQuery.h"
 #include "MStringf.h"
 #include "ReluplexError.h"
-#include "FloatUtils.h"
-#include <iostream>
-#include <fstream>
 
 InputQuery::InputQuery()
 {
@@ -203,66 +202,55 @@ void InputQuery::storeDebuggingSolution( unsigned variable, double value )
 
 void InputQuery::saveQuery( const String &fileName )
 {
-    // TODO: please use our File.h interface instead of ofstream
-    std::ofstream queryFile;
-    queryFile.open( fileName.ascii() );
+    File queryFile( fileName );
+    queryFile.open( File::MODE_WRITE_TRUNCATE );
 
-    // GENERAL QUERY INFORMATION
-    //Amount of variables
-    queryFile << Stringf( "%u\n", _numberOfVariables).ascii();
+    // General query information
 
-    //Amount of Bounds
-    queryFile << Stringf( "%u\n", std::distance(_lowerBounds.begin(), _lowerBounds.end())).ascii();
+    // Number of variables
+    queryFile.write( Stringf( "%u\n", _numberOfVariables ) );
 
-    //Amount of Equations
-    queryFile << Stringf( "%u\n", _equations.size()).ascii();
+    // Number of Bounds
+    queryFile.write( Stringf( "%u\n", _lowerBounds.size() ) );
 
-    //Amount of constraints
-    queryFile << Stringf( "%u", _plConstraints.size()).ascii();
+    // Number of Equations
+    queryFile.write( Stringf( "%u\n", _equations.size() ) );
 
-    // BOUNDS
-    for (Map<unsigned, double>::iterator it = _lowerBounds.begin(); it != _lowerBounds.end(); it++)
-    {
-        queryFile << Stringf("\n%d,%f,%f", it->first, it->second, _upperBounds[it->first]).ascii();
-    }
+    // Number of constraints
+    queryFile.write( Stringf( "%u", _plConstraints.size() ) );
 
-    // EQUATIONS
-    //queryFile << "Equations:\n";
+    // Bounds
+    for ( const auto &lb : _lowerBounds )
+        queryFile.write( Stringf( "\n%d,%f,%f", lb.first, lb.second, _upperBounds[lb.first] ) );
+
+    // Equations
     unsigned i = 0;
-    for (List<Equation>::iterator eq_iter = _equations.begin(); eq_iter != _equations.end(); eq_iter++)
+    for ( const auto &e : _equations )
     {
-        Equation e = *eq_iter;
-        //equation number
-        queryFile << Stringf( "\n%u,", i ).ascii();
+        // Equation number
+        queryFile.write( Stringf( "\n%u,", i ) );
 
-        //equation type
-        queryFile << Stringf("%01u,", e._type).ascii();
+        // Equation type
+        queryFile.write( Stringf( "%01u,", e._type ) );
 
-        //equation scalar
-        queryFile << Stringf("%f", e._scalar).ascii();
-        for (List<Equation::Addend>::iterator add_iter = e._addends.begin(); add_iter != e._addends.end(); add_iter++)
-        {
-            Equation::Addend a = *add_iter;
-            queryFile << Stringf( ",%u,%f", a._variable, a._coefficient).ascii();
-        }
-        //queryFile << Stringf("\n\tScalar: %.6f,\n\tAux Variable: %04u,\n", e._scalar, e._auxVariable).ascii();
-        i+=1;
+        // Equation scalar
+        queryFile.write( Stringf( "%f", e._scalar ) );
+        for ( const auto &a : e._addends )
+            queryFile.write( Stringf( ",%u,%f", a._variable, a._coefficient ) );
+
+        ++i;
     }
 
-    //queryFile << "\nConstraints:";
     unsigned j = 0;
-    //for (const auto plc_iter = _plConstraints.begin(); plc_iter != _plConstraints.end(); plc_iter++)
     for ( const auto &constraint : _plConstraints )
     {
-        //constraint number
-        //queryFile << Stringf( "\nConstraint %04u: ", j ).ascii();
-        queryFile << Stringf( "\n%u,", j).ascii();
-        queryFile << constraint->serializeToString().ascii();
-        j++;
+        // Constraint number
+        queryFile.write( Stringf( "\n%u,", j ) );
+        queryFile.write( constraint->serializeToString() );
+        ++j;
     }
 
     queryFile.close();
-
 }
 
 //

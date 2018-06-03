@@ -141,7 +141,6 @@ public:
 
     void test_infinite_bounds()
     {
-
         InputQuery *inputQuery = new InputQuery;
 
         inputQuery->setNumberOfVariables( 5 );
@@ -149,8 +148,12 @@ public:
         inputQuery->setUpperBound( 2, 55 );
         inputQuery->setUpperBound( 3, FloatUtils::infinity() );
 
-
         TS_ASSERT_EQUALS( inputQuery->countInfiniteBounds(), 8U );
+    }
+
+    void test_save_query()
+    {
+        TS_TRAC( "TODO" );
     }
 };
 
