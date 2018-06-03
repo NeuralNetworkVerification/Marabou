@@ -632,13 +632,13 @@ public:
         unsigned b = 42;
         unsigned f = 7;
 
-        ReluConstraint original_relu( b, f );
-        String original_serialized = original_relu.serializeToString();
-        original_serialized.replace("relu,","");
-        ReluConstraint recovered_relu(original_serialized);
+        ReluConstraint originalRelu( b, f );
+        String originalSerialized = originalRelu.serializeToString();
+        originalSerialized.replace( "relu,", "" );
+        ReluConstraint recoveredRelu( originalSerialized );
 
-        TS_ASSERT_EQUALS(original_relu.serializeToString(),
-                         recovered_relu.serializeToString());
+        TS_ASSERT_EQUALS( originalRelu.serializeToString(),
+                          recoveredRelu.serializeToString() );
     }
 };
 

@@ -408,15 +408,14 @@ public:
         for ( unsigned i = 2; i < 7; ++i )
 			elements.insert( i );
 
-        MaxConstraint original_max( f, elements );
-        String original_serialized = original_max.serializeToString();
-        original_serialized.replace("max,","");
-        MaxConstraint recovered_max(original_serialized);
+        MaxConstraint originalMax( f, elements );
+        String originalSerialized = originalMax.serializeToString();
+        originalSerialized.replace( "max,", "" );
+        MaxConstraint recoveredMax( originalSerialized );
 
-        TS_ASSERT_EQUALS(original_max.serializeToString(),
-                         recovered_max.serializeToString());
+        TS_ASSERT_EQUALS( originalMax.serializeToString(),
+                          recoveredMax.serializeToString() );
     }
-
 };
 
 //
