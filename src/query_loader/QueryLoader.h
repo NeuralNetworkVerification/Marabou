@@ -3,21 +3,18 @@
 
 #include "InputQuery.h"
 
-// Guy: TODO: please add comments.
-// Why is the function load_query outside of the class? You can make it static if you like.
 class QueryLoader
 {
 public:
-    // String filename;
-    int numVars;
-    int numEquations;
-    int numConstraints;
+    unsigned _numVars;
+    unsigned _numEquations;
+    unsigned _numConstraunsigneds;
 
-    static InputQuery loadQuery( const char *filename );
+    /*
+      Parse a serialized query and return it in InputQuery form
+    */
+    static InputQuery loadQuery( const String &fileName );
 };
-
-// Functions Implemented
-
 
 #endif // __QueryLoader_h__
 

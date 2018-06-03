@@ -153,7 +153,7 @@ public:
 
     void test_save_query()
     {
-        TS_TRAC( "TODO" );
+        TS_TRACE( "TODO" );
     }
 };
 
