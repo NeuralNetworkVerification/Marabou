@@ -20,16 +20,6 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
     File input = File( fileName );
     input.open( File::MODE_READ );
 
-    enum {
-        MAX_BUFFER_SIZE = 10240,
-    };
-
-    char *buffer = new char[MAX_BUFFER_SIZE];
-    if ( !buffer )
-    {
-        // Todo: add some error handling here
-    }
-
     // Guy: previously there was a lot of strtok going on, but I
     // think the purpose was just to trim the \n s? We have a trim()
     // method for that
