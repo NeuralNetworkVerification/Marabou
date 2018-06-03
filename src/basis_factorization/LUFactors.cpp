@@ -11,7 +11,9 @@
  ** directory for licensing information.\endverbatim
  **/
 
+#include "BasisFactorizationError.h"
 #include "LUFactors.h"
+#include "MString.h"
 
 LUFactors::LUFactors( unsigned m )
     : _m( m )
@@ -27,7 +29,7 @@ LUFactors::LUFactors( unsigned m )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "LUFactors::V" );
 }
 
-~LUFactors::LUFactors()
+LUFactors::~LUFactors()
 {
     if ( _F )
     {

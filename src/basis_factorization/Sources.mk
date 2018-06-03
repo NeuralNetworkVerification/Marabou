@@ -5,6 +5,7 @@ SOURCES += \
 	GaussianEliminator.cpp \
 	LPElement.cpp \
 	LUFactorization.cpp \
+	LUFactors.cpp \
 	PermutationMatrix.cpp \
 
 #

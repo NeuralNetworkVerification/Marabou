@@ -36,7 +36,7 @@ public:
     bool isIdentityPermutation( const PermutationMatrix *matrix )
     {
         for ( unsigned i = 0; i < matrix->getM(); ++i )
-            if ( matrix->_ordering[i] != i )
+            if ( matrix->_rowOrdering[i] != i )
                 return false;
 
         return true;
@@ -396,10 +396,10 @@ public:
         */
 
         PermutationMatrix Q( 4 );
-        Q._ordering[0] = 1;
-        Q._ordering[1] = 0;
-        Q._ordering[2] = 3;
-        Q._ordering[3] = 2;
+        Q._rowOrdering[0] = 1;
+        Q._rowOrdering[1] = 0;
+        Q._rowOrdering[2] = 3;
+        Q._rowOrdering[3] = 2;
 
         ft->setQ( Q );
 
@@ -524,10 +524,10 @@ public:
         */
 
         PermutationMatrix Q( 4 );
-        Q._ordering[0] = 1;
-        Q._ordering[1] = 0;
-        Q._ordering[2] = 3;
-        Q._ordering[3] = 2;
+        Q._rowOrdering[0] = 1;
+        Q._rowOrdering[1] = 0;
+        Q._rowOrdering[2] = 3;
+        Q._rowOrdering[3] = 2;
 
         ft->setQ( Q );
 
@@ -779,15 +779,15 @@ public:
         const PermutationMatrix *Q = ft->getQ();
         const PermutationMatrix *invQ = ft->getInvQ();
 
-        TS_ASSERT_EQUALS( Q->_ordering[0], 0U );
-        TS_ASSERT_EQUALS( Q->_ordering[1], 3U );
-        TS_ASSERT_EQUALS( Q->_ordering[2], 1U );
-        TS_ASSERT_EQUALS( Q->_ordering[3], 2U );
+        TS_ASSERT_EQUALS( Q->_rowOrdering[0], 0U );
+        TS_ASSERT_EQUALS( Q->_rowOrdering[1], 3U );
+        TS_ASSERT_EQUALS( Q->_rowOrdering[2], 1U );
+        TS_ASSERT_EQUALS( Q->_rowOrdering[3], 2U );
 
-        TS_ASSERT_EQUALS( invQ->_ordering[0], 0U );
-        TS_ASSERT_EQUALS( invQ->_ordering[1], 2U );
-        TS_ASSERT_EQUALS( invQ->_ordering[2], 3U );
-        TS_ASSERT_EQUALS( invQ->_ordering[3], 1U );
+        TS_ASSERT_EQUALS( invQ->_rowOrdering[0], 0U );
+        TS_ASSERT_EQUALS( invQ->_rowOrdering[1], 2U );
+        TS_ASSERT_EQUALS( invQ->_rowOrdering[2], 3U );
+        TS_ASSERT_EQUALS( invQ->_rowOrdering[3], 1U );
 
         const List<AlmostIdentityMatrix *> *A = ft->getA();
 

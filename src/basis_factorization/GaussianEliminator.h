@@ -14,6 +14,7 @@
 #define __GaussianEliminator_h__
 
 #include "LPElement.h"
+#include "LUFactors.h"
 #include "List.h"
 
 class GaussianEliminator
@@ -33,7 +34,8 @@ public:
     */
     LUFactors *run();
 
-    unsigned choosePivot( unsigned column );
+    void choosePivot();
+
 
     /// Older code
 
@@ -53,8 +55,6 @@ public:
     //                 FactorizationStrategy factorizationStrategy = PARTIAL_PIVOTING );
 
 private:
-    LUFactors *_luFactors;
-
     unsigned _pivotRow;
     unsigned _pivotColumn;
 
@@ -65,6 +65,12 @@ private:
     */
     const double *_A;
     unsigned _m;
+
+    LUFactors *_luFactors;
+
+    void initializeFactorization();
+    void permute();
+    void eliminate();
 
     /*
       Given a column with element in indices [columnIndex, .., _m], choose the next pivot according to

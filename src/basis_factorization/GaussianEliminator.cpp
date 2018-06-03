@@ -43,7 +43,7 @@ GaussianEliminator::~GaussianEliminator()
 void GaussianEliminator::initializeFactorization()
 {
     // Allocate the space
-    _luFactors = new LUFactors[_m];
+    _luFactors = new LUFactors( _m );
     if ( !_luFactors )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
                                        "GaussianEliminator::luFactors" );
@@ -58,7 +58,7 @@ void GaussianEliminator::initializeFactorization()
 
     std::fill_n( _luFactors->_F, _m * _m, 0 );
     for ( unsigned i = 0; i < _m; ++i )
-        _luFactors->_F[i*m +i] = 1;
+        _luFactors->_F[i*_m +i] = 1;
 }
 
 void GaussianEliminator::permute()
@@ -69,10 +69,15 @@ void GaussianEliminator::permute()
 
          V = PUQ
 
-      translates into u[i,j]. We want to update P and Q to
+      this translates into some u[i,j]. We want to update P and Q to
       move u[i,j] to position [k,k] in V, where k is the current
       eliminiation step.
     */
+
+    // Translate V-indices to U-indices
+    // unsigned i = _luFactors->_P._ordering[_pivotRow];
+    // unsigned j = _luFactors->_Q._invOrdering[_pivotRow];
+
 }
 
 LUFactors *GaussianEliminator::run()
@@ -90,13 +95,14 @@ LUFactors *GaussianEliminator::run()
           can be any non-zero coefficient. Store the result in
           _pivotRow, _pivotColumn.
         */
-        choosePivot( eliminationStep );
+        choosePivot();
 
         /*
           Step 2:
           -------
-          Element V[p,q] has been selected as the pivot. Move it to
-          position [k,k], where k is the current elimination step.
+          Element V[p,q] has been selected as the pivot. Find the
+          corresponding element of U and move it to position [k,k],
+          where k is the current elimination step.
         */
         permute();
 
@@ -108,7 +114,7 @@ LUFactors *GaussianEliminator::run()
     return _luFactors;
 }
 
-unsigned GaussianEliminator::choosePivot( unsigned eliminationStep )
+void GaussianEliminator::choosePivot()
 {
     /*
       Apply the Markowitz rule: in the active sub-matrix,
@@ -117,6 +123,21 @@ unsigned GaussianEliminator::choosePivot( unsigned eliminationStep )
       in the q'th column.
 
       We pick a pivot a_ij \neq 0 that minimizes (p_i - 1)(q_i - 1).
+
+      Although the selection should be performed on U, it is actually
+      performed on V, which is explicitly stored. We know that
+
+          V = P * U * Q,
+
+      And since P and Q only rearrange elements in rows and columns,
+      the Markowitz cost of each entry remains the same in V as in U.
+    */
+
+    /*
+      Todo:
+      If there's a singleton column, select that element as pivot
+      If there's a singleton row, select thta element as pivot
+      Only if both fail, use Markowitz
     */
 
     unsigned *rowCounters = new unsigned[_m];
@@ -125,9 +146,9 @@ unsigned GaussianEliminator::choosePivot( unsigned eliminationStep )
     std::fill_n( rowCounters, _m, 0.0 );
     std::fill_n( columnCounters, _m, 0.0 );
 
-    for ( unsigned i = eliminationStep; i < _m; ++i )
+    for ( unsigned i = _eliminationStep; i < _m; ++i )
     {
-        for ( unsigned j = eliminationStep; j < _m; ++j )
+        for ( unsigned j = _eliminationStep; j < _m; ++j )
         {
             if ( !FloatUtils::isZero( _luFactors->_V[i*_m + j] ) )
             {
@@ -139,15 +160,15 @@ unsigned GaussianEliminator::choosePivot( unsigned eliminationStep )
 
     unsigned minimum = _m * _m;
     bool found = false;
-    for ( unsigned i = eliminationStep; i < _m; ++i )
+    for ( unsigned i = _eliminationStep; i < _m; ++i )
     {
-        for ( unsigned j = eliminationStep; j < _m; ++j )
+        for ( unsigned j = _eliminationStep; j < _m; ++j )
         {
             if ( !FloatUtils::isZero( _luFactors->_V[i*_m + j] ) )
             {
                 found = true;
 
-                double candidate = (rowCounters[i] - 1) * (columnCounters[j] - 1);
+                double candidate = ( rowCounters[i] - 1 ) * ( columnCounters[j] - 1 );
                 if ( candidate < minimum )
                 {
                     minimum = candidate;
@@ -161,6 +182,10 @@ unsigned GaussianEliminator::choosePivot( unsigned eliminationStep )
     if ( !found )
         throw BasisFactorizationError( BasisFactorizationError::GAUSSIAN_ELIMINATION_FAILED,
                                        "Couldn't find a pivot" );
+}
+
+void GaussianEliminator::eliminate()
+{
 }
 
 // unsigned GaussianEliminator::choosePivotElement( unsigned columnIndex, FactorizationStrategy factorizationStrategy )

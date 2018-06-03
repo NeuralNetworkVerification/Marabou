@@ -151,8 +151,8 @@ void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const doub
 
     _workQ.resetToIdentity();
     for ( unsigned i = indexOfChangedUColumn; i < _m - 1; ++i )
-        _workQ._ordering[i] = i + 1;
-    _workQ._ordering[_m - 1] = indexOfChangedUColumn;
+        _workQ._rowOrdering[i] = i + 1;
+    _workQ._rowOrdering[_m - 1] = indexOfChangedUColumn;
     _workQ.invert( _invWorkQ );
 
     /*
@@ -164,7 +164,7 @@ void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const doub
       it is not upper triangular.
     */
     for ( unsigned i = 0; i < _m; ++i )
-        _workVector[i] = column[_invQ._ordering[i]];
+        _workVector[i] = column[_invQ._rowOrdering[i]];
 
     for ( unsigned i = 0; i < _m; ++i )
     {
@@ -190,8 +190,8 @@ void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const doub
     {
         // Initialize to the non-modified bump value, according to the
         // permutations. This is cell (m,i).
-        unsigned originalRow = _workQ._ordering[_m - 1];
-        unsigned originalCol = _workQ._ordering[i];
+        unsigned originalRow = _workQ._rowOrdering[_m - 1];
+        unsigned originalCol = _workQ._rowOrdering[i];
         double bumpValue = _U[originalCol]->_column[originalRow];
 
         for ( const auto &a : newAs )
@@ -204,7 +204,7 @@ void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const doub
             */
 
             bumpValue += a->_value *
-                _U[_workQ._ordering[i]]->_column[_workQ._ordering[a->_column]];
+                _U[_workQ._rowOrdering[i]]->_column[_workQ._rowOrdering[a->_column]];
         }
 
         // If the bump value is zero, nothing needs to be done
@@ -224,7 +224,7 @@ void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const doub
 
         if ( i < _m - 1 )
         {
-            double diagonalValue = _U[_workQ._ordering[i]]->_column[_workQ._ordering[i]];
+            double diagonalValue = _U[_workQ._rowOrdering[i]]->_column[_workQ._rowOrdering[i]];
             ASSERT( !FloatUtils::isZero( diagonalValue ) );
             newA->_value = - bumpValue / diagonalValue;
         }
@@ -274,9 +274,9 @@ void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const doub
     // row-wise, so this means permuting invQ's rows.
 
     for ( unsigned i = 0; i < _m; ++i )
-        _workOrdering[i] = _invWorkQ._ordering[_Q._ordering[i]];
+        _workOrdering[i] = _invWorkQ._rowOrdering[_Q._rowOrdering[i]];
     for ( unsigned i = 0; i < _m; ++i )
-        _Q._ordering[i] = _workOrdering[i];
+        _Q._rowOrdering[i] = _workOrdering[i];
 
     // Recompute invQ
     _Q.invert( _invQ );
@@ -284,8 +284,8 @@ void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const doub
     // Ai = _Q * Ai * _invQ, for all new A matrices
     for ( const auto &a : newAs )
     {
-        a->_row = _invQ._ordering[a->_row];
-        a->_column = _invQ._ordering[a->_column];
+        a->_row = _invQ._rowOrdering[a->_row];
+        a->_column = _invQ._rowOrdering[a->_column];
     }
 
     // Finally, append the new As to the list
@@ -363,7 +363,7 @@ void ForrestTomlinFactorization::forwardTransformation( const double *y, double 
 
     // Multiply by inv(Q)
     for ( unsigned i = 0; i < _m; ++i )
-        _workW[i] = _workVector[_invQ._ordering[i]];
+        _workW[i] = _workVector[_invQ._rowOrdering[i]];
 
     /****
     Step 2: Find x such that: Um....U1 * invQ * x = w
@@ -384,7 +384,7 @@ void ForrestTomlinFactorization::forwardTransformation( const double *y, double 
 
     // We are now left with invQ x = w (for our modified w). Multiply by Q and be done.
     for ( unsigned i = 0; i < _m; ++i )
-        x[i] = _workW[_Q._ordering[i]];
+        x[i] = _workW[_Q._rowOrdering[i]];
 }
 
 void ForrestTomlinFactorization::backwardTransformation( const double *y, double *x ) const
@@ -416,7 +416,7 @@ void ForrestTomlinFactorization::backwardTransformation( const double *y, double
     // Note: this is easier to do with a column-wise representation of Q,
     // which is just the row-wise representation of invQ.
     for ( unsigned i = 0; i < _m; ++i )
-        _workVector[i] = y[_invQ._ordering[i]];
+        _workVector[i] = y[_invQ._rowOrdering[i]];
 
     // Eliminate the U's
     for ( unsigned i = 0; i < _m; ++i )
@@ -446,7 +446,7 @@ void ForrestTomlinFactorization::backwardTransformation( const double *y, double
     // Note: this is easier to do with a column-wise representation of invQ,
     // which is just the row-wise representation of Q.
     for ( unsigned i = 0; i < _m; ++i )
-        x[i] = _workVector[_Q._ordering[i]];
+        x[i] = _workVector[_Q._rowOrdering[i]];
 
     // Mutiply by the As
     for ( auto a = _A.rbegin(); a != _A.rend(); ++a )

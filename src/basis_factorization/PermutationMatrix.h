@@ -33,6 +33,11 @@ public:
     bool isIdentity() const;
 
     /*
+      Change the permutation so that two rows are swapped
+    */
+    void swap( unsigned a, unsigned b );
+
+    /*
       Produce the inverse of the permutation matrix
     */
     PermutationMatrix *invert() const;
@@ -50,12 +55,12 @@ public:
     unsigned getM() const;
 
     /*
-      The row permutation ordering, and its inverse.
-      _ordering[i] = j implies that entry [i,j] is 1,
-      and _invOrdering[j] = i is equivalent
+      The row and column permutation orderings
+      _rowOrdering[i] = j implies that entry [i,j] is 1,
+      and _columnOrdering[j] = i is equivalent
     */
-    unsigned *_ordering;
-    unsigned *_invOrdering;
+    unsigned *_rowOrdering;
+    unsigned *_columnOrdering;
 
     /*
       Debugging

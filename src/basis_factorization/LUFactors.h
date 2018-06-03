@@ -14,6 +14,8 @@
 #ifndef __LUFactors_h__
 #define __LUFactors_h__
 
+#include "PermutationMatrix.h"
+
 class LUFactors
 {
 
