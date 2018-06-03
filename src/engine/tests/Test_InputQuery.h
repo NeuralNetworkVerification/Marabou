@@ -16,14 +16,16 @@
 #include "FloatUtils.h"
 #include "InputQuery.h"
 #include "MockErrno.h"
+#include "MockErrno.h"
+#include "MockFileFactory.h"
 #include "ReluConstraint.h"
 #include "ReluplexError.h"
-#include "MockFileFactory.h"
 
 #include <string.h>
 
 class MockForInputQuery
     : public MockFileFactory
+    , public MockErrno
 {
 public:
 };

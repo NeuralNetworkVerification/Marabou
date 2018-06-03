@@ -12,6 +12,7 @@
 
 #include <cxxtest/TestSuite.h>
 
+#include "MockErrno.h"
 #include "MockTableau.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "ReluConstraint.h"
@@ -20,6 +21,7 @@
 #include <string.h>
 
 class MockForReluConstraint
+    : public MockErrno
 {
 public:
 };
