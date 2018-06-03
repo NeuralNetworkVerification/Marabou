@@ -1,6 +1,5 @@
 from . import MarabouCore
 import numpy as np
-import sys
 
 class MarabouNetwork:
     """
