@@ -10,7 +10,7 @@
  ** directory for licensing information.\endverbatim
  **/
 
-#include "File.h"
+#include "AutoFile.h"
 #include "FloatUtils.h"
 #include "InputQuery.h"
 #include "MStringf.h"
@@ -202,41 +202,41 @@ void InputQuery::storeDebuggingSolution( unsigned variable, double value )
 
 void InputQuery::saveQuery( const String &fileName )
 {
-    File queryFile( fileName );
-    queryFile.open( File::MODE_WRITE_TRUNCATE );
+    AutoFile queryFile( fileName );
+    queryFile->open( IFile::MODE_WRITE_TRUNCATE );
 
     // General query information
 
     // Number of variables
-    queryFile.write( Stringf( "%u\n", _numberOfVariables ) );
+    queryFile->write( Stringf( "%u\n", _numberOfVariables ) );
 
     // Number of Bounds
-    queryFile.write( Stringf( "%u\n", _lowerBounds.size() ) );
+    queryFile->write( Stringf( "%u\n", _lowerBounds.size() ) );
 
     // Number of Equations
-    queryFile.write( Stringf( "%u\n", _equations.size() ) );
+    queryFile->write( Stringf( "%u\n", _equations.size() ) );
 
     // Number of constraints
-    queryFile.write( Stringf( "%u", _plConstraints.size() ) );
+    queryFile->write( Stringf( "%u", _plConstraints.size() ) );
 
     // Bounds
     for ( const auto &lb : _lowerBounds )
-        queryFile.write( Stringf( "\n%d,%f,%f", lb.first, lb.second, _upperBounds[lb.first] ) );
+        queryFile->write( Stringf( "\n%d,%f,%f", lb.first, lb.second, _upperBounds[lb.first] ) );
 
     // Equations
     unsigned i = 0;
     for ( const auto &e : _equations )
     {
         // Equation number
-        queryFile.write( Stringf( "\n%u,", i ) );
+        queryFile->write( Stringf( "\n%u,", i ) );
 
         // Equation type
-        queryFile.write( Stringf( "%01u,", e._type ) );
+        queryFile->write( Stringf( "%01u,", e._type ) );
 
         // Equation scalar
-        queryFile.write( Stringf( "%f", e._scalar ) );
+        queryFile->write( Stringf( "%f", e._scalar ) );
         for ( const auto &a : e._addends )
-            queryFile.write( Stringf( ",%u,%f", a._variable, a._coefficient ) );
+            queryFile->write( Stringf( ",%u,%f", a._variable, a._coefficient ) );
 
         ++i;
     }
@@ -245,12 +245,12 @@ void InputQuery::saveQuery( const String &fileName )
     for ( const auto &constraint : _plConstraints )
     {
         // Constraint number
-        queryFile.write( Stringf( "\n%u,", j ) );
-        queryFile.write( constraint->serializeToString() );
+        queryFile->write( Stringf( "\n%u,", j ) );
+        queryFile->write( constraint->serializeToString() );
         ++j;
     }
 
-    queryFile.close();
+    queryFile->close();
 }
 
 //

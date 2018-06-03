@@ -16,17 +16,12 @@
 class ConstSimpleData;
 class HeapData;
 
+#include "IFile.h"
 #include "MString.h"
 
-class File
+class File : public IFile
 {
 public:
-    enum Mode {
-        MODE_READ,
-        MODE_WRITE_APPEND,
-        MODE_WRITE_TRUNCATE,
-    };
-
     File( const String &path );
     virtual ~File();
     void close();

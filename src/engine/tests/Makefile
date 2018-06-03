@@ -14,14 +14,14 @@ TEST_FILES = $(wildcard Test_*.h)
 
 include $(BASIS_FACTORIZATION_DIR)/Sources.mk
 include $(COMMON_DIR)/Sources.mk
-include $(COMMON_REAL_DIR)/Sources.mk
+include $(COMMON_MOCK_DIR)/Sources.mk
 include $(CONFIGURATION_DIR)/Sources.mk
 include $(ENGINE_DIR)/Sources.mk
 include $(ENGINE_MOCK_DIR)/Sources.mk
 
 vpath %.cpp $(BASIS_FACTORIZATION_DIR)
 vpath %.cpp $(COMMON_DIR)
-vpath %.cpp $(COMMON_REAL_DIR)
+vpath %.cpp $(COMMON_MOCK_DIR)
 vpath %.cpp $(CONFIGURATION_DIR)
 vpath %.cpp $(ENGINE_DIR)
 vpath %.cpp $(ENGINE_MOCK_DIR)
