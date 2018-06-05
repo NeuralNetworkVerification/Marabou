@@ -93,8 +93,8 @@ public:
 
         // Ordering should be: [0, 3, 1, 2]
 
-        p1.swap( 1, 3 );
-        p1.swap( 2, 3 );
+        p1.swapRows( 1, 3 );
+        p1.swapRows( 2, 3 );
 
         TS_ASSERT_EQUALS( p1._rowOrdering[0], 0U );
         TS_ASSERT_EQUALS( p1._columnOrdering[0], 0U );
