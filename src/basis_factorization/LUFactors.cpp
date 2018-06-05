@@ -54,7 +54,7 @@ void LUFactors::dump() const
         printf( "\t" );
         for ( unsigned j = 0; j < _m; ++j )
         {
-            printf( "%8.lf ", _F[i*_m + j] );
+            printf( "%8.2lf ", _F[i*_m + j] );
         }
         printf( "\n" );
     }
@@ -65,7 +65,7 @@ void LUFactors::dump() const
         printf( "\t" );
         for ( unsigned j = 0; j < _m; ++j )
         {
-            printf( "%8.lf ", _V[i*_m + j] );
+            printf( "%8.2lf ", _V[i*_m + j] );
         }
         printf( "\n" );
     }
@@ -92,7 +92,21 @@ void LUFactors::dump() const
         printf( "\t" );
         for ( unsigned j = 0; j < _m; ++j )
         {
-            printf( "%8.lf ", result[i*_m + j] );
+            printf( "%8.2lf ", result[i*_m + j] );
+        }
+        printf( "\n" );
+    }
+
+    printf( "\tDumping the implied U:\n" );
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        unsigned uRow = _P._columnOrdering[i];
+
+        printf( "\t" );
+        for ( unsigned j = 0; j < _m; ++j )
+        {
+            unsigned uCol = _Q._rowOrdering[j];
+            printf( "%8.2lf ", _V[uRow*_m + uCol] );
         }
         printf( "\n" );
     }

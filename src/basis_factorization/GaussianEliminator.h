@@ -42,8 +42,10 @@ private:
     /*
       Information on the current elimination step
     */
-    unsigned _pivotRow;
-    unsigned _pivotColumn;
+    unsigned _uPivotRow;
+    unsigned _uPivotColumn;
+    unsigned _vPivotRow;
+    unsigned _vPivotColumn;
     unsigned _eliminationStep;
 
     /*
@@ -53,7 +55,7 @@ private:
 
     /*
       Information on the number of non-zero elements in
-      every row of the current active submatrix
+      every row of the current active submatrix of U
     */
     unsigned *_numRowElements;
     unsigned *_numColumnElements;
