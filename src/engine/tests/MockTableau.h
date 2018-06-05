@@ -260,6 +260,8 @@ public:
     }
 
     double getChangeRatio() const { return 0; }
+    void setChangeRatio( double /* changeRatio */ ) {}
+
     void performPivot() {}
     bool performingFakePivot() const
     {
