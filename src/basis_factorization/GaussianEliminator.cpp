@@ -15,6 +15,7 @@
 #include "FloatUtils.h"
 #include "GaussianEliminator.h"
 #include "MalformedBasisException.h"
+#include "MStringf.h"
 
 #include <cstdio>
 
@@ -70,9 +71,13 @@ void GaussianEliminator::permute()
          V = PUQ
 
       this translates into some u[i,j]. We want to update P and Q to
-      move u[i,j] to position [k,k] in V, where k is the current
+      move u[i,j] to position [k,k] in U (= P'VQ'), where k is the current
       eliminiation step.
     */
+
+    // log( "Permute called. Dumping P, Q before\n" );
+    // _luFactors->_P.dump();
+    // _luFactors->_Q.dump();
 
     // Translate V-indices to U-indices
     unsigned uRow = _luFactors->_P._rowOrdering[_pivotRow];
@@ -81,6 +86,10 @@ void GaussianEliminator::permute()
     // Move U[uRow, uColumn] to U[k,k] (because U = P'VQ')
     _luFactors->_P.swapColumns( uRow, _eliminationStep );
     _luFactors->_Q.swapRows( uColumn, _eliminationStep );
+
+    // log( "Permute done. Dumping P, Q after\n" );
+    // _luFactors->_P.dump();
+    // _luFactors->_Q.dump();
 }
 
 LUFactors *GaussianEliminator::run()
@@ -116,6 +125,10 @@ LUFactors *GaussianEliminator::run()
           equation A = FV.
         */
         eliminate();
+
+        printf( "Dumping factorization at end of elimination loop\n" );
+        _luFactors->dump();
+
     }
 
     return _luFactors;
@@ -123,6 +136,8 @@ LUFactors *GaussianEliminator::run()
 
 void GaussianEliminator::choosePivot()
 {
+    log( "Choose pivot invoked" );
+
     /*
       Apply the Markowitz rule: in the active sub-matrix,
       let p_i denote the number of non-zero elements in the i'th
@@ -186,6 +201,8 @@ void GaussianEliminator::choosePivot()
         }
     }
 
+    log( Stringf( "Choose pivot selected a pivot: V[%u,%u] = %lf (cost %u)", _pivotRow, _pivotColumn, _luFactors->_V[_pivotRow*_m + _pivotColumn], minimum ) );
+
     if ( !found )
         throw BasisFactorizationError( BasisFactorizationError::GAUSSIAN_ELIMINATION_FAILED,
                                        "Couldn't find a pivot" );
@@ -193,10 +210,52 @@ void GaussianEliminator::choosePivot()
 
 void GaussianEliminator::eliminate()
 {
+    unsigned fColumnIndex = _luFactors->_P._rowOrdering[_eliminationStep];
+
     /*
       Eliminate all entries below the pivot element U[k,k]
       We know that V[_pivotRow, _pivotColumn] = U[k,k].
     */
+    double pivotElement = _luFactors->_V[_pivotRow*_m + _pivotColumn];
+
+    log( Stringf( "Eliminate called. Pivot element: %lf", pivotElement ) );
+
+    // Process all rows below the pivot row.
+    for ( unsigned row = _eliminationStep + 1; row < _m; ++row )
+    {
+        /*
+          Compute the Gaussian row multiplier for this row.
+          The multiplier is: - U[row,k] / pivotElement
+          We compute it in terms of V
+        */
+        unsigned vRowIndex = _luFactors->_P._rowOrdering[row];
+        double rowMultiplier = -_luFactors->_V[vRowIndex*_m + _pivotColumn] / pivotElement;
+
+        log( Stringf( "\tWorking on V row: %u. Multiplier: %lf", vRowIndex, rowMultiplier ) );
+
+        /*
+          And now use it to eliminate the row
+        */
+        _luFactors->_V[vRowIndex*_m + _pivotColumn] = 0;
+        for ( unsigned column = _eliminationStep + 1; column < _m; ++column )
+        {
+            unsigned vColIndex = _luFactors->_Q._columnOrdering[column];
+            _luFactors->_V[vRowIndex*_m + vColIndex] +=
+                rowMultiplier * _luFactors->_V[_pivotRow*_m + vColIndex];
+        }
+
+        /*
+          Store the row multiplier in matrix F, using F = PLP'.
+          F's rows are ordered same as V's
+        */
+        _luFactors->_F[vRowIndex*_m + fColumnIndex] = -rowMultiplier;
+    }
+
+    /*
+      Put 1 in L's diagonal.
+      TODO: This can be made implicit
+    */
+    _luFactors->_F[fColumnIndex*_m + fColumnIndex] = 1;
 }
 
 // unsigned GaussianEliminator::choosePivotElement( unsigned columnIndex, FactorizationStrategy factorizationStrategy )
@@ -307,6 +366,11 @@ void GaussianEliminator::eliminate()
 //         }
 // 	}
 // }
+
+void GaussianEliminator::log( const String &message )
+{
+    printf( "GaussianEliminator: %s\n", message.ascii() );
+}
 
 //
 // Local Variables:

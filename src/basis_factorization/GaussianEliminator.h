@@ -34,9 +34,6 @@ public:
     */
     LUFactors *run();
 
-    void choosePivot();
-
-
     /// Older code
 
     /*
@@ -68,6 +65,7 @@ private:
 
     LUFactors *_luFactors;
 
+    void choosePivot();
     void initializeFactorization();
     void permute();
     void eliminate();
@@ -83,6 +81,8 @@ private:
     */
     // double *_pivotColumn;
     // double *_LCol;
+
+    void log( const String &message );
 };
 
 #endif // __GaussianEliminator_h__

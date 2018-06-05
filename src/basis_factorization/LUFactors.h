@@ -58,6 +58,8 @@ public:
     double *_V;
     PermutationMatrix _P;
     PermutationMatrix _Q;
+
+    void dump() const;
 };
 
 #endif // __LUFactors_h__

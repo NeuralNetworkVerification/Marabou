@@ -44,6 +44,62 @@ LUFactors::~LUFactors()
     }
 }
 
+void LUFactors::dump() const
+{
+    printf( "\nDumping LU factos:\n" );
+
+    printf( "\tDumping F:\n" );
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        printf( "\t" );
+        for ( unsigned j = 0; j < _m; ++j )
+        {
+            printf( "%8.lf ", _F[i*_m + j] );
+        }
+        printf( "\n" );
+    }
+
+    printf( "\tDumping V:\n" );
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        printf( "\t" );
+        for ( unsigned j = 0; j < _m; ++j )
+        {
+            printf( "%8.lf ", _V[i*_m + j] );
+        }
+        printf( "\n" );
+    }
+
+    printf( "\tDumping product F*V:\n" );
+
+    double *result = new double[_m*_m];
+
+    std::fill_n( result, _m * _m, 0.0 );
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        for ( unsigned j = 0; j < _m; ++j )
+        {
+            result[i*_m + j] = 0;
+            for ( unsigned k = 0; k < _m; ++k )
+            {
+                result[i*_m + j] += _F[i*_m + k] * _V[k*_m + j];
+            }
+        }
+    }
+
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        printf( "\t" );
+        for ( unsigned j = 0; j < _m; ++j )
+        {
+            printf( "%8.lf ", result[i*_m + j] );
+        }
+        printf( "\n" );
+    }
+
+    delete[] result;
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "
