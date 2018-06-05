@@ -13,9 +13,7 @@
 #ifndef __GaussianEliminator_h__
 #define __GaussianEliminator_h__
 
-#include "LPElement.h"
 #include "LUFactors.h"
-#include "List.h"
 
 class GaussianEliminator
 {
@@ -34,53 +32,36 @@ public:
     */
     LUFactors *run();
 
-    /// Older code
-
-    /*
-      The classes main method: factorize matrix A, given in row-major format,
-      into a matrix U and a sequence of L and P matrices, such that:
-
-      - U is upper triangular with its diagonal set to 1s
-      - The Ls are lower triangular
-      - The Ps are permutation matrices
-      - The rowHeaders array indicates the orders of the rows of U, where the i'th
-        row is stored in the rowHeaders[i] location in memory
-    */
-    // void factorize( List<LPElement *> *lp,
-    //                 double *U,
-    //                 unsigned *rowHeaders,
-    //                 FactorizationStrategy factorizationStrategy = PARTIAL_PIVOTING );
-
 private:
-    unsigned _pivotRow;
-    unsigned _pivotColumn;
-
-    unsigned _eliminationStep;
-
     /*
       The (square) matrix being factorized and its dimension
     */
     const double *_A;
     unsigned _m;
 
+    /*
+      Information on the current elimination step
+    */
+    unsigned _pivotRow;
+    unsigned _pivotColumn;
+    unsigned _eliminationStep;
+
+    /*
+      The output factorization
+    */
     LUFactors *_luFactors;
+
+    /*
+      Information on the number of non-zero elements in
+      every row of the current active submatrix
+    */
+    unsigned *_numRowElements;
+    unsigned *_numColumnElements;
 
     void choosePivot();
     void initializeFactorization();
     void permute();
     void eliminate();
-
-    /*
-      Given a column with element in indices [columnIndex, .., _m], choose the next pivot according to
-      the factorization strategy.
-    */
-    // unsigned choosePivotElement( unsigned columnIndex, FactorizationStrategy factorizationStrategy );
-
-    /*
-      Work memory
-    */
-    // double *_pivotColumn;
-    // double *_LCol;
 
     void log( const String &message );
 };
