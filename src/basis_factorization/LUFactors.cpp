@@ -12,6 +12,7 @@
  **/
 
 #include "BasisFactorizationError.h"
+#include "FloatUtils.h"
 #include "LUFactors.h"
 #include "MString.h"
 
@@ -112,6 +113,68 @@ void LUFactors::dump() const
     }
 
     delete[] result;
+}
+
+void LUFactors::fForwardTransformation( double *x )
+{
+    /*
+      Example for solving for a lower triansgular matrix:
+
+      | 1 0 0 |   | x1 |   | y1 |
+      | 2 1 0 | * | x2 | = | y2 |
+      | 3 4 1 |   | x3 |   | y3 |
+
+      Solution:
+
+       x1 = y1 (unchanged)
+       x2 = y2 - 2y1
+       x3 = y3 - 3y1 - 4y2
+
+      However, F is not lower triangular, but rather F = PLP',
+      or L = P'FP.
+      Observe that the i'th column of L becomes the j'th column of F,
+      for j = P._rowOrdering[i]. Also observe that the diagonal elements
+      of L remain diagonal elements in F, i.e. F has a diagonal of 1s.
+    */
+
+    for ( unsigned lColumn = 0; lColumn < _m; ++lColumn )
+    {
+        unsigned fColumn = _P._columnOrdering[lColumn];
+
+        printf( "\nfColumn = %u (x[%u] is the fixed element, %lf)\n", fColumn, fColumn, x[fColumn] );
+
+        /*
+          x[fColumn] has already been computed at this point,
+          so we can substitute it into all remaining equations.
+        */
+        if ( FloatUtils::isZero( x[fColumn] ) )
+            continue;
+
+        for ( unsigned lRow = lColumn + 1; lRow < _m; ++lRow )
+        {
+            unsigned fRow = _P._columnOrdering[lRow];
+
+            printf( "\tx[%u] -= %lf * %lf\n", fRow, _F[fRow*_m + fColumn], x[fColumn] );
+
+            x[fRow] -= ( _F[fRow*_m + fColumn] * x[fColumn] );
+        }
+    }
+}
+
+// fBackwardTransformation: find x such that xF = y
+      // vForwardTransformation:  find x such that Vx = y
+      // vBackwardTransformation: find x such that xV = y
+
+void LUFactors::fBackwardTransformation( double * )
+{
+}
+
+void LUFactors::vForwardTransformation( double * )
+{
+}
+
+void LUFactors::vBackwardTransformation( double * )
+{
 }
 
 //

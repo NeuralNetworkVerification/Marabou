@@ -16,49 +16,66 @@
 
 #include "PermutationMatrix.h"
 
+/*
+  This class provides supprot for an LU-factorization of a given matrix.
+
+  The factorization has the following form:
+
+     A = F * V = P * L * U * Q
+
+     F = P * L * P'
+     V = P * U * Q
+
+  Where:
+    - A is the matrix being factorized
+    - L is lower triangular with all diagonal entries equal to 1
+    - U is upper triangular
+    - P and Q are permutation matrices
+
+  Matrices F, V, P and Q are stored explicitly, but matrices
+  U and L are not - as they are implied by the rest.
+
+  The class also provides functionality for basic computations involving
+  the factorization.
+*/
 class LUFactors
 {
-
-/***********************************************************************
-*  The structure LUF describes sparse LU-factorization.
-*
-*  The LU-factorization has the following format:
-*
-*     A = F * V = P * L * U * Q,                                     (1)
-*
-*     F = P * L * P',                                                (2)
-*
-*     V = P * U * Q,                                                 (3)
-*
-*  where A is a given (unsymmetric) square matrix, F and V are matrix
-*  factors actually computed, L is a lower triangular matrix with unity
-*  diagonal, U is an upper triangular matrix, P and Q are permutation
-*  matrices, P' is a matrix transposed to P. All the matrices have the
-*  same order n.
-*
-*  Matrices F and V are stored in both row- and column-wise sparse
-*  formats in the associated sparse vector area (SVA). Unity diagonal
-*  elements of matrix F are not stored. Pivot elements of matrix V
-*  (which correspond to diagonal elements of matrix U) are stored in
-*  a separate ordinary array.
-*
-*  Permutation matrices P and Q are stored in ordinary arrays in both
-*  row- and column-like formats.
-*
-*  Matrices L and U are completely defined by matrices F, V, P, and Q,
-*  and therefore not stored explicitly. */
-
 public:
     LUFactors( unsigned m );
     ~LUFactors();
 
+    /*
+      The dimension of all matrices involved
+    */
     unsigned _m;
 
+    /*
+      The various factorization components as described above
+    */
     double *_F;
     double *_V;
     PermutationMatrix _P;
     PermutationMatrix _Q;
 
+    /*
+      Basic computations (BTRAN, FTRAN) involving the factorization
+
+      fForwardTransformation:  find x such that Fx = y
+      fBackwardTransformation: find x such that xF = y
+      vForwardTransformation:  find x such that Vx = y
+      vBackwardTransformation: find x such that xV = y
+
+      In all functions, x contains y on entry, and contains the solution
+      on exit.
+    */
+    void fForwardTransformation( double *x );
+    void fBackwardTransformation( double *x );
+    void vForwardTransformation( double *x );
+    void vBackwardTransformation( double *x );
+
+    /*
+      For debugging purposes
+    */
     void dump() const;
 };
 
