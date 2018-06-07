@@ -123,6 +123,13 @@ public:
         TS_ASSERT_THROWS_NOTHING( lu->fForwardTransformation( x1 ) );
         for ( unsigned i = 0; i < 4; ++i )
             TS_ASSERT( FloatUtils::areEqual( x1[i], expected1[i] ) );
+
+        double x2[] = { 2, 0, -3, 1 };
+        double expected2[] = { 8, -22, -3, 10 };
+
+        TS_ASSERT_THROWS_NOTHING( lu->fForwardTransformation( x2 ) );
+        for ( unsigned i = 0; i < 4; ++i )
+            TS_ASSERT( FloatUtils::areEqual( x2[i], expected2[i] ) );
     }
 
     void test_f_backward_transformation()
@@ -148,6 +155,13 @@ public:
         TS_ASSERT_THROWS_NOTHING( lu->fBackwardTransformation( x1 ) );
         for ( unsigned i = 0; i < 4; ++i )
             TS_ASSERT( FloatUtils::areEqual( x1[i], expected1[i] ) );
+
+        double x2[] = { 2, 0, -3, 1 };
+        double expected2[] = { 2, 0, -10, 1 };
+
+        TS_ASSERT_THROWS_NOTHING( lu->fBackwardTransformation( x2 ) );
+        for ( unsigned i = 0; i < 4; ++i )
+            TS_ASSERT( FloatUtils::areEqual( x2[i], expected2[i] ) );
     }
 
     void test_v_forward_transformation()
@@ -174,6 +188,14 @@ public:
         TS_ASSERT_THROWS_NOTHING( lu->vForwardTransformation( y1, x1 ) );
         for ( unsigned i = 0; i < 4; ++i )
             TS_ASSERT( FloatUtils::areEqual( x1[i], expected1[i] ) );
+
+        double y2[] = { 2, 0, -3, 1 };
+        double x2[] = { 0, 0, 0, 0 };
+        double expected2[] = { -43.0/4, 0, -1.0/2, 9.0/4 };
+
+        TS_ASSERT_THROWS_NOTHING( lu->vForwardTransformation( y2, x2 ) );
+        for ( unsigned i = 0; i < 4; ++i )
+            TS_ASSERT( FloatUtils::areEqual( x2[i], expected2[i] ) );
     }
 
     void test_v_backward_transformation()
@@ -200,6 +222,14 @@ public:
         TS_ASSERT_THROWS_NOTHING( lu->vBackwardTransformation( y1, x1 ) );
         for ( unsigned i = 0; i < 4; ++i )
             TS_ASSERT( FloatUtils::areEqual( x1[i], expected1[i] ) );
+
+        double y2[] = { 2, 0, -3, 1 };
+        double x2[] = { 0, 0, 0, 0 };
+        double expected2[] = { -5.0/2, 22.0/7, 2, -27.0/4 };
+
+        TS_ASSERT_THROWS_NOTHING( lu->vBackwardTransformation( y2, x2 ) );
+        for ( unsigned i = 0; i < 4; ++i )
+            TS_ASSERT( FloatUtils::areEqual( x2[i], expected2[i] ) );
     }
 };
 

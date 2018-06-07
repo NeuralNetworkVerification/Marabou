@@ -232,7 +232,10 @@ void LUFactors::vForwardTransformation( const double *y, double *x )
             x[xBeingSolved] -= ( _V[vRow*_m + vColumn] * x[vColumn] );
         }
 
-        x[xBeingSolved] *= ( 1.0 / _V[vRow*_m + _Q._rowOrdering[uRow]] );
+        if ( FloatUtils::isZero( x[xBeingSolved] ) )
+            x[xBeingSolved] = 0.0;
+        else
+            x[xBeingSolved] *= ( 1.0 / _V[vRow*_m + _Q._rowOrdering[uRow]] );
     }
 }
 
@@ -269,7 +272,10 @@ void LUFactors::vBackwardTransformation( const double *y, double *x )
             x[xBeingSolved] -= ( _V[vRow*_m + vColumn] * x[vRow] );
         }
 
-        x[xBeingSolved] *= ( 1.0 / _V[ _P._columnOrdering[uColumn]*_m + vColumn] );
+        if ( FloatUtils::isZero( x[xBeingSolved] ) )
+            x[xBeingSolved] = 0.0;
+        else
+            x[xBeingSolved] *= ( 1.0 / _V[ _P._columnOrdering[uColumn]*_m + vColumn] );
     }
 }
 
