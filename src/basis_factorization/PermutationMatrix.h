@@ -56,6 +56,11 @@ public:
     unsigned getM() const;
 
     /*
+      Clone the permutation matrix
+    */
+    void storeToOther( PermutationMatrix *other ) const;
+
+    /*
       The row and column permutation orderings
       _rowOrdering[i] = j implies that entry [i,j] is 1,
       and _columnOrdering[j] = i is equivalent

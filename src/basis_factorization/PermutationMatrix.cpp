@@ -175,6 +175,14 @@ void PermutationMatrix::swapColumns( unsigned a, unsigned b )
     _rowOrdering[tempA] = b;
 }
 
+void PermutationMatrix::storeToOther( PermutationMatrix *other ) const
+{
+    ASSERT( _m == other->_m );
+
+    memcpy( other->_rowOrdering, _rowOrdering, sizeof(unsigned) * _m );
+    memcpy( other->_columnOrdering, _columnOrdering, sizeof(unsigned) * _m );
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "
