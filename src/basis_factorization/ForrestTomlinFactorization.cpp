@@ -293,7 +293,7 @@ void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const doub
 
     // If the number of A matrices is too great, condense them.
     if ( _A.size() > GlobalConfiguration::REFACTORIZATION_THRESHOLD )
-        refactorizeBasis();
+        obtainFreshBasis();
 }
 
 void ForrestTomlinFactorization::forwardTransformation( const double *y, double *x ) const
@@ -683,7 +683,7 @@ void ForrestTomlinFactorization::makeExplicitBasisAvailable()
     if ( explicitBasisAvailable() )
         return;
 
-    refactorizeBasis();
+    obtainFreshBasis();
 }
 
 const double *ForrestTomlinFactorization::getBasis() const
@@ -859,7 +859,7 @@ void ForrestTomlinFactorization::dump() const
     printf( "*** Done dumping FT factorization ***\n\n" );
 }
 
-void ForrestTomlinFactorization::refactorizeBasis()
+void ForrestTomlinFactorization::obtainFreshBasis()
 {
     for ( unsigned column = 0; column < _m; ++column )
     {

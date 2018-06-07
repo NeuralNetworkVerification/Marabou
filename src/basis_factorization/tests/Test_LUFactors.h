@@ -81,7 +81,19 @@ public:
                       |  1 -3 -2 3 |
                       |  0  2 -2 0 |
 
+                        | -3/2    2 1 -19/4 |
+               inv(V) = |    0  1/7 0     0 |
+                        |    0  1/7 0  -1/2 |
+                        |  1/2 -3/7 0   5/4 |
+
+         inv(V) = Q' * inv(U) * P'
+
+              | 0 1 0 0 |       | 1 0 0 0 |
+          P = | 0 0 0 1 |   Q = | 0 0 0 1 |
+              | 1 0 0 0 |       | 0 0 1 0 |
+              | 0 0 1 0 |       | 0 1 0 0 |
         */
+
 
         double V[16] =
             {
@@ -309,6 +321,39 @@ public:
         TS_ASSERT_THROWS_NOTHING( lu->backwardTransformation( y2, x2 ) );
         for ( unsigned i = 0; i < 4; ++i )
             TS_ASSERT( FloatUtils::areEqual( x2[i], expected2[i] ) );
+    }
+
+    void test_invert_basis()
+    {
+        /*
+           A = | 2 -5   1 8 |
+               | 4  3 -28 8 |
+               | 1 -3  -2 3 |
+               | 3 -7  -8 9 |
+
+                        | 5/2      2 129/4  -59/4 |
+               inv(A) = | 2/7    1/7     1   -5/7 |
+                        | 2/7    1/7   5/2 -17/14 |
+                        | -5/14 -3/7 -31/4  95/28 |
+        */
+
+        TS_TRACE( "Here" );
+
+        double expectedInverse[] = {
+              5.0/2,      2, 129.0/4,  -59.0/4,
+              2.0/7,  1.0/7,       1,   -5.0/7,
+              2.0/7,  1.0/7,   5.0/2, -17.0/14,
+            -5.0/14, -3.0/7, -31.0/4,  95.0/28,
+        };
+
+        double result[16];
+
+        TS_ASSERT_THROWS_NOTHING( lu->invertBasis( result ) );
+        for ( unsigned i = 0; i < 16; ++i )
+            printf( "result[%u] = %lf, expected[%u] = %lf\n", i, result[i], i, expectedInverse[i] );
+
+        for ( unsigned i = 0; i < 16; ++i )
+            TS_ASSERT( FloatUtils::areEqual( result[i], expectedInverse[i] ) );
     }
 };
 

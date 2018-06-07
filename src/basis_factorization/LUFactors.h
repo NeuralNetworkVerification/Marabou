@@ -71,18 +71,31 @@ public:
       In all functions, x contains y on entry, and contains the solution
       on exit.
     */
-    void forwardTransformation( const double *y, double *x );
-    void backwardTransformation( const double *y, double *x );
+    void forwardTransformation( const double *y, double *x ) const;
+    void backwardTransformation( const double *y, double *x ) const;
 
-    void fForwardTransformation( const double *y, double *x );
-    void fBackwardTransformation( const double *y, double *x );
-    void vForwardTransformation( const double *y, double *x );
-    void vBackwardTransformation( const double *y, double *x );
+    void fForwardTransformation( const double *y, double *x ) const;
+    void fBackwardTransformation( const double *y, double *x ) const;
+    void vForwardTransformation( const double *y, double *x ) const;
+    void vBackwardTransformation( const double *y, double *x ) const;
+
+    /*
+      Compute the inverse of the factorized basis
+    */
+    void invertBasis( double *result );
 
     /*
       Work memory
     */
     double *_z;
+    double *_invF;
+    double *_invV;
+    double *_workMatrix;
+
+    /*
+      Clone this LUFactors object into another object
+    */
+    void storeToOther( LUFactors *other ) const;
 
     /*
       For debugging purposes

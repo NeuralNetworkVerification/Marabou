@@ -77,6 +77,9 @@ public:
 
     void test_sanity()
     {
+        LUFactors lu3( 3 );
+        LUFactors lu4( 4 );
+
         {
             double A[] =
             {
@@ -86,20 +89,18 @@ public:
             };
 
             GaussianEliminator *ge;
-            LUFactors *lu;
 
-            TS_ASSERT( ge = new GaussianEliminator( A, 3 ) );
-            TS_ASSERT_THROWS_NOTHING( lu = ge->run() );
+            TS_ASSERT( ge = new GaussianEliminator( 3 ) );
+            TS_ASSERT_THROWS_NOTHING( ge->run( A, &lu3 ) );
 
             double result[9];
-            computeMatrixFromFactorization( lu, result );
+            computeMatrixFromFactorization( &lu3, result );
 
             for ( unsigned i = 0; i < 9; ++i )
             {
                 TS_ASSERT( FloatUtils::areEqual( A[i], result[i] ) );
             }
 
-            TS_ASSERT_THROWS_NOTHING( delete lu );
             TS_ASSERT_THROWS_NOTHING( delete ge );
         }
 
@@ -112,20 +113,18 @@ public:
             };
 
             GaussianEliminator *ge;
-            LUFactors *lu;
 
-            TS_ASSERT( ge = new GaussianEliminator( A, 3 ) );
-            TS_ASSERT_THROWS_NOTHING( lu = ge->run() );
+            TS_ASSERT( ge = new GaussianEliminator( 3 ) );
+            TS_ASSERT_THROWS_NOTHING( ge->run( A, &lu3 ) );
 
             double result[9];
-            computeMatrixFromFactorization( lu, result );
+            computeMatrixFromFactorization( &lu3, result );
 
             for ( unsigned i = 0; i < 9; ++i )
             {
                 TS_ASSERT( FloatUtils::areEqual( A[i], result[i] ) );
             }
 
-            TS_ASSERT_THROWS_NOTHING( delete lu );
             TS_ASSERT_THROWS_NOTHING( delete ge );
         }
 
@@ -138,20 +137,18 @@ public:
             };
 
             GaussianEliminator *ge;
-            LUFactors *lu;
 
-            TS_ASSERT( ge = new GaussianEliminator( A, 3 ) );
-            TS_ASSERT_THROWS_NOTHING( lu = ge->run() );
+            TS_ASSERT( ge = new GaussianEliminator( 3 ) );
+            TS_ASSERT_THROWS_NOTHING( ge->run( A, &lu3 ) );
 
             double result[9];
-            computeMatrixFromFactorization( lu, result );
+            computeMatrixFromFactorization( &lu3, result );
 
             for ( unsigned i = 0; i < 9; ++i )
             {
                 TS_ASSERT( FloatUtils::areEqual( A[i], result[i] ) );
             }
 
-            TS_ASSERT_THROWS_NOTHING( delete lu );
             TS_ASSERT_THROWS_NOTHING( delete ge );
         }
 
@@ -165,20 +162,18 @@ public:
             };
 
             GaussianEliminator *ge;
-            LUFactors *lu;
 
-            TS_ASSERT( ge = new GaussianEliminator( A, 4 ) );
-            TS_ASSERT_THROWS_NOTHING( lu = ge->run() );
+            TS_ASSERT( ge = new GaussianEliminator( 4 ) );
+            TS_ASSERT_THROWS_NOTHING( ge->run( A, &lu4 ) );
 
             double result[16];
-            computeMatrixFromFactorization( lu, result );
+            computeMatrixFromFactorization( &lu4, result );
 
             for ( unsigned i = 0; i < 16; ++i )
             {
                 TS_ASSERT( FloatUtils::areEqual( A[i], result[i] ) );
             }
 
-            TS_ASSERT_THROWS_NOTHING( delete lu );
             TS_ASSERT_THROWS_NOTHING( delete ge );
         }
 
@@ -192,8 +187,8 @@ public:
 
             GaussianEliminator *ge;
 
-            TS_ASSERT( ge = new GaussianEliminator( A, 3 ) );
-            TS_ASSERT_THROWS_EQUALS( ge->run(),
+            TS_ASSERT( ge = new GaussianEliminator( 3 ) );
+            TS_ASSERT_THROWS_EQUALS( ge->run( A, &lu3 ),
                                      const BasisFactorizationError &e,
                                      e.getCode(),
                                      BasisFactorizationError::GAUSSIAN_ELIMINATION_FAILED );
@@ -211,8 +206,8 @@ public:
 
             GaussianEliminator *ge;
 
-            TS_ASSERT( ge = new GaussianEliminator( A, 3 ) );
-            TS_ASSERT_THROWS_EQUALS( ge->run(),
+            TS_ASSERT( ge = new GaussianEliminator( 3 ) );
+            TS_ASSERT_THROWS_EQUALS( ge->run( A, &lu3 ),
                                      const BasisFactorizationError &e,
                                      e.getCode(),
                                      BasisFactorizationError::GAUSSIAN_ELIMINATION_FAILED );

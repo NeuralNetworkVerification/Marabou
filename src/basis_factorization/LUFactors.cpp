@@ -12,6 +12,7 @@
  **/
 
 #include "BasisFactorizationError.h"
+#include "Debug.h"
 #include "FloatUtils.h"
 #include "LUFactors.h"
 #include "MString.h"
@@ -23,6 +24,9 @@ LUFactors::LUFactors( unsigned m )
     , _P( m )
     , _Q( m )
     , _z( NULL )
+    , _invF( NULL )
+    , _invV( NULL )
+    , _workMatrix( NULL )
 {
     _F = new double[m*m];
     if ( !_F )
@@ -35,6 +39,18 @@ LUFactors::LUFactors( unsigned m )
     _z = new double[m];
     if ( !_z )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "LUFactors::z" );
+
+    _invF = new double[m*m];
+    if ( !_invF )
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "LUFactors::invF" );
+
+    _invV = new double[m*m];
+    if ( !_invV )
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "LUFactors::invV" );
+
+    _workMatrix = new double[m*m];
+    if ( !_invV )
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "LUFactors::workMatrix" );
 }
 
 LUFactors::~LUFactors()
@@ -55,6 +71,24 @@ LUFactors::~LUFactors()
     {
         delete[] _z;
         _z = NULL;
+    }
+
+    if ( _invF )
+    {
+        delete[] _invF;
+        _invF = NULL;
+    }
+
+    if ( _invV )
+    {
+        delete[] _invV;
+        _invV = NULL;
+    }
+
+    if ( _workMatrix )
+    {
+        delete[] _invV;
+        _invV = NULL;
     }
 }
 
@@ -128,7 +162,7 @@ void LUFactors::dump() const
     delete[] result;
 }
 
-void LUFactors::fForwardTransformation( const double *y, double *x )
+void LUFactors::fForwardTransformation( const double *y, double *x ) const
 {
     /*
       Solve F*x = y
@@ -171,7 +205,7 @@ void LUFactors::fForwardTransformation( const double *y, double *x )
     }
 }
 
-void LUFactors::fBackwardTransformation( const double *y, double *x )
+void LUFactors::fBackwardTransformation( const double *y, double *x ) const
 {
     /*
       Solve x*F = y
@@ -215,7 +249,7 @@ void LUFactors::fBackwardTransformation( const double *y, double *x )
     }
 }
 
-void LUFactors::vForwardTransformation( const double *y, double *x )
+void LUFactors::vForwardTransformation( const double *y, double *x ) const
 {
     /*
       Solve V*x = y
@@ -255,7 +289,7 @@ void LUFactors::vForwardTransformation( const double *y, double *x )
     }
 }
 
-void LUFactors::vBackwardTransformation( const double *y, double *x )
+void LUFactors::vBackwardTransformation( const double *y, double *x ) const
 {
     /*
       Solve x*V = y
@@ -295,7 +329,7 @@ void LUFactors::vBackwardTransformation( const double *y, double *x )
     }
 }
 
-void LUFactors::forwardTransformation( const double *y, double *x )
+void LUFactors::forwardTransformation( const double *y, double *x ) const
 {
     /*
       Solve Ax = FV x = y.
@@ -308,7 +342,7 @@ void LUFactors::forwardTransformation( const double *y, double *x )
     vForwardTransformation( _z, x );
 }
 
-void LUFactors::backwardTransformation( const double *y, double *x )
+void LUFactors::backwardTransformation( const double *y, double *x ) const
 {
     /*
       Solve xA = x FV = y.
@@ -319,6 +353,156 @@ void LUFactors::backwardTransformation( const double *y, double *x )
 
     vBackwardTransformation( y, _z );
     fBackwardTransformation( _z, x );
+}
+
+void LUFactors::invertBasis( double *result )
+{
+    ASSERT( result );
+
+    /*
+      A = FV
+
+      inv(A) = inv(V) * inv(F)
+     */
+
+    /*
+      Step 1: Compute invV.
+      Go over U, and translate each entry to its corresponding
+      entry in invV.
+
+      V = PUQ
+      U = P'VQ'
+
+      inv(V) = Q' inv(U) P'
+      inv(U) = Q  inv(V) P
+    */
+    std::fill_n( _invV, _m * _m, 0 );
+
+    int uColumn, uRow, invVColumn, invVRow;
+    // Handle U row by row, from top to bottom
+    for ( uRow = _m - 1; uRow >= 0; --uRow )
+    {
+        printf( "Working on uRow = %i\n", uRow );
+
+        invVRow = _Q._rowOrdering[uRow];
+        invVColumn = _P._columnOrdering[uRow];
+
+        printf( "\tu diagonal element is: %lf\n", _V[_P._columnOrdering[uRow]*_m + _Q._rowOrdering[uRow]] );
+
+        // Start with the diagonal element, which can always be computed
+        double invUDiagonalEntry = 1 / _V[_P._columnOrdering[uRow]*_m + _Q._rowOrdering[uRow]];
+        _invV[invVRow*_m + invVColumn] = invUDiagonalEntry;
+        printf( "\tDiagonal element: invV[%i,%i] = 1 / diagonal = %lf\n", invVRow, invVColumn, invUDiagonalEntry );
+
+
+        // Multiply all entries to the right of the diagonal by the inv diagonal entry
+        for ( uColumn = uRow + 1; uColumn < (int)_m; ++uColumn )
+        {
+
+            invVColumn = _P._columnOrdering[uColumn];
+            _invV[invVRow*_m + invVColumn] *= invUDiagonalEntry;
+
+            // Each discovered entry is subtracted from all rows above it
+            for ( int uRowAbove = 0; uRowAbove < uRow; ++uRowAbove )
+            {
+                unsigned invVRowAbove = _Q._rowOrdering[uRowAbove];
+                _invV[invVRowAbove*_m + invVColumn] -=
+                    ( _V[_P._columnOrdering[uRowAbove]*_m + _Q._rowOrdering[uColumn]] * _invV[invVRow*_m + invVColumn] );
+            }
+        }
+    }
+
+    // for ( uColumn = 0; uColumn < _m; ++uColumn )
+    // {
+    //     printf( "Handling u column %u\n", uColumn );
+
+    //     // Find the diagonal entry in (non-inverted) U
+    //     double uDiagonalEntry = _V[_P._columnOrdering[uColumn]*_m + _Q._rowOrdering[uColumn]];
+
+    //     printf( "\tU diagonal entry: %lf\n", uDiagonalEntry );
+
+    //     invVColumn = _P._columnOrdering[uColumn];
+
+    //     printf( "\tThis column is mapped to column %u in inv(V)\n", invVColumn );
+
+    //     // Handle all entries above the diagonal
+    //     for ( uRow = 0; uRow < uColumn; ++uRow )
+    //     {
+    //         invVRow = _Q._rowOrdering[uRow];
+    //         double uEntry = _V[_P._columnOrdering[uRow]*_m + _Q._rowOrdering[uColumn]];
+    //         printf( "\t\tHandling entry above diagonal: %lf\n", uEntry );
+
+    //         _invV[invVRow*_m + invVColumn] = -uEntry / uDiagonalEntry;
+
+    //         printf( "\t\tinvV[%u, %u] = %lf / %lf\n", invVRow, invVColumn, -uEntry, uDiagonalEntry );
+
+    //     }
+
+    //     // Handle the diagonal entry
+    //     invVRow = _Q._rowOrdering[uColumn];
+    //     _invV[invVRow*_m + invVColumn] = 1 / uDiagonalEntry;
+    //     printf( "\t\tinvV[%u, %u] = 1 / %lf\n", invVRow, invVColumn, uDiagonalEntry );
+    // }
+
+    printf( "\nDumping the inverse of V:\n" );
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        printf( "\t" );
+        for ( unsigned j = 0; j < _m; ++j )
+        {
+            printf( "%5.2lf ", _invV[i*_m + j] );
+        }
+        printf( "\n" );
+    }
+
+    /*
+      Step 2: Compute invF.
+      Go over L, and translate each entry to its corresponding
+      entry in invF.
+
+         F = PLP'
+         L = P'FP
+         inv(F) = P * inv(L) * P'
+    */
+    unsigned lColumn, lRow, invFColumn, invFRow;
+    for ( lColumn = 0; lColumn < _m; ++lColumn )
+    {
+        // Find the diagonal entry in (non-inverted) U
+        invFColumn = _P._rowOrdering[lColumn];
+
+        // Handle all below above the diagonal
+        for ( lRow = lColumn + 1; lRow < _m; ++lRow )
+        {
+            invFRow = _P._rowOrdering[lRow];
+            double lEntry = _F[_P._columnOrdering[lRow]*_m + _P._columnOrdering[lColumn]];
+            _invF[invFRow*_m + invFColumn] = -lEntry;
+        }
+
+        // Handle the diagonal entry
+        _invF[invFColumn*_m + invFColumn] = 1;
+    }
+
+    /*
+      Step 3: Compute inv(A), using
+
+          inv(A) = inv(V) * inv(F)
+    */
+    std::fill_n( result, _m * _m, 0.0 );
+    for ( unsigned i = 0; i < _m; ++i )
+        for ( unsigned j = 0; j < _m; ++j )
+            for ( unsigned k = 0; k < _m; ++k )
+                result[i*_m + j] += _invV[i*_m + k] * _invF[k*_m + j];
+}
+
+void LUFactors::storeToOther( LUFactors *other ) const
+{
+    ASSERT( _m == other->_m );
+
+    memcpy( other->_F, _F, sizeof(double) * _m * _m );
+    memcpy( other->_V, _V, sizeof(double) * _m * _m );
+
+    _P.storeToOther( &other->_P );
+    _Q.storeToOther( &other->_Q );
 }
 
 //
