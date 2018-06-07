@@ -60,6 +60,9 @@ public:
     /*
       Basic computations (BTRAN, FTRAN) involving the factorization
 
+      forwardTransformation: find x such that Ax ( = FVx ) = y
+      backwardTransformation: find x such that xA ( = xFV ) = y
+
       fForwardTransformation:  find x such that Fx = y
       fBackwardTransformation: find x such that xF = y
       vForwardTransformation:  find x such that Vx = y
@@ -68,10 +71,18 @@ public:
       In all functions, x contains y on entry, and contains the solution
       on exit.
     */
-    void fForwardTransformation( double *x );
-    void fBackwardTransformation( double *x );
+    void forwardTransformation( const double *y, double *x );
+    void backwardTransformation( const double *y, double *x );
+
+    void fForwardTransformation( const double *y, double *x );
+    void fBackwardTransformation( const double *y, double *x );
     void vForwardTransformation( const double *y, double *x );
     void vBackwardTransformation( const double *y, double *x );
+
+    /*
+      Work memory
+    */
+    double *_z;
 
     /*
       For debugging purposes

@@ -18,8 +18,11 @@
 
 LUFactors::LUFactors( unsigned m )
     : _m( m )
+    , _F( NULL )
+    , _V( NULL )
     , _P( m )
     , _Q( m )
+    , _z( NULL )
 {
     _F = new double[m*m];
     if ( !_F )
@@ -28,6 +31,10 @@ LUFactors::LUFactors( unsigned m )
     _V = new double[m*m];
     if ( !_V )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "LUFactors::V" );
+
+    _z = new double[m];
+    if ( !_z )
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "LUFactors::z" );
 }
 
 LUFactors::~LUFactors()
@@ -42,6 +49,12 @@ LUFactors::~LUFactors()
     {
         delete[] _V;
         _V = NULL;
+    }
+
+    if ( _z )
+    {
+        delete[] _z;
+        _z = NULL;
     }
 }
 
@@ -115,7 +128,7 @@ void LUFactors::dump() const
     delete[] result;
 }
 
-void LUFactors::fForwardTransformation( double *x )
+void LUFactors::fForwardTransformation( const double *y, double *x )
 {
     /*
       Solve F*x = y
@@ -138,6 +151,7 @@ void LUFactors::fForwardTransformation( double *x )
       for j = P._rowOrdering[i]. Also observe that the diagonal elements
       of L remain diagonal elements in F, i.e. F has a diagonal of 1s.
     */
+    memcpy( x, y, sizeof(double) * _m );
 
     for ( unsigned lColumn = 0; lColumn < _m; ++lColumn )
     {
@@ -157,7 +171,7 @@ void LUFactors::fForwardTransformation( double *x )
     }
 }
 
-void LUFactors::fBackwardTransformation( double *x )
+void LUFactors::fBackwardTransformation( const double *y, double *x )
 {
     /*
       Solve x*F = y
@@ -180,6 +194,8 @@ void LUFactors::fBackwardTransformation( double *x )
       for j = P._rowOrdering[i]. Also observe that the diagonal elements
       of L remain diagonal elements in F, i.e. F has a diagonal of 1s.
     */
+
+    memcpy( x, y, sizeof(double) * _m );
 
     for ( int lRow = _m - 1; lRow >= 0; --lRow )
     {
@@ -277,6 +293,32 @@ void LUFactors::vBackwardTransformation( const double *y, double *x )
         else
             x[xBeingSolved] *= ( 1.0 / _V[ _P._columnOrdering[uColumn]*_m + vColumn] );
     }
+}
+
+void LUFactors::forwardTransformation( const double *y, double *x )
+{
+    /*
+      Solve Ax = FV x = y.
+
+      First we find z such that Fz = y
+      And then we find x such that Vx = z
+    */
+
+    fForwardTransformation( y, _z );
+    vForwardTransformation( _z, x );
+}
+
+void LUFactors::backwardTransformation( const double *y, double *x )
+{
+    /*
+      Solve xA = x FV = y.
+
+      First we find z such that zV = y
+      And then we find x such that xF = z
+    */
+
+    vBackwardTransformation( y, _z );
+    fBackwardTransformation( _z, x );
 }
 
 //
