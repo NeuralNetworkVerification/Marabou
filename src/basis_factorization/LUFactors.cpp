@@ -199,12 +199,78 @@ void LUFactors::fBackwardTransformation( double *x )
     }
 }
 
-void LUFactors::vForwardTransformation( double * )
+void LUFactors::vForwardTransformation( const double *y, double *x )
 {
+    /*
+      Solve V*x = y
+
+      Example for solving for an upper triansgular matrix:
+
+      | 2 2  3 |   | x1 |   | y1 |
+      | 0 -1 4 | * | x2 | = | y2 |
+      | 0 0  4 |   | x3 |   | y3 |
+
+      Solution:
+
+       x3 = 1/4 y3
+       x2 = 1/-1 ( y2 - 4x3 )
+       x3 = 1/2 ( y1 - 2x2 - 3x3 )
+
+      However, V is not lower triangular, but rather V = PUQ,
+      or U = P'VQ'.
+    */
+
+    for ( int uRow = _m - 1; uRow >= 0; --uRow )
+    {
+        unsigned vRow = _P._columnOrdering[uRow];
+        unsigned xBeingSolved = _Q._rowOrdering[uRow];
+        x[xBeingSolved] = y[vRow];
+
+        for ( unsigned uColumn = uRow + 1; uColumn < _m; ++uColumn )
+        {
+            unsigned vColumn = _Q._rowOrdering[uColumn];
+            x[xBeingSolved] -= ( _V[vRow*_m + vColumn] * x[vColumn] );
+        }
+
+        x[xBeingSolved] *= ( 1.0 / _V[vRow*_m + _Q._rowOrdering[uRow]] );
+    }
 }
 
-void LUFactors::vBackwardTransformation( double * )
+void LUFactors::vBackwardTransformation( const double *y, double *x )
 {
+    /*
+      Solve x*V = y
+
+      Example for solving for an upper triansgular matrix:
+
+                     | 2 2  3 |   | y1 |
+      | x1 x2 x3 | * | 0 -1 4 | = | y2 |
+                     | 0 0  4 |   | y3 |
+
+      Solution:
+
+       x1 = 1/2 y1
+       x2 = 1/-1 ( y2 - 2x1 )
+       x3 = 1/4 ( y3 - 4x2 -3x1 )
+
+      However, V is not lower triangular, but rather V = PUQ,
+      or U = P'VQ'.
+    */
+
+    for ( unsigned uColumn = 0; uColumn < _m; ++uColumn )
+    {
+        unsigned vColumn = _Q._rowOrdering[uColumn];
+        unsigned xBeingSolved = _P._columnOrdering[uColumn];
+        x[xBeingSolved] = y[vColumn];
+
+        for ( unsigned uRow = 0; uRow < uColumn; ++uRow )
+        {
+            unsigned vRow = _P._columnOrdering[uRow];
+            x[xBeingSolved] -= ( _V[vRow*_m + vColumn] * x[vRow] );
+        }
+
+        x[xBeingSolved] *= ( 1.0 / _V[ _P._columnOrdering[uColumn]*_m + vColumn] );
+    }
 }
 
 //

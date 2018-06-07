@@ -70,8 +70,8 @@ public:
     */
     void fForwardTransformation( double *x );
     void fBackwardTransformation( double *x );
-    void vForwardTransformation( double *x );
-    void vBackwardTransformation( double *x );
+    void vForwardTransformation( const double *y, double *x );
+    void vBackwardTransformation( const double *y, double *x );
 
     /*
       For debugging purposes
