@@ -21,13 +21,20 @@
 
 #include <cstdio>
 
-GaussianEliminator::GaussianEliminator( const double *A, unsigned m )
-    : _A( A )
-    , _m( m )
-    , _luFactors( NULL )
+GaussianEliminator::GaussianEliminator( unsigned m )
+    : _m( m )
     , _numRowElements( NULL )
     , _numColumnElements( NULL )
 {
+    _numRowElements = new unsigned[_m];
+    if ( !_numRowElements )
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                       "GaussianEliminator::numRowElements" );
+
+    _numColumnElements = new unsigned[_m];
+    if ( !_numColumnElements )
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                       "GaussianEliminator::numColumnElements" );
 }
 
 GaussianEliminator::~GaussianEliminator()
@@ -45,23 +52,10 @@ GaussianEliminator::~GaussianEliminator()
     }
 }
 
-void GaussianEliminator::initializeFactorization()
+void GaussianEliminator::initializeFactorization( const double *A, LUFactors *luFactors )
 {
     // Allocate the work space
-    _luFactors = new LUFactors( _m );
-    if ( !_luFactors )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
-                                       "GaussianEliminator::luFactors" );
-
-    _numRowElements = new unsigned[_m];
-    if ( !_numRowElements )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
-                                       "GaussianEliminator::numRowElements" );
-
-    _numColumnElements = new unsigned[_m];
-    if ( !_numColumnElements )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
-                                       "GaussianEliminator::numColumnElements" );
+    _luFactors = luFactors;
 
     /*
       Initially:
@@ -70,10 +64,13 @@ void GaussianEliminator::initializeFactorization()
         V = U = A
         F = L = I
     */
-    memcpy( _luFactors->_V, _A, sizeof(double) * _m * _m );
+    memcpy( _luFactors->_V, A, sizeof(double) * _m * _m );
     std::fill_n( _luFactors->_F, _m * _m, 0 );
     for ( unsigned i = 0; i < _m; ++i )
         _luFactors->_F[i*_m +i] = 1;
+
+    _luFactors->_P.resetToIdentity();
+    _luFactors->_Q.resetToIdentity();
 
     // Count number of non-zeros in U ( = A )
     std::fill_n( _numRowElements, _m, 0 );
@@ -82,7 +79,7 @@ void GaussianEliminator::initializeFactorization()
     {
         for ( unsigned j = 0; j < _m; ++j )
         {
-            if ( !FloatUtils::isZero( _A[i*_m + j] ) )
+            if ( !FloatUtils::isZero( A[i*_m + j] ) )
             {
                 ++_numRowElements[i];
                 ++_numColumnElements[j];
@@ -113,10 +110,10 @@ void GaussianEliminator::permute()
     _numColumnElements[_eliminationStep] = temp;
 }
 
-LUFactors *GaussianEliminator::run()
+void GaussianEliminator::run( const double *A, LUFactors *luFactors )
 {
     // Initialize the LU factors
-    initializeFactorization();
+    initializeFactorization( A, luFactors );
 
     // Main factorization loop
     for ( _eliminationStep = 0; _eliminationStep < _m; ++_eliminationStep )
@@ -148,8 +145,6 @@ LUFactors *GaussianEliminator::run()
         */
         eliminate();
     }
-
-    return _luFactors;
 }
 
 void GaussianEliminator::choosePivot()

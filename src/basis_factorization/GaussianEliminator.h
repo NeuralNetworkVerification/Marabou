@@ -14,29 +14,24 @@
 #define __GaussianEliminator_h__
 
 #include "LUFactors.h"
+#include "MString.h"
 
 class GaussianEliminator
 {
 public:
-    enum FactorizationStrategy {
-        PARTIAL_PIVOTING = 0,
-        MARKOWITZ,
-    };
-
-    GaussianEliminator( const double *A, unsigned m );
+    GaussianEliminator( unsigned m );
     ~GaussianEliminator();
 
     /*
       The class' main method: perform LU-factorization of a given matrix A,
       provided in row-wise format. Store the results in the provided LUFactors.
     */
-    LUFactors *run();
+    void run( const double *A, LUFactors *luFactors );
 
 private:
     /*
-      The (square) matrix being factorized and its dimension
+      The dimension of the (square) matrix being factorized
     */
-    const double *_A;
     unsigned _m;
 
     /*
@@ -61,7 +56,7 @@ private:
     unsigned *_numColumnElements;
 
     void choosePivot();
-    void initializeFactorization();
+    void initializeFactorization( const double *A, LUFactors *luFactors );
     void permute();
     void eliminate();
 
