@@ -302,13 +302,13 @@ public:
         for ( unsigned i = 0; i < 4; ++i )
             TS_ASSERT( FloatUtils::areEqual( x1[i], expected1[i] ) );
 
-        // double y2[] = { 2, 0, -3, 1 };
-        // double x2[] = { 0, 0, 0, 0 };
-        // double expected2[] = { 53.0/14, 22.0/7, 197.0/4 -629.0/28 };
+        double y2[] = { 2, 0, -3, 1 };
+        double x2[] = { 0, 0, 0, 0 };
+        double expected2[] = { 53.0/14, 22.0/7, 197.0/4, -629.0/28 };
 
-        // TS_ASSERT_THROWS_NOTHING( lu->backwardTransformation( y2, x2 ) );
-        // for ( unsigned i = 0; i < 4; ++i )
-        //     TS_ASSERT( FloatUtils::areEqual( x2[i], expected2[i] ) );
+        TS_ASSERT_THROWS_NOTHING( lu->backwardTransformation( y2, x2 ) );
+        for ( unsigned i = 0; i < 4; ++i )
+            TS_ASSERT( FloatUtils::areEqual( x2[i], expected2[i] ) );
     }
 };
 
