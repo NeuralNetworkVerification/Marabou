@@ -118,6 +118,8 @@ void LUFactors::dump() const
 void LUFactors::fForwardTransformation( double *x )
 {
     /*
+      Solve F*x = y
+
       Example for solving for a lower triansgular matrix:
 
       | 1 0 0 |   | x1 |   | y1 |
@@ -140,9 +142,6 @@ void LUFactors::fForwardTransformation( double *x )
     for ( unsigned lColumn = 0; lColumn < _m; ++lColumn )
     {
         unsigned fColumn = _P._columnOrdering[lColumn];
-
-        printf( "\nfColumn = %u (x[%u] is the fixed element, %lf)\n", fColumn, fColumn, x[fColumn] );
-
         /*
           x[fColumn] has already been computed at this point,
           so we can substitute it into all remaining equations.
@@ -153,20 +152,51 @@ void LUFactors::fForwardTransformation( double *x )
         for ( unsigned lRow = lColumn + 1; lRow < _m; ++lRow )
         {
             unsigned fRow = _P._columnOrdering[lRow];
-
-            printf( "\tx[%u] -= %lf * %lf\n", fRow, _F[fRow*_m + fColumn], x[fColumn] );
-
             x[fRow] -= ( _F[fRow*_m + fColumn] * x[fColumn] );
         }
     }
 }
 
-// fBackwardTransformation: find x such that xF = y
-      // vForwardTransformation:  find x such that Vx = y
-      // vBackwardTransformation: find x such that xV = y
-
-void LUFactors::fBackwardTransformation( double * )
+void LUFactors::fBackwardTransformation( double *x )
 {
+    /*
+      Solve x*F = y
+
+      Example for solving for a lower triansgular matrix:
+
+                     | 1 0 0 |   | y1 |
+      | x1 x2 x3 | * | 2 1 0 | = | y2 |
+                     | 3 4 1 |   | y3 |
+
+      Solution:
+
+       x3 = y3
+       x2 = y2 - 4x3
+       x1 = y1 - 2x2 - 3x3
+
+      However, F is not lower triangular, but rather F = PLP',
+      or L = P'FP.
+      Observe that the i'th column of L becomes the j'th column of F,
+      for j = P._rowOrdering[i]. Also observe that the diagonal elements
+      of L remain diagonal elements in F, i.e. F has a diagonal of 1s.
+    */
+
+    for ( int lRow = _m - 1; lRow >= 0; --lRow )
+    {
+        unsigned fRow = _P._columnOrdering[lRow];
+        /*
+          x[fRow] has already been computed at this point,
+          so we can substitute it into all remaining equations.
+        */
+        if ( FloatUtils::isZero( x[fRow] ) )
+            continue;
+
+        for ( int lColumn = lRow - 1; lColumn >= 0; --lColumn )
+        {
+            unsigned fColumn = _P._columnOrdering[lColumn];
+            x[fColumn] -= ( _F[fRow*_m + fColumn] * x[fRow] );
+        }
+    }
 }
 
 void LUFactors::vForwardTransformation( double * )

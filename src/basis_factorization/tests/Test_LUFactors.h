@@ -103,10 +103,10 @@ public:
     void test_f_forward_transformation()
     {
         /*
-                   |  1 0 2 0 |         | 1 |
-               F = | -2 1 4 5 | x, y  = | 2 |
-                   |  0 0 1 0 |         | 3 |
-                   |  0 0 3 1 |         | 4 |
+                   |  1 0 2 0 |
+               F = | -2 1 4 5 |
+                   |  0 0 1 0 |
+                   |  0 0 3 1 |
 
                         | 1	0 -2  0 |
                inv(F) = | 2	1  7 -5 |
@@ -121,6 +121,31 @@ public:
         double expected1[] = { -5, 5, 3, -5 };
 
         TS_ASSERT_THROWS_NOTHING( lu->fForwardTransformation( x1 ) );
+        for ( unsigned i = 0; i < 4; ++i )
+            TS_ASSERT( FloatUtils::areEqual( x1[i], expected1[i] ) );
+    }
+
+    void test_f_backward_transformation()
+    {
+        /*
+                   |  1 0 2 0 |
+               F = | -2 1 4 5 |
+                   |  0 0 1 0 |
+                   |  0 0 3 1 |
+
+                        | 1	0 -2  0 |
+               inv(F) = | 2	1  7 -5 |
+                        | 0	0  1  0 |
+                        | 0	0 -3  1 |
+
+                   xF = y
+                   x = y inv(F)
+        */
+
+        double x1[] = { 1, 2, 3, 4 };
+        double expected1[] = { 5, 2, 3, -6 };
+
+        TS_ASSERT_THROWS_NOTHING( lu->fBackwardTransformation( x1 ) );
         for ( unsigned i = 0; i < 4; ++i )
             TS_ASSERT( FloatUtils::areEqual( x1[i], expected1[i] ) );
     }
