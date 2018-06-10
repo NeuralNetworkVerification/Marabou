@@ -336,9 +336,6 @@ public:
                         | 2/7    1/7   5/2 -17/14 |
                         | -5/14 -3/7 -31/4  95/28 |
         */
-
-        TS_TRACE( "Here" );
-
         double expectedInverse[] = {
               5.0/2,      2, 129.0/4,  -59.0/4,
               2.0/7,  1.0/7,       1,   -5.0/7,
@@ -349,8 +346,6 @@ public:
         double result[16];
 
         TS_ASSERT_THROWS_NOTHING( lu->invertBasis( result ) );
-        for ( unsigned i = 0; i < 16; ++i )
-            printf( "result[%u] = %lf, expected[%u] = %lf\n", i, result[i], i, expectedInverse[i] );
 
         for ( unsigned i = 0; i < 16; ++i )
             TS_ASSERT( FloatUtils::areEqual( result[i], expectedInverse[i] ) );

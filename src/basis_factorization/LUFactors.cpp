@@ -417,8 +417,6 @@ void LUFactors::invertBasis( double *result )
               invU[k,j] -= invU[i,j] * U[k,i]
 
               ( k is uRowAbove, j is uColumn, and i is uRow )
-
-              Of course, indices need to be permuted for proper access to values
             */
             for ( int uRowAbove = 0; uRowAbove < uRow; ++uRowAbove )
             {
@@ -429,49 +427,6 @@ void LUFactors::invertBasis( double *result )
         }
     }
 
-    // for ( uColumn = 0; uColumn < _m; ++uColumn )
-    // {
-    //     printf( "Handling u column %u\n", uColumn );
-
-    //     // Find the diagonal entry in (non-inverted) U
-    //     double uDiagonalEntry = _V[_P._columnOrdering[uColumn]*_m + _Q._rowOrdering[uColumn]];
-
-    //     printf( "\tU diagonal entry: %lf\n", uDiagonalEntry );
-
-    //     invVColumn = _P._columnOrdering[uColumn];
-
-    //     printf( "\tThis column is mapped to column %u in inv(V)\n", invVColumn );
-
-    //     // Handle all entries above the diagonal
-    //     for ( uRow = 0; uRow < uColumn; ++uRow )
-    //     {
-    //         invVRow = _Q._rowOrdering[uRow];
-    //         double uEntry = _V[_P._columnOrdering[uRow]*_m + _Q._rowOrdering[uColumn]];
-    //         printf( "\t\tHandling entry above diagonal: %lf\n", uEntry );
-
-    //         _invV[invVRow*_m + invVColumn] = -uEntry / uDiagonalEntry;
-
-    //         printf( "\t\tinvV[%u, %u] = %lf / %lf\n", invVRow, invVColumn, -uEntry, uDiagonalEntry );
-
-    //     }
-
-    //     // Handle the diagonal entry
-    //     invVRow = _Q._rowOrdering[uColumn];
-    //     _invV[invVRow*_m + invVColumn] = 1 / uDiagonalEntry;
-    //     printf( "\t\tinvV[%u, %u] = 1 / %lf\n", invVRow, invVColumn, uDiagonalEntry );
-    // }
-
-    printf( "\nDumping the inverse of V:\n" );
-    for ( unsigned i = 0; i < _m; ++i )
-    {
-        printf( "\t" );
-        for ( unsigned j = 0; j < _m; ++j )
-        {
-            printf( "%5.2lf ", _invV[i*_m + j] );
-        }
-        printf( "\n" );
-    }
-
     /*
       Step 2: Compute invF.
       Go over L, and translate each entry to its corresponding
@@ -479,24 +434,35 @@ void LUFactors::invertBasis( double *result )
 
          F = PLP'
          L = P'FP
+
          inv(F) = P * inv(L) * P'
+         inv(L) = P' * inv(F) * P
     */
-    unsigned lColumn, lRow, invFColumn, invFRow;
-    for ( lColumn = 0; lColumn < _m; ++lColumn )
+    std::fill_n( _invF, _m * _m, 0 );
+
+    // Handle L row by row, from top to bottom
+    for ( unsigned lRow = 0; lRow < _m; ++lRow )
     {
-        // Find the diagonal entry in (non-inverted) U
-        invFColumn = _P._rowOrdering[lColumn];
+        // L's diagonal entry is always 1. Place it in inv(F)
+        _invF[_P._columnOrdering[lRow]*_m + _P._columnOrdering[lRow]] = 1;
 
-        // Handle all below above the diagonal
-        for ( lRow = lColumn + 1; lRow < _m; ++lRow )
+        /*
+          The remaining elements on row i (to the left of the
+          diagonal) are computed by taking the i'th row of L and
+          multiplying it by each of the partially-computed columns
+          of inv(L).
+        */
+        for ( unsigned lColumn = 0; lColumn < lRow; ++lColumn )
         {
-            invFRow = _P._rowOrdering[lRow];
-            double lEntry = _F[_P._columnOrdering[lRow]*_m + _P._columnOrdering[lColumn]];
-            _invF[invFRow*_m + invFColumn] = -lEntry;
+            // Compute inv(L)[lRow, lColumn]
+            for ( unsigned i = 0; i < lRow; ++i )
+            {
+                // invL[lRow,lColumn] -= L[lRow,i] * invL[i,lColumn]
+                _invF[_P._columnOrdering[lRow]*_m + _P._columnOrdering[lColumn]] -=
+                    _F[_P._columnOrdering[lRow]*_m + _P._columnOrdering[i]] *
+                    _invF[_P._columnOrdering[i]*_m + _P._columnOrdering[lColumn]];
+            }
         }
-
-        // Handle the diagonal entry
-        _invF[invFColumn*_m + invFColumn] = 1;
     }
 
     /*
