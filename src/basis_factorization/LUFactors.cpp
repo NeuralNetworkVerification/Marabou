@@ -378,36 +378,53 @@ void LUFactors::invertBasis( double *result )
     */
     std::fill_n( _invV, _m * _m, 0 );
 
-    int uColumn, uRow, invVColumn, invVRow;
     // Handle U row by row, from top to bottom
-    for ( uRow = _m - 1; uRow >= 0; --uRow )
+    for ( int uRow = _m - 1; uRow >= 0; --uRow )
     {
-        printf( "Working on uRow = %i\n", uRow );
-
-        invVRow = _Q._rowOrdering[uRow];
-        invVColumn = _P._columnOrdering[uRow];
-
-        printf( "\tu diagonal element is: %lf\n", _V[_P._columnOrdering[uRow]*_m + _Q._rowOrdering[uRow]] );
-
-        // Start with the diagonal element, which can always be computed
+        /*
+          Start with the diagonal element of this row: invert
+          and place it in invV.
+        */
         double invUDiagonalEntry = 1 / _V[_P._columnOrdering[uRow]*_m + _Q._rowOrdering[uRow]];
-        _invV[invVRow*_m + invVColumn] = invUDiagonalEntry;
-        printf( "\tDiagonal element: invV[%i,%i] = 1 / diagonal = %lf\n", invVRow, invVColumn, invUDiagonalEntry );
+        _invV[_Q._rowOrdering[uRow]*_m + _P._columnOrdering[uRow]] = invUDiagonalEntry;
 
-
-        // Multiply all entries to the right of the diagonal by the inv diagonal entry
-        for ( uColumn = uRow + 1; uColumn < (int)_m; ++uColumn )
+        /*
+          Next, subtract the newly-computed diagonal entry from all
+          entries above it
+        */
+        for ( int uRowAbove = 0; uRowAbove < uRow; ++uRowAbove )
         {
+            _invV[_Q._rowOrdering[uRowAbove]*_m + _P._columnOrdering[uRow]] -=
+                ( _invV[_Q._rowOrdering[uRow]*_m + _P._columnOrdering[uRow]] *
+                  _V[_P._columnOrdering[uRowAbove]*_m + _Q._rowOrdering[uRow]] );
+        }
 
-            invVColumn = _P._columnOrdering[uColumn];
-            _invV[invVRow*_m + invVColumn] *= invUDiagonalEntry;
+        /*
+          Consider all entries to the right of the diagonal entry.
+          Their final values are obtained by multiplying them by
+          the inverted diagonal entry
+        */
+        for ( int uColumn = uRow + 1; uColumn < (int)_m; ++uColumn )
+        {
+            _invV[_Q._rowOrdering[uRow]*_m + _P._columnOrdering[uColumn]] *= invUDiagonalEntry;
 
-            // Each discovered entry is subtracted from all rows above it
+            /*
+              Each discovered entry is subtracted from all rows above it.
+              After just computing the final value of entry invU[i,j], we look
+              at all entries U[k,j] such that k < i. For each of these entries,
+              we do:
+
+              invU[k,j] -= invU[i,j] * U[k,i]
+
+              ( k is uRowAbove, j is uColumn, and i is uRow )
+
+              Of course, indices need to be permuted for proper access to values
+            */
             for ( int uRowAbove = 0; uRowAbove < uRow; ++uRowAbove )
             {
-                unsigned invVRowAbove = _Q._rowOrdering[uRowAbove];
-                _invV[invVRowAbove*_m + invVColumn] -=
-                    ( _V[_P._columnOrdering[uRowAbove]*_m + _Q._rowOrdering[uColumn]] * _invV[invVRow*_m + invVColumn] );
+                _invV[_Q._rowOrdering[uRowAbove] *_m + _P._columnOrdering[uColumn]] -=
+                    ( _invV[_Q._rowOrdering[uRow]*_m + _P._columnOrdering[uColumn]] *
+                      _V[_P._columnOrdering[uRowAbove]*_m + _Q._rowOrdering[uRow]] );
             }
         }
     }
