@@ -45,6 +45,13 @@ public:
     void addAddend( double coefficient, unsigned variable );
     void setScalar( double scalar );
 
+    /*
+      Go over the addends and rename variable oldVar to newVar.
+      If, as a result, there are two addends with the same variable,
+      unite them.
+    */
+    void updateVariableIndex( unsigned oldVar, unsigned newVar );
+
     List<Addend> _addends;
     double _scalar;
     EquationType _type;
