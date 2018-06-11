@@ -10,10 +10,11 @@
  ** directory for licensing information.\endverbatim
  **/
 
+#include "Debug.h"
+#include "FloatUtils.h"
 #include "InputQuery.h"
 #include "MStringf.h"
 #include "ReluplexError.h"
-#include "FloatUtils.h"
 
 InputQuery::InputQuery()
 {
