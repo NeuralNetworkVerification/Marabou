@@ -492,7 +492,7 @@ public:
         TS_ASSERT_EQUALS( addend->_variable, 2U );
         TS_ASSERT_EQUALS( preprocessedEquation._scalar, 1.0 );
 
-        for ( const auto& plConstraint: processed.getPiecewiseLinearConstraints())
+        for ( const auto &plConstraint: processed.getPiecewiseLinearConstraints() )
         {
             TS_ASSERT( !plConstraint->participatingVariable( 0 ));
             TS_ASSERT( plConstraint->participatingVariable( 1 ));

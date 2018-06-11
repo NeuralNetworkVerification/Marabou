@@ -155,18 +155,23 @@ unsigned InputQuery::countInfiniteBounds()
     return result;
 }
 
-void InputQuery::removeIdenticalVariable( unsigned v1, unsigned v2 )
+void InputQuery::mergeIdenticalVariables( unsigned v1, unsigned v2 )
 {
-    // replace v1 with v2 everywhere
-    
-    // update lower and upper bounds
-
+    // Handle equations
     for ( auto &equation : getEquations() )
         equation.updateVariableIndex( v1, v2 );
-    for ( auto &plConstraint : getPiecewiseLinearConstraints() ){
+
+    // Handle PL constraints
+    for ( auto &plConstraint : getPiecewiseLinearConstraints() )
+    {
         if ( plConstraint->participatingVariable( v1 ) )
+        {
+            ASSERT( !plConstraint->participatingVariable( v2 ) );
             plConstraint->updateVariableIndex( v1, v2 );
+        }
     }
+
+    // TODO: update lower and upper bounds
 }
 
 void InputQuery::removeEquation( Equation e )

@@ -347,31 +347,38 @@ bool Preprocessor::processConstraints()
 
 bool Preprocessor::processIdenticalVariables()
 {
-    // find distinct v1 and v2 which are exactly equal to each other
-    unsigned v1=0, v2=0;
+    // Find distinct v1 and v2 which are exactly equal to each other
+    unsigned v1 = 0, v2 = 0;
     Equation equToRemove;
     for ( const auto &equation : _preprocessed.getEquations() )
     {
         if ( equation._addends.size() != 2 || equation._type != Equation::EQ )
             continue;
+
         auto term1 = equation._addends.front();
         auto term2 = equation._addends.back();
-        if ( FloatUtils::areDisequal(term1._coefficient, -term2._coefficient) ||
-             FloatUtils::areDisequal(equation._scalar, 0.0) )
+
+        if ( FloatUtils::areDisequal( term1._coefficient, -term2._coefficient ) ||
+             !FloatUtils::isZero( equation._scalar ) )
             continue;
-        if (term1._variable == term2._variable )
+
+        // Guy: this should never happen, so adding also an ASSERT
+        ASSERT( term1._variable != term2._variable );
+        if ( term1._variable == term2._variable )
             continue;
+
         v1 = term1._variable;
         v2 = term2._variable;
         equToRemove = equation;
         break;
     }
-    if ( v1 == v2 ){
+
+    if ( v1 == v2 )
         return false;
-    }
-    // found v1 and v2 which are identical
-    _preprocessed.removeEquation(equToRemove);
-    _preprocessed.removeIdenticalVariable(v1, v2);
+
+    // Found v1 and v2 which are identical
+    _preprocessed.removeEquation( equToRemove );
+    _preprocessed.mergeIdenticalVariables( v1, v2 );
     return true;
 }
 

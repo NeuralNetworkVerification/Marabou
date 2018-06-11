@@ -58,9 +58,10 @@ public:
     unsigned countInfiniteBounds();
 
     /*
-      Eliminate a variable if known to be identical to another
+      If two variables are known to be identical, merge them.
+      (v1 will be merged into v2).
     */
-    void removeIdenticalVariable(unsigned v1, unsigned v2);
+    void mergeIdenticalVariables( unsigned v1, unsigned v2 );
 
     /*
       Remove an equation from equation list
