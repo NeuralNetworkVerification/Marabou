@@ -163,8 +163,10 @@ void InputQuery::removeIdenticalVariable( unsigned v1, unsigned v2 )
 
     for ( const auto &equation : getEquations() )
         equation.removeIdenticalVariable( v1, v2 );
-    for ( const auto &plConstraint : getPiecewiseLinearConstraints() )
-        plConstraint.removeIdenticalVariable( v1, v2 );
+    for ( const auto &plConstraint : getPiecewiseLinearConstraints() ){
+        if ( plConstraint.participatingVariable( v1 ) )
+            plConstraint.updateVariableIndex( v1, v2 );
+    }
 }
 
 void InputQuery::removeEquation( Equation e )

@@ -44,6 +44,7 @@ public:
 
     void addAddend( double coefficient, unsigned variable );
     void setScalar( double scalar );
+    void updateVariableIndex( unsigned v1, unsigned v2 );
 
     List<Addend> _addends;
     double _scalar;

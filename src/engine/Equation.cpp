@@ -44,6 +44,36 @@ void Equation::setScalar( double scalar )
     _scalar = scalar;
 }
 
+void Equation::updateVariableIndex( unsigned v1, unsigned v2 )
+{
+    bool alreadyV2 = false;
+    bool alreadyV1 = false;
+    Equation::Addend toRemove;
+    for ( auto addend: _addends )
+    {
+        if ( addend._variable == v1 )
+            alreadyV1 = true;
+        if ( addend._variable == v2 ){
+            alreadyV2 = true;
+            toRemove = addend;
+        }
+    }
+    if ( !alreadyV1 )
+        return;
+    double oldCoeff = 0;
+    if ( alreadyExisted ){
+        _addends.erase( toRemove );
+        oldCoeff = toRemove._coefficient;
+    }
+    for (auto &addend: _addends )
+    {
+        if ( addend._variable == v1 ){
+            addend._variable = v2;
+            addend._coefficient += oldCoeff;
+        }
+    }
+}
+
 bool Equation::operator==( const Equation &other ) const
 {
     return
