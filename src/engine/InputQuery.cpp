@@ -161,11 +161,11 @@ void InputQuery::removeIdenticalVariable( unsigned v1, unsigned v2 )
     
     // update lower and upper bounds
 
-    for ( const auto &equation : getEquations() )
-        equation.removeIdenticalVariable( v1, v2 );
-    for ( const auto &plConstraint : getPiecewiseLinearConstraints() ){
-        if ( plConstraint.participatingVariable( v1 ) )
-            plConstraint.updateVariableIndex( v1, v2 );
+    for ( auto &equation : getEquations() )
+        equation.updateVariableIndex( v1, v2 );
+    for ( auto &plConstraint : getPiecewiseLinearConstraints() ){
+        if ( plConstraint->participatingVariable( v1 ) )
+            plConstraint->updateVariableIndex( v1, v2 );
     }
 }
 

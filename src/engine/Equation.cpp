@@ -48,7 +48,7 @@ void Equation::updateVariableIndex( unsigned v1, unsigned v2 )
 {
     bool alreadyV2 = false;
     bool alreadyV1 = false;
-    Equation::Addend toRemove;
+    Addend toRemove( 0, 0 );
     for ( auto addend: _addends )
     {
         if ( addend._variable == v1 )
@@ -61,7 +61,7 @@ void Equation::updateVariableIndex( unsigned v1, unsigned v2 )
     if ( !alreadyV1 )
         return;
     double oldCoeff = 0;
-    if ( alreadyExisted ){
+    if ( alreadyV2 ){
         _addends.erase( toRemove );
         oldCoeff = toRemove._coefficient;
     }
