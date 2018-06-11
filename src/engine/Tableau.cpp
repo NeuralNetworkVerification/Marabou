@@ -279,7 +279,7 @@ void Tableau::initializeTableau( const List<unsigned> &initialBasicVariables )
     }
 
     // Factorize the basis
-    _basisFactorization->refactorizeBasis();
+    _basisFactorization->obtainFreshBasis();
 
     // Compute assignment
     computeAssignment();
@@ -1298,7 +1298,7 @@ unsigned Tableau::addEquation( const Equation &equation )
     bool factorizationSuccessful = true;
     try
     {
-        _basisFactorization->refactorizeBasis();
+        _basisFactorization->obtainFreshBasis();
     }
     catch ( MalformedBasisException & )
     {
