@@ -65,7 +65,7 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     }
 
     if ( attemptVariableElimination )
-        eliminateFixedVariables();
+        eliminateVariables();
 
     return _preprocessed;
 }
@@ -379,15 +379,24 @@ bool Preprocessor::processIdenticalVariables()
     // Found v1 and v2 which are identical
     _preprocessed.removeEquation( equToRemove );
     _preprocessed.mergeIdenticalVariables( v1, v2 );
+
+    double bestLowerBound = FloatUtils::max( _preprocessed.getLowerBound( v1 ), 
+                                             _preprocessed.getLowerBound( v2 ) );
+    double bestUpperBound = FloatUtils::min( _preprocessed.getUpperBound( v1 ), 
+                                             _preprocessed.getUpperBound( v2 ) );
+    _preprocessed.setLowerBound( v2, bestLowerBound );
+    _preprocessed.setUpperBound( v2, bestUpperBound );
+    _mergedVariables.insert( v1 );
     return true;
 }
 
-void Preprocessor::eliminateFixedVariables()
+void Preprocessor::eliminateVariables()
 {
     // First, collect the variables that have become fixed, and their fixed values
 	for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
 	{
-        if ( FloatUtils::areEqual( _preprocessed.getLowerBound( i ), _preprocessed.getUpperBound( i ) ) )
+        if ( FloatUtils::areEqual( _preprocessed.getLowerBound( i ), _preprocessed.getUpperBound( i ) )
+            || _mergedVariables.exists( i ) )
             _fixedVariables[i] = _preprocessed.getLowerBound( i );
 	}
 
