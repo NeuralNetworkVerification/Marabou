@@ -159,6 +159,20 @@ void LUFactors::dump() const
         printf( "\n" );
     }
 
+    printf( "\tDumping the implied L:\n" );
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        unsigned lRow = _P._columnOrdering[i];
+
+        printf( "\t" );
+        for ( unsigned j = 0; j < _m; ++j )
+        {
+            unsigned lCol = _P._columnOrdering[j];
+            printf( "%8.2lf ", _F[lRow*_m + lCol] );
+        }
+        printf( "\n" );
+    }
+
     delete[] result;
 }
 

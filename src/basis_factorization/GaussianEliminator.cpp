@@ -233,6 +233,7 @@ void GaussianEliminator::choosePivot()
 
     // Todo: more clever heuristics to reduce the search space
     unsigned minimalCost = _m * _m;
+    double pivotEntry = 0.0;
     for ( unsigned column = _eliminationStep; column < _m; ++column )
     {
         // First find the maximal element in the column
@@ -268,13 +269,17 @@ void GaussianEliminator::choosePivot()
             {
                 unsigned cost = ( _numURowElements[row] - 1 ) * ( _numUColumnElements[column] - 1 );
 
-                if ( cost < minimalCost )
+                ASSERT( ( cost != minimalCost ) || found );
+
+                if ( ( cost < minimalCost ) ||
+                     ( ( cost == minimalCost ) && FloatUtils::gt( contender, pivotEntry ) ) )
                 {
                     minimalCost = cost;
                     _uPivotRow = row;
                     _uPivotColumn = column;
                     _vPivotRow = vRow;
                     _vPivotColumn = vColumn;
+                    pivotEntry = contender;
                     found = true;
                 }
             }
@@ -290,7 +295,7 @@ void GaussianEliminator::choosePivot()
 
 void GaussianEliminator::eliminate()
 {
-    unsigned fColumnIndex = _luFactors->_P._rowOrdering[_eliminationStep];
+    unsigned fColumnIndex = _luFactors->_P._columnOrdering[_eliminationStep];
 
     /*
       Eliminate all entries below the pivot element U[k,k]
