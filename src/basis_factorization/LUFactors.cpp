@@ -24,8 +24,8 @@ LUFactors::LUFactors( unsigned m )
     , _P( m )
     , _Q( m )
     , _z( NULL )
-    , _invF( NULL )
-    , _invV( NULL )
+    , _invL( NULL )
+    , _invU( NULL )
     , _workMatrix( NULL )
 {
     _F = new double[m*m];
@@ -40,16 +40,16 @@ LUFactors::LUFactors( unsigned m )
     if ( !_z )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "LUFactors::z" );
 
-    _invF = new double[m*m];
-    if ( !_invF )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "LUFactors::invF" );
+    _invL = new double[m*m];
+    if ( !_invL )
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "LUFactors::invL" );
 
-    _invV = new double[m*m];
-    if ( !_invV )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "LUFactors::invV" );
+    _invU = new double[m*m];
+    if ( !_invU )
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "LUFactors::invU" );
 
     _workMatrix = new double[m*m];
-    if ( !_invV )
+    if ( !_invU )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "LUFactors::workMatrix" );
 }
 
@@ -73,22 +73,22 @@ LUFactors::~LUFactors()
         _z = NULL;
     }
 
-    if ( _invF )
+    if ( _invL )
     {
-        delete[] _invF;
-        _invF = NULL;
+        delete[] _invL;
+        _invL = NULL;
     }
 
-    if ( _invV )
+    if ( _invU )
     {
-        delete[] _invV;
-        _invV = NULL;
+        delete[] _invU;
+        _invU = NULL;
     }
 
     if ( _workMatrix )
     {
-        delete[] _invV;
-        _invV = NULL;
+        delete[] _invU;
+        _invU = NULL;
     }
 }
 
@@ -360,23 +360,23 @@ void LUFactors::invertBasis( double *result )
     ASSERT( result );
 
     /*
-      A = FV
+      A = F * V = P * L * U * Q
 
-      inv(A) = inv(V) * inv(F)
+      inv(A) = Q' * inv(U) * inv(L) P'
+
+      we first compute inv(U) and inv(L), and then
+      compute their permuted product into the result matrix.
      */
 
     /*
-      Step 1: Compute invV.
+      Step 1: Compute invU.
       Go over U, and translate each entry to its corresponding
-      entry in invV.
+      entry in invU.
 
       V = PUQ
       U = P'VQ'
-
-      inv(V) = Q' inv(U) P'
-      inv(U) = Q  inv(V) P
     */
-    std::fill_n( _invV, _m * _m, 0 );
+    std::fill_n( _invU, _m * _m, 0 );
 
     // Handle U row by row, from top to bottom
     for ( int uRow = _m - 1; uRow >= 0; --uRow )
@@ -385,13 +385,14 @@ void LUFactors::invertBasis( double *result )
           Start with the diagonal element of this row: invert
           and place it in invV.
         */
-        double invUDiagonalEntry = 1 / _V[_P._columnOrdering[uRow]*_m + _Q._rowOrdering[uRow]];
-        _invV[_Q._rowOrdering[uRow]*_m + _P._columnOrdering[uRow]] = invUDiagonalEntry;
+        double invUDiagonalEntry =
+            1 / _V[_P._columnOrdering[uRow]*_m + _Q._rowOrdering[uRow]];
+        _invU[uRow*_m + uRow] = invUDiagonalEntry;
 
         /*
           Next, any remaining entries on this row are computed directly,
           by considering the product of the corresponding row of U and the
-          corresponding (partially-computed) column of invV.
+          corresponding (partially-computed) column of invU.
         */
         for ( unsigned uColumn = uRow + 1; uColumn < _m; ++uColumn )
         {
@@ -399,33 +400,31 @@ void LUFactors::invertBasis( double *result )
             for ( unsigned i = uRow + 1; i < _m; ++i )
             {
                 // invU[uRow, uColumn] -= U[uRow, i] * invU[i, uColumn]
-                _invV[_Q._rowOrdering[uRow]*_m + _P._columnOrdering[uColumn]] -=
-                      ( _V[_P._columnOrdering[uRow]*_m + _Q._rowOrdering[i]] *
-                        _invV[_Q._rowOrdering[i]*_m + _P._columnOrdering[uColumn]] );
+                _invU[uRow*_m + uColumn] -=
+                    ( _V[_P._columnOrdering[uRow]*_m + _Q._rowOrdering[i]] *
+                      _invU[i*_m + uColumn] );
             }
 
-            _invV[_Q._rowOrdering[uRow]*_m + _P._columnOrdering[uColumn]] *= invUDiagonalEntry;
+            // Multiply by the inverted diagonal entry
+            _invU[uRow*_m + uColumn] *= invUDiagonalEntry;
         }
     }
 
     /*
-      Step 2: Compute invF.
+      Step 2: Compute invL.
       Go over L, and translate each entry to its corresponding
-      entry in invF.
+      entry in invL.
 
          F = PLP'
          L = P'FP
-
-         inv(F) = P * inv(L) * P'
-         inv(L) = P' * inv(F) * P
     */
-    std::fill_n( _invF, _m * _m, 0 );
+    std::fill_n( _invL, _m * _m, 0 );
 
     // Handle L row by row, from top to bottom
     for ( unsigned lRow = 0; lRow < _m; ++lRow )
     {
-        // L's diagonal entry is always 1. Place it in inv(F)
-        _invF[_P._columnOrdering[lRow]*_m + _P._columnOrdering[lRow]] = 1;
+        // L's diagonal entry is always 1. Place it in inv(L)
+        _invL[lRow*_m + lRow] = 1;
 
         /*
           The remaining elements on row i (to the left of the
@@ -439,9 +438,9 @@ void LUFactors::invertBasis( double *result )
             for ( unsigned i = 0; i < lRow; ++i )
             {
                 // invL[lRow,lColumn] -= L[lRow,i] * invL[i,lColumn]
-                _invF[_P._columnOrdering[lRow]*_m + _P._columnOrdering[lColumn]] -=
+                _invL[lRow*_m + lColumn] -=
                     _F[_P._columnOrdering[lRow]*_m + _P._columnOrdering[i]] *
-                    _invF[_P._columnOrdering[i]*_m + _P._columnOrdering[lColumn]];
+                    _invL[i*_m + lColumn];
             }
         }
     }
@@ -449,13 +448,22 @@ void LUFactors::invertBasis( double *result )
     /*
       Step 3: Compute inv(A), using
 
-          inv(A) = inv(V) * inv(F)
+         inv(A) = Q' * inv(U) * inv(L) P'
+         inv(U)*inv(L) = Q * inv(A) * P
     */
+    unsigned invARow, invAColumn;
     std::fill_n( result, _m * _m, 0.0 );
     for ( unsigned i = 0; i < _m; ++i )
+    {
         for ( unsigned j = 0; j < _m; ++j )
+        {
+            invARow = _Q._rowOrdering[i];
+            invAColumn = _P._columnOrdering[j];
+
             for ( unsigned k = 0; k < _m; ++k )
-                result[i*_m + j] += _invV[i*_m + k] * _invF[k*_m + j];
+                result[invARow*_m + invAColumn] += _invU[i*_m + k] * _invL[k*_m + j];
+        }
+    }
 }
 
 void LUFactors::storeToOther( LUFactors *other ) const

@@ -88,8 +88,8 @@ public:
       Work memory
     */
     double *_z;
-    double *_invF;
-    double *_invV;
+    double *_invL;
+    double *_invU;
     double *_workMatrix;
 
     /*
