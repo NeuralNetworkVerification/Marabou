@@ -389,41 +389,22 @@ void LUFactors::invertBasis( double *result )
         _invV[_Q._rowOrdering[uRow]*_m + _P._columnOrdering[uRow]] = invUDiagonalEntry;
 
         /*
-          Next, subtract the newly-computed diagonal entry from all
-          entries above it
+          Next, any remaining entries on this row are computed directly,
+          by considering the product of the corresponding row of U and the
+          corresponding (partially-computed) column of invV.
         */
-        for ( int uRowAbove = 0; uRowAbove < uRow; ++uRowAbove )
+        for ( unsigned uColumn = uRow + 1; uColumn < _m; ++uColumn )
         {
-            _invV[_Q._rowOrdering[uRowAbove]*_m + _P._columnOrdering[uRow]] -=
-                ( _invV[_Q._rowOrdering[uRow]*_m + _P._columnOrdering[uRow]] *
-                  _V[_P._columnOrdering[uRowAbove]*_m + _Q._rowOrdering[uRow]] );
-        }
-
-        /*
-          Consider all entries to the right of the diagonal entry.
-          Their final values are obtained by multiplying them by
-          the inverted diagonal entry
-        */
-        for ( int uColumn = uRow + 1; uColumn < (int)_m; ++uColumn )
-        {
-            _invV[_Q._rowOrdering[uRow]*_m + _P._columnOrdering[uColumn]] *= invUDiagonalEntry;
-
-            /*
-              Each discovered entry is subtracted from all rows above it.
-              After just computing the final value of entry invU[i,j], we look
-              at all entries U[k,j] such that k < i. For each of these entries,
-              we do:
-
-              invU[k,j] -= invU[i,j] * U[k,i]
-
-              ( k is uRowAbove, j is uColumn, and i is uRow )
-            */
-            for ( int uRowAbove = 0; uRowAbove < uRow; ++uRowAbove )
+            // Compute inv(U)[uRow, uColumn]
+            for ( unsigned i = uRow + 1; i < _m; ++i )
             {
-                _invV[_Q._rowOrdering[uRowAbove] *_m + _P._columnOrdering[uColumn]] -=
-                    ( _invV[_Q._rowOrdering[uRow]*_m + _P._columnOrdering[uColumn]] *
-                      _V[_P._columnOrdering[uRowAbove]*_m + _Q._rowOrdering[uRow]] );
+                // invU[uRow, uColumn] -= U[uRow, i] * invU[i, uColumn]
+                _invV[_Q._rowOrdering[uRow]*_m + _P._columnOrdering[uColumn]] -=
+                      ( _V[_P._columnOrdering[uRow]*_m + _Q._rowOrdering[i]] *
+                        _invV[_Q._rowOrdering[i]*_m + _P._columnOrdering[uColumn]] );
             }
+
+            _invV[_Q._rowOrdering[uRow]*_m + _P._columnOrdering[uColumn]] *= invUDiagonalEntry;
         }
     }
 
