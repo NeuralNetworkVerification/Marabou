@@ -44,32 +44,33 @@ void Equation::setScalar( double scalar )
     _scalar = scalar;
 }
 
-void Equation::updateVariableIndex( unsigned v1, unsigned v2 )
+void Equation::updateVariableIndex( unsigned oldVar, unsigned newVar )
 {
-    bool alreadyV2 = false;
-    bool alreadyV1 = false;
-    Addend toRemove( 0, 0 );
-    for ( auto addend: _addends )
-    {
-        if ( addend._variable == v1 )
-            alreadyV1 = true;
-        if ( addend._variable == v2 ){
-            alreadyV2 = true;
-            toRemove = addend;
-        }
-    }
-    if ( !alreadyV1 )
+    // Find oldVar's addend and update it
+    List<Addend>::iterator oldVarIt = _addends.begin();
+    while ( oldVarIt != _addends.end() && oldVarIt->_variable != oldVar )
+        ++oldVarIt;
+
+    // OldVar doesn't exist - can stop
+    if ( oldVarIt == _addends.end() )
         return;
-    double oldCoeff = 0;
-    if ( alreadyV2 ){
-        _addends.erase( toRemove );
-        oldCoeff = toRemove._coefficient;
-    }
-    for (auto &addend: _addends )
+
+    // Update oldVar's index
+    oldVarIt->_variable = newVar;
+
+    // Check to see if there are now two addends for newVar. If so,
+    // remove one and adjust the coefficient
+    List<Addend>::iterator newVarIt;
+    for ( newVarIt = _addends.begin(); newVarIt != _addends.end(); ++newVarIt )
     {
-        if ( addend._variable == v1 ){
-            addend._variable = v2;
-            addend._coefficient += oldCoeff;
+        if ( newVarIt == oldVarIt )
+            continue;
+
+        if ( newVarIt->_variable == newVar )
+        {
+            oldVarIt->_coefficient += newVarIt->_coefficient;
+            _addends.erase( newVarIt );
+            return;
         }
     }
 }
