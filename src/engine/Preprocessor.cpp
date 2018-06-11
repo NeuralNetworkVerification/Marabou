@@ -349,7 +349,7 @@ bool Preprocessor::processIdenticalVariables()
 {
     // find distinct v1 and v2 which are exactly equal to each other
     unsigned v1=0, v2=0;
-    Equation equToRemove = Equation();
+    Equation equToRemove;
     for ( const auto &equation : _preprocessed.getEquations() )
     {
         if ( equation._addends.size() != 2 || equation._type != Equation::EQ )
@@ -366,9 +366,10 @@ bool Preprocessor::processIdenticalVariables()
         equToRemove = equation;
         break;
     }
-    if ( v1 == v2 )
+    if ( v1 == v2 ){
         return false;
-    // found v1 and v2 which are equal
+    }
+    // found v1 and v2 which are identical
     _preprocessed.removeEquation(equToRemove);
     _preprocessed.removeIdenticalVariable(v1, v2);
     return true;
