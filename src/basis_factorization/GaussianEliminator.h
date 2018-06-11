@@ -52,8 +52,8 @@ private:
       Information on the number of non-zero elements in
       every row of the current active submatrix of U
     */
-    unsigned *_numRowElements;
-    unsigned *_numColumnElements;
+    unsigned *_numURowElements;
+    unsigned *_numUColumnElements;
 
     void choosePivot();
     void initializeFactorization( const double *A, LUFactors *luFactors );

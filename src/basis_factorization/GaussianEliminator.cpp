@@ -23,32 +23,32 @@
 
 GaussianEliminator::GaussianEliminator( unsigned m )
     : _m( m )
-    , _numRowElements( NULL )
-    , _numColumnElements( NULL )
+    , _numURowElements( NULL )
+    , _numUColumnElements( NULL )
 {
-    _numRowElements = new unsigned[_m];
-    if ( !_numRowElements )
+    _numURowElements = new unsigned[_m];
+    if ( !_numURowElements )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
-                                       "GaussianEliminator::numRowElements" );
+                                       "GaussianEliminator::numURowElements" );
 
-    _numColumnElements = new unsigned[_m];
-    if ( !_numColumnElements )
+    _numUColumnElements = new unsigned[_m];
+    if ( !_numUColumnElements )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
-                                       "GaussianEliminator::numColumnElements" );
+                                       "GaussianEliminator::numUColumnElements" );
 }
 
 GaussianEliminator::~GaussianEliminator()
 {
-    if ( _numRowElements )
+    if ( _numURowElements )
     {
-        delete[] _numRowElements;
-        _numRowElements = NULL;
+        delete[] _numURowElements;
+        _numURowElements = NULL;
     }
 
-    if ( _numColumnElements )
+    if ( _numUColumnElements )
     {
-        delete[] _numColumnElements;
-        _numColumnElements = NULL;
+        delete[] _numUColumnElements;
+        _numUColumnElements = NULL;
     }
 }
 
@@ -73,16 +73,16 @@ void GaussianEliminator::initializeFactorization( const double *A, LUFactors *lu
     _luFactors->_Q.resetToIdentity();
 
     // Count number of non-zeros in U ( = A )
-    std::fill_n( _numRowElements, _m, 0 );
-    std::fill_n( _numColumnElements, _m, 0 );
+    std::fill_n( _numURowElements, _m, 0 );
+    std::fill_n( _numUColumnElements, _m, 0 );
     for ( unsigned i = 0; i < _m; ++i )
     {
         for ( unsigned j = 0; j < _m; ++j )
         {
             if ( !FloatUtils::isZero( A[i*_m + j] ) )
             {
-                ++_numRowElements[i];
-                ++_numColumnElements[j];
+                ++_numURowElements[i];
+                ++_numUColumnElements[j];
             }
         }
     }
@@ -101,13 +101,13 @@ void GaussianEliminator::permute()
 
     // Adjust the element counters
     unsigned temp;
-    temp = _numRowElements[_uPivotRow];
-    _numRowElements[_uPivotRow] = _numRowElements[_eliminationStep];
-    _numRowElements[_eliminationStep] = temp;
+    temp = _numURowElements[_uPivotRow];
+    _numURowElements[_uPivotRow] = _numURowElements[_eliminationStep];
+    _numURowElements[_eliminationStep] = temp;
 
-    temp = _numColumnElements[_uPivotColumn];
-    _numColumnElements[_uPivotColumn] = _numColumnElements[_eliminationStep];
-    _numColumnElements[_eliminationStep] = temp;
+    temp = _numUColumnElements[_uPivotColumn];
+    _numUColumnElements[_uPivotColumn] = _numUColumnElements[_eliminationStep];
+    _numUColumnElements[_eliminationStep] = temp;
 }
 
 void GaussianEliminator::run( const double *A, LUFactors *luFactors )
@@ -165,7 +165,7 @@ void GaussianEliminator::choosePivot()
     // If there's a singleton row, use it as the pivot row
     for ( unsigned i = _eliminationStep; i < _m; ++i )
     {
-        if ( _numRowElements[i] == 1 )
+        if ( _numURowElements[i] == 1 )
         {
             _uPivotRow = i;
             _vPivotRow = _luFactors->_P._columnOrdering[i];
@@ -198,7 +198,7 @@ void GaussianEliminator::choosePivot()
     // If there's a singleton column, use it as the pivot column
     for ( unsigned i = _eliminationStep; i < _m; ++i )
     {
-        if ( _numColumnElements[i] == 1 )
+        if ( _numUColumnElements[i] == 1 )
         {
             _uPivotColumn = i;
             _vPivotColumn = _luFactors->_Q._rowOrdering[i];
@@ -206,10 +206,11 @@ void GaussianEliminator::choosePivot()
             // Locate the singleton element
             for ( unsigned j = _eliminationStep; j < _m; ++j )
             {
-                if ( !FloatUtils::isZero( _luFactors->_V[j*_m + _vPivotColumn] ) )
+                unsigned vRow = _luFactors->_P._columnOrdering[j];
+                if ( !FloatUtils::isZero( _luFactors->_V[vRow*_m + _vPivotColumn] ) )
                 {
-                    _vPivotRow = j;
-                    _uPivotRow = _luFactors->_P._rowOrdering[j];
+                    _vPivotRow = vRow;
+                    _uPivotRow = j;
 
                     found = true;
                     break;
@@ -231,7 +232,6 @@ void GaussianEliminator::choosePivot()
     // Fail if no elements exists that are within acceptable magnitude
 
     // Todo: more clever heuristics to reduce the search space
-
     unsigned minimalCost = _m * _m;
     for ( unsigned column = _eliminationStep; column < _m; ++column )
     {
@@ -266,7 +266,7 @@ void GaussianEliminator::choosePivot()
             if ( FloatUtils::gt( contender,
                                  maxInColumn * GlobalConfiguration::GAUSSIAN_ELIMINATION_PIVOT_SCALE_THRESHOLD ) )
             {
-                unsigned cost = ( _numRowElements[row] - 1 ) * ( _numColumnElements[column] - 1 );
+                unsigned cost = ( _numURowElements[row] - 1 ) * ( _numUColumnElements[column] - 1 );
 
                 if ( cost < minimalCost )
                 {
@@ -308,7 +308,7 @@ void GaussianEliminator::eliminate()
           The multiplier is: - U[row,k] / pivotElement
           We compute it in terms of V
         */
-        unsigned vRowIndex = _luFactors->_P._rowOrdering[row];
+        unsigned vRowIndex = _luFactors->_P._columnOrdering[row];
         double subDiagonalEntry = _luFactors->_V[vRowIndex*_m + _vPivotColumn];
 
         // Ignore zero entries
@@ -318,14 +318,14 @@ void GaussianEliminator::eliminate()
         double rowMultiplier = -subDiagonalEntry / pivotElement;
         log( Stringf( "\tWorking on V row: %u. Multiplier: %lf", vRowIndex, rowMultiplier ) );
 
-        --_numColumnElements[_eliminationStep];
-        --_numRowElements[row];
-
         // Eliminate the row
         _luFactors->_V[vRowIndex*_m + _vPivotColumn] = 0;
+        --_numUColumnElements[_eliminationStep];
+        --_numURowElements[row];
+
         for ( unsigned column = _eliminationStep + 1; column < _m; ++column )
         {
-            unsigned vColIndex = _luFactors->_Q._columnOrdering[column];
+            unsigned vColIndex = _luFactors->_Q._rowOrdering[column];
 
             bool wasZero = FloatUtils::isZero( _luFactors->_V[vRowIndex*_m + vColIndex] );
 
@@ -338,13 +338,13 @@ void GaussianEliminator::eliminate()
             {
                 if ( wasZero )
                 {
-                    ++_numColumnElements[column];
-                    ++_numRowElements[row];
+                    ++_numUColumnElements[column];
+                    ++_numURowElements[row];
                 }
                 else
                 {
-                    --_numColumnElements[column];
-                    --_numRowElements[row];
+                    --_numUColumnElements[column];
+                    --_numURowElements[row];
                 }
             }
 
