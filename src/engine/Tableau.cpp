@@ -1915,6 +1915,11 @@ const double *Tableau::getColumnOfBasis( unsigned column ) const
     return _A + ( variable * _m );
 }
 
+void Tableau::refreshBasisFactorization()
+{
+    _basisFactorization->obtainFreshBasis();
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "
