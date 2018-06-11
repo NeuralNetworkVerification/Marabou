@@ -192,7 +192,7 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             e = MarabouUtils.Equation()
             e.addAddend(1, curVars[i])
             e.addAddend(-1, prevVars[i])
-            e.setScalar(c)
+            e.setScalar(0)
             self.addEquation(e)
 
     def matMulEquations(self, op):
