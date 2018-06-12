@@ -1099,7 +1099,7 @@ void Tableau::storeState( TableauState &state ) const
 
     // Store the assignments
     memcpy( state._basicAssignment, _basicAssignment, sizeof(double) *_m );
-    memcpy( state._nonBasicAssignment, _nonBasicAssignment, sizeof(double) * ( _n - _m  ) );
+    memcpy( state._nonBasicAssignment, _nonBasicAssignment, sizeof(double) * ( _n - _m ) );
     state._basicAssignmentStatus = _basicAssignmentStatus;
 
     // Store the indices

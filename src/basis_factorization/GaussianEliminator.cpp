@@ -145,6 +145,27 @@ void GaussianEliminator::run( const double *A, LUFactors *luFactors )
         */
         eliminate();
     }
+
+    /*
+    DEBUG({
+            // Check that the factorization is correct
+            double *product = new double[_m * _m];
+            std::fill_n( product, _m * _m, 0 );
+
+            for ( unsigned i = 0; i < _m; ++i )
+                for ( unsigned j = 0; j < _m; ++j )
+                    for ( unsigned k = 0; k < _m; ++k )
+                    {
+                        product[i*_m+j] += ( _luFactors->_F[i*_m+k] * _luFactors->_V[k*_m+j] );
+                    }
+
+            for ( unsigned i = 0; i < _m; ++i )
+                for ( unsigned j = 0; j < _m; ++j )
+                {
+                    ASSERT( FloatUtils::areEqual( product[i*_m+j], A[i*_m+j] ) );
+                }
+        });
+    */
 }
 
 void GaussianEliminator::choosePivot()
