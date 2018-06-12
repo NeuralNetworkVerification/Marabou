@@ -182,7 +182,7 @@ void LUFactorization::storeFactorization( IBasisFactorization *other )
     ASSERT( _m == otherLUFactorization->_m );
     ASSERT( otherLUFactorization->_etas.size() == 0 );
 
-    factorizeBasis();
+    obtainFreshBasis();
 
     // Store the new basis and factorization
     memcpy( otherLUFactorization->_B, _B, sizeof(double) * _m * _m );
