@@ -91,7 +91,7 @@ public:
     /*
       Obtain the basis matrix from the oracle and compute a fresh factorization
     */
-    void refactorizeBasis();
+    void obtainFreshBasis();
 
 public:
     /*
