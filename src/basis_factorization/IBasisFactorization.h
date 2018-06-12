@@ -68,7 +68,7 @@ public:
       itself (through the previously-provided oracle).
 	*/
     virtual void setBasis( const double *B ) = 0;
-    virtual void refactorizeBasis() = 0;
+    virtual void obtainFreshBasis() = 0;
 
     /*
       Control/check whether factorization is enabled.

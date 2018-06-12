@@ -279,7 +279,7 @@ void Tableau::initializeTableau( const List<unsigned> &initialBasicVariables )
     }
 
     // Factorize the basis
-    _basisFactorization->refactorizeBasis();
+    _basisFactorization->obtainFreshBasis();
 
     // Compute assignment
     computeAssignment();
@@ -1099,7 +1099,7 @@ void Tableau::storeState( TableauState &state ) const
 
     // Store the assignments
     memcpy( state._basicAssignment, _basicAssignment, sizeof(double) *_m );
-    memcpy( state._nonBasicAssignment, _nonBasicAssignment, sizeof(double) * ( _n - _m  ) );
+    memcpy( state._nonBasicAssignment, _nonBasicAssignment, sizeof(double) * ( _n - _m ) );
     state._basicAssignmentStatus = _basicAssignmentStatus;
 
     // Store the indices
@@ -1298,7 +1298,7 @@ unsigned Tableau::addEquation( const Equation &equation )
     bool factorizationSuccessful = true;
     try
     {
-        _basisFactorization->refactorizeBasis();
+        _basisFactorization->obtainFreshBasis();
     }
     catch ( MalformedBasisException & )
     {
@@ -1913,6 +1913,11 @@ const double *Tableau::getColumnOfBasis( unsigned column ) const
     ASSERT( column < _m );
     unsigned variable = _basicIndexToVariable[column];
     return _A + ( variable * _m );
+}
+
+void Tableau::refreshBasisFactorization()
+{
+    _basisFactorization->obtainFreshBasis();
 }
 
 //

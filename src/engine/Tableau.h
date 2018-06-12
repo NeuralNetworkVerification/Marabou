@@ -394,6 +394,13 @@ public:
 
     const double *getColumnOfBasis( unsigned column ) const;
 
+    /*
+      Trigger a re-computing of the basis factorization. This can
+      be triggered, e.g., if a high numerical degradation has
+      been observed.
+    */
+    void refreshBasisFactorization();
+
 private:
     /*
       Variable watchers
