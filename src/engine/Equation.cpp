@@ -44,6 +44,37 @@ void Equation::setScalar( double scalar )
     _scalar = scalar;
 }
 
+void Equation::updateVariableIndex( unsigned oldVar, unsigned newVar )
+{
+    // Find oldVar's addend and update it
+    List<Addend>::iterator oldVarIt = _addends.begin();
+    while ( oldVarIt != _addends.end() && oldVarIt->_variable != oldVar )
+        ++oldVarIt;
+
+    // OldVar doesn't exist - can stop
+    if ( oldVarIt == _addends.end() )
+        return;
+
+    // Update oldVar's index
+    oldVarIt->_variable = newVar;
+
+    // Check to see if there are now two addends for newVar. If so,
+    // remove one and adjust the coefficient
+    List<Addend>::iterator newVarIt;
+    for ( newVarIt = _addends.begin(); newVarIt != _addends.end(); ++newVarIt )
+    {
+        if ( newVarIt == oldVarIt )
+            continue;
+
+        if ( newVarIt->_variable == newVar )
+        {
+            oldVarIt->_coefficient += newVarIt->_coefficient;
+            _addends.erase( newVarIt );
+            return;
+        }
+    }
+}
+
 bool Equation::operator==( const Equation &other ) const
 {
     return
