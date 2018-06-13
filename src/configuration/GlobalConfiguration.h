@@ -51,9 +51,13 @@ public:
     // The threshold of degradation above which restoration is required
     static const double DEGRADATION_THRESHOLD;
 
-    // If a pivot element in a simplex element is smaller than this threshold, the engine will attempt
+    // If a pivot element in a simplex iteration is smaller than this threshold, the engine will attempt
     // to pick another element.
     static const double ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD;
+
+    // If a pivot element in a Gaussian elimination iteration is smaller than this threshold times
+    // the largest element in the column, the elimination engine will attempt to pick another pivot.
+    static const double GAUSSIAN_ELIMINATION_PIVOT_SCALE_THRESHOLD;
 
     // How many potential pivots should the engine inspect (at most) in every simplex iteration?
     static const unsigned MAX_SIMPLEX_PIVOT_SEARCH_ITERATIONS;
@@ -112,6 +116,7 @@ public:
     static const bool DANTZIGS_RULE_LOGGING;
     static const bool BASIS_FACTORIZATION_LOGGING;
     static const bool PROJECTED_STEEPEST_EDGE_LOGGING;
+    static const bool GAUSSIAN_ELIMINATION_LOGGING;
 };
 
 #endif // __GlobalConfiguration_h__

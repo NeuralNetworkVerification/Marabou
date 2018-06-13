@@ -448,6 +448,57 @@ public:
         TS_ASSERT_EQUALS( it->_variable, 3U );
     }
 
+    void test_identical_variable_elimination()
+    {
+        InputQuery inputQuery;
+
+        inputQuery.setNumberOfVariables( 3 );
+        for ( unsigned i = 0; i < 3; ++i )
+        {
+            inputQuery.setLowerBound( i, 0 );
+            inputQuery.setUpperBound( i, 5 );
+        }
+
+        // 2x0 - 2x1 = 0
+        Equation equation1;
+        equation1.addAddend(  2, 0 );
+        equation1.addAddend( -2, 1 );
+        equation1.setScalar( 0 );
+        inputQuery.addEquation( equation1 );
+
+        // x0 + x1 + x2 = 1
+        Equation equation2;
+        equation2.addAddend( 1, 0 );
+        equation2.addAddend( 1, 1 );
+        equation2.addAddend( 1, 2 );
+        equation2.setScalar( 1 );
+        inputQuery.addEquation( equation2 );
+
+        ReluConstraint *relu1 = new ReluConstraint( 0, 2 );
+        ReluConstraint *relu2 = new ReluConstraint( 1, 2 );
+
+        inputQuery.addPiecewiseLinearConstraint( relu1 );
+        inputQuery.addPiecewiseLinearConstraint( relu2 );
+
+        InputQuery processed = Preprocessor().preprocess( inputQuery, false );
+
+        // Check that equation has been updated as needed
+        Equation preprocessedEquation = *processed.getEquations().begin();
+        List<Equation::Addend>::iterator addend = preprocessedEquation._addends.begin();
+        TS_ASSERT_EQUALS( addend->_coefficient, 2.0 );
+        TS_ASSERT_EQUALS( addend->_variable, 1U );
+        ++addend;
+        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, 2U );
+        TS_ASSERT_EQUALS( preprocessedEquation._scalar, 1.0 );
+
+        for ( const auto &plConstraint: processed.getPiecewiseLinearConstraints() )
+        {
+            TS_ASSERT( !plConstraint->participatingVariable( 0 ));
+            TS_ASSERT( plConstraint->participatingVariable( 1 ));
+        }
+    }
+
     void test_todo()
     {
         TS_TRACE( "In test_variable_elimination, test something about updated bounds and updated PL constraints" );

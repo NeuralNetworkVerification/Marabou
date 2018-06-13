@@ -516,6 +516,10 @@ public:
     {
         return NULL;
     }
+
+    void refreshBasisFactorization()
+    {
+    }
 };
 
 #endif // __MockTableau_h__
