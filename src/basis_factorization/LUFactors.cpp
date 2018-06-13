@@ -351,6 +351,10 @@ void LUFactors::invertBasis( double *result )
 {
     ASSERT( result );
 
+    // Corner case - empty Tableau
+    if ( _m == 0 )
+        return;
+
     /*
       A = F * V = P * L * U * Q
 
