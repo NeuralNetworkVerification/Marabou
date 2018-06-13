@@ -24,8 +24,6 @@ LUFactors::LUFactors( unsigned m )
     , _P( m )
     , _Q( m )
     , _z( NULL )
-    , _invL( NULL )
-    , _invU( NULL )
     , _workMatrix( NULL )
 {
     _F = new double[m*m];
@@ -40,16 +38,8 @@ LUFactors::LUFactors( unsigned m )
     if ( !_z )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "LUFactors::z" );
 
-    _invL = new double[m*m];
-    if ( !_invL )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "LUFactors::invL" );
-
-    _invU = new double[m*m];
-    if ( !_invU )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "LUFactors::invU" );
-
     _workMatrix = new double[m*m];
-    if ( !_invU )
+    if ( !_workMatrix )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "LUFactors::workMatrix" );
 }
 
@@ -73,22 +63,10 @@ LUFactors::~LUFactors()
         _z = NULL;
     }
 
-    if ( _invL )
-    {
-        delete[] _invL;
-        _invL = NULL;
-    }
-
-    if ( _invU )
-    {
-        delete[] _invU;
-        _invU = NULL;
-    }
-
     if ( _workMatrix )
     {
-        delete[] _invU;
-        _invU = NULL;
+        delete[] _workMatrix;
+        _workMatrix = NULL;
     }
 }
 
@@ -376,106 +354,75 @@ void LUFactors::invertBasis( double *result )
     /*
       A = F * V = P * L * U * Q
 
-      inv(A) = Q' * inv(U) * inv(L) P'
+      P' * A * Q' = LU
+      Q * inv(A) * P = inv(LU)
 
-      we first compute inv(U) and inv(L), and then
-      compute their permuted product into the result matrix.
-     */
+      So, first we compute inv(LU). We do this by applying elementary
+      row operations to the identity matrix.
+    */
+
+    // Initialize _workMatrix to the identity
+    std::fill_n( _workMatrix, _m * _m, 0 );
+    for ( unsigned i = 0; i < _m; ++i )
+        _workMatrix[i*_m + i] = 1;
 
     /*
-      Step 1: Compute invU.
-      Go over U, and translate each entry to its corresponding
-      entry in invU.
+      Step 1: Multiply I on the left by inv(L) using
+      elementary row operations.
 
-      V = PUQ
-      U = P'VQ'
+      Go over L's columns from left to right and eliminate rows.
+      Remember that L's diagonal is all 1s, and that L = P'FP
     */
-    std::fill_n( _invU, _m * _m, 0 );
-
-    // Handle U row by row, from top to bottom
-    for ( int uRow = _m - 1; uRow >= 0; --uRow )
+    for ( unsigned lColumn = 0; lColumn < _m - 1; ++lColumn )
     {
-        /*
-          Start with the diagonal element of this row: invert
-          and place it in invV.
-        */
-        double invUDiagonalEntry =
-            1 / _V[_P._columnOrdering[uRow]*_m + _Q._rowOrdering[uRow]];
-        _invU[uRow*_m + uRow] = invUDiagonalEntry;
-
-        /*
-          Next, any remaining entries on this row are computed directly,
-          by considering the product of the corresponding row of U and the
-          corresponding (partially-computed) column of invU.
-        */
-        for ( unsigned uColumn = uRow + 1; uColumn < _m; ++uColumn )
+        for ( unsigned lRow = lColumn + 1; lRow < _m; ++lRow )
         {
-            // Compute inv(U)[uRow, uColumn]
-            for ( unsigned i = uRow + 1; i < _m; ++i )
-            {
-                // invU[uRow, uColumn] -= U[uRow, i] * invU[i, uColumn]
-                _invU[uRow*_m + uColumn] -=
-                    ( _V[_P._columnOrdering[uRow]*_m + _Q._rowOrdering[i]] *
-                      _invU[i*_m + uColumn] );
-            }
+            double multiplier = -_F[_P._columnOrdering[lRow]*_m + _P._columnOrdering[lColumn]];
 
-            // Multiply by the inverted diagonal entry
-            _invU[uRow*_m + uColumn] *= invUDiagonalEntry;
+            for ( unsigned i = 0; i <= lColumn; ++i )
+                _workMatrix[lRow*_m + i] += _workMatrix[lColumn*_m + i] * multiplier;
         }
     }
 
     /*
-      Step 2: Compute invL.
-      Go over L, and translate each entry to its corresponding
-      entry in invL.
+      Step 2: Multiply inv(L) on the left by inv(U) using
+      elementary row operations.
 
-         F = PLP'
-         L = P'FP
+      Go over U's columns from right to left and eliminate rows.
+      Remember that U's diagonal are not necessarily 1s, and that U = P'VQ'
     */
-    std::fill_n( _invL, _m * _m, 0 );
-
-    // Handle L row by row, from top to bottom
-    for ( unsigned lRow = 0; lRow < _m; ++lRow )
+    for ( int uColumn = _m - 1; uColumn >= 0; --uColumn )
     {
-        // L's diagonal entry is always 1. Place it in inv(L)
-        _invL[lRow*_m + lRow] = 1;
+        double invUDiagonalEntry =
+            1 / _V[_P._columnOrdering[uColumn]*_m + _Q._rowOrdering[uColumn]];
 
-        /*
-          The remaining elements on row i (to the left of the
-          diagonal) are computed by taking the i'th row of L and
-          multiplying it by each of the partially-computed columns
-          of inv(L).
-        */
-        for ( unsigned lColumn = 0; lColumn < lRow; ++lColumn )
+        for ( int uRow = 0; uRow < uColumn; ++uRow )
         {
-            // Compute inv(L)[lRow, lColumn]
-            for ( unsigned i = 0; i < lRow; ++i )
-            {
-                // invL[lRow,lColumn] -= L[lRow,i] * invL[i,lColumn]
-                _invL[lRow*_m + lColumn] -=
-                    _F[_P._columnOrdering[lRow]*_m + _P._columnOrdering[i]] *
-                    _invL[i*_m + lColumn];
-            }
+            double multiplier = -_V[_P._columnOrdering[uRow]*_m + _Q._rowOrdering[uColumn]] * invUDiagonalEntry;
+
+            for ( unsigned i = 0; i < _m; ++i )
+                _workMatrix[uRow*_m + i] += _workMatrix[uColumn*_m +i] * multiplier;
         }
+
+        for ( unsigned i = 0; i < _m; ++i )
+            _workMatrix[uColumn*_m + i] *= invUDiagonalEntry;
     }
 
     /*
       Step 3: Compute inv(A), using
 
-         inv(A) = Q' * inv(U) * inv(L) P'
-         inv(U)*inv(L) = Q * inv(A) * P
+         Q * inv(A) * P = inv(LU)
+         inv(A) = Q' * inv(LU) * P'
     */
-    unsigned invARow, invAColumn;
-    std::fill_n( result, _m * _m, 0.0 );
+    unsigned invLURow, invLUColumn;
     for ( unsigned i = 0; i < _m; ++i )
     {
         for ( unsigned j = 0; j < _m; ++j )
         {
-            invARow = _Q._rowOrdering[i];
-            invAColumn = _P._columnOrdering[j];
+            invLURow = _Q._columnOrdering[i];
+            invLUColumn = _P._rowOrdering[j];
 
-            for ( unsigned k = 0; k < _m; ++k )
-                result[invARow*_m + invAColumn] += _invU[i*_m + k] * _invL[k*_m + j];
+            result[i*_m + j] = _workMatrix[invLURow*_m + invLUColumn];
         }
     }
 }
