@@ -19,7 +19,7 @@ const unsigned GlobalConfiguration::DEFAULT_DOUBLE_TO_STRING_PRECISION = 10;
 const unsigned GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY = 100;
 const double GlobalConfiguration::BOUND_COMPARISON_TOLERANCE = 0.001;
 const double GlobalConfiguration::PIVOT_CHANGE_COLUMN_TOLERANCE = 0.000000001;
-const unsigned GlobalConfiguration::DEGRADATION_CHECKING_FREQUENCY = 10;
+const unsigned GlobalConfiguration::DEGRADATION_CHECKING_FREQUENCY = 1; // 10;
 const double GlobalConfiguration::DEGRADATION_THRESHOLD = 0.1;
 const double GlobalConfiguration::ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD = 0.0001;
 const bool GlobalConfiguration::USE_COLUMN_MERGING_EQUATIONS = true;
@@ -30,7 +30,7 @@ const unsigned GlobalConfiguration::BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENC
 
 const bool GlobalConfiguration::PREPROCESS_INPUT_QUERY = true;
 const bool GlobalConfiguration::PREPROCESSOR_ELIMINATE_VARIABLES = true;
-const bool GlobalConfiguration::PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS = true;
+const bool GlobalConfiguration::PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS = false;
 
 const unsigned GlobalConfiguration::PSE_ITERATIONS_BEFORE_RESET = 1000;
 const double GlobalConfiguration::PSE_GAMMA_ERROR_THRESHOLD = 0.001;
@@ -44,8 +44,8 @@ const GlobalConfiguration::BasisFactorizationType GlobalConfiguration::BASIS_FAC
     GlobalConfiguration::LU_FACTORIZATION;
 
 // Logging
-const bool GlobalConfiguration::ENGINE_LOGGING = false;
-const bool GlobalConfiguration::TABLEAU_LOGGING = false;
+const bool GlobalConfiguration::ENGINE_LOGGING = true;
+const bool GlobalConfiguration::TABLEAU_LOGGING = true;
 const bool GlobalConfiguration::SMT_CORE_LOGGING = false;
 const bool GlobalConfiguration::DANTZIGS_RULE_LOGGING = false;
 const bool GlobalConfiguration::BASIS_FACTORIZATION_LOGGING = false;
