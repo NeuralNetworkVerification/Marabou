@@ -743,27 +743,45 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
     List<Equation> equations = split.getEquations();
     for ( auto &equation : equations )
     {
-        unsigned auxVariable = _tableau->addEquation( equation );
-        _activeEntryStrategy->resizeHook( _tableau );
-
-        switch ( equation._type )
+        /*
+          In the general case, we just add the new equation to the tableau.
+          However, we also support a very common case: equations of the form
+          x1 = x2, which are common, e.g., with ReLUs. For these equations we
+          merge two columns of the tableau.
+        */
+        unsigned x1, x2;
+        if ( GlobalConfiguration::USE_COLUMN_MERGING_EQUATIONS &&
+             equation.isVariableMergingEquation( x1, x2 ) )
         {
-        case Equation::GE:
-            bounds.append( Tightening( auxVariable, 0.0, Tightening::UB ) );
-            break;
+            // Special case: x1 and x2 need to be merged
+            printf( "!!! Have a variable merging equation: ( x%u, x%u )\n", x1, x2 );
+            _tableau->mergeColumns( x1, x2 );
+        }
+        else
+        {
+            // General case: add a new equation to the tableau
+            unsigned auxVariable = _tableau->addEquation( equation );
+            _activeEntryStrategy->resizeHook( _tableau );
 
-        case Equation::LE:
-            bounds.append( Tightening( auxVariable, 0.0, Tightening::LB ) );
-            break;
+            switch ( equation._type )
+            {
+            case Equation::GE:
+                bounds.append( Tightening( auxVariable, 0.0, Tightening::UB ) );
+                break;
 
-        case Equation::EQ:
-            bounds.append( Tightening( auxVariable, 0.0, Tightening::LB ) );
-            bounds.append( Tightening( auxVariable, 0.0, Tightening::UB ) );
-            break;
+            case Equation::LE:
+                bounds.append( Tightening( auxVariable, 0.0, Tightening::LB ) );
+                break;
 
-        default:
-            ASSERT( false );
-            break;
+            case Equation::EQ:
+                bounds.append( Tightening( auxVariable, 0.0, Tightening::LB ) );
+                bounds.append( Tightening( auxVariable, 0.0, Tightening::UB ) );
+                break;
+
+            default:
+                ASSERT( false );
+                break;
+            }
         }
     }
 

@@ -402,10 +402,17 @@ const double *Tableau::getUpperBounds() const
 
 double Tableau::getValue( unsigned variable )
 {
+    /*
+      If this variable has been merged into another,
+      we need to be reading the other variable's value
+    */
+    if ( _mergedVariables.exists( variable ) )
+        variable = _mergedVariables[variable];
+
+    // The values of non-basics can be extracted even if the
+    // assignment is invalid
     if ( !_basicVariables.exists( variable ) )
     {
-        // The values of non-basics can be extracted even if the
-        // assignment is invalid
         unsigned index = _variableToIndex[variable];
         return _nonBasicAssignment[index];
     }
@@ -1918,6 +1925,39 @@ const double *Tableau::getColumnOfBasis( unsigned column ) const
 void Tableau::refreshBasisFactorization()
 {
     _basisFactorization->obtainFreshBasis();
+}
+
+void Tableau::mergeColumns( unsigned x1, unsigned x2 )
+{
+    /*
+      Merge column x2 of the constraint matrix into x1
+      and zero-out column x2
+    */
+    for ( unsigned row = 0; row < _m; ++row )
+    {
+        _A[(x1 * _m) + row] += _A[(x2 * _m) + row];
+        _A[(x2 * _m) + row] = 0.0;
+    }
+
+    _mergedVariables[x2] = x1;
+
+    ConstraintMatrixAnalyzer analyzer;
+    analyzer.analyze( _A, _m, _n );
+    List<unsigned> independentColumns = analyzer.getIndependentColumns();
+
+    ASSERT( analyzer.getRank() == _m );
+
+    double bestUpperBound = FloatUtils::min( _upperBounds[x1], _upperBounds[x2] );
+    double bestLowerBound = FloatUtils::max( _lowerBounds[x1], _lowerBounds[x2] );
+
+    setUpperBound( x1, bestUpperBound );
+    setLowerBound( x1, bestLowerBound );
+
+    initializeTableau( independentColumns );
+
+    // Invalidate the cost function, so that it is recomputed in the next iteration.
+    _costFunctionManager->invalidateCostFunction();
+
 }
 
 //
