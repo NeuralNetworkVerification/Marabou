@@ -19,6 +19,8 @@ ConstraintMatrixAnalyzer::ConstraintMatrixAnalyzer()
     : _matrix( NULL )
     , _work( NULL )
     , _logging( false )
+    , _rowHeaders( NULL )
+    , _columnHeaders( NULL )
 {
 }
 
@@ -40,6 +42,18 @@ void ConstraintMatrixAnalyzer::freeMemoryIfNeeded()
         delete[] _work;
         _work = NULL;
     }
+
+    if ( _rowHeaders )
+    {
+        delete[] _rowHeaders;
+        _rowHeaders = NULL;
+    }
+
+    if ( _columnHeaders )
+    {
+        delete[] _columnHeaders;
+        _columnHeaders = NULL;
+    }
 }
 
 void ConstraintMatrixAnalyzer::analyze( const double *matrix, unsigned m, unsigned n )
@@ -48,17 +62,28 @@ void ConstraintMatrixAnalyzer::analyze( const double *matrix, unsigned m, unsign
 
     _m = m;
     _n = n;
+
     _matrix = new double[m * n];
     _work = new double[n];
+    _rowHeaders = new unsigned[m];
+    _columnHeaders = new unsigned[n];
 
     // Initialize the local copy of the matrix. Switch from column-major
     // to row-major.
-    for ( unsigned i = 0; i < n*m; ++i )
+    for ( unsigned row = 0; row < _m; ++row )
     {
-        unsigned row = i % m;
-        unsigned col = i / m;
-        _matrix[row * n + col] = matrix[i];
+        for ( unsigned column = 0; column < _n; ++column )
+        {
+            _matrix[row * n + column] = matrix[column * _m + row];
+        }
     }
+
+    // Initialize the row and column headers
+    for ( unsigned i = 0; i < _m; ++i )
+        _rowHeaders[i] = i;
+
+    for ( unsigned i = 0; i < _n; ++i )
+        _columnHeaders[i] = i;
 
     gaussianElimination();
 }
@@ -69,49 +94,55 @@ void ConstraintMatrixAnalyzer::gaussianElimination()
       We work column-by-column, until m columns are found
       that are non-zeroes, or until we run out of columns.
     */
-    _rank = 0;
-    unsigned currentColumn = 0;
-    while ( currentColumn < _n && _rank < _m )
-    {
-        dumpMatrix( Stringf( "Begin iteration %u", currentColumn ) );
-        unsigned largestPivotRow = _rank;
-        double largestPivot = FloatUtils::abs( _matrix[largestPivotRow * _n + currentColumn] );
+    _eliminationStep = 0;
 
-        for ( unsigned i = _rank + 1; i < _m; ++i )
+    while ( _eliminationStep < _m )
+    {
+        // Find largest pivot in active submatrix
+        double largestPivot = 0.0;
+        unsigned bestRow = 0, bestColumn = 0;
+        for ( unsigned i = _eliminationStep; i < _m; ++i )
         {
-            double contender = FloatUtils::abs( _matrix[i * _n + currentColumn] );
-            if ( FloatUtils::gt( contender, largestPivot ) )
+            for ( unsigned j = _eliminationStep; j < _n; ++j )
             {
-                largestPivotRow = i;
-                largestPivot = contender;
+                double contender = FloatUtils::abs( _matrix[_rowHeaders[i]*_n + _columnHeaders[j]] );
+                if ( FloatUtils::gt( contender, largestPivot ) )
+                {
+                    largestPivot = contender;
+                    bestRow = i;
+                    bestColumn = j;
+                }
             }
         }
 
-        // If the entire column is zeros. Nothing to be done, move on to next column.
+        // If we couldn't find a non-zero pivot, elimination is complete
         if ( FloatUtils::isZero( largestPivot ) )
-        {
-            ++currentColumn;
-            continue;
-        }
+            return;
 
-        // Move the pivot row to its new index
-        if ( largestPivotRow != _rank )
-            swapRows( largestPivotRow, _rank );
+        // Move the pivot row to the top
+        if ( bestRow != _eliminationStep )
+            swapRows( bestRow, _eliminationStep );
+
+        // Move the pivot column to the top
+        if ( bestColumn != _eliminationStep )
+            swapColumns( bestColumn, _eliminationStep );
 
         // Eliminate the rows below the pivot row
-        for ( unsigned i = _rank + 1; i < _m; ++i )
+        double invPivotEntry = 1 / _matrix[_rowHeaders[_eliminationStep]*_n + _columnHeaders[_eliminationStep]];
+
+        for ( unsigned i = _eliminationStep + 1; i < _m; ++i )
         {
             double factor =
-                - _matrix[i * _n + currentColumn] / _matrix[_rank * _n + currentColumn];
-            _matrix[i * _n + currentColumn] = 0;
+                -_matrix[_rowHeaders[i]*_n + _columnHeaders[_eliminationStep]] * invPivotEntry ;
+            _matrix[_rowHeaders[i]*_n + _columnHeaders[_eliminationStep]] = 0;
 
-            for ( unsigned j = currentColumn + 1; j < _n; ++j )
-                _matrix[i * _n + j] += (factor * _matrix[_rank * _n + j]);
+            for ( unsigned j = _eliminationStep + 1; j < _n; ++j )
+                _matrix[_rowHeaders[i]*_n + _columnHeaders[j]] +=
+                    (factor * _matrix[_rowHeaders[_eliminationStep]*_n + _columnHeaders[j]]);
         }
 
-        _independentColumns.append( currentColumn );
-        ++currentColumn;
-        ++_rank;
+        _independentColumns.append( _columnHeaders[_eliminationStep] );
+        ++_eliminationStep;
     }
 
     dumpMatrix( "Elimination finished" );
@@ -124,26 +155,35 @@ List<unsigned> ConstraintMatrixAnalyzer::getIndependentColumns() const
 
 void ConstraintMatrixAnalyzer::swapRows( unsigned i, unsigned j )
 {
-    memcpy( _work, _matrix + (i * _n), sizeof(double) * _n );
-    memcpy( _matrix + (i * _n), _matrix + ( j * _n ), sizeof(double) * _n );
-    memcpy( _matrix + (j * _n), _work, sizeof(double) * _n );
+    unsigned temp = _rowHeaders[i];
+    _rowHeaders[i] = _rowHeaders[j];
+    _rowHeaders[j] = temp;
 }
 
-const double *ConstraintMatrixAnalyzer::getCanonicalForm()
+void ConstraintMatrixAnalyzer::swapColumns( unsigned i, unsigned j )
 {
-    return _matrix;
+    unsigned temp = _columnHeaders[i];
+    _columnHeaders[i] = _columnHeaders[j];
+    _columnHeaders[j] = temp;
+}
+
+void ConstraintMatrixAnalyzer::getCanonicalForm( double *matrix )
+{
+    for ( unsigned i = 0; i < _m; ++i )
+        for ( unsigned j = 0; j < _n; ++j )
+            matrix[i*_n + j] = _matrix[_rowHeaders[i]*_n + _columnHeaders[j]];
 }
 
 unsigned ConstraintMatrixAnalyzer::getRank() const
 {
-    return _rank;
+    return _eliminationStep;
 }
 
 void ConstraintMatrixAnalyzer::dumpMatrix( const String &message )
 {
     if ( _logging )
     {
-        printf( "\nConstraintMatrixAnalyzer::Dumping constraint matrix ");
+        printf( "\nConstraintMatrixAnalyzer::Dumping constraint matrix" );
 
         if ( message.length() > 0 )
             printf( "(%s)\n", message.ascii() );
@@ -154,7 +194,7 @@ void ConstraintMatrixAnalyzer::dumpMatrix( const String &message )
         {
             printf( "\t" );
             for ( unsigned j = 0; j < _n; ++j )
-                printf( "%.2lf ", _matrix[i*_n + j] );
+                printf( "%.2lf ", _matrix[_rowHeaders[i]*_n + _columnHeaders[j]] );
             printf( "\n" );
         }
 

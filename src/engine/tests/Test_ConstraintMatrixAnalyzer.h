@@ -49,6 +49,8 @@ public:
 
     void test_analyze__gaussian_eliminiation()
     {
+        double result[15];
+
         {
             ConstraintMatrixAnalyzer *analyzer;
             TS_ASSERT( analyzer = new ConstraintMatrixAnalyzer );
@@ -65,9 +67,15 @@ public:
 
             TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1t, 3, 5 ) );
 
-            TS_ASSERT_SAME_DATA( analyzer->getCanonicalForm(), A1, sizeof(A1) );
-            TS_ASSERT_EQUALS( analyzer->getRank(), 3U );
+            double expectedResult[] = {
+                1, 0, 0, 0, 0,
+                0, 1, 0, 0, 0,
+                0, 0, 1, 0, 0,
+            };
 
+            TS_ASSERT_THROWS_NOTHING( analyzer->getCanonicalForm( result ) );
+            TS_ASSERT_SAME_DATA( result, expectedResult, sizeof(expectedResult) );
+            TS_ASSERT_EQUALS( analyzer->getRank(), 3U );
             TS_ASSERT_THROWS_NOTHING( delete analyzer );
         }
 
@@ -89,11 +97,12 @@ public:
 
             double expectedResult[] = {
                 1, 0, 0, 0, 0,
-                0, 1, 0, 1, 0,
-                0, 0, 1, 0, 0,
+                0, 1, 0, 0, 0,
+                0, 0, 1, 1, 0,
             };
 
-            TS_ASSERT_SAME_DATA( analyzer->getCanonicalForm(), expectedResult, sizeof(expectedResult) );
+            TS_ASSERT_THROWS_NOTHING( analyzer->getCanonicalForm( result ) );
+            TS_ASSERT_SAME_DATA( result, expectedResult, sizeof(expectedResult) );
             TS_ASSERT_EQUALS( analyzer->getRank(), 3U );
 
             TS_ASSERT_THROWS_NOTHING( delete analyzer );
@@ -116,12 +125,13 @@ public:
             TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1t, 3, 5 ) );
 
             double expectedResult[] = {
-                1, 0, 0, 0, 0,
-                0, 1, 0, 2, 0,
+                2, 0, 0, 1, 0,
+                0, 1, 0, 0, 0,
                 0, 0, 0, 0, 0,
             };
 
-            TS_ASSERT_SAME_DATA( analyzer->getCanonicalForm(), expectedResult, sizeof(expectedResult) );
+            TS_ASSERT_THROWS_NOTHING( analyzer->getCanonicalForm( result ) );
+            TS_ASSERT_SAME_DATA( result, expectedResult, sizeof(expectedResult) );
             TS_ASSERT_EQUALS( analyzer->getRank(), 2U );
 
             TS_ASSERT_THROWS_NOTHING( delete analyzer );
@@ -144,12 +154,13 @@ public:
             TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1t, 3, 5 ) );
 
             double expectedResult[] = {
-                2, 2, 0, 0, 0,
-                0, 0, 3, 0, 0,
-                0, 0, 0, 1, 0,
+                3, 0, 0, 0, 0,
+                0, 2, 0, 2, 0,
+                0, 0, 1, 0, 0,
             };
 
-            TS_ASSERT_SAME_DATA( analyzer->getCanonicalForm(), expectedResult, sizeof(expectedResult) );
+            TS_ASSERT_THROWS_NOTHING( analyzer->getCanonicalForm( result ) );
+            TS_ASSERT_SAME_DATA( result, expectedResult, sizeof(expectedResult) );
             TS_ASSERT_EQUALS( analyzer->getRank(), 3U );
 
             TS_ASSERT_THROWS_NOTHING( delete analyzer );
@@ -172,12 +183,13 @@ public:
             TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1t, 3, 5 ) );
 
             double expectedResult[] = {
-                15, 3,  0, 1, 0,
-                0,  0, -1, 1, 4,
-                0,  0,  0, 0, 0,
+                15, 0,  0, 1, 3,
+                0 , 4, -1, 1, 0,
+                0 , 0,  0, 0, 0,
             };
 
-            TS_ASSERT_SAME_DATA( analyzer->getCanonicalForm(), expectedResult, sizeof(expectedResult) );
+            TS_ASSERT_THROWS_NOTHING( analyzer->getCanonicalForm( result ) );
+            TS_ASSERT_SAME_DATA( result, expectedResult, sizeof(expectedResult) );
             TS_ASSERT_EQUALS( analyzer->getRank(), 2U );
 
             TS_ASSERT_THROWS_NOTHING( delete analyzer );
@@ -205,7 +217,8 @@ public:
                 0, 0, 0, 0, 0,
             };
 
-            TS_ASSERT_SAME_DATA( analyzer->getCanonicalForm(), expectedResult, sizeof(expectedResult) );
+            TS_ASSERT_THROWS_NOTHING( analyzer->getCanonicalForm( result ) );
+            TS_ASSERT_SAME_DATA( result, expectedResult, sizeof(expectedResult) );
             TS_ASSERT_EQUALS( analyzer->getRank(), 0U );
 
             TS_ASSERT_THROWS_NOTHING( delete analyzer );
@@ -228,12 +241,13 @@ public:
             TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1t, 3, 5 ) );
 
             double expectedResult[] = {
-                0, 2, 3, 14, 1,
+                14, 2, 3, 0, 1,
                 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0,
             };
 
-            TS_ASSERT_SAME_DATA( analyzer->getCanonicalForm(), expectedResult, sizeof(expectedResult) );
+            TS_ASSERT_THROWS_NOTHING( analyzer->getCanonicalForm( result ) );
+            TS_ASSERT_SAME_DATA( result, expectedResult, sizeof(expectedResult) );
             TS_ASSERT_EQUALS( analyzer->getRank(), 1U );
 
             TS_ASSERT_THROWS_NOTHING( delete analyzer );
@@ -259,16 +273,17 @@ public:
             TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1t, 3, 5 ) );
 
             List<unsigned> cols = analyzer->getIndependentColumns();
-            TS_ASSERT_EQUALS(cols.size(), 3U);
+            TS_ASSERT_EQUALS( cols.size(), 3U );
             auto it = cols.begin();
-            TS_ASSERT_EQUALS(*it, 0U);
-            it++;
-            TS_ASSERT_EQUALS(*it, 1U);
-            it++;
-            TS_ASSERT_EQUALS(*it, 2U);
-            it++;
+            TS_ASSERT_EQUALS( *it, 0U );
+            ++it;
+            TS_ASSERT_EQUALS( *it, 1U );
+            ++it;
+            TS_ASSERT_EQUALS( *it, 2U );
+            ++it;
             TS_ASSERT_THROWS_NOTHING( delete analyzer );
         }
+
         {
             ConstraintMatrixAnalyzer *analyzer;
             TS_ASSERT( analyzer = new ConstraintMatrixAnalyzer );
@@ -286,16 +301,17 @@ public:
             TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1t, 3, 5 ) );
 
             List<unsigned> cols = analyzer->getIndependentColumns();
-            TS_ASSERT_EQUALS(cols.size(), 3U);
+            TS_ASSERT_EQUALS( cols.size(), 3U );
             auto it = cols.begin();
-            TS_ASSERT_EQUALS(*it, 1U);
-            it++;
-            TS_ASSERT_EQUALS(*it, 2U);
-            it++;
-            TS_ASSERT_EQUALS(*it, 4U);
-            it++;
+            TS_ASSERT_EQUALS( *it, 1U );
+            ++it;
+            TS_ASSERT_EQUALS( *it, 2U );
+            ++it;
+            TS_ASSERT_EQUALS( *it, 4U );
+            ++it;
             TS_ASSERT_THROWS_NOTHING( delete analyzer );
         }
+
         {
             ConstraintMatrixAnalyzer *analyzer;
             TS_ASSERT( analyzer = new ConstraintMatrixAnalyzer );
@@ -313,14 +329,14 @@ public:
             TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1t, 3, 5 ) );
 
             List<unsigned> cols = analyzer->getIndependentColumns();
-            TS_ASSERT_EQUALS(cols.size(), 3U);
+            TS_ASSERT_EQUALS( cols.size(), 3U );
             auto it = cols.begin();
-            TS_ASSERT_EQUALS(*it, 0U);
-            it++;
-            TS_ASSERT_EQUALS(*it, 1U);
-            it++;
-            TS_ASSERT_EQUALS(*it, 4U);
-            it++;
+            TS_ASSERT_EQUALS( *it, 0U );
+            ++it;
+            TS_ASSERT_EQUALS( *it, 1U );
+            ++it;
+            TS_ASSERT_EQUALS( *it, 4U );
+            ++it;
             TS_ASSERT_THROWS_NOTHING( delete analyzer );
         }
     }

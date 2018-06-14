@@ -31,7 +31,7 @@ public:
       major format.
     */
     void analyze( const double *matrix, unsigned m, unsigned n );
-    const double *getCanonicalForm();
+    void getCanonicalForm( double *matrix );
     unsigned getRank() const;
     List<unsigned> getIndependentColumns() const;
 
@@ -40,15 +40,23 @@ private:
     double *_work;
     unsigned _m;
     unsigned _n;
-    unsigned _rank;
+    unsigned _eliminationStep;
     bool _logging;
     List<unsigned> _independentColumns;
+
+    /*
+      The i'th (permuted) column of the matrix is stored in memory
+      location _rowHeaders[i]. Likewise for columns.
+    */
+    unsigned *_rowHeaders;
+    unsigned *_columnHeaders;
 
     /*
       Helper functions for performing Gaussian elimination.
     */
     void gaussianElimination();
     void swapRows( unsigned i, unsigned j );
+    void swapColumns( unsigned i, unsigned j );
 
     /*
       Debugging: print the matrix and the log message, if logging
