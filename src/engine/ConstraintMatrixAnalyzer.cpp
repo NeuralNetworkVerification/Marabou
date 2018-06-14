@@ -96,25 +96,28 @@ void ConstraintMatrixAnalyzer::gaussianElimination()
     */
     _eliminationStep = 0;
 
-    double largestPivot = 0.0;
-    unsigned bestRow = 0, bestColumn = 0;
-    // Find largest pivot in active submatrix
-    for ( unsigned i = _eliminationStep; i < _m; ++i )
+    while ( _eliminationStep < _m )
     {
-        for ( unsigned j = _eliminationStep; j < _n; ++j )
+        // Find largest pivot in active submatrix
+        double largestPivot = 0.0;
+        unsigned bestRow = 0, bestColumn = 0;
+        for ( unsigned i = _eliminationStep; i < _m; ++i )
         {
-            double contender = FloatUtils::abs( _matrix[_rowHeaders[i]*_n + _columnHeaders[j]] );
-            if ( FloatUtils::gt( contender, largestPivot ) )
+            for ( unsigned j = _eliminationStep; j < _n; ++j )
             {
-                largestPivot = contender;
-                bestRow = i;
-                bestColumn = j;
+                double contender = FloatUtils::abs( _matrix[_rowHeaders[i]*_n + _columnHeaders[j]] );
+                if ( FloatUtils::gt( contender, largestPivot ) )
+                {
+                    largestPivot = contender;
+                    bestRow = i;
+                    bestColumn = j;
+                }
             }
         }
 
         // If we couldn't find a non-zero pivot, elimination is complete
         if ( FloatUtils::isZero( largestPivot ) )
-            break;
+            return;
 
         // Move the pivot row to the top
         if ( bestRow != _eliminationStep )
@@ -167,7 +170,7 @@ void ConstraintMatrixAnalyzer::swapColumns( unsigned i, unsigned j )
 void ConstraintMatrixAnalyzer::getCanonicalForm( double *matrix )
 {
     for ( unsigned i = 0; i < _m; ++i )
-        for ( unsigned j = 0; j < _m; ++j )
+        for ( unsigned j = 0; j < _n; ++j )
             matrix[i*_n + j] = _matrix[_rowHeaders[i]*_n + _columnHeaders[j]];
 }
 
@@ -180,7 +183,7 @@ void ConstraintMatrixAnalyzer::dumpMatrix( const String &message )
 {
     if ( _logging )
     {
-        printf( "\nConstraintMatrixAnalyzer::Dumping constraint matrix ");
+        printf( "\nConstraintMatrixAnalyzer::Dumping constraint matrix" );
 
         if ( message.length() > 0 )
             printf( "(%s)\n", message.ascii() );
@@ -191,7 +194,7 @@ void ConstraintMatrixAnalyzer::dumpMatrix( const String &message )
         {
             printf( "\t" );
             for ( unsigned j = 0; j < _n; ++j )
-                printf( "%.2lf ", _matrix[i*_n + j] );
+                printf( "%.2lf ", _matrix[_rowHeaders[i]*_n + _columnHeaders[j]] );
             printf( "\n" );
         }
 
