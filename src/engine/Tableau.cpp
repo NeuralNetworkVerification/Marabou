@@ -402,10 +402,17 @@ const double *Tableau::getUpperBounds() const
 
 double Tableau::getValue( unsigned variable )
 {
+    /*
+      If this variable has been merged into another,
+      we need to be reading the other variable's value
+    */
+    if ( _mergedVariables.exists( variable ) )
+        variable = _mergedVariables[variable];
+
+    // The values of non-basics can be extracted even if the
+    // assignment is invalid
     if ( !_basicVariables.exists( variable ) )
     {
-        // The values of non-basics can be extracted even if the
-        // assignment is invalid
         unsigned index = _variableToIndex[variable];
         return _nonBasicAssignment[index];
     }
@@ -1112,6 +1119,9 @@ void Tableau::storeState( TableauState &state ) const
 
     // Store the _boundsValid indicator
     state._boundsValid = _boundsValid;
+
+    // Store the merged variables
+    state._mergedVariables = _mergedVariables;
 }
 
 void Tableau::restoreState( const TableauState &state )
@@ -1148,6 +1158,9 @@ void Tableau::restoreState( const TableauState &state )
 
     // Restore the _boundsValid indicator
     _boundsValid = state._boundsValid;
+
+    // Restore the merged varaibles
+    _mergedVariables = state._mergedVariables;
 
     computeAssignment();
     _costFunctionManager->initialize();
@@ -1911,6 +1924,8 @@ void Tableau::registerCostFunctionManager( ICostFunctionManager *costFunctionMan
 const double *Tableau::getColumnOfBasis( unsigned column ) const
 {
     ASSERT( column < _m );
+    ASSERT( !_mergedVariables.exists( _basicIndexToVariable[column] ) );
+
     unsigned variable = _basicIndexToVariable[column];
     return _A + ( variable * _m );
 }
@@ -1918,6 +1933,35 @@ const double *Tableau::getColumnOfBasis( unsigned column ) const
 void Tableau::refreshBasisFactorization()
 {
     _basisFactorization->obtainFreshBasis();
+}
+
+void Tableau::mergeColumns( unsigned x1, unsigned x2 )
+{
+    ASSERT( !isBasic( x1 ) );
+    ASSERT( !isBasic( x2 ) );
+
+    /*
+      If x2 has tighter bounds than x1, adjust the bounds
+      for x1.
+    */
+    if ( FloatUtils::lt( _upperBounds[x2], _upperBounds[x1] ) )
+        tightenUpperBound( x1, _upperBounds[x2] );
+    if ( FloatUtils::gt( _lowerBounds[x2], _lowerBounds[x1] ) )
+        tightenLowerBound( x1, _lowerBounds[x2] );
+
+    /*
+      Merge column x2 of the constraint matrix into x1
+      and zero-out column x2
+    */
+    for ( unsigned row = 0; row < _m; ++row )
+    {
+        _A[(x1 * _m) + row] += _A[(x2 * _m) + row];
+        _A[(x2 * _m) + row] = 0.0;
+    }
+    _mergedVariables[x2] = x1;
+
+    computeAssignment();
+    computeCostFunction();
 }
 
 //

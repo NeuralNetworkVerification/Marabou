@@ -743,27 +743,130 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
     List<Equation> equations = split.getEquations();
     for ( auto &equation : equations )
     {
-        unsigned auxVariable = _tableau->addEquation( equation );
-        _activeEntryStrategy->resizeHook( _tableau );
+        /*
+          In the general case, we just add the new equation to the tableau.
+          However, we also support a very common case: equations of the form
+          x1 = x2, which are common, e.g., with ReLUs. For these equations we
+          may be able to merge two columns of the tableau.
+        */
+        unsigned x1, x2;
+        bool canMergeColumns =
+            // Only if the flag is on
+            GlobalConfiguration::USE_COLUMN_MERGING_EQUATIONS &&
+            // Only if the equation has the correct form
+            equation.isVariableMergingEquation( x1, x2 ) &&
+            // And only if the variables are not out of bounds
+            ( !_tableau->isBasic( x1 ) ||
+              !_tableau->basicOutOfBounds( _tableau->variableToIndex( x1 ) ) )
+            &&
+            ( !_tableau->isBasic( x2 ) ||
+              !_tableau->basicOutOfBounds( _tableau->variableToIndex( x2 ) ) );
 
-        switch ( equation._type )
+        if ( canMergeColumns )
         {
-        case Equation::GE:
-            bounds.append( Tightening( auxVariable, 0.0, Tightening::UB ) );
-            break;
+            /*
+              Special case: x1 and x2 need to be merged.
+              First, we need to ensure they are both non-basic.
+            */
+            unsigned n = _tableau->getN();
+            unsigned m = _tableau->getM();
 
-        case Equation::LE:
-            bounds.append( Tightening( auxVariable, 0.0, Tightening::LB ) );
-            break;
+            if ( _tableau->isBasic( x1 ) )
+            {
+                TableauRow x1Row( n - m );
+                _tableau->getTableauRow( _tableau->variableToIndex( x1 ), &x1Row );
 
-        case Equation::EQ:
-            bounds.append( Tightening( auxVariable, 0.0, Tightening::LB ) );
-            bounds.append( Tightening( auxVariable, 0.0, Tightening::UB ) );
-            break;
+                bool found = false;
+                unsigned nonBasic;
+                for ( unsigned i = 0; i < n - m; ++i )
+                {
+                    if ( !FloatUtils::isZero( x1Row._row[i]._coefficient ) && ( x1Row._row[i]._var != x2 ) )
+                    {
+                        found = true;
+                        nonBasic = x1Row._row[i]._var;
+                        break;
+                    }
+                }
 
-        default:
-            ASSERT( false );
-            break;
+                if ( !found )
+                    throw ReluplexError( ReluplexError::ENGINE_APPLY_SPLIT_FAILED,
+                                         "Could not find a variable to pivot with" );
+
+                _tableau->setEnteringVariableIndex( _tableau->variableToIndex( nonBasic ) );
+                _tableau->setLeavingVariableIndex( _tableau->variableToIndex( x1 ) );
+
+                // Make sure the change column and pivot row are up-to-date - strategies
+                // such as projected steepest edge need these for their internal updates.
+                _tableau->computeChangeColumn();
+                _tableau->computePivotRow();
+
+                _activeEntryStrategy->prePivotHook( _tableau, false );
+                _tableau->performDegeneratePivot();
+                _activeEntryStrategy->prePivotHook( _tableau, false );
+            }
+
+            if ( _tableau->isBasic( x2 ) )
+            {
+                TableauRow x2Row( n - m );
+                _tableau->getTableauRow( _tableau->variableToIndex( x2 ), &x2Row );
+
+                bool found = false;
+                unsigned nonBasic;
+                for ( unsigned i = 0; i < n - m; ++i )
+                {
+                    if ( !FloatUtils::isZero( x2Row._row[i]._coefficient ) && ( x2Row._row[i]._var != x1 ) )
+                    {
+                        found = true;
+                        nonBasic = x2Row._row[i]._var;
+                        break;
+                    }
+                }
+
+                if ( !found )
+                    throw ReluplexError( ReluplexError::ENGINE_APPLY_SPLIT_FAILED,
+                                         "Could not find a variable to pivot with" );
+
+                _tableau->setEnteringVariableIndex( _tableau->variableToIndex( nonBasic ) );
+                _tableau->setLeavingVariableIndex( _tableau->variableToIndex( x2 ) );
+
+                // Make sure the change column and pivot row are up-to-date - strategies
+                // such as projected steepest edge need these for their internal updates.
+                _tableau->computeChangeColumn();
+                _tableau->computePivotRow();
+
+                _activeEntryStrategy->prePivotHook( _tableau, false );
+                _tableau->performDegeneratePivot();
+                _activeEntryStrategy->prePivotHook( _tableau, false );
+            }
+
+            // Both variables are now non-basic, so we can merge their columns
+            _tableau->mergeColumns( x1, x2 );
+        }
+        else
+        {
+            // General case: add a new equation to the tableau
+            unsigned auxVariable = _tableau->addEquation( equation );
+            _activeEntryStrategy->resizeHook( _tableau );
+
+            switch ( equation._type )
+            {
+            case Equation::GE:
+                bounds.append( Tightening( auxVariable, 0.0, Tightening::UB ) );
+                break;
+
+            case Equation::LE:
+                bounds.append( Tightening( auxVariable, 0.0, Tightening::LB ) );
+                break;
+
+            case Equation::EQ:
+                bounds.append( Tightening( auxVariable, 0.0, Tightening::LB ) );
+                bounds.append( Tightening( auxVariable, 0.0, Tightening::UB ) );
+                break;
+
+            default:
+                ASSERT( false );
+                break;
+            }
         }
     }
 

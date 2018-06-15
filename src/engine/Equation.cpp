@@ -114,6 +114,30 @@ void Equation::dump() const
     printf( "%.2lf\n", _scalar );
 }
 
+bool Equation::isVariableMergingEquation( unsigned &x1, unsigned &x2 ) const
+{
+    if ( _addends.size() != 2 )
+        return false;
+
+    if ( !FloatUtils::isZero( _scalar ) )
+        return false;
+
+    double coefficientOne = _addends.front()._coefficient;
+    double coefficientTwo = _addends.back()._coefficient;
+
+    if ( FloatUtils::isZero( coefficientOne ) || FloatUtils::isZero( coefficientTwo ) )
+        return false;
+
+    if ( FloatUtils::areEqual( coefficientOne, -coefficientTwo ) )
+    {
+        x1 = _addends.front()._variable;
+        x2 = _addends.back()._variable;
+        return true;
+    }
+
+    return false;
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "
