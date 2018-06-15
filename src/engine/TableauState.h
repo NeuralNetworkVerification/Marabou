@@ -15,6 +15,7 @@
 
 #include "IBasisFactorization.h"
 #include "ITableau.h"
+#include "Map.h"
 #include "Set.h"
 
 class TableauState
@@ -104,6 +105,13 @@ public:
       Indicator whether the bounds are valid
     */
     bool _boundsValid;
+
+    /*
+      _mergedVariables[x] = y means that x = y, and that
+      variable x has been merged into variable y. So, when
+      extracting a solution for x, we should read the value of y.
+     */
+    Map<unsigned, unsigned> _mergedVariables;
 };
 
 #endif // __TableauState_h__

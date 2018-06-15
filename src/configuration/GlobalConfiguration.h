@@ -55,6 +55,10 @@ public:
     // to pick another element.
     static const double ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD;
 
+    // If true, column-merging equations are given special treatment and cause columns in the tableau
+    // to be merged (instead of a new row added).
+    static const bool USE_COLUMN_MERGING_EQUATIONS;
+
     // If a pivot element in a Gaussian elimination iteration is smaller than this threshold times
     // the largest element in the column, the elimination engine will attempt to pick another pivot.
     static const double GAUSSIAN_ELIMINATION_PIVOT_SCALE_THRESHOLD;

@@ -168,6 +168,7 @@ public:
     virtual Equation *getBasisEquation( unsigned row ) const = 0;
     virtual double *getInverseBasisMatrix() const = 0;
     virtual void refreshBasisFactorization() = 0;
+    virtual void mergeColumns( unsigned x1, unsigned x2 ) = 0;
 };
 
 #endif // __ITableau_h__
