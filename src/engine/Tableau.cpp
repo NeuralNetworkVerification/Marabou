@@ -1937,6 +1937,18 @@ void Tableau::refreshBasisFactorization()
 
 void Tableau::mergeColumns( unsigned x1, unsigned x2 )
 {
+    ASSERT( !isBasic( x1 ) );
+    ASSERT( !isBasic( x2 ) );
+
+    /*
+      If x2 has tighter bounds than x1, adjust the bounds
+      for x1.
+    */
+    if ( FloatUtils::lt( _upperBounds[x2], _upperBounds[x1] ) )
+        tightenUpperBound( x1, _upperBounds[x2] );
+    if ( FloatUtils::gt( _lowerBounds[x2], _lowerBounds[x1] ) )
+        tightenLowerBound( x1, _lowerBounds[x2] );
+
     /*
       Merge column x2 of the constraint matrix into x1
       and zero-out column x2
@@ -1946,26 +1958,10 @@ void Tableau::mergeColumns( unsigned x1, unsigned x2 )
         _A[(x1 * _m) + row] += _A[(x2 * _m) + row];
         _A[(x2 * _m) + row] = 0.0;
     }
-
     _mergedVariables[x2] = x1;
 
-    ConstraintMatrixAnalyzer analyzer;
-    analyzer.analyze( _A, _m, _n );
-    List<unsigned> independentColumns = analyzer.getIndependentColumns();
-
-    ASSERT( analyzer.getRank() == _m );
-
-    double bestUpperBound = FloatUtils::min( _upperBounds[x1], _upperBounds[x2] );
-    double bestLowerBound = FloatUtils::max( _lowerBounds[x1], _lowerBounds[x2] );
-
-    setUpperBound( x1, bestUpperBound );
-    setLowerBound( x1, bestLowerBound );
-
-    initializeTableau( independentColumns );
-
-    // Invalidate the cost function, so that it is recomputed in the next iteration.
-    _costFunctionManager->invalidateCostFunction();
-
+    computeAssignment();
+    computeCostFunction();
 }
 
 //
