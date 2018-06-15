@@ -754,7 +754,6 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
              equation.isVariableMergingEquation( x1, x2 ) )
         {
             // Special case: x1 and x2 need to be merged
-            printf( "!!! Have a variable merging equation: ( x%u, x%u )\n", x1, x2 );
             _tableau->mergeColumns( x1, x2 );
         }
         else
