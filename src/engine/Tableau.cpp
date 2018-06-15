@@ -1119,6 +1119,9 @@ void Tableau::storeState( TableauState &state ) const
 
     // Store the _boundsValid indicator
     state._boundsValid = _boundsValid;
+
+    // Store the merged variables
+    state._mergedVariables = _mergedVariables;
 }
 
 void Tableau::restoreState( const TableauState &state )
@@ -1155,6 +1158,9 @@ void Tableau::restoreState( const TableauState &state )
 
     // Restore the _boundsValid indicator
     _boundsValid = state._boundsValid;
+
+    // Restore the merged varaibles
+    _mergedVariables = state._mergedVariables;
 
     computeAssignment();
     _costFunctionManager->initialize();
@@ -1918,6 +1924,8 @@ void Tableau::registerCostFunctionManager( ICostFunctionManager *costFunctionMan
 const double *Tableau::getColumnOfBasis( unsigned column ) const
 {
     ASSERT( column < _m );
+    ASSERT( !_mergedVariables.exists( _basicIndexToVariable[column] ) );
+
     unsigned variable = _basicIndexToVariable[column];
     return _A + ( variable * _m );
 }
