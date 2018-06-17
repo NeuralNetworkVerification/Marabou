@@ -39,6 +39,10 @@ Statistics::Statistics()
     , _timePivotsMicro( 0 )
     , _numSimplexPivotSelectionsIgnoredForStability( 0 )
     , _numSimplexUnstablePivots( 0 )
+    , _numAddedRows( 0 )
+    , _numMergedColumns( 0 )
+    , _currentTableauM( 0 )
+    , _currentTableauN( 0 )
     , _numTableauBoundHopping( 0 )
     , _numTightenedBounds( 0 )
     , _numRowsExaminedByRowTightener( 0 )
@@ -222,6 +226,12 @@ void Statistics::print()
             printAverage( _timePivotsMicro / 1000, _numTableauPivots ) );
 
     printf( "\tTotal number of fake pivots performed: %llu\n", _numTableauBoundHopping );
+    printf( "\tTotal number of rows added: %llu. Number of merged columns: %llu\n"
+            , _numAddedRows
+            , _numMergedColumns );
+    printf( "\tCurrent tableau dimensions: M = %u, N = %u\n"
+            , _currentTableauM
+            , _currentTableauN );
 
     printf( "\t--- SMT Core Statistics ---\n" );
     printf( "\tTotal depth is %u. Total visited states: %u. Number of splits: %u. Number of pops: %u\n"
@@ -396,6 +406,22 @@ void Statistics::incNumSimplexPivotSelectionsIgnoredForStability()
 void Statistics::incNumSimplexUnstablePivots()
 {
     ++_numSimplexUnstablePivots;
+}
+
+void Statistics::incNumAddedRows()
+{
+    ++_numAddedRows;
+}
+
+void Statistics::incNumMergedColumns()
+{
+    ++_numMergedColumns;
+}
+
+void Statistics::setCurrentTableauDimension( unsigned m, unsigned n )
+{
+    _currentTableauM = m;
+    _currentTableauN = n;
 }
 
 void Statistics::incNumTightenedBounds()

@@ -227,6 +227,9 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     _work = new double[m];
     if ( !_work )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::work" );
+
+    if ( _statistics )
+        _statistics->setCurrentTableauDimension( _m, _n );
 }
 
 void Tableau::setEntryValue( unsigned row, unsigned column, double value )
@@ -1165,6 +1168,9 @@ void Tableau::restoreState( const TableauState &state )
     computeAssignment();
     _costFunctionManager->initialize();
     computeCostFunction();
+
+    if ( _statistics )
+        _statistics->setCurrentTableauDimension( _m, _n );
 }
 
 void Tableau::checkBoundsValid()
@@ -1485,6 +1491,12 @@ void Tableau::addRow()
 
     for ( const auto &watcher : _resizeWatchers )
         watcher->notifyDimensionChange( _m, _n );
+
+    if ( _statistics )
+    {
+        _statistics->incNumAddedRows();
+        _statistics->setCurrentTableauDimension( _m, _n );
+    }
 }
 
 void Tableau::registerToWatchVariable( VariableWatcher *watcher, unsigned variable )
@@ -1962,6 +1974,9 @@ void Tableau::mergeColumns( unsigned x1, unsigned x2 )
 
     computeAssignment();
     computeCostFunction();
+
+    if ( _statistics )
+        _statistics->incNumMergedColumns();
 }
 
 //
