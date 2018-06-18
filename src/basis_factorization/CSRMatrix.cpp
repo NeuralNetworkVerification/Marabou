@@ -138,11 +138,33 @@ double CSRMatrix::get( unsigned row, unsigned column ) const
     return 0;
 }
 
-void CSRMatrix::set( unsigned // row
-                     , unsigned // column
-                     , double // value
-                     )
+void CSRMatrix::addLastRow( double *row )
 {
+    // Array _IA needs to increase by one
+    unsigned *newIA = new unsigned[_m + 2];
+    memcpy( newIA, _IA, sizeof(unsigned) * ( _m + 1 ) );
+    delete[] _IA;
+    _IA = newIA;
+
+    // Add the new row
+    _IA[_m + 1] = _IA[_m];
+    for ( unsigned i = 0; i < _n; ++i )
+    {
+        // Ignore zero entries
+        if ( FloatUtils::isZero( row[i] ) )
+            continue;
+
+        if ( _nnz >= _estimatedNnz )
+            increaseCapacity();
+
+        _A[_nnz] = row[i];
+        ++_IA[_m + 1];
+        _JA[_nnz] = i;
+
+        ++_nnz;
+    }
+
+    ++_m;
 }
 
 void CSRMatrix::freeMemoryIfNeeded()

@@ -97,6 +97,41 @@ public:
             for ( unsigned j = 0; j < 4; ++j )
                 TS_ASSERT_EQUALS( csr1.get( i, j ), csr3.get( i, j ) );
     }
+
+    void test_add_last_row()
+    {
+        double M1[] = {
+            0, 0, 0, 0,
+            5, 8, 0, 0,
+            0, 0, 3, 0,
+            0, 6, 0, 0,
+        };
+
+        CSRMatrix csr1;
+        csr1.initialize( M1, 4, 4 );
+
+        double row5[] = { 1, 2, 0, 0 };
+        double row6[] = { 0, 2, -3, 0 };
+        double row7[] = { 1, 0, 0, 4 };
+
+        csr1.addLastRow( row5 );
+        csr1.addLastRow( row6 );
+        csr1.addLastRow( row7 );
+
+        double expected[] = {
+            0, 0, 0, 0,
+            5, 8, 0, 0,
+            0, 0, 3, 0,
+            0, 6, 0, 0,
+            1, 2, 0, 0,
+            0, 2, -3, 0,
+            1, 0, 0, 4,
+        };
+
+        for ( unsigned i = 0; i < 7; ++i )
+            for ( unsigned j = 0; j < 4; ++j )
+                TS_ASSERT_EQUALS( csr1.get( i, j ), expected[i*4 + j] );
+    }
 };
 
 //

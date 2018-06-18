@@ -48,10 +48,15 @@ public:
     void initialize( const double *M, unsigned m, unsigned n );
 
     /*
-      Obtain or change an element of the matrix.
+      Obtain an element of the matrix.
     */
     double get( unsigned row, unsigned column ) const;
-    void set( unsigned row, unsigned column, double value );
+
+    /*
+      Add a row to the end of the matrix.
+      The new row is provided in dense format.
+    */
+    void addLastRow( double *row );
 
     /*
       For debugging purposes.
