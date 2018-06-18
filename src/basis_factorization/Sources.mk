@@ -1,5 +1,6 @@
 SOURCES += \
 	BasisFactorizationFactory.cpp \
+	CSRMatrix.cpp \
 	EtaMatrix.cpp \
 	ForrestTomlinFactorization.cpp \
 	GaussianEliminator.cpp \
