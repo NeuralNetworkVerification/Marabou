@@ -58,6 +58,11 @@ public:
     */
     void dump() const;
 
+    /*
+      Storing and restoring the sparse matrix
+    */
+    void storeIntoOther( CSRMatrix *other ) const;
+
 private:
     enum {
         // Initial estimate: each row has average density 1 / ROW_DENSITY_ESTIMATE

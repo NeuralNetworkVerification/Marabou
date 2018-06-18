@@ -70,11 +70,32 @@ public:
         CSRMatrix csr2;
         csr2.initialize( M2, 5, 4 );
 
-        csr2.dump();
-
         for ( unsigned i = 0; i < 5; ++i )
             for ( unsigned j = 0; j < 4; ++j )
                 TS_ASSERT_EQUALS( M2[i*4 + j], csr2.get( i, j ) );
+    }
+
+    void test_store_restore()
+    {
+        double M1[] = {
+            0, 0, 0, 0,
+            5, 8, 0, 0,
+            0, 0, 3, 0,
+            0, 6, 0, 0,
+        };
+
+        CSRMatrix csr1;
+        csr1.initialize( M1, 4, 4 );
+
+        CSRMatrix csr2;
+        csr1.storeIntoOther( &csr2 );
+
+        CSRMatrix csr3;
+        csr2.storeIntoOther( &csr3 );
+
+        for ( unsigned i = 0; i < 4; ++i )
+            for ( unsigned j = 0; j < 4; ++j )
+                TS_ASSERT_EQUALS( csr1.get( i, j ), csr3.get( i, j ) );
     }
 };
 

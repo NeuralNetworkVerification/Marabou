@@ -166,6 +166,31 @@ void CSRMatrix::freeMemoryIfNeeded()
     }
 }
 
+void CSRMatrix::storeIntoOther( CSRMatrix *other ) const
+{
+    other->freeMemoryIfNeeded();
+
+    other->_m = _m;
+    other->_n = _n;
+    other->_nnz = _nnz;
+    other->_estimatedNnz = _estimatedNnz;
+
+    other->_A = new double[_estimatedNnz];
+    if ( !other->_A )
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "CSRMatrix::otherA" );
+    memcpy( other->_A, _A, sizeof(double) * _estimatedNnz );
+
+    other->_IA = new unsigned[_m + 1];
+    if ( !other->_IA )
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "CSRMatrix::otherIA" );
+    memcpy( other->_IA, _IA, sizeof(unsigned) * ( _m + 1 ) );
+
+    other->_JA = new unsigned[_estimatedNnz];
+    if ( !other->_JA )
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "CSRMatrix::otherJA" );
+    memcpy( other->_JA, _JA, sizeof(unsigned) * _estimatedNnz );
+}
+
 void CSRMatrix::dump() const
 {
     printf( "\nDumping internal arrays:\n" );
