@@ -233,6 +233,144 @@ void CSRMatrix::getColumn( unsigned column, double *result ) const
         result[i] = get( i, column );
 }
 
+void CSRMatrix::mergeColumns( unsigned x1, unsigned x2 )
+{
+    List<unsigned> markedForDeletion;
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        // Find the entry of x2
+        int low = _IA[i];
+        int high = _IA[i + 1] - 1;
+        int mid;
+        bool foundX2 = false;
+        while ( !foundX2 && ( low <= high ) )
+        {
+            mid = ( low + high ) / 2;
+            if ( _JA[mid] < x2 )
+                low = mid + 1;
+            else if ( _JA[mid] > x2 )
+                high = mid - 1;
+            else
+                foundX2 = true;
+        }
+
+        /*
+          If the loop terminated because x2 has a
+          zero entry for this row, skip the row
+        */
+        if ( !foundX2 )
+            continue;
+        int x2Index = mid;
+
+        // Now find the entry of x1
+        low = _IA[i];
+        high = _IA[i + 1] - 1;
+        bool foundX1 = false;
+        while ( !foundX1 && ( low <= high ) )
+        {
+            mid = ( low + high ) / 2;
+            if ( _JA[mid] < x1 )
+                low = mid + 1;
+            else if ( _JA[mid] > x1 )
+                high = mid - 1;
+            else
+                foundX1 = true;
+        }
+
+        if ( foundX1 )
+        {
+            /*
+              If x1 already has an entry for this row,
+              we adjust it, and mark x2's entry for deletion.
+              The only exception is when the sum is zero, and both
+              of them need to be deleted.
+            */
+            _A[mid] += _A[x2Index];
+            if ( FloatUtils::isZero( _A[mid] ) )
+                markedForDeletion.append( mid );
+
+            markedForDeletion.append( x2Index );
+        }
+        else
+        {
+            /*
+              x1 didn't have an entry, so we can re-use x2's
+              entry instead of deleting it. However, we may need
+              to re-sort the entries for this row.
+            */
+            _JA[x2Index] = x1;
+
+            /*
+              Elements of row i are stored in _A and _JA between
+              indices _IA[i] and _IA[i+1] - 1. See whether the
+              entry in question needs to move left or right.
+            */
+            while ( ( x2Index > (int)_IA[i] ) && ( x1 < _JA[x2Index - 1] ) )
+            {
+                _JA[x2Index] = _JA[x2Index - 1];
+                _JA[x2Index - 1] = x1;
+                --x2Index;
+            }
+            while ( ( x2Index < (int)_IA[i + 1] - 1 ) && ( x1 > _JA[x2Index + 1] ) )
+            {
+                _JA[x2Index] = _JA[x2Index + 1];
+                _JA[x2Index + 1] = x1;
+                ++x2Index;
+            }
+        }
+    }
+
+    // Finally, remove the entries that were marked for deletion.
+    auto deletedEntry = markedForDeletion.begin();
+    unsigned totalDeleted = 0;
+    for ( unsigned i = 1; i < _m + 1; ++i )
+    {
+        // Count number of deleted entries in row i - 1
+        unsigned deletedInThisRow = 0;
+        while ( ( *deletedEntry < _IA[i] ) && ( deletedEntry != markedForDeletion.end() ) )
+        {
+            ++deletedInThisRow;
+            ++deletedEntry;
+        }
+
+        _IA[i] -= ( deletedInThisRow + totalDeleted );
+        totalDeleted += deletedInThisRow;
+    }
+
+    deletedEntry = markedForDeletion.begin();
+    unsigned index = 0;
+    unsigned copyToIndex = 0;
+    while ( index < _nnz )
+    {
+        if ( index == *deletedEntry )
+        {
+            // We've hit another deleted entry.
+            ++deletedEntry;
+        }
+        else
+        {
+            // This entry needs to stay. Copy if needed
+            if ( index != copyToIndex )
+            {
+                _A[copyToIndex] = _A[index];
+                _JA[copyToIndex] = _JA[index];
+            }
+
+            ++copyToIndex;
+        }
+
+        ++index;
+    }
+
+    _nnz -= markedForDeletion.size();
+    --_n;
+}
+
+unsigned CSRMatrix::getNnz() const
+{
+    return _nnz;
+}
+
 void CSRMatrix::dump() const
 {
     printf( "\nDumping internal arrays:\n" );

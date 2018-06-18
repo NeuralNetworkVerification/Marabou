@@ -190,6 +190,80 @@ public:
         for ( unsigned i = 0; i < 4; ++i )
             TS_ASSERT_EQUALS( column[i], expected0[i] );
     }
+
+    void test_merge_columns()
+    {
+        {
+            double M1[] = {
+                0, 0, 0, 0,
+                5, 8, 0, 0,
+                0, 2, 3, 0,
+                0, 0, 4, 0,
+            };
+
+            CSRMatrix csr1;
+            csr1.initialize( M1, 4, 4 );
+
+            TS_ASSERT_THROWS_NOTHING( csr1.mergeColumns( 1, 2 ) );
+
+            double expected[] = {
+                0, 0, 0,
+                5, 8, 0,
+                0, 5, 0,
+                0, 4, 0,
+            };
+
+            for ( unsigned i = 0; i < 4; ++i )
+                for ( unsigned j = 0; j < 3; ++j )
+                    TS_ASSERT_EQUALS( csr1.get( i, j ), expected[i*3 + j] );
+
+            TS_ASSERT_EQUALS( csr1.getNnz(), 4U );
+        }
+
+        {
+            double M1[] = {
+                0, 0, -1, 1,
+                5, 8, 0, 1,
+                0, 2, 3, 0,
+                0, 0, 4, 1,
+            };
+
+            CSRMatrix csr1;
+            csr1.initialize( M1, 4, 4 );
+
+            TS_ASSERT_THROWS_NOTHING( csr1.mergeColumns( 2, 3 ) );
+
+            double expected[] = {
+                0, 0, 0,
+                5, 8, 1,
+                0, 2, 3,
+                0, 0, 5,
+            };
+
+            for ( unsigned i = 0; i < 4; ++i )
+                for ( unsigned j = 0; j < 3; ++j )
+                    TS_ASSERT_EQUALS( csr1.get( i, j ), expected[i*3 + j] );
+
+            TS_ASSERT_EQUALS( csr1.getNnz(), 6U );
+
+            double newRow[] = { 1, 2, 3 };
+            TS_ASSERT_THROWS_NOTHING( csr1.addLastRow( newRow ) );
+
+            double expected2[] = {
+                0, 0, 0,
+                5, 8, 1,
+                0, 2, 3,
+                0, 0, 5,
+                1, 2, 3,
+            };
+
+            for ( unsigned i = 0; i < 5; ++i )
+                for ( unsigned j = 0; j < 3; ++j )
+                    TS_ASSERT_EQUALS( csr1.get( i, j ), expected2[i*3 + j] );
+
+            TS_ASSERT_EQUALS( csr1.getNnz(), 9U );
+        }
+    }
 };
 
 //

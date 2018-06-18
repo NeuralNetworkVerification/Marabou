@@ -61,6 +61,13 @@ public:
     void addLastRow( double *row );
 
     /*
+      This functio increments _n, the number of columns in the
+      matrix. Use this very carefully! It should only be used if the
+      new column is all zeroes.
+     */
+    void incrementN();
+
+    /*
       For debugging purposes.
     */
     void dump() const;
@@ -69,6 +76,16 @@ public:
       Storing and restoring the sparse matrix
     */
     void storeIntoOther( CSRMatrix *other ) const;
+
+    /*
+      Merge column x2 into column x1, and zero x2 out
+    */
+    void mergeColumns( unsigned x1, unsigned x2 );
+
+    /*
+      Get the number of non-zero elements
+    */
+    unsigned getNnz() const;
 
 private:
     enum {
