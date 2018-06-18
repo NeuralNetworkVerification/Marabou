@@ -48,9 +48,11 @@ public:
     void initialize( const double *M, unsigned m, unsigned n );
 
     /*
-      Obtain an element of the matrix.
+      Obtain a single element/row/column of the matrix.
     */
     double get( unsigned row, unsigned column ) const;
+    void getRow( unsigned row, double *result ) const;
+    void getColumn( unsigned column, double *result ) const;
 
     /*
       Add a row to the end of the matrix.

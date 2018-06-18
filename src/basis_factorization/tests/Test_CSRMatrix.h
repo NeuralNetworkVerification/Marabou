@@ -132,6 +132,64 @@ public:
             for ( unsigned j = 0; j < 4; ++j )
                 TS_ASSERT_EQUALS( csr1.get( i, j ), expected[i*4 + j] );
     }
+
+    void test_get_row()
+    {
+        double M1[] = {
+            0, 0, 0, 0,
+            5, 8, 0, 0,
+            0, 0, 3, 0,
+            0, 6, 0, 0,
+        };
+
+        CSRMatrix csr1;
+        csr1.initialize( M1, 4, 4 );
+
+        double row[4];
+        double expected1[] = { 5, 8, 0, 0 };
+        TS_ASSERT_THROWS_NOTHING( csr1.getRow( 1, row ) );
+        for ( unsigned i = 0; i < 4; ++i )
+            TS_ASSERT_EQUALS( row[i], expected1[i] );
+
+        double expected3[] = { 0, 6, 0, 0 };
+        TS_ASSERT_THROWS_NOTHING( csr1.getRow( 3, row ) );
+        for ( unsigned i = 0; i < 4; ++i )
+            TS_ASSERT_EQUALS( row[i], expected3[i] );
+
+        double expected0[] = { 0, 0, 0, 0 };
+        TS_ASSERT_THROWS_NOTHING( csr1.getRow( 0, row ) );
+        for ( unsigned i = 0; i < 4; ++i )
+            TS_ASSERT_EQUALS( row[i], expected0[i] );
+    }
+
+    void test_get_column()
+    {
+        double M1[] = {
+            0, 0, 0, 0,
+            5, 8, 0, 0,
+            0, 0, 3, 0,
+            0, 6, 0, 0,
+        };
+
+        CSRMatrix csr1;
+        csr1.initialize( M1, 4, 4 );
+
+        double column[4];
+        double expected1[] = { 0, 8, 0, 6 };
+        TS_ASSERT_THROWS_NOTHING( csr1.getColumn( 1, column ) );
+        for ( unsigned i = 0; i < 4; ++i )
+            TS_ASSERT_EQUALS( column[i], expected1[i] );
+
+        double expected3[] = { 0, 0, 0, 0 };
+        TS_ASSERT_THROWS_NOTHING( csr1.getColumn( 3, column ) );
+        for ( unsigned i = 0; i < 4; ++i )
+            TS_ASSERT_EQUALS( column[i], expected3[i] );
+
+        double expected0[] = { 0, 5, 0, 0 };
+        TS_ASSERT_THROWS_NOTHING( csr1.getColumn( 0, column ) );
+        for ( unsigned i = 0; i < 4; ++i )
+            TS_ASSERT_EQUALS( column[i], expected0[i] );
+    }
 };
 
 //

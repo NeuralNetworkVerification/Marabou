@@ -213,6 +213,26 @@ void CSRMatrix::storeIntoOther( CSRMatrix *other ) const
     memcpy( other->_JA, _JA, sizeof(unsigned) * _estimatedNnz );
 }
 
+void CSRMatrix::getRow( unsigned row, double *result ) const
+{
+    std::fill_n( result, _n, 0.0 );
+
+    /*
+      Elements of row j are stored in _A and _JA between
+      indices _IA[j] and _IA[j+1] - 1.
+    */
+
+    for ( unsigned i = _IA[row]; i < _IA[row + 1]; ++i )
+        result[_JA[i]] = _A[i];
+}
+
+void CSRMatrix::getColumn( unsigned column, double *result ) const
+{
+    std::fill_n( result, _m, 0.0 );
+    for ( unsigned i = 0; i < _m; ++i )
+        result[i] = get( i, column );
+}
+
 void CSRMatrix::dump() const
 {
     printf( "\nDumping internal arrays:\n" );
