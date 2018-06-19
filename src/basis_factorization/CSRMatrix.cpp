@@ -188,29 +188,31 @@ void CSRMatrix::freeMemoryIfNeeded()
     }
 }
 
-void CSRMatrix::storeIntoOther( CSRMatrix *other ) const
+void CSRMatrix::storeIntoOther( SparseMatrix *other ) const
 {
-    other->freeMemoryIfNeeded();
+    CSRMatrix *otherCsr = (CSRMatrix *)other;
 
-    other->_m = _m;
-    other->_n = _n;
-    other->_nnz = _nnz;
-    other->_estimatedNnz = _estimatedNnz;
+    otherCsr->freeMemoryIfNeeded();
 
-    other->_A = new double[_estimatedNnz];
-    if ( !other->_A )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "CSRMatrix::otherA" );
-    memcpy( other->_A, _A, sizeof(double) * _estimatedNnz );
+    otherCsr->_m = _m;
+    otherCsr->_n = _n;
+    otherCsr->_nnz = _nnz;
+    otherCsr->_estimatedNnz = _estimatedNnz;
 
-    other->_IA = new unsigned[_m + 1];
-    if ( !other->_IA )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "CSRMatrix::otherIA" );
-    memcpy( other->_IA, _IA, sizeof(unsigned) * ( _m + 1 ) );
+    otherCsr->_A = new double[_estimatedNnz];
+    if ( !otherCsr->_A )
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "CSRMatrix::otherCsrA" );
+    memcpy( otherCsr->_A, _A, sizeof(double) * _estimatedNnz );
 
-    other->_JA = new unsigned[_estimatedNnz];
-    if ( !other->_JA )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "CSRMatrix::otherJA" );
-    memcpy( other->_JA, _JA, sizeof(unsigned) * _estimatedNnz );
+    otherCsr->_IA = new unsigned[_m + 1];
+    if ( !otherCsr->_IA )
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "CSRMatrix::otherCsrIA" );
+    memcpy( otherCsr->_IA, _IA, sizeof(unsigned) * ( _m + 1 ) );
+
+    otherCsr->_JA = new unsigned[_estimatedNnz];
+    if ( !otherCsr->_JA )
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "CSRMatrix::otherCsrJA" );
+    memcpy( otherCsr->_JA, _JA, sizeof(unsigned) * _estimatedNnz );
 }
 
 void CSRMatrix::getRow( unsigned row, double *result ) const
@@ -364,6 +366,11 @@ void CSRMatrix::mergeColumns( unsigned x1, unsigned x2 )
 
     _nnz -= markedForDeletion.size();
     --_n;
+}
+
+void CSRMatrix::addEmptyColumn()
+{
+    ++_n;
 }
 
 unsigned CSRMatrix::getNnz() const

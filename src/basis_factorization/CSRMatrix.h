@@ -14,6 +14,8 @@
 #ifndef __CSRMatrix_h__
 #define __CSRMatrix_h__
 
+#include "SparseMatrix.h"
+
 /*
   This class provides supprot for sparse matrices in
   Compressed Sparse Row (CSR) format.
@@ -35,7 +37,7 @@
   - Array JA of length nnz that holds the column index of every element.
 */
 
-class CSRMatrix
+class CSRMatrix : public SparseMatrix
 {
 public:
     /*
@@ -61,11 +63,10 @@ public:
     void addLastRow( double *row );
 
     /*
-      This functio increments _n, the number of columns in the
-      matrix. Use this very carefully! It should only be used if the
-      new column is all zeroes.
+      This function increments n, the number of columns in the
+      matrix. It assumes the new column is all zeroes.
      */
-    void incrementN();
+    void addEmptyColumn();
 
     /*
       For debugging purposes.
@@ -75,7 +76,7 @@ public:
     /*
       Storing and restoring the sparse matrix
     */
-    void storeIntoOther( CSRMatrix *other ) const;
+    void storeIntoOther( SparseMatrix *other ) const;
 
     /*
       Merge column x2 into column x1, and zero x2 out
