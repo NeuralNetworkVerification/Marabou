@@ -420,10 +420,7 @@ public:
         equation1.setScalar( 10 );
         inputQuery.addEquation( equation1 );
 
-        TS_TRACE( "Start" );
-
         InputQuery processed = Preprocessor().preprocess( inputQuery, false );
-        TS_TRACE( "End" );
 
         TS_ASSERT_EQUALS( processed.getNumberOfVariables(), 4U );
 

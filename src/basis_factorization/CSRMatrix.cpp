@@ -51,6 +51,8 @@ void CSRMatrix::initialize( const double *M, unsigned m, unsigned n )
     unsigned estimatedNumRowEntries = std::max( 2U, _n / ROW_DENSITY_ESTIMATE );
     _estimatedNnz = estimatedNumRowEntries * _m;
 
+    freeMemoryIfNeeded();
+
     _A = new double[_estimatedNnz];
     if ( !_A )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "CSRMatrix::A" );

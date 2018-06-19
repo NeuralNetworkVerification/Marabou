@@ -457,9 +457,10 @@ private:
     double *_b;
 
     /*
-      Working memory (of size m).
+      Working memory (of size m and n).
     */
-    double *_work;
+    double *_workM;
+    double *_workN;
 
     /*
       Working memory for extracting information from

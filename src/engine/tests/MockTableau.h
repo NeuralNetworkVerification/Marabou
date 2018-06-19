@@ -423,9 +423,13 @@ public:
         return NULL;
     }
 
-    void getSparseARow( unsigned /* row */, SparseVector */* result */ ) const
+    void getSparseARow( unsigned row, SparseVector *result ) const
     {
-        TS_ASSERT( false );
+        for ( unsigned i = 0; i < lastN; ++i )
+        {
+            if ( !FloatUtils::isZero( A[row*lastN + i] ) )
+                result->_values[i] = A[row*lastN + i];
+        }
     }
 
     void performDegeneratePivot()

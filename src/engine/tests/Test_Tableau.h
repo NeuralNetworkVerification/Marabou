@@ -1395,91 +1395,122 @@ public:
              3x3 + x7 + 4x1 + 3x2 + 4x4  = 420
         */
 
+        Equation expected1( Equation::EQ );
+        expected1.setScalar( 225 );
+        expected1.addAddend( 1, 4 );
+        expected1.addAddend( 1, 2 );
+        expected1.addAddend( 3, 0 );
+        expected1.addAddend( 2, 1 );
+        expected1.addAddend( 2, 3 );
+
+        Equation expected2( Equation::EQ );
+        expected2.setScalar( 117 );
+        expected2.addAddend( 1, 2 );
+        expected2.addAddend( 1, 0 );
+        expected2.addAddend( 1, 1 );
+        expected2.addAddend( 1, 5 );
+        expected2.addAddend( 1, 3 );
+
+        Equation expected3( Equation::EQ );
+        expected3.setScalar( 420 );
+        expected3.addAddend( 3, 2 );
+        expected3.addAddend( 1, 6 );
+        expected3.addAddend( 4, 0 );
+        expected3.addAddend( 3, 1 );
+        expected3.addAddend( 4, 3 );
+
         List<Equation *> equations;
         TS_ASSERT_THROWS_NOTHING( tableau->makeBasisMatrixAvailable() );
         TS_ASSERT_THROWS_NOTHING( tableau->getBasisEquations( equations ) );
         TS_ASSERT_EQUALS( equations.size(), 3u );
 
         auto it = equations.begin();
-        Equation *eq1 = *it;
-        ++it;
-        Equation *eq2 = *it;
-        ++it;
-        Equation *eq3 = *it;
+        TS_ASSERT( expected1.equivalent( **it++ ) );
+        TS_ASSERT( expected2.equivalent( **it++ ) );
+        TS_ASSERT( expected3.equivalent( **it++ ) );
 
-        eq1->dump();
+        // Equation *eq1 = *it;
+        // ++it;
+        // Equation *eq2 = *it;
+        // ++it;
+        // Equation *eq3 = *it;
 
-        // Check equation 1
-        TS_ASSERT_EQUALS( eq1->_scalar, 225.0 );
-        TS_ASSERT_EQUALS( eq1->_addends.size(), 5u );
+        // TS_TRACE( "Here" );
+        // eq1->dump();
+        // eq2->dump();
+        // eq3->dump();
 
-        auto addend = eq1->_addends.begin();
-        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
-        TS_ASSERT_EQUALS( addend->_variable, 4u );
+        // // Check equation 1
+        // TS_ASSERT_EQUALS( eq1->_scalar, 225.0 );
+        // TS_ASSERT_EQUALS( eq1->_addends.size(), 5u );
 
-        ++addend;
-        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
-        TS_ASSERT_EQUALS( addend->_variable, 2u );
+        // auto addend = eq1->_addends.begin();
+        // TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        // TS_ASSERT_EQUALS( addend->_variable, 4u );
 
-        ++addend;
-        TS_ASSERT_EQUALS( addend->_coefficient, 3.0 );
-        TS_ASSERT_EQUALS( addend->_variable, 0u );
+        // ++addend;
+        // TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        // TS_ASSERT_EQUALS( addend->_variable, 2u );
 
-        ++addend;
-        TS_ASSERT_EQUALS( addend->_coefficient, 2.0 );
-        TS_ASSERT_EQUALS( addend->_variable, 1u );
+        // ++addend;
+        // TS_ASSERT_EQUALS( addend->_coefficient, 3.0 );
+        // TS_ASSERT_EQUALS( addend->_variable, 0u );
 
-        ++addend;
-        TS_ASSERT_EQUALS( addend->_coefficient, 2.0 );
-        TS_ASSERT_EQUALS( addend->_variable, 3u );
+        // ++addend;
+        // TS_ASSERT_EQUALS( addend->_coefficient, 2.0 );
+        // TS_ASSERT_EQUALS( addend->_variable, 1u );
 
-        // Check equation 2
-        TS_ASSERT_EQUALS( eq2->_scalar, 117.0 );
-        TS_ASSERT_EQUALS( eq2->_addends.size(), 5u );
+        // ++addend;
+        // TS_ASSERT_EQUALS( addend->_coefficient, 2.0 );
+        // TS_ASSERT_EQUALS( addend->_variable, 3u );
 
-        addend = eq2->_addends.begin();
-        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
-        TS_ASSERT_EQUALS( addend->_variable, 2u );
+        // // Check equation 2
+        // TS_ASSERT_EQUALS( eq2->_scalar, 117.0 );
+        // TS_ASSERT_EQUALS( eq2->_addends.size(), 5u );
 
-        ++addend;
-        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
-        TS_ASSERT_EQUALS( addend->_variable, 0u );
+        // addend = eq2->_addends.begin();
+        // TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        // TS_ASSERT_EQUALS( addend->_variable, 2u );
 
-        ++addend;
-        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
-        TS_ASSERT_EQUALS( addend->_variable, 1u );
+        // ++addend;
+        // TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        // TS_ASSERT_EQUALS( addend->_variable, 0u );
 
-        ++addend;
-        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
-        TS_ASSERT_EQUALS( addend->_variable, 5u );
+        // ++addend;
+        // TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        // TS_ASSERT_EQUALS( addend->_variable, 1u );
 
-        ++addend;
-        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
-        TS_ASSERT_EQUALS( addend->_variable, 3u );
+        // ++addend;
+        // TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        // TS_ASSERT_EQUALS( addend->_variable, 5u );
 
-        // Check equation 3
-        TS_ASSERT_EQUALS( eq3->_scalar, 420.0 );
-        TS_ASSERT_EQUALS( eq3->_addends.size(), 5u );
+        // ++addend;
+        // TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        // TS_ASSERT_EQUALS( addend->_variable, 3u );
 
-        addend = eq3->_addends.begin();
-        TS_ASSERT_EQUALS( addend->_coefficient, 3.0 );
-        TS_ASSERT_EQUALS( addend->_variable, 2u );
+        // // Check equation 3
+        // TS_ASSERT_EQUALS( eq3->_scalar, 420.0 );
+        // TS_ASSERT_EQUALS( eq3->_addends.size(), 5u );
 
-        ++addend;
-        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
-        TS_ASSERT_EQUALS( addend->_variable, 6u );
+        // addend = eq3->_addends.begin();
+        // TS_ASSERT_EQUALS( addend->_coefficient, 3.0 );
+        // TS_ASSERT_EQUALS( addend->_variable, 2u );
 
-        ++addend;
-        TS_ASSERT_EQUALS( addend->_coefficient, 4.0 );
-        TS_ASSERT_EQUALS( addend->_variable, 0u );
+        // ++addend;
+        // TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        // TS_ASSERT_EQUALS( addend->_variable, 6u );
 
-        ++addend;
-        TS_ASSERT_EQUALS( addend->_coefficient, 3.0 );
-        TS_ASSERT_EQUALS( addend->_variable, 1u );
+        // ++addend;
+        // TS_ASSERT_EQUALS( addend->_coefficient, 4.0 );
+        // TS_ASSERT_EQUALS( addend->_variable, 0u );
 
-        ++addend;
-        TS_ASSERT_EQUALS( addend->_coefficient, 4.0 );
-        TS_ASSERT_EQUALS( addend->_variable, 3u );
+        // ++addend;
+        // TS_ASSERT_EQUALS( addend->_coefficient, 3.0 );
+        // TS_ASSERT_EQUALS( addend->_variable, 1u );
+
+        // ++addend;
+        // TS_ASSERT_EQUALS( addend->_coefficient, 4.0 );
+        // TS_ASSERT_EQUALS( addend->_variable, 3u );
 
         TS_ASSERT_THROWS_NOTHING( delete tableau );
     }

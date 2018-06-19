@@ -34,7 +34,8 @@ Tableau::Tableau()
     , _changeColumn( NULL )
     , _pivotRow( NULL )
     , _b( NULL )
-    , _work( NULL )
+    , _workM( NULL )
+    , _workN( NULL )
     , _unitVector( NULL )
     , _basisFactorization( NULL )
     , _multipliers( NULL )
@@ -51,7 +52,6 @@ Tableau::Tableau()
     , _statistics( NULL )
     , _costFunctionManager( NULL )
 {
-    _A = new CSRMatrix();
 }
 
 Tableau::~Tableau()
@@ -157,10 +157,16 @@ void Tableau::freeMemoryIfNeeded()
         _basisFactorization = NULL;
     }
 
-    if ( _work )
+    if ( _workM )
     {
-        delete[] _work;
-        _work = NULL;
+        delete[] _workM;
+        _workM = NULL;
+    }
+
+    if ( _workN )
+    {
+        delete[] _workN;
+        _workN = NULL;
     }
 }
 
@@ -168,6 +174,10 @@ void Tableau::setDimensions( unsigned m, unsigned n )
 {
     _m = m;
     _n = n;
+
+    _A = new CSRMatrix();
+    if ( !_A )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::A" );
 
     _a = new double[m];
     if ( !_a )
@@ -231,8 +241,12 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     if ( !_basisFactorization )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::basisFactorization" );
 
-    _work = new double[m];
-    if ( !_work )
+    _workM = new double[m];
+    if ( !_workM )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::work" );
+
+    _workN = new double[n];
+    if ( !_workN )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::work" );
 
     if ( _statistics )
@@ -312,7 +326,7 @@ void Tableau::computeAssignment()
       We first compute y (stored in _work), and then do an FTRAN pass to solve B*xB = y
     */
 
-    memcpy( _work, _b, sizeof(double) * _m );
+    memcpy( _workM, _b, sizeof(double) * _m );
 
     // Compute a linear combination of the columns of AN
     for ( unsigned i = 0; i < _n - _m; ++i )
@@ -322,11 +336,11 @@ void Tableau::computeAssignment()
 
         _A->getColumn( var, &_sparseWorkVector );
         for ( const auto entry : _sparseWorkVector._values )
-            _work[entry.first] -= entry.second * value;
+            _workM[entry.first] -= entry.second * value;
     }
 
     // Solve B*xB = y by performing a forward transformation
-    _basisFactorization->forwardTransformation( _work, _basicAssignment );
+    _basisFactorization->forwardTransformation( _workM, _basicAssignment );
 
     computeBasicStatus();
 
@@ -1054,8 +1068,8 @@ void Tableau::getTableauRow( unsigned index, TableauRow *row )
             row->_row[i]._coefficient -= ( _multipliers[entry.first] * entry.second );
     }
 
-    _basisFactorization->forwardTransformation( _b, _work );
-    row->_scalar = _work[index];
+    _basisFactorization->forwardTransformation( _b, _workM );
+    row->_scalar = _workM[index];
 
     row->_lhs = _basicIndexToVariable[index];
 }
@@ -1281,11 +1295,11 @@ unsigned Tableau::addEquation( const Equation &equation )
 
     // Adjust the constraint matrix
     _A->addEmptyColumn();
-    std::fill_n( _work, _m, 0.0 );
+    std::fill_n( _workN, _n, 0.0 );
     for ( const auto &addend : equation._addends )
-        _work[addend._variable] = addend._coefficient;
-    _work[_m - 1] = 1;
-    _A->addLastRow( _work );
+        _workN[addend._variable] = addend._coefficient;
+    _workN[auxVariable] = 1;
+    _A->addLastRow( _workN );
 
     // Invalidate the cost function, so that it is recomputed in the next iteration.
     _costFunctionManager->invalidateCostFunction();
@@ -1476,12 +1490,18 @@ void Tableau::addRow()
     delete _basisFactorization;
     _basisFactorization = newBasisFactorization;
 
-    // Allocate a larger _work. Don't need to initialize.
-    double *newWork = new double[newM];
-    if ( !newWork )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newWork" );
-    delete[] _work;
-    _work = newWork;
+    // Allocate a larger _workM and _workN. Don't need to initialize.
+    double *newWorkM = new double[newM];
+    if ( !newWorkM )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newWorkM" );
+    delete[] _workM;
+    _workM = newWorkM;
+
+    double *newWorkN = new double[newN];
+    if ( !newWorkN )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newWorkN" );
+    delete[] _workN;
+    _workN = newWorkN;
 
     _m = newM;
     _n = newN;
