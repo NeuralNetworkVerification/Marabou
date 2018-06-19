@@ -2,7 +2,6 @@
 /*! \file SparseMatrix.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Derek Huang
  **   Guy Katz
  ** This file is part of the Marabou project.
  ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
@@ -13,6 +12,8 @@
 
 #ifndef __SparseMatrix_h__
 #define __SparseMatrix_h__
+
+#include "SparseVector.h"
 
 class SparseMatrix
 {
@@ -29,8 +30,8 @@ public:
       Obtain a single element/row/column of the matrix.
     */
     virtual double get( unsigned row, unsigned column ) const = 0;
-    virtual void getRow( unsigned row, double *result ) const = 0;
-    virtual void getColumn( unsigned column, double *result ) const = 0;
+    virtual void getRow( unsigned row, SparseVector *result ) const = 0;
+    virtual void getColumn( unsigned column, SparseVector *result ) const = 0;
 
     /*
       Add a row to the end of the matrix.

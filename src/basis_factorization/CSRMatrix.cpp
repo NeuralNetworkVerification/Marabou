@@ -2,7 +2,6 @@
 /*! \file CSRMatrix.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Derek Huang
  **   Guy Katz
  ** This file is part of the Marabou project.
  ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
@@ -215,24 +214,27 @@ void CSRMatrix::storeIntoOther( SparseMatrix *other ) const
     memcpy( otherCsr->_JA, _JA, sizeof(unsigned) * _estimatedNnz );
 }
 
-void CSRMatrix::getRow( unsigned row, double *result ) const
+void CSRMatrix::getRow( unsigned row, SparseVector *result ) const
 {
-    std::fill_n( result, _n, 0.0 );
-
     /*
       Elements of row j are stored in _A and _JA between
       indices _IA[j] and _IA[j+1] - 1.
     */
 
+    result->_values.clear();
     for ( unsigned i = _IA[row]; i < _IA[row + 1]; ++i )
-        result[_JA[i]] = _A[i];
+        result->_values[_JA[i]] = _A[i];
 }
 
-void CSRMatrix::getColumn( unsigned column, double *result ) const
+void CSRMatrix::getColumn( unsigned column, SparseVector *result ) const
 {
-    std::fill_n( result, _m, 0.0 );
+    result->_values.clear();
     for ( unsigned i = 0; i < _m; ++i )
-        result[i] = get( i, column );
+    {
+        double value = get( i, column );
+        if ( !FloatUtils::isZero( value ) )
+            result->_values[i] = value;
+    }
 }
 
 void CSRMatrix::mergeColumns( unsigned x1, unsigned x2 )

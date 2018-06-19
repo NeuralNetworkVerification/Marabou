@@ -2,7 +2,6 @@
 /*! \file CSRMatrix.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Derek Huang
  **   Guy Katz
  ** This file is part of the Marabou project.
  ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
@@ -53,8 +52,8 @@ public:
       Obtain a single element/row/column of the matrix.
     */
     double get( unsigned row, unsigned column ) const;
-    void getRow( unsigned row, double *result ) const;
-    void getColumn( unsigned column, double *result ) const;
+    void getRow( unsigned row, SparseVector *result ) const;
+    void getColumn( unsigned column, SparseVector *result ) const;
 
     /*
       Add a row to the end of the matrix.

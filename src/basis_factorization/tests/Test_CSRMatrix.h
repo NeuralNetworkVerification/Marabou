@@ -145,21 +145,18 @@ public:
         CSRMatrix csr1;
         csr1.initialize( M1, 4, 4 );
 
-        double row[4];
-        double expected1[] = { 5, 8, 0, 0 };
-        TS_ASSERT_THROWS_NOTHING( csr1.getRow( 1, row ) );
-        for ( unsigned i = 0; i < 4; ++i )
-            TS_ASSERT_EQUALS( row[i], expected1[i] );
+        SparseVector row;
+        TS_ASSERT_THROWS_NOTHING( csr1.getRow( 1, &row ) );
+        TS_ASSERT_EQUALS( row.size(), 2U );
+        TS_ASSERT_EQUALS( row._values[0], 5.0 );
+        TS_ASSERT_EQUALS( row._values[1], 8.0 );
 
-        double expected3[] = { 0, 6, 0, 0 };
-        TS_ASSERT_THROWS_NOTHING( csr1.getRow( 3, row ) );
-        for ( unsigned i = 0; i < 4; ++i )
-            TS_ASSERT_EQUALS( row[i], expected3[i] );
+        TS_ASSERT_THROWS_NOTHING( csr1.getRow( 3, &row ) );
+        TS_ASSERT_EQUALS( row.size(), 1U );
+        TS_ASSERT_EQUALS( row._values[1], 6.0 );
 
-        double expected0[] = { 0, 0, 0, 0 };
-        TS_ASSERT_THROWS_NOTHING( csr1.getRow( 0, row ) );
-        for ( unsigned i = 0; i < 4; ++i )
-            TS_ASSERT_EQUALS( row[i], expected0[i] );
+        TS_ASSERT_THROWS_NOTHING( csr1.getRow( 0, &row ) );
+        TS_ASSERT( row.empty() );
     }
 
     void test_get_column()
@@ -174,21 +171,18 @@ public:
         CSRMatrix csr1;
         csr1.initialize( M1, 4, 4 );
 
-        double column[4];
-        double expected1[] = { 0, 8, 0, 6 };
-        TS_ASSERT_THROWS_NOTHING( csr1.getColumn( 1, column ) );
-        for ( unsigned i = 0; i < 4; ++i )
-            TS_ASSERT_EQUALS( column[i], expected1[i] );
+        SparseVector column;
+        TS_ASSERT_THROWS_NOTHING( csr1.getColumn( 1, &column ) );
+        TS_ASSERT_EQUALS( column.size(), 2U );
+        TS_ASSERT_EQUALS( column._values[1], 8.0 );
+        TS_ASSERT_EQUALS( column._values[3], 6.0 );
 
-        double expected3[] = { 0, 0, 0, 0 };
-        TS_ASSERT_THROWS_NOTHING( csr1.getColumn( 3, column ) );
-        for ( unsigned i = 0; i < 4; ++i )
-            TS_ASSERT_EQUALS( column[i], expected3[i] );
+        TS_ASSERT_THROWS_NOTHING( csr1.getColumn( 3, &column ) );
+        TS_ASSERT( column.empty() );
 
-        double expected0[] = { 0, 5, 0, 0 };
-        TS_ASSERT_THROWS_NOTHING( csr1.getColumn( 0, column ) );
-        for ( unsigned i = 0; i < 4; ++i )
-            TS_ASSERT_EQUALS( column[i], expected0[i] );
+        TS_ASSERT_THROWS_NOTHING( csr1.getColumn( 0, &column ) );
+        TS_ASSERT_EQUALS( column.size(), 1U );
+        TS_ASSERT_EQUALS( column._values[1], 5.0 );
     }
 
     void test_merge_columns()
