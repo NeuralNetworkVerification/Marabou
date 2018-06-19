@@ -223,6 +223,25 @@ public:
         TS_ASSERT( row.empty() );
     }
 
+    void test_to_dense()
+    {
+        double M1[] = {
+            0, 0, 0, 0,
+            5, 8, 0, 0,
+            0, 0, 3, 0,
+            0, 6, 0, 0,
+        };
+
+        CSRMatrix csr1;
+        csr1.initialize( M1, 4, 4 );
+
+        double dense[16];
+
+        TS_ASSERT_THROWS_NOTHING( csr1.toDense( dense ) );
+
+        TS_ASSERT_SAME_DATA( M1, dense, sizeof(M1) );
+    }
+
     void test_get_column()
     {
         double M1[] = {
@@ -247,6 +266,14 @@ public:
         TS_ASSERT_THROWS_NOTHING( csr1.getColumn( 0, &column ) );
         TS_ASSERT_EQUALS( column.size(), 1U );
         TS_ASSERT_EQUALS( column._values[1], 5.0 );
+
+        double dense[4];
+
+        TS_ASSERT_THROWS_NOTHING( csr1.getColumnDense( 1, dense ) );
+        TS_ASSERT_EQUALS( dense[0], 0 );
+        TS_ASSERT_EQUALS( dense[1], 8 );
+        TS_ASSERT_EQUALS( dense[2], 0 );
+        TS_ASSERT_EQUALS( dense[3], 6 );
     }
 
     void test_merge_columns()

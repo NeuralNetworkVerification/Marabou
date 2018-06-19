@@ -279,13 +279,19 @@ void CSRMatrix::getRow( unsigned row, SparseVector *result ) const
 
 void CSRMatrix::getColumn( unsigned column, SparseVector *result ) const
 {
-    result->_values.clear();
+    result->clear();
     for ( unsigned i = 0; i < _m; ++i )
     {
         double value = get( i, column );
         if ( !FloatUtils::isZero( value ) )
             result->_values[i] = value;
     }
+}
+
+void CSRMatrix::getColumnDense( unsigned column, double *result ) const
+{
+    for ( unsigned i = 0; i < _m; ++i )
+        result[i] = get( i, column );
 }
 
 void CSRMatrix::mergeColumns( unsigned x1, unsigned x2 )
@@ -429,6 +435,21 @@ void CSRMatrix::addEmptyColumn()
 unsigned CSRMatrix::getNnz() const
 {
     return _nnz;
+}
+
+void CSRMatrix::toDense( double *result ) const
+{
+    std::fill_n( result, _m * _n, 0 );
+
+    unsigned arrayIndex = 0;
+    for ( unsigned row = 0; row < _m; ++row )
+    {
+        while ( arrayIndex < _IA[row + 1] )
+        {
+            result[row * _n + _JA[arrayIndex]] = _A[arrayIndex];
+            ++arrayIndex;
+        }
+    }
 }
 
 void CSRMatrix::dump() const

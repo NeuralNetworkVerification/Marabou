@@ -18,6 +18,11 @@
 class SparseVector
 {
 public:
+    void clear()
+    {
+        _values.clear();
+    }
+
     unsigned size() const
     {
         return _values.size();

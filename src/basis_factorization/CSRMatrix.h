@@ -54,6 +54,7 @@ public:
     double get( unsigned row, unsigned column ) const;
     void getRow( unsigned row, SparseVector *result ) const;
     void getColumn( unsigned column, SparseVector *result ) const;
+    void getColumnDense( unsigned column, double *result ) const;
 
     /*
       Add a row/column to the end of the matrix.
@@ -87,6 +88,11 @@ public:
       Get the number of non-zero elements
     */
     unsigned getNnz() const;
+
+    /*
+      Produce a dense version of the matrix
+    */
+    void toDense( double *result ) const;
 
 private:
     enum {

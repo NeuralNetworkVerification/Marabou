@@ -32,6 +32,7 @@ public:
     virtual double get( unsigned row, unsigned column ) const = 0;
     virtual void getRow( unsigned row, SparseVector *result ) const = 0;
     virtual void getColumn( unsigned column, SparseVector *result ) const = 0;
+    virtual void getColumnDense( unsigned column, double *result ) const = 0;
 
     /*
       Add a row/column to the end of the matrix.
@@ -66,6 +67,11 @@ public:
       Get the number of non-zero elements
     */
     virtual unsigned getNnz() const = 0;
+
+    /*
+      Produce a dense version of the matrix
+    */
+    virtual void toDense( double *result ) const = 0;
 };
 
 #endif // __SparseMatrix_h__
