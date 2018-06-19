@@ -48,10 +48,9 @@ public:
 
     double *_basis;
     unsigned _m;
-
-    const double *getColumnOfBasis( unsigned column ) const
+    void getColumnOfBasis( unsigned column, double *result ) const
     {
-        return _basis + ( _m * column );
+        memcpy( result, _basis + ( _m * column ), sizeof(double) * _m );
     }
 };
 

@@ -251,9 +251,9 @@ void LUFactorization::obtainFreshBasis()
 {
     for ( unsigned column = 0; column < _m; ++column )
     {
-        const double *basisColumn = _basisColumnOracle->getColumnOfBasis( column );
+        _basisColumnOracle->getColumnOfBasis( column, _z );
         for ( unsigned row = 0; row < _m; ++row )
-            _B[row * _m + column] = basisColumn[row];
+            _B[row * _m + column] = _z[row];
     }
 
     factorizeBasis();

@@ -11,6 +11,7 @@
  **/
 
 #include "BasisFactorizationFactory.h"
+#include "CSRMatrix.h"
 #include "ReluplexError.h"
 #include "TableauState.h"
 
@@ -32,7 +33,7 @@ TableauState::~TableauState()
 {
     if ( _A )
     {
-        delete[] _A;
+        delete _A;
         _A = NULL;
     }
 
@@ -96,7 +97,7 @@ void TableauState::setDimensions( unsigned m, unsigned n, const IBasisFactorizat
     _m = m;
     _n = n;
 
-    _A = new double[n*m];
+    _A = new CSRMatrix();
     if ( !_A )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::A" );
 

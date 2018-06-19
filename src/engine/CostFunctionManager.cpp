@@ -15,6 +15,7 @@
 #include "FloatUtils.h"
 #include "ITableau.h"
 #include "ReluplexError.h"
+#include "SparseVector.h"
 #include "TableauRow.h"
 
 CostFunctionManager::CostFunctionManager( ITableau *tableau )
@@ -176,10 +177,11 @@ void CostFunctionManager::computeReducedCosts()
 
 void CostFunctionManager::computeReducedCost( unsigned nonBasic )
 {
+    SparseVector ANColumn;
     unsigned nonBasicIndex = _tableau->nonBasicIndexToVariable( nonBasic );
-    const double *ANColumn = _tableau->getAColumn( nonBasicIndex );
-    for ( unsigned j = 0; j < _m; ++j )
-        _costFunction[nonBasic] -= ( _multipliers[j] * ANColumn[j] );
+    _tableau->getSparseAColumn( nonBasicIndex, &ANColumn );
+    for ( const auto &entry : ANColumn._values )
+        _costFunction[nonBasic] -= ( _multipliers[entry.first] * entry.second );
 }
 
 void CostFunctionManager::dumpCostFunction() const

@@ -16,6 +16,7 @@
 #include "FloatUtils.h"
 #include "ITableau.h"
 #include "Map.h"
+#include "SparseVector.h"
 #include "TableauRow.h"
 
 #include <cstring>
@@ -123,10 +124,10 @@ public:
     }
 
     double *lastEntries;
-    void setEntryValue( unsigned row, unsigned column, double value )
+    void setConstraintMatrix( const double *A )
     {
         TS_ASSERT( setDimensionsCalled );
-        lastEntries[(row * lastN) + column] = value;
+        memcpy( lastEntries, A, sizeof(double) * lastM * lastN );
     }
 
     double *lastRightHandSide;
@@ -391,17 +392,40 @@ public:
     }
 
     Map<unsigned, const double *> nextAColumn;
-    const double *getAColumn( unsigned index ) const
+    void getAColumn( unsigned index, double *result ) const
     {
         TS_ASSERT( nextAColumn.exists( index ) );
         TS_ASSERT( nextAColumn.get( index ) );
-        return nextAColumn.get( index );
+        memcpy( result, nextAColumn.get( index ), sizeof(double) * lastM );
+    }
+
+    void getSparseAColumn( unsigned index, SparseVector *result ) const
+    {
+        TS_ASSERT( nextAColumn.exists( index ) );
+        TS_ASSERT( nextAColumn.get( index ) );
+
+        for ( unsigned i = 0; i < lastM; ++i )
+        {
+            if ( !FloatUtils::isZero( nextAColumn.get( index )[i] ) )
+                result->_values[i] = nextAColumn.get( index )[i];
+        }
     }
 
     double *A;
-    const double *getA() const
+    void getA( double *result ) const
     {
-        return A;
+        memcpy( result, A, sizeof(double) * lastM * lastN );
+    }
+
+    const SparseMatrix *getSparseA() const
+    {
+        TS_ASSERT( false );
+        return NULL;
+    }
+
+    void getSparseARow( unsigned /* row */, SparseVector */* result */ ) const
+    {
+        TS_ASSERT( false );
     }
 
     void performDegeneratePivot()

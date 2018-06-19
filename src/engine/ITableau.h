@@ -20,6 +20,8 @@ class EntrySelectionStrategy;
 class Equation;
 class ICostFunctionManager;
 class PiecewiseLinearCaseSplit;
+class SparseMatrix;
+class SparseVector;
 class Statistics;
 class TableauRow;
 class TableauState;
@@ -90,7 +92,7 @@ public:
     virtual ~ITableau() {};
 
     virtual void setDimensions( unsigned m, unsigned n ) = 0;
-    virtual void setEntryValue( unsigned row, unsigned column, double value ) = 0;
+    virtual void setConstraintMatrix( const double *A ) = 0;
     virtual void setRightHandSide( const double *b ) = 0;
     virtual void setRightHandSide( unsigned index, double value ) = 0;
     virtual void markAsBasic( unsigned variable ) = 0;
@@ -147,8 +149,11 @@ public:
     virtual unsigned getM() const = 0;
     virtual unsigned getN() const = 0;
     virtual void getTableauRow( unsigned index, TableauRow *row ) = 0;
-    virtual const double *getAColumn( unsigned index ) const = 0;
-    virtual const double *getA() const = 0;
+    virtual void getAColumn( unsigned variable, double *result ) const = 0;
+    virtual void getSparseAColumn( unsigned variable, SparseVector *result ) const = 0;
+    virtual void getSparseARow( unsigned row, SparseVector *result ) const = 0;
+    virtual const SparseMatrix *getSparseA() const = 0;
+    virtual void getA( double *result ) const = 0;
     virtual void performDegeneratePivot() = 0;
     virtual void storeState( TableauState &state ) const = 0;
     virtual void restoreState( const TableauState &state ) = 0;

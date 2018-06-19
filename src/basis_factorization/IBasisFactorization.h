@@ -26,7 +26,7 @@ public:
     {
     public:
         virtual ~BasisColumnOracle() {}
-        virtual const double *getColumnOfBasis( unsigned column ) const = 0;
+        virtual void getColumnOfBasis( unsigned column, double *result ) const = 0;
     };
 
     IBasisFactorization( const BasisColumnOracle &basisColumnOracle )

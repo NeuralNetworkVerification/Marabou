@@ -14,6 +14,7 @@
 #include "InfeasibleQueryException.h"
 #include "ReluplexError.h"
 #include "RowBoundTightener.h"
+#include "SparseVector.h"
 #include "Statistics.h"
 
 RowBoundTightener::RowBoundTightener( const ITableau &tableau )
@@ -28,6 +29,7 @@ RowBoundTightener::RowBoundTightener( const ITableau &tableau )
     , _ciTimesUb( NULL )
     , _ciSign( NULL )
     , _statistics( NULL )
+    , _ANColumn( NULL )
 {
 }
 
@@ -53,6 +55,10 @@ void RowBoundTightener::setDimensions()
     _tightenedUpper = new bool[_n];
     if ( !_tightenedUpper )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "RowBoundTightener::tightenedUpper" );
+
+    _ANColumn = new double[_m];
+    if ( !_ANColumn )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "RowBoundTightener::ANColumn" );
 
     resetBounds();
 
@@ -164,6 +170,12 @@ void RowBoundTightener::freeMemoryIfNeeded()
         delete[] _ciSign;
         _ciSign = NULL;
     }
+
+    if ( _ANColumn )
+    {
+        delete[] _ANColumn;
+        _ANColumn = NULL;
+    }
 }
 
 void RowBoundTightener::examineImplicitInvertedBasisMatrix( bool untilSaturation )
@@ -187,8 +199,8 @@ void RowBoundTightener::examineImplicitInvertedBasisMatrix( bool untilSaturation
     for ( unsigned i = 0; i < _n - _m; ++i )
     {
         unsigned nonBasic = _tableau.nonBasicIndexToVariable( i );
-        const double *ANColumn = _tableau.getAColumn( nonBasic );
-        _tableau.forwardTransformation( ANColumn, _z );
+        _tableau.getAColumn( nonBasic, _ANColumn );
+        _tableau.forwardTransformation( _ANColumn, _z );
 
         for ( unsigned j = 0; j < _m; ++j )
         {
@@ -241,10 +253,10 @@ void RowBoundTightener::examineInvertedBasisMatrix( bool untilSaturation )
 
                 // Dot product of the i'th row of inv(B) with the appropriate
                 // column of An
-                const double *ANColumn = _tableau.getAColumn( row->_row[j]._var );
+                _tableau.getAColumn( row->_row[j]._var, _ANColumn );
                 row->_row[j]._coefficient = 0;
                 for ( unsigned k = 0; k < _m; ++k )
-                    row->_row[j]._coefficient -= ( invB[i * _m + k] * ANColumn[k] );
+                    row->_row[j]._coefficient -= ( invB[i * _m + k] * _ANColumn[k] );
             }
 
             // Store the lhs variable
@@ -601,11 +613,11 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
           sum ci xi - b
     */
     unsigned n = _tableau.getN();
-    unsigned m = _tableau.getM();
 
     unsigned result = 0;
 
-    const double *A = _tableau.getA();
+    SparseVector sparseRow;
+    _tableau.getSparseARow( row, &sparseRow );
     const double *b = _tableau.getRightHandSide();
 
     double ci;
@@ -619,7 +631,7 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
 
     for ( unsigned i = 0; i < n; ++i )
     {
-        ci = A[i*m + row];
+        ci = sparseRow._values.exists( i ) ? sparseRow._values[i] : 0;
 
         if ( FloatUtils::isZero( ci ) )
         {
@@ -695,7 +707,7 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
         }
 
         // Now divide everything by ci, switching signs if needed.
-        ci = A[i*m + row];
+        ci = sparseRow._values.exists( i ) ? sparseRow._values[i] : 0;
 
         lowerBound = lowerBound / ci;
         upperBound = upperBound / ci;

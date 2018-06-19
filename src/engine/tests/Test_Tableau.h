@@ -88,29 +88,13 @@ public:
 
         */
 
-        tableau.setEntryValue( 0, 0, 3 );
-        tableau.setEntryValue( 0, 1, 2 );
-        tableau.setEntryValue( 0, 2, 1 );
-        tableau.setEntryValue( 0, 3, 2 );
-        tableau.setEntryValue( 0, 4, 1 );
-        tableau.setEntryValue( 0, 5, 0 );
-        tableau.setEntryValue( 0, 6, 0 );
+        double A[] = {
+            3, 2, 1, 2, 1, 0, 0,
+            1, 1, 1, 1, 0, 1, 0,
+            4, 3, 3, 4, 0, 0, 1,
+        };
 
-        tableau.setEntryValue( 1, 0, 1 );
-        tableau.setEntryValue( 1, 1, 1 );
-        tableau.setEntryValue( 1, 2, 1 );
-        tableau.setEntryValue( 1, 3, 1 );
-        tableau.setEntryValue( 1, 4, 0 );
-        tableau.setEntryValue( 1, 5, 1 );
-        tableau.setEntryValue( 1, 6, 0 );
-
-        tableau.setEntryValue( 2, 0, 4 );
-        tableau.setEntryValue( 2, 1, 3 );
-        tableau.setEntryValue( 2, 2, 3 );
-        tableau.setEntryValue( 2, 3, 4 );
-        tableau.setEntryValue( 2, 4, 0 );
-        tableau.setEntryValue( 2, 5, 0 );
-        tableau.setEntryValue( 2, 6, 1 );
+        tableau.setConstraintMatrix( A );
 
         tableau.assignIndexToBasicVariable( 4, 0 );
         tableau.assignIndexToBasicVariable( 5, 1 );
