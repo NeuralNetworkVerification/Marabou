@@ -166,6 +166,57 @@ void CSRMatrix::addLastRow( double *row )
     ++_m;
 }
 
+void CSRMatrix::addLastColumn( double *column )
+{
+    // Count the number of new entries needed
+    unsigned newNnz = 0;
+    for ( unsigned i = 0; i < _m; ++i )
+        if ( !FloatUtils::isZero( column[i] ) )
+            ++newNnz;
+
+    // Increase the size of _A and _JA if needed
+    while ( _nnz + newNnz > _estimatedNnz )
+        increaseCapacity();
+
+    /*
+      Now do a single sweep of the vectors from right
+      to left, copy elements to their new locations and
+      add the new elements where needed.
+    */
+    unsigned arrayIndex = _nnz - 1;
+    unsigned offset = newNnz;
+    for ( int i = _m - 1; i >= 0; --i )
+    {
+        if ( FloatUtils::isZero( column[i] ) )
+            continue;
+
+        // Ignore all rows greater than i
+        while ( arrayIndex > _IA[i+1] - 1 )
+        {
+            _A[arrayIndex + offset] = _A[arrayIndex];
+            _JA[arrayIndex + offset] = _JA[arrayIndex];
+            --arrayIndex;
+        }
+
+        // We've entered our row. We are adding the last column
+        _A[arrayIndex + offset] = column[i];
+        _JA[arrayIndex + offset] = _n;
+        --offset;
+    }
+
+    // Update the row counters
+    unsigned increase = 0;
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        if ( !FloatUtils::isZero( column[i] ) )
+            ++increase;
+        _IA[i+1] += increase;
+    }
+
+    ++_n;
+    _nnz += newNnz;
+}
+
 void CSRMatrix::freeMemoryIfNeeded()
 {
     if ( _A )

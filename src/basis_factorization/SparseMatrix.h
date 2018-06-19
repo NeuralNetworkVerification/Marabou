@@ -34,10 +34,11 @@ public:
     virtual void getColumn( unsigned column, SparseVector *result ) const = 0;
 
     /*
-      Add a row to the end of the matrix.
-      The new row is provided in dense format.
+      Add a row/column to the end of the matrix.
+      The new row/column is provided in dense format.
     */
     virtual void addLastRow( double *row ) = 0;
+    virtual void addLastColumn( double *column ) = 0;
 
     /*
       This function increments n, the number of columns in the
