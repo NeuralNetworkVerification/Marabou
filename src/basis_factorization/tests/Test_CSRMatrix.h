@@ -135,34 +135,66 @@ public:
 
     void test_add_last_column()
     {
-        double M1[] = {
-            0, 0, 0, 2,
-            5, 8, 0, 0,
-            0, 0, 3, 0,
-            0, 6, 0, 0,
-        };
+        {
+            double M1[] = {
+                0, 0, 0, 2,
+                5, 8, 0, 0,
+                0, 0, 3, 0,
+                0, 6, 0, 0,
+            };
 
-        CSRMatrix csr1;
-        csr1.initialize( M1, 4, 4 );
+            CSRMatrix csr1;
+            csr1.initialize( M1, 4, 4 );
 
-        double col5[] = { 1, 2, 0, 0 };
-        double col6[] = { 0, 2, -3, 0 };
-        double col7[] = { 1, 0, 0, 4 };
+            double col5[] = { 1, 2, 0, 0 };
+            double col6[] = { 0, 2, -3, 0 };
+            double col7[] = { 1, 0, 0, 4 };
 
-        csr1.addLastColumn( col5 );
-        csr1.addLastColumn( col6 );
-        csr1.addLastColumn( col7 );
+            csr1.addLastColumn( col5 );
+            csr1.addLastColumn( col6 );
+            csr1.addLastColumn( col7 );
 
-        double expected[] = {
-            0, 0, 0, 2, 1,  0, 1,
-            5, 8, 0, 0, 2,  2, 0,
-            0, 0, 3, 0, 0, -3, 0,
-            0, 6, 0, 0, 0,  0, 4,
-        };
+            double expected[] = {
+                0, 0, 0, 2, 1,  0, 1,
+                5, 8, 0, 0, 2,  2, 0,
+                0, 0, 3, 0, 0, -3, 0,
+                0, 6, 0, 0, 0,  0, 4,
+            };
 
-        for ( unsigned i = 0; i < 4; ++i )
-            for ( unsigned j = 0; j < 7; ++j )
-                TS_ASSERT_EQUALS( csr1.get( i, j ), expected[i*7 + j] );
+            for ( unsigned i = 0; i < 4; ++i )
+                for ( unsigned j = 0; j < 7; ++j )
+                    TS_ASSERT_EQUALS( csr1.get( i, j ), expected[i*7 + j] );
+
+            TS_ASSERT_EQUALS( csr1.getNnz(), 11U );
+        }
+
+        {
+            double M1[] = {
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+            };
+
+            CSRMatrix csr1;
+            csr1.initialize( M1, 4, 4 );
+
+            double col5[] = { 0, 0, 0, 0 };
+            csr1.addLastColumn( col5 );
+
+            double expected[] = {
+                0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0,
+            };
+
+            for ( unsigned i = 0; i < 4; ++i )
+                for ( unsigned j = 0; j < 5; ++j )
+                    TS_ASSERT_EQUALS( csr1.get( i, j ), expected[i*5 + j] );
+
+            TS_ASSERT_EQUALS( csr1.getNnz(), 0U );
+        }
     }
 
     void test_get_row()
