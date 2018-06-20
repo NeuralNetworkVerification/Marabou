@@ -419,7 +419,6 @@ public:
 
     const SparseMatrix *getSparseA() const
     {
-        TS_ASSERT( false );
         return NULL;
     }
 

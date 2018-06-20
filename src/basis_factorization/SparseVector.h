@@ -33,6 +33,12 @@ public:
         return _values.empty();
     }
 
+    void dump() const
+    {
+        for ( const auto &entry : _values )
+            printf( "\t%u --> %5.2lf\n", entry.first, entry.second );
+    }
+
     Map<unsigned, double> _values;
 };
 
