@@ -631,7 +631,7 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
 
     for ( unsigned i = 0; i < n; ++i )
     {
-        ci = sparseRow._values.exists( i ) ? sparseRow._values[i] : 0;
+        ci = sparseRow.get( i );
 
         if ( FloatUtils::isZero( ci ) )
         {
@@ -707,7 +707,7 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
         }
 
         // Now divide everything by ci, switching signs if needed.
-        ci = sparseRow._values.exists( i ) ? sparseRow._values[i] : 0;
+        ci = sparseRow.get( i );
 
         lowerBound = lowerBound / ci;
         upperBound = upperBound / ci;

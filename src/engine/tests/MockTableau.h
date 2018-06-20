@@ -36,7 +36,7 @@ public:
         lastBtranInput = NULL;
         nextBtranOutput = NULL;
 
-        lastEntries = NULL ;
+        lastEntries = NULL;
         nextCostFunction = NULL;
 
         lastCostFunctionManager = NULL;

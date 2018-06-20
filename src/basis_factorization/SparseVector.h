@@ -33,6 +33,11 @@ public:
         return _values.empty();
     }
 
+    double get( unsigned index )
+    {
+        return _values.exists( index ) ? _values[index] : 0;
+    }
+
     void dump() const
     {
         for ( const auto &entry : _values )

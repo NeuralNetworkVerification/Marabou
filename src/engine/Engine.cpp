@@ -566,6 +566,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         adjustWorkMemorySize();
 
         double *constraintMatrix = new double[n*m];
+        std::fill_n( constraintMatrix, n*m, 0.0 );
         if ( !constraintMatrix )
             throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Engine::constraintMatrix" );
 
