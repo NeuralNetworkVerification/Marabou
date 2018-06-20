@@ -1403,6 +1403,13 @@ void Tableau::addRow()
       that are of size _n - _m are left as is.
     */
 
+    // Allocate a new _a. Don't need to initialize
+    double *newA = new double[newM];
+    if ( !newA )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newA" );
+    delete[] _a;
+    _a = newA;
+
     // Allocate a new changeColumn. Don't need to initialize
     double *newChangeColumn = new double[newM];
     if ( !newChangeColumn )
