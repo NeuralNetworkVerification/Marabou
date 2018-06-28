@@ -11,6 +11,7 @@
  **/
 
 #include "AutoFile.h"
+#include "Debug.h"
 #include "FloatUtils.h"
 #include "InputQuery.h"
 #include "MStringf.h"
