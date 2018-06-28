@@ -156,6 +156,30 @@ unsigned InputQuery::countInfiniteBounds()
     return result;
 }
 
+void InputQuery::mergeIdenticalVariables( unsigned v1, unsigned v2 )
+{
+    // Handle equations
+    for ( auto &equation : getEquations() )
+        equation.updateVariableIndex( v1, v2 );
+
+    // Handle PL constraints
+    for ( auto &plConstraint : getPiecewiseLinearConstraints() )
+    {
+        if ( plConstraint->participatingVariable( v1 ) )
+        {
+            ASSERT( !plConstraint->participatingVariable( v2 ) );
+            plConstraint->updateVariableIndex( v1, v2 );
+        }
+    }
+
+    // TODO: update lower and upper bounds
+}
+
+void InputQuery::removeEquation( Equation e )
+{
+    _equations.erase( e );
+}
+
 InputQuery &InputQuery::operator=( const InputQuery &other )
 {
     _numberOfVariables = other._numberOfVariables;

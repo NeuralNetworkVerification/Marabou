@@ -45,6 +45,20 @@ public:
     void addAddend( double coefficient, unsigned variable );
     void setScalar( double scalar );
 
+    /*
+      Go over the addends and rename variable oldVar to newVar.
+      If, as a result, there are two addends with the same variable,
+      unite them.
+    */
+    void updateVariableIndex( unsigned oldVar, unsigned newVar );
+
+    /*
+      Return true iff the variable is a "variable merging equation",
+      i.e. an equation of the form x = y. If true is returned, x1 and
+      x2 are the merged variables.
+    */
+    bool isVariableMergingEquation( unsigned &x1, unsigned &x2 ) const;
+
     List<Addend> _addends;
     double _scalar;
     EquationType _type;

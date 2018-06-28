@@ -35,6 +35,12 @@ public:
     */
     Map<PiecewiseLinearConstraint *, PiecewiseLinearConstraint *> _plConstraintToState;
     unsigned _numPlConstraintsDisabledByValidSplits;
+
+    /*
+      A unique ID allocated to every state that is stored, for
+      debugging purposes. These are assigned by the SMT core.
+    */
+    unsigned _stateId;
 };
 
 #endif // __EngineState_h__

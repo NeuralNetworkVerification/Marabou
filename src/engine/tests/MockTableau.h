@@ -516,6 +516,14 @@ public:
     {
         return NULL;
     }
+
+    void refreshBasisFactorization()
+    {
+    }
+
+    void mergeColumns( unsigned /* x1 */, unsigned /* x2 */ )
+    {
+    }
 };
 
 #endif // __MockTableau_h__

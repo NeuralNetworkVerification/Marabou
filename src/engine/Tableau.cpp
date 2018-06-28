@@ -227,6 +227,9 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     _work = new double[m];
     if ( !_work )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::work" );
+
+    if ( _statistics )
+        _statistics->setCurrentTableauDimension( _m, _n );
 }
 
 void Tableau::setEntryValue( unsigned row, unsigned column, double value )
@@ -279,7 +282,7 @@ void Tableau::initializeTableau( const List<unsigned> &initialBasicVariables )
     }
 
     // Factorize the basis
-    _basisFactorization->refactorizeBasis();
+    _basisFactorization->obtainFreshBasis();
 
     // Compute assignment
     computeAssignment();
@@ -402,10 +405,17 @@ const double *Tableau::getUpperBounds() const
 
 double Tableau::getValue( unsigned variable )
 {
+    /*
+      If this variable has been merged into another,
+      we need to be reading the other variable's value
+    */
+    if ( _mergedVariables.exists( variable ) )
+        variable = _mergedVariables[variable];
+
+    // The values of non-basics can be extracted even if the
+    // assignment is invalid
     if ( !_basicVariables.exists( variable ) )
     {
-        // The values of non-basics can be extracted even if the
-        // assignment is invalid
         unsigned index = _variableToIndex[variable];
         return _nonBasicAssignment[index];
     }
@@ -1099,7 +1109,7 @@ void Tableau::storeState( TableauState &state ) const
 
     // Store the assignments
     memcpy( state._basicAssignment, _basicAssignment, sizeof(double) *_m );
-    memcpy( state._nonBasicAssignment, _nonBasicAssignment, sizeof(double) * ( _n - _m  ) );
+    memcpy( state._nonBasicAssignment, _nonBasicAssignment, sizeof(double) * ( _n - _m ) );
     state._basicAssignmentStatus = _basicAssignmentStatus;
 
     // Store the indices
@@ -1112,6 +1122,9 @@ void Tableau::storeState( TableauState &state ) const
 
     // Store the _boundsValid indicator
     state._boundsValid = _boundsValid;
+
+    // Store the merged variables
+    state._mergedVariables = _mergedVariables;
 }
 
 void Tableau::restoreState( const TableauState &state )
@@ -1149,9 +1162,15 @@ void Tableau::restoreState( const TableauState &state )
     // Restore the _boundsValid indicator
     _boundsValid = state._boundsValid;
 
+    // Restore the merged varaibles
+    _mergedVariables = state._mergedVariables;
+
     computeAssignment();
     _costFunctionManager->initialize();
     computeCostFunction();
+
+    if ( _statistics )
+        _statistics->setCurrentTableauDimension( _m, _n );
 }
 
 void Tableau::checkBoundsValid()
@@ -1298,7 +1317,7 @@ unsigned Tableau::addEquation( const Equation &equation )
     bool factorizationSuccessful = true;
     try
     {
-        _basisFactorization->refactorizeBasis();
+        _basisFactorization->obtainFreshBasis();
     }
     catch ( MalformedBasisException & )
     {
@@ -1472,6 +1491,12 @@ void Tableau::addRow()
 
     for ( const auto &watcher : _resizeWatchers )
         watcher->notifyDimensionChange( _m, _n );
+
+    if ( _statistics )
+    {
+        _statistics->incNumAddedRows();
+        _statistics->setCurrentTableauDimension( _m, _n );
+    }
 }
 
 void Tableau::registerToWatchVariable( VariableWatcher *watcher, unsigned variable )
@@ -1911,8 +1936,47 @@ void Tableau::registerCostFunctionManager( ICostFunctionManager *costFunctionMan
 const double *Tableau::getColumnOfBasis( unsigned column ) const
 {
     ASSERT( column < _m );
+    ASSERT( !_mergedVariables.exists( _basicIndexToVariable[column] ) );
+
     unsigned variable = _basicIndexToVariable[column];
     return _A + ( variable * _m );
+}
+
+void Tableau::refreshBasisFactorization()
+{
+    _basisFactorization->obtainFreshBasis();
+}
+
+void Tableau::mergeColumns( unsigned x1, unsigned x2 )
+{
+    ASSERT( !isBasic( x1 ) );
+    ASSERT( !isBasic( x2 ) );
+
+    /*
+      If x2 has tighter bounds than x1, adjust the bounds
+      for x1.
+    */
+    if ( FloatUtils::lt( _upperBounds[x2], _upperBounds[x1] ) )
+        tightenUpperBound( x1, _upperBounds[x2] );
+    if ( FloatUtils::gt( _lowerBounds[x2], _lowerBounds[x1] ) )
+        tightenLowerBound( x1, _lowerBounds[x2] );
+
+    /*
+      Merge column x2 of the constraint matrix into x1
+      and zero-out column x2
+    */
+    for ( unsigned row = 0; row < _m; ++row )
+    {
+        _A[(x1 * _m) + row] += _A[(x2 * _m) + row];
+        _A[(x2 * _m) + row] = 0.0;
+    }
+    _mergedVariables[x2] = x1;
+
+    computeAssignment();
+    computeCostFunction();
+
+    if ( _statistics )
+        _statistics->incNumMergedColumns();
 }
 
 //

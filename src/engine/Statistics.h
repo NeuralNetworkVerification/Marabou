@@ -71,6 +71,9 @@ public:
     void incNumTableauDegeneratePivotsByRequest();
     void incNumSimplexPivotSelectionsIgnoredForStability();
     void incNumSimplexUnstablePivots();
+    void incNumAddedRows();
+    void incNumMergedColumns();
+    void setCurrentTableauDimension( unsigned m, unsigned n );
     void addTimePivots( unsigned long long time );
     unsigned long long getNumTableauPivots() const;
     unsigned long long getNumSimplexPivotSelectionsIgnoredForStability() const;
@@ -193,6 +196,16 @@ private:
     // Total number of times in which an unstable simplex pivot was performed, because
     // no better option could be found.
     unsigned long long _numSimplexUnstablePivots;
+
+    // Total number of rows added to the tableau
+    unsigned long long _numAddedRows;
+
+    // Total number of merged columns in the tableau
+    unsigned long long _numMergedColumns;
+
+    // Current Tableau dimensions
+    unsigned _currentTableauM;
+    unsigned _currentTableauN;
 
     // Total number of times a non-basic variable hopped to its
     // opposite bound.

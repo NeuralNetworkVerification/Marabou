@@ -135,6 +135,12 @@ private:
       For debugging purposes only
     */
     Map<unsigned, double> _debuggingSolution;
+
+    /*
+      A unique ID allocated to every state that is stored, for
+      debugging purposes.
+    */
+    unsigned _stateId;
 };
 
 #endif // __SmtCore_h__

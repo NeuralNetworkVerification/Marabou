@@ -394,6 +394,19 @@ public:
 
     const double *getColumnOfBasis( unsigned column ) const;
 
+    /*
+      Trigger a re-computing of the basis factorization. This can
+      be triggered, e.g., if a high numerical degradation has
+      been observed.
+    */
+    void refreshBasisFactorization();
+
+    /*
+      Merge two columns of the constraint matrix and re-initialize
+      the tableau.
+    */
+    void mergeColumns( unsigned x1, unsigned x2 );
+
 private:
     /*
       Variable watchers
@@ -539,6 +552,13 @@ private:
       The cost function manager
     */
     ICostFunctionManager *_costFunctionManager;
+
+    /*
+      _mergedVariables[x] = y means that x = y, and that
+      variable x has been merged into variable y. So, when
+      extracting a solution for x, we should read the value of y.
+     */
+    Map<unsigned, unsigned> _mergedVariables;
 
     /*
       Free all allocated memory.

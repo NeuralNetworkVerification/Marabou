@@ -58,6 +58,17 @@ public:
     unsigned countInfiniteBounds();
 
     /*
+      If two variables are known to be identical, merge them.
+      (v1 will be merged into v2).
+    */
+    void mergeIdenticalVariables( unsigned v1, unsigned v2 );
+
+    /*
+      Remove an equation from equation list
+    */
+    void removeEquation(Equation e);
+
+    /*
       Assignment operator and copy constructor, duplicate the constraints.
     */
     InputQuery &operator=( const InputQuery &other );

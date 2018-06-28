@@ -14,10 +14,11 @@
 #define __Preprocessor_h__
 
 #include "Equation.h"
+#include "InputQuery.h"
 #include "List.h"
 #include "Map.h"
 #include "PiecewiseLinearConstraint.h"
-#include "InputQuery.h"
+#include "Set.h"
 
 class Preprocessor
 {
@@ -62,9 +63,14 @@ private:
 	bool processConstraints();
 
     /*
-      Eliminate any variables that have become files
+      If there exists an equation x = x', replace all instances of x with x'
+    */
+    bool processIdenticalVariables();
+
+    /*
+      Eliminate any variables that have become fixed or merged with an identical variable
 	*/
-	void eliminateFixedVariables();
+	void eliminateVariables();
 
     /*
       Call on the PL constraints to add any auxiliary equations
@@ -86,6 +92,8 @@ private:
       values that they have been fixed to.
     */
     Map<unsigned, double> _fixedVariables;
+
+    Set<unsigned> _mergedVariables;
 
     /*
       Mapping of old variable indices to new varibale indices, if
