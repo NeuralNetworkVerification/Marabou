@@ -10,8 +10,8 @@
 
 int main()
 {
-    InputQuery inputQuery = QueryLoader::loadQuery( "test_TF" );
-    inputQuery.saveQuery( "test_TF_AFTER" );
+    InputQuery inputQuery = QueryLoader::loadQuery( "test_NNET" );
+    inputQuery.saveQuery( "test_TF_AFTER2" );
 }
 
 //

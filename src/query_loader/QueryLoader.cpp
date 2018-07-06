@@ -30,6 +30,11 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
     unsigned numEquations = atoi( input.readLine().trim().ascii() );
     unsigned numConstraints = atoi( input.readLine().trim().ascii() );
 
+     printf("Number of variables: %u\n", numVars);
+     printf("Number of bounds: %u\n", numBounds);
+     printf("Number of equations: %u\n", numEquations);
+     printf("Number of constraints: %u\n", numConstraints);
+
     inputQuery.setNumberOfVariables( numVars );
 
     // Bounds
