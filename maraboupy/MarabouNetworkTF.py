@@ -163,37 +163,22 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         input_ops = [i.op for i in op.inputs]
 
         ### Operations not requiring new variables ###
+        if op.node_def.op == 'Identity':
+            return self.getValues(input_ops[0])
+        if op.node_def.op in ['Reshape']:
+            prevValues = [self.getValues(i) for i in input_ops]
+            shape = prevValues[1]
+            return np.reshape(prevValues[0], shape)
         if op.node_def.op == 'Const':
             tproto = op.node_def.attr['value'].tensor
             return tensor_util.MakeNdarray(tproto)
         ### END operations not requiring new variables ###
 
-        if op.node_def.op in ['Identity', 'MatMul', 'BiasAdd', 'Add', 'Relu', 'MaxPool', 'Conv2D', 'Placeholder']:
+        if op.node_def.op in ['MatMul', 'BiasAdd', 'Add', 'Relu', 'MaxPool', 'Conv2D', 'Placeholder']:
             # need to create variables for these
             return self.opToVarArray(op)
 
         raise NotImplementedError
-
-    def identityEquations(self, op):
-        """
-        Function to generate equations corresponding to identity
-        Arguments:
-            op: (tf.op) representing identity operation
-        """
-        input_ops = [i.op for i in op.inputs]
-        prevValues = [self.getValues(i) for i in input_ops]
-        curValues = self.getValues(op)
-        prevVars = prevValues[0].reshape(-1)
-        curVars = curValues.reshape(-1)
-        assert len(prevVars)==len(curVars)
-
-        # generate equations
-        for i in range(len(curVars)):
-            e = MarabouUtils.Equation()
-            e.addAddend(1, curVars[i])
-            e.addAddend(-1, prevVars[i])
-            e.setScalar(0)
-            self.addEquation(e)
 
     def matMulEquations(self, op):
         """
@@ -382,7 +367,7 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
                     for di in range(strides[1]*i, strides[1]*i + ksize[1]):
                         for dj in range(strides[2]*j, strides[2]*j + ksize[2]):
                             if di < prevValues.shape[1] and dj < prevValues.shape[2]:
-                                maxVars.insert([prevValues[0][di][dj][k]])
+                                maxVars.add(prevValues[0][di][dj][k])
                     self.addMaxConstraint(maxVars, curValues[0][i][j][k])
 
     def makeNeuronEquations(self, op): 
@@ -391,10 +376,8 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         Arguments:
             op: (tf.op) for which to generate equations
         """
-        if op.node_def.op in ['Placeholder', 'Const']:
+        if op.node_def.op in ['Identity', 'Reshape', 'Pack', 'Placeholder', 'Const']:
             return
-        if op.node_def.op == 'Identity':
-            self.identityEquations(op)
         if op.node_def.op == 'MatMul':
             self.matMulEquations(op)
         elif op.node_def.op in ['BiasAdd', 'Add']:

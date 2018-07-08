@@ -106,6 +106,7 @@ class MarabouNetwork:
             fs, bs = zip(*self.reluList)
             if x in fs or x in bs:
                 return True
+
         # Max constraints
         for elems, var in self.maxList:
             if x in elems or x==var:
@@ -201,7 +202,7 @@ class MarabouNetwork:
         outputDict = MarabouCore.solve(ipq, filename)
         outputValues = outputVars.reshape(-1).astype(np.float64)
         for i in range(len(outputValues)):
-            outputValues[i] = outputDict[outputValues[i]]
+            outputValues[i] = (outputDict[0])[outputValues[i]]
         outputValues = outputValues.reshape(outputVars.shape)
         return outputValues
 
