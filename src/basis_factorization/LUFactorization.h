@@ -125,7 +125,6 @@ public:
      */
     void invertBasis( double *result );
 
-
 public:
     /*
       Functions made public strictly for testing, not part of the interface
