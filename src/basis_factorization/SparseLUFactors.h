@@ -58,6 +58,14 @@ public:
     PermutationMatrix _Q;
 
     /*
+      The transposed matrics F' and V' are also stored. This is because
+      sometimes we need to retrieve columns and sometimes we needs rows,
+      and these operations may be cheaper on the transposed matrix
+    */
+    SparseMatrix *_Ft;
+    SparseMatrix *_Vt;
+
+    /*
       Basic computations (BTRAN, FTRAN) involving the factorization
 
       forwardTransformation: find x such that Ax ( = FVx ) = y

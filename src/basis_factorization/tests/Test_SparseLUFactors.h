@@ -27,6 +27,17 @@ public:
     MockForSparseLUFactors *mock;
     SparseLUFactors *lu;
 
+    void transpose( const double *A, double *At, unsigned dim )
+    {
+        for ( unsigned i = 0; i < dim; ++i )
+        {
+            for ( unsigned j = 0; j < dim; ++j )
+            {
+                At[i*dim + j] = A[j*dim + i];
+            }
+        }
+    }
+
     void setUp()
     {
         TS_ASSERT( mock = new MockForSparseLUFactors );
@@ -68,6 +79,10 @@ public:
 
         lu->_F->initialize( F, 4, 4 );
 
+        double Ft[16];
+        transpose( F, Ft, 4 );
+        lu->_Ft->initialize( Ft, 4, 4 );
+
         /*
               | 1 3 -2 -3 |
           U = | 0 2 5   1 |
@@ -102,6 +117,10 @@ public:
             };
 
         lu->_V->initialize( V, 4, 4 );
+
+        double Vt[16];
+        transpose( V, Vt, 4 );
+        lu->_Vt->initialize( Vt, 4, 4 );
 
         /*
           Implies A = FV = | 2 -5   1 8 |
@@ -168,8 +187,6 @@ public:
                    xF = y
                    x = y inv(F)
         */
-
-        TS_TRACE( "TODO: calling getColumn() is currently inefficient" );
 
         double y1[] = { 1, 2, 3, 4 };
         double x1[] = { 0, 0, 0, 0 };
@@ -238,8 +255,6 @@ public:
                    xV = y
                    x = y * inv(V)
         */
-
-        TS_TRACE( "TODO: calling getColumn() is currently inefficient" );
 
         double y1[] = { 1, 2, 3, 4 };
         double x1[] = { 0, 0, 0, 0 };
