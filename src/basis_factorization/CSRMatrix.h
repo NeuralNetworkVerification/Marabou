@@ -53,6 +53,7 @@ public:
     */
     double get( unsigned row, unsigned column ) const;
     void getRow( unsigned row, SparseVector *result ) const;
+    void getRowDense( unsigned row, double *result ) const;
     void getColumn( unsigned column, SparseVector *result ) const;
     void getColumnDense( unsigned column, double *result ) const;
 
@@ -70,9 +71,17 @@ public:
     void addEmptyColumn();
 
     /*
+      A mechanism for storing a set of changes to the matrix,
+      and then executing them all at once to reduce overhead
+    */
+    void commitChange( unsigned row, unsigned column, double newValue );
+    void executeChanges();
+
+    /*
       For debugging purposes.
     */
     void dump() const;
+    void dumpDense() const;
 
     /*
       Storing and restoring the sparse matrix
@@ -99,6 +108,20 @@ private:
         // Initial estimate: each row has average density 1 / ROW_DENSITY_ESTIMATE
         ROW_DENSITY_ESTIMATE = 5,
     };
+
+    struct CommittedChange
+    {
+        unsigned _column;
+        double _value;
+
+        bool operator<( const CommittedChange &other ) const
+        {
+            return _column < other._column;
+        }
+    };
+
+    Map<unsigned, Set<CommittedChange>> _committedChanges;
+    Map<unsigned, Set<unsigned>> _committedErasures;
 
     unsigned _m;
     unsigned _n;

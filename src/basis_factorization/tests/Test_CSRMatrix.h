@@ -376,6 +376,57 @@ public:
             TS_ASSERT_EQUALS( csr1.getNnz(), 0U );
         }
     }
+
+    void test_erasures()
+    {
+        double M1[] = {
+            0, 0, 0, 0,
+            5, 8, 0, 0,
+            0, 0, 3, 0,
+            0, 6, 0, 0,
+        };
+
+        double expected[] = {
+            0, 0, 0, 0,
+            0, 8, 0, 0,
+            0, 0, 3, 0,
+            0, 0, 0, 0,
+        };
+
+        CSRMatrix csr1;
+        csr1.initialize( M1, 4, 4 );
+
+        csr1.commitChange( 1, 0, 0.0 );
+        csr1.commitChange( 3, 1, 0.0 );
+
+        // No changes before "execute" is called
+        for ( unsigned i = 0; i < 4; ++i )
+            for ( unsigned j = 0; j < 4; ++j )
+                TS_ASSERT_EQUALS( csr1.get( i, j ), M1[i*4 + j] );
+
+        TS_ASSERT_THROWS_NOTHING( csr1.executeChanges() );
+
+        for ( unsigned i = 0; i < 4; ++i )
+            for ( unsigned j = 0; j < 4; ++j )
+                TS_ASSERT_EQUALS( csr1.get( i, j ), expected[i*4 + j] );
+
+        // Fake elements
+        csr1.commitChange( 1, 3, 0.0 );
+        csr1.commitChange( 3, 2, 0.0 );
+        TS_ASSERT_THROWS_NOTHING( csr1.executeChanges() );
+
+        for ( unsigned i = 0; i < 4; ++i )
+            for ( unsigned j = 0; j < 4; ++j )
+                TS_ASSERT_EQUALS( csr1.get( i, j ), expected[i*4 + j] );
+
+        csr1.commitChange( 1, 1, 0.0 );
+        csr1.commitChange( 2, 2, 0.0 );
+        TS_ASSERT_THROWS_NOTHING( csr1.executeChanges() );
+
+        for ( unsigned i = 0; i < 4; ++i )
+            for ( unsigned j = 0; j < 4; ++j )
+                TS_ASSERT_EQUALS( csr1.get( i, j ), 0.0 );
+    }
 };
 
 //

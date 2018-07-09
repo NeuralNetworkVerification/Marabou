@@ -279,6 +279,13 @@ void CSRMatrix::getRow( unsigned row, SparseVector *result ) const
         result->_values[_JA[i]] = _A[i];
 }
 
+void CSRMatrix::getRowDense( unsigned row, double *result ) const
+{
+    std::fill_n( result, _n, 0 );
+    for ( unsigned i = _IA[row]; i < _IA[row + 1]; ++i )
+        result[_JA[i]] = _A[i];
+}
+
 void CSRMatrix::getColumn( unsigned column, SparseVector *result ) const
 {
     result->clear();
@@ -454,6 +461,68 @@ void CSRMatrix::toDense( double *result ) const
     }
 }
 
+void CSRMatrix::commitChange( unsigned row, unsigned column, double newValue )
+{
+    if ( FloatUtils::isZero( newValue ) )
+    {
+        _committedErasures[row].insert( column );
+        return;
+    }
+
+    CommittedChange change;
+    change._column = column;
+    change._value = newValue;
+    _committedChanges[row].insert( change );
+}
+
+void CSRMatrix::executeChanges()
+{
+    // First handle the erasures. Do a pass on the data structures, and shrink
+    // them as needed.
+    if ( !_committedErasures.empty() )
+    {
+        unsigned row = 0;
+        unsigned column;
+        unsigned indexAfterDeletion = 0;
+        unsigned deletedSoFar = 0;
+
+        for ( unsigned i = 0; i < _nnz; ++i )
+        {
+            // Check if we've just started a new row, skip any empty rows
+            while ( i == _IA[row + 1] )
+            {
+                _IA[row + 1] -= deletedSoFar;
+                ++row;
+            }
+
+            // We're in the middle of a row, delete as needed
+            column = _JA[i];
+            if (  _committedErasures.exists( row ) && _committedErasures[row].exists( column ) )
+            {
+                ++deletedSoFar;
+            }
+            else
+            {
+                // This entry is being kept
+                _A[indexAfterDeletion] = _A[i];
+                _JA[indexAfterDeletion] = _JA[i];
+                ++indexAfterDeletion;
+            }
+        }
+
+        // Fix any trailing 0-rows
+        while ( row < _m )
+        {
+            _IA[row + 1] -= deletedSoFar;
+            ++row;
+        }
+
+        _nnz -= deletedSoFar;
+    }
+
+    _committedErasures.clear();
+}
+
 void CSRMatrix::dump() const
 {
     printf( "\nDumping internal arrays:\n" );
@@ -472,6 +541,24 @@ void CSRMatrix::dump() const
     for ( unsigned i = 0; i < _nnz; ++i )
         printf( "%5u ", _JA[i] );
     printf( "\n" );
+}
+
+void CSRMatrix::dumpDense() const
+{
+    double *work = new double[_m * _n];
+    toDense( work );
+
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        for ( unsigned j = 0; j < _n; ++j )
+        {
+            printf( "%5.2lf ", work[i*_n + j] );
+        }
+        printf( "\n" );
+    }
+
+    printf( "\n" );
+    delete[] work;
 }
 
 //

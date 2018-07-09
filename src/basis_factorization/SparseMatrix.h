@@ -31,6 +31,7 @@ public:
     */
     virtual double get( unsigned row, unsigned column ) const = 0;
     virtual void getRow( unsigned row, SparseVector *result ) const = 0;
+    virtual void getRowDense( unsigned row, double *result ) const = 0;
     virtual void getColumn( unsigned column, SparseVector *result ) const = 0;
     virtual void getColumnDense( unsigned column, double *result ) const = 0;
 
@@ -48,9 +49,17 @@ public:
     virtual void addEmptyColumn() = 0;
 
     /*
+      A mechanism for storing a set of changes to the matrix,
+      and then executing them all at once to reduce overhead
+    */
+    virtual void commitChange( unsigned row, unsigned column, double newValue ) = 0;
+    virtual void executeChanges() = 0;
+
+    /*
       For debugging purposes.
     */
     virtual void dump() const {};
+    virtual void dumpDense() const {};
 
     /*
       Storing and restoring the sparse matrix. This assumes both
