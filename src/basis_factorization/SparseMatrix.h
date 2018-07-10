@@ -22,9 +22,10 @@ public:
 
     /*
       Initialize the sparse matrix from a given dense matrix
-      M of dimensions m x n.
+      M of dimensions m x n, or an empty matrix
     */
     virtual void initialize( const double *M, unsigned m, unsigned n ) = 0;
+    virtual void initializeToEmpty( unsigned m, unsigned n ) = 0;
 
     /*
       Obtain a single element/row/column of the matrix.
@@ -54,6 +55,11 @@ public:
     */
     virtual void commitChange( unsigned row, unsigned column, double newValue ) = 0;
     virtual void executeChanges() = 0;
+
+    /*
+      Count the number of elements in each row and column
+    */
+    virtual void countElements( unsigned *numRowElements, unsigned *numColumnElements ) = 0;
 
     /*
       For debugging purposes.

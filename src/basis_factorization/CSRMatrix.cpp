@@ -95,6 +95,7 @@ void CSRMatrix::initializeToEmpty( unsigned m, unsigned n )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "CSRMatrix::JA" );
 
     std::fill_n( _IA, _m + 1, 0.0 );
+    _nnz = 0;
 }
 
 void CSRMatrix::increaseCapacity()
@@ -594,6 +595,7 @@ void CSRMatrix::executeChanges()
             _A[index] = changedColumn._value;
         }
     }
+    _committedChanges.clear();
 
     // Next, handle the deletions. Do a pass on the data structures, and shrink
     // them as needed.

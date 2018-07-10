@@ -14,6 +14,7 @@
 #include <cxxtest/TestSuite.h>
 
 #include "BasisFactorizationError.h"
+#include "CSRMatrix.h"
 #include "EtaMatrix.h"
 #include "FloatUtils.h"
 #include "SparseGaussianEliminator.h"
@@ -39,7 +40,7 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete mock );
     }
 
-    void computeMatrixFromFactorization( LUFactors *lu, double *result )
+    void computeMatrixFromFactorization( SparseLUFactors *lu, double *result )
     {
         unsigned m = lu->_m;
 
@@ -51,7 +52,9 @@ public:
                 result[i*m + j] = 0;
                 for ( unsigned k = 0; k < m; ++k )
                 {
-                    result[i*m + j] += lu->_F[i*m + k] * lu->_V[k*m + j];
+                    double fValue = ( i == k ) ? 1.0 : lu->_F->get( i, k );
+                    double vValue = lu->_V->get( k, j );
+                    result[i*m + j] += fValue * vValue;
                 }
             }
         }
@@ -77,8 +80,8 @@ public:
 
     void test_sanity()
     {
-        LUFactors lu3( 3 );
-        LUFactors lu4( 4 );
+        SparseLUFactors lu3( 3 );
+        SparseLUFactors lu4( 4 );
 
         {
             double A[] =
@@ -88,10 +91,13 @@ public:
                 0, 0, 1
             };
 
+            CSRMatrix sparseA( A, 3, 3 );
+
             SparseGaussianEliminator *ge;
 
             TS_ASSERT( ge = new SparseGaussianEliminator( 3 ) );
-            TS_ASSERT_THROWS_NOTHING( ge->run( A, &lu3 ) );
+
+            TS_ASSERT_THROWS_NOTHING( ge->run( &sparseA, &lu3 ) );
 
             double result[9];
             computeMatrixFromFactorization( &lu3, result );
@@ -112,10 +118,12 @@ public:
                 0, 4, 1
             };
 
+            CSRMatrix sparseA( A, 3, 3 );
+
             SparseGaussianEliminator *ge;
 
             TS_ASSERT( ge = new SparseGaussianEliminator( 3 ) );
-            TS_ASSERT_THROWS_NOTHING( ge->run( A, &lu3 ) );
+            TS_ASSERT_THROWS_NOTHING( ge->run( &sparseA, &lu3 ) );
 
             double result[9];
             computeMatrixFromFactorization( &lu3, result );
@@ -136,10 +144,12 @@ public:
                 0, 4, 1
             };
 
+            CSRMatrix sparseA( A, 3, 3 );
+
             SparseGaussianEliminator *ge;
 
             TS_ASSERT( ge = new SparseGaussianEliminator( 3 ) );
-            TS_ASSERT_THROWS_NOTHING( ge->run( A, &lu3 ) );
+            TS_ASSERT_THROWS_NOTHING( ge->run( &sparseA, &lu3 ) );
 
             double result[9];
             computeMatrixFromFactorization( &lu3, result );
@@ -161,10 +171,12 @@ public:
                 1, 2, 3, 4,
             };
 
+            CSRMatrix sparseA( A, 4, 4 );
+
             SparseGaussianEliminator *ge;
 
             TS_ASSERT( ge = new SparseGaussianEliminator( 4 ) );
-            TS_ASSERT_THROWS_NOTHING( ge->run( A, &lu4 ) );
+            TS_ASSERT_THROWS_NOTHING( ge->run( &sparseA, &lu4 ) );
 
             double result[16];
             computeMatrixFromFactorization( &lu4, result );
@@ -185,10 +197,12 @@ public:
                 5, 4, 0
             };
 
+            CSRMatrix sparseA( A, 3, 3 );
+
             SparseGaussianEliminator *ge;
 
             TS_ASSERT( ge = new SparseGaussianEliminator( 3 ) );
-            TS_ASSERT_THROWS_EQUALS( ge->run( A, &lu3 ),
+            TS_ASSERT_THROWS_EQUALS( ge->run( &sparseA, &lu3 ),
                                      const BasisFactorizationError &e,
                                      e.getCode(),
                                      BasisFactorizationError::GAUSSIAN_ELIMINATION_FAILED );
@@ -204,16 +218,23 @@ public:
                 5, 4, 0
             };
 
+            CSRMatrix sparseA( A, 3, 3 );
+
             SparseGaussianEliminator *ge;
 
             TS_ASSERT( ge = new SparseGaussianEliminator( 3 ) );
-            TS_ASSERT_THROWS_EQUALS( ge->run( A, &lu3 ),
+            TS_ASSERT_THROWS_EQUALS( ge->run( &sparseA, &lu3 ),
                                      const BasisFactorizationError &e,
                                      e.getCode(),
                                      BasisFactorizationError::GAUSSIAN_ELIMINATION_FAILED );
 
             TS_ASSERT_THROWS_NOTHING( delete ge );
         }
+    }
+
+    void test_todo()
+    {
+        TS_TRACE( "Currently we don't update V', F' during the factorization, and sometimes we call getColumn() which is inefficient. Consider changing." );
     }
 };
 

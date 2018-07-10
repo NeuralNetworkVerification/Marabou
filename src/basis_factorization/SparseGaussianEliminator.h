@@ -13,8 +13,9 @@
 #ifndef __SparseGaussianEliminator_h__
 #define __SparseGaussianEliminator_h__
 
-#include "LUFactors.h"
 #include "MString.h"
+#include "SparseLUFactors.h"
+#include "SparseMatrix.h"
 
 class SparseGaussianEliminator
 {
@@ -24,9 +25,9 @@ public:
 
     /*
       The class' main method: perform LU-factorization of a given matrix A,
-      provided in row-wise format. Store the results in the provided LUFactors.
+      provided in row-wise format. Store the results in the provided SparseLUFactors.
     */
-    void run( const double *A, LUFactors *luFactors );
+    void run( const SparseMatrix *A, SparseLUFactors *sparseLUFactors );
 
 private:
     /*
@@ -42,11 +43,17 @@ private:
     unsigned _vPivotRow;
     unsigned _vPivotColumn;
     unsigned _eliminationStep;
+    double _pivotElement;
 
     /*
       The output factorization
     */
-    LUFactors *_luFactors;
+    SparseLUFactors *_sparseLUFactors;
+
+    /*
+      Work memory
+    */
+    double *_work;
 
     /*
       Information on the number of non-zero elements in
@@ -56,7 +63,7 @@ private:
     unsigned *_numUColumnElements;
 
     void choosePivot();
-    void initializeFactorization( const double *A, LUFactors *luFactors );
+    void initializeFactorization( const SparseMatrix *A, SparseLUFactors *sparseLUFactors );
     void permute();
     void eliminate();
 

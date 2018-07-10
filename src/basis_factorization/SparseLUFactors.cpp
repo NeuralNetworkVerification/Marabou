@@ -97,10 +97,10 @@ void SparseLUFactors::dump() const
     printf( "\nDumping LU factos:\n" );
 
     printf( "\tDumping F:\n" );
-    _F->dump();
+    _F->dumpDense();
 
     printf( "\tDumping V:\n" );
-    _V->dump();
+    _V->dumpDense();
 
     printf( "\tDumping product F*V:\n" );
 
@@ -114,7 +114,7 @@ void SparseLUFactors::dump() const
             result[i*_m + j] = 0;
             for ( unsigned k = 0; k < _m; ++k )
             {
-                result[i*_m + j] += _F->get( i, k ) * _V->get( k, j );
+                result[i*_m + j] += ( i == k ? 1.0 : _F->get( i, k ) ) * _V->get( k, j );
             }
         }
     }
@@ -152,7 +152,7 @@ void SparseLUFactors::dump() const
         for ( unsigned j = 0; j < _m; ++j )
         {
             unsigned lCol = _P._columnOrdering[j];
-            printf( "%8.2lf ", _F->get( lRow, lCol ) );
+            printf( "%8.2lf ", ( lRow == lCol ? 1.0 : _F->get( lRow, lCol ) ) );
         }
         printf( "\n" );
     }
