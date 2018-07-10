@@ -46,25 +46,7 @@ CSRMatrix::~CSRMatrix()
 
 void CSRMatrix::initialize( const double *M, unsigned m, unsigned n )
 {
-    _m = m;
-    _n = n;
-
-    unsigned estimatedNumRowEntries = std::max( 2U, _n / ROW_DENSITY_ESTIMATE );
-    _estimatedNnz = estimatedNumRowEntries * _m;
-
-    freeMemoryIfNeeded();
-
-    _A = new double[_estimatedNnz];
-    if ( !_A )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "CSRMatrix::A" );
-
-    _IA = new unsigned[_m + 1];
-    if ( !_IA )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "CSRMatrix::IA" );
-
-    _JA = new unsigned[_estimatedNnz];
-    if ( !_JA )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "CSRMatrix::JA" );
+    initializeToEmpty( m, n );
 
     // Now go over M, populate the arrays and find nnz
     _nnz = 0;
@@ -88,6 +70,31 @@ void CSRMatrix::initialize( const double *M, unsigned m, unsigned n )
             ++_nnz;
         }
     }
+}
+
+void CSRMatrix::initializeToEmpty( unsigned m, unsigned n )
+{
+    _m = m;
+    _n = n;
+
+    unsigned estimatedNumRowEntries = std::max( 2U, _n / ROW_DENSITY_ESTIMATE );
+    _estimatedNnz = estimatedNumRowEntries * _m;
+
+    freeMemoryIfNeeded();
+
+    _A = new double[_estimatedNnz];
+    if ( !_A )
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "CSRMatrix::A" );
+
+    _IA = new unsigned[_m + 1];
+    if ( !_IA )
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "CSRMatrix::IA" );
+
+    _JA = new unsigned[_estimatedNnz];
+    if ( !_JA )
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "CSRMatrix::JA" );
+
+    std::fill_n( _IA, _m + 1, 0.0 );
 }
 
 void CSRMatrix::increaseCapacity()
@@ -608,9 +615,19 @@ void CSRMatrix::executeChanges()
     }
 }
 
+void CSRMatrix::countElements( unsigned *numRowElements, unsigned *numColumnElements )
+{
+    for ( unsigned i = 0; i < _m; ++i )
+        numRowElements[i] = _IA[i+1] - _IA[i];
+
+    std::fill_n( numColumnElements, _n, 0 );
+    for ( unsigned i = 0; i < _nnz; ++i )
+        ++numColumnElements[_JA[i]];
+}
+
 void CSRMatrix::dump() const
 {
-    printf( "\nDumping internal arrays:\n" );
+    printf( "\nDumping internal arrays: (nnz = %u)\n", _nnz );
 
     printf( "\tA: " );
     for ( unsigned i = 0; i < _nnz; ++i )

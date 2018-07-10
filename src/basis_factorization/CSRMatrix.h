@@ -48,6 +48,7 @@ public:
     CSRMatrix();
     ~CSRMatrix();
     void initialize( const double *M, unsigned m, unsigned n );
+    void initializeToEmpty( unsigned m, unsigned n );
 
     /*
       Obtain a single element/row/column of the matrix.
@@ -77,6 +78,11 @@ public:
     */
     void commitChange( unsigned row, unsigned column, double newValue );
     void executeChanges();
+
+    /*
+      Count the number of elements in each row and column
+    */
+    void countElements( unsigned *numRowElements, unsigned *numColumnElements );
 
     /*
       For debugging purposes.

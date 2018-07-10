@@ -537,6 +537,35 @@ public:
             for ( unsigned j = 0; j < 4; ++j )
                 TS_ASSERT_EQUALS( csr1.get( i, j ), expected2[i*4 + j] );
     }
+
+    void test_count_elements()
+    {
+        double M1[] = {
+            0, 0, 0, 0, 1,
+            5, 8, 0, 0, 2,
+            0, 2, 3, 0, 3,
+            0, 0, 4, 0, 4,
+        };
+
+        CSRMatrix csr1;
+        csr1.initialize( M1, 4, 5 );
+
+        unsigned rowElements[4];
+        unsigned columnElements[5];
+
+        TS_ASSERT_THROWS_NOTHING( csr1.countElements( rowElements, columnElements ) );
+
+        TS_ASSERT_EQUALS( rowElements[0], 1U );
+        TS_ASSERT_EQUALS( rowElements[1], 3U );
+        TS_ASSERT_EQUALS( rowElements[2], 3U );
+        TS_ASSERT_EQUALS( rowElements[3], 2U );
+
+        TS_ASSERT_EQUALS( columnElements[0], 1U );
+        TS_ASSERT_EQUALS( columnElements[1], 2U );
+        TS_ASSERT_EQUALS( columnElements[2], 2U );
+        TS_ASSERT_EQUALS( columnElements[3], 0U );
+        TS_ASSERT_EQUALS( columnElements[4], 4U );
+    }
 };
 
 //
