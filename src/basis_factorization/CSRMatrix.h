@@ -34,6 +34,7 @@
             of M
 
   - Array JA of length nnz that holds the column index of every element.
+    These are in increasing order for every row
 */
 
 class CSRMatrix : public SparseMatrix
@@ -120,8 +121,9 @@ private:
         }
     };
 
-    Map<unsigned, Set<CommittedChange>> _committedChanges;
-    Map<unsigned, Set<unsigned>> _committedErasures;
+    Map<unsigned, List<CommittedChange>> _committedChanges;
+    Map<unsigned, Set<CommittedChange>> _committedInsertions;
+    Set<unsigned> _committedDeletions;
 
     unsigned _m;
     unsigned _n;
@@ -149,6 +151,23 @@ private:
       Release allocated memory
     */
     void freeMemoryIfNeeded();
+
+    /*
+      Locate the array index of an entry based on row and column. Return
+      _nnz if entry does not exist.
+    */
+    unsigned findArrayIndexForEntry( unsigned row, unsigned column ) const;
+
+    /*
+      Delete a list of elements according to their indices.
+      The list needs to be sorted.
+    */
+    void deleteElements( const List<unsigned> &deletions );
+
+    /*
+      Insert new elements
+    */
+    void insertElements( const Map<unsigned, Set<CommittedChange>> &insertions );
 };
 
 #endif // __CSRMatrix_h__

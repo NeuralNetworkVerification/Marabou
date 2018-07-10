@@ -12,6 +12,7 @@
 
 #include "BasisFactorizationError.h"
 #include "CSRMatrix.h"
+#include "Debug.h"
 #include "FloatUtils.h"
 #include "MString.h"
 
@@ -115,28 +116,10 @@ void CSRMatrix::increaseCapacity()
 
 double CSRMatrix::get( unsigned row, unsigned column ) const
 {
-    /*
-      Elements of row i are stored in _A and _JA between
-      indices _IA[i] and _IA[i+1] - 1. Perform binary search to
-      look for the correct column index.
-    */
+    unsigned index = findArrayIndexForEntry( row, column );
 
-    int low = _IA[row];
-    int high = _IA[row + 1] - 1;
-    int mid;
-    while ( low <= high )
-    {
-        mid = ( low + high ) / 2;
-        if ( _JA[mid] < column )
-            low = mid + 1;
-        else if ( _JA[mid] > column )
-            high = mid - 1;
-        else
-            return _A[mid];
-    }
-
-    // Column doesn't exist, so element is 0
-    return 0;
+    // Return 0 if element is not found
+    return ( index == _nnz ) ? 0 : _A[index];
 }
 
 void CSRMatrix::addLastRow( double *row )
@@ -308,44 +291,18 @@ void CSRMatrix::mergeColumns( unsigned x1, unsigned x2 )
     List<unsigned> markedForDeletion;
     for ( unsigned i = 0; i < _m; ++i )
     {
-        // Find the entry of x2
-        int low = _IA[i];
-        int high = _IA[i + 1] - 1;
-        int mid;
-        bool foundX2 = false;
-        while ( !foundX2 && ( low <= high ) )
-        {
-            mid = ( low + high ) / 2;
-            if ( _JA[mid] < x2 )
-                low = mid + 1;
-            else if ( _JA[mid] > x2 )
-                high = mid - 1;
-            else
-                foundX2 = true;
-        }
+        unsigned x2Index = findArrayIndexForEntry( i, x2 );
+        bool foundX2 = ( x2Index != _nnz );
 
         /*
-          If the loop terminated because x2 has a
-          zero entry for this row, skip the row
+          If x2 has a zero entry for this row, skip the row
         */
         if ( !foundX2 )
             continue;
-        int x2Index = mid;
 
         // Now find the entry of x1
-        low = _IA[i];
-        high = _IA[i + 1] - 1;
-        bool foundX1 = false;
-        while ( !foundX1 && ( low <= high ) )
-        {
-            mid = ( low + high ) / 2;
-            if ( _JA[mid] < x1 )
-                low = mid + 1;
-            else if ( _JA[mid] > x1 )
-                high = mid - 1;
-            else
-                foundX1 = true;
-        }
+        unsigned x1Index = findArrayIndexForEntry( i, x1 );
+        bool foundX1 = ( x1Index != _nnz );
 
         if ( foundX1 )
         {
@@ -355,9 +312,9 @@ void CSRMatrix::mergeColumns( unsigned x1, unsigned x2 )
               The only exception is when the sum is zero, and both
               of them need to be deleted.
             */
-            _A[mid] += _A[x2Index];
-            if ( FloatUtils::isZero( _A[mid] ) )
-                markedForDeletion.append( mid );
+            _A[x1Index] += _A[x2Index];
+            if ( FloatUtils::isZero( _A[x1Index] ) )
+                markedForDeletion.append( x1Index );
 
             markedForDeletion.append( x2Index );
         }
@@ -375,13 +332,13 @@ void CSRMatrix::mergeColumns( unsigned x1, unsigned x2 )
               indices _IA[i] and _IA[i+1] - 1. See whether the
               entry in question needs to move left or right.
             */
-            while ( ( x2Index > (int)_IA[i] ) && ( x1 < _JA[x2Index - 1] ) )
+            while ( ( x2Index > _IA[i] ) && ( x1 < _JA[x2Index - 1] ) )
             {
                 _JA[x2Index] = _JA[x2Index - 1];
                 _JA[x2Index - 1] = x1;
                 --x2Index;
             }
-            while ( ( x2Index < (int)_IA[i + 1] - 1 ) && ( x1 > _JA[x2Index + 1] ) )
+            while ( ( x2Index < _IA[i + 1] - 1 ) && ( x1 > _JA[x2Index + 1] ) )
             {
                 _JA[x2Index] = _JA[x2Index + 1];
                 _JA[x2Index + 1] = x1;
@@ -391,13 +348,22 @@ void CSRMatrix::mergeColumns( unsigned x1, unsigned x2 )
     }
 
     // Finally, remove the entries that were marked for deletion.
-    auto deletedEntry = markedForDeletion.begin();
+    deleteElements( markedForDeletion );
+    --_n;
+}
+
+void CSRMatrix::deleteElements( const List<unsigned> &deletions )
+{
+    if ( deletions.empty() )
+        return;
+
+    auto deletedEntry = deletions.begin();
     unsigned totalDeleted = 0;
     for ( unsigned i = 1; i < _m + 1; ++i )
     {
         // Count number of deleted entries in row i - 1
         unsigned deletedInThisRow = 0;
-        while ( ( *deletedEntry < _IA[i] ) && ( deletedEntry != markedForDeletion.end() ) )
+        while ( ( deletedEntry != deletions.end() ) && ( *deletedEntry < _IA[i] ) )
         {
             ++deletedInThisRow;
             ++deletedEntry;
@@ -407,12 +373,12 @@ void CSRMatrix::mergeColumns( unsigned x1, unsigned x2 )
         totalDeleted += deletedInThisRow;
     }
 
-    deletedEntry = markedForDeletion.begin();
+    deletedEntry = deletions.begin();
     unsigned index = 0;
     unsigned copyToIndex = 0;
     while ( index < _nnz )
     {
-        if ( index == *deletedEntry )
+        if ( ( deletedEntry != deletions.end() ) && ( index == *deletedEntry ) )
         {
             // We've hit another deleted entry.
             ++deletedEntry;
@@ -432,8 +398,97 @@ void CSRMatrix::mergeColumns( unsigned x1, unsigned x2 )
         ++index;
     }
 
-    _nnz -= markedForDeletion.size();
-    --_n;
+    _nnz -= deletions.size();
+}
+
+void CSRMatrix::insertElements( const Map<unsigned, Set<CommittedChange>> &insertions )
+{
+    // Increase capacity if needed
+    unsigned totalInsertions = 0;
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        if ( insertions.exists( i ) )
+            totalInsertions += insertions[i].size();
+    }
+
+    unsigned newNnz = _nnz + totalInsertions;
+    while ( newNnz >= _estimatedNnz )
+        increaseCapacity();
+
+    // Traverse rows from last to first, add elements as needed
+    int arrayIndex = _nnz - 1;
+    int newArrayIndex = arrayIndex + totalInsertions;
+
+    Set<CommittedChange>::const_reverse_iterator nextInsertion;
+    for ( int i = _m - 1; i >= 0; --i )
+    {
+        bool rowHasInsertions = insertions.exists( i );
+        if ( rowHasInsertions )
+            nextInsertion = insertions[i].rbegin();
+
+        /*
+          Elements of row i are stored in _A and _JA between
+          indices _IA[i] and _IA[i+1] - 1.
+        */
+        int j = _IA[i+1] - 1;
+        while ( j >= (int)_IA[i] )
+        {
+            if ( !rowHasInsertions || nextInsertion == insertions[i].rend() )
+            {
+                // No more insertions here, just copy the element
+                _A[newArrayIndex] = _A[j];
+                _JA[newArrayIndex] = _JA[j];
+
+                --j;
+            }
+            else
+            {
+                // We still have insertions for this row, but is this the right spot?
+                if ( _JA[j] < nextInsertion->_column )
+                {
+                    _A[newArrayIndex] = nextInsertion->_value;
+                    _JA[newArrayIndex] = nextInsertion->_column;
+
+                    ++nextInsertion;
+                }
+                else
+                {
+                    _A[newArrayIndex] = _A[j];
+                    _JA[newArrayIndex] = _JA[j];
+
+                    --j;
+                }
+            }
+
+            --newArrayIndex;
+        }
+
+        /*
+          We are done processing the elements of this row, but there may be
+          some insertions left, in which case we just insert them now
+        */
+        if ( rowHasInsertions )
+        {
+            while ( nextInsertion != insertions[i].rend() )
+            {
+                _A[newArrayIndex] = nextInsertion->_value;
+                _JA[newArrayIndex] = nextInsertion->_column;
+                ++nextInsertion;
+                --newArrayIndex;
+            }
+        }
+
+    }
+
+    // Make a final pass to adjust the IA indices
+    unsigned totalAddedSoFar = 0;
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        totalAddedSoFar += insertions.exists( i ) ? insertions[i].size() : 0;
+        _IA[i+1] += totalAddedSoFar;
+    }
+
+    _nnz += totalAddedSoFar;
 }
 
 void CSRMatrix::addEmptyColumn()
@@ -463,64 +518,94 @@ void CSRMatrix::toDense( double *result ) const
 
 void CSRMatrix::commitChange( unsigned row, unsigned column, double newValue )
 {
-    if ( FloatUtils::isZero( newValue ) )
+    // First check whether the entry already exists
+    unsigned index = findArrayIndexForEntry( row, column );
+    bool found = ( index < _nnz );
+
+    if ( !found )
     {
-        _committedErasures[row].insert( column );
-        return;
+        // Entry doesn't exist currently
+        if ( !FloatUtils::isZero( newValue ) )
+        {
+            CommittedChange change;
+            change._column = column;
+            change._value = newValue;
+            _committedInsertions[row].insert( change );
+        }
+    }
+    else
+    {
+        // Entry currently exists
+        if ( FloatUtils::isZero( newValue ) )
+        {
+            _committedDeletions.insert( index );
+        }
+        else if ( FloatUtils::areDisequal( newValue, _A[index] ) )
+        {
+            CommittedChange change;
+            change._column = column;
+            change._value = newValue;
+            _committedChanges[row].append( change );
+        }
+    }
+}
+
+unsigned CSRMatrix::findArrayIndexForEntry( unsigned row, unsigned column ) const
+{
+    int low = _IA[row];
+    int high = _IA[row + 1] - 1;
+    int mid;
+
+    bool found = false;
+    while ( !found && low <= high )
+    {
+        mid = ( low + high ) / 2;
+        if ( _JA[mid] < column )
+            low = mid + 1;
+        else if ( _JA[mid] > column )
+            high = mid - 1;
+        else
+            found = true;
     }
 
-    CommittedChange change;
-    change._column = column;
-    change._value = newValue;
-    _committedChanges[row].insert( change );
+    return found ? mid : _nnz;
 }
 
 void CSRMatrix::executeChanges()
 {
-    // First handle the erasures. Do a pass on the data structures, and shrink
-    // them as needed.
-    if ( !_committedErasures.empty() )
+    // Get the changes out of the way
+    for ( const auto &changedRow : _committedChanges )
     {
-        unsigned row = 0;
-        unsigned column;
-        unsigned indexAfterDeletion = 0;
-        unsigned deletedSoFar = 0;
-
-        for ( unsigned i = 0; i < _nnz; ++i )
+        unsigned row = changedRow.first;
+        for ( const auto &changedColumn : changedRow.second )
         {
-            // Check if we've just started a new row, skip any empty rows
-            while ( i == _IA[row + 1] )
-            {
-                _IA[row + 1] -= deletedSoFar;
-                ++row;
-            }
+            unsigned column = changedColumn._column;
+            unsigned index = findArrayIndexForEntry( row, column );
 
-            // We're in the middle of a row, delete as needed
-            column = _JA[i];
-            if (  _committedErasures.exists( row ) && _committedErasures[row].exists( column ) )
-            {
-                ++deletedSoFar;
-            }
-            else
-            {
-                // This entry is being kept
-                _A[indexAfterDeletion] = _A[i];
-                _JA[indexAfterDeletion] = _JA[i];
-                ++indexAfterDeletion;
-            }
+            ASSERT( index < _nnz );
+
+            _A[index] = changedColumn._value;
         }
-
-        // Fix any trailing 0-rows
-        while ( row < _m )
-        {
-            _IA[row + 1] -= deletedSoFar;
-            ++row;
-        }
-
-        _nnz -= deletedSoFar;
     }
 
-    _committedErasures.clear();
+    // Next, handle the deletions. Do a pass on the data structures, and shrink
+    // them as needed.
+    if ( !_committedDeletions.empty() )
+    {
+        List<unsigned> deletions;
+        for ( const auto &deletedEntry : _committedDeletions )
+            deletions.append( deletedEntry );
+        deleteElements( deletions );
+
+        _committedDeletions.clear();
+    }
+
+    // Finally, handle the insertions
+    if ( !_committedInsertions.empty() )
+    {
+        insertElements( _committedInsertions );
+        _committedInsertions.clear();
+    }
 }
 
 void CSRMatrix::dump() const
