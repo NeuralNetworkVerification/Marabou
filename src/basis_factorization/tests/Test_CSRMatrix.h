@@ -225,21 +225,42 @@ public:
 
     void test_to_dense()
     {
-        double M1[] = {
-            0, 0, 0, 0,
-            5, 8, 0, 0,
-            0, 0, 3, 0,
-            0, 6, 0, 0,
-        };
+        {
+            double M1[] = {
+                0, 0, 0, 0,
+                5, 8, 0, 0,
+                0, 0, 3, 0,
+                0, 6, 0, 0,
+            };
 
-        CSRMatrix csr1;
-        csr1.initialize( M1, 4, 4 );
+            CSRMatrix csr1;
+            csr1.initialize( M1, 4, 4 );
 
-        double dense[16];
+            double dense[16];
 
-        TS_ASSERT_THROWS_NOTHING( csr1.toDense( dense ) );
+            TS_ASSERT_THROWS_NOTHING( csr1.toDense( dense ) );
 
-        TS_ASSERT_SAME_DATA( M1, dense, sizeof(M1) );
+            TS_ASSERT_SAME_DATA( M1, dense, sizeof(M1) );
+        }
+
+        {
+            double M1[] = {
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                5, 8, 0, 0,
+                1, 2, 3, 4,
+                0, 6, 0, 0,
+            };
+
+            CSRMatrix csr1;
+            csr1.initialize( M1, 5, 4 );
+
+            double dense[20];
+
+            TS_ASSERT_THROWS_NOTHING( csr1.toDense( dense ) );
+
+            TS_ASSERT_SAME_DATA( M1, dense, sizeof(M1) );
+        }
     }
 
     void test_get_column()
@@ -401,6 +422,34 @@ public:
                     TS_ASSERT_EQUALS( csr1.get( i, j ), expected[i*3 + j] );
 
             TS_ASSERT_EQUALS( csr1.getNnz(), 6U );
+        }
+
+
+        {
+            double M1[] = {
+                0, 0, 0, 0,
+                5, 8, 0, 0,
+                0, 2, 3, 1,
+                0, 0, 4, 0,
+            };
+
+            CSRMatrix csr1;
+            csr1.initialize( M1, 4, 4 );
+
+            TS_ASSERT_THROWS_NOTHING( csr1.mergeColumns( 0, 1 ) );
+
+            double expected[] = {
+                0,  0, 0,
+                13, 0, 0,
+                2,  3, 1,
+                0,  4, 0,
+            };
+
+            for ( unsigned i = 0; i < 4; ++i )
+                for ( unsigned j = 0; j < 3; ++j )
+                    TS_ASSERT_EQUALS( csr1.get( i, j ), expected[i*3 + j] );
+
+            TS_ASSERT_EQUALS( csr1.getNnz(), 5U );
         }
     }
 

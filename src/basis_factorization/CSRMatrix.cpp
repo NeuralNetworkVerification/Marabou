@@ -363,7 +363,14 @@ void CSRMatrix::mergeColumns( unsigned x1, unsigned x2 )
 
     // Finally, remove the entries that were marked for deletion.
     deleteElements( markedForDeletion );
+
+    // Remove the extra column, adjust any column entries that were higher
     --_n;
+    for ( unsigned i = 0; i < _nnz; ++i )
+    {
+        if ( _JA[i] > x2 )
+            --_JA[i];
+    }
 }
 
 void CSRMatrix::deleteElements( const List<unsigned> &deletions )
