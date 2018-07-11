@@ -14,6 +14,7 @@
 #define __MockColumnOracle_h__
 
 #include "IBasisFactorization.h"
+#include "SparseVector.h"
 
 class MockColumnOracle : public IBasisFactorization::BasisColumnOracle
 {
@@ -51,6 +52,16 @@ public:
     void getColumnOfBasis( unsigned column, double *result ) const
     {
         memcpy( result, _basis + ( _m * column ), sizeof(double) * _m );
+    }
+
+    void getColumnOfBasis( unsigned column, SparseVector *result ) const
+    {
+        result->clear();
+        for ( unsigned i = 0; i < _m; ++i )
+        {
+            if ( !FloatUtils::isZero( _basis[_m * column + i] ) )
+                result->_values[i] = _basis[_m * column + i];
+        }
     }
 };
 

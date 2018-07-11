@@ -398,6 +398,7 @@ public:
     double *getInverseBasisMatrix() const;
 
     void getColumnOfBasis( unsigned column, double *result ) const;
+    void getColumnOfBasis( unsigned column, SparseVector *result ) const;
 
     /*
       Trigger a re-computing of the basis factorization. This can

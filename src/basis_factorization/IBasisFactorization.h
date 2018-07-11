@@ -13,6 +13,8 @@
 #ifndef __IBasisFactorization_h__
 #define __IBasisFactorization_h__
 
+class SparseVector;
+
 class IBasisFactorization
 {
     /*
@@ -27,6 +29,7 @@ public:
     public:
         virtual ~BasisColumnOracle() {}
         virtual void getColumnOfBasis( unsigned column, double *result ) const = 0;
+        virtual void getColumnOfBasis( unsigned column, SparseVector *result ) const = 0;
     };
 
     IBasisFactorization( const BasisColumnOracle &basisColumnOracle )

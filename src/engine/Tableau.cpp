@@ -1964,6 +1964,14 @@ void Tableau::getColumnOfBasis( unsigned column, double *result ) const
     _A->getColumnDense( _basicIndexToVariable[column], result );
 }
 
+void Tableau::getColumnOfBasis( unsigned column, SparseVector *result ) const
+{
+    ASSERT( column < _m );
+    ASSERT( !_mergedVariables.exists( _basicIndexToVariable[column] ) );
+
+    _A->getColumn( _basicIndexToVariable[column], result );
+}
+
 void Tableau::refreshBasisFactorization()
 {
     _basisFactorization->obtainFreshBasis();
