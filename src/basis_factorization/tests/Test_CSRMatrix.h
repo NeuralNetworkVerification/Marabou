@@ -375,6 +375,33 @@ public:
 
             TS_ASSERT_EQUALS( csr1.getNnz(), 0U );
         }
+
+        {
+            double M1[] = {
+                0, 0, 0, 0,
+                5, 8, 0, 0,
+                0, 2, 3, 1,
+                0, 0, 4, 0,
+            };
+
+            CSRMatrix csr1;
+            csr1.initialize( M1, 4, 4 );
+
+            TS_ASSERT_THROWS_NOTHING( csr1.mergeColumns( 0, 3 ) );
+
+            double expected[] = {
+                0, 0, 0,
+                5, 8, 0,
+                1, 2, 3,
+                0, 0, 4,
+            };
+
+            for ( unsigned i = 0; i < 4; ++i )
+                for ( unsigned j = 0; j < 3; ++j )
+                    TS_ASSERT_EQUALS( csr1.get( i, j ), expected[i*3 + j] );
+
+            TS_ASSERT_EQUALS( csr1.getNnz(), 6U );
+        }
     }
 
     void test_deletions()

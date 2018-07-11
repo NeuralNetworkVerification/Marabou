@@ -340,16 +340,22 @@ void CSRMatrix::mergeColumns( unsigned x1, unsigned x2 )
               indices _IA[i] and _IA[i+1] - 1. See whether the
               entry in question needs to move left or right.
             */
+
+            double temp = _A[x2Index];
             while ( ( x2Index > _IA[i] ) && ( x1 < _JA[x2Index - 1] ) )
             {
                 _JA[x2Index] = _JA[x2Index - 1];
                 _JA[x2Index - 1] = x1;
+                _A[x2Index] = _A[x2Index - 1];
+                _A[x2Index - 1] = temp;
                 --x2Index;
             }
             while ( ( x2Index < _IA[i + 1] - 1 ) && ( x1 > _JA[x2Index + 1] ) )
             {
                 _JA[x2Index] = _JA[x2Index + 1];
                 _JA[x2Index + 1] = x1;
+                _A[x2Index] = _A[x2Index + 1];
+                _A[x2Index + 1] = temp;
                 ++x2Index;
             }
         }
@@ -648,9 +654,45 @@ void CSRMatrix::dump() const
 {
     printf( "\nDumping internal arrays: (nnz = %u)\n", _nnz );
 
-    printf( "\tA: " );
+    printf( "\tA:\n" );
+    unsigned row = 0;
     for ( unsigned i = 0; i < _nnz; ++i )
+    {
+        bool jump = false;
+
+        while ( i == _IA[row] )
+        {
+            jump = true;
+            ++row;
+        }
+
+        if ( jump )
+            printf( "\n\t\t" );
+
         printf( "%5.2lf ", _A[i] );
+    }
+
+    printf( "\n" );
+
+    printf( "\tJA: " );
+    row = 0;
+    for ( unsigned i = 0; i < _nnz; ++i )
+    {
+        bool jump = false;
+
+        while ( i == _IA[row] )
+        {
+            jump = true;
+            ++row;
+        }
+
+        if ( jump )
+            printf( "\n\t\t" );
+
+        printf( "%5u ", _JA[i] );
+    }
+
+
     printf( "\n" );
 
     printf( "\tIA: " );
@@ -658,10 +700,6 @@ void CSRMatrix::dump() const
         printf( "%5u ", _IA[i] );
     printf( "\n" );
 
-    printf( "\tJA: " );
-    for ( unsigned i = 0; i < _nnz; ++i )
-        printf( "%5u ", _JA[i] );
-    printf( "\n" );
 }
 
 void CSRMatrix::dumpDense() const
