@@ -179,6 +179,11 @@ private:
       Insert new elements
     */
     void insertElements( const Map<unsigned, Set<CommittedChange>> &insertions );
+
+    /*
+      For debugging
+    */
+    void checkInvariants() const;
 };
 
 #endif // __CSRMatrix_h__

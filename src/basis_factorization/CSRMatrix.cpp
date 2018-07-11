@@ -727,6 +727,21 @@ void CSRMatrix::dumpDense() const
     delete[] work;
 }
 
+void CSRMatrix::checkInvariants() const
+{
+    // Check that all _JA elements are within range
+    for ( unsigned i = 0; i < _nnz; ++i )
+    {
+        if ( _JA[i] >= _n )
+        {
+            printf( "CSRMatrix error! Have a _JA element out of range. "
+                    "Dumping and terminating\n" );
+            dump();
+            exit( 1 );
+        }
+    }
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "
