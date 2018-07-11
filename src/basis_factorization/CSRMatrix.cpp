@@ -627,6 +627,23 @@ void CSRMatrix::countElements( unsigned *numRowElements, unsigned *numColumnElem
         ++numColumnElements[_JA[i]];
 }
 
+void CSRMatrix::transposeIntoOther( SparseMatrix *other )
+{
+    other->initializeToEmpty( _n, _m );
+
+    unsigned row = 0;
+    for ( unsigned i = 0; i < _nnz; ++i )
+    {
+        // Find the row of the element indexed i
+        while ( i >= _IA[row + 1] )
+            ++row;
+
+        other->commitChange( _JA[i], row, _A[i] );
+    }
+
+    other->executeChanges();
+}
+
 void CSRMatrix::dump() const
 {
     printf( "\nDumping internal arrays: (nnz = %u)\n", _nnz );

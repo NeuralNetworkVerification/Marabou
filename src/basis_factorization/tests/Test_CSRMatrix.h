@@ -566,6 +566,58 @@ public:
         TS_ASSERT_EQUALS( columnElements[3], 0U );
         TS_ASSERT_EQUALS( columnElements[4], 4U );
     }
+
+    void test_transpose()
+    {
+        double M1[] = {
+            0, 0, 0, 0, 1,
+            5, 8, 0, 0, 2,
+            0, 2, 3, 0, 3,
+            0, 0, 4, 0, 4,
+        };
+
+        CSRMatrix csr1;
+        csr1.initialize( M1, 4, 5 );
+
+        CSRMatrix csr2;
+        TS_ASSERT_THROWS_NOTHING( csr1.transposeIntoOther( &csr2 ) );
+
+        double expected[] = {
+            0, 5, 0, 0,
+            0, 8, 2, 0,
+            0, 0, 3, 4,
+            0, 0, 0, 0,
+            1, 2, 3, 4,
+        };
+
+        for ( unsigned i = 0; i < 5; ++i )
+            for ( unsigned j = 0; j < 4; ++j )
+                TS_ASSERT_EQUALS( csr2.get( i, j ), expected[i*4 + j] );
+
+        CSRMatrix csr3;
+        TS_ASSERT_THROWS_NOTHING( csr2.transposeIntoOther( &csr3 ) );
+
+        for ( unsigned i = 0; i < 4; ++i )
+            for ( unsigned j = 0; j < 5; ++j )
+                TS_ASSERT_EQUALS( csr3.get( i, j ), M1[i*5 + j] );
+
+        // Transpose an empty matrix
+        double empty[] = {
+            0, 0,
+            0, 0,
+            0, 0,
+        };
+
+        CSRMatrix csr4;
+        csr4.initialize( empty, 2, 3 );
+
+        CSRMatrix csr5;
+        TS_ASSERT_THROWS_NOTHING( csr4.transposeIntoOther( &csr5 ) );
+
+        for ( unsigned i = 0; i < 2; ++i )
+            for ( unsigned j = 0; j < 3; ++j )
+                TS_ASSERT_EQUALS( csr5.get( i, j ), 0.0 );
+    }
 };
 
 //

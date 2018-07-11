@@ -150,6 +150,10 @@ void SparseGaussianEliminator::run( const SparseMatrix *A, SparseLUFactors *spar
     // Execute the changes in F
     _sparseLUFactors->_F->executeChanges();
 
+    // Compute the transposed F, V
+    _sparseLUFactors->_F->transposeIntoOther( _sparseLUFactors->_Ft );
+    _sparseLUFactors->_V->transposeIntoOther( _sparseLUFactors->_Vt );
+
     // DEBUG({
     //         // Check that the factorization is correct
     //         double *product = new double[_m * _m];

@@ -62,6 +62,11 @@ public:
     virtual void countElements( unsigned *numRowElements, unsigned *numColumnElements ) = 0;
 
     /*
+      Transpose the matrix and store it in another matrix
+    */
+    virtual void transposeIntoOther( SparseMatrix *other ) = 0;
+
+    /*
       For debugging purposes.
     */
     virtual void dump() const {};

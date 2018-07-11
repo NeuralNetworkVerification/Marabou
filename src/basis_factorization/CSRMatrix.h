@@ -85,6 +85,11 @@ public:
     void countElements( unsigned *numRowElements, unsigned *numColumnElements );
 
     /*
+      Transpose the matrix and store it in another matrix
+    */
+    void transposeIntoOther( SparseMatrix *other );
+
+    /*
       For debugging purposes.
     */
     void dump() const;

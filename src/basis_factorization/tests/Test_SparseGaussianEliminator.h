@@ -60,6 +60,29 @@ public:
         }
     }
 
+    void computeTransposedMatrixFromFactorization( SparseLUFactors *lu, double *result )
+    {
+        // At = Vt * Ft
+
+        unsigned m = lu->_m;
+
+        std::fill_n( result, m * m, 0.0 );
+        for ( unsigned i = 0; i < m; ++i )
+        {
+            for ( unsigned j = 0; j < m; ++j )
+            {
+                result[i*m + j] = 0;
+                for ( unsigned k = 0; k < m; ++k )
+                {
+                    double vtValue = lu->_Vt->get( i, k );
+                    double ftValue = ( k == j ) ? 1.0 : lu->_Ft->get( k, j );
+
+                    result[i*m + j] += vtValue * ftValue;
+                }
+            }
+        }
+    }
+
     void dumpMatrix( double *matrix, unsigned m, String message )
     {
         TS_TRACE( message );
@@ -76,6 +99,17 @@ public:
         }
 
         printf( "\n" );
+    }
+
+    void transposeMatrix( const double *orig, double *result, unsigned m )
+    {
+        for ( unsigned i = 0; i < m; ++i )
+        {
+            for ( unsigned j = 0; j < m; ++j )
+            {
+                result[i*m + j] = orig[j*m + i];
+            }
+        }
     }
 
     void test_sanity()
@@ -107,6 +141,15 @@ public:
                 TS_ASSERT( FloatUtils::areEqual( A[i], result[i] ) );
             }
 
+            double At[9];
+            transposeMatrix( A, At, 3 );
+            computeTransposedMatrixFromFactorization( &lu3, result );
+
+            for ( unsigned i = 0; i < 9; ++i )
+            {
+                TS_ASSERT( FloatUtils::areEqual( At[i], result[i] ) );
+            }
+
             TS_ASSERT_THROWS_NOTHING( delete ge );
         }
 
@@ -131,6 +174,15 @@ public:
             for ( unsigned i = 0; i < 9; ++i )
             {
                 TS_ASSERT( FloatUtils::areEqual( A[i], result[i] ) );
+            }
+
+            double At[9];
+            transposeMatrix( A, At, 3 );
+            computeTransposedMatrixFromFactorization( &lu3, result );
+
+            for ( unsigned i = 0; i < 9; ++i )
+            {
+                TS_ASSERT( FloatUtils::areEqual( At[i], result[i] ) );
             }
 
             TS_ASSERT_THROWS_NOTHING( delete ge );
@@ -159,6 +211,15 @@ public:
                 TS_ASSERT( FloatUtils::areEqual( A[i], result[i] ) );
             }
 
+            double At[9];
+            transposeMatrix( A, At, 3 );
+            computeTransposedMatrixFromFactorization( &lu3, result );
+
+            for ( unsigned i = 0; i < 9; ++i )
+            {
+                TS_ASSERT( FloatUtils::areEqual( At[i], result[i] ) );
+            }
+
             TS_ASSERT_THROWS_NOTHING( delete ge );
         }
 
@@ -184,6 +245,15 @@ public:
             for ( unsigned i = 0; i < 16; ++i )
             {
                 TS_ASSERT( FloatUtils::areEqual( A[i], result[i] ) );
+            }
+
+            double At[9];
+            transposeMatrix( A, At, 4 );
+            computeTransposedMatrixFromFactorization( &lu4, result );
+
+            for ( unsigned i = 0; i < 16; ++i )
+            {
+                TS_ASSERT( FloatUtils::areEqual( At[i], result[i] ) );
             }
 
             TS_ASSERT_THROWS_NOTHING( delete ge );

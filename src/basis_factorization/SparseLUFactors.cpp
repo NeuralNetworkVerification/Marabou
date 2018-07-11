@@ -478,6 +478,9 @@ void SparseLUFactors::storeToOther( SparseLUFactors *other ) const
     _F->storeIntoOther( other->_F );
     _V->storeIntoOther( other->_V );
 
+    _Ft->storeIntoOther( other->_Ft );
+    _Vt->storeIntoOther( other->_Vt );
+
     _P.storeToOther( &other->_P );
     _Q.storeToOther( &other->_Q );
 }
