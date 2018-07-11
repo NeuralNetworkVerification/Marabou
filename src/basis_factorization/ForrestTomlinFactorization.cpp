@@ -692,6 +692,12 @@ const double *ForrestTomlinFactorization::getBasis() const
     return _B;
 }
 
+const SparseMatrix *ForrestTomlinFactorization::getSparseBasis() const
+{
+    printf( "Error! sparse getBasis() not supported for ForrestTomlinFactorization!\n" );
+    exit( 1 );
+}
+
 void ForrestTomlinFactorization::invertBasis( double *result )
 {
     if ( !_explicitBasisAvailable )

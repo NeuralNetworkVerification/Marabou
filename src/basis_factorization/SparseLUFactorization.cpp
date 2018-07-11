@@ -1,8 +1,7 @@
 /*********************                                                        */
-/*! \file LUFactorization.cpp
+/*! \file SparseLUFactorization.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Derek Huang
  **   Guy Katz
  ** This file is part of the Marabou project.
  ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
@@ -12,42 +11,43 @@
  **/
 
 #include "BasisFactorizationError.h"
+#include "CSRMatrix.h"
 #include "Debug.h"
 #include "EtaMatrix.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
 #include "LPElement.h"
-#include "LUFactorization.h"
 #include "MStringf.h"
 #include "MalformedBasisException.h"
+#include "SparseLUFactorization.h"
 
-LUFactorization::LUFactorization( unsigned m, const BasisColumnOracle &basisColumnOracle )
+SparseLUFactorization::SparseLUFactorization( unsigned m, const BasisColumnOracle &basisColumnOracle )
     : IBasisFactorization( basisColumnOracle )
-    , _B( NULL )
 	, _m( m )
-    , _luFactors( m )
-    , _gaussianEliminator( m )
+    , _sparseLUFactors( m )
+    , _sparseGaussianEliminator( m )
     , _z( NULL )
 {
-    _B = new double[m*m];
+    _B = new CSRMatrix;
     if ( !_B )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "LUFactorization::B" );
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseLUFactorization::B" );
+    _B->initializeToEmpty( m, m );
 
     _z = new double[m];
     if ( !_z )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "LUFactorization::z" );
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseLUFactorization::z" );
 }
 
-LUFactorization::~LUFactorization()
+SparseLUFactorization::~SparseLUFactorization()
 {
     freeIfNeeded();
 }
 
-void LUFactorization::freeIfNeeded()
+void SparseLUFactorization::freeIfNeeded()
 {
 	if ( _B )
 	{
-		delete[] _B;
+		delete _B;
 		_B = NULL;
 	}
 
@@ -58,23 +58,23 @@ void LUFactorization::freeIfNeeded()
     _etas.clear();
 }
 
-const double *LUFactorization::getBasis() const
+const double *SparseLUFactorization::getBasis() const
+{
+    printf( "Error! dense getBasis() not supported for SparseLUFactorization!\n" );
+    exit( 1 );
+}
+
+const SparseMatrix *SparseLUFactorization::getSparseBasis() const
 {
 	return _B;
 }
 
-const SparseMatrix *LUFactorization::getSparseBasis() const
-{
-    printf( "Error! sparse getBasis() not supported for LUFactorization!\n" );
-    exit( 1 );
-}
-
-const List<EtaMatrix *> LUFactorization::getEtas() const
+const List<EtaMatrix *> SparseLUFactorization::getEtas() const
 {
 	return _etas;
 }
 
-void LUFactorization::pushEtaMatrix( unsigned columnIndex, const double *column )
+void SparseLUFactorization::pushEtaMatrix( unsigned columnIndex, const double *column )
 {
     EtaMatrix *matrix = new EtaMatrix( _m, columnIndex, column );
     _etas.append( matrix );
@@ -86,19 +86,19 @@ void LUFactorization::pushEtaMatrix( unsigned columnIndex, const double *column 
 	}
 }
 
-void LUFactorization::setBasis( const double *B )
+void SparseLUFactorization::setBasis( const double *B )
 {
-	memcpy( _B, B, sizeof(double) * _m * _m );
+    _B->initialize( B, _m, _m );
 	factorizeBasis();
 }
 
-void LUFactorization::forwardTransformation( const double *y, double *x ) const
+void SparseLUFactorization::forwardTransformation( const double *y, double *x ) const
 {
     /*
       We are solving Bx = y, where B = B0 * E1 ... * En.
       First we solve B0 * z = y using a forward transformation.
     */
-    _luFactors.forwardTransformation( y, x );
+    _sparseLUFactors.forwardTransformation( y, x );
 
     /*
       Now we are left with E1 * ... * En * x = z (z is stored in x)
@@ -127,7 +127,7 @@ void LUFactorization::forwardTransformation( const double *y, double *x ) const
     }
 }
 
-void LUFactorization::backwardTransformation( const double *y, double *x ) const
+void SparseLUFactorization::backwardTransformation( const double *y, double *x ) const
 {
     /*
       We are solving xB = y, where B = B0 * E1 ... * En.
@@ -153,10 +153,10 @@ void LUFactorization::backwardTransformation( const double *y, double *x ) const
     /*
       We now need to solve xB0 = z. Use a backward transformation.
     */
-    _luFactors.backwardTransformation( _z, x );
+    _sparseLUFactors.backwardTransformation( _z, x );
 }
 
-void LUFactorization::clearFactorization()
+void SparseLUFactorization::clearFactorization()
 {
 	List<EtaMatrix *>::iterator it;
     for ( it = _etas.begin(); it != _etas.end(); ++it )
@@ -164,13 +164,13 @@ void LUFactorization::clearFactorization()
     _etas.clear();
 }
 
-void LUFactorization::factorizeBasis()
+void SparseLUFactorization::factorizeBasis()
 {
     clearFactorization();
 
     try
     {
-        _gaussianEliminator.run( _B, &_luFactors );
+        _sparseGaussianEliminator.run( _B, &_sparseLUFactors );
     }
     catch ( const BasisFactorizationError &e )
     {
@@ -181,67 +181,67 @@ void LUFactorization::factorizeBasis()
     }
 }
 
-void LUFactorization::storeFactorization( IBasisFactorization *other )
+void SparseLUFactorization::storeFactorization( IBasisFactorization *other )
 {
-    LUFactorization *otherLUFactorization = (LUFactorization *)other;
+    SparseLUFactorization *otherSparseLUFactorization = (SparseLUFactorization *)other;
 
-    ASSERT( _m == otherLUFactorization->_m );
-    ASSERT( otherLUFactorization->_etas.size() == 0 );
+    ASSERT( _m == otherSparseLUFactorization->_m );
+    ASSERT( otherSparseLUFactorization->_etas.size() == 0 );
 
     obtainFreshBasis();
 
     // Store the new basis and factorization
-    memcpy( otherLUFactorization->_B, _B, sizeof(double) * _m * _m );
-    _luFactors.storeToOther( &otherLUFactorization->_luFactors );
+    _B->storeIntoOther( otherSparseLUFactorization->_B );
+    _sparseLUFactors.storeToOther( &otherSparseLUFactorization->_sparseLUFactors );
 }
 
-void LUFactorization::restoreFactorization( const IBasisFactorization *other )
+void SparseLUFactorization::restoreFactorization( const IBasisFactorization *other )
 {
-    const LUFactorization *otherLUFactorization = (const LUFactorization *)other;
+    const SparseLUFactorization *otherSparseLUFactorization = (const SparseLUFactorization *)other;
 
-    ASSERT( _m == otherLUFactorization->_m );
-    ASSERT( otherLUFactorization->_etas.size() == 0 );
+    ASSERT( _m == otherSparseLUFactorization->_m );
+    ASSERT( otherSparseLUFactorization->_etas.size() == 0 );
 
     // Clear any existing data
     clearFactorization();
 
     // Store the new basis and factorization
-    memcpy( _B, otherLUFactorization->_B, sizeof(double) * _m * _m );
-    otherLUFactorization->_luFactors.storeToOther( &_luFactors );
+    otherSparseLUFactorization->_B->storeIntoOther( _B );
+    otherSparseLUFactorization->_sparseLUFactors.storeToOther( &_sparseLUFactors );
 }
 
-void LUFactorization::invertBasis( double *result )
+void SparseLUFactorization::invertBasis( double *result )
 {
     if ( !_etas.empty() )
         throw BasisFactorizationError( BasisFactorizationError::CANT_INVERT_BASIS_BECAUSE_OF_ETAS );
 
     ASSERT( result );
 
-    _luFactors.invertBasis( result );
+    _sparseLUFactors.invertBasis( result );
 }
 
-void LUFactorization::log( const String &message )
+void SparseLUFactorization::log( const String &message )
 {
     if ( GlobalConfiguration::BASIS_FACTORIZATION_LOGGING )
-        printf( "LUFactorization: %s\n", message.ascii() );
+        printf( "SparseLUFactorization: %s\n", message.ascii() );
 }
 
-bool LUFactorization::explicitBasisAvailable() const
+bool SparseLUFactorization::explicitBasisAvailable() const
 {
     return _etas.empty();
 }
 
-void LUFactorization::makeExplicitBasisAvailable()
+void SparseLUFactorization::makeExplicitBasisAvailable()
 {
     obtainFreshBasis();
 }
 
-void LUFactorization::dump() const
+void SparseLUFactorization::dump() const
 {
     printf( "*** Dumping LU factorization ***\n\n" );
 
     printf( "\nDumping LU factors:\n" );
-    _luFactors.dump();
+    _sparseLUFactors.dump();
     printf( "\n\n" );
 
     printf( "Dumping etas:\n" );
@@ -253,14 +253,18 @@ void LUFactorization::dump() const
     printf( "*** Done dumping LU factorization ***\n\n" );
 }
 
-void LUFactorization::obtainFreshBasis()
+void SparseLUFactorization::obtainFreshBasis()
 {
-    for ( unsigned column = 0; column < _m; ++column )
+    _B->initializeToEmpty( _m, _m );
+
+    SparseVector column;
+    for ( unsigned columnIndex = 0; columnIndex < _m; ++columnIndex )
     {
-        _basisColumnOracle->getColumnOfBasis( column, _z );
-        for ( unsigned row = 0; row < _m; ++row )
-            _B[row * _m + column] = _z[row];
+        _basisColumnOracle->getColumnOfBasis( columnIndex, &column );
+        for ( const auto &entry : column._values )
+            _B->commitChange( entry.first, columnIndex, entry.second );
     }
+    _B->executeChanges();
 
     factorizeBasis();
 }

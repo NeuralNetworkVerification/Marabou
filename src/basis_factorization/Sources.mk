@@ -8,6 +8,9 @@ SOURCES += \
 	LUFactorization.cpp \
 	LUFactors.cpp \
 	PermutationMatrix.cpp \
+	SparseGaussianEliminator.cpp \
+	SparseLUFactorization.cpp \
+	SparseLUFactors.cpp \
 
 #
 # Local Variables:
