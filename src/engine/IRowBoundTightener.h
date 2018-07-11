@@ -38,14 +38,6 @@ public:
 
     /*
       Derive and enqueue new bounds for all varaibles, using the
-      explicit basis matrix B0 that should be available through the
-      tableau. Can also do this until saturation, meaning that we
-      continue until no new bounds are learned.
-     */
-    virtual void examineBasisMatrix( bool untilSaturation ) = 0;
-
-    /*
-      Derive and enqueue new bounds for all varaibles, using the
       inverse of the explicit basis matrix, inv(B0), which should be available
       through the tableau. Can also do this until saturation, meaning that we
       continue until no new bounds are learned.

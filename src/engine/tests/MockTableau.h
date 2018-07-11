@@ -530,15 +530,6 @@ public:
         return true;
     }
 
-    void getBasisEquations( List<Equation *> &/* equations */ ) const
-    {
-    }
-
-    Equation *getBasisEquation( unsigned /* row */ ) const
-    {
-        return NULL;
-    }
-
     double *getInverseBasisMatrix() const
     {
         return NULL;

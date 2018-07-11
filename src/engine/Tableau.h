@@ -393,8 +393,6 @@ public:
     */
     bool basisMatrixAvailable() const;
     void makeBasisMatrixAvailable();
-    void getBasisEquations( List<Equation *> &equations ) const;
-    Equation *getBasisEquation( unsigned row ) const;
     double *getInverseBasisMatrix() const;
 
     void getColumnOfBasis( unsigned column, double *result ) const;
@@ -438,7 +436,7 @@ private:
     SparseMatrix *_A;
 
     /*
-      A single column matrix from A
+      A single column from A
     */
     double *_a;
 

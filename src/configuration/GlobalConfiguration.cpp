@@ -41,7 +41,7 @@ const bool GlobalConfiguration::EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION = fal
 
 const unsigned GlobalConfiguration::REFACTORIZATION_THRESHOLD = 100;
 const GlobalConfiguration::BasisFactorizationType GlobalConfiguration::BASIS_FACTORIZATION_TYPE =
-    GlobalConfiguration::LU_FACTORIZATION;
+    GlobalConfiguration::SPARSE_LU_FACTORIZATION;
 
 // Logging
 const bool GlobalConfiguration::ENGINE_LOGGING = false;
@@ -81,10 +81,6 @@ void GlobalConfiguration::print()
     String basisBoundTighteningType;
     switch ( EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE )
     {
-    case USE_BASIS_MATRIX:
-        basisBoundTighteningType = "Use basis matrix";
-        break;
-
     case COMPUTE_INVERTED_BASIS_MATRIX:
         basisBoundTighteningType = "Compute inverted basis matrix";
         break;
@@ -106,6 +102,9 @@ void GlobalConfiguration::print()
     String basisFactorizationType;
     if ( GlobalConfiguration::BASIS_FACTORIZATION_TYPE == GlobalConfiguration::LU_FACTORIZATION )
         basisFactorizationType = "LU_FACTORIZATION";
+    else if ( GlobalConfiguration::BASIS_FACTORIZATION_TYPE ==
+              GlobalConfiguration::SPARSE_LU_FACTORIZATION )
+        basisFactorizationType = "SPARSE_LU_FACTORIZATION";
     else if ( GlobalConfiguration::BASIS_FACTORIZATION_TYPE ==
               GlobalConfiguration::FORREST_TOMLIN_FACTORIZATION )
         basisFactorizationType = "FORREST_TOMLIN_FACTORIZATION";

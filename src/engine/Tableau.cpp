@@ -1900,43 +1900,6 @@ bool Tableau::basisMatrixAvailable() const
     return _basisFactorization->explicitBasisAvailable();
 }
 
-void Tableau::getBasisEquations( List<Equation *> &equations ) const
-{
-    ASSERT( basisMatrixAvailable() );
-
-    for ( unsigned i = 0; i < _m; ++i )
-        equations.append( getBasisEquation( i ) );
-}
-
-Equation *Tableau::getBasisEquation( unsigned row ) const
-{
-    Equation *equation = new Equation;
-
-    // Add the scalar
-    equation->setScalar( _b[row] );
-
-    // Add the basic variables
-    const double *b0 = _basisFactorization->getBasis();
-    for ( unsigned i = 0; i < _m; ++i )
-    {
-        unsigned basicVariable = _basicIndexToVariable[i];
-        double coefficient = b0[_m * row + i];
-
-        if ( !FloatUtils::isZero( coefficient ) )
-            equation->addAddend( coefficient, basicVariable );
-    }
-
-    // Add the non-basic variables
-    _A->getRow( row, &_sparseWorkVector );
-    for ( const auto &entry : _sparseWorkVector._values )
-    {
-        if ( !_basicVariables.exists( entry.first ) )
-            equation->addAddend( entry.second, entry.first );
-    }
-
-    return equation;
-}
-
 double *Tableau::getInverseBasisMatrix() const
 {
     ASSERT( basisMatrixAvailable() );

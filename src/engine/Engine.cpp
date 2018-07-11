@@ -1021,10 +1021,6 @@ void Engine::explicitBasisBoundTightening()
 
     switch ( GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE )
     {
-    case GlobalConfiguration::USE_BASIS_MATRIX:
-        _rowBoundTightener->examineBasisMatrix( saturation );
-        break;
-
     case GlobalConfiguration::COMPUTE_INVERTED_BASIS_MATRIX:
         _rowBoundTightener->examineInvertedBasisMatrix( saturation );
         break;
