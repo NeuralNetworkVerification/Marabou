@@ -50,6 +50,7 @@ public:
       The matrix
     */
     SparseMatrix *_A;
+    SparseVector **_sparseColumnsOfA;
 
     /*
       The right hand side

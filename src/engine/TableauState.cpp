@@ -17,6 +17,7 @@
 
 TableauState::TableauState()
     : _A( NULL )
+    , _sparseColumnsOfA( NULL )
     , _b( NULL )
     , _lowerBounds( NULL )
     , _upperBounds( NULL )
@@ -35,6 +36,21 @@ TableauState::~TableauState()
     {
         delete _A;
         _A = NULL;
+    }
+
+    if ( _sparseColumnsOfA )
+    {
+        for ( unsigned i = 0; i < _n; ++i )
+        {
+            if ( _sparseColumnsOfA[i] )
+            {
+                delete _sparseColumnsOfA[i];
+                _sparseColumnsOfA[i] = NULL;
+            }
+        }
+
+        delete _sparseColumnsOfA;
+        _sparseColumnsOfA = NULL;
     }
 
     if ( _b )
@@ -100,6 +116,17 @@ void TableauState::setDimensions( unsigned m, unsigned n, const IBasisFactorizat
     _A = new CSRMatrix();
     if ( !_A )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::A" );
+
+    _sparseColumnsOfA = new SparseVector *[n];
+    if ( !_sparseColumnsOfA )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::sparseColumnsOfA" );
+
+    for ( unsigned i = 0; i < n; ++i )
+    {
+        _sparseColumnsOfA[i] = new SparseVector;
+        if ( !_sparseColumnsOfA[i] )
+            throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::sparseColumnsOfA[i]" );
+    }
 
     _b = new double[m];
     if ( !_b )

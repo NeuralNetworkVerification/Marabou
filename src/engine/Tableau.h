@@ -431,9 +431,11 @@ private:
     unsigned _m;
 
     /*
-      The constraint matrix A
+      The constraint matrix A, and a collection of its
+      sparse columns
     */
     SparseMatrix *_A;
+    SparseVector **_sparseColumnsOfA;
 
     /*
       A single column from A

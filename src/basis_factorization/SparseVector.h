@@ -44,6 +44,13 @@ public:
             printf( "\t%u --> %5.2lf\n", entry.first, entry.second );
     }
 
+    void toDense( unsigned size, double *result ) const
+    {
+        std::fill_n( result, size, 0.0 );
+        for ( const auto &value : _values )
+            result[value.first] = value.second;
+    }
+
     Map<unsigned, double> _values;
 };
 
