@@ -64,6 +64,7 @@ public:
     EquationType _type;
 
     bool operator==( const Equation &other ) const;
+    bool equivalent( const Equation &other ) const;
 
     void dump() const;
 };

@@ -13,6 +13,9 @@
 #ifndef __IBasisFactorization_h__
 #define __IBasisFactorization_h__
 
+class SparseMatrix;
+class SparseVector;
+
 class IBasisFactorization
 {
     /*
@@ -26,7 +29,8 @@ public:
     {
     public:
         virtual ~BasisColumnOracle() {}
-        virtual const double *getColumnOfBasis( unsigned column ) const = 0;
+        virtual void getColumnOfBasis( unsigned column, double *result ) const = 0;
+        virtual void getColumnOfBasis( unsigned column, SparseVector *result ) const = 0;
     };
 
     IBasisFactorization( const BasisColumnOracle &basisColumnOracle )
@@ -97,6 +101,7 @@ public:
       Get the explicit basis matrix
     */
     virtual const double *getBasis() const = 0;
+    virtual const SparseMatrix *getSparseBasis() const = 0;
 
     /*
       Compute the inverse of B (should only be called when B is explicitly available).

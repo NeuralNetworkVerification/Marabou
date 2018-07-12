@@ -15,6 +15,7 @@
 
 #include "ICostFunctionManager.h"
 #include "Map.h"
+#include "SparseVector.h"
 
 class ITableau;
 
@@ -88,6 +89,11 @@ private:
       Status of the cost function.
     */
     CostFunctionStatus _costFunctionStatus;
+
+    /*
+      Work memeory
+    */
+    SparseVector _ANColumn;
 
     /*
       Free memory.

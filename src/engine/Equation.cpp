@@ -12,6 +12,7 @@
 
 #include "Equation.h"
 #include "FloatUtils.h"
+#include "Map.h"
 
 Equation::Addend::Addend( double coefficient, unsigned variable )
     : _coefficient( coefficient )
@@ -81,6 +82,26 @@ bool Equation::operator==( const Equation &other ) const
         ( _addends == other._addends ) &&
         ( _scalar == other._scalar ) &&
         ( _type == other._type );
+}
+
+bool Equation::equivalent( const Equation &other ) const
+{
+    if ( _scalar != other._scalar )
+        return false;
+
+    if ( _type != other._type )
+        return false;
+
+    Map<unsigned, double> us;
+    Map<unsigned, double> them;
+
+    for ( const auto &addend : _addends )
+        us[addend._variable] = addend._coefficient;
+
+    for ( const auto &addend : other._addends )
+        them[addend._variable] = addend._coefficient;
+
+    return us == them;
 }
 
 void Equation::dump() const

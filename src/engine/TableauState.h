@@ -17,6 +17,8 @@
 #include "ITableau.h"
 #include "Map.h"
 #include "Set.h"
+#include "SparseMatrix.h"
+#include "SparseVector.h"
 
 class TableauState
 {
@@ -48,7 +50,8 @@ public:
     /*
       The matrix
     */
-    double *_A;
+    SparseMatrix *_A;
+    SparseVector **_sparseColumnsOfA;
 
     /*
       The right hand side
