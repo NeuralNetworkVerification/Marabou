@@ -392,11 +392,11 @@ public:
     }
 
     Map<unsigned, const double *> nextAColumn;
-    void getAColumn( unsigned index, double *result ) const
+    const double *getAColumn( unsigned index ) const
     {
         TS_ASSERT( nextAColumn.exists( index ) );
         TS_ASSERT( nextAColumn.get( index ) );
-        memcpy( result, nextAColumn.get( index ), sizeof(double) * lastM );
+        return nextAColumn.get( index );
     }
 
     void getSparseAColumn( unsigned index, SparseVector *result ) const
@@ -410,17 +410,12 @@ public:
         }
     }
 
-    double *A;
-    void getA( double *result ) const
-    {
-        memcpy( result, A, sizeof(double) * lastM * lastN );
-    }
-
     const SparseMatrix *getSparseA() const
     {
         return NULL;
     }
 
+    double *A;
     void getSparseARow( unsigned row, SparseVector *result ) const
     {
         double *temp = new double[lastN];

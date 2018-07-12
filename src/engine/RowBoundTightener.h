@@ -157,11 +157,6 @@ private:
       of tighter bounds found.
     */
     unsigned tightenOnSingleInvertedBasisRow( const TableauRow &row );
-
-    /*
-      Work memory
-    */
-    double *_ANColumn;
 };
 
 #endif // __RowBoundTightener_h__

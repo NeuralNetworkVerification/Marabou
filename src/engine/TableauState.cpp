@@ -18,6 +18,7 @@
 TableauState::TableauState()
     : _A( NULL )
     , _sparseColumnsOfA( NULL )
+    , _denseA( NULL )
     , _b( NULL )
     , _lowerBounds( NULL )
     , _upperBounds( NULL )
@@ -51,6 +52,12 @@ TableauState::~TableauState()
 
         delete _sparseColumnsOfA;
         _sparseColumnsOfA = NULL;
+    }
+
+    if ( _denseA )
+    {
+        delete[] _denseA;
+        _denseA = NULL;
     }
 
     if ( _b )
@@ -127,6 +134,10 @@ void TableauState::setDimensions( unsigned m, unsigned n, const IBasisFactorizat
         if ( !_sparseColumnsOfA[i] )
             throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::sparseColumnsOfA[i]" );
     }
+
+    _denseA = new double[m*n];
+    if ( !_denseA )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::denseA" );
 
     _b = new double[m];
     if ( !_b )

@@ -314,8 +314,7 @@ public:
       in dense form.
     */
     const SparseMatrix *getSparseA() const;
-    void getA( double *result ) const;
-    void getAColumn( unsigned variable, double *result ) const;
+    const double *getAColumn( unsigned variable ) const;
     void getSparseAColumn( unsigned variable, SparseVector *result ) const;
     void getSparseARow( unsigned row, SparseVector *result ) const;
 
@@ -433,10 +432,12 @@ private:
 
     /*
       The constraint matrix A, and a collection of its
-      sparse columns
+      sparse columns. The matrix is also stored in dense
+      form (column-major).
     */
     SparseMatrix *_A;
     SparseVector **_sparseColumnsOfA;
+    double *_denseA;
 
     /*
       A single column from A
