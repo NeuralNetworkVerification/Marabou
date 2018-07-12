@@ -13,7 +13,10 @@
 #ifndef __CSRMatrix_h__
 #define __CSRMatrix_h__
 
+#include "Map.h"
 #include "SparseMatrix.h"
+
+class SparseVector;
 
 /*
   This class provides supprot for sparse matrices in
@@ -114,6 +117,17 @@ public:
       Produce a dense version of the matrix
     */
     void toDense( double *result ) const;
+
+    /*
+      Empty the matrix without changing its dimensions
+    */
+    void clear();
+
+    /*
+      Read-only access to the internal data structures
+    */
+    const double *getA() const;
+    const unsigned *getJA() const;
 
 private:
     enum {

@@ -17,6 +17,7 @@
 #include "IRowBoundTightener.h"
 #include "ITableau.h"
 #include "Queue.h"
+#include "SparseVector.h"
 #include "TableauRow.h"
 #include "Tightening.h"
 
@@ -119,6 +120,7 @@ private:
     double *_ciTimesLb;
     double *_ciTimesUb;
     char *_ciSign;
+    SparseVector _sparseRow;
 
     /*
       Statistics collection

@@ -15,6 +15,7 @@
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "MString.h"
+#include "SparseVector.h"
 
 CSRMatrix::CSRMatrix()
     : _m( 0 )
@@ -100,6 +101,8 @@ void CSRMatrix::initializeToEmpty( unsigned m, unsigned n )
 
 void CSRMatrix::increaseCapacity()
 {
+    ASSERT( _m > 0 && _n > 0 );
+
     unsigned estimatedNumRowEntries = std::max( 2U, _n / ROW_DENSITY_ESTIMATE );
     unsigned newEstimatedNnz = _estimatedNnz + ( estimatedNumRowEntries * _m );
 
@@ -264,10 +267,23 @@ void CSRMatrix::getRow( unsigned row, SparseVector *result ) const
       Elements of row j are stored in _A and _JA between
       indices _IA[j] and _IA[j+1] - 1.
     */
+    result->clear();
 
-    result->_values.clear();
+    CSRMatrix *resultMatrix = result->getInternalMatrix();
+    while ( resultMatrix->_estimatedNnz < _IA[row + 1] - _IA[row] )
+        resultMatrix->increaseCapacity();
+
+    unsigned count = 0;
     for ( unsigned i = _IA[row]; i < _IA[row + 1]; ++i )
-        result->_values[_JA[i]] = _A[i];
+    {
+        resultMatrix->_A[count] = _A[i];
+        resultMatrix->_JA[count] = _JA[i];
+
+        ++count;
+    }
+
+    resultMatrix->_IA[1] = count;
+    resultMatrix->_nnz = count;
 }
 
 void CSRMatrix::getRowDense( unsigned row, double *result ) const
@@ -280,12 +296,27 @@ void CSRMatrix::getRowDense( unsigned row, double *result ) const
 void CSRMatrix::getColumn( unsigned column, SparseVector *result ) const
 {
     result->clear();
+
+    CSRMatrix *resultMatrix = result->getInternalMatrix();
+
+    unsigned count = 0;
     for ( unsigned i = 0; i < _m; ++i )
     {
         double value = get( i, column );
         if ( !FloatUtils::isZero( value ) )
-            result->_values[i] = value;
+        {
+            while ( count >= resultMatrix->_estimatedNnz )
+                resultMatrix->increaseCapacity();
+
+            resultMatrix->_A[count] = value;
+            resultMatrix->_JA[count] = i;
+
+            ++count;
+        }
     }
+
+    resultMatrix->_IA[1] = count;
+    resultMatrix->_nnz = count;
 }
 
 void CSRMatrix::getColumnDense( unsigned column, double *result ) const
@@ -753,6 +784,23 @@ void CSRMatrix::checkInvariants() const
             }
         }
     }
+}
+
+void CSRMatrix::clear()
+{
+    _nnz = 0;
+    for ( unsigned i = 0; i < _m; ++i )
+        _IA[i+1] = 0;
+}
+
+const double *CSRMatrix::getA() const
+{
+    return _A;
+}
+
+const unsigned *CSRMatrix::getJA() const
+{
+    return _JA;
 }
 
 //

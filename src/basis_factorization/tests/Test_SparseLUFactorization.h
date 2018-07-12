@@ -144,7 +144,7 @@ public:
 		double d[] = { 0., 0., 0. };
         double expected[] = { -20, 27, -8 };
 
-		basis.forwardTransformation( a, d );
+        basis.forwardTransformation( a, d );
 
         for ( unsigned i = 0; i < 3; ++i )
             TS_ASSERT( FloatUtils::areEqual( d[i], expected[i] ) );

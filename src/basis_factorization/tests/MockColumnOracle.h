@@ -56,12 +56,7 @@ public:
 
     void getColumnOfBasis( unsigned column, SparseVector *result ) const
     {
-        result->clear();
-        for ( unsigned i = 0; i < _m; ++i )
-        {
-            if ( !FloatUtils::isZero( _basis[_m * column + i] ) )
-                result->_values[i] = _basis[_m * column + i];
-        }
+        result->initialize( _basis + ( _m * column ), _m );
     }
 };
 

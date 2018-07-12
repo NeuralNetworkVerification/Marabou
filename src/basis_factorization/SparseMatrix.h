@@ -13,7 +13,7 @@
 #ifndef __SparseMatrix_h__
 #define __SparseMatrix_h__
 
-#include "SparseVector.h"
+class SparseVector;
 
 class SparseMatrix
 {

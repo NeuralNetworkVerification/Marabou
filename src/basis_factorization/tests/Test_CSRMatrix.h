@@ -15,6 +15,7 @@
 
 #include "CSRMatrix.h"
 #include "MString.h"
+#include "SparseVector.h"
 
 class MockForCSRMatrix
 {
@@ -209,15 +210,15 @@ public:
         CSRMatrix csr1;
         csr1.initialize( M1, 4, 4 );
 
-        SparseVector row;
+        SparseVector row( 4 );
         TS_ASSERT_THROWS_NOTHING( csr1.getRow( 1, &row ) );
-        TS_ASSERT_EQUALS( row.size(), 2U );
-        TS_ASSERT_EQUALS( row._values[0], 5.0 );
-        TS_ASSERT_EQUALS( row._values[1], 8.0 );
+        TS_ASSERT_EQUALS( row.getNnz(), 2U );
+        TS_ASSERT_EQUALS( row.get( 0 ), 5.0 );
+        TS_ASSERT_EQUALS( row.get( 1 ), 8.0 );
 
         TS_ASSERT_THROWS_NOTHING( csr1.getRow( 3, &row ) );
-        TS_ASSERT_EQUALS( row.size(), 1U );
-        TS_ASSERT_EQUALS( row._values[1], 6.0 );
+        TS_ASSERT_EQUALS( row.getNnz(), 1U );
+        TS_ASSERT_EQUALS( row.get( 1 ), 6.0 );
 
         TS_ASSERT_THROWS_NOTHING( csr1.getRow( 0, &row ) );
         TS_ASSERT( row.empty() );
@@ -275,18 +276,18 @@ public:
         CSRMatrix csr1;
         csr1.initialize( M1, 4, 4 );
 
-        SparseVector column;
+        SparseVector column( 4 );
         TS_ASSERT_THROWS_NOTHING( csr1.getColumn( 1, &column ) );
-        TS_ASSERT_EQUALS( column.size(), 2U );
-        TS_ASSERT_EQUALS( column._values[1], 8.0 );
-        TS_ASSERT_EQUALS( column._values[3], 6.0 );
+        TS_ASSERT_EQUALS( column.getNnz(), 2U );
+        TS_ASSERT_EQUALS( column.get( 1 ), 8.0 );
+        TS_ASSERT_EQUALS( column.get( 3 ), 6.0 );
 
         TS_ASSERT_THROWS_NOTHING( csr1.getColumn( 3, &column ) );
         TS_ASSERT( column.empty() );
 
         TS_ASSERT_THROWS_NOTHING( csr1.getColumn( 0, &column ) );
-        TS_ASSERT_EQUALS( column.size(), 1U );
-        TS_ASSERT_EQUALS( column._values[1], 5.0 );
+        TS_ASSERT_EQUALS( column.getNnz(), 1U );
+        TS_ASSERT_EQUALS( column.get( 1 ), 5.0 );
 
         double dense[4];
 
@@ -692,6 +693,25 @@ public:
         for ( unsigned i = 0; i < 2; ++i )
             for ( unsigned j = 0; j < 3; ++j )
                 TS_ASSERT_EQUALS( csr5.get( i, j ), 0.0 );
+    }
+
+    void test_clear()
+    {
+        double M1[] = {
+            0, 0, 0, 0,
+            5, 8, 0, 0,
+            0, 0, 3, 0,
+            0, 6, 0, 0,
+        };
+
+        CSRMatrix csr1;
+        csr1.initialize( M1, 4, 4 );
+
+        TS_ASSERT_THROWS_NOTHING( csr1.clear() );
+
+        for ( unsigned i = 0; i < 4; ++i )
+            for ( unsigned j = 0; j < 4; ++j )
+                TS_ASSERT_EQUALS( csr1.get( i, j ), 0.0 );
     }
 };
 

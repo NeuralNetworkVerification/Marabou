@@ -11,6 +11,7 @@ SOURCES += \
 	SparseGaussianEliminator.cpp \
 	SparseLUFactorization.cpp \
 	SparseLUFactors.cpp \
+	SparseVector.cpp \
 
 #
 # Local Variables:

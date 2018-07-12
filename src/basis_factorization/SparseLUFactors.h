@@ -15,6 +15,7 @@
 
 #include "PermutationMatrix.h"
 #include "SparseMatrix.h"
+#include "SparseVector.h"
 
 /*
   This class provides supprot for an LU-factorization of a given matrix.
@@ -97,6 +98,8 @@ public:
     */
     double *_z;
     double *_workMatrix;
+    mutable SparseVector _sparseRow;
+    mutable SparseVector _sparseColumn;
 
     /*
       Clone this SparseLUFactors object into another object

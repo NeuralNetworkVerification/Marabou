@@ -69,6 +69,8 @@ void ProjectedSteepestEdgeRule::initialize( const ITableau &tableau )
     _n = tableau.getN();
     _m = tableau.getM();
 
+    _AColumn.initializeToEmpty( _m );
+
     _referenceSpace = new char[_n];
     if ( !_referenceSpace )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "ProjectedSteepestEdgeRule::referenceSpace" );
@@ -201,7 +203,6 @@ void ProjectedSteepestEdgeRule::prePivotHook( const ITableau &tableau, bool fake
 
     // Auxiliary variables
     double r, s, t1, t2;
-    SparseVector AColumn;
 
     // Compute GLPK's u vector
     for ( unsigned i = 0; i < m; ++i )
@@ -230,10 +231,10 @@ void ProjectedSteepestEdgeRule::prePivotHook( const ITableau &tableau, bool fake
          * is constraint matrix column corresponding to xN[j] */
         unsigned nonBasic = tableau.nonBasicIndexToVariable( i );
 
-        tableau.getSparseAColumn( nonBasic, &AColumn );
+        tableau.getSparseAColumn( nonBasic, &_AColumn );
         s = 0.0;
-        for ( const auto &entry : AColumn._values )
-            s += entry.second * _work2[entry.first];
+        for ( unsigned i = 0; i < _AColumn.getNnz(); ++i )
+            s += _AColumn.getValueOfEntry( i ) * _work2[_AColumn.getIndexOfEntry( i )];
 
         /* compute new gamma[j] */
         t1 = _gamma[i] + r * ( r * accurateGamma + s + s );

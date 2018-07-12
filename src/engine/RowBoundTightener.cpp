@@ -40,6 +40,8 @@ void RowBoundTightener::setDimensions()
     _n = _tableau.getN();
     _m = _tableau.getM();
 
+    _sparseRow.initializeToEmpty( _n );
+
     _lowerBounds = new double[_n];
     if ( !_lowerBounds )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "RowBoundTightener::lowerBounds" );
@@ -511,8 +513,7 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
 
     unsigned result = 0;
 
-    SparseVector sparseRow;
-    _tableau.getSparseARow( row, &sparseRow );
+    _tableau.getSparseARow( row, &_sparseRow );
     const double *b = _tableau.getRightHandSide();
 
     double ci;
@@ -526,7 +527,7 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
 
     for ( unsigned i = 0; i < n; ++i )
     {
-        ci = sparseRow.get( i );
+        ci = _sparseRow.get( i );
 
         if ( FloatUtils::isZero( ci ) )
         {
@@ -602,7 +603,7 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
         }
 
         // Now divide everything by ci, switching signs if needed.
-        ci = sparseRow.get( i );
+        ci = _sparseRow.get( i );
 
         lowerBound = lowerBound / ci;
         upperBound = upperBound / ci;

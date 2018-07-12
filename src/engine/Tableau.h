@@ -19,6 +19,7 @@
 #include "Map.h"
 #include "Set.h"
 #include "SparseMatrix.h"
+#include "SparseVector.h"
 #include "Statistics.h"
 
 class Equation;

@@ -406,8 +406,7 @@ public:
 
         for ( unsigned i = 0; i < lastM; ++i )
         {
-            if ( !FloatUtils::isZero( nextAColumn.get( index )[i] ) )
-                result->_values[i] = nextAColumn.get( index )[i];
+            result->initialize( nextAColumn.get( index ), lastM );
         }
     }
 
@@ -424,11 +423,16 @@ public:
 
     void getSparseARow( unsigned row, SparseVector *result ) const
     {
+        double *temp = new double[lastN];
+
         for ( unsigned i = 0; i < lastN; ++i )
         {
-            if ( !FloatUtils::isZero( A[row*lastN + i] ) )
-                result->_values[i] = A[row*lastN + i];
+            temp[i] = A[row*lastN + i];
         }
+
+        result->initialize( temp, lastN );
+
+        delete[] temp;
     }
 
     void performDegeneratePivot()

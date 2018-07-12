@@ -14,10 +14,11 @@
 #include "Debug.h"
 #include "EtaMatrix.h"
 #include "FloatUtils.h"
-#include "SparseGaussianEliminator.h"
 #include "GlobalConfiguration.h"
 #include "MStringf.h"
 #include "MalformedBasisException.h"
+#include "SparseGaussianEliminator.h"
+#include "SparseVector.h"
 
 #include <cstdio>
 
@@ -191,8 +192,8 @@ void SparseGaussianEliminator::choosePivot()
       We pick a pivot a_ij \neq 0 that minimizes (p_i - 1)(q_i - 1).
     */
 
-    SparseVector sparseRow;
-    SparseVector sparseColumn;
+    SparseVector sparseRow( _m );
+    SparseVector sparseColumn( _m );
 
     // If there's a singleton row, use it as the pivot row
     for ( unsigned i = _eliminationStep; i < _m; ++i )
@@ -205,11 +206,11 @@ void SparseGaussianEliminator::choosePivot()
             // Get the singleton element
             _sparseLUFactors->_V->getRow( _vPivotRow, &sparseRow );
 
-            ASSERT( sparseRow._values.size() == 1U );
+            ASSERT( sparseRow.getNnz() == 1U );
 
-            _vPivotColumn = sparseRow._values.begin()->first;
+            _vPivotColumn = sparseRow.getIndexOfEntry( 0 );
             _uPivotColumn = _sparseLUFactors->_Q._columnOrdering[_vPivotColumn];
-            _pivotElement = sparseRow._values.begin()->second;
+            _pivotElement = sparseRow.getValueOfEntry( 0 );
 
             log( Stringf( "Choose pivot selected a pivot (singleton row): V[%u,%u] = %lf",
                           _vPivotRow,
@@ -235,9 +236,9 @@ void SparseGaussianEliminator::choosePivot()
 
             DEBUG( bool found = false; );
 
-            for ( const auto &it : sparseColumn._values )
+            for ( unsigned entry = 0; entry < sparseColumn.getNnz(); ++entry )
             {
-                unsigned vRow = it.first;
+                unsigned vRow = sparseColumn.getIndexOfEntry( entry );
                 unsigned uRow = _sparseLUFactors->_P._rowOrdering[vRow];
 
                 if ( uRow >= _eliminationStep )
@@ -246,7 +247,7 @@ void SparseGaussianEliminator::choosePivot()
 
                     _vPivotRow = vRow;
                     _uPivotRow = uRow;
-                    _pivotElement = it.second;
+                    _pivotElement = sparseColumn.getValueOfEntry( entry );
 
                     break;
                 }
@@ -278,15 +279,15 @@ void SparseGaussianEliminator::choosePivot()
         _sparseLUFactors->_V->getColumn( vColumn, &sparseColumn );
 
         double maxInColumn = 0;
-        for ( const auto &entry : sparseColumn._values )
+        for ( unsigned entry = 0; entry < sparseColumn.getNnz(); ++entry )
         {
             // Ignore entrying that are not in the active submatrix
-            unsigned vRow = entry.first;
+            unsigned vRow = sparseColumn.getIndexOfEntry( entry );
             unsigned uRow = _sparseLUFactors->_P._rowOrdering[vRow];
             if ( uRow < _eliminationStep )
                 continue;
 
-            double contender = FloatUtils::abs( entry.second );
+            double contender = FloatUtils::abs( sparseColumn.getValueOfEntry( entry ) );
             if ( FloatUtils::gt( contender, maxInColumn ) )
                 maxInColumn = contender;
         }
@@ -297,20 +298,20 @@ void SparseGaussianEliminator::choosePivot()
                                            "Have a zero column" );
         }
 
-        // Now scan the column for candidates
-        for ( const auto &entry : sparseColumn._values )
+        for ( unsigned entry = 0; entry < sparseColumn.getNnz(); ++entry )
         {
-            unsigned vRow = entry.first;
+            unsigned vRow = sparseColumn.getIndexOfEntry( entry );
             unsigned uRow = _sparseLUFactors->_P._rowOrdering[vRow];
 
             // Ignore entrying that are not in the active submatrix
             if ( uRow < _eliminationStep )
                 continue;
 
-            double contender = FloatUtils::abs( entry.second );
+            double contender = sparseColumn.getValueOfEntry( entry );
+            double absContender = FloatUtils::abs( contender );
 
             // Only consider large-enough elements
-            if ( FloatUtils::gt( contender,
+            if ( FloatUtils::gt( absContender,
                                  maxInColumn * GlobalConfiguration::GAUSSIAN_ELIMINATION_PIVOT_SCALE_THRESHOLD ) )
             {
                 unsigned cost = ( _numURowElements[uRow] - 1 ) * ( _numUColumnElements[uColumn] - 1 );
@@ -318,15 +319,15 @@ void SparseGaussianEliminator::choosePivot()
                 ASSERT( ( cost != minimalCost ) || found );
 
                 if ( ( cost < minimalCost ) ||
-                     ( ( cost == minimalCost ) && FloatUtils::gt( contender, absPivotElement ) ) )
+                     ( ( cost == minimalCost ) && FloatUtils::gt( absContender, absPivotElement ) ) )
                 {
                     minimalCost = cost;
                     _uPivotRow = uRow;
                     _uPivotColumn = uColumn;
                     _vPivotRow = vRow;
                     _vPivotColumn = vColumn;
-                    _pivotElement = entry.second;
-                    absPivotElement = FloatUtils::abs( entry.second );
+                    _pivotElement = contender;
+                    absPivotElement = absContender;
 
                     found = true;
                 }
@@ -344,8 +345,8 @@ void SparseGaussianEliminator::choosePivot()
 void SparseGaussianEliminator::eliminate()
 {
     unsigned fColumn = _sparseLUFactors->_P._columnOrdering[_eliminationStep];
-    SparseVector sparseColumn;
-    SparseVector sparseRow;
+    SparseVector sparseRow( _m );
+    SparseVector sparseColumn( _m );
 
     /*
       Eliminate all entries below the pivot element U[k,k]
@@ -369,9 +370,9 @@ void SparseGaussianEliminator::eliminate()
     }
 
     // Process all rows below the pivot row
-    for ( const auto &entry : sparseColumn._values )
+    for ( unsigned entry = 0; entry < sparseColumn.getNnz(); ++entry )
     {
-        unsigned vRow = entry.first;
+        unsigned vRow = sparseColumn.getIndexOfEntry( entry );
         unsigned uRow = _sparseLUFactors->_P._rowOrdering[vRow];
 
         if ( uRow <= _eliminationStep )
@@ -381,7 +382,7 @@ void SparseGaussianEliminator::eliminate()
           Compute the Gaussian row multiplier for this row.
           The multiplier is: - U[row,k] / pivotElement
         */
-        double rowMultiplier = -entry.second / _pivotElement;
+        double rowMultiplier = - sparseColumn.getValueOfEntry( entry ) / _pivotElement;
         log( Stringf( "\tWorking on V row: %u. Multiplier: %lf", vRow, rowMultiplier ) );
 
         // Eliminate the row
@@ -392,9 +393,9 @@ void SparseGaussianEliminator::eliminate()
 
         Set<unsigned> columnsAlreadyHandled;
         // First, handle non-zero entries in the row being eliminated
-        for ( const auto &rowEntry : sparseRow._values )
+        for ( unsigned rowEntry = 0; rowEntry < sparseRow.getNnz(); ++rowEntry )
         {
-            unsigned vColumnIndex = rowEntry.first;
+            unsigned vColumnIndex = sparseRow.getIndexOfEntry( rowEntry );
             unsigned uColumnIndex = _sparseLUFactors->_Q._columnOrdering[vColumnIndex];
 
             columnsAlreadyHandled.insert( vColumnIndex );
@@ -408,7 +409,7 @@ void SparseGaussianEliminator::eliminate()
                 continue;
 
             // Value will change
-            double newValue = rowEntry.second + ( rowMultiplier * _work[vColumnIndex] );
+            double newValue = sparseRow.getValueOfEntry( rowEntry ) + ( rowMultiplier * _work[vColumnIndex] );
             if ( FloatUtils::isZero( newValue ) )
             {
                 newValue = 0;

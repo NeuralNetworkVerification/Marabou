@@ -20,6 +20,7 @@
 #include "MStringf.h"
 #include "MalformedBasisException.h"
 #include "SparseLUFactorization.h"
+#include "SparseVector.h"
 
 SparseLUFactorization::SparseLUFactorization( unsigned m, const BasisColumnOracle &basisColumnOracle )
     : IBasisFactorization( basisColumnOracle )
@@ -261,8 +262,9 @@ void SparseLUFactorization::obtainFreshBasis()
     for ( unsigned columnIndex = 0; columnIndex < _m; ++columnIndex )
     {
         _basisColumnOracle->getColumnOfBasis( columnIndex, &column );
-        for ( const auto &entry : column._values )
-            _B->commitChange( entry.first, columnIndex, entry.second );
+
+        for ( unsigned entry = 0; entry < column.getNnz(); ++entry )
+            _B->commitChange( column.getIndexOfEntry( entry ), columnIndex, column.getValueOfEntry( entry ) );
     }
     _B->executeChanges();
 

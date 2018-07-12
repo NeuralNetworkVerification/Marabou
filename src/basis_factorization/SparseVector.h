@@ -13,45 +13,52 @@
 #ifndef __SparseVector_h__
 #define __SparseVector_h__
 
-#include "Map.h"
+#include "CSRMatrix.h"
 
 class SparseVector
 {
 public:
-    void clear()
-    {
-        _values.clear();
-    }
+    SparseVector();
+    SparseVector( unsigned size );
+    SparseVector( const double *V, unsigned size );
 
-    unsigned size() const
-    {
-        return _values.size();
-    }
+    void initialize( const double *V, unsigned size );
 
-    bool empty() const
-    {
-        return _values.empty();
-    }
+    void initializeToEmpty( unsigned size );
 
-    double get( unsigned index )
-    {
-        return _values.exists( index ) ? _values[index] : 0;
-    }
+    void clear();
 
-    void dump() const
-    {
-        for ( const auto &entry : _values )
-            printf( "\t%u --> %5.2lf\n", entry.first, entry.second );
-    }
+    unsigned getNnz() const;
 
-    void toDense( unsigned size, double *result ) const
-    {
-        std::fill_n( result, size, 0.0 );
-        for ( const auto &value : _values )
-            result[value.first] = value.second;
-    }
+    bool empty() const;
 
-    Map<unsigned, double> _values;
+    double get( unsigned index );
+
+    void dump() const;
+
+    void toDense( double *result ) const;
+
+    SparseVector &operator=( const SparseVector &other );
+
+    CSRMatrix *getInternalMatrix();
+
+    unsigned getIndexOfEntry( unsigned entry ) const;
+    double getValueOfEntry( unsigned entry ) const;
+
+    /*
+      This actually increase the diemsnion of the vector
+    */
+    void addEmptyLastEntry();
+    void addLastEntry( double value );
+
+    /*
+      Changing values
+    */
+    void commitChange( unsigned index, double newValue );
+    void executeChanges();
+
+private:
+    CSRMatrix _V;
 };
 
 #endif // __SparseVector_h__

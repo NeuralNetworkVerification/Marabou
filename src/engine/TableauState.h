@@ -18,6 +18,7 @@
 #include "Map.h"
 #include "Set.h"
 #include "SparseMatrix.h"
+#include "SparseVector.h"
 
 class TableauState
 {
