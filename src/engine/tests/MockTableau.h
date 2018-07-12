@@ -16,6 +16,7 @@
 #include "FloatUtils.h"
 #include "ITableau.h"
 #include "Map.h"
+#include "SparseVector.h"
 #include "TableauRow.h"
 
 #include <cstring>
@@ -35,7 +36,7 @@ public:
         lastBtranInput = NULL;
         nextBtranOutput = NULL;
 
-        lastEntries = NULL ;
+        lastEntries = NULL;
         nextCostFunction = NULL;
 
         lastCostFunctionManager = NULL;
@@ -123,10 +124,10 @@ public:
     }
 
     double *lastEntries;
-    void setEntryValue( unsigned row, unsigned column, double value )
+    void setConstraintMatrix( const double *A )
     {
         TS_ASSERT( setDimensionsCalled );
-        lastEntries[(row * lastN) + column] = value;
+        memcpy( lastEntries, A, sizeof(double) * lastM * lastN );
     }
 
     double *lastRightHandSide;
@@ -391,17 +392,47 @@ public:
     }
 
     Map<unsigned, const double *> nextAColumn;
-    const double *getAColumn( unsigned index ) const
+    void getAColumn( unsigned index, double *result ) const
     {
         TS_ASSERT( nextAColumn.exists( index ) );
         TS_ASSERT( nextAColumn.get( index ) );
-        return nextAColumn.get( index );
+        memcpy( result, nextAColumn.get( index ), sizeof(double) * lastM );
+    }
+
+    void getSparseAColumn( unsigned index, SparseVector *result ) const
+    {
+        TS_ASSERT( nextAColumn.exists( index ) );
+        TS_ASSERT( nextAColumn.get( index ) );
+
+        for ( unsigned i = 0; i < lastM; ++i )
+        {
+            result->initialize( nextAColumn.get( index ), lastM );
+        }
     }
 
     double *A;
-    const double *getA() const
+    void getA( double *result ) const
     {
-        return A;
+        memcpy( result, A, sizeof(double) * lastM * lastN );
+    }
+
+    const SparseMatrix *getSparseA() const
+    {
+        return NULL;
+    }
+
+    void getSparseARow( unsigned row, SparseVector *result ) const
+    {
+        double *temp = new double[lastN];
+
+        for ( unsigned i = 0; i < lastN; ++i )
+        {
+            temp[i] = A[row*lastN + i];
+        }
+
+        result->initialize( temp, lastN );
+
+        delete[] temp;
     }
 
     void performDegeneratePivot()
@@ -501,15 +532,6 @@ public:
     bool basisMatrixAvailable() const
     {
         return true;
-    }
-
-    void getBasisEquations( List<Equation *> &/* equations */ ) const
-    {
-    }
-
-    Equation *getBasisEquation( unsigned /* row */ ) const
-    {
-        return NULL;
     }
 
     double *getInverseBasisMatrix() const

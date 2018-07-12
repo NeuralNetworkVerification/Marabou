@@ -15,6 +15,7 @@
 
 #include "IConstraintMatrixAnalyzer.h"
 #include "List.h"
+#include "SparseMatrix.h"
 
 class String;
 
@@ -31,6 +32,7 @@ public:
       major format.
     */
     void analyze( const double *matrix, unsigned m, unsigned n );
+    void analyze( const SparseMatrix *matrix, unsigned m, unsigned n );
     void getCanonicalForm( double *matrix );
     unsigned getRank() const;
     List<unsigned> getIndependentColumns() const;

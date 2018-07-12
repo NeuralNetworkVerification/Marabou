@@ -56,6 +56,30 @@ void ConstraintMatrixAnalyzer::freeMemoryIfNeeded()
     }
 }
 
+void ConstraintMatrixAnalyzer::analyze( const SparseMatrix *matrix, unsigned m, unsigned n )
+{
+    freeMemoryIfNeeded();
+
+    _m = m;
+    _n = n;
+
+    _matrix = new double[m * n];
+    _work = new double[n];
+    _rowHeaders = new unsigned[m];
+    _columnHeaders = new unsigned[n];
+
+    matrix->toDense( _matrix );
+
+    // Initialize the row and column headers
+    for ( unsigned i = 0; i < _m; ++i )
+        _rowHeaders[i] = i;
+
+    for ( unsigned i = 0; i < _n; ++i )
+        _columnHeaders[i] = i;
+
+    gaussianElimination();
+}
+
 void ConstraintMatrixAnalyzer::analyze( const double *matrix, unsigned m, unsigned n )
 {
     freeMemoryIfNeeded();

@@ -692,6 +692,12 @@ const double *ForrestTomlinFactorization::getBasis() const
     return _B;
 }
 
+const SparseMatrix *ForrestTomlinFactorization::getSparseBasis() const
+{
+    printf( "Error! sparse getBasis() not supported for ForrestTomlinFactorization!\n" );
+    exit( 1 );
+}
+
 void ForrestTomlinFactorization::invertBasis( double *result )
 {
     if ( !_explicitBasisAvailable )
@@ -863,9 +869,9 @@ void ForrestTomlinFactorization::obtainFreshBasis()
 {
     for ( unsigned column = 0; column < _m; ++column )
     {
-        const double *basisColumn = _basisColumnOracle->getColumnOfBasis( column );
+        _basisColumnOracle->getColumnOfBasis( column, _workVector );
         for ( unsigned row = 0; row < _m; ++row )
-            _B[row * _m + column] = basisColumn[row];
+            _B[row * _m + column] = _workVector[row];
     }
 
     clearFactorization();

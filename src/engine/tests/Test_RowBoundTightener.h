@@ -334,11 +334,10 @@ public:
 
         tightener.setDimensions();
 
-        double A[] = { 1, 0,
-                       -2, -2,
-                       0, 1,
-                       1, 0,
-                       2, 0 };
+        double A[] = {
+            1, -2, 0, 1, 2,
+            0, -2, 1, 0, 0,
+        };
 
         double b[] = { 1, -2 };
 

@@ -1,8 +1,7 @@
 /*********************                                                        */
-/*! \file LUFactorization.h
+/*! \file SparseLUFactorization.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Derek Huang
  **   Guy Katz
  ** This file is part of the Marabou project.
  ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
@@ -11,28 +10,23 @@
  ** directory for licensing information.\endverbatim
  **/
 
-#ifndef __LUFactorization_h__
-#define __LUFactorization_h__
+#ifndef __SparseLUFactorization_h__
+#define __SparseLUFactorization_h__
 
-#include "GaussianEliminator.h"
 #include "IBasisFactorization.h"
-#include "LUFactors.h"
 #include "List.h"
 #include "MString.h"
+#include "SparseGaussianEliminator.h"
+#include "SparseLUFactors.h"
 
 class EtaMatrix;
 class LPElement;
 
-class LUFactorization : public IBasisFactorization
+class SparseLUFactorization : public IBasisFactorization
 {
 public:
-    LUFactorization( unsigned m, const BasisColumnOracle &basisColumnOracle );
-    ~LUFactorization();
-
-    /*
-      Free any allocated memory.
-    */
-    void freeIfNeeded();
+    SparseLUFactorization( unsigned m, const BasisColumnOracle &basisColumnOracle );
+    ~SparseLUFactorization();
 
     /*
       Adds a new eta matrix to the basis factorization. The matrix is
@@ -88,21 +82,11 @@ public:
     void restoreFactorization( const IBasisFactorization *other );
 
 	/*
-      Factorize the stored _B matrix into LU form.
-	*/
-    void factorizeBasis();
-
-	/*
       Set B to a non-identity matrix (or have it retrieved from the oracle),
       and then factorize it.
 	*/
 	void setBasis( const double *B );
     void obtainFreshBasis();
-
-	/*
-      Swap two rows of a matrix.
-    */
-    void rowSwap( unsigned rowOne, unsigned rowTwo, double *matrix );
 
     /*
       Return true iff the basis matrix B0 is explicitly available.
@@ -120,12 +104,6 @@ public:
     const double *getBasis() const;
     const SparseMatrix *getSparseBasis() const;
 
-    /*
-      Compute the inverse of B0, using the LP factorization already stored.
-      This can only be done when B0 is "fresh", i.e. when there are no stored etas.
-     */
-    void invertBasis( double *result );
-
 public:
     /*
       Functions made public strictly for testing, not part of the interface
@@ -134,8 +112,6 @@ public:
     /*
       Getter functions for the various factorization components.
     */
-	const double *getU() const;
-	const List<LPElement *> getLP() const;
 	const List<EtaMatrix *> getEtas() const;
 
     /*
@@ -147,7 +123,7 @@ private:
     /*
       The Basis matrix.
     */
-	double *_B;
+    SparseMatrix *_B;
 
     /*
       The dimension of the basis matrix.
@@ -157,7 +133,7 @@ private:
     /*
       The LU factors of B.
     */
-    LUFactors _luFactors;
+    SparseLUFactors _sparseLUFactors;
 
     /*
       A sequence of eta matrices.
@@ -167,12 +143,33 @@ private:
     /*
       The Gaussian eliminator, to compute basis factorizations
     */
-    GaussianEliminator _gaussianEliminator;
+    SparseGaussianEliminator _sparseGaussianEliminator;
 
     /*
       Work memory.
     */
     mutable double *_z;
+
+    /*
+      Free any allocated memory.
+    */
+    void freeIfNeeded();
+
+    /*
+      Factorize the stored _B matrix into LU form.
+	*/
+    void factorizeBasis();
+
+	/*
+      Swap two rows of a matrix.
+    */
+    void rowSwap( unsigned rowOne, unsigned rowTwo, double *matrix );
+
+    /*
+      Compute the inverse of B0, using the LP factorization already stored.
+      This can only be done when B0 is "fresh", i.e. when there are no stored etas.
+     */
+    void invertBasis( double *result );
 
     /*
       Clear a previous factorization.
@@ -182,7 +179,7 @@ private:
     static void log( const String &message );
 };
 
-#endif // __LUFactorization_h__
+#endif // __SparseLUFactorization_h__
 
 //
 // Local Variables:

@@ -16,6 +16,7 @@
 #include "MStringf.h"
 #include "ProjectedSteepestEdge.h"
 #include "ReluplexError.h"
+#include "SparseVector.h"
 #include "Statistics.h"
 #include "TableauRow.h"
 
@@ -67,6 +68,8 @@ void ProjectedSteepestEdgeRule::initialize( const ITableau &tableau )
 
     _n = tableau.getN();
     _m = tableau.getM();
+
+    _AColumn.initializeToEmpty( _m );
 
     _referenceSpace = new char[_n];
     if ( !_referenceSpace )
@@ -200,7 +203,6 @@ void ProjectedSteepestEdgeRule::prePivotHook( const ITableau &tableau, bool fake
 
     // Auxiliary variables
     double r, s, t1, t2;
-    const double *AColumn;
 
     // Compute GLPK's u vector
     for ( unsigned i = 0; i < m; ++i )
@@ -228,10 +230,11 @@ void ProjectedSteepestEdgeRule::prePivotHook( const ITableau &tableau, bool fake
         /* compute inner product s[j] = N'[j] * u, where N[j] = A[k]
          * is constraint matrix column corresponding to xN[j] */
         unsigned nonBasic = tableau.nonBasicIndexToVariable( i );
-        AColumn = tableau.getAColumn( nonBasic );
+
+        tableau.getSparseAColumn( nonBasic, &_AColumn );
         s = 0.0;
-        for ( unsigned j = 0; j < m; ++j )
-            s += AColumn[j] * _work2[j];
+        for ( unsigned i = 0; i < _AColumn.getNnz(); ++i )
+            s += _AColumn.getValueOfEntry( i ) * _work2[_AColumn.getIndexOfEntry( i )];
 
         /* compute new gamma[j] */
         t1 = _gamma[i] + r * ( r * accurateGamma + s + s );

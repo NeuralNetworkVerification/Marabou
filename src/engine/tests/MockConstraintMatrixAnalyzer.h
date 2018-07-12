@@ -48,6 +48,10 @@ public:
     {
     }
 
+    void analyze( const SparseMatrix */* matrix */, unsigned /* m */, unsigned /* n */ )
+    {
+    }
+
     unsigned getRank() const
     {
         return 0;

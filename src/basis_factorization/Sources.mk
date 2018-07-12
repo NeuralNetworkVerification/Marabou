@@ -1,5 +1,6 @@
 SOURCES += \
 	BasisFactorizationFactory.cpp \
+	CSRMatrix.cpp \
 	EtaMatrix.cpp \
 	ForrestTomlinFactorization.cpp \
 	GaussianEliminator.cpp \
@@ -7,6 +8,10 @@ SOURCES += \
 	LUFactorization.cpp \
 	LUFactors.cpp \
 	PermutationMatrix.cpp \
+	SparseGaussianEliminator.cpp \
+	SparseLUFactorization.cpp \
+	SparseLUFactors.cpp \
+	SparseVector.cpp \
 
 #
 # Local Variables:

@@ -15,12 +15,16 @@
 #include "ForrestTomlinFactorization.h"
 #include "GlobalConfiguration.h"
 #include "LUFactorization.h"
+#include "SparseLUFactorization.h"
 
 IBasisFactorization *BasisFactorizationFactory::createBasisFactorization( unsigned basisSize, const IBasisFactorization::BasisColumnOracle &basisColumnOracle )
 {
     if ( GlobalConfiguration::BASIS_FACTORIZATION_TYPE ==
          GlobalConfiguration::LU_FACTORIZATION )
         return new LUFactorization( basisSize, basisColumnOracle );
+    if ( GlobalConfiguration::BASIS_FACTORIZATION_TYPE ==
+         GlobalConfiguration::SPARSE_LU_FACTORIZATION )
+        return new SparseLUFactorization( basisSize, basisColumnOracle );
     else if ( GlobalConfiguration::BASIS_FACTORIZATION_TYPE ==
               GlobalConfiguration::FORREST_TOMLIN_FACTORIZATION )
         return new ForrestTomlinFactorization( basisSize, basisColumnOracle );
