@@ -313,15 +313,15 @@ public:
             TS_ASSERT_THROWS_NOTHING( csr1.mergeColumns( 1, 2 ) );
 
             double expected[] = {
-                0, 0, 0,
-                5, 8, 0,
-                0, 5, 0,
-                0, 4, 0,
+                0, 0, 0, 0,
+                5, 8, 0, 0,
+                0, 5, 0, 0,
+                0, 4, 0, 0,
             };
 
             for ( unsigned i = 0; i < 4; ++i )
-                for ( unsigned j = 0; j < 3; ++j )
-                    TS_ASSERT_EQUALS( csr1.get( i, j ), expected[i*3 + j] );
+                for ( unsigned j = 0; j < 4; ++j )
+                    TS_ASSERT_EQUALS( csr1.get( i, j ), expected[i*4 + j] );
 
             TS_ASSERT_EQUALS( csr1.getNnz(), 4U );
         }
@@ -340,34 +340,34 @@ public:
             TS_ASSERT_THROWS_NOTHING( csr1.mergeColumns( 2, 3 ) );
 
             double expected[] = {
-                0, 0, 0,
-                5, 8, 1,
-                0, 2, 3,
-                0, 0, 5,
+                0, 0, 0, 0,
+                5, 8, 1, 0,
+                0, 2, 3, 0,
+                0, 0, 5, 0,
             };
 
             for ( unsigned i = 0; i < 4; ++i )
-                for ( unsigned j = 0; j < 3; ++j )
-                    TS_ASSERT_EQUALS( csr1.get( i, j ), expected[i*3 + j] );
+                for ( unsigned j = 0; j < 4; ++j )
+                    TS_ASSERT_EQUALS( csr1.get( i, j ), expected[i*4 + j] );
 
             TS_ASSERT_EQUALS( csr1.getNnz(), 6U );
 
-            double newRow[] = { 1, 2, 3 };
+            double newRow[] = { 1, 2, 3, 5 };
             TS_ASSERT_THROWS_NOTHING( csr1.addLastRow( newRow ) );
 
             double expected2[] = {
-                0, 0, 0,
-                5, 8, 1,
-                0, 2, 3,
-                0, 0, 5,
-                1, 2, 3,
+                0, 0, 0, 0,
+                5, 8, 1, 0,
+                0, 2, 3, 0,
+                0, 0, 5, 0,
+                1, 2, 3, 5,
             };
 
             for ( unsigned i = 0; i < 5; ++i )
-                for ( unsigned j = 0; j < 3; ++j )
-                    TS_ASSERT_EQUALS( csr1.get( i, j ), expected2[i*3 + j] );
+                for ( unsigned j = 0; j < 4; ++j )
+                    TS_ASSERT_EQUALS( csr1.get( i, j ), expected2[i*4 + j] );
 
-            TS_ASSERT_EQUALS( csr1.getNnz(), 9U );
+            TS_ASSERT_EQUALS( csr1.getNnz(), 10U );
         }
 
         {
@@ -384,15 +384,15 @@ public:
             TS_ASSERT_THROWS_NOTHING( csr1.mergeColumns( 2, 3 ) );
 
             double expected[] = {
-                0, 0, 0,
-                0, 0, 0,
-                0, 0, 0,
-                0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
             };
 
             for ( unsigned i = 0; i < 4; ++i )
-                for ( unsigned j = 0; j < 3; ++j )
-                    TS_ASSERT_EQUALS( csr1.get( i, j ), expected[i*3 + j] );
+                for ( unsigned j = 0; j < 4; ++j )
+                    TS_ASSERT_EQUALS( csr1.get( i, j ), expected[i*4 + j] );
 
             TS_ASSERT_EQUALS( csr1.getNnz(), 0U );
         }
@@ -411,19 +411,18 @@ public:
             TS_ASSERT_THROWS_NOTHING( csr1.mergeColumns( 0, 3 ) );
 
             double expected[] = {
-                0, 0, 0,
-                5, 8, 0,
-                1, 2, 3,
-                0, 0, 4,
+                0, 0, 0, 0,
+                5, 8, 0, 0,
+                1, 2, 3, 0,
+                0, 0, 4, 0,
             };
 
             for ( unsigned i = 0; i < 4; ++i )
-                for ( unsigned j = 0; j < 3; ++j )
-                    TS_ASSERT_EQUALS( csr1.get( i, j ), expected[i*3 + j] );
+                for ( unsigned j = 0; j < 4; ++j )
+                    TS_ASSERT_EQUALS( csr1.get( i, j ), expected[i*4 + j] );
 
             TS_ASSERT_EQUALS( csr1.getNnz(), 6U );
         }
-
 
         {
             double M1[] = {
@@ -439,15 +438,15 @@ public:
             TS_ASSERT_THROWS_NOTHING( csr1.mergeColumns( 0, 1 ) );
 
             double expected[] = {
-                0,  0, 0,
-                13, 0, 0,
-                2,  3, 1,
-                0,  4, 0,
+                0,  0, 0, 0,
+                13, 0, 0, 0,
+                2,  0, 3, 1,
+                0,  0, 4, 0,
             };
 
             for ( unsigned i = 0; i < 4; ++i )
-                for ( unsigned j = 0; j < 3; ++j )
-                    TS_ASSERT_EQUALS( csr1.get( i, j ), expected[i*3 + j] );
+                for ( unsigned j = 0; j < 4; ++j )
+                    TS_ASSERT_EQUALS( csr1.get( i, j ), expected[i*4 + j] );
 
             TS_ASSERT_EQUALS( csr1.getNnz(), 5U );
         }

@@ -364,13 +364,8 @@ void CSRMatrix::mergeColumns( unsigned x1, unsigned x2 )
     // Finally, remove the entries that were marked for deletion.
     deleteElements( markedForDeletion );
 
-    // Remove the extra column, adjust any column entries that were higher
-    --_n;
-    for ( unsigned i = 0; i < _nnz; ++i )
-    {
-        if ( _JA[i] > x2 )
-            --_JA[i];
-    }
+    // Note that _n is not changed, because the merged column is not
+    // deleted - rather, it just stays empty.
 }
 
 void CSRMatrix::deleteElements( const List<unsigned> &deletions )
@@ -738,6 +733,24 @@ void CSRMatrix::checkInvariants() const
                     "Dumping and terminating\n" );
             dump();
             exit( 1 );
+        }
+    }
+
+    // For each row, check that the JA entries are increasing
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        unsigned start = _IA[i];
+        unsigned end = _IA[i+1];
+
+        for ( unsigned j = start; j + 1 < end; ++j )
+        {
+            if ( _JA[j] >= _JA[j+1] )
+            {
+                printf( "CSRMatrix error! _JA elements not increasing. "
+                        "Dumping and terminating\n" );
+                dump();
+                exit( 1 );
+            }
         }
     }
 }
