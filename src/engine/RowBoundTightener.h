@@ -17,6 +17,7 @@
 #include "IRowBoundTightener.h"
 #include "ITableau.h"
 #include "Queue.h"
+#include "SparseVector.h"
 #include "TableauRow.h"
 #include "Tightening.h"
 
@@ -52,14 +53,6 @@ public:
       Callback from the Tableau, to inform of a change in dimensions
     */
     void notifyDimensionChange( unsigned m, unsigned n );
-
-    /*
-      Derive and enqueue new bounds for all varaibles, using the
-      explicit basis matrix B0 that should be available through the
-      tableau. Can also do this until saturation, meaning that we
-      continue until no new bounds are learned.
-     */
-    void examineBasisMatrix( bool untilSaturation );
 
     /*
       Derive and enqueue new bounds for all varaibles, using the
@@ -127,6 +120,7 @@ private:
     double *_ciTimesLb;
     double *_ciTimesUb;
     char *_ciSign;
+    SparseVector _sparseRow;
 
     /*
       Statistics collection
@@ -137,20 +131,6 @@ private:
       Free internal work memory.
     */
     void freeMemoryIfNeeded();
-
-    /*
-      Do a single pass over the basis matrix and derive any
-      tighter bounds. Return the number of new bounds are learned.
-    */
-    unsigned onePassOverBasisMatrix();
-
-    /*
-      Process the basis row and attempt to derive tighter
-      lower/upper bounds for the specified variable. Return the number of
-      tighter bounds that have been found.
-     */
-    unsigned tightenOnSingleEquation( Equation &equation,
-                                      Equation::Addend varBeingTightened );
 
     /*
       Do a single pass over the constraint matrix and derive any

@@ -565,6 +565,11 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         adjustWorkMemorySize();
 
+        double *constraintMatrix = new double[n*m];
+        std::fill_n( constraintMatrix, n*m, 0.0 );
+        if ( !constraintMatrix )
+            throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Engine::constraintMatrix" );
+
         unsigned equationIndex = 0;
         for ( const auto &equation : equations )
         {
@@ -574,10 +579,13 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             _tableau->setRightHandSide( equationIndex, equation._scalar );
 
             for ( const auto &addend : equation._addends )
-                _tableau->setEntryValue( equationIndex, addend._variable, addend._coefficient );
+                constraintMatrix[equationIndex*n + addend._variable] = addend._coefficient;
 
             ++equationIndex;
         }
+
+        _tableau->setConstraintMatrix( constraintMatrix );
+        delete[] constraintMatrix;
 
         for ( unsigned i = 0; i < n; ++i )
         {
@@ -601,7 +609,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         // of the preprocessing phase.
 
         AutoConstraintMatrixAnalyzer analyzer;
-        analyzer->analyze( _tableau->getA(), _tableau->getM(), _tableau->getN() );
+        analyzer->analyze( _tableau->getSparseA(), _tableau->getM(), _tableau->getN() );
 
         if ( analyzer->getRank() != _tableau->getM() )
         {
@@ -1013,10 +1021,6 @@ void Engine::explicitBasisBoundTightening()
 
     switch ( GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE )
     {
-    case GlobalConfiguration::USE_BASIS_MATRIX:
-        _rowBoundTightener->examineBasisMatrix( saturation );
-        break;
-
     case GlobalConfiguration::COMPUTE_INVERTED_BASIS_MATRIX:
         _rowBoundTightener->examineInvertedBasisMatrix( saturation );
         break;

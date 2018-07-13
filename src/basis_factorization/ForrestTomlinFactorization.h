@@ -82,6 +82,7 @@ public:
       Get the explicit basis matrix
     */
     const double *getBasis() const;
+    const SparseMatrix *getSparseBasis() const;
 
     /*
       Compute the inverse of B (should only be called when B is explicitly available).

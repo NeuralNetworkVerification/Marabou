@@ -18,6 +18,8 @@
 #include "MString.h"
 #include "Map.h"
 #include "Set.h"
+#include "SparseMatrix.h"
+#include "SparseVector.h"
 #include "Statistics.h"
 
 class Equation;
@@ -39,9 +41,9 @@ public:
     void setDimensions( unsigned m, unsigned n );
 
     /*
-      Set the value of a specific entry in the tableau
+      Initialize the constraint matrix
     */
-    void setEntryValue( unsigned row, unsigned column, double value );
+    void setConstraintMatrix( const double *A );
 
     /*
       Set which variable will enter the basis. The input is the
@@ -308,10 +310,13 @@ public:
     void getTableauRow( unsigned index, TableauRow *row );
 
     /*
-      Get the original constraint matrix A or a column thereof.
+      Get the original constraint matrix A or a column thereof,
+      in dense form.
     */
-    const double *getA() const;
+    const SparseMatrix *getSparseA() const;
     const double *getAColumn( unsigned variable ) const;
+    void getSparseAColumn( unsigned variable, SparseVector *result ) const;
+    void getSparseARow( unsigned row, SparseVector *result ) const;
 
     /*
       Store and restore the Tableau's state. Needed for case splitting
@@ -388,11 +393,10 @@ public:
     */
     bool basisMatrixAvailable() const;
     void makeBasisMatrixAvailable();
-    void getBasisEquations( List<Equation *> &equations ) const;
-    Equation *getBasisEquation( unsigned row ) const;
     double *getInverseBasisMatrix() const;
 
-    const double *getColumnOfBasis( unsigned column ) const;
+    void getColumnOfBasis( unsigned column, double *result ) const;
+    void getColumnOfBasis( unsigned column, SparseVector *result ) const;
 
     /*
       Trigger a re-computing of the basis factorization. This can
@@ -427,12 +431,16 @@ private:
     unsigned _m;
 
     /*
-      The matrix
+      The constraint matrix A, and a collection of its
+      sparse columns. The matrix is also stored in dense
+      form (column-major).
     */
-    double *_A;
+    SparseMatrix *_A;
+    SparseVector **_sparseColumnsOfA;
+    double *_denseA;
 
     /*
-      A single column matrix from A
+      A single column from A
     */
     double *_a;
 
@@ -452,9 +460,16 @@ private:
     double *_b;
 
     /*
-      Working memory (of size m).
+      Working memory (of size m and n).
     */
-    double *_work;
+    double *_workM;
+    double *_workN;
+
+    /*
+      Working memory for extracting information from
+      sparse matrices
+    */
+    mutable SparseVector _sparseWorkVector;
 
     /*
       A unit vector of size m

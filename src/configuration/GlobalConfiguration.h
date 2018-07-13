@@ -83,12 +83,10 @@ public:
     */
 
     enum ExplicitBasisBoundTighteningType {
-        // Use the basis matrix without inverting it
-        USE_BASIS_MATRIX = 0,
         // Compute the inverse basis matrix and use it
-        COMPUTE_INVERTED_BASIS_MATRIX = 1,
+        COMPUTE_INVERTED_BASIS_MATRIX = 0,
         // Use the inverted basis matrix without using it, via transformations
-        USE_IMPLICIT_INVERTED_BASIS_MATRIX = 2,
+        USE_IMPLICIT_INVERTED_BASIS_MATRIX = 1,
     };
 
     // When doing bound tightening using the explicit basis matrix, should the basis matrix be inverted?
@@ -107,6 +105,7 @@ public:
     // The kind of basis factorization algorithm in use
     enum BasisFactorizationType {
         LU_FACTORIZATION,
+        SPARSE_LU_FACTORIZATION,
         FORREST_TOMLIN_FACTORIZATION,
     };
     static const BasisFactorizationType BASIS_FACTORIZATION_TYPE;

@@ -61,7 +61,6 @@ public:
     void clear() {}
     void notifyLowerBound( unsigned /* variable */, double /* bound */ ) {}
     void notifyUpperBound( unsigned /* variable */, double /* bound */ ) {}
-    void examineBasisMatrix( bool /* untilSaturation */ ) {}
     void examineInvertedBasisMatrix( bool /* untilSaturation */ ) {}
     void examineConstraintMatrix( bool /* untilSaturation */ ) {}
     void examinePivotRow() {}
