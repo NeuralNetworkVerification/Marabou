@@ -648,6 +648,8 @@ void Engine::extractSolution( InputQuery &inputQuery )
         {
             if ( _preprocessor.variableIsFixed( i ) )
                 inputQuery.setSolutionValue( i, _preprocessor.getFixedValue( i ) );
+            else if ( _preprocessor.variableIsMerged( i ) )
+                inputQuery.setSolutionValue( i, _tableau->getValue( _preprocessor.getMergedIndex( i ) ) );
             else
                 inputQuery.setSolutionValue( i, _tableau->getValue( _preprocessor.getNewIndex( i ) ) );
         }

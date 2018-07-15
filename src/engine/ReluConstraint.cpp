@@ -308,16 +308,16 @@ void ReluConstraint::getEntailedTightenings( List<Tightening> &tightenings ) con
     double bUpperBound = _upperBounds[_b];
     double fUpperBound = _upperBounds[_f];
 
-    double minBound =
+    double minUpperBound =
         FloatUtils::lt( bUpperBound, fUpperBound ) ? bUpperBound : fUpperBound;
 
-    if ( !FloatUtils::isNegative( minBound ) )
+    if ( !FloatUtils::isNegative( minUpperBound ) )
     {
         // The minimal bound is non-negative. Should match for both f and b.
-        if ( FloatUtils::lt( minBound, bUpperBound ) )
-            tightenings.append( Tightening( _b, minBound, Tightening::UB ) );
-        else if ( FloatUtils::lt( minBound, fUpperBound ) )
-            tightenings.append( Tightening( _f, minBound, Tightening::UB ) );
+        if ( FloatUtils::lt( minUpperBound, bUpperBound ) )
+            tightenings.append( Tightening( _b, minUpperBound, Tightening::UB ) );
+        else if ( FloatUtils::lt( minUpperBound, fUpperBound ) )
+            tightenings.append( Tightening( _f, minUpperBound, Tightening::UB ) );
     }
     else
     {
@@ -329,6 +329,10 @@ void ReluConstraint::getEntailedTightenings( List<Tightening> &tightenings ) con
     // Lower bounds
     double bLowerBound = _lowerBounds[_b];
     double fLowerBound = _lowerBounds[_f];
+
+    // F's lower bound should always be non-negative
+    if ( FloatUtils::isNegative( fLowerBound ) )
+        tightenings.append( Tightening( _f, 0.0, Tightening::LB ) );
 
     // Lower bounds are entailed between f and b only if they are strictly positive, and otherwise ignored.
     if ( FloatUtils::isPositive( fLowerBound ) )
