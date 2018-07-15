@@ -301,11 +301,6 @@ public:
             TS_ASSERT_THROWS_NOTHING( delete ge );
         }
     }
-
-    void test_todo()
-    {
-        TS_TRACE( "Currently we don't update Vt, Ft during the factorization, and sometimes we call getColumn() which is inefficient. Consider changing." );
-    }
 };
 
 //
