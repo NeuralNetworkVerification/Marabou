@@ -247,7 +247,7 @@ public:
                 TS_ASSERT( FloatUtils::areEqual( A[i], result[i] ) );
             }
 
-            double At[9];
+            double At[16];
             transposeMatrix( A, At, 4 );
             computeTransposedMatrixFromFactorization( &lu4, result );
 
