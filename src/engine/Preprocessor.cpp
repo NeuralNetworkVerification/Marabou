@@ -67,6 +67,12 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     if ( attemptVariableElimination )
         eliminateVariables();
 
+    DEBUG({
+            // For now, assume merged and fixed variable sets are disjoint
+            for ( const auto &fixed : _fixedVariables )
+                ASSERT( !_mergedVariables.exists( fixed.first ) );
+          });
+
     return _preprocessed;
 }
 
@@ -362,7 +368,6 @@ bool Preprocessor::processIdenticalVariables()
              !FloatUtils::isZero( equation._scalar ) )
             continue;
 
-        // Guy: this should never happen, so adding also an ASSERT
         ASSERT( term1._variable != term2._variable );
         if ( term1._variable == term2._variable )
             continue;
@@ -380,13 +385,14 @@ bool Preprocessor::processIdenticalVariables()
     _preprocessed.removeEquation( equToRemove );
     _preprocessed.mergeIdenticalVariables( v1, v2 );
 
-    double bestLowerBound = FloatUtils::max( _preprocessed.getLowerBound( v1 ), 
+    double bestLowerBound = FloatUtils::max( _preprocessed.getLowerBound( v1 ),
                                              _preprocessed.getLowerBound( v2 ) );
-    double bestUpperBound = FloatUtils::min( _preprocessed.getUpperBound( v1 ), 
+    double bestUpperBound = FloatUtils::min( _preprocessed.getUpperBound( v1 ),
                                              _preprocessed.getUpperBound( v2 ) );
     _preprocessed.setLowerBound( v2, bestLowerBound );
     _preprocessed.setUpperBound( v2, bestUpperBound );
-    _mergedVariables.insert( v1 );
+
+    _mergedVariables[v1] = v2;
     return true;
 }
 
@@ -395,23 +401,22 @@ void Preprocessor::eliminateVariables()
     // First, collect the variables that have become fixed, and their fixed values
 	for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
 	{
-        if ( FloatUtils::areEqual( _preprocessed.getLowerBound( i ), _preprocessed.getUpperBound( i ) )
-            || _mergedVariables.exists( i ) )
+        if ( FloatUtils::areEqual( _preprocessed.getLowerBound( i ), _preprocessed.getUpperBound( i ) ) )
             _fixedVariables[i] = _preprocessed.getLowerBound( i );
 	}
 
     // If there's nothing to eliminate, we're done
-    if ( _fixedVariables.empty() )
+    if ( _fixedVariables.empty() && _mergedVariables.empty() )
         return;
 
     if ( _statistics )
-        _statistics->ppSetNumEliminatedVars( _fixedVariables.size() );
+        _statistics->ppSetNumEliminatedVars( _fixedVariables.size() + _mergedVariables.size() );
 
     // Compute the new variable indices, after the elimination of fixed variables
  	int offset = 0;
 	for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
 	{
-        if ( _fixedVariables.exists( i ) )
+        if ( _fixedVariables.exists( i ) || _mergedVariables.exists( i ) )
             ++offset;
         else
             _oldIndexToNewIndex[i] = i - offset;
@@ -424,10 +429,13 @@ void Preprocessor::eliminateVariables()
     while ( equation != equations.end() )
 	{
         // Each equation is of the form sum(addends) = scalar. So, any fixed variable
-        // needs to be subtracted from the scalar.
+        // needs to be subtracted from the scalar. Merged variables should have already
+        // been removed, so we don't care about them
         List<Equation::Addend>::iterator addend = equation->_addends.begin();
         while ( addend != equation->_addends.end() )
         {
+            ASSERT( !_mergedVariables.exists( addend->_variable ) );
+
             if ( _fixedVariables.exists( addend->_variable ) )
             {
                 // Addend has to go...
@@ -496,7 +504,7 @@ void Preprocessor::eliminateVariables()
     // Update the lower/upper bound maps
     for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
 	{
-        if ( _fixedVariables.exists( i ) )
+        if ( _fixedVariables.exists( i ) || _mergedVariables.exists( i ) )
             continue;
 
         ASSERT( _oldIndexToNewIndex.at( i ) <= i );
@@ -522,6 +530,31 @@ void Preprocessor::eliminateVariables()
 
                 _preprocessed._debuggingSolution.erase( i );
             }
+            else if ( _mergedVariables.exists( i ) )
+            {
+                unsigned oldVar = i;
+                unsigned newVar = _mergedVariables[i];
+
+                if ( !_preprocessed._debuggingSolution.exists( newVar ) )
+                {
+                    _preprocessed._debuggingSolution[newVar] = _preprocessed._debuggingSolution[oldVar];
+                }
+                else
+                {
+                    if ( !FloatUtils::areEqual ( _preprocessed._debuggingSolution[newVar],
+                                                 _preprocessed._debuggingSolution[oldVar] ) )
+                        throw ReluplexError( ReluplexError::DEBUGGING_ERROR,
+                                             Stringf( "Variable %u fixed to %.5lf, "
+                                                      "merged into %u which was fixed to %.5lf",
+                                                      oldVar,
+                                                      _mergedVariables[oldVar],
+                                                      newVar,
+                                                      _mergedVariables[newVar] ).ascii() );
+
+                }
+
+                _preprocessed._debuggingSolution.erase( oldVar );
+            }
             else
             {
                 _preprocessed._debuggingSolution[_oldIndexToNewIndex[i]] =
@@ -534,7 +567,7 @@ void Preprocessor::eliminateVariables()
     }
 
     // Adjust the number of variables in the query
-    _preprocessed.setNumberOfVariables( _preprocessed.getNumberOfVariables() - _fixedVariables.size() );
+    _preprocessed.setNumberOfVariables( _preprocessed.getNumberOfVariables() - _fixedVariables.size() - _mergedVariables.size() );
 }
 
 bool Preprocessor::variableIsFixed( unsigned index ) const
@@ -545,6 +578,16 @@ bool Preprocessor::variableIsFixed( unsigned index ) const
 double Preprocessor::getFixedValue( unsigned index ) const
 {
     return _fixedVariables.at( index );
+}
+
+bool Preprocessor::variableIsMerged( unsigned index ) const
+{
+    return _mergedVariables.exists( index );
+}
+
+unsigned Preprocessor::getMergedIndex( unsigned index ) const
+{
+    return _mergedVariables.at( index );
 }
 
 unsigned Preprocessor::getNewIndex( unsigned oldIndex ) const
@@ -572,6 +615,18 @@ void Preprocessor::addPlAuxiliaryEquations()
 
     for ( Equation equation : newEquations )
         _preprocessed.addEquation( equation );
+}
+
+void Preprocessor::dumpAllBounds( const String &message )
+{
+    printf( "\nPP: Dumping all bounds (%s)\n", message.ascii() );
+
+    for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
+    {
+        printf( "\tx%u: [%5.2lf, %5.2lf]\n", i, _preprocessed.getLowerBound( i ), _preprocessed.getUpperBound( i ) );
+    }
+
+    printf( "\n" );
 }
 
 //

@@ -42,6 +42,12 @@ public:
     double getFixedValue( unsigned index ) const;
 
     /*
+      Obtain the values of variables that have been merged.
+    */
+    bool variableIsMerged( unsigned index ) const;
+    unsigned getMergedIndex( unsigned index ) const;
+
+    /*
       Obtain the new index of a variable.
     */
     unsigned getNewIndex( unsigned oldIndex ) const;
@@ -93,13 +99,23 @@ private:
     */
     Map<unsigned, double> _fixedVariables;
 
-    Set<unsigned> _mergedVariables;
+    /*
+      Variables that have been merged with other varaibles, due to
+      equations of the form x1 = x2
+    */
+    Map<unsigned, unsigned> _mergedVariables;
 
     /*
       Mapping of old variable indices to new varibale indices, if
       indices were changed during preprocessing.
     */
     Map<unsigned, unsigned> _oldIndexToNewIndex;
+
+    /*
+      For debugging only
+    */
+    void dumpAllBounds( const String &message );
+
 };
 
 #endif // __Preprocessor_h__

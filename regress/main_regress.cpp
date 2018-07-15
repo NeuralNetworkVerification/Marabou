@@ -25,6 +25,7 @@
 #include "max_infeasible_1.h"
 #include "max_relu_feasible_1.h"
 #include "relu_feasible_1.h"
+#include "relu_feasible_2.h"
 
 void lps()
 {
@@ -45,6 +46,9 @@ void relus()
     printTitle( "ReLUs / Sat" );
     Relu_Feasible_1 rf1;
     rf1.run();
+
+    Relu_Feasible_2 rf2;
+    rf2.run();
 
     Acas_1_1_Fixed_Input acas_1_1_fixed_input;
     acas_1_1_fixed_input.run();
@@ -78,8 +82,8 @@ void max_relu()
 int main()
 {
     try
-	{
-		lps();
+    {
+        lps();
 
     	relus();
 
