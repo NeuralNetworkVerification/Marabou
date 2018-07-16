@@ -50,7 +50,7 @@ TableauState::~TableauState()
             }
         }
 
-        delete _sparseColumnsOfA;
+        delete[] _sparseColumnsOfA;
         _sparseColumnsOfA = NULL;
     }
 

@@ -82,6 +82,7 @@ void SparseGaussianEliminator::initializeFactorization( const SparseMatrix *A, S
         so we just leave it empty for now.
     */
     A->storeIntoOther( _sparseLUFactors->_V );
+    _sparseLUFactors->_V->transposeIntoOther( _sparseLUFactors->_Vt );
     _sparseLUFactors->_F->initializeToEmpty( _m, _m );
     _sparseLUFactors->_P.resetToIdentity();
     _sparseLUFactors->_Q.resetToIdentity();
@@ -148,12 +149,9 @@ void SparseGaussianEliminator::run( const SparseMatrix *A, SparseLUFactors *spar
         eliminate();
     }
 
-    // Execute the changes in F
+    // Execute the changes in F, compute its transpose
     _sparseLUFactors->_F->executeChanges();
-
-    // Compute the transposed F, V
     _sparseLUFactors->_F->transposeIntoOther( _sparseLUFactors->_Ft );
-    _sparseLUFactors->_V->transposeIntoOther( _sparseLUFactors->_Vt );
 
     // DEBUG({
     //         // Check that the factorization is correct
@@ -229,7 +227,7 @@ void SparseGaussianEliminator::choosePivot()
             _vPivotColumn = _sparseLUFactors->_Q._rowOrdering[i];
 
             // Get the singleton element
-            _sparseLUFactors->_V->getColumn( _vPivotColumn, &sparseColumn );
+            _sparseLUFactors->_Vt->getRow( _vPivotColumn, &sparseColumn );
 
             // There may be some elements in higher rows - we need just the one
             // in the active submatrix.
@@ -276,7 +274,7 @@ void SparseGaussianEliminator::choosePivot()
     for ( unsigned uColumn = _eliminationStep; uColumn < _m; ++uColumn )
     {
         unsigned vColumn = _sparseLUFactors->_Q._rowOrdering[uColumn];
-        _sparseLUFactors->_V->getColumn( vColumn, &sparseColumn );
+        _sparseLUFactors->_Vt->getRow( vColumn, &sparseColumn );
 
         double maxInColumn = 0;
         for ( unsigned entry = 0; entry < sparseColumn.getNnz(); ++entry )
@@ -352,7 +350,7 @@ void SparseGaussianEliminator::eliminate()
       Eliminate all entries below the pivot element U[k,k]
       We know that V[_vPivotRow, _vPivotColumn] = U[k,k].
     */
-    _sparseLUFactors->_V->getColumn( _vPivotColumn, &sparseColumn );
+    _sparseLUFactors->_Vt->getRow( _vPivotColumn, &sparseColumn );
 
     // Get the pivot row in dense format, due to repeated access
     _sparseLUFactors->_V->getRowDense( _vPivotRow, _work );
@@ -389,6 +387,7 @@ void SparseGaussianEliminator::eliminate()
         --_numUColumnElements[_eliminationStep];
         --_numURowElements[uRow];
         _sparseLUFactors->_V->commitChange( vRow, _vPivotColumn, 0.0 );
+        _sparseLUFactors->_Vt->commitChange( _vPivotColumn, vRow, 0.0 );
         _sparseLUFactors->_V->getRow( vRow, &sparseRow );
 
         Set<unsigned> columnsAlreadyHandled;
@@ -418,6 +417,7 @@ void SparseGaussianEliminator::eliminate()
             }
 
             _sparseLUFactors->_V->commitChange( vRow, vColumnIndex, newValue );
+            _sparseLUFactors->_Vt->commitChange( vColumnIndex, vRow, newValue );
         }
 
         // Next, handle entries that were zero in the eliminated row
@@ -433,7 +433,9 @@ void SparseGaussianEliminator::eliminate()
 
             ++_numUColumnElements[uColumnIndex];
             ++_numURowElements[uRow];
-            _sparseLUFactors->_V->commitChange( vRow, vColumnIndex, rowMultiplier * _work[vColumnIndex] );
+            double newVal = rowMultiplier * _work[vColumnIndex];
+            _sparseLUFactors->_V->commitChange( vRow, vColumnIndex, newVal );
+            _sparseLUFactors->_Vt->commitChange( vColumnIndex, vRow, newVal );
         }
 
         /*
@@ -445,6 +447,7 @@ void SparseGaussianEliminator::eliminate()
 
     // Execute the changes in V
     _sparseLUFactors->_V->executeChanges();
+    _sparseLUFactors->_Vt->executeChanges();
 }
 
 void SparseGaussianEliminator::log( const String &message )
