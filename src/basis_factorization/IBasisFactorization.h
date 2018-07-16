@@ -108,6 +108,11 @@ public:
      */
     virtual void invertBasis( double *result ) = 0;
 
+    /*
+      For debugging
+    */
+    virtual void dump() const {};
+
 private:
     /*
       A flag that controls whether factorization is enabled or
