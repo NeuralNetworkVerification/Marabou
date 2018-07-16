@@ -923,6 +923,13 @@ void Tableau::pickLeavingVariable( double *changeColumn )
                 {
                     _changeRatio = ratio;
                     _leavingVariable = i;
+
+                    if ( FloatUtils::isZero( _changeRatio ) )
+                    {
+                        // All ratios are non-positive, so if we already hit 0 we are done.
+                        _changeRatio = 0.0;
+                        break;
+                    }
                 }
             }
         }
@@ -950,6 +957,13 @@ void Tableau::pickLeavingVariable( double *changeColumn )
                 {
                     _changeRatio = ratio;
                     _leavingVariable = i;
+
+                    if ( FloatUtils::isZero( _changeRatio ) )
+                    {
+                        // All ratios are non-negative, so if we already hit 0 we are done.
+                        _changeRatio = 0.0;
+                        break;
+                    }
                 }
             }
         }
@@ -1483,7 +1497,11 @@ void Tableau::addRow()
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newDenseA" );
 
     for ( unsigned column = 0; column < _n; ++column )
+    {
         memcpy( newDenseA + ( column * newM ), _denseA + ( column * _m ), sizeof(double) * _m );
+        newDenseA[column*newM + newM - 1] = 0.0;
+    }
+
     delete[] _denseA;
     _denseA = newDenseA;
 

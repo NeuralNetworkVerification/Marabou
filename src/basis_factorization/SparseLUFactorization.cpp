@@ -52,6 +52,12 @@ void SparseLUFactorization::freeIfNeeded()
 		_B = NULL;
 	}
 
+    if ( _z )
+    {
+        delete[] _z;
+        _z = NULL;
+    }
+
     List<EtaMatrix *>::iterator it;
     for ( it = _etas.begin(); it != _etas.end(); ++it )
         delete *it;
