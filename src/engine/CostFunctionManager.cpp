@@ -219,10 +219,12 @@ const double *CostFunctionManager::getCostFunction() const
     return _costFunction;
 }
 
-void CostFunctionManager::updateCostFunctionForPivot( unsigned enteringVariableIndex,
-                                                      unsigned leavingVariableIndex,
-                                                      double pivotElement,
-                                                      const TableauRow *pivotRow )
+double CostFunctionManager::updateCostFunctionForPivot( unsigned enteringVariableIndex,
+                                                        unsigned leavingVariableIndex,
+                                                        double pivotElement,
+                                                        const TableauRow *pivotRow,
+                                                        const double *changeColumn
+                                                        )
 {
     /*
       This method is invoked when the non-basic _enteringVariable and
@@ -247,8 +249,21 @@ void CostFunctionManager::updateCostFunctionForPivot( unsigned enteringVariableI
     ASSERT( _tableau->getM() == _m );
     ASSERT( _tableau->getN() == _n );
 
+    /*
+      The current reduced cost of the entering variable is stored in
+      _costFunction, but since we have the change column we can compute a
+      more accurate version from scratch
+    */
+    double enteringVariableCost = 0;
+    for ( unsigned i = 0; i < _m; ++i )
+        enteringVariableCost -= _basicCosts[i] * changeColumn[i];
+
+    double normalizedError =
+        FloatUtils::abs( enteringVariableCost - _costFunction[enteringVariableIndex] ) /
+        ( FloatUtils::abs( enteringVariableCost ) + 1.0 );
+
     // Update the cost of the new non-basic
-    _costFunction[enteringVariableIndex] /= pivotElement;
+    _costFunction[enteringVariableIndex] = enteringVariableCost / pivotElement;
 
     for ( unsigned i = 0; i < _n - _m; ++i )
     {
@@ -256,27 +271,17 @@ void CostFunctionManager::updateCostFunctionForPivot( unsigned enteringVariableI
             _costFunction[i] -= (*pivotRow)[i] * _costFunction[enteringVariableIndex];
     }
 
-    unsigned leavingVariableStatus = _tableau->getBasicStatusByIndex( leavingVariableIndex );
-
-    // Update the basic cost for the leaving variable, which may have changed
-    // since we last computed it
-    switch ( leavingVariableStatus )
-    {
-    case ITableau::ABOVE_UB:
-        _basicCosts[leavingVariableIndex] = 1;
-        break;
-    case ITableau::BELOW_LB:
-        _basicCosts[leavingVariableIndex] = -1;
-        break;
-    default:
-        _basicCosts[leavingVariableIndex] = 0;
-        break;
-    }
-
-    // If the leaving variable was previously out of bounds, this is no longer
-    // the case. Adjust the non-basic cost.
+    /*
+      The leaving variable might have contributed to the cost function, but it will
+      soon be made within bounds. So, we adjust the reduced costs accordingly.
+    */
     _costFunction[enteringVariableIndex] -= _basicCosts[leavingVariableIndex];
+
+    // The entering varibale is non-basic, so it is within bounds.
+    _basicCosts[leavingVariableIndex] = 0;
+
     _costFunctionStatus = ICostFunctionManager::COST_FUNCTION_UPDATED;
+    return normalizedError;
 }
 
 bool CostFunctionManager::costFunctionInvalid() const

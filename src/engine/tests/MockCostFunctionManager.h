@@ -92,11 +92,14 @@ public:
     {
     }
 
-    void updateCostFunctionForPivot( unsigned /* enteringVariableIndex */,
-                                     unsigned /* leavingVariableIndex */,
-                                     double /* pivotElement */,
-                                     const TableauRow */* pivotRow */ )
+    double updateCostFunctionForPivot( unsigned /* enteringVariableIndex */,
+                                       unsigned /* leavingVariableIndex */,
+                                       double /* pivotElement */,
+                                       const TableauRow */* pivotRow */,
+                                       const double */* changeColumn */
+                                       )
     {
+        return 0;
     }
 
     bool costFunctionInvalid() const
