@@ -991,33 +991,6 @@ void Tableau::computeChangeColumn()
 
     // Compute d = inv(B) * a using the basis factorization
     _basisFactorization->forwardTransformation( _a, _changeColumn );
-
-    double max = 0.0;
-    for ( unsigned i = 0; i < _m; ++i )
-    {
-        if ( FloatUtils::abs( _changeColumn[i] ) > max )
-            max = FloatUtils::abs( _changeColumn[i] );
-    }
-
-    if ( FloatUtils::gt( max, 10000 ) )
-    {
-        printf( "\nHave change column with max = %.15lf. Recomputing\n", max );
-
-        _basisFactorization->obtainFreshBasis();
-        _basisFactorization->forwardTransformation( _a, _changeColumn );
-
-        double maxAfter = 0.0;
-        for ( unsigned i = 0; i < _m; ++i )
-        {
-            if ( FloatUtils::abs( _changeColumn[i] ) > maxAfter )
-                maxAfter = FloatUtils::abs( _changeColumn[i] );
-        }
-
-        printf( "Max after re-compute: %.15lf\n", maxAfter );
-
-        if ( FloatUtils::areDisequal( max, maxAfter ) )
-            printf( "AHA!\n" );
-    }
 }
 
 const double *Tableau::getChangeColumn() const
