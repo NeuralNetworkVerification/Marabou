@@ -35,10 +35,11 @@ public:
     virtual const double *getCostFunction() const = 0;
     virtual void dumpCostFunction() const = 0;
     virtual void setCostFunctionStatus( ICostFunctionManager::CostFunctionStatus status ) = 0;
-    virtual void updateCostFunctionForPivot( unsigned enteringVariableIndex,
-                                             unsigned leavingVariableIndex,
-                                             double pivotElement,
-                                             const TableauRow *pivotRow ) = 0;
+    virtual double updateCostFunctionForPivot( unsigned enteringVariableIndex,
+                                               unsigned leavingVariableIndex,
+                                               double pivotElement,
+                                               const TableauRow *pivotRow,
+                                               const double *changeColumn ) = 0;
 
     virtual bool costFunctionInvalid() const = 0;
     virtual bool costFunctionJustComputed() const = 0;

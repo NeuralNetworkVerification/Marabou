@@ -1977,10 +1977,14 @@ void Tableau::updateCostFunctionForPivot()
         return;
 
     double pivotElement = -_changeColumn[_leavingVariable];
-    _costFunctionManager->updateCostFunctionForPivot( _enteringVariable,
-                                                      _leavingVariable,
-                                                      pivotElement,
-                                                      _pivotRow );
+    double normalizedError = _costFunctionManager->updateCostFunctionForPivot( _enteringVariable,
+                                                                               _leavingVariable,
+                                                                               pivotElement,
+                                                                               _pivotRow,
+                                                                               _changeColumn );
+
+    if ( FloatUtils::gt( normalizedError, GlobalConfiguration::COST_FUNCTION_ERROR_THRESHOLD ) )
+        _costFunctionManager->invalidateCostFunction();
 }
 
 ITableau::BasicAssignmentStatus Tableau::getBasicAssignmentStatus() const
