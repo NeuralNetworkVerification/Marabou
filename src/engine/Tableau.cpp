@@ -1528,6 +1528,7 @@ void Tableau::addRow()
         memcpy( newDenseA + ( column * newM ), _denseA + ( column * _m ), sizeof(double) * _m );
         newDenseA[column*newM + newM - 1] = 0.0;
     }
+    std::fill_n( newDenseA + ( newN - 1 ) * newM, newM, 0.0 );
 
     delete[] _denseA;
     _denseA = newDenseA;
