@@ -56,10 +56,11 @@ public:
       Update the cost fucntion just before a coming pivot step, to avoid having to compute
       it from scratch afterwards.
     */
-    void updateCostFunctionForPivot( unsigned enteringVariableIndex,
-                                     unsigned leavingVariableIndex,
-                                     double pivotElement,
-                                     const TableauRow *pivotRow );
+    double updateCostFunctionForPivot( unsigned enteringVariableIndex,
+                                       unsigned leavingVariableIndex,
+                                       double pivotElement,
+                                       const TableauRow *pivotRow,
+                                       const double *changeColumn );
 
     /*
       For debugging purposes: dump the cost function.

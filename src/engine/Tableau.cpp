@@ -1849,38 +1849,6 @@ void Tableau::updateAssignmentForPivot()
 
     _basicAssignmentStatus = ITableau::BASIC_ASSIGNMENT_UPDATED;
 
-    // If the change ratio is 0, just maintain the current assignment
-    if ( FloatUtils::isZero( _changeRatio ) )
-    {
-        ASSERT( !performingFakePivot() );
-
-        DEBUG({
-                // This should only happen when the basic variable is pressed against
-                // one of its bounds
-                if ( !( _basicStatus[_leavingVariable] == Tableau::AT_UB ||
-                        _basicStatus[_leavingVariable] == Tableau::AT_LB ||
-                        _basicStatus[_leavingVariable] == Tableau::BETWEEN
-                        ) )
-                {
-                    printf( "Assertion violation!\n" );
-                    printf( "Basic (leaving) variable is: %u\n", _basicIndexToVariable[_leavingVariable] );
-                    printf( "Basic assignment: %.10lf. Bounds: [%.10lf, %.10lf]\n",
-                            _basicAssignment[_leavingVariable],
-                            _lowerBounds[_basicIndexToVariable[_leavingVariable]],
-                            _upperBounds[_basicIndexToVariable[_leavingVariable]] );
-                    printf( "Basic status: %u\n", _basicStatus[_leavingVariable] );
-                    printf( "leavingVariableIncreases = %s", _leavingVariableIncreases ? "yes" : "no" );
-                    exit( 1 );
-                }
-            });
-
-        double basicAssignment = _basicAssignment[_leavingVariable];
-        double nonBasicAssignment = _nonBasicAssignment[_enteringVariable];
-        _basicAssignment[_leavingVariable] = nonBasicAssignment;
-        _nonBasicAssignment[_enteringVariable] = basicAssignment;
-        return;
-    }
-
     if ( performingFakePivot() )
     {
         // A non-basic is hopping from one bound to the other.
@@ -1977,10 +1945,14 @@ void Tableau::updateCostFunctionForPivot()
         return;
 
     double pivotElement = -_changeColumn[_leavingVariable];
-    _costFunctionManager->updateCostFunctionForPivot( _enteringVariable,
-                                                      _leavingVariable,
-                                                      pivotElement,
-                                                      _pivotRow );
+    double normalizedError = _costFunctionManager->updateCostFunctionForPivot( _enteringVariable,
+                                                                               _leavingVariable,
+                                                                               pivotElement,
+                                                                               _pivotRow,
+                                                                               _changeColumn );
+
+    if ( FloatUtils::gt( normalizedError, GlobalConfiguration::COST_FUNCTION_ERROR_THRESHOLD ) )
+        _costFunctionManager->invalidateCostFunction();
 }
 
 ITableau::BasicAssignmentStatus Tableau::getBasicAssignmentStatus() const
