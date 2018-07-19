@@ -1725,6 +1725,17 @@ void Tableau::log( const String &message )
 
 void Tableau::verifyInvariants()
 {
+    // All merged variables are non-basic
+    for ( const auto &merged : _mergedVariables )
+    {
+        if ( _basicVariables.exists( merged.first ) )
+        {
+            printf( "Error! Merged variable x%u is basic!\n", merged.first );
+            exit( 1 );
+        }
+    }
+
+    // All assignments are well formed
     for ( unsigned i = 0; i < _m; ++i )
     {
         if ( !FloatUtils::wellFormed( _basicAssignment[i] ) )
