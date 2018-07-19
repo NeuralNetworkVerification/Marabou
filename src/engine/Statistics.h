@@ -124,6 +124,11 @@ public:
     void ppIncNumConstraintsRemoved();
     void ppIncNumEquationsRemoved();
 
+    /*
+      For debugging purposes
+    */
+    void printStartingIteration( unsigned long long iteration, String message );
+
 private:
     // Initial timestamp
     struct timespec _startTime;
