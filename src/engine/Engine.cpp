@@ -795,14 +795,19 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
                 _tableau->getTableauRow( _tableau->variableToIndex( x1 ), &x1Row );
 
                 bool found = false;
+                double bestCoefficient = 0.0;
                 unsigned nonBasic;
                 for ( unsigned i = 0; i < n - m; ++i )
                 {
-                    if ( !FloatUtils::isZero( x1Row._row[i]._coefficient ) && ( x1Row._row[i]._var != x2 ) )
+                    if ( x1Row._row[i]._var != x2 )
                     {
-                        found = true;
-                        nonBasic = x1Row._row[i]._var;
-                        break;
+                        double contender = FloatUtils::abs( x1Row._row[i]._coefficient );
+                        if ( FloatUtils::gt( contender, bestCoefficient ) )
+                        {
+                            found = true;
+                            nonBasic = x1Row._row[i]._var;
+                            bestCoefficient = contender;
+                        }
                     }
                 }
 
@@ -833,14 +838,19 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
                 _tableau->getTableauRow( _tableau->variableToIndex( x2 ), &x2Row );
 
                 bool found = false;
+                double bestCoefficient = 0.0;
                 unsigned nonBasic;
                 for ( unsigned i = 0; i < n - m; ++i )
                 {
-                    if ( !FloatUtils::isZero( x2Row._row[i]._coefficient ) && ( x2Row._row[i]._var != x1 ) )
+                    if ( x2Row._row[i]._var != x1 )
                     {
-                        found = true;
-                        nonBasic = x2Row._row[i]._var;
-                        break;
+                        double contender = FloatUtils::abs( x2Row._row[i]._coefficient );
+                        if ( FloatUtils::gt( contender, bestCoefficient ) )
+                        {
+                            found = true;
+                            nonBasic = x2Row._row[i]._var;
+                            bestCoefficient = contender;
+                        }
                     }
                 }
 

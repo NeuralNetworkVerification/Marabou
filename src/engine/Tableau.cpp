@@ -1114,24 +1114,9 @@ void Tableau::getTableauRow( unsigned index, TableauRow *row )
 
     ASSERT( index < _m );
 
-
     std::fill( _unitVector, _unitVector + _m, 0.0 );
     _unitVector[index] = 1;
     computeMultipliers( _unitVector );
-
-    if ( _statistics->getNumMainLoopIterations() >= 1244700 )
-    {
-        printf( "getTableauRow callde for index %u\n", index );
-        printf( "Dumping multipliers:\n" );
-
-        for ( unsigned i = 0; i < _m; ++i )
-        {
-            printf( "\tmultipliers[%u] = %.15lf\n", i, _multipliers[i] );
-        }
-
-        printf( "Also dumping LU factorization\n" );
-        _basisFactorization->dump();
-    }
 
     for ( unsigned i = 0; i < _n - _m; ++i )
     {
@@ -1139,19 +1124,6 @@ void Tableau::getTableauRow( unsigned index, TableauRow *row )
         row->_row[i]._coefficient = 0;
 
         SparseVector *column = _sparseColumnsOfA[_nonBasicIndexToVariable[i]];
-
-        if ( _statistics->getNumMainLoopIterations() >= 1244700 )
-        {
-            printf( "getTableauRow: dumping column %u of A in sparse and dense formats\n", i );
-
-            column->dump();
-            column->dumpDense();
-
-            for ( unsigned j = 0; j < _m; ++j )
-            {
-                printf( "\tDense[%u] = %.15lf\n", j, getAColumn( index )[j] );
-            }
-        }
 
         for ( unsigned entry = 0; entry < column->getNnz(); ++entry )
             row->_row[i]._coefficient -= ( _multipliers[column->getIndexOfEntry( entry )] * column->getValueOfEntry( entry ) );
