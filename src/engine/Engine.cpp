@@ -818,7 +818,6 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
                 _activeEntryStrategy->prePivotHook( _tableau, false );
                 _tableau->performDegeneratePivot();
                 _activeEntryStrategy->prePivotHook( _tableau, false );
-
             }
 
             if ( _tableau->isBasic( x2 ) )
@@ -861,7 +860,6 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 
             }
 
-            DEBUG( _tableau->verifyInvariants() );
             // Both variables are now non-basic, so we can merge their columns
             _tableau->mergeColumns( x1, x2 );
             DEBUG( _tableau->verifyInvariants() );
