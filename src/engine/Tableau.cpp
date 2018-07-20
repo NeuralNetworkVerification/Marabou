@@ -2064,24 +2064,6 @@ void Tableau::mergeColumns( unsigned x1, unsigned x2 )
     ASSERT( !isBasic( x1 ) );
     ASSERT( !isBasic( x2 ) );
 
-    if ( _statistics->getNumMainLoopIterations() >= 1244700 )
-    {
-        printf( "Merge columns called. Obtaining row for basic 270" );
-
-        if ( _basicVariables.exists( 270 ) )
-        {
-            printf( "x270 is indeed basic. Index is: %u\n", _variableToIndex[270] );
-            TableauRow row( _n - _m );
-            getTableauRow( _variableToIndex[270], &row );
-            printf( "Dumping row:\n" );
-            row.dump(); // This alreayd printed all NANs
-        }
-        else
-        {
-            printf( "Var not basic!\n" );
-        }
-
-    }
     /*
       If x2 has tighter bounds than x1, adjust the bounds
       for x1.
@@ -2107,27 +2089,6 @@ void Tableau::mergeColumns( unsigned x1, unsigned x2 )
     for ( unsigned i = 0; i < _m; ++i )
         _denseA[x1*_m + i] += _denseA[x2*_m + i];
     std::fill_n( _denseA + x2 * _m, _m, 0 );
-
-    if ( _statistics->getNumMainLoopIterations() >= 1244700 )
-    {
-        printf( "Re-obtaining row after the merge, before computing assignment" );
-
-        if ( _basicVariables.exists( 270 ) )
-        {
-            printf( "x270 is indeed basic. Index is: %u\n", _variableToIndex[270] );
-            TableauRow row( _n - _m );
-            getTableauRow( _variableToIndex[270], &row );
-            printf( "Dumping row:\n" );
-            row.dump();
-        }
-        else
-        {
-            printf( "Var not basic!\n" );
-        }
-
-        printf( "dumping assignment before calling 'compute assignment', to see non basics\n" );
-        dumpAssignment();
-    }
 
     computeAssignment();
     computeCostFunction();

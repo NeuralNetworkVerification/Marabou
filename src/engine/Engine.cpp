@@ -747,17 +747,12 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
     log( "" );
     log( "Applying a split. " );
 
-    printf( "Engine::applySplit: before first verifyInvariants\n" );
     DEBUG( _tableau->verifyInvariants() );
-    printf( "Engine::applySplit: after first verifyInvariants\n" );
 
     List<Tightening> bounds = split.getBoundTightenings();
     List<Equation> equations = split.getEquations();
     for ( auto &equation : equations )
     {
-        printf( "Engine::applySplit: Working on an equation:\n" );
-        equation.dump();
-
         /*
           In the general case, we just add the new equation to the tableau.
           However, we also support a very common case: equations of the form
@@ -779,8 +774,6 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 
         if ( canMergeColumns )
         {
-            printf( "Engine::applySplit: Merging columns\n" );
-
             /*
               Special case: x1 and x2 need to be merged.
               First, we need to ensure they are both non-basic.
@@ -790,7 +783,6 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 
             if ( _tableau->isBasic( x1 ) )
             {
-                printf( "Engine::applySplit: x1 is basic, making non-basic\n" );
                 TableauRow x1Row( n - m );
                 _tableau->getTableauRow( _tableau->variableToIndex( x1 ), &x1Row );
 
@@ -826,14 +818,11 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
                 _activeEntryStrategy->prePivotHook( _tableau, false );
                 _tableau->performDegeneratePivot();
                 _activeEntryStrategy->prePivotHook( _tableau, false );
-                printf( "Engine::applySplit: done handling non-basic x1\n" );
 
             }
 
             if ( _tableau->isBasic( x2 ) )
             {
-                printf( "Engine::applySplit: x2 is basic, making non-basic\n" );
-
                 TableauRow x2Row( n - m );
                 _tableau->getTableauRow( _tableau->variableToIndex( x2 ), &x2Row );
 
@@ -870,26 +859,15 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
                 _tableau->performDegeneratePivot();
                 _activeEntryStrategy->prePivotHook( _tableau, false );
 
-                printf( "Engine::applySplit: done handling non-basic x2\n" );
             }
 
-
-            printf( "Engine::applySplit: before middle 1 verifyInvariants\n" );
             DEBUG( _tableau->verifyInvariants() );
-            printf( "Engine::applySplit: after middle 1 verifyInvariants\n" );
-
             // Both variables are now non-basic, so we can merge their columns
-            printf( "Engine::applySplit: merge columns starting\n" );
             _tableau->mergeColumns( x1, x2 );
-            printf( "Engine::applySplit: merge columns done\n" );
-
-            printf( "Engine::applySplit: before middle 2 verifyInvariants\n" );
             DEBUG( _tableau->verifyInvariants() );
-            printf( "Engine::applySplit: after middle 2 verifyInvariants\n" );
         }
         else
         {
-            printf( "Engine::applySplit: general case, adding row\n" );
             // General case: add a new equation to the tableau
             unsigned auxVariable = _tableau->addEquation( equation );
             _activeEntryStrategy->resizeHook( _tableau );
@@ -913,8 +891,6 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
                 ASSERT( false );
                 break;
             }
-            printf( "Engine::applySplit: general case done\n" );
-
         }
     }
 
@@ -922,7 +898,6 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 
     _rowBoundTightener->resetBounds();
 
-    printf( "Engine::applySplit: starting bound tightening\n" );
     for ( auto &bound : bounds )
     {
         if ( bound._type == Tightening::LB )
@@ -936,12 +911,8 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
             _tableau->tightenUpperBound( bound._variable, bound._value );
         }
     }
-    printf( "Engine::applySplit: done with bound tightening\n" );
 
-    printf( "Engine::applySplit: before second verifyInvariants\n" );
     DEBUG( _tableau->verifyInvariants() );
-    printf( "Engine::applySplit: after second verifyInvariants\n" );
-
     log( "Done with split\n" );
 }
 
@@ -1006,27 +977,6 @@ void Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
         constraint->dump( constraintString );
         log( Stringf( "A constraint has become valid. Dumping constraint: %s",
                       constraintString.ascii() ) );
-
-        if ( _statistics.getNumMainLoopIterations() >= 1244700 )
-        {
-            printf( "Engine::applyValidConstraintCaseSplit dumping x270 and assingment before start\n" );
-
-            if ( _tableau->isBasic( 270 ) )
-            {
-                printf( "x270 is indeed basic. Index is: %u\n", _tableau->variableToIndex( 270 ) );
-                TableauRow row( _tableau->getN() - _tableau->getM() );
-                _tableau->getTableauRow( _tableau->variableToIndex( 270 ), &row );
-                printf( "Dumping row:\n" );
-                row.dump();
-            }
-            else
-            {
-                printf( "Var not basic!\n" );
-            }
-
-            _tableau->dumpAssignment();
-        }
-
 
         constraint->setActiveConstraint( false );
         PiecewiseLinearCaseSplit validSplit = constraint->getValidCaseSplit();
