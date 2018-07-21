@@ -614,6 +614,12 @@ unsigned long long Statistics::getTotalTime() const
     return total / 1000;
 }
 
+void Statistics::printStartingIteration( unsigned long long iteration, String message )
+{
+    if ( _numMainLoopIterations >= iteration )
+        printf( "DBG_PRINT: %s\n", message.ascii() );
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

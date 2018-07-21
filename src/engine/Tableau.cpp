@@ -1124,6 +1124,7 @@ void Tableau::getTableauRow( unsigned index, TableauRow *row )
         row->_row[i]._coefficient = 0;
 
         SparseVector *column = _sparseColumnsOfA[_nonBasicIndexToVariable[i]];
+
         for ( unsigned entry = 0; entry < column->getNnz(); ++entry )
             row->_row[i]._coefficient -= ( _multipliers[column->getIndexOfEntry( entry )] * column->getValueOfEntry( entry ) );
     }
@@ -1725,6 +1726,17 @@ void Tableau::log( const String &message )
 
 void Tableau::verifyInvariants()
 {
+    // All merged variables are non-basic
+    for ( const auto &merged : _mergedVariables )
+    {
+        if ( _basicVariables.exists( merged.first ) )
+        {
+            printf( "Error! Merged variable x%u is basic!\n", merged.first );
+            exit( 1 );
+        }
+    }
+
+    // All assignments are well formed
     for ( unsigned i = 0; i < _m; ++i )
     {
         if ( !FloatUtils::wellFormed( _basicAssignment[i] ) )
@@ -2060,6 +2072,7 @@ void Tableau::mergeColumns( unsigned x1, unsigned x2 )
         tightenUpperBound( x1, _upperBounds[x2] );
     if ( FloatUtils::gt( _lowerBounds[x2], _lowerBounds[x1] ) )
         tightenLowerBound( x1, _lowerBounds[x2] );
+
 
     /*
       Merge column x2 of the constraint matrix into x1
