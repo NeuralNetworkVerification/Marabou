@@ -83,6 +83,8 @@ const List<EtaMatrix *> SparseLUFactorization::getEtas() const
 
 void SparseLUFactorization::pushEtaMatrix( unsigned columnIndex, const double *column )
 {
+    ASSERT( !FloatUtils::isZero( column[columnIndex] ) );
+
     EtaMatrix *matrix = new EtaMatrix( _m, columnIndex, column );
     _etas.append( matrix );
 

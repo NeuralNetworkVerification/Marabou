@@ -565,6 +565,8 @@ void CSRMatrix::toDense( double *result ) const
 
 void CSRMatrix::commitChange( unsigned row, unsigned column, double newValue )
 {
+    ASSERT( FloatUtils::wellFormed( newValue ) );
+
     // First check whether the entry already exists
     unsigned index = findArrayIndexForEntry( row, column );
     bool found = ( index < _nnz );

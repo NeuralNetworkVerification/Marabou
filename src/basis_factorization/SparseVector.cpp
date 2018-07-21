@@ -62,6 +62,11 @@ void SparseVector::dump() const
     _V.dump();
 }
 
+void SparseVector::dumpDense() const
+{
+    _V.dumpDense();
+}
+
 void SparseVector::toDense( double *result ) const
 {
     _V.getRowDense( 0, result );
