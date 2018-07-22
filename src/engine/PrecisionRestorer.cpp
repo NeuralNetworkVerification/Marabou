@@ -56,13 +56,17 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
 
         // At this point, the tableau has the appropriate dimensions. Restore the variable bounds
         // and basic variables.
+        // Note that if column merging is enabled, the dimensions may not be precisely those before
+        // the resotration, because merging sometimes fails - in which case an equation is added. If
+        // we fail to restore the dimensions, we cannot restore the basics.
 
-        ASSERT( tableau.getN() == targetN );
-        ASSERT( tableau.getM() == targetM );
+        bool dimensionsRestored = ( tableau.getN() == targetN ) && ( tableau.getM() == targetM );
+
+        ASSERT( dimensionsRestored || GlobalConfiguration::USE_COLUMN_MERGING_EQUATIONS );
 
         Set<unsigned> currentBasics = tableau.getBasicVariables();
 
-        if ( restoreBasics == RESTORE_BASICS )
+        if ( dimensionsRestored && restoreBasics == RESTORE_BASICS )
         {
             List<unsigned> shouldBeBasicList;
             for ( const auto &basic : shouldBeBasic )
@@ -115,8 +119,8 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
 
         DEBUG({
                 // Same dimensions
-                ASSERT( tableau.getN() == targetN );
-                ASSERT( tableau.getM() == targetM );
+                ASSERT( GlobalConfiguration::USE_COLUMN_MERGING_EQUATIONS || tableau.getN() == targetN );
+                ASSERT( GlobalConfiguration::USE_COLUMN_MERGING_EQUATIONS || tableau.getM() == targetM );
 
                 // Constraints should be in the same state before and after restoration
                 for ( const auto &pair : targetEngineState._plConstraintToState )
