@@ -502,7 +502,7 @@ void Engine::fixViolatedPlConstraintIfPossible()
 
     _activeEntryStrategy->prePivotHook( _tableau, false );
     _tableau->performDegeneratePivot();
-    _activeEntryStrategy->prePivotHook( _tableau, false );
+    _activeEntryStrategy->postPivotHook( _tableau, false );
 
     ASSERT( !_tableau->isBasic( fix._variable ) );
     _tableau->setNonBasicAssignment( fix._variable, fix._value, true );
@@ -817,7 +817,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 
                 _activeEntryStrategy->prePivotHook( _tableau, false );
                 _tableau->performDegeneratePivot();
-                _activeEntryStrategy->prePivotHook( _tableau, false );
+                _activeEntryStrategy->postPivotHook( _tableau, false );
             }
 
             if ( _tableau->isBasic( x2 ) )
@@ -856,13 +856,16 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 
                 _activeEntryStrategy->prePivotHook( _tableau, false );
                 _tableau->performDegeneratePivot();
-                _activeEntryStrategy->prePivotHook( _tableau, false );
+                _activeEntryStrategy->postPivotHook( _tableau, false );
 
             }
 
             // Both variables are now non-basic, so we can merge their columns
             _tableau->mergeColumns( x1, x2 );
             DEBUG( _tableau->verifyInvariants() );
+
+            // Reset the entry strategy
+            _activeEntryStrategy->initialize( _tableau );
         }
         else
         {
