@@ -95,6 +95,7 @@ public:
       For debugging
     */
     void dump() const;
+    void dumpDense() const;
 
 private:
     CSRMatrix _V;

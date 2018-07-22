@@ -502,7 +502,7 @@ void Engine::fixViolatedPlConstraintIfPossible()
 
     _activeEntryStrategy->prePivotHook( _tableau, false );
     _tableau->performDegeneratePivot();
-    _activeEntryStrategy->prePivotHook( _tableau, false );
+    _activeEntryStrategy->postPivotHook( _tableau, false );
 
     ASSERT( !_tableau->isBasic( fix._variable ) );
     _tableau->setNonBasicAssignment( fix._variable, fix._value, true );
@@ -787,14 +787,19 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
                 _tableau->getTableauRow( _tableau->variableToIndex( x1 ), &x1Row );
 
                 bool found = false;
+                double bestCoefficient = 0.0;
                 unsigned nonBasic;
                 for ( unsigned i = 0; i < n - m; ++i )
                 {
-                    if ( !FloatUtils::isZero( x1Row._row[i]._coefficient ) && ( x1Row._row[i]._var != x2 ) )
+                    if ( x1Row._row[i]._var != x2 )
                     {
-                        found = true;
-                        nonBasic = x1Row._row[i]._var;
-                        break;
+                        double contender = FloatUtils::abs( x1Row._row[i]._coefficient );
+                        if ( FloatUtils::gt( contender, bestCoefficient ) )
+                        {
+                            found = true;
+                            nonBasic = x1Row._row[i]._var;
+                            bestCoefficient = contender;
+                        }
                     }
                 }
 
@@ -812,7 +817,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 
                 _activeEntryStrategy->prePivotHook( _tableau, false );
                 _tableau->performDegeneratePivot();
-                _activeEntryStrategy->prePivotHook( _tableau, false );
+                _activeEntryStrategy->postPivotHook( _tableau, false );
             }
 
             if ( _tableau->isBasic( x2 ) )
@@ -821,14 +826,19 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
                 _tableau->getTableauRow( _tableau->variableToIndex( x2 ), &x2Row );
 
                 bool found = false;
+                double bestCoefficient = 0.0;
                 unsigned nonBasic;
                 for ( unsigned i = 0; i < n - m; ++i )
                 {
-                    if ( !FloatUtils::isZero( x2Row._row[i]._coefficient ) && ( x2Row._row[i]._var != x1 ) )
+                    if ( x2Row._row[i]._var != x1 )
                     {
-                        found = true;
-                        nonBasic = x2Row._row[i]._var;
-                        break;
+                        double contender = FloatUtils::abs( x2Row._row[i]._coefficient );
+                        if ( FloatUtils::gt( contender, bestCoefficient ) )
+                        {
+                            found = true;
+                            nonBasic = x2Row._row[i]._var;
+                            bestCoefficient = contender;
+                        }
                     }
                 }
 
@@ -846,11 +856,16 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 
                 _activeEntryStrategy->prePivotHook( _tableau, false );
                 _tableau->performDegeneratePivot();
-                _activeEntryStrategy->prePivotHook( _tableau, false );
+                _activeEntryStrategy->postPivotHook( _tableau, false );
+
             }
 
             // Both variables are now non-basic, so we can merge their columns
             _tableau->mergeColumns( x1, x2 );
+            DEBUG( _tableau->verifyInvariants() );
+
+            // Reset the entry strategy
+            _activeEntryStrategy->initialize( _tableau );
         }
         else
         {

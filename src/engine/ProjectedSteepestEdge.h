@@ -80,7 +80,7 @@ private:
     /*
       Remaining iterations before resetting the reference space.
     */
-    unsigned _iterationsUntilReset;
+    int _iterationsUntilReset;
 
     /*
       The error in gamma compuated in the previous iteration.

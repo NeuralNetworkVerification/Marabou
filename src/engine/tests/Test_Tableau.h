@@ -553,6 +553,8 @@ public:
             TS_ASSERT( FloatUtils::areEqual( pivotRow[i], -1.0 ) );
         TS_ASSERT( FloatUtils::areEqual( pivotRow._scalar, 117.0 ) );
 
+        TS_ASSERT_THROWS_NOTHING( tableau->computeChangeColumn() );
+
         TS_ASSERT_THROWS_NOTHING( tableau->performPivot() );
 
         TS_ASSERT( tableau->isBasic( 2u ) );
