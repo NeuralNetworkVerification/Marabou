@@ -145,7 +145,7 @@ bool ProjectedSteepestEdgeRule::select( ITableau &tableau, const Set<unsigned> &
     unsigned bestCandidate = *it;
     double gammaValue = _gamma[*it];
     double bestValue =
-        !FloatUtils::isPositive( gammaValue ) ? 0 : ( costFunction[*it] * costFunction[*it] ) / _gamma[*it];
+        !FloatUtils::isPositive( gammaValue ) ? 0 : ( costFunction[*it] * costFunction[*it] ) / gammaValue;
 
     ++it;
 
@@ -154,7 +154,7 @@ bool ProjectedSteepestEdgeRule::select( ITableau &tableau, const Set<unsigned> &
         unsigned contender = *it;
         gammaValue = _gamma[*it];
         double contenderValue =
-            !FloatUtils::isPositive( gammaValue ) ? 0 : ( costFunction[*it] * costFunction[*it] ) / _gamma[*it];
+            !FloatUtils::isPositive( gammaValue ) ? 0 : ( costFunction[*it] * costFunction[*it] ) / gammaValue;
 
         if ( FloatUtils::gt( contenderValue, bestValue ) )
         {
@@ -184,11 +184,13 @@ void ProjectedSteepestEdgeRule::prePivotHook( const ITableau &tableau, bool fake
     }
 
     // When this hook is called, the entering and leaving variables have
-    // already been determined. These are the actual varaibles, not the indices.
+    // already been determined.
     unsigned entering = tableau.getEnteringVariable();
     unsigned enteringIndex = tableau.variableToIndex( entering );
     unsigned leaving = tableau.getLeavingVariable();
     unsigned leavingIndex = tableau.variableToIndex( leaving );
+
+    ASSERT( entering != leaving );
 
     const double *changeColumn = tableau.getChangeColumn();
     const TableauRow &pivotRow = *tableau.getPivotRow();
@@ -222,7 +224,7 @@ void ProjectedSteepestEdgeRule::prePivotHook( const ITableau &tableau, bool fake
         if ( i == enteringIndex )
             continue;
 
-        if ( FloatUtils::isZero( pivotRow[i] ) )
+        if ( FloatUtils::isZero( pivotRow[i], 1e-9 ) )
             continue;
 
         r = pivotRow[i] / -changeColumn[leavingIndex];
