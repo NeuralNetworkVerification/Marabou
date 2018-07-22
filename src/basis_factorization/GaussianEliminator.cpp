@@ -319,6 +319,18 @@ void GaussianEliminator::eliminate()
     unsigned fColumnIndex = _luFactors->_P._columnOrdering[_eliminationStep];
 
     /*
+      The pivot row is not eliminated per se, but it is excluded
+      from the active submatrix, so we adjust the element counters
+    */
+    _numURowElements[_eliminationStep] = 0;
+    for ( unsigned uColumn = _eliminationStep; uColumn < _m; ++uColumn )
+    {
+        unsigned vColumn = _luFactors->_Q._rowOrdering[uColumn];
+        if ( !FloatUtils::isZero( _luFactors->_V[_vPivotRow*_m + vColumn] ) )
+            --_numUColumnElements[uColumn];
+    }
+
+    /*
       Eliminate all entries below the pivot element U[k,k]
       We know that V[_pivotRow, _pivotColumn] = U[k,k].
     */

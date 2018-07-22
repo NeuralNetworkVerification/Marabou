@@ -101,6 +101,7 @@ void ProjectedSteepestEdgeRule::resetReferenceSpace( const ITableau &tableau )
     }
 
     _iterationsUntilReset = GlobalConfiguration::PSE_ITERATIONS_BEFORE_RESET;
+    _errorInGamma = 0.0;
 
     if ( _statistics )
         _statistics->pseIncNumResetReferenceSpace();
@@ -281,7 +282,7 @@ void ProjectedSteepestEdgeRule::postPivotHook( const ITableau &tableau, bool fak
 
     // If the iteration limit has been exhausted, reset the reference space
     --_iterationsUntilReset;
-    if ( _iterationsUntilReset == 0 )
+    if ( _iterationsUntilReset <= 0 )
     {
         log( "PostPivotHook reseting ref space (iterations)" );
         resetReferenceSpace( tableau );
