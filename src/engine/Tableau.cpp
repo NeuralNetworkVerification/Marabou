@@ -867,9 +867,6 @@ void Tableau::pickLeavingVariable( double *changeColumn )
     ASSERT( !FloatUtils::isZero( _costFunctionManager->getCostFunction()[_enteringVariable] ) );
     bool decrease = FloatUtils::isPositive( _costFunctionManager->getCostFunction()[_enteringVariable] );
 
-    printf( "\npickLeavingVariable called!\n" );
-    printf( "\tEntering variable is x%u, direction = %s\n", _nonBasicIndexToVariable[_enteringVariable], decrease ? "DECREASE" : "INCREASE" );
-
     DEBUG({
             if ( decrease )
             {
@@ -886,8 +883,6 @@ void Tableau::pickLeavingVariable( double *changeColumn )
     double lb = _lowerBounds[_nonBasicIndexToVariable[_enteringVariable]];
     double ub = _upperBounds[_nonBasicIndexToVariable[_enteringVariable]];
     double currentValue = _nonBasicAssignment[_enteringVariable];
-
-    printf( "\tCurrent assignment: %.15lf, range: [%.15lf, %.15lf]\n", currentValue, lb, ub );
 
     // A marker to show that no leaving variable has been selected
     _leavingVariable = _m;
@@ -947,11 +942,6 @@ void Tableau::pickLeavingVariable( double *changeColumn )
                     largestPivot = FloatUtils::abs( changeColumn[i] );
                 }
             }
-        }
-
-        if ( _leavingVariable == _m )
-        {
-            printf( "\tPerforming a fake pivot!\n" );
         }
 
         // Only perform this check if pivot isn't fake
