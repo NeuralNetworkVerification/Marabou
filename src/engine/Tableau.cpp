@@ -788,83 +788,66 @@ double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient
          ( FloatUtils::isNegative( coefficient ) && !decrease ) )
     {
         // Basic variable is decreasing
-        double maxChange;
-
+        double actualLowerBound;
         if ( _basicStatus[basicIndex] == BasicStatus::ABOVE_UB )
         {
-            // Maximal change: hitting the upper bound
-            maxChange = _upperBounds[basic] - _basicAssignment[basicIndex];
+            actualLowerBound = _upperBounds[basic];
         }
-        else if ( ( _basicStatus[basicIndex] == BasicStatus::BETWEEN ) ||
-                  ( _basicStatus[basicIndex] == BasicStatus::AT_UB ) )
+        else if ( _basicStatus[basicIndex] == BasicStatus::BELOW_LB )
         {
-            // Maximal change: hitting the lower bound
-            maxChange = _lowerBounds[basic] - _basicAssignment[basicIndex];
-
-            // Protect against corner cases where LB = UB, variable is "AT_UB" but
-            // due to the tolerance is in fact below LB, and the change becomes positive.
-            if ( !FloatUtils::isNegative( maxChange ) )
-                maxChange = 0;
-        }
-        else if ( _basicStatus[basicIndex] == BasicStatus::AT_LB )
-        {
-            // Variable is formally pressed against a bound. However,
-            // maybe it's in the tolerance zone but still greater than
-            // the bound.
-            maxChange = _lowerBounds[basic] - _basicAssignment[basicIndex];
-            if ( !FloatUtils::isNegative( maxChange ) )
-                maxChange = 0;
+            actualLowerBound = FloatUtils::negativeInfinity();
         }
         else
         {
-            // Variable is below its lower bound, no constraint here
-            maxChange = FloatUtils::negativeInfinity() - _basicAssignment[basicIndex];
+            actualLowerBound = _lowerBounds[basic];
         }
 
-        ASSERT( !FloatUtils::isPositive( maxChange ) );
-        ratio = maxChange / coefficient;
+        double tolerance = GlobalConfiguration::RATIO_CONSTRAINT_ADDITIVE_TOLERANCE +
+            FloatUtils::abs( actualLowerBound ) * GlobalConfiguration::RATIO_CONSTRAINT_MULTIPLICATIVE_TOLERANCE;
+
+        if ( _basicAssignment[basicIndex] <= actualLowerBound + tolerance )
+        {
+            ratio = 0;
+        }
+        else
+        {
+            double maxChange = actualLowerBound - _basicAssignment[basicIndex];
+            ASSERT( !FloatUtils::isPositive( maxChange ) );
+            ratio = maxChange / coefficient;
+        }
     }
     else if ( ( FloatUtils::isPositive( coefficient ) && !decrease ) ||
               ( FloatUtils::isNegative( coefficient ) && decrease ) )
 
     {
         // Basic variable is increasing
-        double maxChange;
-
+        double actualUpperBound;
         if ( _basicStatus[basicIndex] == BasicStatus::BELOW_LB )
         {
-            // Maximal change: hitting the lower bound
-            maxChange = _lowerBounds[basic] - _basicAssignment[basicIndex];
+            actualUpperBound = _lowerBounds[basic];
         }
-        else if ( ( _basicStatus[basicIndex] == BasicStatus::BETWEEN ) ||
-                  ( _basicStatus[basicIndex] == BasicStatus::AT_LB ) )
+        else if ( _basicStatus[basicIndex] == BasicStatus::ABOVE_UB )
         {
-            // Maximal change: hitting the upper bound
-            maxChange = _upperBounds[basic] - _basicAssignment[basicIndex];
-
-            // Protect against corner cases where LB = UB, variable is "AT_LB" but
-            // due to the tolerance is in fact above UB, and the change becomes negative.
-            if ( !FloatUtils::isPositive( maxChange ) )
-                maxChange = 0;
-
-        }
-        else if ( _basicStatus[basicIndex] == BasicStatus::AT_UB )
-        {
-            // Variable is formally pressed against a bound. However,
-            // maybe it's in the tolerance zone but still greater than
-            // the bound.
-            maxChange = _upperBounds[basic] - _basicAssignment[basicIndex];
-            if ( !FloatUtils::isPositive( maxChange ) )
-                maxChange = 0;
+            actualUpperBound = FloatUtils::infinity();
         }
         else
         {
-            // Variable is above its upper bound, no constraint here
-            maxChange = FloatUtils::infinity() - _basicAssignment[basicIndex];
+            actualUpperBound = _upperBounds[basic];
         }
 
-        ASSERT( !FloatUtils::isNegative( maxChange ) );
-        ratio = maxChange / coefficient;
+        double tolerance = GlobalConfiguration::RATIO_CONSTRAINT_ADDITIVE_TOLERANCE +
+            FloatUtils::abs( actualUpperBound ) * GlobalConfiguration::RATIO_CONSTRAINT_MULTIPLICATIVE_TOLERANCE;
+
+        if ( _basicAssignment[basicIndex] >= actualUpperBound - tolerance )
+        {
+            ratio = 0;
+        }
+        else
+        {
+            double maxChange = actualUpperBound - _basicAssignment[basicIndex];
+            ASSERT( !FloatUtils::isNegative( maxChange ) );
+            ratio = maxChange / coefficient;
+        }
     }
     else
     {
@@ -884,6 +867,9 @@ void Tableau::pickLeavingVariable( double *changeColumn )
     ASSERT( !FloatUtils::isZero( _costFunctionManager->getCostFunction()[_enteringVariable] ) );
     bool decrease = FloatUtils::isPositive( _costFunctionManager->getCostFunction()[_enteringVariable] );
 
+    printf( "\npickLeavingVariable called!\n" );
+    printf( "\tEntering variable is x%u, direction = %s\n", _nonBasicIndexToVariable[_enteringVariable], decrease ? "DECREASE" : "INCREASE" );
+
     DEBUG({
             if ( decrease )
             {
@@ -901,9 +887,12 @@ void Tableau::pickLeavingVariable( double *changeColumn )
     double ub = _upperBounds[_nonBasicIndexToVariable[_enteringVariable]];
     double currentValue = _nonBasicAssignment[_enteringVariable];
 
+    printf( "\tCurrent assignment: %.15lf, range: [%.15lf, %.15lf]\n", currentValue, lb, ub );
+
     // A marker to show that no leaving variable has been selected
     _leavingVariable = _m;
 
+    double largestPivot = 0;
     if ( decrease )
     {
         // The maximum amount by which the entering variable can
@@ -919,17 +908,22 @@ void Tableau::pickLeavingVariable( double *changeColumn )
             if ( !FloatUtils::isZero( changeColumn[i], GlobalConfiguration::PIVOT_CHANGE_COLUMN_TOLERANCE ) )
             {
                 double ratio = ratioConstraintPerBasic( i, changeColumn[i], decrease );
-                if ( ratio > _changeRatio )
+
+                // if ( FloatUtils::isZero( ratio ) )
+                //     ratio = 0;
+
+                if ( ( ratio > _changeRatio ) ||
+                     ( ( ratio == _changeRatio ) && ( FloatUtils::abs( changeColumn[i] ) > largestPivot ) ) )
                 {
                     _changeRatio = ratio;
                     _leavingVariable = i;
+                    largestPivot = FloatUtils::abs( changeColumn[i] );
 
-                    if ( FloatUtils::isZero( _changeRatio ) )
-                    {
-                        // All ratios are non-positive, so if we already hit 0 we are done.
-                        _changeRatio = 0.0;
-                        break;
-                    }
+                    printf( "\t\tNew constraint imposed by basic x%u. Pivot: %.15lf. Constraint: %.15lf. Current assingment: %.15lf, range: [%.15lf, %.15lf] (%s)\n",
+                            _basicIndexToVariable[i], changeColumn[i], ratio, _basicAssignment[i], _lowerBounds[_basicIndexToVariable[i]], _upperBounds[_basicIndexToVariable[i]],
+                            basicStatusToString( _basicStatus[i] ).ascii() );
+
+                    printf( "largestPivot = %.15lf\n", largestPivot );
                 }
             }
         }
@@ -953,19 +947,27 @@ void Tableau::pickLeavingVariable( double *changeColumn )
             if ( !FloatUtils::isZero( changeColumn[i] ) )
             {
                 double ratio = ratioConstraintPerBasic( i, changeColumn[i], decrease );
-                if ( ratio < _changeRatio )
+
+                // if ( FloatUtils::isZero( ratio ) )
+                //     ratio = 0;
+
+                if ( ( ratio < _changeRatio ) ||
+                     ( ( ratio == _changeRatio ) && ( FloatUtils::abs( changeColumn[i] ) > largestPivot ) ) )
                 {
                     _changeRatio = ratio;
                     _leavingVariable = i;
+                    largestPivot = FloatUtils::abs( changeColumn[i] );
 
-                    if ( FloatUtils::isZero( _changeRatio ) )
-                    {
-                        // All ratios are non-negative, so if we already hit 0 we are done.
-                        _changeRatio = 0.0;
-                        break;
-                    }
+                    printf( "\t\tNew constraint imposed by basic x%u. Pivot: %.15lf. Constraint: %.15lf. Current assingment: %.15lf, range: [%.15lf, %.15lf] (%s)\n",
+                            _basicIndexToVariable[i], changeColumn[i], ratio, _basicAssignment[i], _lowerBounds[_basicIndexToVariable[i]], _upperBounds[_basicIndexToVariable[i]],
+                            basicStatusToString( _basicStatus[i] ).ascii() );
                 }
             }
+        }
+
+        if ( _leavingVariable == _m )
+        {
+            printf( "\tPerforming a fake pivot!\n" );
         }
 
         // Only perform this check if pivot isn't fake

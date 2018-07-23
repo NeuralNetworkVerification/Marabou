@@ -34,6 +34,10 @@ public:
     // at the change column, as part of a pivot operation.
     static const double PIVOT_CHANGE_COLUMN_TOLERANCE;
 
+    // Ratio test tolerance constants
+    static const double RATIO_CONSTRAINT_ADDITIVE_TOLERANCE;
+    static const double RATIO_CONSTRAINT_MULTIPLICATIVE_TOLERANCE;
+
     // Toggle query-preprocessing on/off.
 	static const bool PREPROCESS_INPUT_QUERY;
 
