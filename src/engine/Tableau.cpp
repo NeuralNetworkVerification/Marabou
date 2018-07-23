@@ -909,21 +909,12 @@ void Tableau::pickLeavingVariable( double *changeColumn )
             {
                 double ratio = ratioConstraintPerBasic( i, changeColumn[i], decrease );
 
-                // if ( FloatUtils::isZero( ratio ) )
-                //     ratio = 0;
-
                 if ( ( ratio > _changeRatio ) ||
                      ( ( ratio == _changeRatio ) && ( FloatUtils::abs( changeColumn[i] ) > largestPivot ) ) )
                 {
                     _changeRatio = ratio;
                     _leavingVariable = i;
                     largestPivot = FloatUtils::abs( changeColumn[i] );
-
-                    printf( "\t\tNew constraint imposed by basic x%u. Pivot: %.15lf. Constraint: %.15lf. Current assingment: %.15lf, range: [%.15lf, %.15lf] (%s)\n",
-                            _basicIndexToVariable[i], changeColumn[i], ratio, _basicAssignment[i], _lowerBounds[_basicIndexToVariable[i]], _upperBounds[_basicIndexToVariable[i]],
-                            basicStatusToString( _basicStatus[i] ).ascii() );
-
-                    printf( "largestPivot = %.15lf\n", largestPivot );
                 }
             }
         }
@@ -948,19 +939,12 @@ void Tableau::pickLeavingVariable( double *changeColumn )
             {
                 double ratio = ratioConstraintPerBasic( i, changeColumn[i], decrease );
 
-                // if ( FloatUtils::isZero( ratio ) )
-                //     ratio = 0;
-
                 if ( ( ratio < _changeRatio ) ||
                      ( ( ratio == _changeRatio ) && ( FloatUtils::abs( changeColumn[i] ) > largestPivot ) ) )
                 {
                     _changeRatio = ratio;
                     _leavingVariable = i;
                     largestPivot = FloatUtils::abs( changeColumn[i] );
-
-                    printf( "\t\tNew constraint imposed by basic x%u. Pivot: %.15lf. Constraint: %.15lf. Current assingment: %.15lf, range: [%.15lf, %.15lf] (%s)\n",
-                            _basicIndexToVariable[i], changeColumn[i], ratio, _basicAssignment[i], _lowerBounds[_basicIndexToVariable[i]], _upperBounds[_basicIndexToVariable[i]],
-                            basicStatusToString( _basicStatus[i] ).ascii() );
                 }
             }
         }
