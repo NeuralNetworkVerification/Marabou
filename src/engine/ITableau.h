@@ -162,6 +162,7 @@ public:
     virtual void backwardTransformation( const double *y, double *x ) const = 0;
     virtual double getSumOfInfeasibilities() const = 0;
     virtual BasicAssignmentStatus getBasicAssignmentStatus() const = 0;
+    virtual double getBasicAssignment( unsigned basicIndex ) const = 0;
     virtual void setBasicAssignmentStatus( ITableau::BasicAssignmentStatus status ) = 0;
     virtual bool basicOutOfBounds( unsigned basic ) const = 0;
     virtual bool basicTooHigh( unsigned basic ) const = 0;

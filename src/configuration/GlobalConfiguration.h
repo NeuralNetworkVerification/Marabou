@@ -38,6 +38,10 @@ public:
     static const double RATIO_CONSTRAINT_ADDITIVE_TOLERANCE;
     static const double RATIO_CONSTRAINT_MULTIPLICATIVE_TOLERANCE;
 
+    // Cost function tolerance constants
+    static const double BASIC_COSTS_ADDITIVE_TOLERANCE;
+    static const double BASIC_COSTS_MULTIPLICATIVE_TOLERANCE;
+
     // Toggle query-preprocessing on/off.
 	static const bool PREPROCESS_INPUT_QUERY;
 

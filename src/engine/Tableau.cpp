@@ -1980,6 +1980,11 @@ ITableau::BasicAssignmentStatus Tableau::getBasicAssignmentStatus() const
     return _basicAssignmentStatus;
 }
 
+double Tableau::getBasicAssignment( unsigned basicIndex ) const
+{
+    return _basicAssignment[basicIndex];
+}
+
 void Tableau::setBasicAssignmentStatus( ITableau::BasicAssignmentStatus status )
 {
     _basicAssignmentStatus = status;

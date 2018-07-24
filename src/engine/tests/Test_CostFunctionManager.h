@@ -77,8 +77,21 @@ public:
         tableau.nextAColumn[2] = columnTwo;
 
         // We have 3 basic variables. One is too high, one too low, one within bounds.
-        tableau.nextBasicTooHigh.insert( 0 );
-        tableau.nextBasicTooLow.insert( 1 );
+
+        tableau.nextBasicIndexToVariable[0] = 5;
+        tableau.nextBasicIndexToVariable[1] = 6;
+        tableau.nextBasicIndexToVariable[2] = 7;
+
+        tableau.lowerBounds[5] = 0;
+        tableau.upperBounds[5] = 1;
+        tableau.lowerBounds[6] = 0;
+        tableau.upperBounds[6] = 1;
+        tableau.lowerBounds[7] = 0;
+        tableau.upperBounds[7] = 1;
+
+        tableau.nextValues[5] = 10; // Too high
+        tableau.nextValues[6] = -10; // Too low
+        tableau.nextValues[7] = 0.5; // Okay
 
         TS_ASSERT_THROWS_NOTHING( manager->computeCoreCostFunction() );
 
@@ -124,8 +137,20 @@ public:
         tableau.nextAColumn[2] = columnTwo;
 
         // We have 3 basic variables. One is too high, one too low, one within bounds.
-        tableau.nextBasicTooHigh.insert( 0 );
-        tableau.nextBasicTooLow.insert( 1 );
+        tableau.nextBasicIndexToVariable[0] = 5;
+        tableau.nextBasicIndexToVariable[1] = 6;
+        tableau.nextBasicIndexToVariable[2] = 7;
+
+        tableau.lowerBounds[5] = 0;
+        tableau.upperBounds[5] = 1;
+        tableau.lowerBounds[6] = 0;
+        tableau.upperBounds[6] = 1;
+        tableau.lowerBounds[7] = 0;
+        tableau.upperBounds[7] = 1;
+
+        tableau.nextValues[5] = 10; // Too high
+        tableau.nextValues[6] = -10; // Too low
+        tableau.nextValues[7] = 0.5; // Okay
 
         // The heuristic costs change a basic var and a non-basic variable
         Map<unsigned, double> heuristicCost;
