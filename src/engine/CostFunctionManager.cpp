@@ -155,14 +155,38 @@ void CostFunctionManager::computeCoreCostFunction()
 
 void CostFunctionManager::computeBasicOOBCosts()
 {
+    unsigned variable;
+    double assignment, lb, relaxedLb, ub, relaxedUb;
     for ( unsigned i = 0; i < _m; ++i )
     {
-        if ( _tableau->basicTooLow( i ) )
+        variable = _tableau->basicIndexToVariable( i );
+        assignment = _tableau->getBasicAssignment( i );
+
+        lb = _tableau->getLowerBound( variable );
+        relaxedLb =
+            lb -
+            ( GlobalConfiguration::BASIC_COSTS_ADDITIVE_TOLERANCE +
+              GlobalConfiguration::BASIC_COSTS_MULTIPLICATIVE_TOLERANCE * FloatUtils::abs( lb ) );
+
+        if ( assignment < relaxedLb )
+        {
             _basicCosts[i] = -1;
-        else if ( _tableau->basicTooHigh( i ) )
+            continue;
+        }
+
+        ub = _tableau->getUpperBound( variable );
+        relaxedUb =
+            ub +
+            ( GlobalConfiguration::BASIC_COSTS_ADDITIVE_TOLERANCE +
+              GlobalConfiguration::BASIC_COSTS_MULTIPLICATIVE_TOLERANCE * FloatUtils::abs( ub ) );
+
+        if ( assignment > relaxedUb )
+        {
             _basicCosts[i] = 1;
-        else
-            _basicCosts[i] = 0;
+            continue;
+        }
+
+        _basicCosts[i] = 0;
     }
 }
 
