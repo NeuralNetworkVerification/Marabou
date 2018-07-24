@@ -31,10 +31,8 @@ class ITableau
 public:
     enum BasicStatus {
         BELOW_LB = 0,
-        AT_LB = 1,
-        BETWEEN = 2,
-        AT_UB = 3,
-        ABOVE_UB = 4,
+        BETWEEN = 1,
+        ABOVE_UB = 2,
     };
 
     enum CostFunctionStatus {
@@ -162,6 +160,7 @@ public:
     virtual void backwardTransformation( const double *y, double *x ) const = 0;
     virtual double getSumOfInfeasibilities() const = 0;
     virtual BasicAssignmentStatus getBasicAssignmentStatus() const = 0;
+    virtual double getBasicAssignment( unsigned basicIndex ) const = 0;
     virtual void setBasicAssignmentStatus( ITableau::BasicAssignmentStatus status ) = 0;
     virtual bool basicOutOfBounds( unsigned basic ) const = 0;
     virtual bool basicTooHigh( unsigned basic ) const = 0;

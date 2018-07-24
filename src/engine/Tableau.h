@@ -369,9 +369,10 @@ public:
     double getSumOfInfeasibilities() const;
 
     /*
-      The current state of the basic assignment
+      The current state and values of the basic assignment
     */
     BasicAssignmentStatus getBasicAssignmentStatus() const;
+    double getBasicAssignment( unsigned basicIndex ) const;
     void setBasicAssignmentStatus( ITableau::BasicAssignmentStatus status );
 
     /*
