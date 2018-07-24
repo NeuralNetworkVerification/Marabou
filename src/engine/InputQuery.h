@@ -83,7 +83,7 @@ public:
     /*
       Serializes the query to a file which can then be loaded using QueryLoader.
     */
-    void saveQuery( const String &fileName );
+    void saveQuery( const std::string &fileName );
 
 private:
     unsigned _numberOfVariables;

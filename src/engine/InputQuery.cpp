@@ -225,7 +225,7 @@ void InputQuery::storeDebuggingSolution( unsigned variable, double value )
     _debuggingSolution[variable] = value;
 }
 
-void InputQuery::saveQuery( const String &fileName )
+void InputQuery::saveQuery( const std::string &fileName )
 {
     AutoFile queryFile( fileName );
     queryFile->open( IFile::MODE_WRITE_TRUNCATE );
@@ -234,7 +234,6 @@ void InputQuery::saveQuery( const String &fileName )
 
     // Number of variables
     queryFile->write( Stringf( "%u\n", _numberOfVariables ) );
-
     // Number of Bounds
     queryFile->write( Stringf( "%u\n", _lowerBounds.size() ) );
 
@@ -243,6 +242,11 @@ void InputQuery::saveQuery( const String &fileName )
 
     // Number of constraints
     queryFile->write( Stringf( "%u", _plConstraints.size() ) );
+
+    printf("Number of variables: %u\n", _numberOfVariables);
+    printf("Number of bounds: %u\n", _lowerBounds.size());
+    printf("Number of equations: %u\n", _equations.size());
+    printf("Number of constraints: %u\n", _plConstraints.size());
 
     // Bounds
     for ( const auto &lb : _lowerBounds )
