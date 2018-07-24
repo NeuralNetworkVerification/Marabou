@@ -28,7 +28,8 @@ public:
     static const unsigned STATISTICS_PRINTING_FREQUENCY;
 
     // Tolerance when checking whether the value computed for a basic variable is out of bounds
-    static const double BOUND_COMPARISON_TOLERANCE;
+    static const double BOUND_COMPARISON_ADDITIVE_TOLERANCE;
+    static const double BOUND_COMPARISON_MULTIPLICATIVE_TOLERANCE;
 
     // Tolerance when checking whether a basic variable depends on a non-basic variable, by looking
     // at the change column, as part of a pivot operation.
@@ -89,6 +90,8 @@ public:
     // An error threshold which, when crossed, causes projected steepest edge to reset the reference space
     static const double PSE_GAMMA_ERROR_THRESHOLD;
 
+    // The tolerance for checking whether f = Relu( b ), to determine a ReLU's statisfaction
+    static const double RELU_CONSTRAINT_COMPARISON_TOLERANCE;
     /*
       Bound tightening options
     */

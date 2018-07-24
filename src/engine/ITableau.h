@@ -31,10 +31,8 @@ class ITableau
 public:
     enum BasicStatus {
         BELOW_LB = 0,
-        AT_LB = 1,
-        BETWEEN = 2,
-        AT_UB = 3,
-        ABOVE_UB = 4,
+        BETWEEN = 1,
+        ABOVE_UB = 2,
     };
 
     enum CostFunctionStatus {

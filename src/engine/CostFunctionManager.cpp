@@ -165,8 +165,8 @@ void CostFunctionManager::computeBasicOOBCosts()
         lb = _tableau->getLowerBound( variable );
         relaxedLb =
             lb -
-            GlobalConfiguration::BASIC_COSTS_ADDITIVE_TOLERANCE +
-            GlobalConfiguration::BASIC_COSTS_MULTIPLICATIVE_TOLERANCE * FloatUtils::abs( lb );
+            ( GlobalConfiguration::BASIC_COSTS_ADDITIVE_TOLERANCE +
+              GlobalConfiguration::BASIC_COSTS_MULTIPLICATIVE_TOLERANCE * FloatUtils::abs( lb ) );
 
         if ( assignment < relaxedLb )
         {
@@ -177,8 +177,8 @@ void CostFunctionManager::computeBasicOOBCosts()
         ub = _tableau->getUpperBound( variable );
         relaxedUb =
             ub +
-            GlobalConfiguration::BASIC_COSTS_ADDITIVE_TOLERANCE +
-            GlobalConfiguration::BASIC_COSTS_MULTIPLICATIVE_TOLERANCE * FloatUtils::abs( ub );
+            ( GlobalConfiguration::BASIC_COSTS_ADDITIVE_TOLERANCE +
+              GlobalConfiguration::BASIC_COSTS_MULTIPLICATIVE_TOLERANCE * FloatUtils::abs( ub ) );
 
         if ( assignment > relaxedUb )
         {

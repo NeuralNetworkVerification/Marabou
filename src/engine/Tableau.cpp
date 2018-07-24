@@ -403,31 +403,34 @@ void Tableau::computeBasicStatus()
         computeBasicStatus( i );
 }
 
-void Tableau::computeBasicStatus( unsigned basic )
+void Tableau::computeBasicStatus( unsigned basicIndex )
 {
-    double ub = _upperBounds[_basicIndexToVariable[basic]];
-    double lb = _lowerBounds[_basicIndexToVariable[basic]];
-    double value = _basicAssignment[basic];
+    unsigned variable = _basicIndexToVariable[basicIndex];
+    double value = _basicAssignment[basicIndex];
 
-    if ( FloatUtils::gt( value , ub, GlobalConfiguration::BOUND_COMPARISON_TOLERANCE ) )
+    double lb = _lowerBounds[variable];
+    double relaxedLb =
+        lb -
+        ( GlobalConfiguration::BOUND_COMPARISON_ADDITIVE_TOLERANCE +
+          GlobalConfiguration::BOUND_COMPARISON_MULTIPLICATIVE_TOLERANCE * FloatUtils::abs( lb ) );
+
+    double ub = _upperBounds[variable];
+    double relaxedUb =
+        ub +
+        ( GlobalConfiguration::BOUND_COMPARISON_ADDITIVE_TOLERANCE +
+          GlobalConfiguration::BOUND_COMPARISON_MULTIPLICATIVE_TOLERANCE * FloatUtils::abs( ub ) );
+
+    if ( value > relaxedUb )
     {
-        _basicStatus[basic] = Tableau::ABOVE_UB;
+        _basicStatus[basicIndex] = Tableau::ABOVE_UB;
     }
-    else if ( FloatUtils::lt( value , lb, GlobalConfiguration::BOUND_COMPARISON_TOLERANCE ) )
+    else if ( value < relaxedLb )
     {
-        _basicStatus[basic] = Tableau::BELOW_LB;
-    }
-    else if ( FloatUtils::areEqual( ub, value, GlobalConfiguration::BOUND_COMPARISON_TOLERANCE ) )
-    {
-        _basicStatus[basic] = Tableau::AT_UB;
-    }
-    else if ( FloatUtils::areEqual( lb, value, GlobalConfiguration::BOUND_COMPARISON_TOLERANCE ) )
-    {
-        _basicStatus[basic] = Tableau::AT_LB;
+        _basicStatus[basicIndex] = Tableau::BELOW_LB;
     }
     else
     {
-        _basicStatus[basic] = Tableau::BETWEEN;
+        _basicStatus[basicIndex] = Tableau::BETWEEN;
     }
 }
 
@@ -1740,23 +1743,33 @@ void Tableau::verifyInvariants()
 
     for ( unsigned i = 0; i < _n - _m; ++i )
     {
-        unsigned var = _nonBasicIndexToVariable[i];
-        if ( !( FloatUtils::gte( _nonBasicAssignment[i],
-                                 _lowerBounds[var],
-                                 GlobalConfiguration::BOUND_COMPARISON_TOLERANCE ) &&
-                FloatUtils::lte( _nonBasicAssignment[i],
-                                 _upperBounds[var],
-                                 GlobalConfiguration::BOUND_COMPARISON_TOLERANCE ) ) )
+        unsigned variable = _nonBasicIndexToVariable[i];
+        double value = _nonBasicAssignment[i];
+
+        double lb = _lowerBounds[variable];
+        double relaxedLb =
+            lb -
+            ( GlobalConfiguration::BOUND_COMPARISON_ADDITIVE_TOLERANCE +
+              GlobalConfiguration::BOUND_COMPARISON_MULTIPLICATIVE_TOLERANCE * FloatUtils::abs( lb ) );
+
+        double ub = _upperBounds[variable];
+        double relaxedUb =
+            ub +
+            ( GlobalConfiguration::BOUND_COMPARISON_ADDITIVE_TOLERANCE +
+              GlobalConfiguration::BOUND_COMPARISON_MULTIPLICATIVE_TOLERANCE * FloatUtils::abs( ub ) );
+
+        if ( !( ( relaxedLb <= value ) && ( value <= relaxedUb ) ) )
         {
             // This behavior is okay iff lb > ub, and this is going to be caught
             // soon anyway
 
-            if ( FloatUtils::gt( _lowerBounds[var], _upperBounds[var] ) )
+            if ( FloatUtils::gt( _lowerBounds[variable], _upperBounds[variable] ) )
                 continue;
 
             printf( "Tableau test invariants: bound violation!\n" );
-            printf( "Variable %u (non-basic #%u). Assignment: %lf. Range: [%lf, %lf]\n",
-                    var, i, _nonBasicAssignment[i], _lowerBounds[var], _upperBounds[var] );
+            printf( "Variable %u (non-basic #%u). Assignment: %.15lf. Range: [%.15lf, %.15lf]\n",
+                    variable, i, _nonBasicAssignment[i], _lowerBounds[variable], _upperBounds[variable] );
+            printf( "RelaxedLB = %.15lf. RelaxedUB = %.15lf\n", relaxedLb, relaxedUb );
 
             exit( 1 );
         }
@@ -1791,14 +1804,8 @@ String Tableau::basicStatusToString( unsigned status )
     case BELOW_LB:
         return "BELOW_LB";
 
-    case AT_LB:
-        return "AT_LB";
-
     case BETWEEN:
         return "BETWEEN";
-
-    case AT_UB:
-        return "AT_UB";
 
     case ABOVE_UB:
         return "ABOVE_UB";
