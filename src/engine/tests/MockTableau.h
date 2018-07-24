@@ -292,6 +292,14 @@ public:
         return BASIC_ASSIGNMENT_INVALID;
     }
 
+    double getBasicAssignment( unsigned basicIndex ) const
+    {
+        TS_ASSERT( nextBasicIndexToVariable.exists( basicIndex ) );
+        unsigned variable = nextBasicIndexToVariable[basicIndex];
+        TS_ASSERT( nextValues.exists( variable ) );
+        return nextValues[variable];
+    }
+
     void setBasicAssignmentStatus( ITableau::BasicAssignmentStatus /* status */ )
     {
     }
