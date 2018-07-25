@@ -153,6 +153,57 @@ void CostFunctionManager::computeCoreCostFunction()
     _costFunctionStatus = ICostFunctionManager::COST_FUNCTION_JUST_COMPUTED;
 }
 
+void CostFunctionManager::checkBasicCostAccuracy()
+{
+    unsigned variable;
+    double assignment, lb, relaxedLb, ub, relaxedUb;
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        variable = _tableau->basicIndexToVariable( i );
+        assignment = _tableau->getBasicAssignment( i );
+
+        lb = _tableau->getLowerBound( variable );
+        relaxedLb =
+            lb -
+            ( GlobalConfiguration::BASIC_COSTS_ADDITIVE_TOLERANCE +
+              GlobalConfiguration::BASIC_COSTS_MULTIPLICATIVE_TOLERANCE * FloatUtils::abs( lb ) );
+
+        ub = _tableau->getUpperBound( variable );
+        relaxedUb =
+            ub +
+            ( GlobalConfiguration::BASIC_COSTS_ADDITIVE_TOLERANCE +
+              GlobalConfiguration::BASIC_COSTS_MULTIPLICATIVE_TOLERANCE * FloatUtils::abs( ub ) );
+
+        if ( _basicCosts[i] < 0 )
+        {
+            // Current basic cost is negative, assignment should be too small
+            if ( assignment >= relaxedLb )
+            {
+                invalidateCostFunction();
+                return;
+            }
+        }
+        else if ( _basicCosts[i] > 0 )
+        {
+            // Current basic cost is positive, assignment should be too large
+            if ( assignment <= relaxedUb )
+            {
+                invalidateCostFunction();
+                return;
+            }
+        }
+        else
+        {
+            // Current basic cost is zero, assignment should be within range
+            if ( ( assignment > relaxedUb ) || ( assignment < relaxedLb ) )
+            {
+                invalidateCostFunction();
+                return;
+            }
+        }
+    }
+}
+
 void CostFunctionManager::computeBasicOOBCosts()
 {
     unsigned variable;
@@ -321,6 +372,11 @@ void CostFunctionManager::invalidateCostFunction()
 bool CostFunctionManager::costFunctionJustComputed() const
 {
     return _costFunctionStatus == ICostFunctionManager::COST_FUNCTION_JUST_COMPUTED;
+}
+
+double CostFunctionManager::getBasicCost( unsigned basicIndex ) const
+{
+    return _basicCosts[basicIndex];
 }
 
 //

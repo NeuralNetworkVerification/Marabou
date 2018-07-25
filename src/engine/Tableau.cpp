@@ -787,16 +787,18 @@ double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient
 
     ASSERT( !FloatUtils::isZero( coefficient ) );
 
+    double basicCost = _costFunctionManager->getBasicCost( basicIndex );
+
     if ( ( FloatUtils::isPositive( coefficient ) && decrease ) ||
          ( FloatUtils::isNegative( coefficient ) && !decrease ) )
     {
         // Basic variable is decreasing
         double actualLowerBound;
-        if ( _basicStatus[basicIndex] == BasicStatus::ABOVE_UB )
+        if ( basicCost > 0 )
         {
             actualLowerBound = _upperBounds[basic];
         }
-        else if ( _basicStatus[basicIndex] == BasicStatus::BELOW_LB )
+        else if ( basicCost < 0 )
         {
             actualLowerBound = FloatUtils::negativeInfinity();
         }
@@ -825,11 +827,11 @@ double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient
     {
         // Basic variable is increasing
         double actualUpperBound;
-        if ( _basicStatus[basicIndex] == BasicStatus::BELOW_LB )
+        if ( basicCost < 0 )
         {
             actualUpperBound = _lowerBounds[basic];
         }
-        else if ( _basicStatus[basicIndex] == BasicStatus::ABOVE_UB )
+        else if ( basicCost > 0 )
         {
             actualUpperBound = FloatUtils::infinity();
         }
@@ -903,7 +905,8 @@ void Tableau::pickLeavingVariable( double *changeColumn )
         // constraint.
         for ( unsigned i = 0; i < _m; ++i )
         {
-            if ( !FloatUtils::isZero( changeColumn[i], GlobalConfiguration::PIVOT_CHANGE_COLUMN_TOLERANCE ) )
+            if ( changeColumn[i] >= +GlobalConfiguration::PIVOT_CHANGE_COLUMN_TOLERANCE ||
+                 changeColumn[i] <= -GlobalConfiguration::PIVOT_CHANGE_COLUMN_TOLERANCE )
             {
                 double ratio = ratioConstraintPerBasic( i, changeColumn[i], decrease );
 
@@ -933,7 +936,8 @@ void Tableau::pickLeavingVariable( double *changeColumn )
         // constraint.
         for ( unsigned i = 0; i < _m; ++i )
         {
-            if ( !FloatUtils::isZero( changeColumn[i] ) )
+            if ( changeColumn[i] >= +GlobalConfiguration::PIVOT_CHANGE_COLUMN_TOLERANCE ||
+                 changeColumn[i] <= -GlobalConfiguration::PIVOT_CHANGE_COLUMN_TOLERANCE )
             {
                 double ratio = ratioConstraintPerBasic( i, changeColumn[i], decrease );
 

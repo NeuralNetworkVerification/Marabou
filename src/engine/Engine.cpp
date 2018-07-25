@@ -274,6 +274,7 @@ void Engine::performSimplexStep()
          next-best entering variable.
     */
 
+    _costFunctionManager->checkBasicCostAccuracy();
     if ( _costFunctionManager->costFunctionInvalid() )
         _costFunctionManager->computeCoreCostFunction();
 
