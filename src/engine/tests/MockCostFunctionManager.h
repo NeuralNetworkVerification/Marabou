@@ -109,7 +109,7 @@ public:
         return nextBasicCost[basicIndex];
     }
 
-    void checkBasicCostAccuracy()
+    void adjustBasicCostAccuracy()
     {
     }
 

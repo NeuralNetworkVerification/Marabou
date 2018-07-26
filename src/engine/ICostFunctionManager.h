@@ -41,7 +41,7 @@ public:
                                                const TableauRow *pivotRow,
                                                const double *changeColumn ) = 0;
     virtual double getBasicCost( unsigned basicIndex ) const = 0;
-    virtual void checkBasicCostAccuracy() = 0;
+    virtual void adjustBasicCostAccuracy() = 0;
 
     virtual bool costFunctionInvalid() const = 0;
     virtual bool costFunctionJustComputed() const = 0;

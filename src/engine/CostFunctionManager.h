@@ -69,9 +69,9 @@ public:
 
     /*
       Check whether the basic costs are accurate with respect to the current assignment.
-      Invalidate the cost function if they are not.
+      Adjust them and recompute the reduced costs if they are not.
     */
-    void checkBasicCostAccuracy();
+    void adjustBasicCostAccuracy();
 
     /*
       For debugging purposes: dump the cost function.

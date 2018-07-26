@@ -153,54 +153,63 @@ void CostFunctionManager::computeCoreCostFunction()
     _costFunctionStatus = ICostFunctionManager::COST_FUNCTION_JUST_COMPUTED;
 }
 
-void CostFunctionManager::checkBasicCostAccuracy()
+void CostFunctionManager::adjustBasicCostAccuracy()
 {
     unsigned variable;
     double assignment, lb, relaxedLb, ub, relaxedUb;
+
+    bool needToRecompute = false;
     for ( unsigned i = 0; i < _m; ++i )
     {
         variable = _tableau->basicIndexToVariable( i );
         assignment = _tableau->getBasicAssignment( i );
 
-        lb = _tableau->getLowerBound( variable );
-        relaxedLb =
-            lb -
-            ( GlobalConfiguration::BASIC_COSTS_ADDITIVE_TOLERANCE +
-              GlobalConfiguration::BASIC_COSTS_MULTIPLICATIVE_TOLERANCE * FloatUtils::abs( lb ) );
-
-        ub = _tableau->getUpperBound( variable );
-        relaxedUb =
-            ub +
-            ( GlobalConfiguration::BASIC_COSTS_ADDITIVE_TOLERANCE +
-              GlobalConfiguration::BASIC_COSTS_MULTIPLICATIVE_TOLERANCE * FloatUtils::abs( ub ) );
-
         if ( _basicCosts[i] < 0 )
         {
+            lb = _tableau->getLowerBound( variable );
+            relaxedLb =
+                lb -
+                ( GlobalConfiguration::BASIC_COSTS_ADDITIVE_TOLERANCE +
+                  GlobalConfiguration::BASIC_COSTS_MULTIPLICATIVE_TOLERANCE * FloatUtils::abs( lb ) );
+
             // Current basic cost is negative, assignment should be too small
             if ( assignment >= relaxedLb )
             {
-                invalidateCostFunction();
-                return;
+                needToRecompute = true;
+                _basicCosts[i] = 0;
             }
         }
         else if ( _basicCosts[i] > 0 )
         {
+            ub = _tableau->getUpperBound( variable );
+            relaxedUb =
+                ub +
+                ( GlobalConfiguration::BASIC_COSTS_ADDITIVE_TOLERANCE +
+                  GlobalConfiguration::BASIC_COSTS_MULTIPLICATIVE_TOLERANCE * FloatUtils::abs( ub ) );
+
             // Current basic cost is positive, assignment should be too large
             if ( assignment <= relaxedUb )
             {
-                invalidateCostFunction();
-                return;
+                needToRecompute = true;
+                _basicCosts[i] = 0;
             }
         }
         else
         {
-            // Current basic cost is zero, assignment should be within range
-            if ( ( assignment > relaxedUb ) || ( assignment < relaxedLb ) )
-            {
-                invalidateCostFunction();
-                return;
-            }
+            /*
+              It seems to make sense to adjust anything that had cost 0 but should be
+              1 or -1, but apparently this leads to cycling.
+            */
         }
+
+    }
+
+    if ( needToRecompute )
+    {
+        computeMultipliers();
+        computeReducedCosts();
+
+        _costFunctionStatus = ICostFunctionManager::COST_FUNCTION_JUST_COMPUTED;
     }
 }
 
