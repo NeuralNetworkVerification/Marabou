@@ -276,6 +276,8 @@ void Engine::performSimplexStep()
 
     if ( _costFunctionManager->costFunctionInvalid() )
         _costFunctionManager->computeCoreCostFunction();
+    else
+        _costFunctionManager->adjustBasicCostAccuracy();
 
     DEBUG({
             // Since we're performing a simplex step, there are out-of-bounds variables.
