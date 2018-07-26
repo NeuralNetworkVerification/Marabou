@@ -368,6 +368,10 @@ public:
         costFunctionManager.nextCostFunction[2] = -1;
         costFunctionManager.nextCostFunction[3] = -1;
 
+        costFunctionManager.nextBasicCost[0] = -1;
+        costFunctionManager.nextBasicCost[1] =  0;
+        costFunctionManager.nextBasicCost[2] = +1;
+
         tableau->setEnteringVariableIndex( 2u );
         TS_ASSERT( hasCandidates( *tableau ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
@@ -470,6 +474,10 @@ public:
         costFunctionManager.nextCostFunction[2] = -1;
         costFunctionManager.nextCostFunction[3] = -1;
 
+        costFunctionManager.nextBasicCost[0] = -1;
+        costFunctionManager.nextBasicCost[1] =  0;
+        costFunctionManager.nextBasicCost[2] = +1;
+
         tableau->setEnteringVariableIndex( 2u );
         TS_ASSERT( hasCandidates( *tableau ) );
         TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
@@ -527,6 +535,10 @@ public:
         costFunctionManager.nextCostFunction[1] = -1;
         costFunctionManager.nextCostFunction[2] = -1;
         costFunctionManager.nextCostFunction[3] = -1;
+
+        costFunctionManager.nextBasicCost[0] = -1;
+        costFunctionManager.nextBasicCost[1] =  0;
+        costFunctionManager.nextBasicCost[2] = +1;
 
         tableau->setEnteringVariableIndex( 2u );
         TS_ASSERT( hasCandidates( *tableau ) );
@@ -668,6 +680,10 @@ public:
         costFunctionManager.nextCostFunction[1] = -1;
         costFunctionManager.nextCostFunction[2] = -1;
         costFunctionManager.nextCostFunction[3] = -1;
+
+        costFunctionManager.nextBasicCost[0] = -1;
+        costFunctionManager.nextBasicCost[1] =  0;
+        costFunctionManager.nextBasicCost[2] = +1;
 
         tableau->setEnteringVariableIndex( 2u );
         TS_ASSERT( hasCandidates( *tableau ) );
@@ -1005,6 +1021,10 @@ public:
         costFunctionManager.nextCostFunction[2] = -1;
         costFunctionManager.nextCostFunction[3] = -1;
 
+        costFunctionManager.nextBasicCost[0] = -1;
+        costFunctionManager.nextBasicCost[1] =  0;
+        costFunctionManager.nextBasicCost[2] = +1;
+
         TS_ASSERT( hasCandidates( *tableau ) );
         tableau->setEnteringVariableIndex( 3u );
         tableau->computeChangeColumn();
@@ -1126,6 +1146,10 @@ public:
         costFunctionManager.nextCostFunction[1] = -1;
         costFunctionManager.nextCostFunction[2] = -1;
         costFunctionManager.nextCostFunction[3] = -1;
+
+        costFunctionManager.nextBasicCost[0] = -1;
+        costFunctionManager.nextBasicCost[1] =  0;
+        costFunctionManager.nextBasicCost[2] = +1;
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeChangeColumn() );
         tableau->pickLeavingVariable();

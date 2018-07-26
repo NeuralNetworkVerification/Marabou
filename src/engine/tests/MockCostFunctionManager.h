@@ -102,6 +102,17 @@ public:
         return 0;
     }
 
+    Map <unsigned, double> nextBasicCost;
+    double getBasicCost( unsigned basicIndex ) const
+    {
+        TS_ASSERT( nextBasicCost.exists( basicIndex ) );
+        return nextBasicCost[basicIndex];
+    }
+
+    void adjustBasicCostAccuracy()
+    {
+    }
+
     bool costFunctionInvalid() const
     {
         return true;

@@ -787,16 +787,18 @@ double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient
 
     ASSERT( !FloatUtils::isZero( coefficient ) );
 
+    double basicCost = _costFunctionManager->getBasicCost( basicIndex );
+
     if ( ( FloatUtils::isPositive( coefficient ) && decrease ) ||
          ( FloatUtils::isNegative( coefficient ) && !decrease ) )
     {
         // Basic variable is decreasing
         double actualLowerBound;
-        if ( _basicStatus[basicIndex] == BasicStatus::ABOVE_UB )
+        if ( basicCost > 0 )
         {
             actualLowerBound = _upperBounds[basic];
         }
-        else if ( _basicStatus[basicIndex] == BasicStatus::BELOW_LB )
+        else if ( basicCost < 0 )
         {
             actualLowerBound = FloatUtils::negativeInfinity();
         }
@@ -825,11 +827,11 @@ double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient
     {
         // Basic variable is increasing
         double actualUpperBound;
-        if ( _basicStatus[basicIndex] == BasicStatus::BELOW_LB )
+        if ( basicCost < 0 )
         {
             actualUpperBound = _lowerBounds[basic];
         }
-        else if ( _basicStatus[basicIndex] == BasicStatus::ABOVE_UB )
+        else if ( basicCost > 0 )
         {
             actualUpperBound = FloatUtils::infinity();
         }
@@ -903,7 +905,8 @@ void Tableau::pickLeavingVariable( double *changeColumn )
         // constraint.
         for ( unsigned i = 0; i < _m; ++i )
         {
-            if ( !FloatUtils::isZero( changeColumn[i], GlobalConfiguration::PIVOT_CHANGE_COLUMN_TOLERANCE ) )
+            if ( changeColumn[i] >= +GlobalConfiguration::PIVOT_CHANGE_COLUMN_TOLERANCE ||
+                 changeColumn[i] <= -GlobalConfiguration::PIVOT_CHANGE_COLUMN_TOLERANCE )
             {
                 double ratio = ratioConstraintPerBasic( i, changeColumn[i], decrease );
 
@@ -933,7 +936,8 @@ void Tableau::pickLeavingVariable( double *changeColumn )
         // constraint.
         for ( unsigned i = 0; i < _m; ++i )
         {
-            if ( !FloatUtils::isZero( changeColumn[i] ) )
+            if ( changeColumn[i] >= +GlobalConfiguration::PIVOT_CHANGE_COLUMN_TOLERANCE ||
+                 changeColumn[i] <= -GlobalConfiguration::PIVOT_CHANGE_COLUMN_TOLERANCE )
             {
                 double ratio = ratioConstraintPerBasic( i, changeColumn[i], decrease );
 
@@ -1436,6 +1440,8 @@ unsigned Tableau::addEquation( const Equation &equation )
             log( "addEquation failed - could not refactorize basis" );
             throw ReluplexError( ReluplexError::FAILURE_TO_ADD_NEW_EQUATION );
         }
+
+        computeCostFunction();
     }
 
     return auxVariable;
@@ -1844,38 +1850,6 @@ void Tableau::updateAssignmentForPivot()
 
     _basicAssignmentStatus = ITableau::BASIC_ASSIGNMENT_UPDATED;
 
-    // // If the change ratio is 0, just maintain the current assignment
-    // if ( FloatUtils::isZero( _changeRatio ) )
-    // {
-    //     ASSERT( !performingFakePivot() );
-
-    //     DEBUG({
-    //             // This should only happen when the basic variable is pressed against
-    //             // one of its bounds
-    //             if ( !( _basicStatus[_leavingVariable] == Tableau::AT_UB ||
-    //                     _basicStatus[_leavingVariable] == Tableau::AT_LB ||
-    //                     _basicStatus[_leavingVariable] == Tableau::BETWEEN
-    //                     ) )
-    //             {
-    //                 printf( "Assertion violation!\n" );
-    //                 printf( "Basic (leaving) variable is: %u\n", _basicIndexToVariable[_leavingVariable] );
-    //                 printf( "Basic assignment: %.10lf. Bounds: [%.10lf, %.10lf]\n",
-    //                         _basicAssignment[_leavingVariable],
-    //                         _lowerBounds[_basicIndexToVariable[_leavingVariable]],
-    //                         _upperBounds[_basicIndexToVariable[_leavingVariable]] );
-    //                 printf( "Basic status: %u\n", _basicStatus[_leavingVariable] );
-    //                 printf( "leavingVariableIncreases = %s", _leavingVariableIncreases ? "yes" : "no" );
-    //                 exit( 1 );
-    //             }
-    //         });
-
-    //     double basicAssignment = _basicAssignment[_leavingVariable];
-    //     double nonBasicAssignment = _nonBasicAssignment[_enteringVariable];
-    //     _basicAssignment[_leavingVariable] = nonBasicAssignment;
-    //     _nonBasicAssignment[_enteringVariable] = basicAssignment;
-    //     return;
-    // }
-
     if ( performingFakePivot() )
     {
         // A non-basic is hopping from one bound to the other.
@@ -2060,7 +2034,6 @@ void Tableau::mergeColumns( unsigned x1, unsigned x2 )
         tightenUpperBound( x1, _upperBounds[x2] );
     if ( FloatUtils::gt( _lowerBounds[x2], _lowerBounds[x1] ) )
         tightenLowerBound( x1, _lowerBounds[x2] );
-
 
     /*
       Merge column x2 of the constraint matrix into x1
