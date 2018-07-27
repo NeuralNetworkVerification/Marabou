@@ -591,8 +591,8 @@ void Tableau::setLeavingVariableIndex( unsigned basic )
 
 bool Tableau::eligibleForEntry( unsigned nonBasic, const double *costFunction ) const
 {
-    // A non-basic variable is eligible for entry if it is not fixed,
-    // and one of the two conditions holds:
+    // A non-basic variable is eligible for entry if one of the
+    // two conditions holds:
     //
     //   1. It has a negative coefficient in the cost function and it
     //      can increase
