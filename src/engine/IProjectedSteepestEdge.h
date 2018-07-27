@@ -32,7 +32,9 @@ public:
     /*
       Apply the projected steepest edge pivot selection rule.
     */
-    virtual bool select( ITableau &tableau, const Set<unsigned> &excluded ) = 0;
+    virtual bool select( ITableau &tableau,
+                         const List<unsigned> &candidates,
+                         const Set<unsigned> &excluded ) = 0;
 
     /*
       We use this hook to update gamma according to the entering

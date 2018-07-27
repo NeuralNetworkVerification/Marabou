@@ -16,21 +16,22 @@
 #include "MStringf.h"
 #include "ReluplexError.h"
 
-bool DantzigsRule::select( ITableau &tableau, const Set<unsigned> &excluded )
+bool DantzigsRule::select( ITableau &tableau,
+                           const List<unsigned> &candidates,
+                           const Set<unsigned> &excluded )
 {
-    List<unsigned> candidates;
-    tableau.getEntryCandidates( candidates );
+    List<unsigned> remainingCandidates = candidates;
 
-    List<unsigned>::iterator it = candidates.begin();
-    while ( it != candidates.end() )
+    List<unsigned>::iterator it = remainingCandidates.begin();
+    while ( it != remainingCandidates.end() )
     {
         if ( excluded.exists( *it ) )
-            it = candidates.erase( it );
+            it = remainingCandidates.erase( it );
         else
             ++it;
     }
 
-    if ( candidates.empty() )
+    if ( remainingCandidates.empty() )
         return false;
 
     // Dantzig's rule
@@ -51,12 +52,12 @@ bool DantzigsRule::select( ITableau &tableau, const Set<unsigned> &excluded )
     }
     log( Stringf( "Cost function: %s\n", cost.ascii() ) );
 
-    List<unsigned>::const_iterator candidate = candidates.begin();
+    List<unsigned>::const_iterator candidate = remainingCandidates.begin();
     unsigned maxIndex = *candidate;
     double maxValue = FloatUtils::abs( costFunction[maxIndex] );
     ++candidate;
 
-    while ( candidate != candidates.end() )
+    while ( candidate != remainingCandidates.end() )
     {
         double contenderValue = FloatUtils::abs( costFunction[*candidate] );
         if ( FloatUtils::gt( contenderValue, maxValue ) )

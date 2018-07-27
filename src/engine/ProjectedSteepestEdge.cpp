@@ -107,22 +107,22 @@ void ProjectedSteepestEdgeRule::resetReferenceSpace( const ITableau &tableau )
         _statistics->pseIncNumResetReferenceSpace();
 }
 
-bool ProjectedSteepestEdgeRule::select( ITableau &tableau, const Set<unsigned> &excluded )
+bool ProjectedSteepestEdgeRule::select( ITableau &tableau,
+                                        const List<unsigned> &candidates,
+                                        const Set<unsigned> &excluded )
 {
-    // Obtain the list of eligible non-basic variables to consider
-    List<unsigned> candidates;
-    tableau.getEntryCandidates( candidates );
+    List<unsigned> remainingCandidates = candidates;
 
-    List<unsigned>::iterator it = candidates.begin();
-    while ( it != candidates.end() )
+    List<unsigned>::iterator it = remainingCandidates.begin();
+    while ( it != remainingCandidates.end() )
     {
         if ( excluded.exists( *it ) )
-            it = candidates.erase( it );
+            it = remainingCandidates.erase( it );
         else
             ++it;
     }
 
-    if ( candidates.empty() )
+    if ( remainingCandidates.empty() )
     {
         log( "No candidates, select returning false" );
         return false;
@@ -142,22 +142,22 @@ bool ProjectedSteepestEdgeRule::select( ITableau &tableau, const Set<unsigned> &
       is maximal.
     */
 
-    it = candidates.begin();
+    it = remainingCandidates.begin();
     unsigned bestCandidate = *it;
     double gammaValue = _gamma[*it];
     double bestValue =
-        !FloatUtils::isPositive( gammaValue ) ? 0 : ( costFunction[*it] * costFunction[*it] ) / gammaValue;
+        ( gammaValue < DBL_EPSILON ) ? 0 : ( costFunction[*it] * costFunction[*it] ) / gammaValue;
 
     ++it;
 
-    while ( it != candidates.end() )
+    while ( it != remainingCandidates.end() )
     {
         unsigned contender = *it;
         gammaValue = _gamma[*it];
         double contenderValue =
-            !FloatUtils::isPositive( gammaValue ) ? 0 : ( costFunction[*it] * costFunction[*it] ) / gammaValue;
+            ( gammaValue < DBL_EPSILON ) ? 0 : ( costFunction[*it] * costFunction[*it] ) / gammaValue;
 
-        if ( FloatUtils::gt( contenderValue, bestValue ) )
+        if ( contenderValue > bestValue )
         {
             bestCandidate = contender;
             bestValue = contenderValue;

@@ -24,7 +24,9 @@ public:
       Apply Dantzig's rule: choose the candidate associated with the
       largest coefficient (in absolute value) in the cost function.
     */
-    bool select( ITableau &tableau, const Set<unsigned> &excluded );
+    bool select( ITableau &tableau,
+                 const List<unsigned> &candidates,
+                 const Set<unsigned> &excluded );
 
     static void log( const String &message );
 };

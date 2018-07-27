@@ -591,34 +591,55 @@ void Tableau::setLeavingVariableIndex( unsigned basic )
 
 bool Tableau::eligibleForEntry( unsigned nonBasic, const double *costFunction ) const
 {
-    // A non-basic variable is eligible for entry if one of the two
-    //   conditions holds:
+    // A non-basic variable is eligible for entry if one of the
+    // two conditions holds:
     //
     //   1. It has a negative coefficient in the cost function and it
     //      can increase
     //   2. It has a positive coefficient in the cost function and it
     //      can decrease
 
-    if ( FloatUtils::isZero( costFunction[nonBasic] ) )
-        return false;
+    double reducedCost = costFunction[nonBasic];
 
-    bool positive = FloatUtils::isPositive( costFunction[nonBasic] );
+    if ( reducedCost <= -GlobalConfiguration::ENTRY_ELIGIBILITY_TOLERANCE )
+    {
+        // Variable needs to increase
+        return nonBasicCanIncrease( nonBasic );
+    }
+    else if ( reducedCost >= +GlobalConfiguration::ENTRY_ELIGIBILITY_TOLERANCE )
+    {
+        // Variable needs to decrease
+        return nonBasicCanDecrease( nonBasic );
+    }
 
-    return
-        ( positive && nonBasicCanDecrease( nonBasic ) ) ||
-        ( !positive && nonBasicCanIncrease( nonBasic ) );
+    // Cost is zero
+    return false;
 }
 
 bool Tableau::nonBasicCanIncrease( unsigned nonBasic ) const
 {
-    double max = _upperBounds[_nonBasicIndexToVariable[nonBasic]];
-    return FloatUtils::lt( _nonBasicAssignment[nonBasic], max );
+    unsigned variable = _nonBasicIndexToVariable[nonBasic];
+
+    double ub = _upperBounds[variable];
+    double tighterUb =
+        ub -
+        ( GlobalConfiguration::BOUND_COMPARISON_ADDITIVE_TOLERANCE +
+          GlobalConfiguration::BOUND_COMPARISON_MULTIPLICATIVE_TOLERANCE * FloatUtils::abs( ub ) );
+
+    return _nonBasicAssignment[nonBasic] < tighterUb;
 }
 
 bool Tableau::nonBasicCanDecrease( unsigned nonBasic ) const
 {
-    double min = _lowerBounds[_nonBasicIndexToVariable[nonBasic]];
-    return FloatUtils::gt( _nonBasicAssignment[nonBasic], min );
+    unsigned variable = _nonBasicIndexToVariable[nonBasic];
+
+    double lb = _lowerBounds[variable];
+    double tighterLb =
+        lb +
+        ( GlobalConfiguration::BOUND_COMPARISON_ADDITIVE_TOLERANCE +
+          GlobalConfiguration::BOUND_COMPARISON_MULTIPLICATIVE_TOLERANCE * FloatUtils::abs( lb ) );
+
+    return _nonBasicAssignment[nonBasic] > tighterLb;
 }
 
 unsigned Tableau::getEnteringVariable() const
@@ -656,9 +677,12 @@ void Tableau::performPivot()
         if ( _statistics )
             _statistics->incNumTableauBoundHopping();
 
-        // The entering variable is going to be pressed against its bound.
-        bool decrease =
-            FloatUtils::isPositive( _costFunctionManager->getCostFunction()[_enteringVariable] );
+        double enteringReducedCost = _costFunctionManager->getCostFunction()[_enteringVariable];
+
+        ASSERT( ( enteringReducedCost <= -GlobalConfiguration::ENTRY_ELIGIBILITY_TOLERANCE ) ||
+                ( enteringReducedCost >= +GlobalConfiguration::ENTRY_ELIGIBILITY_TOLERANCE ) );
+
+        bool decrease = ( enteringReducedCost >= +GlobalConfiguration::ENTRY_ELIGIBILITY_TOLERANCE );
         unsigned nonBasic = _nonBasicIndexToVariable[_enteringVariable];
 
         log( Stringf( "Performing 'fake' pivot. Variable x%u jumping to %s bound",
@@ -1021,9 +1045,6 @@ void Tableau::setNonBasicAssignment( unsigned variable, double value, bool updat
     // Update all the affected basic variables
     for ( unsigned i = 0; i < _m; ++i )
     {
-        if ( FloatUtils::isZero( _changeColumn[i] ) )
-            continue;
-
         _basicAssignment[i] -= _changeColumn[i] * delta;
         notifyVariableValue( _basicIndexToVariable[i], _basicAssignment[i] );
 
@@ -1854,8 +1875,9 @@ void Tableau::updateAssignmentForPivot()
     {
         // A non-basic is hopping from one bound to the other.
 
-        bool nonBasicDecreases =
-            FloatUtils::isPositive( _costFunctionManager->getCostFunction()[_enteringVariable] );
+        double enteringReducedCost = _costFunctionManager->getCostFunction()[_enteringVariable];
+        bool nonBasicDecreases = ( enteringReducedCost >= +GlobalConfiguration::ENTRY_ELIGIBILITY_TOLERANCE );
+
         unsigned nonBasic = _nonBasicIndexToVariable[_enteringVariable];
 
         double nonBasicDelta;
@@ -1918,9 +1940,6 @@ void Tableau::updateAssignmentForPivot()
         for ( unsigned i = 0; i < _m; ++i )
         {
             if ( i == _leavingVariable )
-                continue;
-
-            if ( FloatUtils::isZero( _changeColumn[i] ) )
                 continue;
 
             _basicAssignment[i] -= _changeColumn[i] * nonBasicDelta;
