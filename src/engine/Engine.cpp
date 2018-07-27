@@ -316,12 +316,18 @@ void Engine::performSimplexStep()
     unsigned bestLeaving = 0;
     double bestChangeRatio = 0.0;
 
+    // Obtain all eligible entering varaibles
+    List<unsigned> enteringVariableCandidates;
+    _tableau->getEntryCandidates( enteringVariableCandidates );
+
     while ( tries > 0 )
     {
         --tries;
 
         // Attempt to pick the best entering variable from the available candidates
-        if ( !_activeEntryStrategy->select( _tableau, excludedEnteringVariables ) )
+        if ( !_activeEntryStrategy->select( _tableau,
+                                            enteringVariableCandidates,
+                                            excludedEnteringVariables ) )
         {
             // No additional candidates can be found.
             break;
@@ -351,7 +357,7 @@ void Engine::performSimplexStep()
         // Is the newly found pivot better than the stored one?
         unsigned leavingIndex = _tableau->getLeavingVariableIndex();
         double pivotEntry = FloatUtils::abs( _tableau->getChangeColumn()[leavingIndex] );
-        if ( FloatUtils::gt( pivotEntry, bestPivotEntry ) )
+        if ( pivotEntry > bestPivotEntry )
         {
             bestEntering = _tableau->getEnteringVariableIndex();
             bestPivotEntry = pivotEntry;
@@ -362,7 +368,7 @@ void Engine::performSimplexStep()
 
         // If the pivot is greater than the sought-after threshold, we
         // are done.
-        if ( FloatUtils::gte( bestPivotEntry, GlobalConfiguration::ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD ) )
+        if ( bestPivotEntry >= GlobalConfiguration::ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD )
             break;
         else
             _statistics.incNumSimplexPivotSelectionsIgnoredForStability();

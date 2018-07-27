@@ -35,6 +35,10 @@ public:
     // at the change column, as part of a pivot operation.
     static const double PIVOT_CHANGE_COLUMN_TOLERANCE;
 
+    // Tolerance when checking whether a non-basic variable is eligible for being selected as the
+    // entering variable, by its reduced cost
+    static const double ENTRY_ELIGIBILITY_TOLERANCE;
+
     // Ratio test tolerance constants
     static const double RATIO_CONSTRAINT_ADDITIVE_TOLERANCE;
     static const double RATIO_CONSTRAINT_MULTIPLICATIVE_TOLERANCE;
