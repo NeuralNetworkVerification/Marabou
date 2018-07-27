@@ -677,9 +677,12 @@ void Tableau::performPivot()
         if ( _statistics )
             _statistics->incNumTableauBoundHopping();
 
-        // The entering variable is going to be pressed against its bound.
-        bool decrease =
-            FloatUtils::isPositive( _costFunctionManager->getCostFunction()[_enteringVariable] );
+        double enteringReducedCost = _costFunctionManager->getCostFunction()[_enteringVariable];
+
+        ASSERT( ( enteringReducedCost <= -GlobalConfiguration::ENTRY_ELIGIBILITY_TOLERANCE ) ||
+                ( enteringReducedCost >= +GlobalConfiguration::ENTRY_ELIGIBILITY_TOLERANCE ) );
+
+        bool decrease = ( enteringReducedCost >= +GlobalConfiguration::ENTRY_ELIGIBILITY_TOLERANCE );
         unsigned nonBasic = _nonBasicIndexToVariable[_enteringVariable];
 
         log( Stringf( "Performing 'fake' pivot. Variable x%u jumping to %s bound",
@@ -1042,9 +1045,6 @@ void Tableau::setNonBasicAssignment( unsigned variable, double value, bool updat
     // Update all the affected basic variables
     for ( unsigned i = 0; i < _m; ++i )
     {
-        if ( FloatUtils::isZero( _changeColumn[i] ) )
-            continue;
-
         _basicAssignment[i] -= _changeColumn[i] * delta;
         notifyVariableValue( _basicIndexToVariable[i], _basicAssignment[i] );
 
@@ -1875,8 +1875,9 @@ void Tableau::updateAssignmentForPivot()
     {
         // A non-basic is hopping from one bound to the other.
 
-        bool nonBasicDecreases =
-            FloatUtils::isPositive( _costFunctionManager->getCostFunction()[_enteringVariable] );
+        double enteringReducedCost = _costFunctionManager->getCostFunction()[_enteringVariable];
+        bool nonBasicDecreases = ( enteringReducedCost >= +GlobalConfiguration::ENTRY_ELIGIBILITY_TOLERANCE );
+
         unsigned nonBasic = _nonBasicIndexToVariable[_enteringVariable];
 
         double nonBasicDelta;
@@ -1939,9 +1940,6 @@ void Tableau::updateAssignmentForPivot()
         for ( unsigned i = 0; i < _m; ++i )
         {
             if ( i == _leavingVariable )
-                continue;
-
-            if ( FloatUtils::isZero( _changeColumn[i] ) )
                 continue;
 
             _basicAssignment[i] -= _changeColumn[i] * nonBasicDelta;
