@@ -146,7 +146,7 @@ bool ProjectedSteepestEdgeRule::select( ITableau &tableau,
     unsigned bestCandidate = *it;
     double gammaValue = _gamma[*it];
     double bestValue =
-        !FloatUtils::isPositive( gammaValue ) ? 0 : ( costFunction[*it] * costFunction[*it] ) / gammaValue;
+        ( gammaValue < DBL_EPSILON ) ? 0 : ( costFunction[*it] * costFunction[*it] ) / gammaValue;
 
     ++it;
 
@@ -155,9 +155,9 @@ bool ProjectedSteepestEdgeRule::select( ITableau &tableau,
         unsigned contender = *it;
         gammaValue = _gamma[*it];
         double contenderValue =
-            !FloatUtils::isPositive( gammaValue ) ? 0 : ( costFunction[*it] * costFunction[*it] ) / gammaValue;
+            ( gammaValue < DBL_EPSILON ) ? 0 : ( costFunction[*it] * costFunction[*it] ) / gammaValue;
 
-        if ( FloatUtils::gt( contenderValue, bestValue ) )
+        if ( contenderValue > bestValue )
         {
             bestCandidate = contender;
             bestValue = contenderValue;
