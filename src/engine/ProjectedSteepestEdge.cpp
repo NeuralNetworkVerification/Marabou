@@ -107,22 +107,22 @@ void ProjectedSteepestEdgeRule::resetReferenceSpace( const ITableau &tableau )
         _statistics->pseIncNumResetReferenceSpace();
 }
 
-bool ProjectedSteepestEdgeRule::select( ITableau &tableau, const Set<unsigned> &excluded )
+bool ProjectedSteepestEdgeRule::select( ITableau &tableau,
+                                        const List<unsigned> &candidates,
+                                        const Set<unsigned> &excluded )
 {
-    // Obtain the list of eligible non-basic variables to consider
-    List<unsigned> candidates;
-    tableau.getEntryCandidates( candidates );
+    List<unsigned> remainingCandidates = candidates;
 
-    List<unsigned>::iterator it = candidates.begin();
-    while ( it != candidates.end() )
+    List<unsigned>::iterator it = remainingCandidates.begin();
+    while ( it != remainingCandidates.end() )
     {
         if ( excluded.exists( *it ) )
-            it = candidates.erase( it );
+            it = remainingCandidates.erase( it );
         else
             ++it;
     }
 
-    if ( candidates.empty() )
+    if ( remainingCandidates.empty() )
     {
         log( "No candidates, select returning false" );
         return false;
@@ -142,7 +142,7 @@ bool ProjectedSteepestEdgeRule::select( ITableau &tableau, const Set<unsigned> &
       is maximal.
     */
 
-    it = candidates.begin();
+    it = remainingCandidates.begin();
     unsigned bestCandidate = *it;
     double gammaValue = _gamma[*it];
     double bestValue =
@@ -150,7 +150,7 @@ bool ProjectedSteepestEdgeRule::select( ITableau &tableau, const Set<unsigned> &
 
     ++it;
 
-    while ( it != candidates.end() )
+    while ( it != remainingCandidates.end() )
     {
         unsigned contender = *it;
         gammaValue = _gamma[*it];

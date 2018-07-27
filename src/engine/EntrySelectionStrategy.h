@@ -35,7 +35,9 @@ public:
       Choose the entrying variable for the given tableau. Do not pick
       a variable from the excluded set.
     */
-    virtual bool select( ITableau &tableau, const Set<unsigned> &excluded ) = 0;
+    virtual bool select( ITableau &tableau,
+                         const List<unsigned> &candidates,
+                         const Set<unsigned> &excluded ) = 0;
 
     /*
       This hook gets called after the entering and leaving variables

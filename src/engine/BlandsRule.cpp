@@ -14,30 +14,31 @@
 #include "ITableau.h"
 #include "ReluplexError.h"
 
-bool BlandsRule::select( ITableau &tableau, const Set<unsigned> &excluded )
+bool BlandsRule::select( ITableau &tableau,
+                         const List<unsigned> &candidates,
+                         const Set<unsigned> &excluded )
 {
-    List<unsigned> candidates;
-    tableau.getEntryCandidates( candidates );
+    List<unsigned> remainingCandidates = candidates;
 
-    List<unsigned>::iterator it = candidates.begin();
-    while ( it != candidates.end() )
+    List<unsigned>::iterator it = remainingCandidates.begin();
+    while ( it != remainingCandidates.end() )
     {
         if ( excluded.exists( *it ) )
-            it = candidates.erase( it );
+            it = remainingCandidates.erase( it );
         else
             ++it;
     }
 
-    if ( candidates.empty() )
+    if ( remainingCandidates.empty() )
         return false;
 
-    it = candidates.begin();
+    it = remainingCandidates.begin();
     unsigned minIndex = *it;
     unsigned minVariable = tableau.nonBasicIndexToVariable( minIndex );
 
     ++it;
     unsigned variable;
-    while ( it != candidates.end() )
+    while ( it != remainingCandidates.end() )
     {
         variable = tableau.nonBasicIndexToVariable( *it );
         if ( variable < minVariable )

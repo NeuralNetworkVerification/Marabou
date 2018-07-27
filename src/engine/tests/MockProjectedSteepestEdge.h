@@ -48,7 +48,9 @@ public:
     {
     }
 
-    bool select( ITableau &, const Set<unsigned> & )
+    bool select( ITableau &,
+                 const List<unsigned> &,
+                 const Set<unsigned> & )
     {
         return true;
     }

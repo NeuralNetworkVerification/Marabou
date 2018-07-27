@@ -591,34 +591,55 @@ void Tableau::setLeavingVariableIndex( unsigned basic )
 
 bool Tableau::eligibleForEntry( unsigned nonBasic, const double *costFunction ) const
 {
-    // A non-basic variable is eligible for entry if one of the two
-    //   conditions holds:
+    // A non-basic variable is eligible for entry if it is not fixed,
+    // and one of the two conditions holds:
     //
     //   1. It has a negative coefficient in the cost function and it
     //      can increase
     //   2. It has a positive coefficient in the cost function and it
     //      can decrease
 
-    if ( FloatUtils::isZero( costFunction[nonBasic] ) )
-        return false;
+    double reducedCost = costFunction[nonBasic];
 
-    bool positive = FloatUtils::isPositive( costFunction[nonBasic] );
+    if ( reducedCost <= -GlobalConfiguration::ENTRY_ELIGIBILITY_TOLERANCE )
+    {
+        // Variable needs to increase
+        return nonBasicCanIncrease( nonBasic );
+    }
+    else if ( reducedCost >= +GlobalConfiguration::ENTRY_ELIGIBILITY_TOLERANCE )
+    {
+        // Variable needs to decrease
+        return nonBasicCanDecrease( nonBasic );
+    }
 
-    return
-        ( positive && nonBasicCanDecrease( nonBasic ) ) ||
-        ( !positive && nonBasicCanIncrease( nonBasic ) );
+    // Cost is zero
+    return false;
 }
 
 bool Tableau::nonBasicCanIncrease( unsigned nonBasic ) const
 {
-    double max = _upperBounds[_nonBasicIndexToVariable[nonBasic]];
-    return FloatUtils::lt( _nonBasicAssignment[nonBasic], max );
+    unsigned variable = _nonBasicIndexToVariable[nonBasic];
+
+    double ub = _upperBounds[variable];
+    double tighterUb =
+        ub -
+        ( GlobalConfiguration::BOUND_COMPARISON_ADDITIVE_TOLERANCE +
+          GlobalConfiguration::BOUND_COMPARISON_MULTIPLICATIVE_TOLERANCE * FloatUtils::abs( ub ) );
+
+    return _nonBasicAssignment[nonBasic] < tighterUb;
 }
 
 bool Tableau::nonBasicCanDecrease( unsigned nonBasic ) const
 {
-    double min = _lowerBounds[_nonBasicIndexToVariable[nonBasic]];
-    return FloatUtils::gt( _nonBasicAssignment[nonBasic], min );
+    unsigned variable = _nonBasicIndexToVariable[nonBasic];
+
+    double lb = _lowerBounds[variable];
+    double tighterLb =
+        lb +
+        ( GlobalConfiguration::BOUND_COMPARISON_ADDITIVE_TOLERANCE +
+          GlobalConfiguration::BOUND_COMPARISON_MULTIPLICATIVE_TOLERANCE * FloatUtils::abs( lb ) );
+
+    return _nonBasicAssignment[nonBasic] > tighterLb;
 }
 
 unsigned Tableau::getEnteringVariable() const

@@ -316,12 +316,18 @@ void Engine::performSimplexStep()
     unsigned bestLeaving = 0;
     double bestChangeRatio = 0.0;
 
+    // Obtain all eligible entering varaibles
+    List<unsigned> enteringVariableCandidates;
+    _tableau->getEntryCandidates( enteringVariableCandidates );
+
     while ( tries > 0 )
     {
         --tries;
 
         // Attempt to pick the best entering variable from the available candidates
-        if ( !_activeEntryStrategy->select( _tableau, excludedEnteringVariables ) )
+        if ( !_activeEntryStrategy->select( _tableau,
+                                            enteringVariableCandidates,
+                                            excludedEnteringVariables ) )
         {
             // No additional candidates can be found.
             break;

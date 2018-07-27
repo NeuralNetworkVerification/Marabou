@@ -47,9 +47,8 @@ public:
 
         Set<unsigned> excluded;
         List<unsigned> candidates;
-        tableau->mockCandidates = candidates;
 
-        TS_ASSERT( !blandsRule.select( *tableau, excluded ) );
+        TS_ASSERT( !blandsRule.select( *tableau, candidates, excluded ) );
 
         candidates.append( 3 );
         tableau->nextNonBasicIndexToVariable[3] = 20;
@@ -63,13 +62,11 @@ public:
         candidates.append( 51 );
         tableau->nextNonBasicIndexToVariable[51] = 6;
 
-        tableau->mockCandidates = candidates;
-
-        TS_ASSERT( blandsRule.select( *tableau, excluded ) );
+        TS_ASSERT( blandsRule.select( *tableau, candidates, excluded ) );
         TS_ASSERT_EQUALS( tableau->mockEnteringVariable, 10U );
 
         excluded.insert( 10 );
-        TS_ASSERT( blandsRule.select( *tableau, excluded ) );
+        TS_ASSERT( blandsRule.select( *tableau, candidates, excluded ) );
         TS_ASSERT_EQUALS( tableau->mockEnteringVariable, 51U );
         excluded.clear();
 
@@ -80,7 +77,7 @@ public:
 
         // TS_ASSERT_EQUALS( blandsRule.select( candidates, *tableau ), 100U );
 
-        TS_ASSERT( blandsRule.select( *tableau, excluded ) );
+        TS_ASSERT( blandsRule.select( *tableau, candidates, excluded ) );
         TS_ASSERT_EQUALS( tableau->mockEnteringVariable, 100U );
     }
 };
