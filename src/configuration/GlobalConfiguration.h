@@ -94,6 +94,9 @@ public:
     // An error threshold which, when crossed, causes projected steepest edge to reset the reference space
     static const double PSE_GAMMA_ERROR_THRESHOLD;
 
+    // PSE's Gamma function's update tolerance
+    static const double PSE_GAMMA_UPDATE_TOLERANCE;
+
     // The tolerance for checking whether f = Relu( b ), to determine a ReLU's statisfaction
     static const double RELU_CONSTRAINT_COMPARISON_TOLERANCE;
     /*
