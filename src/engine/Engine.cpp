@@ -308,17 +308,17 @@ void Engine::performSimplexStep()
             }
         });
 
+    // Obtain all eligible entering varaibles
+    List<unsigned> enteringVariableCandidates;
+    _tableau->getEntryCandidates( enteringVariableCandidates );
+
+    unsigned bestLeaving = 0;
+    double bestChangeRatio = 0.0;
+    Set<unsigned> excludedEnteringVariables;
     bool haveCandidate = false;
     unsigned bestEntering = 0;
     double bestPivotEntry = 0.0;
     unsigned tries = GlobalConfiguration::MAX_SIMPLEX_PIVOT_SEARCH_ITERATIONS;
-    Set<unsigned> excludedEnteringVariables;
-    unsigned bestLeaving = 0;
-    double bestChangeRatio = 0.0;
-
-    // Obtain all eligible entering varaibles
-    List<unsigned> enteringVariableCandidates;
-    _tableau->getEntryCandidates( enteringVariableCandidates );
 
     while ( tries > 0 )
     {
@@ -413,8 +413,21 @@ void Engine::performSimplexStep()
     bool fakePivot = _tableau->performingFakePivot();
 
     if ( !fakePivot &&
-         FloatUtils::lt( bestPivotEntry, GlobalConfiguration::ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD ) )
+         bestPivotEntry < GlobalConfiguration::ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD )
+    {
+        /*
+          Despite our efforts, we are stuck with a small pivot. If basis factorization
+          isn't fresh, refresh it and terminate this step - perhaps in the next iteration
+          a better pivot will be found
+        */
+        if ( !_tableau->basisMatrixAvailable() )
+        {
+            _tableau->refreshBasisFactorization();
+            return;
+        }
+
         _statistics.incNumSimplexUnstablePivots();
+    }
 
     if ( !fakePivot )
     {
