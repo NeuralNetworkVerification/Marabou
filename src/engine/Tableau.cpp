@@ -893,6 +893,14 @@ void Tableau::pickLeavingVariable()
 
 void Tableau::pickLeavingVariable( double *changeColumn )
 {
+    if ( GlobalConfiguration::USE_HARRIS_RATIO_TEST )
+        harrisRatioTest( changeColumn );
+    else
+        standardRatioTest( changeColumn );
+}
+
+void Tableau::standardRatioTest( double *changeColumn )
+{
     ASSERT( !FloatUtils::isZero( _costFunctionManager->getCostFunction()[_enteringVariable] ) );
     bool decrease = FloatUtils::isPositive( _costFunctionManager->getCostFunction()[_enteringVariable] );
 
@@ -979,6 +987,11 @@ void Tableau::pickLeavingVariable( double *changeColumn )
         if ( _leavingVariable != _m )
             _leavingVariableIncreases = FloatUtils::isNegative( changeColumn[_leavingVariable] );
     }
+}
+
+void Tableau::harrisRatioTest( double *// changeColumn
+                               )
+{
 }
 
 double Tableau::getChangeRatio() const

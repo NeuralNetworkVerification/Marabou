@@ -35,6 +35,8 @@ const unsigned GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD = 20;
 const unsigned GlobalConfiguration::BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY = 100;
 const double GlobalConfiguration::COST_FUNCTION_ERROR_THRESHOLD = 0.0000000001;
 
+const bool GlobalConfiguration::USE_HARRIS_RATIO_TEST = false;
+
 const bool GlobalConfiguration::PREPROCESS_INPUT_QUERY = true;
 const bool GlobalConfiguration::PREPROCESSOR_ELIMINATE_VARIABLES = true;
 const bool GlobalConfiguration::PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS = false;
@@ -87,6 +89,9 @@ void GlobalConfiguration::print()
     printf( "  CONSTRAINT_VIOLATION_THRESHOLD: %u\n", CONSTRAINT_VIOLATION_THRESHOLD );
     printf( "  BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY: %u\n",
             BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY );
+    printf( "  COST_FUNCTION_ERROR_THRESHOLD: %.15lf\n", COST_FUNCTION_ERROR_THRESHOLD );
+    printf( "  USE_HARRIS_RATIO_TEST: %s\n", USE_HARRIS_RATIO_TEST ? "Yes" : "No" );
+
     printf( "  PREPROCESS_INPUT_QUERY: %s\n", PREPROCESS_INPUT_QUERY ? "Yes" : "No" );
     printf( "  PREPROCESSOR_ELIMINATE_VARIABLES: %s\n", PREPROCESSOR_ELIMINATE_VARIABLES ? "Yes" : "No" );
     printf( "  PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS: %s\n",

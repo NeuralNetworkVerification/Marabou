@@ -47,6 +47,9 @@ public:
     static const double BASIC_COSTS_ADDITIVE_TOLERANCE;
     static const double BASIC_COSTS_MULTIPLICATIVE_TOLERANCE;
 
+    // Toggle use of Harris' two-pass ratio test for selecting the leaving variable
+    static const bool USE_HARRIS_RATIO_TEST;
+
     // Toggle query-preprocessing on/off.
 	static const bool PREPROCESS_INPUT_QUERY;
 
