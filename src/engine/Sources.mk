@@ -1,4 +1,5 @@
 SOURCES += \
+	AbstractionManager.cpp \
 	BlandsRule.cpp \
 	ConstraintMatrixAnalyzer.cpp \
 	CostFunctionManager.cpp \

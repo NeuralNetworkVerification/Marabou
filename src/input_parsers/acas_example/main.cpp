@@ -20,6 +20,8 @@
 #include "Preprocessor.h"
 #include "ReluplexError.h"
 
+#include "AbstractionManager.h"
+
 int main()
 {
     try
@@ -27,13 +29,13 @@ int main()
         // Extract an input query from the network
         InputQuery inputQuery;
 
-        AcasParser acasParser( "./ACASXU_run2a_1_1_batch_2000.nnet" );
+        // AcasParser acasParser( "./ACASXU_run2a_1_1_batch_2000.nnet" );
 
         // Trimmed network: 5-5-5, 5 Relus
         // AcasParser acasParser( "ACASXU_run2a_1_1_tiny.nnet" );
 
         // Trimmed network: 5-50-5, 50 Relus
-        // AcasParser acasParser( "ACASXU_run2a_1_1_tiny_2.nnet" );
+        AcasParser acasParser( "ACASXU_run2a_1_1_tiny_2.nnet" );
 
         // Trimmed network: 5-50-50-5, 100 Relus
         // AcasParser acasParser( "ACASXU_run2a_1_1_tiny_3.nnet" );
@@ -59,17 +61,19 @@ int main()
         // inputQuery.setLowerBound( variable, 0.5 );
 
 		// Feed the query to the engine
-        Engine engine;
-        bool preprocess = engine.processInputQuery( inputQuery );
+        AbstractionManager am;
 
-        if ( !preprocess || !engine.solve() )
+        bool result = am.run( inputQuery );
+
+        if ( !result )
         {
-            printf( "\n\nQuery is unsat\n" );
+            printf( "UNSAT!\n" );
             return 0;
         }
 
         printf( "\n\nQuery is sat! Extracting solution...\n" );
-        engine.extractSolution( inputQuery );
+
+        return 0;
 
         Vector<double> inputs;
         for ( unsigned i = 0; i < 5; ++i )

@@ -80,6 +80,12 @@ public:
     void storeDebuggingSolution( unsigned variable, double value );
     Map<unsigned, double> _debuggingSolution;
 
+    /*
+      Mark and retrieve input nodes
+    */
+    void markInputVariable( unsigned variable );
+    List<unsigned> getInputVariables() const;
+
 private:
     unsigned _numberOfVariables;
     List<Equation> _equations;
@@ -89,6 +95,7 @@ private:
 
     Map<unsigned, double> _solution;
 
+    List<unsigned> _inputVariables;
     /*
       Free any stored pl constraints.
     */

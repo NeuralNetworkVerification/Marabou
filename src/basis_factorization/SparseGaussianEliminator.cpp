@@ -241,7 +241,7 @@ void SparseGaussianEliminator::choosePivot()
 
                 if ( uRow >= _eliminationStep )
                 {
-                    found = true;
+                    DEBUG( found = true );
 
                     _vPivotRow = vRow;
                     _uPivotRow = uRow;

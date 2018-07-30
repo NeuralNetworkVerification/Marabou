@@ -188,6 +188,7 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
     _upperBounds = other._upperBounds;
     _solution = other._solution;
     _debuggingSolution = other._debuggingSolution;
+    _inputVariables = other._inputVariables;
 
     freeConstraintsIfNeeded();
     for ( const auto &constraint : other._plConstraints )
@@ -222,6 +223,16 @@ const Map<unsigned, double> &InputQuery::getUpperBounds() const
 void InputQuery::storeDebuggingSolution( unsigned variable, double value )
 {
     _debuggingSolution[variable] = value;
+}
+
+void InputQuery::markInputVariable( unsigned variable )
+{
+    _inputVariables.append( variable );
+}
+
+List<unsigned> InputQuery::getInputVariables() const
+{
+    return _inputVariables;
 }
 
 //
