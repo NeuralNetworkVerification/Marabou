@@ -989,9 +989,331 @@ void Tableau::standardRatioTest( double *changeColumn )
     }
 }
 
-void Tableau::harrisRatioTest( double *// changeColumn
-                               )
+void Tableau::harrisRatioTest( double *changeColumn )
 {
+    /*
+      The Harris ratio test is performed in two steps:
+
+      1. Find the minimal change ratio, according to the constraints imposed by the
+         basic variables
+      2. For the discovered change ratio, pick the basic variable leading to the largest
+         pivot element.
+
+      Observe that the constraints imposed by the basic variables are slightly relaxed
+      when compared to the traditional, text-book ratio test
+    */
+
+    ASSERT( !FloatUtils::isZero( _costFunctionManager->getCostFunction()[_enteringVariable] ) );
+
+    // Is the entering variable decreasing?
+    bool enteringDecreases = FloatUtils::isPositive( _costFunctionManager->getCostFunction()[_enteringVariable] );
+
+    DEBUG({
+            if ( enteringDecreases )
+            {
+                ASSERTM( nonBasicCanDecrease( _enteringVariable ),
+                         "Error! Entering variable needs to decrease but is at its lower bound" );
+            }
+            else
+            {
+                ASSERTM( nonBasicCanIncrease( _enteringVariable ),
+                         "Error! Entering variable needs to increase but is at its upper bound" );
+            }
+        });
+
+    /*
+      Alfa:
+
+      nb increases -->   pivot ( = -changeColumn )
+      nb decreases --> - pivot ( =  changeColumn )
+    */
+
+    // *** First pass: determine optimal change ratio *** //
+    double optimalChangeRatio;
+    if ( enteringDecreases )
+    {
+        // The maximum amount by which the entering variable can
+        // decrease, as determined by its bounds. This is a negative
+        // value.
+        optimalChangeRatio = FloatUtils::negativeInfinity();
+
+        // Iterate over the basics that depend on the entering
+        // variable and see if any of them imposes a tighter
+        // constraint.
+        double ratioConstraintPerBasic;
+        for ( unsigned i = 0; i < _m; ++i )
+        {
+            unsigned basic = _basicIndexToVariable[i];
+            double basicCost = _costFunctionManager->getBasicCost( i );
+            if ( changeColumn[i] >= +GlobalConfiguration::PIVOT_CHANGE_COLUMN_TOLERANCE )
+            {
+                // Nonbasic decreases, basic increases
+                double actualUpperBound;
+                if ( basicCost > 0 )
+                    continue;
+                else if ( basicCost < 0 )
+                    actualUpperBound = _lowerBounds[basic];
+                else
+                    actualUpperBound = _upperBounds[basic];
+
+                // Determine the constraint imposed by this basic
+                double delta = GlobalConfiguration::HARRIS_RATIO_CONSTRAINT_ADDITIVE_TOLERANCE +
+                    FloatUtils::abs( actualUpperBound ) * GlobalConfiguration::HARRIS_RATIO_CONSTRAINT_MULTIPLICATIVE_TOLERANCE;
+                if ( _basicAssignment[i] > actualUpperBound )
+                    ratioConstraintPerBasic = - delta / changeColumn[i];
+                else
+                    ratioConstraintPerBasic = - ( ( actualUpperBound + delta ) - _basicAssignment[i] ) / changeColumn[i];
+            }
+            else if ( changeColumn[i] <= -GlobalConfiguration::PIVOT_CHANGE_COLUMN_TOLERANCE )
+            {
+                // Nonbasic decreases, basic decreases
+                double actualLowerBound;
+                if ( basicCost < 0 )
+                    continue;
+                else if ( basicCost > 0 )
+                    actualLowerBound = _upperBounds[basic];
+                else
+                    actualLowerBound = _lowerBounds[basic];
+
+                // Determine the constraint imposed by this basic
+                double delta = GlobalConfiguration::HARRIS_RATIO_CONSTRAINT_ADDITIVE_TOLERANCE +
+                    FloatUtils::abs( actualLowerBound ) * GlobalConfiguration::HARRIS_RATIO_CONSTRAINT_MULTIPLICATIVE_TOLERANCE;
+                if ( _basicAssignment[i] < actualLowerBound )
+                    ratioConstraintPerBasic = delta / changeColumn[i];
+                else
+                    ratioConstraintPerBasic = - ( ( actualLowerBound - delta ) - _basicAssignment[i] ) / changeColumn[i];
+            }
+            else
+            {
+                // This basic does not depend on the entering variable
+                continue;
+            }
+
+            ASSERT( !FloatUtils::isPositive( ratioConstraintPerBasic ) );
+            if ( ratioConstraintPerBasic > optimalChangeRatio )
+                optimalChangeRatio = ratioConstraintPerBasic;
+        }
+    }
+    else
+    {
+        // The maximum amount by which the entering variable can
+        // increase, as determined by its bounds. This is a positive
+        // value.
+        optimalChangeRatio = FloatUtils::infinity();
+
+        // Iterate over the basics that depend on the entering
+        // variable and see if any of them imposes a tighter
+        // constraint.
+        double ratioConstraintPerBasic;
+        for ( unsigned i = 0; i < _m; ++i )
+        {
+            unsigned basic = _basicIndexToVariable[i];
+            double basicCost = _costFunctionManager->getBasicCost( i );
+            if ( changeColumn[i] >= +GlobalConfiguration::PIVOT_CHANGE_COLUMN_TOLERANCE )
+            {
+                // Nonbasic increases, basic decreases
+                double actualLowerBound;
+                if ( basicCost < 0 )
+                    continue;
+                else if ( basicCost > 0 )
+                    actualLowerBound = _upperBounds[basic];
+                else
+                    actualLowerBound = _lowerBounds[basic];
+
+                // Determine the constraint imposed by this basic
+                double delta = GlobalConfiguration::HARRIS_RATIO_CONSTRAINT_ADDITIVE_TOLERANCE +
+                    FloatUtils::abs( actualLowerBound ) * GlobalConfiguration::HARRIS_RATIO_CONSTRAINT_MULTIPLICATIVE_TOLERANCE;
+                if ( _basicAssignment[i] < actualLowerBound )
+                    ratioConstraintPerBasic = delta / changeColumn[i];
+                else
+                    ratioConstraintPerBasic = - ( ( actualLowerBound - delta ) - _basicAssignment[i] ) / changeColumn[i];
+            }
+            else if ( changeColumn[i] <= -GlobalConfiguration::PIVOT_CHANGE_COLUMN_TOLERANCE )
+            {
+                // Nonbasic increases, basic increases
+                double actualUpperBound;
+                if ( basicCost > 0 )
+                    continue;
+                else if ( basicCost < 0 )
+                    actualUpperBound = _lowerBounds[basic];
+                else
+                    actualUpperBound = _upperBounds[basic];
+
+                // Determine the constraint imposed by this basic
+                double delta = GlobalConfiguration::HARRIS_RATIO_CONSTRAINT_ADDITIVE_TOLERANCE +
+                    FloatUtils::abs( actualUpperBound ) * GlobalConfiguration::HARRIS_RATIO_CONSTRAINT_MULTIPLICATIVE_TOLERANCE;
+                if ( _basicAssignment[i] > actualUpperBound )
+                    ratioConstraintPerBasic = - delta / changeColumn[i];
+                else
+                    ratioConstraintPerBasic = - ( ( actualUpperBound + delta ) - _basicAssignment[i] ) / changeColumn[i];
+            }
+            else
+            {
+                // This basic does not depend on the entering variable
+                continue;
+            }
+
+            ASSERT( !FloatUtils::isNegative( ratioConstraintPerBasic ) );
+            if ( ratioConstraintPerBasic < optimalChangeRatio )
+                optimalChangeRatio = ratioConstraintPerBasic;
+        }
+    }
+
+    // *** Second pass: choose leaving variable *** //
+
+    // Check if we need to perform a fake pivot
+    double enteringLb = _lowerBounds[_nonBasicIndexToVariable[_enteringVariable]];
+    double enteringUb = _upperBounds[_nonBasicIndexToVariable[_enteringVariable]];
+    double enteringCurrentValue = _nonBasicAssignment[_enteringVariable];
+
+    _leavingVariable = _m;
+    if ( enteringDecreases )
+    {
+        ASSERT( !FloatUtils::isPositive( optimalChangeRatio ) );
+        if ( enteringLb - enteringCurrentValue >= optimalChangeRatio )
+        {
+            _changeRatio = enteringLb - enteringCurrentValue;
+            return;
+        }
+    }
+    else
+    {
+        ASSERT( !FloatUtils::isNegative( optimalChangeRatio ) );
+        if ( enteringUb - enteringCurrentValue <= optimalChangeRatio )
+        {
+            _changeRatio = enteringUb - enteringCurrentValue;
+            return;
+        }
+    }
+
+    // Pivot isn't fake, choose the leaving variable
+    double largestPivot = 0;
+    if ( enteringDecreases )
+    {
+        // Change ratios are negative
+        double ratioConstraintPerBasic;
+        for ( unsigned i = 0; i < _m; ++i )
+        {
+            unsigned basic = _basicIndexToVariable[i];
+            double basicCost = _costFunctionManager->getBasicCost( i );
+            if ( changeColumn[i] >= +GlobalConfiguration::PIVOT_CHANGE_COLUMN_TOLERANCE )
+            {
+                // Nonbasic decreases, basic increases
+                double actualUpperBound;
+                if ( basicCost > 0 )
+                    continue;
+                else if ( basicCost < 0 )
+                    actualUpperBound = _lowerBounds[basic];
+                else
+                    actualUpperBound = _upperBounds[basic];
+
+                ratioConstraintPerBasic = - ( actualUpperBound - _basicAssignment[i] ) / changeColumn[i];
+            }
+            else if ( changeColumn[i] <= -GlobalConfiguration::PIVOT_CHANGE_COLUMN_TOLERANCE )
+            {
+                // Nonbasic decreases, basic decreases
+                double actualLowerBound;
+                if ( basicCost < 0 )
+                    continue;
+                else if ( basicCost > 0 )
+                    actualLowerBound = _upperBounds[basic];
+                else
+                    actualLowerBound = _lowerBounds[basic];
+
+                ratioConstraintPerBasic = - ( actualLowerBound - _basicAssignment[i] ) / changeColumn[i];
+            }
+            else
+            {
+                // This basic does not depend on the entering variable
+                continue;
+            }
+
+            if ( FloatUtils::isPositive( ratioConstraintPerBasic ) )
+            {
+                /*
+                  This happens when the basic cost does not properly reflect the relation
+                  between assignment and bound, due to some minor degeneracy. Assume that
+                  assignment = bound, and set the cosntraint to 0.
+                */
+                ratioConstraintPerBasic = 0;
+            }
+
+            ASSERT( !FloatUtils::isPositive( ratioConstraintPerBasic ) );
+            double pivot = FloatUtils::abs( changeColumn[i] );
+            if ( ( ratioConstraintPerBasic >= optimalChangeRatio ) && ( pivot > largestPivot ) )
+            {
+                largestPivot = pivot;
+                _leavingVariable = i;
+                _changeRatio = ratioConstraintPerBasic;
+                _leavingVariableIncreases = FloatUtils::isPositive( changeColumn[_leavingVariable] );
+            }
+        }
+    }
+    else
+    {
+        // Change ratios are positive
+        double ratioConstraintPerBasic;
+        for ( unsigned i = 0; i < _m; ++i )
+        {
+            unsigned basic = _basicIndexToVariable[i];
+            double basicCost = _costFunctionManager->getBasicCost( i );
+            if ( changeColumn[i] >= +GlobalConfiguration::PIVOT_CHANGE_COLUMN_TOLERANCE )
+            {
+                // Nonbasic increases, basic decreases
+                double actualLowerBound;
+                if ( basicCost < 0 )
+                    continue;
+                else if ( basicCost > 0 )
+                    actualLowerBound = _upperBounds[basic];
+                else
+                    actualLowerBound = _lowerBounds[basic];
+
+                ratioConstraintPerBasic = - ( actualLowerBound - _basicAssignment[i] ) / changeColumn[i];
+            }
+            else if ( changeColumn[i] <= -GlobalConfiguration::PIVOT_CHANGE_COLUMN_TOLERANCE )
+            {
+                // Nonbasic decreases, basic decreases
+                double actualUpperBound;
+                if ( basicCost > 0 )
+                    continue;
+                else if ( basicCost < 0 )
+                    actualUpperBound = _lowerBounds[basic];
+                else
+                    actualUpperBound = _upperBounds[basic];
+
+                ratioConstraintPerBasic = - ( actualUpperBound - _basicAssignment[i] ) / changeColumn[i];
+
+            }
+            else
+            {
+                // This basic does not depend on the entering variable
+                continue;
+            }
+
+            if ( FloatUtils::isNegative( ratioConstraintPerBasic ) )
+            {
+                /*
+                  This happens when the basic cost does not properly reflect the relation
+                  between assignment and bound, due to some minor degeneracy. Assume that
+                  assignment = bound, and set the cosntraint to 0.
+                */
+                ratioConstraintPerBasic = 0;
+            }
+
+            ASSERT( !FloatUtils::isNegative( ratioConstraintPerBasic ) );
+            double pivot = FloatUtils::abs( changeColumn[i] );
+            if ( ( ratioConstraintPerBasic <= optimalChangeRatio ) && ( pivot > largestPivot ) )
+            {
+                largestPivot = pivot;
+                _leavingVariable = i;
+                _changeRatio = ratioConstraintPerBasic;
+                _leavingVariableIncreases = FloatUtils::isNegative( changeColumn[_leavingVariable] );
+            }
+        }
+    }
+
+    // Something must have been chosen
+    ASSERT( _leavingVariable != _m );
 }
 
 double Tableau::getChangeRatio() const

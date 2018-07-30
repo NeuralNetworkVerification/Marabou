@@ -42,6 +42,8 @@ public:
     // Ratio test tolerance constants
     static const double RATIO_CONSTRAINT_ADDITIVE_TOLERANCE;
     static const double RATIO_CONSTRAINT_MULTIPLICATIVE_TOLERANCE;
+    static const double HARRIS_RATIO_CONSTRAINT_ADDITIVE_TOLERANCE;
+    static const double HARRIS_RATIO_CONSTRAINT_MULTIPLICATIVE_TOLERANCE;
 
     // Cost function tolerance constants
     static const double BASIC_COSTS_ADDITIVE_TOLERANCE;
