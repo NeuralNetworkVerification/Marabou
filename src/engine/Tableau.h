@@ -592,6 +592,12 @@ private:
      */
     void updateAssignmentForPivot();
 
+    /*
+      Ratio tests for determining the leaving variable
+    */
+    void standardRatioTest( double *changeColumn );
+    void harrisRatioTest( double *changeColumn );
+
     static void log( const String &message );
 
     /*
