@@ -16,13 +16,15 @@
 
 const double GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS = 0.0000000001;
 const unsigned GlobalConfiguration::DEFAULT_DOUBLE_TO_STRING_PRECISION = 10;
-const unsigned GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY = 100;
+const unsigned GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY = 1000;
 const double GlobalConfiguration::BOUND_COMPARISON_ADDITIVE_TOLERANCE = 0.0000001;
 const double GlobalConfiguration::BOUND_COMPARISON_MULTIPLICATIVE_TOLERANCE = 0.001 * 0.0000001;
 const double GlobalConfiguration::PIVOT_CHANGE_COLUMN_TOLERANCE = 0.000000001;
 const double GlobalConfiguration::ENTRY_ELIGIBILITY_TOLERANCE = 0.00000001;
 const double GlobalConfiguration::RATIO_CONSTRAINT_ADDITIVE_TOLERANCE = 0.0000001 * 0.3;
 const double GlobalConfiguration::RATIO_CONSTRAINT_MULTIPLICATIVE_TOLERANCE = 0.001 * 0.0000001 * 0.3;
+const double GlobalConfiguration::HARRIS_RATIO_CONSTRAINT_ADDITIVE_TOLERANCE = 0.0000001 * 0.5;
+const double GlobalConfiguration::HARRIS_RATIO_CONSTRAINT_MULTIPLICATIVE_TOLERANCE = 0.001 * 0.0000001 * 0.5;
 const double GlobalConfiguration::BASIC_COSTS_ADDITIVE_TOLERANCE = 0.0000001;
 const double GlobalConfiguration::BASIC_COSTS_MULTIPLICATIVE_TOLERANCE = 0.001 * 0.0000001;
 const unsigned GlobalConfiguration::DEGRADATION_CHECKING_FREQUENCY = 100;
@@ -34,6 +36,8 @@ const unsigned GlobalConfiguration::MAX_SIMPLEX_PIVOT_SEARCH_ITERATIONS = 5;
 const unsigned GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD = 20;
 const unsigned GlobalConfiguration::BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY = 100;
 const double GlobalConfiguration::COST_FUNCTION_ERROR_THRESHOLD = 0.0000000001;
+
+const bool GlobalConfiguration::USE_HARRIS_RATIO_TEST = true;
 
 const bool GlobalConfiguration::PREPROCESS_INPUT_QUERY = true;
 const bool GlobalConfiguration::PREPROCESSOR_ELIMINATE_VARIABLES = true;
@@ -87,6 +91,9 @@ void GlobalConfiguration::print()
     printf( "  CONSTRAINT_VIOLATION_THRESHOLD: %u\n", CONSTRAINT_VIOLATION_THRESHOLD );
     printf( "  BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY: %u\n",
             BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY );
+    printf( "  COST_FUNCTION_ERROR_THRESHOLD: %.15lf\n", COST_FUNCTION_ERROR_THRESHOLD );
+    printf( "  USE_HARRIS_RATIO_TEST: %s\n", USE_HARRIS_RATIO_TEST ? "Yes" : "No" );
+
     printf( "  PREPROCESS_INPUT_QUERY: %s\n", PREPROCESS_INPUT_QUERY ? "Yes" : "No" );
     printf( "  PREPROCESSOR_ELIMINATE_VARIABLES: %s\n", PREPROCESSOR_ELIMINATE_VARIABLES ? "Yes" : "No" );
     printf( "  PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS: %s\n",
