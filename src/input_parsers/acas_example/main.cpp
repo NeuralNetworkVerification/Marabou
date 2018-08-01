@@ -32,13 +32,13 @@ int main()
         // AcasParser acasParser( "./ACASXU_run2a_1_1_batch_2000.nnet" );
 
         // Trimmed network: 5-5-5, 5 Relus
-        AcasParser acasParser( "ACASXU_run2a_1_1_tiny.nnet" );
+        // AcasParser acasParser( "ACASXU_run2a_1_1_tiny.nnet" );
 
         // Trimmed network: 5-50-5, 50 Relus
         // AcasParser acasParser( "ACASXU_run2a_1_1_tiny_2.nnet" );
 
         // Trimmed network: 5-50-50-5, 100 Relus
-        // AcasParser acasParser( "ACASXU_run2a_1_1_tiny_3.nnet" );
+        AcasParser acasParser( "ACASXU_run2a_1_1_tiny_3.nnet" );
 
         // Trimmed network: 5-50-50-50-5, 150 Relus
         // AcasParser acasParser( "ACASXU_run2a_1_1_tiny_4.nnet" );

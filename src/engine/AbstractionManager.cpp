@@ -11,6 +11,7 @@
  **/
 
 #include "AbstractionManager.h"
+#include "Debug.h"
 #include "Engine.h"
 #include "FloatUtils.h"
 #include "InputQuery.h"
@@ -27,6 +28,10 @@ bool AbstractionManager::run( InputQuery &inputQuery )
     {
         log( "Main loop starting" );
 
+        printf( "Number of restored constraints: %u / %u\n",
+                _abstractQuery.getPiecewiseLinearConstraints().size(),
+                _originalQuery.getPiecewiseLinearConstraints().size() );
+
         // Run the solver
         result = checkSatisfiability();
 
@@ -42,6 +47,11 @@ bool AbstractionManager::run( InputQuery &inputQuery )
             {
                 // A satisfying assignment
                 log( "checkSatisfiability returned SAT, and the assignment is valid - we are done " );
+
+                printf( "Dumping abstract query\n" );
+                _abstractQuery.dump();
+                _abstractQuery.dumpSolution();
+
                 extractSatAssignment();
                 break;
             }
@@ -52,8 +62,6 @@ bool AbstractionManager::run( InputQuery &inputQuery )
                 refineAbstraction();
             }
         }
-
-        break;
     }
 
     return result;
@@ -62,6 +70,9 @@ bool AbstractionManager::run( InputQuery &inputQuery )
 void AbstractionManager::storeOriginalQuery( InputQuery &inputQuery )
 {
     _originalQuery = inputQuery;
+
+    printf( "Dumping original query\n" );
+    _originalQuery.dump();
 
     for ( const auto &plConstraint : _originalQuery.getPiecewiseLinearConstraints() )
     {
@@ -73,7 +84,7 @@ void AbstractionManager::storeOriginalQuery( InputQuery &inputQuery )
         }
     }
 
-    _originalQuery = Preprocessor().preprocess( _originalQuery, true );
+    _originalQuery = Preprocessor().preprocess( _originalQuery, false );
 
     if ( _originalQuery.countInfiniteBounds() != 0 )
     {
@@ -112,60 +123,47 @@ void AbstractionManager::createInitialAbstraction()
 
 bool AbstractionManager::checkSatisfiability()
 {
-    _ppAbstractQuery = _abstractQuery;
-
-    for ( const auto &plConstraint : _ppAbstractQuery.getPiecewiseLinearConstraints() )
-    {
-        List<unsigned> variables = plConstraint->getParticipatingVariables();
-        for ( unsigned variable : variables )
-        {
-            plConstraint->notifyLowerBound( variable, _ppAbstractQuery.getLowerBound( variable ) );
-            plConstraint->notifyUpperBound( variable, _ppAbstractQuery.getUpperBound( variable ) );
-        }
-    }
-
-    _ppAbstractQuery = Preprocessor().preprocess( _ppAbstractQuery, true );
-
-    if ( _ppAbstractQuery.countInfiniteBounds() != 0 )
-    {
-        printf( "Error! preprocessed abstract query has infinite bounds\n" );
-        exit ( 1 );
-    }
-
     Engine engine;
-    if ( !engine.processInputQuery( _ppAbstractQuery ) )
+    if ( !engine.processInputQuery( _abstractQuery ) )
         return false;
 
     if ( !engine.solve() )
         return false;
 
-    engine.extractSolution( _ppAbstractQuery );
+    engine.extractSolution( _abstractQuery );
 
     return true;
 }
 
 void AbstractionManager::extractSatAssignment()
 {
+    printf( "extractSatAssignment not yet supported!\n" );
+    exit( 1 );
 }
 
 bool AbstractionManager::spurious()
 {
-    InputQuery copy = _originalQuery;
+    _copyOfOriginalQuery.clear();
+    _copyOfOriginalQuery = _originalQuery;
 
     // Fix the input variables to their solution values
     for ( const auto &input : _originalQuery.getInputVariables() )
     {
-        copy.setLowerBound( input, _ppAbstractQuery.getSolutionValue( input ) );
-        copy.setUpperBound( input, _ppAbstractQuery.getSolutionValue( input ) );
+        _copyOfOriginalQuery.setLowerBound( input, _abstractQuery.getSolutionValue( input ) );
+        _copyOfOriginalQuery.setUpperBound( input, _abstractQuery.getSolutionValue( input ) );
     }
 
     // Use the preprocessor to propagate these values through the network
-    copy = Preprocessor().preprocess( copy, false );
+    Preprocessor preprocessor;
+    _copyOfOriginalQuery = preprocessor.preprocess( _copyOfOriginalQuery, true );
+    _copyOfOriginalQuery.dump();
 
     // Make sure that a value has been calculated for every variable
-    for ( unsigned i = 0; i < copy.getNumberOfVariables(); ++i )
+    for ( unsigned i = 0; i < _originalQuery.getNumberOfVariables(); ++i )
     {
-        if ( !FloatUtils::areEqual( copy.getLowerBound( i ), copy.getUpperBound( i ) ) )
+        ASSERT( !preprocessor.variableIsMerged( i ) );
+
+        if ( !preprocessor.variableIsFixed( i ) )
         {
             printf( "Error! Could not calculate an exact assignment!\n" );
             exit( 1 );
@@ -173,9 +171,10 @@ bool AbstractionManager::spurious()
     }
 
     // Go over the variables and see if everything matches
-    for ( unsigned i = 0; i < copy.getNumberOfVariables(); ++i )
+    for ( unsigned i = 0; i < _originalQuery.getNumberOfVariables(); ++i )
     {
-        if ( !FloatUtils::areEqual( copy.getLowerBound( i ), _ppAbstractQuery.getSolutionValue( i ) ) )
+        double value = preprocessor.getFixedValue( i );
+        if ( !FloatUtils::areEqual( value, _abstractQuery.getSolutionValue( i ) ) )
         {
             log( "assignment is spurious!" );
             return true;
@@ -188,6 +187,22 @@ bool AbstractionManager::spurious()
 
 void AbstractionManager::refineAbstraction()
 {
+    // At least one of the original PL constraints does not hold.
+    for ( const auto &constraint : _originalQuery.getPiecewiseLinearConstraints() )
+    {
+        PiecewiseLinearConstraint *dup = constraint->duplicateConstraint();
+        List<unsigned> vars = dup->getParticipatingVariables();
+
+        for ( const auto var : vars )
+            dup->notifyVariableValue( var, _abstractQuery.getSolutionValue( var ) );
+
+        if ( !dup->satisfied() )
+        {
+            // Add the violated constraint to the abstract query, and preprocess it again
+            _abstractQuery.addPiecewiseLinearConstraint( constraint->duplicateConstraint() );
+            return;
+        }
+    }
 }
 
 void AbstractionManager::log( const String &message ) const

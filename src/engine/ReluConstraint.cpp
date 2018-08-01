@@ -256,6 +256,17 @@ void ReluConstraint::dump( String &output ) const
         output += Stringf( "%5.3lf]", _upperBounds[_f] );
     else
         output += Stringf( "-]" );
+
+    output += Stringf( ". Assignment: b = " );
+    if ( _assignment.exists( _b ) )
+        output += Stringf( "%5.3lf, f = ", _assignment[_b] );
+    else
+        output += Stringf( "--, f = " );
+
+    if ( _assignment.exists( _f ) )
+        output += Stringf( "%5.3lf", _assignment[_f] );
+    else
+        output += Stringf( "--" );
 }
 
 void ReluConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )

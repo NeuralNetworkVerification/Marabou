@@ -22,8 +22,8 @@ public:
 
 private:
     InputQuery _originalQuery;
+    InputQuery _copyOfOriginalQuery;
     InputQuery _abstractQuery;
-    InputQuery _ppAbstractQuery;
 
     Map<unsigned, double> _satAssignment;
 
