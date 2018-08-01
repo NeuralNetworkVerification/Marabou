@@ -33,6 +33,8 @@ public:
 
     void addEquation( const Equation &equation );
 
+    void copyEquatiosnAndBounds( const InputQuery &other );
+
     unsigned getNumberOfVariables() const;
     double getLowerBound( unsigned variable ) const;
     double getUpperBound( unsigned variable ) const;
@@ -85,6 +87,17 @@ public:
     */
     void markInputVariable( unsigned variable );
     List<unsigned> getInputVariables() const;
+
+    /*
+      Clear an input query
+    */
+    void clear();
+
+    /*
+      For debugging purposes
+    */
+    void dump() const;
+    void dumpSolution() const;
 
 private:
     unsigned _numberOfVariables;

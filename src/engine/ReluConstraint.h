@@ -123,6 +123,12 @@ public:
     */
     virtual void getCostFunctionComponent( Map<unsigned, double> &cost ) const;
 
+    /*
+      Getters
+    */
+    unsigned getF() const;
+    unsigned getB() const;
+
 private:
     unsigned _b, _f;
     PhaseStatus _phaseStatus;

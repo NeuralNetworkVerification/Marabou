@@ -235,6 +235,73 @@ List<unsigned> InputQuery::getInputVariables() const
     return _inputVariables;
 }
 
+void InputQuery::clear()
+{
+    _numberOfVariables = 0;
+    _equations.clear();
+    _lowerBounds.clear();
+    _upperBounds.clear();
+    _solution.clear();
+    _inputVariables.clear();
+
+    freeConstraintsIfNeeded();
+}
+
+void InputQuery::copyEquatiosnAndBounds( const InputQuery &other )
+{
+    _equations = other._equations;
+    _lowerBounds = other._lowerBounds;
+    _upperBounds = other._upperBounds;
+}
+
+void InputQuery::dump() const
+{
+    printf( "Dumping input query:\n" );
+    printf( "\tNumber of varibales: %u. Equations: %u. Constraints: %u\n",
+            _numberOfVariables, _equations.size(), _plConstraints.size() );
+    printf( "\tVariable bounds:\n" );
+    for ( unsigned i = 0; i < _numberOfVariables; ++i )
+    {
+        printf( "\t\tx%u: [", i );
+
+        if ( _lowerBounds[i] == FloatUtils::negativeInfinity() )
+            printf( "-INFTY, " );
+        else
+            printf( "%5.3lf, ", _lowerBounds[i] );
+
+        if ( _upperBounds[i] == FloatUtils::infinity() )
+            printf( "+INFTY] " );
+        else
+            printf( "%5.3lf]", _upperBounds[i] );
+
+        printf( "\n" );
+    }
+
+    printf( "\tEquations:\n" );
+    for ( const auto &eq : _equations )
+    {
+        printf( "\t\t" );
+        eq.dump();
+    }
+
+    printf( "\tConstraints:\n" );
+    for ( const auto &constraint : _plConstraints )
+    {
+        String asString;
+        constraint->dump( asString );
+        printf( "\t\t%s\n", asString.ascii() );
+    }
+}
+
+void InputQuery::dumpSolution() const
+{
+    printf( "Dumping input query's stored solution:\n" );
+    for ( unsigned i = 0; i < _numberOfVariables; ++i )
+    {
+        printf( "\tx%u = %5.3lf\n", i, getSolutionValue( i ) );
+    }
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

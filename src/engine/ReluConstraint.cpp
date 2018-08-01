@@ -228,13 +228,34 @@ PiecewiseLinearCaseSplit ReluConstraint::getValidCaseSplit() const
 
 void ReluConstraint::dump( String &output ) const
 {
-    output = Stringf( "ReluConstraint: x%u = ReLU( x%u ). Active? %s. PhaseStatus = %u (%s). "
-                      "b in [%lf, %lf]. f in [%lf, %lf]",
+    output = Stringf( "ReluConstraint: x%u = ReLU( x%u ). Active? %s. PhaseStatus = %u (%s). ",
                       _f, _b,
                       _constraintActive ? "Yes" : "No",
-                      _phaseStatus, phaseToString( _phaseStatus ).ascii(),
-                      _lowerBounds[_b], _upperBounds[_b], _lowerBounds[_f], _upperBounds[_f]
-                      );
+                      _phaseStatus, phaseToString( _phaseStatus ).ascii() );
+
+    output += Stringf( "b in [" );
+
+    if ( _lowerBounds.exists( _b ) )
+        output += Stringf( "%5.3lf, ", _lowerBounds[_b] );
+    else
+        output += Stringf( "-, " );
+
+    if ( _upperBounds.exists( _b ) )
+        output += Stringf( "%5.3lf]. ", _upperBounds[_b] );
+    else
+        output += Stringf( "-]. " );
+
+    output += Stringf( "f in [" );
+
+    if ( _lowerBounds.exists( _f ) )
+        output += Stringf( "%5.3lf, ", _lowerBounds[_f] );
+    else
+        output += Stringf( "-, " );
+
+    if ( _upperBounds.exists( _f ) )
+        output += Stringf( "%5.3lf]", _upperBounds[_f] );
+    else
+        output += Stringf( "-]" );
 }
 
 void ReluConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
@@ -440,6 +461,16 @@ bool ReluConstraint::haveOutOfBoundVariables() const
         return true;
 
     return false;
+}
+
+unsigned ReluConstraint::getF() const
+{
+    return _f;
+}
+
+unsigned ReluConstraint::getB() const
+{
+    return _b;
 }
 
 //

@@ -23,12 +23,18 @@ public:
 private:
     InputQuery _originalQuery;
     InputQuery _abstractQuery;
+    InputQuery _ppAbstractQuery;
+
+    Map<unsigned, double> _satAssignment;
 
     void storeOriginalQuery( InputQuery &inputQuery );
     void createInitialAbstraction();
     bool checkSatisfiability();
     bool spurious();
     void refineAbstraction();
+    void extractSatAssignment();
+
+    void log( const String &message ) const;
 };
 
 #endif // __AbstractionManager_h__
