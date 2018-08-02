@@ -48,11 +48,11 @@ bool AbstractionManager::run( InputQuery &inputQuery )
                 // A satisfying assignment
                 log( "checkSatisfiability returned SAT, and the assignment is valid - we are done " );
 
-                printf( "Dumping abstract query\n" );
-                _abstractQuery.dump();
-                _abstractQuery.dumpSolution();
+                // printf( "Dumping abstract query\n" );
+                // _abstractQuery.dump();
+                // _abstractQuery.dumpSolution();
 
-                extractSatAssignment();
+                extractSatAssignment( inputQuery );
                 break;
             }
             else
@@ -71,8 +71,8 @@ void AbstractionManager::storeOriginalQuery( InputQuery &inputQuery )
 {
     _originalQuery = inputQuery;
 
-    printf( "Dumping original query\n" );
-    _originalQuery.dump();
+    // printf( "Dumping original query\n" );
+    // _originalQuery.dump();
 
     for ( const auto &plConstraint : _originalQuery.getPiecewiseLinearConstraints() )
     {
@@ -135,10 +135,10 @@ bool AbstractionManager::checkSatisfiability()
     return true;
 }
 
-void AbstractionManager::extractSatAssignment()
+void AbstractionManager::extractSatAssignment( InputQuery &inputQuery )
 {
-    printf( "extractSatAssignment not yet supported!\n" );
-    exit( 1 );
+    for ( unsigned i = 0; i < inputQuery.getNumberOfVariables(); ++i )
+        inputQuery.setSolutionValue( i, _abstractQuery.getSolutionValue( i ) );
 }
 
 bool AbstractionManager::spurious()
@@ -153,10 +153,12 @@ bool AbstractionManager::spurious()
         _copyOfOriginalQuery.setUpperBound( input, _abstractQuery.getSolutionValue( input ) );
     }
 
+    // _copyOfOriginalQuery.dump();
+
     // Use the preprocessor to propagate these values through the network
     Preprocessor preprocessor;
     _copyOfOriginalQuery = preprocessor.preprocess( _copyOfOriginalQuery, true );
-    _copyOfOriginalQuery.dump();
+    // _copyOfOriginalQuery.dump();
 
     // Make sure that a value has been calculated for every variable
     for ( unsigned i = 0; i < _originalQuery.getNumberOfVariables(); ++i )

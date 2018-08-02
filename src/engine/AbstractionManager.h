@@ -32,7 +32,7 @@ private:
     bool checkSatisfiability();
     bool spurious();
     void refineAbstraction();
-    void extractSatAssignment();
+    void extractSatAssignment( InputQuery &inputQuery );
 
     void log( const String &message ) const;
 };

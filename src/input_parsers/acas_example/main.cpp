@@ -73,8 +73,6 @@ int main()
 
             bool result = am.run( inputQuery );
 
-            return 0;
-
             if ( !result )
             {
                 printf( "UNSAT!\n" );
