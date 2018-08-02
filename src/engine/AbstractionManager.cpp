@@ -48,6 +48,10 @@ bool AbstractionManager::run( InputQuery &inputQuery )
                 // A satisfying assignment
                 log( "checkSatisfiability returned SAT, and the assignment is valid - we are done " );
 
+                printf( "Number of restored constraints in last query: %u / %u\n",
+                _abstractQuery.getPiecewiseLinearConstraints().size(),
+                _originalQuery.getPiecewiseLinearConstraints().size() );
+
                 // printf( "Dumping abstract query\n" );
                 // _abstractQuery.dump();
                 // _abstractQuery.dumpSolution();
