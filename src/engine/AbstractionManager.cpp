@@ -153,11 +153,16 @@ bool AbstractionManager::spurious()
         _copyOfOriginalQuery.setUpperBound( input, _abstractQuery.getSolutionValue( input ) );
     }
 
+
     // _copyOfOriginalQuery.dump();
 
     // Use the preprocessor to propagate these values through the network
+    // printf( "!!! Spurious(): starting to preprocess fixed-assignment query\n\n" );
+    // _copyOfOriginalQuery.dump();
+
     Preprocessor preprocessor;
     _copyOfOriginalQuery = preprocessor.preprocess( _copyOfOriginalQuery, true );
+    // printf( "!!! Spurious(): done preprocessing fixed-assignment query\n\n" );
     // _copyOfOriginalQuery.dump();
 
     // Make sure that a value has been calculated for every variable

@@ -111,6 +111,22 @@ bool Preprocessor::processEquations()
 
     for ( const auto &equation : _preprocessed.getEquations() )
     {
+        bool allFixed = true;
+
+        for ( const auto &addend : equation._addends )
+        {
+            unsigned var = addend._variable;
+            if ( !FloatUtils::areEqual( _preprocessed.getLowerBound( var ),
+                                        _preprocessed.getUpperBound( var ) ) )
+            {
+                allFixed = false;
+                break;
+            }
+        }
+
+        if ( allFixed )
+            continue;
+
         // The equation is of the form sum (ci * xi) - b ? 0
         Equation::EquationType type = equation._type;
 
@@ -299,6 +315,27 @@ bool Preprocessor::processEquations()
 
             if ( FloatUtils::gt( _preprocessed.getLowerBound( xi ), _preprocessed.getUpperBound( xi ) ) )
             {
+                // printf( "Throwing InfeasibleQueryException. Variable = x%u, Lb = %.15lf, Ub = %.15lf\n",
+                //         xi,
+                //         _preprocessed.getLowerBound( xi ),
+                //         _preprocessed.getUpperBound( xi ) );
+                // equation.dump();
+
+                // printf( "Dumping bounds of vars in equation:\n" );
+
+                // for ( const auto &addend : equation._addends )
+                // {
+                //     unsigned var = addend._variable;
+                //     printf( "\tVar: %u, range: [%.15lf, %.15lf], fixed = %s\n",
+                //             var,
+                //             _preprocessed.getLowerBound( var ),
+                //             _preprocessed.getUpperBound( var ),
+                //             FloatUtils::areEqual( _preprocessed.getLowerBound( var ),
+                //                                   _preprocessed.getUpperBound( var ) ) ? "YES" : "NO" );
+
+                // }
+                // printf( "\n" );
+
                 delete[] ciTimesLb;
                 delete[] ciTimesUb;
                 delete[] ciSign;

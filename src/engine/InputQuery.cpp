@@ -264,13 +264,17 @@ void InputQuery::dump() const
     {
         printf( "\t\tx%u: [", i );
 
-        if ( _lowerBounds[i] == FloatUtils::negativeInfinity() )
+        if ( !_lowerBounds.exists( i ) )
+            printf( "-/-, " );
+        else if ( _lowerBounds[i] == FloatUtils::negativeInfinity() )
             printf( "-INFTY, " );
         else
             printf( "%5.3lf, ", _lowerBounds[i] );
 
-        if ( _upperBounds[i] == FloatUtils::infinity() )
-            printf( "+INFTY] " );
+        if ( !_upperBounds.exists( i ) )
+            printf( "-/-] " );
+        else if ( _upperBounds[i] == FloatUtils::infinity() )
+            printf( "+INFTY]" );
         else
             printf( "%5.3lf]", _upperBounds[i] );
 
