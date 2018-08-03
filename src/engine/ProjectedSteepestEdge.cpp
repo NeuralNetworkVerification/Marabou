@@ -107,22 +107,22 @@ void ProjectedSteepestEdgeRule::resetReferenceSpace( const ITableau &tableau )
         _statistics->pseIncNumResetReferenceSpace();
 }
 
-bool ProjectedSteepestEdgeRule::select( ITableau &tableau, const Set<unsigned> &excluded )
+bool ProjectedSteepestEdgeRule::select( ITableau &tableau,
+                                        const List<unsigned> &candidates,
+                                        const Set<unsigned> &excluded )
 {
-    // Obtain the list of eligible non-basic variables to consider
-    List<unsigned> candidates;
-    tableau.getEntryCandidates( candidates );
+    List<unsigned> remainingCandidates = candidates;
 
-    List<unsigned>::iterator it = candidates.begin();
-    while ( it != candidates.end() )
+    List<unsigned>::iterator it = remainingCandidates.begin();
+    while ( it != remainingCandidates.end() )
     {
         if ( excluded.exists( *it ) )
-            it = candidates.erase( it );
+            it = remainingCandidates.erase( it );
         else
             ++it;
     }
 
-    if ( candidates.empty() )
+    if ( remainingCandidates.empty() )
     {
         log( "No candidates, select returning false" );
         return false;
@@ -142,22 +142,22 @@ bool ProjectedSteepestEdgeRule::select( ITableau &tableau, const Set<unsigned> &
       is maximal.
     */
 
-    it = candidates.begin();
+    it = remainingCandidates.begin();
     unsigned bestCandidate = *it;
     double gammaValue = _gamma[*it];
     double bestValue =
-        !FloatUtils::isPositive( gammaValue ) ? 0 : ( costFunction[*it] * costFunction[*it] ) / gammaValue;
+        ( gammaValue < DBL_EPSILON ) ? 0 : ( costFunction[*it] * costFunction[*it] ) / gammaValue;
 
     ++it;
 
-    while ( it != candidates.end() )
+    while ( it != remainingCandidates.end() )
     {
         unsigned contender = *it;
         gammaValue = _gamma[*it];
         double contenderValue =
-            !FloatUtils::isPositive( gammaValue ) ? 0 : ( costFunction[*it] * costFunction[*it] ) / gammaValue;
+            ( gammaValue < DBL_EPSILON ) ? 0 : ( costFunction[*it] * costFunction[*it] ) / gammaValue;
 
-        if ( FloatUtils::gt( contenderValue, bestValue ) )
+        if ( contenderValue > bestValue )
         {
             bestCandidate = contender;
             bestValue = contenderValue;
@@ -225,7 +225,8 @@ void ProjectedSteepestEdgeRule::prePivotHook( const ITableau &tableau, bool fake
         if ( i == enteringIndex )
             continue;
 
-        if ( FloatUtils::isZero( pivotRow[i], 1e-9 ) )
+        if ( ( -GlobalConfiguration::PSE_GAMMA_UPDATE_TOLERANCE < pivotRow[i] ) &&
+             ( pivotRow[i] < +GlobalConfiguration::PSE_GAMMA_UPDATE_TOLERANCE ) )
             continue;
 
         r = pivotRow[i] / -changeColumn[leavingIndex];
@@ -243,7 +244,7 @@ void ProjectedSteepestEdgeRule::prePivotHook( const ITableau &tableau, bool fake
         t1 = _gamma[i] + r * ( r * accurateGamma + s + s );
         t2 = ( ( _referenceSpace[nonBasic] ? 1.0 : 0.0 ) +
                ( ( _referenceSpace[entering] ? 1.0 : 0.0 ) * r * r ) );
-        _gamma[i] = FloatUtils::max( t1, t2 );
+        _gamma[i] = ( t1 > t2 ? t1 : t2 );
     }
 
     log( "PrePivotHook done" );
@@ -290,7 +291,7 @@ void ProjectedSteepestEdgeRule::postPivotHook( const ITableau &tableau, bool fak
     }
 
     // If the error is too great, reset the reference space.
-    if ( FloatUtils::gt( _errorInGamma, GlobalConfiguration::PSE_GAMMA_ERROR_THRESHOLD ) )
+    if ( _errorInGamma > GlobalConfiguration::PSE_GAMMA_ERROR_THRESHOLD )
     {
         log( Stringf( "PostPivotHook reseting ref space (degradation). Error = %.15lf", _errorInGamma ) );
         resetReferenceSpace( tableau );

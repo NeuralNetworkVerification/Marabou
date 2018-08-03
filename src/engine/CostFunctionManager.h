@@ -63,6 +63,17 @@ public:
                                        const double *changeColumn );
 
     /*
+      Return the basic cost of a basic variable (by index)
+    */
+    double getBasicCost( unsigned basicIndex ) const;
+
+    /*
+      Check whether the basic costs are accurate with respect to the current assignment.
+      Adjust them and recompute the reduced costs if they are not.
+    */
+    void adjustBasicCostAccuracy();
+
+    /*
       For debugging purposes: dump the cost function.
     */
     void dumpCostFunction() const;

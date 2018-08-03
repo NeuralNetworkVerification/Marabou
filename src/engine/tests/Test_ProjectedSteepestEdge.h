@@ -56,12 +56,13 @@ public:
         // Next, we're going to ask pse to pick an entering variable.
         // All variables are eligible, none are excluded
         Set<unsigned> excluded;
-        tableau.mockCandidates = { 0, 1, 2 };
+
+        List<unsigned> candidates = { 0, 1, 2 };
         double costFunction[] = { -5.0, -3.0, -7.0 };
 
         memcpy( tableau.nextCostFunction, costFunction, sizeof(costFunction) );
 
-        TS_ASSERT_THROWS_NOTHING( pse.select( tableau, excluded ) );
+        TS_ASSERT_THROWS_NOTHING( pse.select( tableau, candidates, excluded ) );
 
         // The largest cost^2/gamma belongs to variable #2, so it should enter
         TS_ASSERT_EQUALS( tableau.mockEnteringVariable, 2U );
@@ -80,9 +81,11 @@ public:
             TS_ASSERT_EQUALS( pse.getGamma( i ), 1.0 );
 
         // Second iteration is another fake pivot, with variable #0 hopping to opposite bound.
-        tableau.mockCandidates = { 0, 1 };
+        candidates.clear();
+        candidates.append( 0 );
+        candidates.append( 1 );
 
-        TS_ASSERT_THROWS_NOTHING( pse.select( tableau, excluded ) );
+        TS_ASSERT_THROWS_NOTHING( pse.select( tableau, candidates, excluded ) );
         TS_ASSERT_EQUALS( tableau.mockEnteringVariable, 0U );
 
         tableau.mockLeavingVariable = 2;
@@ -95,9 +98,10 @@ public:
             TS_ASSERT_EQUALS( pse.getGamma( i ), 1.0 );
 
         // The third iteration has a real pivot.
-        tableau.mockCandidates = { 1 };
+        candidates.clear();
+        candidates.append( 1 );
 
-        TS_ASSERT_THROWS_NOTHING( pse.select( tableau, excluded ) );
+        TS_ASSERT_THROWS_NOTHING( pse.select( tableau, candidates, excluded ) );
         TS_ASSERT_EQUALS( tableau.mockEnteringVariable, 1U );
 
         // The entering variable is 1 (index 1), leaving variable is 3 (index 0)
@@ -147,11 +151,14 @@ public:
         TS_ASSERT( FloatUtils::areEqual( pse.getGamma( 2 ), 2.0 ) );
 
         // Fourth iteration, also with a real pivot
-        tableau.mockCandidates = { 0, 1 };
+        candidates.clear();
+        candidates.append( 0 );
+        candidates.append( 1 );
+
         costFunction[0] = 4.0; costFunction[1] = -2.0; costFunction[2] = -4.0;
         memcpy( tableau.nextCostFunction, costFunction, sizeof(costFunction) );
 
-        TS_ASSERT_THROWS_NOTHING( pse.select( tableau, excluded ) );
+        TS_ASSERT_THROWS_NOTHING( pse.select( tableau, candidates, excluded ) );
         TS_ASSERT_EQUALS( tableau.mockEnteringVariable, 1U );
 
         // The entering variable is 3 (index 1), leaving variable is 4 (index 1)
@@ -193,6 +200,11 @@ public:
         TS_ASSERT( FloatUtils::areEqual( pse.getGamma( 0 ), 2.0 ) );
         TS_ASSERT( FloatUtils::areEqual( pse.getGamma( 1 ), 0.25 ) );
         TS_ASSERT( FloatUtils::areEqual( pse.getGamma( 2 ), 10.0 ) );
+    }
+
+    void test_todo()
+    {
+        TS_TRACE( "Move 'excluded' computation out to the Engine instead of repeating it in every invocation of PSE.select()" );
     }
 };
 

@@ -48,9 +48,8 @@ public:
 
         Set<unsigned> excluded;
         List<unsigned> candidates;
-        tableau->mockCandidates = candidates;
 
-        TS_ASSERT( !dantzigsRule.select( *tableau, excluded ) );
+        TS_ASSERT( !dantzigsRule.select( *tableau, candidates, excluded ) );
 
         tableau->setDimensions( 10, 100 );
 
@@ -58,8 +57,6 @@ public:
         candidates.append( 3 );
         candidates.append( 10 );
         candidates.append( 51 );
-
-        tableau->mockCandidates = candidates;
 
         tableau->nextCostFunction[2] = -5;
         tableau->nextCostFunction[3] = 7;
@@ -71,19 +68,17 @@ public:
         tableau->nextCostFunction[25] = -1202;
         tableau->nextCostFunction[33] = 10;
 
-        TS_ASSERT( dantzigsRule.select( *tableau, excluded ) );
+        TS_ASSERT( dantzigsRule.select( *tableau, candidates, excluded ) );
         TS_ASSERT_EQUALS( tableau->mockEnteringVariable, 10U );
 
         excluded.insert( 10 );
-        TS_ASSERT( dantzigsRule.select( *tableau, excluded ) );
+        TS_ASSERT( dantzigsRule.select( *tableau, candidates, excluded ) );
         TS_ASSERT_EQUALS( tableau->mockEnteringVariable, 51U );
         excluded.clear();
 
         candidates.append( 25 );
 
-        tableau->mockCandidates = candidates;
-
-        TS_ASSERT( dantzigsRule.select( *tableau, excluded ) );
+        TS_ASSERT( dantzigsRule.select( *tableau, candidates, excluded ) );
         TS_ASSERT_EQUALS( tableau->mockEnteringVariable, 25U );
     }
 };

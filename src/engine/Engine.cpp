@@ -276,6 +276,8 @@ void Engine::performSimplexStep()
 
     if ( _costFunctionManager->costFunctionInvalid() )
         _costFunctionManager->computeCoreCostFunction();
+    else
+        _costFunctionManager->adjustBasicCostAccuracy();
 
     DEBUG({
             // Since we're performing a simplex step, there are out-of-bounds variables.
@@ -306,20 +308,26 @@ void Engine::performSimplexStep()
             }
         });
 
+    // Obtain all eligible entering varaibles
+    List<unsigned> enteringVariableCandidates;
+    _tableau->getEntryCandidates( enteringVariableCandidates );
+
+    unsigned bestLeaving = 0;
+    double bestChangeRatio = 0.0;
+    Set<unsigned> excludedEnteringVariables;
     bool haveCandidate = false;
     unsigned bestEntering = 0;
     double bestPivotEntry = 0.0;
     unsigned tries = GlobalConfiguration::MAX_SIMPLEX_PIVOT_SEARCH_ITERATIONS;
-    Set<unsigned> excludedEnteringVariables;
-    unsigned bestLeaving = 0;
-    double bestChangeRatio = 0.0;
 
     while ( tries > 0 )
     {
         --tries;
 
         // Attempt to pick the best entering variable from the available candidates
-        if ( !_activeEntryStrategy->select( _tableau, excludedEnteringVariables ) )
+        if ( !_activeEntryStrategy->select( _tableau,
+                                            enteringVariableCandidates,
+                                            excludedEnteringVariables ) )
         {
             // No additional candidates can be found.
             break;
@@ -349,7 +357,7 @@ void Engine::performSimplexStep()
         // Is the newly found pivot better than the stored one?
         unsigned leavingIndex = _tableau->getLeavingVariableIndex();
         double pivotEntry = FloatUtils::abs( _tableau->getChangeColumn()[leavingIndex] );
-        if ( FloatUtils::gt( pivotEntry, bestPivotEntry ) )
+        if ( pivotEntry > bestPivotEntry )
         {
             bestEntering = _tableau->getEnteringVariableIndex();
             bestPivotEntry = pivotEntry;
@@ -360,7 +368,7 @@ void Engine::performSimplexStep()
 
         // If the pivot is greater than the sought-after threshold, we
         // are done.
-        if ( FloatUtils::gte( bestPivotEntry, GlobalConfiguration::ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD ) )
+        if ( bestPivotEntry >= GlobalConfiguration::ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD )
             break;
         else
             _statistics.incNumSimplexPivotSelectionsIgnoredForStability();
@@ -405,8 +413,21 @@ void Engine::performSimplexStep()
     bool fakePivot = _tableau->performingFakePivot();
 
     if ( !fakePivot &&
-         FloatUtils::lt( bestPivotEntry, GlobalConfiguration::ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD ) )
+         bestPivotEntry < GlobalConfiguration::ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD )
+    {
+        /*
+          Despite our efforts, we are stuck with a small pivot. If basis factorization
+          isn't fresh, refresh it and terminate this step - perhaps in the next iteration
+          a better pivot will be found
+        */
+        if ( !_tableau->basisMatrixAvailable() )
+        {
+            _tableau->refreshBasisFactorization();
+            return;
+        }
+
         _statistics.incNumSimplexUnstablePivots();
+    }
 
     if ( !fakePivot )
     {
