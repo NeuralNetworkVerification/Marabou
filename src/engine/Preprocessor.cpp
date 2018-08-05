@@ -49,6 +49,7 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
       Until saturation:
         1. Tighten bounds using equations
         2. Tighten bounds using pl constraints
+        3. Unify identical variables
 
       Then, eliminate fixed variables.
     */
@@ -109,29 +110,16 @@ bool Preprocessor::processEquations()
 
     bool tighterBoundFound = false;
 
-    for ( const auto &equation : _preprocessed.getEquations() )
+    List<Equation> &equations( _preprocessed.getEquations() );
+    List<Equation>::iterator equation = equations.begin();
+
+    while ( equation != equations.end() )
     {
-        bool allFixed = true;
-
-        for ( const auto &addend : equation._addends )
-        {
-            unsigned var = addend._variable;
-            if ( !FloatUtils::areEqual( _preprocessed.getLowerBound( var ),
-                                        _preprocessed.getUpperBound( var ) ) )
-            {
-                allFixed = false;
-                break;
-            }
-        }
-
-        if ( allFixed )
-            continue;
-
         // The equation is of the form sum (ci * xi) - b ? 0
-        Equation::EquationType type = equation._type;
+        Equation::EquationType type = equation->_type;
 
-        unsigned maxVar = equation._addends.begin()->_variable;
-        for ( const auto &addend : equation._addends )
+        unsigned maxVar = equation->_addends.begin()->_variable;
+        for ( const auto &addend : equation->_addends )
         {
             if ( addend._variable > maxVar )
                 maxVar = addend._variable;
@@ -157,9 +145,9 @@ bool Preprocessor::processEquations()
 
         // The first goal is to compute the LB and UB of: sum (ci * xi) - b
         // For this we first identify unbounded variables
-        double auxLb = -equation._scalar;
-        double auxUb = -equation._scalar;
-        for ( const auto &addend : equation._addends )
+        double auxLb = -equation->_scalar;
+        double auxUb = -equation->_scalar;
+        for ( const auto &addend : equation->_addends )
         {
             ci = addend._coefficient;
             xi = addend._variable;
@@ -187,7 +175,7 @@ bool Preprocessor::processEquations()
             }
             else
             {
-                if ( FloatUtils::isPositive( ci ) )
+                if ( ci > 0 )
                     excludedFromLB.insert( xi );
                 else
                     excludedFromUB.insert( xi );
@@ -203,7 +191,7 @@ bool Preprocessor::processEquations()
             }
             else
             {
-                if ( FloatUtils::isPositive( ci ) )
+                if ( ci > 0 )
                     excludedFromUB.insert( xi );
                 else
                     excludedFromLB.insert( xi );
@@ -211,7 +199,7 @@ bool Preprocessor::processEquations()
         }
 
         // Now, go over each addend in sum (ci * xi) - b ? 0, and see what can be done
-        for ( const auto &addend : equation._addends )
+        for ( const auto &addend : equation->_addends )
         {
             ci = addend._coefficient;
             xi = addend._variable;
@@ -282,7 +270,7 @@ bool Preprocessor::processEquations()
 
                 lowerBound /= -ci;
 
-                if ( FloatUtils::gt( lowerBound, _preprocessed.getLowerBound( xi ) ) )
+                if ( lowerBound > _preprocessed.getLowerBound( xi ) )
                 {
                     tighterBoundFound = true;
                     _preprocessed.setLowerBound( xi, lowerBound );
@@ -306,35 +294,35 @@ bool Preprocessor::processEquations()
 
                 upperBound /= -ci;
 
-                if ( FloatUtils::lt( upperBound, _preprocessed.getUpperBound( xi ) ) )
+                if ( upperBound < _preprocessed.getUpperBound( xi ) )
                 {
                     tighterBoundFound = true;
                     _preprocessed.setUpperBound( xi, upperBound );
                 }
             }
 
-            if ( FloatUtils::gt( _preprocessed.getLowerBound( xi ), _preprocessed.getUpperBound( xi ) ) )
+            if ( _preprocessed.getLowerBound( xi ) > _preprocessed.getUpperBound( xi ) )
             {
-                // printf( "Throwing InfeasibleQueryException. Variable = x%u, Lb = %.15lf, Ub = %.15lf\n",
-                //         xi,
-                //         _preprocessed.getLowerBound( xi ),
-                //         _preprocessed.getUpperBound( xi ) );
-                // equation.dump();
+                printf( "Throwing InfeasibleQueryException. Variable = x%u, Lb = %.15lf, Ub = %.15lf\n",
+                        xi,
+                        _preprocessed.getLowerBound( xi ),
+                        _preprocessed.getUpperBound( xi ) );
+                equation->dump();
 
-                // printf( "Dumping bounds of vars in equation:\n" );
+                printf( "Dumping bounds of vars in equation:\n" );
 
-                // for ( const auto &addend : equation._addends )
-                // {
-                //     unsigned var = addend._variable;
-                //     printf( "\tVar: %u, range: [%.15lf, %.15lf], fixed = %s\n",
-                //             var,
-                //             _preprocessed.getLowerBound( var ),
-                //             _preprocessed.getUpperBound( var ),
-                //             FloatUtils::areEqual( _preprocessed.getLowerBound( var ),
-                //                                   _preprocessed.getUpperBound( var ) ) ? "YES" : "NO" );
+                for ( const auto &addend : equation->_addends )
+                {
+                    unsigned var = addend._variable;
+                    printf( "\tVar: %u, range: [%.15lf, %.15lf], fixed = %s\n",
+                            var,
+                            _preprocessed.getLowerBound( var ),
+                            _preprocessed.getUpperBound( var ),
+                            FloatUtils::areEqual( _preprocessed.getLowerBound( var ),
+                                                  _preprocessed.getUpperBound( var ) ) ? "YES" : "NO" );
 
-                // }
-                // printf( "\n" );
+                }
+                printf( "\n" );
 
                 delete[] ciTimesLb;
                 delete[] ciTimesUb;
@@ -342,11 +330,53 @@ bool Preprocessor::processEquations()
 
                 throw InfeasibleQueryException();
             }
+
+            // If bounds are almost equal, make them equal (numerical stability issue)
+            if ( FloatUtils::areEqual( _preprocessed.getLowerBound( xi ),
+                                       _preprocessed.getUpperBound( xi ) ) )
+                _preprocessed.setUpperBound( xi, _preprocessed.getLowerBound( xi ) );
+
         }
 
         delete[] ciTimesLb;
         delete[] ciTimesUb;
         delete[] ciSign;
+
+        /*
+          When finished processing the equation, check if all variables are fixed.
+          If so, if the equation holds, it can be removed.
+          Otherwise, the query is infeasible.
+        */
+
+        bool allFixed = true;
+        for ( const auto &addend : equation->_addends )
+        {
+            unsigned var = addend._variable;
+            if ( !FloatUtils::areEqual( _preprocessed.getLowerBound( var ),
+                                        _preprocessed.getUpperBound( var ) ) )
+            {
+                allFixed = false;
+                break;
+            }
+        }
+
+        if ( !allFixed )
+            ++equation;
+        else
+        {
+            double sum = 0;
+            for ( const auto &addend : equation->_addends )
+                sum += addend._coefficient * _preprocessed.getLowerBound( addend._variable );
+
+            if ( FloatUtils::areDisequal( sum, equation->_scalar ) )
+                throw InfeasibleQueryException();
+
+            printf( "PP: process equations: removing equation\n" );
+            equation->dump();
+            _preprocessed.dump();
+
+            equation = equations.erase( equation );
+        }
     }
 
     return tighterBoundFound;
@@ -390,47 +420,52 @@ bool Preprocessor::processConstraints()
 
 bool Preprocessor::processIdenticalVariables()
 {
-    // Find distinct v1 and v2 which are exactly equal to each other
-    unsigned v1 = 0, v2 = 0;
-    Equation equToRemove;
-    for ( const auto &equation : _preprocessed.getEquations() )
-    {
-        if ( equation._addends.size() != 2 || equation._type != Equation::EQ )
-            continue;
+    List<Equation> &equations( _preprocessed.getEquations() );
+    List<Equation>::iterator equation = equations.begin();
 
-        auto term1 = equation._addends.front();
-        auto term2 = equation._addends.back();
+    bool found = false;
+    while ( equation != equations.end() )
+    {
+        // We are only looking for equations of type c(v1 - v2) = 0
+        if ( equation->_addends.size() != 2 || equation->_type != Equation::EQ )
+        {
+            ++equation;
+            continue;
+        }
+
+        Equation::Addend term1 = equation->_addends.front();
+        Equation::Addend term2 = equation->_addends.back();
 
         if ( FloatUtils::areDisequal( term1._coefficient, -term2._coefficient ) ||
-             !FloatUtils::isZero( equation._scalar ) )
+             !FloatUtils::isZero( equation->_scalar ) )
+        {
+            ++equation;
             continue;
+        }
 
         ASSERT( term1._variable != term2._variable );
-        if ( term1._variable == term2._variable )
-            continue;
 
-        v1 = term1._variable;
-        v2 = term2._variable;
-        equToRemove = equation;
-        break;
+        // The equation matches the pattern, process and remove it
+        found = true;
+        unsigned v1 = term1._variable;
+        unsigned v2 = term2._variable;
+
+        double bestLowerBound = FloatUtils::max( _preprocessed.getLowerBound( v1 ),
+                                                 _preprocessed.getLowerBound( v2 ) );
+        double bestUpperBound = FloatUtils::min( _preprocessed.getUpperBound( v1 ),
+                                                 _preprocessed.getUpperBound( v2 ) );
+
+        equation = equations.erase( equation );
+
+        _preprocessed.setLowerBound( v2, bestLowerBound );
+        _preprocessed.setUpperBound( v2, bestUpperBound );
+
+        _preprocessed.mergeIdenticalVariables( v1, v2 );
+
+        _mergedVariables[v1] = v2;
     }
 
-    if ( v1 == v2 )
-        return false;
-
-    // Found v1 and v2 which are identical
-    _preprocessed.removeEquation( equToRemove );
-    _preprocessed.mergeIdenticalVariables( v1, v2 );
-
-    double bestLowerBound = FloatUtils::max( _preprocessed.getLowerBound( v1 ),
-                                             _preprocessed.getLowerBound( v2 ) );
-    double bestUpperBound = FloatUtils::min( _preprocessed.getUpperBound( v1 ),
-                                             _preprocessed.getUpperBound( v2 ) );
-    _preprocessed.setLowerBound( v2, bestLowerBound );
-    _preprocessed.setUpperBound( v2, bestUpperBound );
-
-    _mergedVariables[v1] = v2;
-    return true;
+    return found;
 }
 
 void Preprocessor::eliminateVariables()

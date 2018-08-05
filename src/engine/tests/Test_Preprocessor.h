@@ -372,7 +372,7 @@ public:
         equation1.setScalar( 10 );
         inputQuery.addEquation( equation1 );
 
-		// x2 + x3 = 6
+		// x7 + x8 = 12
 		Equation equation2;
 		equation2.addAddend( 1, 7 );
 		equation2.addAddend( 1, 8 );
@@ -449,10 +449,10 @@ public:
     {
         InputQuery inputQuery;
 
-        inputQuery.setNumberOfVariables( 3 );
-        for ( unsigned i = 0; i < 3; ++i )
+        inputQuery.setNumberOfVariables( 4 );
+        for ( unsigned i = 0; i < 4; ++i )
         {
-            inputQuery.setLowerBound( i, 0 );
+            inputQuery.setLowerBound( i, -3 );
             inputQuery.setUpperBound( i, 5 );
         }
 
@@ -471,15 +471,15 @@ public:
         equation2.setScalar( 1 );
         inputQuery.addEquation( equation2 );
 
-        ReluConstraint *relu1 = new ReluConstraint( 0, 2 );
-        ReluConstraint *relu2 = new ReluConstraint( 1, 2 );
+        ReluConstraint *relu1 = new ReluConstraint( 1, 3 );
 
         inputQuery.addPiecewiseLinearConstraint( relu1 );
-        inputQuery.addPiecewiseLinearConstraint( relu2 );
 
         InputQuery processed = Preprocessor().preprocess( inputQuery, false );
 
         // Check that equation has been updated as needed
+        TS_ASSERT_EQUALS( processed.getEquations().size(), 1U );
+
         Equation preprocessedEquation = *processed.getEquations().begin();
         List<Equation::Addend>::iterator addend = preprocessedEquation._addends.begin();
         TS_ASSERT_EQUALS( addend->_coefficient, 2.0 );
