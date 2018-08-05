@@ -52,6 +52,8 @@ public:
     */
     unsigned getNewIndex( unsigned oldIndex ) const;
 
+    void numericalStability();
+
 private:
     /*
       Transform all equations of type GE or LE to type EQ.

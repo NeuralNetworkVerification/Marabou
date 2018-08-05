@@ -57,9 +57,19 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     bool continueTightening = true;
     while ( continueTightening )
     {
+        numericalStability();
+
+        // _preprocessed.dump();
+
+        // printf( "\n\n*** PP: starting PP equations\n" );
         continueTightening = processEquations();
+        // printf( "\n\n*** PP: DONE PP equations\n" );
+        numericalStability();
+        // printf( "\n\n*** PP: starting PP constraints\n" );
         continueTightening = processConstraints() || continueTightening;
-        continueTightening = processIdenticalVariables() || continueTightening;
+        // printf( "\n\n*** PP: DONE PP constraints\n" );
+        numericalStability();
+        //        continueTightening = processIdenticalVariables() || continueTightening;
 
         if ( _statistics )
             _statistics->ppIncNumTighteningIterations();
@@ -201,6 +211,9 @@ bool Preprocessor::processEquations()
         // Now, go over each addend in sum (ci * xi) - b ? 0, and see what can be done
         for ( const auto &addend : equation->_addends )
         {
+            // bool learnedLower = false;
+            // bool learnedUpper = false;
+
             ci = addend._coefficient;
             xi = addend._variable;
 
@@ -274,6 +287,8 @@ bool Preprocessor::processEquations()
                 {
                     tighterBoundFound = true;
                     _preprocessed.setLowerBound( xi, lowerBound );
+
+                    // learnedLower = true;
                 }
             }
 
@@ -298,10 +313,26 @@ bool Preprocessor::processEquations()
                 {
                     tighterBoundFound = true;
                     _preprocessed.setUpperBound( xi, upperBound );
+
+                    // learnedUpper = true;
                 }
             }
 
-            if ( _preprocessed.getLowerBound( xi ) > _preprocessed.getUpperBound( xi ) )
+
+            // if ( learnedUpper || learnedLower )
+            // {
+            //     if ( learnedUpper )
+            //         printf( "Learned lower: %.15lf\n", lowerBound );
+            //     if ( learnedLower )
+            //         printf( "Learned upper: %.15lf\n", upperBound );
+
+            //     if ( FloatUtils::areDisequal( lowerBound, upperBound ) )
+            //     {
+            //         printf( "Warning: DISEQUAL!\n" );
+            //     }
+            // }
+
+            if ( FloatUtils::gt( _preprocessed.getLowerBound( xi ), _preprocessed.getUpperBound( xi ), 1e-5 ) )
             {
                 printf( "Throwing InfeasibleQueryException. Variable = x%u, Lb = %.15lf, Ub = %.15lf\n",
                         xi,
@@ -330,12 +361,12 @@ bool Preprocessor::processEquations()
 
                 throw InfeasibleQueryException();
             }
+        }
 
-            // If bounds are almost equal, make them equal (numerical stability issue)
-            if ( FloatUtils::areEqual( _preprocessed.getLowerBound( xi ),
-                                       _preprocessed.getUpperBound( xi ) ) )
-                _preprocessed.setUpperBound( xi, _preprocessed.getLowerBound( xi ) );
-
+        if ( FloatUtils::areEqual( _preprocessed.getLowerBound( xi ),
+                                   _preprocessed.getUpperBound( xi ) ) )
+        {
+            _preprocessed.setUpperBound( xi, _preprocessed.getLowerBound( xi ) );
         }
 
         delete[] ciTimesLb;
@@ -361,19 +392,31 @@ bool Preprocessor::processEquations()
         }
 
         if ( !allFixed )
+        {
+            // printf( "NOT removing equation!\n" );
+            // equation->dump();
+
             ++equation;
+
+        }
         else
         {
             double sum = 0;
             for ( const auto &addend : equation->_addends )
                 sum += addend._coefficient * _preprocessed.getLowerBound( addend._variable );
 
-            if ( FloatUtils::areDisequal( sum, equation->_scalar ) )
-                throw InfeasibleQueryException();
+            if ( FloatUtils::areDisequal( sum, equation->_scalar, 1e-5 ) )
+            {
+                printf( "Error! Got sum = %.15lf, scalar = %.15lf, failing...\n",
+                        sum,
+                        equation->_scalar );
 
-            printf( "PP: process equations: removing equation\n" );
-            equation->dump();
-            _preprocessed.dump();
+                throw InfeasibleQueryException();
+            }
+
+            // printf( "PP: process equations: removing equation\n" );
+            // equation->dump();
+            // _preprocessed.dump();
 
             equation = equations.erase( equation );
         }
@@ -700,6 +743,56 @@ void Preprocessor::dumpAllBounds( const String &message )
     }
 
     printf( "\n" );
+}
+
+void Preprocessor::numericalStability()
+{
+    // If bounds are almost equal, make them equal (numerical stability issue)
+    for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
+    {
+        if ( FloatUtils::areEqual( _preprocessed.getLowerBound( i ),
+                                   _preprocessed.getUpperBound( i ),
+                                   1e-5 ) )
+            _preprocessed.setUpperBound( i, _preprocessed.getLowerBound( i ) );
+    }
+
+
+    List<Equation> &equations( _preprocessed.getEquations() );
+    List<Equation>::iterator equation = equations.begin();
+
+    while ( equation != equations.end() )
+    {
+        bool allFixed = true;
+        for ( const auto &addend : equation->_addends )
+        {
+            unsigned var = addend._variable;
+            if ( !FloatUtils::areEqual( _preprocessed.getLowerBound( var ),
+                                        _preprocessed.getUpperBound( var ) ) )
+            {
+                allFixed = false;
+                break;
+            }
+        }
+
+        if ( !allFixed )
+        {
+            ++equation;
+        }
+        else
+        {
+            double sum = 0;
+            for ( const auto &addend : equation->_addends )
+                sum += addend._coefficient * _preprocessed.getLowerBound( addend._variable );
+
+            if ( FloatUtils::areDisequal( sum, equation->_scalar ) )
+                throw InfeasibleQueryException();
+
+            // printf( "PP: numerical stability removing equation\n" );
+            // equation->dump();
+
+            equation = equations.erase( equation );
+        }
+    }
 }
 
 //
