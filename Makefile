@@ -2,6 +2,7 @@ ROOT_DIR = .
 
 SUBDIRS += \
 	src \
+	experiments \
 
 all:
 	@echo Done

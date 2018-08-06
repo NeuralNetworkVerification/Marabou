@@ -1,0 +1,69 @@
+Engine::solve: SAT assignment found
+
+13:25:53 Statistics update:
+	--- Time Statistics ---
+	Total time elapsed: 2504871 milli (00:41:44)
+		Main loop: 2503506 milli (00:41:43)
+		Preprocessing time: 370 milli (00:00:00)
+		Unknown: 995 milli (00:00:00)
+	Breakdown for main loop:
+		[61.08%] Simplex steps: 1529143 milli
+		[13.60%] Explicit-basis bound tightening: 340417 milli
+		[2.40%] Constraint-matrix bound tightening: 60153 milli
+		[1.67%] Degradation checking: 41826 milli
+		[0.00%] Precision restoration: 0 milli
+		[0.32%] Statistics handling: 7896 milli
+		[6.71%] Constraint-fixing steps: 167923 milli
+		[3.21%] Valid case splits: 80336 milli. Average per split: 0.29 milli
+		[2.78%] Applying stored bound-tightening: 69609 milli
+		[5.06%] SMT core: 126660 milli
+		[3.18%] Unaccounted for: 79537 milli
+	--- Preprocessor Statistics ---
+	Number of preprocessor bound-tightening loop iterations: 7
+	Number of eliminated variables: 2
+	Number of constraints removed due to variable elimination: 2
+	Number of equations removed due to variable elimination: 0
+	--- Engine Statistics ---
+	Number of main loop iterations: 1778328
+		1495849 iterations were simplex steps. Total time: 1529143 milli. Average: 1.02 milli.
+		272656 iterations were constraint-fixing steps. Total time: 167923 milli. Average: 0.62 milli
+	Number of active piecewise-linear constraints: 28 / 148
+		Constraints disabled by valid splits: 81. By SMT-originated splits: 39
+	Last reported degradation: 0.0000000000. Max degradation so far: 0.0000000000. Restorations so far: 0
+	Number of simplex pivots we attempted to skip because of instability: 61.
+	Unstable pivots performed anyway: 2
+	--- Tableau Statistics ---
+	Total number of pivots performed: 1541292
+		Real pivots: 1429310. Degenerate: 111982 (7.27%)
+		Degenerate pivots by request (e.g., to fix a PL constraint): 102381 (91.43%)
+		Average time per pivot: 0.19 milli
+	Total number of fake pivots performed: 41473
+	Total number of rows added: 7067. Number of merged columns: 21080
+	Current tableau dimensions: M = 158, N = 311
+	--- SMT Core Statistics ---
+	Total depth is 39. Total visited states: 15021. Number of splits: 7527. Number of pops: 7493
+	Max stack depth: 57
+	--- Bound Tightening Statistics ---
+	Number of tightened bounds: 3049046.
+		Number of rows examined by row tightener: 1438994. Consequent tightenings: 301183
+		Number of explicit basis matrices examined by row tightener: 23555. Consequent tightenings: 1932249
+		Number of bound tightening rounds on the entire constraint matrix: 2740. Consequent tightenings: 2411970
+		Number of bound notifications sent to PL constraints: 2868821. Tightenings proposed: 939690
+	--- Projected Steepest Edge Statistics ---
+	Number of iterations: 1480526.
+	Number of resets to reference space: 35703. Avg. iterations per reset: 41
+
+
+Query is sat! Extracting solution...
+Input[0] = -0.242508479067807
+Input[1] = -0.012163668139945
+Input[2] = 0.465092365790459
+Input[3] = -0.450875382706013
+Input[4] = -0.377371044025070
+Output[0] = 0.012616470253308
+Output[1] = 0.465958335918229
+Output[2] = 0.176359823637705
+Output[3] = -5.370708486228588
+Output[4] = -4.403996667906376
+
+Total error: 0.000000000000059
