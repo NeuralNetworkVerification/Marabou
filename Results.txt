@@ -1,0 +1,20 @@
+** Emacs, this is an -*-outline-*- file
+
+
+* Yes/no abstraction:
+- ReLUs abstracted as their aux equations, then restored if needed
+- Arbitrarily select a broken ReLU to restore
+
+Results (ACAS 1_1, no properties, increasing number of neurons):
+x/y means x out of y ReLU constraints had to be restored until a SAT
+answer was found
+
+- 5   / 5    ( 100% )
+- 34  / 50   ( 68%  )
+- 54  / 100  ( 54%  )
+- 121 / 150  ( 80%  )
+- 177 / 200  ( 88%  )
+- 286 / 300  ( 95%  )
+
+
+Avg: 80%
