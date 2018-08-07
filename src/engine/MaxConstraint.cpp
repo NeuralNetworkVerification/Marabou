@@ -266,6 +266,24 @@ void MaxConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
     // fLB cannot be smaller than maxElementLB
     if ( FloatUtils::lt( fLB, maxElementLB ) )
         tightenings.append( Tightening( _f, maxElementLB, Tightening::LB ) );
+    else if ( _elements.size() == 1 )
+    {
+        // Special case: there is only one element. In that case, the tighter lower
+        // bound (in this case, f's) wins.
+        tightenings.append( Tightening( *_elements.begin(), fLB, Tightening::LB ) );
+    }
+
+    // Hack:
+    // MaxConstraint currently does some 'illegal' internal bound propgation
+    // (in eliminateVariable()) due to bound notifications, and doesn't bother
+    // informing the outside world. To work around this, we report the tighest
+    // internal bounds known for f (knowing that these will be ignored by the
+    // outside world if tighter bounds are already known).
+
+    if ( _lowerBounds.exists( _f ) )
+        tightenings.append( Tightening( _f, _lowerBounds[_f], Tightening::LB ) );
+    if ( _upperBounds.exists( _f ) )
+        tightenings.append( Tightening( _f, _upperBounds[_f], Tightening::UB ) );
 
     // TODO: can we derive additional bounds?
 }
