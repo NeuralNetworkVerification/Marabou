@@ -57,7 +57,7 @@ public:
     /*
       Count the number of infinite bounds in the input query.
     */
-    unsigned countInfiniteBounds();
+    unsigned countInfiniteBounds() const;
 
     /*
       If two variables are known to be identical, merge them.

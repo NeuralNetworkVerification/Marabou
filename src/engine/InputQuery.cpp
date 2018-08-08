@@ -133,7 +133,7 @@ const List<PiecewiseLinearConstraint *> &InputQuery::getPiecewiseLinearConstrain
     return _plConstraints;
 }
 
-unsigned InputQuery::countInfiniteBounds()
+unsigned InputQuery::countInfiniteBounds() const
 {
     unsigned result = 0;
 

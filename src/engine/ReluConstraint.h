@@ -83,6 +83,8 @@ public:
       Check if the constraint's phase has been fixed.
     */
     bool phaseFixed() const;
+    bool phaseFixedToActive() const;
+    bool phaseFixedToInactive() const;
 
     /*
       If the constraint's phase has been fixed, get the (valid) case split.

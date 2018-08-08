@@ -484,6 +484,16 @@ unsigned ReluConstraint::getB() const
     return _b;
 }
 
+bool ReluConstraint::phaseFixedToActive() const
+{
+    return _phaseStatus == PhaseStatus::PHASE_ACTIVE;
+}
+
+bool ReluConstraint::phaseFixedToInactive() const
+{
+    return _phaseStatus == PhaseStatus::PHASE_INACTIVE;
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

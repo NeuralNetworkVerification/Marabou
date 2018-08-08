@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file Simulator.h
+/*! \file ActivationSignature.h
 ** \verbatim
 ** Top contributors (to current version):
 **   Guy Katz
@@ -10,24 +10,19 @@
 ** directory for licensing information.\endverbatim
 **/
 
-#ifndef __Simulator_h__
-#define __Simulator_h__
+#ifndef __ActivationSignature_h__
+#define __ActivationSignature_h__
 
-#include "ActivationSignature.h"
-#include "InputQuery.h"
+class PiecewiseLinearConstraint;
 
-class Simulator
+class ActivationSignature
 {
 public:
-    void processInputQuery( const InputQuery &inputQuery );
-    void log( const String &message ) const;
-    void collectOneSignature();
-
-    InputQuery _originalQuery;
-    List<ActivationSignature> _signatures;
+    //    Map<PiecewiseLinearConstraint *, bool> _signature;
+    List<bool> _signature;
 };
 
-#endif // __Simulator_h__
+#endif // __ActivationSignature_h__
 
 //
 // Local Variables:
