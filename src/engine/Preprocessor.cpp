@@ -58,18 +58,12 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     while ( continueTightening )
     {
         numericalStability();
-
-        // _preprocessed.dump();
-
-        // printf( "\n\n*** PP: starting PP equations\n" );
         continueTightening = processEquations();
-        // printf( "\n\n*** PP: DONE PP equations\n" );
         numericalStability();
-        // printf( "\n\n*** PP: starting PP constraints\n" );
         continueTightening = processConstraints() || continueTightening;
-        // printf( "\n\n*** PP: DONE PP constraints\n" );
         numericalStability();
-        //        continueTightening = processIdenticalVariables() || continueTightening;
+        continueTightening = processIdenticalVariables() || continueTightening;
+        numericalStability();
 
         if ( _statistics )
             _statistics->ppIncNumTighteningIterations();
@@ -338,22 +332,6 @@ bool Preprocessor::processEquations()
                         xi,
                         _preprocessed.getLowerBound( xi ),
                         _preprocessed.getUpperBound( xi ) );
-                equation->dump();
-
-                printf( "Dumping bounds of vars in equation:\n" );
-
-                for ( const auto &addend : equation->_addends )
-                {
-                    unsigned var = addend._variable;
-                    printf( "\tVar: %u, range: [%.15lf, %.15lf], fixed = %s\n",
-                            var,
-                            _preprocessed.getLowerBound( var ),
-                            _preprocessed.getUpperBound( var ),
-                            FloatUtils::areEqual( _preprocessed.getLowerBound( var ),
-                                                  _preprocessed.getUpperBound( var ) ) ? "YES" : "NO" );
-
-                }
-                printf( "\n" );
 
                 delete[] ciTimesLb;
                 delete[] ciTimesUb;

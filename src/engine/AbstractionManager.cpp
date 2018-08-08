@@ -14,23 +14,25 @@
 #include "Debug.h"
 #include "Engine.h"
 #include "FloatUtils.h"
+#include "InfeasibleQueryException.h"
 #include "InputQuery.h"
 #include "MStringf.h"
 #include "ReluConstraint.h"
+#include "Simulator.h"
 
 bool AbstractionManager::run( InputQuery &inputQuery )
 {
     storeOriginalQuery( inputQuery );
+    runSimulations();
     createInitialAbstraction();
 
     bool result = false;
     while ( true )
     {
-        log( "Main loop starting" );
-
-        printf( "Number of restored constraints: %u / %u\n",
-                _abstractQuery.getPiecewiseLinearConstraints().size(),
-                _originalQuery.getPiecewiseLinearConstraints().size() );
+        log( Stringf( "Main loop starting. "
+                      "Number of restored constraints: %u / %u",
+                      _abstractQuery.getPiecewiseLinearConstraints().size(),
+                      _originalQuery.getPiecewiseLinearConstraints().size() ) );
 
         // Run the solver
         result = checkSatisfiability();
@@ -157,17 +159,16 @@ bool AbstractionManager::spurious()
         _copyOfOriginalQuery.setUpperBound( input, _abstractQuery.getSolutionValue( input ) );
     }
 
-
-    // _copyOfOriginalQuery.dump();
-
     // Use the preprocessor to propagate these values through the network
-    // printf( "!!! Spurious(): starting to preprocess fixed-assignment query\n\n" );
-    // _copyOfOriginalQuery.dump();
-
     Preprocessor preprocessor;
-    _copyOfOriginalQuery = preprocessor.preprocess( _copyOfOriginalQuery, true );
-    // printf( "!!! Spurious(): done preprocessing fixed-assignment query\n\n" );
-    // _copyOfOriginalQuery.dump();
+    try
+    {
+        _copyOfOriginalQuery = preprocessor.preprocess( _copyOfOriginalQuery, true );
+    }
+    catch ( const InfeasibleQueryException & )
+    {
+        return true;
+    }
 
     // Make sure that a value has been calculated for every variable
     for ( unsigned i = 0; i < _originalQuery.getNumberOfVariables(); ++i )
@@ -219,6 +220,11 @@ void AbstractionManager::refineAbstraction()
 void AbstractionManager::log( const String &message ) const
 {
     printf( "AbstractionManager: %s\n", message.ascii() );
+}
+
+void AbstractionManager::runSimulations()
+{
+    _simulator.processInputQuery( _originalQuery );
 }
 
 //

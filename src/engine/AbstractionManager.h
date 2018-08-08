@@ -14,6 +14,7 @@
 #define __AbstractionManager_h__
 
 #include "InputQuery.h"
+#include "Simulator.h"
 
 class AbstractionManager
 {
@@ -27,12 +28,15 @@ private:
 
     Map<unsigned, double> _satAssignment;
 
+    Simulator _simulator;
+
     void storeOriginalQuery( InputQuery &inputQuery );
     void createInitialAbstraction();
     bool checkSatisfiability();
     bool spurious();
     void refineAbstraction();
     void extractSatAssignment( InputQuery &inputQuery );
+    void runSimulations();
 
     void log( const String &message ) const;
 };

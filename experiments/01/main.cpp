@@ -49,7 +49,7 @@ int main()
         for ( unsigned i = 0; i < 5; ++i )
             inputQuery.markInputVariable( i );
 
-        bool useAbstraction = false;
+        bool useAbstraction = true;
 
         if ( useAbstraction )
         {
