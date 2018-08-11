@@ -13,18 +13,13 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
 {
     if ( !File::exists( fileName ) )
     {
-        // Todo: add some informative error handling
+        printf("File %s not found.\n", fileName.ascii());
     }
 
     InputQuery inputQuery;
     File input = File( fileName );
     input.open( File::MODE_READ );
 
-    // Guy: previously there was a lot of strtok going on, but I
-    // think the purpose was just to trim the \n s? We have a trim()
-    // method for that
-
-    // Todo: check something about corrupt values?
     unsigned numVars = atoi( input.readLine().trim().ascii() );
     unsigned numBounds = atoi( input.readLine().trim().ascii() );
     unsigned numEquations = atoi( input.readLine().trim().ascii() );
@@ -39,7 +34,8 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
 
     // Bounds
     for ( unsigned i = 0; i < numBounds; ++i )
-    {
+    {   
+        printf("Bound: %u\n", i);
         // First bound
         String line = input.readLine();
         List<String> tokens = line.tokenize( "," );
@@ -56,6 +52,7 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         double ub = atof( it->ascii() );
         ++it;
 
+        printf("Var: %u, L: %f, U: %f\n", varToBound, lb, ub);
         inputQuery.setLowerBound( varToBound, lb );
         inputQuery.setUpperBound( varToBound, ub );
     }
@@ -63,6 +60,7 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
     // Equations
     for( unsigned i = 0; i< numEquations; ++i )
     {
+        printf("Equation: %u ", i);
         String line = input.readLine();
 
         List<String> tokens = line.tokenize( "," );
@@ -71,8 +69,10 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         // Skip equation number
         ++it;
         int eqType = atoi( it->ascii() );
+        printf("Type: %u ", eqType);
         ++it;
         double eqScalar = atof( it->ascii() );
+        printf("Scalar: %f\n", eqScalar);
 
         Equation::EquationType type = Equation::EQ;
 
@@ -98,19 +98,20 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         Equation equation( type );
         equation.setScalar( eqScalar );
 
-        while ( it != tokens.end() )
+
+        while ( ++it != tokens.end() )
         {
             int varNo = atoi( it->ascii() );
             ++it;
             ASSERT( it != tokens.end() );
             double coeff = atof( it->ascii() );
 
+            printf("\tVar_no: %i, Coeff: %f\n", varNo, coeff);
+
             equation.addAddend( coeff, varNo );
-
-            ++it;
         }
-
         inputQuery.addEquation( equation );
+
     }
 
     // Constraints
@@ -124,10 +125,17 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         // Skip constraint number
         ++it;
         String coType = *it;
-        ++it;
-        String serializeConstraint = *it;
+        String serializeConstraint;
+        while ( ++it != tokens.end() ) {
+            serializeConstraint += *it + String(",");
+        }
+        serializeConstraint = serializeConstraint.substring(0, serializeConstraint.length()-1);
+        //++it;
+        
 
         PiecewiseLinearConstraint *constraint = NULL;
+        printf("Constraint: %u, Type: %s \n", i, coType.ascii());
+        printf("\tserialized:\t%s \n", serializeConstraint.ascii());
         if ( coType == "relu" )
         {
             constraint = new ReluConstraint( serializeConstraint );
@@ -140,6 +148,7 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         {
             // Todo: Unsupport constraint, add error handling
         }
+
 
         ASSERT( constraint );
         inputQuery.addPiecewiseLinearConstraint( constraint );
