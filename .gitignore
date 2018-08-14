@@ -14,3 +14,4 @@ TAGS
 *-checkpoint.ipynb
 *.so
 *.pyc
+/src/engine/marabou.elf

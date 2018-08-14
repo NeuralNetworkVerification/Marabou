@@ -69,6 +69,9 @@ CFLAGS += \
 # Linking C/C++
 #
 
+SYSTEM_LIBRARY_DIR += \
+	/usr/lib
+
 SYSTEM_LIBRARIES += \
 
 LOCAL_LIBRARIES += \
@@ -87,7 +90,7 @@ OBJECTS = $(SOURCES:%.cpp=%.obj)
 
 %.elf: $(OBJECTS)
 	@echo "LD\t" $@
-	@$(LINK) $(LINK_FLAGS) -o $@ $^ $(addprefix -l, $(SYSTEM_LIBRARIES)) $(addprefix -l, $(LOCAL_LIBRARIES))
+	@$(LINK) $(LINK_FLAGS) -o $@ $^ $(addprefix -L, $(SYSTEM_LIBRARY_DIR)) $(addprefix -l, $(SYSTEM_LIBRARIES)) $(addprefix -l, $(LOCAL_LIBRARIES))
 
 .PRECIOUS: %.obj
 

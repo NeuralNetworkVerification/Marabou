@@ -1,5 +1,9 @@
 SOURCES += \
 	GlobalConfiguration.cpp \
+	OptionParser.cpp \
+
+SYSTEM_LIBRARIES += \
+	boost_program_options
 
 #
 # Local Variables:
