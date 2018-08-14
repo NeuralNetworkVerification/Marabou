@@ -1,5 +1,4 @@
-/*********************                                                        */
-/*! \file main.cpp
+/*! \file Marabou.cpp
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz
@@ -11,11 +10,21 @@
  **/
 
 #include "Marabou.h"
+#include "OptionParser.h"
 
-int main( int argc, char **argv )
+void Marabou::run( int argc, char **argv )
 {
-    Marabou().run( argc, argv );
-    return 0;
+    OptionParser optionParser;
+    optionParser.parse( argc, argv );
+
+    if ( optionParser.valueExists( "test" ) )
+    {
+        printf( "Test exists!\n" );
+    }
+    else
+    {
+        printf( "Test does not exist!\n" );
+    }
 }
 
 //

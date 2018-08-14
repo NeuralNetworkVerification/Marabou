@@ -18,7 +18,7 @@ void OptionParser::parse( int argc, char **argv )
     // Declare the supported options.
     boost::program_options::options_description optionDescription( "Allowed options" );
     optionDescription.add_options()
-        ( "dummy1", "dummy2" )
+        ( "test", "bla" )
         ( "dummy3", boost::program_options::value<int>(), "dummy4")
         ;
 

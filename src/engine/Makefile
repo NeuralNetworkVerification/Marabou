@@ -31,6 +31,7 @@ vpath %.cpp $(CONFIGURATION_DIR)
 vpath %.cpp $(ENGINE_REAL_DIR)
 
 SOURCES += \
+	Marabou.cpp \
 	main.cpp \
 
 TARGET = marabou.elf

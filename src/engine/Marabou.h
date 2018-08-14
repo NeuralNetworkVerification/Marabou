@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file main.cpp
+/*! \file Marabou.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz
@@ -10,13 +10,16 @@
  ** directory for licensing information.\endverbatim
  **/
 
-#include "Marabou.h"
+#ifndef __Marabou_h__
+#define __Marabou_h__
 
-int main( int argc, char **argv )
+class Marabou
 {
-    Marabou().run( argc, argv );
-    return 0;
-}
+public:
+    void run( int argc, char **argv );
+};
+
+#endif // __Marabou_h__
 
 //
 // Local Variables:
