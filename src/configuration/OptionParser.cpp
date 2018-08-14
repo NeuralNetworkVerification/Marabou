@@ -38,7 +38,6 @@ int OptionParser::extractIntValue( const String &option )
     return _variableMap[option.ascii()].as<int>();
 }
 
-
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

@@ -11,9 +11,12 @@
  **/
 
 #include "Marabou.h"
+#include "Options.h"
 
 int main( int argc, char **argv )
 {
+    Options::get();
+
     Marabou().run( argc, argv );
     return 0;
 }
