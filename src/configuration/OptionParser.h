@@ -20,6 +20,9 @@
 class OptionParser
 {
 public:
+    OptionParser();
+    OptionParser( Map<unsigned, bool> *boolOptions );
+
     /*
       Parse the command line arguments and extract the option values.
     */
@@ -35,8 +38,16 @@ public:
     */
     int extractIntValue( const String &option );
 
+    /*
+      Sets the allowed options and their default values
+    */
+    void initialize();
+
 private:
     boost::program_options::variables_map _variableMap;
+    boost::program_options::options_description _optionDescription;
+
+    Map<unsigned, bool> *_boolOptions;
 };
 
 #endif // __OptionParser_h__

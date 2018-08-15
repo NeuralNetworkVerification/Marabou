@@ -12,18 +12,33 @@
 
 #include "Debug.h"
 #include "OptionParser.h"
+#include "Options.h"
+
+OptionParser::OptionParser()
+{
+    // This constructor should not be called
+    ASSERT( false );
+}
+
+OptionParser::OptionParser( Map<unsigned, bool> *boolOptions )
+    : _optionDescription( "Supported options" )
+    , _boolOptions( boolOptions )
+{
+}
+
+void OptionParser::initialize()
+{
+    _optionDescription.add_options()
+        ( "pl-aux-eq",
+          boost::program_options::bool_switch( &((*_boolOptions)[Options::PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS] ) ),
+          "PL constraints generate auxiliary equations" )
+        ;
+}
 
 void OptionParser::parse( int argc, char **argv )
 {
-    // Declare the supported options.
-    boost::program_options::options_description optionDescription( "Allowed options" );
-    optionDescription.add_options()
-        ( "test", "bla" )
-        ( "dummy3", boost::program_options::value<int>(), "dummy4")
-        ;
-
     boost::program_options::store
-        ( boost::program_options::parse_command_line( argc, argv, optionDescription ), _variableMap );
+        ( boost::program_options::parse_command_line( argc, argv, _optionDescription ), _variableMap );
     boost::program_options::notify( _variableMap );
 }
 

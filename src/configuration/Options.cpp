@@ -10,12 +10,42 @@
 ** directory for licensing information.\endverbatim
 **/
 
+#include "ConfigurationError.h"
+#include "Debug.h"
 #include "Options.h"
 
 Options *Options::get()
 {
     static Options singleton;
     return &singleton;
+}
+
+Options::Options()
+    : _optionParser( &_boolOptions )
+{
+    initializeDefaultValues();
+    _optionParser.initialize();
+}
+
+Options::Options( const Options & )
+{
+    // This constructor should never be called
+    ASSERT( false );
+}
+
+void Options::initializeDefaultValues()
+{
+    _boolOptions[PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS] = false;
+}
+
+void Options::parseOptions( int argc, char **argv )
+{
+    _optionParser.parse( argc, argv );
+}
+
+bool Options::getBool( unsigned option ) const
+{
+    return _boolOptions.get( option );
 }
 
 //

@@ -10,21 +10,14 @@
  **/
 
 #include "Marabou.h"
-#include "OptionParser.h"
+#include "Options.h"
 
 void Marabou::run( int argc, char **argv )
 {
-    OptionParser optionParser;
-    optionParser.parse( argc, argv );
+    Options *options = Options::get();
+    options->parseOptions( argc, argv );
 
-    if ( optionParser.valueExists( "test" ) )
-    {
-        printf( "Test exists!\n" );
-    }
-    else
-    {
-        printf( "Test does not exist!\n" );
-    }
+    printf( "Value of aux flag: %u\n", options->getBool( Options::PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS ) );
 }
 
 //
