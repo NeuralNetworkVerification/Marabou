@@ -3,8 +3,14 @@ SOURCES += \
 	OptionParser.cpp \
 	Options.cpp \
 
-SYSTEM_LIBRARIES += \
-	boost_program_options
+LIBRARY_DIR += \
+	$(BOOST_LIBS) \
+
+LIBRARIES += \
+	:libboost_program_options.a \
+
+LOCAL_INCLUDES += \
+	$(BOOST_INCLUDES)
 
 #
 # Local Variables:

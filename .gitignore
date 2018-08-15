@@ -15,3 +15,5 @@ TAGS
 *.so
 *.pyc
 /src/engine/marabou.elf
+tools/boost_1_68_0
+/tools/boost.unzipped
