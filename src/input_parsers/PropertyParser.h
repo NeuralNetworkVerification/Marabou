@@ -13,6 +13,7 @@
 #ifndef __PropertyParser_h__
 #define __PropertyParser_h__
 
+#include "Equation.h"
 #include "InputQuery.h"
 #include "MString.h"
 
@@ -21,12 +22,6 @@
   constraints within an InputQuery object.
   Currently, properties can involve the input variables (X's) and the output
   variables (Y's) of a neural network.
-
-  The format is as follows: in each line, var <= constant or var >= constant,
-  e.g.
-
-    X0 <= -5
-    Y1 >= 3
 */
 class PropertyParser
 {
@@ -34,15 +29,8 @@ public:
     void parse( const String &propertyFilePath, InputQuery &inputQuery );
 
 private:
-    enum Sign {
-        GEQ = 0,
-        LEQ
-    };
-
     void processSingleLine( const String &line, InputQuery &inputQuery );
-
-    unsigned extractVariable( const String &token, const InputQuery &inputQuery );
-    Sign extractSign( const String &token );
+    Equation::EquationType extractSign( const String &token );
     double extractScalar( const String &token );
 };
 

@@ -49,125 +49,73 @@ void PropertyParser::processSingleLine( const String &line, InputQuery &inputQue
     if ( tokens.size() < 3 )
         throw InputParserError( InputParserError::UNEXPECTED_INPUT, line.ascii() );
 
-    if ( tokens.size() == 3 )
-    {
-        // This is the simple case, e.g. x1 >= 10
-        auto it = tokens.begin();
-        unsigned variable = extractVariable( *it, inputQuery );
-        ++it;
-        Sign sign = extractSign( *it );
-        ++it;
-        double scalar = extractScalar( *it );
+    auto it = tokens.rbegin();
+    double scalar = extractScalar( *it );
+    ++it;
+    Equation::EquationType type = extractSign( *it );
+    ++it;
 
-        if ( sign == GEQ )
+    Equation equation( type );
+    equation.setScalar( scalar );
+
+    // Now extract the addends
+    while ( it != tokens.rend() )
+    {
+        String token = (*it).trim();
+
+        bool inputVariable = token.contains( "x" );
+        bool outputVariable = token.contains( "y" );
+
+        if ( !( inputVariable xor outputVariable ) )
+            throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
+
+        List<String> subTokens;
+        if ( inputVariable )
+            subTokens = token.tokenize( "x" );
+        else
+            subTokens = token.tokenize( "y" );
+
+        if ( subTokens.size() != 2 )
+            throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
+
+        unsigned justIndex = atoi( subTokens.rbegin()->ascii() );
+        unsigned variable;
+
+        if ( inputVariable )
         {
-            if ( inputQuery.getLowerBound( variable ) < scalar )
-                inputQuery.setLowerBound( variable, scalar );
+            ASSERT( justIndex < inputQuery.getNumInputVariables() );
+            variable = inputQuery.inputVariableByIndex( justIndex );
         }
         else
         {
-            if ( inputQuery.getUpperBound( variable ) > scalar )
-                inputQuery.setUpperBound( variable, scalar );
-        }
-    }
-    else
-    {
-        // This is the more complex case, e.g. x1 -x2 >= 10
-        auto it = tokens.rbegin();
-        double scalar = extractScalar( *it );
-        ++it;
-        Sign sign = extractSign( *it );
-        ++it;
-
-        Equation equation( sign == GEQ ? Equation::GE : Equation::LE );
-        equation.setScalar( scalar );
-
-        // Now extract the addends
-        while ( it != tokens.rend() )
-        {
-            String token = (*it).trim();
-
-            bool inputVariable = token.contains( "x" );
-            bool outputVariable = token.contains( "y" );
-
-            if ( !( inputVariable xor outputVariable ) )
-                throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
-
-            List<String> subTokens;
-            if ( inputVariable )
-                subTokens = token.tokenize( "x" );
-            else
-                subTokens = token.tokenize( "y" );
-
-            if ( subTokens.size() != 2 )
-                throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
-
-            unsigned justIndex = atoi( subTokens.rbegin()->ascii() );
-            unsigned variable;
-
-            if ( inputVariable )
-            {
-                ASSERT( justIndex < inputQuery.getNumInputVariables() );
-                variable = inputQuery.inputVariableByIndex( justIndex );
-            }
-            else
-            {
-                ASSERT( justIndex < inputQuery.getNumOutputVariables() );
-                variable = inputQuery.outputVariableByIndex( justIndex );
-            }
-
-            String coefficientString = *subTokens.begin();
-            double coefficient;
-            if ( coefficientString == "+" )
-                coefficient = 1;
-            else if ( coefficientString == "-" )
-                coefficient = -1;
-            else
-                coefficient = atof( coefficientString.ascii() );
-
-            printf( "token = %s, coefficient = %lf\n", subTokens.begin()->ascii(), coefficient );
-
-
-            equation.addAddend( coefficient, variable );
-
-            ++it;
+            ASSERT( justIndex < inputQuery.getNumOutputVariables() );
+            variable = inputQuery.outputVariableByIndex( justIndex );
         }
 
-        printf( "Adding equation:\n" );
-        equation.dump();
+        String coefficientString = *subTokens.begin();
+        double coefficient;
+        if ( coefficientString == "+" )
+            coefficient = 1;
+        else if ( coefficientString == "-" )
+            coefficient = -1;
+        else
+            coefficient = atof( coefficientString.ascii() );
 
-        inputQuery.addEquation( equation );
+        equation.addAddend( coefficient, variable );
+        ++it;
     }
+
+    inputQuery.addEquation( equation );
 }
 
-unsigned PropertyParser::extractVariable( const String &token, const InputQuery &inputQuery )
-{
-    bool inputVariable = token.contains( "x" );
-    bool outputVariable = token.contains( "y" );
-
-    if ( !( inputVariable xor outputVariable ) )
-        throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
-
-    String justIndex = token.substring( 1, token.length() - 1 );
-
-    if ( inputVariable )
-    {
-        ASSERT( atoi( justIndex.ascii() ) < (int)inputQuery.getNumInputVariables() );
-        return inputQuery.inputVariableByIndex( atoi( justIndex.ascii() ) );
-    }
-    else
-    {
-        ASSERT( atoi( justIndex.ascii() ) < (int)inputQuery.getNumOutputVariables() );
-        return inputQuery.outputVariableByIndex( atoi( justIndex.ascii() ) );
-    }
-}
-
-PropertyParser::Sign PropertyParser::extractSign( const String &token )
+Equation::EquationType PropertyParser::extractSign( const String &token )
 {
     if ( token == ">=" )
-        return GEQ;
+        return Equation::GE;
     if ( token == "<=" )
-        return LEQ;
+        return Equation::LE;
+    if ( token == "=" )
+        return Equation::EQ;
 
     throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
 }
