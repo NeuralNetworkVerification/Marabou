@@ -13,6 +13,7 @@
 #include "File.h"
 #include "Marabou.h"
 #include "Options.h"
+#include "PropertyParser.h"
 #include "ReluplexError.h"
 
 Marabou::Marabou()
@@ -41,17 +42,26 @@ void Marabou::run( int argc, char **argv )
 
 void Marabou::prepareInputQuery()
 {
+    /*
+      Step 1: extract the network
+    */
     String networkFilePath = Options::get()->getString( Options::INPUT_FILE_PATH );
-
     if ( !File::exists( networkFilePath ) )
     {
         printf( "Error: the specified network file (%s) doesn't exist!\n", networkFilePath.ascii() );
         throw ReluplexError( ReluplexError::FILE_DOESNT_EXIST, networkFilePath.ascii() );
     }
 
-    // For now, assume the network is givne in ACAS format
+    // For now, assume the network is given in ACAS format
     _acasParser = new AcasParser( networkFilePath );
     _acasParser->generateQuery( _inputQuery );
+
+    /*
+      Step 2: extract the property in question
+    */
+    String propertyFilePath = Options::get()->getString( Options::PROPERTY_FILE_PATH );
+    if ( propertyFilePath != "" )
+        PropertyParser().parse( propertyFilePath, _inputQuery );
 }
 
 void Marabou::solveQuery()

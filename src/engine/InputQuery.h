@@ -53,6 +53,8 @@ public:
     void markOutputVariable( unsigned variable, unsigned inputIndex );
     unsigned inputVariableByIndex( unsigned index ) const;
     unsigned outputVariableByIndex( unsigned index ) const;
+    unsigned getNumInputVariables() const;
+    unsigned getNumOutputVariables() const;
 
     /*
       Methods for setting and getting the solution.
@@ -83,10 +85,19 @@ public:
     InputQuery( const InputQuery &other );
 
     /*
-      For debugging purposes only - store a correct possible solution
+      Debugging methods
+    */
+
+    /*
+      Store a correct possible solution
     */
     void storeDebuggingSolution( unsigned variable, double value );
     Map<unsigned, double> _debuggingSolution;
+
+    /*
+      Print input and output bounds
+    */
+    void printInputOutputBounds() const;
 
 private:
     unsigned _numberOfVariables;

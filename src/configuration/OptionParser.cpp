@@ -38,6 +38,9 @@ void OptionParser::initialize()
         ( "input",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::INPUT_FILE_PATH]) ),
           "Neural netowrk file" )
+        ( "property",
+          boost::program_options::value<std::string>( &((*_stringOptions)[Options::PROPERTY_FILE_PATH]) ),
+          "Property file" )
         ;
 
     // Positional options, for the mandatory options

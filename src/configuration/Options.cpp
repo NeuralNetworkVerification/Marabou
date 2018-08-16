@@ -44,6 +44,7 @@ void Options::initializeDefaultValues()
       String options
     */
     _stringOptions[INPUT_FILE_PATH] = "";
+    _stringOptions[PROPERTY_FILE_PATH] = "";
 }
 
 void Options::parseOptions( int argc, char **argv )
