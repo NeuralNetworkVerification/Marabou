@@ -23,6 +23,7 @@ include $(COMMON_REAL_DIR)/Sources.mk
 include $(CONFIGURATION_DIR)/Sources.mk
 include $(ENGINE_DIR)/Sources.mk
 include $(ENGINE_REAL_DIR)/Sources.mk
+include $(INPUT_PARSER_DIR)/Sources.mk
 
 vpath %.cpp $(BASIS_FACTORIZATION_DIR)
 vpath %.cpp $(COMMON_DIR)
