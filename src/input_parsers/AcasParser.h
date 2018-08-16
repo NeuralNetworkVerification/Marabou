@@ -39,6 +39,8 @@ public:
     AcasParser( const String &path );
     void generateQuery( InputQuery &inputQuery );
 
+    unsigned getNumInputVaribales() const;
+    unsigned getNumOutputVariables() const;
     unsigned getInputVariable( unsigned index ) const;
     unsigned getOutputVariable( unsigned index ) const;
     unsigned getBVariable( unsigned layer, unsigned index ) const;

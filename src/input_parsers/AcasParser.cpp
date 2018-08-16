@@ -158,6 +158,16 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
     }
 }
 
+unsigned AcasParser::getNumInputVaribales() const
+{
+    return _acasNeuralNetwork.getLayerSize( 0 );
+}
+
+unsigned AcasParser::getNumOutputVariables() const
+{
+    return _acasNeuralNetwork.getLayerSize( _acasNeuralNetwork.getNumLayers() );
+}
+
 unsigned AcasParser::getInputVariable( unsigned index ) const
 {
     return getFVariable( 0, index );
