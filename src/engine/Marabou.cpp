@@ -67,6 +67,9 @@ void Marabou::prepareInputQuery()
 void Marabou::solveQuery()
 {
     _result = _engine.processInputQuery( _inputQuery ) && _engine.solve();
+
+    if ( _result )
+        _engine.extractSolution( _inputQuery );
 }
 
 void Marabou::displayResults() const
@@ -77,7 +80,17 @@ void Marabou::displayResults() const
         return;
     }
 
-    printf( "SAT\n" );
+    printf( "SAT\n\n" );
+
+    printf( "Input assignment:\n" );
+    for ( unsigned i = 0; i < _inputQuery.getNumInputVariables(); ++i )
+        printf( "\tx%u = %8.4lf\n", i, _inputQuery.getSolutionValue( _inputQuery.inputVariableByIndex( i ) ) );
+
+    printf( "\n" );
+    printf( "Output:\n" );
+    for ( unsigned i = 0; i < _inputQuery.getNumOutputVariables(); ++i )
+        printf( "\ty%u = %8.4lf\n", i, _inputQuery.getSolutionValue( _inputQuery.outputVariableByIndex( i ) ) );
+    printf( "\n" );
 }
 
 //
