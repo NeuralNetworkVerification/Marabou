@@ -69,9 +69,9 @@ CFLAGS += \
 # Linking C/C++
 #
 
-SYSTEM_LIBRARIES += \
+LIBRARY_DIR += \
 
-LOCAL_LIBRARIES += \
+LIBRARIES += \
 
 LINK_FLAGS += \
 
@@ -87,7 +87,7 @@ OBJECTS = $(SOURCES:%.cpp=%.obj)
 
 %.elf: $(OBJECTS)
 	@echo "LD\t" $@
-	@$(LINK) $(LINK_FLAGS) -o $@ $^ $(addprefix -l, $(SYSTEM_LIBRARIES)) $(addprefix -l, $(LOCAL_LIBRARIES))
+	@$(LINK) $(LINK_FLAGS) -o $@ $^ $(addprefix -L, $(LIBRARY_DIR)) $(addprefix -l, $(LIBRARIES))
 
 .PRECIOUS: %.obj
 
@@ -126,7 +126,7 @@ runner.cxx:
 
 %.tests: $(TEST_OBJECTS)
 	@echo "LD\t" $@
-	@$(LINK) -o $@ $^ $(addprefix -l, $(SYSTEM_LIBRARIES))
+	@$(LINK) -o $@ $^ $(addprefix -L, $(LIBRARY_DIR)) $(addprefix -l, $(LIBRARIES))
 
 .PRECIOUS: %.cxx %.obj
 

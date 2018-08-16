@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file InputParserError.h
+/*! \file ConfigurationError.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz
@@ -10,31 +10,28 @@
  ** directory for licensing information.\endverbatim
  **/
 
-#ifndef __InputParserError_h__
-#define __InputParserError_h__
+#ifndef __ConfigurationError_h__
+#define __ConfigurationError_h__
 
 #include "Error.h"
 
-class InputParserError : public Error
+class ConfigurationError : public Error
 {
 public:
 	enum Code {
-        VARIABLE_INDEX_OUT_OF_RANGE = 0,
-        UNEXPECTED_INPUT = 1,
-        FILE_DOESNT_EXIST = 2,
+        OPTION_KEY_DOESNT_EXIST = 0,
     };
 
-    InputParserError( InputParserError::Code code ) : Error( "InputParserError", (int)code )
+    ConfigurationError( ConfigurationError::Code code ) : Error( "ConfigurationError", (int)code )
 	{
 	}
 
-    InputParserError( InputParserError::Code code, const char *userMessage )
-      : Error( "InputParserError", (int)code, userMessage )
+    ConfigurationError( ConfigurationError::Code code, const char *userMessage ) : Error( "ConfigurationError", (int)code, userMessage )
     {
     }
 };
 
-#endif // __InputParserError_h__
+#endif // __ConfigurationError_h__
 
 //
 // Local Variables:
