@@ -34,10 +34,6 @@ vpath %.cpp $(ENGINE_REAL_DIR)
 vpath %.cpp $(INPUT_PARSER_DIR)
 
 SOURCES += \
-	AcasNeuralNetwork.cpp \
-	AcasNnet.cpp \
-	AcasParser.cpp \
-	\
 	main_regress.cpp \
 
 all:
