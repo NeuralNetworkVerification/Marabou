@@ -21,7 +21,7 @@ Options *Options::get()
 }
 
 Options::Options()
-    : _optionParser( &_boolOptions )
+    : _optionParser( &_boolOptions, &_stringOptions )
 {
     initializeDefaultValues();
     _optionParser.initialize();
@@ -35,7 +35,15 @@ Options::Options( const Options & )
 
 void Options::initializeDefaultValues()
 {
+    /*
+      Int options
+    */
     _boolOptions[PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS] = false;
+
+    /*
+      String options
+    */
+    _stringOptions[INPUT_FILE_PATH] = "";
 }
 
 void Options::parseOptions( int argc, char **argv )
@@ -46,6 +54,11 @@ void Options::parseOptions( int argc, char **argv )
 bool Options::getBool( unsigned option ) const
 {
     return _boolOptions.get( option );
+}
+
+String Options::getString( unsigned option ) const
+{
+    return String( _stringOptions.get( option ) );
 }
 
 //

@@ -9,6 +9,7 @@ LOCAL_INCLUDES += \
 	$(BASIS_FACTORIZATION_DIR) \
 	$(COMMON_TEST_DIR) \
 	$(CONFIGURATION_DIR) \
+	$(INPUT_PARSER_DIR) \
 
 TEST_FILES = $(wildcard Test_*.h)
 
@@ -18,6 +19,7 @@ include $(COMMON_REAL_DIR)/Sources.mk
 include $(CONFIGURATION_DIR)/Sources.mk
 include $(ENGINE_DIR)/Sources.mk
 include $(ENGINE_MOCK_DIR)/Sources.mk
+include $(INPUT_PARSER_DIR)/Sources.mk
 
 vpath %.cpp $(BASIS_FACTORIZATION_DIR)
 vpath %.cpp $(COMMON_DIR)
@@ -25,6 +27,7 @@ vpath %.cpp $(COMMON_REAL_DIR)
 vpath %.cpp $(CONFIGURATION_DIR)
 vpath %.cpp $(ENGINE_DIR)
 vpath %.cpp $(ENGINE_MOCK_DIR)
+vpath %.cpp $(INPUT_PARSER_DIR)
 
 all:
 	./$(TEST_TARGET)

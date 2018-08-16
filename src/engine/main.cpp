@@ -10,14 +10,26 @@
  ** directory for licensing information.\endverbatim
  **/
 
+#include "Error.h"
 #include "Marabou.h"
-#include "Options.h"
 
 int main( int argc, char **argv )
 {
-    Options::get();
+    try
+    {
+        Marabou().run( argc, argv );
+    }
+    catch ( const Error &e )
+    {
+        printf( "Caught a %s error. Code: %u, Errno: %i, Message: %s.\n",
+                e.getErrorClass(),
+                e.getCode(),
+                e.getErrno(),
+                e.getUserMessage() );
 
-    Marabou().run( argc, argv );
+        return 1;
+    }
+
     return 0;
 }
 

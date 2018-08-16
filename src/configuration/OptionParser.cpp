@@ -20,25 +20,36 @@ OptionParser::OptionParser()
     ASSERT( false );
 }
 
-OptionParser::OptionParser( Map<unsigned, bool> *boolOptions )
+OptionParser::OptionParser( Map<unsigned, bool> *boolOptions,
+                            Map<unsigned, std::string> *stringOptions )
     : _optionDescription( "Supported options" )
     , _boolOptions( boolOptions )
+    , _stringOptions( stringOptions )
 {
 }
 
 void OptionParser::initialize()
 {
+    // Possible options
     _optionDescription.add_options()
         ( "pl-aux-eq",
-          boost::program_options::bool_switch( &((*_boolOptions)[Options::PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS] ) ),
+          boost::program_options::bool_switch( &((*_boolOptions)[Options::PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS]) ),
           "PL constraints generate auxiliary equations" )
+        ( "input",
+          boost::program_options::value<std::string>( &((*_stringOptions)[Options::INPUT_FILE_PATH]) ),
+          "Neural netowrk file" )
         ;
+
+    // Positional options, for the mandatory options
+    _positionalOptions.add( "input", 1 );
 }
 
 void OptionParser::parse( int argc, char **argv )
 {
     boost::program_options::store
-        ( boost::program_options::parse_command_line( argc, argv, _optionDescription ), _variableMap );
+        ( boost::program_options::command_line_parser( argc, argv )
+          .options( _optionDescription ).positional( _positionalOptions ).run(),
+          _variableMap );
     boost::program_options::notify( _variableMap );
 }
 

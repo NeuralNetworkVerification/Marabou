@@ -13,10 +13,50 @@
 #ifndef __Marabou_h__
 #define __Marabou_h__
 
+#include "AcasParser.h"
+#include "Engine.h"
+#include "InputQuery.h"
+
 class Marabou
 {
 public:
+    Marabou();
+    ~Marabou();
+
+    /*
+      Entry point of this class
+    */
     void run( int argc, char **argv );
+
+private:
+    InputQuery _inputQuery;
+    bool _result;
+
+    /*
+      Extract the input files: network and property, and use them
+      to generate the input query
+    */
+    void prepareInputQuery();
+
+    /*
+      Invoke the engine to solve the input query
+    */
+    void solveQuery();
+
+    /*
+      Display the results
+    */
+    void displayResults() const;
+
+    /*
+      ACAS network parser
+    */
+    AcasParser *_acasParser;
+
+    /*
+      The solver
+    */
+    Engine _engine;
 };
 
 #endif // __Marabou_h__

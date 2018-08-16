@@ -21,7 +21,8 @@ class OptionParser
 {
 public:
     OptionParser();
-    OptionParser( Map<unsigned, bool> *boolOptions );
+    OptionParser( Map<unsigned, bool> *boolOptions,
+                  Map<unsigned, std::string> *stringOptions );
 
     /*
       Parse the command line arguments and extract the option values.
@@ -46,8 +47,10 @@ public:
 private:
     boost::program_options::variables_map _variableMap;
     boost::program_options::options_description _optionDescription;
+    boost::program_options::positional_options_description _positionalOptions;
 
     Map<unsigned, bool> *_boolOptions;
+    Map<unsigned, std::string> *_stringOptions;
 };
 
 #endif // __OptionParser_h__

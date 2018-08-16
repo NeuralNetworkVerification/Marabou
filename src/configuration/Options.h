@@ -28,6 +28,10 @@ public:
         PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS = 0,
     };
 
+    enum StringOptions {
+        INPUT_FILE_PATH = 0,
+    };
+
     /*
       The singleton instance
     */
@@ -43,6 +47,11 @@ public:
     */
     bool getBool( unsigned option ) const;
 
+    /*
+      Retrieve the value of a string option
+    */
+    String getString( unsigned option ) const;
+
 private:
     /*
       Disable default constructor and copy constructor
@@ -57,8 +66,11 @@ private:
 
     OptionParser _optionParser;
 
-    // Map<String, int> _defaultIntValues;
+    /*
+      The various option values
+    */
     Map<unsigned, bool> _boolOptions;
+    Map<unsigned, std::string> _stringOptions;
 };
 
 #endif // __Options_h__
