@@ -1,6 +1,7 @@
 ROOT_DIR = .
 
 SUBDIRS += \
+	tools \
 	src \
 
 all:

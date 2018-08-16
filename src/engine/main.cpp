@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file InputParserError.h
+/*! \file main.cpp
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz
@@ -10,31 +10,28 @@
  ** directory for licensing information.\endverbatim
  **/
 
-#ifndef __InputParserError_h__
-#define __InputParserError_h__
-
 #include "Error.h"
+#include "Marabou.h"
 
-class InputParserError : public Error
+int main( int argc, char **argv )
 {
-public:
-	enum Code {
-        VARIABLE_INDEX_OUT_OF_RANGE = 0,
-        UNEXPECTED_INPUT = 1,
-        FILE_DOESNT_EXIST = 2,
-    };
-
-    InputParserError( InputParserError::Code code ) : Error( "InputParserError", (int)code )
-	{
-	}
-
-    InputParserError( InputParserError::Code code, const char *userMessage )
-      : Error( "InputParserError", (int)code, userMessage )
+    try
     {
+        Marabou().run( argc, argv );
     }
-};
+    catch ( const Error &e )
+    {
+        printf( "Caught a %s error. Code: %u, Errno: %i, Message: %s.\n",
+                e.getErrorClass(),
+                e.getCode(),
+                e.getErrno(),
+                e.getUserMessage() );
 
-#endif // __InputParserError_h__
+        return 1;
+    }
+
+    return 0;
+}
 
 //
 // Local Variables:
