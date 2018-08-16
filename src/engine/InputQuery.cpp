@@ -224,6 +224,30 @@ void InputQuery::storeDebuggingSolution( unsigned variable, double value )
     _debuggingSolution[variable] = value;
 }
 
+void InputQuery::markInputVariable( unsigned variable, unsigned inputIndex )
+{
+    _variableToInputIndex[variable] = inputIndex;
+    _inputIndexToVariable[inputIndex] = variable;
+}
+
+void InputQuery::markOutputVariable( unsigned variable, unsigned outputIndex )
+{
+    _variableToOutputIndex[variable] = outputIndex;
+    _outputIndexToVariable[outputIndex] = variable;
+}
+
+unsigned InputQuery::inputVariableByIndex( unsigned index ) const
+{
+    ASSERT( _inputIndexToVariable.exists( index ) );
+    return _inputIndexToVariable.get( index );
+}
+
+unsigned InputQuery::outputVariableByIndex( unsigned index ) const
+{
+    ASSERT( _outputIndexToVariable.exists( index ) );
+    return _outputIndexToVariable.get( index );
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

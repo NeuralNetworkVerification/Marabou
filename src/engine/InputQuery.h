@@ -47,6 +47,14 @@ public:
 	List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints();
 
     /*
+      Methods for handling input and output variables
+    */
+    void markInputVariable( unsigned variable, unsigned inputIndex );
+    void markOutputVariable( unsigned variable, unsigned inputIndex );
+    unsigned inputVariableByIndex( unsigned index ) const;
+    unsigned outputVariableByIndex( unsigned index ) const;
+
+    /*
       Methods for setting and getting the solution.
     */
     void setSolutionValue( unsigned variable, double value );
@@ -93,6 +101,14 @@ private:
       Free any stored pl constraints.
     */
     void freeConstraintsIfNeeded();
+
+    /*
+      Mapping of input/output variables to their indices
+    */
+    Map<unsigned, unsigned> _variableToInputIndex;
+    Map<unsigned, unsigned> _inputIndexToVariable;
+    Map<unsigned, unsigned> _variableToOutputIndex;
+    Map<unsigned, unsigned> _outputIndexToVariable;
 };
 
 #endif // __InputQuery_h__
