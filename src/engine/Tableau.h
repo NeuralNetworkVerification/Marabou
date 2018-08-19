@@ -317,6 +317,7 @@ public:
     const double *getAColumn( unsigned variable ) const;
     void getSparseAColumn( unsigned variable, SparseVector *result ) const;
     void getSparseARow( unsigned row, SparseVector *result ) const;
+    const SparseVector *getSparseAColumn( unsigned variable ) const;
 
     /*
       Store and restore the Tableau's state. Needed for case splitting

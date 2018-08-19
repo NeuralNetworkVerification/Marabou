@@ -150,6 +150,7 @@ public:
     virtual const double *getAColumn( unsigned variable ) const = 0;
     virtual void getSparseAColumn( unsigned variable, SparseVector *result ) const = 0;
     virtual void getSparseARow( unsigned row, SparseVector *result ) const = 0;
+    virtual const SparseVector *getSparseAColumn( unsigned variable ) const = 0;
     virtual const SparseMatrix *getSparseA() const = 0;
     virtual void performDegeneratePivot() = 0;
     virtual void storeState( TableauState &state ) const = 0;

@@ -1489,6 +1489,11 @@ void Tableau::getSparseAColumn( unsigned variable, SparseVector *result ) const
     *result = *_sparseColumnsOfA[variable];
 }
 
+const SparseVector *Tableau::getSparseAColumn( unsigned variable ) const
+{
+    return _sparseColumnsOfA[variable];
+}
+
 void Tableau::getSparseARow( unsigned row, SparseVector *result ) const
 {
     _A->getRow( row, result );
