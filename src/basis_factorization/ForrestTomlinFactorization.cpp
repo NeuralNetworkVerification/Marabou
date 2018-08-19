@@ -137,7 +137,9 @@ ForrestTomlinFactorization::~ForrestTomlinFactorization()
     _A.clear();
 }
 
-void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const double *column )
+void ForrestTomlinFactorization::updateToAdjacentBasis( unsigned columnIndex,
+                                                        const double *changeColumn,
+                                                        const SparseVector */* newColumn */ )
 {
     // Pushing an eta matrix invalidates the explicit basis
     _explicitBasisAvailable = false;
@@ -164,7 +166,7 @@ void ForrestTomlinFactorization::pushEtaMatrix( unsigned columnIndex, const doub
       it is not upper triangular.
     */
     for ( unsigned i = 0; i < _m; ++i )
-        _workVector[i] = column[_invQ._rowOrdering[i]];
+        _workVector[i] = changeColumn[_invQ._rowOrdering[i]];
 
     for ( unsigned i = 0; i < _m; ++i )
     {

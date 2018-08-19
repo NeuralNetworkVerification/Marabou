@@ -34,7 +34,9 @@ public:
       provided. If the number of stored eta matrices exceeds a certain
       threshold, re-factorization may occur.
     */
-    void pushEtaMatrix( unsigned columnIndex, const double *column );
+    void updateToAdjacentBasis( unsigned columnIndex,
+                                const double *changeColumn,
+                                const SparseVector *newColumn );
 
     /*
       Perform a forward transformation, i.e. find x such that x = inv(B) * y,

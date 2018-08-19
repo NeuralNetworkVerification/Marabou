@@ -743,7 +743,9 @@ void Tableau::performPivot()
 
     // Update the basis factorization. The column corresponding to the
     // leaving variable is the one that has changed
-    _basisFactorization->pushEtaMatrix( _leavingVariable, _changeColumn );
+    _basisFactorization->updateToAdjacentBasis( _leavingVariable,
+                                                _changeColumn,
+                                                _sparseColumnsOfA[currentNonBasic] );
 
     if ( _statistics )
     {
@@ -783,7 +785,9 @@ void Tableau::performDegeneratePivot()
     _variableToIndex[currentNonBasic] = _leavingVariable;
 
     // Update the basis factorization
-    _basisFactorization->pushEtaMatrix( _leavingVariable, _changeColumn );
+    _basisFactorization->updateToAdjacentBasis( _leavingVariable,
+                                                _changeColumn,
+                                                _sparseColumnsOfA[currentNonBasic] );
 
     // Switch assignment values. No call to notify is required,
     // because values haven't changed.

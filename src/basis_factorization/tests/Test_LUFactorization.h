@@ -60,9 +60,9 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete mock );
     }
 
-    void test_dummy()
+    void test_todo()
     {
-        TS_ASSERT( true );
+        TS_TRACE( "ADD TESTS!" );
     }
 
     // void test_factorization_enabled_disabled()
@@ -99,7 +99,7 @@ public:
     //     // E1 = | 1 1   |
     //     //      |   1   |
     //     //      |   3 1 |
-    //     basis.pushEtaMatrix( 1, a1 );
+    //     basis.updateToAdjacentBasis( 1, a1 );
 
     //     double a2[] = { 3, 1, 4 };
     //     double d2[] = { 0, 0, 0 };
@@ -117,7 +117,7 @@ public:
     //     // E2 = | 2     |
     //     //      | 1 1   |
     //     //      | 1   1 |
-    //     basis.pushEtaMatrix( 0, d2 );
+    //     basis.updateToAdjacentBasis( 0, d2 );
 
     //     double a3[] = { 2, 1, 4 };
     //     double d3[] = { 0, 0, 0 };
@@ -138,11 +138,11 @@ public:
     //     // Same etas as test_backward_transformation()
 	// 	LUFactorization basis( 3, *oracle );
 	// 	double e1[] = {1., 1., 3.};
-	// 	basis.pushEtaMatrix( 1, e1 );
+	// 	basis.updateToAdjacentBasis( 1, e1 );
 	// 	double e2[] = {2., 1., 1.};
-	// 	basis.pushEtaMatrix ( 0, e2 );
+	// 	basis.updateToAdjacentBasis ( 0, e2 );
 	// 	double e3[] = { 0.5, 0.5, 0.5 };
-	// 	basis.pushEtaMatrix( 2, e3 );
+	// 	basis.updateToAdjacentBasis( 2, e3 );
 
 	// 	double nB0[] = { 1, 2, 4,
     //                      4, 5, 7,
@@ -175,7 +175,7 @@ public:
     //     //      |   1   |
     //     //      |   3 1 |
     //     double e1[] = { 1, 1, 3 };
-    //     basis.pushEtaMatrix( 1, e1 );
+    //     basis.updateToAdjacentBasis( 1, e1 );
 
     //     double y2[] = { 0, 12, 0 };
     //     double x2[] = { 0, 0, 0 };
@@ -194,7 +194,7 @@ public:
     //     //      | 1 1   |
     //     //      | 1   1 |
     //     double e2[] = { 2, 1, 1 };
-    //     basis.pushEtaMatrix( 0, e2 );
+    //     basis.updateToAdjacentBasis( 0, e2 );
 
     //     double y3[] = { 19, 12, 0 };
     //     double x3[] = { 0, 0, 0 };
@@ -213,7 +213,7 @@ public:
     //     //      |   1 0.5 |
     //     //      |     0.5 |
     //     double e3[] = { 0.5, 0.5, 0.5 };
-    //     basis.pushEtaMatrix( 2, e3 );
+    //     basis.updateToAdjacentBasis( 2, e3 );
 
     //     double y4[] = { 19, 12, 17 };
     //     double x4[] = { 0, 0, 0 };
@@ -237,7 +237,7 @@ public:
     //     //      |  0 1   |
     //     //      | -1   1 |
     //     double e1[] = { -1, 0, -1 };
-    //     basis.pushEtaMatrix( 0, e1 );
+    //     basis.updateToAdjacentBasis( 0, e1 );
 
     //     double y[] = { 1, 0, -1 };
     //     double x[] = { 0, 0, 0 };
@@ -258,11 +258,11 @@ public:
     //     // Same etas as test_backward_transformation()
 	// 	LUFactorization basis( 3, *oracle );
 	// 	double e1[] = {1., 1., 3.};
-	// 	basis.pushEtaMatrix( 1, e1 );
+	// 	basis.updateToAdjacentBasis( 1, e1 );
 	// 	double e2[] = {2., 1., 1.};
-	// 	basis.pushEtaMatrix( 0, e2 );
+	// 	basis.updateToAdjacentBasis( 0, e2 );
 	// 	double e3[] = { 0.5, 0.5, 0.5 };
-    //     basis.pushEtaMatrix( 2, e3 );
+    //     basis.updateToAdjacentBasis( 2, e3 );
 
 	// 	double nB0[] = {1.,2.,4.,4.,5.,7.,7.,8.,9};
 	// 	basis.setBasis( nB0 );
@@ -291,7 +291,7 @@ public:
     //     double d1[] = { 0, 0, 0 };
 
     //     TS_ASSERT_THROWS_NOTHING( basis.forwardTransformation( a1, d1 ) );
-    //     basis.pushEtaMatrix( 1, a1 );
+    //     basis.updateToAdjacentBasis( 1, a1 );
 
     //     // Save the expected basis after this push
     //     double currentBasis[] = {
@@ -325,7 +325,7 @@ public:
     //         TS_ASSERT( FloatUtils::areEqual( expected2[i], d2other[i] ) );
 
     //     // Transform the new basis but not the original
-    //     otherBasis.pushEtaMatrix( 0, d2 );
+    //     otherBasis.updateToAdjacentBasis( 0, d2 );
 
     //     double a3[] = { 2, 1, 4 };
     //     double d3[] = { 0, 0, 0 };
@@ -602,8 +602,8 @@ public:
     //         unsigned startingIndex = rand() % ( ETA_POOL_SIZE - 2 );
     //         double *etaCol = etaPool + startingIndex;
 	// 		int col = rand() % d;
-	// 		basis.pushEtaMatrix( col, etaCol );
-	// 		basis2.pushEtaMatrix( col, etaCol );
+	// 		basis.updateToAdjacentBasis( col, etaCol );
+	// 		basis2.updateToAdjacentBasis( col, etaCol );
 	// 	}
 
 	// 	// Check if etas have disappeared
@@ -650,7 +650,7 @@ public:
     //     basis.setBasis( B0 );
 
     //     double a1[] = { 1, 1, 3 };
-    //     basis.pushEtaMatrix( 1, a1 );
+    //     basis.updateToAdjacentBasis( 1, a1 );
 
     //     double result[9];
 

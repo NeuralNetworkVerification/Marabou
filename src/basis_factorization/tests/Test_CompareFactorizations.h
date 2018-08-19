@@ -72,8 +72,8 @@ public:
             TS_ASSERT( FloatUtils::areEqual( x1[i], x2[i] ) );
 
         double d1[] = { -4, 2, 0, 3 };
-        ft->pushEtaMatrix( 1, d1 );
-        lu->pushEtaMatrix( 1, d1 );
+        ft->updateToAdjacentBasis( 1, d1, NULL );
+        lu->updateToAdjacentBasis( 1, d1, NULL );
 
         TS_ASSERT_THROWS_NOTHING( ft->forwardTransformation( y, x1 ) );
         TS_ASSERT_THROWS_NOTHING( lu->forwardTransformation( y, x2 ) );
@@ -82,15 +82,14 @@ public:
             TS_ASSERT( FloatUtils::areEqual( x1[i], x2[i] ) );
 
         double d2[] = { 3.2, -2, 10, 3 };
-        ft->pushEtaMatrix( 2, d2 );
-        lu->pushEtaMatrix( 2, d2 );
+        ft->updateToAdjacentBasis( 2, d2, NULL );
+        lu->updateToAdjacentBasis( 2, d2, NULL );
 
         TS_ASSERT_THROWS_NOTHING( ft->forwardTransformation( y, x1 ) );
         TS_ASSERT_THROWS_NOTHING( lu->forwardTransformation( y, x2 ) );
 
         for ( unsigned i = 0; i < 4; ++i )
             TS_ASSERT( FloatUtils::areEqual( x1[i], x2[i] ) );
-
 
         double basisAtThisPoint[] = {
             2, -20, 64, -4,

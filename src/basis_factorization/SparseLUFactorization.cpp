@@ -81,11 +81,13 @@ const List<EtaMatrix *> SparseLUFactorization::getEtas() const
 	return _etas;
 }
 
-void SparseLUFactorization::pushEtaMatrix( unsigned columnIndex, const double *column )
+void SparseLUFactorization::updateToAdjacentBasis( unsigned columnIndex,
+                                                   const double *changeColumn,
+                                                   const SparseVector */* newColumn */ )
 {
-    ASSERT( !FloatUtils::isZero( column[columnIndex] ) );
+    ASSERT( !FloatUtils::isZero( changeColumn[columnIndex] ) );
 
-    EtaMatrix *matrix = new EtaMatrix( _m, columnIndex, column );
+    EtaMatrix *matrix = new EtaMatrix( _m, columnIndex, changeColumn );
     _etas.append( matrix );
 
 	if ( _etas.size() > GlobalConfiguration::REFACTORIZATION_THRESHOLD )

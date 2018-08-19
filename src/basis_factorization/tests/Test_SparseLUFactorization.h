@@ -66,7 +66,7 @@ public:
         // E1 = | 1 1   |
         //      |   1   |
         //      |   3 1 |
-        basis.pushEtaMatrix( 1, a1 );
+        basis.updateToAdjacentBasis( 1, a1, NULL );
 
         double a2[] = { 3, 1, 4 };
         double d2[] = { 0, 0, 0 };
@@ -84,7 +84,7 @@ public:
         // E2 = | 2     |
         //      | 1 1   |
         //      | 1   1 |
-        basis.pushEtaMatrix( 0, d2 );
+        basis.updateToAdjacentBasis( 0, d2, NULL );
 
         double a3[] = { 2, 1, 4 };
         double d3[] = { 0, 0, 0 };
@@ -106,13 +106,13 @@ public:
 		SparseLUFactorization basis( 3, *oracle );
 
 		double e1[] = { 1, 1, 3 };
-		basis.pushEtaMatrix( 1, e1 );
+		basis.updateToAdjacentBasis( 1, e1, NULL );
 
 		double e2[] = { 2, 1, 1 };
-		basis.pushEtaMatrix ( 0, e2 );
+		basis.updateToAdjacentBasis ( 0, e2, NULL );
 
 		double e3[] = { 0.5, 0.5, 0.5 };
-		basis.pushEtaMatrix( 2, e3 );
+		basis.updateToAdjacentBasis( 2, e3, NULL );
 
 		double B[] = {
             1, 2, 4,
@@ -154,7 +154,7 @@ public:
         //      |   1   |
         //      |   3 1 |
         double e1[] = { 1, 1, 3 };
-        basis.pushEtaMatrix( 1, e1 );
+        basis.updateToAdjacentBasis( 1, e1, NULL );
 
         double y2[] = { 0, 12, 0 };
         double x2[] = { 0, 0, 0 };
@@ -173,7 +173,7 @@ public:
         //      | 1 1   |
         //      | 1   1 |
         double e2[] = { 2, 1, 1 };
-        basis.pushEtaMatrix( 0, e2 );
+        basis.updateToAdjacentBasis( 0, e2, NULL );
 
         double y3[] = { 19, 12, 0 };
         double x3[] = { 0, 0, 0 };
@@ -192,7 +192,7 @@ public:
         //      |   1 0.5 |
         //      |     0.5 |
         double e3[] = { 0.5, 0.5, 0.5 };
-        basis.pushEtaMatrix( 2, e3 );
+        basis.updateToAdjacentBasis( 2, e3, NULL );
 
         double y4[] = { 19, 12, 17 };
         double x4[] = { 0, 0, 0 };
@@ -222,7 +222,7 @@ public:
         //      |  0 1   |
         //      | -1   1 |
         double e1[] = { -1, 0, -1 };
-        basis.pushEtaMatrix( 0, e1 );
+        basis.updateToAdjacentBasis( 0, e1, NULL );
 
         double y[] = { 1, 0, -1 };
         double x[] = { 0, 0, 0 };
@@ -244,13 +244,13 @@ public:
 		SparseLUFactorization basis( 3, *oracle );
 
 		double e1[] = { 1, 1, 3 };
-		basis.pushEtaMatrix( 1, e1 );
+		basis.updateToAdjacentBasis( 1, e1, NULL );
 
 		double e2[] = { 2, 1, 1 };
-		basis.pushEtaMatrix( 0, e2 );
+		basis.updateToAdjacentBasis( 0, e2, NULL );
 
 		double e3[] = { 0.5, 0.5, 0.5 };
-        basis.pushEtaMatrix( 2, e3 );
+        basis.updateToAdjacentBasis( 2, e3, NULL );
 
 		double B[] = {
             1, 2, 4,
@@ -290,7 +290,7 @@ public:
         double d1[] = { 0, 0, 0 };
 
         TS_ASSERT_THROWS_NOTHING( basis.forwardTransformation( a1, d1 ) );
-        basis.pushEtaMatrix( 1, a1 );
+        basis.updateToAdjacentBasis( 1, a1, NULL );
 
         // Save the expected basis after this push
         double currentBasis[] = {
@@ -324,7 +324,7 @@ public:
             TS_ASSERT( FloatUtils::areEqual( expected2[i], d2other[i] ) );
 
         // Transform the new basis but not the original
-        otherBasis.pushEtaMatrix( 0, d2 );
+        otherBasis.updateToAdjacentBasis( 0, d2, NULL );
 
         double a3[] = { 2, 1, 4 };
         double d3[] = { 0, 0, 0 };

@@ -42,11 +42,18 @@ public:
 
     /*
       Inform the basis factorization that the basis has been changed
-      by a pivot step. This results is an eta matrix by which the
-      basis is multiplied on the right. This eta matrix is represented
-      by the column index and column vector.
+      by a pivot step. The parameters are:
+
+      1. The index of the column in question
+      2. The changeColumn -- this is the so called Eta matrix column
+      3. The new explicit column that is being added to the basis
+
+      A basis factorization may make use of just one of the two last
+      parameters.
     */
-    virtual void pushEtaMatrix( unsigned columnIndex, const double *column ) = 0;
+    virtual void updateToAdjacentBasis( unsigned columnIndex,
+                                        const double *changeColumn,
+                                        const SparseVector *newColumn ) = 0;
 
     /*
       Perform a forward transformation, i.e. find x such that Bx = y.

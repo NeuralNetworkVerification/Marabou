@@ -74,9 +74,11 @@ const List<EtaMatrix *> LUFactorization::getEtas() const
 	return _etas;
 }
 
-void LUFactorization::pushEtaMatrix( unsigned columnIndex, const double *column )
+void LUFactorization::updateToAdjacentBasis( unsigned columnIndex,
+                                             const double *changeColumn,
+                                             const SparseVector */* newColumn */ )
 {
-    EtaMatrix *matrix = new EtaMatrix( _m, columnIndex, column );
+    EtaMatrix *matrix = new EtaMatrix( _m, columnIndex, changeColumn );
     _etas.append( matrix );
 
 	if ( _etas.size() > GlobalConfiguration::REFACTORIZATION_THRESHOLD )
