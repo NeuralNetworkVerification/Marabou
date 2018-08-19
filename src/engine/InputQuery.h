@@ -113,8 +113,10 @@ private:
     */
     void freeConstraintsIfNeeded();
 
+public:
     /*
-      Mapping of input/output variables to their indices
+      Mapping of input/output variables to their indices.
+      Made public for easy access from the preprocessor.
     */
     Map<unsigned, unsigned> _variableToInputIndex;
     Map<unsigned, unsigned> _inputIndexToVariable;
