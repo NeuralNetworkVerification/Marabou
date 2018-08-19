@@ -22,6 +22,7 @@ SparseFTFactorization::SparseFTFactorization( unsigned m, const BasisColumnOracl
     , _sparseLUFactors( m )
     , _sparseGaussianEliminator( m )
     , _z( NULL )
+    , _hIsIdentity( true )
 {
     _B = new CSRMatrix;
     if ( !_B )
@@ -84,14 +85,15 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
     --columnIndex;
     if ( newColumn )
         printf( "BLA" );
+
+    // Mark that H has been changed
+    _hIsIdentity = false;
 }
 
 void SparseFTFactorization::setBasis( const double *B )
 {
     _B->initialize( B, _m, _m );
 	factorizeBasis();
-
-    // DO SOMETHING WITH H?
 }
 
 void SparseFTFactorization::forwardTransformation( const double *y, double *x ) const
@@ -169,6 +171,8 @@ void SparseFTFactorization::clearFactorization()
     for ( unsigned i = 0; i < _m; ++i )
         _H->commitChange( i, i, 1.0 );
     _H->executeChanges();
+
+    _hIsIdentity = true;
 }
 
 void SparseFTFactorization::factorizeBasis()
@@ -193,15 +197,13 @@ void SparseFTFactorization::storeFactorization( IBasisFactorization *other )
     SparseFTFactorization *otherSparseFTFactorization = (SparseFTFactorization *)other;
 
     ASSERT( _m == otherSparseFTFactorization->_m );
-    // ASSERT( otherSparseFTFactorization->_etas.size() == 0 );
-
-    // TODO: H?
 
     obtainFreshBasis();
 
     // Store the new basis and factorization
     _B->storeIntoOther( otherSparseFTFactorization->_B );
     _sparseLUFactors.storeToOther( &otherSparseFTFactorization->_sparseLUFactors );
+    otherSparseFTFactorization->_hIsIdentity = true;
 }
 
 void SparseFTFactorization::restoreFactorization( const IBasisFactorization *other )
@@ -209,9 +211,6 @@ void SparseFTFactorization::restoreFactorization( const IBasisFactorization *oth
     const SparseFTFactorization *otherSparseFTFactorization = (const SparseFTFactorization *)other;
 
     ASSERT( _m == otherSparseFTFactorization->_m );
-    // ASSERT( otherSparseFTFactorization->_etas.size() == 0 );
-
-    // TODO: H?
 
     // Clear any existing data
     clearFactorization();
@@ -223,13 +222,10 @@ void SparseFTFactorization::restoreFactorization( const IBasisFactorization *oth
 
 void SparseFTFactorization::invertBasis( double *result )
 {
-    // if ( !_etas.empty() )
-    //     throw BasisFactorizationError( BasisFactorizationError::CANT_INVERT_BASIS_BECAUSE_OF_ETAS );
-
-    // TODO: H?
+    if ( !_hIsIdentity )
+        throw BasisFactorizationError( BasisFactorizationError::CANT_INVERT_BASIS_BECAUSE_OF_H_MATRIX );
 
     ASSERT( result );
-
     _sparseLUFactors.invertBasis( result );
 }
 
@@ -241,9 +237,7 @@ void SparseFTFactorization::log( const String &message )
 
 bool SparseFTFactorization::explicitBasisAvailable() const
 {
-    // return _etas.empty();
-    return false;
-    // TODO: H?
+    return _hIsIdentity;
 }
 
 void SparseFTFactorization::makeExplicitBasisAvailable()
@@ -277,8 +271,6 @@ void SparseFTFactorization::obtainFreshBasis()
     _B->executeChanges();
 
     factorizeBasis();
-
-    // TOOD: H?
 }
 
 //

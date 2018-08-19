@@ -17,6 +17,17 @@
 #include "IBasisFactorization.h"
 #include "SparseLUFactors.h"
 
+/*
+  This class performs a sparse FT factorization of a given matrix.
+
+  The factorization is of the form:
+
+      A = F * H * V
+
+  This is an extension of the previous LU facotrization, where A = FV,
+  with an extra matrix H that replaces the eta matrices. This factorization
+  makes use of the previous LU factorization, but makes the necessary changes.
+*/
 class SparseFTFactorization : public IBasisFactorization
 {
 public:
@@ -139,6 +150,11 @@ private:
       Clear a previous factorization.
     */
 	void clearFactorization();
+
+    /*
+      A flag that marks whether H is the identity matrix
+    */
+    bool _hIsIdentity;
 
     static void log( const String &message );
 };
