@@ -164,12 +164,11 @@ void SparseFTFactorization::backwardTransformation( const double *y, double *x )
 
 void SparseFTFactorization::clearFactorization()
 {
-	// List<EtaMatrix *>::iterator it;
-    // for ( it = _etas.begin(); it != _etas.end(); ++it )
-    //     delete *it;
-    // _etas.clear();
-
-    // TODO: H?
+    // Reset matrix _H to the identity matrix
+    _H->clear();
+    for ( unsigned i = 0; i < _m; ++i )
+        _H->commitChange( i, i, 1.0 );
+    _H->executeChanges();
 }
 
 void SparseFTFactorization::factorizeBasis()
