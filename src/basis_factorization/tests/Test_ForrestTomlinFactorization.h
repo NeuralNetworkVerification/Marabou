@@ -54,25 +54,6 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete mock );
     }
 
-    void test_factorization_enabled_disabled()
-    {
-        ForrestTomlinFactorization *ft;
-
-        TS_ASSERT( ft = new ForrestTomlinFactorization( 3, *oracle ) );
-
-        TS_ASSERT( ft->factorizationEnabled() );
-
-        TS_ASSERT_THROWS_NOTHING( ft->toggleFactorization( false ) );
-
-        TS_ASSERT( !ft->factorizationEnabled() );
-
-        TS_ASSERT_THROWS_NOTHING( ft->toggleFactorization( true ) );
-
-        TS_ASSERT( ft->factorizationEnabled() );
-
-        TS_ASSERT_THROWS_NOTHING( delete ft );
-    }
-
     void test_set_basis()
     {
         ForrestTomlinFactorization *ft;

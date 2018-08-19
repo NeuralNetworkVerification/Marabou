@@ -44,25 +44,6 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete mock );
     }
 
-    void test_factorization_enabled_disabled()
-    {
-        SparseLUFactorization *basis;
-
-        TS_ASSERT( basis = new SparseLUFactorization( 3, *oracle ) );
-
-        TS_ASSERT( basis->factorizationEnabled() );
-
-        TS_ASSERT_THROWS_NOTHING( basis->toggleFactorization( false ) );
-
-        TS_ASSERT( !basis->factorizationEnabled() );
-
-        TS_ASSERT_THROWS_NOTHING( basis->toggleFactorization( true ) );
-
-        TS_ASSERT( basis->factorizationEnabled() );
-
-        TS_ASSERT_THROWS_NOTHING( delete basis );
-    }
-
     void test_forward_transformation()
     {
         SparseLUFactorization basis( 3, *oracle );

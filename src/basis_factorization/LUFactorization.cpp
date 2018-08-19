@@ -79,7 +79,7 @@ void LUFactorization::pushEtaMatrix( unsigned columnIndex, const double *column 
     EtaMatrix *matrix = new EtaMatrix( _m, columnIndex, column );
     _etas.append( matrix );
 
-	if ( ( _etas.size() > GlobalConfiguration::REFACTORIZATION_THRESHOLD ) && factorizationEnabled() )
+	if ( _etas.size() > GlobalConfiguration::REFACTORIZATION_THRESHOLD )
 	{
         log( "Number of etas exceeds threshold. Refactoring basis\n" );
         obtainFreshBasis();

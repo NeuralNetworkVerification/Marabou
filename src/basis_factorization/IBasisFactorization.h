@@ -34,8 +34,7 @@ public:
     };
 
     IBasisFactorization( const BasisColumnOracle &basisColumnOracle )
-        : _factorizationEnabled( true )
-        , _basisColumnOracle( &basisColumnOracle )
+        : _basisColumnOracle( &basisColumnOracle )
     {
     }
 
@@ -75,19 +74,6 @@ public:
     virtual void obtainFreshBasis() = 0;
 
     /*
-      Control/check whether factorization is enabled.
-    */
-    bool factorizationEnabled() const
-    {
-        return _factorizationEnabled;
-    }
-
-    void toggleFactorization( bool value )
-    {
-        _factorizationEnabled = value;
-    }
-
-    /*
       Return true iff the basis matrix B is explicitly available.
     */
     virtual bool explicitBasisAvailable() const = 0;
@@ -112,13 +98,6 @@ public:
       For debugging
     */
     virtual void dump() const {};
-
-private:
-    /*
-      A flag that controls whether factorization is enabled or
-      disabled.
-    */
-    bool _factorizationEnabled;
 
 protected:
     const BasisColumnOracle *_basisColumnOracle;
