@@ -47,7 +47,7 @@ public:
     */
     void updateToAdjacentBasis( unsigned columnIndex,
                                 const double *changeColumn,
-                                const SparseVector */* newColumn */ );
+                                const double */* newColumn */ );
 
     /*
       Perform a forward transformation, i.e. find x such that x = inv(B) * y,

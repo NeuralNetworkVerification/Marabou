@@ -76,7 +76,7 @@ const List<EtaMatrix *> LUFactorization::getEtas() const
 
 void LUFactorization::updateToAdjacentBasis( unsigned columnIndex,
                                              const double *changeColumn,
-                                             const SparseVector */* newColumn */ )
+                                             const double */* newColumn */ )
 {
     EtaMatrix *matrix = new EtaMatrix( _m, columnIndex, changeColumn );
     _etas.append( matrix );

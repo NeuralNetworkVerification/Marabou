@@ -83,7 +83,7 @@ const List<EtaMatrix *> SparseLUFactorization::getEtas() const
 
 void SparseLUFactorization::updateToAdjacentBasis( unsigned columnIndex,
                                                    const double *changeColumn,
-                                                   const SparseVector */* newColumn */ )
+                                                   const double */* newColumn */ )
 {
     ASSERT( !FloatUtils::isZero( changeColumn[columnIndex] ) );
 

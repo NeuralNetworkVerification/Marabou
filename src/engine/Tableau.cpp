@@ -32,7 +32,7 @@ Tableau::Tableau()
     : _A( NULL )
     , _sparseColumnsOfA( NULL )
     , _denseA( NULL )
-    , _a( NULL )
+    // , _a( NULL )
     , _changeColumn( NULL )
     , _pivotRow( NULL )
     , _b( NULL )
@@ -90,11 +90,11 @@ void Tableau::freeMemoryIfNeeded()
         _denseA = NULL;
     }
 
-    if ( _a )
-    {
-        delete[] _a;
-        _a = NULL;
-    }
+    // if ( _a )
+    // {
+    //     delete[] _a;
+    //     _a = NULL;
+    // }
 
     if ( _changeColumn )
     {
@@ -217,9 +217,9 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     if ( !_denseA )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::denseA" );
 
-    _a = new double[m];
-    if ( !_a )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::a" );
+    // _a = new double[m];
+    // if ( !_a )
+    //     throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::a" );
 
     _changeColumn = new double[m];
     if ( !_changeColumn )
@@ -745,7 +745,7 @@ void Tableau::performPivot()
     // leaving variable is the one that has changed
     _basisFactorization->updateToAdjacentBasis( _leavingVariable,
                                                 _changeColumn,
-                                                _sparseColumnsOfA[currentNonBasic] );
+                                                getAColumn( currentNonBasic ) );
 
     if ( _statistics )
     {
@@ -787,7 +787,7 @@ void Tableau::performDegeneratePivot()
     // Update the basis factorization
     _basisFactorization->updateToAdjacentBasis( _leavingVariable,
                                                 _changeColumn,
-                                                _sparseColumnsOfA[currentNonBasic] );
+                                                getAColumn( currentNonBasic ) );
 
     // Switch assignment values. No call to notify is required,
     // because values haven't changed.
@@ -1333,10 +1333,12 @@ void Tableau::setChangeRatio( double changeRatio )
 void Tableau::computeChangeColumn()
 {
     // _a gets the entering variable's column in A
-    _sparseColumnsOfA[_nonBasicIndexToVariable[_enteringVariable]]->toDense( _a );
+    // _sparseColumnsOfA[_nonBasicIndexToVariable[_enteringVariable]]->toDense( _a );
+
+    const double *a = getAColumn( _nonBasicIndexToVariable[_enteringVariable] );
 
     // Compute d = inv(B) * a using the basis factorization
-    _basisFactorization->forwardTransformation( _a, _changeColumn );
+    _basisFactorization->forwardTransformation( a, _changeColumn );
 }
 
 const double *Tableau::getChangeColumn() const
@@ -1857,12 +1859,12 @@ void Tableau::addRow()
     delete[] _denseA;
     _denseA = newDenseA;
 
-    // Allocate a new _a. Don't need to initialize
-    double *newA = new double[newM];
-    if ( !newA )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newA" );
-    delete[] _a;
-    _a = newA;
+    // // Allocate a new _a. Don't need to initialize
+    // double *newA = new double[newM];
+    // if ( !newA )
+    //     throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newA" );
+    // delete[] _a;
+    // _a = newA;
 
     // Allocate a new changeColumn. Don't need to initialize
     double *newChangeColumn = new double[newM];

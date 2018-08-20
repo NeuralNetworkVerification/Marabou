@@ -25,7 +25,6 @@ public:
         CORRUPT_PERMUATION_MATRIX = 3,
         CANT_INVERT_BASIS_BECAUSE_BASIS_ISNT_AVAILABLE = 4,
         GAUSSIAN_ELIMINATION_FAILED = 5,
-        CANT_INVERT_BASIS_BECAUSE_OF_H_MATRIX = 6,
     };
 
     BasisFactorizationError( BasisFactorizationError::Code code ) :

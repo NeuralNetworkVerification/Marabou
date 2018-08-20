@@ -441,10 +441,10 @@ private:
     SparseVector **_sparseColumnsOfA;
     double *_denseA;
 
-    /*
-      A single column from A
-    */
-    double *_a;
+    // /*
+    //   A single column from A
+    // */
+    // double *_a;
 
     /*
       Used to compute inv(B)*a

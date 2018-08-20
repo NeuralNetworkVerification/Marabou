@@ -139,7 +139,7 @@ ForrestTomlinFactorization::~ForrestTomlinFactorization()
 
 void ForrestTomlinFactorization::updateToAdjacentBasis( unsigned columnIndex,
                                                         const double *changeColumn,
-                                                        const SparseVector */* newColumn */ )
+                                                        const double */* newColumn */ )
 {
     // Pushing an eta matrix invalidates the explicit basis
     _explicitBasisAvailable = false;

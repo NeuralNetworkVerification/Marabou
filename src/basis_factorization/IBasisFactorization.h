@@ -53,7 +53,7 @@ public:
     */
     virtual void updateToAdjacentBasis( unsigned columnIndex,
                                         const double *changeColumn,
-                                        const SparseVector *newColumn ) = 0;
+                                        const double *newColumn ) = 0;
 
     /*
       Perform a forward transformation, i.e. find x such that Bx = y.

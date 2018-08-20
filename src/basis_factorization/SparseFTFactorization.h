@@ -13,8 +13,9 @@
 #ifndef __SparseFTFactorization_h__
 #define __SparseFTFactorization_h__
 
-#include "SparseGaussianEliminator.h"
 #include "IBasisFactorization.h"
+#include "SparseEtaMatrix.h"
+#include "SparseGaussianEliminator.h"
 #include "SparseLUFactors.h"
 
 /*
@@ -23,6 +24,8 @@
   The factorization is of the form:
 
       A = F * H * V
+
+  Where H represents a list of transposed eta matrices.
 
   This is an extension of the previous LU facotrization, where A = FV,
   with an extra matrix H that replaces the eta matrices. This factorization
@@ -47,7 +50,7 @@ public:
     */
     void updateToAdjacentBasis( unsigned columnIndex,
                                 const double *changeColumn,
-                                const SparseVector *newColumn );
+                                const double *newColumn );
 
     /*
       Perform a forward transformation, i.e. find x such that x = inv(B) * y,
@@ -102,9 +105,9 @@ private:
     SparseMatrix *_B;
 
     /*
-      The extra ForrstTomlin factorization matrix
+      The extra ForrstTomlin factorization eta matrices
     */
-    SparseMatrix *_H;
+    List<SparseEtaMatrix *> _etas;
 
     /*
       The dimension of the basis matrix.
@@ -124,7 +127,16 @@ private:
     /*
       Work memory.
     */
-    mutable double *_z;
+    mutable double *_z1;
+    mutable double *_z2;
+    double *_z3;
+    double *_z4;
+
+    /*
+      Transformations on the H matrix (the list of etas)
+    */
+    void hForwardTransformation( const double *y, double *x ) const;
+    void hBackwardTransformation( const double *y, double *x ) const;
 
     /*
       Free any allocated memory.
@@ -150,11 +162,6 @@ private:
       Clear a previous factorization.
     */
 	void clearFactorization();
-
-    /*
-      A flag that marks whether H is the identity matrix
-    */
-    bool _hIsIdentity;
 
     static void log( const String &message );
 };
