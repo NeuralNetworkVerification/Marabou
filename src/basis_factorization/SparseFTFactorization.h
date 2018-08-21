@@ -97,6 +97,7 @@ public:
       Debug
     */
     void dump() const;
+    void dumpExplicitBasis() const;
 
 private:
     /*

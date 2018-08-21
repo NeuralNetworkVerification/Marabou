@@ -28,7 +28,7 @@ public:
 
     ~EtaMatrix();
     void dump() const;
-	void toMatrix( double *A );
+	void toMatrix( double *A ) const;
 
     void resetToIdentity();
 

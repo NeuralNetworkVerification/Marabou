@@ -148,14 +148,23 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
     _sparseLUFactors.fForwardTransformation( newColumn, _z3 );
     hForwardTransformation( _z3, _z4 );
 
+    printf( "Vector z4 after the forward transformation:\n" );
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        printf( "\tz3[%u] = %lf\n", i, _z4[i] );
+    }
+
     // Replace this column of V in the sparse factors
     // Also find the index of the last non-zero entry in this column, for U
     unsigned lastNonZeroEntryInU = 0;       // this is "t"
+    DEBUG( bool foundNonZeroEntry = false );
     // double diagonalElement;
     for ( unsigned i = 0; i < _m; ++i )
     {
         if ( !FloatUtils::isZero( _z4[i] ) )
         {
+            DEBUG( foundNonZeroEntry = true );
+
             unsigned uRow = _sparseLUFactors._P._rowOrdering[i];
             if ( uRow > lastNonZeroEntryInU )
                 lastNonZeroEntryInU = uRow;
@@ -188,7 +197,7 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
       If U is upper traingular, we are done.
     */
 
-    ASSERT( lastNonZeroEntryInU > 0 );
+    ASSERT( foundNonZeroEntry );
     if ( lastNonZeroEntryInU <= uColumnIndex )
     {
         // No spike, just store the diagonal element and be done
@@ -588,6 +597,69 @@ void SparseFTFactorization::hBackwardTransformation( const double *y, double *x 
         // {
         //     printf( "\tx[%u] = %lf\n", i, x[i] );
         // }
+    }
+}
+
+void SparseFTFactorization::dumpExplicitBasis() const
+{
+    // The basis is given by:   B = F * H * V
+    double *result = new double[_m * _m];
+    double *toMultiply = new double[_m * _m];
+    double *temp = new double[_m * _m];
+
+    // Start with F
+    _sparseLUFactors._F->toDense( result );
+    for ( unsigned i = 0; i < _m; ++i )
+        result[i*_m + i] = 1;
+
+    // Go eta by eta
+    for ( const auto &eta : _etas )
+    {
+        eta->toMatrix( toMultiply );
+
+        // Etas are transposed
+        for ( unsigned i = 0; i < _m; ++i )
+        {
+            for ( unsigned j = 0; j < _m; ++j )
+            {
+                temp[i*_m + j] = 0;
+                for ( unsigned k = 0; k < _m; ++k )
+                {
+                    temp[i*_m + j] += ( result[i*_m + k] * toMultiply[j*_m + k] );
+                }
+            }
+        }
+
+        memcpy( result, temp, sizeof(double) * _m * _m );
+    }
+
+    // End with V
+    _sparseLUFactors._V->toDense( toMultiply );
+
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        for ( unsigned j = 0; j < _m; ++j )
+        {
+            temp[i*_m + j] = 0;
+            for ( unsigned k = 0; k < _m; ++k )
+            {
+                temp[i*_m + j] += ( result[i*_m + k] * toMultiply[k*_m + j] );
+            }
+        }
+    }
+    memcpy( result, temp, sizeof(double) * _m * _m );
+
+    // Print out the result
+    printf( "SparseFTFactorization dumping explicit basis:\n" );
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        printf( "\t" );
+        for ( unsigned j = 0; j < _m; ++j )
+        {
+            printf( "%5.2lf ", result[i*_m + j] );
+        }
+
+        printf( "\n" );
     }
 }
 
