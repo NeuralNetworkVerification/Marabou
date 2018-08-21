@@ -18,6 +18,8 @@
 #include "LUFactorization.h"
 #include "MockColumnOracle.h"
 #include "MockErrno.h"
+#include "SparseFTFactorization.h"
+#include "SparseLUFactorization.h"
 
 class MockForCompareFactorizations
 {
@@ -46,9 +48,13 @@ public:
     {
         ForrestTomlinFactorization *ft;
         LUFactorization *lu;
+        SparseFTFactorization *sft;
+        SparseLUFactorization *slu;
 
         TS_ASSERT( ft = new ForrestTomlinFactorization( 4, *oracle ) );
         TS_ASSERT( lu = new LUFactorization( 4, *oracle ) );
+        TS_ASSERT( sft = new SparseFTFactorization( 4, *oracle ) );
+        TS_ASSERT( slu = new SparseLUFactorization( 4, *oracle ) );
 
         double B[] =
             {
@@ -60,36 +66,66 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( ft->setBasis( B ) );
         TS_ASSERT_THROWS_NOTHING( lu->setBasis( B ) );
+        TS_ASSERT_THROWS_NOTHING( sft->setBasis( B ) );
+        TS_ASSERT_THROWS_NOTHING( slu->setBasis( B ) );
 
         double y[4] = { 9, 15, 10, -12 };
         double x1[4];
         double x2[4];
+        double x3[4];
+        double x4[4];
 
         TS_ASSERT_THROWS_NOTHING( ft->forwardTransformation( y, x1 ) );
         TS_ASSERT_THROWS_NOTHING( lu->forwardTransformation( y, x2 ) );
+        TS_ASSERT_THROWS_NOTHING( sft->forwardTransformation( y, x3 ) );
+        TS_ASSERT_THROWS_NOTHING( slu->forwardTransformation( y, x4 ) );
 
         for ( unsigned i = 0; i < 4; ++i )
+        {
             TS_ASSERT( FloatUtils::areEqual( x1[i], x2[i] ) );
+            TS_ASSERT( FloatUtils::areEqual( x1[i], x3[i] ) );
+            TS_ASSERT( FloatUtils::areEqual( x1[i], x4[i] ) );
+        }
 
         double d1[] = { -4, 2, 0, 3 };
-        ft->updateToAdjacentBasis( 1, d1, NULL );
-        lu->updateToAdjacentBasis( 1, d1, NULL );
+        double a1[] = { 0, 1, 4.5, 0 };
+
+        ft->updateToAdjacentBasis( 1, d1, a1 );
+        lu->updateToAdjacentBasis( 1, d1, a1 );
+        // sft->updateToAdjacentBasis( 1, d1, a1 );
+        slu->updateToAdjacentBasis( 1, d1, a1 );
 
         TS_ASSERT_THROWS_NOTHING( ft->forwardTransformation( y, x1 ) );
         TS_ASSERT_THROWS_NOTHING( lu->forwardTransformation( y, x2 ) );
+        // TS_ASSERT_THROWS_NOTHING( sft->forwardTransformation( y, x3 ) );
+        TS_ASSERT_THROWS_NOTHING( slu->forwardTransformation( y, x4 ) );
 
         for ( unsigned i = 0; i < 4; ++i )
+        {
             TS_ASSERT( FloatUtils::areEqual( x1[i], x2[i] ) );
+            // TS_ASSERT( FloatUtils::areEqual( x1[i], x3[i] ) );
+            TS_ASSERT( FloatUtils::areEqual( x1[i], x4[i] ) );
+        }
 
         double d2[] = { 3.2, -2, 10, 3 };
-        ft->updateToAdjacentBasis( 2, d2, NULL );
-        lu->updateToAdjacentBasis( 2, d2, NULL );
+        double a2[] = { -26.33, 10, -44, 0 };
+
+        ft->updateToAdjacentBasis( 2, d2, a2 );
+        lu->updateToAdjacentBasis( 2, d2, a2 );
+        // sft->updateToAdjacentBasis( 2, d2, a2 );
+        slu->updateToAdjacentBasis( 2, d2, a2 );
 
         TS_ASSERT_THROWS_NOTHING( ft->forwardTransformation( y, x1 ) );
         TS_ASSERT_THROWS_NOTHING( lu->forwardTransformation( y, x2 ) );
+        // TS_ASSERT_THROWS_NOTHING( sft->forwardTransformation( y, x3 ) );
+        TS_ASSERT_THROWS_NOTHING( slu->forwardTransformation( y, x4 ) );
 
         for ( unsigned i = 0; i < 4; ++i )
+        {
             TS_ASSERT( FloatUtils::areEqual( x1[i], x2[i] ) );
+            // TS_ASSERT( FloatUtils::areEqual( x1[i], x3[i] ) );
+            TS_ASSERT( FloatUtils::areEqual( x1[i], x4[i] ) );
+        }
 
         double basisAtThisPoint[] = {
             2, -20, 64, -4,
@@ -102,23 +138,41 @@ public:
 
         ft->makeExplicitBasisAvailable();
         lu->makeExplicitBasisAvailable();
+        sft->makeExplicitBasisAvailable();
+        slu->makeExplicitBasisAvailable();
 
         TS_ASSERT_THROWS_NOTHING( ft->forwardTransformation( y, x1 ) );
         TS_ASSERT_THROWS_NOTHING( lu->forwardTransformation( y, x2 ) );
+        TS_ASSERT_THROWS_NOTHING( sft->forwardTransformation( y, x3 ) );
+        TS_ASSERT_THROWS_NOTHING( slu->forwardTransformation( y, x4 ) );
 
         for ( unsigned i = 0; i < 4; ++i )
+
+        for ( unsigned i = 0; i < 4; ++i )
+        {
             TS_ASSERT( FloatUtils::areEqual( x1[i], x2[i] ) );
+            TS_ASSERT( FloatUtils::areEqual( x1[i], x3[i] ) );
+            TS_ASSERT( FloatUtils::areEqual( x1[i], x4[i] ) );
+        }
 
         lu->makeExplicitBasisAvailable();
 
         TS_ASSERT_THROWS_NOTHING( ft->forwardTransformation( y, x1 ) );
         TS_ASSERT_THROWS_NOTHING( lu->forwardTransformation( y, x2 ) );
+        TS_ASSERT_THROWS_NOTHING( sft->forwardTransformation( y, x3 ) );
+        TS_ASSERT_THROWS_NOTHING( slu->forwardTransformation( y, x4 ) );
 
         for ( unsigned i = 0; i < 4; ++i )
+        {
             TS_ASSERT( FloatUtils::areEqual( x1[i], x2[i] ) );
+            TS_ASSERT( FloatUtils::areEqual( x1[i], x3[i] ) );
+            TS_ASSERT( FloatUtils::areEqual( x1[i], x4[i] ) );
+        }
 
         TS_ASSERT_THROWS_NOTHING( delete lu );
         TS_ASSERT_THROWS_NOTHING( delete ft );
+        TS_ASSERT_THROWS_NOTHING( delete slu );
+        TS_ASSERT_THROWS_NOTHING( delete sft );
     }
 };
 
