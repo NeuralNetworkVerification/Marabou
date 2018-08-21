@@ -101,6 +101,32 @@ void SparseEtaMatrix::executeChanges()
     _diagonalElement = _sparseColumn.get( _columnIndex );
 }
 
+void SparseEtaMatrix::dumpDenseTransposed() const
+{
+    printf( "Dumping transposed eta matrix:\n" );
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        printf( "\t" );
+        if ( i != _columnIndex )
+        {
+            // Print identity row
+            for ( unsigned j = 0; j < _m; ++j )
+            {
+                printf( "%5u ", j == i ? 1 : 0 );
+            }
+        }
+        else
+        {
+            for ( unsigned j = 0; j < _m; ++j )
+            {
+                printf( "%5.2lf ", _sparseColumn.get( j ) );
+            }
+        }
+        printf( "\n" );
+    }
+    printf( "\n" );
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

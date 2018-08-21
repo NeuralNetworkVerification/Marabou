@@ -30,6 +30,7 @@ public:
 
     ~SparseEtaMatrix();
     void dump() const;
+    void dumpDenseTransposed() const;
 
     void resetToIdentity();
 
