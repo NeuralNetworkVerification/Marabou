@@ -54,25 +54,6 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete mock );
     }
 
-    void test_factorization_enabled_disabled()
-    {
-        ForrestTomlinFactorization *ft;
-
-        TS_ASSERT( ft = new ForrestTomlinFactorization( 3, *oracle ) );
-
-        TS_ASSERT( ft->factorizationEnabled() );
-
-        TS_ASSERT_THROWS_NOTHING( ft->toggleFactorization( false ) );
-
-        TS_ASSERT( !ft->factorizationEnabled() );
-
-        TS_ASSERT_THROWS_NOTHING( ft->toggleFactorization( true ) );
-
-        TS_ASSERT( ft->factorizationEnabled() );
-
-        TS_ASSERT_THROWS_NOTHING( delete ft );
-    }
-
     void test_set_basis()
     {
         ForrestTomlinFactorization *ft;
@@ -623,7 +604,7 @@ public:
         //      | 0  3 0 1 |
         double a1[] = { -4, 2, 0, 3 };
 
-        ft->pushEtaMatrix( 1, a1 );
+        ft->updateToAdjacentBasis( 1, a1, NULL );
 
         // B * E1 = | 1   14 -2  4 |
         //          | 1   21 -1  5 |
@@ -828,7 +809,7 @@ public:
         TS_ASSERT_THROWS_NOTHING( ft->setBasis( basisMatrix ) );
 
         double a1[] = { -4, 2, 0, 3 };
-        ft->pushEtaMatrix( 1, a1 );
+        ft->updateToAdjacentBasis( 1, a1, NULL );
 
         ForrestTomlinFactorization *ft2 = new ForrestTomlinFactorization( 4, *oracle );
         ForrestTomlinFactorization *ft3 = new ForrestTomlinFactorization( 4, *oracle );
@@ -882,7 +863,7 @@ public:
         //      |    0 1   |
         //      | 0  3 0 1 |
         double a1[] = { -4, 2, 0, 3 };
-        ft->pushEtaMatrix( 1, a1 );
+        ft->updateToAdjacentBasis( 1, a1, NULL );
 
         // B * E1 = | 1   14 -2  4 |
         //          | 1   21 -1  5 |
@@ -952,7 +933,7 @@ public:
         //      |    0 1   |
         //      | 0  3 0 1 |
         double a1[] = { -4, 2, 0, 3 };
-        ft->pushEtaMatrix( 1, a1 );
+        ft->updateToAdjacentBasis( 1, a1, NULL );
 
         // B * E1 = | 1   14 -2  4 |
         //          | 1   21 -1  5 |

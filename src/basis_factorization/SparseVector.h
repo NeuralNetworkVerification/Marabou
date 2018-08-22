@@ -53,7 +53,7 @@ public:
     /*
       Retrieve an element
     */
-    double get( unsigned index );
+    double get( unsigned index ) const;
 
     /*
       Convert the vector to dense format

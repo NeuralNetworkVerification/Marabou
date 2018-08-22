@@ -81,14 +81,16 @@ const List<EtaMatrix *> SparseLUFactorization::getEtas() const
 	return _etas;
 }
 
-void SparseLUFactorization::pushEtaMatrix( unsigned columnIndex, const double *column )
+void SparseLUFactorization::updateToAdjacentBasis( unsigned columnIndex,
+                                                   const double *changeColumn,
+                                                   const double */* newColumn */ )
 {
-    ASSERT( !FloatUtils::isZero( column[columnIndex] ) );
+    ASSERT( !FloatUtils::isZero( changeColumn[columnIndex] ) );
 
-    EtaMatrix *matrix = new EtaMatrix( _m, columnIndex, column );
+    EtaMatrix *matrix = new EtaMatrix( _m, columnIndex, changeColumn );
     _etas.append( matrix );
 
-	if ( ( _etas.size() > GlobalConfiguration::REFACTORIZATION_THRESHOLD ) && factorizationEnabled() )
+	if ( _etas.size() > GlobalConfiguration::REFACTORIZATION_THRESHOLD )
 	{
         log( "Number of etas exceeds threshold. Refactoring basis\n" );
         obtainFreshBasis();
@@ -277,6 +279,69 @@ void SparseLUFactorization::obtainFreshBasis()
     _B->executeChanges();
 
     factorizeBasis();
+}
+
+void SparseLUFactorization::dumpExplicitBasis() const
+{
+    // The basis is given by:   B = F * V * Etas
+
+    double *result = new double[_m * _m];
+    double *toMultiply = new double[_m * _m];
+    double *temp = new double[_m * _m];
+
+    // Start with F
+    _sparseLUFactors._F->toDense( result );
+    for ( unsigned i = 0; i < _m; ++i )
+        result[i*_m + i] = 1;
+
+    // Multiply by V
+    _sparseLUFactors._V->toDense( toMultiply );
+
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        for ( unsigned j = 0; j < _m; ++j )
+        {
+            temp[i*_m + j] = 0;
+            for ( unsigned k = 0; k < _m; ++k )
+            {
+                temp[i*_m + j] += ( result[i*_m + k] * toMultiply[k*_m + j] );
+            }
+        }
+    }
+    memcpy( result, temp, sizeof(double) * _m * _m );
+
+    // Go eta by eta
+    for ( const auto &eta : _etas )
+    {
+        eta->toMatrix( toMultiply );
+
+        for ( unsigned i = 0; i < _m; ++i )
+        {
+            for ( unsigned j = 0; j < _m; ++j )
+            {
+                temp[i*_m + j] = 0;
+                for ( unsigned k = 0; k < _m; ++k )
+                {
+                    temp[i*_m + j] += ( result[i*_m + k] * toMultiply[k*_m + j] );
+                }
+            }
+        }
+
+        memcpy( result, temp, sizeof(double) * _m * _m );
+    }
+
+    // Print out the result
+    printf( "SparseLUFactorization dumping explicit basis:\n" );
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        printf( "\t" );
+        for ( unsigned j = 0; j < _m; ++j )
+        {
+            printf( "%5.2lf ", result[i*_m + j] );
+        }
+
+        printf( "\n" );
+    }
 }
 
 //

@@ -92,6 +92,11 @@ public:
       Produce a dense version of the matrix
     */
     virtual void toDense( double *result ) const = 0;
+
+    /*
+      Empty the matrix without changing its dimensions
+    */
+    virtual void clear() = 0;
 };
 
 #endif // __SparseMatrix_h__

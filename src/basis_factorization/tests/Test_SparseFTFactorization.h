@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file Test_SparseLUFactorization.h
+/*! \file Test_SparseFTFactorization.h
 ** \verbatim
 ** Top contributors (to current version):
 **   Guy Katz
@@ -16,25 +16,25 @@
 #include "EtaMatrix.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
-#include "SparseLUFactorization.h"
+#include "SparseFTFactorization.h"
 #include "List.h"
 #include "MockColumnOracle.h"
 #include "MockErrno.h"
 
-class MockForSparseLUFactorization
+class MockForSparseFTFactorization
 {
 public:
 };
 
-class SparseLUFactorizationTestSuite : public CxxTest::TestSuite
+class SparseFTFactorizationTestSuite : public CxxTest::TestSuite
 {
 public:
-    MockForSparseLUFactorization *mock;
+    MockForSparseFTFactorization *mock;
     MockColumnOracle *oracle;
 
     void setUp()
     {
-        TS_ASSERT( mock = new MockForSparseLUFactorization );
+        TS_ASSERT( mock = new MockForSparseFTFactorization );
         TS_ASSERT( oracle = new MockColumnOracle );
     }
 
@@ -46,7 +46,7 @@ public:
 
     void test_forward_transformation()
     {
-        SparseLUFactorization basis( 3, *oracle );
+        SparseFTFactorization basis( 3, *oracle );
 
 		double B[] = {
             1, 0, 0,
@@ -66,7 +66,7 @@ public:
         // E1 = | 1 1   |
         //      |   1   |
         //      |   3 1 |
-        basis.updateToAdjacentBasis( 1, a1, NULL );
+        basis.updateToAdjacentBasis( 1, NULL, a1 );
 
         double a2[] = { 3, 1, 4 };
         double d2[] = { 0, 0, 0 };
@@ -84,7 +84,7 @@ public:
         // E2 = | 2     |
         //      | 1 1   |
         //      | 1   1 |
-        basis.updateToAdjacentBasis( 0, d2, NULL );
+        basis.updateToAdjacentBasis( 0, NULL, a2 );
 
         double a3[] = { 2, 1, 4 };
         double d3[] = { 0, 0, 0 };
@@ -102,17 +102,23 @@ public:
 
 	void test_forward_transformation_with_B0()
 	{
-        // Same etas as test_backward_transformation()
-		SparseLUFactorization basis( 3, *oracle );
+        SparseFTFactorization basis( 3, *oracle );
+
+        double identity[] = {
+            1, 0, 0,
+            0, 1, 0,
+            0, 0, 1,
+        };
+		basis.setBasis( identity );
 
 		double e1[] = { 1, 1, 3 };
-		basis.updateToAdjacentBasis( 1, e1, NULL );
+		basis.updateToAdjacentBasis( 1, NULL, e1 );
 
 		double e2[] = { 2, 1, 1 };
-		basis.updateToAdjacentBasis ( 0, e2, NULL );
+		basis.updateToAdjacentBasis ( 0, NULL, e2 );
 
 		double e3[] = { 0.5, 0.5, 0.5 };
-		basis.updateToAdjacentBasis( 2, e3, NULL );
+		basis.updateToAdjacentBasis( 2, NULL, e3 );
 
 		double B[] = {
             1, 2, 4,
@@ -133,7 +139,7 @@ public:
 
 	void test_backward_transformation()
     {
-        SparseLUFactorization basis( 3, *oracle );
+        SparseFTFactorization basis( 3, *oracle );
 
         double B[] = {
             1, 0, 0,
@@ -142,7 +148,7 @@ public:
         };
 		basis.setBasis( B );
 
-        // If no eta matrices are provided, x = y
+        // Initially, x = y
         double y1[] = { 1, 2, 3 };
         double x1[] = { 0, 0, 0 };
         double expected1[] = { 1, 2, 3 };
@@ -150,11 +156,12 @@ public:
         TS_ASSERT_THROWS_NOTHING( basis.backwardTransformation( y1, x1 ) );
         TS_ASSERT_SAME_DATA( x1, expected1, sizeof(double) * 3 );
 
-        // E1 = | 1 1   |
-        //      |   1   |
-        //      |   3 1 |
-        double e1[] = { 1, 1, 3 };
-        basis.updateToAdjacentBasis( 1, e1, NULL );
+        // Change basis into:
+        //  | 1 1   |
+        //  |   1   |
+        //  |   3 1 |
+        double a1[] = { 1, 1, 3 };
+        basis.updateToAdjacentBasis( 1, NULL, a1 );
 
         double y2[] = { 0, 12, 0 };
         double x2[] = { 0, 0, 0 };
@@ -169,38 +176,40 @@ public:
         TS_ASSERT_THROWS_NOTHING( basis.backwardTransformation( y2, x2 ) );
         TS_ASSERT_SAME_DATA( x2, expected2, sizeof(double) * 3 );
 
-        // E2 = | 2     |
-        //      | 1 1   |
-        //      | 1   1 |
-        double e2[] = { 2, 1, 1 };
-        basis.updateToAdjacentBasis( 0, e2, NULL );
+        // Change basis into:
+        //    | 3 1   |
+        //    | 1 1   |
+        //    | 4 3 1 |
+        double a2[] = { 3, 1, 4 };
+        basis.updateToAdjacentBasis( 0, NULL, a2 );
 
         double y3[] = { 19, 12, 0 };
         double x3[] = { 0, 0, 0 };
         double expected3[] = { 3.5, 8.5, 0 };
 
-        //      | 1 1   |   | 2     |
-        //  x * |   1   | * | 1 1   | = | 19 12 0 |
-        //      |   3 1 |   | 1   1 |
+        //      | 3 1   |
+        //  x * | 1 1   | = | 19 12 0 |
+        //      | 4 3 1 |
         //
         // --> x = [ 3.5 8.5 0 ]
 
         TS_ASSERT_THROWS_NOTHING( basis.backwardTransformation( y3, x3 ) );
         TS_ASSERT_SAME_DATA( x3, expected3, sizeof(double) * 3 );
 
-        // E3 = | 1   0.5 |
-        //      |   1 0.5 |
-        //      |     0.5 |
-        double e3[] = { 0.5, 0.5, 0.5 };
-        basis.updateToAdjacentBasis( 2, e3, NULL );
+        // Change basis into:
+        //    | 3 1 2 |
+        //    | 1 1 1 |
+        //    | 4 3 4 |
+        double a3[] = { 2, 1, 4 };
+        basis.updateToAdjacentBasis( 2, NULL, a3 );
 
         double y4[] = { 19, 12, 17 };
         double x4[] = { 0, 0, 0 };
         double expected4[] = { 2, 1, 3 };
 
-        //      | 1 1   |   | 2     |   | 1   0.5 |
-        //  x * |   1   | * | 1 1   | * |   1 0.5 | = | 19 12 0 |
-        //      |   3 1 |   | 1   1 |   |     0.5 |
+        //      | 3 1 2 |
+        //  x * | 1 1 1 | = | 19 12 17 |
+        //      | 4 3 4 |
         //
         // --> x = [ 2 1 3 ]
         TS_ASSERT_THROWS_NOTHING( basis.backwardTransformation( y4, x4 ) );
@@ -209,7 +218,7 @@ public:
 
     void test_backward_transformation_2()
     {
-        SparseLUFactorization basis( 3, *oracle );
+        SparseFTFactorization basis( 3, *oracle );
 
         double B[] = {
             1, 0, 0,
@@ -222,7 +231,7 @@ public:
         //      |  0 1   |
         //      | -1   1 |
         double e1[] = { -1, 0, -1 };
-        basis.updateToAdjacentBasis( 0, e1, NULL );
+        basis.updateToAdjacentBasis( 0, NULL, e1 );
 
         double y[] = { 1, 0, -1 };
         double x[] = { 0, 0, 0 };
@@ -240,17 +249,23 @@ public:
 
 	void test_backward_transformation_with_B0()
 	{
-        // Same etas as test_backward_transformation()
-		SparseLUFactorization basis( 3, *oracle );
+        SparseFTFactorization basis( 3, *oracle );
+
+        double identity[] = {
+            1, 0, 0,
+            0, 1, 0,
+            0, 0, 1,
+        };
+		basis.setBasis( identity );
 
 		double e1[] = { 1, 1, 3 };
-		basis.updateToAdjacentBasis( 1, e1, NULL );
+		basis.updateToAdjacentBasis( 1, NULL, e1 );
 
 		double e2[] = { 2, 1, 1 };
-		basis.updateToAdjacentBasis( 0, e2, NULL );
+		basis.updateToAdjacentBasis( 0, NULL, e2 );
 
 		double e3[] = { 0.5, 0.5, 0.5 };
-        basis.updateToAdjacentBasis( 2, e3, NULL );
+        basis.updateToAdjacentBasis( 2, NULL, e3 );
 
 		double B[] = {
             1, 2, 4,
@@ -276,8 +291,8 @@ public:
 
     void test_store_and_restore()
     {
-        SparseLUFactorization basis( 3, *oracle );
-        SparseLUFactorization otherBasis( 3, *oracle );
+        SparseFTFactorization basis( 3, *oracle );
+        SparseFTFactorization otherBasis( 3, *oracle );
 
         double B[] = {
             1, 0, 0,
@@ -290,7 +305,7 @@ public:
         double d1[] = { 0, 0, 0 };
 
         TS_ASSERT_THROWS_NOTHING( basis.forwardTransformation( a1, d1 ) );
-        basis.updateToAdjacentBasis( 1, a1, NULL );
+        basis.updateToAdjacentBasis( 1, NULL, a1 );
 
         // Save the expected basis after this push
         double currentBasis[] = {
@@ -324,12 +339,17 @@ public:
             TS_ASSERT( FloatUtils::areEqual( expected2[i], d2other[i] ) );
 
         // Transform the new basis but not the original
-        otherBasis.updateToAdjacentBasis( 0, d2, NULL );
+        otherBasis.updateToAdjacentBasis( 0, NULL, d2 );
+
+        // New basis is now:
+        //   2 1 0
+        //   1 1 0
+        //   1 3 1
 
         double a3[] = { 2, 1, 4 };
         double d3[] = { 0, 0, 0 };
         double d3other[] = { 0, 0, 0 };
-        double expected3[] = { 0.5, 0.5, 0.5 };
+        double expected3[] = { 1, 0, 3 };
 
         TS_ASSERT_THROWS_NOTHING( otherBasis.forwardTransformation( a3, d3other ) );
 

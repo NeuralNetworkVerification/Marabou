@@ -35,12 +35,19 @@ public:
     void freeIfNeeded();
 
     /*
-      Adds a new eta matrix to the basis factorization. The matrix is
-      the identity matrix with the specified column replaced by the one
-      provided. If the number of stored eta matrices exceeds a certain
-      threshold, re-factorization may occur.
+      Inform the basis factorization that the basis has been changed
+      by a pivot step. The parameters are:
+
+      1. The index of the column in question
+      2. The changeColumn -- this is the so called Eta matrix column
+      3. The new explicit column that is being added to the basis
+
+      A basis factorization may make use of just one of the two last
+      parameters.
     */
-    void pushEtaMatrix( unsigned columnIndex, const double *column );
+    void updateToAdjacentBasis( unsigned columnIndex,
+                                const double *changeColumn,
+                                const double */* newColumn */ );
 
     /*
       Perform a forward transformation, i.e. find x such that x = inv(B) * y,

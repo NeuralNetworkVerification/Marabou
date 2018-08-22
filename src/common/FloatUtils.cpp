@@ -48,7 +48,7 @@ bool FloatUtils::areDisequal( double x, double y, double epsilon )
 
 bool FloatUtils::isZero( double x, double epsilon )
 {
-    return areEqual( x, 0.0, epsilon );
+    return ( -epsilon <= x ) && ( x <= epsilon );
 }
 
 bool FloatUtils::isPositive( double x, double epsilon )

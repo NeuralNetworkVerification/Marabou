@@ -189,6 +189,11 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
     _solution = other._solution;
     _debuggingSolution = other._debuggingSolution;
 
+    _variableToInputIndex = other._variableToInputIndex;
+    _inputIndexToVariable = other._inputIndexToVariable;
+    _variableToOutputIndex = other._variableToOutputIndex;
+    _outputIndexToVariable = other._outputIndexToVariable;
+
     freeConstraintsIfNeeded();
     for ( const auto &constraint : other._plConstraints )
         _plConstraints.append( constraint->duplicateConstraint() );

@@ -317,6 +317,7 @@ public:
     const double *getAColumn( unsigned variable ) const;
     void getSparseAColumn( unsigned variable, SparseVector *result ) const;
     void getSparseARow( unsigned row, SparseVector *result ) const;
+    const SparseVector *getSparseAColumn( unsigned variable ) const;
 
     /*
       Store and restore the Tableau's state. Needed for case splitting
@@ -439,11 +440,6 @@ private:
     SparseMatrix *_A;
     SparseVector **_sparseColumnsOfA;
     double *_denseA;
-
-    /*
-      A single column from A
-    */
-    double *_a;
 
     /*
       Used to compute inv(B)*a

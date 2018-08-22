@@ -567,9 +567,19 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             _preprocessedQuery = inputQuery;
 
         printf( "Engine::processInputQuery: Input query (after preprocessing): "
-                "%u equations, %u variables\n",
+                "%u equations, %u variables\n\n",
                 _preprocessedQuery.getEquations().size(),
                 _preprocessedQuery.getNumberOfVariables() );
+
+        printf( "Input bounds:\n" );
+        for ( unsigned i = 0; i < _preprocessedQuery.getNumInputVariables(); ++i )
+        {
+            printf( "\tx%u: [%8.4lf, %8.4lf]\n",
+                    i,
+                    _preprocessedQuery.getLowerBound( _preprocessedQuery.inputVariableByIndex( i ) ),
+                    _preprocessedQuery.getUpperBound( _preprocessedQuery.inputVariableByIndex( i ) ) );
+        }
+        printf( "\n" );
 
         unsigned infiniteBounds = _preprocessedQuery.countInfiniteBounds();
         if ( infiniteBounds != 0 )

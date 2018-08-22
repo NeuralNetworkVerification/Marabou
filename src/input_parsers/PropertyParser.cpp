@@ -55,12 +55,12 @@ void PropertyParser::processSingleLine( const String &line, InputQuery &inputQue
     Equation::EquationType type = extractSign( *it );
     ++it;
 
-    Equation equation( type );
-    equation.setScalar( scalar );
-
-    // Now extract the addends
-    while ( it != tokens.rend() )
+    // Now extract the addends. In the special case where we only have
+    // one addend, we add this equation as a bound. Otherwise, we add
+    // as an equation.
+    if ( tokens.size() == 3 )
     {
+        // Special case: add as a bound
         String token = (*it).trim();
 
         bool inputVariable = token.contains( "x" );
@@ -75,7 +75,7 @@ void PropertyParser::processSingleLine( const String &line, InputQuery &inputQue
         else
             subTokens = token.tokenize( "y" );
 
-        if ( subTokens.size() != 2 )
+        if ( subTokens.size() != 1 )
             throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
 
         unsigned justIndex = atoi( subTokens.rbegin()->ascii() );
@@ -92,20 +92,80 @@ void PropertyParser::processSingleLine( const String &line, InputQuery &inputQue
             variable = inputQuery.outputVariableByIndex( justIndex );
         }
 
-        String coefficientString = *subTokens.begin();
-        double coefficient;
-        if ( coefficientString == "+" )
-            coefficient = 1;
-        else if ( coefficientString == "-" )
-            coefficient = -1;
+        if ( type == Equation::GE )
+        {
+            if ( inputQuery.getLowerBound( variable ) < scalar )
+                inputQuery.setLowerBound( variable, scalar );
+        }
+        else if ( type == Equation::LE )
+        {
+            if ( inputQuery.getUpperBound( variable ) > scalar )
+                inputQuery.setUpperBound( variable, scalar );
+        }
         else
-            coefficient = atof( coefficientString.ascii() );
+        {
+            ASSERT( type == Equation::EQ );
 
-        equation.addAddend( coefficient, variable );
-        ++it;
+            if ( inputQuery.getLowerBound( variable ) < scalar )
+                inputQuery.setLowerBound( variable, scalar );
+            if ( inputQuery.getUpperBound( variable ) > scalar )
+                inputQuery.setUpperBound( variable, scalar );
+        }
     }
+    else
+    {
+        // Normal case: add as an equation
+        Equation equation( type );
+        equation.setScalar( scalar );
 
-    inputQuery.addEquation( equation );
+        while ( it != tokens.rend() )
+        {
+            String token = (*it).trim();
+
+            bool inputVariable = token.contains( "x" );
+            bool outputVariable = token.contains( "y" );
+
+            if ( !( inputVariable xor outputVariable ) )
+                throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
+
+            List<String> subTokens;
+            if ( inputVariable )
+                subTokens = token.tokenize( "x" );
+            else
+                subTokens = token.tokenize( "y" );
+
+            if ( subTokens.size() != 2 )
+                throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
+
+            unsigned justIndex = atoi( subTokens.rbegin()->ascii() );
+            unsigned variable;
+
+            if ( inputVariable )
+            {
+                ASSERT( justIndex < inputQuery.getNumInputVariables() );
+                variable = inputQuery.inputVariableByIndex( justIndex );
+            }
+            else
+            {
+                ASSERT( justIndex < inputQuery.getNumOutputVariables() );
+                variable = inputQuery.outputVariableByIndex( justIndex );
+            }
+
+            String coefficientString = *subTokens.begin();
+            double coefficient;
+            if ( coefficientString == "+" )
+                coefficient = 1;
+            else if ( coefficientString == "-" )
+                coefficient = -1;
+            else
+                coefficient = atof( coefficientString.ascii() );
+
+            equation.addAddend( coefficient, variable );
+            ++it;
+        }
+
+        inputQuery.addEquation( equation );
+    }
 }
 
 Equation::EquationType PropertyParser::extractSign( const String &token )
