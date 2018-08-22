@@ -483,6 +483,7 @@ void SparseLUFactors::invertBasis( double *result )
 void SparseLUFactors::storeToOther( SparseLUFactors *other ) const
 {
     ASSERT( _m == other->_m );
+    ASSERT( !_usePForF );
 
     _F->storeIntoOther( other->_F );
     _V->storeIntoOther( other->_V );
@@ -492,6 +493,8 @@ void SparseLUFactors::storeToOther( SparseLUFactors *other ) const
 
     _P.storeToOther( &other->_P );
     _Q.storeToOther( &other->_Q );
+
+    other->_usePForF = false;
 }
 
 //
