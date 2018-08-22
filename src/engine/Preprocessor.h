@@ -84,6 +84,12 @@ private:
     void addPlAuxiliaryEquations();
 
     /*
+      If we have merged/eliminated variables that were designated as
+      input or output variables, adjust these markings.
+    */
+    void adjustInputAndOutputMarkings();
+
+    /*
       The preprocessed query
     */
     InputQuery _preprocessed;
@@ -115,7 +121,6 @@ private:
       For debugging only
     */
     void dumpAllBounds( const String &message );
-
 };
 
 #endif // __Preprocessor_h__

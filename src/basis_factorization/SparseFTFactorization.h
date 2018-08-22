@@ -10,23 +10,32 @@
  ** directory for licensing information.\endverbatim
  **/
 
-#ifndef __SparseLUFactorization_h__
-#define __SparseLUFactorization_h__
+#ifndef __SparseFTFactorization_h__
+#define __SparseFTFactorization_h__
 
 #include "IBasisFactorization.h"
-#include "List.h"
-#include "MString.h"
+#include "SparseEtaMatrix.h"
 #include "SparseGaussianEliminator.h"
 #include "SparseLUFactors.h"
 
-class EtaMatrix;
-class LPElement;
+/*
+  This class performs a sparse FT factorization of a given matrix.
 
-class SparseLUFactorization : public IBasisFactorization
+  The factorization is of the form:
+
+      A = F * H * V
+
+  Where H represents a list of transposed eta matrices.
+
+  This is an extension of the previous LU facotrization, where A = FV,
+  with an extra matrix H that replaces the eta matrices. This factorization
+  makes use of the previous LU factorization, but makes the necessary changes.
+*/
+class SparseFTFactorization : public IBasisFactorization
 {
 public:
-    SparseLUFactorization( unsigned m, const BasisColumnOracle &basisColumnOracle );
-    ~SparseLUFactorization();
+    SparseFTFactorization( unsigned m, const BasisColumnOracle &basisColumnOracle );
+    ~SparseFTFactorization();
 
     /*
       Inform the basis factorization that the basis has been changed
@@ -46,44 +55,17 @@ public:
     /*
       Perform a forward transformation, i.e. find x such that x = inv(B) * y,
       The solution is found by solving Bx = y.
-
-      Bx = (B0 * E1 * E2 ... * En) x = B0 * ( E1 ( ... ( En * x ) ) ) = y
-                                                        -- u_n --
-                                                 ----- u_1 ------
-                                            ------- u_0 ---------
-
-      And the equation is solved iteratively:
-      B0     * u0   =   y  --> obtain u0
-      E1     * u1   =  u0  --> obtain u1
-      ...
-      En     * x    =  un  --> obtain x
-
-      Result needs to be of size m.
     */
     void forwardTransformation( const double *y, double *x ) const;
 
     /*
       Perform a backward transformation, i.e. find x such that x = y * inv(B),
       The solution is found by solving xB = y.
-
-      xB = x (B0 * E1 * E2 ... * En) = ( ( ( x B0 ) * E1 ... ) En ) = y
-                                            ------- u_n ---------
-                                            --- u_1 ----
-                                            - u_0 -
-
-      And the equation is solved iteratively:
-      u_n-1  * En   =  y   --> obtain u_n-1
-      ...
-      u1     * E2   =  u2  --> obtain u1
-      u0     * E1   =  u1  --> obtain u0
-
-      Result needs to be of size m.
     */
     void backwardTransformation( const double *y, double *x ) const;
 
     /*
-      Store and restore the basis factorization. Storing triggers
-      condesning the etas.
+      Store and restore the basis factorization.
     */
     void storeFactorization( IBasisFactorization *other );
     void restoreFactorization( const IBasisFactorization *other );
@@ -111,16 +93,6 @@ public:
     const double *getBasis() const;
     const SparseMatrix *getSparseBasis() const;
 
-public:
-    /*
-      Functions made public strictly for testing, not part of the interface
-    */
-
-    /*
-      Getter functions for the various factorization components.
-    */
-	const List<EtaMatrix *> getEtas() const;
-
     /*
       Debug
     */
@@ -134,6 +106,11 @@ private:
     SparseMatrix *_B;
 
     /*
+      The extra ForrstTomlin factorization eta matrices
+    */
+    List<SparseEtaMatrix *> _etas;
+
+    /*
       The dimension of the basis matrix.
     */
     unsigned _m;
@@ -144,11 +121,6 @@ private:
     SparseLUFactors _sparseLUFactors;
 
     /*
-      A sequence of eta matrices.
-    */
-    List<EtaMatrix *> _etas;
-
-    /*
       The Gaussian eliminator, to compute basis factorizations
     */
     SparseGaussianEliminator _sparseGaussianEliminator;
@@ -156,7 +128,16 @@ private:
     /*
       Work memory.
     */
-    mutable double *_z;
+    mutable double *_z1;
+    mutable double *_z2;
+    double *_z3;
+    double *_z4;
+
+    /*
+      Transformations on the H matrix (the list of etas)
+    */
+    void hForwardTransformation( const double *y, double *x ) const;
+    void hBackwardTransformation( const double *y, double *x ) const;
 
     /*
       Free any allocated memory.
@@ -170,9 +151,14 @@ private:
 
     /*
       Compute the inverse of B0, using the LP factorization already stored.
-      This can only be done when B0 is "fresh", i.e. when there are no stored etas.
-     */
+    */
     void invertBasis( double *result );
+
+    /*
+      When moving to adjacent bases, fix the permutation matrix that is used
+      for computing L from F in the underlying factorization.
+    */
+    void fixPForL();
 
     /*
       Clear a previous factorization.
@@ -182,7 +168,7 @@ private:
     static void log( const String &message );
 };
 
-#endif // __SparseLUFactorization_h__
+#endif // __SparseFTFactorization_h__
 
 //
 // Local Variables:

@@ -95,8 +95,9 @@ void EtaMatrix::dump() const
     printf( "\n" );
 }
 
-void EtaMatrix::toMatrix( double *A )
+void EtaMatrix::toMatrix( double *A ) const
 {
+    std::fill_n( A, _m * _m, 0.0 );
 	for ( unsigned i = 0; i < _m; ++i )
     {
 		A[i * _m + i] = 1.;

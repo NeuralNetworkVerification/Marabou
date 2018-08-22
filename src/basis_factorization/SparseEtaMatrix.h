@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file EtaMatrix.h
+/*! \file SparseEtaMatrix.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz
@@ -10,36 +10,43 @@
  ** directory for licensing information.\endverbatim
  **/
 
-#ifndef __EtaMatrix_h__
-#define __EtaMatrix_h__
+#ifndef __SparseEtaMatrix_h__
+#define __SparseEtaMatrix_h__
 
-class EtaMatrix
+#include "SparseVector.h"
+
+class SparseEtaMatrix
 {
 public:
-    EtaMatrix( unsigned m, unsigned index, const double *column );
+    SparseEtaMatrix( unsigned m, unsigned index, const double *column );
 
     /*
       Initializees the matrix to the identity matrix
     */
-    EtaMatrix( unsigned m, unsigned index );
+    SparseEtaMatrix( unsigned m, unsigned index );
 
-    EtaMatrix( const EtaMatrix &other );
-    EtaMatrix &operator=( const EtaMatrix &other );
+    SparseEtaMatrix( const SparseEtaMatrix &other );
+    SparseEtaMatrix &operator=( const SparseEtaMatrix &other );
 
-    ~EtaMatrix();
+    ~SparseEtaMatrix();
     void dump() const;
-	void toMatrix( double *A ) const;
+    void dumpDenseTransposed() const;
+    void toMatrix( double *A ) const;
 
     void resetToIdentity();
 
-    bool operator==( const EtaMatrix &other ) const;
+    bool operator==( const SparseEtaMatrix &other ) const;
+
+    void commitChange( unsigned index, double newValue );
+    void executeChanges();
 
     unsigned _m;
     unsigned _columnIndex;
-    double *_column;
+    SparseVector _sparseColumn;
+    double _diagonalElement;
 };
 
-#endif // __EtaMatrix_h__
+#endif // __SparseEtaMatrix_h__
 
 //
 // Local Variables:

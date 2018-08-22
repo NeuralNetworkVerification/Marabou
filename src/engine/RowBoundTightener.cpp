@@ -244,10 +244,12 @@ void RowBoundTightener::examineInvertedBasisMatrix( bool untilSaturation )
 
                 // Dot product of the i'th row of inv(B) with the appropriate
                 // column of An
-                const double *ANColumn = _tableau.getAColumn( row->_row[j]._var );
+
+                const SparseVector *column = _tableau.getSparseAColumn( row->_row[j]._var );
                 row->_row[j]._coefficient = 0;
-                for ( unsigned k = 0; k < _m; ++k )
-                    row->_row[j]._coefficient -= ( invB[i * _m + k] * ANColumn[k] );
+
+                for ( unsigned entry = 0; entry < column->getNnz(); ++entry )
+                    row->_row[j]._coefficient -= invB[i*_m + column->getIndexOfEntry( entry )] * column->getValueOfEntry( entry );
             }
 
             // Store the lhs variable

@@ -57,6 +57,7 @@ const bool GlobalConfiguration::EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION = fal
 const unsigned GlobalConfiguration::REFACTORIZATION_THRESHOLD = 100;
 const GlobalConfiguration::BasisFactorizationType GlobalConfiguration::BASIS_FACTORIZATION_TYPE =
     GlobalConfiguration::SPARSE_LU_FACTORIZATION;
+    // GlobalConfiguration::SPARSE_FORREST_TOMLIN_FACTORIZATION;
 
 // Logging
 const bool GlobalConfiguration::ENGINE_LOGGING = false;

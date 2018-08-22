@@ -263,6 +263,8 @@ void CSRMatrix::storeIntoOther( SparseMatrix *other ) const
 
 void CSRMatrix::getRow( unsigned row, SparseVector *result ) const
 {
+    ASSERT( row < _m );
+
     /*
       Elements of row j are stored in _A and _JA between
       indices _IA[j] and _IA[j+1] - 1.

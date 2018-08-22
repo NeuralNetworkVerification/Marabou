@@ -94,8 +94,6 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
 
         inputQuery.setLowerBound( _nodeToF[NodeIndex(0, i)], min );
         inputQuery.setUpperBound( _nodeToF[NodeIndex(0, i)], max );
-
-        printf( "Parser setting bounds for input %u: [%.15lf, %.15lf]\n", i, min, max );
     }
 
     for ( const auto &fNode : _nodeToF )

@@ -418,6 +418,14 @@ public:
         }
     }
 
+    mutable SparseVector sparseVector;
+    const SparseVector *getSparseAColumn( unsigned index ) const
+    {
+        TS_ASSERT( nextAColumn.get( index ) );
+        sparseVector.initialize( nextAColumn.get( index ), lastM );
+        return &sparseVector;
+    }
+
     const SparseMatrix *getSparseA() const
     {
         return NULL;

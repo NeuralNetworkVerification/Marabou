@@ -52,7 +52,7 @@ bool SparseVector::empty() const
     return getNnz() == 0;
 }
 
-double SparseVector::get( unsigned index )
+double SparseVector::get( unsigned index ) const
 {
     return _V.get( 0, index );
 }
