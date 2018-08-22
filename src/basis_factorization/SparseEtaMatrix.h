@@ -31,7 +31,7 @@ public:
     ~SparseEtaMatrix();
     void dump() const;
     void dumpDenseTransposed() const;
-	void toMatrix( double *A ) const;
+    void toMatrix( double *A ) const;
 
     void resetToIdentity();
 

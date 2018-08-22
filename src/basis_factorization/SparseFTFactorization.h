@@ -149,11 +149,6 @@ private:
 	*/
     void factorizeBasis();
 
-	/*
-      Swap two rows of a matrix.
-    */
-    void rowSwap( unsigned rowOne, unsigned rowTwo, double *matrix );
-
     /*
       Compute the inverse of B0, using the LP factorization already stored.
     */

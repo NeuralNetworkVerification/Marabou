@@ -58,11 +58,11 @@ void SparseFTFactorization::freeIfNeeded()
 {
     clearFactorization();
 
-	if ( _B )
-	{
-		delete _B;
-		_B = NULL;
-	}
+    if ( _B )
+    {
+        delete _B;
+        _B = NULL;
+    }
 
     if ( _z1 )
     {
@@ -170,9 +170,7 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
 
     ASSERT( foundNonZeroEntry );
     if ( lastNonZeroEntryInU <= uColumnIndex )
-    {
         return;
-    }
 
     /*
       Step 3:
@@ -220,10 +218,7 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
     }
 
     if ( !haveSpike )
-    {
         return;
-
-    }
 
     /*
       Step 4:
