@@ -104,11 +104,12 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
                                                    const double */* changeColumn */,
                                                    const double *newColumn )
 {
-
     // q = columnIndex
     // s = uColumnIndex
     // p = vRowDiagonalIndex
     // t = lastNonZeroEntryInU
+
+    fixPForL();
 
     static unsigned count = 1;
     printf( "\n\n******" );
@@ -305,6 +306,13 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
     // Copy the spike row to work memory
     _sparseLUFactors._V->getRowDense( vRowDiagonalIndex, _z3 );
 
+    printf( "\nDumping V's spike row:\n" );
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        printf( "\tspikeRow[%u] = %lf\n", i, _z3[i] );
+    }
+    printf( "\n" );
+
     for ( unsigned i = uColumnIndex; i < lastNonZeroEntryInU; ++i )
     {
         // We are eliminating the i'th column of the spike row
@@ -321,11 +329,17 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
         _sparseLUFactors._V->getRow( vPivotRow, &sparseRow );
         double pivot = sparseRow.get( vPivotColumn );
 
+        printf( "\nEliminating element %lf from spike row. Pivot element: V[%u,%u] = %lf\n",
+                subDiagonalElement,
+                vPivotRow,
+                vPivotColumn,
+                pivot );
+
         // Compute the Gaussian multiplier
         double multiplier = subDiagonalElement / pivot;
 
         // Store the multiplier in the new eta matrix
-        sparseEtaMatrix->commitChange( vPivotColumn, multiplier );
+        sparseEtaMatrix->commitChange( vPivotRow, multiplier );
 
         // Adjust the spike row per the elimination step
         for ( unsigned j = 0; j < sparseRow.getNnz(); ++j )
@@ -385,14 +399,44 @@ void SparseFTFactorization::forwardTransformation( const double *y, double *x ) 
         B = FHV
     */
 
+    printf( "FTran starting:\n" );
+
+    _sparseLUFactors.dump();
+
+    printf( "Y:\n" );
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        printf( "\tY[%u] = %lf\n", i, y[i] );
+    }
+
     // Eliminate F
     _sparseLUFactors.fForwardTransformation( y, _z1 );
+
+    printf( "After F: z1:\n" );
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        printf( "\tz1[%u] = %lf\n", i, _z1[i] );
+    }
 
     // Eliminate H
     hForwardTransformation( _z1, _z2 );
 
+    printf( "After H: z2:\n" );
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        printf( "\tz2[%u] = %lf\n", i, _z2[i] );
+    }
+
     // Eliminate V
     _sparseLUFactors.vForwardTransformation( _z2, x );
+
+    printf( "BTran finished:\n" );
+    printf( "x:\n" );
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        printf( "\tx[%u] = %lf\n", i, x[i] );
+    }
+
 }
 
 void SparseFTFactorization::backwardTransformation( const double *y, double *x ) const
@@ -403,14 +447,41 @@ void SparseFTFactorization::backwardTransformation( const double *y, double *x )
         B = FHV
     */
 
+    printf( "BTran starting:\n" );
+    printf( "Y:\n" );
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        printf( "\tY[%u] = %lf\n", i, y[i] );
+    }
+
     // Eliminate V
     _sparseLUFactors.vBackwardTransformation( y, _z1 );
+
+    printf( "After V: z1:\n" );
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        printf( "\tz1[%u] = %lf\n", i, _z1[i] );
+    }
 
     // Eliminate H
     hBackwardTransformation( _z1, _z2 );
 
+    printf( "After H: z2:\n" );
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        printf( "\tz1[%u] = %lf\n", i, _z2[i] );
+    }
+
     // Eliminate F
     _sparseLUFactors.fBackwardTransformation( _z2, x );
+
+    printf( "BTran finished:\n" );
+    printf( "x:\n" );
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        printf( "\tx[%u] = %lf\n", i, x[i] );
+    }
+
 }
 
 void SparseFTFactorization::clearFactorization()
@@ -529,8 +600,20 @@ void SparseFTFactorization::hForwardTransformation( const double *y, double *x )
 
     memcpy( x, y, sizeof(double) * _m );
 
+    printf( "SparseFTFactorization::hForwardTransformation\n" );
+
+    printf( "Initial y:\n" );
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        printf( "\ty[%u] = %lf\n", i, y[i] );
+    }
+
+
     for ( const auto &eta : _etas )
     {
+        printf( "Working on Eta matrix:\n" );
+        eta->dumpDenseTransposed();
+
         unsigned pivotIndex = eta->_columnIndex;
         double pivotValue;
 
@@ -552,6 +635,14 @@ void SparseFTFactorization::hForwardTransformation( const double *y, double *x )
         x[pivotIndex] = ( x[pivotIndex] / pivotValue );
         if ( FloatUtils::isZero( x[pivotIndex] ) )
             x[pivotIndex] = 0.0;
+
+
+        printf( "x at end of this iteration:\n" );
+        for ( unsigned i = 0; i < _m; ++i )
+        {
+            printf( "\tx[%u] = %lf\n", i, x[i] );
+        }
+
     }
 }
 
@@ -597,6 +688,15 @@ void SparseFTFactorization::hBackwardTransformation( const double *y, double *x 
         // {
         //     printf( "\tx[%u] = %lf\n", i, x[i] );
         // }
+    }
+}
+
+void SparseFTFactorization::fixPForL()
+{
+    if ( !_sparseLUFactors._usePForF )
+    {
+        _sparseLUFactors._usePForF = true;
+        _sparseLUFactors._PForF = _sparseLUFactors._P;
     }
 }
 

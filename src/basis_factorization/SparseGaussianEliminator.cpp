@@ -89,6 +89,9 @@ void SparseGaussianEliminator::initializeFactorization( const SparseMatrix *A, S
 
     // Count number of non-zeros in U ( = V )
     _sparseLUFactors->_V->countElements( _numURowElements, _numUColumnElements );
+
+    // Use same matrix P for L and V
+    _sparseLUFactors->_usePForF = false;
 }
 
 void SparseGaussianEliminator::permute()

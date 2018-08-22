@@ -160,6 +160,12 @@ private:
     void invertBasis( double *result );
 
     /*
+      When moving to adjacent bases, fix the permutation matrix that is used
+      for computing L from F in the underlying factorization.
+    */
+    void fixPForL();
+
+    /*
       Clear a previous factorization.
     */
 	void clearFactorization();
