@@ -24,6 +24,8 @@ SparseLUFactors::SparseLUFactors( unsigned m )
     , _V( NULL )
     , _P( m )
     , _Q( m )
+    , _usePForF( false )
+    , _PForF( m )
     , _Ft( NULL )
     , _Vt( NULL )
     , _z( NULL )
@@ -150,12 +152,12 @@ void SparseLUFactors::dump() const
     printf( "\tDumping the implied L:\n" );
     for ( unsigned i = 0; i < _m; ++i )
     {
-        unsigned lRow = _P._columnOrdering[i];
-
+        const PermutationMatrix *p = ( _usePForF ) ? &_PForF : &_P;
+        unsigned lRow = p->_columnOrdering[i];
         printf( "\t" );
         for ( unsigned j = 0; j < _m; ++j )
         {
-            unsigned lCol = _P._columnOrdering[j];
+            unsigned lCol = p->_columnOrdering[j];
             printf( "%8.2lf ", ( lRow == lCol ? 1.0 : _F->get( lRow, lCol ) ) );
         }
         printf( "\n" );
@@ -189,9 +191,10 @@ void SparseLUFactors::fForwardTransformation( const double *y, double *x ) const
 
     memcpy( x, y, sizeof(double) * _m );
 
+    const PermutationMatrix *p = ( _usePForF ) ? &_PForF : &_P;
     for ( unsigned lRow = 0; lRow < _m; ++lRow )
     {
-        unsigned fRow = _P._columnOrdering[lRow];
+        unsigned fRow = p->_columnOrdering[lRow];
         _F->getRow( fRow, &_sparseRow );
 
         for ( unsigned entry = 0; entry < _sparseRow.getNnz(); ++entry )
@@ -232,9 +235,10 @@ void SparseLUFactors::fBackwardTransformation( const double *y, double *x ) cons
 
     memcpy( x, y, sizeof(double) * _m );
 
+    const PermutationMatrix *p = ( _usePForF ) ? &_PForF : &_P;
     for ( int lColumn = _m - 1; lColumn >= 0; --lColumn )
     {
-        unsigned fColumn = _P._columnOrdering[lColumn];
+        unsigned fColumn = p->_columnOrdering[lColumn];
         _Ft->getRow( fColumn, &_sparseColumn );
 
         for ( unsigned entry = 0; entry < _sparseColumn.getNnz(); ++entry )
@@ -374,6 +378,12 @@ void SparseLUFactors::backwardTransformation( const double *y, double *x ) const
 void SparseLUFactors::invertBasis( double *result )
 {
     ASSERT( result );
+
+    if ( _usePForF )
+    {
+        printf( "SparseLUFactors::invertBasis not supported when _usePForF is set!\n" );
+        exit( 1 );
+    }
 
     // Corner case - empty Tableau
     if ( _m == 0 )

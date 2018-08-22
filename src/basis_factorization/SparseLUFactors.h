@@ -36,6 +36,11 @@
   Matrices F, V, P and Q are stored sparsely. Matrices
   U and L are not stored at all, as they are implied by the rest.
 
+  On some cases, we may wish to use separate Ps for the F and V computation.
+  While the same matrix is used for both by default, the class also supports
+  setting a different P for the L computation. In this case, the main equation
+  becomes A = FV = ( P1 L P1') * ( P U Q ).
+
   The class also provides functionality for basic computations involving
   the factorization.
 */
@@ -57,6 +62,14 @@ public:
     SparseMatrix *_V;
     PermutationMatrix _P;
     PermutationMatrix _Q;
+
+    /*
+      A separate matrix, PforF, that is used for computing F = PLP',
+      if it is used (otherwise the default P is used). The flag indicates
+      whether this matrix is currently in use or not.
+    */
+    bool _usePForF;
+    PermutationMatrix _PForF;
 
     /*
       The transposed matrics F' and V' are also stored. This is because
