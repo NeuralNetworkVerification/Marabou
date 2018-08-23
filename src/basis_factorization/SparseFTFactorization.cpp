@@ -281,12 +281,6 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
     _sparseLUFactors._Vt->executeChanges();
 }
 
-void SparseFTFactorization::setBasis( const double */* B */ )
-{
-    printf( "SparseFTFactorization::setBasis not supported!\n" );
-    exit( 1 );
-}
-
 void SparseFTFactorization::forwardTransformation( const double *y, double *x ) const
 {
     /*

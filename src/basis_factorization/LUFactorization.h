@@ -100,10 +100,9 @@ public:
     void factorizeBasis();
 
 	/*
-      Set B to a non-identity matrix (or have it retrieved from the oracle),
-      and then factorize it.
+      Ask the basis factorization to obtain a fresh basis
+      (through the previously-provided oracle).
 	*/
-	void setBasis( const double *B );
     void obtainFreshBasis();
 
 	/*

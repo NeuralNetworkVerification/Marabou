@@ -88,12 +88,6 @@ void SparseLUFactorization::updateToAdjacentBasis( unsigned columnIndex,
 	}
 }
 
-void SparseLUFactorization::setBasis( const double *B )
-{
-    throw BasisFactorizationError( BasisFactorizationError::FEATURE_NOT_YET_SUPPORTED,
-                                   "SparseLUFactorization::setBasis" );
-}
-
 void SparseLUFactorization::forwardTransformation( const double *y, double *x ) const
 {
     /*

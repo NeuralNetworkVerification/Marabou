@@ -70,10 +70,10 @@ public:
     void restoreFactorization( const IBasisFactorization *other );
 
 	/*
-      Set the basis matrix. This clears the previous factorization,
-      and triggers a factorization into FT format of the matrix.
+      Ask the basis factorization to obtain a fresh basis
+      (through the previously-provided oracle).
     */
-	void setBasis( const double *B );
+    void obtainFreshBasis();
 
     /*
       Return true iff the basis matrix B is explicitly available.
@@ -95,11 +95,6 @@ public:
       Compute the inverse of B (should only be called when B is explicitly available).
      */
     void invertBasis( double *result );
-
-    /*
-      Obtain the basis matrix from the oracle and compute a fresh factorization
-    */
-    void obtainFreshBasis();
 
 public:
     /*

@@ -76,10 +76,9 @@ public:
     virtual void restoreFactorization( const IBasisFactorization *other ) = 0;
 
 	/*
-      Set the basis matrix, or ask the basis factorization to obtain it
-      itself (through the previously-provided oracle).
+      Ask the basis factorization to obtain a fresh basis
+      (through the previously-provided oracle).
 	*/
-    virtual void setBasis( const double *B ) = 0;
     virtual void obtainFreshBasis() = 0;
 
     /*

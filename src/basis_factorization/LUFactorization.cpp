@@ -88,12 +88,6 @@ void LUFactorization::updateToAdjacentBasis( unsigned columnIndex,
 	}
 }
 
-void LUFactorization::setBasis( const double *B )
-{
-	memcpy( _B, B, sizeof(double) * _m * _m );
-	factorizeBasis();
-}
-
 void LUFactorization::forwardTransformation( const double *y, double *x ) const
 {
     /*
