@@ -64,6 +64,8 @@ void SparseVectors::initialize( const double *M, unsigned m, unsigned n )
 
 void SparseVectors::initialize( const SparseVector **V, unsigned m, unsigned n )
 {
+    freeMemoryIfNeeded();
+
     _m = m;
     _n = n;
 
@@ -82,6 +84,8 @@ void SparseVectors::initialize( const SparseVector **V, unsigned m, unsigned n )
 
 void SparseVectors::initializeToEmpty( unsigned m, unsigned n )
 {
+    freeMemoryIfNeeded();
+
     _m = m;
     _n = n;
 
