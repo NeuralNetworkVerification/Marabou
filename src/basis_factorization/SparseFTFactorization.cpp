@@ -19,6 +19,7 @@
 
 SparseFTFactorization::SparseFTFactorization( unsigned m, const BasisColumnOracle &basisColumnOracle )
     : IBasisFactorization( basisColumnOracle )
+    , _B( m )
 	, _m( m )
     , _sparseLUFactors( m )
     , _sparseGaussianEliminator( m )
@@ -27,11 +28,6 @@ SparseFTFactorization::SparseFTFactorization( unsigned m, const BasisColumnOracl
     , _z3( NULL )
     , _z4( NULL )
 {
-    _B = new CSRMatrix;
-    if ( !_B )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseFTFactorization::B" );
-    _B->initializeToEmpty( m, m );
-
     _z1 = new double[m];
     if ( !_z1 )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseFTFactorization::z1" );
@@ -57,12 +53,6 @@ SparseFTFactorization::~SparseFTFactorization()
 void SparseFTFactorization::freeIfNeeded()
 {
     clearFactorization();
-
-    if ( _B )
-    {
-        delete _B;
-        _B = NULL;
-    }
 
     if ( _z1 )
     {
@@ -97,7 +87,8 @@ const double *SparseFTFactorization::getBasis() const
 
 const SparseMatrix *SparseFTFactorization::getSparseBasis() const
 {
-	return _B;
+    printf( "SparseFTFactorization::getSparseBasis not supported!\n" );
+    exit( 1 );
 }
 
 void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
@@ -290,10 +281,10 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
     _sparseLUFactors._Vt->executeChanges();
 }
 
-void SparseFTFactorization::setBasis( const double *B )
+void SparseFTFactorization::setBasis( const double */* B */ )
 {
-    _B->initialize( B, _m, _m );
-	factorizeBasis();
+    printf( "SparseFTFactorization::setBasis not supported!\n" );
+    exit( 1 );
 }
 
 void SparseFTFactorization::forwardTransformation( const double *y, double *x ) const
@@ -347,7 +338,7 @@ void SparseFTFactorization::factorizeBasis()
 
     try
     {
-        _sparseGaussianEliminator.run( _B, &_sparseLUFactors );
+        _sparseGaussianEliminator.run( &_B, &_sparseLUFactors );
     }
     catch ( const BasisFactorizationError &e )
     {
@@ -367,7 +358,7 @@ void SparseFTFactorization::storeFactorization( IBasisFactorization *other )
     obtainFreshBasis();
 
     // Store the new basis and factorization
-    _B->storeIntoOther( otherSparseFTFactorization->_B );
+    // _B->storeIntoOther( otherSparseFTFactorization->_B );
     _sparseLUFactors.storeToOther( &otherSparseFTFactorization->_sparseLUFactors );
 }
 
@@ -382,7 +373,7 @@ void SparseFTFactorization::restoreFactorization( const IBasisFactorization *oth
     clearFactorization();
 
     // Store the new basis and factorization
-    otherSparseFTFactorization->_B->storeIntoOther( _B );
+    // otherSparseFTFactorization->_B->storeIntoOther( _B );
     otherSparseFTFactorization->_sparseLUFactors.storeToOther( &_sparseLUFactors );
 }
 
@@ -424,18 +415,19 @@ void SparseFTFactorization::dump() const
 
 void SparseFTFactorization::obtainFreshBasis()
 {
-    _B->initializeToEmpty( _m, _m );
+    // _B->initializeToEmpty( _m, _m );
 
-    SparseVector column;
-    for ( unsigned columnIndex = 0; columnIndex < _m; ++columnIndex )
-    {
-        _basisColumnOracle->getColumnOfBasis( columnIndex, &column );
+    // SparseVector column;
+    // for ( unsigned columnIndex = 0; columnIndex < _m; ++columnIndex )
+    // {
+    //     _basisColumnOracle->getColumnOfBasis( columnIndex, &column );
 
-        for ( unsigned entry = 0; entry < column.getNnz(); ++entry )
-            _B->commitChange( column.getIndexOfEntry( entry ), columnIndex, column.getValueOfEntry( entry ) );
-    }
-    _B->executeChanges();
+    //     for ( unsigned entry = 0; entry < column.getNnz(); ++entry )
+    //         _B->commitChange( column.getIndexOfEntry( entry ), columnIndex, column.getValueOfEntry( entry ) );
+    // }
+    // _B->executeChanges();
 
+    _basisColumnOracle->getSparseBasis( _B );
     factorizeBasis();
 }
 

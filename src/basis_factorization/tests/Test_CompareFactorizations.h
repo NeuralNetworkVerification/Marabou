@@ -64,10 +64,11 @@ public:
                 0, 0, 2, 2
             };
 
-        TS_ASSERT_THROWS_NOTHING( ft->setBasis( B ) );
-        TS_ASSERT_THROWS_NOTHING( lu->setBasis( B ) );
-        TS_ASSERT_THROWS_NOTHING( sft->setBasis( B ) );
-        TS_ASSERT_THROWS_NOTHING( slu->setBasis( B ) );
+        oracle->storeBasis( 4, B );
+        ft->obtainFreshBasis();
+        lu->obtainFreshBasis();
+        sft->obtainFreshBasis();
+        slu->obtainFreshBasis();
 
         double y[4] = { 9, 15, 10, -12 };
         double x1[4];

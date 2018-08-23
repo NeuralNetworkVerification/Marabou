@@ -18,6 +18,7 @@
 #include "MString.h"
 #include "Map.h"
 #include "Set.h"
+#include "SparseColumnsOfBasis.h"
 #include "SparseMatrix.h"
 #include "SparseVector.h"
 #include "Statistics.h"
@@ -399,6 +400,7 @@ public:
 
     void getColumnOfBasis( unsigned column, double *result ) const;
     void getColumnOfBasis( unsigned column, SparseVector *result ) const;
+    void getSparseBasis( SparseColumnsOfBasis &basis ) const;
 
     /*
       Trigger a re-computing of the basis factorization. This can

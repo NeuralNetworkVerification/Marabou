@@ -14,6 +14,7 @@
 #define __SparseFTFactorization_h__
 
 #include "IBasisFactorization.h"
+#include "SparseColumnsOfBasis.h"
 #include "SparseEtaMatrix.h"
 #include "SparseGaussianEliminator.h"
 #include "SparseLUFactors.h"
@@ -103,7 +104,7 @@ private:
     /*
       The Basis matrix.
     */
-    SparseMatrix *_B;
+    SparseColumnsOfBasis _B;
 
     /*
       The extra ForrstTomlin factorization eta matrices

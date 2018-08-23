@@ -2351,6 +2351,12 @@ void Tableau::getColumnOfBasis( unsigned column, double *result ) const
     _sparseColumnsOfA[_basicIndexToVariable[column]]->toDense( result );
 }
 
+void Tableau::getSparseBasis( SparseColumnsOfBasis &basis ) const
+{
+    for ( unsigned i = 0; i < _m; ++i )
+        basis._columns[i] = _sparseColumnsOfA[_basicIndexToVariable[i]];
+}
+
 void Tableau::getColumnOfBasis( unsigned column, SparseVector *result ) const
 {
     ASSERT( column < _m );

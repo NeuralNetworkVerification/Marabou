@@ -8,6 +8,7 @@ SOURCES += \
 	LUFactorization.cpp \
 	LUFactors.cpp \
 	PermutationMatrix.cpp \
+	SparseColumnsOfBasis.cpp \
 	SparseEtaMatrix.cpp \
 	SparseFTFactorization.cpp \
 	SparseGaussianEliminator.cpp \
