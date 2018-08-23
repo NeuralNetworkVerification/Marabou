@@ -15,6 +15,7 @@ SOURCES += \
 	SparseLUFactorization.cpp \
 	SparseLUFactors.cpp \
 	SparseVector.cpp \
+	SparseVectors.cpp \
 
 #
 # Local Variables:

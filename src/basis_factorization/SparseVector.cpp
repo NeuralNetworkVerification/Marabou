@@ -78,6 +78,11 @@ SparseVector &SparseVector::operator=( const SparseVector &other )
     return *this;
 }
 
+void SparseVector::storeIntoOther( SparseVector *other ) const
+{
+    _V.storeIntoOther( &other->_V );
+}
+
 CSRMatrix *SparseVector::getInternalMatrix()
 {
     return &_V;
@@ -113,6 +118,11 @@ void SparseVector::commitChange( unsigned index, double newValue )
 void SparseVector::executeChanges()
 {
     _V.executeChanges();
+}
+
+const unsigned *SparseVector::getJA() const
+{
+    return _V.getJA();
 }
 
 //

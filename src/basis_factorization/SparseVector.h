@@ -64,6 +64,7 @@ public:
       Cloning
     */
     SparseVector &operator=( const SparseVector &other );
+    void storeIntoOther( SparseVector *other ) const;
 
     /*
       For some delicate changes, we can get access to the
@@ -96,6 +97,11 @@ public:
     */
     void dump() const;
     void dumpDense() const;
+
+    /*
+      Read-only access to the internal data structures
+    */
+    const unsigned *getJA() const;
 
 private:
     CSRMatrix _V;
