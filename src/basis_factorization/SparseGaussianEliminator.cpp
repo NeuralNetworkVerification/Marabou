@@ -84,7 +84,7 @@ void SparseGaussianEliminator::initializeFactorization( const SparseColumnsOfBas
         so we just leave it empty for now.
     */
 
-    ((SparseVectors *)_sparseLUFactors->_Vt)->initialize( A->_columns, _m, _m );
+    _sparseLUFactors->_Vt->initialize( A->_columns, _m, _m );
     _sparseLUFactors->_Vt->transposeIntoOther( _sparseLUFactors->_V );
 
     _sparseLUFactors->_F->initializeToEmpty( _m, _m );

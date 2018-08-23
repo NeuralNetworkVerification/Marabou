@@ -17,7 +17,6 @@
 #include "MString.h"
 #include "SparseLUFactors.h"
 #include "SparseVector.h"
-
 #include "SparseVectors.h"
 
 SparseLUFactors::SparseLUFactors( unsigned m )
