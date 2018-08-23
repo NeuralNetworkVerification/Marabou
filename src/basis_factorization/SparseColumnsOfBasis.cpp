@@ -15,6 +15,7 @@
 
 SparseColumnsOfBasis::SparseColumnsOfBasis( unsigned m )
     : _columns( NULL )
+    , _m( m )
 {
     _columns = new const SparseVector *[m];
     if ( !_columns )
@@ -28,6 +29,12 @@ SparseColumnsOfBasis::~SparseColumnsOfBasis()
         delete[] _columns;
         _columns = NULL;
     }
+}
+
+void SparseColumnsOfBasis::dump() const
+{
+    for ( unsigned i = 0; i < _m; ++i )
+        _columns[i]->dumpDense();
 }
 
 //

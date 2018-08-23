@@ -415,18 +415,6 @@ void SparseFTFactorization::dump() const
 
 void SparseFTFactorization::obtainFreshBasis()
 {
-    // _B->initializeToEmpty( _m, _m );
-
-    // SparseVector column;
-    // for ( unsigned columnIndex = 0; columnIndex < _m; ++columnIndex )
-    // {
-    //     _basisColumnOracle->getColumnOfBasis( columnIndex, &column );
-
-    //     for ( unsigned entry = 0; entry < column.getNnz(); ++entry )
-    //         _B->commitChange( column.getIndexOfEntry( entry ), columnIndex, column.getValueOfEntry( entry ) );
-    // }
-    // _B->executeChanges();
-
     _basisColumnOracle->getSparseBasis( _B );
     factorizeBasis();
 }

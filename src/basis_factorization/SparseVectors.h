@@ -28,6 +28,7 @@ public:
     */
     void initialize( const double *M, unsigned m, unsigned n );
     void initializeToEmpty( unsigned m, unsigned n );
+    void initialize( const SparseVector **V, unsigned m, unsigned n );
 
     /*
       Obtain a single element/row/column of the matrix.

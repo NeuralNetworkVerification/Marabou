@@ -22,6 +22,12 @@ public:
     ~SparseColumnsOfBasis();
 
     const SparseVector **_columns;
+
+    /*
+      For debugging purposes
+    */
+    void dump() const;
+    unsigned _m;
 };
 
 #endif // __SparseColumnsOfBasis_h__

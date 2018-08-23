@@ -20,6 +20,8 @@
 #include "SparseGaussianEliminator.h"
 #include "SparseVector.h"
 
+#include "SparseVectors.h"
+
 #include <cstdio>
 
 SparseGaussianEliminator::SparseGaussianEliminator( unsigned m )
@@ -82,48 +84,9 @@ void SparseGaussianEliminator::initializeFactorization( const SparseColumnsOfBas
         so we just leave it empty for now.
     */
 
-    // Note that A is column-major, and V/U should be row-major, so transpose as we go
-    _sparseLUFactors->_V->initializeToEmpty( _m, _m );
-    for ( unsigned columnIndex = 0; columnIndex < _m; ++columnIndex )
-    {
-        const SparseVector *column = A->_columns[columnIndex];
+    ((SparseVectors *)_sparseLUFactors->_Vt)->initialize( A->_columns, _m, _m );
+    _sparseLUFactors->_Vt->transposeIntoOther( _sparseLUFactors->_V );
 
-        ASSERT( column );
-
-        for ( unsigned entry = 0; entry < column->getNnz(); ++entry )
-            _sparseLUFactors->_V->commitChange( column->getIndexOfEntry( entry ), columnIndex, column->getValueOfEntry( entry ) );
-    }
-    _sparseLUFactors->_V->executeChanges();
-
-    _sparseLUFactors->_V->transposeIntoOther( _sparseLUFactors->_Vt );
-    _sparseLUFactors->_F->initializeToEmpty( _m, _m );
-    _sparseLUFactors->_P.resetToIdentity();
-    _sparseLUFactors->_Q.resetToIdentity();
-
-    // Count number of non-zeros in U ( = V )
-    _sparseLUFactors->_V->countElements( _numURowElements, _numUColumnElements );
-
-    // Use same matrix P for L and V
-    _sparseLUFactors->_usePForF = false;
-}
-
-void SparseGaussianEliminator::initializeFactorization( const SparseMatrix *A, SparseLUFactors *sparseLUFactors )
-{
-    // Allocate the work space
-    _sparseLUFactors = sparseLUFactors;
-
-    /*
-      Initially:
-
-        P = Q = I
-        V = U = A
-        F = L = I
-
-        In the sparse representation of F, the diagonal is implicity 1,
-        so we just leave it empty for now.
-    */
-    A->storeIntoOther( _sparseLUFactors->_V );
-    _sparseLUFactors->_V->transposeIntoOther( _sparseLUFactors->_Vt );
     _sparseLUFactors->_F->initializeToEmpty( _m, _m );
     _sparseLUFactors->_P.resetToIdentity();
     _sparseLUFactors->_Q.resetToIdentity();
@@ -158,15 +121,6 @@ void SparseGaussianEliminator::permute()
 }
 
 void SparseGaussianEliminator::run( const SparseColumnsOfBasis *A, SparseLUFactors *sparseLUFactors )
-{
-    // Initialize the LU factors
-    initializeFactorization( A, sparseLUFactors );
-
-    // Do the work
-    factorize();
-}
-
-void SparseGaussianEliminator::run( const SparseMatrix *A, SparseLUFactors *sparseLUFactors )
 {
     // Initialize the LU factors
     initializeFactorization( A, sparseLUFactors );

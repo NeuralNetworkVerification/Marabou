@@ -62,6 +62,24 @@ void SparseVectors::initialize( const double *M, unsigned m, unsigned n )
     }
 }
 
+void SparseVectors::initialize( const SparseVector **V, unsigned m, unsigned n )
+{
+    _m = m;
+    _n = n;
+
+    _rows = new SparseVector *[_m];
+    if ( !_rows )
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseVectors::rows" );
+
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        _rows[i] = new SparseVector();
+        if ( !_rows[i] )
+            throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseVectors::rows[i]" );
+        V[i]->storeIntoOther( _rows[i] );
+    }
+}
+
 void SparseVectors::initializeToEmpty( unsigned m, unsigned n )
 {
     _m = m;

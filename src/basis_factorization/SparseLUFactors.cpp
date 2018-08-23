@@ -18,6 +18,8 @@
 #include "SparseLUFactors.h"
 #include "SparseVector.h"
 
+#include "SparseVectors.h"
+
 SparseLUFactors::SparseLUFactors( unsigned m )
     : _m( m )
     , _F( NULL )
@@ -34,19 +36,19 @@ SparseLUFactors::SparseLUFactors( unsigned m )
     , _sparseColumn( m )
 
 {
-    _F = new CSRMatrix();
+    _F = new SparseVectors();
     if ( !_F )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseLUFactors::F" );
 
-    _V = new CSRMatrix();
+    _V = new SparseVectors();
     if ( !_V )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseLUFactors::V" );
 
-    _Ft = new CSRMatrix();
+    _Ft = new SparseVectors();
     if ( !_Ft )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseLUFactors::Ft" );
 
-    _Vt = new CSRMatrix();
+    _Vt = new SparseVectors();
     if ( !_Vt )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseLUFactors::Vt" );
 

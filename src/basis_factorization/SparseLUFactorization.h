@@ -131,7 +131,7 @@ private:
     /*
       The Basis matrix.
     */
-    SparseMatrix *_B;
+    SparseColumnsOfBasis _B;
 
     /*
       The dimension of the basis matrix.
