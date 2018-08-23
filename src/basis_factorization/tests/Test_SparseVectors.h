@@ -524,9 +524,8 @@ public:
 
         // Transpose an empty matrix
         double empty[] = {
-            0, 0,
-            0, 0,
-            0, 0,
+            0, 0, 0,
+            0, 0, 0,
         };
 
         SparseVectors sv4;
@@ -535,8 +534,8 @@ public:
         SparseVectors sv5;
         TS_ASSERT_THROWS_NOTHING( sv4.transposeIntoOther( &sv5 ) );
 
-        for ( unsigned i = 0; i < 2; ++i )
-            for ( unsigned j = 0; j < 3; ++j )
+        for ( unsigned i = 0; i < 3; ++i )
+            for ( unsigned j = 0; j < 2; ++j )
                 TS_ASSERT_EQUALS( sv5.get( i, j ), 0.0 );
     }
 

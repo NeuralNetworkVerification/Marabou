@@ -15,24 +15,18 @@
 
 #include "CSRMatrix.h"
 
-/*
-  This class provides supprot for sparse vectors in
-  Compressed Sparse Row (CSR) format. The vector is
-  simply stored as a 1 x n matrix in CSR format.
-*/
-
 class SparseVector
 {
 public:
     /*
       Initialization: the size determines the dimension of the
-      underlying 1 x n matrix, and also influences the number
-      of memory allocated initially.
+      underlying storage.
 
       A vector can be initialized from a dense vector, or it
       can remain empty.
     */
     SparseVector();
+    ~SparseVector();
     SparseVector( unsigned size );
     SparseVector( const double *V, unsigned size );
     void initialize( const double *V, unsigned size );
@@ -44,6 +38,7 @@ public:
     */
     void clear();
 
+
     /*
       The number of non-zero elements in the vector
     */
@@ -53,7 +48,7 @@ public:
     /*
       Retrieve an element
     */
-    double get( unsigned index ) const;
+    double get( unsigned entry ) const;
 
     /*
       Convert the vector to dense format
@@ -65,12 +60,6 @@ public:
     */
     SparseVector &operator=( const SparseVector &other );
     void storeIntoOther( SparseVector *other ) const;
-
-    /*
-      For some delicate changes, we can get access to the
-      internal CSR matrix
-    */
-    CSRMatrix *getInternalMatrix();
 
     /*
       Retrieve an entry by its index in the vector.
@@ -98,13 +87,51 @@ public:
     void dump() const;
     void dumpDense() const;
 
-    /*
-      Read-only access to the internal data structures
-    */
-    const unsigned *getJA() const;
-
 private:
-    CSRMatrix _V;
+    enum {
+        // Initial estimate: each row has average density 1 / ROW_DENSITY_ESTIMATE
+        ROW_DENSITY_ESTIMATE = 5,
+    };
+
+    Map<unsigned, double> _committedChanges;
+
+    /*
+      This is the size of the concrete vector
+    */
+    unsigned _size;
+
+    /*
+      An estimate of nnz, used to allocate space for the
+      underlying straoge. If the real nnz exceeds this value,
+      it needs to be increased.
+    */
+    unsigned _estimatedNnz;
+
+    /*
+      Number of non-zeroes
+    */
+    unsigned _nnz;
+
+    /*
+      Values and indices
+    */
+    double *_values;
+    unsigned *_indices;
+
+    /*
+      Swapable memory, for "executeChanges"
+    */
+    double *_valuesA;
+    double *_valuesB;
+    unsigned *_indicesA;
+    unsigned *_indicesB;
+    bool _usingMemoryA;
+
+    void freeMemoryIfNeeded();
+
+    void increaseCapacity();
+
+    unsigned findArrayIndexForEntry( unsigned entry ) const;
 };
 
 #endif // __SparseVector_h__

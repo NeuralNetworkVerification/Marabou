@@ -178,15 +178,14 @@ void SparseVectors::countElements( unsigned *numRowElements, unsigned *numColumn
 
     for ( unsigned i = 0; i < _m; ++i )
     {
-        unsigned nnz = _rows[i]->getNnz();
+        unsigned nnzInRow = _rows[i]->getNnz();
 
         // Rows
-        numRowElements[i] = nnz;
+        numRowElements[i] = nnzInRow;
 
         // Columns
-        const unsigned *ja = _rows[i]->getJA();
-        for ( unsigned j = 0; j < nnz; ++j )
-            ++numColumnElements[ja[j]];
+        for ( unsigned j = 0; j < nnzInRow; ++j )
+            ++numColumnElements[_rows[i]->getIndexOfEntry( j )];
     }
 }
 
