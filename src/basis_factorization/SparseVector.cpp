@@ -331,6 +331,9 @@ void SparseVector::commitChange( unsigned index, double newValue )
 
 void SparseVector::executeChanges()
 {
+    if ( _committedChanges.empty() )
+        return;
+
     unsigned newEstimatedNnz = _estimatedNnz;
     bool needToIncreaseA = false;
     bool needToIncreaseB = false;
