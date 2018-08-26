@@ -64,6 +64,16 @@ public:
         return _container.end();
     }
 
+    const_iterator begin() const
+    {
+        return _container.begin();
+    }
+
+    const_iterator end() const
+    {
+        return _container.end();
+    }
+
     void clear()
     {
         _container.clear();

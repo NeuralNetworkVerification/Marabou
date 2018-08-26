@@ -133,7 +133,7 @@ double CSRMatrix::get( unsigned row, unsigned column ) const
     return ( index == _nnz ) ? 0 : _A[index];
 }
 
-void CSRMatrix::addLastRow( double *row )
+void CSRMatrix::addLastRow( const double *row )
 {
     // Array _IA needs to increase by one
     unsigned *newIA = new unsigned[_m + 2];
@@ -162,7 +162,7 @@ void CSRMatrix::addLastRow( double *row )
     ++_m;
 }
 
-void CSRMatrix::addLastColumn( double *column )
+void CSRMatrix::addLastColumn( const double *column )
 {
     // Count the number of new entries needed
     unsigned newNnz = 0;

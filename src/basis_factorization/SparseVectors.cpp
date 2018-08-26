@@ -135,7 +135,7 @@ void SparseVectors::getColumnDense( unsigned column, double *result ) const
         result[i] = _rows[i]->get( column );
 }
 
-void SparseVectors::addLastRow( double *row )
+void SparseVectors::addLastRow( const double *row )
 {
     SparseVector **newRows = new SparseVector *[_m + 1];
     if ( !newRows )
@@ -153,7 +153,7 @@ void SparseVectors::addLastRow( double *row )
     ++_m;
 }
 
-void SparseVectors::addLastColumn( double *column )
+void SparseVectors::addLastColumn( const double *column )
 {
     for ( unsigned i = 0; i < _m; ++i )
         _rows[i]->addLastEntry( column[i] );

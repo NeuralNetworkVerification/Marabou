@@ -16,6 +16,7 @@
 #include "FloatUtils.h"
 #include "MString.h"
 #include "SparseLUFactors.h"
+#include "SparseUnsortedVectors.h"
 #include "SparseVector.h"
 #include "SparseVectors.h"
 
@@ -35,19 +36,19 @@ SparseLUFactors::SparseLUFactors( unsigned m )
     , _sparseColumn( m )
 
 {
-    _F = new SparseVectors();
+    _F = new SparseUnsortedVectors();
     if ( !_F )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseLUFactors::F" );
 
-    _V = new SparseVectors();
+    _V = new SparseUnsortedVectors();
     if ( !_V )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseLUFactors::V" );
 
-    _Ft = new SparseVectors();
+    _Ft = new SparseUnsortedVectors();
     if ( !_Ft )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseLUFactors::Ft" );
 
-    _Vt = new SparseVectors();
+    _Vt = new SparseUnsortedVectors();
     if ( !_Vt )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseLUFactors::Vt" );
 

@@ -53,22 +53,17 @@ void SparseUnsortedVectors::initialize( const double *M, unsigned m, unsigned n 
     _m = m;
     _n = n;
 
-    _rows = new SparseUnsortedVectors::Row *[_m];
+    _rows = new SparseUnsortedVector *[_m];
     if ( !_rows )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseUnsortedVectors::rows" );
 
     for ( unsigned i = 0; i < _m; ++i )
     {
-        _rows[i] = new SparseUnsortedVectors::Row;
+        _rows[i] = new SparseUnsortedVector;
         if ( !_rows[i] )
             throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseUnsortedVectors::rows[i]" );
 
-        for ( unsigned j = 0; j < _n; ++j )
-        {
-            double value = M[i*_n + j];
-            if ( !FloatUtils::isZero( value ) )
-                _rows[i]->set( j, value );
-        }
+        _rows[i]->initialize( M + ( i*_n ), _n );
     }
 }
 
@@ -79,13 +74,13 @@ void SparseUnsortedVectors::initialize( const SparseVector **V, unsigned m, unsi
     _m = m;
     _n = n;
 
-    _rows = new SparseUnsortedVectors::Row *[_m];
+    _rows = new SparseUnsortedVector *[_m];
     if ( !_rows )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseUnsortedVectors::rows" );
 
     for ( unsigned i = 0; i < _m; ++i )
     {
-        _rows[i] = new SparseUnsortedVectors::Row;
+        _rows[i] = new SparseUnsortedVector;
         if ( !_rows[i] )
             throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseUnsortedVectors::rows[i]" );
 
@@ -101,13 +96,13 @@ void SparseUnsortedVectors::initializeToEmpty( unsigned m, unsigned n )
     _m = m;
     _n = n;
 
-    _rows = new SparseUnsortedVectors::Row *[_m];
+    _rows = new SparseUnsortedVector *[_m];
     if ( !_rows )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseUnsortedVectors::rows" );
 
     for ( unsigned i = 0; i < _m; ++i )
     {
-        _rows[i] = new SparseUnsortedVectors::Row;
+        _rows[i] = new SparseUnsortedVector( _n );
         if ( !_rows[i] )
             throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseUnsortedVectors::rows[i]" );
     }
@@ -115,12 +110,12 @@ void SparseUnsortedVectors::initializeToEmpty( unsigned m, unsigned n )
 
 double SparseUnsortedVectors::get( unsigned row, unsigned column ) const
 {
-    return _rows[row]->exists( column ) ? _rows[row]->get( column ) : 0;
+    return _rows[row]->get( column );
 }
 
 void SparseUnsortedVectors::getRow( unsigned row, SparseVector *result ) const
 {
-    Row *unsortedRow = _rows[row];
+    SparseUnsortedVector *unsortedRow = _rows[row];
 
     result->clear();
     for ( const auto &entry : *unsortedRow )
@@ -129,13 +124,14 @@ void SparseUnsortedVectors::getRow( unsigned row, SparseVector *result ) const
     result->executeChanges();
 }
 
+const SparseUnsortedVector *SparseUnsortedVectors::getRow( unsigned row ) const
+{
+    return _rows[row];
+}
+
 void SparseUnsortedVectors::getRowDense( unsigned row, double *result ) const
 {
-    Row *unsortedRow = _rows[row];
-
-    std::fill_n( result, _n, 0 );
-    for ( const auto &entry : *unsortedRow )
-        result[entry.first] = entry.second;
+    _rows[row]->toDense( result );
 }
 
 void SparseUnsortedVectors::getColumn( unsigned column, SparseVector *result ) const
@@ -143,10 +139,7 @@ void SparseUnsortedVectors::getColumn( unsigned column, SparseVector *result ) c
     result->clear();
 
     for ( unsigned i = 0; i < _m; ++i )
-    {
-        if ( _rows[i]->exists( column ) )
-            result->commitChange( i, _rows[i]->get( column ) );
-    }
+        result->commitChange( i, _rows[i]->get( column ) );
 
     result->executeChanges();
 }
@@ -157,23 +150,19 @@ void SparseUnsortedVectors::getColumnDense( unsigned column, double *result ) co
         result[i] = get( i, column );
 }
 
-void SparseUnsortedVectors::addLastRow( double *row )
+void SparseUnsortedVectors::addLastRow( const double *row )
 {
-    SparseUnsortedVectors::Row **newRows = new SparseUnsortedVectors::Row *[_m + 1];
+    SparseUnsortedVector **newRows = new SparseUnsortedVector *[_m + 1];
     if ( !newRows )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseUnsortedVectors::newRows" );
 
-    memcpy( newRows, _rows, sizeof(SparseUnsortedVectors::Row *) * _m );
+    memcpy( newRows, _rows, sizeof(SparseUnsortedVector *) * _m );
 
-    newRows[_m] = new SparseUnsortedVectors::Row;
+    newRows[_m] = new SparseUnsortedVector;
     if ( !newRows[_m] )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "ArrayOfCSRUnsortedVectors::newRows[_m]" );
 
-    for ( unsigned i = 0; i < _n; ++i )
-    {
-        if ( !FloatUtils::isZero( row[i] ) )
-            newRows[_m]->set( i, row[i] );
-    }
+    newRows[_m]->initialize( row, _n );
 
     delete[] _rows;
     _rows = newRows;
@@ -181,49 +170,31 @@ void SparseUnsortedVectors::addLastRow( double *row )
     ++_m;
 }
 
-void SparseUnsortedVectors::addLastColumn( double *column )
+void SparseUnsortedVectors::addLastColumn( const double *column )
 {
     for ( unsigned i = 0; i < _m; ++i )
-    {
-        if ( !FloatUtils::isZero( column[i] ) )
-            _rows[i]->set( _n, column[i] );
-    }
+        _rows[i]->addLastEntry( column[i] );
 
     ++_n;
 }
 
 void SparseUnsortedVectors::addEmptyColumn()
 {
+    for ( unsigned i = 0; i < _m; ++i )
+        _rows[i]->incrementSize();
+
     ++_n;
 }
 
 void SparseUnsortedVectors::commitChange( unsigned row, unsigned column, double newValue )
 {
-    _committedChangesByRow[row].append( SparseUnsortedVectors::CommittedChange( column, newValue ) );
+    _rows[row]->commitChange( column, newValue );
 }
 
 void SparseUnsortedVectors::executeChanges()
 {
     for ( unsigned i = 0; i < _m; ++i )
-    {
-        for ( const auto &change : _committedChangesByRow[i] )
-        {
-            double value = change._value;
-            double column = change._index;
-
-            if ( !FloatUtils::isZero( value ) )
-            {
-                _rows[i]->set( column, value );
-            }
-            else
-            {
-                if ( _rows[i]->exists( column ) )
-                    _rows[i]->erase( column );
-            }
-        }
-
-        _committedChangesByRow[i].clear();
-    }
+        _rows[i]->executeChanges();
 }
 
 void SparseUnsortedVectors::countElements( unsigned *numRowElements, unsigned *numColumnElements )
@@ -232,10 +203,8 @@ void SparseUnsortedVectors::countElements( unsigned *numRowElements, unsigned *n
 
     for ( unsigned i = 0; i < _m; ++i )
     {
-        unsigned nnzInRow = _rows[i]->size();
-
         // Rows
-        numRowElements[i] = nnzInRow;
+        numRowElements[i] = _rows[i]->getNnz();
 
         // Columns
         for ( const auto element : (*_rows[i]) )
@@ -248,12 +217,8 @@ void SparseUnsortedVectors::transposeIntoOther( SparseMatrix *other )
     other->initializeToEmpty( _n, _m );
 
     for ( unsigned row = 0; row < _m; ++row )
-    {
         for ( const auto &element : (*_rows[row]) )
-        {
             other->commitChange( element.first, row, element.second );
-        }
-    }
 
     other->executeChanges();
 }
@@ -269,10 +234,7 @@ void SparseUnsortedVectors::dumpDense() const
     for ( unsigned row = 0; row < _m; ++row )
     {
         printf( "\t" );
-        for ( unsigned column = 0; column < _n; ++column )
-        {
-            printf( "%6.3lf ", get( row, column ) );
-        }
+        _rows[row]->dumpDense();
         printf( "\n" );
     }
     printf( "\n\n" );
@@ -287,13 +249,13 @@ void SparseUnsortedVectors::storeIntoOther( SparseMatrix *other ) const
     otherSparseUnsortedVectors->_m = _m;
     otherSparseUnsortedVectors->_n = _n;
 
-    otherSparseUnsortedVectors->_rows = new SparseUnsortedVectors::Row *[_m];
+    otherSparseUnsortedVectors->_rows = new SparseUnsortedVector *[_m];
     if ( !otherSparseUnsortedVectors->_rows )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseUnsortedVectors::otherRows" );
 
     for ( unsigned i = 0; i < _m; ++i )
     {
-        otherSparseUnsortedVectors->_rows[i] = new SparseUnsortedVectors::Row;
+        otherSparseUnsortedVectors->_rows[i] = new SparseUnsortedVector;
         if ( !otherSparseUnsortedVectors->_rows[i] )
             throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseVectors::otherRows[i]" );
 
@@ -311,7 +273,8 @@ unsigned SparseUnsortedVectors::getNnz() const
 {
     unsigned result = 0;
     for ( unsigned i = 0; i < _m; ++i )
-        result += _rows[i]->size();
+        result += _rows[i]->getNnz();
+
     return result;
 }
 
@@ -320,11 +283,7 @@ void SparseUnsortedVectors::toDense( double *result ) const
     std::fill_n( result, _n * _m, 0 );
 
     for ( unsigned i = 0; i < _m; ++i )
-    {
-        double *row = result + ( i * _n );
-        for ( const auto element : (*_rows[i]) )
-            row[element.first] = element.second;
-    }
+        _rows[i]->toDense( result + ( i * _n ) );
 }
 
 void SparseUnsortedVectors::clear()

@@ -15,6 +15,7 @@
 
 #include "HashMap.h"
 #include "SparseMatrix.h"
+#include "SparseUnsortedVector.h"
 #include "SparseVector.h"
 
 class SparseUnsortedVectors : public SparseMatrix
@@ -36,6 +37,7 @@ public:
     */
     double get( unsigned row, unsigned column ) const;
     void getRow( unsigned row, SparseVector *result ) const;
+    const SparseUnsortedVector *getRow( unsigned row ) const;
     void getRowDense( unsigned row, double *result ) const;
     void getColumn( unsigned column, SparseVector *result ) const;
     void getColumnDense( unsigned column, double *result ) const;
@@ -44,8 +46,8 @@ public:
       Add a row/column to the end of the matrix.
       The new row/column is provided in dense format.
     */
-    void addLastRow( double *row );
-    void addLastColumn( double *column );
+    void addLastRow( const double *row );
+    void addLastColumn( const double *column );
 
     /*
       This function increments n, the number of columns in the
@@ -104,30 +106,13 @@ public:
 
 private:
     // Actual rows
-    typedef HashMap<unsigned, double> Row;
-    Row **_rows;
+    SparseUnsortedVector **_rows;
 
     // Number of rows
     unsigned _m;
 
     // Number of columns
     unsigned _n;
-
-    // Commited changes
-    struct CommittedChange
-    {
-        CommittedChange( unsigned index, double value )
-            : _index( index )
-            , _value( value )
-        {
-        }
-
-        unsigned _index;
-        double _value;
-    };
-
-    typedef List<CommittedChange> CommittedChanges;
-    Map<unsigned, CommittedChanges> _committedChangesByRow;
 
     void freeMemoryIfNeeded();
 };

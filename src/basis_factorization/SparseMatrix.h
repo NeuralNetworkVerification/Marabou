@@ -40,8 +40,8 @@ public:
       Add a row/column to the end of the matrix.
       The new row/column is provided in dense format.
     */
-    virtual void addLastRow( double *row ) = 0;
-    virtual void addLastColumn( double *column ) = 0;
+    virtual void addLastRow( const double *row ) = 0;
+    virtual void addLastColumn( const double *column ) = 0;
 
     /*
       This function increments n, the number of columns in the
