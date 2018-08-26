@@ -77,6 +77,11 @@ public:
         return _container.at( key );
     }
 
+    void set( const Key &key, const Value &value )
+    {
+        _container[key] = value;
+    }
+
     bool operator==( const HashMap<Key,Value> &other ) const
     {
         return _container == other._container;

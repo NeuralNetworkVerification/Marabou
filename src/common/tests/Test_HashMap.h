@@ -31,6 +31,20 @@ public:
         TS_ASSERT_EQUALS( hashMap[1], "Apple" );
         TS_ASSERT_EQUALS( hashMap[2], "Red" );
         TS_ASSERT_EQUALS( hashMap[3], "Tasty" );
+
+        hashMap.set( 4, "bla" );
+
+        TS_ASSERT_EQUALS( hashMap[1], "Apple" );
+        TS_ASSERT_EQUALS( hashMap[2], "Red" );
+        TS_ASSERT_EQUALS( hashMap[3], "Tasty" );
+        TS_ASSERT_EQUALS( hashMap[4], "bla" );
+
+        hashMap.set( 4, "otherBla" );
+
+        TS_ASSERT_EQUALS( hashMap[1], "Apple" );
+        TS_ASSERT_EQUALS( hashMap[2], "Red" );
+        TS_ASSERT_EQUALS( hashMap[3], "Tasty" );
+        TS_ASSERT_EQUALS( hashMap[4], "otherBla" );
     }
 
     void test_size_and_exists()

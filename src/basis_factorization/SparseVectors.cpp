@@ -46,6 +46,8 @@ void SparseVectors::freeMemoryIfNeeded()
 
 void SparseVectors::initialize( const double *M, unsigned m, unsigned n )
 {
+    freeMemoryIfNeeded();
+
     _m = m;
     _n = n;
 
@@ -163,6 +165,8 @@ void SparseVectors::addEmptyColumn()
 {
     for ( unsigned i = 0; i < _m; ++i )
         _rows[i]->addEmptyLastEntry();
+
+    ++_n;
 }
 
 void SparseVectors::commitChange( unsigned row, unsigned column, double newValue )

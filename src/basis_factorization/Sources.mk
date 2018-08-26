@@ -14,6 +14,7 @@ SOURCES += \
 	SparseGaussianEliminator.cpp \
 	SparseLUFactorization.cpp \
 	SparseLUFactors.cpp \
+	SparseUnsortedVectors.cpp \
 	SparseVector.cpp \
 	SparseVectors.cpp \
 
