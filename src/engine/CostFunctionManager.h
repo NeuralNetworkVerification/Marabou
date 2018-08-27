@@ -15,7 +15,7 @@
 
 #include "ICostFunctionManager.h"
 #include "Map.h"
-#include "SparseUnsortedVector.h"
+#include "SparseUnsortedList.h"
 
 class ITableau;
 
@@ -105,7 +105,7 @@ private:
     /*
       Work memeory
     */
-    const SparseUnsortedVector *_ANColumn;
+    const SparseUnsortedList *_ANColumn;
 
     /*
       Free memory.

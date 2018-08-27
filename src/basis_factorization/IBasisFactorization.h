@@ -15,7 +15,7 @@
 
 class SparseColumnsOfBasis;
 class SparseMatrix;
-class SparseUnsortedVector;
+class SparseUnsortedList;
 
 class IBasisFactorization
 {
@@ -31,7 +31,7 @@ public:
     public:
         virtual ~BasisColumnOracle() {}
         virtual void getColumnOfBasis( unsigned column, double *result ) const = 0;
-        virtual void getColumnOfBasis( unsigned column, SparseUnsortedVector *result ) const = 0;
+        virtual void getColumnOfBasis( unsigned column, SparseUnsortedList *result ) const = 0;
         virtual void getSparseBasis( SparseColumnsOfBasis &basis ) const = 0;
     };
 

@@ -13,6 +13,7 @@
 #include "BasisFactorizationFactory.h"
 #include "CSRMatrix.h"
 #include "ReluplexError.h"
+#include "SparseUnsortedList.h"
 #include "TableauState.h"
 
 TableauState::TableauState()
@@ -124,13 +125,13 @@ void TableauState::setDimensions( unsigned m, unsigned n, const IBasisFactorizat
     if ( !_A )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::A" );
 
-    _sparseColumnsOfA = new SparseUnsortedVector *[n];
+    _sparseColumnsOfA = new SparseUnsortedList *[n];
     if ( !_sparseColumnsOfA )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::sparseColumnsOfA" );
 
     for ( unsigned i = 0; i < n; ++i )
     {
-        _sparseColumnsOfA[i] = new SparseUnsortedVector;
+        _sparseColumnsOfA[i] = new SparseUnsortedList;
         if ( !_sparseColumnsOfA[i] )
             throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::sparseColumnsOfA[i]" );
     }

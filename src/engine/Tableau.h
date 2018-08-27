@@ -20,7 +20,7 @@
 #include "Set.h"
 #include "SparseColumnsOfBasis.h"
 #include "SparseMatrix.h"
-#include "SparseUnsortedVector.h"
+#include "SparseUnsortedList.h"
 #include "Statistics.h"
 
 class Equation;
@@ -316,9 +316,9 @@ public:
     */
     const SparseMatrix *getSparseA() const;
     const double *getAColumn( unsigned variable ) const;
-    void getSparseAColumn( unsigned variable, SparseUnsortedVector *result ) const;
-    void getSparseARow( unsigned row, SparseUnsortedVector *result ) const;
-    const SparseUnsortedVector *getSparseAColumn( unsigned variable ) const;
+    void getSparseAColumn( unsigned variable, SparseUnsortedList *result ) const;
+    void getSparseARow( unsigned row, SparseUnsortedList *result ) const;
+    const SparseUnsortedList *getSparseAColumn( unsigned variable ) const;
 
     /*
       Store and restore the Tableau's state. Needed for case splitting
@@ -399,7 +399,7 @@ public:
     double *getInverseBasisMatrix() const;
 
     void getColumnOfBasis( unsigned column, double *result ) const;
-    void getColumnOfBasis( unsigned column, SparseUnsortedVector *result ) const;
+    void getColumnOfBasis( unsigned column, SparseUnsortedList *result ) const;
     void getSparseBasis( SparseColumnsOfBasis &basis ) const;
 
     /*
@@ -440,7 +440,7 @@ private:
       form (column-major).
     */
     SparseMatrix *_A;
-    SparseUnsortedVector **_sparseColumnsOfA;
+    SparseUnsortedList **_sparseColumnsOfA;
     double *_denseA;
 
     /*

@@ -66,7 +66,7 @@ public:
         }
     }
 
-    List<SparseUnsortedVector *> cleanup;
+    List<SparseUnsortedList *> cleanup;
     void basisIntoSparseColumns( double *B, unsigned m, SparseColumnsOfBasis &sparse )
     {
         double *denseColumn = new double[m];
@@ -78,9 +78,9 @@ public:
                 denseColumn[row] = B[row*m + col];
             }
 
-            SparseUnsortedVector *vector = new SparseUnsortedVector( denseColumn, m );
-            sparse._columns[col] = vector;
-            cleanup.append( vector );
+            SparseUnsortedList *list = new SparseUnsortedList( denseColumn, m );
+            sparse._columns[col] = list;
+            cleanup.append( list );
         }
 
         delete[] denseColumn;

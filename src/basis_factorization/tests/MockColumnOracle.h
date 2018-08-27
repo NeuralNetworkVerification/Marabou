@@ -15,7 +15,7 @@
 
 #include "IBasisFactorization.h"
 #include "SparseColumnsOfBasis.h"
-#include "SparseUnsortedVector.h"
+#include "SparseUnsortedList.h"
 
 class MockColumnOracle : public IBasisFactorization::BasisColumnOracle
 {
@@ -65,7 +65,7 @@ public:
         }
 
         for ( unsigned i = 0; i < _m; ++i )
-            _sparseBasis->_columns[i] = new SparseUnsortedVector( _basis + ( i * _m ), _m );
+            _sparseBasis->_columns[i] = new SparseUnsortedList( _basis + ( i * _m ), _m );
     }
 
     double *_basis;
@@ -75,7 +75,7 @@ public:
         memcpy( result, _basis + ( _m * column ), sizeof(double) * _m );
     }
 
-    void getColumnOfBasis( unsigned column, SparseUnsortedVector *result ) const
+    void getColumnOfBasis( unsigned column, SparseUnsortedList *result ) const
     {
         result->initialize( _basis + ( _m * column ), _m );
     }

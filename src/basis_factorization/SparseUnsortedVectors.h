@@ -15,6 +15,7 @@
 
 #include "HashMap.h"
 #include "SparseMatrix.h"
+#include "SparseUnsortedList.h"
 #include "SparseUnsortedVector.h"
 
 class SparseUnsortedVectors : public SparseMatrix
@@ -30,6 +31,7 @@ public:
     void initialize( const double *M, unsigned m, unsigned n );
     void initializeToEmpty( unsigned m, unsigned n );
     void initialize( const SparseUnsortedVector **V, unsigned m, unsigned n );
+    void initialize( const SparseUnsortedList **V, unsigned m, unsigned n );
 
     /*
       Obtain a single element/row/column of the matrix.
@@ -37,9 +39,11 @@ public:
     double get( unsigned row, unsigned column ) const;
     void set( unsigned row, unsigned column, double value );
     void getRow( unsigned row, SparseUnsortedVector *result ) const;
+    void getRow( unsigned row, SparseUnsortedList *result ) const;
     const SparseUnsortedVector *getRow( unsigned row ) const;
     void getRowDense( unsigned row, double *result ) const;
     void getColumn( unsigned column, SparseUnsortedVector *result ) const;
+    void getColumn( unsigned column, SparseUnsortedList *result ) const;
     void getColumnDense( unsigned column, double *result ) const;
 
     /*

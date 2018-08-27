@@ -237,7 +237,7 @@ void ProjectedSteepestEdgeRule::prePivotHook( const ITableau &tableau, bool fake
         _AColumn = tableau.getSparseAColumn( nonBasic );
         s = 0.0;
         for ( const auto &entry : *_AColumn )
-            s += entry.second * _work2[entry.first];
+            s += entry._value * _work2[entry._index];
 
         /* compute new gamma[j] */
         t1 = _gamma[i] + r * ( r * accurateGamma + s + s );

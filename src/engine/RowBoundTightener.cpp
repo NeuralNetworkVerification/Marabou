@@ -14,7 +14,7 @@
 #include "InfeasibleQueryException.h"
 #include "ReluplexError.h"
 #include "RowBoundTightener.h"
-#include "SparseUnsortedVector.h"
+#include "SparseUnsortedList.h"
 #include "Statistics.h"
 
 RowBoundTightener::RowBoundTightener( const ITableau &tableau )
@@ -243,11 +243,11 @@ void RowBoundTightener::examineInvertedBasisMatrix( bool untilSaturation )
                 // Dot product of the i'th row of inv(B) with the appropriate
                 // column of An
 
-                const SparseUnsortedVector *column = _tableau.getSparseAColumn( row->_row[j]._var );
+                const SparseUnsortedList *column = _tableau.getSparseAColumn( row->_row[j]._var );
                 row->_row[j]._coefficient = 0;
 
                 for ( const auto &entry : *column )
-                    row->_row[j]._coefficient -= invB[i*_m + entry.first] * entry.second;
+                    row->_row[j]._coefficient -= invB[i*_m + entry._index] * entry._value;
             }
 
             // Store the lhs variable
@@ -502,7 +502,7 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
 
     unsigned result = 0;
 
-    SparseUnsortedVector sparseRow( n );
+    SparseUnsortedList sparseRow( n );
     _tableau.getSparseARow( row, &sparseRow );
     const double *b = _tableau.getRightHandSide();
 

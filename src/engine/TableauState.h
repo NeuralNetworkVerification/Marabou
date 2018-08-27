@@ -51,7 +51,7 @@ public:
       The matrix
     */
     SparseMatrix *_A;
-    SparseUnsortedVector **_sparseColumnsOfA;
+    SparseUnsortedList **_sparseColumnsOfA;
     double *_denseA;
 
     /*

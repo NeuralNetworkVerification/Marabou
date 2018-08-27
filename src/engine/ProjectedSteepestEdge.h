@@ -14,7 +14,7 @@
 #define __ProjectedSteepestEdge_h__
 
 #include "IProjectedSteepestEdge.h"
-#include "SparseVector.h"
+#include "SparseUnsortedList.h"
 
 class ProjectedSteepestEdgeRule : public IProjectedSteepestEdgeRule
 {
@@ -71,7 +71,7 @@ private:
     */
     double *_work1;
     double *_work2;
-    const SparseUnsortedVector *_AColumn;
+    const SparseUnsortedList *_AColumn;
 
     /*
       Tableau dimensions.

@@ -15,6 +15,7 @@
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "MString.h"
+#include "SparseUnsortedList.h"
 #include "SparseUnsortedVector.h"
 #include "SparseVector.h"
 
@@ -262,7 +263,7 @@ void CSRMatrix::storeIntoOther( SparseMatrix *other ) const
     memcpy( otherCsr->_JA, _JA, sizeof(unsigned) * _estimatedNnz );
 }
 
-void CSRMatrix::getRow( unsigned row, SparseUnsortedVector *result ) const
+void CSRMatrix::getRow( unsigned row, SparseUnsortedList *result ) const
 {
     ASSERT( row < _m );
 
@@ -272,8 +273,7 @@ void CSRMatrix::getRow( unsigned row, SparseUnsortedVector *result ) const
     */
     result->clear();
     for ( unsigned i = _IA[row]; i < _IA[row + 1]; ++i )
-        result->commitChange( _JA[i], _A[i] );
-    result->executeChanges();
+        result->set( _JA[i], _A[i] );
 }
 
 void CSRMatrix::getRow( unsigned row, SparseVector *result ) const
@@ -307,14 +307,13 @@ void CSRMatrix::getColumn( unsigned column, SparseVector *result ) const
     result->executeChanges();
 }
 
-void CSRMatrix::getColumn( unsigned column, SparseUnsortedVector *result ) const
+void CSRMatrix::getColumn( unsigned column, SparseUnsortedList *result ) const
 {
     ASSERT( column < _n );
 
     result->clear();
     for ( unsigned i = 0; i < _m; ++i )
-        result->commitChange( i, get( i, column ) );
-    result->executeChanges();
+        result->set( i, get( i, column ) );
 }
 
 void CSRMatrix::getColumnDense( unsigned column, double *result ) const

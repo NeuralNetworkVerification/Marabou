@@ -11,6 +11,7 @@
  **/
 
 #include "BasisFactorizationError.h"
+#include "SparseUnsortedList.h"
 #include "SparseUnsortedVector.h"
 #include "SparseVectors.h"
 #include <cstring>
@@ -110,7 +111,7 @@ double SparseVectors::get( unsigned row, unsigned column ) const
     return _rows[row]->get( column );
 }
 
-void SparseVectors::getRow( unsigned row, SparseUnsortedVector *result ) const
+void SparseVectors::getRow( unsigned row, SparseUnsortedList *result ) const
 {
     result->clear();
     for ( unsigned i = 0; i < _rows[row]->getNnz(); ++i )
@@ -137,14 +138,12 @@ void SparseVectors::getColumn( unsigned column, SparseVector *result ) const
     result->executeChanges();
 }
 
-void SparseVectors::getColumn( unsigned column, SparseUnsortedVector *result ) const
+void SparseVectors::getColumn( unsigned column, SparseUnsortedList *result ) const
 {
     result->clear();
 
     for ( unsigned i = 0; i < _m; ++i )
-        result->commitChange( i, _rows[i]->get( column ) );
-
-    result->executeChanges();
+        result->set( i, _rows[i]->get( column ) );
 }
 
 void SparseVectors::getColumnDense( unsigned column, double *result ) const

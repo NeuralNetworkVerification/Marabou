@@ -16,7 +16,7 @@
 #include "FloatUtils.h"
 #include "ITableau.h"
 #include "Map.h"
-#include "SparseUnsortedVector.h"
+#include "SparseUnsortedList.h"
 #include "SparseVector.h"
 #include "TableauRow.h"
 
@@ -408,7 +408,7 @@ public:
         return nextAColumn.get( index );
     }
 
-    void getSparseAColumn( unsigned index, SparseUnsortedVector *result ) const
+    void getSparseAColumn( unsigned index, SparseUnsortedList *result ) const
     {
         TS_ASSERT( nextAColumn.exists( index ) );
         TS_ASSERT( nextAColumn.get( index ) );
@@ -419,12 +419,12 @@ public:
         }
     }
 
-    mutable SparseUnsortedVector sparseVector;
-    const SparseUnsortedVector *getSparseAColumn( unsigned index ) const
+    mutable SparseUnsortedList sparseList;
+    const SparseUnsortedList *getSparseAColumn( unsigned index ) const
     {
         TS_ASSERT( nextAColumn.get( index ) );
-        sparseVector.initialize( nextAColumn.get( index ), lastM );
-        return &sparseVector;
+        sparseList.initialize( nextAColumn.get( index ), lastM );
+        return &sparseList;
     }
 
     const SparseMatrix *getSparseA() const
@@ -433,7 +433,7 @@ public:
     }
 
     double *A;
-    void getSparseARow( unsigned row, SparseUnsortedVector *result ) const
+    void getSparseARow( unsigned row, SparseUnsortedList *result ) const
     {
         double *temp = new double[lastN];
 
