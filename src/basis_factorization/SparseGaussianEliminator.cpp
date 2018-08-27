@@ -86,6 +86,7 @@ void SparseGaussianEliminator::initializeFactorization( const SparseColumnsOfBas
     _sparseLUFactors->_Vt->transposeIntoOther( _sparseLUFactors->_V );
 
     _sparseLUFactors->_F->initializeToEmpty( _m, _m );
+    _sparseLUFactors->_Ft->initializeToEmpty( _m, _m );
     _sparseLUFactors->_P.resetToIdentity();
     _sparseLUFactors->_Q.resetToIdentity();
 
@@ -159,10 +160,6 @@ void SparseGaussianEliminator::factorize()
         */
         eliminate();
     }
-
-    // Execute the changes in F, compute its transpose
-    _sparseLUFactors->_F->executeChanges();
-    _sparseLUFactors->_F->transposeIntoOther( _sparseLUFactors->_Ft );
 
     // DEBUG({
     //         // Check that the factorization is correct
@@ -456,7 +453,8 @@ void SparseGaussianEliminator::eliminate()
           Store the row multiplier in matrix F, using F = PLP'.
           F's rows are ordered same as V's
         */
-        _sparseLUFactors->_F->commitChange( vRow, fColumn, -rowMultiplier );
+        _sparseLUFactors->_F->set( vRow, fColumn, -rowMultiplier );
+        _sparseLUFactors->_Ft->set( fColumn, vRow, -rowMultiplier );
     }
 
     // Execute the changes in V

@@ -420,7 +420,7 @@ private:
       Variable watchers
     */
     typedef List<VariableWatcher *> VariableWatchers;
-    Map<unsigned, VariableWatchers> _variableToWatchers;
+    HashMap<unsigned, VariableWatchers> _variableToWatchers;
     List<VariableWatcher *> _globalWatchers;
 
     /*
