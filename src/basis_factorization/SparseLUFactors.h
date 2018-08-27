@@ -111,8 +111,6 @@ public:
     */
     double *_z;
     double *_workMatrix;
-    mutable SparseVector _sparseRow;
-    mutable SparseVector _sparseColumn;
 
     /*
       Clone this SparseLUFactors object into another object

@@ -14,7 +14,7 @@
 #include "InfeasibleQueryException.h"
 #include "ReluplexError.h"
 #include "RowBoundTightener.h"
-#include "SparseVector.h"
+#include "SparseUnsortedVector.h"
 #include "Statistics.h"
 
 RowBoundTightener::RowBoundTightener( const ITableau &tableau )
@@ -38,8 +38,6 @@ void RowBoundTightener::setDimensions()
 
     _n = _tableau.getN();
     _m = _tableau.getM();
-
-    _sparseRow.initializeToEmpty( _n );
 
     _lowerBounds = new double[_n];
     if ( !_lowerBounds )
@@ -245,11 +243,11 @@ void RowBoundTightener::examineInvertedBasisMatrix( bool untilSaturation )
                 // Dot product of the i'th row of inv(B) with the appropriate
                 // column of An
 
-                const SparseVector *column = _tableau.getSparseAColumn( row->_row[j]._var );
+                const SparseUnsortedVector *column = _tableau.getSparseAColumn( row->_row[j]._var );
                 row->_row[j]._coefficient = 0;
 
-                for ( unsigned entry = 0; entry < column->getNnz(); ++entry )
-                    row->_row[j]._coefficient -= invB[i*_m + column->getIndexOfEntry( entry )] * column->getValueOfEntry( entry );
+                for ( const auto &entry : *column )
+                    row->_row[j]._coefficient -= invB[i*_m + entry.first] * entry.second;
             }
 
             // Store the lhs variable
@@ -504,7 +502,8 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
 
     unsigned result = 0;
 
-    _tableau.getSparseARow( row, &_sparseRow );
+    SparseUnsortedVector sparseRow( n );
+    _tableau.getSparseARow( row, &sparseRow );
     const double *b = _tableau.getRightHandSide();
 
     double ci;
@@ -518,7 +517,7 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
 
     for ( unsigned i = 0; i < n; ++i )
     {
-        ci = _sparseRow.get( i );
+        ci = sparseRow.get( i );
 
         if ( FloatUtils::isZero( ci ) )
         {
@@ -594,7 +593,7 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
         }
 
         // Now divide everything by ci, switching signs if needed.
-        ci = _sparseRow.get( i );
+        ci = sparseRow.get( i );
 
         lowerBound = lowerBound / ci;
         upperBound = upperBound / ci;

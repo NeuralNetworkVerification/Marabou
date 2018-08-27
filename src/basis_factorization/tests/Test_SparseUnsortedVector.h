@@ -13,6 +13,7 @@
 #include <cxxtest/TestSuite.h>
 
 #include "FloatUtils.h"
+#include "Map.h"
 #include "SparseUnsortedVector.h"
 
 class MockForSparseUnsortedVector

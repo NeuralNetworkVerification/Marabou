@@ -17,7 +17,7 @@ SparseColumnsOfBasis::SparseColumnsOfBasis( unsigned m )
     : _columns( NULL )
     , _m( m )
 {
-    _columns = new const SparseVector *[m];
+    _columns = new const SparseUnsortedVector *[m];
     if ( !_columns )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseColumnsOfBasis::columns" );
 }

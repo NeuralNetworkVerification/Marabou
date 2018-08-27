@@ -193,12 +193,12 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
       This is done by traversing V's corresponding row
     */
 
-    SparseVector sparseRow( _m );
-    _sparseLUFactors._V->getRow( vRowDiagonalIndex, &sparseRow );
+    const SparseUnsortedVector *sparseRow;
+    sparseRow = _sparseLUFactors._V->getRow( vRowDiagonalIndex );
     bool haveSpike = false;
-    for ( unsigned i = 0; i < sparseRow.getNnz(); ++i )
+    for ( const auto &entry : *sparseRow )
     {
-        unsigned vColumn = sparseRow.getIndexOfEntry( i );
+        unsigned vColumn = entry.first;
         unsigned uColumn = _sparseLUFactors._Q._columnOrdering[vColumn];
 
         if ( uColumn < lastNonZeroEntryInU )
@@ -235,8 +235,8 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
         if ( FloatUtils::isZero( subDiagonalElement ) )
             continue;
 
-        _sparseLUFactors._V->getRow( vPivotRow, &sparseRow );
-        double pivot = sparseRow.get( vPivotColumn );
+        sparseRow = _sparseLUFactors._V->getRow( vPivotRow );
+        double pivot = sparseRow->get( vPivotColumn );
 
         // Compute the Gaussian multiplier
         double multiplier = subDiagonalElement / pivot;
@@ -245,12 +245,12 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
         sparseEtaMatrix->commitChange( vPivotRow, multiplier );
 
         // Adjust the spike row per the elimination step
-        for ( unsigned j = 0; j < sparseRow.getNnz(); ++j )
+        for ( const auto &entry : *sparseRow )
         {
-            unsigned column = sparseRow.getIndexOfEntry( j );
+            unsigned column = entry.first;
 
             if ( column != vPivotColumn )
-                _z3[column] -= multiplier * sparseRow.getValueOfEntry( j );
+                _z3[column] -= multiplier * entry.second;
             else
                 _z3[column] = 0;
         }

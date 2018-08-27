@@ -15,12 +15,10 @@
 #include "EtaMatrix.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
+#include "HashSet.h"
 #include "MStringf.h"
 #include "MalformedBasisException.h"
 #include "SparseGaussianEliminator.h"
-#include "SparseVector.h"
-
-#include "SparseVectors.h"
 
 #include <cstdio>
 
@@ -406,7 +404,7 @@ void SparseGaussianEliminator::eliminate()
         _sparseLUFactors->_Vt->commitChange( _vPivotColumn, vRow, 0.0 );
         sparseRow = _sparseLUFactors->_V->getRow( vRow );
 
-        Set<unsigned> columnsAlreadyHandled; // TODO: HashSet
+        HashSet<unsigned> columnsAlreadyHandled;
         // First, handle non-zero entries in the row being eliminated
         for ( const auto &rowEntry : *sparseRow )
         {

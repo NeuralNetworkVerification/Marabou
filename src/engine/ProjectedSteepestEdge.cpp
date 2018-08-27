@@ -16,7 +16,7 @@
 #include "MStringf.h"
 #include "ProjectedSteepestEdge.h"
 #include "ReluplexError.h"
-#include "SparseVector.h"
+#include "SparseUnsortedVector.h"
 #include "Statistics.h"
 #include "TableauRow.h"
 
@@ -25,6 +25,7 @@ ProjectedSteepestEdgeRule::ProjectedSteepestEdgeRule()
     , _gamma( NULL )
     , _work1( NULL )
     , _work2( NULL )
+    , _AColumn( NULL )
     , _iterationsUntilReset( GlobalConfiguration::PSE_ITERATIONS_BEFORE_RESET )
     , _errorInGamma( 0.0 )
 {
@@ -68,8 +69,6 @@ void ProjectedSteepestEdgeRule::initialize( const ITableau &tableau )
 
     _n = tableau.getN();
     _m = tableau.getM();
-
-    _AColumn.initializeToEmpty( _m );
 
     _referenceSpace = new char[_n];
     if ( !_referenceSpace )
@@ -235,10 +234,10 @@ void ProjectedSteepestEdgeRule::prePivotHook( const ITableau &tableau, bool fake
          * is constraint matrix column corresponding to xN[j] */
         unsigned nonBasic = tableau.nonBasicIndexToVariable( i );
 
-        tableau.getSparseAColumn( nonBasic, &_AColumn );
+        _AColumn = tableau.getSparseAColumn( nonBasic );
         s = 0.0;
-        for ( unsigned i = 0; i < _AColumn.getNnz(); ++i )
-            s += _AColumn.getValueOfEntry( i ) * _work2[_AColumn.getIndexOfEntry( i )];
+        for ( const auto &entry : *_AColumn )
+            s += entry.second * _work2[entry.first];
 
         /* compute new gamma[j] */
         t1 = _gamma[i] + r * ( r * accurateGamma + s + s );

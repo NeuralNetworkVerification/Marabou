@@ -13,7 +13,7 @@
 #ifndef __SparseColumnsOfBasis_h__
 #define __SparseColumnsOfBasis_h__
 
-#include "SparseVector.h"
+#include "SparseUnsortedVector.h"
 
 class SparseColumnsOfBasis
 {
@@ -21,7 +21,7 @@ public:
     SparseColumnsOfBasis( unsigned m );
     ~SparseColumnsOfBasis();
 
-    const SparseVector **_columns;
+    const SparseUnsortedVector **_columns;
 
     /*
       For debugging purposes

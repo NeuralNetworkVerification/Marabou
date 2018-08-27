@@ -71,7 +71,7 @@ private:
     */
     double *_work1;
     double *_work2;
-    SparseVector _AColumn;
+    const SparseUnsortedVector *_AColumn;
 
     /*
       Tableau dimensions.

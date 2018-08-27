@@ -195,13 +195,13 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     if ( !_A )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::A" );
 
-    _sparseColumnsOfA = new SparseVector *[n];
+    _sparseColumnsOfA = new SparseUnsortedVector *[n];
     if ( !_sparseColumnsOfA )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::sparseColumnsOfA" );
 
     for ( unsigned i = 0; i < n; ++i )
     {
-        _sparseColumnsOfA[i] = new SparseVector( _m );
+        _sparseColumnsOfA[i] = new SparseUnsortedVector( _m );
         if ( !_sparseColumnsOfA[i] )
             throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::sparseColumnsOfA[i]" );
     }
@@ -369,9 +369,8 @@ void Tableau::computeAssignment()
         unsigned var = _nonBasicIndexToVariable[i];
         double value = _nonBasicAssignment[i];
 
-        for ( unsigned entry = 0; entry < _sparseColumnsOfA[var]->getNnz(); ++entry )
-            _workM[_sparseColumnsOfA[var]->getIndexOfEntry( entry )] -=
-                _sparseColumnsOfA[var]->getValueOfEntry( entry ) * value;
+        for ( const auto &entry : *_sparseColumnsOfA[var] )
+            _workM[entry.first] -= entry.second * value;
     }
 
     // Solve B*xB = y by performing a forward transformation
@@ -1453,10 +1452,10 @@ void Tableau::getTableauRow( unsigned index, TableauRow *row )
         row->_row[i]._var = _nonBasicIndexToVariable[i];
         row->_row[i]._coefficient = 0;
 
-        SparseVector *column = _sparseColumnsOfA[_nonBasicIndexToVariable[i]];
+        SparseUnsortedVector *column = _sparseColumnsOfA[_nonBasicIndexToVariable[i]];
 
-        for ( unsigned entry = 0; entry < column->getNnz(); ++entry )
-            row->_row[i]._coefficient -= ( _multipliers[column->getIndexOfEntry( entry )] * column->getValueOfEntry( entry ) );
+        for ( const auto &entry : *column )
+            row->_row[i]._coefficient -= ( _multipliers[entry.first] * entry.second );
     }
 
     _basisFactorization->forwardTransformation( _b, _workM );
@@ -1475,17 +1474,17 @@ const double *Tableau::getAColumn( unsigned variable ) const
     return _denseA + ( variable * _m );
 }
 
-void Tableau::getSparseAColumn( unsigned variable, SparseVector *result ) const
+void Tableau::getSparseAColumn( unsigned variable, SparseUnsortedVector *result ) const
 {
-    *result = *_sparseColumnsOfA[variable];
+    _sparseColumnsOfA[variable]->storeIntoOther( result );
 }
 
-const SparseVector *Tableau::getSparseAColumn( unsigned variable ) const
+const SparseUnsortedVector *Tableau::getSparseAColumn( unsigned variable ) const
 {
     return _sparseColumnsOfA[variable];
 }
 
-void Tableau::getSparseARow( unsigned row, SparseVector *result ) const
+void Tableau::getSparseARow( unsigned row, SparseUnsortedVector *result ) const
 {
     _A->getRow( row, result );
 }
@@ -1512,7 +1511,7 @@ void Tableau::storeState( TableauState &state ) const
     // Store matrix A
     _A->storeIntoOther( state._A );
     for ( unsigned i = 0; i < _n; ++i )
-        *state._sparseColumnsOfA[i] = *_sparseColumnsOfA[i];
+        _sparseColumnsOfA[i]->storeIntoOther( state._sparseColumnsOfA[i] );
     memcpy( state._denseA, _denseA, sizeof(double) * _m * _n );
 
     // Store right hand side vector _b
@@ -1553,7 +1552,7 @@ void Tableau::restoreState( const TableauState &state )
     // Restore matrix A
     state._A->storeIntoOther( _A );
     for ( unsigned i = 0; i < _n; ++i )
-        *_sparseColumnsOfA[i] = *state._sparseColumnsOfA[i];
+        state._sparseColumnsOfA[i]->storeIntoOther( _sparseColumnsOfA[i] );
     memcpy( _denseA, state._denseA, sizeof(double) * _m * _n );
 
     // Restore right hand side vector _b
@@ -1812,17 +1811,17 @@ void Tableau::addRow()
     */
 
     // Allocate a larger _sparseColumnsOfA, keep old ones
-    SparseVector **newSparseColumnsOfA = new SparseVector *[newN];
+    SparseUnsortedVector **newSparseColumnsOfA = new SparseUnsortedVector *[newN];
     if ( !newSparseColumnsOfA )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newSparseColumnsOfA" );
 
     for ( unsigned i = 0; i < _n; ++i )
     {
         newSparseColumnsOfA[i] = _sparseColumnsOfA[i];
-        newSparseColumnsOfA[i]->addEmptyLastEntry();
+        newSparseColumnsOfA[i]->incrementSize();
     }
 
-    newSparseColumnsOfA[newN - 1] = new SparseVector( newM );
+    newSparseColumnsOfA[newN - 1] = new SparseUnsortedVector( newM );
     if ( !newSparseColumnsOfA[newN - 1] )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newSparseColumnsOfA[newN-1]" );
 
@@ -2357,12 +2356,12 @@ void Tableau::getSparseBasis( SparseColumnsOfBasis &basis ) const
         basis._columns[i] = _sparseColumnsOfA[_basicIndexToVariable[i]];
 }
 
-void Tableau::getColumnOfBasis( unsigned column, SparseVector *result ) const
+void Tableau::getColumnOfBasis( unsigned column, SparseUnsortedVector *result ) const
 {
     ASSERT( column < _m );
     ASSERT( !_mergedVariables.exists( _basicIndexToVariable[column] ) );
 
-    *result = *_sparseColumnsOfA[_basicIndexToVariable[column]];
+    _sparseColumnsOfA[_basicIndexToVariable[column]]->storeIntoOther( result );
 }
 
 void Tableau::refreshBasisFactorization()

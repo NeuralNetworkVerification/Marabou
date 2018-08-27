@@ -211,18 +211,18 @@ public:
         SparseUnsortedVectors sv1;
         sv1.initialize( M1, 4, 4 );
 
-        SparseVector row( 4 );
-        TS_ASSERT_THROWS_NOTHING( sv1.getRow( 1, &row ) );
-        TS_ASSERT_EQUALS( row.getNnz(), 2U );
-        TS_ASSERT_EQUALS( row.get( 0 ), 5.0 );
-        TS_ASSERT_EQUALS( row.get( 1 ), 8.0 );
+        const SparseUnsortedVector *row;
+        TS_ASSERT_THROWS_NOTHING( row = sv1.getRow( 1 ) );
+        TS_ASSERT_EQUALS( row->getNnz(), 2U );
+        TS_ASSERT_EQUALS( row->get( 0 ), 5.0 );
+        TS_ASSERT_EQUALS( row->get( 1 ), 8.0 );
 
-        TS_ASSERT_THROWS_NOTHING( sv1.getRow( 3, &row ) );
-        TS_ASSERT_EQUALS( row.getNnz(), 1U );
-        TS_ASSERT_EQUALS( row.get( 1 ), 6.0 );
+        TS_ASSERT_THROWS_NOTHING( row = sv1.getRow( 3 ) );
+        TS_ASSERT_EQUALS( row->getNnz(), 1U );
+        TS_ASSERT_EQUALS( row->get( 1 ), 6.0 );
 
-        TS_ASSERT_THROWS_NOTHING( sv1.getRow( 0, &row ) );
-        TS_ASSERT( row.empty() );
+        TS_ASSERT_THROWS_NOTHING( row = sv1.getRow( 0 ) );
+        TS_ASSERT( row->empty() );
     }
 
     void test_to_dense()
@@ -277,7 +277,7 @@ public:
         SparseUnsortedVectors sv1;
         sv1.initialize( M1, 4, 4 );
 
-        SparseVector column( 4 );
+        SparseUnsortedVector column( 4 );
         TS_ASSERT_THROWS_NOTHING( sv1.getColumn( 1, &column ) );
         TS_ASSERT_EQUALS( column.getNnz(), 2U );
         TS_ASSERT_EQUALS( column.get( 1 ), 8.0 );

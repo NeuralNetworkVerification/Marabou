@@ -20,7 +20,7 @@
 #include "Set.h"
 #include "SparseColumnsOfBasis.h"
 #include "SparseMatrix.h"
-#include "SparseVector.h"
+#include "SparseUnsortedVector.h"
 #include "Statistics.h"
 
 class Equation;
@@ -316,9 +316,9 @@ public:
     */
     const SparseMatrix *getSparseA() const;
     const double *getAColumn( unsigned variable ) const;
-    void getSparseAColumn( unsigned variable, SparseVector *result ) const;
-    void getSparseARow( unsigned row, SparseVector *result ) const;
-    const SparseVector *getSparseAColumn( unsigned variable ) const;
+    void getSparseAColumn( unsigned variable, SparseUnsortedVector *result ) const;
+    void getSparseARow( unsigned row, SparseUnsortedVector *result ) const;
+    const SparseUnsortedVector *getSparseAColumn( unsigned variable ) const;
 
     /*
       Store and restore the Tableau's state. Needed for case splitting
@@ -399,7 +399,7 @@ public:
     double *getInverseBasisMatrix() const;
 
     void getColumnOfBasis( unsigned column, double *result ) const;
-    void getColumnOfBasis( unsigned column, SparseVector *result ) const;
+    void getColumnOfBasis( unsigned column, SparseUnsortedVector *result ) const;
     void getSparseBasis( SparseColumnsOfBasis &basis ) const;
 
     /*
@@ -440,7 +440,7 @@ private:
       form (column-major).
     */
     SparseMatrix *_A;
-    SparseVector **_sparseColumnsOfA;
+    SparseUnsortedVector **_sparseColumnsOfA;
     double *_denseA;
 
     /*
@@ -463,12 +463,6 @@ private:
     */
     double *_workM;
     double *_workN;
-
-    /*
-      Working memory for extracting information from
-      sparse matrices
-    */
-    mutable SparseVector _sparseWorkVector;
 
     /*
       A unit vector of size m

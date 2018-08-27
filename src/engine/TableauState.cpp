@@ -124,13 +124,13 @@ void TableauState::setDimensions( unsigned m, unsigned n, const IBasisFactorizat
     if ( !_A )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::A" );
 
-    _sparseColumnsOfA = new SparseVector *[n];
+    _sparseColumnsOfA = new SparseUnsortedVector *[n];
     if ( !_sparseColumnsOfA )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::sparseColumnsOfA" );
 
     for ( unsigned i = 0; i < n; ++i )
     {
-        _sparseColumnsOfA[i] = new SparseVector;
+        _sparseColumnsOfA[i] = new SparseUnsortedVector;
         if ( !_sparseColumnsOfA[i] )
             throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::sparseColumnsOfA[i]" );
     }

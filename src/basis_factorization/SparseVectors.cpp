@@ -10,9 +10,10 @@
  ** directory for licensing information.\endverbatim
  **/
 
-#include <cstring>
 #include "BasisFactorizationError.h"
+#include "SparseUnsortedVector.h"
 #include "SparseVectors.h"
+#include <cstring>
 
 SparseVectors::SparseVectors()
     : _rows( NULL )
@@ -109,6 +110,13 @@ double SparseVectors::get( unsigned row, unsigned column ) const
     return _rows[row]->get( column );
 }
 
+void SparseVectors::getRow( unsigned row, SparseUnsortedVector *result ) const
+{
+    result->clear();
+    for ( unsigned i = 0; i < _rows[row]->getNnz(); ++i )
+        result->set( _rows[row]->getIndexOfEntry( i ), _rows[row]->getValueOfEntry( i ) );
+}
+
 void SparseVectors::getRow( unsigned row, SparseVector *result ) const
 {
     _rows[row]->storeIntoOther( result );
@@ -120,6 +128,16 @@ void SparseVectors::getRowDense( unsigned row, double *result ) const
 }
 
 void SparseVectors::getColumn( unsigned column, SparseVector *result ) const
+{
+    result->clear();
+
+    for ( unsigned i = 0; i < _m; ++i )
+        result->commitChange( i, _rows[i]->get( column ) );
+
+    result->executeChanges();
+}
+
+void SparseVectors::getColumn( unsigned column, SparseUnsortedVector *result ) const
 {
     result->clear();
 

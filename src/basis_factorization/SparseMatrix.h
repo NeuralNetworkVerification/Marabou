@@ -13,7 +13,7 @@
 #ifndef __SparseMatrix_h__
 #define __SparseMatrix_h__
 
-class SparseVector;
+class SparseUnsortedVector;
 
 class SparseMatrix
 {
@@ -31,9 +31,9 @@ public:
       Obtain a single element/row/column of the matrix.
     */
     virtual double get( unsigned row, unsigned column ) const = 0;
-    virtual void getRow( unsigned row, SparseVector *result ) const = 0;
+    virtual void getRow( unsigned row, SparseUnsortedVector *result ) const = 0;
     virtual void getRowDense( unsigned row, double *result ) const = 0;
-    virtual void getColumn( unsigned column, SparseVector *result ) const = 0;
+    virtual void getColumn( unsigned column, SparseUnsortedVector *result ) const = 0;
     virtual void getColumnDense( unsigned column, double *result ) const = 0;
 
     /*

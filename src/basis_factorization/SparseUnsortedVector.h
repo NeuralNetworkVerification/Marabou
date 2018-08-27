@@ -15,7 +15,6 @@
 
 #include "HashMap.h"
 #include "SparseMatrix.h"
-#include "SparseVector.h"
 
 class SparseUnsortedVector
 {
@@ -94,7 +93,7 @@ public:
 private:
     unsigned _size;
     HashMap<unsigned, double> _vector;
-    Map<unsigned, double> _committedChanges;
+    HashMap<unsigned, double> _committedChanges;
 };
 
 #endif // __SparseUnsortedVector_h__
