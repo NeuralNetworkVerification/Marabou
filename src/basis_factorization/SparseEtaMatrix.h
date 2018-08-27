@@ -13,7 +13,7 @@
 #ifndef __SparseEtaMatrix_h__
 #define __SparseEtaMatrix_h__
 
-#include "SparseVector.h"
+#include "List.h"
 
 class SparseEtaMatrix
 {
@@ -33,16 +33,26 @@ public:
     void dumpDenseTransposed() const;
     void toMatrix( double *A ) const;
 
-    void resetToIdentity();
-
     bool operator==( const SparseEtaMatrix &other ) const;
 
-    void commitChange( unsigned index, double newValue );
-    void executeChanges();
+    void addEntry( unsigned index, double value );
+
+    struct Entry
+    {
+        Entry( unsigned index, double value )
+            : _index( index )
+            , _value( value )
+        {
+        }
+
+        unsigned _index;
+        double _value;
+    };
 
     unsigned _m;
     unsigned _columnIndex;
-    SparseVector _sparseColumn;
+
+    List<Entry> _sparseColumn;
     double _diagonalElement;
 };
 
