@@ -451,7 +451,7 @@ void SparseFTFactorization::hForwardTransformation( const double *y, double *x )
     for ( const auto &eta : _etas )
     {
         unsigned pivotIndex = eta->_columnIndex;
-        double pivotValue;
+        double pivotValue = 0;
 
         for ( unsigned i = 0; i < eta->_sparseColumn.getNnz(); ++i )
         {

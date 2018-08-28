@@ -3,6 +3,7 @@ ROOT_DIR = .
 SUBDIRS += \
 	tools \
 	src \
+	maraboupy \
 
 all:
 	@echo Done
