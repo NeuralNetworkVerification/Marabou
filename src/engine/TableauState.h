@@ -52,6 +52,7 @@ public:
     */
     SparseMatrix *_A;
     SparseUnsortedList **_sparseColumnsOfA;
+    SparseUnsortedList **_sparseRowsOfA;
     double *_denseA;
 
     /*

@@ -319,6 +319,7 @@ public:
     void getSparseAColumn( unsigned variable, SparseUnsortedList *result ) const;
     void getSparseARow( unsigned row, SparseUnsortedList *result ) const;
     const SparseUnsortedList *getSparseAColumn( unsigned variable ) const;
+    const SparseUnsortedList *getSparseARow( unsigned row ) const;
 
     /*
       Store and restore the Tableau's state. Needed for case splitting
@@ -441,6 +442,7 @@ private:
     */
     SparseMatrix *_A;
     SparseUnsortedList **_sparseColumnsOfA;
+    SparseUnsortedList **_sparseRowsOfA;
     double *_denseA;
 
     /*

@@ -419,12 +419,12 @@ public:
         }
     }
 
-    mutable SparseUnsortedList sparseList;
+    mutable SparseUnsortedList sparseColumn;
     const SparseUnsortedList *getSparseAColumn( unsigned index ) const
     {
         TS_ASSERT( nextAColumn.get( index ) );
-        sparseList.initialize( nextAColumn.get( index ), lastM );
-        return &sparseList;
+        sparseColumn.initialize( nextAColumn.get( index ), lastM );
+        return &sparseColumn;
     }
 
     const SparseMatrix *getSparseA() const
@@ -445,6 +445,13 @@ public:
         result->initialize( temp, lastN );
 
         delete[] temp;
+    }
+
+    mutable SparseUnsortedList sparseRow;
+    const SparseUnsortedList *getSparseARow( unsigned row ) const
+    {
+        sparseRow.initialize( A + ( row * lastN ), lastN );
+        return &sparseRow;
     }
 
     void performDegeneratePivot()

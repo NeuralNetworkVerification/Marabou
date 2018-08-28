@@ -93,6 +93,12 @@ public:
     List<Entry>::iterator end();
 
     /*
+      Addes the coefficient for entry 'source' to entry 'target'
+      and erases entry 'source'
+    */
+    void mergeEntries( unsigned source, unsigned target );
+
+    /*
       Debugging
     */
     void dump() const;

@@ -31,6 +31,7 @@
 Tableau::Tableau()
     : _A( NULL )
     , _sparseColumnsOfA( NULL )
+    , _sparseRowsOfA( NULL )
     , _denseA( NULL )
     , _changeColumn( NULL )
     , _pivotRow( NULL )
@@ -81,6 +82,21 @@ void Tableau::freeMemoryIfNeeded()
 
         delete[] _sparseColumnsOfA;
         _sparseColumnsOfA = NULL;
+    }
+
+    if ( _sparseRowsOfA )
+    {
+        for ( unsigned i = 0; i < _m; ++i )
+        {
+            if ( _sparseRowsOfA[i] )
+            {
+                delete _sparseRowsOfA[i];
+                _sparseRowsOfA[i] = NULL;
+            }
+        }
+
+        delete[] _sparseRowsOfA;
+        _sparseRowsOfA = NULL;
     }
 
     if ( _denseA )
@@ -206,6 +222,17 @@ void Tableau::setDimensions( unsigned m, unsigned n )
             throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::sparseColumnsOfA[i]" );
     }
 
+    _sparseRowsOfA = new SparseUnsortedList *[m];
+    if ( !_sparseRowsOfA )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::sparseRowOfA" );
+
+    for ( unsigned i = 0; i < m; ++i )
+    {
+        _sparseRowsOfA[i] = new SparseUnsortedList( _n );
+        if ( !_sparseRowsOfA[i] )
+            throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::sparseRowOfA[i]" );
+    }
+
     _denseA = new double[m*n];
     if ( !_denseA )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::denseA" );
@@ -291,6 +318,9 @@ void Tableau::setConstraintMatrix( const double *A )
 
         _sparseColumnsOfA[column]->initialize( _denseA + ( column * _m ), _m );
     }
+
+    for ( unsigned row = 0; row < _m; ++row )
+        _sparseRowsOfA[row]->initialize( A + ( row * _n ), _n );
 }
 
 void Tableau::markAsBasic( unsigned variable )
@@ -1484,9 +1514,14 @@ const SparseUnsortedList *Tableau::getSparseAColumn( unsigned variable ) const
     return _sparseColumnsOfA[variable];
 }
 
+const SparseUnsortedList *Tableau::getSparseARow( unsigned row ) const
+{
+    return _sparseRowsOfA[row];
+}
+
 void Tableau::getSparseARow( unsigned row, SparseUnsortedList *result ) const
 {
-    _A->getRow( row, result );
+    _sparseRowsOfA[row]->storeIntoOther( result );
 }
 
 void Tableau::dumpEquations()
@@ -1512,6 +1547,8 @@ void Tableau::storeState( TableauState &state ) const
     _A->storeIntoOther( state._A );
     for ( unsigned i = 0; i < _n; ++i )
         _sparseColumnsOfA[i]->storeIntoOther( state._sparseColumnsOfA[i] );
+    for ( unsigned i = 0; i < _m; ++i )
+        _sparseRowsOfA[i]->storeIntoOther( state._sparseRowsOfA[i] );
     memcpy( state._denseA, _denseA, sizeof(double) * _m * _n );
 
     // Store right hand side vector _b
@@ -1553,6 +1590,8 @@ void Tableau::restoreState( const TableauState &state )
     state._A->storeIntoOther( _A );
     for ( unsigned i = 0; i < _n; ++i )
         state._sparseColumnsOfA[i]->storeIntoOther( _sparseColumnsOfA[i] );
+    for ( unsigned i = 0; i < _m; ++i )
+        state._sparseRowsOfA[i]->storeIntoOther( _sparseRowsOfA[i] );
     memcpy( _denseA, state._denseA, sizeof(double) * _m * _n );
 
     // Restore right hand side vector _b
@@ -1696,11 +1735,13 @@ unsigned Tableau::addEquation( const Equation &equation )
     {
         _workN[addend._variable] = addend._coefficient;
         _sparseColumnsOfA[addend._variable]->set( _m - 1, addend._coefficient );
+        _sparseRowsOfA[_m - 1]->set( addend._variable, addend._coefficient );
         _denseA[(addend._variable * _m) + _m - 1] = addend._coefficient;
     }
 
     _workN[auxVariable] = 1;
-    _sparseColumnsOfA[auxVariable]->set( _m-1, 1 );
+    _sparseColumnsOfA[auxVariable]->set( _m - 1, 1 );
+    _sparseRowsOfA[_m - 1]->set( auxVariable, 1 );
     _denseA[(auxVariable * _m) + _m - 1] = 1;
     _A->addLastRow( _workN );
 
@@ -1825,6 +1866,24 @@ void Tableau::addRow()
 
     delete[] _sparseColumnsOfA;
     _sparseColumnsOfA = newSparseColumnsOfA;
+
+    // Allocate a larger _sparseRowsOfA, keep old ones
+    SparseUnsortedList **newSparseRowsOfA = new SparseUnsortedList *[newM];
+    if ( !newSparseRowsOfA )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newSparseRowsOfA" );
+
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        newSparseRowsOfA[i] = _sparseRowsOfA[i];
+        newSparseRowsOfA[i]->incrementSize();
+    }
+
+    newSparseRowsOfA[newM - 1] = new SparseUnsortedList( newN );
+    if ( !newSparseRowsOfA[newM - 1] )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newSparseRowsOfA[newN-1]" );
+
+    delete[] _sparseRowsOfA;
+    _sparseRowsOfA = newSparseRowsOfA;
 
     // Allocate a larger _denseA, keep old entries
     double *newDenseA = new double[newM * newN];
@@ -2388,9 +2447,12 @@ void Tableau::mergeColumns( unsigned x1, unsigned x2 )
     _A->mergeColumns( x1, x2 );
     _mergedVariables[x2] = x1;
 
-    // Adjust sparse columns, also
+    // Adjust sparse columns and rows, also
     _sparseColumnsOfA[x2]->clear();
     _A->getColumn( x1, _sparseColumnsOfA[x1] );
+
+    for ( unsigned i = 0; i < _m; ++i )
+        _sparseRowsOfA[i]->mergeEntries( x2, x1 );
 
     // And the dense ones, too
     for ( unsigned i = 0; i < _m; ++i )

@@ -147,6 +147,30 @@ public:
         for ( unsigned i = 0; i < 5; ++i )
             TS_ASSERT( FloatUtils::areEqual( expected2[i], dense[i] ) );
     }
+
+    void test_merge_entries()
+    {
+        SparseUnsortedList v1( 5 );
+        TS_ASSERT( v1.empty() );
+
+        v1.set( 0, 4 );
+        v1.set( 2, 3 );
+        v1.set( 4, -7 );
+
+        TS_ASSERT_EQUALS( v1.get( 0 ), 4 );
+        TS_ASSERT_EQUALS( v1.get( 4 ), -7 );
+
+        TS_ASSERT_THROWS_NOTHING( v1.mergeEntries( 0, 4 ) );
+
+        TS_ASSERT_EQUALS( v1.getNnz(), 2U );
+
+        TS_ASSERT_EQUALS( v1.get( 0 ), 0 );
+        TS_ASSERT_EQUALS( v1.get( 4 ), -3 );
+
+        TS_ASSERT_THROWS_NOTHING( v1.mergeEntries( 2, 4 ) );
+
+        TS_ASSERT_EQUALS( v1.getNnz(), 0U );
+    }
 };
 
 //

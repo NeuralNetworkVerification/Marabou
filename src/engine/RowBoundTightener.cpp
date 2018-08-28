@@ -502,11 +502,11 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
 
     unsigned result = 0;
 
-    SparseUnsortedList sparseRow( n );
-    _tableau.getSparseARow( row, &sparseRow );
+    const SparseUnsortedList *sparseRow = _tableau.getSparseARow( row );
     const double *b = _tableau.getRightHandSide();
 
     double ci;
+    unsigned index;
 
     // Compute ci * lb, ci * ub, flag signs for all entries
     enum {
@@ -515,21 +515,18 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
         NEGATIVE = 2,
     };
 
-    for ( unsigned i = 0; i < n; ++i )
+    std::fill_n( _ciSign, n, ZERO );
+    std::fill_n( _ciTimesLb, n, 0 );
+    std::fill_n( _ciTimesUb, n, 0 );
+
+    for ( const auto &entry : *sparseRow )
     {
-        ci = sparseRow.get( i );
+        index = entry._index;
+        ci = entry._value;
 
-        if ( FloatUtils::isZero( ci ) )
-        {
-            _ciSign[i] = ZERO;
-            _ciTimesLb[i] = 0;
-            _ciTimesUb[i] = 0;
-            continue;
-        }
-
-        _ciSign[i] = FloatUtils::isPositive( ci ) ? POSITIVE : NEGATIVE;
-        _ciTimesLb[i] = ci * _lowerBounds[i];
-        _ciTimesUb[i] = ci * _upperBounds[i];
+        _ciSign[index] = FloatUtils::isPositive( ci ) ? POSITIVE : NEGATIVE;
+        _ciTimesLb[index] = ci * _lowerBounds[index];
+        _ciTimesUb[index] = ci * _upperBounds[index];
     }
 
     /*
@@ -570,35 +567,33 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
     double lowerBound;
     double upperBound;
 
-    // Now consider each individual xi
-    for ( unsigned i = 0; i < n; ++i )
+    // Now consider each individual xi with non zero coefficient
+    for ( const auto &entry : *sparseRow )
     {
-        // If ci = 0, nothing to do.
-        if ( _ciSign[i] == ZERO )
-            continue;
+        index = entry._index;
 
         lowerBound = auxLb;
         upperBound = auxUb;
 
         // Adjust the aux bounds to remove xi
-        if ( _ciSign[i] == NEGATIVE )
+        if ( _ciSign[index] == NEGATIVE )
         {
-            lowerBound += _ciTimesLb[i];
-            upperBound += _ciTimesUb[i];
+            lowerBound += _ciTimesLb[index];
+            upperBound += _ciTimesUb[index];
         }
         else
         {
-            lowerBound += _ciTimesUb[i];
-            upperBound += _ciTimesLb[i];
+            lowerBound += _ciTimesUb[index];
+            upperBound += _ciTimesLb[index];
         }
 
         // Now divide everything by ci, switching signs if needed.
-        ci = sparseRow.get( i );
+        ci = entry._value;
 
         lowerBound = lowerBound / ci;
         upperBound = upperBound / ci;
 
-        if ( _ciSign[i] == NEGATIVE )
+        if ( _ciSign[index] == NEGATIVE )
         {
             double temp = upperBound;
             upperBound = lowerBound;
@@ -606,21 +601,21 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
         }
 
         // If a tighter bound is found, store it
-        if ( FloatUtils::lt( _lowerBounds[i], lowerBound ) )
+        if ( FloatUtils::lt( _lowerBounds[index], lowerBound ) )
         {
-            _lowerBounds[i] = lowerBound;
-            _tightenedLower[i] = true;
+            _lowerBounds[index] = lowerBound;
+            _tightenedLower[index] = true;
             ++result;
         }
 
-        if ( FloatUtils::gt( _upperBounds[i], upperBound ) )
+        if ( FloatUtils::gt( _upperBounds[index], upperBound ) )
         {
-            _upperBounds[i] = upperBound;
-            _tightenedUpper[i] = true;
+            _upperBounds[index] = upperBound;
+            _tightenedUpper[index] = true;
             ++result;
         }
 
-        if ( FloatUtils::gt( _lowerBounds[i], _upperBounds[i] ) )
+        if ( FloatUtils::gt( _lowerBounds[index], _upperBounds[index] ) )
             throw InfeasibleQueryException();
     }
 

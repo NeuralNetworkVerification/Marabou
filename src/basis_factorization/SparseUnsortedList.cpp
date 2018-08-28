@@ -167,6 +167,48 @@ void SparseUnsortedList::incrementSize()
     ++_size;
 }
 
+void SparseUnsortedList::mergeEntries( unsigned source, unsigned target )
+{
+    List<Entry>::iterator sourceIt = _list.end();
+    List<Entry>::iterator targetIt = _list.end();
+    List<Entry>::iterator it;
+
+    for ( it = _list.begin(); it != _list.end(); ++it )
+    {
+        if ( it->_index == source )
+        {
+            sourceIt = it;
+            if ( targetIt != _list.end() )
+                break;
+        }
+
+        if ( it->_index == target )
+        {
+            targetIt = it;
+            if ( sourceIt != _list.end() )
+                break;
+        }
+    }
+
+    // If no source entry exists, we are done
+    if ( sourceIt == _list.end() )
+        return;
+
+    // If no target entry, simply change index on source entry
+    if ( targetIt == _list.end() )
+    {
+        sourceIt->_index = target;
+        return;
+    }
+
+    // Both source and target entries
+    targetIt->_value += sourceIt->_value;
+
+    _list.erase( sourceIt );
+    if ( FloatUtils::isZero( targetIt->_value ) )
+         _list.erase( targetIt );
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "
