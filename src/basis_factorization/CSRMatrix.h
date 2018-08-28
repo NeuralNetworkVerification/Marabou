@@ -16,9 +16,6 @@
 #include "Map.h"
 #include "SparseMatrix.h"
 
-class SparseUnsortedVector;
-class SparseVector;
-
 /*
   This class provides supprot for sparse matrices in
   Compressed Sparse Row (CSR) format.
@@ -58,10 +55,8 @@ public:
       Obtain a single element/row/column of the matrix.
     */
     double get( unsigned row, unsigned column ) const;
-    void getRow( unsigned row, SparseVector *result ) const;
     void getRow( unsigned row, SparseUnsortedList *result ) const;
     void getRowDense( unsigned row, double *result ) const;
-    void getColumn( unsigned column, SparseVector *result ) const;
     void getColumn( unsigned column, SparseUnsortedList *result ) const;
     void getColumnDense( unsigned column, double *result ) const;
 

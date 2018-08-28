@@ -16,10 +16,6 @@ SOURCES += \
 	SparseLUFactors.cpp \
 	SparseUnsortedList.cpp \
 	SparseUnsortedLists.cpp \
-	SparseUnsortedVector.cpp \
-	SparseUnsortedVectors.cpp \
-	SparseVector.cpp \
-	SparseVectors.cpp \
 
 #
 # Local Variables:

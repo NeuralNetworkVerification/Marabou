@@ -15,7 +15,6 @@
 #include "FloatUtils.h"
 #include "ITableau.h"
 #include "ReluplexError.h"
-#include "SparseVector.h"
 #include "TableauRow.h"
 
 CostFunctionManager::CostFunctionManager( ITableau *tableau )

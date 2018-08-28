@@ -15,7 +15,7 @@
 
 #include "CSRMatrix.h"
 #include "MString.h"
-#include "SparseVector.h"
+#include "SparseUnsortedList.h"
 
 class MockForCSRMatrix
 {
@@ -210,7 +210,7 @@ public:
         CSRMatrix csr1;
         csr1.initialize( M1, 4, 4 );
 
-        SparseVector row( 4 );
+        SparseUnsortedList row( 4 );
         TS_ASSERT_THROWS_NOTHING( csr1.getRow( 1, &row ) );
         TS_ASSERT_EQUALS( row.getNnz(), 2U );
         TS_ASSERT_EQUALS( row.get( 0 ), 5.0 );
@@ -276,7 +276,7 @@ public:
         CSRMatrix csr1;
         csr1.initialize( M1, 4, 4 );
 
-        SparseVector column( 4 );
+        SparseUnsortedList column( 4 );
         TS_ASSERT_THROWS_NOTHING( csr1.getColumn( 1, &column ) );
         TS_ASSERT_EQUALS( column.getNnz(), 2U );
         TS_ASSERT_EQUALS( column.get( 1 ), 8.0 );

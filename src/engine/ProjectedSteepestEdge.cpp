@@ -16,7 +16,6 @@
 #include "MStringf.h"
 #include "ProjectedSteepestEdge.h"
 #include "ReluplexError.h"
-#include "SparseUnsortedVector.h"
 #include "Statistics.h"
 #include "TableauRow.h"
 

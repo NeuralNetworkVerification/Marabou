@@ -17,7 +17,6 @@
 #include "ITableau.h"
 #include "Map.h"
 #include "SparseUnsortedList.h"
-#include "SparseVector.h"
 #include "TableauRow.h"
 
 #include <cstring>

@@ -16,8 +16,6 @@
 #include "FloatUtils.h"
 #include "MString.h"
 #include "SparseUnsortedList.h"
-#include "SparseUnsortedVector.h"
-#include "SparseVector.h"
 
 CSRMatrix::CSRMatrix()
     : _m( 0 )
@@ -276,35 +274,11 @@ void CSRMatrix::getRow( unsigned row, SparseUnsortedList *result ) const
         result->set( _JA[i], _A[i] );
 }
 
-void CSRMatrix::getRow( unsigned row, SparseVector *result ) const
-{
-    ASSERT( row < _m );
-
-    /*
-      Elements of row j are stored in _A and _JA between
-      indices _IA[j] and _IA[j+1] - 1.
-    */
-    result->clear();
-    for ( unsigned i = _IA[row]; i < _IA[row + 1]; ++i )
-        result->commitChange( _JA[i], _A[i] );
-    result->executeChanges();
-}
-
 void CSRMatrix::getRowDense( unsigned row, double *result ) const
 {
     std::fill_n( result, _n, 0 );
     for ( unsigned i = _IA[row]; i < _IA[row + 1]; ++i )
         result[_JA[i]] = _A[i];
-}
-
-void CSRMatrix::getColumn( unsigned column, SparseVector *result ) const
-{
-    ASSERT( column < _n );
-
-    result->clear();
-    for ( unsigned i = 0; i < _m; ++i )
-        result->commitChange( i, get( i, column ) );
-    result->executeChanges();
 }
 
 void CSRMatrix::getColumn( unsigned column, SparseUnsortedList *result ) const

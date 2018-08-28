@@ -15,7 +15,6 @@
 
 #include "HashMap.h"
 #include "SparseUnsortedList.h"
-#include "SparseUnsortedVector.h"
 
 class SparseUnsortedLists
 {

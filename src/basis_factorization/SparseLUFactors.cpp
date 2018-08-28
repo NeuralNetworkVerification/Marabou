@@ -11,14 +11,10 @@
  **/
 
 #include "BasisFactorizationError.h"
-#include "CSRMatrix.h"
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "MString.h"
 #include "SparseLUFactors.h"
-#include "SparseUnsortedVectors.h"
-#include "SparseVector.h"
-#include "SparseVectors.h"
 
 SparseLUFactors::SparseLUFactors( unsigned m )
     : _m( m )

@@ -11,7 +11,6 @@
  **/
 
 #include "BasisFactorizationError.h"
-#include "CSRMatrix.h"
 #include "Debug.h"
 #include "EtaMatrix.h"
 #include "FloatUtils.h"
@@ -20,7 +19,6 @@
 #include "MStringf.h"
 #include "MalformedBasisException.h"
 #include "SparseLUFactorization.h"
-#include "SparseVector.h"
 
 SparseLUFactorization::SparseLUFactorization( unsigned m, const BasisColumnOracle &basisColumnOracle )
     : IBasisFactorization( basisColumnOracle )
