@@ -14,8 +14,7 @@
 #define __SparseLUFactors_h__
 
 #include "PermutationMatrix.h"
-#include "SparseUnsortedVectors.h"
-#include "SparseVectors.h"
+#include "SparseUnsortedLists.h"
 
 /*
   This class provides supprot for an LU-factorization of a given matrix.
@@ -58,8 +57,8 @@ public:
     /*
       The various factorization components as described above
     */
-    SparseUnsortedVectors *_F;
-    SparseUnsortedVectors *_V;
+    SparseUnsortedLists *_F;
+    SparseUnsortedLists *_V;
     PermutationMatrix _P;
     PermutationMatrix _Q;
 
@@ -76,8 +75,8 @@ public:
       sometimes we need to retrieve columns and sometimes we needs rows,
       and these operations may be cheaper on the transposed matrix
     */
-    SparseUnsortedVectors *_Ft;
-    SparseUnsortedVectors *_Vt;
+    SparseUnsortedLists *_Ft;
+    SparseUnsortedLists *_Vt;
 
     /*
       Basic computations (BTRAN, FTRAN) involving the factorization

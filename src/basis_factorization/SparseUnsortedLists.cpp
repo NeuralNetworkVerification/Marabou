@@ -107,6 +107,11 @@ void SparseUnsortedLists::initializeToEmpty( unsigned m, unsigned n )
     }
 }
 
+void SparseUnsortedLists::updateSingleRow( unsigned row, const double *dense )
+{
+    _rows[row]->initialize( dense, _n );
+}
+
 double SparseUnsortedLists::get( unsigned row, unsigned column ) const
 {
     return _rows[row]->get( column );
@@ -118,6 +123,11 @@ void SparseUnsortedLists::set( unsigned row, unsigned column, double value )
 }
 
 const SparseUnsortedList *SparseUnsortedLists::getRow( unsigned row ) const
+{
+    return _rows[row];
+}
+
+SparseUnsortedList *SparseUnsortedLists::getRow( unsigned row )
 {
     return _rows[row];
 }
@@ -263,7 +273,17 @@ void SparseUnsortedLists::toDense( double *result ) const
 void SparseUnsortedLists::clear()
 {
     for ( unsigned i = 0; i < _m; ++i )
-        _rows[i]->clear();
+        clear( i );
+}
+
+void SparseUnsortedLists::clear( unsigned row )
+{
+    _rows[row]->clear();
+}
+
+void SparseUnsortedLists::append( unsigned row, unsigned column, double value )
+{
+    _rows[row]->append( column, value );
 }
 
 //

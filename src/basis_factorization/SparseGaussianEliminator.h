@@ -55,6 +55,7 @@ private:
       Work memory
     */
     double *_work;
+    double *_work2;
 
     /*
       Information on the number of non-zero elements in

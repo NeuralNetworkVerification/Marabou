@@ -217,6 +217,11 @@ void SparseUnsortedList::mergeEntries( unsigned source, unsigned target )
          _list.erase( targetIt );
 }
 
+List<SparseUnsortedList::Entry>::iterator SparseUnsortedList::erase( List<SparseUnsortedList::Entry>::iterator it )
+{
+    return _list.erase( it );
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

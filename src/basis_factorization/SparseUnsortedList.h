@@ -96,6 +96,11 @@ public:
     List<Entry>::iterator end();
 
     /*
+      Erasing an element by iterator
+    */
+    List<Entry>::iterator erase( List<Entry>::iterator it );
+
+    /*
       Addes the coefficient for entry 'source' to entry 'target'
       and erases entry 'source'
     */

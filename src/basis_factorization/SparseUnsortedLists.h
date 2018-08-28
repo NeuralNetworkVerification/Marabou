@@ -31,11 +31,17 @@ public:
     void initialize( const SparseUnsortedList **V, unsigned m, unsigned n );
 
     /*
+      Update a single row from a dense vector
+    */
+    void updateSingleRow( unsigned row, const double *dense );
+
+    /*
       Obtain a single element/row/column of the matrix.
     */
     double get( unsigned row, unsigned column ) const;
     void set( unsigned row, unsigned column, double value );
     const SparseUnsortedList *getRow( unsigned row ) const;
+    SparseUnsortedList *getRow( unsigned row );
     void getRowDense( unsigned row, double *result ) const;
     void getColumn( unsigned column, SparseUnsortedList *result ) const;
     void getColumnDense( unsigned column, double *result ) const;
@@ -85,9 +91,17 @@ public:
     void toDense( double *result ) const;
 
     /*
-      Empty the matrix without changing its dimensions
+      Empty the matrix without changing its dimensions,
+      or clear a specific row
     */
     void clear();
+    void clear( unsigned row );
+
+    /*
+      Append an element to one of the lists. Element must be
+      non-zero, and must not already exist in that list
+    */
+    void append( unsigned row, unsigned column, double value );
 
 private:
     // Actual rows

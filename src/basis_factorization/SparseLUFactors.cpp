@@ -33,19 +33,19 @@ SparseLUFactors::SparseLUFactors( unsigned m )
     , _z( NULL )
     , _workMatrix( NULL )
 {
-    _F = new SparseUnsortedVectors();
+    _F = new SparseUnsortedLists();
     if ( !_F )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseLUFactors::F" );
 
-    _V = new SparseUnsortedVectors();
+    _V = new SparseUnsortedLists();
     if ( !_V )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseLUFactors::V" );
 
-    _Ft = new SparseUnsortedVectors();
+    _Ft = new SparseUnsortedLists();
     if ( !_Ft )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseLUFactors::Ft" );
 
-    _Vt = new SparseUnsortedVectors();
+    _Vt = new SparseUnsortedLists();
     if ( !_Vt )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseLUFactors::Vt" );
 
@@ -194,17 +194,17 @@ void SparseLUFactors::fForwardTransformation( const double *y, double *x ) const
     for ( unsigned lRow = 0; lRow < _m; ++lRow )
     {
         unsigned fRow = p->_columnOrdering[lRow];
-        const SparseUnsortedVector *sparseRow = _F->getRow( fRow );
+        const SparseUnsortedList *sparseRow = _F->getRow( fRow );
 
         for ( const auto &entry : *sparseRow )
         {
-            unsigned fColumn = entry.first;
+            unsigned fColumn = entry._index;
 
             // We want to ignore just the diagonal element
             if ( fColumn == fRow )
                 continue;
 
-            x[fRow] -= x[fColumn] * entry.second;
+            x[fRow] -= x[fColumn] * entry._value;
         }
     }
 }
@@ -238,16 +238,16 @@ void SparseLUFactors::fBackwardTransformation( const double *y, double *x ) cons
     for ( int lColumn = _m - 1; lColumn >= 0; --lColumn )
     {
         unsigned fColumn = p->_columnOrdering[lColumn];
-        const SparseUnsortedVector *sparseColumn = _Ft->getRow( fColumn );
+        const SparseUnsortedList *sparseColumn = _Ft->getRow( fColumn );
 
         for ( const auto &entry : *sparseColumn )
         {
-            unsigned fRow = entry.first;
+            unsigned fRow = entry._index;
             // We want to ignore just the diagonal element
             if ( fRow == fColumn )
                 continue;
 
-            x[fColumn] -= ( entry.second * x[fRow] );
+            x[fColumn] -= ( entry._value * x[fRow] );
         }
     }
 }
@@ -276,7 +276,7 @@ void SparseLUFactors::vForwardTransformation( const double *y, double *x ) const
     for ( int uRow = _m - 1; uRow >= 0; --uRow )
     {
         unsigned vRow = _P._columnOrdering[uRow];
-        const SparseUnsortedVector *sparseRow = _V->getRow( vRow );
+        const SparseUnsortedList *sparseRow = _V->getRow( vRow );
 
         unsigned xBeingSolved = _Q._rowOrdering[uRow];
         x[xBeingSolved] = y[vRow];
@@ -284,13 +284,13 @@ void SparseLUFactors::vForwardTransformation( const double *y, double *x ) const
         double diagonalCoefficient = 0.0;
         for ( const auto &entry : *sparseRow )
         {
-            unsigned vColumn = entry.first;
+            unsigned vColumn = entry._index;
             unsigned uColumn = _Q._columnOrdering[vColumn];
 
             if ( (int)uColumn == uRow )
-                diagonalCoefficient = entry.second;
+                diagonalCoefficient = entry._value;
             else
-                x[xBeingSolved] -= ( entry.second * x[vColumn] );
+                x[xBeingSolved] -= ( entry._value * x[vColumn] );
         }
 
         if ( FloatUtils::isZero( x[xBeingSolved] ) )
@@ -324,7 +324,7 @@ void SparseLUFactors::vBackwardTransformation( const double *y, double *x ) cons
     for ( unsigned uColumn = 0; uColumn < _m; ++uColumn )
     {
         unsigned vColumn = _Q._rowOrdering[uColumn];
-        const SparseUnsortedVector *sparseColumn = _Vt->getRow( vColumn );
+        const SparseUnsortedList *sparseColumn = _Vt->getRow( vColumn );
 
         unsigned xBeingSolved = _P._columnOrdering[uColumn];
         x[xBeingSolved] = y[vColumn];
@@ -332,13 +332,13 @@ void SparseLUFactors::vBackwardTransformation( const double *y, double *x ) cons
         double diagonalCoefficient = 0.0;
         for ( const auto &entry : *sparseColumn )
         {
-            unsigned vRow = entry.first;
+            unsigned vRow = entry._index;
             unsigned uRow = _P._rowOrdering[vRow];
 
             if ( uRow == uColumn )
-                diagonalCoefficient = entry.second;
+                diagonalCoefficient = entry._value;
             else
-                x[xBeingSolved] -= ( entry.second * x[vRow] );
+                x[xBeingSolved] -= ( entry._value * x[vRow] );
         }
 
         if ( FloatUtils::isZero( x[xBeingSolved] ) )
@@ -413,16 +413,16 @@ void SparseLUFactors::invertBasis( double *result )
     for ( unsigned lColumn = 0; lColumn < _m - 1; ++lColumn )
     {
         unsigned fColumn = _P._columnOrdering[lColumn];
-        const SparseUnsortedVector *sparseColumn = _Ft->getRow( fColumn );
+        const SparseUnsortedList *sparseColumn = _Ft->getRow( fColumn );
         for ( const auto &entry : *sparseColumn )
         {
-            unsigned fRow = entry.first;
+            unsigned fRow = entry._index;
             unsigned lRow = _P._rowOrdering[fRow];
 
             if ( lRow > lColumn )
             {
                 for ( unsigned i = 0; i <= lColumn; ++i )
-                    _workMatrix[lRow*_m + i] += _workMatrix[lColumn*_m + i] * ( - entry.second );
+                    _workMatrix[lRow*_m + i] += _workMatrix[lColumn*_m + i] * ( - entry._value );
             }
         }
     }
@@ -437,19 +437,19 @@ void SparseLUFactors::invertBasis( double *result )
     for ( int uColumn = _m - 1; uColumn >= 0; --uColumn )
     {
         unsigned vColumn = _Q._rowOrdering[uColumn];
-        const SparseUnsortedVector *sparseColumn = _Vt->getRow( vColumn );
+        const SparseUnsortedList *sparseColumn = _Vt->getRow( vColumn );
 
         double invUDiagonalEntry =
             1 / sparseColumn->get( _P._columnOrdering[uColumn] );
 
         for ( const auto &entry : *sparseColumn )
         {
-            unsigned vRow = entry.first;
+            unsigned vRow = entry._index;
             unsigned uRow = _P._rowOrdering[vRow];
 
             if ( (int)uRow < uColumn )
             {
-                double multiplier = ( -entry.second * invUDiagonalEntry );
+                double multiplier = ( -entry._value * invUDiagonalEntry );
                 for ( unsigned i = 0; i < _m; ++i )
                     _workMatrix[uRow*_m + i] += _workMatrix[uColumn*_m +i] * multiplier;
             }

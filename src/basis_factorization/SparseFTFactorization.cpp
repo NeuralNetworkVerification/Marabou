@@ -134,6 +134,8 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
     // Also find the index of the last non-zero entry in this column, for U
     unsigned lastNonZeroEntryInU = 0;
     DEBUG( bool foundNonZeroEntry = false );
+
+    _sparseLUFactors._Vt->clear( columnIndex );
     for ( unsigned i = 0; i < _m; ++i )
     {
         if ( !FloatUtils::isZero( _z4[i] ) )
@@ -143,14 +145,12 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
             unsigned uRow = _sparseLUFactors._P._rowOrdering[i];
             if ( uRow > lastNonZeroEntryInU )
                 lastNonZeroEntryInU = uRow;
+
+            _sparseLUFactors._Vt->append( columnIndex, i, _z4[i] );
         }
 
-        _sparseLUFactors._V->commitChange( i, columnIndex, _z4[i] );
-        _sparseLUFactors._Vt->commitChange( columnIndex, i, _z4[i] );
+        _sparseLUFactors._V->set( i, columnIndex, _z4[i] );
     }
-
-    _sparseLUFactors._V->executeChanges();
-    _sparseLUFactors._Vt->executeChanges();
 
     /*
       Step 2:
@@ -193,12 +193,11 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
       This is done by traversing V's corresponding row
     */
 
-    const SparseUnsortedVector *sparseRow;
-    sparseRow = _sparseLUFactors._V->getRow( vRowDiagonalIndex );
+    const SparseUnsortedList *sparseRow = _sparseLUFactors._V->getRow( vRowDiagonalIndex );
     bool haveSpike = false;
     for ( const auto &entry : *sparseRow )
     {
-        unsigned vColumn = entry.first;
+        unsigned vColumn = entry._index;
         unsigned uColumn = _sparseLUFactors._Q._columnOrdering[vColumn];
 
         if ( uColumn < lastNonZeroEntryInU )
@@ -249,10 +248,14 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
         // Adjust the spike row per the elimination step
         for ( const auto &entry : *sparseRow )
         {
-            unsigned column = entry.first;
+            unsigned column = entry._index;
 
             if ( column != vPivotColumn )
-                _z3[column] -= multiplier * entry.second;
+            {
+                _z3[column] -= multiplier * entry._value;
+                if ( FloatUtils::isZero( _z3[column] ) )
+                    _z3[column] = 0;
+            }
             else
                 _z3[column] = 0;
         }
@@ -269,16 +272,11 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
     /*
       Step 6:
 
-      Finally, copy the (eliminated) spike row back into V
+      Finally, copy the (eliminated) spike row back into V and Vt
     */
-
+    _sparseLUFactors._V->updateSingleRow( vRowDiagonalIndex, _z3 );
     for ( unsigned i = 0; i < _m; ++i )
-    {
-        _sparseLUFactors._V->commitChange( vRowDiagonalIndex, i, _z3[i] );
-        _sparseLUFactors._Vt->commitChange( i, vRowDiagonalIndex, _z3[i] );
-    }
-    _sparseLUFactors._V->executeChanges();
-    _sparseLUFactors._Vt->executeChanges();
+        _sparseLUFactors._Vt->set( i, vRowDiagonalIndex, _z3[i] );
 }
 
 void SparseFTFactorization::forwardTransformation( const double *y, double *x ) const
