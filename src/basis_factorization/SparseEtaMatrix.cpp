@@ -21,19 +21,20 @@
 SparseEtaMatrix::SparseEtaMatrix( unsigned m, unsigned index, const double *column )
     : _m( m )
     , _columnIndex( index )
-    , _sparseColumn( column, m )
 {
     _diagonalElement = column[index];
+    for ( unsigned i = 0; i < m; ++i )
+    {
+        if ( !FloatUtils::isZero( column[i] ) )
+            addEntry( i, column[i] );
+    }
 }
 
 SparseEtaMatrix::SparseEtaMatrix( unsigned m, unsigned index )
     : _m( m )
     , _columnIndex( index )
-    , _sparseColumn( m )
+    , _diagonalElement( 0 )
 {
-    _sparseColumn.commitChange( index, 1 );
-    _sparseColumn.executeChanges();
-    _diagonalElement = 1;
 }
 
 SparseEtaMatrix::SparseEtaMatrix( const SparseEtaMatrix &other )
@@ -63,8 +64,8 @@ void SparseEtaMatrix::dump() const
     printf( "Dumping eta matrix\n" );
     printf( "\tm = %u. column index = %u\n", _m, _columnIndex );
     printf( "\tcolumn: " );
-    for ( unsigned i = 0; i < _sparseColumn.getNnz(); ++i )
-        printf( "\t\tEntry %u: %lf", _sparseColumn.getIndexOfEntry( i ), _sparseColumn.getValueOfEntry( i ) );
+    for ( const auto &entry : _sparseColumn )
+        printf( "\t\tEntry %u: %lf", entry._index, entry._value );
     printf( "\n" );
 }
 
@@ -82,28 +83,22 @@ bool SparseEtaMatrix::operator==( const SparseEtaMatrix &other ) const
     return true;
 }
 
-void SparseEtaMatrix::resetToIdentity()
+void SparseEtaMatrix::addEntry( unsigned index, double value )
 {
-    _sparseColumn.clear();
-    _sparseColumn.commitChange( _columnIndex, 1 );
-    _sparseColumn.executeChanges();
-    _diagonalElement = 1;
-}
-
-void SparseEtaMatrix::commitChange( unsigned index, double newValue )
-{
-    _sparseColumn.commitChange( index, newValue );
-}
-
-void SparseEtaMatrix::executeChanges()
-{
-    _sparseColumn.executeChanges();
-    _diagonalElement = _sparseColumn.get( _columnIndex );
+    _sparseColumn.append( Entry( index, value ) );
+    if ( index == _columnIndex )
+        _diagonalElement = value;
 }
 
 void SparseEtaMatrix::dumpDenseTransposed() const
 {
     printf( "Dumping transposed eta matrix:\n" );
+
+    double *dense = new double[_m];
+    std::fill_n( dense, _m, 0 );
+    for ( const auto &entry : _sparseColumn )
+        dense[entry._index] = entry._value;
+
     for ( unsigned i = 0; i < _m; ++i )
     {
         printf( "\t" );
@@ -119,7 +114,7 @@ void SparseEtaMatrix::dumpDenseTransposed() const
         {
             for ( unsigned j = 0; j < _m; ++j )
             {
-                printf( "%5.2lf ", _sparseColumn.get( j ) );
+                printf( "%5.2lf ", dense[j] );
             }
         }
         printf( "\n" );
@@ -134,8 +129,8 @@ void SparseEtaMatrix::toMatrix( double *A ) const
 	for ( unsigned i = 0; i < _m; ++i )
 		A[i * _m + i] = 1;
 
-    for ( unsigned i = 0; i < _m; ++i )
-        A[i*_m + _columnIndex] = _sparseColumn.get( i );
+    for ( const auto &entry : _sparseColumn )
+        A[entry._index * _m + _columnIndex] = entry._value;
 }
 
 //

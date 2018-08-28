@@ -565,14 +565,6 @@ void ForrestTomlinFactorization::restoreFactorization( const IBasisFactorization
         _A.append( new AlmostIdentityMatrix( *a ) );
 }
 
-void ForrestTomlinFactorization::setBasis( const double *B )
-{
-    clearFactorization();
-    memcpy( _B, B, sizeof(double) * _m * _m );
-	initialLUFactorization();
-    _explicitBasisAvailable = true;
-}
-
 void ForrestTomlinFactorization::clearFactorization()
 {
     List<LPElement *>::iterator lpIt;

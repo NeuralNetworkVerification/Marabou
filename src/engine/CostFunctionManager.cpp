@@ -15,7 +15,6 @@
 #include "FloatUtils.h"
 #include "ITableau.h"
 #include "ReluplexError.h"
-#include "SparseVector.h"
 #include "TableauRow.h"
 
 CostFunctionManager::CostFunctionManager( ITableau *tableau )
@@ -26,6 +25,7 @@ CostFunctionManager::CostFunctionManager( ITableau *tableau )
     , _n( 0 )
     , _m( 0 )
     , _costFunctionStatus( COST_FUNCTION_INVALID )
+    , _ANColumn( NULL )
 {
 }
 
@@ -59,8 +59,6 @@ void CostFunctionManager::initialize()
 {
     _n = _tableau->getN();
     _m = _tableau->getM();
-
-    _ANColumn.initializeToEmpty( _m );
 
     freeMemoryIfNeeded();
 
@@ -264,10 +262,10 @@ void CostFunctionManager::computeReducedCosts()
 void CostFunctionManager::computeReducedCost( unsigned nonBasic )
 {
     unsigned nonBasicIndex = _tableau->nonBasicIndexToVariable( nonBasic );
-    _tableau->getSparseAColumn( nonBasicIndex, &_ANColumn );
+    _ANColumn = _tableau->getSparseAColumn( nonBasicIndex );
 
-    for ( unsigned entry = 0; entry < _ANColumn.getNnz(); ++entry )
-        _costFunction[nonBasic] -= ( _multipliers[_ANColumn.getIndexOfEntry( entry )] * _ANColumn.getValueOfEntry( entry) );
+    for ( const auto &entry : *_ANColumn )
+        _costFunction[nonBasic] -= ( _multipliers[entry._index] * entry._value );
 }
 
 void CostFunctionManager::dumpCostFunction() const

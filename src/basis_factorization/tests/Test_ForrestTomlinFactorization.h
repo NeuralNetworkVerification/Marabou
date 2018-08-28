@@ -67,7 +67,8 @@ public:
             -1, -3,  3, -8,
         };
 
-        TS_ASSERT_THROWS_NOTHING( ft->setBasis( basisMatrix ) );
+        oracle->storeBasis( 4, basisMatrix );
+        ft->obtainFreshBasis();
 
         // LU factorization should have occurred. There should be no A matrices,
         // and Q and R should be the identity permutation.
@@ -189,7 +190,8 @@ public:
             -1, -3,   3, -8,
         };
 
-        TS_ASSERT_THROWS_NOTHING( ft->setBasis( basisMatrix ) );
+        oracle->storeBasis( 4, basisMatrix );
+        ft->obtainFreshBasis();
 
         // LU factorization should have occurred. There should be no A matrices,
         // and Q and R should be the identity permutation.
@@ -325,7 +327,8 @@ public:
             -1, -3,  3, -8,
         };
 
-        TS_ASSERT_THROWS_NOTHING( ft->setBasis( basisMatrix ) );
+        oracle->storeBasis( 4, basisMatrix );
+        ft->obtainFreshBasis();
 
         /*
           The factorization of this matrix gives:
@@ -453,7 +456,8 @@ public:
             -1, -3,  3, -8,
         };
 
-        TS_ASSERT_THROWS_NOTHING( ft->setBasis( basisMatrix ) );
+        oracle->storeBasis( 4, basisMatrix );
+        ft->obtainFreshBasis();
 
         /*
           The factorization of this matrix gives:
@@ -596,7 +600,8 @@ public:
             -1, -3,  3, -8,
         };
 
-        TS_ASSERT_THROWS_NOTHING( ft->setBasis( basisMatrix ) );
+        oracle->storeBasis( 4, basisMatrix );
+        ft->obtainFreshBasis();
 
         // E1 = | 1 -4     |
         //      |    2     |
@@ -806,7 +811,8 @@ public:
             -1, -3,  3, -8,
         };
 
-        TS_ASSERT_THROWS_NOTHING( ft->setBasis( basisMatrix ) );
+        oracle->storeBasis( 4, basisMatrix );
+        ft->obtainFreshBasis();
 
         double a1[] = { -4, 2, 0, 3 };
         ft->updateToAdjacentBasis( 1, a1, NULL );
@@ -850,7 +856,8 @@ public:
             -1, -3,  3, -8,
         };
 
-        TS_ASSERT_THROWS_NOTHING( ft->setBasis( basisMatrix ) );
+        oracle->storeBasis( 4, basisMatrix );
+        ft->obtainFreshBasis();
 
         TS_ASSERT( ft->explicitBasisAvailable() );
         const double *basis;
@@ -909,7 +916,8 @@ public:
             -1, -3,  3, -8,
         };
 
-        TS_ASSERT_THROWS_NOTHING( ft->setBasis( basisMatrix ) );
+        oracle->storeBasis( 4, basisMatrix );
+        ft->obtainFreshBasis();
 
         // invB = |  6 -3/2 -23/4 -9/4 |
         //        | -1  1/2   5/4  3/4 |
