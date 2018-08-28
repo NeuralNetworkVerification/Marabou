@@ -11,7 +11,6 @@
  **/
 
 #include "BasisFactorizationError.h"
-#include "CSRMatrix.h"
 #include "Debug.h"
 #include "EtaMatrix.h"
 #include "FloatUtils.h"
@@ -20,20 +19,15 @@
 #include "MStringf.h"
 #include "MalformedBasisException.h"
 #include "SparseLUFactorization.h"
-#include "SparseVector.h"
 
 SparseLUFactorization::SparseLUFactorization( unsigned m, const BasisColumnOracle &basisColumnOracle )
     : IBasisFactorization( basisColumnOracle )
-	, _m( m )
+    , _B( m )
+    , _m( m )
     , _sparseLUFactors( m )
     , _sparseGaussianEliminator( m )
     , _z( NULL )
 {
-    _B = new CSRMatrix;
-    if ( !_B )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseLUFactorization::B" );
-    _B->initializeToEmpty( m, m );
-
     _z = new double[m];
     if ( !_z )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseLUFactorization::z" );
@@ -46,12 +40,6 @@ SparseLUFactorization::~SparseLUFactorization()
 
 void SparseLUFactorization::freeIfNeeded()
 {
-	if ( _B )
-	{
-		delete _B;
-		_B = NULL;
-	}
-
     if ( _z )
     {
         delete[] _z;
@@ -67,13 +55,14 @@ void SparseLUFactorization::freeIfNeeded()
 
 const double *SparseLUFactorization::getBasis() const
 {
-    printf( "Error! dense getBasis() not supported for SparseLUFactorization!\n" );
-    exit( 1 );
+    throw BasisFactorizationError( BasisFactorizationError::FEATURE_NOT_YET_SUPPORTED,
+                                   "SparseLUFactorization::getBasis" );
 }
 
 const SparseMatrix *SparseLUFactorization::getSparseBasis() const
 {
-	return _B;
+    throw BasisFactorizationError( BasisFactorizationError::FEATURE_NOT_YET_SUPPORTED,
+                                   "SparseLUFactorization::getSparseBasis" );
 }
 
 const List<EtaMatrix *> SparseLUFactorization::getEtas() const
@@ -95,12 +84,6 @@ void SparseLUFactorization::updateToAdjacentBasis( unsigned columnIndex,
         log( "Number of etas exceeds threshold. Refactoring basis\n" );
         obtainFreshBasis();
 	}
-}
-
-void SparseLUFactorization::setBasis( const double *B )
-{
-    _B->initialize( B, _m, _m );
-	factorizeBasis();
 }
 
 void SparseLUFactorization::forwardTransformation( const double *y, double *x ) const
@@ -181,7 +164,7 @@ void SparseLUFactorization::factorizeBasis()
 
     try
     {
-        _sparseGaussianEliminator.run( _B, &_sparseLUFactors );
+        _sparseGaussianEliminator.run( &_B, &_sparseLUFactors );
     }
     catch ( const BasisFactorizationError &e )
     {
@@ -202,7 +185,6 @@ void SparseLUFactorization::storeFactorization( IBasisFactorization *other )
     obtainFreshBasis();
 
     // Store the new basis and factorization
-    _B->storeIntoOther( otherSparseLUFactorization->_B );
     _sparseLUFactors.storeToOther( &otherSparseLUFactorization->_sparseLUFactors );
 }
 
@@ -217,7 +199,6 @@ void SparseLUFactorization::restoreFactorization( const IBasisFactorization *oth
     clearFactorization();
 
     // Store the new basis and factorization
-    otherSparseLUFactorization->_B->storeIntoOther( _B );
     otherSparseLUFactorization->_sparseLUFactors.storeToOther( &_sparseLUFactors );
 }
 
@@ -266,18 +247,7 @@ void SparseLUFactorization::dump() const
 
 void SparseLUFactorization::obtainFreshBasis()
 {
-    _B->initializeToEmpty( _m, _m );
-
-    SparseVector column;
-    for ( unsigned columnIndex = 0; columnIndex < _m; ++columnIndex )
-    {
-        _basisColumnOracle->getColumnOfBasis( columnIndex, &column );
-
-        for ( unsigned entry = 0; entry < column.getNnz(); ++entry )
-            _B->commitChange( column.getIndexOfEntry( entry ), columnIndex, column.getValueOfEntry( entry ) );
-    }
-    _B->executeChanges();
-
+    _basisColumnOracle->getSparseBasis( _B );
     factorizeBasis();
 }
 

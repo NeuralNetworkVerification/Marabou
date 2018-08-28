@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file Test_SparseVector.h
+/*! \file Test_SparseUnsortedList.h
 ** \verbatim
 ** Top contributors (to current version):
 **   Guy Katz
@@ -13,21 +13,22 @@
 #include <cxxtest/TestSuite.h>
 
 #include "FloatUtils.h"
-#include "SparseVector.h"
+#include "Map.h"
+#include "SparseUnsortedList.h"
 
-class MockForSparseVector
+class MockForSparseUnsortedList
 {
 public:
 };
 
-class SparseVectorTestSuite : public CxxTest::TestSuite
+class SparseUnsortedListTestSuite : public CxxTest::TestSuite
 {
 public:
-    MockForSparseVector *mock;
+    MockForSparseUnsortedList *mock;
 
     void setUp()
     {
-        TS_ASSERT( mock = new MockForSparseVector );
+        TS_ASSERT( mock = new MockForSparseUnsortedList );
     }
 
     void tearDown()
@@ -35,23 +36,14 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete mock );
     }
 
-    void test_empty_vector()
+    void test_empty_unsorted_list()
     {
-        SparseVector v1( 4 );
+        SparseUnsortedList v1( 4 );
 
         for ( unsigned i = 0; i < 4; ++i )
             TS_ASSERT( FloatUtils::isZero( v1.get( i ) ) );
         TS_ASSERT( v1.empty() );
         TS_ASSERT_EQUALS( v1.getNnz(), 0U );
-
-        SparseVector v2;
-
-        TS_ASSERT_THROWS_NOTHING( v2.initializeToEmpty( 4 ) );
-        for ( unsigned i = 0; i < 4; ++i )
-            TS_ASSERT( FloatUtils::isZero( v2.get( i ) ) );
-
-        TS_ASSERT( v2.empty() );
-        TS_ASSERT_EQUALS( v2.getNnz(), 0U );
     }
 
     void test_initialize_from_dense()
@@ -60,7 +52,7 @@ public:
             1, 2, 3, 0, 0, 4, 5, 6
         };
 
-        SparseVector v1( dense, 8 );
+        SparseUnsortedList v1( dense, 8 );
 
         TS_ASSERT_EQUALS( v1.getNnz(), 6U );
         TS_ASSERT( !v1.empty() );
@@ -75,9 +67,9 @@ public:
             1, 2, 3, 0, 0, 4, 5, 6
         };
 
-        SparseVector v1( dense, 8 );
+        SparseUnsortedList v1( dense, 8 );
 
-        SparseVector v2;
+        SparseUnsortedList v2;
 
         TS_ASSERT_THROWS_NOTHING( v2 = v1 );
 
@@ -91,48 +83,46 @@ public:
             TS_ASSERT( FloatUtils::areEqual( dense[i], v2.get( i ) ) );
     }
 
-    void test_get_index_and_value()
+    void test_iterate()
     {
         double dense[8] = {
             1, 2, 3, 0, 0, 4, 5, 6
         };
 
-        SparseVector v1( dense, 8 );
+        Map<unsigned, double> answers;
+        answers[0] = 1;
+        answers[1] = 2;
+        answers[2] = 3;
+        answers[5] = 4;
+        answers[6] = 5;
+        answers[7] = 6;
+
+        SparseUnsortedList v1( dense, 8 );
 
         TS_ASSERT_EQUALS( v1.getNnz(), 6U );
 
-        TS_ASSERT_EQUALS( v1.getIndexOfEntry( 0 ), 0U );
-        TS_ASSERT_EQUALS( v1.getIndexOfEntry( 1 ), 1U );
-        TS_ASSERT_EQUALS( v1.getIndexOfEntry( 2 ), 2U );
-        TS_ASSERT( FloatUtils::areEqual( v1.getValueOfEntry( 0 ), 1 ) );
-        TS_ASSERT( FloatUtils::areEqual( v1.getValueOfEntry( 1 ), 2 ) );
-        TS_ASSERT( FloatUtils::areEqual( v1.getValueOfEntry( 2 ), 3 ) );
+        auto it = v1.begin();
+        for ( unsigned i = 0; i < 6; ++i )
+        {
+            TS_ASSERT( answers.exists( it->_index ) );
+            TS_ASSERT_EQUALS( answers[it->_index], it->_value );
+            ++it;
+        }
 
-        TS_ASSERT_EQUALS( v1.getIndexOfEntry( 3 ), 5U );
-        TS_ASSERT_EQUALS( v1.getIndexOfEntry( 4 ), 6U );
-        TS_ASSERT_EQUALS( v1.getIndexOfEntry( 5 ), 7U );
-        TS_ASSERT( FloatUtils::areEqual( v1.getValueOfEntry( 3 ), 4 ) );
-        TS_ASSERT( FloatUtils::areEqual( v1.getValueOfEntry( 4 ), 5 ) );
-        TS_ASSERT( FloatUtils::areEqual( v1.getValueOfEntry( 5 ), 6 ) );
-
-        for ( unsigned i = 0; i < 8; ++i )
-            TS_ASSERT( FloatUtils::areEqual( v1.get( i ), dense[i] ) );
+        TS_ASSERT_EQUALS( it, v1.end() );
     }
 
-    void test_commit_changes()
+    void test_set()
     {
-        SparseVector v1( 5 );
+        SparseUnsortedList v1( 5 );
         TS_ASSERT( v1.empty() );
 
-        v1.commitChange( 0, 4 );
-        v1.commitChange( 2, 3 );
-        v1.commitChange( 4, -7 );
-
-        TS_ASSERT( v1.empty() );
-
-        TS_ASSERT_THROWS_NOTHING( v1.executeChanges() );
+        v1.set( 0, 4 );
+        v1.set( 2, 3 );
+        v1.set( 4, -7 );
 
         TS_ASSERT( !v1.empty() );
+
         TS_ASSERT_EQUALS( v1.getNnz(), 3U );
 
         double dense[5];
@@ -144,8 +134,43 @@ public:
 
         for ( unsigned i = 0; i < 5; ++i )
             TS_ASSERT( FloatUtils::areEqual( expected[i], dense[i] ) );
+
+        v1.set( 2, 0 );
+        v1.set( 1, 5 );
+
+        TS_ASSERT_THROWS_NOTHING( v1.toDense( dense ) );
+
+        double expected2[5] = {
+            4, 5, 0, 0, -7
+        };
+
+        for ( unsigned i = 0; i < 5; ++i )
+            TS_ASSERT( FloatUtils::areEqual( expected2[i], dense[i] ) );
     }
 
+    void test_merge_entries()
+    {
+        SparseUnsortedList v1( 5 );
+        TS_ASSERT( v1.empty() );
+
+        v1.set( 0, 4 );
+        v1.set( 2, 3 );
+        v1.set( 4, -7 );
+
+        TS_ASSERT_EQUALS( v1.get( 0 ), 4 );
+        TS_ASSERT_EQUALS( v1.get( 4 ), -7 );
+
+        TS_ASSERT_THROWS_NOTHING( v1.mergeEntries( 0, 4 ) );
+
+        TS_ASSERT_EQUALS( v1.getNnz(), 2U );
+
+        TS_ASSERT_EQUALS( v1.get( 0 ), 0 );
+        TS_ASSERT_EQUALS( v1.get( 4 ), -3 );
+
+        TS_ASSERT_THROWS_NOTHING( v1.mergeEntries( 2, 4 ) );
+
+        TS_ASSERT_EQUALS( v1.getNnz(), 0U );
+    }
 };
 
 //

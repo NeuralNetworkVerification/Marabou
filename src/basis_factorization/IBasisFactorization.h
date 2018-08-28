@@ -13,8 +13,9 @@
 #ifndef __IBasisFactorization_h__
 #define __IBasisFactorization_h__
 
+class SparseColumnsOfBasis;
 class SparseMatrix;
-class SparseVector;
+class SparseUnsortedList;
 
 class IBasisFactorization
 {
@@ -30,7 +31,8 @@ public:
     public:
         virtual ~BasisColumnOracle() {}
         virtual void getColumnOfBasis( unsigned column, double *result ) const = 0;
-        virtual void getColumnOfBasis( unsigned column, SparseVector *result ) const = 0;
+        virtual void getColumnOfBasis( unsigned column, SparseUnsortedList *result ) const = 0;
+        virtual void getSparseBasis( SparseColumnsOfBasis &basis ) const = 0;
     };
 
     IBasisFactorization( const BasisColumnOracle &basisColumnOracle )
@@ -74,10 +76,9 @@ public:
     virtual void restoreFactorization( const IBasisFactorization *other ) = 0;
 
 	/*
-      Set the basis matrix, or ask the basis factorization to obtain it
-      itself (through the previously-provided oracle).
+      Ask the basis factorization to obtain a fresh basis
+      (through the previously-provided oracle).
 	*/
-    virtual void setBasis( const double *B ) = 0;
     virtual void obtainFreshBasis() = 0;
 
     /*

@@ -48,12 +48,13 @@ public:
     {
         SparseLUFactorization basis( 3, *oracle );
 
-		double B[] = {
+        double B[] = {
             1, 0, 0,
             0, 1, 0,
             0, 0, 1,
         };
-		basis.setBasis( B );
+        oracle->storeBasis( 3, B );
+        basis.obtainFreshBasis();
 
         // If no eta matrices are provided, d = a
         double a1[] = { 1, 1, 3 };
@@ -100,38 +101,39 @@ public:
         TS_ASSERT_SAME_DATA( d3, expected3, sizeof(double) * 3 );
     }
 
-	void test_forward_transformation_with_B0()
-	{
+    void test_forward_transformation_with_B0()
+    {
         // Same etas as test_backward_transformation()
-		SparseLUFactorization basis( 3, *oracle );
+        SparseLUFactorization basis( 3, *oracle );
 
-		double e1[] = { 1, 1, 3 };
-		basis.updateToAdjacentBasis( 1, e1, NULL );
+        double e1[] = { 1, 1, 3 };
+        basis.updateToAdjacentBasis( 1, e1, NULL );
 
-		double e2[] = { 2, 1, 1 };
-		basis.updateToAdjacentBasis ( 0, e2, NULL );
+        double e2[] = { 2, 1, 1 };
+        basis.updateToAdjacentBasis ( 0, e2, NULL );
 
-		double e3[] = { 0.5, 0.5, 0.5 };
-		basis.updateToAdjacentBasis( 2, e3, NULL );
+        double e3[] = { 0.5, 0.5, 0.5 };
+        basis.updateToAdjacentBasis( 2, e3, NULL );
 
-		double B[] = {
+        double B[] = {
             1, 2, 4,
             4, 5, 7,
             7, 8, 9
         };
-		basis.setBasis( B );
+        oracle->storeBasis( 3, B );
+        basis.obtainFreshBasis();
 
-		double a[] = { 2., -1., 4. };
-		double d[] = { 0., 0., 0. };
+        double a[] = { 2., -1., 4. };
+        double d[] = { 0., 0., 0. };
         double expected[] = { -20, 27, -8 };
 
         basis.forwardTransformation( a, d );
 
         for ( unsigned i = 0; i < 3; ++i )
             TS_ASSERT( FloatUtils::areEqual( d[i], expected[i] ) );
-	}
+    }
 
-	void test_backward_transformation()
+    void test_backward_transformation()
     {
         SparseLUFactorization basis( 3, *oracle );
 
@@ -140,7 +142,8 @@ public:
             0, 1, 0,
             0, 0, 1,
         };
-		basis.setBasis( B );
+        oracle->storeBasis( 3, B );
+        basis.obtainFreshBasis();
 
         // If no eta matrices are provided, x = y
         double y1[] = { 1, 2, 3 };
@@ -216,7 +219,8 @@ public:
             0, 1, 0,
             0, 0, 1,
         };
-		basis.setBasis( B );
+        oracle->storeBasis( 3, B );
+        basis.obtainFreshBasis();
 
         // E1 = | -1     |
         //      |  0 1   |
@@ -238,41 +242,42 @@ public:
         TS_ASSERT_SAME_DATA( x, expected, sizeof(double) * 3 );
     }
 
-	void test_backward_transformation_with_B0()
-	{
+    void test_backward_transformation_with_B0()
+    {
         // Same etas as test_backward_transformation()
-		SparseLUFactorization basis( 3, *oracle );
+        SparseLUFactorization basis( 3, *oracle );
 
-		double e1[] = { 1, 1, 3 };
-		basis.updateToAdjacentBasis( 1, e1, NULL );
+        double e1[] = { 1, 1, 3 };
+        basis.updateToAdjacentBasis( 1, e1, NULL );
 
-		double e2[] = { 2, 1, 1 };
-		basis.updateToAdjacentBasis( 0, e2, NULL );
+        double e2[] = { 2, 1, 1 };
+        basis.updateToAdjacentBasis( 0, e2, NULL );
 
-		double e3[] = { 0.5, 0.5, 0.5 };
+        double e3[] = { 0.5, 0.5, 0.5 };
         basis.updateToAdjacentBasis( 2, e3, NULL );
 
-		double B[] = {
+        double B[] = {
             1, 2, 4,
             4, 5, 7,
             7, 8, 9,
         };
-		basis.setBasis( B );
+        oracle->storeBasis( 3, B );
+        basis.obtainFreshBasis();
 
-		double y[] = { 19, 12, 17 };
-		double x[] = { 0, 0, 0 };
-		double expected[] = { -104.0/3, 140.0/3, -19 };
+        double y[] = { 19, 12, 17 };
+        double x[] = { 0, 0, 0 };
+        double expected[] = { -104.0/3, 140.0/3, -19 };
 
-		//     	| 1 2 4	|
+        //     	| 1 2 4	|
         //  x *	| 4	5 7 | = | 19 12 17 |
         //     	| 7 8 9	|
         //
         // --> x = [ -104/3, 140/3, -19 ]
-		basis.backwardTransformation( y, x );
+        basis.backwardTransformation( y, x );
 
         for ( unsigned i = 0; i < 3; ++i )
             TS_ASSERT( FloatUtils::areEqual( x[i], expected[i] ) );
-	}
+    }
 
     void test_store_and_restore()
     {
@@ -284,7 +289,8 @@ public:
             0, 1, 0,
             0, 0, 1,
         };
-		basis.setBasis( B );
+        oracle->storeBasis( 3, B );
+        basis.obtainFreshBasis();
 
         double a1[] = { 1, 1, 3 };
         double d1[] = { 0, 0, 0 };

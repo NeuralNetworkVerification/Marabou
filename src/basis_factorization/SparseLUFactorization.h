@@ -89,10 +89,9 @@ public:
     void restoreFactorization( const IBasisFactorization *other );
 
 	/*
-      Set B to a non-identity matrix (or have it retrieved from the oracle),
-      and then factorize it.
+      Ask the basis factorization to obtain a fresh basis
+      (through the previously-provided oracle).
 	*/
-	void setBasis( const double *B );
     void obtainFreshBasis();
 
     /*
@@ -131,7 +130,7 @@ private:
     /*
       The Basis matrix.
     */
-    SparseMatrix *_B;
+    SparseColumnsOfBasis _B;
 
     /*
       The dimension of the basis matrix.

@@ -53,7 +53,8 @@ public:
             0, 1, 0,
             0, 0, 1,
         };
-		basis.setBasis( B );
+        oracle->storeBasis( 3, B );
+        basis.obtainFreshBasis();
 
         // If no eta matrices are provided, d = a
         double a1[] = { 1, 1, 3 };
@@ -109,7 +110,8 @@ public:
             0, 1, 0,
             0, 0, 1,
         };
-		basis.setBasis( identity );
+        oracle->storeBasis( 3, identity );
+        basis.obtainFreshBasis();
 
 		double e1[] = { 1, 1, 3 };
 		basis.updateToAdjacentBasis( 1, NULL, e1 );
@@ -125,7 +127,8 @@ public:
             4, 5, 7,
             7, 8, 9
         };
-		basis.setBasis( B );
+        oracle->storeBasis( 3, B );
+        basis.obtainFreshBasis();
 
 		double a[] = { 2., -1., 4. };
 		double d[] = { 0., 0., 0. };
@@ -146,7 +149,8 @@ public:
             0, 1, 0,
             0, 0, 1,
         };
-		basis.setBasis( B );
+        oracle->storeBasis( 3, B );
+        basis.obtainFreshBasis();
 
         // Initially, x = y
         double y1[] = { 1, 2, 3 };
@@ -225,7 +229,8 @@ public:
             0, 1, 0,
             0, 0, 1,
         };
-		basis.setBasis( B );
+        oracle->storeBasis( 3, B );
+        basis.obtainFreshBasis();
 
         // E1 = | -1     |
         //      |  0 1   |
@@ -256,7 +261,8 @@ public:
             0, 1, 0,
             0, 0, 1,
         };
-		basis.setBasis( identity );
+        oracle->storeBasis( 3, identity );
+        basis.obtainFreshBasis();
 
 		double e1[] = { 1, 1, 3 };
 		basis.updateToAdjacentBasis( 1, NULL, e1 );
@@ -272,7 +278,8 @@ public:
             4, 5, 7,
             7, 8, 9,
         };
-		basis.setBasis( B );
+        oracle->storeBasis( 3, B );
+        basis.obtainFreshBasis();
 
 		double y[] = { 19, 12, 17 };
 		double x[] = { 0, 0, 0 };
@@ -299,7 +306,8 @@ public:
             0, 1, 0,
             0, 0, 1,
         };
-		basis.setBasis( B );
+        oracle->storeBasis( 3, B );
+        basis.obtainFreshBasis();
 
         double a1[] = { 1, 1, 3 };
         double d1[] = { 0, 0, 0 };
@@ -314,6 +322,7 @@ public:
             0, 3, 1
         };
         oracle->storeBasis( 3, currentBasis );
+        basis.obtainFreshBasis();
 
         // Do a computation using both basis, see that we get the same result.
 

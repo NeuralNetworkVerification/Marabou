@@ -19,6 +19,7 @@
 
 SparseFTFactorization::SparseFTFactorization( unsigned m, const BasisColumnOracle &basisColumnOracle )
     : IBasisFactorization( basisColumnOracle )
+    , _B( m )
 	, _m( m )
     , _sparseLUFactors( m )
     , _sparseGaussianEliminator( m )
@@ -27,11 +28,6 @@ SparseFTFactorization::SparseFTFactorization( unsigned m, const BasisColumnOracl
     , _z3( NULL )
     , _z4( NULL )
 {
-    _B = new CSRMatrix;
-    if ( !_B )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseFTFactorization::B" );
-    _B->initializeToEmpty( m, m );
-
     _z1 = new double[m];
     if ( !_z1 )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseFTFactorization::z1" );
@@ -57,12 +53,6 @@ SparseFTFactorization::~SparseFTFactorization()
 void SparseFTFactorization::freeIfNeeded()
 {
     clearFactorization();
-
-    if ( _B )
-    {
-        delete _B;
-        _B = NULL;
-    }
 
     if ( _z1 )
     {
@@ -97,7 +87,8 @@ const double *SparseFTFactorization::getBasis() const
 
 const SparseMatrix *SparseFTFactorization::getSparseBasis() const
 {
-	return _B;
+    printf( "SparseFTFactorization::getSparseBasis not supported!\n" );
+    exit( 1 );
 }
 
 void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
@@ -143,6 +134,8 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
     // Also find the index of the last non-zero entry in this column, for U
     unsigned lastNonZeroEntryInU = 0;
     DEBUG( bool foundNonZeroEntry = false );
+
+    _sparseLUFactors._Vt->clear( columnIndex );
     for ( unsigned i = 0; i < _m; ++i )
     {
         if ( !FloatUtils::isZero( _z4[i] ) )
@@ -152,14 +145,12 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
             unsigned uRow = _sparseLUFactors._P._rowOrdering[i];
             if ( uRow > lastNonZeroEntryInU )
                 lastNonZeroEntryInU = uRow;
+
+            _sparseLUFactors._Vt->append( columnIndex, i, _z4[i] );
         }
 
-        _sparseLUFactors._V->commitChange( i, columnIndex, _z4[i] );
-        _sparseLUFactors._Vt->commitChange( columnIndex, i, _z4[i] );
+        _sparseLUFactors._V->set( i, columnIndex, _z4[i] );
     }
-
-    _sparseLUFactors._V->executeChanges();
-    _sparseLUFactors._Vt->executeChanges();
 
     /*
       Step 2:
@@ -202,12 +193,11 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
       This is done by traversing V's corresponding row
     */
 
-    SparseVector sparseRow( _m );
-    _sparseLUFactors._V->getRow( vRowDiagonalIndex, &sparseRow );
+    const SparseUnsortedList *sparseRow = _sparseLUFactors._V->getRow( vRowDiagonalIndex );
     bool haveSpike = false;
-    for ( unsigned i = 0; i < sparseRow.getNnz(); ++i )
+    for ( const auto &entry : *sparseRow )
     {
-        unsigned vColumn = sparseRow.getIndexOfEntry( i );
+        unsigned vColumn = entry._index;
         unsigned uColumn = _sparseLUFactors._Q._columnOrdering[vColumn];
 
         if ( uColumn < lastNonZeroEntryInU )
@@ -227,6 +217,8 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
     */
 
     SparseEtaMatrix *sparseEtaMatrix = new SparseEtaMatrix( _m, vRowDiagonalIndex );
+    // These eta matrices always have 1 as their pivot entry
+    sparseEtaMatrix->addEntry( vRowDiagonalIndex, 1 );
 
     // Copy the spike row to work memory
     _sparseLUFactors._V->getRowDense( vRowDiagonalIndex, _z3 );
@@ -244,22 +236,26 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
         if ( FloatUtils::isZero( subDiagonalElement ) )
             continue;
 
-        _sparseLUFactors._V->getRow( vPivotRow, &sparseRow );
-        double pivot = sparseRow.get( vPivotColumn );
+        sparseRow = _sparseLUFactors._V->getRow( vPivotRow );
+        double pivot = sparseRow->get( vPivotColumn );
 
         // Compute the Gaussian multiplier
         double multiplier = subDiagonalElement / pivot;
 
         // Store the multiplier in the new eta matrix
-        sparseEtaMatrix->commitChange( vPivotRow, multiplier );
+        sparseEtaMatrix->addEntry( vPivotRow, multiplier );
 
         // Adjust the spike row per the elimination step
-        for ( unsigned j = 0; j < sparseRow.getNnz(); ++j )
+        for ( const auto &entry : *sparseRow )
         {
-            unsigned column = sparseRow.getIndexOfEntry( j );
+            unsigned column = entry._index;
 
             if ( column != vPivotColumn )
-                _z3[column] -= multiplier * sparseRow.getValueOfEntry( j );
+            {
+                _z3[column] -= multiplier * entry._value;
+                if ( FloatUtils::isZero( _z3[column] ) )
+                    _z3[column] = 0;
+            }
             else
                 _z3[column] = 0;
         }
@@ -271,29 +267,16 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
       U is now upper triangular once more. We need to record the elimination
       step we performed in the eta file
     */
-
-    sparseEtaMatrix->executeChanges();
     _etas.append( sparseEtaMatrix );
 
     /*
       Step 6:
 
-      Finally, copy the (eliminated) spike row back into V
+      Finally, copy the (eliminated) spike row back into V and Vt
     */
-
+    _sparseLUFactors._V->updateSingleRow( vRowDiagonalIndex, _z3 );
     for ( unsigned i = 0; i < _m; ++i )
-    {
-        _sparseLUFactors._V->commitChange( vRowDiagonalIndex, i, _z3[i] );
-        _sparseLUFactors._Vt->commitChange( i, vRowDiagonalIndex, _z3[i] );
-    }
-    _sparseLUFactors._V->executeChanges();
-    _sparseLUFactors._Vt->executeChanges();
-}
-
-void SparseFTFactorization::setBasis( const double *B )
-{
-    _B->initialize( B, _m, _m );
-	factorizeBasis();
+        _sparseLUFactors._Vt->set( i, vRowDiagonalIndex, _z3[i] );
 }
 
 void SparseFTFactorization::forwardTransformation( const double *y, double *x ) const
@@ -347,7 +330,7 @@ void SparseFTFactorization::factorizeBasis()
 
     try
     {
-        _sparseGaussianEliminator.run( _B, &_sparseLUFactors );
+        _sparseGaussianEliminator.run( &_B, &_sparseLUFactors );
     }
     catch ( const BasisFactorizationError &e )
     {
@@ -367,7 +350,6 @@ void SparseFTFactorization::storeFactorization( IBasisFactorization *other )
     obtainFreshBasis();
 
     // Store the new basis and factorization
-    _B->storeIntoOther( otherSparseFTFactorization->_B );
     _sparseLUFactors.storeToOther( &otherSparseFTFactorization->_sparseLUFactors );
 }
 
@@ -382,7 +364,6 @@ void SparseFTFactorization::restoreFactorization( const IBasisFactorization *oth
     clearFactorization();
 
     // Store the new basis and factorization
-    otherSparseFTFactorization->_B->storeIntoOther( _B );
     otherSparseFTFactorization->_sparseLUFactors.storeToOther( &_sparseLUFactors );
 }
 
@@ -424,18 +405,7 @@ void SparseFTFactorization::dump() const
 
 void SparseFTFactorization::obtainFreshBasis()
 {
-    _B->initializeToEmpty( _m, _m );
-
-    SparseVector column;
-    for ( unsigned columnIndex = 0; columnIndex < _m; ++columnIndex )
-    {
-        _basisColumnOracle->getColumnOfBasis( columnIndex, &column );
-
-        for ( unsigned entry = 0; entry < column.getNnz(); ++entry )
-            _B->commitChange( column.getIndexOfEntry( entry ), columnIndex, column.getValueOfEntry( entry ) );
-    }
-    _B->executeChanges();
-
+    _basisColumnOracle->getSparseBasis( _B );
     factorizeBasis();
 }
 
@@ -450,27 +420,19 @@ void SparseFTFactorization::hForwardTransformation( const double *y, double *x )
 
     for ( const auto &eta : _etas )
     {
+        ASSERT( eta->_diagonalElement == 1 );
         unsigned pivotIndex = eta->_columnIndex;
-        double pivotValue = 0;
 
-        for ( unsigned i = 0; i < eta->_sparseColumn.getNnz(); ++i )
+        for ( const auto &entry : eta->_sparseColumn )
         {
-            unsigned entryIndex = eta->_sparseColumn.getIndexOfEntry( i );
-            double value = eta->_sparseColumn.getValueOfEntry( i );
+            unsigned entryIndex = entry._index;
+            double value = entry._value;
 
             if ( entryIndex == pivotIndex )
-                pivotValue = value;
-            else
-            {
-                x[pivotIndex] -= value * x[entryIndex];
-                if ( FloatUtils::isZero( x[pivotIndex] ) )
-                    x[pivotIndex] = 0.0;
-            }
-        }
+                continue;
 
-        x[pivotIndex] = ( x[pivotIndex] / pivotValue );
-        if ( FloatUtils::isZero( x[pivotIndex] ) )
-            x[pivotIndex] = 0.0;
+            x[pivotIndex] -= value * x[entryIndex];
+        }
     }
 }
 
@@ -485,23 +447,21 @@ void SparseFTFactorization::hBackwardTransformation( const double *y, double *x 
 
     for ( auto eta = _etas.rbegin(); eta != _etas.rend(); ++eta )
     {
+        ASSERT( (*eta)->_diagonalElement == 1 );
         unsigned pivotIndex = (*eta)->_columnIndex;
-        x[pivotIndex] = x[pivotIndex] / (*eta)->_sparseColumn.get( pivotIndex );
-        double adjustedPivotValue = x[pivotIndex];
+        double pivotValue = x[pivotIndex];
 
-        for ( unsigned i = 0; i < (*eta)->_sparseColumn.getNnz(); ++i )
+        for ( const auto &entry : (*eta)->_sparseColumn )
         {
-            unsigned entryIndex = (*eta)->_sparseColumn.getIndexOfEntry( i );
-            double value = (*eta)->_sparseColumn.getValueOfEntry( i );
+            unsigned entryIndex = entry._index;
+            double value = entry._value;
 
             if ( entryIndex == pivotIndex )
                 continue;
-            else
-            {
-                x[entryIndex] -= value * adjustedPivotValue;
-                if ( FloatUtils::isZero( x[entryIndex] ) )
-                    x[entryIndex] = 0.0;
-            }
+
+            x[entryIndex] -= value * pivotValue;
+            if ( FloatUtils::isZero( x[entryIndex] ) )
+                x[entryIndex] = 0.0;
         }
     }
 }
