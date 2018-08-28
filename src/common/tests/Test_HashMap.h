@@ -203,21 +203,6 @@ public:
         TS_ASSERT_DIFFERS( hashMap1, hashMap2 );
     }
 
-    // void test_keys()
-    // {
-    //     HashMap<int, String> hashMap;
-    //     hashMap[1] = "cat";
-    //     hashMap[2] = "dog";
-    //     hashMap[3] = "bear";
-
-    //     Set<int> keys = hashMap.keys();
-
-    //     TS_ASSERT_EQUALS( keys.size(), 3U );
-    //     TS_ASSERT( keys.exists( 1 ) );
-    //     TS_ASSERT( keys.exists( 2 ) );
-    //     TS_ASSERT( keys.exists( 3 ) );
-    // }
-
     void test_at()
     {
         HashMap<int, String> hashMap;

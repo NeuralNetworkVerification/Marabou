@@ -118,15 +118,6 @@ public:
         return _container.at( key );
     }
 
-    // Set<Key> keys() const
-    // {
-    //     Set<Key> result;
-    //     for ( auto it : _container )
-    //         result.insert( it.first );
-
-    //     return result;
-    // }
-
 private:
     Super _container;
 };

@@ -350,7 +350,6 @@ void SparseFTFactorization::storeFactorization( IBasisFactorization *other )
     obtainFreshBasis();
 
     // Store the new basis and factorization
-    // _B->storeIntoOther( otherSparseFTFactorization->_B );
     _sparseLUFactors.storeToOther( &otherSparseFTFactorization->_sparseLUFactors );
 }
 
@@ -365,7 +364,6 @@ void SparseFTFactorization::restoreFactorization( const IBasisFactorization *oth
     clearFactorization();
 
     // Store the new basis and factorization
-    // otherSparseFTFactorization->_B->storeIntoOther( _B );
     otherSparseFTFactorization->_sparseLUFactors.storeToOther( &_sparseLUFactors );
 }
 

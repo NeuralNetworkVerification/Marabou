@@ -15,7 +15,6 @@
 #include "EtaMatrix.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
-#include "HashSet.h"
 #include "MStringf.h"
 #include "MalformedBasisException.h"
 #include "SparseGaussianEliminator.h"

@@ -23,7 +23,7 @@
 SparseLUFactorization::SparseLUFactorization( unsigned m, const BasisColumnOracle &basisColumnOracle )
     : IBasisFactorization( basisColumnOracle )
     , _B( m )
-	, _m( m )
+    , _m( m )
     , _sparseLUFactors( m )
     , _sparseGaussianEliminator( m )
     , _z( NULL )
