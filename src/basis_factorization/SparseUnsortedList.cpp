@@ -138,11 +138,13 @@ List<SparseUnsortedList::Entry>::iterator SparseUnsortedList::end()
 
 void SparseUnsortedList::set( unsigned index, double value )
 {
+    bool isZero = FloatUtils::isZero( value );
+
     for ( auto it = begin(); it != end(); ++it )
     {
         if ( it->_index == index )
         {
-            if ( FloatUtils::isZero( value ) )
+            if ( isZero )
                 _list.erase( it );
             else
                 it->_value = value;
@@ -151,6 +153,12 @@ void SparseUnsortedList::set( unsigned index, double value )
         }
     }
 
+    if ( !isZero )
+        _list.append( Entry( index, value ) );
+}
+
+void SparseUnsortedList::append( unsigned index, double value )
+{
     _list.append( Entry( index, value ) );
 }
 

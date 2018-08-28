@@ -52,9 +52,12 @@ public:
     void clear();
 
     /*
-      Set a value
+      Set a value.
+      Call "append" only if certain that the value is not zero and
+      that the index does not already exist in the sparse vector.
     */
     void set( unsigned index, double value );
+    void append( unsigned index, double value );
 
     /*
       The number of non-zero elements in the unsortedList

@@ -15,6 +15,7 @@ SOURCES += \
 	SparseLUFactorization.cpp \
 	SparseLUFactors.cpp \
 	SparseUnsortedList.cpp \
+	SparseUnsortedLists.cpp \
 	SparseUnsortedVector.cpp \
 	SparseUnsortedVectors.cpp \
 	SparseVector.cpp \
