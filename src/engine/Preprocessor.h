@@ -74,6 +74,11 @@ private:
     bool processIdenticalVariables();
 
     /*
+      Collect all variables whose lower and upper bounds are equal
+    */
+    void collectFixedValues();
+
+    /*
       Eliminate any variables that have become fixed or merged with an identical variable
 	*/
 	void eliminateVariables();

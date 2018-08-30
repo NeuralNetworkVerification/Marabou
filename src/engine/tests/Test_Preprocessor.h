@@ -449,10 +449,10 @@ public:
     {
         InputQuery inputQuery;
 
-        inputQuery.setNumberOfVariables( 3 );
-        for ( unsigned i = 0; i < 3; ++i )
+        inputQuery.setNumberOfVariables( 4 );
+        for ( unsigned i = 0; i < 4; ++i )
         {
-            inputQuery.setLowerBound( i, 0 );
+            inputQuery.setLowerBound( i, -3 );
             inputQuery.setUpperBound( i, 5 );
         }
 
@@ -471,28 +471,39 @@ public:
         equation2.setScalar( 1 );
         inputQuery.addEquation( equation2 );
 
-        ReluConstraint *relu1 = new ReluConstraint( 0, 2 );
-        ReluConstraint *relu2 = new ReluConstraint( 1, 2 );
+        ReluConstraint *relu1 = new ReluConstraint( 1, 3 );
 
         inputQuery.addPiecewiseLinearConstraint( relu1 );
-        inputQuery.addPiecewiseLinearConstraint( relu2 );
 
-        InputQuery processed = Preprocessor().preprocess( inputQuery, false );
+        Preprocessor preprocessor;
+        InputQuery processed = preprocessor.preprocess( inputQuery, true );
 
         // Check that equation has been updated as needed
+        TS_ASSERT_EQUALS( processed.getEquations().size(), 1U );
+
         Equation preprocessedEquation = *processed.getEquations().begin();
+
+        // Make sure that variable x0 has been merged into x1
+        TS_ASSERT( preprocessor.variableIsMerged( 0 ) );
+        TS_ASSERT_EQUALS( preprocessor.getMergedIndex( 0 ), 1U );
+
+        TS_ASSERT_EQUALS( preprocessor.getNewIndex( 1 ), 0U );
+        TS_ASSERT_EQUALS( preprocessor.getNewIndex( 2 ), 1U );
+        TS_ASSERT_EQUALS( preprocessor.getNewIndex( 3 ), 2U );
+
+        // Variables have been renamed, so we should have 2x0 + x1 (x0 is the new x1)
         List<Equation::Addend>::iterator addend = preprocessedEquation._addends.begin();
         TS_ASSERT_EQUALS( addend->_coefficient, 2.0 );
-        TS_ASSERT_EQUALS( addend->_variable, 1U );
+        TS_ASSERT_EQUALS( addend->_variable, 0U );
         ++addend;
         TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
-        TS_ASSERT_EQUALS( addend->_variable, 2U );
+        TS_ASSERT_EQUALS( addend->_variable, 1U );
         TS_ASSERT_EQUALS( preprocessedEquation._scalar, 1.0 );
 
         for ( const auto &plConstraint: processed.getPiecewiseLinearConstraints() )
         {
-            TS_ASSERT( !plConstraint->participatingVariable( 0 ));
-            TS_ASSERT( plConstraint->participatingVariable( 1 ));
+            TS_ASSERT( plConstraint->participatingVariable( 0 ));
+            TS_ASSERT( plConstraint->participatingVariable( 2 ));
         }
     }
 
