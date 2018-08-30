@@ -56,13 +56,19 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     bool continueTightening = true;
     while ( continueTightening )
     {
+        handleAlmostFixedVariables();
+
         continueTightening = processEquations();
         continueTightening = processConstraints() || continueTightening;
-        continueTightening = processIdenticalVariables() || continueTightening;
+
+        if ( attemptVariableElimination )
+            continueTightening = processIdenticalVariables() || continueTightening;
 
         if ( _statistics )
             _statistics->ppIncNumTighteningIterations();
     }
+
+    collectFixedValues();
 
     if ( attemptVariableElimination )
         eliminateVariables();
@@ -76,6 +82,24 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
           });
 
     return _preprocessed;
+}
+
+void Preprocessor::handleAlmostFixedVariables()
+{
+    /*
+      In order to improve numerical stability, identify varibales
+      that are "almost fixed" and make them completely fixed
+    */
+
+    double THRESHOLD = 1e-5;
+
+    for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
+    {
+        if ( FloatUtils::areEqual( _preprocessed.getLowerBound( i ),
+                                   _preprocessed.getUpperBound( i ),
+                                   THRESHOLD ) )
+            _preprocessed.setUpperBound( i, _preprocessed.getLowerBound( i ) );
+    }
 }
 
 void Preprocessor::makeAllEquationsEqualities()
@@ -102,6 +126,41 @@ void Preprocessor::makeAllEquationsEqualities()
 
 bool Preprocessor::processEquations()
 {
+    // First, remove any useless equations - where all variables are fixed
+    List<Equation> &equations( _preprocessed.getEquations() );
+    List<Equation>::iterator equation = equations.begin();
+    while ( equation != equations.end() )
+    {
+        bool allFixed = true;
+        for ( const auto &addend : equation->_addends )
+        {
+            unsigned var = addend._variable;
+            if ( !FloatUtils::areEqual( _preprocessed.getLowerBound( var ),
+                                        _preprocessed.getUpperBound( var ) ) )
+            {
+                allFixed = false;
+                break;
+            }
+        }
+
+        if ( !allFixed )
+        {
+            ++equation;
+        }
+        else
+        {
+            double sum = 0;
+            for ( const auto &addend : equation->_addends )
+                sum += addend._coefficient * _preprocessed.getLowerBound( addend._variable );
+
+            if ( FloatUtils::areDisequal( sum, equation->_scalar ) )
+                throw InfeasibleQueryException();
+            equation = equations.erase( equation );
+        }
+    }
+
+    // Now, use the remaining equations for bound tightening
+
     enum {
         ZERO = 0,
         POSITIVE = 1,
@@ -355,58 +414,65 @@ bool Preprocessor::processConstraints()
 
 bool Preprocessor::processIdenticalVariables()
 {
-    // Find distinct v1 and v2 which are exactly equal to each other
-    unsigned v1 = 0, v2 = 0;
-    Equation equToRemove;
-    for ( const auto &equation : _preprocessed.getEquations() )
-    {
-        if ( equation._addends.size() != 2 || equation._type != Equation::EQ )
-            continue;
+    List<Equation> &equations( _preprocessed.getEquations() );
+    List<Equation>::iterator equation = equations.begin();
 
-        auto term1 = equation._addends.front();
-        auto term2 = equation._addends.back();
+    bool found = false;
+    while ( equation != equations.end() )
+    {
+        // We are only looking for equations of type c(v1 - v2) = 0
+        if ( equation->_addends.size() != 2 || equation->_type != Equation::EQ )
+        {
+            ++equation;
+            continue;
+        }
+
+        Equation::Addend term1 = equation->_addends.front();
+        Equation::Addend term2 = equation->_addends.back();
 
         if ( FloatUtils::areDisequal( term1._coefficient, -term2._coefficient ) ||
-             !FloatUtils::isZero( equation._scalar ) )
+             !FloatUtils::isZero( equation->_scalar ) )
+        {
+            ++equation;
             continue;
+        }
 
         ASSERT( term1._variable != term2._variable );
-        if ( term1._variable == term2._variable )
-            continue;
 
-        v1 = term1._variable;
-        v2 = term2._variable;
-        equToRemove = equation;
-        break;
+        // The equation matches the pattern, process and remove it
+        found = true;
+        unsigned v1 = term1._variable;
+        unsigned v2 = term2._variable;
+
+        double bestLowerBound = FloatUtils::max( _preprocessed.getLowerBound( v1 ),
+                                                 _preprocessed.getLowerBound( v2 ) );
+        double bestUpperBound = FloatUtils::min( _preprocessed.getUpperBound( v1 ),
+                                                 _preprocessed.getUpperBound( v2 ) );
+
+        equation = equations.erase( equation );
+
+        _preprocessed.setLowerBound( v2, bestLowerBound );
+        _preprocessed.setUpperBound( v2, bestUpperBound );
+
+        _preprocessed.mergeIdenticalVariables( v1, v2 );
+
+        _mergedVariables[v1] = v2;
     }
 
-    if ( v1 == v2 )
-        return false;
-
-    // Found v1 and v2 which are identical
-    _preprocessed.removeEquation( equToRemove );
-    _preprocessed.mergeIdenticalVariables( v1, v2 );
-
-    double bestLowerBound = FloatUtils::max( _preprocessed.getLowerBound( v1 ),
-                                             _preprocessed.getLowerBound( v2 ) );
-    double bestUpperBound = FloatUtils::min( _preprocessed.getUpperBound( v1 ),
-                                             _preprocessed.getUpperBound( v2 ) );
-    _preprocessed.setLowerBound( v2, bestLowerBound );
-    _preprocessed.setUpperBound( v2, bestUpperBound );
-
-    _mergedVariables[v1] = v2;
-    return true;
+    return found;
 }
 
-void Preprocessor::eliminateVariables()
+void Preprocessor::collectFixedValues()
 {
-    // First, collect the variables that have become fixed, and their fixed values
 	for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
 	{
         if ( FloatUtils::areEqual( _preprocessed.getLowerBound( i ), _preprocessed.getUpperBound( i ) ) )
             _fixedVariables[i] = _preprocessed.getLowerBound( i );
 	}
+}
 
+void Preprocessor::eliminateVariables()
+{
     // If there's nothing to eliminate, we're done
     if ( _fixedVariables.empty() && _mergedVariables.empty() )
         return;
