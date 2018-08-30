@@ -266,7 +266,7 @@ unsigned InputQuery::getNumOutputVariables() const
 List<unsigned> InputQuery::getInputVariables() const
 {
     List<unsigned> result;
-    for ( const auto &pair : _variableToOutputIndex )
+    for ( const auto &pair : _variableToInputIndex )
         result.append( pair.first );
 
     return result;
