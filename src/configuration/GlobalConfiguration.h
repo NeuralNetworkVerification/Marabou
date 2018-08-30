@@ -63,6 +63,10 @@ public:
     // to add auxiliary variables and equations.
     static const bool PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS;
 
+    // If the difference between a variable's lower and upper bounds is smaller than this
+    // threshold, the preprocessor will treat it as fixed.
+    static const double PREPROCESSOR_ALMOST_FIXED_THRESHOLD;
+
     // How often should the main loop check the current degradation?
     static const unsigned DEGRADATION_CHECKING_FREQUENCY;
 
