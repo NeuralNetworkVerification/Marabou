@@ -84,11 +84,6 @@ private:
 	void eliminateVariables();
 
     /*
-      If two variables are almost fixed (bounds very close), make them fixed
-    */
-    void handleAlmostFixedVariables();
-
-    /*
       Call on the PL constraints to add any auxiliary equations
     */
     void addPlAuxiliaryEquations();

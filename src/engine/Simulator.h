@@ -32,9 +32,10 @@ public:
     /*
       Perform a given number of simulation runs on the input query.
       The seed will be used to initialize randomness. A specific seed can be
-      passed for determinism; if 0 is passed, time() will be used.
+      passed for determinism; otherwise, time() will be used.
     */
-    void runSimulations( const InputQuery &inputQuery, unsigned numberOfSimulations, unsigned seed = 0 );
+    void runSimulations( const InputQuery &inputQuery, unsigned numberOfSimulations );
+    void runSimulations( const InputQuery &inputQuery, unsigned numberOfSimulations, unsigned seed );
 
     /*
       Obtain the results from previously-run simulations.

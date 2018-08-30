@@ -16,14 +16,18 @@
 #include "ReluplexError.h"
 #include "Simulator.h"
 
+void Simulator::runSimulations( const InputQuery &inputQuery, unsigned numberOfSimulations )
+{
+    unsigned seed = time( NULL );
+    runSimulations( inputQuery, numberOfSimulations, seed );
+}
+
 void Simulator::runSimulations( const InputQuery &inputQuery, unsigned numberOfSimulations, unsigned seed )
 {
     // Store the original query, so a fresh copy can be used in every simulation
     storeOriginalQuery( inputQuery );
 
     // Initialize randomness
-    if ( seed == 0 )
-        seed = time( NULL );
     srand( seed );
 
     // Perform the actual simulations
@@ -35,17 +39,17 @@ void Simulator::storeOriginalQuery( const InputQuery &inputQuery )
 {
     _originalQuery = inputQuery;
 
-    // for ( const auto &plConstraint : _originalQuery.getPiecewiseLinearConstraints() )
-    // {
-    //     List<unsigned> variables = plConstraint->getParticipatingVariables();
-    //     for ( unsigned variable : variables )
-    //     {
-    //         plConstraint->notifyLowerBound( variable, _originalQuery.getLowerBound( variable ) );
-    //         plConstraint->notifyUpperBound( variable, _originalQuery.getUpperBound( variable ) );
-    //     }
-    // }
+    for ( const auto &plConstraint : _originalQuery.getPiecewiseLinearConstraints() )
+    {
+        List<unsigned> variables = plConstraint->getParticipatingVariables();
+        for ( unsigned variable : variables )
+        {
+            plConstraint->notifyLowerBound( variable, _originalQuery.getLowerBound( variable ) );
+            plConstraint->notifyUpperBound( variable, _originalQuery.getUpperBound( variable ) );
+        }
+    }
 
-    // _originalQuery = Preprocessor().preprocess( _originalQuery, false );
+    _originalQuery = Preprocessor().preprocess( _originalQuery, false );
 
     if ( _originalQuery.countInfiniteBounds() != 0 )
         throw ReluplexError( ReluplexError::SIMULATOR_ERROR, "Preprocessed query has infinite bounds" );
