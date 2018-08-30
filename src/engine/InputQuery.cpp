@@ -263,6 +263,15 @@ unsigned InputQuery::getNumOutputVariables() const
     return _outputIndexToVariable.size();
 }
 
+List<unsigned> InputQuery::getInputVariables() const
+{
+    List<unsigned> result;
+    for ( const auto &pair : _variableToOutputIndex )
+        result.append( pair.first );
+
+    return result;
+}
+
 void InputQuery::printInputOutputBounds() const
 {
     printf( "Dumping bounds of the input and output variables:\n" );

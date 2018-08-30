@@ -55,6 +55,7 @@ public:
     unsigned outputVariableByIndex( unsigned index ) const;
     unsigned getNumInputVariables() const;
     unsigned getNumOutputVariables() const;
+    List<unsigned> getInputVariables() const;
 
     /*
       Methods for setting and getting the solution.

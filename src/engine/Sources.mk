@@ -18,6 +18,7 @@ SOURCES += \
 	ProjectedSteepestEdge.cpp \
 	ReluConstraint.cpp \
 	RowBoundTightener.cpp \
+	Simulator.cpp \
 	SmtCore.cpp \
 	Statistics.cpp \
 	Tableau.cpp \
