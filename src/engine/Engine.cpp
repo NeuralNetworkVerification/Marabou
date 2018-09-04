@@ -685,7 +685,7 @@ void Engine::extractSolution( InputQuery &inputQuery )
             }
 
             // Has the variable been merged into another?
-            unsigned variable;
+            unsigned variable = i;
             if ( _preprocessor.variableIsMerged( i ) )
                 variable = _preprocessor.getMergedIndex( i );
 
