@@ -11,6 +11,7 @@
 
 #include "AcasParser.h"
 #include "File.h"
+#include "MStringf.h"
 #include "Marabou.h"
 #include "Options.h"
 #include "PropertyParser.h"
@@ -32,12 +33,18 @@ Marabou::~Marabou()
 
 void Marabou::run( int argc, char **argv )
 {
+    struct timespec start = TimeUtils::sampleMicro();
+
     Options *options = Options::get();
     options->parseOptions( argc, argv );
 
     prepareInputQuery();
     solveQuery();
-    displayResults();
+
+    struct timespec end = TimeUtils::sampleMicro();
+
+    unsigned long long totalElapsed = TimeUtils::timePassed( start, end );
+    displayResults( totalElapsed );
 }
 
 void Marabou::prepareInputQuery()
@@ -72,25 +79,38 @@ void Marabou::solveQuery()
         _engine.extractSolution( _inputQuery );
 }
 
-void Marabou::displayResults() const
+void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
 {
     if ( !_result )
     {
         printf( "UNSAT\n" );
-        return;
+    }
+    else
+    {
+        printf( "SAT\n\n" );
+
+        printf( "Input assignment:\n" );
+        for ( unsigned i = 0; i < _inputQuery.getNumInputVariables(); ++i )
+            printf( "\tx%u = %8.4lf\n", i, _inputQuery.getSolutionValue( _inputQuery.inputVariableByIndex( i ) ) );
+
+        printf( "\n" );
+        printf( "Output:\n" );
+        for ( unsigned i = 0; i < _inputQuery.getNumOutputVariables(); ++i )
+            printf( "\ty%u = %8.4lf\n", i, _inputQuery.getSolutionValue( _inputQuery.outputVariableByIndex( i ) ) );
+        printf( "\n" );
     }
 
-    printf( "SAT\n\n" );
+    // Create a summary file, if requested
+    String summaryFilePath = Options::get()->getString( Options::SUMMARY_FILE );
+    if ( summaryFilePath != "" )
+    {
+        File summaryFile( summaryFilePath );
+        summaryFile.open( File::MODE_WRITE_TRUNCATE );
 
-    printf( "Input assignment:\n" );
-    for ( unsigned i = 0; i < _inputQuery.getNumInputVariables(); ++i )
-        printf( "\tx%u = %8.4lf\n", i, _inputQuery.getSolutionValue( _inputQuery.inputVariableByIndex( i ) ) );
-
-    printf( "\n" );
-    printf( "Output:\n" );
-    for ( unsigned i = 0; i < _inputQuery.getNumOutputVariables(); ++i )
-        printf( "\ty%u = %8.4lf\n", i, _inputQuery.getSolutionValue( _inputQuery.outputVariableByIndex( i ) ) );
-    printf( "\n" );
+        summaryFile.write( _result ? "SAT, " : "UNSAT, " );
+        summaryFile.write( Stringf( "%u", microSecondsElapsed / 1000000 ) ); // In seconds
+        summaryFile.write( "" );
+    }
 }
 
 //

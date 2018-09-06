@@ -41,6 +41,9 @@ void OptionParser::initialize()
         ( "property",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::PROPERTY_FILE_PATH]) ),
           "Property file" )
+        ( "summary-file",
+          boost::program_options::value<std::string>( &((*_stringOptions)[Options::SUMMARY_FILE]) ),
+          "Summary file" )
         ;
 
     // Positional options, for the mandatory options

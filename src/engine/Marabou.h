@@ -46,7 +46,7 @@ private:
     /*
       Display the results
     */
-    void displayResults() const;
+    void displayResults( unsigned long long microSecondsElapsed ) const;
 
     /*
       ACAS network parser
