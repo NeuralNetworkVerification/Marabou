@@ -15,8 +15,15 @@ LINK_FLAGS += \
 
 LOCAL_LIBRARIES += \
 
-CFLAGS += \
-	-DDEBUG_ON \
+CFLAGS = \
+	-MMD \
+	-Wall \
+	-Wextra \
+	-Werror \
+	-Wno-deprecated \
+	-std=c++0x \
+	-O3
+	\
 
 include $(BASIS_FACTORIZATION_DIR)/Sources.mk
 include $(COMMON_DIR)/Sources.mk
