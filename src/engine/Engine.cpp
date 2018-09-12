@@ -572,12 +572,24 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
                 _preprocessedQuery.getNumberOfVariables() );
 
         printf( "Input bounds:\n" );
-        for ( unsigned i = 0; i < _preprocessedQuery.getNumInputVariables(); ++i )
+        for ( unsigned i = 0; i < inputQuery.getNumInputVariables(); ++i )
         {
-            printf( "\tx%u: [%8.4lf, %8.4lf]\n",
-                    i,
-                    _preprocessedQuery.getLowerBound( _preprocessedQuery.inputVariableByIndex( i ) ),
-                    _preprocessedQuery.getUpperBound( _preprocessedQuery.inputVariableByIndex( i ) ) );
+            unsigned originalIndex = inputQuery.inputVariableByIndex( i );
+            if ( _preprocessor.variableIsFixed( originalIndex ) )
+            {
+                double value = _preprocessor.getFixedValue( originalIndex );
+                printf( "\tx%u: [%8.4lf, %8.4lf] (FIXED)\n",
+                        i,
+                        value,
+                        value );
+            }
+            else
+            {
+                printf( "\tx%u: [%8.4lf, %8.4lf]\n",
+                        i,
+                        _preprocessedQuery.getLowerBound( _preprocessedQuery.inputVariableByIndex( i ) ),
+                        _preprocessedQuery.getUpperBound( _preprocessedQuery.inputVariableByIndex( i ) ) );
+            }
         }
         printf( "\n" );
 
