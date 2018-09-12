@@ -25,9 +25,9 @@ SparseGaussianEliminator::SparseGaussianEliminator( unsigned m )
     : _m( m )
     , _work( NULL )
     , _work2( NULL )
+    , _statistics( NULL )
     , _numURowElements( NULL )
     , _numUColumnElements( NULL )
-
 {
     _work = new double[_m];
     if ( !_work )
@@ -471,6 +471,11 @@ void SparseGaussianEliminator::log( const String &message )
 {
     if ( GlobalConfiguration::GAUSSIAN_ELIMINATION_LOGGING )
         printf( "SparseGaussianEliminator: %s\n", message.ascii() );
+}
+
+void SparseGaussianEliminator::setStatistics( Statistics *statistics )
+{
+    _statistics = statistics;
 }
 
 //

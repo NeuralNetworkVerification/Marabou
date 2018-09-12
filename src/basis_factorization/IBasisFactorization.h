@@ -16,6 +16,7 @@
 class SparseColumnsOfBasis;
 class SparseMatrix;
 class SparseUnsortedList;
+class Statistics;
 
 class IBasisFactorization
 {
@@ -101,6 +102,11 @@ public:
       Compute the inverse of B (should only be called when B is explicitly available).
      */
     virtual void invertBasis( double *result ) = 0;
+
+    /*
+      Have the Basis Factoriaztion object start reporting statistics.
+    */
+    virtual void setStatistics( Statistics * ) {};
 
     /*
       For debugging
