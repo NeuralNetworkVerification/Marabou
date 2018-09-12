@@ -164,6 +164,17 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
     if ( lastNonZeroEntryInU <= uColumnIndex )
         return;
 
+    //// DEBUG: check that V does not have zero rows
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        if ( _sparseLUFactors._V->getRow( i )->getNnz() == 0 )
+        {
+            printf( "Warning!! Have an empty row of V after end of FT: step 2 !!\n" );
+            exit( 1 );
+        }
+    }
+    //// END DEBUG:
+
     /*
       Step 3:
 
@@ -207,6 +218,18 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
             break;
         }
     }
+
+
+    //// DEBUG: check that V does not have zero rows
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        if ( _sparseLUFactors._V->getRow( i )->getNnz() == 0 )
+        {
+            printf( "Warning!! Have an empty row of V after end of FT: step 3 !!\n" );
+            exit( 1 );
+        }
+    }
+    //// END DEBUG:
 
     if ( !haveSpike )
         return;
@@ -262,6 +285,17 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
         }
     }
 
+    //// DEBUG: check that V does not have zero rows
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        if ( _sparseLUFactors._V->getRow( i )->getNnz() == 0 )
+        {
+            printf( "Warning!! Have an empty row of V after end of FT: step 4 !!\n" );
+            exit( 1 );
+        }
+    }
+    //// END DEBUG:
+
     /*
       Step 5:
 
@@ -278,10 +312,47 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
     _sparseLUFactors._V->updateSingleRow( vRowDiagonalIndex, _z3 );
     for ( unsigned i = 0; i < _m; ++i )
         _sparseLUFactors._Vt->set( i, vRowDiagonalIndex, _z3[i] );
+
+    //// DEBUG: check that V does not have zero rows
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        if ( _sparseLUFactors._V->getRow( i )->getNnz() == 0 )
+        {
+            printf( "Warning!! Have an empty row of V after end of FT: step 6 !!\n" );
+            exit( 1 );
+        }
+    }
+    //// END DEBUG:
+
 }
 
 void SparseFTFactorization::forwardTransformation( const double *y, double *x ) const
 {
+    if ( _statistics && _statistics->getNumMainLoopIterations() >= 4210000 )
+    {
+        for ( unsigned i = 0; i < _m; ++i )
+        {
+            const SparseUnsortedList *row = _sparseLUFactors._V->getRow( i );
+
+            if ( row->getNnz() == 0 )
+            {
+                printf( "Warning!! Have an empty row at the start of an FT:fTran (V)!!\n" );
+                exit( 1 );
+            }
+        }
+
+        for ( unsigned i = 0; i < _m; ++i )
+        {
+            const SparseUnsortedList *row = _sparseLUFactors._Vt->getRow( i );
+
+            if ( row->getNnz() == 0 )
+            {
+                printf( "Warning!! Have an empty col at the start of an FT:fTran (Vt)!!\n" );
+                exit( 1 );
+            }
+        }
+    }
+
     /*
       We are solving Bx = y, and we have the factorization:
 
@@ -315,6 +386,31 @@ void SparseFTFactorization::forwardTransformation( const double *y, double *x ) 
 
 void SparseFTFactorization::backwardTransformation( const double *y, double *x ) const
 {
+        if ( _statistics && _statistics->getNumMainLoopIterations() >= 4210000 )
+    {
+        for ( unsigned i = 0; i < _m; ++i )
+        {
+            const SparseUnsortedList *row = _sparseLUFactors._V->getRow( i );
+
+            if ( row->getNnz() == 0 )
+            {
+                printf( "Warning!! Have an empty row at the start of an FT:btran (V)!!\n" );
+                exit( 1 );
+            }
+        }
+
+        for ( unsigned i = 0; i < _m; ++i )
+        {
+            const SparseUnsortedList *row = _sparseLUFactors._Vt->getRow( i );
+
+            if ( row->getNnz() == 0 )
+            {
+                printf( "Warning!! Have an empty col at the start of an FT:btran (Vt)!!\n" );
+                exit( 1 );
+            }
+        }
+    }
+
     /*
       We are solving xB = y, and we have the factorization:
 

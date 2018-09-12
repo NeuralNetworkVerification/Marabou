@@ -171,6 +171,28 @@ void SparseGaussianEliminator::run( const SparseColumnsOfBasis *A, SparseLUFacto
 
                 printf( "\nSGE: test passed\n\n ");
             });
+
+        for ( unsigned i = 0; i < _m; ++i )
+        {
+            const SparseUnsortedList *row = sparseLUFactors->_V->getRow( i );
+
+            if ( row->getNnz() == 0 )
+            {
+                printf( "Warning!! Have an empty row at end of factorization (V)!!\n" );
+                exit( 1 );
+            }
+        }
+
+        for ( unsigned i = 0; i < _m; ++i )
+        {
+            const SparseUnsortedList *row = sparseLUFactors->_Vt->getRow( i );
+
+            if ( row->getNnz() == 0 )
+            {
+                printf( "Warning!! Have an empty col at end of factorization (Vt)!!\n" );
+                exit( 1 );
+            }
+        }
     }
 }
 
@@ -182,7 +204,7 @@ void SparseGaussianEliminator::factorize()
         /*
           Step 1:
           -------
-           Choose a pivot element from the active submatrix of U. This
+          Choose a pivot element from the active submatrix of U. This
           can be any non-zero coefficient. Store the result in:
              _uPivotRow, _uPivotColumn (indices in U)
              _vPivotRow, _vPivotColumn (indices in V)
@@ -205,6 +227,19 @@ void SparseGaussianEliminator::factorize()
           equation A = FV.
         */
         eliminate();
+
+        // Debug: check that the i'th row of U is non empty
+        // V = PUQ
+        // U = P'VQ'
+        unsigned vRow = _sparseLUFactors->_P._columnOrdering[_eliminationStep];
+        const SparseUnsortedList *sparseRow = _sparseLUFactors->_V->getRow( vRow );
+
+        if ( sparseRow->getNnz() == 0 )
+        {
+            printf( "Error!! After an elimination step, have an empty U row!\n" );
+            exit( 1 );
+        }
+
     }
 }
 
