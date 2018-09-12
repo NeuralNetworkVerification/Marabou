@@ -291,11 +291,26 @@ void SparseFTFactorization::forwardTransformation( const double *y, double *x ) 
     // Eliminate F
     _sparseLUFactors.fForwardTransformation( y, _z1 );
 
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        ASSERT( FloatUtils::wellFormed( _z1[i] ) );
+    }
+
     // Eliminate H
     hForwardTransformation( _z1, _z2 );
 
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        ASSERT( FloatUtils::wellFormed( _z2[i] ) );
+    }
+
     // Eliminate V
     _sparseLUFactors.vForwardTransformation( _z2, x );
+
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        ASSERT( FloatUtils::wellFormed( x[i] ) );
+    }
 }
 
 void SparseFTFactorization::backwardTransformation( const double *y, double *x ) const
@@ -309,11 +324,26 @@ void SparseFTFactorization::backwardTransformation( const double *y, double *x )
     // Eliminate V
     _sparseLUFactors.vBackwardTransformation( y, _z1 );
 
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        ASSERT( FloatUtils::wellFormed( _z1[i] ) );
+    }
+
     // Eliminate H
     hBackwardTransformation( _z1, _z2 );
 
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        ASSERT( FloatUtils::wellFormed( _z2[i] ) );
+    }
+
     // Eliminate F
     _sparseLUFactors.fBackwardTransformation( _z2, x );
+
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        ASSERT( FloatUtils::wellFormed( x[i] ) );
+    }
 }
 
 void SparseFTFactorization::clearFactorization()
