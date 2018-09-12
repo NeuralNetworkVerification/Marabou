@@ -18,6 +18,7 @@
 #include "SparseEtaMatrix.h"
 #include "SparseGaussianEliminator.h"
 #include "SparseLUFactors.h"
+#include "Statistics.h"
 
 /*
   This class performs a sparse FT factorization of a given matrix.
@@ -126,6 +127,11 @@ private:
     SparseGaussianEliminator _sparseGaussianEliminator;
 
     /*
+      An object for reporting statistics
+    */
+    Statistics *_statistics;
+
+    /*
       Work memory.
     */
     mutable double *_z1;
@@ -164,6 +170,11 @@ private:
       Clear a previous factorization.
     */
 	void clearFactorization();
+
+    /*
+      Have the Basis Factoriaztion object start reporting statistics.
+    */
+    void setStatistics( Statistics *statistics );
 
     static void log( const String &message );
 };

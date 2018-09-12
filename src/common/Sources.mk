@@ -6,6 +6,7 @@ SOURCES += \
 	HeapData.cpp \
 	MString.cpp \
 	SignalHandler.cpp \
+	Statistics.cpp \
 	TimeUtils.cpp \
 
 #

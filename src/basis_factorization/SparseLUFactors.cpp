@@ -289,11 +289,49 @@ void SparseLUFactors::vForwardTransformation( const double *y, double *x ) const
                 x[xBeingSolved] -= ( entry._value * x[vColumn] );
         }
 
+        // ASSERT( !FloatUtils::isZero( diagonalCoefficient ) );
+        if ( FloatUtils::isZero( diagonalCoefficient ) )
+        {
+            printf( "Warning! Have diagonal coefficient = 0. uRow = %u, vRow = %u\n",
+                    uRow, vRow );
+
+            printf( "Dumping the sparse row:\n" );
+            sparseRow->dump();
+        }
+
         if ( FloatUtils::isZero( x[xBeingSolved] ) )
             x[xBeingSolved] = 0.0;
         else
             x[xBeingSolved] *= ( 1.0 / diagonalCoefficient );
     }
+
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        if ( !FloatUtils::wellFormed( x[i] ) )
+        {
+            printf( "end of vForwardTransformation, x[i] not well formed. Dumping stuff...\n" );
+
+            printf( "dumping the factors: \n" );
+            dump();
+
+            printf( "Dumping the input y:\n" );
+            for ( unsigned j = 0; j < _m; ++j )
+            {
+                printf( "\ty[%u] = %.15lf\n", j, y[j] );
+            }
+
+            printf( "Dumping result x\n" );
+
+            printf( "Dumping the input y:\n" );
+            for ( unsigned j = 0; j < _m; ++j )
+            {
+                printf( "\tx[%u] = %.15lf\n", j, x[j] );
+            }
+
+            exit ( 1 );
+        }
+    }
+
 }
 
 void SparseLUFactors::vBackwardTransformation( const double *y, double *x ) const
