@@ -289,6 +289,8 @@ void SparseLUFactors::vForwardTransformation( const double *y, double *x ) const
                 x[xBeingSolved] -= ( entry._value * x[vColumn] );
         }
 
+        ASSERT( !FloatUtils::isZero( diagonalCoefficient ) );
+
         if ( FloatUtils::isZero( x[xBeingSolved] ) )
             x[xBeingSolved] = 0.0;
         else

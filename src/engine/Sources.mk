@@ -20,7 +20,6 @@ SOURCES += \
 	RowBoundTightener.cpp \
 	Simulator.cpp \
 	SmtCore.cpp \
-	Statistics.cpp \
 	Tableau.cpp \
 	TableauRow.cpp \
 	TableauState.cpp \

@@ -17,6 +17,7 @@
 #include "SparseColumnsOfBasis.h"
 #include "SparseLUFactors.h"
 #include "SparseMatrix.h"
+#include "Statistics.h"
 
 class SparseGaussianEliminator
 {
@@ -29,6 +30,11 @@ public:
       provided in row-wise format. Store the results in the provided SparseLUFactors.
     */
     void run( const SparseColumnsOfBasis *A, SparseLUFactors *sparseLUFactors );
+
+    /*
+      Have the eliminator start reporting statistics.
+    */
+    void setStatistics( Statistics *statistics );
 
 private:
     /*
@@ -56,6 +62,11 @@ private:
     */
     double *_work;
     double *_work2;
+
+    /*
+      An object for reporting statistics
+    */
+    Statistics *_statistics;
 
     /*
       Information on the number of non-zero elements in

@@ -294,6 +294,7 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     _basisFactorization = BasisFactorizationFactory::createBasisFactorization( _m, *this );
     if ( !_basisFactorization )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::basisFactorization" );
+    _basisFactorization->setStatistics( _statistics );
 
     _workM = new double[m];
     if ( !_workM )

@@ -574,7 +574,7 @@ unsigned CSRMatrix::findArrayIndexForEntry( unsigned row, unsigned column ) cons
 {
     int low = _IA[row];
     int high = _IA[row + 1] - 1;
-    int mid;
+    int mid = -1;
 
     bool found = false;
     while ( !found && low <= high )
