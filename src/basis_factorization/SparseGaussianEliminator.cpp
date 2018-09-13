@@ -198,19 +198,6 @@ void SparseGaussianEliminator::factorize()
           equation A = FV.
         */
         eliminate();
-
-        // Debug: check that the i'th row of U is non empty
-        // V = PUQ
-        // U = P'VQ'
-        unsigned vRow = _sparseLUFactors->_P._columnOrdering[_eliminationStep];
-        const SparseUnsortedList *sparseRow = _sparseLUFactors->_V->getRow( vRow );
-
-        if ( sparseRow->getNnz() == 0 )
-        {
-            printf( "Error!! After an elimination step, have an empty U row!\n" );
-            exit( 1 );
-        }
-
     }
 }
 
@@ -426,9 +413,6 @@ void SparseGaussianEliminator::eliminate()
           The multiplier is: - U[row,k] / pivotElement
         */
         double rowMultiplier = - columnIt->_value / _pivotElement;
-        log( Stringf( "\tWorking on V row: %u. Multiplier: %lf", vRow, rowMultiplier ) );
-
-        ASSERT( FloatUtils::wellFormed( rowMultiplier ) );
 
         // Get the row being eliminated in dense format
         _sparseLUFactors->_V->getRowDense( vRow, _work2 );
