@@ -174,7 +174,7 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             prevValues = [self.getValues(i) for i in input_ops]
             shape = prevValues[1]
             return np.reshape(prevValues[0], shape)
-         if op.node_def.op == 'ConcatV2':
+        if op.node_def.op == 'ConcatV2':
             prevValues = [self.getValues(i) for i in input_ops]
             values = prevValues[0:2]
             axis = prevValues[2]
