@@ -22,7 +22,7 @@ class MarabouNetwork:
         self.maxList = []
         self.lowerBounds = dict()
         self.upperBounds = dict()
-        self.inputVars = np.array([])
+        self.inputVars = []
         self.outputVars = np.array([])
     
     def getNewVariable(self):
@@ -169,8 +169,9 @@ class MarabouNetwork:
                 print("UNSAT")
             else:
                 print("SAT")
-                for i in range(self.inputVars.size):
-                    print("input {} = {}".format(i, vals[self.inputVars.item(i)]))
+                for j in range(len(self.inputVars)):
+                    for i in range(self.inputVars[j].size):
+                        print("input {} = {}".format(i, vals[self.inputVars[j].item(i)]))
 
                 for i in range(self.outputVars.size):
                     print("output {} = {}".format(i, vals[self.outputVars.item(i)]))
@@ -181,16 +182,19 @@ class MarabouNetwork:
         """
         Function to evaluate network at a given point using Marabou as solver
         Arguments:
-            inputValues: (np array) representing input to network
+            inputValues: list of (np arrays) representing input to network
             filename: (string) path to redirect output
         Returns:
             outputValues: (np array) representing output of network
         """
-        inputVars = self.inputVars
+        print("Evaluating with Marabou\n")
+        inputVars = self.inputVars # list of numpy arrays
         outputVars = self.outputVars
         
         inputDict = dict()
-        assignList = zip(inputVars.reshape(-1), inputValues.reshape(-1))
+        inputVarList = np.concatenate(inputVars, axis=-1).ravel()
+        inputValList = np.concatenate(inputValues).ravel()
+        assignList = zip(inputVarList, inputValList)
         for x in assignList:
             inputDict[x[0]] = x[1]
 
@@ -210,15 +214,15 @@ class MarabouNetwork:
         """
         Function to evaluate network at a given point
         Arguments:
-            inputValues: (np array) representing input to network
+            inputValues: list of (np arrays) representing input to network
             useMarabou: (bool) whether to use Marabou solver or TF/NNet
         Returns:
             outputValues: (np array) representing output of network
         """
         if useMarabou:
-            return self.evaluateWithMarabou(np.array(inputValues))
+            return self.evaluateWithMarabou(inputValues)
         if not useMarabou:
-            return self.evaluateWithoutMarabou(np.array(inputValues))
+            return self.evaluateWithoutMarabou(inputValues)
 
     def findError(self, inputs):
         """
