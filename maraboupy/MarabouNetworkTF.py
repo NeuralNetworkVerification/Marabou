@@ -10,7 +10,7 @@ from . import MarabouUtils
 from . import MarabouNetwork
 
 class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
-    def __init__(self, filename, inputName=None, outputName=None, savedModel=False, savedModelTags=[]):
+    def __init__(self, filename, inputNames=None, outputName=None, savedModel=False, savedModelTags=[]):
         """
         Constructs a MarabouNetworkTF object from a frozen Tensorflow protobuf or SavedModel
 
@@ -25,7 +25,7 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         """
         super().__init__()
         self.biasAddRelations = list()
-        self.readFromPb(filename, inputName, outputName, savedModel, savedModelTags)
+        self.readFromPb(filename, inputNames, outputName, savedModel, savedModelTags)
         self.processBiasAddRelations()
     
     def clear(self):
@@ -35,12 +35,12 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         super().clear()
         self.varMap = dict()
         self.shapeMap = dict()
-        self.inputOp = None
+        self.inputOps = None
         self.outputOp = None
         self.sess = None
         self.biasAddRelations = list()
 
-    def readFromPb(self, filename, inputName, outputName, savedModel, savedModelTags):
+    def readFromPb(self, filename, inputNames, outputName, savedModel, savedModelTags):
         """
         Constructs a MarabouNetworkTF object from a frozen Tensorflow protobuf or SavedModel
 
@@ -77,40 +77,44 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             ### END reading protobuf ###
 
         ### Find operations corresponding to input and output ###
-        if inputName:
-            inputOp = self.sess.graph.get_operation_by_name(inputName)
+        if inputNames: # is not None
+            inputOps = []
+            for i in inputNames:
+               inputOps.append(self.sess.graph.get_operation_by_name(i))
         else: # If there is just one placeholder, use it as input
             ops = self.sess.graph.get_operations()  
             placeholders = [x for x in ops if x.node_def.op == 'Placeholder']
-            assert len(placeholders)==1
-            inputOp = placeholders[0]
+            inputOps = placeholders
         if outputName:
             outputOp = self.sess.graph.get_operation_by_name(outputName)
         else: # Assume that the last operation is the output
             outputOp = self.sess.graph.get_operations()[-1]
-        self.setInputOp(inputOp)
+        self.setInputOps(inputOps)
         self.setOutputOp(outputOp)
         ### END finding input/output operations ###
 
         ### Generate equations corresponding to network ###
-        self.foundInputFlag = False
+        self.foundnInputFlags = 0
         self.makeGraphEquations(self.outputOp)
-        assert self.foundInputFlag
+        assert self.foundnInputFlags == len(inputOps)
         ### END generating equations ###
 
-    def setInputOp(self, op):
+    def setInputOps(self, ops):
         """
-        Function to set input operation
+        Function to set input operations
         Arguments:
-            op: (tf.op) Representing input
+            [ops]: (tf.op) list representing input
         """
-        try:
-            shape = tuple(op.outputs[0].shape.as_list())
-            self.shapeMap[op] = shape
-        except:
-            self.shapeMap[op] = [None]
-        self.inputOp = op
-        self.inputVars = self.opToVarArray(self.inputOp)
+        self.inputVars = []
+        for op in ops:
+            try:
+                shape = tuple(op.outputs[0].shape.as_list())
+                self.shapeMap[op] = shape
+            except:
+                self.shapeMap[op] = [None]
+            self.inputVars.append(self.opToVarArray(op))
+        self.inputOps = ops
+        
 
     def setOutputOp(self, op):
         """
@@ -150,6 +154,7 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
 
         v = np.array([self.getNewVariable() for _ in range(size)]).reshape(shape)
         self.varMap[x] = v
+        assert all([np.equal(np.mod(i, 1), 0) for i in v[0]]) # check if integers
         return v
         
     def getValues(self, op):
@@ -169,6 +174,11 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             prevValues = [self.getValues(i) for i in input_ops]
             shape = prevValues[1]
             return np.reshape(prevValues[0], shape)
+        if op.node_def.op == 'ConcatV2':
+            prevValues = [self.getValues(i) for i in input_ops]
+            values = prevValues[0:2]
+            axis = prevValues[2]
+            return np.concatenate(values, axis=axis)
         if op.node_def.op == 'Const':
             tproto = op.node_def.attr['value'].tensor
             return tensor_util.MakeNdarray(tproto)
@@ -376,12 +386,14 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         Arguments:
             op: (tf.op) for which to generate equations
         """
-        if op.node_def.op in ['Identity', 'Reshape', 'Pack', 'Placeholder', 'Const']:
+        if op.node_def.op in ['Identity', 'Reshape', 'Pack', 'Placeholder', 'Const', 'ConcatV2']:
             return
         if op.node_def.op == 'MatMul':
             self.matMulEquations(op)
-        elif op.node_def.op in ['BiasAdd', 'Add']:
+        elif op.node_def.op == 'BiasAdd':
             self.biasAddEquations(op)
+        elif op.node_def.op == 'Add':
+            raise NotImplementedError
         elif op.node_def.op == 'Conv2D':
             self.conv2DEquations(op)
         elif op.node_def.op == 'Relu':
@@ -389,6 +401,7 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         elif op.node_def.op == 'MaxPool':
             self.maxpoolEquations(op)
         else:
+            print("Operation ", str(op.node_def.op), " not implemented")
             raise NotImplementedError
 
     def makeGraphEquations(self, op):
@@ -399,26 +412,33 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         """
         in_ops = [x.op for x in op.inputs]    
         for x in in_ops:
-            if not x.name == self.inputOp.name:
+            #import pdb; pdb.set_trace()
+            if not (x.name in [i.name for i in self.inputOps]):
                 self.makeGraphEquations(x)
             else:
-                self.foundInputFlag = True
+                self.foundnInputFlags += 1
         self.makeNeuronEquations(op)
 
     def evaluateWithoutMarabou(self, inputValues):
         """
         Function to evaluate network at a given point using Tensorflow
         Arguments:
-            inputValues: (np array) representing input to network
+            inputValues: list of (np array)s representing inputs to network
         Returns:
             outputValues: (np array) representing output of network
         """
-        inputShape = self.shapeMap[self.inputOp]
-        inputShape = [i if i is not None else 1 for i in inputShape]        
-        # Try to reshape given input to correct shape
-        inputValues = inputValues.reshape(inputShape)
+        print("Evaluating without Marabou")
+        inputValuesReshaped = []
+        for j in range(len(self.inputOps)):
+            inputOp = self.inputOps[j]
+            inputShape = self.shapeMap[inputOp]
+            inputShape = [i if i is not None else 1 for i in inputShape]        
+            # Try to reshape given input to correct shape
+            inputValuesReshaped.append(inputValues[j].reshape(inputShape))
         
-        inputName = self.inputOp.name
+        inputNames = [o.name+":0" for o in self.inputOps]
+        feed_dict = dict(zip(inputNames, inputValuesReshaped))
         outputName = self.outputOp.name
-        out = self.sess.run(outputName + ":0", feed_dict={inputName + ":0":inputValues})
+        out = self.sess.run(outputName + ":0", feed_dict=feed_dict)
+
         return out[0]
