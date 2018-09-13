@@ -49,6 +49,9 @@ public:
     static const double BASIC_COSTS_ADDITIVE_TOLERANCE;
     static const double BASIC_COSTS_MULTIPLICATIVE_TOLERANCE;
 
+    // Sparse ForrestTomlin diagonal element tolerance constant
+    static const double SPARSE_FORREST_TOMLIN_DIAGONAL_ELEMENT_TOLERANCE;
+
     // Toggle use of Harris' two-pass ratio test for selecting the leaving variable
     static const bool USE_HARRIS_RATIO_TEST;
 
