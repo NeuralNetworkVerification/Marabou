@@ -353,8 +353,6 @@ void SparseGaussianEliminator::choosePivot()
                     _pivotElement = contender;
                     absPivotElement = absContender;
 
-                    ASSERT( !FloatUtils::isZero( _pivotElement ) );
-
                     found = true;
                 }
             }
@@ -453,8 +451,6 @@ void SparseGaussianEliminator::eliminate()
                 ++_numUColumnElements[uColumnIndex];
                 ++_numURowElements[uRow];
             }
-
-            ASSERT( FloatUtils::wellFormed( newValue ) );
 
             _work2[vColumnIndex] = newValue;
 
