@@ -138,62 +138,33 @@ void SparseGaussianEliminator::run( const SparseColumnsOfBasis *A, SparseLUFacto
     // Do the work
     factorize();
 
-    //    4215000
-    //    getNumMainLoopIterations
-    if ( _statistics && _statistics->getNumMainLoopIterations() >= 4210000 )
-    {
-        DEBUG({
-                // Check that the factorization is correct
-                double *product = new double[_m * _m];
-                std::fill_n( product, _m * _m, 0 );
+    // DEBUG({
+    //         // Check that the factorization is correct
+    //         double *product = new double[_m * _m];
+    //         std::fill_n( product, _m * _m, 0 );
 
-                for ( unsigned i = 0; i < _m; ++i )
-                    for ( unsigned j = 0; j < _m; ++j )
-                        for ( unsigned k = 0; k < _m; ++k )
-                        {
-                            double fValue = ( i == k ) ? 1.0 : _sparseLUFactors->_F->get( i, k );
-                            double vValue = _sparseLUFactors->_V->get( k, j );
+    //         for ( unsigned i = 0; i < _m; ++i )
+    //             for ( unsigned j = 0; j < _m; ++j )
+    //                 for ( unsigned k = 0; k < _m; ++k )
+    //                 {
+    //                     double fValue = ( i == k ) ? 1.0 : _sparseLUFactors->_F->get( i, k );
+    //                     double vValue = _sparseLUFactors->_V->get( k, j );
 
-                            ASSERT( FloatUtils::wellFormed( fValue ) );
-                            ASSERT( FloatUtils::wellFormed( vValue ) );
+    //                     ASSERT( FloatUtils::wellFormed( fValue ) );
+    //                     ASSERT( FloatUtils::wellFormed( vValue ) );
 
-                            product[i*_m + j] += fValue * vValue;
-                        }
+    //                     product[i*_m + j] += fValue * vValue;
+    //                 }
 
-                for ( unsigned i = 0; i < _m; ++i )
-                    for ( unsigned j = 0; j < _m; ++j )
-                    {
-                        ASSERT( FloatUtils::areEqual( product[i*_m+j],
-                                                      A->_columns[j]->get( i ) ) );
-                    }
+    //         for ( unsigned i = 0; i < _m; ++i )
+    //             for ( unsigned j = 0; j < _m; ++j )
+    //             {
+    //                 ASSERT( FloatUtils::areEqual( product[i*_m+j],
+    //                                               A->_columns[j]->get( i ) ) );
+    //             }
 
-                delete[] product;
-
-                printf( "\nSGE: test passed\n\n ");
-            });
-
-        for ( unsigned i = 0; i < _m; ++i )
-        {
-            const SparseUnsortedList *row = sparseLUFactors->_V->getRow( i );
-
-            if ( row->getNnz() == 0 )
-            {
-                printf( "Warning!! Have an empty row at end of factorization (V)!!\n" );
-                exit( 1 );
-            }
-        }
-
-        for ( unsigned i = 0; i < _m; ++i )
-        {
-            const SparseUnsortedList *row = sparseLUFactors->_Vt->getRow( i );
-
-            if ( row->getNnz() == 0 )
-            {
-                printf( "Warning!! Have an empty col at end of factorization (Vt)!!\n" );
-                exit( 1 );
-            }
-        }
-    }
+    //         delete[] product;
+    //     });
 }
 
 void SparseGaussianEliminator::factorize()

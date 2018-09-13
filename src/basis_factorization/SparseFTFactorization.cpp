@@ -162,7 +162,10 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
 
     ASSERT( foundNonZeroEntry );
     if ( lastNonZeroEntryInU <= uColumnIndex )
+    {
+        ASSERT( uColumnIndex == lastNonZeroEntryInU ); // Otherwise, singular matrix
         return;
+    }
 
     //// DEBUG: check that V does not have zero rows
     for ( unsigned i = 0; i < _m; ++i )
@@ -283,6 +286,16 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
             else
                 _z3[column] = 0;
         }
+    }
+
+    if ( -GlobalConfiguration::SPARSE_FORREST_TOMLIN_DIAGONAL_ELEMENT_TOLERANCE <
+         _z3[columnIndex]
+         &&
+         _z3[columnIndex] <
+         GlobalConfiguration::SPARSE_FORREST_TOMLIN_DIAGONAL_ELEMENT_TOLERANCE )
+    {
+        obtainFreshBasis();
+        return;
     }
 
     //// DEBUG: check that V does not have zero rows
