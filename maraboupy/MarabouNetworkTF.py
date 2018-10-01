@@ -155,7 +155,7 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
 
         v = np.array([self.getNewVariable() for _ in range(size)]).reshape(shape)
         self.varMap[x] = v
-        assert all([np.equal(np.mod(i, 1), 0) for i in v[0]]) # check if integers
+        assert all([np.equal(np.mod(i, 1), 0) for i in v.reshape(-1)) # check if integers
         return v
 
     def getValues(self, op):
