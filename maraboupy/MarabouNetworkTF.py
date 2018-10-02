@@ -271,12 +271,14 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         Or eliminate one of the two variables in every other relation
         """
         biasAddUpdates = dict()
+        participations = [rel[0] for rel in self.biasAddRelations] + \
+                            [rel[1] for rel in self.biasAddRelations]
         for (x, xprime, c) in self.biasAddRelations:
             # x = xprime + c
             # replace x only if it does not occur anywhere else in the system
             if self.lowerBoundExists(x) or self.upperBoundExists(x) or \
                     self.participatesInPLConstraint(x) or \
-                    len([rel for rel in self.biasAddRelations if rel[0]==x]) > 1:
+                    len([p for p in participations if p == x]) > 1:
                 e = MarabouUtils.Equation()
                 e.addAddend(1.0, x)
                 e.addAddend(-1.0, xprime)
