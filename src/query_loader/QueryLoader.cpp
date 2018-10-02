@@ -6,14 +6,15 @@
 #include "MaxConstraint.h"
 #include "QueryLoader.h"
 #include "ReluConstraint.h"
-
+#include "GlobalConfiguration.h"
+#include "ReluplexError.h"
 // TODO: add a unit test for a sanity check
 
 InputQuery QueryLoader::loadQuery( const String &fileName )
 {
     if ( !File::exists( fileName ) )
     {
-        printf("File %s not found.\n", fileName.ascii());
+        throw ReluplexError(ReluplexError::FILE_DOES_NOT_EXIST, Stringf( "File %s not found.\n", fileName.ascii() ).ascii() );
     }
 
     InputQuery inputQuery;
@@ -25,17 +26,17 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
     unsigned numEquations = atoi( input.readLine().trim().ascii() );
     unsigned numConstraints = atoi( input.readLine().trim().ascii() );
 
-     printf("Number of variables: %u\n", numVars);
-     printf("Number of bounds: %u\n", numBounds);
-     printf("Number of equations: %u\n", numEquations);
-     printf("Number of constraints: %u\n", numConstraints);
+    log(Stringf("Number of variables: %u\n", numVars));
+    log(Stringf("Number of bounds: %u\n", numBounds));
+    log(Stringf("Number of equations: %u\n", numEquations));
+    log(Stringf("Number of constraints: %u\n", numConstraints));
 
     inputQuery.setNumberOfVariables( numVars );
 
     // Bounds
     for ( unsigned i = 0; i < numBounds; ++i )
     {   
-        printf("Bound: %u\n", i);
+        log(Stringf("Bound: %u\n", i));
         // First bound
         String line = input.readLine();
         List<String> tokens = line.tokenize( "," );
@@ -52,7 +53,7 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         double ub = atof( it->ascii() );
         ++it;
 
-        printf("Var: %u, L: %f, U: %f\n", varToBound, lb, ub);
+        log(Stringf("Var: %u, L: %f, U: %f\n", varToBound, lb, ub));
         inputQuery.setLowerBound( varToBound, lb );
         inputQuery.setUpperBound( varToBound, ub );
     }
@@ -60,7 +61,7 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
     // Equations
     for( unsigned i = 0; i< numEquations; ++i )
     {
-        printf("Equation: %u ", i);
+        log(Stringf("Equation: %u ", i));
         String line = input.readLine();
 
         List<String> tokens = line.tokenize( "," );
@@ -69,10 +70,10 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         // Skip equation number
         ++it;
         int eqType = atoi( it->ascii() );
-        printf("Type: %u ", eqType);
+        log(Stringf("Type: %u ", eqType));
         ++it;
         double eqScalar = atof( it->ascii() );
-        printf("Scalar: %f\n", eqScalar);
+        log(Stringf("Scalar: %f\n", eqScalar));
 
         Equation::EquationType type = Equation::EQ;
 
@@ -91,13 +92,13 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
             break;
 
         default:
-            // Todo: add error handling
+            // Throw exception
+            throw ReluplexError(ReluplexError::INVALID_EQUATION_TYPE, Stringf("Invalid Equation Type\n").ascii() );
             break;
         }
 
         Equation equation( type );
         equation.setScalar( eqScalar );
-
 
         while ( ++it != tokens.end() )
         {
@@ -106,7 +107,7 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
             ASSERT( it != tokens.end() );
             double coeff = atof( it->ascii() );
 
-            printf("\tVar_no: %i, Coeff: %f\n", varNo, coeff);
+            log(Stringf("\tVar_no: %i, Coeff: %f\n", varNo, coeff));
 
             equation.addAddend( coeff, varNo );
         }
@@ -130,12 +131,10 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
             serializeConstraint += *it + String(",");
         }
         serializeConstraint = serializeConstraint.substring(0, serializeConstraint.length()-1);
-        //++it;
-        
 
         PiecewiseLinearConstraint *constraint = NULL;
-        printf("Constraint: %u, Type: %s \n", i, coType.ascii());
-        printf("\tserialized:\t%s \n", serializeConstraint.ascii());
+        log(Stringf("Constraint: %u, Type: %s \n", i, coType.ascii()));
+        log(Stringf("\tserialized:\t%s \n", serializeConstraint.ascii()));
         if ( coType == "relu" )
         {
             constraint = new ReluConstraint( serializeConstraint );
@@ -146,9 +145,8 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         }
         else
         {
-            // Todo: Unsupport constraint, add error handling
+            throw ReluplexError(ReluplexError::UNSUPPORTED_PIECEWISE_CONSTRAINT, Stringf("UNSUPPORTED PIECEWISE CONSTRAINT: %s\n", coType.ascii()).ascii() );
         }
-
 
         ASSERT( constraint );
         inputQuery.addPiecewiseLinearConstraint( constraint );
@@ -157,6 +155,11 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
     return inputQuery;
 }
 
+void QueryLoader::log( const String &message )
+{
+    if ( GlobalConfiguration::QUERY_LOADER_LOGGING )
+        printf( "Engine: %s\n", message.ascii() );
+}
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

@@ -17,6 +17,7 @@
 #include "List.h"
 #include "Map.h"
 #include "PiecewiseLinearConstraint.h"
+#include "MString.h"
 
 class InputQuery
 {
@@ -83,7 +84,7 @@ public:
     /*
       Serializes the query to a file which can then be loaded using QueryLoader.
     */
-    void saveQuery( const std::string &fileName );
+    void saveQuery( const String &fileName );
 
 private:
     unsigned _numberOfVariables;

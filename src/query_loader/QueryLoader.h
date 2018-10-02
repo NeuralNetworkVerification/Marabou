@@ -14,6 +14,8 @@ public:
       Parse a serialized query and return it in InputQuery form
     */
     static InputQuery loadQuery( const String &fileName );
+
+    static void log( const String &message );
 };
 
 #endif // __QueryLoader_h__

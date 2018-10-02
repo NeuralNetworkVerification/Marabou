@@ -225,7 +225,7 @@ void InputQuery::storeDebuggingSolution( unsigned variable, double value )
     _debuggingSolution[variable] = value;
 }
 
-void InputQuery::saveQuery( const std::string &fileName )
+void InputQuery::saveQuery( const String &fileName )
 {
     AutoFile queryFile( fileName );
     queryFile->open( IFile::MODE_WRITE_TRUNCATE );
