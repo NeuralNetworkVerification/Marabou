@@ -65,6 +65,8 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         String line = input.readLine();
 
         List<String> tokens = line.tokenize( "," );
+        assert(tokens.size() > 4);
+        
         auto it = tokens.begin();
 
         // Skip equation number
