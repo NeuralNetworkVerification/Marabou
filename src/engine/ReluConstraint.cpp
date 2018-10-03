@@ -30,39 +30,12 @@ ReluConstraint::ReluConstraint( unsigned b, unsigned f )
 ReluConstraint::ReluConstraint( const String &serializedRelu )
     : _haveEliminatedVariables( false )
 {
-    /*
-      Guy: unclear: in the comment about
+    String constraintType = serializedRelu.substring(0, 4);
+    assert(constraintType == String("relu"));
 
-          String serializeToString() const;
-
-      you wrote:
-
-          Returns string with shape: relu, _f, _b
-
-      But here it looks more like a f,b? where's the relu,?
-
-    Chris: What I was trying to say is that it will literally print
-            the word "relu" at the beginning of the line so that the
-            QueryLoader has a way to identify which constructor to call.
-            The QueryLoader then strips the first token and comma and dispatches
-            the rest of the line to the constructor.
-            For example relu(3,6) would be come "relu,6,3"
-            The processor will then call ReluConstraint(3,6) because it
-            identified the word "relu" at the beginning of the line.
-
-            I also opted for relu,f,b instead of relu,b,f which may seem more
-            intuitive because for max we have max,f,element1,element2,... so
-            I opted for consistency across constraint types.
-
-       Guy: Okay. I suggest to have the input query not strip the initial "relu,",
-       for two reasons:
-         - It makes the serialize/unserialize functionality in the PL class more symmetrical
-         - You can do an ASSERT() in the unserialize method to check that the string indeed
-           starts with "relu,".
-       What do you think?
-    */
-
-    List<String> values = serializedRelu.tokenize( "," );
+    // remove the constraint type in serialized form
+    String serializedValues = serializedRelu.substring(5, serializedRelu.length()-5);
+    List<String> values = serializedValues.tokenize( "," );
     _b = atoi( values.back().ascii() );
     _f = atoi( values.front().ascii() );
 

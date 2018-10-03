@@ -37,11 +37,11 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
     for ( unsigned i = 0; i < numBounds; ++i )
     {   
         log(Stringf("Bound: %u\n", i));
-        // First bound
         String line = input.readLine();
         List<String> tokens = line.tokenize( "," );
 
-        // Todo: check something about the number of tokens
+        // format: <var, lb, ub>
+        assert(tokens.size() == 3);
 
         auto it = tokens.begin();
         unsigned varToBound = atoi( it->ascii() );
@@ -127,8 +127,10 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         ++it;
         String coType = *it;
         String serializeConstraint;
-        while ( ++it != tokens.end() ) {
+        // include type in serializeConstraint as well
+        while ( it != tokens.end() ) {
             serializeConstraint += *it + String(",");
+            it++;
         }
         serializeConstraint = serializeConstraint.substring(0, serializeConstraint.length()-1);
 
