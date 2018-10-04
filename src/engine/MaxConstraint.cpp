@@ -25,6 +25,7 @@ MaxConstraint::MaxConstraint( unsigned f, const Set<unsigned> &elements )
     , _elements( elements )
     , _maxIndexSet( false )
     , _maxLowerBound( FloatUtils::negativeInfinity() )
+    , _obsolete( false )
 {
 }
 
@@ -343,12 +344,15 @@ void MaxConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 
 bool MaxConstraint::constraintObsolete() const
 {
-    return !_elements.exists(_f) || _elements.size() <= 1;
+    return _obsolete;
 }
 
 void MaxConstraint::eliminateVariable( unsigned var, double /*value*/ )
 {
     _elements.erase( var );
+    if ( var == _f  || _elements.size() == 1 ) {
+      _obsolete = true;
+    }
 }
 
 void MaxConstraint::getAuxiliaryEquations( List<Equation> & newEquations ) const
