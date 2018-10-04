@@ -399,6 +399,22 @@ public:
     {
         TS_TRACE( "TODO: add a test for duplicate" );
     }
+
+    void test_serialize_and_unserialize()
+    {
+        unsigned f = 42;
+        Set<unsigned> elements;
+
+        for ( unsigned i = 2; i < 7; ++i )
+			elements.insert( i );
+
+        MaxConstraint originalMax( f, elements );
+        String originalSerialized = originalMax.serializeToString();
+        MaxConstraint recoveredMax( originalSerialized );
+
+        TS_ASSERT_EQUALS( originalMax.serializeToString(),
+                          recoveredMax.serializeToString() );
+    }
 };
 
 //

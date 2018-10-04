@@ -27,6 +27,21 @@ ReluConstraint::ReluConstraint( unsigned b, unsigned f )
     setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
 }
 
+ReluConstraint::ReluConstraint( const String &serializedRelu )
+    : _haveEliminatedVariables( false )
+{
+    String constraintType = serializedRelu.substring(0, 4);
+    ASSERT(constraintType == String("relu"));
+
+    // remove the constraint type in serialized form
+    String serializedValues = serializedRelu.substring(5, serializedRelu.length()-5);
+    List<String> values = serializedValues.tokenize( "," );
+    _b = atoi( values.back().ascii() );
+    _f = atoi( values.front().ascii() );
+
+    setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
+}
+
 PiecewiseLinearConstraint *ReluConstraint::duplicateConstraint() const
 {
     ReluConstraint *clone = new ReluConstraint( _b, _f );
@@ -440,6 +455,12 @@ bool ReluConstraint::haveOutOfBoundVariables() const
         return true;
 
     return false;
+}
+
+String ReluConstraint::serializeToString() const
+{
+    // Output format is: relu,f,b
+    return Stringf( "relu,%u,%u", _f, _b );
 }
 
 //

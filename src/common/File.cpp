@@ -114,10 +114,11 @@ String File::readLine( char lineSeparatingChar )
 
     while ( !_readLineBuffer.contains( separatorAsString ) )
     {
-        char buffer[SIZE_OF_BUFFER + 1];
+        char *buffer = new char[SIZE_OF_BUFFER + 1];
         int n = T::read( _descriptor, buffer, sizeof(char) * SIZE_OF_BUFFER );
         if ( ( n == -1 ) || ( n == 0 ) )
         {
+            delete[] buffer;
             if ( _readLineBuffer != "" )
             {
                 String result = _readLineBuffer;
@@ -130,6 +131,7 @@ String File::readLine( char lineSeparatingChar )
 
         buffer[n] = 0;
         _readLineBuffer += buffer;
+        delete[] buffer;
     }
 
     String result = _readLineBuffer.substring( 0, _readLineBuffer.find( separatorAsString ) );

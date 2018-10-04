@@ -16,12 +16,16 @@
 #include "FloatUtils.h"
 #include "InputQuery.h"
 #include "MockErrno.h"
+#include "MockErrno.h"
+#include "MockFileFactory.h"
 #include "ReluConstraint.h"
 #include "ReluplexError.h"
 
 #include <string.h>
 
 class MockForInputQuery
+    : public MockFileFactory
+    , public MockErrno
 {
 public:
 };
@@ -30,10 +34,13 @@ class InputQueryTestSuite : public CxxTest::TestSuite
 {
 public:
     MockForInputQuery *mock;
+    MockFile *file;
 
     void setUp()
     {
         TS_ASSERT( mock = new MockForInputQuery );
+
+        file = &( mock->mockFile );
     }
 
     void tearDown()
@@ -141,7 +148,6 @@ public:
 
     void test_infinite_bounds()
     {
-
         InputQuery *inputQuery = new InputQuery;
 
         inputQuery->setNumberOfVariables( 5 );
@@ -149,8 +155,29 @@ public:
         inputQuery->setUpperBound( 2, 55 );
         inputQuery->setUpperBound( 3, FloatUtils::infinity() );
 
-
         TS_ASSERT_EQUALS( inputQuery->countInfiniteBounds(), 8U );
+
+        delete inputQuery;
+    }
+
+    void test_save_query()
+    {
+        TS_TRACE( "TODO" );
+
+        InputQuery *inputQuery = new InputQuery;
+
+        // Todo: Load some stuff into the input query
+
+        TS_ASSERT_THROWS_NOTHING( inputQuery->saveQuery( "query.dump" ) );
+
+        // Todo: after saveQuery(), all the relevant information
+        // should have been written to the mockFile. Specifically, we should
+        // have mockFile's write() store everythign that's been written, and then
+        // check that it is as expected here.
+
+        TS_ASSERT_EQUALS( file->lastPath, "query.dump" );
+
+        delete inputQuery;
     }
 };
 

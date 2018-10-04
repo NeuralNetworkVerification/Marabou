@@ -10,6 +10,7 @@
  ** directory for licensing information.\endverbatim
  **/
 
+#include "AutoFile.h"
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "InputQuery.h"
@@ -227,6 +228,63 @@ const Map<unsigned, double> &InputQuery::getUpperBounds() const
 void InputQuery::storeDebuggingSolution( unsigned variable, double value )
 {
     _debuggingSolution[variable] = value;
+}
+
+void InputQuery::saveQuery( const String &fileName )
+{
+    AutoFile queryFile( fileName );
+    queryFile->open( IFile::MODE_WRITE_TRUNCATE );
+
+    // General query information
+
+    // Number of variables
+    queryFile->write( Stringf( "%u\n", _numberOfVariables ) );
+    // Number of Bounds
+    queryFile->write( Stringf( "%u\n", _lowerBounds.size() ) );
+
+    // Number of Equations
+    queryFile->write( Stringf( "%u\n", _equations.size() ) );
+
+    // Number of constraints
+    queryFile->write( Stringf( "%u", _plConstraints.size() ) );
+
+    printf("Number of variables: %u\n", _numberOfVariables);
+    printf("Number of bounds: %u\n", _lowerBounds.size());
+    printf("Number of equations: %u\n", _equations.size());
+    printf("Number of constraints: %u\n", _plConstraints.size());
+
+    // Bounds
+    for ( const auto &lb : _lowerBounds )
+        queryFile->write( Stringf( "\n%d,%f,%f", lb.first, lb.second, _upperBounds[lb.first] ) );
+
+    // Equations
+    unsigned i = 0;
+    for ( const auto &e : _equations )
+    {
+        // Equation number
+        queryFile->write( Stringf( "\n%u,", i ) );
+
+        // Equation type
+        queryFile->write( Stringf( "%01u,", e._type ) );
+
+        // Equation scalar
+        queryFile->write( Stringf( "%f", e._scalar ) );
+        for ( const auto &a : e._addends )
+            queryFile->write( Stringf( ",%u,%f", a._variable, a._coefficient ) );
+
+        ++i;
+    }
+
+    unsigned j = 0;
+    for ( const auto &constraint : _plConstraints )
+    {
+        // Constraint number
+        queryFile->write( Stringf( "\n%u,", j ) );
+        queryFile->write( constraint->serializeToString() );
+        ++j;
+    }
+
+    queryFile->close();
 }
 
 void InputQuery::markInputVariable( unsigned variable, unsigned inputIndex )

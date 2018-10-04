@@ -12,6 +12,7 @@
 
 #include <cxxtest/TestSuite.h>
 
+#include "MockErrno.h"
 #include "MockTableau.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "ReluConstraint.h"
@@ -20,6 +21,7 @@
 #include <string.h>
 
 class MockForReluConstraint
+    : public MockErrno
 {
 public:
 };
@@ -625,6 +627,19 @@ public:
         TS_ASSERT( !relu.constraintObsolete() );
         TS_ASSERT_THROWS_NOTHING( relu.eliminateVariable( b, 5 ) );
         TS_ASSERT( relu.constraintObsolete() );
+    }
+
+    void test_serialize_and_unserialize()
+    {
+        unsigned b = 42;
+        unsigned f = 7;
+
+        ReluConstraint originalRelu( b, f );
+        String originalSerialized = originalRelu.serializeToString();
+        ReluConstraint recoveredRelu( originalSerialized );
+
+        TS_ASSERT_EQUALS( originalRelu.serializeToString(),
+                          recoveredRelu.serializeToString() );
     }
 };
 

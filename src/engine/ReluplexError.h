@@ -37,6 +37,11 @@ public:
         ENGINE_APPLY_SPLIT_FAILED = 15,
         FILE_DOESNT_EXIST = 16,
 
+        // Error codes for Query Loader
+        FILE_DOES_NOT_EXIST = 100,
+        INVALID_EQUATION_TYPE = 101,
+        UNSUPPORTED_PIECEWISE_CONSTRAINT = 102,
+
         DEBUGGING_ERROR = 999,
     };
 

@@ -1,5 +1,5 @@
 SOURCES += \
-	CommonReal.cpp \
+	CommonMock.cpp \
 	Errno.cpp \
 	FileFactory.cpp \
 
