@@ -410,7 +410,6 @@ public:
 
         MaxConstraint originalMax( f, elements );
         String originalSerialized = originalMax.serializeToString();
-        originalSerialized.replace( "max,", "" );
         MaxConstraint recoveredMax( originalSerialized );
 
         TS_ASSERT_EQUALS( originalMax.serializeToString(),

@@ -636,7 +636,6 @@ public:
 
         ReluConstraint originalRelu( b, f );
         String originalSerialized = originalRelu.serializeToString();
-        originalSerialized.replace( "relu,", "" );
         ReluConstraint recoveredRelu( originalSerialized );
 
         TS_ASSERT_EQUALS( originalRelu.serializeToString(),
