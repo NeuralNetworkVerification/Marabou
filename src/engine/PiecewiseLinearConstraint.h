@@ -45,7 +45,6 @@ public:
     };
 
     PiecewiseLinearConstraint();
-
     virtual ~PiecewiseLinearConstraint() {}
 
     /*
@@ -162,6 +161,15 @@ public:
     virtual void getCostFunctionComponent( Map<unsigned, double> &/* cost */ ) const
     {
     }
+
+    /*
+      Produce string representation of the piecewise linear constraint.
+      This representation contains only the information necessary to reproduce it
+      but does not account for state or change in state during execution. Additionally
+      the first string before a comma has the contraint type identifier
+      (ie. "relu", "max", etc)
+    */
+    virtual String serializeToString() const = 0;
 
 protected:
     bool _constraintActive;

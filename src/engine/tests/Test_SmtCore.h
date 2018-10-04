@@ -133,6 +133,11 @@ public:
         void getAuxiliaryEquations( List<Equation> &/* newEquations */ ) const
         {
         }
+
+        String serializeToString() const
+        {
+            return "";
+        }
     };
 
     void setUp()

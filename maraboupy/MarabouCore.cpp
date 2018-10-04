@@ -12,6 +12,7 @@
 #include "Engine.h"
 #include "InputQuery.h"
 #include "ReluplexError.h"
+#include "MString.h"
 #include "FloatUtils.h"
 #include "MaxConstraint.h"
 #include "PiecewiseLinearConstraint.h"
@@ -98,11 +99,16 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::s
     return std::make_pair(ret, retStats);
 }
 
+void saveQuery(InputQuery& inputQuery, std::string filename){
+    inputQuery.saveQuery(String(filename));
+}
+
 // Code necessary to generate Python library
 // Describes which classes and functions are exposed to API
 PYBIND11_MODULE(MarabouCore, m) {
     m.doc() = "Marabou API Library";
     m.def("solve", &solve, "Takes in a description of the InputQuery and returns the solution");
+    m.def("saveQuery", &saveQuery, "Serializes the inputQuery in the given filename");
     m.def("addReluConstraint", &addReluConstraint, "Add a Relu constraint to the InputQuery");
     m.def("addMaxConstraint", &addMaxConstraint, "Add a Max constraint to the InputQuery");
     py::class_<InputQuery>(m, "InputQuery")

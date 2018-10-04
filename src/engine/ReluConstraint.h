@@ -25,6 +25,7 @@ public:
     };
 
     ReluConstraint( unsigned b, unsigned f );
+    ReluConstraint( const String &serializedRelu );
 
     /*
       Return a clone of the constraint.
@@ -122,6 +123,11 @@ public:
       equation should then lead to the constraint being "closer to satisfied".
     */
     virtual void getCostFunctionComponent( Map<unsigned, double> &cost ) const;
+
+    /*
+      Returns string with shape: relu, _f, _b
+    */
+    String serializeToString() const;
 
 private:
     unsigned _b, _f;

@@ -22,6 +22,7 @@ class MaxConstraint : public PiecewiseLinearConstraint
     ~MaxConstraint();
 
     MaxConstraint( unsigned f, const Set<unsigned> &elements );
+    MaxConstraint( const String &serializedMax );
 
     /*
       Return a clone of the constraint.
@@ -106,6 +107,12 @@ class MaxConstraint : public PiecewiseLinearConstraint
       like to add to the equation pool.
     */
     void getAuxiliaryEquations( List<Equation> &newEquations ) const;
+
+    /*
+      Returns string with shape:
+      max, _f, element_1, element_2, ... , element_n
+    */
+    String serializeToString() const;
 
  private:
     unsigned _f;

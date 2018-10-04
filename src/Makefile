@@ -5,6 +5,7 @@ SUBDIRS += \
 	basis_factorization \
 	engine \
 	input_parsers \
+	query_loader \
 
 include $(ROOT_DIR)/Rules.mk
 
