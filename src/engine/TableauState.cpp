@@ -13,11 +13,13 @@
 #include "BasisFactorizationFactory.h"
 #include "CSRMatrix.h"
 #include "ReluplexError.h"
+#include "SparseUnsortedList.h"
 #include "TableauState.h"
 
 TableauState::TableauState()
     : _A( NULL )
     , _sparseColumnsOfA( NULL )
+    , _sparseRowsOfA( NULL )
     , _denseA( NULL )
     , _b( NULL )
     , _lowerBounds( NULL )
@@ -52,6 +54,21 @@ TableauState::~TableauState()
 
         delete[] _sparseColumnsOfA;
         _sparseColumnsOfA = NULL;
+    }
+
+    if ( _sparseRowsOfA )
+    {
+        for ( unsigned i = 0; i < _m; ++i )
+        {
+            if ( _sparseRowsOfA[i] )
+            {
+                delete _sparseRowsOfA[i];
+                _sparseRowsOfA[i] = NULL;
+            }
+        }
+
+        delete[] _sparseRowsOfA;
+        _sparseRowsOfA = NULL;
     }
 
     if ( _denseA )
@@ -124,15 +141,26 @@ void TableauState::setDimensions( unsigned m, unsigned n, const IBasisFactorizat
     if ( !_A )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::A" );
 
-    _sparseColumnsOfA = new SparseVector *[n];
+    _sparseColumnsOfA = new SparseUnsortedList *[n];
     if ( !_sparseColumnsOfA )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::sparseColumnsOfA" );
 
     for ( unsigned i = 0; i < n; ++i )
     {
-        _sparseColumnsOfA[i] = new SparseVector;
+        _sparseColumnsOfA[i] = new SparseUnsortedList;
         if ( !_sparseColumnsOfA[i] )
             throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::sparseColumnsOfA[i]" );
+    }
+
+    _sparseRowsOfA = new SparseUnsortedList *[m];
+    if ( !_sparseRowsOfA )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::sparseRowsOfA" );
+
+    for ( unsigned i = 0; i < m; ++i )
+    {
+        _sparseRowsOfA[i] = new SparseUnsortedList;
+        if ( !_sparseRowsOfA[i] )
+            throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::sparseRowsOfA[i]" );
     }
 
     _denseA = new double[m*n];

@@ -13,7 +13,7 @@
 #ifndef __SparseMatrix_h__
 #define __SparseMatrix_h__
 
-class SparseVector;
+class SparseUnsortedList;
 
 class SparseMatrix
 {
@@ -31,17 +31,17 @@ public:
       Obtain a single element/row/column of the matrix.
     */
     virtual double get( unsigned row, unsigned column ) const = 0;
-    virtual void getRow( unsigned row, SparseVector *result ) const = 0;
+    virtual void getRow( unsigned row, SparseUnsortedList *result ) const = 0;
     virtual void getRowDense( unsigned row, double *result ) const = 0;
-    virtual void getColumn( unsigned column, SparseVector *result ) const = 0;
+    virtual void getColumn( unsigned column, SparseUnsortedList *result ) const = 0;
     virtual void getColumnDense( unsigned column, double *result ) const = 0;
 
     /*
       Add a row/column to the end of the matrix.
       The new row/column is provided in dense format.
     */
-    virtual void addLastRow( double *row ) = 0;
-    virtual void addLastColumn( double *column ) = 0;
+    virtual void addLastRow( const double *row ) = 0;
+    virtual void addLastColumn( const double *column ) = 0;
 
     /*
       This function increments n, the number of columns in the
@@ -92,6 +92,11 @@ public:
       Produce a dense version of the matrix
     */
     virtual void toDense( double *result ) const = 0;
+
+    /*
+      Empty the matrix without changing its dimensions
+    */
+    virtual void clear() = 0;
 };
 
 #endif // __SparseMatrix_h__

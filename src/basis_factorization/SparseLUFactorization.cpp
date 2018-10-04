@@ -11,7 +11,6 @@
  **/
 
 #include "BasisFactorizationError.h"
-#include "CSRMatrix.h"
 #include "Debug.h"
 #include "EtaMatrix.h"
 #include "FloatUtils.h"
@@ -20,20 +19,15 @@
 #include "MStringf.h"
 #include "MalformedBasisException.h"
 #include "SparseLUFactorization.h"
-#include "SparseVector.h"
 
 SparseLUFactorization::SparseLUFactorization( unsigned m, const BasisColumnOracle &basisColumnOracle )
     : IBasisFactorization( basisColumnOracle )
-	, _m( m )
+    , _B( m )
+    , _m( m )
     , _sparseLUFactors( m )
     , _sparseGaussianEliminator( m )
     , _z( NULL )
 {
-    _B = new CSRMatrix;
-    if ( !_B )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseLUFactorization::B" );
-    _B->initializeToEmpty( m, m );
-
     _z = new double[m];
     if ( !_z )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseLUFactorization::z" );
@@ -46,12 +40,6 @@ SparseLUFactorization::~SparseLUFactorization()
 
 void SparseLUFactorization::freeIfNeeded()
 {
-	if ( _B )
-	{
-		delete _B;
-		_B = NULL;
-	}
-
     if ( _z )
     {
         delete[] _z;
@@ -67,13 +55,14 @@ void SparseLUFactorization::freeIfNeeded()
 
 const double *SparseLUFactorization::getBasis() const
 {
-    printf( "Error! dense getBasis() not supported for SparseLUFactorization!\n" );
-    exit( 1 );
+    throw BasisFactorizationError( BasisFactorizationError::FEATURE_NOT_YET_SUPPORTED,
+                                   "SparseLUFactorization::getBasis" );
 }
 
 const SparseMatrix *SparseLUFactorization::getSparseBasis() const
 {
-	return _B;
+    throw BasisFactorizationError( BasisFactorizationError::FEATURE_NOT_YET_SUPPORTED,
+                                   "SparseLUFactorization::getSparseBasis" );
 }
 
 const List<EtaMatrix *> SparseLUFactorization::getEtas() const
@@ -81,24 +70,20 @@ const List<EtaMatrix *> SparseLUFactorization::getEtas() const
 	return _etas;
 }
 
-void SparseLUFactorization::pushEtaMatrix( unsigned columnIndex, const double *column )
+void SparseLUFactorization::updateToAdjacentBasis( unsigned columnIndex,
+                                                   const double *changeColumn,
+                                                   const double */* newColumn */ )
 {
-    ASSERT( !FloatUtils::isZero( column[columnIndex] ) );
+    ASSERT( !FloatUtils::isZero( changeColumn[columnIndex] ) );
 
-    EtaMatrix *matrix = new EtaMatrix( _m, columnIndex, column );
+    EtaMatrix *matrix = new EtaMatrix( _m, columnIndex, changeColumn );
     _etas.append( matrix );
 
-	if ( ( _etas.size() > GlobalConfiguration::REFACTORIZATION_THRESHOLD ) && factorizationEnabled() )
+	if ( _etas.size() > GlobalConfiguration::REFACTORIZATION_THRESHOLD )
 	{
         log( "Number of etas exceeds threshold. Refactoring basis\n" );
         obtainFreshBasis();
 	}
-}
-
-void SparseLUFactorization::setBasis( const double *B )
-{
-    _B->initialize( B, _m, _m );
-	factorizeBasis();
 }
 
 void SparseLUFactorization::forwardTransformation( const double *y, double *x ) const
@@ -179,7 +164,7 @@ void SparseLUFactorization::factorizeBasis()
 
     try
     {
-        _sparseGaussianEliminator.run( _B, &_sparseLUFactors );
+        _sparseGaussianEliminator.run( &_B, &_sparseLUFactors );
     }
     catch ( const BasisFactorizationError &e )
     {
@@ -200,7 +185,6 @@ void SparseLUFactorization::storeFactorization( IBasisFactorization *other )
     obtainFreshBasis();
 
     // Store the new basis and factorization
-    _B->storeIntoOther( otherSparseLUFactorization->_B );
     _sparseLUFactors.storeToOther( &otherSparseLUFactorization->_sparseLUFactors );
 }
 
@@ -215,7 +199,6 @@ void SparseLUFactorization::restoreFactorization( const IBasisFactorization *oth
     clearFactorization();
 
     // Store the new basis and factorization
-    otherSparseLUFactorization->_B->storeIntoOther( _B );
     otherSparseLUFactorization->_sparseLUFactors.storeToOther( &_sparseLUFactors );
 }
 
@@ -264,19 +247,71 @@ void SparseLUFactorization::dump() const
 
 void SparseLUFactorization::obtainFreshBasis()
 {
-    _B->initializeToEmpty( _m, _m );
-
-    SparseVector column;
-    for ( unsigned columnIndex = 0; columnIndex < _m; ++columnIndex )
-    {
-        _basisColumnOracle->getColumnOfBasis( columnIndex, &column );
-
-        for ( unsigned entry = 0; entry < column.getNnz(); ++entry )
-            _B->commitChange( column.getIndexOfEntry( entry ), columnIndex, column.getValueOfEntry( entry ) );
-    }
-    _B->executeChanges();
-
+    _basisColumnOracle->getSparseBasis( _B );
     factorizeBasis();
+}
+
+void SparseLUFactorization::dumpExplicitBasis() const
+{
+    // The basis is given by:   B = F * V * Etas
+
+    double *result = new double[_m * _m];
+    double *toMultiply = new double[_m * _m];
+    double *temp = new double[_m * _m];
+
+    // Start with F
+    _sparseLUFactors._F->toDense( result );
+    for ( unsigned i = 0; i < _m; ++i )
+        result[i*_m + i] = 1;
+
+    // Multiply by V
+    _sparseLUFactors._V->toDense( toMultiply );
+
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        for ( unsigned j = 0; j < _m; ++j )
+        {
+            temp[i*_m + j] = 0;
+            for ( unsigned k = 0; k < _m; ++k )
+            {
+                temp[i*_m + j] += ( result[i*_m + k] * toMultiply[k*_m + j] );
+            }
+        }
+    }
+    memcpy( result, temp, sizeof(double) * _m * _m );
+
+    // Go eta by eta
+    for ( const auto &eta : _etas )
+    {
+        eta->toMatrix( toMultiply );
+
+        for ( unsigned i = 0; i < _m; ++i )
+        {
+            for ( unsigned j = 0; j < _m; ++j )
+            {
+                temp[i*_m + j] = 0;
+                for ( unsigned k = 0; k < _m; ++k )
+                {
+                    temp[i*_m + j] += ( result[i*_m + k] * toMultiply[k*_m + j] );
+                }
+            }
+        }
+
+        memcpy( result, temp, sizeof(double) * _m * _m );
+    }
+
+    // Print out the result
+    printf( "SparseLUFactorization dumping explicit basis:\n" );
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        printf( "\t" );
+        for ( unsigned j = 0; j < _m; ++j )
+        {
+            printf( "%5.2lf ", result[i*_m + j] );
+        }
+
+        printf( "\n" );
+    }
 }
 
 //

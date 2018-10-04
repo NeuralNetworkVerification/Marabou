@@ -14,8 +14,7 @@
 #define __SparseLUFactors_h__
 
 #include "PermutationMatrix.h"
-#include "SparseMatrix.h"
-#include "SparseVector.h"
+#include "SparseUnsortedLists.h"
 
 /*
   This class provides supprot for an LU-factorization of a given matrix.
@@ -36,6 +35,11 @@
   Matrices F, V, P and Q are stored sparsely. Matrices
   U and L are not stored at all, as they are implied by the rest.
 
+  On some cases, we may wish to use separate Ps for the F and V computation.
+  While the same matrix is used for both by default, the class also supports
+  setting a different P for the L computation. In this case, the main equation
+  becomes A = FV = ( P1 L P1') * ( P U Q ).
+
   The class also provides functionality for basic computations involving
   the factorization.
 */
@@ -53,18 +57,26 @@ public:
     /*
       The various factorization components as described above
     */
-    SparseMatrix *_F;
-    SparseMatrix *_V;
+    SparseUnsortedLists *_F;
+    SparseUnsortedLists *_V;
     PermutationMatrix _P;
     PermutationMatrix _Q;
+
+    /*
+      A separate matrix, PforF, that is used for computing F = PLP',
+      if it is used (otherwise the default P is used). The flag indicates
+      whether this matrix is currently in use or not.
+    */
+    bool _usePForF;
+    PermutationMatrix _PForF;
 
     /*
       The transposed matrics F' and V' are also stored. This is because
       sometimes we need to retrieve columns and sometimes we needs rows,
       and these operations may be cheaper on the transposed matrix
     */
-    SparseMatrix *_Ft;
-    SparseMatrix *_Vt;
+    SparseUnsortedLists *_Ft;
+    SparseUnsortedLists *_Vt;
 
     /*
       Basic computations (BTRAN, FTRAN) involving the factorization
@@ -98,8 +110,6 @@ public:
     */
     double *_z;
     double *_workMatrix;
-    mutable SparseVector _sparseRow;
-    mutable SparseVector _sparseColumn;
 
     /*
       Clone this SparseLUFactors object into another object

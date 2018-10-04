@@ -94,8 +94,6 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
 
         inputQuery.setLowerBound( _nodeToF[NodeIndex(0, i)], min );
         inputQuery.setUpperBound( _nodeToF[NodeIndex(0, i)], max );
-
-        printf( "Parser setting bounds for input %u: [%.15lf, %.15lf]\n", i, min, max );
     }
 
     for ( const auto &fNode : _nodeToF )
@@ -156,6 +154,23 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
             inputQuery.addPiecewiseLinearConstraint( relu );
         }
     }
+
+    // Mark the input and output variables
+    for ( unsigned i = 0; i < inputLayerSize; ++i )
+        inputQuery.markInputVariable( _nodeToF[NodeIndex( 0, i )], i );
+
+    for ( unsigned i = 0; i < outputLayerSize; ++i )
+        inputQuery.markOutputVariable( _nodeToB[NodeIndex( numberOfLayers - 1, i )], i );
+}
+
+unsigned AcasParser::getNumInputVaribales() const
+{
+    return _acasNeuralNetwork.getLayerSize( 0 );
+}
+
+unsigned AcasParser::getNumOutputVariables() const
+{
+    return _acasNeuralNetwork.getLayerSize( _acasNeuralNetwork.getNumLayers() );
 }
 
 unsigned AcasParser::getInputVariable( unsigned index ) const

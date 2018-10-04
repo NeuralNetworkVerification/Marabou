@@ -74,6 +74,11 @@ private:
     bool processIdenticalVariables();
 
     /*
+      Collect all variables whose lower and upper bounds are equal
+    */
+    void collectFixedValues();
+
+    /*
       Eliminate any variables that have become fixed or merged with an identical variable
 	*/
 	void eliminateVariables();
@@ -82,6 +87,12 @@ private:
       Call on the PL constraints to add any auxiliary equations
     */
     void addPlAuxiliaryEquations();
+
+    /*
+      If we have merged/eliminated variables that were designated as
+      input or output variables, adjust these markings.
+    */
+    void adjustInputAndOutputMarkings();
 
     /*
       The preprocessed query
@@ -115,7 +126,6 @@ private:
       For debugging only
     */
     void dumpAllBounds( const String &message );
-
 };
 
 #endif // __Preprocessor_h__

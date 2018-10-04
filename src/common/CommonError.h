@@ -32,6 +32,7 @@ public:
         WRITE_FAILED = 10,
         READ_FAILED = 11,
         LIST_IS_EMPTY = 12,
+        KEY_DOESNT_EXIST_IN_HASHMAP = 13,
     };
 
     CommonError( CommonError::Code code ) : Error( "CommonError", (int)code )

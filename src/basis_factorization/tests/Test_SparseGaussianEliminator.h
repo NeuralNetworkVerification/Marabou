@@ -30,6 +30,12 @@ class SparseGaussianEliminatorTestSuite : public CxxTest::TestSuite
 public:
     MockForSparseGaussianEliminator *mock;
 
+    SparseGaussianEliminatorTestSuite()
+    {
+        for ( const auto vector : cleanup )
+            delete vector;
+    }
+
     void setUp()
     {
         TS_ASSERT( mock = new MockForSparseGaussianEliminator );
@@ -58,6 +64,26 @@ public:
                 }
             }
         }
+    }
+
+    List<SparseUnsortedList *> cleanup;
+    void basisIntoSparseColumns( double *B, unsigned m, SparseColumnsOfBasis &sparse )
+    {
+        double *denseColumn = new double[m];
+
+        for ( unsigned col = 0; col < m; ++col )
+        {
+            for ( unsigned row = 0; row < m; ++row )
+            {
+                denseColumn[row] = B[row*m + col];
+            }
+
+            SparseUnsortedList *list = new SparseUnsortedList( denseColumn, m );
+            sparse._columns[col] = list;
+            cleanup.append( list );
+        }
+
+        delete[] denseColumn;
     }
 
     void computeTransposedMatrixFromFactorization( SparseLUFactors *lu, double *result )
@@ -125,13 +151,13 @@ public:
                 0, 0, 1
             };
 
-            CSRMatrix sparseA( A, 3, 3 );
+            SparseColumnsOfBasis sparseCols( 3 );
+            basisIntoSparseColumns( A, 3, sparseCols );
 
             SparseGaussianEliminator *ge;
 
             TS_ASSERT( ge = new SparseGaussianEliminator( 3 ) );
-
-            TS_ASSERT_THROWS_NOTHING( ge->run( &sparseA, &lu3 ) );
+            TS_ASSERT_THROWS_NOTHING( ge->run( &sparseCols, &lu3 ) );
 
             double result[9];
             computeMatrixFromFactorization( &lu3, result );
@@ -161,12 +187,13 @@ public:
                 0, 4, 1
             };
 
-            CSRMatrix sparseA( A, 3, 3 );
+            SparseColumnsOfBasis sparseCols( 3 );
+            basisIntoSparseColumns( A, 3, sparseCols );
 
             SparseGaussianEliminator *ge;
 
             TS_ASSERT( ge = new SparseGaussianEliminator( 3 ) );
-            TS_ASSERT_THROWS_NOTHING( ge->run( &sparseA, &lu3 ) );
+            TS_ASSERT_THROWS_NOTHING( ge->run( &sparseCols, &lu3 ) );
 
             double result[9];
             computeMatrixFromFactorization( &lu3, result );
@@ -196,12 +223,13 @@ public:
                 0, 4, 1
             };
 
-            CSRMatrix sparseA( A, 3, 3 );
+            SparseColumnsOfBasis sparseCols( 3 );
+            basisIntoSparseColumns( A, 3, sparseCols );
 
             SparseGaussianEliminator *ge;
 
             TS_ASSERT( ge = new SparseGaussianEliminator( 3 ) );
-            TS_ASSERT_THROWS_NOTHING( ge->run( &sparseA, &lu3 ) );
+            TS_ASSERT_THROWS_NOTHING( ge->run( &sparseCols, &lu3 ) );
 
             double result[9];
             computeMatrixFromFactorization( &lu3, result );
@@ -232,12 +260,13 @@ public:
                 1, 2, 3, 4,
             };
 
-            CSRMatrix sparseA( A, 4, 4 );
+            SparseColumnsOfBasis sparseCols( 4 );
+            basisIntoSparseColumns( A, 4, sparseCols );
 
             SparseGaussianEliminator *ge;
 
             TS_ASSERT( ge = new SparseGaussianEliminator( 4 ) );
-            TS_ASSERT_THROWS_NOTHING( ge->run( &sparseA, &lu4 ) );
+            TS_ASSERT_THROWS_NOTHING( ge->run( &sparseCols, &lu4 ) );
 
             double result[16];
             computeMatrixFromFactorization( &lu4, result );
@@ -267,12 +296,13 @@ public:
                 5, 4, 0
             };
 
-            CSRMatrix sparseA( A, 3, 3 );
+            SparseColumnsOfBasis sparseCols( 3 );
+            basisIntoSparseColumns( A, 3, sparseCols );
 
             SparseGaussianEliminator *ge;
 
             TS_ASSERT( ge = new SparseGaussianEliminator( 3 ) );
-            TS_ASSERT_THROWS_EQUALS( ge->run( &sparseA, &lu3 ),
+            TS_ASSERT_THROWS_EQUALS( ge->run( &sparseCols, &lu3 ),
                                      const BasisFactorizationError &e,
                                      e.getCode(),
                                      BasisFactorizationError::GAUSSIAN_ELIMINATION_FAILED );
@@ -288,12 +318,13 @@ public:
                 5, 4, 0
             };
 
-            CSRMatrix sparseA( A, 3, 3 );
+            SparseColumnsOfBasis sparseCols( 3 );
+            basisIntoSparseColumns( A, 3, sparseCols );
 
             SparseGaussianEliminator *ge;
 
             TS_ASSERT( ge = new SparseGaussianEliminator( 3 ) );
-            TS_ASSERT_THROWS_EQUALS( ge->run( &sparseA, &lu3 ),
+            TS_ASSERT_THROWS_EQUALS( ge->run( &sparseCols, &lu3 ),
                                      const BasisFactorizationError &e,
                                      e.getCode(),
                                      BasisFactorizationError::GAUSSIAN_ELIMINATION_FAILED );

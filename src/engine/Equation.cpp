@@ -140,6 +140,9 @@ bool Equation::isVariableMergingEquation( unsigned &x1, unsigned &x2 ) const
     if ( _addends.size() != 2 )
         return false;
 
+    if ( _type != Equation::EQ )
+        return false;
+
     if ( !FloatUtils::isZero( _scalar ) )
         return false;
 

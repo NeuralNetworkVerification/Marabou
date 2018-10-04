@@ -49,6 +49,9 @@ public:
     static const double BASIC_COSTS_ADDITIVE_TOLERANCE;
     static const double BASIC_COSTS_MULTIPLICATIVE_TOLERANCE;
 
+    // Sparse ForrestTomlin diagonal element tolerance constant
+    static const double SPARSE_FORREST_TOMLIN_DIAGONAL_ELEMENT_TOLERANCE;
+
     // Toggle use of Harris' two-pass ratio test for selecting the leaving variable
     static const bool USE_HARRIS_RATIO_TEST;
 
@@ -62,6 +65,10 @@ public:
     // Assuming the preprocessor is on, toggle whether or not PL constraints will be called upon
     // to add auxiliary variables and equations.
     static const bool PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS;
+
+    // If the difference between a variable's lower and upper bounds is smaller than this
+    // threshold, the preprocessor will treat it as fixed.
+    static const double PREPROCESSOR_ALMOST_FIXED_THRESHOLD;
 
     // How often should the main loop check the current degradation?
     static const unsigned DEGRADATION_CHECKING_FREQUENCY;
@@ -133,6 +140,7 @@ public:
         LU_FACTORIZATION,
         SPARSE_LU_FACTORIZATION,
         FORREST_TOMLIN_FACTORIZATION,
+        SPARSE_FORREST_TOMLIN_FACTORIZATION,
     };
     static const BasisFactorizationType BASIS_FACTORIZATION_TYPE;
 

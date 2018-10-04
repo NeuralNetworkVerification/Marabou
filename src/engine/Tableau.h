@@ -18,8 +18,9 @@
 #include "MString.h"
 #include "Map.h"
 #include "Set.h"
+#include "SparseColumnsOfBasis.h"
 #include "SparseMatrix.h"
-#include "SparseVector.h"
+#include "SparseUnsortedList.h"
 #include "Statistics.h"
 
 class Equation;
@@ -315,8 +316,10 @@ public:
     */
     const SparseMatrix *getSparseA() const;
     const double *getAColumn( unsigned variable ) const;
-    void getSparseAColumn( unsigned variable, SparseVector *result ) const;
-    void getSparseARow( unsigned row, SparseVector *result ) const;
+    void getSparseAColumn( unsigned variable, SparseUnsortedList *result ) const;
+    void getSparseARow( unsigned row, SparseUnsortedList *result ) const;
+    const SparseUnsortedList *getSparseAColumn( unsigned variable ) const;
+    const SparseUnsortedList *getSparseARow( unsigned row ) const;
 
     /*
       Store and restore the Tableau's state. Needed for case splitting
@@ -397,7 +400,8 @@ public:
     double *getInverseBasisMatrix() const;
 
     void getColumnOfBasis( unsigned column, double *result ) const;
-    void getColumnOfBasis( unsigned column, SparseVector *result ) const;
+    void getColumnOfBasis( unsigned column, SparseUnsortedList *result ) const;
+    void getSparseBasis( SparseColumnsOfBasis &basis ) const;
 
     /*
       Trigger a re-computing of the basis factorization. This can
@@ -417,7 +421,7 @@ private:
       Variable watchers
     */
     typedef List<VariableWatcher *> VariableWatchers;
-    Map<unsigned, VariableWatchers> _variableToWatchers;
+    HashMap<unsigned, VariableWatchers> _variableToWatchers;
     List<VariableWatcher *> _globalWatchers;
 
     /*
@@ -437,13 +441,9 @@ private:
       form (column-major).
     */
     SparseMatrix *_A;
-    SparseVector **_sparseColumnsOfA;
+    SparseUnsortedList **_sparseColumnsOfA;
+    SparseUnsortedList **_sparseRowsOfA;
     double *_denseA;
-
-    /*
-      A single column from A
-    */
-    double *_a;
 
     /*
       Used to compute inv(B)*a
@@ -465,12 +465,6 @@ private:
     */
     double *_workM;
     double *_workN;
-
-    /*
-      Working memory for extracting information from
-      sparse matrices
-    */
-    mutable SparseVector _sparseWorkVector;
 
     /*
       A unit vector of size m

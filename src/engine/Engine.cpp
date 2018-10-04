@@ -567,9 +567,31 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             _preprocessedQuery = inputQuery;
 
         printf( "Engine::processInputQuery: Input query (after preprocessing): "
-                "%u equations, %u variables\n",
+                "%u equations, %u variables\n\n",
                 _preprocessedQuery.getEquations().size(),
                 _preprocessedQuery.getNumberOfVariables() );
+
+        printf( "Input bounds:\n" );
+        for ( unsigned i = 0; i < inputQuery.getNumInputVariables(); ++i )
+        {
+            unsigned originalIndex = inputQuery.inputVariableByIndex( i );
+            if ( _preprocessor.variableIsFixed( originalIndex ) )
+            {
+                double value = _preprocessor.getFixedValue( originalIndex );
+                printf( "\tx%u: [%8.4lf, %8.4lf] (FIXED)\n",
+                        i,
+                        value,
+                        value );
+            }
+            else
+            {
+                printf( "\tx%u: [%8.4lf, %8.4lf]\n",
+                        i,
+                        _preprocessedQuery.getLowerBound( _preprocessedQuery.inputVariableByIndex( i ) ),
+                        _preprocessedQuery.getUpperBound( _preprocessedQuery.inputVariableByIndex( i ) ) );
+            }
+        }
+        printf( "\n" );
 
         unsigned infiniteBounds = _preprocessedQuery.countInfiniteBounds();
         if ( infiniteBounds != 0 )
@@ -667,12 +689,24 @@ void Engine::extractSolution( InputQuery &inputQuery )
     {
         if ( _preprocessingEnabled )
         {
+            // Fixed variables are easy: return the value they've been fixed to.
             if ( _preprocessor.variableIsFixed( i ) )
+            {
                 inputQuery.setSolutionValue( i, _preprocessor.getFixedValue( i ) );
-            else if ( _preprocessor.variableIsMerged( i ) )
-                inputQuery.setSolutionValue( i, _tableau->getValue( _preprocessor.getMergedIndex( i ) ) );
-            else
-                inputQuery.setSolutionValue( i, _tableau->getValue( _preprocessor.getNewIndex( i ) ) );
+                continue;
+            }
+
+            // Has the variable been merged into another?
+            unsigned variable = i;
+            if ( _preprocessor.variableIsMerged( i ) )
+                variable = _preprocessor.getMergedIndex( i );
+
+            // We know which variable to look for, but it may have been assigned
+            // a new index, due to variable elimination
+            unsigned finalIndex = _preprocessor.getNewIndex( variable );
+
+            // Finally, set the assigned value
+            inputQuery.setSolutionValue( i, _tableau->getValue( finalIndex ) );
         }
         else
         {

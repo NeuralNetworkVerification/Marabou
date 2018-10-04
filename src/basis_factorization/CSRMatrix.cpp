@@ -15,7 +15,7 @@
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "MString.h"
-#include "SparseVector.h"
+#include "SparseUnsortedList.h"
 
 CSRMatrix::CSRMatrix()
     : _m( 0 )
@@ -133,7 +133,7 @@ double CSRMatrix::get( unsigned row, unsigned column ) const
     return ( index == _nnz ) ? 0 : _A[index];
 }
 
-void CSRMatrix::addLastRow( double *row )
+void CSRMatrix::addLastRow( const double *row )
 {
     // Array _IA needs to increase by one
     unsigned *newIA = new unsigned[_m + 2];
@@ -162,7 +162,7 @@ void CSRMatrix::addLastRow( double *row )
     ++_m;
 }
 
-void CSRMatrix::addLastColumn( double *column )
+void CSRMatrix::addLastColumn( const double *column )
 {
     // Count the number of new entries needed
     unsigned newNnz = 0;
@@ -261,29 +261,17 @@ void CSRMatrix::storeIntoOther( SparseMatrix *other ) const
     memcpy( otherCsr->_JA, _JA, sizeof(unsigned) * _estimatedNnz );
 }
 
-void CSRMatrix::getRow( unsigned row, SparseVector *result ) const
+void CSRMatrix::getRow( unsigned row, SparseUnsortedList *result ) const
 {
+    ASSERT( row < _m );
+
     /*
       Elements of row j are stored in _A and _JA between
       indices _IA[j] and _IA[j+1] - 1.
     */
     result->clear();
-
-    CSRMatrix *resultMatrix = result->getInternalMatrix();
-    while ( resultMatrix->_estimatedNnz < _IA[row + 1] - _IA[row] )
-        resultMatrix->increaseCapacity();
-
-    unsigned count = 0;
     for ( unsigned i = _IA[row]; i < _IA[row + 1]; ++i )
-    {
-        resultMatrix->_A[count] = _A[i];
-        resultMatrix->_JA[count] = _JA[i];
-
-        ++count;
-    }
-
-    resultMatrix->_IA[1] = count;
-    resultMatrix->_nnz = count;
+        result->set( _JA[i], _A[i] );
 }
 
 void CSRMatrix::getRowDense( unsigned row, double *result ) const
@@ -293,30 +281,13 @@ void CSRMatrix::getRowDense( unsigned row, double *result ) const
         result[_JA[i]] = _A[i];
 }
 
-void CSRMatrix::getColumn( unsigned column, SparseVector *result ) const
+void CSRMatrix::getColumn( unsigned column, SparseUnsortedList *result ) const
 {
+    ASSERT( column < _n );
+
     result->clear();
-
-    CSRMatrix *resultMatrix = result->getInternalMatrix();
-
-    unsigned count = 0;
     for ( unsigned i = 0; i < _m; ++i )
-    {
-        double value = get( i, column );
-        if ( !FloatUtils::isZero( value ) )
-        {
-            while ( count >= resultMatrix->_estimatedNnz )
-                resultMatrix->increaseCapacity();
-
-            resultMatrix->_A[count] = value;
-            resultMatrix->_JA[count] = i;
-
-            ++count;
-        }
-    }
-
-    resultMatrix->_IA[1] = count;
-    resultMatrix->_nnz = count;
+        result->set( i, get( i, column ) );
 }
 
 void CSRMatrix::getColumnDense( unsigned column, double *result ) const
@@ -603,7 +574,7 @@ unsigned CSRMatrix::findArrayIndexForEntry( unsigned row, unsigned column ) cons
 {
     int low = _IA[row];
     int high = _IA[row + 1] - 1;
-    int mid;
+    int mid = -1;
 
     bool found = false;
     while ( !found && low <= high )

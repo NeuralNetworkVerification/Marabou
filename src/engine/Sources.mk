@@ -9,6 +9,7 @@ SOURCES += \
 	EntrySelectionStrategy.cpp \
 	Equation.cpp \
 	InputQuery.cpp \
+	Marabou.cpp \
 	MaxConstraint.cpp \
 	PiecewiseLinearCaseSplit.cpp \
 	PiecewiseLinearConstraint.cpp \
@@ -17,8 +18,8 @@ SOURCES += \
 	ProjectedSteepestEdge.cpp \
 	ReluConstraint.cpp \
 	RowBoundTightener.cpp \
+	Simulator.cpp \
 	SmtCore.cpp \
-	Statistics.cpp \
 	Tableau.cpp \
 	TableauRow.cpp \
 	TableauState.cpp \

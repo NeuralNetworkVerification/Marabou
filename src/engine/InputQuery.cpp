@@ -190,6 +190,11 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
     _solution = other._solution;
     _debuggingSolution = other._debuggingSolution;
 
+    _variableToInputIndex = other._variableToInputIndex;
+    _inputIndexToVariable = other._inputIndexToVariable;
+    _variableToOutputIndex = other._variableToOutputIndex;
+    _outputIndexToVariable = other._outputIndexToVariable;
+
     freeConstraintsIfNeeded();
     for ( const auto &constraint : other._plConstraints )
         _plConstraints.append( constraint->duplicateConstraint() );
@@ -280,6 +285,72 @@ void InputQuery::saveQuery( const String &fileName )
     }
 
     queryFile->close();
+}
+
+void InputQuery::markInputVariable( unsigned variable, unsigned inputIndex )
+{
+    _variableToInputIndex[variable] = inputIndex;
+    _inputIndexToVariable[inputIndex] = variable;
+}
+
+void InputQuery::markOutputVariable( unsigned variable, unsigned outputIndex )
+{
+    _variableToOutputIndex[variable] = outputIndex;
+    _outputIndexToVariable[outputIndex] = variable;
+}
+
+unsigned InputQuery::inputVariableByIndex( unsigned index ) const
+{
+    ASSERT( _inputIndexToVariable.exists( index ) );
+    return _inputIndexToVariable.get( index );
+}
+
+unsigned InputQuery::outputVariableByIndex( unsigned index ) const
+{
+    ASSERT( _outputIndexToVariable.exists( index ) );
+    return _outputIndexToVariable.get( index );
+}
+
+unsigned InputQuery::getNumInputVariables() const
+{
+    return _inputIndexToVariable.size();
+}
+
+unsigned InputQuery::getNumOutputVariables() const
+{
+    return _outputIndexToVariable.size();
+}
+
+List<unsigned> InputQuery::getInputVariables() const
+{
+    List<unsigned> result;
+    for ( const auto &pair : _variableToInputIndex )
+        result.append( pair.first );
+
+    return result;
+}
+
+void InputQuery::printInputOutputBounds() const
+{
+    printf( "Dumping bounds of the input and output variables:\n" );
+
+    for ( const auto &pair : _variableToInputIndex )
+    {
+        printf( "\tInput %u (var %u): [%lf, %lf]\n",
+                pair.second,
+                pair.first,
+                _lowerBounds[pair.first],
+                _upperBounds[pair.first] );
+    }
+
+    for ( const auto &pair : _variableToOutputIndex )
+    {
+        printf( "\tOutput %u (var %u): [%lf, %lf]\n",
+                pair.second,
+                pair.first,
+                _lowerBounds[pair.first],
+                _upperBounds[pair.first] );
+    }
 }
 
 //

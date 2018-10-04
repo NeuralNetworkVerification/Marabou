@@ -48,6 +48,17 @@ public:
 	List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints();
 
     /*
+      Methods for handling input and output variables
+    */
+    void markInputVariable( unsigned variable, unsigned inputIndex );
+    void markOutputVariable( unsigned variable, unsigned inputIndex );
+    unsigned inputVariableByIndex( unsigned index ) const;
+    unsigned outputVariableByIndex( unsigned index ) const;
+    unsigned getNumInputVariables() const;
+    unsigned getNumOutputVariables() const;
+    List<unsigned> getInputVariables() const;
+
+    /*
       Methods for setting and getting the solution.
     */
     void setSolutionValue( unsigned variable, double value );
@@ -76,7 +87,11 @@ public:
     InputQuery( const InputQuery &other );
 
     /*
-      For debugging purposes only - store a correct possible solution
+      Debugging methods
+    */
+
+    /*
+      Store a correct possible solution
     */
     void storeDebuggingSolution( unsigned variable, double value );
     Map<unsigned, double> _debuggingSolution;
@@ -85,6 +100,11 @@ public:
       Serializes the query to a file which can then be loaded using QueryLoader.
     */
     void saveQuery( const String &fileName );
+
+    /*
+      Print input and output bounds
+    */
+    void printInputOutputBounds() const;
 
 private:
     unsigned _numberOfVariables;
@@ -99,6 +119,16 @@ private:
       Free any stored pl constraints.
     */
     void freeConstraintsIfNeeded();
+
+public:
+    /*
+      Mapping of input/output variables to their indices.
+      Made public for easy access from the preprocessor.
+    */
+    Map<unsigned, unsigned> _variableToInputIndex;
+    Map<unsigned, unsigned> _inputIndexToVariable;
+    Map<unsigned, unsigned> _variableToOutputIndex;
+    Map<unsigned, unsigned> _outputIndexToVariable;
 };
 
 #endif // __InputQuery_h__
