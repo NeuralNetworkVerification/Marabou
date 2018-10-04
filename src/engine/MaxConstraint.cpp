@@ -343,7 +343,7 @@ void MaxConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 
 bool MaxConstraint::constraintObsolete() const
 {
-    return false;
+    return phaseFixed();
 }
 
 void MaxConstraint::eliminateVariable( unsigned var, double /*value*/ )
