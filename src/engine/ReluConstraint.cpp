@@ -31,7 +31,7 @@ ReluConstraint::ReluConstraint( const String &serializedRelu )
     : _haveEliminatedVariables( false )
 {
     String constraintType = serializedRelu.substring(0, 4);
-    assert(constraintType == String("relu"));
+    ASSERT(constraintType == String("relu"));
 
     // remove the constraint type in serialized form
     String serializedValues = serializedRelu.substring(5, serializedRelu.length()-5);

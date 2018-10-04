@@ -41,7 +41,7 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         List<String> tokens = line.tokenize( "," );
 
         // format: <var, lb, ub>
-        assert(tokens.size() == 3);
+        ASSERT(tokens.size() == 3);
 
         auto it = tokens.begin();
         unsigned varToBound = atoi( it->ascii() );
@@ -65,7 +65,7 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         String line = input.readLine();
 
         List<String> tokens = line.tokenize( "," );
-        assert(tokens.size() > 4);
+        ASSERT(tokens.size() > 4);
         
         auto it = tokens.begin();
 

@@ -33,7 +33,7 @@ MaxConstraint::MaxConstraint( unsigned f, const Set<unsigned> &elements )
 MaxConstraint::MaxConstraint( const String &serializedMax )
 {
     String constraintType = serializedMax.substring(0, 3);
-    assert(constraintType == String("max"));
+    ASSERT(constraintType == String("max"));
 
     // remove the constraint type in serialized form
     String serializedValues = serializedMax.substring(4, serializedMax.length()-4);    
