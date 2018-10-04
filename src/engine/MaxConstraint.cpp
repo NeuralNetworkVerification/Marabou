@@ -350,9 +350,8 @@ bool MaxConstraint::constraintObsolete() const
 void MaxConstraint::eliminateVariable( unsigned var, double /*value*/ )
 {
     _elements.erase( var );
-    if ( var == _f  || _elements.size() == 1 ) {
-      _obsolete = true;
-    }
+    if ( var == _f || getParticipatingVariables().size() == 1 )
+        _obsolete = true;
 }
 
 void MaxConstraint::getAuxiliaryEquations( List<Equation> & newEquations ) const
