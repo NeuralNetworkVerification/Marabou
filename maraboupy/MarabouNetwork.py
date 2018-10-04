@@ -11,7 +11,7 @@ class MarabouNetwork:
         Constructs a MarabouNetwork object and calls function to initialize
         """
         self.clear()
-    
+
     def clear(self):
         """
         Reset values to represent empty network
@@ -20,21 +20,22 @@ class MarabouNetwork:
         self.equList = []
         self.reluList = []
         self.maxList = []
+        self.varsParticipatingInConstraints = set()
         self.lowerBounds = dict()
         self.upperBounds = dict()
         self.inputVars = []
         self.outputVars = np.array([])
-    
+
     def getNewVariable(self):
         """
         Function to request allocation of new variable
-        
+
         Returns:
             varnum: (int) representing new variable
         """
         self.numVars += 1
         return self.numVars - 1
-    
+
     def addEquation(self, x):
         """
         Function to add new equation to the network
@@ -42,7 +43,7 @@ class MarabouNetwork:
             x: (MarabouUtils.Equation) representing new equation
         """
         self.equList += [x]
-    
+
     def setLowerBound(self, x, v):
         """
         Function to set lower bound for variable
@@ -51,7 +52,7 @@ class MarabouNetwork:
             v: (float) value representing lower bound
         """
         self.lowerBounds[x]=v
-    
+
     def setUpperBound(self, x, v):
         """
         Function to set upper bound for variable
@@ -69,7 +70,9 @@ class MarabouNetwork:
             v2: (int) variable representing output of Relu
         """
         self.reluList += [(v1, v2)]
-    
+        self.varsParticipatingInConstraints.add(v1)
+        self.varsParticipatingInConstraints.add(v2)
+
     def addMaxConstraint(self, elements, v):
         """
         Function to add a new Max constraint
@@ -78,6 +81,9 @@ class MarabouNetwork:
             v: (int) variable representing output of max constraint
         """
         self.maxList += [(elements, v)]
+        self.varsParticipatingInConstraints.add(v)
+        for i in elements:
+            self.varsParticipatingInConstraints.add(i)
 
     def lowerBoundExists(self, x):
         """
@@ -102,16 +108,7 @@ class MarabouNetwork:
             x: (int) variable to check
         """
         # ReLUs
-        if self.reluList:
-            fs, bs = zip(*self.reluList)
-            if x in fs or x in bs:
-                return True
-
-        # Max constraints
-        for elems, var in self.maxList:
-            if x in elems or x==var:
-                return True
-        return False
+        return x in self.varsParticipatingInConstraints
 
     def getMarabouQuery(self):
         """
@@ -121,7 +118,7 @@ class MarabouNetwork:
         """
         ipq = MarabouCore.InputQuery()
         ipq.setNumberOfVariables(self.numVars)
-        
+
         for e in self.equList:
             eq = MarabouCore.Equation(e.EquationType)
             for (c, v) in e.addendList:
@@ -133,7 +130,7 @@ class MarabouNetwork:
         for r in self.reluList:
             assert r[1] < self.numVars and r[0] < self.numVars
             MarabouCore.addReluConstraint(ipq, r[0], r[1])
-        
+
         for m in self.maxList:
             assert m[1] < self.numVars
             for e in m[0]:
@@ -190,7 +187,7 @@ class MarabouNetwork:
         print("Evaluating with Marabou\n")
         inputVars = self.inputVars # list of numpy arrays
         outputVars = self.outputVars
-        
+
         inputDict = dict()
         inputVarList = np.concatenate(inputVars, axis=-1).ravel()
         inputValList = np.concatenate(inputValues).ravel()
