@@ -177,6 +177,17 @@ class MarabouNetwork:
 
         return [vals, stats]
 
+    def saveQuery(self, filename=""):
+        """
+        Serializes the inputQuery in the given filename
+        Arguments:
+            filename: (string) path to redirect output to
+        Returns:
+            None
+        """
+        ipq = self.getMarabouQuery()
+        MarabouCore.saveQuery(ipq, filename)
+
     def loadQuery(self, filename="", verbose=True):
         """
         Function to solve query represented by this network
