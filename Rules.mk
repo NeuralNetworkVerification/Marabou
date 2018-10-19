@@ -99,6 +99,12 @@ endif
 
 ifneq ($(TEST_TARGET),)
 
+CXXFLAGS += \
+	-Wno-ignored-qualifiers \
+
+CFLAGS += \
+	-Wno-ignored-qualifiers \
+
 ifeq ($(COMPILER),g++)
 	GPPVERSION = $(shell $(COMPILE) --version | grep ^g++ | sed 's/^.* //g')
 	GPPVERSION_MAJOR = $(shell echo $(GPPVERSION) | cut -f1 -d.)
