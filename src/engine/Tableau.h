@@ -187,6 +187,8 @@ public:
     */
     void computeAssignment();
 
+    bool checkValueWithinBounds(unsigned variable, double value);
+
     /*
       Compute the status of the basic variable based on current assignment
     */
