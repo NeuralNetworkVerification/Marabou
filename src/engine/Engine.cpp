@@ -471,62 +471,74 @@ void Engine::fixViolatedPlConstraintIfPossible()
                         unsigned _b = vars.front();
                         unsigned _f = vars.back();
                     
-                        TableauRow row(_tableau->getN() - _tableau->getM());
-                        for ( unsigned i = 0; i < _tableau->getM(); ++i )
+                        TableauRow row(_tableau->getN() - _tableau->getM());                   
+                        int basic_variable = -1;
+                        if(fix._variable == _b){
+                            basic_variable = _f;
+                        } else {
+                            basic_variable = _b;
+                        }
+                        
+                        ASSERT(basic_variable != -1);
+                        ASSERT(_tableau->isBasic(basic_variable));
+
+                        int row_index = _tableau->variableToIndex(basic_variable);
+                        _tableau->getTableauRow( row_index, &row );
+                        
+                        ASSERT(vars.exists(row._lhs));
+                        ASSERT((int)row._lhs == basic_variable);
+                        
+                        double scalar = 0;
+                        double coefficient = 0;
+                        for ( unsigned i = 0; i < row._size; ++i )
                         {
-                            _tableau->getTableauRow( i, &row );
-                            if (vars.exists(row._lhs)) {
-                                double scalar = 0;
-                                double coefficient = 0;
-                                for ( unsigned i = 0; i < row._size; ++i )
-                                {
-                                    if((!FloatUtils::isZero(row._row[i]._coefficient)) && !vars.exists(row._row[i]._var)){
-                                        scalar += row._row[i]._coefficient * _tableau->getValue(row._row[i]._var);
-                                    } else if(vars.exists(row._row[i]._var) && (!FloatUtils::isZero(row._row[i]._coefficient))){
-                                        coefficient = row._row[i]._coefficient;
-                                    }
-                                }
-                                scalar += row._scalar;
+                            if((!FloatUtils::isZero(row._row[i]._coefficient)) && !vars.exists(row._row[i]._var)){
+                                scalar += row._row[i]._coefficient * _tableau->getValue(row._row[i]._var);
+                            } else if(vars.exists(row._row[i]._var) && (!FloatUtils::isZero(row._row[i]._coefficient))){
+                                coefficient = row._row[i]._coefficient;
+                            }
+                        }
+                        scalar += row._scalar;
 
-                                ASSERT(!FloatUtils::isZero(coefficient));
-                                if(FloatUtils::isZero(coefficient - 1)){
-                                    break;
-                                }
+                        ASSERT(!FloatUtils::isZero(coefficient));
+                        if(FloatUtils::isZero(coefficient - 1)){
+                            break;
+                        }
 
-                                double activeFix = scalar / (1 - coefficient);
+                        double activeFix = scalar / (1 - coefficient);
+                        
+                        if (activeFix > 0){ 
+                            if( _tableau->checkValueWithinBounds(fix._variable, activeFix)){
+                                _tableau->setNonBasicAssignment(fix._variable, activeFix, true);
                                 
-                                if (activeFix > 0){ 
-                                    if( _tableau->checkValueWithinBounds(fix._variable, activeFix)){
-                                        _tableau->setNonBasicAssignment(fix._variable, activeFix, true);
-                                        
-                                        if(_plConstraintToFix->satisfied()){
-                                            return;
-                                        } else {
-                                            _tableau->setNonBasicAssignment(fix._variable, old_value, true);
-                                        }
-                                    }
-                                }
-
-                                double nonactiveFix = 0;
-                                if(row._lhs == _b){
-                                    nonactiveFix = scalar;
+                                if(_plConstraintToFix->satisfied()){
+                                    std::cerr << "using active fix " << activeFix << std::endl;
+                                    return;
                                 } else {
-                                    nonactiveFix = -scalar/coefficient;
+                                    _tableau->setNonBasicAssignment(fix._variable, old_value, true);
                                 }
+                            }
+                        }
 
-                                if(nonactiveFix <= 0){
-                                    if(fix._variable == _f && _tableau->checkValueWithinBounds(_f, 0)){
-                                        _tableau->setNonBasicAssignment(fix._variable, 0, true);
-                                    } else if(fix._variable == _b && _tableau->checkValueWithinBounds(_b, nonactiveFix)){
-                                        _tableau->setNonBasicAssignment(fix._variable, nonactiveFix, true);
-                                    }
+                        double nonactiveFix = 0;
+                        if(row._lhs == _b){
+                            nonactiveFix = scalar;
+                        } else {
+                            nonactiveFix = -scalar/coefficient;
+                        }
 
-                                    if(_plConstraintToFix->satisfied()){
-                                        return;
-                                    } else {
-                                        _tableau->setNonBasicAssignment(fix._variable, old_value, true);
-                                    }
-                                }
+                        if(nonactiveFix <= 0){
+                            if(fix._variable == _f && _tableau->checkValueWithinBounds(_f, 0)){
+                                _tableau->setNonBasicAssignment(fix._variable, 0, true);
+                            } else if(fix._variable == _b && _tableau->checkValueWithinBounds(_b, nonactiveFix)){
+                                _tableau->setNonBasicAssignment(fix._variable, nonactiveFix, true);
+                            }
+
+                            if(_plConstraintToFix->satisfied()){
+                                std::cerr << "using non active fix " << nonactiveFix << std::endl;
+                                return;
+                            } else {
+                                _tableau->setNonBasicAssignment(fix._variable, old_value, true);
                             }
                         }
                     }
