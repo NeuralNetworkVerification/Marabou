@@ -512,7 +512,6 @@ void Engine::fixViolatedPlConstraintIfPossible()
                                 _tableau->setNonBasicAssignment(fix._variable, activeFix, true);
                                 
                                 if(_plConstraintToFix->satisfied()){
-                                    std::cerr << "using active fix " << activeFix << std::endl;
                                     return;
                                 } else {
                                     _tableau->setNonBasicAssignment(fix._variable, old_value, true);
@@ -535,7 +534,6 @@ void Engine::fixViolatedPlConstraintIfPossible()
                             }
 
                             if(_plConstraintToFix->satisfied()){
-                                std::cerr << "using non active fix " << nonactiveFix << std::endl;
                                 return;
                             } else {
                                 _tableau->setNonBasicAssignment(fix._variable, old_value, true);
