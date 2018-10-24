@@ -75,6 +75,7 @@ public:
     void incNumMergedColumns();
     void setCurrentTableauDimension( unsigned m, unsigned n );
     void addTimePivots( unsigned long long time );
+    unsigned getAveragePivotTimeInMicro() const;
     unsigned long long getNumTableauPivots() const;
     unsigned long long getNumSimplexPivotSelectionsIgnoredForStability() const;
     unsigned long long getNumSimplexUnstablePivots() const;
