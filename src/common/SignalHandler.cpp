@@ -37,6 +37,7 @@ void SignalHandler::initialize()
     sa.sa_handler = got_signal;
     sigfillset( &sa.sa_mask );
     sigaction( SIGQUIT, &sa, NULL );
+    sigaction( SIGTERM, &sa, NULL );
 }
 
 void SignalHandler::signalReceived( unsigned /* signalNumber */ )

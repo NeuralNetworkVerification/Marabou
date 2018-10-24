@@ -30,7 +30,6 @@ public:
 
 private:
     InputQuery _inputQuery;
-    bool _result;
 
     /*
       Extract the input files: network and property, and use them

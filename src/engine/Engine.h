@@ -40,6 +40,15 @@ public:
     Engine();
     ~Engine();
 
+    enum ExitCode {
+        UNSAT = 0,
+        SAT = 1,
+        ERROR = 2,
+        TIMEOUT = 3,
+
+        NOT_DONE = 999,
+    };
+
     /*
       Attempt to find a feasible solution for the input. Returns true
       if found, false if infeasible.
@@ -73,6 +82,11 @@ public:
     void quitSignal();
 
     const Statistics *getStatistics() const;
+
+    /*
+      Get the exit code
+    */
+    Engine::ExitCode getExitCode() const;
 
 private:
     enum BasisRestorationRequired {
@@ -191,6 +205,11 @@ private:
       Indicates a user request to quit
     */
     bool _quitRequested;
+
+    /*
+      A code indicating how the run terminated.
+    */
+    ExitCode _exitCode;
 
     /*
       Perform a simplex step: compute the cost function, pick the

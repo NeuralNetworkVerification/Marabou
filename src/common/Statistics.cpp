@@ -398,6 +398,14 @@ void Statistics::addTimePivots( unsigned long long time )
     _timePivotsMicro += time;
 }
 
+unsigned Statistics::getAveragePivotTimeInMicro() const
+{
+    if ( _numTableauPivots == 0 )
+        return 0;
+
+    return _timePivotsMicro / _numTableauPivots;
+}
+
 void Statistics::incNumSimplexPivotSelectionsIgnoredForStability()
 {
     ++_numSimplexPivotSelectionsIgnoredForStability;
