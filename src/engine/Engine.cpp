@@ -170,7 +170,7 @@ bool Engine::solve()
 
                 // We have violated piecewise-linear constraints.
                 performConstraintFixingStep();
-                
+
                 // Finally, take this opporunity to tighten any bounds
                 // and perform any valid case splits.
                 tightenBoundsOnConstraintMatrix();
@@ -470,24 +470,24 @@ void Engine::fixViolatedPlConstraintIfPossible()
                         List<unsigned> vars = reluConstraint->getParticipatingVariables();
                         unsigned _b = vars.front();
                         unsigned _f = vars.back();
-                    
-                        TableauRow row(_tableau->getN() - _tableau->getM());                   
+
+                        TableauRow row(_tableau->getN() - _tableau->getM());
                         int basic_variable = -1;
                         if(fix._variable == _b){
                             basic_variable = _f;
                         } else {
                             basic_variable = _b;
                         }
-                        
+
                         ASSERT(basic_variable != -1);
                         ASSERT(_tableau->isBasic(basic_variable));
 
                         int row_index = _tableau->variableToIndex(basic_variable);
                         _tableau->getTableauRow( row_index, &row );
-                        
+
                         ASSERT(vars.exists(row._lhs));
                         ASSERT((int)row._lhs == basic_variable);
-                        
+
                         double scalar = 0;
                         double coefficient = 0;
                         for ( unsigned i = 0; i < row._size; ++i )
@@ -506,11 +506,11 @@ void Engine::fixViolatedPlConstraintIfPossible()
                         }
 
                         double activeFix = scalar / (1 - coefficient);
-                        
-                        if (activeFix > 0){ 
+
+                        if (activeFix > 0){
                             if( _tableau->checkValueWithinBounds(fix._variable, activeFix)){
                                 _tableau->setNonBasicAssignment(fix._variable, activeFix, true);
-                                
+
                                 if(_plConstraintToFix->satisfied()){
                                     return;
                                 } else {
@@ -805,21 +805,23 @@ bool Engine::allVarsWithinBounds() const
 
 void Engine::collectViolatedPlConstraints()
 {
-    _violatedPlConstraints.clear();
-    for ( const auto &constraint : _plConstraints )
-        if ( constraint->isActive() && !constraint->satisfied() )
-            _violatedPlConstraints.append( constraint );
+    _violatedPlConstraintsSet.clear();
+    for ( const auto &constraint : _plConstraints ){
+        if ( constraint->isActive() && !constraint->satisfied() ){
+            _violatedPlConstraintsSet.insert( {_smtCore.getViolationCounts(constraint), constraint} );
+        }
+    }
 }
 
 bool Engine::allPlConstraintsHold()
 {
-    return _violatedPlConstraints.empty();
+    return _violatedPlConstraintsSet.empty();
 }
 
 void Engine::selectViolatedPlConstraint()
 {
-    ASSERT( !_violatedPlConstraints.empty() );
-    _plConstraintToFix = *_violatedPlConstraints.begin();
+    ASSERT( !_violatedPlConstraintsSet.empty() );
+    _plConstraintToFix = _violatedPlConstraintsSet.begin()->second;
     ASSERT( _plConstraintToFix );
 }
 
