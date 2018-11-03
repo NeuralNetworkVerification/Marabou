@@ -1,7 +1,5 @@
 SOURCES += \
 	GlobalConfiguration.cpp \
-	OptionParser.cpp \
-	Options.cpp \
 
 LIBRARY_DIR += \
 	$(BOOST_LIBS) \

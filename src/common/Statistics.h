@@ -61,7 +61,8 @@ public:
     void incNumPrecisionRestorations();
     double getMaxDegradation() const;
     unsigned getNumPrecisionRestorations() const;
-
+    unsigned long long getTimeSimplexStepsMicro(){ return _timeSimplexStepsMicro; }
+    unsigned long long getNumConstraintFixingSteps(){ return _numConstraintFixingSteps; }
     /*
       Tableau related statistics.
     */
