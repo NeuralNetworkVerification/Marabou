@@ -117,7 +117,8 @@ private:
       Piecewise linear constraints that are currently violated.
     */
     std::set<std::pair<unsigned, PiecewiseLinearConstraint *>>_violatedPlConstraintsSet;
-
+    List<PiecewiseLinearConstraint *>_violatedPlConstraints;
+    
     /*
       A single, violated PL constraint, selected for fixing.
     */

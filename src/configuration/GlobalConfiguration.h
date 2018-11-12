@@ -128,6 +128,10 @@ public:
     // When doing explicit bound tightening, should we repeat until saturation?
     static const bool EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION;
 
+    // Heuristic flags
+    static const bool USE_SMART_FIX;
+    static const bool USE_LEAST_FIX;
+
     /*
       Basis factorization options
     */
