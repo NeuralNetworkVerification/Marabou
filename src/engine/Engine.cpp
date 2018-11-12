@@ -80,11 +80,21 @@ bool Engine::solve()
     printf( "\n---\n" );
 
     struct timespec mainLoopStart = TimeUtils::sampleMicro();
+    struct timespec beginTime = mainLoopStart;
     while ( true )
     {
         struct timespec mainLoopEnd = TimeUtils::sampleMicro();
         _statistics.addTimeMainLoop( TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
         mainLoopStart = mainLoopEnd;
+        unsigned long long timePassed = TimeUtils::timePassed( beginTime, mainLoopEnd );
+        if(timePassed > 300*1000000){
+            printf( "\n\nEngine: quitting due to time out...\n\n" );
+            printf( "Final statistics:\n" );
+            _statistics.print();
+
+            return false;
+        }
+
         if ( _quitRequested )
         {
             printf( "\n\nEngine: quitting due to external request...\n\n" );
