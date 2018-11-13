@@ -64,6 +64,9 @@ public:
     void examineInvertedBasisMatrix( const double */* invertedBasis */,
                                      const double */* rhs */,
                                      Saturation /* saturation */ ) {}
+    void extractRowsFromInvertedBasisMatrix( const double */* invertedBasis */,
+                                             const double */* rhs */ ) {}
+    void examineInvertedBasisMatrix( Saturation /* saturation */ ) {}
     void examineConstraintMatrix( Saturation /* saturation */ ) {}
     void examinePivotRow() {}
     void getRowTightenings( List<Tightening> &/* tightenings */ ) const {}

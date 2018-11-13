@@ -1044,12 +1044,23 @@ bool Engine::applyAllConstraintTightenings()
 
 void Engine::extensiveBoundTightening()
 {
+    struct timespec start;
+    struct timespec end;
+
+    start = TimeUtils::sampleMicro();
+
     // Get the inverted basis matrix and the rhs
     if ( !_tableau->basisMatrixAvailable() )
         _tableau->makeBasisMatrixAvailable();
 
-    const double *b = _tableau->getRightHandSide();
+    // Extract the rows of the inverse basis matrix
     double *invB = _tableau->getInverseBasisMatrix();
+    const double *b = _tableau->getRightHandSide();
+    _rowBoundTightener->extractRowsFromInvertedBasisMatrix( invB, b );
+    delete [] invB;
+
+    end = TimeUtils::sampleMicro();
+    _statistics.addTimeForExplicitBasisBoundTightening( TimeUtils::timePassed( start, end ) );
 
     /*
       Perform the following until saturation:
@@ -1059,29 +1070,25 @@ void Engine::extensiveBoundTightening()
       - Propgate bounds through PL constraints
     */
 
-    try
+    bool learnedNewBounds = true;
+    while ( learnedNewBounds )
     {
-        bool learnedNewBounds = true;
-        while ( learnedNewBounds )
-        {
-            learnedNewBounds = false;
+        learnedNewBounds = false;
 
-            tightenBoundsOnConstraintMatrix();
-            explicitBasisBoundTightening( invB, b, IRowBoundTightener::UNTIL_SATURATION );
+        tightenBoundsOnConstraintMatrix();
 
-            if ( applyAllRowTightenings() )
-                learnedNewBounds = true;
+        start = TimeUtils::sampleMicro();
+        _statistics.incNumBoundTighteningsOnExplicitBasis();
+        _rowBoundTightener->examineInvertedBasisMatrix( IRowBoundTightener::UNTIL_SATURATION );
+        end = TimeUtils::sampleMicro();
+        _statistics.addTimeForExplicitBasisBoundTightening( TimeUtils::timePassed( start, end ) );
 
-            if ( applyAllConstraintTightenings() )
-                learnedNewBounds = true;
-        }
+        if ( applyAllRowTightenings() )
+            learnedNewBounds = true;
+
+        if ( applyAllConstraintTightenings() )
+            learnedNewBounds = true;
     }
-    catch ( ... )
-    {
-        delete [] invB;
-        throw;
-    }
-    delete [] invB;
 }
 
 void Engine::tightenBoundsOnConstraintMatrix()

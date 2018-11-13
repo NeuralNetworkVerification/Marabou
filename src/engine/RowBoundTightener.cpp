@@ -216,6 +216,12 @@ void RowBoundTightener::examineInvertedBasisMatrix( const double *invertedBasis,
                                                     const double *rhs,
                                                     Saturation saturation )
 {
+    extractRowsFromInvertedBasisMatrix( invertedBasis, rhs );
+    examineInvertedBasisMatrix( saturation );
+}
+
+void RowBoundTightener::extractRowsFromInvertedBasisMatrix( const double *invertedBasis, const double *rhs )
+{
     /*
       Roughly (the dimensions don't add up):
 
@@ -253,11 +259,11 @@ void RowBoundTightener::examineInvertedBasisMatrix( const double *invertedBasis,
         // Store the lhs variable
         row->_lhs = _tableau.basicIndexToVariable( i );
     }
+}
 
-    // We now have all the rows, can use them for tightening.
-    // The tightening procedure may throw an exception, in which case we need
-    // to release the rows.
-
+void RowBoundTightener::examineInvertedBasisMatrix( Saturation saturation )
+{
+    // The _rows have all been extracted, and now we use them for tightening.
     unsigned newBoundsLearned;
     do
     {
@@ -268,6 +274,7 @@ void RowBoundTightener::examineInvertedBasisMatrix( const double *invertedBasis,
     }
     while ( ( saturation == UNTIL_SATURATION ) && ( newBoundsLearned > 0 ) );
 }
+
 
 unsigned RowBoundTightener::onePassOverInvertedBasisRows()
 {

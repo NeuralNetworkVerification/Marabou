@@ -41,13 +41,24 @@ public:
     */
     virtual void clear() = 0;
 
+
     /*
       Derive and enqueue new bounds for all varaibles, using the supplied
       inverse of the explicit basis matrix and the supplied rhs scalars.
       Can also do this until saturation, meaning that we continue until
       no new bounds are learned.
+
+      The procedure has two steps:
+
+      1. Extract rows from the inverted basis matrix
+      2. Use the rows for bound tightening
+
+      It is possible to invoke the individual steps in order to save time, e.g.,
+      if the same basis matrix is used multiple times.
      */
     virtual void examineInvertedBasisMatrix( const double *invertedBasis, const double *rhs, Saturation saturation ) = 0;
+    virtual void extractRowsFromInvertedBasisMatrix( const double *invertedBasis, const double *rhs ) = 0;
+    virtual void examineInvertedBasisMatrix( Saturation saturation ) = 0;
 
     /*
       Derive and enqueue new bounds for all varaibles, implicitly using the
