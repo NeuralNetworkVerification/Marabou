@@ -19,6 +19,11 @@
 class IRowBoundTightener : public ITableau::VariableWatcher, public ITableau::ResizeWatcher
 {
 public:
+    enum Saturation {
+        ONE_PASS,
+        UNTIL_SATURATION,
+    };
+
     virtual ~IRowBoundTightener() {};
 
     /*
@@ -37,12 +42,12 @@ public:
     virtual void clear() = 0;
 
     /*
-      Derive and enqueue new bounds for all varaibles, using the
-      inverse of the explicit basis matrix, inv(B0), which should be available
-      through the tableau. Can also do this until saturation, meaning that we
-      continue until no new bounds are learned.
+      Derive and enqueue new bounds for all varaibles, using the supplied
+      inverse of the explicit basis matrix and the supplied rhs scalars.
+      Can also do this until saturation, meaning that we continue until
+      no new bounds are learned.
      */
-    virtual void examineInvertedBasisMatrix( bool untilSaturation ) = 0;
+    virtual void examineInvertedBasisMatrix( const double *invertedBasis, const double *rhs, Saturation saturation ) = 0;
 
     /*
       Derive and enqueue new bounds for all varaibles, implicitly using the
@@ -51,7 +56,7 @@ public:
       is performed via FTRANs. Can also do this until saturation, meaning that we
       continue until no new bounds are learned.
     */
-    virtual void examineImplicitInvertedBasisMatrix( bool untilSaturation ) = 0;
+    virtual void examineImplicitInvertedBasisMatrix( Saturation saturation ) = 0;
 
     /*
       Derive and enqueue new bounds for all varaibles, using the
@@ -59,7 +64,7 @@ public:
       also do this until saturation, meaning that we continue until no
       new bounds are learned.
     */
-    virtual void examineConstraintMatrix( bool untilSaturation ) = 0;
+    virtual void examineConstraintMatrix( Saturation saturation ) = 0;
 
     /*
       Derive and enqueue new bounds immedaitely following a pivot

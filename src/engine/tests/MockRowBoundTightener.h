@@ -61,12 +61,14 @@ public:
     void clear() {}
     void notifyLowerBound( unsigned /* variable */, double /* bound */ ) {}
     void notifyUpperBound( unsigned /* variable */, double /* bound */ ) {}
-    void examineInvertedBasisMatrix( bool /* untilSaturation */ ) {}
-    void examineConstraintMatrix( bool /* untilSaturation */ ) {}
+    void examineInvertedBasisMatrix( const double */* invertedBasis */,
+                                     const double */* rhs */,
+                                     Saturation /* saturation */ ) {}
+    void examineConstraintMatrix( Saturation /* saturation */ ) {}
     void examinePivotRow() {}
     void getRowTightenings( List<Tightening> &/* tightenings */ ) const {}
     void setStatistics( Statistics */* statistics */ ) {}
-    void examineImplicitInvertedBasisMatrix( bool /* untilSaturation */ ) {}
+    void examineImplicitInvertedBasisMatrix( Saturation /* saturation */ ) {}
 };
 
 #endif // __MockRowBoundTightener_h__

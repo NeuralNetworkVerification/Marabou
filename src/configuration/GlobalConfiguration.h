@@ -94,9 +94,6 @@ public:
     // The number of violations of a constraints after which the SMT core will initiate a case split
     static const unsigned CONSTRAINT_VIOLATION_THRESHOLD;
 
-    // How often should we perform full bound tightening, on the entire contraints matrix A.
-    static const unsigned BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY;
-
     // If the cost function error exceeds this threshold, it is recomputed
     static const double COST_FUNCTION_ERROR_THRESHOLD;
 
@@ -124,9 +121,6 @@ public:
 
     // When doing bound tightening using the explicit basis matrix, should the basis matrix be inverted?
     static const ExplicitBasisBoundTighteningType EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE;
-
-    // When doing explicit bound tightening, should we repeat until saturation?
-    static const bool EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION;
 
     /*
       Basis factorization options

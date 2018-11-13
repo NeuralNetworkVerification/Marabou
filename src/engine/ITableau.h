@@ -170,6 +170,7 @@ public:
     virtual bool basicTooLow( unsigned basic ) const = 0;
     virtual void verifyInvariants() = 0;
     virtual bool basisMatrixAvailable() const = 0;
+    virtual void makeBasisMatrixAvailable() = 0;
     virtual double *getInverseBasisMatrix() const = 0;
     virtual void refreshBasisFactorization() = 0;
     virtual void mergeColumns( unsigned x1, unsigned x2 ) = 0;

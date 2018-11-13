@@ -54,12 +54,12 @@ public:
     void notifyDimensionChange( unsigned m, unsigned n );
 
     /*
-      Derive and enqueue new bounds for all varaibles, using the
-      inverse of the explicit basis matrix, inv(B0), which should be available
-      through the tableau. Can also do this until saturation, meaning that we
-      continue until no new bounds are learned.
+      Derive and enqueue new bounds for all varaibles, using the supplied
+      inverse of the explicit basis matrix and the supplied rhs scalars.
+      Can also do this until saturation, meaning that we continue until
+      no new bounds are learned.
      */
-    void examineInvertedBasisMatrix( bool untilSaturation );
+    void examineInvertedBasisMatrix( const double *invertedBasis, const double *rhs, Saturation saturation );
 
     /*
       Derive and enqueue new bounds for all varaibles, implicitly using the
@@ -68,7 +68,7 @@ public:
       is performed via FTRANs. Can also do this until saturation, meaning that we
       continue until no new bounds are learned.
      */
-    void examineImplicitInvertedBasisMatrix( bool untilSaturation );
+    void examineImplicitInvertedBasisMatrix( Saturation saturation );
 
     /*
       Derive and enqueue new bounds for all varaibles, using the
@@ -76,7 +76,7 @@ public:
       also do this until saturation, meaning that we continue until no
       new bounds are learned.
     */
-    void examineConstraintMatrix( bool untilSaturation );
+    void examineConstraintMatrix( Saturation saturation );
 
     /*
       Derive and enqueue new bounds immedaitely following a pivot

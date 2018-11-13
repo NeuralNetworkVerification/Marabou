@@ -132,7 +132,20 @@ bool Engine::solve()
             }
 
             if ( _tableau->basisMatrixAvailable() )
-                explicitBasisBoundTightening();
+            {
+                const double *b = _tableau->getRightHandSide();
+                double *invB = _tableau->getInverseBasisMatrix();
+                try
+                {
+                    explicitBasisBoundTightening( invB, b, IRowBoundTightener::ONE_PASS );
+                }
+                catch ( ... )
+                {
+                    delete [] invB;
+                    throw;
+                }
+                delete [] invB;
+            }
 
             // Perform any SmtCore-initiated case splits
             if ( _smtCore.needToSplit() )
@@ -176,12 +189,11 @@ bool Engine::solve()
 
                 // Finally, take this opporunity to tighten any bounds
                 // and perform any valid case splits.
-                tightenBoundsOnConstraintMatrix();
-                applyAllBoundTightenings();
+                extensiveBoundTightening();
+                applyAllValidConstraintCaseSplits();
+
                 // For debugging purposes
                 checkBoundCompliancyWithDebugSolution();
-
-                applyAllValidConstraintCaseSplits();
 
                 continue;
             }
@@ -990,8 +1002,10 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
     log( "Done with split\n" );
 }
 
-void Engine::applyAllRowTightenings()
+bool Engine::applyAllRowTightenings()
 {
+    struct timespec start = TimeUtils::sampleMicro();
+
     List<Tightening> rowTightenings;
     _rowBoundTightener->getRowTightenings( rowTightenings );
 
@@ -1002,9 +1016,14 @@ void Engine::applyAllRowTightenings()
         else
             _tableau->tightenUpperBound( tightening._variable, tightening._value );
     }
+
+    struct timespec end = TimeUtils::sampleMicro();
+    _statistics.addTimeForApplyingStoredTightenings( TimeUtils::timePassed( start, end ) );
+
+    return !rowTightenings.empty();
 }
 
-void Engine::applyAllConstraintTightenings()
+bool Engine::applyAllConstraintTightenings()
 {
     List<Tightening> entailedTightenings;
     for ( auto &constraint : _plConstraints )
@@ -1019,17 +1038,61 @@ void Engine::applyAllConstraintTightenings()
         else
             _tableau->tightenUpperBound( tightening._variable, tightening._value );
     }
+
+    return !entailedTightenings.empty();
 }
 
-void Engine::applyAllBoundTightenings()
+void Engine::extensiveBoundTightening()
+{
+    // Get the inverted basis matrix and the rhs
+    if ( !_tableau->basisMatrixAvailable() )
+        _tableau->makeBasisMatrixAvailable();
+
+    const double *b = _tableau->getRightHandSide();
+    double *invB = _tableau->getInverseBasisMatrix();
+
+    /*
+      Perform the following until saturation:
+
+      - Tighten bounds on the constraint matrix
+      - Tighten bounds on the inverted basis matrix
+      - Propgate bounds through PL constraints
+    */
+
+    try
+    {
+        bool learnedNewBounds = true;
+        while ( learnedNewBounds )
+        {
+            learnedNewBounds = false;
+
+            tightenBoundsOnConstraintMatrix();
+            explicitBasisBoundTightening( invB, b, IRowBoundTightener::UNTIL_SATURATION );
+
+            if ( applyAllRowTightenings() )
+                learnedNewBounds = true;
+
+            if ( applyAllConstraintTightenings() )
+                learnedNewBounds = true;
+        }
+    }
+    catch ( ... )
+    {
+        delete [] invB;
+        throw;
+    }
+    delete [] invB;
+}
+
+void Engine::tightenBoundsOnConstraintMatrix()
 {
     struct timespec start = TimeUtils::sampleMicro();
 
-    applyAllRowTightenings();
-    applyAllConstraintTightenings();
+    _rowBoundTightener->examineConstraintMatrix( IRowBoundTightener::UNTIL_SATURATION );
+    _statistics.incNumBoundTighteningOnConstraintMatrix();
 
     struct timespec end = TimeUtils::sampleMicro();
-    _statistics.addTimeForApplyingStoredTightenings( TimeUtils::timePassed( start, end ) );
+    _statistics.addTimeForConstraintMatrixBoundTightening( TimeUtils::timePassed( start, end ) );
 }
 
 void Engine::applyAllValidConstraintCaseSplits()
@@ -1086,33 +1149,16 @@ bool Engine::highDegradation()
     return result;
 }
 
-void Engine::tightenBoundsOnConstraintMatrix()
+void Engine::explicitBasisBoundTightening( const double *invertedBasis, const double *rhs, IRowBoundTightener::Saturation saturation )
 {
     struct timespec start = TimeUtils::sampleMicro();
-
-    if ( _statistics.getNumMainLoopIterations() %
-         GlobalConfiguration::BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY == 0 )
-    {
-        _rowBoundTightener->examineConstraintMatrix( true );
-        _statistics.incNumBoundTighteningOnConstraintMatrix();
-    }
-
-    struct timespec end = TimeUtils::sampleMicro();
-    _statistics.addTimeForConstraintMatrixBoundTightening( TimeUtils::timePassed( start, end ) );
-}
-
-void Engine::explicitBasisBoundTightening()
-{
-    struct timespec start = TimeUtils::sampleMicro();
-
-    bool saturation = GlobalConfiguration::EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION;
 
     _statistics.incNumBoundTighteningsOnExplicitBasis();
 
     switch ( GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE )
     {
     case GlobalConfiguration::COMPUTE_INVERTED_BASIS_MATRIX:
-        _rowBoundTightener->examineInvertedBasisMatrix( saturation );
+        _rowBoundTightener->examineInvertedBasisMatrix( invertedBasis, rhs, saturation );
         break;
 
     case GlobalConfiguration::USE_IMPLICIT_INVERTED_BASIS_MATRIX:

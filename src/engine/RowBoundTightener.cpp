@@ -167,7 +167,7 @@ void RowBoundTightener::freeMemoryIfNeeded()
     }
 }
 
-void RowBoundTightener::examineImplicitInvertedBasisMatrix( bool untilSaturation )
+void RowBoundTightener::examineImplicitInvertedBasisMatrix( Saturation saturation )
 {
     /*
       Roughly (the dimensions don't add up):
@@ -209,10 +209,12 @@ void RowBoundTightener::examineImplicitInvertedBasisMatrix( bool untilSaturation
         if ( _statistics && ( newBoundsLearned > 0 ) )
             _statistics->incNumTighteningsFromExplicitBasis( newBoundsLearned );
     }
-    while ( untilSaturation && ( newBoundsLearned > 0 ) );
+    while ( ( saturation == UNTIL_SATURATION ) && ( newBoundsLearned > 0 ) );
 }
 
-void RowBoundTightener::examineInvertedBasisMatrix( bool untilSaturation )
+void RowBoundTightener::examineInvertedBasisMatrix( const double *invertedBasis,
+                                                    const double *rhs,
+                                                    Saturation saturation )
 {
     /*
       Roughly (the dimensions don't add up):
@@ -222,59 +224,49 @@ void RowBoundTightener::examineInvertedBasisMatrix( bool untilSaturation )
       We compute one row at a time.
     */
 
-    const double *b = _tableau.getRightHandSide();
-    const double *invB = _tableau.getInverseBasisMatrix();
+    const double *b = rhs;
+    const double *invB = invertedBasis;
 
-    try
+    for ( unsigned i = 0; i < _m; ++i )
     {
-        for ( unsigned i = 0; i < _m; ++i )
+        TableauRow *row = _rows[i];
+        // First, compute the scalar, using inv(B)*b
+        row->_scalar = 0;
+        for ( unsigned j = 0; j < _m; ++j )
+            row->_scalar += ( invB[i * _m + j] * b[j] );
+
+        // Now update the row's coefficients for basic variable i
+        for ( unsigned j = 0; j < _n - _m; ++j )
         {
-            TableauRow *row = _rows[i];
-            // First, compute the scalar, using inv(B)*b
-            row->_scalar = 0;
-            for ( unsigned j = 0; j < _m; ++j )
-                row->_scalar += ( invB[i * _m + j] * b[j] );
+            row->_row[j]._var = _tableau.nonBasicIndexToVariable( j );
 
-            // Now update the row's coefficients for basic variable i
-            for ( unsigned j = 0; j < _n - _m; ++j )
-            {
-                row->_row[j]._var = _tableau.nonBasicIndexToVariable( j );
+            // Dot product of the i'th row of inv(B) with the appropriate
+            // column of An
 
-                // Dot product of the i'th row of inv(B) with the appropriate
-                // column of An
+            const SparseUnsortedList *column = _tableau.getSparseAColumn( row->_row[j]._var );
+            row->_row[j]._coefficient = 0;
 
-                const SparseUnsortedList *column = _tableau.getSparseAColumn( row->_row[j]._var );
-                row->_row[j]._coefficient = 0;
-
-                for ( const auto &entry : *column )
-                    row->_row[j]._coefficient -= invB[i*_m + entry._index] * entry._value;
-            }
-
-            // Store the lhs variable
-            row->_lhs = _tableau.basicIndexToVariable( i );
+            for ( const auto &entry : *column )
+                row->_row[j]._coefficient -= invB[i*_m + entry._index] * entry._value;
         }
 
-        // We now have all the rows, can use them for tightening.
-        // The tightening procedure may throw an exception, in which case we need
-        // to release the rows.
-
-        unsigned newBoundsLearned;
-        do
-        {
-            newBoundsLearned = onePassOverInvertedBasisRows();
-
-            if ( _statistics && ( newBoundsLearned > 0 ) )
-                _statistics->incNumTighteningsFromExplicitBasis( newBoundsLearned );
-        }
-        while ( untilSaturation && ( newBoundsLearned > 0 ) );
+        // Store the lhs variable
+        row->_lhs = _tableau.basicIndexToVariable( i );
     }
-    catch ( ... )
+
+    // We now have all the rows, can use them for tightening.
+    // The tightening procedure may throw an exception, in which case we need
+    // to release the rows.
+
+    unsigned newBoundsLearned;
+    do
     {
-        delete[] invB;
-        throw;
-    }
+        newBoundsLearned = onePassOverInvertedBasisRows();
 
-    delete[] invB;
+        if ( _statistics && ( newBoundsLearned > 0 ) )
+            _statistics->incNumTighteningsFromExplicitBasis( newBoundsLearned );
+    }
+    while ( ( saturation == UNTIL_SATURATION ) && ( newBoundsLearned > 0 ) );
 }
 
 unsigned RowBoundTightener::onePassOverInvertedBasisRows()
@@ -456,7 +448,7 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
     return result;
 }
 
-void RowBoundTightener::examineConstraintMatrix( bool untilSaturation )
+void RowBoundTightener::examineConstraintMatrix( Saturation saturation )
 {
     unsigned newBoundsLearned;
 
@@ -471,7 +463,7 @@ void RowBoundTightener::examineConstraintMatrix( bool untilSaturation )
         if ( _statistics && ( newBoundsLearned > 0 ) )
             _statistics->incNumTighteningsFromConstraintMatrix( newBoundsLearned );
     }
-    while ( untilSaturation && ( newBoundsLearned > 0 ) );
+    while ( ( saturation == UNTIL_SATURATION ) && ( newBoundsLearned > 0 ) );
 }
 
 unsigned RowBoundTightener::onePassOverConstraintMatrix()

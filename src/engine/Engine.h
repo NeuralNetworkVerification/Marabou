@@ -110,7 +110,7 @@ private:
       Perform bound tightening operations that require
       access to the explicit basis matrix.
     */
-    void explicitBasisBoundTightening();
+    void explicitBasisBoundTightening( const double *invertedBasis, const double *rhs, IRowBoundTightener::Saturation saturation );
 
     /*
       Collect and print various statistics.
@@ -254,20 +254,21 @@ private:
     void reportPlViolation();
 
     /*
-      Apply all bound tightenings (row and matrix-based) in
-      the queue.
+      Perform extensive bound tightening on the constraint matrix,
+      the inverted basis matrix and the PL constraints. Apply all
+      discovered tightenings.
     */
-    void applyAllBoundTightenings();
+    void extensiveBoundTightening();
 
     /*
       Apply any bound tightenings found by the row tightener.
     */
-    void applyAllRowTightenings();
+    bool applyAllRowTightenings();
 
     /*
       Apply any bound tightenings entailed by the constraints.
     */
-    void applyAllConstraintTightenings();
+    bool applyAllConstraintTightenings();
 
     /*
       Apply all valid case splits proposed by the constraints.

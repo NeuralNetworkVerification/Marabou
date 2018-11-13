@@ -552,6 +552,10 @@ public:
         return true;
     }
 
+    void makeBasisMatrixAvailable()
+    {
+    }
+
     double *getInverseBasisMatrix() const
     {
         return NULL;

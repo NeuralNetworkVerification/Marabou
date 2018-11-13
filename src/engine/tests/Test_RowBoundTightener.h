@@ -275,7 +275,7 @@ public:
         tableau->A = A;
         tableau->b = b;
 
-        TS_ASSERT_THROWS_NOTHING( tightener.examineConstraintMatrix( false ) );
+        TS_ASSERT_THROWS_NOTHING( tightener.examineConstraintMatrix( IRowBoundTightener::ONE_PASS ) );
 
         List<Tightening> tightenings;
         TS_ASSERT_THROWS_NOTHING( tightener.getRowTightenings( tightenings ) );
@@ -344,7 +344,7 @@ public:
         tableau->A = A;
         tableau->b = b;
 
-        TS_ASSERT_THROWS_NOTHING( tightener.examineConstraintMatrix( false ) );
+        TS_ASSERT_THROWS_NOTHING( tightener.examineConstraintMatrix( IRowBoundTightener::ONE_PASS ) );
 
         List<Tightening> tightenings;
         TS_ASSERT_THROWS_NOTHING( tightener.getRowTightenings( tightenings ) );
