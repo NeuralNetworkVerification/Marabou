@@ -810,6 +810,7 @@ bool Engine::allVarsWithinBounds() const
 void Engine::collectViolatedPlConstraints()
 {
     _violatedPlConstraintsSet.clear();
+    _violatedPlConstraints.clear();
     for ( const auto &constraint : _plConstraints ){
         if ( constraint->isActive() && !constraint->satisfied() ){
             _violatedPlConstraints.append( constraint );
