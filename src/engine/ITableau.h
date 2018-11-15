@@ -137,7 +137,7 @@ public:
     virtual void computePivotRow() = 0;
     virtual const TableauRow *getPivotRow() const = 0;
     virtual void computeAssignment() = 0;
-    virtual bool checkValueWithinBounds(unsigned variable, double value) = 0;
+    virtual bool checkValueWithinBounds( unsigned variable, double value ) = 0;
     virtual void dump() const = 0;
     virtual void dumpAssignment() = 0;
     virtual void dumpEquations() = 0;

@@ -33,10 +33,7 @@ public:
     */
     void reportViolatedConstraint( PiecewiseLinearConstraint *constraint );
 
-    unsigned getViolationCounts(PiecewiseLinearConstraint* constraint) {
-      if (!_constraintToViolationCount.exists(constraint)) return 0;
-      return _constraintToViolationCount[constraint];
-    }
+    unsigned getViolationCounts( PiecewiseLinearConstraint* constraint );
 
     /*
       Reset all reported violation counts.

@@ -23,6 +23,8 @@
 #include "IEngine.h"
 #include "InputQuery.h"
 #include "Map.h"
+#include "Set.h"
+#include "Pair.h"
 #include "PrecisionRestorer.h"
 #include "Preprocessor.h"
 #include "SignalHandler.h"
@@ -116,9 +118,9 @@ private:
     /*
       Piecewise linear constraints that are currently violated.
     */
-    std::set<std::pair<unsigned, PiecewiseLinearConstraint *>>_violatedPlConstraintsSet;
+    Set<Pair<unsigned, PiecewiseLinearConstraint *>>_violatedPlConstraintsSet;
     List<PiecewiseLinearConstraint *>_violatedPlConstraints;
-    
+
     /*
       A single, violated PL constraint, selected for fixing.
     */

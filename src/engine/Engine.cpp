@@ -469,7 +469,7 @@ void Engine::fixViolatedPlConstraintIfPossible()
                         String constraintType = serializedConstraint.substring( 0, 4 );
                         // check if PL constraint is RELU
                         if( constraintType == String( "relu" ) ){
-                            ReluConstraint * reluConstraint = (ReluConstraint *)_plConstraintToFix;
+                            ReluConstraint * reluConstraint = ( ReluConstraint * )_plConstraintToFix;
                             List<unsigned> vars = reluConstraint->getParticipatingVariables();
                             unsigned _b = vars.front();
                             unsigned _f = vars.back();
@@ -489,14 +489,14 @@ void Engine::fixViolatedPlConstraintIfPossible()
                             _tableau->getTableauRow( row_index, &row );
 
                             ASSERT( vars.exists(row._lhs) );
-                            ASSERT( (int)row._lhs == basic_variable );
+                            ASSERT( ( int )row._lhs == basic_variable );
 
                             double scalar = 0;
                             double coefficient = 0;
                             for ( unsigned i = 0; i < row._size; ++i )
                             {
-                                if( (!FloatUtils::isZero( row._row[i]._coefficient  ) ) && !vars.exists( row._row[i]._var ) ){
-                                    scalar += row._row[i]._coefficient * _tableau->getValue(row._row[i]._var);
+                                if( ( !FloatUtils::isZero( row._row[i]._coefficient  ) ) && !vars.exists( row._row[i]._var ) ){
+                                    scalar += row._row[i]._coefficient * _tableau->getValue( row._row[i]._var );
                                 } else if( vars.exists( row._row[i]._var ) && ( !FloatUtils::isZero( row._row[i]._coefficient ))){
                                     coefficient = row._row[i]._coefficient;
                                 }
@@ -532,7 +532,7 @@ void Engine::fixViolatedPlConstraintIfPossible()
                             if( nonactiveFix <= 0 ){
                                 if( fix._variable == _f && _tableau->checkValueWithinBounds( _f, 0 ) ){
                                     _tableau->setNonBasicAssignment( fix._variable, 0, true );
-                                } else if( fix._variable == _b && _tableau->checkValueWithinBounds( _b, nonactiveFix )){
+                                } else if( fix._variable == _b && _tableau->checkValueWithinBounds( _b, nonactiveFix ) ){
                                     _tableau->setNonBasicAssignment( fix._variable, nonactiveFix, true );
                                 }
 
@@ -828,7 +828,7 @@ void Engine::selectViolatedPlConstraint()
 {
     ASSERT( !_violatedPlConstraintsSet.empty() );
     if(GlobalConfiguration::USE_LEAST_FIX) {
-        _plConstraintToFix = _violatedPlConstraintsSet.begin()->second;
+        _plConstraintToFix = _violatedPlConstraintsSet.begin()->second();
     }
     else {
         _plConstraintToFix = *_violatedPlConstraints.begin();

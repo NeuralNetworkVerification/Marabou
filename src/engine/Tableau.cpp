@@ -416,8 +416,9 @@ void Tableau::computeAssignment()
         notifyVariableValue( _basicIndexToVariable[i], _basicAssignment[i] );
 }
 
-bool Tableau::checkValueWithinBounds(unsigned variable, double value){
-    return FloatUtils::gte(value, getLowerBound(variable)) && FloatUtils::lte(value, getUpperBound(variable));
+bool Tableau::checkValueWithinBounds( unsigned variable, double value ){
+    return FloatUtils::gte( value, getLowerBound( variable ) ) 
+    && FloatUtils::lte( value, getUpperBound( variable ) );
 }
 
 void Tableau::computeBasicStatus()
@@ -695,7 +696,6 @@ bool Tableau::performingFakePivot() const
 
 void Tableau::performPivot()
 {
-    // std::cerr << "performPivot()" << std::endl;
     if ( _leavingVariable == _m )
     {
         if ( _statistics )
@@ -717,7 +717,6 @@ void Tableau::performPivot()
                       _lowerBounds[nonBasic], _upperBounds[nonBasic] ) );
 
         updateAssignmentForPivot();
-        // std::cerr <<  "Fake pivot "<<_m << std::endl;
 
         return;
     }
@@ -732,7 +731,6 @@ void Tableau::performPivot()
 
     unsigned currentBasic = _basicIndexToVariable[_leavingVariable];
     unsigned currentNonBasic = _nonBasicIndexToVariable[_enteringVariable];
-    // std::cerr << currentBasic << " "  << currentNonBasic << std::endl;
 
     log( Stringf( "Tableau performing pivot. Entering: %u, Leaving: %u",
                   _nonBasicIndexToVariable[_enteringVariable],

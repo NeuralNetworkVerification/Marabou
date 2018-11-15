@@ -52,6 +52,12 @@ void SmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
     }
 }
 
+unsigned SmtCore::getViolationCounts( PiecewiseLinearConstraint *constraint )
+{
+    if ( !_constraintToViolationCount.exists( constraint ) ) return 0;
+    return _constraintToViolationCount[constraint];
+}
+
 bool SmtCore::needToSplit() const
 {
     return _needToSplit;
