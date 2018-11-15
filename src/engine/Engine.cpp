@@ -34,6 +34,7 @@ Engine::Engine()
     , _basisRestorationPerformed( Engine::NO_RESTORATION_PERFORMED )
     , _costFunctionManager( _tableau )
     , _quitRequested( false )
+    , _exitCode( Engine::NOT_DONE )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -92,7 +93,7 @@ bool Engine::solve()
             printf( "Final statistics:\n" );
             _statistics.print();
 
-            // Todo: return a separate exit code for tiemouts
+            _exitCode = Engine::TIMEOUT;
             return false;
         }
 
@@ -166,6 +167,7 @@ bool Engine::solve()
 
                     printf( "\nEngine::solve: SAT assignment found\n" );
                     _statistics.print();
+                    _exitCode = Engine::SAT;
                     return true;
                 }
 
@@ -198,7 +200,10 @@ bool Engine::solve()
             else if ( _basisRestorationPerformed == Engine::PERFORMED_STRONG_RESTORATION )
                 _basisRestorationRequired = Engine::WEAK_RESTORATION_NEEDED;
             else
+            {
+                _exitCode = Engine::ERROR;
                 throw ReluplexError( ReluplexError::CANNOT_RESTORE_TABLEAU );
+            }
         }
         catch ( const InfeasibleQueryException & )
         {
@@ -208,8 +213,14 @@ bool Engine::solve()
             {
                 printf( "\nEngine::solve: UNSAT query\n" );
                 _statistics.print();
+                _exitCode = Engine::UNSAT;
                 return false;
             }
+        }
+        catch ( ... )
+        {
+            _exitCode = Engine::ERROR;
+            throw;
         }
     }
 }
@@ -682,8 +693,11 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         unsigned infiniteBounds = _preprocessedQuery.countInfiniteBounds();
         if ( infiniteBounds != 0 )
+        {
+            _exitCode = Engine::ERROR;
             throw ReluplexError( ReluplexError::UNBOUNDED_VARIABLES_NOT_YET_SUPPORTED,
                                  Stringf( "Error! Have %u infinite bounds", infiniteBounds ).ascii() );
+        }
 
         _degradationChecker.storeEquations( _preprocessedQuery );
 
@@ -704,7 +718,10 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         for ( const auto &equation : equations )
         {
             if ( equation._type != Equation::EQ )
+            {
+                _exitCode = Engine::ERROR;
                 throw ReluplexError( ReluplexError::NON_EQUALITY_INPUT_EQUATIONS_NOT_YET_SUPPORTED );
+            }
 
             _tableau->setRightHandSide( equationIndex, equation._scalar );
 
@@ -762,6 +779,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
     }
     catch ( const InfeasibleQueryException & )
     {
+        _exitCode = Engine::UNSAT;
         return false;
     }
 
@@ -1309,6 +1327,11 @@ void Engine::checkBoundCompliancyWithDebugSolution()
 void Engine::quitSignal()
 {
     _quitRequested = true;
+}
+
+Engine::ExitCode Engine::getExitCode() const
+{
+    return _exitCode;
 }
 
 //

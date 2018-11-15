@@ -9,7 +9,6 @@ SOURCES += \
 	EntrySelectionStrategy.cpp \
 	Equation.cpp \
 	InputQuery.cpp \
-	Marabou.cpp \
 	MaxConstraint.cpp \
 	PiecewiseLinearCaseSplit.cpp \
 	PiecewiseLinearConstraint.cpp \
