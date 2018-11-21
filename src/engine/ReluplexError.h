@@ -34,8 +34,7 @@ public:
         CANNOT_RESTORE_TABLEAU = 12,
         FAILURE_TO_ADD_NEW_EQUATION = 13,
         RESTORATION_FAILED_TO_REFACTORIZE_BASIS = 14,
-        ENGINE_APPLY_SPLIT_FAILED = 15,
-        FILE_DOESNT_EXIST = 16,
+        FILE_DOESNT_EXIST = 15,
 
         // Error codes for Query Loader
         FILE_DOES_NOT_EXIST = 100,

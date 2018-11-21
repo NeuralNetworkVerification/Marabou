@@ -521,7 +521,11 @@ void Engine::fixViolatedPlConstraintIfPossible()
         }
     }
 
-    ASSERT( !FloatUtils::isZero( bestValue ) );
+    if ( FloatUtils::isZero( bestValue ) )
+    {
+        // This can happen, e.g., if we have an equation x = 5, and is legal behavior.
+        return;
+    }
 
     // Switch between nonBasic and the variable we need to fix
     _tableau->setEnteringVariableIndex( _tableau->variableToIndex( bestCandidate ) );
@@ -815,6 +819,103 @@ void Engine::setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints )
     _numPlConstraintsDisabledByValidSplits = numConstraints;
 }
 
+bool Engine::attemptToMergeVariables( unsigned x1, unsigned x2 )
+{
+    /*
+      First, we need to ensure that the variables are both non-basic.
+    */
+
+    unsigned n = _tableau->getN();
+    unsigned m = _tableau->getM();
+
+    if ( _tableau->isBasic( x1 ) )
+    {
+        TableauRow x1Row( n - m );
+        _tableau->getTableauRow( _tableau->variableToIndex( x1 ), &x1Row );
+
+        bool found = false;
+        double bestCoefficient = 0.0;
+        unsigned nonBasic = 0;
+        for ( unsigned i = 0; i < n - m; ++i )
+        {
+            if ( x1Row._row[i]._var != x2 )
+            {
+                double contender = FloatUtils::abs( x1Row._row[i]._coefficient );
+                if ( FloatUtils::gt( contender, bestCoefficient ) )
+                {
+                    found = true;
+                    nonBasic = x1Row._row[i]._var;
+                    bestCoefficient = contender;
+                }
+            }
+        }
+
+        if ( !found )
+            return false;
+
+        _tableau->setEnteringVariableIndex( _tableau->variableToIndex( nonBasic ) );
+        _tableau->setLeavingVariableIndex( _tableau->variableToIndex( x1 ) );
+
+        // Make sure the change column and pivot row are up-to-date - strategies
+        // such as projected steepest edge need these for their internal updates.
+        _tableau->computeChangeColumn();
+        _tableau->computePivotRow();
+
+        _activeEntryStrategy->prePivotHook( _tableau, false );
+        _tableau->performDegeneratePivot();
+        _activeEntryStrategy->postPivotHook( _tableau, false );
+    }
+
+    if ( _tableau->isBasic( x2 ) )
+    {
+        TableauRow x2Row( n - m );
+        _tableau->getTableauRow( _tableau->variableToIndex( x2 ), &x2Row );
+
+        bool found = false;
+        double bestCoefficient = 0.0;
+        unsigned nonBasic = 0;
+        for ( unsigned i = 0; i < n - m; ++i )
+        {
+            if ( x2Row._row[i]._var != x1 )
+            {
+                double contender = FloatUtils::abs( x2Row._row[i]._coefficient );
+                if ( FloatUtils::gt( contender, bestCoefficient ) )
+                {
+                    found = true;
+                    nonBasic = x2Row._row[i]._var;
+                    bestCoefficient = contender;
+                }
+            }
+        }
+
+        if ( !found )
+            return false;
+
+        _tableau->setEnteringVariableIndex( _tableau->variableToIndex( nonBasic ) );
+        _tableau->setLeavingVariableIndex( _tableau->variableToIndex( x2 ) );
+
+        // Make sure the change column and pivot row are up-to-date - strategies
+        // such as projected steepest edge need these for their internal updates.
+        _tableau->computeChangeColumn();
+        _tableau->computePivotRow();
+
+        printf( "swapping x%u with x%u\n", x2, nonBasic );
+
+        _activeEntryStrategy->prePivotHook( _tableau, false );
+        _tableau->performDegeneratePivot();
+        _activeEntryStrategy->postPivotHook( _tableau, false );
+    }
+
+    // Both variables are now non-basic, so we can merge their columns
+    _tableau->mergeColumns( x1, x2 );
+    DEBUG( _tableau->verifyInvariants() );
+
+    // Reset the entry strategy
+    _activeEntryStrategy->initialize( _tableau );
+
+    return true;
+}
+
 void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 {
     log( "" );
@@ -826,6 +927,40 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
     List<Equation> equations = split.getEquations();
     for ( auto &equation : equations )
     {
+        /*
+          First, adjust the equation if any variables have been merged.
+          E.g., if the equation is x1 + x2 + x3 = 0, and x1 and x2 have been
+          merged, the equation becomes 2x1 + x3 = 0
+        */
+        for ( auto &addend : equation._addends )
+            addend._variable = _tableau->getVariableAfterMerging( addend._variable );
+
+        List<Equation::Addend>::iterator addend;
+        List<Equation::Addend>::iterator otherAddend;
+
+        addend = equation._addends.begin();
+        while ( addend != equation._addends.end() )
+        {
+            otherAddend = addend;
+            ++otherAddend;
+
+            while ( otherAddend != equation._addends.end() )
+            {
+                if ( otherAddend->_variable == addend->_variable )
+                {
+                    addend->_coefficient += otherAddend->_coefficient;
+                    otherAddend = equation._addends.erase( otherAddend );
+                }
+                else
+                    ++otherAddend;
+            }
+
+            if ( FloatUtils::isZero( addend->_coefficient ) )
+                addend = equation._addends.erase( addend );
+            else
+                ++addend;
+        }
+
         /*
           In the general case, we just add the new equation to the tableau.
           However, we also support a very common case: equations of the form
@@ -845,102 +980,11 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
             ( !_tableau->isBasic( x2 ) ||
               !_tableau->basicOutOfBounds( _tableau->variableToIndex( x2 ) ) );
 
+        bool columnsSuccessfullyMerged = false;
         if ( canMergeColumns )
-        {
-            /*
-              Special case: x1 and x2 need to be merged.
-              First, we need to ensure they are both non-basic.
-            */
-            unsigned n = _tableau->getN();
-            unsigned m = _tableau->getM();
+            columnsSuccessfullyMerged = attemptToMergeVariables( x1, x2 );
 
-            if ( _tableau->isBasic( x1 ) )
-            {
-                TableauRow x1Row( n - m );
-                _tableau->getTableauRow( _tableau->variableToIndex( x1 ), &x1Row );
-
-                bool found = false;
-                double bestCoefficient = 0.0;
-                unsigned nonBasic;
-                for ( unsigned i = 0; i < n - m; ++i )
-                {
-                    if ( x1Row._row[i]._var != x2 )
-                    {
-                        double contender = FloatUtils::abs( x1Row._row[i]._coefficient );
-                        if ( FloatUtils::gt( contender, bestCoefficient ) )
-                        {
-                            found = true;
-                            nonBasic = x1Row._row[i]._var;
-                            bestCoefficient = contender;
-                        }
-                    }
-                }
-
-                if ( !found )
-                    throw ReluplexError( ReluplexError::ENGINE_APPLY_SPLIT_FAILED,
-                                         "Could not find a variable to pivot with" );
-
-                _tableau->setEnteringVariableIndex( _tableau->variableToIndex( nonBasic ) );
-                _tableau->setLeavingVariableIndex( _tableau->variableToIndex( x1 ) );
-
-                // Make sure the change column and pivot row are up-to-date - strategies
-                // such as projected steepest edge need these for their internal updates.
-                _tableau->computeChangeColumn();
-                _tableau->computePivotRow();
-
-                _activeEntryStrategy->prePivotHook( _tableau, false );
-                _tableau->performDegeneratePivot();
-                _activeEntryStrategy->postPivotHook( _tableau, false );
-            }
-
-            if ( _tableau->isBasic( x2 ) )
-            {
-                TableauRow x2Row( n - m );
-                _tableau->getTableauRow( _tableau->variableToIndex( x2 ), &x2Row );
-
-                bool found = false;
-                double bestCoefficient = 0.0;
-                unsigned nonBasic;
-                for ( unsigned i = 0; i < n - m; ++i )
-                {
-                    if ( x2Row._row[i]._var != x1 )
-                    {
-                        double contender = FloatUtils::abs( x2Row._row[i]._coefficient );
-                        if ( FloatUtils::gt( contender, bestCoefficient ) )
-                        {
-                            found = true;
-                            nonBasic = x2Row._row[i]._var;
-                            bestCoefficient = contender;
-                        }
-                    }
-                }
-
-                if ( !found )
-                    throw ReluplexError( ReluplexError::ENGINE_APPLY_SPLIT_FAILED,
-                                         "Could not find a variable to pivot with" );
-
-                _tableau->setEnteringVariableIndex( _tableau->variableToIndex( nonBasic ) );
-                _tableau->setLeavingVariableIndex( _tableau->variableToIndex( x2 ) );
-
-                // Make sure the change column and pivot row are up-to-date - strategies
-                // such as projected steepest edge need these for their internal updates.
-                _tableau->computeChangeColumn();
-                _tableau->computePivotRow();
-
-                _activeEntryStrategy->prePivotHook( _tableau, false );
-                _tableau->performDegeneratePivot();
-                _activeEntryStrategy->postPivotHook( _tableau, false );
-
-            }
-
-            // Both variables are now non-basic, so we can merge their columns
-            _tableau->mergeColumns( x1, x2 );
-            DEBUG( _tableau->verifyInvariants() );
-
-            // Reset the entry strategy
-            _activeEntryStrategy->initialize( _tableau );
-        }
-        else
+        if ( !columnsSuccessfullyMerged )
         {
             // General case: add a new equation to the tableau
             unsigned auxVariable = _tableau->addEquation( equation );
@@ -974,15 +1018,17 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 
     for ( auto &bound : bounds )
     {
+        unsigned variable = _tableau->getVariableAfterMerging( bound._variable );
+
         if ( bound._type == Tightening::LB )
         {
-            log( Stringf( "x%u: lower bound set to %.3lf", bound._variable, bound._value ) );
-            _tableau->tightenLowerBound( bound._variable, bound._value );
+            log( Stringf( "x%u: lower bound set to %.3lf", variable, bound._value ) );
+            _tableau->tightenLowerBound( variable, bound._value );
         }
         else
         {
-            log( Stringf( "x%u: upper bound set to %.3lf", bound._variable, bound._value ) );
-            _tableau->tightenUpperBound( bound._variable, bound._value );
+            log( Stringf( "x%u: upper bound set to %.3lf", variable, bound._value ) );
+            _tableau->tightenUpperBound( variable, bound._value );
         }
     }
 

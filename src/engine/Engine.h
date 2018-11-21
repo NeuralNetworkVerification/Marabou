@@ -312,6 +312,14 @@ private:
       with the stored solution
     */
     void checkBoundCompliancyWithDebugSolution();
+
+    /*
+      A helper function for merging the columns of two variables.
+      This function will ensure that the variables are non-basic
+      and then attempt to merge them. Returns true if successful,
+      false otherwise.
+    */
+    bool attemptToMergeVariables( unsigned x1, unsigned x2 );
 };
 
 #endif // __Engine_h__
