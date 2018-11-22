@@ -667,6 +667,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         {
             constraint->registerAsWatcher( _tableau );
             constraint->setStatistics( &_statistics );
+            _plConstraintFromID[constraint->getID()] = constraint;
         }
 
         // Placeholder: better constraint matrix analysis as part

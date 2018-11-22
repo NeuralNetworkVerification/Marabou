@@ -126,6 +126,7 @@ private:
       The existing piecewise-linear constraints.
     */
     List<PiecewiseLinearConstraint *> _plConstraints;
+    Map<unsigned, PiecewiseLinearConstraint *> _plConstraintFromID;
 
     /*
       Piecewise linear constraints that are currently violated.

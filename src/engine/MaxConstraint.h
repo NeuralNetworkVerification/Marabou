@@ -21,6 +21,7 @@ class MaxConstraint : public PiecewiseLinearConstraint
  public:
     ~MaxConstraint();
 
+    MaxConstraint( unsigned f, const Set<unsigned> &elements, unsigned id );
     MaxConstraint( unsigned f, const Set<unsigned> &elements );
     MaxConstraint( const String &serializedMax );
 
@@ -76,6 +77,8 @@ class MaxConstraint : public PiecewiseLinearConstraint
       then ~l1 /\ ~l2 /\ ... /\ ~ln-1 --> ln.
     */
     List<PiecewiseLinearCaseSplit> getCaseSplits() const;
+
+    PiecewiseLinearCaseSplit getSplitFromID( unsigned splitID ) const;
 
     /*
       Check if the constraint's phase has been fixed.

@@ -19,6 +19,10 @@ PiecewiseLinearConstraint::PiecewiseLinearConstraint()
 {
 }
 
+unsigned PiecewiseLinearConstraint::getID() const {
+  return _id;
+}
+
 void PiecewiseLinearConstraint::setStatistics( Statistics *statistics )
 {
     _statistics = statistics;

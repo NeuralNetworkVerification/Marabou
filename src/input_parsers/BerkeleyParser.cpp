@@ -45,6 +45,7 @@ void BerkeleyParser::generateQuery( InputQuery &inputQuery )
         inputQuery.setUpperBound( it, max );
     }
 
+    unsigned constraintID = 1;
     // Declare relu pairs and set bounds
     Map<unsigned, unsigned> fToB = _berkeleyNeuralNetwork.getFToB();
     for ( const auto &it : fToB )
@@ -52,7 +53,7 @@ void BerkeleyParser::generateQuery( InputQuery &inputQuery )
         unsigned f = it.first;
         unsigned b = it.second;
 
-        PiecewiseLinearConstraint *relu = new ReluConstraint( b, f );
+        PiecewiseLinearConstraint *relu = new ReluConstraint( b, f, constraintID++ );
         inputQuery.addPiecewiseLinearConstraint( relu );
 
         inputQuery.setLowerBound( f, 0.0 );
