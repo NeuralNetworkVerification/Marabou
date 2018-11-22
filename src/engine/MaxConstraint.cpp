@@ -398,8 +398,8 @@ void MaxConstraint::getAuxiliaryEquations( List<Equation> & newEquations ) const
 String MaxConstraint::serializeToString() const
 {
     // Output format: max,id,f,element_1,element_2,element_3,...
-    Stringf output = Stringf( "max,%u", _f );
-    output += Stringf( ",%u", _id );
+    Stringf output = Stringf( "max,%u", _id );
+    output += Stringf( ",%u", _f );
     for ( const auto &element : _elements )
         output += Stringf( ",%u", element );
     return output;
