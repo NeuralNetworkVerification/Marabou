@@ -25,6 +25,7 @@ public:
     };
 
     ReluConstraint( unsigned b, unsigned f, unsigned id );
+    ReluConstraint( unsigned b, unsigned f );
     ReluConstraint( const String &serializedRelu );
 
     /*

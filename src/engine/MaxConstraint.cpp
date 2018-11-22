@@ -31,6 +31,11 @@ MaxConstraint::MaxConstraint( unsigned f, const Set<unsigned> &elements, unsigne
   _id = id;
 }
 
+MaxConstraint::MaxConstraint( unsigned f, const Set<unsigned> &elements )
+{
+  (*this) = MaxConstraint( f, elements, 0 );
+}
+
 MaxConstraint::MaxConstraint( const String &serializedMax )
 {
     String constraintType = serializedMax.substring(0, 3);

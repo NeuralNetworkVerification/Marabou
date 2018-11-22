@@ -28,6 +28,11 @@ ReluConstraint::ReluConstraint( unsigned b, unsigned f, unsigned id )
     setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
 }
 
+ReluConstraint::ReluConstraint( unsigned b, unsigned f )
+{
+  (*this) = ReluConstraint( b, f, 0 );
+}
+
 ReluConstraint::ReluConstraint( const String &serializedRelu )
     : _haveEliminatedVariables( false )
 {
