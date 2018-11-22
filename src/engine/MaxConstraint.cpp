@@ -21,13 +21,14 @@
 #include "Statistics.h"
 #include <algorithm>
 
-MaxConstraint::MaxConstraint( unsigned f, const Set<unsigned> &elements )
+MaxConstraint::MaxConstraint( unsigned f, const Set<unsigned> &elements, unsigned id )
     : _f( f )
     , _elements( elements )
     , _maxIndexSet( false )
     , _maxLowerBound( FloatUtils::negativeInfinity() )
     , _obsolete( false )
 {
+  _id = id;
 }
 
 MaxConstraint::MaxConstraint( const String &serializedMax )
@@ -36,10 +37,12 @@ MaxConstraint::MaxConstraint( const String &serializedMax )
     ASSERT(constraintType == String("max"));
 
     // remove the constraint type in serialized form
-    String serializedValues = serializedMax.substring(4, serializedMax.length()-4);    
+    String serializedValues = serializedMax.substring(4, serializedMax.length()-4);
     List<String> values = serializedValues.tokenize( "," );
 
     auto valuesIter = values.begin();
+    unsigned id = atoi( valuesIter->ascii() );
+    ++valuesIter;
     unsigned f = atoi( valuesIter->ascii() );
     ++valuesIter;
 
@@ -47,7 +50,7 @@ MaxConstraint::MaxConstraint( const String &serializedMax )
     for ( ; valuesIter != values.end(); ++valuesIter )
         elements.insert( atoi( valuesIter->ascii() ) );
 
-    *(this) = MaxConstraint( f, elements );
+    *(this) = MaxConstraint( f, elements, id );
 }
 
 MaxConstraint::~MaxConstraint()
@@ -57,7 +60,7 @@ MaxConstraint::~MaxConstraint()
 
 PiecewiseLinearConstraint *MaxConstraint::duplicateConstraint() const
 {
-    MaxConstraint *clone = new MaxConstraint( _f, _elements );
+    MaxConstraint *clone = new MaxConstraint( _f, _elements, _id );
     *clone = *this;
     return clone;
 }
@@ -389,8 +392,9 @@ void MaxConstraint::getAuxiliaryEquations( List<Equation> & newEquations ) const
 
 String MaxConstraint::serializeToString() const
 {
-    // Output format: max,f,element_1,element_2,element_3,...
+    // Output format: max,id,f,element_1,element_2,element_3,...
     Stringf output = Stringf( "max,%u", _f );
+    output += Stringf( ",%u", _id );
     for ( const auto &element : _elements )
         output += Stringf( ",%u", element );
     return output;

@@ -58,16 +58,16 @@ void restoreOutputStream(int outputStream)
     close(outputStream);
 }
 
-void addReluConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
-    PiecewiseLinearConstraint* r = new ReluConstraint(var1, var2);
+void addReluConstraint(InputQuery& ipq, unsigned var1, unsigned var2, unsigned id){
+    PiecewiseLinearConstraint* r = new ReluConstraint(var1, var2, id);
     ipq.addPiecewiseLinearConstraint(r);
 }
 
-void addMaxConstraint(InputQuery& ipq, std::set<unsigned> elements, unsigned v){
+void addMaxConstraint(InputQuery& ipq, std::set<unsigned> elements, unsigned v, unsigned id){
     Set<unsigned> e;
     for(unsigned var: elements)
         e.insert(var);
-    PiecewiseLinearConstraint* m = new MaxConstraint(v, e);
+    PiecewiseLinearConstraint* m = new MaxConstraint(v, e, id);
     ipq.addPiecewiseLinearConstraint(m);
 }
 
@@ -82,9 +82,9 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::s
     try{
         Engine engine;
         if(!engine.processInputQuery(inputQuery)) return std::make_pair(ret, *(engine.getStatistics()));
-        
+
         if(!engine.solve()) return std::make_pair(ret, *(engine.getStatistics()));
-        
+
         engine.extractSolution(inputQuery);
         retStats = *(engine.getStatistics());
         for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); i++)

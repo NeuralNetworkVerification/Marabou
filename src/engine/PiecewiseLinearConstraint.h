@@ -53,6 +53,11 @@ public:
     virtual PiecewiseLinearConstraint *duplicateConstraint() const = 0;
 
     /*
+      Getter for constraint ID
+    */
+    unsigned getID() const;
+
+    /*
       Restore the state of this constraint from the given one.
       We have this function in order to take advantage of the polymorphically
       correct assignment operator.
@@ -173,9 +178,10 @@ public:
 
 protected:
     bool _constraintActive;
-	Map<unsigned, double> _assignment;
+	  Map<unsigned, double> _assignment;
     Map<unsigned, double> _lowerBounds;
     Map<unsigned, double> _upperBounds;
+    unsigned _id;
 
     /*
       Statistics collection

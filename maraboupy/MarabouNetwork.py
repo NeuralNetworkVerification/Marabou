@@ -127,15 +127,18 @@ class MarabouNetwork:
             eq.setScalar(e.scalar)
             ipq.addEquation(eq)
 
+        constraintID = 1
         for r in self.reluList:
             assert r[1] < self.numVars and r[0] < self.numVars
-            MarabouCore.addReluConstraint(ipq, r[0], r[1])
+            MarabouCore.addReluConstraint(ipq, r[0], r[1], constraintID)
+            constraintID += 1
 
         for m in self.maxList:
             assert m[1] < self.numVars
             for e in m[0]:
                 assert e < self.numVars
-            MarabouCore.addMaxConstraint(ipq, m[0], m[1])
+            MarabouCore.addMaxConstraint(ipq, m[0], m[1], constraintID)
+            constraintID += 1
 
         for l in self.lowerBounds:
             assert l < self.numVars

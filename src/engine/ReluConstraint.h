@@ -24,7 +24,7 @@ public:
         PHASE_INACTIVE = 2,
     };
 
-    ReluConstraint( unsigned b, unsigned f );
+    ReluConstraint( unsigned b, unsigned f, unsigned id );
     ReluConstraint( const String &serializedRelu );
 
     /*
