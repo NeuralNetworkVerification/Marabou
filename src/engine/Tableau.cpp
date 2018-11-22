@@ -1580,6 +1580,10 @@ void Tableau::storeState( TableauState &state ) const
 
     // Store the merged variables
     state._mergedVariables = _mergedVariables;
+
+    // CDCL information
+    state._splitsAffectingVariable = _splitsAffectingVariable;
+    state._currentSplit = _currentSplit;
 }
 
 void Tableau::restoreState( const TableauState &state )
@@ -2475,6 +2479,11 @@ void Tableau::mergeColumns( unsigned x1, unsigned x2 )
 
     if ( _statistics )
         _statistics->incNumMergedColumns();
+}
+
+void Tableau::setCurrentSplit( const PiecewiseLinearCaseSplit& plc )
+{
+  _currentSplit = Pair<unsigned, unsigned> { plc.getConstraintID(), plc.getSplitID() };
 }
 
 //

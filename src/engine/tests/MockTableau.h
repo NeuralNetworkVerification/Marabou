@@ -569,6 +569,9 @@ public:
     {
         return 0;
     }
+
+		void setCurrentSplit( const PiecewiseLinearCaseSplit& ) { }
+
 };
 
 #endif // __MockTableau_h__

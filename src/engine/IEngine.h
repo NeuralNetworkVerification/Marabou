@@ -26,6 +26,7 @@ public:
       Add equations and apply tightenings from a PL case split.
     */
     virtual void applySplit( const PiecewiseLinearCaseSplit &split ) = 0;
+    virtual void setCurrentSplit (const PiecewiseLinearCaseSplit &split ) = 0;
 
     /*
       Methods for storing and restoring the state of the engine.

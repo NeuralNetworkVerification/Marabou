@@ -105,6 +105,7 @@ private:
       Add equations and tightenings from a split.
     */
     void applySplit( const PiecewiseLinearCaseSplit &split );
+    void setCurrentSplit( const PiecewiseLinearCaseSplit &split );
 
     /*
       Perform bound tightening operations that require

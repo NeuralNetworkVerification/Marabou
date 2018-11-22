@@ -17,6 +17,7 @@
 #include "ITableau.h"
 #include "MString.h"
 #include "Map.h"
+#include "Pair.h"
 #include "Set.h"
 #include "SparseColumnsOfBasis.h"
 #include "SparseMatrix.h"
@@ -424,6 +425,8 @@ public:
      */
     unsigned getVariableAfterMerging( unsigned variable ) const;
 
+    void setCurrentSplit( const PiecewiseLinearCaseSplit& plc );
+
 private:
     /*
       Variable watchers
@@ -601,6 +604,12 @@ private:
     void harrisRatioTest( double *changeColumn );
 
     static void log( const String &message );
+
+    /*
+      Information about what splits have affected each variable for CDCL
+    */
+    Map<unsigned, List<Pair<unsigned, unsigned> > > _splitsAffectingVariable;
+    Pair<unsigned, unsigned> _currentSplit;
 
     /*
       For debugging purposes only

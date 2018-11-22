@@ -1037,6 +1037,11 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
     log( "Done with split\n" );
 }
 
+void Engine::setCurrentSplit( const PiecewiseLinearCaseSplit &split )
+{
+  _tableau->setCurrentSplit( split );
+}
+
 void Engine::applyAllRowTightenings()
 {
     List<Tightening> rowTightenings;

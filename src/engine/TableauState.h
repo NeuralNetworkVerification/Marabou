@@ -16,6 +16,7 @@
 #include "IBasisFactorization.h"
 #include "ITableau.h"
 #include "Map.h"
+#include "Pair.h"
 #include "Set.h"
 #include "SparseMatrix.h"
 
@@ -33,6 +34,8 @@ class TableauState
       - Basic assignment status
       - The current indexing
       - The current basis
+      - Splits that have affected each variable
+      - Current top level split
     */
 public:
     TableauState();
@@ -116,6 +119,12 @@ public:
       extracting a solution for x, we should read the value of y.
      */
     Map<unsigned, unsigned> _mergedVariables;
+
+    /*
+      Information about what splits have affected each variable for CDCL
+    */
+    Map<unsigned, List<Pair<unsigned, unsigned> > > _splitsAffectingVariable;
+    Pair<unsigned, unsigned> _currentSplit;
 };
 
 #endif // __TableauState_h__
