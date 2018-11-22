@@ -2491,7 +2491,9 @@ void Tableau::setCurrentSplit( const PiecewiseLinearCaseSplit& split )
 
 SplitSet Tableau::getSplitsAffectingVariable( unsigned var ) const
 {
-  return _splitsAffectingVariable[var];
+  if( _splitsAffectingVariable.exists( var ) )
+    return _splitsAffectingVariable[var];
+  return SplitSet();
 }
 
 void Tableau::addSplitAffectsVariable( unsigned var, unsigned constraintID, unsigned splitID )

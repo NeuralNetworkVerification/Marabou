@@ -690,7 +690,9 @@ void RowBoundTightener::notifyDimensionChange( unsigned /* m */ , unsigned /* n 
 
 SplitSet RowBoundTightener::getNewSplitsAffectingVariable( unsigned var) const
 {
-  return _newSplitsAffectingVariable[var];
+  if( _newSplitsAffectingVariable.exists( var ) )
+    return _newSplitsAffectingVariable[var];
+  return SplitSet();
 }
 
 //
