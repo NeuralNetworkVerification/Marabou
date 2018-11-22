@@ -119,6 +119,8 @@ public:
     */
     virtual List<PiecewiseLinearCaseSplit> getCaseSplits() const = 0;
 
+    virtual PiecewiseLinearCaseSplit getSplitFromID( unsigned splitID ) const = 0;
+
     /*
       Check if the constraint's phase has been fixed.
     */

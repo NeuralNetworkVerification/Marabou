@@ -319,10 +319,16 @@ PiecewiseLinearCaseSplit MaxConstraint::getValidCaseSplit() const
     return getSplit( *( _elements.begin() ) );
 }
 
+PiecewiseLinearCaseSplit MaxConstraint::getSplitFromID( unsigned splitID ) const
+{
+  return getSplit( splitID );
+}
+
 PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const
 {
     ASSERT( _assignment.exists( argMax ) );
     PiecewiseLinearCaseSplit maxPhase;
+    maxPhase.setConstraintAndSplitID( _id, argMax );
 
     // maxArg - f = 0
     Equation maxEquation( Equation::EQ );

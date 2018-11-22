@@ -81,6 +81,8 @@ public:
      */
     List<PiecewiseLinearCaseSplit> getCaseSplits() const;
 
+    PiecewiseLinearCaseSplit getSplitFromID( unsigned splitID ) const;
+
     /*
       Check if the constraint's phase has been fixed.
     */

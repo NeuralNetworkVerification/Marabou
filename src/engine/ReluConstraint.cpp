@@ -214,10 +214,19 @@ List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
     return splits;
 }
 
+PiecewiseLinearCaseSplit ReluConstraint::getSplitFromID( unsigned splitID ) const
+{
+  ASSERT( splitID == 0 || splitID == 1 );
+  if ( splitID == 0 )
+    return getInactiveSplit();
+  return getActiveSplit();
+}
+
 PiecewiseLinearCaseSplit ReluConstraint::getInactiveSplit() const
 {
     // Inactive phase: b <= 0, f = 0
     PiecewiseLinearCaseSplit inactivePhase;
+    inactivePhase.setConstraintAndSplitID( _id, 0 );
     inactivePhase.storeBoundTightening( Tightening( _b, 0.0, Tightening::UB ) );
     inactivePhase.storeBoundTightening( Tightening( _f, 0.0, Tightening::UB ) );
     return inactivePhase;
@@ -227,6 +236,7 @@ PiecewiseLinearCaseSplit ReluConstraint::getActiveSplit() const
 {
     // Active phase: b >= 0, b - f = 0
     PiecewiseLinearCaseSplit activePhase;
+    activePhase.setConstraintAndSplitID( _id, 1 );
     activePhase.storeBoundTightening( Tightening( _b, 0.0, Tightening::LB ) );
     Equation activeEquation( Equation::EQ );
     activeEquation.addAddend( 1, _b );
