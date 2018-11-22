@@ -680,6 +680,11 @@ void RowBoundTightener::notifyDimensionChange( unsigned /* m */ , unsigned /* n 
     setDimensions();
 }
 
+SplitSet RowBoundTightener::getNewSplitsAffectingVariable( unsigned var) const
+{
+  return newSplitsAffectingVariable[var];
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

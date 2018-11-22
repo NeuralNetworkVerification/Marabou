@@ -2481,9 +2481,24 @@ void Tableau::mergeColumns( unsigned x1, unsigned x2 )
         _statistics->incNumMergedColumns();
 }
 
-void Tableau::setCurrentSplit( const PiecewiseLinearCaseSplit& plc )
+void Tableau::setCurrentSplit( const PiecewiseLinearCaseSplit& split )
 {
-  _currentSplit = Pair<unsigned, unsigned> { plc.getConstraintID(), plc.getSplitID() };
+  _currentSplit = Pair<unsigned, unsigned> { split.getConstraintID(), split.getSplitID() };
+}
+
+SplitSet Tableau::getSplitsAffectingVariable( unsigned var ) const
+{
+  return _splitsAffectingVariable[var];
+}
+
+void Tableau::addSplitAffectsVariable( unsigned var, unsigned constraintID, unsigned splitID )
+{
+  _splitsAffectingVariable[var].insert( Pair<unsigned, unsigned> {constraintID, splitID } );
+}
+
+void Tableau::addSplitAffectsVariable( unsigned var, const PiecewiseLinearCaseSplit& split)
+{
+  addSplitAffectsVariable( var, split.getConstraintID(), split.getSplitID() );
 }
 
 //

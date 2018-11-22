@@ -17,7 +17,6 @@
 #include "ITableau.h"
 #include "MString.h"
 #include "Map.h"
-#include "Pair.h"
 #include "Set.h"
 #include "SparseColumnsOfBasis.h"
 #include "SparseMatrix.h"
@@ -425,7 +424,10 @@ public:
      */
     unsigned getVariableAfterMerging( unsigned variable ) const;
 
-    void setCurrentSplit( const PiecewiseLinearCaseSplit& plc );
+    void setCurrentSplit( const PiecewiseLinearCaseSplit& split );
+    virtual SplitSet getSplitsAffectingVariable( unsigned var ) const;
+    void addSplitAffectsVariable( unsigned var, unsigned constraintID, unsigned splitID );
+    void addSplitAffectsVariable( unsigned var, const PiecewiseLinearCaseSplit& split );
 
 private:
     /*
@@ -608,7 +610,7 @@ private:
     /*
       Information about what splits have affected each variable for CDCL
     */
-    Map<unsigned, List<Pair<unsigned, unsigned> > > _splitsAffectingVariable;
+    Map<unsigned, SplitSet > _splitsAffectingVariable;
     Pair<unsigned, unsigned> _currentSplit;
 
     /*

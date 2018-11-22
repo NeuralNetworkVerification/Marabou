@@ -1024,12 +1024,18 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
         if ( bound._type == Tightening::LB )
         {
             log( Stringf( "x%u: lower bound set to %.3lf", variable, bound._value ) );
-            _tableau->tightenLowerBound( variable, bound._value );
+            if (FloatUtils::gt( bound._value, _tableau->getLowerBound(variable))) {
+              _tableau->tightenLowerBound( variable, bound._value );
+              _tableau->addSplitAffectsVariable( variable, split );
+            }
         }
         else
         {
             log( Stringf( "x%u: upper bound set to %.3lf", variable, bound._value ) );
-            _tableau->tightenUpperBound( variable, bound._value );
+            if (FloatUtils::lt( bound._value, _tableau->getUpperBound(variable))) {
+              _tableau->tightenUpperBound( variable, bound._value );
+              _tableau->addSplitAffectsVariable( variable, split );
+            }
         }
     }
 
@@ -1049,10 +1055,22 @@ void Engine::applyAllRowTightenings()
 
     for ( const auto &tightening : rowTightenings )
     {
-        if ( tightening._type == Tightening::LB )
+        if ( tightening._type == Tightening::LB ){
+          if (FloatUtils::gt( tightening._value, _tableau->getLowerBound( tightening._variable) ) ) {
             _tableau->tightenLowerBound( tightening._variable, tightening._value );
-        else
+            for( const Pair<unsigned, unsigned>& split: _rowBoundTightener->getNewSplitsAffectingVariable( tightening._variable ) ) {
+              _tableau->addSplitAffectsVariable( tightening._variable, split.first(), split.second() );
+            }
+          }
+        }
+        else {
+          if (FloatUtils::lt( tightening._value, _tableau->getUpperBound (tightening._variable ) ) ) {
             _tableau->tightenUpperBound( tightening._variable, tightening._value );
+            for( const Pair<unsigned, unsigned>& split: _rowBoundTightener->getNewSplitsAffectingVariable( tightening._variable ) ) {
+              _tableau->addSplitAffectsVariable( tightening._variable, split.first(), split.second() );
+            }
+          }
+        }
     }
 }
 

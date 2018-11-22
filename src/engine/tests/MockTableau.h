@@ -571,6 +571,9 @@ public:
     }
 
 		void setCurrentSplit( const PiecewiseLinearCaseSplit& ) { }
+		SplitSet getSplitsAffectingVariable( unsigned ) const { return SplitSet(); }
+		void addSplitAffectsVariable( unsigned, unsigned, unsigned ) {}
+		void addSplitAffectsVariable( unsigned, const PiecewiseLinearCaseSplit& ) { }
 
 };
 

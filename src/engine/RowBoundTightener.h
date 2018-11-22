@@ -16,6 +16,7 @@
 #include "Equation.h"
 #include "IRowBoundTightener.h"
 #include "ITableau.h"
+#include "Map.h"
 #include "Queue.h"
 #include "TableauRow.h"
 #include "Tightening.h"
@@ -95,6 +96,8 @@ public:
      */
     void setStatistics( Statistics *statistics );
 
+    SplitSet getNewSplitsAffectingVariable( unsigned var) const;
+
 private:
     const ITableau &_tableau;
     unsigned _n;
@@ -155,6 +158,9 @@ private:
       of tighter bounds found.
     */
     unsigned tightenOnSingleInvertedBasisRow( const TableauRow &row );
+
+    Map<unsigned, SplitSet> newSplitsAffectingVariable;
+
 };
 
 #endif // __RowBoundTightener_h__

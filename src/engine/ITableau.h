@@ -14,6 +14,7 @@
 #define __ITableau_h__
 
 #include "List.h"
+#include "Pair.h"
 #include "Set.h"
 
 class EntrySelectionStrategy;
@@ -26,6 +27,8 @@ class SparseVector;
 class Statistics;
 class TableauRow;
 class TableauState;
+
+typedef Set<Pair<unsigned, unsigned> > SplitSet;
 
 class ITableau
 {
@@ -174,7 +177,10 @@ public:
     virtual void refreshBasisFactorization() = 0;
     virtual void mergeColumns( unsigned x1, unsigned x2 ) = 0;
     virtual unsigned getVariableAfterMerging( unsigned variable ) const = 0;
-    virtual void setCurrentSplit( const PiecewiseLinearCaseSplit& plc ) = 0;
+    virtual void setCurrentSplit( const PiecewiseLinearCaseSplit& split ) = 0;
+    virtual SplitSet getSplitsAffectingVariable( unsigned var ) const = 0;
+    virtual void addSplitAffectsVariable( unsigned var, unsigned constraintID, unsigned splitID ) = 0;
+    virtual void addSplitAffectsVariable( unsigned var, const PiecewiseLinearCaseSplit& split) = 0;
 };
 
 #endif // __ITableau_h__

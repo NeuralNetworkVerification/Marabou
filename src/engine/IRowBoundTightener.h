@@ -73,6 +73,8 @@ public:
     */
     virtual void getRowTightenings( List<Tightening> &tightenings ) const = 0;
 
+    virtual SplitSet getNewSplitsAffectingVariable( unsigned var ) const = 0;
+
     /*
       Have the Bound Tightener start reporting statistics.
      */
