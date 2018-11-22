@@ -1635,6 +1635,9 @@ void Tableau::restoreState( const TableauState &state )
 
     if ( _statistics )
         _statistics->setCurrentTableauDimension( _m, _n );
+
+    _splitsAffectingVariable = state._splitsAffectingVariable;
+    _currentSplit = state._currentSplit;
 }
 
 void Tableau::checkBoundsValid()

@@ -519,6 +519,8 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
     std::fill_n( _ciTimesLb, n, 0 );
     std::fill_n( _ciTimesUb, n, 0 );
 
+    SplitSet setForThisRow;
+
     for ( const auto &entry : *sparseRow )
     {
         index = entry._index;
@@ -527,6 +529,10 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
         _ciSign[index] = FloatUtils::isPositive( ci ) ? POSITIVE : NEGATIVE;
         _ciTimesLb[index] = ci * _lowerBounds[index];
         _ciTimesUb[index] = ci * _upperBounds[index];
+
+        if( !FloatUtils::isZero( ci ) ) {
+          setForThisRow.insert( _tableau.getSplitsAffectingVariable( index ) );
+        }
     }
 
     /*
@@ -605,6 +611,7 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
         {
             _lowerBounds[index] = lowerBound;
             _tightenedLower[index] = true;
+            _newSplitsAffectingVariable[index].insert( setForThisRow );
             ++result;
         }
 
@@ -612,6 +619,7 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
         {
             _upperBounds[index] = upperBound;
             _tightenedUpper[index] = true;
+            _newSplitsAffectingVariable[index].insert( setForThisRow );
             ++result;
         }
 
@@ -682,7 +690,7 @@ void RowBoundTightener::notifyDimensionChange( unsigned /* m */ , unsigned /* n 
 
 SplitSet RowBoundTightener::getNewSplitsAffectingVariable( unsigned var) const
 {
-  return newSplitsAffectingVariable[var];
+  return _newSplitsAffectingVariable[var];
 }
 
 //

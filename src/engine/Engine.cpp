@@ -1024,7 +1024,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
         if ( bound._type == Tightening::LB )
         {
             log( Stringf( "x%u: lower bound set to %.3lf", variable, bound._value ) );
-            if (FloatUtils::gt( bound._value, _tableau->getLowerBound(variable))) {
+            if (FloatUtils::gt( bound._value, _tableau->getLowerBound( variable ) ) ) {
               _tableau->tightenLowerBound( variable, bound._value );
               _tableau->addSplitAffectsVariable( variable, split );
             }
@@ -1032,7 +1032,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
         else
         {
             log( Stringf( "x%u: upper bound set to %.3lf", variable, bound._value ) );
-            if (FloatUtils::lt( bound._value, _tableau->getUpperBound(variable))) {
+            if (FloatUtils::lt( bound._value, _tableau->getUpperBound( variable ) ) ) {
               _tableau->tightenUpperBound( variable, bound._value );
               _tableau->addSplitAffectsVariable( variable, split );
             }

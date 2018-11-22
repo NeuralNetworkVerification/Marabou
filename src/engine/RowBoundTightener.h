@@ -159,7 +159,7 @@ private:
     */
     unsigned tightenOnSingleInvertedBasisRow( const TableauRow &row );
 
-    Map<unsigned, SplitSet> newSplitsAffectingVariable;
+    Map<unsigned, SplitSet> _newSplitsAffectingVariable;
 
 };
 
