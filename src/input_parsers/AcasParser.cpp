@@ -144,6 +144,7 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
         }
     }
 
+    unsigned constraintID = 1;
     // Add the ReLU constraints
     for ( unsigned i = 1; i < numberOfLayers - 1; ++i )
     {
@@ -153,7 +154,7 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
         {
             unsigned b = _nodeToB[NodeIndex(i, j)];
             unsigned f = _nodeToF[NodeIndex(i, j)];
-            PiecewiseLinearConstraint *relu = new ReluConstraint( b, f );
+            PiecewiseLinearConstraint *relu = new ReluConstraint( b, f, constraintID++ );
             inputQuery.addPiecewiseLinearConstraint( relu );
         }
     }
