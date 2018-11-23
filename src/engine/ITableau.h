@@ -101,6 +101,7 @@ public:
     virtual void initializeTableau( const List<unsigned> &initialBasicVariables ) = 0;
     virtual double getValue( unsigned variable ) = 0;
     virtual bool allBoundsValid() const = 0;
+    virtual unsigned getInvalidBoundVariable() const = 0;
     virtual double getLowerBound( unsigned variable ) const = 0;
     virtual double getUpperBound( unsigned variable ) const = 0;
     virtual const double *getLowerBounds() const = 0;

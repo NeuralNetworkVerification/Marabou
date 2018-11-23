@@ -144,7 +144,7 @@ bool Engine::solve()
             if ( !_tableau->allBoundsValid() )
             {
                 // Some variable bounds are invalid, so the query is unsat
-                throw InfeasibleQueryException();
+                throw InfeasibleQueryException( _tableau->getInvalidBoundVariable() );
             }
 
             if ( allVarsWithinBounds() )
@@ -411,7 +411,8 @@ void Engine::performSimplexStep()
             // Cost function is fresh --- failure is real.
             struct timespec end = TimeUtils::sampleMicro();
             _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
-            throw InfeasibleQueryException();
+
+            throw InfeasibleQueryException( -1 /* todo: not clear what variable to blame for this */ );
         }
     }
 

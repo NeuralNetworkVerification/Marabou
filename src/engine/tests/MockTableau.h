@@ -201,6 +201,8 @@ public:
         return NULL;
     }
 
+		unsigned getInvalidBoundVariable() const { return 0; }
+
     bool allBoundsValid() const
     {
         for ( auto it : lowerBounds.keys() )

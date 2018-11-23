@@ -16,6 +16,10 @@
 class InfeasibleQueryException
 {
 public:
+  // if non-negative, variable whose lower bound is greater than upper bound
+  // if negative, query is infeasible but not clear which particular variable to blame
+  InfeasibleQueryException( int var): _var( var ) {}
+  int _var;
 };
 
 #endif // __InfeasibleQueryException_h__
