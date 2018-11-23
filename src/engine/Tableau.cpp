@@ -2463,10 +2463,14 @@ void Tableau::mergeColumns( unsigned x1, unsigned x2 )
       If x2 has tighter bounds than x1, adjust the bounds
       for x1.
     */
-    if ( FloatUtils::lt( _upperBounds[x2], _upperBounds[x1] ) )
-        tightenUpperBound( x1, _upperBounds[x2] );
-    if ( FloatUtils::gt( _lowerBounds[x2], _lowerBounds[x1] ) )
-        tightenLowerBound( x1, _lowerBounds[x2] );
+    if ( FloatUtils::lt( _upperBounds[x2], _upperBounds[x1] ) ) {
+      tightenUpperBound( x1, _upperBounds[x2] );
+      _splitsAffectingVariable[x1].insert( getSplitsAffectingVariable( x2 ) );
+    }
+    if ( FloatUtils::gt( _lowerBounds[x2], _lowerBounds[x1] ) ) {
+      tightenLowerBound( x1, _lowerBounds[x2] );
+      _splitsAffectingVariable[x1].insert( getSplitsAffectingVariable( x2 ) );
+    }
 
     /*
       Merge column x2 of the constraint matrix into x1
