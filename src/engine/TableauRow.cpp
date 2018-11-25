@@ -42,6 +42,7 @@ void TableauRow::dump() const
     }
 
     printf( "\n\tscalar = %.2lf\n", _scalar );
+    printf( "\tlhs = x%u\n", _lhs );
 }
 
 //

@@ -568,6 +568,11 @@ public:
     void mergeColumns( unsigned /* x1 */, unsigned /* x2 */ )
     {
     }
+
+    unsigned getVariableAfterMerging( unsigned /* variable */ ) const
+    {
+        return 0;
+    }
 };
 
 #endif // __MockTableau_h__
