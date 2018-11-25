@@ -911,8 +911,6 @@ bool Engine::attemptToMergeVariables( unsigned x1, unsigned x2 )
         _tableau->computeChangeColumn();
         _tableau->computePivotRow();
 
-        printf( "swapping x%u with x%u\n", x2, nonBasic );
-
         _activeEntryStrategy->prePivotHook( _tableau, false );
         _tableau->performDegeneratePivot();
         _activeEntryStrategy->postPivotHook( _tableau, false );

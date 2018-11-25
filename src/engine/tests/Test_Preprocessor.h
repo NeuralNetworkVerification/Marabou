@@ -479,7 +479,14 @@ public:
         InputQuery processed = preprocessor.preprocess( inputQuery, true );
 
         // Check that equation has been updated as needed
-        TS_ASSERT_EQUALS( processed.getEquations().size(), 1U );
+        if ( !GlobalConfiguration::PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS )
+        {
+            TS_ASSERT_EQUALS( processed.getEquations().size(), 1U );
+        }
+        else
+        {
+            TS_ASSERT_EQUALS( processed.getEquations().size(), 2U );
+        }
 
         Equation preprocessedEquation = *processed.getEquations().begin();
 
