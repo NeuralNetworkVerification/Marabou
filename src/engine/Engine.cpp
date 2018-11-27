@@ -292,9 +292,6 @@ void Engine::performSimplexStep()
     _statistics.incNumSimplexSteps();
     struct timespec start = TimeUtils::sampleMicro();
 
-    // A simplex step immediately makes the stored inverted basis stale
-    _inveretedBasisIsStale = true;
-
     /*
       In order to increase numerical stability, we attempt to pick a
       "good" entering/leaving combination, by trying to avoid tiny pivot
@@ -466,6 +463,9 @@ void Engine::performSimplexStep()
         _tableau->computePivotRow();
         _rowBoundTightener->examinePivotRow();
     }
+
+    // A pivot step immediately makes the stored inverted basis stale
+    _inveretedBasisIsStale = true;
 
     // Perform the actual pivot
     _activeEntryStrategy->prePivotHook( _tableau, fakePivot );
@@ -821,6 +821,8 @@ void Engine::restoreState( const EngineState &state )
 {
     log( "Restore state starting" );
 
+    _inveretedBasisIsStale = true;
+
     if ( !state._tableauStateIsStored )
         throw ReluplexError( ReluplexError::RESTORING_ENGINE_FROM_INVALID_STATE );
 
@@ -951,6 +953,8 @@ bool Engine::attemptToMergeVariables( unsigned x1, unsigned x2 )
 
 void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 {
+    _inveretedBasisIsStale = true;
+
     log( "" );
     log( "Applying a split. " );
 
@@ -1117,12 +1121,12 @@ void Engine::extensiveBoundTightening()
 
     start = TimeUtils::sampleMicro();
 
-    // Get the inverted basis matrix and the rhs
-    if ( !_tableau->basisMatrixAvailable() )
-        _tableau->makeBasisMatrixAvailable();
-
     if ( _inveretedBasisIsStale )
     {
+        // Get the inverted basis matrix and the rhs
+        if ( !_tableau->basisMatrixAvailable() )
+            _tableau->makeBasisMatrixAvailable();
+
         // Extract the rows of the inverse basis matrix
         double *invB = _tableau->getInverseBasisMatrix();
         const double *b = _tableau->getRightHandSide();
