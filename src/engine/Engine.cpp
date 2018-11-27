@@ -1158,7 +1158,7 @@ void Engine::extensiveBoundTightening()
                         _tableau->tightenUpperBound( tightening._variable, tightening._value );
                 }
 
-                learnedNewBounds = !entailedTightenings.empty();
+                learnedNewBounds = !tighteningsFromConstraints.empty();
                 break;
             }
         }
