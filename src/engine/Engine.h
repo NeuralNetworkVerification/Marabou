@@ -220,6 +220,14 @@ private:
     ConstraintBoundTightener _constraintBoundTightener;
 
     /*
+      The engine sometimes extracts the invereted basis matrix, to
+      be used in bound tightening. This computation is expensive, so we
+      keep track of whether the result of the previous computation has
+      become stale, or can be reused.
+    */
+    bool _inveretedBasisIsStale;
+
+    /*
       Perform a simplex step: compute the cost function, pick the
       entering and leaving variables and perform a pivot.
     */

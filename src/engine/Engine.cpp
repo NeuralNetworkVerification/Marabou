@@ -35,6 +35,7 @@ Engine::Engine()
     , _quitRequested( false )
     , _exitCode( Engine::NOT_DONE )
     , _constraintBoundTightener( *_tableau )
+    , _inveretedBasisIsStale( true )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -290,6 +291,9 @@ void Engine::performSimplexStep()
     // Statistics
     _statistics.incNumSimplexSteps();
     struct timespec start = TimeUtils::sampleMicro();
+
+    // A simplex step immediately makes the stored inverted basis stale
+    _inveretedBasisIsStale = true;
 
     /*
       In order to increase numerical stability, we attempt to pick a
@@ -1117,11 +1121,15 @@ void Engine::extensiveBoundTightening()
     if ( !_tableau->basisMatrixAvailable() )
         _tableau->makeBasisMatrixAvailable();
 
-    // Extract the rows of the inverse basis matrix
-    double *invB = _tableau->getInverseBasisMatrix();
-    const double *b = _tableau->getRightHandSide();
-    _rowBoundTightener->extractRowsFromInvertedBasisMatrix( invB, b );
-    delete [] invB;
+    if ( _inveretedBasisIsStale )
+    {
+        // Extract the rows of the inverse basis matrix
+        double *invB = _tableau->getInverseBasisMatrix();
+        const double *b = _tableau->getRightHandSide();
+        _rowBoundTightener->extractRowsFromInvertedBasisMatrix( invB, b );
+        delete [] invB;
+        _inveretedBasisIsStale = false;
+    }
 
     end = TimeUtils::sampleMicro();
     _statistics.addTimeForExplicitBasisBoundTightening( TimeUtils::timePassed( start, end ) );
