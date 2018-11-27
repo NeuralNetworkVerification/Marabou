@@ -15,6 +15,7 @@
 
 PiecewiseLinearConstraint::PiecewiseLinearConstraint()
     : _constraintActive( true )
+    , _constraintBoundTightener( NULL )
     , _statistics( NULL )
 {
 }
@@ -22,6 +23,11 @@ PiecewiseLinearConstraint::PiecewiseLinearConstraint()
 void PiecewiseLinearConstraint::setStatistics( Statistics *statistics )
 {
     _statistics = statistics;
+}
+
+void PiecewiseLinearConstraint::registerConstraintBoundTightener( ConstraintBoundTightener *tightener )
+{
+    _constraintBoundTightener = tightener;
 }
 
 //

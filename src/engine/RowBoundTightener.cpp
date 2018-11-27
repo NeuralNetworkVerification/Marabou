@@ -286,6 +286,12 @@ unsigned RowBoundTightener::onePassOverInvertedBasisRows()
     return newBounds;
 }
 
+unsigned RowBoundTightener::tightenOnSingleInvertedStoredBasisRow( unsigned rowIndex )
+{
+    ASSERT( rowIndex < _m );
+    return tightenOnSingleInvertedBasisRow( *( _rows[rowIndex] ) );
+}
+
 unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &row )
 {
 	/*

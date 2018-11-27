@@ -132,7 +132,8 @@ public:
         TS_ASSERT( costFunctionManager->initializeWasCalled );
         TS_ASSERT( rowTightener->setDimensionsWasCalled );
 
-        TS_ASSERT_EQUALS( tableau->lastResizeWatchers.size(), 1U );
+        TS_ASSERT_EQUALS( tableau->lastResizeWatchers.size(), 2U );
+        // TODO: check other watcher
         TS_ASSERT_EQUALS( *( tableau->lastResizeWatchers.begin() ), rowTightener );
 
         TS_ASSERT_EQUALS( tableau->lastCostFunctionManager, costFunctionManager );

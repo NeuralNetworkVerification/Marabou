@@ -61,6 +61,17 @@ public:
     virtual void examineInvertedBasisMatrix( Saturation saturation ) = 0;
 
     /*
+      Process the inverted basis row and attempt to derive tighter
+      lower/upper bounds for the specified variable. Return the number
+      of tighter bounds found.
+
+      In the "stored" version, we process a row that has been previously
+      stored, by its index.
+    */
+    virtual unsigned tightenOnSingleInvertedBasisRow( const TableauRow &row ) = 0;
+    virtual unsigned tightenOnSingleInvertedStoredBasisRow( unsigned rowIndex ) = 0;
+
+    /*
       Derive and enqueue new bounds for all varaibles, implicitly using the
       inverse of the explicit basis matrix, inv(B0), which should be available
       through the tableau. Inv(B0) is not computed directly --- instead, the computation

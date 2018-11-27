@@ -72,6 +72,8 @@ public:
     void getRowTightenings( List<Tightening> &/* tightenings */ ) const {}
     void setStatistics( Statistics */* statistics */ ) {}
     void examineImplicitInvertedBasisMatrix( Saturation /* saturation */ ) {}
+    unsigned tightenOnSingleInvertedBasisRow( const TableauRow &/* row */ ) { return 0; }
+    unsigned tightenOnSingleInvertedStoredBasisRow( unsigned /* rowIndex */ ) { return 0; }
 };
 
 #endif // __MockRowBoundTightener_h__

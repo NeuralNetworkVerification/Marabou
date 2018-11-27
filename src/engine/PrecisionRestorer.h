@@ -25,7 +25,7 @@ public:
         DO_NOT_RESTORE_BASICS = 1,
     };
 
-    void storeInitialEngineState( const IEngine &engine );
+    void storeInitialEngineState( IEngine &engine );
 
     void restorePrecision( IEngine &engine,
                            ITableau &tableau,

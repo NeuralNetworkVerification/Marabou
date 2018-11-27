@@ -34,6 +34,7 @@ Engine::Engine()
     , _costFunctionManager( _tableau )
     , _quitRequested( false )
     , _exitCode( Engine::NOT_DONE )
+    , _constraintBoundTightener( *_tableau )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -162,6 +163,10 @@ bool Engine::solve()
 
             if ( allVarsWithinBounds() )
             {
+                // Apply any tightenings that were discovered while solving
+                // the linear constraints
+                applyAllRowTightenings();
+
                 // The linear portion of the problem has been solved.
                 // Check the status of the PL constraints
                 collectViolatedPlConstraints();
@@ -672,7 +677,15 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         _tableau->registerToWatchAllVariables( _rowBoundTightener );
         _tableau->registerResizeWatcher( _rowBoundTightener );
 
+        _tableau->registerToWatchAllVariables( &_constraintBoundTightener );
+        _tableau->registerResizeWatcher( &_constraintBoundTightener );
+
         _rowBoundTightener->setDimensions();
+        _constraintBoundTightener.setDimensions();
+
+        // Register the constraint bound tightener to all the PL constraints
+        for ( auto &plConstraint : inputQuery.getPiecewiseLinearConstraints() )
+            plConstraint->registerConstraintBoundTightener( &_constraintBoundTightener );
 
         _plConstraints = _preprocessedQuery.getPiecewiseLinearConstraints();
         for ( const auto &constraint : _plConstraints )
@@ -779,8 +792,13 @@ void Engine::reportPlViolation()
     _smtCore.reportViolatedConstraint( _plConstraintToFix );
 }
 
-void Engine::storeState( EngineState &state, bool storeAlsoTableauState ) const
+void Engine::storeState( EngineState &state, bool storeAlsoTableauState )
 {
+    // Just before storing the state, we perform a full constraint-based bound
+    // tightening, and apply any previosuly-discovered row bound tightenings
+    applyAllRowTightenings();
+    applyAllConstraintTightenings();
+
     if ( storeAlsoTableauState )
     {
         _tableau->storeState( state._tableauState );
@@ -818,6 +836,7 @@ void Engine::restoreState( const EngineState &state )
 
     // Make sure the data structures are initialized to the correct size
     _rowBoundTightener->setDimensions();
+    _constraintBoundTightener.setDimensions();
     adjustWorkMemorySize();
     _activeEntryStrategy->resizeHook( _tableau );
     _costFunctionManager->initialize();
@@ -1025,6 +1044,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
     adjustWorkMemorySize();
 
     _rowBoundTightener->resetBounds();
+    _constraintBoundTightener.resetBounds();
 
     for ( auto &bound : bounds )
     {
@@ -1106,32 +1126,45 @@ void Engine::extensiveBoundTightening()
     end = TimeUtils::sampleMicro();
     _statistics.addTimeForExplicitBasisBoundTightening( TimeUtils::timePassed( start, end ) );
 
-    /*
-      Perform the following until saturation:
-
-      - Tighten bounds on the constraint matrix
-      - Tighten bounds on the inverted basis matrix
-      - Propgate bounds through PL constraints
-    */
-
     bool learnedNewBounds = true;
     while ( learnedNewBounds )
     {
         learnedNewBounds = false;
 
-        tightenBoundsOnConstraintMatrix();
-
         start = TimeUtils::sampleMicro();
         _statistics.incNumBoundTighteningsOnExplicitBasis();
-        _rowBoundTightener->examineInvertedBasisMatrix( IRowBoundTightener::UNTIL_SATURATION );
+
+        List<Tightening> tighteningsFromConstraints;
+        for ( unsigned i = 0; i < _tableau->getM(); ++i )
+        {
+            unsigned numLearnedBounds = _rowBoundTightener->tightenOnSingleInvertedStoredBasisRow( i );
+
+            // If we discovered new bounds on this row, we stop and attempt to propagate bounds
+            // through the PL constraints. If new bounds are discovered, we restart our traversal
+            // of the inverted tableau
+            if ( numLearnedBounds > 0 )
+            {
+                applyAllRowTightenings();
+
+                tighteningsFromConstraints.clear();
+                _constraintBoundTightener.getConstraintTightenings( tighteningsFromConstraints );
+                for ( const auto &tightening : tighteningsFromConstraints )
+                {
+                    _statistics.incNumBoundsProposedByPlConstraints();
+
+                    if ( tightening._type == Tightening::LB )
+                        _tableau->tightenLowerBound( tightening._variable, tightening._value );
+                    else
+                        _tableau->tightenUpperBound( tightening._variable, tightening._value );
+                }
+
+                learnedNewBounds = !entailedTightenings.empty();
+                break;
+            }
+        }
+
         end = TimeUtils::sampleMicro();
         _statistics.addTimeForExplicitBasisBoundTightening( TimeUtils::timePassed( start, end ) );
-
-        if ( applyAllRowTightenings() )
-            learnedNewBounds = true;
-
-        if ( applyAllConstraintTightenings() )
-            learnedNewBounds = true;
     }
 }
 
@@ -1235,6 +1268,7 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
 
     _statistics.incNumPrecisionRestorations();
     _rowBoundTightener->clear();
+    _constraintBoundTightener.resetBounds();
 
     // debug
     double after = _degradationChecker.computeDegradation( *_tableau );
@@ -1255,6 +1289,7 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
         _statistics.incNumPrecisionRestorations();
 
         _rowBoundTightener->clear();
+        _constraintBoundTightener.resetBounds();
 
         // debug
         double afterSecond = _degradationChecker.computeDegradation( *_tableau );

@@ -17,7 +17,7 @@
 #include "ReluplexError.h"
 #include "SmtCore.h"
 
-void PrecisionRestorer::storeInitialEngineState( const IEngine &engine )
+void PrecisionRestorer::storeInitialEngineState( IEngine &engine )
 {
     engine.storeState( _initialEngineState, true );
 }

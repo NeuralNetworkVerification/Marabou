@@ -29,6 +29,8 @@
 #include "SmtCore.h"
 #include "Statistics.h"
 
+#include "ConstraintBoundTightener.h"
+
 class EngineState;
 class InputQuery;
 class PiecewiseLinearConstraint;
@@ -72,7 +74,7 @@ public:
     /*
       Methods for storing and restoring the state of the engine.
     */
-    void storeState( EngineState &state, bool storeAlsoTableauState ) const;
+    void storeState( EngineState &state, bool storeAlsoTableauState );
     void restoreState( const EngineState &state );
     void setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints );
 
@@ -210,6 +212,12 @@ private:
       A code indicating how the run terminated.
     */
     ExitCode _exitCode;
+
+    /*
+      An object in charge of managing bound tightenings
+      proposed by the PiecewiseLinearConstriants.
+    */
+    ConstraintBoundTightener _constraintBoundTightener;
 
     /*
       Perform a simplex step: compute the cost function, pick the

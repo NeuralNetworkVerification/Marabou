@@ -105,6 +105,17 @@ public:
      */
     void setStatistics( Statistics *statistics );
 
+    /*
+      Process the inverted basis row and attempt to derive tighter
+      lower/upper bounds for the specified variable. Return the number
+      of tighter bounds found.
+
+      In the "stored" version, we process a row that has been previously
+      stored, by its index.
+    */
+    unsigned tightenOnSingleInvertedBasisRow( const TableauRow &row );
+    unsigned tightenOnSingleInvertedStoredBasisRow( unsigned rowIndex );
+
 private:
     const ITableau &_tableau;
     unsigned _n;
@@ -158,13 +169,6 @@ private:
       tighter bounds. Return the number of new bounds learned.
     */
     unsigned onePassOverInvertedBasisRows();
-
-    /*
-      Process the inverted basis row and attempt to derive tighter
-      lower/upper bounds for the specified variable. Return the number
-      of tighter bounds found.
-    */
-    unsigned tightenOnSingleInvertedBasisRow( const TableauRow &row );
 };
 
 #endif // __RowBoundTightener_h__

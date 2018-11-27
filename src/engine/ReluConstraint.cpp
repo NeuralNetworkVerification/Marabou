@@ -10,6 +10,7 @@
  ** directory for licensing information.\endverbatim
  **/
 
+#include "ConstraintBoundTightener.h"
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
@@ -31,10 +32,10 @@ ReluConstraint::ReluConstraint( const String &serializedRelu )
     : _haveEliminatedVariables( false )
 {
     String constraintType = serializedRelu.substring(0, 4);
-    ASSERT(constraintType == String("relu"));
+    ASSERT( constraintType == String( "relu" ) );
 
     // remove the constraint type in serialized form
-    String serializedValues = serializedRelu.substring(5, serializedRelu.length()-5);
+    String serializedValues = serializedRelu.substring( 5, serializedRelu.length() - 5 );
     List<String> values = serializedValues.tokenize( "," );
     _b = atoi( values.back().ascii() );
     _f = atoi( values.front().ascii() );
@@ -89,6 +90,26 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
         setPhaseStatus( PhaseStatus::PHASE_ACTIVE );
     else if ( variable == _b && !FloatUtils::isNegative( bound ) )
         setPhaseStatus( PhaseStatus::PHASE_ACTIVE );
+
+    if ( isActive() && _constraintBoundTightener )
+    {
+        // A positive lower bound is always propagated between the two variables
+        if ( bound > 0 )
+        {
+            unsigned partner = ( variable == _f ) ? _b : _f;
+
+            if ( _lowerBounds.exists( partner ) )
+            {
+                double otherLowerBound = _lowerBounds[partner];
+                if ( bound > otherLowerBound )
+                    _constraintBoundTightener->registerTighterLowerBound( partner, bound );
+            }
+            else
+            {
+                _constraintBoundTightener->registerTighterLowerBound( partner, bound );
+            }
+        }
+    }
  }
 
 void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
@@ -103,6 +124,23 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
 
     if ( ( variable == _f || variable == _b ) && !FloatUtils::isPositive( bound ) )
         setPhaseStatus( PhaseStatus::PHASE_INACTIVE );
+
+    if ( isActive() && _constraintBoundTightener )
+    {
+        if ( variable == _f )
+        {
+            // Any bound that we learned of f should be propagated to b
+            if ( bound < _upperBounds[_b] )
+                _constraintBoundTightener->registerTighterUpperBound( _b, bound );
+        }
+        else
+        {
+            // If b has a negative upper bound, we f's upper bound is 0
+            double adjustedUpperBound = FloatUtils::max( bound, 0 );
+            if ( adjustedUpperBound < _upperBounds[_f] )
+                _constraintBoundTightener->registerTighterUpperBound( _f, adjustedUpperBound );
+        }
+    }
 }
 
 bool ReluConstraint::participatingVariable( unsigned variable ) const
