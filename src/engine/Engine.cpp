@@ -506,22 +506,6 @@ void Engine::fixViolatedPlConstraintIfPossible()
                             double coefficient = row[nonbasic_index];
                             double scalar = _tableau->getValue( basic_variable ) - coefficient * _tableau->getValue( fix._variable );
 
-                            // std::cerr << row._size << " " << fix._variable << " " << _tableau->variableToIndex(fix._variable) << std::endl; 
-                            // for ( unsigned i = 0; i < row._size; ++i )
-                            // {
-                            //     if( ( !FloatUtils::isZero( row._row[i]._coefficient  ) ) && !vars.exists( row._row[i]._var ) ){
-                            //         scalar += row._row[i]._coefficient * _tableau->getValue( row._row[i]._var );
-                            //     } else if( vars.exists( row._row[i]._var ) && ( !FloatUtils::isZero( row._row[i]._coefficient ))){
-                            //         coefficient = row._row[i]._coefficient;
-                            //     }
-                            // }
-                            // scalar += row._scalar;
-
-                            // std::cerr << _tableau->getValue(basic_variable) - coefficient * _tableau->getValue(fix._variable) << " " << scalar << std::endl;
-                            // ASSERT( row._size >= _tableau->variableToIndex( fix._variable ) );
-                            // std::cerr << coefficient << " --- " << row[_tableau->variableToIndex( fix._variable )] << std::endl;
-                            // ASSERT( FloatUtils::areEqual( (_tableau->getValue(basic_variable) - coefficient * _tableau->getValue(fix._variable)), scalar));
-                            
                             ASSERT( !FloatUtils::isZero( coefficient ) );
                             if(FloatUtils::isZero( coefficient - 1 )){
                                 break;
@@ -534,16 +518,7 @@ void Engine::fixViolatedPlConstraintIfPossible()
                                     _tableau->setNonBasicAssignment( fix._variable, activeFix, true );
 
                                     ASSERT( _plConstraintToFix->satisfied() )
-                                    // std::cerr << "taking active fix" << std::endl;
                                     return;
-
-                                    // if( _plConstraintToFix->satisfied() ){
-                                    //     std::cerr << "taking active fix" << std::endl;
-                                    //     return;
-                                    // } else {
-                                    //     std::cerr << "sdjlfadskl;fkasjfkadsjgklasjdgkljadsklgjaklgjaslkjgalkdjglk" << std::endl;
-                                    //     _tableau->setNonBasicAssignment( fix._variable, old_value, true );
-                                    // }
                                 }
                             }
 
@@ -563,14 +538,7 @@ void Engine::fixViolatedPlConstraintIfPossible()
                                     ASSERT( _plConstraintToFix->satisfied() );
                                 }
 
-                                // std::cerr << "taking NON active fix" << std::endl;
                                 return;
-                                // if( _plConstraintToFix->satisfied() ){
-                                //     return;
-                                // } else {
-                                //     std::cerr << "sdjlfadskl;fkasjfkadsjgklasjdgkljadsklgjaklgjaslkjgalkdjglk" << std::endl;
-                                //     _tableau->setNonBasicAssignment( fix._variable, old_value, true );
-                                // }
                             }
                         }
                     }

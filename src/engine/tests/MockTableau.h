@@ -346,6 +346,9 @@ public:
     }
 
     void computeAssignment() {}
+    bool checkValueWithinBounds( unsigned variable, double value ){
+        return FloatUtils::gte( value, getLowerBound( variable ) ) && FloatUtils::lte( value, getUpperBound( variable ) );
+    }
     void dump() const {}
     void dumpAssignment() {}
     void dumpEquations() {}
