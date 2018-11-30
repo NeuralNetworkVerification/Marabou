@@ -1,0 +1,44 @@
+/*********************                                                        */
+/*! \file Fact.h
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Guy Katz
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **/
+
+#ifndef __Fact_h__
+#define __Fact_h__
+
+#include "List.h"
+#include "Map.h"
+
+class Fact
+{
+public:
+  List<unsigned> getExplanations() const;
+  void addExplanation( unsigned explanationID );
+  void setCausingConstraintAndSplitID( unsigned constraintID, unsigned splitID );
+  bool isCausedBySplit() const;
+  unsigned getCausingConstraintID() const;
+  unsigned getCausingSplitID() const;
+
+private:
+  List<unsigned> _explanations;
+  unsigned _causingConstraintID;
+  unsigned _causingSplitID;
+  bool _causedBySplit;
+};
+
+#endif // __Fact_h__
+
+//
+// Local Variables:
+// compile-command: "make -C ../.. "
+// tags-file-name: "../../TAGS"
+// c-basic-offset: 4
+// End:
+//

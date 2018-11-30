@@ -16,6 +16,7 @@
 #ifndef __SmtCore_h__
 #define __SmtCore_h__
 
+#include "FactTracker.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
 #include "Stack.h"
@@ -85,6 +86,8 @@ public:
     */
     void setStatistics( Statistics *statistics );
 
+    void setFactTracker( FactTracker* factTracker );
+
     /*
       Have the SMT core choose, among a set of violated PL constraints, which
       constraint should be repaired (without splitting)
@@ -111,7 +114,10 @@ private:
         List<PiecewiseLinearCaseSplit> _impliedValidSplits;
         List<PiecewiseLinearCaseSplit> _alternativeSplits;
         EngineState *_engineState;
+        FactTracker _factTracker;
     };
+
+    FactTracker* _factTracker;
 
     /*
       Valid splits that were implied by level 0 of the stack.

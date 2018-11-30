@@ -16,6 +16,7 @@
 #ifndef __PiecewiseLinearConstraint_h__
 #define __PiecewiseLinearConstraint_h__
 
+#include "FactTracker.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
 #include "List.h"
@@ -77,10 +78,11 @@ public:
     virtual void restoreState( const PiecewiseLinearConstraint *state ) = 0;
 
     /*
-      Register/unregister the constraint with a talbeau.
+      Register/unregister the constraint with a talbeau
     */
     virtual void registerAsWatcher( ITableau *tableau ) = 0;
     virtual void unregisterAsWatcher( ITableau *tableau ) = 0;
+    void setFactTracker (FactTracker* FactTracker);
 
     /*
       The variable watcher notifcation callbacks, about a change in a variable's value or bounds.
@@ -219,6 +221,7 @@ protected:
     unsigned _id;
 
     IConstraintBoundTightener *_constraintBoundTightener;
+    FactTracker* _factTracker;
 
     /*
       Statistics collection

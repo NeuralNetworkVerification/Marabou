@@ -55,7 +55,7 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
 
         // Re-add all splits, which will restore variables and equations
         for ( const auto &split : targetSplits )
-            engine.applySplit( split );
+            engine.applySplit( split, false );
 
         // At this point, the tableau has the appropriate dimensions. Restore the variable bounds
         // and basic variables.

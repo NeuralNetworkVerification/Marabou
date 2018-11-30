@@ -17,8 +17,9 @@
 #define __Tightening_h__
 
 #include "ITableau.h"
+#include "Fact.h"
 
-class Tightening
+class Tightening: public Fact
 {
 public:
 	enum BoundType {

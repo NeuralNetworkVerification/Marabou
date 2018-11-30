@@ -44,8 +44,10 @@ Engine::Engine()
     , _numVisitedStatesAtPreviousRestoration( 0 )
 {
     _smtCore.setStatistics( &_statistics );
+    _smtCore.setFactTracker( &_factTracker );
     _tableau->setStatistics( &_statistics );
     _rowBoundTightener->setStatistics( &_statistics );
+    _rowBoundTightener->setFactTracker( &_factTracker );
     _constraintBoundTightener->setStatistics( &_statistics );
     _preprocessor.setStatistics( &_statistics );
 
@@ -740,6 +742,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         for ( const auto &constraint : _plConstraints )
         {
             constraint->registerAsWatcher( _tableau );
+            constraint->setFactTracker( &_factTracker );
             constraint->setStatistics( &_statistics );
             _plConstraintFromID[constraint->getID()] = constraint;
         }
@@ -997,7 +1000,7 @@ bool Engine::attemptToMergeVariables( unsigned x1, unsigned x2 )
     return true;
 }
 
-void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
+void Engine::applySplit( const PiecewiseLinearCaseSplit &split, bool fromSmtCore )
 {
     log( "" );
     log( "Applying a split. " );
@@ -1064,12 +1067,23 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
         bool columnsSuccessfullyMerged = false;
         if ( canMergeColumns )
             columnsSuccessfullyMerged = attemptToMergeVariables( x1, x2 );
-
+        if ( columnsSuccessfullyMerged )
+        {
+          // MAJOR TODO: fact tracking when equations merged
+          // probably; when x_1 and x_2 are merged and now referred to as x_1
+          // create a new fact corresponding to the equation, whose explanation is
+          // the old fact of x_1 and the old fact of x_2
+        }
         if ( !columnsSuccessfullyMerged )
         {
             // General case: add a new equation to the tableau
             unsigned auxVariable = _tableau->addEquation( equation );
             _activeEntryStrategy->resizeHook( _tableau );
+
+            if( fromSmtCore )
+            {
+              _factTracker.addEquationFact( _tableau->getM()-1, equation );
+            }
 
             switch ( equation._type )
             {
@@ -1101,7 +1115,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
     for ( auto &bound : bounds )
     {
         unsigned variable = _tableau->getVariableAfterMerging( bound._variable );
-
+        _factTracker.addBoundFact( variable, bound );
         if ( bound._type == Tightening::LB )
         {
             log( Stringf( "x%u: lower bound set to %.3lf", variable, bound._value ) );
@@ -1187,7 +1201,7 @@ bool Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
         constraint->setActiveConstraint( false );
         PiecewiseLinearCaseSplit validSplit = constraint->getValidCaseSplit();
         _smtCore.recordImpliedValidSplit( validSplit );
-        applySplit( validSplit );
+        applySplit( validSplit, false );
         ++_numPlConstraintsDisabledByValidSplits;
 
         return true;

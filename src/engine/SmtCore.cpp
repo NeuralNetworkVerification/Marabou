@@ -23,7 +23,8 @@
 #include "SmtCore.h"
 
 SmtCore::SmtCore( IEngine *engine )
-    : _statistics( NULL )
+    : _factTracker( NULL )
+    , _statistics( NULL )
     , _engine( engine )
     , _needToSplit( false )
     , _constraintForSplitting( NULL )
@@ -108,9 +109,11 @@ void SmtCore::performSplit()
     _engine->storeState( *stateBeforeSplits, true );
 
     StackEntry *stackEntry = new StackEntry;
+    if (_factTracker)
+      stackEntry->_factTracker = *_factTracker;
     // Perform the first split: add bounds and equations
     List<PiecewiseLinearCaseSplit>::iterator split = splits.begin();
-    _engine->applySplit( *split );
+    _engine->applySplit( *split, true );
     stackEntry->_activeSplit = *split;
 
     // Store the remaining splits on the stack, for later
@@ -185,6 +188,8 @@ bool SmtCore::popSplit()
     log( "\tRestoring engine state..." );
     _engine->restoreState( *(stackEntry->_engineState) );
     log( "\tRestoring engine state - DONE" );
+    if ( _factTracker )
+      *_factTracker = stackEntry->_factTracker;
 
     // Apply the new split and erase it from the list
     auto split = stackEntry->_alternativeSplits.begin();
@@ -193,7 +198,7 @@ bool SmtCore::popSplit()
     stackEntry->_impliedValidSplits.clear();
 
     log( "\tApplying new split..." );
-    _engine->applySplit( *split );
+    _engine->applySplit( *split, true );
     log( "\tApplying new split - DONE" );
 
     stackEntry->_activeSplit = *split;
@@ -245,6 +250,11 @@ void SmtCore::allSplitsSoFar( List<PiecewiseLinearCaseSplit> &result ) const
 void SmtCore::setStatistics( Statistics *statistics )
 {
     _statistics = statistics;
+}
+
+void SmtCore::setFactTracker( FactTracker* factTracker )
+{
+  _factTracker = factTracker;
 }
 
 void SmtCore::log( const String &message )

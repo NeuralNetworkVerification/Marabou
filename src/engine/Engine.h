@@ -24,6 +24,7 @@
 #include "BlandsRule.h"
 #include "DantzigsRule.h"
 #include "DegradationChecker.h"
+#include "FactTracker.h"
 #include "IEngine.h"
 #include "InputQuery.h"
 #include "Map.h"
@@ -108,7 +109,7 @@ private:
     /*
       Add equations and tightenings from a split.
     */
-    void applySplit( const PiecewiseLinearCaseSplit &split );
+    void applySplit( const PiecewiseLinearCaseSplit &split, bool fromSmtCore );
 
     /*
       Perform bound tightening operations that require
@@ -169,6 +170,7 @@ private:
       The SMT engine is in charge of case splitting.
     */
     SmtCore _smtCore;
+    FactTracker _factTracker;
 
     /*
       Number of pl constraints disabled by valid splits.
