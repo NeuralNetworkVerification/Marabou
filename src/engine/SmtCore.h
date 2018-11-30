@@ -13,6 +13,7 @@
 #ifndef __SmtCore_h__
 #define __SmtCore_h__
 
+#include "FactTracker.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
 #include "Stack.h"
@@ -76,6 +77,8 @@ public:
     */
     void setStatistics( Statistics *statistics );
 
+    void setFactTracker( FactTracker* factTracker );
+
     /*
       For debugging purposes only - store a correct possible solution
     */
@@ -96,7 +99,10 @@ private:
         List<PiecewiseLinearCaseSplit> _impliedValidSplits;
         List<PiecewiseLinearCaseSplit> _alternativeSplits;
         EngineState *_engineState;
+        FactTracker _factTracker;
     };
+
+    FactTracker* _factTracker;
 
     /*
       Valid splits that were implied by level 0 of the stack.

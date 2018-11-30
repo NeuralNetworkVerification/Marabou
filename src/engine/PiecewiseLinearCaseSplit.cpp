@@ -39,6 +39,28 @@ void PiecewiseLinearCaseSplit::setConstraintAndSplitID( unsigned constraintID, u
   _splitID = splitID;
 }
 
+unsigned PiecewiseLinearCaseSplit::getConstraintID() const
+{
+  return _constraintID;
+}
+
+unsigned PiecewiseLinearCaseSplit::getSplitID() const
+{
+  return _splitID;
+}
+
+void PiecewiseLinearCaseSplit::addExplanation( unsigned causeID )
+{
+  for( auto& bound: _bounds)
+  {
+    bound.addExplanation( causeID );
+  }
+  for (auto& equation: _equations )
+  {
+    equation.addExplanation( causeID );
+  }
+}
+
 void PiecewiseLinearCaseSplit::dump() const
 {
     printf( "\nDumping piecewise linear case split\n" );

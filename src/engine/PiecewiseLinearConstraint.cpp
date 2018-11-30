@@ -11,6 +11,7 @@
 **/
 
 #include "PiecewiseLinearConstraint.h"
+#include "FactTracker.h"
 #include "Statistics.h"
 
 PiecewiseLinearConstraint::PiecewiseLinearConstraint()
@@ -21,6 +22,11 @@ PiecewiseLinearConstraint::PiecewiseLinearConstraint()
 
 unsigned PiecewiseLinearConstraint::getID() const {
   return _id;
+}
+
+void PiecewiseLinearConstraint::setFactTracker( FactTracker* factTracker)
+{
+  _factTracker = factTracker;
 }
 
 void PiecewiseLinearConstraint::setStatistics( Statistics *statistics )

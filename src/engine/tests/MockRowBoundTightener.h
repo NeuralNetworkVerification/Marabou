@@ -65,6 +65,7 @@ public:
     void examineConstraintMatrix( bool /* untilSaturation */ ) {}
     void examinePivotRow() {}
     void getRowTightenings( List<Tightening> &/* tightenings */ ) const {}
+		void setFactTracker( FactTracker* /* factTracker */ ) {}
     void setStatistics( Statistics */* statistics */ ) {}
     void examineImplicitInvertedBasisMatrix( bool /* untilSaturation */ ) {}
 };

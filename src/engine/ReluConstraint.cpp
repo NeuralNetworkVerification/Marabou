@@ -11,6 +11,7 @@
  **/
 
 #include "Debug.h"
+#include "FactTracker.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
 #include "MStringf.h"
@@ -25,6 +26,7 @@ ReluConstraint::ReluConstraint( unsigned b, unsigned f, unsigned id )
     , _haveEliminatedVariables( false )
 {
     _id = id;
+    _factTracker = NULL;
     setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
 }
 
@@ -256,9 +258,21 @@ PiecewiseLinearCaseSplit ReluConstraint::getValidCaseSplit() const
     ASSERT( _phaseStatus != PhaseStatus::PHASE_NOT_FIXED );
 
     if ( _phaseStatus == PhaseStatus::PHASE_ACTIVE )
-        return getActiveSplit();
+    {
+      PiecewiseLinearCaseSplit activeSplit = getActiveSplit();
+      if ( _factTracker && _factTracker->hasFactAffectingBound( _f, FactTracker::LB ) )
+      {
+        activeSplit.addExplanation( _factTracker->getFactIDAffectingBound( _f, FactTracker::LB ) );
+      }
+      return activeSplit;
+    }
 
-    return getInactiveSplit();
+    PiecewiseLinearCaseSplit inactiveSplit = getInactiveSplit();
+    if ( _factTracker && _factTracker->hasFactAffectingBound( _b, FactTracker::UB ) )
+    {
+      inactiveSplit.addExplanation( _factTracker->getFactIDAffectingBound( _b, FactTracker::UB ) );
+    }
+    return inactiveSplit;
 }
 
 void ReluConstraint::dump( String &output ) const

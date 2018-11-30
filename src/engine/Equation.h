@@ -14,12 +14,13 @@
 #define __Equation_h__
 
 #include "List.h"
+#include "Fact.h"
 
 /* A class representing a single input equation. For now, all
    equations are interpreted as equalities, i.e. the sum of all
    addends equals the scalar */
 
-class Equation
+class Equation: public Fact
 {
 public:
     enum EquationType {

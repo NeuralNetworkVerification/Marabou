@@ -11,6 +11,7 @@
  **/
 
 #include "Debug.h"
+#include "FactTracker.h"
 #include "InfeasibleQueryException.h"
 #include "ReluplexError.h"
 #include "RowBoundTightener.h"
@@ -650,6 +651,11 @@ void RowBoundTightener::getRowTightenings( List<Tightening> &tightenings ) const
             _tightenedUpper[i] = false;
         }
     }
+}
+
+void RowBoundTightener::setFactTracker( FactTracker* factTracker )
+{
+  _factTracker = factTracker;
 }
 
 void RowBoundTightener::setStatistics( Statistics *statistics )

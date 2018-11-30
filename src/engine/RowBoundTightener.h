@@ -90,6 +90,8 @@ public:
     */
     void getRowTightenings( List<Tightening> &tightenings ) const;
 
+    void setFactTracker( FactTracker* factTracker );
+
     /*
       Have the Bound Tightener start reporting statistics.
      */
@@ -119,6 +121,8 @@ private:
     double *_ciTimesLb;
     double *_ciTimesUb;
     char *_ciSign;
+
+    FactTracker* _factTracker;
 
     /*
       Statistics collection

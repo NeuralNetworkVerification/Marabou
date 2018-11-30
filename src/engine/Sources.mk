@@ -8,6 +8,8 @@ SOURCES += \
 	EngineState.cpp \
 	EntrySelectionStrategy.cpp \
 	Equation.cpp \
+	Fact.cpp \
+	FactTracker.cpp \
 	InputQuery.cpp \
 	MaxConstraint.cpp \
 	PiecewiseLinearCaseSplit.cpp \
