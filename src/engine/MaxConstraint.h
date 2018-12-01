@@ -88,6 +88,11 @@ class MaxConstraint : public PiecewiseLinearConstraint
     PiecewiseLinearCaseSplit getValidCaseSplit() const;
 
     /*
+      Return a list of smart fixes for violated constraint.
+    */
+    List<PiecewiseLinearConstraint::Fix> getSmartFixes( ITableau *tableau ) const;
+
+    /*
       Preprocessing related functions, to inform that a variable has been eliminated completely
       because it was fixed to some value, or that a variable's index has changed (e.g., x4 is now
       called x2). constraintObsolete() returns true iff and the constraint has become obsolote

@@ -73,6 +73,11 @@ public:
     List<PiecewiseLinearConstraint::Fix> getPossibleFixes() const;
 
     /*
+      Return a list of smart fixes for violated constraint.
+    */
+    List<PiecewiseLinearConstraint::Fix> getSmartFixes( ITableau *tableau ) const;
+    
+    /*
       Returns the list of case splits that this piecewise linear
       constraint breaks into. These splits need to complementary,
       i.e. if the list is {l1, l2, ..., ln-1, ln},

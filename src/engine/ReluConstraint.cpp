@@ -18,6 +18,7 @@
 #include "ReluConstraint.h"
 #include "ReluplexError.h"
 #include "Statistics.h"
+#include "TableauRow.h"
 
 ReluConstraint::ReluConstraint( unsigned b, unsigned f )
     : _b( b )
@@ -168,6 +169,65 @@ List<PiecewiseLinearConstraint::Fix> ReluConstraint::getPossibleFixes() const
         fixes.append( PiecewiseLinearConstraint::Fix( _f, bValue ) );
     }
 
+    return fixes;
+}
+
+List<PiecewiseLinearConstraint::Fix> ReluConstraint::getSmartFixes( ITableau *tableau ) const {
+    ASSERT( !satisfied() );
+    ASSERT( _assignment.exists( _f ) && _assignment.size() > 1 );
+
+    // TODO
+    List<PiecewiseLinearConstraint::Fix> fixes;
+
+    TableauRow row( tableau->getN() - tableau->getM() );
+    int basic_variable = -1;
+    int nonbasic_variable = -1;
+    if( tableau->isBasic( _b )){
+        basic_variable = _b;
+        nonbasic_variable = _f;
+    } else if ( tableau->isBasic( _f )) {
+        basic_variable = _f;
+        nonbasic_variable = _b;
+    }
+
+    // one of the variables need to be basic variable
+    ASSERT( basic_variable != -1 );
+
+    int row_index = tableau->variableToIndex( basic_variable );
+    tableau->getTableauRow( row_index, &row );
+
+    // row lhs need to be basic_variable
+    ASSERT( ( int )row._lhs == basic_variable );
+
+    int nonbasic_index = tableau->variableToIndex( nonbasic_variable );
+    double coefficient = row[nonbasic_index];
+    double scalar = tableau->getValue( basic_variable ) - coefficient * tableau->getValue( nonbasic_variable );
+
+    ASSERT( !FloatUtils::isZero( coefficient ) );
+    if(FloatUtils::isZero( coefficient - 1 )){
+        return fixes; // return empty list
+    }
+
+    double activeFix = scalar / ( 1 - coefficient );
+
+    if ( activeFix > 0 ){
+        fixes.append( PiecewiseLinearConstraint::Fix( nonbasic_variable, activeFix ) );
+    }
+
+    double nonactiveFix = 0;
+    if( row._lhs == _b ){
+        nonactiveFix = scalar;
+    } else {
+        nonactiveFix = -scalar/coefficient;
+    }
+
+    if( nonactiveFix <= 0 ){
+        if( (unsigned) nonbasic_variable == _f ){
+            fixes.append( PiecewiseLinearConstraint::Fix( nonbasic_variable, 0 ) );
+        } else if( (unsigned) nonbasic_variable == _b ){
+            fixes.append( PiecewiseLinearConstraint::Fix( nonbasic_variable, nonactiveFix ) );
+        }
+    }
     return fixes;
 }
 

@@ -18,7 +18,6 @@
 #include "MStringf.h"
 #include "MalformedBasisException.h"
 #include "PiecewiseLinearConstraint.h"
-#include "ReluConstraint.h"
 #include "Preprocessor.h"
 #include "ReluplexError.h"
 #include "TableauRow.h"
@@ -471,79 +470,26 @@ void Engine::fixViolatedPlConstraintIfPossible()
                 _tableau->setNonBasicAssignment( fix._variable, fix._value, true );
                 if( _plConstraintToFix->satisfied() ){
                     return;
-                } else {
+                } 
+                else {
                     // if the constraint is not satisfied, return it back to original value
                     _tableau->setNonBasicAssignment( fix._variable, old_value, true );
 
-                    if( GlobalConfiguration::USE_SMART_FIX ){
-                        String serializedConstraint = _plConstraintToFix->serializeToString();
-                        String constraintType = serializedConstraint.substring( 0, 4 );
-                        // check if PL constraint is RELU
-                        if( constraintType == String( "relu" ) ){
-                            ReluConstraint * reluConstraint = ( ReluConstraint * )_plConstraintToFix;
-                            List<unsigned> vars = reluConstraint->getParticipatingVariables();
-                            unsigned _b = vars.front();
-                            unsigned _f = vars.back();
+                    if( GlobalConfiguration::USE_SMART_FIX )
+                    {
+                        List<PiecewiseLinearConstraint::Fix> smartFixes = _plConstraintToFix->getSmartFixes( _tableau );
 
-                            TableauRow row( _tableau->getN() - _tableau->getM() );
-                            int basic_variable = -1;
-                            if( fix._variable == _b ){
-                                basic_variable = _f;
-                            } else {
-                                basic_variable = _b;
-                            }
-
-                            ASSERT( basic_variable != -1 );
-                            ASSERT( _tableau->isBasic(basic_variable) );
-
-                            int row_index = _tableau->variableToIndex( basic_variable );
-                            _tableau->getTableauRow( row_index, &row );
-
-                            ASSERT( vars.exists(row._lhs) );
-                            ASSERT( ( int )row._lhs == basic_variable );
-
-                            int nonbasic_index = _tableau->variableToIndex( fix._variable );
-                            double coefficient = row[nonbasic_index];
-                            double scalar = _tableau->getValue( basic_variable ) - coefficient * _tableau->getValue( fix._variable );
-
-                            ASSERT( !FloatUtils::isZero( coefficient ) );
-                            if(FloatUtils::isZero( coefficient - 1 )){
-                                break;
-                            }
-
-                            double activeFix = scalar / ( 1 - coefficient );
-
-                            if ( activeFix > 0 ){
-                                if( _tableau->checkValueWithinBounds( fix._variable, activeFix )){
-                                    _tableau->setNonBasicAssignment( fix._variable, activeFix, true );
-
-                                    ASSERT( _plConstraintToFix->satisfied() )
-                                    return;
-                                }
-                            }
-
-                            double nonactiveFix = 0;
-                            if( row._lhs == _b ){
-                                nonactiveFix = scalar;
-                            } else {
-                                nonactiveFix = -scalar/coefficient;
-                            }
-
-                            if( nonactiveFix <= 0 ){
-                                if( fix._variable == _f && _tableau->checkValueWithinBounds( _f, 0 ) ){
-                                    _tableau->setNonBasicAssignment( fix._variable, 0, true );
-                                    ASSERT( _plConstraintToFix->satisfied() );
-                                } else if( fix._variable == _b && _tableau->checkValueWithinBounds( _b, nonactiveFix ) ){
-                                    _tableau->setNonBasicAssignment( fix._variable, nonactiveFix, true );
-                                    ASSERT( _plConstraintToFix->satisfied() );
-                                }
-
+                        for ( const auto &smartFix : smartFixes )
+                        {
+                            if( _tableau->checkValueWithinBounds( smartFix._variable, smartFix._value ))
+                            {
+                                _tableau->setNonBasicAssignment( smartFix._variable, smartFix._value, true );
+                                ASSERT( _plConstraintToFix->satisfied() );
                                 return;
-                            }
+                            }   
                         }
                     }
                 }
-            	// return;
 			}
         }
     }
