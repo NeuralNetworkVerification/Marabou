@@ -92,6 +92,11 @@ public:
             return List<PiecewiseLinearConstraint::Fix>();
         }
 
+        List<PiecewiseLinearConstraint::Fix> getSmartFixes( ITableau * ) const
+        {
+            return List<PiecewiseLinearConstraint::Fix>();
+        }
+
         List<PiecewiseLinearCaseSplit> nextSplits;
         List<PiecewiseLinearCaseSplit> getCaseSplits() const
         {
