@@ -128,8 +128,12 @@ public:
     // When doing explicit bound tightening, should we repeat until saturation?
     static const bool EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION;
 
-    // Heuristic flags
+    // When a PL constraint proposes a fix that affects multiple variables, should it first query
+    // for any relevant linear connections between the variables?
     static const bool USE_SMART_FIX;
+
+    // A heuristic for selecting which of the broken PL constraints will be split on. In this case,
+    // the one that has been repaired the least number of times so far.
     static const bool USE_LEAST_FIX;
 
     /*
