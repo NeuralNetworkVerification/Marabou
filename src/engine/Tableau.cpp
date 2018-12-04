@@ -417,7 +417,7 @@ void Tableau::computeAssignment()
 }
 
 bool Tableau::checkValueWithinBounds( unsigned variable, double value ){
-    return FloatUtils::gte( value, getLowerBound( variable ) ) 
+    return FloatUtils::gte( value, getLowerBound( variable ) )
     && FloatUtils::lte( value, getUpperBound( variable ) );
 }
 
@@ -2471,6 +2471,48 @@ void Tableau::mergeColumns( unsigned x1, unsigned x2 )
 
     if ( _statistics )
         _statistics->incNumMergedColumns();
+}
+
+bool Tableau::areLinearlyDependent( unsigned x1, unsigned x2, double &coefficient )
+{
+    bool oneIsBasic = isBasic( x1 );
+    bool twoIsBasic = isBasic( x2 );
+
+    // If both are basic or both or non-basic, they are
+    // independent
+    if ( oneIsBasic == twoIsBasic )
+        return false;
+
+    // One is basic and one isnt
+    unsigned basic = oneIsBasic ? x1 : x2;
+    unsigned nonBasic = oneIsBasic ? x2 : x1;
+
+    // Find the column of the non-basic
+    const double *a = getAColumn( nonBasic );
+    _basisFactorization->forwardTransformation( a, _workM );
+
+    // Find the correct entry in the column
+    unsigned basicIndex = _variableToIndex[basic];
+    coefficient = -_workM[basicIndex];
+
+    // Coefficient is zero - independent!
+    if ( FloatUtils::isZero( coefficient ) )
+        return false;
+
+    /*
+      The variable are linearly dependent. We want the coefficient c such that
+
+        x2 = ... + c * x1 + ...
+
+      right now we know that
+
+        basic = ... + c * nonBasic + ...
+    */
+
+    if ( basic != x2 )
+        coefficient = 1 / coefficient;
+
+    return true;
 }
 
 //

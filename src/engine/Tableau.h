@@ -418,6 +418,14 @@ public:
     */
     void mergeColumns( unsigned x1, unsigned x2 );
 
+    /*
+      Check whether two variables are linearly dependent. If so, the function
+      returns true and places in coefficient the value c such that
+
+        x2 = ... + c * x1 + ...
+    */
+    bool areLinearlyDependent( unsigned x1, unsigned x2, double &coefficient );
+
 private:
     /*
       Variable watchers
