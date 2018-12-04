@@ -1146,7 +1146,6 @@ void Engine::extensiveBoundTightening()
         start = TimeUtils::sampleMicro();
         _statistics.incNumBoundTighteningsOnExplicitBasis();
 
-        List<Tightening> tighteningsFromConstraints;
         for ( unsigned i = 0; i < _tableau->getM(); ++i )
         {
             unsigned numLearnedBounds = _rowBoundTightener->tightenOnSingleInvertedStoredBasisRow( i );
@@ -1157,20 +1156,7 @@ void Engine::extensiveBoundTightening()
             if ( numLearnedBounds > 0 )
             {
                 applyAllRowTightenings();
-
-                tighteningsFromConstraints.clear();
-                _constraintBoundTightener.getConstraintTightenings( tighteningsFromConstraints );
-                for ( const auto &tightening : tighteningsFromConstraints )
-                {
-                    _statistics.incNumBoundsProposedByPlConstraints();
-
-                    if ( tightening._type == Tightening::LB )
-                        _tableau->tightenLowerBound( tightening._variable, tightening._value );
-                    else
-                        _tableau->tightenUpperBound( tightening._variable, tightening._value );
-                }
-
-                learnedNewBounds = !tighteningsFromConstraints.empty();
+                learnedNewBounds = applyAllConstraintTightenings();
                 break;
             }
         }
