@@ -172,14 +172,66 @@ List<PiecewiseLinearConstraint::Fix> ReluConstraint::getPossibleFixes() const
     return fixes;
 }
 
-List<PiecewiseLinearConstraint::Fix> ReluConstraint::getSmartFixes( ITableau *tableau ) const {
+List<PiecewiseLinearConstraint::Fix> ReluConstraint::getSmartFixes( ITableau *tableau ) const
+{
     ASSERT( !satisfied() );
     ASSERT( _assignment.exists( _f ) && _assignment.size() > 1 );
 
-    // TODO
+    double coefficient;
+    double inverseCoefficient;
+    bool linearlyDependent = tableau->areLinearlyDependent( _b, _f, coefficient, inverseCoefficient );
+
+    // TODO: do we want special handling for the case both are basic? This might make the original
+    // fixes not work, because a pivot will happen and make the variables dependent.
+
+    /*
+      If b and f are linearly independent, there's nothing clever to be done -
+      just return the "non-smart" fixes.
+    */
+    if ( !linearlyDependent )
+        return getPossibleFixes();
+
+    /*
+      We know b and f are linearly dependent. This means that one of them
+      is basic, the other non basic, and that coefficient is not 0.
+
+      We know that:
+
+        _f = ... + coefficient * _b + ...
+    */
+
     List<PiecewiseLinearConstraint::Fix> fixes;
 
+    /*
+      Next, we want to compute by how much we need to change b and/or f in order to
+      repair the violation. For example, if we have:
+
+        b = 0, f = 6
+
+      and
+
+        b = ... -2f ...
+
+      And we want to repair so that f=b, we do the following computation:
+
+        f' = f - x
+        b' = b +2x
+        f' = b'
+        -------->
+        0 + 2x = 6 - x
+        -------->
+        x = 2
+
+      Giving us that we need to decrease f by 2, which will cause b to be increased
+      by 4, repairing the violation. Of course, there may be multiple options for repair.
+    */
+
+    // TODO: implement the above. No longer need to compute the tableau row.
+
+    /*
+
     TableauRow row( tableau->getN() - tableau->getM() );
+
     int basic_variable = -1;
     int nonbasic_variable = -1;
     if( tableau->isBasic( _b )){
@@ -228,6 +280,7 @@ List<PiecewiseLinearConstraint::Fix> ReluConstraint::getSmartFixes( ITableau *ta
             fixes.append( PiecewiseLinearConstraint::Fix( nonbasic_variable, nonactiveFix ) );
         }
     }
+    */
     return fixes;
 }
 

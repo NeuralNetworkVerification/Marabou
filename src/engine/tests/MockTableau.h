@@ -567,6 +567,14 @@ public:
     void mergeColumns( unsigned /* x1 */, unsigned /* x2 */ )
     {
     }
+
+    bool areLinearlyDependent( unsigned /* x1 */,
+                               unsigned /* x2 */,
+                               double & /* coefficient */,
+                               double & /*inverseCoefficient */ )
+    {
+        return false;
+    }
 };
 
 #endif // __MockTableau_h__

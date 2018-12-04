@@ -2473,7 +2473,7 @@ void Tableau::mergeColumns( unsigned x1, unsigned x2 )
         _statistics->incNumMergedColumns();
 }
 
-bool Tableau::areLinearlyDependent( unsigned x1, unsigned x2, double &coefficient )
+bool Tableau::areLinearlyDependent( unsigned x1, unsigned x2, double &coefficient, double &inverseCoefficient )
 {
     bool oneIsBasic = isBasic( x1 );
     bool twoIsBasic = isBasic( x2 );
@@ -2510,7 +2510,12 @@ bool Tableau::areLinearlyDependent( unsigned x1, unsigned x2, double &coefficien
     */
 
     if ( basic != x2 )
+    {
+        inverseCoefficient = coefficient;
         coefficient = 1 / coefficient;
+    }
+    else
+        inverseCoefficient = 1 / coefficient;
 
     return true;
 }

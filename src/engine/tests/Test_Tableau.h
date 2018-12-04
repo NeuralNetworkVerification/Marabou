@@ -1370,28 +1370,28 @@ public:
         List<unsigned> basics = { 4, 5, 6 };
         TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau( basics ) );
 
-        double coefficient;
+        double coefficient, inverseCoefficient;
 
         // Basics are independet, non-basics are independet
-        TS_ASSERT( !tableau->areLinearlyDependent( 0, 1, coefficient ) );
-        TS_ASSERT( !tableau->areLinearlyDependent( 1, 0, coefficient ) );
-        TS_ASSERT( !tableau->areLinearlyDependent( 0, 2, coefficient ) );
-        TS_ASSERT( !tableau->areLinearlyDependent( 2, 0, coefficient ) );
-        TS_ASSERT( !tableau->areLinearlyDependent( 0, 3, coefficient ) );
-        TS_ASSERT( !tableau->areLinearlyDependent( 3, 0, coefficient ) );
-        TS_ASSERT( !tableau->areLinearlyDependent( 1, 2, coefficient ) );
-        TS_ASSERT( !tableau->areLinearlyDependent( 2, 1, coefficient ) );
-        TS_ASSERT( !tableau->areLinearlyDependent( 1, 3, coefficient ) );
-        TS_ASSERT( !tableau->areLinearlyDependent( 3, 1, coefficient ) );
-        TS_ASSERT( !tableau->areLinearlyDependent( 2, 3, coefficient ) );
-        TS_ASSERT( !tableau->areLinearlyDependent( 3, 2, coefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 0, 1, coefficient, inverseCoefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 1, 0, coefficient, inverseCoefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 0, 2, coefficient, inverseCoefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 2, 0, coefficient, inverseCoefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 0, 3, coefficient, inverseCoefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 3, 0, coefficient, inverseCoefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 1, 2, coefficient, inverseCoefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 2, 1, coefficient, inverseCoefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 1, 3, coefficient, inverseCoefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 3, 1, coefficient, inverseCoefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 2, 3, coefficient, inverseCoefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 3, 2, coefficient, inverseCoefficient ) );
 
-        TS_ASSERT( !tableau->areLinearlyDependent( 4, 5, coefficient ) );
-        TS_ASSERT( !tableau->areLinearlyDependent( 5, 4, coefficient ) );
-        TS_ASSERT( !tableau->areLinearlyDependent( 4, 6, coefficient ) );
-        TS_ASSERT( !tableau->areLinearlyDependent( 6, 4, coefficient ) );
-        TS_ASSERT( !tableau->areLinearlyDependent( 5, 6, coefficient ) );
-        TS_ASSERT( !tableau->areLinearlyDependent( 6, 5, coefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 4, 5, coefficient, inverseCoefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 5, 4, coefficient, inverseCoefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 4, 6, coefficient, inverseCoefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 6, 4, coefficient, inverseCoefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 5, 6, coefficient, inverseCoefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 6, 5, coefficient, inverseCoefficient ) );
 
         // All basics depend on all non-basics
 
@@ -1401,65 +1401,53 @@ public:
            x7 = 420 - 4x1 - 3x2 - 3x3 - 4x4
         */
 
-        TS_ASSERT( tableau->areLinearlyDependent( 0, 4, coefficient ) );
+        TS_ASSERT( tableau->areLinearlyDependent( 0, 4, coefficient, inverseCoefficient ) );
         TS_ASSERT( FloatUtils::areEqual( coefficient, -3 ) );
-        TS_ASSERT( tableau->areLinearlyDependent( 4, 0, coefficient ) );
-        TS_ASSERT( FloatUtils::areEqual( coefficient, -1.0/3 ) );
+        TS_ASSERT( FloatUtils::areEqual( inverseCoefficient, -1.0/3 ) );
 
-        TS_ASSERT( tableau->areLinearlyDependent( 1, 4, coefficient ) );
+        TS_ASSERT( tableau->areLinearlyDependent( 1, 4, coefficient, inverseCoefficient ) );
         TS_ASSERT( FloatUtils::areEqual( coefficient, -2 ) );
-        TS_ASSERT( tableau->areLinearlyDependent( 4, 1, coefficient ) );
-        TS_ASSERT( FloatUtils::areEqual( coefficient, -1.0/2 ) );
+        TS_ASSERT( FloatUtils::areEqual( inverseCoefficient, -1.0/2 ) );
 
-        TS_ASSERT( tableau->areLinearlyDependent( 2, 4, coefficient ) );
+        TS_ASSERT( tableau->areLinearlyDependent( 2, 4, coefficient, inverseCoefficient ) );
         TS_ASSERT( FloatUtils::areEqual( coefficient, -1 ) );
-        TS_ASSERT( tableau->areLinearlyDependent( 4, 2, coefficient ) );
-        TS_ASSERT( FloatUtils::areEqual( coefficient, -1 ) );
+        TS_ASSERT( FloatUtils::areEqual( inverseCoefficient, -1 ) );
 
-        TS_ASSERT( tableau->areLinearlyDependent( 3, 4, coefficient ) );
+        TS_ASSERT( tableau->areLinearlyDependent( 3, 4, coefficient, inverseCoefficient ) );
         TS_ASSERT( FloatUtils::areEqual( coefficient, -2 ) );
-        TS_ASSERT( tableau->areLinearlyDependent( 4, 3, coefficient ) );
-        TS_ASSERT( FloatUtils::areEqual( coefficient, -1.0/2 ) );
+        TS_ASSERT( FloatUtils::areEqual( inverseCoefficient, -1.0/2 ) );
 
-        TS_ASSERT( tableau->areLinearlyDependent( 0, 5, coefficient ) );
+        TS_ASSERT( tableau->areLinearlyDependent( 0, 5, coefficient, inverseCoefficient ) );
         TS_ASSERT( FloatUtils::areEqual( coefficient, -1 ) );
-        TS_ASSERT( tableau->areLinearlyDependent( 5, 0, coefficient ) );
-        TS_ASSERT( FloatUtils::areEqual( coefficient, -1 ) );
+        TS_ASSERT( FloatUtils::areEqual( inverseCoefficient, -1 ) );
 
-        TS_ASSERT( tableau->areLinearlyDependent( 1, 5, coefficient ) );
+        TS_ASSERT( tableau->areLinearlyDependent( 1, 5, coefficient, inverseCoefficient ) );
         TS_ASSERT( FloatUtils::areEqual( coefficient, -1 ) );
-        TS_ASSERT( tableau->areLinearlyDependent( 5, 1, coefficient ) );
-        TS_ASSERT( FloatUtils::areEqual( coefficient, -1 ) );
+        TS_ASSERT( FloatUtils::areEqual( inverseCoefficient, -1 ) );
 
-        TS_ASSERT( tableau->areLinearlyDependent( 2, 5, coefficient ) );
+        TS_ASSERT( tableau->areLinearlyDependent( 2, 5, coefficient, inverseCoefficient ) );
         TS_ASSERT( FloatUtils::areEqual( coefficient, -1 ) );
-        TS_ASSERT( tableau->areLinearlyDependent( 5, 2, coefficient ) );
-        TS_ASSERT( FloatUtils::areEqual( coefficient, -1 ) );
+        TS_ASSERT( FloatUtils::areEqual( inverseCoefficient, -1 ) );
 
-        TS_ASSERT( tableau->areLinearlyDependent( 3, 5, coefficient ) );
+        TS_ASSERT( tableau->areLinearlyDependent( 3, 5, coefficient, inverseCoefficient ) );
         TS_ASSERT( FloatUtils::areEqual( coefficient, -1 ) );
-        TS_ASSERT( tableau->areLinearlyDependent( 5, 3, coefficient ) );
-        TS_ASSERT( FloatUtils::areEqual( coefficient, -1 ) );
+        TS_ASSERT( FloatUtils::areEqual( inverseCoefficient, -1 ) );
 
-        TS_ASSERT( tableau->areLinearlyDependent( 0, 6, coefficient ) );
+        TS_ASSERT( tableau->areLinearlyDependent( 0, 6, coefficient, inverseCoefficient ) );
         TS_ASSERT( FloatUtils::areEqual( coefficient, -4 ) );
-        TS_ASSERT( tableau->areLinearlyDependent( 6, 0, coefficient ) );
-        TS_ASSERT( FloatUtils::areEqual( coefficient, -1.0/4 ) );
+        TS_ASSERT( FloatUtils::areEqual( inverseCoefficient, -1.0/4 ) );
 
-        TS_ASSERT( tableau->areLinearlyDependent( 1, 6, coefficient ) );
+        TS_ASSERT( tableau->areLinearlyDependent( 1, 6, coefficient, inverseCoefficient ) );
         TS_ASSERT( FloatUtils::areEqual( coefficient, -3 ) );
-        TS_ASSERT( tableau->areLinearlyDependent( 6, 1, coefficient ) );
-        TS_ASSERT( FloatUtils::areEqual( coefficient, -1.0/3 ) );
+        TS_ASSERT( FloatUtils::areEqual( inverseCoefficient, -1.0/3 ) );
 
-        TS_ASSERT( tableau->areLinearlyDependent( 2, 6, coefficient ) );
+        TS_ASSERT( tableau->areLinearlyDependent( 2, 6, coefficient, inverseCoefficient ) );
         TS_ASSERT( FloatUtils::areEqual( coefficient, -3 ) );
-        TS_ASSERT( tableau->areLinearlyDependent( 6, 2, coefficient ) );
-        TS_ASSERT( FloatUtils::areEqual( coefficient, -1.0/3 ) );
+        TS_ASSERT( FloatUtils::areEqual( inverseCoefficient, -1.0/3 ) );
 
-        TS_ASSERT( tableau->areLinearlyDependent( 3, 6, coefficient ) );
+        TS_ASSERT( tableau->areLinearlyDependent( 3, 6, coefficient, inverseCoefficient ) );
         TS_ASSERT( FloatUtils::areEqual( coefficient, -4 ) );
-        TS_ASSERT( tableau->areLinearlyDependent( 6, 3, coefficient ) );
-        TS_ASSERT( FloatUtils::areEqual( coefficient, -1.0/4 ) );
+        TS_ASSERT( FloatUtils::areEqual( inverseCoefficient, -1.0/4 ) );
 
         // Now perform a pivot, and see that things still make sense afterwards
 
@@ -1489,45 +1477,41 @@ public:
 
         */
 
-        TS_ASSERT( !tableau->areLinearlyDependent( 0, 1, coefficient ) );
-        TS_ASSERT( !tableau->areLinearlyDependent( 1, 0, coefficient ) );
-        TS_ASSERT( !tableau->areLinearlyDependent( 0, 5, coefficient ) );
-        TS_ASSERT( !tableau->areLinearlyDependent( 5, 0, coefficient ) );
-        TS_ASSERT( !tableau->areLinearlyDependent( 0, 3, coefficient ) );
-        TS_ASSERT( !tableau->areLinearlyDependent( 3, 0, coefficient ) );
-        TS_ASSERT( !tableau->areLinearlyDependent( 1, 5, coefficient ) );
-        TS_ASSERT( !tableau->areLinearlyDependent( 5, 1, coefficient ) );
-        TS_ASSERT( !tableau->areLinearlyDependent( 1, 3, coefficient ) );
-        TS_ASSERT( !tableau->areLinearlyDependent( 3, 1, coefficient ) );
-        TS_ASSERT( !tableau->areLinearlyDependent( 5, 3, coefficient ) );
-        TS_ASSERT( !tableau->areLinearlyDependent( 3, 5, coefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 0, 1, coefficient, inverseCoefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 1, 0, coefficient, inverseCoefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 0, 5, coefficient, inverseCoefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 5, 0, coefficient, inverseCoefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 0, 3, coefficient, inverseCoefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 3, 0, coefficient, inverseCoefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 1, 5, coefficient, inverseCoefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 5, 1, coefficient, inverseCoefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 1, 3, coefficient, inverseCoefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 3, 1, coefficient, inverseCoefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 5, 3, coefficient, inverseCoefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 3, 5, coefficient, inverseCoefficient ) );
 
-        TS_ASSERT( !tableau->areLinearlyDependent( 4, 2, coefficient ) );
-        TS_ASSERT( !tableau->areLinearlyDependent( 2, 4, coefficient ) );
-        TS_ASSERT( !tableau->areLinearlyDependent( 4, 6, coefficient ) );
-        TS_ASSERT( !tableau->areLinearlyDependent( 6, 4, coefficient ) );
-        TS_ASSERT( !tableau->areLinearlyDependent( 2, 6, coefficient ) );
-        TS_ASSERT( !tableau->areLinearlyDependent( 6, 2, coefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 4, 2, coefficient, inverseCoefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 2, 4, coefficient, inverseCoefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 4, 6, coefficient, inverseCoefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 6, 4, coefficient, inverseCoefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 2, 6, coefficient, inverseCoefficient ) );
+        TS_ASSERT( !tableau->areLinearlyDependent( 6, 2, coefficient, inverseCoefficient ) );
 
-        TS_ASSERT( tableau->areLinearlyDependent( 0, 2, coefficient ) );
+        TS_ASSERT( tableau->areLinearlyDependent( 0, 2, coefficient, inverseCoefficient ) );
         TS_ASSERT( FloatUtils::areEqual( coefficient, -1 ) );
-        TS_ASSERT( tableau->areLinearlyDependent( 2, 0, coefficient ) );
-        TS_ASSERT( FloatUtils::areEqual( coefficient, -1 ) );
+        TS_ASSERT( FloatUtils::areEqual( inverseCoefficient, -1 ) );
 
-        TS_ASSERT( tableau->areLinearlyDependent( 1, 2, coefficient ) );
+        TS_ASSERT( tableau->areLinearlyDependent( 1, 2, coefficient, inverseCoefficient ) );
         TS_ASSERT( FloatUtils::areEqual( coefficient, -1 ) );
-        TS_ASSERT( tableau->areLinearlyDependent( 2, 1, coefficient ) );
-        TS_ASSERT( FloatUtils::areEqual( coefficient, -1 ) );
+        TS_ASSERT( FloatUtils::areEqual( inverseCoefficient, -1 ) );
 
-        TS_ASSERT( tableau->areLinearlyDependent( 5, 2, coefficient ) );
+        TS_ASSERT( tableau->areLinearlyDependent( 5, 2, coefficient, inverseCoefficient ) );
         TS_ASSERT( FloatUtils::areEqual( coefficient, -1 ) );
-        TS_ASSERT( tableau->areLinearlyDependent( 2, 5, coefficient ) );
-        TS_ASSERT( FloatUtils::areEqual( coefficient, -1 ) );
+        TS_ASSERT( FloatUtils::areEqual( inverseCoefficient, -1 ) );
 
-        TS_ASSERT( tableau->areLinearlyDependent( 3, 2, coefficient ) );
+        TS_ASSERT( tableau->areLinearlyDependent( 3, 2, coefficient, inverseCoefficient ) );
         TS_ASSERT( FloatUtils::areEqual( coefficient, -1 ) );
-        TS_ASSERT( tableau->areLinearlyDependent( 2, 3, coefficient ) );
-        TS_ASSERT( FloatUtils::areEqual( coefficient, -1 ) );
+        TS_ASSERT( FloatUtils::areEqual( inverseCoefficient, -1 ) );
 
         TS_ASSERT_THROWS_NOTHING( delete tableau );
     }

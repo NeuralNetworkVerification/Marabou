@@ -423,8 +423,10 @@ public:
       returns true and places in coefficient the value c such that
 
         x2 = ... + c * x1 + ...
+
+      The inverse coefficient is just 1/c.
     */
-    bool areLinearlyDependent( unsigned x1, unsigned x2, double &coefficient );
+    bool areLinearlyDependent( unsigned x1, unsigned x2, double &coefficient, double &inverseCoefficient );
 
 private:
     /*
