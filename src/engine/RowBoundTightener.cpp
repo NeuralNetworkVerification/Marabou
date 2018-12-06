@@ -60,16 +60,16 @@ void RowBoundTightener::setDimensions()
     if ( GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE ==
          GlobalConfiguration::COMPUTE_INVERTED_BASIS_MATRIX )
     {
-        _rows = new TableauRow *[_m];
+        _rows = new SparseTableauRow *[_m];
         for ( unsigned i = 0; i < _m; ++i )
-            _rows[i] = new TableauRow( _n - _m );
+            _rows[i] = new SparseTableauRow( _n - _m );
     }
     else if ( GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE ==
               GlobalConfiguration::USE_IMPLICIT_INVERTED_BASIS_MATRIX )
     {
-        _rows = new TableauRow *[_m];
+        _rows = new SparseTableauRow *[_m];
         for ( unsigned i = 0; i < _m; ++i )
-            _rows[i] = new TableauRow( _n - _m );
+            _rows[i] = new SparseTableauRow( _n - _m );
 
         _z = new double[_m];
     }
@@ -185,6 +185,9 @@ void RowBoundTightener::examineImplicitInvertedBasisMatrix( Saturation saturatio
 
     // Now, go over the columns of the constraint martrix, perform an FTRAN
     // for each of them, and populate the rows.
+    for ( unsigned j = 0; j < _m; ++j )
+        _rows[j]->clear();
+
     for ( unsigned i = 0; i < _n - _m; ++i )
     {
         unsigned nonBasic = _tableau.nonBasicIndexToVariable( i );
@@ -192,10 +195,7 @@ void RowBoundTightener::examineImplicitInvertedBasisMatrix( Saturation saturatio
         _tableau.forwardTransformation( ANColumn, _z );
 
         for ( unsigned j = 0; j < _m; ++j )
-        {
-            _rows[j]->_row[i]._var = nonBasic;
-            _rows[j]->_row[i]._coefficient = -_z[j];
-        }
+            _rows[j]->append( i, nonBasic, -_z[j] );
     }
 
     // We now have all the rows, can use them for tightening.
@@ -235,7 +235,9 @@ void RowBoundTightener::extractRowsFromInvertedBasisMatrix( const double *invert
 
     for ( unsigned i = 0; i < _m; ++i )
     {
-        TableauRow *row = _rows[i];
+        SparseTableauRow *row = _rows[i];
+        row->clear();
+
         // First, compute the scalar, using inv(B)*b
         row->_scalar = 0;
         for ( unsigned j = 0; j < _m; ++j )
@@ -244,16 +246,17 @@ void RowBoundTightener::extractRowsFromInvertedBasisMatrix( const double *invert
         // Now update the row's coefficients for basic variable i
         for ( unsigned j = 0; j < _n - _m; ++j )
         {
-            row->_row[j]._var = _tableau.nonBasicIndexToVariable( j );
-
             // Dot product of the i'th row of inv(B) with the appropriate
             // column of An
-
-            const SparseUnsortedList *column = _tableau.getSparseAColumn( row->_row[j]._var );
-            row->_row[j]._coefficient = 0;
+            unsigned nonBasic = _tableau.nonBasicIndexToVariable( j );
+            double coefficient = 0;
+            const SparseUnsortedList *column = _tableau.getSparseAColumn( nonBasic );
 
             for ( const auto &entry : *column )
-                row->_row[j]._coefficient -= invB[i*_m + entry._index] * entry._value;
+                coefficient -= invB[i*_m + entry._index] * entry._value;
+
+            if ( !FloatUtils::isZero( coefficient ) )
+                row->append( j, nonBasic, coefficient );
         }
 
         // Store the lhs variable
@@ -292,7 +295,7 @@ unsigned RowBoundTightener::tightenOnSingleInvertedStoredBasisRow( unsigned rowI
     return tightenOnSingleInvertedBasisRow( *( _rows[rowIndex] ) );
 }
 
-unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &row )
+unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const SparseTableauRow &row )
 {
 	/*
       A row is of the form
@@ -315,19 +318,18 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
 
     for ( unsigned i = 0; i < n - m; ++i )
     {
-        double ci = row[i];
+        _ciSign[i] = ZERO;
+        _ciTimesLb[i] = 0;
+        _ciTimesUb[i] = 0;
+    }
 
-        if ( FloatUtils::isZero( ci ) )
-        {
-            _ciSign[i] = ZERO;
-            _ciTimesLb[i] = 0;
-            _ciTimesUb[i] = 0;
-            continue;
-        }
+    for ( auto entry = row.begin(); entry != row.end(); ++entry )
+    {
+        unsigned i = entry->_index;
+        double ci = entry->_coefficient;
+        unsigned xi = entry->_variable;
 
         _ciSign[i] = FloatUtils::isPositive( ci ) ? POSITIVE : NEGATIVE;
-
-        unsigned xi = row._row[i]._var;
         _ciTimesLb[i] = ci * _lowerBounds[xi];
         _ciTimesUb[i] = ci * _upperBounds[xi];
     }
@@ -340,8 +342,10 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
     unsigned xi;
     double ci;
 
-    for ( unsigned i = 0; i < n - m; ++i )
+    for ( auto entry = row.begin(); entry != row.end(); ++entry )
     {
+        unsigned i = entry->_index;
+
         if ( _ciSign[i] == POSITIVE )
         {
             lowerBound += _ciTimesLb[i];
@@ -390,8 +394,10 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
     double auxUb = _upperBounds[y] - row._scalar;
 
     // Now add ALL xi's
-    for ( unsigned i = 0; i < n - m; ++i )
+    for ( auto entry = row.begin(); entry != row.end(); ++entry )
     {
+        unsigned i = entry->_index;
+
         if ( _ciSign[i] == NEGATIVE )
         {
             auxLb -= _ciTimesLb[i];
@@ -405,11 +411,9 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
     }
 
     // Now consider each individual xi
-    for ( unsigned i = 0; i < n - m; ++i )
+    for ( auto entry = row.begin(); entry != row.end(); ++entry )
     {
-        // If ci = 0, nothing to do.
-        if ( _ciSign[i] == ZERO )
-            continue;
+        unsigned i = entry->_index;
 
         lowerBound = auxLb;
         upperBound = auxUb;
@@ -427,7 +431,7 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
         }
 
         // Now divide everything by ci, switching signs if needed.
-        ci = row[i];
+        ci = entry->_coefficient;
         lowerBound = lowerBound / ci;
         upperBound = upperBound / ci;
 
@@ -439,7 +443,7 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
         }
 
         // If a tighter bound is found, store it
-        xi = row._row[i]._var;
+        xi = entry->_variable;
         if ( FloatUtils::lt( _lowerBounds[xi], lowerBound ) )
         {
             _lowerBounds[xi] = lowerBound;
@@ -632,7 +636,7 @@ void RowBoundTightener::examinePivotRow()
 	if ( _statistics )
         _statistics->incNumRowsExaminedByRowTightener();
 
-    const TableauRow &row( *_tableau.getPivotRow() );
+    const SparseTableauRow &row( *_tableau.getSparsePivotRow() );
     unsigned newBoundsLearned = tightenOnSingleInvertedBasisRow( row );
 
     if ( _statistics && ( newBoundsLearned > 0 ) )

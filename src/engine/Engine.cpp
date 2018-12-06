@@ -20,7 +20,7 @@
 #include "PiecewiseLinearConstraint.h"
 #include "Preprocessor.h"
 #include "ReluplexError.h"
-#include "TableauRow.h"
+#include "SparseTableauRow.h"
 #include "TimeUtils.h"
 
 Engine::Engine()
@@ -522,31 +522,33 @@ void Engine::fixViolatedPlConstraintIfPossible()
     PiecewiseLinearConstraint::Fix fix = *it;
     ASSERT( _tableau->isBasic( fix._variable ) );
 
-    TableauRow row( _tableau->getN() - _tableau->getM() );
+    SparseTableauRow row( _tableau->getN() - _tableau->getM() );
     _tableau->getTableauRow( _tableau->variableToIndex( fix._variable ), &row );
 
-    // Pick the variable with the largest coefficient in this row for pivoting,
-    // to increase numerical stability.
-    unsigned bestCandidate = row._row[0]._var;
-    double bestValue = FloatUtils::abs( row._row[0]._coefficient );
-
-    unsigned n = _tableau->getN();
-    unsigned m = _tableau->getM();
-    for ( unsigned i = 1; i < n - m; ++i )
-    {
-        double contenderValue = FloatUtils::abs( row._row[i]._coefficient );
-        if ( FloatUtils::gt( contenderValue, bestValue ) )
-        {
-            bestValue = contenderValue;
-            bestCandidate = row._row[i]._var;
-        }
-    }
-
-    if ( FloatUtils::isZero( bestValue ) )
+    if ( row.empty() )
     {
         // This can happen, e.g., if we have an equation x = 5, and is legal behavior.
         return;
     }
+
+    // Pick the variable with the largest coefficient in this row for pivoting,
+    // to increase numerical stability.
+    double bestValue = 0;
+    unsigned bestCandidate = 0;
+    found = false;
+    for ( auto entry = row.begin(); entry != row.end(); ++entry )
+    {
+        double contenderValue = FloatUtils::abs( entry->_coefficient );
+        if ( contenderValue > bestValue )
+        {
+            found = true;
+            bestValue = contenderValue;
+            bestCandidate = entry->_variable;
+        }
+    }
+
+    if ( !found )
+        return;
 
     // Switch between nonBasic and the variable we need to fix
     _tableau->setEnteringVariableIndex( _tableau->variableToIndex( bestCandidate ) );
@@ -867,22 +869,22 @@ bool Engine::attemptToMergeVariables( unsigned x1, unsigned x2 )
 
     if ( _tableau->isBasic( x1 ) )
     {
-        TableauRow x1Row( n - m );
+        SparseTableauRow x1Row( n - m );
         _tableau->getTableauRow( _tableau->variableToIndex( x1 ), &x1Row );
 
         bool found = false;
         double bestCoefficient = 0.0;
         unsigned nonBasic = 0;
-        for ( unsigned i = 0; i < n - m; ++i )
+        for ( auto entry = x1Row.begin(); entry != x1Row.end(); ++entry )
         {
-            if ( x1Row._row[i]._var != x2 )
+            if ( entry->_variable != x2 )
             {
-                double contender = FloatUtils::abs( x1Row._row[i]._coefficient );
-                if ( FloatUtils::gt( contender, bestCoefficient ) )
+                double contenderValue = FloatUtils::abs( entry->_coefficient );
+                if ( contenderValue > bestCoefficient )
                 {
                     found = true;
-                    nonBasic = x1Row._row[i]._var;
-                    bestCoefficient = contender;
+                    nonBasic = entry->_variable;
+                    bestCoefficient = contenderValue;
                 }
             }
         }
@@ -905,22 +907,22 @@ bool Engine::attemptToMergeVariables( unsigned x1, unsigned x2 )
 
     if ( _tableau->isBasic( x2 ) )
     {
-        TableauRow x2Row( n - m );
+        SparseTableauRow x2Row( n - m );
         _tableau->getTableauRow( _tableau->variableToIndex( x2 ), &x2Row );
 
         bool found = false;
         double bestCoefficient = 0.0;
         unsigned nonBasic = 0;
-        for ( unsigned i = 0; i < n - m; ++i )
+        for ( auto entry = x2Row.begin(); entry != x2Row.end(); ++entry )
         {
-            if ( x2Row._row[i]._var != x1 )
+            if ( entry->_variable != x1 )
             {
-                double contender = FloatUtils::abs( x2Row._row[i]._coefficient );
-                if ( FloatUtils::gt( contender, bestCoefficient ) )
+                double contenderValue = FloatUtils::abs( entry->_coefficient );
+                if ( contenderValue > bestCoefficient )
                 {
                     found = true;
-                    nonBasic = x2Row._row[i]._var;
-                    bestCoefficient = contender;
+                    nonBasic = entry->_variable;
+                    bestCoefficient = contenderValue;
                 }
             }
         }

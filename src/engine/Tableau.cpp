@@ -1379,13 +1379,7 @@ void Tableau::setChangeColumn( const double *column )
 
 void Tableau::computePivotRow()
 {
-    getTableauRow( _leavingVariable, _pivotRow );
     getTableauRow( _leavingVariable, _sparsePivotRow );
-}
-
-const TableauRow *Tableau::getPivotRow() const
-{
-    return _pivotRow;
 }
 
 const SparseTableauRow *Tableau::getSparsePivotRow() const
@@ -1513,37 +1507,6 @@ void Tableau::getTableauRow( unsigned index, SparseTableauRow *row )
     row->_lhs = _basicIndexToVariable[index];
 }
 
-void Tableau::getTableauRow( unsigned index, TableauRow *row )
-{
-    /*
-      Let e denote a unit matrix with 1 in its *index* entry.
-      A row is then computed by: e * inv(B) * -AN. e * inv(B) is
-      solved by invoking BTRAN.
-    */
-
-    ASSERT( index < _m );
-
-    std::fill( _unitVector, _unitVector + _m, 0.0 );
-    _unitVector[index] = 1;
-    computeMultipliers( _unitVector );
-
-    for ( unsigned i = 0; i < _n - _m; ++i )
-    {
-        row->_row[i]._var = _nonBasicIndexToVariable[i];
-        row->_row[i]._coefficient = 0;
-
-        SparseUnsortedList *column = _sparseColumnsOfA[_nonBasicIndexToVariable[i]];
-
-        for ( const auto &entry : *column )
-            row->_row[i]._coefficient -= ( _multipliers[entry._index] * entry._value );
-    }
-
-    _basisFactorization->forwardTransformation( _b, _workM );
-    row->_scalar = _workM[index];
-
-    row->_lhs = _basicIndexToVariable[index];
-}
-
 const SparseMatrix *Tableau::getSparseA() const
 {
     return _A;
@@ -1576,7 +1539,7 @@ void Tableau::getSparseARow( unsigned row, SparseUnsortedList *result ) const
 
 void Tableau::dumpEquations()
 {
-    TableauRow row( _n - _m );
+    SparseTableauRow row( _n - _m );
 
     printf( "Dumping tableau equations:\n" );
     for ( unsigned i = 0; i < _m; ++i )

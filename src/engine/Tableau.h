@@ -297,7 +297,6 @@ public:
       Compute the pivot row.
     */
     void computePivotRow();
-    const TableauRow *getPivotRow() const;
     const SparseTableauRow *getSparsePivotRow() const;
 
     /*
@@ -310,7 +309,6 @@ public:
     /*
       Extract a row from the tableau.
     */
-    void getTableauRow( unsigned index, TableauRow *row );
     void getTableauRow( unsigned index, SparseTableauRow *row );
 
     /*

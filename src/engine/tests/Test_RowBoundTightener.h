@@ -62,11 +62,11 @@ public:
 
         tightener.setDimensions();
 
-        TableauRow row( 3 );
+        SparseTableauRow row( 3 );
         // 1 - x0 - x1 + 2x2
-        row._row[0] = TableauRow::Entry( 0, -1 );
-        row._row[1] = TableauRow::Entry( 1, -1 );
-        row._row[2] = TableauRow::Entry( 2, 2 );
+        row.append( 0, 0, -1 );
+        row.append( 1, 1, -1 );
+        row.append( 2, 2, 2 );
         row._scalar = 1;
         row._lhs = 4;
 
@@ -124,11 +124,11 @@ public:
 
         tightener.setDimensions();
 
-        TableauRow row( 3 );
+        SparseTableauRow row( 3 );
         // 1 - x0 - x1 + 2x2
-        row._row[0] = TableauRow::Entry( 0, -1 );
-        row._row[1] = TableauRow::Entry( 1, -1 );
-        row._row[2] = TableauRow::Entry( 2, 2 );
+        row.append( 0, 0, -1 );
+        row.append( 1, 1, -1 );
+        row.append( 2, 2, 2 );
         row._scalar = 1;
         row._lhs = 4;
 
@@ -171,11 +171,11 @@ public:
 
         tightener.setDimensions();
 
-        TableauRow row( 3 );
+        SparseTableauRow row( 3 );
         // 1 - x0 - x1 + 2x2
-        row._row[0] = TableauRow::Entry( 0, -1 );
-        row._row[1] = TableauRow::Entry( 1, -1 );
-        row._row[2] = TableauRow::Entry( 2, 2 );
+        row.append( 0, 0, -1 );
+        row.append( 1, 1, -1 );
+        row.append( 2, 2, 2 );
         row._scalar = 1;
         row._lhs = 4;
 
@@ -217,11 +217,11 @@ public:
 
         tightener.setDimensions();
 
-        TableauRow row( 3 );
+        SparseTableauRow row( 3 );
         // 1 - x0 - x1 + 2x2
-        row._row[0] = TableauRow::Entry( 0, -1 );
-        row._row[1] = TableauRow::Entry( 1, -1 );
-        row._row[2] = TableauRow::Entry( 2, 2 );
+        row.append( 0, 0, -1 );
+        row.append( 1, 1, -1 );
+        row.append( 2, 2, 2 );
         row._scalar = 1;
         row._lhs = 4;
 

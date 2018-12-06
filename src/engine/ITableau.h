@@ -24,6 +24,7 @@ class SparseMatrix;
 class SparseUnsortedList;
 class SparseVector;
 class Statistics;
+class SparseTableauRow;
 class TableauRow;
 class TableauState;
 
@@ -135,7 +136,7 @@ public:
     virtual const double *getChangeColumn() const = 0;
     virtual void setChangeColumn( const double *column ) = 0;
     virtual void computePivotRow() = 0;
-    virtual const TableauRow *getPivotRow() const = 0;
+    virtual const SparseTableauRow *getSparsePivotRow() const = 0;
     virtual void computeAssignment() = 0;
     virtual void dump() const = 0;
     virtual void dumpAssignment() = 0;
@@ -147,7 +148,7 @@ public:
     virtual unsigned addEquation( const Equation &equation ) = 0;
     virtual unsigned getM() const = 0;
     virtual unsigned getN() const = 0;
-    virtual void getTableauRow( unsigned index, TableauRow *row ) = 0;
+    virtual void getTableauRow( unsigned index, SparseTableauRow *row ) = 0;
     virtual const double *getAColumn( unsigned variable ) const = 0;
     virtual void getSparseAColumn( unsigned variable, SparseUnsortedList *result ) const = 0;
     virtual void getSparseARow( unsigned row, SparseUnsortedList *result ) const = 0;

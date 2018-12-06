@@ -121,10 +121,10 @@ public:
         double finalU[] = { 0, 0 };
         memcpy( tableau.nextBtranOutput, finalU, sizeof(double) * 2 );
 
-        TableauRow pivotRow( 3 );
-        pivotRow._row[0]._coefficient = 3;
-        pivotRow._row[1]._coefficient = 1;
-        pivotRow._row[2]._coefficient = 1;
+        SparseTableauRow pivotRow( 3 );
+        pivotRow.append( 0, 0, 3 );
+        pivotRow.append( 1, 1, 1 );
+        pivotRow.append( 2, 2, 1 );
         tableau.nextPivotRow = &pivotRow;
 
         double nextAColumn0[] = { 3, 2 };
@@ -178,9 +178,10 @@ public:
         finalU[0] = -1; finalU[1] = 0;
         memcpy( tableau.nextBtranOutput, finalU, sizeof(double) * 2 );
 
-        pivotRow._row[0]._coefficient = -4;
-        pivotRow._row[1]._coefficient = 2;
-        pivotRow._row[2]._coefficient = 4;
+        pivotRow.clear();
+        pivotRow.append( 0, 0, -4 );
+        pivotRow.append( 1, 1, 2 );
+        pivotRow.append( 2, 2, 4 );
         tableau.nextPivotRow = &pivotRow;
 
         nextAColumn1[0] = 1; nextAColumn1[1] = 0;

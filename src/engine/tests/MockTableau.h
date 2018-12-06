@@ -16,6 +16,7 @@
 #include "FloatUtils.h"
 #include "ITableau.h"
 #include "Map.h"
+#include "SparseTableauRow.h"
 #include "SparseUnsortedList.h"
 #include "TableauRow.h"
 
@@ -334,13 +335,13 @@ public:
     {
     }
 
-    TableauRow *nextPivotRow;
+    SparseTableauRow *nextPivotRow;
     void computePivotRow()
     {
         getTableauRow( mockLeavingVariable, nextPivotRow );
     }
 
-    const TableauRow *getPivotRow() const
+    const SparseTableauRow *getSparsePivotRow() const
     {
         return nextPivotRow;
     }
@@ -389,13 +390,16 @@ public:
 
     unsigned lastGetRowIndex;
     TableauRow *nextRow;
-    void getTableauRow( unsigned index, TableauRow *row )
+    void getTableauRow( unsigned index, SparseTableauRow *row )
     {
         lastGetRowIndex = index;
-        TS_ASSERT_EQUALS( row->_size, nextRow->_size );
+        TS_ASSERT_EQUALS( row->_dimension, nextRow->_size );
 
-        for ( unsigned i = 0; i < row->_size; ++i )
-            row->_row[i] = nextRow->_row[i];
+        row->clear();
+
+        for ( unsigned i = 0; i < nextRow->_size; ++i )
+            row->append( i, nextRow->_row[i]._var, nextRow->_row[i]._coefficient );
+
         row->_scalar = nextRow->_scalar;
     }
 

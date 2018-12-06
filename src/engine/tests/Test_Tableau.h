@@ -17,7 +17,7 @@
 #include "MockErrno.h"
 #include "ReluplexError.h"
 #include "Tableau.h"
-#include "TableauRow.h"
+#include "SparseTableauRow.h"
 #include "TableauState.h"
 
 #include <string.h>
@@ -62,6 +62,20 @@ public:
     void tearDown()
     {
         TS_ASSERT_THROWS_NOTHING( delete mock );
+    }
+
+    bool rowContains( const SparseTableauRow *row, unsigned index, unsigned variable, double coefficient )
+    {
+        List<SparseTableauRow::Entry>::const_iterator entry;
+        for ( entry = row->begin(); entry != row->end(); ++entry )
+        {
+            if ( entry->_index == index &&
+                 entry->_variable == variable &&
+                 entry->_coefficient == coefficient )
+                return true;
+        }
+
+        return false;
     }
 
     bool hasCandidates( const ITableau &tableau ) const
@@ -559,10 +573,14 @@ public:
         TS_ASSERT_EQUALS( tableau->getValue( 5u ), 113.0 );
 
         TS_ASSERT_THROWS_NOTHING( tableau->computePivotRow() );
-        const TableauRow &pivotRow = *tableau->getPivotRow();
+        const SparseTableauRow &pivotRow = *tableau->getSparsePivotRow();
         // x3 = 117 -x1 -x2 -x6 -x4
-        for ( unsigned i = 0; i < 4; ++i )
-            TS_ASSERT( FloatUtils::areEqual( pivotRow[i], -1.0 ) );
+
+        TS_ASSERT( rowContains( &pivotRow, 0, 0, -1 ) );
+        TS_ASSERT( rowContains( &pivotRow, 1, 1, -1 ) );
+        TS_ASSERT( rowContains( &pivotRow, 2, 2, -1 ) );
+        TS_ASSERT( rowContains( &pivotRow, 3, 3, -1 ) );
+
         TS_ASSERT( FloatUtils::areEqual( pivotRow._scalar, 117.0 ) );
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeChangeColumn() );
@@ -607,7 +625,7 @@ public:
         List<unsigned> basics = { 4, 5, 6 };
         TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau( basics ) );
 
-        TableauRow row( 4 );
+        SparseTableauRow row( 4 );
 
            // x5 = 225 - 3x1 - 2x2 - x3  - 2x4
            // x6 = 117 -  x1 -  x2 - x3  -  x4
@@ -615,62 +633,30 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 0, &row ) );
 
-        TableauRow::Entry entry;
-        entry = row._row[0];
-        TS_ASSERT_EQUALS( entry._var, 0U );
-        TS_ASSERT_EQUALS( entry._coefficient, -3 );
+        TS_ASSERT_EQUALS( row.getNnz(), 4U );
 
-        entry = row._row[1];
-        TS_ASSERT_EQUALS( entry._var, 1U );
-        TS_ASSERT_EQUALS( entry._coefficient, -2 );
-
-        entry = row._row[2];
-        TS_ASSERT_EQUALS( entry._var, 2U );
-        TS_ASSERT_EQUALS( entry._coefficient, -1 );
-
-        entry = row._row[3];
-        TS_ASSERT_EQUALS( entry._var, 3U );
-        TS_ASSERT_EQUALS( entry._coefficient, -2 );
+        TS_ASSERT( rowContains( &row, 0, 0, -3 ) );
+        TS_ASSERT( rowContains( &row, 1, 1, -2 ) );
+        TS_ASSERT( rowContains( &row, 2, 2, -1 ) );
+        TS_ASSERT( rowContains( &row, 3, 3, -2 ) );
 
         TS_ASSERT_EQUALS( row._scalar, 225.0 );
 
         TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 1, &row ) );
 
-        entry = row._row[0];
-        TS_ASSERT_EQUALS( entry._var, 0U );
-        TS_ASSERT_EQUALS( entry._coefficient, -1 );
-
-        entry = row._row[1];
-        TS_ASSERT_EQUALS( entry._var, 1U );
-        TS_ASSERT_EQUALS( entry._coefficient, -1 );
-
-        entry = row._row[2];
-        TS_ASSERT_EQUALS( entry._var, 2U );
-        TS_ASSERT_EQUALS( entry._coefficient, -1 );
-
-        entry = row._row[3];
-        TS_ASSERT_EQUALS( entry._var, 3U );
-        TS_ASSERT_EQUALS( entry._coefficient, -1 );
+        TS_ASSERT( rowContains( &row, 0, 0, -1 ) );
+        TS_ASSERT( rowContains( &row, 1, 1, -1 ) );
+        TS_ASSERT( rowContains( &row, 2, 2, -1 ) );
+        TS_ASSERT( rowContains( &row, 3, 3, -1 ) );
 
         TS_ASSERT_EQUALS( row._scalar, 117.0 );
 
         TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 2, &row ) );
 
-        entry = row._row[0];
-        TS_ASSERT_EQUALS( entry._var, 0U );
-        TS_ASSERT_EQUALS( entry._coefficient, -4 );
-
-        entry = row._row[1];
-        TS_ASSERT_EQUALS( entry._var, 1U );
-        TS_ASSERT_EQUALS( entry._coefficient, -3 );
-
-        entry = row._row[2];
-        TS_ASSERT_EQUALS( entry._var, 2U );
-        TS_ASSERT_EQUALS( entry._coefficient, -3 );
-
-        entry = row._row[3];
-        TS_ASSERT_EQUALS( entry._var, 3U );
-        TS_ASSERT_EQUALS( entry._coefficient, -4 );
+        TS_ASSERT( rowContains( &row, 0, 0, -4 ) );
+        TS_ASSERT( rowContains( &row, 1, 1, -3 ) );
+        TS_ASSERT( rowContains( &row, 2, 2, -3 ) );
+        TS_ASSERT( rowContains( &row, 3, 3, -4 ) );
 
         TS_ASSERT_EQUALS( row._scalar, 420.0 );
 
@@ -725,61 +711,33 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 0, &row ) );
 
-        entry = row._row[0];
-        TS_ASSERT_EQUALS( entry._var, 0U );
-        TS_ASSERT( FloatUtils::areEqual( entry._coefficient, -2 ) );
+        TS_ASSERT_EQUALS( row.getNnz(), 4U );
 
-        entry = row._row[1];
-        TS_ASSERT_EQUALS( entry._var, 1U );
-        TS_ASSERT( FloatUtils::areEqual( entry._coefficient, -1 ) );
-
-        entry = row._row[2];
-        TS_ASSERT_EQUALS( entry._var, 5U );
-        TS_ASSERT( FloatUtils::areEqual( entry._coefficient, 1 ) );
-
-        entry = row._row[3];
-        TS_ASSERT_EQUALS( entry._var, 3U );
-        TS_ASSERT( FloatUtils::areEqual( entry._coefficient, -1 ) );
+        TS_ASSERT( rowContains( &row, 0, 0, -2 ) );
+        TS_ASSERT( rowContains( &row, 1, 1, -1 ) );
+        TS_ASSERT( rowContains( &row, 2, 5, 1 ) );
+        TS_ASSERT( rowContains( &row, 3, 3, -1 ) );
 
         TS_ASSERT_EQUALS( row._scalar, 108.0 );
 
         TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 1, &row ) );
 
-        entry = row._row[0];
-        TS_ASSERT_EQUALS( entry._var, 0U );
-        TS_ASSERT( FloatUtils::areEqual( entry._coefficient, -1 ) );
+        TS_ASSERT_EQUALS( row.getNnz(), 4U );
 
-        entry = row._row[1];
-        TS_ASSERT_EQUALS( entry._var, 1U );
-        TS_ASSERT( FloatUtils::areEqual( entry._coefficient, -1 ) );
-
-        entry = row._row[2];
-        TS_ASSERT_EQUALS( entry._var, 5U );
-        TS_ASSERT( FloatUtils::areEqual( entry._coefficient, -1 ) );
-
-        entry = row._row[3];
-        TS_ASSERT_EQUALS( entry._var, 3U );
-        TS_ASSERT( FloatUtils::areEqual( entry._coefficient, -1 ) );
+        TS_ASSERT( rowContains( &row, 0, 0, -1 ) );
+        TS_ASSERT( rowContains( &row, 1, 1, -1 ) );
+        TS_ASSERT( rowContains( &row, 2, 5, -1 ) );
+        TS_ASSERT( rowContains( &row, 3, 3, -1 ) );
 
         TS_ASSERT_EQUALS( row._scalar, 117.0 );
 
         TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 2, &row ) );
 
-        entry = row._row[0];
-        TS_ASSERT_EQUALS( entry._var, 0U );
-        TS_ASSERT( FloatUtils::areEqual( entry._coefficient, -1 ) );
+        TS_ASSERT_EQUALS( row.getNnz(), 3U );
 
-        entry = row._row[1];
-        TS_ASSERT_EQUALS( entry._var, 1U );
-        TS_ASSERT( FloatUtils::areEqual( entry._coefficient, 0 ) );
-
-        entry = row._row[2];
-        TS_ASSERT_EQUALS( entry._var, 5U );
-        TS_ASSERT( FloatUtils::areEqual( entry._coefficient, 3 ) );
-
-        entry = row._row[3];
-        TS_ASSERT_EQUALS( entry._var, 3U );
-        TS_ASSERT( FloatUtils::areEqual( entry._coefficient, -1 ) );
+        TS_ASSERT( rowContains( &row, 0, 0, -1 ) );
+        TS_ASSERT( rowContains( &row, 2, 5, 3 ) );
+        TS_ASSERT( rowContains( &row, 3, 3, -1 ) );
 
         TS_ASSERT_EQUALS( row._scalar, 69 );
     }
@@ -819,62 +777,28 @@ public:
         TS_ASSERT( tableau->isBasic( 5 ) );
 
         // Check equations before the pivot
-        TableauRow row( 4 );
-        TableauRow::Entry entry;
+        SparseTableauRow row( 4 );
 
         TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 0, &row ) );
 
-        entry = row._row[0];
-        TS_ASSERT_EQUALS( entry._var, 0U );
-        TS_ASSERT_EQUALS( entry._coefficient, -3 );
-
-        entry = row._row[1];
-        TS_ASSERT_EQUALS( entry._var, 1U );
-        TS_ASSERT_EQUALS( entry._coefficient, -2 );
-
-        entry = row._row[2];
-        TS_ASSERT_EQUALS( entry._var, 2U );
-        TS_ASSERT_EQUALS( entry._coefficient, -1 );
-
-        entry = row._row[3];
-        TS_ASSERT_EQUALS( entry._var, 3U );
-        TS_ASSERT_EQUALS( entry._coefficient, -2 );
+        TS_ASSERT( rowContains( &row, 0, 0, -3 ) );
+        TS_ASSERT( rowContains( &row, 1, 1, -2 ) );
+        TS_ASSERT( rowContains( &row, 2, 2, -1 ) );
+        TS_ASSERT( rowContains( &row, 3, 3, -2 ) );
 
         TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 1, &row ) );
 
-        entry = row._row[0];
-        TS_ASSERT_EQUALS( entry._var, 0U );
-        TS_ASSERT_EQUALS( entry._coefficient, -1 );
-
-        entry = row._row[1];
-        TS_ASSERT_EQUALS( entry._var, 1U );
-        TS_ASSERT_EQUALS( entry._coefficient, -1 );
-
-        entry = row._row[2];
-        TS_ASSERT_EQUALS( entry._var, 2U );
-        TS_ASSERT_EQUALS( entry._coefficient, -1 );
-
-        entry = row._row[3];
-        TS_ASSERT_EQUALS( entry._var, 3U );
-        TS_ASSERT_EQUALS( entry._coefficient, -1 );
+        TS_ASSERT( rowContains( &row, 0, 0, -1 ) );
+        TS_ASSERT( rowContains( &row, 1, 1, -1 ) );
+        TS_ASSERT( rowContains( &row, 2, 2, -1 ) );
+        TS_ASSERT( rowContains( &row, 3, 3, -1 ) );
 
         TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 2, &row ) );
 
-        entry = row._row[0];
-        TS_ASSERT_EQUALS( entry._var, 0U );
-        TS_ASSERT_EQUALS( entry._coefficient, -4 );
-
-        entry = row._row[1];
-        TS_ASSERT_EQUALS( entry._var, 1U );
-        TS_ASSERT_EQUALS( entry._coefficient, -3 );
-
-        entry = row._row[2];
-        TS_ASSERT_EQUALS( entry._var, 2U );
-        TS_ASSERT_EQUALS( entry._coefficient, -3 );
-
-        entry = row._row[3];
-        TS_ASSERT_EQUALS( entry._var, 3U );
-        TS_ASSERT_EQUALS( entry._coefficient, -4 );
+        TS_ASSERT( rowContains( &row, 0, 0, -4 ) );
+        TS_ASSERT( rowContains( &row, 1, 1, -3 ) );
+        TS_ASSERT( rowContains( &row, 2, 2, -3 ) );
+        TS_ASSERT( rowContains( &row, 3, 3, -4 ) );
 
         // Values before the degenerate pivot
         TS_ASSERT_EQUALS( tableau->getValue( 0 ), 1.0 );
@@ -930,57 +854,29 @@ public:
         // Check equations after the pivot
         TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 0, &row ) );
 
-        entry = row._row[0];
-        TS_ASSERT_EQUALS( entry._var, 0U );
-        TS_ASSERT_EQUALS( entry._coefficient, -2 );
+        TS_ASSERT_EQUALS( row.getNnz(), 4U );
 
-        entry = row._row[1];
-        TS_ASSERT_EQUALS( entry._var, 1U );
-        TS_ASSERT_EQUALS( entry._coefficient, -1 );
-
-        entry = row._row[2];
-        TS_ASSERT_EQUALS( entry._var, 5U );
-        TS_ASSERT_EQUALS( entry._coefficient, 1 );
-
-        entry = row._row[3];
-        TS_ASSERT_EQUALS( entry._var, 3U );
-        TS_ASSERT_EQUALS( entry._coefficient, -1 );
+        TS_ASSERT( rowContains( &row, 0, 0, -2 ) );
+        TS_ASSERT( rowContains( &row, 1, 1, -1 ) );
+        TS_ASSERT( rowContains( &row, 2, 5, 1 ) );
+        TS_ASSERT( rowContains( &row, 3, 3, -1 ) );
 
         TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 1, &row ) );
 
-        entry = row._row[0];
-        TS_ASSERT_EQUALS( entry._var, 0U );
-        TS_ASSERT_EQUALS( entry._coefficient, -1 );
+        TS_ASSERT_EQUALS( row.getNnz(), 4U );
 
-        entry = row._row[1];
-        TS_ASSERT_EQUALS( entry._var, 1U );
-        TS_ASSERT_EQUALS( entry._coefficient, -1 );
-
-        entry = row._row[2];
-        TS_ASSERT_EQUALS( entry._var, 5U );
-        TS_ASSERT_EQUALS( entry._coefficient, -1 );
-
-        entry = row._row[3];
-        TS_ASSERT_EQUALS( entry._var, 3U );
-        TS_ASSERT_EQUALS( entry._coefficient, -1 );
+        TS_ASSERT( rowContains( &row, 0, 0, -1 ) );
+        TS_ASSERT( rowContains( &row, 1, 1, -1 ) );
+        TS_ASSERT( rowContains( &row, 2, 5, -1 ) );
+        TS_ASSERT( rowContains( &row, 3, 3, -1 ) );
 
         TS_ASSERT_THROWS_NOTHING( tableau->getTableauRow( 2, &row ) );
 
-        entry = row._row[0];
-        TS_ASSERT_EQUALS( entry._var, 0U );
-        TS_ASSERT_EQUALS( entry._coefficient, -1 );
+        TS_ASSERT_EQUALS( row.getNnz(), 3U );
 
-        entry = row._row[1];
-        TS_ASSERT_EQUALS( entry._var, 1U );
-        TS_ASSERT_EQUALS( entry._coefficient, 0 );
-
-        entry = row._row[2];
-        TS_ASSERT_EQUALS( entry._var, 5U );
-        TS_ASSERT_EQUALS( entry._coefficient, 3 );
-
-        entry = row._row[3];
-        TS_ASSERT_EQUALS( entry._var, 3U );
-        TS_ASSERT_EQUALS( entry._coefficient, -1 );
+        TS_ASSERT( rowContains( &row, 0, 0, -1 ) );
+        TS_ASSERT( rowContains( &row, 2, 5, 3 ) );
+        TS_ASSERT( rowContains( &row, 3, 3, -1 ) );
     }
 
     void test_store_and_restore()
@@ -1189,27 +1085,16 @@ public:
           Test that the new row is also computed correctly.
         */
 
-        TableauRow row( 4 );
+        SparseTableauRow row( 4 );
         tableau->getTableauRow( 0, &row );
 
         // Row 0 is the row for x5. Due to the earlier pivot, we expect:
         //     x5 = 225 - 2x1 - x2 + x6 - x4
-        TableauRow::Entry entry;
-        entry = row._row[0];
-        TS_ASSERT_EQUALS( entry._var, 0U );
-        TS_ASSERT_EQUALS( entry._coefficient, -2.0 );
 
-        entry = row._row[1];
-        TS_ASSERT_EQUALS( entry._var, 1U );
-        TS_ASSERT_EQUALS( entry._coefficient, -1.0 );
-
-        entry = row._row[2];
-        TS_ASSERT_EQUALS( entry._var, 5U );
-        TS_ASSERT_EQUALS( entry._coefficient, 1.0 );
-
-        entry = row._row[3];
-        TS_ASSERT_EQUALS( entry._var, 3U );
-        TS_ASSERT_EQUALS( entry._coefficient, -1.0 );
+        TS_ASSERT( rowContains( &row, 0, 0, -2 ) );
+        TS_ASSERT( rowContains( &row, 1, 1, -1 ) );
+        TS_ASSERT( rowContains( &row, 2, 5, 1 ) );
+        TS_ASSERT( rowContains( &row, 3, 3, -1 ) );
 
         // Row 3 is the new row.
         //   Originally,  x8 = 5 - 2x2 + 4x3
@@ -1221,21 +1106,10 @@ public:
 
         tableau->getTableauRow( 3, &row );
 
-        entry = row._row[0];
-        TS_ASSERT_EQUALS( entry._var, 0U );
-        TS_ASSERT_EQUALS( entry._coefficient, -4.0 );
-
-        entry = row._row[1];
-        TS_ASSERT_EQUALS( entry._var, 1U );
-        TS_ASSERT_EQUALS( entry._coefficient, -6.0 );
-
-        entry = row._row[2];
-        TS_ASSERT_EQUALS( entry._var, 5U );
-        TS_ASSERT_EQUALS( entry._coefficient, -4.0 );
-
-        entry = row._row[3];
-        TS_ASSERT_EQUALS( entry._var, 3U );
-        TS_ASSERT_EQUALS( entry._coefficient, -4.0 );
+        TS_ASSERT( rowContains( &row, 0, 0, -4 ) );
+        TS_ASSERT( rowContains( &row, 1, 1, -6 ) );
+        TS_ASSERT( rowContains( &row, 2, 5, -4 ) );
+        TS_ASSERT( rowContains( &row, 3, 3, -4 ) );
 
         /*
           At this point, the equations are:

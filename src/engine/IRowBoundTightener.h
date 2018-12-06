@@ -68,7 +68,7 @@ public:
       In the "stored" version, we process a row that has been previously
       stored, by its index.
     */
-    virtual unsigned tightenOnSingleInvertedBasisRow( const TableauRow &row ) = 0;
+    virtual unsigned tightenOnSingleInvertedBasisRow( const SparseTableauRow &row ) = 0;
     virtual unsigned tightenOnSingleInvertedStoredBasisRow( unsigned rowIndex ) = 0;
 
     /*

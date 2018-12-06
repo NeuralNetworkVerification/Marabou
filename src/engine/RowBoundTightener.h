@@ -17,7 +17,7 @@
 #include "IRowBoundTightener.h"
 #include "ITableau.h"
 #include "Queue.h"
-#include "TableauRow.h"
+#include "SparseTableauRow.h"
 #include "Tightening.h"
 
 class RowBoundTightener : public IRowBoundTightener
@@ -113,7 +113,7 @@ public:
       In the "stored" version, we process a row that has been previously
       stored, by its index.
     */
-    unsigned tightenOnSingleInvertedBasisRow( const TableauRow &row );
+    unsigned tightenOnSingleInvertedBasisRow( const SparseTableauRow &row );
     unsigned tightenOnSingleInvertedStoredBasisRow( unsigned rowIndex );
 
 private:
@@ -135,7 +135,7 @@ private:
     /*
       Work space for the inverted basis matrix tighteners
     */
-    TableauRow **_rows;
+    SparseTableauRow **_rows;
     double *_z;
     double *_ciTimesLb;
     double *_ciTimesUb;

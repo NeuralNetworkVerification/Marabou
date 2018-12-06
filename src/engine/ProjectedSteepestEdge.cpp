@@ -16,8 +16,8 @@
 #include "MStringf.h"
 #include "ProjectedSteepestEdge.h"
 #include "ReluplexError.h"
+#include "SparseTableauRow.h"
 #include "Statistics.h"
-#include "TableauRow.h"
 
 ProjectedSteepestEdgeRule::ProjectedSteepestEdgeRule()
     : _referenceSpace( NULL )
@@ -192,7 +192,7 @@ void ProjectedSteepestEdgeRule::prePivotHook( const ITableau &tableau, bool fake
     ASSERT( entering != leaving );
 
     const double *changeColumn = tableau.getChangeColumn();
-    const TableauRow &pivotRow = *tableau.getPivotRow();
+    const SparseTableauRow &pivotRow = *tableau.getSparsePivotRow();
 
     // Update gamma[entering] to the accurate value, taking the pivot into account
     double accurateGamma;
@@ -200,7 +200,6 @@ void ProjectedSteepestEdgeRule::prePivotHook( const ITableau &tableau, bool fake
     _gamma[enteringIndex] = accurateGamma / ( changeColumn[leavingIndex] * changeColumn[leavingIndex] );
 
     unsigned m = tableau.getM();
-    unsigned n = tableau.getN();
 
     // Auxiliary variables
     double r, s, t1, t2;
@@ -218,16 +217,20 @@ void ProjectedSteepestEdgeRule::prePivotHook( const ITableau &tableau, bool fake
     tableau.backwardTransformation( _work1, _work2 );
 
     // Update gamma[i] for all i != enteringIndex
-    for ( unsigned i = 0; i < n - m; ++i )
+
+    for ( auto entry = pivotRow.begin(); entry != pivotRow.end(); ++entry )
     {
+        unsigned i = entry->_index;
+        double coefficient = entry->_coefficient;
+
         if ( i == enteringIndex )
             continue;
 
-        if ( ( -GlobalConfiguration::PSE_GAMMA_UPDATE_TOLERANCE < pivotRow[i] ) &&
-             ( pivotRow[i] < +GlobalConfiguration::PSE_GAMMA_UPDATE_TOLERANCE ) )
+        if ( ( -GlobalConfiguration::PSE_GAMMA_UPDATE_TOLERANCE < coefficient ) &&
+             ( coefficient < +GlobalConfiguration::PSE_GAMMA_UPDATE_TOLERANCE ) )
             continue;
 
-        r = pivotRow[i] / -changeColumn[leavingIndex];
+        r = coefficient / -changeColumn[leavingIndex];
 
         /* compute inner product s[j] = N'[j] * u, where N[j] = A[k]
          * is constraint matrix column corresponding to xN[j] */
