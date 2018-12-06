@@ -35,6 +35,7 @@ Tableau::Tableau()
     , _denseA( NULL )
     , _changeColumn( NULL )
     , _pivotRow( NULL )
+    , _sparsePivotRow( NULL )
     , _b( NULL )
     , _workM( NULL )
     , _workN( NULL )
@@ -115,6 +116,12 @@ void Tableau::freeMemoryIfNeeded()
     {
         delete _pivotRow;
         _pivotRow = NULL;
+    }
+
+    if ( _sparsePivotRow )
+    {
+        delete _sparsePivotRow;
+        _sparsePivotRow = NULL;
     }
 
     if ( _b )
@@ -244,6 +251,10 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     _pivotRow = new TableauRow( n-m );
     if ( !_pivotRow )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::pivotRow" );
+
+    _sparsePivotRow = new SparseTableauRow( n-m );
+    if ( !_sparsePivotRow )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::sparsePivotRow" );
 
     _b = new double[m];
     if ( !_b )
@@ -1369,11 +1380,17 @@ void Tableau::setChangeColumn( const double *column )
 void Tableau::computePivotRow()
 {
     getTableauRow( _leavingVariable, _pivotRow );
+    getTableauRow( _leavingVariable, _sparsePivotRow );
 }
 
 const TableauRow *Tableau::getPivotRow() const
 {
     return _pivotRow;
+}
+
+const SparseTableauRow *Tableau::getSparsePivotRow() const
+{
+    return _sparsePivotRow;
 }
 
 bool Tableau::isBasic( unsigned variable ) const
@@ -1462,6 +1479,38 @@ unsigned Tableau::getM() const
 unsigned Tableau::getN() const
 {
     return _n;
+}
+
+void Tableau::getTableauRow( unsigned index, SparseTableauRow *row )
+{
+    /*
+      Let e denote a unit matrix with 1 in its *index* entry.
+      A row is then computed by: e * inv(B) * -AN. e * inv(B) is
+      solved by invoking BTRAN.
+    */
+
+    ASSERT( index < _m );
+
+    std::fill( _unitVector, _unitVector + _m, 0.0 );
+    _unitVector[index] = 1;
+    computeMultipliers( _unitVector );
+
+    row->clear();
+    for ( unsigned i = 0; i < _n - _m; ++i )
+    {
+        double coefficient = 0;
+        SparseUnsortedList *column = _sparseColumnsOfA[_nonBasicIndexToVariable[i]];
+
+        for ( const auto &entry : *column )
+            coefficient -= ( _multipliers[entry._index] * entry._value );
+
+        if ( !FloatUtils::isZero( coefficient ) )
+            row->append( _nonBasicIndexToVariable[i], coefficient );
+    }
+
+    _basisFactorization->forwardTransformation( _b, _workM );
+    row->_scalar = _workM[index];
+    row->_lhs = _basicIndexToVariable[index];
 }
 
 void Tableau::getTableauRow( unsigned index, TableauRow *row )
@@ -2349,7 +2398,7 @@ void Tableau::updateCostFunctionForPivot()
     double normalizedError = _costFunctionManager->updateCostFunctionForPivot( _enteringVariable,
                                                                                _leavingVariable,
                                                                                pivotElement,
-                                                                               _pivotRow,
+                                                                               _sparsePivotRow,
                                                                                _changeColumn );
 
     if ( FloatUtils::gt( normalizedError, GlobalConfiguration::COST_FUNCTION_ERROR_THRESHOLD ) )

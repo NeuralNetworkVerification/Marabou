@@ -20,6 +20,7 @@
 #include "Set.h"
 #include "SparseColumnsOfBasis.h"
 #include "SparseMatrix.h"
+#include "SparseTableauRow.h"
 #include "SparseUnsortedList.h"
 #include "Statistics.h"
 
@@ -297,6 +298,7 @@ public:
     */
     void computePivotRow();
     const TableauRow *getPivotRow() const;
+    const SparseTableauRow *getSparsePivotRow() const;
 
     /*
       Dump the tableau (debug)
@@ -309,6 +311,7 @@ public:
       Extract a row from the tableau.
     */
     void getTableauRow( unsigned index, TableauRow *row );
+    void getTableauRow( unsigned index, SparseTableauRow *row );
 
     /*
       Get the original constraint matrix A or a column thereof,
@@ -462,6 +465,7 @@ private:
       Used to store the pivot row
     */
     TableauRow *_pivotRow;
+    SparseTableauRow *_sparsePivotRow;
 
     /*
       The right hand side vector of Ax = b

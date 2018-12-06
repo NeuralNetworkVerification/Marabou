@@ -75,7 +75,7 @@ public:
         // 1 - x0 - x1 + 2x2 = x4 (pre pivot)
         // x0 entering, x4 leaving
         // x0 = 1 - x1 + 2 x2 - x4
-
+        tableau->mockLeavingVariable = 1;
         TS_ASSERT_THROWS_NOTHING( tightener.examinePivotRow() );
 
         List<Tightening> tightenings;
@@ -134,6 +134,7 @@ public:
 
         tableau->nextPivotRow = &row;
 
+        tableau->mockLeavingVariable = 1;
         TS_ASSERT_THROWS_NOTHING( tightener.examinePivotRow() );
 
         List<Tightening> tightenings;
@@ -180,6 +181,7 @@ public:
 
         tableau->nextPivotRow = &row;
 
+        tableau->mockLeavingVariable = 1;
         TS_ASSERT_THROWS_NOTHING( tightener.examinePivotRow() );
 
         List<Tightening> tightenings;
@@ -225,6 +227,7 @@ public:
 
         tableau->nextPivotRow = &row;
 
+        tableau->mockLeavingVariable = 1;
         TS_ASSERT_THROWS_NOTHING( tightener.examinePivotRow() );
 
         List<Tightening> tightenings;

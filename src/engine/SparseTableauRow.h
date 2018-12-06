@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file TableauRow.h
+/*! \file SparseTableauRow.h
 ** \verbatim
 ** Top contributors (to current version):
 **   Guy Katz
@@ -10,14 +10,14 @@
 ** directory for licensing information.\endverbatim
 **/
 
-#ifndef __TableauRow_h__
-#define __TableauRow_h__
+#ifndef __SparseTableauRow_h__
+#define __SparseTableauRow_h__
 
 #include "FloatUtils.h"
 
 #include <cstdio>
 
-class TableauRow
+class SparseTableauRow
 {
 public:
     /*
@@ -29,8 +29,8 @@ public:
       The basic variable is stored as lhs.
     */
 
-    TableauRow( unsigned size );
-    ~TableauRow();
+    SparseTableauRow( unsigned dimension );
+    ~SparseTableauRow();
 
     struct Entry
     {
@@ -50,20 +50,39 @@ public:
         double _coefficient;
     };
 
-    unsigned _size;
-    Entry *_row;
+    /*
+      Insert an element, assuming it does not exist already in the row
+    */
+    void append( unsigned var, double coefficient );
+
+    /*
+      The number of non-zero elements in the row
+    */
+    unsigned getNnz() const;
+    bool empty() const;
+
+    /*
+      Clear the stored row
+    */
+    void clear();
+
+    /*
+      Retrieve entries
+    */
+    List<Entry>::const_iterator begin() const;
+    List<Entry>::const_iterator end() const;
+    List<Entry>::iterator begin();
+    List<Entry>::iterator end();
+
+    unsigned _dimension;
+    List<Entry> _entries;
     double _scalar;
     unsigned _lhs;
-
-    double operator[]( unsigned index ) const;
-    TableauRow &operator=( const TableauRow &other );
-
-    bool emptyRow() const;
 
     void dump() const;
 };
 
-#endif // __TableauRow_h__
+#endif // __SparseTableauRow_h__
 
 //
 // Local Variables:

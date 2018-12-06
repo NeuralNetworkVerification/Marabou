@@ -15,7 +15,7 @@
 #include "FloatUtils.h"
 #include "ITableau.h"
 #include "ReluplexError.h"
-#include "TableauRow.h"
+#include "SparseTableauRow.h"
 
 CostFunctionManager::CostFunctionManager( ITableau *tableau )
     : _tableau( tableau )
@@ -304,7 +304,7 @@ const double *CostFunctionManager::getCostFunction() const
 double CostFunctionManager::updateCostFunctionForPivot( unsigned enteringVariableIndex,
                                                         unsigned leavingVariableIndex,
                                                         double pivotElement,
-                                                        const TableauRow *pivotRow,
+                                                        const SparseTableauRow *pivotRow,
                                                         const double *changeColumn
                                                         )
 {
@@ -347,10 +347,14 @@ double CostFunctionManager::updateCostFunctionForPivot( unsigned enteringVariabl
     // Update the cost of the new non-basic
     _costFunction[enteringVariableIndex] = enteringVariableCost / pivotElement;
 
-    for ( unsigned i = 0; i < _n - _m; ++i )
+    unsigned var;
+    for ( auto entry = pivotRow->begin(); entry != pivotRow->end(); ++entry )
+    // for ( unsigned i = 0; i < _n - _m; ++i )
     {
-        if ( i != enteringVariableIndex )
-            _costFunction[i] -= (*pivotRow)[i] * _costFunction[enteringVariableIndex];
+        var = entry->_var;
+
+        if ( var != enteringVariableIndex )
+            _costFunction[var] -= entry->_coefficient * _costFunction[enteringVariableIndex];
     }
 
     /*

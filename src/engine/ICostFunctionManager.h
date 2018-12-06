@@ -15,7 +15,7 @@
 
 #include "Map.h"
 
-class TableauRow;
+class SparseTableauRow;
 
 class ICostFunctionManager
 {
@@ -38,7 +38,7 @@ public:
     virtual double updateCostFunctionForPivot( unsigned enteringVariableIndex,
                                                unsigned leavingVariableIndex,
                                                double pivotElement,
-                                               const TableauRow *pivotRow,
+                                               const SparseTableauRow *pivotRow,
                                                const double *changeColumn ) = 0;
     virtual double getBasicCost( unsigned basicIndex ) const = 0;
     virtual void adjustBasicCostAccuracy() = 0;

@@ -59,7 +59,7 @@ public:
     double updateCostFunctionForPivot( unsigned enteringVariableIndex,
                                        unsigned leavingVariableIndex,
                                        double pivotElement,
-                                       const TableauRow *pivotRow,
+                                       const SparseTableauRow *pivotRow,
                                        const double *changeColumn );
 
     /*

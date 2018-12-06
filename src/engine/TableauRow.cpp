@@ -23,7 +23,11 @@ TableauRow::TableauRow( unsigned size )
 
 TableauRow::~TableauRow()
 {
-    delete[] _row;
+    if ( _row )
+    {
+        delete[] _row;
+        _row = NULL;
+    }
 }
 
 double TableauRow::operator[]( unsigned index ) const
@@ -43,6 +47,44 @@ void TableauRow::dump() const
 
     printf( "\n\tscalar = %.2lf\n", _scalar );
     printf( "\tlhs = x%u\n", _lhs );
+}
+
+TableauRow &TableauRow::operator=( const TableauRow &other )
+{
+    printf( "Row equality operator called\n" );
+
+    if ( _size != other._size )
+    {
+        if ( _row )
+        {
+            delete[] _row;
+            _row = NULL;
+        }
+
+        _row = new TableauRow::Entry[other._size];
+        if ( !_row )
+            throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauRow::row" );
+    }
+
+    _size = other._size;
+    _scalar = other._scalar;
+    _lhs = other._lhs;
+
+    for  ( unsigned i = 0; i < _size; ++i )
+        _row[i] = other._row[i];
+
+    return *this;
+}
+
+bool TableauRow::emptyRow() const
+{
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        if ( !FloatUtils::isZero( _row[i]._coefficient ) )
+            return false;
+    }
+
+    return true;
 }
 
 //
