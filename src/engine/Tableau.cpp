@@ -1505,7 +1505,7 @@ void Tableau::getTableauRow( unsigned index, SparseTableauRow *row )
             coefficient -= ( _multipliers[entry._index] * entry._value );
 
         if ( !FloatUtils::isZero( coefficient ) )
-            row->append( _nonBasicIndexToVariable[i], coefficient );
+            row->append( i, _nonBasicIndexToVariable[i], coefficient );
     }
 
     _basisFactorization->forwardTransformation( _b, _workM );

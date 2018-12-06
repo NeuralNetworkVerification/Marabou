@@ -35,25 +35,33 @@ public:
     struct Entry
     {
         Entry()
-            : _var( 0 )
+            : _index( 0 )
+            , _variable( 0 )
             , _coefficient( 0.0 )
         {
         }
 
-        Entry( unsigned var, double coefficient )
-            : _var( var )
+        Entry( unsigned index, unsigned variable, double coefficient )
+            : _index( index )
+            , _variable( variable )
             , _coefficient( coefficient )
         {
         }
 
-        unsigned _var;
+        // The index of the non-basic variable
+        unsigned _index;
+
+        // The actual non-basic variable
+        unsigned _variable;
+
+        // The coefficient
         double _coefficient;
     };
 
     /*
       Insert an element, assuming it does not exist already in the row
     */
-    void append( unsigned var, double coefficient );
+    void append( unsigned index, unsigned variable, double coefficient );
 
     /*
       The number of non-zero elements in the row

@@ -347,14 +347,13 @@ double CostFunctionManager::updateCostFunctionForPivot( unsigned enteringVariabl
     // Update the cost of the new non-basic
     _costFunction[enteringVariableIndex] = enteringVariableCost / pivotElement;
 
-    unsigned var;
+    unsigned index;
     for ( auto entry = pivotRow->begin(); entry != pivotRow->end(); ++entry )
     // for ( unsigned i = 0; i < _n - _m; ++i )
     {
-        var = entry->_var;
-
-        if ( var != enteringVariableIndex )
-            _costFunction[var] -= entry->_coefficient * _costFunction[enteringVariableIndex];
+        index = entry->_index;
+        if ( index != enteringVariableIndex )
+            _costFunction[index] -= entry->_coefficient * _costFunction[enteringVariableIndex];
     }
 
     /*

@@ -23,14 +23,14 @@ SparseTableauRow::~SparseTableauRow()
 {
 }
 
-void SparseTableauRow::append( unsigned var, double coefficient )
+void SparseTableauRow::append( unsigned index, unsigned variable, double coefficient )
 {
-    ASSERT( var < _dimension );
+    ASSERT( index < _dimension );
 
     if ( FloatUtils::isZero( coefficient ) )
         return;
 
-    _entries.append( Entry( var, coefficient ) );
+    _entries.append( Entry( index, variable, coefficient ) );
 }
 
 unsigned SparseTableauRow::getNnz() const
@@ -72,7 +72,7 @@ void SparseTableauRow::dump() const
 {
     for ( const auto &entry : _entries )
     {
-        printf( "%.2lf * x%u, ", entry._coefficient, entry._var );
+        printf( "%.2lf * x%u, ", entry._coefficient, entry._variable );
     }
 
     printf( "\n\tscalar = %.2lf\n", _scalar );
