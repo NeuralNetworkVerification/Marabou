@@ -212,6 +212,11 @@ public:
         return true;
     }
 
+		unsigned getInvalidBoundsVariable() const
+		{
+			return 0;
+		}
+
     unsigned getBasicStatus( unsigned /* basic */ ) { return 0; }
     unsigned getBasicStatusByIndex( unsigned /* basicIndex */ ) { return 0; }
 

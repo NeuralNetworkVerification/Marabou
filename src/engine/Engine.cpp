@@ -146,7 +146,13 @@ bool Engine::solve()
             if ( !_tableau->allBoundsValid() )
             {
                 // Some variable bounds are invalid, so the query is unsat
-                throw InfeasibleQueryException();
+                unsigned failureVar = _tableau->getInvalidBoundsVariable();
+                List<unsigned> failureExplanations;
+                if( _factTracker.hasFactAffectingBound( failureVar, FactTracker::LB ) )
+                  failureExplanations.append( _factTracker.getFactIDAffectingBound( failureVar, FactTracker::LB ) );
+                if( _factTracker.hasFactAffectingBound( failureVar, FactTracker::UB ) )
+                  failureExplanations.append( _factTracker.getFactIDAffectingBound( failureVar, FactTracker::UB ) );
+                throw InfeasibleQueryException( failureExplanations );
             }
 
             if ( allVarsWithinBounds() )
@@ -413,7 +419,10 @@ void Engine::performSimplexStep()
             // Cost function is fresh --- failure is real.
             struct timespec end = TimeUtils::sampleMicro();
             _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
-            throw InfeasibleQueryException();
+            List<unsigned> explanation;
+            // TODO: explanations probably include fact that created leavingIndex equation,
+            // and bounds of variables with non-zero coefficients in the equation
+            throw InfeasibleQueryException( explanation );
         }
     }
 
