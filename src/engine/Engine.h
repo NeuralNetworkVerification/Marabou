@@ -109,7 +109,7 @@ private:
     /*
       Add equations and tightenings from a split.
     */
-    void applySplit( const PiecewiseLinearCaseSplit &split, bool fromSmtCore );
+    void applySplit( const PiecewiseLinearCaseSplit &split );
 
     /*
       Perform bound tightening operations that require

@@ -30,7 +30,7 @@ private:
   List<unsigned> _explanations;
   unsigned _causingConstraintID;
   unsigned _causingSplitID;
-  bool _causedBySplit;
+  bool _causedBySplit = false;
 };
 
 #endif // __Fact_h__

@@ -1000,7 +1000,7 @@ bool Engine::attemptToMergeVariables( unsigned x1, unsigned x2 )
     return true;
 }
 
-void Engine::applySplit( const PiecewiseLinearCaseSplit &split, bool fromSmtCore )
+void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 {
     log( "" );
     log( "Applying a split. " );
@@ -1080,11 +1080,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split, bool fromSmtCore
             unsigned auxVariable = _tableau->addEquation( equation );
             _activeEntryStrategy->resizeHook( _tableau );
 
-            if( fromSmtCore )
-            {
-              _factTracker.addEquationFact( _tableau->getM()-1, equation );
-            }
-
+            _factTracker.addEquationFact( _tableau->getM()-1, equation );
             switch ( equation._type )
             {
             case Equation::GE:
@@ -1139,6 +1135,7 @@ void Engine::applyAllRowTightenings()
 
     for ( const auto &tightening : rowTightenings )
     {
+        _factTracker.addBoundFact( tightening._variable, tightening );
         if ( tightening._type == Tightening::LB )
             _tableau->tightenLowerBound( tightening._variable, tightening._value );
         else
@@ -1156,6 +1153,7 @@ void Engine::applyAllConstraintTightenings()
     {
         _statistics.incNumBoundsProposedByPlConstraints();
 
+        _factTracker.addBoundFact( tightening._variable, tightening );
         if ( tightening._type == Tightening::LB )
             _tableau->tightenLowerBound( tightening._variable, tightening._value );
         else
@@ -1201,7 +1199,7 @@ bool Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
         constraint->setActiveConstraint( false );
         PiecewiseLinearCaseSplit validSplit = constraint->getValidCaseSplit();
         _smtCore.recordImpliedValidSplit( validSplit );
-        applySplit( validSplit, false );
+        applySplit( validSplit );
         ++_numPlConstraintsDisabledByValidSplits;
 
         return true;
