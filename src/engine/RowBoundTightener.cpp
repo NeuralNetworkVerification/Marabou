@@ -21,7 +21,9 @@
 RowBoundTightener::RowBoundTightener( const ITableau &tableau )
     : _tableau( tableau )
     , _lowerBounds( NULL )
+    , _lowerBoundExplanationIDs( NULL )
     , _upperBounds( NULL )
+    , _upperBoundExplanationIDs( NULL )
     , _tightenedLower( NULL )
     , _tightenedUpper( NULL )
     , _rows( NULL )
@@ -29,6 +31,7 @@ RowBoundTightener::RowBoundTightener( const ITableau &tableau )
     , _ciTimesLb( NULL )
     , _ciTimesUb( NULL )
     , _ciSign( NULL )
+    , _factTracker( NULL )
     , _statistics( NULL )
 {
 }
@@ -44,9 +47,17 @@ void RowBoundTightener::setDimensions()
     if ( !_lowerBounds )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "RowBoundTightener::lowerBounds" );
 
+    _lowerBoundExplanationIDs = new List<unsigned>[_n];
+    if ( !_lowerBoundExplanationIDs )
+      throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "RowBoundTightener::lowerBoundExplanationIDs" );
+
     _upperBounds = new double[_n];
     if ( !_upperBounds )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "RowBoundTightener::upperBounds" );
+
+    _upperBoundExplanationIDs = new List<unsigned>[_n];
+    if ( !_upperBoundExplanationIDs )
+      throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "RowBoundTightener::upperBoundExplanationIDs" );
 
     _tightenedLower = new bool[_n];
     if ( !_tightenedLower )
@@ -88,7 +99,9 @@ void RowBoundTightener::resetBounds()
     for ( unsigned i = 0; i < _n; ++i )
     {
         _lowerBounds[i] = _tableau.getLowerBound( i );
+        _lowerBoundExplanationIDs[i].clear();
         _upperBounds[i] = _tableau.getUpperBound( i );
+        _upperBoundExplanationIDs[i].clear();
     }
 }
 
@@ -100,7 +113,9 @@ void RowBoundTightener::clear()
     for ( unsigned i = 0; i < _n; ++i )
     {
         _lowerBounds[i] = _tableau.getLowerBound( i );
+        _lowerBoundExplanationIDs[i].clear();
         _upperBounds[i] = _tableau.getUpperBound( i );
+        _upperBoundExplanationIDs[i].clear();
     }
 }
 
@@ -117,10 +132,22 @@ void RowBoundTightener::freeMemoryIfNeeded()
         _lowerBounds = NULL;
     }
 
+    if ( _lowerBoundExplanationIDs )
+    {
+      delete[] _lowerBoundExplanationIDs;
+      _lowerBoundExplanationIDs = NULL;
+    }
+
     if ( _upperBounds )
     {
         delete[] _upperBounds;
         _upperBounds = NULL;
+    }
+
+    if ( _upperBoundExplanationIDs )
+    {
+      delete[] _upperBoundExplanationIDs;
+      _upperBoundExplanationIDs = NULL;
     }
 
     if ( _tightenedLower )
@@ -283,12 +310,12 @@ unsigned RowBoundTightener::onePassOverInvertedBasisRows()
     unsigned newBounds = 0;
 
     for ( unsigned i = 0; i < _m; ++i )
-        newBounds += tightenOnSingleInvertedBasisRow( *( _rows[i] ) );
+        newBounds += tightenOnSingleInvertedBasisRow( *( _rows[i] ), i );
 
     return newBounds;
 }
 
-unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &row )
+unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &row, unsigned equIndex )
 {
 	/*
       A row is of the form
@@ -335,24 +362,51 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
 
     unsigned xi;
     double ci;
+    Set<unsigned> yLowerBoundExplanations;
+    Set<unsigned> yUpperBoundExplanations;
+
+    if( _factTracker && _factTracker->hasFactAffectingEquation( equIndex ) )
+    {
+      yLowerBoundExplanations.insert( _factTracker->getFactIDAffectingEquation( equIndex ) );
+      yUpperBoundExplanations.insert( _factTracker->getFactIDAffectingEquation( equIndex ) );
+    }
 
     for ( unsigned i = 0; i < n - m; ++i )
     {
+        unsigned xi = row._row[i]._var;
         if ( _ciSign[i] == POSITIVE )
         {
             lowerBound += _ciTimesLb[i];
+            if( _factTracker && _factTracker->hasFactAffectingBound( xi, FactTracker::LB ) )
+            {
+              yLowerBoundExplanations.insert( _factTracker->getFactIDAffectingBound( xi, FactTracker::LB ) );
+            }
             upperBound += _ciTimesUb[i];
+            if( _factTracker && _factTracker->hasFactAffectingBound( xi, FactTracker::UB ) )
+            {
+              yUpperBoundExplanations.insert( _factTracker->getFactIDAffectingBound( xi, FactTracker::UB ) );
+            }
         }
-        else
+        if ( _ciSign[i] == NEGATIVE )
         {
             lowerBound += _ciTimesUb[i];
+            if( _factTracker && _factTracker->hasFactAffectingBound( xi, FactTracker::UB ) )
+            {
+              yLowerBoundExplanations.insert( _factTracker->getFactIDAffectingBound( xi, FactTracker::UB ) );
+            }
             upperBound += _ciTimesLb[i];
+            if( _factTracker && _factTracker->hasFactAffectingBound( xi, FactTracker::LB ) )
+            {
+              yUpperBoundExplanations.insert( _factTracker->getFactIDAffectingBound( xi, FactTracker::LB ) );
+            }
         }
     }
 
     if ( FloatUtils::lt( _lowerBounds[y], lowerBound ) )
     {
         _lowerBounds[y] = lowerBound;
+        for( unsigned explanationID: yLowerBoundExplanations )
+          _lowerBoundExplanationIDs[y].append( explanationID );
         _tightenedLower[y] = true;
         ++result;
     }
@@ -360,6 +414,8 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
     if ( FloatUtils::gt( _upperBounds[y], upperBound ) )
     {
         _upperBounds[y] = upperBound;
+        for( unsigned explanationID: yUpperBoundExplanations )
+          _upperBoundExplanationIDs[y].append( explanationID );
         _tightenedUpper[y] = true;
         ++result;
     }
@@ -416,7 +472,7 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
             lowerBound += _ciTimesLb[i];
             upperBound += _ciTimesUb[i];
         }
-        else
+        if ( _ciSign[i] == POSITIVE )
         {
             lowerBound += _ciTimesUb[i];
             upperBound += _ciTimesLb[i];
@@ -427,18 +483,33 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
         lowerBound = lowerBound / ci;
         upperBound = upperBound / ci;
 
+        Set<unsigned> xiLowerBoundExplanations = yLowerBoundExplanations;
+        Set<unsigned> xiUpperBoundExplanations = yUpperBoundExplanations;
+
         if ( _ciSign[i] == NEGATIVE )
         {
             double temp = upperBound;
             upperBound = lowerBound;
             lowerBound = temp;
+            xiLowerBoundExplanations = yUpperBoundExplanations;
+            xiUpperBoundExplanations = yLowerBoundExplanations;
         }
 
         // If a tighter bound is found, store it
         xi = row._row[i]._var;
+
+        if( xiLowerBoundExplanations.exists( xi ) )
+          xiLowerBoundExplanations.erase( xi );
+        xiLowerBoundExplanations.insert( y );
+        if( xiUpperBoundExplanations.exists( xi ) )
+          xiUpperBoundExplanations.erase( xi );
+        xiUpperBoundExplanations.insert( y );
+
         if ( FloatUtils::lt( _lowerBounds[xi], lowerBound ) )
         {
             _lowerBounds[xi] = lowerBound;
+            for( unsigned explanationID: xiLowerBoundExplanations )
+              _lowerBoundExplanationIDs[xi].append( explanationID );
             _tightenedLower[xi] = true;
             ++result;
         }
@@ -446,6 +517,8 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
         if ( FloatUtils::gt( _upperBounds[xi], upperBound ) )
         {
             _upperBounds[xi] = upperBound;
+            for( unsigned explanationID: xiUpperBoundExplanations )
+              _upperBoundExplanationIDs[xi].append( explanationID );
             _tightenedUpper[xi] = true;
             ++result;
         }
@@ -489,6 +562,7 @@ unsigned RowBoundTightener::onePassOverConstraintMatrix()
 
 unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
 {
+    // TODO
     /*
       The cosntraint matrix A satisfies Ax = b.
       Each row is of the form:
@@ -550,18 +624,43 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
     double auxLb = b[row];
     double auxUb = b[row];
 
+    Set<unsigned> tempLowerBoundExplanations;
+    Set<unsigned> tempUpperBoundExplanations;
+
+    if( _factTracker && _factTracker->hasFactAffectingEquation( row ) )
+    {
+      tempLowerBoundExplanations.insert( _factTracker->getFactIDAffectingEquation( row ) );
+      tempUpperBoundExplanations.insert( _factTracker->getFactIDAffectingEquation( row ) );
+    }
+
     // Now add ALL xi's
     for ( unsigned i = 0; i < n; ++i )
     {
         if ( _ciSign[i] == NEGATIVE )
         {
             auxLb -= _ciTimesLb[i];
+            if( _factTracker && _factTracker->hasFactAffectingBound( i, FactTracker::LB ) )
+            {
+              tempLowerBoundExplanations.insert( _factTracker->getFactIDAffectingBound( i, FactTracker::LB ) );
+            }
             auxUb -= _ciTimesUb[i];
+            if( _factTracker && _factTracker->hasFactAffectingBound( i, FactTracker::UB ) )
+            {
+              tempUpperBoundExplanations.insert( _factTracker->getFactIDAffectingBound( i, FactTracker::UB ) );
+            }
         }
-        else
+        if ( _ciSign[i] == POSITIVE )
         {
             auxLb -= _ciTimesUb[i];
+            if( _factTracker && _factTracker->hasFactAffectingBound( i, FactTracker::UB ) )
+            {
+              tempLowerBoundExplanations.insert( _factTracker->getFactIDAffectingBound( i, FactTracker::UB ) );
+            }
             auxUb -= _ciTimesLb[i];
+            if( _factTracker && _factTracker->hasFactAffectingBound( i, FactTracker::LB ) )
+            {
+              tempUpperBoundExplanations.insert( _factTracker->getFactIDAffectingBound( i, FactTracker::LB ) );
+            }
         }
     }
 
@@ -582,7 +681,7 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
             lowerBound += _ciTimesLb[index];
             upperBound += _ciTimesUb[index];
         }
-        else
+        if ( _ciSign[index] == POSITIVE )
         {
             lowerBound += _ciTimesUb[index];
             upperBound += _ciTimesLb[index];
@@ -594,17 +693,27 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
         lowerBound = lowerBound / ci;
         upperBound = upperBound / ci;
 
+        Set<unsigned> iLowerBoundExplanations = tempLowerBoundExplanations;
+        Set<unsigned> iUpperBoundExplanations = tempUpperBoundExplanations;
         if ( _ciSign[index] == NEGATIVE )
         {
             double temp = upperBound;
             upperBound = lowerBound;
             lowerBound = temp;
+            iLowerBoundExplanations = tempUpperBoundExplanations;
+            iUpperBoundExplanations = tempLowerBoundExplanations;
         }
+        if( iLowerBoundExplanations.exists( index ) )
+          iLowerBoundExplanations.erase( index );
+        if( iUpperBoundExplanations.exists( index ) )
+          iUpperBoundExplanations.erase( index );
 
         // If a tighter bound is found, store it
         if ( FloatUtils::lt( _lowerBounds[index], lowerBound ) )
         {
             _lowerBounds[index] = lowerBound;
+            for( unsigned explanationID: iLowerBoundExplanations )
+              _lowerBoundExplanationIDs[index].append( explanationID );
             _tightenedLower[index] = true;
             ++result;
         }
@@ -612,6 +721,8 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
         if ( FloatUtils::gt( _upperBounds[index], upperBound ) )
         {
             _upperBounds[index] = upperBound;
+            for( unsigned explanationID: iUpperBoundExplanations )
+              _upperBoundExplanationIDs[index].append( explanationID );
             _tightenedUpper[index] = true;
             ++result;
         }
@@ -629,7 +740,7 @@ void RowBoundTightener::examinePivotRow()
         _statistics->incNumRowsExaminedByRowTightener();
 
     const TableauRow &row( *_tableau.getPivotRow() );
-    unsigned newBoundsLearned = tightenOnSingleInvertedBasisRow( row );
+    unsigned newBoundsLearned = tightenOnSingleInvertedBasisRow( row, _tableau.getLeavingVariableIndex() );
 
     if ( _statistics && ( newBoundsLearned > 0 ) )
         _statistics->incNumTighteningsFromRows( newBoundsLearned );
@@ -641,13 +752,19 @@ void RowBoundTightener::getRowTightenings( List<Tightening> &tightenings ) const
     {
         if ( _tightenedLower[i] )
         {
-            tightenings.append( Tightening( i, _lowerBounds[i], Tightening::LB ) );
+            Tightening newBound( i, _lowerBounds[i], Tightening::LB );
+            for( unsigned explanationID: _lowerBoundExplanationIDs[i] )
+              newBound.addExplanation( explanationID );
+            tightenings.append( newBound );
             _tightenedLower[i] = false;
         }
 
         if ( _tightenedUpper[i] )
         {
-            tightenings.append( Tightening( i, _upperBounds[i], Tightening::UB ) );
+            Tightening newBound( i, _upperBounds[i], Tightening::UB );
+            for( unsigned explanationID: _upperBoundExplanationIDs[i] )
+              newBound.addExplanation( explanationID );
+            tightenings.append( newBound );
             _tightenedUpper[i] = false;
         }
     }
@@ -668,6 +785,7 @@ void RowBoundTightener::notifyLowerBound( unsigned variable, double bound )
     if ( FloatUtils::gt( bound, _lowerBounds[variable] ) )
     {
         _lowerBounds[variable] = bound;
+        _lowerBoundExplanationIDs[variable].clear();
         _tightenedLower[variable] = false;
     }
 }
@@ -677,6 +795,7 @@ void RowBoundTightener::notifyUpperBound( unsigned variable, double bound )
     if ( FloatUtils::lt( bound, _upperBounds[variable] ) )
     {
         _upperBounds[variable] = bound;
+        _upperBoundExplanationIDs[variable].clear();
         _tightenedUpper[variable] = false;
     }
 }

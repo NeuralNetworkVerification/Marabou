@@ -39,6 +39,18 @@ void PiecewiseLinearCaseSplit::setConstraintAndSplitID( unsigned constraintID, u
   _splitID = splitID;
 }
 
+void PiecewiseLinearCaseSplit::setFactsConstraintAndSplitID()
+{
+  for( auto& bound: _bounds)
+  {
+    bound.setCausingConstraintAndSplitID( _constraintID, _splitID );
+  }
+  for (auto& equation: _equations )
+  {
+    equation.setCausingConstraintAndSplitID( _constraintID, _splitID );
+  }
+}
+
 unsigned PiecewiseLinearCaseSplit::getConstraintID() const
 {
   return _constraintID;

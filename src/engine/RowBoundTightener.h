@@ -109,7 +109,9 @@ private:
       whether each bound has been tightened by the tightener.
     */
     double *_lowerBounds;
+    List<unsigned> *_lowerBoundExplanationIDs;
     double *_upperBounds;
+    List<unsigned> *_upperBoundExplanationIDs;
     bool *_tightenedLower;
     bool *_tightenedUpper;
 
@@ -158,7 +160,7 @@ private:
       lower/upper bounds for the specified variable. Return the number
       of tighter bounds found.
     */
-    unsigned tightenOnSingleInvertedBasisRow( const TableauRow &row );
+    unsigned tightenOnSingleInvertedBasisRow( const TableauRow &row, unsigned equIndex );
 };
 
 #endif // __RowBoundTightener_h__
