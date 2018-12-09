@@ -90,7 +90,7 @@ void SmtCore::performSplit()
     ASSERT( splits.size() >= 2 ); // Not really necessary, can add code to handle this case.
     for( auto& split: splits )
       split.setFactsConstraintAndSplitID();
-      
+
     _constraintForSplitting->setActiveConstraint( false );
 
     // Obtain the current state of the engine
@@ -104,7 +104,7 @@ void SmtCore::performSplit()
       stackEntry->_factTracker = *_factTracker;
     // Perform the first split: add bounds and equations
     List<PiecewiseLinearCaseSplit>::iterator split = splits.begin();
-    _engine->applySplit( *split, true );
+    _engine->applySplit( *split );
     stackEntry->_activeSplit = *split;
 
     // Store the remaining splits on the stack, for later
@@ -189,7 +189,7 @@ bool SmtCore::popSplit()
     stackEntry->_impliedValidSplits.clear();
 
     log( "\tApplying new split..." );
-    _engine->applySplit( *split, true );
+    _engine->applySplit( *split );
     log( "\tApplying new split - DONE" );
 
     stackEntry->_activeSplit = *split;

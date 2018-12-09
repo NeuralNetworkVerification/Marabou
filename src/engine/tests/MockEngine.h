@@ -63,7 +63,7 @@ public:
     List<Bound> lastLowerBounds;
     List<Bound> lastUpperBounds;
     List<Equation> lastEquations;
-    void applySplit( const PiecewiseLinearCaseSplit &split, bool /*fromSmtCore*/ )
+    void applySplit( const PiecewiseLinearCaseSplit &split )
     {
         List<Tightening> bounds = split.getBoundTightenings();
         auto equations = split.getEquations();
