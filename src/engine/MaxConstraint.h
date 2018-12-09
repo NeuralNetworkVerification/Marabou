@@ -123,7 +123,9 @@ class MaxConstraint : public PiecewiseLinearConstraint
     unsigned _maxIndex;
     bool _maxIndexSet;
     double _maxLowerBound;
+    unsigned _maxLowerBoundVar;
     bool _obsolete;
+    List<unsigned> _factIDsCausingVarRemoval;
 
     void resetMaxIndex();
 

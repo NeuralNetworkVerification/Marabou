@@ -50,6 +50,7 @@ ReluConstraint::ReluConstraint( const String &serializedRelu )
     _f = atoi( valuesIter->ascii() );
     ++valuesIter;
     _b = atoi( valuesIter->ascii() );
+    _factTracker = NULL;
 
     setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
 }
