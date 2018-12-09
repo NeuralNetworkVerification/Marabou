@@ -1677,6 +1677,16 @@ bool Tableau::allBoundsValid() const
     return _boundsValid;
 }
 
+unsigned Tableau::getInvalidBoundsVariable() const
+{
+  ASSERT( !_boundsValid );
+  for( unsigned i=0; i < _n-1; i++ ) {
+    if ( FloatUtils::gt( _lowerBounds[i], _upperBounds[i] ) )
+      return i;
+  }
+  return _n-1;
+}
+
 void Tableau::tightenLowerBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );

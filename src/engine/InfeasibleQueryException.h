@@ -16,9 +16,15 @@
 #ifndef __InfeasibleQueryException_h__
 #define __InfeasibleQueryException_h__
 
+#include "List.h"
+
 class InfeasibleQueryException
 {
 public:
+  InfeasibleQueryException( const List<unsigned>& explanations ){
+    _explanations = explanations;
+  }
+  List<unsigned> _explanations;
 };
 
 #endif // __InfeasibleQueryException_h__

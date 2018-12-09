@@ -165,6 +165,7 @@ public:
       Returns whether any variable's bounds are invalid.
     */
     bool allBoundsValid() const;
+    unsigned getInvalidBoundsVariable() const;
 
     /*
       Tighten the lower/upper bound for a variable. These functions
