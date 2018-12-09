@@ -131,6 +131,9 @@ private:
       The existing piecewise-linear constraints.
     */
     List<PiecewiseLinearConstraint *> _plConstraints;
+    // Guy: PLCs can duplicate themselves. I think we only use that during the
+    // preprocessing phase or something, but we should look into that - to make
+    // sure the mapping here remains up-to-date.
     Map<unsigned, PiecewiseLinearConstraint *> _plConstraintFromID;
 
     /*
@@ -170,6 +173,11 @@ private:
       The SMT engine is in charge of case splitting.
     */
     SmtCore _smtCore;
+
+    /*
+      The Fact Tracker keeps track of facts (bounds, equations)
+      generated via case splits or via deductions.
+    */
     FactTracker _factTracker;
 
     /*

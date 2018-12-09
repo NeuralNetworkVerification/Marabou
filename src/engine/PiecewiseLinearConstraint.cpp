@@ -13,24 +13,38 @@
 
 **/
 
-#include "PiecewiseLinearConstraint.h"
 #include "FactTracker.h"
+#include "PiecewiseLinearConstraint.h"
 #include "Statistics.h"
 
 PiecewiseLinearConstraint::PiecewiseLinearConstraint()
     : _constraintActive( true )
+    , _id( 0 )
     , _constraintBoundTightener( NULL )
+      // Guy: since _factTracker is a member of the parent class, better to initialize it here
+      // instead of in the children
+    , _factTracker( NULL )
     , _statistics( NULL )
 {
 }
 
-unsigned PiecewiseLinearConstraint::getID() const {
-  return _id;
+PiecewiseLinearConstraint::PiecewiseLinearConstraint( unsigned id )
+    : _constraintActive( true )
+    , _id( id )
+    , _constraintBoundTightener( NULL )
+    , _factTracker( NULL )
+    , _statistics( NULL )
+{
 }
 
-void PiecewiseLinearConstraint::setFactTracker( FactTracker* factTracker)
+unsigned PiecewiseLinearConstraint::getID() const
 {
-  _factTracker = factTracker;
+    return _id;
+}
+
+void PiecewiseLinearConstraint::setFactTracker( FactTracker *factTracker )
+{
+    _factTracker = factTracker;
 }
 
 void PiecewiseLinearConstraint::setStatistics( Statistics *statistics )

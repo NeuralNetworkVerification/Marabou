@@ -1679,12 +1679,16 @@ bool Tableau::allBoundsValid() const
 
 unsigned Tableau::getInvalidBoundsVariable() const
 {
-  ASSERT( !_boundsValid );
-  for( unsigned i=0; i < _n-1; i++ ) {
-    if ( FloatUtils::gt( _lowerBounds[i], _upperBounds[i] ) )
-      return i;
-  }
-  return _n-1;
+    ASSERT( !_boundsValid );
+
+    for( unsigned i = 0; i < _n - 1; ++i )
+    {
+        if ( FloatUtils::gt( _lowerBounds[i], _upperBounds[i] ) )
+            return i;
+    }
+
+    // This should never happen, right? Lets throw an exception insteadof returning n-1.
+    return _n - 1;
 }
 
 void Tableau::tightenLowerBound( unsigned variable, double value )

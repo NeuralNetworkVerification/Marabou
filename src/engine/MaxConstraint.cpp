@@ -26,19 +26,20 @@
 #include <algorithm>
 
 MaxConstraint::MaxConstraint( unsigned f, const Set<unsigned> &elements, unsigned id )
-    : _f( f )
+    : PiecewiseLinearConstraint( id )
+    , _f( f )
     , _elements( elements )
     , _maxIndexSet( false )
     , _maxLowerBound( FloatUtils::negativeInfinity() )
     , _obsolete( false )
 {
-  _id = id;
-  _factTracker = NULL;
 }
 
 MaxConstraint::MaxConstraint( unsigned f, const Set<unsigned> &elements )
 {
-  (*this) = MaxConstraint( f, elements, 0 );
+    // Guy: lets make 0 the default ID, maybe define it in the parent class, and make all numbering start from 1.
+    // Alternatively, make the default id (unsigned)-1.
+   (*this) = MaxConstraint( f, elements, 0 );
 }
 
 MaxConstraint::MaxConstraint( const String &serializedMax )
@@ -129,16 +130,13 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
             if ( _upperBounds.exists( element ) &&
                  FloatUtils::lt( _upperBounds[element], value ) )
             {
-                if( _factTracker )
+                if ( _factTracker )
                 {
-                  if ( _factTracker->hasFactAffectingBound( element, FactTracker::UB ) )
-                  {
-                    _factIDsCausingVarRemoval.append( _factTracker->getFactIDAffectingBound( element, FactTracker::UB ) );
-                  }
-                  if ( _factTracker->hasFactAffectingBound( variable, FactTracker::LB ) )
-                  {
-                    _factIDsCausingVarRemoval.append( _factTracker->getFactIDAffectingBound( variable, FactTracker::LB ) );
-                  }
+                    if ( _factTracker->hasFactAffectingBound( element, FactTracker::UB ) )
+                        _factIDsCausingVarRemoval.append( _factTracker->getFactIDAffectingBound( element, FactTracker::UB ) );
+
+                    if ( _factTracker->hasFactAffectingBound( variable, FactTracker::LB ) )
+                        _factIDsCausingVarRemoval.append( _factTracker->getFactIDAffectingBound( variable, FactTracker::LB ) );
                 }
                 toRemove.append( element );
             }
@@ -184,14 +182,11 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
     {
         if( _factTracker )
         {
-          if ( _factTracker->hasFactAffectingBound( variable, FactTracker::UB ) )
-          {
-            _factIDsCausingVarRemoval.append( _factTracker->getFactIDAffectingBound( variable, FactTracker::UB ) );
-          }
-          if ( _factTracker->hasFactAffectingBound( _maxLowerBoundVar, FactTracker::LB ) )
-          {
-            _factIDsCausingVarRemoval.append( _factTracker->getFactIDAffectingBound( _maxLowerBoundVar, FactTracker::LB ) );
-          }
+            if ( _factTracker->hasFactAffectingBound( variable, FactTracker::UB ) )
+                _factIDsCausingVarRemoval.append( _factTracker->getFactIDAffectingBound( variable, FactTracker::UB ) );
+
+            if ( _factTracker->hasFactAffectingBound( _maxLowerBoundVar, FactTracker::LB ) )
+                _factIDsCausingVarRemoval.append( _factTracker->getFactIDAffectingBound( _maxLowerBoundVar, FactTracker::LB ) );
         }
         _elements.erase( variable );
     }
@@ -384,16 +379,15 @@ PiecewiseLinearCaseSplit MaxConstraint::getValidCaseSplit() const
 {
     ASSERT( phaseFixed() );
     PiecewiseLinearCaseSplit split = getSplit( *( _elements.begin() ) );
-    for( unsigned explanationID: _factIDsCausingVarRemoval )
-    {
-      split.addExplanation( explanationID );
-    }
+    for ( unsigned explanationID: _factIDsCausingVarRemoval )
+        split.addExplanation( explanationID );
+
     return split;
 }
 
 PiecewiseLinearCaseSplit MaxConstraint::getSplitFromID( unsigned splitID ) const
 {
-  return getSplit( splitID );
+    return getSplit( splitID );
 }
 
 PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const

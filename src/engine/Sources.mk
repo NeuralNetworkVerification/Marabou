@@ -11,6 +11,7 @@ SOURCES += \
 	Equation.cpp \
 	Fact.cpp \
 	FactTracker.cpp \
+	InfeasibleQueryException.cpp \
 	InputQuery.cpp \
 	MaxConstraint.cpp \
 	PiecewiseLinearCaseSplit.cpp \

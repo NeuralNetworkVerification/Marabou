@@ -93,6 +93,10 @@ public:
     */
     void getRowTightenings( List<Tightening> &tightenings ) const;
 
+    /*
+      Have the bount tightener report new deductions to a tracker,
+      for conflict analysis later on.
+    */
     void setFactTracker( FactTracker* factTracker );
 
     /*
@@ -127,7 +131,7 @@ private:
     double *_ciTimesUb;
     char *_ciSign;
 
-    FactTracker* _factTracker;
+    FactTracker *_factTracker;
 
     /*
       Statistics collection

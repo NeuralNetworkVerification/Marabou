@@ -58,6 +58,7 @@ public:
     };
 
     PiecewiseLinearConstraint();
+    PiecewiseLinearConstraint( unsigned id );
     virtual ~PiecewiseLinearConstraint() {}
 
     /*
@@ -78,11 +79,15 @@ public:
     virtual void restoreState( const PiecewiseLinearConstraint *state ) = 0;
 
     /*
-      Register/unregister the constraint with a talbeau
+      Register/unregister the constraint with a talbeau.
     */
     virtual void registerAsWatcher( ITableau *tableau ) = 0;
     virtual void unregisterAsWatcher( ITableau *tableau ) = 0;
-    void setFactTracker (FactTracker* FactTracker);
+
+    /*
+      Register a fact tracker for this constraint.
+    */
+    void setFactTracker( FactTracker *FactTracker );
 
     /*
       The variable watcher notifcation callbacks, about a change in a variable's value or bounds.
@@ -138,6 +143,7 @@ public:
     */
     virtual List<PiecewiseLinearCaseSplit> getCaseSplits() const = 0;
 
+    // Guy: what does this do? Does every PLCS have a pre-determined, fixed ID?
     virtual PiecewiseLinearCaseSplit getSplitFromID( unsigned splitID ) const = 0;
 
     /*
@@ -215,7 +221,7 @@ public:
 
 protected:
     bool _constraintActive;
-	  Map<unsigned, double> _assignment;
+    Map<unsigned, double> _assignment;
     Map<unsigned, double> _lowerBounds;
     Map<unsigned, double> _upperBounds;
     unsigned _id;

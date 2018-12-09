@@ -162,7 +162,8 @@ public:
     void checkBoundsValid( unsigned variable );
 
     /*
-      Returns whether any variable's bounds are invalid.
+      Returns whether any variable's bounds are invalid. If such
+      a variable exists, it can be retrieved.
     */
     bool allBoundsValid() const;
     unsigned getInvalidBoundsVariable() const;

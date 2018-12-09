@@ -1,31 +1,21 @@
 /*********************                                                        */
-/*! \file InfeasibleQueryException.h
+/*! \file InfeasibleQueryException.cpp
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz
  ** This file is part of the Marabou project.
- ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
- **
- ** [[ Add lengthier description here ]]
-
  **/
 
-#ifndef __InfeasibleQueryException_h__
-#define __InfeasibleQueryException_h__
+#include "InfeasibleQueryException.h"
 
-#include "List.h"
-
-class InfeasibleQueryException
+InfeasibleQueryException::InfeasibleQueryException( const List<unsigned> &explanations )
+    : _explanations( explanations )
 {
-public:
-    InfeasibleQueryException( const List<unsigned>& explanations );
-    List<unsigned> _explanations;
-};
-
-#endif // __InfeasibleQueryException_h__
+}
 
 //
 // Local Variables:

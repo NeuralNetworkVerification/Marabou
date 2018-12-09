@@ -90,6 +90,9 @@ public:
      */
     List<PiecewiseLinearCaseSplit> getCaseSplits() const;
 
+    /*
+      TODO: Add comment
+    */
     PiecewiseLinearCaseSplit getSplitFromID( unsigned splitID ) const;
 
     /*
