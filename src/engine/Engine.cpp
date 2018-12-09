@@ -600,22 +600,39 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         printf( "Input bounds:\n" );
         for ( unsigned i = 0; i < inputQuery.getNumInputVariables(); ++i )
         {
-            unsigned originalIndex = inputQuery.inputVariableByIndex( i );
-            if ( _preprocessor.variableIsFixed( originalIndex ) )
+            unsigned variable = inputQuery.inputVariableByIndex( i );
+            double lb, ub;
+            bool fixed = false;
+            if ( _preprocessingEnabled )
             {
-                double value = _preprocessor.getFixedValue( originalIndex );
-                printf( "\tx%u: [%8.4lf, %8.4lf] (FIXED)\n",
-                        i,
-                        value,
-                        value );
+                // Fixed variables are easy: return the value they've been fixed to.
+                if ( _preprocessor.variableIsFixed( variable ) )
+                {
+                    fixed = true;
+                    lb = _preprocessor.getFixedValue( variable );
+                    ub = lb;
+                }
+                else
+                {
+                    // Has the variable been merged into another?
+                    if ( _preprocessor.variableIsMerged( variable ) )
+                        variable = _preprocessor.getMergedIndex( variable );
+
+                    // We know which variable to look for, but it may have been assigned
+                    // a new index, due to variable elimination
+                    variable = _preprocessor.getNewIndex( variable );
+
+                    lb = _preprocessedQuery.getLowerBound( variable );
+                    ub = _preprocessedQuery.getUpperBound( variable );
+                }
             }
             else
             {
-                printf( "\tx%u: [%8.4lf, %8.4lf]\n",
-                        i,
-                        _preprocessedQuery.getLowerBound( _preprocessedQuery.inputVariableByIndex( i ) ),
-                        _preprocessedQuery.getUpperBound( _preprocessedQuery.inputVariableByIndex( i ) ) );
+                lb = inputQuery.getLowerBound( variable );
+                ub = inputQuery.getUpperBound( variable );
             }
+
+            printf( "\tx%u: [%8.4lf, %8.4lf] %s\n", i, lb, ub, fixed ? "[FIXED]" : "" );
         }
         printf( "\n" );
 
@@ -911,8 +928,6 @@ bool Engine::attemptToMergeVariables( unsigned x1, unsigned x2 )
         // such as projected steepest edge need these for their internal updates.
         _tableau->computeChangeColumn();
         _tableau->computePivotRow();
-
-        printf( "swapping x%u with x%u\n", x2, nonBasic );
 
         _activeEntryStrategy->prePivotHook( _tableau, false );
         _tableau->performDegeneratePivot();
