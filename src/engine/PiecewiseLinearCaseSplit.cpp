@@ -54,24 +54,21 @@ void PiecewiseLinearCaseSplit::setFactsConstraintAndSplitID()
 
 unsigned PiecewiseLinearCaseSplit::getConstraintID() const
 {
-  return _constraintID;
+    return _constraintID;
 }
 
 unsigned PiecewiseLinearCaseSplit::getSplitID() const
 {
-  return _splitID;
+    return _splitID;
 }
 
 void PiecewiseLinearCaseSplit::addExplanation( unsigned causeID )
 {
-  for( auto& bound: _bounds)
-  {
-    bound.addExplanation( causeID );
-  }
-  for (auto& equation: _equations )
-  {
-    equation.addExplanation( causeID );
-  }
+    for( auto &bound: _bounds )
+        bound.addExplanation( causeID );
+
+    for ( auto &equation: _equations )
+        equation.addExplanation( causeID );
 }
 
 void PiecewiseLinearCaseSplit::dump() const

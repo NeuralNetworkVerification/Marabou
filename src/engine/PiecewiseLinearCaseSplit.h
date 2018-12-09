@@ -71,7 +71,6 @@ private:
       Information about PLConstraint and Split that caused this
     */
     // Guy: I thought we reached the conclusion that this information should be stored elsewhere? E.g., in the fact tracker?
-    // The _splitId, especially, seems out of place here. A PLCS shouldn't care at all about the SMT core functiaonlity...
     unsigned _constraintID;
     unsigned _splitID;
 };
