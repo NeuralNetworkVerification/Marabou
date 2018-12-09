@@ -100,6 +100,9 @@ void SmtCore::performSplit()
     List<PiecewiseLinearCaseSplit> splits = _constraintForSplitting->getCaseSplits();
     ASSERT( !splits.empty() );
     ASSERT( splits.size() >= 2 ); // Not really necessary, can add code to handle this case.
+    for( auto& split: splits )
+      split.setFactsConstraintAndSplitID();
+      
     _constraintForSplitting->setActiveConstraint( false );
 
     // Obtain the current state of the engine
