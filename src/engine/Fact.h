@@ -19,18 +19,20 @@
 class Fact
 {
 public:
-  List<unsigned> getExplanations() const;
-  void addExplanation( unsigned explanationID );
-  void setCausingConstraintAndSplitID( unsigned constraintID, unsigned splitID );
-  bool isCausedBySplit() const;
-  unsigned getCausingConstraintID() const;
-  unsigned getCausingSplitID() const;
+    Fact();
+
+    List<unsigned> getExplanations() const;
+    void addExplanation( unsigned explanationID );
+    void setCausingConstraintAndSplitID( unsigned constraintID, unsigned splitID );
+    bool isCausedBySplit() const;
+    unsigned getCausingConstraintID() const;
+    unsigned getCausingSplitID() const;
 
 private:
-  List<unsigned> _explanations;
-  unsigned _causingConstraintID;
-  unsigned _causingSplitID;
-  bool _causedBySplit = false;
+    List<unsigned> _explanations;
+    unsigned _causingConstraintID;
+    unsigned _causingSplitID;
+    bool _causedBySplit;
 };
 
 #endif // __Fact_h__
