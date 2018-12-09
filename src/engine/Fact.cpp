@@ -12,36 +12,41 @@
 
 #include "Fact.h"
 
+Fact::Fact()
+    : _causedBySplit( false )
+{
+}
+
 List<unsigned> Fact::getExplanations() const
 {
-  return _explanations;
+    return _explanations;
 }
 
 void Fact::addExplanation( unsigned explanationID )
 {
-  _explanations.append( explanationID );
+    _explanations.append( explanationID );
 }
 
 void Fact::setCausingConstraintAndSplitID( unsigned constraintID, unsigned splitID )
 {
-  _causedBySplit = true;
-  _causingConstraintID = constraintID;
-  _causingSplitID = splitID;
+    _causedBySplit = true;
+    _causingConstraintID = constraintID;
+    _causingSplitID = splitID;
 }
 
 bool Fact::isCausedBySplit() const
 {
-  return _causedBySplit;
+    return _causedBySplit;
 }
 
 unsigned Fact::getCausingConstraintID() const
 {
-  return _causingConstraintID;
+    return _causingConstraintID;
 }
 
 unsigned Fact::getCausingSplitID() const
 {
-  return _causingSplitID;
+    return _causingSplitID;
 }
 
 //
