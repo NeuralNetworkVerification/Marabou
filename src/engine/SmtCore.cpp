@@ -88,8 +88,11 @@ void SmtCore::performSplit()
     List<PiecewiseLinearCaseSplit> splits = _constraintForSplitting->getCaseSplits();
     ASSERT( !splits.empty() );
     ASSERT( splits.size() >= 2 ); // Not really necessary, can add code to handle this case.
-    for( auto& split: splits )
-      split.setFactsConstraintAndSplitID();
+
+    // Guy: as I wrote earlier, this is confusing. I'm not sure the splits should carry this information,
+    // and if they do I think it can be passed more automatically, without this extra call.
+    for( auto &split: splits )
+        split.setFactsConstraintAndSplitID();
 
     _constraintForSplitting->setActiveConstraint( false );
 
@@ -100,8 +103,13 @@ void SmtCore::performSplit()
     _engine->storeState( *stateBeforeSplits, true );
 
     StackEntry *stackEntry = new StackEntry;
-    if (_factTracker)
-      stackEntry->_factTracker = *_factTracker;
+
+    // Guy: this is for forgetting facts that were the result of the popped split?
+    // We can live with this for now, but as Clark says, it is more efficient to have the object
+    // be able to support internal roll-back.
+    if ( _factTracker )
+        stackEntry->_factTracker = *_factTracker;
+
     // Perform the first split: add bounds and equations
     List<PiecewiseLinearCaseSplit>::iterator split = splits.begin();
     _engine->applySplit( *split );
@@ -245,7 +253,7 @@ void SmtCore::setStatistics( Statistics *statistics )
 
 void SmtCore::setFactTracker( FactTracker* factTracker )
 {
-  _factTracker = factTracker;
+    _factTracker = factTracker;
 }
 
 void SmtCore::log( const String &message )

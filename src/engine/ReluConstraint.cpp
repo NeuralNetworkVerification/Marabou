@@ -21,18 +21,23 @@
 #include "Statistics.h"
 
 ReluConstraint::ReluConstraint( unsigned b, unsigned f, unsigned id )
-    : _b( b )
+    // Guy: since _id is a member of the parent class, initialize it in the parent class
+    : PiecewiseLinearConstraint( id )
+    , _b( b )
     , _f( f )
     , _haveEliminatedVariables( false )
 {
-    _id = id;
-    _factTracker = NULL;
+    // Both of these moved to parent
+    // _id = id;
+    // _factTracker = NULL;
     setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
 }
 
 ReluConstraint::ReluConstraint( unsigned b, unsigned f )
 {
-  (*this) = ReluConstraint( b, f, 0 );
+    // Guy: lets make 0 the default ID, maybe define it in the parent class, and make all numbering start from 1.
+    // Alternatively, make the default id (unsigned)-1.
+    (*this) = ReluConstraint( b, f, 0 );
 }
 
 ReluConstraint::ReluConstraint( const String &serializedRelu )
@@ -42,7 +47,7 @@ ReluConstraint::ReluConstraint( const String &serializedRelu )
     ASSERT(constraintType == String("relu"));
 
     // remove the constraint type in serialized form
-    String serializedValues = serializedRelu.substring(5, serializedRelu.length()-5);
+    String serializedValues = serializedRelu.substring( 5, serializedRelu.length() - 5 );
     List<String> values = serializedValues.tokenize( "," );
     auto valuesIter = values.begin();
     _id = atoi( valuesIter->ascii() );
@@ -219,10 +224,9 @@ List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
 
 PiecewiseLinearCaseSplit ReluConstraint::getSplitFromID( unsigned splitID ) const
 {
-  ASSERT( splitID == 0 || splitID == 1 );
-  if ( splitID == 0 )
-    return getInactiveSplit();
-  return getActiveSplit();
+    // Write a comment somewhere in the h file, saying that split 0 is the inactive, 1 is the active.
+    ASSERT( splitID == 0 || splitID == 1 );
+    return splitID == 0 ? getInactiveSplit() : getActiveSplit();
 }
 
 PiecewiseLinearCaseSplit ReluConstraint::getInactiveSplit() const
@@ -260,19 +264,27 @@ PiecewiseLinearCaseSplit ReluConstraint::getValidCaseSplit() const
 
     if ( _phaseStatus == PhaseStatus::PHASE_ACTIVE )
     {
-      PiecewiseLinearCaseSplit activeSplit = getActiveSplit();
-      if ( _factTracker && _factTracker->hasFactAffectingBound( _f, FactTracker::LB ) )
-      {
-        activeSplit.addExplanation( _factTracker->getFactIDAffectingBound( _f, FactTracker::LB ) );
-      }
-      return activeSplit;
+        PiecewiseLinearCaseSplit activeSplit = getActiveSplit();
+
+        /*
+          Guy: just to make sure I got this right:
+          We're storing in advance, in the case split, the ID of the facts that participated in setting the lower
+          bound of f to its current value?
+
+          and likewise for the inactive case, below?
+
+          Also, the logic here is that this is justified because f.lb > 0? Lets add an ASSERT statement to explain
+          this. Likewise for the inactive case, and in MaxConstraint.
+        */
+        if ( _factTracker && _factTracker->hasFactAffectingBound( _f, FactTracker::LB ) )
+            activeSplit.addExplanation( _factTracker->getFactIDAffectingBound( _f, FactTracker::LB ) );
+
+        return activeSplit;
     }
 
     PiecewiseLinearCaseSplit inactiveSplit = getInactiveSplit();
     if ( _factTracker && _factTracker->hasFactAffectingBound( _b, FactTracker::UB ) )
-    {
-      inactiveSplit.addExplanation( _factTracker->getFactIDAffectingBound( _b, FactTracker::UB ) );
-    }
+        inactiveSplit.addExplanation( _factTracker->getFactIDAffectingBound( _b, FactTracker::UB ) );
     return inactiveSplit;
 }
 

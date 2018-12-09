@@ -148,10 +148,10 @@ bool Engine::solve()
                 // Some variable bounds are invalid, so the query is unsat
                 unsigned failureVar = _tableau->getInvalidBoundsVariable();
                 List<unsigned> failureExplanations;
-                if( _factTracker.hasFactAffectingBound( failureVar, FactTracker::LB ) )
-                  failureExplanations.append( _factTracker.getFactIDAffectingBound( failureVar, FactTracker::LB ) );
-                if( _factTracker.hasFactAffectingBound( failureVar, FactTracker::UB ) )
-                  failureExplanations.append( _factTracker.getFactIDAffectingBound( failureVar, FactTracker::UB ) );
+                if ( _factTracker.hasFactAffectingBound( failureVar, FactTracker::LB ) )
+                    failureExplanations.append( _factTracker.getFactIDAffectingBound( failureVar, FactTracker::LB ) );
+                if ( _factTracker.hasFactAffectingBound( failureVar, FactTracker::UB ) )
+                    failureExplanations.append( _factTracker.getFactIDAffectingBound( failureVar, FactTracker::UB ) );
                 throw InfeasibleQueryException( failureExplanations );
             }
 
@@ -420,8 +420,17 @@ void Engine::performSimplexStep()
             struct timespec end = TimeUtils::sampleMicro();
             _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
             List<unsigned> explanation;
-            // TODO: explanations probably include fact that created leavingIndex equation,
-            // and bounds of variables with non-zero coefficients in the equation
+            /*
+              TODO: explanations probably include fact that created leavingIndex equation,
+              and bounds of variables with non-zero coefficients in the equation
+
+              Guy: I'm afraid it may not be so simple. AFAIK, the standard way for "explaining"
+              simplex UNSATs is via Farkas' lemma. This will basically give you a set of equations that
+              are responsible for the failure - and then you can grab the facts leading to those equations, plus
+              the varibale bounds of all variables involved in those equations.
+
+              For now, it may be easier to not have an explanation for this case - i.e., just backtrack.
+            */
             throw InfeasibleQueryException( explanation );
         }
     }

@@ -353,8 +353,8 @@ bool Preprocessor::processEquations()
 
             if ( FloatUtils::areDisequal( sum, equation->_scalar, GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD ) )
             {
-              List<unsigned> emptyExplanationForPreprocessing;
-              throw InfeasibleQueryException( emptyExplanationForPreprocessing );
+                List<unsigned> emptyExplanationForPreprocessing;
+                throw InfeasibleQueryException( emptyExplanationForPreprocessing );
             }
             equation = equations.erase( equation );
         }

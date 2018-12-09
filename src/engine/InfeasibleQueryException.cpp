@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file InfeasibleQueryException.h
+/*! \file InfeasibleQueryException.cpp
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz
@@ -10,19 +10,12 @@
  ** directory for licensing information.\endverbatim
  **/
 
-#ifndef __InfeasibleQueryException_h__
-#define __InfeasibleQueryException_h__
+#include "InfeasibleQueryException.h"
 
-#include "List.h"
-
-class InfeasibleQueryException
+InfeasibleQueryException::InfeasibleQueryException( const List<unsigned> &explanations )
+    : _explanations( explanations )
 {
-public:
-    InfeasibleQueryException( const List<unsigned>& explanations );
-    List<unsigned> _explanations;
-};
-
-#endif // __InfeasibleQueryException_h__
+}
 
 //
 // Local Variables:

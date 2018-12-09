@@ -78,6 +78,9 @@ class MaxConstraint : public PiecewiseLinearConstraint
     */
     List<PiecewiseLinearCaseSplit> getCaseSplits() const;
 
+    /*
+      TODO: Add comment
+    */
     PiecewiseLinearCaseSplit getSplitFromID( unsigned splitID ) const;
 
     /*

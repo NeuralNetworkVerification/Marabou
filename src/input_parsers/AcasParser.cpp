@@ -141,6 +141,8 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
         }
     }
 
+    // Guy: I don't like having this here. Lets move this to the preprocessor: let it enumerate
+    // all the cosntraints. That would remove the duplication from the parsers.
     unsigned constraintID = 1;
     // Add the ReLU constraints
     for ( unsigned i = 1; i < numberOfLayers - 1; ++i )

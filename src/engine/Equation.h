@@ -13,8 +13,8 @@
 #ifndef __Equation_h__
 #define __Equation_h__
 
-#include "List.h"
 #include "Fact.h"
+#include "List.h"
 
 /* A class representing a single input equation. For now, all
    equations are interpreted as equalities, i.e. the sum of all

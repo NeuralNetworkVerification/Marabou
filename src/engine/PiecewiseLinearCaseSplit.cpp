@@ -35,20 +35,18 @@ List<Equation> PiecewiseLinearCaseSplit::getEquations() const
 
 void PiecewiseLinearCaseSplit::setConstraintAndSplitID( unsigned constraintID, unsigned splitID )
 {
-  _constraintID = constraintID;
-  _splitID = splitID;
+    _constraintID = constraintID;
+    _splitID = splitID;
 }
 
 void PiecewiseLinearCaseSplit::setFactsConstraintAndSplitID()
 {
-  for( auto& bound: _bounds)
-  {
-    bound.setCausingConstraintAndSplitID( _constraintID, _splitID );
-  }
-  for (auto& equation: _equations )
-  {
-    equation.setCausingConstraintAndSplitID( _constraintID, _splitID );
-  }
+    // Guy: why not move this functionality to when bounds and equations are stored in the case split?
+    for ( auto &bound: _bounds )
+        bound.setCausingConstraintAndSplitID( _constraintID, _splitID );
+
+    for ( auto &equation: _equations )
+        equation.setCausingConstraintAndSplitID( _constraintID, _splitID );
 }
 
 unsigned PiecewiseLinearCaseSplit::getConstraintID() const
