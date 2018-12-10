@@ -1123,22 +1123,27 @@ void Engine::extensiveBoundTightening()
 
     start = TimeUtils::sampleMicro();
 
-    if ( _inveretedBasisIsStale )
-    {
-        // Get the inverted basis matrix and the rhs
-        if ( !_tableau->basisMatrixAvailable() )
-            _tableau->makeBasisMatrixAvailable();
+    // if ( !GlobalConfiguration::USE_STORED_PIVOT_ROWS )
+    // {
+        if ( _inveretedBasisIsStale )
+        {
+            // Get the inverted basis matrix and the rhs
+            if ( !_tableau->basisMatrixAvailable() )
+                _tableau->makeBasisMatrixAvailable();
 
-        // Extract the rows of the inverse basis matrix
-        double *invB = _tableau->getInverseBasisMatrix();
-        const double *b = _tableau->getRightHandSide();
-        _rowBoundTightener->extractRowsFromInvertedBasisMatrix( invB, b );
-        delete [] invB;
-        _inveretedBasisIsStale = false;
-    }
+            // Extract the rows of the inverse basis matrix
+            double *invB = _tableau->getInverseBasisMatrix();
+            const double *b = _tableau->getRightHandSide();
+            _rowBoundTightener->extractRowsFromInvertedBasisMatrix( invB, b );
+            delete [] invB;
+            _inveretedBasisIsStale = false;
+        }
+    // }
 
     end = TimeUtils::sampleMicro();
     _statistics.addTimeForExplicitBasisBoundTightening( TimeUtils::timePassed( start, end ) );
+
+    // _rowBoundTightener->debug();
 
     bool learnedNewBounds = true;
     while ( learnedNewBounds )
@@ -1235,6 +1240,8 @@ bool Engine::highDegradation()
 
 void Engine::explicitBasisBoundTightening( const double *invertedBasis, const double *rhs, IRowBoundTightener::Saturation saturation )
 {
+    // TODO: can this function be removed?
+
     struct timespec start = TimeUtils::sampleMicro();
 
     _statistics.incNumBoundTighteningsOnExplicitBasis();

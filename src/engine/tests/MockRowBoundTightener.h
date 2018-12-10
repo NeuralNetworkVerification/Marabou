@@ -74,6 +74,8 @@ public:
     void examineImplicitInvertedBasisMatrix( Saturation /* saturation */ ) {}
     unsigned tightenOnSingleInvertedBasisRow( const SparseTableauRow &/* row */ ) { return 0; }
     unsigned tightenOnSingleInvertedStoredBasisRow( unsigned /* rowIndex */ ) { return 0; }
+
+    void debug() {}
 };
 
 #endif // __MockRowBoundTightener_h__

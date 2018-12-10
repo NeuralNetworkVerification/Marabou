@@ -28,6 +28,12 @@ RowBoundTightener::RowBoundTightener( const ITableau &tableau )
     , _ciTimesLb( NULL )
     , _ciTimesUb( NULL )
     , _ciSign( NULL )
+    , _lastPivotRows( NULL )
+    , _haveStoredPivotRow( NULL )
+    , _pivotRowAges( NULL )
+    , _iteration( 0 )
+    // , _pivotRowIndex( 0 )
+    // , _numStoredPivotRows( 0 )
     , _statistics( NULL )
 {
 }
@@ -54,6 +60,21 @@ void RowBoundTightener::setDimensions()
     _tightenedUpper = new bool[_n];
     if ( !_tightenedUpper )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "RowBoundTightener::tightenedUpper" );
+
+    _lastPivotRows = new SparseTableauRow *[_m];
+    for ( unsigned i = 0; i < _m; ++i )
+        _lastPivotRows[i] = new SparseTableauRow( _n - _m );
+
+    _haveStoredPivotRow = new bool[_m];
+    if ( !_haveStoredPivotRow )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "RowBoundTightener::haveStoredPivotRow" );
+
+    _pivotRowAges = new unsigned long long[_m];
+    if ( !_pivotRowAges )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "RowBoundTightener::pivotRowAges" );
+
+    // _pivotRowIndex = 0;
+    // _numStoredPivotRows = 0;
 
     resetBounds();
 
@@ -89,6 +110,9 @@ void RowBoundTightener::resetBounds()
         _lowerBounds[i] = _tableau.getLowerBound( i );
         _upperBounds[i] = _tableau.getUpperBound( i );
     }
+
+    std::fill_n( _haveStoredPivotRow, _m, false );
+    std::fill_n( _pivotRowAges, _m, 0 );
 }
 
 void RowBoundTightener::clear()
@@ -101,6 +125,9 @@ void RowBoundTightener::clear()
         _lowerBounds[i] = _tableau.getLowerBound( i );
         _upperBounds[i] = _tableau.getUpperBound( i );
     }
+
+    std::fill_n( _haveStoredPivotRow, _m, false );
+    std::fill_n( _pivotRowAges, _m, false );
 }
 
 RowBoundTightener::~RowBoundTightener()
@@ -141,6 +168,29 @@ void RowBoundTightener::freeMemoryIfNeeded()
         delete[] _rows;
         _rows = NULL;
     }
+
+    if ( _lastPivotRows )
+    {
+        for ( unsigned i = 0; i < _m; ++i )
+            delete _lastPivotRows[i];
+        delete[] _lastPivotRows;
+        _lastPivotRows = NULL;
+    }
+
+    if ( _haveStoredPivotRow )
+    {
+        delete[] _haveStoredPivotRow;
+        _haveStoredPivotRow = NULL;
+    }
+
+    if ( _pivotRowAges )
+    {
+        delete[] _pivotRowAges;
+        _pivotRowAges = NULL;
+    }
+
+    // _pivotRowIndex = 0;
+    // _numStoredPivotRows = 0;
 
     if ( _z )
     {
@@ -233,8 +283,31 @@ void RowBoundTightener::extractRowsFromInvertedBasisMatrix( const double *invert
     const double *b = rhs;
     const double *invB = invertedBasis;
 
+    unsigned count = 0;
+
+    // printf( "Dumping row ages...\n" );
+    // for ( unsigned i = 0; i < _m; ++i )
+    // {
+    //     printf( "\trow %u: %llu\n", i, _pivotRowAges[i] );
+    // }
+    // printf( "\n" );
+
     for ( unsigned i = 0; i < _m; ++i )
     {
+        if ( GlobalConfiguration::USE_STORED_PIVOT_ROWS && _haveStoredPivotRow[i] && ( _iteration <= _pivotRowAges[i] + 100  ) ) // + 300
+            continue;
+
+        // if ( _haveStoredPivotRow[i] && !( _iteration  <= _pivotRowAges[i] + 300  ) )
+        // {
+        //     printf( "Refreshing row %u, %llu\n", i, _iteration - _pivotRowAges[i] );
+
+        // }
+
+        ++count;
+
+        _haveStoredPivotRow[i] = true;
+        _pivotRowAges[i] = _iteration;
+
         SparseTableauRow *row = _rows[i];
         row->clear();
 
@@ -262,6 +335,9 @@ void RowBoundTightener::extractRowsFromInvertedBasisMatrix( const double *invert
         // Store the lhs variable
         row->_lhs = _tableau.basicIndexToVariable( i );
     }
+
+    // printf( "RBT: conputed %u rows from scratch\n", count );
+
 }
 
 void RowBoundTightener::examineInvertedBasisMatrix( Saturation saturation )
@@ -292,7 +368,16 @@ unsigned RowBoundTightener::onePassOverInvertedBasisRows()
 unsigned RowBoundTightener::tightenOnSingleInvertedStoredBasisRow( unsigned rowIndex )
 {
     ASSERT( rowIndex < _m );
-    return tightenOnSingleInvertedBasisRow( *( _rows[rowIndex] ) );
+
+    if ( !GlobalConfiguration::USE_STORED_PIVOT_ROWS )
+        return tightenOnSingleInvertedBasisRow( *( _rows[rowIndex] ) );
+    else
+    {
+        if ( !_haveStoredPivotRow[rowIndex] )
+            return 0;
+
+        return tightenOnSingleInvertedBasisRow( *( _rows[rowIndex] ) );
+    }
 }
 
 unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const SparseTableauRow &row )
@@ -633,14 +718,31 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
 
 void RowBoundTightener::examinePivotRow()
 {
+
 	if ( _statistics )
         _statistics->incNumRowsExaminedByRowTightener();
 
     const SparseTableauRow &row( *_tableau.getSparsePivotRow() );
     unsigned newBoundsLearned = tightenOnSingleInvertedBasisRow( row );
 
+    unsigned basicIndex = _tableau.getLeavingVariableIndex();
+
+    ASSERT( basicIndex <= _m );
+    // *_rows[basicIndex] = row;
+    _haveStoredPivotRow[basicIndex] = true;
+    _pivotRowAges[basicIndex] = _iteration;
+
+    // *_lastPivotRows[_pivotRowIndex] = row;
+    // ++_pivotRowIndex;
+    // if ( _pivotRowIndex >= _m )
+    //     _pivotRowIndex = 0;
+    // if ( _numStoredPivotRows < _m )
+    //     ++_numStoredPivotRows;
+
     if ( _statistics && ( newBoundsLearned > 0 ) )
         _statistics->incNumTighteningsFromRows( newBoundsLearned );
+
+    ++_iteration;
 }
 
 void RowBoundTightener::getRowTightenings( List<Tightening> &tightenings ) const
@@ -687,6 +789,19 @@ void RowBoundTightener::notifyUpperBound( unsigned variable, double bound )
 void RowBoundTightener::notifyDimensionChange( unsigned /* m */ , unsigned /* n */ )
 {
     setDimensions();
+}
+
+void RowBoundTightener::debug()
+{
+    unsigned count = 0;
+
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        if ( _haveStoredPivotRow[i] )
+            ++count;
+    }
+
+    printf( "\nRBW: Stored rows: %u / %u \n", count, _m );
 }
 
 //

@@ -116,6 +116,7 @@ public:
     unsigned tightenOnSingleInvertedBasisRow( const SparseTableauRow &row );
     unsigned tightenOnSingleInvertedStoredBasisRow( unsigned rowIndex );
 
+    void debug();
 private:
     const ITableau &_tableau;
     unsigned _n;
@@ -140,6 +141,14 @@ private:
     double *_ciTimesLb;
     double *_ciTimesUb;
     char *_ciSign;
+
+    SparseTableauRow **_lastPivotRows;
+    bool *_haveStoredPivotRow;
+    // unsigned _pivotRowIndex;
+    // unsigned _numStoredPivotRows;
+
+    unsigned long long *_pivotRowAges;
+    unsigned long long _iteration;
 
     /*
       Statistics collection
