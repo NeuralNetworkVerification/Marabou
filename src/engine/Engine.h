@@ -13,6 +13,7 @@
 #ifndef __Engine_h__
 #define __Engine_h__
 
+#include "AutoConstraintBoundTightener.h"
 #include "AutoCostFunctionManager.h"
 #include "AutoProjectedSteepestEdge.h"
 #include "AutoRowBoundTightener.h"
@@ -210,6 +211,12 @@ private:
       A code indicating how the run terminated.
     */
     ExitCode _exitCode;
+
+    /*
+      An object in charge of managing bound tightenings
+      proposed by the PiecewiseLinearConstriants.
+    */
+    AutoConstraintBoundTightener _constraintBoundTightener;
 
     /*
       Perform a simplex step: compute the cost function, pick the

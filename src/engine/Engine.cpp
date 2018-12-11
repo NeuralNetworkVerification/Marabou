@@ -34,10 +34,12 @@ Engine::Engine()
     , _costFunctionManager( _tableau )
     , _quitRequested( false )
     , _exitCode( Engine::NOT_DONE )
+    , _constraintBoundTightener( *_tableau )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
     _rowBoundTightener->setStatistics( &_statistics );
+    _constraintBoundTightener->setStatistics( &_statistics );
     _preprocessor.setStatistics( &_statistics );
 
     _activeEntryStrategy = _projectedSteepestEdgeRule;
@@ -677,7 +679,15 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         _tableau->registerToWatchAllVariables( _rowBoundTightener );
         _tableau->registerResizeWatcher( _rowBoundTightener );
 
+        _tableau->registerToWatchAllVariables( _constraintBoundTightener );
+        _tableau->registerResizeWatcher( _constraintBoundTightener );
+
         _rowBoundTightener->setDimensions();
+        _constraintBoundTightener->setDimensions();
+
+        // Register the constraint bound tightener to all the PL constraints
+        for ( auto &plConstraint : _preprocessedQuery.getPiecewiseLinearConstraints() )
+            plConstraint->registerConstraintBoundTightener( _constraintBoundTightener );
 
         _plConstraints = _preprocessedQuery.getPiecewiseLinearConstraints();
         for ( const auto &constraint : _plConstraints )
@@ -823,6 +833,7 @@ void Engine::restoreState( const EngineState &state )
 
     // Make sure the data structures are initialized to the correct size
     _rowBoundTightener->setDimensions();
+    _constraintBoundTightener->setDimensions();
     adjustWorkMemorySize();
     _activeEntryStrategy->resizeHook( _tableau );
     _costFunctionManager->initialize();
@@ -1030,6 +1041,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
     adjustWorkMemorySize();
 
     _rowBoundTightener->resetBounds();
+    _constraintBoundTightener->resetBounds();
 
     for ( auto &bound : bounds )
     {
@@ -1068,8 +1080,8 @@ void Engine::applyAllRowTightenings()
 void Engine::applyAllConstraintTightenings()
 {
     List<Tightening> entailedTightenings;
-    for ( auto &constraint : _plConstraints )
-        constraint->getEntailedTightenings( entailedTightenings );
+
+    _constraintBoundTightener->getConstraintTightenings( entailedTightenings );
 
     for ( const auto &tightening : entailedTightenings )
     {
@@ -1199,6 +1211,7 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
 
     _statistics.incNumPrecisionRestorations();
     _rowBoundTightener->clear();
+    _constraintBoundTightener->resetBounds();
 
     // debug
     double after = _degradationChecker.computeDegradation( *_tableau );
@@ -1219,6 +1232,7 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
         _statistics.incNumPrecisionRestorations();
 
         _rowBoundTightener->clear();
+        _constraintBoundTightener->resetBounds();
 
         // debug
         double afterSecond = _degradationChecker.computeDegradation( *_tableau );
