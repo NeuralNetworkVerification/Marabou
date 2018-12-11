@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file PiecewiseLinearConstraint.cpp
+/*! \file ConstraintBoundTightenerFactory.cpp
 ** \verbatim
 ** Top contributors (to current version):
 **   Guy Katz
@@ -10,25 +10,8 @@
 ** directory for licensing information.\endverbatim
 **/
 
-#include "PiecewiseLinearConstraint.h"
-#include "Statistics.h"
-
-PiecewiseLinearConstraint::PiecewiseLinearConstraint()
-    : _constraintActive( true )
-    , _constraintBoundTightener( NULL )
-    , _statistics( NULL )
-{
-}
-
-void PiecewiseLinearConstraint::setStatistics( Statistics *statistics )
-{
-    _statistics = statistics;
-}
-
-void PiecewiseLinearConstraint::registerConstraintBoundTightener( IConstraintBoundTightener *tightener )
-{
-    _constraintBoundTightener = tightener;
-}
+#define CXXTEST_MOCK_TEST_SOURCE_FILE
+#include "T/ConstraintBoundTightenerFactory.h"
 
 //
 // Local Variables:
