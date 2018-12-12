@@ -478,9 +478,16 @@ public:
         Preprocessor preprocessor;
         InputQuery processed = preprocessor.preprocess( inputQuery, true );
 
-        // Check that equation has been updated as needed
-        TS_ASSERT_EQUALS( processed.getEquations().size(), 1U );
+        if ( !GlobalConfiguration::PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS )
+        {
+            TS_ASSERT_EQUALS( processed.getEquations().size(), 1U );
+        }
+        else
+        {
+            TS_ASSERT( processed.getEquations().size() > 1U );
+        }
 
+        // Check that equation has been updated as needed
         Equation preprocessedEquation = *processed.getEquations().begin();
 
         // Make sure that variable x0 has been merged into x1
