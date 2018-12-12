@@ -1,5 +1,6 @@
 SOURCES += \
 	BlandsRule.cpp \
+	ConstraintBoundTightener.cpp \
 	ConstraintMatrixAnalyzer.cpp \
 	CostFunctionManager.cpp \
 	DantzigsRule.cpp \
