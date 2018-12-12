@@ -1163,12 +1163,8 @@ void Engine::tightenBoundsOnConstraintMatrix()
 {
     struct timespec start = TimeUtils::sampleMicro();
 
-    if ( _statistics.getNumMainLoopIterations() %
-         GlobalConfiguration::BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY == 0 )
-    {
-        _rowBoundTightener->examineConstraintMatrix( true );
-        _statistics.incNumBoundTighteningOnConstraintMatrix();
-    }
+    _rowBoundTightener->examineConstraintMatrix( true );
+    _statistics.incNumBoundTighteningOnConstraintMatrix();
 
     struct timespec end = TimeUtils::sampleMicro();
     _statistics.addTimeForConstraintMatrixBoundTightening( TimeUtils::timePassed( start, end ) );
