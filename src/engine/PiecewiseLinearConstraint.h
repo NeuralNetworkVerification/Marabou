@@ -20,6 +20,7 @@
 #include "Queue.h"
 #include "Tightening.h"
 
+class IConstraintBoundTightener;
 class Equation;
 class ITableau;
 class String;
@@ -171,11 +172,20 @@ public:
     */
     virtual String serializeToString() const = 0;
 
+    /*
+      Register a constraint bound tightener. If a tightener is registered,
+      this piecewise linear constraint will inform the tightener whenever
+      it discovers a tighter (entailed) bound.
+    */
+    void registerConstraintBoundTightener( IConstraintBoundTightener *tightener );
+
 protected:
     bool _constraintActive;
 	Map<unsigned, double> _assignment;
     Map<unsigned, double> _lowerBounds;
     Map<unsigned, double> _upperBounds;
+
+    IConstraintBoundTightener *_constraintBoundTightener;
 
     /*
       Statistics collection

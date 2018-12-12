@@ -1,4 +1,5 @@
 SOURCES += \
+	ConstraintBoundTightenerFactory.cpp \
 	ConstraintMatrixAnalyzerFactory.cpp \
 	CostFunctionManagerFactory.cpp \
 	ProjectedSteepestEdgeFactory.cpp \
