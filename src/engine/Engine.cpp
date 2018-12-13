@@ -457,7 +457,12 @@ void Engine::performSimplexStep()
 
 void Engine::fixViolatedPlConstraintIfPossible()
 {
-    List<PiecewiseLinearConstraint::Fix> fixes = _plConstraintToFix->getSmartFixes( _tableau );
+    List<PiecewiseLinearConstraint::Fix> fixes;
+
+    if ( GlobalConfiguration::USE_SMART_FIX )
+        fixes = _plConstraintToFix->getSmartFixes( _tableau );
+    else
+        fixes = _plConstraintToFix->getPossibleFixes();
 
     // First, see if we can fix without pivoting. We are looking for a fix concerning a
     // non-basic variable, that doesn't set that variable out-of-bounds.
@@ -465,37 +470,24 @@ void Engine::fixViolatedPlConstraintIfPossible()
     {
         if ( !_tableau->isBasic( fix._variable ) )
         {
-			if ( _tableau->checkValueWithinBounds( fix._variable, fix._value) )
+			if ( _tableau->checkValueWithinBounds( fix._variable, fix._value ) )
 			{
-            	double old_value = _tableau->getValue( fix._variable );
                 _tableau->setNonBasicAssignment( fix._variable, fix._value, true );
-                if( _plConstraintToFix->satisfied() ){
-                    std::cerr << "hoorah" << std::endl;
-                    return;
-                } 
-                else {
-                    // If the constraint is not satisfied, return it back to original value
-                    _tableau->setNonBasicAssignment( fix._variable, old_value, true );
-                    std::cerr << "this is not happening" << std::endl;
-                    // This is still required for max constraint. For relu constraint, this branch should not be taken 
-                    // because of the smart fix implementation
-                }
+                return;
 			}
         }
     }
 
     // No choice, have to pivot. Look for a fix concerning a basic variable, that
-    // doesn't set that variable out-of-bounds. 
-    // Smart-fix for relus would not contain non basic fixes. Get original possible fixes here. 
-    fixes = _plConstraintToFix->getPossibleFixes();
+    // doesn't set that variable out-of-bounds. If smart-fix is enabled and implemented,
+    // we should probably not reach this point.
     bool found = false;
     auto it = fixes.begin();
     while ( !found && it != fixes.end() )
     {
         if ( _tableau->isBasic( it->_variable ) )
         {
-			if ( FloatUtils::gte( it->_value, _tableau->getLowerBound( it->_variable ) ) &&
-                 FloatUtils::lte( it->_value, _tableau->getUpperBound( it->_variable ) ) )
+			if ( _tableau->checkValueWithinBounds( it->_variable, it->_value ) )
 			{
                 found = true;
             }

@@ -416,9 +416,11 @@ void Tableau::computeAssignment()
         notifyVariableValue( _basicIndexToVariable[i], _basicAssignment[i] );
 }
 
-bool Tableau::checkValueWithinBounds( unsigned variable, double value ){
-    return FloatUtils::gte( value, getLowerBound( variable ) )
-    && FloatUtils::lte( value, getUpperBound( variable ) );
+bool Tableau::checkValueWithinBounds( unsigned variable, double value )
+{
+    return
+        FloatUtils::gte( value, getLowerBound( variable ) ) &&
+        FloatUtils::lte( value, getUpperBound( variable ) );
 }
 
 void Tableau::computeBasicStatus()
@@ -2507,7 +2509,7 @@ bool Tableau::areLinearlyDependent( unsigned x1, unsigned x2, double &coefficien
     coefficient = -_workM[basicIndex];
 
     _basisFactorization->forwardTransformation( _b, _workM );
-    
+
     // Coefficient is zero - independent!
     if ( FloatUtils::isZero( coefficient ) )
         return false;
