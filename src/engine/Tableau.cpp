@@ -2493,8 +2493,11 @@ bool Tableau::areLinearlyDependent( unsigned x1, unsigned x2, double &coefficien
 
     // Find the correct entry in the column
     unsigned basicIndex = _variableToIndex[basic];
+
     coefficient = -_workM[basicIndex];
 
+    _basisFactorization->forwardTransformation( _b, _workM );
+    
     // Coefficient is zero - independent!
     if ( FloatUtils::isZero( coefficient ) )
         return false;

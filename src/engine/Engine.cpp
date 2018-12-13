@@ -455,7 +455,7 @@ void Engine::performSimplexStep()
 
 void Engine::fixViolatedPlConstraintIfPossible()
 {
-    List<PiecewiseLinearConstraint::Fix> fixes = _plConstraintToFix->getPossibleFixes();
+    List<PiecewiseLinearConstraint::Fix> fixes = _plConstraintToFix->getSmartFixes( _tableau );
 
     // First, see if we can fix without pivoting. We are looking for a fix concerning a
     // non-basic variable, that doesn't set that variable out-of-bounds.
@@ -463,39 +463,29 @@ void Engine::fixViolatedPlConstraintIfPossible()
     {
         if ( !_tableau->isBasic( fix._variable ) )
         {
-			if ( FloatUtils::gte( fix._value, _tableau->getLowerBound( fix._variable ) ) &&
-                 FloatUtils::lte( fix._value, _tableau->getUpperBound( fix._variable ) ) )
+			if ( _tableau->checkValueWithinBounds( fix._variable, fix._value) )
 			{
             	double old_value = _tableau->getValue( fix._variable );
                 _tableau->setNonBasicAssignment( fix._variable, fix._value, true );
                 if( _plConstraintToFix->satisfied() ){
+                    std::cerr << "hoorah" << std::endl;
                     return;
                 } 
                 else {
-                    // if the constraint is not satisfied, return it back to original value
+                    // If the constraint is not satisfied, return it back to original value
                     _tableau->setNonBasicAssignment( fix._variable, old_value, true );
-
-                    if( GlobalConfiguration::USE_SMART_FIX )
-                    {
-                        List<PiecewiseLinearConstraint::Fix> smartFixes = _plConstraintToFix->getSmartFixes( _tableau );
-
-                        for ( const auto &smartFix : smartFixes )
-                        {
-                            if( _tableau->checkValueWithinBounds( smartFix._variable, smartFix._value ))
-                            {
-                                _tableau->setNonBasicAssignment( smartFix._variable, smartFix._value, true );
-                                ASSERT( _plConstraintToFix->satisfied() );
-                                return;
-                            }   
-                        }
-                    }
+                    std::cerr << "this is not happening" << std::endl;
+                    // This is still required for max constraint. For relu constraint, this branch should not be taken 
+                    // because of the smart fix implementation
                 }
 			}
         }
     }
 
     // No choice, have to pivot. Look for a fix concerning a basic variable, that
-    // doesn't set that variable out-of-bounds.
+    // doesn't set that variable out-of-bounds. 
+    // Smart-fix for relus would not contain non basic fixes. Get original possible fixes here. 
+    fixes = _plConstraintToFix->getPossibleFixes();
     bool found = false;
     auto it = fixes.begin();
     while ( !found && it != fixes.end() )

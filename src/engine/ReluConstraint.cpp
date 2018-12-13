@@ -191,6 +191,7 @@ List<PiecewiseLinearConstraint::Fix> ReluConstraint::getSmartFixes( ITableau *ta
     if ( !linearlyDependent )
         return getPossibleFixes();
 
+    List<PiecewiseLinearConstraint::Fix> fixes;
     /*
       We know b and f are linearly dependent. This means that one of them
       is basic, the other non basic, and that coefficient is not 0.
@@ -198,11 +199,7 @@ List<PiecewiseLinearConstraint::Fix> ReluConstraint::getSmartFixes( ITableau *ta
       We know that:
 
         _f = ... + coefficient * _b + ...
-    */
 
-    List<PiecewiseLinearConstraint::Fix> fixes;
-
-    /*
       Next, we want to compute by how much we need to change b and/or f in order to
       repair the violation. For example, if we have:
 
@@ -224,63 +221,43 @@ List<PiecewiseLinearConstraint::Fix> ReluConstraint::getSmartFixes( ITableau *ta
 
       Giving us that we need to decrease f by 2, which will cause b to be increased
       by 4, repairing the violation. Of course, there may be multiple options for repair.
+
+      The current assignment in f = assignmentF and b = assignmentB. 
+      We know  f  = .... + coefficient * b + ....
+      let activeFixDelta be the change to get activeFix(f = b >=  0),
+
+        assignmentB + activeFixDelta = assignmentF + coefficient * activeFixDelta
+        activeFixDelta = (assignmentB - assignmentF) / (coefficient - 1);
+
     */
 
-    // TODO: implement the above. No longer need to compute the tableau row.
+    double assignmentF = tableau->getValue( _f );
+    double assignmentB = tableau->getValue( _b );
+    bool isfBasic = tableau->isBasic( _f );
+    if( coefficient != 1 )
+    {
+        double activeFixDelta = ( assignmentB - assignmentF )  / ( coefficient - 1 );
+        double activeFix = assignmentB + activeFixDelta;
 
-    /*
-
-    TableauRow row( tableau->getN() - tableau->getM() );
-
-    int basic_variable = -1;
-    int nonbasic_variable = -1;
-    if( tableau->isBasic( _b )){
-        basic_variable = _b;
-        nonbasic_variable = _f;
-    } else if ( tableau->isBasic( _f )) {
-        basic_variable = _f;
-        nonbasic_variable = _b;
-    }
-
-    // one of the variables need to be basic variable
-    ASSERT( basic_variable != -1 );
-
-    int row_index = tableau->variableToIndex( basic_variable );
-    tableau->getTableauRow( row_index, &row );
-
-    // row lhs need to be basic_variable
-    ASSERT( ( int )row._lhs == basic_variable );
-
-    int nonbasic_index = tableau->variableToIndex( nonbasic_variable );
-    double coefficient = row[nonbasic_index];
-    double scalar = tableau->getValue( basic_variable ) - coefficient * tableau->getValue( nonbasic_variable );
-
-    ASSERT( !FloatUtils::isZero( coefficient ) );
-    if(FloatUtils::isZero( coefficient - 1 )){
-        return fixes; // return empty list
-    }
-
-    double activeFix = scalar / ( 1 - coefficient );
-
-    if ( activeFix > 0 ){
-        fixes.append( PiecewiseLinearConstraint::Fix( nonbasic_variable, activeFix ) );
-    }
-
-    double nonactiveFix = 0;
-    if( row._lhs == _b ){
-        nonactiveFix = scalar;
-    } else {
-        nonactiveFix = -scalar/coefficient;
-    }
-
-    if( nonactiveFix <= 0 ){
-        if( (unsigned) nonbasic_variable == _f ){
-            fixes.append( PiecewiseLinearConstraint::Fix( nonbasic_variable, 0 ) );
-        } else if( (unsigned) nonbasic_variable == _b ){
-            fixes.append( PiecewiseLinearConstraint::Fix( nonbasic_variable, nonactiveFix ) );
+        unsigned nonbasicVariable =  isfBasic ? _b : _f;
+        if ( activeFix > 0 ){
+            fixes.append( PiecewiseLinearConstraint::Fix( nonbasicVariable, activeFix ) );
         }
     }
-    */
+
+    double nonactiveFixDelta = assignmentF / ( -coefficient );
+    double nonactiveFix = assignmentB + nonactiveFixDelta;
+    if( nonactiveFix <= 0 )
+    {
+        if( isfBasic )
+        {
+            fixes.append( PiecewiseLinearConstraint::Fix( _b, nonactiveFix ) );
+        } else if( !isfBasic )
+        {
+            fixes.append( PiecewiseLinearConstraint::Fix( _f, 0 ) );
+        }
+    }
+    
     return fixes;
 }
 

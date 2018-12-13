@@ -290,8 +290,7 @@ List<PiecewiseLinearConstraint::Fix> MaxConstraint::getSmartFixes( ITableau * ) 
     ASSERT( _assignment.exists( _f ) && _assignment.size() > 1 );
 
     // TODO
-    List<PiecewiseLinearConstraint::Fix> fixes;
-    return fixes;
+    return getPossibleFixes();
 }
 
 List<PiecewiseLinearCaseSplit> MaxConstraint::getCaseSplits() const
