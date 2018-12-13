@@ -2433,6 +2433,16 @@ void Tableau::refreshBasisFactorization()
     _basisFactorization->obtainFreshBasis();
 }
 
+unsigned Tableau::getVariableAfterMerging( unsigned variable ) const
+{
+    unsigned answer = variable;
+
+    while ( _mergedVariables.exists( answer ) )
+        answer = _mergedVariables[answer];
+
+    return answer;
+}
+
 void Tableau::mergeColumns( unsigned x1, unsigned x2 )
 {
     ASSERT( !isBasic( x1 ) );

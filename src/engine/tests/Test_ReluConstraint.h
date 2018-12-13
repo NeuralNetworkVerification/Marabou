@@ -597,6 +597,11 @@ public:
         relu1->setActiveConstraint( false );
         relu1->notifyVariableValue( 4, 1.0 );
         relu1->notifyVariableValue( 6, 1.0 );
+
+        relu1->notifyLowerBound( 4, -8.0 );
+        relu1->notifyUpperBound( 4, 8.0 );
+
+        relu1->notifyLowerBound( 6, 0.0 );
         relu1->notifyUpperBound( 6, 8.0 );
 
         PiecewiseLinearConstraint *relu2 = relu1->duplicateConstraint();

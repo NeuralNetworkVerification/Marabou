@@ -428,6 +428,14 @@ public:
     */
     bool areLinearlyDependent( unsigned x1, unsigned x2, double &coefficient, double &inverseCoefficient );
 
+    /*
+      When we start merging columns, variables effectively get renamed.
+      Further, it is possible that x1 is renamed to x2, and x2 is then
+      renamed to x3. This function returns the final name of its input
+      variable, after the merging has been applied.
+     */
+    unsigned getVariableAfterMerging( unsigned variable ) const;
+
 private:
     /*
       Variable watchers
