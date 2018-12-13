@@ -234,7 +234,7 @@ List<PiecewiseLinearConstraint::Fix> ReluConstraint::getSmartFixes( ITableau *ta
     double assignmentF = tableau->getValue( _f );
     double assignmentB = tableau->getValue( _b );
     bool isfBasic = tableau->isBasic( _f );
-    if( coefficient != 1 )
+    if( !FloatUtils::areEqual(coefficient, 1.0) )
     {
         double activeFixDelta = ( assignmentB - assignmentF )  / ( coefficient - 1 );
         double activeFix = assignmentB + activeFixDelta;
