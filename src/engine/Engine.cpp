@@ -773,31 +773,24 @@ bool Engine::allVarsWithinBounds() const
 
 void Engine::collectViolatedPlConstraints()
 {
-    _violatedPlConstraintsSet.clear();
     _violatedPlConstraints.clear();
     for ( const auto &constraint : _plConstraints )
     {
-        if ( constraint->isActive() && !constraint->satisfied() ){
+        if ( constraint->isActive() && !constraint->satisfied() )
             _violatedPlConstraints.append( constraint );
-            _violatedPlConstraintsSet.insert( {_smtCore.getViolationCounts(constraint), constraint} );
-        }
     }
 }
 
 bool Engine::allPlConstraintsHold()
 {
-    return _violatedPlConstraintsSet.empty();
+    return _violatedPlConstraints.empty();
 }
 
 void Engine::selectViolatedPlConstraint()
 {
-    ASSERT( !_violatedPlConstraintsSet.empty() );
-    if( GlobalConfiguration::USE_LEAST_FIX ) {
-        _plConstraintToFix = _violatedPlConstraintsSet.begin()->second();
-    }
-    else {
-        _plConstraintToFix = *_violatedPlConstraints.begin();
-    }
+    ASSERT( !_violatedPlConstraints.empty() );
+
+    _plConstraintToFix = _smtCore.chooseViolatedConstraintForSplitting( _violatedPlConstraints );
 
     ASSERT( _plConstraintToFix );
 }
