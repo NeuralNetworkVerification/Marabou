@@ -13,6 +13,7 @@
 #ifndef __PiecewiseLinearConstraint_h__
 #define __PiecewiseLinearConstraint_h__
 
+#include "FloatUtils.h"
 #include "ITableau.h"
 #include "List.h"
 #include "Map.h"
@@ -39,6 +40,13 @@ public:
             : _variable( variable )
             , _value( value )
         {
+        }
+
+        bool operator==( const Fix &other ) const
+        {
+            return
+                _variable == other._variable &&
+                FloatUtils::areEqual( _value, other._value );
         }
 
         unsigned _variable;

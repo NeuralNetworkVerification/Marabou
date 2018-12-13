@@ -40,6 +40,8 @@ public:
         nextCostFunction = NULL;
 
         lastCostFunctionManager = NULL;
+
+        nextLinearlyDependentResult = false;
     }
 
     ~MockTableau()
@@ -568,12 +570,22 @@ public:
     {
     }
 
-    bool areLinearlyDependent( unsigned /* x1 */,
-                               unsigned /* x2 */,
-                               double & /* coefficient */,
-                               double & /*inverseCoefficient */ )
+    unsigned lastLinearlyDependentX1;
+    unsigned lastLinearlyDependentX2;
+    double nextLinearlyDependentCoefficient;
+    bool nextLinearlyDependentResult;
+    bool areLinearlyDependent( unsigned x1,
+                               unsigned x2,
+                               double &coefficient,
+                               double &inverseCoefficient )
     {
-        return false;
+        lastLinearlyDependentX1 = x1;
+        lastLinearlyDependentX2 = x2;
+
+        coefficient = nextLinearlyDependentCoefficient;
+        inverseCoefficient = 1 / coefficient;
+
+        return nextLinearlyDependentResult;
     }
 
     unsigned getVariableAfterMerging( unsigned /* variable */ ) const
