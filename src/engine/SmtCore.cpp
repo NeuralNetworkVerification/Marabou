@@ -23,6 +23,7 @@ SmtCore::SmtCore( IEngine *engine )
     : _statistics( NULL )
     , _engine( engine )
     , _needToSplit( false )
+    , _constraintForSplitting( NULL )
     , _stateId( 0 )
 {
 }

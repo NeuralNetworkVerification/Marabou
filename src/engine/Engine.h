@@ -13,6 +13,7 @@
 #ifndef __Engine_h__
 #define __Engine_h__
 
+#include "AutoConstraintBoundTightener.h"
 #include "AutoCostFunctionManager.h"
 #include "AutoProjectedSteepestEdge.h"
 #include "AutoRowBoundTightener.h"
@@ -215,6 +216,12 @@ private:
     ExitCode _exitCode;
 
     /*
+      An object in charge of managing bound tightenings
+      proposed by the PiecewiseLinearConstriants.
+    */
+    AutoConstraintBoundTightener _constraintBoundTightener;
+
+    /*
       Perform a simplex step: compute the cost function, pick the
       entering and leaving variables and perform a pivot.
     */
@@ -315,6 +322,14 @@ private:
       with the stored solution
     */
     void checkBoundCompliancyWithDebugSolution();
+
+    /*
+      A helper function for merging the columns of two variables.
+      This function will ensure that the variables are non-basic
+      and then attempt to merge them. Returns true if successful,
+      false otherwise.
+    */
+    bool attemptToMergeVariables( unsigned x1, unsigned x2 );
 };
 
 #endif // __Engine_h__

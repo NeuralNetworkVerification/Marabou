@@ -25,7 +25,7 @@ public:
 
     Tightening( unsigned variable, double value, BoundType type )
         : _variable( variable )
-        , _value ( value )
+        , _value( value )
         , _type( type )
     {
     }
