@@ -187,6 +187,10 @@ public:
     */
     void computeAssignment();
 
+    /*
+      Check whether a given value falls within a variable's bounds,
+      i.e. lowerBound <= value <= upperBound.
+    */
     bool checkValueWithinBounds( unsigned variable, double value );
 
     /*
