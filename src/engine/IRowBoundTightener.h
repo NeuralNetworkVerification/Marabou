@@ -77,6 +77,13 @@ public:
       Have the Bound Tightener start reporting statistics.
      */
     virtual void setStatistics( Statistics *statistics ) = 0;
+
+    /*
+      Extract the rows of the inverted basis matrix, and then use them for
+      individual tightening operations.
+    */
+    virtual void extractRowsFromInvertedBasisMatrix( const double *invertedBasis, const double *rhs ) = 0;
+    virtual unsigned tightenOnSingleInvertedStoredBasisRow( unsigned rowIndex ) = 0;
 };
 
 #endif // __IRowBoundTightener_h__

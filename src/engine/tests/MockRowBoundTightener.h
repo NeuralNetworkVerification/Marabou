@@ -67,6 +67,8 @@ public:
     void getRowTightenings( List<Tightening> &/* tightenings */ ) const {}
     void setStatistics( Statistics */* statistics */ ) {}
     void examineImplicitInvertedBasisMatrix( bool /* untilSaturation */ ) {}
+    void extractRowsFromInvertedBasisMatrix( const double */* invertedBasis */, const double */* rhs */ ) {}
+    unsigned tightenOnSingleInvertedStoredBasisRow( unsigned /* rowIndex */ ) { return 0; }
 };
 
 #endif // __MockRowBoundTightener_h__

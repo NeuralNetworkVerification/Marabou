@@ -1180,9 +1180,37 @@ void Engine::explicitBasisBoundTightening()
 
     switch ( GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE )
     {
-    case GlobalConfiguration::COMPUTE_INVERTED_BASIS_MATRIX:
-        _rowBoundTightener->examineInvertedBasisMatrix( saturation );
+    case GlobalConfiguration::COMPUTE_INVERTED_BASIS_MATRIX: {
+
+        // Extract and store the inverted basis rows
+        double *invB = _tableau->getInverseBasisMatrix();
+        const double *b = _tableau->getRightHandSide();
+        _rowBoundTightener->extractRowsFromInvertedBasisMatrix( invB, b );
+        delete [] invB;
+
+        // Begin the tightening operation
+        bool learnedNewBounds = true;
+        while ( learnedNewBounds )
+        {
+            learnedNewBounds = false;
+
+            for ( unsigned i = 0; i < _tableau->getM(); ++i )
+            {
+                unsigned numLearnedBounds = _rowBoundTightener->tightenOnSingleInvertedStoredBasisRow( i );
+
+                // If we discovered new bounds on this row, we stop and attempt to propagate bounds
+                // through the PL constraints.
+                if ( numLearnedBounds > 0 )
+                {
+                    applyAllRowTightenings();
+                    applyAllConstraintTightenings();
+                    learnedNewBounds = true;
+                }
+            }
+        }
+
         break;
+    }
 
     case GlobalConfiguration::USE_IMPLICIT_INVERTED_BASIS_MATRIX:
         _rowBoundTightener->examineImplicitInvertedBasisMatrix( saturation );

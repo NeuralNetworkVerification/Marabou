@@ -680,6 +680,53 @@ void RowBoundTightener::notifyDimensionChange( unsigned /* m */ , unsigned /* n 
     setDimensions();
 }
 
+void RowBoundTightener::extractRowsFromInvertedBasisMatrix( const double *invertedBasis, const double *rhs )
+{
+    /*
+      Roughly (the dimensions don't add up):
+
+         xB = inv(B)*b - inv(B)*An
+
+      We compute one row at a time.
+    */
+
+    const double *b = rhs;
+    const double *invB = invertedBasis;
+
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        TableauRow *row = _rows[i];
+        // First, compute the scalar, using inv(B)*b
+        row->_scalar = 0;
+        for ( unsigned j = 0; j < _m; ++j )
+            row->_scalar += ( invB[i * _m + j] * b[j] );
+
+        // Now update the row's coefficients for basic variable i
+        for ( unsigned j = 0; j < _n - _m; ++j )
+        {
+            row->_row[j]._var = _tableau.nonBasicIndexToVariable( j );
+
+            // Dot product of the i'th row of inv(B) with the appropriate
+            // column of An
+
+            const SparseUnsortedList *column = _tableau.getSparseAColumn( row->_row[j]._var );
+            row->_row[j]._coefficient = 0;
+
+            for ( const auto &entry : *column )
+                row->_row[j]._coefficient -= invB[i*_m + entry._index] * entry._value;
+        }
+
+        // Store the lhs variable
+        row->_lhs = _tableau.basicIndexToVariable( i );
+    }
+}
+
+unsigned RowBoundTightener::tightenOnSingleInvertedStoredBasisRow( unsigned rowIndex )
+{
+    ASSERT( rowIndex < _m );
+    return tightenOnSingleInvertedBasisRow( *( _rows[rowIndex] ) );
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

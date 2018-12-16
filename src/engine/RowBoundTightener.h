@@ -62,6 +62,13 @@ public:
     void examineInvertedBasisMatrix( bool untilSaturation );
 
     /*
+      Extract the rows of the inverted basis matrix, and then use them for
+      individual tightening operations.
+    */
+    void extractRowsFromInvertedBasisMatrix( const double *invertedBasis, const double *rhs );
+    unsigned tightenOnSingleInvertedStoredBasisRow( unsigned rowIndex );
+
+    /*
       Derive and enqueue new bounds for all varaibles, implicitly using the
       inverse of the explicit basis matrix, inv(B0), which should be available
       through the tableau. Inv(B0) is not computed directly --- instead, the computation
