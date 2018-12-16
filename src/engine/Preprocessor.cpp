@@ -275,7 +275,7 @@ bool Preprocessor::processEquations()
 
                 lowerBound /= -ci;
 
-                if ( lowerBound > _preprocessed.getLowerBound( xi ) )
+                if ( FloatUtils::gt( lowerBound, _preprocessed.getLowerBound( xi ) ) )
                 {
                     tighterBoundFound = true;
                     _preprocessed.setLowerBound( xi, lowerBound );
@@ -299,7 +299,7 @@ bool Preprocessor::processEquations()
 
                 upperBound /= -ci;
 
-                if ( upperBound < _preprocessed.getUpperBound( xi ) )
+                if ( FloatUtils::lt( upperBound, _preprocessed.getUpperBound( xi ) ) )
                 {
                     tighterBoundFound = true;
                     _preprocessed.setUpperBound( xi, upperBound );
@@ -379,14 +379,14 @@ bool Preprocessor::processConstraints()
         for ( const auto &tightening : tightenings )
 		{
 			if ( ( tightening._type == Tightening::LB ) &&
-                 ( tightening._value > _preprocessed.getLowerBound( tightening._variable ) ) )
+                 ( FloatUtils::gt( tightening._value, _preprocessed.getLowerBound( tightening._variable ) ) ) )
             {
                 tighterBoundFound = true;
                 _preprocessed.setLowerBound( tightening._variable, tightening._value );
             }
 
-			else if ( ( tightening._type == Tightening::UB ) &&
-                      ( tightening._value < _preprocessed.getUpperBound( tightening._variable ) ) )
+            else if ( ( tightening._type == Tightening::UB ) &&
+                      ( FloatUtils::lt( tightening._value, _preprocessed.getUpperBound( tightening._variable ) ) ) )
             {
                 tighterBoundFound = true;
                 _preprocessed.setUpperBound( tightening._variable, tightening._value );
