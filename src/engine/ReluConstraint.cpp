@@ -116,6 +116,9 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
         {
             _constraintBoundTightener->registerTighterLowerBound( _f, 0 );
         }
+
+        if ( phaseFixed() )
+            _constraintBoundTightener->notifyConstraintHasBecomeFixed();
     }
  }
 
@@ -147,6 +150,9 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
             if ( adjustedUpperBound < _upperBounds[_f] )
                 _constraintBoundTightener->registerTighterUpperBound( _f, adjustedUpperBound );
         }
+
+        if ( phaseFixed() )
+            _constraintBoundTightener->notifyConstraintHasBecomeFixed();
     }
 }
 
@@ -506,6 +512,14 @@ String ReluConstraint::serializeToString() const
 {
     // Output format is: relu,f,b
     return Stringf( "relu,%u,%u", _f, _b );
+}
+
+void ReluConstraint::registerConstraintBoundTightener( IConstraintBoundTightener *tightener )
+{
+    _constraintBoundTightener = tightener;
+
+    if ( phaseFixed() )
+        _constraintBoundTightener->notifyConstraintHasBecomeFixed();
 }
 
 //

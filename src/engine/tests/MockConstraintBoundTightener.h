@@ -62,6 +62,9 @@ public:
     void registerTighterLowerBound( unsigned /* variable */, double /* bound */ ) {}
     void registerTighterUpperBound( unsigned /* variable */, double /* bound */ ) {}
     void getConstraintTightenings( List<Tightening> &/* tightenings */ ) const {}
+    void notifyConstraintHasBecomeFixed() {}
+    bool fixedConstraintsPending() const { return false; }
+    void clearFixedConstraints() {}
 };
 
 #endif // __MockConstraintBoundTightener_h__

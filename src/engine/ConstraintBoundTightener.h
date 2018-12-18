@@ -60,6 +60,13 @@ public:
     */
     void getConstraintTightenings( List<Tightening> &tightenings ) const;
 
+    /*
+      A way for constraints to notify that they have become fixed
+    */
+    void notifyConstraintHasBecomeFixed();
+    bool fixedConstraintsPending() const;
+    void clearFixedConstraints();
+
 private:
     const ITableau &_tableau;
     unsigned _n;
@@ -75,6 +82,12 @@ private:
     double *_upperBounds;
     bool *_tightenedLower;
     bool *_tightenedUpper;
+
+    /*
+      A flag indicating whether a notification was received from at least
+      one PL constraint that it has become fixed.
+    */
+    bool _fixedConstraintsPending;
 
     /*
       Statistics collection

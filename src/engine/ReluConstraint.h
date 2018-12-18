@@ -129,6 +129,13 @@ public:
     */
     String serializeToString() const;
 
+    /*
+      Register a constraint bound tightener. If a tightener is registered,
+      this piecewise linear constraint will inform the tightener whenever
+      it discovers a tighter (entailed) bound.
+    */
+    void registerConstraintBoundTightener( IConstraintBoundTightener *tightener );
+
 private:
     unsigned _b, _f;
     PhaseStatus _phaseStatus;

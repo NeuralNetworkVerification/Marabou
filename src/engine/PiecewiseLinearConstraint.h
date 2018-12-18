@@ -177,7 +177,7 @@ public:
       this piecewise linear constraint will inform the tightener whenever
       it discovers a tighter (entailed) bound.
     */
-    void registerConstraintBoundTightener( IConstraintBoundTightener *tightener );
+    virtual void registerConstraintBoundTightener( IConstraintBoundTightener *tightener );
 
 protected:
     bool _constraintActive;

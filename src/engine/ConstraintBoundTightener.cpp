@@ -21,6 +21,7 @@ ConstraintBoundTightener::ConstraintBoundTightener( const ITableau &tableau )
     , _upperBounds( NULL )
     , _tightenedLower( NULL )
     , _tightenedUpper( NULL )
+    , _fixedConstraintsPending( false )
     , _statistics( NULL )
 {
 }
@@ -151,6 +152,21 @@ void ConstraintBoundTightener::getConstraintTightenings( List<Tightening> &tight
         if ( _tightenedUpper[i] )
             tightenings.append( Tightening( i, _upperBounds[i], Tightening::UB ) );
     }
+}
+
+void ConstraintBoundTightener::notifyConstraintHasBecomeFixed()
+{
+    _fixedConstraintsPending = true;
+}
+
+bool ConstraintBoundTightener::fixedConstraintsPending() const
+{
+    return _fixedConstraintsPending;
+}
+
+void ConstraintBoundTightener::clearFixedConstraints()
+{
+    _fixedConstraintsPending = false;
 }
 
 //

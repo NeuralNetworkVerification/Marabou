@@ -59,6 +59,13 @@ public:
       Get the tightenings previously registered by the constraints
     */
     virtual void getConstraintTightenings( List<Tightening> &tightenings ) const = 0;
+
+    /*
+      A way for constraints to notify that they have become fixed
+    */
+    virtual void notifyConstraintHasBecomeFixed() = 0;
+    virtual bool fixedConstraintsPending() const = 0;
+    virtual void clearFixedConstraints() = 0;
 };
 
 #endif // __IConstraintBoundTightener_h__

@@ -136,6 +136,8 @@ bool Engine::solve()
             if ( _tableau->basisMatrixAvailable() )
                 explicitBasisBoundTightening();
 
+            applyAllValidConstraintCaseSplits();
+
             // Perform any SmtCore-initiated case splits
             if ( _smtCore.needToSplit() )
             {
@@ -1107,13 +1109,18 @@ void Engine::applyAllBoundTightenings()
 
 void Engine::applyAllValidConstraintCaseSplits()
 {
-    struct timespec start = TimeUtils::sampleMicro();
+    if ( _constraintBoundTightener->fixedConstraintsPending() )
+    {
+        struct timespec start = TimeUtils::sampleMicro();
 
-    for ( auto &constraint : _plConstraints )
-        applyValidConstraintCaseSplit( constraint );
+        for ( auto &constraint : _plConstraints )
+            applyValidConstraintCaseSplit( constraint );
 
-    struct timespec end = TimeUtils::sampleMicro();
-    _statistics.addTimeForValidCaseSplit( TimeUtils::timePassed( start, end ) );
+        _constraintBoundTightener->clearFixedConstraints();
+
+        struct timespec end = TimeUtils::sampleMicro();
+        _statistics.addTimeForValidCaseSplit( TimeUtils::timePassed( start, end ) );
+    }
 }
 
 void Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constraint )
