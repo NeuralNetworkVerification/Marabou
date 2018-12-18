@@ -31,7 +31,7 @@ const double GlobalConfiguration::SPARSE_FORREST_TOMLIN_DIAGONAL_ELEMENT_TOLERAN
 const unsigned GlobalConfiguration::DEGRADATION_CHECKING_FREQUENCY = 100;
 const double GlobalConfiguration::DEGRADATION_THRESHOLD = 0.1;
 const double GlobalConfiguration::ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD = 0.0001;
-const bool GlobalConfiguration::USE_COLUMN_MERGING_EQUATIONS = true;
+const bool GlobalConfiguration::USE_COLUMN_MERGING_EQUATIONS = false;
 const double GlobalConfiguration::GAUSSIAN_ELIMINATION_PIVOT_SCALE_THRESHOLD = 0.1;
 const unsigned GlobalConfiguration::MAX_SIMPLEX_PIVOT_SEARCH_ITERATIONS = 5;
 const unsigned GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD = 20;
@@ -41,7 +41,7 @@ const bool GlobalConfiguration::USE_HARRIS_RATIO_TEST = true;
 
 const bool GlobalConfiguration::PREPROCESS_INPUT_QUERY = true;
 const bool GlobalConfiguration::PREPROCESSOR_ELIMINATE_VARIABLES = true;
-const bool GlobalConfiguration::PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS = false;
+const bool GlobalConfiguration::PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS = true;
 const double GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD = 0.00001;
 
 const unsigned GlobalConfiguration::PSE_ITERATIONS_BEFORE_RESET = 1000;
