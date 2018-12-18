@@ -84,9 +84,9 @@ public:
 
     /*
       Have the SMT core choose, among a set of violated PL constraints, which
-      constraint should be split on
+      constraint should be repaired (without splitting)
     */
-    PiecewiseLinearConstraint *chooseViolatedConstraintForSplitting( List<PiecewiseLinearConstraint *> &_violatedPlConstraints ) const;
+    PiecewiseLinearConstraint *chooseViolatedConstraintForFixing( List<PiecewiseLinearConstraint *> &_violatedPlConstraints ) const;
 
     /*
       For debugging purposes only - store a correct possible solution

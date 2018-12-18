@@ -790,7 +790,7 @@ void Engine::selectViolatedPlConstraint()
 {
     ASSERT( !_violatedPlConstraints.empty() );
 
-    _plConstraintToFix = _smtCore.chooseViolatedConstraintForSplitting( _violatedPlConstraints );
+    _plConstraintToFix = _smtCore.chooseViolatedConstraintForFixing( _violatedPlConstraints );
 
     ASSERT( _plConstraintToFix );
 }

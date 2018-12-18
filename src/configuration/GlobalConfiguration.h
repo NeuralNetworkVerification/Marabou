@@ -132,7 +132,7 @@ public:
     // for any relevant linear connections between the variables?
     static const bool USE_SMART_FIX;
 
-    // A heuristic for selecting which of the broken PL constraints will be split on. In this case,
+    // A heuristic for selecting which of the broken PL constraints will be repaired next. In this case,
     // the one that has been repaired the least number of times so far.
     static const bool USE_LEAST_FIX;
 
