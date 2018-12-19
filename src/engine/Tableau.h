@@ -188,6 +188,12 @@ public:
     void computeAssignment();
 
     /*
+      Check whether a given value falls within a variable's bounds,
+      i.e. lowerBound <= value <= upperBound.
+    */
+    bool checkValueWithinBounds( unsigned variable, double value );
+
+    /*
       Compute the status of the basic variable based on current assignment
     */
     void computeBasicStatus();
@@ -415,6 +421,16 @@ public:
       the tableau.
     */
     void mergeColumns( unsigned x1, unsigned x2 );
+
+    /*
+      Check whether two variables are linearly dependent. If so, the function
+      returns true and places in coefficient the value c such that
+
+        x2 = ... + c * x1 + ...
+
+      The inverse coefficient is just 1/c.
+    */
+    bool areLinearlyDependent( unsigned x1, unsigned x2, double &coefficient, double &inverseCoefficient );
 
     /*
       When we start merging columns, variables effectively get renamed.

@@ -595,6 +595,16 @@ unsigned Statistics::getNumPrecisionRestorations() const
     return _numPrecisionRestorations;
 }
 
+unsigned long long Statistics::getTimeSimplexStepsMicro() const
+{
+    return _timeSimplexStepsMicro;
+}
+
+unsigned long long Statistics::getNumConstraintFixingSteps() const
+{
+    return _numConstraintFixingSteps;
+}
+
 unsigned long long Statistics::getNumSimplexPivotSelectionsIgnoredForStability() const
 {
     return _numSimplexPivotSelectionsIgnoredForStability;

@@ -53,6 +53,14 @@ void SmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
     }
 }
 
+unsigned SmtCore::getViolationCounts( PiecewiseLinearConstraint *constraint ) const
+{
+    if ( !_constraintToViolationCount.exists( constraint ) )
+        return 0;
+
+    return _constraintToViolationCount[constraint];
+}
+
 bool SmtCore::needToSplit() const
 {
     return _needToSplit;
@@ -338,6 +346,37 @@ bool SmtCore::splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split, 
     }
 
     return true;
+}
+
+PiecewiseLinearConstraint *SmtCore::chooseViolatedConstraintForFixing( List<PiecewiseLinearConstraint *> &_violatedPlConstraints ) const
+{
+    ASSERT( !_violatedPlConstraints.empty() );
+
+    if ( !GlobalConfiguration::USE_LEAST_FIX )
+        return *_violatedPlConstraints.begin();
+
+    PiecewiseLinearConstraint *candidate;
+
+    // Apply the least fix heuristic
+    auto it = _violatedPlConstraints.begin();
+
+    candidate = *it;
+    unsigned minFixes = getViolationCounts( candidate );
+
+    PiecewiseLinearConstraint *contender;
+    unsigned contenderFixes;
+    while ( it != _violatedPlConstraints.end() )
+    {
+        contender = *it;
+        contenderFixes = getViolationCounts( contender );
+        if ( contenderFixes < minFixes )
+        {
+            minFixes = contenderFixes;
+            candidate = contender;
+        }
+    }
+
+    return candidate;
 }
 
 //

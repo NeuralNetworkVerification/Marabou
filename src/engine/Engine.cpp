@@ -119,7 +119,6 @@ bool Engine::solve()
                 }
 
                 _basisRestorationRequired = Engine::RESTORATION_NOT_NEEDED;
-
                 continue;
             }
 
@@ -184,7 +183,6 @@ bool Engine::solve()
                 checkBoundCompliancyWithDebugSolution();
 
                 applyAllValidConstraintCaseSplits();
-
                 continue;
             }
 
@@ -459,7 +457,12 @@ void Engine::performSimplexStep()
 
 void Engine::fixViolatedPlConstraintIfPossible()
 {
-    List<PiecewiseLinearConstraint::Fix> fixes = _plConstraintToFix->getPossibleFixes();
+    List<PiecewiseLinearConstraint::Fix> fixes;
+
+    if ( GlobalConfiguration::USE_SMART_FIX )
+        fixes = _plConstraintToFix->getSmartFixes( _tableau );
+    else
+        fixes = _plConstraintToFix->getPossibleFixes();
 
     // First, see if we can fix without pivoting. We are looking for a fix concerning a
     // non-basic variable, that doesn't set that variable out-of-bounds.
@@ -467,25 +470,24 @@ void Engine::fixViolatedPlConstraintIfPossible()
     {
         if ( !_tableau->isBasic( fix._variable ) )
         {
-			if ( FloatUtils::gte( fix._value, _tableau->getLowerBound( fix._variable ) ) &&
-                 FloatUtils::lte( fix._value, _tableau->getUpperBound( fix._variable ) ) )
+			if ( _tableau->checkValueWithinBounds( fix._variable, fix._value ) )
 			{
-            	_tableau->setNonBasicAssignment( fix._variable, fix._value, true );
-            	return;
+                _tableau->setNonBasicAssignment( fix._variable, fix._value, true );
+                return;
 			}
         }
     }
 
     // No choice, have to pivot. Look for a fix concerning a basic variable, that
-    // doesn't set that variable out-of-bounds.
+    // doesn't set that variable out-of-bounds. If smart-fix is enabled and implemented,
+    // we should probably not reach this point.
     bool found = false;
     auto it = fixes.begin();
     while ( !found && it != fixes.end() )
     {
         if ( _tableau->isBasic( it->_variable ) )
         {
-			if ( FloatUtils::gte( it->_value, _tableau->getLowerBound( it->_variable ) ) &&
-                 FloatUtils::lte( it->_value, _tableau->getUpperBound( it->_variable ) ) )
+			if ( _tableau->checkValueWithinBounds( it->_variable, it->_value ) )
 			{
                 found = true;
             }
@@ -773,8 +775,10 @@ void Engine::collectViolatedPlConstraints()
 {
     _violatedPlConstraints.clear();
     for ( const auto &constraint : _plConstraints )
+    {
         if ( constraint->isActive() && !constraint->satisfied() )
             _violatedPlConstraints.append( constraint );
+    }
 }
 
 bool Engine::allPlConstraintsHold()
@@ -785,7 +789,9 @@ bool Engine::allPlConstraintsHold()
 void Engine::selectViolatedPlConstraint()
 {
     ASSERT( !_violatedPlConstraints.empty() );
-    _plConstraintToFix = *_violatedPlConstraints.begin();
+
+    _plConstraintToFix = _smtCore.chooseViolatedConstraintForFixing( _violatedPlConstraints );
+
     ASSERT( _plConstraintToFix );
 }
 

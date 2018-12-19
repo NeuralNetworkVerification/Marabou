@@ -131,7 +131,7 @@ private:
     /*
       Piecewise linear constraints that are currently violated.
     */
-    List<PiecewiseLinearConstraint *>_violatedPlConstraints;
+    List<PiecewiseLinearConstraint *> _violatedPlConstraints;
 
     /*
       A single, violated PL constraint, selected for fixing.

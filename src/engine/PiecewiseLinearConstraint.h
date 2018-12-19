@@ -13,6 +13,7 @@
 #ifndef __PiecewiseLinearConstraint_h__
 #define __PiecewiseLinearConstraint_h__
 
+#include "FloatUtils.h"
 #include "ITableau.h"
 #include "List.h"
 #include "Map.h"
@@ -39,6 +40,13 @@ public:
             : _variable( variable )
             , _value( value )
         {
+        }
+
+        bool operator==( const Fix &other ) const
+        {
+            return
+                _variable == other._variable &&
+                FloatUtils::areEqual( _value, other._value );
         }
 
         unsigned _variable;
@@ -106,6 +114,11 @@ public:
       Returns a list of possible fixes for the violated constraint.
     */
     virtual List<PiecewiseLinearConstraint::Fix> getPossibleFixes() const = 0;
+
+    /*
+      Return a list of smart fixes for violated constraint.
+    */
+    virtual List<PiecewiseLinearConstraint::Fix> getSmartFixes( ITableau *tableau ) const = 0;
 
     /*
       Returns the list of case splits that this piecewise linear

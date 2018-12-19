@@ -70,6 +70,9 @@ const bool GlobalConfiguration::PROJECTED_STEEPEST_EDGE_LOGGING = false;
 const bool GlobalConfiguration::GAUSSIAN_ELIMINATION_LOGGING = false;
 const bool GlobalConfiguration::QUERY_LOADER_LOGGING = true;
 
+const bool GlobalConfiguration::USE_SMART_FIX = false;
+const bool GlobalConfiguration::USE_LEAST_FIX = false;
+
 void GlobalConfiguration::print()
 {
     printf( "****************************\n" );

@@ -19,6 +19,7 @@
 #include "ReluConstraint.h"
 #include "ReluplexError.h"
 #include "Statistics.h"
+#include "TableauRow.h"
 
 ReluConstraint::ReluConstraint( unsigned b, unsigned f )
     : _b( b )
@@ -211,6 +212,126 @@ List<PiecewiseLinearConstraint::Fix> ReluConstraint::getPossibleFixes() const
     {
         fixes.append( PiecewiseLinearConstraint::Fix( _b, 0 ) );
         fixes.append( PiecewiseLinearConstraint::Fix( _f, bValue ) );
+    }
+
+    return fixes;
+}
+
+List<PiecewiseLinearConstraint::Fix> ReluConstraint::getSmartFixes( ITableau *tableau ) const
+{
+    ASSERT( !satisfied() );
+    ASSERT( _assignment.exists( _f ) && _assignment.size() > 1 );
+
+    double bDeltaToFDelta;
+    double fDeltaToBDelta;
+    bool linearlyDependent = tableau->areLinearlyDependent( _b, _f, bDeltaToFDelta, fDeltaToBDelta );
+
+    /*
+      If b and f are linearly independent, there's nothing clever to be done -
+      just return the "non-smart" fixes.
+
+      We could potentially do something if both are basic, but for now we
+      return the non-smart fixes. Some dependency may be created when f or b are
+      pivoted out of the base; in which case we hope getSmartFixes will be called
+      again later, where we will be able to produce smart fixes.
+    */
+    if ( !linearlyDependent )
+        return getPossibleFixes();
+
+    bool fIsBasic = tableau->isBasic( _f );
+    bool bIsBasic = tableau->isBasic( _b );
+    ASSERT( bIsBasic != fIsBasic );
+
+    List<PiecewiseLinearConstraint::Fix> fixes;
+    /*
+      We know b and f are linearly dependent. This means that one of them
+      is basic, the other non basic, and that coefficient is not 0.
+
+      We know that:
+
+        _f = ... + coefficient * _b + ...
+
+      Next, we want to compute by how much we need to change b and/or f in order to
+      repair the violation. For example, if we have:
+
+        b = 0, f = 6
+
+      and
+
+        b = ... -2f ...
+
+      And we want to repair so that f=b, we do the following computation:
+
+        f' = f - x
+        b' = b +2x
+        f' = b'
+        -------->
+        0 + 2x = 6 - x
+        -------->
+        x = 2
+
+      Giving us that we need to decrease f by 2, which will cause b to be increased
+      by 4, repairing the violation. Of course, there may be multiple options for repair.
+    */
+
+    double bValue = _assignment.get( _b );
+    double fValue = _assignment.get( _f );
+
+    /*
+      Repair option number 1: the active fix. We want to set f = b > 0.
+    */
+
+    if ( !bIsBasic )
+    {
+        /*
+          bValue + delta = fValue + bDeltaToFDelta * delta
+          delta = ( bValue - fValue ) / ( bDeltaToFDelta - 1 );
+        */
+
+        if ( !FloatUtils::areEqual( bDeltaToFDelta, 1.0 ) )
+        {
+            double activeFixDelta = ( bValue - fValue )  / ( bDeltaToFDelta - 1 );
+            double activeFix = bValue + activeFixDelta;
+            fixes.append( PiecewiseLinearConstraint::Fix( _b, activeFix ) );
+        }
+    }
+    else
+    {
+        /*
+          fValue + delta = bValue + fDeltaToBDelta * delta
+          delta = ( fValue - bValue ) / ( fDeltaToBDelta - 1 );
+        */
+        if ( !FloatUtils::areEqual( fDeltaToBDelta, 1.0 ) )
+        {
+            double activeFixDelta = ( fValue - bValue )  / ( fDeltaToBDelta - 1 );
+            double activeFix = fValue + activeFixDelta;
+            fixes.append( PiecewiseLinearConstraint::Fix( _f, activeFix ) );
+        }
+    }
+
+    /*
+      Repair option number 2: the inactive fix. We want to set f = 0, b < 0.
+    */
+
+    if ( !fIsBasic )
+    {
+        double newBValue = bValue + fDeltaToBDelta * (-fValue);
+        if ( newBValue <= 0 )
+            fixes.append( PiecewiseLinearConstraint::Fix( _f, 0 ) );
+    }
+    else
+    {
+        /*
+          By how much should we change b to make f zero?
+
+          fValue + bDeltaToFDelta * delta = 0
+          delta = fValue / ( -bDeltaToFDelta )
+        */
+        double nonactiveFixDelta = fValue / ( -bDeltaToFDelta );
+        double nonactiveFix = bValue + nonactiveFixDelta;
+
+        if ( nonactiveFix <= 0 )
+            fixes.append( PiecewiseLinearConstraint::Fix( _b, nonactiveFix ) );
     }
 
     return fixes;
