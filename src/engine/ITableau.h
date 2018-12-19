@@ -137,6 +137,7 @@ public:
     virtual void computePivotRow() = 0;
     virtual const TableauRow *getPivotRow() const = 0;
     virtual void computeAssignment() = 0;
+    virtual bool checkValueWithinBounds( unsigned variable, double value ) = 0;
     virtual void dump() const = 0;
     virtual void dumpAssignment() = 0;
     virtual void dumpEquations() = 0;
@@ -173,6 +174,7 @@ public:
     virtual double *getInverseBasisMatrix() const = 0;
     virtual void refreshBasisFactorization() = 0;
     virtual void mergeColumns( unsigned x1, unsigned x2 ) = 0;
+    virtual bool areLinearlyDependent( unsigned x1, unsigned x2, double &coefficient, double &inverseCoefficient ) = 0;
     virtual unsigned getVariableAfterMerging( unsigned variable ) const = 0;
 };
 

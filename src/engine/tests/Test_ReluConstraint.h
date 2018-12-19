@@ -646,6 +646,159 @@ public:
         TS_ASSERT_EQUALS( originalRelu.serializeToString(),
                           recoveredRelu.serializeToString() );
     }
+
+    bool haveFix( List<PiecewiseLinearConstraint::Fix> &fixes, unsigned var, double value )
+    {
+        PiecewiseLinearConstraint::Fix targetFix( var, value );
+        for ( const auto &fix : fixes )
+        {
+            if ( fix == targetFix )
+                return true;
+        }
+
+        return false;
+    }
+
+    void test_relu_smart_fixes()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        ReluConstraint relu( b, f );
+
+        MockTableau tableau;
+
+        List<PiecewiseLinearConstraint::Fix> fixes;
+        List<PiecewiseLinearConstraint::Fix>::iterator it;
+
+        // b and f are not linearly dependent. Return non-smart fixes
+
+        tableau.nextLinearlyDependentResult = false;
+
+        relu.notifyVariableValue( b, -1 );
+        relu.notifyVariableValue( f, 1 );
+
+        TS_ASSERT_THROWS_NOTHING( fixes = relu.getSmartFixes( &tableau ) );
+
+        TS_ASSERT_EQUALS( fixes.size(), 2U );
+        TS_ASSERT( haveFix( fixes, b, 1 ) );
+        TS_ASSERT( haveFix( fixes, f, 0 ) );
+
+        TS_ASSERT_EQUALS( tableau.lastLinearlyDependentX1, b );
+        TS_ASSERT_EQUALS( tableau.lastLinearlyDependentX2, f );
+
+        // From now on, assume b and f are linearly dependent
+        tableau.nextLinearlyDependentResult = true;
+
+        // First, assume f is basic, b is non basic
+        tableau.nextIsBasic.insert( f );
+
+        double bDeltaToFDelta = -2;
+        tableau.nextLinearlyDependentCoefficient = bDeltaToFDelta;
+
+        relu.notifyVariableValue( b, 5 );
+        relu.notifyVariableValue( f, 2 );
+
+        // We expect b to decrease by 1, which will cause f to increase by 2
+        fixes.clear();
+        TS_ASSERT_THROWS_NOTHING( fixes = relu.getSmartFixes( &tableau ) );
+
+        TS_ASSERT_EQUALS( fixes.size(), 1U );
+        TS_ASSERT( haveFix( fixes, b, 4 ) );
+
+        relu.notifyVariableValue( b, 5 );
+        relu.notifyVariableValue( f, 1 );
+
+        bDeltaToFDelta = 3;
+        tableau.nextLinearlyDependentCoefficient = bDeltaToFDelta;
+
+        // We expect b to increase to 7, so that f will catch up
+        fixes.clear();
+        TS_ASSERT_THROWS_NOTHING( fixes = relu.getSmartFixes( &tableau ) );
+
+        TS_ASSERT_EQUALS( fixes.size(), 1U );
+        TS_ASSERT( haveFix( fixes, b, 7 ) );
+
+        // If the coefficient is 1, no fix is possible
+        bDeltaToFDelta = 1;
+        tableau.nextLinearlyDependentCoefficient = bDeltaToFDelta;
+
+        fixes.clear();
+        TS_ASSERT_THROWS_NOTHING( fixes = relu.getSmartFixes( &tableau ) );
+
+        TS_ASSERT( fixes.empty() );
+
+        // Now a case where both fixes are possible
+        relu.notifyVariableValue( b, -1 );
+        relu.notifyVariableValue( f, 1 );
+
+        bDeltaToFDelta = 1.0 / 3;
+        tableau.nextLinearlyDependentCoefficient = bDeltaToFDelta;
+
+        // Option 1: decrease b by 3, so that f decreases by 1
+        // Option 2: increase b by 3, so that f increases by 1
+        fixes.clear();
+        TS_ASSERT_THROWS_NOTHING( fixes = relu.getSmartFixes( &tableau ) );
+
+        TS_ASSERT_EQUALS( fixes.size(), 2U );
+        TS_ASSERT( haveFix( fixes, b, -4 ) );
+        TS_ASSERT( haveFix( fixes, b, 2 ) );
+
+        // Now, assume b is basic, f is non basic
+        tableau.nextIsBasic.clear();
+        tableau.nextIsBasic.insert( b );
+
+        double fDeltaToBDelta = -1.0 / 2;
+        tableau.nextLinearlyDependentCoefficient = 1.0 / fDeltaToBDelta;
+
+        relu.notifyVariableValue( b, 5 );
+        relu.notifyVariableValue( f, 2 );
+
+        // We expect f to increase by 2, which will cause b to decrease by 1
+        fixes.clear();
+        TS_ASSERT_THROWS_NOTHING( fixes = relu.getSmartFixes( &tableau ) );
+
+        TS_ASSERT_EQUALS( fixes.size(), 1U );
+        TS_ASSERT( haveFix( fixes, f, 4 ) );
+
+        relu.notifyVariableValue( b, 5 );
+        relu.notifyVariableValue( f, 1 );
+
+        fDeltaToBDelta = 1.0 / 3;
+        tableau.nextLinearlyDependentCoefficient = 1.0 / fDeltaToBDelta;
+
+        // We expect f to increase to 7, so that f will catch up
+        fixes.clear();
+        TS_ASSERT_THROWS_NOTHING( fixes = relu.getSmartFixes( &tableau ) );
+
+        TS_ASSERT_EQUALS( fixes.size(), 1U );
+        TS_ASSERT( haveFix( fixes, f, 7 ) );
+
+        // If the coefficient is 1, no fix is possible
+        fDeltaToBDelta = 1;
+        tableau.nextLinearlyDependentCoefficient = 1.0 / fDeltaToBDelta;
+
+        fixes.clear();
+        TS_ASSERT_THROWS_NOTHING( fixes = relu.getSmartFixes( &tableau ) );
+
+        TS_ASSERT( fixes.empty() );
+
+        // Now a case where both fixes are possible
+        relu.notifyVariableValue( b, -1 );
+        relu.notifyVariableValue( f, 1 );
+
+        fDeltaToBDelta = 3;
+        tableau.nextLinearlyDependentCoefficient = 1 / fDeltaToBDelta;
+
+        // Option 1: f decreases by 1, so that b decreases by 3
+        // Option 2: f increases by 1, so that b increases by 3
+        fixes.clear();
+        TS_ASSERT_THROWS_NOTHING( fixes = relu.getSmartFixes( &tableau ) );
+
+        TS_ASSERT_EQUALS( fixes.size(), 2U );
+        TS_ASSERT( haveFix( fixes, f, 0 ) );
+        TS_ASSERT( haveFix( fixes, f, 2 ) );
+    }
 };
 
 //

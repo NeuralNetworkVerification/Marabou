@@ -34,6 +34,12 @@ public:
     void reportViolatedConstraint( PiecewiseLinearConstraint *constraint );
 
     /*
+      Get the number of times a specific PL constraint has been reported as
+      violated.
+    */
+    unsigned getViolationCounts( PiecewiseLinearConstraint* constraint ) const;
+
+    /*
       Reset all reported violation counts.
     */
     void resetReportedViolations();
@@ -75,6 +81,12 @@ public:
       Have the SMT core start reporting statistics.
     */
     void setStatistics( Statistics *statistics );
+
+    /*
+      Have the SMT core choose, among a set of violated PL constraints, which
+      constraint should be repaired (without splitting)
+    */
+    PiecewiseLinearConstraint *chooseViolatedConstraintForFixing( List<PiecewiseLinearConstraint *> &_violatedPlConstraints ) const;
 
     /*
       For debugging purposes only - store a correct possible solution

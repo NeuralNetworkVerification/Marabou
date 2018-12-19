@@ -316,6 +316,15 @@ List<PiecewiseLinearConstraint::Fix> MaxConstraint::getPossibleFixes() const
     return fixes;
 }
 
+List<PiecewiseLinearConstraint::Fix> MaxConstraint::getSmartFixes( ITableau * ) const
+{
+    ASSERT( !satisfied() );
+    ASSERT( _assignment.exists( _f ) && _assignment.size() > 1 );
+
+    // TODO
+    return getPossibleFixes();
+}
+
 List<PiecewiseLinearCaseSplit> MaxConstraint::getCaseSplits() const
 {
     if ( phaseFixed() )
