@@ -18,6 +18,7 @@
 #include "ReluplexError.h"
 
 InputQuery::InputQuery()
+    : _sbt( NULL )
 {
 }
 

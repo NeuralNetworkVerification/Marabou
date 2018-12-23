@@ -16,7 +16,7 @@
 
 const double GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS = 0.0000000001;
 const unsigned GlobalConfiguration::DEFAULT_DOUBLE_TO_STRING_PRECISION = 10;
-const unsigned GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY = 10000;
+const unsigned GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY = 100;
 const double GlobalConfiguration::BOUND_COMPARISON_ADDITIVE_TOLERANCE = 0.0000001;
 const double GlobalConfiguration::BOUND_COMPARISON_MULTIPLICATIVE_TOLERANCE = 0.001 * 0.0000001;
 const double GlobalConfiguration::PIVOT_CHANGE_COLUMN_TOLERANCE = 0.000000001;
@@ -42,7 +42,7 @@ const bool GlobalConfiguration::USE_HARRIS_RATIO_TEST = true;
 
 const bool GlobalConfiguration::PREPROCESS_INPUT_QUERY = true;
 const bool GlobalConfiguration::PREPROCESSOR_ELIMINATE_VARIABLES = true;
-const bool GlobalConfiguration::PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS = true;
+const bool GlobalConfiguration::PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS = false;
 const double GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD = 0.00001;
 
 const unsigned GlobalConfiguration::PSE_ITERATIONS_BEFORE_RESET = 1000;

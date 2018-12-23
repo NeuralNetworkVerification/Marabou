@@ -10,6 +10,8 @@
  ** directory for licensing information.\endverbatim
  **/
 
+#include "SymbolicBoundTightener.h"
+
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "InfeasibleQueryException.h"

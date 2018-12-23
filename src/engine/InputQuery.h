@@ -19,6 +19,8 @@
 #include "PiecewiseLinearConstraint.h"
 #include "MString.h"
 
+#include "SymbolicBoundTightener.h"
+
 class InputQuery
 {
 public:
@@ -105,6 +107,8 @@ public:
       Print input and output bounds
     */
     void printInputOutputBounds() const;
+
+    SymbolicBoundTightener *_sbt;
 
 private:
     unsigned _numberOfVariables;
