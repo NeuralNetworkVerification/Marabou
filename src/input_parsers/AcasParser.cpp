@@ -161,6 +161,71 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
 
     for ( unsigned i = 0; i < outputLayerSize; ++i )
         inputQuery.markOutputVariable( _nodeToB[NodeIndex( numberOfLayers - 1, i )], i );
+
+    // Prepare the symbolic bound tightener
+    SymbolicBoundTightener *sbt = new SymbolicBoundTightener;
+
+    sbt->setNumberOfLayers( numberOfLayers );
+
+    for ( unsigned i = 0; i < numberOfLayers; ++i )
+        sbt->setLayerSize( i, _acasNeuralNetwork.getLayerSize( i ) );
+
+    sbt->allocateWeightAndBiasSpace();
+
+    // Biases
+    for ( unsigned i = 1; i < numberOfLayers; ++i )
+        for ( unsigned j = 0; j < _acasNeuralNetwork.getLayerSize( i ); ++j )
+            sbt->setBias( i, j, _acasNeuralNetwork.getBias( i, j ) );
+
+    // Weights
+    for ( unsigned layer = 0; layer < numberOfLayers - 1; ++layer )
+    {
+        unsigned targetLayerSize = _acasNeuralNetwork.getLayerSize( layer + 1 );
+        for ( unsigned target = 0; target < targetLayerSize; ++target )
+        {
+            for ( unsigned source = 0; source < _acasNeuralNetwork.getLayerSize( layer ); ++source )
+                sbt->setWeight( layer, source, target, _acasNeuralNetwork.getWeight( layer, source, target ) );
+        }
+    }
+
+    inputQuery._sbt = sbt;
+
+    sbt->dump();
+
+    sbt->run();
+
+    // Extract the bounds for the intermediate layers
+    for ( unsigned i = 1; i < numberOfLayers - 1; ++i )
+    {
+        for ( unsigned j = 0; j < _acasNeuralNetwork.getLayerSize( i ); ++j )
+        {
+            double lb = sbt->getLowerBound( i, j );
+            double ub = sbt->getUpperBound( i, j );
+
+            // These bounds are for the F variales, after the relu activation
+
+            if ( lb > 0 )
+                inputQuery.setLowerBound( _nodeToF[NodeIndex(i, j)], lb );
+
+            if ( ub < FloatUtils::infinity() )
+                inputQuery.setUpperBound( _nodeToF[NodeIndex(i, j)], ub );
+        }
+    }
+
+    // Extract the bounds for the output layer
+    unsigned outputLayer = numberOfLayers - 1;
+
+    for ( unsigned i = 0; i < _acasNeuralNetwork.getLayerSize( outputLayer ); ++i )
+    {
+        double lb = sbt->getLowerBound( outputLayer, i );
+        double ub = sbt->getUpperBound( outputLayer, i );
+
+        if ( lb > FloatUtils::negativeInfinity() )
+            inputQuery.setLowerBound( _nodeToB[NodeIndex( outputLayer, i )], lb );
+
+        if ( ub < FloatUtils::infinity() )
+            inputQuery.setUpperBound( _nodeToB[NodeIndex( outputLayer, i )], ub );
+    }
 }
 
 unsigned AcasParser::getNumInputVaribales() const

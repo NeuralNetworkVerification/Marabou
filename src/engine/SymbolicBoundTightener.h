@@ -45,6 +45,14 @@ public:
     void setInputLowerBound( unsigned neuron, double bound );
     void setInputUpperBound( unsigned neuron, double bound );
 
+    void run();
+
+    void dump() const;
+
+    // Extract the discovered bounds
+    double getLowerBound( unsigned layer, unsigned neuron ) const;
+    double getUpperBound( unsigned layer, unsigned neuron ) const;
+
 private:
     unsigned _numberOfLayers;
     unsigned *_layerSizes;
@@ -54,6 +62,9 @@ private:
 
     double **_biases;
     WeightMatrix *_weights;
+
+    double **_lowerBounds;
+    double **_upperBounds;
 
     void freeMemoryIfNeeded();
 

@@ -16,6 +16,9 @@
 SymbolicBoundTightener::SymbolicBoundTightener()
     : _layerSizes( NULL )
     , _biases( NULL )
+    , _weights( NULL )
+    , _lowerBounds( NULL )
+    , _upperBounds( NULL )
 {
 }
 
@@ -54,6 +57,36 @@ void SymbolicBoundTightener::freeMemoryIfNeeded()
 
         delete[] _weights;
         _weights = NULL;
+    }
+
+    if ( _lowerBounds )
+    {
+        for ( unsigned i = 0; i < _numberOfLayers; ++i )
+        {
+            if ( _lowerBounds[i] )
+            {
+                delete[] _lowerBounds[i];
+                _lowerBounds[i] = NULL;
+            }
+        }
+
+        delete[] _lowerBounds;
+        _lowerBounds = NULL;
+    }
+
+    if ( _upperBounds )
+    {
+        for ( unsigned i = 0; i < _numberOfLayers; ++i )
+        {
+            if ( _upperBounds[i] )
+            {
+                delete[] _upperBounds[i];
+                _upperBounds[i] = NULL;
+            }
+        }
+
+        delete[] _upperBounds;
+        _upperBounds = NULL;
     }
 
     if ( _currentLayerBias )
@@ -139,6 +172,24 @@ void SymbolicBoundTightener::allocateWeightAndBiasSpace()
         _weights[i]._values = new double[_weights[i]._rows * _weights[i]._columns];
     }
 
+    _lowerBounds = new double *[_numberOfLayers];
+    for ( unsigned i = 0; i < _numberOfLayers; ++i )
+    {
+        ASSERT( _layerSizes[i] > 0 );
+        _lowerBounds[i] = new double[_layerSizes[i]];
+
+        std::fill_n( _lowerBounds[i], _layerSizes[i], 0 );
+    }
+
+    _upperBounds = new double *[_numberOfLayers];
+    for ( unsigned i = 0; i < _numberOfLayers; ++i )
+    {
+        ASSERT( _layerSizes[i] > 0 );
+        _upperBounds[i] = new double[_layerSizes[i]];
+
+        std::fill_n( _upperBounds[i], _layerSizes[i], 0 );
+    }
+
     // Allocate work space for the bound computation
     unsigned maxLayerSize = 0;
     for ( unsigned i = 0; i < _numberOfLayers; ++i )
@@ -174,6 +225,31 @@ void SymbolicBoundTightener::setInputLowerBound( unsigned neuron, double bound )
 void SymbolicBoundTightener::setInputUpperBound( unsigned neuron, double bound )
 {
     _inputUpperBounds[neuron] = bound;
+}
+
+void SymbolicBoundTightener::dump() const
+{
+    printf( "SBT: dumping stored network.\n" );
+    printf( "\tNumber of layers: %u. Sizes: ", _numberOfLayers );
+    for ( unsigned i = 0; i < _numberOfLayers; ++i )
+        printf( "%u ", _layerSizes[i] );
+
+    printf( "\n" );
+
+}
+
+void SymbolicBoundTightener::run()
+{
+}
+
+double SymbolicBoundTightener::getLowerBound( unsigned layer, unsigned neuron ) const
+{
+    return _lowerBounds[layer][neuron];
+}
+
+double SymbolicBoundTightener::getUpperBound( unsigned layer, unsigned neuron ) const
+{
+    return _upperBounds[layer][neuron];
 }
 
 //
