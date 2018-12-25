@@ -24,6 +24,8 @@
     3. An external caller has stored the weights and topology
 */
 
+const double BOUND_ROUNDING_CONSTANT = 0.00000005;
+
 class SymbolicBoundTightener
 {
 public:

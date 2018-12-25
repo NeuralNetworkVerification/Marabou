@@ -14,14 +14,16 @@
 #include "FloatUtils.h"
 #include "SymbolicBoundTightener.h"
 
-const double BOUND_ROUNDING_CONSTANT = 0.00000005;
-
 SymbolicBoundTightener::SymbolicBoundTightener()
     : _layerSizes( NULL )
     , _biases( NULL )
     , _weights( NULL )
     , _lowerBounds( NULL )
     , _upperBounds( NULL )
+    , _currentLayerLowerBounds( NULL )
+    , _currentLayerUpperBounds( NULL )
+    , _previousLayerLowerBounds( NULL )
+    , _previousLayerUpperBounds( NULL )
 {
 }
 
@@ -216,7 +218,11 @@ void SymbolicBoundTightener::setWeight( unsigned sourceLayer, unsigned sourceNeu
     if ( weight > 0 )
         _weights[sourceLayer]._positiveValues[sourceNeuron * _weights[sourceLayer]._columns + targetNeuron] = weight;
     else
+    {
+        printf( "Have negative weight: %lf (index: %u)\n", weight, sourceNeuron * _weights[sourceLayer]._columns + targetNeuron );
         _weights[sourceLayer]._negativeValues[sourceNeuron * _weights[sourceLayer]._columns + targetNeuron] = weight;
+    }
+
 }
 
 void SymbolicBoundTightener::setInputLowerBound( unsigned neuron, double bound )
@@ -254,8 +260,34 @@ void SymbolicBoundTightener::run()
         _previousLayerUpperBounds[i * _inputLayerSize + i] = 1;
     }
 
+    printf( "Initializing.\n\tLB matrix:\n" );
+    for ( unsigned i = 0; i < _inputLayerSize; ++i )
+    {
+        printf( "\t" );
+        for ( unsigned j = 0; j < _inputLayerSize; ++j )
+        {
+            printf( "%.2lf ", _previousLayerLowerBounds[i*_inputLayerSize + j] );
+        }
+        printf( "\n" );
+    }
+    printf( "\nUB matrix:\n" );
+    for ( unsigned i = 0; i < _inputLayerSize; ++i )
+    {
+        printf( "\t" );
+        for ( unsigned j = 0; j < _inputLayerSize; ++j )
+        {
+            printf( "%.2lf ", _previousLayerUpperBounds[i*_inputLayerSize + j] );
+        }
+        printf( "\n" );
+    }
+
     for ( unsigned currentLayer = 1; currentLayer < _numberOfLayers; ++currentLayer )
     {
+        printf( "\nStarting work on layer %u\n", currentLayer );
+
+        unsigned currentLayerSize = _layerSizes[currentLayer];
+        unsigned previousLayerSize = _layerSizes[currentLayer - 1];
+
         /*
           Computing symbolic bounds for layer i, based on layer i-1.
           We assume that the bounds for the previous layer have been computed.
@@ -267,6 +299,27 @@ void SymbolicBoundTightener::run()
         // Grab the weights
         WeightMatrix weights = _weights[currentLayer-1];
 
+        printf( "Positive weights:\n" );
+        for ( unsigned i = 0; i < _layerSizes[currentLayer - 1]; ++i )
+        {
+            printf( "\t" );
+            for ( unsigned j = 0; j < _layerSizes[currentLayer]; ++j )
+            {
+                printf( "%.2lf ", weights._positiveValues[i*_layerSizes[currentLayer] + j] );
+            }
+            printf( "\n" );
+        }
+        printf( "\nNegative weights:\n" );
+        for ( unsigned i = 0; i < _layerSizes[currentLayer - 1]; ++i )
+        {
+            printf( "\t" );
+            for ( unsigned j = 0; j < _layerSizes[currentLayer]; ++j )
+            {
+                printf( "%.2lf ", weights._negativeValues[i*_layerSizes[currentLayer] + j] );
+            }
+            printf( "\n" );
+        }
+
         /*
           Perform the multiplication.
 
@@ -275,43 +328,69 @@ void SymbolicBoundTightener::run()
 
             dimensions for oldUB and oldLB: inputLayerSize x previousLayerSize
             dimensions for posWeights and negWeights: previousLayerSize x layerSize
+
+            newUB, newLB dimensions: inputLayerSize x layerSize
         */
 
         for ( unsigned i = 0; i < _inputLayerSize; ++i )
         {
-            for ( unsigned j = 0; j < _layerSizes[currentLayer]; ++j )
+            for ( unsigned j = 0; j < currentLayerSize; ++j )
             {
-                for ( unsigned k = 0; k < _layerSizes[currentLayer-1]; ++k )
+                for ( unsigned k = 0; k < previousLayerSize; ++k )
                 {
-                    _currentLayerUpperBounds[i * _inputLayerSize + _layerSizes[currentLayer]] +=
-                        _previousLayerUpperBounds[i * _inputLayerSize + k] *
-                        weights._positiveValues[k * _layerSizes[currentLayer-1] + j];
+                    _currentLayerLowerBounds[i * currentLayerSize + j] +=
+                        _previousLayerUpperBounds[i * previousLayerSize + k] *
+                        weights._negativeValues[k * currentLayerSize + j];
 
-                    _currentLayerUpperBounds[i * _inputLayerSize + _layerSizes[currentLayer]] +=
-                        _previousLayerLowerBounds[i * _inputLayerSize + k] *
-                        weights._negativeValues[k * _layerSizes[currentLayer-1] + j];
+                    _currentLayerLowerBounds[i * currentLayerSize + j] +=
+                        _previousLayerLowerBounds[i * previousLayerSize + k] *
+                        weights._positiveValues[k * currentLayerSize + j];
 
-                    _currentLayerLowerBounds[i * _inputLayerSize + _layerSizes[currentLayer]] +=
-                        _previousLayerUpperBounds[i * _inputLayerSize + k] *
-                        weights._negativeValues[k * _layerSizes[currentLayer-1] + j];
+                    _currentLayerUpperBounds[i * currentLayerSize + j] +=
+                        _previousLayerUpperBounds[i * previousLayerSize + k] *
+                        weights._positiveValues[k * currentLayerSize + j];
 
-                    _currentLayerLowerBounds[i * _inputLayerSize + _layerSizes[currentLayer]] +=
-                        _previousLayerLowerBounds[i * _inputLayerSize + k] *
-                        weights._positiveValues[k * _layerSizes[currentLayer-1] + j];
+                    _currentLayerUpperBounds[i * currentLayerSize + j] +=
+                        _previousLayerLowerBounds[i * previousLayerSize + k] *
+                        weights._negativeValues[k * currentLayerSize + j];
                 }
             }
         }
 
+        printf( "\nAfter matrix multiplication, newLB is:\n" );
+        for ( unsigned i = 0; i < _inputLayerSize; ++i )
+        {
+            printf( "\t" );
+            for ( unsigned j = 0; j < _layerSizes[currentLayer]; ++j )
+            {
+                printf( "%.2lf ", _currentLayerLowerBounds[i*_layerSizes[currentLayer] + j] );
+            }
+            printf( "\n" );
+        }
+        printf( "\nnew UB is:\n" );
+        for ( unsigned i = 0; i < _inputLayerSize; ++i )
+        {
+            printf( "\t" );
+            for ( unsigned j = 0; j < _layerSizes[currentLayer]; ++j )
+            {
+                printf( "%.2lf ", _currentLayerUpperBounds[i*_layerSizes[currentLayer] + j] );
+            }
+            printf( "\n" );
+        }
+
         // We now have the symbolic representation for the new layer. Next, we compute new lower
         // and upper bounds for it.
-        for ( unsigned i = 0; i < _layerSizes[currentLayer]; ++i )
+        //
+        // newUB, newLB dimensions: inputLayerSize x layerSize
+        //
+        for ( unsigned i = 0; i < currentLayerSize; ++i )
         {
             double lb = 0;
             double ub = 0;
 
             for ( unsigned j = 0; j < _inputLayerSize; ++j )
             {
-                double entry = _currentLayerLowerBounds[j * _inputLayerSize + i];
+                double entry = _currentLayerLowerBounds[j * currentLayerSize + i];
 
                 if ( entry >= 0 )
                     lb += ( entry * _inputLowerBounds[j] );
@@ -320,7 +399,7 @@ void SymbolicBoundTightener::run()
 
                 lb -= BOUND_ROUNDING_CONSTANT;
 
-                entry = _currentLayerUpperBounds[j * _inputLayerSize + i];
+                entry = _currentLayerLowerBounds[j * currentLayerSize + i];
 
                 if ( entry >= 0 )
                     ub += ( entry * _inputUpperBounds[j] );
@@ -333,6 +412,9 @@ void SymbolicBoundTightener::run()
             // Add the network bias to both bounds
             lb += _biases[currentLayer][i];
             ub += _biases[currentLayer][i];
+
+            printf( "Neuron %u: Computed concrete lb: %lf, ub: %lf\n", i, lb, ub );
+
 
             if ( currentLayer < _numberOfLayers - 1 )
             {
