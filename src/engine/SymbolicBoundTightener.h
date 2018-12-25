@@ -23,12 +23,14 @@
     2. The network is fully connected
     3. An external caller has stored the weights and topology
 */
+
 class SymbolicBoundTightener
 {
 public:
     struct WeightMatrix
     {
-        double *_values;
+        double *_positiveValues;
+        double *_negativeValues;
         unsigned _rows;
         unsigned _columns;
     };
@@ -68,16 +70,17 @@ private:
 
     void freeMemoryIfNeeded();
 
+    unsigned _inputLayerSize;
+    unsigned _maxLayerSize;
+
     /*
       Work space for the bound computation
     */
     double *_currentLayerLowerBounds;
     double *_currentLayerUpperBounds;
-    double *_currentLayerBias;
 
-    double *_nextLayerLowerBounds;
-    double *_nextLayerUpperBounds;
-    double *_nextLayerBias;
+    double *_previousLayerLowerBounds;
+    double *_previousLayerUpperBounds;
 };
 
 #endif // __SymbolicBoundTightener_h__
