@@ -22,8 +22,10 @@ SymbolicBoundTightener::SymbolicBoundTightener()
     , _upperBounds( NULL )
     , _currentLayerLowerBounds( NULL )
     , _currentLayerUpperBounds( NULL )
+    , _currentLayerBias( NULL )
     , _previousLayerLowerBounds( NULL )
     , _previousLayerUpperBounds( NULL )
+    , _previousLayerBias( NULL )
 {
 }
 
@@ -112,6 +114,12 @@ void SymbolicBoundTightener::freeMemoryIfNeeded()
         _currentLayerUpperBounds = NULL;
     }
 
+    if ( _currentLayerBias )
+    {
+        delete[] _currentLayerBias;
+        _currentLayerBias = NULL;
+    }
+
     if ( _previousLayerLowerBounds )
     {
         delete[] _previousLayerLowerBounds;
@@ -122,6 +130,12 @@ void SymbolicBoundTightener::freeMemoryIfNeeded()
     {
         delete[] _previousLayerUpperBounds;
         _previousLayerUpperBounds = NULL;
+    }
+
+    if ( _previousLayerBias )
+    {
+        delete[] _previousLayerBias;
+        _previousLayerBias = NULL;
     }
 
     if ( _layerSizes )
@@ -203,9 +217,11 @@ void SymbolicBoundTightener::allocateWeightAndBiasSpace()
 
     _currentLayerLowerBounds = new double[_maxLayerSize * _inputLayerSize];
     _currentLayerUpperBounds = new double[_maxLayerSize * _inputLayerSize];
+    _currentLayerBias = new double[_maxLayerSize];
 
     _previousLayerLowerBounds = new double[_maxLayerSize * _inputLayerSize];
     _previousLayerUpperBounds = new double[_maxLayerSize * _inputLayerSize];
+    _previousLayerBias = new double[_maxLayerSize];
 }
 
 void SymbolicBoundTightener::setBias( unsigned layer, unsigned neuron, double bias )
@@ -259,6 +275,7 @@ void SymbolicBoundTightener::run()
         _previousLayerLowerBounds[i * _inputLayerSize + i] = 1;
         _previousLayerUpperBounds[i * _inputLayerSize + i] = 1;
     }
+    std::fill_n( _currentLayerBias, _maxLayerSize, 0 );
 
     printf( "Initializing.\n\tLB matrix:\n" );
     for ( unsigned i = 0; i < _inputLayerSize; ++i )
@@ -357,6 +374,21 @@ void SymbolicBoundTightener::run()
             }
         }
 
+        /*
+          Compute the biases for the new layer
+        */
+        for ( unsigned j = 0; j < currentLayerSize; ++j )
+        {
+            _currentLayerBias[j] = _biases[currentLayer][j];
+
+            // Add the weighted bias from the previous layer
+            for ( unsigned k = 0; k < previousLayerSize; ++k )
+            {
+                _currentLayerBias[j] += _biases[currentLayer - 1][k] *
+                    ( weights._negativeValues[k * currentLayerSize + j] + weights._positiveValues[k * currentLayerSize + j] );
+            }
+        }
+
         printf( "\nAfter matrix multiplication, newLB is:\n" );
         for ( unsigned i = 0; i < _inputLayerSize; ++i )
         {
@@ -399,7 +431,7 @@ void SymbolicBoundTightener::run()
 
                 lb -= BOUND_ROUNDING_CONSTANT;
 
-                entry = _currentLayerLowerBounds[j * currentLayerSize + i];
+                entry = _currentLayerUpperBounds[j * currentLayerSize + i];
 
                 if ( entry >= 0 )
                     ub += ( entry * _inputUpperBounds[j] );
@@ -410,11 +442,10 @@ void SymbolicBoundTightener::run()
             }
 
             // Add the network bias to both bounds
-            lb += _biases[currentLayer][i];
-            ub += _biases[currentLayer][i];
+            lb += _currentLayerBias[i];
+            ub += _currentLayerBias[i];
 
             printf( "Neuron %u: Computed concrete lb: %lf, ub: %lf\n", i, lb, ub );
-
 
             if ( currentLayer < _numberOfLayers - 1 )
             {
@@ -425,6 +456,12 @@ void SymbolicBoundTightener::run()
                     // The ReLU will zero this entry out
                     ub = 0;
                     lb = 0;
+
+                    for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                    {
+                        _currentLayerLowerBounds[i * currentLayerSize + j] = 0;
+                        _currentLayerUpperBounds[i * currentLayerSize + j] = 0;
+                    }
                 }
                 else if ( lb >= 0 )
                 {
@@ -435,9 +472,12 @@ void SymbolicBoundTightener::run()
                 {
                     // lb <= 0 <= ub
                     // The ReLU might affect this entry, lb must be set to 0
+
+                    lb = 0;
+
                     for ( unsigned j = 0; j < _inputLayerSize; ++j )
                     {
-                        _currentLayerLowerBounds[j * _inputLayerSize + i] = 0;
+                        _currentLayerLowerBounds[i * currentLayerSize + j] = 0;
                     }
 
                     // TODO: upper_s_lower thingy?
@@ -452,6 +492,7 @@ void SymbolicBoundTightener::run()
 
             memcpy( _previousLayerLowerBounds, _currentLayerLowerBounds, sizeof(double) * _maxLayerSize * _inputLayerSize );
             memcpy( _previousLayerUpperBounds, _currentLayerUpperBounds, sizeof(double) * _maxLayerSize * _inputLayerSize );
+            memcpy( _previousLayerBias, _currentLayerBias, sizeof(double) * _maxLayerSize );
         }
     }
 }

@@ -80,9 +80,11 @@ private:
     */
     double *_currentLayerLowerBounds;
     double *_currentLayerUpperBounds;
+    double *_currentLayerBias;
 
     double *_previousLayerLowerBounds;
     double *_previousLayerUpperBounds;
+    double *_previousLayerBias;
 };
 
 #endif // __SymbolicBoundTightener_h__
