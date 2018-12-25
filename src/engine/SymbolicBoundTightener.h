@@ -61,8 +61,8 @@ private:
     unsigned _numberOfLayers;
     unsigned *_layerSizes;
 
-    Map<unsigned,unsigned> _inputLowerBounds;
-    Map<unsigned,unsigned> _inputUpperBounds;
+    Map<unsigned,double> _inputLowerBounds;
+    Map<unsigned,double> _inputUpperBounds;
 
     double **_biases;
     WeightMatrix *_weights;
@@ -80,11 +80,13 @@ private:
     */
     double *_currentLayerLowerBounds;
     double *_currentLayerUpperBounds;
-    double *_currentLayerBias;
+    double *_currentLayerLowerBias;
+    double *_currentLayerUpperBias;
 
     double *_previousLayerLowerBounds;
     double *_previousLayerUpperBounds;
-    double *_previousLayerBias;
+    double *_previousLayerLowerBias;
+    double *_previousLayerUpperBias;
 };
 
 #endif // __SymbolicBoundTightener_h__
