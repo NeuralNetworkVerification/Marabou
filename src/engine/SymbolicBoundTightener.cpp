@@ -291,8 +291,8 @@ void SymbolicBoundTightener::run()
         _previousLayerLowerBounds[i * _inputLayerSize + i] = 1;
         _previousLayerUpperBounds[i * _inputLayerSize + i] = 1;
     }
-    std::fill_n( _currentLayerLowerBias, _maxLayerSize, 0 );
-    std::fill_n( _currentLayerUpperBias, _maxLayerSize, 0 );
+    std::fill_n( _previousLayerLowerBias, _maxLayerSize, 0 );
+    std::fill_n( _previousLayerUpperBias, _maxLayerSize, 0 );
 
     printf( "Initializing.\n\tLB matrix:\n" );
     for ( unsigned i = 0; i < _inputLayerSize; ++i )
@@ -402,17 +402,17 @@ void SymbolicBoundTightener::run()
             // Add the weighted bias from the previous layer
             for ( unsigned k = 0; k < previousLayerSize; ++k )
             {
-                double weight = weights._positiveValues[k * currentLayerSize + j];
+                double weight = weights._positiveValues[k * currentLayerSize + j] + weights._negativeValues[k * currentLayerSize + j];
 
                 if ( weight > 0 )
                 {
-                    _currentLayerLowerBias[j] += _previousLayerLowerBias[k] * weights._positiveValues[k * currentLayerSize + j];
-                    _currentLayerUpperBias[j] += _previousLayerUpperBias[k] * weights._positiveValues[k * currentLayerSize + j];
+                    _currentLayerLowerBias[j] += _previousLayerLowerBias[k] * weight;
+                    _currentLayerUpperBias[j] += _previousLayerUpperBias[k] * weight;
                 }
                 else
                 {
-                    _currentLayerLowerBias[j] += _previousLayerUpperBias[k] * weights._negativeValues[k * currentLayerSize + j];
-                    _currentLayerUpperBias[j] += _previousLayerLowerBias[k] * weights._negativeValues[k * currentLayerSize + j];
+                    _currentLayerLowerBias[j] += _previousLayerUpperBias[k] * weight;
+                    _currentLayerUpperBias[j] += _previousLayerLowerBias[k] * weight;
                 }
             }
         }
@@ -423,7 +423,7 @@ void SymbolicBoundTightener::run()
             printf( "\t" );
             for ( unsigned j = 0; j < _layerSizes[currentLayer]; ++j )
             {
-                printf( "%.2lf (index: %u) ", _currentLayerLowerBounds[i*_layerSizes[currentLayer] + j], i*_layerSizes[currentLayer] + j );
+                printf( "%.2lf ", _currentLayerLowerBounds[i*_layerSizes[currentLayer] + j] );
             }
             printf( "\n" );
         }
@@ -451,8 +451,6 @@ void SymbolicBoundTightener::run()
             for ( unsigned j = 0; j < _inputLayerSize; ++j )
             {
                 double entry = _currentLayerLowerBounds[j * currentLayerSize + i];
-                printf( "Entry: %lf (index %u)\n", entry, j * currentLayerSize + i );
-
 
                 if ( entry >= 0 )
                 {
