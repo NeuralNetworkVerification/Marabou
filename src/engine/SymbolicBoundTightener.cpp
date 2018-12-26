@@ -490,7 +490,7 @@ void SymbolicBoundTightener::run()
                         _currentLayerLowerBounds[j * currentLayerSize + i] = 0;
                         _currentLayerUpperBounds[j * currentLayerSize + i] = 0;
                     }
-                    _currentLayerLowerBias[i] = 0;
+                    _currentLayerLowerBias[i] = 0; // FIX ME??
                     _currentLayerUpperBias[i] = 0;
                 }
                 else if ( lb >= 0 )
