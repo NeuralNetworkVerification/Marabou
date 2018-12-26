@@ -188,6 +188,16 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
         }
     }
 
+    // Initial bounds
+    for ( unsigned i = 0; i < inputLayerSize; ++i )
+    {
+        double min, max;
+        _acasNeuralNetwork.getInputRange( i, min, max );
+
+        sbt->setInputLowerBound( i, min );
+        sbt->setInputUpperBound( i, max );
+    }
+
     inputQuery._sbt = sbt;
 
     sbt->dump();

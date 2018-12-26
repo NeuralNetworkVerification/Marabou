@@ -453,16 +453,9 @@ void SymbolicBoundTightener::run()
                 double entry = _currentLayerLowerBounds[j * currentLayerSize + i];
 
                 if ( entry >= 0 )
-                {
-                    printf( "Adding to lb: %lf * %lf\n", entry, _inputLowerBounds[j] );
                     lb += ( entry * _inputLowerBounds[j] );
-                }
-
                 else
-                {
-                    printf( "Adding to lb: %lf * %lf\n", entry, _inputUpperBounds[j] );
                     lb += ( entry * _inputUpperBounds[j] );
-                }
 
                 lb -= BOUND_ROUNDING_CONSTANT;
 
@@ -522,6 +515,7 @@ void SymbolicBoundTightener::run()
                 }
             }
 
+            printf( "\tAfter ReLU: concrete lb: %lf, ub: %lf\n", lb, ub );
             // Store the bounds for this neuron
             _lowerBounds[currentLayer][i] = lb;
             _upperBounds[currentLayer][i] = ub;
