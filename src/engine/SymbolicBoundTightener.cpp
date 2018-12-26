@@ -546,14 +546,18 @@ void SymbolicBoundTightener::run()
             // Store the bounds for this neuron
             _lowerBounds[currentLayer][i] = lbLb;
             _upperBounds[currentLayer][i] = ubUb;
-
-            // Prepare for next iteration
-
-            memcpy( _previousLayerLowerBounds, _currentLayerLowerBounds, sizeof(double) * _maxLayerSize * _inputLayerSize );
-            memcpy( _previousLayerUpperBounds, _currentLayerUpperBounds, sizeof(double) * _maxLayerSize * _inputLayerSize );
-            memcpy( _previousLayerLowerBias, _currentLayerLowerBias, sizeof(double) * _maxLayerSize );
-            memcpy( _previousLayerUpperBias, _currentLayerUpperBias, sizeof(double) * _maxLayerSize );
         }
+
+        printf( "Dumping current layer upper bounds, before copy:\n" );
+        for ( unsigned i = 0; i < _maxLayerSize * _inputLayerSize; ++i )
+            printf( "%.5lf ", _currentLayerUpperBounds[i] );
+        printf( "\n\n" );
+
+        // Prepare for next iteration
+        memcpy( _previousLayerLowerBounds, _currentLayerLowerBounds, sizeof(double) * _maxLayerSize * _inputLayerSize );
+        memcpy( _previousLayerUpperBounds, _currentLayerUpperBounds, sizeof(double) * _maxLayerSize * _inputLayerSize );
+        memcpy( _previousLayerLowerBias, _currentLayerLowerBias, sizeof(double) * _maxLayerSize );
+        memcpy( _previousLayerUpperBias, _currentLayerUpperBias, sizeof(double) * _maxLayerSize );
     }
 }
 
