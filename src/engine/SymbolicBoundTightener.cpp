@@ -250,11 +250,7 @@ void SymbolicBoundTightener::setWeight( unsigned sourceLayer, unsigned sourceNeu
     if ( weight > 0 )
         _weights[sourceLayer]._positiveValues[sourceNeuron * _weights[sourceLayer]._columns + targetNeuron] = weight;
     else
-    {
-        printf( "Have negative weight: %lf (index: %u)\n", weight, sourceNeuron * _weights[sourceLayer]._columns + targetNeuron );
         _weights[sourceLayer]._negativeValues[sourceNeuron * _weights[sourceLayer]._columns + targetNeuron] = weight;
-    }
-
 }
 
 void SymbolicBoundTightener::setInputLowerBound( unsigned neuron, double bound )
@@ -439,86 +435,117 @@ void SymbolicBoundTightener::run()
         }
 
         // We now have the symbolic representation for the new layer. Next, we compute new lower
-        // and upper bounds for it.
+        // and upper bounds for it. For each of these bounds, we compute an upper bound and a lower
+        // bound.
         //
         // newUB, newLB dimensions: inputLayerSize x layerSize
         //
         for ( unsigned i = 0; i < currentLayerSize; ++i )
         {
-            double lb = 0;
-            double ub = 0;
+            double lbLb = 0;
+            double lbUb = 0;
+            double ubLb = 0;
+            double ubUb = 0;
 
             for ( unsigned j = 0; j < _inputLayerSize; ++j )
             {
                 double entry = _currentLayerLowerBounds[j * currentLayerSize + i];
 
                 if ( entry >= 0 )
-                    lb += ( entry * _inputLowerBounds[j] );
+                {
+                    lbLb += ( entry * _inputLowerBounds[j] );
+                    lbUb += ( entry * _inputUpperBounds[j] );
+                }
                 else
-                    lb += ( entry * _inputUpperBounds[j] );
+                {
+                    lbLb += ( entry * _inputUpperBounds[j] );
+                    lbUb += ( entry * _inputLowerBounds[j] );
+                }
 
-                lb -= BOUND_ROUNDING_CONSTANT;
+                lbLb -= BOUND_ROUNDING_CONSTANT;
+                lbUb += BOUND_ROUNDING_CONSTANT;
 
                 entry = _currentLayerUpperBounds[j * currentLayerSize + i];
 
                 if ( entry >= 0 )
-                    ub += ( entry * _inputUpperBounds[j] );
+                {
+                    ubLb += ( entry * _inputLowerBounds[j] );
+                    ubUb += ( entry * _inputUpperBounds[j] );
+                }
                 else
-                    ub += ( entry * _inputLowerBounds[j] );
+                {
+                    ubLb += ( entry * _inputUpperBounds[j] );
+                    ubUb += ( entry * _inputLowerBounds[j] );
+                }
 
-                ub += BOUND_ROUNDING_CONSTANT;
+                ubLb -= BOUND_ROUNDING_CONSTANT;
+                ubUb += BOUND_ROUNDING_CONSTANT;
             }
 
-            // Add the network bias to both bounds
-            lb += _currentLayerLowerBias[i];
-            ub += _currentLayerUpperBias[i];
+            // Add the network bias to all bounds
+            lbLb += _currentLayerLowerBias[i];
+            lbUb += _currentLayerLowerBias[i];
+            ubLb += _currentLayerUpperBias[i];
+            ubUb += _currentLayerUpperBias[i];
 
-            printf( "Neuron %u: Computed concrete lb: %lf, ub: %lf\n", i, lb, ub );
+            printf( "Neuron %u: Computed concrete lb: %lf, ub: %lf\n", i, lbLb, ubUb );
 
+            // Handle the ReLU activation. We know that:
+            //   lbLb <= true LB <= lbUb
+            //   ubLb <= true UB <= ubUb
             if ( currentLayer < _numberOfLayers - 1 )
             {
-                // Handle the ReLU activation
-                if ( ub <= 0 )
+                if ( ubUb <= 0 )
                 {
                     // lb <= ub <= 0
                     // The ReLU will zero this entry out
-                    ub = 0;
-                    lb = 0;
+                    lbLb = 0;
+                    lbUb = 0;
+                    ubLb = 0;
+                    ubUb = 0;
 
                     for ( unsigned j = 0; j < _inputLayerSize; ++j )
                     {
                         _currentLayerLowerBounds[j * currentLayerSize + i] = 0;
                         _currentLayerUpperBounds[j * currentLayerSize + i] = 0;
                     }
-                    _currentLayerLowerBias[i] = 0; // FIX ME??
+                    _currentLayerLowerBias[i] = 0;
                     _currentLayerUpperBias[i] = 0;
                 }
-                else if ( lb >= 0 )
+                else if ( lbLb >= 0 )
                 {
                     // 0 <= lb <= ub
                     // The ReLU will not affect this entry
                 }
                 else
                 {
-                    // lb <= 0 <= ub
-                    // The ReLU might affect this entry, lb must be set to 0
+                    // lbLb <= 0 <= ubUb
+                    // The ReLU might affect this entry, we need to figure out how
 
-                    lb = 0;
-
-                    for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                    if ( ubLb < 0 )
                     {
-                        _currentLayerLowerBounds[j * currentLayerSize + i] = 0;
-                    }
-                    _currentLayerLowerBias[i] = 0;
+                        // The upper bound range goes below 0, we we need to zero it out
+                        for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                            _currentLayerUpperBounds[j * currentLayerSize + i] = 0;
 
-                    // TODO: upper_s_lower thingy?
+                        // We keep the concrete maxiaml value of the upper bound as the bias for this layer
+                        _currentLayerUpperBias[i] = ubUb;
+                    }
+
+                    // The lower bound can be negative, so it is zeroed out also
+                    for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                        _currentLayerLowerBounds[j * currentLayerSize + i] = 0;
+
+                    _currentLayerLowerBias[i] = 0;
+                    lbLb = 0;
                 }
             }
 
-            printf( "\tAfter ReLU: concrete lb: %lf, ub: %lf\n", lb, ub );
+            printf( "\tAfter ReLU: concrete lb: %lf, ub: %lf\n", lbLb, ubUb );
+
             // Store the bounds for this neuron
-            _lowerBounds[currentLayer][i] = lb;
-            _upperBounds[currentLayer][i] = ub;
+            _lowerBounds[currentLayer][i] = lbLb;
+            _upperBounds[currentLayer][i] = ubUb;
 
             // Prepare for next iteration
 

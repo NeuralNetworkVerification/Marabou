@@ -116,11 +116,11 @@ public:
         // Run the tightener
         TS_ASSERT_THROWS_NOTHING( sbt.run() );
 
-        // Expected range: [-11, 1], +- epsilon
+        // Expected range: [-11, 7], +- epsilon
         TS_ASSERT( sbt.getLowerBound( 2, 0 ) < -11 );
         TS_ASSERT( sbt.getLowerBound( 2, 0 ) > -11 - 0.001 );
-        TS_ASSERT( sbt.getUpperBound( 2, 0 ) > 1 );
-        TS_ASSERT( sbt.getUpperBound( 2, 0 ) < 1 + 0.001 );
+        TS_ASSERT( sbt.getUpperBound( 2, 0 ) > 7 );
+        TS_ASSERT( sbt.getUpperBound( 2, 0 ) < 7 + 0.001 );
     }
 
     void test_negative_lower_bounds_and_upper_bounds_get_zeroed()
