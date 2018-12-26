@@ -55,8 +55,8 @@ int main()
         // }
 
         // Simple constraint on an output variable
-        unsigned variable = acasParser.getOutputVariable( 0 );
-        inputQuery.setLowerBound( variable, 0.5 );
+        // unsigned variable = acasParser.getOutputVariable( 0 );
+        // inputQuery.setLowerBound( variable, 0.5 );
 
 		// Feed the query to the engine
         Engine engine;
