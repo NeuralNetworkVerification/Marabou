@@ -13,6 +13,7 @@
 #ifndef __SymbolicBoundTightener_h__
 #define __SymbolicBoundTightener_h__
 
+#include "MString.h"
 #include "Map.h"
 
 /*
@@ -51,11 +52,11 @@ public:
 
     void run();
 
-    void dump() const;
-
     // Extract the discovered bounds
     double getLowerBound( unsigned layer, unsigned neuron ) const;
     double getUpperBound( unsigned layer, unsigned neuron ) const;
+
+    static void log( const String &message );
 
 private:
     unsigned _numberOfLayers;

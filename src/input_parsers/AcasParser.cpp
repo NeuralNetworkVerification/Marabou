@@ -200,8 +200,6 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
 
     inputQuery._sbt = sbt;
 
-    sbt->dump();
-
     sbt->run();
 
     // Extract the bounds for the intermediate layers

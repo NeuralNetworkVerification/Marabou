@@ -12,6 +12,7 @@
 
 #include "Debug.h"
 #include "FloatUtils.h"
+#include "MStringf.h"
 #include "SymbolicBoundTightener.h"
 
 SymbolicBoundTightener::SymbolicBoundTightener()
@@ -263,16 +264,6 @@ void SymbolicBoundTightener::setInputUpperBound( unsigned neuron, double bound )
     _inputUpperBounds[neuron] = bound;
 }
 
-void SymbolicBoundTightener::dump() const
-{
-    printf( "SBT: dumping stored network.\n" );
-    printf( "\tNumber of layers: %u. Sizes: ", _numberOfLayers );
-    for ( unsigned i = 0; i < _numberOfLayers; ++i )
-        printf( "%u ", _layerSizes[i] );
-
-    printf( "\n" );
-}
-
 void SymbolicBoundTightener::run()
 {
     /*
@@ -290,30 +281,30 @@ void SymbolicBoundTightener::run()
     std::fill_n( _previousLayerLowerBias, _maxLayerSize, 0 );
     std::fill_n( _previousLayerUpperBias, _maxLayerSize, 0 );
 
-    printf( "Initializing.\n\tLB matrix:\n" );
+    log( "Initializing.\n\tLB matrix:\n" );
     for ( unsigned i = 0; i < _inputLayerSize; ++i )
     {
-        printf( "\t" );
+        log( "\t" );
         for ( unsigned j = 0; j < _inputLayerSize; ++j )
         {
-            printf( "%.2lf ", _previousLayerLowerBounds[i*_inputLayerSize + j] );
+            log( Stringf( "%.2lf ", _previousLayerLowerBounds[i*_inputLayerSize + j] ) );
         }
-        printf( "\n" );
+        log( "\n" );
     }
-    printf( "\nUB matrix:\n" );
+    log( "\nUB matrix:\n" );
     for ( unsigned i = 0; i < _inputLayerSize; ++i )
     {
-        printf( "\t" );
+        log( "\t" );
         for ( unsigned j = 0; j < _inputLayerSize; ++j )
         {
-            printf( "%.2lf ", _previousLayerUpperBounds[i*_inputLayerSize + j] );
+            log( Stringf( "%.2lf ", _previousLayerUpperBounds[i*_inputLayerSize + j] ) );
         }
-        printf( "\n" );
+        log( "\n" );
     }
 
     for ( unsigned currentLayer = 1; currentLayer < _numberOfLayers; ++currentLayer )
     {
-        printf( "\nStarting work on layer %u\n", currentLayer );
+        log( Stringf( "\nStarting work on layer %u\n", currentLayer ) );
 
         unsigned currentLayerSize = _layerSizes[currentLayer];
         unsigned previousLayerSize = _layerSizes[currentLayer - 1];
@@ -329,25 +320,25 @@ void SymbolicBoundTightener::run()
         // Grab the weights
         WeightMatrix weights = _weights[currentLayer-1];
 
-        printf( "Positive weights:\n" );
+        log( "Positive weights:\n" );
         for ( unsigned i = 0; i < _layerSizes[currentLayer - 1]; ++i )
         {
-            printf( "\t" );
+            log( "\t" );
             for ( unsigned j = 0; j < _layerSizes[currentLayer]; ++j )
             {
-                printf( "%.2lf ", weights._positiveValues[i*_layerSizes[currentLayer] + j] );
+                log( Stringf( "%.2lf ", weights._positiveValues[i*_layerSizes[currentLayer] + j] ) );
             }
-            printf( "\n" );
+            log( "\n" );
         }
-        printf( "\nNegative weights:\n" );
+        log( "\nNegative weights:\n" );
         for ( unsigned i = 0; i < _layerSizes[currentLayer - 1]; ++i )
         {
-            printf( "\t" );
+            log( "\t" );
             for ( unsigned j = 0; j < _layerSizes[currentLayer]; ++j )
             {
-                printf( "%.2lf ", weights._negativeValues[i*_layerSizes[currentLayer] + j] );
+                log( Stringf( "%.2lf ", weights._negativeValues[i*_layerSizes[currentLayer] + j] ) );
             }
-            printf( "\n" );
+            log( "\n" );
         }
 
         /*
@@ -413,25 +404,25 @@ void SymbolicBoundTightener::run()
             }
         }
 
-        printf( "\nAfter matrix multiplication, newLB is:\n" );
+        log( "\nAfter matrix multiplication, newLB is:\n" );
         for ( unsigned i = 0; i < _inputLayerSize; ++i )
         {
-            printf( "\t" );
+            log( "\t" );
             for ( unsigned j = 0; j < _layerSizes[currentLayer]; ++j )
             {
-                printf( "%.2lf ", _currentLayerLowerBounds[i*_layerSizes[currentLayer] + j] );
+                log( Stringf( "%.2lf ", _currentLayerLowerBounds[i*_layerSizes[currentLayer] + j] ) );
             }
-            printf( "\n" );
+            log( "\n" );
         }
-        printf( "\nnew UB is:\n" );
+        log( "\nnew UB is:\n" );
         for ( unsigned i = 0; i < _inputLayerSize; ++i )
         {
-            printf( "\t" );
+            log( "\t" );
             for ( unsigned j = 0; j < _layerSizes[currentLayer]; ++j )
             {
-                printf( "%.2lf ", _currentLayerUpperBounds[i*_layerSizes[currentLayer] + j] );
+                log( Stringf( "%.2lf ", _currentLayerUpperBounds[i*_layerSizes[currentLayer] + j] ) );
             }
-            printf( "\n" );
+            log( "\n" );
         }
 
         // We now have the symbolic representation for the new layer. Next, we compute new lower
@@ -488,7 +479,7 @@ void SymbolicBoundTightener::run()
             ubLb += _currentLayerUpperBias[i];
             ubUb += _currentLayerUpperBias[i];
 
-            printf( "Neuron %u: Computed concrete lb: %lf, ub: %lf\n", i, lbLb, ubUb );
+            log( Stringf( "Neuron %u: Computed concrete lb: %lf, ub: %lf\n", i, lbLb, ubUb ) );
 
             // Handle the ReLU activation. We know that:
             //   lbLb <= true LB <= lbUb
@@ -516,6 +507,8 @@ void SymbolicBoundTightener::run()
                 {
                     // 0 <= lb <= ub
                     // The ReLU will not affect this entry
+
+                    log( "SBT: eliminated nothing!\n" );
                 }
                 else
                 {
@@ -531,6 +524,10 @@ void SymbolicBoundTightener::run()
                         // We keep the concrete maxiaml value of the upper bound as the bias for this layer
                         _currentLayerUpperBias[i] = ubUb;
                     }
+                    else
+                    {
+                        log( "SBT: did not eliminate upper!\n" );
+                    }
 
                     // The lower bound can be negative, so it is zeroed out also
                     for ( unsigned j = 0; j < _inputLayerSize; ++j )
@@ -541,17 +538,17 @@ void SymbolicBoundTightener::run()
                 }
             }
 
-            printf( "\tAfter ReLU: concrete lb: %lf, ub: %lf\n", lbLb, ubUb );
+            log( Stringf( "\tAfter ReLU: concrete lb: %lf, ub: %lf\n", lbLb, ubUb ) );
 
             // Store the bounds for this neuron
             _lowerBounds[currentLayer][i] = lbLb;
             _upperBounds[currentLayer][i] = ubUb;
         }
 
-        printf( "Dumping current layer upper bounds, before copy:\n" );
+        log( "Dumping current layer upper bounds, before copy:\n" );
         for ( unsigned i = 0; i < _maxLayerSize * _inputLayerSize; ++i )
-            printf( "%.5lf ", _currentLayerUpperBounds[i] );
-        printf( "\n\n" );
+            log( Stringf( "%.5lf ", _currentLayerUpperBounds[i] ) );
+        log( "\n\n" );
 
         // Prepare for next iteration
         memcpy( _previousLayerLowerBounds, _currentLayerLowerBounds, sizeof(double) * _maxLayerSize * _inputLayerSize );
@@ -569,6 +566,12 @@ double SymbolicBoundTightener::getLowerBound( unsigned layer, unsigned neuron ) 
 double SymbolicBoundTightener::getUpperBound( unsigned layer, unsigned neuron ) const
 {
     return _upperBounds[layer][neuron];
+}
+
+void SymbolicBoundTightener::log( const String &message )
+{
+    if ( GlobalConfiguration::SYMBOLIC_BOUND_TIGHTENER_LOGGING )
+        printf( "SymbolicBoundTightener: %s\n", message.ascii() );
 }
 
 //
