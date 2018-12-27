@@ -616,6 +616,14 @@ void SymbolicBoundTightener::setReluStatus( unsigned layer, unsigned neuron, Rel
     _nodeIndexToReluState[NodeIndex( layer, neuron )] = status;
 }
 
+void SymbolicBoundTightener::setReluBVariable( unsigned layer, unsigned neuron, unsigned b )
+{
+    _nodeIndexToBVariable[NodeIndex( layer, neuron )] = b;
+    _bVariableToNodeIndex[b] = NodeIndex( layer, neuron );
+
+    // printf( "SBT: Relu var %u: ( %u, %u ) --> x%u\n", _bVariableToNodeIndex.size(), layer, neuron, b );
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

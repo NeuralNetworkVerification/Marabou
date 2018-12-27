@@ -234,6 +234,19 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
         if ( ub < FloatUtils::infinity() )
             inputQuery.setUpperBound( _nodeToB[NodeIndex( outputLayer, i )], ub );
     }
+
+    // Tell the SBT about ReLU variable indexing, for later use
+    for ( unsigned i = 1; i < numberOfLayers - 1; ++i )
+    {
+        unsigned layerSize = _acasNeuralNetwork.getLayerSize( i );
+
+        for ( unsigned j = 0; j < layerSize; ++j )
+        {
+            unsigned b = _nodeToB[NodeIndex( i, j )];
+            sbt->setReluBVariable( i, j, b );
+        }
+    }
+
 }
 
 unsigned AcasParser::getNumInputVaribales() const

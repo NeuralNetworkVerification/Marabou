@@ -327,6 +327,8 @@ private:
       false otherwise.
     */
     bool attemptToMergeVariables( unsigned x1, unsigned x2 );
+
+    void performSymbolicBoundTightening();
 };
 
 #endif // __Engine_h__

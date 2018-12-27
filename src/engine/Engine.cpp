@@ -1317,6 +1317,12 @@ Engine::ExitCode Engine::getExitCode() const
     return _exitCode;
 }
 
+void Engine::performSymbolicBoundTightening()
+{
+    // The SBT is provided as part of the input query, and it already
+    // knows the original network topology and weights.
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

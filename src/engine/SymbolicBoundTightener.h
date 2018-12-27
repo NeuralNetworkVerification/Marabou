@@ -43,6 +43,12 @@ public:
 
     struct NodeIndex
     {
+        NodeIndex()
+            : _layer( 0 )
+            , _neuron( 0 )
+        {
+        }
+
         NodeIndex( unsigned layer, unsigned neuron )
             : _layer( layer )
             , _neuron( neuron )
@@ -86,6 +92,8 @@ public:
     static void log( const String &message );
 
 
+    void setReluBVariable( unsigned layer, unsigned neuron, unsigned b );
+
 private:
     unsigned _numberOfLayers;
     unsigned *_layerSizes;
@@ -116,6 +124,9 @@ private:
     double *_previousLayerUpperBounds;
     double *_previousLayerLowerBias;
     double *_previousLayerUpperBias;
+
+    Map<NodeIndex, unsigned> _nodeIndexToBVariable;
+    Map<unsigned, NodeIndex> _bVariableToNodeIndex;
 
     Map<NodeIndex, ReluConstraint::PhaseStatus> _nodeIndexToReluState;
 };
