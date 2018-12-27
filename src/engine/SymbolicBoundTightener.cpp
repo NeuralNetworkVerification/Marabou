@@ -603,7 +603,17 @@ double SymbolicBoundTightener::getUpperBound( unsigned layer, unsigned neuron ) 
 void SymbolicBoundTightener::log( const String &message )
 {
     if ( GlobalConfiguration::SYMBOLIC_BOUND_TIGHTENER_LOGGING )
-        printf( "SymbolicBoundTightener: %s\n", message.ascii() );
+        printf( "%s", message.ascii() );
+}
+
+void SymbolicBoundTightener::clearReluStatuses()
+{
+    _nodeIndexToReluState.clear();
+}
+
+void SymbolicBoundTightener::setReluStatus( unsigned layer, unsigned neuron, ReluConstraint::PhaseStatus status )
+{
+    _nodeIndexToReluState[NodeIndex( layer, neuron )] = status;
 }
 
 //

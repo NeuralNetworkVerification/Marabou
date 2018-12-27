@@ -79,6 +79,10 @@ public:
     double getLowerBound( unsigned layer, unsigned neuron ) const;
     double getUpperBound( unsigned layer, unsigned neuron ) const;
 
+    // For informing the tightener about ReLUs that have become fixed
+    void clearReluStatuses();
+    void setReluStatus( unsigned layer, unsigned neuron, ReluConstraint::PhaseStatus status );
+
     static void log( const String &message );
 
 
