@@ -486,59 +486,91 @@ void SymbolicBoundTightener::run()
             //   ubLb <= true UB <= ubUb
             if ( currentLayer < _numberOfLayers - 1 )
             {
-                if ( ubUb <= 0 )
+                // If the ReLU phase is not fixed yet, do the usual propagation:
+                NodeIndex reluIndex( currentLayer, i );
+                if ( !_nodeIndexToReluState.exists( reluIndex ) || _nodeIndexToReluState[reluIndex] == ReluConstraint::PHASE_NOT_FIXED )
                 {
-                    // lb <= ub <= 0
-                    // The ReLU will zero this entry out
-                    lbLb = 0;
-                    lbUb = 0;
-                    ubLb = 0;
-                    ubUb = 0;
 
-                    for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                    if ( ubUb <= 0 )
                     {
-                        _currentLayerLowerBounds[j * currentLayerSize + i] = 0;
-                        _currentLayerUpperBounds[j * currentLayerSize + i] = 0;
-                    }
-                    _currentLayerLowerBias[i] = 0;
-                    _currentLayerUpperBias[i] = 0;
-                }
-                else if ( lbLb >= 0 )
-                {
-                    // 0 <= lb <= ub
-                    // The ReLU will not affect this entry
+                        // lb <= ub <= 0
+                        // The ReLU will zero this entry out
+                        lbLb = 0;
+                        lbUb = 0;
+                        ubLb = 0;
+                        ubUb = 0;
 
-                    log( "SBT: eliminated nothing!\n" );
-                }
-                else
-                {
-                    // lbLb <= 0 <= ubUb
-                    // The ReLU might affect this entry, we need to figure out how
-
-                    if ( ubLb < 0 )
-                    {
-                        // The upper bound range goes below 0, we we need to zero it out
                         for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                        {
+                            _currentLayerLowerBounds[j * currentLayerSize + i] = 0;
                             _currentLayerUpperBounds[j * currentLayerSize + i] = 0;
+                        }
+                        _currentLayerLowerBias[i] = 0;
+                        _currentLayerUpperBias[i] = 0;
+                    }
+                    else if ( lbLb >= 0 )
+                    {
+                        // 0 <= lb <= ub
+                        // The ReLU will not affect this entry
 
-                        // We keep the concrete maxiaml value of the upper bound as the bias for this layer
-                        _currentLayerUpperBias[i] = ubUb;
+                        log( "SBT: eliminated nothing!\n" );
                     }
                     else
                     {
-                        log( "SBT: did not eliminate upper!\n" );
+                        // lbLb <= 0 <= ubUb
+                        // The ReLU might affect this entry, we need to figure out how
+
+                        if ( ubLb < 0 )
+                        {
+                            // The upper bound range goes below 0, we we need to zero it out
+                            for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                                _currentLayerUpperBounds[j * currentLayerSize + i] = 0;
+
+                            // We keep the concrete maxiaml value of the upper bound as the bias for this layer
+                            _currentLayerUpperBias[i] = ubUb;
+                        }
+                        else
+                        {
+                            log( "SBT: did not eliminate upper!\n" );
+                        }
+
+                        // The lower bound can be negative, so it is zeroed out also
+                        for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                            _currentLayerLowerBounds[j * currentLayerSize + i] = 0;
+
+                        _currentLayerLowerBias[i] = 0;
+                        lbLb = 0;
                     }
 
-                    // The lower bound can be negative, so it is zeroed out also
-                    for ( unsigned j = 0; j < _inputLayerSize; ++j )
-                        _currentLayerLowerBounds[j * currentLayerSize + i] = 0;
+                    log( Stringf( "\tAfter ReLU: concrete lb: %lf, ub: %lf\n", lbLb, ubUb ) );
+                }
+                else
+                {
+                    // The phase of this ReLU is fixed!
+                    if ( _nodeIndexToReluState[reluIndex] == ReluConstraint::PHASE_ACTIVE )
+                    {
+                        // Active ReLU, bounds are propagated as is
+                    }
+                    else
+                    {
+                        // Inactive ReLU, returns zero
+                        lbLb = 0;
+                        lbUb = 0;
+                        ubLb = 0;
+                        ubUb = 0;
 
-                    _currentLayerLowerBias[i] = 0;
-                    lbLb = 0;
+                        for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                        {
+                            _currentLayerLowerBounds[j * currentLayerSize + i] = 0;
+                            _currentLayerUpperBounds[j * currentLayerSize + i] = 0;
+                        }
+                        _currentLayerLowerBias[i] = 0;
+                        _currentLayerUpperBias[i] = 0;
+                    }
+
+                    log( Stringf( "\tAfter phase-fixed ReLU: concrete lb: %lf, ub: %lf\n", lbLb, ubUb ) );
                 }
             }
-
-            log( Stringf( "\tAfter ReLU: concrete lb: %lf, ub: %lf\n", lbLb, ubUb ) );
 
             // Store the bounds for this neuron
             _lowerBounds[currentLayer][i] = lbLb;

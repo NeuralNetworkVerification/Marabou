@@ -16,6 +16,9 @@
 #include "MString.h"
 #include "Map.h"
 
+// Hack: SBT should not know about ReLUs directly. Fix this.
+#include "ReluConstraint.h"
+
 /*
   A utility class for performing symbolic bound tightening.
   It currently makes the following assumptions:
@@ -38,6 +41,26 @@ public:
         unsigned _columns;
     };
 
+    struct NodeIndex
+    {
+        NodeIndex( unsigned layer, unsigned neuron )
+            : _layer( layer )
+            , _neuron( neuron )
+        {
+        }
+
+        unsigned _layer;
+        unsigned _neuron;
+
+        bool operator<( const NodeIndex &other ) const
+        {
+            if ( _layer != other._layer )
+                return _layer < other._layer;
+
+            return _neuron < other._neuron;
+        }
+    };
+
     SymbolicBoundTightener();
     ~SymbolicBoundTightener();
 
@@ -57,6 +80,7 @@ public:
     double getUpperBound( unsigned layer, unsigned neuron ) const;
 
     static void log( const String &message );
+
 
 private:
     unsigned _numberOfLayers;
@@ -88,6 +112,8 @@ private:
     double *_previousLayerUpperBounds;
     double *_previousLayerLowerBias;
     double *_previousLayerUpperBias;
+
+    Map<NodeIndex, ReluConstraint::PhaseStatus> _nodeIndexToReluState;
 };
 
 #endif // __SymbolicBoundTightener_h__
