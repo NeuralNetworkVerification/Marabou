@@ -602,6 +602,8 @@ double SymbolicBoundTightener::getUpperBound( unsigned layer, unsigned neuron ) 
 
 void SymbolicBoundTightener::log( const String &message )
 {
+    return;
+
     if ( GlobalConfiguration::SYMBOLIC_BOUND_TIGHTENER_LOGGING )
         printf( "%s", message.ascii() );
 }
@@ -614,6 +616,9 @@ void SymbolicBoundTightener::clearReluStatuses()
 void SymbolicBoundTightener::setReluStatus( unsigned layer, unsigned neuron, ReluConstraint::PhaseStatus status )
 {
     _nodeIndexToReluState[NodeIndex( layer, neuron )] = status;
+
+    // if ( status != ReluConstraint::PHASE_NOT_FIXED )
+    //     printf( "SBT: fixed relu!\n" );
 }
 
 void SymbolicBoundTightener::setReluBVariable( unsigned layer, unsigned neuron, unsigned b )
@@ -622,6 +627,17 @@ void SymbolicBoundTightener::setReluBVariable( unsigned layer, unsigned neuron, 
     _bVariableToNodeIndex[b] = NodeIndex( layer, neuron );
 
     // printf( "SBT: Relu var %u: ( %u, %u ) --> x%u\n", _bVariableToNodeIndex.size(), layer, neuron, b );
+}
+
+SymbolicBoundTightener::NodeIndex SymbolicBoundTightener::nodeIndexFromB( unsigned b ) const
+{
+    if ( !_bVariableToNodeIndex.exists( b ) )
+    {
+        printf( "Error! SBT encountered unknown b\n" );
+        exit( 1 );
+    }
+
+    return _bVariableToNodeIndex.at( b );
 }
 
 //

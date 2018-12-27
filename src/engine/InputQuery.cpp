@@ -200,6 +200,8 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
     for ( const auto &constraint : other._plConstraints )
         _plConstraints.append( constraint->duplicateConstraint() );
 
+    _sbt = other._sbt;
+
     return *this;
 }
 

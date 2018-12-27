@@ -76,7 +76,7 @@ public:
       Return a list of smart fixes for violated constraint.
     */
     List<PiecewiseLinearConstraint::Fix> getSmartFixes( ITableau *tableau ) const;
-    
+
     /*
       Returns the list of case splits that this piecewise linear
       constraint breaks into. These splits need to complementary,
@@ -133,6 +133,16 @@ public:
       Returns string with shape: relu, _f, _b
     */
     String serializeToString() const;
+
+    unsigned getB() const
+    {
+        return _b;
+    }
+
+    PhaseStatus getPhaseStatus() const
+    {
+        return _phaseStatus;
+    }
 
 private:
     unsigned _b, _f;

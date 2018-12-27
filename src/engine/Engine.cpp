@@ -139,6 +139,8 @@ bool Engine::solve()
             if ( _smtCore.needToSplit() )
             {
                 _smtCore.performSplit();
+                performSymbolicBoundTightening();
+                // exit( 1 );
                 continue;
             }
 
@@ -1319,8 +1321,63 @@ Engine::ExitCode Engine::getExitCode() const
 
 void Engine::performSymbolicBoundTightening()
 {
+    if ( !_preprocessedQuery._sbt )
+        return;
+
+    printf( "Engine::SBT starting\n" );
     // The SBT is provided as part of the input query, and it already
     // knows the original network topology and weights.
+
+    // Step 1: tell the SBT about input bounds; maybe they were tightened
+    for ( const auto &inputVariable : _preprocessedQuery.getInputVariables() )
+    {
+        // We assume the ordering is correct (i.e., input are 0, 1, 2, 3, 4) but really something more robust is needed
+        double min = _tableau->getLowerBound( inputVariable );
+        double max = _tableau->getUpperBound( inputVariable );
+        _preprocessedQuery._sbt->setInputLowerBound( inputVariable, min );
+        _preprocessedQuery._sbt->setInputUpperBound( inputVariable, max );
+    }
+
+    // Step 2: tell the SBT about the state of the ReLUs
+    for ( const auto &constraint : _plConstraints )
+    {
+        ReluConstraint *relu = (ReluConstraint *)constraint;
+        unsigned b = relu->getB();
+        SymbolicBoundTightener::NodeIndex nodeIndex = _preprocessedQuery._sbt->nodeIndexFromB( b );
+        _preprocessedQuery._sbt->setReluStatus( nodeIndex._layer, nodeIndex._neuron, relu->getPhaseStatus() );
+    }
+
+    // Step 3: perfrom the bound tightening
+    _preprocessedQuery._sbt->run();
+
+    // Stpe 4: extract any tighter bounds that were discovered
+    for ( const auto &pair : _preprocessedQuery._sbt->_nodeIndexToVar )
+    {
+        unsigned layer = pair.first._layer;
+        unsigned neuron = pair.first._neuron;
+        unsigned var = pair.second;
+
+        double lb = _preprocessedQuery._sbt->getLowerBound( layer, neuron );
+        double ub = _preprocessedQuery._sbt->getUpperBound( layer, neuron );
+
+        double currentLb = _tableau->getLowerBound( var );
+        double currentUb = _tableau->getUpperBound( var );
+
+        _tableau->tightenLowerBound( var, lb );
+        _tableau->tightenUpperBound( var, ub );
+
+        if ( FloatUtils::lt( ub, currentUb ) )
+        {
+            // printf( "\tTighter uB: %lf --> %lf\n", currentUb, ub );
+        }
+
+        if ( FloatUtils::gt( lb, currentLb ) )
+        {
+            // printf( "\tTighter lb: %lf --> %lf\n", currentLb, lb );
+        }
+    }
+
+    printf( "Engine::SBT DONE\n" );
 }
 
 //
