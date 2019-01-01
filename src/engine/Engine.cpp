@@ -1324,7 +1324,10 @@ void Engine::performSymbolicBoundTightening()
     if ( !_preprocessedQuery._sbt )
         return;
 
-    printf( "Engine::SBT starting\n" );
+    unsigned numTightenedBounds = 0;
+
+    struct timespec start = TimeUtils::sampleMicro();
+
     // The SBT is provided as part of the input query, and it already
     // knows the original network topology and weights.
 
@@ -1369,15 +1372,21 @@ void Engine::performSymbolicBoundTightening()
         if ( FloatUtils::lt( ub, currentUb ) )
         {
             // printf( "\tTighter uB: %lf --> %lf\n", currentUb, ub );
+            ++numTightenedBounds;
         }
 
         if ( FloatUtils::gt( lb, currentLb ) )
         {
             // printf( "\tTighter lb: %lf --> %lf\n", currentLb, lb );
+            ++numTightenedBounds;
         }
     }
 
-    printf( "Engine::SBT DONE\n" );
+    struct timespec end = TimeUtils::sampleMicro();
+
+    _statistics.addTimeForSBT( TimeUtils::timePassed( start, end ) );
+
+    _statistics.addNumBoundsTightenedInSBT( numTightenedBounds );
 }
 
 //

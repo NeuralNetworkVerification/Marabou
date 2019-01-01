@@ -240,6 +240,7 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
     }
 
     // Tell the SBT about ReLU variable indexing, for later use
+    printf( "\nSBT Relu Mapping:\n" );
     for ( unsigned i = 1; i < numberOfLayers - 1; ++i )
     {
         unsigned layerSize = _acasNeuralNetwork.getLayerSize( i );
@@ -248,8 +249,11 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
         {
             unsigned b = _nodeToB[NodeIndex( i, j )];
             sbt->setReluBVariable( i, j, b );
+
+            printf( "\t<%u, %u> --> b: %u (f: %u)\n", i, j, b, _nodeToF[NodeIndex( i, j )] );
         }
     }
+    printf( "\n\n" );
 }
 
 unsigned AcasParser::getNumInputVaribales() const

@@ -52,6 +52,7 @@ public:
     void setNumPlSMTSplits( unsigned numberOfSplits );
     void setCurrentDegradation( double degradation );
     void addTimeForValidCaseSplit( unsigned long long time );
+    void addTimeForSBT( unsigned long long time );
     void addTimeForStatistics( unsigned long long time );
     void addTimeForExplicitBasisBoundTightening( unsigned long long time );
     void addTimeForConstraintMatrixBoundTightening( unsigned long long time );
@@ -63,7 +64,8 @@ public:
     unsigned getNumPrecisionRestorations() const;
     unsigned long long getTimeSimplexStepsMicro() const;
     unsigned long long getNumConstraintFixingSteps() const;
-    
+
+    void addNumBoundsTightenedInSBT( unsigned bounds );
     /*
       Tableau related statistics.
     */
@@ -257,6 +259,8 @@ private:
     // Total amount of time spent performing valid case splits
     unsigned long long _totalTimePerformingValidCaseSplitsMicro;
 
+    unsigned long long _totalTimePerformingSBT;
+
     // Total amount of time handling statistics printing
     unsigned long long _totalTimeHandlingStatisticsMicro;
 
@@ -285,6 +289,8 @@ private:
     // Printing helpers
     double printPercents( unsigned long long part, unsigned long long total ) const;
     double printAverage( unsigned long long part, unsigned long long total ) const;
+
+    unsigned long long _numBoundsTightenedInSBT;
 };
 
 #endif // __Statistics_h__

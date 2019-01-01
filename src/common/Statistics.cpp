@@ -60,6 +60,7 @@ Statistics::Statistics()
     , _ppNumConstraintsRemoved( 0 )
     , _ppNumEquationsRemoved( 0 )
     , _totalTimePerformingValidCaseSplitsMicro( 0 )
+    , _totalTimePerformingSBT( 0 )
     , _totalTimeHandlingStatisticsMicro( 0 )
     , _totalNumberOfValidCaseSplits( 0 )
     , _totalTimeExplicitBasisBoundTighteningMicro( 0 )
@@ -68,6 +69,7 @@ Statistics::Statistics()
     , _totalTimeConstraintMatrixBoundTighteningMicro( 0 )
     , _totalTimeApplyingStoredTighteningsMicro( 0 )
     , _totalTimeSmtCoreMicro( 0 )
+    , _numBoundsTightenedInSBT( 0 )
 {
 }
 
@@ -152,6 +154,11 @@ void Statistics::print()
             , _totalTimeSmtCoreMicro / 1000
             );
 
+    printf( "\t\t[%.2lf%%] SBT: %llu milli\n"
+            , printPercents( _totalTimePerformingSBT, _timeMainLoopMicro )
+            , _totalTimePerformingSBT / 1000
+            );
+
     unsigned long long total =
         _timeSimplexStepsMicro +
         _timeConstraintFixingStepsMicro +
@@ -162,7 +169,8 @@ void Statistics::print()
         _totalTimePrecisionRestoration +
         _totalTimeConstraintMatrixBoundTighteningMicro +
         _totalTimeApplyingStoredTighteningsMicro +
-        _totalTimeSmtCoreMicro;
+        _totalTimeSmtCoreMicro +
+        _totalTimePerformingSBT;
 
     printf( "\t\t[%.2lf%%] Unaccounted for: %llu milli\n"
             , printPercents( _timeMainLoopMicro - total, _timeMainLoopMicro )
@@ -267,6 +275,9 @@ void Statistics::print()
             , _pseNumResetReferenceSpace
             , _pseNumResetReferenceSpace > 0 ?
             (unsigned)((double)_pseNumIterations / _pseNumResetReferenceSpace) : 0 );
+
+    printf( "\t--- SBT ---\n" );
+    printf( "\tNumber of tightened bounds: %llu\n", _numBoundsTightenedInSBT );
 }
 
 double Statistics::printPercents( unsigned long long part, unsigned long long total ) const
@@ -530,6 +541,11 @@ void Statistics::addTimeForValidCaseSplit( unsigned long long time )
     ++_totalNumberOfValidCaseSplits;
 }
 
+void Statistics::addTimeForSBT( unsigned long long time )
+{
+    _totalTimePerformingSBT += time;
+}
+
 void Statistics::addTimeForStatistics( unsigned long long time )
 {
     _totalTimeHandlingStatisticsMicro += time;
@@ -636,6 +652,11 @@ void Statistics::printStartingIteration( unsigned long long iteration, String me
 {
     if ( _numMainLoopIterations >= iteration )
         printf( "DBG_PRINT: %s\n", message.ascii() );
+}
+
+void Statistics::addNumBoundsTightenedInSBT( unsigned bounds )
+{
+    _numBoundsTightenedInSBT += bounds;
 }
 
 //
