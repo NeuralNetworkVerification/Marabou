@@ -549,10 +549,13 @@ void SymbolicBoundTightener::run()
                     // The phase of this ReLU is fixed!
                     if ( _nodeIndexToReluState[reluIndex] == ReluConstraint::PHASE_ACTIVE )
                     {
+                        // printf( "Relu <%u,%u> is ACTIVE, leaving equations as is\n", reluIndex._layer, reluIndex._neuron );
                         // Active ReLU, bounds are propagated as is
                     }
                     else
                     {
+                        // printf( "Relu <%u,%u> is INACTIVE, zeroing out equations\n", reluIndex._layer, reluIndex._neuron );
+
                         // Inactive ReLU, returns zero
                         lbLb = 0;
                         lbUb = 0;

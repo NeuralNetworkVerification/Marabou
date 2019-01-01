@@ -162,97 +162,101 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
     for ( unsigned i = 0; i < outputLayerSize; ++i )
         inputQuery.markOutputVariable( _nodeToB[NodeIndex( numberOfLayers - 1, i )], i );
 
-    // Prepare the symbolic bound tightener
-    SymbolicBoundTightener *sbt = new SymbolicBoundTightener;
-
-    sbt->setNumberOfLayers( numberOfLayers );
-
-    for ( unsigned i = 0; i < numberOfLayers; ++i )
-        sbt->setLayerSize( i, _acasNeuralNetwork.getLayerSize( i ) );
-
-    sbt->allocateWeightAndBiasSpace();
-
-    // Biases
-    for ( unsigned i = 1; i < numberOfLayers; ++i )
-        for ( unsigned j = 0; j < _acasNeuralNetwork.getLayerSize( i ); ++j )
-            sbt->setBias( i, j, _acasNeuralNetwork.getBias( i, j ) );
-
-    // Weights
-    for ( unsigned layer = 0; layer < numberOfLayers - 1; ++layer )
+    if ( GlobalConfiguration::USE_SBT )
     {
-        unsigned targetLayerSize = _acasNeuralNetwork.getLayerSize( layer + 1 );
-        for ( unsigned target = 0; target < targetLayerSize; ++target )
+        // Prepare the symbolic bound tightener
+        SymbolicBoundTightener *sbt = new SymbolicBoundTightener;
+
+        sbt->setNumberOfLayers( numberOfLayers );
+
+        for ( unsigned i = 0; i < numberOfLayers; ++i )
+            sbt->setLayerSize( i, _acasNeuralNetwork.getLayerSize( i ) );
+
+        sbt->allocateWeightAndBiasSpace();
+
+        // Biases
+        for ( unsigned i = 1; i < numberOfLayers; ++i )
+            for ( unsigned j = 0; j < _acasNeuralNetwork.getLayerSize( i ); ++j )
+                sbt->setBias( i, j, _acasNeuralNetwork.getBias( i, j ) );
+
+        // Weights
+        for ( unsigned layer = 0; layer < numberOfLayers - 1; ++layer )
         {
-            for ( unsigned source = 0; source < _acasNeuralNetwork.getLayerSize( layer ); ++source )
-                sbt->setWeight( layer, source, target, _acasNeuralNetwork.getWeight( layer, source, target ) );
+            unsigned targetLayerSize = _acasNeuralNetwork.getLayerSize( layer + 1 );
+            for ( unsigned target = 0; target < targetLayerSize; ++target )
+            {
+                for ( unsigned source = 0; source < _acasNeuralNetwork.getLayerSize( layer ); ++source )
+                    sbt->setWeight( layer, source, target, _acasNeuralNetwork.getWeight( layer, source, target ) );
+            }
         }
-    }
 
-    // Initial bounds
-    for ( unsigned i = 0; i < inputLayerSize; ++i )
-    {
-        double min, max;
-        _acasNeuralNetwork.getInputRange( i, min, max );
-
-        sbt->setInputLowerBound( i, min );
-        sbt->setInputUpperBound( i, max );
-    }
-
-    inputQuery._sbt = sbt;
-
-    sbt->run();
-
-    // Extract the bounds for the intermediate layers
-    for ( unsigned i = 1; i < numberOfLayers - 1; ++i )
-    {
-        for ( unsigned j = 0; j < _acasNeuralNetwork.getLayerSize( i ); ++j )
+        // Initial bounds
+        for ( unsigned i = 0; i < inputLayerSize; ++i )
         {
-            double lb = sbt->getLowerBound( i, j );
-            double ub = sbt->getUpperBound( i, j );
+            double min, max;
+            _acasNeuralNetwork.getInputRange( i, min, max );
 
-            // These bounds are for the F variales, after the relu activation
+            sbt->setInputLowerBound( i, min );
+            sbt->setInputUpperBound( i, max );
+        }
 
-            if ( lb > 0 )
-                inputQuery.setLowerBound( _nodeToF[NodeIndex(i, j)], lb );
+        inputQuery._sbt = sbt;
+
+        sbt->run();
+
+        // Extract the bounds for the intermediate layers
+        for ( unsigned i = 1; i < numberOfLayers - 1; ++i )
+        {
+            for ( unsigned j = 0; j < _acasNeuralNetwork.getLayerSize( i ); ++j )
+            {
+                double lb = sbt->getLowerBound( i, j );
+                double ub = sbt->getUpperBound( i, j );
+
+                // These bounds are for the F variales, after the relu activation
+
+                if ( lb > 0 )
+                    inputQuery.setLowerBound( _nodeToF[NodeIndex(i, j)], lb );
+
+                if ( ub < FloatUtils::infinity() )
+                    inputQuery.setUpperBound( _nodeToF[NodeIndex(i, j)], ub );
+
+                sbt->_nodeIndexToVar[SymbolicBoundTightener::NodeIndex(i, j)] = _nodeToF[NodeIndex(i, j)];
+            }
+        }
+
+        // Extract the bounds for the output layer
+        unsigned outputLayer = numberOfLayers - 1;
+
+        for ( unsigned i = 0; i < _acasNeuralNetwork.getLayerSize( outputLayer ); ++i )
+        {
+            double lb = sbt->getLowerBound( outputLayer, i );
+            double ub = sbt->getUpperBound( outputLayer, i );
+
+            if ( lb > FloatUtils::negativeInfinity() )
+                inputQuery.setLowerBound( _nodeToB[NodeIndex( outputLayer, i )], lb );
 
             if ( ub < FloatUtils::infinity() )
-                inputQuery.setUpperBound( _nodeToF[NodeIndex(i, j)], ub );
+                inputQuery.setUpperBound( _nodeToB[NodeIndex( outputLayer, i )], ub );
 
-            sbt->_nodeIndexToVar[SymbolicBoundTightener::NodeIndex(i, j)] = _nodeToF[NodeIndex(i, j)];
+            sbt->_nodeIndexToVar[SymbolicBoundTightener::NodeIndex( outputLayer, i)] = _nodeToB[NodeIndex( outputLayer, i)];
         }
-    }
 
-    // Extract the bounds for the output layer
-    unsigned outputLayer = numberOfLayers - 1;
-
-    for ( unsigned i = 0; i < _acasNeuralNetwork.getLayerSize( outputLayer ); ++i )
-    {
-        double lb = sbt->getLowerBound( outputLayer, i );
-        double ub = sbt->getUpperBound( outputLayer, i );
-
-        if ( lb > FloatUtils::negativeInfinity() )
-            inputQuery.setLowerBound( _nodeToB[NodeIndex( outputLayer, i )], lb );
-
-        if ( ub < FloatUtils::infinity() )
-            inputQuery.setUpperBound( _nodeToB[NodeIndex( outputLayer, i )], ub );
-
-        sbt->_nodeIndexToVar[SymbolicBoundTightener::NodeIndex( outputLayer, i)] = _nodeToB[NodeIndex( outputLayer, i)];
-    }
-
-    // Tell the SBT about ReLU variable indexing, for later use
-    printf( "\nSBT Relu Mapping:\n" );
-    for ( unsigned i = 1; i < numberOfLayers - 1; ++i )
-    {
-        unsigned layerSize = _acasNeuralNetwork.getLayerSize( i );
-
-        for ( unsigned j = 0; j < layerSize; ++j )
+        // Tell the SBT about ReLU variable indexing, for later use
+        printf( "\nSBT Relu Mapping:\n" );
+        for ( unsigned i = 1; i < numberOfLayers - 1; ++i )
         {
-            unsigned b = _nodeToB[NodeIndex( i, j )];
-            sbt->setReluBVariable( i, j, b );
+            unsigned layerSize = _acasNeuralNetwork.getLayerSize( i );
 
-            printf( "\t<%u, %u> --> b: %u (f: %u)\n", i, j, b, _nodeToF[NodeIndex( i, j )] );
+            for ( unsigned j = 0; j < layerSize; ++j )
+            {
+                unsigned b = _nodeToB[NodeIndex( i, j )];
+                sbt->setReluBVariable( i, j, b );
+
+                printf( "\t<%u, %u> --> b: %u (f: %u)\n", i, j, b, _nodeToF[NodeIndex( i, j )] );
+            }
         }
     }
+
     printf( "\n\n" );
 }
 

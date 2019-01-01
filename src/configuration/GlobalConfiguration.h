@@ -115,6 +115,8 @@ public:
       Bound tightening options
     */
 
+    static const bool USE_SBT;
+
     enum ExplicitBasisBoundTighteningType {
         // Compute the inverse basis matrix and use it
         COMPUTE_INVERTED_BASIS_MATRIX = 0,

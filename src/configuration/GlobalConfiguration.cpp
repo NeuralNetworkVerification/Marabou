@@ -74,6 +74,8 @@ const bool GlobalConfiguration::SYMBOLIC_BOUND_TIGHTENER_LOGGING = true;
 const bool GlobalConfiguration::USE_SMART_FIX = false;
 const bool GlobalConfiguration::USE_LEAST_FIX = false;
 
+const bool GlobalConfiguration::USE_SBT = true;
+
 void GlobalConfiguration::print()
 {
     printf( "****************************\n" );

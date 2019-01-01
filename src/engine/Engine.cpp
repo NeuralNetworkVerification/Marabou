@@ -1326,6 +1326,14 @@ void Engine::performSymbolicBoundTightening()
 
     unsigned numTightenedBounds = 0;
 
+    // printf( "SBT DEBUG: dumping states of all ReLUs:\n" );
+    // for ( const auto &constraint : _plConstraints )
+    // {
+    //     String reluString;
+    //     constraint->dump( reluString );
+    //     printf( "\t%s\n", reluString.ascii() );
+    // }
+
     struct timespec start = TimeUtils::sampleMicro();
 
     // The SBT is provided as part of the input query, and it already
@@ -1337,6 +1345,9 @@ void Engine::performSymbolicBoundTightening()
         // We assume the ordering is correct (i.e., input are 0, 1, 2, 3, 4) but really something more robust is needed
         double min = _tableau->getLowerBound( inputVariable );
         double max = _tableau->getUpperBound( inputVariable );
+
+        // printf( "Input variable: %u. Range: [%lf, %lf]\n", inputVariable, min, max );
+
         _preprocessedQuery._sbt->setInputLowerBound( inputVariable, min );
         _preprocessedQuery._sbt->setInputUpperBound( inputVariable, max );
     }
