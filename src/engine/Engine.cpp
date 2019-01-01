@@ -184,6 +184,7 @@ bool Engine::solve()
                 // For debugging purposes
                 checkBoundCompliancyWithDebugSolution();
 
+                performSymbolicBoundTightening();
                 applyAllValidConstraintCaseSplits();
                 continue;
             }
