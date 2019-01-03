@@ -23,6 +23,8 @@
 #include "Statistics.h"
 #include "Tightening.h"
 
+#include "ReluConstraint.h"
+
 Preprocessor::Preprocessor()
     : _statistics( NULL )
 {
@@ -61,8 +63,9 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
         continueTightening = processEquations();
         continueTightening = processConstraints() || continueTightening;
 
-        if ( attemptVariableElimination )
-            continueTightening = processIdenticalVariables() || continueTightening;
+        // For SBT, commenting this out for now
+        // if ( attemptVariableElimination )
+        //     continueTightening = processIdenticalVariables() || continueTightening;
 
         if ( _statistics )
             _statistics->ppIncNumTighteningIterations();
@@ -86,6 +89,7 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
 
 void Preprocessor::makeAllEquationsEqualities()
 {
+    unsigned count = 0;
     for ( auto &equation : _preprocessed.getEquations() )
     {
         if ( equation._type == Equation::EQ )
@@ -103,7 +107,12 @@ void Preprocessor::makeAllEquationsEqualities()
         equation._type = Equation::EQ;
 
         equation.addAddend( 1, auxVariable );
+
+        ++count;
     }
+
+    printf( "PP: added %u aux variables to turn equations into equalities\n", count );
+
 }
 
 bool Preprocessor::processEquations()
@@ -538,23 +547,42 @@ void Preprocessor::eliminateVariables()
     // the constraints themselves if they become obsolete.
     List<PiecewiseLinearConstraint *> &constraints( _preprocessed.getPiecewiseLinearConstraints() );
     List<PiecewiseLinearConstraint *>::iterator constraint = constraints.begin();
+    unsigned count = 0;
     while ( constraint != constraints.end() )
     {
         List<unsigned> participatingVariables = (*constraint)->getParticipatingVariables();
         for ( unsigned variable : participatingVariables )
         {
             if ( _fixedVariables.exists( variable ) )
+            {
+                String asString;
+                (*constraint)->dump( asString );
+                printf( "PP: Informing relu about eliminated var!! Relu: %s, variable: x%u\n", asString.ascii(), variable );
                 (*constraint)->eliminateVariable( variable, _fixedVariables.at( variable ) );
+
+                ++count;
+            }
         }
 
         if ( (*constraint)->constraintObsolete() )
         {
+            if ( _preprocessed._sbt )
+            {
+                ReluConstraint *relu = (ReluConstraint *)(*constraint);
+                unsigned b = relu->getB();
+
+                SymbolicBoundTightener::NodeIndex nodeIndex = _preprocessed._sbt->nodeIndexFromB( b );
+                _preprocessed._sbt->setEliminatedRelu( nodeIndex._layer, nodeIndex._neuron, relu->getPhaseStatus() );
+            }
+
             _statistics->ppIncNumConstraintsRemoved();
             constraint = constraints.erase( constraint );
         }
         else
             ++constraint;
 	}
+
+    printf( "PP: total num of eliminated relu constraints: %u\n", count );
 
     // Let the remaining piecewise-lienar constraints know of any changes in indices.
     for ( const auto &constraint : constraints )
@@ -563,7 +591,15 @@ void Preprocessor::eliminateVariables()
         for ( unsigned variable : participatingVariables )
         {
             if ( _oldIndexToNewIndex.at( variable ) != variable )
+            {
+                printf( "PP: Informing relu about renamed var!! x%u --> x%u\n", variable, _oldIndexToNewIndex.at( variable ) );
                 constraint->updateVariableIndex( variable, _oldIndexToNewIndex.at( variable ) );
+
+                if ( _preprocessed._sbt )
+                {
+                    _preprocessed._sbt->updateVariableIndex( variable, _oldIndexToNewIndex.at( variable ) );
+                }
+            }
         }
 	}
 
@@ -671,6 +707,8 @@ void Preprocessor::setStatistics( Statistics *statistics )
 
 void Preprocessor::addPlAuxiliaryEquations()
 {
+    unsigned count = 0;
+
     // First, collect all the new equations
     const List<PiecewiseLinearConstraint *> &plConstraints
         ( _preprocessed.getPiecewiseLinearConstraints() );
@@ -680,7 +718,12 @@ void Preprocessor::addPlAuxiliaryEquations()
         constraint->getAuxiliaryEquations( newEquations );
 
     for ( Equation equation : newEquations )
+    {
+        ++count;
         _preprocessed.addEquation( equation );
+    }
+
+    printf( "PP: added %u aux equations\n", count );
 }
 
 void Preprocessor::adjustInputAndOutputMarkings()

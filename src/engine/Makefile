@@ -3,7 +3,8 @@ ROOT_DIR = ../..
 include $(ROOT_DIR)/Places.mk
 
 SUBDIRS += \
-	tests \
+
+#tests \
 
 LOCAL_INCLUDES += \
 	.. \
@@ -28,6 +29,8 @@ CFLAGS = \
 	-Wno-deprecated \
 	-std=c++0x \
 	-O3 \
+	\
+	-DDEBUG_ON \
 
 include $(BASIS_FACTORIZATION_DIR)/Sources.mk
 include $(COMMON_DIR)/Sources.mk

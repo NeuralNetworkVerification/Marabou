@@ -91,11 +91,16 @@ public:
 
     static void log( const String &message );
 
+    // This permanently sets a relu's status
+    void setEliminatedRelu( unsigned layer, unsigned neuron, ReluConstraint::PhaseStatus status );
 
     void setReluBVariable( unsigned layer, unsigned neuron, unsigned b );
     NodeIndex nodeIndexFromB( unsigned b ) const;
 
     Map<NodeIndex, unsigned> _nodeIndexToVar; // For bound tightening
+
+    void updateVariableIndex( unsigned oldIndex, unsigned newIndex );
+
 private:
     unsigned _numberOfLayers;
     unsigned *_layerSizes;
@@ -131,6 +136,7 @@ private:
     Map<unsigned, NodeIndex> _bVariableToNodeIndex;
 
     Map<NodeIndex, ReluConstraint::PhaseStatus> _nodeIndexToReluState;
+    Map<NodeIndex, ReluConstraint::PhaseStatus> _nodeIndexToEliminatedReluState;
 };
 
 #endif // __SymbolicBoundTightener_h__

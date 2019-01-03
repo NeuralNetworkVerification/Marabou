@@ -30,6 +30,7 @@ SymbolicBoundTightener::SymbolicBoundTightener()
     , _previousLayerLowerBias( NULL )
     , _previousLayerUpperBias( NULL )
 {
+    ASSERT( !GlobalConfiguration::USE_COLUMN_MERGING_EQUATIONS );
 }
 
 SymbolicBoundTightener::~SymbolicBoundTightener()
@@ -484,11 +485,27 @@ void SymbolicBoundTightener::run()
             // Handle the ReLU activation. We know that:
             //   lbLb <= true LB <= lbUb
             //   ubLb <= true UB <= ubUb
+
             if ( currentLayer < _numberOfLayers - 1 )
             {
-                // If the ReLU phase is not fixed yet, do the usual propagation:
                 NodeIndex reluIndex( currentLayer, i );
-                if ( !_nodeIndexToReluState.exists( reluIndex ) || _nodeIndexToReluState[reluIndex] == ReluConstraint::PHASE_NOT_FIXED )
+
+                ReluConstraint::PhaseStatus reluPhase = ReluConstraint::PHASE_NOT_FIXED;
+                if ( _nodeIndexToEliminatedReluState.exists( reluIndex ) )
+                {
+                    reluPhase = _nodeIndexToEliminatedReluState[reluIndex];
+                    printf( "Relu (%u,%u) has been ELIMINATED. Status: %u\n", currentLayer, i, reluPhase );
+                    ASSERT( reluPhase != ReluConstraint::PHASE_NOT_FIXED );
+                }
+                else if ( _nodeIndexToReluState.exists( reluIndex ) )
+                {
+                    reluPhase = _nodeIndexToReluState[reluIndex];
+                    if ( reluPhase != ReluConstraint::PHASE_NOT_FIXED )
+                        printf( "Relu (%u,%u) has been FIXED. Status: %u\n", currentLayer, i, reluPhase );
+                }
+
+                // If the ReLU phase is not fixed yet, do the usual propagation:
+                if ( reluPhase == ReluConstraint::PHASE_NOT_FIXED )
                 {
 
                     if ( ubUb <= 0 )
@@ -547,7 +564,7 @@ void SymbolicBoundTightener::run()
                 else
                 {
                     // The phase of this ReLU is fixed!
-                    if ( _nodeIndexToReluState[reluIndex] == ReluConstraint::PHASE_ACTIVE )
+                    if ( reluPhase == ReluConstraint::PHASE_ACTIVE )
                     {
                         // printf( "Relu <%u,%u> is ACTIVE, leaving equations as is\n", reluIndex._layer, reluIndex._neuron );
                         // Active ReLU, bounds are propagated as is
@@ -641,6 +658,40 @@ SymbolicBoundTightener::NodeIndex SymbolicBoundTightener::nodeIndexFromB( unsign
     }
 
     return _bVariableToNodeIndex.at( b );
+}
+
+void SymbolicBoundTightener::setEliminatedRelu( unsigned layer, unsigned neuron, ReluConstraint::PhaseStatus status )
+{
+    ASSERT( status != ReluConstraint::PHASE_NOT_FIXED );
+
+    _nodeIndexToEliminatedReluState[NodeIndex( layer, neuron )] = status;
+
+    printf( "SBT: relu eliminated! (%u, %u), set to %u\n", layer, neuron, status );
+}
+
+void SymbolicBoundTightener::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
+{
+    // oldIndex can only appear once in the maps
+
+    for ( auto &it : _nodeIndexToBVariable )
+    {
+        if ( it.second == oldIndex )
+            it.second = newIndex;
+    }
+
+    if ( _bVariableToNodeIndex.exists( oldIndex ) )
+    {
+        NodeIndex value = _bVariableToNodeIndex[oldIndex];
+        _bVariableToNodeIndex.erase( oldIndex );
+        _bVariableToNodeIndex[newIndex] = value;
+    }
+
+    // Update Fs
+    for ( auto &it : _nodeIndexToVar )
+    {
+        if ( it.second == oldIndex )
+            it.second = newIndex;
+    }
 }
 
 //

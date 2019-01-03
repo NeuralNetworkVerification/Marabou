@@ -1325,15 +1325,16 @@ void Engine::performSymbolicBoundTightening()
     if ( !_preprocessedQuery._sbt )
         return;
 
+    _preprocessedQuery._sbt->clearReluStatuses();
     unsigned numTightenedBounds = 0;
 
-    // printf( "SBT DEBUG: dumping states of all ReLUs:\n" );
-    // for ( const auto &constraint : _plConstraints )
-    // {
-    //     String reluString;
-    //     constraint->dump( reluString );
-    //     printf( "\t%s\n", reluString.ascii() );
-    // }
+    printf( "SBT DEBUG: dumping states of all (%u) ReLUs:\n", _plConstraints.size() );
+    for ( const auto &constraint : _plConstraints )
+    {
+        String reluString;
+        constraint->dump( reluString );
+        printf( "\t%s\n", reluString.ascii() );
+    }
 
     struct timespec start = TimeUtils::sampleMicro();
 
@@ -1344,8 +1345,24 @@ void Engine::performSymbolicBoundTightening()
     for ( const auto &inputVariable : _preprocessedQuery.getInputVariables() )
     {
         // We assume the ordering is correct (i.e., input are 0, 1, 2, 3, 4) but really something more robust is needed
-        double min = _tableau->getLowerBound( inputVariable );
-        double max = _tableau->getUpperBound( inputVariable );
+
+        double min, max;
+        if ( _preprocessor.variableIsFixed( inputVariable ) )
+        {
+            min = _preprocessor.getFixedValue( inputVariable );
+            max = min;
+        }
+        else if ( _preprocessor.variableIsMerged( inputVariable ) )
+        {
+            unsigned variable = _preprocessor.getMergedIndex( inputVariable );
+            min = _tableau->getLowerBound( variable );
+            max = _tableau->getUpperBound( variable );
+        }
+        else
+        {
+            min = _tableau->getLowerBound( inputVariable );
+            max = _tableau->getUpperBound( inputVariable );
+        }
 
         // printf( "Input variable: %u. Range: [%lf, %lf]\n", inputVariable, min, max );
 
@@ -1371,6 +1388,14 @@ void Engine::performSymbolicBoundTightening()
         unsigned layer = pair.first._layer;
         unsigned neuron = pair.first._neuron;
         unsigned var = pair.second;
+
+        if ( _preprocessor.variableIsFixed( var ) )
+        {
+            // We've learned a bound for a fixed variable, disregard
+            continue;
+        }
+
+        // unsigned varIndex = _preprocessor.getNewIndex( var );
 
         double lb = _preprocessedQuery._sbt->getLowerBound( layer, neuron );
         double ub = _preprocessedQuery._sbt->getUpperBound( layer, neuron );
