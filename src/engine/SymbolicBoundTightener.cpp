@@ -504,6 +504,8 @@ void SymbolicBoundTightener::run()
                     //     printf( "Relu (%u,%u) has been FIXED. Status: %u\n", currentLayer, i, reluPhase );
                 }
 
+                bool useNeurifyTrick = true;
+
                 // If the ReLU phase is not fixed yet, do the usual propagation:
                 if ( reluPhase == ReluConstraint::PHASE_NOT_FIXED )
                 {
@@ -539,24 +541,66 @@ void SymbolicBoundTightener::run()
 
                         if ( ubLb < 0 )
                         {
-                            // The upper bound range goes below 0, we we need to zero it out
-                            for ( unsigned j = 0; j < _inputLayerSize; ++j )
-                                _currentLayerUpperBounds[j * currentLayerSize + i] = 0;
+                            if ( useNeurifyTrick )
+                            {
+                                // Concretize the upper bound using the Ehler's-like sapproximation
 
-                            // We keep the concrete maxiaml value of the upper bound as the bias for this layer
-                            _currentLayerUpperBias[i] = ubUb;
+                                for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                                    _currentLayerUpperBounds[j * currentLayerSize + i] =
+                                        _currentLayerUpperBounds[j * currentLayerSize + i] * ubUb / ( ubUb - ubLb );
+
+                                // Do the same for the bias, and then adjust
+                                _currentLayerUpperBias[i] = _currentLayerUpperBias[i] * ubUb / ( ubUb - ubLb );
+                                _currentLayerUpperBias[i] -= ubUb * ubLb / ( ubUb - ubLb );
+                            }
+                            else
+                            {
+                                // No Neurify //
+
+                                // The upper bound range goes below 0, we we need to zero it out
+                                for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                                    _currentLayerUpperBounds[j * currentLayerSize + i] = 0;
+
+                                // We keep the concrete maxiaml value of the upper bound as the bias for this layer
+                                _currentLayerUpperBias[i] = ubUb;
+                            }
                         }
                         else
                         {
                             log( "SBT: did not eliminate upper!\n" );
                         }
 
-                        // The lower bound can be negative, so it is zeroed out also
-                        for ( unsigned j = 0; j < _inputLayerSize; ++j )
-                            _currentLayerLowerBounds[j * currentLayerSize + i] = 0;
+                        if ( useNeurifyTrick )
+                        {
+                            if ( lbUb < 0 )
+                            {
+                                for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                                    _currentLayerLowerBounds[j * currentLayerSize + i] = 0;
 
-                        _currentLayerLowerBias[i] = 0;
-                        lbLb = 0;
+                                _currentLayerLowerBias[i] = 0;
+                            }
+                            else
+                            {
+                                for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                                    _currentLayerLowerBounds[j * currentLayerSize + i] =
+                                        _currentLayerLowerBounds[j * currentLayerSize + i] * lbUb / ( lbUb - lbLb );
+
+                            }
+
+                            lbLb = 0; // Needed?
+                        }
+                        else
+                        {
+                            // No Neurify //
+
+                            // The lower bound can be negative, so it is zeroed out also
+                            for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                                _currentLayerLowerBounds[j * currentLayerSize + i] = 0;
+
+                            _currentLayerLowerBias[i] = 0;
+                            lbLb = 0;
+                        }
+
                     }
 
                     log( Stringf( "\tAfter ReLU: concrete lb: %lf, ub: %lf\n", lbLb, ubUb ) );
