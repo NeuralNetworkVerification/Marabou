@@ -134,6 +134,11 @@ public:
         _container.erase( key );
     }
 
+    iterator erase( iterator it )
+    {
+        return _container.erase( it );
+    }
+
     iterator begin()
     {
         return _container.begin();

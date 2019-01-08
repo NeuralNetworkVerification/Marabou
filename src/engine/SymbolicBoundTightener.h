@@ -97,9 +97,10 @@ public:
     void setReluBVariable( unsigned layer, unsigned neuron, unsigned b );
     NodeIndex nodeIndexFromB( unsigned b ) const;
 
-    Map<NodeIndex, unsigned> _nodeIndexToVar; // For bound tightening
+    Map<NodeIndex, unsigned> _nodeIndexToFVar; // For bound tightening
 
-    void updateVariableIndex( unsigned oldIndex, unsigned newIndex );
+    // void updateVariableIndex( unsigned oldIndex, unsigned newIndex );
+    void updateVariableIndieces( const Map<unsigned, unsigned> &oldIndexToNewIndex );
 
 private:
     unsigned _numberOfLayers;

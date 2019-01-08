@@ -494,14 +494,14 @@ void SymbolicBoundTightener::run()
                 if ( _nodeIndexToEliminatedReluState.exists( reluIndex ) )
                 {
                     reluPhase = _nodeIndexToEliminatedReluState[reluIndex];
-                    printf( "Relu (%u,%u) has been ELIMINATED. Status: %u\n", currentLayer, i, reluPhase );
+                    // printf( "Relu (%u,%u) has been ELIMINATED. Status: %u\n", currentLayer, i, reluPhase );
                     ASSERT( reluPhase != ReluConstraint::PHASE_NOT_FIXED );
                 }
                 else if ( _nodeIndexToReluState.exists( reluIndex ) )
                 {
                     reluPhase = _nodeIndexToReluState[reluIndex];
-                    if ( reluPhase != ReluConstraint::PHASE_NOT_FIXED )
-                        printf( "Relu (%u,%u) has been FIXED. Status: %u\n", currentLayer, i, reluPhase );
+                    // if ( reluPhase != ReluConstraint::PHASE_NOT_FIXED )
+                    //     printf( "Relu (%u,%u) has been FIXED. Status: %u\n", currentLayer, i, reluPhase );
                 }
 
                 // If the ReLU phase is not fixed yet, do the usual propagation:
@@ -608,6 +608,8 @@ void SymbolicBoundTightener::run()
         memcpy( _previousLayerLowerBias, _currentLayerLowerBias, sizeof(double) * _maxLayerSize );
         memcpy( _previousLayerUpperBias, _currentLayerUpperBias, sizeof(double) * _maxLayerSize );
     }
+
+    // printf( "\n" );
 }
 
 double SymbolicBoundTightener::getLowerBound( unsigned layer, unsigned neuron ) const
@@ -669,29 +671,79 @@ void SymbolicBoundTightener::setEliminatedRelu( unsigned layer, unsigned neuron,
     printf( "SBT: relu eliminated! (%u, %u), set to %u\n", layer, neuron, status );
 }
 
-void SymbolicBoundTightener::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
+void SymbolicBoundTightener::updateVariableIndieces( const Map<unsigned, unsigned> &oldIndexToNewIndex )
 {
-    // oldIndex can only appear once in the maps
 
-    for ( auto &it : _nodeIndexToBVariable )
+    // printf( "SBT: updateVariableIndex: x%u --> x%u\n", oldIndex, newIndex );
+
+    auto bIt = _nodeIndexToBVariable.begin();
+    while ( bIt != _nodeIndexToBVariable.end() )
     {
-        if ( it.second == oldIndex )
-            it.second = newIndex;
+        unsigned b = bIt->second;
+        if ( !oldIndexToNewIndex.exists( b ) )
+        {
+            // This variable has been eliminated, remove from map
+            bIt = _nodeIndexToBVariable.erase( bIt );
+        }
+        else
+        {
+            if ( oldIndexToNewIndex[b] == b )
+            {
+                // Index hasn't changed, skip
+            }
+            else
+            {
+                // Index has changed
+                bIt->second = oldIndexToNewIndex[b];
+            }
+
+            ++bIt;
+            continue;
+        }
     }
 
-    if ( _bVariableToNodeIndex.exists( oldIndex ) )
+    // Recreate the inverse map
+    _bVariableToNodeIndex.clear();
+    for ( const auto &entry : _nodeIndexToBVariable )
+        _bVariableToNodeIndex[entry.second] = entry.first;
+
+    // printf( "Dumping F map before change (size = %u)\n", _nodeIndexToFVar.size() );
+    // for ( auto &it : _nodeIndexToFVar )
+    // {
+    //     printf( "<%u, %u> --> x%u\n", it.first._layer, it.first._neuron, it.second );
+    // }
+
+    auto fIt = _nodeIndexToFVar.begin();
+    while ( fIt != _nodeIndexToFVar.end() )
     {
-        NodeIndex value = _bVariableToNodeIndex[oldIndex];
-        _bVariableToNodeIndex.erase( oldIndex );
-        _bVariableToNodeIndex[newIndex] = value;
+        unsigned f = fIt->second;
+        if ( !oldIndexToNewIndex.exists( f ) )
+        {
+            // This variable has been eliminated, remove from map
+            fIt = _nodeIndexToFVar.erase( fIt );
+        }
+        else
+        {
+            if ( oldIndexToNewIndex[f] == f )
+            {
+                // Index hasn't changed, skip
+            }
+            else
+            {
+                // Index has changed
+                fIt->second = oldIndexToNewIndex[f];
+            }
+
+            ++fIt;
+            continue;
+        }
     }
 
-    // Update Fs
-    for ( auto &it : _nodeIndexToVar )
-    {
-        if ( it.second == oldIndex )
-            it.second = newIndex;
-    }
+    // printf( "Dumping F map after change (size = %u)\n", _nodeIndexToFVar.size() );
+    // for ( auto &it : _nodeIndexToFVar )
+    // {
+    //     printf( "<%u, %u> --> x%u\n", it.first._layer, it.first._neuron, it.second );
+    // }
 }
 
 //

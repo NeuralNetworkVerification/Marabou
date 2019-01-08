@@ -279,8 +279,8 @@ private:
     /*
       Apply all valid case splits proposed by the constraints.
     */
-    void applyAllValidConstraintCaseSplits();
-    void applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constraint );
+    bool applyAllValidConstraintCaseSplits();
+    bool applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constraint );
 
     /*
       Update statitstics, print them if needed.

@@ -220,7 +220,7 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
                 if ( ub < FloatUtils::infinity() )
                     inputQuery.setUpperBound( _nodeToF[NodeIndex(i, j)], ub );
 
-                sbt->_nodeIndexToVar[SymbolicBoundTightener::NodeIndex(i, j)] = _nodeToF[NodeIndex(i, j)];
+                sbt->_nodeIndexToFVar[SymbolicBoundTightener::NodeIndex(i, j)] = _nodeToF[NodeIndex(i, j)];
             }
         }
 
@@ -238,7 +238,7 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
             if ( ub < FloatUtils::infinity() )
                 inputQuery.setUpperBound( _nodeToB[NodeIndex( outputLayer, i )], ub );
 
-            sbt->_nodeIndexToVar[SymbolicBoundTightener::NodeIndex( outputLayer, i)] = _nodeToB[NodeIndex( outputLayer, i)];
+            sbt->_nodeIndexToFVar[SymbolicBoundTightener::NodeIndex( outputLayer, i)] = _nodeToB[NodeIndex( outputLayer, i)];
         }
 
         // Tell the SBT about ReLU variable indexing, for later use

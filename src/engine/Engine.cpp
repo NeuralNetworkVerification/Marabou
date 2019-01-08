@@ -184,8 +184,9 @@ bool Engine::solve()
                 // For debugging purposes
                 checkBoundCompliancyWithDebugSolution();
 
-                performSymbolicBoundTightening();
-                applyAllValidConstraintCaseSplits();
+                if ( applyAllValidConstraintCaseSplits() )
+                    performSymbolicBoundTightening();
+
                 continue;
             }
 
@@ -1114,18 +1115,22 @@ void Engine::applyAllBoundTightenings()
     _statistics.addTimeForApplyingStoredTightenings( TimeUtils::timePassed( start, end ) );
 }
 
-void Engine::applyAllValidConstraintCaseSplits()
+bool Engine::applyAllValidConstraintCaseSplits()
 {
     struct timespec start = TimeUtils::sampleMicro();
 
+    bool appliedSplit = false;
     for ( auto &constraint : _plConstraints )
-        applyValidConstraintCaseSplit( constraint );
+        if ( applyValidConstraintCaseSplit( constraint ) )
+            appliedSplit = true;
 
     struct timespec end = TimeUtils::sampleMicro();
     _statistics.addTimeForValidCaseSplit( TimeUtils::timePassed( start, end ) );
+
+    return appliedSplit;
 }
 
-void Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constraint )
+bool Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constraint )
 {
     if ( constraint->isActive() && constraint->phaseFixed() )
     {
@@ -1139,7 +1144,11 @@ void Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
         _smtCore.recordImpliedValidSplit( validSplit );
         applySplit( validSplit );
         ++_numPlConstraintsDisabledByValidSplits;
+
+        return true;
     }
+
+    return false;
 }
 
 bool Engine::shouldCheckDegradation()
@@ -1328,13 +1337,13 @@ void Engine::performSymbolicBoundTightening()
     _preprocessedQuery._sbt->clearReluStatuses();
     unsigned numTightenedBounds = 0;
 
-    printf( "SBT DEBUG: dumping states of all (%u) ReLUs:\n", _plConstraints.size() );
-    for ( const auto &constraint : _plConstraints )
-    {
-        String reluString;
-        constraint->dump( reluString );
-        printf( "\t%s\n", reluString.ascii() );
-    }
+    // printf( "\nSBT DEBUG: dumping states of all (%u) ReLUs:\n", _plConstraints.size() );
+    // for ( const auto &constraint : _plConstraints )
+    // {
+    //     String reluString;
+    //     constraint->dump( reluString );
+    //     printf( "\t%s\n", reluString.ascii() );
+    // }
 
     struct timespec start = TimeUtils::sampleMicro();
 
@@ -1342,9 +1351,17 @@ void Engine::performSymbolicBoundTightening()
     // knows the original network topology and weights.
 
     // Step 1: tell the SBT about input bounds; maybe they were tightened
+    unsigned sanity = 0;
     for ( const auto &inputVariable : _preprocessedQuery.getInputVariables() )
     {
         // We assume the ordering is correct (i.e., input are 0, 1, 2, 3, 4) but really something more robust is needed
+
+        if ( inputVariable != sanity )
+        {
+            printf( "Error! Sanity failed, input variable with strange index\n" );
+            exit( 1 );
+        }
+        ++sanity;
 
         double min, max;
         if ( _preprocessor.variableIsFixed( inputVariable ) )
@@ -1383,17 +1400,18 @@ void Engine::performSymbolicBoundTightening()
     _preprocessedQuery._sbt->run();
 
     // Stpe 4: extract any tighter bounds that were discovered
-    for ( const auto &pair : _preprocessedQuery._sbt->_nodeIndexToVar )
+    for ( const auto &pair : _preprocessedQuery._sbt->_nodeIndexToFVar )
     {
         unsigned layer = pair.first._layer;
         unsigned neuron = pair.first._neuron;
         unsigned var = pair.second;
 
-        if ( _preprocessor.variableIsFixed( var ) )
-        {
-            // We've learned a bound for a fixed variable, disregard
-            continue;
-        }
+        // if ( _preprocessor.variableIsFixed( var ) )
+        // {
+        //     // We've learned a bound for a fixed variable, disregard
+        //     printf( "Learned bound for a fixed var! This shouldnt happen\n" );
+        //     exit( 1 );
+        // }
 
         // unsigned varIndex = _preprocessor.getNewIndex( var );
 
@@ -1408,13 +1426,15 @@ void Engine::performSymbolicBoundTightening()
 
         if ( FloatUtils::lt( ub, currentUb ) )
         {
-            // printf( "\tTighter uB: %lf --> %lf\n", currentUb, ub );
+            // printf( "\tTighter uB: %lf --> %lf. Layer: %u, Neuron: %u, Var: %u\n", currentUb, ub,
+            //         layer, neuron, var );
             ++numTightenedBounds;
         }
 
         if ( FloatUtils::gt( lb, currentLb ) )
         {
-            // printf( "\tTighter lb: %lf --> %lf\n", currentLb, lb );
+            // printf( "\tTighter lb: %lf --> %lf. Layer: %u, Neuron: %u, Var: %u\n", currentLb, lb,
+            //         layer, neuron, var );
             ++numTightenedBounds;
         }
     }
@@ -1424,6 +1444,17 @@ void Engine::performSymbolicBoundTightening()
     _statistics.addTimeForSBT( TimeUtils::timePassed( start, end ) );
 
     _statistics.addNumBoundsTightenedInSBT( numTightenedBounds );
+
+    // if ( numTightenedBounds == 0 )
+    // {
+    //     printf( "\n\tSBT bad!!\n" );
+    // }
+    // else
+    // {
+    //     printf( "\n\tSBT good!!\n" );
+    // }
+
+    // printf( "\n" );
 }
 
 //

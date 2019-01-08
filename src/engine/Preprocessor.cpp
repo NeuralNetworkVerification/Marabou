@@ -557,7 +557,7 @@ void Preprocessor::eliminateVariables()
             {
                 String asString;
                 (*constraint)->dump( asString );
-                printf( "PP: Informing relu about eliminated var!! Relu: %s, variable: x%u\n", asString.ascii(), variable );
+                // printf( "PP: Informing relu about eliminated var!! Relu: %s, variable: x%u\n", asString.ascii(), variable );
                 (*constraint)->eliminateVariable( variable, _fixedVariables.at( variable ) );
 
                 ++count;
@@ -592,16 +592,22 @@ void Preprocessor::eliminateVariables()
         {
             if ( _oldIndexToNewIndex.at( variable ) != variable )
             {
-                printf( "PP: Informing relu about renamed var!! x%u --> x%u\n", variable, _oldIndexToNewIndex.at( variable ) );
+                // printf( "PP: Informing relu about renamed var!! x%u --> x%u\n", variable, _oldIndexToNewIndex.at( variable ) );
                 constraint->updateVariableIndex( variable, _oldIndexToNewIndex.at( variable ) );
 
-                if ( _preprocessed._sbt )
-                {
-                    _preprocessed._sbt->updateVariableIndex( variable, _oldIndexToNewIndex.at( variable ) );
-                }
+                // if ( _preprocessed._sbt )
+                // {
+                //     _preprocessed._sbt->updateVariableIndex( variable, _oldIndexToNewIndex.at( variable ) );
+                // }
             }
         }
 	}
+
+    // Let the SBT know of changes in indices
+    if ( _preprocessed._sbt )
+    {
+        _preprocessed._sbt->updateVariableIndieces( _oldIndexToNewIndex );
+    }
 
     // Update the lower/upper bound maps
     for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
