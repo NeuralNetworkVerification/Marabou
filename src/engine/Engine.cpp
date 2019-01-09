@@ -1369,7 +1369,7 @@ void Engine::performSymbolicBoundTightening()
         // We assume the input variables are the first variables
         if ( inputVariable != inputVariableIndex )
         {
-            throw ReluplexError( ReluplexError::SYMBOLIC_BOUND_TIGHTNER_FAULTY_INPUT,
+            throw ReluplexError( ReluplexError::SYMBOLIC_BOUND_TIGHTENER_FAULTY_INPUT,
                                  Stringf( "Sanity check failed, input variable %u with unexpected index %u", inputVariableIndex, inputVariable ).ascii() );
         }
         ++inputVariableIndex;
@@ -1400,7 +1400,7 @@ void Engine::performSymbolicBoundTightening()
     for ( const auto &constraint : _plConstraints )
     {
         if ( !constraint->supportsSymbolicBoundTightening() )
-            throw ReluplexError( ReluplexError::SYMBOLIC_BOUND_TIGHTNER_UNSUPPORTED_CONSTRAINT_TYPE );
+            throw ReluplexError( ReluplexError::SYMBOLIC_BOUND_TIGHTENER_UNSUPPORTED_CONSTRAINT_TYPE );
 
         ReluConstraint *relu = (ReluConstraint *)constraint;
         unsigned b = relu->getB();
@@ -1412,7 +1412,7 @@ void Engine::performSymbolicBoundTightening()
     _symbolicBoundTightener->run();
 
     // Stpe 4: extract any tighter bounds that were discovered
-    for ( const auto &pair : _symbolicBoundTightener->_nodeIndexToFVar )
+    for ( const auto &pair : _symbolicBoundTightener->getNodeIndexToFMapping() )
     {
         unsigned layer = pair.first._layer;
         unsigned neuron = pair.first._neuron;

@@ -16,7 +16,7 @@
 #include "MString.h"
 #include "Map.h"
 
-// Hack: SBT should not know about ReLUs directly. Fix this.
+// Todo: remove this include later
 #include "ReluConstraint.h"
 
 /*
@@ -27,8 +27,6 @@
     2. The network is fully connected
     3. An external caller has stored the weights and topology
 */
-
-const double BOUND_ROUNDING_CONSTANT = 0.00000005;
 
 class SymbolicBoundTightener
 {
@@ -70,56 +68,87 @@ public:
     SymbolicBoundTightener();
     ~SymbolicBoundTightener();
 
+    /*
+      Initialization methods for reporting the topology of the network:
+
+      - Number of layers
+      - Layer sizes
+      - Allocating the required internal memory
+      - Biases and weights
+      - Lower and upper bounds for input neurons
+    */
     void setNumberOfLayers( unsigned layers );
     void setLayerSize( unsigned layer, unsigned layerSize );
     void allocateWeightAndBiasSpace();
     void setBias( unsigned layer, unsigned neuron, double bias );
     void setWeight( unsigned sourceLayer, unsigned sourceNeuron, unsigned targetNeuron, double weight );
-
     void setInputLowerBound( unsigned neuron, double bound );
     void setInputUpperBound( unsigned neuron, double bound );
 
-    void run();
-    void run( bool useLinearConcretization );
-
-    // Extract the discovered bounds
-    double getLowerBound( unsigned layer, unsigned neuron ) const;
-    double getUpperBound( unsigned layer, unsigned neuron ) const;
-
-    // For informing the tightener about ReLUs that have become fixed
-    void clearReluStatuses();
-    void setReluStatus( unsigned layer, unsigned neuron, ReluConstraint::PhaseStatus status );
-
-    static void log( const String &message );
-
-    // This permanently sets a relu's status
-    void setEliminatedRelu( unsigned layer, unsigned neuron, ReluConstraint::PhaseStatus status );
-
+    /*
+      Setting the connections between the network topology and the simplex variables
+    */
     void setReluBVariable( unsigned layer, unsigned neuron, unsigned b );
-    NodeIndex nodeIndexFromB( unsigned b ) const;
+    void setReluFVariable( unsigned layer, unsigned neuron, unsigned f );
 
-    Map<NodeIndex, unsigned> _nodeIndexToFVar; // For bound tightening
+    NodeIndex nodeIndexFromB( unsigned b ) const;
+    const Map<NodeIndex, unsigned> &getNodeIndexToFMapping() const;
 
     void updateVariableIndices( const Map<unsigned, unsigned> &oldIndexToNewIndex,
                                 const Map<unsigned, unsigned> &mergedVariables );
 
+    /*
+      Report that a ReLU constraint has become permanently fixed (i.e., at decision level 0)
+    */
+    void setEliminatedRelu( unsigned layer, unsigned neuron, ReluConstraint::PhaseStatus status );
+
+    /*
+      Prior to running, we can use these methods to report any ReLUs that have becomes
+      fixed, or to clear previously-reported information
+    */
+    void setReluStatus( unsigned layer, unsigned neuron, ReluConstraint::PhaseStatus status );
+    void clearReluStatuses();
+
+    /*
+      Running the tool, with or without linear concertization
+    */
+    void run();
+    void run( bool useLinearConcretization );
+
+    /*
+      After running the tools, these methods will extract the discovered
+      bounds for every neuron
+    */
+    double getLowerBound( unsigned layer, unsigned neuron ) const;
+    double getUpperBound( unsigned layer, unsigned neuron ) const;
+
 private:
+    // The number of layers and their sizes
     unsigned _numberOfLayers;
     unsigned *_layerSizes;
+    unsigned _inputLayerSize;
+    unsigned _maxLayerSize;
 
-    Map<unsigned,double> _inputLowerBounds;
-    Map<unsigned,double> _inputUpperBounds;
-
+    // The network's weights and biases
     double **_biases;
     WeightMatrix *_weights;
 
+    // Lower and upper bounds for input neurons
+    Map<unsigned,double> _inputLowerBounds;
+    Map<unsigned,double> _inputUpperBounds;
+
+    // Lower and upper bounds for internal neurons
     double **_lowerBounds;
     double **_upperBounds;
 
-    void freeMemoryIfNeeded();
+    // Mapping from ReLUs to simplex variables
+    Map<NodeIndex, unsigned> _nodeIndexToBVariable;
+    Map<NodeIndex, unsigned> _nodeIndexToFVariable;
+    Map<unsigned, NodeIndex> _bVariableToNodeIndex;
 
-    unsigned _inputLayerSize;
-    unsigned _maxLayerSize;
+    // Information about the phase statuses of ReLU nodes
+    Map<NodeIndex, ReluConstraint::PhaseStatus> _nodeIndexToReluState;
+    Map<NodeIndex, ReluConstraint::PhaseStatus> _nodeIndexToEliminatedReluState;
 
     /*
       Work space for the bound computation
@@ -134,11 +163,8 @@ private:
     double *_previousLayerLowerBias;
     double *_previousLayerUpperBias;
 
-    Map<NodeIndex, unsigned> _nodeIndexToBVariable;
-    Map<unsigned, NodeIndex> _bVariableToNodeIndex;
-
-    Map<NodeIndex, ReluConstraint::PhaseStatus> _nodeIndexToReluState;
-    Map<NodeIndex, ReluConstraint::PhaseStatus> _nodeIndexToEliminatedReluState;
+    void freeMemoryIfNeeded();
+    static void log( const String &message );
 };
 
 #endif // __SymbolicBoundTightener_h__

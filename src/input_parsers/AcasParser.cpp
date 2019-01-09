@@ -209,7 +209,15 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
             {
                 unsigned b = _nodeToB[NodeIndex( i, j )];
                 sbt->setReluBVariable( i, j, b );
+
+                unsigned f = _nodeToF[NodeIndex(i, j)];
+                sbt->setReluFVariable( i, j, f );
             }
+        }
+
+        for ( unsigned i = 0; i < outputLayerSize; ++i )
+        {
+            sbt->setReluFVariable( numberOfLayers - 1, i, _nodeToB[NodeIndex( numberOfLayers - 1, i )] );
         }
 
         inputQuery._sbt = sbt;

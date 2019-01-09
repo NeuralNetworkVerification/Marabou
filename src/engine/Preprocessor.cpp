@@ -22,7 +22,7 @@
 #include "SymbolicBoundTightener.h"
 #include "Tightening.h"
 
-// TODO: get rid of this
+// TODO: get rid of this include
 #include "ReluConstraint.h"
 
 Preprocessor::Preprocessor()
@@ -554,7 +554,7 @@ void Preprocessor::eliminateVariables()
             if ( _preprocessed._sbt )
             {
                 if ( !(*constraint)->supportsSymbolicBoundTightening() )
-                    throw ReluplexError( ReluplexError::SYMBOLIC_BOUND_TIGHTNER_UNSUPPORTED_CONSTRAINT_TYPE );
+                    throw ReluplexError( ReluplexError::SYMBOLIC_BOUND_TIGHTENER_UNSUPPORTED_CONSTRAINT_TYPE );
 
                 ReluConstraint *relu = (ReluConstraint *)(*constraint);
                 unsigned b = relu->getB();

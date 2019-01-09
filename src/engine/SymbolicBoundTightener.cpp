@@ -13,6 +13,7 @@
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "MStringf.h"
+#include "ReluplexError.h"
 #include "SymbolicBoundTightener.h"
 
 SymbolicBoundTightener::SymbolicBoundTightener()
@@ -30,7 +31,9 @@ SymbolicBoundTightener::SymbolicBoundTightener()
     , _previousLayerLowerBias( NULL )
     , _previousLayerUpperBias( NULL )
 {
-    ASSERT( !GlobalConfiguration::USE_COLUMN_MERGING_EQUATIONS );
+    if ( GlobalConfiguration::USE_COLUMN_MERGING_EQUATIONS )
+        throw ReluplexError( ReluplexError::SYMBOLIC_BOUND_TIGHTENER_OPTION_NOT_SUPPORTED,
+                             "Cannot run SBT with Column Merging!" );
 }
 
 SymbolicBoundTightener::~SymbolicBoundTightener()
@@ -459,8 +462,8 @@ void SymbolicBoundTightener::run( bool useLinearConcretization )
                     lbUb += ( entry * _inputLowerBounds[j] );
                 }
 
-                lbLb -= BOUND_ROUNDING_CONSTANT;
-                lbUb += BOUND_ROUNDING_CONSTANT;
+                lbLb -= GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
+                lbUb += GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
 
                 entry = _currentLayerUpperBounds[j * currentLayerSize + i];
 
@@ -475,8 +478,8 @@ void SymbolicBoundTightener::run( bool useLinearConcretization )
                     ubUb += ( entry * _inputLowerBounds[j] );
                 }
 
-                ubLb -= BOUND_ROUNDING_CONSTANT;
-                ubUb += BOUND_ROUNDING_CONSTANT;
+                ubLb -= GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
+                ubUb += GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
             }
 
             // Add the network bias to all bounds
@@ -499,14 +502,11 @@ void SymbolicBoundTightener::run( bool useLinearConcretization )
                 if ( _nodeIndexToEliminatedReluState.exists( reluIndex ) )
                 {
                     reluPhase = _nodeIndexToEliminatedReluState[reluIndex];
-                    // printf( "Relu (%u,%u) has been ELIMINATED. Status: %u\n", currentLayer, i, reluPhase );
                     ASSERT( reluPhase != ReluConstraint::PHASE_NOT_FIXED );
                 }
                 else if ( _nodeIndexToReluState.exists( reluIndex ) )
                 {
                     reluPhase = _nodeIndexToReluState[reluIndex];
-                    // if ( reluPhase != ReluConstraint::PHASE_NOT_FIXED )
-                    //     printf( "Relu (%u,%u) has been FIXED. Status: %u\n", currentLayer, i, reluPhase );
                 }
 
                 // If the ReLU phase is not fixed yet, do the usual propagation:
@@ -655,8 +655,6 @@ void SymbolicBoundTightener::run( bool useLinearConcretization )
         memcpy( _previousLayerLowerBias, _currentLayerLowerBias, sizeof(double) * _maxLayerSize );
         memcpy( _previousLayerUpperBias, _currentLayerUpperBias, sizeof(double) * _maxLayerSize );
     }
-
-    // printf( "\n" );
 }
 
 double SymbolicBoundTightener::getLowerBound( unsigned layer, unsigned neuron ) const
@@ -671,8 +669,6 @@ double SymbolicBoundTightener::getUpperBound( unsigned layer, unsigned neuron ) 
 
 void SymbolicBoundTightener::log( const String &message )
 {
-    return;
-
     if ( GlobalConfiguration::SYMBOLIC_BOUND_TIGHTENER_LOGGING )
         printf( "%s", message.ascii() );
 }
@@ -685,26 +681,23 @@ void SymbolicBoundTightener::clearReluStatuses()
 void SymbolicBoundTightener::setReluStatus( unsigned layer, unsigned neuron, ReluConstraint::PhaseStatus status )
 {
     _nodeIndexToReluState[NodeIndex( layer, neuron )] = status;
-
-    // if ( status != ReluConstraint::PHASE_NOT_FIXED )
-    //     printf( "SBT: fixed relu!\n" );
 }
 
 void SymbolicBoundTightener::setReluBVariable( unsigned layer, unsigned neuron, unsigned b )
 {
     _nodeIndexToBVariable[NodeIndex( layer, neuron )] = b;
     _bVariableToNodeIndex[b] = NodeIndex( layer, neuron );
+}
 
-    // printf( "SBT: Relu var %u: ( %u, %u ) --> x%u\n", _bVariableToNodeIndex.size(), layer, neuron, b );
+void SymbolicBoundTightener::setReluFVariable( unsigned layer, unsigned neuron, unsigned f )
+{
+    _nodeIndexToFVariable[NodeIndex( layer, neuron )] = f;
 }
 
 SymbolicBoundTightener::NodeIndex SymbolicBoundTightener::nodeIndexFromB( unsigned b ) const
 {
     if ( !_bVariableToNodeIndex.exists( b ) )
-    {
-        printf( "Error! SBT encountered unknown b\n" );
-        exit( 1 );
-    }
+        throw ReluplexError( ReluplexError::SYMBOLIC_BOUND_TIGHTENER_UNKNOWN_VARIABLE_INDEX );
 
     return _bVariableToNodeIndex.at( b );
 }
@@ -712,10 +705,7 @@ SymbolicBoundTightener::NodeIndex SymbolicBoundTightener::nodeIndexFromB( unsign
 void SymbolicBoundTightener::setEliminatedRelu( unsigned layer, unsigned neuron, ReluConstraint::PhaseStatus status )
 {
     ASSERT( status != ReluConstraint::PHASE_NOT_FIXED );
-
     _nodeIndexToEliminatedReluState[NodeIndex( layer, neuron )] = status;
-
-    printf( "SBT: relu eliminated! (%u, %u), set to %u\n", layer, neuron, status );
 }
 
 void SymbolicBoundTightener::updateVariableIndices( const Map<unsigned, unsigned> &oldIndexToNewIndex,
@@ -733,8 +723,8 @@ void SymbolicBoundTightener::updateVariableIndices( const Map<unsigned, unsigned
         ++bIt;
     }
 
-    auto fIt = _nodeIndexToFVar.begin();
-    while ( fIt != _nodeIndexToFVar.end() )
+    auto fIt = _nodeIndexToFVariable.begin();
+    while ( fIt != _nodeIndexToFVariable.end() )
     {
         unsigned f = fIt->second;
 
@@ -772,14 +762,14 @@ void SymbolicBoundTightener::updateVariableIndices( const Map<unsigned, unsigned
         }
     }
 
-    fIt = _nodeIndexToFVar.begin();
-    while ( fIt != _nodeIndexToFVar.end() )
+    fIt = _nodeIndexToFVariable.begin();
+    while ( fIt != _nodeIndexToFVariable.end() )
     {
         unsigned f = fIt->second;
         if ( !oldIndexToNewIndex.exists( f ) )
         {
             // This variable has been eliminated, remove from map
-            fIt = _nodeIndexToFVar.erase( fIt );
+            fIt = _nodeIndexToFVariable.erase( fIt );
         }
         else
         {
@@ -802,6 +792,11 @@ void SymbolicBoundTightener::updateVariableIndices( const Map<unsigned, unsigned
     _bVariableToNodeIndex.clear();
     for ( const auto &entry : _nodeIndexToBVariable )
         _bVariableToNodeIndex[entry.second] = entry.first;
+}
+
+const Map<SymbolicBoundTightener::NodeIndex, unsigned> &SymbolicBoundTightener::getNodeIndexToFMapping() const
+{
+    return _nodeIndexToFVariable;
 }
 
 //

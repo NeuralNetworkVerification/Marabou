@@ -111,8 +111,9 @@ public:
 
     // The tolerance for checking whether f = Relu( b ), to determine a ReLU's statisfaction
     static const double RELU_CONSTRAINT_COMPARISON_TOLERANCE;
+
     /*
-      Bound tightening options
+      Explicit (Reluplex-style) bound tightening options
     */
 
     enum ExplicitBasisBoundTighteningType {
@@ -122,6 +123,16 @@ public:
         USE_IMPLICIT_INVERTED_BASIS_MATRIX = 1,
     };
 
+    // When doing bound tightening using the explicit basis matrix, should the basis matrix be inverted?
+    static const ExplicitBasisBoundTighteningType EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE;
+
+    // When doing explicit bound tightening, should we repeat until saturation?
+    static const bool EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION;
+
+    /*
+      Symbolic bound tightening options
+    */
+
     // Whether symbolic bound tightening should be used or not
     static const bool USE_SYMBOLIC_BOUND_TIGHTENING;
 
@@ -129,11 +140,8 @@ public:
     // opposed to constant concretization) be used.
     static const bool USE_LINEAR_CONCRETIZATION;
 
-    // When doing bound tightening using the explicit basis matrix, should the basis matrix be inverted?
-    static const ExplicitBasisBoundTighteningType EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE;
-
-    // When doing explicit bound tightening, should we repeat until saturation?
-    static const bool EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION;
+    // Symbolic tightening rounding constant
+    static const double SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
 
     /*
       Constraint fixing heuristics
