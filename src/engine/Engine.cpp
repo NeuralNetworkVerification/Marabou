@@ -25,6 +25,7 @@
 
 Engine::Engine()
     : _rowBoundTightener( *_tableau )
+    , _symbolicBoundTightener( NULL )
     , _smtCore( this )
     , _numPlConstraintsDisabledByValidSplits( 0 )
     , _preprocessingEnabled( false )
@@ -54,6 +55,12 @@ Engine::~Engine()
     {
         delete[] _work;
         _work = NULL;
+    }
+
+    if ( _symbolicBoundTightener )
+    {
+        delete _symbolicBoundTightener;
+        _symbolicBoundTightener = NULL;
     }
 }
 
@@ -150,6 +157,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
             if ( _smtCore.needToSplit() )
             {
                 _smtCore.performSplit();
+                performSymbolicBoundTightening();
                 continue;
             }
 
@@ -193,7 +201,9 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 // For debugging purposes
                 checkBoundCompliancyWithDebugSolution();
 
-                applyAllValidConstraintCaseSplits();
+                if ( applyAllValidConstraintCaseSplits() )
+                    performSymbolicBoundTightening();
+
                 continue;
             }
 
@@ -729,6 +739,9 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         _statistics.setNumPlConstraints( _plConstraints.size() );
 
+        if ( _preprocessedQuery._sbt )
+            _symbolicBoundTightener = _preprocessedQuery._sbt;
+
         struct timespec end = TimeUtils::sampleMicro();
         _statistics.setPreprocessingTime( TimeUtils::timePassed( start, end ) );
 
@@ -1122,18 +1135,22 @@ void Engine::applyAllBoundTightenings()
     _statistics.addTimeForApplyingStoredTightenings( TimeUtils::timePassed( start, end ) );
 }
 
-void Engine::applyAllValidConstraintCaseSplits()
+bool Engine::applyAllValidConstraintCaseSplits()
 {
     struct timespec start = TimeUtils::sampleMicro();
 
+    bool appliedSplit = false;
     for ( auto &constraint : _plConstraints )
-        applyValidConstraintCaseSplit( constraint );
+        if ( applyValidConstraintCaseSplit( constraint ) )
+            appliedSplit = true;
 
     struct timespec end = TimeUtils::sampleMicro();
     _statistics.addTimeForValidCaseSplit( TimeUtils::timePassed( start, end ) );
+
+    return appliedSplit;
 }
 
-void Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constraint )
+bool Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constraint )
 {
     if ( constraint->isActive() && constraint->phaseFixed() )
     {
@@ -1147,7 +1164,11 @@ void Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
         _smtCore.recordImpliedValidSplit( validSplit );
         applySplit( validSplit );
         ++_numPlConstraintsDisabledByValidSplits;
+
+        return true;
     }
+
+    return false;
 }
 
 bool Engine::shouldCheckDegradation()
@@ -1326,6 +1347,96 @@ void Engine::quitSignal()
 Engine::ExitCode Engine::getExitCode() const
 {
     return _exitCode;
+}
+
+void Engine::performSymbolicBoundTightening()
+{
+    if ( ( !GlobalConfiguration::USE_SYMBOLIC_BOUND_TIGHTENING ) ||
+         ( !_symbolicBoundTightener ) )
+        return;
+
+    struct timespec start = TimeUtils::sampleMicro();
+
+    unsigned numTightenedBounds = 0;
+
+    // Clear any previously stored information
+    _symbolicBoundTightener->clearReluStatuses();
+
+    // Step 1: tell the SBT about input bounds; maybe they were tightened
+    unsigned inputVariableIndex = 0;
+    for ( const auto &inputVariable : _preprocessedQuery.getInputVariables() )
+    {
+        // We assume the input variables are the first variables
+        if ( inputVariable != inputVariableIndex )
+        {
+            throw ReluplexError( ReluplexError::SYMBOLIC_BOUND_TIGHTENER_FAULTY_INPUT,
+                                 Stringf( "Sanity check failed, input variable %u with unexpected index %u", inputVariableIndex, inputVariable ).ascii() );
+        }
+        ++inputVariableIndex;
+
+        double min, max;
+        if ( _preprocessor.variableIsFixed( inputVariable ) )
+        {
+            min = _preprocessor.getFixedValue( inputVariable );
+            max = min;
+        }
+        else if ( _preprocessor.variableIsMerged( inputVariable ) )
+        {
+            unsigned variable = _preprocessor.getMergedIndex( inputVariable );
+            min = _tableau->getLowerBound( variable );
+            max = _tableau->getUpperBound( variable );
+        }
+        else
+        {
+            min = _tableau->getLowerBound( inputVariable );
+            max = _tableau->getUpperBound( inputVariable );
+        }
+
+        _symbolicBoundTightener->setInputLowerBound( inputVariable, min );
+        _symbolicBoundTightener->setInputUpperBound( inputVariable, max );
+    }
+
+    // Step 2: tell the SBT about the state of the ReLU constraints
+    for ( const auto &constraint : _plConstraints )
+    {
+        if ( !constraint->supportsSymbolicBoundTightening() )
+            throw ReluplexError( ReluplexError::SYMBOLIC_BOUND_TIGHTENER_UNSUPPORTED_CONSTRAINT_TYPE );
+
+        ReluConstraint *relu = (ReluConstraint *)constraint;
+        unsigned b = relu->getB();
+        SymbolicBoundTightener::NodeIndex nodeIndex = _symbolicBoundTightener->nodeIndexFromB( b );
+        _symbolicBoundTightener->setReluStatus( nodeIndex._layer, nodeIndex._neuron, relu->getPhaseStatus() );
+    }
+
+    // Step 3: perfrom the bound tightening
+    _symbolicBoundTightener->run();
+
+    // Stpe 4: extract any tighter bounds that were discovered
+    for ( const auto &pair : _symbolicBoundTightener->getNodeIndexToFMapping() )
+    {
+        unsigned layer = pair.first._layer;
+        unsigned neuron = pair.first._neuron;
+        unsigned var = pair.second;
+
+        double lb = _symbolicBoundTightener->getLowerBound( layer, neuron );
+        double ub = _symbolicBoundTightener->getUpperBound( layer, neuron );
+
+        double currentLb = _tableau->getLowerBound( var );
+        double currentUb = _tableau->getUpperBound( var );
+
+        _tableau->tightenLowerBound( var, lb );
+        _tableau->tightenUpperBound( var, ub );
+
+        if ( FloatUtils::lt( ub, currentUb ) )
+            ++numTightenedBounds;
+
+        if ( FloatUtils::gt( lb, currentLb ) )
+            ++numTightenedBounds;
+    }
+
+    struct timespec end = TimeUtils::sampleMicro();
+    _statistics.addTimeForSymbolicBoundTightening( TimeUtils::timePassed( start, end ) );
+    _statistics.incNumTighteningsFromSymbolicBoundTightening( numTightenedBounds );
 }
 
 bool Engine::shouldExitDueToTimeout( unsigned timeout ) const

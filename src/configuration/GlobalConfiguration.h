@@ -111,8 +111,9 @@ public:
 
     // The tolerance for checking whether f = Relu( b ), to determine a ReLU's statisfaction
     static const double RELU_CONSTRAINT_COMPARISON_TOLERANCE;
+
     /*
-      Bound tightening options
+      Explicit (Reluplex-style) bound tightening options
     */
 
     enum ExplicitBasisBoundTighteningType {
@@ -127,6 +128,24 @@ public:
 
     // When doing explicit bound tightening, should we repeat until saturation?
     static const bool EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION;
+
+    /*
+      Symbolic bound tightening options
+    */
+
+    // Whether symbolic bound tightening should be used or not
+    static const bool USE_SYMBOLIC_BOUND_TIGHTENING;
+
+    // If symbolic bound tightening is used, should linear concretization (as
+    // opposed to constant concretization) be used.
+    static const bool USE_LINEAR_CONCRETIZATION;
+
+    // Symbolic tightening rounding constant
+    static const double SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
+
+    /*
+      Constraint fixing heuristics
+    */
 
     // When a PL constraint proposes a fix that affects multiple variables, should it first query
     // for any relevant linear connections between the variables?
@@ -163,6 +182,7 @@ public:
     static const bool PROJECTED_STEEPEST_EDGE_LOGGING;
     static const bool GAUSSIAN_ELIMINATION_LOGGING;
     static const bool QUERY_LOADER_LOGGING;
+    static const bool SYMBOLIC_BOUND_TIGHTENER_LOGGING;
 };
 
 #endif // __GlobalConfiguration_h__

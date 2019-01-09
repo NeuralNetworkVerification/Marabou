@@ -18,6 +18,7 @@
 #include "ReluplexError.h"
 
 InputQuery::InputQuery()
+    : _sbt( NULL )
 {
 }
 
@@ -199,6 +200,8 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
     for ( const auto &constraint : other._plConstraints )
         _plConstraints.append( constraint->duplicateConstraint() );
 
+    _sbt = other._sbt;
+
     return *this;
 }
 
@@ -351,6 +354,11 @@ void InputQuery::printInputOutputBounds() const
                 _lowerBounds[pair.first],
                 _upperBounds[pair.first] );
     }
+}
+
+void InputQuery::setSymbolicBoundTightener( SymbolicBoundTightener *sbt )
+{
+    _sbt = sbt;
 }
 
 //
