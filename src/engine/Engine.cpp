@@ -70,7 +70,7 @@ void Engine::adjustWorkMemorySize()
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Engine::work" );
 }
 
-bool Engine::solve()
+bool Engine::solve( unsigned timeoutInSeconds )
 {
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
@@ -87,6 +87,17 @@ bool Engine::solve()
         struct timespec mainLoopEnd = TimeUtils::sampleMicro();
         _statistics.addTimeMainLoop( TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
         mainLoopStart = mainLoopEnd;
+
+        if ( shouldExitDueToTimeout( timeoutInSeconds ) )
+        {
+            printf( "\n\nEngine: quitting due to timeout...\n\n" );
+            printf( "Final statistics:\n" );
+            _statistics.print();
+
+            _exitCode = Engine::TIMEOUT;
+            _statistics.timeout();
+            return false;
+        }
 
         if ( _quitRequested )
         {
@@ -1455,6 +1466,19 @@ void Engine::performSymbolicBoundTightening()
     // }
 
     // printf( "\n" );
+}
+
+bool Engine::shouldExitDueToTimeout( unsigned timeout ) const
+{
+    enum {
+        MILLISECONDS_TO_SECONDS = 1000,
+    };
+
+    // A timeout value of 0 means no time limit
+    if ( timeout == 0 )
+        return false;
+
+    return _statistics.getTotalTime() / MILLISECONDS_TO_SECONDS > timeout;
 }
 
 //

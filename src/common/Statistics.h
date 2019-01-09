@@ -66,6 +66,7 @@ public:
     unsigned long long getNumConstraintFixingSteps() const;
 
     void addNumBoundsTightenedInSBT( unsigned bounds );
+
     /*
       Tableau related statistics.
     */
@@ -97,6 +98,12 @@ public:
     unsigned getNumVisitedTreeStates() const;
     unsigned getNumSplits() const;
     unsigned long long getTotalTime() const;
+
+    /*
+      Report a timeout, or check whether a timeout has occurred
+    */
+    void timeout();
+    bool hasTimedOut() const;
 
     /*
       Bound tightening related statistics.
@@ -285,6 +292,9 @@ private:
 
     // Total amount of time spent within the SMT core
     unsigned long long _totalTimeSmtCoreMicro;
+
+    // Whether the engine quitted with a timeout
+    bool _timedOut;
 
     // Printing helpers
     double printPercents( unsigned long long part, unsigned long long total ) const;
