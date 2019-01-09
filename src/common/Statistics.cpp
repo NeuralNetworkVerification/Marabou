@@ -68,6 +68,7 @@ Statistics::Statistics()
     , _totalTimeConstraintMatrixBoundTighteningMicro( 0 )
     , _totalTimeApplyingStoredTighteningsMicro( 0 )
     , _totalTimeSmtCoreMicro( 0 )
+    , _timedOut( false )
 {
 }
 
@@ -617,7 +618,7 @@ unsigned long long Statistics::getNumSimplexUnstablePivots() const
 
 unsigned long long Statistics::getTotalTime() const
 {
-        unsigned long long total =
+    unsigned long long total =
         _timeSimplexStepsMicro +
         _timeConstraintFixingStepsMicro +
         _totalTimePerformingValidCaseSplitsMicro +
@@ -628,8 +629,19 @@ unsigned long long Statistics::getTotalTime() const
         _totalTimeConstraintMatrixBoundTighteningMicro +
         _totalTimeApplyingStoredTighteningsMicro +
         _totalTimeSmtCoreMicro;
-        // total is in micro seconds
+
+    // Total is in micro seconds, and we need to return milliseconds
     return total / 1000;
+}
+
+void Statistics::timeout()
+{
+    _timedOut = true;
+}
+
+bool Statistics::hasTimedOut() const
+{
+    return _timedOut;
 }
 
 void Statistics::printStartingIteration( unsigned long long iteration, String message )
