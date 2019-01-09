@@ -16,7 +16,7 @@
 
 const double GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS = 0.0000000001;
 const unsigned GlobalConfiguration::DEFAULT_DOUBLE_TO_STRING_PRECISION = 10;
-const unsigned GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY = 500;
+const unsigned GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY = 10000;
 const double GlobalConfiguration::BOUND_COMPARISON_ADDITIVE_TOLERANCE = 0.0000001;
 const double GlobalConfiguration::BOUND_COMPARISON_MULTIPLICATIVE_TOLERANCE = 0.001 * 0.0000001;
 const double GlobalConfiguration::PIVOT_CHANGE_COLUMN_TOLERANCE = 0.000000001;
@@ -39,6 +39,8 @@ const unsigned GlobalConfiguration::BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENC
 const double GlobalConfiguration::COST_FUNCTION_ERROR_THRESHOLD = 0.0000000001;
 
 const bool GlobalConfiguration::USE_HARRIS_RATIO_TEST = true;
+
+const bool GlobalConfiguration::USE_SYMBOLIC_BOUND_TIGHTENING = true;
 
 const bool GlobalConfiguration::PREPROCESS_INPUT_QUERY = true;
 const bool GlobalConfiguration::PREPROCESSOR_ELIMINATE_VARIABLES = true;
@@ -69,12 +71,10 @@ const bool GlobalConfiguration::BASIS_FACTORIZATION_LOGGING = false;
 const bool GlobalConfiguration::PROJECTED_STEEPEST_EDGE_LOGGING = false;
 const bool GlobalConfiguration::GAUSSIAN_ELIMINATION_LOGGING = false;
 const bool GlobalConfiguration::QUERY_LOADER_LOGGING = false;
-const bool GlobalConfiguration::SYMBOLIC_BOUND_TIGHTENER_LOGGING = true;
+const bool GlobalConfiguration::SYMBOLIC_BOUND_TIGHTENER_LOGGING = false;
 
 const bool GlobalConfiguration::USE_SMART_FIX = false;
 const bool GlobalConfiguration::USE_LEAST_FIX = false;
-
-const bool GlobalConfiguration::USE_SBT = true;
 
 void GlobalConfiguration::print()
 {

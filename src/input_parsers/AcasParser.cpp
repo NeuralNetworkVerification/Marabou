@@ -162,7 +162,7 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
     for ( unsigned i = 0; i < outputLayerSize; ++i )
         inputQuery.markOutputVariable( _nodeToB[NodeIndex( numberOfLayers - 1, i )], i );
 
-    if ( GlobalConfiguration::USE_SBT )
+    if ( GlobalConfiguration::USE_SYMBOLIC_BOUND_TIGHTENING )
     {
         // Prepare the symbolic bound tightener
         SymbolicBoundTightener *sbt = new SymbolicBoundTightener;

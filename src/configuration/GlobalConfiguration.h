@@ -115,8 +115,6 @@ public:
       Bound tightening options
     */
 
-    static const bool USE_SBT;
-
     enum ExplicitBasisBoundTighteningType {
         // Compute the inverse basis matrix and use it
         COMPUTE_INVERTED_BASIS_MATRIX = 0,
@@ -124,11 +122,18 @@ public:
         USE_IMPLICIT_INVERTED_BASIS_MATRIX = 1,
     };
 
+    // Whether symbolic bound tightening should be used or not
+    static const bool USE_SYMBOLIC_BOUND_TIGHTENING;
+
     // When doing bound tightening using the explicit basis matrix, should the basis matrix be inverted?
     static const ExplicitBasisBoundTighteningType EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE;
 
     // When doing explicit bound tightening, should we repeat until saturation?
     static const bool EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION;
+
+    /*
+      Constraint fixing heuristics
+    */
 
     // When a PL constraint proposes a fix that affects multiple variables, should it first query
     // for any relevant linear connections between the variables?
