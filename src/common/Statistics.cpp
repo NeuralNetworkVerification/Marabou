@@ -617,11 +617,6 @@ unsigned long long Statistics::getNumSimplexUnstablePivots() const
     return _numSimplexUnstablePivots;
 }
 
-unsigned long long Statistics::getTimeMainLoopMicro() const
-{
-    return _timeMainLoopMicro;
-}
-
 unsigned long long Statistics::getTotalTime() const
 {
         unsigned long long total =
