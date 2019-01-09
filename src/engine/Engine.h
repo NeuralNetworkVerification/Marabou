@@ -52,9 +52,9 @@ public:
 
     /*
       Attempt to find a feasible solution for the input within a time limit
-      (if given). Returns true if found, false if infeasible.
+      (a timeout of 0 means no time limit). Returns true if found, false if infeasible.
     */
-    bool solve(unsigned timeout=0);
+    bool solve( unsigned timeoutInSeconds = 0 );
 
     /*
       Process the input query and pass the needed information to the
@@ -327,6 +327,11 @@ private:
       false otherwise.
     */
     bool attemptToMergeVariables( unsigned x1, unsigned x2 );
+
+    /*
+      Check whether a timeout value has been provided and exceeded.
+    */
+    bool shouldExitDueToTimeout( unsigned timeout ) const;
 };
 
 #endif // __Engine_h__

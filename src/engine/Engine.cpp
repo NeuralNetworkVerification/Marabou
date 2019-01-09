@@ -70,7 +70,7 @@ void Engine::adjustWorkMemorySize()
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Engine::work" );
 }
 
-bool Engine::solve(unsigned timeout)
+bool Engine::solve( unsigned timeoutInSeconds )
 {
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
@@ -81,7 +81,6 @@ bool Engine::solve(unsigned timeout)
     mainLoopStatistics();
     printf( "\n---\n" );
 
-    bool to_ = (timeout>0); // only add time limit if timeout is larger than 0
     struct timespec mainLoopStart = TimeUtils::sampleMicro();
     while ( true )
     {
@@ -89,13 +88,14 @@ bool Engine::solve(unsigned timeout)
         _statistics.addTimeMainLoop( TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
         mainLoopStart = mainLoopEnd;
 
-        if (to_ && _statistics.getTotalTime() / 1000 > timeout){
-            // If the time limit is reached
+        if ( shouldExitDueToTimeout( timeoutInSeconds ) )
+        {
             printf( "\n\nEngine: quitting due to timeout...\n\n" );
             printf( "Final statistics:\n" );
             _statistics.print();
+
             _exitCode = Engine::TIMEOUT;
-            _statistics.timeout(); // Set _statistics._timeOut to true
+            _statistics.timeout();
             return false;
         }
 
@@ -1326,6 +1326,19 @@ void Engine::quitSignal()
 Engine::ExitCode Engine::getExitCode() const
 {
     return _exitCode;
+}
+
+bool Engine::shouldExitDueToTimeout( unsigned timeout ) const
+{
+    enum {
+        MILLISECONDS_TO_SECONDS = 1000,
+    };
+
+    // A timeout value of 0 means no time limit
+    if ( timeout == 0 )
+        return false;
+
+    return _statistics.getTotalTime() / MILLISECONDS_TO_SECONDS > timeout;
 }
 
 //

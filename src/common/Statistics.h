@@ -63,7 +63,7 @@ public:
     unsigned getNumPrecisionRestorations() const;
     unsigned long long getTimeSimplexStepsMicro() const;
     unsigned long long getNumConstraintFixingSteps() const;
-    
+
     /*
       Tableau related statistics.
     */
@@ -94,12 +94,10 @@ public:
     unsigned getNumPops() const;
     unsigned getNumVisitedTreeStates() const;
     unsigned getNumSplits() const;
-    unsigned long long getTimeMainLoopMicro() const;
     unsigned long long getTotalTime() const;
 
-
     /*
-      setter and getter for _timedOut
+      Report a timeout, or check whether a timeout has occurred
     */
     void timeout();
     bool hasTimedOut() const;
@@ -290,7 +288,7 @@ private:
     // Total amount of time spent within the SMT core
     unsigned long long _totalTimeSmtCoreMicro;
 
-    // Whether the engine quitted with timeout
+    // Whether the engine quitted with a timeout
     bool _timedOut;
 
     // Printing helpers
