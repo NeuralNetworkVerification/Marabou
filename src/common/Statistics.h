@@ -52,6 +52,7 @@ public:
     void setNumPlSMTSplits( unsigned numberOfSplits );
     void setCurrentDegradation( double degradation );
     void addTimeForValidCaseSplit( unsigned long long time );
+    void addTimeForSymbolicBoundTightening( unsigned long long time );
     void addTimeForStatistics( unsigned long long time );
     void addTimeForExplicitBasisBoundTightening( unsigned long long time );
     void addTimeForConstraintMatrixBoundTightening( unsigned long long time );
@@ -119,6 +120,7 @@ public:
     void incNumBoundNotificationsPlConstraints();
     void incNumBoundsProposedByPlConstraints();
 
+    void incNumTighteningsFromSymbolicBoundTightening( unsigned increment );
     /*
       Projected Steepest Edge related statistics.
     */
@@ -229,6 +231,9 @@ private:
     // This combines tightenings from all sources: rows, basis, PL constraints, etc.
     unsigned long long _numTightenedBounds;
 
+    // The number of bounds tightened via symbolic bound tightening
+    unsigned long long _numTighteningsFromSymbolicBoundTightening;
+
     // Number of pivot rows examined by the row tightener, and consequent tightenings
     // proposed.
     unsigned long long _numRowsExaminedByRowTightener;
@@ -262,6 +267,8 @@ private:
 
     // Total amount of time spent performing valid case splits
     unsigned long long _totalTimePerformingValidCaseSplitsMicro;
+
+    unsigned long long _totalTimePerformingSymbolicBoundTightening;
 
     // Total amount of time handling statistics printing
     unsigned long long _totalTimeHandlingStatisticsMicro;

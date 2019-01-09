@@ -19,7 +19,11 @@
 #include "Preprocessor.h"
 #include "ReluplexError.h"
 #include "Statistics.h"
+#include "SymbolicBoundTightener.h"
 #include "Tightening.h"
+
+// TODO: get rid of this include
+#include "ReluConstraint.h"
 
 Preprocessor::Preprocessor()
     : _statistics( NULL )
@@ -547,6 +551,17 @@ void Preprocessor::eliminateVariables()
 
         if ( (*constraint)->constraintObsolete() )
         {
+            if ( _preprocessed._sbt )
+            {
+                if ( !(*constraint)->supportsSymbolicBoundTightening() )
+                    throw ReluplexError( ReluplexError::SYMBOLIC_BOUND_TIGHTENER_UNSUPPORTED_CONSTRAINT_TYPE );
+
+                ReluConstraint *relu = (ReluConstraint *)(*constraint);
+                unsigned b = relu->getB();
+                SymbolicBoundTightener::NodeIndex nodeIndex = _preprocessed._sbt->nodeIndexFromB( b );
+                _preprocessed._sbt->setEliminatedRelu( nodeIndex._layer, nodeIndex._neuron, relu->getPhaseStatus() );
+            }
+
             _statistics->ppIncNumConstraintsRemoved();
             constraint = constraints.erase( constraint );
         }
@@ -564,6 +579,10 @@ void Preprocessor::eliminateVariables()
                 constraint->updateVariableIndex( variable, _oldIndexToNewIndex.at( variable ) );
         }
 	}
+
+    // Let the SBT know of changes in indices and merged variables
+    if ( _preprocessed._sbt )
+        _preprocessed._sbt->updateVariableIndices( _oldIndexToNewIndex, _mergedVariables );
 
     // Update the lower/upper bound maps
     for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )

@@ -157,6 +157,11 @@ private:
     AutoRowBoundTightener _rowBoundTightener;
 
     /*
+      Symbolic bound tightnere.
+    */
+    SymbolicBoundTightener *_symbolicBoundTightener;
+
+    /*
       The SMT engine is in charge of case splitting.
     */
     SmtCore _smtCore;
@@ -278,9 +283,10 @@ private:
 
     /*
       Apply all valid case splits proposed by the constraints.
+      Return true if a valid case split has been applied.
     */
-    void applyAllValidConstraintCaseSplits();
-    void applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constraint );
+    bool applyAllValidConstraintCaseSplits();
+    bool applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constraint );
 
     /*
       Update statitstics, print them if needed.
@@ -327,6 +333,12 @@ private:
       false otherwise.
     */
     bool attemptToMergeVariables( unsigned x1, unsigned x2 );
+
+    /*
+      Perform a round of symbolic bound tightening, taking into
+      account the current state of the piecewise linear constraints.
+    */
+    void performSymbolicBoundTightening();
 
     /*
       Check whether a timeout value has been provided and exceeded.

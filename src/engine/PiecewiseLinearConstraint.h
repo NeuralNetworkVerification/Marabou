@@ -192,6 +192,15 @@ public:
     */
     void registerConstraintBoundTightener( IConstraintBoundTightener *tightener );
 
+    /*
+      Return true if and only if this piecewise linear constraint supports
+      symbolic bound tightening.
+    */
+    virtual bool supportsSymbolicBoundTightening() const
+    {
+        return false;
+    }
+
 protected:
     bool _constraintActive;
 	Map<unsigned, double> _assignment;

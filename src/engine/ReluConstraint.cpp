@@ -629,6 +629,21 @@ String ReluConstraint::serializeToString() const
     return Stringf( "relu,%u,%u", _f, _b );
 }
 
+unsigned ReluConstraint::getB() const
+{
+    return _b;
+}
+
+ReluConstraint::PhaseStatus ReluConstraint::getPhaseStatus() const
+{
+    return _phaseStatus;
+}
+
+bool ReluConstraint::supportsSymbolicBoundTightening() const
+{
+    return true;
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "
