@@ -267,6 +267,11 @@ void SymbolicBoundTightener::setInputUpperBound( unsigned neuron, double bound )
 
 void SymbolicBoundTightener::run()
 {
+    run( GlobalConfiguration::USE_LINEAR_CONCRETIZATION );
+}
+
+void SymbolicBoundTightener::run( bool useLinearConcretization )
+{
     /*
       Initialize the symbolic bounds for the first layer. Each variable has symbolic
       upper and lower bound 1 for itself, 0 for all other varibales.
@@ -504,8 +509,6 @@ void SymbolicBoundTightener::run()
                     //     printf( "Relu (%u,%u) has been FIXED. Status: %u\n", currentLayer, i, reluPhase );
                 }
 
-                bool useNeurifyTrick = true;
-
                 // If the ReLU phase is not fixed yet, do the usual propagation:
                 if ( reluPhase == ReluConstraint::PHASE_NOT_FIXED )
                 {
@@ -541,7 +544,7 @@ void SymbolicBoundTightener::run()
 
                         if ( ubLb < 0 )
                         {
-                            if ( useNeurifyTrick )
+                            if ( useLinearConcretization )
                             {
                                 // Concretize the upper bound using the Ehler's-like sapproximation
 
@@ -555,7 +558,7 @@ void SymbolicBoundTightener::run()
                             }
                             else
                             {
-                                // No Neurify //
+                                // No linear concretization //
 
                                 // The upper bound range goes below 0, we we need to zero it out
                                 for ( unsigned j = 0; j < _inputLayerSize; ++j )
@@ -570,7 +573,7 @@ void SymbolicBoundTightener::run()
                             log( "SBT: did not eliminate upper!\n" );
                         }
 
-                        if ( useNeurifyTrick )
+                        if ( useLinearConcretization )
                         {
                             if ( lbUb < 0 )
                             {
@@ -591,7 +594,7 @@ void SymbolicBoundTightener::run()
                         }
                         else
                         {
-                            // No Neurify //
+                            // No linear concretization //
 
                             // The lower bound can be negative, so it is zeroed out also
                             for ( unsigned j = 0; j < _inputLayerSize; ++j )
@@ -715,15 +718,38 @@ void SymbolicBoundTightener::setEliminatedRelu( unsigned layer, unsigned neuron,
     printf( "SBT: relu eliminated! (%u, %u), set to %u\n", layer, neuron, status );
 }
 
-void SymbolicBoundTightener::updateVariableIndieces( const Map<unsigned, unsigned> &oldIndexToNewIndex )
+void SymbolicBoundTightener::updateVariableIndices( const Map<unsigned, unsigned> &oldIndexToNewIndex,
+                                                    const Map<unsigned, unsigned> &mergedVariables )
 {
-
-    // printf( "SBT: updateVariableIndex: x%u --> x%u\n", oldIndex, newIndex );
-
+    // First, do a pass to handle any merged variables
     auto bIt = _nodeIndexToBVariable.begin();
     while ( bIt != _nodeIndexToBVariable.end() )
     {
         unsigned b = bIt->second;
+
+        if ( mergedVariables.exists( b ) )
+            bIt->second = mergedVariables[b];
+
+        ++bIt;
+    }
+
+    auto fIt = _nodeIndexToFVar.begin();
+    while ( fIt != _nodeIndexToFVar.end() )
+    {
+        unsigned f = fIt->second;
+
+        if ( mergedVariables.exists( f ) )
+            fIt->second = mergedVariables[f];
+
+        ++fIt;
+    }
+
+    // Now handle re-indexing
+    bIt = _nodeIndexToBVariable.begin();
+    while ( bIt != _nodeIndexToBVariable.end() )
+    {
+        unsigned b = bIt->second;
+
         if ( !oldIndexToNewIndex.exists( b ) )
         {
             // This variable has been eliminated, remove from map
@@ -746,18 +772,7 @@ void SymbolicBoundTightener::updateVariableIndieces( const Map<unsigned, unsigne
         }
     }
 
-    // Recreate the inverse map
-    _bVariableToNodeIndex.clear();
-    for ( const auto &entry : _nodeIndexToBVariable )
-        _bVariableToNodeIndex[entry.second] = entry.first;
-
-    // printf( "Dumping F map before change (size = %u)\n", _nodeIndexToFVar.size() );
-    // for ( auto &it : _nodeIndexToFVar )
-    // {
-    //     printf( "<%u, %u> --> x%u\n", it.first._layer, it.first._neuron, it.second );
-    // }
-
-    auto fIt = _nodeIndexToFVar.begin();
+    fIt = _nodeIndexToFVar.begin();
     while ( fIt != _nodeIndexToFVar.end() )
     {
         unsigned f = fIt->second;
@@ -783,11 +798,10 @@ void SymbolicBoundTightener::updateVariableIndieces( const Map<unsigned, unsigne
         }
     }
 
-    // printf( "Dumping F map after change (size = %u)\n", _nodeIndexToFVar.size() );
-    // for ( auto &it : _nodeIndexToFVar )
-    // {
-    //     printf( "<%u, %u> --> x%u\n", it.first._layer, it.first._neuron, it.second );
-    // }
+    // Recreate the inverse B map
+    _bVariableToNodeIndex.clear();
+    for ( const auto &entry : _nodeIndexToBVariable )
+        _bVariableToNodeIndex[entry.second] = entry.first;
 }
 
 //

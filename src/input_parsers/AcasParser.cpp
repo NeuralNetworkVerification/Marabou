@@ -200,49 +200,7 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
             sbt->setInputUpperBound( i, max );
         }
 
-        inputQuery._sbt = sbt;
-
-        sbt->run();
-
-        // Extract the bounds for the intermediate layers
-        for ( unsigned i = 1; i < numberOfLayers - 1; ++i )
-        {
-            for ( unsigned j = 0; j < _acasNeuralNetwork.getLayerSize( i ); ++j )
-            {
-                double lb = sbt->getLowerBound( i, j );
-                double ub = sbt->getUpperBound( i, j );
-
-                // These bounds are for the F variales, after the relu activation
-
-                if ( lb > 0 )
-                    inputQuery.setLowerBound( _nodeToF[NodeIndex(i, j)], lb );
-
-                if ( ub < FloatUtils::infinity() )
-                    inputQuery.setUpperBound( _nodeToF[NodeIndex(i, j)], ub );
-
-                sbt->_nodeIndexToFVar[SymbolicBoundTightener::NodeIndex(i, j)] = _nodeToF[NodeIndex(i, j)];
-            }
-        }
-
-        // Extract the bounds for the output layer
-        unsigned outputLayer = numberOfLayers - 1;
-
-        for ( unsigned i = 0; i < _acasNeuralNetwork.getLayerSize( outputLayer ); ++i )
-        {
-            double lb = sbt->getLowerBound( outputLayer, i );
-            double ub = sbt->getUpperBound( outputLayer, i );
-
-            if ( lb > FloatUtils::negativeInfinity() )
-                inputQuery.setLowerBound( _nodeToB[NodeIndex( outputLayer, i )], lb );
-
-            if ( ub < FloatUtils::infinity() )
-                inputQuery.setUpperBound( _nodeToB[NodeIndex( outputLayer, i )], ub );
-
-            sbt->_nodeIndexToFVar[SymbolicBoundTightener::NodeIndex( outputLayer, i)] = _nodeToB[NodeIndex( outputLayer, i)];
-        }
-
-        // Tell the SBT about ReLU variable indexing, for later use
-        printf( "\nSBT Relu Mapping:\n" );
+        // Variable indexing
         for ( unsigned i = 1; i < numberOfLayers - 1; ++i )
         {
             unsigned layerSize = _acasNeuralNetwork.getLayerSize( i );
@@ -251,13 +209,11 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
             {
                 unsigned b = _nodeToB[NodeIndex( i, j )];
                 sbt->setReluBVariable( i, j, b );
-
-                printf( "\t<%u, %u> --> b: %u (f: %u)\n", i, j, b, _nodeToF[NodeIndex( i, j )] );
             }
         }
-    }
 
-    printf( "\n\n" );
+        inputQuery._sbt = sbt;
+    }
 }
 
 unsigned AcasParser::getNumInputVaribales() const

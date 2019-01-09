@@ -356,6 +356,11 @@ void InputQuery::printInputOutputBounds() const
     }
 }
 
+void InputQuery::setSymbolicBoundTightener( SymbolicBoundTightener *sbt )
+{
+    _sbt = sbt;
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

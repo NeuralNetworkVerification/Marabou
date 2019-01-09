@@ -80,6 +80,7 @@ public:
     void setInputUpperBound( unsigned neuron, double bound );
 
     void run();
+    void run( bool useLinearConcretization );
 
     // Extract the discovered bounds
     double getLowerBound( unsigned layer, unsigned neuron ) const;
@@ -99,8 +100,8 @@ public:
 
     Map<NodeIndex, unsigned> _nodeIndexToFVar; // For bound tightening
 
-    // void updateVariableIndex( unsigned oldIndex, unsigned newIndex );
-    void updateVariableIndieces( const Map<unsigned, unsigned> &oldIndexToNewIndex );
+    void updateVariableIndices( const Map<unsigned, unsigned> &oldIndexToNewIndex,
+                                const Map<unsigned, unsigned> &mergedVariables );
 
 private:
     unsigned _numberOfLayers;

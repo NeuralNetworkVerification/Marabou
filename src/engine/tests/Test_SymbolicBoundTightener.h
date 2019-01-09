@@ -114,7 +114,7 @@ public:
         sbt.setInputUpperBound( 1, 5 );
 
         // Run the tightener
-        TS_ASSERT_THROWS_NOTHING( sbt.run() );
+        TS_ASSERT_THROWS_NOTHING( sbt.run( false ) ); // Test with costant concretization
 
         // Expected range: [-11, 7], +- epsilon
         TS_ASSERT( sbt.getLowerBound( 2, 0 ) < -11 );
@@ -158,7 +158,7 @@ public:
         sbt.setInputUpperBound( 1, 5 );
 
         // Run the tightener
-        TS_ASSERT_THROWS_NOTHING( sbt.run() );
+        TS_ASSERT_THROWS_NOTHING( sbt.run( false ) ); // Test with costant concretization
 
         // Expected range: [-11, -5], +- epsilon
         TS_ASSERT( sbt.getLowerBound( 2, 0 ) < -11 );
@@ -205,7 +205,7 @@ public:
         sbt.setReluStatus( 1, 0, ReluConstraint::PHASE_NOT_FIXED );
 
         // Run the tightener
-        TS_ASSERT_THROWS_NOTHING( sbt.run() );
+        TS_ASSERT_THROWS_NOTHING( sbt.run( false ) ); // Test with costant concretization
 
         // Expected range: [-11, -5], +- epsilon
         TS_ASSERT( sbt.getLowerBound( 2, 0 ) < -11 );
@@ -217,7 +217,7 @@ public:
         sbt.setReluStatus( 1, 0, ReluConstraint::PHASE_ACTIVE );
 
         // Run the tightener
-        TS_ASSERT_THROWS_NOTHING( sbt.run() );
+        TS_ASSERT_THROWS_NOTHING( sbt.run( false ) ); // Test with costant concretization
 
         // Expected range: [-11, -5], +- epsilon
         TS_ASSERT( sbt.getLowerBound( 2, 0 ) < -9 );
@@ -229,7 +229,7 @@ public:
         sbt.setReluStatus( 1, 0, ReluConstraint::PHASE_INACTIVE );
 
         // Run the tightener
-        TS_ASSERT_THROWS_NOTHING( sbt.run() );
+        TS_ASSERT_THROWS_NOTHING( sbt.run( false ) ); // Test with costant concretization
 
         // Expected range: [-11, -5], +- epsilon
         TS_ASSERT( sbt.getLowerBound( 2, 0 ) < -11 );

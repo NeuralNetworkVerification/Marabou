@@ -15,10 +15,9 @@
 
 #include "Equation.h"
 #include "List.h"
+#include "MString.h"
 #include "Map.h"
 #include "PiecewiseLinearConstraint.h"
-#include "MString.h"
-
 #include "SymbolicBoundTightener.h"
 
 class InputQuery
@@ -89,6 +88,11 @@ public:
     InputQuery( const InputQuery &other );
 
     /*
+      Attach a symbolic bound tightener to the input query
+    */
+    void setSymbolicBoundTightener( SymbolicBoundTightener *sbt );
+
+    /*
       Debugging methods
     */
 
@@ -107,8 +111,6 @@ public:
       Print input and output bounds
     */
     void printInputOutputBounds() const;
-
-    SymbolicBoundTightener *_sbt;
 
 private:
     unsigned _numberOfVariables;
@@ -133,6 +135,8 @@ public:
     Map<unsigned, unsigned> _inputIndexToVariable;
     Map<unsigned, unsigned> _variableToOutputIndex;
     Map<unsigned, unsigned> _outputIndexToVariable;
+
+    SymbolicBoundTightener *_sbt;
 };
 
 #endif // __InputQuery_h__

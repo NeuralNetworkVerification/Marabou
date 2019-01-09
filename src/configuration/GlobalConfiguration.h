@@ -125,6 +125,10 @@ public:
     // Whether symbolic bound tightening should be used or not
     static const bool USE_SYMBOLIC_BOUND_TIGHTENING;
 
+    // If symbolic bound tightening is used, should linear concretization (as
+    // opposed to constant concretization) be used.
+    static const bool USE_LINEAR_CONCRETIZATION;
+
     // When doing bound tightening using the explicit basis matrix, should the basis matrix be inverted?
     static const ExplicitBasisBoundTighteningType EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE;
 
