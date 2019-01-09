@@ -369,7 +369,6 @@ void Statistics::incNumPops()
     ++_numPops;
 }
 
-
 unsigned Statistics::getNumPops() const
 {
     return _numPops;
