@@ -94,6 +94,7 @@ public:
     unsigned getNumPops() const;
     unsigned getNumVisitedTreeStates() const;
     unsigned getNumSplits() const;
+    unsigned long long getTimeMainLoopMicro() const;
     unsigned long long getTotalTime() const;
 
     /*

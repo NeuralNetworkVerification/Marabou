@@ -368,6 +368,7 @@ void Statistics::incNumPops()
     ++_numPops;
 }
 
+
 unsigned Statistics::getNumPops() const
 {
     return _numPops;
@@ -613,6 +614,11 @@ unsigned long long Statistics::getNumSimplexPivotSelectionsIgnoredForStability()
 unsigned long long Statistics::getNumSimplexUnstablePivots() const
 {
     return _numSimplexUnstablePivots;
+}
+
+unsigned long long Statistics::getTimeMainLoopMicro() const
+{
+    return _timeMainLoopMicro;
 }
 
 unsigned long long Statistics::getTotalTime() const

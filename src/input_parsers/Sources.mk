@@ -4,7 +4,6 @@ SOURCES += \
 	AcasParser.cpp \
 	BerkeleyNeuralNetwork.cpp \
 	BerkeleyParser.cpp \
-	PropertyParser.cpp \
 
 #
 # Local Variables:
