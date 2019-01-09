@@ -81,7 +81,7 @@ bool Engine::solve(unsigned timeout)
     mainLoopStatistics();
     printf( "\n---\n" );
 
-    bool to_ = (timeout>0);
+    bool to_ = (timeout>0); // only add time limit if timeout is larger than 0
     struct timespec mainLoopStart = TimeUtils::sampleMicro();
     while ( true )
     {
@@ -90,11 +90,12 @@ bool Engine::solve(unsigned timeout)
         mainLoopStart = mainLoopEnd;
 
         if (to_ && _statistics.getTotalTime() / 1000 > timeout){
+            // If the time limit is reached
             printf( "\n\nEngine: quitting due to timeout...\n\n" );
             printf( "Final statistics:\n" );
             _statistics.print();
             _exitCode = Engine::TIMEOUT;
-            _statistics.timeout();
+            _statistics.timeout(); // Set _statistics._timeOut to true
             return false;
         }
 

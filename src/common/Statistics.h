@@ -96,6 +96,11 @@ public:
     unsigned getNumSplits() const;
     unsigned long long getTimeMainLoopMicro() const;
     unsigned long long getTotalTime() const;
+
+
+    /*
+      setter and getter for _timedOut
+    */
     void timeout();
     bool hasTimedOut() const;
 

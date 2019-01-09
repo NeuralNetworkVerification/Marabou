@@ -51,8 +51,8 @@ public:
     };
 
     /*
-      Attempt to find a feasible solution for the input. Returns true
-      if found, false if infeasible.
+      Attempt to find a feasible solution for the input within a time limit
+      (if given). Returns true if found, false if infeasible.
     */
     bool solve(unsigned timeout=0);
 

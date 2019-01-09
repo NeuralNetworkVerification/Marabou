@@ -162,9 +162,9 @@ class MarabouNetwork:
         ipq = self.getMarabouQuery()
         vals, stats = MarabouCore.solve(ipq, filename, timeout)
         if verbose:
-            if to:
+            if stats.hasTimedOut():
                 print("TO")
-            if len(vals)==0:
+            elif len(vals)==0:
                 print("UNSAT")
             else:
                 print("SAT")
@@ -204,7 +204,7 @@ class MarabouNetwork:
         ipq = MarabouCore.loadQuery(filename)
         vals, stats = MarabouCore.solve(ipq, filename, timeout=0)
         if verbose:
-            if to:
+            if stats.hasTimedOut():
                 print ("TIMEOUT")
             elif len(vals)==0:
                 print("UNSAT")
