@@ -71,9 +71,9 @@ void addMaxConstraint(InputQuery& ipq, std::set<unsigned> elements, unsigned v){
     ipq.addPiecewiseLinearConstraint(m);
 }
 
-std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::string redirect=""){
+std::tuple<std::map<int, double>, Statistics, bool> solve(InputQuery inputQuery, std::string redirect="", float timeout=0){
     // Arguments: InputQuery object, filename to redirect output
-    // Returns: map from variable number to value
+    // Returns: map from variable number to value, statistics object, an a boolean denoting whether a timeout occurs
     std::map<int, double> ret;
     Statistics retStats;
     int output=-1;
@@ -81,10 +81,9 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::s
         output=redirectOutputToFile(redirect);
     try{
         Engine engine;
-        if(!engine.processInputQuery(inputQuery)) return std::make_pair(ret, *(engine.getStatistics()));
-        
-        if(!engine.solve()) return std::make_pair(ret, *(engine.getStatistics()));
-        
+        if(!engine.processInputQuery(inputQuery)) return std::make_tuple(ret, *(engine.getStatistics()), false);
+	if(!engine.solve(timeout)) return std::make_tuple(ret, *(engine.getStatistics()), engine.getExitCode()==Engine::TIMEOUT);
+
         engine.extractSolution(inputQuery);
         retStats = *(engine.getStatistics());
         for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); i++)
@@ -92,11 +91,11 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::s
     }
     catch(const ReluplexError &e){
         printf( "Caught a ReluplexError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );
-        return std::make_pair(ret, retStats);
+        return std::make_tuple(ret, retStats, false);
     }
     if(output != -1)
         restoreOutputStream(output);
-    return std::make_pair(ret, retStats);
+    return std::make_tuple(ret, retStats, false);
 }
 
 void saveQuery(InputQuery& inputQuery, std::string filename){
