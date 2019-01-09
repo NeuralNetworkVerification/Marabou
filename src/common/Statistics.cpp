@@ -45,6 +45,7 @@ Statistics::Statistics()
     , _currentTableauN( 0 )
     , _numTableauBoundHopping( 0 )
     , _numTightenedBounds( 0 )
+    , _numTighteningsFromSymbolicBoundTightening( 0 )
     , _numRowsExaminedByRowTightener( 0 )
     , _numTighteningsFromRows( 0 )
     , _numBoundTighteningsOnExplicitBasis( 0 )
@@ -60,7 +61,7 @@ Statistics::Statistics()
     , _ppNumConstraintsRemoved( 0 )
     , _ppNumEquationsRemoved( 0 )
     , _totalTimePerformingValidCaseSplitsMicro( 0 )
-    , _totalTimePerformingSBT( 0 )
+    , _totalTimePerformingSymbolicBoundTightening( 0 )
     , _totalTimeHandlingStatisticsMicro( 0 )
     , _totalNumberOfValidCaseSplits( 0 )
     , _totalTimeExplicitBasisBoundTighteningMicro( 0 )
@@ -69,7 +70,6 @@ Statistics::Statistics()
     , _totalTimeConstraintMatrixBoundTighteningMicro( 0 )
     , _totalTimeApplyingStoredTighteningsMicro( 0 )
     , _totalTimeSmtCoreMicro( 0 )
-    , _numBoundsTightenedInSBT( 0 )
     , _timedOut( false )
 {
 }
@@ -155,9 +155,9 @@ void Statistics::print()
             , _totalTimeSmtCoreMicro / 1000
             );
 
-    printf( "\t\t[%.2lf%%] SBT: %llu milli\n"
-            , printPercents( _totalTimePerformingSBT, _timeMainLoopMicro )
-            , _totalTimePerformingSBT / 1000
+    printf( "\t\t[%.2lf%%] Symbolic Bound Tightening: %llu milli\n"
+            , printPercents( _totalTimePerformingSymbolicBoundTightening, _timeMainLoopMicro )
+            , _totalTimePerformingSymbolicBoundTightening / 1000
             );
 
     unsigned long long total =
@@ -171,7 +171,7 @@ void Statistics::print()
         _totalTimeConstraintMatrixBoundTighteningMicro +
         _totalTimeApplyingStoredTighteningsMicro +
         _totalTimeSmtCoreMicro +
-        _totalTimePerformingSBT;
+        _totalTimePerformingSymbolicBoundTightening;
 
     printf( "\t\t[%.2lf%%] Unaccounted for: %llu milli\n"
             , printPercents( _timeMainLoopMicro - total, _timeMainLoopMicro )
@@ -278,7 +278,7 @@ void Statistics::print()
             (unsigned)((double)_pseNumIterations / _pseNumResetReferenceSpace) : 0 );
 
     printf( "\t--- SBT ---\n" );
-    printf( "\tNumber of tightened bounds: %llu\n", _numBoundsTightenedInSBT );
+    printf( "\tNumber of tightened bounds: %llu\n", _numTighteningsFromSymbolicBoundTightening );
 }
 
 double Statistics::printPercents( unsigned long long part, unsigned long long total ) const
@@ -542,9 +542,9 @@ void Statistics::addTimeForValidCaseSplit( unsigned long long time )
     ++_totalNumberOfValidCaseSplits;
 }
 
-void Statistics::addTimeForSBT( unsigned long long time )
+void Statistics::addTimeForSymbolicBoundTightening( unsigned long long time )
 {
-    _totalTimePerformingSBT += time;
+    _totalTimePerformingSymbolicBoundTightening += time;
 }
 
 void Statistics::addTimeForStatistics( unsigned long long time )
@@ -666,9 +666,9 @@ void Statistics::printStartingIteration( unsigned long long iteration, String me
         printf( "DBG_PRINT: %s\n", message.ascii() );
 }
 
-void Statistics::addNumBoundsTightenedInSBT( unsigned bounds )
+void Statistics::incNumTighteningsFromSymbolicBoundTightening( unsigned increment )
 {
-    _numBoundsTightenedInSBT += bounds;
+    _numTighteningsFromSymbolicBoundTightening += increment;
 }
 
 //
