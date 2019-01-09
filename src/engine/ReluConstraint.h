@@ -134,15 +134,21 @@ public:
     */
     String serializeToString() const;
 
-    unsigned getB() const
-    {
-        return _b;
-    }
+    /*
+      Get the index of the B variable.
+    */
+    unsigned getB() const;
 
-    PhaseStatus getPhaseStatus() const
-    {
-        return _phaseStatus;
-    }
+    /*
+      Get the current phase status.
+    */
+    PhaseStatus getPhaseStatus() const;
+
+    /*
+      Return true if and only if this piecewise linear constraint supports
+      symbolic bound tightening.
+    */
+    bool supportsSymbolicBoundTightening() const;
 
 private:
     unsigned _b, _f;

@@ -25,6 +25,7 @@
 
 Engine::Engine()
     : _rowBoundTightener( *_tableau )
+    , _symbolicBoundTightener( NULL )
     , _smtCore( this )
     , _numPlConstraintsDisabledByValidSplits( 0 )
     , _preprocessingEnabled( false )
@@ -54,6 +55,12 @@ Engine::~Engine()
     {
         delete[] _work;
         _work = NULL;
+    }
+
+    if ( _symbolicBoundTightener )
+    {
+        delete _symbolicBoundTightener;
+        _symbolicBoundTightener = NULL;
     }
 }
 
@@ -151,7 +158,6 @@ bool Engine::solve( unsigned timeoutInSeconds )
             {
                 _smtCore.performSplit();
                 performSymbolicBoundTightening();
-                // exit( 1 );
                 continue;
             }
 
@@ -732,6 +738,9 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         _activeEntryStrategy->initialize( _tableau );
 
         _statistics.setNumPlConstraints( _plConstraints.size() );
+
+        if ( _preprocessedQuery._sbt )
+            _symbolicBoundTightener = _preprocessedQuery._sbt;
 
         struct timespec end = TimeUtils::sampleMicro();
         _statistics.setPreprocessingTime( TimeUtils::timePassed( start, end ) );
@@ -1342,37 +1351,28 @@ Engine::ExitCode Engine::getExitCode() const
 
 void Engine::performSymbolicBoundTightening()
 {
-    if ( !_preprocessedQuery._sbt )
+    if ( !GlobalConfiguration::USE_SYMBOLIC_BOUND_TIGHTENING )
         return;
-
-    _preprocessedQuery._sbt->clearReluStatuses();
-    unsigned numTightenedBounds = 0;
-
-    // printf( "\nSBT DEBUG: dumping states of all (%u) ReLUs:\n", _plConstraints.size() );
-    // for ( const auto &constraint : _plConstraints )
-    // {
-    //     String reluString;
-    //     constraint->dump( reluString );
-    //     printf( "\t%s\n", reluString.ascii() );
-    // }
 
     struct timespec start = TimeUtils::sampleMicro();
 
-    // The SBT is provided as part of the input query, and it already
-    // knows the original network topology and weights.
+    unsigned numTightenedBounds = 0;
+
+    // Clear any previously stored information
+    _symbolicBoundTightener->clearReluStatuses();
 
     // Step 1: tell the SBT about input bounds; maybe they were tightened
-    unsigned sanity = 0;
+    unsigned inputVariableIndex = 0;
     for ( const auto &inputVariable : _preprocessedQuery.getInputVariables() )
     {
-        // We assume the ordering is correct (i.e., input are 0, 1, 2, 3, 4) but really something more robust is needed
-
-        if ( inputVariable != sanity )
+        // We assume the input variables are the first variables
+        if ( inputVariable != inputVariableIndex )
         {
-            printf( "Error! Sanity failed, input variable with strange index\n" );
+            throw ReluplexError( ReluplexError::SYMBOLIC_BOUND_TIGHTNER_FAULTY_INPUT,
+                                 Stringf( "Sanity check failed, input variable %u with unexpected index %u", inputVariableIndex, inputVariable ).ascii() );
             exit( 1 );
         }
-        ++sanity;
+        ++inputVariableIndex;
 
         double min, max;
         if ( _preprocessor.variableIsFixed( inputVariable ) )
@@ -1392,42 +1392,34 @@ void Engine::performSymbolicBoundTightening()
             max = _tableau->getUpperBound( inputVariable );
         }
 
-        // printf( "Input variable: %u. Range: [%lf, %lf]\n", inputVariable, min, max );
-
-        _preprocessedQuery._sbt->setInputLowerBound( inputVariable, min );
-        _preprocessedQuery._sbt->setInputUpperBound( inputVariable, max );
+        _symbolicBoundTightener->setInputLowerBound( inputVariable, min );
+        _symbolicBoundTightener->setInputUpperBound( inputVariable, max );
     }
 
-    // Step 2: tell the SBT about the state of the ReLUs
+    // Step 2: tell the SBT about the state of the ReLU constraints
     for ( const auto &constraint : _plConstraints )
     {
+        if ( !constraint->supportsSymbolicBoundTightening() )
+            throw ReluplexError( ReluplexError::SYMBOLIC_BOUND_TIGHTNER_UNSUPPORTED_CONSTRAINT_TYPE );
+
         ReluConstraint *relu = (ReluConstraint *)constraint;
         unsigned b = relu->getB();
-        SymbolicBoundTightener::NodeIndex nodeIndex = _preprocessedQuery._sbt->nodeIndexFromB( b );
-        _preprocessedQuery._sbt->setReluStatus( nodeIndex._layer, nodeIndex._neuron, relu->getPhaseStatus() );
+        SymbolicBoundTightener::NodeIndex nodeIndex = _symbolicBoundTightener->nodeIndexFromB( b );
+        _symbolicBoundTightener->setReluStatus( nodeIndex._layer, nodeIndex._neuron, relu->getPhaseStatus() );
     }
 
     // Step 3: perfrom the bound tightening
-    _preprocessedQuery._sbt->run();
+    _symbolicBoundTightener->run();
 
     // Stpe 4: extract any tighter bounds that were discovered
-    for ( const auto &pair : _preprocessedQuery._sbt->_nodeIndexToFVar )
+    for ( const auto &pair : _symbolicBoundTightener->_nodeIndexToFVar )
     {
         unsigned layer = pair.first._layer;
         unsigned neuron = pair.first._neuron;
         unsigned var = pair.second;
 
-        // if ( _preprocessor.variableIsFixed( var ) )
-        // {
-        //     // We've learned a bound for a fixed variable, disregard
-        //     printf( "Learned bound for a fixed var! This shouldnt happen\n" );
-        //     exit( 1 );
-        // }
-
-        // unsigned varIndex = _preprocessor.getNewIndex( var );
-
-        double lb = _preprocessedQuery._sbt->getLowerBound( layer, neuron );
-        double ub = _preprocessedQuery._sbt->getUpperBound( layer, neuron );
+        double lb = _symbolicBoundTightener->getLowerBound( layer, neuron );
+        double ub = _symbolicBoundTightener->getUpperBound( layer, neuron );
 
         double currentLb = _tableau->getLowerBound( var );
         double currentUb = _tableau->getUpperBound( var );
@@ -1436,36 +1428,15 @@ void Engine::performSymbolicBoundTightening()
         _tableau->tightenUpperBound( var, ub );
 
         if ( FloatUtils::lt( ub, currentUb ) )
-        {
-            // printf( "\tTighter uB: %lf --> %lf. Layer: %u, Neuron: %u, Var: %u\n", currentUb, ub,
-            //         layer, neuron, var );
             ++numTightenedBounds;
-        }
 
         if ( FloatUtils::gt( lb, currentLb ) )
-        {
-            // printf( "\tTighter lb: %lf --> %lf. Layer: %u, Neuron: %u, Var: %u\n", currentLb, lb,
-            //         layer, neuron, var );
             ++numTightenedBounds;
-        }
     }
 
     struct timespec end = TimeUtils::sampleMicro();
-
     _statistics.addTimeForSymbolicBoundTightening( TimeUtils::timePassed( start, end ) );
-
     _statistics.incNumTighteningsFromSymbolicBoundTightening( numTightenedBounds );
-
-    // if ( numTightenedBounds == 0 )
-    // {
-    //     printf( "\n\tSBT bad!!\n" );
-    // }
-    // else
-    // {
-    //     printf( "\n\tSBT good!!\n" );
-    // }
-
-    // printf( "\n" );
 }
 
 bool Engine::shouldExitDueToTimeout( unsigned timeout ) const
