@@ -96,6 +96,8 @@ public:
     unsigned getNumSplits() const;
     unsigned long long getTimeMainLoopMicro() const;
     unsigned long long getTotalTime() const;
+    void timeout();
+    bool hasTimedOut() const;
 
     /*
       Bound tightening related statistics.
@@ -282,6 +284,9 @@ private:
 
     // Total amount of time spent within the SMT core
     unsigned long long _totalTimeSmtCoreMicro;
+
+    // Whether the engine quitted with timeout
+    bool _timedOut;
 
     // Printing helpers
     double printPercents( unsigned long long part, unsigned long long total ) const;

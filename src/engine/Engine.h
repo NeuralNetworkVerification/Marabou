@@ -54,7 +54,7 @@ public:
       Attempt to find a feasible solution for the input. Returns true
       if found, false if infeasible.
     */
-    bool solve(float timeout=0);
+    bool solve(unsigned timeout=0);
 
     /*
       Process the input query and pass the needed information to the

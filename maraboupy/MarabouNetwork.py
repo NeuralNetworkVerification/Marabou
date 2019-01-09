@@ -160,7 +160,7 @@ class MarabouNetwork:
                     to how an input query was solved.
         """
         ipq = self.getMarabouQuery()
-        vals, stats, to = MarabouCore.solve(ipq, filename, timeout)
+        vals, stats = MarabouCore.solve(ipq, filename, timeout)
         if verbose:
             if to:
                 print("TO")
@@ -175,7 +175,7 @@ class MarabouNetwork:
                 for i in range(self.outputVars.size):
                     print("output {} = {}".format(i, vals[self.outputVars.item(i)]))
 
-        return [vals, stats, to]
+        return [vals, stats]
 
     def saveQuery(self, filename=""):
         """
@@ -202,7 +202,7 @@ class MarabouNetwork:
         """
         #ipq = self.getMarabouQuery()
         ipq = MarabouCore.loadQuery(filename)
-        vals, stats, to = MarabouCore.solve(ipq, filename, timeout=0)
+        vals, stats = MarabouCore.solve(ipq, filename, timeout=0)
         if verbose:
             if to:
                 print ("TIMEOUT")
@@ -216,7 +216,7 @@ class MarabouNetwork:
                 for i in range(self.outputVars.size):
                     print("output {} = {}".format(i, vals[self.outputVars.item(i)]))
 
-        return [vals, stats, to]
+        return [vals, stats]
 
     def evaluateWithMarabou(self, inputValues, filename="evaluateWithMarabou.log", timeout=0):
         """

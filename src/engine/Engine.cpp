@@ -70,7 +70,7 @@ void Engine::adjustWorkMemorySize()
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Engine::work" );
 }
 
-bool Engine::solve(float timeout)
+bool Engine::solve(unsigned timeout)
 {
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
@@ -89,11 +89,12 @@ bool Engine::solve(float timeout)
         _statistics.addTimeMainLoop( TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
         mainLoopStart = mainLoopEnd;
 
-        if (to_ && _statistics.getTotalTime() / 1000 >= timeout){
+        if (to_ && _statistics.getTotalTime() / 1000 > timeout){
             printf( "\n\nEngine: quitting due to timeout...\n\n" );
             printf( "Final statistics:\n" );
             _statistics.print();
             _exitCode = Engine::TIMEOUT;
+            _statistics.timeout();
             return false;
         }
 
