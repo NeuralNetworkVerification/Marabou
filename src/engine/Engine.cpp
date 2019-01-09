@@ -1351,7 +1351,8 @@ Engine::ExitCode Engine::getExitCode() const
 
 void Engine::performSymbolicBoundTightening()
 {
-    if ( !GlobalConfiguration::USE_SYMBOLIC_BOUND_TIGHTENING )
+    if ( ( !GlobalConfiguration::USE_SYMBOLIC_BOUND_TIGHTENING ) ||
+         ( !_symbolicBoundTightener ) )
         return;
 
     struct timespec start = TimeUtils::sampleMicro();
@@ -1370,7 +1371,6 @@ void Engine::performSymbolicBoundTightening()
         {
             throw ReluplexError( ReluplexError::SYMBOLIC_BOUND_TIGHTNER_FAULTY_INPUT,
                                  Stringf( "Sanity check failed, input variable %u with unexpected index %u", inputVariableIndex, inputVariable ).ascii() );
-            exit( 1 );
         }
         ++inputVariableIndex;
 
