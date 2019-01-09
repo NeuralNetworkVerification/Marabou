@@ -66,7 +66,7 @@ inputQuery.addEquation(equation3)
 MarabouCore.addReluConstraint(inputQuery,1,2)
 MarabouCore.addReluConstraint(inputQuery,3,4)
 
-vars1, stats1 = MarabouCore.solve(inputQuery, "")
+vars1, stats1 = MarabouCore.solve(inputQuery, "", 0)
 if len(vars1)>0:
 	print("SAT")
 	print(vars1)
