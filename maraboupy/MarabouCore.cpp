@@ -121,7 +121,8 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def("addEquation", &InputQuery::addEquation)
         .def("setSymbolicBoundTightener", &InputQuery::setSymbolicBoundTightener);
     py::class_<SymbolicBoundTightener>(m, "SymbolicBoundTightener")
-        .def(py::init())
+      .def(py::init());
+      /*
         .def("setNumberOfLayers", &SymbolicBoundTightener::setNumberOfLayers)
         .def("setLayerSize", &SymbolicBoundTightener::setLayerSize)
       .def("allocateWeightAndBiasSpace", &SymbolicBoundTightener::allocateWeightAndBiasSpace)
@@ -134,9 +135,7 @@ PYBIND11_MODULE(MarabouCore, m) {
       .def("nodeIndexFromB", &SymbolicBoundTightener::nodeIndexFromB)
       .def("&getNodeIndexToFMapping", &SymbolicBoundTightener::&getNodeIndexToFMapping)
       .def("updateVariableIndices", &SymbolicBoundTightener::updateVariableIndices)
-
-
-    sbt.def(py::init());
+      */
     py::class_<Equation> eq(m, "Equation");
     eq.def(py::init());
     eq.def(py::init<Equation::EquationType>());

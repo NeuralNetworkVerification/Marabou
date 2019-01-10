@@ -145,11 +145,6 @@ class MarabouNetwork:
             assert u < self.numVars
             ipq.setUpperBound(u, self.upperBounds[u])
 
-        # To-do: check whether sbt is performed.
-        sbt = MarabouCore.SymbolicBoundTightener()
-        sbt.setNumberOfLayers(self.
-
-        ipq.setSymbolicBoundTightener(sbt)
         return ipq
 
     def solve(self, filename="", verbose=True, timeout=0):

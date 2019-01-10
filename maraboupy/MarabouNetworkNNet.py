@@ -6,7 +6,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
     """
     Class that implements a MarabouNetwork from an NNet file.
     """
-    def __init__ (self, filename):
+    def __init__ (self, filename, perform_sbt=False):
         """
         Constructs a MarabouNetworkNNet object from an .nnet file.
 
@@ -25,6 +25,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
             weights          (list of list of lists) Outer index corresponds to layer
                                 number.
             biases           (list of lists) Outer index corresponds to layer number.
+            sbt              The SymbolicBoundTightener object
         """
         super().__init__()
 
@@ -64,6 +65,44 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
         # Set the number of variables
         self.numVars = self.numberOfVariables()
+        if perform_sbt:
+            self.sbt = createSBT(filename)
+        else:
+            self.sbt = None
+
+    def createSBT(self, filename):
+        sbt = MarabouCore.SymbolicBoundTightener()
+        sbt.setNumberOfLayers(self.numLayers)
+        for layer, size in enumerate(self.layerSizes):
+            sbt.setLayerSize(layer, size)
+        sbt.allocateWeightAndBiasSpace()
+        # Biases
+        assert (len(self.biases) == self.numLayers - 1)
+        for layer in range(self.numLayers)[1:]:
+            assert (len(biases[layer - 1]) == self.layerSizes[layer])
+            for i in range(self.layerSizes[layer]):
+                sbt.setBias(layer, i, self.biases[layer - 1][j])
+        # Weights
+        for layer in range(len(self.weights) - 1):
+            targetLayerSize = self.layerSizes[layer + 1]
+            sourceLayerSize = self.layerSizes[layer]
+            for target in range(targetLayerSize):
+                for source in range(sourceLayerSize):
+                    sbt.setWeight(layer, source, target, weights[layer][source][target])
+        # Initial bounds
+        for i in range(self.inputSize):
+            sbt.setInputLowerBound( i, inputMinimums[i])
+            sbt.setInputUpperBound( i, inputMaximums[i])
+
+        # Variable indexing !!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+        return sbt
+
+    def getMarabouQuery(self):
+        ipq = super(MarabouNetworkNNet, self).getMarabouQuery()
+        ipq.setSymbolicBoundTightener(self.sbt)
+        return ipq
 
     """
     Read the nnet file, load all the values and assign the class members.
@@ -76,7 +115,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
             line = f.readline()
             cnt = 1
             while line[0:2] == "//":
-                line=f.readline() 
+                line=f.readline()
                 cnt+= 1
             #numLayers does't include the input layer!
             numLayers, inputSize, outputSize, maxLayersize = [int(x) for x in line.strip().split(",")[:-1]]
