@@ -118,7 +118,25 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def("getUpperBound", &InputQuery::getUpperBound)
         .def("getLowerBound", &InputQuery::getLowerBound)
         .def("setNumberOfVariables", &InputQuery::setNumberOfVariables)
-        .def("addEquation", &InputQuery::addEquation);
+        .def("addEquation", &InputQuery::addEquation)
+        .def("setSymbolicBoundTightener", &InputQuery::setSymbolicBoundTightener);
+    py::class_<SymbolicBoundTightener>(m, "SymbolicBoundTightener")
+        .def(py::init())
+        .def("setNumberOfLayers", &SymbolicBoundTightener::setNumberOfLayers)
+        .def("setLayerSize", &SymbolicBoundTightener::setLayerSize)
+      .def("allocateWeightAndBiasSpace", &SymbolicBoundTightener::allocateWeightAndBiasSpace)
+      .def("setBias", &SymbolicBoundTightener::setBias)
+      .def("setWeight", &SymbolicBoundTightener::setWeight)
+      .def("setInputLowerBound", &SymbolicBoundTightener::setInputLowerBound)
+      .def("setLayerSize", &SymbolicBoundTightener::setLayerSize)
+      .def("setReluBVariable", &SymbolicBoundTightener::setReluBVariable)
+      .def("setReluFVariable", &SymbolicBoundTightener::setReluFVariable)
+      .def("nodeIndexFromB", &SymbolicBoundTightener::nodeIndexFromB)
+      .def("&getNodeIndexToFMapping", &SymbolicBoundTightener::&getNodeIndexToFMapping)
+      .def("updateVariableIndices", &SymbolicBoundTightener::updateVariableIndices)
+
+
+    sbt.def(py::init());
     py::class_<Equation> eq(m, "Equation");
     eq.def(py::init());
     eq.def(py::init<Equation::EquationType>());
