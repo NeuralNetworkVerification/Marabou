@@ -442,6 +442,10 @@ void SymbolicBoundTightener::run( bool useLinearConcretization )
         //
         for ( unsigned i = 0; i < currentLayerSize; ++i )
         {
+            // lbLb: the lower bound for the expression of the lower bound
+            // lbUb: the upper bound for the expression of the lower bound
+            // etc
+
             double lbLb = 0;
             double lbUb = 0;
             double ubLb = 0;
@@ -512,7 +516,6 @@ void SymbolicBoundTightener::run( bool useLinearConcretization )
                 // If the ReLU phase is not fixed yet, do the usual propagation:
                 if ( reluPhase == ReluConstraint::PHASE_NOT_FIXED )
                 {
-
                     if ( ubUb <= 0 )
                     {
                         // lb <= ub <= 0
@@ -539,11 +542,12 @@ void SymbolicBoundTightener::run( bool useLinearConcretization )
                     }
                     else
                     {
-                        // lbLb <= 0 <= ubUb
+                        // lbLb < 0 < ubUb
                         // The ReLU might affect this entry, we need to figure out how
 
                         if ( ubLb < 0 )
                         {
+                            // ubLb < 0 < ubUb
                             if ( useLinearConcretization )
                             {
                                 // Concretize the upper bound using the Ehler's-like sapproximation
@@ -588,9 +592,8 @@ void SymbolicBoundTightener::run( bool useLinearConcretization )
                                     _currentLayerLowerBounds[j * currentLayerSize + i] =
                                         _currentLayerLowerBounds[j * currentLayerSize + i] * lbUb / ( lbUb - lbLb );
 
+                                _currentLayerLowerBias[i] = _currentLayerLowerBias[i] * lbUb / ( lbUb - lbLb );
                             }
-
-                            lbLb = 0; // Needed?
                         }
                         else
                         {
@@ -601,9 +604,9 @@ void SymbolicBoundTightener::run( bool useLinearConcretization )
                                 _currentLayerLowerBounds[j * currentLayerSize + i] = 0;
 
                             _currentLayerLowerBias[i] = 0;
-                            lbLb = 0;
                         }
 
+                        lbLb = 0;
                     }
 
                     log( Stringf( "\tAfter ReLU: concrete lb: %lf, ub: %lf\n", lbLb, ubUb ) );
