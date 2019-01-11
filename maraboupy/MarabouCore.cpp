@@ -81,7 +81,6 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::s
         output=redirectOutputToFile(redirect);
     try{
         Engine engine;
-
         if(!engine.processInputQuery(inputQuery)) return std::make_pair(ret, *(engine.getStatistics()));
 
         if(!engine.solve(timeout)) return std::make_pair(ret, *(engine.getStatistics()));
