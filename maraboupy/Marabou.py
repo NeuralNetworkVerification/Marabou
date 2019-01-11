@@ -2,7 +2,7 @@
 from .MarabouNetworkNNet import *
 from .MarabouNetworkTF import *
 
-def read_nnet(filename):
+def read_nnet(filename, sbt=False):
     """
     Constructs a MarabouNetworkNnet object from a .nnet file
 
@@ -11,7 +11,7 @@ def read_nnet(filename):
     Returns:
         marabouNetworkNNet: (MarabouNetworkNNet) representing network
     """
-    return MarabouNetworkNNet(filename)
+    return MarabouNetworkNNet(filename, sbt=sbt)
 
 
 def read_tf(filename, inputName=None, outputName=None, savedModel=False, savedModelTags=[]):

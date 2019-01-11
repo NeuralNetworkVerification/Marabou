@@ -71,6 +71,7 @@ void addMaxConstraint(InputQuery& ipq, std::set<unsigned> elements, unsigned v){
     ipq.addPiecewiseLinearConstraint(m);
 }
 
+
 std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::string redirect="", unsigned timeout=0){
     // Arguments: InputQuery object, filename to redirect output
     // Returns: map from variable number to value
@@ -121,21 +122,15 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def("addEquation", &InputQuery::addEquation)
         .def("setSymbolicBoundTightener", &InputQuery::setSymbolicBoundTightener);
     py::class_<SymbolicBoundTightener>(m, "SymbolicBoundTightener")
-      .def(py::init());
-      /*
+        .def(py::init())
         .def("setNumberOfLayers", &SymbolicBoundTightener::setNumberOfLayers)
         .def("setLayerSize", &SymbolicBoundTightener::setLayerSize)
-      .def("allocateWeightAndBiasSpace", &SymbolicBoundTightener::allocateWeightAndBiasSpace)
-      .def("setBias", &SymbolicBoundTightener::setBias)
-      .def("setWeight", &SymbolicBoundTightener::setWeight)
-      .def("setInputLowerBound", &SymbolicBoundTightener::setInputLowerBound)
-      .def("setLayerSize", &SymbolicBoundTightener::setLayerSize)
-      .def("setReluBVariable", &SymbolicBoundTightener::setReluBVariable)
-      .def("setReluFVariable", &SymbolicBoundTightener::setReluFVariable)
-      .def("nodeIndexFromB", &SymbolicBoundTightener::nodeIndexFromB)
-      .def("&getNodeIndexToFMapping", &SymbolicBoundTightener::&getNodeIndexToFMapping)
-      .def("updateVariableIndices", &SymbolicBoundTightener::updateVariableIndices)
-      */
+        .def("allocateWeightAndBiasSpace", &SymbolicBoundTightener::allocateWeightAndBiasSpace)
+        .def("setBias", &SymbolicBoundTightener::setBias)
+        .def("setWeight", &SymbolicBoundTightener::setWeight)
+        .def("setInputLowerBound", &SymbolicBoundTightener::setInputLowerBound)
+        .def("setInputUpperBound", &SymbolicBoundTightener::setInputUpperBound)
+        .def("setReluFVariable", &SymbolicBoundTightener::setReluFVariable);
     py::class_<Equation> eq(m, "Equation");
     eq.def(py::init());
     eq.def(py::init<Equation::EquationType>());

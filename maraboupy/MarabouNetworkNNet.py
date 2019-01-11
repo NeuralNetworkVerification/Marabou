@@ -94,8 +94,27 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
             sbt.setInputLowerBound( i, inputMinimums[i])
             sbt.setInputUpperBound( i, inputMaximums[i])
 
-        # Variable indexing !!!!!!!!!!!!!!!!!!!!!!!!!!!
+        # Variable indexing
+        nodeToF = {}
+        nodeToB = {}
+        curIndex = 0
+        for layer in range(self.numLayers)[1:]:
+            prevSize = self.layerSizes[layer - 1]
+            curSize = self.layerSizes[layer]
+            for node in range(prevSize):
+                nodeToF[(layer - 1, node)] = curIndex
+                curIndex += 1
+            for node in range(curSize):
+                nodeToB[(layer, node)] = curIndex
+                curIndex += 1
 
+        for layer in range(self.numLayers - 1)[1:]:
+            layerSize = layerSizes[layer]
+            for node in range(layerSize):
+                sbt.setReluBVariable(i, j, nodeToB[(i, j)])
+                sbt.setReluFVariable(i, j, nodeToF[(i, j)])
+        for node in range(self.outputSize):
+            sbt.setReluFVariable(self.numLayers - 1, node, nodeToB[(self.numLayers - 1, node)])
 
         return sbt
 
