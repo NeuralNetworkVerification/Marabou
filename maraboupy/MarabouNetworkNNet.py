@@ -72,38 +72,33 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
     def createSBT(self, filename):
         sbt = MarabouCore.SymbolicBoundTightener()
-        sbt.setNumberOfLayers(self.numLayers)
+        sbt.setNumberOfLayers(self.numLayers + 1)
         for layer, size in enumerate(self.layerSizes):
             sbt.setLayerSize(layer, size)
         sbt.allocateWeightAndBiasSpace()
         # Biases
-        assert(len(self.biases) == self.numLayers)
-        for layer in range(self.numLayers)[1:]:
-            assert (len(self.biases[layer - 1]) == self.layerSizes[layer])
-            for node in range(self.layerSizes[layer]):
-                sbt.setBias(layer, node, self.biases[layer - 1][node])
+        for layer in range(len(self.biases)):
+            for node in range(len(self.biases[layer])):
+                sbt.setBias(layer + 1, node, self.biases[layer][node])
         # Weights
-
-        for layer in range(self.numLayers - 1):
-            targetLayerSize = self.layerSizes[layer + 1]
-            sourceLayerSize = self.layerSizes[layer]
-            for target in range(targetLayerSize):
-                for source in range(sourceLayerSize):
+        for layer in range(len(self.weights)): # starting from the first hidden layer
+            for target in range(len(self.weights[layer])):
+                for source in range(len(self.weights[layer][target])):
                     sbt.setWeight(layer, source, target, self.weights[layer][target][source])
 
         # Initial bounds
         for i in range(self.inputSize):
             sbt.setInputLowerBound( i, self.inputMinimums[i])
             sbt.setInputUpperBound( i, self.inputMaximums[i])
-
-        # Variable indexing
-        for layer in range(self.numLayers - 1)[1:]:
-            layerSize = self.layerSizes[layer]
-            for node in range(layerSize):
+        
+        # Variable indexing of hidden layers
+        for layer in range(len(self.layerSizes))[1:-1]:
+            for node in range(self.layerSizes[layer]):
                 sbt.setReluBVariable(layer, node, self.nodeTo_b(layer, node))
                 sbt.setReluFVariable(layer, node, self.nodeTo_f(layer, node))
+
         for node in range(self.outputSize):
-            sbt.setReluBVariable(self.numLayers - 1, node, self.nodeTo_b(self.numLayers - 1, node))
+            sbt.setReluFVariable(len(self.layerSizes) - 1, node, self.nodeTo_b(len(self.layerSizes) - 1, node))
 
         return sbt
 
