@@ -577,13 +577,12 @@ bool Engine::processInputQuery( InputQuery &inputQuery )
 bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 {
     log( "processInputQuery starting\n" );
-
     try
     {
         struct timespec start = TimeUtils::sampleMicro();
-
+        const auto &crap = inputQuery.getPiecewiseLinearConstraints();
         // Inform the PL constraints of the initial variable bounds
-        for ( const auto &plConstraint : inputQuery.getPiecewiseLinearConstraints() )
+        for ( const auto &plConstraint : crap)
         {
             List<unsigned> variables = plConstraint->getParticipatingVariables();
             for ( unsigned variable : variables )
@@ -741,6 +740,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         if ( _preprocessedQuery._sbt )
             _symbolicBoundTightener = _preprocessedQuery._sbt;
+
 
         struct timespec end = TimeUtils::sampleMicro();
         _statistics.setPreprocessingTime( TimeUtils::timePassed( start, end ) );

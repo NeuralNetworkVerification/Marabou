@@ -83,38 +83,27 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
             for node in range(self.layerSizes[layer]):
                 sbt.setBias(layer, node, self.biases[layer - 1][node])
         # Weights
+
         for layer in range(self.numLayers - 1):
             targetLayerSize = self.layerSizes[layer + 1]
             sourceLayerSize = self.layerSizes[layer]
             for target in range(targetLayerSize):
                 for source in range(sourceLayerSize):
-                    sbt.setWeight(layer, source, target, self.weights[layer][source][target])
+                    sbt.setWeight(layer, source, target, self.weights[layer][target][source])
+
         # Initial bounds
         for i in range(self.inputSize):
-            sbt.setInputLowerBound( i, inputMinimums[i])
-            sbt.setInputUpperBound( i, inputMaximums[i])
+            sbt.setInputLowerBound( i, self.inputMinimums[i])
+            sbt.setInputUpperBound( i, self.inputMaximums[i])
 
         # Variable indexing
-        nodeToF = {}
-        nodeToB = {}
-        curIndex = 0
-        for layer in range(self.numLayers)[1:]:
-            prevSize = self.layerSizes[layer - 1]
-            curSize = self.layerSizes[layer]
-            for node in range(prevSize):
-                nodeToF[(layer - 1, node)] = curIndex
-                curIndex += 1
-            for node in range(curSize):
-                nodeToB[(layer, node)] = curIndex
-                curIndex += 1
-
         for layer in range(self.numLayers - 1)[1:]:
-            layerSize = layerSizes[layer]
+            layerSize = self.layerSizes[layer]
             for node in range(layerSize):
-                sbt.setReluBVariable(i, j, nodeToB[(i, j)])
-                sbt.setReluFVariable(i, j, nodeToF[(i, j)])
+                sbt.setReluBVariable(layer, node, self.nodeTo_b(layer, node))
+                sbt.setReluFVariable(layer, node, self.nodeTo_f(layer, node))
         for node in range(self.outputSize):
-            sbt.setReluFVariable(self.numLayers - 1, node, nodeToB[(self.numLayers - 1, node)])
+            sbt.setReluBVariable(self.numLayers - 1, node, self.nodeTo_b(self.numLayers - 1, node))
 
         return sbt
 

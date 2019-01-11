@@ -82,10 +82,11 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::s
         output=redirectOutputToFile(redirect);
     try{
         Engine engine;
-        if(!engine.processInputQuery(inputQuery)) return std::make_pair(ret, *(engine.getStatistics()));
-        
-        if(!engine.solve(timeout=timeout)) return std::make_pair(ret, *(engine.getStatistics()));
-        
+        printf("I'm here\n");
+        auto crap = !engine.processInputQuery(inputQuery);
+        printf("I'm here \n");
+        if(crap) return std::make_pair(ret, *(engine.getStatistics()));
+        if(!engine.solve(timeout)) return std::make_pair(ret, *(engine.getStatistics()));
         engine.extractSolution(inputQuery);
         retStats = *(engine.getStatistics());
         for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); i++)
@@ -130,6 +131,7 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def("setWeight", &SymbolicBoundTightener::setWeight)
         .def("setInputLowerBound", &SymbolicBoundTightener::setInputLowerBound)
         .def("setInputUpperBound", &SymbolicBoundTightener::setInputUpperBound)
+        .def("setReluBVariable", &SymbolicBoundTightener::setReluBVariable)
         .def("setReluFVariable", &SymbolicBoundTightener::setReluFVariable);
     py::class_<Equation> eq(m, "Equation");
     eq.def(py::init());
