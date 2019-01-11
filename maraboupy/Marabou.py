@@ -11,7 +11,7 @@ def read_nnet(filename, sbt=False):
     Returns:
         marabouNetworkNNet: (MarabouNetworkNNet) representing network
     """
-    return MarabouNetworkNNet(filename, sbt=sbt)
+    return MarabouNetworkNNet(filename, perform_sbt=sbt)
 
 
 def read_tf(filename, inputName=None, outputName=None, savedModel=False, savedModelTags=[]):

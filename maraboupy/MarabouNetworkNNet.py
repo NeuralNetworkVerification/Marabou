@@ -66,7 +66,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         # Set the number of variables
         self.numVars = self.numberOfVariables()
         if perform_sbt:
-            self.sbt = createSBT(filename)
+            self.sbt = self.createSBT(filename)
         else:
             self.sbt = None
 
@@ -77,18 +77,18 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
             sbt.setLayerSize(layer, size)
         sbt.allocateWeightAndBiasSpace()
         # Biases
-        assert (len(self.biases) == self.numLayers - 1)
+        assert(len(self.biases) == self.numLayers)
         for layer in range(self.numLayers)[1:]:
-            assert (len(biases[layer - 1]) == self.layerSizes[layer])
-            for i in range(self.layerSizes[layer]):
-                sbt.setBias(layer, i, self.biases[layer - 1][j])
+            assert (len(self.biases[layer - 1]) == self.layerSizes[layer])
+            for node in range(self.layerSizes[layer]):
+                sbt.setBias(layer, node, self.biases[layer - 1][node])
         # Weights
-        for layer in range(len(self.weights) - 1):
+        for layer in range(self.numLayers - 1):
             targetLayerSize = self.layerSizes[layer + 1]
             sourceLayerSize = self.layerSizes[layer]
             for target in range(targetLayerSize):
                 for source in range(sourceLayerSize):
-                    sbt.setWeight(layer, source, target, weights[layer][source][target])
+                    sbt.setWeight(layer, source, target, self.weights[layer][source][target])
         # Initial bounds
         for i in range(self.inputSize):
             sbt.setInputLowerBound( i, inputMinimums[i])
