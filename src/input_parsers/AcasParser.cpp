@@ -219,6 +219,7 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
         {
             sbt->setReluFVariable( numberOfLayers - 1, i, _nodeToB[NodeIndex( numberOfLayers - 1, i )] );
         }
+
         inputQuery.setSymbolicBoundTightener(sbt);
     }
 }
