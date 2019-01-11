@@ -71,7 +71,6 @@ void addMaxConstraint(InputQuery& ipq, std::set<unsigned> elements, unsigned v){
     ipq.addPiecewiseLinearConstraint(m);
 }
 
-
 std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::string redirect="", unsigned timeout=0){
     // Arguments: InputQuery object, filename to redirect output
     // Returns: map from variable number to value
@@ -82,11 +81,11 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::s
         output=redirectOutputToFile(redirect);
     try{
         Engine engine;
-        printf("I'm here\n");
-        auto crap = !engine.processInputQuery(inputQuery);
-        printf("I'm here \n");
-        if(crap) return std::make_pair(ret, *(engine.getStatistics()));
+
+        if(!engine.processInputQuery(inputQuery)) return std::make_pair(ret, *(engine.getStatistics()));
+
         if(!engine.solve(timeout)) return std::make_pair(ret, *(engine.getStatistics()));
+
         engine.extractSolution(inputQuery);
         retStats = *(engine.getStatistics());
         for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); i++)
