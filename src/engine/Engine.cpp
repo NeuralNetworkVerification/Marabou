@@ -1374,23 +1374,8 @@ void Engine::performSymbolicBoundTightening()
         }
         ++inputVariableIndex;
 
-        double min, max;
-        if ( _preprocessor.variableIsFixed( inputVariable ) )
-        {
-            min = _preprocessor.getFixedValue( inputVariable );
-            max = min;
-        }
-        else if ( _preprocessor.variableIsMerged( inputVariable ) )
-        {
-            unsigned variable = _preprocessor.getMergedIndex( inputVariable );
-            min = _tableau->getLowerBound( variable );
-            max = _tableau->getUpperBound( variable );
-        }
-        else
-        {
-            min = _tableau->getLowerBound( inputVariable );
-            max = _tableau->getUpperBound( inputVariable );
-        }
+        double min = _tableau->getLowerBound( inputVariable );
+        double max = _tableau->getUpperBound( inputVariable );
 
         _symbolicBoundTightener->setInputLowerBound( inputVariable, min );
         _symbolicBoundTightener->setInputUpperBound( inputVariable, max );
