@@ -234,6 +234,10 @@ void SymbolicBoundTightener::allocateWeightAndBiasSpace()
 
     _inputLayerSize = _layerSizes[0];
 
+    _inputNeuronToIndex.clear();
+    for ( unsigned i = 0; i < _inputLayerSize; ++i )
+        _inputNeuronToIndex[i] = i;
+
     _currentLayerLowerBounds = new double[_maxLayerSize * _inputLayerSize];
     _currentLayerUpperBounds = new double[_maxLayerSize * _inputLayerSize];
     _currentLayerLowerBias = new double[_maxLayerSize];
@@ -260,12 +264,14 @@ void SymbolicBoundTightener::setWeight( unsigned sourceLayer, unsigned sourceNeu
 
 void SymbolicBoundTightener::setInputLowerBound( unsigned neuron, double bound )
 {
-    _inputLowerBounds[neuron] = bound;
+    ASSERT( _inputNeuronToIndex.exists( neuron ) );
+    _inputLowerBounds[_inputNeuronToIndex[neuron]] = bound;
 }
 
 void SymbolicBoundTightener::setInputUpperBound( unsigned neuron, double bound )
 {
-    _inputUpperBounds[neuron] = bound;
+    ASSERT( _inputNeuronToIndex.exists( neuron ) );
+    _inputUpperBounds[_inputNeuronToIndex[neuron]] = bound;
 }
 
 void SymbolicBoundTightener::run()
@@ -712,7 +718,8 @@ void SymbolicBoundTightener::setEliminatedRelu( unsigned layer, unsigned neuron,
 }
 
 void SymbolicBoundTightener::updateVariableIndices( const Map<unsigned, unsigned> &oldIndexToNewIndex,
-                                                    const Map<unsigned, unsigned> &mergedVariables )
+                                                    const Map<unsigned, unsigned> &mergedVariables,
+                                                    const Map<unsigned, double> &fixedVariableValues )
 {
     // First, do a pass to handle any merged variables
     auto bIt = _nodeIndexToBVariable.begin();
@@ -795,6 +802,29 @@ void SymbolicBoundTightener::updateVariableIndices( const Map<unsigned, unsigned
     _bVariableToNodeIndex.clear();
     for ( const auto &entry : _nodeIndexToBVariable )
         _bVariableToNodeIndex[entry.second] = entry.first;
+
+    // Set the lower and upper bound for any input variable that has become fixed
+    for ( unsigned i = 0; i < _inputLayerSize; ++i )
+    {
+        if ( mergedVariables.exists( i ) )
+            throw ReluplexError( ReluplexError::MERGED_INPUT_VARIABLE );
+
+        if ( !oldIndexToNewIndex.exists( i ) )
+        {
+            log( Stringf( "Input %u permanently fixed to value %lf\n", i, fixedVariableValues[i] ) );
+
+            // The i'th variable has been fixed.
+            _inputLowerBounds[i] = fixedVariableValues[i];
+            _inputUpperBounds[i] = fixedVariableValues[i];
+
+            // If input neuron 3 has become fixed, later when we hear something
+            // about neuron 3 it will actually refer to neuron 4
+            for ( unsigned j = i; j < _inputLayerSize; ++j )
+                ++_inputNeuronToIndex[j];
+
+            _inputNeuronToIndex.erase( _inputNeuronToIndex.size() - 1 );
+        }
+    }
 }
 
 const Map<SymbolicBoundTightener::NodeIndex, unsigned> &SymbolicBoundTightener::getNodeIndexToFMapping() const

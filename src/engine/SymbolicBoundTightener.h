@@ -95,7 +95,8 @@ public:
     const Map<NodeIndex, unsigned> &getNodeIndexToFMapping() const;
 
     void updateVariableIndices( const Map<unsigned, unsigned> &oldIndexToNewIndex,
-                                const Map<unsigned, unsigned> &mergedVariables );
+                                const Map<unsigned, unsigned> &mergedVariables,
+                                const Map<unsigned, double> &fixedVariableValues );
 
     /*
       Report that a ReLU constraint has become permanently fixed (i.e., at decision level 0)
@@ -149,6 +150,9 @@ private:
     // Information about the phase statuses of ReLU nodes
     Map<NodeIndex, ReluConstraint::PhaseStatus> _nodeIndexToReluState;
     Map<NodeIndex, ReluConstraint::PhaseStatus> _nodeIndexToEliminatedReluState;
+
+    // To account for input variable renaming as part of preprocessing
+    Map<unsigned, unsigned> _inputNeuronToIndex;
 
     /*
       Work space for the bound computation

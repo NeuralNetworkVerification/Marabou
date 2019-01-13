@@ -580,7 +580,7 @@ void Preprocessor::eliminateVariables()
 
     // Let the SBT know of changes in indices and merged variables
     if ( _preprocessed._sbt )
-        _preprocessed._sbt->updateVariableIndices( _oldIndexToNewIndex, _mergedVariables );
+        _preprocessed._sbt->updateVariableIndices( _oldIndexToNewIndex, _mergedVariables, _fixedVariables );
 
     // Update the lower/upper bound maps
     for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
