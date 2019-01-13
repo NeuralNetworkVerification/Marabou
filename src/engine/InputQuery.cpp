@@ -361,6 +361,54 @@ void InputQuery::setSymbolicBoundTightener( SymbolicBoundTightener *sbt )
     _sbt = sbt;
 }
 
+void InputQuery::adjustInputOutputMapping( const Map<unsigned, unsigned> &oldIndexToNewIndex,
+                                           const Map<unsigned, unsigned> &mergedVariables )
+{
+    Map<unsigned, unsigned> newInputIndexToVariable;
+    unsigned currentIndex = 0;
+
+    // Input variables
+    for ( const auto &it : _inputIndexToVariable )
+    {
+        if ( mergedVariables.exists( it.second ) )
+            throw ReluplexError( ReluplexError::MERGED_INPUT_VARIABLE,
+                                 Stringf( "Input variable %u has been merged\n", it.second ).ascii() );
+
+        if ( oldIndexToNewIndex.exists( it.second ) )
+        {
+            newInputIndexToVariable[currentIndex] = oldIndexToNewIndex[it.second];
+            ++currentIndex;
+        }
+    }
+    _inputIndexToVariable = newInputIndexToVariable;
+
+    _variableToInputIndex.clear();
+    for ( auto it : _inputIndexToVariable )
+        _variableToInputIndex[it.second] = it.first;
+
+    Map<unsigned, unsigned> newOutputIndexToVariable;
+    currentIndex = 0;
+
+    // Output variables
+    for ( const auto &it : _outputIndexToVariable )
+    {
+        if ( mergedVariables.exists( it.second ) )
+            throw ReluplexError( ReluplexError::MERGED_OUTPUT_VARIABLE,
+                                 Stringf( "Output variable %u has been merged\n", it.second ).ascii() );
+
+        if ( oldIndexToNewIndex.exists( it.second ) )
+        {
+            newOutputIndexToVariable[currentIndex] = oldIndexToNewIndex[it.second];
+            ++currentIndex;
+        }
+    }
+    _outputIndexToVariable = newOutputIndexToVariable;
+
+    _variableToOutputIndex.clear();
+    for ( auto it : _outputIndexToVariable )
+        _variableToOutputIndex[it.second] = it.first;
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "
