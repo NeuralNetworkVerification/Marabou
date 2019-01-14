@@ -112,6 +112,13 @@ public:
     */
     void printInputOutputBounds() const;
 
+    /*
+      Adjsut the input/output variable mappings because variables have been merged
+      or have become fixed
+    */
+    void adjustInputOutputMapping( const Map<unsigned, unsigned> &oldIndexToNewIndex,
+                                   const Map<unsigned, unsigned> &mergedVariables );
+
 private:
     unsigned _numberOfVariables;
     List<Equation> _equations;

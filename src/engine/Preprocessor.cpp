@@ -75,8 +75,6 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     if ( attemptVariableElimination )
         eliminateVariables();
 
-    adjustInputAndOutputMarkings();
-
     DEBUG({
             // For now, assume merged and fixed variable sets are disjoint
             for ( const auto &fixed : _fixedVariables )
@@ -582,7 +580,7 @@ void Preprocessor::eliminateVariables()
 
     // Let the SBT know of changes in indices and merged variables
     if ( _preprocessed._sbt )
-        _preprocessed._sbt->updateVariableIndices( _oldIndexToNewIndex, _mergedVariables );
+        _preprocessed._sbt->updateVariableIndices( _oldIndexToNewIndex, _mergedVariables, _fixedVariables );
 
     // Update the lower/upper bound maps
     for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
@@ -651,6 +649,9 @@ void Preprocessor::eliminateVariables()
 
     // Adjust the number of variables in the query
     _preprocessed.setNumberOfVariables( _preprocessed.getNumberOfVariables() - _fixedVariables.size() - _mergedVariables.size() );
+
+    // Adjust the input/output mappings in the query
+    _preprocessed.adjustInputOutputMapping( _oldIndexToNewIndex, _mergedVariables );
 }
 
 bool Preprocessor::variableIsFixed( unsigned index ) const
@@ -698,61 +699,6 @@ void Preprocessor::addPlAuxiliaryEquations()
 
     for ( Equation equation : newEquations )
         _preprocessed.addEquation( equation );
-}
-
-void Preprocessor::adjustInputAndOutputMarkings()
-{
-    // Handle the merged variables
-    for ( const auto &pair : _mergedVariables )
-    {
-        unsigned v1 = pair.first;
-        unsigned v2 = pair.second;
-
-        // v1 has been removed (merged into v2)
-        if ( _preprocessed._variableToInputIndex.exists( v1 ) )
-        {
-            // v1 was an input variable
-            ASSERT( !_preprocessed._variableToInputIndex.exists( v2 ) );
-            ASSERT( !_preprocessed._variableToOutputIndex.exists( v2 ) );
-
-            unsigned index = _preprocessed._variableToInputIndex[v1];
-
-            _preprocessed._variableToInputIndex[v2] = index;
-            _preprocessed._inputIndexToVariable[index] = v2;
-            _preprocessed._variableToInputIndex.erase( v1 );
-        }
-        if ( _preprocessed._variableToOutputIndex.exists( v1 ) )
-        {
-            // v1 was an output variable
-            ASSERT( !_preprocessed._variableToInputIndex.exists( v2 ) );
-            ASSERT( !_preprocessed._variableToOutputIndex.exists( v2 ) );
-
-            unsigned index = _preprocessed._variableToOutputIndex[v1];
-
-            _preprocessed._variableToOutputIndex[v2] = index;
-            _preprocessed._outputIndexToVariable[index] = v2;
-            _preprocessed._variableToOutputIndex.erase( v1 );
-        }
-    }
-
-    // Handle the fixed variables
-    for ( const auto pair : _fixedVariables )
-    {
-        unsigned var = pair.first;
-        if ( _preprocessed._variableToInputIndex.exists( var ) )
-        {
-            unsigned index = _preprocessed._variableToInputIndex[var];
-            _preprocessed._variableToInputIndex.erase( var );
-            _preprocessed._inputIndexToVariable.erase( index );
-        }
-
-        if ( _preprocessed._variableToOutputIndex.exists( var ) )
-        {
-            unsigned index = _preprocessed._variableToOutputIndex[var];
-            _preprocessed._variableToOutputIndex.erase( var );
-            _preprocessed._outputIndexToVariable.erase( index );
-        }
-    }
 }
 
 void Preprocessor::dumpAllBounds( const String &message )
