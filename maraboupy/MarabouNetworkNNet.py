@@ -88,8 +88,8 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
         # Initial bounds
         for i in range(self.inputSize):
-            sbt.setInputLowerBound( i, self.inputMinimums[i])
-            sbt.setInputUpperBound( i, self.inputMaximums[i])
+            sbt.setInputLowerBound( i, self.getInputMinimum(i))
+            sbt.setInputUpperBound( i, self.getInputMaximum(i))
         
         # Variable indexing of hidden layers
         for layer in range(len(self.layerSizes))[1:-1]:
@@ -141,7 +141,6 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
             line = f.readline()
             inputRanges = [float(x) for x in line.strip().split(",")[:-1]]
-
             weights=[]
             biases = []
             for layernum in range(numLayers):
