@@ -141,6 +141,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
             line = f.readline()
             inputRanges = [float(x) for x in line.strip().split(",")[:-1]]
+
             weights=[]
             biases = []
             for layernum in range(numLayers):
