@@ -120,7 +120,7 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def("setNumberOfVariables", &InputQuery::setNumberOfVariables)
         .def("addEquation", &InputQuery::addEquation)
         .def("setSymbolicBoundTightener", &InputQuery::setSymbolicBoundTightener);
-    py::class_<SymbolicBoundTightener>(m, "SymbolicBoundTightener")
+    py::class_<SymbolicBoundTightener, std::unique_ptr<SymbolicBoundTightener,py::nodelete>>(m, "SymbolicBoundTightener")
         .def(py::init())
         .def("setNumberOfLayers", &SymbolicBoundTightener::setNumberOfLayers)
         .def("setLayerSize", &SymbolicBoundTightener::setLayerSize)
