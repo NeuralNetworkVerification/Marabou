@@ -157,7 +157,12 @@ bool Engine::solve( unsigned timeoutInSeconds )
             if ( _smtCore.needToSplit() )
             {
                 _smtCore.performSplit();
-                performSymbolicBoundTightening();
+
+                do
+                {
+                    performSymbolicBoundTightening();
+                }
+                while ( applyAllValidConstraintCaseSplits() );
                 continue;
             }
 
@@ -201,7 +206,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 // For debugging purposes
                 checkBoundCompliancyWithDebugSolution();
 
-                if ( applyAllValidConstraintCaseSplits() )
+                while ( applyAllValidConstraintCaseSplits() )
                     performSymbolicBoundTightening();
 
                 continue;
@@ -223,8 +228,9 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 _basisRestorationRequired = Engine::WEAK_RESTORATION_NEEDED;
             else
             {
+                printf( "Engine: Cannot restore tableau!\n" );
                 _exitCode = Engine::ERROR;
-                throw ReluplexError( ReluplexError::CANNOT_RESTORE_TABLEAU );
+                return false;
             }
         }
         catch ( const InfeasibleQueryException & )
@@ -242,7 +248,8 @@ bool Engine::solve( unsigned timeoutInSeconds )
         catch ( ... )
         {
             _exitCode = Engine::ERROR;
-            throw;
+            printf( "Engine: Unknown error!\n" );
+            return false;
         }
     }
 }
