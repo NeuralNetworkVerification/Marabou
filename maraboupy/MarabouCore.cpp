@@ -82,9 +82,9 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::s
     try{
         Engine engine;
         if(!engine.processInputQuery(inputQuery)) return std::make_pair(ret, *(engine.getStatistics()));
-        
-        if(!engine.solve(timeout=timeout)) return std::make_pair(ret, *(engine.getStatistics()));
-        
+
+        if(!engine.solve(timeout)) return std::make_pair(ret, *(engine.getStatistics()));
+
         engine.extractSolution(inputQuery);
         retStats = *(engine.getStatistics());
         for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); i++)
@@ -118,7 +118,19 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def("getUpperBound", &InputQuery::getUpperBound)
         .def("getLowerBound", &InputQuery::getLowerBound)
         .def("setNumberOfVariables", &InputQuery::setNumberOfVariables)
-        .def("addEquation", &InputQuery::addEquation);
+        .def("addEquation", &InputQuery::addEquation)
+        .def("setSymbolicBoundTightener", &InputQuery::setSymbolicBoundTightener);
+    py::class_<SymbolicBoundTightener, std::unique_ptr<SymbolicBoundTightener,py::nodelete>>(m, "SymbolicBoundTightener")
+        .def(py::init())
+        .def("setNumberOfLayers", &SymbolicBoundTightener::setNumberOfLayers)
+        .def("setLayerSize", &SymbolicBoundTightener::setLayerSize)
+        .def("allocateWeightAndBiasSpace", &SymbolicBoundTightener::allocateWeightAndBiasSpace)
+        .def("setBias", &SymbolicBoundTightener::setBias)
+        .def("setWeight", &SymbolicBoundTightener::setWeight)
+        .def("setInputLowerBound", &SymbolicBoundTightener::setInputLowerBound)
+        .def("setInputUpperBound", &SymbolicBoundTightener::setInputUpperBound)
+        .def("setReluBVariable", &SymbolicBoundTightener::setReluBVariable)
+        .def("setReluFVariable", &SymbolicBoundTightener::setReluFVariable);
     py::class_<Equation> eq(m, "Equation");
     eq.def(py::init());
     eq.def(py::init<Equation::EquationType>());
