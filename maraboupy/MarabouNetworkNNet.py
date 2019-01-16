@@ -6,7 +6,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
     """
     Class that implements a MarabouNetwork from an NNet file.
     """
-    def __init__ (self, filename):
+    def __init__ (self, filename, perform_sbt=False):
         """
         Constructs a MarabouNetworkNNet object from an .nnet file.
 
@@ -25,6 +25,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
             weights          (list of list of lists) Outer index corresponds to layer
                                 number.
             biases           (list of lists) Outer index corresponds to layer number.
+            sbt              The SymbolicBoundTightener object
         """
         super().__init__()
 
@@ -64,6 +65,47 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
         # Set the number of variables
         self.numVars = self.numberOfVariables()
+        if perform_sbt:
+            self.sbt = self.createSBT(filename)
+        else:
+            self.sbt = None
+
+    def createSBT(self, filename):
+        sbt = MarabouCore.SymbolicBoundTightener()
+        sbt.setNumberOfLayers(self.numLayers + 1)
+        for layer, size in enumerate(self.layerSizes):
+            sbt.setLayerSize(layer, size)
+        sbt.allocateWeightAndBiasSpace()
+        # Biases
+        for layer in range(len(self.biases)):
+            for node in range(len(self.biases[layer])):
+                sbt.setBias(layer + 1, node, self.biases[layer][node])
+        # Weights
+        for layer in range(len(self.weights)): # starting from the first hidden layer
+            for target in range(len(self.weights[layer])):
+                for source in range(len(self.weights[layer][target])):
+                    sbt.setWeight(layer, source, target, self.weights[layer][target][source])
+
+        # Initial bounds
+        for i in range(self.inputSize):
+            sbt.setInputLowerBound( i, self.getInputMinimum(i))
+            sbt.setInputUpperBound( i, self.getInputMaximum(i))
+        
+        # Variable indexing of hidden layers
+        for layer in range(len(self.layerSizes))[1:-1]:
+            for node in range(self.layerSizes[layer]):
+                sbt.setReluBVariable(layer, node, self.nodeTo_b(layer, node))
+                sbt.setReluFVariable(layer, node, self.nodeTo_f(layer, node))
+
+        for node in range(self.outputSize):
+            sbt.setReluFVariable(len(self.layerSizes) - 1, node, self.nodeTo_b(len(self.layerSizes) - 1, node))
+
+        return sbt
+
+    def getMarabouQuery(self):
+        ipq = super(MarabouNetworkNNet, self).getMarabouQuery()
+        ipq.setSymbolicBoundTightener(self.sbt)
+        return ipq
 
     """
     Read the nnet file, load all the values and assign the class members.
@@ -76,7 +118,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
             line = f.readline()
             cnt = 1
             while line[0:2] == "//":
-                line=f.readline() 
+                line=f.readline()
                 cnt+= 1
             #numLayers does't include the input layer!
             numLayers, inputSize, outputSize, maxLayersize = [int(x) for x in line.strip().split(",")[:-1]]
