@@ -55,6 +55,7 @@ void Marabou::prepareInputQuery()
     String networkFilePath = Options::get()->getString( Options::INPUT_FILE_PATH );
     if ( !File::exists( networkFilePath ) )
     {
+        printf( "Network: %s\n", networkFilePath.ascii() );
         printf( "Error: the specified network file (%s) doesn't exist!\n", networkFilePath.ascii() );
         throw ReluplexError( ReluplexError::FILE_DOESNT_EXIST, networkFilePath.ascii() );
     }
@@ -68,7 +69,14 @@ void Marabou::prepareInputQuery()
     */
     String propertyFilePath = Options::get()->getString( Options::PROPERTY_FILE_PATH );
     if ( propertyFilePath != "" )
+    {
+        printf( "Property: %s\n", propertyFilePath.ascii() );
         PropertyParser().parse( propertyFilePath, _inputQuery );
+    }
+    else
+        printf( "Property: None\n" );
+
+    printf( "\n" );
 }
 
 void Marabou::solveQuery()
