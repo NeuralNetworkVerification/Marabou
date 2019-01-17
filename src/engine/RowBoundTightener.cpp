@@ -202,14 +202,18 @@ void RowBoundTightener::examineImplicitInvertedBasisMatrix( bool untilSaturation
     // The tightening procedure may throw an exception, in which case we need
     // to release the rows.
     unsigned newBoundsLearned;
+    unsigned maxNumberOfIterations = untilSaturation ?
+        GlobalConfiguration::ROW_BOUND_TIGHTENER_SATURATION_ITERATIONS : 1;
     do
     {
         newBoundsLearned = onePassOverInvertedBasisRows();
 
         if ( _statistics && ( newBoundsLearned > 0 ) )
             _statistics->incNumTighteningsFromExplicitBasis( newBoundsLearned );
+
+        --maxNumberOfIterations;
     }
-    while ( untilSaturation && ( newBoundsLearned > 0 ) );
+    while ( ( maxNumberOfIterations != 0 ) && ( newBoundsLearned > 0 ) );
 }
 
 void RowBoundTightener::examineInvertedBasisMatrix( bool untilSaturation )
@@ -259,14 +263,18 @@ void RowBoundTightener::examineInvertedBasisMatrix( bool untilSaturation )
         // to release the rows.
 
         unsigned newBoundsLearned;
+        unsigned maxNumberOfIterations = untilSaturation ?
+            GlobalConfiguration::ROW_BOUND_TIGHTENER_SATURATION_ITERATIONS : 1;
         do
         {
             newBoundsLearned = onePassOverInvertedBasisRows();
 
             if ( _statistics && ( newBoundsLearned > 0 ) )
                 _statistics->incNumTighteningsFromExplicitBasis( newBoundsLearned );
+
+            --maxNumberOfIterations;
         }
-        while ( untilSaturation && ( newBoundsLearned > 0 ) );
+        while ( ( maxNumberOfIterations != 0 ) && ( newBoundsLearned > 0 ) );
     }
     catch ( ... )
     {
@@ -464,14 +472,18 @@ void RowBoundTightener::examineConstraintMatrix( bool untilSaturation )
       If working until saturation, do single passes over the matrix until no new bounds
       are learned. Otherwise, just do a single pass.
     */
+    unsigned maxNumberOfIterations = untilSaturation ?
+        GlobalConfiguration::ROW_BOUND_TIGHTENER_SATURATION_ITERATIONS : 1;
     do
     {
         newBoundsLearned = onePassOverConstraintMatrix();
 
         if ( _statistics && ( newBoundsLearned > 0 ) )
             _statistics->incNumTighteningsFromConstraintMatrix( newBoundsLearned );
+
+        --maxNumberOfIterations;
     }
-    while ( untilSaturation && ( newBoundsLearned > 0 ) );
+    while ( ( maxNumberOfIterations != 0 ) && ( newBoundsLearned > 0 ) );
 }
 
 unsigned RowBoundTightener::onePassOverConstraintMatrix()
