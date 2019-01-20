@@ -35,6 +35,9 @@ public:
     // at the change column, as part of a pivot operation.
     static const double PIVOT_CHANGE_COLUMN_TOLERANCE;
 
+    // Tolerance for the difference when computing the pivot entry by column and by row
+    static const double PIVOT_ROW_AND_COLUMN_TOLERANCE;
+
     // Tolerance when checking whether a non-basic variable is eligible for being selected as the
     // entering variable, by its reduced cost
     static const double ENTRY_ELIGIBILITY_TOLERANCE;
