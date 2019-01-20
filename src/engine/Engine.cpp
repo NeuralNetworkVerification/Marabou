@@ -36,6 +36,7 @@ Engine::Engine()
     , _quitRequested( false )
     , _exitCode( Engine::NOT_DONE )
     , _constraintBoundTightener( *_tableau )
+    , _numVisitedStatesAtPreviousRestoration( 0 )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -136,6 +137,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
                     _basisRestorationPerformed = Engine::PERFORMED_WEAK_RESTORATION;
                 }
 
+                _numVisitedStatesAtPreviousRestoration = _statistics.getNumVisitedTreeStates();
                 _basisRestorationRequired = Engine::RESTORATION_NOT_NEEDED;
                 continue;
             }
@@ -223,7 +225,17 @@ bool Engine::solve( unsigned timeoutInSeconds )
             //
 
             if ( _basisRestorationPerformed == Engine::NO_RESTORATION_PERFORMED )
-                _basisRestorationRequired = Engine::STRONG_RESTORATION_NEEDED;
+            {
+                if ( _numVisitedStatesAtPreviousRestoration != _statistics.getNumVisitedTreeStates() )
+                {
+                    // We've tried a strong restoration before, and it didn't work. Do a weak restoration
+                    _basisRestorationRequired = Engine::WEAK_RESTORATION_NEEDED;
+                }
+                else
+                {
+                    _basisRestorationRequired = Engine::STRONG_RESTORATION_NEEDED;
+                }
+            }
             else if ( _basisRestorationPerformed == Engine::PERFORMED_STRONG_RESTORATION )
                 _basisRestorationRequired = Engine::WEAK_RESTORATION_NEEDED;
             else
