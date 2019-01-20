@@ -20,6 +20,7 @@ const unsigned GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY = 10000;
 const double GlobalConfiguration::BOUND_COMPARISON_ADDITIVE_TOLERANCE = 0.0000001;
 const double GlobalConfiguration::BOUND_COMPARISON_MULTIPLICATIVE_TOLERANCE = 0.001 * 0.0000001;
 const double GlobalConfiguration::PIVOT_CHANGE_COLUMN_TOLERANCE = 0.000000001;
+const double GlobalConfiguration::PIVOT_ROW_AND_COLUMN_TOLERANCE = 0.01;
 const double GlobalConfiguration::ENTRY_ELIGIBILITY_TOLERANCE = 0.00000001;
 const double GlobalConfiguration::RATIO_CONSTRAINT_ADDITIVE_TOLERANCE = 0.0000001 * 0.3;
 const double GlobalConfiguration::RATIO_CONSTRAINT_MULTIPLICATIVE_TOLERANCE = 0.001 * 0.0000001 * 0.3;

@@ -748,8 +748,15 @@ void Tableau::performPivot()
                   _lowerBounds[currentNonBasic], _upperBounds[currentNonBasic] ) );
     log( Stringf( "Change ratio is: %.15lf\n", _changeRatio ) );
 
-    updateAssignmentForPivot();
+    // As part of the pivot operation we use both the pivot row and
+    // pivot column. If they don't agree on the intersection, there's some
+    // numerical degradation issue.
+    double pivotEntryByColumn = -_changeColumn[_leavingVariable];
+    double pivotEntryByRow = _pivotRow->_row[_enteringVariable]._coefficient;
+    if ( !FloatUtils::isZero( pivotEntryByRow - pivotEntryByColumn, GlobalConfiguration::PIVOT_ROW_AND_COLUMN_TOLERANCE ) )
+        throw MalformedBasisException();
 
+    updateAssignmentForPivot();
     updateCostFunctionForPivot();
 
     // Update the database
@@ -1995,6 +2002,7 @@ void Tableau::addRow()
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newBasisFactorization" );
     delete _basisFactorization;
     _basisFactorization = newBasisFactorization;
+    _basisFactorization->setStatistics( _statistics );
 
     // Allocate a larger _workM and _workN. Don't need to initialize.
     double *newWorkM = new double[newM];

@@ -706,8 +706,10 @@ public:
         TS_ASSERT_EQUALS( tableau->getValue( 5u ), 113.0 );
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeChangeColumn() );
-        TS_ASSERT_THROWS_NOTHING( tableau->performPivot() );
 
+        TS_ASSERT_THROWS_NOTHING( tableau->computePivotRow() );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->performPivot() );
         TS_ASSERT( tableau->isBasic( 2u ) );
         TS_ASSERT( !tableau->isBasic( 5u ) );
 
@@ -1070,6 +1072,8 @@ public:
         TS_ASSERT_EQUALS( tableau->getValue( 2u ), 1.0 );
         TS_ASSERT_EQUALS( tableau->getValue( 5u ), 112.0 );
 
+        TS_ASSERT_THROWS_NOTHING( tableau->computePivotRow() );
+
         TS_ASSERT_THROWS_NOTHING( tableau->performPivot() );
 
         TS_ASSERT_DIFFERS( tableau->getValue( 2u ), 1.0 );
@@ -1096,6 +1100,8 @@ public:
 
         TS_ASSERT_EQUALS( tableau->getValue( 2u ), 1.0 );
         TS_ASSERT_EQUALS( tableau->getValue( 5u ), 112.0 );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->computePivotRow() );
 
         TS_ASSERT_THROWS_NOTHING( tableau->performPivot() );
 
@@ -1153,6 +1159,8 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( tableau->computeChangeColumn() );
         tableau->pickLeavingVariable();
+
+        TS_ASSERT_THROWS_NOTHING( tableau->computePivotRow() );
 
         TS_ASSERT_THROWS_NOTHING( tableau->performPivot() );
 
