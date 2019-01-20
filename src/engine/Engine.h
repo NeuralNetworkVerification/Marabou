@@ -224,6 +224,13 @@ private:
     AutoConstraintBoundTightener _constraintBoundTightener;
 
     /*
+      The number of visited states when we performed the previous
+      restoration. This field serves as an indication of whether or
+      not progress has been made since the previous restoration.
+    */
+    unsigned long long _numVisitedStatesAtPreviousRestoration;
+
+    /*
       Perform a simplex step: compute the cost function, pick the
       entering and leaving variables and perform a pivot.
     */
