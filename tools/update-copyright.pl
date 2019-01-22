@@ -126,7 +126,7 @@ while($#searchdirs >= 0) {
 
 sub handleFile {
   my ($srcdir, $file) = @_;
-  return if !($file =~ /\.(c|cc|cpp|C|h|hh|hpp|H|y|yy|ypp|Y|l|ll|lpp|L|g|java)(\.in)?$/);
+  return if !($file =~ /\.(c|cc|cpp|C|h|hh|hpp|H|y|yy|ypp|Y|l|ll|lpp|L|g|java|py)(\.in)?$/);
   return if ($srcdir.'/'.$file) =~ /$excluded_paths/;
   return if $modonly && `git status -s "$srcdir/$file" 2>/dev/null` !~ /^(M|.M)/;
   print "$srcdir/$file...\n";
@@ -144,6 +144,10 @@ sub handleFile {
       print $OUT "/** $file\n";
     } elsif($file =~ /\.g$/) {
       # avoid javadoc-style comment here; antlr complains
+      print $OUT "/* *******************                                                        */\n";
+      print $OUT "/*! \\file $file\n";
+    } elsif($file =~ /\.py$/) {
+      print $OUT "'''\n";
       print $OUT "/* *******************                                                        */\n";
       print $OUT "/*! \\file $file\n";
     } else {
@@ -181,6 +185,10 @@ $line";
       # avoid javadoc-style comment here; antlr complains
       print $OUT "/* *******************                                                        */\n";
       print $OUT "/*! \\file $file\n";
+    } elsif($file =~ /\.py$/) {
+      print $OUT "'''\n";
+      print $OUT "/* *******************                                                        */\n";
+      print $OUT "/*! \\file $file\n";
     } else {
       print $OUT "/*********************                                                        */\n";
       print $OUT "/*! \\file $file\n";
@@ -193,7 +201,12 @@ $line";
     print $OUT " ** \\brief [[ Add one-line brief description here ]]\n";
     print $OUT " **\n";
     print $OUT " ** [[ Add lengthier description here ]]\n";
-    print $OUT " **/\n\n";
+    print $OUT " **/\n";
+    if($file =~ /\.py$/) {
+      print $OUT "'''\n";
+    }
+    print $OUT "\n";
+
     print $OUT $line;
     if($file =~ /\.(y|yy|ypp|Y)$/) {
       while(my $line = <$IN>) {
