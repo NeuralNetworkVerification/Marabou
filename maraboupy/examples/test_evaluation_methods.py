@@ -1,3 +1,21 @@
+'''
+/* *******************                                                        */
+/*! \file test_evaluation_methods.py
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Christopher Lazarus, Kyle Julian
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** \brief [[ Add one-line brief description here ]]
+ **
+ ** [[ Add lengthier description here ]]
+ **/
+'''
+
 import numpy as np
 from maraboupy import MarabouCore
 

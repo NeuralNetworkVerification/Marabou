@@ -1,3 +1,21 @@
+'''
+/* *******************                                                        */
+/*! \file MarabouCoreExample.py
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Christopher Lazarus, Kyle Julian, Andrew Wu
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** \brief [[ Add one-line brief description here ]]
+ **
+ ** [[ Add lengthier description here ]]
+ **/
+'''
+
 from maraboupy import MarabouCore
 
 # The example from the CAV'17 paper:
