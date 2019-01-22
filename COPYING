@@ -1,12 +1,11 @@
-Reluwise is copyright (C) 2016-2017 by its
+Marabou is copyright (C) 2017-2019 by its
 authors and contributors (see the file AUTHORS) and their institutional
 affiliations. All rights reserved.
 
-The source code of Reluwise is open and available to study, to modify, and to
+The source code of Marabou is open and available to study, to modify, and to
 redistribute original or modified versions; distribution is under the terms of
-the modified BSD license (reproduced below). Reluwise links against GLPK which
-is licensed under the GNU General Public License, and therefore
-its use may be restricted in non-GPL-compatible projects.
+the modified BSD license (reproduced below). Marabou links against Boost which
+is separately licensed under the Boost Software License.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
