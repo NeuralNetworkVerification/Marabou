@@ -377,6 +377,8 @@ PiecewiseLinearConstraint *SmtCore::chooseViolatedConstraintForFixing( List<Piec
             minFixes = contenderFixes;
             candidate = contender;
         }
+
+        ++it;
     }
 
     return candidate;
