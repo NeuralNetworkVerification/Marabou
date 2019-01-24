@@ -14,45 +14,82 @@
 
 void FactTracker::addBoundFact( unsigned var, Tightening bound )
 {
-    _factFromIndex[_numFacts] = bound;
+    unsigned newFactNum = _factsLearned.size();
+    _factFromIndex[newFactNum] = bound;
     if ( bound._type == Tightening::LB )
-        _lowerBoundFact[var] = _numFacts;
+    {
+        if ( !hasFactAffectingBound( var, FactTracker::LB) )
+          _lowerBoundFact[var] = Stack<unsigned>();
+        _lowerBoundFact[var].push( newFactNum );
+        _factsLearned.push( Pair<unsigned, BoundType>( var, FactTracker::LB ) );
+    }
     else
-        _upperBoundFact[var] = _numFacts;
-    ++_numFacts;
+    {
+        if ( !hasFactAffectingBound( var, FactTracker::UB) )
+          _upperBoundFact[var] = Stack<unsigned>();
+        _upperBoundFact[var].push( newFactNum );
+        _factsLearned.push( Pair<unsigned, BoundType>( var, FactTracker::UB ) );
+    }
 }
 
 void FactTracker::addEquationFact( unsigned equNumber, Equation equ )
 {
-    _factFromIndex[_numFacts] = equ;
-    _equationFact[equNumber] = _numFacts;
-    ++_numFacts;
+    unsigned newFactNum = _factsLearned.size();
+    _factFromIndex[newFactNum] = equ;
+    if ( !hasFactAffectingEquation( equNumber ) )
+      _equationFact[equNumber] = Stack<unsigned>();
+    _equationFact[equNumber].push(newFactNum);
+    _factsLearned.push( Pair<unsigned, BoundType>( equNumber, FactTracker::EQU ) );
 }
 
 bool FactTracker::hasFactAffectingBound( unsigned var, BoundType type ) const
 {
     if ( type == LB )
-        return _lowerBoundFact.exists( var );
+        return _lowerBoundFact.exists( var ) && !_lowerBoundFact[var].empty();
     else
-        return _upperBoundFact.exists( var );
+        return _upperBoundFact.exists( var ) && !_upperBoundFact[var].empty();
 }
 
 unsigned FactTracker::getFactIDAffectingBound( unsigned var, BoundType type ) const
 {
     if ( type == LB )
-        return _lowerBoundFact[var];
+    {
+        Stack<unsigned> temp = _lowerBoundFact[var];
+        return temp.top();
+    }
     else
-        return _upperBoundFact[var];
+    {
+        Stack<unsigned> temp = _upperBoundFact[var];
+        return temp.top();
+    }
 }
 
 bool FactTracker::hasFactAffectingEquation( unsigned equNumber ) const
 {
-    return _equationFact.exists( equNumber );
+    return _equationFact.exists( equNumber ) && !_equationFact[equNumber].empty();
 }
 
 unsigned FactTracker::getFactIDAffectingEquation( unsigned equNumber ) const
 {
-    return _equationFact[equNumber];
+    Stack<unsigned> temp = _equationFact[equNumber];
+    return temp.top();
+}
+
+unsigned FactTracker::getNumFacts( ) const
+{
+  return _factsLearned.size();
+}
+
+void FactTracker::popFact()
+{
+  Pair<unsigned, BoundType> factInfo = _factsLearned.top();
+  _factsLearned.pop();
+  if ( factInfo.second() == LB )
+    _lowerBoundFact[factInfo.first()].pop();
+  if ( factInfo.second() == UB )
+    _upperBoundFact[factInfo.first()].pop();
+  if ( factInfo.second() == EQU )
+    _equationFact[factInfo.first()].pop();
 }
 
 //

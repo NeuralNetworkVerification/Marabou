@@ -120,7 +120,7 @@ void SmtCore::performSplit()
     // We can live with this for now, but as Clark says, it is more efficient to have the object
     // be able to support internal roll-back.
     if ( _factTracker )
-        stackEntry->_factTracker = *_factTracker;
+        stackEntry->_numFacts = _factTracker->getNumFacts();
 
     // Perform the first split: add bounds and equations
     List<PiecewiseLinearCaseSplit>::iterator split = splits.begin();
@@ -200,7 +200,13 @@ bool SmtCore::popSplit()
     _engine->restoreState( *(stackEntry->_engineState) );
     log( "\tRestoring engine state - DONE" );
     if ( _factTracker )
-      *_factTracker = stackEntry->_factTracker;
+    {
+      unsigned oldNumFacts = stackEntry->_numFacts;
+      while( _factTracker->getNumFacts() > oldNumFacts )
+      {
+        _factTracker->popFact();
+      }
+    }
 
     // Apply the new split and erase it from the list
     auto split = stackEntry->_alternativeSplits.begin();
