@@ -17,6 +17,8 @@
 // Guy: sort includes alphabetically
 #include "Equation.h"
 #include "Fact.h"
+#include "Pair.h"
+#include "Stack.h"
 #include "Tightening.h"
 
 class FactTracker
@@ -25,6 +27,7 @@ public:
     enum BoundType {
 		LB = 0,
 		UB = 1,
+    EQU = 2,
     };
 
     void addBoundFact( unsigned var, Tightening bound );
@@ -33,6 +36,8 @@ public:
     bool hasFactAffectingEquation( unsigned equNumber ) const;
     unsigned getFactIDAffectingBound( unsigned var, BoundType type ) const;
     unsigned getFactIDAffectingEquation( unsigned equNumber ) const;
+    unsigned getNumFacts( ) const;
+    void popFact( );
 
 private:
     unsigned _numFacts;
@@ -42,12 +47,13 @@ private:
     // Also, a conceptual issue: what if we learn x>=5 and later we learn x>=7? Are these always
     // the tightest bounds? What happens if later x>=5 is used for a deduction?
     // We should write an informative comment
-    Map<unsigned, unsigned> _lowerBoundFact;
-    Map<unsigned, unsigned> _upperBoundFact;
-    Map<unsigned, unsigned> _equationFact;
+    Map<unsigned, Stack<unsigned> > _lowerBoundFact;
+    Map<unsigned, Stack<unsigned> > _upperBoundFact;
+    Map<unsigned, Stack<unsigned> > _equationFact;
     //
 
     Map<unsigned, Fact> _factFromIndex;
+    Stack<Pair<unsigned, BoundType> > _factsLearned;
 };
 
 #endif // __FactTracker_h__

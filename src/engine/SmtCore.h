@@ -99,7 +99,7 @@ private:
         List<PiecewiseLinearCaseSplit> _impliedValidSplits;
         List<PiecewiseLinearCaseSplit> _alternativeSplits;
         EngineState *_engineState;
-        FactTracker _factTracker;
+        unsigned _numFacts;
     };
 
     FactTracker* _factTracker;
