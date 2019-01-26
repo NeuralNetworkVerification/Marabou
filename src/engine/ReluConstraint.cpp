@@ -56,8 +56,14 @@ PiecewiseLinearConstraint *ReluConstraint::duplicateConstraint() const
 
 void ReluConstraint::restoreState( const PiecewiseLinearConstraint *state )
 {
+    bool before = shouldBeInViolationSet();
+    
     const ReluConstraint *relu = dynamic_cast<const ReluConstraint *>( state );
     *this = *relu;
+    
+    bool after = shouldBeInViolationSet();
+
+    updateViolationWatchers(before, after);
 }
 
 void ReluConstraint::registerAsWatcher( ITableau *tableau )
@@ -74,10 +80,15 @@ void ReluConstraint::unregisterAsWatcher( ITableau *tableau )
 
 void ReluConstraint::notifyVariableValue( unsigned variable, double value )
 {
+    bool before = shouldBeInViolationSet();
     if ( FloatUtils::isZero( value, GlobalConfiguration::RELU_CONSTRAINT_COMPARISON_TOLERANCE ) )
         value = 0.0;
 
     _assignment[variable] = value;
+
+    bool after = shouldBeInViolationSet();
+
+    updateViolationWatchers(before, after);
 }
 
 void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
@@ -162,6 +173,15 @@ bool ReluConstraint::participatingVariable( unsigned variable ) const
 List<unsigned> ReluConstraint::getParticipatingVariables() const
 {
     return List<unsigned>( { _b, _f } );
+}
+
+bool ReluConstraint::shouldBeInViolationSet() const
+{
+  if ( !isActive() )
+    return false;
+  if ( !( _assignment.exists( _b ) && _assignment.exists( _f ) ) )
+    return false;
+  return !satisfied();
 }
 
 bool ReluConstraint::satisfied() const

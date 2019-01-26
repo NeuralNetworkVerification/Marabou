@@ -89,7 +89,32 @@ public:
     */
     virtual void setActiveConstraint( bool active )
     {
+        bool before = shouldBeInViolationSet();
         _constraintActive = active;
+        bool after = shouldBeInViolationSet();
+
+        updateViolationWatchers(before, after);
+    }
+
+    void updateViolationWatchers( bool before, bool after )
+    {
+        if ( before != after && _violatedPlConstraints && _violationPriorityQueue && _constraintToViolationCount)
+        {
+            if ( after )
+            {
+                _violatedPlConstraints->insert( this );
+                if ( !_constraintToViolationCount->exists( this ) )
+                {
+                    (*_constraintToViolationCount)[this] = 0;
+                } 
+                _violationPriorityQueue->insert( Pair<unsigned, PiecewiseLinearConstraint*>( (*_constraintToViolationCount)[this], this )); 
+            }
+            else
+            {
+                _violatedPlConstraints->erase( this );
+                _violationPriorityQueue->erase( Pair<unsigned, PiecewiseLinearConstraint*>( (*_constraintToViolationCount)[this], this ));
+            }
+        }
     }
 
     virtual bool isActive() const
@@ -195,6 +220,14 @@ public:
     */
     void registerConstraintBoundTightener( IConstraintBoundTightener *tightener );
 
+    void registerViolationWatchers(
+      Set<PiecewiseLinearConstraint*>* violatedPlConstraints,
+      Map<PiecewiseLinearConstraint *, unsigned>* constraintToViolationCount,
+      Set<Pair<unsigned, PiecewiseLinearConstraint*> >* violationPriorityQueue
+    );
+
+    virtual bool shouldBeInViolationSet() const = 0;
+
     /*
       Return true if and only if this piecewise linear constraint supports
       symbolic bound tightening.
@@ -206,9 +239,14 @@ public:
 
 protected:
     bool _constraintActive;
-	Map<unsigned, double> _assignment;
+	  Map<unsigned, double> _assignment;
     Map<unsigned, double> _lowerBounds;
     Map<unsigned, double> _upperBounds;
+
+
+    Set<PiecewiseLinearConstraint *>* _violatedPlConstraints;
+    Map<PiecewiseLinearConstraint *, unsigned>* _constraintToViolationCount;
+    Set<Pair<unsigned, PiecewiseLinearConstraint*> >* _violationPriorityQueue;
 
     IConstraintBoundTightener *_constraintBoundTightener;
 

@@ -132,11 +132,6 @@ private:
     List<PiecewiseLinearConstraint *> _plConstraints;
 
     /*
-      Piecewise linear constraints that are currently violated.
-    */
-    List<PiecewiseLinearConstraint *> _violatedPlConstraints;
-
-    /*
       A single, violated PL constraint, selected for fixing.
     */
     PiecewiseLinearConstraint *_plConstraintToFix;
@@ -254,11 +249,6 @@ private:
       Return true iff all variables are within bounds.
      */
     bool allVarsWithinBounds() const;
-
-    /*
-      Collect all violated piecewise linear constraints.
-    */
-    void collectViolatedPlConstraints();
 
     /*
       Return true iff all piecewise linear constraints hold.

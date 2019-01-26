@@ -182,8 +182,6 @@ bool Engine::solve( unsigned timeoutInSeconds )
             if ( allVarsWithinBounds() )
             {
                 // The linear portion of the problem has been solved.
-                // Check the status of the PL constraints
-                collectViolatedPlConstraints();
 
                 // If all constraints are satisfied, we are possibly done
                 if ( allPlConstraintsHold() )
@@ -741,6 +739,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         {
             constraint->registerAsWatcher( _tableau );
             constraint->setStatistics( &_statistics );
+            _smtCore.registerPLConstraint( constraint );
         }
 
         // Placeholder: better constraint matrix analysis as part
@@ -819,27 +818,15 @@ bool Engine::allVarsWithinBounds() const
     return !_tableau->existsBasicOutOfBounds();
 }
 
-void Engine::collectViolatedPlConstraints()
-{
-    _violatedPlConstraints.clear();
-    for ( const auto &constraint : _plConstraints )
-    {
-        if ( constraint->isActive() && !constraint->satisfied() )
-            _violatedPlConstraints.append( constraint );
-    }
-}
-
 bool Engine::allPlConstraintsHold()
 {
-    return _violatedPlConstraints.empty();
+    return _smtCore.allPlConstraintsHold();
 }
 
 void Engine::selectViolatedPlConstraint()
 {
-    ASSERT( !_violatedPlConstraints.empty() );
-
-    _plConstraintToFix = _smtCore.chooseViolatedConstraintForFixing( _violatedPlConstraints );
-
+    ASSERT( !allPlConstraintsHold() );
+    _plConstraintToFix = _smtCore.chooseViolatedConstraintForFixing();
     ASSERT( _plConstraintToFix );
 }
 
@@ -1000,7 +987,6 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 {
     log( "" );
     log( "Applying a split. " );
-
     DEBUG( _tableau->verifyInvariants() );
 
     List<Tightening> bounds = split.getBoundTightenings();

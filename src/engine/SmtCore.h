@@ -89,7 +89,11 @@ public:
       Have the SMT core choose, among a set of violated PL constraints, which
       constraint should be repaired (without splitting)
     */
-    PiecewiseLinearConstraint *chooseViolatedConstraintForFixing( List<PiecewiseLinearConstraint *> &_violatedPlConstraints ) const;
+    PiecewiseLinearConstraint *chooseViolatedConstraintForFixing() const;
+    void registerPLConstraint(PiecewiseLinearConstraint* plc) {
+      plc->registerViolationWatchers( &_violatedPlConstraints, &_constraintToViolationCount, &_violationPriorityQueue );
+    }
+    bool allPlConstraintsHold() const { return _violatedPlConstraints.empty();}
 
     /*
       For debugging purposes only - store a correct possible solution
@@ -140,9 +144,14 @@ private:
     PiecewiseLinearConstraint *_constraintForSplitting;
 
     /*
+      Piecewise linear constraints that are currently violated.
+    */
+    Set<PiecewiseLinearConstraint *> _violatedPlConstraints;
+    /*
       Count how many times each constraint has been violated.
     */
     Map<PiecewiseLinearConstraint *, unsigned> _constraintToViolationCount;
+    Set<Pair<unsigned, PiecewiseLinearConstraint*> > _violationPriorityQueue;
 
     static void log( const String &message );
 

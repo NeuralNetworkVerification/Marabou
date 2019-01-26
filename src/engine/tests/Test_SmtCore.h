@@ -90,6 +90,11 @@ public:
             return true;
         }
 
+        bool shouldBeInViolationSet() const
+        {
+          return false;
+        }
+
         List<PiecewiseLinearConstraint::Fix> getPossibleFixes() const
         {
             return List<PiecewiseLinearConstraint::Fix>();

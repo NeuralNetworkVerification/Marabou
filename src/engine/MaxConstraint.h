@@ -122,6 +122,8 @@ class MaxConstraint : public PiecewiseLinearConstraint
     */
     String serializeToString() const;
 
+    bool shouldBeInViolationSet() const;
+
  private:
     unsigned _f;
     Set<unsigned> _elements;

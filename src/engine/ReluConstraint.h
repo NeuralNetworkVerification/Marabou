@@ -138,6 +138,8 @@ public:
     */
     String serializeToString() const;
 
+    bool shouldBeInViolationSet() const;
+
     /*
       Get the index of the B variable.
     */

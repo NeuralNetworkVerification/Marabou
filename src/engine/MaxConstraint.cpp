@@ -68,8 +68,12 @@ PiecewiseLinearConstraint *MaxConstraint::duplicateConstraint() const
 
 void MaxConstraint::restoreState( const PiecewiseLinearConstraint *state )
 {
+    bool before = shouldBeInViolationSet();
     const MaxConstraint *max = dynamic_cast<const MaxConstraint *>( state );
     *this = *max;
+    bool after = shouldBeInViolationSet();
+    
+    updateViolationWatchers(before, after);
 }
 
 void MaxConstraint::registerAsWatcher( ITableau *tableau )
@@ -88,12 +92,18 @@ void MaxConstraint::unregisterAsWatcher( ITableau *tableau )
 
 void MaxConstraint::notifyVariableValue( unsigned variable, double value )
 {
+    bool before = shouldBeInViolationSet();
+
     if ( variable != _f && ( !_maxIndexSet || _assignment.get( _maxIndex ) < value ) )
 	  {
         _maxIndex = variable;
         _maxIndexSet = true;
 	  }
     _assignment[variable] = value;
+
+    bool after = shouldBeInViolationSet();
+    
+    updateViolationWatchers(before, after);
 }
 
 void MaxConstraint::notifyLowerBound( unsigned variable, double value )
@@ -245,6 +255,15 @@ List<unsigned> MaxConstraint::getParticipatingVariables() const
         result.append( element );
     result.append( _f );
     return result;
+}
+
+bool MaxConstraint::shouldBeInViolationSet() const
+{
+  if ( !isActive() )
+    return false;
+  if ( !( _assignment.exists( _f ) && _assignment.size() > 1 ) )
+    return false;
+  return !satisfied();
 }
 
 bool MaxConstraint::satisfied() const

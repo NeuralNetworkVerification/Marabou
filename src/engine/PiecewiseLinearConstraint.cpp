@@ -18,6 +18,9 @@
 
 PiecewiseLinearConstraint::PiecewiseLinearConstraint()
     : _constraintActive( true )
+    , _violatedPlConstraints( NULL )
+    , _constraintToViolationCount( NULL )
+    , _violationPriorityQueue( NULL )
     , _constraintBoundTightener( NULL )
     , _statistics( NULL )
 {
@@ -31,6 +34,19 @@ void PiecewiseLinearConstraint::setStatistics( Statistics *statistics )
 void PiecewiseLinearConstraint::registerConstraintBoundTightener( IConstraintBoundTightener *tightener )
 {
     _constraintBoundTightener = tightener;
+}
+void PiecewiseLinearConstraint::registerViolationWatchers(
+  Set<PiecewiseLinearConstraint*>* violatedPlConstraints,
+  Map<PiecewiseLinearConstraint *, unsigned>* constraintToViolationCount,
+  Set<Pair<unsigned, PiecewiseLinearConstraint*> >* violationPriorityQueue)
+{
+  _violatedPlConstraints = violatedPlConstraints;
+  _constraintToViolationCount = constraintToViolationCount;
+  _violationPriorityQueue = violationPriorityQueue;
+  if ( shouldBeInViolationSet() ){
+    _violatedPlConstraints->insert( this );
+    // TODO
+  }
 }
 
 //

@@ -44,10 +44,11 @@ SmtCore::~SmtCore()
 
 void SmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
 {
-    if ( !_constraintToViolationCount.exists( constraint ) )
-        _constraintToViolationCount[constraint] = 0;
+    unsigned& val = _constraintToViolationCount[constraint];
+    _violationPriorityQueue.erase( Pair<unsigned, PiecewiseLinearConstraint*>( val, constraint ) );
 
-    ++_constraintToViolationCount[constraint];
+    ++val;
+    _violationPriorityQueue.insert( Pair<unsigned, PiecewiseLinearConstraint*>( val, constraint ) );
 
     if ( _constraintToViolationCount[constraint] >= GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD )
     {
@@ -77,7 +78,10 @@ void SmtCore::performSplit()
     if ( !_constraintForSplitting->isActive() )
     {
         _needToSplit = false;
-        _constraintToViolationCount[_constraintForSplitting] = 0;
+        unsigned& val = _constraintToViolationCount[_constraintForSplitting];
+        _violationPriorityQueue.erase(
+          Pair<unsigned, PiecewiseLinearConstraint*>( val, _constraintForSplitting ) );
+        val = 0;
         _constraintForSplitting = NULL;
         return;
     }
@@ -139,7 +143,6 @@ unsigned SmtCore::getStackDepth() const
 bool SmtCore::popSplit()
 {
     log( "Performing a pop" );
-
     if ( _stack.empty() )
         return false;
 
@@ -214,6 +217,11 @@ bool SmtCore::popSplit()
 void SmtCore::resetReportedViolations()
 {
     _constraintToViolationCount.clear();
+    _violationPriorityQueue.clear();
+    for( PiecewiseLinearConstraint* constraint: _violatedPlConstraints ){
+        _constraintToViolationCount[constraint] = 0;
+        _violationPriorityQueue.insert( Pair<unsigned, PiecewiseLinearConstraint*>( 0, constraint ));
+    }
     _needToSplit = false;
 }
 
@@ -351,37 +359,17 @@ bool SmtCore::splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split, 
     return true;
 }
 
-PiecewiseLinearConstraint *SmtCore::chooseViolatedConstraintForFixing( List<PiecewiseLinearConstraint *> &_violatedPlConstraints ) const
+PiecewiseLinearConstraint *SmtCore::chooseViolatedConstraintForFixing() const
 {
     ASSERT( !_violatedPlConstraints.empty() );
 
     if ( !GlobalConfiguration::USE_LEAST_FIX )
         return *_violatedPlConstraints.begin();
 
-    PiecewiseLinearConstraint *candidate;
-
     // Apply the least fix heuristic
-    auto it = _violatedPlConstraints.begin();
-
-    candidate = *it;
-    unsigned minFixes = getViolationCounts( candidate );
-
-    PiecewiseLinearConstraint *contender;
-    unsigned contenderFixes;
-    while ( it != _violatedPlConstraints.end() )
-    {
-        contender = *it;
-        contenderFixes = getViolationCounts( contender );
-        if ( contenderFixes < minFixes )
-        {
-            minFixes = contenderFixes;
-            candidate = contender;
-        }
-
-        ++it;
-    }
-
-    return candidate;
+    // The priority queue contains a sorted list of broken pl constraint with the count
+    // Return the plconstraint which has been fixed least number of times
+    return ( *_violationPriorityQueue.begin() ).second();
 }
 
 //
