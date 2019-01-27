@@ -66,11 +66,15 @@ int main()
             return 0;
         }
 
-        printf( "\n\nQuery is sat! Extracting solution...\n" );
+        printf( "\n\nQuery is sat! Extracting solution...\n\n" );
         engine.extractSolution( inputQuery );
 
+        Vector<double> inputs;
         for ( unsigned i = 0; i < 784; ++i )
+        {
+            inputs.append( inputQuery.getSolutionValue( i ) );
             printf( "Input[%u] = %.15lf\n", i, inputQuery.getSolutionValue( i ) );
+        }
 
         Set<unsigned> outputVariables = berkeleyParser.getOutputVariables();
         count = 0;
@@ -79,35 +83,6 @@ int main()
             printf( "Output[%u] = %.15lf\n", count, inputQuery.getSolutionValue( outputVariable ) );
             ++count;
         }
-
-        // // for ( unsigned i = 0; i < 5; ++i )
-        // // {
-        // //     unsigned b = acasParser.getBVariable( 1, i );
-        // //     unsigned f = acasParser.getFVariable( 1, i );
-        // //     unsigned aux = acasParser.getAuxVariable( 1, i );
-        // //     unsigned slack = acasParser.getSlackVariable( 1, i );
-
-        // //     printf( "Node (%u, %u): b = %.15lf, f = %.15lf, aux = %.15lf, slack = %.15lf\n",
-        // //             1, i,
-        // //             inputQuery.getSolutionValue( b ),
-        // //             inputQuery.getSolutionValue( f ),
-        // //             inputQuery.getSolutionValue( aux ),
-        // //             inputQuery.getSolutionValue( slack ) );
-        // // }
-
-        // // Run the inputs through the real network, to evaluate the error
-        // Vector<double> outputs;
-        // acasParser.evaluate( inputs, outputs );
-        // double error = 0.0;
-
-        // for ( unsigned i = 0; i < 5; ++i )
-        // {
-        //     unsigned variable = acasParser.getOutputVariable( i );
-        //     printf( "Output[%u] = %.15lf\n", i, inputQuery.getSolutionValue( variable ) );
-        //     error += FloatUtils::abs( outputs[i] - inputQuery.getSolutionValue( variable ) );
-        // }
-
-        // printf( "\nTotal error: %.15lf\n", error );
     }
     catch ( const ReluplexError &e )
     {
