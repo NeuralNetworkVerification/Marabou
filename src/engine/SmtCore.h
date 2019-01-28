@@ -98,6 +98,9 @@ public:
     bool checkSkewFromDebuggingSolution();
     bool splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split, String &error ) const;
 
+    // Experimental
+    Map<unsigned, PiecewiseLinearConstraint *> _constraintsByLayer;
+
 private:
     /*
       A stack entry consists of the engine state before the split,

@@ -87,6 +87,43 @@ void SmtCore::performSplit()
     ASSERT( _constraintForSplitting->isActive() );
     _needToSplit = false;
 
+    // Experimental - New:
+    bool experimental = true;
+    if ( experimental )
+    {
+        // printf( "Was about to split on the following constraint:\n" );
+        // String dumpString;
+        // _constraintForSplitting->dump( dumpString );
+        // printf( "\t%s\n", dumpString.ascii() );
+
+        _constraintToViolationCount[_constraintForSplitting] = 0;
+        bool found = false;
+        for ( auto &pair : _constraintsByLayer )
+        {
+            PiecewiseLinearConstraint *constraint = pair.second;
+            if ( !constraint->isActive() )
+                continue;
+            if ( constraint->phaseFixed() )
+                continue;
+
+            _constraintForSplitting = constraint;
+            found = true;
+            break;
+        }
+
+        if ( !found )
+        {
+            printf( "Error! Couldn't find anyone to split on!\n" );
+            exit( 1 );
+        }
+
+        // printf( "Instead, now splitting on the following constraint:\n" );
+        // _constraintForSplitting->dump( dumpString );
+        // printf( "\t%s\n", dumpString.ascii() );
+
+    }
+    // Experimental - new (DONE)
+
     if ( _statistics )
     {
         _statistics->incNumSplits();

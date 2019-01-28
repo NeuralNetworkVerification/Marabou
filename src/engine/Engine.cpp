@@ -779,6 +779,20 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
     _smtCore.storeDebuggingSolution( _preprocessedQuery._debuggingSolution );
 
+    // Experimental
+    for ( const auto &constraint : _plConstraints )
+    {
+        List<unsigned> vars = constraint->getParticipatingVariables();
+        unsigned min = _preprocessedQuery.getNumberOfVariables();
+        for ( const auto &var : vars )
+        {
+            if ( var < min )
+                min = var;
+        }
+
+        _smtCore._constraintsByLayer[min] = constraint;
+    }
+
     return true;
 }
 
