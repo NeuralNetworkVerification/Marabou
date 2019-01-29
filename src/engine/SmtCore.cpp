@@ -87,16 +87,10 @@ void SmtCore::performSplit()
     ASSERT( _constraintForSplitting->isActive() );
     _needToSplit = false;
 
-    // Experimental - New:
-    bool experimental = true;
-    if ( experimental )
+    if ( GlobalConfiguration::SPLIT_ON_LOWER_LAYERS_FIRST )
     {
-        // printf( "Was about to split on the following constraint:\n" );
-        // String dumpString;
-        // _constraintForSplitting->dump( dumpString );
-        // printf( "\t%s\n", dumpString.ascii() );
-
         _constraintToViolationCount[_constraintForSplitting] = 0;
+
         bool found = false;
         for ( auto &pair : _constraintsByLayer )
         {
@@ -113,16 +107,10 @@ void SmtCore::performSplit()
 
         if ( !found )
         {
-            printf( "Error! Couldn't find anyone to split on!\n" );
-            exit( 1 );
+            printf( "SmtCore Throwing...\n" );
+            throw ReluplexError( ReluplexError::SMT_FAILED_TO_FIND_CONSTRAINT );
         }
-
-        // printf( "Instead, now splitting on the following constraint:\n" );
-        // _constraintForSplitting->dump( dumpString );
-        // printf( "\t%s\n", dumpString.ascii() );
-
     }
-    // Experimental - new (DONE)
 
     if ( _statistics )
     {
@@ -419,6 +407,11 @@ PiecewiseLinearConstraint *SmtCore::chooseViolatedConstraintForFixing( List<Piec
     }
 
     return candidate;
+}
+
+void SmtCore::setConstraintByLayer( unsigned variable, PiecewiseLinearConstraint *contraint )
+{
+    _constraintsByLayer[variable] = contraint;
 }
 
 //

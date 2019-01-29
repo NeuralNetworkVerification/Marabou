@@ -44,6 +44,7 @@ public:
         SYMBOLIC_BOUND_TIGHTENER_UNKNOWN_VARIABLE_INDEX = 19,
         MERGED_INPUT_VARIABLE = 20,
         MERGED_OUTPUT_VARIABLE = 21,
+        SMT_FAILED_TO_FIND_CONSTRAINT = 22,
 
         // Error codes for Query Loader
         FILE_DOES_NOT_EXIST = 100,

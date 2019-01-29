@@ -165,6 +165,10 @@ public:
     // the one that has been repaired the least number of times so far.
     static const bool USE_LEAST_FIX;
 
+    // A heurstic for splitting the constraint that will be split on next. In this is turned on,
+    // we will prefer constraints from the lower layers of the network.
+    static const bool SPLIT_ON_LOWER_LAYERS_FIRST;
+
     /*
       Basis factorization options
     */

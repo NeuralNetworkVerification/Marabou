@@ -779,18 +779,20 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
     _smtCore.storeDebuggingSolution( _preprocessedQuery._debuggingSolution );
 
-    // Experimental
-    for ( const auto &constraint : _plConstraints )
+    if ( GlobalConfiguration::SPLIT_ON_LOWER_LAYERS_FIRST )
     {
-        List<unsigned> vars = constraint->getParticipatingVariables();
-        unsigned min = _preprocessedQuery.getNumberOfVariables();
-        for ( const auto &var : vars )
+        for ( const auto &constraint : _plConstraints )
         {
-            if ( var < min )
-                min = var;
-        }
+            List<unsigned> variables = constraint->getParticipatingVariables();
+            unsigned minimalVariable = _preprocessedQuery.getNumberOfVariables();
+            for ( const auto &variable : variables )
+            {
+                if ( variable < minimalVariable )
+                    minimalVariable = variable;
+            }
 
-        _smtCore._constraintsByLayer[min] = constraint;
+            _smtCore.setConstraintByLayer( minimalVariable, constraint );
+        }
     }
 
     return true;

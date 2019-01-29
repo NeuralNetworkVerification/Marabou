@@ -81,6 +81,7 @@ const bool GlobalConfiguration::SYMBOLIC_BOUND_TIGHTENER_LOGGING = false;
 
 const bool GlobalConfiguration::USE_SMART_FIX = false;
 const bool GlobalConfiguration::USE_LEAST_FIX = false;
+const bool GlobalConfiguration::SPLIT_ON_LOWER_LAYERS_FIRST = true;
 
 void GlobalConfiguration::print()
 {

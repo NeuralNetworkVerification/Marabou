@@ -92,14 +92,16 @@ public:
     PiecewiseLinearConstraint *chooseViolatedConstraintForFixing( List<PiecewiseLinearConstraint *> &_violatedPlConstraints ) const;
 
     /*
+      For sorting constraint by network layers
+    */
+    void setConstraintByLayer( unsigned variable, PiecewiseLinearConstraint *contraint );
+
+    /*
       For debugging purposes only - store a correct possible solution
     */
     void storeDebuggingSolution( const Map<unsigned, double> &debuggingSolution );
     bool checkSkewFromDebuggingSolution();
     bool splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split, String &error ) const;
-
-    // Experimental
-    Map<unsigned, PiecewiseLinearConstraint *> _constraintsByLayer;
 
 private:
     /*
@@ -159,6 +161,11 @@ private:
       debugging purposes.
     */
     unsigned _stateId;
+
+    /*
+      A map that keeps the constraints sorted by network layer.
+    */
+    Map<unsigned, PiecewiseLinearConstraint *> _constraintsByLayer;
 };
 
 #endif // __SmtCore_h__

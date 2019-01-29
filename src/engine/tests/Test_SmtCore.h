@@ -108,7 +108,7 @@ public:
 
         bool phaseFixed() const
         {
-            return true;
+            return false;
         }
 
         PiecewiseLinearCaseSplit getValidCaseSplit() const
@@ -226,6 +226,8 @@ public:
         constraint.nextSplits.append( split1 );
         constraint.nextSplits.append( split2 );
         constraint.nextSplits.append( split3 );
+
+        smtCore.setConstraintByLayer( 0, &constraint );
 
         for ( unsigned i = 0; i < GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD; ++i )
             smtCore.reportViolatedConstraint( &constraint );
@@ -435,6 +437,8 @@ public:
 
         constraint.nextIsActive = true;
 
+        smtCore.setConstraintByLayer( 0, &constraint );
+
         TS_ASSERT( smtCore.needToSplit() );
         TS_ASSERT_THROWS_NOTHING( smtCore.performSplit() );
         TS_ASSERT( !smtCore.needToSplit() );
@@ -466,7 +470,9 @@ public:
         for ( unsigned i = 0; i < GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD; ++i )
             smtCore.reportViolatedConstraint( &constraint2 );
 
+        constraint.nextIsActive = false;
         constraint2.nextIsActive = true;
+        smtCore.setConstraintByLayer( 0, &constraint2 );
 
         TS_ASSERT( smtCore.needToSplit() );
         TS_ASSERT_THROWS_NOTHING( smtCore.performSplit() );

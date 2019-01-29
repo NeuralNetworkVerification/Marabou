@@ -3,8 +3,7 @@ ROOT_DIR = ../..
 include $(ROOT_DIR)/Places.mk
 
 SUBDIRS += \
-
-#tests \
+	tests \
 
 LOCAL_INCLUDES += \
 	.. \
