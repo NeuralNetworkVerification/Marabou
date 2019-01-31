@@ -526,7 +526,7 @@ found under the bin directory.
        In particular, see an example for running a TensorFlor model in ...
        Also, see an example for verifying a convolutional network in...
 
-
+   (d) Parallel execution ?
 
 ** TODO **
 
