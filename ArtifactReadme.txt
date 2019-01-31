@@ -5,8 +5,8 @@ Welcome to the Marabou artifact. This file contains
 contained within the artifact; and (ii) instructions for using the
 tool and for running the experiments described in the paper.
 
-The username and password for the virtual machine are: -- TODO --
-All the relevant files and directories are under: -- TODO --
+The username and password for the virtual machine are: cav / ae
+All the relevant files and directories are under: /home/cav/marabou
 
 
 (i) Information regarding the Marabou code
@@ -431,75 +431,101 @@ Additional pieces of the code:
 
 
 
+(ii) Using the tool and running the experiments
+-----------------------------------------------
+
+1. Compilation and Tests
+
+The artifact contains the code for Marabou and its various interfaces,
+as described in the paper and in this readme file. Compiling the code
+is performed as follows:
+
+      - Open a terminal (ctrl + alt + t)
+      - Navigate to the main dir:
+        cd marabou
+      - Run "make":
+        make -j 8
+
+The code in the provided VM has already been compiled, so the re-compilation
+should end very quickly. Still, it will also run the unit tests, which are
+rerun with every invocation of "make". To recompile from scratch, run
+
+      - make clean && make -j 8
+
+In addition, it is also possible to run a small set of regression tests, by
+invoking
+
+      - make regress
+
+After a successful compilation, the Marabou executable, marabou.elf, can be
+found under the bin directory.
+
+2. The Various Interfaces
+
+   (a) The C++ interface
+       Marabou queries can be encoded by writing code that populates Marabou's
+       InputQuery object, and compiling it against Marabou. This approach may
+       prove useful, e.g., if Marabou is used within another framework, or for
+       automation purposes.
+
+       An example of this interface can be found under examples/cpp_interface.
+       In order to compile that example, run
+
+       - cd examples/cpp_interface
+       - make -j 8
+       - ./cpp_example
+
+       To see the encoding, open the main.cpp file in the aforementioned folder.
+       The code therein populates the various fields of an InputQuery object
+       that describe a verification query: the equations, piecewise-linear
+       constraints and variabe bounds. It then invokes the Marabou engine,
+       obtains a SAT answer, and prints out the satisfying assignment.
+
+       Feel free to change some of the constraints, recompile the code and run
+       it again to obtain different results. You might try, e.g., to
+
+       ... TODO !!
 
 
-////////// TODO:
-////////// Below is the Reluplex stuff, need to update once the evaluation section is in place
+   (b) Marabou executable
+       Marabou can be invoked by running the executable file created under the
+       bin folder, and supplying it with a neural network and a property. For
+       example, try running:
 
-(1) Running the experiments
----------------------------
+       - ./bin/marabou.elf acas/ACASXU_run2a_1_1_batch_2000.nnet property.txt
 
-The paper describes 3 categories of experiments:
+       This tells Marabou to find an assignment to the network described in the
+       nnet file (in this case, one of the ACAS Xu networks), that satisfies
+       the property described in property.txt.
 
-  (i) Experiments comparing Reluplex to the SMT solvers CVC4, Z3,
-  Yices and Mathsat, and to the LP solver Gurobi.
+       The property files are encoded in a simple textual format, where the x
+       variables represent the networks inputs, the y variables represent its
+       outputs, and only linear constraints are allowed.
 
-  (ii) Using Reluplex to check 10 desirable properties of the ACAS
-  Xu networks.
+       The current property specifies that...
 
-  (iii) Using Reluplex to evaluate the local adversarial robustness of
-  one of the ACAS Xu networks.
+       Again, feel free to change some of the constraints, for example into...
 
-The artifact contains the code for all experiments above (additional
-information is below). All experiments are run using simple scripts,
-provided in the "scripts" folder. The results will appear in the
-"logs" folder. In order to run an experiment:
 
-       - Open a terminal (ctrl + alt + t)
-       - Navigate to the main dir:
-         cd artifact
-       - Run the experiment of choice:
-       	 ./scripts/run_XYZ.sh
-	 Make sure that you are running the scripts from the artifact
-         directory, or this will fail (e.g., do not do "cd scripts"
-         and "./run_XYZ.sh")
-       - Find the results under the "logs" folder.
-       	 E.g., run: nautilus logs
-	 And then double click on any of the text files, or use your
-         favorite editor.
+   (c) Python interface
+       The python interface resides in the maraboupy folder, and can be compiled
+       by running
 
-A Reluplex execution generates two kinds of logs. The first is the
-summary log, in which each query to Reluplex is summarized by a line like this:
+       - cd maraboupy && make -j 8
 
-./nnet/ACASXU_run2a_2_3_batch_2000.nnet, SAT, 12181, 00:00:12, 37, 39
+       (it has already precompiled in the artifact).
 
-The fields in each line in the summary file are:
- - The network being tested
- - Result (SAT/UNSAT/TIMEOUT/ERROR)
- - Time in millseconds
- - Time in HH:MM:SS format
- - Maximal stack depth reached
- - Number of visited states
+       Running it is then performed by ...
+       See examples in ...
+       In particular, see an example for running a TensorFlor model in ...
+       Also, see an example for verifying a convolutional network in...
 
-Summary logs will always have the word "summary" in their
-names. Observe that a single experiment may involve multiple networks,
-or multiple queries on the same network - so a single summary file may
-contain multiple lines. Also, note that these files are only
-created/updated when a query finishes, so they will likely appear
-only some time after an experiment has started.
 
-The second kind of log files that will appear under the "logs" folder
-is the statistics log. These logs will have the word "stats" in their
-names, and will contain statistics that Reluplex prints roughly every
-500 iterations of its main loop. These logs will appear immediately
-when the experiment starts. Unlike summary logs which may summarize
-multiple queries to Reluplex, each statistics log describes just a
-single query. Consequently, there will be many of these logs (a
-single experiment may generate as many as 45 of these logs). The log
-names will typically indicate the specific query that generated them;
-for example, "property2_stats_3_9.txt" signifies a statistics log that
-was generated for property 2, when checked on the network indexed by
-(3,9).
+
+** TODO **
+
+(3) Experiments described in the paper
+
 
 IMPORTANT NOTE:
 
@@ -524,122 +550,3 @@ specifications:
   - Cores: 8 (altough Reluplex itself is single-threaded)
   - RAM: 32 gigabyte
   - CPU: Intel(R) Xeon(R) CPU E5-2637 v4 @ 3.50GHz
-
-(1.i) Comparing Reluplex to SMT and LP solvers
-----------------------------------------------
-
-We compared the various solvers using 8 benchmarks. These benchmarks
-are organized under the "compare_to_solvers" folder. Each benchmark
-appears in a separate numbered folder. Each of these folders has the
-benchmark in Reluplex format (main.cpp, already compiled into
-queryi_reluplex.elf for i between 1 and 8), in SMTLIB format for the
-SMT solvers (queryi.smt2), and in LP format for Gurobi (queryi.lp).
-
-A description of the actual benchmark appears in the file
-benchmarks.pdf, in the same directory as the file you are now reading.
-
-- To run Reluplex:
-Execute the script "run_compare_to_solvers_reluplex.sh". This script
-should take a few  minutes to run. A summary of the results will
-appear under "logs/compare_to_solvers_reluplex_summary.txt". The
-statistics produced by Reluplex as it was solving each query will
-appear under "logs/compare_to_solvers_reluplex_i_stats.txt". Since all
-queries are satisfiable, success is indicated by 8 SAT results in the
-summary file. No timeouts are expected here.
-
-- To run Gurobi:
-Execute the script "run_compare_to_solvers_gurobi.sh". The logs will
-appear as "logs/compare_to_solvers_gurobi_i_stats.txt". Note that Gurobi
-is expected to time out on most of these benchmarks (4 hour timeout,
-times 5 benchmarks that will likely timeout), so this experiment
-will take several hours. A successful Gurobi execution is indicated by a line
-similar to: "Optimal solution found (tolerance 1.00e-04)". A timeout
-is indicated by a sudden termination of the log, without this line.
-
-- To run the SMT solvers:
-Execute the script "run_compare_to_solvers_smt.sh". The logs will
-appear as "logs/compare_to_solvers_smt_query_i.txt". Each log file
-will contain logs for the 4 SMT solvers run on that benchmark. Almost
-all experiments timeout here, and since there are 8 benchmarks times 4
-solvers times 4 hours per timeout, this will take a long time. The log
-files will indicate the time each experiment took. Success is
-indicated by the appearance of the word "sat" and duration that is
-smaller than 4 hours; 4 hours indicates a timeout.
-
-
-(1.ii) Using Reluplex to check 10 desirable
-       properties of the ACAS Xu networks
---------------------------------------------
-
-These 10 benchmarks are organized under the "check_properties" folder,
-in numbered folders. Property 6 is checked in two parts, and
-so it got two folders: property6a and property6b. Within these
-folders, the properties are given in Reluplex format (main.cpp,
-already compiled into an executable). A description of the actual
-benchmark appears in the file benchmarks.pdf, in the same directory as
-the file you are now reading.
-
-Recall that checking is done by negating the property. For instance,
-in order to prove that x > 50, we tell Reluplex to check the
-satisfiability x <= 50, and expect an UNSAT result.
-
-Also, some properties are checked in parts. For example, the ACAS Xu
-networks have 5 outputs, and we often wish to prove that one of them
-is minimal. We check this by querying Reluplex 4 times, each time
-asking it to check whether it is possible that one of the other
-outputs is smaller than our target output. In this case, success is
-indicated by 4 UNSAT answers.
-
-The expected results for these experiments are a mix of SAT, UNSAT and
-TIMEOUT results, and should match the ones reported in the paper -
-modulo the machine used to run the experiment, which can cause, e.g.,
-more TIMEOUT instances.
-
-To run Reluplex, execute the "run_peopertyi.sh" scripts, for i between
-1 and 10. The result summaries will appear under
-"logs/propertyi_summary.txt". The statistics from each individual
-query to Reluplex will also appear under the logs folder.
-
-Each query has a 12 hour timeout, and some of the experiments are
-long. One of the shorter ones is property 4, which on our
-machine took less than 4 hours total to complete for all 42 networks
-that it includes. For an experiment on multiple networks (properties
-1-4) you can also stop the experiment part way, and the summary
-files will indicate the results for the networks covered so far.
-
-Since submitting the paper we have made some improvements to the tool,
-and so fewer benchmarks timeout now than as reported in the paper. We
-will update the results in our camera-ready version.
-
-(1.iii) Using Reluplex to evaluate the local adversarial
-        robustness of one of the ACAS Xu networks.
---------------------------------------------------------
-
-These experiments include evaluating the adversarial robustness of one
-of the ACAS Xu networks on 5 arbitrary points. Evaluating each point
-involves invoking Reluplex 5 times, with different delta sizes.
-The relevant Reluplex code appears under
-"check_properties/adversarial/main.cpp", and has already been
-compiled. To execute it, run the "scripts/run_adversarial.sh" script. The
-summary of the results will appear as "logs/adversarial_summary.txt",
-and the Reluplex statistics will appear under
-"logs/adversarial_stats.txt" (the statistics for all queries will
-appear under the same file). On our machine the entire experiment took
-about 10 hours to run, although you can terminate it prematurely and
-look at the partial results.
-
-Checking the adversarial robustness at point x for a fixed delta is
-done as follows:
-
-  - Identify the minimal output at point x
-  - For each of the other 4 outputs, do:
-  -   Invoke Reluplex to look for a point x' that is at most delta
-      away from x, for which the other point is minimal
-
-If the test fails for all 4 other outputs (4 UNSAT results), the
-network is robust at x; otherwise, it is not. As soon as one SAT
-result is found we stop the test.
-
-
-
-/////////////////////
