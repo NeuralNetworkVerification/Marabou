@@ -468,12 +468,12 @@ found under the bin directory.
        prove useful, e.g., if Marabou is used within another framework, or for
        automation purposes.
 
-       An example of this interface can be found under examples/cpp_interface.
-       In order to compile that example, run
+       An example of this interface can be found under cpp_interface_example.
+       In order to compile and run that example, run
 
-       - cd examples/cpp_interface
+       - cd cpp_interface_example
        - make -j 8
-       - ./cpp_example
+       - ./example.elf
 
        To see the encoding, open the main.cpp file in the aforementioned folder.
        The code therein populates the various fields of an InputQuery object
@@ -482,9 +482,15 @@ found under the bin directory.
        obtains a SAT answer, and prints out the satisfying assignment.
 
        Feel free to change some of the constraints, recompile the code and run
-       it again to obtain different results. You might try, e.g., to
+       it again to obtain different results. You might try to, e.g., change
+       the bounds of variable x5 (lines 49-50) from
 
-       ... TODO !!
+       	   0.5 <= x5 <= 1
+
+       to
+	     6 <= x5 <= 7
+
+       and see that the problem becomes UNSAT.
 
 
    (b) Marabou executable
