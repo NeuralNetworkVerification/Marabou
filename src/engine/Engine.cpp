@@ -682,20 +682,22 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
                                  Stringf( "Error! Have %u infinite bounds", infiniteBounds ).ascii() );
         }
 
-        _degradationChecker.storeEquations( _preprocessedQuery );
-
-        const List<Equation> equations( _preprocessedQuery.getEquations() );
-
+        const List<Equation> &equations( _preprocessedQuery.getEquations() );
         unsigned m = equations.size();
         unsigned n = _preprocessedQuery.getNumberOfVariables();
-        _tableau->setDimensions( m, n );
 
-        adjustWorkMemorySize();
+        _degradationChecker.storeEquations( _preprocessedQuery );
 
+        /*
+          Process the returned equations, to detect any redundancies, i.e. equations that
+          are a linear combination of other equations. Such equations can be removed
+        */
+
+        // Step 1: create a constraint matrix from the equations
         double *constraintMatrix = new double[n*m];
-        std::fill_n( constraintMatrix, n*m, 0.0 );
         if ( !constraintMatrix )
             throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Engine::constraintMatrix" );
+        std::fill_n( constraintMatrix, n*m, 0.0 );
 
         unsigned equationIndex = 0;
         for ( const auto &equation : equations )
@@ -706,11 +708,53 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
                 throw ReluplexError( ReluplexError::NON_EQUALITY_INPUT_EQUATIONS_NOT_YET_SUPPORTED );
             }
 
-            _tableau->setRightHandSide( equationIndex, equation._scalar );
-
             for ( const auto &addend : equation._addends )
                 constraintMatrix[equationIndex*n + addend._variable] = addend._coefficient;
 
+            ++equationIndex;
+        }
+
+        // Step 2: analyze the matrix to identify redundant rows and independent columns
+        AutoConstraintMatrixAnalyzer analyzer;
+        analyzer->analyze( constraintMatrix, m, n );
+
+        log( Stringf( "Number of redundant rows: %u out of %u",
+                      analyzer->getRedundantRows().size(), m ) );
+
+        // Step 3: remove any equations corresponding to redundant rows
+        Set<unsigned> redundantRows = analyzer->getRedundantRows();
+
+        if ( !redundantRows.empty() )
+        {
+            _preprocessedQuery.removeEquationsByIndex( redundantRows );
+            m = equations.size();
+
+            // Adjust A for the missing rows
+            std::fill_n( constraintMatrix, n*m, 0.0 );
+
+            unsigned equationIndex = 0;
+            for ( const auto &equation : equations )
+            {
+                for ( const auto &addend : equation._addends )
+                    constraintMatrix[equationIndex*n + addend._variable] = addend._coefficient;
+
+                ++equationIndex;
+            }
+        }
+
+        // Step 4: keep the independent columns for later basis initialization
+        List<unsigned> independentColumns = analyzer->getIndependentColumns();
+        ASSERT( independentColumns.size() == m );
+        /* Done analyzing the constraint matrix for detetign dependencies */
+
+        _tableau->setDimensions( m, n );
+
+        adjustWorkMemorySize();
+
+        equationIndex = 0;
+        for ( const auto &equation : equations )
+        {
+            _tableau->setRightHandSide( equationIndex, equation._scalar );
             ++equationIndex;
         }
 
@@ -745,16 +789,6 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         // Placeholder: better constraint matrix analysis as part
         // of the preprocessing phase.
-
-        AutoConstraintMatrixAnalyzer analyzer;
-        analyzer->analyze( _tableau->getSparseA(), _tableau->getM(), _tableau->getN() );
-
-        if ( analyzer->getRank() != _tableau->getM() )
-        {
-            printf( "Warning!! Contraint matrix rank is %u (out of %u)\n",
-                    analyzer->getRank(), _tableau->getM() );
-        }
-        List<unsigned> independentColumns = analyzer->getIndependentColumns();
         _tableau->initializeTableau( independentColumns );
 
         _costFunctionManager->initialize();
