@@ -45,7 +45,8 @@ public:
     const Map<unsigned, double> &getUpperBounds() const;
 
     const List<Equation> &getEquations() const;
-	List<Equation> &getEquations();
+    List<Equation> &getEquations();
+    void removeEquationsByIndex( const Set<unsigned> indices );
 
     void addPiecewiseLinearConstraint( PiecewiseLinearConstraint *constraint );
     const List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints() const;
