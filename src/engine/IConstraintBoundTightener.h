@@ -19,6 +19,8 @@
 #include "ITableau.h"
 #include "Tightening.h"
 
+class FactTracker;
+
 class IConstraintBoundTightener : public ITableau::VariableWatcher, public ITableau::ResizeWatcher
 {
 public:
@@ -52,11 +54,17 @@ public:
     virtual void setStatistics( Statistics *statistics ) = 0;
 
     /*
+      Have the bount tightener report new deductions to a tracker,
+      for conflict analysis later on.
+    */
+    virtual void setFactTracker( FactTracker* factTracker ) = 0;
+
+    /*
       This method can be used by clients to tell the bound tightener
       about a tighter bound
     */
-    virtual void registerTighterLowerBound( unsigned variable, double bound ) = 0;
-    virtual void registerTighterUpperBound( unsigned variable, double bound ) = 0;
+    virtual void registerTighterLowerBound( unsigned variable, double bound, unsigned explanationID ) = 0;
+    virtual void registerTighterUpperBound( unsigned variable, double bound, unsigned explanationID ) = 0;
 
     /*
       Get the tightenings previously registered by the constraints

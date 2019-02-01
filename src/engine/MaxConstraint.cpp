@@ -135,6 +135,9 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
                     if ( _factTracker->hasFactAffectingBound( element, FactTracker::UB ) )
                         _factIDsCausingVarRemoval.append( _factTracker->getFactIDAffectingBound( element, FactTracker::UB ) );
 
+                    // Junyao: why do we remove the fact that explains the new lower bound,
+                    // if we want to remove fact about old lower bound,
+                    // this should be done when the new bound is assigned
                     if ( _factTracker->hasFactAffectingBound( variable, FactTracker::LB ) )
                         _factIDsCausingVarRemoval.append( _factTracker->getFactIDAffectingBound( variable, FactTracker::LB ) );
                 }
@@ -158,12 +161,22 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
         // can focus only on the newly learned bound and possible consequences.
         List<Tightening> tightenings;
         getEntailedTightenings( tightenings );
+        unsigned explanationID = 0;
+
+        //Junyao: seems right because new tightening should only blame this new bound update,
+        // that is, even without previous bound updates,
+        // this tightening would still be valid
+        if ( _factTracker->hasFactAffectingBound( variable, FactTracker::LB ) )
+        {
+            explanationID = _factTracker->getFactIDAffectingBound( variable, FactTracker::LB );
+        }
+
         for ( const auto &tightening : tightenings )
         {
             if ( tightening._type == Tightening::LB )
-                _constraintBoundTightener->registerTighterLowerBound( tightening._variable, tightening._value );
+                _constraintBoundTightener->registerTighterLowerBound( tightening._variable, tightening._value, explanationID );
             else if ( tightening._type == Tightening::UB )
-                _constraintBoundTightener->registerTighterUpperBound( tightening._variable, tightening._value );
+                _constraintBoundTightener->registerTighterUpperBound( tightening._variable, tightening._value, explanationID );
         }
     }
 }
@@ -199,12 +212,20 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
         // can focus only on the newly learned bound and possible consequences.
         List<Tightening> tightenings;
         getEntailedTightenings( tightenings );
+        unsigned explanationID = 0;
+
+        //Junyao: same comment as in notifyLowerBound
+        if ( _factTracker->hasFactAffectingBound( variable, FactTracker::UB ) )
+        {
+            explanationID = _factTracker->getFactIDAffectingBound( variable, FactTracker::UB );
+        }
+
         for ( const auto &tightening : tightenings )
         {
             if ( tightening._type == Tightening::LB )
-                _constraintBoundTightener->registerTighterLowerBound( tightening._variable, tightening._value );
+                _constraintBoundTightener->registerTighterLowerBound( tightening._variable, tightening._value, explanationID );
             else if ( tightening._type == Tightening::UB )
-                _constraintBoundTightener->registerTighterUpperBound( tightening._variable, tightening._value );
+                _constraintBoundTightener->registerTighterUpperBound( tightening._variable, tightening._value, explanationID );
         }
     }
 }

@@ -62,9 +62,10 @@ public:
     void notifyLowerBound( unsigned /* variable */, double /* bound */ ) {}
     void notifyUpperBound( unsigned /* variable */, double /* bound */ ) {}
     void setStatistics( Statistics */* statistics */ ) {}
-    void registerTighterLowerBound( unsigned /* variable */, double /* bound */ ) {}
-    void registerTighterUpperBound( unsigned /* variable */, double /* bound */ ) {}
+    void registerTighterLowerBound( unsigned /* variable */, double /* bound */, unsigned /* explanationID */ ) {}
+    void registerTighterUpperBound( unsigned /* variable */, double /* bound */, unsigned /* explanationID */ ) {}
     void getConstraintTightenings( List<Tightening> &/* tightenings */ ) const {}
+    void setFactTracker( FactTracker* /* factTracker */ ) {};
 };
 
 #endif // __MockConstraintBoundTightener_h__

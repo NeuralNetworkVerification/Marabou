@@ -115,6 +115,15 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
 
     if ( isActive() && _constraintBoundTightener )
     {
+        // Junyao: maybe we should number valid explanationID from 1 in factTracker
+        // so that 0 means there's none explanation
+        unsigned explainationID = 0;
+
+        if( _factTracker && _factTracker->hasFactAffectingBound( variable, FactTracker::LB ))
+        {
+           explainationID = _factTracker->getFactIDAffectingBound( variable, FactTracker::LB );
+        }
+
         // A positive lower bound is always propagated between the two variables
         if ( bound > 0 )
         {
@@ -124,11 +133,11 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
             {
                 double otherLowerBound = _lowerBounds[partner];
                 if ( bound > otherLowerBound )
-                    _constraintBoundTightener->registerTighterLowerBound( partner, bound );
+                    _constraintBoundTightener->registerTighterLowerBound( partner, bound, explainationID );
             }
             else
             {
-                _constraintBoundTightener->registerTighterLowerBound( partner, bound );
+                _constraintBoundTightener->registerTighterLowerBound( partner, bound, explainationID );
             }
         }
 
@@ -136,7 +145,7 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
         // we attempt to tighten it to 0
         if ( bound < 0 && variable == _f )
         {
-            _constraintBoundTightener->registerTighterLowerBound( _f, 0 );
+            _constraintBoundTightener->registerTighterLowerBound( _f, 0, explainationID );
         }
     }
  }
@@ -156,18 +165,28 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
 
     if ( isActive() && _constraintBoundTightener )
     {
+        // Junyao: maybe we should number valid explanationID from 1 in factTracker
+        // so that 0 means there's none explanation
+        unsigned explainationID = 0;
+
+        if( _factTracker && _factTracker->hasFactAffectingBound( variable, FactTracker::UB ))
+        {
+           explainationID = _factTracker->getFactIDAffectingBound( variable, FactTracker::UB );
+        }
+
+
         if ( variable == _f )
         {
             // Any bound that we learned of f should be propagated to b
             if ( bound < _upperBounds[_b] )
-                _constraintBoundTightener->registerTighterUpperBound( _b, bound );
+                _constraintBoundTightener->registerTighterUpperBound( _b, bound, explainationID );
         }
         else
         {
             // If b has a negative upper bound, we f's upper bound is 0
             double adjustedUpperBound = FloatUtils::max( bound, 0 );
             if ( adjustedUpperBound < _upperBounds[_f] )
-                _constraintBoundTightener->registerTighterUpperBound( _f, adjustedUpperBound );
+                _constraintBoundTightener->registerTighterUpperBound( _f, adjustedUpperBound, explainationID );
         }
     }
 }
