@@ -12,10 +12,32 @@
 
 #include "FactTracker.h"
 
+void FactTracker::setStatistics( Statistics* statistics )
+{
+  _statistics = statistics;
+}
+
+void FactTracker::addSplitLevelCausingFact( Fact fact, unsigned factID)
+{
+  if ( fact.isCausedBySplit() )
+  {
+    _factToSplitLevelCausing[factID] = _statistics->getCurrentStackDepth();
+    return;
+  }
+  unsigned level = 0;
+  for (unsigned explanationID: fact.getExplanations() )
+  {
+    if (_factToSplitLevelCausing[explanationID] > level)
+      level = _factToSplitLevelCausing[explanationID];
+  }
+  _factToSplitLevelCausing[factID] = level;
+}
+
 void FactTracker::addBoundFact( unsigned var, Tightening bound )
 {
     unsigned newFactNum = _factsLearned.size();
     _factFromIndex[newFactNum] = bound;
+    addSplitLevelCausingFact( bound, newFactNum );
     if ( bound._type == Tightening::LB )
     {
         if ( !hasFactAffectingBound( var, FactTracker::LB) )
@@ -36,6 +58,7 @@ void FactTracker::addEquationFact( unsigned equNumber, Equation equ )
 {
     unsigned newFactNum = _factsLearned.size();
     _factFromIndex[newFactNum] = equ;
+    addSplitLevelCausingFact( equ, newFactNum );
     if ( !hasFactAffectingEquation( equNumber ) )
       _equationFact[equNumber] = Stack<unsigned>();
     _equationFact[equNumber].push(newFactNum);
