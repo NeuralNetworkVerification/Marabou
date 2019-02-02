@@ -11,11 +11,38 @@
  **/
 
 #include "FactTracker.h"
+#include "Queue.h"
 
 void FactTracker::setStatistics( Statistics* statistics )
 {
   _statistics = statistics;
 }
+
+List<Pair<unsigned, unsigned> > FactTracker::getConstraintsAndSplitsCausingFacts(List<unsigned> facts) const
+{
+  Set<unsigned> seen;
+  List<Pair<unsigned, unsigned> > result;
+  Queue<unsigned> remaining;
+  for(unsigned id: facts)
+    remaining.push( id );
+  while(!remaining.empty())
+  {
+    const unsigned id = remaining.peak();
+    remaining.pop();
+    if (seen.exists(id)) continue;
+    seen.insert(id);
+    const Fact& fact = _factFromIndex[id];
+    if(fact.isCausedBySplit()){
+      result.append(Pair<unsigned, unsigned>(fact.getCausingConstraintID(), fact.getCausingSplitID()));
+    }
+    else {
+      for(unsigned explanation: fact.getExplanations())
+        remaining.push(explanation);
+    }
+  }
+  return result;
+}
+
 
 void FactTracker::addSplitLevelCausingFact( Fact fact, unsigned factID)
 {

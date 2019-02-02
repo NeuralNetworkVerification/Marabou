@@ -33,6 +33,7 @@ public:
 
     FactTracker(): _statistics(NULL){};
     void setStatistics( Statistics* statistics );
+    List<Pair<unsigned, unsigned> > getConstraintsAndSplitsCausingFacts(List<unsigned> facts) const;
     void addSplitLevelCausingFact( Fact fact, unsigned factID );
     void addBoundFact( unsigned var, Tightening bound );
     void addEquationFact ( unsigned equNumber, Equation equ );
