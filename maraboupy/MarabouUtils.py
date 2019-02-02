@@ -119,3 +119,32 @@ def addInequality(network, vars, coeffs, scalar, ineq_flag):
         e.addAddend(coeffs[i], vars[i])
     e.setScalar(scalar)
     network.addEquation(e)
+
+def getComplementOutputSet(network, LB, UB, x):
+    """
+    Function to convert an output specification of staying within a set defined 
+    by a lower bound and upper bound to its complement appropriate for Marabou.
+    Arguments:
+        network: (MarabouNetwork) to which to add constraint
+        LB: (float) specifying the lower bound
+        UB: (float) specifying the upper bound
+        x: (int) specifying the variable
+    """
+    # define x_l = l - x
+    x_l = network.getNewVariable()
+    eq = Equation()
+    eq.addAddend(1.0, x_l)
+    eq.addAddend(1.0, x)
+    eq.setScalar(LB)
+    # define x_u = x - u
+    x_u = network.getNewVariable()
+    eq = Equation()
+    eq.addAddend(1.0, x_u)
+    eq.addAddend(-1.0, x)
+    eq.setScalar(-UB)
+    #
+    Y = network.getNewVariable()
+    network.addMaxConstraint({x_l, x_u}, Y)
+    # ensure that neither of these is greater than 0 by ensuring that their
+    # max is less than zero
+    addInequality(network, [Y], [1.0], 0.0, "LE")
