@@ -17,6 +17,7 @@
 '''
 
 from . import MarabouCore
+import numpy as np
 
 class Equation:
     """
@@ -98,7 +99,7 @@ def addEquality(network, vars, coeffs, scalar):
     e.setScalar(scalar)
     network.addEquation(e)
 
-def addInequality(network, vars, coeffs, scalar):
+def addInequality(network, vars, coeffs, scalar, ineq_flag):
     """
     Function to conveniently add inequality constraint to network
     \sum_i vars_i*coeffs_i <= scalar
@@ -109,7 +110,11 @@ def addInequality(network, vars, coeffs, scalar):
         scalar: (float) representing RHS of equation
     """
     assert len(vars)==len(coeffs)
-    e = Equation(MarabouCore.Equation.LE)
+    assert type(vars[0]) == np.int64
+    if ineq_flag == "LE":
+        e = Equation(MarabouCore.Equation.LE)
+    elif ineq_flag == "GE":
+        e = Equation(MarabouCore.Equation.GE)
     for i in range(len(vars)):
         e.addAddend(coeffs[i], vars[i])
     e.setScalar(scalar)
