@@ -168,9 +168,9 @@ Specifically, the following preprocessing steps are applied until saturation:
   (b) Bound tightening using pl-constraints:
       If a user provides the constraint x = max( y, z ) and the bounds
 
-      -10 <= x <= 10, 0 <= y <= 1.5, 1 <= z <= 2
+      -10 <= x <= 10, 1 <= y <= 1.5, 0.5 <= z <= 2
 
-      this step will deduce tighter bounds for x: 0 <= x <= 2
+      this step will deduce tighter bounds for x: 1 <= x <= 2
 
   (c) Variable elimination:
       Any variable that can be replaced with a constant or merged with another
