@@ -481,6 +481,8 @@ found under the bin directory.
        constraints and variabe bounds. It then invokes the Marabou engine,
        obtains a SAT answer, and prints out the satisfying assignment.
 
+       The comments in the main.cpp file describe the encoded network.
+
        Feel free to change some of the constraints, recompile the code and run
        it again to obtain different results. You might try to, e.g., change
        the bounds of variable x5 (lines 49-50) from
@@ -498,19 +500,34 @@ found under the bin directory.
        bin folder, and supplying it with a neural network and a property. For
        example, try running:
 
-       - ./bin/marabou.elf acas/ACASXU_run2a_1_1_batch_2000.nnet property.txt
+       - ./bin/marabou.elf executable_example/acas.nnet executable_example/property.txt
 
        This tells Marabou to find an assignment to the network described in the
        nnet file (in this case, one of the ACAS Xu networks), that satisfies
-       the property described in property.txt.
+       the property described in property.txt. If a satsifying assignment is
+       found it is printed out.
 
        The property files are encoded in a simple textual format, where the x
        variables represent the networks inputs, the y variables represent its
        outputs, and only linear constraints are allowed.
 
-       The current property specifies that...
+       The particular property file in the example limits the range of the
+       network's 5 inputs, and requires that the first output, y0, be the minimal
+       of the 5 outputs. For an ACAS network, this means the network advises
+       that the drone continue to fly straight, i.e. issuses a COC
+       (clear-of-conflict) advisory.
 
-       Again, feel free to change some of the constraints, for example into...
+       The initial query is SAT, i.e. there exists an input within the specified
+       range for which the network's output is COC. Feel free to change some of
+       the constraints and see what happens. For example, changing the first
+       two lines in the file into:
+
+           x0 >= -0.30
+           x0 <= -0.29
+
+       Will make the query UNSAT. This is because input x0 represents the
+       distance to an intruder drone, and the change means that the
+       intruder is very close - and so the network will never advise COC.
 
 
    (c) Python interface
