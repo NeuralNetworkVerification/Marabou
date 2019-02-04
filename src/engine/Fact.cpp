@@ -22,9 +22,15 @@ List<unsigned> Fact::getExplanations() const
     return _explanations;
 }
 
-void Fact::addExplanation( unsigned explanationID )
+List<bool> Fact::getExplanationIsInternal() const
+{
+    return _explanationIsInternal;
+}
+
+void Fact::addExplanation( unsigned explanationID, bool isInternal )
 {
     _explanations.append( explanationID );
+    _explanationIsInternal.append( isInternal );
 }
 
 void Fact::setCausingConstraintAndSplitID( unsigned constraintID, unsigned splitID )

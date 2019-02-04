@@ -26,6 +26,12 @@
 class RowBoundTightener : public IRowBoundTightener
 {
 public:
+    enum QueryType {
+      LB = 0,
+      UB = 1,
+      BOTH = 2,
+    };
+
     RowBoundTightener( const ITableau &tableau );
     ~RowBoundTightener();
 
@@ -100,6 +106,13 @@ public:
     void setFactTracker( FactTracker* factTracker );
 
     /*
+      Using internal factTracker to find the external explanations
+      for the upper and lower bounds of the varialbe. This is performed
+      when we get an InfeasibleQueryException.
+    */
+    List<unsigned> findExternalExplanations( unsigned variable, QueryType queryType = BOTH ) const;
+
+    /*
       Have the Bound Tightener start reporting statistics.
      */
     void setStatistics( Statistics *statistics );
@@ -116,11 +129,13 @@ private:
       whether each bound has been tightened by the tightener.
     */
     double *_lowerBounds;
-    List<unsigned> *_lowerBoundExplanationIDs;
+    unsigned *_lowerBoundExplanationIDs;
     double *_upperBounds;
-    List<unsigned> *_upperBoundExplanationIDs;
+    unsigned *_upperBoundExplanationIDs;
     bool *_tightenedLower;
     bool *_tightenedUpper;
+    bool *_lowerBoundIsInternal;
+    bool *_upperBoundIsInternal;
 
     /*
       Work space for the inverted basis matrix tighteners
@@ -137,6 +152,11 @@ private:
       Statistics collection
     */
     Statistics *_statistics;
+
+    /*
+      Keep track of reasoning for internal bound updates
+    */
+    FactTracker *_internalFactTracker;
 
     /*
       Free internal work memory.

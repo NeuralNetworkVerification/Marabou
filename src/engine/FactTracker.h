@@ -37,6 +37,7 @@ public:
     unsigned getFactIDAffectingBound( unsigned var, BoundType type ) const;
     unsigned getFactIDAffectingEquation( unsigned equNumber ) const;
     unsigned getNumFacts( ) const;
+    Set<unsigned> getExternalFactsForBound( unsigned explanationID ) const;
     void popFact( );
 
 private:

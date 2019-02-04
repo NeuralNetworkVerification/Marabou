@@ -22,7 +22,8 @@ public:
     Fact();
 
     List<unsigned> getExplanations() const;
-    void addExplanation( unsigned explanationID );
+    List<bool> getExplanationIsInternal() const;
+    void addExplanation( unsigned explanationID, bool isInternal = false );
     void setCausingConstraintAndSplitID( unsigned constraintID, unsigned splitID );
     bool isCausedBySplit() const;
     unsigned getCausingConstraintID() const;
@@ -30,6 +31,7 @@ public:
 
 private:
     List<unsigned> _explanations;
+    List<bool> _explanationIsInternal;
     unsigned _causingConstraintID;
     unsigned _causingSplitID;
     bool _causedBySplit;

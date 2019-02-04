@@ -11,6 +11,7 @@
  **/
 
 #include "FactTracker.h"
+#include "assert.h"
 
 void FactTracker::addBoundFact( unsigned var, Tightening bound )
 {
@@ -90,6 +91,30 @@ void FactTracker::popFact()
     _upperBoundFact[factInfo.first()].pop();
   if ( factInfo.second() == EQU )
     _equationFact[factInfo.first()].pop();
+}
+
+Set<unsigned> FactTracker::getExternalFactsForBound( unsigned explanationID ) const
+{
+    Set<unsigned> externalFacts;
+    Fact fact = _factFromIndex[explanationID];
+    List<unsigned> explanations = fact.getExplanations();
+    List<bool> explanationIsInternal = fact.getExplanationIsInternal();
+    List<unsigned>::iterator explanationsIter = explanations.begin();
+    List<bool>::iterator explanationIsInternalIter = explanationIsInternal.begin();
+
+    for ( ; explanationsIter != explanations.end() ; ++explanationsIter, ++explanationIsInternalIter )
+    {
+        if( !*explanationIsInternalIter )
+        {
+            externalFacts.insert( *explanationsIter );
+        }
+        else
+        {
+            externalFacts.insert( getExternalFactsForBound( *explanationsIter ) );
+        }
+    }
+
+    return externalFacts;
 }
 
 //

@@ -476,7 +476,16 @@ void Engine::performSimplexStep()
               the varibale bounds of all variables involved in those equations.
 
               For now, it may be easier to not have an explanation for this case - i.e., just backtrack.
+
+              Junyao: For backtracking, it makes sense to return to the latest level that influences
+              participating equations or the respective lower or upper bounds of participating variables.
+              We can use "List<unsigned> explanation" to transmit such information for backtracking,
+              even though it is not a certificate for proving UNSATs. But because of the cost function,
+              the algorithm still proceeds even if it has a bad row. Thus in the end, we might have
+              many bad rows (they're all to blame in our backtracking methodology), but there is no trivial
+              way to identify these bad rows. Going through all rows is a large overhead, i.e. O(mn).
             */
+
             throw InfeasibleQueryException( explanation );
         }
     }
