@@ -136,8 +136,9 @@ class DnCSolver:
             try:
                 with open(log_file, "a") as out_file:
                     print("Valid log file!")
-                    out_file.write(self.network_name + " "
-                                    + str(self.num_workers) + " \n")
+                    out_file.write("Network name: " + self.network_name + "\n")
+                    out_file.write("Property file: " + self.property_path + "\n")
+                    out_file.write("Number of threads: " +  str(self.num_workers) + " \n")
                     out_file.write("Initial splits: {}\n".format(self.initial_splits))
                     out_file.write("Online split: {}\n".format(self.online_split))
                     out_file.write("Initial timeout: {}\n".format(self.init_to))
