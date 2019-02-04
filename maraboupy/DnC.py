@@ -27,8 +27,14 @@ from multiprocessing import Process, Pipe
 import os
 
 def main():
-    # The main method
-    # Call "python3 DnC.py --help" to see the options
+    """
+    The main method
+    Checking a property (property.txt) on a network (network.nnet) and
+      save the results to a summary file (summary.txt)
+      "python3 DnC.py -n network -q property.txt --summary-file=summary.txt"
+
+    Call "python3 DnC.py --help" to see other options
+    """
 
     options, args = Options.create_parser().parse_args()
 
