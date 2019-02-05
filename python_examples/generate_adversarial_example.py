@@ -36,3 +36,10 @@ ae_target = 3;
 # find an adversarial example within delta distance 0.08 from the input point which would be misclassified as 3
 val, stats = find_ae(proto_file, input_x_file, pred, ae_target, delta)
 print(('Adversarial Example Found: %r, Time Taken: %f\n')%(len(val)!=0, stats.getTotalTime()/1000))
+
+delta = 0.1
+# find an adversarial example within delta distance 0.1 from the input point which would be misclassified as 3
+val, stats = find_ae(proto_file, input_x_file, pred, ae_target, delta)
+print(('Adversarial Example Found: %r, Time Taken: %f\n')%(len(val)!=0, stats.getTotalTime()/1000))
+
+# input 374.npy has the predicted label of 8 and can also be used in a similar way
