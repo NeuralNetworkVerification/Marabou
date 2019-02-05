@@ -162,6 +162,26 @@ public:
 
         delete inputQuery;
     }
+
+    void test_save_query()
+    {
+        TS_TRACE( "TODO" );
+
+        InputQuery *inputQuery = new InputQuery;
+
+        // Todo: Load some stuff into the input query
+
+        TS_ASSERT_THROWS_NOTHING( inputQuery->saveQuery( "query.dump" ) );
+
+        // Todo: after saveQuery(), all the relevant information
+        // should have been written to the mockFile. Specifically, we should
+        // have mockFile's write() store everythign that's been written, and then
+        // check that it is as expected here.
+
+        TS_ASSERT_EQUALS( file->lastPath, "query.dump" );
+
+        delete inputQuery;
+    }
 };
 
 //

@@ -398,6 +398,11 @@ public:
 		}
 	}
 
+    void test_max_duplicate()
+    {
+        TS_TRACE( "TODO: add a test for duplicate" );
+    }
+
     void test_serialize_and_unserialize()
     {
         unsigned f = 42;

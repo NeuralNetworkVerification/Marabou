@@ -518,6 +518,11 @@ public:
             TS_ASSERT( plConstraint->participatingVariable( 2 ));
         }
     }
+
+    void test_todo()
+    {
+        TS_TRACE( "In test_variable_elimination, test something about updated bounds and updated PL constraints" );
+    }
 };
 
 //

@@ -237,6 +237,11 @@ public:
 
        	TS_ASSERT( watcher4 == relu2->getParticipatingVariables() );
     }
+
+    void test_todo()
+    {
+        TS_TRACE( "Future work: Guarantee correct behavior even when some variable is unbounded\n" );
+    }
 };
 
 //
