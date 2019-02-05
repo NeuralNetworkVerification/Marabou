@@ -39,6 +39,7 @@ public:
     void getCanonicalForm( double *matrix );
     unsigned getRank() const;
     List<unsigned> getIndependentColumns() const;
+    Set<unsigned> getRedundantRows() const;
 
 private:
     double *_matrix;
