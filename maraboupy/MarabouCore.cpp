@@ -25,6 +25,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
+#include "AcasParser.h"
 #include "Engine.h"
 #include "InputQuery.h"
 #include "ReluplexError.h"
@@ -32,6 +33,7 @@
 #include "FloatUtils.h"
 #include "MaxConstraint.h"
 #include "PiecewiseLinearConstraint.h"
+#include "PropertyParser.h"
 #include "ReluConstraint.h"
 #include "Set.h"
 
@@ -87,6 +89,20 @@ void addMaxConstraint(InputQuery& ipq, std::set<unsigned> elements, unsigned v){
     ipq.addPiecewiseLinearConstraint(m);
 }
 
+
+void createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::string propertyFilePath){
+  AcasParser* acasParser = new AcasParser( String(networkFilePath) );
+  acasParser->generateQuery( inputQuery );
+  String propertyFilePathM = String(propertyFilePath);
+  if ( propertyFilePath != "" )
+    {
+      printf( "Property: %s\n", propertyFilePathM.ascii() );
+      PropertyParser().parse( propertyFilePathM, inputQuery );
+    }
+  else
+    printf( "Property: None\n" );
+}
+
 std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::string redirect="", unsigned timeout=0){
     // Arguments: InputQuery object, filename to redirect output
     // Returns: map from variable number to value
@@ -101,7 +117,8 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::s
 
         if(!engine.solve(timeout)) return std::make_pair(ret, *(engine.getStatistics()));
 
-        engine.extractSolution(inputQuery);
+        if (engine.getExitCode() == Engine::SAT)
+            engine.extractSolution(inputQuery);
         retStats = *(engine.getStatistics());
         for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); i++)
             ret[i] = inputQuery.getSolutionValue(i);
@@ -123,6 +140,7 @@ void saveQuery(InputQuery& inputQuery, std::string filename){
 // Describes which classes and functions are exposed to API
 PYBIND11_MODULE(MarabouCore, m) {
     m.doc() = "Marabou API Library";
+    m.def("createInputQuery", &createInputQuery, "Create input query from network and property file");
     m.def("solve", &solve, "Takes in a description of the InputQuery and returns the solution");
     m.def("saveQuery", &saveQuery, "Serializes the inputQuery in the given filename");
     m.def("addReluConstraint", &addReluConstraint, "Add a Relu constraint to the InputQuery");
@@ -135,6 +153,11 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def("getLowerBound", &InputQuery::getLowerBound)
         .def("setNumberOfVariables", &InputQuery::setNumberOfVariables)
         .def("addEquation", &InputQuery::addEquation)
+        .def("getSolutionValue", &InputQuery::getSolutionValue)
+        .def("getNumInputVariables", &InputQuery::getNumInputVariables)
+        .def("getNumOutputVariables", &InputQuery::getNumOutputVariables)
+        .def("inputVariableByIndex", &InputQuery::inputVariableByIndex)
+        .def("outputVariableByIndex", &InputQuery::outputVariableByIndex)
         .def("setSymbolicBoundTightener", &InputQuery::setSymbolicBoundTightener);
     py::class_<SymbolicBoundTightener, std::unique_ptr<SymbolicBoundTightener,py::nodelete>>(m, "SymbolicBoundTightener")
         .def(py::init())

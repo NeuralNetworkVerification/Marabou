@@ -17,6 +17,7 @@
 #define __IConstraintMatrixAnalyzer_h__
 
 #include "List.h"
+#include "Set.h"
 
 class SparseMatrix;
 
@@ -29,6 +30,7 @@ public:
     virtual void analyze( const SparseMatrix *matrix, unsigned m, unsigned n ) = 0;
     virtual unsigned getRank() const = 0;
     virtual List<unsigned> getIndependentColumns() const = 0;
+    virtual Set<unsigned> getRedundantRows() const = 0;
 };
 
 #endif // __IConstraintMatrixAnalyzer_h__

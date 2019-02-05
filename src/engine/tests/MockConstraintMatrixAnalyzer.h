@@ -61,10 +61,15 @@ public:
     }
 
     List<unsigned> nextIndependentColumns;
-
     List<unsigned> getIndependentColumns() const
     {
         return nextIndependentColumns;
+    }
+
+    Set<unsigned> nextRedundantRows;
+    Set<unsigned> getRedundantRows() const
+    {
+        return nextRedundantRows;
     }
 };
 
