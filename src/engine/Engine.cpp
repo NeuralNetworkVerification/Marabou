@@ -225,6 +225,10 @@ bool Engine::solve( unsigned timeoutInSeconds )
         }
         catch ( const MalformedBasisException & )
         {
+            // Debug
+            printf( "MalformedBasisException caught!\n" );
+            //
+
             if ( _basisRestorationPerformed == Engine::NO_RESTORATION_PERFORMED )
             {
                 if ( _numVisitedStatesAtPreviousRestoration != _statistics.getNumVisitedTreeStates() )
@@ -613,10 +617,10 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             }
         }
 
-        log( Stringf( "Engine::processInputQuery: Input query (before preprocessing): "
-                      "%u equations, %u variables\n",
-                      inputQuery.getEquations().size(),
-                      inputQuery.getNumberOfVariables() ) );
+        printf( "Engine::processInputQuery: Input query (before preprocessing): "
+                "%u equations, %u variables\n",
+                inputQuery.getEquations().size(),
+                inputQuery.getNumberOfVariables() );
 
         // If processing is enabled, invoke the preprocessor
         _preprocessingEnabled = preprocess;
@@ -626,12 +630,12 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         else
             _preprocessedQuery = inputQuery;
 
-        log( Stringf( "Engine::processInputQuery: Input query (after preprocessing): "
-                      "%u equations, %u variables\n\n",
-                      _preprocessedQuery.getEquations().size(),
-                      _preprocessedQuery.getNumberOfVariables() ) );
+        printf( "Engine::processInputQuery: Input query (after preprocessing): "
+                "%u equations, %u variables\n\n",
+                _preprocessedQuery.getEquations().size(),
+                _preprocessedQuery.getNumberOfVariables() );
 
-        log( "Input bounds:\n" );
+        printf( "Input bounds:\n" );
         for ( unsigned i = 0; i < inputQuery.getNumInputVariables(); ++i )
         {
             unsigned variable = inputQuery.inputVariableByIndex( i );
@@ -666,9 +670,9 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
                 ub = inputQuery.getUpperBound( variable );
             }
 
-            log( Stringf( "\tx%u: [%8.4lf, %8.4lf] %s\n", i, lb, ub, fixed ? "[FIXED]" : "" ) );
+            printf( "\tx%u: [%8.4lf, %8.4lf] %s\n", i, lb, ub, fixed ? "[FIXED]" : "" );
         }
-        log( "\n" );
+        printf( "\n" );
 
         unsigned infiniteBounds = _preprocessedQuery.countInfiniteBounds();
         if ( infiniteBounds != 0 )
@@ -1243,6 +1247,11 @@ bool Engine::highDegradation()
     struct timespec end = TimeUtils::sampleMicro();
     _statistics.addTimeForDegradationChecking( TimeUtils::timePassed( start, end ) );
 
+    // Debug
+    if ( result )
+        printf( "High degradation found!\n" );
+    //
+
     return result;
 }
 
@@ -1288,6 +1297,10 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
 {
     struct timespec start = TimeUtils::sampleMicro();
 
+    // debug
+    double before = _degradationChecker.computeDegradation( *_tableau );
+    //
+
     _precisionRestorer.restorePrecision( *this, *_tableau, _smtCore, restoreBasics );
     struct timespec end = TimeUtils::sampleMicro();
     _statistics.addTimeForPrecisionRestoration( TimeUtils::timePassed( start, end ) );
@@ -1295,6 +1308,13 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
     _statistics.incNumPrecisionRestorations();
     _rowBoundTightener->clear();
     _constraintBoundTightener->resetBounds();
+
+    // debug
+    double after = _degradationChecker.computeDegradation( *_tableau );
+    printf( "Performing precision restoration. Degradation before: %.15lf. After: %.15lf\n",
+            before,
+            after );
+    //
 
     if ( highDegradation() && ( restoreBasics == PrecisionRestorer::RESTORE_BASICS ) )
     {
@@ -1309,6 +1329,12 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
 
         _rowBoundTightener->clear();
         _constraintBoundTightener->resetBounds();
+
+        // debug
+        double afterSecond = _degradationChecker.computeDegradation( *_tableau );
+        printf( "Performing 2nd precision restoration. Degradation before: %.15lf. After: %.15lf\n",
+                after,
+                afterSecond );
 
         if ( highDegradation() )
             throw ReluplexError( ReluplexError::RESTORATION_FAILED_TO_RESTORE_PRECISION );
