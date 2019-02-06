@@ -639,7 +639,9 @@ found under the bin directory.
 To use the devide-and-conquer (DnC) mode, the python API must be installed.
 The DnC mode accepts the same format of property description as the Marabou
 engine. For now, it requires the availability of both the protobuf format and
-the nnet format of the network with the same suffix.
+the nnet format of the network with the same suffix. The conversion between
+protobuf and nnet can be easily conducted using the following scripts:
+https://github.com/sisl/NNet/tree/master/scripts
 
 The network is passed to the DnC solver using the flag -n, and the property
 is passed to it using the flag -q.
