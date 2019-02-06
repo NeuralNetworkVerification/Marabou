@@ -43,6 +43,7 @@ Engine::Engine()
     , _constraintBoundTightener( *_tableau )
     , _numVisitedStatesAtPreviousRestoration( 0 )
 {
+    _factTracker.setStatistics( &_statistics );
     _smtCore.setStatistics( &_statistics );
     _smtCore.setFactTracker( &_factTracker );
     _tableau->setStatistics( &_statistics );

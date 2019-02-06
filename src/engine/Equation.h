@@ -70,7 +70,7 @@ public:
     bool operator==( const Equation &other ) const;
     bool equivalent( const Equation &other ) const;
 
-    void dump() const;
+    String getDescription() const;
 };
 
 #endif // __Equation_h__

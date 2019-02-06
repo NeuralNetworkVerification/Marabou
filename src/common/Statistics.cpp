@@ -368,6 +368,11 @@ void Statistics::setCurrentStackDepth( unsigned depth )
         _maxStackDepth = _currentStackDepth;
 }
 
+unsigned Statistics::getCurrentStackDepth() const
+{
+  return _currentStackDepth;
+}
+
 unsigned Statistics::getMaxStackDepth() const
 {
     return _maxStackDepth;

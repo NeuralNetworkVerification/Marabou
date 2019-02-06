@@ -15,12 +15,13 @@
 
 #include "List.h"
 #include "Map.h"
+#include "MString.h"
 
 class Fact
 {
 public:
     Fact();
-
+    virtual ~Fact(){}
     List<unsigned> getExplanations() const;
     List<bool> getExplanationIsInternal() const;
     void addExplanation( unsigned explanationID, bool isInternal = false );
@@ -28,6 +29,8 @@ public:
     bool isCausedBySplit() const;
     unsigned getCausingConstraintID() const;
     unsigned getCausingSplitID() const;
+    virtual String getDescription() const = 0;
+    void dump() const {printf("%s", getDescription().ascii());}
 
 private:
     List<unsigned> _explanations;

@@ -19,6 +19,7 @@
 #include "Fact.h"
 #include "Pair.h"
 #include "Stack.h"
+#include "Statistics.h"
 #include "Tightening.h"
 
 class FactTracker
@@ -30,6 +31,10 @@ public:
     EQU = 2,
     };
 
+    FactTracker(): _statistics(NULL){};
+    void setStatistics( Statistics* statistics );
+    List<Pair<unsigned, unsigned> > getConstraintsAndSplitsCausingFacts(List<unsigned> facts) const;
+    void addSplitLevelCausingFact( Fact* fact, unsigned factID );
     void addBoundFact( unsigned var, Tightening bound );
     void addEquationFact ( unsigned equNumber, Equation equ );
     bool hasFactAffectingBound( unsigned var, BoundType type ) const;
@@ -39,6 +44,7 @@ public:
     unsigned getNumFacts( ) const;
     Set<unsigned> getExternalFactsForBound( unsigned explanationID ) const;
     void popFact( );
+    void printFactAndExplanations(unsigned factID) const;
 
 private:
     unsigned _numFacts;
@@ -53,8 +59,11 @@ private:
     Map<unsigned, Stack<unsigned> > _equationFact;
     //
 
-    Map<unsigned, Fact> _factFromIndex;
+    Map<unsigned, Fact*> _factFromIndex;
     Stack<Pair<unsigned, BoundType> > _factsLearned;
+    Map<unsigned, unsigned> _factToSplitLevelCausing;
+
+    Statistics* _statistics;
 };
 
 #endif // __FactTracker_h__

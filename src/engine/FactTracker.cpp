@@ -11,12 +11,60 @@
  **/
 
 #include "FactTracker.h"
-#include "assert.h"
+#include "Queue.h"
+
+void FactTracker::setStatistics( Statistics* statistics )
+{
+  _statistics = statistics;
+}
+
+List<Pair<unsigned, unsigned> > FactTracker::getConstraintsAndSplitsCausingFacts(List<unsigned> facts) const
+{
+  Set<unsigned> seen;
+  List<Pair<unsigned, unsigned> > result;
+  Queue<unsigned> remaining;
+  for(unsigned id: facts)
+    remaining.push( id );
+  while(!remaining.empty())
+  {
+    const unsigned id = remaining.peak();
+    remaining.pop();
+    if (seen.exists(id)) continue;
+    seen.insert(id);
+    const Fact* fact = _factFromIndex[id];
+    if(fact->isCausedBySplit()){
+      result.append(Pair<unsigned, unsigned>(fact->getCausingConstraintID(), fact->getCausingSplitID()));
+    }
+    else {
+      for(unsigned explanation: fact->getExplanations())
+        remaining.push(explanation);
+    }
+  }
+  return result;
+}
+
+
+void FactTracker::addSplitLevelCausingFact( Fact* fact, unsigned factID)
+{
+  if ( fact->isCausedBySplit() )
+  {
+    _factToSplitLevelCausing[factID] = _statistics->getCurrentStackDepth();
+    return;
+  }
+  unsigned level = 0;
+  for (unsigned explanationID: fact->getExplanations() )
+  {
+    if (_factToSplitLevelCausing[explanationID] > level)
+      level = _factToSplitLevelCausing[explanationID];
+  }
+  _factToSplitLevelCausing[factID] = level;
+}
 
 void FactTracker::addBoundFact( unsigned var, Tightening bound )
 {
     unsigned newFactNum = _factsLearned.size();
-    _factFromIndex[newFactNum] = bound;
+    _factFromIndex[newFactNum] = new Tightening(bound);
+    addSplitLevelCausingFact( _factFromIndex[newFactNum], newFactNum );
     if ( bound._type == Tightening::LB )
     {
         if ( !hasFactAffectingBound( var, FactTracker::LB) )
@@ -36,7 +84,8 @@ void FactTracker::addBoundFact( unsigned var, Tightening bound )
 void FactTracker::addEquationFact( unsigned equNumber, Equation equ )
 {
     unsigned newFactNum = _factsLearned.size();
-    _factFromIndex[newFactNum] = equ;
+    _factFromIndex[newFactNum] = new Equation(equ);
+    addSplitLevelCausingFact( _factFromIndex[newFactNum], newFactNum );
     if ( !hasFactAffectingEquation( equNumber ) )
       _equationFact[equNumber] = Stack<unsigned>();
     _equationFact[equNumber].push(newFactNum);
@@ -84,6 +133,7 @@ unsigned FactTracker::getNumFacts( ) const
 void FactTracker::popFact()
 {
   Pair<unsigned, BoundType> factInfo = _factsLearned.top();
+  delete _factFromIndex[getNumFacts()-1];
   _factsLearned.pop();
   if ( factInfo.second() == LB )
     _lowerBoundFact[factInfo.first()].pop();
@@ -96,9 +146,9 @@ void FactTracker::popFact()
 Set<unsigned> FactTracker::getExternalFactsForBound( unsigned explanationID ) const
 {
     Set<unsigned> externalFacts;
-    Fact fact = _factFromIndex[explanationID];
-    List<unsigned> explanations = fact.getExplanations();
-    List<bool> explanationIsInternal = fact.getExplanationIsInternal();
+    Fact* fact = _factFromIndex[explanationID];
+    List<unsigned> explanations = fact->getExplanations();
+    List<bool> explanationIsInternal = fact->getExplanationIsInternal();
     List<unsigned>::iterator explanationsIter = explanations.begin();
     List<bool>::iterator explanationIsInternalIter = explanationIsInternal.begin();
 
@@ -114,7 +164,19 @@ Set<unsigned> FactTracker::getExternalFactsForBound( unsigned explanationID ) co
         }
     }
 
+    fact = NULL;
+    
     return externalFacts;
+}
+
+void FactTracker::printFactAndExplanations(unsigned factID) const
+{
+  Fact* fact = _factFromIndex[factID];
+  printf("Fact #%d: %s\n", factID, fact->getDescription().ascii());
+  printf("Explanations\n");
+  for(unsigned explanation: fact->getExplanations()){
+    printf("Fact #%d: %s\n", explanation, _factFromIndex[explanation]->getDescription().ascii());
+  }
 }
 
 //

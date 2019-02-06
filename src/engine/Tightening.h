@@ -18,6 +18,7 @@
 
 #include "ITableau.h"
 #include "Fact.h"
+#include "MStringf.h"
 
 class Tightening: public Fact
 {
@@ -61,13 +62,14 @@ public:
             ( _type == other._type );
     }
 
-    void dump() const
-    {
-        printf( "Tightening: x%u %s %.2lf\n",
-                _variable,
-                _type == LB ? ">=" : "<=",
-                _value );
-    }
+		String getDescription() const
+		{
+			return Stringf("Tightening: x%u %s %.2lf\n",
+														_variable,
+														_type == LB ? ">=" : "<=",
+														_value );
+		}
+
 };
 
 #endif // __Tightening_h__
