@@ -46,12 +46,13 @@ the input and its matching output satisfy the property, or declare that
 no such input exists.
 
 With the appearance of multiple deep neural network (DNN) verification
-tools and techniques over the last couple of years, diverse input formats have emerged, making
-it difficult to compare tools and run them on queries provided by
-others. Tools are often proof-of-concept implementations, and support
-specific benchmarks in a proprietary format. As part of our effort to
-make the Marabou tool accessible to many users, we added support for
-several input formats, described below:
+tools and techniques over the last couple of years, diverse input
+formats have emerged, making it difficult to compare tools and run
+them on queries provided by others. Tools are often proof-of-concept
+implementations, and support specific benchmarks in a proprietary
+format. As part of our effort to make the Marabou tool accessible to
+many users, we added support for several input formats, described
+below:
 
    (a) The native Marabou C++ format:
        In this format the user compiles a query into Marabou using its
@@ -531,26 +532,68 @@ found under the bin directory.
 
 
    (c) Python interface
-       The python interface resides in the maraboupy folder, and can be compiled
+       The Python interface resides in the maraboupy folder, and can be compiled
        by running
 
        - cd maraboupy && make -j 8
 
-       (it has already precompiled in the artifact).
+       (it is already precompiled in the artifact).
 
-       Running it is then performed by ...
-       See examples in ...
-       In particular, see an example for running a TensorFlow model and 
-       an example for verifying a convolutional network in folder python_examples
+       Running it is then performed by writing a Python script that prepares an
+       input query and invokes the engine. This Python script will usually
+       define the property to be checked explicitly, and will use a parser
+       for reading a neural network stored in a file.
 
-       The folder inputs/ contain two sample 14*14 inputs(subsampled images 
-       from MNIST) and models/ contains the frozen convolutional model. 
-       The script is generate_adversarial_example.py which tries to find 
-       adversarial examples for a given input. Run it using
+       A couple of examples reside within the python_examples directory. To
+       run the first, use:
 
-       - python generate_adversarial_example.py
+       - cd python_examples
+       - python3 ./generate_adversarial_example.py
 
-   (d) Parallel execution ?
+       In this example, we read a neural network stored in a
+       TensorFlow protobuff file (in this case, a small convolutional
+       network for digit recognition), and search for adversarial
+       inputs for that network. An adversarial input is a misclassified
+       input, obtained by slightly perturbing a properly classified
+       input. Here, we start from an image correctly classified as the
+       digit 1 (stored in the inputs/145.npy file), and look for
+       slight perturbations that would cause it to be misclassified as
+       the digit 3. The allowed amount of perturbation is delta =
+       0.08, measured in L-infinity distance. Marabou returns an UNSAT
+       answer, implying that no adversarial inputs exists within
+       distance delta of our starting image.
+
+       Feel free to change the query, e.g. by increasing delta (line
+       32) to 0.1. This tells Marabou to search for adversarial inputs
+       that are a little more distant, and indeed it is able to find
+       an adversarial input.
+
+       Another example, in which the network is not stored as a
+       TensorFlow model but is instead encoded directly through the
+       Python interface is available in the simple.py file. To run it,
+       perform:
+
+       - cd python_examples (no need to repeat if already in this dir)
+       - python3 ./simple.py
+
+       The comments inside the file describe the network and
+       property. You can see the network's equations, activation
+       functions and variable bounds encoded directly into an
+       InputQuery object and then passed into the solver.
+
+       As usual, feel free to change some of the constraints and rerun
+       the example. You might try to, e.g., change the bounds of
+       variable x5 (lines 33-34) from
+
+       	   0.5 <= x5 <= 1
+
+       to
+	     6 <= x5 <= 7
+
+       and see that the problem becomes UNSAT.
+
+
+(d) Parallel execution ?
 
 ** TODO **
 
