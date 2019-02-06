@@ -201,4 +201,5 @@ class DnCSolver:
                     outFile.write("0 ")
                 outFile.write("0\n")
         except:
-            print ("Fail to write summary file!")
+            pass
+            #print ("Fail to write summary file!")
