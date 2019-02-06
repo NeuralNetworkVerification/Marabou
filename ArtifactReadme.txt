@@ -543,10 +543,11 @@ found under the bin directory.
        In particular, see an example for running a TensorFlow model and 
        an example for verifying a convolutional network in folder python_examples
 
-       The folder inputs/ contain two sample 14*14 inputs and models/ contains the 
-       frozen convolutional model. The script is generate_adversarial_example.py which
-       tries to find adversarial examples for a given input. Run it using
-       
+       The folder inputs/ contain two sample 14*14 inputs(subsampled images 
+       from MNIST) and models/ contains the frozen convolutional model. 
+       The script is generate_adversarial_example.py which tries to find 
+       adversarial examples for a given input. Run it using
+
        - python generate_adversarial_example.py
 
    (d) Parallel execution ?
