@@ -426,11 +426,38 @@ references therein. Symbolic bound tightening is managed by the
 SymbolicBoundTightener class.
 
 
-9. A Divide-and-Conquer Strategy [path...]
+9. A Divide-and-Conquer Strategy [maraboupy/DnC.py
+                                  maraboupy/DnCSolver.py
+                                  maraboupy/DnCParallelSolver.py
+                                  maraboupy/NumTasksDecider.py]
 
-TODO: Explain in a few sentences about divide-and-conquer and where it can be found.
-Do not add explanations on how to run it here - these go in the 2nd part of this file.
+The divide-and-conquer(DnC) strategy is implemented as a wrapper around the
+Marabou core. The main class of the DnC mode is DnC.py.
 
+When tasked with a query, the DnC mode repeatedly breaks it down  into simpler
+sub-queries, which are solved independently. Concretely, The DnC mode first
+tries to solve the original query with a short timeout T (e.g., 5 seconds). If
+the query is not solved, the DnC solver breaks the query down into N sub-queries
+and tries to solve each of those sub-queries with a higher timeout m * T, where
+m is larger than 1. If a timeout occured again for certain sub-query \phi, the
+DnC solver will further break it down further with a even higher timeout m * m * T.
+The process keeps going, until all "leaf"-sub-queries are proven UNSAT, or
+any sub-query is proven SAT, at which point the satisfiability of the original query
+can be deduced.
+The algorithm described above can be found in the DnCParallelSolver.py,
+which implements a version of the algorithm that supports parallel execution.
+DnCSolver.py contains the DnC Solver class that calls the methods in
+DnCParallelSolver.py.
+
+The sub-queries are created by bisecting the interval of one of the input neuron.
+NumTasksdecider.py contains different heuristics to decide which interval to
+bisect. The default heuristic involves randomly sampling points along each input
+dimension and compute the sum of the differences of the activation-function patterns
+between adjacent points. An-activation pattern of an input and a neural network
+is a bit vector where each bit represent whether a neuron in the network is active
+or not given the input. Intuitively, the heuristic above computes the infleunce
+of an input interval on the activation function of the network. And the bisection
+is conducted on the interval with the highest influence.
 
 
 Additional pieces of the code:
@@ -609,8 +636,23 @@ found under the bin directory.
 
 3. Using the Divide-and-Conquer mode
 
-** TODO **
+To use the devide-and-conquer (DnC) mode, the python API must be installed.
+The DnC mode accepts the same format of property description as the Marabou
+executable. It also requires the availability of both the protobuf format and
+the nnet format of the network with the same suffix. The network is passed to
+the DnC solver using the flag -n, and the property is passed to it using the flag
+-q. In addition to these two mandatory flags, there are several additional flags
+to set the parameters of the system. Run
+      - python3 ./maraboupy/DnC.py --help
+to see the list of options.
 
+To see an example of using the DnC mode, try running:
+      - python3 ./maraboupy/DnC.py -n executable_example/acas -q executable_example/property.txt -w 4 --summary-file executable_example/summary.txt
+
+This checks the property on the network "acas" using 4 cores, and
+writes a summary file about performance. You can also pass in
+additional flags, such as --log-file executable_example/log.txt to
+view more detailed statistics as well as  the satisfying assignment.
 
 
 4. Experiments described in the paper
