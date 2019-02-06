@@ -431,33 +431,53 @@ SymbolicBoundTightener class.
                                   maraboupy/DnCParallelSolver.py
                                   maraboupy/NumTasksDecider.py]
 
-The divide-and-conquer(DnC) strategy is implemented as a wrapper around the
-Marabou core. The main class of the DnC mode is DnC.py.
+The divide-and-conquer (DnC) strategy is implemented as a wrapper
+around the Marabou Engine. The main class implementing DnC mode is
+DnC.py.
 
-When tasked with a query, the DnC mode repeatedly breaks it down  into simpler
-sub-queries, which are solved independently. Concretely, The DnC mode first
-tries to solve the original query with a short timeout T (e.g., 5 seconds). If
-the query is not solved, the DnC solver breaks the query down into N sub-queries
-and tries to solve each of those sub-queries with a higher timeout m * T, where
-m is larger than 1. If a timeout occured again for certain sub-query \phi, the
-DnC solver will further break it down further with a even higher timeout m * m * T.
-The process keeps going, until all "leaf"-sub-queries are proven UNSAT, or
-any sub-query is proven SAT, at which point the satisfiability of the original query
-can be deduced.
-The algorithm described above can be found in the DnCParallelSolver.py,
-which implements a version of the algorithm that supports parallel execution.
-DnCSolver.py contains the DnCSolver class that calls the methods in
-DnCParallelSolver.py.
+When used, the DnC core repeatedly breaks down the input query into a
+set of simpler sub-queries, which are solved independently.
+Concretely, The DnC mode first tries to solve the original query with
+a short timeout T (e.g., 5 seconds). If the query times out, the DnC
+solver breaks it down into N sub-queries and tries to solve each of
+those sub-queries with a higher timeout m * T, where m is a
+configurable parameter that is greater than 1. If a timeout occurs
+again a sub-query, the DnC solver further breaks it down into
+sub-queries and attempts to solve each of them with yet a higher
+timeout, and so on.
 
-The sub-queries are created by bisecting the interval of one of the input neuron.
-NumTasksdecider.py contains different heuristics to decide which interval to
-bisect. The default heuristic involves randomly sampling points along each input
-dimension and compute the sum of the differences of the activation patterns
-between adjacent points. An activation pattern of an input and a neural network
-is a bit-vector where each bit represents whether a neuron in the network is active
-or not given the input. Intuitively, the heuristic above computes the influence
-of an input interval on the activation function of the network, and bisect the
-interval with the highest influence.
+Solving in DnC can thus be regarded as solving a tree of queries: the
+input query is stored at the root, and is equivalent to the
+disjunction of queries stored in the leaves of the tree. Marabou tries
+to solve each of these leaf-queries, and whenever one of these times
+out it ceases to be a leaf and another set of nodes is added as its
+children. The process keeps going until all the sub-queries stored in
+leaf nodes are proven UNSAT by the Engine, or until one of the
+sub-queries proven SAT --- at which point the original query is
+determined SAT and the process halts.
+
+Breaking a query into sub-queries is performed by bisecting the value
+range of one of the input neurons; e.g., a query with an input input
+neuron x that has range 0 <= x <= 10 might be broken down into two
+subqueries, where one of them has the constraint 0 <= x <= 5 and the
+other has 5 <= x <= 10.
+
+NumTasksdecider.py implements several heuristics for deciding which
+interval to bisect. The default heuristic randomly samples points
+along each input dimension, and computes the sum of differences in
+activation patterns of pairs of adjancement points.  An activation
+pattern for a given input point is a bit-vector where each bit
+represents whether a neuron in the network is active or
+not. Intuitively, this heuristic computes the influence of an input
+interval on the activation functions of the network, and bisect the
+interval with the highest influence. The motivation is that in the
+resulting sub-queries, Marabou's deduction engines may deduce that
+many activation functions are fixed in one of their linear phases.
+
+The algorithm described above is implemented DnCParallelSolver.py, in
+a way that also supports parallel execution. DnCSolver.py contains
+the DnCSolver class that calls the methods in DnCParallelSolver.py.
+
 
 
 Additional pieces of the code:
@@ -636,25 +656,35 @@ found under the bin directory.
 
 3. Using the Divide-and-Conquer mode
 
-To use the devide-and-conquer (DnC) mode, the python API must be installed.
-The DnC mode accepts the same format of property description as the Marabou
-engine. For now, it requires the availability of both the protobuf format and
-the nnet format of the network with the same suffix. The conversion between
-protobuf and nnet can be easily conducted using the following scripts:
-https://github.com/sisl/NNet/tree/master/scripts
+To divide-and-conquer (DnC) mode is implemented on top of Marabou's
+python interface. The DnC mode accepts its input in a similar format
+to Marabou's executable interface, i.e. it receives as command line
+parameters paths to the neural network and the property to be
+verified.
 
-The network is passed to the DnC solver using the flag -n, and the property
-is passed to it using the flag -q.
-In addition to these two mandatory flags, there are several additional flags.
-Call
+DnC mode has several configurable parameters; run
+
       - python3 ./maraboupy/DnC.py --help
-to see the full list of options.
+
+for some details. Specifically, the network file is passed to the DnC
+solver using the flag -n, and the property file is passed to it using
+the flag -q.
 
 As an example of using the DnC mode, try running:
-      - python3 ./maraboupy/DnC.py -n executable_example/acas -q executable_example/property.txt -w 4 --log-file executable_example/log.txt 
 
-This checks the property on the network "acas" using 4 cores and writing the
-satisfying model as well as detailed statistics to executable_example/log.txt
+      - python3 ./maraboupy/DnC.py -n executable_example/acas -q executable_example/property.txt -w 4 --log-file executable_example/log.txt
+
+This will verify the property defined in
+executable_example/property.txt on the network stored in
+executable_example/acas, and write the satisfying model as well as
+detailed statistics to executable_example/log.txt. You can again
+modify the property being verified, e.g. by setting x0's bounds to
+
+           x0 >= -0.30
+           x0 <= -0.29
+
+and see that you get an UNSAT result.
+
 
 
 4. Experiments described in the paper
