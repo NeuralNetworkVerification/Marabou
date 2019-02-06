@@ -95,7 +95,7 @@ def solve_subproblems(network_name, subproblems, property_path, runtimes,
                         for result in results:
                             val, t_id, runtime, has_TO, num_tree_states = result
                             if has_TO:
-                                runtimes[t_id] = TO
+                                runtimes[t_id] = init_to
                             else:
                                 runtimes[t_id] = runtime
                             tree_states[t_id] = num_tree_states
