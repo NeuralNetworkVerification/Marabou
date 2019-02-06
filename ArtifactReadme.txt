@@ -660,7 +660,10 @@ To divide-and-conquer (DnC) mode is implemented on top of Marabou's
 python interface. The DnC mode accepts its input in a similar format
 to Marabou's executable interface, i.e. it receives as command line
 parameters paths to the neural network and the property to be
-verified.
+verified. (A current technical limitation is that the network needs to
+be provided in both nnet and TensorFlow protobuf formats - this is a
+minor issue that we did not have time to resolve before the submission
+deadline).
 
 DnC mode has several configurable parameters; run
 
@@ -676,9 +679,10 @@ As an example of using the DnC mode, try running:
 
 This will verify the property defined in
 executable_example/property.txt on the network stored in
-executable_example/acas, and write the satisfying model as well as
-detailed statistics to executable_example/log.txt. You can again
-modify the property being verified, e.g. by setting x0's bounds to
+executable_example/acas.{pb,nnet}, and write the satisfying model as
+well as detailed statistics to executable_example/log.txt. You can
+again modify the property being verified, e.g. by setting x0's bounds
+to
 
            x0 >= -0.30
            x0 <= -0.29
