@@ -204,6 +204,11 @@ public:
         TS_ASSERT( FloatUtils::areEqual( pse.getGamma( 1 ), 0.25 ) );
         TS_ASSERT( FloatUtils::areEqual( pse.getGamma( 2 ), 10.0 ) );
     }
+
+    void test_todo()
+    {
+        TS_TRACE( "Move 'excluded' computation out to the Engine instead of repeating it in every invocation of PSE.select()" );
+    }
 };
 
 //
