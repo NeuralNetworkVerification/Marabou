@@ -616,6 +616,20 @@ found under the bin directory.
 4. Experiments described in the paper
 
 
+The machines we used to run the experiments all had the following
+specifications:
+  - OS: Ubuntu 16.04.1 LTS
+  - Cores: 8 (altough Reluplex itself is single-threaded)
+  - RAM: 32 gigabyte
+  - CPU: Intel(R) Xeon(R) CPU E5-2637 v4 @ 3.50GHz
+
+
+TODO: scripts for running the experiments
+TODO: complete logs
+
+
+
+
 IMPORTANT NOTE:
 
 Most of the experiments described in the paper take a long time to
@@ -632,10 +646,3 @@ if a partial Reluplex log contains information up to iteration #5000,
 the information for this iteration can be compared to that in the
 complete_logs folder, to see that, e.g., that the number of explored
 states match.
-
-The machines we used to run the experiments all had the following
-specifications:
-  - OS: Ubuntu 16.04.1 LTS
-  - Cores: 8 (altough Reluplex itself is single-threaded)
-  - RAM: 32 gigabyte
-  - CPU: Intel(R) Xeon(R) CPU E5-2637 v4 @ 3.50GHz
