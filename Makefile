@@ -5,6 +5,7 @@ SUBDIRS += \
 	src \
 
 all:
+	cp src/engine/marabou.elf bin/marabou.elf
 	@echo Done
 
 .PHONY: regress
