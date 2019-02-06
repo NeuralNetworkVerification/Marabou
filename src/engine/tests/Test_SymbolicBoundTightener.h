@@ -240,11 +240,6 @@ public:
         TS_ASSERT( sbt.getUpperBound( 2, 0 ) > -5 );
         TS_ASSERT( sbt.getUpperBound( 2, 0 ) < -5 + 0.001 );
     }
-
-    void test_todo()
-    {
-        TS_TRACE( "TODO: add a test for linear concretizations" );
-    }
 };
 
 //

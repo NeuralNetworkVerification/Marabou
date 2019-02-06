@@ -487,12 +487,6 @@ public:
         ++it;
         TS_ASSERT_EQUALS( *it, split4 );
     }
-
-    void test_todo()
-    {
-        // Reason: the inefficiency in resizing the tableau mutliple times
-        TS_TRACE( "add support for adding multiple equations at once, not one-by-one" );
-    }
 };
 
 //
