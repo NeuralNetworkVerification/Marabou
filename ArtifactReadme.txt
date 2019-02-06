@@ -31,6 +31,10 @@ The main components of the Marabou tool are:
     8. Deduction engines, in charge of learning new facts and pruning the
        search space
 
+9. A Divide-and-Conquer strategy that breaks down an input query into
+   sub-queries that can be solved more efficiently, sequentially
+   or concurrently.
+
 Below we elaborate on each of these components. The interested reader may
 look at the code comments for additional information, or also look at the
 unit tests that accompany many of the classes for additional insight (these
@@ -52,15 +56,15 @@ them on queries provided by others. Tools are often proof-of-concept
 implementations, and support specific benchmarks in a proprietary
 format. As part of our effort to make the Marabou tool accessible to
 many users, we added support for several input formats, described
-below:
+below (instructions on using these formats are given in the second
+part of this file):
+
 
    (a) The native Marabou C++ format:
        In this format the user compiles a query into Marabou using its
        internal C++ classes and constructs. We envision that this format
        will be most useful to users trying to integrate Marabou into
-       another program. Examples of simple queries of this kind can be
-       found under the "regress" folder, e.g. in the file
-       regress/relu_feasible_1.h.
+       another program.
 
    (b) The ACAS Xu format:
        The ACAS Xu format is a textual format, in which the deep neural
@@ -74,8 +78,7 @@ below:
        and is encoded in a simple, textual file.
 
        The parser in charge of handling inputs in this format can be
-       found under the src/input_parsers folder. For some usage examples,
-       see the second part of this file.
+       found under the src/input_parsers folder.
 
    (c) The Berkeley format:
        This format is similar to the ACAS Xu format, in the sense that
@@ -93,7 +96,9 @@ below:
        user can provide the network and property in question. Most
        importantly, this interface can process networks stored in the
        common TensorFlow format, and seamlessly pass them into Marabou.
-       Examples can be found under the maraboupy directory.
+
+       The parser in charge of handling inputs in this format is found
+       in the various files under the maraboupy directory.
 
 
 2. InputQuery [src/Engine/InputQuery.{h,cpp}]
@@ -103,7 +108,7 @@ InputQuery object: a single object that describes the neural network being
 verified, and the property in question. The main fields of an InputQuery are:
 
   (a) Variables:
-      A neural network is encoded by representing each neuron with one or
+      A neural network is encoded by representing each neuron by one or
       more variables, and then trying to find a satisfying assignment for these
       variables. A satisfying assignment then corresponds a legal evaluation
       of the original network. Additional constraints on these variables express
@@ -137,7 +142,7 @@ verified, and the property in question. The main fields of an InputQuery are:
       Marabou needs to be extended with additional kinds of pl-constraints
       in the future.
 
-  (d) Network level reasoning:
+  (d) Network-level reasoning:
       The aforementioned ingredients of an input query (variables, equations and
       bounds) reduce the verification problem into a constraint solving problem,
       and do not keep a global overview of the network (e.g., its topology).
@@ -224,14 +229,14 @@ first applicable step is applied):
 
 Apart from these main steps, the engine also triggers deduction steps,
 both at the neuron level and at the network level, according to certain
-heuristics that we don't discuss here due to lack of space.
+heuristics.
 [e.g., lines 170, 211-212, and 217 in Engine.cpp]
 
 In addition, the Engine also checks the numerical stability of the current
 equations, and if they have become degraded it initiates a restoration process.
 (Numerical instability is typically caused by performing floating point division
 by small fractions as part of the simplex loop).
-[lines 132-149 in Engine.cpp]
+[lines 132-148 in Engine.cpp]
 
 
 5. The Simplex core [src/engine/Tableau.{h,cpp} and dependent classes:
@@ -347,7 +352,7 @@ that a piecewise-linear constraint needs to provide are:
 Implementing some of these interface methods is mandatory, in order to guarantee
 soundness and termination, whereas other methods are optional. For example, a
 constraint must implement the the satisfied() and getCaseSplits() methods, but
-may leave the getEntailedTightenings() method empty.
+may leave the getPossibleFixes() and getEntailedTightenings() methods empty.
 
 
 7. The SMT Core [src/Engine/SmtCore.{h,cpp}]
@@ -421,6 +426,12 @@ references therein. Symbolic bound tightening is managed by the
 SymbolicBoundTightener class.
 
 
+9. A Divide-and-Conquer Strategy [path...]
+
+TODO: Explain in a few sentences about divide-and-conquer and where it can be found.
+Do not add explanations on how to run it here - these go in the 2nd part of this file.
+
+
 
 Additional pieces of the code:
 
@@ -445,13 +456,13 @@ is performed as follows:
       - Navigate to the main dir:
         cd marabou
       - Run "make":
-        make -j 8
+        make
 
 The code in the provided VM has already been compiled, so the re-compilation
-should end very quickly. Still, it will also run the unit tests, which are
+should end fairly quickly. Still, it will also run the unit tests, which are
 rerun with every invocation of "make". To recompile from scratch, run
 
-      - make clean && make -j 8
+      - make clean && make
 
 In addition, it is also possible to run a small set of regression tests, by
 invoking
@@ -473,7 +484,7 @@ found under the bin directory.
        In order to compile and run that example, run
 
        - cd cpp_interface_example
-       - make -j 8
+       - make
        - ./example.elf
 
        To see the encoding, open the main.cpp file in the aforementioned folder.
@@ -486,7 +497,7 @@ found under the bin directory.
 
        Feel free to change some of the constraints, recompile the code and run
        it again to obtain different results. You might try to, e.g., change
-       the bounds of variable x5 (lines 49-50) from
+       the bounds of variable x5 (lines 48-49) from
 
        	   0.5 <= x5 <= 1
 
@@ -495,6 +506,9 @@ found under the bin directory.
 
        and see that the problem becomes UNSAT.
 
+       Examples of additional queries of this kind, including some that use
+       the Max pl-constraint, can be found under the "regress" folder, e.g. in
+       the file regress/max_feasible_1.h.
 
    (b) Marabou executable
        Marabou can be invoked by running the executable file created under the
@@ -535,7 +549,7 @@ found under the bin directory.
        The Python interface resides in the maraboupy folder, and can be compiled
        by running
 
-       - cd maraboupy && make -j 8
+       - cd maraboupy && make
 
        (it is already precompiled in the artifact).
 
@@ -565,7 +579,7 @@ found under the bin directory.
 
        Feel free to change the query, e.g. by increasing delta (line
        32) to 0.1. This tells Marabou to search for adversarial inputs
-       that are a little more distant, and indeed it is able to find
+       that are a little more distant, and indeed it is then able to find
        an adversarial input.
 
        Another example, in which the network is not stored as a
@@ -593,11 +607,13 @@ found under the bin directory.
        and see that the problem becomes UNSAT.
 
 
-(d) Parallel execution ?
+3. Using the Divide-and-Conquer mode
 
 ** TODO **
 
-(3) Experiments described in the paper
+
+
+4. Experiments described in the paper
 
 
 IMPORTANT NOTE:
