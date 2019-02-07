@@ -829,13 +829,15 @@ Given these difficulties, we provide the follow two items:
 
      To run the ACAS Xu benchmarks, from the planet dir run:
 
-        python3 memtime_wrapper.py ./planet.elf 8388608 3600 ./out benchmarks/ACAS/property1/1_1.rlv
+        python3 memtime_wrapper.py ./planet.elf 8388608 3600 ./summary benchmarks/ACAS/property1/1_1.rlv
 
      where 3600 represents a timeout value (in this case, 3600 seconds
-     = 1 hour), and "out" is an output file. To change the input
-     network+property pair, change the path passed to the tool.
+     = 1 hour), and "summary" is a file summarizing the solver's results. 
+     The solver will also craete an out.log file with its raw output. 
+     To change the input network+property pair, change the path passed 
+     to the tool.
 
      Similarly, for the other two sets of benchmarks run, e.g.:
 
-        python3 memtime_wrapper.py ./planet.elf 8388608 3600 ./out benchmarks/collisionDetection/reluBenchmark0.0507640838623s_UNSAT.rlv
-        python3 memtime_wrapper.py ./planet.elf 8388608 3600 ./out benchmarks/twinLadder/twin_ladder-10_inp-2_layers-10_width-10_margin.rlv
+        python3 memtime_wrapper.py ./planet.elf 8388608 3600 ./summary benchmarks/collisionDetection/reluBenchmark0.0507640838623s_UNSAT.rlv
+        python3 memtime_wrapper.py ./planet.elf 8388608 3600 ./summary benchmarks/twinLadder/twin_ladder-10_inp-2_layers-10_width-10_margin.rlv
