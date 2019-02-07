@@ -729,8 +729,88 @@ Given these difficulties, we provide the follow two items:
    - The scripts for running each of the individual benchmarks
      reported in the paper (except for the multi-core experiment,
      which is irrelevant without the needed hardware). These can all
-     be found under the benchmarks folder, divided into sub-folders.
-     Each benchmark file is a simple executable that can be run from a
-     terminal, and will run one of the solvers on one of the input
-     queries. Of course, given the different hardware, the results
-     will likely not be an exact match to the complete logs.
+     be found under the evaluation folder, divided into sub-folders.
+
+
+     * marabou:
+
+     The Marabou solver (without DnC), with 45 ACAS Xu networks and 4
+     properties (45 * 4 = 180 total benchmarks). To run these, from
+     within the marabou folder, run, e.g.,
+
+        ./marabou.elf networks/ACASXU_run2a_1_1_batch_2000.nnet properties/property1.txt
+
+     To change the network or property, simply adjust the
+     arguments. To limit the run to, e.g., 1 hour, add the following
+     prefix to the previous command:
+
+        timeout --foreground --signal=SIGQUIT 1h
+
+
+     * dncmarabou:
+
+     The Marabou solver (with DnC). It can be run on the 45 ACAS Xu
+     networks and 4 properties (45 * 4 = 180 benchmarks), and also on
+     the 500 CollisionDetection benchmarks and 81 TwinStream
+     benchmarks, for a total of 761 benchmarks.
+
+     To run the ACAS Xu benchmarks, from the dncmarabou dir run:
+
+        python3 DnC.py -n networks/ACASXU_run2a_1_1_batch_2000 -q properties/property1.txt
+
+     You can change the network and property indices. (For network
+     names, do not include the .nnet or .pb suffix).
+
+     To run the CollisionDetection and TwinStream benchmarks, run
+
+        python3 DnC.py -n networks/reluBenchmark0.00491881370544s_UNSAT -q properties/property_0.txt
+
+     You can change the network path as needed.
+
+     Note that property_0.txt is intended to be used with the
+     CollisionDetection networks (file names reluBenchmark*), and the
+     TwinStream networks (file names twin_ladder*). The remaining 4
+     property files are intended to be used with the ACAS Xu networks.
+
+     To limit the run to, e.g., 1 hour, add the following prefix to
+     the previous commands:
+
+        timeout --foreground --signal=SIGQUIT 1h
+
+
+     * reluplex:
+
+     The Reluplex solver (without DnC), with 45 ACAS Xu networks. The
+     Reluplex executable has the property hardcoded inside, and so
+     there are 4 executables, 1 for each of the 4 properties (again
+     yielding a total of 45 * 4 = 180 benchmarks). To run these, from
+     within the reluplex folder, run, e.g.,
+
+        ./reluplex_property1.elf networks/ACASXU_run2a_1_1_batch_2000.nnet
+
+     To change the network or property, simply adjust the executable
+     or argument. To limit the run to, e.g., 1 hour, add the following
+     prefix to the previous command:
+
+        timeout --foreground --signal=SIGQUIT 1h
+
+
+     * reluval:
+
+     The ReluVal solver (without DnC), with 45 ACAS Xu networks. The 4
+     properties are hardcoded into the solver, and are controller via
+     command line flags. To check the 4 properties, run the following
+     commands:
+
+        ./reluval.elf 1 networks/ACASXU_run2a_1_1_batch_2000.nnet 0 0 0
+        ./reluval.elf 2 networks/ACASXU_run2a_1_1_batch_2000.nnet 0 0 0
+        ./reluval.elf 3 networks/ACASXU_run2a_1_1_batch_2000.nnet 0 0 0
+        ./reluval.elf 4 networks/ACASXU_run2a_1_1_batch_2000.nnet 0 0 0
+
+     where the network file name is the only parameter that needs to
+     be changed to check each of the 4 properties on other networks.
+
+     To limit the run to, e.g., 1 hour, add the following prefix to
+     the previous commands:
+
+        timeout --foreground --signal=SIGQUIT 1h
