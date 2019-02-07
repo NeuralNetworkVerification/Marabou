@@ -151,9 +151,12 @@ def worker(network_name, property_path, L, num_tasks, online_split, to_factor,
     np.random.seed(thread_id)
     num_workers = len(L)
     while num_tasks.value != 0:
-        try:
-            with lock:
+        with lock:
+            try:
                 input_ = l.pop()
+            except:
+                input_ = None
+        if input_ != None:
             query = input_[0]
             TO = input_[1]
 
@@ -181,12 +184,8 @@ def worker(network_name, property_path, L, num_tasks, online_split, to_factor,
                 with lock:
                     with num_tasks.get_lock():
                         num_tasks.value += num_created
-                selectedLs = np.random.choice(range(num_workers), size=num_created - 1, replace=True)
-                p = subproblems[0]
-                p_ = (query[0] + "-" + p[0], p)
-                with lock: # First add one to the current list
-                    l.append((p_, int(TO * to_factor)))
-                for i in range(num_created)[1:]:
+                selectedLs = np.random.choice(range(num_workers), size=num_created, replace=True)
+                for i in range(num_created):
                     p = subproblems[i]
                     p_ = (query[0] + "-" + p[0], p[1])
                     with lock:
@@ -201,8 +200,7 @@ def worker(network_name, property_path, L, num_tasks, online_split, to_factor,
                 with num_tasks.get_lock():
                     num_tasks.value -= 1
             results.append(result)
-        except:
-            pass
+
         if num_workers > 1:
             with lock:
                 size = len(l)
