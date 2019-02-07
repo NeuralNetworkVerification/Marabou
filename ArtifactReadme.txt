@@ -459,7 +459,7 @@ determined SAT and the process halts.
 Breaking a query into sub-queries is performed by bisecting the value
 range of one of the input neurons; e.g., a query with an input input
 neuron x that has range 0 <= x <= 10 might be broken down into two
-subqueries, where one of them has the constraint 0 <= x <= 5 and the
+sub-queries, where one of them has the constraint 0 <= x <= 5 and the
 other has 5 <= x <= 10.
 
 NumTasksdecider.py implements several heuristics for deciding which
@@ -537,7 +537,7 @@ found under the bin directory.
        To see the encoding, open the main.cpp file in the aforementioned folder.
        The code therein populates the various fields of an InputQuery object
        that describe a verification query: the equations, piecewise-linear
-       constraints and variabe bounds. It then invokes the Marabou engine,
+       constraints and variable bounds. It then invokes the Marabou engine,
        obtains a SAT answer, and prints out the satisfying assignment.
 
        The comments in the main.cpp file describe the encoded network.
@@ -566,7 +566,7 @@ found under the bin directory.
 
        This tells Marabou to find an assignment to the network described in the
        nnet file (in this case, one of the ACAS Xu networks), that satisfies
-       the property described in property.txt. If a satsifying assignment is
+       the property described in property.txt. If a satisfying assignment is
        found it is printed out.
 
        The property files are encoded in a simple textual format, where the x
@@ -576,7 +576,7 @@ found under the bin directory.
        The particular property file in the example limits the range of the
        network's 5 inputs, and requires that the first output, y0, be the minimal
        of the 5 outputs. For an ACAS network, this means the network advises
-       that the drone continue to fly straight, i.e. issuses a COC
+       that the drone continue to fly straight, i.e. issues a COC
        (clear-of-conflict) advisory.
 
        The initial query is SAT, i.e. there exists an input within the specified
@@ -612,7 +612,7 @@ found under the bin directory.
        - python3 ./generate_adversarial_example.py
 
        In this example, we read a neural network stored in a
-       TensorFlow protobuff file (in this case, a small convolutional
+       TensorFlow protobuf file (in this case, a small convolutional
        network for digit recognition), and search for adversarial
        inputs for that network. An adversarial input is a misclassified
        input, obtained by slightly perturbing a properly classified
@@ -693,34 +693,44 @@ and see that you get an UNSAT result.
 
 4. Experiments described in the paper
 
-
-The machines we used to run the experiments all had the following
+The evaluation section in the paper describes experiments with the
+Marabou, Reluplex, ReluVal and Planet solvers on various benchmarks
+and in various configurations. Almost all reported results were
+obtained using a cluster of machines with the following
 specifications:
+
   - OS: Ubuntu 16.04.1 LTS
-  - Cores: 8 (altough Reluplex itself is single-threaded)
+  - Cores: 8 (although Reluplex itself is single-threaded)
   - RAM: 32 gigabyte
   - CPU: Intel(R) Xeon(R) CPU E5-2637 v4 @ 3.50GHz
 
+The only exception is the experiments reported in Figure 4, i.e. a
+comparison of Marabou and ReluVal using a high number of cores. These
+experiments were conducted on a dedicated machine with 64 cores.
 
-TODO: scripts for running the experiments
-TODO: complete logs
+The paper includes several thousands benchmark runs, and so
+reproducing them all on a single machine will take a long
+time. Further, while Marabou itself is deterministic, there is some
+non-determinism introduced when running it in concurrent, DnC mode;
+and the other solvers may or may not be deterministic. Thus, it will
+be quite difficult for a reviewer to reproduce the reported results
+precisely.
 
+Given these difficulties, we provide the follow two items:
 
+   - Complete logs, from our cluster runs, for each of the reported
+     experiments. These can be found under the complete_logs folder,
+     and are divided into sub-folders. These logs are the raw output
+     of the solvers, and also some summary files with aggregated data.
+     These logs can be used, e.g., if a reviewer wishes to run a
+     benchmark for a few minutes and see that the produced log is
+     roughly a prefix of the complete log for the same experiment.
 
-
-IMPORTANT NOTE:
-
-Most of the experiments described in the paper take a long time to
-run. Running them all sequently on a laptop will probably take a few
-weeks (we ran the experiments in parallel, using several machines).
-Below we mention some of the faster experiments - the reviewers may
-wish to focus on them. For the longer experiments, we propose to let
-Reluplex run for a while, and then look at the (partial) output in the
-statistics file. For these cases, we have provided a complete set of logs
-generated on our machines under the "complete_logs" folder; and the
-reviewers may compare the prefix of the statistics logs that they've
-obtained to those in our files, to see that they match. For example,
-if a partial Reluplex log contains information up to iteration #5000,
-the information for this iteration can be compared to that in the
-complete_logs folder, to see that, e.g., that the number of explored
-states match.
+   - The scripts for running each of the individual benchmarks
+     reported in the paper (except for the multi-core experiment,
+     which is irrelevant without the needed hardware). These can all
+     be found under the benchmarks folder, divided into sub-folders.
+     Each benchmark file is a simple executable that can be run from a
+     terminal, and will run one of the solvers on one of the input
+     queries. Of course, given the different hardware, the results
+     will likely not be an exact match to the complete logs.
