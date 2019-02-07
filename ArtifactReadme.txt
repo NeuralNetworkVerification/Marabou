@@ -829,23 +829,13 @@ Given these difficulties, we provide the follow two items:
 
      To run the ACAS Xu benchmarks, from the planet dir run:
 
-        ...
+        python3 memtime_wrapper.py ./planet.elf 8388608 3600 ./out benchmarks/ACAS/property1/1_1.rlv
 
-     You can change the network and property indices. (For network
-     names, do not include the .nnet or .pb suffix).
+     where 3600 represents a timeout value (in this case, 3600 seconds
+     = 1 hour), and "out" is an output file. To change the input
+     network+property pair, change the path passed to the tool.
 
-     To run the CollisionDetection and TwinStream benchmarks, run
+     Similarly, for the other two sets of benchmarks run, e.g.:
 
-        ...
-
-     You can change the network path as needed.
-
-     Note that property_0.txt is intended to be used with the
-     CollisionDetection networks (file names reluBenchmark*), and the
-     TwinStream networks (file names twin_ladder*). The remaining 4
-     property files are intended to be used with the ACAS Xu networks.
-
-     To limit the run to, e.g., 1 hour, add the following prefix to
-     the previous commands:
-
-        timeout --foreground --signal=SIGQUIT 1h
+        python3 memtime_wrapper.py ./planet.elf 8388608 3600 ./out benchmarks/collisionDetection/reluBenchmark0.0507640838623s_UNSAT.rlv
+        python3 memtime_wrapper.py ./planet.elf 8388608 3600 ./out benchmarks/twinLadder/twin_ladder-10_inp-2_layers-10_width-10_margin.rlv
