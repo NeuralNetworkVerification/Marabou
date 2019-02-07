@@ -184,12 +184,8 @@ def worker(network_name, property_path, L, num_tasks, online_split, to_factor,
                 with lock:
                     with num_tasks.get_lock():
                         num_tasks.value += num_created
-                selectedLs = np.random.choice(range(num_workers), size=num_created - 1, replace=True)
-                p = subproblems[0]
-                p_ = (query[0] + "-" + p[0], p)
-                with lock: # First add one to the current list
-                    l.append((p_, int(TO * to_factor)))
-                for i in range(num_created)[1:]:
+                selectedLs = np.random.choice(range(num_workers), size=num_created, replace=True)
+                for i in range(num_created):
                     p = subproblems[i]
                     p_ = (query[0] + "-" + p[0], p[1])
                     with lock:
