@@ -777,6 +777,10 @@ Given these difficulties, we provide the follow two items:
 
         timeout --foreground --signal=SIGQUIT 1h
 
+     Note: warning of the form "Your CPU supports instructions that
+     this TensorFlow binary was not compiled to use: AVX2 FMA" can be
+     safely ignored.
+
 
      * reluplex:
 
@@ -809,6 +813,37 @@ Given these difficulties, we provide the follow two items:
 
      where the network file name is the only parameter that needs to
      be changed to check each of the 4 properties on other networks.
+
+     To limit the run to, e.g., 1 hour, add the following prefix to
+     the previous commands:
+
+        timeout --foreground --signal=SIGQUIT 1h
+
+
+     * planet:
+
+     The Planet solver. It can be run on the 45 ACAS Xu
+     networks and 4 properties (45 * 4 = 180 benchmarks), and also on
+     the 500 CollisionDetection benchmarks and 81 TwinStream
+     benchmarks, for a total of 761 benchmarks.
+
+     To run the ACAS Xu benchmarks, from the planet dir run:
+
+        ...
+
+     You can change the network and property indices. (For network
+     names, do not include the .nnet or .pb suffix).
+
+     To run the CollisionDetection and TwinStream benchmarks, run
+
+        ...
+
+     You can change the network path as needed.
+
+     Note that property_0.txt is intended to be used with the
+     CollisionDetection networks (file names reluBenchmark*), and the
+     TwinStream networks (file names twin_ladder*). The remaining 4
+     property files are intended to be used with the ACAS Xu networks.
 
      To limit the run to, e.g., 1 hour, add the following prefix to
      the previous commands:
