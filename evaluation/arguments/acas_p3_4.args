@@ -1,0 +1,8 @@
+acas_p3
+DnCMarabou.zip,ReluVal.zip
+--flags=--online-split 1 --to-factor 1.5 -w 4,
+--nndir=networks/acas/nnet
+properties/property3.txt
+1:01:00
+cav24h
+4

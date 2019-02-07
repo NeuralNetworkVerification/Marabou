@@ -107,52 +107,52 @@ Each of the various input methods described above eventually produces an
 InputQuery object: a single object that describes the neural network being
 verified, and the property in question. The main fields of an InputQuery are:
 
-  (a) Variables:
-      A neural network is encoded by representing each neuron by one or
-      more variables, and then trying to find a satisfying assignment for these
-      variables. A satisfying assignment then corresponds a legal evaluation
-      of the original network. Additional constraints on these variables express
-      the property being verified.
+   (a) Variables:
+       A neural network is encoded by representing each neuron by one or
+       more variables, and then trying to find a satisfying assignment for these
+       variables. A satisfying assignment then corresponds a legal evaluation
+       of the original network. Additional constraints on these variables express
+       the property being verified.
 
-      The input query maintains the number of variables in use, as well as
-      initial lower and upper bounds for each of them.
+       The input query maintains the number of variables in use, as well as
+       initial lower and upper bounds for each of them.
 
-  (b) Equations:
-      The InputQuery also maintains a set of equations involving the variables.
-      These can express, e.g., the weighted sum operations of the neural
-      network.
+   (b) Equations:
+       The InputQuery also maintains a set of equations involving the variables.
+       These can express, e.g., the weighted sum operations of the neural
+       network.
 
-      Variables and equations together can also capture properties being
-      verified: for example, if a neural network has two output nodes n1
-      and n2 and we wish to check whether it is possible that n2 > n1, we might
-      represent n1 and n2 by variables x1 and x2, and also add the equation
-      y = x2 - x1, for a fresh variable y. We would then set a lower bound 0 on
-      y and have the tool look for a satisfying assignment.
+       Variables and equations together can also capture properties being
+       verified: for example, if a neural network has two output nodes n1
+       and n2 and we wish to check whether it is possible that n2 > n1, we might
+       represent n1 and n2 by variables x1 and x2, and also add the equation
+       y = x2 - x1, for a fresh variable y. We would then set a lower bound 0 on
+       y and have the tool look for a satisfying assignment.
 
-  (c) Piecewise-Linear constraints (abbreviated pl-constraints):
-      These piecewise-linear constraints represent the network's activation
-      functions, or any piecewise-linear function that appears as part of the
-      property being verified (e.g., some properties involve absolute values as
-      part of L1-norm constraints. As absolute values are piecewise-linear
-      functions, they can be encoded as pl-constraints).
+   (c) Piecewise-Linear constraints (abbreviated pl-constraints):
+       These piecewise-linear constraints represent the network's activation
+       functions, or any piecewise-linear function that appears as part of the
+       property being verified (e.g., some properties involve absolute values as
+       part of L1-norm constraints. As absolute values are piecewise-linear
+       functions, they can be encoded as pl-constraints).
 
-      The InputQuery class does not assume the pl-constraints are any particular
-      function; instead, it only assumes they inherit from the abstract
-      PiecewiseLinearConstraint interface. This afford flexibility in case
-      Marabou needs to be extended with additional kinds of pl-constraints
-      in the future.
+       The InputQuery class does not assume the pl-constraints are any particular
+       function; instead, it only assumes they inherit from the abstract
+       PiecewiseLinearConstraint interface. This afford flexibility in case
+       Marabou needs to be extended with additional kinds of pl-constraints
+       in the future.
 
-  (d) Network-level reasoning:
-      The aforementioned ingredients of an input query (variables, equations and
-      bounds) reduce the verification problem into a constraint solving problem,
-      and do not keep a global overview of the network (e.g., its topology).
-      However, network level reasoning is an important ingredient that can help
-      in solving the query, e.g. by deducing new facts that can prune the search
-      space. To support network level reasoning, an input query also stores the
-      network's topology. Currently this information is stored within the
-      SymbolicBoundTightener object stored as part of the input query. Making
-      this infrastructure more general, so that it can easily be extended with
-      additional kinds of network level reasoning, is a work in progress.
+   (d) Network-level reasoning:
+       The aforementioned ingredients of an input query (variables, equations and
+       bounds) reduce the verification problem into a constraint solving problem,
+       and do not keep a global overview of the network (e.g., its topology).
+       However, network level reasoning is an important ingredient that can help
+       in solving the query, e.g. by deducing new facts that can prune the search
+       space. To support network level reasoning, an input query also stores the
+       network's topology. Currently this information is stored within the
+       SymbolicBoundTightener object stored as part of the input query. Making
+       this infrastructure more general, so that it can easily be extended with
+       additional kinds of network level reasoning, is a work in progress.
 
 
 3. Preprocessor [src/Engine/Preprocessor.{h,cpp}]
@@ -164,29 +164,29 @@ user-provided InputQuery object.
 
 Specifically, the following preprocessing steps are applied until saturation:
 
-  (a) Bound tightening using equations:
-      If a user provides an equation x = y + z and states the bounds
+   (a) Bound tightening using equations:
+       If a user provides an equation x = y + z and states the bounds
 
-      -10 <= x <= 10, 0 <= y <= 1, 1 <= z <= 2
+       -10 <= x <= 10, 0 <= y <= 1, 1 <= z <= 2
 
-      this step will deduce tighter bounds for x: 1 <= x <= 3
+       this step will deduce tighter bounds for x: 1 <= x <= 3
 
-  (b) Bound tightening using pl-constraints:
-      If a user provides the constraint x = max( y, z ) and the bounds
+   (b) Bound tightening using pl-constraints:
+       If a user provides the constraint x = max( y, z ) and the bounds
 
-      -10 <= x <= 10, 1 <= y <= 1.5, 0.5 <= z <= 2
+       -10 <= x <= 10, 1 <= y <= 1.5, 0.5 <= z <= 2
 
-      this step will deduce tighter bounds for x: 1 <= x <= 2
+       this step will deduce tighter bounds for x: 1 <= x <= 2
 
-  (c) Variable elimination:
-      Any variable that can be replaced with a constant or merged with another
-      variable is removed; e.g.
+   (c) Variable elimination:
+       Any variable that can be replaced with a constant or merged with another
+       variable is removed; e.g.
 
-      x = y + z and z = 5 is replaced with x = y + 5,
+       x = y + z and z = 5 is replaced with x = y + 5,
 
-      and
+       and
 
-      x = y + z and y = z is replaced with x = 2y
+       x = y + z and y = z is replaced with x = 2y
 
 This preprocessing can remove many equations, variables and pl-constraints that
 become obsolete, thus improving overall performance. In the future we plan to add
@@ -390,33 +390,33 @@ Deduction steps are performed throughout the solution phases, according to
 certain heuristics. Currently there are three kinds of deductions, two of
 which we already mentioned when we discussed the preprocessor:
 
-  (a) Bound tightening using equations:
-      As part of the simplex process, Marabou repeatedly encounters new
-      equations after each simplex iteration. These equations can be used
-      for bound tightening. For example, if the equation x = y + z is
-      encountered, and the current variable bounds are
+   (a) Bound tightening using equations:
+       As part of the simplex process, Marabou repeatedly encounters new
+       equations after each simplex iteration. These equations can be used
+       for bound tightening. For example, if the equation x = y + z is
+       encountered, and the current variable bounds are
 
-      -10 <= x <= 10, 0 <= y <= 1, 1 <= z <= 2
+       -10 <= x <= 10, 0 <= y <= 1, 1 <= z <= 2
 
-      this step will deduce tighter bounds for x: 1 <= x <= 3
+       this step will deduce tighter bounds for x: 1 <= x <= 3
 
-      This kind of tightening is managed by the RowBoundTightener class.
+       This kind of tightening is managed by the RowBoundTightener class.
 
-  (b) Bound tightening using pl-constraints:
-      The pl-constraints are repeatedly consulted, to see if they can deduce
-      tighter bounds. For example, for the constraint x = max( y, z ) and
-      the bounds
+   (b) Bound tightening using pl-constraints:
+       The pl-constraints are repeatedly consulted, to see if they can deduce
+       tighter bounds. For example, for the constraint x = max( y, z ) and
+       the bounds
 
-      -10 <= x <= 10, 0 <= y <= 1.5, 1 <= z <= 2
+       -10 <= x <= 10, 0 <= y <= 1.5, 1 <= z <= 2
 
-      this step will deduce tighter bounds for x: 0 <= x <= 2
+       this step will deduce tighter bounds for x: 0 <= x <= 2
 
-      The set of pl-constraints is mostly static. However, this step is repeated
-      because bound tightening operations have a cascading nature: a bound
-      tightened, e.g., using method (a) may lead to tighter bounds in
-      method (b).
+       The set of pl-constraints is mostly static. However, this step is repeated
+       because bound tightening operations have a cascading nature: a bound
+       tightened, e.g., using method (a) may lead to tighter bounds in
+       method (b).
 
-      This kind of tightening is managed by the ConstraintBoundTightener class.
+       This kind of tightening is managed by the ConstraintBoundTightener class.
 
 These two preprocessing steps are done at the equation level (method a) or at
 the pl-constraint level (method b). A third method, called symbolic bound
@@ -431,33 +431,53 @@ SymbolicBoundTightener class.
                                   maraboupy/DnCParallelSolver.py
                                   maraboupy/NumTasksDecider.py]
 
-The divide-and-conquer(DnC) strategy is implemented as a wrapper around the
-Marabou core. The main class of the DnC mode is DnC.py.
+The divide-and-conquer (DnC) strategy is implemented as a wrapper
+around the Marabou Engine. The main class implementing DnC mode is
+DnC.py.
 
-When tasked with a query, the DnC mode repeatedly breaks it down  into simpler
-sub-queries, which are solved independently. Concretely, The DnC mode first
-tries to solve the original query with a short timeout T (e.g., 5 seconds). If
-the query is not solved, the DnC solver breaks the query down into N sub-queries
-and tries to solve each of those sub-queries with a higher timeout m * T, where
-m is larger than 1. If a timeout occured again for certain sub-query \phi, the
-DnC solver will further break it down further with a even higher timeout m * m * T.
-The process keeps going, until all "leaf"-sub-queries are proven UNSAT, or
-any sub-query is proven SAT, at which point the satisfiability of the original query
-can be deduced.
-The algorithm described above can be found in the DnCParallelSolver.py,
-which implements a version of the algorithm that supports parallel execution.
-DnCSolver.py contains the DnCSolver class that calls the methods in
-DnCParallelSolver.py.
+When used, the DnC core repeatedly breaks down the input query into a
+set of simpler sub-queries, which are solved independently.
+Concretely, The DnC mode first tries to solve the original query with
+a short timeout T (e.g., 5 seconds). If the query times out, the DnC
+solver breaks it down into N sub-queries and tries to solve each of
+those sub-queries with a higher timeout m * T, where m is a
+configurable parameter that is greater than 1. If a timeout occurs
+again a sub-query, the DnC solver further breaks it down into
+sub-queries and attempts to solve each of them with yet a higher
+timeout, and so on.
 
-The sub-queries are created by bisecting the interval of one of the input neuron.
-NumTasksdecider.py contains different heuristics to decide which interval to
-bisect. The default heuristic involves randomly sampling points along each input
-dimension and compute the sum of the differences of the activation patterns
-between adjacent points. An activation pattern of an input and a neural network
-is a bit-vector where each bit represents whether a neuron in the network is active
-or not given the input. Intuitively, the heuristic above computes the influence
-of an input interval on the activation function of the network, and bisect the
-interval with the highest influence.
+Solving in DnC can thus be regarded as solving a tree of queries: the
+input query is stored at the root, and is equivalent to the
+disjunction of queries stored in the leaves of the tree. Marabou tries
+to solve each of these leaf-queries, and whenever one of these times
+out it ceases to be a leaf and another set of nodes is added as its
+children. The process keeps going until all the sub-queries stored in
+leaf nodes are proven UNSAT by the Engine, or until one of the
+sub-queries proven SAT --- at which point the original query is
+determined SAT and the process halts.
+
+Breaking a query into sub-queries is performed by bisecting the value
+range of one of the input neurons; e.g., a query with an input input
+neuron x that has range 0 <= x <= 10 might be broken down into two
+sub-queries, where one of them has the constraint 0 <= x <= 5 and the
+other has 5 <= x <= 10.
+
+NumTasksdecider.py implements several heuristics for deciding which
+interval to bisect. The default heuristic randomly samples points
+along each input dimension, and computes the sum of differences in
+activation patterns of pairs of adjancement points.  An activation
+pattern for a given input point is a bit-vector where each bit
+represents whether a neuron in the network is active or
+not. Intuitively, this heuristic computes the influence of an input
+interval on the activation functions of the network, and bisect the
+interval with the highest influence. The motivation is that in the
+resulting sub-queries, Marabou's deduction engines may deduce that
+many activation functions are fixed in one of their linear phases.
+
+The algorithm described above is implemented DnCParallelSolver.py, in
+a way that also supports parallel execution. DnCSolver.py contains
+the DnCSolver class that calls the methods in DnCParallelSolver.py.
+
 
 
 Additional pieces of the code:
@@ -517,7 +537,7 @@ found under the bin directory.
        To see the encoding, open the main.cpp file in the aforementioned folder.
        The code therein populates the various fields of an InputQuery object
        that describe a verification query: the equations, piecewise-linear
-       constraints and variabe bounds. It then invokes the Marabou engine,
+       constraints and variable bounds. It then invokes the Marabou engine,
        obtains a SAT answer, and prints out the satisfying assignment.
 
        The comments in the main.cpp file describe the encoded network.
@@ -546,7 +566,7 @@ found under the bin directory.
 
        This tells Marabou to find an assignment to the network described in the
        nnet file (in this case, one of the ACAS Xu networks), that satisfies
-       the property described in property.txt. If a satsifying assignment is
+       the property described in property.txt. If a satisfying assignment is
        found it is printed out.
 
        The property files are encoded in a simple textual format, where the x
@@ -556,7 +576,7 @@ found under the bin directory.
        The particular property file in the example limits the range of the
        network's 5 inputs, and requires that the first output, y0, be the minimal
        of the 5 outputs. For an ACAS network, this means the network advises
-       that the drone continue to fly straight, i.e. issuses a COC
+       that the drone continue to fly straight, i.e. issues a COC
        (clear-of-conflict) advisory.
 
        The initial query is SAT, i.e. there exists an input within the specified
@@ -592,7 +612,7 @@ found under the bin directory.
        - python3 ./generate_adversarial_example.py
 
        In this example, we read a neural network stored in a
-       TensorFlow protobuff file (in this case, a small convolutional
+       TensorFlow protobuf file (in this case, a small convolutional
        network for digit recognition), and search for adversarial
        inputs for that network. An adversarial input is a misclassified
        input, obtained by slightly perturbing a properly classified
@@ -636,57 +656,81 @@ found under the bin directory.
 
 3. Using the Divide-and-Conquer mode
 
-To use the devide-and-conquer (DnC) mode, the python API must be installed.
-The DnC mode accepts the same format of property description as the Marabou
-engine. For now, it requires the availability of both the protobuf format and
-the nnet format of the network with the same suffix. The conversion between
-protobuf and nnet can be easily conducted using the following scripts:
-https://github.com/sisl/NNet/tree/master/scripts
+To divide-and-conquer (DnC) mode is implemented on top of Marabou's
+python interface. The DnC mode accepts its input in a similar format
+to Marabou's executable interface, i.e. it receives as command line
+parameters paths to the neural network and the property to be
+verified. (A current technical limitation is that the network needs to
+be provided in both nnet and TensorFlow protobuf formats - this is a
+minor issue that we did not have time to resolve before the submission
+deadline).
 
-The network is passed to the DnC solver using the flag -n, and the property
-is passed to it using the flag -q.
-In addition to these two mandatory flags, there are several additional flags.
-Call
+DnC mode has several configurable parameters; run
+
       - python3 ./maraboupy/DnC.py --help
-to see the full list of options.
+
+for some details. Specifically, the network file is passed to the DnC
+solver using the flag -n, and the property file is passed to it using
+the flag -q.
 
 As an example of using the DnC mode, try running:
-      - python3 ./maraboupy/DnC.py -n executable_example/acas -q executable_example/property.txt -w 4 --log-file executable_example/log.txt 
 
-This checks the property on the network "acas" using 4 cores and writing the
-satisfying model as well as detailed statistics to executable_example/log.txt
+      - python3 ./maraboupy/DnC.py -n executable_example/acas -q executable_example/property.txt -w 4 --log-file executable_example/log.txt
+
+This will verify the property defined in
+executable_example/property.txt on the network stored in
+executable_example/acas.{pb,nnet}, and write the satisfying model as
+well as detailed statistics to executable_example/log.txt. You can
+again modify the property being verified, e.g. by setting x0's bounds
+to
+
+           x0 >= -0.30
+           x0 <= -0.29
+
+and see that you get an UNSAT result.
+
 
 
 4. Experiments described in the paper
 
-
-The machines we used to run the experiments all had the following
+The evaluation section in the paper describes experiments with the
+Marabou, Reluplex, ReluVal and Planet solvers on various benchmarks
+and in various configurations. Almost all reported results were
+obtained using a cluster of machines with the following
 specifications:
+
   - OS: Ubuntu 16.04.1 LTS
-  - Cores: 8 (altough Reluplex itself is single-threaded)
+  - Cores: 8 (although Reluplex itself is single-threaded)
   - RAM: 32 gigabyte
   - CPU: Intel(R) Xeon(R) CPU E5-2637 v4 @ 3.50GHz
 
+The only exception is the experiments reported in Figure 4, i.e. a
+comparison of Marabou and ReluVal using a high number of cores. These
+experiments were conducted on a dedicated machine with 64 cores.
 
-TODO: scripts for running the experiments
-TODO: complete logs
+The paper includes several thousands benchmark runs, and so
+reproducing them all on a single machine will take a long
+time. Further, while Marabou itself is deterministic, there is some
+non-determinism introduced when running it in concurrent, DnC mode;
+and the other solvers may or may not be deterministic. Thus, it will
+be quite difficult for a reviewer to reproduce the reported results
+precisely.
 
+Given these difficulties, we provide the follow two items:
 
+   - Complete logs, from our cluster runs, for each of the reported
+     experiments. These can be found under the complete_logs folder,
+     and are divided into sub-folders. These logs are the raw output
+     of the solvers, and also some summary files with aggregated data.
+     These logs can be used, e.g., if a reviewer wishes to run a
+     benchmark for a few minutes and see that the produced log is
+     roughly a prefix of the complete log for the same experiment.
 
-
-IMPORTANT NOTE:
-
-Most of the experiments described in the paper take a long time to
-run. Running them all sequently on a laptop will probably take a few
-weeks (we ran the experiments in parallel, using several machines).
-Below we mention some of the faster experiments - the reviewers may
-wish to focus on them. For the longer experiments, we propose to let
-Reluplex run for a while, and then look at the (partial) output in the
-statistics file. For these cases, we have provided a complete set of logs
-generated on our machines under the "complete_logs" folder; and the
-reviewers may compare the prefix of the statistics logs that they've
-obtained to those in our files, to see that they match. For example,
-if a partial Reluplex log contains information up to iteration #5000,
-the information for this iteration can be compared to that in the
-complete_logs folder, to see that, e.g., that the number of explored
-states match.
+   - The scripts for running each of the individual benchmarks
+     reported in the paper (except for the multi-core experiment,
+     which is irrelevant without the needed hardware). These can all
+     be found under the benchmarks folder, divided into sub-folders.
+     Each benchmark file is a simple executable that can be run from a
+     terminal, and will run one of the solvers on one of the input
+     queries. Of course, given the different hardware, the results
+     will likely not be an exact match to the complete logs.
