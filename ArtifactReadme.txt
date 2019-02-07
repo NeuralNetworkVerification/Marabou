@@ -107,52 +107,52 @@ Each of the various input methods described above eventually produces an
 InputQuery object: a single object that describes the neural network being
 verified, and the property in question. The main fields of an InputQuery are:
 
-  (a) Variables:
-      A neural network is encoded by representing each neuron by one or
-      more variables, and then trying to find a satisfying assignment for these
-      variables. A satisfying assignment then corresponds a legal evaluation
-      of the original network. Additional constraints on these variables express
-      the property being verified.
+   (a) Variables:
+       A neural network is encoded by representing each neuron by one or
+       more variables, and then trying to find a satisfying assignment for these
+       variables. A satisfying assignment then corresponds a legal evaluation
+       of the original network. Additional constraints on these variables express
+       the property being verified.
 
-      The input query maintains the number of variables in use, as well as
-      initial lower and upper bounds for each of them.
+       The input query maintains the number of variables in use, as well as
+       initial lower and upper bounds for each of them.
 
-  (b) Equations:
-      The InputQuery also maintains a set of equations involving the variables.
-      These can express, e.g., the weighted sum operations of the neural
-      network.
+   (b) Equations:
+       The InputQuery also maintains a set of equations involving the variables.
+       These can express, e.g., the weighted sum operations of the neural
+       network.
 
-      Variables and equations together can also capture properties being
-      verified: for example, if a neural network has two output nodes n1
-      and n2 and we wish to check whether it is possible that n2 > n1, we might
-      represent n1 and n2 by variables x1 and x2, and also add the equation
-      y = x2 - x1, for a fresh variable y. We would then set a lower bound 0 on
-      y and have the tool look for a satisfying assignment.
+       Variables and equations together can also capture properties being
+       verified: for example, if a neural network has two output nodes n1
+       and n2 and we wish to check whether it is possible that n2 > n1, we might
+       represent n1 and n2 by variables x1 and x2, and also add the equation
+       y = x2 - x1, for a fresh variable y. We would then set a lower bound 0 on
+       y and have the tool look for a satisfying assignment.
 
-  (c) Piecewise-Linear constraints (abbreviated pl-constraints):
-      These piecewise-linear constraints represent the network's activation
-      functions, or any piecewise-linear function that appears as part of the
-      property being verified (e.g., some properties involve absolute values as
-      part of L1-norm constraints. As absolute values are piecewise-linear
-      functions, they can be encoded as pl-constraints).
+   (c) Piecewise-Linear constraints (abbreviated pl-constraints):
+       These piecewise-linear constraints represent the network's activation
+       functions, or any piecewise-linear function that appears as part of the
+       property being verified (e.g., some properties involve absolute values as
+       part of L1-norm constraints. As absolute values are piecewise-linear
+       functions, they can be encoded as pl-constraints).
 
-      The InputQuery class does not assume the pl-constraints are any particular
-      function; instead, it only assumes they inherit from the abstract
-      PiecewiseLinearConstraint interface. This afford flexibility in case
-      Marabou needs to be extended with additional kinds of pl-constraints
-      in the future.
+       The InputQuery class does not assume the pl-constraints are any particular
+       function; instead, it only assumes they inherit from the abstract
+       PiecewiseLinearConstraint interface. This afford flexibility in case
+       Marabou needs to be extended with additional kinds of pl-constraints
+       in the future.
 
-  (d) Network-level reasoning:
-      The aforementioned ingredients of an input query (variables, equations and
-      bounds) reduce the verification problem into a constraint solving problem,
-      and do not keep a global overview of the network (e.g., its topology).
-      However, network level reasoning is an important ingredient that can help
-      in solving the query, e.g. by deducing new facts that can prune the search
-      space. To support network level reasoning, an input query also stores the
-      network's topology. Currently this information is stored within the
-      SymbolicBoundTightener object stored as part of the input query. Making
-      this infrastructure more general, so that it can easily be extended with
-      additional kinds of network level reasoning, is a work in progress.
+   (d) Network-level reasoning:
+       The aforementioned ingredients of an input query (variables, equations and
+       bounds) reduce the verification problem into a constraint solving problem,
+       and do not keep a global overview of the network (e.g., its topology).
+       However, network level reasoning is an important ingredient that can help
+       in solving the query, e.g. by deducing new facts that can prune the search
+       space. To support network level reasoning, an input query also stores the
+       network's topology. Currently this information is stored within the
+       SymbolicBoundTightener object stored as part of the input query. Making
+       this infrastructure more general, so that it can easily be extended with
+       additional kinds of network level reasoning, is a work in progress.
 
 
 3. Preprocessor [src/Engine/Preprocessor.{h,cpp}]
@@ -164,29 +164,29 @@ user-provided InputQuery object.
 
 Specifically, the following preprocessing steps are applied until saturation:
 
-  (a) Bound tightening using equations:
-      If a user provides an equation x = y + z and states the bounds
+   (a) Bound tightening using equations:
+       If a user provides an equation x = y + z and states the bounds
 
-      -10 <= x <= 10, 0 <= y <= 1, 1 <= z <= 2
+       -10 <= x <= 10, 0 <= y <= 1, 1 <= z <= 2
 
-      this step will deduce tighter bounds for x: 1 <= x <= 3
+       this step will deduce tighter bounds for x: 1 <= x <= 3
 
-  (b) Bound tightening using pl-constraints:
-      If a user provides the constraint x = max( y, z ) and the bounds
+   (b) Bound tightening using pl-constraints:
+       If a user provides the constraint x = max( y, z ) and the bounds
 
-      -10 <= x <= 10, 1 <= y <= 1.5, 0.5 <= z <= 2
+       -10 <= x <= 10, 1 <= y <= 1.5, 0.5 <= z <= 2
 
-      this step will deduce tighter bounds for x: 1 <= x <= 2
+       this step will deduce tighter bounds for x: 1 <= x <= 2
 
-  (c) Variable elimination:
-      Any variable that can be replaced with a constant or merged with another
-      variable is removed; e.g.
+   (c) Variable elimination:
+       Any variable that can be replaced with a constant or merged with another
+       variable is removed; e.g.
 
-      x = y + z and z = 5 is replaced with x = y + 5,
+       x = y + z and z = 5 is replaced with x = y + 5,
 
-      and
+       and
 
-      x = y + z and y = z is replaced with x = 2y
+       x = y + z and y = z is replaced with x = 2y
 
 This preprocessing can remove many equations, variables and pl-constraints that
 become obsolete, thus improving overall performance. In the future we plan to add
@@ -390,33 +390,33 @@ Deduction steps are performed throughout the solution phases, according to
 certain heuristics. Currently there are three kinds of deductions, two of
 which we already mentioned when we discussed the preprocessor:
 
-  (a) Bound tightening using equations:
-      As part of the simplex process, Marabou repeatedly encounters new
-      equations after each simplex iteration. These equations can be used
-      for bound tightening. For example, if the equation x = y + z is
-      encountered, and the current variable bounds are
+   (a) Bound tightening using equations:
+       As part of the simplex process, Marabou repeatedly encounters new
+       equations after each simplex iteration. These equations can be used
+       for bound tightening. For example, if the equation x = y + z is
+       encountered, and the current variable bounds are
 
-      -10 <= x <= 10, 0 <= y <= 1, 1 <= z <= 2
+       -10 <= x <= 10, 0 <= y <= 1, 1 <= z <= 2
 
-      this step will deduce tighter bounds for x: 1 <= x <= 3
+       this step will deduce tighter bounds for x: 1 <= x <= 3
 
-      This kind of tightening is managed by the RowBoundTightener class.
+       This kind of tightening is managed by the RowBoundTightener class.
 
-  (b) Bound tightening using pl-constraints:
-      The pl-constraints are repeatedly consulted, to see if they can deduce
-      tighter bounds. For example, for the constraint x = max( y, z ) and
-      the bounds
+   (b) Bound tightening using pl-constraints:
+       The pl-constraints are repeatedly consulted, to see if they can deduce
+       tighter bounds. For example, for the constraint x = max( y, z ) and
+       the bounds
 
-      -10 <= x <= 10, 0 <= y <= 1.5, 1 <= z <= 2
+       -10 <= x <= 10, 0 <= y <= 1.5, 1 <= z <= 2
 
-      this step will deduce tighter bounds for x: 0 <= x <= 2
+       this step will deduce tighter bounds for x: 0 <= x <= 2
 
-      The set of pl-constraints is mostly static. However, this step is repeated
-      because bound tightening operations have a cascading nature: a bound
-      tightened, e.g., using method (a) may lead to tighter bounds in
-      method (b).
+       The set of pl-constraints is mostly static. However, this step is repeated
+       because bound tightening operations have a cascading nature: a bound
+       tightened, e.g., using method (a) may lead to tighter bounds in
+       method (b).
 
-      This kind of tightening is managed by the ConstraintBoundTightener class.
+       This kind of tightening is managed by the ConstraintBoundTightener class.
 
 These two preprocessing steps are done at the equation level (method a) or at
 the pl-constraint level (method b). A third method, called symbolic bound
