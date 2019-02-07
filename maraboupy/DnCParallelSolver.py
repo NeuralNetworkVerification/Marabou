@@ -151,12 +151,9 @@ def worker(network_name, property_path, L, num_tasks, online_split, to_factor,
     np.random.seed(thread_id)
     num_workers = len(L)
     while num_tasks.value != 0:
-        with lock:
-            try:
+        try:
+            with lock:
                 input_ = l.pop()
-            except:
-                input_ = None
-        if input_ != None:
             query = input_[0]
             TO = input_[1]
 
@@ -204,7 +201,8 @@ def worker(network_name, property_path, L, num_tasks, online_split, to_factor,
                 with num_tasks.get_lock():
                     num_tasks.value -= 1
             results.append(result)
-
+        except:
+            pass
         if num_workers > 1:
             with lock:
                 size = len(l)
