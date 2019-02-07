@@ -465,7 +465,7 @@ other has 5 <= x <= 10.
 NumTasksdecider.py implements several heuristics for deciding which
 interval to bisect. The default heuristic randomly samples points
 along each input dimension, and computes the sum of differences in
-activation patterns of pairs of adjancement points.  An activation
+activation patterns of pairs of adjacent points.  An activation
 pattern for a given input point is a bit-vector where each bit
 represents whether a neuron in the network is active or
 not. Intuitively, this heuristic computes the influence of an input
@@ -518,6 +518,8 @@ invoking
 
 After a successful compilation, the Marabou executable, marabou.elf, can be
 found under the bin directory.
+
+
 
 2. The Various Interfaces
 
@@ -654,6 +656,7 @@ found under the bin directory.
        and see that the problem becomes UNSAT.
 
 
+
 3. Using the Divide-and-Conquer mode
 
 To divide-and-conquer (DnC) mode is implemented on top of Marabou's
@@ -708,8 +711,8 @@ The only exception is the experiments reported in Figure 4, i.e. a
 comparison of Marabou and ReluVal using a high number of cores. These
 experiments were conducted on a dedicated machine with 64 cores.
 
-The paper includes several thousands benchmark runs, and so
-reproducing them all on a single machine will take a long
+The paper includes over 2000 benchmar runs, and so
+reproducing them all on a single machine, will take a long
 time. Further, while Marabou itself is deterministic, there is some
 non-determinism introduced when running it in concurrent, DnC mode;
 and the other solvers may or may not be deterministic. Thus, it will
@@ -729,7 +732,8 @@ Given these difficulties, we provide the follow two items:
    - The scripts for running each of the individual benchmarks
      reported in the paper (except for the multi-core experiment,
      which is irrelevant without the needed hardware). These can all
-     be found under the evaluation folder, divided into sub-folders.
+     be found under the evaluation folder, divided into sub-folders,
+     as we explain below.
 
 
      * marabou:
@@ -777,7 +781,7 @@ Given these difficulties, we provide the follow two items:
 
         timeout --foreground --signal=SIGQUIT 1h
 
-     Note: warning of the form "Your CPU supports instructions that
+     Note: warnings of the form "Your CPU supports instructions that
      this TensorFlow binary was not compiled to use: AVX2 FMA" can be
      safely ignored.
 
@@ -802,7 +806,7 @@ Given these difficulties, we provide the follow two items:
      * reluval:
 
      The ReluVal solver (without DnC), with 45 ACAS Xu networks. The 4
-     properties are hardcoded into the solver, and are controller via
+     properties are hardcoded into the solver, and are controlled via
      command line flags. To check the 4 properties, run the following
      commands:
 
@@ -832,10 +836,10 @@ Given these difficulties, we provide the follow two items:
         python3 memtime_wrapper.py ./planet.elf 8388608 3600 ./summary benchmarks/ACAS/property1/1_1.rlv
 
      where 3600 represents a timeout value (in this case, 3600 seconds
-     = 1 hour), and "summary" is a file summarizing the solver's results. 
-     The solver will also craete an out.log file with its raw output. 
-     To change the input network+property pair, change the path passed 
-     to the tool.
+     = 1 hour), and "summary" is a file summarizing the solver's
+     results.  The solver will also create a more detaield "out.log"
+     file with its raw output. To change the input network+property
+     pair, change the path passed to the tool.
 
      Similarly, for the other two sets of benchmarks run, e.g.:
 
