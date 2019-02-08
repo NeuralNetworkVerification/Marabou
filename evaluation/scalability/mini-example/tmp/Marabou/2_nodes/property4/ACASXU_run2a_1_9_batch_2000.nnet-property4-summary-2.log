@@ -9,12 +9,12 @@ Property: mini-example/property4.txt
 
 Engine::solve: Initial statistics
 
-16:11:26 Statistics update:
+16:47:40 Statistics update:
 	--- Time Statistics ---
-	Total time elapsed: 1250 milli (00:00:01)
+	Total time elapsed: 1107 milli (00:00:01)
 		Main loop: 0 milli (00:00:00)
-		Preprocessing time: 1202 milli (00:00:01)
-		Unknown: 47 milli (00:00:00)
+		Preprocessing time: 1051 milli (00:00:01)
+		Unknown: 56 milli (00:00:00)
 	Breakdown for main loop:
 		[0.00%] Simplex steps: 0 milli
 		[0.00%] Explicit-basis bound tightening: 0 milli
@@ -30,14 +30,14 @@ Engine::solve: Initial statistics
 		[0.00%] Unaccounted for: 0 milli
 	--- Preprocessor Statistics ---
 	Number of preprocessor bound-tightening loop iterations: 8
-	Number of eliminated variables: 62
-	Number of constraints removed due to variable elimination: 61
+	Number of eliminated variables: 61
+	Number of constraints removed due to variable elimination: 60
 	Number of equations removed due to variable elimination: 0
 	--- Engine Statistics ---
 	Number of main loop iterations: 0
 		0 iterations were simplex steps. Total time: 0 milli. Average: 0.00 milli.
 		0 iterations were constraint-fixing steps. Total time: 0 milli. Average: 0.00 milli
-	Number of active piecewise-linear constraints: 239 / 239
+	Number of active piecewise-linear constraints: 240 / 240
 		Constraints disabled by valid splits: 0. By SMT-originated splits: 0
 	Last reported degradation: 0.0000000000. Max degradation so far: 0.0000000000. Restorations so far: 0
 	Number of simplex pivots we attempted to skip because of instability: 0.
@@ -49,7 +49,7 @@ Engine::solve: Initial statistics
 		Average time per pivot: 0.00 milli
 	Total number of fake pivots performed: 0
 	Total number of rows added: 0. Number of merged columns: 0
-	Current tableau dimensions: M = 609, N = 852
+	Current tableau dimensions: M = 609, N = 853
 	--- SMT Core Statistics ---
 	Total depth is 0. Total visited states: 1. Number of splits: 0. Number of pops: 0
 	Max stack depth: 0
@@ -70,29 +70,29 @@ Before declaring SAT, recomputing...
 
 Engine::solve: SAT assignment found
 
-16:11:28 Statistics update:
+16:47:42 Statistics update:
 	--- Time Statistics ---
-	Total time elapsed: 3144 milli (00:00:03)
-		Main loop: 1893 milli (00:00:01)
-		Preprocessing time: 1202 milli (00:00:01)
-		Unknown: 48 milli (00:00:00)
+	Total time elapsed: 3015 milli (00:00:03)
+		Main loop: 1907 milli (00:00:01)
+		Preprocessing time: 1051 milli (00:00:01)
+		Unknown: 57 milli (00:00:00)
 	Breakdown for main loop:
-		[56.61%] Simplex steps: 1071 milli
-		[11.65%] Explicit-basis bound tightening: 220 milli
-		[0.00%] Constraint-matrix bound tightening: 0 milli
-		[0.20%] Degradation checking: 3 milli
+		[64.25%] Simplex steps: 1225 milli
+		[12.58%] Explicit-basis bound tightening: 239 milli
+		[0.24%] Constraint-matrix bound tightening: 4 milli
+		[0.25%] Degradation checking: 4 milli
 		[0.00%] Precision restoration: 0 milli
 		[0.00%] Statistics handling: 0 milli
-		[0.10%] Constraint-fixing steps: 1 milli
-		[29.34%] Valid case splits: 555 milli. Average per split: 24.13 milli
-		[0.01%] Applying stored bound-tightening: 0 milli
+		[0.30%] Constraint-fixing steps: 5 milli
+		[20.05%] Valid case splits: 382 milli. Average per split: 10.32 milli
+		[0.04%] Applying stored bound-tightening: 0 milli
 		[0.00%] SMT core: 0 milli
-		[1.02%] Symbolic Bound Tightening: 19 milli
-		[1.07%] Unaccounted for: 20 milli
+		[1.05%] Symbolic Bound Tightening: 20 milli
+		[1.23%] Unaccounted for: 23 milli
 	--- Preprocessor Statistics ---
 	Number of preprocessor bound-tightening loop iterations: 8
-	Number of eliminated variables: 62
-	Number of constraints removed due to variable elimination: 61
+	Number of eliminated variables: 61
+	Number of constraints removed due to variable elimination: 60
 	Number of equations removed due to SAT
 Number of layers: 8. Input layer size: 5. Output layer size: 5. Number of ReLUs: 300
 Total number of variables: 610

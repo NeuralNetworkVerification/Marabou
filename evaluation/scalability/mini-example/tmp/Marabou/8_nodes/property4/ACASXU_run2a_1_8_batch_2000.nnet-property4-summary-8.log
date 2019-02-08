@@ -9,12 +9,12 @@ Property: mini-example/property4.txt
 
 Engine::solve: Initial statistics
 
-16:11:31 Statistics update:
+16:47:45 Statistics update:
 	--- Time Statistics ---
-	Total time elapsed: 1516 milli (00:00:01)
+	Total time elapsed: 1593 milli (00:00:01)
 		Main loop: 0 milli (00:00:00)
-		Preprocessing time: 1455 milli (00:00:01)
-		Unknown: 61 milli (00:00:00)
+		Preprocessing time: 1529 milli (00:00:01)
+		Unknown: 63 milli (00:00:00)
 	Breakdown for main loop:
 		[0.00%] Simplex steps: 0 milli
 		[0.00%] Explicit-basis bound tightening: 0 milli
@@ -70,25 +70,25 @@ Before declaring SAT, recomputing...
 
 Engine::solve: SAT assignment found
 
-16:11:34 Statistics update:
+16:47:48 Statistics update:
 	--- Time Statistics ---
-	Total time elapsed: 4578 milli (00:00:04)
-		Main loop: 3061 milli (00:00:03)
-		Preprocessing time: 1455 milli (00:00:01)
-		Unknown: 62 milli (00:00:00)
+	Total time elapsed: 4665 milli (00:00:04)
+		Main loop: 3071 milli (00:00:03)
+		Preprocessing time: 1529 milli (00:00:01)
+		Unknown: 64 milli (00:00:00)
 	Breakdown for main loop:
-		[62.32%] Simplex steps: 1907 milli
-		[10.39%] Explicit-basis bound tightening: 318 milli
-		[0.29%] Constraint-matrix bound tightening: 8 milli
-		[0.22%] Degradation checking: 6 milli
+		[62.39%] Simplex steps: 1916 milli
+		[10.61%] Explicit-basis bound tightening: 325 milli
+		[0.28%] Constraint-matrix bound tightening: 8 milli
+		[0.23%] Degradation checking: 7 milli
 		[0.00%] Precision restoration: 0 milli
-		[0.02%] Statistics handling: 0 milli
-		[0.14%] Constraint-fixing steps: 4 milli
-		[24.72%] Valid case splits: 756 milli. Average per split: 27.00 milli
+		[0.03%] Statistics handling: 1 milli
+		[0.13%] Constraint-fixing steps: 3 milli
+		[24.33%] Valid case splits: 747 milli. Average per split: 26.68 milli
 		[0.01%] Applying stored bound-tightening: 0 milli
 		[0.00%] SMT core: 0 milli
-		[0.76%] Symbolic Bound Tightening: 23 milli
-		[1.12%] Unaccounted for: 34 milli
+		[0.79%] Symbolic Bound Tightening: 24 milli
+		[1.20%] Unaccounted for: 36 milli
 	--- Preprocessor Statistics ---
 	Number of preprocessor bound-tightening loop iterations: 8
 	Number of eliminated variables: 58

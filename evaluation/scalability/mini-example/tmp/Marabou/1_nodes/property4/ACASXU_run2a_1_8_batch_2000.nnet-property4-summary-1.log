@@ -9,11 +9,11 @@ Property: mini-example/property4.txt
 
 Engine::solve: Initial statistics
 
-16:10:55 Statistics update:
+16:47:09 Statistics update:
 	--- Time Statistics ---
-	Total time elapsed: 1295 milli (00:00:01)
+	Total time elapsed: 1316 milli (00:00:01)
 		Main loop: 0 milli (00:00:00)
-		Preprocessing time: 1221 milli (00:00:01)
+		Preprocessing time: 1242 milli (00:00:01)
 		Unknown: 74 milli (00:00:00)
 	Breakdown for main loop:
 		[0.00%] Simplex steps: 0 milli
@@ -70,25 +70,25 @@ Before declaring SAT, recomputing...
 
 Engine::solve: SAT assignment found
 
-16:11:01 Statistics update:
+16:47:15 Statistics update:
 	--- Time Statistics ---
-	Total time elapsed: 6545 milli (00:00:06)
-		Main loop: 5247 milli (00:00:05)
-		Preprocessing time: 1221 milli (00:00:01)
+	Total time elapsed: 6581 milli (00:00:06)
+		Main loop: 5262 milli (00:00:05)
+		Preprocessing time: 1242 milli (00:00:01)
 		Unknown: 76 milli (00:00:00)
 	Breakdown for main loop:
-		[57.45%] Simplex steps: 3014 milli
-		[17.75%] Explicit-basis bound tightening: 931 milli
-		[0.52%] Constraint-matrix bound tightening: 27 milli
+		[57.04%] Simplex steps: 3002 milli
+		[17.85%] Explicit-basis bound tightening: 939 milli
+		[0.53%] Constraint-matrix bound tightening: 27 milli
 		[0.23%] Degradation checking: 12 milli
 		[0.00%] Precision restoration: 0 milli
 		[0.00%] Statistics handling: 0 milli
-		[1.37%] Constraint-fixing steps: 71 milli
-		[14.84%] Valid case splits: 778 milli. Average per split: 3.52 milli
+		[1.37%] Constraint-fixing steps: 72 milli
+		[15.11%] Valid case splits: 795 milli. Average per split: 3.60 milli
 		[0.39%] Applying stored bound-tightening: 20 milli
-		[2.44%] SMT core: 128 milli
-		[3.89%] Symbolic Bound Tightening: 204 milli
-		[1.11%] Unaccounted for: 58 milli
+		[2.42%] SMT core: 127 milli
+		[3.96%] Symbolic Bound Tightening: 208 milli
+		[1.10%] Unaccounted for: 58 milli
 	--- Preprocessor Statistics ---
 	Number of preprocessor bound-tightening loop iterations: 8
 	Number of eliminated variables: 43

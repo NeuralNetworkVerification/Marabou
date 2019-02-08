@@ -7,13 +7,13 @@
 [runlim] argv[2]:		mini-example/property4.txt
 [runlim] argv[3]:		/home/haozewu/Projects/NN/Marabou/evaluation/scalability/mini-example/tmp/Marabou/1_nodes/property4/ACASXU_run2a_1_8_batch_2000.nnet-property4-summary-1.txt
 [runlim] argv[4]:		-w 1 --initial-splits=0 --to-sub=5
-[runlim] start:			Thu Feb  7 16:10:54 2019
-[runlim] main pid:		18210
-[runlim] end:			Thu Feb  7 16:11:01 2019
+[runlim] start:			Thu Feb  7 16:47:08 2019
+[runlim] main pid:		21888
+[runlim] end:			Thu Feb  7 16:47:15 2019
 [runlim] status:		ok
 [runlim] result:		0
 [runlim] children:		199
-[runlim] real:			7.06 seconds
-[runlim] time:			7.92 seconds
-[runlim] space:			173.4 MB
+[runlim] real:			7.31 seconds
+[runlim] time:			7.91 seconds
+[runlim] space:			175.7 MB
 [runlim] samples:		67

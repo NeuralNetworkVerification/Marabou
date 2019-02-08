@@ -9,11 +9,11 @@ Property: mini-example/property4.txt
 
 Engine::solve: Initial statistics
 
-16:11:02 Statistics update:
+16:47:16 Statistics update:
 	--- Time Statistics ---
-	Total time elapsed: 1244 milli (00:00:01)
+	Total time elapsed: 1267 milli (00:00:01)
 		Main loop: 0 milli (00:00:00)
-		Preprocessing time: 1183 milli (00:00:01)
+		Preprocessing time: 1206 milli (00:00:01)
 		Unknown: 61 milli (00:00:00)
 	Breakdown for main loop:
 		[0.00%] Simplex steps: 0 milli
@@ -70,25 +70,25 @@ Before declaring SAT, recomputing...
 
 Engine::solve: SAT assignment found
 
-16:11:04 Statistics update:
+16:47:18 Statistics update:
 	--- Time Statistics ---
-	Total time elapsed: 3261 milli (00:00:03)
-		Main loop: 2016 milli (00:00:02)
-		Preprocessing time: 1183 milli (00:00:01)
+	Total time elapsed: 3157 milli (00:00:03)
+		Main loop: 1889 milli (00:00:01)
+		Preprocessing time: 1206 milli (00:00:01)
 		Unknown: 62 milli (00:00:00)
 	Breakdown for main loop:
-		[59.29%] Simplex steps: 1195 milli
-		[11.96%] Explicit-basis bound tightening: 241 milli
-		[0.22%] Constraint-matrix bound tightening: 4 milli
-		[0.23%] Degradation checking: 4 milli
+		[59.76%] Simplex steps: 1128 milli
+		[12.02%] Explicit-basis bound tightening: 226 milli
+		[0.24%] Constraint-matrix bound tightening: 4 milli
+		[0.22%] Degradation checking: 4 milli
 		[0.00%] Precision restoration: 0 milli
 		[0.00%] Statistics handling: 0 milli
-		[0.21%] Constraint-fixing steps: 4 milli
-		[23.46%] Valid case splits: 473 milli. Average per split: 11.82 milli
-		[0.01%] Applying stored bound-tightening: 0 milli
+		[0.22%] Constraint-fixing steps: 4 milli
+		[22.93%] Valid case splits: 433 milli. Average per split: 10.82 milli
+		[0.02%] Applying stored bound-tightening: 0 milli
 		[0.00%] SMT core: 0 milli
-		[1.02%] Symbolic Bound Tightening: 20 milli
-		[3.60%] Unaccounted for: 72 milli
+		[0.99%] Symbolic Bound Tightening: 18 milli
+		[3.60%] Unaccounted for: 68 milli
 	--- Preprocessor Statistics ---
 	Number of preprocessor bound-tightening loop iterations: 8
 	Number of eliminated variables: 55

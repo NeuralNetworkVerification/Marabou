@@ -6,10 +6,10 @@ We run the two solvers on the AcasXU benchmarks with increasing amount of cpu
 allowance  (2, 4, 8, 16, 32, 64). The two solvers are Marabou in the Divide-and-Conquer
 mode and ReluVal. We use a wall-clock timeout of 2 hours across the board and allocate
 80000 MB memory for each CPU.
-In the following sections we introduce in detail what the folder contains, as well as
-how to reproduce the scalability experiment.
+In the following sections we introduce in detail what the folder contains.
 We also provide a mini-example where you could run scalability test on a small set of
-benchmarks with 1, 2, 4 cpus, extract the results, and obtain the plot.
+benchmarks with 1, 2, 4, 8 cpus, extract the results, and obtain the plot of the same
+fashion as the one presented in the paper.
 
 - File organization
 
@@ -84,3 +84,25 @@ To generate the scalability plot similar to the one in the paper call
     - python3 scripts/compare_scalability.py
 
 
+- A mini-example of scalability test, and how to generalize the experiment
+
+Since it is unrealistic to reproduce the large-scale experiment that we conducted in a virtual
+machine environment, we only provide a small snapshot of our experiment.
+Concretely, we ask ReluVal and Marabou to check property 4 on 2 networks, with an increasing
+amount of spawned threads. The two networks are located in mini-example/networks/, the path to
+the property file is mini-example/property4.txt. Due to the different name of the created log file,
+we use a slightly different version of parse_result.py and compare_scalability.py, namely
+parse_result_mini.py and compare_scalability_mini.py. You do not need to explicitly call them, as
+the experiment can be run by simply calling
+   - ./run_mini_example.sh
+
+The experiment should take less than 5 minute to finish on machines with 4 cpus.
+If the script runs properly, you should see the performance summary printed, and a plot comparing
+the scalability of Marabou and ReluVal on these two small benchmark displayed.
+
+Note that you could use run_mini_example.sh to solve other benchmarks.
+You could add more networks (.nnet and .pb both required) to the "mini-example/networks/"
+folder. You could also replace the content of mini-example/property4.txt with other properties. 
+
+After doing this, re-run the run_mini_example.sh script and it will try to solve the new benchmarks
+that you added.
