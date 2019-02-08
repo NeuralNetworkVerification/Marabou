@@ -10,9 +10,6 @@ for benchmark_set in os.listdir(benchmark_sets):
         continue
     print ("Solving benchmark_set: {}".format(benchmark_set))
     with open(benchmark_sets + benchmark_set, "r") as in_file:
-        num_tasks = len(in_file.readlines())
-    with open(benchmark_sets + benchmark_set, "r") as in_file:
-        i = 1
         for line in in_file.readlines():
             arg1 = line.split()[0]
             arg2 = line.split()[1]
@@ -22,5 +19,3 @@ for benchmark_set in os.listdir(benchmark_sets):
             f = open(name + ".log", "w")
             e = open(name + ".err", "w")
             subprocess.run(["runlim", solver, arg1, arg2, arg3, arg4], stdout=f, stderr=e)
-            print ("{} out of {} done!".format(i, num_tasks))
-            i += 1
