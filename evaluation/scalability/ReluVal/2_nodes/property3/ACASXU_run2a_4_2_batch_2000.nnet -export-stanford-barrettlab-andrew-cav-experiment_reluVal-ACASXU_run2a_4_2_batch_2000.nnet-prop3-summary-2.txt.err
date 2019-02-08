@@ -1,0 +1,556 @@
+[runlim] version:		1.10fixed
+[runlim] time limit:		14400 seconds
+[runlim] real time limit:	311040000 seconds
+[runlim] space limit:		80000 MB
+[runlim] argv[0]:		./run_template.sh
+[runlim] argv[1]:		/export/stanford/barrettlab/andrew-cav-experiment_reluVal/nnets/acas/ACASXU_run2a_4_2_batch_2000.nnet
+[runlim] argv[2]:		/export/stanford/barrettlab/andrew-cav-experiment_reluVal/ACASXU_run2a_4_2_batch_2000.nnet-prop3-summary-2.txt
+[runlim] argv[3]:		
+[runlim] start:			Tue Feb  5 14:43:28 2019
+[runlim] main pid:		118974
+progress: [=                                                 progress: [=                                                 progress: [=                                                 progress: [=                                                 progress: [=                                                 progress: [=                                                 progress: [=                                                 progress: [=                                                 progress: [=                                                 [runlim] sample:		30.1 time, 10.8 real, 7.9 MB
+progress: [=                                                 progress: [=                                                 progress: [=                                                 progress: [=                                                 progress: [=                                                 [runlim] sample:		60.0 time, 20.8 real, 7.9 MB
+progress: [=                                                 [runlim] sample:		88.9 time, 30.8 real, 7.9 MB
+progress: [=                                                 [runlim] sample:		118.7 time, 40.8 real, 7.9 MB
+progress: [=                                                 progress: [=                                                 progress: [=                                                 [runlim] sample:		148.6 time, 50.8 real, 7.9 MB
+[runlim] sample:		175.5 time, 60.8 real, 7.9 MB
+progress: [=                                                 [runlim] sample:		201.9 time, 70.8 real, 7.9 MB
+progress: [==                                                [runlim] sample:		229.1 time, 80.8 real, 7.9 MB
+progress: [==                                                progress: [==                                                progress: [==                                                progress: [==                                                progress: [==                                                progress: [==                                                [runlim] sample:		258.9 time, 90.8 real, 7.9 MB
+progress: [==                                                progress: [==                                                progress: [==                                                progress: [==                                                [runlim] sample:		288.6 time, 100.8 real, 7.9 MB
+progress: [==                                                progress: [==                                                [runlim] sample:		318.4 time, 110.8 real, 7.9 MB
+[runlim] sample:		348.2 time, 120.8 real, 7.9 MB
+[runlim] sample:		378.1 time, 130.8 real, 7.9 MB
+[runlim] sample:		407.9 time, 140.8 real, 7.9 MB
+[runlim] sample:		437.8 time, 150.8 real, 7.9 MB
+progress: [==                                                progress: [==                                                [runlim] sample:		467.5 time, 160.8 real, 7.9 MB
+progress: [==                                                [runlim] sample:		497.2 time, 170.8 real, 7.9 MB
+[runlim] sample:		527.0 time, 180.8 real, 7.9 MB
+[runlim] sample:		556.8 time, 190.8 real, 7.9 MB
+[runlim] sample:		586.4 time, 200.8 real, 7.9 MB
+progress: [==                                                [runlim] sample:		616.2 time, 210.8 real, 7.9 MB
+[runlim] sample:		646.0 time, 220.8 real, 7.9 MB
+[runlim] sample:		675.8 time, 230.8 real, 7.9 MB
+progress: [==                                                [runlim] sample:		705.6 time, 240.8 real, 7.9 MB
+[runlim] sample:		735.5 time, 250.8 real, 7.9 MB
+progress: [==                                                [runlim] sample:		765.4 time, 260.8 real, 7.9 MB
+[runlim] sample:		795.3 time, 270.8 real, 7.9 MB
+[runlim] sample:		825.1 time, 280.8 real, 7.9 MB
+[runlim] sample:		855.0 time, 290.8 real, 7.9 MB
+progress: [==                                                [runlim] sample:		884.9 time, 300.8 real, 7.9 MB
+progress: [===                                               [runlim] sample:		914.8 time, 310.8 real, 7.9 MB
+[runlim] sample:		944.7 time, 320.8 real, 7.9 MB
+[runlim] sample:		974.7 time, 330.8 real, 7.9 MB
+progress: [===                                               progress: [===                                               [runlim] sample:		1004.6 time, 340.8 real, 7.9 MB
+[runlim] sample:		1034.5 time, 350.8 real, 7.9 MB
+[runlim] sample:		1064.4 time, 360.8 real, 7.9 MB
+[runlim] sample:		1094.3 time, 370.8 real, 7.9 MB
+progress: [===                                               progress: [===                                               [runlim] sample:		1124.2 time, 380.8 real, 7.9 MB
+progress: [===                                               progress: [===                                               [runlim] sample:		1154.2 time, 390.8 real, 7.9 MB
+progress: [===                                               [runlim] sample:		1184.0 time, 400.8 real, 7.9 MB
+progress: [===                                               [runlim] sample:		1214.0 time, 410.8 real, 7.9 MB
+[runlim] sample:		1243.9 time, 420.8 real, 7.9 MB
+[runlim] sample:		1273.8 time, 430.8 real, 7.9 MB
+[runlim] sample:		1303.7 time, 440.8 real, 7.9 MB
+[runlim] sample:		1333.6 time, 450.8 real, 7.9 MB
+progress: [===                                               progress: [===                                               progress: [===                                               progress: [===                                               progress: [===                                               progress: [===                                               [runlim] sample:		1363.5 time, 460.8 real, 7.9 MB
+progress: [===                                               progress: [===                                               progress: [===                                               [runlim] sample:		1393.4 time, 470.8 real, 7.9 MB
+progress: [===                                               progress: [===                                               progress: [====                                              progress: [====                                              progress: [====                                              progress: [====                                              [runlim] sample:		1423.3 time, 480.8 real, 7.9 MB
+progress: [====                                              [runlim] sample:		1453.2 time, 490.8 real, 7.9 MB
+[runlim] sample:		1483.1 time, 500.8 real, 7.9 MB
+[runlim] sample:		1513.0 time, 510.8 real, 7.9 MB
+[runlim] sample:		1542.9 time, 520.8 real, 7.9 MB
+progress: [====                                              [runlim] sample:		1572.8 time, 530.8 real, 7.9 MB
+progress: [====                                              [runlim] sample:		1602.7 time, 540.8 real, 7.9 MB
+progress: [====                                              progress: [====                                              [runlim] sample:		1632.6 time, 550.8 real, 7.9 MB
+[runlim] sample:		1662.4 time, 560.8 real, 7.9 MB
+progress: [====                                              [runlim] sample:		1692.3 time, 570.8 real, 7.9 MB
+[runlim] sample:		1722.2 time, 580.8 real, 7.9 MB
+[runlim] sample:		1752.1 time, 590.8 real, 7.9 MB
+progress: [====                                              progress: [====                                              progress: [====                                              [runlim] sample:		1782.0 time, 600.8 real, 7.9 MB
+[runlim] sample:		1811.9 time, 610.8 real, 7.9 MB
+progress: [====                                              progress: [====                                              [runlim] sample:		1841.7 time, 620.8 real, 7.9 MB
+progress: [====                                              progress: [====                                              [runlim] sample:		1871.6 time, 630.8 real, 7.9 MB
+[runlim] sample:		1901.5 time, 640.8 real, 7.9 MB
+progress: [====                                              progress: [====                                              [runlim] sample:		1931.4 time, 650.8 real, 7.9 MB
+progress: [====                                              progress: [=====                                             [runlim] sample:		1961.3 time, 660.8 real, 7.9 MB
+progress: [=====                                             progress: [=====                                             [runlim] sample:		1991.2 time, 670.8 real, 7.9 MB
+progress: [=====                                             [runlim] sample:		2021.0 time, 680.8 real, 7.9 MB
+[runlim] sample:		2050.9 time, 690.8 real, 7.9 MB
+[runlim] sample:		2080.8 time, 700.8 real, 7.9 MB
+progress: [=====                                             [runlim] sample:		2110.7 time, 710.8 real, 7.9 MB
+[runlim] sample:		2140.6 time, 720.8 real, 7.9 MB
+[runlim] sample:		2170.4 time, 730.8 real, 7.9 MB
+progress: [=====                                             progress: [=====                                             progress: [=====                                             [runlim] sample:		2200.3 time, 740.8 real, 7.9 MB
+progress: [=====                                             progress: [=====                                             progress: [=====                                             progress: [=====                                             [runlim] sample:		2230.2 time, 750.8 real, 7.9 MB
+progress: [=====                                             progress: [=====                                             progress: [=====                                             [runlim] sample:		2260.1 time, 760.8 real, 7.9 MB
+progress: [=====                                             progress: [=====                                             progress: [=====                                             progress: [=====                                             progress: [=====                                             progress: [=====                                             progress: [======                                            [runlim] sample:		2290.0 time, 770.8 real, 7.9 MB
+progress: [======                                            progress: [======                                            [runlim] sample:		2319.8 time, 780.8 real, 7.9 MB
+progress: [======                                            progress: [======                                            progress: [======                                            [runlim] sample:		2349.7 time, 790.8 real, 7.9 MB
+progress: [======                                            [runlim] sample:		2379.6 time, 800.8 real, 7.9 MB
+progress: [======                                            [runlim] sample:		2409.5 time, 810.8 real, 7.9 MB
+progress: [======                                            [runlim] sample:		2439.4 time, 820.8 real, 7.9 MB
+[runlim] sample:		2469.3 time, 830.8 real, 7.9 MB
+progress: [======                                            [runlim] sample:		2499.2 time, 840.8 real, 7.9 MB
+progress: [======                                            progress: [======                                            [runlim] sample:		2529.1 time, 850.8 real, 7.9 MB
+[runlim] sample:		2559.1 time, 860.8 real, 7.9 MB
+progress: [======                                            progress: [======                                            progress: [======                                            progress: [======                                            progress: [======                                            [runlim] sample:		2588.9 time, 870.8 real, 7.9 MB
+[runlim] sample:		2618.9 time, 880.8 real, 7.9 MB
+progress: [======                                            [runlim] sample:		2648.8 time, 890.8 real, 7.9 MB
+progress: [======                                            [runlim] sample:		2678.7 time, 900.8 real, 7.9 MB
+progress: [======                                            [runlim] sample:		2708.6 time, 910.8 real, 7.9 MB
+[runlim] sample:		2738.5 time, 920.8 real, 7.9 MB
+progress: [=======                                           progress: [=======                                           [runlim] sample:		2768.5 time, 930.8 real, 7.9 MB
+progress: [=======                                           [runlim] sample:		2798.4 time, 940.8 real, 7.9 MB
+progress: [=======                                           [runlim] sample:		2828.3 time, 950.8 real, 7.9 MB
+progress: [=======                                           [runlim] sample:		2858.2 time, 960.8 real, 7.9 MB
+progress: [=======                                           [runlim] sample:		2888.2 time, 970.8 real, 7.9 MB
+[runlim] sample:		2918.1 time, 980.8 real, 7.9 MB
+progress: [=======                                           [runlim] sample:		2948.0 time, 990.8 real, 7.9 MB
+progress: [=======                                           [runlim] sample:		2977.9 time, 1000.8 real, 7.9 MB
+[runlim] sample:		3007.8 time, 1010.8 real, 7.9 MB
+progress: [=======                                           [runlim] sample:		3037.7 time, 1020.8 real, 7.9 MB
+progress: [=======                                           progress: [=======                                           progress: [=======                                           progress: [=======                                           progress: [=======                                           [runlim] sample:		3067.7 time, 1030.8 real, 7.9 MB
+progress: [=======                                           [runlim] sample:		3097.6 time, 1040.8 real, 7.9 MB
+[runlim] sample:		3127.5 time, 1050.8 real, 7.9 MB
+progress: [=======                                           [runlim] sample:		3157.4 time, 1060.8 real, 7.9 MB
+[runlim] sample:		3187.4 time, 1070.8 real, 7.9 MB
+[runlim] sample:		3217.3 time, 1080.8 real, 7.9 MB
+[runlim] sample:		3247.2 time, 1090.8 real, 7.9 MB
+progress: [=======                                           [runlim] sample:		3277.1 time, 1100.8 real, 7.9 MB
+[runlim] sample:		3307.0 time, 1110.8 real, 7.9 MB
+[runlim] sample:		3336.9 time, 1120.8 real, 7.9 MB
+progress: [=======                                           [runlim] sample:		3366.8 time, 1130.8 real, 7.9 MB
+[runlim] sample:		3396.8 time, 1140.8 real, 7.9 MB
+progress: [=======                                           progress: [=======                                           [runlim] sample:		3426.7 time, 1150.8 real, 7.9 MB
+progress: [=======                                           [runlim] sample:		3456.6 time, 1160.8 real, 7.9 MB
+progress: [========                                          progress: [========                                          [runlim] sample:		3486.5 time, 1170.8 real, 7.9 MB
+progress: [========                                          progress: [========                                          progress: [========                                          [runlim] sample:		3516.4 time, 1180.8 real, 7.9 MB
+[runlim] sample:		3546.4 time, 1190.8 real, 7.9 MB
+progress: [========                                          progress: [========                                          progress: [========                                          progress: [========                                          progress: [========                                          [runlim] sample:		3576.3 time, 1200.8 real, 7.9 MB
+[runlim] sample:		3606.2 time, 1210.8 real, 7.9 MB
+[runlim] sample:		3636.1 time, 1220.8 real, 7.9 MB
+progress: [========                                          [runlim] sample:		3666.1 time, 1230.8 real, 7.9 MB
+progress: [========                                          [runlim] sample:		3696.0 time, 1240.8 real, 7.9 MB
+progress: [========                                          [runlim] sample:		3725.9 time, 1250.8 real, 7.9 MB
+progress: [========                                          [runlim] sample:		3755.8 time, 1260.8 real, 7.9 MB
+progress: [========                                          progress: [========                                          progress: [========                                          progress: [========                                          progress: [========                                          [runlim] sample:		3785.7 time, 1270.8 real, 7.9 MB
+[runlim] sample:		3815.7 time, 1280.8 real, 7.9 MB
+progress: [========                                          [runlim] sample:		3845.5 time, 1290.8 real, 7.9 MB
+[runlim] sample:		3875.5 time, 1300.8 real, 7.9 MB
+progress: [=========                                         [runlim] sample:		3905.4 time, 1310.8 real, 7.9 MB
+[runlim] sample:		3935.3 time, 1320.8 real, 7.9 MB
+[runlim] sample:		3965.2 time, 1330.8 real, 7.9 MB
+[runlim] sample:		3995.2 time, 1340.8 real, 7.9 MB
+progress: [=========                                         [runlim] sample:		4025.1 time, 1350.8 real, 7.9 MB
+[runlim] sample:		4055.0 time, 1360.8 real, 7.9 MB
+[runlim] sample:		4084.9 time, 1370.8 real, 7.9 MB
+progress: [=========                                         [runlim] sample:		4114.8 time, 1380.8 real, 7.9 MB
+[runlim] sample:		4144.7 time, 1390.8 real, 7.9 MB
+[runlim] sample:		4174.6 time, 1400.8 real, 7.9 MB
+[runlim] sample:		4204.6 time, 1410.8 real, 7.9 MB
+progress: [=========                                         [runlim] sample:		4234.4 time, 1420.8 real, 7.9 MB
+progress: [=========                                         progress: [=========                                         progress: [=========                                         progress: [=========                                         progress: [=========                                         progress: [=========                                         [runlim] sample:		4264.3 time, 1430.8 real, 7.9 MB
+progress: [=========                                         progress: [=========                                         progress: [=========                                         [runlim] sample:		4294.2 time, 1440.8 real, 7.9 MB
+[runlim] sample:		4324.1 time, 1450.8 real, 7.9 MB
+[runlim] sample:		4353.9 time, 1460.8 real, 7.9 MB
+progress: [=========                                         progress: [=========                                         [runlim] sample:		4383.8 time, 1470.8 real, 7.9 MB
+[runlim] sample:		4413.7 time, 1480.8 real, 7.9 MB
+progress: [=========                                         [runlim] sample:		4443.6 time, 1490.8 real, 7.9 MB
+[runlim] sample:		4473.5 time, 1500.8 real, 7.9 MB
+[runlim] sample:		4503.4 time, 1510.8 real, 7.9 MB
+progress: [=========                                         [runlim] sample:		4533.2 time, 1520.8 real, 7.9 MB
+[runlim] sample:		4563.1 time, 1530.8 real, 7.9 MB
+progress: [=========                                         [runlim] sample:		4593.0 time, 1540.8 real, 7.9 MB
+progress: [=========                                         progress: [=========                                         progress: [=========                                         progress: [==========                                        progress: [==========                                        progress: [==========                                        progress: [==========                                        [runlim] sample:		4622.9 time, 1550.8 real, 7.9 MB
+progress: [==========                                        progress: [==========                                        progress: [==========                                        [runlim] sample:		4652.8 time, 1560.8 real, 7.9 MB
+progress: [==========                                        progress: [==========                                        progress: [==========                                        progress: [==========                                        progress: [==========                                        progress: [==========                                        progress: [==========                                        progress: [==========                                        progress: [==========                                        [runlim] sample:		4682.6 time, 1570.8 real, 7.9 MB
+progress: [==========                                        progress: [==========                                        progress: [==========                                        progress: [==========                                        progress: [===========                                       progress: [===========                                       progress: [===========                                       progress: [===========                                       progress: [===========                                       progress: [===========                                       progress: [===========                                       progress: [===========                                       progress: [===========                                       progress: [===========                                       progress: [===========                                       [runlim] sample:		4712.5 time, 1580.8 real, 7.9 MB
+[runlim] sample:		4742.4 time, 1590.8 real, 7.9 MB
+progress: [===========                                       [runlim] sample:		4772.3 time, 1600.8 real, 7.9 MB
+progress: [===========                                       [runlim] sample:		4802.2 time, 1610.8 real, 7.9 MB
+progress: [===========                                       [runlim] sample:		4832.1 time, 1620.8 real, 7.9 MB
+progress: [===========                                       [runlim] sample:		4861.9 time, 1630.8 real, 7.9 MB
+[runlim] sample:		4891.8 time, 1640.8 real, 7.9 MB
+[runlim] sample:		4921.7 time, 1650.8 real, 7.9 MB
+progress: [===========                                       progress: [===========                                       [runlim] sample:		4951.6 time, 1660.8 real, 7.9 MB
+progress: [===========                                       [runlim] sample:		4981.4 time, 1670.8 real, 7.9 MB
+progress: [===========                                       [runlim] sample:		5011.3 time, 1680.8 real, 7.9 MB
+progress: [===========                                       [runlim] sample:		5041.2 time, 1690.8 real, 7.9 MB
+[runlim] sample:		5071.1 time, 1700.8 real, 7.9 MB
+progress: [===========                                       [runlim] sample:		5101.0 time, 1710.8 real, 7.9 MB
+progress: [============                                      [runlim] sample:		5130.9 time, 1720.8 real, 7.9 MB
+[runlim] sample:		5160.8 time, 1730.8 real, 7.9 MB
+progress: [============                                      [runlim] sample:		5190.7 time, 1740.8 real, 7.9 MB
+[runlim] sample:		5220.5 time, 1750.8 real, 7.9 MB
+progress: [============                                      [runlim] sample:		5250.4 time, 1760.8 real, 7.9 MB
+[runlim] sample:		5280.3 time, 1770.8 real, 7.9 MB
+[runlim] sample:		5310.2 time, 1780.8 real, 7.9 MB
+progress: [============                                      progress: [============                                      progress: [============                                      [runlim] sample:		5340.1 time, 1790.8 real, 7.9 MB
+progress: [============                                      progress: [============                                      [runlim] sample:		5370.0 time, 1800.8 real, 7.9 MB
+[runlim] sample:		5399.9 time, 1810.8 real, 7.9 MB
+progress: [============                                      [runlim] sample:		5429.8 time, 1820.8 real, 7.9 MB
+[runlim] sample:		5459.6 time, 1830.8 real, 7.9 MB
+[runlim] sample:		5489.6 time, 1840.8 real, 7.9 MB
+[runlim] sample:		5519.4 time, 1850.8 real, 7.9 MB
+progress: [============                                      [runlim] sample:		5549.3 time, 1860.8 real, 7.9 MB
+[runlim] sample:		5579.2 time, 1870.8 real, 7.9 MB
+progress: [============                                      [runlim] sample:		5609.1 time, 1880.8 real, 7.9 MB
+[runlim] sample:		5639.0 time, 1890.8 real, 7.9 MB
+[runlim] sample:		5668.9 time, 1900.8 real, 7.9 MB
+progress: [============                                      progress: [============                                      [runlim] sample:		5698.8 time, 1910.8 real, 7.9 MB
+[runlim] sample:		5728.7 time, 1920.8 real, 7.9 MB
+[runlim] sample:		5758.5 time, 1930.8 real, 7.9 MB
+progress: [============                                      [runlim] sample:		5788.4 time, 1940.8 real, 7.9 MB
+[runlim] sample:		5818.3 time, 1950.8 real, 7.9 MB
+progress: [============                                      [runlim] sample:		5848.2 time, 1960.8 real, 7.9 MB
+[runlim] sample:		5878.1 time, 1970.8 real, 7.9 MB
+[runlim] sample:		5908.0 time, 1980.8 real, 7.9 MB
+progress: [============                                      progress: [============                                      progress: [============                                      [runlim] sample:		5937.9 time, 1990.8 real, 7.9 MB
+progress: [============                                      progress: [============                                      [runlim] sample:		5967.8 time, 2000.8 real, 7.9 MB
+progress: [=============                                     progress: [=============                                     progress: [=============                                     [runlim] sample:		5997.7 time, 2010.8 real, 7.9 MB
+progress: [=============                                     [runlim] sample:		6027.6 time, 2020.8 real, 7.9 MB
+progress: [=============                                     [runlim] sample:		6057.4 time, 2030.8 real, 7.9 MB
+[runlim] sample:		6087.3 time, 2040.8 real, 7.9 MB
+progress: [=============                                     [runlim] sample:		6117.2 time, 2050.8 real, 7.9 MB
+progress: [=============                                     progress: [=============                                     progress: [=============                                     progress: [=============                                     progress: [=============                                     [runlim] sample:		6147.1 time, 2060.8 real, 7.9 MB
+progress: [=============                                     progress: [=============                                     progress: [=============                                     progress: [=============                                     [runlim] sample:		6177.0 time, 2070.8 real, 7.9 MB
+[runlim] sample:		6206.9 time, 2080.8 real, 7.9 MB
+progress: [=============                                     [runlim] sample:		6236.8 time, 2090.8 real, 7.9 MB
+progress: [=============                                     progress: [=============                                     progress: [=============                                     [runlim] sample:		6266.7 time, 2100.8 real, 7.9 MB
+[runlim] sample:		6296.6 time, 2110.8 real, 7.9 MB
+[runlim] sample:		6326.5 time, 2120.8 real, 7.9 MB
+progress: [=============                                     [runlim] sample:		6356.4 time, 2130.8 real, 7.9 MB
+[runlim] sample:		6386.2 time, 2140.8 real, 7.9 MB
+[runlim] sample:		6416.1 time, 2150.8 real, 7.9 MB
+progress: [=============                                     [runlim] sample:		6446.0 time, 2160.8 real, 7.9 MB
+[runlim] sample:		6475.9 time, 2170.8 real, 7.9 MB
+[runlim] sample:		6505.8 time, 2180.8 real, 7.9 MB
+[runlim] sample:		6535.7 time, 2190.8 real, 7.9 MB
+progress: [==============                                    progress: [==============                                    progress: [==============                                    progress: [==============                                    [runlim] sample:		6565.6 time, 2200.8 real, 7.9 MB
+[runlim] sample:		6595.4 time, 2210.8 real, 7.9 MB
+[runlim] sample:		6625.4 time, 2220.8 real, 7.9 MB
+progress: [==============                                    [runlim] sample:		6655.2 time, 2230.8 real, 7.9 MB
+progress: [==============                                    progress: [==============                                    progress: [==============                                    [runlim] sample:		6685.1 time, 2240.8 real, 7.9 MB
+progress: [==============                                    [runlim] sample:		6715.0 time, 2250.8 real, 7.9 MB
+progress: [==============                                    [runlim] sample:		6744.9 time, 2260.8 real, 7.9 MB
+[runlim] sample:		6774.8 time, 2270.8 real, 7.9 MB
+[runlim] sample:		6804.6 time, 2280.8 real, 7.9 MB
+[runlim] sample:		6834.5 time, 2290.8 real, 7.9 MB
+progress: [==============                                    [runlim] sample:		6864.4 time, 2300.8 real, 7.9 MB
+[runlim] sample:		6894.3 time, 2310.8 real, 7.9 MB
+progress: [==============                                    [runlim] sample:		6924.2 time, 2320.8 real, 7.9 MB
+[runlim] sample:		6954.1 time, 2330.8 real, 7.9 MB
+[runlim] sample:		6984.0 time, 2340.8 real, 7.9 MB
+[runlim] sample:		7013.9 time, 2350.8 real, 7.9 MB
+[runlim] sample:		7043.8 time, 2360.8 real, 7.9 MB
+progress: [==============                                    progress: [==============                                    [runlim] sample:		7073.7 time, 2370.8 real, 7.9 MB
+progress: [==============                                    progress: [==============                                    progress: [==============                                    [runlim] sample:		7103.6 time, 2380.8 real, 7.9 MB
+progress: [==============                                    [runlim] sample:		7133.4 time, 2390.8 real, 7.9 MB
+[runlim] sample:		7163.4 time, 2400.8 real, 7.9 MB
+progress: [==============                                    [runlim] sample:		7193.2 time, 2410.8 real, 7.9 MB
+progress: [==============                                    progress: [===============                                   [runlim] sample:		7223.1 time, 2420.8 real, 7.9 MB
+progress: [===============                                   progress: [===============                                   progress: [===============                                   [runlim] sample:		7253.0 time, 2430.8 real, 7.9 MB
+progress: [===============                                   [runlim] sample:		7282.9 time, 2440.8 real, 7.9 MB
+[runlim] sample:		7312.8 time, 2450.8 real, 7.9 MB
+[runlim] sample:		7342.7 time, 2460.8 real, 7.9 MB
+progress: [===============                                   [runlim] sample:		7372.6 time, 2470.8 real, 7.9 MB
+progress: [===============                                   [runlim] sample:		7402.5 time, 2480.8 real, 7.9 MB
+progress: [===============                                   [runlim] sample:		7432.4 time, 2490.8 real, 7.9 MB
+progress: [===============                                   [runlim] sample:		7462.3 time, 2500.8 real, 7.9 MB
+progress: [===============                                   [runlim] sample:		7492.1 time, 2510.8 real, 7.9 MB
+progress: [===============                                   [runlim] sample:		7522.0 time, 2520.8 real, 7.9 MB
+progress: [===============                                   progress: [===============                                   [runlim] sample:		7551.9 time, 2530.8 real, 7.9 MB
+[runlim] sample:		7581.8 time, 2540.8 real, 7.9 MB
+[runlim] sample:		7611.7 time, 2550.8 real, 7.9 MB
+[runlim] sample:		7641.6 time, 2560.8 real, 7.9 MB
+[runlim] sample:		7671.5 time, 2570.8 real, 7.9 MB
+[runlim] sample:		7701.4 time, 2580.8 real, 7.9 MB
+[runlim] sample:		7731.2 time, 2590.8 real, 7.9 MB
+progress: [===============                                   [runlim] sample:		7761.1 time, 2600.8 real, 7.9 MB
+[runlim] sample:		7791.0 time, 2610.8 real, 7.9 MB
+[runlim] sample:		7820.9 time, 2620.8 real, 7.9 MB
+progress: [===============                                   progress: [===============                                   [runlim] sample:		7850.8 time, 2630.8 real, 7.9 MB
+[runlim] sample:		7880.7 time, 2640.8 real, 7.9 MB
+progress: [===============                                   [runlim] sample:		7910.6 time, 2650.8 real, 7.9 MB
+[runlim] sample:		7940.4 time, 2660.8 real, 7.9 MB
+[runlim] sample:		7970.3 time, 2670.8 real, 7.9 MB
+[runlim] sample:		8000.2 time, 2680.8 real, 7.9 MB
+progress: [===============                                   [runlim] sample:		8030.1 time, 2690.8 real, 7.9 MB
+progress: [===============                                   [runlim] sample:		8060.0 time, 2700.8 real, 7.9 MB
+[runlim] sample:		8089.9 time, 2710.8 real, 7.9 MB
+[runlim] sample:		8119.8 time, 2720.8 real, 7.9 MB
+[runlim] sample:		8149.7 time, 2730.8 real, 7.9 MB
+[runlim] sample:		8179.6 time, 2740.8 real, 7.9 MB
+progress: [===============                                   [runlim] sample:		8209.5 time, 2750.8 real, 7.9 MB
+progress: [===============                                   [runlim] sample:		8239.4 time, 2760.8 real, 7.9 MB
+[runlim] sample:		8269.2 time, 2770.8 real, 7.9 MB
+[runlim] sample:		8299.1 time, 2780.8 real, 7.9 MB
+progress: [================                                  progress: [================                                  [runlim] sample:		8329.0 time, 2790.8 real, 7.9 MB
+progress: [================                                  [runlim] sample:		8358.9 time, 2800.8 real, 7.9 MB
+[runlim] sample:		8388.9 time, 2810.8 real, 7.9 MB
+[runlim] sample:		8418.8 time, 2820.8 real, 7.9 MB
+progress: [================                                  [runlim] sample:		8448.7 time, 2830.8 real, 7.9 MB
+[runlim] sample:		8478.6 time, 2840.8 real, 7.9 MB
+progress: [================                                  [runlim] sample:		8508.5 time, 2850.8 real, 7.9 MB
+[runlim] sample:		8538.4 time, 2860.8 real, 7.9 MB
+[runlim] sample:		8568.4 time, 2870.8 real, 7.9 MB
+progress: [================                                  [runlim] sample:		8598.3 time, 2880.8 real, 7.9 MB
+progress: [================                                  progress: [================                                  progress: [================                                  [runlim] sample:		8628.2 time, 2890.8 real, 7.9 MB
+progress: [================                                  progress: [================                                  [runlim] sample:		8658.1 time, 2900.8 real, 7.9 MB
+progress: [================                                  progress: [================                                  progress: [================                                  [runlim] sample:		8688.0 time, 2910.8 real, 7.9 MB
+progress: [================                                  [runlim] sample:		8718.0 time, 2920.8 real, 7.9 MB
+progress: [================                                  [runlim] sample:		8747.9 time, 2930.8 real, 7.9 MB
+progress: [================                                  progress: [================                                  progress: [================                                  progress: [================                                  progress: [=================                                 [runlim] sample:		8777.8 time, 2940.8 real, 7.9 MB
+progress: [=================                                 progress: [=================                                 progress: [=================                                 progress: [=================                                 progress: [=================                                 progress: [=================                                 progress: [=================                                 progress: [=================                                 progress: [=================                                 [runlim] sample:		8807.7 time, 2950.8 real, 7.9 MB
+progress: [=================                                 progress: [=================                                 progress: [=================                                 progress: [=================                                 progress: [=================                                 progress: [=================                                 [runlim] sample:		8837.6 time, 2960.8 real, 7.9 MB
+progress: [=================                                 progress: [=================                                 progress: [=================                                 [runlim] sample:		8867.5 time, 2970.8 real, 7.9 MB
+[runlim] sample:		8897.5 time, 2980.8 real, 7.9 MB
+progress: [=================                                 progress: [=================                                 [runlim] sample:		8927.4 time, 2990.8 real, 7.9 MB
+progress: [==================                                progress: [==================                                progress: [==================                                [runlim] sample:		8957.3 time, 3000.8 real, 7.9 MB
+[runlim] sample:		8987.2 time, 3010.8 real, 7.9 MB
+progress: [==================                                [runlim] sample:		9017.1 time, 3020.8 real, 7.9 MB
+progress: [==================                                [runlim] sample:		9047.0 time, 3030.8 real, 7.9 MB
+progress: [==================                                progress: [==================                                [runlim] sample:		9077.0 time, 3040.8 real, 7.9 MB
+[runlim] sample:		9106.9 time, 3050.8 real, 7.9 MB
+[runlim] sample:		9136.8 time, 3060.8 real, 7.9 MB
+progress: [==================                                [runlim] sample:		9166.7 time, 3070.8 real, 7.9 MB
+progress: [==================                                [runlim] sample:		9196.7 time, 3080.8 real, 7.9 MB
+progress: [==================                                progress: [==================                                progress: [==================                                [runlim] sample:		9226.6 time, 3090.8 real, 7.9 MB
+[runlim] sample:		9256.5 time, 3100.8 real, 7.9 MB
+progress: [==================                                [runlim] sample:		9286.4 time, 3110.8 real, 7.9 MB
+[runlim] sample:		9316.4 time, 3120.8 real, 7.9 MB
+progress: [==================                                progress: [==================                                progress: [==================                                progress: [==================                                progress: [==================                                progress: [==================                                progress: [==================                                progress: [===================                               [runlim] sample:		9346.2 time, 3130.8 real, 7.9 MB
+[runlim] sample:		9376.2 time, 3140.8 real, 7.9 MB
+progress: [===================                               progress: [===================                               [runlim] sample:		9406.1 time, 3150.8 real, 7.9 MB
+progress: [===================                               progress: [===================                               progress: [===================                               progress: [===================                               progress: [===================                               progress: [===================                               progress: [===================                               progress: [===================                               progress: [===================                               progress: [===================                               [runlim] sample:		9436.0 time, 3160.8 real, 7.9 MB
+progress: [===================                               progress: [===================                               [runlim] sample:		9466.0 time, 3170.8 real, 7.9 MB
+progress: [===================                               progress: [===================                               progress: [===================                               progress: [===================                               progress: [===================                               [runlim] sample:		9495.9 time, 3180.8 real, 7.9 MB
+progress: [====================                              [runlim] sample:		9525.8 time, 3190.8 real, 7.9 MB
+progress: [====================                              progress: [====================                              [runlim] sample:		9555.7 time, 3200.8 real, 7.9 MB
+progress: [====================                              [runlim] sample:		9585.6 time, 3210.8 real, 7.9 MB
+progress: [====================                              [runlim] sample:		9615.5 time, 3220.8 real, 7.9 MB
+[runlim] sample:		9645.4 time, 3230.8 real, 7.9 MB
+progress: [====================                              progress: [====================                              progress: [====================                              progress: [====================                              progress: [====================                              progress: [====================                              [runlim] sample:		9675.4 time, 3240.8 real, 7.9 MB
+progress: [====================                              progress: [====================                              [runlim] sample:		9705.3 time, 3250.8 real, 7.9 MB
+progress: [====================                              progress: [====================                              progress: [====================                              progress: [====================                              [runlim] sample:		9735.2 time, 3260.8 real, 7.9 MB
+progress: [====================                              progress: [====================                              progress: [====================                              progress: [=====================                             progress: [=====================                             progress: [=====================                             progress: [=====================                             [runlim] sample:		9765.1 time, 3270.8 real, 7.9 MB
+progress: [=====================                             [runlim] sample:		9795.0 time, 3280.8 real, 7.9 MB
+progress: [=====================                             [runlim] sample:		9824.9 time, 3290.8 real, 7.9 MB
+[runlim] sample:		9854.9 time, 3300.8 real, 7.9 MB
+progress: [=====================                             progress: [=====================                             progress: [=====================                             progress: [=====================                             progress: [=====================                             [runlim] sample:		9884.8 time, 3310.8 real, 7.9 MB
+progress: [=====================                             progress: [=====================                             progress: [=====================                             [runlim] sample:		9914.7 time, 3320.8 real, 7.9 MB
+[runlim] sample:		9944.6 time, 3330.8 real, 7.9 MB
+progress: [=====================                             [runlim] sample:		9974.5 time, 3340.8 real, 7.9 MB
+progress: [=====================                             progress: [=====================                             progress: [=====================                             [runlim] sample:		10004.4 time, 3350.8 real, 7.9 MB
+progress: [=====================                             progress: [=====================                             progress: [=====================                             [runlim] sample:		10034.3 time, 3360.8 real, 7.9 MB
+progress: [======================                            progress: [======================                            progress: [======================                            progress: [======================                            progress: [======================                            progress: [======================                            progress: [======================                            [runlim] sample:		10064.2 time, 3370.8 real, 7.9 MB
+progress: [======================                            progress: [======================                            [runlim] sample:		10094.2 time, 3380.8 real, 7.9 MB
+progress: [======================                            [runlim] sample:		10124.1 time, 3390.8 real, 7.9 MB
+progress: [======================                            [runlim] sample:		10154.0 time, 3400.8 real, 7.9 MB
+progress: [======================                            progress: [======================                            progress: [======================                            [runlim] sample:		10183.9 time, 3410.8 real, 7.9 MB
+progress: [======================                            progress: [======================                            progress: [======================                            [runlim] sample:		10213.8 time, 3420.8 real, 7.9 MB
+progress: [======================                            [runlim] sample:		10243.7 time, 3430.8 real, 7.9 MB
+progress: [======================                            progress: [======================                            progress: [=======================                           progress: [=======================                           progress: [=======================                           progress: [=======================                           progress: [=======================                           progress: [=======================                           progress: [=======================                           progress: [=======================                           [runlim] sample:		10273.5 time, 3440.8 real, 7.9 MB
+progress: [=======================                           progress: [=======================                           [runlim] sample:		10303.5 time, 3450.8 real, 7.9 MB
+[runlim] sample:		10333.4 time, 3460.8 real, 7.9 MB
+[runlim] sample:		10363.2 time, 3470.8 real, 7.9 MB
+progress: [=======================                           progress: [=======================                           progress: [=======================                           progress: [=======================                           [runlim] sample:		10393.1 time, 3480.8 real, 7.9 MB
+[runlim] sample:		10423.0 time, 3490.8 real, 7.9 MB
+progress: [=======================                           progress: [=======================                           progress: [=======================                           [runlim] sample:		10452.9 time, 3500.8 real, 7.9 MB
+progress: [=======================                           progress: [=======================                           [runlim] sample:		10482.8 time, 3510.8 real, 7.9 MB
+progress: [=======================                           progress: [=======================                           [runlim] sample:		10512.7 time, 3520.8 real, 7.9 MB
+progress: [========================                          progress: [========================                          progress: [========================                          [runlim] sample:		10542.6 time, 3530.8 real, 7.9 MB
+progress: [========================                          progress: [========================                          [runlim] sample:		10572.5 time, 3540.8 real, 7.9 MB
+progress: [========================                          [runlim] sample:		10602.4 time, 3550.8 real, 7.9 MB
+[runlim] sample:		10632.3 time, 3560.8 real, 7.9 MB
+progress: [========================                          [runlim] sample:		10662.1 time, 3570.8 real, 7.9 MB
+progress: [========================                          [runlim] sample:		10692.0 time, 3580.8 real, 7.9 MB
+progress: [========================                          [runlim] sample:		10721.9 time, 3590.8 real, 7.9 MB
+[runlim] sample:		10751.8 time, 3600.8 real, 7.9 MB
+progress: [========================                          progress: [========================                          [runlim] sample:		10781.7 time, 3610.8 real, 7.9 MB
+[runlim] sample:		10811.6 time, 3620.8 real, 7.9 MB
+progress: [========================                          progress: [========================                          progress: [========================                          [runlim] sample:		10841.5 time, 3630.8 real, 7.9 MB
+[runlim] sample:		10871.3 time, 3640.8 real, 7.9 MB
+[runlim] sample:		10901.2 time, 3650.8 real, 7.9 MB
+[runlim] sample:		10931.1 time, 3660.8 real, 7.9 MB
+progress: [========================                          [runlim] sample:		10961.0 time, 3670.8 real, 7.9 MB
+[runlim] sample:		10990.9 time, 3680.8 real, 7.9 MB
+[runlim] sample:		11020.8 time, 3690.8 real, 7.9 MB
+progress: [========================                          [runlim] sample:		11050.7 time, 3700.8 real, 7.9 MB
+progress: [========================                          progress: [========================                          progress: [========================                          [runlim] sample:		11080.7 time, 3710.8 real, 7.9 MB
+[runlim] sample:		11110.6 time, 3720.8 real, 7.9 MB
+[runlim] sample:		11140.5 time, 3730.8 real, 7.9 MB
+progress: [========================                          [runlim] sample:		11170.4 time, 3740.8 real, 7.9 MB
+progress: [=========================                         [runlim] sample:		11200.4 time, 3750.8 real, 7.9 MB
+[runlim] sample:		11230.2 time, 3760.8 real, 7.9 MB
+[runlim] sample:		11260.2 time, 3770.8 real, 7.9 MB
+progress: [=========================                         [runlim] sample:		11290.1 time, 3780.8 real, 7.9 MB
+progress: [=========================                         progress: [=========================                         progress: [=========================                         progress: [=========================                         progress: [=========================                         [runlim] sample:		11320.0 time, 3790.8 real, 7.9 MB
+[runlim] sample:		11349.9 time, 3800.8 real, 7.9 MB
+progress: [=========================                         progress: [=========================                         progress: [=========================                         progress: [=========================                         progress: [=========================                         progress: [=========================                         progress: [=========================                         progress: [=========================                         progress: [=========================                         progress: [=========================                         progress: [=========================                         progress: [=========================                         progress: [=========================                         [runlim] sample:		11960.3 time, 4130.6 real, 7.9 MB
+progress: [==========================                        progress: [==========================                        [runlim] sample:		11989.4 time, 4146.0 real, 7.9 MB
+progress: [==========================                        progress: [==========================                        progress: [==========================                        [runlim] sample:		12026.3 time, 4161.7 real, 7.9 MB
+progress: [==========================                        [runlim] sample:		12152.6 time, 4225.3 real, 7.9 MB
+progress: [==========================                        [runlim] sample:		12195.3 time, 4243.2 real, 7.9 MB
+[runlim] sample:		12241.1 time, 4263.1 real, 7.9 MB
+progress: [==========================                        [runlim] sample:		12272.4 time, 4281.5 real, 7.9 MB
+progress: [==========================                        progress: [==========================                        progress: [==========================                        progress: [==========================                        [runlim] sample:		12428.4 time, 4361.9 real, 7.9 MB
+progress: [==========================                        [runlim] sample:		12456.0 time, 4379.0 real, 7.9 MB
+[runlim] sample:		12492.1 time, 4397.2 real, 7.9 MB
+[runlim] sample:		12531.0 time, 4416.7 real, 7.9 MB
+progress: [==========================                        progress: [==========================                        progress: [==========================                        progress: [==========================                        [runlim] sample:		12743.7 time, 4535.2 real, 7.9 MB
+progress: [==========================                        [runlim] sample:		12805.9 time, 4561.6 real, 7.9 MB
+progress: [==========================                        [runlim] sample:		12863.6 time, 4589.5 real, 7.9 MB
+[runlim] sample:		12920.6 time, 4614.0 real, 7.9 MB
+progress: [==========================                        [runlim] sample:		12966.2 time, 4639.1 real, 7.9 MB
+[runlim] sample:		13021.2 time, 4666.3 real, 7.9 MB
+progress: [==========================                        progress: [===========================                       [runlim] sample:		13073.9 time, 4695.2 real, 7.9 MB
+progress: [===========================                       progress: [===========================                       progress: [===========================                       [runlim] sample:		13147.7 time, 4726.5 real, 7.9 MB
+[runlim] sample:		13213.7 time, 4757.0 real, 7.9 MB
+progress: [===========================                       [runlim] sample:		13282.9 time, 4789.5 real, 7.9 MB
+[runlim] sample:		13340.0 time, 4819.6 real, 7.9 MB
+progress: [===========================                       progress: [===========================                       progress: [===========================                       progress: [===========================                       progress: [===========================                       [runlim] sample:		13399.7 time, 4853.8 real, 7.9 MB
+progress: [===========================                       [runlim] sample:		13458.1 time, 4884.8 real, 7.9 MB
+progress: [===========================                       [runlim] sample:		13516.0 time, 4919.3 real, 7.9 MB
+[runlim] sample:		13581.2 time, 4948.3 real, 7.9 MB
+progress: [===========================                       progress: [===========================                       progress: [===========================                       [runlim] sample:		13644.8 time, 4980.7 real, 7.9 MB
+progress: [===========================                       [runlim] sample:		13700.5 time, 5010.0 real, 7.9 MB
+[runlim] sample:		13772.4 time, 5042.4 real, 7.9 MB
+progress: [===========================                       progress: [===========================                       [runlim] sample:		13828.2 time, 5071.8 real, 7.9 MB
+progress: [===========================                       progress: [===========================                       [runlim] sample:		13888.5 time, 5102.3 real, 7.9 MB
+[runlim] sample:		13950.5 time, 5133.3 real, 7.9 MB
+progress: [============================                      progress: [============================                      [runlim] sample:		14009.8 time, 5163.1 real, 7.9 MB
+progress: [============================                      [runlim] sample:		14130.1 time, 5214.2 real, 7.9 MB
+[runlim] sample:		14172.1 time, 5229.9 real, 7.9 MB
+progress: [============================                      progress: [============================                      progress: [============================                      progress: [============================                      progress: [============================                      progress: [============================                      [runlim] sample:		14252.4 time, 5259.4 real, 7.9 MB
+progress: [============================                      [runlim] sample:		14312.2 time, 5279.5 real, 7.9 MB
+[runlim] sample:		14362.4 time, 5298.7 real, 7.9 MB
+progress: [============================                      [runlim] sample:		0.0 time, 5317.6 real, 0.0 MB
+progress: [============================                      [runlim] sample:		0.0 time, 5340.5 real, 0.0 MB
+[runlim] sample:		0.0 time, 5359.6 real, 0.0 MB
+[runlim] sample:		0.0 time, 5378.3 real, 0.0 MB
+[runlim] sample:		0.0 time, 5397.1 real, 0.0 MB
+[runlim] sample:		0.0 time, 5417.6 real, 0.0 MB
+[runlim] sample:		0.0 time, 5438.1 real, 0.0 MB
+[runlim] sample:		0.0 time, 5459.2 real, 0.0 MB
+[runlim] sample:		0.0 time, 5480.3 real, 0.0 MB
+[runlim] sample:		0.0 time, 5504.1 real, 0.0 MB
+[runlim] sample:		0.0 time, 5526.5 real, 0.0 MB
+[runlim] sample:		0.0 time, 5552.9 real, 0.0 MB
+[runlim] sample:		0.0 time, 5579.3 real, 0.0 MB
+[runlim] sample:		0.0 time, 5605.2 real, 0.0 MB
+[runlim] sample:		0.0 time, 5630.3 real, 0.0 MB
+[runlim] sample:		0.0 time, 5655.5 real, 0.0 MB
+[runlim] sample:		0.0 time, 5681.3 real, 0.0 MB
+[runlim] sample:		0.0 time, 5705.7 real, 0.0 MB
+[runlim] sample:		0.0 time, 5732.4 real, 0.0 MB
+[runlim] sample:		0.0 time, 5757.1 real, 0.0 MB
+[runlim] sample:		0.0 time, 5784.2 real, 0.0 MB
+[runlim] sample:		0.0 time, 5809.4 real, 0.0 MB
+[runlim] sample:		0.0 time, 5834.4 real, 0.0 MB
+[runlim] sample:		0.0 time, 5858.7 real, 0.0 MB
+[runlim] sample:		0.0 time, 6478.3 real, 0.0 MB
+[runlim] sample:		0.0 time, 6495.6 real, 0.0 MB
+[runlim] sample:		0.0 time, 6512.9 real, 0.0 MB
+[runlim] sample:		0.0 time, 6529.0 real, 0.0 MB
+[runlim] sample:		0.0 time, 6543.5 real, 0.0 MB
+[runlim] sample:		0.0 time, 6559.6 real, 0.0 MB
+[runlim] sample:		0.0 time, 6576.2 real, 0.0 MB
+[runlim] sample:		0.0 time, 6594.8 real, 0.0 MB
+[runlim] sample:		0.0 time, 6613.5 real, 0.0 MB
+[runlim] sample:		0.0 time, 6632.3 real, 0.0 MB
+[runlim] sample:		0.0 time, 6651.2 real, 0.0 MB
+[runlim] sample:		0.0 time, 6669.8 real, 0.0 MB
+[runlim] sample:		0.0 time, 6688.8 real, 0.0 MB
+[runlim] sample:		0.0 time, 6707.8 real, 0.0 MB
+[runlim] sample:		0.0 time, 6726.9 real, 0.0 MB
+[runlim] sample:		0.0 time, 6746.3 real, 0.0 MB
+[runlim] sample:		0.0 time, 6767.4 real, 0.0 MB
+[runlim] sample:		0.0 time, 6787.4 real, 0.0 MB
+[runlim] sample:		0.0 time, 6807.9 real, 0.0 MB
+[runlim] sample:		0.0 time, 6828.3 real, 0.0 MB
+[runlim] sample:		0.0 time, 6848.6 real, 0.0 MB
+[runlim] sample:		0.0 time, 6869.3 real, 0.0 MB
+[runlim] sample:		0.0 time, 6890.6 real, 0.0 MB
+[runlim] sample:		0.0 time, 6911.4 real, 0.0 MB
+[runlim] sample:		0.0 time, 6932.4 real, 0.0 MB
+[runlim] sample:		0.0 time, 6953.5 real, 0.0 MB
+[runlim] sample:		0.0 time, 6975.1 real, 0.0 MB
+[runlim] sample:		0.0 time, 6996.6 real, 0.0 MB
+[runlim] sample:		0.0 time, 7060.1 real, 0.0 MB
+[runlim] sample:		0.0 time, 7081.3 real, 0.0 MB
+[runlim] sample:		0.0 time, 7103.0 real, 0.0 MB
+[runlim] sample:		0.0 time, 7124.3 real, 0.0 MB
+[runlim] sample:		0.0 time, 7146.6 real, 0.0 MB
+[runlim] sample:		0.0 time, 7168.3 real, 0.0 MB
+[runlim] sample:		0.0 time, 7189.2 real, 0.0 MB
+[runlim] sample:		0.0 time, 7210.5 real, 0.0 MB
+[runlim] sample:		0.0 time, 7231.7 real, 0.0 MB
+[runlim] sample:		0.0 time, 7253.4 real, 0.0 MB
+[runlim] sample:		0.0 time, 7276.4 real, 0.0 MB
+[runlim] sample:		0.0 time, 7298.6 real, 0.0 MB
+[runlim] sample:		0.0 time, 7320.6 real, 0.0 MB
+[runlim] sample:		0.0 time, 7344.6 real, 0.0 MB
+[runlim] sample:		0.0 time, 7365.5 real, 0.0 MB
+[runlim] sample:		0.0 time, 7380.6 real, 0.0 MB
+[runlim] sample:		0.0 time, 7397.5 real, 0.0 MB
+[runlim] sample:		0.0 time, 7412.4 real, 0.0 MB
+[runlim] sample:		0.0 time, 7429.0 real, 0.0 MB
+[runlim] sample:		0.0 time, 7446.9 real, 0.0 MB
+[runlim] sample:		0.0 time, 7465.9 real, 0.0 MB
+[runlim] sample:		0.0 time, 7486.9 real, 0.0 MB
+[runlim] sample:		0.0 time, 7508.3 real, 0.0 MB
+[runlim] sample:		0.0 time, 7529.1 real, 0.0 MB
+[runlim] sample:		0.0 time, 7549.1 real, 0.0 MB
+[runlim] sample:		0.0 time, 7568.4 real, 0.0 MB
+[runlim] sample:		0.0 time, 7588.9 real, 0.0 MB
+[runlim] sample:		0.0 time, 7610.0 real, 0.0 MB
+[runlim] sample:		0.0 time, 7632.6 real, 0.0 MB
+[runlim] sample:		0.0 time, 7654.2 real, 0.0 MB
+[runlim] sample:		0.0 time, 7676.1 real, 0.0 MB
+[runlim] sample:		0.0 time, 7698.8 real, 0.0 MB
+[runlim] sample:		0.0 time, 7722.5 real, 0.0 MB
+[runlim] sample:		0.0 time, 7745.8 real, 0.0 MB
+[runlim] sample:		0.0 time, 7769.6 real, 0.0 MB
+[runlim] sample:		0.0 time, 7791.4 real, 0.0 MB
+[runlim] sample:		0.0 time, 7812.7 real, 0.0 MB
+[runlim] sample:		0.0 time, 7829.8 real, 0.0 MB
+[runlim] sample:		0.0 time, 7844.1 real, 0.0 MB
+[runlim] sample:		0.0 time, 7857.7 real, 0.0 MB
+[runlim] sample:		0.0 time, 7872.3 real, 0.0 MB
+[runlim] sample:		0.0 time, 7888.0 real, 0.0 MB
+[runlim] sample:		0.0 time, 7905.1 real, 0.0 MB
+[runlim] sample:		0.0 time, 7923.5 real, 0.0 MB
+[runlim] sample:		0.0 time, 7943.2 real, 0.0 MB
+[runlim] sample:		0.0 time, 7963.0 real, 0.0 MB
+[runlim] sample:		0.0 time, 7982.2 real, 0.0 MB
+[runlim] sample:		0.0 time, 8002.3 real, 0.0 MB
+[runlim] sample:		0.0 time, 8022.1 real, 0.0 MB
+[runlim] sample:		0.0 time, 8041.9 real, 0.0 MB
+[runlim] sample:		0.0 time, 8062.5 real, 0.0 MB
+[runlim] sample:		0.0 time, 8082.9 real, 0.0 MB
+[runlim] sample:		0.0 time, 8104.6 real, 0.0 MB
+[runlim] sample:		0.0 time, 8125.4 real, 0.0 MB
+[runlim] sample:		0.0 time, 8144.3 real, 0.0 MB
+[runlim] sample:		0.0 time, 12382.6 real, 0.0 MB
+[runlim] sample:		0.0 time, 12400.3 real, 0.0 MB
+[runlim] sample:		0.0 time, 12418.0 real, 0.0 MB
+[runlim] sample:		0.0 time, 12433.1 real, 0.0 MB
+[runlim] sample:		0.0 time, 12447.3 real, 0.0 MB
+[runlim] sample:		0.0 time, 12462.6 real, 0.0 MB
+[runlim] sample:		0.0 time, 12475.1 real, 0.0 MB
+[runlim] sample:		0.0 time, 12488.7 real, 0.0 MB
+[runlim] sample:		0.0 time, 12504.3 real, 0.0 MB
+[runlim] sample:		0.0 time, 12520.7 real, 0.0 MB
+[runlim] sample:		0.0 time, 12536.8 real, 0.0 MB
+[runlim] sample:		0.0 time, 12552.2 real, 0.0 MB
+[runlim] sample:		0.0 time, 12568.6 real, 0.0 MB
+[runlim] sample:		0.0 time, 12585.3 real, 0.0 MB
+[runlim] sample:		0.0 time, 12602.6 real, 0.0 MB
+[runlim] sample:		0.0 time, 12619.0 real, 0.0 MB
+[runlim] sample:		0.0 time, 12635.5 real, 0.0 MB
+[runlim] sample:		0.0 time, 12651.6 real, 0.0 MB
+[runlim] sample:		0.0 time, 12668.8 real, 0.0 MB
+[runlim] sample:		0.0 time, 12683.1 real, 0.0 MB
+[runlim] sample:		0.0 time, 12697.2 real, 0.0 MB

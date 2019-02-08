@@ -1,0 +1,11 @@
+running property 3 with network /export/stanford/barrettlab/andrew-cav-experiment_reluVal/nnets/acas/ACASXU_run2a_2_9_batch_2000.nnet
+input ranges:
+[-0.298553 0.009549 0.500000 0.500000 0.500000 ]
+[-0.303531 -0.009549 0.493380 0.300000 0.300000 ]
+check mode: NORMAL_CHECK_MODE
+progress: [==================================================] 100.00%
+
+No adv!
+time: 0.019655 
+
+

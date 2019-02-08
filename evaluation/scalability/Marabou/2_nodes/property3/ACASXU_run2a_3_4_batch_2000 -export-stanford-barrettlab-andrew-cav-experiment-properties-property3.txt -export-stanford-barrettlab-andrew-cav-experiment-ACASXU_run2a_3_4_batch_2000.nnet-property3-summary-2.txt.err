@@ -1,0 +1,42 @@
+[runlim] version:		1.10fixed
+[runlim] time limit:		14400 seconds
+[runlim] real time limit:	311040000 seconds
+[runlim] space limit:		80000 MB
+[runlim] argv[0]:		./run.sh
+[runlim] argv[1]:		/export/stanford/barrettlab/andrew-cav-experiment/MStar/acas/ACASXU_run2a_3_4_batch_2000
+[runlim] argv[2]:		/export/stanford/barrettlab/andrew-cav-experiment/properties/property3.txt
+[runlim] argv[3]:		/export/stanford/barrettlab/andrew-cav-experiment/ACASXU_run2a_3_4_batch_2000.nnet-property3-summary-2.txt
+[runlim] argv[4]:		-w 2 --initial-splits=1 --to-sub=6
+[runlim] start:			Tue Feb  5 13:22:31 2019
+[runlim] main pid:		99921
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+2019-02-05 13:22:33.711347: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+2019-02-05 13:22:47.741564: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+2019-02-05 13:22:47.764222: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+[runlim] sample:		105.6 time, 59.9 real, 717.4 MB
+[runlim] sample:		232.0 time, 124.3 real, 670.3 MB
+[runlim] sample:		353.7 time, 185.0 real, 743.3 MB
+[runlim] sample:		479.6 time, 248.6 real, 713.5 MB
+[runlim] sample:		578.5 time, 298.2 real, 724.5 MB
+[runlim] sample:		650.3 time, 334.3 real, 737.1 MB
+[runlim] sample:		702.4 time, 360.5 real, 714.6 MB
+[runlim] sample:		740.7 time, 379.7 real, 719.2 MB
+[runlim] sample:		780.5 time, 398.9 real, 760.4 MB
+[runlim] sample:		815.5 time, 416.4 real, 722.4 MB
+[runlim] sample:		852.6 time, 435.0 real, 723.6 MB
+[runlim] end:			Tue Feb  5 13:29:57 2019
+[runlim] status:		ok
+[runlim] result:		0
+[runlim] children:		5762
+[runlim] real:			446.93 seconds
+[runlim] time:			874.22 seconds
+[runlim] space:			848.7 MB
+[runlim] samples:		1170
