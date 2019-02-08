@@ -162,6 +162,7 @@ AcasNnet *load_network(const char* filename)
 
 
     delete[] buffer;
+    fclose(fstream);
 
     //return a pointer to the neural network
     return nnet;
