@@ -719,7 +719,7 @@ and the other solvers may or may not be deterministic. Thus, it will
 be quite difficult for a reviewer to reproduce the reported results
 precisely.
 
-Given these difficulties, we provide the follow three items:
+Given these difficulties, we provide the follow two items:
 
    - Complete logs, from our cluster runs, for each of the reported
      experiments. These can be found under the complete_logs folder,
@@ -728,6 +728,10 @@ Given these difficulties, we provide the follow three items:
      These logs can be used, e.g., if a reviewer wishes to run a
      benchmark for a few minutes and see that the produced log is
      roughly a prefix of the complete log for the same experiment.
+
+     In each sub folder, the resources/results folder contains the
+     output from the experiment, and the comparisons sub-folder 
+     therein contains summaries and some plots.
 
    - The scripts for running each of the individual benchmarks
      reported in the paper (except for the multi-core experiment,
