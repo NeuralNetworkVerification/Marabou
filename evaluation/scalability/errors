@@ -1,0 +1,34 @@
+Traceback (most recent call last):
+  File "scripts/create_arguments_reluval.py", line 16, in <module>
+    with open(sys.argv[4], 'w') as out_file:
+FileNotFoundError: [Errno 2] No such file or directory: 'sample_experiment/benchmark_sets/benchmark_set_prop3_2_nodes_reluval'
+Traceback (most recent call last):
+  File "scripts/create_arguments_marabou.py", line 28, in <module>
+    with open(sys.argv[4], 'w') as out_file:
+FileNotFoundError: [Errno 2] No such file or directory: 'sample_experiment/benchmark_sets/benchmark_set_prop3_2_nodes_marabou'
+Traceback (most recent call last):
+  File "scripts/create_arguments_reluval.py", line 16, in <module>
+    with open(sys.argv[4], 'w') as out_file:
+FileNotFoundError: [Errno 2] No such file or directory: 'sample_experiment/benchmark_sets/benchmark_set_prop3_4_nodes_reluval'
+Traceback (most recent call last):
+  File "scripts/create_arguments_marabou.py", line 28, in <module>
+    with open(sys.argv[4], 'w') as out_file:
+FileNotFoundError: [Errno 2] No such file or directory: 'sample_experiment/benchmark_sets/benchmark_set_prop3_4_nodes_marabou'
+Traceback (most recent call last):
+  File "scripts/create_arguments_reluval.py", line 16, in <module>
+    with open(sys.argv[4], 'w') as out_file:
+FileNotFoundError: [Errno 2] No such file or directory: 'sample_experiment/benchmark_sets/benchmark_set_prop3_8_nodes_reluval'
+Traceback (most recent call last):
+  File "scripts/create_arguments_marabou.py", line 28, in <module>
+    with open(sys.argv[4], 'w') as out_file:
+FileNotFoundError: [Errno 2] No such file or directory: 'sample_experiment/benchmark_sets/benchmark_set_prop3_8_nodes_marabou'
+benchmarking Marabou...
+Traceback (most recent call last):
+  File "scripts/run_with_runlim_marabou.py", line 8, in <module>
+    for benchmark_set in os.listdir(benchmark_sets):
+FileNotFoundError: [Errno 2] No such file or directory: 'sample_experiment/benchmark_sets/'
+benchmarking Reluval...
+Traceback (most recent call last):
+  File "scripts/run_with_runlim_reluval.py", line 8, in <module>
+    for benchmark_set in os.listdir(benchmark_sets):
+
