@@ -465,7 +465,7 @@ other has 5 <= x <= 10.
 NumTasksdecider.py implements several heuristics for deciding which
 interval to bisect. The default heuristic randomly samples points
 along each input dimension, and computes the sum of differences in
-activation patterns of pairs of adjancement points.  An activation
+activation patterns of pairs of adjacent points.  An activation
 pattern for a given input point is a bit-vector where each bit
 represents whether a neuron in the network is active or
 not. Intuitively, this heuristic computes the influence of an input
@@ -518,6 +518,8 @@ invoking
 
 After a successful compilation, the Marabou executable, marabou.elf, can be
 found under the bin directory.
+
+
 
 2. The Various Interfaces
 
@@ -654,6 +656,7 @@ found under the bin directory.
        and see that the problem becomes UNSAT.
 
 
+
 3. Using the Divide-and-Conquer mode
 
 To divide-and-conquer (DnC) mode is implemented on top of Marabou's
@@ -708,8 +711,8 @@ The only exception is the experiments reported in Figure 4, i.e. a
 comparison of Marabou and ReluVal using a high number of cores. These
 experiments were conducted on a dedicated machine with 64 cores.
 
-The paper includes several thousands benchmark runs, and so
-reproducing them all on a single machine will take a long
+The paper includes over 2000 benchmar runs, and so
+reproducing them all on a single machine, will take a long
 time. Further, while Marabou itself is deterministic, there is some
 non-determinism introduced when running it in concurrent, DnC mode;
 and the other solvers may or may not be deterministic. Thus, it will
@@ -729,14 +732,116 @@ Given these difficulties, we provide the follow three items:
    - The scripts for running each of the individual benchmarks
      reported in the paper (except for the multi-core experiment,
      which is irrelevant without the needed hardware). These can all
-     be found under the benchmarks folder, divided into sub-folders.
-     Each benchmark file is a simple executable that can be run from a
-     terminal, and will run one of the solvers on one of the input
-     queries. Of course, given the different hardware, the results
-     will likely not be an exact match to the complete logs.
+     be found under the evaluation folder, divided into sub-folders,
+     as we explain below.
 
-   - A sample small-scale scalability experiment that a reviewer could
-     run in the virtual environment. The script and instructions for
-     running this experiment can be found in the evaluation/scalability
-     folder. Depending on the machine that the reviewer has, this experiment
-     might take from 3 minutes to 10 minutes.
+
+     * marabou:
+
+     The Marabou solver (without DnC), with 45 ACAS Xu networks and 4
+     properties (45 * 4 = 180 total benchmarks). To run these, from
+     within the marabou folder, run, e.g.,
+
+        ./marabou.elf networks/ACASXU_run2a_1_1_batch_2000.nnet properties/property1.txt
+
+     To change the network or property, simply adjust the
+     arguments. To limit the run to, e.g., 1 hour, add the following
+     prefix to the previous command:
+
+        timeout --foreground --signal=SIGQUIT 1h
+
+
+     * dncmarabou:
+
+     The Marabou solver (with DnC). It can be run on the 45 ACAS Xu
+     networks and 4 properties (45 * 4 = 180 benchmarks), and also on
+     the 500 CollisionDetection benchmarks and 81 TwinStream
+     benchmarks, for a total of 761 benchmarks.
+
+     To run the ACAS Xu benchmarks, from the dncmarabou dir run:
+
+        python3 DnC.py -n networks/ACASXU_run2a_1_1_batch_2000 -q properties/property1.txt
+
+     You can change the network and property indices. (For network
+     names, do not include the .nnet or .pb suffix).
+
+     To run the CollisionDetection and TwinStream benchmarks, run
+
+        python3 DnC.py -n networks/reluBenchmark0.00491881370544s_UNSAT -q properties/property_0.txt
+
+     You can change the network path as needed.
+
+     Note that property_0.txt is intended to be used with the
+     CollisionDetection networks (file names reluBenchmark*), and the
+     TwinStream networks (file names twin_ladder*). The remaining 4
+     property files are intended to be used with the ACAS Xu networks.
+
+     To limit the run to, e.g., 1 hour, add the following prefix to
+     the previous commands:
+
+        timeout --foreground --signal=SIGQUIT 1h
+
+     Note: warnings of the form "Your CPU supports instructions that
+     this TensorFlow binary was not compiled to use: AVX2 FMA" can be
+     safely ignored.
+
+
+     * reluplex:
+
+     The Reluplex solver (without DnC), with 45 ACAS Xu networks. The
+     Reluplex executable has the property hardcoded inside, and so
+     there are 4 executables, 1 for each of the 4 properties (again
+     yielding a total of 45 * 4 = 180 benchmarks). To run these, from
+     within the reluplex folder, run, e.g.,
+
+        ./reluplex_property1.elf networks/ACASXU_run2a_1_1_batch_2000.nnet
+
+     To change the network or property, simply adjust the executable
+     or argument. To limit the run to, e.g., 1 hour, add the following
+     prefix to the previous command:
+
+        timeout --foreground --signal=SIGQUIT 1h
+
+
+     * reluval:
+
+     The ReluVal solver (without DnC), with 45 ACAS Xu networks. The 4
+     properties are hardcoded into the solver, and are controlled via
+     command line flags. To check the 4 properties, run the following
+     commands:
+
+        ./reluval.elf 1 networks/ACASXU_run2a_1_1_batch_2000.nnet 0 0 0
+        ./reluval.elf 2 networks/ACASXU_run2a_1_1_batch_2000.nnet 0 0 0
+        ./reluval.elf 3 networks/ACASXU_run2a_1_1_batch_2000.nnet 0 0 0
+        ./reluval.elf 4 networks/ACASXU_run2a_1_1_batch_2000.nnet 0 0 0
+
+     where the network file name is the only parameter that needs to
+     be changed to check each of the 4 properties on other networks.
+
+     To limit the run to, e.g., 1 hour, add the following prefix to
+     the previous commands:
+
+        timeout --foreground --signal=SIGQUIT 1h
+
+
+     * planet:
+
+     The Planet solver. It can be run on the 45 ACAS Xu
+     networks and 4 properties (45 * 4 = 180 benchmarks), and also on
+     the 500 CollisionDetection benchmarks and 81 TwinStream
+     benchmarks, for a total of 761 benchmarks.
+
+     To run the ACAS Xu benchmarks, from the planet dir run:
+
+        python3 memtime_wrapper.py ./planet.elf 8388608 3600 ./summary benchmarks/ACAS/property1/1_1.rlv
+
+     where 3600 represents a timeout value (in this case, 3600 seconds
+     = 1 hour), and "summary" is a file summarizing the solver's
+     results.  The solver will also create a more detaield "out.log"
+     file with its raw output. To change the input network+property
+     pair, change the path passed to the tool.
+
+     Similarly, for the other two sets of benchmarks run, e.g.:
+
+        python3 memtime_wrapper.py ./planet.elf 8388608 3600 ./summary benchmarks/collisionDetection/reluBenchmark0.0507640838623s_UNSAT.rlv
+        python3 memtime_wrapper.py ./planet.elf 8388608 3600 ./summary benchmarks/twinLadder/twin_ladder-10_inp-2_layers-10_width-10_margin.rlv
