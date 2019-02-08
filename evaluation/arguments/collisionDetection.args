@@ -1,8 +1,0 @@
-CollisionDetection
-DnCMarabou.zip,Planet.zip
---flags=--online-split 1 --to-factor 1.5 -w 4,
---nndir=networks/collisionDetection/nnet
-properties/property_0.txt
-1:01:00 
-cav24h
-4
