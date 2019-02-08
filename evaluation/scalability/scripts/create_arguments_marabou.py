@@ -2,12 +2,10 @@ import sys
 import os
 import math
 
-#nnets/acas/ACASXU_run2a_2_9_batch_2000.nneline-split=1 --to-factor=1.5 --to-sub=5 --initial-splits=0 -w 12"
-
 arguments = []
 
 for filename in os.listdir(sys.argv[1]):
-    tmp_address= "/home/haozewu/Projects/NN/Marabou/evaluation/scalability/mini-example/tmp/Marabou/{}_nodes/property4/".format(sys.argv[3])
+    tmp_address= "/home/haozewu/Projects/NN/Marabou/evaluation/scalability/sample_experiment/tmp/Marabou/{}_nodes/property4/".format(sys.argv[3])
     if not os.path.exists(tmp_address):
         os.makedirs(tmp_address)
     if ".nnet" in filename:

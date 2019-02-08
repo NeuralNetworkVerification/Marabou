@@ -1,0 +1,1 @@
+sample_experiment/networks/ACASXU_run2a_2_4_batch_2000 sample_experiment/property3.txt /home/haozewu/Projects/NN/Marabou/evaluation/scalability/sample_experiment/tmp/Marabou/4_nodes/property4/ACASXU_run2a_2_4_batch_2000.nnet-property3-summary-4.txt "-w 4 --initial-splits=2 --to-sub=7"

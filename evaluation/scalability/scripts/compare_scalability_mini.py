@@ -7,8 +7,8 @@ import matplotlib.pyplot as plt
 
 def main():
 
-    marabou_path = "mini-example/tmp/Marabou/"
-    reluval_path = "mini-example/tmp/ReluVal/"
+    marabou_path = "sample_experiment/tmp/Marabou/"
+    reluval_path = "sample_experiment/tmp/ReluVal/"
     cwd = os.getcwd()
     summaries_m = []
     for node in os.listdir(marabou_path):
@@ -24,7 +24,7 @@ def main():
     m_to = 0
 
     cpu_to_rt_ms = [{}, {}, {}, {}]
-    for i in range(4):
+    for i in range(4)[1:]:
         for j in range(4):
             cpu_to_rt_ms[j][int(2**i)] = []
     for line in summaries_m:
@@ -45,7 +45,7 @@ def main():
     r_to = 0
 
     cpu_to_rt_rs = [{}, {}, {}, {}]
-    for i in range(4):
+    for i in range(4)[1:]:
         for j in range(4):
             cpu_to_rt_rs[j][int(2**i)] = []
     for line in summaries_r:
@@ -72,7 +72,7 @@ def main():
         m_scale = []
         r_scale = []
         empty = True
-        for j in range(4):
+        for j in range(4)[1:]:
             x_axi_text.append("{} cpus".format(2**j))
             if len(cpu_to_rt_ms[i][int(2**j)]) > 0:
                 empty = False

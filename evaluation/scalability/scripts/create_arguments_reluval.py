@@ -4,7 +4,7 @@ import os
 arguments = []
 
 for filename in os.listdir(sys.argv[1]):
-    tmp_address= "/home/haozewu/Projects/NN/Marabou/evaluation/scalability/mini-example/tmp/ReluVal/{}_nodes/property4/".format(sys.argv[3])
+    tmp_address= "/home/haozewu/Projects/NN/Marabou/evaluation/scalability/sample_experiment/tmp/ReluVal/{}_nodes/property4/".format(sys.argv[3])
     if not os.path.exists(tmp_address):
         os.makedirs(tmp_address)
     if ".nnet" in filename:

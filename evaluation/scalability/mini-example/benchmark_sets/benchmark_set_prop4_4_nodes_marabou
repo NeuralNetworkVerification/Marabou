@@ -1,2 +1,0 @@
-mini-example/networks/ACASXU_run2a_1_8_batch_2000 mini-example/property4.txt /home/haozewu/Projects/NN/Marabou/evaluation/scalability/mini-example/tmp/Marabou/4_nodes/property4/ACASXU_run2a_1_8_batch_2000.nnet-property4-summary-4.txt "-w 4 --initial-splits=2 --to-sub=7"
-mini-example/networks/ACASXU_run2a_1_9_batch_2000 mini-example/property4.txt /home/haozewu/Projects/NN/Marabou/evaluation/scalability/mini-example/tmp/Marabou/4_nodes/property4/ACASXU_run2a_1_9_batch_2000.nnet-property4-summary-4.txt "-w 4 --initial-splits=2 --to-sub=7"
