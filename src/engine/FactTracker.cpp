@@ -62,7 +62,7 @@ void FactTracker::addSplitLevelCausingFact( Fact* fact, unsigned factID)
 
 void FactTracker::addBoundFact( unsigned var, Tightening bound )
 {
-    unsigned newFactNum = _factsLearned.size();
+    unsigned newFactNum = _factsLearned.size() + 1;
     _factFromIndex[newFactNum] = new Tightening(bound);
     addSplitLevelCausingFact( _factFromIndex[newFactNum], newFactNum );
     if ( bound._type == Tightening::LB )
@@ -83,7 +83,7 @@ void FactTracker::addBoundFact( unsigned var, Tightening bound )
 
 void FactTracker::addEquationFact( unsigned equNumber, Equation equ )
 {
-    unsigned newFactNum = _factsLearned.size();
+    unsigned newFactNum = _factsLearned.size() + 1;
     _factFromIndex[newFactNum] = new Equation(equ);
     addSplitLevelCausingFact( _factFromIndex[newFactNum], newFactNum );
     if ( !hasFactAffectingEquation( equNumber ) )
@@ -165,7 +165,7 @@ Set<unsigned> FactTracker::getExternalFactsForBound( unsigned explanationID ) co
     }
 
     fact = NULL;
-    
+
     return externalFacts;
 }
 

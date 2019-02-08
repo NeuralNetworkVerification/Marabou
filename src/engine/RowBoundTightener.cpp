@@ -507,22 +507,33 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
             // Guy: as I stated elsewhere, if I understand correctly, we are saying to the fact tracker that
             // the current bound for xi contributed to the new bound we are computing. However, maybe this is not
             // the same bound as the one we are using? I.e., th efact trackers knows a newer or an older bound?
-
-            yLowerBoundExplanations.insert( _lowerBoundExplanationIDs[xi], _lowerBoundIsInternal[xi] );
+            if ( _lowerBoundExplanationIDs[xi] )
+            {
+                yLowerBoundExplanations.insert( _lowerBoundExplanationIDs[xi], _lowerBoundIsInternal[xi] );
+            }
             
             upperBound += _ciTimesUb[i];
 
-            yUpperBoundExplanations.insert( _upperBoundExplanationIDs[xi], _upperBoundIsInternal[xi] );
+            if ( _upperBoundExplanationIDs[xi] )
+            {
+                yUpperBoundExplanations.insert( _upperBoundExplanationIDs[xi], _upperBoundIsInternal[xi] );
+            }
         }
         else if ( _ciSign[i] == NEGATIVE )
         {
             lowerBound += _ciTimesUb[i];
 
-            yLowerBoundExplanations.insert( _upperBoundExplanationIDs[xi], _upperBoundIsInternal[xi] );
+            if ( _upperBoundExplanationIDs[xi] )
+            {
+                yLowerBoundExplanations.insert( _upperBoundExplanationIDs[xi], _upperBoundIsInternal[xi] );
+            }
             
             upperBound += _ciTimesLb[i];
 
-            yUpperBoundExplanations.insert( _lowerBoundExplanationIDs[xi], _lowerBoundIsInternal[xi] );
+            if ( _lowerBoundExplanationIDs[xi] )
+            {
+                yUpperBoundExplanations.insert( _lowerBoundExplanationIDs[xi], _lowerBoundIsInternal[xi] );
+            }
         }
     }
 
@@ -640,8 +651,8 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
 
         if ( _ciSign[i] == POSITIVE )
         {
-            xiLowerBoundExplanations = yLowerBoundExplanations;
-            xiUpperBoundExplanations = yUpperBoundExplanations;
+            xiLowerBoundExplanations = yUpperBoundExplanations;
+            xiUpperBoundExplanations = yLowerBoundExplanations;
         }
 
         if ( _ciSign[i] == NEGATIVE )
@@ -651,8 +662,8 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
             lowerBound = temp;
 
             // Guy: copying lists/sets is expensive. Better do the if() first and copy just once.
-            xiLowerBoundExplanations = yUpperBoundExplanations;
-            xiUpperBoundExplanations = yLowerBoundExplanations;
+            xiLowerBoundExplanations = yLowerBoundExplanations;
+            xiUpperBoundExplanations = yUpperBoundExplanations;
         }
 
         // If a tighter bound is found, store it
@@ -662,18 +673,29 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
 
         if ( FloatUtils::lt( _lowerBounds[xi], lowerBound ) )
         {
-            if( xiLowerBoundExplanations.exists( xi ) )
+            if( xiLowerBoundExplanations.exists( _lowerBoundExplanationIDs[xi] ) &&  xiLowerBoundExplanations[_lowerBoundExplanationIDs[xi]] == _lowerBoundIsInternal[xi] )
             {
-                xiLowerBoundExplanations.erase( xi );
+                xiLowerBoundExplanations.erase( _lowerBoundExplanationIDs[xi] );
+            }
+
+            if( xiLowerBoundExplanations.exists( _upperBoundExplanationIDs[xi] ) &&  xiLowerBoundExplanations[_upperBoundExplanationIDs[xi]] == _upperBoundIsInternal[xi] )
+            {
+                xiLowerBoundExplanations.erase( _upperBoundExplanationIDs[xi] );
             }
 
             if( _ciSign[i] == POSITIVE )
             {
-                xiLowerBoundExplanations.insert( _lowerBoundExplanationIDs[y], _lowerBoundIsInternal[y] );
+                if ( _lowerBoundExplanationIDs[y] )
+                {
+                    xiLowerBoundExplanations.insert( _lowerBoundExplanationIDs[y], _lowerBoundIsInternal[y] );
+                }
             }
             else if( _ciSign[i] == NEGATIVE )
             {
-                xiLowerBoundExplanations.insert( _upperBoundExplanationIDs[y], _upperBoundIsInternal[y] );
+                if ( _upperBoundExplanationIDs[y] )
+                {
+                    xiLowerBoundExplanations.insert( _upperBoundExplanationIDs[y], _upperBoundIsInternal[y] );
+                }
             }
 
             _lowerBounds[xi] = lowerBound;
@@ -697,18 +719,29 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
 
         if ( FloatUtils::gt( _upperBounds[xi], upperBound ) )
         {
-            if( xiUpperBoundExplanations.exists( xi ) )
+            if( xiUpperBoundExplanations.exists( _lowerBoundExplanationIDs[xi] ) && xiUpperBoundExplanations[_lowerBoundExplanationIDs[xi]] == _lowerBoundIsInternal[xi] )
             {
-                xiUpperBoundExplanations.erase( xi );
+                xiUpperBoundExplanations.erase( _lowerBoundExplanationIDs[xi] );
+            }
+
+            if( xiUpperBoundExplanations.exists( _upperBoundExplanationIDs[xi] ) && xiUpperBoundExplanations[_upperBoundExplanationIDs[xi]] == _upperBoundIsInternal[xi] )
+            {
+                xiUpperBoundExplanations.erase( _upperBoundExplanationIDs[xi] );
             }
             
             if( _ciSign[i] == POSITIVE )
             {
-                xiUpperBoundExplanations.insert( _upperBoundExplanationIDs[y], _upperBoundIsInternal[y] );
+                if ( _upperBoundExplanationIDs[y] )
+                {
+                    xiUpperBoundExplanations.insert( _upperBoundExplanationIDs[y], _upperBoundIsInternal[y] );
+                }
             }
             else if( _ciSign[i] == NEGATIVE )
             {
-                xiUpperBoundExplanations.insert( _lowerBoundExplanationIDs[y], _lowerBoundIsInternal[y] );
+                if ( _lowerBoundExplanationIDs[y] )
+                {
+                    xiUpperBoundExplanations.insert( _lowerBoundExplanationIDs[y], _lowerBoundIsInternal[y] );
+                }
             }
 
             _upperBounds[xi] = upperBound;
@@ -853,18 +886,30 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
         if ( _ciSign[i] == NEGATIVE )
         {
             auxLb -= _ciTimesLb[i];
-            tempLowerBoundExplanations.insert( _lowerBoundExplanationIDs[i], _lowerBoundIsInternal[i] );
+            if ( _lowerBoundExplanationIDs[i] )
+            {
+                tempLowerBoundExplanations.insert( _lowerBoundExplanationIDs[i], _lowerBoundIsInternal[i] );
+            }
 
             auxUb -= _ciTimesUb[i];
-            tempUpperBoundExplanations.insert( _upperBoundExplanationIDs[i], _upperBoundIsInternal[i] );
+            if ( _upperBoundExplanationIDs[i] )
+            {
+                tempUpperBoundExplanations.insert( _upperBoundExplanationIDs[i], _upperBoundIsInternal[i] );
+            }
         }
         else if ( _ciSign[i] == POSITIVE )
         {
             auxLb -= _ciTimesUb[i];
-            tempLowerBoundExplanations.insert( _upperBoundExplanationIDs[i], _upperBoundIsInternal[i] );
+            if ( _upperBoundExplanationIDs[i] )
+            {
+                tempLowerBoundExplanations.insert( _upperBoundExplanationIDs[i], _upperBoundIsInternal[i] );
+            }
 
             auxUb -= _ciTimesLb[i];
-            tempUpperBoundExplanations.insert( _lowerBoundExplanationIDs[i], _lowerBoundIsInternal[i] );
+            if ( _lowerBoundExplanationIDs[i] )
+            {
+                tempUpperBoundExplanations.insert( _lowerBoundExplanationIDs[i], _lowerBoundIsInternal[i] );
+            }
         }
     }
 
@@ -917,9 +962,14 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
         // If a tighter bound is found, store it
         if ( FloatUtils::lt( _lowerBounds[index], lowerBound ) )
         {
-            if ( iLowerBoundExplanations.exists( index ) )
+            if ( iLowerBoundExplanations.exists( _lowerBoundExplanationIDs[index] ) && iLowerBoundExplanations[_lowerBoundExplanationIDs[index]] == _lowerBoundIsInternal[index] )
             {
-                iLowerBoundExplanations.erase( index );
+                iLowerBoundExplanations.erase( _lowerBoundExplanationIDs[index] );
+            }
+
+            if ( iLowerBoundExplanations.exists( _upperBoundExplanationIDs[index] ) && iLowerBoundExplanations[_upperBoundExplanationIDs[index]] == _upperBoundIsInternal[index] )
+            {
+                iLowerBoundExplanations.erase( _upperBoundExplanationIDs[index] );
             }
 
             _lowerBounds[index] = lowerBound;
@@ -943,9 +993,13 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
 
         if ( FloatUtils::gt( _upperBounds[index], upperBound ) )
         {
-            if ( iUpperBoundExplanations.exists( index ) )
+            if ( iUpperBoundExplanations.exists( _lowerBoundExplanationIDs[index] ) && iUpperBoundExplanations[_lowerBoundExplanationIDs[index]] == _lowerBoundIsInternal[index] )
             {
-                iUpperBoundExplanations.erase( index );
+                iUpperBoundExplanations.erase( _lowerBoundExplanationIDs[index] );
+            }
+            if ( iUpperBoundExplanations.exists( _upperBoundExplanationIDs[index] ) && iUpperBoundExplanations[_upperBoundExplanationIDs[index]] == _upperBoundIsInternal[index] )
+            {
+                iUpperBoundExplanations.erase( _upperBoundExplanationIDs[index] );
             }
 
             _upperBounds[index] = upperBound;

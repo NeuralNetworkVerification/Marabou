@@ -16,6 +16,7 @@
 #include <cxxtest/TestSuite.h>
 
 #include "MockTableau.h"
+#include "FactTracker.h"
 #include "RowBoundTightener.h"
 
 class MockForRowBoundTightener
@@ -48,7 +49,7 @@ public:
         tableau->setDimensions( 2, 5 );
 
         // Current bounds:
-        //  0 <= x0 <= 0
+        //  -200 <= x0 <= 200
         //    5  <= x1 <= 10
         //    -2 <= x2 <= 3
         //  -100 <= x4 <= 100
@@ -377,6 +378,122 @@ public:
         TS_ASSERT( FloatUtils::areEqual( it->_value, 2 ) );
         TS_ASSERT_EQUALS( it->_type, Tightening::UB );
     }
+
+    void test_examine_inverted_row_bounds_tightened_explanation()
+    {
+        FactTracker* factTracker = new FactTracker();
+
+        RowBoundTightener tightener( *tableau );
+
+        tightener.setFactTracker( factTracker );
+
+        tableau->setDimensions( 2, 5 );
+
+        // Add external facts for x2 >= -2, x2 <= 3, x4 >= -100, x4 <= 100
+        Tightening x2_lb( 2, -2, Tightening::LB );
+        Tightening x2_ub( 2, 3, Tightening::UB );
+        Tightening x4_lb( 4, -100, Tightening::LB );
+        Tightening x4_ub( 4, 100, Tightening::UB );
+
+        factTracker->addBoundFact( 2, x2_lb );
+        factTracker->addBoundFact( 2, x2_ub );
+        factTracker->addBoundFact( 4, x4_lb );
+        factTracker->addBoundFact( 4, x4_ub );
+
+        // Current bounds:
+        //  -200 <= x0 <= 200
+        //    5  <= x1 <= 10
+        //    -2 <= x2 <= 3
+        //  -100 <= x4 <= 100
+        tableau->setLowerBound( 0, -200 );
+        tableau->setUpperBound( 0, 200 );
+        tableau->setLowerBound( 1, 5 );
+        tableau->setUpperBound( 1, 10 );
+        tableau->setLowerBound( 2, -2 );
+        tableau->setUpperBound( 2, 3 );
+        tableau->setLowerBound( 3, -5 );
+        tableau->setUpperBound( 3, 5 );
+        tableau->setLowerBound( 4, -100 );
+        tableau->setUpperBound( 4, 100 );
+
+        tightener.setDimensions();
+
+        TableauRow row( 3 );
+        // 1 - x0 - x1 + 2x2
+        row._row[0] = TableauRow::Entry( 0, -1 );
+        row._row[1] = TableauRow::Entry( 1, -1 );
+        row._row[2] = TableauRow::Entry( 2, 2 );
+        row._scalar = 1;
+        row._lhs = 4;
+
+        tableau->nextPivotRow = &row;
+
+        // 1 - x0 - x1 + 2x2 = x4 (pre pivot)
+        // x0 entering, x4 leaving
+        // x0 = 1 - x1 + 2 x2 - x4
+
+        TS_ASSERT_THROWS_NOTHING( tightener.examinePivotRow() );
+
+        List<Tightening> tightenings;
+        TS_ASSERT_THROWS_NOTHING( tightener.getRowTightenings( tightenings ) );
+
+        // Lower and upper bounds should have been tightened
+        TS_ASSERT_EQUALS( tightenings.size(), 2U );
+
+        auto lower = tightenings.begin();
+        while ( ( lower != tightenings.end() ) && !( ( lower->_variable == 0 ) && ( lower->_type == Tightening::LB ) ) )
+            ++lower;
+        TS_ASSERT( lower != tightenings.end() );
+
+        auto upper = tightenings.begin();
+        while ( ( upper != tightenings.end() ) && !( ( upper->_variable == 0 ) && ( upper->_type == Tightening::UB ) ) )
+            ++upper;
+        TS_ASSERT( upper != tightenings.end() );
+
+        // LB -> 1 - 10 - 4 -100
+        // UB -> 1 - 5 + 6 + 100
+        TS_ASSERT_EQUALS( lower->_value, -113 );
+        TS_ASSERT_EQUALS( upper->_value, 102 );
+
+        // LB should have explanations 1, 4
+        List<unsigned> lowerBoundExplanations = lower->getExplanations();
+        List<bool> lowerBoundExplanationIsInternal = lower->getExplanationIsInternal();
+        Set<unsigned> lowerBoundExplanationSet;
+
+        for ( bool explanationIsInternal : lowerBoundExplanationIsInternal )
+        {
+            TS_ASSERT_EQUALS( explanationIsInternal, false );
+        }
+
+        for ( unsigned explanation : lowerBoundExplanations )
+        {
+            lowerBoundExplanationSet.insert( explanation );
+        }
+
+        TS_ASSERT_EQUALS( lowerBoundExplanationSet.size(), 2U );
+        TS_ASSERT( lowerBoundExplanationSet.exists( 1U ) && lowerBoundExplanationSet.exists( 4U ) );
+
+        // UB should have explanations 2, 3 
+        List<unsigned> upperBoundExplanations = upper->getExplanations();
+        List<bool> upperBoundExplanationIsInternal = upper->getExplanationIsInternal();
+        Set<unsigned> upperBoundExplanationSet;
+
+        for ( bool explanationIsInternal : upperBoundExplanationIsInternal )
+        {
+            TS_ASSERT_EQUALS( explanationIsInternal, false );
+        }
+
+        for ( unsigned explanation: upperBoundExplanations )
+        {
+            upperBoundExplanationSet.insert( explanation );
+        }
+
+        TS_ASSERT_EQUALS( upperBoundExplanationSet.size(), 2U );
+        TS_ASSERT( upperBoundExplanationSet.exists( 2U ) && upperBoundExplanationSet.exists( 3U ) );
+
+        delete factTracker;
+        factTracker = NULL;
+    }    
 };
 
 //
