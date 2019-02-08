@@ -81,7 +81,7 @@ To generate the scalability plot similar to the one in the paper call
 
 Since it is unrealistic to reproduce the large-scale experiment that we conducted in a virtual
 machine environment, we provide the scripts to run a small-scale experiment. Concretely, we ask
-ReluVal and Marabou to check property 3 on only 2 networks, with an increasing amount of spawned
+ReluVal and Marabou to check property 3 on only 1 network, with an increasing amount of spawned
 threads. The two networks are located in sample_experiment/networks/, the path to
 the property file is sample_experiment/property3.txt. Due to the different name of the created log file,
 we use a slightly different version of parse_result.py and compare_scalability.py, namely

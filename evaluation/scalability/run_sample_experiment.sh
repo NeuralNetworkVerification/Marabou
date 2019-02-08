@@ -1,3 +1,5 @@
+rm -rf sample_experiment/tmp/ sample_experiment/benchmark_sets/*
+
 # Create benchmark files
 for j in 2 4 8
 do

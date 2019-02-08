@@ -716,7 +716,7 @@ and the other solvers may or may not be deterministic. Thus, it will
 be quite difficult for a reviewer to reproduce the reported results
 precisely.
 
-Given these difficulties, we provide the follow two items:
+Given these difficulties, we provide the follow three items:
 
    - Complete logs, from our cluster runs, for each of the reported
      experiments. These can be found under the complete_logs folder,
@@ -734,3 +734,9 @@ Given these difficulties, we provide the follow two items:
      terminal, and will run one of the solvers on one of the input
      queries. Of course, given the different hardware, the results
      will likely not be an exact match to the complete logs.
+
+   - A sample small-scale scalability experiment that a reviewer could
+     run in the virtual environment. The script and instructions for
+     running this experiment can be found in the evaluation/scalability
+     folder. Depending on the machine that the reviewer has, this experiment
+     might take from 3 minutes to 10 minutes.

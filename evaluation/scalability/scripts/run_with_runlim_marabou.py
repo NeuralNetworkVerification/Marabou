@@ -15,7 +15,6 @@ for benchmark_set in os.listdir(benchmark_sets):
         i = 1
         for line in in_file.readlines():
             arg1 = line.split()[0]
-            print ("Checking {}".format(arg1.split("/")[1]))
             arg2 = line.split()[1]
             arg3 = line.split()[2]
             arg4 = line.split('"')[1]
