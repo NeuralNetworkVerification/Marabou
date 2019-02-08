@@ -719,7 +719,7 @@ and the other solvers may or may not be deterministic. Thus, it will
 be quite difficult for a reviewer to reproduce the reported results
 precisely.
 
-Given these difficulties, we provide the follow two items:
+Given these difficulties, we provide the follow three items:
 
    - Complete logs, from our cluster runs, for each of the reported
      experiments. These can be found under the complete_logs folder,

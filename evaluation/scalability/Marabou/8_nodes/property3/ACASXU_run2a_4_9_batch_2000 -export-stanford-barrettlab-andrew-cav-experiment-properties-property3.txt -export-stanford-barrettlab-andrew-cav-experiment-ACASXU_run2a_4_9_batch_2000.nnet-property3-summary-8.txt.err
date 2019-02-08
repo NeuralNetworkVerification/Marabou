@@ -1,0 +1,56 @@
+[runlim] version:		1.10fixed
+[runlim] time limit:		57600 seconds
+[runlim] real time limit:	311040000 seconds
+[runlim] space limit:		80000 MB
+[runlim] argv[0]:		./run.sh
+[runlim] argv[1]:		/export/stanford/barrettlab/andrew-cav-experiment/MStar/acas/ACASXU_run2a_4_9_batch_2000
+[runlim] argv[2]:		/export/stanford/barrettlab/andrew-cav-experiment/properties/property3.txt
+[runlim] argv[3]:		/export/stanford/barrettlab/andrew-cav-experiment/ACASXU_run2a_4_9_batch_2000.nnet-property3-summary-8.txt
+[runlim] argv[4]:		-w 8 --initial-splits=3 --to-sub=9
+[runlim] start:			Tue Feb  5 14:24:01 2019
+[runlim] main pid:		380879
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+2019-02-05 14:24:05.116032: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+[runlim] sample:		42.8 time, 10.7 real, 541.6 MB
+[runlim] sample:		101.8 time, 20.7 real, 810.5 MB
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+2019-02-05 14:24:28.986203: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+2019-02-05 14:24:28.996176: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+2019-02-05 14:24:29.000733: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+2019-02-05 14:24:29.009280: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+2019-02-05 14:24:29.014017: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+[runlim] sample:		147.5 time, 32.3 real, 1880.8 MB
+[runlim] sample:		260.6 time, 46.7 real, 1975.5 MB
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+2019-02-05 14:24:48.764541: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+2019-02-05 14:24:48.774833: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+[runlim] sample:		365.2 time, 59.8 real, 2436.0 MB
+[runlim] end:			Tue Feb  5 14:25:08 2019
+[runlim] status:		ok
+[runlim] result:		0
+[runlim] children:		9193
+[runlim] real:			67.93 seconds
+[runlim] time:			407.91 seconds
+[runlim] space:			2481.8 MB
+[runlim] samples:		580

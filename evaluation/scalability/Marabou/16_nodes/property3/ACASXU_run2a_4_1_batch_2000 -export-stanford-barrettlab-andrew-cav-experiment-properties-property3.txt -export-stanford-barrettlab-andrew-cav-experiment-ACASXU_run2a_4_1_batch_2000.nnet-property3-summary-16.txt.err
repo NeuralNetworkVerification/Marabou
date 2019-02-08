@@ -1,0 +1,86 @@
+[runlim] version:		1.10fixed
+[runlim] time limit:		115200 seconds
+[runlim] real time limit:	311040000 seconds
+[runlim] space limit:		80000 MB
+[runlim] argv[0]:		./run.sh
+[runlim] argv[1]:		/export/stanford/barrettlab/andrew-cav-experiment/MStar/acas/ACASXU_run2a_4_1_batch_2000
+[runlim] argv[2]:		/export/stanford/barrettlab/andrew-cav-experiment/properties/property3.txt
+[runlim] argv[3]:		/export/stanford/barrettlab/andrew-cav-experiment/ACASXU_run2a_4_1_batch_2000.nnet-property3-summary-16.txt
+[runlim] argv[4]:		-w 16 --initial-splits=4 --to-sub=10
+[runlim] start:			Tue Feb  5 13:25:09 2019
+[runlim] main pid:		44539
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+2019-02-05 13:25:11.673395: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+[runlim] sample:		93.8 time, 11.2 real, 1024.2 MB
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+2019-02-05 13:25:29.504937: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+2019-02-05 13:25:29.789879: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+2019-02-05 13:25:29.822377: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+2019-02-05 13:25:29.973976: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+[runlim] sample:		220.8 time, 21.3 real, 2246.9 MB
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+2019-02-05 13:25:30.415270: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+2019-02-05 13:25:30.448212: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+2019-02-05 13:25:30.495128: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+2019-02-05 13:25:30.670475: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+2019-02-05 13:25:30.786267: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+2019-02-05 13:25:30.891362: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+2019-02-05 13:25:30.925261: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+2019-02-05 13:25:31.247584: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+[runlim] sample:		579.0 time, 44.0 real, 3665.7 MB
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+2019-02-05 13:25:55.970142: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+[runlim] sample:		922.3 time, 65.6 real, 3968.3 MB
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+2019-02-05 13:26:18.900514: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+[runlim] sample:		1156.5 time, 80.2 real, 4276.0 MB
+[runlim] sample:		1251.6 time, 90.2 real, 4055.5 MB
+[runlim] sample:		1276.4 time, 100.2 real, 4015.6 MB
+[runlim] end:			Tue Feb  5 13:26:52 2019
+[runlim] status:		ok
+[runlim] result:		0
+[runlim] children:		22912
+[runlim] real:			103.48 seconds
+[runlim] time:			1284.38 seconds
+[runlim] space:			4309.6 MB
+[runlim] samples:		733

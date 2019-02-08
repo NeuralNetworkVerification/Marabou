@@ -1,0 +1,196 @@
+[runlim] version:		1.10fixed
+[runlim] time limit:		28800 seconds
+[runlim] real time limit:	311040000 seconds
+[runlim] space limit:		80000 MB
+[runlim] argv[0]:		./run.sh
+[runlim] argv[1]:		/export/stanford/barrettlab/andrew-cav-experiment/MStar/acas/ACASXU_run2a_1_1_batch_2000
+[runlim] argv[2]:		/export/stanford/barrettlab/andrew-cav-experiment/properties/property3.txt
+[runlim] argv[3]:		/export/stanford/barrettlab/andrew-cav-experiment/ACASXU_run2a_1_1_batch_2000.nnet-property3-summary-4.txt
+[runlim] argv[4]:		-w 4 --initial-splits=2 --to-sub=7
+[runlim] start:			Tue Feb  5 14:22:05 2019
+[runlim] main pid:		37937
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+2019-02-05 14:22:07.130357: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+[runlim] sample:		42.0 time, 14.5 real, 353.7 MB
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+2019-02-05 14:22:22.842504: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+2019-02-05 14:22:22.930095: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+2019-02-05 14:22:23.039078: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+2019-02-05 14:22:40.651324: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+[runlim] sample:		233.4 time, 66.9 real, 1348.1 MB
+[runlim] sample:		464.4 time, 125.0 real, 1483.4 MB
+[runlim] sample:		664.6 time, 175.3 real, 1444.0 MB
+[runlim] sample:		854.7 time, 223.0 real, 1417.9 MB
+[runlim] sample:		1025.5 time, 266.0 real, 1352.2 MB
+[runlim] sample:		1187.9 time, 306.7 real, 1457.0 MB
+[runlim] sample:		1349.7 time, 347.1 real, 1465.6 MB
+[runlim] sample:		1488.7 time, 382.0 real, 1552.5 MB
+[runlim] sample:		1598.1 time, 409.5 real, 1498.8 MB
+[runlim] sample:		1677.7 time, 429.6 real, 1497.1 MB
+[runlim] sample:		1743.0 time, 445.8 real, 1563.2 MB
+[runlim] sample:		1798.4 time, 459.6 real, 1566.3 MB
+[runlim] sample:		1838.7 time, 469.7 real, 1477.1 MB
+[runlim] sample:		1878.6 time, 479.7 real, 1477.9 MB
+[runlim] sample:		1918.4 time, 489.7 real, 1537.8 MB
+[runlim] sample:		1958.3 time, 499.7 real, 1465.7 MB
+[runlim] sample:		1998.2 time, 509.7 real, 1547.2 MB
+[runlim] sample:		2038.2 time, 519.7 real, 1569.9 MB
+[runlim] sample:		2078.1 time, 529.7 real, 1531.7 MB
+[runlim] sample:		2118.0 time, 539.7 real, 1510.9 MB
+[runlim] sample:		2157.9 time, 549.7 real, 1593.4 MB
+[runlim] sample:		2197.8 time, 559.7 real, 1487.2 MB
+[runlim] sample:		2237.7 time, 569.7 real, 1604.2 MB
+[runlim] sample:		2277.6 time, 579.7 real, 1495.7 MB
+[runlim] sample:		2317.6 time, 589.7 real, 1643.1 MB
+[runlim] sample:		2357.5 time, 599.7 real, 1495.4 MB
+[runlim] sample:		2397.4 time, 609.7 real, 1499.3 MB
+[runlim] sample:		2437.3 time, 619.7 real, 1708.5 MB
+[runlim] sample:		2477.3 time, 629.7 real, 1512.1 MB
+[runlim] sample:		2517.2 time, 639.7 real, 1508.0 MB
+[runlim] sample:		2557.1 time, 649.7 real, 1665.1 MB
+[runlim] sample:		2597.0 time, 659.7 real, 1487.9 MB
+[runlim] sample:		2636.9 time, 669.7 real, 1513.6 MB
+[runlim] sample:		2676.9 time, 679.7 real, 1490.7 MB
+[runlim] sample:		2716.8 time, 689.7 real, 1499.0 MB
+[runlim] sample:		2756.7 time, 699.7 real, 1579.9 MB
+[runlim] sample:		2796.6 time, 709.7 real, 1618.5 MB
+[runlim] sample:		2836.5 time, 719.7 real, 1672.9 MB
+[runlim] sample:		2876.5 time, 729.7 real, 1576.1 MB
+[runlim] sample:		2916.4 time, 739.7 real, 1552.4 MB
+[runlim] sample:		2956.3 time, 749.7 real, 1665.2 MB
+[runlim] sample:		2996.2 time, 759.7 real, 1706.6 MB
+[runlim] sample:		3036.1 time, 769.7 real, 1667.4 MB
+[runlim] sample:		3076.1 time, 779.7 real, 1586.3 MB
+[runlim] sample:		3116.0 time, 789.7 real, 1592.7 MB
+[runlim] sample:		3155.9 time, 799.7 real, 1576.6 MB
+[runlim] sample:		3195.9 time, 809.7 real, 1599.8 MB
+[runlim] sample:		3235.8 time, 819.7 real, 1624.4 MB
+[runlim] sample:		3275.7 time, 829.7 real, 1530.2 MB
+[runlim] sample:		3315.6 time, 839.7 real, 1569.3 MB
+[runlim] sample:		3355.5 time, 849.7 real, 1665.8 MB
+[runlim] sample:		3395.4 time, 859.7 real, 1581.5 MB
+[runlim] sample:		3435.3 time, 869.7 real, 1527.2 MB
+[runlim] sample:		3475.2 time, 879.7 real, 1642.0 MB
+[runlim] sample:		3515.2 time, 889.7 real, 1689.0 MB
+[runlim] sample:		3555.1 time, 899.7 real, 1666.4 MB
+[runlim] sample:		3595.1 time, 909.7 real, 1561.0 MB
+[runlim] sample:		3634.9 time, 919.7 real, 1617.7 MB
+[runlim] sample:		3674.8 time, 929.7 real, 1589.3 MB
+[runlim] sample:		3714.8 time, 939.7 real, 1616.0 MB
+[runlim] sample:		3754.7 time, 949.7 real, 1580.7 MB
+[runlim] sample:		3794.6 time, 959.7 real, 1542.8 MB
+[runlim] sample:		3834.5 time, 969.7 real, 1573.3 MB
+[runlim] sample:		3874.4 time, 979.7 real, 1632.5 MB
+[runlim] sample:		3914.3 time, 989.7 real, 1778.2 MB
+[runlim] sample:		3954.3 time, 999.7 real, 1720.6 MB
+[runlim] sample:		3994.2 time, 1009.7 real, 1585.9 MB
+[runlim] sample:		4034.1 time, 1019.7 real, 1554.2 MB
+[runlim] sample:		4074.0 time, 1029.7 real, 1635.4 MB
+[runlim] sample:		4113.9 time, 1039.7 real, 1579.1 MB
+[runlim] sample:		4153.8 time, 1049.7 real, 1628.9 MB
+[runlim] sample:		4193.8 time, 1059.7 real, 1619.3 MB
+[runlim] sample:		4233.7 time, 1069.7 real, 1666.7 MB
+[runlim] sample:		4273.6 time, 1079.7 real, 1639.4 MB
+[runlim] sample:		4313.5 time, 1089.7 real, 1668.0 MB
+[runlim] sample:		4353.4 time, 1099.7 real, 1545.1 MB
+[runlim] sample:		4393.3 time, 1109.7 real, 1524.8 MB
+[runlim] sample:		4433.3 time, 1119.7 real, 1663.8 MB
+[runlim] sample:		4473.2 time, 1129.7 real, 1630.8 MB
+[runlim] sample:		4513.2 time, 1139.7 real, 1669.0 MB
+[runlim] sample:		4553.1 time, 1149.7 real, 1653.2 MB
+[runlim] sample:		4593.0 time, 1159.7 real, 1645.9 MB
+[runlim] sample:		4633.0 time, 1169.7 real, 1567.0 MB
+[runlim] sample:		4672.9 time, 1179.7 real, 1550.4 MB
+[runlim] sample:		4712.8 time, 1189.7 real, 1638.4 MB
+[runlim] sample:		4752.7 time, 1199.7 real, 1599.8 MB
+[runlim] sample:		4792.6 time, 1209.7 real, 1592.5 MB
+[runlim] sample:		4832.5 time, 1219.7 real, 1578.0 MB
+[runlim] sample:		4872.5 time, 1229.7 real, 1651.2 MB
+[runlim] sample:		4912.4 time, 1239.7 real, 1630.9 MB
+[runlim] sample:		4952.4 time, 1249.7 real, 1634.9 MB
+[runlim] sample:		4992.3 time, 1259.7 real, 1658.9 MB
+[runlim] sample:		5032.2 time, 1269.7 real, 1624.1 MB
+[runlim] sample:		5072.1 time, 1279.7 real, 1621.6 MB
+[runlim] sample:		5112.1 time, 1289.7 real, 1592.7 MB
+[runlim] sample:		5152.0 time, 1299.7 real, 1669.5 MB
+[runlim] sample:		5191.9 time, 1309.7 real, 1593.2 MB
+[runlim] sample:		5231.9 time, 1319.7 real, 1643.9 MB
+[runlim] sample:		5271.8 time, 1329.7 real, 1675.4 MB
+[runlim] sample:		5311.7 time, 1339.7 real, 1586.5 MB
+[runlim] sample:		5351.6 time, 1349.7 real, 1614.1 MB
+[runlim] sample:		5391.5 time, 1359.7 real, 1693.4 MB
+[runlim] sample:		5431.5 time, 1369.7 real, 1705.8 MB
+[runlim] sample:		5471.4 time, 1379.7 real, 1576.6 MB
+[runlim] sample:		5511.3 time, 1389.7 real, 1631.9 MB
+[runlim] sample:		5551.2 time, 1399.7 real, 1572.2 MB
+[runlim] sample:		5591.1 time, 1409.7 real, 1636.9 MB
+[runlim] sample:		5631.1 time, 1419.7 real, 1588.3 MB
+[runlim] sample:		5671.0 time, 1429.7 real, 1602.5 MB
+[runlim] sample:		5710.9 time, 1439.7 real, 1599.3 MB
+[runlim] sample:		5750.8 time, 1449.7 real, 1651.1 MB
+[runlim] sample:		5790.7 time, 1459.7 real, 1597.8 MB
+[runlim] sample:		5830.7 time, 1469.7 real, 1647.6 MB
+[runlim] sample:		5870.6 time, 1479.7 real, 1667.4 MB
+[runlim] sample:		5910.5 time, 1489.7 real, 1716.4 MB
+[runlim] sample:		5950.4 time, 1499.7 real, 1673.6 MB
+[runlim] sample:		5990.4 time, 1509.7 real, 1608.8 MB
+[runlim] sample:		6030.3 time, 1519.7 real, 1650.9 MB
+[runlim] sample:		6070.2 time, 1529.7 real, 1634.9 MB
+[runlim] sample:		6110.2 time, 1539.7 real, 1724.6 MB
+[runlim] sample:		6150.1 time, 1549.7 real, 1597.1 MB
+[runlim] sample:		6190.0 time, 1559.7 real, 1586.9 MB
+[runlim] sample:		6229.9 time, 1569.7 real, 1591.8 MB
+[runlim] sample:		6269.8 time, 1579.7 real, 1636.6 MB
+[runlim] sample:		6309.8 time, 1589.7 real, 1586.9 MB
+[runlim] sample:		6349.7 time, 1599.7 real, 1637.8 MB
+[runlim] sample:		6389.6 time, 1609.7 real, 1763.5 MB
+[runlim] sample:		6429.6 time, 1619.7 real, 1674.7 MB
+[runlim] sample:		6469.5 time, 1629.7 real, 1631.7 MB
+[runlim] sample:		6509.5 time, 1639.7 real, 1605.7 MB
+[runlim] sample:		6549.4 time, 1649.7 real, 1597.1 MB
+[runlim] sample:		6589.3 time, 1659.7 real, 1738.5 MB
+[runlim] sample:		6629.2 time, 1669.7 real, 1691.3 MB
+[runlim] sample:		6669.2 time, 1679.7 real, 1586.3 MB
+[runlim] sample:		6709.1 time, 1689.7 real, 1643.3 MB
+[runlim] sample:		6749.0 time, 1699.7 real, 1600.2 MB
+[runlim] sample:		6788.9 time, 1709.7 real, 1593.1 MB
+[runlim] sample:		6828.8 time, 1719.7 real, 1610.5 MB
+[runlim] sample:		6868.8 time, 1729.7 real, 1613.8 MB
+[runlim] sample:		6908.7 time, 1739.7 real, 1725.0 MB
+[runlim] sample:		6948.6 time, 1749.7 real, 1662.4 MB
+[runlim] sample:		6988.6 time, 1759.7 real, 1673.2 MB
+[runlim] sample:		7029.5 time, 1769.7 real, 1669.7 MB
+[runlim] sample:		7070.9 time, 1779.7 real, 1662.6 MB
+[runlim] sample:		7110.8 time, 1789.7 real, 1724.6 MB
+[runlim] sample:		7150.7 time, 1799.7 real, 1720.9 MB
+[runlim] sample:		7190.7 time, 1809.7 real, 1725.5 MB
+[runlim] sample:		7230.6 time, 1819.7 real, 1739.4 MB
+[runlim] sample:		7270.5 time, 1829.7 real, 1667.1 MB
+[runlim] sample:		7310.4 time, 1839.7 real, 1656.6 MB
+[runlim] sample:		7350.4 time, 1849.7 real, 1731.4 MB
+[runlim] sample:		7390.6 time, 1859.7 real, 1774.5 MB
+[runlim] sample:		7433.1 time, 1869.7 real, 1775.0 MB
+[runlim] sample:		7474.5 time, 1879.7 real, 1734.3 MB
+[runlim] sample:		7514.6 time, 1889.7 real, 1662.3 MB
+[runlim] sample:		7555.9 time, 1899.7 real, 1694.5 MB
+[runlim] end:			Tue Feb  5 14:53:52 2019
+[runlim] status:		ok
+[runlim] result:		0
+[runlim] children:		141819
+[runlim] real:			1907.47 seconds
+[runlim] time:			7580.47 seconds
+[runlim] space:			1811.7 MB
+[runlim] samples:		15778

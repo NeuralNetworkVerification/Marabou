@@ -1,0 +1,6 @@
+c host: vsl068
+c start: Tue Feb  5 15:39:15 PST 2019
+c benchmark: /export/stanford/barrettlab/andrew-cav-experiment_reluVal/nnets/acas/ACASXU_run2a_4_8_batch_2000.nnet /export/stanford/barrettlab/andrew-cav-experiment_reluVal/ACASXU_run2a_4_8_batch_2000.nnet-prop3-summary-32.txt
+c solver: ./run_template.sh
+c solver options: 
+c done

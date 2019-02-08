@@ -1,0 +1,24 @@
+[runlim] version:		1.10fixed
+[runlim] time limit:		230400 seconds
+[runlim] real time limit:	311040000 seconds
+[runlim] space limit:		80000 MB
+[runlim] argv[0]:		./run.sh
+[runlim] argv[1]:		/export/stanford/barrettlab/andrew-cav-experiment/MStar/acas/ACASXU_run2a_1_9_batch_2000
+[runlim] argv[2]:		/export/stanford/barrettlab/andrew-cav-experiment/properties/property3.txt
+[runlim] argv[3]:		/export/stanford/barrettlab/andrew-cav-experiment/ACASXU_run2a_1_9_batch_2000.nnet-property3-summary-32.txt
+[runlim] argv[4]:		-w 32 --initial-splits=5 --to-sub=13
+[runlim] start:			Tue Feb  5 13:26:14 2019
+[runlim] main pid:		368341
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+2019-02-05 13:26:18.587685: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+[runlim] sample:		74.4 time, 10.4 real, 2005.9 MB
+[runlim] end:			Tue Feb  5 13:26:28 2019
+[runlim] status:		ok
+[runlim] result:		0
+[runlim] children:		3962
+[runlim] real:			14.32 seconds
+[runlim] time:			170.13 seconds
+[runlim] space:			2039.4 MB
+[runlim] samples:		139

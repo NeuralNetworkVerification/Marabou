@@ -1,0 +1,11 @@
+c host: vsl084
+c start: Tue Feb  5 13:26:14 PST 2019
+c benchmark: /export/stanford/barrettlab/andrew-cav-experiment/MStar/acas/ACASXU_run2a_4_5_batch_2000 /export/stanford/barrettlab/andrew-cav-experiment/properties/property3.txt /export/stanford/barrettlab/andrew-cav-experiment/ACASXU_run2a_4_5_batch_2000.nnet-property3-summary-32.txt
+c solver: ./run.sh
+c solver options: -w 32 --initial-splits=5 --to-sub=13
+
+UNSAT
+Number of layers: 8. Input layer size: 5. Output layer size: 5. Number of ReLUs: 300
+Total number of variables: 610
+Property: /export/stanford/barrettlab/andrew-cav-experiment/properties/property3.txt
+c done

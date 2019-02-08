@@ -1,0 +1,222 @@
+[runlim] version:		1.10fixed
+[runlim] time limit:		115200 seconds
+[runlim] real time limit:	311040000 seconds
+[runlim] space limit:		80000 MB
+[runlim] argv[0]:		./run.sh
+[runlim] argv[1]:		/export/stanford/barrettlab/andrew-cav-experiment/MStar/acas/ACASXU_run2a_1_2_batch_2000
+[runlim] argv[2]:		/export/stanford/barrettlab/andrew-cav-experiment/properties/property3.txt
+[runlim] argv[3]:		/export/stanford/barrettlab/andrew-cav-experiment/ACASXU_run2a_1_2_batch_2000.nnet-property3-summary-16.txt
+[runlim] argv[4]:		-w 16 --initial-splits=4 --to-sub=10
+[runlim] start:			Tue Feb  5 13:33:06 2019
+[runlim] main pid:		165584
+[runlim] sample:		4.0 time, 23.9 real, 1.9 MB
+[runlim] sample:		4.0 time, 49.1 real, 1.9 MB
+[runlim] sample:		4.0 time, 78.9 real, 1.9 MB
+[runlim] sample:		4.0 time, 103.9 real, 1.9 MB
+[runlim] sample:		4.0 time, 131.9 real, 1.9 MB
+[runlim] sample:		4.0 time, 159.0 real, 1.9 MB
+[runlim] sample:		4.0 time, 185.8 real, 1.9 MB
+[runlim] sample:		4.0 time, 211.3 real, 1.9 MB
+[runlim] sample:		4.0 time, 239.2 real, 1.9 MB
+[runlim] sample:		4.0 time, 269.7 real, 1.9 MB
+[runlim] sample:		4.0 time, 298.4 real, 1.9 MB
+[runlim] sample:		4.0 time, 322.7 real, 1.9 MB
+[runlim] sample:		5.0 time, 347.8 real, 5.1 MB
+[runlim] sample:		21.6 time, 372.3 real, 13.3 MB
+[runlim] sample:		33.4 time, 393.3 real, 13.3 MB
+[runlim] sample:		49.8 time, 432.4 real, 111.7 MB
+[runlim] sample:		66.5 time, 465.3 real, 129.1 MB
+[runlim] sample:		77.0 time, 495.8 real, 129.1 MB
+[runlim] sample:		86.9 time, 521.1 real, 129.1 MB
+[runlim] sample:		99.6 time, 543.6 real, 129.1 MB
+[runlim] sample:		119.5 time, 575.8 real, 129.1 MB
+[runlim] sample:		129.1 time, 598.8 real, 129.1 MB
+[runlim] sample:		150.0 time, 627.9 real, 129.1 MB
+[runlim] sample:		165.1 time, 660.1 real, 129.1 MB
+[runlim] sample:		188.8 time, 689.5 real, 129.1 MB
+[runlim] sample:		202.4 time, 713.0 real, 129.1 MB
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+2019-02-05 13:45:08.631187: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+[runlim] sample:		59.7 time, 741.1 real, 25.6 MB
+[runlim] sample:		197.8 time, 768.4 real, 1545.4 MB
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+2019-02-05 13:46:07.744628: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+2019-02-05 13:46:07.775600: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+2019-02-05 13:46:07.821762: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+2019-02-05 13:46:07.909417: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+2019-02-05 13:46:15.952687: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+2019-02-05 13:46:15.970612: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+2019-02-05 13:46:15.996615: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+2019-02-05 13:46:16.006435: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+2019-02-05 13:46:16.013829: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+2019-02-05 13:46:16.016463: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+2019-02-05 13:46:16.025491: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+2019-02-05 13:46:16.026060: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+2019-02-05 13:46:16.034827: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+2019-02-05 13:46:16.051395: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+2019-02-05 13:46:16.103707: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+[runlim] sample:		432.9 time, 798.5 real, 4267.7 MB
+[runlim] sample:		607.4 time, 810.4 real, 4356.7 MB
+[runlim] sample:		766.3 time, 821.7 real, 4493.8 MB
+WARNING:tensorflow:From /export/stanford/barrettlab/andrew-cav-experiment/Marabou/maraboupy/NumTasksDecider.py:133: FastGFile.__init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.gfile.GFile.
+2019-02-05 13:46:49.775857: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+[runlim] sample:		934.3 time, 832.9 real, 4625.6 MB
+[runlim] sample:		1107.5 time, 844.3 real, 4697.5 MB
+[runlim] sample:		1280.8 time, 855.6 real, 4482.4 MB
+[runlim] sample:		1456.9 time, 867.2 real, 4603.4 MB
+[runlim] sample:		1625.1 time, 878.2 real, 4673.7 MB
+[runlim] sample:		1801.4 time, 889.9 real, 4753.0 MB
+[runlim] sample:		1984.6 time, 901.8 real, 4557.3 MB
+[runlim] sample:		2160.0 time, 913.2 real, 4574.8 MB
+[runlim] sample:		2324.1 time, 924.4 real, 4745.9 MB
+[runlim] sample:		2514.9 time, 936.8 real, 4731.0 MB
+[runlim] sample:		2696.0 time, 948.6 real, 4867.1 MB
+[runlim] sample:		2870.8 time, 960.0 real, 4637.9 MB
+[runlim] sample:		3047.7 time, 971.4 real, 4743.3 MB
+[runlim] sample:		3226.5 time, 983.2 real, 4557.0 MB
+[runlim] sample:		3397.0 time, 994.4 real, 4675.3 MB
+[runlim] sample:		3567.0 time, 1005.6 real, 4793.2 MB
+[runlim] sample:		3750.8 time, 1017.6 real, 4747.0 MB
+[runlim] sample:		3921.3 time, 1028.8 real, 4441.4 MB
+[runlim] sample:		4103.1 time, 1040.8 real, 4534.9 MB
+[runlim] sample:		4276.4 time, 1052.0 real, 4648.3 MB
+[runlim] sample:		4453.5 time, 1063.4 real, 4767.6 MB
+[runlim] sample:		4624.3 time, 1074.8 real, 4740.8 MB
+[runlim] sample:		4805.5 time, 1086.7 real, 4511.8 MB
+[runlim] sample:		4982.0 time, 1098.1 real, 4810.4 MB
+[runlim] sample:		5152.5 time, 1109.3 real, 4938.2 MB
+[runlim] sample:		5318.8 time, 1120.5 real, 4709.6 MB
+[runlim] sample:		5494.4 time, 1132.0 real, 4773.9 MB
+[runlim] sample:		5671.4 time, 1143.8 real, 4880.2 MB
+[runlim] sample:		5842.8 time, 1155.6 real, 4860.0 MB
+[runlim] sample:		6006.5 time, 1167.0 real, 4539.1 MB
+[runlim] sample:		6173.0 time, 1178.5 real, 4610.6 MB
+[runlim] sample:		6333.8 time, 1189.6 real, 4625.3 MB
+[runlim] sample:		6506.8 time, 1201.2 real, 4627.8 MB
+[runlim] sample:		6619.0 time, 1211.8 real, 4713.4 MB
+[runlim] sample:		6692.9 time, 1222.8 real, 4742.4 MB
+[runlim] sample:		6751.6 time, 1233.1 real, 4905.0 MB
+[runlim] sample:		6794.7 time, 1243.4 real, 4832.8 MB
+[runlim] sample:		6854.2 time, 1253.7 real, 4606.7 MB
+[runlim] sample:		6897.9 time, 1263.9 real, 4597.0 MB
+[runlim] sample:		6923.3 time, 1274.1 real, 4495.4 MB
+[runlim] sample:		98.4 time, 1301.9 real, 178.1 MB
+[runlim] sample:		122.5 time, 1327.7 real, 159.1 MB
+[runlim] sample:		142.4 time, 1354.7 real, 159.1 MB
+[runlim] sample:		153.7 time, 1373.9 real, 159.1 MB
+[runlim] sample:		163.4 time, 1392.3 real, 159.1 MB
+[runlim] sample:		162.0 time, 1416.1 real, 64.3 MB
+[runlim] sample:		182.4 time, 1439.4 real, 64.3 MB
+[runlim] sample:		200.2 time, 1462.6 real, 64.3 MB
+[runlim] sample:		227.3 time, 1491.7 real, 64.3 MB
+[runlim] sample:		244.1 time, 1517.3 real, 64.3 MB
+[runlim] sample:		265.4 time, 1542.0 real, 64.3 MB
+[runlim] sample:		286.6 time, 1566.3 real, 64.3 MB
+[runlim] sample:		307.8 time, 1593.8 real, 64.3 MB
+[runlim] sample:		324.7 time, 1620.2 real, 64.3 MB
+[runlim] sample:		346.2 time, 1650.1 real, 64.3 MB
+[runlim] sample:		365.7 time, 1679.2 real, 64.3 MB
+[runlim] sample:		389.1 time, 1708.4 real, 64.3 MB
+[runlim] sample:		409.6 time, 1733.8 real, 64.3 MB
+[runlim] sample:		428.7 time, 1763.9 real, 64.3 MB
+[runlim] sample:		457.8 time, 1794.7 real, 64.3 MB
+[runlim] sample:		12.6 time, 1902.9 real, 0.0 MB
+[runlim] sample:		12.6 time, 1930.5 real, 0.0 MB
+[runlim] sample:		12.6 time, 1958.2 real, 0.0 MB
+[runlim] sample:		12.6 time, 1981.1 real, 0.0 MB
+[runlim] sample:		12.6 time, 2017.0 real, 0.0 MB
+[runlim] sample:		12.6 time, 2041.3 real, 0.0 MB
+[runlim] sample:		12.6 time, 2066.0 real, 0.0 MB
+[runlim] sample:		12.6 time, 2091.5 real, 0.0 MB
+[runlim] sample:		12.6 time, 2118.2 real, 0.0 MB
+[runlim] sample:		12.6 time, 2141.6 real, 0.0 MB
+[runlim] sample:		12.6 time, 2172.3 real, 0.0 MB
+[runlim] sample:		12.6 time, 2202.0 real, 0.0 MB
+[runlim] sample:		12.6 time, 2231.5 real, 0.0 MB
+[runlim] sample:		12.6 time, 2261.4 real, 0.0 MB
+[runlim] sample:		12.6 time, 2289.8 real, 0.0 MB
+[runlim] sample:		12.6 time, 2317.4 real, 0.0 MB
+[runlim] sample:		12.6 time, 2344.8 real, 0.0 MB
+[runlim] sample:		12.6 time, 2371.5 real, 0.0 MB
+[runlim] sample:		12.6 time, 2399.2 real, 0.0 MB
+[runlim] sample:		12.6 time, 2422.7 real, 0.0 MB
+[runlim] sample:		12.6 time, 2447.1 real, 0.0 MB
+[runlim] sample:		12.6 time, 2472.8 real, 0.0 MB
+[runlim] sample:		12.6 time, 2542.4 real, 0.0 MB
+[runlim] sample:		12.6 time, 2569.5 real, 0.0 MB
+[runlim] sample:		12.6 time, 2600.2 real, 0.0 MB
+[runlim] sample:		12.6 time, 2629.1 real, 0.0 MB
+[runlim] sample:		12.6 time, 2656.9 real, 0.0 MB
+[runlim] sample:		12.6 time, 2682.8 real, 0.0 MB
+[runlim] sample:		12.6 time, 2838.8 real, 0.0 MB
+[runlim] sample:		12.6 time, 2865.6 real, 0.0 MB
+[runlim] sample:		12.6 time, 2889.4 real, 0.0 MB
+[runlim] sample:		12.6 time, 2917.5 real, 0.0 MB
+[runlim] sample:		12.6 time, 2941.6 real, 0.0 MB
+[runlim] sample:		12.6 time, 2979.0 real, 0.0 MB
+[runlim] sample:		12.6 time, 3006.5 real, 0.0 MB
+[runlim] sample:		12.6 time, 3174.2 real, 0.0 MB
+[runlim] sample:		12.6 time, 3198.4 real, 0.0 MB
+[runlim] sample:		12.6 time, 3223.2 real, 0.0 MB
+[runlim] sample:		12.6 time, 3246.2 real, 0.0 MB
+[runlim] sample:		12.6 time, 3270.7 real, 0.0 MB
+[runlim] sample:		12.6 time, 3293.6 real, 0.0 MB
+[runlim] sample:		12.6 time, 3332.8 real, 0.0 MB
+[runlim] sample:		12.6 time, 3357.3 real, 0.0 MB
+[runlim] sample:		12.6 time, 3385.5 real, 0.0 MB
+[runlim] end:			Tue Feb  5 14:29:36 2019
+[runlim] status:		ok
+[runlim] result:		0
+[runlim] children:		163744
+[runlim] real:			3390.92 seconds
+[runlim] time:			6963.23 seconds
+[runlim] space:			5051.7 MB
+[runlim] samples:		13528
