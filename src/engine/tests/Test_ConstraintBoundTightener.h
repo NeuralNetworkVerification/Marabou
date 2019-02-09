@@ -65,8 +65,8 @@ public:
 
         tightener.setDimensions();
 
-        TS_ASSERT_THROWS_NOTHING( tightener.registerTighterLowerBound( 1, 7, 0 ) );
-        TS_ASSERT_THROWS_NOTHING( tightener.registerTighterUpperBound( 3, 2, 0 ) );
+        TS_ASSERT_THROWS_NOTHING( tightener.registerTighterLowerBound( 1, 7, NULL ) );
+        TS_ASSERT_THROWS_NOTHING( tightener.registerTighterUpperBound( 3, 2, NULL ) );
 
         List<Tightening> tightenings;
         TS_ASSERT_THROWS_NOTHING( tightener.getConstraintTightenings( tightenings ) );

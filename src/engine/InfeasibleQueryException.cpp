@@ -12,7 +12,7 @@
 
 #include "InfeasibleQueryException.h"
 
-InfeasibleQueryException::InfeasibleQueryException( const List<unsigned> &explanations )
+InfeasibleQueryException::InfeasibleQueryException( const List<const Fact*> &explanations )
     : _explanations( explanations )
 {
 }

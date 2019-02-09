@@ -181,11 +181,11 @@ bool Engine::solve( unsigned timeoutInSeconds )
             {
                 // Some variable bounds are invalid, so the query is unsat
                 unsigned failureVar = _tableau->getInvalidBoundsVariable();
-                List<unsigned> failureExplanations;
+                List<const Fact*> failureExplanations;
                 if ( _factTracker.hasFactAffectingBound( failureVar, FactTracker::LB ) )
-                    failureExplanations.append( _factTracker.getFactIDAffectingBound( failureVar, FactTracker::LB ) );
+                    failureExplanations.append( _factTracker.getFactAffectingBound( failureVar, FactTracker::LB ) );
                 if ( _factTracker.hasFactAffectingBound( failureVar, FactTracker::UB ) )
-                    failureExplanations.append( _factTracker.getFactIDAffectingBound( failureVar, FactTracker::UB ) );
+                    failureExplanations.append( _factTracker.getFactAffectingBound( failureVar, FactTracker::UB ) );
                 throw InfeasibleQueryException( failureExplanations );
             }
 
@@ -466,7 +466,7 @@ void Engine::performSimplexStep()
             // Cost function is fresh --- failure is real.
             struct timespec end = TimeUtils::sampleMicro();
             _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
-            List<unsigned> explanation;
+            List<const Fact*> explanation;
             /*
               TODO: explanations probably include fact that created leavingIndex equation,
               and bounds of variables with non-zero coefficients in the equation

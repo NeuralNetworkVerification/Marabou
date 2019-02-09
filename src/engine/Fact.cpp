@@ -17,20 +17,15 @@ Fact::Fact()
 {
 }
 
-List<unsigned> Fact::getExplanations() const
+List<const Fact*> Fact::getExplanations() const
 {
     return _explanations;
 }
 
-List<bool> Fact::getExplanationIsInternal() const
+void Fact::addExplanation( const Fact* explanation )
 {
-    return _explanationIsInternal;
-}
-
-void Fact::addExplanation( unsigned explanationID, bool isInternal )
-{
-    _explanations.append( explanationID );
-    _explanationIsInternal.append( isInternal );
+    if(explanation!=NULL)
+      _explanations.append( explanation );
 }
 
 void Fact::setCausingConstraintAndSplitID( unsigned constraintID, unsigned splitID )

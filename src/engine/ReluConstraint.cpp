@@ -117,11 +117,11 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
     {
         // Junyao: maybe we should number valid explanationID from 1 in factTracker
         // so that 0 means there's none explanation
-        unsigned explainationID = 0;
+        Fact* explanation = NULL;
 
         if( _factTracker && _factTracker->hasFactAffectingBound( variable, FactTracker::LB ))
         {
-           explainationID = _factTracker->getFactIDAffectingBound( variable, FactTracker::LB );
+           explanation = const_cast<Fact*>(_factTracker->getFactAffectingBound( variable, FactTracker::LB ));
         }
 
         // A positive lower bound is always propagated between the two variables
@@ -133,11 +133,11 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
             {
                 double otherLowerBound = _lowerBounds[partner];
                 if ( bound > otherLowerBound )
-                    _constraintBoundTightener->registerTighterLowerBound( partner, bound, explainationID );
+                    _constraintBoundTightener->registerTighterLowerBound( partner, bound, explanation );
             }
             else
             {
-                _constraintBoundTightener->registerTighterLowerBound( partner, bound, explainationID );
+                _constraintBoundTightener->registerTighterLowerBound( partner, bound, explanation );
             }
         }
 
@@ -145,7 +145,7 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
         // we attempt to tighten it to 0
         if ( bound < 0 && variable == _f )
         {
-            _constraintBoundTightener->registerTighterLowerBound( _f, 0, explainationID );
+            _constraintBoundTightener->registerTighterLowerBound( _f, 0, explanation );
         }
     }
  }
@@ -167,11 +167,11 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
     {
         // Junyao: maybe we should number valid explanationID from 1 in factTracker
         // so that 0 means there's none explanation
-        unsigned explainationID = 0;
+        Fact* explanation = NULL;
 
         if( _factTracker && _factTracker->hasFactAffectingBound( variable, FactTracker::UB ))
         {
-           explainationID = _factTracker->getFactIDAffectingBound( variable, FactTracker::UB );
+           explanation = const_cast<Fact*>(_factTracker->getFactAffectingBound( variable, FactTracker::UB ));
         }
 
 
@@ -179,14 +179,14 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
         {
             // Any bound that we learned of f should be propagated to b
             if ( bound < _upperBounds[_b] )
-                _constraintBoundTightener->registerTighterUpperBound( _b, bound, explainationID );
+                _constraintBoundTightener->registerTighterUpperBound( _b, bound, explanation );
         }
         else
         {
             // If b has a negative upper bound, we f's upper bound is 0
             double adjustedUpperBound = FloatUtils::max( bound, 0 );
             if ( adjustedUpperBound < _upperBounds[_f] )
-                _constraintBoundTightener->registerTighterUpperBound( _f, adjustedUpperBound, explainationID );
+                _constraintBoundTightener->registerTighterUpperBound( _f, adjustedUpperBound, explanation );
         }
     }
 }
@@ -465,14 +465,14 @@ PiecewiseLinearCaseSplit ReluConstraint::getValidCaseSplit() const
           this. Likewise for the inactive case, and in MaxConstraint.
         */
         if ( _factTracker && _factTracker->hasFactAffectingBound( _f, FactTracker::LB ) )
-            activeSplit.addExplanation( _factTracker->getFactIDAffectingBound( _f, FactTracker::LB ) );
+            activeSplit.addExplanation( _factTracker->getFactAffectingBound( _f, FactTracker::LB ) );
 
         return activeSplit;
     }
 
     PiecewiseLinearCaseSplit inactiveSplit = getInactiveSplit();
     if ( _factTracker && _factTracker->hasFactAffectingBound( _b, FactTracker::UB ) )
-        inactiveSplit.addExplanation( _factTracker->getFactIDAffectingBound( _b, FactTracker::UB ) );
+        inactiveSplit.addExplanation( _factTracker->getFactAffectingBound( _b, FactTracker::UB ) );
     return inactiveSplit;
 }
 

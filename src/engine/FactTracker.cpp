@@ -18,25 +18,24 @@ void FactTracker::setStatistics( Statistics* statistics )
   _statistics = statistics;
 }
 
-List<Pair<unsigned, unsigned> > FactTracker::getConstraintsAndSplitsCausingFacts(List<unsigned> facts) const
+List<Pair<unsigned, unsigned> > FactTracker::getConstraintsAndSplitsCausingFacts(List<const Fact*> facts) const
 {
-  Set<unsigned> seen;
+  Set<const Fact*> seen;
   List<Pair<unsigned, unsigned> > result;
-  Queue<unsigned> remaining;
-  for(unsigned id: facts)
+  Queue<const Fact*> remaining;
+  for(const Fact* id: facts)
     remaining.push( id );
   while(!remaining.empty())
   {
-    const unsigned id = remaining.peak();
+    const Fact* fact = remaining.peak();
     remaining.pop();
-    if (seen.exists(id)) continue;
-    seen.insert(id);
-    const Fact* fact = _factFromIndex[id];
+    if (seen.exists(fact)) continue;
+    seen.insert(fact);
     if(fact->isCausedBySplit()){
       result.append(Pair<unsigned, unsigned>(fact->getCausingConstraintID(), fact->getCausingSplitID()));
     }
     else {
-      for(unsigned explanation: fact->getExplanations())
+      for(const Fact* explanation: fact->getExplanations())
         remaining.push(explanation);
     }
   }
@@ -44,52 +43,57 @@ List<Pair<unsigned, unsigned> > FactTracker::getConstraintsAndSplitsCausingFacts
 }
 
 
-void FactTracker::addSplitLevelCausingFact( Fact* fact, unsigned factID)
+void FactTracker::addSplitLevelCausingFact( const Fact* fact)
 {
   if ( fact->isCausedBySplit() )
   {
-    _factToSplitLevelCausing[factID] = _statistics->getCurrentStackDepth();
+    _factToSplitLevelCausing[fact] = _statistics->getCurrentStackDepth();
     return;
   }
   unsigned level = 0;
-  for (unsigned explanationID: fact->getExplanations() )
+  for (const Fact* explanation: fact->getExplanations() )
   {
-    if (_factToSplitLevelCausing[explanationID] > level)
-      level = _factToSplitLevelCausing[explanationID];
+    if (_factToSplitLevelCausing[explanation] > level)
+      level = _factToSplitLevelCausing[explanation];
   }
-  _factToSplitLevelCausing[factID] = level;
+  _factToSplitLevelCausing[fact] = level;
 }
 
 void FactTracker::addBoundFact( unsigned var, Tightening bound )
 {
-    unsigned newFactNum = _factsLearned.size() + 1;
-    _factFromIndex[newFactNum] = new Tightening(bound);
-    addSplitLevelCausingFact( _factFromIndex[newFactNum], newFactNum );
+    const Fact* newFact = new Tightening(bound);
+    _factsLearnedSet.insert(newFact);
+    addSplitLevelCausingFact( newFact );
     if ( bound._type == Tightening::LB )
     {
         if ( !hasFactAffectingBound( var, FactTracker::LB) )
-          _lowerBoundFact[var] = Stack<unsigned>();
-        _lowerBoundFact[var].push( newFactNum );
+          _lowerBoundFact[var] = Stack<const Fact*>();
+        _lowerBoundFact[var].push( newFact );
         _factsLearned.push( Pair<unsigned, BoundType>( var, FactTracker::LB ) );
     }
     else
     {
         if ( !hasFactAffectingBound( var, FactTracker::UB) )
-          _upperBoundFact[var] = Stack<unsigned>();
-        _upperBoundFact[var].push( newFactNum );
+          _upperBoundFact[var] = Stack<const Fact*>();
+        _upperBoundFact[var].push( newFact );
         _factsLearned.push( Pair<unsigned, BoundType>( var, FactTracker::UB ) );
     }
 }
 
 void FactTracker::addEquationFact( unsigned equNumber, Equation equ )
 {
-    unsigned newFactNum = _factsLearned.size() + 1;
-    _factFromIndex[newFactNum] = new Equation(equ);
-    addSplitLevelCausingFact( _factFromIndex[newFactNum], newFactNum );
+    const Fact* newFact = new Equation(equ);
+    _factsLearnedSet.insert(newFact);
+    addSplitLevelCausingFact( newFact );
     if ( !hasFactAffectingEquation( equNumber ) )
-      _equationFact[equNumber] = Stack<unsigned>();
-    _equationFact[equNumber].push(newFactNum);
+      _equationFact[equNumber] = Stack<const Fact*>();
+    _equationFact[equNumber].push(newFact);
     _factsLearned.push( Pair<unsigned, BoundType>( equNumber, FactTracker::EQU ) );
+}
+
+bool FactTracker::hasFact(const Fact* fact) const
+{
+  return _factsLearnedSet.exists(fact);
 }
 
 bool FactTracker::hasFactAffectingBound( unsigned var, BoundType type ) const
@@ -100,16 +104,16 @@ bool FactTracker::hasFactAffectingBound( unsigned var, BoundType type ) const
         return _upperBoundFact.exists( var ) && !_upperBoundFact[var].empty();
 }
 
-unsigned FactTracker::getFactIDAffectingBound( unsigned var, BoundType type ) const
+const Fact* FactTracker::getFactAffectingBound( unsigned var, BoundType type ) const
 {
     if ( type == LB )
     {
-        Stack<unsigned> temp = _lowerBoundFact[var];
+        Stack<const Fact*> temp = _lowerBoundFact[var];
         return temp.top();
     }
     else
     {
-        Stack<unsigned> temp = _upperBoundFact[var];
+        Stack<const Fact*> temp = _upperBoundFact[var];
         return temp.top();
     }
 }
@@ -119,9 +123,9 @@ bool FactTracker::hasFactAffectingEquation( unsigned equNumber ) const
     return _equationFact.exists( equNumber ) && !_equationFact[equNumber].empty();
 }
 
-unsigned FactTracker::getFactIDAffectingEquation( unsigned equNumber ) const
+const Fact* FactTracker::getFactAffectingEquation( unsigned equNumber ) const
 {
-    Stack<unsigned> temp = _equationFact[equNumber];
+    Stack<const Fact*> temp = _equationFact[equNumber];
     return temp.top();
 }
 
@@ -133,50 +137,40 @@ unsigned FactTracker::getNumFacts( ) const
 void FactTracker::popFact()
 {
   Pair<unsigned, BoundType> factInfo = _factsLearned.top();
-  delete _factFromIndex[getNumFacts()-1];
   _factsLearned.pop();
-  if ( factInfo.second() == LB )
+  if ( factInfo.second() == LB ){
+    const Fact* oldFact = _lowerBoundFact[factInfo.first()].top();
+    _factsLearnedSet.erase(oldFact);
+    delete oldFact;
     _lowerBoundFact[factInfo.first()].pop();
-  if ( factInfo.second() == UB )
-    _upperBoundFact[factInfo.first()].pop();
-  if ( factInfo.second() == EQU )
+  }
+  if ( factInfo.second() == UB ){
+    const Fact* oldFact = _upperBoundFact[factInfo.first()].top();
+    _factsLearnedSet.erase(oldFact);
+    delete oldFact;    _upperBoundFact[factInfo.first()].pop();
+  }
+  if ( factInfo.second() == EQU ){
+    const Fact* oldFact = _equationFact[factInfo.first()].top();
+    _factsLearnedSet.erase(oldFact);
+    delete oldFact;
     _equationFact[factInfo.first()].pop();
+  }
 }
 
-Set<unsigned> FactTracker::getExternalFactsForBound( unsigned explanationID ) const
+Set<const Fact*> FactTracker::getExternalFactsForBound( const Fact* fact ) const
 {
-    Set<unsigned> externalFacts;
-    Fact* fact = _factFromIndex[explanationID];
-    List<unsigned> explanations = fact->getExplanations();
-    List<bool> explanationIsInternal = fact->getExplanationIsInternal();
-    List<unsigned>::iterator explanationsIter = explanations.begin();
-    List<bool>::iterator explanationIsInternalIter = explanationIsInternal.begin();
-
-    for ( ; explanationsIter != explanations.end() ; ++explanationsIter, ++explanationIsInternalIter )
-    {
-        if( !*explanationIsInternalIter )
-        {
-            externalFacts.insert( *explanationsIter );
-        }
-        else
-        {
-            externalFacts.insert( getExternalFactsForBound( *explanationsIter ) );
-        }
+    Set<const Fact*> externalFacts;
+    List<const Fact*> explanations = fact->getExplanations();
+    for(const Fact* explanation: explanations){
+      if (!hasFact(explanation)){
+        externalFacts.insert(explanation);
+      }
+      else{
+        externalFacts.insert(getExternalFactsForBound(explanation));
+      }
     }
 
-    fact = NULL;
-
     return externalFacts;
-}
-
-void FactTracker::printFactAndExplanations(unsigned factID) const
-{
-  Fact* fact = _factFromIndex[factID];
-  printf("Fact #%d: %s\n", factID, fact->getDescription().ascii());
-  printf("Explanations\n");
-  for(unsigned explanation: fact->getExplanations()){
-    printf("Fact #%d: %s\n", explanation, _factFromIndex[explanation]->getDescription().ascii());
-  }
 }
 
 //

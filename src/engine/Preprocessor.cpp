@@ -319,7 +319,7 @@ bool Preprocessor::processEquations()
                 delete[] ciTimesUb;
                 delete[] ciSign;
 
-                List<unsigned> emptyExplanationForPreprocessing;
+                List<const Fact*> emptyExplanationForPreprocessing;
                 throw InfeasibleQueryException( emptyExplanationForPreprocessing );
             }
         }
@@ -358,7 +358,7 @@ bool Preprocessor::processEquations()
 
             if ( FloatUtils::areDisequal( sum, equation->_scalar, GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD ) )
             {
-                List<unsigned> emptyExplanationForPreprocessing;
+                List<const Fact*> emptyExplanationForPreprocessing;
                 throw InfeasibleQueryException( emptyExplanationForPreprocessing );
             }
             equation = equations.erase( equation );
@@ -532,7 +532,7 @@ void Preprocessor::eliminateVariables()
             // No addends left, scalar should be 0
             if ( !FloatUtils::isZero( equation->_scalar ) )
             {
-              List<unsigned> emptyExplanationForPreprocessing;
+              List<const Fact*> emptyExplanationForPreprocessing;
               throw InfeasibleQueryException( emptyExplanationForPreprocessing );
             }
             else

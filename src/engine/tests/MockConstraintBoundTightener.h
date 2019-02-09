@@ -62,8 +62,8 @@ public:
     void notifyLowerBound( unsigned /* variable */, double /* bound */ ) {}
     void notifyUpperBound( unsigned /* variable */, double /* bound */ ) {}
     void setStatistics( Statistics */* statistics */ ) {}
-    void registerTighterLowerBound( unsigned /* variable */, double /* bound */, unsigned /* explanationID */ ) {}
-    void registerTighterUpperBound( unsigned /* variable */, double /* bound */, unsigned /* explanationID */ ) {}
+    void registerTighterLowerBound( unsigned /* variable */, double /* bound */, const Fact* /* explanationID */ ) {}
+    void registerTighterUpperBound( unsigned /* variable */, double /* bound */, const Fact* /* explanationID */ ) {}
     void getConstraintTightenings( List<Tightening> &/* tightenings */ ) const {}
     void setFactTracker( FactTracker* /* factTracker */ ) {};
 };

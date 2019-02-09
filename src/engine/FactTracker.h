@@ -33,18 +33,18 @@ public:
 
     FactTracker(): _statistics(NULL){};
     void setStatistics( Statistics* statistics );
-    List<Pair<unsigned, unsigned> > getConstraintsAndSplitsCausingFacts(List<unsigned> facts) const;
-    void addSplitLevelCausingFact( Fact* fact, unsigned factID );
+    List<Pair<unsigned, unsigned> > getConstraintsAndSplitsCausingFacts(List<const Fact*> facts) const;
+    void addSplitLevelCausingFact( const Fact* fact );
     void addBoundFact( unsigned var, Tightening bound );
     void addEquationFact ( unsigned equNumber, Equation equ );
+    bool hasFact(const Fact* fact) const;
     bool hasFactAffectingBound( unsigned var, BoundType type ) const;
     bool hasFactAffectingEquation( unsigned equNumber ) const;
-    unsigned getFactIDAffectingBound( unsigned var, BoundType type ) const;
-    unsigned getFactIDAffectingEquation( unsigned equNumber ) const;
+    const Fact* getFactAffectingBound( unsigned var, BoundType type ) const;
+    const Fact* getFactAffectingEquation( unsigned equNumber ) const;
     unsigned getNumFacts( ) const;
-    Set<unsigned> getExternalFactsForBound( unsigned explanationID ) const;
+    Set<const Fact*> getExternalFactsForBound( const Fact* fact ) const;
     void popFact( );
-    void printFactAndExplanations(unsigned factID) const;
 
 private:
     unsigned _numFacts;
@@ -54,14 +54,15 @@ private:
     // Also, a conceptual issue: what if we learn x>=5 and later we learn x>=7? Are these always
     // the tightest bounds? What happens if later x>=5 is used for a deduction?
     // We should write an informative comment
-    Map<unsigned, Stack<unsigned> > _lowerBoundFact;
-    Map<unsigned, Stack<unsigned> > _upperBoundFact;
-    Map<unsigned, Stack<unsigned> > _equationFact;
+    Map<unsigned, Stack<const Fact*> > _lowerBoundFact;
+    Map<unsigned, Stack<const Fact*> > _upperBoundFact;
+    Map<unsigned, Stack<const Fact*> > _equationFact;
     //
 
-    Map<unsigned, Fact*> _factFromIndex;
+    Set<const Fact*> _factsLearnedSet;
     Stack<Pair<unsigned, BoundType> > _factsLearned;
-    Map<unsigned, unsigned> _factToSplitLevelCausing;
+    Map<const Fact*, unsigned> _factToSplitLevelCausing;
+    Set<const Fact*> _allFacts;
 
     Statistics* _statistics;
 };

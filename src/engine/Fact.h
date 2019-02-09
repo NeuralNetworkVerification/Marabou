@@ -22,9 +22,8 @@ class Fact
 public:
     Fact();
     virtual ~Fact(){}
-    List<unsigned> getExplanations() const;
-    List<bool> getExplanationIsInternal() const;
-    void addExplanation( unsigned explanationID, bool isInternal = false );
+    List<const Fact*> getExplanations() const;
+    void addExplanation( const Fact* explanation );
     void setCausingConstraintAndSplitID( unsigned constraintID, unsigned splitID );
     bool isCausedBySplit() const;
     unsigned getCausingConstraintID() const;
@@ -33,8 +32,7 @@ public:
     void dump() const {printf("%s", getDescription().ascii());}
 
 private:
-    List<unsigned> _explanations;
-    List<bool> _explanationIsInternal;
+    List<const Fact*> _explanations;
     unsigned _causingConstraintID;
     unsigned _causingSplitID;
     bool _causedBySplit;

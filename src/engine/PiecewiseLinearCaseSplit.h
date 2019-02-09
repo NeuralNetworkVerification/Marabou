@@ -44,7 +44,7 @@ public:
     unsigned getConstraintID() const;
     unsigned getSplitID() const;
 
-    void addExplanation( unsigned causeID );
+    void addExplanation( const Fact* explanation );
 
     /*
       Dump the case split - for debugging purposes.

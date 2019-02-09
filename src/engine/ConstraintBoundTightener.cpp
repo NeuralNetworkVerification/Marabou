@@ -44,11 +44,11 @@ void ConstraintBoundTightener::setDimensions()
     if ( !_upperBounds )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "ConstraintBoundTightener::upperBounds" );
 
-    _lowerBoundsExplanation = new unsigned[_n];
+    _lowerBoundsExplanation = new const Fact*[_n];
     if ( !_lowerBoundsExplanation )
       throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "ConstraintBoundTightener::lowerBoundsExplanation" );
-    
-    _upperBoundsExplanation = new unsigned[_n];
+
+    _upperBoundsExplanation = new const Fact*[_n];
     if ( !_upperBoundsExplanation )
       throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "ConstraintBoundTightener::upperBoundsExplanation" );
 
@@ -75,12 +75,12 @@ void ConstraintBoundTightener::resetBounds()
 
         if( _factTracker && _factTracker->hasFactAffectingBound( i, FactTracker::UB ))
         {
-           _upperBoundsExplanation[i] = _factTracker->getFactIDAffectingBound( i, FactTracker::UB );
+           _upperBoundsExplanation[i] = _factTracker->getFactAffectingBound( i, FactTracker::UB );
         }
 
         if( _factTracker && _factTracker->hasFactAffectingBound( i, FactTracker::LB ))
         {
-           _lowerBoundsExplanation[i] = _factTracker->getFactIDAffectingBound( i, FactTracker::LB );
+           _lowerBoundsExplanation[i] = _factTracker->getFactAffectingBound( i, FactTracker::LB );
         }
     }
 }
@@ -148,7 +148,7 @@ void ConstraintBoundTightener::notifyLowerBound( unsigned variable, double bound
 
         if( _factTracker && _factTracker->hasFactAffectingBound( variable, FactTracker::LB ))
         {
-           _lowerBoundsExplanation[variable] = _factTracker->getFactIDAffectingBound( variable, FactTracker::LB );
+           _lowerBoundsExplanation[variable] = _factTracker->getFactAffectingBound( variable, FactTracker::LB );
         }
     }
 }
@@ -162,7 +162,7 @@ void ConstraintBoundTightener::notifyUpperBound( unsigned variable, double bound
 
         if( _factTracker && _factTracker->hasFactAffectingBound( variable, FactTracker::UB ))
         {
-           _upperBoundsExplanation[variable] = _factTracker->getFactIDAffectingBound( variable, FactTracker::UB );
+           _upperBoundsExplanation[variable] = _factTracker->getFactAffectingBound( variable, FactTracker::UB );
         }
     }
 }
@@ -172,23 +172,23 @@ void ConstraintBoundTightener::notifyDimensionChange( unsigned /* m */ , unsigne
     setDimensions();
 }
 
-void ConstraintBoundTightener::registerTighterLowerBound( unsigned variable, double bound, unsigned explanationID )
+void ConstraintBoundTightener::registerTighterLowerBound( unsigned variable, double bound, const Fact* explanation )
 {
     if ( bound > _lowerBounds[variable] )
     {
         _lowerBounds[variable] = bound;
         _tightenedLower[variable] = true;
-        _lowerBoundsExplanation[variable] = explanationID;
+        _lowerBoundsExplanation[variable] = explanation;
     }
 }
 
-void ConstraintBoundTightener::registerTighterUpperBound( unsigned variable, double bound, unsigned explanationID )
+void ConstraintBoundTightener::registerTighterUpperBound( unsigned variable, double bound, const Fact* explanation )
 {
     if ( bound < _upperBounds[variable] )
     {
         _upperBounds[variable] = bound;
         _tightenedUpper[variable] = true;
-        _upperBoundsExplanation[variable] = explanationID;
+        _upperBoundsExplanation[variable] = explanation;
     }
 }
 

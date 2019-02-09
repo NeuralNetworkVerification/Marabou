@@ -51,7 +51,7 @@ public:
     */
     void setStatistics( Statistics *statistics );
 
-    
+
     /*
       Have the bount tightener report new deductions to a tracker,
       for conflict analysis later on.
@@ -62,8 +62,8 @@ public:
       This method can be used by clients to tell the bound tightener
       about a tighter bound
     */
-    void registerTighterLowerBound( unsigned variable, double bound, unsigned explanationID );
-    void registerTighterUpperBound( unsigned variable, double bound, unsigned explanationID );
+    void registerTighterLowerBound( unsigned variable, double bound, const Fact* explanation );
+    void registerTighterUpperBound( unsigned variable, double bound, const Fact* explanation );
 
     /*
       Get the tightenings previously registered by the constraints
@@ -89,8 +89,8 @@ private:
     /*
       Keep track of the facts from which the bounds are derived
     */
-    unsigned *_lowerBoundsExplanation;
-    unsigned *_upperBoundsExplanation;
+    const Fact* *_lowerBoundsExplanation;
+    const Fact* *_upperBoundsExplanation;
 
     /*
       Global fact tracker

@@ -62,13 +62,13 @@ unsigned PiecewiseLinearCaseSplit::getSplitID() const
     return _splitID;
 }
 
-void PiecewiseLinearCaseSplit::addExplanation( unsigned causeID )
+void PiecewiseLinearCaseSplit::addExplanation( const Fact* explanation )
 {
     for( auto &bound: _bounds )
-        bound.addExplanation( causeID );
+        bound.addExplanation( explanation );
 
     for ( auto &equation: _equations )
-        equation.addExplanation( causeID );
+        equation.addExplanation( explanation );
 }
 
 void PiecewiseLinearCaseSplit::dump() const

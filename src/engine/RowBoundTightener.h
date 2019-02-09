@@ -110,7 +110,7 @@ public:
       for the upper and lower bounds of the varialbe. This is performed
       when we get an InfeasibleQueryException.
     */
-    List<unsigned> findExternalExplanations( unsigned variable, QueryType queryType = BOTH ) const;
+    List<const Fact*> findExternalExplanations( unsigned variable, QueryType queryType = BOTH ) const;
 
     /*
       Have the Bound Tightener start reporting statistics.
@@ -129,13 +129,11 @@ private:
       whether each bound has been tightened by the tightener.
     */
     double *_lowerBounds;
-    unsigned *_lowerBoundExplanationIDs;
+    Fact* *_lowerBoundExplanations;
     double *_upperBounds;
-    unsigned *_upperBoundExplanationIDs;
+    Fact* *_upperBoundExplanations;
     bool *_tightenedLower;
     bool *_tightenedUpper;
-    bool *_lowerBoundIsInternal;
-    bool *_upperBoundIsInternal;
 
     /*
       Work space for the inverted basis matrix tighteners
@@ -188,6 +186,8 @@ private:
       of tighter bounds found.
     */
     unsigned tightenOnSingleInvertedBasisRow( const TableauRow &row, unsigned equIndex );
+
+    bool isBoundFactInternal(unsigned variable, QueryType type) const;
 };
 
 #endif // __RowBoundTightener_h__

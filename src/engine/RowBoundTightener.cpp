@@ -24,13 +24,11 @@
 RowBoundTightener::RowBoundTightener( const ITableau &tableau )
     : _tableau( tableau )
     , _lowerBounds( NULL )
-    , _lowerBoundExplanationIDs( NULL )
+    , _lowerBoundExplanations( NULL )
     , _upperBounds( NULL )
-    , _upperBoundExplanationIDs( NULL )
+    , _upperBoundExplanations( NULL )
     , _tightenedLower( NULL )
     , _tightenedUpper( NULL )
-    , _lowerBoundIsInternal( NULL )
-    , _upperBoundIsInternal( NULL )
     , _rows( NULL )
     , _z( NULL )
     , _ciTimesLb( NULL )
@@ -53,16 +51,16 @@ void RowBoundTightener::setDimensions()
     if ( !_lowerBounds )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "RowBoundTightener::lowerBounds" );
 
-    _lowerBoundExplanationIDs = new unsigned[_n];
-    if ( !_lowerBoundExplanationIDs )
+    _lowerBoundExplanations = new Fact*[_n];
+    if ( !_lowerBoundExplanations )
       throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "RowBoundTightener::lowerBoundExplanationIDs" );
 
     _upperBounds = new double[_n];
     if ( !_upperBounds )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "RowBoundTightener::upperBounds" );
 
-    _upperBoundExplanationIDs = new unsigned[_n];
-    if ( !_upperBoundExplanationIDs )
+    _upperBoundExplanations = new Fact*[_n];
+    if ( !_upperBoundExplanations )
       throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "RowBoundTightener::upperBoundExplanationIDs" );
 
     _tightenedLower = new bool[_n];
@@ -72,14 +70,6 @@ void RowBoundTightener::setDimensions()
     _tightenedUpper = new bool[_n];
     if ( !_tightenedUpper )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "RowBoundTightener::tightenedUpper" );
-
-    _lowerBoundIsInternal = new bool[_n];
-    if ( !_lowerBoundIsInternal )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "RowBoundTightener::_lowerBoundIsInternal" );
-
-    _upperBoundIsInternal = new bool[_n];
-    if ( !_upperBoundIsInternal )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "RowBoundTightener::_upperBoundIsInternal" );
 
     _internalFactTracker = new FactTracker();
 
@@ -115,21 +105,19 @@ void RowBoundTightener::resetBounds()
     for ( unsigned i = 0; i < _n; ++i )
     {
         _lowerBounds[i] = _tableau.getLowerBound( i );
-        _lowerBoundExplanationIDs[i] = 0;
-        _lowerBoundIsInternal[i] = false;
-        
+        _lowerBoundExplanations[i] = NULL;
+
         if ( _factTracker && _factTracker->hasFactAffectingBound( i, FactTracker::LB ) )
         {
-            _lowerBoundExplanationIDs[i] = _factTracker->getFactIDAffectingBound( i, FactTracker::LB );
+            _lowerBoundExplanations[i] = const_cast<Fact*>(_factTracker->getFactAffectingBound( i, FactTracker::LB ));
         }
 
         _upperBounds[i] = _tableau.getUpperBound( i );
-        _upperBoundExplanationIDs[i] = 0;
-        _upperBoundIsInternal[i] = false;
+        _upperBoundExplanations[i] = NULL;
 
         if ( _factTracker && _factTracker->hasFactAffectingBound( i, FactTracker::UB ) )
         {
-            _upperBoundExplanationIDs[i] = _factTracker->getFactIDAffectingBound( i, FactTracker::UB );
+            _upperBoundExplanations[i] = const_cast<Fact*>(_factTracker->getFactAffectingBound( i, FactTracker::UB ));
         }
 
         //clear bounds
@@ -147,21 +135,19 @@ void RowBoundTightener::clear()
     for ( unsigned i = 0; i < _n; ++i )
     {
         _lowerBounds[i] = _tableau.getLowerBound( i );
-        _lowerBoundExplanationIDs[i] = 0;
-        _lowerBoundIsInternal[i] = false;
+        _lowerBoundExplanations[i] = NULL;
 
         if ( _factTracker && _factTracker->hasFactAffectingBound( i, FactTracker::LB ) )
         {
-            _lowerBoundExplanationIDs[i] = _factTracker->getFactIDAffectingBound( i, FactTracker::LB );
+            _lowerBoundExplanations[i] = const_cast<Fact*>(_factTracker->getFactAffectingBound( i, FactTracker::LB ));
         }
 
         _upperBounds[i] = _tableau.getUpperBound( i );
-        _upperBoundExplanationIDs[i] = 0;
-        _upperBoundIsInternal[i] = false;
+        _upperBoundExplanations[i] = NULL;
 
         if ( _factTracker && _factTracker->hasFactAffectingBound( i, FactTracker::UB ) )
         {
-            _upperBoundExplanationIDs[i] = _factTracker->getFactIDAffectingBound( i, FactTracker::UB );
+            _upperBoundExplanations[i] = const_cast<Fact*>(_factTracker->getFactAffectingBound( i, FactTracker::UB ));
         }
     }
 
@@ -182,10 +168,10 @@ void RowBoundTightener::freeMemoryIfNeeded()
         _lowerBounds = NULL;
     }
 
-    if ( _lowerBoundExplanationIDs )
+    if ( _lowerBoundExplanations )
     {
-        delete[] _lowerBoundExplanationIDs;
-        _lowerBoundExplanationIDs = NULL;
+        delete[] _lowerBoundExplanations;
+        _lowerBoundExplanations = NULL;
     }
 
     if ( _upperBounds )
@@ -194,10 +180,10 @@ void RowBoundTightener::freeMemoryIfNeeded()
         _upperBounds = NULL;
     }
 
-    if ( _upperBoundExplanationIDs )
+    if ( _upperBoundExplanations )
     {
-        delete[] _upperBoundExplanationIDs;
-        _upperBoundExplanationIDs = NULL;
+        delete[] _upperBoundExplanations;
+        _upperBoundExplanations = NULL;
     }
 
     if ( _tightenedLower )
@@ -250,60 +236,60 @@ void RowBoundTightener::freeMemoryIfNeeded()
         _internalFactTracker = NULL;
     }
 
-    if( _lowerBoundIsInternal )
-    {
-        delete[] _lowerBoundIsInternal;
-        _lowerBoundIsInternal = NULL;
-    }
-
-    if ( _upperBoundIsInternal )
-    {
-        delete[] _upperBoundIsInternal;
-        _upperBoundIsInternal = NULL;
-    }
 }
 
-List<unsigned> RowBoundTightener::findExternalExplanations( unsigned variable, RowBoundTightener::QueryType queryType ) const
+bool RowBoundTightener::isBoundFactInternal(unsigned variable, RowBoundTightener::QueryType type) const
 {
-    Set<unsigned> explanations;
-    
+  if(!_internalFactTracker)
+    return false;
+  if(type==RowBoundTightener::LB)
+    return _internalFactTracker->hasFact(_lowerBoundExplanations[variable]);
+  else return _internalFactTracker->hasFact(_upperBoundExplanations[variable]);
+}
+
+List<const Fact*> RowBoundTightener::findExternalExplanations( unsigned variable, RowBoundTightener::QueryType queryType ) const
+{
+    Set<const Fact*> explanations;
+
     if( queryType == RowBoundTightener::BOTH || queryType == RowBoundTightener::LB )
     {
-        if( !_lowerBoundIsInternal[variable] )
+        if( !isBoundFactInternal(variable, RowBoundTightener::LB) )
         {
-            explanations.insert( _lowerBoundExplanationIDs[variable] );
+            explanations.insert( _lowerBoundExplanations[variable] );
         }
         else
         {
-            if( _internalFactTracker && _internalFactTracker->hasFactAffectingBound( variable, FactTracker::LB ) )
+            if( _internalFactTracker )
             {
-                unsigned explanationID = _internalFactTracker->getFactIDAffectingBound( variable, FactTracker::LB );
-                explanations.insert( _internalFactTracker->getExternalFactsForBound( explanationID ) );
+                ASSERT(_internalFactTracker->hasFactAffectingBound(variable, FactTracker::LB));
+                const Fact* explanation = _internalFactTracker->getFactAffectingBound( variable, FactTracker::LB );
+                explanations.insert( _internalFactTracker->getExternalFactsForBound( explanation ) );
             }
         }
     }
 
     if( queryType == RowBoundTightener::BOTH || queryType == RowBoundTightener::UB )
     {
-        if( !_upperBoundIsInternal[variable] )
+        if( !isBoundFactInternal(variable, RowBoundTightener::UB) )
         {
-            explanations.insert( _upperBoundExplanationIDs[variable] );
+            explanations.insert( _upperBoundExplanations[variable] );
         }
         else
         {
-            if( _internalFactTracker && _internalFactTracker->hasFactAffectingBound( variable, FactTracker::UB ) )
+            if( _internalFactTracker )
             {
-                unsigned explanationID = _internalFactTracker->getFactIDAffectingBound( variable, FactTracker::UB );
-                explanations.insert( _internalFactTracker->getExternalFactsForBound( explanationID ) );
+                ASSERT(_internalFactTracker->hasFactAffectingBound( variable, FactTracker::UB ));
+                const Fact* explanation = _internalFactTracker->getFactAffectingBound( variable, FactTracker::UB );
+                explanations.insert( _internalFactTracker->getExternalFactsForBound( explanation ) );
             }
         }
     }
 
-    List<unsigned> explanationList;
+    List<const Fact*> explanationList;
 
-    for ( unsigned explanationID : explanations )
+    for ( const Fact* explanation : explanations )
     {
-        explanationList.append( explanationID );
+        explanationList.append( explanation );
     }
 
     return explanationList;
@@ -487,14 +473,14 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
 
     // Guy: what's the motivation for using sets over lists? The removal of elements later?
 
-    Map<unsigned, bool> yLowerBoundExplanations;
-    Map<unsigned, bool> yUpperBoundExplanations;
+    Set<const Fact*> yLowerBoundExplanations;
+    Set<const Fact*> yUpperBoundExplanations;
 
     // Guy: this is for the fact that added the actual equation, right?
     if ( _factTracker && _factTracker->hasFactAffectingEquation( equIndex ) )
     {
-        yLowerBoundExplanations.insert( _factTracker->getFactIDAffectingEquation( equIndex ), false );
-        yUpperBoundExplanations.insert( _factTracker->getFactIDAffectingEquation( equIndex ), false );
+        yLowerBoundExplanations.insert( _factTracker->getFactAffectingEquation( equIndex ) );
+        yUpperBoundExplanations.insert( _factTracker->getFactAffectingEquation( equIndex ) );
     }
 
     for ( unsigned i = 0; i < n - m; ++i )
@@ -507,32 +493,32 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
             // Guy: as I stated elsewhere, if I understand correctly, we are saying to the fact tracker that
             // the current bound for xi contributed to the new bound we are computing. However, maybe this is not
             // the same bound as the one we are using? I.e., th efact trackers knows a newer or an older bound?
-            if ( _lowerBoundExplanationIDs[xi] )
+            if ( _lowerBoundExplanations[xi] )
             {
-                yLowerBoundExplanations.insert( _lowerBoundExplanationIDs[xi], _lowerBoundIsInternal[xi] );
+                yLowerBoundExplanations.insert( _lowerBoundExplanations[xi] );
             }
-            
+
             upperBound += _ciTimesUb[i];
 
-            if ( _upperBoundExplanationIDs[xi] )
+            if ( _upperBoundExplanations[xi] )
             {
-                yUpperBoundExplanations.insert( _upperBoundExplanationIDs[xi], _upperBoundIsInternal[xi] );
+                yUpperBoundExplanations.insert( _upperBoundExplanations[xi] );
             }
         }
         else if ( _ciSign[i] == NEGATIVE )
         {
             lowerBound += _ciTimesUb[i];
 
-            if ( _upperBoundExplanationIDs[xi] )
+            if ( _upperBoundExplanations[xi] )
             {
-                yLowerBoundExplanations.insert( _upperBoundExplanationIDs[xi], _upperBoundIsInternal[xi] );
+                yLowerBoundExplanations.insert( _upperBoundExplanations[xi] );
             }
-            
+
             upperBound += _ciTimesLb[i];
 
-            if ( _lowerBoundExplanationIDs[xi] )
+            if ( _lowerBoundExplanations[xi] )
             {
-                yUpperBoundExplanations.insert( _lowerBoundExplanationIDs[xi], _lowerBoundIsInternal[xi] );
+                yUpperBoundExplanations.insert( _lowerBoundExplanations[xi] );
             }
         }
     }
@@ -540,39 +526,37 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
     if ( FloatUtils::lt( _lowerBounds[y], lowerBound ) )
     {
         _lowerBounds[y] = lowerBound;
-        _lowerBoundIsInternal[y] = true;
         Tightening newBound( y, _lowerBounds[y], Tightening::LB );
-        
-        for ( std::pair<unsigned, bool> explanationPair: yLowerBoundExplanations )
+
+        for ( const Fact* explanation: yLowerBoundExplanations )
         {
-            newBound.addExplanation( explanationPair.first, explanationPair.second );
+            newBound.addExplanation( explanation );
         }
 
         if( _internalFactTracker )
         {
             _internalFactTracker->addBoundFact( newBound._variable, newBound );
-            _lowerBoundExplanationIDs[y] = _internalFactTracker->getFactIDAffectingBound( y, FactTracker::LB );
+            _lowerBoundExplanations[y] = const_cast<Fact*>(_internalFactTracker->getFactAffectingBound( y, FactTracker::LB ));
         }
 
         _tightenedLower[y] = true;
         ++result;
     }
-    
+
     if ( FloatUtils::gt( _upperBounds[y], upperBound ) )
     {
         _upperBounds[y] = upperBound;
-        _upperBoundIsInternal[y] = true;
         Tightening newBound( y, _upperBounds[y], Tightening::UB );
 
-        for ( std::pair<unsigned, bool> explanationPair: yUpperBoundExplanations )
+        for ( const Fact* explanation: yUpperBoundExplanations )
         {
-            newBound.addExplanation( explanationPair.first, explanationPair.second );
+            newBound.addExplanation( explanation );
         }
 
         if( _internalFactTracker )
         {
             _internalFactTracker->addBoundFact( newBound._variable, newBound );
-            _upperBoundExplanationIDs[y] = _internalFactTracker->getFactIDAffectingBound( y, FactTracker::UB );
+            _upperBoundExplanations[y] = const_cast<Fact*>(_internalFactTracker->getFactAffectingBound( y, FactTracker::UB ));
         }
         _tightenedUpper[y] = true;
         ++result;
@@ -580,7 +564,7 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
 
     if ( FloatUtils::gt( _lowerBounds[y], _upperBounds[y] ) )
     {
-        List<unsigned> failureExplanations = findExternalExplanations( y );
+        List<const Fact*> failureExplanations = findExternalExplanations( y );
         throw InfeasibleQueryException( failureExplanations );
     }
 
@@ -646,8 +630,8 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
 
         // Guy: For symmetry with auxLb and auxUb, please compute once the explanations for
         // all variables including y, and then remove as needed. Follow the same naming convention.
-        Map<unsigned, bool> xiLowerBoundExplanations;
-        Map<unsigned, bool> xiUpperBoundExplanations;
+        Set<const Fact*> xiLowerBoundExplanations;
+        Set<const Fact*> xiUpperBoundExplanations;
 
         if ( _ciSign[i] == POSITIVE )
         {
@@ -673,28 +657,30 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
 
         if ( FloatUtils::lt( _lowerBounds[xi], lowerBound ) )
         {
-            if( xiLowerBoundExplanations.exists( _lowerBoundExplanationIDs[xi] ) &&  xiLowerBoundExplanations[_lowerBoundExplanationIDs[xi]] == _lowerBoundIsInternal[xi] )
+            if( xiLowerBoundExplanations.exists( _lowerBoundExplanations[xi] )
+                isBoundFactInternal(xi, RowBoundTightener::LB) ==
+            &&  xiLowerBoundExplanations[_lowerBoundExplanations[xi]] == _lowerBoundIsInternal[xi] )
             {
-                xiLowerBoundExplanations.erase( _lowerBoundExplanationIDs[xi] );
+                xiLowerBoundExplanations.erase( _lowerBoundExplanations[xi] );
             }
 
-            if( xiLowerBoundExplanations.exists( _upperBoundExplanationIDs[xi] ) &&  xiLowerBoundExplanations[_upperBoundExplanationIDs[xi]] == _upperBoundIsInternal[xi] )
+            if( xiLowerBoundExplanations.exists( _upperBoundExplanations[xi] ) &&  xiLowerBoundExplanations[_upperBoundExplanations[xi]] == _upperBoundIsInternal[xi] )
             {
-                xiLowerBoundExplanations.erase( _upperBoundExplanationIDs[xi] );
+                xiLowerBoundExplanations.erase( _upperBoundExplanations[xi] );
             }
 
             if( _ciSign[i] == POSITIVE )
             {
-                if ( _lowerBoundExplanationIDs[y] )
+                if ( _lowerBoundExplanations[y] )
                 {
-                    xiLowerBoundExplanations.insert( _lowerBoundExplanationIDs[y], _lowerBoundIsInternal[y] );
+                    xiLowerBoundExplanations.insert( _lowerBoundExplanations[y], _lowerBoundIsInternal[y] );
                 }
             }
             else if( _ciSign[i] == NEGATIVE )
             {
-                if ( _upperBoundExplanationIDs[y] )
+                if ( _upperBoundExplanations[y] )
                 {
-                    xiLowerBoundExplanations.insert( _upperBoundExplanationIDs[y], _upperBoundIsInternal[y] );
+                    xiLowerBoundExplanations.insert( _upperBoundExplanations[y], _upperBoundIsInternal[y] );
                 }
             }
 
@@ -710,37 +696,37 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
             if( _internalFactTracker )
             {
                 _internalFactTracker->addBoundFact( newBound._variable, newBound );
-                _lowerBoundExplanationIDs[xi] = _internalFactTracker->getFactIDAffectingBound( xi, FactTracker::LB );
+                _lowerBoundExplanations[xi] = _internalFactTracker->getFactIDAffectingBound( xi, FactTracker::LB );
             }
-            
+
             _tightenedLower[xi] = true;
             ++result;
         }
 
         if ( FloatUtils::gt( _upperBounds[xi], upperBound ) )
         {
-            if( xiUpperBoundExplanations.exists( _lowerBoundExplanationIDs[xi] ) && xiUpperBoundExplanations[_lowerBoundExplanationIDs[xi]] == _lowerBoundIsInternal[xi] )
+            if( xiUpperBoundExplanations.exists( _lowerBoundExplanations[xi] ) && xiUpperBoundExplanations[_lowerBoundExplanations[xi]] == _lowerBoundIsInternal[xi] )
             {
-                xiUpperBoundExplanations.erase( _lowerBoundExplanationIDs[xi] );
+                xiUpperBoundExplanations.erase( _lowerBoundExplanations[xi] );
             }
 
-            if( xiUpperBoundExplanations.exists( _upperBoundExplanationIDs[xi] ) && xiUpperBoundExplanations[_upperBoundExplanationIDs[xi]] == _upperBoundIsInternal[xi] )
+            if( xiUpperBoundExplanations.exists( _upperBoundExplanations[xi] ) && xiUpperBoundExplanations[_upperBoundExplanations[xi]] == _upperBoundIsInternal[xi] )
             {
-                xiUpperBoundExplanations.erase( _upperBoundExplanationIDs[xi] );
+                xiUpperBoundExplanations.erase( _upperBoundExplanations[xi] );
             }
-            
+
             if( _ciSign[i] == POSITIVE )
             {
-                if ( _upperBoundExplanationIDs[y] )
+                if ( _upperBoundExplanations[y] )
                 {
-                    xiUpperBoundExplanations.insert( _upperBoundExplanationIDs[y], _upperBoundIsInternal[y] );
+                    xiUpperBoundExplanations.insert( _upperBoundExplanations[y], _upperBoundIsInternal[y] );
                 }
             }
             else if( _ciSign[i] == NEGATIVE )
             {
-                if ( _lowerBoundExplanationIDs[y] )
+                if ( _lowerBoundExplanations[y] )
                 {
-                    xiUpperBoundExplanations.insert( _lowerBoundExplanationIDs[y], _lowerBoundIsInternal[y] );
+                    xiUpperBoundExplanations.insert( _lowerBoundExplanations[y], _lowerBoundIsInternal[y] );
                 }
             }
 
@@ -756,7 +742,7 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
             if( _internalFactTracker )
             {
                 _internalFactTracker->addBoundFact( newBound._variable, newBound );
-                _upperBoundExplanationIDs[xi] = _internalFactTracker->getFactIDAffectingBound( xi, FactTracker::UB );
+                _upperBoundExplanations[xi] = _internalFactTracker->getFactIDAffectingBound( xi, FactTracker::UB );
             }
 
             _tightenedUpper[xi] = true;
@@ -886,29 +872,29 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
         if ( _ciSign[i] == NEGATIVE )
         {
             auxLb -= _ciTimesLb[i];
-            if ( _lowerBoundExplanationIDs[i] )
+            if ( _lowerBoundExplanations[i] )
             {
-                tempLowerBoundExplanations.insert( _lowerBoundExplanationIDs[i], _lowerBoundIsInternal[i] );
+                tempLowerBoundExplanations.insert( _lowerBoundExplanations[i], _lowerBoundIsInternal[i] );
             }
 
             auxUb -= _ciTimesUb[i];
-            if ( _upperBoundExplanationIDs[i] )
+            if ( _upperBoundExplanations[i] )
             {
-                tempUpperBoundExplanations.insert( _upperBoundExplanationIDs[i], _upperBoundIsInternal[i] );
+                tempUpperBoundExplanations.insert( _upperBoundExplanations[i], _upperBoundIsInternal[i] );
             }
         }
         else if ( _ciSign[i] == POSITIVE )
         {
             auxLb -= _ciTimesUb[i];
-            if ( _upperBoundExplanationIDs[i] )
+            if ( _upperBoundExplanations[i] )
             {
-                tempLowerBoundExplanations.insert( _upperBoundExplanationIDs[i], _upperBoundIsInternal[i] );
+                tempLowerBoundExplanations.insert( _upperBoundExplanations[i], _upperBoundIsInternal[i] );
             }
 
             auxUb -= _ciTimesLb[i];
-            if ( _lowerBoundExplanationIDs[i] )
+            if ( _lowerBoundExplanations[i] )
             {
-                tempUpperBoundExplanations.insert( _lowerBoundExplanationIDs[i], _lowerBoundIsInternal[i] );
+                tempUpperBoundExplanations.insert( _lowerBoundExplanations[i], _lowerBoundIsInternal[i] );
             }
         }
     }
@@ -962,14 +948,14 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
         // If a tighter bound is found, store it
         if ( FloatUtils::lt( _lowerBounds[index], lowerBound ) )
         {
-            if ( iLowerBoundExplanations.exists( _lowerBoundExplanationIDs[index] ) && iLowerBoundExplanations[_lowerBoundExplanationIDs[index]] == _lowerBoundIsInternal[index] )
+            if ( iLowerBoundExplanations.exists( _lowerBoundExplanations[index] ) && iLowerBoundExplanations[_lowerBoundExplanations[index]] == _lowerBoundIsInternal[index] )
             {
-                iLowerBoundExplanations.erase( _lowerBoundExplanationIDs[index] );
+                iLowerBoundExplanations.erase( _lowerBoundExplanations[index] );
             }
 
-            if ( iLowerBoundExplanations.exists( _upperBoundExplanationIDs[index] ) && iLowerBoundExplanations[_upperBoundExplanationIDs[index]] == _upperBoundIsInternal[index] )
+            if ( iLowerBoundExplanations.exists( _upperBoundExplanations[index] ) && iLowerBoundExplanations[_upperBoundExplanations[index]] == _upperBoundIsInternal[index] )
             {
-                iLowerBoundExplanations.erase( _upperBoundExplanationIDs[index] );
+                iLowerBoundExplanations.erase( _upperBoundExplanations[index] );
             }
 
             _lowerBounds[index] = lowerBound;
@@ -980,11 +966,11 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
             {
                 newBound.addExplanation( explanationPair.first, explanationPair.second );
             }
-            
+
             if( _internalFactTracker )
             {
                 _internalFactTracker->addBoundFact( newBound._variable, newBound );
-                _lowerBoundExplanationIDs[index] = _internalFactTracker->getFactIDAffectingBound( index, FactTracker::LB );
+                _lowerBoundExplanations[index] = _internalFactTracker->getFactIDAffectingBound( index, FactTracker::LB );
             }
 
             _tightenedLower[index] = true;
@@ -993,13 +979,13 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
 
         if ( FloatUtils::gt( _upperBounds[index], upperBound ) )
         {
-            if ( iUpperBoundExplanations.exists( _lowerBoundExplanationIDs[index] ) && iUpperBoundExplanations[_lowerBoundExplanationIDs[index]] == _lowerBoundIsInternal[index] )
+            if ( iUpperBoundExplanations.exists( _lowerBoundExplanations[index] ) && iUpperBoundExplanations[_lowerBoundExplanations[index]] == _lowerBoundIsInternal[index] )
             {
-                iUpperBoundExplanations.erase( _lowerBoundExplanationIDs[index] );
+                iUpperBoundExplanations.erase( _lowerBoundExplanations[index] );
             }
-            if ( iUpperBoundExplanations.exists( _upperBoundExplanationIDs[index] ) && iUpperBoundExplanations[_upperBoundExplanationIDs[index]] == _upperBoundIsInternal[index] )
+            if ( iUpperBoundExplanations.exists( _upperBoundExplanations[index] ) && iUpperBoundExplanations[_upperBoundExplanations[index]] == _upperBoundIsInternal[index] )
             {
-                iUpperBoundExplanations.erase( _upperBoundExplanationIDs[index] );
+                iUpperBoundExplanations.erase( _upperBoundExplanations[index] );
             }
 
             _upperBounds[index] = upperBound;
@@ -1014,7 +1000,7 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
             if( _internalFactTracker )
             {
                 _internalFactTracker->addBoundFact( newBound._variable, newBound );
-                _upperBoundExplanationIDs[index] = _internalFactTracker->getFactIDAffectingBound( index, FactTracker::UB );
+                _upperBoundExplanations[index] = _internalFactTracker->getFactIDAffectingBound( index, FactTracker::UB );
             }
 
             _tightenedUpper[index] = true;
@@ -1096,9 +1082,9 @@ void RowBoundTightener::notifyLowerBound( unsigned variable, double bound )
 
         if ( _factTracker && _factTracker->hasFactAffectingBound( variable, FactTracker::LB ) )
         {
-            _lowerBoundExplanationIDs[variable] = _factTracker->getFactIDAffectingBound( variable, FactTracker::LB );
+            _lowerBoundExplanations[variable] = const_cast<Fact*>(_factTracker->getFactAffectingBound( variable, FactTracker::LB ));
         }
-        
+
         _tightenedLower[variable] = false;
     }
 }
@@ -1108,11 +1094,10 @@ void RowBoundTightener::notifyUpperBound( unsigned variable, double bound )
     if ( FloatUtils::lt( bound, _upperBounds[variable] ) )
     {
         _upperBounds[variable] = bound;
-        _upperBoundIsInternal[variable] = false;
 
         if ( _factTracker && _factTracker->hasFactAffectingBound( variable, FactTracker::UB ) )
         {
-            _upperBoundExplanationIDs[variable] = _factTracker->getFactIDAffectingBound( variable, FactTracker::UB );
+            _upperBoundExplanations[variable] = const_cast<Fact*>(_factTracker->getFactIDAffectingBound( variable, FactTracker::UB ));
         }
 
         _tightenedUpper[variable] = false;
