@@ -23,6 +23,8 @@ class InfeasibleQueryException
 {
 public:
     InfeasibleQueryException( const List<const Fact*>& explanations );
+    List<const Fact*> getExplanations() const;
+private:
     List<const Fact*> _explanations;
 };
 

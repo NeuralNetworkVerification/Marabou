@@ -63,7 +63,7 @@ public:
       Pop an old split from the stack, and perform a new split as
       needed. Return true if successful, false if the stack is empty.
     */
-    bool popSplit();
+    bool popSplit(const List<const Fact*>& explanation);
 
     /*
       The current stack depth.

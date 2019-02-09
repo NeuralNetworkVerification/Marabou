@@ -269,9 +269,10 @@ public:
         engine->lastUpperBounds.clear();
         engine->lastEquations.clear();
 
+        List<const Fact*> emptyExplanations;
         // Pop Split1, check that the tableau was restored and that
         // a Split2 was performed
-        TS_ASSERT( smtCore.popSplit() );
+        TS_ASSERT( smtCore.popSplit(emptyExplanations) );
         TS_ASSERT_EQUALS( smtCore.getStackDepth(), 1U );
 
         TS_ASSERT_EQUALS( engine->lastRestoredState, originalState );
@@ -299,7 +300,7 @@ public:
 
         // Pop Split2, check that the tableau was restored and that
         // a Split3 was performed
-        TS_ASSERT( smtCore.popSplit() );
+        TS_ASSERT( smtCore.popSplit(emptyExplanations) );
         TS_ASSERT_EQUALS( smtCore.getStackDepth(), 1U );
 
         TS_ASSERT_EQUALS( engine->lastRestoredState, originalState );
@@ -327,7 +328,7 @@ public:
         engine->lastEquations.clear();
 
         // Final pop
-        TS_ASSERT( !smtCore.popSplit() );
+        TS_ASSERT( !smtCore.popSplit(emptyExplanations) );
         TS_ASSERT( !engine->lastRestoredState );
         TS_ASSERT_EQUALS( smtCore.getStackDepth(), 0U );
     }

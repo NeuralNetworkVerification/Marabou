@@ -150,7 +150,7 @@ unsigned SmtCore::getStackDepth() const
     return _stack.size();
 }
 
-bool SmtCore::popSplit()
+bool SmtCore::popSplit(const List<const Fact*>& /*explanation*/)
 {
     log( "Performing a pop" );
 

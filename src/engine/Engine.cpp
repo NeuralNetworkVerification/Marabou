@@ -260,11 +260,11 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 return false;
             }
         }
-        catch ( const InfeasibleQueryException & )
+        catch ( const InfeasibleQueryException & e)
         {
             // The current query is unsat, and we need to pop.
             // If we're at level 0, the whole query is unsat.
-            if ( !_smtCore.popSplit() )
+            if ( !_smtCore.popSplit(e.getExplanations()) )
             {
                 printf( "\nEngine::solve: UNSAT query\n" );
                 _statistics.print();

@@ -17,6 +17,11 @@ InfeasibleQueryException::InfeasibleQueryException( const List<const Fact*> &exp
 {
 }
 
+List<const Fact*> InfeasibleQueryException::getExplanations() const
+{
+  return _explanations;
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "
