@@ -134,6 +134,8 @@ private:
     Fact* *_upperBoundExplanations;
     bool *_tightenedLower;
     bool *_tightenedUpper;
+    bool *_lowerBoundIsInternal;
+    bool *_upperBoundIsInternal;
 
     /*
       Work space for the inverted basis matrix tighteners
@@ -187,7 +189,7 @@ private:
     */
     unsigned tightenOnSingleInvertedBasisRow( const TableauRow &row, unsigned equIndex );
 
-    bool isBoundFactInternal(unsigned variable, QueryType type) const;
+    bool isBoundInternal(unsigned var, QueryType type);
 };
 
 #endif // __RowBoundTightener_h__
