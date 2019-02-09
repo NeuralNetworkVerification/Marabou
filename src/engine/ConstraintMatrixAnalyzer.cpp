@@ -95,15 +95,8 @@ void ConstraintMatrixAnalyzer::analyze( const double *matrix, unsigned m, unsign
     _rowHeaders = new unsigned[m];
     _columnHeaders = new unsigned[n];
 
-    // Initialize the local copy of the matrix. Switch from column-major
-    // to row-major.
-    for ( unsigned row = 0; row < _m; ++row )
-    {
-        for ( unsigned column = 0; column < _n; ++column )
-        {
-            _matrix[row * n + column] = matrix[column * _m + row];
-        }
-    }
+    // Initialize the local copy of the matrix
+    memcpy( _matrix, matrix, sizeof(double) * m * n );
 
     // Initialize the row and column headers
     for ( unsigned i = 0; i < _m; ++i )
@@ -178,6 +171,15 @@ void ConstraintMatrixAnalyzer::gaussianElimination()
 List<unsigned> ConstraintMatrixAnalyzer::getIndependentColumns() const
 {
     return _independentColumns;
+}
+
+Set<unsigned> ConstraintMatrixAnalyzer::getRedundantRows() const
+{
+    Set<unsigned> result;
+    for ( unsigned i = _eliminationStep; i < _m; ++i )
+        result.insert( _rowHeaders[i] );
+
+    return result;
 }
 
 void ConstraintMatrixAnalyzer::swapRows( unsigned i, unsigned j )

@@ -104,6 +104,20 @@ List<Equation> &InputQuery::getEquations()
     return _equations;
 }
 
+void InputQuery::removeEquationsByIndex( const Set<unsigned> indices )
+{
+    unsigned m = _equations.size();
+    List<Equation>::iterator it = _equations.begin();
+
+    for ( unsigned index = 0; index < m; ++index )
+    {
+        if ( indices.exists( index ) )
+            it = _equations.erase( it );
+        else
+            ++it;
+    }
+}
+
 const List<Equation> &InputQuery::getEquations() const
 {
     return _equations;

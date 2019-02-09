@@ -41,17 +41,6 @@ public:
 		TS_ASSERT_THROWS_NOTHING( delete mock );
 	}
 
-    void transpose( double *matrix, unsigned m, unsigned n )
-    {
-        double *temp = new double[m*n];
-        for ( unsigned i = 0; i < m; ++i )
-            for ( unsigned j = 0; j < n; ++j )
-                temp[j*m + i] = matrix[i*n + j];
-
-        memcpy( matrix, temp, sizeof(double) * m * n );
-        delete[] temp;
-    }
-
     void test_analyze__gaussian_eliminiation()
     {
         double result[15];
@@ -66,11 +55,7 @@ public:
                 0, 0, 0, 1, 0,
             };
 
-            double A1t[sizeof(A1) / sizeof(double)];
-            memcpy( A1t, A1, sizeof(A1) );
-            transpose( A1t, 3, 5 );
-
-            TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1t, 3, 5 ) );
+            TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1, 3, 5 ) );
 
             double expectedResult[] = {
                 1, 0, 0, 0, 0,
@@ -94,11 +79,7 @@ public:
                 0, 1, 0, 1, 0,
             };
 
-            double A1t[sizeof(A1) / sizeof(double)];
-            memcpy( A1t, A1, sizeof(A1) );
-            transpose( A1t, 3, 5 );
-
-            TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1t, 3, 5 ) );
+            TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1, 3, 5 ) );
 
             double expectedResult[] = {
                 1, 0, 0, 0, 0,
@@ -123,11 +104,7 @@ public:
                 0, 1, 0, 2, 0,
             };
 
-            double A1t[sizeof(A1) / sizeof(double)];
-            memcpy( A1t, A1, sizeof(A1) );
-            transpose( A1t, 3, 5 );
-
-            TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1t, 3, 5 ) );
+            TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1, 3, 5 ) );
 
             double expectedResult[] = {
                 2, 0, 0, 1, 0,
@@ -152,11 +129,7 @@ public:
                 2, 2, 0, 0, 0,
             };
 
-            double A1t[sizeof(A1) / sizeof(double)];
-            memcpy( A1t, A1, sizeof(A1) );
-            transpose( A1t, 3, 5 );
-
-            TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1t, 3, 5 ) );
+            TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1, 3, 5 ) );
 
             double expectedResult[] = {
                 3, 0, 0, 0, 0,
@@ -181,11 +154,7 @@ public:
                 15, 3, -1, 2, 4,
             };
 
-            double A1t[sizeof(A1) / sizeof(double)];
-            memcpy( A1t, A1, sizeof(A1) );
-            transpose( A1t, 3, 5 );
-
-            TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1t, 3, 5 ) );
+            TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1, 3, 5 ) );
 
             double expectedResult[] = {
                 15, 0,  0, 1, 3,
@@ -210,11 +179,7 @@ public:
                 0, 0, 0, 0, 0,
             };
 
-            double A1t[sizeof(A1) / sizeof(double)];
-            memcpy( A1t, A1, sizeof(A1) );
-            transpose( A1t, 3, 5 );
-
-            TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1t, 3, 5 ) );
+            TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1, 3, 5 ) );
 
             double expectedResult[] = {
                 0, 0, 0, 0, 0,
@@ -239,11 +204,7 @@ public:
                 0, 2, 3, 14, 1,
             };
 
-            double A1t[sizeof(A1) / sizeof(double)];
-            memcpy( A1t, A1, sizeof(A1) );
-            transpose( A1t, 3, 5 );
-
-            TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1t, 3, 5 ) );
+            TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1, 3, 5 ) );
 
             double expectedResult[] = {
                 14, 2, 3, 0, 1,
@@ -271,11 +232,7 @@ public:
                 0, 0, 1, 0, 0,
             };
 
-            double A1t[sizeof(A1) / sizeof(double)];
-            memcpy( A1t, A1, sizeof(A1) );
-            transpose( A1t, 3, 5 );
-
-            TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1t, 3, 5 ) );
+            TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1, 3, 5 ) );
 
             List<unsigned> cols = analyzer->getIndependentColumns();
             TS_ASSERT_EQUALS( cols.size(), 3U );
@@ -299,11 +256,7 @@ public:
                 0, 0, 0, 0, 1,
             };
 
-            double A1t[sizeof(A1) / sizeof(double)];
-            memcpy( A1t, A1, sizeof(A1) );
-            transpose( A1t, 3, 5 );
-
-            TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1t, 3, 5 ) );
+            TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1, 3, 5 ) );
 
             List<unsigned> cols = analyzer->getIndependentColumns();
             TS_ASSERT_EQUALS( cols.size(), 3U );
@@ -327,11 +280,7 @@ public:
                 0, 0, 0, 0, 1,
             };
 
-            double A1t[sizeof(A1) / sizeof(double)];
-            memcpy( A1t, A1, sizeof(A1) );
-            transpose( A1t, 3, 5 );
-
-            TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1t, 3, 5 ) );
+            TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1, 3, 5 ) );
 
             List<unsigned> cols = analyzer->getIndependentColumns();
             TS_ASSERT_EQUALS( cols.size(), 3U );

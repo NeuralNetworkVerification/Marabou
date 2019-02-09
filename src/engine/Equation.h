@@ -19,9 +19,14 @@
 #include "Fact.h"
 #include "List.h"
 
-/* A class representing a single input equation. For now, all
-   equations are interpreted as equalities, i.e. the sum of all
-   addends equals the scalar */
+/* 
+   A class representing a single equation. 
+   An equation is interpreted as:
+
+   sum( coefficient * variable ) op scalar
+
+   Where op is either =, <= or >=
+*/
 
 class Equation: public Fact
 {
