@@ -32,6 +32,7 @@ public:
     };
 
     FactTracker(): _statistics(NULL){};
+    ~FactTracker();
     void setStatistics( Statistics* statistics );
     List<Pair<unsigned, unsigned> > getConstraintsAndSplitsCausingFacts(List<const Fact*> facts) const;
     void addSplitLevelCausingFact( const Fact* fact );

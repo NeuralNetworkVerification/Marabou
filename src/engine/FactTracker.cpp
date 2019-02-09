@@ -13,6 +13,12 @@
 #include "FactTracker.h"
 #include "Queue.h"
 
+FactTracker::~FactTracker()
+{
+  for(const Fact* fact: _factsLearnedSet)
+    delete fact;
+}
+
 void FactTracker::setStatistics( Statistics* statistics )
 {
   _statistics = statistics;
