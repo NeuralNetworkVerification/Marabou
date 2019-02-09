@@ -35,7 +35,6 @@ public:
     ~FactTracker();
     void setStatistics( Statistics* statistics );
     List<Pair<unsigned, unsigned> > getConstraintsAndSplitsCausingFacts(List<const Fact*> facts) const;
-    void addSplitLevelCausingFact( const Fact* fact );
     void addBoundFact( unsigned var, Tightening bound );
     void addEquationFact ( unsigned equNumber, Equation equ );
     bool hasFact(const Fact* fact) const;
@@ -62,7 +61,6 @@ private:
 
     Set<const Fact*> _factsLearnedSet;
     Stack<Pair<unsigned, BoundType> > _factsLearned;
-    Map<const Fact*, unsigned> _factToSplitLevelCausing;
     Set<const Fact*> _allFacts;
 
     Statistics* _statistics;

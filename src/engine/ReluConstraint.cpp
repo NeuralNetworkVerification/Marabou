@@ -419,24 +419,38 @@ PiecewiseLinearCaseSplit ReluConstraint::getSplitFromID( unsigned splitID ) cons
 
 PiecewiseLinearCaseSplit ReluConstraint::getInactiveSplit() const
 {
+    unsigned nextSplitLevel = 0;
+    if (_statistics)
+      nextSplitLevel = _statistics->getCurrentStackDepth() + 1;
     // Inactive phase: b <= 0, f = 0
     PiecewiseLinearCaseSplit inactivePhase;
     inactivePhase.setConstraintAndSplitID( _id, 0 );
-    inactivePhase.storeBoundTightening( Tightening( _b, 0.0, Tightening::UB ) );
-    inactivePhase.storeBoundTightening( Tightening( _f, 0.0, Tightening::UB ) );
+    Tightening bound1 = Tightening( _b, 0.0, Tightening::UB );
+    bound1.setCausingSplitInfo( _id, 0, nextSplitLevel );
+    Tightening bound2 = Tightening( _f, 0.0, Tightening::UB );
+    bound2.setCausingSplitInfo( _id, 0, nextSplitLevel );
+    inactivePhase.storeBoundTightening( bound1 );
+    inactivePhase.storeBoundTightening( bound2 );
     return inactivePhase;
 }
 
 PiecewiseLinearCaseSplit ReluConstraint::getActiveSplit() const
 {
+    unsigned nextSplitLevel = 0;
+    if (_statistics)
+      nextSplitLevel = _statistics->getCurrentStackDepth() + 1;
     // Active phase: b >= 0, b - f = 0
     PiecewiseLinearCaseSplit activePhase;
     activePhase.setConstraintAndSplitID( _id, 1 );
-    activePhase.storeBoundTightening( Tightening( _b, 0.0, Tightening::LB ) );
+    Tightening bound = Tightening( _b, 0.0, Tightening::LB );
+    // this fact will be caused by next split
+    bound.setCausingSplitInfo( _id, 1, nextSplitLevel );
+    activePhase.storeBoundTightening( bound );
     Equation activeEquation( Equation::EQ );
     activeEquation.addAddend( 1, _b );
     activeEquation.addAddend( -1, _f );
     activeEquation.setScalar( 0 );
+    activeEquation.setCausingSplitInfo( _id, 1, nextSplitLevel );
     activePhase.addEquation( activeEquation );
     return activePhase;
 }

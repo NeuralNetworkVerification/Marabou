@@ -40,7 +40,6 @@ public:
       Set contraint and split ID that caused this split
     */
     void setConstraintAndSplitID( unsigned constraintID, unsigned splitID );
-    void setFactsConstraintAndSplitID();
     unsigned getConstraintID() const;
     unsigned getSplitID() const;
 

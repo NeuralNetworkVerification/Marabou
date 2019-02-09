@@ -48,28 +48,10 @@ List<Pair<unsigned, unsigned> > FactTracker::getConstraintsAndSplitsCausingFacts
   return result;
 }
 
-
-void FactTracker::addSplitLevelCausingFact( const Fact* fact)
-{
-  if ( fact->isCausedBySplit() )
-  {
-    _factToSplitLevelCausing[fact] = _statistics->getCurrentStackDepth();
-    return;
-  }
-  unsigned level = 0;
-  for (const Fact* explanation: fact->getExplanations() )
-  {
-    if (_factToSplitLevelCausing[explanation] > level)
-      level = _factToSplitLevelCausing[explanation];
-  }
-  _factToSplitLevelCausing[fact] = level;
-}
-
 void FactTracker::addBoundFact( unsigned var, Tightening bound )
 {
     const Fact* newFact = new Tightening(bound);
     _factsLearnedSet.insert(newFact);
-    addSplitLevelCausingFact( newFact );
     if ( bound._type == Tightening::LB )
     {
         if ( !hasFactAffectingBound( var, FactTracker::LB) )
@@ -90,7 +72,6 @@ void FactTracker::addEquationFact( unsigned equNumber, Equation equ )
 {
     const Fact* newFact = new Equation(equ);
     _factsLearnedSet.insert(newFact);
-    addSplitLevelCausingFact( newFact );
     if ( !hasFactAffectingEquation( equNumber ) )
       _equationFact[equNumber] = Stack<const Fact*>();
     _equationFact[equNumber].push(newFact);

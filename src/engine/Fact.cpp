@@ -13,7 +13,8 @@
 #include "Fact.h"
 
 Fact::Fact()
-    : _causedBySplit( false )
+    : _causedBySplit( false ),
+      _splitLevelCausing( 0 )
 {
 }
 
@@ -24,20 +25,29 @@ List<const Fact*> Fact::getExplanations() const
 
 void Fact::addExplanation( const Fact* explanation )
 {
-    if(explanation!=NULL)
+    if(explanation!=NULL){
       _explanations.append( explanation );
+      if ( explanation->getSplitLevelCausing() > _splitLevelCausing )
+        _splitLevelCausing = explanation->_splitLevelCausing;
+    }
 }
 
-void Fact::setCausingConstraintAndSplitID( unsigned constraintID, unsigned splitID )
+void Fact::setCausingSplitInfo( unsigned constraintID, unsigned splitID, unsigned splitLevelCausing )
 {
     _causedBySplit = true;
     _causingConstraintID = constraintID;
     _causingSplitID = splitID;
+    _splitLevelCausing = splitLevelCausing;
 }
 
 bool Fact::isCausedBySplit() const
 {
     return _causedBySplit;
+}
+
+unsigned Fact::getSplitLevelCausing() const
+{
+  return _splitLevelCausing;
 }
 
 unsigned Fact::getCausingConstraintID() const

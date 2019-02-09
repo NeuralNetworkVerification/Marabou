@@ -24,8 +24,9 @@ public:
     virtual ~Fact(){}
     List<const Fact*> getExplanations() const;
     void addExplanation( const Fact* explanation );
-    void setCausingConstraintAndSplitID( unsigned constraintID, unsigned splitID );
+    void setCausingSplitInfo( unsigned constraintID, unsigned splitID, unsigned splitLevelCausing );
     bool isCausedBySplit() const;
+    unsigned getSplitLevelCausing() const;
     unsigned getCausingConstraintID() const;
     unsigned getCausingSplitID() const;
     virtual String getDescription() const = 0;
@@ -36,6 +37,7 @@ private:
     unsigned _causingConstraintID;
     unsigned _causingSplitID;
     bool _causedBySplit;
+    unsigned _splitLevelCausing;
 };
 
 #endif // __Fact_h__

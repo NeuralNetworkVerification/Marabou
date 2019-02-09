@@ -101,11 +101,6 @@ void SmtCore::performSplit()
     ASSERT( !splits.empty() );
     ASSERT( splits.size() >= 2 ); // Not really necessary, can add code to handle this case.
 
-    // Guy: as I wrote earlier, this is confusing. I'm not sure the splits should carry this information,
-    // and if they do I think it can be passed more automatically, without this extra call.
-    for( auto &split: splits )
-        split.setFactsConstraintAndSplitID();
-
     _constraintForSplitting->setActiveConstraint( false );
 
     // Obtain the current state of the engine

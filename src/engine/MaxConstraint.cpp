@@ -417,11 +417,16 @@ PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const
     PiecewiseLinearCaseSplit maxPhase;
     maxPhase.setConstraintAndSplitID( _id, argMax );
 
+    unsigned nextSplitLevel = 0;
+    if ( _statistics )
+      nextSplitLevel = _statistics->getCurrentStackDepth() + 1;
+
     // maxArg - f = 0
     Equation maxEquation( Equation::EQ );
     maxEquation.addAddend( 1, argMax );
     maxEquation.addAddend( -1, _f );
     maxEquation.setScalar( 0 );
+    maxEquation.setCausingSplitInfo( _id, argMax, nextSplitLevel);
     maxPhase.addEquation( maxEquation );
 
     // store bound tightenings as well
@@ -438,13 +443,18 @@ PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const
 	    gtEquation.addAddend( -1, other );
 	    gtEquation.addAddend( 1, argMax );
 	    gtEquation.setScalar( 0 );
+      gtEquation.setCausingSplitInfo( _id, argMax, nextSplitLevel);
 	    maxPhase.addEquation( gtEquation );
 
         if ( _upperBounds.exists( argMax ) )
         {
             if ( !_upperBounds.exists( other ) ||
                  FloatUtils::gt( _upperBounds[other], _upperBounds[argMax] ) )
-                maxPhase.storeBoundTightening( Tightening( other, _upperBounds[argMax], Tightening::UB ) );
+              {
+                Tightening bound = Tightening( other, _upperBounds[argMax], Tightening::UB );
+                bound.setCausingSplitInfo( _id, argMax, nextSplitLevel);
+                maxPhase.storeBoundTightening( bound );
+              }
         }
 	}
 
