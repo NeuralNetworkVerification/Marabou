@@ -48,7 +48,7 @@ TARGET = $(API_NAME)
 
 include ../Rules.mk
 
-COMPILE = c++ -std=c++11 -O3 -fPIC $(PYBIND11_INCLUDES)
+COMPILE = c++ -std=c++11 -O3 -fPIC $(PYBIND11_INCLUDES) -g
 LINK 	= c++ -std=c++11 -O3 -fPIC -shared -Wl,-undefined,dynamic_lookup $(PYBIND11_INCLUDES)
 
 $(TARGET): $(OBJECTS)

@@ -264,16 +264,12 @@ bool Engine::solve( unsigned timeoutInSeconds )
         {
             auto explanations = e.getExplanations();
             auto splits = _factTracker.getConstraintsAndSplitsCausingFacts(explanations);
+            List<PiecewiseLinearCaseSplit> soFar;
+            _smtCore.allSplitsSoFar(soFar);
             printf("CONTRADICTION %u %u %u\n",
               explanations.size(),
               splits.size(),
-              _statistics.getCurrentStackDepth());
-            for(const auto& f: explanations){
-              printf("EXPLANATION %s\n", f->getDescription().ascii());
-            }
-            for(const auto& p: splits){
-              printf("CONSTRAINT/SPLIT %u %u\n", p.first(), p.second());
-            }
+              soFar.size());
             // The current query is unsat, and we need to pop.
             // If we're at level 0, the whole query is unsat.
             if ( !_smtCore.popSplit(explanations) )

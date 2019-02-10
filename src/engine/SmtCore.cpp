@@ -114,8 +114,9 @@ void SmtCore::performSplit()
     // Guy: this is for forgetting facts that were the result of the popped split?
     // We can live with this for now, but as Clark says, it is more efficient to have the object
     // be able to support internal roll-back.
-    if ( _factTracker )
+    if ( _factTracker ){
         stackEntry->_numFacts = _factTracker->getNumFacts();
+    }
 
     // Perform the first split: add bounds and equations
     List<PiecewiseLinearCaseSplit>::iterator split = splits.begin();
@@ -201,6 +202,7 @@ bool SmtCore::popSplit(const List<const Fact*>& /*explanation*/)
       {
         _factTracker->popFact();
       }
+      _factTracker->verifySplitLevel(_statistics->getCurrentStackDepth());
     }
 
     // Apply the new split and erase it from the list
