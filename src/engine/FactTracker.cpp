@@ -179,9 +179,12 @@ Set<const Fact*> FactTracker::getExternalFactsForBound( const Fact* fact ) const
 
 void FactTracker::verifySplitLevel( unsigned level ) const
 {
+  (void) level;
   for(const Fact* fact: _factsLearnedSet){
+    (void) fact; // to make compiler happy
     ASSERT(fact != NULL && fact->getSplitLevelCausing() <= level);
     for(const Fact* exp: fact->getExplanations()){
+      (void) exp;
       ASSERT(exp != NULL && hasFact(exp) && exp->getSplitLevelCausing() <= level);
     }
   }
