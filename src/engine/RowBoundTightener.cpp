@@ -115,7 +115,7 @@ void RowBoundTightener::resetBounds()
     for ( unsigned i = 0; i < _n; ++i )
     {
         _lowerBounds[i] = _tableau.getLowerBound( i );
-        _lowerBoundExplanations[i] = 0;
+        _lowerBoundExplanations[i] = NULL;
         _lowerBoundIsInternal[i] = false;
 
         if ( _factTracker && _factTracker->hasFactAffectingBound( i, FactTracker::LB ) )
@@ -124,7 +124,7 @@ void RowBoundTightener::resetBounds()
         }
 
         _upperBounds[i] = _tableau.getUpperBound( i );
-        _upperBoundExplanations[i] = 0;
+        _upperBoundExplanations[i] = NULL;
         _upperBoundIsInternal[i] = false;
 
         if ( _factTracker && _factTracker->hasFactAffectingBound( i, FactTracker::UB ) )
@@ -133,36 +133,6 @@ void RowBoundTightener::resetBounds()
         }
 
         //clear bounds
-    }
-
-    delete _internalFactTracker;
-    _internalFactTracker = new FactTracker();
-}
-
-void RowBoundTightener::clear()
-{
-    std::fill( _tightenedLower, _tightenedLower + _n, false );
-    std::fill( _tightenedUpper, _tightenedUpper + _n, false );
-
-    for ( unsigned i = 0; i < _n; ++i )
-    {
-        _lowerBounds[i] = _tableau.getLowerBound( i );
-        _lowerBoundExplanations[i] = 0;
-        _lowerBoundIsInternal[i] = false;
-
-        if ( _factTracker && _factTracker->hasFactAffectingBound( i, FactTracker::LB ) )
-        {
-            _lowerBoundExplanations[i] = const_cast<Fact*>(_factTracker->getFactAffectingBound( i, FactTracker::LB ));
-        }
-
-        _upperBounds[i] = _tableau.getUpperBound( i );
-        _upperBoundExplanations[i] = 0;
-        _upperBoundIsInternal[i] = false;
-
-        if ( _factTracker && _factTracker->hasFactAffectingBound( i, FactTracker::UB ) )
-        {
-            _upperBoundExplanations[i] = const_cast<Fact*>(_factTracker->getFactAffectingBound( i, FactTracker::UB ));
-        }
     }
 
     delete _internalFactTracker;
@@ -271,7 +241,8 @@ List<const Fact*> RowBoundTightener::findExternalExplanations( unsigned variable
     {
         if( !_lowerBoundIsInternal[variable] )
         {
-            explanations.insert( _lowerBoundExplanations[variable] );
+            if (_lowerBoundExplanations[variable] != NULL)
+              explanations.insert( _lowerBoundExplanations[variable] );
         }
         else
         {
@@ -287,7 +258,8 @@ List<const Fact*> RowBoundTightener::findExternalExplanations( unsigned variable
     {
         if( !_upperBoundIsInternal[variable] )
         {
-            explanations.insert( _upperBoundExplanations[variable] );
+            if (_upperBoundExplanations[variable] != NULL)
+              explanations.insert( _upperBoundExplanations[variable] );
         }
         else
         {

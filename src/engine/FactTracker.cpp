@@ -10,6 +10,7 @@
  ** directory for licensing information.\endverbatim
  **/
 
+#include "Debug.h"
 #include "FactTracker.h"
 #include "Queue.h"
 
@@ -27,25 +28,33 @@ void FactTracker::setStatistics( Statistics* statistics )
 List<Pair<unsigned, unsigned> > FactTracker::getConstraintsAndSplitsCausingFacts(List<const Fact*> facts) const
 {
   Set<const Fact*> seen;
-  List<Pair<unsigned, unsigned> > result;
+  Set<Pair<unsigned, unsigned> > result;
   Queue<const Fact*> remaining;
-  for(const Fact* id: facts)
-    remaining.push( id );
+  for(const Fact* fact: facts){
+    ASSERT( fact != NULL);
+    remaining.push( fact );
+  }
   while(!remaining.empty())
   {
     const Fact* fact = remaining.peak();
+    ASSERT(fact != NULL);
     remaining.pop();
     if (seen.exists(fact)) continue;
     seen.insert(fact);
     if(fact->isCausedBySplit()){
-      result.append(Pair<unsigned, unsigned>(fact->getCausingConstraintID(), fact->getCausingSplitID()));
+      result.insert(Pair<unsigned, unsigned>(fact->getCausingConstraintID(), fact->getCausingSplitID()));
     }
     else {
-      for(const Fact* explanation: fact->getExplanations())
+      for(const Fact* explanation: fact->getExplanations()){
+        ASSERT(explanation != NULL);
         remaining.push(explanation);
+      }
     }
   }
-  return result;
+  List<Pair<unsigned, unsigned> > ret;
+  for( const auto& p: result)
+    ret.append(p);
+  return ret;
 }
 
 void FactTracker::addBoundFact( unsigned var, Tightening bound )
@@ -96,11 +105,13 @@ const Fact* FactTracker::getFactAffectingBound( unsigned var, BoundType type ) c
     if ( type == LB )
     {
         Stack<const Fact*> temp = _lowerBoundFact[var];
+        ASSERT(temp.top() != NULL);
         return temp.top();
     }
     else
     {
         Stack<const Fact*> temp = _upperBoundFact[var];
+        ASSERT(temp.top() != NULL);
         return temp.top();
     }
 }
@@ -113,6 +124,7 @@ bool FactTracker::hasFactAffectingEquation( unsigned equNumber ) const
 const Fact* FactTracker::getFactAffectingEquation( unsigned equNumber ) const
 {
     Stack<const Fact*> temp = _equationFact[equNumber];
+    ASSERT(temp.top() != NULL);
     return temp.top();
 }
 
@@ -128,17 +140,21 @@ void FactTracker::popFact()
   if ( factInfo.second() == LB ){
     const Fact* oldFact = _lowerBoundFact[factInfo.first()].top();
     _factsLearnedSet.erase(oldFact);
+    ASSERT(oldFact != NULL);
     delete oldFact;
     _lowerBoundFact[factInfo.first()].pop();
   }
   if ( factInfo.second() == UB ){
     const Fact* oldFact = _upperBoundFact[factInfo.first()].top();
     _factsLearnedSet.erase(oldFact);
-    delete oldFact;    _upperBoundFact[factInfo.first()].pop();
+    ASSERT(oldFact != NULL);
+    delete oldFact;
+     _upperBoundFact[factInfo.first()].pop();
   }
   if ( factInfo.second() == EQU ){
     const Fact* oldFact = _equationFact[factInfo.first()].top();
     _factsLearnedSet.erase(oldFact);
+    ASSERT(oldFact != NULL);
     delete oldFact;
     _equationFact[factInfo.first()].pop();
   }
@@ -146,6 +162,7 @@ void FactTracker::popFact()
 
 Set<const Fact*> FactTracker::getExternalFactsForBound( const Fact* fact ) const
 {
+    ASSERT(fact != NULL);
     Set<const Fact*> externalFacts;
     List<const Fact*> explanations = fact->getExplanations();
     for(const Fact* explanation: explanations){

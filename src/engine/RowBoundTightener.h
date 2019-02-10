@@ -46,11 +46,6 @@ public:
     void resetBounds();
 
     /*
-      Clear all learned bounds, without reallocating memory.
-    */
-    void clear();
-
-    /*
       Callbacks from the Tableau, to inform of bounds tightened by,
       e.g., the PL constraints.
     */

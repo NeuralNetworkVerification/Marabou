@@ -47,8 +47,6 @@ public:
     void popFact( );
 
 private:
-    unsigned _numFacts;
-
     // Guy: names should be more informative, e.g. varToLowerBoundFact, like you did
     // with factFromIndex
     // Also, a conceptual issue: what if we learn x>=5 and later we learn x>=7? Are these always
@@ -61,7 +59,6 @@ private:
 
     Set<const Fact*> _factsLearnedSet;
     Stack<Pair<unsigned, BoundType> > _factsLearned;
-    Set<const Fact*> _allFacts;
 
     Statistics* _statistics;
 };

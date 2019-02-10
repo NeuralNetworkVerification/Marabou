@@ -61,7 +61,6 @@ public:
     {
     }
 
-    void clear() {}
     void notifyLowerBound( unsigned /* variable */, double /* bound */ ) {}
     void notifyUpperBound( unsigned /* variable */, double /* bound */ ) {}
     void examineInvertedBasisMatrix( bool /* untilSaturation */ ) {}
