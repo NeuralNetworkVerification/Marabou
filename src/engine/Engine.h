@@ -365,6 +365,8 @@ private:
       Check whether a timeout value has been provided and exceeded.
     */
     bool shouldExitDueToTimeout( unsigned timeout ) const;
+
+    void initializeFactTracker();
 };
 
 #endif // __Engine_h__

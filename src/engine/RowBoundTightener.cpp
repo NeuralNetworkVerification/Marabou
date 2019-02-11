@@ -118,8 +118,9 @@ void RowBoundTightener::resetBounds()
         _lowerBoundExplanations[i] = NULL;
         _lowerBoundIsInternal[i] = false;
 
-        if ( _factTracker && _factTracker->hasFactAffectingBound( i, FactTracker::LB ) )
+        if ( _factTracker )
         {
+            ASSERT(_factTracker->hasFactAffectingBound( i, FactTracker::LB ));
             _lowerBoundExplanations[i] = const_cast<Fact*>(_factTracker->getFactAffectingBound( i, FactTracker::LB ));
         }
 
@@ -127,8 +128,9 @@ void RowBoundTightener::resetBounds()
         _upperBoundExplanations[i] = NULL;
         _upperBoundIsInternal[i] = false;
 
-        if ( _factTracker && _factTracker->hasFactAffectingBound( i, FactTracker::UB ) )
+        if ( _factTracker )
         {
+            ASSERT(_factTracker->hasFactAffectingBound( i, FactTracker::UB ) );
             _upperBoundExplanations[i] = const_cast<Fact*>(_factTracker->getFactAffectingBound( i, FactTracker::UB ));
         }
 
@@ -463,8 +465,9 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
     Map<const Fact*, bool> yUpperBoundExplanations;
 
     // Guy: this is for the fact that added the actual equation, right?
-    if ( _factTracker && _factTracker->hasFactAffectingEquation( equIndex ) )
+    if ( _factTracker )
     {
+        ASSERT(_factTracker->hasFactAffectingEquation( equIndex ));
         yLowerBoundExplanations.insert( _factTracker->getFactAffectingEquation( equIndex ), false );
         yUpperBoundExplanations.insert( _factTracker->getFactAffectingEquation( equIndex ), false );
     }
@@ -846,8 +849,9 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
     Map<const Fact*, bool> tempLowerBoundExplanations;
     Map<const Fact*, bool> tempUpperBoundExplanations;
 
-    if ( _factTracker && _factTracker->hasFactAffectingEquation( row ) )
+    if ( _factTracker )
     {
+        ASSERT(_factTracker->hasFactAffectingEquation( row ));
         tempLowerBoundExplanations.insert( _factTracker->getFactAffectingEquation( row ), true );
         tempUpperBoundExplanations.insert( _factTracker->getFactAffectingEquation( row ), true );
     }
@@ -1066,8 +1070,9 @@ void RowBoundTightener::notifyLowerBound( unsigned variable, double bound )
         _lowerBounds[variable] = bound;
         _lowerBoundIsInternal[variable] = false;
 
-        if ( _factTracker && _factTracker->hasFactAffectingBound( variable, FactTracker::LB ) )
+        if ( _factTracker )
         {
+            ASSERT(_factTracker->hasFactAffectingBound( variable, FactTracker::LB ));
             _lowerBoundExplanations[variable] = const_cast<Fact*>(_factTracker->getFactAffectingBound( variable, FactTracker::LB ));
         }
 
@@ -1082,8 +1087,9 @@ void RowBoundTightener::notifyUpperBound( unsigned variable, double bound )
         _upperBounds[variable] = bound;
         _upperBoundIsInternal[variable] = false;
 
-        if ( _factTracker && _factTracker->hasFactAffectingBound( variable, FactTracker::UB ) )
+        if ( _factTracker )
         {
+            ASSERT(_factTracker->hasFactAffectingBound( variable, FactTracker::UB ) );
             _upperBoundExplanations[variable] = const_cast<Fact*>(_factTracker->getFactAffectingBound( variable, FactTracker::UB ));
         }
 
