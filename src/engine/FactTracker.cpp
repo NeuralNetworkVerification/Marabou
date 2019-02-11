@@ -59,7 +59,8 @@ List<Pair<unsigned, unsigned> > FactTracker::getConstraintsAndSplitsCausingFacts
 
 void FactTracker::addBoundFact( unsigned var, Tightening bound )
 {
-    ASSERT((bound.getExplanations().size() == 0) != (bound.isCausedBySplit()));
+    // if caused by (non-implied) split, should not be explainable
+    ASSERT(!(bound.isCausedBySplit()) || (bound.getExplanations().size() == 0));
     const Fact* newFact = new Tightening(bound);
     _factsLearnedSet.insert(newFact);
     if ( bound._type == Tightening::LB )
@@ -80,7 +81,8 @@ void FactTracker::addBoundFact( unsigned var, Tightening bound )
 
 void FactTracker::addEquationFact( unsigned equNumber, Equation equ )
 {
-    ASSERT((equ.getExplanations().size() == 0) != (equ.isCausedBySplit()));
+  // if caused by (non-implied) split, should not be explainable
+  ASSERT(!(equ.isCausedBySplit()) || (equ.getExplanations().size() == 0));
     const Fact* newFact = new Equation(equ);
     _factsLearnedSet.insert(newFact);
     if ( !hasFactAffectingEquation( equNumber ) )

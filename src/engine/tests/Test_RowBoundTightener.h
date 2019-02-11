@@ -488,7 +488,7 @@ public:
 
         TS_ASSERT_EQUALS( upperBoundExplanationSet.size(), 2U );
         // TS_ASSERT( upperBoundExplanationSet.exists( 2U ) && upperBoundExplanationSet.exists( 3U ) );
-        
+
         delete factTracker;
         factTracker = NULL;
     }

@@ -111,9 +111,6 @@ void SmtCore::performSplit()
 
     StackEntry *stackEntry = new StackEntry;
 
-    // Guy: this is for forgetting facts that were the result of the popped split?
-    // We can live with this for now, but as Clark says, it is more efficient to have the object
-    // be able to support internal roll-back.
     if ( _factTracker ){
         stackEntry->_numFacts = _factTracker->getNumFacts();
     }
