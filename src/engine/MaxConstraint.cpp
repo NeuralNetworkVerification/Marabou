@@ -133,13 +133,13 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
                 if ( _factTracker )
                 {
                     if ( _factTracker->hasFactAffectingBound( element, FactTracker::UB ) )
-                        _factIDsCausingVarRemoval.append( _factTracker->getFactAffectingBound( element, FactTracker::UB ) );
+                        _factsCausingVarRemoval.append( _factTracker->getFactAffectingBound( element, FactTracker::UB ) );
 
                     // Junyao: why do we remove the fact that explains the new lower bound,
                     // if we want to remove fact about old lower bound,
                     // this should be done when the new bound is assigned
                     if ( _factTracker->hasFactAffectingBound( variable, FactTracker::LB ) )
-                        _factIDsCausingVarRemoval.append( _factTracker->getFactAffectingBound( variable, FactTracker::LB ) );
+                        _factsCausingVarRemoval.append( _factTracker->getFactAffectingBound( variable, FactTracker::LB ) );
                 }
                 toRemove.append( element );
             }
@@ -196,10 +196,10 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
         if( _factTracker )
         {
             if ( _factTracker->hasFactAffectingBound( variable, FactTracker::UB ) )
-                _factIDsCausingVarRemoval.append( _factTracker->getFactAffectingBound( variable, FactTracker::UB ) );
+                _factsCausingVarRemoval.append( _factTracker->getFactAffectingBound( variable, FactTracker::UB ) );
 
             if ( _factTracker->hasFactAffectingBound( _maxLowerBoundVar, FactTracker::LB ) )
-                _factIDsCausingVarRemoval.append( _factTracker->getFactAffectingBound( _maxLowerBoundVar, FactTracker::LB ) );
+                _factsCausingVarRemoval.append( _factTracker->getFactAffectingBound( _maxLowerBoundVar, FactTracker::LB ) );
         }
         _elements.erase( variable );
     }
@@ -399,19 +399,19 @@ bool MaxConstraint::phaseFixed() const
 PiecewiseLinearCaseSplit MaxConstraint::getValidCaseSplit() const
 {
     ASSERT( phaseFixed() );
-    PiecewiseLinearCaseSplit split = getSplit( *( _elements.begin() ) );
-    for ( const Fact* explanation: _factIDsCausingVarRemoval )
+    PiecewiseLinearCaseSplit split = getSplit( *( _elements.begin() ), true );
+    for ( const Fact* explanation: _factsCausingVarRemoval )
         split.addExplanation( explanation );
 
     return split;
 }
 
-PiecewiseLinearCaseSplit MaxConstraint::getSplitFromID( unsigned splitID ) const
+PiecewiseLinearCaseSplit MaxConstraint::getSplitFromID( unsigned splitID, bool impliedSplit/*=false*/ ) const
 {
-    return getSplit( splitID );
+    return getSplit( splitID, impliedSplit );
 }
 
-PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const
+PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax, bool impliedSplit/*=false*/ ) const
 {
     ASSERT( _assignment.exists( argMax ) );
     PiecewiseLinearCaseSplit maxPhase;
@@ -426,7 +426,8 @@ PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const
     maxEquation.addAddend( 1, argMax );
     maxEquation.addAddend( -1, _f );
     maxEquation.setScalar( 0 );
-    maxEquation.setCausingSplitInfo( _id, argMax, nextSplitLevel);
+    if(!impliedSplit)
+      maxEquation.setCausingSplitInfo( _id, argMax, nextSplitLevel);
     maxPhase.addEquation( maxEquation );
 
     // store bound tightenings as well
@@ -443,7 +444,8 @@ PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const
 	    gtEquation.addAddend( -1, other );
 	    gtEquation.addAddend( 1, argMax );
 	    gtEquation.setScalar( 0 );
-      gtEquation.setCausingSplitInfo( _id, argMax, nextSplitLevel);
+      if(!impliedSplit)
+        gtEquation.setCausingSplitInfo( _id, argMax, nextSplitLevel);
 	    maxPhase.addEquation( gtEquation );
 
         if ( _upperBounds.exists( argMax ) )
@@ -452,7 +454,8 @@ PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const
                  FloatUtils::gt( _upperBounds[other], _upperBounds[argMax] ) )
               {
                 Tightening bound = Tightening( other, _upperBounds[argMax], Tightening::UB );
-                bound.setCausingSplitInfo( _id, argMax, nextSplitLevel);
+                if(!impliedSplit)
+                  bound.setCausingSplitInfo( _id, argMax, nextSplitLevel);
                 maxPhase.storeBoundTightening( bound );
               }
         }

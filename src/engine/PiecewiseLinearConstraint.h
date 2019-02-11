@@ -144,7 +144,7 @@ public:
     virtual List<PiecewiseLinearCaseSplit> getCaseSplits() const = 0;
 
     // Guy: what does this do? Does every PLCS have a pre-determined, fixed ID?
-    virtual PiecewiseLinearCaseSplit getSplitFromID( unsigned splitID ) const = 0;
+    virtual PiecewiseLinearCaseSplit getSplitFromID( unsigned splitID, bool impliedSplit=false ) const = 0;
 
     /*
       Check if the constraint's phase has been fixed.

@@ -84,7 +84,7 @@ class MaxConstraint : public PiecewiseLinearConstraint
     /*
       TODO: Add comment
     */
-    PiecewiseLinearCaseSplit getSplitFromID( unsigned splitID ) const;
+    PiecewiseLinearCaseSplit getSplitFromID( unsigned splitID, bool impliedSplit=false ) const;
 
     /*
       Check if the constraint's phase has been fixed.
@@ -136,14 +136,14 @@ class MaxConstraint : public PiecewiseLinearConstraint
     double _maxLowerBound;
     unsigned _maxLowerBoundVar;
     bool _obsolete;
-    List<const Fact*> _factIDsCausingVarRemoval;
+    List<const Fact*> _factsCausingVarRemoval;
 
     void resetMaxIndex();
 
     /*
       Returns the phase where variable argMax has maximum value.
     */
-    PiecewiseLinearCaseSplit getSplit( unsigned argMax ) const;
+    PiecewiseLinearCaseSplit getSplit( unsigned argMax, bool impliedSplit=false ) const;
 
 };
 

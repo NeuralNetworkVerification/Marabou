@@ -410,14 +410,14 @@ List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
     return splits;
 }
 
-PiecewiseLinearCaseSplit ReluConstraint::getSplitFromID( unsigned splitID ) const
+PiecewiseLinearCaseSplit ReluConstraint::getSplitFromID( unsigned splitID, bool impliedSplit/*=false*/ ) const
 {
     // Write a comment somewhere in the h file, saying that split 0 is the inactive, 1 is the active.
     ASSERT( splitID == 0 || splitID == 1 );
-    return splitID == 0 ? getInactiveSplit() : getActiveSplit();
+    return splitID == 0 ? getInactiveSplit(impliedSplit) : getActiveSplit(impliedSplit);
 }
 
-PiecewiseLinearCaseSplit ReluConstraint::getInactiveSplit() const
+PiecewiseLinearCaseSplit ReluConstraint::getInactiveSplit(bool impliedSplit/*=false*/) const
 {
     unsigned nextSplitLevel = 0;
     if (_statistics)
@@ -426,15 +426,17 @@ PiecewiseLinearCaseSplit ReluConstraint::getInactiveSplit() const
     PiecewiseLinearCaseSplit inactivePhase;
     inactivePhase.setConstraintAndSplitID( _id, 0 );
     Tightening bound1 = Tightening( _b, 0.0, Tightening::UB );
-    bound1.setCausingSplitInfo( _id, 0, nextSplitLevel );
+    if(!impliedSplit)
+      bound1.setCausingSplitInfo( _id, 0, nextSplitLevel );
     Tightening bound2 = Tightening( _f, 0.0, Tightening::UB );
-    bound2.setCausingSplitInfo( _id, 0, nextSplitLevel );
+    if(!impliedSplit)
+      bound2.setCausingSplitInfo( _id, 0, nextSplitLevel );
     inactivePhase.storeBoundTightening( bound1 );
     inactivePhase.storeBoundTightening( bound2 );
     return inactivePhase;
 }
 
-PiecewiseLinearCaseSplit ReluConstraint::getActiveSplit() const
+PiecewiseLinearCaseSplit ReluConstraint::getActiveSplit(bool impliedSplit/*=false*/) const
 {
     unsigned nextSplitLevel = 0;
     if (_statistics)
@@ -444,13 +446,15 @@ PiecewiseLinearCaseSplit ReluConstraint::getActiveSplit() const
     activePhase.setConstraintAndSplitID( _id, 1 );
     Tightening bound = Tightening( _b, 0.0, Tightening::LB );
     // this fact will be caused by next split
-    bound.setCausingSplitInfo( _id, 1, nextSplitLevel );
+    if(!impliedSplit)
+      bound.setCausingSplitInfo( _id, 1, nextSplitLevel );
     activePhase.storeBoundTightening( bound );
     Equation activeEquation( Equation::EQ );
     activeEquation.addAddend( 1, _b );
     activeEquation.addAddend( -1, _f );
     activeEquation.setScalar( 0 );
-    activeEquation.setCausingSplitInfo( _id, 1, nextSplitLevel );
+    if(!impliedSplit)
+      activeEquation.setCausingSplitInfo( _id, 1, nextSplitLevel );
     activePhase.addEquation( activeEquation );
     return activePhase;
 }
@@ -466,7 +470,7 @@ PiecewiseLinearCaseSplit ReluConstraint::getValidCaseSplit() const
 
     if ( _phaseStatus == PhaseStatus::PHASE_ACTIVE )
     {
-        PiecewiseLinearCaseSplit activeSplit = getActiveSplit();
+        PiecewiseLinearCaseSplit activeSplit = getActiveSplit(true);
 
         /*
           Guy: just to make sure I got this right:
@@ -484,7 +488,7 @@ PiecewiseLinearCaseSplit ReluConstraint::getValidCaseSplit() const
         return activeSplit;
     }
 
-    PiecewiseLinearCaseSplit inactiveSplit = getInactiveSplit();
+    PiecewiseLinearCaseSplit inactiveSplit = getInactiveSplit(true);
     if ( _factTracker && _factTracker->hasFactAffectingBound( _b, FactTracker::UB ) )
         inactiveSplit.addExplanation( _factTracker->getFactAffectingBound( _b, FactTracker::UB ) );
     return inactiveSplit;

@@ -106,7 +106,7 @@ public:
             return nextSplits;
         }
 
-        PiecewiseLinearCaseSplit getSplitFromID( unsigned /* splitID */ ) const
+        PiecewiseLinearCaseSplit getSplitFromID( unsigned /* splitID */, bool /* impliedSplit */ ) const
         {
             PiecewiseLinearCaseSplit dontCare;
             return dontCare;
