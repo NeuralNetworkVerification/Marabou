@@ -1329,6 +1329,7 @@ void Engine::explicitBasisBoundTightening()
 
     _statistics.incNumBoundTighteningsOnExplicitBasis();
 
+    // Junyao: always use COMPUTE_INVERTED_BASIS_MATRIX for CDCL
     switch ( GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE )
     {
     case GlobalConfiguration::COMPUTE_INVERTED_BASIS_MATRIX:

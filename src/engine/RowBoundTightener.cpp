@@ -283,6 +283,10 @@ List<const Fact*> RowBoundTightener::findExternalExplanations( unsigned variable
 
 void RowBoundTightener::examineImplicitInvertedBasisMatrix( bool untilSaturation )
 {
+    /* Junyao: for CDCL, we don't have explanations for the inverted rows
+        without knowing the inv(B), make sure we call examineInvertedBasisMatrix instead
+    */
+
     /*
       Roughly (the dimensions don't add up):
 
@@ -351,7 +355,15 @@ void RowBoundTightener::examineInvertedBasisMatrix( bool untilSaturation )
             // First, compute the scalar, using inv(B)*b
             row->_scalar = 0;
             for ( unsigned j = 0; j < _m; ++j )
+            {
                 row->_scalar += ( invB[i * _m + j] * b[j] );
+                // if inv(B)_{i,j} is nonzero, then j-th row in the constraint matrix
+                // is responsible for i-th inverted row in the inverted basis matrix
+                if ( invB[i * _m + j] != 0 )
+                {
+                    row->_explanations.append( j );
+                }
+            }
 
             // Now update the row's coefficients for basic variable i
             for ( unsigned j = 0; j < _n - _m; ++j )
@@ -404,12 +416,12 @@ unsigned RowBoundTightener::onePassOverInvertedBasisRows()
     unsigned newBounds = 0;
 
     for ( unsigned i = 0; i < _m; ++i )
-        newBounds += tightenOnSingleInvertedBasisRow( *( _rows[i] ), i );
+        newBounds += tightenOnSingleInvertedBasisRow( *( _rows[i] ) );
 
     return newBounds;
 }
 
-unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &row, unsigned equIndex )
+unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &row )
 {
 	/*
       A row is of the form
@@ -463,10 +475,13 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
     Map<const Fact*, bool> yUpperBoundExplanations;
 
     // Guy: this is for the fact that added the actual equation, right?
-    if ( _factTracker && _factTracker->hasFactAffectingEquation( equIndex ) )
+    for ( unsigned equIndex : row._explanations )
     {
-        yLowerBoundExplanations.insert( _factTracker->getFactAffectingEquation( equIndex ), false );
-        yUpperBoundExplanations.insert( _factTracker->getFactAffectingEquation( equIndex ), false );
+        if ( _factTracker && _factTracker->hasFactAffectingEquation( equIndex ) )
+        {
+            yLowerBoundExplanations.insert( _factTracker->getFactAffectingEquation( equIndex ), false );
+            yUpperBoundExplanations.insert( _factTracker->getFactAffectingEquation( equIndex ), false );
+        }
     }
 
     for ( unsigned i = 0; i < n - m; ++i )
@@ -1009,7 +1024,7 @@ void RowBoundTightener::examinePivotRow()
         _statistics->incNumRowsExaminedByRowTightener();
 
     const TableauRow &row( *_tableau.getPivotRow() );
-    unsigned newBoundsLearned = tightenOnSingleInvertedBasisRow( row, _tableau.getLeavingVariableIndex() );
+    unsigned newBoundsLearned = tightenOnSingleInvertedBasisRow( row );
 
     if ( _statistics && ( newBoundsLearned > 0 ) )
         _statistics->incNumTighteningsFromRows( newBoundsLearned );

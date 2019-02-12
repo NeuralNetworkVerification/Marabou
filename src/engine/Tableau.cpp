@@ -1496,6 +1496,16 @@ void Tableau::getTableauRow( unsigned index, TableauRow *row )
     _unitVector[index] = 1;
     computeMultipliers( _unitVector );
 
+    // If e * inv(B) is nonzero at coordinate i, then the i-th row in the constraint
+    // matrix is responsible for the inverted row we're currently computing.
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        if ( _multipliers[i] != 0 )
+        {
+            row->_explanations.append( i );
+        }
+    }
+
     for ( unsigned i = 0; i < _n - _m; ++i )
     {
         row->_row[i]._var = _nonBasicIndexToVariable[i];

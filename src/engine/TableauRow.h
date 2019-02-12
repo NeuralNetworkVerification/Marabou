@@ -57,6 +57,7 @@ public:
     Entry *_row;
     double _scalar;
     unsigned _lhs;
+    List<unsigned> _explanations;
 
     double operator[]( unsigned index ) const;
 

@@ -136,6 +136,7 @@ private:
       Work space for the inverted basis matrix tighteners
     */
     TableauRow **_rows;
+    List<unsigned> *_rowExplanations;
     double *_z;
     double *_ciTimesLb;
     double *_ciTimesUb;
@@ -182,7 +183,7 @@ private:
       lower/upper bounds for the specified variable. Return the number
       of tighter bounds found.
     */
-    unsigned tightenOnSingleInvertedBasisRow( const TableauRow &row, unsigned equIndex );
+    unsigned tightenOnSingleInvertedBasisRow( const TableauRow &row );
 
     bool isBoundInternal(unsigned var, QueryType type);
 };
