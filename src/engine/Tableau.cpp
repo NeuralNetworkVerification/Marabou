@@ -1553,6 +1553,11 @@ void Tableau::getSparseARow( unsigned row, SparseUnsortedList *result ) const
     _sparseRowsOfA[row]->storeIntoOther( result );
 }
 
+double Tableau::getbRow( unsigned row ) const
+{
+    return _b[row];
+}
+
 void Tableau::dumpEquations()
 {
     TableauRow row( _n - _m );

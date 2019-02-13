@@ -27,6 +27,7 @@
 #include "ReluplexError.h"
 #include "TableauRow.h"
 #include "TimeUtils.h"
+#include "SparseUnsortedList.h"
 
 Engine::Engine()
     : _rowBoundTightener( *_tableau )
@@ -87,6 +88,28 @@ void Engine::adjustWorkMemorySize()
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Engine::work" );
 }
 
+void Engine::initializeFactTracker()
+{
+  for(unsigned var = 0; var < _tableau->getN(); var++){
+    Tightening bound(var, _tableau->getLowerBound(var), Tightening::LB);
+    bound.setCausingSplitInfo(0, 0, 0);
+    _factTracker.addBoundFact(var, bound);
+    Tightening bound2(var, _tableau->getUpperBound(var), Tightening::UB);
+    bound2.setCausingSplitInfo(0, 0, 0);
+    _factTracker.addBoundFact(var, bound2);
+  }
+  for(unsigned equID = 0; equID < _tableau->getM(); equID++){
+    const SparseUnsortedList* row = _tableau->getSparseARow( equID );
+    Equation equ;
+    for (const auto &entry : *row){
+        equ.addAddend(entry._value, entry._index);
+    }
+    equ.setScalar(_tableau->getbRow( equID ));
+    equ.setCausingSplitInfo(0, 0, 0);
+    _factTracker.addEquationFact(equID, equ);
+  }
+}
+
 bool Engine::solve( unsigned timeoutInSeconds )
 {
     SignalHandler::getInstance()->initialize();
@@ -101,6 +124,13 @@ bool Engine::solve( unsigned timeoutInSeconds )
     struct timespec mainLoopStart = TimeUtils::sampleMicro();
     while ( true )
     {
+        for(unsigned var=0; var<_tableau->getN(); var++){
+          ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::LB));
+          ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::UB));
+        }
+        for(unsigned id=0; id<_tableau->getM(); id++){
+          ASSERT(_factTracker.hasFactAffectingEquation(id));
+        }
         struct timespec mainLoopEnd = TimeUtils::sampleMicro();
         _statistics.addTimeMainLoop( TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
         mainLoopStart = mainLoopEnd;
@@ -182,10 +212,10 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 // Some variable bounds are invalid, so the query is unsat
                 unsigned failureVar = _tableau->getInvalidBoundsVariable();
                 List<const Fact*> failureExplanations;
-                if ( _factTracker.hasFactAffectingBound( failureVar, FactTracker::LB ) )
-                    failureExplanations.append( _factTracker.getFactAffectingBound( failureVar, FactTracker::LB ) );
-                if ( _factTracker.hasFactAffectingBound( failureVar, FactTracker::UB ) )
-                    failureExplanations.append( _factTracker.getFactAffectingBound( failureVar, FactTracker::UB ) );
+                ASSERT( ( _factTracker.hasFactAffectingBound( failureVar, FactTracker::LB ) ));
+                failureExplanations.append( _factTracker.getFactAffectingBound( failureVar, FactTracker::LB ) );
+                ASSERT ( _factTracker.hasFactAffectingBound( failureVar, FactTracker::UB ) );
+                failureExplanations.append( _factTracker.getFactAffectingBound( failureVar, FactTracker::UB ) );
                 throw InfeasibleQueryException( failureExplanations );
             }
 
@@ -281,12 +311,12 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 return false;
             }
         }
-        catch ( ... )
-        {
-            _exitCode = Engine::ERROR;
-            printf( "Engine: Unknown error!\n" );
-            return false;
-        }
+        // catch ( ... )
+        // {
+        //     _exitCode = Engine::ERROR;
+        //     printf( "Engine: Unknown error!\n" );
+        //     return false;
+        // }
     }
 }
 
@@ -814,9 +844,8 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         _tableau->registerToWatchAllVariables( _constraintBoundTightener );
         _tableau->registerResizeWatcher( _constraintBoundTightener );
 
-        _rowBoundTightener->setDimensions();
-        _constraintBoundTightener->setDimensions();
-
+        // Placeholder: better constraint matrix analysis as part
+        // of the preprocessing phase.
         // Register the constraint bound tightener to all the PL constraints
         for ( auto &plConstraint : _preprocessedQuery.getPiecewiseLinearConstraints() )
             plConstraint->registerConstraintBoundTightener( _constraintBoundTightener );
@@ -829,9 +858,6 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             constraint->setStatistics( &_statistics );
             _plConstraintFromID[constraint->getID()] = constraint;
         }
-
-        // Placeholder: better constraint matrix analysis as part
-        // of the preprocessing phase.
         _tableau->initializeTableau( independentColumns );
 
         _costFunctionManager->initialize();
@@ -839,6 +865,22 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         _activeEntryStrategy->initialize( _tableau );
 
         _statistics.setNumPlConstraints( _plConstraints.size() );
+
+        initializeFactTracker();
+
+        for(unsigned i=0; i<_tableau->getN(); i++){
+          ASSERT(_factTracker.hasFactAffectingBound(i, FactTracker::LB));
+          ASSERT(_factTracker.hasFactAffectingBound(i, FactTracker::UB));
+        }
+        for(unsigned var=0; var<_tableau->getN(); var++){
+          ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::LB));
+          ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::UB));
+        }
+        for(unsigned id=0; id<_tableau->getM(); id++){
+          ASSERT(_factTracker.hasFactAffectingEquation(id));
+        }
+        _rowBoundTightener->setDimensions();
+        _constraintBoundTightener->setDimensions();
 
         if ( _preprocessedQuery._sbt )
             _symbolicBoundTightener = _preprocessedQuery._sbt;
@@ -963,6 +1005,13 @@ void Engine::restoreState( const EngineState &state )
     _numPlConstraintsDisabledByValidSplits = state._numPlConstraintsDisabledByValidSplits;
 
     // Make sure the data structures are initialized to the correct size
+    for(unsigned var=0; var<_tableau->getN(); var++){
+      ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::LB));
+      ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::UB));
+    }
+    for(unsigned id=0; id<_tableau->getM(); id++){
+      ASSERT(_factTracker.hasFactAffectingEquation(id));
+    }
     _rowBoundTightener->setDimensions();
     _constraintBoundTightener->setDimensions();
     adjustWorkMemorySize();
@@ -1186,7 +1235,16 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
         if ( !columnsSuccessfullyMerged )
         {
             // General case: add a new equation to the tableau
+            for(unsigned var=0; var<_tableau->getN(); var++){
+              ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::LB));
+              ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::UB));
+            }
+            for(unsigned id=0; id<_tableau->getM(); id++){
+              ASSERT(_factTracker.hasFactAffectingEquation(id));
+            }
+            printf("BEFORE ADDING EQUATION\n");
             unsigned auxVariable = _tableau->addEquation( equation );
+            printf("AFTER ADDING EQUATION\n");
             _activeEntryStrategy->resizeHook( _tableau );
 
             _factTracker.addEquationFact( _tableau->getM()-1, equation );
@@ -1213,7 +1271,13 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
     }
 
     adjustWorkMemorySize();
-
+    for(unsigned var=0; var<_tableau->getN(); var++){
+      ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::LB));
+      ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::UB));
+    }
+    for(unsigned id=0; id<_tableau->getM(); id++){
+      ASSERT(_factTracker.hasFactAffectingEquation(id));
+    }
     _rowBoundTightener->resetBounds();
     _constraintBoundTightener->resetBounds();
 
@@ -1398,6 +1462,13 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
     _statistics.addTimeForPrecisionRestoration( TimeUtils::timePassed( start, end ) );
 
     _statistics.incNumPrecisionRestorations();
+    for(unsigned var=0; var<_tableau->getN(); var++){
+      ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::LB));
+      ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::UB));
+    }
+    for(unsigned id=0; id<_tableau->getM(); id++){
+      ASSERT(_factTracker.hasFactAffectingEquation(id));
+    }
     _rowBoundTightener->resetBounds();
     _constraintBoundTightener->resetBounds();
 
@@ -1418,7 +1489,13 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
         end = TimeUtils::sampleMicro();
         _statistics.addTimeForPrecisionRestoration( TimeUtils::timePassed( start, end ) );
         _statistics.incNumPrecisionRestorations();
-
+        for(unsigned var=0; var<_tableau->getN(); var++){
+          ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::LB));
+          ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::UB));
+        }
+        for(unsigned id=0; id<_tableau->getM(); id++){
+          ASSERT(_factTracker.hasFactAffectingEquation(id));
+        }
         _rowBoundTightener->resetBounds();
         _constraintBoundTightener->resetBounds();
 

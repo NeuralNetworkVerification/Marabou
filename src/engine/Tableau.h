@@ -331,6 +331,7 @@ public:
     void getSparseARow( unsigned row, SparseUnsortedList *result ) const;
     const SparseUnsortedList *getSparseAColumn( unsigned variable ) const;
     const SparseUnsortedList *getSparseARow( unsigned row ) const;
+    double getbRow( unsigned row ) const;
 
     /*
       Store and restore the Tableau's state. Needed for case splitting

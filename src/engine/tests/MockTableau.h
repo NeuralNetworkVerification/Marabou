@@ -466,6 +466,14 @@ public:
         return &sparseRow;
     }
 
+    double getbRow( unsigned row ) const
+    {
+        double* temp = new double[lastM];
+        double bRow = temp[row];
+        delete[] temp;
+        return bRow;
+    }
+
     void performDegeneratePivot()
     {
     }

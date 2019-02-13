@@ -60,7 +60,11 @@ List<Pair<unsigned, unsigned> > FactTracker::getConstraintsAndSplitsCausingFacts
 void FactTracker::addBoundFact( unsigned var, Tightening bound )
 {
     // if caused by (non-implied) split, should not be explainable
-    ASSERT(!(bound.isCausedBySplit()) || (bound.getExplanations().size() == 0));
+    ASSERT((bound.isCausedBySplit()) != (bound.getExplanations().size() != 0));
+    // if(!((bound.isCausedBySplit()) != (bound.getExplanations().size() != 0))){
+    //   printf("ERROR %s\n", bound.getDescription().ascii());
+    // }
+    ASSERT(var == bound._variable);
     const Fact* newFact = new Tightening(bound);
     _factsLearnedSet.insert(newFact);
     if ( bound._type == Tightening::LB )
@@ -81,8 +85,11 @@ void FactTracker::addBoundFact( unsigned var, Tightening bound )
 
 void FactTracker::addEquationFact( unsigned equNumber, Equation equ )
 {
-  // if caused by (non-implied) split, should not be explainable
-  ASSERT(!(equ.isCausedBySplit()) || (equ.getExplanations().size() == 0));
+    // if caused by (non-implied) split, should not be explainable
+    ASSERT((equ.isCausedBySplit()) != (equ.getExplanations().size() != 0));
+    // if(!((equ.isCausedBySplit()) != (equ.getExplanations().size() != 0))){
+    //   printf("ERROR %s\n", equ.getDescription().ascii());
+    // }
     const Fact* newFact = new Equation(equ);
     _factsLearnedSet.insert(newFact);
     if ( !hasFactAffectingEquation( equNumber ) )
