@@ -494,6 +494,7 @@ void Engine::performSimplexStep()
               the algorithm still proceeds even if it has a bad row. Thus in the end, we might have
               many bad rows (they're all to blame in our backtracking methodology), but there is no trivial
               way to identify these bad rows. Going through all rows is a large overhead, i.e. O(mn).
+              Let's not explain this for now.
             */
 
             throw InfeasibleQueryException( explanation );
@@ -1136,6 +1137,18 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
             ( !_tableau->isBasic( x2 ) ||
               !_tableau->basicOutOfBounds( _tableau->variableToIndex( x2 ) ) );
 
+        // Get bounds before merge
+        ASSERT( _factTracker.hasFactAffectingBound( x2, FactTracker::UB ) );
+        ASSERT( _factTracker.hasFactAffectingBound( x2, FactTracker::LB ) );
+
+        const Fact* fact_x2_lb = _factTracker.getFactAffectingBound( x2, FactTracker::LB );
+        const Fact* fact_x2_ub = _factTracker.getFactAffectingBound( x2, FactTracker::UB );
+
+        double x1_lb = _tableau->getLowerBound( x1 );
+        double x2_lb = _tableau->getLowerBound( x2 );
+        double x1_ub = _tableau->getUpperBound( x1 );
+        double x2_ub = _tableau->getUpperBound( x2 );
+
         bool columnsSuccessfullyMerged = false;
         if ( canMergeColumns )
             columnsSuccessfullyMerged = attemptToMergeVariables( x1, x2 );
@@ -1145,6 +1158,30 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
           // probably; when x_1 and x_2 are merged and now referred to as x_1
           // create a new fact corresponding to the equation, whose explanation is
           // the old fact of x_1 and the old fact of x_2
+
+            if ( x1_lb < x2_lb )
+            {
+                Tightening x1_new_lb( x1, x2_lb, Tightening::LB );
+                List<const Fact*> explanations = fact_x2_lb->getExplanations();
+                for ( const Fact* explanation : explanations )
+                {
+                    x1_new_lb.addExplanation( explanation );
+                }
+                _factTracker.addBoundFact( x1, x1_new_lb );
+            }
+
+            if ( x1_ub > x2_ub )
+            {
+                Tightening x1_new_ub( x1, x2_ub, Tightening::UB );
+                List<const Fact*> explanations = fact_x2_ub->getExplanations();
+                for ( const Fact* explanation: explanations )
+                {
+                    x1_new_ub.addExplanation( explanation );
+                }
+                _factTracker.addBoundFact( x1, x1_new_ub );
+            }
+
+            // Even though x2 is merged, facts about x2 are still useful in fact tracker.
         }
         if ( !columnsSuccessfullyMerged )
         {
@@ -1183,16 +1220,19 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
     for ( auto &bound : bounds )
     {
         unsigned variable = _tableau->getVariableAfterMerging( bound._variable );
-        _factTracker.addBoundFact( variable, bound );
         if ( bound._type == Tightening::LB )
         {
             log( Stringf( "x%u: lower bound set to %.3lf", variable, bound._value ) );
-            _tableau->tightenLowerBound( variable, bound._value );
+            // add fact for this bound only if it is indeed tighter
+            if( _tableau->tightenLowerBound( variable, bound._value ) )
+                _factTracker.addBoundFact( variable, bound );
         }
         else
         {
             log( Stringf( "x%u: upper bound set to %.3lf", variable, bound._value ) );
-            _tableau->tightenUpperBound( variable, bound._value );
+            // add fact for this bound only if it is indeed tighter
+            if( _tableau->tightenUpperBound( variable, bound._value ) )
+                _factTracker.addBoundFact( variable, bound );
         }
     }
 

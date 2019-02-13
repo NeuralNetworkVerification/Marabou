@@ -1701,12 +1701,12 @@ unsigned Tableau::getInvalidBoundsVariable() const
     return _n - 1;
 }
 
-void Tableau::tightenLowerBound( unsigned variable, double value )
+bool Tableau::tightenLowerBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );
 
     if ( !FloatUtils::gt( value, _lowerBounds[variable] ) )
-        return;
+        return false;
 
     if ( _statistics )
         _statistics->incNumTightenedBounds();
@@ -1729,14 +1729,16 @@ void Tableau::tightenLowerBound( unsigned variable, double value )
         if ( _basicStatus[index] != oldStatus )
             _costFunctionManager->invalidateCostFunction();
     }
+
+    return true;
 }
 
-void Tableau::tightenUpperBound( unsigned variable, double value )
+bool Tableau::tightenUpperBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );
 
     if ( !FloatUtils::lt( value, _upperBounds[variable] ) )
-        return;
+        return false;
 
     if ( _statistics )
         _statistics->incNumTightenedBounds();
@@ -1759,6 +1761,8 @@ void Tableau::tightenUpperBound( unsigned variable, double value )
         if ( _basicStatus[index] != oldStatus )
             _costFunctionManager->invalidateCostFunction();
     }
+
+    return true;
 }
 
 unsigned Tableau::addEquation( const Equation &equation )

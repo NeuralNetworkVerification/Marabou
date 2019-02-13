@@ -479,15 +479,17 @@ public:
     }
 
     Map<unsigned, double> tightenedLowerBounds;
-    void tightenLowerBound( unsigned variable, double value )
+    bool tightenLowerBound( unsigned variable, double value )
     {
         tightenedLowerBounds[variable] = value;
+        return true;
     }
 
     Map<unsigned, double> tightenedUpperBounds;
-    void tightenUpperBound( unsigned variable, double value )
+    bool tightenUpperBound( unsigned variable, double value )
     {
         tightenedUpperBounds[variable] = value;
+        return true;
     }
 
     void applySplit( const PiecewiseLinearCaseSplit &/* split */)

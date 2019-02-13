@@ -115,8 +115,6 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
 
     if ( isActive() && _constraintBoundTightener )
     {
-        // Junyao: maybe we should number valid explanationID from 1 in factTracker
-        // so that 0 means there's none explanation
         Fact* explanation = NULL;
 
         if( _factTracker && _factTracker->hasFactAffectingBound( variable, FactTracker::LB ))
@@ -165,8 +163,6 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
 
     if ( isActive() && _constraintBoundTightener )
     {
-        // Junyao: maybe we should number valid explanationID from 1 in factTracker
-        // so that 0 means there's none explanation
         Fact* explanation = NULL;
 
         if( _factTracker && _factTracker->hasFactAffectingBound( variable, FactTracker::UB ))
