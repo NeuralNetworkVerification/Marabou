@@ -381,6 +381,7 @@ public:
 
     void test_examine_inverted_row_bounds_tightened_explanation()
     {
+        // Junyao TODO: test equation explanations are correctly included
         FactTracker* factTracker = new FactTracker();
 
         RowBoundTightener tightener( *tableau );
@@ -399,6 +400,11 @@ public:
         factTracker->addBoundFact( 2, x2_ub );
         factTracker->addBoundFact( 4, x4_lb );
         factTracker->addBoundFact( 4, x4_ub );
+
+        const Fact* fact1 = factTracker->getFactAffectingBound( 2, FactTracker::LB );
+        const Fact* fact2 = factTracker->getFactAffectingBound( 2, FactTracker::UB );
+        const Fact* fact3 = factTracker->getFactAffectingBound( 4, FactTracker::LB );
+        const Fact* fact4 = factTracker->getFactAffectingBound( 4, FactTracker::UB );
 
         // Current bounds:
         //  -200 <= x0 <= 200
@@ -470,9 +476,9 @@ public:
         }
 
         TS_ASSERT_EQUALS( lowerBoundExplanationSet.size(), 2U );
-        // TS_ASSERT( lowerBoundExplanationSet.exists( 1U ) && lowerBoundExplanationSet.exists( 4U ) );
+        TS_ASSERT( lowerBoundExplanationSet.exists( fact1 ) && lowerBoundExplanationSet.exists( fact4 ) );
 
-        // // UB should have explanations 2, 3
+        // UB should have explanations 2, 3
         List<const Fact*> upperBoundExplanations = upper->getExplanations();
         Set<const Fact*> upperBoundExplanationSet;
 
@@ -487,11 +493,155 @@ public:
         }
 
         TS_ASSERT_EQUALS( upperBoundExplanationSet.size(), 2U );
-        // TS_ASSERT( upperBoundExplanationSet.exists( 2U ) && upperBoundExplanationSet.exists( 3U ) );
+        TS_ASSERT( upperBoundExplanationSet.exists( fact2 ) && upperBoundExplanationSet.exists( fact3 ) );
 
         delete factTracker;
-        factTracker = NULL;
     }
+
+    void test_examine_constraint_matrix_row_bound_tightened_explanation()
+    {
+        RowBoundTightener tightener( *tableau );
+
+        tableau->setDimensions( 2, 5 );
+
+        FactTracker* factTracker = new FactTracker();
+
+        tightener.setFactTracker( factTracker );
+
+        Tightening x1_lb( 1, -1, Tightening::LB );
+        Tightening x1_ub( 1, 2, Tightening::UB );
+        Tightening x4_lb( 4, 2, Tightening::LB );
+        Tightening x4_ub( 4, 2, Tightening::UB );
+
+        factTracker->addBoundFact( 1, x1_lb );
+        factTracker->addBoundFact( 1, x1_ub );
+        factTracker->addBoundFact( 4, x4_lb );
+        factTracker->addBoundFact( 4, x4_ub );
+
+        tableau->setLowerBound( 0, 0 );
+        tableau->setUpperBound( 0, 3 );
+        tableau->setLowerBound( 1, -1 );
+        tableau->setUpperBound( 1, 2 );
+        tableau->setLowerBound( 2, -10 );
+        tableau->setUpperBound( 2, 10 );
+        tableau->setLowerBound( 3, 0 );
+        tableau->setUpperBound( 3, 1 );
+        tableau->setLowerBound( 4, 2 );
+        tableau->setUpperBound( 4, 2 );
+
+        const Fact* fact_x1_ub = factTracker->getFactAffectingBound( 1, FactTracker::UB );
+        const Fact* fact_x4_lb = factTracker->getFactAffectingBound( 4, FactTracker::LB );
+
+        /*
+               | 1 -2 0  1 2 | ,     | 1  |
+           A = | 0 -2 1  0 0 | , b = | -2 |
+
+
+           Equations:
+                x0 -2x1      +x3  +2x4 = 1
+                   -2x1 + x2           = -2
+
+           Ranges:
+                x0: [0, 3]
+                x1: [-1, 2]
+                x2: [-10, 10]
+                x3: [0, 1]
+                x4: [2, 2]
+
+           Equation 1 gives us that x0 <= 1
+                                    x1 >= 1.5
+           Equation 2 gives us that x2 <= 2, >= 1
+        */
+
+        tightener.setDimensions();
+
+        double A[] = {
+            1, -2, 0, 1, 2,
+            0, -2, 1, 0, 0,
+        };
+
+        double b[] = { 1, -2 };
+
+        tableau->A = A;
+        tableau->b = b;
+
+        Equation fakeEq1, fakeEq2;
+        factTracker->addEquationFact( 0, fakeEq1 );
+        factTracker->addEquationFact( 1, fakeEq2 );
+        const Fact* fact_eq1 = factTracker->getFactAffectingEquation( 0 );
+        const Fact* fact_eq2 = factTracker->getFactAffectingEquation( 1 ); 
+        TS_ASSERT( fact_eq1 != NULL && fact_eq2 != NULL );
+
+        TS_ASSERT_THROWS_NOTHING( tightener.examineConstraintMatrix( false ) );
+
+        List<Tightening> tightenings;
+        TS_ASSERT_THROWS_NOTHING( tightener.getRowTightenings( tightenings ) );
+        TS_ASSERT_EQUALS( tightenings.size(), 4U );
+
+        auto it = tightenings.begin();
+
+        TS_ASSERT_EQUALS( it->_variable, 0U );
+        TS_ASSERT( FloatUtils::areEqual( it->_value, 1.0 ) );
+        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+
+        List<const Fact*> explanations = it->getExplanations();
+        List<const Fact*>::iterator explanation_iter1 = explanations.begin();
+        List<const Fact*>::iterator explanation_iter2 = std::next(explanation_iter1);
+        List<const Fact*>::iterator explanation_iter3 = std::next(explanation_iter2);
+
+        TS_ASSERT_EQUALS( explanations.size(), 3U );
+
+        TS_ASSERT( ( *explanation_iter1 == fact_x4_lb ) || ( *explanation_iter2 == fact_x4_lb ) || ( *explanation_iter3 == fact_x4_lb ) );
+        TS_ASSERT( ( *explanation_iter1 == fact_x1_ub ) || ( *explanation_iter2 == fact_x1_ub ) || ( *explanation_iter3 == fact_x1_ub ) );
+        TS_ASSERT( ( *explanation_iter1 == fact_eq1 ) || ( *explanation_iter2 == fact_eq1 ) || ( *explanation_iter3 == fact_eq1 ) );
+
+        ++it;
+
+        TS_ASSERT_EQUALS( it->_variable, 1U );
+        TS_ASSERT( FloatUtils::areEqual( it->_value, 1.5 ) );
+        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
+
+        explanations = it->getExplanations();
+        explanation_iter1 = explanations.begin(); 
+        explanation_iter2 = std::next(explanation_iter1);
+
+        TS_ASSERT_EQUALS( explanations.size(), 2U );
+        TS_ASSERT( ( *explanation_iter1 == fact_x4_lb ) || ( *explanation_iter2 == fact_x4_lb ) );
+        TS_ASSERT( ( *explanation_iter1 == fact_eq1 ) || ( *explanation_iter2 == fact_eq1 ) );
+
+        ++it;
+
+        TS_ASSERT_EQUALS( it->_variable, 2U );
+        TS_ASSERT( FloatUtils::areEqual( it->_value, 1 ) );
+        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
+
+        explanations = it->getExplanations();
+        explanation_iter1 = explanations.begin(); 
+        explanation_iter2 = std::next(explanation_iter1);
+        explanation_iter3 = std::next(explanation_iter2);
+
+        TS_ASSERT_EQUALS( explanations.size(), 3U );
+        TS_ASSERT( ( *explanation_iter1 == fact_x4_lb ) || ( *explanation_iter2 == fact_x4_lb ) || ( *explanation_iter3 == fact_x4_lb ) );
+        TS_ASSERT( ( *explanation_iter1 == fact_eq1 ) || ( *explanation_iter2 == fact_eq1 ) || ( *explanation_iter3 == fact_eq1 ) );
+        TS_ASSERT( ( *explanation_iter1 == fact_eq2 ) || ( *explanation_iter2 == fact_eq2 ) || ( *explanation_iter3 == fact_eq2 ) );      
+
+        ++it;
+
+        TS_ASSERT_EQUALS( it->_variable, 2U );
+        TS_ASSERT( FloatUtils::areEqual( it->_value, 2 ) );
+        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+
+        explanations = it->getExplanations();
+        explanation_iter1 = explanations.begin(); 
+        explanation_iter2 = std::next(explanation_iter1);
+
+        TS_ASSERT_EQUALS( explanations.size(), 2U );
+        TS_ASSERT( ( *explanation_iter1 == fact_x1_ub ) || ( *explanation_iter2 == fact_x1_ub ) );
+        TS_ASSERT( ( *explanation_iter1 == fact_eq2 ) || ( *explanation_iter2 == fact_eq2 ) );
+
+        delete factTracker;
+    }
+
 };
 
 //
