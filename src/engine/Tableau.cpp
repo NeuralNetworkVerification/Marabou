@@ -19,6 +19,7 @@
 #include "Debug.h"
 #include "EntrySelectionStrategy.h"
 #include "Equation.h"
+#include "FactTracker.h"
 #include "FloatUtils.h"
 #include "ICostFunctionManager.h"
 #include "MStringf.h"
@@ -1802,6 +1803,11 @@ unsigned Tableau::addEquation( const Equation &equation )
 
     // All variables except the new one have finite bounds. Use this to compute
     // finite bounds for the new variable.
+    List<const Fact*> lbExplanation;
+    List<const Fact*> ubExplanation;
+    ASSERT(_factTracker->hasFactAffectingEquation(_m-1));
+    lbExplanation.append(_factTracker->getFactAffectingEquation(_m-1));
+    ubExplanation.append(_factTracker->getFactAffectingEquation(_m-1));
     double lb = equation._scalar;
     double ub = equation._scalar;
 
@@ -1813,17 +1819,34 @@ unsigned Tableau::addEquation( const Equation &equation )
         if ( FloatUtils::isPositive( coefficient ) )
         {
             lb -= coefficient * _upperBounds[variable];
+            ASSERT(_factTracker->hasFactAffectingBound(variable, FactTracker::UB));
+            lbExplanation.append(_factTracker->getFactAffectingBound(variable, FactTracker::UB));
             ub -= coefficient * _lowerBounds[variable];
+            ASSERT(_factTracker->hasFactAffectingBound(variable, FactTracker::LB));
+            ubExplanation.append(_factTracker->getFactAffectingBound(variable, FactTracker::LB));
         }
         else
         {
             lb -= coefficient * _lowerBounds[variable];
+            ASSERT(_factTracker->hasFactAffectingBound(variable, FactTracker::LB));
+            lbExplanation.append(_factTracker->getFactAffectingBound(variable, FactTracker::LB));
             ub -= coefficient * _upperBounds[variable];
+            ASSERT(_factTracker->hasFactAffectingBound(variable, FactTracker::UB));
+            ubExplanation.append(_factTracker->getFactAffectingBound(variable, FactTracker::UB));
         }
     }
 
     setLowerBound( auxVariable, lb );
+    Tightening lowerBoundFact(auxVariable, lb, Tightening::LB);
+    for(const Fact* explanation: lbExplanation)
+      lowerBoundFact.addExplanation(explanation);
+    _factTracker->addBoundFact( auxVariable, lowerBoundFact );
+
     setUpperBound( auxVariable, ub );
+    Tightening upperBoundFact(auxVariable, ub, Tightening::UB);
+    for(const Fact* explanation: ubExplanation)
+      upperBoundFact.addExplanation(explanation);
+    _factTracker->addBoundFact( auxVariable, upperBoundFact );
 
     for ( const auto &watcher : _resizeWatchers )
         watcher->notifyDimensionChange( _m, _n );
