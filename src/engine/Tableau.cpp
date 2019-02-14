@@ -1496,6 +1496,16 @@ void Tableau::getTableauRow( unsigned index, TableauRow *row )
     _unitVector[index] = 1;
     computeMultipliers( _unitVector );
 
+    // If e * inv(B) is nonzero at coordinate i, then the i-th row in the constraint
+    // matrix is responsible for the inverted row we're currently computing.
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        if ( _multipliers[i] != 0 )
+        {
+            row->_explanations.append( i );
+        }
+    }
+
     for ( unsigned i = 0; i < _n - _m; ++i )
     {
         row->_row[i]._var = _nonBasicIndexToVariable[i];
@@ -1541,6 +1551,11 @@ const SparseUnsortedList *Tableau::getSparseARow( unsigned row ) const
 void Tableau::getSparseARow( unsigned row, SparseUnsortedList *result ) const
 {
     _sparseRowsOfA[row]->storeIntoOther( result );
+}
+
+double Tableau::getbRow( unsigned row ) const
+{
+    return _b[row];
 }
 
 void Tableau::dumpEquations()
@@ -1691,12 +1706,12 @@ unsigned Tableau::getInvalidBoundsVariable() const
     return _n - 1;
 }
 
-void Tableau::tightenLowerBound( unsigned variable, double value )
+bool Tableau::tightenLowerBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );
 
     if ( !FloatUtils::gt( value, _lowerBounds[variable] ) )
-        return;
+        return false;
 
     if ( _statistics )
         _statistics->incNumTightenedBounds();
@@ -1719,14 +1734,16 @@ void Tableau::tightenLowerBound( unsigned variable, double value )
         if ( _basicStatus[index] != oldStatus )
             _costFunctionManager->invalidateCostFunction();
     }
+
+    return true;
 }
 
-void Tableau::tightenUpperBound( unsigned variable, double value )
+bool Tableau::tightenUpperBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );
 
     if ( !FloatUtils::lt( value, _upperBounds[variable] ) )
-        return;
+        return false;
 
     if ( _statistics )
         _statistics->incNumTightenedBounds();
@@ -1749,6 +1766,8 @@ void Tableau::tightenUpperBound( unsigned variable, double value )
         if ( _basicStatus[index] != oldStatus )
             _costFunctionManager->invalidateCostFunction();
     }
+
+    return true;
 }
 
 unsigned Tableau::addEquation( const Equation &equation )

@@ -109,8 +109,8 @@ public:
     virtual const double *getUpperBounds() const = 0;
     virtual void setLowerBound( unsigned variable, double value ) = 0;
     virtual void setUpperBound( unsigned variable, double value ) = 0;
-    virtual void tightenLowerBound( unsigned variable, double value ) = 0;
-    virtual void tightenUpperBound( unsigned variable, double value ) = 0;
+    virtual bool tightenLowerBound( unsigned variable, double value ) = 0;
+    virtual bool tightenUpperBound( unsigned variable, double value ) = 0;
     virtual unsigned getBasicStatus( unsigned basic ) = 0;
     virtual unsigned getBasicStatusByIndex( unsigned basicIndex ) = 0;
     virtual bool existsBasicOutOfBounds() const = 0;
@@ -157,6 +157,7 @@ public:
     virtual const double *getAColumn( unsigned variable ) const = 0;
     virtual void getSparseAColumn( unsigned variable, SparseUnsortedList *result ) const = 0;
     virtual void getSparseARow( unsigned row, SparseUnsortedList *result ) const = 0;
+    virtual double getbRow( unsigned row ) const = 0;
     virtual const SparseUnsortedList *getSparseAColumn( unsigned variable ) const = 0;
     virtual const SparseUnsortedList *getSparseARow( unsigned row ) const = 0;
     virtual const SparseMatrix *getSparseA() const = 0;
