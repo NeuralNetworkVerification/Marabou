@@ -14,13 +14,14 @@
 #ifndef __FactTracker_h__
 #define __FactTracker_h__
 
-// Guy: sort includes alphabetically
 #include "Equation.h"
 #include "Fact.h"
 #include "Pair.h"
 #include "Stack.h"
 #include "Statistics.h"
 #include "Tightening.h"
+
+class ITableau;
 
 class FactTracker
 {
@@ -33,6 +34,7 @@ public:
 
     FactTracker(): _statistics(NULL){};
     ~FactTracker();
+    void initializeFromTableau( const ITableau& tableau );
     void setStatistics( Statistics* statistics );
     List<Pair<unsigned, unsigned> > getConstraintsAndSplitsCausingFacts(List<const Fact*> facts) const;
     void addBoundFact( unsigned var, Tightening bound );

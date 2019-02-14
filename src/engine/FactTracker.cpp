@@ -12,12 +12,36 @@
 
 #include "Debug.h"
 #include "FactTracker.h"
+#include "ITableau.h"
 #include "Queue.h"
+#include "SparseUnsortedList.h"
 
 FactTracker::~FactTracker()
 {
   for(const Fact* fact: _factsLearnedSet)
     delete fact;
+}
+
+void FactTracker::initializeFromTableau(const ITableau& tableau)
+{
+  for(unsigned var = 0; var < tableau.getN(); var++){
+    Tightening bound(var, tableau.getLowerBound(var), Tightening::LB);
+    bound.setCausingSplitInfo(0, 0, 0);
+    addBoundFact(var, bound);
+    Tightening bound2(var, tableau.getUpperBound(var), Tightening::UB);
+    bound2.setCausingSplitInfo(0, 0, 0);
+    addBoundFact(var, bound2);
+  }
+  for(unsigned equID = 0; equID < tableau.getM(); equID++){
+    const SparseUnsortedList* row = tableau.getSparseARow( equID );
+    Equation equ;
+    for (const auto &entry : *row){
+        equ.addAddend(entry._value, entry._index);
+    }
+    equ.setScalar(tableau.getbRow( equID ));
+    equ.setCausingSplitInfo(0, 0, 0);
+    addEquationFact(equID, equ);
+  }
 }
 
 void FactTracker::setStatistics( Statistics* statistics )

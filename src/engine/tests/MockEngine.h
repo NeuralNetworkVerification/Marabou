@@ -104,9 +104,6 @@ public:
     {
     }
 
-    void initializeFactTracker()
-    {
-    }
 };
 
 #endif // __MockEngine_h__

@@ -27,7 +27,6 @@
 #include "ReluplexError.h"
 #include "TableauRow.h"
 #include "TimeUtils.h"
-#include "SparseUnsortedList.h"
 
 Engine::Engine()
     : _rowBoundTightener( *_tableau )
@@ -87,28 +86,6 @@ void Engine::adjustWorkMemorySize()
     _work = new double[_tableau->getM()];
     if ( !_work )
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Engine::work" );
-}
-
-void Engine::initializeFactTracker()
-{
-  for(unsigned var = 0; var < _tableau->getN(); var++){
-    Tightening bound(var, _tableau->getLowerBound(var), Tightening::LB);
-    bound.setCausingSplitInfo(0, 0, 0);
-    _factTracker.addBoundFact(var, bound);
-    Tightening bound2(var, _tableau->getUpperBound(var), Tightening::UB);
-    bound2.setCausingSplitInfo(0, 0, 0);
-    _factTracker.addBoundFact(var, bound2);
-  }
-  for(unsigned equID = 0; equID < _tableau->getM(); equID++){
-    const SparseUnsortedList* row = _tableau->getSparseARow( equID );
-    Equation equ;
-    for (const auto &entry : *row){
-        equ.addAddend(entry._value, entry._index);
-    }
-    equ.setScalar(_tableau->getbRow( equID ));
-    equ.setCausingSplitInfo(0, 0, 0);
-    _factTracker.addEquationFact(equID, equ);
-  }
 }
 
 bool Engine::solve( unsigned timeoutInSeconds )
@@ -867,7 +844,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         _statistics.setNumPlConstraints( _plConstraints.size() );
 
-        initializeFactTracker();
+        _factTracker.initializeFromTableau(*_tableau);
 
         for(unsigned i=0; i<_tableau->getN(); i++){
           ASSERT(_factTracker.hasFactAffectingBound(i, FactTracker::LB));
@@ -1245,24 +1222,33 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
               ASSERT(_factTracker.hasFactAffectingEquation(id));
             }
             _factTracker.addEquationFact( _tableau->getM(), equation );
-            printf("BEFORE ADDING EQUATION\n");
             unsigned auxVariable = _tableau->addEquation( equation );
-            printf("AFTER ADDING EQUATION\n");
             _activeEntryStrategy->resizeHook( _tableau );
 
+            Tightening newAuxBound(0,0,Tightening::LB);
             switch ( equation._type )
             {
+            // in general, new aux variable bound setCausingSplitInfo should be same
+            // as current equation that is causing it
             case Equation::GE:
-                bounds.append( Tightening( auxVariable, 0.0, Tightening::UB ) );
+                newAuxBound = Tightening( auxVariable, 0.0, Tightening::UB );
+                newAuxBound.setCausingSplitInfo( equation.getCausingConstraintID(), equation.getCausingSplitID(), equation.getSplitLevelCausing() );
+                bounds.append( newAuxBound );
                 break;
 
             case Equation::LE:
-                bounds.append( Tightening( auxVariable, 0.0, Tightening::LB ) );
+                newAuxBound = Tightening( auxVariable, 0.0, Tightening::LB );
+                newAuxBound.setCausingSplitInfo( equation.getCausingConstraintID(), equation.getCausingSplitID(), equation.getSplitLevelCausing() );
+                bounds.append( newAuxBound );
                 break;
 
             case Equation::EQ:
-                bounds.append( Tightening( auxVariable, 0.0, Tightening::LB ) );
-                bounds.append( Tightening( auxVariable, 0.0, Tightening::UB ) );
+                newAuxBound = Tightening( auxVariable, 0.0, Tightening::UB );
+                newAuxBound.setCausingSplitInfo( equation.getCausingConstraintID(), equation.getCausingSplitID(), equation.getSplitLevelCausing() );
+                bounds.append( newAuxBound );
+                newAuxBound = Tightening( auxVariable, 0.0, Tightening::LB );
+                newAuxBound.setCausingSplitInfo( equation.getCausingConstraintID(), equation.getCausingSplitID(), equation.getSplitLevelCausing() );
+                bounds.append( newAuxBound );
                 break;
 
             default:

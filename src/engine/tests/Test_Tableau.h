@@ -16,6 +16,7 @@
 
 #include <cxxtest/TestSuite.h>
 
+#include "FactTracker.h"
 #include "Equation.h"
 #include "MockCostFunctionManager.h"
 #include "MockErrno.h"
@@ -1148,6 +1149,10 @@ public:
         List<unsigned> basics = { 4, 5, 6 };
         TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau( basics ) );
 
+        FactTracker factTracker;
+        factTracker.initializeFromTableau( *tableau );
+        tableau->setFactTracker( &factTracker );
+
         // Do a pivot to shuffle the basis
         tableau->setEnteringVariableIndex( 2u );
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
@@ -1191,6 +1196,8 @@ public:
         equation.addAddend( 2, 1 );
         equation.addAddend( -4, 2 );
         equation.setScalar( 5 );
+        equation.setCausingSplitInfo(0, 0, 0);
+        factTracker.addEquationFact(tableau->getM(), equation);
         TS_ASSERT_THROWS_NOTHING( tableau->addEquation( equation ) );
 
         TS_ASSERT( tableau->isBasic( 7u ) );
