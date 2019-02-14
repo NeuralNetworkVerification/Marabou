@@ -143,19 +143,28 @@ unsigned InputQuery::countInfiniteBounds()
     unsigned result = 0;
 
     for ( const auto &lowerBound : _lowerBounds )
-        if ( lowerBound.second == FloatUtils::negativeInfinity() )
+        if ( lowerBound.second == FloatUtils::negativeInfinity() ){
             ++result;
+            printf("lowerBound on this var is infinite: %u \n", lowerBound.first);
+        }
 
     for ( const auto &upperBound : _upperBounds )
         if ( upperBound.second == FloatUtils::infinity() )
+        {
             ++result;
+            printf("upperBound on this var is infinite: %u \n", upperBound.first);
+        }
 
     for ( unsigned i = 0; i < _numberOfVariables; ++i )
     {
-        if ( !_lowerBounds.exists( i ) )
+        if ( !_lowerBounds.exists( i ) ){
             ++result;
-        if ( !_upperBounds.exists( i ) )
+            printf("var %u doesn't have a lower bound:", i);
+        }
+        if ( !_upperBounds.exists( i ) ){
             ++result;
+            printf("var %u doesn't have an upper bound:", i);
+        }
     }
 
     return result;
