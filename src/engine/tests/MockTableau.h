@@ -440,24 +440,13 @@ public:
     }
 
     double *A;
-    void getSparseARow( unsigned row, SparseUnsortedList *result ) const
+    void getSparseARow( unsigned /*row*/, SparseUnsortedList */*result*/ ) const
     {
-        double *temp = new double[lastN];
-
-        for ( unsigned i = 0; i < lastN; ++i )
-        {
-            temp[i] = A[row*lastN + i];
-        }
-
-        result->initialize( temp, lastN );
-
-        delete[] temp;
     }
 
     mutable SparseUnsortedList sparseRow;
-    const SparseUnsortedList *getSparseARow( unsigned row ) const
+    const SparseUnsortedList *getSparseARow( unsigned /*row*/ ) const
     {
-        sparseRow.initialize( A + ( row * lastN ), lastN );
         return &sparseRow;
     }
 
