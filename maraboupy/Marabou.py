@@ -47,7 +47,9 @@ def read_tf(filename, inputName=None, outputName=None, savedModel=False, savedMo
     Returns:
         marabouNetworkTF: (MarabouNetworkTF) representing network
     """
-    return MarabouNetworkTF(filename, inputName, outputName, savedModel, savedModelTags)
+    network = MarabouNetworkTF()
+    network.read(filename, inputName, outputName, savedModel, savedModelTags)
+    return network
 
 def load_query(filename, verbose=True, timeout=0):
     MarabouNetwork.loadQuery(filename, verbose, timeout=0)
