@@ -137,12 +137,14 @@ def addComplementOutputSet(network, LB, UB, x):
     eq.addAddend(1.0, x_l)
     eq.addAddend(1.0, x)
     eq.setScalar(LB)
+    network.addEquation(eq)
     # define x_u = x - u
     x_u = network.getNewVariable()
     eq = Equation()
     eq.addAddend(1.0, x_u)
     eq.addAddend(-1.0, x)
     eq.setScalar(-UB)
+    network.addEquation(eq)
     #
     # For a validity interface we would want both x_l and x_u to be negative, but
     # for Marabou's satisfiability interface, we assert that at least on of the
