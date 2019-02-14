@@ -1167,8 +1167,15 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
               !_tableau->basicOutOfBounds( _tableau->variableToIndex( x2 ) ) );
 
         bool columnsSuccessfullyMerged = false;
-        if ( canMergeColumns )
+        double x1_lb, x2_lb, x1_ub, x2_ub;
+        if ( canMergeColumns ) 
+        {
+            x1_lb = _tableau->getLowerBound( x1 );
+            x2_lb = _tableau->getLowerBound( x2 );
+            x1_ub = _tableau->getUpperBound( x1 );
+            x2_ub = _tableau->getUpperBound( x2 );
             columnsSuccessfullyMerged = attemptToMergeVariables( x1, x2 );
+        }
         if ( columnsSuccessfullyMerged )
         {
           // MAJOR TODO: fact tracking when equations merged
@@ -1181,11 +1188,6 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 
           const Fact* fact_x2_lb = _factTracker.getFactAffectingBound( x2, FactTracker::LB );
           const Fact* fact_x2_ub = _factTracker.getFactAffectingBound( x2, FactTracker::UB );
-
-          double x1_lb = _tableau->getLowerBound( x1 );
-          double x2_lb = _tableau->getLowerBound( x2 );
-          double x1_ub = _tableau->getUpperBound( x1 );
-          double x2_ub = _tableau->getUpperBound( x2 );
 
             if ( x1_lb < x2_lb )
             {
