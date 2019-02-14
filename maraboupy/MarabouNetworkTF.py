@@ -28,7 +28,10 @@ from . import MarabouUtils
 from . import MarabouNetwork
 
 class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
-    def __init__(self, filename, inputNames=None, outputName=None, savedModel=False, savedModelTags=[]):
+    def __init__(self):
+        super().__init__()
+
+    def read(self, filename, inputNames=None, outputName=None, savedModel=False, savedModelTags=[]):
         """
         Constructs a MarabouNetworkTF object from a frozen Tensorflow protobuf or SavedModel
 
@@ -41,7 +44,6 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             savedModel: (bool) If false, load frozen graph. If true, load SavedModel object.
             savedModelTags: (list of strings) If loading a SavedModel, the user must specify tags used.
         """
-        super().__init__()
         self.biasAddRelations = list()
         self.readFromPb(filename, inputNames, outputName, savedModel, savedModelTags)
         self.processBiasAddRelations()
@@ -193,6 +195,11 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             prevValues = [self.getValues(i) for i in input_ops]
             shape = prevValues[1]
             return np.reshape(prevValues[0], shape)
+        if op.node_def.op == 'ExpandDims':
+            values = [self.getValues(i) for i in input_ops]
+            tensor = values[0]
+            axis = values[1]
+            return np.expand_dims(tensor, axis=axis)
         if op.node_def.op == 'ConcatV2':
             prevValues = [self.getValues(i) for i in input_ops]
             values = prevValues[0:2]
@@ -203,7 +210,7 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             return tensor_util.MakeNdarray(tproto)
         ### END operations not requiring new variables ###
 
-        if op.node_def.op in ['MatMul', 'BiasAdd', 'Add', 'Relu', 'MaxPool', 'Conv2D', 'Placeholder']:
+        if op.node_def.op in ['MatMul', 'BiasAdd', 'Add', 'Relu', 'MaxPool', 'Conv2D', 'Placeholder', 'Sub', 'Neg', 'Mul']:
             # need to create variables for these
             return self.opToVarArray(op)
 
@@ -265,6 +272,43 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
                 e.setScalar(0.0)
                 self.addEquation(e)
 
+    def mulEquations(self, op):
+        """
+        Function to generate equations corresponding to elementwise matrix multiplication 
+        Arguments:
+            op: (tf.op) representing elementwise matrix multiplication operation
+        """
+        ### Get variables and constants of inputs ###
+        input_ops = [i.op for i in op.inputs]
+        prevValues = [self.getValues(i) for i in input_ops]
+        curValues = self.getValues(op)
+        if self.isVariable(input_ops[0]):
+            #convention = "xW"
+            x = prevValues[0]
+            W = prevValues[1]
+        elif self.isVariable(input_ops[1]):
+            #convention = "Wx"
+            W = prevValues[0]
+            x = prevValues[1]
+        W = W.reshape(-1)
+        x = x.reshape(-1)
+        if x.shape != W.shape:
+            # broadcast
+            W = np.tile(W, len(x)//len(W))
+        assert x.shape == W.shape
+        curValues = curValues.reshape(-1)
+        assert x.shape == curValues.shape
+        ### END getting inputs ###
+
+        ### Generate actual equations ###
+        for i in range(len(curValues)):
+            e = []
+            e = MarabouUtils.Equation()
+            e.addAddend(W[i], x[i])
+            e.addAddend(-1, curValues[i])
+            e.setScalar(0.0)
+            self.addEquation(e)
+
     def biasAddEquations(self, op):
         """
         Function to generate equations corresponding to bias addition
@@ -289,11 +333,36 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             # prevVars = curVars - prevConst
             self.biasAddRelations += [(prevVars[i], curVars[i], -prevConsts[i])]
 
+    def biasSubEquations(self, op):
+        """
+        Function to generate equations corresponding to bias subtraction
+        Arguments:
+            op: (tf.op) representing bias add operation
+        """
+        ### Get variables and constants of inputs ###
+        input_ops = [i.op for i in op.inputs]
+        assert len(input_ops) == 2
+        prevValues = [self.getValues(i) for i in input_ops]
+        curValues = self.getValues(op)
+        prevVars = prevValues[0].reshape(-1)
+        prevConsts = prevValues[1].reshape(-1)
+        # broadcasting
+        prevConsts = np.tile(prevConsts, len(prevVars)//len(prevConsts))
+        curVars = curValues.reshape(-1)
+        assert len(prevVars)==len(curVars) and len(curVars)==len(prevConsts)
+        ### END getting inputs ###
+
+        ### Do not generate equations, as these can be eliminated ###
+        for i in range(len(prevVars)):
+            # prevVars = curVars + prevConst
+            self.biasAddRelations += [(prevVars[i], curVars[i], prevConsts[i])]
+
     def processBiasAddRelations(self):
         """
         Either add an equation representing a bias add,
         Or eliminate one of the two variables in every other relation
         """
+        print("number of variables b4 processBiasAddRelations: ", self.numVars)
         biasAddUpdates = dict()
         participations = [rel[0] for rel in self.biasAddRelations] + \
                             [rel[1] for rel in self.biasAddRelations]
@@ -319,17 +388,20 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
                 if x in biasAddUpdates: # if a variable to remove is part of this equation
                     xprime, c = biasAddUpdates[x]
                     equ.replaceVariable(x, xprime, c)
+        print("number of vars after processBiasAddRelations: ", self.numVars)
 
-    def addEquations(self, op):
+    def addSubEquations(self, op, flag):
         """
-        Function to generate equations corresponding to bias addition
+        Function to generate equations corresponding to addition and subtraction
         Arguments:
-            op: (tf.op) representing bias add operation
+            op: (tf.op) representing add or subtract operation
+            flag: (string) representing whether to add or subtract
         """
         input_ops = [i.op for i in op.inputs]
         assert len(input_ops) == 2
         input1 = input_ops[0]
         input2 = input_ops[1]
+        assert flag in ['add', 'sub']
         assert self.isVariable(input1)
         if self.isVariable(input2):
             curVars = self.getValues(op).reshape(-1)
@@ -340,12 +412,53 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             for i in range(len(curVars)):
                 e = MarabouUtils.Equation()
                 e.addAddend(1, prevVars1[i])
-                e.addAddend(1, prevVars2[i])
+                if flag == 'add':
+                    e.addAddend(1, prevVars2[i])
+                elif flag == 'sub':
+                    e.addAddend(-1, prevVars2[i])
                 e.addAddend(-1, curVars[i])
                 e.setScalar(0.0)
                 self.addEquation(e)
         else:
-            self.biasAddEquations(op)
+            if flag == 'add':
+                self.biasAddEquations(op)
+            elif flag == 'sub':
+                self.biasSubEquations(op)
+
+    def addEquations(self, op):
+        """
+        Function to generate equations corresponding to addition 
+        Arguments:
+            op: (tf.op) representing add operation
+        """
+        return self.addSubEquations(op, flag='add')
+
+    def subEquations(self, op):
+        """
+        Function to generate equations corresponding to subtraction 
+        Arguments:
+            op: (tf.op) representing subtraction operation
+        """
+        return self.addSubEquations(op, flag='sub')
+
+    def negEquations(self, op):
+        """
+        Function to generate equations corresponding to negation 
+        Arguments:
+            op: (tf.op) representing negation operation
+        """
+        input_ops = [i.op for i in op.inputs]
+        input1 = input_ops[0]
+        assert self.isVariable(input1)
+        curVars = self.getValues(op).reshape(-1)
+        prevVars1 = self.getValues(input1).reshape(-1)
+        assert len(curVars) == len(prevVars1)
+        for i in range(len(curVars)):
+                e = MarabouUtils.Equation()
+                e.addAddend(-1, prevVars1[i])
+                e.addAddend(-1, curVars[i])
+                e.setScalar(0.0)
+                self.addEquation(e)
 
     def conv2DEquations(self, op):
         """
@@ -456,14 +569,20 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         Arguments:
             op: (tf.op) for which to generate equations
         """
-        if op.node_def.op in ['Identity', 'Reshape', 'Pack', 'Placeholder', 'Const', 'ConcatV2']:
+        if op.node_def.op in ['Identity', 'Reshape', 'Pack', 'Placeholder', 'Const', 'ConcatV2', 'ExpandDims']:
             return
         if op.node_def.op == 'MatMul':
             self.matMulEquations(op)
+        elif op.node_def.op == 'Mul':
+            self.mulEquations(op)
         elif op.node_def.op == 'BiasAdd':
             self.biasAddEquations(op)
         elif op.node_def.op == 'Add':
             self.addEquations(op)
+        elif op.node_def.op == 'Sub':
+            self.subEquations(op)
+        elif op.node_def.op == 'Neg':
+            self.negEquations(op)
         elif op.node_def.op == 'Conv2D':
             self.conv2DEquations(op)
         elif op.node_def.op == 'Relu':
