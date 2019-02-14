@@ -1806,6 +1806,9 @@ unsigned Tableau::addEquation( const Equation &equation )
     setLowerBound( auxVariable, lb );
     setUpperBound( auxVariable, ub );
 
+    for ( const auto &watcher : _resizeWatchers )
+        watcher->notifyDimensionChange( _m, _n );
+
     // Populate the new row of b
     _b[_m - 1] = equation._scalar;
 
@@ -2038,9 +2041,6 @@ void Tableau::addRow()
     _n = newN;
     _costFunctionManager->initialize();
 
-    for ( const auto &watcher : _resizeWatchers )
-        watcher->notifyDimensionChange( _m, _n );
-
     if ( _statistics )
     {
         _statistics->incNumAddedRows();
@@ -2136,6 +2136,11 @@ double Tableau::getSumOfInfeasibilities() const
 void Tableau::setStatistics( Statistics *statistics )
 {
     _statistics = statistics;
+}
+
+void Tableau::setFactTracker( FactTracker* tracker)
+{
+  _factTracker = tracker;
 }
 
 void Tableau::log( const String &message )

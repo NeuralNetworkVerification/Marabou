@@ -47,6 +47,7 @@ Engine::Engine()
     _smtCore.setStatistics( &_statistics );
     _smtCore.setFactTracker( &_factTracker );
     _tableau->setStatistics( &_statistics );
+    _tableau->setFactTracker( &_factTracker );
     _rowBoundTightener->setStatistics( &_statistics );
     _rowBoundTightener->setFactTracker( &_factTracker );
     _constraintBoundTightener->setStatistics( &_statistics );
@@ -312,12 +313,12 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 return false;
             }
         }
-        // catch ( ... )
-        // {
-        //     _exitCode = Engine::ERROR;
-        //     printf( "Engine: Unknown error!\n" );
-        //     return false;
-        // }
+        catch ( ... )
+        {
+            _exitCode = Engine::ERROR;
+            printf( "Engine: Unknown error!\n" );
+            return false;
+        }
     }
 }
 
@@ -879,6 +880,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         for(unsigned id=0; id<_tableau->getM(); id++){
           ASSERT(_factTracker.hasFactAffectingEquation(id));
         }
+
         _rowBoundTightener->setDimensions();
         _constraintBoundTightener->setDimensions();
 
@@ -1206,12 +1208,12 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
             for(unsigned id=0; id<_tableau->getM(); id++){
               ASSERT(_factTracker.hasFactAffectingEquation(id));
             }
+            _factTracker.addEquationFact( _tableau->getM(), equation );
             printf("BEFORE ADDING EQUATION\n");
             unsigned auxVariable = _tableau->addEquation( equation );
             printf("AFTER ADDING EQUATION\n");
             _activeEntryStrategy->resizeHook( _tableau );
 
-            _factTracker.addEquationFact( _tableau->getM()-1, equation );
             switch ( equation._type )
             {
             case Equation::GE:

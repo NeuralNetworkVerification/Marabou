@@ -376,6 +376,7 @@ public:
       Have the Tableau start reporting statistics.
      */
     void setStatistics( Statistics *statistics );
+    void setFactTracker( FactTracker* tracker);
 
     /*
       Compute the current sum of infeasibilities
@@ -586,6 +587,7 @@ private:
       Statistics collection
     */
     Statistics *_statistics;
+    FactTracker* _factTracker;
 
     /*
       The cost function manager

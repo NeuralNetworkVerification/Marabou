@@ -402,14 +402,9 @@ public:
 
     unsigned lastGetRowIndex;
     TableauRow *nextRow;
-    void getTableauRow( unsigned index, TableauRow *row )
+    void getTableauRow( unsigned index, TableauRow */*row*/ )
     {
         lastGetRowIndex = index;
-        TS_ASSERT_EQUALS( row->_size, nextRow->_size );
-
-        for ( unsigned i = 0; i < row->_size; ++i )
-            row->_row[i] = nextRow->_row[i];
-        row->_scalar = nextRow->_scalar;
     }
 
     Map<unsigned, const double *> nextAColumn;
@@ -530,6 +525,8 @@ public:
     void setStatistics( Statistics */* statistics */ )
     {
     }
+
+		void setFactTracker( FactTracker* /* tracker */){}
 
     double *b;
     const double *getRightHandSide() const
