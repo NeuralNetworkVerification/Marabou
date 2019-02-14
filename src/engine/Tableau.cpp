@@ -1836,13 +1836,11 @@ unsigned Tableau::addEquation( const Equation &equation )
         }
     }
 
-    setLowerBound( auxVariable, lb );
     Tightening lowerBoundFact(auxVariable, lb, Tightening::LB);
     for(const Fact* explanation: lbExplanation)
       lowerBoundFact.addExplanation(explanation);
     _factTracker->addBoundFact( auxVariable, lowerBoundFact );
 
-    setUpperBound( auxVariable, ub );
     Tightening upperBoundFact(auxVariable, ub, Tightening::UB);
     for(const Fact* explanation: ubExplanation)
       upperBoundFact.addExplanation(explanation);
@@ -1850,6 +1848,8 @@ unsigned Tableau::addEquation( const Equation &equation )
 
     for ( const auto &watcher : _resizeWatchers )
         watcher->notifyDimensionChange( _m, _n );
+    setLowerBound( auxVariable, lb );
+    setUpperBound( auxVariable, ub );
 
     // Populate the new row of b
     _b[_m - 1] = equation._scalar;

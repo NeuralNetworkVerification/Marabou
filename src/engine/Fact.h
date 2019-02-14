@@ -17,6 +17,8 @@
 #include "Map.h"
 #include "MString.h"
 
+class FactTracker;
+
 class Fact
 {
 public:
@@ -31,6 +33,8 @@ public:
     unsigned getCausingSplitID() const;
     virtual String getDescription() const = 0;
     void dump() const {printf("%s", getDescription().ascii());}
+    void setOwner(const FactTracker* owner);
+    FactTracker* getOwner() const;
 
 private:
     List<const Fact*> _explanations;
@@ -38,6 +42,7 @@ private:
     unsigned _causingSplitID;
     bool _causedBySplit;
     unsigned _splitLevelCausing;
+    FactTracker* _owner;
 };
 
 #endif // __Fact_h__

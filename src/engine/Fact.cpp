@@ -60,6 +60,16 @@ unsigned Fact::getCausingSplitID() const
     return _causingSplitID;
 }
 
+void Fact::setOwner(const FactTracker* owner)
+{
+  _owner = const_cast<FactTracker*>(owner);
+}
+
+FactTracker* Fact::getOwner() const
+{
+  return _owner;
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

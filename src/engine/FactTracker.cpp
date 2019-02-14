@@ -86,6 +86,7 @@ void FactTracker::addBoundFact( unsigned var, Tightening bound )
     // if caused by (non-implied) split, should not be explainable
     ASSERT((bound.isCausedBySplit()) != (bound.getExplanations().size() != 0));
     ASSERT(var == bound._variable);
+    bound.setOwner(this);
     const Fact* newFact = new Tightening(bound);
     _factsLearnedSet.insert(newFact);
     if ( bound._type == Tightening::LB )
@@ -108,6 +109,7 @@ void FactTracker::addEquationFact( unsigned equNumber, Equation equ )
 {
     // if caused by (non-implied) split, should not be explainable
     ASSERT((equ.isCausedBySplit()) != (equ.getExplanations().size() != 0));
+    equ.setOwner(this);
     const Fact* newFact = new Equation(equ);
     _factsLearnedSet.insert(newFact);
     if ( !hasFactAffectingEquation( equNumber ) )
@@ -118,7 +120,7 @@ void FactTracker::addEquationFact( unsigned equNumber, Equation equ )
 
 bool FactTracker::hasFact(const Fact* fact) const
 {
-  return _factsLearnedSet.exists(fact);
+  return this==fact->getOwner();
 }
 
 bool FactTracker::hasFactAffectingBound( unsigned var, BoundType type ) const
