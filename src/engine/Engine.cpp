@@ -1153,29 +1153,18 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
           may be able to merge two columns of the tableau.
         */
         unsigned x1, x2;
+        bool isMergingEquation = equation.isVariableMergingEquation( x1, x2 );
         bool canMergeColumns =
             // Only if the flag is on
             GlobalConfiguration::USE_COLUMN_MERGING_EQUATIONS &&
             // Only if the equation has the correct form
-            equation.isVariableMergingEquation( x1, x2 ) &&
+            isMergingEquation &&
             // And only if the variables are not out of bounds
             ( !_tableau->isBasic( x1 ) ||
               !_tableau->basicOutOfBounds( _tableau->variableToIndex( x1 ) ) )
             &&
             ( !_tableau->isBasic( x2 ) ||
               !_tableau->basicOutOfBounds( _tableau->variableToIndex( x2 ) ) );
-
-        // Get bounds before merge
-        ASSERT( _factTracker.hasFactAffectingBound( x2, FactTracker::UB ) );
-        ASSERT( _factTracker.hasFactAffectingBound( x2, FactTracker::LB ) );
-
-        const Fact* fact_x2_lb = _factTracker.getFactAffectingBound( x2, FactTracker::LB );
-        const Fact* fact_x2_ub = _factTracker.getFactAffectingBound( x2, FactTracker::UB );
-
-        double x1_lb = _tableau->getLowerBound( x1 );
-        double x2_lb = _tableau->getLowerBound( x2 );
-        double x1_ub = _tableau->getUpperBound( x1 );
-        double x2_ub = _tableau->getUpperBound( x2 );
 
         bool columnsSuccessfullyMerged = false;
         if ( canMergeColumns )
@@ -1186,6 +1175,17 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
           // probably; when x_1 and x_2 are merged and now referred to as x_1
           // create a new fact corresponding to the equation, whose explanation is
           // the old fact of x_1 and the old fact of x_2
+          // Get bounds before merge
+          ASSERT( _factTracker.hasFactAffectingBound( x2, FactTracker::UB ) );
+          ASSERT( _factTracker.hasFactAffectingBound( x2, FactTracker::LB ) );
+
+          const Fact* fact_x2_lb = _factTracker.getFactAffectingBound( x2, FactTracker::LB );
+          const Fact* fact_x2_ub = _factTracker.getFactAffectingBound( x2, FactTracker::UB );
+
+          double x1_lb = _tableau->getLowerBound( x1 );
+          double x2_lb = _tableau->getLowerBound( x2 );
+          double x1_ub = _tableau->getUpperBound( x1 );
+          double x2_ub = _tableau->getUpperBound( x2 );
 
             if ( x1_lb < x2_lb )
             {
