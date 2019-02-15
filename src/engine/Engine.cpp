@@ -1301,11 +1301,16 @@ void Engine::applyAllRowTightenings()
 
     for ( const auto &tightening : rowTightenings )
     {
-        _factTracker.addBoundFact( tightening._variable, tightening );
         if ( tightening._type == Tightening::LB )
-            _tableau->tightenLowerBound( tightening._variable, tightening._value );
+        {
+            if ( _tableau->tightenLowerBound( tightening._variable, tightening._value ) )
+                _factTracker.addBoundFact( tightening._variable, tightening );
+        }
         else
-            _tableau->tightenUpperBound( tightening._variable, tightening._value );
+        {
+            if( _tableau->tightenUpperBound( tightening._variable, tightening._value ) )
+                _factTracker.addBoundFact( tightening._variable, tightening );
+        }
     }
 }
 
@@ -1319,11 +1324,16 @@ void Engine::applyAllConstraintTightenings()
     {
         _statistics.incNumBoundsProposedByPlConstraints();
 
-        _factTracker.addBoundFact( tightening._variable, tightening );
         if ( tightening._type == Tightening::LB )
-            _tableau->tightenLowerBound( tightening._variable, tightening._value );
+        {
+            if ( _tableau->tightenLowerBound( tightening._variable, tightening._value ) )
+                _factTracker.addBoundFact( tightening._variable, tightening );
+        }
         else
-            _tableau->tightenUpperBound( tightening._variable, tightening._value );
+        {
+            if( _tableau->tightenUpperBound( tightening._variable, tightening._value ) )
+                _factTracker.addBoundFact( tightening._variable, tightening );
+        }
     }
 }
 

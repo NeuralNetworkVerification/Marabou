@@ -170,19 +170,34 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
            explanation = const_cast<Fact*>(_factTracker->getFactAffectingBound( variable, FactTracker::UB ));
         }
 
-
         if ( variable == _f )
         {
             // Any bound that we learned of f should be propagated to b
-            if ( bound < _upperBounds[_b] )
+            // Junyao: check exists first before retrieving value from map
+            if ( _upperBounds.exists(_b) )
+            {
+                if ( bound < _upperBounds[_b] )
+                    _constraintBoundTightener->registerTighterUpperBound( _b, bound, explanation );
+            }
+            else
+            {
                 _constraintBoundTightener->registerTighterUpperBound( _b, bound, explanation );
+            }
         }
         else
         {
             // If b has a negative upper bound, we f's upper bound is 0
             double adjustedUpperBound = FloatUtils::max( bound, 0 );
-            if ( adjustedUpperBound < _upperBounds[_f] )
-                _constraintBoundTightener->registerTighterUpperBound( _f, adjustedUpperBound, explanation );
+            // Junyao: check exists first before retrieving value from map
+            if ( _upperBounds.exists(_f) )
+            {
+                if ( adjustedUpperBound < _upperBounds[_f] )
+                    _constraintBoundTightener->registerTighterUpperBound( _f, adjustedUpperBound, explanation );
+            }
+            else
+            {
+                _constraintBoundTightener->registerTighterUpperBound( _f, adjustedUpperBound, explanation );   
+            }
         }
     }
 }

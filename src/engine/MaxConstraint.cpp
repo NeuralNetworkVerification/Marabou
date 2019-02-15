@@ -135,9 +135,6 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
                     if ( _factTracker->hasFactAffectingBound( element, FactTracker::UB ) )
                         _factsCausingVarRemoval.append( _factTracker->getFactAffectingBound( element, FactTracker::UB ) );
 
-                    // Junyao: why do we remove the fact that explains the new lower bound,
-                    // if we want to remove fact about old lower bound,
-                    // this should be done when the new bound is assigned
                     if ( _factTracker->hasFactAffectingBound( variable, FactTracker::LB ) )
                         _factsCausingVarRemoval.append( _factTracker->getFactAffectingBound( variable, FactTracker::LB ) );
                 }
