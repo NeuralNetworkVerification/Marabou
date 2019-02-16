@@ -54,12 +54,6 @@ public:
     virtual void setStatistics( Statistics *statistics ) = 0;
 
     /*
-      Have the bount tightener report new deductions to a tracker,
-      for conflict analysis later on.
-    */
-    virtual void setFactTracker( FactTracker* factTracker ) = 0;
-
-    /*
       This method can be used by clients to tell the bound tightener
       about a tighter bound
     */

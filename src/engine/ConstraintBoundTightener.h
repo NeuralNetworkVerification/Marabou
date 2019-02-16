@@ -51,13 +51,6 @@ public:
     */
     void setStatistics( Statistics *statistics );
 
-
-    /*
-      Have the bount tightener report new deductions to a tracker,
-      for conflict analysis later on.
-    */
-    void setFactTracker( FactTracker* factTracker );
-
     /*
       This method can be used by clients to tell the bound tightener
       about a tighter bound
@@ -91,11 +84,6 @@ private:
     */
     const Fact* *_lowerBoundsExplanation;
     const Fact* *_upperBoundsExplanation;
-
-    /*
-      Global fact tracker
-    */
-    FactTracker *_factTracker;
 
     /*
       Statistics collection

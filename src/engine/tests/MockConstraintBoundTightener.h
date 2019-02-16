@@ -65,7 +65,6 @@ public:
     void registerTighterLowerBound( unsigned /* variable */, double /* bound */, const Fact* /* explanationID */ ) {}
     void registerTighterUpperBound( unsigned /* variable */, double /* bound */, const Fact* /* explanationID */ ) {}
     void getConstraintTightenings( List<Tightening> &/* tightenings */ ) const {}
-    void setFactTracker( FactTracker* /* factTracker */ ) {};
 };
 
 #endif // __MockConstraintBoundTightener_h__

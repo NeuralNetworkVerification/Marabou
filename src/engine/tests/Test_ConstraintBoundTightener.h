@@ -19,6 +19,7 @@
 #include "ConstraintBoundTightener.h"
 #include "FactTracker.h"
 #include "ReluConstraint.h"
+#include "MaxConstraint.h"
 
 class MockForConstraintBoundTightener
 {
@@ -108,7 +109,6 @@ public:
         ConstraintBoundTightener cbt( *tableau );
 
         FactTracker* factTracker = new FactTracker();
-        cbt.setFactTracker( factTracker );
 
         tableau->setDimensions( 2, 2 );
 
@@ -166,7 +166,7 @@ public:
 
         // tighten LB of bn, and relu is required to be active
         Tightening x1_new_lb( 1, 5, Tightening::LB );
-        x1_new_lb.setCausingSplitInfo(0, 0, 0);
+        x1_new_lb.setCausingSplitInfo( 0, 0, 0 );
         factTracker->addBoundFact( 1, x1_new_lb );
         const Fact* fact_x1_new_lb = factTracker->getFactAffectingBound( 1, FactTracker::LB );
         relu.notifyLowerBound( bn, 5 );
@@ -185,6 +185,106 @@ public:
         TS_ASSERT_EQUALS( explanations.front(), fact_x1_new_lb );
 
         delete factTracker;
+    }
+
+    void test_explain_tightening_from_maxpool()
+    {
+        ConstraintBoundTightener cbt( *tableau );
+
+        FactTracker* factTracker = new FactTracker();
+
+        tableau->setDimensions( 3, 3 );
+
+        tableau->setLowerBound( 0, -200 );
+        tableau->setUpperBound( 0, 200 );
+        tableau->setLowerBound( 1, -5 );
+        tableau->setUpperBound( 1, 10 );
+        tableau->setLowerBound( 2, -5 );
+        tableau->setUpperBound( 2, 100 );
+
+        Tightening x0_lb( 0, -200, Tightening::LB );
+        Tightening x0_ub( 0, 200, Tightening::UB );
+        Tightening x1_lb( 1, -5, Tightening::LB );
+        Tightening x1_ub( 1, 10, Tightening::UB );
+        Tightening x2_lb( 2, -5, Tightening::LB );
+        Tightening x2_ub( 2, 100, Tightening::UB );
+
+        x0_lb.setCausingSplitInfo( 0, 0, 0 );
+        x0_ub.setCausingSplitInfo( 0, 0, 0 );
+        x1_lb.setCausingSplitInfo( 0, 0, 0 );
+        x1_ub.setCausingSplitInfo( 0, 0, 0 );
+        x2_lb.setCausingSplitInfo( 0, 0, 0 );
+        x2_ub.setCausingSplitInfo( 0, 0, 0 );
+
+        factTracker->addBoundFact( 0, x0_lb );
+        factTracker->addBoundFact( 0, x0_ub );
+        factTracker->addBoundFact( 1, x1_lb );
+        factTracker->addBoundFact( 1, x1_ub );
+        factTracker->addBoundFact( 2, x2_lb );
+        factTracker->addBoundFact( 2, x2_ub );
+
+        const Fact* fact_x2_ub = factTracker->getFactAffectingBound( 2, FactTracker::UB );
+        cbt.setDimensions();
+
+        unsigned f = 2, b1 = 0, b2 = 1;
+        Set<unsigned> elements;
+        elements.insert( b1 );
+        elements.insert( b2 );
+        MaxConstraint maxpool( f, elements, 1U );
+        maxpool.setFactTracker( factTracker );
+        maxpool.registerConstraintBoundTightener( &cbt );
+        maxpool.notifyLowerBound( b1, -200 );
+        maxpool.notifyUpperBound( b1, 200 );
+        maxpool.notifyLowerBound( b2, -5 );
+        maxpool.notifyUpperBound( b2, 10 );
+        maxpool.notifyLowerBound( f, -100 );
+        maxpool.notifyUpperBound( f, 100 );
+
+        List<Tightening> tightenings;
+        cbt.getConstraintTightenings( tightenings );
+        TS_ASSERT_EQUALS( tightenings.size(), 1U );
+        Tightening bound = tightenings.front();
+        TS_ASSERT_EQUALS( bound._variable, b1 );
+        TS_ASSERT_EQUALS( bound._value, 100 );
+        TS_ASSERT_EQUALS( bound._type, Tightening::UB );
+        List<const Fact*> explanations = bound.getExplanations();
+        TS_ASSERT_EQUALS( explanations.size(), 1U );
+        TS_ASSERT_EQUALS( explanations.front(), fact_x2_ub );
+
+        Tightening x0_new_ub( 0, -10, Tightening::UB );
+        x0_new_ub.setCausingSplitInfo( 0, 0, 0 );
+        factTracker->addBoundFact( 0, x0_new_ub );
+        const Fact* fact_x0_new_ub = factTracker->getFactAffectingBound( 0, FactTracker::UB );
+        maxpool.notifyUpperBound( b1, -10 );
+
+        tightenings.clear();
+        cbt.getConstraintTightenings( tightenings );
+        TS_ASSERT_EQUALS( tightenings.size(), 2U );
+        bound = tightenings.back();
+        TS_ASSERT_EQUALS( bound._variable, f );
+        TS_ASSERT_EQUALS( bound._value, 10 );
+        TS_ASSERT_EQUALS( bound._type, Tightening::UB );
+        explanations = bound.getExplanations();
+        TS_ASSERT_EQUALS( explanations.size(), 1U );
+        TS_ASSERT_EQUALS( explanations.front(), fact_x0_new_ub );
+
+        Tightening x1_new_lb( 1, 0, Tightening::LB );
+        x1_new_lb.setCausingSplitInfo( 0, 0, 0 );
+        factTracker->addBoundFact( 1, x1_new_lb );
+        const Fact* fact_x1_new_lb = factTracker->getFactAffectingBound( 1, FactTracker::LB );
+        maxpool.notifyLowerBound( b2, 0 );
+
+        tightenings.clear();
+        cbt.getConstraintTightenings( tightenings );
+        TS_ASSERT_EQUALS( tightenings.size(), 3U );
+        tightenings.popBack();
+        bound = tightenings.back();
+        TS_ASSERT_EQUALS( bound._variable, f );
+        TS_ASSERT_EQUALS( bound._value, 0 );
+        TS_ASSERT_EQUALS( bound._type, Tightening::LB );
+        explanations = bound.getExplanations();
+        TS_ASSERT_EQUALS( explanations.size(), 1U );
+        TS_ASSERT_EQUALS( explanations.front(), fact_x1_new_lb );
     }
 };
 

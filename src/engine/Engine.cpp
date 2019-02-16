@@ -51,7 +51,6 @@ Engine::Engine()
     _rowBoundTightener->setStatistics( &_statistics );
     _rowBoundTightener->setFactTracker( &_factTracker );
     _constraintBoundTightener->setStatistics( &_statistics );
-    _constraintBoundTightener->setFactTracker( &_factTracker );
     _preprocessor.setStatistics( &_statistics );
 
     _activeEntryStrategy = _projectedSteepestEdgeRule;

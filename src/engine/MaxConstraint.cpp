@@ -23,6 +23,7 @@
 #include "PiecewiseLinearCaseSplit.h"
 #include "ReluplexError.h"
 #include "Statistics.h"
+#include "assert.h"
 #include <algorithm>
 
 MaxConstraint::MaxConstraint( unsigned f, const Set<unsigned> &elements, unsigned id )
@@ -132,11 +133,11 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
             {
                 if ( _factTracker )
                 {
-                    if ( _factTracker->hasFactAffectingBound( element, FactTracker::UB ) )
-                        _factsCausingVarRemoval.append( _factTracker->getFactAffectingBound( element, FactTracker::UB ) );
+                    assert( _factTracker->hasFactAffectingBound( element, FactTracker::UB ) );
+                    _factsCausingVarRemoval.append( _factTracker->getFactAffectingBound( element, FactTracker::UB ) );
 
-                    if ( _factTracker->hasFactAffectingBound( variable, FactTracker::LB ) )
-                        _factsCausingVarRemoval.append( _factTracker->getFactAffectingBound( variable, FactTracker::LB ) );
+                    assert( _factTracker->hasFactAffectingBound( variable, FactTracker::LB ) );
+                    _factsCausingVarRemoval.append( _factTracker->getFactAffectingBound( variable, FactTracker::LB ) );
                 }
                 toRemove.append( element );
             }
@@ -160,11 +161,9 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
         getEntailedTightenings( tightenings );
         Fact* explanation = NULL;
 
-        //Junyao: seems right because new tightening should only blame this new bound update,
-        // that is, even without previous bound updates,
-        // this tightening would still be valid
-        if ( _factTracker->hasFactAffectingBound( variable, FactTracker::LB ) )
+        if ( _factTracker )
         {
+            assert( _factTracker->hasFactAffectingBound( variable, FactTracker::LB ) );
             explanation = const_cast<Fact*>(_factTracker->getFactAffectingBound( variable, FactTracker::LB ));
         }
 
@@ -192,11 +191,11 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
     {
         if( _factTracker )
         {
-            if ( _factTracker->hasFactAffectingBound( variable, FactTracker::UB ) )
-                _factsCausingVarRemoval.append( _factTracker->getFactAffectingBound( variable, FactTracker::UB ) );
+            assert( _factTracker->hasFactAffectingBound( variable, FactTracker::UB ) );
+            _factsCausingVarRemoval.append( _factTracker->getFactAffectingBound( variable, FactTracker::UB ) );
 
-            if ( _factTracker->hasFactAffectingBound( _maxLowerBoundVar, FactTracker::LB ) )
-                _factsCausingVarRemoval.append( _factTracker->getFactAffectingBound( _maxLowerBoundVar, FactTracker::LB ) );
+            assert( _factTracker->hasFactAffectingBound( _maxLowerBoundVar, FactTracker::LB ) );
+            _factsCausingVarRemoval.append( _factTracker->getFactAffectingBound( _maxLowerBoundVar, FactTracker::LB ) );
         }
         _elements.erase( variable );
     }
@@ -211,9 +210,9 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
         getEntailedTightenings( tightenings );
         Fact* explanation = NULL;
 
-        //Junyao: same comment as in notifyLowerBound
-        if ( _factTracker->hasFactAffectingBound( variable, FactTracker::UB ) )
+        if ( _factTracker )
         {
+            assert( _factTracker->hasFactAffectingBound( variable, FactTracker::UB ) );
             explanation = const_cast<Fact*>(_factTracker->getFactAffectingBound( variable, FactTracker::UB ));
         }
 
@@ -259,8 +258,17 @@ void MaxConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
 		{
 		    for ( const auto &element : _elements )
 			{
-			    if ( !_upperBounds.exists( element ) || FloatUtils::gt( _upperBounds[element], fUB ) )
+			    if ( _upperBounds.exists( element ) )
+                {
+                    if( FloatUtils::gt( _upperBounds[element], fUB ) )
+                    {
+                        tightenings.append( Tightening( element, fUB, Tightening::UB ) );
+                    }
+                }
+                else
+                {
                     tightenings.append( Tightening( element, fUB, Tightening::UB ) );
+                }
 			}
 		}
 	}
@@ -268,7 +276,7 @@ void MaxConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
     // fLB cannot be smaller than maxElementLB
     if ( FloatUtils::lt( fLB, maxElementLB ) )
         tightenings.append( Tightening( _f, maxElementLB, Tightening::LB ) );
-    else if ( _elements.size() == 1 )
+    else if ( _elements.size() == 1 && FloatUtils::gt( fLB, maxElementLB ) )
     {
         // Special case: there is only one element. In that case, the tighter lower
         // bound (in this case, f's) wins.

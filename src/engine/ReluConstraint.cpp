@@ -24,6 +24,7 @@
 #include "ReluplexError.h"
 #include "Statistics.h"
 #include "TableauRow.h"
+#include "assert.h"
 
 ReluConstraint::ReluConstraint( unsigned b, unsigned f, unsigned id )
     // Guy: since _id is a member of the parent class, initialize it in the parent class
@@ -117,9 +118,10 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
     {
         Fact* explanation = NULL;
 
-        if( _factTracker && _factTracker->hasFactAffectingBound( variable, FactTracker::LB ))
+        if( _factTracker )
         {
-           explanation = const_cast<Fact*>(_factTracker->getFactAffectingBound( variable, FactTracker::LB ));
+            assert( _factTracker->hasFactAffectingBound( variable, FactTracker::LB ) );
+            explanation = const_cast<Fact*>(_factTracker->getFactAffectingBound( variable, FactTracker::LB ));
         }
 
         // A positive lower bound is always propagated between the two variables
@@ -165,9 +167,10 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
     {
         Fact* explanation = NULL;
 
-        if( _factTracker && _factTracker->hasFactAffectingBound( variable, FactTracker::UB ))
+        if( _factTracker )
         {
-           explanation = const_cast<Fact*>(_factTracker->getFactAffectingBound( variable, FactTracker::UB ));
+            assert( _factTracker->hasFactAffectingBound( variable, FactTracker::UB ) );
+            explanation = const_cast<Fact*>(_factTracker->getFactAffectingBound( variable, FactTracker::UB ));
         }
 
         if ( variable == _f )

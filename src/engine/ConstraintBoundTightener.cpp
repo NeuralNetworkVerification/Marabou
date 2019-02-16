@@ -24,7 +24,6 @@ ConstraintBoundTightener::ConstraintBoundTightener( const ITableau &tableau )
     , _tightenedUpper( NULL )
     , _lowerBoundsExplanation( NULL )
     , _upperBoundsExplanation( NULL )
-    , _factTracker( NULL )
     , _statistics( NULL )
 {
 }
@@ -72,16 +71,6 @@ void ConstraintBoundTightener::resetBounds()
     {
         _lowerBounds[i] = _tableau.getLowerBound( i );
         _upperBounds[i] = _tableau.getUpperBound( i );
-
-        if( _factTracker && _factTracker->hasFactAffectingBound( i, FactTracker::UB ))
-        {
-           _upperBoundsExplanation[i] = _factTracker->getFactAffectingBound( i, FactTracker::UB );
-        }
-
-        if( _factTracker && _factTracker->hasFactAffectingBound( i, FactTracker::LB ))
-        {
-           _lowerBoundsExplanation[i] = _factTracker->getFactAffectingBound( i, FactTracker::LB );
-        }
     }
 }
 
@@ -134,22 +123,12 @@ void ConstraintBoundTightener::setStatistics( Statistics *statistics )
     _statistics = statistics;
 }
 
-void ConstraintBoundTightener::setFactTracker( FactTracker *factTracker )
-{
-    _factTracker = factTracker;
-}
-
 void ConstraintBoundTightener::notifyLowerBound( unsigned variable, double bound )
 {
     if ( bound > _lowerBounds[variable] )
     {
         _lowerBounds[variable] = bound;
         _tightenedLower[variable] = false;
-
-        if( _factTracker && _factTracker->hasFactAffectingBound( variable, FactTracker::LB ))
-        {
-           _lowerBoundsExplanation[variable] = _factTracker->getFactAffectingBound( variable, FactTracker::LB );
-        }
     }
 }
 
@@ -159,11 +138,6 @@ void ConstraintBoundTightener::notifyUpperBound( unsigned variable, double bound
     {
         _upperBounds[variable] = bound;
         _tightenedUpper[variable] = false;
-
-        if( _factTracker && _factTracker->hasFactAffectingBound( variable, FactTracker::UB ))
-        {
-           _upperBoundsExplanation[variable] = _factTracker->getFactAffectingBound( variable, FactTracker::UB );
-        }
     }
 }
 
