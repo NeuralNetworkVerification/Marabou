@@ -17,6 +17,7 @@
 '''
 
 from . import MarabouCore
+import numpy as np
 
 class Equation:
     """
@@ -114,3 +115,40 @@ def addInequality(network, vars, coeffs, scalar):
         e.addAddend(coeffs[i], vars[i])
     e.setScalar(scalar)
     network.addEquation(e)
+
+def addComplementOutputSet(network, LB, UB, x):
+    """
+    Function to convert an output specification of staying within a set defined 
+    by a lower bound and upper bound to its complement appropriate for Marabou.
+    Arguments:
+        network: (MarabouNetwork) to which to add constraint
+        LB: (float) specifying the lower bound
+        UB: (float) specifying the upper bound
+        x: (int) specifying the variable
+    """
+    # define x_l = l - x
+    x_l = network.getNewVariable()
+    eq = Equation()
+    eq.addAddend(1.0, x_l)
+    eq.addAddend(1.0, x)
+    eq.setScalar(LB)
+    network.addEquation(eq)
+    # define x_u = x - u
+    x_u = network.getNewVariable()
+    eq = Equation()
+    eq.addAddend(1.0, x_u)
+    eq.addAddend(-1.0, x)
+    eq.setScalar(-UB)
+    network.addEquation(eq)
+    #
+    # For a validity interface we would want both x_l and x_u to be negative, but
+    # for Marabou's satisfiability interface, we assert that one of the
+    # constraints must be in violation, meaning one on them is greater than zero
+    # max(x_l, x_u) > 0
+    Y = network.getNewVariable()
+    network.addMaxConstraint({x_l,x_u}, Y)
+    network.setLowerBound(Y, 0.0)
+    if network.outputVars is None:
+        network.outputVars = np.array([[Y]])
+    else: 
+        network.outputVars = np.hstack([network.outputVars, np.array([[Y]]) ])
