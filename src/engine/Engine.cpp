@@ -822,24 +822,24 @@ void Engine::extractSolution( InputQuery &inputQuery )
     {
         if ( _preprocessingEnabled )
         {
+            // Has the variable been merged into another?
+            unsigned variable = i;
+            while ( _preprocessor.variableIsMerged( variable ) )
+                variable = _preprocessor.getMergedIndex( variable );
+
             // Fixed variables are easy: return the value they've been fixed to.
-            if ( _preprocessor.variableIsFixed( i ) )
+            if ( _preprocessor.variableIsFixed( variable ) )
             {
-                inputQuery.setSolutionValue( i, _preprocessor.getFixedValue( i ) );
+                inputQuery.setSolutionValue( i, _preprocessor.getFixedValue( variable ) );
                 continue;
             }
 
-            // Has the variable been merged into another?
-            unsigned variable = i;
-            if ( _preprocessor.variableIsMerged( i ) )
-                variable = _preprocessor.getMergedIndex( i );
-
             // We know which variable to look for, but it may have been assigned
             // a new index, due to variable elimination
-            unsigned finalIndex = _preprocessor.getNewIndex( variable );
+            variable = _preprocessor.getNewIndex( variable );
 
             // Finally, set the assigned value
-            inputQuery.setSolutionValue( i, _tableau->getValue( finalIndex ) );
+            inputQuery.setSolutionValue( i, _tableau->getValue( variable ) );
         }
         else
         {
