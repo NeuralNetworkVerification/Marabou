@@ -2607,6 +2607,135 @@ bool Tableau::areLinearlyDependent( unsigned x1, unsigned x2, double &coefficien
     return true;
 }
 
+List<const Fact*> Tableau::getExplanationsForSaturatedTableauRow()
+{
+    List<const Fact*> explanations;
+
+    if ( !_factTracker )
+    {
+        return explanations;
+    }
+
+    /*
+      Roughly (the dimensions don't add up):
+
+         xB = inv(B)*b - inv(B)*An
+
+      We compute one row at a time.
+    */
+
+    const double *invB = getInverseBasisMatrix();
+
+    try
+    {
+        for ( unsigned i = 0; i < _m; ++i )
+        {
+            // Check basic assignment out of bound
+            double basicAssignment =  getBasicAssignment( i );
+            unsigned basicVariable = _basicIndexToVariable[i];
+            bool assignmentIsTooSmall, rowIsSaturated = true;
+            if ( _lowerBounds[basicVariable] > basicAssignment )
+                assignmentIsTooSmall = true;
+            else if ( _upperBounds[basicVariable] < basicAssignment )
+                assignmentIsTooSmall = false;
+            else
+                continue;
+
+            TableauRow row( _n - _m );
+
+            // Compute the row's coefficients for basic variable i
+            for ( unsigned j = 0; j < _n - _m; ++j )
+            {
+                unsigned nonBasicVariable = _nonBasicIndexToVariable[j];
+                row._row[j]._var = nonBasicVariable;
+
+                // Dot product of the i'th row of inv(B) with the appropriate
+                // column of An
+
+                const SparseUnsortedList *column = getSparseAColumn( nonBasicVariable );
+                row._row[j]._coefficient = 0;
+
+                for ( const auto &entry : *column )
+                    row._row[j]._coefficient -= invB[i*_m + entry._index] * entry._value;
+
+                if ( assignmentIsTooSmall )
+                {
+                    if ( ( row._row[j]._coefficient > 0 && _upperBounds[nonBasicVariable] > _nonBasicAssignment[nonBasicVariable] )
+                        || ( row._row[j]._coefficient < 0 && _lowerBounds[nonBasicVariable] < _nonBasicAssignment[nonBasicVariable] ) )
+                    {
+                        rowIsSaturated = false;
+                        break;
+                    }
+                }
+                else
+                {
+                    if ( ( row._row[j]._coefficient > 0 && _lowerBounds[nonBasicVariable] < _nonBasicAssignment[nonBasicVariable] )
+                        || ( row._row[j]._coefficient < 0 && _upperBounds[nonBasicVariable] > _nonBasicAssignment[nonBasicVariable] ) )
+                    {
+                        rowIsSaturated = false;
+                        break;
+                    }
+                }
+            }
+
+            if ( !rowIsSaturated )
+                continue;
+
+            // Get equation explanations
+            for ( unsigned j = 0; j < _m; ++j )
+            {
+                // if inv(B)_{i,j} is nonzero, then j-th row in the constraint matrix
+                // is responsible for i-th inverted row in the inverted basis matrix
+                if ( invB[i * _m + j] != 0 )
+                {
+                    ASSERT( _factTracker->hasFactAffectingEquation( j ) );
+                    explanations.append( _factTracker->getFactAffectingEquation( j ) );
+                }
+            }
+
+            // Get bound explanations
+            for ( unsigned j = 0; j < _n - _m; ++j )
+            {
+                if ( row._row[j]._coefficient > 0 )
+                {
+                    if ( assignmentIsTooSmall )
+                    {
+                        ASSERT( _factTracker->hasFactAffectingBound( row._row[j]._var, FactTracker::UB ) );
+                        explanations.append( _factTracker->getFactAffectingBound( row._row[j]._var, FactTracker::UB ) );
+                    }
+                    else
+                    {
+                        ASSERT( _factTracker->hasFactAffectingBound( row._row[j]._var, FactTracker::LB ) );
+                        explanations.append( _factTracker->getFactAffectingBound( row._row[j]._var, FactTracker::LB ) );
+                    }
+                }
+                else if ( row._row[j]._coefficient < 0 )
+                {
+                    if ( assignmentIsTooSmall )
+                    {
+                        ASSERT( _factTracker->hasFactAffectingBound( row._row[j]._var, FactTracker::LB ) );
+                        explanations.append( _factTracker->getFactAffectingBound( row._row[j]._var, FactTracker::LB ) );
+                    }
+                    else
+                    {
+                        ASSERT( _factTracker->hasFactAffectingBound( row._row[j]._var, FactTracker::UB ) );
+                        explanations.append( _factTracker->getFactAffectingBound( row._row[j]._var, FactTracker::UB ) );
+                    }
+                }
+            }
+
+            return explanations;
+        }
+
+    }
+    catch ( ... )
+    {
+        throw;
+    }
+
+    return explanations;
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

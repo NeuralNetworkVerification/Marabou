@@ -447,6 +447,12 @@ public:
      */
     unsigned getVariableAfterMerging( unsigned variable ) const;
 
+    /*
+      When simplex cannot make progress, we compute explanations for 
+      an arbitrary saturated row.
+    */
+    List<const Fact*> getExplanationsForSaturatedTableauRow();
+
 private:
     /*
       Variable watchers

@@ -482,7 +482,7 @@ void Engine::performSimplexStep()
             // Cost function is fresh --- failure is real.
             struct timespec end = TimeUtils::sampleMicro();
             _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
-            List<const Fact*> explanation;
+            List<const Fact*> explanation = _tableau->getExplanationsForSaturatedTableauRow();
             /*
               TODO: explanations probably include fact that created leavingIndex equation,
               and bounds of variables with non-zero coefficients in the equation
@@ -494,14 +494,8 @@ void Engine::performSimplexStep()
 
               For now, it may be easier to not have an explanation for this case - i.e., just backtrack.
 
-              Junyao: For backtracking, it makes sense to return to the latest level that influences
-              participating equations or the respective lower or upper bounds of participating variables.
-              We can use "List<unsigned> explanation" to transmit such information for backtracking,
-              even though it is not a certificate for proving UNSATs. But because of the cost function,
-              the algorithm still proceeds even if it has a bad row. Thus in the end, we might have
-              many bad rows (they're all to blame in our backtracking methodology), but there is no trivial
-              way to identify these bad rows. Going through all rows is a large overhead, i.e. O(mn).
-              Let's not explain this for now.
+              For now, we go over all rows to find a contradiction row. And backtrack for that row. This is not
+              a minimal explanation, but it is a sufficient one.
             */
 
             throw InfeasibleQueryException( explanation );

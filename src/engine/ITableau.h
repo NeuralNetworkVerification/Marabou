@@ -21,6 +21,7 @@
 
 class EntrySelectionStrategy;
 class Equation;
+class Fact;
 class FactTracker;
 class ICostFunctionManager;
 class PiecewiseLinearCaseSplit;
@@ -183,6 +184,7 @@ public:
     virtual bool areLinearlyDependent( unsigned x1, unsigned x2, double &coefficient, double &inverseCoefficient ) = 0;
     virtual unsigned getVariableAfterMerging( unsigned variable ) const = 0;
     virtual void setFactTracker(FactTracker* tracker) = 0;
+    virtual List<const Fact*> getExplanationsForSaturatedTableauRow() = 0;
 };
 
 #endif // __ITableau_h__
