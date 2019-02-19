@@ -232,6 +232,10 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
 
         ### Get variables and constants of inputs ###
         input_ops = [i.op for i in op.inputs]
+        if self.isVariable(input_ops[0]):
+            convention = "xW"
+        elif self.isVariable(input_ops[1]):
+            convention = "Wx"
         prevValues = [self.getValues(i) for i in input_ops]
         curValues = self.getValues(op)
         aTranspose = op.node_def.attr['transpose_a'].b
@@ -254,7 +258,10 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
                 e = []
                 e = MarabouUtils.Equation()
                 for k in range(p):
-                    e.addAddend(B[k][j], A[i][k])
+                    if convention == "xW":
+                        e.addAddend(B[k][j], A[i][k])
+                    elif convention == "Wx":
+                        e.addAddend(A[i][k], B[k][j])
                 e.addAddend(-1, curValues[i][j])
                 e.setScalar(0.0)
                 self.addEquation(e)
