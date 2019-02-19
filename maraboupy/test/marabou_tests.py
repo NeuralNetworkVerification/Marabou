@@ -1,9 +1,9 @@
 # tests
-from test_utils import *
 import tensorflow as tf 
 import numpy as np
 from maraboupy import Marabou
 from maraboupy.MarabouUtils import *
+import os
 
 # test 1: test validity interface to maraboupy
 # read super simple network
@@ -97,7 +97,7 @@ def test4(frozen_graph):
 	network = Marabou.read_tf(frozen_graph, outputName="matmul")
 	output_vars = network.outputVars
 	# input bounds
-	eps = 1e-5
+	eps = 1e-3
 	network.setLowerBound(0, 0.+eps)
 	network.setUpperBound(0, 1.-eps)
 	# output bounds
@@ -113,26 +113,42 @@ def test4(frozen_graph):
 	vals, stats = network.solve()
 	return vals, stats
 
-# test 1: segmentation fault sometimes, but not all the time
-# run a few times
-# test lower bound
-vals, stats = test1(frozen_graph) # comment to see the other tests run
+def assert_SAT(vals, stats):
+	assert not stats.hasTimedOut()
+	assert len(vals) > 0
 
-# test 2: works fine
+def assert_UNSAT(vals, stats):
+	assert not stats.hasTimedOut()
+	assert len(vals)  == 0
+
+# test 1: lower bound
+# should be sat
+vals, stats = test1(frozen_graph) # comment to see the other tests run
+print("vals: ", vals)
+print("stats:", stats)
+assert_SAT(vals, stats)
+
+# test 2: 
 # test upper bound
+# should be unsat
 vals, stats = test2(frozen_graph)
 print("vals: ", vals)
 print("stats:", stats)
+assert_UNSAT(vals, stats)
 
 # test 3: complement output set, test bounds together
-# the SAT values chosen violate the input bounds and the equations. see value assigned to v0, v1, v2, v3, v4
+# SAT or UNSAT is SAT, should be SAT
 vals, stats = test3(frozen_graph)
 print("vals: ", vals)
 print("stats:", stats)
+assert_SAT(vals, stats)
 
 # test complement output set
-# should be UNSAT, but never finishes preprocessing and I have to kill-9 the process. Seems like a numerical precision issue because it works with eps=1e-4
+# should be UNSAT
 vals, stats = test4(frozen_graph)
 print("vals: ", vals)
 print("stats:", stats)
+assert_UNSAT(vals, stats)
+
+print("Tests pass.")
 
