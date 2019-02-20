@@ -108,6 +108,11 @@ public:
     List<const Fact*> findExternalExplanations( unsigned variable, QueryType queryType = BOTH ) const;
 
     /*
+      When we don't need fact tracking, this avoids assert errors in internal fact tracker.
+    */
+    void nullifyInternalFactTracker();
+
+    /*
       Have the Bound Tightener start reporting statistics.
      */
     void setStatistics( Statistics *statistics );

@@ -2660,8 +2660,8 @@ List<const Fact*> Tableau::getExplanationsForSaturatedTableauRow()
 
                 if ( assignmentIsTooSmall )
                 {
-                    if ( ( row._row[j]._coefficient > 0 && _upperBounds[nonBasicVariable] > _nonBasicAssignment[nonBasicVariable] )
-                        || ( row._row[j]._coefficient < 0 && _lowerBounds[nonBasicVariable] < _nonBasicAssignment[nonBasicVariable] ) )
+                    if ( ( row._row[j]._coefficient > 0 &&  FloatUtils::gt( _upperBounds[nonBasicVariable], _nonBasicAssignment[nonBasicVariable] ) )
+                        || ( row._row[j]._coefficient < 0 && FloatUtils::lt( _lowerBounds[nonBasicVariable], _nonBasicAssignment[nonBasicVariable] ) ) )
                     {
                         rowIsSaturated = false;
                         break;
@@ -2669,8 +2669,8 @@ List<const Fact*> Tableau::getExplanationsForSaturatedTableauRow()
                 }
                 else
                 {
-                    if ( ( row._row[j]._coefficient > 0 && _lowerBounds[nonBasicVariable] < _nonBasicAssignment[nonBasicVariable] )
-                        || ( row._row[j]._coefficient < 0 && _upperBounds[nonBasicVariable] > _nonBasicAssignment[nonBasicVariable] ) )
+                    if ( ( row._row[j]._coefficient > 0 && FloatUtils::lt( _lowerBounds[nonBasicVariable], _nonBasicAssignment[nonBasicVariable] ) )
+                        || ( row._row[j]._coefficient < 0 && FloatUtils::gt( _upperBounds[nonBasicVariable], _nonBasicAssignment[nonBasicVariable] ) ) )
                     {
                         rowIsSaturated = false;
                         break;
