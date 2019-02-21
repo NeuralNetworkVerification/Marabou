@@ -1161,7 +1161,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 
         bool columnsSuccessfullyMerged = false;
         double x1_lb, x2_lb, x1_ub, x2_ub;
-        if ( canMergeColumns ) 
+        if ( canMergeColumns )
         {
             x1_lb = _tableau->getLowerBound( x1 );
             x2_lb = _tableau->getLowerBound( x2 );
@@ -1216,7 +1216,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
             for(unsigned id=0; id<_tableau->getM(); id++){
               ASSERT(_factTracker.hasFactAffectingEquation(id));
             }
-            _factTracker.addEquationFact( _tableau->getM(), equation );
+
             unsigned auxVariable = _tableau->addEquation( equation );
             _activeEntryStrategy->resizeHook( _tableau );
 

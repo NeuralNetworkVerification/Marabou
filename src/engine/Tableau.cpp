@@ -1778,6 +1778,9 @@ unsigned Tableau::addEquation( const Equation &equation )
     // coefficient 1.
     unsigned auxVariable = _n;
 
+    if (_factTracker)
+      _factTracker->addEquationFact( _m, equation );
+
     // Adjust the data structures
     addRow();
 

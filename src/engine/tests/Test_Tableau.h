@@ -1197,7 +1197,7 @@ public:
         equation.addAddend( -4, 2 );
         equation.setScalar( 5 );
         equation.setCausingSplitInfo(0, 0, 0);
-        factTracker.addEquationFact(tableau->getM(), equation);
+
         TS_ASSERT_THROWS_NOTHING( tableau->addEquation( equation ) );
 
         TS_ASSERT( tableau->isBasic( 7u ) );
