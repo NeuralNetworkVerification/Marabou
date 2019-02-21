@@ -2624,6 +2624,11 @@ List<const Fact*> Tableau::getExplanationsForSaturatedTableauRow()
       We compute one row at a time.
     */
 
+    if ( !basisMatrixAvailable() )
+    {
+        refreshBasisFactorization();
+    }
+
     const double *invB = getInverseBasisMatrix();
 
     try
