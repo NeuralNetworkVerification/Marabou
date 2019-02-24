@@ -16,8 +16,8 @@
 #ifndef __MpsParser_h__
 #define __MpsParser_h__
 
-#include "Map.h"
 #include "Equation.h"
+#include "Map.h"
 #include "Set.h"
 
 class InputQuery;
@@ -27,65 +27,54 @@ class MpsParser
 {
 public:
     enum RowType {
-        E = 0, // equality
-        L, // less than or equal
-        G, // greater than or equal
-        N, // no restriction
+        EQ = 0,
+        LE,
+        GE,
     };
 
-    MpsParser( const char *filename );
-    void generateQuery( InputQuery &inputQuery );
+    MpsParser( const String &path );
 
+    // Extract an input query from the input file
+    void generateQuery( InputQuery &inputQuery ) const;
+
+    // Getters
     unsigned getNumVars() const;
-    unsigned getNumVarsInclAux() const;
-    unsigned getNumEqns() const;
-
-    // printables
-    String getEqnName( unsigned index ) const;
+    unsigned getNumEquations() const;
+    String getEquationName( unsigned index ) const;
     String getVarName( unsigned index ) const;
-    String getUpperBound( unsigned index ) const;
-    String getLowerBound( unsigned index ) const;
-
-    String getEqnLB( unsigned index ) const;
-    String getEqnUB( unsigned index ) const;
-    String getEqnValue( unsigned index, const InputQuery &inputQuery ) const;
-    //    Set<String> getVarNames() const;
-    //    unsigned getVarIndex( const String &name ) const;
-
-//    unsigned getInputVariable( unsigned index ) const;
-//    unsigned getOutputVariable( unsigned index ) const;
-//    unsigned getBVariable( unsigned layer, unsigned index ) const;
-//    unsigned getFVariable( unsigned layer, unsigned index ) const;
-//    unsigned getAuxVariable( unsigned layer, unsigned index ) const;
+    double getUpperBound( unsigned index ) const;
+    double getLowerBound( unsigned index ) const;
 
 private:
-    void parse( const char *filename );
-    void parseRow( const char *token );
-    void parseColumn( const char *token );
-    void parseRhs( const char *token );
-    void parseRanges( const char *token );
-    void parseBounds( const char *token );
-    void parseRemainingBounds();
+    // Helpers for parsing the various section of the file
+    void parse( const String &path );
+    void parseRow( const String &line );
+    void parseColumn( const String &line );
+    void parseRhs( const String &line );
+    void parseBounds( const String &line );
+    void setRemainingBounds();
 
-    void setBounds( InputQuery &inputQuery );
-    void setEqns( InputQuery &inputQuery );
-    void setEqn( Equation &eqn, unsigned eqnIndex, unsigned auxVarIndex );
+    // Helpers for preparing the input query
+    void populateBounds( InputQuery &inputQuery ) const;
+    void populateEquations( InputQuery &inputQuery ) const;
+    void populateEquation( Equation &equation, unsigned index ) const;
 
-    const char *DELIM = "\n\t ";
-    unsigned _numVars = 0;
-    unsigned _numEqns = 0;
-    Map<String, unsigned> _eqnToIndex;
-    Map<unsigned, String> _indexToEqn;
-    Map<unsigned, unsigned> _eqnToRowType;
-    Map<unsigned, Map<unsigned, double>> _eqnToCoeffs; // Eqn: {Var: Coeff, ...}
-    Map<unsigned, double> _eqnToRhs;
+    // Number of equations and variables
+    unsigned _numRows;
+    unsigned _numVars;
 
-    Map<String, unsigned> _varToIndex;
-    Map<unsigned, String> _indexToVar;
+    // Various mappings
+    Map<String, unsigned> _equationNameToIndex;
+    Map<unsigned, String> _equationIndexToName;
+    Map<unsigned, unsigned> _equationIndexToRowType;
+    Map<unsigned, Map<unsigned, double>> _equationIndexToCoefficients;
+    Map<unsigned, double> _equationIndexToRhs;
+    Map<String, unsigned> _variableNameToIndex;
+    Map<unsigned, String> _variableIndexToName;
     Map<unsigned, double> _varToUpperBounds;
     Map<unsigned, double> _varToLowerBounds;
 
-    String ftos( double val ) const;
+    void log( const String &message ) const;
 };
 
 #endif // __MpsParser_h__

@@ -32,7 +32,7 @@ SOURCES += \
 	main.cpp \
 	../MpsParser.cpp \
 
-TARGET = mps_gensol.elf
+TARGET = mps.elf
 
 include $(ROOT_DIR)/Rules.mk
 

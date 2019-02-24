@@ -110,7 +110,7 @@ void File::read( HeapData &buffer, unsigned maxReadSize )
 String File::readLine( char lineSeparatingChar )
 {
     enum {
-        SIZE_OF_BUFFER = 1024,
+        SIZE_OF_BUFFER = 10240,
     };
 
     Stringf separatorAsString( "%c", lineSeparatingChar );

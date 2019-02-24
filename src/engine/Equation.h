@@ -18,8 +18,8 @@
 
 #include "List.h"
 
-/* 
-   A class representing a single equation. 
+/*
+   A class representing a single equation.
    An equation is interpreted as:
 
    sum( coefficient * variable ) op scalar
@@ -52,6 +52,7 @@ public:
 
     void addAddend( double coefficient, unsigned variable );
     void setScalar( double scalar );
+    void setType( EquationType type );
 
     /*
       Go over the addends and rename variable oldVar to newVar.
