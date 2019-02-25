@@ -124,6 +124,12 @@ public:
     void incNumBoundsProposedByPlConstraints();
 
     void incNumTighteningsFromSymbolicBoundTightening( unsigned increment );
+
+    /*
+      Basis factorization statistics
+    */
+    void incNumBasisRefactorizations();
+
     /*
       Projected Steepest Edge related statistics.
     */
@@ -257,6 +263,9 @@ private:
     // consequent tightenings proposed.
     unsigned long long _numBoundTighteningsOnConstraintMatrix;
     unsigned long long _numTighteningsFromConstraintMatrix;
+
+    // Basis factorization statistics
+    unsigned long long _numBasisRefactorizations;
 
     // Projected steepest edge statistics
     unsigned long long _pseNumIterations;

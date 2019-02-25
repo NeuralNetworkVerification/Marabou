@@ -705,7 +705,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             if ( equation._type != Equation::EQ )
             {
                 _exitCode = Engine::ERROR;
-                throw ReluplexError( ReluplexError::NON_EQUALITY_INPUT_EQUATIONS_NOT_YET_SUPPORTED );
+                throw ReluplexError( ReluplexError::NON_EQUALITY_INPUT_EQUATION_DISCOVERED );
             }
 
             for ( const auto &addend : equation._addends )

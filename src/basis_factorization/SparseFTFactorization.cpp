@@ -356,6 +356,9 @@ void SparseFTFactorization::factorizeBasis()
         else
             throw e;
     }
+
+    if ( _statistics )
+        _statistics->incNumBasisRefactorizations();
 }
 
 void SparseFTFactorization::storeFactorization( IBasisFactorization *other )
