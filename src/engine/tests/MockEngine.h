@@ -17,6 +17,7 @@
 #define __MockEngine_h__
 
 #include "IEngine.h"
+#include "FactTracker.h"
 #include "List.h"
 #include "PiecewiseLinearCaseSplit.h"
 
@@ -27,7 +28,7 @@ public:
     {
         wasCreated = false;
         wasDiscarded = false;
-
+        factTracker = NULL;
         lastStoredState = NULL;
     }
 
@@ -66,13 +67,23 @@ public:
     List<Bound> lastLowerBounds;
     List<Bound> lastUpperBounds;
     List<Equation> lastEquations;
+    FactTracker* factTracker;
+    void setFactTracker(FactTracker* f)
+    {
+      factTracker = f;
+    }
     void applySplit( const PiecewiseLinearCaseSplit &split )
     {
         List<Tightening> bounds = split.getBoundTightenings();
         auto equations = split.getEquations();
+        unsigned i=1;
         for ( auto &it : equations )
         {
             lastEquations.append( it );
+            if(factTracker){
+              factTracker->addEquationFact(i, it);
+              i++;
+            }
         }
 
         for ( auto &bound : bounds )
@@ -84,6 +95,9 @@ public:
             else
             {
                 lastUpperBounds.append( Bound( bound._variable, bound._value ) );
+            }
+            if(factTracker){
+              factTracker->addBoundFact(bound._variable, bound);
             }
         }
     }
