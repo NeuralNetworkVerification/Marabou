@@ -15,16 +15,35 @@
 
 #include <cxxtest/TestSuite.h>
 
+#include "RowBoundTightener.h"
+#include "Tableau.h"
+#include "Engine.h"
+#include "Fact.h"
+#include "FactTracker.h"
 #include "GlobalConfiguration.h"
+#include "InputQuery.h"
+// #include "MockConstraintBoundTightenerFactory.h"
+// #include "MockConstraintMatrixAnalyzerFactory.h"
+// #include "MockCostFunctionManagerFactory.h"
 #include "MockEngine.h"
 #include "MockErrno.h"
+// #include "MockProjectedSteepestEdgeFactory.h"
+// #include "MockRowBoundTightenerFactory.h"
+// #include "MockTableauFactory.h"
+#include "MockTableau.h"
 #include "PiecewiseLinearConstraint.h"
 #include "ReluConstraint.h"
-#include "SmtCore.h"
+// #include "SmtCore.h"
 
 #include <string.h>
 
-class MockForSmtCore
+class MockForSmtCore /*:
+    public MockTableauFactory,
+    public MockProjectedSteepestEdgeRuleFactory,
+    public MockRowBoundTightenerFactory,
+    public MockConstraintBoundTightenerFactory,
+    public MockCostFunctionManagerFactory,
+    public MockConstraintMatrixAnalyzerFactory*/
 {
 public:
 };
@@ -495,11 +514,92 @@ public:
         TS_ASSERT_EQUALS( *it, split4 );
     }
 
+    // void test_split_backtrack()
+    // {
+    //     Engine engine;
+    //     SmtCore* smtCore = engine.getSmtCoreForTest();
+
+    //     unsigned n = 5;
+
+    //     InputQuery query;
+    //     query.setNumberOfVariables( n );
+    //     query.markInputVariable( 0, 0 );
+    //     query.markInputVariable( 2, 1 );
+    //     query.markOutputVariable( 4, 0 );
+
+    //     /*
+    //        -1 <= x0 <= 100
+    //         0 <= x1 <= 100
+    //        -1 <= x2 <= 1
+    //         0 <= x3 <= 1
+    //         2 <= x4 <= 200
+    //     */
+    //     query.setLowerBound( 0, -1 );
+    //     query.setLowerBound( 1, 0 );
+    //     query.setLowerBound( 2, -1 );
+    //     query.setLowerBound( 3, 0 );
+    //     query.setLowerBound( 4, 2 );
+    //     query.setUpperBound( 0, 100 );
+    //     query.setUpperBound( 1, 100 );
+    //     query.setUpperBound( 2, 1 );
+    //     query.setUpperBound( 3, 1 );
+    //     query.setUpperBound( 4, 200 );
+
+    //     // x1 = x4
+    //     Equation equation( Equation::EQ );
+    //     equation.addAddend( 1, 1 );
+    //     equation.addAddend( -1, 4 );
+    //     equation.setScalar( 0 );
+    //     query.addEquation( equation );
+
+    //     // relu1 (x0, x1) and relu2 (x2, x3)
+    //     ReluConstraint relu1( 0, 1, 1 );
+    //     ReluConstraint relu2( 2, 3, 2 );
+    //     PiecewiseLinearConstraint *plc1 = &relu1;
+    //     PiecewiseLinearConstraint *plc2 = &relu2;
+    //     query.addPiecewiseLinearConstraint( plc1 );
+    //     query.addPiecewiseLinearConstraint( plc2 );
+
+    //     engine.processInputQuery( query, false );
+    //     relu1.setStatistics( engine.getStatisticsForTest() );
+    //     relu2.setStatistics( engine.getStatisticsForTest() );
+
+    //     for ( unsigned i = 0; i < GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD; ++i )
+    //         smtCore->reportViolatedConstraint( &relu1 );
+
+    //     smtCore->performSplit();
+
+    //     for ( unsigned i = 0; i < GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD; ++i )
+    //         smtCore->reportViolatedConstraint( &relu2 );
+
+    //     smtCore->performSplit();
+        
+    //     engine.applyAllBoundTighteningsForTest();
+
+    //     try
+    //     {
+    //         engine.examineConstraintMatrixForTest();
+    //     }
+    //     catch( const InfeasibleQueryException & e )
+    //     {
+    //         unsigned failureVar;
+    //         engine.checkAllBoundsValidForTest( failureVar );
+    //         printf( "failure variable: %d, ", failureVar );
+
+    //         FactTracker *factTracker = engine.getFactTrackerForTest();
+    //         auto explanations = e.getExplanations();
+    //         printf( "explanation size: %d\n", explanations.size() );
+    //         auto splits = factTracker->getConstraintsAndSplitsCausingFacts( explanations );
+    //         printf( "splits size: %d, constraint ID: %d, split ID: %d\n", splits.size(), splits.front().first(), splits.front().second() );
+    //     }
+    // }
+
     void test_todo()
     {
         // Reason: the inefficiency in resizing the tableau mutliple times
         TS_TRACE( "add support for adding multiple equations at once, not one-by-one" );
     }
+
 };
 
 //

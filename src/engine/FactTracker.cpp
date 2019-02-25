@@ -66,7 +66,8 @@ List<Pair<unsigned, unsigned> > FactTracker::getConstraintsAndSplitsCausingFacts
     if (seen.exists(fact)) continue;
     seen.insert(fact);
     if(fact->isCausedBySplit()){
-      result.insert(Pair<unsigned, unsigned>(fact->getCausingConstraintID(), fact->getCausingSplitID()));
+        if(fact->getSplitLevelCausing() != 0)
+            result.insert(Pair<unsigned, unsigned>(fact->getCausingConstraintID(), fact->getCausingSplitID()));
     }
     else {
       for(const Fact* explanation: fact->getExplanations()){
@@ -170,6 +171,7 @@ void FactTracker::popFact()
   _factsLearned.pop();
   if ( factInfo.second() == LB ){
     const Fact* oldFact = _lowerBoundFact[factInfo.first()].top();
+    ASSERT(_factsLearnedSet.exists(oldFact));
     _factsLearnedSet.erase(oldFact);
     ASSERT(oldFact != NULL);
     delete oldFact;
@@ -177,6 +179,7 @@ void FactTracker::popFact()
   }
   if ( factInfo.second() == UB ){
     const Fact* oldFact = _upperBoundFact[factInfo.first()].top();
+    ASSERT(_factsLearnedSet.exists(oldFact));
     _factsLearnedSet.erase(oldFact);
     ASSERT(oldFact != NULL);
     delete oldFact;
@@ -184,6 +187,7 @@ void FactTracker::popFact()
   }
   if ( factInfo.second() == EQU ){
     const Fact* oldFact = _equationFact[factInfo.first()].top();
+    ASSERT(_factsLearnedSet.exists(oldFact));
     _factsLearnedSet.erase(oldFact);
     ASSERT(oldFact != NULL);
     delete oldFact;

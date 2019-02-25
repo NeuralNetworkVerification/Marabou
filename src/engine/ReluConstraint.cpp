@@ -433,6 +433,7 @@ PiecewiseLinearCaseSplit ReluConstraint::getSplitFromID( unsigned splitID, bool 
 
 PiecewiseLinearCaseSplit ReluConstraint::getInactiveSplit(bool impliedSplit/*=false*/) const
 {
+    assert( !_factTracker || _statistics );
     unsigned nextSplitLevel = 0;
     if (_statistics)
       nextSplitLevel = _statistics->getCurrentStackDepth() + 1;
@@ -452,6 +453,7 @@ PiecewiseLinearCaseSplit ReluConstraint::getInactiveSplit(bool impliedSplit/*=fa
 
 PiecewiseLinearCaseSplit ReluConstraint::getActiveSplit(bool impliedSplit/*=false*/) const
 {
+    assert( !_factTracker || _statistics );
     unsigned nextSplitLevel = 0;
     if (_statistics)
       nextSplitLevel = _statistics->getCurrentStackDepth() + 1;

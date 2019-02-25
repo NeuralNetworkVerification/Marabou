@@ -89,6 +89,16 @@ public:
     const Statistics *getStatistics() const;
 
     /*
+      Temporary functions To test backtracking by CDCL
+    */
+    Statistics *getStatisticsForTest();
+    SmtCore* getSmtCoreForTest();
+    FactTracker* getFactTrackerForTest();
+    void checkAllBoundsValidForTest( unsigned &failureVar );
+    void examineConstraintMatrixForTest();
+    void applyAllBoundTighteningsForTest();
+
+    /*
       Get the exit code
     */
     Engine::ExitCode getExitCode() const;

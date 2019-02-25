@@ -18,6 +18,7 @@
 #include "Debug.h"
 #include "Engine.h"
 #include "EngineState.h"
+#include "FactTracker.h"
 #include "InfeasibleQueryException.h"
 #include "InputQuery.h"
 #include "MStringf.h"
@@ -25,6 +26,7 @@
 #include "PiecewiseLinearConstraint.h"
 #include "Preprocessor.h"
 #include "ReluplexError.h"
+#include "SmtCore.h"
 #include "TableauRow.h"
 #include "TimeUtils.h"
 
@@ -1518,6 +1520,43 @@ bool Engine::basisRestorationNeeded() const
 const Statistics *Engine::getStatistics() const
 {
     return &_statistics;
+}
+
+Statistics *Engine::getStatisticsForTest()
+{
+    return &_statistics;
+}
+
+SmtCore *Engine::getSmtCoreForTest()
+{
+    return &_smtCore;
+}
+
+FactTracker *Engine::getFactTrackerForTest()
+{
+    return &_factTracker;
+}
+
+void Engine::checkAllBoundsValidForTest( unsigned &failureVar )
+{
+    ASSERT( !_tableau->allBoundsValid() );
+    failureVar = _tableau->getInvalidBoundsVariable();
+}
+
+void Engine::examineConstraintMatrixForTest()
+{
+    _rowBoundTightener->examineConstraintMatrix( true );
+}
+
+void Engine::applyAllBoundTighteningsForTest()
+{
+    struct timespec start = TimeUtils::sampleMicro();
+
+    applyAllRowTightenings();
+    applyAllConstraintTightenings();
+
+    struct timespec end = TimeUtils::sampleMicro();
+    _statistics.addTimeForApplyingStoredTightenings( TimeUtils::timePassed( start, end ) );
 }
 
 void Engine::log( const String &message )
