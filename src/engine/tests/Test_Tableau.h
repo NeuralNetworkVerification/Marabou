@@ -1199,6 +1199,7 @@ public:
         equation.setCausingSplitInfo(0, 0, 0);
 
         TS_ASSERT_THROWS_NOTHING( tableau->addEquation( equation ) );
+        TS_ASSERT ( factTracker.hasFactAffectingEquation(3) );
 
         TS_ASSERT( tableau->isBasic( 7u ) );
 

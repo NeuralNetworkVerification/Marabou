@@ -187,20 +187,28 @@ public:
 
     void test_perform_split()
     {
+
+        FactTracker factTracker;
+        engine->setFactTracker(&factTracker);
         SmtCore smtCore( engine );
+        smtCore.setFactTracker(&factTracker);
+
 
         MockConstraint constraint;
 
         // Split 1
         PiecewiseLinearCaseSplit split1;
         Tightening bound1( 1, 3.0, Tightening::LB );
+        bound1.setCausingSplitInfo(1, 1, 1);
         Tightening bound2( 1, 5.0, Tightening::UB );
+        bound2.setCausingSplitInfo(1, 1, 1);
 
         Equation equation1( Equation::EQ );
         equation1.addAddend( 1, 0 );
         equation1.addAddend( 2, 1 );
         equation1.addAddend( -1, 2 );
         equation1.setScalar( 11 );
+        equation1.setCausingSplitInfo(1, 1, 1);
 
         split1.storeBoundTightening( bound1 );
         split1.storeBoundTightening( bound2 );
@@ -209,12 +217,15 @@ public:
         // Split 2
         PiecewiseLinearCaseSplit split2;
         Tightening bound3( 2, 13.0, Tightening::UB );
+        bound3.setCausingSplitInfo(1, 2, 1);
         Tightening bound4( 3, 25.0, Tightening::UB );
+        bound4.setCausingSplitInfo(1, 2, 1);
 
         Equation equation2( Equation::EQ );
         equation2.addAddend( -3, 0 );
         equation2.addAddend( 3, 1 );
         equation2.setScalar( -5 );
+        equation2.setCausingSplitInfo(1, 2, 1);
 
         split2.storeBoundTightening( bound3 );
         split2.storeBoundTightening( bound4 );
@@ -223,6 +234,9 @@ public:
         // Split 3
         PiecewiseLinearCaseSplit split3;
         Tightening bound5( 14, 2.3, Tightening::LB );
+        bound5.setCausingSplitInfo(1, 3, 1);
+        equation1.setCausingSplitInfo(1, 3, 1);
+        equation2.setCausingSplitInfo(1, 3, 1);
 
         split3.storeBoundTightening( bound5 );
         split3.addEquation( equation1 );
@@ -246,6 +260,8 @@ public:
         TS_ASSERT( constraint.setActiveWasCalled );
         TS_ASSERT( !smtCore.needToSplit() );
         TS_ASSERT_EQUALS( smtCore.getStackDepth(), 1U );
+        TS_ASSERT(factTracker.hasFactAffectingBound(1U, FactTracker::LB));
+        TS_ASSERT(factTracker.hasFactAffectingBound(1U, FactTracker::UB));
 
         // Check that Split1 was performed and tableau state was stored
         TS_ASSERT_EQUALS( engine->lastLowerBounds.size(), 1U );
@@ -272,7 +288,13 @@ public:
         List<const Fact*> emptyExplanations;
         // Pop Split1, check that the tableau was restored and that
         // a Split2 was performed
+
         TS_ASSERT( smtCore.popSplit(emptyExplanations) );
+        TS_ASSERT(!factTracker.hasFactAffectingBound(1U, FactTracker::LB));
+        TS_ASSERT(!factTracker.hasFactAffectingBound(1U, FactTracker::UB));
+        TS_ASSERT(factTracker.hasFactAffectingBound(2U, FactTracker::UB));
+        TS_ASSERT(factTracker.hasFactAffectingBound(3U, FactTracker::UB));
+
         TS_ASSERT_EQUALS( smtCore.getStackDepth(), 1U );
 
         TS_ASSERT_EQUALS( engine->lastRestoredState, originalState );
@@ -303,6 +325,12 @@ public:
         TS_ASSERT( smtCore.popSplit(emptyExplanations) );
         TS_ASSERT_EQUALS( smtCore.getStackDepth(), 1U );
 
+        TS_ASSERT(!factTracker.hasFactAffectingBound(1U, FactTracker::LB));
+        TS_ASSERT(!factTracker.hasFactAffectingBound(1U, FactTracker::UB));
+        TS_ASSERT(!factTracker.hasFactAffectingBound(2U, FactTracker::UB));
+        TS_ASSERT(!factTracker.hasFactAffectingBound(3U, FactTracker::UB));
+        TS_ASSERT(factTracker.hasFactAffectingBound(14U, FactTracker::LB));
+
         TS_ASSERT_EQUALS( engine->lastRestoredState, originalState );
         TS_ASSERT( !engine->lastStoredState );
         engine->lastRestoredState = NULL;
@@ -331,6 +359,13 @@ public:
         TS_ASSERT( !smtCore.popSplit(emptyExplanations) );
         TS_ASSERT( !engine->lastRestoredState );
         TS_ASSERT_EQUALS( smtCore.getStackDepth(), 0U );
+
+        TS_ASSERT(!factTracker.hasFactAffectingBound(1U, FactTracker::LB));
+        TS_ASSERT(!factTracker.hasFactAffectingBound(1U, FactTracker::UB));
+        TS_ASSERT(!factTracker.hasFactAffectingBound(2U, FactTracker::UB));
+        TS_ASSERT(!factTracker.hasFactAffectingBound(3U, FactTracker::UB));
+        TS_ASSERT(!factTracker.hasFactAffectingBound(14U, FactTracker::LB));
+
     }
 
     void test_perform_split__inactive_constraint()

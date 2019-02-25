@@ -171,12 +171,24 @@ bool SmtCore::popSplit(const List<const Fact*>& /*explanation*/)
             throw ReluplexError( ReluplexError::DEBUGGING_ERROR );
         }
 
+        unsigned oldNumFacts = _stack.back()->_numFacts;
+
         delete _stack.back()->_engineState;
         delete _stack.back();
         _stack.popBack();
 
-        if ( _stack.empty() )
+        if ( _stack.empty() ){
+            if ( _factTracker )
+            {
+              while( _factTracker->getNumFacts() > oldNumFacts )
+              {
+                _factTracker->popFact();
+              }
+              if(_statistics)
+                _factTracker->verifySplitLevel(_statistics->getCurrentStackDepth());
+            }
             return false;
+        }
     }
 
     if ( checkSkewFromDebuggingSolution() )
@@ -199,7 +211,8 @@ bool SmtCore::popSplit(const List<const Fact*>& /*explanation*/)
       {
         _factTracker->popFact();
       }
-      _factTracker->verifySplitLevel(_statistics->getCurrentStackDepth());
+      if(_statistics)
+        _factTracker->verifySplitLevel(_statistics->getCurrentStackDepth());
     }
 
     // Apply the new split and erase it from the list
