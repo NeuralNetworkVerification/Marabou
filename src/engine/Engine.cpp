@@ -598,221 +598,466 @@ bool Engine::processInputQuery( InputQuery &inputQuery )
     return processInputQuery( inputQuery, GlobalConfiguration::PREPROCESS_INPUT_QUERY );
 }
 
+void Engine::informConstraintsOfInitialBounds( InputQuery &inputQuery ) const
+{
+    for ( const auto &plConstraint : inputQuery.getPiecewiseLinearConstraints() )
+    {
+        List<unsigned> variables = plConstraint->getParticipatingVariables();
+        for ( unsigned variable : variables )
+        {
+            plConstraint->notifyLowerBound( variable, inputQuery.getLowerBound( variable ) );
+            plConstraint->notifyUpperBound( variable, inputQuery.getUpperBound( variable ) );
+        }
+    }
+}
+
+void Engine::invokePreprocessor( const InputQuery &inputQuery, bool preprocess )
+{
+    printf( "Engine::processInputQuery: Input query (before preprocessing): "
+            "%u equations, %u variables\n",
+            inputQuery.getEquations().size(),
+            inputQuery.getNumberOfVariables() );
+
+    // If processing is enabled, invoke the preprocessor
+    _preprocessingEnabled = preprocess;
+    if ( _preprocessingEnabled )
+        _preprocessedQuery = _preprocessor.preprocess
+            ( inputQuery, GlobalConfiguration::PREPROCESSOR_ELIMINATE_VARIABLES );
+    else
+        _preprocessedQuery = inputQuery;
+
+    printf( "Engine::processInputQuery: Input query (after preprocessing): "
+            "%u equations, %u variables\n\n",
+            _preprocessedQuery.getEquations().size(),
+            _preprocessedQuery.getNumberOfVariables() );
+
+    unsigned infiniteBounds = _preprocessedQuery.countInfiniteBounds();
+    if ( infiniteBounds != 0 )
+    {
+        _exitCode = Engine::ERROR;
+        throw ReluplexError( ReluplexError::UNBOUNDED_VARIABLES_NOT_YET_SUPPORTED,
+                             Stringf( "Error! Have %u infinite bounds", infiniteBounds ).ascii() );
+    }
+}
+
+void Engine::printInputBounds( const InputQuery &inputQuery ) const
+{
+    printf( "Input bounds:\n" );
+    for ( unsigned i = 0; i < inputQuery.getNumInputVariables(); ++i )
+    {
+        unsigned variable = inputQuery.inputVariableByIndex( i );
+        double lb, ub;
+        bool fixed = false;
+        if ( _preprocessingEnabled )
+        {
+            // Fixed variables are easy: return the value they've been fixed to.
+            if ( _preprocessor.variableIsFixed( variable ) )
+            {
+                fixed = true;
+                lb = _preprocessor.getFixedValue( variable );
+                ub = lb;
+            }
+            else
+            {
+                // Has the variable been merged into another?
+                while ( _preprocessor.variableIsMerged( variable ) )
+                    variable = _preprocessor.getMergedIndex( variable );
+
+                // We know which variable to look for, but it may have been assigned
+                // a new index, due to variable elimination
+                variable = _preprocessor.getNewIndex( variable );
+
+                lb = _preprocessedQuery.getLowerBound( variable );
+                ub = _preprocessedQuery.getUpperBound( variable );
+            }
+        }
+        else
+        {
+            lb = inputQuery.getLowerBound( variable );
+            ub = inputQuery.getUpperBound( variable );
+        }
+
+        printf( "\tx%u: [%8.4lf, %8.4lf] %s\n", i, lb, ub, fixed ? "[FIXED]" : "" );
+    }
+    printf( "\n" );
+}
+
+void Engine::storeEquationsInDegradationChecker()
+{
+    _degradationChecker.storeEquations( _preprocessedQuery );
+}
+
+double *Engine::createConstraintMatrix()
+{
+    const List<Equation> &equations( _preprocessedQuery.getEquations() );
+    unsigned m = equations.size();
+    unsigned n = _preprocessedQuery.getNumberOfVariables();
+
+    // Step 1: create a constraint matrix from the equations
+    double *constraintMatrix = new double[n*m];
+    if ( !constraintMatrix )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Engine::constraintMatrix" );
+    std::fill_n( constraintMatrix, n*m, 0.0 );
+
+    unsigned equationIndex = 0;
+    for ( const auto &equation : equations )
+    {
+        if ( equation._type != Equation::EQ )
+        {
+            _exitCode = Engine::ERROR;
+            throw ReluplexError( ReluplexError::NON_EQUALITY_INPUT_EQUATION_DISCOVERED );
+        }
+
+        for ( const auto &addend : equation._addends )
+            constraintMatrix[equationIndex*n + addend._variable] = addend._coefficient;
+
+        ++equationIndex;
+    }
+
+    return constraintMatrix;
+}
+
+void Engine::removeRedundantEquations( const double *constraintMatrix )
+{
+    const List<Equation> &equations( _preprocessedQuery.getEquations() );
+    unsigned m = equations.size();
+    unsigned n = _preprocessedQuery.getNumberOfVariables();
+
+    // Step 1: analyze the matrix to identify redundant rows
+    AutoConstraintMatrixAnalyzer analyzer;
+    analyzer->analyze( constraintMatrix, m, n );
+
+    log( Stringf( "Number of redundant rows: %u out of %u",
+                  analyzer->getRedundantRows().size(), m ) );
+
+    // Step 2: remove any equations corresponding to redundant rows
+    Set<unsigned> redundantRows = analyzer->getRedundantRows();
+
+    if ( !redundantRows.empty() )
+    {
+        _preprocessedQuery.removeEquationsByIndex( redundantRows );
+        m = equations.size();
+    }
+}
+
+void Engine::selectInitialVariablesForBasis( const double *constraintMatrix, List<unsigned> &initialBasis, List<unsigned> &basicRows )
+{
+    /*
+      This method permutes rows and columns in the constraint matrix (prior
+      to the addition of auxiliary variables), in order to obtain a set of
+      column that constitue a lower triangular matrix. The variables
+      corresponding to the columns of this matrix join the initial basis.
+
+      (It is possible that not enough variables are obtained this way, in which
+      case the initial basis will have to be augmented later).
+    */
+
+    const List<Equation> &equations( _preprocessedQuery.getEquations() );
+
+    unsigned m = equations.size();
+    unsigned n = _preprocessedQuery.getNumberOfVariables();
+
+    // Trivial case, or if a trivial basis is requested
+    if ( ( m == 0 ) || ( n == 0 ) || GlobalConfiguration::ONLY_AUX_INITIAL_BASIS )
+    {
+        for ( unsigned i = 0; i < m; ++i )
+            basicRows.append( i );
+
+        return;
+    }
+
+    unsigned *nnzInRow = new unsigned[m];
+    unsigned *nnzInColumn = new unsigned[n];
+
+    std::fill_n( nnzInRow, m, 0 );
+    std::fill_n( nnzInColumn, n, 0 );
+
+    unsigned *columnOrdering = new unsigned[n];
+    unsigned *rowOrdering = new unsigned[m];
+
+    for ( unsigned i = 0; i < m; ++i )
+        rowOrdering[i] = i;
+
+    for ( unsigned i = 0; i < n; ++i )
+        columnOrdering[i] = i;
+
+    // Initialize the counters
+    for ( unsigned i = 0; i < m; ++i )
+    {
+        for ( unsigned j = 0; j < n; ++j )
+        {
+            if ( !FloatUtils::isZero( constraintMatrix[i*n + j] ) )
+            {
+                ++nnzInRow[i];
+                ++nnzInColumn[j];
+            }
+        }
+    }
+
+    DEBUG({
+            for ( unsigned i = 0; i < m; ++i )
+            {
+                ASSERT( nnzInRow[i] > 0 );
+            }
+        });
+
+    unsigned numExcluded = 0;
+    unsigned numTriangularRows = 0;
+    unsigned temp;
+
+    while ( numExcluded + numTriangularRows < n )
+    {
+        // Do we have a singleton row?
+        unsigned singletonRow = m;
+        for ( unsigned i = numTriangularRows; i < m; ++i )
+        {
+            if ( nnzInRow[i] == 1 )
+            {
+                singletonRow = i;
+                break;
+            }
+        }
+
+        if ( singletonRow < m )
+        {
+            // Have a singleton row! Swap it to the top and update counters
+            temp = rowOrdering[singletonRow];
+            rowOrdering[singletonRow] = rowOrdering[numTriangularRows];
+            rowOrdering[numTriangularRows] = temp;
+
+            temp = nnzInRow[numTriangularRows];
+            nnzInRow[numTriangularRows] = nnzInRow[singletonRow];
+            nnzInRow[singletonRow] = temp;
+
+            // Find the non-zero entry in the row and swap it to the diagonal
+            DEBUG( bool foundNonZero = false );
+            for ( unsigned i = numTriangularRows; i < n - numExcluded; ++i )
+            {
+                if ( !FloatUtils::isZero( constraintMatrix[rowOrdering[numTriangularRows] * n + columnOrdering[i]] ) )
+                {
+                    temp = columnOrdering[i];
+                    columnOrdering[i] = columnOrdering[numTriangularRows];
+                    columnOrdering[numTriangularRows] = temp;
+
+                    temp = nnzInColumn[numTriangularRows];
+                    nnzInColumn[numTriangularRows] = nnzInColumn[i];
+                    nnzInColumn[i] = temp;
+
+                    DEBUG( foundNonZero = true );
+                    break;
+                }
+            }
+
+            ASSERT( foundNonZero );
+
+            // Remove all entries under the diagonal entry from the row counters
+            for ( unsigned i = numTriangularRows + 1; i < m; ++i )
+            {
+                if ( !FloatUtils::isZero( constraintMatrix[rowOrdering[i] * n + columnOrdering[numTriangularRows]] ) )
+                    --nnzInRow[i];
+            }
+
+            ++numTriangularRows;
+        }
+        else
+        {
+            // No singleton rows. Exclude the densest column
+            unsigned maxDensity = nnzInColumn[numTriangularRows];
+            unsigned column = numTriangularRows;
+
+            for ( unsigned i = numTriangularRows; i < n - numExcluded; ++i )
+            {
+                if ( nnzInColumn[i] > maxDensity )
+                {
+                    maxDensity = nnzInColumn[i];
+                    column = i;
+                }
+            }
+
+            // Update the row counters to account for the excluded column
+            for ( unsigned i = numTriangularRows; i < m; ++i )
+            {
+                double element = constraintMatrix[rowOrdering[i]*n + columnOrdering[column]];
+                if ( !FloatUtils::isZero( element ) )
+                {
+                    ASSERT( nnzInRow[i] > 1 );
+                    --nnzInRow[i];
+                }
+            }
+
+            columnOrdering[column] = columnOrdering[n - 1 - numExcluded];
+            nnzInColumn[column] = nnzInColumn[n - 1 - numExcluded];
+            ++numExcluded;
+        }
+    }
+
+    // Final basis: diagonalized columns + non-diagonalized rows
+    List<unsigned> result;
+
+    for ( unsigned i = 0; i < numTriangularRows; ++i )
+    {
+        initialBasis.append( columnOrdering[i] );
+    }
+
+    for ( unsigned i = numTriangularRows; i < m; ++i )
+    {
+        basicRows.append( rowOrdering[i] );
+    }
+
+    // Cleanup
+    delete[] nnzInRow;
+    delete[] nnzInColumn;
+    delete[] columnOrdering;
+    delete[] rowOrdering;
+}
+
+void Engine::addAuxiliaryVariables()
+{
+    List<Equation> &equations( _preprocessedQuery.getEquations() );
+
+    unsigned m = equations.size();
+    unsigned originalN = _preprocessedQuery.getNumberOfVariables();
+    unsigned n = originalN + m;
+
+    _preprocessedQuery.setNumberOfVariables( n );
+
+    // Add auxiliary variables to the equations and set their bounds
+    unsigned count = 0;
+    for ( auto &eq : equations )
+    {
+        unsigned auxVar = originalN + count;
+        eq.addAddend( -1, auxVar );
+        _preprocessedQuery.setLowerBound( auxVar, eq._scalar );
+        _preprocessedQuery.setUpperBound( auxVar, eq._scalar );
+        eq.setScalar( 0 );
+
+        ++count;
+    }
+}
+
+void Engine::augmentInitialBasisIfNeeded( List<unsigned> &initialBasis, const List<unsigned> &basicRows )
+{
+    unsigned m = _preprocessedQuery.getEquations().size();
+    unsigned n = _preprocessedQuery.getNumberOfVariables();
+    unsigned originalN = n - m;
+
+    if ( initialBasis.size() != m )
+    {
+        for ( const auto &basicRow : basicRows )
+            initialBasis.append( basicRow + originalN );
+    }
+}
+
+void Engine::initializeTableau( const double *constraintMatrix, const List<unsigned> &initialBasis )
+{
+    const List<Equation> &equations( _preprocessedQuery.getEquations() );
+    unsigned m = equations.size();
+    unsigned n = _preprocessedQuery.getNumberOfVariables();
+
+    _tableau->setDimensions( m, n );
+
+    adjustWorkMemorySize();
+
+    unsigned equationIndex = 0;
+    for ( const auto &equation : equations )
+    {
+        _tableau->setRightHandSide( equationIndex, equation._scalar );
+        ++equationIndex;
+    }
+
+    // Populate constriant matrix
+    _tableau->setConstraintMatrix( constraintMatrix );
+
+    for ( unsigned i = 0; i < n; ++i )
+    {
+        _tableau->setLowerBound( i, _preprocessedQuery.getLowerBound( i ) );
+        _tableau->setUpperBound( i, _preprocessedQuery.getUpperBound( i ) );
+    }
+
+    _tableau->registerToWatchAllVariables( _rowBoundTightener );
+    _tableau->registerResizeWatcher( _rowBoundTightener );
+
+    _tableau->registerToWatchAllVariables( _constraintBoundTightener );
+    _tableau->registerResizeWatcher( _constraintBoundTightener );
+
+    _rowBoundTightener->setDimensions();
+    _constraintBoundTightener->setDimensions();
+
+    // Register the constraint bound tightener to all the PL constraints
+    for ( auto &plConstraint : _preprocessedQuery.getPiecewiseLinearConstraints() )
+        plConstraint->registerConstraintBoundTightener( _constraintBoundTightener );
+
+    _plConstraints = _preprocessedQuery.getPiecewiseLinearConstraints();
+    for ( const auto &constraint : _plConstraints )
+    {
+        constraint->registerAsWatcher( _tableau );
+        constraint->setStatistics( &_statistics );
+    }
+
+    _tableau->initializeTableau( initialBasis );
+
+    _costFunctionManager->initialize();
+    _tableau->registerCostFunctionManager( _costFunctionManager );
+    _activeEntryStrategy->initialize( _tableau );
+
+    _statistics.setNumPlConstraints( _plConstraints.size() );
+}
+
+void Engine::initializeNetworkLevelReasoning()
+{
+    if ( _preprocessedQuery._sbt )
+        _symbolicBoundTightener = _preprocessedQuery._sbt;
+}
+
 bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 {
     log( "processInputQuery starting\n" );
 
+    struct timespec start = TimeUtils::sampleMicro();
+
     try
     {
-        struct timespec start = TimeUtils::sampleMicro();
+        informConstraintsOfInitialBounds( inputQuery );
+        invokePreprocessor( inputQuery, preprocess );
+        printInputBounds( inputQuery );
 
-        // Inform the PL constraints of the initial variable bounds
-        for ( const auto &plConstraint : inputQuery.getPiecewiseLinearConstraints() )
-        {
-            List<unsigned> variables = plConstraint->getParticipatingVariables();
-            for ( unsigned variable : variables )
-            {
-                plConstraint->notifyLowerBound( variable, inputQuery.getLowerBound( variable ) );
-                plConstraint->notifyUpperBound( variable, inputQuery.getUpperBound( variable ) );
-            }
-        }
+        double *constraintMatrix = createConstraintMatrix();
+        removeRedundantEquations( constraintMatrix );
 
-        printf( "Engine::processInputQuery: Input query (before preprocessing): "
-                "%u equations, %u variables\n",
-                inputQuery.getEquations().size(),
-                inputQuery.getNumberOfVariables() );
+        List<unsigned> initialBasis;
+        List<unsigned> basicRows;
+        selectInitialVariablesForBasis( constraintMatrix, initialBasis, basicRows );
+        addAuxiliaryVariables();
+        augmentInitialBasisIfNeeded( initialBasis, basicRows );
 
-        // If processing is enabled, invoke the preprocessor
-        _preprocessingEnabled = preprocess;
-        if ( _preprocessingEnabled )
-            _preprocessedQuery = _preprocessor.preprocess
-                ( inputQuery, GlobalConfiguration::PREPROCESSOR_ELIMINATE_VARIABLES );
-        else
-            _preprocessedQuery = inputQuery;
+        storeEquationsInDegradationChecker();
 
-        printf( "Engine::processInputQuery: Input query (after preprocessing): "
-                "%u equations, %u variables\n\n",
-                _preprocessedQuery.getEquations().size(),
-                _preprocessedQuery.getNumberOfVariables() );
+        // The equations have changed, recreate the constraint matrix
+        delete[] constraintMatrix;
+        constraintMatrix = createConstraintMatrix();
 
-        printf( "Input bounds:\n" );
-        for ( unsigned i = 0; i < inputQuery.getNumInputVariables(); ++i )
-        {
-            unsigned variable = inputQuery.inputVariableByIndex( i );
-            double lb, ub;
-            bool fixed = false;
-            if ( _preprocessingEnabled )
-            {
-                // Fixed variables are easy: return the value they've been fixed to.
-                if ( _preprocessor.variableIsFixed( variable ) )
-                {
-                    fixed = true;
-                    lb = _preprocessor.getFixedValue( variable );
-                    ub = lb;
-                }
-                else
-                {
-                    // Has the variable been merged into another?
-                    if ( _preprocessor.variableIsMerged( variable ) )
-                        variable = _preprocessor.getMergedIndex( variable );
+        initializeTableau( constraintMatrix, initialBasis );
+        initializeNetworkLevelReasoning();
 
-                    // We know which variable to look for, but it may have been assigned
-                    // a new index, due to variable elimination
-                    variable = _preprocessor.getNewIndex( variable );
-
-                    lb = _preprocessedQuery.getLowerBound( variable );
-                    ub = _preprocessedQuery.getUpperBound( variable );
-                }
-            }
-            else
-            {
-                lb = inputQuery.getLowerBound( variable );
-                ub = inputQuery.getUpperBound( variable );
-            }
-
-            printf( "\tx%u: [%8.4lf, %8.4lf] %s\n", i, lb, ub, fixed ? "[FIXED]" : "" );
-        }
-        printf( "\n" );
-
-        unsigned infiniteBounds = _preprocessedQuery.countInfiniteBounds();
-        if ( infiniteBounds != 0 )
-        {
-            _exitCode = Engine::ERROR;
-            throw ReluplexError( ReluplexError::UNBOUNDED_VARIABLES_NOT_YET_SUPPORTED,
-                                 Stringf( "Error! Have %u infinite bounds", infiniteBounds ).ascii() );
-        }
-
-        const List<Equation> &equations( _preprocessedQuery.getEquations() );
-        unsigned m = equations.size();
-        unsigned n = _preprocessedQuery.getNumberOfVariables();
-
-        _degradationChecker.storeEquations( _preprocessedQuery );
-
-        /*
-          Process the returned equations, to detect any redundancies, i.e. equations that
-          are a linear combination of other equations. Such equations can be removed
-        */
-
-        // Step 1: create a constraint matrix from the equations
-        double *constraintMatrix = new double[n*m];
-        if ( !constraintMatrix )
-            throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Engine::constraintMatrix" );
-        std::fill_n( constraintMatrix, n*m, 0.0 );
-
-        unsigned equationIndex = 0;
-        for ( const auto &equation : equations )
-        {
-            if ( equation._type != Equation::EQ )
-            {
-                _exitCode = Engine::ERROR;
-                throw ReluplexError( ReluplexError::NON_EQUALITY_INPUT_EQUATION_DISCOVERED );
-            }
-
-            for ( const auto &addend : equation._addends )
-                constraintMatrix[equationIndex*n + addend._variable] = addend._coefficient;
-
-            ++equationIndex;
-        }
-
-        // Step 2: analyze the matrix to identify redundant rows and independent columns
-        AutoConstraintMatrixAnalyzer analyzer;
-        analyzer->analyze( constraintMatrix, m, n );
-
-        log( Stringf( "Number of redundant rows: %u out of %u",
-                      analyzer->getRedundantRows().size(), m ) );
-
-        // Step 3: remove any equations corresponding to redundant rows
-        Set<unsigned> redundantRows = analyzer->getRedundantRows();
-
-        if ( !redundantRows.empty() )
-        {
-            _preprocessedQuery.removeEquationsByIndex( redundantRows );
-            m = equations.size();
-
-            // Adjust A for the missing rows
-            std::fill_n( constraintMatrix, n*m, 0.0 );
-
-            unsigned equationIndex = 0;
-            for ( const auto &equation : equations )
-            {
-                for ( const auto &addend : equation._addends )
-                    constraintMatrix[equationIndex*n + addend._variable] = addend._coefficient;
-
-                ++equationIndex;
-            }
-        }
-
-        // Step 4: keep the independent columns for later basis initialization
-        List<unsigned> independentColumns = analyzer->getIndependentColumns();
-        ASSERT( independentColumns.size() == m );
-        /* Done analyzing the constraint matrix for detetign dependencies */
-
-        _tableau->setDimensions( m, n );
-
-        adjustWorkMemorySize();
-
-        equationIndex = 0;
-        for ( const auto &equation : equations )
-        {
-            _tableau->setRightHandSide( equationIndex, equation._scalar );
-            ++equationIndex;
-        }
-
-        _tableau->setConstraintMatrix( constraintMatrix );
         delete[] constraintMatrix;
 
-        for ( unsigned i = 0; i < n; ++i )
-        {
-            _tableau->setLowerBound( i, _preprocessedQuery.getLowerBound( i ) );
-            _tableau->setUpperBound( i, _preprocessedQuery.getUpperBound( i ) );
-        }
-
-        _tableau->registerToWatchAllVariables( _rowBoundTightener );
-        _tableau->registerResizeWatcher( _rowBoundTightener );
-
-        _tableau->registerToWatchAllVariables( _constraintBoundTightener );
-        _tableau->registerResizeWatcher( _constraintBoundTightener );
-
-        _rowBoundTightener->setDimensions();
-        _constraintBoundTightener->setDimensions();
-
-        // Register the constraint bound tightener to all the PL constraints
-        for ( auto &plConstraint : _preprocessedQuery.getPiecewiseLinearConstraints() )
-            plConstraint->registerConstraintBoundTightener( _constraintBoundTightener );
-
-        _plConstraints = _preprocessedQuery.getPiecewiseLinearConstraints();
-        for ( const auto &constraint : _plConstraints )
-        {
-            constraint->registerAsWatcher( _tableau );
-            constraint->setStatistics( &_statistics );
-        }
-
-        // Placeholder: better constraint matrix analysis as part
-        // of the preprocessing phase.
-        _tableau->initializeTableau( independentColumns );
-
-        _costFunctionManager->initialize();
-        _tableau->registerCostFunctionManager( _costFunctionManager );
-        _activeEntryStrategy->initialize( _tableau );
-
-        _statistics.setNumPlConstraints( _plConstraints.size() );
-
-        if ( _preprocessedQuery._sbt )
-            _symbolicBoundTightener = _preprocessedQuery._sbt;
+        struct timespec end = TimeUtils::sampleMicro();
+        _statistics.setPreprocessingTime( TimeUtils::timePassed( start, end ) );
+    }
+    catch ( const InfeasibleQueryException & )
+    {
+        log( "processInputQuery done\n" );
 
         struct timespec end = TimeUtils::sampleMicro();
         _statistics.setPreprocessingTime( TimeUtils::timePassed( start, end ) );
 
-        log( "processInputQuery done\n" );
-    }
-    catch ( const InfeasibleQueryException & )
-    {
         _exitCode = Engine::UNSAT;
         return false;
     }
 
-    _smtCore.storeDebuggingSolution( _preprocessedQuery._debuggingSolution );
+    log( "processInputQuery done\n" );
 
+    _smtCore.storeDebuggingSolution( _preprocessedQuery._debuggingSolution );
     return true;
 }
 

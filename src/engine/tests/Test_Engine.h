@@ -88,6 +88,8 @@ public:
         //
         //  x0 + 2x1 -x2 <= 11 --> x0 + 2x1 - x2 + x3 = 11, 100 >= x3 >= 0
         //  -3x0 + 3x1  >= -5 --> -3x0 + 3x1 + x4 = -5, -100 <= x4 <= 0
+        //
+        //  aux var x6 added to equation 1, x7 to equation 2
 
         InputQuery inputQuery;
         inputQuery.setNumberOfVariables( 5 );
@@ -146,30 +148,32 @@ public:
         TS_ASSERT_EQUALS( tableau->lastCostFunctionManager, costFunctionManager );
 
         TS_ASSERT_EQUALS( tableau->lastM, 2U );
-        TS_ASSERT_EQUALS( tableau->lastN, 5U );
+        TS_ASSERT_EQUALS( tableau->lastN, 7U );
 
-        // Variables 0 and 1 should be marked as basic
+        // Two basic variables
         TS_ASSERT_EQUALS( tableau->lastBasicVariables.size(), 2U );
-        TS_ASSERT( tableau->lastBasicVariables.exists( 0 ) );
-        TS_ASSERT( tableau->lastBasicVariables.exists( 1 ) );
 
         // Right hand side scalars
         TS_ASSERT( tableau->lastRightHandSide );
-        TS_ASSERT_EQUALS( tableau->lastRightHandSide[0], 11.0 );
-        TS_ASSERT_EQUALS( tableau->lastRightHandSide[1], -5.0 );
+        TS_ASSERT_EQUALS( tableau->lastRightHandSide[0], 0 );
+        TS_ASSERT_EQUALS( tableau->lastRightHandSide[1], 0 );
 
         // Tableau entries
-        TS_ASSERT_EQUALS( tableau->lastEntries[(0*5) + 0], 1 );
-        TS_ASSERT_EQUALS( tableau->lastEntries[(0*5) + 1], 2 );
-        TS_ASSERT_EQUALS( tableau->lastEntries[(0*5) + 2], -1 );
-        TS_ASSERT_EQUALS( tableau->lastEntries[(0*5) + 3], 1 );
-        TS_ASSERT_EQUALS( tableau->lastEntries[(0*5) + 4], 0 );
+        TS_ASSERT_EQUALS( tableau->lastEntries[(0*7) + 0], 1 );
+        TS_ASSERT_EQUALS( tableau->lastEntries[(0*7) + 1], 2 );
+        TS_ASSERT_EQUALS( tableau->lastEntries[(0*7) + 2], -1 );
+        TS_ASSERT_EQUALS( tableau->lastEntries[(0*7) + 3], 1 );
+        TS_ASSERT_EQUALS( tableau->lastEntries[(0*7) + 4], 0 );
+        TS_ASSERT_EQUALS( tableau->lastEntries[(0*7) + 5], -1 );
+        TS_ASSERT_EQUALS( tableau->lastEntries[(0*7) + 6], 0 );
 
-        TS_ASSERT_EQUALS( tableau->lastEntries[(1*5) + 0], -3 );
-        TS_ASSERT_EQUALS( tableau->lastEntries[(1*5) + 1], 3 );
-        TS_ASSERT_EQUALS( tableau->lastEntries[(1*5) + 2], 0 );
-        TS_ASSERT_EQUALS( tableau->lastEntries[(1*5) + 3], 0 );
-        TS_ASSERT_EQUALS( tableau->lastEntries[(1*5) + 4], 1 );
+        TS_ASSERT_EQUALS( tableau->lastEntries[(1*7) + 0], -3 );
+        TS_ASSERT_EQUALS( tableau->lastEntries[(1*7) + 1], 3 );
+        TS_ASSERT_EQUALS( tableau->lastEntries[(1*7) + 2], 0 );
+        TS_ASSERT_EQUALS( tableau->lastEntries[(1*7) + 3], 0 );
+        TS_ASSERT_EQUALS( tableau->lastEntries[(1*7) + 4], 1 );
+        TS_ASSERT_EQUALS( tableau->lastEntries[(1*7) + 5], 0 );
+        TS_ASSERT_EQUALS( tableau->lastEntries[(1*7) + 6], -1 );
 
         // Lower and upper bounds
         TS_ASSERT( tableau->lowerBounds.exists( 0 ) );
@@ -187,6 +191,12 @@ public:
         TS_ASSERT( tableau->lowerBounds.exists( 4 ) );
         TS_ASSERT_EQUALS( tableau->lowerBounds[4], -100.0 );
 
+        TS_ASSERT( tableau->lowerBounds.exists( 5 ) );
+        TS_ASSERT_EQUALS( tableau->lowerBounds[5], 11.0 );
+
+        TS_ASSERT( tableau->lowerBounds.exists( 6 ) );
+        TS_ASSERT_EQUALS( tableau->lowerBounds[6], -5.0 );
+
         TS_ASSERT( tableau->upperBounds.exists( 0 ) );
         TS_ASSERT_EQUALS( tableau->upperBounds[0], 2.0 );
 
@@ -201,6 +211,12 @@ public:
 
         TS_ASSERT( tableau->upperBounds.exists( 4 ) );
         TS_ASSERT_EQUALS( tableau->upperBounds[4], 0.0 );
+
+        TS_ASSERT( tableau->upperBounds.exists( 5 ) );
+        TS_ASSERT_EQUALS( tableau->upperBounds[5], 11.0 );
+
+        TS_ASSERT( tableau->upperBounds.exists( 6 ) );
+        TS_ASSERT_EQUALS( tableau->upperBounds[6], -5.0 );
 
         TS_ASSERT_EQUALS( tableau->lastRegisteredVariableToWatcher.size(), 3U );
         TS_ASSERT( tableau->lastRegisteredVariableToWatcher.exists( 1 ) );

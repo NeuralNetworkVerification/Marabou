@@ -60,6 +60,8 @@ const double GlobalConfiguration::PSE_GAMMA_UPDATE_TOLERANCE = 0.000000001;
 
 const double GlobalConfiguration::RELU_CONSTRAINT_COMPARISON_TOLERANCE = 0.001;
 
+const bool GlobalConfiguration::ONLY_AUX_INITIAL_BASIS = false;
+
 const GlobalConfiguration::ExplicitBasisBoundTighteningType GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE =
     GlobalConfiguration::COMPUTE_INVERTED_BASIS_MATRIX;
 const bool GlobalConfiguration::EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION = false;
