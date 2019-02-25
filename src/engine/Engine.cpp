@@ -271,8 +271,14 @@ bool Engine::solve( unsigned timeoutInSeconds )
         {
             auto explanations = e.getExplanations();
             auto splits = _factTracker.getConstraintsAndSplitsCausingFacts(explanations);
+            for(auto x: splits){
+              printf("HERE %u %u\n", x.first(), x.second());
+            }
             List<PiecewiseLinearCaseSplit> soFar;
             _smtCore.allSplitsSoFar(soFar);
+            for(auto x: soFar){
+              printf("THERE %u %u\n", x.getConstraintID(), x.getSplitID());
+            }
             printf("CONTRADICTION #facts=%u, #splits_causing=%u, #splits_excluding_implied=%u, #splits_including_implied=%d\n",
               explanations.size(),
               splits.size(),
@@ -1346,9 +1352,12 @@ bool Engine::applyAllValidConstraintCaseSplits()
     struct timespec start = TimeUtils::sampleMicro();
 
     bool appliedSplit = false;
-    for ( auto &constraint : _plConstraints )
-        if ( applyValidConstraintCaseSplit( constraint ) )
-            appliedSplit = true;
+    for ( auto &constraint : _plConstraints ){
+        if ( applyValidConstraintCaseSplit( constraint ) ){
+          printf("VALID %u\n", constraint->getID());
+          appliedSplit = true;
+        }
+    }
 
     struct timespec end = TimeUtils::sampleMicro();
     _statistics.addTimeForValidCaseSplit( TimeUtils::timePassed( start, end ) );

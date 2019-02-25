@@ -184,8 +184,14 @@ bool SmtCore::popSplit(const List<const Fact*>& /*explanation*/)
               {
                 _factTracker->popFact();
               }
-              if(_statistics)
-                _factTracker->verifySplitLevel(_statistics->getCurrentStackDepth());
+              if(_statistics){
+                Set<unsigned> constraints;
+                List<PiecewiseLinearCaseSplit> soFar;
+                allSplitsSoFar(soFar);
+                for(auto x:soFar)
+                  constraints.insert(x.getConstraintID());
+                _factTracker->verifySplitLevel(_statistics->getCurrentStackDepth(), constraints);
+              }
             }
             return false;
         }
@@ -211,8 +217,14 @@ bool SmtCore::popSplit(const List<const Fact*>& /*explanation*/)
       {
         _factTracker->popFact();
       }
-      if(_statistics)
-        _factTracker->verifySplitLevel(_statistics->getCurrentStackDepth());
+      if(_statistics){
+        Set<unsigned> constraints;
+        List<PiecewiseLinearCaseSplit> soFar;
+        allSplitsSoFar(soFar);
+        for(auto x:soFar)
+          constraints.insert(x.getConstraintID());
+        _factTracker->verifySplitLevel(_statistics->getCurrentStackDepth(), constraints);
+      }
     }
 
     // Apply the new split and erase it from the list

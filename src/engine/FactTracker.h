@@ -47,7 +47,7 @@ public:
     unsigned getNumFacts( ) const;
     Set<const Fact*> getExternalFactsForBound( const Fact* fact ) const;
     void popFact( );
-    void verifySplitLevel( unsigned level ) const;
+    void verifySplitLevel( unsigned level, Set<unsigned> constraints ) const;
 
 private:
     // Guy: names should be more informative, e.g. varToLowerBoundFact, like you did

@@ -199,7 +199,7 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
             }
             else
             {
-                _constraintBoundTightener->registerTighterUpperBound( _f, adjustedUpperBound, explanation );   
+                _constraintBoundTightener->registerTighterUpperBound( _f, adjustedUpperBound, explanation );
             }
         }
     }
@@ -438,7 +438,7 @@ PiecewiseLinearCaseSplit ReluConstraint::getInactiveSplit(bool impliedSplit/*=fa
       nextSplitLevel = _statistics->getCurrentStackDepth() + 1;
     // Inactive phase: b <= 0, f = 0
     PiecewiseLinearCaseSplit inactivePhase;
-    inactivePhase.setConstraintAndSplitID( _id, 0 );
+    inactivePhase.setConstraintAndSplitID( _id, 0U );
     Tightening bound1 = Tightening( _b, 0.0, Tightening::UB );
     if(!impliedSplit)
       bound1.setCausingSplitInfo( _id, 0, nextSplitLevel );
@@ -457,7 +457,7 @@ PiecewiseLinearCaseSplit ReluConstraint::getActiveSplit(bool impliedSplit/*=fals
       nextSplitLevel = _statistics->getCurrentStackDepth() + 1;
     // Active phase: b >= 0, b - f = 0
     PiecewiseLinearCaseSplit activePhase;
-    activePhase.setConstraintAndSplitID( _id, 1 );
+    activePhase.setConstraintAndSplitID( _id, 1U );
     Tightening bound = Tightening( _b, 0.0, Tightening::LB );
     // this fact will be caused by next split
     if(!impliedSplit)

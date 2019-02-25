@@ -208,12 +208,18 @@ Set<const Fact*> FactTracker::getExternalFactsForBound( const Fact* fact ) const
     return externalFacts;
 }
 
-void FactTracker::verifySplitLevel( unsigned level ) const
+void FactTracker::verifySplitLevel( unsigned level, Set<unsigned> constraints ) const
 {
   (void) level;
   for(const Fact* fact: _factsLearnedSet){
     (void) fact; // to make compiler happy
     ASSERT(fact != NULL && fact->getSplitLevelCausing() <= level);
+    if(fact->isCausedBySplit()){
+      if(fact->getCausingConstraintID()!=0 && !constraints.exists(fact->getCausingConstraintID())){
+        printf("ERROR %u\n", fact->getCausingConstraintID());
+      }
+      ASSERT(fact->getCausingConstraintID()==0 || constraints.exists(fact->getCausingConstraintID()));
+    }
     for(const Fact* exp: fact->getExplanations()){
       (void) exp;
       ASSERT(exp != NULL && hasFact(exp) && exp->getSplitLevelCausing() <= level);
