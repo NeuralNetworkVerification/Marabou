@@ -1218,7 +1218,8 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
             for(unsigned id=0; id<_tableau->getM(); id++){
               ASSERT(_factTracker.hasFactAffectingEquation(id));
             }
-
+            
+            // Junyao: here can save the computation for initializing bounds for auxVariable in addEquation
             unsigned auxVariable = _tableau->addEquation( equation );
             _activeEntryStrategy->resizeHook( _tableau );
 
@@ -1229,22 +1230,42 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
             // as current equation that is causing it
             case Equation::GE:
                 newAuxBound = Tightening( auxVariable, 0.0, Tightening::UB );
-                newAuxBound.setCausingSplitInfo( equation.getCausingConstraintID(), equation.getCausingSplitID(), equation.getSplitLevelCausing() );
+                if ( equation.isCausedBySplit() )
+                    newAuxBound.setCausingSplitInfo( equation.getCausingConstraintID(), equation.getCausingSplitID(), equation.getSplitLevelCausing() );
+                else{
+                    for ( const Fact* explanation : equation.getExplanations() )
+                        newAuxBound.addExplanation( explanation );
+                }
                 bounds.append( newAuxBound );
                 break;
 
             case Equation::LE:
                 newAuxBound = Tightening( auxVariable, 0.0, Tightening::LB );
-                newAuxBound.setCausingSplitInfo( equation.getCausingConstraintID(), equation.getCausingSplitID(), equation.getSplitLevelCausing() );
+                if ( equation.isCausedBySplit() )
+                    newAuxBound.setCausingSplitInfo( equation.getCausingConstraintID(), equation.getCausingSplitID(), equation.getSplitLevelCausing() );
+                else{
+                    for ( const Fact* explanation : equation.getExplanations() )
+                        newAuxBound.addExplanation( explanation );
+                }
                 bounds.append( newAuxBound );
                 break;
 
             case Equation::EQ:
                 newAuxBound = Tightening( auxVariable, 0.0, Tightening::UB );
-                newAuxBound.setCausingSplitInfo( equation.getCausingConstraintID(), equation.getCausingSplitID(), equation.getSplitLevelCausing() );
+                if ( equation.isCausedBySplit() )
+                    newAuxBound.setCausingSplitInfo( equation.getCausingConstraintID(), equation.getCausingSplitID(), equation.getSplitLevelCausing() );
+                else{
+                    for ( const Fact* explanation : equation.getExplanations() )
+                        newAuxBound.addExplanation( explanation );
+                }
                 bounds.append( newAuxBound );
                 newAuxBound = Tightening( auxVariable, 0.0, Tightening::LB );
-                newAuxBound.setCausingSplitInfo( equation.getCausingConstraintID(), equation.getCausingSplitID(), equation.getSplitLevelCausing() );
+                if ( equation.isCausedBySplit() )
+                    newAuxBound.setCausingSplitInfo( equation.getCausingConstraintID(), equation.getCausingSplitID(), equation.getSplitLevelCausing() );
+                else{
+                    for ( const Fact* explanation : equation.getExplanations() )
+                        newAuxBound.addExplanation( explanation );
+                }
                 bounds.append( newAuxBound );
                 break;
 
