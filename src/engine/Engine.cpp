@@ -280,6 +280,13 @@ bool Engine::solve( unsigned timeoutInSeconds )
               splits.size(),
               _statistics.getCurrentStackDepth(),
               soFar.size());
+            if(splits.size()>0&&splits.size()<_statistics.getCurrentStackDepth()){
+                _smtCore.printLastSplitForTest();
+                printf("Constraint IDs of blamed splits: ");
+                for(auto split : splits)
+                    printf("%d ", split.first());
+                printf("\n");
+            }
             // The current query is unsat, and we need to pop.
             // If we're at level 0, the whole query is unsat.
             if ( !_smtCore.popSplit(explanations) )
