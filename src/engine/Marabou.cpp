@@ -22,6 +22,12 @@
 #include "PropertyParser.h"
 #include "ReluplexError.h"
 
+#include "Engine.h"
+#include "InputQuery.h"
+#include "PiecewiseLinearConstraint.h"
+#include "ReluConstraint.h"
+#include "SmtCore.h"
+
 Marabou::Marabou()
     : _acasParser( NULL )
 {

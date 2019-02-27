@@ -143,6 +143,11 @@ unsigned SmtCore::getStackDepth() const
     return _stack.size();
 }
 
+void SmtCore::printLastSplitForTest()
+{
+    printf("Constraint ID of last split: %d\n", _stack.back()->_activeSplit.getConstraintID());
+}
+
 bool SmtCore::popSplit(const List<const Fact*>& /*explanation*/)
 {
     log( "Performing a pop" );
