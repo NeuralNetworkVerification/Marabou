@@ -45,6 +45,7 @@ Engine::Engine()
     , _constraintBoundTightener( *_tableau )
     , _numVisitedStatesAtPreviousRestoration( 0 )
 {
+    _factTracker._smtCore = &_smtCore;
     _factTracker.setStatistics( &_statistics );
     _smtCore.setStatistics( &_statistics );
     _smtCore.setFactTracker( &_factTracker );
@@ -1231,7 +1232,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
             for(unsigned id=0; id<_tableau->getM(); id++){
               ASSERT(_factTracker.hasFactAffectingEquation(id));
             }
-            
+
             // Junyao: here can save the computation for initializing bounds for auxVariable in addEquation
             unsigned auxVariable = _tableau->addEquation( equation );
             _activeEntryStrategy->resizeHook( _tableau );

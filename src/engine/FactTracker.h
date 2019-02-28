@@ -22,6 +22,7 @@
 #include "Tightening.h"
 
 class ITableau;
+class SmtCore;
 
 class FactTracker
 {
@@ -48,6 +49,7 @@ public:
     Set<const Fact*> getExternalFactsForBound( const Fact* fact ) const;
     void popFact( );
     void verifySplitLevel( unsigned level, Set<unsigned> constraints ) const;
+    SmtCore* _smtCore;
 
 private:
     // Guy: names should be more informative, e.g. varToLowerBoundFact, like you did
