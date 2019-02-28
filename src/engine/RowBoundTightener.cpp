@@ -367,7 +367,7 @@ void RowBoundTightener::examineInvertedBasisMatrix( bool untilSaturation )
                 row->_scalar += ( invB[i * _m + j] * b[j] );
                 // if inv(B)_{i,j} is nonzero, then j-th row in the constraint matrix
                 // is responsible for i-th inverted row in the inverted basis matrix
-                if ( invB[i * _m + j] != 0 )
+                if ( !FloatUtils::isZero( invB[i * _m + j] ) )
                 {
                     row->_explanations.append( j );
                 }
@@ -485,9 +485,10 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
     Map<unsigned, const Fact*> variable2yUpperBoundExplanations;
 
     // Guy: this is for the fact that added the actual equation, right?
-    for ( unsigned equIndex : row._explanations )
+    if ( _factTracker )
     {
-        if ( _factTracker )
+        ASSERT(row._explanations.size() > 0);
+        for ( unsigned equIndex : row._explanations )
         {
             ASSERT(_factTracker->hasFactAffectingEquation( equIndex ));
             yLowerBoundExplanations.insert( _factTracker->getFactAffectingEquation( equIndex ), false );

@@ -286,7 +286,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
               splits.size(),
               _statistics.getCurrentStackDepth(),
               soFar.size());
-            if(splits.size()>0&&splits.size()<_statistics.getCurrentStackDepth()){
+            if(splits.size()>0&&splits.size()<=_statistics.getCurrentStackDepth()){
                 _smtCore.printLastSplitForTest();
                 printf("Constraint IDs of blamed splits: ");
                 for(auto split : splits)

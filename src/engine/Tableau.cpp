@@ -2642,9 +2642,9 @@ List<const Fact*> Tableau::getExplanationsForSaturatedTableauRow()
             double basicAssignment =  getBasicAssignment( i );
             unsigned basicVariable = _basicIndexToVariable[i];
             bool assignmentIsTooSmall, rowIsSaturated = true;
-            if ( _lowerBounds[basicVariable] > basicAssignment )
+            if ( FloatUtils::gt( _lowerBounds[basicVariable], basicAssignment ) )
                 assignmentIsTooSmall = true;
-            else if ( _upperBounds[basicVariable] < basicAssignment )
+            else if ( FloatUtils::lt( _upperBounds[basicVariable], basicAssignment ) )
                 assignmentIsTooSmall = false;
             else
                 continue;
@@ -2668,18 +2668,28 @@ List<const Fact*> Tableau::getExplanationsForSaturatedTableauRow()
 
                 if ( assignmentIsTooSmall )
                 {
-                    if ( ( row._row[j]._coefficient > 0 &&  FloatUtils::gt( _upperBounds[nonBasicVariable], _nonBasicAssignment[nonBasicVariable] ) )
-                        || ( row._row[j]._coefficient < 0 && FloatUtils::lt( _lowerBounds[nonBasicVariable], _nonBasicAssignment[nonBasicVariable] ) ) )
+                    if ( ( FloatUtils::gt( row._row[j]._coefficient, 0 ) &&  FloatUtils::gt( _upperBounds[nonBasicVariable], _nonBasicAssignment[j] ) )
+                        || ( FloatUtils::lt( row._row[j]._coefficient, 0 ) && FloatUtils::lt( _lowerBounds[nonBasicVariable], _nonBasicAssignment[j] ) ) )
                     {
+                        // Debugging:
+                        // printf( "assignment is too small, coefficient is %f, basic variable %d has UB %f, LB %f and assignment %f, but non basic variable %d has UB %f, LB %f and assignment %f\n",
+                        //     row._row[j]._coefficient,
+                        //     i, _upperBounds[basicVariable], _lowerBounds[basicVariable], basicAssignment,
+                        //     j, _upperBounds[nonBasicVariable], _lowerBounds[nonBasicVariable], _nonBasicAssignment[j] );
                         rowIsSaturated = false;
                         break;
                     }
                 }
                 else
                 {
-                    if ( ( row._row[j]._coefficient > 0 && FloatUtils::lt( _lowerBounds[nonBasicVariable], _nonBasicAssignment[nonBasicVariable] ) )
-                        || ( row._row[j]._coefficient < 0 && FloatUtils::gt( _upperBounds[nonBasicVariable], _nonBasicAssignment[nonBasicVariable] ) ) )
+                    if ( ( FloatUtils::gt( row._row[j]._coefficient, 0 ) && FloatUtils::lt( _lowerBounds[nonBasicVariable], _nonBasicAssignment[j] ) )
+                        || ( FloatUtils::lt( row._row[j]._coefficient, 0 ) && FloatUtils::gt( _upperBounds[nonBasicVariable], _nonBasicAssignment[j] ) ) )
                     {
+                        // Debugging:
+                        // printf( "assignment is too large, coefficient is %f, basic variable %d has UB %f, LB %f and assignment %f, but non basic variable %d has UB %f, LB %f and assignment %f\n",
+                        //     row._row[j]._coefficient,
+                        //     i, _upperBounds[basicVariable], _lowerBounds[basicVariable], basicAssignment,
+                        //     j, _upperBounds[nonBasicVariable], _lowerBounds[nonBasicVariable], _nonBasicAssignment[j] );
                         rowIsSaturated = false;
                         break;
                     }
@@ -2694,7 +2704,7 @@ List<const Fact*> Tableau::getExplanationsForSaturatedTableauRow()
             {
                 // if inv(B)_{i,j} is nonzero, then j-th row in the constraint matrix
                 // is responsible for i-th inverted row in the inverted basis matrix
-                if ( invB[i * _m + j] != 0 )
+                if ( !FloatUtils::isZero( invB[i * _m + j] ) )
                 {
                     ASSERT( _factTracker->hasFactAffectingEquation( j ) );
                     explanations.append( _factTracker->getFactAffectingEquation( j ) );
@@ -2704,7 +2714,7 @@ List<const Fact*> Tableau::getExplanationsForSaturatedTableauRow()
             // Get bound explanations
             for ( unsigned j = 0; j < _n - _m; ++j )
             {
-                if ( row._row[j]._coefficient > 0 )
+                if ( FloatUtils::gt( row._row[j]._coefficient, 0 ) )
                 {
                     if ( assignmentIsTooSmall )
                     {
@@ -2717,7 +2727,7 @@ List<const Fact*> Tableau::getExplanationsForSaturatedTableauRow()
                         explanations.append( _factTracker->getFactAffectingBound( row._row[j]._var, FactTracker::LB ) );
                     }
                 }
-                else if ( row._row[j]._coefficient < 0 )
+                else if ( FloatUtils::lt( row._row[j]._coefficient, 0 ) )
                 {
                     if ( assignmentIsTooSmall )
                     {
@@ -2734,6 +2744,16 @@ List<const Fact*> Tableau::getExplanationsForSaturatedTableauRow()
 
             return explanations;
         }
+
+        /*
+            Junyao: This assertion should never be reached, but this doesn't hold now.
+                    One possible reason is that although we cannot make progress on the cost function,
+                    there probably still exists a tableau row where we can make progress on the
+                    corresponding basic variable. The reason why the objective cannot be improved
+                    could be that to make progress on this basic variable, we have to sacrifie
+                    another basic variable.
+        */
+        // ASSERT(false);
 
     }
     catch ( ... )
