@@ -281,11 +281,20 @@ bool Engine::solve( unsigned timeoutInSeconds )
               _statistics.getCurrentStackDepth(),
               soFar.size());
             if(splits.size()>0&&splits.size()<=_statistics.getCurrentStackDepth()){
-                _smtCore.printLastSplitForTest();
-                printf("Constraint IDs of blamed splits: ");
+                Set<unsigned> splitSet;
                 for(auto split : splits)
-                    printf("%d ", split.first());
+                    splitSet.insert( split.first() );
+                _smtCore.printBackjumpLevelForTest( splitSet );
+                printf("\nBlamed splits: ");
+                for(auto plcSplit : soFar)
+                    if( splitSet.exists( plcSplit.getConstraintID() ) )
+                        plcSplit.dump();
                 printf("\n");
+            }
+            printf("Explaining Facts:\nDumping equations and bounds\n");
+            for ( const Fact* explanation : explanations ){
+                printf("\t");
+                explanation->dump();
             }
             // The current query is unsat, and we need to pop.
             // If we're at level 0, the whole query is unsat.
@@ -491,6 +500,7 @@ void Engine::performSimplexStep()
             // Cost function is fresh --- failure is real.
             struct timespec end = TimeUtils::sampleMicro();
             _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
+            printf("SIMPLEX CONTRADICTION\n");
             List<const Fact*> explanation = _tableau->getExplanationsForSaturatedTableauRow();
             /*
               TODO: explanations probably include fact that created leavingIndex equation,

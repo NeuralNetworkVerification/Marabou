@@ -1779,7 +1779,11 @@ unsigned Tableau::addEquation( const Equation &equation )
     unsigned auxVariable = _n;
 
     if (_factTracker)
-      _factTracker->addEquationFact( _m, equation );
+    {
+        Equation eqWithAux = equation;
+        eqWithAux.addAddend( 1, auxVariable );
+        _factTracker->addEquationFact( _m, eqWithAux );
+    }
 
     // Adjust the data structures
     addRow();
@@ -2711,9 +2715,16 @@ List<const Fact*> Tableau::getExplanationsForSaturatedTableauRow()
                 }
             }
 
+            printf("Saturated row: ");
+            printf("x%d=", basicVariable);
+            bool first = true;
             // Get bound explanations
             for ( unsigned j = 0; j < _n - _m; ++j )
             {
+                if(!FloatUtils::isZero(row._row[j]._coefficient)){
+                    printf("%s%fx%d", first||(FloatUtils::lt(row._row[j]._coefficient,0))?"":"+", row._row[j]._coefficient, row._row[j]._var);
+                    first = false;
+                }
                 if ( FloatUtils::gt( row._row[j]._coefficient, 0 ) )
                 {
                     if ( assignmentIsTooSmall )
@@ -2740,6 +2751,19 @@ List<const Fact*> Tableau::getExplanationsForSaturatedTableauRow()
                         explanations.append( _factTracker->getFactAffectingBound( row._row[j]._var, FactTracker::UB ) );
                     }
                 }
+            }
+            
+            printf("\n");
+
+            if ( assignmentIsTooSmall )
+            {
+                ASSERT( _factTracker->hasFactAffectingBound( basicVariable, FactTracker::LB ) );
+                explanations.append( _factTracker->getFactAffectingBound( basicVariable, FactTracker::LB ) );
+            }
+            else
+            {
+                ASSERT( _factTracker->hasFactAffectingBound( basicVariable, FactTracker::UB ) );
+                explanations.append( _factTracker->getFactAffectingBound( basicVariable, FactTracker::UB ) );   
             }
 
             return explanations;
