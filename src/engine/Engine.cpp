@@ -104,13 +104,13 @@ bool Engine::solve( unsigned timeoutInSeconds )
     struct timespec mainLoopStart = TimeUtils::sampleMicro();
     while ( true )
     {
-        for(unsigned var=0; var<_tableau->getN(); var++){
-          ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::LB));
-          ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::UB));
-        }
-        for(unsigned id=0; id<_tableau->getM(); id++){
-          ASSERT(_factTracker.hasFactAffectingEquation(id));
-        }
+        // for(unsigned var=0; var<_tableau->getN(); var++){
+        //   ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::LB));
+        //   ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::UB));
+        // }
+        // for(unsigned id=0; id<_tableau->getM(); id++){
+        //   ASSERT(_factTracker.hasFactAffectingEquation(id));
+        // }
         struct timespec mainLoopEnd = TimeUtils::sampleMicro();
         _statistics.addTimeMainLoop( TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
         mainLoopStart = mainLoopEnd;
@@ -192,9 +192,9 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 // Some variable bounds are invalid, so the query is unsat
                 unsigned failureVar = _tableau->getInvalidBoundsVariable();
                 List<const Fact*> failureExplanations;
-                ASSERT( ( _factTracker.hasFactAffectingBound( failureVar, FactTracker::LB ) ));
+                // ASSERT( ( _factTracker.hasFactAffectingBound( failureVar, FactTracker::LB ) ));
                 failureExplanations.append( _factTracker.getFactAffectingBound( failureVar, FactTracker::LB ) );
-                ASSERT ( _factTracker.hasFactAffectingBound( failureVar, FactTracker::UB ) );
+                // ASSERT ( _factTracker.hasFactAffectingBound( failureVar, FactTracker::UB ) );
                 failureExplanations.append( _factTracker.getFactAffectingBound( failureVar, FactTracker::UB ) );
                 throw InfeasibleQueryException( failureExplanations );
             }
@@ -277,12 +277,20 @@ bool Engine::solve( unsigned timeoutInSeconds )
             List<PiecewiseLinearCaseSplit> soFar;
 
             _smtCore.allSplitsSoFar(soFar, false);
+            Set<unsigned> splitSet;
+            for(auto split : splits)
+                splitSet.insert( split.first() );
+
+            unsigned blameSize = splits.size();
+            if (blameSize==0) blameSize=_statistics.getCurrentStackDepth();
+            printf("BLAME %u %u %u\n",
+              blameSize, _statistics.getCurrentStackDepth(), _smtCore.printBackjumpLevelForTest(splitSet));
             // printf("CONTRADICTION #facts=%u, #splits_causing=%u, #splits_excluding_implied=%u, #splits_including_implied=%d\n",
             //   explanations.size(),
             //   splits.size(),
             //   _statistics.getCurrentStackDepth(),
             //   soFar.size());
-            printf("BLAME %u out of %u\n", splits.size(), _statistics.getCurrentStackDepth());
+
             // _smtCore.allSplitsSoFar(soFar);
             // printf("CONTRADICTION #facts=%u, #splits_causing=%u, #splits_excluding_implied=%u, #splits_including_implied=%d\n",
             //   explanations.size(),
@@ -868,17 +876,17 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         _factTracker.initializeFromTableau(*_tableau);
 
-        for(unsigned i=0; i<_tableau->getN(); i++){
-          ASSERT(_factTracker.hasFactAffectingBound(i, FactTracker::LB));
-          ASSERT(_factTracker.hasFactAffectingBound(i, FactTracker::UB));
-        }
-        for(unsigned var=0; var<_tableau->getN(); var++){
-          ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::LB));
-          ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::UB));
-        }
-        for(unsigned id=0; id<_tableau->getM(); id++){
-          ASSERT(_factTracker.hasFactAffectingEquation(id));
-        }
+        // for(unsigned i=0; i<_tableau->getN(); i++){
+        //   ASSERT(_factTracker.hasFactAffectingBound(i, FactTracker::LB));
+        //   ASSERT(_factTracker.hasFactAffectingBound(i, FactTracker::UB));
+        // }
+        // for(unsigned var=0; var<_tableau->getN(); var++){
+        //   ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::LB));
+        //   ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::UB));
+        // }
+        // for(unsigned id=0; id<_tableau->getM(); id++){
+        //   ASSERT(_factTracker.hasFactAffectingEquation(id));
+        // }
 
         _rowBoundTightener->setDimensions();
         _constraintBoundTightener->setDimensions();
@@ -1006,13 +1014,13 @@ void Engine::restoreState( const EngineState &state )
     _numPlConstraintsDisabledByValidSplits = state._numPlConstraintsDisabledByValidSplits;
 
     // Make sure the data structures are initialized to the correct size
-    for(unsigned var=0; var<_tableau->getN(); var++){
-      ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::LB));
-      ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::UB));
-    }
-    for(unsigned id=0; id<_tableau->getM(); id++){
-      ASSERT(_factTracker.hasFactAffectingEquation(id));
-    }
+    // for(unsigned var=0; var<_tableau->getN(); var++){
+    //   ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::LB));
+    //   ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::UB));
+    // }
+    // for(unsigned id=0; id<_tableau->getM(); id++){
+    //   ASSERT(_factTracker.hasFactAffectingEquation(id));
+    // }
     _rowBoundTightener->setDimensions();
     _constraintBoundTightener->setDimensions();
     adjustWorkMemorySize();
@@ -1205,8 +1213,8 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
           // create a new fact corresponding to the equation, whose explanation is
           // the old fact of x_1 and the old fact of x_2
           // Get bounds before merge
-          ASSERT( _factTracker.hasFactAffectingBound( x2, FactTracker::UB ) );
-          ASSERT( _factTracker.hasFactAffectingBound( x2, FactTracker::LB ) );
+          // ASSERT( _factTracker.hasFactAffectingBound( x2, FactTracker::UB ) );
+          // ASSERT( _factTracker.hasFactAffectingBound( x2, FactTracker::LB ) );
 
           const Fact* fact_x2_lb = _factTracker.getFactAffectingBound( x2, FactTracker::LB );
           const Fact* fact_x2_ub = _factTracker.getFactAffectingBound( x2, FactTracker::UB );
@@ -1238,13 +1246,13 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
         if ( !columnsSuccessfullyMerged )
         {
             // General case: add a new equation to the tableau
-            for(unsigned var=0; var<_tableau->getN(); var++){
-              ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::LB));
-              ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::UB));
-            }
-            for(unsigned id=0; id<_tableau->getM(); id++){
-              ASSERT(_factTracker.hasFactAffectingEquation(id));
-            }
+            // for(unsigned var=0; var<_tableau->getN(); var++){
+            //   ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::LB));
+            //   ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::UB));
+            // }
+            // for(unsigned id=0; id<_tableau->getM(); id++){
+            //   ASSERT(_factTracker.hasFactAffectingEquation(id));
+            // }
 
             // Junyao: here can save the computation for initializing bounds for auxVariable in addEquation
             unsigned auxVariable = _tableau->addEquation( equation );
@@ -1304,13 +1312,13 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
     }
 
     adjustWorkMemorySize();
-    for(unsigned var=0; var<_tableau->getN(); var++){
-      ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::LB));
-      ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::UB));
-    }
-    for(unsigned id=0; id<_tableau->getM(); id++){
-      ASSERT(_factTracker.hasFactAffectingEquation(id));
-    }
+    // for(unsigned var=0; var<_tableau->getN(); var++){
+    //   ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::LB));
+    //   ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::UB));
+    // }
+    // for(unsigned id=0; id<_tableau->getM(); id++){
+    //   ASSERT(_factTracker.hasFactAffectingEquation(id));
+    // }
     _rowBoundTightener->resetBounds();
     _constraintBoundTightener->resetBounds();
 
@@ -1508,13 +1516,13 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
     _statistics.addTimeForPrecisionRestoration( TimeUtils::timePassed( start, end ) );
 
     _statistics.incNumPrecisionRestorations();
-    for(unsigned var=0; var<_tableau->getN(); var++){
-      ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::LB));
-      ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::UB));
-    }
-    for(unsigned id=0; id<_tableau->getM(); id++){
-      ASSERT(_factTracker.hasFactAffectingEquation(id));
-    }
+    // for(unsigned var=0; var<_tableau->getN(); var++){
+    //   ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::LB));
+    //   ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::UB));
+    // }
+    // for(unsigned id=0; id<_tableau->getM(); id++){
+    //   ASSERT(_factTracker.hasFactAffectingEquation(id));
+    // }
     _rowBoundTightener->resetBounds();
     _constraintBoundTightener->resetBounds();
 
@@ -1535,13 +1543,13 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
         end = TimeUtils::sampleMicro();
         _statistics.addTimeForPrecisionRestoration( TimeUtils::timePassed( start, end ) );
         _statistics.incNumPrecisionRestorations();
-        for(unsigned var=0; var<_tableau->getN(); var++){
-          ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::LB));
-          ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::UB));
-        }
-        for(unsigned id=0; id<_tableau->getM(); id++){
-          ASSERT(_factTracker.hasFactAffectingEquation(id));
-        }
+        // for(unsigned var=0; var<_tableau->getN(); var++){
+        //   ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::LB));
+        //   ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::UB));
+        // }
+        // for(unsigned id=0; id<_tableau->getM(); id++){
+        //   ASSERT(_factTracker.hasFactAffectingEquation(id));
+        // }
         _rowBoundTightener->resetBounds();
         _constraintBoundTightener->resetBounds();
 

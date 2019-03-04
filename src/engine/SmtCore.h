@@ -100,7 +100,7 @@ public:
     void storeDebuggingSolution( const Map<unsigned, double> &debuggingSolution );
     bool checkSkewFromDebuggingSolution();
     bool splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split, String &error ) const;
-    void printBackjumpLevelForTest( const Set<unsigned> &blamedConstraints );
+    unsigned printBackjumpLevelForTest( const Set<unsigned> &blamedConstraints );
 
 private:
     /*

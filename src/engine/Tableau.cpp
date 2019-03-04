@@ -1826,19 +1826,19 @@ unsigned Tableau::addEquation( const Equation &equation )
         if ( FloatUtils::isPositive( coefficient ) )
         {
             lb -= coefficient * _upperBounds[variable];
-            ASSERT(_factTracker->hasFactAffectingBound(variable, FactTracker::UB));
+            // ASSERT(_factTracker->hasFactAffectingBound(variable, FactTracker::UB));
             lbExplanation.append(_factTracker->getFactAffectingBound(variable, FactTracker::UB));
             ub -= coefficient * _lowerBounds[variable];
-            ASSERT(_factTracker->hasFactAffectingBound(variable, FactTracker::LB));
+            // ASSERT(_factTracker->hasFactAffectingBound(variable, FactTracker::LB));
             ubExplanation.append(_factTracker->getFactAffectingBound(variable, FactTracker::LB));
         }
         else
         {
             lb -= coefficient * _lowerBounds[variable];
-            ASSERT(_factTracker->hasFactAffectingBound(variable, FactTracker::LB));
+            // ASSERT(_factTracker->hasFactAffectingBound(variable, FactTracker::LB));
             lbExplanation.append(_factTracker->getFactAffectingBound(variable, FactTracker::LB));
             ub -= coefficient * _upperBounds[variable];
-            ASSERT(_factTracker->hasFactAffectingBound(variable, FactTracker::UB));
+            // ASSERT(_factTracker->hasFactAffectingBound(variable, FactTracker::UB));
             ubExplanation.append(_factTracker->getFactAffectingBound(variable, FactTracker::UB));
         }
     }
@@ -2710,7 +2710,7 @@ List<const Fact*> Tableau::getExplanationsForSaturatedTableauRow()
                 // is responsible for i-th inverted row in the inverted basis matrix
                 if ( !FloatUtils::isZero( invB[i * _m + j] ) )
                 {
-                    ASSERT( _factTracker->hasFactAffectingEquation( j ) );
+                    // ASSERT( _factTracker->hasFactAffectingEquation( j ) );
                     explanations.append( _factTracker->getFactAffectingEquation( j ) );
                 }
             }
@@ -2729,12 +2729,12 @@ List<const Fact*> Tableau::getExplanationsForSaturatedTableauRow()
                 {
                     if ( assignmentIsTooSmall )
                     {
-                        ASSERT( _factTracker->hasFactAffectingBound( row._row[j]._var, FactTracker::UB ) );
+                        // ASSERT( _factTracker->hasFactAffectingBound( row._row[j]._var, FactTracker::UB ) );
                         explanations.append( _factTracker->getFactAffectingBound( row._row[j]._var, FactTracker::UB ) );
                     }
                     else
                     {
-                        ASSERT( _factTracker->hasFactAffectingBound( row._row[j]._var, FactTracker::LB ) );
+                        // ASSERT( _factTracker->hasFactAffectingBound( row._row[j]._var, FactTracker::LB ) );
                         explanations.append( _factTracker->getFactAffectingBound( row._row[j]._var, FactTracker::LB ) );
                     }
                 }
@@ -2742,28 +2742,28 @@ List<const Fact*> Tableau::getExplanationsForSaturatedTableauRow()
                 {
                     if ( assignmentIsTooSmall )
                     {
-                        ASSERT( _factTracker->hasFactAffectingBound( row._row[j]._var, FactTracker::LB ) );
+                        // ASSERT( _factTracker->hasFactAffectingBound( row._row[j]._var, FactTracker::LB ) );
                         explanations.append( _factTracker->getFactAffectingBound( row._row[j]._var, FactTracker::LB ) );
                     }
                     else
                     {
-                        ASSERT( _factTracker->hasFactAffectingBound( row._row[j]._var, FactTracker::UB ) );
+                        // ASSERT( _factTracker->hasFactAffectingBound( row._row[j]._var, FactTracker::UB ) );
                         explanations.append( _factTracker->getFactAffectingBound( row._row[j]._var, FactTracker::UB ) );
                     }
                 }
             }
-            
+
             printf("\n");
 
             if ( assignmentIsTooSmall )
             {
-                ASSERT( _factTracker->hasFactAffectingBound( basicVariable, FactTracker::LB ) );
+                // ASSERT( _factTracker->hasFactAffectingBound( basicVariable, FactTracker::LB ) );
                 explanations.append( _factTracker->getFactAffectingBound( basicVariable, FactTracker::LB ) );
             }
             else
             {
-                ASSERT( _factTracker->hasFactAffectingBound( basicVariable, FactTracker::UB ) );
-                explanations.append( _factTracker->getFactAffectingBound( basicVariable, FactTracker::UB ) );   
+                // ASSERT( _factTracker->hasFactAffectingBound( basicVariable, FactTracker::UB ) );
+                explanations.append( _factTracker->getFactAffectingBound( basicVariable, FactTracker::UB ) );
             }
 
             return explanations;

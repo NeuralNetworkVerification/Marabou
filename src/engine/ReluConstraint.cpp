@@ -120,7 +120,7 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
 
         if( _factTracker )
         {
-            assert( _factTracker->hasFactAffectingBound( variable, FactTracker::LB ) );
+            // assert( _factTracker->hasFactAffectingBound( variable, FactTracker::LB ) );
             explanation = const_cast<Fact*>(_factTracker->getFactAffectingBound( variable, FactTracker::LB ));
         }
 
@@ -169,7 +169,7 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
 
         if( _factTracker )
         {
-            assert( _factTracker->hasFactAffectingBound( variable, FactTracker::UB ) );
+            // assert( _factTracker->hasFactAffectingBound( variable, FactTracker::UB ) );
             explanation = const_cast<Fact*>(_factTracker->getFactAffectingBound( variable, FactTracker::UB ));
         }
 

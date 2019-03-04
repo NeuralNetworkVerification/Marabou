@@ -120,7 +120,7 @@ void RowBoundTightener::resetBounds()
 
         if ( _factTracker )
         {
-            ASSERT(_factTracker->hasFactAffectingBound( i, FactTracker::LB ));
+            // ASSERT(_factTracker->hasFactAffectingBound( i, FactTracker::LB ));
             _lowerBoundExplanations[i] = const_cast<Fact*>(_factTracker->getFactAffectingBound( i, FactTracker::LB ));
         }
 
@@ -130,7 +130,7 @@ void RowBoundTightener::resetBounds()
 
         if ( _factTracker )
         {
-            ASSERT(_factTracker->hasFactAffectingBound( i, FactTracker::UB ) );
+            // ASSERT(_factTracker->hasFactAffectingBound( i, FactTracker::UB ) );
             _upperBoundExplanations[i] = const_cast<Fact*>(_factTracker->getFactAffectingBound( i, FactTracker::UB ));
         }
 
@@ -489,7 +489,7 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
     {
         for ( unsigned equIndex : row._explanations )
         {
-            ASSERT(_factTracker->hasFactAffectingEquation( equIndex ));
+            // ASSERT(_factTracker->hasFactAffectingEquation( equIndex ));
             yLowerBoundExplanations.insert( _factTracker->getFactAffectingEquation( equIndex ), false );
             yUpperBoundExplanations.insert( _factTracker->getFactAffectingEquation( equIndex ), false );
         }
@@ -868,7 +868,7 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
 
     if ( _factTracker )
     {
-        ASSERT(_factTracker->hasFactAffectingEquation( row ));
+        // ASSERT(_factTracker->hasFactAffectingEquation( row ));
         tempLowerBoundExplanations.insert( _factTracker->getFactAffectingEquation( row ), true );
         tempUpperBoundExplanations.insert( _factTracker->getFactAffectingEquation( row ), true );
     }
@@ -1082,7 +1082,7 @@ void RowBoundTightener::notifyLowerBound( unsigned variable, double bound )
 
         if ( _factTracker )
         {
-            ASSERT(_factTracker->hasFactAffectingBound( variable, FactTracker::LB ));
+            // ASSERT(_factTracker->hasFactAffectingBound( variable, FactTracker::LB ));
             _lowerBoundExplanations[variable] = const_cast<Fact*>(_factTracker->getFactAffectingBound( variable, FactTracker::LB ));
         }
 
@@ -1099,7 +1099,7 @@ void RowBoundTightener::notifyUpperBound( unsigned variable, double bound )
 
         if ( _factTracker )
         {
-            ASSERT(_factTracker->hasFactAffectingBound( variable, FactTracker::UB ) );
+            // ASSERT(_factTracker->hasFactAffectingBound( variable, FactTracker::UB ) );
             _upperBoundExplanations[variable] = const_cast<Fact*>(_factTracker->getFactAffectingBound( variable, FactTracker::UB ));
         }
 

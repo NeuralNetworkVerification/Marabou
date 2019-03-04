@@ -143,22 +143,24 @@ unsigned SmtCore::getStackDepth() const
     return _stack.size();
 }
 
-void SmtCore::printBackjumpLevelForTest( const Set<unsigned> &blamedConstraints )
+unsigned SmtCore::printBackjumpLevelForTest( const Set<unsigned> &blamedConstraints )
 {
-    if ( _stack.size() <= 1 )
+    if ( _stack.size() <= 1 || blamedConstraints.size()==0)
     {
         printf("Backjump: no more than 1 split\n");
-        return;
+        return 1;
     }
 
-    int num = 0;
+    unsigned num = 0;
     List<StackEntry*>::iterator it = _stack.end();
     --it;
-    
+    unsigned times = 0;
     while(1)
-    {        
-        if( !blamedConstraints.exists( (*it)->_activeSplit.getConstraintID() ) )
-            num++;
+    {
+        if( blamedConstraints.exists( (*it)->_activeSplit.getConstraintID() ) )
+            times++;
+        if(times<2)
+          num++;
         else
             break;
 
@@ -169,6 +171,7 @@ void SmtCore::printBackjumpLevelForTest( const Set<unsigned> &blamedConstraints 
     }
 
     printf("Backjump: can backjump %d levels\n", num);
+    return num;
 }
 
 bool SmtCore::popSplit(const List<const Fact*>& /*explanation*/)
@@ -218,7 +221,7 @@ bool SmtCore::popSplit(const List<const Fact*>& /*explanation*/)
                 allSplitsSoFar(soFar);
                 for(auto x:soFar)
                   constraints.insert(x.getConstraintID());
-                _factTracker->verifySplitLevel(_statistics->getCurrentStackDepth(), constraints);
+                // _factTracker->verifySplitLevel(_statistics->getCurrentStackDepth(), constraints);
               }
             }
             return false;
