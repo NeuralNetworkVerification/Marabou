@@ -283,7 +283,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
             unsigned blameSize = splits.size();
             if (blameSize==0) blameSize=_statistics.getCurrentStackDepth();
-            printf("BLAME %u %u %u\n",
+            printf("BLAME %u %u %u %u\n", splits.size(),
               blameSize, _statistics.getCurrentStackDepth(), _smtCore.printBackjumpLevelForTest(splitSet));
             // printf("CONTRADICTION #facts=%u, #splits_causing=%u, #splits_excluding_implied=%u, #splits_including_implied=%d\n",
             //   explanations.size(),
