@@ -79,7 +79,7 @@ public:
       Return a list of all splits performed so far, both SMT-originating and valid ones,
       in the correct order.
     */
-    void allSplitsSoFar( List<PiecewiseLinearCaseSplit> &result ) const;
+    void allSplitsSoFar( List<PiecewiseLinearCaseSplit> &result, bool includeImplied=true ) const;
 
     /*
       Have the SMT core start reporting statistics.

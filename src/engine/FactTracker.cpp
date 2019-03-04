@@ -89,18 +89,18 @@ void FactTracker::addBoundFact( unsigned var, Tightening bound )
     // if caused by (non-implied) split, should not be explainable
     ASSERT((bound.isCausedBySplit()) != (bound.getExplanations().size() != 0));
     ASSERT(var == bound._variable);
-    if(bound.isCausedBySplit()){
-      if(_smtCore){
-        bool b = false;
-        List<PiecewiseLinearCaseSplit> splits;
-        _smtCore->allSplitsSoFar(splits);
-        for(auto x: splits){
-          if(x.getConstraintID() == bound.getCausingConstraintID())
-            b=true;
-        }
-        ASSERT(b);
-      }
-    }
+    // if(bound.isCausedBySplit()){
+    //   if(_smtCore){
+    //     bool b = false;
+    //     List<PiecewiseLinearCaseSplit> splits;
+    //     _smtCore->allSplitsSoFar(splits);
+    //     for(auto x: splits){
+    //       if(x.getConstraintID() == bound.getCausingConstraintID())
+    //         b=true;
+    //     }
+    //     ASSERT(b);
+    //   }
+    // }
     bound.setOwner(this);
     const Fact* newFact = new Tightening(bound);
     _factsLearnedSet.insert(newFact);
@@ -124,18 +124,18 @@ void FactTracker::addEquationFact( unsigned equNumber, Equation equ )
 {
     // if caused by (non-implied) split, should not be explainable
     ASSERT((equ.isCausedBySplit()) != (equ.getExplanations().size() != 0));
-    if(equ.isCausedBySplit()){
-      if(_smtCore){
-        bool b = false;
-        List<PiecewiseLinearCaseSplit> splits;
-        _smtCore->allSplitsSoFar(splits);
-        for(auto x: splits){
-          if(x.getConstraintID() == equ.getCausingConstraintID())
-            b=true;
-        }
-        ASSERT(b);
-      }
-    }
+    // if(equ.isCausedBySplit()){
+    //   if(_smtCore){
+    //     bool b = false;
+    //     List<PiecewiseLinearCaseSplit> splits;
+    //     _smtCore->allSplitsSoFar(splits);
+    //     for(auto x: splits){
+    //       if(x.getConstraintID() == equ.getCausingConstraintID())
+    //         b=true;
+    //     }
+    //     ASSERT(b);
+    //   }
+    // }
     equ.setOwner(this);
     const Fact* newFact = new Equation(equ);
     _factsLearnedSet.insert(newFact);

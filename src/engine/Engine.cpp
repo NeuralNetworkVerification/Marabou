@@ -274,26 +274,14 @@ bool Engine::solve( unsigned timeoutInSeconds )
         {
             auto explanations = e.getExplanations();
             auto splits = _factTracker.getConstraintsAndSplitsCausingFacts(explanations);
-            for(auto x: splits){
-              printf("HERE %u %u\n", x.first(), x.second());
-            }
             List<PiecewiseLinearCaseSplit> soFar;
-            _smtCore.allSplitsSoFar(soFar);
-            for(auto x: soFar){
-              printf("THERE %u %u\n", x.getConstraintID(), x.getSplitID());
-            }
-            printf("CONTRADICTION #facts=%u, #splits_causing=%u, #splits_excluding_implied=%u, #splits_including_implied=%d\n",
-              explanations.size(),
-              splits.size(),
-              _statistics.getCurrentStackDepth(),
-              soFar.size());
-            if(splits.size()>0&&splits.size()<=_statistics.getCurrentStackDepth()){
-                _smtCore.printLastSplitForTest();
-                printf("Constraint IDs of blamed splits: ");
-                for(auto split : splits)
-                    printf("%d ", split.first());
-                printf("\n");
-            }
+            _smtCore.allSplitsSoFar(soFar, false);
+            // printf("CONTRADICTION #facts=%u, #splits_causing=%u, #splits_excluding_implied=%u, #splits_including_implied=%d\n",
+            //   explanations.size(),
+            //   splits.size(),
+            //   _statistics.getCurrentStackDepth(),
+            //   soFar.size());
+            printf("BLAME %u out of %u\n", splits.size(), _statistics.getCurrentStackDepth());
             // The current query is unsat, and we need to pop.
             // If we're at level 0, the whole query is unsat.
             if ( !_smtCore.popSplit(explanations) )
@@ -1385,7 +1373,7 @@ bool Engine::applyAllValidConstraintCaseSplits()
     bool appliedSplit = false;
     for ( auto &constraint : _plConstraints ){
         if ( applyValidConstraintCaseSplit( constraint ) ){
-          printf("VALID %u\n", constraint->getID());
+          // printf("VALID %u\n", constraint->getID());
           appliedSplit = true;
         }
     }
