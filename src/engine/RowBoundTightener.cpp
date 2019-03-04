@@ -487,7 +487,6 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
     // Guy: this is for the fact that added the actual equation, right?
     if ( _factTracker )
     {
-        ASSERT(row._explanations.size() > 0);
         for ( unsigned equIndex : row._explanations )
         {
             ASSERT(_factTracker->hasFactAffectingEquation( equIndex ));

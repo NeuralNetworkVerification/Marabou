@@ -143,9 +143,32 @@ unsigned SmtCore::getStackDepth() const
     return _stack.size();
 }
 
-void SmtCore::printLastSplitForTest()
+void SmtCore::printBackjumpLevelForTest( const Set<unsigned> &blamedConstraints )
 {
-    printf("Constraint ID of last split: %d\n", _stack.back()->_activeSplit.getConstraintID());
+    if ( _stack.size() <= 1 )
+    {
+        printf("Backjump: no more than 1 split\n");
+        return;
+    }
+
+    int num = 0;
+    List<StackEntry*>::iterator it = _stack.end();
+    --it;
+    
+    while(1)
+    {        
+        if( !blamedConstraints.exists( (*it)->_activeSplit.getConstraintID() ) )
+            num++;
+        else
+            break;
+
+        if( it != _stack.begin() )
+            --it;
+        else
+            break;
+    }
+
+    printf("Backjump: can backjump %d levels\n", num);
 }
 
 bool SmtCore::popSplit(const List<const Fact*>& /*explanation*/)
