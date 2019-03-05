@@ -29,6 +29,7 @@
 #include "SmtCore.h"
 #include "TableauRow.h"
 #include "TimeUtils.h"
+#include <fstream>
 
 Engine::Engine()
     : _rowBoundTightener( *_tableau )
@@ -273,13 +274,18 @@ bool Engine::solve( unsigned timeoutInSeconds )
         catch ( const InfeasibleQueryException & e)
         {
             auto explanations = e.getExplanations();
-            auto splits = _factTracker.getConstraintsAndSplitsCausingFacts(explanations);
+            Set<const Fact*> groundFacts;
+            auto splits = _factTracker.getConstraintsAndSplitsCausingFacts(explanations, &groundFacts);
             List<PiecewiseLinearCaseSplit> soFar;
 
             _smtCore.allSplitsSoFar(soFar, false);
             Set<unsigned> splitSet;
             for(auto split : splits)
                 splitSet.insert( split.first() );
+
+            List<Equation> infeasibleSystem;
+            _smtCore.getBlamedSplitFacts( splitSet, infeasibleSystem );
+            dumpInfeasibleSystemToSMTForTest( groundFacts, infeasibleSystem );
 
             unsigned blameSize = splits.size();
             if (blameSize==0) blameSize=_statistics.getCurrentStackDepth();
@@ -1616,6 +1622,71 @@ void Engine::applyAllBoundTighteningsForTest()
 
     struct timespec end = TimeUtils::sampleMicro();
     _statistics.addTimeForApplyingStoredTightenings( TimeUtils::timePassed( start, end ) );
+}
+
+void Engine::dumpInfeasibleSystemToSMTForTest( Set<const Fact*> &groundFacts, List<Equation> &infeasibleSystem )
+{
+    for( const Fact* fact : groundFacts )
+    {
+        if( fact->isEquation() )
+        {
+            const Equation* equation = dynamic_cast<const Equation*>( fact );
+            infeasibleSystem.append( *equation );
+        }
+        else
+        {
+            const Tightening* bound = dynamic_cast<const Tightening*>( fact );
+            if( bound->_type == Tightening::UB )
+            {
+                Equation equation( Equation::LE );
+                equation.addAddend( 1, bound->_variable );
+                equation.setScalar( bound->_value );
+                infeasibleSystem.append( equation );
+            }
+            else
+            {
+                Equation equation( Equation::GE );
+                equation.addAddend( 1, bound->_variable );
+                equation.setScalar( bound->_value );
+                infeasibleSystem.append( equation );
+            }
+        }
+    }
+
+    std::fstream fs("smt.txt", std::ios::in | std::ios::app );
+    std::string s_equations, s_variables;
+    Set<unsigned> variables;
+
+    for( Equation eq : infeasibleSystem )
+    {
+        std::string s_eq, s_op;
+        for( Equation::Addend addend : eq._addends )
+        {
+            variables.insert( addend._variable );
+
+            if( s_eq.length() )
+                s_eq = "(+ " + s_eq + " (* x" + std::to_string( addend._variable ) + " " + std::to_string( addend._coefficient ) + "))";
+            else
+                s_eq = "(* x" + std::to_string( addend._variable ) + " " + std::to_string( addend._coefficient ) + ")";
+        }
+
+        if( eq._type == Equation::LE )
+            s_op = "<=";
+        else if( eq._type == Equation::GE )
+            s_op = ">=";
+        else
+            s_op = "=";
+
+        s_eq = "(assert (" + s_op + " " + s_eq + " " + std::to_string( eq._scalar ) + "))";
+
+        s_equations = s_equations + s_eq + "\n";
+    }
+
+    for( unsigned var : variables )
+        s_variables = s_variables + "(declare-const x" + std::to_string( var ) + " Real)" + "\n";
+
+    fs << s_variables << s_equations << "(check-sat)" << std::endl << "(reset)" << std::endl;
+    fs.close();
 }
 
 void Engine::log( const String &message )

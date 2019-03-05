@@ -32,6 +32,7 @@ public:
     unsigned getCausingConstraintID() const;
     unsigned getCausingSplitID() const;
     virtual String getDescription() const = 0;
+    virtual bool isEquation() const = 0;
     void dump() const {printf("%s", getDescription().ascii());}
     void setOwner(const FactTracker* owner);
     FactTracker* getOwner() const;

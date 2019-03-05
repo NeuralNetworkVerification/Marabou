@@ -17,6 +17,7 @@
 #define __SmtCore_h__
 
 #include "FactTracker.h"
+#include "HashSet.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
 #include "Stack.h"
@@ -101,6 +102,7 @@ public:
     bool checkSkewFromDebuggingSolution();
     bool splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split, String &error ) const;
     unsigned printBackjumpLevelForTest( const Set<unsigned> &blamedConstraints );
+    void getBlamedSplitFacts( const Set<unsigned> &blamedConstraints, List<Equation> &splitFacts );
 
 private:
     /*

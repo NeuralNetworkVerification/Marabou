@@ -70,6 +70,11 @@ public:
 														_value );
 		}
 
+		bool isEquation() const
+		{
+			return false;
+		}
+
 };
 
 #endif // __Tightening_h__

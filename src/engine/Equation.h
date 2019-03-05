@@ -76,6 +76,7 @@ public:
     bool equivalent( const Equation &other ) const;
 
     String getDescription() const;
+    bool isEquation() const { return true; }
 };
 
 #endif // __Equation_h__

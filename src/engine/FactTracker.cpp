@@ -51,7 +51,7 @@ void FactTracker::setStatistics( Statistics* statistics )
   _statistics = statistics;
 }
 
-List<Pair<unsigned, unsigned> > FactTracker::getConstraintsAndSplitsCausingFacts(List<const Fact*> facts) const
+List<Pair<unsigned, unsigned> > FactTracker::getConstraintsAndSplitsCausingFacts(List<const Fact*> facts, Set<const Fact*> *groundFacts/*=NULL*/) const
 {
   Set<const Fact*> seen;
   Set<Pair<unsigned, unsigned> > result;
@@ -70,6 +70,8 @@ List<Pair<unsigned, unsigned> > FactTracker::getConstraintsAndSplitsCausingFacts
     if(fact->isCausedBySplit()){
         if(fact->getSplitLevelCausing() != 0)
             result.insert(Pair<unsigned, unsigned>(fact->getCausingConstraintID(), fact->getCausingSplitID()));
+        else if(groundFacts!=NULL)
+            groundFacts->insert(fact);
     }
     else {
       for(const Fact* explanation: fact->getExplanations()){
