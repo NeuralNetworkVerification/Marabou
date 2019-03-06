@@ -223,7 +223,7 @@ class MarabouNetwork:
         """
         #ipq = self.getMarabouQuery()
         ipq = MarabouCore.loadQuery(filename)
-        vals, stats = MarabouCore.solve(ipq, filename, timeout=0)
+        vals, stats = MarabouCore.solve(ipq, "", timeout)
         if verbose:
             if stats.hasTimedOut():
                 print ("TIMEOUT")

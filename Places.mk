@@ -11,6 +11,7 @@ BOOST_LIBS 	  = $(TOOLS_DIR)/boost_1_68_0/installed/lib
 BOOST_INCLUDES	  = $(TOOLS_DIR)/boost_1_68_0/installed/include
 
 INPUT_PARSER_DIR  = $(SRC_DIR)/input_parsers
+QUERY_LOADER_DIR = $(SRC_DIR)/query_loader
 
 COMMON_DIR 	  = $(SRC_DIR)/common
 COMMON_MOCK_DIR   = $(COMMON_DIR)/mock

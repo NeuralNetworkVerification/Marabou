@@ -89,7 +89,7 @@ public:
     const Statistics *getStatistics() const;
 
     /*
-      Temporary functions To test backtracking by CDCL
+      Temporary functions and variables to test backtracking by CDCL
     */
     Statistics *getStatisticsForTest();
     SmtCore* getSmtCoreForTest();
@@ -98,6 +98,8 @@ public:
     void examineConstraintMatrixForTest();
     void applyAllBoundTighteningsForTest();
     void dumpInfeasibleSystemToSMTForTest( List<const Fact*> &explanations );
+    InputQuery _tempInputQueryForTest;
+    unsigned _crossValidationCountForTest;
 
     /*
       Get the exit code

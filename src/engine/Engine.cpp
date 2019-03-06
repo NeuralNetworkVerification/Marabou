@@ -282,9 +282,6 @@ bool Engine::solve( unsigned timeoutInSeconds )
             for(auto split : splits)
                 splitSet.insert( split.first() );
 
-            if ( explanations.size() )
-                dumpInfeasibleSystemToSMTForTest( explanations );
-
             unsigned blameSize = splits.size();
             if (blameSize==0) blameSize=_statistics.getCurrentStackDepth();
             printf("BLAME %u %u %u %u\n", splits.size(),
@@ -317,6 +314,15 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 printf("\t");
                 explanation->dump();
             }*/
+            if ( explanations.size() ){
+                dumpInfeasibleSystemToSMTForTest( explanations );
+                InputQuery crossValidationQuery = _tempInputQueryForTest;
+                List<Equation> infeasibleSystem;
+                _smtCore.getBlamedSplitFacts( splitSet, infeasibleSystem );
+                for ( Equation eq: infeasibleSystem )
+                    crossValidationQuery.addEquation( eq );
+                crossValidationQuery.saveQuery( String( "cv_query" + std::to_string( _crossValidationCountForTest++ ) + ".txt" ) );
+            }
 
             // The current query is unsat, and we need to pop.
             // If we're at level 0, the whole query is unsat.
@@ -678,6 +684,8 @@ void Engine::fixViolatedPlConstraintIfPossible()
 
 bool Engine::processInputQuery( InputQuery &inputQuery )
 {
+    _tempInputQueryForTest = inputQuery;
+    _crossValidationCountForTest = 0U;
     return processInputQuery( inputQuery, GlobalConfiguration::PREPROCESS_INPUT_QUERY );
 }
 

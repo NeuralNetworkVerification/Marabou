@@ -34,6 +34,7 @@
 #include "MaxConstraint.h"
 #include "PiecewiseLinearConstraint.h"
 #include "PropertyParser.h"
+#include "QueryLoader.h"
 #include "ReluConstraint.h"
 #include "Set.h"
 
@@ -136,6 +137,11 @@ void saveQuery(InputQuery& inputQuery, std::string filename){
     inputQuery.saveQuery(String(filename));
 }
 
+InputQuery loadQuery(std::string filename){
+    QueryLoader ql;
+    return ql.loadQuery(String(filename));
+}
+
 // Code necessary to generate Python library
 // Describes which classes and functions are exposed to API
 PYBIND11_MODULE(MarabouCore, m) {
@@ -143,6 +149,7 @@ PYBIND11_MODULE(MarabouCore, m) {
     m.def("createInputQuery", &createInputQuery, "Create input query from network and property file");
     m.def("solve", &solve, "Takes in a description of the InputQuery and returns the solution");
     m.def("saveQuery", &saveQuery, "Serializes the inputQuery in the given filename");
+    m.def("loadQuery", &loadQuery, "Loads the InputQuery from the given filename");
     m.def("addReluConstraint", &addReluConstraint, "Add a Relu constraint to the InputQuery");
     m.def("addMaxConstraint", &addMaxConstraint, "Add a Max constraint to the InputQuery");
     py::class_<InputQuery>(m, "InputQuery")
@@ -195,4 +202,7 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def("getTimeSimplexStepsMicro", &Statistics::getTimeSimplexStepsMicro)
         .def("getNumConstraintFixingSteps", &Statistics::getNumConstraintFixingSteps)
         .def("hasTimedOut", &Statistics::hasTimedOut);
+    py::class_<QueryLoader>(m, "QueryLoader")
+        .def(py::init())
+        .def("loadQuery", &QueryLoader::loadQuery);
 }

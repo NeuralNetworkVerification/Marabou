@@ -174,6 +174,43 @@ unsigned SmtCore::printBackjumpLevelForTest( const Set<unsigned> &blamedConstrai
     return num;
 }
 
+void SmtCore::getBlamedSplitFacts( const Set<unsigned> &blamedConstraints, List<Equation> &splitFacts )
+{
+    for( List<StackEntry*>::iterator it = _stack.begin(); it != _stack.end(); ++it )
+    {
+        if( !blamedConstraints.exists( (*it)->_activeSplit.getConstraintID() ) )
+            continue;
+
+        PiecewiseLinearCaseSplit& split = (*it)->_activeSplit;
+        List<Equation> equations = split.getEquations();
+        for( Equation equation : equations )
+            splitFacts.append( equation );
+
+        if( equations.size() <= 1 )
+        {
+            // This should only happen for relu splits, max constraint split has at least 2 equations
+            List<Tightening> bounds = split.getBoundTightenings();
+            for( Tightening bound : bounds )
+            {
+                if( bound._type == Tightening::UB )
+                {
+                    Equation equation( Equation::LE );
+                    equation.addAddend( 1, bound._variable );
+                    equation.setScalar( bound._value );
+                    splitFacts.append( equation );
+                }
+                else
+                {
+                    Equation equation( Equation::GE );
+                    equation.addAddend( 1, bound._variable );
+                    equation.setScalar( bound._value );
+                    splitFacts.append( equation );
+                }
+            }
+        }
+    }
+}
+
 bool SmtCore::popSplit(const List<const Fact*>& /*explanation*/)
 {
     log( "Performing a pop" );
