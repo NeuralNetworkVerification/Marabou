@@ -102,7 +102,6 @@ public:
     bool checkSkewFromDebuggingSolution();
     bool splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split, String &error ) const;
     unsigned printBackjumpLevelForTest( const Set<unsigned> &blamedConstraints );
-    void getBlamedSplitFacts( const Set<unsigned> &blamedConstraints, List<Equation> &splitFacts );
 
 private:
     /*

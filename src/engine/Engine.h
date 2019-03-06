@@ -97,7 +97,7 @@ public:
     void checkAllBoundsValidForTest( unsigned &failureVar );
     void examineConstraintMatrixForTest();
     void applyAllBoundTighteningsForTest();
-    void dumpInfeasibleSystemToSMTForTest( Set<const Fact*> &groundFacts, List<Equation> &infeasibleSystem );
+    void dumpInfeasibleSystemToSMTForTest( List<const Fact*> &explanations );
 
     /*
       Get the exit code

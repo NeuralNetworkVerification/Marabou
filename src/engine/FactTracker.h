@@ -37,7 +37,7 @@ public:
     ~FactTracker();
     void initializeFromTableau( const ITableau& tableau );
     void setStatistics( Statistics* statistics );
-    List<Pair<unsigned, unsigned> > getConstraintsAndSplitsCausingFacts(List<const Fact*> facts,Set<const Fact*> *groundFacts=NULL) const;
+    List<Pair<unsigned, unsigned> > getConstraintsAndSplitsCausingFacts(List<const Fact*> facts) const;
     void addBoundFact( unsigned var, Tightening bound );
     void addEquationFact ( unsigned equNumber, Equation equ );
     bool hasFact(const Fact* fact) const;

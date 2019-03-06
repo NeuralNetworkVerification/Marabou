@@ -274,8 +274,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
         catch ( const InfeasibleQueryException & e)
         {
             auto explanations = e.getExplanations();
-            Set<const Fact*> groundFacts;
-            auto splits = _factTracker.getConstraintsAndSplitsCausingFacts(explanations, &groundFacts);
+            auto splits = _factTracker.getConstraintsAndSplitsCausingFacts(explanations);
             List<PiecewiseLinearCaseSplit> soFar;
 
             _smtCore.allSplitsSoFar(soFar, false);
@@ -283,9 +282,8 @@ bool Engine::solve( unsigned timeoutInSeconds )
             for(auto split : splits)
                 splitSet.insert( split.first() );
 
-            List<Equation> infeasibleSystem;
-            _smtCore.getBlamedSplitFacts( splitSet, infeasibleSystem );
-            dumpInfeasibleSystemToSMTForTest( groundFacts, infeasibleSystem );
+            if ( explanations.size() )
+                dumpInfeasibleSystemToSMTForTest( explanations );
 
             unsigned blameSize = splits.size();
             if (blameSize==0) blameSize=_statistics.getCurrentStackDepth();
@@ -1642,9 +1640,11 @@ void Engine::applyAllBoundTighteningsForTest()
     _statistics.addTimeForApplyingStoredTightenings( TimeUtils::timePassed( start, end ) );
 }
 
-void Engine::dumpInfeasibleSystemToSMTForTest( Set<const Fact*> &groundFacts, List<Equation> &infeasibleSystem )
+void Engine::dumpInfeasibleSystemToSMTForTest( List<const Fact*> &explanations )
 {
-    for( const Fact* fact : groundFacts )
+    List<Equation> infeasibleSystem;
+
+    for( const Fact* fact : explanations )
     {
         if( fact->isEquation() )
         {
