@@ -104,7 +104,7 @@ void createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::
     printf( "Property: None\n" );
 }
 
-std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::string redirect="", unsigned timeout=0){
+std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::string redirect="", unsigned timeout=0, bool crossValidation=false){
     // Arguments: InputQuery object, filename to redirect output
     // Returns: map from variable number to value
     std::map<int, double> ret;
@@ -116,7 +116,7 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::s
         Engine engine;
         if(!engine.processInputQuery(inputQuery)) return std::make_pair(ret, *(engine.getStatistics()));
 
-        if(!engine.solve(timeout)) return std::make_pair(ret, *(engine.getStatistics()));
+        if(!engine.solve(timeout,crossValidation)) return std::make_pair(ret, *(engine.getStatistics()));
 
         if (engine.getExitCode() == Engine::SAT)
             engine.extractSolution(inputQuery);

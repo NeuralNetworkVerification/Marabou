@@ -91,7 +91,7 @@ void Engine::adjustWorkMemorySize()
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Engine::work" );
 }
 
-bool Engine::solve( unsigned timeoutInSeconds )
+bool Engine::solve( unsigned timeoutInSeconds, bool crossValidation/*=false*/ )
 {
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
@@ -314,7 +314,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 printf("\t");
                 explanation->dump();
             }*/
-            if ( explanations.size() ){
+            if ( explanations.size() && !crossValidation ){
                 dumpInfeasibleSystemToSMTForTest( explanations );
                 InputQuery crossValidationQuery = _tempInputQueryForTest;
                 List<Equation> infeasibleSystem;

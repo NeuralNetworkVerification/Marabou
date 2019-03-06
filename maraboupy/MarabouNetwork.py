@@ -181,7 +181,7 @@ class MarabouNetwork:
                     to how an input query was solved.
         """
         ipq = self.getMarabouQuery()
-        vals, stats = MarabouCore.solve(ipq, filename, timeout)
+        vals, stats = MarabouCore.solve(ipq, filename, timeout, False)
         if verbose:
             if stats.hasTimedOut():
                 print("TO")
@@ -223,7 +223,7 @@ class MarabouNetwork:
         """
         #ipq = self.getMarabouQuery()
         ipq = MarabouCore.loadQuery(filename)
-        vals, stats = MarabouCore.solve(ipq, "", timeout)
+        vals, stats = MarabouCore.solve(ipq, "", timeout, True)
         if verbose:
             if stats.hasTimedOut():
                 print ("TIMEOUT")
