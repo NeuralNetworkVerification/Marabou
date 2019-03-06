@@ -173,8 +173,8 @@ public:
       are meant to be used during the solution process, when a tighter
       bound has been discovered.
     */
-    bool tightenLowerBound( unsigned variable, double value );
-    bool tightenUpperBound( unsigned variable, double value );
+    void tightenLowerBound( unsigned variable, double value );
+    void tightenUpperBound( unsigned variable, double value );
 
     /*
       Return the current status of the basic variable

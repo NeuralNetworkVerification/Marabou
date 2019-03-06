@@ -1707,12 +1707,16 @@ unsigned Tableau::getInvalidBoundsVariable() const
     return _n - 1;
 }
 
-bool Tableau::tightenLowerBound( unsigned variable, double value )
+void Tableau::tightenLowerBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );
 
+    // ASSERT( FloatUtils::gt( value, _lowerBounds[variable] ) );
     if ( !FloatUtils::gt( value, _lowerBounds[variable] ) )
-        return false;
+    {
+        printf("Debug warning: vacuous tightening.\n");
+        return;
+    }
 
     if ( _statistics )
         _statistics->incNumTightenedBounds();
@@ -1735,16 +1739,18 @@ bool Tableau::tightenLowerBound( unsigned variable, double value )
         if ( _basicStatus[index] != oldStatus )
             _costFunctionManager->invalidateCostFunction();
     }
-
-    return true;
 }
 
-bool Tableau::tightenUpperBound( unsigned variable, double value )
+void Tableau::tightenUpperBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );
 
+    // ASSERT( FloatUtils::lt( value, _upperBounds[variable] ) );
     if ( !FloatUtils::lt( value, _upperBounds[variable] ) )
-        return false;
+    {
+        printf("Debug warning: vacuous tightening.\n");
+        return;
+    }
 
     if ( _statistics )
         _statistics->incNumTightenedBounds();
@@ -1767,8 +1773,6 @@ bool Tableau::tightenUpperBound( unsigned variable, double value )
         if ( _basicStatus[index] != oldStatus )
             _costFunctionManager->invalidateCostFunction();
     }
-
-    return true;
 }
 
 unsigned Tableau::addEquation( const Equation &equation )

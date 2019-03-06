@@ -297,28 +297,28 @@ bool Engine::solve( unsigned timeoutInSeconds )
             //   _statistics.getCurrentStackDepth(),
             //   soFar.size());
 
-            // _smtCore.allSplitsSoFar(soFar);
-            // printf("CONTRADICTION #facts=%u, #splits_causing=%u, #splits_excluding_implied=%u, #splits_including_implied=%d\n",
-            //   explanations.size(),
-            //   splits.size(),
-            //   _statistics.getCurrentStackDepth(),
-            //   soFar.size());
-            // if(splits.size()>0&&splits.size()<=_statistics.getCurrentStackDepth()){
-            //     Set<unsigned> splitSet;
-            //     for(auto split : splits)
-            //         splitSet.insert( split.first() );
-            //     _smtCore.printBackjumpLevelForTest( splitSet );
-            //     printf("\nBlamed splits: ");
-            //     for(auto plcSplit : soFar)
-            //         if( splitSet.exists( plcSplit.getConstraintID() ) )
-            //             plcSplit.dump();
-            //     printf("\n");
-            // }
-            // printf("Explaining Facts:\nDumping equations and bounds\n");
-            // for ( const Fact* explanation : explanations ){
-            //     printf("\t");
-            //     explanation->dump();
-            // }
+            /*_smtCore.allSplitsSoFar(soFar);
+            printf("CONTRADICTION #facts=%u, #splits_causing=%u, #splits_excluding_implied=%u, #splits_including_implied=%d\n",
+              explanations.size(),
+              splits.size(),
+              _statistics.getCurrentStackDepth(),
+              soFar.size());
+            if(splits.size()>0&&splits.size()<=_statistics.getCurrentStackDepth()){
+                Set<unsigned> splitSet;
+                for(auto split : splits)
+                    splitSet.insert( split.first() );
+                _smtCore.printBackjumpLevelForTest( splitSet );
+                printf("\nBlamed splits: ");
+                for(auto plcSplit : soFar)
+                    if( splitSet.exists( plcSplit.getConstraintID() ) )
+                        plcSplit.dump();
+                printf("\n");
+            }
+            printf("Explaining Facts:\nDumping equations and bounds\n");
+            for ( const Fact* explanation : explanations ){
+                printf("\t");
+                explanation->dump();
+            }*/
 
             // The current query is unsat, and we need to pop.
             // If we're at level 0, the whole query is unsat.
@@ -1333,17 +1333,23 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
         unsigned variable = _tableau->getVariableAfterMerging( bound._variable );
         if ( bound._type == Tightening::LB )
         {
-            log( Stringf( "x%u: lower bound set to %.3lf", variable, bound._value ) );
             // add fact for this bound only if it is indeed tighter
-            if( _tableau->tightenLowerBound( variable, bound._value ) )
+            if( FloatUtils::gt( bound._value, _tableau->getLowerBound( variable ) ) )
+            {
+                log( Stringf( "x%u: lower bound set to %.3lf", variable, bound._value ) );
                 _factTracker.addBoundFact( variable, bound );
+                _tableau->tightenLowerBound( variable, bound._value );
+            }
         }
         else
         {
-            log( Stringf( "x%u: upper bound set to %.3lf", variable, bound._value ) );
             // add fact for this bound only if it is indeed tighter
-            if( _tableau->tightenUpperBound( variable, bound._value ) )
+            if( FloatUtils::lt( bound._value, _tableau->getUpperBound( variable ) ) )
+            {
+                log( Stringf( "x%u: upper bound set to %.3lf", variable, bound._value ) );
                 _factTracker.addBoundFact( variable, bound );
+                _tableau->tightenUpperBound( variable, bound._value );
+            }
         }
     }
 
@@ -1360,13 +1366,19 @@ void Engine::applyAllRowTightenings()
     {
         if ( tightening._type == Tightening::LB )
         {
-            if ( _tableau->tightenLowerBound( tightening._variable, tightening._value ) )
+            if ( FloatUtils::gt( tightening._value, _tableau->getLowerBound( tightening._variable ) ) )
+            {
                 _factTracker.addBoundFact( tightening._variable, tightening );
+                _tableau->tightenLowerBound( tightening._variable, tightening._value );
+            }
         }
         else
         {
-            if( _tableau->tightenUpperBound( tightening._variable, tightening._value ) )
+            if( FloatUtils::lt( tightening._value, _tableau->getUpperBound( tightening._variable ) ) )
+            {
                 _factTracker.addBoundFact( tightening._variable, tightening );
+                _tableau->tightenUpperBound( tightening._variable, tightening._value );
+            }
         }
     }
 }
@@ -1383,13 +1395,19 @@ void Engine::applyAllConstraintTightenings()
 
         if ( tightening._type == Tightening::LB )
         {
-            if ( _tableau->tightenLowerBound( tightening._variable, tightening._value ) )
+            if ( FloatUtils::gt( tightening._value, _tableau->getLowerBound( tightening._variable ) ) )
+            {
                 _factTracker.addBoundFact( tightening._variable, tightening );
+                _tableau->tightenLowerBound( tightening._variable, tightening._value );
+            }
         }
         else
         {
-            if( _tableau->tightenUpperBound( tightening._variable, tightening._value ) )
+            if( FloatUtils::lt( tightening._value, _tableau->getUpperBound( tightening._variable ) ) )
+            {
                 _factTracker.addBoundFact( tightening._variable, tightening );
+                _tableau->tightenUpperBound( tightening._variable, tightening._value );
+            }
         }
     }
 }

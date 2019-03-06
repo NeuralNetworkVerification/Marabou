@@ -110,8 +110,8 @@ public:
     virtual const double *getUpperBounds() const = 0;
     virtual void setLowerBound( unsigned variable, double value ) = 0;
     virtual void setUpperBound( unsigned variable, double value ) = 0;
-    virtual bool tightenLowerBound( unsigned variable, double value ) = 0;
-    virtual bool tightenUpperBound( unsigned variable, double value ) = 0;
+    virtual void tightenLowerBound( unsigned variable, double value ) = 0;
+    virtual void tightenUpperBound( unsigned variable, double value ) = 0;
     virtual unsigned getBasicStatus( unsigned basic ) = 0;
     virtual unsigned getBasicStatusByIndex( unsigned basicIndex ) = 0;
     virtual bool existsBasicOutOfBounds() const = 0;
