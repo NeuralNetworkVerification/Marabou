@@ -30,6 +30,15 @@
 #include "TableauRow.h"
 #include "TimeUtils.h"
 #include <fstream>
+#include <chrono>
+#include <ctime>
+
+std::string getTimeInNanoseconds(){
+  std::chrono::time_point<std::chrono::system_clock> now = std::chrono::system_clock::now();
+  auto duration = now.time_since_epoch();
+  auto nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(duration);
+  return std::to_string(nanoseconds.count());
+}
 
 Engine::Engine()
     : _rowBoundTightener( *_tableau )
@@ -321,7 +330,7 @@ bool Engine::solve( unsigned timeoutInSeconds, bool crossValidation/*=false*/ )
                 _smtCore.getBlamedSplitFacts( splitSet, infeasibleSystem );
                 for ( Equation eq: infeasibleSystem )
                     crossValidationQuery.addEquation( eq );
-                crossValidationQuery.saveQuery( String( "cv_query" + std::to_string( _crossValidationCountForTest++ ) + ".txt" ) );
+                crossValidationQuery.saveQuery( String( "cv_query/" + getTimeInNanoseconds() + ".txt" ) );
             }
 
             // The current query is unsat, and we need to pop.
@@ -1679,7 +1688,7 @@ void Engine::dumpInfeasibleSystemToSMTForTest( List<const Fact*> &explanations )
         }
     }
 
-    std::fstream fs("smt.txt", std::ios::in | std::ios::app );
+    std::fstream fs("smt/"+getTimeInNanoseconds()+".txt", std::ios::in | std::ios::app );
     std::string s_equations, s_variables;
     Set<unsigned> variables;
 
