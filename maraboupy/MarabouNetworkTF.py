@@ -266,6 +266,43 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
                 e.setScalar(0.0)
                 self.addEquation(e)
 
+        def mulEquations(self, op):
+        """
+        Function to generate equations corresponding to elementwise matrix multiplication 
+        Arguments:
+            op: (tf.op) representing elementwise multiplication operation
+        """
+        ### Get variables and constants of inputs ###
+        input_ops = [i.op for i in op.inputs]
+        prevValues = [self.getValues(i) for i in input_ops]
+        curValues = self.getValues(op)
+        if self.isVariable(input_ops[0]):
+            #convention = "xW"
+            x = prevValues[0]
+            W = prevValues[1]
+        elif self.isVariable(input_ops[1]):
+            #convention = "Wx"
+            W = prevValues[0]
+            x = prevValues[1]
+        W = W.reshape(-1)
+        x = x.reshape(-1)
+        if x.shape != W.shape:
+            # broadcast
+            W = np.tile(W, len(x)//len(W))
+        assert x.shape == W.shape
+        curValues = curValues.reshape(-1)
+        assert x.shape == curValues.shape
+        ### END getting inputs ###
+
+        ### Generate actual equations ###
+        for i in range(len(curValues)):
+            e = []
+            e = MarabouUtils.Equation()
+            e.addAddend(W[i], x[i])
+            e.addAddend(-1, curValues[i])
+            e.setScalar(0.0)
+            self.addEquation(e)
+
     def biasAddEquations(self, op):
         """
         Function to generate equations corresponding to bias addition
@@ -461,6 +498,8 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             return
         if op.node_def.op == 'MatMul':
             self.matMulEquations(op)
+        elif op.node_def.op == 'Mul':
+            self.mulEquations(op)
         elif op.node_def.op == 'BiasAdd':
             self.biasAddEquations(op)
         elif op.node_def.op == 'Add':
@@ -513,4 +552,4 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         outputName = self.outputOp.name
         out = self.sess.run(outputName + ":0", feed_dict=feed_dict)
 
-        return out[0]
+        return out
