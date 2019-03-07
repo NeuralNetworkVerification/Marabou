@@ -168,6 +168,8 @@ private:
     PiecewiseLinearCaseSplit getActiveSplit(bool impliedSplit=false) const;
 
     bool _haveEliminatedVariables;
+    unsigned _phaseFixCausingVariable;
+    FactTracker::BoundType _phaseFixCausingBoundType;
 
     /*
       Set the phase status.

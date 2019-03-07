@@ -109,10 +109,16 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
 
     _lowerBounds[variable] = bound;
 
-    if ( variable == _f && FloatUtils::isPositive( bound ) )
+    if ( variable == _f && FloatUtils::isPositive( bound ) ){
+        _phaseFixCausingVariable = _f;
+        _phaseFixCausingBoundType = FactTracker::LB;
         setPhaseStatus( PhaseStatus::PHASE_ACTIVE );
-    else if ( variable == _b && !FloatUtils::isNegative( bound ) )
+    }
+    else if ( variable == _b && !FloatUtils::isNegative( bound ) ){
+        _phaseFixCausingVariable = _b;
+        _phaseFixCausingBoundType = FactTracker::LB;
         setPhaseStatus( PhaseStatus::PHASE_ACTIVE );
+    }
 
     if ( isActive() && _constraintBoundTightener )
     {
@@ -160,8 +166,11 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
 
     _upperBounds[variable] = bound;
 
-    if ( ( variable == _f || variable == _b ) && !FloatUtils::isPositive( bound ) )
+    if ( ( variable == _f || variable == _b ) && !FloatUtils::isPositive( bound ) ){
+        _phaseFixCausingVariable = variable;
+        _phaseFixCausingBoundType = FactTracker::UB;
         setPhaseStatus( PhaseStatus::PHASE_INACTIVE );
+    }
 
     if ( isActive() && _constraintBoundTightener )
     {
@@ -498,15 +507,15 @@ PiecewiseLinearCaseSplit ReluConstraint::getValidCaseSplit() const
           Also, the logic here is that this is justified because f.lb > 0? Lets add an ASSERT statement to explain
           this. Likewise for the inactive case, and in MaxConstraint.
         */
-        if ( _factTracker && _factTracker->hasFactAffectingBound( _f, FactTracker::LB ) )
-            activeSplit.addExplanation( _factTracker->getFactAffectingBound( _f, FactTracker::LB ) );
+        if ( _factTracker && _factTracker->hasFactAffectingBound( _phaseFixCausingVariable, _phaseFixCausingBoundType ) )
+            activeSplit.addExplanation( _factTracker->getFactAffectingBound( _phaseFixCausingVariable, _phaseFixCausingBoundType ) );
 
         return activeSplit;
     }
 
     PiecewiseLinearCaseSplit inactiveSplit = getInactiveSplit(true);
-    if ( _factTracker && _factTracker->hasFactAffectingBound( _b, FactTracker::UB ) )
-        inactiveSplit.addExplanation( _factTracker->getFactAffectingBound( _b, FactTracker::UB ) );
+    if ( _factTracker && _factTracker->hasFactAffectingBound( _phaseFixCausingVariable, _phaseFixCausingBoundType ) )
+        inactiveSplit.addExplanation( _factTracker->getFactAffectingBound( _phaseFixCausingVariable, _phaseFixCausingBoundType ) );
     return inactiveSplit;
 }
 
