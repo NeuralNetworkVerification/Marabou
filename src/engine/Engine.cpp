@@ -1689,39 +1689,44 @@ void Engine::dumpInfeasibleSystemToSMTForTest( List<const Fact*> &explanations )
     }
 
     std::fstream fs("smt/"+getTimeInNanoseconds()+".txt", std::ios::in | std::ios::app );
-    std::string s_equations, s_variables;
+    String s_equations, s_variables;
     Set<unsigned> variables;
 
     for( Equation eq : infeasibleSystem )
     {
-        std::string s_eq, s_op;
+        String s_eq, s_op;
         for( Equation::Addend addend : eq._addends )
         {
             variables.insert( addend._variable );
 
             if( s_eq.length() )
-                s_eq = "(+ " + s_eq + " (* x" + std::to_string( addend._variable ) + " " + std::to_string( addend._coefficient ) + "))";
+                s_eq = String( "(+ " ) + s_eq + String( " (* x" ) + Stringf( "%u", addend._variable ) + String( " " ) + Stringf( "%f", addend._coefficient ) + String( "))" );
             else
-                s_eq = "(* x" + std::to_string( addend._variable ) + " " + std::to_string( addend._coefficient ) + ")";
+                s_eq = String( "(* x" ) + String( "%u", addend._variable ) + String( " " ) + Stringf( "%f", addend._coefficient ) + String( ")" );
         }
 
         if( eq._type == Equation::LE )
-            s_op = "<=";
+            s_op = String( "<=" );
         else if( eq._type == Equation::GE )
-            s_op = ">=";
+            s_op = String( ">=" );
         else
-            s_op = "=";
+            s_op = String( "=" );
 
-        s_eq = "(assert (" + s_op + " " + s_eq + " " + std::to_string( eq._scalar ) + "))";
+        s_eq = String( "(assert (" ) + s_op + String( " " ) + s_eq + String( " " ) + Stringf( "%f", eq._scalar ) + String( "))" );
 
-        s_equations = s_equations + s_eq + "\n";
+        s_equations = s_equations + s_eq + String( "\n" );
     }
 
     for( unsigned var : variables )
-        s_variables = s_variables + "(declare-const x" + std::to_string( var ) + " Real)" + "\n";
+        s_variables = s_variables + String( "(declare-const x" ) + String( "%u", var ) + String( " Real)" ) + String( "\n" );
 
     fs << s_variables << s_equations << "(check-sat)" << std::endl << "(reset)" << std::endl;
     fs.close();
+
+    InputQuery infeasibleQuery;
+    for ( Equation eq: infeasibleSystem )
+        infeasibleQuery.addEquation( eq );
+    infeasibleQuery.saveQuery( String( "smt/" + getTimeInNanoseconds() + "ForMarabou.txt" ) );
 }
 
 void Engine::log( const String &message )
