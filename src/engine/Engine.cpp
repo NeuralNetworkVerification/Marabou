@@ -1725,6 +1725,7 @@ void Engine::dumpInfeasibleSystemToSMTForTest( List<const Fact*> &explanations )
     fs.close();
 
     InputQuery infeasibleQuery;
+    infeasibleQuery.setNumberOfVariables( _tempInputQueryForTest.getNumberOfVariables() );
     for ( Equation eq: infeasibleSystem )
         infeasibleQuery.addEquation( eq );
     infeasibleQuery.saveQuery( String( "smt/" + timestr + "ForMarabou.txt" ) );
