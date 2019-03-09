@@ -1688,37 +1688,38 @@ void Engine::dumpInfeasibleSystemToSMTForTest( List<const Fact*> &explanations )
         }
     }
 
-    std::fstream fs("smt/"+getTimeInNanoseconds()+".txt", std::ios::in | std::ios::app );
-    String s_equations, s_variables;
+    std::string timestr = getTimeInNanoseconds(); 
+    std::fstream fs("smt/"+timestr+".txt", std::ios::in | std::ios::app );
+    std::string s_equations, s_variables;
     Set<unsigned> variables;
 
     for( Equation eq : infeasibleSystem )
     {
-        String s_eq, s_op;
+        std::string s_eq, s_op;
         for( Equation::Addend addend : eq._addends )
         {
             variables.insert( addend._variable );
 
             if( s_eq.length() )
-                s_eq = String( "(+ " ) + s_eq + String( " (* x" ) + Stringf( "%u", addend._variable ) + String( " " ) + Stringf( "%f", addend._coefficient ) + String( "))" );
+                s_eq = "(+ " + s_eq + " (* x" + std::to_string( addend._variable ) + " " + std::to_string( addend._coefficient ) + "))";
             else
-                s_eq = String( "(* x" ) + String( "%u", addend._variable ) + String( " " ) + Stringf( "%f", addend._coefficient ) + String( ")" );
+                s_eq = "(* x" + std::to_string( addend._variable ) + " " + std::to_string( addend._coefficient ) + ")";
         }
 
         if( eq._type == Equation::LE )
-            s_op = String( "<=" );
+            s_op = "<=";
         else if( eq._type == Equation::GE )
-            s_op = String( ">=" );
+            s_op = ">=";
         else
-            s_op = String( "=" );
+            s_op = "=";
 
-        s_eq = String( "(assert (" ) + s_op + String( " " ) + s_eq + String( " " ) + Stringf( "%f", eq._scalar ) + String( "))" );
+        s_eq = "(assert (" + s_op + " " + s_eq + " " + std::to_string( eq._scalar ) + "))";
 
-        s_equations = s_equations + s_eq + String( "\n" );
+        s_equations = s_equations + s_eq + "\n";
     }
 
     for( unsigned var : variables )
-        s_variables = s_variables + String( "(declare-const x" ) + String( "%u", var ) + String( " Real)" ) + String( "\n" );
+        s_variables = s_variables + "(declare-const x" + std::to_string( var ) + " Real)" + "\n";
 
     fs << s_variables << s_equations << "(check-sat)" << std::endl << "(reset)" << std::endl;
     fs.close();
@@ -1726,7 +1727,7 @@ void Engine::dumpInfeasibleSystemToSMTForTest( List<const Fact*> &explanations )
     InputQuery infeasibleQuery;
     for ( Equation eq: infeasibleSystem )
         infeasibleQuery.addEquation( eq );
-    infeasibleQuery.saveQuery( String( "smt/" + getTimeInNanoseconds() + "ForMarabou.txt" ) );
+    infeasibleQuery.saveQuery( String( "smt/" + timestr + "ForMarabou.txt" ) );
 }
 
 void Engine::log( const String &message )
