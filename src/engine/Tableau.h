@@ -598,6 +598,12 @@ private:
     Map<unsigned, unsigned> _mergedVariables;
 
     /*
+      True if and only if the rhs vector _b is all zeros. This can
+      simplify some of the computations.
+     */
+    bool _rhsIsAllZeros;
+
+    /*
       Free all allocated memory.
     */
     void freeMemoryIfNeeded();
