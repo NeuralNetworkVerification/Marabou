@@ -116,7 +116,7 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::s
         Engine engine;
         if(!engine.processInputQuery(inputQuery)) return std::make_pair(ret, *(engine.getStatistics()));
 
-        if(!engine.solve(timeout,crossValidation)) return std::make_pair(ret, *(engine.getStatistics()));
+        if(!engine.solve(timeout,"",crossValidation)) return std::make_pair(ret, *(engine.getStatistics()));
 
         if (engine.getExitCode() == Engine::SAT)
             engine.extractSolution(inputQuery);

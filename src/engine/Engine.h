@@ -33,6 +33,7 @@
 #include "SignalHandler.h"
 #include "SmtCore.h"
 #include "Statistics.h"
+#include <string>
 
 class EngineState;
 class InputQuery;
@@ -58,7 +59,7 @@ public:
       Attempt to find a feasible solution for the input within a time limit
       (a timeout of 0 means no time limit). Returns true if found, false if infeasible.
     */
-    bool solve( unsigned timeoutInSeconds = 0, bool crossValidation=false );
+    bool solve( unsigned timeoutInSeconds = 0, std::string prefix="", bool crossValidation=false );
 
     /*
       Process the input query and pass the needed information to the
@@ -97,7 +98,7 @@ public:
     void checkAllBoundsValidForTest( unsigned &failureVar );
     void examineConstraintMatrixForTest();
     void applyAllBoundTighteningsForTest();
-    void dumpInfeasibleSystemToSMTForTest( List<const Fact*> &explanations );
+    void dumpInfeasibleSystemToSMTForTest( List<const Fact*> &explanations, std::string filename );
     InputQuery _tempInputQueryForTest;
     unsigned _crossValidationCountForTest;
 

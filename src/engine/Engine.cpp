@@ -29,6 +29,7 @@
 #include "SmtCore.h"
 #include "TableauRow.h"
 #include "TimeUtils.h"
+#include <string>
 #include <fstream>
 #include <chrono>
 #include <ctime>
@@ -100,7 +101,7 @@ void Engine::adjustWorkMemorySize()
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Engine::work" );
 }
 
-bool Engine::solve( unsigned timeoutInSeconds, bool crossValidation/*=false*/ )
+bool Engine::solve( unsigned timeoutInSeconds, std::string fileprefix/*=""*/, bool crossValidation/*=false*/ )
 {
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
@@ -324,13 +325,13 @@ bool Engine::solve( unsigned timeoutInSeconds, bool crossValidation/*=false*/ )
                 explanation->dump();
             }*/
             if ( explanations.size() && !crossValidation ){
-                dumpInfeasibleSystemToSMTForTest( explanations );
+                dumpInfeasibleSystemToSMTForTest( explanations, fileprefix+"_" );
                 InputQuery crossValidationQuery = _tempInputQueryForTest;
                 List<Equation> infeasibleSystem;
                 _smtCore.getBlamedSplitFacts( splitSet, infeasibleSystem );
                 for ( Equation eq: infeasibleSystem )
                     crossValidationQuery.addEquation( eq );
-                crossValidationQuery.saveQuery( String( "cv_query/" + getTimeInNanoseconds() + ".txt" ) );
+                crossValidationQuery.saveQuery( String( "cv_query/" + fileprefix+"_"+getTimeInNanoseconds() + ".txt" ) );
             }
 
             // The current query is unsat, and we need to pop.
@@ -1657,7 +1658,7 @@ void Engine::applyAllBoundTighteningsForTest()
     _statistics.addTimeForApplyingStoredTightenings( TimeUtils::timePassed( start, end ) );
 }
 
-void Engine::dumpInfeasibleSystemToSMTForTest( List<const Fact*> &explanations )
+void Engine::dumpInfeasibleSystemToSMTForTest( List<const Fact*> &explanations, std::string fileprefix )
 {
     List<Equation> infeasibleSystem;
 
@@ -1688,7 +1689,7 @@ void Engine::dumpInfeasibleSystemToSMTForTest( List<const Fact*> &explanations )
         }
     }
 
-    std::fstream fs("smt/"+getTimeInNanoseconds()+".txt", std::ios::in | std::ios::app );
+    std::fstream fs("smt/"+fileprefix+"_"+getTimeInNanoseconds()+".txt", std::ios::in | std::ios::app );
     std::string s_equations, s_variables;
     Set<unsigned> variables;
 
