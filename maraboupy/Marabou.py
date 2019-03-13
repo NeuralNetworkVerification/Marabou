@@ -19,6 +19,7 @@
 #Marabou File
 from .MarabouNetworkNNet import *
 from .MarabouNetworkTF import *
+from .MarabouNetwork import *
 
 def read_nnet(filename, sbt=False):
     """
@@ -50,4 +51,5 @@ def read_tf(filename, inputName=None, outputName=None, savedModel=False, savedMo
     return MarabouNetworkTF(filename, inputName, outputName, savedModel, savedModelTags)
 
 def load_query(filename, verbose=True, timeout=0):
-    MarabouNetwork.loadQuery(filename, verbose, timeout)
+    marabouNetwork = MarabouNetwork()
+    marabouNetwork.loadQuery(filename, verbose, timeout)

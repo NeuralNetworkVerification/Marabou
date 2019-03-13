@@ -2627,21 +2627,6 @@ List<const Fact*> Tableau::getExplanationsForSaturatedTableauRow()
         return explanations;
     }
 
-    /*
-      Roughly (the dimensions don't add up):
-
-         xB = inv(B)*b - inv(B)*An
-
-      We compute one row at a time.
-    */
-
-    if ( !basisMatrixAvailable() )
-    {
-        refreshBasisFactorization();
-    }
-
-    const double *invB = getInverseBasisMatrix();
-
     try
     {
         for ( unsigned i = 0; i < _m; ++i )
@@ -2658,21 +2643,12 @@ List<const Fact*> Tableau::getExplanationsForSaturatedTableauRow()
                 continue;
 
             TableauRow row( _n - _m );
+            getTableauRow( i, &row );
 
             // Compute the row's coefficients for basic variable i
             for ( unsigned j = 0; j < _n - _m; ++j )
             {
                 unsigned nonBasicVariable = _nonBasicIndexToVariable[j];
-                row._row[j]._var = nonBasicVariable;
-
-                // Dot product of the i'th row of inv(B) with the appropriate
-                // column of An
-
-                const SparseUnsortedList *column = getSparseAColumn( nonBasicVariable );
-                row._row[j]._coefficient = 0;
-
-                for ( const auto &entry : *column )
-                    row._row[j]._coefficient -= invB[i*_m + entry._index] * entry._value;
 
                 if ( assignmentIsTooSmall )
                 {
@@ -2708,15 +2684,10 @@ List<const Fact*> Tableau::getExplanationsForSaturatedTableauRow()
                 continue;
 
             // Get equation explanations
-            for ( unsigned j = 0; j < _m; ++j )
+            for ( unsigned j : row._explanations )
             {
-                // if inv(B)_{i,j} is nonzero, then j-th row in the constraint matrix
-                // is responsible for i-th inverted row in the inverted basis matrix
-                if ( !FloatUtils::isZero( invB[i * _m + j] ) )
-                {
-                    // ASSERT( _factTracker->hasFactAffectingEquation( j ) );
-                    explanations.append( _factTracker->getFactAffectingEquation( j ) );
-                }
+                // ASSERT( _factTracker->hasFactAffectingEquation( j ) );
+                explanations.append( _factTracker->getFactAffectingEquation( j ) );
             }
 
             printf("Saturated row: ");

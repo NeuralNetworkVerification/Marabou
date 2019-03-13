@@ -1689,7 +1689,8 @@ void Engine::dumpInfeasibleSystemToSMTForTest( List<const Fact*> &explanations, 
         }
     }
 
-    std::fstream fs("smt/"+fileprefix+"_"+getTimeInNanoseconds()+".txt", std::ios::in | std::ios::app );
+    std::string timestr = getTimeInNanoseconds();
+    std::fstream fs("smt/"+fileprefix+"_"+timestr+".txt", std::ios::in | std::ios::app );
     std::string s_equations, s_variables;
     Set<unsigned> variables;
 
@@ -1723,6 +1724,12 @@ void Engine::dumpInfeasibleSystemToSMTForTest( List<const Fact*> &explanations, 
 
     fs << s_variables << s_equations << "(check-sat)" << std::endl << "(reset)" << std::endl;
     fs.close();
+
+    InputQuery infeasibleQuery;
+    infeasibleQuery.setNumberOfVariables( _tempInputQueryForTest.getNumberOfVariables() );
+    for ( Equation eq: infeasibleSystem )
+        infeasibleQuery.addEquation( eq );
+    infeasibleQuery.saveQuery( String( "smt/" + fileprefix+"_"+timestr + "ForMarabou.txt" ) );
 }
 
 void Engine::log( const String &message )
