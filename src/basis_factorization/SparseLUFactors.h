@@ -82,6 +82,12 @@ public:
     SparseUnsortedLists *_Vt;
 
     /*
+      A vector for the diagonal elements of V, for quick access. If row i
+      of V corresponds to row j of U, the i'th diaonal element will be U[j,j].
+    */
+    double *_vDiagonalElements;
+
+    /*
       Basic computations (BTRAN, FTRAN) involving the factorization
 
       forwardTransformation: find x such that Ax ( = FVx ) = y
@@ -113,6 +119,7 @@ public:
     */
     double *_z;
     double *_workMatrix;
+    double *_workVector;
 
     /*
       Clone this SparseLUFactors object into another object

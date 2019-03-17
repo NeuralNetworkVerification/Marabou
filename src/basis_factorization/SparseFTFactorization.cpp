@@ -156,6 +156,8 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
         _sparseLUFactors._V->set( i, columnIndex, _z4[i] );
     }
 
+    double pivotElement = _z4[vRowDiagonalIndex];
+
     /*
       Step 2:
 
@@ -166,6 +168,7 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
     ASSERT( foundNonZeroEntry );
     if ( lastNonZeroEntryInU <= uColumnIndex )
     {
+        _sparseLUFactors._vDiagonalElements[vRowDiagonalIndex] = pivotElement;
         ASSERT( uColumnIndex == lastNonZeroEntryInU ); // Otherwise, singular matrix
         return;
     }
@@ -215,7 +218,10 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
     }
 
     if ( !haveSpike )
+    {
+        _sparseLUFactors._vDiagonalElements[vRowDiagonalIndex] = pivotElement;
         return;
+    }
 
     /*
       Step 4:
@@ -294,6 +300,8 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
     _sparseLUFactors._V->updateSingleRow( vRowDiagonalIndex, _z3 );
     for ( unsigned i = 0; i < _m; ++i )
         _sparseLUFactors._Vt->set( i, vRowDiagonalIndex, _z3[i] );
+
+    _sparseLUFactors._vDiagonalElements[vRowDiagonalIndex] = _z3[columnIndex];
 }
 
 void SparseFTFactorization::forwardTransformation( const double *y, double *x ) const

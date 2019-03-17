@@ -472,6 +472,9 @@ void SparseGaussianEliminator::eliminate()
         _sparseLUFactors->_F->set( vRow, fColumn, -rowMultiplier );
         _sparseLUFactors->_Ft->set( fColumn, vRow, -rowMultiplier );
     }
+
+    // Store the pivot element
+    _sparseLUFactors->_vDiagonalElements[_vPivotRow] = _pivotElement;
 }
 
 void SparseGaussianEliminator::log( const String &message )

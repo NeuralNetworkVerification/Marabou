@@ -46,6 +46,10 @@ int main( int argc, char *argv[] )
     }
 
     printf( "Status:\tSAT\n\n" );
+
+    // Uncomment the below to print the solution
+
+    /*
     engine.extractSolution( inputQuery );
 
     printf( "Printing feasible solution:\n" );
@@ -55,6 +59,7 @@ int main( int argc, char *argv[] )
                 mpsParser.getVarName( i ).ascii(),
                 inputQuery.getSolutionValue( i ) );
     }
+    */
 
     return 0;
 }

@@ -29,8 +29,10 @@ SparseLUFactors::SparseLUFactors( unsigned m )
     , _PForF( m )
     , _Ft( NULL )
     , _Vt( NULL )
+    , _vDiagonalElements( NULL )
     , _z( NULL )
     , _workMatrix( NULL )
+    , _workVector( NULL )
 {
     _F = new SparseUnsortedLists();
     if ( !_F )
@@ -48,6 +50,10 @@ SparseLUFactors::SparseLUFactors( unsigned m )
     if ( !_Vt )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseLUFactors::Vt" );
 
+    _vDiagonalElements = new double[m];
+    if ( !_vDiagonalElements )
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseLUFactors::vDiagonalElements" );
+
     _z = new double[m];
     if ( !_z )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseLUFactors::z" );
@@ -55,6 +61,10 @@ SparseLUFactors::SparseLUFactors( unsigned m )
     _workMatrix = new double[m*m];
     if ( !_workMatrix )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseLUFactors::workMatrix" );
+
+    _workVector = new double[m];
+    if ( !_workVector )
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseLUFactors::workVector" );
 }
 
 SparseLUFactors::~SparseLUFactors()
@@ -83,6 +93,12 @@ SparseLUFactors::~SparseLUFactors()
         _Vt = NULL;
     }
 
+    if ( _vDiagonalElements )
+    {
+        delete[] _vDiagonalElements;
+        _vDiagonalElements = NULL;
+    }
+
     if ( _z )
     {
         delete[] _z;
@@ -93,6 +109,12 @@ SparseLUFactors::~SparseLUFactors()
     {
         delete[] _workMatrix;
         _workMatrix = NULL;
+    }
+
+    if ( _workVector )
+    {
+        delete[] _workVector;
+        _workVector = NULL;
     }
 }
 
@@ -146,6 +168,13 @@ void SparseLUFactors::dump() const
         }
         printf( "\n" );
     }
+
+    printf( "\tDumping the stored V diagonal:\n" );
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        printf( "\t%8.2lf\n", _vDiagonalElements[i] );
+    }
+    printf( "\n" );
 
     printf( "\tDumping the implied L:\n" );
     for ( unsigned i = 0; i < _m; ++i )
@@ -256,7 +285,7 @@ void SparseLUFactors::vForwardTransformation( const double *y, double *x ) const
     /*
       Solve V*x = y
 
-      Example for solving for an upper triansgular matrix:
+      Example for solving for an upper triangular matrix:
 
       | 2 2  3 |   | x1 |   | y1 |
       | 0 -1 4 | * | x2 | = | y2 |
@@ -272,32 +301,32 @@ void SparseLUFactors::vForwardTransformation( const double *y, double *x ) const
       or U = P'VQ'.
     */
 
+    const SparseUnsortedList *sparseColumn;
+    double diagonalElement;
+    double xElement;
+    unsigned vRow;
+    unsigned vColumn;
+
+    memcpy( _workVector, y, sizeof(double) * _m );
+
     for ( int uRow = _m - 1; uRow >= 0; --uRow )
     {
-        unsigned vRow = _P._columnOrdering[uRow];
-        const SparseUnsortedList *sparseRow = _V->getRow( vRow );
+        vRow = _P._columnOrdering[uRow];
+        vColumn = _Q._rowOrdering[uRow];
 
-        unsigned xBeingSolved = _Q._rowOrdering[uRow];
-        x[xBeingSolved] = y[vRow];
+        // Extract the pivot elemnt
+        diagonalElement = _vDiagonalElements[vRow];
 
-        double diagonalCoefficient = 0.0;
-        for ( const auto &entry : *sparseRow )
+        // Set the (final) value of this entry of x
+        xElement = x[vColumn] = ( _workVector[vRow] / diagonalElement );
+
+        // Eliminate this entry from all other entries
+        if ( xElement != 0.0 )
         {
-            unsigned vColumn = entry._index;
-            unsigned uColumn = _Q._columnOrdering[vColumn];
-
-            if ( (int)uColumn == uRow )
-                diagonalCoefficient = entry._value;
-            else
-                x[xBeingSolved] -= ( entry._value * x[vColumn] );
+            sparseColumn = _Vt->getRow( vColumn );
+            for ( const auto &entry : *sparseColumn )
+                _workVector[entry._index] -= xElement * entry._value;
         }
-
-        ASSERT( !FloatUtils::isZero( diagonalCoefficient ) );
-
-        if ( FloatUtils::isZero( x[xBeingSolved] ) )
-            x[xBeingSolved] = 0.0;
-        else
-            x[xBeingSolved] *= ( 1.0 / diagonalCoefficient );
     }
 }
 
@@ -493,6 +522,8 @@ void SparseLUFactors::storeToOther( SparseLUFactors *other ) const
 
     _P.storeToOther( &other->_P );
     _Q.storeToOther( &other->_Q );
+
+    memcpy( other->_vDiagonalElements, _vDiagonalElements, sizeof(double) * _m );
 
     other->_usePForF = false;
 }
