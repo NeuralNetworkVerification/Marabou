@@ -333,13 +333,13 @@ void SparseLUFactors::vForwardTransformation( const double *y, double *x ) const
 void SparseLUFactors::vBackwardTransformation( const double *y, double *x ) const
 {
     /*
-      Solve x*V = y
+      Solve x*V = y.
 
       Example for solving for an upper triansgular matrix:
 
-                     | 2 2  3 |   | y1 |
-      | x1 x2 x3 | * | 0 -1 4 | = | y2 |
-                     | 0 0  4 |   | y3 |
+                     | 2 2  3 |
+      | x1 x2 x3 | * | 0 -1 4 | = | y1 y2 y3 |
+                     | 0 0  4 |
 
       Solution:
 
@@ -349,32 +349,39 @@ void SparseLUFactors::vBackwardTransformation( const double *y, double *x ) cons
 
       However, V is not lower triangular, but rather V = PUQ,
       or U = P'VQ'.
+
+      It is also useful to remember that xV = y is equivalent to
+      V'x' = y'.
     */
 
-    for ( unsigned uColumn = 0; uColumn < _m; ++uColumn )
+    const SparseUnsortedList *sparseRow;
+    double diagonalElement;
+    double xElement;
+    unsigned vRow;
+    unsigned vColumn;
+
+    memcpy( _workVector, y, sizeof(double) * _m );
+
+    for ( unsigned utIndex = 0; utIndex < _m; ++utIndex )
     {
-        unsigned vColumn = _Q._rowOrdering[uColumn];
-        const SparseUnsortedList *sparseColumn = _Vt->getRow( vColumn );
+        // The utIndex row of u' is the k-th column of u
+        vRow = _P._columnOrdering[utIndex];
+        // The utIndex column of u' is the k-th row of u
+        vColumn = _Q._rowOrdering[utIndex];
 
-        unsigned xBeingSolved = _P._columnOrdering[uColumn];
-        x[xBeingSolved] = y[vColumn];
+        // Extract the pivot elemnt
+        diagonalElement = _vDiagonalElements[vRow];
 
-        double diagonalCoefficient = 0.0;
-        for ( const auto &entry : *sparseColumn )
+        // Set the (final) value of this entry of x
+        xElement = x[vRow] = ( _workVector[vColumn] / diagonalElement );
+
+        // Eliminate this entry from all other entries
+        if ( xElement != 0.0 )
         {
-            unsigned vRow = entry._index;
-            unsigned uRow = _P._rowOrdering[vRow];
-
-            if ( uRow == uColumn )
-                diagonalCoefficient = entry._value;
-            else
-                x[xBeingSolved] -= ( entry._value * x[vRow] );
+            sparseRow = _V->getRow( vRow );
+            for ( const auto &entry : *sparseRow )
+                _workVector[entry._index] -= xElement * entry._value;
         }
-
-        if ( FloatUtils::isZero( x[xBeingSolved] ) )
-            x[xBeingSolved] = 0.0;
-        else
-            x[xBeingSolved] *= ( 1.0 / diagonalCoefficient );
     }
 }
 
