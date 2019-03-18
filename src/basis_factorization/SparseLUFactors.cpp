@@ -227,11 +227,6 @@ void SparseLUFactors::fForwardTransformation( const double *y, double *x ) const
         for ( const auto &entry : *sparseRow )
         {
             unsigned fColumn = entry._index;
-
-            // We want to ignore just the diagonal element
-            if ( fColumn == fRow )
-                continue;
-
             x[fRow] -= x[fColumn] * entry._value;
         }
     }
@@ -271,10 +266,6 @@ void SparseLUFactors::fBackwardTransformation( const double *y, double *x ) cons
         for ( const auto &entry : *sparseColumn )
         {
             unsigned fRow = entry._index;
-            // We want to ignore just the diagonal element
-            if ( fRow == fColumn )
-                continue;
-
             x[fColumn] -= ( entry._value * x[fRow] );
         }
     }
