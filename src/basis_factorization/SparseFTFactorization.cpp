@@ -476,10 +476,7 @@ void SparseFTFactorization::hBackwardTransformation( const double *y, double *x 
         {
             unsigned entryIndex = entry._index;
             double value = entry._value;
-
             x[entryIndex] -= value * pivotValue;
-            if ( FloatUtils::isZero( x[entryIndex] ) )
-                x[entryIndex] = 0.0;
         }
     }
 }
