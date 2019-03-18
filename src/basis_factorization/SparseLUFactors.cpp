@@ -219,15 +219,19 @@ void SparseLUFactors::fForwardTransformation( const double *y, double *x ) const
     memcpy( x, y, sizeof(double) * _m );
 
     const PermutationMatrix *p = ( _usePForF ) ? &_PForF : &_P;
-    for ( unsigned lRow = 0; lRow < _m; ++lRow )
-    {
-        unsigned fRow = p->_columnOrdering[lRow];
-        const SparseUnsortedList *sparseRow = _F->getRow( fRow );
+    double xElement;
+    const SparseUnsortedList *sparseColumn;
 
-        for ( const auto &entry : *sparseRow )
+    for ( unsigned lColumn = 0; lColumn < _m; ++lColumn )
+    {
+        unsigned fColumn = p->_columnOrdering[lColumn];
+
+        xElement = x[fColumn];
+        if ( xElement != 0.0 )
         {
-            unsigned fColumn = entry._index;
-            x[fRow] -= x[fColumn] * entry._value;
+            sparseColumn = _Ft->getRow( fColumn );
+            for ( const auto &entry : *sparseColumn )
+                x[entry._index] -= xElement * entry._value;
         }
     }
 }
@@ -258,15 +262,19 @@ void SparseLUFactors::fBackwardTransformation( const double *y, double *x ) cons
     memcpy( x, y, sizeof(double) * _m );
 
     const PermutationMatrix *p = ( _usePForF ) ? &_PForF : &_P;
+    double xElement;
+    const SparseUnsortedList *sparseRow;
+
     for ( int lColumn = _m - 1; lColumn >= 0; --lColumn )
     {
         unsigned fColumn = p->_columnOrdering[lColumn];
-        const SparseUnsortedList *sparseColumn = _Ft->getRow( fColumn );
 
-        for ( const auto &entry : *sparseColumn )
+        xElement = x[fColumn];
+        if ( xElement != 0.0 )
         {
-            unsigned fRow = entry._index;
-            x[fColumn] -= ( entry._value * x[fRow] );
+            sparseRow = _F->getRow( fColumn );
+            for ( const auto &entry : *sparseRow )
+                x[entry._index] -= xElement * entry._value;
         }
     }
 }
