@@ -230,8 +230,7 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
     */
 
     SparseEtaMatrix *sparseEtaMatrix = new SparseEtaMatrix( _m, vRowDiagonalIndex );
-    // These eta matrices always have 1 as their pivot entry
-    sparseEtaMatrix->addEntry( vRowDiagonalIndex, 1 );
+    // These eta matrices always have 1 as their pivot entry, but this is implicit.
 
     // Copy the spike row to work memory
     _sparseLUFactors._V->getRowDense( vRowDiagonalIndex, _z3 );
@@ -448,17 +447,12 @@ void SparseFTFactorization::hForwardTransformation( const double *y, double *x )
 
     for ( const auto &eta : _etas )
     {
-        ASSERT( eta->_diagonalElement == 1 );
         unsigned pivotIndex = eta->_columnIndex;
 
         for ( const auto &entry : eta->_sparseColumn )
         {
             unsigned entryIndex = entry._index;
             double value = entry._value;
-
-            if ( entryIndex == pivotIndex )
-                continue;
-
             x[pivotIndex] -= value * x[entryIndex];
         }
     }
@@ -475,7 +469,6 @@ void SparseFTFactorization::hBackwardTransformation( const double *y, double *x 
 
     for ( auto eta = _etas.rbegin(); eta != _etas.rend(); ++eta )
     {
-        ASSERT( (*eta)->_diagonalElement == 1 );
         unsigned pivotIndex = (*eta)->_columnIndex;
         double pivotValue = x[pivotIndex];
 
@@ -483,9 +476,6 @@ void SparseFTFactorization::hBackwardTransformation( const double *y, double *x 
         {
             unsigned entryIndex = entry._index;
             double value = entry._value;
-
-            if ( entryIndex == pivotIndex )
-                continue;
 
             x[entryIndex] -= value * pivotValue;
             if ( FloatUtils::isZero( x[entryIndex] ) )
