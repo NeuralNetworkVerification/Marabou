@@ -1,11 +1,11 @@
 NAME      lp_feasible_1
 ROWS
- N  obj 
+ N  obj
  L  e1
 COLUMNS
-    x0        obj                  2   e1                  1
-    x1        obj                  2   e1                  2
-    x2        obj                  2   e1                  -1
+    x0        obj                  0   e1                  1
+    x1        obj                  0   e1                  2
+    x2        obj                  0   e1                  -1
 RHS
     rhs       e1                  11
 BOUNDS

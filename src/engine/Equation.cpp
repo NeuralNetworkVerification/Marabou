@@ -49,6 +49,11 @@ void Equation::setScalar( double scalar )
     _scalar = scalar;
 }
 
+void Equation::setType( EquationType type )
+{
+    _type = type;
+}
+
 void Equation::updateVariableIndex( unsigned oldVar, unsigned newVar )
 {
     // Find oldVar's addend and update it

@@ -69,7 +69,7 @@ void Marabou::prepareInputQuery()
         printf( "Error: the specified network file (%s) doesn't exist!\n", networkFilePath.ascii() );
         throw ReluplexError( ReluplexError::FILE_DOESNT_EXIST, networkFilePath.ascii() );
     }
-   printf( "Network: %s\n", networkFilePath.ascii() );
+    printf( "Network: %s\n", networkFilePath.ascii() );
 
     // For now, assume the network is given in ACAS format
     _acasParser = new AcasParser( networkFilePath );
