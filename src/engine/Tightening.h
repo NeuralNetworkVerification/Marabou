@@ -17,8 +17,10 @@
 #define __Tightening_h__
 
 #include "ITableau.h"
+#include "Fact.h"
+#include "MStringf.h"
 
-class Tightening
+class Tightening: public Fact
 {
 public:
 	enum BoundType {
@@ -60,13 +62,19 @@ public:
             ( _type == other._type );
     }
 
-    void dump() const
-    {
-        printf( "Tightening: x%u %s %.2lf\n",
-                _variable,
-                _type == LB ? ">=" : "<=",
-                _value );
-    }
+		String getDescription() const
+		{
+			return Stringf("Tightening: x%u %s %.2lf\n",
+														_variable,
+														_type == LB ? ">=" : "<=",
+														_value );
+		}
+
+		bool isEquation() const
+		{
+			return false;
+		}
+
 };
 
 #endif // __Tightening_h__

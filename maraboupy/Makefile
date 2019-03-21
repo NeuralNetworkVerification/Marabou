@@ -12,6 +12,7 @@ LOCAL_INCLUDES += \
 	$(CONFIGURATION_DIR) \
 	$(ENGINE_DIR) \
 	$(INPUT_PARSER_DIR) \
+	$(QUERY_LOADER_DIR) \
 	$(PYBIND11_INCLUDES) \
 
 LINK_FLAGS += \
@@ -31,6 +32,7 @@ include $(CONFIGURATION_DIR)/Sources.mk
 include $(ENGINE_DIR)/Sources.mk
 include $(ENGINE_REAL_DIR)/Sources.mk
 include $(INPUT_PARSER_DIR)/Sources.mk
+include $(QUERY_LOADER_DIR)/Sources.mk
 
 vpath %.cpp $(BASIS_FACTORIZATION_DIR)
 vpath %.cpp $(COMMON_DIR)
@@ -39,6 +41,7 @@ vpath %.cpp $(CONFIGURATION_DIR)
 vpath %.cpp $(ENGINE_DIR)
 vpath %.cpp $(ENGINE_REAL_DIR)
 vpath %.cpp $(INPUT_PARSER_DIR)
+vpath %.cpp $(QUERY_LOADER_DIR)
 
 SOURCES += \
 	\
@@ -48,7 +51,7 @@ TARGET = $(API_NAME)
 
 include ../Rules.mk
 
-COMPILE = c++ -std=c++11 -O3 -fPIC $(PYBIND11_INCLUDES)
+COMPILE = c++ -std=c++11 -O3 -fPIC $(PYBIND11_INCLUDES) -g
 LINK 	= c++ -std=c++11 -O3 -fPIC -shared -Wl,-undefined,dynamic_lookup $(PYBIND11_INCLUDES)
 
 $(TARGET): $(OBJECTS)

@@ -19,6 +19,7 @@
 #include "Debug.h"
 #include "EntrySelectionStrategy.h"
 #include "Equation.h"
+#include "FactTracker.h"
 #include "FloatUtils.h"
 #include "ICostFunctionManager.h"
 #include "MStringf.h"
@@ -1543,6 +1544,11 @@ void Tableau::getSparseARow( unsigned row, SparseUnsortedList *result ) const
     _sparseRowsOfA[row]->storeIntoOther( result );
 }
 
+double Tableau::getbRow( unsigned row ) const
+{
+    return _b[row];
+}
+
 void Tableau::dumpEquations()
 {
     TableauRow row( _n - _m );
@@ -2122,6 +2128,11 @@ double Tableau::getSumOfInfeasibilities() const
 void Tableau::setStatistics( Statistics *statistics )
 {
     _statistics = statistics;
+}
+
+void Tableau::setFactTracker( FactTracker* tracker)
+{
+  _factTracker = tracker;
 }
 
 void Tableau::log( const String &message )

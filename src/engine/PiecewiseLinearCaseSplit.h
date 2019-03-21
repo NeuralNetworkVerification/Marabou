@@ -37,6 +37,13 @@ public:
   	List<Equation> getEquations() const;
 
     /*
+      Set and Get contraint and split ID that caused this split
+    */
+    void setConstraintAndSplitID( unsigned constraintID, unsigned splitID );
+    unsigned getConstraintID() const;
+    unsigned getSplitID() const;
+
+    /*
       Dump the case split - for debugging purposes.
     */
     void dump() const;
@@ -56,6 +63,12 @@ private:
       The equation that needs to be added.
     */
     List<Equation> _equations;
+
+    /*
+      Information about PLConstraint and Split that caused this
+    */
+    unsigned _constraintID;
+    unsigned _splitID;
 };
 
 #endif // __PiecewiseLinearCaseSplit_h__

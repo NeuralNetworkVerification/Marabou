@@ -105,6 +105,12 @@ public:
         {
             return nextSplits;
         }
+        
+        PiecewiseLinearCaseSplit getSplitFromID( unsigned /* splitID */, bool /* impliedSplit */ ) const
+        {
+            PiecewiseLinearCaseSplit dontCare;
+            return dontCare;
+        }
 
         bool phaseFixed() const
         {

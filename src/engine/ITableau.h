@@ -21,6 +21,8 @@
 
 class EntrySelectionStrategy;
 class Equation;
+class Fact;
+class FactTracker;
 class ICostFunctionManager;
 class PiecewiseLinearCaseSplit;
 class SparseMatrix;
@@ -157,6 +159,7 @@ public:
     virtual void getSparseARow( unsigned row, SparseUnsortedList *result ) const = 0;
     virtual const SparseUnsortedList *getSparseAColumn( unsigned variable ) const = 0;
     virtual const SparseUnsortedList *getSparseARow( unsigned row ) const = 0;
+    virtual double getbRow( unsigned row ) const = 0;
     virtual const SparseMatrix *getSparseA() const = 0;
     virtual void performDegeneratePivot() = 0;
     virtual void storeState( TableauState &state ) const = 0;
@@ -179,6 +182,7 @@ public:
     virtual void mergeColumns( unsigned x1, unsigned x2 ) = 0;
     virtual bool areLinearlyDependent( unsigned x1, unsigned x2, double &coefficient, double &inverseCoefficient ) = 0;
     virtual unsigned getVariableAfterMerging( unsigned variable ) const = 0;
+    virtual void setFactTracker(FactTracker* tracker) = 0;
 };
 
 #endif // __ITableau_h__

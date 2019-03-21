@@ -24,7 +24,7 @@ class MaxConstraint : public PiecewiseLinearConstraint
  public:
     ~MaxConstraint();
 
-    MaxConstraint( unsigned f, const Set<unsigned> &elements );
+    MaxConstraint( unsigned f, const Set<unsigned> &elements, unsigned id=0 );
     MaxConstraint( const String &serializedMax );
 
     /*
@@ -79,6 +79,11 @@ class MaxConstraint : public PiecewiseLinearConstraint
       then ~l1 /\ ~l2 /\ ... /\ ~ln-1 --> ln.
     */
     List<PiecewiseLinearCaseSplit> getCaseSplits() const;
+
+    /*
+      For Max Constraint, ID of split corresponding to i'th element being max is i
+    */
+    PiecewiseLinearCaseSplit getSplitFromID( unsigned splitID, bool impliedSplit=false ) const;
 
     /*
       Check if the constraint's phase has been fixed.

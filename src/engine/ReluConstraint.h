@@ -28,7 +28,7 @@ public:
         PHASE_INACTIVE = 2,
     };
 
-    ReluConstraint( unsigned b, unsigned f );
+    ReluConstraint( unsigned b, unsigned f, unsigned id=0 );
     ReluConstraint( const String &serializedRelu );
 
     /*
@@ -88,6 +88,11 @@ public:
       then ~l1 /\ ~l2 /\ ... /\ ~ln-1 --> ln.
      */
     List<PiecewiseLinearCaseSplit> getCaseSplits() const;
+
+    /*
+      For Relus, 0 means inactive and 1 means active split
+    */
+    PiecewiseLinearCaseSplit getSplitFromID( unsigned splitID, bool impliedSplit=false ) const;
 
     /*
       Check if the constraint's phase has been fixed.

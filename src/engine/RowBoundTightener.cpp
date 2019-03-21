@@ -672,6 +672,11 @@ void RowBoundTightener::setStatistics( Statistics *statistics )
     _statistics = statistics;
 }
 
+void RowBoundTightener::setFactTracker( FactTracker* tracker)
+{
+  _factTracker = tracker;
+}
+
 void RowBoundTightener::notifyLowerBound( unsigned variable, double bound )
 {
     if ( FloatUtils::gt( bound, _lowerBounds[variable] ) )

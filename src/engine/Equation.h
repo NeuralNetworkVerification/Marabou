@@ -16,6 +16,7 @@
 #ifndef __Equation_h__
 #define __Equation_h__
 
+#include "Fact.h"
 #include "List.h"
 
 /*
@@ -27,7 +28,7 @@
    Where op is either =, <= or >=
 */
 
-class Equation
+class Equation: public Fact
 {
 public:
     enum EquationType {
@@ -75,7 +76,8 @@ public:
     bool operator==( const Equation &other ) const;
     bool equivalent( const Equation &other ) const;
 
-    void dump() const;
+    String getDescription() const;
+    bool isEquation() const { return true; }
 };
 
 #endif // __Equation_h__

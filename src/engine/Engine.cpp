@@ -43,9 +43,13 @@ Engine::Engine()
     , _constraintBoundTightener( *_tableau )
     , _numVisitedStatesAtPreviousRestoration( 0 )
 {
+    _factTracker.setStatistics( &_statistics );
     _smtCore.setStatistics( &_statistics );
+    _smtCore.setFactTracker( &_factTracker );
     _tableau->setStatistics( &_statistics );
+    _tableau->setFactTracker( &_factTracker );
     _rowBoundTightener->setStatistics( &_statistics );
+    _rowBoundTightener->setFactTracker( &_factTracker );
     _constraintBoundTightener->setStatistics( &_statistics );
     _preprocessor.setStatistics( &_statistics );
 
@@ -784,6 +788,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         for ( const auto &constraint : _plConstraints )
         {
             constraint->registerAsWatcher( _tableau );
+            constraint->setFactTracker( &_factTracker );
             constraint->setStatistics( &_statistics );
         }
 

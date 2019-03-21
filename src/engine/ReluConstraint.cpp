@@ -24,8 +24,9 @@
 #include "Statistics.h"
 #include "TableauRow.h"
 
-ReluConstraint::ReluConstraint( unsigned b, unsigned f )
-    : _b( b )
+ReluConstraint::ReluConstraint( unsigned b, unsigned f, unsigned id/*=0*/ )
+    : PiecewiseLinearConstraint( id )
+    , _b( b )
     , _f( f )
     , _haveEliminatedVariables( false )
 {
@@ -41,15 +42,20 @@ ReluConstraint::ReluConstraint( const String &serializedRelu )
     // remove the constraint type in serialized form
     String serializedValues = serializedRelu.substring(5, serializedRelu.length()-5);
     List<String> values = serializedValues.tokenize( "," );
-    _b = atoi( values.back().ascii() );
-    _f = atoi( values.front().ascii() );
+    auto valuesIter = values.begin();
+    _id = atoi( valuesIter->ascii() );
+    ++valuesIter;
+    _f = atoi( valuesIter->ascii() );
+    ++valuesIter;
+    _b = atoi( valuesIter->ascii() );
+    _factTracker = NULL;
 
     setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
 }
 
 PiecewiseLinearConstraint *ReluConstraint::duplicateConstraint() const
 {
-    ReluConstraint *clone = new ReluConstraint( _b, _f );
+    ReluConstraint *clone = new ReluConstraint( _b, _f, _id );
     *clone = *this;
     return clone;
 }
@@ -373,10 +379,17 @@ List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
     return splits;
 }
 
+PiecewiseLinearCaseSplit ReluConstraint::getSplitFromID( unsigned splitID, bool /*impliedSplit=false*/ ) const
+{
+    ASSERT( splitID == 0 || splitID == 1 );
+    return splitID == 0 ? getInactiveSplit( ) : getActiveSplit( );
+}
+
 PiecewiseLinearCaseSplit ReluConstraint::getInactiveSplit() const
 {
     // Inactive phase: b <= 0, f = 0
     PiecewiseLinearCaseSplit inactivePhase;
+    inactivePhase.setConstraintAndSplitID( _id, 0U );
     inactivePhase.storeBoundTightening( Tightening( _b, 0.0, Tightening::UB ) );
     inactivePhase.storeBoundTightening( Tightening( _f, 0.0, Tightening::UB ) );
     return inactivePhase;
@@ -386,6 +399,7 @@ PiecewiseLinearCaseSplit ReluConstraint::getActiveSplit() const
 {
     // Active phase: b >= 0, b - f = 0
     PiecewiseLinearCaseSplit activePhase;
+    activePhase.setConstraintAndSplitID( _id, 1U );
     activePhase.storeBoundTightening( Tightening( _b, 0.0, Tightening::LB ) );
     Equation activeEquation( Equation::EQ );
     activeEquation.addAddend( 1, _b );
@@ -412,8 +426,9 @@ PiecewiseLinearCaseSplit ReluConstraint::getValidCaseSplit() const
 
 void ReluConstraint::dump( String &output ) const
 {
-    output = Stringf( "ReluConstraint: x%u = ReLU( x%u ). Active? %s. PhaseStatus = %u (%s). "
+    output = Stringf( "ReluConstraint ID = %u: x%u = ReLU( x%u ). Active? %s. PhaseStatus = %u (%s). "
                       "b in [%lf, %lf]. f in [%lf, %lf]",
+                      _id,
                       _f, _b,
                       _constraintActive ? "Yes" : "No",
                       _phaseStatus, phaseToString( _phaseStatus ).ascii(),
@@ -628,8 +643,8 @@ bool ReluConstraint::haveOutOfBoundVariables() const
 
 String ReluConstraint::serializeToString() const
 {
-    // Output format is: relu,f,b
-    return Stringf( "relu,%u,%u", _f, _b );
+    // Output format is: relu,id,f,b
+    return Stringf( "relu,%u,%u,%u", _id, _f, _b );
 }
 
 unsigned ReluConstraint::getB() const

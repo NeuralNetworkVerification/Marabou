@@ -36,6 +36,22 @@ List<Equation> PiecewiseLinearCaseSplit::getEquations() const
 	return _equations;
 }
 
+void PiecewiseLinearCaseSplit::setConstraintAndSplitID( unsigned constraintID, unsigned splitID )
+{
+    _constraintID = constraintID;
+    _splitID = splitID;
+}
+
+unsigned PiecewiseLinearCaseSplit::getConstraintID() const
+{
+    return _constraintID;
+}
+
+unsigned PiecewiseLinearCaseSplit::getSplitID() const
+{
+    return _splitID;
+}
+
 void PiecewiseLinearCaseSplit::dump() const
 {
     printf( "\nDumping piecewise linear case split\n" );

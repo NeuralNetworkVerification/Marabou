@@ -24,6 +24,7 @@
 #include "BlandsRule.h"
 #include "DantzigsRule.h"
 #include "DegradationChecker.h"
+#include "FactTracker.h"
 #include "IEngine.h"
 #include "InputQuery.h"
 #include "Map.h"
@@ -168,6 +169,11 @@ private:
       The SMT engine is in charge of case splitting.
     */
     SmtCore _smtCore;
+
+    /*
+      Fact Tracker object for managing facts learned
+    */
+    FactTracker _factTracker;
 
     /*
       Number of pl constraints disabled by valid splits.

@@ -16,6 +16,7 @@
 #include "Equation.h"
 #include "FloatUtils.h"
 #include "Map.h"
+#include "MStringf.h"
 
 Equation::Addend::Addend( double coefficient, unsigned variable )
     : _coefficient( coefficient )
@@ -112,35 +113,35 @@ bool Equation::equivalent( const Equation &other ) const
     return us == them;
 }
 
-void Equation::dump() const
+String Equation::getDescription() const
 {
-    for ( const auto &addend : _addends )
-    {
-        if ( FloatUtils::isZero( addend._coefficient ) )
-            continue;
+  String desc = "Equation: ";
+  for ( const auto &addend : _addends )
+  {
+      if ( FloatUtils::isZero( addend._coefficient ) )
+          continue;
 
-        if ( FloatUtils::isPositive( addend._coefficient ) )
-            printf( "+" );
+      if ( FloatUtils::isPositive( addend._coefficient ) )
+        desc += "+";
+      desc += Stringf("%.2lfx%u ", addend._coefficient, addend._variable);
+  }
 
-        printf( "%.2lfx%u ", addend._coefficient, addend._variable );
-    }
+  switch ( _type )
+  {
+  case Equation::GE:
+      desc += " >= ";
+      break;
 
-    switch ( _type )
-    {
-    case Equation::GE:
-        printf( " >= " );
-        break;
+  case Equation::LE:
+      desc += " <= ";
+      break;
 
-    case Equation::LE:
-        printf( " <= " );
-        break;
-
-    case Equation::EQ:
-        printf( " = " );
-        break;
-    }
-
-    printf( "%.2lf\n", _scalar );
+  case Equation::EQ:
+      desc += " = ";
+      break;
+  }
+  desc += Stringf("%.2lf\n", _scalar);
+  return desc;
 }
 
 bool Equation::isVariableMergingEquation( unsigned &x1, unsigned &x2 ) const

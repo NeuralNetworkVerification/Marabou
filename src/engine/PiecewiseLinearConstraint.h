@@ -56,13 +56,18 @@ public:
         double _value;
     };
 
-    PiecewiseLinearConstraint();
+    PiecewiseLinearConstraint( unsigned id = 0 );
     virtual ~PiecewiseLinearConstraint() {}
 
     /*
       Return a clone of the constraint.
     */
     virtual PiecewiseLinearConstraint *duplicateConstraint() const = 0;
+
+    /*
+      Getter for constraint ID
+    */
+    unsigned getID() const;
 
     /*
       Restore the state of this constraint from the given one.
@@ -76,6 +81,11 @@ public:
     */
     virtual void registerAsWatcher( ITableau *tableau ) = 0;
     virtual void unregisterAsWatcher( ITableau *tableau ) = 0;
+
+    /*
+      Register a fact tracker for this constraint.
+    */
+    void setFactTracker( FactTracker *FactTracker );
 
     /*
       The variable watcher notifcation callbacks, about a change in a variable's value or bounds.
@@ -130,6 +140,13 @@ public:
       then ~l1 /\ ~l2 /\ ... /\ ~ln-1 --> ln.
     */
     virtual List<PiecewiseLinearCaseSplit> getCaseSplits() const = 0;
+
+    /*
+      For each PLConstraint, each possible split phase has a unique getSplitFromID
+      Function to get split corresponding to ID,
+      and whether this split is implied by facts we know so far
+    */
+    virtual PiecewiseLinearCaseSplit getSplitFromID( unsigned splitID, bool impliedSplit=false ) const = 0;
 
     /*
       Check if the constraint's phase has been fixed.
@@ -209,9 +226,10 @@ protected:
 	Map<unsigned, double> _assignment;
     Map<unsigned, double> _lowerBounds;
     Map<unsigned, double> _upperBounds;
+    unsigned _id;
 
     IConstraintBoundTightener *_constraintBoundTightener;
-
+    FactTracker* _factTracker;
     /*
       Statistics collection
     */

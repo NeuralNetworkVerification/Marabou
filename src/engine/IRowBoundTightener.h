@@ -19,6 +19,8 @@
 #include "ITableau.h"
 #include "Tightening.h"
 
+class FactTracker;
+
 class IRowBoundTightener : public ITableau::VariableWatcher, public ITableau::ResizeWatcher
 {
 public:
@@ -75,6 +77,12 @@ public:
       Get the tightenings entailed by the constraint.
     */
     virtual void getRowTightenings( List<Tightening> &tightenings ) const = 0;
+
+    /*
+      Have the bount tightener report new deductions to a tracker,
+      for conflict analysis later on.
+    */
+    virtual void setFactTracker( FactTracker* factTracker ) = 0;
 
     /*
       Have the Bound Tightener start reporting statistics.

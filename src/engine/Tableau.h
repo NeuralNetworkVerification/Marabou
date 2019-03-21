@@ -329,6 +329,7 @@ public:
     void getSparseARow( unsigned row, SparseUnsortedList *result ) const;
     const SparseUnsortedList *getSparseAColumn( unsigned variable ) const;
     const SparseUnsortedList *getSparseARow( unsigned row ) const;
+    double getbRow( unsigned row ) const;
 
     /*
       Store and restore the Tableau's state. Needed for case splitting
@@ -374,6 +375,11 @@ public:
       Have the Tableau start reporting statistics.
      */
     void setStatistics( Statistics *statistics );
+
+    /*
+      Have the Tableau get/tell facts to fact tracker
+    */
+    void setFactTracker( FactTracker* tracker);
 
     /*
       Compute the current sum of infeasibilities
@@ -584,6 +590,11 @@ private:
       Statistics collection
     */
     Statistics *_statistics;
+
+    /*
+      Fact Tracker from engine
+    */
+    FactTracker* _factTracker;
 
     /*
       The cost function manager

@@ -23,7 +23,8 @@
 #include "SmtCore.h"
 
 SmtCore::SmtCore( IEngine *engine )
-    : _statistics( NULL )
+    : _factTracker( NULL )
+    , _statistics( NULL )
     , _engine( engine )
     , _needToSplit( false )
     , _constraintForSplitting( NULL )
@@ -108,6 +109,10 @@ void SmtCore::performSplit()
     _engine->storeState( *stateBeforeSplits, true );
 
     StackEntry *stackEntry = new StackEntry;
+
+    if ( _factTracker )
+        stackEntry->_numFacts = _factTracker->getNumFacts();
+
     // Perform the first split: add bounds and equations
     List<PiecewiseLinearCaseSplit>::iterator split = splits.begin();
     _engine->applySplit( *split );
@@ -164,12 +169,20 @@ bool SmtCore::popSplit()
             throw ReluplexError( ReluplexError::DEBUGGING_ERROR );
         }
 
+        unsigned oldNumFacts = _stack.back()->_numFacts;
+
         delete _stack.back()->_engineState;
         delete _stack.back();
         _stack.popBack();
 
-        if ( _stack.empty() )
+        if ( _stack.empty() ){
+            if ( _factTracker )
+            {
+              while( _factTracker->getNumFacts() > oldNumFacts )
+                _factTracker->popFact();
+            }
             return false;
+        }
     }
 
     if ( checkSkewFromDebuggingSolution() )
@@ -185,6 +198,13 @@ bool SmtCore::popSplit()
     log( "\tRestoring engine state..." );
     _engine->restoreState( *(stackEntry->_engineState) );
     log( "\tRestoring engine state - DONE" );
+
+    if ( _factTracker )
+    {
+      unsigned oldNumFacts = stackEntry->_numFacts;
+      while( _factTracker->getNumFacts() > oldNumFacts )
+        _factTracker->popFact();
+    }
 
     // Apply the new split and erase it from the list
     auto split = stackEntry->_alternativeSplits.begin();
@@ -245,6 +265,11 @@ void SmtCore::allSplitsSoFar( List<PiecewiseLinearCaseSplit> &result ) const
 void SmtCore::setStatistics( Statistics *statistics )
 {
     _statistics = statistics;
+}
+
+void SmtCore::setFactTracker( FactTracker* factTracker )
+{
+    _factTracker = factTracker;
 }
 
 void SmtCore::log( const String &message )

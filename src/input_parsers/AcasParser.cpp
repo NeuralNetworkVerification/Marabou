@@ -145,6 +145,7 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
     }
 
     // Add the ReLU constraints
+    unsigned constraintID = 1;
     for ( unsigned i = 1; i < numberOfLayers - 1; ++i )
     {
         unsigned currentLayerSize = _acasNeuralNetwork.getLayerSize( i );
@@ -153,7 +154,7 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
         {
             unsigned b = _nodeToB[NodeIndex(i, j)];
             unsigned f = _nodeToF[NodeIndex(i, j)];
-            PiecewiseLinearConstraint *relu = new ReluConstraint( b, f );
+            PiecewiseLinearConstraint *relu = new ReluConstraint( b, f, constraintID++ );
             inputQuery.addPiecewiseLinearConstraint( relu );
         }
     }
