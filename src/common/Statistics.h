@@ -94,6 +94,7 @@ public:
     void incNumPops();
     void addTimeSmtCore( unsigned long long time );
     void incNumVisitedTreeStates();
+    unsigned getCurrentStackDepth() const;
     unsigned getMaxStackDepth() const;
     unsigned getNumPops() const;
     unsigned getNumVisitedTreeStates() const;

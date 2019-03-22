@@ -114,6 +114,7 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
     if ( _elements.exists( variable ) && FloatUtils::gt( value, _maxLowerBound ) )
     {
         _maxLowerBound = value;
+        _maxLowerBoundVar = variable;
         List<unsigned> toRemove;
         for ( auto element : _elements )
         {
@@ -122,6 +123,11 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
             if ( _upperBounds.exists( element ) &&
                  FloatUtils::lt( _upperBounds[element], value ) )
             {
+                if ( _factTracker )
+                {
+                    _factsCausingVarRemoval.append( _factTracker->getFactAffectingBound( element, FactTracker::UB ) );
+                    _factsCausingVarRemoval.append( _factTracker->getFactAffectingBound( variable, FactTracker::LB ) );
+                }
                 toRemove.append( element );
             }
         }
@@ -142,12 +148,18 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
         // can focus only on the newly learned bound and possible consequences.
         List<Tightening> tightenings;
         getEntailedTightenings( tightenings );
+        Fact* explanation = NULL;
+
+        if ( _factTracker )
+          explanation = const_cast<Fact*>(_factTracker->getFactAffectingBound( variable, FactTracker::LB ));
+
+
         for ( const auto &tightening : tightenings )
         {
             if ( tightening._type == Tightening::LB )
-                _constraintBoundTightener->registerTighterLowerBound( tightening._variable, tightening._value );
+                _constraintBoundTightener->registerTighterLowerBound( tightening._variable, tightening._value, explanation );
             else if ( tightening._type == Tightening::UB )
-                _constraintBoundTightener->registerTighterUpperBound( tightening._variable, tightening._value );
+                _constraintBoundTightener->registerTighterUpperBound( tightening._variable, tightening._value, explanation );
         }
     }
 }
@@ -164,6 +176,11 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
 
     if ( _elements.exists( variable ) && FloatUtils::lt( value, _maxLowerBound ) )
     {
+        if( _factTracker )
+        {
+            _factsCausingVarRemoval.append( _factTracker->getFactAffectingBound( variable, FactTracker::UB ) );
+            _factsCausingVarRemoval.append( _factTracker->getFactAffectingBound( _maxLowerBoundVar, FactTracker::LB ) );
+        }
         _elements.erase( variable );
     }
 
@@ -175,12 +192,17 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
         // can focus only on the newly learned bound and possible consequences.
         List<Tightening> tightenings;
         getEntailedTightenings( tightenings );
+        Fact* explanation = NULL;
+
+        if ( _factTracker )
+          explanation = const_cast<Fact*>(_factTracker->getFactAffectingBound( variable, FactTracker::UB ));
+
         for ( const auto &tightening : tightenings )
         {
             if ( tightening._type == Tightening::LB )
-                _constraintBoundTightener->registerTighterLowerBound( tightening._variable, tightening._value );
+                _constraintBoundTightener->registerTighterLowerBound( tightening._variable, tightening._value, explanation );
             else if ( tightening._type == Tightening::UB )
-                _constraintBoundTightener->registerTighterUpperBound( tightening._variable, tightening._value );
+                _constraintBoundTightener->registerTighterUpperBound( tightening._variable, tightening._value, explanation );
         }
     }
 }
@@ -354,25 +376,35 @@ bool MaxConstraint::phaseFixed() const
 PiecewiseLinearCaseSplit MaxConstraint::getValidCaseSplit() const
 {
     ASSERT( phaseFixed() );
-    return getSplit( *( _elements.begin() ) );
+    PiecewiseLinearCaseSplit split = getSplit( *( _elements.begin() ), true );
+    for ( const Fact* explanation: _factsCausingVarRemoval )
+        split.addExplanation( explanation );
+
+    return split;
 }
 
-PiecewiseLinearCaseSplit MaxConstraint::getSplitFromID( unsigned splitID, bool /*impliedSplit=false*/ ) const
+PiecewiseLinearCaseSplit MaxConstraint::getSplitFromID( unsigned splitID, bool impliedSplit/*=false*/ ) const
 {
-    return getSplit( splitID );
+    return getSplit( splitID, impliedSplit );
 }
 
-PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const
+PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax, bool impliedSplit/*=false*/ ) const
 {
     ASSERT( _assignment.exists( argMax ) );
     PiecewiseLinearCaseSplit maxPhase;
     maxPhase.setConstraintAndSplitID( _id, argMax );
+
+    unsigned nextSplitLevel = 0;
+    if ( _statistics )
+      nextSplitLevel = _statistics->getCurrentStackDepth() + 1;
 
     // maxArg - f = 0
     Equation maxEquation( Equation::EQ );
     maxEquation.addAddend( 1, argMax );
     maxEquation.addAddend( -1, _f );
     maxEquation.setScalar( 0 );
+    if(!impliedSplit)
+      maxEquation.setCausingSplitInfo( _id, argMax, nextSplitLevel);
     maxPhase.addEquation( maxEquation );
 
     // store bound tightenings as well
@@ -389,13 +421,20 @@ PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const
 	    gtEquation.addAddend( -1, other );
 	    gtEquation.addAddend( 1, argMax );
 	    gtEquation.setScalar( 0 );
+      if(!impliedSplit)
+        gtEquation.setCausingSplitInfo( _id, argMax, nextSplitLevel);
 	    maxPhase.addEquation( gtEquation );
 
         if ( _upperBounds.exists( argMax ) )
         {
             if ( !_upperBounds.exists( other ) ||
                  FloatUtils::gt( _upperBounds[other], _upperBounds[argMax] ) )
-                maxPhase.storeBoundTightening( Tightening( other, _upperBounds[argMax], Tightening::UB ) );
+              {
+                Tightening bound = Tightening( other, _upperBounds[argMax], Tightening::UB );
+                if(!impliedSplit)
+                  bound.setCausingSplitInfo( _id, argMax, nextSplitLevel);
+                maxPhase.storeBoundTightening( bound );
+              }
         }
 	}
 

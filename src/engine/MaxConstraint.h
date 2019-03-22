@@ -133,14 +133,16 @@ class MaxConstraint : public PiecewiseLinearConstraint
     unsigned _maxIndex;
     bool _maxIndexSet;
     double _maxLowerBound;
+    unsigned _maxLowerBoundVar;
     bool _obsolete;
+    List<const Fact*> _factsCausingVarRemoval;
 
     void resetMaxIndex();
 
     /*
       Returns the phase where variable argMax has maximum value.
     */
-    PiecewiseLinearCaseSplit getSplit( unsigned argMax ) const;
+    PiecewiseLinearCaseSplit getSplit( unsigned argMax, bool impliedSplit=false ) const;
 
 };
 

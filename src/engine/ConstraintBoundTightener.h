@@ -53,10 +53,10 @@ public:
 
     /*
       This method can be used by clients to tell the bound tightener
-      about a tighter bound
+      about a tighter bound, and its explanation
     */
-    void registerTighterLowerBound( unsigned variable, double bound );
-    void registerTighterUpperBound( unsigned variable, double bound );
+    void registerTighterLowerBound( unsigned variable, double bound, const Fact* explanation );
+    void registerTighterUpperBound( unsigned variable, double bound, const Fact* explanation );
 
     /*
       Get the tightenings previously registered by the constraints
@@ -78,6 +78,12 @@ private:
     double *_upperBounds;
     bool *_tightenedLower;
     bool *_tightenedUpper;
+
+    /*
+      Keep track of the facts from which the bounds are derived
+    */
+    const Fact* *_lowerBoundsExplanation;
+    const Fact* *_upperBoundsExplanation;
 
     /*
       Statistics collection

@@ -163,10 +163,12 @@ private:
     unsigned _b, _f;
     PhaseStatus _phaseStatus;
 
-    PiecewiseLinearCaseSplit getInactiveSplit() const;
-    PiecewiseLinearCaseSplit getActiveSplit() const;
+    PiecewiseLinearCaseSplit getInactiveSplit(bool impliedSplit=false) const;
+    PiecewiseLinearCaseSplit getActiveSplit(bool impliedSplit=false) const;
 
     bool _haveEliminatedVariables;
+    unsigned _phaseFixCausingVariable;
+    FactTracker::BoundType _phaseFixCausingBoundType;
 
     /*
       Set the phase status.

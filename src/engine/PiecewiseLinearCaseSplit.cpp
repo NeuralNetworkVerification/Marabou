@@ -52,6 +52,15 @@ unsigned PiecewiseLinearCaseSplit::getSplitID() const
     return _splitID;
 }
 
+void PiecewiseLinearCaseSplit::addExplanation( const Fact* explanation )
+{
+    for( auto &bound: _bounds )
+        bound.addExplanation( explanation );
+
+    for ( auto &equation: _equations )
+        equation.addExplanation( explanation );
+}
+
 void PiecewiseLinearCaseSplit::dump() const
 {
     printf( "\nDumping piecewise linear case split\n" );

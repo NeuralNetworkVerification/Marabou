@@ -53,10 +53,10 @@ public:
 
     /*
       This method can be used by clients to tell the bound tightener
-      about a tighter bound
+      about a tighter bound and its explanation
     */
-    virtual void registerTighterLowerBound( unsigned variable, double bound ) = 0;
-    virtual void registerTighterUpperBound( unsigned variable, double bound ) = 0;
+    virtual void registerTighterLowerBound( unsigned variable, double bound, const Fact* explanation ) = 0;
+    virtual void registerTighterUpperBound( unsigned variable, double bound, const Fact* explanation ) = 0;
 
     /*
       Get the tightenings previously registered by the constraints

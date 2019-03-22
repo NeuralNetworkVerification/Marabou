@@ -16,6 +16,7 @@
 #ifndef __PiecewiseLinearConstraint_h__
 #define __PiecewiseLinearConstraint_h__
 
+#include "FactTracker.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
 #include "List.h"

@@ -15,6 +15,7 @@
 
 #include "ConstraintBoundTightener.h"
 #include "Debug.h"
+#include "FactTracker.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
 #include "MStringf.h"
@@ -97,12 +98,26 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
     _lowerBounds[variable] = bound;
 
     if ( variable == _f && FloatUtils::isPositive( bound ) )
+    {
+        _phaseFixCausingVariable = _f;
+        _phaseFixCausingBoundType = FactTracker::LB;
         setPhaseStatus( PhaseStatus::PHASE_ACTIVE );
+    }
     else if ( variable == _b && !FloatUtils::isNegative( bound ) )
+    {
+        _phaseFixCausingVariable = _b;
+        _phaseFixCausingBoundType = FactTracker::LB;
         setPhaseStatus( PhaseStatus::PHASE_ACTIVE );
+    }
 
     if ( isActive() && _constraintBoundTightener )
     {
+        Fact* explanation = NULL;
+
+        if( _factTracker )
+            explanation = const_cast<Fact*>(_factTracker->getFactAffectingBound( variable, FactTracker::LB ));
+
+
         // A positive lower bound is always propagated between the two variables
         if ( bound > 0 )
         {
@@ -112,11 +127,11 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
             {
                 double otherLowerBound = _lowerBounds[partner];
                 if ( bound > otherLowerBound )
-                    _constraintBoundTightener->registerTighterLowerBound( partner, bound );
+                    _constraintBoundTightener->registerTighterLowerBound( partner, bound, explanation );
             }
             else
             {
-                _constraintBoundTightener->registerTighterLowerBound( partner, bound );
+                _constraintBoundTightener->registerTighterLowerBound( partner, bound, explanation );
             }
         }
 
@@ -124,7 +139,7 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
         // we attempt to tighten it to 0
         if ( bound < 0 && variable == _f )
         {
-            _constraintBoundTightener->registerTighterLowerBound( _f, 0 );
+            _constraintBoundTightener->registerTighterLowerBound( _f, 0, explanation );
         }
     }
  }
@@ -140,22 +155,47 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
     _upperBounds[variable] = bound;
 
     if ( ( variable == _f || variable == _b ) && !FloatUtils::isPositive( bound ) )
+    {
+        _phaseFixCausingVariable = variable;
+        _phaseFixCausingBoundType = FactTracker::UB;
         setPhaseStatus( PhaseStatus::PHASE_INACTIVE );
+    }
 
     if ( isActive() && _constraintBoundTightener )
     {
+        Fact* explanation = NULL;
+
+        if( _factTracker )
+            explanation = const_cast<Fact*>(_factTracker->getFactAffectingBound( variable, FactTracker::UB ));
+
+
         if ( variable == _f )
         {
             // Any bound that we learned of f should be propagated to b
-            if ( bound < _upperBounds[_b] )
-                _constraintBoundTightener->registerTighterUpperBound( _b, bound );
+            if ( _upperBounds.exists(_b) )
+            {
+                if ( bound < _upperBounds[_b] )
+                    _constraintBoundTightener->registerTighterUpperBound( _b, bound, explanation );
+            }
+            else
+            {
+                _constraintBoundTightener->registerTighterUpperBound( _b, bound, explanation );
+            }
         }
         else
         {
             // If b has a negative upper bound, we f's upper bound is 0
             double adjustedUpperBound = FloatUtils::max( bound, 0 );
-            if ( adjustedUpperBound < _upperBounds[_f] )
-                _constraintBoundTightener->registerTighterUpperBound( _f, adjustedUpperBound );
+            // Junyao: check exists first before retrieving value from map
+            if ( _upperBounds.exists(_f) )
+            {
+                if ( adjustedUpperBound < _upperBounds[_f] )
+                    _constraintBoundTightener->registerTighterUpperBound( _f, adjustedUpperBound, explanation );
+            }
+            else
+            {
+                _constraintBoundTightener->registerTighterUpperBound( _f, adjustedUpperBound, explanation );
+            }
         }
     }
 }
@@ -379,32 +419,50 @@ List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
     return splits;
 }
 
-PiecewiseLinearCaseSplit ReluConstraint::getSplitFromID( unsigned splitID, bool /*impliedSplit=false*/ ) const
+PiecewiseLinearCaseSplit ReluConstraint::getSplitFromID( unsigned splitID, bool impliedSplit/*=false*/ ) const
 {
     ASSERT( splitID == 0 || splitID == 1 );
-    return splitID == 0 ? getInactiveSplit( ) : getActiveSplit( );
+    return splitID == 0 ? getInactiveSplit( impliedSplit ) : getActiveSplit( impliedSplit );
 }
 
-PiecewiseLinearCaseSplit ReluConstraint::getInactiveSplit() const
+PiecewiseLinearCaseSplit ReluConstraint::getInactiveSplit(bool impliedSplit/*=false*/) const
 {
+    unsigned nextSplitLevel = 0;
+    if (_statistics)
+      nextSplitLevel = _statistics->getCurrentStackDepth() + 1;
     // Inactive phase: b <= 0, f = 0
     PiecewiseLinearCaseSplit inactivePhase;
     inactivePhase.setConstraintAndSplitID( _id, 0U );
-    inactivePhase.storeBoundTightening( Tightening( _b, 0.0, Tightening::UB ) );
-    inactivePhase.storeBoundTightening( Tightening( _f, 0.0, Tightening::UB ) );
+    Tightening bound1 = Tightening( _b, 0.0, Tightening::UB );
+    if(!impliedSplit)
+      bound1.setCausingSplitInfo( _id, 0, nextSplitLevel );
+    Tightening bound2 = Tightening( _f, 0.0, Tightening::UB );
+    if(!impliedSplit)
+      bound2.setCausingSplitInfo( _id, 0, nextSplitLevel );
+    inactivePhase.storeBoundTightening( bound1 );
+    inactivePhase.storeBoundTightening( bound2 );
     return inactivePhase;
 }
 
-PiecewiseLinearCaseSplit ReluConstraint::getActiveSplit() const
+PiecewiseLinearCaseSplit ReluConstraint::getActiveSplit(bool impliedSplit/*=false*/) const
 {
+    unsigned nextSplitLevel = 0;
+    if (_statistics)
+      nextSplitLevel = _statistics->getCurrentStackDepth() + 1;
     // Active phase: b >= 0, b - f = 0
     PiecewiseLinearCaseSplit activePhase;
     activePhase.setConstraintAndSplitID( _id, 1U );
-    activePhase.storeBoundTightening( Tightening( _b, 0.0, Tightening::LB ) );
+    Tightening bound = Tightening( _b, 0.0, Tightening::LB );
+    // this fact will be caused by next split
+    if(!impliedSplit)
+      bound.setCausingSplitInfo( _id, 1, nextSplitLevel );
+    activePhase.storeBoundTightening( bound );
     Equation activeEquation( Equation::EQ );
     activeEquation.addAddend( 1, _b );
     activeEquation.addAddend( -1, _f );
     activeEquation.setScalar( 0 );
+    if(!impliedSplit)
+      activeEquation.setCausingSplitInfo( _id, 1, nextSplitLevel );
     activePhase.addEquation( activeEquation );
     return activePhase;
 }
@@ -419,9 +477,19 @@ PiecewiseLinearCaseSplit ReluConstraint::getValidCaseSplit() const
     ASSERT( _phaseStatus != PhaseStatus::PHASE_NOT_FIXED );
 
     if ( _phaseStatus == PhaseStatus::PHASE_ACTIVE )
-        return getActiveSplit();
+    {
+        PiecewiseLinearCaseSplit activeSplit = getActiveSplit(true);
 
-    return getInactiveSplit();
+        if ( _factTracker && _factTracker->hasFactAffectingBound( _phaseFixCausingVariable, _phaseFixCausingBoundType ) )
+            activeSplit.addExplanation( _factTracker->getFactAffectingBound( _phaseFixCausingVariable, _phaseFixCausingBoundType ) );
+
+        return activeSplit;
+    }
+
+    PiecewiseLinearCaseSplit inactiveSplit = getInactiveSplit(true);
+    if ( _factTracker && _factTracker->hasFactAffectingBound( _phaseFixCausingVariable, _phaseFixCausingBoundType ) )
+        inactiveSplit.addExplanation( _factTracker->getFactAffectingBound( _phaseFixCausingVariable, _phaseFixCausingBoundType ) );
+    return inactiveSplit;
 }
 
 void ReluConstraint::dump( String &output ) const

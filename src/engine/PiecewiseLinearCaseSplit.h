@@ -44,6 +44,11 @@ public:
     unsigned getSplitID() const;
 
     /*
+      Add explanation for why this case split is being done (for implied splits)
+    */
+    void addExplanation( const Fact* explanation );
+
+    /*
       Dump the case split - for debugging purposes.
     */
     void dump() const;
