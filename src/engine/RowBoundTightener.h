@@ -1,3 +1,4 @@
+
 /*********************                                                        */
 /*! \file RowBoundTightener.h
  ** \verbatim
@@ -10,7 +11,6 @@
  ** directory for licensing information.\endverbatim
  **
  ** [[ Add lengthier description here ]]
-
 **/
 
 #ifndef __RowBoundTightener_h__
@@ -26,6 +26,12 @@
 class RowBoundTightener : public IRowBoundTightener
 {
 public:
+    enum QueryType {
+      LB = 0,
+      UB = 1,
+      BOTH = 2,
+    };
+
     RowBoundTightener( const ITableau &tableau );
     ~RowBoundTightener();
 
@@ -38,11 +44,6 @@ public:
       Initialize tightest lower/upper bounds using the talbeau.
     */
     void resetBounds();
-
-    /*
-      Clear all learned bounds, without reallocating memory.
-    */
-    void clear();
 
     /*
       Callbacks from the Tableau, to inform of bounds tightened by,
@@ -100,6 +101,18 @@ public:
     void setFactTracker( FactTracker* factTracker );
 
     /*
+      Using internal factTracker to find the external explanations
+      for the upper and lower bounds of the varialbe. This is performed
+      when we get an InfeasibleQueryException.
+    */
+    List<const Fact*> findExternalExplanations( unsigned variable, QueryType queryType = BOTH ) const;
+
+    /*
+      When we don't need fact tracking, this avoids assert errors in internal fact tracker.
+    */
+    void nullifyInternalFactTracker();
+
+    /*
       Have the Bound Tightener start reporting statistics.
      */
     void setStatistics( Statistics *statistics );
@@ -116,14 +129,19 @@ private:
       whether each bound has been tightened by the tightener.
     */
     double *_lowerBounds;
+    Fact* *_lowerBoundExplanations;
     double *_upperBounds;
+    Fact* *_upperBoundExplanations;
     bool *_tightenedLower;
     bool *_tightenedUpper;
+    bool *_lowerBoundIsInternal;
+    bool *_upperBoundIsInternal;
 
     /*
       Work space for the inverted basis matrix tighteners
     */
     TableauRow **_rows;
+    List<unsigned> *_rowExplanations;
     double *_z;
     double *_ciTimesLb;
     double *_ciTimesUb;
@@ -135,6 +153,11 @@ private:
       Statistics collection
     */
     Statistics *_statistics;
+
+    /*
+      Keep track of reasoning for internal bound updates
+    */
+    FactTracker *_internalFactTracker;
 
     /*
       Free internal work memory.
@@ -166,6 +189,8 @@ private:
       of tighter bounds found.
     */
     unsigned tightenOnSingleInvertedBasisRow( const TableauRow &row );
+
+    bool isBoundInternal(unsigned var, QueryType type);
 };
 
 #endif // __RowBoundTightener_h__

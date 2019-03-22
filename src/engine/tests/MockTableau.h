@@ -27,10 +27,10 @@
 class MockTableau : public ITableau
 {
 public:
-	MockTableau()
-	{
-		wasCreated = false;
-		wasDiscarded = false;
+    MockTableau()
+    {
+        wasCreated = false;
+        wasDiscarded = false;
 
         setDimensionsCalled = false;
         lastRightHandSide = NULL;
@@ -80,8 +80,8 @@ public:
         }
     }
 
-	bool wasCreated;
-	bool wasDiscarded;
+    bool wasCreated;
+    bool wasDiscarded;
 
     List<unsigned> mockCandidates;
     unsigned mockEnteringVariable;
@@ -95,18 +95,18 @@ public:
         mockEnteringVariable = nonBasic;
     }
 
-	void mockConstructor()
-	{
-		TS_ASSERT( !wasCreated );
-		wasCreated = true;
-	}
+    void mockConstructor()
+    {
+        TS_ASSERT( !wasCreated );
+        wasCreated = true;
+    }
 
-	void mockDestructor()
-	{
-		TS_ASSERT( wasCreated );
-		TS_ASSERT( !wasDiscarded );
-		wasDiscarded = true;
-	}
+    void mockDestructor()
+    {
+        TS_ASSERT( wasCreated );
+        TS_ASSERT( !wasDiscarded );
+        wasDiscarded = true;
+    }
 
     bool setDimensionsCalled;
     unsigned lastM;
@@ -215,6 +215,11 @@ public:
                     return false;
         }
         return true;
+    }
+
+    unsigned getInvalidBoundsVariable() const
+    {
+        return 0;
     }
 
     unsigned getBasicStatus( unsigned /* basic */ ) { return 0; }
@@ -397,14 +402,9 @@ public:
 
     unsigned lastGetRowIndex;
     TableauRow *nextRow;
-    void getTableauRow( unsigned index, TableauRow *row )
+    void getTableauRow( unsigned index, TableauRow */*row*/ )
     {
         lastGetRowIndex = index;
-        TS_ASSERT_EQUALS( row->_size, nextRow->_size );
-
-        for ( unsigned i = 0; i < row->_size; ++i )
-            row->_row[i] = nextRow->_row[i];
-        row->_scalar = nextRow->_scalar;
     }
 
     Map<unsigned, const double *> nextAColumn;
@@ -440,28 +440,17 @@ public:
     }
 
     double *A;
-    void getSparseARow( unsigned row, SparseUnsortedList *result ) const
+    void getSparseARow( unsigned /*row*/, SparseUnsortedList */*result*/ ) const
     {
-        double *temp = new double[lastN];
-
-        for ( unsigned i = 0; i < lastN; ++i )
-        {
-            temp[i] = A[row*lastN + i];
-        }
-
-        result->initialize( temp, lastN );
-
-        delete[] temp;
     }
 
     mutable SparseUnsortedList sparseRow;
-    const SparseUnsortedList *getSparseARow( unsigned row ) const
+    const SparseUnsortedList *getSparseARow( unsigned /*row*/ ) const
     {
-        sparseRow.initialize( A + ( row * lastN ), lastN );
         return &sparseRow;
     }
 
-		double getbRow( unsigned row ) const
+    double getbRow( unsigned row ) const
     {
         double* temp = new double[lastM];
         double bRow = temp[row];
@@ -530,13 +519,11 @@ public:
     {
     }
 
-		void setFactTracker( FactTracker* /* tracker */)
-		{
-		}
-
     void setStatistics( Statistics */* statistics */ )
     {
     }
+
+        void setFactTracker( FactTracker* /* tracker */){}
 
     double *b;
     const double *getRightHandSide() const

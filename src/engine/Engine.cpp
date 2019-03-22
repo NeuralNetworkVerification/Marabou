@@ -1311,7 +1311,7 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
     _statistics.addTimeForPrecisionRestoration( TimeUtils::timePassed( start, end ) );
 
     _statistics.incNumPrecisionRestorations();
-    _rowBoundTightener->clear();
+    _rowBoundTightener->resetBounds();
     _constraintBoundTightener->resetBounds();
 
     // debug
@@ -1332,7 +1332,7 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
         _statistics.addTimeForPrecisionRestoration( TimeUtils::timePassed( start, end ) );
         _statistics.incNumPrecisionRestorations();
 
-        _rowBoundTightener->clear();
+        _rowBoundTightener->resetBounds();
         _constraintBoundTightener->resetBounds();
 
         // debug
