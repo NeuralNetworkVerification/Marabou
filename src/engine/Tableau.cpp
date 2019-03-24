@@ -2655,11 +2655,6 @@ List<const Fact*> Tableau::getExplanationsForSaturatedTableauRow()
                     if ( ( FloatUtils::gt( row._row[j]._coefficient, 0 ) &&  FloatUtils::gt( _upperBounds[nonBasicVariable], _nonBasicAssignment[j] ) )
                         || ( FloatUtils::lt( row._row[j]._coefficient, 0 ) && FloatUtils::lt( _lowerBounds[nonBasicVariable], _nonBasicAssignment[j] ) ) )
                     {
-                        // Debugging:
-                        // printf( "assignment is too small, coefficient is %f, basic variable %d has UB %f, LB %f and assignment %f, but non basic variable %d has UB %f, LB %f and assignment %f\n",
-                        //     row._row[j]._coefficient,
-                        //     i, _upperBounds[basicVariable], _lowerBounds[basicVariable], basicAssignment,
-                        //     j, _upperBounds[nonBasicVariable], _lowerBounds[nonBasicVariable], _nonBasicAssignment[j] );
                         rowIsSaturated = false;
                         break;
                     }
@@ -2669,11 +2664,6 @@ List<const Fact*> Tableau::getExplanationsForSaturatedTableauRow()
                     if ( ( FloatUtils::gt( row._row[j]._coefficient, 0 ) && FloatUtils::lt( _lowerBounds[nonBasicVariable], _nonBasicAssignment[j] ) )
                         || ( FloatUtils::lt( row._row[j]._coefficient, 0 ) && FloatUtils::gt( _upperBounds[nonBasicVariable], _nonBasicAssignment[j] ) ) )
                     {
-                        // Debugging:
-                        // printf( "assignment is too large, coefficient is %f, basic variable %d has UB %f, LB %f and assignment %f, but non basic variable %d has UB %f, LB %f and assignment %f\n",
-                        //     row._row[j]._coefficient,
-                        //     i, _upperBounds[basicVariable], _lowerBounds[basicVariable], basicAssignment,
-                        //     j, _upperBounds[nonBasicVariable], _lowerBounds[nonBasicVariable], _nonBasicAssignment[j] );
                         rowIsSaturated = false;
                         break;
                     }
@@ -2690,16 +2680,9 @@ List<const Fact*> Tableau::getExplanationsForSaturatedTableauRow()
                 explanations.append( _factTracker->getFactAffectingEquation( j ) );
             }
 
-            printf("Saturated row: ");
-            printf("x%d=", basicVariable);
-            bool first = true;
             // Get bound explanations
             for ( unsigned j = 0; j < _n - _m; ++j )
             {
-                if(!FloatUtils::isZero(row._row[j]._coefficient)){
-                    printf("%s%fx%d", first||(FloatUtils::lt(row._row[j]._coefficient,0))?"":"+", row._row[j]._coefficient, row._row[j]._var);
-                    first = false;
-                }
                 if ( FloatUtils::gt( row._row[j]._coefficient, 0 ) )
                 {
                     if ( assignmentIsTooSmall )
@@ -2727,8 +2710,6 @@ List<const Fact*> Tableau::getExplanationsForSaturatedTableauRow()
                     }
                 }
             }
-
-            printf("\n");
 
             if ( assignmentIsTooSmall )
             {

@@ -33,6 +33,7 @@
 #include "SignalHandler.h"
 #include "SmtCore.h"
 #include "Statistics.h"
+#include <string>
 
 class EngineState;
 class InputQuery;
@@ -58,7 +59,7 @@ public:
       Attempt to find a feasible solution for the input within a time limit
       (a timeout of 0 means no time limit). Returns true if found, false if infeasible.
     */
-    bool solve( unsigned timeoutInSeconds = 0 );
+    bool solve( unsigned timeoutInSeconds = 0, std::string prefix="", bool crossValidation=false );
 
     /*
       Process the input query and pass the needed information to the
@@ -87,6 +88,13 @@ public:
     void quitSignal();
 
     const Statistics *getStatistics() const;
+
+    /*
+      Temporary functions and variables to test backtracking by CDCL
+    */
+    void dumpInfeasibleSystemToSMTForTest( List<const Fact*> &explanations, std::string filename );
+    InputQuery _tempInputQueryForTest;
+    unsigned _crossValidationCountForTest;
 
     /*
       Get the exit code
@@ -131,6 +139,10 @@ private:
       The existing piecewise-linear constraints.
     */
     List<PiecewiseLinearConstraint *> _plConstraints;
+    // Guy: PLCs can duplicate themselves. I think we only use that during the
+    // preprocessing phase or something, but we should look into that - to make
+    // sure the mapping here remains up-to-date.
+    Map<unsigned, PiecewiseLinearConstraint *> _plConstraintFromID;
 
     /*
       Piecewise linear constraints that are currently violated.
@@ -142,10 +154,10 @@ private:
     */
     PiecewiseLinearConstraint *_plConstraintToFix;
 
-	/*
-	  Preprocessed InputQuery
-	*/
-	InputQuery _preprocessedQuery;
+  /*
+    Preprocessed InputQuery
+  */
+  InputQuery _preprocessedQuery;
 
     /*
       Pivot selection strategies.
@@ -171,7 +183,8 @@ private:
     SmtCore _smtCore;
 
     /*
-      Fact Tracker object for managing facts learned
+      The Fact Tracker keeps track of facts (bounds, equations)
+      generated via case splits or via deductions.
     */
     FactTracker _factTracker;
 
@@ -360,6 +373,7 @@ private:
       Check whether a timeout value has been provided and exceeded.
     */
     bool shouldExitDueToTimeout( unsigned timeout ) const;
+
 };
 
 #endif // __Engine_h__

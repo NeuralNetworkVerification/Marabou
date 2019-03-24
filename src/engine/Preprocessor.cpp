@@ -319,7 +319,8 @@ bool Preprocessor::processEquations()
                 delete[] ciTimesUb;
                 delete[] ciSign;
 
-                throw InfeasibleQueryException();
+                List<const Fact*> emptyExplanationForPreprocessing;
+                throw InfeasibleQueryException( emptyExplanationForPreprocessing );
             }
         }
 
@@ -357,7 +358,8 @@ bool Preprocessor::processEquations()
 
             if ( FloatUtils::areDisequal( sum, equation->_scalar, GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD ) )
             {
-                throw InfeasibleQueryException();
+                List<const Fact*> emptyExplanationForPreprocessing;
+                throw InfeasibleQueryException( emptyExplanationForPreprocessing );
             }
             equation = equations.erase( equation );
         }
@@ -370,20 +372,20 @@ bool Preprocessor::processConstraints()
 {
     bool tighterBoundFound = false;
 
-	for ( auto &constraint : _preprocessed.getPiecewiseLinearConstraints() )
-	{
-		for ( unsigned variable : constraint->getParticipatingVariables() )
-		{
-			constraint->notifyLowerBound( variable, _preprocessed.getLowerBound( variable ) );
-			constraint->notifyUpperBound( variable, _preprocessed.getUpperBound( variable ) );
-		}
+    for ( auto &constraint : _preprocessed.getPiecewiseLinearConstraints() )
+    {
+        for ( unsigned variable : constraint->getParticipatingVariables() )
+        {
+            constraint->notifyLowerBound( variable, _preprocessed.getLowerBound( variable ) );
+            constraint->notifyUpperBound( variable, _preprocessed.getUpperBound( variable ) );
+        }
 
         List<Tightening> tightenings;
         constraint->getEntailedTightenings( tightenings );
 
         for ( const auto &tightening : tightenings )
-		{
-			if ( ( tightening._type == Tightening::LB ) &&
+        {
+            if ( ( tightening._type == Tightening::LB ) &&
                  ( FloatUtils::gt( tightening._value, _preprocessed.getLowerBound( tightening._variable ) ) ) )
             {
                 tighterBoundFound = true;
@@ -402,8 +404,8 @@ bool Preprocessor::processConstraints()
                                        GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD ) )
                 _preprocessed.setUpperBound( tightening._variable,
                                              _preprocessed.getLowerBound( tightening._variable ) );
-		}
-	}
+        }
+    }
 
     return tighterBoundFound;
 }
@@ -465,11 +467,11 @@ bool Preprocessor::processIdenticalVariables()
 
 void Preprocessor::collectFixedValues()
 {
-	for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
-	{
+    for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
+    {
         if ( FloatUtils::areEqual( _preprocessed.getLowerBound( i ), _preprocessed.getUpperBound( i ) ) )
             _fixedVariables[i] = _preprocessed.getLowerBound( i );
-	}
+    }
 }
 
 void Preprocessor::eliminateVariables()
@@ -482,21 +484,21 @@ void Preprocessor::eliminateVariables()
         _statistics->ppSetNumEliminatedVars( _fixedVariables.size() + _mergedVariables.size() );
 
     // Compute the new variable indices, after the elimination of fixed variables
- 	int offset = 0;
-	for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
-	{
+    int offset = 0;
+    for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
+    {
         if ( _fixedVariables.exists( i ) || _mergedVariables.exists( i ) )
             ++offset;
         else
             _oldIndexToNewIndex[i] = i - offset;
-	}
+    }
 
     // Next, eliminate the fixed variables from the equations
     List<Equation> &equations( _preprocessed.getEquations() );
     List<Equation>::iterator equation = equations.begin();
 
     while ( equation != equations.end() )
-	{
+    {
         // Each equation is of the form sum(addends) = scalar. So, any fixed variable
         // needs to be subtracted from the scalar. Merged variables should have already
         // been removed, so we don't care about them
@@ -529,13 +531,16 @@ void Preprocessor::eliminateVariables()
 
             // No addends left, scalar should be 0
             if ( !FloatUtils::isZero( equation->_scalar ) )
-                throw InfeasibleQueryException();
+            {
+              List<const Fact*> emptyExplanationForPreprocessing;
+              throw InfeasibleQueryException( emptyExplanationForPreprocessing );
+            }
             else
                 equation = equations.erase( equation );
         }
         else
             ++equation;
-	}
+    }
 
     // Let the piecewise-linear constraints know of any eliminated variables, and remove
     // the constraints themselves if they become obsolete.
@@ -568,18 +573,18 @@ void Preprocessor::eliminateVariables()
         }
         else
             ++constraint;
-	}
+    }
 
     // Let the remaining piecewise-lienar constraints know of any changes in indices.
     for ( const auto &constraint : constraints )
-	{
-		List<unsigned> participatingVariables = constraint->getParticipatingVariables();
+    {
+        List<unsigned> participatingVariables = constraint->getParticipatingVariables();
         for ( unsigned variable : participatingVariables )
         {
             if ( _oldIndexToNewIndex.at( variable ) != variable )
                 constraint->updateVariableIndex( variable, _oldIndexToNewIndex.at( variable ) );
         }
-	}
+    }
 
     // Let the SBT know of changes in indices and merged variables
     if ( _preprocessed._sbt )
@@ -587,7 +592,7 @@ void Preprocessor::eliminateVariables()
 
     // Update the lower/upper bound maps
     for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
-	{
+    {
         if ( _fixedVariables.exists( i ) || _mergedVariables.exists( i ) )
             continue;
 
@@ -595,7 +600,7 @@ void Preprocessor::eliminateVariables()
 
         _preprocessed.setLowerBound( _oldIndexToNewIndex.at( i ), _preprocessed.getLowerBound( i ) );
         _preprocessed.setUpperBound( _oldIndexToNewIndex.at( i ), _preprocessed.getUpperBound( i ) );
-	}
+    }
 
     // Make any adjustments in the stored debugging solution, if needed
     for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )

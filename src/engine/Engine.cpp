@@ -100,7 +100,7 @@ void Engine::adjustWorkMemorySize()
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Engine::work" );
 }
 
-bool Engine::solve( unsigned timeoutInSeconds )
+bool Engine::solve( unsigned timeoutInSeconds, std::string fileprefix/*=""*/, bool crossValidation/*=false*/ )
 {
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
@@ -199,7 +199,14 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
             if ( !_tableau->allBoundsValid() )
             {
-                throw InfeasibleQueryException();
+                // Some variable bounds are invalid, so the query is unsat
+                unsigned failureVar = _tableau->getInvalidBoundsVariable();
+                List<const Fact*> failureExplanations;
+                // ASSERT( ( _factTracker.hasFactAffectingBound( failureVar, FactTracker::LB ) ));
+                failureExplanations.append( _factTracker.getFactAffectingBound( failureVar, FactTracker::LB ) );
+                // ASSERT ( _factTracker.hasFactAffectingBound( failureVar, FactTracker::UB ) );
+                failureExplanations.append( _factTracker.getFactAffectingBound( failureVar, FactTracker::UB ) );
+                throw InfeasibleQueryException( failureExplanations );
             }
 
             if ( allVarsWithinBounds() )
@@ -275,9 +282,37 @@ bool Engine::solve( unsigned timeoutInSeconds )
         }
         catch ( const InfeasibleQueryException & e)
         {
+            auto explanations = e.getExplanations();
+
+            if ( GlobalConfiguration::CDCL_LOGGING )
+            {
+                auto splits = _factTracker.getConstraintsAndSplitsCausingFacts(explanations);
+                List<PiecewiseLinearCaseSplit> soFar;
+
+                _smtCore.allSplitsSoFar(soFar, false);
+                Set<unsigned> splitSet;
+                for(auto split : splits)
+                    splitSet.insert( split.first() );
+
+                unsigned blameSize = splits.size();
+                if (blameSize==0) blameSize=_statistics.getCurrentStackDepth();
+                printf("BLAME %u %u %u %u\n", splits.size(),
+                  blameSize, _statistics.getCurrentStackDepth(), _smtCore.printBackjumpLevelForTest(splitSet));
+                
+                if ( GlobalConfiguration::CDCL_CROSS_VALIDATION && explanations.size() && !crossValidation ){
+                    dumpInfeasibleSystemToSMTForTest( explanations, fileprefix+"_" );
+                    InputQuery crossValidationQuery = _tempInputQueryForTest;
+                    List<Equation> infeasibleSystem;
+                    _smtCore.getBlamedSplitFacts( splitSet, infeasibleSystem );
+                    for ( Equation eq: infeasibleSystem )
+                        crossValidationQuery.addEquation( eq );
+                    crossValidationQuery.saveQuery( String( "cv_query/" + fileprefix+"_"+getTimeInNanoseconds() + ".txt" ) );
+                }
+            }
+
             // The current query is unsat, and we need to pop.
             // If we're at level 0, the whole query is unsat.
-            if ( !_smtCore.popSplit() )
+            if ( !_smtCore.popSplit( explanations ) )
             {
                 printf( "\nEngine::solve: UNSAT query\n" );
                 _statistics.print();
@@ -495,7 +530,7 @@ void Engine::performSimplexStep()
               a minimal explanation, but it is a sufficient one.
             */
 
-            throw InfeasibleQueryException();
+            throw InfeasibleQueryException( explanation );
         }
     }
 
@@ -634,6 +669,8 @@ void Engine::fixViolatedPlConstraintIfPossible()
 
 bool Engine::processInputQuery( InputQuery &inputQuery )
 {
+    _tempInputQueryForTest = inputQuery;
+    _crossValidationCountForTest = 0U;
     return processInputQuery( inputQuery, GlobalConfiguration::PREPROCESS_INPUT_QUERY );
 }
 
@@ -824,6 +861,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             constraint->registerAsWatcher( _tableau );
             constraint->setFactTracker( &_factTracker );
             constraint->setStatistics( &_statistics );
+            _plConstraintFromID[constraint->getID()] = constraint;
         }
         _tableau->initializeTableau( independentColumns );
 
@@ -1551,6 +1589,80 @@ bool Engine::basisRestorationNeeded() const
 const Statistics *Engine::getStatistics() const
 {
     return &_statistics;
+}
+
+void Engine::dumpInfeasibleSystemToSMTForTest( List<const Fact*> &explanations, std::string fileprefix )
+{
+    List<Equation> infeasibleSystem;
+
+    for( const Fact* fact : explanations )
+    {
+        if( fact->isEquation() )
+        {
+            const Equation* equation = dynamic_cast<const Equation*>( fact );
+            infeasibleSystem.append( *equation );
+        }
+        else
+        {
+            const Tightening* bound = dynamic_cast<const Tightening*>( fact );
+            if( bound->_type == Tightening::UB )
+            {
+                Equation equation( Equation::LE );
+                equation.addAddend( 1, bound->_variable );
+                equation.setScalar( bound->_value );
+                infeasibleSystem.append( equation );
+            }
+            else
+            {
+                Equation equation( Equation::GE );
+                equation.addAddend( 1, bound->_variable );
+                equation.setScalar( bound->_value );
+                infeasibleSystem.append( equation );
+            }
+        }
+    }
+
+    std::string timestr = getTimeInNanoseconds();
+    std::fstream fs("smt/"+fileprefix+"_"+timestr+".txt", std::ios::in | std::ios::app );
+    std::string s_equations, s_variables;
+    Set<unsigned> variables;
+
+    for( Equation eq : infeasibleSystem )
+    {
+        std::string s_eq, s_op;
+        for( Equation::Addend addend : eq._addends )
+        {
+            variables.insert( addend._variable );
+
+            if( s_eq.length() )
+                s_eq = "(+ " + s_eq + " (* x" + std::to_string( addend._variable ) + " " + std::to_string( addend._coefficient ) + "))";
+            else
+                s_eq = "(* x" + std::to_string( addend._variable ) + " " + std::to_string( addend._coefficient ) + ")";
+        }
+
+        if( eq._type == Equation::LE )
+            s_op = "<=";
+        else if( eq._type == Equation::GE )
+            s_op = ">=";
+        else
+            s_op = "=";
+
+        s_eq = "(assert (" + s_op + " " + s_eq + " " + std::to_string( eq._scalar ) + "))";
+
+        s_equations = s_equations + s_eq + "\n";
+    }
+
+    for( unsigned var : variables )
+        s_variables = s_variables + "(declare-const x" + std::to_string( var ) + " Real)" + "\n";
+
+    fs << s_variables << s_equations << "(check-sat)" << std::endl << "(reset)" << std::endl;
+    fs.close();
+
+    InputQuery infeasibleQuery;
+    infeasibleQuery.setNumberOfVariables( _tempInputQueryForTest.getNumberOfVariables() );
+    for ( Equation eq: infeasibleSystem )
+        infeasibleQuery.addEquation( eq );
+    infeasibleQuery.saveQuery( String( "smt/" + fileprefix+"_"+timestr + "ForMarabou.txt" ) );
 }
 
 void Engine::log( const String &message )

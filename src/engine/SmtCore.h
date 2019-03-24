@@ -17,6 +17,7 @@
 #define __SmtCore_h__
 
 #include "FactTracker.h"
+#include "HashSet.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
 #include "Stack.h"
@@ -63,7 +64,7 @@ public:
       Pop an old split from the stack, and perform a new split as
       needed. Return true if successful, false if the stack is empty.
     */
-    bool popSplit();
+    bool popSplit(const List<const Fact*>& explanation);
 
     /*
       The current stack depth.
@@ -79,16 +80,13 @@ public:
       Return a list of all splits performed so far, both SMT-originating and valid ones,
       in the correct order.
     */
-    void allSplitsSoFar( List<PiecewiseLinearCaseSplit> &result ) const;
+    void allSplitsSoFar( List<PiecewiseLinearCaseSplit> &result, bool includeImplied=true ) const;
 
     /*
       Have the SMT core start reporting statistics.
     */
     void setStatistics( Statistics *statistics );
 
-    /*
-      Have the SMT core know fact tracking done by engine
-    */
     void setFactTracker( FactTracker* factTracker );
 
     /*
@@ -103,6 +101,8 @@ public:
     void storeDebuggingSolution( const Map<unsigned, double> &debuggingSolution );
     bool checkSkewFromDebuggingSolution();
     bool splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split, String &error ) const;
+    unsigned printBackjumpLevelForTest( const Set<unsigned> &blamedConstraints );
+    void getBlamedSplitFacts( const Set<unsigned> &blamedConstraints, List<Equation> &splitFacts );
 
 private:
     /*

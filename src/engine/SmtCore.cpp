@@ -100,6 +100,7 @@ void SmtCore::performSplit()
     List<PiecewiseLinearCaseSplit> splits = _constraintForSplitting->getCaseSplits();
     ASSERT( !splits.empty() );
     ASSERT( splits.size() >= 2 ); // Not really necessary, can add code to handle this case.
+
     _constraintForSplitting->setActiveConstraint( false );
 
     // Obtain the current state of the engine
@@ -110,8 +111,9 @@ void SmtCore::performSplit()
 
     StackEntry *stackEntry = new StackEntry;
 
-    if ( _factTracker )
+    if ( _factTracker ){
         stackEntry->_numFacts = _factTracker->getNumFacts();
+    }
 
     // Perform the first split: add bounds and equations
     List<PiecewiseLinearCaseSplit>::iterator split = splits.begin();
@@ -141,7 +143,75 @@ unsigned SmtCore::getStackDepth() const
     return _stack.size();
 }
 
-bool SmtCore::popSplit()
+unsigned SmtCore::printBackjumpLevelForTest( const Set<unsigned> &blamedConstraints )
+{
+    if ( _stack.size() <= 1 || blamedConstraints.size()==0)
+    {
+        printf("Backjump: no more than 1 split\n");
+        return 1;
+    }
+
+    unsigned num = 0;
+    List<StackEntry*>::iterator it = _stack.end();
+    --it;
+    unsigned times = 0;
+    while(1)
+    {
+        if( blamedConstraints.exists( (*it)->_activeSplit.getConstraintID() ) )
+            times++;
+        if(times<2)
+          num++;
+        else
+            break;
+
+        if( it != _stack.begin() )
+            --it;
+        else
+            break;
+    }
+
+    printf("Backjump: can backjump %d levels\n", num);
+    return num;
+}
+
+void SmtCore::getBlamedSplitFacts( const Set<unsigned> &blamedConstraints, List<Equation> &splitFacts )
+{
+    for( List<StackEntry*>::iterator it = _stack.begin(); it != _stack.end(); ++it )
+    {
+        if( !blamedConstraints.exists( (*it)->_activeSplit.getConstraintID() ) )
+            continue;
+
+        PiecewiseLinearCaseSplit& split = (*it)->_activeSplit;
+        List<Equation> equations = split.getEquations();
+        for( Equation equation : equations )
+            splitFacts.append( equation );
+
+        if( equations.size() <= 1 )
+        {
+            // This should only happen for relu splits, max constraint split has at least 2 equations
+            List<Tightening> bounds = split.getBoundTightenings();
+            for( Tightening bound : bounds )
+            {
+                if( bound._type == Tightening::UB )
+                {
+                    Equation equation( Equation::LE );
+                    equation.addAddend( 1, bound._variable );
+                    equation.setScalar( bound._value );
+                    splitFacts.append( equation );
+                }
+                else
+                {
+                    Equation equation( Equation::GE );
+                    equation.addAddend( 1, bound._variable );
+                    equation.setScalar( bound._value );
+                    splitFacts.append( equation );
+                }
+            }
+        }
+    }
+}
+
+bool SmtCore::popSplit(const List<const Fact*>& /*explanation*/)
 {
     log( "Performing a pop" );
 
@@ -179,7 +249,17 @@ bool SmtCore::popSplit()
             if ( _factTracker )
             {
               while( _factTracker->getNumFacts() > oldNumFacts )
+              {
                 _factTracker->popFact();
+              }
+              if(_statistics){
+                Set<unsigned> constraints;
+                List<PiecewiseLinearCaseSplit> soFar;
+                allSplitsSoFar(soFar);
+                for(auto x:soFar)
+                  constraints.insert(x.getConstraintID());
+                // _factTracker->verifySplitLevel(_statistics->getCurrentStackDepth(), constraints);
+              }
             }
             return false;
         }
@@ -198,12 +278,20 @@ bool SmtCore::popSplit()
     log( "\tRestoring engine state..." );
     _engine->restoreState( *(stackEntry->_engineState) );
     log( "\tRestoring engine state - DONE" );
-
     if ( _factTracker )
     {
       unsigned oldNumFacts = stackEntry->_numFacts;
       while( _factTracker->getNumFacts() > oldNumFacts )
+      {
         _factTracker->popFact();
+      }
+      if(_statistics){
+        Set<unsigned> constraints;
+        List<PiecewiseLinearCaseSplit> soFar;
+        allSplitsSoFar(soFar);
+        for(auto x:soFar)
+          constraints.insert(x.getConstraintID());
+      }
     }
 
     // Apply the new split and erase it from the list
@@ -247,17 +335,19 @@ void SmtCore::recordImpliedValidSplit( PiecewiseLinearCaseSplit &validSplit )
     checkSkewFromDebuggingSolution();
 }
 
-void SmtCore::allSplitsSoFar( List<PiecewiseLinearCaseSplit> &result ) const
+void SmtCore::allSplitsSoFar( List<PiecewiseLinearCaseSplit> &result, bool includeImplied ) const
 {
     result.clear();
 
     for ( const auto &it : _impliedValidSplitsAtRoot )
+      if(includeImplied)
         result.append( it );
 
     for ( const auto &it : _stack )
     {
         result.append( it->_activeSplit );
         for ( const auto &impliedSplit : it->_impliedValidSplits )
+          if(includeImplied)
             result.append( impliedSplit );
     }
 }

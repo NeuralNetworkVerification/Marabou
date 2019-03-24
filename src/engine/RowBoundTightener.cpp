@@ -582,7 +582,7 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
     if ( FloatUtils::gt( _lowerBounds[y], _upperBounds[y] ) )
     {
         List<const Fact*> failureExplanations = findExternalExplanations( y );
-        throw InfeasibleQueryException();
+        throw InfeasibleQueryException( failureExplanations );
     }
 
     // Next, do a pass for each of the rhs variables.
@@ -755,7 +755,7 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
         if ( FloatUtils::gt( _lowerBounds[xi], _upperBounds[xi] ) )
         {
             List<const Fact*> failureExplanations = findExternalExplanations( xi );
-            throw InfeasibleQueryException();
+            throw InfeasibleQueryException( failureExplanations );
         }
     }
 
@@ -1008,7 +1008,7 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
         if ( FloatUtils::gt( _lowerBounds[index], _upperBounds[index] ) )
         {
             List<const Fact*> failureExplanations =  findExternalExplanations( index );
-            throw InfeasibleQueryException();
+            throw InfeasibleQueryException( failureExplanations );
         }
     }
 

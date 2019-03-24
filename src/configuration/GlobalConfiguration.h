@@ -193,6 +193,8 @@ public:
     static const bool GAUSSIAN_ELIMINATION_LOGGING;
     static const bool QUERY_LOADER_LOGGING;
     static const bool SYMBOLIC_BOUND_TIGHTENER_LOGGING;
+    static const bool CDCL_LOGGING;
+    static const bool CDCL_CROSS_VALIDATION;
 };
 
 #endif // __GlobalConfiguration_h__
