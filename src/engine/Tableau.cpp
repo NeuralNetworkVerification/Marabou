@@ -1693,12 +1693,30 @@ bool Tableau::allBoundsValid() const
     return _boundsValid;
 }
 
+unsigned Tableau::getInvalidBoundsVariable() const
+{
+    ASSERT( !_boundsValid );
+
+    for( unsigned i = 0; i < _n - 1; ++i )
+    {
+        if ( FloatUtils::gt( _lowerBounds[i], _upperBounds[i] ) )
+            return i;
+    }
+
+    // This should never happen, right? Lets throw an exception insteadof returning n-1.
+    return _n - 1;
+}
+
 void Tableau::tightenLowerBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );
 
+    // ASSERT( FloatUtils::gt( value, _lowerBounds[variable] ) );
     if ( !FloatUtils::gt( value, _lowerBounds[variable] ) )
+    {
+        printf("Debug warning: vacuous tightening.\n");
         return;
+    }
 
     if ( _statistics )
         _statistics->incNumTightenedBounds();
@@ -1727,8 +1745,12 @@ void Tableau::tightenUpperBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );
 
+    // ASSERT( FloatUtils::lt( value, _upperBounds[variable] ) );
     if ( !FloatUtils::lt( value, _upperBounds[variable] ) )
+    {
+        printf("Debug warning: vacuous tightening.\n");
         return;
+    }
 
     if ( _statistics )
         _statistics->incNumTightenedBounds();
@@ -1760,6 +1782,13 @@ unsigned Tableau::addEquation( const Equation &equation )
     // coefficient 1.
     unsigned auxVariable = _n;
 
+    if (_factTracker)
+    {
+        Equation eqWithAux = equation;
+        eqWithAux.addAddend( 1, auxVariable );
+        _factTracker->addEquationFact( _m, eqWithAux );
+    }
+
     // Adjust the data structures
     addRow();
 
@@ -1785,6 +1814,11 @@ unsigned Tableau::addEquation( const Equation &equation )
 
     // All variables except the new one have finite bounds. Use this to compute
     // finite bounds for the new variable.
+    List<const Fact*> lbExplanation;
+    List<const Fact*> ubExplanation;
+    ASSERT(_factTracker->hasFactAffectingEquation(_m-1));
+    lbExplanation.append(_factTracker->getFactAffectingEquation(_m-1));
+    ubExplanation.append(_factTracker->getFactAffectingEquation(_m-1));
     double lb = equation._scalar;
     double ub = equation._scalar;
 
@@ -1796,15 +1830,35 @@ unsigned Tableau::addEquation( const Equation &equation )
         if ( FloatUtils::isPositive( coefficient ) )
         {
             lb -= coefficient * _upperBounds[variable];
+            // ASSERT(_factTracker->hasFactAffectingBound(variable, FactTracker::UB));
+            lbExplanation.append(_factTracker->getFactAffectingBound(variable, FactTracker::UB));
             ub -= coefficient * _lowerBounds[variable];
+            // ASSERT(_factTracker->hasFactAffectingBound(variable, FactTracker::LB));
+            ubExplanation.append(_factTracker->getFactAffectingBound(variable, FactTracker::LB));
         }
         else
         {
             lb -= coefficient * _lowerBounds[variable];
+            // ASSERT(_factTracker->hasFactAffectingBound(variable, FactTracker::LB));
+            lbExplanation.append(_factTracker->getFactAffectingBound(variable, FactTracker::LB));
             ub -= coefficient * _upperBounds[variable];
+            // ASSERT(_factTracker->hasFactAffectingBound(variable, FactTracker::UB));
+            ubExplanation.append(_factTracker->getFactAffectingBound(variable, FactTracker::UB));
         }
     }
 
+    Tightening lowerBoundFact(auxVariable, lb, Tightening::LB);
+    for(const Fact* explanation: lbExplanation)
+      lowerBoundFact.addExplanation(explanation);
+    _factTracker->addBoundFact( auxVariable, lowerBoundFact );
+
+    Tightening upperBoundFact(auxVariable, ub, Tightening::UB);
+    for(const Fact* explanation: ubExplanation)
+      upperBoundFact.addExplanation(explanation);
+    _factTracker->addBoundFact( auxVariable, upperBoundFact );
+
+    for ( const auto &watcher : _resizeWatchers )
+        watcher->notifyDimensionChange( _m, _n );
     setLowerBound( auxVariable, lb );
     setUpperBound( auxVariable, ub );
 
@@ -2039,9 +2093,6 @@ void Tableau::addRow()
     _m = newM;
     _n = newN;
     _costFunctionManager->initialize();
-
-    for ( const auto &watcher : _resizeWatchers )
-        watcher->notifyDimensionChange( _m, _n );
 
     if ( _statistics )
     {
@@ -2565,6 +2616,151 @@ bool Tableau::areLinearlyDependent( unsigned x1, unsigned x2, double &coefficien
         inverseCoefficient = 1 / coefficient;
 
     return true;
+}
+
+List<const Fact*> Tableau::getExplanationsForSaturatedTableauRow()
+{
+    List<const Fact*> explanations;
+
+    if ( !_factTracker )
+    {
+        return explanations;
+    }
+
+    try
+    {
+        for ( unsigned i = 0; i < _m; ++i )
+        {
+            // Check basic assignment out of bound
+            double basicAssignment =  getBasicAssignment( i );
+            unsigned basicVariable = _basicIndexToVariable[i];
+            bool assignmentIsTooSmall, rowIsSaturated = true;
+            if ( FloatUtils::gt( _lowerBounds[basicVariable], basicAssignment ) )
+                assignmentIsTooSmall = true;
+            else if ( FloatUtils::lt( _upperBounds[basicVariable], basicAssignment ) )
+                assignmentIsTooSmall = false;
+            else
+                continue;
+
+            TableauRow row( _n - _m );
+            getTableauRow( i, &row );
+
+            // Compute the row's coefficients for basic variable i
+            for ( unsigned j = 0; j < _n - _m; ++j )
+            {
+                unsigned nonBasicVariable = _nonBasicIndexToVariable[j];
+
+                if ( assignmentIsTooSmall )
+                {
+                    if ( ( FloatUtils::gt( row._row[j]._coefficient, 0 ) &&  FloatUtils::gt( _upperBounds[nonBasicVariable], _nonBasicAssignment[j] ) )
+                        || ( FloatUtils::lt( row._row[j]._coefficient, 0 ) && FloatUtils::lt( _lowerBounds[nonBasicVariable], _nonBasicAssignment[j] ) ) )
+                    {
+                        // Debugging:
+                        // printf( "assignment is too small, coefficient is %f, basic variable %d has UB %f, LB %f and assignment %f, but non basic variable %d has UB %f, LB %f and assignment %f\n",
+                        //     row._row[j]._coefficient,
+                        //     i, _upperBounds[basicVariable], _lowerBounds[basicVariable], basicAssignment,
+                        //     j, _upperBounds[nonBasicVariable], _lowerBounds[nonBasicVariable], _nonBasicAssignment[j] );
+                        rowIsSaturated = false;
+                        break;
+                    }
+                }
+                else
+                {
+                    if ( ( FloatUtils::gt( row._row[j]._coefficient, 0 ) && FloatUtils::lt( _lowerBounds[nonBasicVariable], _nonBasicAssignment[j] ) )
+                        || ( FloatUtils::lt( row._row[j]._coefficient, 0 ) && FloatUtils::gt( _upperBounds[nonBasicVariable], _nonBasicAssignment[j] ) ) )
+                    {
+                        // Debugging:
+                        // printf( "assignment is too large, coefficient is %f, basic variable %d has UB %f, LB %f and assignment %f, but non basic variable %d has UB %f, LB %f and assignment %f\n",
+                        //     row._row[j]._coefficient,
+                        //     i, _upperBounds[basicVariable], _lowerBounds[basicVariable], basicAssignment,
+                        //     j, _upperBounds[nonBasicVariable], _lowerBounds[nonBasicVariable], _nonBasicAssignment[j] );
+                        rowIsSaturated = false;
+                        break;
+                    }
+                }
+            }
+
+            if ( !rowIsSaturated )
+                continue;
+
+            // Get equation explanations
+            for ( unsigned j : row._explanations )
+            {
+                // ASSERT( _factTracker->hasFactAffectingEquation( j ) );
+                explanations.append( _factTracker->getFactAffectingEquation( j ) );
+            }
+
+            printf("Saturated row: ");
+            printf("x%d=", basicVariable);
+            bool first = true;
+            // Get bound explanations
+            for ( unsigned j = 0; j < _n - _m; ++j )
+            {
+                if(!FloatUtils::isZero(row._row[j]._coefficient)){
+                    printf("%s%fx%d", first||(FloatUtils::lt(row._row[j]._coefficient,0))?"":"+", row._row[j]._coefficient, row._row[j]._var);
+                    first = false;
+                }
+                if ( FloatUtils::gt( row._row[j]._coefficient, 0 ) )
+                {
+                    if ( assignmentIsTooSmall )
+                    {
+                        // ASSERT( _factTracker->hasFactAffectingBound( row._row[j]._var, FactTracker::UB ) );
+                        explanations.append( _factTracker->getFactAffectingBound( row._row[j]._var, FactTracker::UB ) );
+                    }
+                    else
+                    {
+                        // ASSERT( _factTracker->hasFactAffectingBound( row._row[j]._var, FactTracker::LB ) );
+                        explanations.append( _factTracker->getFactAffectingBound( row._row[j]._var, FactTracker::LB ) );
+                    }
+                }
+                else if ( FloatUtils::lt( row._row[j]._coefficient, 0 ) )
+                {
+                    if ( assignmentIsTooSmall )
+                    {
+                        // ASSERT( _factTracker->hasFactAffectingBound( row._row[j]._var, FactTracker::LB ) );
+                        explanations.append( _factTracker->getFactAffectingBound( row._row[j]._var, FactTracker::LB ) );
+                    }
+                    else
+                    {
+                        // ASSERT( _factTracker->hasFactAffectingBound( row._row[j]._var, FactTracker::UB ) );
+                        explanations.append( _factTracker->getFactAffectingBound( row._row[j]._var, FactTracker::UB ) );
+                    }
+                }
+            }
+
+            printf("\n");
+
+            if ( assignmentIsTooSmall )
+            {
+                // ASSERT( _factTracker->hasFactAffectingBound( basicVariable, FactTracker::LB ) );
+                explanations.append( _factTracker->getFactAffectingBound( basicVariable, FactTracker::LB ) );
+            }
+            else
+            {
+                // ASSERT( _factTracker->hasFactAffectingBound( basicVariable, FactTracker::UB ) );
+                explanations.append( _factTracker->getFactAffectingBound( basicVariable, FactTracker::UB ) );
+            }
+
+            return explanations;
+        }
+
+        /*
+            Junyao: This assertion should never be reached, but this doesn't hold now.
+                    One possible reason is that although we cannot make progress on the cost function,
+                    there probably still exists a tableau row where we can make progress on the
+                    corresponding basic variable. The reason why the objective cannot be improved
+                    could be that to make progress on this basic variable, we have to sacrifie
+                    another basic variable.
+        */
+        // ASSERT(false);
+
+    }
+    catch ( ... )
+    {
+        throw;
+    }
+
+    return explanations;
 }
 
 //

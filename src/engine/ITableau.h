@@ -103,6 +103,7 @@ public:
     virtual void initializeTableau( const List<unsigned> &initialBasicVariables ) = 0;
     virtual double getValue( unsigned variable ) = 0;
     virtual bool allBoundsValid() const = 0;
+    virtual unsigned getInvalidBoundsVariable() const = 0;
     virtual double getLowerBound( unsigned variable ) const = 0;
     virtual double getUpperBound( unsigned variable ) const = 0;
     virtual const double *getLowerBounds() const = 0;
@@ -157,9 +158,9 @@ public:
     virtual const double *getAColumn( unsigned variable ) const = 0;
     virtual void getSparseAColumn( unsigned variable, SparseUnsortedList *result ) const = 0;
     virtual void getSparseARow( unsigned row, SparseUnsortedList *result ) const = 0;
+    virtual double getbRow( unsigned row ) const = 0;
     virtual const SparseUnsortedList *getSparseAColumn( unsigned variable ) const = 0;
     virtual const SparseUnsortedList *getSparseARow( unsigned row ) const = 0;
-    virtual double getbRow( unsigned row ) const = 0;
     virtual const SparseMatrix *getSparseA() const = 0;
     virtual void performDegeneratePivot() = 0;
     virtual void storeState( TableauState &state ) const = 0;
@@ -183,6 +184,7 @@ public:
     virtual bool areLinearlyDependent( unsigned x1, unsigned x2, double &coefficient, double &inverseCoefficient ) = 0;
     virtual unsigned getVariableAfterMerging( unsigned variable ) const = 0;
     virtual void setFactTracker(FactTracker* tracker) = 0;
+    virtual List<const Fact*> getExplanationsForSaturatedTableauRow() = 0;
 };
 
 #endif // __ITableau_h__

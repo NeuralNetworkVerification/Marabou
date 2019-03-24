@@ -15,12 +15,18 @@
 
 #include <cxxtest/TestSuite.h>
 
+#include "RowBoundTightener.h"
+#include "Tableau.h"
+#include "Engine.h"
+#include "Fact.h"
+#include "FactTracker.h"
 #include "GlobalConfiguration.h"
+#include "InputQuery.h"
 #include "MockEngine.h"
 #include "MockErrno.h"
+#include "MockTableau.h"
 #include "PiecewiseLinearConstraint.h"
 #include "ReluConstraint.h"
-#include "SmtCore.h"
 
 #include <string.h>
 
@@ -105,7 +111,7 @@ public:
         {
             return nextSplits;
         }
-        
+
         PiecewiseLinearCaseSplit getSplitFromID( unsigned /* splitID */, bool /* impliedSplit */ ) const
         {
             PiecewiseLinearCaseSplit dontCare;
@@ -123,22 +129,22 @@ public:
             return dontCare;
         }
 
-		void updateVariableIndex( unsigned, unsigned )
-		{
-		}
+        void updateVariableIndex( unsigned, unsigned )
+        {
+        }
 
-		void eliminateVariable( unsigned, double )
-		{
-		}
+        void eliminateVariable( unsigned, double )
+        {
+        }
 
         bool constraintObsolete() const
         {
             return false;
         }
 
-		void preprocessBounds( unsigned, double, Tightening::BoundType )
-		{
-		}
+        void preprocessBounds( unsigned, double, Tightening::BoundType )
+        {
+        }
 
         void getEntailedTightenings( List<Tightening> & ) const
         {
@@ -499,6 +505,7 @@ public:
         // Reason: the inefficiency in resizing the tableau mutliple times
         TS_TRACE( "add support for adding multiple equations at once, not one-by-one" );
     }
+
 };
 
 //

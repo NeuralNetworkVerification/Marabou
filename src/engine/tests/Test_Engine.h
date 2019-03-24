@@ -210,32 +210,32 @@ public:
         TS_ASSERT_EQUALS( tableau->lastRegisteredVariableToWatcher[1].size(), 1U );
         auto it = tableau->lastRegisteredVariableToWatcher[1].begin();
         auto watcher1 = ( ( ReluConstraint * ) ( * it ) )->getParticipatingVariables();
-       	TS_ASSERT( watcher1 == relu1->getParticipatingVariables() );
+        TS_ASSERT( watcher1 == relu1->getParticipatingVariables() );
 
         TS_ASSERT_EQUALS( tableau->lastRegisteredVariableToWatcher[2].size(), 2U );
         it = tableau->lastRegisteredVariableToWatcher[2].begin();
-		auto watcher2 = ( ( ReluConstraint * ) ( * it  ) )->getParticipatingVariables();
-		it++;
-		auto watcher3 = ( ( ReluConstraint * ) ( * it  ) )->getParticipatingVariables();
+        auto watcher2 = ( ( ReluConstraint * ) ( * it  ) )->getParticipatingVariables();
+        it++;
+        auto watcher3 = ( ( ReluConstraint * ) ( * it  ) )->getParticipatingVariables();
 
-		if ( watcher2 == relu1->getParticipatingVariables() )
-		{
-			TS_ASSERT( watcher3 == relu2->getParticipatingVariables() );
-		}
-		else if ( watcher2 == relu2->getParticipatingVariables() )
-		{
-			TS_ASSERT( watcher3 == relu1->getParticipatingVariables() );
-		}
-		else
-		{
-			TS_ASSERT( false );
-		}
+        if ( watcher2 == relu1->getParticipatingVariables() )
+        {
+            TS_ASSERT( watcher3 == relu2->getParticipatingVariables() );
+        }
+        else if ( watcher2 == relu2->getParticipatingVariables() )
+        {
+            TS_ASSERT( watcher3 == relu1->getParticipatingVariables() );
+        }
+        else
+        {
+            TS_ASSERT( false );
+        }
 
         TS_ASSERT_EQUALS( tableau->lastRegisteredVariableToWatcher[4].size(), 1U );
         it = tableau->lastRegisteredVariableToWatcher[4].begin();
-		auto watcher4 = ( ( ReluConstraint * ) ( * it ) )->getParticipatingVariables();
+        auto watcher4 = ( ( ReluConstraint * ) ( * it ) )->getParticipatingVariables();
 
-       	TS_ASSERT( watcher4 == relu2->getParticipatingVariables() );
+        TS_ASSERT( watcher4 == relu2->getParticipatingVariables() );
     }
 
     void test_todo()

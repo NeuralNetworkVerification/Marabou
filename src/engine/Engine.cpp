@@ -18,6 +18,7 @@
 #include "Debug.h"
 #include "Engine.h"
 #include "EngineState.h"
+#include "FactTracker.h"
 #include "InfeasibleQueryException.h"
 #include "InputQuery.h"
 #include "MStringf.h"
@@ -25,8 +26,20 @@
 #include "PiecewiseLinearConstraint.h"
 #include "Preprocessor.h"
 #include "ReluplexError.h"
+#include "SmtCore.h"
 #include "TableauRow.h"
 #include "TimeUtils.h"
+#include <string>
+#include <fstream>
+#include <chrono>
+#include <ctime>
+
+std::string getTimeInNanoseconds(){
+  std::chrono::time_point<std::chrono::system_clock> now = std::chrono::system_clock::now();
+  auto duration = now.time_since_epoch();
+  auto nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(duration);
+  return std::to_string(nanoseconds.count());
+}
 
 Engine::Engine()
     : _rowBoundTightener( *_tableau )
@@ -101,6 +114,13 @@ bool Engine::solve( unsigned timeoutInSeconds )
     struct timespec mainLoopStart = TimeUtils::sampleMicro();
     while ( true )
     {
+        // for(unsigned var=0; var<_tableau->getN(); var++){
+        //   ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::LB));
+        //   ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::UB));
+        // }
+        // for(unsigned id=0; id<_tableau->getM(); id++){
+        //   ASSERT(_factTracker.hasFactAffectingEquation(id));
+        // }
         struct timespec mainLoopEnd = TimeUtils::sampleMicro();
         _statistics.addTimeMainLoop( TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
         mainLoopStart = mainLoopEnd;
@@ -179,7 +199,6 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
             if ( !_tableau->allBoundsValid() )
             {
-                // Some variable bounds are invalid, so the query is unsat
                 throw InfeasibleQueryException();
             }
 
@@ -254,7 +273,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 return false;
             }
         }
-        catch ( const InfeasibleQueryException & )
+        catch ( const InfeasibleQueryException & e)
         {
             // The current query is unsat, and we need to pop.
             // If we're at level 0, the whole query is unsat.
@@ -460,6 +479,22 @@ void Engine::performSimplexStep()
             // Cost function is fresh --- failure is real.
             struct timespec end = TimeUtils::sampleMicro();
             _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
+            List<const Fact*> explanation = _tableau->getExplanationsForSaturatedTableauRow();
+            /*
+              TODO: explanations probably include fact that created leavingIndex equation,
+              and bounds of variables with non-zero coefficients in the equation
+
+              Guy: I'm afraid it may not be so simple. AFAIK, the standard way for "explaining"
+              simplex UNSATs is via Farkas' lemma. This will basically give you a set of equations that
+              are responsible for the failure - and then you can grab the facts leading to those equations, plus
+              the varibale bounds of all variables involved in those equations.
+
+              For now, it may be easier to not have an explanation for this case - i.e., just backtrack.
+
+              For now, we go over all rows to find a contradiction row. And backtrack for that row. This is not
+              a minimal explanation, but it is a sufficient one.
+            */
+
             throw InfeasibleQueryException();
         }
     }
@@ -519,11 +554,11 @@ void Engine::fixViolatedPlConstraintIfPossible()
     {
         if ( !_tableau->isBasic( fix._variable ) )
         {
-			if ( _tableau->checkValueWithinBounds( fix._variable, fix._value ) )
-			{
+            if ( _tableau->checkValueWithinBounds( fix._variable, fix._value ) )
+            {
                 _tableau->setNonBasicAssignment( fix._variable, fix._value, true );
                 return;
-			}
+            }
         }
     }
 
@@ -536,8 +571,8 @@ void Engine::fixViolatedPlConstraintIfPossible()
     {
         if ( _tableau->isBasic( it->_variable ) )
         {
-			if ( _tableau->checkValueWithinBounds( it->_variable, it->_value ) )
-			{
+            if ( _tableau->checkValueWithinBounds( it->_variable, it->_value ) )
+            {
                 found = true;
             }
         }
@@ -777,9 +812,8 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         _tableau->registerToWatchAllVariables( _constraintBoundTightener );
         _tableau->registerResizeWatcher( _constraintBoundTightener );
 
-        _rowBoundTightener->setDimensions();
-        _constraintBoundTightener->setDimensions();
-
+        // Placeholder: better constraint matrix analysis as part
+        // of the preprocessing phase.
         // Register the constraint bound tightener to all the PL constraints
         for ( auto &plConstraint : _preprocessedQuery.getPiecewiseLinearConstraints() )
             plConstraint->registerConstraintBoundTightener( _constraintBoundTightener );
@@ -791,9 +825,6 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             constraint->setFactTracker( &_factTracker );
             constraint->setStatistics( &_statistics );
         }
-
-        // Placeholder: better constraint matrix analysis as part
-        // of the preprocessing phase.
         _tableau->initializeTableau( independentColumns );
 
         _costFunctionManager->initialize();
@@ -801,6 +832,23 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         _activeEntryStrategy->initialize( _tableau );
 
         _statistics.setNumPlConstraints( _plConstraints.size() );
+
+        _factTracker.initializeFromTableau(*_tableau);
+
+        // for(unsigned i=0; i<_tableau->getN(); i++){
+        //   ASSERT(_factTracker.hasFactAffectingBound(i, FactTracker::LB));
+        //   ASSERT(_factTracker.hasFactAffectingBound(i, FactTracker::UB));
+        // }
+        // for(unsigned var=0; var<_tableau->getN(); var++){
+        //   ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::LB));
+        //   ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::UB));
+        // }
+        // for(unsigned id=0; id<_tableau->getM(); id++){
+        //   ASSERT(_factTracker.hasFactAffectingEquation(id));
+        // }
+
+        _rowBoundTightener->setDimensions();
+        _constraintBoundTightener->setDimensions();
 
         if ( _preprocessedQuery._sbt )
             _symbolicBoundTightener = _preprocessedQuery._sbt;
@@ -925,6 +973,13 @@ void Engine::restoreState( const EngineState &state )
     _numPlConstraintsDisabledByValidSplits = state._numPlConstraintsDisabledByValidSplits;
 
     // Make sure the data structures are initialized to the correct size
+    // for(unsigned var=0; var<_tableau->getN(); var++){
+    //   ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::LB));
+    //   ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::UB));
+    // }
+    // for(unsigned id=0; id<_tableau->getM(); id++){
+    //   ASSERT(_factTracker.hasFactAffectingEquation(id));
+    // }
     _rowBoundTightener->setDimensions();
     _constraintBoundTightener->setDimensions();
     adjustWorkMemorySize();
@@ -1087,11 +1142,12 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
           may be able to merge two columns of the tableau.
         */
         unsigned x1, x2;
+        bool isMergingEquation = equation.isVariableMergingEquation( x1, x2 );
         bool canMergeColumns =
             // Only if the flag is on
             GlobalConfiguration::USE_COLUMN_MERGING_EQUATIONS &&
             // Only if the equation has the correct form
-            equation.isVariableMergingEquation( x1, x2 ) &&
+            isMergingEquation &&
             // And only if the variables are not out of bounds
             ( !_tableau->isBasic( x1 ) ||
               !_tableau->basicOutOfBounds( _tableau->variableToIndex( x1 ) ) )
@@ -1100,28 +1156,106 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
               !_tableau->basicOutOfBounds( _tableau->variableToIndex( x2 ) ) );
 
         bool columnsSuccessfullyMerged = false;
+        double x1_lb, x2_lb, x1_ub, x2_ub;
         if ( canMergeColumns )
+        {
+            x1_lb = _tableau->getLowerBound( x1 );
+            x2_lb = _tableau->getLowerBound( x2 );
+            x1_ub = _tableau->getUpperBound( x1 );
+            x2_ub = _tableau->getUpperBound( x2 );
             columnsSuccessfullyMerged = attemptToMergeVariables( x1, x2 );
+        }
+        if ( columnsSuccessfullyMerged )
+        {
+          // Get bounds before merge
+          // ASSERT( _factTracker.hasFactAffectingBound( x2, FactTracker::UB ) );
+          // ASSERT( _factTracker.hasFactAffectingBound( x2, FactTracker::LB ) );
 
+          const Fact* fact_x2_lb = _factTracker.getFactAffectingBound( x2, FactTracker::LB );
+          const Fact* fact_x2_ub = _factTracker.getFactAffectingBound( x2, FactTracker::UB );
+
+            if ( x1_lb < x2_lb )
+            {
+                Tightening x1_new_lb( x1, x2_lb, Tightening::LB );
+                List<const Fact*> explanations = fact_x2_lb->getExplanations();
+                for ( const Fact* explanation : explanations )
+                {
+                    x1_new_lb.addExplanation( explanation );
+                }
+                _factTracker.addBoundFact( x1, x1_new_lb );
+            }
+
+            if ( x1_ub > x2_ub )
+            {
+                Tightening x1_new_ub( x1, x2_ub, Tightening::UB );
+                List<const Fact*> explanations = fact_x2_ub->getExplanations();
+                for ( const Fact* explanation: explanations )
+                {
+                    x1_new_ub.addExplanation( explanation );
+                }
+                _factTracker.addBoundFact( x1, x1_new_ub );
+            }
+
+            // Even though x2 is merged, facts about x2 are still useful in fact tracker.
+        }
         if ( !columnsSuccessfullyMerged )
         {
             // General case: add a new equation to the tableau
+            // for(unsigned var=0; var<_tableau->getN(); var++){
+            //   ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::LB));
+            //   ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::UB));
+            // }
+            // for(unsigned id=0; id<_tableau->getM(); id++){
+            //   ASSERT(_factTracker.hasFactAffectingEquation(id));
+            // }
+
             unsigned auxVariable = _tableau->addEquation( equation );
             _activeEntryStrategy->resizeHook( _tableau );
 
+            Tightening newAuxBound(0,0,Tightening::LB);
             switch ( equation._type )
             {
+            // in general, new aux variable bound setCausingSplitInfo should be same
+            // as current equation that is causing it
             case Equation::GE:
-                bounds.append( Tightening( auxVariable, 0.0, Tightening::UB ) );
+                newAuxBound = Tightening( auxVariable, 0.0, Tightening::UB );
+                if ( equation.isCausedBySplit() )
+                    newAuxBound.setCausingSplitInfo( equation.getCausingConstraintID(), equation.getCausingSplitID(), equation.getSplitLevelCausing() );
+                else{
+                    for ( const Fact* explanation : equation.getExplanations() )
+                        newAuxBound.addExplanation( explanation );
+                }
+                bounds.append( newAuxBound );
                 break;
 
             case Equation::LE:
-                bounds.append( Tightening( auxVariable, 0.0, Tightening::LB ) );
+                newAuxBound = Tightening( auxVariable, 0.0, Tightening::LB );
+                if ( equation.isCausedBySplit() )
+                    newAuxBound.setCausingSplitInfo( equation.getCausingConstraintID(), equation.getCausingSplitID(), equation.getSplitLevelCausing() );
+                else{
+                    for ( const Fact* explanation : equation.getExplanations() )
+                        newAuxBound.addExplanation( explanation );
+                }
+                bounds.append( newAuxBound );
                 break;
 
             case Equation::EQ:
-                bounds.append( Tightening( auxVariable, 0.0, Tightening::LB ) );
-                bounds.append( Tightening( auxVariable, 0.0, Tightening::UB ) );
+                newAuxBound = Tightening( auxVariable, 0.0, Tightening::UB );
+                if ( equation.isCausedBySplit() )
+                    newAuxBound.setCausingSplitInfo( equation.getCausingConstraintID(), equation.getCausingSplitID(), equation.getSplitLevelCausing() );
+                else{
+                    for ( const Fact* explanation : equation.getExplanations() )
+                        newAuxBound.addExplanation( explanation );
+                }
+                bounds.append( newAuxBound );
+                newAuxBound = Tightening( auxVariable, 0.0, Tightening::LB );
+                if ( equation.isCausedBySplit() )
+                    newAuxBound.setCausingSplitInfo( equation.getCausingConstraintID(), equation.getCausingSplitID(), equation.getSplitLevelCausing() );
+                else{
+                    for ( const Fact* explanation : equation.getExplanations() )
+                        newAuxBound.addExplanation( explanation );
+                }
+                bounds.append( newAuxBound );
                 break;
 
             default:
@@ -1132,23 +1266,38 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
     }
 
     adjustWorkMemorySize();
-
+    // for(unsigned var=0; var<_tableau->getN(); var++){
+    //   ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::LB));
+    //   ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::UB));
+    // }
+    // for(unsigned id=0; id<_tableau->getM(); id++){
+    //   ASSERT(_factTracker.hasFactAffectingEquation(id));
+    // }
     _rowBoundTightener->resetBounds();
     _constraintBoundTightener->resetBounds();
 
     for ( auto &bound : bounds )
     {
         unsigned variable = _tableau->getVariableAfterMerging( bound._variable );
-
         if ( bound._type == Tightening::LB )
         {
-            log( Stringf( "x%u: lower bound set to %.3lf", variable, bound._value ) );
-            _tableau->tightenLowerBound( variable, bound._value );
+            // add fact for this bound only if it is indeed tighter
+            if( FloatUtils::gt( bound._value, _tableau->getLowerBound( variable ) ) )
+            {
+                log( Stringf( "x%u: lower bound set to %.3lf", variable, bound._value ) );
+                _factTracker.addBoundFact( variable, bound );
+                _tableau->tightenLowerBound( variable, bound._value );
+            }
         }
         else
         {
-            log( Stringf( "x%u: upper bound set to %.3lf", variable, bound._value ) );
-            _tableau->tightenUpperBound( variable, bound._value );
+            // add fact for this bound only if it is indeed tighter
+            if( FloatUtils::lt( bound._value, _tableau->getUpperBound( variable ) ) )
+            {
+                log( Stringf( "x%u: upper bound set to %.3lf", variable, bound._value ) );
+                _factTracker.addBoundFact( variable, bound );
+                _tableau->tightenUpperBound( variable, bound._value );
+            }
         }
     }
 
@@ -1164,9 +1313,21 @@ void Engine::applyAllRowTightenings()
     for ( const auto &tightening : rowTightenings )
     {
         if ( tightening._type == Tightening::LB )
-            _tableau->tightenLowerBound( tightening._variable, tightening._value );
+        {
+            if ( FloatUtils::gt( tightening._value, _tableau->getLowerBound( tightening._variable ) ) )
+            {
+                _factTracker.addBoundFact( tightening._variable, tightening );
+                _tableau->tightenLowerBound( tightening._variable, tightening._value );
+            }
+        }
         else
-            _tableau->tightenUpperBound( tightening._variable, tightening._value );
+        {
+            if( FloatUtils::lt( tightening._value, _tableau->getUpperBound( tightening._variable ) ) )
+            {
+                _factTracker.addBoundFact( tightening._variable, tightening );
+                _tableau->tightenUpperBound( tightening._variable, tightening._value );
+            }
+        }
     }
 }
 
@@ -1181,9 +1342,21 @@ void Engine::applyAllConstraintTightenings()
         _statistics.incNumBoundsProposedByPlConstraints();
 
         if ( tightening._type == Tightening::LB )
-            _tableau->tightenLowerBound( tightening._variable, tightening._value );
+        {
+            if ( FloatUtils::gt( tightening._value, _tableau->getLowerBound( tightening._variable ) ) )
+            {
+                _factTracker.addBoundFact( tightening._variable, tightening );
+                _tableau->tightenLowerBound( tightening._variable, tightening._value );
+            }
+        }
         else
-            _tableau->tightenUpperBound( tightening._variable, tightening._value );
+        {
+            if( FloatUtils::lt( tightening._value, _tableau->getUpperBound( tightening._variable ) ) )
+            {
+                _factTracker.addBoundFact( tightening._variable, tightening );
+                _tableau->tightenUpperBound( tightening._variable, tightening._value );
+            }
+        }
     }
 }
 
@@ -1203,9 +1376,12 @@ bool Engine::applyAllValidConstraintCaseSplits()
     struct timespec start = TimeUtils::sampleMicro();
 
     bool appliedSplit = false;
-    for ( auto &constraint : _plConstraints )
-        if ( applyValidConstraintCaseSplit( constraint ) )
-            appliedSplit = true;
+    for ( auto &constraint : _plConstraints ){
+        if ( applyValidConstraintCaseSplit( constraint ) ){
+          // printf("VALID %u\n", constraint->getID());
+          appliedSplit = true;
+        }
+    }
 
     struct timespec end = TimeUtils::sampleMicro();
     _statistics.addTimeForValidCaseSplit( TimeUtils::timePassed( start, end ) );
@@ -1283,6 +1459,7 @@ void Engine::explicitBasisBoundTightening()
 
     _statistics.incNumBoundTighteningsOnExplicitBasis();
 
+    // Junyao: always use COMPUTE_INVERTED_BASIS_MATRIX for CDCL
     switch ( GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE )
     {
     case GlobalConfiguration::COMPUTE_INVERTED_BASIS_MATRIX:
@@ -1311,6 +1488,13 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
     _statistics.addTimeForPrecisionRestoration( TimeUtils::timePassed( start, end ) );
 
     _statistics.incNumPrecisionRestorations();
+    // for(unsigned var=0; var<_tableau->getN(); var++){
+    //   ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::LB));
+    //   ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::UB));
+    // }
+    // for(unsigned id=0; id<_tableau->getM(); id++){
+    //   ASSERT(_factTracker.hasFactAffectingEquation(id));
+    // }
     _rowBoundTightener->resetBounds();
     _constraintBoundTightener->resetBounds();
 
@@ -1331,7 +1515,13 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
         end = TimeUtils::sampleMicro();
         _statistics.addTimeForPrecisionRestoration( TimeUtils::timePassed( start, end ) );
         _statistics.incNumPrecisionRestorations();
-
+        // for(unsigned var=0; var<_tableau->getN(); var++){
+        //   ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::LB));
+        //   ASSERT(_factTracker.hasFactAffectingBound(var, FactTracker::UB));
+        // }
+        // for(unsigned id=0; id<_tableau->getM(); id++){
+        //   ASSERT(_factTracker.hasFactAffectingEquation(id));
+        // }
         _rowBoundTightener->resetBounds();
         _constraintBoundTightener->resetBounds();
 

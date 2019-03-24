@@ -162,9 +162,11 @@ public:
     void checkBoundsValid( unsigned variable );
 
     /*
-      Returns whether any variable's bounds are invalid.
+      Returns whether any variable's bounds are invalid. If such
+      a variable exists, it can be retrieved.
     */
     bool allBoundsValid() const;
+    unsigned getInvalidBoundsVariable() const;
 
     /*
       Tighten the lower/upper bound for a variable. These functions
@@ -375,10 +377,6 @@ public:
       Have the Tableau start reporting statistics.
      */
     void setStatistics( Statistics *statistics );
-
-    /*
-      Have the Tableau get/tell facts to fact tracker
-    */
     void setFactTracker( FactTracker* tracker);
 
     /*
@@ -448,6 +446,12 @@ public:
       variable, after the merging has been applied.
      */
     unsigned getVariableAfterMerging( unsigned variable ) const;
+
+    /*
+      When simplex cannot make progress, we compute explanations for 
+      an arbitrary saturated row.
+    */
+    List<const Fact*> getExplanationsForSaturatedTableauRow();
 
 private:
     /*
@@ -590,10 +594,6 @@ private:
       Statistics collection
     */
     Statistics *_statistics;
-
-    /*
-      Fact Tracker from engine
-    */
     FactTracker* _factTracker;
 
     /*

@@ -458,6 +458,12 @@ public:
         return bRow;
     }
 
+    List<const Fact*> getExplanationsForSaturatedTableauRow()
+    {
+        List<const Fact*> explanations;
+        return explanations;
+    }
+
     void performDegeneratePivot()
     {
     }
