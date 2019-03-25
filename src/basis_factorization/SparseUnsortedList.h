@@ -110,6 +110,11 @@ public:
     void mergeEntries( unsigned source, unsigned target );
 
     /*
+      Get the size
+    */
+    unsigned getSize() const;
+
+    /*
       Debugging
     */
     void dump() const;

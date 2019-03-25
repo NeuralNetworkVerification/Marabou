@@ -18,6 +18,8 @@
 
 #include "HashMap.h"
 
+class SparseUnsortedList;
+
 class SparseUnsortedArray
 {
 public:
@@ -39,16 +41,9 @@ public:
         double _value;
     };
 
-    enum {
-        CHUNK_SIZE = 20,
-    };
-
     /*
       Initialization: the size determines the dimension of the
       underlying storage.
-
-      A unsortedList can be initialized from a dense unsortedList, or it
-      can remain empty.
     */
     SparseUnsortedArray();
     ~SparseUnsortedArray();
@@ -56,17 +51,17 @@ public:
     SparseUnsortedArray( const double *V, unsigned size );
     void initialize( const double *V, unsigned size );
     void initializeToEmpty();
+    void initializeFromList( const SparseUnsortedList *list );
 
     /*
-      Remove the unsortedList's elements, without touching the
-      allocated memory
+      Remove the elements, without changing the allocated memory
     */
     void clear();
 
     /*
       Set a value.
       Call "append" only if certain that the value is not zero and
-      that the index does not already exist in the otherSparse vector.
+      that the index does not already exist in the sparse array.
     */
     void set( unsigned index, double value );
     void append( unsigned index, double value );
@@ -101,15 +96,15 @@ public:
     void storeIntoOther( SparseUnsortedArray *other ) const;
 
     /*
-      Erasing an element by iterator
+      Erasing an element by its index in the underlying array
     */
-    // List<Entry>::iterator erase( List<Entry>::iterator it );
+    void erase( unsigned index );
 
     /*
       Addes the coefficient for entry 'source' to entry 'target'
       and erases entry 'source'
     */
-    // void mergeEntries( unsigned source, unsigned target );
+    void mergeEntries( unsigned source, unsigned target );
 
     /*
       Debugging
@@ -121,7 +116,12 @@ private:
     Entry *_array;
     unsigned _maxSize;
     unsigned _allocatedSize;
-    unsigned _usedSize;
+    unsigned _nnz;
+
+    // The chunk size by which the capacity is increased when exceeded
+    enum {
+        CHUNK_SIZE = 20,
+    };
 
     void freeMemoryIfNeeded();
     void increaseCapacity();

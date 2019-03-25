@@ -18,6 +18,7 @@
 
 #include "HashMap.h"
 #include "SparseUnsortedArray.h"
+#include "SparseUnsortedList.h"
 
 class SparseUnsortedArrays
 {
@@ -31,6 +32,7 @@ public:
     void initializeToEmpty( unsigned m, unsigned n );
     void initialize( const double *M, unsigned m, unsigned n );
     void initialize( const SparseUnsortedArray **V, unsigned m, unsigned n );
+    void initialize( const SparseUnsortedList **V, unsigned m, unsigned n );
 
     /*
       Update a single row from a dense vector

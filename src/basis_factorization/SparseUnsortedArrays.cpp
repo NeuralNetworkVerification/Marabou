@@ -91,6 +91,27 @@ void SparseUnsortedArrays::initialize( const SparseUnsortedArray **V, unsigned m
     }
 }
 
+void SparseUnsortedArrays::initialize( const SparseUnsortedList **V, unsigned m, unsigned n )
+{
+    freeMemoryIfNeeded();
+
+    _m = m;
+    _n = n;
+
+    _rows = new SparseUnsortedArray *[_m];
+    if ( !_rows )
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseUnsortedLists::rows" );
+
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        _rows[i] = new SparseUnsortedArray;
+        if ( !_rows[i] )
+            throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseUnsortedLists::rows[i]" );
+
+        _rows[i]->initializeFromList( V[i] );
+    }
+}
+
 void SparseUnsortedArrays::initializeToEmpty( unsigned m, unsigned n )
 {
     freeMemoryIfNeeded();
@@ -192,22 +213,20 @@ void SparseUnsortedArrays::addEmptyColumn()
 
 void SparseUnsortedArrays::countElements( unsigned *numRowElements, unsigned *numColumnElements )
 {
-    std::fill_n( numRowElements, _n, 0 );
     std::fill_n( numColumnElements, _n, 0 );
 
     SparseUnsortedArray::Entry entry;
 
     for ( unsigned i = 0; i < _m; ++i )
     {
+        // Rows
+        numRowElements[i] = _rows[i]->getNnz();
+
+        // Columns
         for ( unsigned j = 0; j < _rows[i]->getNnz(); ++j )
         {
             entry = _rows[i]->getByArrayIndex( j );
-
-            if ( !FloatUtils::isZero( entry._value ) )
-            {
-                ++numRowElements[i];
-                ++numColumnElements[entry._index];
-            }
+            ++numColumnElements[entry._index];
         }
     }
 }
@@ -285,8 +304,6 @@ void SparseUnsortedArrays::toDense( double *result ) const
 
 void SparseUnsortedArrays::clear()
 {
-    printf( "Clear called!\n" );
-
     for ( unsigned i = 0; i < _m; ++i )
         clear( i );
 }
