@@ -217,8 +217,9 @@ void SparseGaussianEliminator::choosePivot()
       We pick a pivot a_ij \neq 0 that minimizes (p_i - 1)(q_i - 1).
     */
 
-    const SparseUnsortedList *sparseRow;
-    const SparseUnsortedList *sparseColumn;
+    const SparseUnsortedArray *sparseRow;
+    const SparseUnsortedArray *sparseColumn;
+    SparseUnsortedArray::Entry entry;
 
     // If there's a singleton row, use it as the pivot row
     for ( unsigned i = _eliminationStep; i < _m; ++i )
@@ -233,11 +234,11 @@ void SparseGaussianEliminator::choosePivot()
 
             ASSERT( sparseRow->getNnz() == 1U );
 
-            auto entry = sparseRow->begin();
+            entry = sparseRow->getByArrayIndex( 0 );
 
-            _vPivotColumn = entry->_index;
+            _vPivotColumn = entry._index;
             _uPivotColumn = _sparseLUFactors->_Q._columnOrdering[_vPivotColumn];
-            _pivotElement = entry->_value;
+            _pivotElement = entry._value;
 
             log( Stringf( "Choose pivot selected a pivot (singleton row): V[%u,%u] = %lf",
                           _vPivotRow,
@@ -263,8 +264,9 @@ void SparseGaussianEliminator::choosePivot()
 
             DEBUG( bool found = false; );
 
-            for ( const auto &entry : *sparseColumn )
+            for ( unsigned i = 0; i < sparseColumn->getNnz(); ++i )
             {
+                entry = sparseColumn->getByArrayIndex( i );
                 unsigned vRow = entry._index;
                 unsigned uRow = _sparseLUFactors->_P._rowOrdering[vRow];
 
@@ -306,8 +308,10 @@ void SparseGaussianEliminator::choosePivot()
         sparseColumn = _sparseLUFactors->_Vt->getRow( vColumn );
 
         double maxInColumn = 0;
-        for ( const auto &entry : *sparseColumn )
+        for ( unsigned i = 0; i < sparseColumn->getNnz(); ++i )
         {
+            entry = sparseColumn->getByArrayIndex( i );
+
             // Ignore entrying that are not in the active submatrix
             unsigned vRow = entry._index;
             unsigned uRow = _sparseLUFactors->_P._rowOrdering[vRow];
@@ -325,8 +329,10 @@ void SparseGaussianEliminator::choosePivot()
                                            "Have a zero column" );
         }
 
-        for ( const auto &entry : *sparseColumn )
+        for ( unsigned i = 0; i < sparseColumn->getNnz(); ++i )
         {
+            entry = sparseColumn->getByArrayIndex( i );
+
             unsigned vRow = entry._index;
             unsigned uRow = _sparseLUFactors->_P._rowOrdering[vRow];
 
@@ -394,18 +400,19 @@ void SparseGaussianEliminator::eliminate()
     }
 
     // Process all rows below the pivot row
-    SparseUnsortedList *sparseColumn = _sparseLUFactors->_Vt->getRow( _vPivotColumn );
-    List<SparseUnsortedList::Entry>::iterator columnIt = sparseColumn->begin();
-    List<SparseUnsortedList::Entry>::iterator end = sparseColumn->end();
+    SparseUnsortedArray *sparseColumn = _sparseLUFactors->_Vt->getRow( _vPivotColumn );
+    unsigned index = 0;
 
-    while ( columnIt != end )
+    SparseUnsortedArray::Entry entry;
+    while ( index < sparseColumn->getNnz() )
     {
-        unsigned vRow = columnIt->_index;
+        entry = sparseColumn->getByArrayIndex( index );
+        unsigned vRow = entry._index;
         unsigned uRow = _sparseLUFactors->_P._rowOrdering[vRow];
 
         if ( uRow <= _eliminationStep )
         {
-            ++columnIt;
+            ++index;
             continue;
         }
 
@@ -413,7 +420,7 @@ void SparseGaussianEliminator::eliminate()
           Compute the Gaussian row multiplier for this row.
           The multiplier is: - U[row,k] / pivotElement
         */
-        double rowMultiplier = - columnIt->_value / _pivotElement;
+        double rowMultiplier = - entry._value / _pivotElement;
 
         // Get the row being eliminated in dense format
         _sparseLUFactors->_V->getRowDense( vRow, _work2 );
@@ -421,7 +428,7 @@ void SparseGaussianEliminator::eliminate()
         // Eliminate the sub-diagonal entry
         --_numUColumnElements[_eliminationStep];
         --_numURowElements[uRow];
-        columnIt = sparseColumn->erase( columnIt );
+        sparseColumn->erase( index );
         _work2[_vPivotColumn] = 0;
 
         // Handle the rest of the row

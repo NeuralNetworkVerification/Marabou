@@ -203,10 +203,13 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
       This is done by traversing V's corresponding row
     */
 
-    const SparseUnsortedList *sparseRow = _sparseLUFactors._V->getRow( vRowDiagonalIndex );
+    SparseUnsortedArray::Entry entry;
+    const SparseUnsortedArray *sparseRow = _sparseLUFactors._V->getRow( vRowDiagonalIndex );
     bool haveSpike = false;
-    for ( const auto &entry : *sparseRow )
+    for ( unsigned i = 0; i < sparseRow->getNnz(); ++i )
     {
+        entry = sparseRow->getByArrayIndex( i );
+
         unsigned vColumn = entry._index;
         unsigned uColumn = _sparseLUFactors._Q._columnOrdering[vColumn];
 
@@ -258,8 +261,9 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
         sparseEtaMatrix->addEntry( vPivotRow, multiplier );
 
         // Adjust the spike row per the elimination step
-        for ( const auto &entry : *sparseRow )
+        for ( unsigned j = 0; j < sparseRow->getNnz(); ++j )
         {
+            entry = sparseRow->getByArrayIndex( j );
             unsigned column = entry._index;
 
             if ( column != vPivotColumn )

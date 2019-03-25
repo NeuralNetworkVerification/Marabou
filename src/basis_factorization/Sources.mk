@@ -7,6 +7,8 @@ SOURCES += \
 	LPElement.cpp \
 	LUFactorization.cpp \
 	LUFactors.cpp \
+	SparseUnsortedArray.cpp \
+	SparseUnsortedArrays.cpp \
 	PermutationMatrix.cpp \
 	SparseColumnsOfBasis.cpp \
 	SparseEtaMatrix.cpp \
