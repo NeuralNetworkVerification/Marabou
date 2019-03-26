@@ -77,6 +77,7 @@ public:
     */
     double get( unsigned entry ) const;
     Entry getByArrayIndex( unsigned index ) const;
+    const Entry *getArray() const;
 
     /*
       Convert the unsortedList to dense format

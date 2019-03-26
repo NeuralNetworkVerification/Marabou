@@ -130,6 +130,11 @@ SparseUnsortedArray::Entry SparseUnsortedArray::getByArrayIndex( unsigned index 
     return _array[index];
 }
 
+const SparseUnsortedArray::Entry *SparseUnsortedArray::getArray() const
+{
+    return _array;
+}
+
 void SparseUnsortedArray::dump() const
 {
     printf( "\nDumping otherSparseUnsortedList: (nnz = %u)\n", _nnz );
