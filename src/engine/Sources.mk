@@ -11,6 +11,7 @@ SOURCES += \
 	Equation.cpp \
 	InputQuery.cpp \
 	MaxConstraint.cpp \
+	NetworkLevelReasoner.cpp \
 	PiecewiseLinearCaseSplit.cpp \
 	PiecewiseLinearConstraint.cpp \
 	PrecisionRestorer.cpp \
