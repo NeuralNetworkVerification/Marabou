@@ -42,6 +42,7 @@ Engine::Engine()
     , _exitCode( Engine::NOT_DONE )
     , _constraintBoundTightener( *_tableau )
     , _numVisitedStatesAtPreviousRestoration( 0 )
+    , _networkLevelReasoner( NULL )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -67,6 +68,12 @@ Engine::~Engine()
     {
         delete _symbolicBoundTightener;
         _symbolicBoundTightener = NULL;
+    }
+
+    if ( _networkLevelReasoner )
+    {
+        delete _networkLevelReasoner;
+        _networkLevelReasoner = NULL;
     }
 }
 
@@ -1005,6 +1012,8 @@ void Engine::initializeTableau( const double *constraintMatrix, const List<unsig
 
 void Engine::initializeNetworkLevelReasoning()
 {
+    _networkLevelReasoner = _preprocessedQuery.getNetworkLevelReasoner();
+
     if ( _preprocessedQuery._sbt )
         _symbolicBoundTightener = _preprocessedQuery._sbt;
 }
