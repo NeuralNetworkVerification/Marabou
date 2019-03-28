@@ -21,7 +21,8 @@
 #include "ReluplexError.h"
 
 InputQuery::InputQuery()
-    : _sbt( NULL )
+    : _networkLevelReasoner( NULL )
+    , _sbt( NULL )
 {
 }
 
@@ -217,6 +218,7 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
     for ( const auto &constraint : other._plConstraints )
         _plConstraints.append( constraint->duplicateConstraint() );
 
+    _networkLevelReasoner = other._networkLevelReasoner;
     _sbt = other._sbt;
 
     return *this;
@@ -424,6 +426,16 @@ void InputQuery::adjustInputOutputMapping( const Map<unsigned, unsigned> &oldInd
     _variableToOutputIndex.clear();
     for ( auto it : _outputIndexToVariable )
         _variableToOutputIndex[it.second] = it.first;
+}
+
+void InputQuery::setNetworkLevelReasoner( NetworkLevelReasoner *nlr )
+{
+    _networkLevelReasoner = nlr;
+}
+
+NetworkLevelReasoner *InputQuery::getNetworkLevelReasoner() const
+{
+    return _networkLevelReasoner;
 }
 
 //

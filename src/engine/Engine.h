@@ -27,7 +27,6 @@
 #include "IEngine.h"
 #include "InputQuery.h"
 #include "Map.h"
-#include "NetworkLevelReasoner.h"
 #include "PrecisionRestorer.h"
 #include "Preprocessor.h"
 #include "SignalHandler.h"
@@ -92,11 +91,6 @@ public:
       Get the exit code
     */
     Engine::ExitCode getExitCode() const;
-
-    /*
-      Pass a network level reasoner to the engine
-    */
-    void setNetworkLevelReasoner( NetworkLevelReasoner *nlr );
 
 private:
     enum BasisRestorationRequired {

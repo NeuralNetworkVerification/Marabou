@@ -20,6 +20,7 @@
 #include "List.h"
 #include "MString.h"
 #include "Map.h"
+#include "NetworkLevelReasoner.h"
 #include "PiecewiseLinearConstraint.h"
 #include "SymbolicBoundTightener.h"
 
@@ -123,6 +124,12 @@ public:
     void adjustInputOutputMapping( const Map<unsigned, unsigned> &oldIndexToNewIndex,
                                    const Map<unsigned, unsigned> &mergedVariables );
 
+    /*
+      Include a network level reasoner in the query
+    */
+    void setNetworkLevelReasoner( NetworkLevelReasoner *nlr );
+    NetworkLevelReasoner *getNetworkLevelReasoner() const;
+
 private:
     unsigned _numberOfVariables;
     List<Equation> _equations;
@@ -136,6 +143,13 @@ private:
       Free any stored pl constraints.
     */
     void freeConstraintsIfNeeded();
+
+    /*
+      An object that knows the topology of the network being checked,
+      and can be used for various operations such as network
+      evaluation of topology-based bound tightening.
+     */
+    NetworkLevelReasoner *_networkLevelReasoner;
 
 public:
     /*

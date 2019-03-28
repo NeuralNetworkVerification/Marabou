@@ -18,6 +18,7 @@
 #include "InputParserError.h"
 #include "InputQuery.h"
 #include "MString.h"
+#include "NetworkLevelReasoner.h"
 #include "ReluConstraint.h"
 
 AcasParser::NodeIndex::NodeIndex( unsigned layer, unsigned node )
@@ -165,6 +166,46 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
     for ( unsigned i = 0; i < outputLayerSize; ++i )
         inputQuery.markOutputVariable( _nodeToB[NodeIndex( numberOfLayers - 1, i )], i );
 
+    // Populate the Network-Level Reasoner
+    NetworkLevelReasoner *nlr = new NetworkLevelReasoner;
+
+    nlr->setNumberOfLayers( numberOfLayers );
+
+    for ( unsigned i = 0; i < numberOfLayers; ++i )
+        nlr->setLayerSize( i, _acasNeuralNetwork.getLayerSize( i ) );
+
+    nlr->allocateWeightMatrices();
+
+    // Biases
+    for ( unsigned i = 1; i < numberOfLayers; ++i )
+        for ( unsigned j = 0; j < _acasNeuralNetwork.getLayerSize( i ); ++j )
+            nlr->setBias( i, j, _acasNeuralNetwork.getBias( i, j ) );
+
+    // Weights
+    for ( unsigned layer = 0; layer < numberOfLayers - 1; ++layer )
+    {
+        unsigned targetLayerSize = _acasNeuralNetwork.getLayerSize( layer + 1 );
+        for ( unsigned target = 0; target < targetLayerSize; ++target )
+        {
+            for ( unsigned source = 0; source < _acasNeuralNetwork.getLayerSize( layer ); ++source )
+                nlr->setWeight( layer, source, target, _acasNeuralNetwork.getWeight( layer, source, target ) );
+        }
+    }
+
+    // Mark all hidden nodes as ReLU nodes, per the ACAS implicit convention
+    for ( unsigned layer = 1; layer < numberOfLayers - 1; ++layer )
+    {
+        unsigned layerSize = _acasNeuralNetwork.getLayerSize( layer  );
+        for ( unsigned neuron = 0; neuron < layerSize; ++neuron )
+        {
+            nlr->setNeuronActivationFunction( layer, neuron, NetworkLevelReasoner::ReLU );
+        }
+    }
+
+    // Store the reasoner in the input query
+    inputQuery.setNetworkLevelReasoner( nlr );
+
+    // TODO: remove the below, once SBT is merged into NLR
     if ( GlobalConfiguration::USE_SYMBOLIC_BOUND_TIGHTENING )
     {
         // Prepare the symbolic bound tightener

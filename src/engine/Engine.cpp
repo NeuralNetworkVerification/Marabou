@@ -1012,6 +1012,8 @@ void Engine::initializeTableau( const double *constraintMatrix, const List<unsig
 
 void Engine::initializeNetworkLevelReasoning()
 {
+    _networkLevelReasoner = _preprocessedQuery.getNetworkLevelReasoner();
+
     if ( _preprocessedQuery._sbt )
         _symbolicBoundTightener = _preprocessedQuery._sbt;
 }
@@ -1745,11 +1747,6 @@ bool Engine::shouldExitDueToTimeout( unsigned timeout ) const
         return false;
 
     return _statistics.getTotalTime() / MILLISECONDS_TO_SECONDS > timeout;
-}
-
-void Engine::setNetworkLevelReasoner( NetworkLevelReasoner *nlr )
-{
-    _networkLevelReasoner = nlr;
 }
 
 //
