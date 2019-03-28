@@ -225,6 +225,11 @@ List<SparseUnsortedList::Entry>::iterator SparseUnsortedList::erase( List<Sparse
     return _list.erase( it );
 }
 
+unsigned SparseUnsortedList::getSize() const
+{
+    return _size;
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

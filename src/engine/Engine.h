@@ -354,6 +354,21 @@ private:
       Check whether a timeout value has been provided and exceeded.
     */
     bool shouldExitDueToTimeout( unsigned timeout ) const;
+
+    /*
+      Helper functions for input query preprocessing
+    */
+    void informConstraintsOfInitialBounds( InputQuery &inputQuery ) const;
+    void invokePreprocessor( const InputQuery &inputQuery, bool preprocess );
+    void printInputBounds( const InputQuery &inputQuery ) const;
+    void storeEquationsInDegradationChecker();
+    void removeRedundantEquations( const double *constraintMatrix );
+    void selectInitialVariablesForBasis( const double *constraintMatrix, List<unsigned> &initialBasis, List<unsigned> &basicRows );
+    void initializeTableau( const double *constraintMatrix, const List<unsigned> &initialBasis );
+    void initializeNetworkLevelReasoning();
+    double *createConstraintMatrix();
+    void addAuxiliaryVariables();
+    void augmentInitialBasisIfNeeded( List<unsigned> &initialBasis, const List<unsigned> &basicRows );
 };
 
 #endif // __Engine_h__

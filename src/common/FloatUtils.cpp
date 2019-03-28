@@ -54,6 +54,11 @@ bool FloatUtils::isZero( double x, double epsilon )
     return ( -epsilon <= x ) && ( x <= epsilon );
 }
 
+double FloatUtils::roundToZero( double x, double epsilon )
+{
+    return isZero( x, epsilon ) ? 0.0 : x;
+}
+
 bool FloatUtils::isPositive( double x, double epsilon )
 {
     return ( !isZero( x, epsilon ) ) && ( x > 0.0 );
