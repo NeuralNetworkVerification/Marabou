@@ -42,6 +42,7 @@ Engine::Engine()
     , _exitCode( Engine::NOT_DONE )
     , _constraintBoundTightener( *_tableau )
     , _numVisitedStatesAtPreviousRestoration( 0 )
+    , _networkLevelReasoner( NULL )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -67,6 +68,12 @@ Engine::~Engine()
     {
         delete _symbolicBoundTightener;
         _symbolicBoundTightener = NULL;
+    }
+
+    if ( _networkLevelReasoner )
+    {
+        delete _networkLevelReasoner;
+        _networkLevelReasoner = NULL;
     }
 }
 
@@ -1738,6 +1745,11 @@ bool Engine::shouldExitDueToTimeout( unsigned timeout ) const
         return false;
 
     return _statistics.getTotalTime() / MILLISECONDS_TO_SECONDS > timeout;
+}
+
+void Engine::setNetworkLevelReasoner( NetworkLevelReasoner *nlr )
+{
+    _networkLevelReasoner = nlr;
 }
 
 //

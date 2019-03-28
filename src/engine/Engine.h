@@ -27,6 +27,7 @@
 #include "IEngine.h"
 #include "InputQuery.h"
 #include "Map.h"
+#include "NetworkLevelReasoner.h"
 #include "PrecisionRestorer.h"
 #include "Preprocessor.h"
 #include "SignalHandler.h"
@@ -91,6 +92,11 @@ public:
       Get the exit code
     */
     Engine::ExitCode getExitCode() const;
+
+    /*
+      Pass a network level reasoner to the engine
+    */
+    void setNetworkLevelReasoner( NetworkLevelReasoner *nlr );
 
 private:
     enum BasisRestorationRequired {
@@ -232,6 +238,13 @@ private:
       not progress has been made since the previous restoration.
     */
     unsigned long long _numVisitedStatesAtPreviousRestoration;
+
+    /*
+      An object that knows the topology of the network being checked,
+      and can be used for various operations such as network
+      evaluation of topology-based bound tightening.
+     */
+    NetworkLevelReasoner *_networkLevelReasoner;
 
     /*
       Perform a simplex step: compute the cost function, pick the
