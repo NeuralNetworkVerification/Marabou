@@ -234,6 +234,13 @@ private:
     unsigned long long _numVisitedStatesAtPreviousRestoration;
 
     /*
+      An object that knows the topology of the network being checked,
+      and can be used for various operations such as network
+      evaluation of topology-based bound tightening.
+     */
+    NetworkLevelReasoner *_networkLevelReasoner;
+
+    /*
       Perform a simplex step: compute the cost function, pick the
       entering and leaving variables and perform a pivot.
     */
