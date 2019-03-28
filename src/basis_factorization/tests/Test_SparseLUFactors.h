@@ -128,6 +128,14 @@ public:
         lu->_Vt->initialize( Vt, 4, 4 );
 
         /*
+          If row i of V corresponds to row j of U, the i'th diaonal element will be U[j,j].
+        */
+        lu->_vDiagonalElements[0] = 2;
+        lu->_vDiagonalElements[1] = 7;
+        lu->_vDiagonalElements[2] = 1;
+        lu->_vDiagonalElements[3] = -2;
+
+        /*
           Implies A = FV = | 2 -5   1 8 |
                            | 4  3 -28 8 |
                            | 1 -3  -2 3 |

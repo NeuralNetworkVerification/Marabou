@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file SparseUnsortedList.h
+/*! \file SparseUnsortedArray.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz
@@ -13,17 +13,24 @@
 
  **/
 
-#ifndef __SparseUnsortedList_h__
-#define __SparseUnsortedList_h__
+#ifndef __SparseUnsortedArray_h__
+#define __SparseUnsortedArray_h__
 
 #include "HashMap.h"
-#include "SparseMatrix.h"
 
-class SparseUnsortedList
+class SparseUnsortedList;
+
+class SparseUnsortedArray
 {
 public:
     struct Entry
     {
+        Entry()
+            : _index( 0 )
+            , _value( 0 )
+        {
+        }
+
         Entry( unsigned index, double value )
             : _index( index )
             , _value( value )
@@ -37,27 +44,24 @@ public:
     /*
       Initialization: the size determines the dimension of the
       underlying storage.
-
-      A unsortedList can be initialized from a dense unsortedList, or it
-      can remain empty.
     */
-    SparseUnsortedList();
-    ~SparseUnsortedList();
-    SparseUnsortedList( unsigned size );
-    SparseUnsortedList( const double *V, unsigned size );
+    SparseUnsortedArray();
+    ~SparseUnsortedArray();
+    SparseUnsortedArray( unsigned size );
+    SparseUnsortedArray( const double *V, unsigned size );
     void initialize( const double *V, unsigned size );
     void initializeToEmpty();
+    void initializeFromList( const SparseUnsortedList *list );
 
     /*
-      Remove the unsortedList's elements, without touching the
-      allocated memory
+      Remove the elements, without changing the allocated memory
     */
     void clear();
 
     /*
       Set a value.
       Call "append" only if certain that the value is not zero and
-      that the index does not already exist in the sparse vector.
+      that the index does not already exist in the sparse array.
     */
     void set( unsigned index, double value );
     void append( unsigned index, double value );
@@ -72,6 +76,8 @@ public:
       Retrieve an element
     */
     double get( unsigned entry ) const;
+    Entry getByArrayIndex( unsigned index ) const;
+    const Entry *getArray() const;
 
     /*
       Convert the unsortedList to dense format
@@ -87,21 +93,13 @@ public:
     /*
       Cloning
     */
-    SparseUnsortedList &operator=( const SparseUnsortedList &other );
-    void storeIntoOther( SparseUnsortedList *other ) const;
+    SparseUnsortedArray &operator=( const SparseUnsortedArray &other );
+    void storeIntoOther( SparseUnsortedArray *other ) const;
 
     /*
-      Retrieve entries
+      Erasing an element by its index in the underlying array
     */
-    List<Entry>::const_iterator begin() const;
-    List<Entry>::const_iterator end() const;
-    List<Entry>::iterator begin();
-    List<Entry>::iterator end();
-
-    /*
-      Erasing an element by iterator
-    */
-    List<Entry>::iterator erase( List<Entry>::iterator it );
+    void erase( unsigned index );
 
     /*
       Addes the coefficient for entry 'source' to entry 'target'
@@ -110,22 +108,27 @@ public:
     void mergeEntries( unsigned source, unsigned target );
 
     /*
-      Get the size
-    */
-    unsigned getSize() const;
-
-    /*
       Debugging
     */
     void dump() const;
     void dumpDense() const;
 
 private:
-    unsigned _size;
-    List<Entry> _list;
+    Entry *_array;
+    unsigned _maxSize;
+    unsigned _allocatedSize;
+    unsigned _nnz;
+
+    // The chunk size by which the capacity is increased when exceeded
+    enum {
+        CHUNK_SIZE = 20,
+    };
+
+    void freeMemoryIfNeeded();
+    void increaseCapacity();
 };
 
-#endif // __SparseUnsortedList_h__
+#endif // __SparseUnsortedArray_h__
 
 //
 // Local Variables:

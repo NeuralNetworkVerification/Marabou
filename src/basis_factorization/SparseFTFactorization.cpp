@@ -156,6 +156,8 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
         _sparseLUFactors._V->set( i, columnIndex, _z4[i] );
     }
 
+    double pivotElement = _z4[vRowDiagonalIndex];
+
     /*
       Step 2:
 
@@ -166,6 +168,7 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
     ASSERT( foundNonZeroEntry );
     if ( lastNonZeroEntryInU <= uColumnIndex )
     {
+        _sparseLUFactors._vDiagonalElements[vRowDiagonalIndex] = pivotElement;
         ASSERT( uColumnIndex == lastNonZeroEntryInU ); // Otherwise, singular matrix
         return;
     }
@@ -200,10 +203,13 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
       This is done by traversing V's corresponding row
     */
 
-    const SparseUnsortedList *sparseRow = _sparseLUFactors._V->getRow( vRowDiagonalIndex );
+    SparseUnsortedArray::Entry entry;
+    const SparseUnsortedArray *sparseRow = _sparseLUFactors._V->getRow( vRowDiagonalIndex );
     bool haveSpike = false;
-    for ( const auto &entry : *sparseRow )
+    for ( unsigned i = 0; i < sparseRow->getNnz(); ++i )
     {
+        entry = sparseRow->getByArrayIndex( i );
+
         unsigned vColumn = entry._index;
         unsigned uColumn = _sparseLUFactors._Q._columnOrdering[vColumn];
 
@@ -215,7 +221,10 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
     }
 
     if ( !haveSpike )
+    {
+        _sparseLUFactors._vDiagonalElements[vRowDiagonalIndex] = pivotElement;
         return;
+    }
 
     /*
       Step 4:
@@ -224,8 +233,7 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
     */
 
     SparseEtaMatrix *sparseEtaMatrix = new SparseEtaMatrix( _m, vRowDiagonalIndex );
-    // These eta matrices always have 1 as their pivot entry
-    sparseEtaMatrix->addEntry( vRowDiagonalIndex, 1 );
+    // These eta matrices always have 1 as their pivot entry, but this is implicit.
 
     // Copy the spike row to work memory
     _sparseLUFactors._V->getRowDense( vRowDiagonalIndex, _z3 );
@@ -253,8 +261,9 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
         sparseEtaMatrix->addEntry( vPivotRow, multiplier );
 
         // Adjust the spike row per the elimination step
-        for ( const auto &entry : *sparseRow )
+        for ( unsigned j = 0; j < sparseRow->getNnz(); ++j )
         {
+            entry = sparseRow->getByArrayIndex( j );
             unsigned column = entry._index;
 
             if ( column != vPivotColumn )
@@ -294,6 +303,8 @@ void SparseFTFactorization::updateToAdjacentBasis( unsigned columnIndex,
     _sparseLUFactors._V->updateSingleRow( vRowDiagonalIndex, _z3 );
     for ( unsigned i = 0; i < _m; ++i )
         _sparseLUFactors._Vt->set( i, vRowDiagonalIndex, _z3[i] );
+
+    _sparseLUFactors._vDiagonalElements[vRowDiagonalIndex] = _z3[columnIndex];
 }
 
 void SparseFTFactorization::forwardTransformation( const double *y, double *x ) const
@@ -356,6 +367,9 @@ void SparseFTFactorization::factorizeBasis()
         else
             throw e;
     }
+
+    if ( _statistics )
+        _statistics->incNumBasisRefactorizations();
 }
 
 void SparseFTFactorization::storeFactorization( IBasisFactorization *other )
@@ -437,17 +451,12 @@ void SparseFTFactorization::hForwardTransformation( const double *y, double *x )
 
     for ( const auto &eta : _etas )
     {
-        ASSERT( eta->_diagonalElement == 1 );
         unsigned pivotIndex = eta->_columnIndex;
 
         for ( const auto &entry : eta->_sparseColumn )
         {
             unsigned entryIndex = entry._index;
             double value = entry._value;
-
-            if ( entryIndex == pivotIndex )
-                continue;
-
             x[pivotIndex] -= value * x[entryIndex];
         }
     }
@@ -464,7 +473,6 @@ void SparseFTFactorization::hBackwardTransformation( const double *y, double *x 
 
     for ( auto eta = _etas.rbegin(); eta != _etas.rend(); ++eta )
     {
-        ASSERT( (*eta)->_diagonalElement == 1 );
         unsigned pivotIndex = (*eta)->_columnIndex;
         double pivotValue = x[pivotIndex];
 
@@ -472,13 +480,7 @@ void SparseFTFactorization::hBackwardTransformation( const double *y, double *x 
         {
             unsigned entryIndex = entry._index;
             double value = entry._value;
-
-            if ( entryIndex == pivotIndex )
-                continue;
-
             x[entryIndex] -= value * pivotValue;
-            if ( FloatUtils::isZero( x[entryIndex] ) )
-                x[entryIndex] = 0.0;
         }
     }
 }

@@ -56,6 +56,7 @@ Tableau::Tableau()
     , _basicAssignmentStatus( ITableau::BASIC_ASSIGNMENT_INVALID )
     , _statistics( NULL )
     , _costFunctionManager( NULL )
+    , _rhsIsAllZeros( true )
 {
 }
 
@@ -541,11 +542,20 @@ unsigned Tableau::variableToIndex( unsigned index ) const
 void Tableau::setRightHandSide( const double *b )
 {
     memcpy( _b, b, sizeof(double) * _m );
+
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        if ( !FloatUtils::isZero( _b[i] ) )
+            _rhsIsAllZeros = false;
+    }
 }
 
 void Tableau::setRightHandSide( unsigned index, double value )
 {
     _b[index] = value;
+
+    if ( !FloatUtils::isZero( value ) )
+        _rhsIsAllZeros = false;
 }
 
 const double *Tableau::getCostFunction() const
@@ -1507,8 +1517,18 @@ void Tableau::getTableauRow( unsigned index, TableauRow *row )
             row->_row[i]._coefficient -= ( _multipliers[entry._index] * entry._value );
     }
 
-    _basisFactorization->forwardTransformation( _b, _workM );
-    row->_scalar = _workM[index];
+    /*
+      If the rhs vector is all zeros, the row's scalar will be 0. This is
+      the common case. If the rhs vector is not zero, we need to compute
+      the scalar directly.
+    */
+    if ( _rhsIsAllZeros )
+        row->_scalar = 0;
+    else
+    {
+        _basisFactorization->forwardTransformation( _b, _workM );
+        row->_scalar = _workM[index];
+    }
 
     row->_lhs = _basicIndexToVariable[index];
 }

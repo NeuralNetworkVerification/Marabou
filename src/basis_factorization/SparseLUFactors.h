@@ -17,6 +17,7 @@
 #define __SparseLUFactors_h__
 
 #include "PermutationMatrix.h"
+#include "SparseUnsortedArrays.h"
 #include "SparseUnsortedLists.h"
 
 /*
@@ -60,8 +61,8 @@ public:
     /*
       The various factorization components as described above
     */
-    SparseUnsortedLists *_F;
-    SparseUnsortedLists *_V;
+    SparseUnsortedArrays *_F;
+    SparseUnsortedArrays *_V;
     PermutationMatrix _P;
     PermutationMatrix _Q;
 
@@ -78,8 +79,14 @@ public:
       sometimes we need to retrieve columns and sometimes we needs rows,
       and these operations may be cheaper on the transposed matrix
     */
-    SparseUnsortedLists *_Ft;
-    SparseUnsortedLists *_Vt;
+    SparseUnsortedArrays *_Ft;
+    SparseUnsortedArrays *_Vt;
+
+    /*
+      A vector for the diagonal elements of V, for quick access. If row i
+      of V corresponds to row j of U, the i'th diaonal element will be U[j,j].
+    */
+    double *_vDiagonalElements;
 
     /*
       Basic computations (BTRAN, FTRAN) involving the factorization
@@ -113,6 +120,7 @@ public:
     */
     double *_z;
     double *_workMatrix;
+    double *_workVector;
 
     /*
       Clone this SparseLUFactors object into another object

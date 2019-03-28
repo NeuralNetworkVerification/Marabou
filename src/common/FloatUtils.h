@@ -30,6 +30,7 @@ public:
                              double y,
                              double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
     static bool isZero( double x, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
+    static double roundToZero( double x, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
     static bool isPositive( double x, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
     static bool isNegative( double x, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
     static bool gt( double x, double y, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
@@ -43,7 +44,6 @@ public:
     static bool isFinite( double x );
     static String doubleToString( double x,
                                   unsigned precision = GlobalConfiguration::DEFAULT_DOUBLE_TO_STRING_PRECISION );
-
     static bool wellFormed( double x );
     static bool isNan( double x );
     static bool isInf( double x );

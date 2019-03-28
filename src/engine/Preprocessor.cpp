@@ -563,7 +563,9 @@ void Preprocessor::eliminateVariables()
                 _preprocessed._sbt->setEliminatedRelu( nodeIndex._layer, nodeIndex._neuron, relu->getPhaseStatus() );
             }
 
-            _statistics->ppIncNumConstraintsRemoved();
+            if ( _statistics )
+                _statistics->ppIncNumConstraintsRemoved();
+
             constraint = constraints.erase( constraint );
         }
         else
