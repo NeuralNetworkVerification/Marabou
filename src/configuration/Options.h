@@ -69,7 +69,7 @@ private:
     */
     void initializeDefaultValues();
 
-    OptionParser _optionParser;
+    // OptionParser _optionParser;
 
     /*
       The various option values

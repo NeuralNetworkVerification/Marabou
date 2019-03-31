@@ -46,7 +46,6 @@ vpath %.cpp $(INPUT_PARSER_DIR)
 
 SOURCES += \
 	Marabou.cpp \
-	OptionParser.cpp \
 	Options.cpp \
 	main.cpp \
 
