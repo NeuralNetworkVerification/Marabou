@@ -24,8 +24,8 @@ os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 import tensorflow as tf
-from . import MarabouUtils
-from . import MarabouNetwork
+from maraboupy import MarabouUtils
+from maraboupy import MarabouNetwork
 
 class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
     def __init__(self, filename, inputNames=None, outputName=None, savedModel=False, savedModelTags=[]):
@@ -185,13 +185,19 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             values: (np array) of scalars or variable numbers depending on op
         """
         input_ops = [i.op for i in op.inputs]
-
+        
         ### Operations not requiring new variables ###
         if op.node_def.op == 'Identity':
             return self.getValues(input_ops[0])
         if op.node_def.op in ['Reshape']:
-            prevValues = [self.getValues(i) for i in input_ops]
-            shape = prevValues[1]
+            if input_ops[1].node_def.op == 'Pack':
+                prevValues = self.getValues(input_ops[0])
+                input_dims = op.inputs[0].shape.dims
+                input_size = np.prod(np.array([d.value for d in input_dims])[1:])
+                shape = (-1, input_size)
+            else:
+                prevValues = [self.getValues(i) for i in input_ops]
+                shape = prevValues[1]
             return np.reshape(prevValues[0], shape)
         if op.node_def.op == 'ConcatV2':
             prevValues = [self.getValues(i) for i in input_ops]
@@ -203,7 +209,7 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             return tensor_util.MakeNdarray(tproto)
         ### END operations not requiring new variables ###
 
-        if op.node_def.op in ['MatMul', 'BiasAdd', 'Add', 'Relu', 'MaxPool', 'Conv2D', 'Placeholder']:
+        if op.node_def.op in ['MatMul', 'BiasAdd', 'Add', 'Sub', 'Relu', 'MaxPool', 'Conv2D', 'Placeholder']:
             # need to create variables for these
             return self.opToVarArray(op)
 
@@ -341,6 +347,34 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         else:
             self.biasAddEquations(op)
 
+    def subEquations(self, op): 
+        """
+        Function to generate equations corresponding to subtraction
+        Arguments:
+            op: (tf.op) representing sub operation
+        """
+        input_ops = [i.op for i in op.inputs]
+        assert len(input_ops) == 2
+        input1 = input_ops[0]
+        input2 = input_ops[1]
+        assert self.isVariable(input1)
+        if self.isVariable(input2):
+            curVars = self.getValues(op).reshape(-1)
+            prevVars1 = self.getValues(input1).reshape(-1)
+            prevVars2 = self.getValues(input2).reshape(-1)
+            assert len(prevVars1) == len(prevVars2)
+            assert len(curVars) == len(prevVars1)
+            for i in range(len(curVars)):
+                e = MarabouUtils.Equation()
+                e.addAddend(1, prevVars1[i])
+                e.addAddend(-1, prevVars2[i])
+                e.addAddend(-1, curVars[i])
+                e.setScalar(0.0)
+                self.addEquation(e)
+        else:
+            self.biasAddEquations(op)
+
+
     def conv2DEquations(self, op):
         """
         Function to generate equations corresponding to 2D convolution operation
@@ -450,7 +484,7 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         Arguments:
             op: (tf.op) for which to generate equations
         """
-        if op.node_def.op in ['Identity', 'Reshape', 'Pack', 'Placeholder', 'Const', 'ConcatV2']:
+        if op.node_def.op in ['Identity', 'Reshape', 'Pack', 'Placeholder', 'Const', 'ConcatV2', 'Shape', 'StridedSlice']:
             return
         if op.node_def.op == 'MatMul':
             self.matMulEquations(op)
@@ -458,6 +492,8 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             self.biasAddEquations(op)
         elif op.node_def.op == 'Add':
             self.addEquations(op)
+        elif op.node_def.op == 'Sub':
+            self.subEquations(op)
         elif op.node_def.op == 'Conv2D':
             self.conv2DEquations(op)
         elif op.node_def.op == 'Relu':
