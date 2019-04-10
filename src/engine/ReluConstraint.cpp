@@ -468,7 +468,7 @@ void ReluConstraint::eliminateVariable( __attribute__((unused)) unsigned variabl
             {
                 ASSERT( _phaseStatus != PHASE_INACTIVE );
             }
-            else
+            else if ( FloatUtils::lt( fixedValue, 0 ) )
             {
                 ASSERT( _phaseStatus != PHASE_ACTIVE );
             }
