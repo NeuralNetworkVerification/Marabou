@@ -176,6 +176,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
             if ( !_tableau->allBoundsValid() )
             {
                 // Some variable bounds are invalid, so the query is unsat
+                printf("UNSAT due to variable bounds being invalid.");
                 throw InfeasibleQueryException();
             }
 
@@ -624,11 +625,14 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         // If processing is enabled, invoke the preprocessor
         _preprocessingEnabled = preprocess;
-        if ( _preprocessingEnabled )
+        if ( _preprocessingEnabled ){
+            printf("Preprocessing...");
             _preprocessedQuery = _preprocessor.preprocess
                 ( inputQuery, GlobalConfiguration::PREPROCESSOR_ELIMINATE_VARIABLES );
-        else
+            }
+        else {
             _preprocessedQuery = inputQuery;
+        }
 
         printf( "Engine::processInputQuery: Input query (after preprocessing): "
                 "%u equations, %u variables\n\n",

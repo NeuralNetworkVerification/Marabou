@@ -1657,8 +1657,10 @@ void Tableau::checkBoundsValid()
     for ( unsigned i = 0; i < _n ; ++i )
     {
         checkBoundsValid( i );
-        if ( !_boundsValid )
+        if ( !_boundsValid ){
+            printf("Variable %d has invalid bounds.", i);
             return;
+        }
     }
 }
 
@@ -1667,6 +1669,7 @@ void Tableau::checkBoundsValid( unsigned variable )
     ASSERT( variable < _n );
     if ( !FloatUtils::lte( _lowerBounds[variable], _upperBounds[variable] ) )
     {
+        printf("Variable %d has invalid bounds.", variable);
         _boundsValid = false;
         return;
     }
