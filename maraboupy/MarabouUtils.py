@@ -148,7 +148,5 @@ def addComplementOutputSet(network, LB, UB, x):
     Y = network.getNewVariable()
     network.addMaxConstraint({x_l,x_u}, Y)
     network.setLowerBound(Y, 0.0)
-    if network.outputVars is None:
-        network.outputVars = np.array([[Y]])
-    else: 
-        network.outputVars = np.hstack([network.outputVars, np.array([[Y]]) ])
+    print("Instead of setting a bound on ", x, " we are creating x_l:",x_l," and x_u:",x_u," and Y:",Y,"and setting a bound on Y")
+    return Y
