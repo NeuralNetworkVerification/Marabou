@@ -178,13 +178,13 @@ class MarabouNetwork:
                     to how an input query was solved.
         """
         ipq = self.getMarabouQuery()
-        vals, stats = MarabouCore.solve(ipq, filename, timeout)
+        vals, stats, exit_code = MarabouCore.solve(ipq, filename, timeout)
         if verbose:
-            if stats.hasTimedOut():
-                print("TO")
-            elif len(vals)==0:
+            if exit_code == 3:
+                print("TIMEOUT")
+            elif exit_code == 0:
                 print("UNSAT")
-            else:
+            elif exit_code == 1:
                 print("SAT")
                 for j in range(len(self.inputVars)):
                     for i in range(self.inputVars[j].size):
@@ -192,8 +192,11 @@ class MarabouNetwork:
 
                 for i in range(self.outputVars.size):
                     print("output {} = {}".format(self.outputVars.item(i), vals[self.outputVars.item(i)]))
-
-        return [vals, stats]
+            elif exit_code == 2:
+                print("ERROR")
+            else:
+                raise NotImplementedError
+        return [vals, stats, exit_code]
 
     def saveQuery(self, filename=""):
         """
@@ -257,9 +260,15 @@ class MarabouNetwork:
             inputDict[x[0]] = x[1]
 
         ipq = self.getMarabouQuery()
+        # concerningly, getNumOutputVariables returns 0...
+        # same for getNumInputVariables...
+        print("lower bound on 0: ", ipq.getLowerBound(0))
         for k in inputDict:
             ipq.setLowerBound(k, inputDict[k])
             ipq.setUpperBound(k, inputDict[k])
+        print("lower bound on 0: ", ipq.getLowerBound(0))
+        # ^^ This doesn't seem to actually set bounds...
+        # but network.setLowerBound does seem to work...
 
         outputDict = MarabouCore.solve(ipq, filename, timeout)
         outputValues = outputVars.reshape(-1).astype(np.float64)
