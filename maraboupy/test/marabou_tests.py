@@ -78,7 +78,6 @@ def test3(frozen_graph):
 	network.setLowerBound(0, 0.)
 	network.setUpperBound(0, 1.)
 	# output bounds
-	network.outputVars = None
 	for i in range(4):
 		addComplementOutputSet(network, LB=4., UB=5., x=output_vars[0][i])
 	display_equations(network)
@@ -101,7 +100,6 @@ def test4(frozen_graph):
 	network.setLowerBound(0, 0.+eps)
 	network.setUpperBound(0, 1.-eps)
 	# output bounds
-	network.outputVars = None
 	for i in range(4):
 		addComplementOutputSet(network, LB=0., UB=1., x=output_vars[0][i])
 	display_equations(network)
