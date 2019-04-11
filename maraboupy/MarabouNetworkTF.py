@@ -201,9 +201,16 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         if op.node_def.op == 'Const':
             tproto = op.node_def.attr['value'].tensor
             return tensor_util.MakeNdarray(tproto)
+        if op.node_def.op == 'Mul':
+            if (not self.isVariable(input_ops[0])) and (not self.isVariable(input_ops[1])):
+                i0 = self.getValues(input_ops[0])
+                i1 = self.getValues(input_ops[1])
+                # allow broadcasting
+                return np.multiply(i0, i1)
+
         ### END operations not requiring new variables ###
 
-        if op.node_def.op in ['MatMul', 'BiasAdd', 'Add', 'Relu', 'MaxPool', 'Conv2D', 'Placeholder']:
+        if op.node_def.op in ['MatMul', 'Mul', 'BiasAdd', 'Add', 'Relu', 'Maximum', 'MaxPool', 'Conv2D', 'Placeholder']:
             # need to create variables for these
             return self.opToVarArray(op)
 
@@ -266,7 +273,7 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
                 e.setScalar(0.0)
                 self.addEquation(e)
 
-        def mulEquations(self, op):
+    def mulEquations(self, op):
         """
         Function to generate equations corresponding to elementwise matrix multiplication 
         Arguments:
@@ -276,6 +283,7 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         input_ops = [i.op for i in op.inputs]
         prevValues = [self.getValues(i) for i in input_ops]
         curValues = self.getValues(op)
+        assert not (self.isVariable(input_ops[0]) and self.isVariable(input_ops[1]))
         if self.isVariable(input_ops[0]):
             #convention = "xW"
             x = prevValues[0]
@@ -284,6 +292,10 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             #convention = "Wx"
             W = prevValues[0]
             x = prevValues[1]
+        else:
+            print("Multiplying two constants not supported")
+            import pdb; pdb.set_trace()
+            raise NotImplementedError
         W = W.reshape(-1)
         x = x.reshape(-1)
         if x.shape != W.shape:
@@ -488,6 +500,29 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
                                 maxVars.add(prevValues[0][di][dj][k])
                     self.addMaxConstraint(maxVars, curValues[0][i][j][k])
 
+    def maxEquations(self, op):
+        """
+        Function to generate max equations
+        # TODO: 
+        # extend to handle max between a constant and a variable
+        # nominal right now: just handle between two variables
+        """
+        input_ops = [i.op for i in op.inputs]
+        prevValues = [self.getValues(i) for i in input_ops]
+        curValues = self.getValues(op)
+        assert len(prevValues) == 2
+        if not (self.isVariable(input_ops[0]) and self.isVariable(input_ops[1])):
+            import pdb; pdb.set_trace()
+        # max btw two variables
+        prevValues = np.array(prevValues).flatten()
+        curValues = np.array(curValues).flatten()
+        maxVars = set()
+        if (type(prevValues[0]) is np.ndarray) or (type(prevValues[0]) is np.ndarray):
+            import pdb; pdb.set_trace()
+        maxVars.add(prevValues[0])
+        maxVars.add(prevValues[1])
+        self.addMaxConstraint(maxVars, curValues[0])
+
     def makeNeuronEquations(self, op):
         """
         Function to generate equations corresponding to given operation
@@ -499,7 +534,11 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         if op.node_def.op == 'MatMul':
             self.matMulEquations(op)
         elif op.node_def.op == 'Mul':
-            self.mulEquations(op)
+            input_ops = [i.op for i in op.inputs]
+            if self.isVariable(input_ops[0]) or self.isVariable(input_ops[1]): 
+                self.mulEquations(op)
+            else:
+                return
         elif op.node_def.op == 'BiasAdd':
             self.biasAddEquations(op)
         elif op.node_def.op == 'Add':
@@ -508,6 +547,8 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             self.conv2DEquations(op)
         elif op.node_def.op == 'Relu':
             self.reluEquations(op)
+        elif op.node_def.op == 'Maximum':
+            self.maxEquations(op)
         elif op.node_def.op == 'MaxPool':
             self.maxpoolEquations(op)
         else:
