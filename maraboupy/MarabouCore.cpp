@@ -103,33 +103,52 @@ void createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::
     printf( "Property: None\n" );
 }
 
-std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::string redirect="", unsigned timeout=0){
+std::tuple<std::map<int, double>, Statistics, int> solve(InputQuery inputQuery, std::string redirect="", unsigned timeout=0){
     // Arguments: InputQuery object, filename to redirect output
     // Returns: map from variable number to value
     std::map<int, double> ret;
     Statistics retStats;
+    int engine_exit_code;
     int output=-1;
     if(redirect.length()>0)
         output=redirectOutputToFile(redirect);
     try{
         Engine engine;
-        if(!engine.processInputQuery(inputQuery)) return std::make_pair(ret, *(engine.getStatistics()));
+        if(!engine.processInputQuery(inputQuery)){ 
+            if(output != -1){
+                restoreOutputStream(output);
+            };
+            printf("Engine exit code: %d", engine.getExitCode());
+            return std::make_tuple(ret, *(engine.getStatistics()), engine.getExitCode());
+        }
 
-        if(!engine.solve(timeout)) return std::make_pair(ret, *(engine.getStatistics()));
+        if(!engine.solve(timeout)){ 
+            if(output != -1){
+                restoreOutputStream(output);
+            };
+            printf("Engine exit code: %d", engine.getExitCode());
+            return std::make_tuple(ret, *(engine.getStatistics()), engine.getExitCode());
+        }
 
         if (engine.getExitCode() == Engine::SAT)
             engine.extractSolution(inputQuery);
         retStats = *(engine.getStatistics());
         for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); i++)
             ret[i] = inputQuery.getSolutionValue(i);
+        printf("Engine exit code: %d", engine.getExitCode());
+        engine_exit_code = engine.getExitCode();
     }
     catch(const ReluplexError &e){
         printf( "Caught a ReluplexError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );
-        return std::make_pair(ret, retStats);
+        if(output != -1){
+            restoreOutputStream(output);
+        };
+        return std::make_tuple(ret, retStats, 2);
     }
-    if(output != -1)
+    if(output != -1){
         restoreOutputStream(output);
-    return std::make_pair(ret, retStats);
+    }
+    return std::make_tuple(ret, retStats, engine_exit_code);
 }
 
 void saveQuery(InputQuery& inputQuery, std::string filename){
