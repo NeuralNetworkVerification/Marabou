@@ -464,6 +464,51 @@ void Tableau::computeBasicStatus( unsigned basicIndex )
     }
 }
 
+void Tableau::printCurrentBounds()
+{
+    printf( "---------------------------\n" );
+    printf( "Current bounds:\n" );
+
+    for (unsigned i = 0; i < _n; ++i) {
+        double lb, ub;
+        lb = getLowerBound( i );
+        ub = getUpperBound( i );
+        printf( "\tx%u: [%8.4lf, %8.4lf]\n", i, lb, ub );
+    }
+
+    for (unsigned i = 0; i < _m; ++i) {
+        TableauRow row( _n );
+        getTableauRow( i, &row );
+
+        unsigned lhs = row._lhs;
+        printf( "\tx%u =", lhs );
+
+        for ( unsigned j = 0; j <= _n - _m; ++j )
+        {
+            unsigned row_v = row._row[j]._var;
+            double row_coef = row._row[j]._coefficient;
+
+            if (row_coef > 0) {
+                printf( " +%.2fx%u", row_coef, row_v );
+            } else if (row_coef < 0) {
+                printf( " %.2fx%u", row_coef, row_v );
+            }
+        }
+
+        double row_scalar = row._scalar;
+        if (row_scalar > 0) {
+            printf( " +%.2f", row_scalar );
+        } else if (row_scalar < 0) {
+            printf( " %.2f", row_scalar );
+        }
+
+        printf("\n");
+    }
+
+    printf( "---------------------------\n" );
+}
+
+
 void Tableau::setLowerBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );
