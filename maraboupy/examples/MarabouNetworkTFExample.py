@@ -32,7 +32,7 @@ network = Marabou.read_tf(filename)
 #network = MarabouNetworkTF(filename=filename, inputName=inputName, outputName = outputName)
 
 # Get the input and output variable numbers; [0] since first dimension is batch size
-inputVars = network.inputVars[0]
+inputVars = network.inputVars[0][0]
 outputVars = network.outputVars[0]
 
 # Set input bounds

@@ -1033,9 +1033,13 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         double *constraintMatrix = createConstraintMatrix();
         removeRedundantEquations( constraintMatrix );
 
+        // The equations have changed, recreate the constraint matrix
+        delete[] constraintMatrix;
+        constraintMatrix = createConstraintMatrix();
+
         List<unsigned> initialBasis;
         List<unsigned> basicRows;
-        selectInitialVariablesForBasis( constraintMatrix, initialBasis, basicRows );
+        selectInitialVariablesForBasis( constraintMatrix, initialBasis, basicRows ); // HERE
         addAuxiliaryVariables();
         augmentInitialBasisIfNeeded( initialBasis, basicRows );
 
