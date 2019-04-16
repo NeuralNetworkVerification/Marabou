@@ -116,10 +116,37 @@ def addInequality(network, vars, coeffs, scalar):
     e.setScalar(scalar)
     network.addEquation(e)
 
+def addComplementOutputSets(network, var_tuples):
+    """
+    Construct multiple complement output sets and "OR"s them together.
+    Arguments:
+        network: (MarabouNetwork) to which to add constraint
+        List of tuples of the form:
+            [(LB: (float) specifying the lower bound,
+             UB: (float) specifying the upper bound,
+             x: (int) specifying the variable), 
+             (,,), 
+             ...]
+    """
+    assert len(var_tuples) > 1
+    LB,UB,x = var_tuples.pop(0)
+    Y = addComplementOutputSet(network, LB, UB, x)
+    for (LB,UB,x) in var_tuples:
+        Z = addComplementOutputSet(network, LB, UB, x)
+        Q = network.getNewVariable()
+        network.addMaxConstraint({Y,Z}, Q)
+        Y = Q
+    # set the lower bound enforcing the "OR" on all the complement output set 
+    # constraints
+    network.setLowerBound(Q, 0.0)
+    return True
+
 def addComplementOutputSet(network, LB, UB, x):
     """
     Function to convert an output specification of staying within a set defined 
-    by a lower bound and upper bound to its complement appropriate for Marabou.
+    by a lower bound and upper bound to its complement appropriate for Marabou. 
+    Returns a variable. May be "OR"ed with other variables or a lower bound of 0
+    may be set on the output of this function.
     Arguments:
         network: (MarabouNetwork) to which to add constraint
         LB: (float) specifying the lower bound
@@ -147,6 +174,6 @@ def addComplementOutputSet(network, LB, UB, x):
     # max(x_l, x_u) > 0
     Y = network.getNewVariable()
     network.addMaxConstraint({x_l,x_u}, Y)
-    network.setLowerBound(Y, 0.0)
-    print("Instead of setting a bound on ", x, " we are creating x_l:",x_l," and x_u:",x_u," and Y:",Y,"and setting a bound on Y")
+    #network.setLowerBound(Y, 0.0)
+    print("Instead of setting a bound on ", x, " we are creating x_l:",x_l," and x_u:",x_u," and Y:",Y,"")#and setting a bound on Y")
     return Y
