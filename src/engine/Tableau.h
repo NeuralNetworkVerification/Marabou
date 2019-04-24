@@ -131,8 +131,6 @@ public:
     */
     unsigned variableToIndex( unsigned index ) const;
 
-    void printCurrentBounds();
-
     /*
       Set the lower/upper bounds for a variable. These functions are
       meant to be used as part of the initialization of the tableau.

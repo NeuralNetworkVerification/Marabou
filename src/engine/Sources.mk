@@ -25,6 +25,7 @@ SOURCES += \
 	Tableau.cpp \
 	TableauRow.cpp \
 	TableauState.cpp \
+	GurobiManager.cpp \
 
 #
 # Local Variables:

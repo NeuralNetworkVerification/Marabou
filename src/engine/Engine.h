@@ -32,6 +32,7 @@
 #include "SignalHandler.h"
 #include "SmtCore.h"
 #include "Statistics.h"
+#include "GurobiManager.h"
 
 class EngineState;
 class InputQuery;

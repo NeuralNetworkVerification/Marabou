@@ -280,6 +280,9 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
 void Engine::mainLoopStatistics()
 {
+    GurobiManager gurobiManager = GurobiManager(_tableau);
+    gurobiManager.printCurrentBounds();
+
     struct timespec start = TimeUtils::sampleMicro();
 
     unsigned activeConstraints = 0;
