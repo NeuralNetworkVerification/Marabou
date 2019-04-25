@@ -242,6 +242,13 @@ private:
     NetworkLevelReasoner *_networkLevelReasoner;
 
     /*
+      An object in charge of managing bound tightenings before a split 
+      occurs, by running gurobi solver on current tableau values.
+      In case the bounds are tighten enough, the split does not happen.
+    */
+    GurobiManager _gurobiManager;
+
+    /*
       Perform a simplex step: compute the cost function, pick the
       entering and leaving variables and perform a pivot.
     */

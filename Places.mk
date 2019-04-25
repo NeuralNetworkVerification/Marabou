@@ -9,6 +9,8 @@ TOOLS_DIR	  = $(PROJECT_DIR)/tools
 CXXTEST_DIR 	  = $(TOOLS_DIR)/cxxtest
 BOOST_LIBS 	  = $(TOOLS_DIR)/boost_1_68_0/installed/lib
 BOOST_INCLUDES	  = $(TOOLS_DIR)/boost_1_68_0/installed/include
+GUROBI_LIBS 	  = $(TOOLS_DIR)/gurobi811/lib
+GUROBI_INCLUDES	  = $(TOOLS_DIR)/gurobi811/include
 
 INPUT_PARSER_DIR  = $(SRC_DIR)/input_parsers
 

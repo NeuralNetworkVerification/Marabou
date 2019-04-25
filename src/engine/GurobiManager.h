@@ -19,7 +19,7 @@
 #include <iostream>
 #include "ITableau.h"
 #include "TableauRow.h"
-// #include "gurobi_c++.h"
+#include "gurobi_c++.h"
 
 class ITableau;
 class TableauRow;
@@ -27,9 +27,10 @@ class TableauRow;
 class GurobiManager
 {
 public:
-    GurobiManager(ITableau *tableau);
+    GurobiManager();
     ~GurobiManager();
-    void printCurrentBounds();
+    void setTableau(ITableau *tableau);
+	void tightenBoundsOfVar(int objectiveVar);
 private:
 	ITableau *_tableau;
 };

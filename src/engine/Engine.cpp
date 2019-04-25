@@ -49,6 +49,7 @@ Engine::Engine()
     _rowBoundTightener->setStatistics( &_statistics );
     _constraintBoundTightener->setStatistics( &_statistics );
     _preprocessor.setStatistics( &_statistics );
+    _gurobiManager.setTableau( _tableau );
 
     _activeEntryStrategy = _projectedSteepestEdgeRule;
     _activeEntryStrategy->setStatistics( &_statistics );
@@ -170,6 +171,8 @@ bool Engine::solve( unsigned timeoutInSeconds )
             // Perform any SmtCore-initiated case splits
             if ( _smtCore.needToSplit() )
             {
+                // Check for the problematic variable if the upper or lower bounds can be tighten.
+                _gurobiManager.tightenBoundsOfVar(0);
                 _smtCore.performSplit();
 
                 // do
@@ -280,9 +283,6 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
 void Engine::mainLoopStatistics()
 {
-    GurobiManager gurobiManager = GurobiManager(_tableau);
-    gurobiManager.printCurrentBounds();
-
     struct timespec start = TimeUtils::sampleMicro();
 
     unsigned activeConstraints = 0;

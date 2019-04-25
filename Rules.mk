@@ -45,6 +45,7 @@ LOCAL_INCLUDES += \
 	. \
 	$(COMMON_DIR) \
 	$(CXXTEST_DIR) \
+	$(GUROBI_INCLUDES) \
 
 CFLAGS += \
 	-MMD \
@@ -70,8 +71,11 @@ CFLAGS += \
 #
 
 LIBRARY_DIR += \
+	$(GUROBI_LIBS) \
 
 LIBRARIES += \
+	gurobi_c++ \
+	gurobi81 \
 
 LINK_FLAGS += \
 
