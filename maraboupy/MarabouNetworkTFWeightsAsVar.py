@@ -1,5 +1,4 @@
 import numpy as np
-from copy import deepcopy
 from tensorflow.python.framework import tensor_util
 from tensorflow.python.framework import graph_util
 import os
@@ -31,8 +30,6 @@ class MarabouNetworkTFWeightsAsVar(MarabouNetwork.MarabouNetwork):
         self.numOfLayers = -1
         self.readFromPb(filename, inputVals, inputNames, outputName, savedModel, savedModelTags)
         self.processBiasAddRelations()
-
-    # def __deepcopy__(self, memo):
 
 
     def clear(self):
