@@ -1,4 +1,5 @@
 import numpy as np
+from copy import deepcopy
 from tensorflow.python.framework import tensor_util
 from tensorflow.python.framework import graph_util
 import os
@@ -31,6 +32,9 @@ class MarabouNetworkTFWeightsAsVar(MarabouNetwork.MarabouNetwork):
         self.readFromPb(filename, inputVals, inputNames, outputName, savedModel, savedModelTags)
         self.processBiasAddRelations()
 
+    # def __deepcopy__(self, memo):
+
+
     def clear(self):
         """
         Reset values to represent empty network
@@ -40,13 +44,11 @@ class MarabouNetworkTFWeightsAsVar(MarabouNetwork.MarabouNetwork):
         self.varMap = dict()
         self.shapeMap = dict()
         self.inputOps = None
-        self.outputOp = None
-        self.sess = None
         self.inputVals = None
         self.biasAddRelations = list()
         self.matMulLayers = dict()
         self.biasAddLayers = dict()
-        self.numOfLayers = 0
+        self.numOfLayers = -1
 
     def readFromPb(self, filename, inputVals, inputNames, outputName, savedModel, savedModelTags):
         """
@@ -61,7 +63,7 @@ class MarabouNetworkTFWeightsAsVar(MarabouNetwork.MarabouNetwork):
             savedModel: (bool) If false, load frozen graph. If true, load SavedModel object.
             savedModelTags: (list of strings) If loading a SavedModel, the user must specify tags used.
         """
-
+        tf_session = None
         if savedModel:
             ### Read SavedModel ###
             sess = tf.Session()
@@ -71,7 +73,7 @@ class MarabouNetworkTFWeightsAsVar(MarabouNetwork.MarabouNetwork):
             simp_graph_def = graph_util.convert_variables_to_constants(sess,sess.graph.as_graph_def(),[outputName])
             with tf.Graph().as_default() as graph:
                 tf.import_graph_def(simp_graph_def, name="")
-            self.sess = tf.Session(graph=graph)
+            tf_session = tf.Session(graph=graph)
             ### End reading SavedModel
 
         else:
@@ -81,29 +83,29 @@ class MarabouNetworkTFWeightsAsVar(MarabouNetwork.MarabouNetwork):
                 graph_def.ParseFromString(f.read())
             with tf.Graph().as_default() as graph:
                 tf.import_graph_def(graph_def, name="")
-            self.sess = tf.Session(graph=graph)
+            tf_session = tf.Session(graph=graph)
             ### END reading protobuf ###
 
         ### Find operations corresponding to input and output ###
         if inputNames: # is not None
             inputOps = []
             for i in inputNames:
-               inputOps.append(self.sess.graph.get_operation_by_name(i))
+               inputOps.append(tf_session.graph.get_operation_by_name(i))
         else: # If there is just one placeholder, use it as input
-            ops = self.sess.graph.get_operations()
+            ops = tf_session.graph.get_operations()
             placeholders = [x for x in ops if x.node_def.op == 'Placeholder']
             inputOps = placeholders
         if outputName:
-            outputOp = self.sess.graph.get_operation_by_name(outputName)
+            outputOp = tf_session.graph.get_operation_by_name(outputName)
         else: # Assume that the last operation is the output
-            outputOp = self.sess.graph.get_operations()[-1]
+            outputOp = tf_session.graph.get_operations()[-1]
         self.setInputVals(inputOps, inputVals)
         self.setOutputOp(outputOp)
         ### END finding input/output operations ###
 
         ### Generate equations corresponding to network ###
         self.foundnInputFlags = 0
-        self.makeGraphEquations(self.outputOp)
+        self.makeGraphEquations(outputOp)
         assert self.foundnInputFlags == len(inputOps)
         ### END generating equations ###
 
@@ -118,11 +120,11 @@ class MarabouNetworkTFWeightsAsVar(MarabouNetwork.MarabouNetwork):
             try:
                 shape = tuple(op.outputs[0].shape.as_list())
                 assert shape == inputVals.shape
-                self.shapeMap[op] = shape
+                self.shapeMap[op.name] = shape
             except:
-                self.shapeMap[op] = [None]
+                self.shapeMap[op.name] = [None]
             # self.inputVars.append(self.opToVarArray(op))
-        self.inputOps = ops
+        self.inputOps = [op.name for op in ops]
 
 
     def setOutputOp(self, op):
@@ -133,11 +135,10 @@ class MarabouNetworkTFWeightsAsVar(MarabouNetwork.MarabouNetwork):
         """
         try:
             shape = tuple(op.outputs[0].shape.as_list())
-            self.shapeMap[op] = shape
+            self.shapeMap[op.name] = shape
         except:
-            self.shapeMap[op] = [None]
-        self.outputOp = op
-        self.outputVars = self.opToVarArray(self.outputOp)
+            self.shapeMap[op.name] = [None]
+        self.outputVars = self.opToVarArray(op)
 
     def opToVarArray(self, x):
         """
@@ -147,12 +148,12 @@ class MarabouNetworkTFWeightsAsVar(MarabouNetwork.MarabouNetwork):
         Returns:
             v: (np array) of variable numbers, in same shape as x
         """
-        if x in self.varMap:
-            return self.varMap[x]
+        if x.name in self.varMap:
+            return self.varMap[x.name]
 
         ### Find number of new variables needed ###
-        if x in self.shapeMap:
-            shape = self.shapeMap[x]
+        if x.name in self.shapeMap:
+            shape = self.shapeMap[x.name]
             shape = [a if a is not None else 1 for a in shape]
         else:
             shape = [a if a is not None else 1 for a in x.outputs[0].get_shape().as_list()]
@@ -162,7 +163,7 @@ class MarabouNetworkTFWeightsAsVar(MarabouNetwork.MarabouNetwork):
         ### END finding number of new variables ###
 
         v = np.array([self.getNewVariable() for _ in range(size)]).reshape(shape)
-        self.varMap[x] = v
+        self.varMap[x.name] = v
         assert all([np.equal(np.mod(i, 1), 0) for i in v.reshape(-1)]) # check if integers
         return v
 
@@ -518,36 +519,12 @@ class MarabouNetworkTFWeightsAsVar(MarabouNetwork.MarabouNetwork):
         Arguments:
             op: (tf.op) representing operation until which we want to generate network equations
         """
-        if op in self.madeGraphEquations:
+        if op.name in self.madeGraphEquations:
             return
-        self.madeGraphEquations += [op]
-        if op in self.inputOps:
+        self.madeGraphEquations += [op.name]
+        if op.name in self.inputOps:
             self.foundnInputFlags += 1
         in_ops = [x.op for x in op.inputs]
         for x in in_ops:
             self.makeGraphEquations(x)
         self.makeNeuronEquations(op)
-
-    def evaluateWithoutMarabou(self, inputValues):
-        """
-        Function to evaluate network at a given point using Tensorflow
-        Arguments:
-            inputValues: list of (np array)s representing inputs to network
-        Returns:
-            outputValues: (np array) representing output of network
-        """
-        print("Evaluating without Marabou")
-        inputValuesReshaped = []
-        for j in range(len(self.inputOps)):
-            inputOp = self.inputOps[j]
-            inputShape = self.shapeMap[inputOp]
-            inputShape = [i if i is not None else 1 for i in inputShape]
-            # Try to reshape given input to correct shape
-            inputValuesReshaped.append(inputValues[j].reshape(inputShape))
-
-        inputNames = [o.name+":0" for o in self.inputOps]
-        feed_dict = dict(zip(inputNames, inputValuesReshaped))
-        outputName = self.outputOp.name
-        out = self.sess.run(outputName + ":0", feed_dict=feed_dict)
-
-        return out[0]
