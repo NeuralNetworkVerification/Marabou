@@ -10,7 +10,8 @@ maraboupy - a python API for marabou.
 - Compile maraboupy:
 - 		cd maraboupy 
  		make
-- Add the root of the Marabou directory to your Python path
+- Add the root of the Marabou directory to your Python path 
+-	one way to do it: `export PYTHONPATH=$PYTHONPATH:<Marabou root>`
 
 ### Usage
 -		import maraboupy
