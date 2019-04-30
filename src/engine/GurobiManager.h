@@ -30,7 +30,7 @@ public:
     GurobiManager();
     ~GurobiManager();
     void setTableau(ITableau *tableau);
-	void tightenBoundsOfVar(int objectiveVar);
+	void tightenBoundsOfVar(unsigned objectiveVar);
 private:
 	ITableau *_tableau;
 };
