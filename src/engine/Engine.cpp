@@ -172,8 +172,18 @@ bool Engine::solve( unsigned timeoutInSeconds )
             if ( _smtCore.needToSplit() )
             {
                 // Check for the problematic variable if the upper or lower bounds can be tighten.
-                _gurobiManager.tightenBoundsOfVar(0);
-                _smtCore.performSplit();
+                PiecewiseLinearConstraint *constraint = _smtCore.constraintForSplitting();
+                for (unsigned constraintVariable : constraint->getParticipatingVariables()) {
+                    // printf("%u\n", constraintVariable);
+                    _gurobiManager.tightenBoundsOfVar(constraintVariable);
+                }
+
+                if ( constraint->phaseFixed() ) {
+                    applyAllValidConstraintCaseSplits();
+                    _smtCore.resetReportedViolations(); // Should reset reports only for constraint variable?
+                } else {
+                    _smtCore.performSplit();
+                }
 
                 // do
                 // {

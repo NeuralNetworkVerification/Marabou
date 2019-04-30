@@ -53,6 +53,12 @@ public:
     bool needToSplit() const;
 
     /*
+      Returns the PiecewiseLinearConstraint object represents 
+      the constraint for splitting.
+    */
+    PiecewiseLinearConstraint* constraintForSplitting() const;
+
+    /*
       Perform the split according to the constraint marked for
       splitting. Update bounds, add equations and update the stack.
     */
