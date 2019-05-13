@@ -151,6 +151,61 @@ public:
         TS_ASSERT( FloatUtils::areEqual( output[1], 0 ) );
 
     }
+
+    void test_store_into_other()
+    {
+        NetworkLevelReasoner nlr;
+
+        populateNetwork( nlr );
+
+        NetworkLevelReasoner nlr2;
+
+        TS_ASSERT_THROWS_NOTHING( nlr.storeIntoOther( nlr2 ) );
+
+        double input[2];
+        double output1[2];
+        double output2[2];
+
+        // Inputs are zeros, only biases count
+        input[0] = 0;
+        input[1] = 0;
+
+        TS_ASSERT_THROWS_NOTHING( nlr.evaluate( input, output1 ) );
+        TS_ASSERT_THROWS_NOTHING( nlr2.evaluate( input, output2 ) );
+
+        TS_ASSERT( FloatUtils::areEqual( output1[0], output2[0] ) );
+        TS_ASSERT( FloatUtils::areEqual( output1[1], output2[1] ) );
+
+        // Set all neurons to ReLU, except for input and output neurons
+        nlr.setNeuronActivationFunction( 1, 0, NetworkLevelReasoner::ReLU );
+        nlr.setNeuronActivationFunction( 1, 1, NetworkLevelReasoner::ReLU );
+        nlr.setNeuronActivationFunction( 1, 2, NetworkLevelReasoner::ReLU );
+
+        nlr.setNeuronActivationFunction( 2, 0, NetworkLevelReasoner::ReLU );
+        nlr.setNeuronActivationFunction( 2, 1, NetworkLevelReasoner::ReLU );
+
+        TS_ASSERT_THROWS_NOTHING( nlr.storeIntoOther( nlr2 ) );
+
+        // With ReLUs, Inputs are zeros, only biases count
+        input[0] = 0;
+        input[1] = 0;
+
+        TS_ASSERT_THROWS_NOTHING( nlr.evaluate( input, output1 ) );
+        TS_ASSERT_THROWS_NOTHING( nlr2.evaluate( input, output2 ) );
+
+        TS_ASSERT( FloatUtils::areEqual( output1[0], output2[0] ) );
+        TS_ASSERT( FloatUtils::areEqual( output1[1], output2[1] ) );
+
+        // With ReLUs, case 1
+        input[0] = 1;
+        input[1] = 1;
+
+        TS_ASSERT_THROWS_NOTHING( nlr.evaluate( input, output1 ) );
+        TS_ASSERT_THROWS_NOTHING( nlr2.evaluate( input, output2 ) );
+
+        TS_ASSERT( FloatUtils::areEqual( output1[0], output2[0] ) );
+        TS_ASSERT( FloatUtils::areEqual( output1[1], output2[1] ) );
+    }
 };
 
 //
