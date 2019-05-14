@@ -69,6 +69,11 @@ bool SmtCore::needToSplit() const
     return _needToSplit;
 }
 
+void SmtCore::resetNeedToSplit()
+{
+    _needToSplit = false;
+}
+
 PiecewiseLinearConstraint* SmtCore::constraintForSplitting() const
 {
     return _constraintForSplitting;

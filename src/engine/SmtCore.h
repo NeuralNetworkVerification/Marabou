@@ -53,6 +53,11 @@ public:
     bool needToSplit() const;
 
     /*
+      Resets the SMT core needToSplit value to false.
+    */
+    void resetNeedToSplit();
+
+    /*
       Returns the PiecewiseLinearConstraint object represents 
       the constraint for splitting.
     */
