@@ -15,7 +15,7 @@
 
 #include "GurobiManager.h"
 
-GurobiManager::GurobiManager(ITableau *tableau)
+GurobiManager::GurobiManager(ITableau &tableau)
     : _tableau( tableau )
 {
 }
@@ -26,7 +26,6 @@ GurobiManager::~GurobiManager()
 
 void GurobiManager::tightenBoundsOfVar(unsigned objectiveVar)
 {
-    printf("---------------------------\n");
 
     try {
         GRBEnv env = GRBEnv();
@@ -34,12 +33,12 @@ void GurobiManager::tightenBoundsOfVar(unsigned objectiveVar)
         model.set(GRB_IntParam_OutputFlag, 0);
 
         // Create variables
-        unsigned n = _tableau->getN();
-        unsigned m = _tableau->getM();
+        unsigned n = _tableau.getN();
+        unsigned m = _tableau.getM();
         GRBVar vars[n];
         for (unsigned i = 0; i < n; ++i) {
-            double lb = _tableau->getLowerBound(i);
-            double ub = _tableau->getUpperBound(i);
+            double lb = _tableau.getLowerBound(i);
+            double ub = _tableau.getUpperBound(i);
             vars[i] = model.addVar(lb, ub, 1.0, GRB_CONTINUOUS, "x" + std::to_string(i));
             // printf("\tx%u: [%.2f, %.2f]\n", i, lb, ub);
         }
@@ -47,7 +46,7 @@ void GurobiManager::tightenBoundsOfVar(unsigned objectiveVar)
         // Add constraints
         for (unsigned i = 0; i < m; ++i) {
             TableauRow row(n);
-            _tableau->getTableauRow(i, &row);
+            _tableau.getTableauRow(i, &row);
             
             unsigned lhs_var_id = row._lhs;
             GRBLinExpr lhs = vars[lhs_var_id];
@@ -88,7 +87,7 @@ void GurobiManager::tightenBoundsOfVar(unsigned objectiveVar)
             model.setObjective(objectiveExpr, GRB_MINIMIZE);
             model.optimize();
             double minValue = model.get(GRB_DoubleAttr_ObjVal);
-            _tableau->tightenLowerBound(objectiveVar, minValue);
+            _tableau.tightenLowerBound(objectiveVar, minValue);
             // printf("\tMin: %.2f\n", minValue);
         } catch (...) {
             // printf("\tMin value haven't changed\n");
@@ -99,13 +98,12 @@ void GurobiManager::tightenBoundsOfVar(unsigned objectiveVar)
             model.setObjective(objectiveExpr, GRB_MAXIMIZE);
             model.optimize();
             double maxValue = model.get(GRB_DoubleAttr_ObjVal);
-            _tableau->tightenUpperBound(objectiveVar, maxValue);
+            _tableau.tightenUpperBound(objectiveVar, maxValue);
             // printf("\tMax: %.2f\n", maxValue);
         } catch(...) {
             // printf("\tMax value haven't changed\n");
         }
 
-        // model.write("/Users/omricohen/Desktop/model" + std::to_string(objectiveVar) + ".lp");
     } catch(GRBException e) {
         printf("%s%d\n", "Error code = ", e.getErrorCode());
         printf("%s\n", e.getMessage().c_str());
@@ -113,7 +111,6 @@ void GurobiManager::tightenBoundsOfVar(unsigned objectiveVar)
         printf("%s\n", "Exception during optimization");
     }
     
-    printf("---------------------------\n");
 }
 
 //

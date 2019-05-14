@@ -27,11 +27,12 @@ class TableauRow;
 class GurobiManager
 {
 public:
-    GurobiManager(ITableau *tableau);
+    GurobiManager(ITableau &tableau);
     ~GurobiManager();
+
 	void tightenBoundsOfVar(unsigned objectiveVar);
 private:
-	ITableau *_tableau;
+    ITableau &_tableau;
 };
 
 #endif // __GurobiManager_h__
