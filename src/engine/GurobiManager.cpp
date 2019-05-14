@@ -15,18 +15,13 @@
 
 #include "GurobiManager.h"
 
-GurobiManager::GurobiManager()
-    : _tableau( NULL )
+GurobiManager::GurobiManager(ITableau *tableau)
+    : _tableau( tableau )
 {
 }
 
 GurobiManager::~GurobiManager()
 {
-}
-
-void GurobiManager::setTableau(ITableau *tableau)
-{
-    _tableau = tableau;
 }
 
 void GurobiManager::tightenBoundsOfVar(unsigned objectiveVar)

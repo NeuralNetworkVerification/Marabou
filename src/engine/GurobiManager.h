@@ -27,9 +27,8 @@ class TableauRow;
 class GurobiManager
 {
 public:
-    GurobiManager();
+    GurobiManager(ITableau *tableau);
     ~GurobiManager();
-    void setTableau(ITableau *tableau);
 	void tightenBoundsOfVar(unsigned objectiveVar);
 private:
 	ITableau *_tableau;
