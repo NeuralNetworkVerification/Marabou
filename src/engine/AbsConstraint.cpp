@@ -21,8 +21,8 @@ PiecewiseLinearConstraint *AbsConstraint::duplicateConstraint() const
 
 void AbsConstraint::restoreState( const PiecewiseLinearConstraint *state )
 {
-    const AbsConstraint *relu = dynamic_cast<const AbsConstraint *>( state );
-    *this = *relu;
+    const AbsConstraint *abs = dynamic_cast<const AbsConstraint *>( state );
+    *this = *abs;
 }
 
 void AbsConstraint::registerAsWatcher( ITableau *tableau )
