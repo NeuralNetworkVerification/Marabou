@@ -162,6 +162,25 @@ void NetworkLevelReasoner::evaluate( double *input, double *output ) const
     memcpy( output, _work1, sizeof(double) * _layerSizes[_numberOfLayers - 1] );
 }
 
+void NetworkLevelReasoner::storeIntoOther( NetworkLevelReasoner &other ) const
+{
+    other.freeMemoryIfNeeded();
+
+    other.setNumberOfLayers( _numberOfLayers );
+    for ( const auto &pair : _layerSizes )
+        other.setLayerSize( pair.first, pair.second );
+    other.allocateWeightMatrices();
+
+    for ( const auto &pair : _neuronToActivationFunction )
+        other.setNeuronActivationFunction( pair.first._layer, pair.first._neuron, pair.second );
+
+    for ( unsigned i = 0; i < _numberOfLayers - 1; ++i )
+        memcpy( other._weights[i], _weights[i], sizeof(double) * _layerSizes[i] * _layerSizes[i+1] );
+
+    for ( const auto &pair : _bias )
+        other.setBias( pair.first._layer, pair.first._neuron, pair.second );
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

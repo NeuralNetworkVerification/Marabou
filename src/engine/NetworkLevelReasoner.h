@@ -50,6 +50,11 @@ public:
     */
     void evaluate( double *input, double *output ) const;
 
+    /*
+      Duplicate the reasoner
+    */
+    void storeIntoOther( NetworkLevelReasoner &other ) const;
+
 private:
     struct Index
     {

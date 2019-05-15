@@ -1646,10 +1646,11 @@ void Engine::checkBoundCompliancyWithDebugSolution()
             if ( FloatUtils::gt( _tableau->getLowerBound( var.first ), var.second, 1e-5 ) )
             {
                 printf( "Error! The stack is compliant, but learned an non-compliant bound: "
-                        "Solution for %u is %.15lf, but learned lower bound %.15lf\n",
+                        "Solution for x%u is %.15lf, but learned lower bound %.15lf\n",
                         var.first,
                         var.second,
                         _tableau->getLowerBound( var.first ) );
+
                 throw ReluplexError( ReluplexError::DEBUGGING_ERROR );
             }
 
