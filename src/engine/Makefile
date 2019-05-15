@@ -18,6 +18,7 @@ LIBRARY_DIR += \
 	$(BOOST_LIBS) \
 
 LIBRARIES += \
+	:libboost_program_options.a \
 
 CFLAGS = \
 	-MMD \
@@ -45,6 +46,7 @@ vpath %.cpp $(INPUT_PARSER_DIR)
 
 SOURCES += \
 	Marabou.cpp \
+	OptionParser.cpp \
 	Options.cpp \
 	main.cpp \
 

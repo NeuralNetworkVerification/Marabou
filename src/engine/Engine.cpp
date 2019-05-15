@@ -165,8 +165,8 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 continue;
             }
 
-            // if ( _tableau->basisMatrixAvailable() )
-            //     explicitBasisBoundTightening();
+            if ( _tableau->basisMatrixAvailable() )
+                explicitBasisBoundTightening();
 
             // Perform any SmtCore-initiated case splits
             if ( _smtCore.needToSplit() )
@@ -182,13 +182,13 @@ bool Engine::solve( unsigned timeoutInSeconds )
                     _smtCore.resetNeedToSplit();
                 } else {
                     _smtCore.performSplit();
-                }
 
-                // do
-                // {
-                //     performSymbolicBoundTightening();
-                // }
-                // while ( applyAllValidConstraintCaseSplits() );
+                    do
+                    {
+                        performSymbolicBoundTightening();
+                    }
+                    while ( applyAllValidConstraintCaseSplits() );
+                }
                 continue;
             }
 
@@ -227,13 +227,13 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
                 // Finally, take this opporunity to tighten any bounds
                 // and perform any valid case splits.
-                // tightenBoundsOnConstraintMatrix();
-                // applyAllBoundTightenings();
+                tightenBoundsOnConstraintMatrix();
+                applyAllBoundTightenings();
                 // For debugging purposes
                 checkBoundCompliancyWithDebugSolution();
 
-                // while ( applyAllValidConstraintCaseSplits() )
-                //     performSymbolicBoundTightening();
+                while ( applyAllValidConstraintCaseSplits() )
+                    performSymbolicBoundTightening();
 
                 continue;
             }

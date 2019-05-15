@@ -24,10 +24,10 @@ Options *Options::get()
 }
 
 Options::Options()
-    // : _optionParser( &_boolOptions, &_stringOptions )
+    : _optionParser( &_boolOptions, &_stringOptions )
 {
     initializeDefaultValues();
-    // _optionParser.initialize();
+    _optionParser.initialize();
 }
 
 Options::Options( const Options & )
@@ -53,20 +53,7 @@ void Options::initializeDefaultValues()
 
 void Options::parseOptions( int argc, char **argv )
 {
-    if ( argc <= 1 )
-    {
-        printf( "Error! Please provide a network file\n" );
-        exit( 1 );
-    }
-
-    if ( argc > 1 )
-        _stringOptions[INPUT_FILE_PATH] = std::string( argv[1] );
-    if ( argc > 2 )
-        _stringOptions[PROPERTY_FILE_PATH] = std::string( argv[2] );
-    if ( argc > 3 )
-        _stringOptions[SUMMARY_FILE] = std::string( argv[3] );
-
-    // _optionParser.parse( argc, argv );
+    _optionParser.parse( argc, argv );
 }
 
 bool Options::getBool( unsigned option ) const

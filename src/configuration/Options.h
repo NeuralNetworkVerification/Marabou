@@ -18,7 +18,7 @@
 
 #include "MString.h"
 #include "Map.h"
-// #include "OptionParser.h"
+#include "OptionParser.h"
 #include "boost/program_options.hpp"
 
 /*
@@ -69,7 +69,7 @@ private:
     */
     void initializeDefaultValues();
 
-    // OptionParser _optionParser;
+    OptionParser _optionParser;
 
     /*
       The various option values
