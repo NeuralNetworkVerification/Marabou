@@ -812,6 +812,10 @@ public:
         query.setNumberOfVariables( 9 );
 
         relu.notifyLowerBound( 4, -10 );
+        relu.notifyLowerBound( 6, 0 );
+
+        relu.notifyUpperBound( 4, 15 );
+        relu.notifyUpperBound( 6, 15 );
 
         TS_ASSERT_THROWS_NOTHING( relu.addAuxiliaryEquations( query ) );
 
@@ -822,7 +826,7 @@ public:
 
         unsigned aux = 9;
         TS_ASSERT_EQUALS( query.getLowerBound( aux ), 0 );
-        TS_ASSERT_EQUALS( query.getUpperBound( aux ), 10 );
+        // TS_ASSERT_EQUALS( query.getUpperBound( aux ), 10 );
 
         Equation eq = *equations.begin();
 
@@ -838,6 +842,8 @@ public:
         TS_ASSERT_EQUALS( eq._scalar, 0 );
     }
 };
+
+// serialize and unserialize, duplicate. Register as watcher for aux?
 
 //
 // Local Variables:

@@ -169,7 +169,7 @@ public:
       like to add to the equation pool.
     */
     virtual void getAuxiliaryEquations( List<Equation> &newEquations ) const = 0;
-    virtual void addAuxiliaryEquations( InputQuery &/* inputQuery */ ) const {}
+    virtual void addAuxiliaryEquations( InputQuery &/* inputQuery */ ) {}
 
     /*
       Ask the piecewise linear constraint to contribute a component to the cost

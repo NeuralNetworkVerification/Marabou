@@ -124,7 +124,7 @@ public:
       like to add to the equation pool.
     */
     void getAuxiliaryEquations( List<Equation> &newEquations ) const;
-    void addAuxiliaryEquations( InputQuery &inputQuery ) const;
+    void addAuxiliaryEquations( InputQuery &inputQuery );
 
     /*
       Ask the piecewise linear constraint to contribute a component to the cost
@@ -155,9 +155,16 @@ public:
     */
     bool supportsSymbolicBoundTightening() const;
 
+    /*
+      Mark a variable as an auxiliary variable for this constraint
+    */
+    void setAuxVariable( unsigned variable );
+
 private:
     unsigned _b, _f;
     PhaseStatus _phaseStatus;
+    bool _auxVarInUse;
+    unsigned _aux;
 
     PiecewiseLinearCaseSplit getInactiveSplit() const;
     PiecewiseLinearCaseSplit getActiveSplit() const;
