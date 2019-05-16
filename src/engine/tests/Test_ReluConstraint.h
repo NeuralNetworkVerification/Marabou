@@ -15,6 +15,7 @@
 
 #include <cxxtest/TestSuite.h>
 
+#include "InputQuery.h"
 #include "MockErrno.h"
 #include "MockTableau.h"
 #include "PiecewiseLinearCaseSplit.h"
@@ -801,6 +802,40 @@ public:
         TS_ASSERT_EQUALS( fixes.size(), 2U );
         TS_ASSERT( haveFix( fixes, f, 0 ) );
         TS_ASSERT( haveFix( fixes, f, 2 ) );
+    }
+
+    void test_add_auxiliary_equations()
+    {
+        ReluConstraint relu( 4, 6 );
+        InputQuery query;
+
+        query.setNumberOfVariables( 9 );
+
+        relu.notifyLowerBound( 4, -10 );
+
+        TS_ASSERT_THROWS_NOTHING( relu.addAuxiliaryEquations( query ) );
+
+        const List<Equation> &equations( query.getEquations() );
+
+        TS_ASSERT_EQUALS( equations.size(), 1U );
+        TS_ASSERT_EQUALS( query.getNumberOfVariables(), 10U );
+
+        unsigned aux = 9;
+        TS_ASSERT_EQUALS( query.getLowerBound( aux ), 0 );
+        TS_ASSERT_EQUALS( query.getUpperBound( aux ), 10 );
+
+        Equation eq = *equations.begin();
+
+        TS_ASSERT_EQUALS( eq._addends.size(), 3U );
+
+        auto it = eq._addends.begin();
+        TS_ASSERT_EQUALS( *it, Equation::Addend( 1, 6 ) );
+        ++it;
+        TS_ASSERT_EQUALS( *it, Equation::Addend( -1, 4 ) );
+        ++it;
+        TS_ASSERT_EQUALS( *it, Equation::Addend( -1, aux ) );
+
+        TS_ASSERT_EQUALS( eq._scalar, 0 );
     }
 };
 

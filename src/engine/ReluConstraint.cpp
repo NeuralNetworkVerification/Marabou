@@ -17,6 +17,7 @@
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
+#include "InputQuery.h"
 #include "MStringf.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "ReluConstraint.h"
@@ -35,11 +36,11 @@ ReluConstraint::ReluConstraint( unsigned b, unsigned f )
 ReluConstraint::ReluConstraint( const String &serializedRelu )
     : _haveEliminatedVariables( false )
 {
-    String constraintType = serializedRelu.substring(0, 4);
-    ASSERT(constraintType == String("relu"));
+    String constraintType = serializedRelu.substring( 0, 4 );
+    ASSERT( constraintType == String( "relu" ) );
 
     // remove the constraint type in serialized form
-    String serializedValues = serializedRelu.substring(5, serializedRelu.length()-5);
+    String serializedValues = serializedRelu.substring( 5, serializedRelu.length() - 5 );
     List<String> values = serializedValues.tokenize( "," );
     _b = atoi( values.back().ascii() );
     _f = atoi( values.front().ascii() );
@@ -564,6 +565,39 @@ void ReluConstraint::getAuxiliaryEquations( List<Equation> &newEquations ) const
     equation.setScalar( 0 );
 
     newEquations.append( equation );
+}
+
+void ReluConstraint::addAuxiliaryEquations( InputQuery &inputQuery ) const
+{
+    /*
+      We want to add the equation
+
+          f >= b
+
+      Which actually becomes
+
+          f - b - aux = 0
+
+      Lower bound: always non-negative
+      Upper bound: when f = 0 and b is minimal, i.e. -b.lb
+    */
+
+    // Create the aux variable
+    unsigned aux = inputQuery.getNumberOfVariables();
+    inputQuery.setNumberOfVariables( aux + 1 );
+
+    // Create and add the equation
+    Equation equation( Equation::GE );
+    equation.addAddend( 1.0, _f );
+    equation.addAddend( -1.0, _b );
+    equation.addAddend( -1.0, aux );
+    equation.setScalar( 0 );
+    inputQuery.addEquation( equation );
+
+    // Adjust the bounds for the new variable
+    ASSERT( _lowerBounds.exists( _b ) );
+    inputQuery.setLowerBound( aux, 0 );
+    inputQuery.setUpperBound( aux, -_lowerBounds[_b] );
 }
 
 void ReluConstraint::getCostFunctionComponent( Map<unsigned, double> &cost ) const

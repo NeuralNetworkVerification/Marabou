@@ -124,6 +124,7 @@ public:
       like to add to the equation pool.
     */
     void getAuxiliaryEquations( List<Equation> &newEquations ) const;
+    void addAuxiliaryEquations( InputQuery &inputQuery ) const;
 
     /*
       Ask the piecewise linear constraint to contribute a component to the cost
