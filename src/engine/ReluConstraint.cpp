@@ -84,10 +84,7 @@ void ReluConstraint::registerAsWatcher( ITableau *tableau )
     tableau->registerToWatchVariable( this, _f );
 
     if ( _auxVarInUse )
-    {
-        printf( "registering to watch aux\n" );
         tableau->registerToWatchVariable( this, _aux );
-    }
 }
 
 void ReluConstraint::unregisterAsWatcher( ITableau *tableau )
@@ -109,9 +106,6 @@ void ReluConstraint::notifyVariableValue( unsigned variable, double value )
 
 void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
 {
-    if ( _auxVarInUse && variable == _aux )
-        printf( "Notify lower called on aux!\n" );
-
     if ( _statistics )
         _statistics->incNumBoundNotificationsPlConstraints();
 
@@ -133,17 +127,7 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
         if ( ( variable == _f || variable == _b ) && bound > 0 )
         {
             unsigned partner = ( variable == _f ) ? _b : _f;
-
-            if ( _lowerBounds.exists( partner ) )
-            {
-                double otherLowerBound = _lowerBounds[partner];
-                if ( bound > otherLowerBound )
-                    _constraintBoundTightener->registerTighterLowerBound( partner, bound );
-            }
-            else
-            {
-                _constraintBoundTightener->registerTighterLowerBound( partner, bound );
-            }
+            _constraintBoundTightener->registerTighterLowerBound( partner, bound );
 
             // If we're in the active phase, aux should be 0
             if ( _auxVarInUse )
@@ -158,11 +142,9 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
         }
 
         // A negative lower bound for b could tighten aux's upper bound
-        if ( _auxVarInUse && variable == _b )
+        if ( _auxVarInUse && variable == _b && bound < 0 )
         {
-            double auxUpperBound = _upperBounds[_aux];
-            if ( auxUpperBound > -bound )
-                _constraintBoundTightener->registerTighterUpperBound( _aux, -bound );
+            _constraintBoundTightener->registerTighterUpperBound( _aux, -bound );
         }
 
         // Also, if for some reason we only know a negative lower bound for f,
@@ -176,9 +158,6 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
 
 void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
 {
-    if ( _auxVarInUse && variable == _aux )
-        printf( "Notify upper called on aux!\n" );
-
     if ( _statistics )
         _statistics->incNumBoundNotificationsPlConstraints();
 
@@ -198,23 +177,17 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
         if ( variable == _f )
         {
             // Any bound that we learned of f should be propagated to b
-            if ( bound < _upperBounds[_b] )
-                _constraintBoundTightener->registerTighterUpperBound( _b, bound );
+            _constraintBoundTightener->registerTighterUpperBound( _b, bound );
         }
         else if ( variable == _b )
         {
             // If b has a negative upper bound, we f's upper bound is 0
             double adjustedUpperBound = FloatUtils::max( bound, 0 );
-            if ( adjustedUpperBound < _upperBounds[_f] )
-                _constraintBoundTightener->registerTighterUpperBound( _f, adjustedUpperBound );
+            _constraintBoundTightener->registerTighterUpperBound( _f, adjustedUpperBound );
         }
         else if ( _auxVarInUse && variable == _aux )
         {
-            ASSERT( _lowerBounds.exists( _b ) );
-
-            double bLowerBound = _lowerBounds[_b];
-            if ( bound < -bLowerBound )
-                _constraintBoundTightener->registerTighterLowerBound( _b, -bound );
+            _constraintBoundTightener->registerTighterLowerBound( _b, -bound );
         }
     }
 }
@@ -226,10 +199,9 @@ bool ReluConstraint::participatingVariable( unsigned variable ) const
 
 List<unsigned> ReluConstraint::getParticipatingVariables() const
 {
-    if ( _auxVarInUse )
-        return List<unsigned>( { _b, _f, _aux } );
-
-    return List<unsigned>( { _b, _f } );
+    return _auxVarInUse?
+        List<unsigned>( { _b, _f, _aux } ) :
+        List<unsigned>( { _b, _f } );
 }
 
 bool ReluConstraint::satisfied() const
@@ -585,16 +557,13 @@ void ReluConstraint::getEntailedTightenings( List<Tightening> &tightenings ) con
     if ( !FloatUtils::isNegative( minUpperBound ) )
     {
         // The minimal bound is non-negative. Should match for both f and b.
-        if ( FloatUtils::lt( minUpperBound, bUpperBound ) )
-            tightenings.append( Tightening( _b, minUpperBound, Tightening::UB ) );
-        else if ( FloatUtils::lt( minUpperBound, fUpperBound ) )
-            tightenings.append( Tightening( _f, minUpperBound, Tightening::UB ) );
+        tightenings.append( Tightening( _b, minUpperBound, Tightening::UB ) );
+        tightenings.append( Tightening( _f, minUpperBound, Tightening::UB ) );
     }
     else
     {
         // The minimal bound is negative. This has to be b's upper bound.
-        if ( !FloatUtils::isZero( fUpperBound ) )
-            tightenings.append( Tightening( _f, 0.0, Tightening::UB ) );
+        tightenings.append( Tightening( _f, 0.0, Tightening::UB ) );
     }
 
     // Lower bounds
@@ -602,45 +571,39 @@ void ReluConstraint::getEntailedTightenings( List<Tightening> &tightenings ) con
     double fLowerBound = _lowerBounds[_f];
 
     // F's lower bound should always be non-negative
-    if ( FloatUtils::isNegative( fLowerBound ) )
-        tightenings.append( Tightening( _f, 0.0, Tightening::LB ) );
+    tightenings.append( Tightening( _f, 0.0, Tightening::LB ) );
 
     // Lower bounds are entailed between f and b only if they are strictly positive, and otherwise ignored.
     if ( FloatUtils::isPositive( fLowerBound ) )
     {
-        if ( FloatUtils::lt( bLowerBound, fLowerBound ) )
-            tightenings.append( Tightening( _b, fLowerBound, Tightening::LB ) );
+        tightenings.append( Tightening( _b, fLowerBound, Tightening::LB ) );
     }
 
     if ( FloatUtils::isPositive( bLowerBound ) )
     {
-        if ( FloatUtils::lt( fLowerBound, bLowerBound ) )
-            tightenings.append( Tightening( _f, bLowerBound, Tightening::LB ) );
+        tightenings.append( Tightening( _f, bLowerBound, Tightening::LB ) );
     }
 
     // Aux variable
     if ( _auxVarInUse )
     {
+        // aux's lower bound should always be non-negative
+        tightenings.append( Tightening( _aux, 0.0, Tightening::LB ) );
+
         double auxUpperBound = _upperBounds[_aux];
 
-        if ( !FloatUtils::isNegative( bLowerBound ) || FloatUtils::isZero( auxUpperBound ) )
+        // If b's lower bound is negative, it should match aux's upper bound
+        if ( !FloatUtils::isPositive( bLowerBound ) )
         {
-            // We're in the active phase - aux is zero, b is non-negative.
-            tightenings.append( Tightening( _aux, 0, Tightening::UB ) );
-            tightenings.append( Tightening( _b, 0, Tightening::LB ) );
+            tightenings.append( Tightening( _aux, -bLowerBound, Tightening::UB ) );
+            tightenings.append( Tightening( _b, -auxUpperBound, Tightening::LB ) );
         }
         else
         {
-            // Phase not fixed, so aux.ub should match -b.lb
-            if ( FloatUtils::gt( auxUpperBound, -bLowerBound ) )
-            {
-                tightenings.append( Tightening( _aux, -bLowerBound, Tightening::UB ) );
-            }
-            else if ( FloatUtils::lt( auxUpperBound, -bLowerBound ) )
-            {
-                tightenings.append( Tightening( _b, -auxUpperBound, Tightening::LB ) );
-            }
+            // Active case, aux is 0
+            tightenings.append( Tightening( _aux, 0, Tightening::UB ) );
         }
+
     }
 }
 
@@ -796,12 +759,6 @@ ReluConstraint::PhaseStatus ReluConstraint::getPhaseStatus() const
 bool ReluConstraint::supportsSymbolicBoundTightening() const
 {
     return true;
-}
-
-void ReluConstraint::setAuxVariable( unsigned variable )
-{
-    _auxVarInUse = true;
-    _aux = variable;
 }
 
 //

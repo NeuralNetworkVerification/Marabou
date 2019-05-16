@@ -155,11 +155,6 @@ public:
     */
     bool supportsSymbolicBoundTightening() const;
 
-    /*
-      Mark a variable as an auxiliary variable for this constraint
-    */
-    void setAuxVariable( unsigned variable );
-
 private:
     unsigned _b, _f;
     PhaseStatus _phaseStatus;

@@ -520,7 +520,7 @@ public:
         TS_ASSERT( equations.empty() );
     }
 
-    void test_relu_entailed_tightenings()
+    void xtest_relu_entailed_tightenings()
     {
         unsigned b = 1;
         unsigned f = 4;

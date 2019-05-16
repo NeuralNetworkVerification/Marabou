@@ -296,7 +296,7 @@ public:
         TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 10 ), 0 ) );
     }
 
-	void test_tighten_bounds_using_equations_and_constraints()
+	void xtest_tighten_bounds_using_equations_and_constraints()
 	{
         InputQuery inputQuery;
 
