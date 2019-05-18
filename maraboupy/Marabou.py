@@ -19,7 +19,6 @@
 #Marabou File
 from .MarabouNetworkNNet import *
 from .MarabouNetworkTF import *
-from .MarabouNetworkTFWeightsAsVar import *
 
 def read_nnet(filename, sbt=False):
     """
