@@ -1,15 +1,21 @@
 
-
 #include "AbsConstraint.h"
 #include "ITableau.h"
 #include "FloatUtils.h"
 
 
+
 AbsConstraint::AbsConstraint(unsigned b, unsigned f)
-{
+
     _b = b;
     _f = f;
+    // one of our variables eliminated
+    , _haveEliminatedVariables( false )
+{
+    //bound tightening
+    setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
 }
+
 
 
 PiecewiseLinearConstraint *AbsConstraint::duplicateConstraint() const
@@ -38,9 +44,23 @@ void AbsConstraint::unregisterAsWatcher( ITableau *tableau )
 }
 
 
-bool AbsConstraint::participatingVariable( unsigned variable ) const
+/*
+  The variable watcher notifcation callbacks, about a change in a variable's value or bounds.
+*/
+void AbsConstraint::notifyVariableValue( unsigned /* variable */, double /* value */ ) {}
+void AbsConstraint::notifyLowerBound( unsigned /* variable */, double /* bound */ ) {}
+void AbsConstraint::notifyUpperBound( unsigned /* variable */, double /* bound */ ) {}
+
+
+
+bool AbsConstraint::participatingVariable(signed variable ) const
 {
     return ( variable == _b ) || ( variable == _f );
+}
+
+List<unsigned> AbsConstraint::List<unsigned> getParticipatingVariables()
+{
+    return List<unsigned >( { _b, _f } );
 }
 
 bool AbsConstraint::satisfied() const
@@ -50,10 +70,62 @@ bool AbsConstraint::satisfied() const
 
     double bValue = _assignment.get( _b );
     double fValue = _assignment.get( _f );
-    //todo: add tolerance
 
-    if ( FloatUtils::areEqual( bValue, fValue, GlobalConfiguration::RELU_CONSTRAINT_COMPARISON_TOLERANCE );)
+    // Possible violations:
+    //   1. f is negative
+    //   2. f is positive, abs(b) and f are disequal
+
+    if ( FloatUtils::isNegative( fValue ) )
         return false;
+
+    return FloatUtils::areEqual( FloatUtils::abs(bValue), fValue, GlobalConfiguration::ABS_CONSTRAINT_COMPARISON_TOLERANCE);
+
+}
+
+
+List<PiecewiseLinearConstraint::Fix> AbsConstraint::getPossibleFixes()
+{
+    ASSERT( !satisfied() );
+    ASSERT( _assignment.exists( _b ) );
+    ASSERT( _assignment.exists( _f ) );
+
+    double bValue = _assignment.get( _b );
+    double fValue = _assignment.get( _f );
+
+//    ASSERT( !FloatUtils::isNegative( fValue ) );
+
+    List<PiecewiseLinearConstraint::Fix> fixes;
+
+    // Possible violations:
+    //   1. f is positive, b is positive, b and f are disequal
+    //   2. f is positive, b is negative, -b and f are disequal
+    //   3. f is negative
+
+    if ( FloatUtils::isPositive( fValue ) )
+    {
+        fixes.append( PiecewiseLinearConstraint::Fix( _b, fValue ) );
+        if ( FloatUtils::isPositive( bValue ) )
+        {
+            fixes.append( PiecewiseLinearConstraint::Fix( _f, bValue ) );
+        }
+        else
+        {
+            fixes.append( PiecewiseLinearConstraint::Fix( _f, -bValue ) );
+        }
+    }
     else
-        return true;
+    {
+        fixes.append( PiecewiseLinearConstraint::Fix( _f, -fValue ) );
+    }
+
+    return fixes;
+}
+
+List<PiecewiseLinearConstraint::Fix> AbsConstraint::getSmartFixes( ITableau *tableau ) const
+{
+
+}
+
+List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const{
+
 }
