@@ -1,4 +1,5 @@
 SOURCES += \
+    AbsConstraint.cpp \
 	BlandsRule.cpp \
 	ConstraintBoundTightener.cpp \
 	ConstraintMatrixAnalyzer.cpp \

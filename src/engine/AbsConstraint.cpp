@@ -92,7 +92,7 @@ List<PiecewiseLinearConstraint::Fix> AbsConstraint::getPossibleFixes()
     double bValue = _assignment.get( _b );
     double fValue = _assignment.get( _f );
 
-//    ASSERT( !FloatUtils::isNegative( fValue ) );
+    ASSERT( !FloatUtils::isNegative( fValue ) );
 
     List<PiecewiseLinearConstraint::Fix> fixes;
 
@@ -104,26 +104,14 @@ List<PiecewiseLinearConstraint::Fix> AbsConstraint::getPossibleFixes()
     if ( FloatUtils::isPositive( fValue ) )
     {
         fixes.append( PiecewiseLinearConstraint::Fix( _b, fValue ) );
-        if ( FloatUtils::isPositive( bValue ) )
-        {
-            fixes.append( PiecewiseLinearConstraint::Fix( _f, bValue ) );
-        }
-        else
-        {
-            fixes.append( PiecewiseLinearConstraint::Fix( _f, -bValue ) );
-        }
-    }
-    else
-    {
-        fixes.append( PiecewiseLinearConstraint::Fix( _f, -fValue ) );
-    }
+        fixes.append( PiecewiseLinearConstraint::Fix( _f, abs(bValue) ) );
 
     return fixes;
 }
 
 List<PiecewiseLinearConstraint::Fix> AbsConstraint::getSmartFixes( ITableau *tableau ) const
 {
-
+    return getPossibleFixes()
 }
 
 List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const{
