@@ -7,13 +7,13 @@
 
 AbsConstraint::AbsConstraint(unsigned b, unsigned f)
 
-    _b = b;
-    _f = f;
-    // one of our variables eliminated
-    , _haveEliminatedVariables( false )
+_b = b;
+_f = f;
+// one of our variables eliminated
+, _haveEliminatedVariables( false )
 {
-    //bound tightening
-    setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
+//bound tightening
+setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
 }
 
 
@@ -106,14 +106,14 @@ List<PiecewiseLinearConstraint::Fix> AbsConstraint::getPossibleFixes()
         fixes.append( PiecewiseLinearConstraint::Fix( _b, fValue ) );
         fixes.append( PiecewiseLinearConstraint::Fix( _f, abs(bValue) ) );
 
-    return fixes;
-}
+        return fixes;
+    }
 
-List<PiecewiseLinearConstraint::Fix> AbsConstraint::getSmartFixes( ITableau *tableau ) const
-{
-    return getPossibleFixes()
-}
+    List<PiecewiseLinearConstraint::Fix> AbsConstraint::getSmartFixes( ITableau *tableau ) const
+    {
+        return getPossibleFixes()
+    }
 
-List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const{
+    List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const{
 
-}
+    }

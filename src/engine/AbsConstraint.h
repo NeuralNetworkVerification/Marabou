@@ -1,3 +1,11 @@
+//
+// Created by shirana on 5/22/19.
+//
+
+#ifndef MARABOU_ABSCONSTRAINT_H
+#define MARABOU_ABSCONSTRAINT_H
+
+
 
 
 #include "PiecewiseLinearConstraint.h"
@@ -60,3 +68,5 @@ public:
 private:
     unsigned _b, _f;
 }
+
+#endif //MARABOU_ABSCONSTRAINT_H
