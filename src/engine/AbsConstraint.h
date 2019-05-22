@@ -75,6 +75,6 @@ private:
       Set the phase status not fixed pos neg.
     */
     void setPhaseStatus( PhaseStatus phaseStatus );
-}
+};
 
 #endif //MARABOU_ABSCONSTRAINT_H
