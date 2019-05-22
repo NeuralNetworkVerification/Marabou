@@ -5,15 +5,14 @@
 
 
 
-AbsConstraint::AbsConstraint(unsigned b, unsigned f)
-
-_b = b;
-_f = f;
-// one of our variables eliminated
-, _haveEliminatedVariables( false )
+AbsConstraint::AbsConstraint(unsigned b, unsigned f )
+    : _b( b )
+    , _f( f )
+    // one of our variables eliminated
+    , _haveEliminatedVariables( false )
 {
-//bound tightening
-setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
+    //bound tightening
+    setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
 }
 
 
@@ -51,16 +50,14 @@ void AbsConstraint::notifyVariableValue( unsigned /* variable */, double /* valu
 void AbsConstraint::notifyLowerBound( unsigned /* variable */, double /* bound */ ) {}
 void AbsConstraint::notifyUpperBound( unsigned /* variable */, double /* bound */ ) {}
 
-
-
-bool AbsConstraint::participatingVariable(signed variable ) const
+bool AbsConstraint::participatingVariable(unsigned variable ) const
 {
     return ( variable == _b ) || ( variable == _f );
 }
 
-List<unsigned> AbsConstraint::List<unsigned> getParticipatingVariables()
+List<unsigned> AbsConstraint::getParticipatingVariables() const
 {
-    return List<unsigned >( { _b, _f } );
+    return List<unsigned>( { _b, _f } );
 }
 
 bool AbsConstraint::satisfied() const
@@ -83,7 +80,7 @@ bool AbsConstraint::satisfied() const
 }
 
 
-List<PiecewiseLinearConstraint::Fix> AbsConstraint::getPossibleFixes()
+List<PiecewiseLinearConstraint::Fix> AbsConstraint::getPossibleFixes() const
 {
     ASSERT( !satisfied() );
     ASSERT( _assignment.exists( _b ) );
@@ -99,21 +96,20 @@ List<PiecewiseLinearConstraint::Fix> AbsConstraint::getPossibleFixes()
     // Possible violations:
     //   1. f is positive, b is positive, b and f are disequal
     //   2. f is positive, b is negative, -b and f are disequal
-    //   3. f is negative
 
-    if ( FloatUtils::isPositive( fValue ) )
-    {
-        fixes.append( PiecewiseLinearConstraint::Fix( _b, fValue ) );
-        fixes.append( PiecewiseLinearConstraint::Fix( _f, abs(bValue) ) );
-
-        return fixes;
+    if ( FloatUtils::isPositive( fValue ) ) {
+        fixes.append(PiecewiseLinearConstraint::Fix(_b, fValue));
+        fixes.append(PiecewiseLinearConstraint::Fix(_f, abs(bValue)));
     }
 
-    List<PiecewiseLinearConstraint::Fix> AbsConstraint::getSmartFixes( ITableau *tableau ) const
-    {
-        return getPossibleFixes()
-    }
+    return fixes;
+}
 
-    List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const{
+List<PiecewiseLinearConstraint::Fix> AbsConstraint::getSmartFixes( ITableau *tableau ) const
+{
+    return getPossibleFixes()
+}
 
-    }
+List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
+{
+}

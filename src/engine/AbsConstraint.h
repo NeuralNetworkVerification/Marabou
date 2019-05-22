@@ -11,7 +11,8 @@
 #include "PiecewiseLinearConstraint.h"
 
 
-class AbsConstraint : public PiecewiseLinearConstraint {
+class AbsConstraint : public PiecewiseLinearConstraint
+{
 
 public:
     enum PhaseStatus {
@@ -20,7 +21,7 @@ public:
         PHASE_NEGATIVE = 2,
     };
 
-    AbsConstraint(unsigned b, unsigned f);
+    AbsConstraint(unsigned b, unsigned f );
 
     /*
     Return a clone of the constraint.
@@ -39,13 +40,13 @@ public:
 
     void unregisterAsWatcher(ITableau *tableau);
 
-//    /*
-//    These callbacks are invoked when a watched variable's value
-//    changes, or when its bounds change.
-//  */
-//    void notifyVariableValue( unsigned variable, double value );
-//    void notifyLowerBound( unsigned variable, double bound );
-//    void notifyUpperBound( unsigned variable, double bound );
+    /*
+    These callbacks are invoked when a watched variable's value
+    changes, or when its bounds change.
+  */
+    void notifyVariableValue( unsigned variable, double value );
+    void notifyLowerBound( unsigned variable, double bound );
+    void notifyUpperBound( unsigned variable, double bound );
 
 
     /*
@@ -54,10 +55,10 @@ public:
      */
     bool participatingVariable(unsigned variable) const;
 
-//    /*
-//      Get the list of variables participating in this constraint.
-//    */
-//    List<unsigned> getParticipatingVariables() const;
+    /*
+      Get the list of variables participating in this constraint.
+    */
+    List<unsigned> getParticipatingVariables() const;
 
     /*
       Returns true iff the assignment satisfies the constraint
@@ -67,6 +68,13 @@ public:
 
 private:
     unsigned _b, _f;
+    bool _haveEliminatedVariables;
+
+
+    /*
+      Set the phase status not fixed pos neg.
+    */
+    void setPhaseStatus( PhaseStatus phaseStatus );
 }
 
 #endif //MARABOU_ABSCONSTRAINT_H
