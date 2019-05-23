@@ -18,7 +18,7 @@ LIBRARY_DIR += \
 	$(BOOST_LIBS) \
 
 LIBRARIES += \
-	:libboost_program_options.a \
+	boost_program_options \
 
 CFLAGS = \
 	-MMD \
