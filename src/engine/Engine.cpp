@@ -625,6 +625,34 @@ void Engine::invokePreprocessor( const InputQuery &inputQuery, bool preprocess )
             inputQuery.getEquations().size(),
             inputQuery.getNumberOfVariables() );
 
+    InputQuery *hack = (InputQuery *)&inputQuery;
+    hack->markInputVariable( 0, 0 );
+    hack->markInputVariable( 1, 1 );
+    hack->markInputVariable( 2, 2 );
+    hack->markInputVariable( 3, 3 );
+    hack->markInputVariable( 4, 4 );
+
+    unsigned numOfVars = inputQuery.getNumberOfVariables();
+    
+    hack->markOutputVariable( 0, numOfVars-5 );
+    hack->markOutputVariable( 1, numOfVars-4 );
+    hack->markOutputVariable( 2, numOfVars-3 );
+    hack->markOutputVariable( 3, numOfVars-2 );
+    hack->markOutputVariable( 4, numOfVars-1 );
+    
+    printf( "Number of inputs: %u, number of outputs: %u\n", inputQuery._inputIndexToVariable.size(), inputQuery._outputIndexToVariable.size() );
+    
+    printf( "Dumping input and output variables:\n" );
+    for ( const auto &var : inputQuery._inputIndexToVariable )
+	printf ( "\tInput %u is variable x%u\n", var.first, var.second );
+
+    for ( const auto &var : inputQuery._outputIndexToVariable )
+	printf ( "\tOutput %u is variable x%u\n", var.first, var.second );
+
+    printf( "\n" );
+    
+    inputQuery.printInputOutputBounds();
+    
     // If processing is enabled, invoke the preprocessor
     _preprocessingEnabled = preprocess;
     if ( _preprocessingEnabled )
