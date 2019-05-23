@@ -62,6 +62,7 @@ public:
     void addTimeForDegradationChecking( unsigned long long time );
     void addTimeForPrecisionRestoration( unsigned long long time );
     void addTimeForApplyingStoredTightenings( unsigned long long time );
+    void addTimeForLPSolverTightenings( unsigned long long time );
     void incNumPrecisionRestorations();
     double getMaxDegradation() const;
     unsigned getNumPrecisionRestorations() const;
@@ -303,6 +304,9 @@ private:
 
     // Total amount of time spent applying previously stored bound tightenings
     unsigned long long _totalTimeApplyingStoredTighteningsMicro;
+
+    // Total amount of time spent by LP solver on bound tightenings
+    unsigned long long _totalTimeLPSolverTighteningsMicro;
 
     // Total amount of time spent within the SMT core
     unsigned long long _totalTimeSmtCoreMicro;

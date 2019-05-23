@@ -14,9 +14,12 @@
  **/
 
 #include "GurobiManager.h"
+#include "Statistics.h"
+#include "TimeUtils.h"
 
 GurobiManager::GurobiManager(ITableau &tableau)
     : _tableau( tableau )
+    , _statistics( NULL )
 {
 }
 
@@ -24,8 +27,14 @@ GurobiManager::~GurobiManager()
 {
 }
 
+void GurobiManager::setStatistics( Statistics *statistics )
+{
+    _statistics = statistics;
+}
+
 void GurobiManager::tightenBoundsOfVar(unsigned objectiveVar)
 {
+    struct timespec start = TimeUtils::sampleMicro();
 
     try {
         GRBEnv env = GRBEnv();
@@ -111,6 +120,8 @@ void GurobiManager::tightenBoundsOfVar(unsigned objectiveVar)
         printf("%s\n", "Exception during optimization");
     }
     
+    struct timespec end = TimeUtils::sampleMicro();
+    _statistics->addTimeForLPSolverTightenings( TimeUtils::timePassed( start, end ) );
 }
 
 //

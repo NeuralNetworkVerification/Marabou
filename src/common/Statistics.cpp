@@ -73,6 +73,7 @@ Statistics::Statistics()
     , _totalTimePrecisionRestoration( 0 )
     , _totalTimeConstraintMatrixBoundTighteningMicro( 0 )
     , _totalTimeApplyingStoredTighteningsMicro( 0 )
+    , _totalTimeLPSolverTighteningsMicro( 0 )
     , _totalTimeSmtCoreMicro( 0 )
     , _timedOut( false )
 {
@@ -154,6 +155,11 @@ void Statistics::print()
             , _totalTimeApplyingStoredTighteningsMicro / 1000
             );
 
+    printf( "\t\t[%.2lf%%] LP Solver bound tightening: %llu milli\n"
+            , printPercents( _totalTimeLPSolverTighteningsMicro, _timeMainLoopMicro )
+            , _totalTimeLPSolverTighteningsMicro / 1000
+            );
+
     printf( "\t\t[%.2lf%%] SMT core: %llu milli\n"
             , printPercents( _totalTimeSmtCoreMicro, _timeMainLoopMicro )
             , _totalTimeSmtCoreMicro / 1000
@@ -174,6 +180,7 @@ void Statistics::print()
         _totalTimePrecisionRestoration +
         _totalTimeConstraintMatrixBoundTighteningMicro +
         _totalTimeApplyingStoredTighteningsMicro +
+        _totalTimeLPSolverTighteningsMicro +
         _totalTimeSmtCoreMicro +
         _totalTimePerformingSymbolicBoundTightening;
 
@@ -590,6 +597,11 @@ void Statistics::addTimeForApplyingStoredTightenings( unsigned long long time )
     _totalTimeApplyingStoredTighteningsMicro += time;
 }
 
+void Statistics::addTimeForLPSolverTightenings( unsigned long long time )
+{
+    _totalTimeLPSolverTighteningsMicro += time;
+}
+
 void Statistics::addTimeSmtCore( unsigned long long time )
 {
     _totalTimeSmtCoreMicro += time;
@@ -657,6 +669,7 @@ unsigned long long Statistics::getTotalTime() const
         _totalTimePrecisionRestoration +
         _totalTimeConstraintMatrixBoundTighteningMicro +
         _totalTimeApplyingStoredTighteningsMicro +
+        _totalTimeLPSolverTighteningsMicro +
         _totalTimeSmtCoreMicro;
 
     // Total is in micro seconds, and we need to return milliseconds

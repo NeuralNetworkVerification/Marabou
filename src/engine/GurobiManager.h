@@ -31,8 +31,18 @@ public:
     ~GurobiManager();
 
 	void tightenBoundsOfVar(unsigned objectiveVar);
+
+    /*
+      Have the Gurobi manager start reporting statistics.
+    */
+    void setStatistics( Statistics *statistics );
 private:
     ITableau &_tableau;
+
+    /*
+      Collect statistics.
+    */
+    Statistics *_statistics;
 };
 
 #endif // __GurobiManager_h__
