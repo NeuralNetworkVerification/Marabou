@@ -633,15 +633,15 @@ void Engine::invokePreprocessor( const InputQuery &inputQuery, bool preprocess )
     hack->markInputVariable( 4, 4 );
 
     unsigned numOfVars = inputQuery.getNumberOfVariables();
-    
-    hack->markOutputVariable( 0, numOfVars-5 );
-    hack->markOutputVariable( 1, numOfVars-4 );
-    hack->markOutputVariable( 2, numOfVars-3 );
-    hack->markOutputVariable( 3, numOfVars-2 );
-    hack->markOutputVariable( 4, numOfVars-1 );
-    
+
+    hack->markOutputVariable( numOfVars-5, 0 );
+    hack->markOutputVariable( numOfVars-4, 1 );
+    hack->markOutputVariable( numOfVars-3, 2 );
+    hack->markOutputVariable( numOfVars-2, 3 );
+    hack->markOutputVariable( numOfVars-1, 4 );
+
     printf( "Number of inputs: %u, number of outputs: %u\n", inputQuery._inputIndexToVariable.size(), inputQuery._outputIndexToVariable.size() );
-    
+
     printf( "Dumping input and output variables:\n" );
     for ( const auto &var : inputQuery._inputIndexToVariable )
 	printf ( "\tInput %u is variable x%u\n", var.first, var.second );
@@ -649,10 +649,34 @@ void Engine::invokePreprocessor( const InputQuery &inputQuery, bool preprocess )
     for ( const auto &var : inputQuery._outputIndexToVariable )
 	printf ( "\tOutput %u is variable x%u\n", var.first, var.second );
 
+    printf( "\tNumber of ReLUs: %u\n", inputQuery.getPiecewiseLinearConstraints().size() );
+
+    unsigned numOfEqs = inputQuery.getEquations().size();
+
+    printf( "Dumping %u equations:\n", numOfEqs );
+    auto it = inputQuery.getEquations().begin();
+    for ( unsigned i = 0; i < numOfEqs; ++i )
+    {
+        it->dump();
+        ++it;
+    }
+
     printf( "\n" );
-    
+
+    for ( unsigned i = numOfVars - 5; i < numOfVars; ++i )
+    {
+        if ( !hack->getLowerBounds().exists( i ) )
+            hack->setLowerBound( i, FloatUtils::negativeInfinity() );
+
+        if ( !hack->getUpperBounds().exists( i ) )
+            hack->setUpperBound( i, FloatUtils::infinity() );
+    }
+
     inputQuery.printInputOutputBounds();
-    
+
+
+
+
     // If processing is enabled, invoke the preprocessor
     _preprocessingEnabled = preprocess;
     if ( _preprocessingEnabled )

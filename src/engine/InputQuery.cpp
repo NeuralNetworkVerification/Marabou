@@ -396,9 +396,10 @@ void InputQuery::printInputOutputBounds() const
 
     for ( const auto &pair : _variableToOutputIndex )
     {
-        printf( "\tOutput %u (var %u): [%lf, %lf]\n",
+        printf( "\tOutput %u (var %u): ",
                 pair.second,
-                pair.first,
+                pair.first );
+        printf ( "[%lf, %lf]\n",
                 _lowerBounds[pair.first],
                 _upperBounds[pair.first] );
     }
