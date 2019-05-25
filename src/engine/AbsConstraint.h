@@ -65,6 +65,35 @@ public:
     */
     bool satisfied() const;
 
+    /*
+    Returns a list of possible fixes for the violated constraint.
+    */
+    List<PiecewiseLinearConstraint::Fix> getPossibleFixes() const;
+
+    List<PiecewiseLinearConstraint::Fix> getSmartFixes( ITableau *tableau ) const;
+
+    List<PiecewiseLinearCaseSplit> getCaseSplits() const;
+
+    bool phaseFixed() const;
+
+    PiecewiseLinearCaseSplit getValidCaseSplit() const;
+
+    void eliminateVariable( unsigned variable, double fixedValue );
+    void updateVariableIndex( unsigned oldIndex, unsigned newIndex );
+    bool constraintObsolete() const;
+
+    void getEntailedTightenings( List<Tightening> &tightenings ) const;
+
+    void getAuxiliaryEquations( List<Equation> &newEquations ) const;
+
+    String serializeToString() const;
+
+
+
+
+
+
+
 
 private:
     unsigned _b, _f;

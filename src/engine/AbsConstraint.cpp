@@ -3,6 +3,7 @@
 #include "ITableau.h"
 #include "FloatUtils.h"
 #include "AbsError.h"
+#include "Debug.h"
 
 
 
@@ -106,13 +107,8 @@ List<PiecewiseLinearConstraint::Fix> AbsConstraint::getPossibleFixes() const
     return fixes;
 }
 
-List<PiecewiseLinearConstraint::Fix> AbsConstraint::getSmartFixes( ITableau *tableau ) const
-{
-    return getPossibleFixes()
-}
 
-List<PiecewiseLinearCaseSplit> AbsConstraint::getCaseSplits() const
-{
-}
+
+
 
 
