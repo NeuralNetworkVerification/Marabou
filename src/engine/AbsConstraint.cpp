@@ -5,13 +5,14 @@
 #include "AbsError.h"
 #include "Debug.h"
 #include "PiecewiseLinearCaseSplit.h"
+#include "MStringf.h"
 
 
 AbsConstraint::AbsConstraint(unsigned b, unsigned f )
     //var names
     : _b( b )
     , _f( f )
-    // one of our variables eliminated
+    // one of our variables terminated
     , _haveEliminatedVariables( false )
 {
     //bound tightening
@@ -107,12 +108,14 @@ List<PiecewiseLinearConstraint::Fix> AbsConstraint::getPossibleFixes() const
 
     return fixes;
 }
-//
-//List<PiecewiseLinearConstraint::Fix> AbsConstraint::getSmartFixes( ITableau *tableau ) const
-//{
-//    return getPossibleFixes();
-//
-//}
+
+
+
+List<PiecewiseLinearConstraint::Fix> AbsConstraint::getSmartFixes( __attribute__((unused)) ITableau *tableau ) const
+{
+    return getPossibleFixes();
+}
+
 
 List<PiecewiseLinearCaseSplit> AbsConstraint::getCaseSplits() const
 {
@@ -168,7 +171,6 @@ bool AbsConstraint::phaseFixed() const
     return _phaseStatus != PhaseStatus::PHASE_NOT_FIXED;
 }
 
-
 PiecewiseLinearCaseSplit AbsConstraint::getValidCaseSplit() const
 {
     ASSERT( _phaseStatus != PhaseStatus::PHASE_NOT_FIXED );
@@ -178,6 +180,29 @@ PiecewiseLinearCaseSplit AbsConstraint::getValidCaseSplit() const
 
     return getNegativeSplit();
 }
+
+
+void AbsConstraint::eliminateVariable(__attribute__((unused)) unsigned variable, __attribute__((unused)) double fixedValue ){}
+
+void AbsConstraint::updateVariableIndex( __attribute__((unused)) unsigned oldIndex, __attribute__((unused)) unsigned newIndex ) {}
+
+bool AbsConstraint::constraintObsolete() const
+{
+    return true;
+}
+
+void AbsConstraint::getEntailedTightenings( __attribute__((unused)) List<Tightening> &tightenings ) const {}
+
+void AbsConstraint::getAuxiliaryEquations( __attribute__((unused)) List<Equation> &newEquations ) const {}
+
+
+String AbsConstraint::serializeToString() const
+{
+    // Output format is: Abs,f,b
+    return Stringf( "Abs,%u,%u", _f, _b );
+}
+
+
 
 
 
