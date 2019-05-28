@@ -96,8 +96,17 @@ public:
 
 
 private:
+    // variables name. example x_1, x_2, etc.
     unsigned _b, _f;
+
+    // if one of our variable i.e _b or _f have been terminated
+    // caused by bound tightening
     bool _haveEliminatedVariables;
+
+    PhaseStatus _phaseStatus;
+
+    PiecewiseLinearCaseSplit getPositiveSplit() const;
+    PiecewiseLinearCaseSplit getNegativeSplit() const;
 
 
     /*

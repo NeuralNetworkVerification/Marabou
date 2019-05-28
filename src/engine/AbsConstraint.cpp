@@ -4,10 +4,11 @@
 #include "FloatUtils.h"
 #include "AbsError.h"
 #include "Debug.h"
-
+#include "PiecewiseLinearCaseSplit.h"
 
 
 AbsConstraint::AbsConstraint(unsigned b, unsigned f )
+    //var names
     : _b( b )
     , _f( f )
     // one of our variables eliminated
@@ -17,7 +18,7 @@ AbsConstraint::AbsConstraint(unsigned b, unsigned f )
     setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
 }
 
-
+//TODO: add serialize?
 
 PiecewiseLinearConstraint *AbsConstraint::duplicateConstraint() const
 {
@@ -106,9 +107,81 @@ List<PiecewiseLinearConstraint::Fix> AbsConstraint::getPossibleFixes() const
 
     return fixes;
 }
+//
+//List<PiecewiseLinearConstraint::Fix> AbsConstraint::getSmartFixes( ITableau *tableau ) const
+//{
+//    return getPossibleFixes();
+//
+//}
+
+List<PiecewiseLinearCaseSplit> AbsConstraint::getCaseSplits() const
+{
+    if ( _phaseStatus != PhaseStatus::PHASE_NOT_FIXED )
+        throw AbsError( AbsError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
+
+    List<PiecewiseLinearCaseSplit> splits;
+    splits.append( getNegativeSplit() );
+    splits.append( getPositiveSplit() );
+
+    //TODO: add some heuristic
+    return splits;
+}
+
+
+PiecewiseLinearCaseSplit AbsConstraint::getNegativeSplit() const {
+    // Negative phase: b <=0, b + f = 0
+    PiecewiseLinearCaseSplit negativePhase;
+
+    //b <= 0
+    negativePhase.storeBoundTightening(Tightening(_b, 0.0, Tightening::UB));
+
+    //b + f = 0
+    Equation negativeEquation(Equation::EQ);
+    negativeEquation.addAddend(1, _b);
+    negativeEquation.addAddend(1, _f);
+    negativeEquation.setScalar(0);
+    negativePhase.addEquation(negativeEquation);
+
+    return negativePhase;
+}
+
+PiecewiseLinearCaseSplit AbsConstraint::getPositiveSplit() const {
+    // Positive phase: b >= 0, b - f = 0
+    PiecewiseLinearCaseSplit positivePhase;
+
+    //b >= 0
+    positivePhase.storeBoundTightening(Tightening(_b, 0.0, Tightening::LB));
+
+    //b - f = 0
+    Equation positiveEquation(Equation::EQ);
+    positiveEquation.addAddend(1, _b);
+    positiveEquation.addAddend(-1, _f);
+    positiveEquation.setScalar(0);
+    positivePhase.addEquation(positiveEquation);
+
+    return positivePhase;
+}
+
+
+bool AbsConstraint::phaseFixed() const
+{
+    return _phaseStatus != PhaseStatus::PHASE_NOT_FIXED;
+}
+
+
+PiecewiseLinearCaseSplit AbsConstraint::getValidCaseSplit() const
+{
+    ASSERT( _phaseStatus != PhaseStatus::PHASE_NOT_FIXED );
+
+    if ( _phaseStatus == PhaseStatus::PHASE_POSITIVE )
+        return getPositiveSplit();
+
+    return getNegativeSplit();
+}
 
 
 
-
-
-
+void AbsConstraint::setPhaseStatus( PhaseStatus phaseStatus )
+{
+    _phaseStatus = phaseStatus;
+}
