@@ -134,22 +134,29 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
                 _constraintBoundTightener->registerTighterUpperBound( _aux, 0 );
         }
 
-        // A positive lower bound for aux means we're inactive: f is 0, b is non-positive
-        if ( _auxVarInUse && variable == _aux && bound > 0 )
+        // If b is non-negative, we're in the active phase
+        else if ( _auxVarInUse && variable == _b && FloatUtils::isZero( bound ) )
         {
-            _constraintBoundTightener->registerTighterUpperBound( _b, 0 );
+            _constraintBoundTightener->registerTighterUpperBound( _aux, 0 );
+        }
+
+        // A positive lower bound for aux means we're inactive: f is 0, b is non-positive
+        // When inactive, b = -aux
+        else if ( _auxVarInUse && variable == _aux && bound > 0 )
+        {
+            _constraintBoundTightener->registerTighterUpperBound( _b, -bound );
             _constraintBoundTightener->registerTighterUpperBound( _f, 0 );
         }
 
         // A negative lower bound for b could tighten aux's upper bound
-        if ( _auxVarInUse && variable == _b && bound < 0 )
+        else if ( _auxVarInUse && variable == _b && bound < 0 )
         {
             _constraintBoundTightener->registerTighterUpperBound( _aux, -bound );
         }
 
         // Also, if for some reason we only know a negative lower bound for f,
         // we attempt to tighten it to 0
-        if ( bound < 0 && variable == _f )
+        else if ( bound < 0 && variable == _f )
         {
             _constraintBoundTightener->registerTighterLowerBound( _f, 0 );
         }
@@ -178,12 +185,38 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
         {
             // Any bound that we learned of f should be propagated to b
             _constraintBoundTightener->registerTighterUpperBound( _b, bound );
+
+            if ( FloatUtils::isZero( bound ) && _auxVarInUse )
+            {
+                // Inactive case, aux's range is minus the range of b,
+                // with the new upper bound just learned
+                double tightestBound = FloatUtils::min( _upperBounds[_b], bound );
+                _constraintBoundTightener->registerTighterLowerBound( _aux, -tightestBound );
+                _constraintBoundTightener->registerTighterUpperBound( _aux, -_lowerBounds[_b] );
+
+                _constraintBoundTightener->registerTighterLowerBound( _b, -_upperBounds[_aux] );
+                _constraintBoundTightener->registerTighterUpperBound( _b, -_lowerBounds[_aux] );
+            }
         }
         else if ( variable == _b )
         {
-            // If b has a negative upper bound, we f's upper bound is 0
-            double adjustedUpperBound = FloatUtils::max( bound, 0 );
-            _constraintBoundTightener->registerTighterUpperBound( _f, adjustedUpperBound );
+            if ( !FloatUtils::isPositive( bound ) )
+            {
+                // If b has a non-positive upper bound, f's upper bound is 0
+                _constraintBoundTightener->registerTighterUpperBound( _f, 0 );
+
+                if ( _auxVarInUse )
+                {
+                    // Aux's range is minus the range of b
+                    _constraintBoundTightener->registerTighterLowerBound( _aux, -bound );
+                    _constraintBoundTightener->registerTighterUpperBound( _aux, -_lowerBounds[_b] );
+                }
+            }
+            else
+            {
+                // b has a positive upper bound, propagate to f
+                _constraintBoundTightener->registerTighterUpperBound( _f, bound );
+            }
         }
         else if ( _auxVarInUse && variable == _aux )
         {
@@ -547,64 +580,79 @@ void ReluConstraint::getEntailedTightenings( List<Tightening> &tightenings ) con
 
     ASSERT( !_auxVarInUse || ( _lowerBounds.exists( _aux ) && _upperBounds.exists( _aux ) ) );
 
-    // Upper bounds
-    double bUpperBound = _upperBounds[_b];
-    double fUpperBound = _upperBounds[_f];
-
-    double minUpperBound =
-        FloatUtils::lt( bUpperBound, fUpperBound ) ? bUpperBound : fUpperBound;
-
-    if ( !FloatUtils::isNegative( minUpperBound ) )
-    {
-        // The minimal bound is non-negative. Should match for both f and b.
-        tightenings.append( Tightening( _b, minUpperBound, Tightening::UB ) );
-        tightenings.append( Tightening( _f, minUpperBound, Tightening::UB ) );
-    }
-    else
-    {
-        // The minimal bound is negative. This has to be b's upper bound.
-        tightenings.append( Tightening( _f, 0.0, Tightening::UB ) );
-    }
-
-    // Lower bounds
     double bLowerBound = _lowerBounds[_b];
     double fLowerBound = _lowerBounds[_f];
 
-    // F's lower bound should always be non-negative
-    tightenings.append( Tightening( _f, 0.0, Tightening::LB ) );
+    double bUpperBound = _upperBounds[_b];
+    double fUpperBound = _upperBounds[_f];
 
-    // Lower bounds are entailed between f and b only if they are strictly positive, and otherwise ignored.
-    if ( FloatUtils::isPositive( fLowerBound ) )
-    {
-        tightenings.append( Tightening( _b, fLowerBound, Tightening::LB ) );
-    }
+    double auxLowerBound = 0;
+    double auxUpperBound = 0;
 
-    if ( FloatUtils::isPositive( bLowerBound ) )
-    {
-        tightenings.append( Tightening( _f, bLowerBound, Tightening::LB ) );
-    }
-
-    // Aux variable
     if ( _auxVarInUse )
     {
-        // aux's lower bound should always be non-negative
-        tightenings.append( Tightening( _aux, 0.0, Tightening::LB ) );
+        auxLowerBound = _lowerBounds[_aux];
+        auxUpperBound = _upperBounds[_aux];
+    }
 
-        double auxUpperBound = _upperBounds[_aux];
+    // Determine if we are in the active case, inactive case or unknown phase
+    if ( !FloatUtils::isNegative( bLowerBound ) ||
+         FloatUtils::isPositive( fLowerBound ) ||
+         ( _auxVarInUse && FloatUtils::isZero( auxUpperBound ) ) )
+    {
+        // Active case;
 
-        // If b's lower bound is negative, it should match aux's upper bound
-        if ( !FloatUtils::isPositive( bLowerBound ) )
+        // All bounds are propagated between b and f
+        tightenings.append( Tightening( _b, fLowerBound, Tightening::LB ) );
+        tightenings.append( Tightening( _f, bLowerBound, Tightening::LB ) );
+
+        tightenings.append( Tightening( _b, fUpperBound, Tightening::UB ) );
+        tightenings.append( Tightening( _f, bUpperBound, Tightening::UB ) );
+
+        // Aux is zero
+        if ( _auxVarInUse )
+            tightenings.append( Tightening( _aux, 0, Tightening::UB ) );
+    }
+    else if ( FloatUtils::isNegative( bUpperBound ) ||
+              FloatUtils::isZero( fUpperBound ) ||
+              ( _auxVarInUse && FloatUtils::isPositive( auxLowerBound ) ) )
+    {
+        // Inactive case
+
+        // f is zero, b is non-positive
+        tightenings.append( Tightening( _f, 0, Tightening::UB ) );
+        tightenings.append( Tightening( _b, 0, Tightening::UB ) );
+
+        // aux = -b
+        if ( _auxVarInUse )
         {
             tightenings.append( Tightening( _aux, -bLowerBound, Tightening::UB ) );
+            tightenings.append( Tightening( _aux, -bUpperBound, Tightening::LB ) );
+
+            tightenings.append( Tightening( _b, -auxLowerBound, Tightening::UB ) );
             tightenings.append( Tightening( _b, -auxUpperBound, Tightening::LB ) );
         }
-        else
-        {
-            // Active case, aux is 0
-            tightenings.append( Tightening( _aux, 0, Tightening::UB ) );
-        }
-
     }
+    else
+    {
+        // Unknown case
+
+        // b and f share upper bounds
+        tightenings.append( Tightening( _b, fUpperBound, Tightening::UB ) );
+        tightenings.append( Tightening( _f, bUpperBound, Tightening::UB ) );
+
+        // aux upper bound is -b lower bound
+        if ( _auxVarInUse )
+        {
+            tightenings.append( Tightening( _b, -auxUpperBound, Tightening::LB ) );
+            tightenings.append( Tightening( _aux, -bLowerBound, Tightening::UB ) );
+        }
+    }
+
+    // f and aux are always non negative
+    tightenings.append( Tightening( _f, 0, Tightening::LB ) );
+    if ( _auxVarInUse )
+        tightenings.append( Tightening( _aux, 0, Tightening::LB ) );
 }
 
 String ReluConstraint::phaseToString( PhaseStatus phase )
@@ -661,7 +709,7 @@ void ReluConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
     inputQuery.setNumberOfVariables( _aux + 1 );
 
     // Create and add the equation
-    Equation equation( Equation::GE );
+    Equation equation( Equation::EQ );
     equation.addAddend( 1.0, _f );
     equation.addAddend( -1.0, _b );
     equation.addAddend( -1.0, _aux );
