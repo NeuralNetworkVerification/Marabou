@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file SODDivider.h
+/*! \file LargestIntervalDivider.h
 ** \verbatim
 ** Top contributors (to current version):
 **   Haoze Wu
@@ -33,11 +33,12 @@ class LargestIntervalDivider : public QueryDivider
   void createSubQueries( unsigned num_new_subqueries, SubQuery&
                          previousSubquery, SubQueries& subqueries );
 
+  // Returns the variable with the largest range
   unsigned getLargestInterval( InputRegion& inputRegion );
 
  private:
-  std::vector<unsigned> _inputVariables;
-  double _timeout_factor;
+  std::vector<unsigned> _inputVariables; // All input variables of the network
+  double _timeout_factor; // Multiply the previous timeout with this factor
 
 };
 

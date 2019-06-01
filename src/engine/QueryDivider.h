@@ -18,7 +18,6 @@
 
 
 #include "SubQuery.h"
-
 #include <map>
 
 struct InputRegion {
@@ -33,7 +32,7 @@ class QueryDivider
   // Divide the previousSubquery into |numNewSubQueries| new subqueries and
   // store them in subqueries
   virtual void createSubQueries( unsigned numNewSubQueries, SubQuery&
-                                 previousSubQuery, SubQueries& subqueries ) = 0;
+                                 previousSubquery, SubQueries& subqueries ) = 0;
 
   // Bisect the given input region at the given dimension, and store the
   // new input regions into inputRegions

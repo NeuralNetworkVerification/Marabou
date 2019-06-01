@@ -97,7 +97,6 @@ public:
     */
     List<unsigned> getInputVariables() const;
 
-
 private:
     enum BasisRestorationRequired {
         RESTORATION_NOT_NEEDED = 0,
