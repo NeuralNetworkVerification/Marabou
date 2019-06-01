@@ -92,6 +92,12 @@ public:
     */
     Engine::ExitCode getExitCode() const;
 
+    /*
+      Get the list of input variables
+    */
+    List<unsigned> getInputVariables() const;
+
+
 private:
     enum BasisRestorationRequired {
         RESTORATION_NOT_NEEDED = 0,
