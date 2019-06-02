@@ -22,20 +22,12 @@
 #include <boost/lockfree/queue.hpp>
 #include <utility>
 
-// Guy: In general, tuples are less self-explanatory than structs (fields are not named in tuples). Consider changing this.
-
-// Object representing a subquery, containing a string denoting the id of the
-// query, a case split containing the input ranges, and an unsigned int denoting
-// the timeout
-
-typedef std::tuple<std::string, std::unique_ptr<PiecewiseLinearCaseSplit>,
-    unsigned> SubQuery;
-
-//struct SubQuery {
-//    std::string queryId;
-//    std::unique_ptr<PiecewiseLinearCaseSplit> split;
-//    unsigned timeoutInSeconds;
-//};
+// Struct representing a subquery
+struct SubQuery {
+    std::string queryId;
+    std::unique_ptr<PiecewiseLinearCaseSplit> split;
+    unsigned timeoutInSeconds;
+};
 
 // Synchronized Queue containing the Sub-Queries shared by workers
 typedef boost::lockfree::queue<SubQuery*, boost::lockfree::

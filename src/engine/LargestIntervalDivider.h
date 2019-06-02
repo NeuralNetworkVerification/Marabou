@@ -27,7 +27,7 @@
 class LargestIntervalDivider : public QueryDivider
 {
 public:
-    LargestIntervalDivider( List<unsigned> &inputVariables,
+    LargestIntervalDivider( const List<unsigned> &inputVariables,
                             double timeoutFactor );
 
     void createSubQueries( unsigned numNewSubqueries,
@@ -43,7 +43,7 @@ private:
     /*
       All input variables of the network
     */
-    List<unsigned> _inputVariables;
+    const List<unsigned> _inputVariables;
 
     /*
       Multiply the previous timeout with this factor

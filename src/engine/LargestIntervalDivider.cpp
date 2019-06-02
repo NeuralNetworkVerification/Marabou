@@ -15,12 +15,12 @@
 
 #include "LargestIntervalDivider.h"
 
-LargestIntervalDivider::LargestIntervalDivider( List<unsigned> &inputVariables,
-                                                double timeoutFactor )
-    : _timeoutFactor( timeoutFactor )
-{
-    _inputVariables = inputVariables;
-}
+LargestIntervalDivider::LargestIntervalDivider( const List<unsigned>
+                                                &inputVariables, double
+                                                timeoutFactor )
+    : _inputVariables( inputVariables ),
+      _timeoutFactor( timeoutFactor )
+{}
 
 void LargestIntervalDivider::createSubQueries( unsigned numNewSubqueries,
                                                const SubQuery &previousSubQuery,
@@ -29,10 +29,9 @@ void LargestIntervalDivider::createSubQueries( unsigned numNewSubqueries,
     unsigned numBisects = ( unsigned ) log2( numNewSubqueries );
 
     // Get the query id, previous case split, and the previous timeout
-    const std::string queryIdPrefix = std::get<0>( previousSubQuery );
-    const PiecewiseLinearCaseSplit previousSplit = *( std::get<1>
-                                                      ( previousSubQuery ) );
-    const unsigned timeoutInSeconds = std::get<2>( previousSubQuery );
+    const std::string queryIdPrefix = previousSubQuery.queryId;
+    const PiecewiseLinearCaseSplit previousSplit = *( previousSubQuery.split );
+    const unsigned timeoutInSeconds = previousSubQuery.timeoutInSeconds;
 
     List<InputRegion> inputRegions;
 
@@ -91,9 +90,11 @@ void LargestIntervalDivider::createSubQueries( unsigned numNewSubqueries,
         }
 
         // Construct the new subquery and add it to subqueries
-        SubQuery *subQuery = new SubQuery( queryId, std::move(split),
-                                           (unsigned) (timeoutInSeconds *
-                                                       _timeoutFactor) );
+        SubQuery *subQuery = new SubQuery;
+        subQuery->queryId = queryId;
+        subQuery->split = std::move(split);
+        subQuery->timeoutInSeconds = (unsigned) (timeoutInSeconds *
+                                                 _timeoutFactor);
         subQueries.append( subQuery );
     }
 }
