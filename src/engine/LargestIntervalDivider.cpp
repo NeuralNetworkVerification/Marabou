@@ -93,8 +93,8 @@ void LargestIntervalDivider::createSubQueries( unsigned numNewSubqueries,
         SubQuery *subQuery = new SubQuery;
         subQuery->queryId = queryId;
         subQuery->split = std::move(split);
-        subQuery->timeoutInSeconds = (unsigned) (timeoutInSeconds *
-                                                 _timeoutFactor);
+        subQuery->timeoutInSeconds = ( unsigned ) ( timeoutInSeconds *
+                                                    _timeoutFactor );
         subQueries.append( subQuery );
     }
 }
@@ -102,7 +102,7 @@ void LargestIntervalDivider::createSubQueries( unsigned numNewSubqueries,
 unsigned LargestIntervalDivider::getLargestInterval( const InputRegion
                                                      &inputRegion )
 {
-    ASSERT( inputRegion._lowerBounds.size() == inputRegion._lowerBounds.size() );
+    ASSERT( inputRegion._lowerBounds.size() == inputRegion._upperBounds.size() );
     unsigned dimensionToSplit = 0;
     double largestInterval = 0;
 

@@ -23,7 +23,8 @@
 #include <utility>
 
 // Struct representing a subquery
-struct SubQuery {
+struct SubQuery
+{
     std::string queryId;
     std::unique_ptr<PiecewiseLinearCaseSplit> split;
     unsigned timeoutInSeconds;
