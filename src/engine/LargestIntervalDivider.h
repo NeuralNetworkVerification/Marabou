@@ -1,15 +1,15 @@
 /*********************                                                        */
 /*! \file LargestIntervalDivider.h
-** \verbatim
-** Top contributors (to current version):
-**   Haoze Wu
-** This file is part of the Marabou project.
-** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
-** in the top-level source directory) and their institutional affiliations.
-** All rights reserved. See the file COPYING in the top-level source
-** directory for licensing information.\endverbatim
-**
-** [[ Add lengthier description here ]]
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Haoze Wu
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
 
 **/
 
@@ -20,26 +20,43 @@
 #include "Engine.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "QueryDivider.h"
+#include "Vector.h"
 
 #include <math.h>
-#include <vector>
 
 class LargestIntervalDivider : public QueryDivider
 {
- public:
-  LargestIntervalDivider( List<unsigned>& inputVariables,
-                          double timeout_factor );
+public:
+    LargestIntervalDivider( List<unsigned> &inputVariables,
+                            double timeoutFactor );
 
-  void createSubQueries( unsigned num_new_subqueries, SubQuery&
-                         previousSubquery, SubQueries& subqueries );
+    void createSubQueries( unsigned numNewSubqueries,
+                           SubQuery &previousSubquery,
+                           SubQueries &subqueries ); // consistent camel-casing for subQuery
 
-  // Returns the variable with the largest range
-  unsigned getLargestInterval( InputRegion& inputRegion );
+    /*
+      Returns the variable with the largest range
+    */
+    unsigned getLargestInterval( const InputRegion &inputRegion );
 
- private:
-  std::vector<unsigned> _inputVariables; // All input variables of the network
-  double _timeout_factor; // Multiply the previous timeout with this factor
+private:
+    /*
+      All input variables of the network
+    */
+    Vector<unsigned> _inputVariables; // vector? not a list?
 
+    /*
+      Multiply the previous timeout with this factor
+    */
+    double _timeoutFactor;
 };
 
 #endif // __LargestIntervalDivider_h__
+
+//
+// Local Variables:
+// compile-command: "make -C ../.. "
+// tags-file-name: "../../TAGS"
+// c-basic-offset: 4
+// End:
+//

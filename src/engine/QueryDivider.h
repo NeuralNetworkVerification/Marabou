@@ -16,28 +16,42 @@
 #ifndef __QueryDivider_h__
 #define __QueryDivider_h__
 
-
+#include "Map.h"
 #include "SubQuery.h"
-#include <map>
-
-struct InputRegion {
-  std::map<unsigned, double> lowerbounds;
-  std::map<unsigned, double> upperbounds;
-};
-
+#include "Vector.h"
 
 class QueryDivider
 {
- public:
-  // Divide the previousSubquery into |numNewSubQueries| new subqueries and
-  // store them in subqueries
-  virtual void createSubQueries( unsigned numNewSubQueries, SubQuery&
-                                 previousSubquery, SubQueries& subqueries ) = 0;
+public:
+    struct InputRegion
+    {
+        Map<unsigned, double> _lowerBounds;
+        Map<unsigned, double> _upperBounds;
+    };
 
-  // Bisect the given input region at the given dimension, and store the
-  // new input regions into inputRegions
-  void bisectInputRegion(InputRegion& inputRegion, unsigned dimensionToBisect,
-                         std::vector<InputRegion>& inputRegions);
+    /*
+      Divide the previousSubquery into |numNewSubQueries| new subqueries and
+      store them in subqueries
+    */
+    virtual void createSubQueries( unsigned numNewSubQueries,
+                                   SubQuery &previousSubquery, // make const?
+                                   SubQueries &subqueries ) = 0; // please be consistent with camel-casing: either subquery or subQuery throughout
+
+    /*
+      Bisect the given input region at the given dimension, and store the
+      new input regions into inputRegions
+    */
+    void bisectInputRegion( const InputRegion &inputRegion,
+                            unsigned dimensionToBisect,
+                            Vector<InputRegion> &inputRegions ); // Vector? not a list?
 };
 
 #endif // __Querydivider_h__
+
+//
+// Local Variables:
+// compile-command: "make -C ../.. "
+// tags-file-name: "../../TAGS"
+// c-basic-offset: 4
+// End:
+//
