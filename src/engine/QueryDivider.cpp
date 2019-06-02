@@ -17,7 +17,7 @@
 
 void QueryDivider::bisectInputRegion( const InputRegion &inputRegion,
                                       unsigned dimensionToBisect,
-                                      Vector<InputRegion> &inputRegions )
+                                      List<InputRegion> &inputRegions )
 {
     InputRegion inputRegion1;
     InputRegion inputRegion2;

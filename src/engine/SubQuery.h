@@ -16,11 +16,11 @@
 #ifndef __SubQuery_h__
 #define __SubQuery_h__
 
+#include "List.h"
 #include "PiecewiseLinearCaseSplit.h"
 
 #include <boost/lockfree/queue.hpp>
 #include <utility>
-#include <vector>
 
 // Guy: In general, tuples are less self-explanatory than structs (fields are not named in tuples). Consider changing this.
 
@@ -28,9 +28,14 @@
 // query, a case split containing the input ranges, and an unsigned int denoting
 // the timeout
 
-// Guy: copying strings is cheap. For simplicity, consider removing the std::unique_ptr
-typedef std::tuple<std::unique_ptr<std::string>, std::unique_ptr
-  <PiecewiseLinearCaseSplit>, unsigned> SubQuery;
+typedef std::tuple<std::string, std::unique_ptr<PiecewiseLinearCaseSplit>,
+    unsigned> SubQuery;
+
+//struct SubQuery {
+//    std::string queryId;
+//    std::unique_ptr<PiecewiseLinearCaseSplit> split;
+//    unsigned timeoutInSeconds;
+//};
 
 // Synchronized Queue containing the Sub-Queries shared by workers
 typedef boost::lockfree::queue<SubQuery*, boost::lockfree::
@@ -39,7 +44,7 @@ typedef boost::lockfree::queue<SubQuery*, boost::lockfree::
 // A vector of Sub-Queries
 
 // Guy: consider using our wrapper class Vector instead of std::vector
-typedef std::vector<SubQuery*> SubQueries;
+typedef List<SubQuery*> SubQueries;
 
 #endif // __SubQuery_h__
 

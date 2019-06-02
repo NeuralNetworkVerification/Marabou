@@ -16,9 +16,9 @@
 #ifndef __QueryDivider_h__
 #define __QueryDivider_h__
 
+#include "List.h"
 #include "Map.h"
 #include "SubQuery.h"
-#include "Vector.h"
 
 class QueryDivider
 {
@@ -34,8 +34,8 @@ public:
       store them in subqueries
     */
     virtual void createSubQueries( unsigned numNewSubQueries,
-                                   SubQuery &previousSubquery, // make const?
-                                   SubQueries &subqueries ) = 0; // please be consistent with camel-casing: either subquery or subQuery throughout
+                                   const SubQuery &previousSubQuery,
+                                   SubQueries &subQueries ) = 0;
 
     /*
       Bisect the given input region at the given dimension, and store the
@@ -43,7 +43,7 @@ public:
     */
     void bisectInputRegion( const InputRegion &inputRegion,
                             unsigned dimensionToBisect,
-                            Vector<InputRegion> &inputRegions ); // Vector? not a list?
+                            List<InputRegion> &inputRegions );
 };
 
 #endif // __Querydivider_h__

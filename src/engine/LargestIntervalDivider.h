@@ -18,9 +18,9 @@
 
 #include "Debug.h"
 #include "Engine.h"
+#include "List.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "QueryDivider.h"
-#include "Vector.h"
 
 #include <math.h>
 
@@ -31,8 +31,8 @@ public:
                             double timeoutFactor );
 
     void createSubQueries( unsigned numNewSubqueries,
-                           SubQuery &previousSubquery,
-                           SubQueries &subqueries ); // consistent camel-casing for subQuery
+                           const SubQuery &previousSubQuery,
+                           SubQueries &subQueries );
 
     /*
       Returns the variable with the largest range
@@ -43,7 +43,7 @@ private:
     /*
       All input variables of the network
     */
-    Vector<unsigned> _inputVariables; // vector? not a list?
+    List<unsigned> _inputVariables;
 
     /*
       Multiply the previous timeout with this factor
