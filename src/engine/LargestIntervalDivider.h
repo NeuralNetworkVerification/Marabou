@@ -16,10 +16,7 @@
 #ifndef __LargestIntervalDivider_h__
 #define __LargestIntervalDivider_h__
 
-#include "Debug.h"
-#include "Engine.h"
 #include "List.h"
-#include "PiecewiseLinearCaseSplit.h"
 #include "QueryDivider.h"
 
 #include <math.h>

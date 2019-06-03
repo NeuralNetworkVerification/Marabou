@@ -17,6 +17,7 @@
 #define __SubQuery_h__
 
 #include "List.h"
+#include "MString.h"
 #include "PiecewiseLinearCaseSplit.h"
 
 #include <boost/lockfree/queue.hpp>
@@ -25,19 +26,19 @@
 // Struct representing a subquery
 struct SubQuery
 {
-    std::string queryId;
-    std::unique_ptr<PiecewiseLinearCaseSplit> split;
-    unsigned timeoutInSeconds;
+    String _queryId;
+    std::unique_ptr<PiecewiseLinearCaseSplit> _split;
+    unsigned _timeoutInSeconds;
 };
 
 // Synchronized Queue containing the Sub-Queries shared by workers
-typedef boost::lockfree::queue<SubQuery*, boost::lockfree::
+typedef boost::lockfree::queue<SubQuery *, boost::lockfree::
   fixed_sized<false>>WorkerQueue;
 
 // A vector of Sub-Queries
 
 // Guy: consider using our wrapper class Vector instead of std::vector
-typedef List<SubQuery*> SubQueries;
+typedef List<SubQuery *> SubQueries;
 
 #endif // __SubQuery_h__
 

@@ -13,25 +13,29 @@
 
 **/
 
+#include "Debug.h"
 #include "LargestIntervalDivider.h"
+#include "MStringf.h"
+#include "PiecewiseLinearCaseSplit.h"
 
 LargestIntervalDivider::LargestIntervalDivider( const List<unsigned>
                                                 &inputVariables, double
                                                 timeoutFactor )
-    : _inputVariables( inputVariables ),
-      _timeoutFactor( timeoutFactor )
-{}
+    : _inputVariables( inputVariables )
+    , _timeoutFactor( timeoutFactor )
+{
+}
 
 void LargestIntervalDivider::createSubQueries( unsigned numNewSubqueries,
                                                const SubQuery &previousSubQuery,
                                                SubQueries &subQueries )
 {
-    unsigned numBisects = ( unsigned ) log2( numNewSubqueries );
+    unsigned numBisects = (unsigned)log2( numNewSubqueries );
 
     // Get the query id, previous case split, and the previous timeout
-    const std::string queryIdPrefix = previousSubQuery.queryId;
-    const PiecewiseLinearCaseSplit previousSplit = *( previousSubQuery.split );
-    const unsigned timeoutInSeconds = previousSubQuery.timeoutInSeconds;
+    const String queryIdPrefix = previousSubQuery._queryId;
+    const PiecewiseLinearCaseSplit previousSplit = *( previousSubQuery._split );
+    const unsigned timeoutInSeconds = previousSubQuery._timeoutInSeconds;
 
     List<InputRegion> inputRegions;
 
@@ -69,11 +73,11 @@ void LargestIntervalDivider::createSubQueries( unsigned numNewSubqueries,
     for ( const auto &inputRegion : inputRegions )
     {
         // Create a new query id
-        std::string queryId;
+        String queryId;
         if ( queryIdPrefix == "" )
-            queryId = queryIdPrefix + std::to_string( queryIdSuffix++ );
+            queryId = queryIdPrefix + Stringf( "%u", queryIdSuffix++ );
         else
-            queryId = queryIdPrefix + "-" + std::to_string( queryIdSuffix++ );
+            queryId = queryIdPrefix + Stringf( "-%u", queryIdSuffix++ );
 
         // Create a new case split
         auto split = std::unique_ptr<PiecewiseLinearCaseSplit>
@@ -91,10 +95,10 @@ void LargestIntervalDivider::createSubQueries( unsigned numNewSubqueries,
 
         // Construct the new subquery and add it to subqueries
         SubQuery *subQuery = new SubQuery;
-        subQuery->queryId = queryId;
-        subQuery->split = std::move(split);
-        subQuery->timeoutInSeconds = ( unsigned ) ( timeoutInSeconds *
-                                                    _timeoutFactor );
+        subQuery->_queryId = queryId;
+        subQuery->_split = std::move(split);
+        subQuery->_timeoutInSeconds = (unsigned)( timeoutInSeconds *
+                                                  _timeoutFactor );
         subQueries.append( subQuery );
     }
 }
