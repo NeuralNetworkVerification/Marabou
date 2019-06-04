@@ -16,7 +16,7 @@
  **/
 '''
 
-from . import MarabouCore
+from maraboupy import MarabouCore
 
 class Equation:
     """
