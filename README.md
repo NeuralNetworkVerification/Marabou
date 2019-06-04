@@ -1,23 +1,25 @@
 Marabou
 ===============================================================================
-Marabou is a tool for verification of deep neural networks(DNNs) with piece-wise
+Marabou is a tool for verification of deep neural networks (DNNs) with piece-wise
 linear functions. It checks reachability and robustness properties on a given
 network. It re-implements the
 [ReluPlex](https://github.com/guykatzz/ReluplexCav2017) algorithm, replacing
 GLPK with its own simplex core enabling tighter integration with satisfiability
 modulo theory (SMT) techniques.
 
-Marabou supports fully connected feed-forward and convolutional NNs, in the
-.nnet and TensorFlow formats. Properties can be specified using inequalites over
-input and output variables. For more details about the features of Marabou check
-out the [tool paper](marabouCAV2019.pdf) or the [slides](slides.pdf). For more
-information about the input formats please check the [wiki](TODO:formats_page).
+Marabou supports fully connected feed-forward and convolutional NNs with
+piece-wise linear activation functions, in the .nnet and TensorFlow formats.
+Properties can be specified using inequalites over input and output variables.
+For more details about the features of Marabou check out the [tool
+paper](marabouCAV2019.pdf) or the [slides](slides.pdf). For more information
+about the input formats please check the [wiki](TODO:formats_page).
 
 Download
 ------------------------------------------------------------------------------
 The latest version of Marabou is available on GitHub:
 [http://github.com/GuyKatzz/Marabou].
 
+Static binaries are available from ...
 
 Build and Dependencies
 ------------------------------------------------------------------------------
@@ -66,12 +68,16 @@ An example jupyter notebook is available at ... It is ready to run assuming the 
 Related projects
 -----------------------------------------------------------------------------
 Marabou is used for a number of flagship projects at [Stanford's AISafety
-center](www.aisafety.stanford.edu).
+center](http://aisafety.stanford.edu).
 
 People
 -----------------------------------------------------------------------------
 [Clark Barrett]()
+
 [Guy Katz]()
+
 [Aleksandar Zeljic]()
+
 [Ahmed Irfan]()
+
 [Haoze Wu]()
