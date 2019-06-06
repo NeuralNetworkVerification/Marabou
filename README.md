@@ -2,7 +2,7 @@ Marabou
 ===============================================================================
 Marabou is a tool for verification of deep neural networks (DNNs) with piece-wise
 linear functions. It checks reachability and robustness properties on a given
-network. It re-implements the
+network. It is based on and extends the
 [ReluPlex](https://github.com/guykatzz/ReluplexCav2017) algorithm, replacing
 GLPK with its own simplex core enabling tighter integration with satisfiability
 modulo theory (SMT) techniques.
