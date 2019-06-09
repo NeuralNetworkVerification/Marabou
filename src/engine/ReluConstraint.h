@@ -120,8 +120,10 @@ public:
     void dump( String &output ) const;
 
     /*
-      For preprocessing: get any auxiliary equations that this constraint would
-      like to add to the equation pool.
+      For preprocessing: get any auxiliary equations that this
+      constraint would like to add to the equation pool. In the ReLU
+      case, this is an equation of the form aux = f - b, where aux is
+      non-negative.
     */
     void addAuxiliaryEquations( InputQuery &inputQuery );
 
