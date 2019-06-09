@@ -432,6 +432,40 @@ public:
             relu.notifyLowerBound( b, -2.0 );
             TS_ASSERT( !relu.phaseFixed() );
         }
+
+        // Aux variables: upper bound
+        {
+            ReluConstraint relu( b, f );
+
+            relu.notifyLowerBound( b, -5 );
+            InputQuery dontCare;
+            unsigned aux = 300;
+            dontCare.setNumberOfVariables( aux );
+            relu.addAuxiliaryEquations( dontCare );
+
+            TS_ASSERT( !relu.phaseFixed() );
+            relu.notifyUpperBound( aux, 3.0 );
+            TS_ASSERT( !relu.phaseFixed() );
+            relu.notifyUpperBound( aux, 0.0 );
+            TS_ASSERT( relu.phaseFixed() );
+        }
+
+        // Aux variables: lower bound
+        {
+            ReluConstraint relu( b, f );
+
+            relu.notifyLowerBound( b, -5 );
+            InputQuery dontCare;
+            unsigned aux = 300;
+            dontCare.setNumberOfVariables( aux );
+            relu.addAuxiliaryEquations( dontCare );
+
+            TS_ASSERT( !relu.phaseFixed() );
+            relu.notifyLowerBound( aux, 0.0 );
+            TS_ASSERT( !relu.phaseFixed() );
+            relu.notifyLowerBound( aux, 1.0 );
+            TS_ASSERT( relu.phaseFixed() );
+        }
     }
 
     void test_valid_split_relu_phase_fixed_to_active()
