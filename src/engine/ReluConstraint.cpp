@@ -602,7 +602,13 @@ void ReluConstraint::getEntailedTightenings( List<Tightening> &tightenings ) con
 
         // Aux is zero
         if ( _auxVarInUse )
+        {
+            tightenings.append( Tightening( _aux, 0, Tightening::LB ) );
             tightenings.append( Tightening( _aux, 0, Tightening::UB ) );
+        }
+
+        tightenings.append( Tightening( _b, 0, Tightening::LB ) );
+        tightenings.append( Tightening( _f, 0, Tightening::LB ) );
     }
     else if ( FloatUtils::isNegative( bUpperBound ) ||
               FloatUtils::isZero( fUpperBound ) ||
@@ -610,11 +616,14 @@ void ReluConstraint::getEntailedTightenings( List<Tightening> &tightenings ) con
     {
         // Inactive case
 
-        // f is zero, b is non-positive
+        // f is zero
+        tightenings.append( Tightening( _f, 0, Tightening::LB ) );
         tightenings.append( Tightening( _f, 0, Tightening::UB ) );
+
+        // b is non-positive
         tightenings.append( Tightening( _b, 0, Tightening::UB ) );
 
-        // aux = -b
+        // aux = -b, aux is non-negative
         if ( _auxVarInUse )
         {
             tightenings.append( Tightening( _aux, -bLowerBound, Tightening::UB ) );
@@ -622,6 +631,8 @@ void ReluConstraint::getEntailedTightenings( List<Tightening> &tightenings ) con
 
             tightenings.append( Tightening( _b, -auxLowerBound, Tightening::UB ) );
             tightenings.append( Tightening( _b, -auxUpperBound, Tightening::LB ) );
+
+            tightenings.append( Tightening( _aux, 0, Tightening::LB ) );
         }
     }
     else
@@ -638,12 +649,12 @@ void ReluConstraint::getEntailedTightenings( List<Tightening> &tightenings ) con
             tightenings.append( Tightening( _b, -auxUpperBound, Tightening::LB ) );
             tightenings.append( Tightening( _aux, -bLowerBound, Tightening::UB ) );
         }
-    }
 
-    // f and aux are always non negative
-    tightenings.append( Tightening( _f, 0, Tightening::LB ) );
-    if ( _auxVarInUse )
-        tightenings.append( Tightening( _aux, 0, Tightening::LB ) );
+        // f and aux are always non negative
+        tightenings.append( Tightening( _f, 0, Tightening::LB ) );
+        if ( _auxVarInUse )
+            tightenings.append( Tightening( _aux, 0, Tightening::LB ) );
+    }
 }
 
 String ReluConstraint::phaseToString( PhaseStatus phase )

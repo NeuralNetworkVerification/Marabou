@@ -520,79 +520,97 @@ public:
         TS_ASSERT( equations.empty() );
     }
 
-    void xtest_relu_entailed_tightenings()
+    void test_relu_entailed_tightenings()
     {
         unsigned b = 1;
         unsigned f = 4;
 
-        ReluConstraint relu( b, f );
+        InputQuery dontCare;
+        dontCare.setNumberOfVariables( 500 );
+        unsigned aux = 500;
 
-        List<Tightening> entailedTightenings;
+        ReluConstraint relu( b, f );
 
         relu.notifyUpperBound( b, 7 );
         relu.notifyUpperBound( f, 7 );
 
-        // Negative b lower bound is not propagated
         relu.notifyLowerBound( b, -1 );
         relu.notifyLowerBound( f, 0 );
 
-        relu.getEntailedTightenings( entailedTightenings );
-        TS_ASSERT( entailedTightenings.empty() );
+        relu.addAuxiliaryEquations( dontCare );
 
-        // Positive lower bounds are propagated
+        relu.notifyLowerBound( aux, 0 );
+        relu.notifyUpperBound( aux, 1 );
+
+        List<Tightening> entailedTightenings;
+        relu.getEntailedTightenings( entailedTightenings );
+
+        // The phase is not fixed: upper bounds propagated between b
+        // and f, b lower bound propagated to aux and vice versa, f
+        // and aux both non-negative
+        TS_ASSERT_EQUALS( entailedTightenings.size(), 6U );
+        TS_ASSERT( entailedTightenings.exists( Tightening( f, 7, Tightening::UB ) ) );
+        TS_ASSERT( entailedTightenings.exists( Tightening( b, 7, Tightening::UB ) ) );
+        TS_ASSERT( entailedTightenings.exists( Tightening( f, 0, Tightening::LB ) ) );
+        TS_ASSERT( entailedTightenings.exists( Tightening( aux, 0, Tightening::LB ) ) );
+        TS_ASSERT( entailedTightenings.exists( Tightening( b, -1, Tightening::LB ) ) );
+        TS_ASSERT( entailedTightenings.exists( Tightening( aux, 1, Tightening::UB ) ) );
+
+        entailedTightenings.clear();
+
+        // Positive lower bounds for b and f: active case. All bounds
+        // propagated between f and b, and aux is set to 0. F and b are
+        // non-negative.
         relu.notifyLowerBound( b, 1 );
         relu.notifyLowerBound( f, 2 );
 
-        entailedTightenings.clear();
         relu.getEntailedTightenings( entailedTightenings );
-        TS_ASSERT_EQUALS( entailedTightenings.size(), 1U );
-        Tightening tightening = *entailedTightenings.begin();
 
-        TS_ASSERT_EQUALS( tightening._variable, b );
-        TS_ASSERT_EQUALS( tightening._value, 2 );
-        TS_ASSERT_EQUALS( tightening._type, Tightening::LB );
+        TS_ASSERT_EQUALS( entailedTightenings.size(), 8U );
+        TS_ASSERT( entailedTightenings.exists( Tightening( f, 1, Tightening::LB ) ) );
+        TS_ASSERT( entailedTightenings.exists( Tightening( b, 2, Tightening::LB ) ) );
+        TS_ASSERT( entailedTightenings.exists( Tightening( f, 7, Tightening::UB ) ) );
+        TS_ASSERT( entailedTightenings.exists( Tightening( b, 7, Tightening::UB ) ) );
 
-        relu.notifyLowerBound( b, 2 );
-        entailedTightenings.clear();
-        relu.getEntailedTightenings( entailedTightenings );
-        TS_ASSERT( entailedTightenings.empty() );
+        TS_ASSERT( entailedTightenings.exists( Tightening( aux, 0, Tightening::LB ) ) );
+        TS_ASSERT( entailedTightenings.exists( Tightening( aux, 0, Tightening::UB ) ) );
 
-        relu.notifyLowerBound( b, 3 );
+        TS_ASSERT( entailedTightenings.exists( Tightening( b, 0, Tightening::LB ) ) );
+        TS_ASSERT( entailedTightenings.exists( Tightening( f, 0, Tightening::LB ) ) );
 
         entailedTightenings.clear();
-        relu.getEntailedTightenings( entailedTightenings );
-        TS_ASSERT_EQUALS( entailedTightenings.size(), 1U );
-        tightening = *entailedTightenings.begin();
 
-        TS_ASSERT_EQUALS( tightening._variable, f );
-        TS_ASSERT_EQUALS( tightening._value, 3 );
-        TS_ASSERT_EQUALS( tightening._type, Tightening::LB );
+        // Negative upper bound for b: inactive case. F is 0, b =
+        // -aux. B is non-positive, aux is non-negative.
 
-        relu.notifyLowerBound( f, 3 );
+        dontCare.setNumberOfVariables( 500 );
+        ReluConstraint relu2( b, f );
 
-        // Positive upper bounds are propagated
-        relu.notifyUpperBound( b, 5 );
-        relu.notifyUpperBound( f, 6 );
+        relu2.notifyUpperBound( b, -1 );
+        relu2.notifyUpperBound( f, 7 );
 
-        entailedTightenings.clear();
-        relu.getEntailedTightenings( entailedTightenings );
-        TS_ASSERT_EQUALS( entailedTightenings.size(), 1U );
-        tightening = *entailedTightenings.begin();
+        relu2.notifyLowerBound( b, -2 );
+        relu2.notifyLowerBound( f, 0 );
 
-        TS_ASSERT_EQUALS( tightening._variable, f );
-        TS_ASSERT_EQUALS( tightening._value, 5 );
-        TS_ASSERT_EQUALS( tightening._type, Tightening::UB );
+        relu2.addAuxiliaryEquations( dontCare );
 
-        relu.notifyUpperBound( f, 4 );
+        relu2.notifyLowerBound( aux, 0 );
+        relu2.notifyUpperBound( aux, 2 );
 
-        entailedTightenings.clear();
-        relu.getEntailedTightenings( entailedTightenings );
-        TS_ASSERT_EQUALS( entailedTightenings.size(), 1U );
-        tightening = *entailedTightenings.begin();
+        relu2.getEntailedTightenings( entailedTightenings );
 
-        TS_ASSERT_EQUALS( tightening._variable, b );
-        TS_ASSERT_EQUALS( tightening._value, 4 );
-        TS_ASSERT_EQUALS( tightening._type, Tightening::UB );
+        TS_ASSERT_EQUALS( entailedTightenings.size(), 8U );
+
+        TS_ASSERT( entailedTightenings.exists( Tightening( b, 0, Tightening::UB ) ) );
+        TS_ASSERT( entailedTightenings.exists( Tightening( aux, 0, Tightening::LB ) ) );
+
+        TS_ASSERT( entailedTightenings.exists( Tightening( b, -2, Tightening::LB ) ) );
+        TS_ASSERT( entailedTightenings.exists( Tightening( b, 0, Tightening::UB ) ) );
+        TS_ASSERT( entailedTightenings.exists( Tightening( aux, 1, Tightening::LB ) ) );
+        TS_ASSERT( entailedTightenings.exists( Tightening( aux, 2, Tightening::UB ) ) );
+
+        TS_ASSERT( entailedTightenings.exists( Tightening( f, 0, Tightening::LB ) ) );
+        TS_ASSERT( entailedTightenings.exists( Tightening( f, 0, Tightening::UB ) ) );
     }
 
     void test_relu_duplicate_and_restore()
