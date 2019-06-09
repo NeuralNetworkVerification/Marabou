@@ -1,18 +1,18 @@
 /*********************                                                        */
 /*! \file Test_Preprocessor.h
-** \verbatim
-** Top contributors (to current version):
-**   Guy Katz, Derek Huang, Shantanu Thakoor
-** This file is part of the Marabou project.
-** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
-** in the top-level source directory) and their institutional affiliations.
-** All rights reserved. See the file COPYING in the top-level source
-** directory for licensing information.\endverbatim
-**
-** \brief [[ Add one-line brief description here ]]
-**
-** [[ Add lengthier description here ]]
-**/
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Guy Katz, Derek Huang, Shantanu Thakoor
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** \brief [[ Add one-line brief description here ]]
+ **
+ ** [[ Add lengthier description here ]]
+ **/
 
 #include <cxxtest/TestSuite.h>
 
@@ -296,7 +296,7 @@ public:
         TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 10 ), 0 ) );
     }
 
-	void xtest_tighten_bounds_using_equations_and_constraints()
+	void test_tighten_bounds_using_equations_and_constraints()
 	{
         InputQuery inputQuery;
 

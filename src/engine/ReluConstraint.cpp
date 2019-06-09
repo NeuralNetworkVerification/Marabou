@@ -586,7 +586,7 @@ void ReluConstraint::getEntailedTightenings( List<Tightening> &tightenings ) con
         auxUpperBound = _upperBounds[_aux];
     }
 
-    // Determine if we are in the active case, inactive case or unknown phase
+    // Determine if we are in the active phase, inactive phase or unknown phase
     if ( !FloatUtils::isNegative( bLowerBound ) ||
          FloatUtils::isPositive( fLowerBound ) ||
          ( _auxVarInUse && FloatUtils::isZero( auxUpperBound ) ) )
