@@ -867,7 +867,7 @@ public:
 
         unsigned aux = 9;
         TS_ASSERT_EQUALS( query.getLowerBound( aux ), 0 );
-        // TS_ASSERT_EQUALS( query.getUpperBound( aux ), 10 );
+        TS_ASSERT_EQUALS( query.getUpperBound( aux ), 10 );
 
         Equation eq = *equations.begin();
 
@@ -883,8 +883,6 @@ public:
         TS_ASSERT_EQUALS( eq._scalar, 0 );
     }
 };
-
-// serialize and unserialize, duplicate. Register as watcher for aux?
 
 //
 // Local Variables:
