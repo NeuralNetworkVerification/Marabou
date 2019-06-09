@@ -168,7 +168,6 @@ public:
       For preprocessing: get any auxiliary equations that this constraint would
       like to add to the equation pool.
     */
-    virtual void getAuxiliaryEquations( List<Equation> &newEquations ) const = 0;
     virtual void addAuxiliaryEquations( InputQuery &/* inputQuery */ ) {}
 
     /*

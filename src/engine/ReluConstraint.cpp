@@ -678,17 +678,6 @@ void ReluConstraint::setPhaseStatus( PhaseStatus phaseStatus )
     _phaseStatus = phaseStatus;
 }
 
-void ReluConstraint::getAuxiliaryEquations( List<Equation> &newEquations ) const
-{
-    // Add the equation: f >= b, or f - b >= 0
-    Equation equation( Equation::GE );
-    equation.addAddend( 1.0, _f );
-    equation.addAddend( -1.0, _b );
-    equation.setScalar( 0 );
-
-    newEquations.append( equation );
-}
-
 void ReluConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
 {
     /*
