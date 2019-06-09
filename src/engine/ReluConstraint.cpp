@@ -1,17 +1,16 @@
 /*********************                                                        */
 /*! \file ReluConstraint.cpp
-** \verbatim
-** Top contributors (to current version):
-**   Guy Katz, Parth Shah, Derek Huang
-** This file is part of the Marabou project.
-** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
-** in the top-level source directory) and their institutional affiliations.
-** All rights reserved. See the file COPYING in the top-level source
-** directory for licensing information.\endverbatim
-**
-** [[ Add lengthier description here ]]
-
-**/
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Guy Katz, Parth Shah, Derek Huang
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+ **/
 
 #include "ConstraintBoundTightener.h"
 #include "Debug.h"
@@ -48,18 +47,23 @@ ReluConstraint::ReluConstraint( const String &serializedRelu )
 
     if ( values.size() == 2 )
     {
-        _b = atoi( values.back().ascii() );
-        _f = atoi( values.front().ascii() );
+        auto var = values.begin();
+        _f = atoi( var->ascii() );
+        ++var;
+        _b = atoi( var->ascii() );
+
         _auxVarInUse = false;
     }
     else
     {
         auto var = values.begin();
-        _b = atoi( var->ascii() );
-        ++var;
         _f = atoi( var->ascii() );
         ++var;
+        _b = atoi( var->ascii() );
+        ++var;
         _aux = atoi( var->ascii() );
+
+        _auxVarInUse = true;
     }
 
     setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
@@ -185,18 +189,6 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
         {
             // Any bound that we learned of f should be propagated to b
             _constraintBoundTightener->registerTighterUpperBound( _b, bound );
-
-            if ( FloatUtils::isZero( bound ) && _auxVarInUse )
-            {
-                // Inactive case, aux's range is minus the range of b,
-                // with the new upper bound just learned
-                double tightestBound = FloatUtils::min( _upperBounds[_b], bound );
-                _constraintBoundTightener->registerTighterLowerBound( _aux, -tightestBound );
-                _constraintBoundTightener->registerTighterUpperBound( _aux, -_lowerBounds[_b] );
-
-                _constraintBoundTightener->registerTighterLowerBound( _b, -_upperBounds[_aux] );
-                _constraintBoundTightener->registerTighterUpperBound( _b, -_lowerBounds[_aux] );
-            }
         }
         else if ( variable == _b )
         {
@@ -209,7 +201,6 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
                 {
                     // Aux's range is minus the range of b
                     _constraintBoundTightener->registerTighterLowerBound( _aux, -bound );
-                    _constraintBoundTightener->registerTighterUpperBound( _aux, -_lowerBounds[_b] );
                 }
             }
             else
@@ -796,6 +787,16 @@ ReluConstraint::PhaseStatus ReluConstraint::getPhaseStatus() const
 bool ReluConstraint::supportsSymbolicBoundTightening() const
 {
     return true;
+}
+
+bool ReluConstraint::auxVariableInUse() const
+{
+    return _auxVarInUse;
+}
+
+unsigned ReluConstraint::getAux() const
+{
+    return _aux;
 }
 
 //

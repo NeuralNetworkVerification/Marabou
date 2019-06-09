@@ -644,11 +644,34 @@ public:
         unsigned f = 7;
 
         ReluConstraint originalRelu( b, f );
+        originalRelu.notifyLowerBound( b, -10 );
+        originalRelu.notifyUpperBound( f, 5 );
+        originalRelu.notifyUpperBound( f, 5 );
+
         String originalSerialized = originalRelu.serializeToString();
         ReluConstraint recoveredRelu( originalSerialized );
 
         TS_ASSERT_EQUALS( originalRelu.serializeToString(),
                           recoveredRelu.serializeToString() );
+
+        TS_ASSERT( !originalRelu.auxVariableInUse() );
+        TS_ASSERT( !recoveredRelu.auxVariableInUse() );
+
+        InputQuery dontCare;
+        dontCare.setNumberOfVariables( 500 );
+
+        originalRelu.addAuxiliaryEquations( dontCare );
+
+        TS_ASSERT( originalRelu.auxVariableInUse() );
+
+        originalSerialized = originalRelu.serializeToString();
+        ReluConstraint recoveredRelu2( originalSerialized );
+
+        TS_ASSERT_EQUALS( originalRelu.serializeToString(),
+                          recoveredRelu2.serializeToString() );
+
+        TS_ASSERT( recoveredRelu2.auxVariableInUse() );
+        TS_ASSERT_EQUALS( originalRelu.getAux(), recoveredRelu2.getAux() );
     }
 
     bool haveFix( List<PiecewiseLinearConstraint::Fix> &fixes, unsigned var, double value )

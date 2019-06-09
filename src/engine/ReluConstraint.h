@@ -123,7 +123,6 @@ public:
       For preprocessing: get any auxiliary equations that this constraint would
       like to add to the equation pool.
     */
-    void getAuxiliaryEquations( List<Equation> &newEquations ) const;
     void addAuxiliaryEquations( InputQuery &inputQuery );
 
     /*
@@ -148,6 +147,12 @@ public:
       Get the current phase status.
     */
     PhaseStatus getPhaseStatus() const;
+
+    /*
+      Check if the aux variable is in use and retrieve it
+    */
+    bool auxVariableInUse() const;
+    unsigned getAux() const;
 
     /*
       Return true if and only if this piecewise linear constraint supports
