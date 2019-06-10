@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file Test_QueryDivider.h
+/*! \file Test_LargestIntervalDivider.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Haoze Wu
