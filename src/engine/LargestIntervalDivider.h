@@ -27,7 +27,7 @@ public:
     LargestIntervalDivider( const List<unsigned> &inputVariables,
                             double timeoutFactor );
 
-    void createSubQueries( unsigned numNewSubqueries,
+    void createSubQueries( unsigned numNewSubQueries,
                            const SubQuery &previousSubQuery,
                            SubQueries &subQueries );
 
