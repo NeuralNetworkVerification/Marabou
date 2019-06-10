@@ -33,6 +33,8 @@
 #include "SmtCore.h"
 #include "Statistics.h"
 
+#include <atomic>
+
 class EngineState;
 class InputQuery;
 class PiecewiseLinearConstraint;
@@ -91,6 +93,16 @@ public:
       Get the exit code
     */
     Engine::ExitCode getExitCode() const;
+
+    /*
+      Get the input query
+    */
+    InputQuery *getInputQuery();
+
+    /*
+      Get the quitRequested flag
+    */
+    std::atomic_bool *getQuitRequested();
 
     /*
       Get the list of input variables
@@ -216,9 +228,9 @@ private:
     AutoCostFunctionManager _costFunctionManager;
 
     /*
-      Indicates a user request to quit
+      Indicates a user/DnCManager request to quit
     */
-    bool _quitRequested;
+    std::atomic_bool _quitRequested;
 
     /*
       A code indicating how the run terminated.
