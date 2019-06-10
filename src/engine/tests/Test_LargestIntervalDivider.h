@@ -29,7 +29,8 @@ public:
     List<unsigned> inputVariables;
     unsigned timeoutFactor;
 
-    void setUp(){
+    void setUp()
+    {
         // inputVariables x1 x2 x3
         inputVariables.append( 1 );
         inputVariables.append( 2 );
@@ -41,53 +42,55 @@ public:
             ( new LargestIntervalDivider( inputVariables, timeoutFactor ) );
     }
 
+    void tearDown()
+    {
+        inputVariables.clear();
+    }
+
     void test_create_subqueries()
     {
         //   Input Region:
         //   -2 <= x1 <= 2
         //    3 <= x2 <= 5
         //    2 <= x3 <= 5
-
+        //
         //    Timeout factor 1.5
         //    Previous Timeout 5
         //    Divide into 4 subqueries
-
-        // 1. The number of created regions must matches the corresponding
+        //
+        // 1. The number of created regions must match the corresponding
         //    argument
-
+        //
         // 2. The new query ids must be "<oldQueryId>-1", "<oldQueryId>-2" ...
-
-        // 2. Check the output ranges
-
+        //
+        // 3. Check the output ranges
+        //
         // Step 1 ( bisect the range of x1 )
-
         //   -2 <= x1 <= 0
         //    3 <= x2 <= 5
         //    2 <= x3 <= 5
-
+        //
         //    0 <= x1 <= 2
         //    3 <= x2 <= 5
         //    2 <= x3 <= 5
-
-        // Step 2 ( bisect the range of x2 )
-
+        //
+        // Step 2 ( bisect the range of x3 )
         //   -2 <= x1 <= 0
         //    3 <= x2 <= 5
         //    2 <= x3 <= 3.5
-
+        //
         //    -2 <= x1 <= 0
         //    3 <= x2 <= 5
         //    3.5 <= x3 <= 5
-
+        //
         //    0 <= x1 <= 2
         //    3 <= x2 <= 5
         //    2 <= x3 <= 3.5
-
+        //
         //    0 <= x1 <= 2
         //    3 <= x2 <= 5
         //    3.5 <= x3 <= 5
-
-
+        //
         // 3. The timeout of each subquery must be (timeoutFactor *
         //    previousTimeout)
 
@@ -113,14 +116,13 @@ public:
 
         SubQuery previousSubQuery;
         previousSubQuery._queryId = queryId;
-        previousSubQuery._split = std::move(previousSplit);
+        previousSubQuery._split = std::move( previousSplit );
         previousSubQuery._timeoutInSeconds = timeoutInSeconds;
 
-        SubQueries subQueries;
         // Divide the previousSplit
+        SubQueries subQueries;
         queryDivider->createSubQueries( numNewSubQueries, previousSubQuery,
                                    subQueries );
-
 
         // The following four splits should be created by the queryDivider
         Vector<PiecewiseLinearCaseSplit> newSplits;
@@ -189,22 +191,19 @@ public:
         newSplits.append( newSplit3 );
         newSplits.append( newSplit4 );
 
-
-
         TS_ASSERT( subQueries.size() == 4 );
-
         unsigned correctTimeoutInSeconds = (unsigned) ( timeoutInSeconds *
                                                         timeoutFactor );
         unsigned index = 0;
-        for ( const auto& subQuery : subQueries ){
-            TS_ASSERT( subQuery->_queryId == queryId +
-                       Stringf( "-%u", index + 1 ) )
-            TS_ASSERT( *(subQuery->_split) == newSplits[index] );
-            TS_ASSERT( subQuery->_timeoutInSeconds == correctTimeoutInSeconds );
-            index++;
-        }
+        for ( const auto &subQuery : subQueries )
+            {
+                TS_ASSERT( subQuery->_queryId == queryId +
+                           Stringf( "-%u", index + 1 ) )
+                    TS_ASSERT( *(subQuery->_split) == newSplits[index] );
+                TS_ASSERT( subQuery->_timeoutInSeconds == correctTimeoutInSeconds );
+                index++;
+            }
     }
-
 };
 
 //
