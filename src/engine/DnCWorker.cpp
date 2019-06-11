@@ -13,7 +13,6 @@
 
  **/
 
-#include "Debug.h"
 #include "DivideStrategy.h"
 #include "DnCWorker.h"
 #include "Engine.h"
@@ -30,13 +29,13 @@
 
 DnCWorker::DnCWorker( WorkerQueue* workload, std::shared_ptr<Engine> engine,
                       std::atomic_uint& numUnsolvedSubqueries,
-                      std::atomic_bool& foundSolutionInSomeThread,
+                      std::atomic_bool& shouldQuitSolving,
                       unsigned threadId, unsigned onlineDivides,
                       float timeoutFactor, DivideStrategy divideStrategy )
   : _workload ( workload )
   , _engine ( engine )
   , _numUnsolvedSubqueries ( &numUnsolvedSubqueries )
-  , _foundSolutionInSomeThread ( &foundSolutionInSomeThread )
+  , _shouldQuitSolving ( &shouldQuitSolving )
   , _threadId ( threadId )
   , _onlineDivides ( onlineDivides )
   , _timeoutFactor ( timeoutFactor )
@@ -106,29 +105,32 @@ void DnCWorker::run()
             }
           else if ( result == Engine::SAT )
             {
-              // If SAT, set the corresponding flag to true,
-              // and quit the thread
-              *_foundSolutionInSomeThread = true;
-              *_numUnsolvedSubqueries -= 1;
-              return;
-            }
-          else if ( result == Engine::ERROR )
-            {
-              // If ERROR, quit solving
-              std::cout << "Error!" << std::endl;
+              // If SAT, set the shouldQuitSolving flag to true, so that the
+              // DnCManager will kill all the DnCWorkers
+              *_shouldQuitSolving = true;
               *_numUnsolvedSubqueries -= 1;
               return;
             }
           else if ( result == Engine::QUIT_REQUESTED )
             {
-              // If engine was asked to quit
+              // If engine was asked to quit, quit
               std::cout << "Quit requested by manager!" << std::endl;
+              *_numUnsolvedSubqueries -= 1;
+              return;
+            }
+          else if ( result == Engine::ERROR )
+            {
+              // If ERROR, set the shouldQuitSolving flag to true and quit
+              std::cout << "Error!" << std::endl;
+              *_shouldQuitSolving = true;
               *_numUnsolvedSubqueries -= 1;
               return;
             }
           else if ( result == Engine::NOT_DONE )
             {
-              std::cout << "Not done! This should not happen" << std::endl;
+              // If NOT_DONE, set the shouldQuitSolving flag to true and quit
+              std::cout << "Not done! This should not happen." << std::endl;
+              *_shouldQuitSolving = true;
               *_numUnsolvedSubqueries -= 1;
               return;
             }
@@ -142,6 +144,7 @@ void DnCWorker::run()
         }
       else
         {
+          // If the queue is empty but the pop fails, wait and retry
           std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
         }
     }

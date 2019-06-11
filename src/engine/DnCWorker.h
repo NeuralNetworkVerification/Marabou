@@ -27,8 +27,8 @@ class DnCWorker
 {
 public:
   DnCWorker(WorkerQueue* workload, std::shared_ptr<Engine> engine,
-            std::atomic_uint& num_unsolved_subqueries,
-            std::atomic_bool& has_done, unsigned threadId,
+            std::atomic_uint& numUnsolvedSubqueries,
+            std::atomic_bool& shouldQuitSolving, unsigned threadId,
             unsigned onlineDivides, float timeoutFactor,
             DivideStrategy divideStrategy);
 
@@ -60,7 +60,7 @@ private:
   // The number of unsolved subqueries
   std::atomic_uint* _numUnsolvedSubqueries;
   // A boolean denoting whether a solution has been found
-  std::atomic_bool* _foundSolutionInSomeThread;
+  std::atomic_bool* _shouldQuitSolving;
   std::unique_ptr<QueryDivider> _queryDivider;
   // Initial state of the engine to which engine is restored after handling
   // a subquery
