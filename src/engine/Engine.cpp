@@ -113,6 +113,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
             printf( "\n\nEngine: quitting due to timeout...\n\n" );
             printf( "Final statistics:\n" );
             _statistics.print();
+
             _exitCode = Engine::TIMEOUT;
             _statistics.timeout();
             return false;
@@ -123,6 +124,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
             printf( "\n\nEngine: quitting due to external request...\n\n" );
             printf( "Final statistics:\n" );
             _statistics.print();
+
             _exitCode = Engine::QUIT_REQUESTED;
             return false;
         }
@@ -1619,11 +1621,6 @@ InputQuery *Engine::getInputQuery()
     return &_preprocessedQuery;
 }
 
-List<unsigned> Engine::getInputVariables() const
-{
-    return _preprocessedQuery.getInputVariables();
-}
-
 void Engine::log( const String &message )
 {
     if ( GlobalConfiguration::ENGINE_LOGGING )
@@ -1672,6 +1669,11 @@ void Engine::quitSignal()
 Engine::ExitCode Engine::getExitCode() const
 {
     return _exitCode;
+}
+
+List<unsigned> Engine::getInputVariables() const
+{
+    return _preprocessedQuery.getInputVariables();
 }
 
 void Engine::performSymbolicBoundTightening()
@@ -1775,15 +1777,6 @@ void Engine::resetStatistics( const Statistics &statistics ){
 
     _statistics.stampStartingTime();
 
-}
-
-void Engine::setQuitThread( std::atomic_bool &quitThread ){
-    _quitThread = &quitThread;
-}
-
-bool Engine::shouldExitDueToFoundSAT() const
-{
-    return _quitThread != NULL && _quitThread->load();
 }
 
 void Engine::clearViolatedPLConstraints()

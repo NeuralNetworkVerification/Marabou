@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file Engine.h
+/*! \fil Engine.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz, Duligur Ibeling, Andrew Wu
@@ -60,7 +60,7 @@ public:
       Attempt to find a feasible solution for the input within a time limit
       (a timeout of 0 means no time limit). Returns true if found, false if infeasible.
     */
-    bool solve( unsigned timeoutInSeconds = 0, unsigned verbosity = 2 );
+    bool solve( unsigned timeoutInSeconds = 0 );
 
     /*
       Process the input query and pass the needed information to the
@@ -93,14 +93,14 @@ public:
     InputQuery *getInputQuery();
 
     /*
-      Get the list of input variables
-    */
-    List<unsigned> getInputVariables() const;
-
-    /*
       Get the exit code
     */
     Engine::ExitCode getExitCode() const;
+
+    /*
+      Get the list of input variables
+    */
+    List<unsigned> getInputVariables() const;
 
     /*
       Add equations and tightenings from a split.
@@ -111,8 +111,6 @@ public:
       Reset the statistics object
     */
     void resetStatistics( const Statistics &statistics );
-
-    void setQuitThread( std::atomic_bool &quitThread );
 
     /*
       Clear the violated PL constraints
@@ -246,7 +244,7 @@ private:
     /*
       Indicates a user request to quit
     */
-    bool _quitRequested;
+    std::atomic_bool _quitRequested;
 
     /*
       A code indicating how the run terminated.
@@ -272,14 +270,6 @@ private:
       evaluation of topology-based bound tightening.
      */
     NetworkLevelReasoner *_networkLevelReasoner;
-
-    /*
-      An atomic variable that keeps track of whether the engine can quit
-      as some other thread found a satisfying assignment.
-     */
-    std::atomic_bool *_quitThread;
-
-
 
     /*
       Perform a simplex step: compute the cost function, pick the
