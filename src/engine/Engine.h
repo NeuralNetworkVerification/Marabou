@@ -33,6 +33,8 @@
 #include "SmtCore.h"
 #include "Statistics.h"
 
+#include <atomic>
+
 class EngineState;
 class InputQuery;
 class PiecewiseLinearConstraint;
@@ -49,6 +51,7 @@ public:
         SAT = 1,
         ERROR = 2,
         TIMEOUT = 3,
+        QUIT_REQUESTED = 4,
 
         NOT_DONE = 999,
     };
@@ -57,7 +60,7 @@ public:
       Attempt to find a feasible solution for the input within a time limit
       (a timeout of 0 means no time limit). Returns true if found, false if infeasible.
     */
-    bool solve( unsigned timeoutInSeconds = 0 );
+    bool solve( unsigned timeoutInSeconds = 0, unsigned verbosity = 2 );
 
     /*
       Process the input query and pass the needed information to the
@@ -87,15 +90,44 @@ public:
 
     const Statistics *getStatistics() const;
 
+    InputQuery *getInputQuery();
+
+    /*
+      Get the list of input variables
+    */
+    List<unsigned> getInputVariables() const;
+
     /*
       Get the exit code
     */
     Engine::ExitCode getExitCode() const;
 
     /*
-      Get the list of input variables
+      Add equations and tightenings from a split.
     */
-    List<unsigned> getInputVariables() const;
+    void applySplit( const PiecewiseLinearCaseSplit &split );
+
+    /*
+      Reset the statistics object
+    */
+    void resetStatistics( const Statistics &statistics );
+
+    void setQuitThread( std::atomic_bool &quitThread );
+
+    /*
+      Clear the violated PL constraints
+    */
+    void clearViolatedPLConstraints();
+
+    /*
+      PSA: The following two methods are for DnC only and should be used very
+      cauciously.
+     */
+    void resetSmtCore();
+
+    void resetExitCode();
+
+    void resetBoundTighteners();
 
 private:
     enum BasisRestorationRequired {
@@ -110,10 +142,6 @@ private:
         PERFORMED_WEAK_RESTORATION = 2,
     };
 
-    /*
-      Add equations and tightenings from a split.
-    */
-    void applySplit( const PiecewiseLinearCaseSplit &split );
 
     /*
       Perform bound tightening operations that require
@@ -246,6 +274,14 @@ private:
     NetworkLevelReasoner *_networkLevelReasoner;
 
     /*
+      An atomic variable that keeps track of whether the engine can quit
+      as some other thread found a satisfying assignment.
+     */
+    std::atomic_bool *_quitThread;
+
+
+
+    /*
       Perform a simplex step: compute the cost function, pick the
       entering and leaving variables and perform a pivot.
     */
@@ -366,6 +402,11 @@ private:
       Check whether a timeout value has been provided and exceeded.
     */
     bool shouldExitDueToTimeout( unsigned timeout ) const;
+
+    /*
+      Check whether some thread has found a SATisfying assignemnt.
+    */
+    bool shouldExitDueToFoundSAT() const;
 
     /*
       Helper functions for input query preprocessing

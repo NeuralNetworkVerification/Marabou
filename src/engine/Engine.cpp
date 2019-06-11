@@ -43,6 +43,7 @@ Engine::Engine()
     , _constraintBoundTightener( *_tableau )
     , _numVisitedStatesAtPreviousRestoration( 0 )
     , _networkLevelReasoner( NULL )
+    , _quitThread( NULL )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -90,16 +91,18 @@ void Engine::adjustWorkMemorySize()
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Engine::work" );
 }
 
-bool Engine::solve( unsigned timeoutInSeconds )
+bool Engine::solve( unsigned timeoutInSeconds, unsigned verbosity )
 {
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
 
     storeInitialEngineState();
 
-    printf( "\nEngine::solve: Initial statistics\n" );
-    mainLoopStatistics();
-    printf( "\n---\n" );
+    if ( verbosity > 0 ){
+        printf( "\nEngine::solve: Initial statistics\n" );
+        mainLoopStatistics();
+        printf( "\n---\n" );
+    }
 
     struct timespec mainLoopStart = TimeUtils::sampleMicro();
     while ( true )
@@ -110,21 +113,34 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
         if ( shouldExitDueToTimeout( timeoutInSeconds ) )
         {
-            printf( "\n\nEngine: quitting due to timeout...\n\n" );
-            printf( "Final statistics:\n" );
-            _statistics.print();
-
+            if ( verbosity > 0 ){
+                printf( "\n\nEngine: quitting due to timeout...\n\n" );
+                printf( "Final statistics:\n" );
+                _statistics.print();
+            }
             _exitCode = Engine::TIMEOUT;
             _statistics.timeout();
             return false;
         }
 
+        if ( shouldExitDueToFoundSAT() )
+        {
+            if ( verbosity > 0 ){
+                printf( "\n\nEngine: quitting as SATisfying assignment is found in some other thread...\n\n" );
+                printf( "Final statistics:\n" );
+                _statistics.print();
+            }
+            _exitCode = Engine::QUIT_REQUESTED;
+            return false;
+        }
+
         if ( _quitRequested )
         {
-            printf( "\n\nEngine: quitting due to external request...\n\n" );
-            printf( "Final statistics:\n" );
-            _statistics.print();
-
+            if ( verbosity > 0 ){
+                printf( "\n\nEngine: quitting due to external request...\n\n" );
+                printf( "Final statistics:\n" );
+                _statistics.print();
+            }
             _exitCode = Engine::TIMEOUT;
             return false;
         }
@@ -133,7 +149,8 @@ bool Engine::solve( unsigned timeoutInSeconds )
         {
             DEBUG( _tableau->verifyInvariants() );
 
-            mainLoopStatistics();
+            if ( verbosity > 1 )
+                mainLoopStatistics();
 
             // If the basis has become malformed, we need to restore it
             if ( basisRestorationNeeded() )
@@ -198,14 +215,17 @@ bool Engine::solve( unsigned timeoutInSeconds )
                     if ( _tableau->getBasicAssignmentStatus() !=
                          ITableau::BASIC_ASSIGNMENT_JUST_COMPUTED )
                     {
-                        printf( "Before declaring SAT, recomputing...\n" );
+                        if ( verbosity > 0 )
+                            printf( "Before declaring SAT, recomputing...\n" );
                         // Make sure that the assignment is precise before declaring success
                         _tableau->computeAssignment();
                         continue;
                     }
 
-                    printf( "\nEngine::solve: SAT assignment found\n" );
-                    _statistics.print();
+                    if ( verbosity > 0 ){
+                        printf( "\nEngine::solve: SAT assignment found\n" );
+                        _statistics.print();
+                    }
                     _exitCode = Engine::SAT;
                     return true;
                 }
@@ -263,8 +283,10 @@ bool Engine::solve( unsigned timeoutInSeconds )
             // If we're at level 0, the whole query is unsat.
             if ( !_smtCore.popSplit() )
             {
-                printf( "\nEngine::solve: UNSAT query\n" );
-                _statistics.print();
+                if ( verbosity > 0 ) {
+                    printf( "\nEngine::solve: UNSAT query\n" );
+                    _statistics.print();
+                }
                 _exitCode = Engine::UNSAT;
                 return false;
             }
@@ -1616,6 +1638,16 @@ const Statistics *Engine::getStatistics() const
     return &_statistics;
 }
 
+InputQuery *Engine::getInputQuery()
+{
+    return &_preprocessedQuery;
+}
+
+List<unsigned> Engine::getInputVariables() const
+{
+    return _preprocessedQuery.getInputVariables();
+}
+
 void Engine::log( const String &message )
 {
     if ( GlobalConfiguration::ENGINE_LOGGING )
@@ -1664,11 +1696,6 @@ void Engine::quitSignal()
 Engine::ExitCode Engine::getExitCode() const
 {
     return _exitCode;
-}
-
-List<unsigned> Engine::getInputVariables() const
-{
-    return _preprocessedQuery.getInputVariables();
 }
 
 void Engine::performSymbolicBoundTightening()
@@ -1757,6 +1784,49 @@ bool Engine::shouldExitDueToTimeout( unsigned timeout ) const
         return false;
 
     return _statistics.getTotalTime() / MILLISECONDS_TO_SECONDS > timeout;
+}
+
+
+void Engine::resetStatistics( const Statistics &statistics ){
+    _statistics = statistics;
+    _smtCore.setStatistics( &_statistics );
+    _tableau->setStatistics( &_statistics );
+    _rowBoundTightener->setStatistics( &_statistics );
+    _constraintBoundTightener->setStatistics( &_statistics );
+    _preprocessor.setStatistics( &_statistics );
+    _activeEntryStrategy = _projectedSteepestEdgeRule;
+    _activeEntryStrategy->setStatistics( &_statistics );
+
+    _statistics.stampStartingTime();
+
+}
+
+void Engine::setQuitThread( std::atomic_bool &quitThread ){
+    _quitThread = &quitThread;
+}
+
+bool Engine::shouldExitDueToFoundSAT() const
+{
+    return _quitThread != NULL && _quitThread->load();
+}
+
+void Engine::clearViolatedPLConstraints()
+{
+    _violatedPlConstraints.clear();
+    _plConstraintToFix = NULL;
+}
+
+void Engine::resetSmtCore(){
+    _smtCore = SmtCore(this);
+}
+
+void Engine::resetExitCode(){
+    _exitCode = Engine::NOT_DONE;
+}
+
+void Engine::resetBoundTighteners(){
+    _constraintBoundTightener->resetBounds();
+    _rowBoundTightener->resetBounds();
 }
 
 //
