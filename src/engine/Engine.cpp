@@ -1765,7 +1765,8 @@ bool Engine::shouldExitDueToTimeout( unsigned timeout ) const
 }
 
 
-void Engine::resetStatistics( const Statistics &statistics ){
+void Engine::resetStatistics( const Statistics &statistics )
+{
     _statistics = statistics;
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -1776,7 +1777,6 @@ void Engine::resetStatistics( const Statistics &statistics ){
     _activeEntryStrategy->setStatistics( &_statistics );
 
     _statistics.stampStartingTime();
-
 }
 
 void Engine::clearViolatedPLConstraints()
@@ -1785,15 +1785,18 @@ void Engine::clearViolatedPLConstraints()
     _plConstraintToFix = NULL;
 }
 
-void Engine::resetSmtCore(){
+void Engine::resetSmtCore()
+{
     _smtCore = SmtCore(this);
 }
 
-void Engine::resetExitCode(){
+void Engine::resetExitCode()
+{
     _exitCode = Engine::NOT_DONE;
 }
 
-void Engine::resetBoundTighteners(){
+void Engine::resetBoundTighteners()
+{
     _constraintBoundTightener->resetBounds();
     _rowBoundTightener->resetBounds();
 }
