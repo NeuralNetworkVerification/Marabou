@@ -26,11 +26,11 @@
 class DnCWorker
 {
 public:
-  DnCWorker(WorkerQueue* workload, std::shared_ptr<Engine> engine,
-            std::atomic_uint& numUnsolvedSubqueries,
-            std::atomic_bool& shouldQuitSolving, unsigned threadId,
-            unsigned onlineDivides, float timeoutFactor,
-            DivideStrategy divideStrategy);
+  DnCWorker( WorkerQueue* workload, std::shared_ptr<Engine> engine,
+             std::atomic_uint& numUnsolvedSubqueries,
+             std::atomic_bool& shouldQuitSolving, unsigned threadId,
+             unsigned onlineDivides, float timeoutFactor,
+             DivideStrategy divideStrategy );
 
   /*
     Repeatedly handling subQueries from the input worker queue
@@ -41,12 +41,12 @@ private:
   /*
     Initiate the query-divider object
   */
-  void setQueryDivider(DivideStrategy divideStrategy);
+  void setQueryDivider( DivideStrategy divideStrategy );
 
   /*
     Convert the exitCode to string
   */
-  static const std::string exitCodeToString(const Engine::ExitCode result);
+  static const std::string exitCodeToString( const Engine::ExitCode result );
 
   /*
     Print the current progress
