@@ -28,8 +28,8 @@ which is automatically downloaded and built when you run make. Library CXXTEST
 comes included in the repository.
 
 Using Marabou through the Python interface requires Python 3.5(?). If you have a
-higher version installed you can set up a virtual environment, see [here](TODO:virtualenvguide) for
-more information.
+higher version installed you can set up a Python virtual environment, see
+[here](https://docs.python.org/3/tutorial/venv.html) for more information.
 
 
 To build Marabou, run the following:
@@ -72,12 +72,12 @@ center](http://aisafety.stanford.edu).
 
 People
 -----------------------------------------------------------------------------
-[Clark Barrett]()
+[Clark Barrett](http://theory.stanford.edu/~barrett/)
 
-[Guy Katz]()
+[Guy Katz](https://www.katz-lab.com/)
 
-[Aleksandar Zeljic]()
+[Aleksandar Zeljic](https://profiles.stanford.edu/aleksandar-zeljic)
 
-[Ahmed Irfan]()
+[Ahmed Irfan](https://profiles.stanford.edu/ahmed-irfan)
 
 [Haoze Wu]()
