@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \fil Engine.h
+/*! \file Engine.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz, Duligur Ibeling, Andrew Wu
@@ -392,11 +392,6 @@ private:
       Check whether a timeout value has been provided and exceeded.
     */
     bool shouldExitDueToTimeout( unsigned timeout ) const;
-
-    /*
-      Check whether some thread has found a SATisfying assignemnt.
-    */
-    bool shouldExitDueToFoundSAT() const;
 
     /*
       Helper functions for input query preprocessing
