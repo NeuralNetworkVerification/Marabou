@@ -46,13 +46,12 @@ private:
     /*
       Convert the exitCode to string
     */
-    static const String exitCodeToString( const Engine::ExitCode result );
+    static String exitCodeToString( Engine::ExitCode result );
 
     /*
       Print the current progress
     */
-    void printProgress( const String &queryId,
-                        const Engine::ExitCode result ) const;
+    void printProgress( String queryId, Engine::ExitCode result ) const;
 
     /*
       The queue of subqueries (shared across threads)
@@ -63,7 +62,7 @@ private:
     /*
       The number of unsolved subqueries
     */
-    std::atomic_uint *_numUnsolvedSubqueries;
+    std::atomic_uint *_numUnsolvedSubQueries;
 
     /*
       A boolean denoting whether a solution has been found

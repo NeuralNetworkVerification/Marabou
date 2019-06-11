@@ -13,6 +13,7 @@
 
  **/
 
+#include "Debug.h"
 #include "DivideStrategy.h"
 #include "DnCWorker.h"
 #include "Engine.h"
@@ -28,13 +29,13 @@
 #include <thread>
 
 DnCWorker::DnCWorker( WorkerQueue *workload, std::shared_ptr<Engine> engine,
-                      std::atomic_uint &numUnsolvedSubqueries,
+                      std::atomic_uint &numUnsolvedSubQueries,
                       std::atomic_bool &shouldQuitSolving,
                       unsigned threadId, unsigned onlineDivides,
                       float timeoutFactor, DivideStrategy divideStrategy )
     : _workload( workload )
     , _engine( engine )
-    , _numUnsolvedSubqueries( &numUnsolvedSubqueries ) // subqueries --> subQueries?
+    , _numUnsolvedSubQueries( &numUnsolvedSubQueries )
     , _shouldQuitSolving( &shouldQuitSolving )
     , _threadId( threadId )
     , _onlineDivides( onlineDivides )
@@ -44,7 +45,6 @@ DnCWorker::DnCWorker( WorkerQueue *workload, std::shared_ptr<Engine> engine,
 
     // Obtain the current state of the engine
     _initialState = std::make_shared<EngineState>();
-    _initialState->_stateId = _threadId; // State ids were originally added solely for debugging. Are they used for something else, now?
     _engine->storeState( *_initialState, true );
 }
 
@@ -52,28 +52,36 @@ void DnCWorker::setQueryDivider( DivideStrategy divideStrategy )
 {
     // For now, there is only one strategy
     ASSERT( divideStrategy == DivideStrategy::LargestInterval );
-    const List<unsigned> &inputVariables = _engine->getInputVariables();
-    _queryDivider = std::unique_ptr<LargestIntervalDivider>
-        ( new LargestIntervalDivider( inputVariables, _timeoutFactor ) );
+    if ( divideStrategy == DivideStrategy::LargestInterval )
+        {
+            const List<unsigned> &inputVariables = _engine->getInputVariables();
+            _queryDivider = std::unique_ptr<LargestIntervalDivider>
+                ( new LargestIntervalDivider( inputVariables, _timeoutFactor ) );
+        }
 }
 
 void DnCWorker::run()
 {
-    while ( _numUnsolvedSubqueries->load() > 0 )
+    while ( _numUnsolvedSubQueries->load() > 0 )
     {
-        std::unique_ptr<SubQuery> subquery = nullptr; // subquery --> subQuery?
+        std::unique_ptr<SubQuery> subQuery = nullptr;
         // Boost queue stores the next element into the passed-in pointer
         // and returns true if the pop is successful (aka, the queue is not empty
         // in most cases)
-        if ( _workload->pop( subquery ) )
+        if ( _workload->pop( subQuery ) )
         {
-            String queryId = subquery->_queryId;
-            PiecewiseLinearCaseSplit split = *( subquery->_split );
-            unsigned timeoutInSeconds = subquery->_timeoutInSeconds;
+            String queryId = subQuery->_queryId;
+            PiecewiseLinearCaseSplit split = *( subQuery->_split );
+            unsigned timeoutInSeconds = subQuery->_timeoutInSeconds;
 
-            // Create a new statistics object for each subquery
+            // Create a new statistics object for each subQuery
             Statistics *statistics = new Statistics();
-            _engine->resetStatistics( *statistics ); // What is our policy for statistics in DnC mode? is there some global statistics, also?
+            _engine->resetStatistics( *statistics );
+            // What is our policy for statistics in DnC mode?
+            // is there some global statistics, also?
+            // TODO: each worker is going to keep a map from *CaseSplit to an
+            // object of class DnCStatistics, which contains some basic
+            // statistics. The maps are owned by the DnCManager.
 
             // Apply the split and solve
             _engine->applySplit( split );
@@ -85,37 +93,37 @@ void DnCWorker::run()
             if ( result == Engine::UNSAT )
             {
                 // If UNSAT, continue to solve
-                *_numUnsolvedSubqueries -= 1;
+                *_numUnsolvedSubQueries -= 1;
             }
             else if ( result == Engine::TIMEOUT )
             {
                 // If TIMEOUT, split the current input region and add the
-                // new subqueries to the current queue
-                SubQueries subqueries; // subQueries
+                // new subQueries to the current queue
+                SubQueries subQueries;
                 _queryDivider->createSubQueries( pow( 2, _onlineDivides ),
-                                                 *subquery, subqueries );
+                                                 *subQuery, subQueries );
                 bool pushed = false;
-                for ( auto &subquery : subqueries )
+                for ( auto &subQuery : subQueries )
                 {
-                    pushed = _workload->push( std::move( subquery ) );
-                    ASSERT( pushed );
-                    *_numUnsolvedSubqueries += 1;
+                    pushed = pushed && _workload->push( std::move( subQuery ) );
+                    *_numUnsolvedSubQueries += 1;
                 }
-                *_numUnsolvedSubqueries -= 1;
+                ASSERT( pushed );
+                *_numUnsolvedSubQueries -= 1;
             }
             else if ( result == Engine::SAT )
             {
                 // If SAT, set the shouldQuitSolving flag to true, so that the
                 // DnCManager will kill all the DnCWorkers
                 *_shouldQuitSolving = true;
-                *_numUnsolvedSubqueries -= 1;
+                *_numUnsolvedSubQueries -= 1;
                 return;
             }
             else if ( result == Engine::QUIT_REQUESTED )
             {
                 // If engine was asked to quit, quit
                 std::cout << "Quit requested by manager!" << std::endl;
-                *_numUnsolvedSubqueries -= 1;
+                *_numUnsolvedSubQueries -= 1;
                 return;
             }
             else if ( result == Engine::ERROR )
@@ -123,16 +131,16 @@ void DnCWorker::run()
                 // If ERROR, set the shouldQuitSolving flag to true and quit
                 std::cout << "Error!" << std::endl;
                 *_shouldQuitSolving = true;
-                *_numUnsolvedSubqueries -= 1;
+                *_numUnsolvedSubQueries -= 1;
                 return;
             }
             else if ( result == Engine::NOT_DONE )
             {
                 // If NOT_DONE, set the shouldQuitSolving flag to true and quit
+                ASSERT( false );
                 std::cout << "Not done! This should not happen." << std::endl;
-                // If this should not happen, add ASSERT( false )?
                 *_shouldQuitSolving = true;
-                *_numUnsolvedSubqueries -= 1;
+                *_numUnsolvedSubQueries -= 1;
                 return;
             }
 
@@ -151,14 +159,13 @@ void DnCWorker::run()
     }
 }
 
-void DnCWorker::printProgress( const String &queryId,
-                               const Engine::ExitCode result ) const // no need to add "const" for pass-by-value
+void DnCWorker::printProgress( String queryId, Engine::ExitCode result ) const
 {
     printf( "Query %s %s, %d tasks remaining\n", queryId.ascii(),
-            exitCodeToString( result ).ascii(), _numUnsolvedSubqueries->load() );
+            exitCodeToString( result ).ascii(), _numUnsolvedSubQueries->load() );
 }
 
-const String DnCWorker::exitCodeToString( const Engine::ExitCode result ) // no need to add "const" for pass-by-value, it's a local copy anyway. Likewise for return value
+String DnCWorker::exitCodeToString( Engine::ExitCode result )
 {
     switch ( result )
     {
@@ -173,8 +180,10 @@ const String DnCWorker::exitCodeToString( const Engine::ExitCode result ) // no 
     case Engine::QUIT_REQUESTED:
         return "QUIT_REQUESTED";
     default:
-        // Add ASSERT( false ) for unreachable code, so that it's harded to overlook.
-        return "UNKNOWN (this should never happen)";
+        {
+            ASSERT( false );
+            return "UNKNOWN (this should never happen)";
+        }
     }
 }
 
