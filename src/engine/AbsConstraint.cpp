@@ -6,6 +6,9 @@
 #include "Debug.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "MStringf.h"
+#include "Statistics.h"
+#include "ConstraintBoundTightener.h"
+
 
 
 AbsConstraint::AbsConstraint(unsigned b, unsigned f )
@@ -50,9 +53,89 @@ void AbsConstraint::unregisterAsWatcher( ITableau *tableau )
 /*
   The variable watcher notifcation callbacks, about a change in a variable's value or bounds.
 */
-void AbsConstraint::notifyVariableValue( unsigned /* variable */, double /* value */ ) {}
-void AbsConstraint::notifyLowerBound( unsigned /* variable */, double /* bound */ ) {}
-void AbsConstraint::notifyUpperBound( unsigned /* variable */, double /* bound */ ) {}
+void AbsConstraint::notifyVariableValue( unsigned variable, double value)
+{
+    //todo: ask guy if its ok
+    _assignment[variable] = value;
+}
+
+void AbsConstraint::notifyLowerBound( unsigned variable, double bound)
+{
+    if ( _statistics )
+        _statistics->incNumBoundNotificationsPlConstraints();
+
+    if ( _lowerBounds.exists( variable ) && !FloatUtils::gt( bound, _lowerBounds[variable] ) )
+        return;
+
+    _lowerBounds[variable] = bound;
+
+    if ( (variable == _f || variable == _b) && FloatUtils::isPositive( bound ) )
+        setPhaseStatus( PhaseStatus::PHASE_POSITIVE );
+
+    if ( isActive() && _constraintBoundTightener )
+    {
+        unsigned partner = ( variable == _f ) ? _b : _f;
+
+        if ( bound >=0 )
+        {
+            if ( _lowerBounds.exists( partner ) )
+            {
+                double otherLowerBound = _lowerBounds[partner];
+                if ( bound > otherLowerBound )
+                    _constraintBoundTightener->registerTighterLowerBound( partner, bound );
+            }
+            else
+            {
+                _constraintBoundTightener->registerTighterLowerBound( partner, bound );
+            }
+        }
+        else if ( bound < 0 )
+        {
+            if ( _lowerBounds.exists( partner ) )
+            {
+                double otherLowerBound = _lowerBounds[partner];
+                if ( bound > otherLowerBound )
+                    _constraintBoundTightener->registerTighterLowerBound( partner, bound );
+            }
+            else
+            {
+                _constraintBoundTightener->registerTighterLowerBound( partner, bound );
+            }
+        }
+    }
+}
+
+void AbsConstraint::notifyUpperBound(  unsigned variable, double bound )
+{
+    if ( _statistics )
+        _statistics->incNumBoundNotificationsPlConstraints();
+
+    if ( _upperBounds.exists( variable ) && !FloatUtils::lt( bound, _upperBounds[variable] ) )
+        return;
+
+    _upperBounds[variable] = bound;
+
+    if ( ( variable == _f || variable == _b ) && FloatUtils::isNegative( bound ) )
+        setPhaseStatus( PhaseStatus::PHASE_NEGATIVE );
+
+    if ( isActive() && _constraintBoundTightener )
+    {
+        unsigned partner = ( variable == _f ) ? _b : _f;
+
+        if ( _lowerBounds.exists( partner ) )
+            {
+                double otherLowerBound = _lowerBounds[partner];
+                if ( bound < otherLowerBound )
+                    _constraintBoundTightener->registerTighterLowerBound( partner, bound );
+            }
+            else
+            {
+                _constraintBoundTightener->registerTighterLowerBound( partner, bound );
+            }
+        }
+    }
+}
+
 
 bool AbsConstraint::participatingVariable(unsigned variable ) const
 {
