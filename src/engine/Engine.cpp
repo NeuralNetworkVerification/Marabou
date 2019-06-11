@@ -1787,7 +1787,7 @@ void Engine::clearViolatedPLConstraints()
 
 void Engine::resetSmtCore()
 {
-    _smtCore = SmtCore(this);
+    _smtCore = SmtCore( this );
 }
 
 void Engine::resetExitCode()

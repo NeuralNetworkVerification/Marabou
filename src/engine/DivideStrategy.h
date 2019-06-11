@@ -18,10 +18,10 @@
 
 enum DivideStrategy
 {
-  LargestInterval,
+    LargestInterval,
 };
 
-#endif
+#endif // __DivideStrategy_h__
 
 //
 // Local Variables:
