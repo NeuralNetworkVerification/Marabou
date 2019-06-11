@@ -43,7 +43,6 @@ Engine::Engine()
     , _constraintBoundTightener( *_tableau )
     , _numVisitedStatesAtPreviousRestoration( 0 )
     , _networkLevelReasoner( NULL )
-    , _quitThread( NULL )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -91,18 +90,16 @@ void Engine::adjustWorkMemorySize()
         throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Engine::work" );
 }
 
-bool Engine::solve( unsigned timeoutInSeconds, unsigned verbosity )
+bool Engine::solve( unsigned timeoutInSeconds )
 {
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
 
     storeInitialEngineState();
 
-    if ( verbosity > 0 ){
-        printf( "\nEngine::solve: Initial statistics\n" );
-        mainLoopStatistics();
-        printf( "\n---\n" );
-    }
+    printf( "\nEngine::solve: Initial statistics\n" );
+    mainLoopStatistics();
+    printf( "\n---\n" );
 
     struct timespec mainLoopStart = TimeUtils::sampleMicro();
     while ( true )
@@ -113,35 +110,20 @@ bool Engine::solve( unsigned timeoutInSeconds, unsigned verbosity )
 
         if ( shouldExitDueToTimeout( timeoutInSeconds ) )
         {
-            if ( verbosity > 0 ){
-                printf( "\n\nEngine: quitting due to timeout...\n\n" );
-                printf( "Final statistics:\n" );
-                _statistics.print();
-            }
+            printf( "\n\nEngine: quitting due to timeout...\n\n" );
+            printf( "Final statistics:\n" );
+            _statistics.print();
             _exitCode = Engine::TIMEOUT;
             _statistics.timeout();
             return false;
         }
 
-        if ( shouldExitDueToFoundSAT() )
-        {
-            if ( verbosity > 0 ){
-                printf( "\n\nEngine: quitting as SATisfying assignment is found in some other thread...\n\n" );
-                printf( "Final statistics:\n" );
-                _statistics.print();
-            }
-            _exitCode = Engine::QUIT_REQUESTED;
-            return false;
-        }
-
         if ( _quitRequested )
         {
-            if ( verbosity > 0 ){
-                printf( "\n\nEngine: quitting due to external request...\n\n" );
-                printf( "Final statistics:\n" );
-                _statistics.print();
-            }
-            _exitCode = Engine::TIMEOUT;
+            printf( "\n\nEngine: quitting due to external request...\n\n" );
+            printf( "Final statistics:\n" );
+            _statistics.print();
+            _exitCode = Engine::QUIT_REQUESTED;
             return false;
         }
 
@@ -149,8 +131,7 @@ bool Engine::solve( unsigned timeoutInSeconds, unsigned verbosity )
         {
             DEBUG( _tableau->verifyInvariants() );
 
-            if ( verbosity > 1 )
-                mainLoopStatistics();
+            mainLoopStatistics();
 
             // If the basis has become malformed, we need to restore it
             if ( basisRestorationNeeded() )
@@ -215,17 +196,14 @@ bool Engine::solve( unsigned timeoutInSeconds, unsigned verbosity )
                     if ( _tableau->getBasicAssignmentStatus() !=
                          ITableau::BASIC_ASSIGNMENT_JUST_COMPUTED )
                     {
-                        if ( verbosity > 0 )
-                            printf( "Before declaring SAT, recomputing...\n" );
+                        printf( "Before declaring SAT, recomputing...\n" );
                         // Make sure that the assignment is precise before declaring success
                         _tableau->computeAssignment();
                         continue;
                     }
 
-                    if ( verbosity > 0 ){
-                        printf( "\nEngine::solve: SAT assignment found\n" );
-                        _statistics.print();
-                    }
+                    printf( "\nEngine::solve: SAT assignment found\n" );
+                    _statistics.print();
                     _exitCode = Engine::SAT;
                     return true;
                 }
@@ -283,10 +261,8 @@ bool Engine::solve( unsigned timeoutInSeconds, unsigned verbosity )
             // If we're at level 0, the whole query is unsat.
             if ( !_smtCore.popSplit() )
             {
-                if ( verbosity > 0 ) {
-                    printf( "\nEngine::solve: UNSAT query\n" );
-                    _statistics.print();
-                }
+                printf( "\nEngine::solve: UNSAT query\n" );
+                _statistics.print();
                 _exitCode = Engine::UNSAT;
                 return false;
             }
