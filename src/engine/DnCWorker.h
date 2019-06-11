@@ -54,13 +54,13 @@ private:
   void printProgress( const String& queryId, const Engine::ExitCode
                     result ) const;
 
-  WorkerQueue* _workload;   // The queue of subqueries (shared across threads)
+  WorkerQueue *_workload;   // The queue of subqueries (shared across threads)
   std::shared_ptr<Engine> _engine;
 
   // The number of unsolved subqueries
-  std::atomic_uint* _numUnsolvedSubqueries;
+  std::atomic_uint *_numUnsolvedSubqueries;
   // A boolean denoting whether a solution has been found
-  std::atomic_bool* _shouldQuitSolving;
+  std::atomic_bool *_shouldQuitSolving;
   std::unique_ptr<QueryDivider> _queryDivider;
   // Initial state of the engine to which engine is restored after handling
   // a subquery
