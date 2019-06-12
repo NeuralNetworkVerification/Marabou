@@ -76,25 +76,11 @@ void AbsConstraint::notifyLowerBound( unsigned variable, double bound)
     {
         unsigned partner = ( variable == _f ) ? _b : _f;
 
-        if ( bound >=0 )
+        if ( _lowerBounds.exists( partner ) )
         {
-            if ( _lowerBounds.exists( partner ) )
+            double otherLowerBound = _lowerBounds[partner];
+            if ( bound > otherLowerBound )
             {
-                double otherLowerBound = _lowerBounds[partner];
-                if ( bound > otherLowerBound )
-                    _constraintBoundTightener->registerTighterLowerBound( partner, bound );
-            }
-            else
-            {
-                _constraintBoundTightener->registerTighterLowerBound( partner, bound );
-            }
-        }
-        else if ( bound < 0 )
-        {
-            if ( _lowerBounds.exists( partner ) )
-            {
-                double otherLowerBound = _lowerBounds[partner];
-                if ( bound > otherLowerBound )
                     _constraintBoundTightener->registerTighterLowerBound( partner, bound );
             }
             else
@@ -118,20 +104,18 @@ void AbsConstraint::notifyUpperBound(  unsigned variable, double bound )
     if ( ( variable == _f || variable == _b ) && FloatUtils::isNegative( bound ) )
         setPhaseStatus( PhaseStatus::PHASE_NEGATIVE );
 
-    if ( isActive() && _constraintBoundTightener )
-    {
-        unsigned partner = ( variable == _f ) ? _b : _f;
+    if ( isActive() && _constraintBoundTightener ) {
+        unsigned partner = (variable == _f) ? _b : _f;
 
-        if ( _lowerBounds.exists( partner ) )
-            {
-                double otherLowerBound = _lowerBounds[partner];
-                if ( bound < otherLowerBound )
-                    _constraintBoundTightener->registerTighterLowerBound( partner, bound );
+        if (_upperBounds.exists(partner)) {
+            double otherUpperBound = _upperBounds[partner];
+            if (bound < otherUpperBound) {
+                _constraintBoundTightener->registerTighterUpperBound(partner, bound);
             }
-            else
-            {
-                _constraintBoundTightener->registerTighterLowerBound( partner, bound );
-            }
+        }
+        else
+        {
+            _constraintBoundTightener->registerTighterUpperBound( partner, bound );
         }
     }
 }
@@ -192,13 +176,10 @@ List<PiecewiseLinearConstraint::Fix> AbsConstraint::getPossibleFixes() const
     return fixes;
 }
 
-
-
 List<PiecewiseLinearConstraint::Fix> AbsConstraint::getSmartFixes( __attribute__((unused)) ITableau *tableau ) const
 {
     return getPossibleFixes();
 }
-
 
 List<PiecewiseLinearCaseSplit> AbsConstraint::getCaseSplits() const
 {
@@ -212,7 +193,6 @@ List<PiecewiseLinearCaseSplit> AbsConstraint::getCaseSplits() const
     //TODO: add some heuristic
     return splits;
 }
-
 
 PiecewiseLinearCaseSplit AbsConstraint::getNegativeSplit() const {
     // Negative phase: b <=0, b + f = 0
@@ -265,16 +245,91 @@ PiecewiseLinearCaseSplit AbsConstraint::getValidCaseSplit() const
 }
 
 
-void AbsConstraint::eliminateVariable(__attribute__((unused)) unsigned variable, __attribute__((unused)) double fixedValue ){}
-
-void AbsConstraint::updateVariableIndex( __attribute__((unused)) unsigned oldIndex, __attribute__((unused)) unsigned newIndex ) {}
-
-bool AbsConstraint::constraintObsolete() const
+void AbsConstraint::eliminateVariable(__attribute__((unused)) unsigned variable,
+        __attribute__((unused)) double fixedValue )
 {
-    return true;
+    ASSERT( variable == _b || variable == _f );
+
+    // In a Abs constraint, if a variable is removed the entire constraint can be discarded.
+    _haveEliminatedVariables = true;
+
 }
 
-void AbsConstraint::getEntailedTightenings( __attribute__((unused)) List<Tightening> &tightenings ) const {}
+void AbsConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
+{
+    ASSERT( oldIndex == _b || oldIndex == _f );
+    ASSERT( !_assignment.exists( newIndex ) &&
+            !_lowerBounds.exists( newIndex ) &&
+            !_upperBounds.exists( newIndex ) &&
+            newIndex != _b && newIndex != _f );
+    if ( _assignment.exists( oldIndex ) )
+    {
+        _assignment[newIndex] = _assignment.get( oldIndex );
+        _assignment.erase( oldIndex );
+    }
+
+    if ( _lowerBounds.exists( oldIndex ) )
+    {
+        _lowerBounds[newIndex] = _lowerBounds.get( oldIndex );
+        _lowerBounds.erase( oldIndex );
+    }
+
+    if ( _upperBounds.exists( oldIndex ) )
+    {
+        _upperBounds[newIndex] = _upperBounds.get( oldIndex );
+        _upperBounds.erase( oldIndex );
+    }
+
+    if ( oldIndex == _b )
+        _b = newIndex;
+    else
+        _f = newIndex;
+
+}
+
+/**
+ *  check if the constraint is redundant
+ * @return true iff and the constraint has become obsolote
+ * as a result of variable eliminations.
+ */
+bool AbsConstraint::constraintObsolete() const
+{
+    return _haveEliminatedVariables;
+}
+
+void AbsConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
+{
+    ASSERT( _lowerBounds.exists( _b ) && _lowerBounds.exists( _f ) &&
+            _upperBounds.exists( _b ) && _upperBounds.exists( _f ) );
+
+    // Upper bounds
+    double bUpperBound = _upperBounds[_b];
+    double fUpperBound = _upperBounds[_f];
+
+    double minUpperBound =
+            FloatUtils::lt( bUpperBound, fUpperBound ) ? bUpperBound : fUpperBound;
+    // The minimal bound is non-negative. Should match for both f and b.
+    if ( FloatUtils::lt( minUpperBound, bUpperBound ) )
+        tightenings.append( Tightening( _b, minUpperBound, Tightening::UB ) );
+    else if ( FloatUtils::lt( minUpperBound, fUpperBound ) )
+        tightenings.append( Tightening( _f, minUpperBound, Tightening::UB ) );
+
+    // Lower bounds
+    double bLowerBound = _lowerBounds[_b];
+    double fLowerBound = _lowerBounds[_f];
+
+    double maxLowerBound =
+            FloatUtils::gt( bLowerBound, fLowerBound ) ? bLowerBound : fLowerBound;
+    // The minimal bound is non-negative. Should match for both f and b.
+    if ( FloatUtils::gt( maxLowerBound, bLowerBound ) )
+        tightenings.append( Tightening( _b, minUpperBound, Tightening::LB ) );
+    else if ( FloatUtils::lt( maxLowerBound, fLowerBound ) )
+        tightenings.append( Tightening( _f, maxLowerBound, Tightening::LB ) );
+
+}
+
+
+
 
 void AbsConstraint::getAuxiliaryEquations( __attribute__((unused)) List<Equation> &newEquations ) const {}
 
