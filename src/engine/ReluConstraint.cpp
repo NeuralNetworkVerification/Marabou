@@ -10,13 +10,13 @@
  ** directory for licensing information.\endverbatim
  **
  ** [[ Add lengthier description here ]]
-
  **/
 
 #include "ConstraintBoundTightener.h"
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
+#include "InputQuery.h"
 #include "MStringf.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "ReluConstraint.h"
@@ -27,6 +27,7 @@
 ReluConstraint::ReluConstraint( unsigned b, unsigned f )
     : _b( b )
     , _f( f )
+    , _auxVarInUse( false )
     , _haveEliminatedVariables( false )
 {
     setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
@@ -35,14 +36,35 @@ ReluConstraint::ReluConstraint( unsigned b, unsigned f )
 ReluConstraint::ReluConstraint( const String &serializedRelu )
     : _haveEliminatedVariables( false )
 {
-    String constraintType = serializedRelu.substring(0, 4);
-    ASSERT(constraintType == String("relu"));
+    String constraintType = serializedRelu.substring( 0, 4 );
+    ASSERT( constraintType == String( "relu" ) );
 
     // remove the constraint type in serialized form
-    String serializedValues = serializedRelu.substring(5, serializedRelu.length()-5);
+    String serializedValues = serializedRelu.substring( 5, serializedRelu.length() - 5 );
     List<String> values = serializedValues.tokenize( "," );
-    _b = atoi( values.back().ascii() );
-    _f = atoi( values.front().ascii() );
+
+    ASSERT( values.size() >= 2 && values.size() <= 3 );
+
+    if ( values.size() == 2 )
+    {
+        auto var = values.begin();
+        _f = atoi( var->ascii() );
+        ++var;
+        _b = atoi( var->ascii() );
+
+        _auxVarInUse = false;
+    }
+    else
+    {
+        auto var = values.begin();
+        _f = atoi( var->ascii() );
+        ++var;
+        _b = atoi( var->ascii() );
+        ++var;
+        _aux = atoi( var->ascii() );
+
+        _auxVarInUse = true;
+    }
 
     setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
 }
@@ -64,12 +86,18 @@ void ReluConstraint::registerAsWatcher( ITableau *tableau )
 {
     tableau->registerToWatchVariable( this, _b );
     tableau->registerToWatchVariable( this, _f );
+
+    if ( _auxVarInUse )
+        tableau->registerToWatchVariable( this, _aux );
 }
 
 void ReluConstraint::unregisterAsWatcher( ITableau *tableau )
 {
     tableau->unregisterToWatchVariable( this, _b );
     tableau->unregisterToWatchVariable( this, _f );
+
+    if ( _auxVarInUse )
+        tableau->unregisterToWatchVariable( this, _aux );
 }
 
 void ReluConstraint::notifyVariableValue( unsigned variable, double value )
@@ -94,34 +122,51 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
         setPhaseStatus( PhaseStatus::PHASE_ACTIVE );
     else if ( variable == _b && !FloatUtils::isNegative( bound ) )
         setPhaseStatus( PhaseStatus::PHASE_ACTIVE );
+    else if ( variable == _aux && FloatUtils::isPositive( bound ) )
+        setPhaseStatus( PhaseStatus::PHASE_INACTIVE );
 
     if ( isActive() && _constraintBoundTightener )
     {
-        // A positive lower bound is always propagated between the two variables
-        if ( bound > 0 )
+        // A positive lower bound is always propagated between f and b
+        if ( ( variable == _f || variable == _b ) && bound > 0 )
         {
             unsigned partner = ( variable == _f ) ? _b : _f;
+            _constraintBoundTightener->registerTighterLowerBound( partner, bound );
 
-            if ( _lowerBounds.exists( partner ) )
-            {
-                double otherLowerBound = _lowerBounds[partner];
-                if ( bound > otherLowerBound )
-                    _constraintBoundTightener->registerTighterLowerBound( partner, bound );
-            }
-            else
-            {
-                _constraintBoundTightener->registerTighterLowerBound( partner, bound );
-            }
+            // If we're in the active phase, aux should be 0
+            if ( _auxVarInUse )
+                _constraintBoundTightener->registerTighterUpperBound( _aux, 0 );
+        }
+
+        // If b is non-negative, we're in the active phase
+        else if ( _auxVarInUse && variable == _b && FloatUtils::isZero( bound ) )
+        {
+            _constraintBoundTightener->registerTighterUpperBound( _aux, 0 );
+        }
+
+        // A positive lower bound for aux means we're inactive: f is 0, b is non-positive
+        // When inactive, b = -aux
+        else if ( _auxVarInUse && variable == _aux && bound > 0 )
+        {
+            _constraintBoundTightener->registerTighterUpperBound( _b, -bound );
+            _constraintBoundTightener->registerTighterUpperBound( _f, 0 );
+        }
+
+        // A negative lower bound for b could tighten aux's upper bound
+        else if ( _auxVarInUse && variable == _b && bound < 0 )
+        {
+            printf( "Here! %p\n", _constraintBoundTightener );
+            _constraintBoundTightener->registerTighterUpperBound( _aux, -bound );
         }
 
         // Also, if for some reason we only know a negative lower bound for f,
         // we attempt to tighten it to 0
-        if ( bound < 0 && variable == _f )
+        else if ( bound < 0 && variable == _f )
         {
             _constraintBoundTightener->registerTighterLowerBound( _f, 0 );
         }
     }
- }
+}
 
 void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
 {
@@ -136,32 +181,52 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
     if ( ( variable == _f || variable == _b ) && !FloatUtils::isPositive( bound ) )
         setPhaseStatus( PhaseStatus::PHASE_INACTIVE );
 
+    if ( _auxVarInUse && variable == _aux && FloatUtils::isZero( bound ) )
+        setPhaseStatus( PhaseStatus::PHASE_ACTIVE );
+
     if ( isActive() && _constraintBoundTightener )
     {
         if ( variable == _f )
         {
             // Any bound that we learned of f should be propagated to b
-            if ( bound < _upperBounds[_b] )
-                _constraintBoundTightener->registerTighterUpperBound( _b, bound );
+            _constraintBoundTightener->registerTighterUpperBound( _b, bound );
         }
-        else
+        else if ( variable == _b )
         {
-            // If b has a negative upper bound, we f's upper bound is 0
-            double adjustedUpperBound = FloatUtils::max( bound, 0 );
-            if ( adjustedUpperBound < _upperBounds[_f] )
-                _constraintBoundTightener->registerTighterUpperBound( _f, adjustedUpperBound );
+            if ( !FloatUtils::isPositive( bound ) )
+            {
+                // If b has a non-positive upper bound, f's upper bound is 0
+                _constraintBoundTightener->registerTighterUpperBound( _f, 0 );
+
+                if ( _auxVarInUse )
+                {
+                    // Aux's range is minus the range of b
+                    _constraintBoundTightener->registerTighterLowerBound( _aux, -bound );
+                }
+            }
+            else
+            {
+                // b has a positive upper bound, propagate to f
+                _constraintBoundTightener->registerTighterUpperBound( _f, bound );
+            }
+        }
+        else if ( _auxVarInUse && variable == _aux )
+        {
+            _constraintBoundTightener->registerTighterLowerBound( _b, -bound );
         }
     }
 }
 
 bool ReluConstraint::participatingVariable( unsigned variable ) const
 {
-    return ( variable == _b ) || ( variable == _f );
+    return ( variable == _b ) || ( variable == _f ) || ( _auxVarInUse && variable == _aux );
 }
 
 List<unsigned> ReluConstraint::getParticipatingVariables() const
 {
-    return List<unsigned>( { _b, _f } );
+    return _auxVarInUse?
+        List<unsigned>( { _b, _f, _aux } ) :
+        List<unsigned>( { _b, _f } );
 }
 
 bool ReluConstraint::satisfied() const
@@ -419,44 +484,50 @@ void ReluConstraint::dump( String &output ) const
                       _phaseStatus, phaseToString( _phaseStatus ).ascii(),
                       _lowerBounds[_b], _upperBounds[_b], _lowerBounds[_f], _upperBounds[_f]
                       );
+
+    if ( _auxVarInUse )
+        output += Stringf( ". Aux var: %u. Range: [%lf, %lf]\n",
+                           _aux, _lowerBounds[_aux], _upperBounds[_aux] );
 }
 
 void ReluConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
-	ASSERT( oldIndex == _b || oldIndex == _f );
+	ASSERT( oldIndex == _b || oldIndex == _f || ( _auxVarInUse && oldIndex == _aux ) );
     ASSERT( !_assignment.exists( newIndex ) &&
             !_lowerBounds.exists( newIndex ) &&
             !_upperBounds.exists( newIndex ) &&
-            newIndex != _b && newIndex != _f );
+            newIndex != _b && newIndex != _f && ( !_auxVarInUse || newIndex != _aux ) );
 
-	if ( _assignment.exists( oldIndex ) )
-	{
-		_assignment[newIndex] = _assignment.get( oldIndex );
-		_assignment.erase( oldIndex );
-	}
+    if ( _assignment.exists( oldIndex ) )
+    {
+        _assignment[newIndex] = _assignment.get( oldIndex );
+        _assignment.erase( oldIndex );
+    }
 
-	if ( _lowerBounds.exists( oldIndex ) )
-	{
-		_lowerBounds[newIndex] = _lowerBounds.get( oldIndex );
-		_lowerBounds.erase( oldIndex );
-	}
+    if ( _lowerBounds.exists( oldIndex ) )
+    {
+        _lowerBounds[newIndex] = _lowerBounds.get( oldIndex );
+        _lowerBounds.erase( oldIndex );
+    }
 
-	if ( _upperBounds.exists( oldIndex ) )
-	{
-		_upperBounds[newIndex] = _upperBounds.get( oldIndex );
-		_upperBounds.erase( oldIndex );
-	}
+    if ( _upperBounds.exists( oldIndex ) )
+    {
+        _upperBounds[newIndex] = _upperBounds.get( oldIndex );
+        _upperBounds.erase( oldIndex );
+    }
 
-	if ( oldIndex == _b )
-		_b = newIndex;
-	else
-		_f = newIndex;
+    if ( oldIndex == _b )
+        _b = newIndex;
+    else if ( oldIndex == _f )
+        _f = newIndex;
+    else
+        _aux = newIndex;
 }
 
 void ReluConstraint::eliminateVariable( __attribute__((unused)) unsigned variable,
                                         __attribute__((unused)) double fixedValue )
 {
-	ASSERT( variable == _b || variable == _f );
+    ASSERT( variable == _b || variable == _f || ( _auxVarInUse && variable == _aux ) );
 
     DEBUG({
             if ( variable == _f )
@@ -464,13 +535,24 @@ void ReluConstraint::eliminateVariable( __attribute__((unused)) unsigned variabl
                 ASSERT( FloatUtils::gte( fixedValue, 0.0 ) );
             }
 
-            if ( FloatUtils::gt( fixedValue, 0 ) )
+            if ( variable == _f || variable == _b )
             {
-                ASSERT( _phaseStatus != PHASE_INACTIVE );
+                if ( FloatUtils::gt( fixedValue, 0 ) )
+                {
+                    ASSERT( _phaseStatus != PHASE_INACTIVE );
+                }
+                else if ( FloatUtils::lt( fixedValue, 0 ) )
+                {
+                    ASSERT( _phaseStatus != PHASE_ACTIVE );
+                }
             }
-            else if ( FloatUtils::lt( fixedValue, 0 ) )
+            else
             {
-                ASSERT( _phaseStatus != PHASE_ACTIVE );
+                // This is the aux variable
+                if ( FloatUtils::isPositive( fixedValue ) )
+                {
+                    ASSERT( _phaseStatus != PHASE_ACTIVE );
+                }
             }
         });
 
@@ -488,47 +570,91 @@ void ReluConstraint::getEntailedTightenings( List<Tightening> &tightenings ) con
     ASSERT( _lowerBounds.exists( _b ) && _lowerBounds.exists( _f ) &&
             _upperBounds.exists( _b ) && _upperBounds.exists( _f ) );
 
-    // Upper bounds
-    double bUpperBound = _upperBounds[_b];
-    double fUpperBound = _upperBounds[_f];
+    ASSERT( !_auxVarInUse || ( _lowerBounds.exists( _aux ) && _upperBounds.exists( _aux ) ) );
 
-    double minUpperBound =
-        FloatUtils::lt( bUpperBound, fUpperBound ) ? bUpperBound : fUpperBound;
-
-    if ( !FloatUtils::isNegative( minUpperBound ) )
-    {
-        // The minimal bound is non-negative. Should match for both f and b.
-        if ( FloatUtils::lt( minUpperBound, bUpperBound ) )
-            tightenings.append( Tightening( _b, minUpperBound, Tightening::UB ) );
-        else if ( FloatUtils::lt( minUpperBound, fUpperBound ) )
-            tightenings.append( Tightening( _f, minUpperBound, Tightening::UB ) );
-    }
-    else
-    {
-        // The minimal bound is negative. This has to be b's upper bound.
-        if ( !FloatUtils::isZero( fUpperBound ) )
-            tightenings.append( Tightening( _f, 0.0, Tightening::UB ) );
-    }
-
-    // Lower bounds
     double bLowerBound = _lowerBounds[_b];
     double fLowerBound = _lowerBounds[_f];
 
-    // F's lower bound should always be non-negative
-    if ( FloatUtils::isNegative( fLowerBound ) )
-        tightenings.append( Tightening( _f, 0.0, Tightening::LB ) );
+    double bUpperBound = _upperBounds[_b];
+    double fUpperBound = _upperBounds[_f];
 
-    // Lower bounds are entailed between f and b only if they are strictly positive, and otherwise ignored.
-    if ( FloatUtils::isPositive( fLowerBound ) )
+    double auxLowerBound = 0;
+    double auxUpperBound = 0;
+
+    if ( _auxVarInUse )
     {
-        if ( FloatUtils::lt( bLowerBound, fLowerBound ) )
-            tightenings.append( Tightening( _b, fLowerBound, Tightening::LB ) );
+        auxLowerBound = _lowerBounds[_aux];
+        auxUpperBound = _upperBounds[_aux];
     }
 
-    if ( FloatUtils::isPositive( bLowerBound ) )
+    // Determine if we are in the active phase, inactive phase or unknown phase
+    if ( !FloatUtils::isNegative( bLowerBound ) ||
+         FloatUtils::isPositive( fLowerBound ) ||
+         ( _auxVarInUse && FloatUtils::isZero( auxUpperBound ) ) )
     {
-        if ( FloatUtils::lt( fLowerBound, bLowerBound ) )
-            tightenings.append( Tightening( _f, bLowerBound, Tightening::LB ) );
+        // Active case;
+
+        // All bounds are propagated between b and f
+        tightenings.append( Tightening( _b, fLowerBound, Tightening::LB ) );
+        tightenings.append( Tightening( _f, bLowerBound, Tightening::LB ) );
+
+        tightenings.append( Tightening( _b, fUpperBound, Tightening::UB ) );
+        tightenings.append( Tightening( _f, bUpperBound, Tightening::UB ) );
+
+        // Aux is zero
+        if ( _auxVarInUse )
+        {
+            tightenings.append( Tightening( _aux, 0, Tightening::LB ) );
+            tightenings.append( Tightening( _aux, 0, Tightening::UB ) );
+        }
+
+        tightenings.append( Tightening( _b, 0, Tightening::LB ) );
+        tightenings.append( Tightening( _f, 0, Tightening::LB ) );
+    }
+    else if ( FloatUtils::isNegative( bUpperBound ) ||
+              FloatUtils::isZero( fUpperBound ) ||
+              ( _auxVarInUse && FloatUtils::isPositive( auxLowerBound ) ) )
+    {
+        // Inactive case
+
+        // f is zero
+        tightenings.append( Tightening( _f, 0, Tightening::LB ) );
+        tightenings.append( Tightening( _f, 0, Tightening::UB ) );
+
+        // b is non-positive
+        tightenings.append( Tightening( _b, 0, Tightening::UB ) );
+
+        // aux = -b, aux is non-negative
+        if ( _auxVarInUse )
+        {
+            tightenings.append( Tightening( _aux, -bLowerBound, Tightening::UB ) );
+            tightenings.append( Tightening( _aux, -bUpperBound, Tightening::LB ) );
+
+            tightenings.append( Tightening( _b, -auxLowerBound, Tightening::UB ) );
+            tightenings.append( Tightening( _b, -auxUpperBound, Tightening::LB ) );
+
+            tightenings.append( Tightening( _aux, 0, Tightening::LB ) );
+        }
+    }
+    else
+    {
+        // Unknown case
+
+        // b and f share upper bounds
+        tightenings.append( Tightening( _b, fUpperBound, Tightening::UB ) );
+        tightenings.append( Tightening( _f, bUpperBound, Tightening::UB ) );
+
+        // aux upper bound is -b lower bound
+        if ( _auxVarInUse )
+        {
+            tightenings.append( Tightening( _b, -auxUpperBound, Tightening::LB ) );
+            tightenings.append( Tightening( _aux, -bLowerBound, Tightening::UB ) );
+        }
+
+        // f and aux are always non negative
+        tightenings.append( Tightening( _f, 0, Tightening::LB ) );
+        if ( _auxVarInUse )
+            tightenings.append( Tightening( _aux, 0, Tightening::LB ) );
     }
 }
 
@@ -555,15 +681,40 @@ void ReluConstraint::setPhaseStatus( PhaseStatus phaseStatus )
     _phaseStatus = phaseStatus;
 }
 
-void ReluConstraint::getAuxiliaryEquations( List<Equation> &newEquations ) const
+void ReluConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
 {
-    // Add the equation: f >= b, or f - b >= 0
-    Equation equation( Equation::GE );
+    /*
+      We want to add the equation
+
+          f >= b
+
+      Which actually becomes
+
+          f - b - aux = 0
+
+      Lower bound: always non-negative
+      Upper bound: when f = 0 and b is minimal, i.e. -b.lb
+    */
+
+    // Create the aux variable
+    _aux = inputQuery.getNumberOfVariables();
+    inputQuery.setNumberOfVariables( _aux + 1 );
+
+    // Create and add the equation
+    Equation equation( Equation::EQ );
     equation.addAddend( 1.0, _f );
     equation.addAddend( -1.0, _b );
+    equation.addAddend( -1.0, _aux );
     equation.setScalar( 0 );
+    inputQuery.addEquation( equation );
 
-    newEquations.append( equation );
+    // Adjust the bounds for the new variable
+    ASSERT( _lowerBounds.exists( _b ) );
+    inputQuery.setLowerBound( _aux, 0 );
+    inputQuery.setUpperBound( _aux, -_lowerBounds[_b] );
+
+    // We now care about the auxiliary variable, as well
+    _auxVarInUse = true;
 }
 
 void ReluConstraint::getCostFunctionComponent( Map<unsigned, double> &cost ) const
@@ -628,7 +779,10 @@ bool ReluConstraint::haveOutOfBoundVariables() const
 
 String ReluConstraint::serializeToString() const
 {
-    // Output format is: relu,f,b
+    // Output format is: relu,f,b,aux
+    if ( _auxVarInUse )
+        return Stringf( "relu,%u,%u,%u", _f, _b, _aux );
+
     return Stringf( "relu,%u,%u", _f, _b );
 }
 
@@ -645,6 +799,16 @@ ReluConstraint::PhaseStatus ReluConstraint::getPhaseStatus() const
 bool ReluConstraint::supportsSymbolicBoundTightening() const
 {
     return true;
+}
+
+bool ReluConstraint::auxVariableInUse() const
+{
+    return _auxVarInUse;
+}
+
+unsigned ReluConstraint::getAux() const
+{
+    return _aux;
 }
 
 //
