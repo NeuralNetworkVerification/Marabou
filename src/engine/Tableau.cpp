@@ -550,6 +550,11 @@ void Tableau::setRightHandSide( const double *b )
     }
 }
 
+bool Tableau::rightHandSizeIsZero() const
+{
+    return _rhsIsAllZeros;
+}
+
 void Tableau::setRightHandSide( unsigned index, double value )
 {
     _b[index] = value;

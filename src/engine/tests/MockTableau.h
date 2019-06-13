@@ -532,6 +532,11 @@ public:
         return b;
     }
 
+    bool rightHandSizeIsZero() const
+    {
+        return false;
+    }
+
     void forwardTransformation( const double *, double * ) const {}
 
     mutable double *lastBtranInput;

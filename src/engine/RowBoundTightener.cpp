@@ -230,6 +230,7 @@ void RowBoundTightener::examineInvertedBasisMatrix( bool untilSaturation )
     */
 
     const double *b = _tableau.getRightHandSide();
+    bool bIsZero = _tableau.rightHandSizeIsZero();
     const double *invB = _tableau.getInverseBasisMatrix();
 
     try
@@ -237,10 +238,14 @@ void RowBoundTightener::examineInvertedBasisMatrix( bool untilSaturation )
         for ( unsigned i = 0; i < _m; ++i )
         {
             TableauRow *row = _rows[i];
-            // First, compute the scalar, using inv(B)*b
+            // First, compute the scalar, using inv(B)*b, if needed
             row->_scalar = 0;
-            for ( unsigned j = 0; j < _m; ++j )
-                row->_scalar += ( invB[i * _m + j] * b[j] );
+
+            if ( !bIsZero )
+            {
+                for ( unsigned j = 0; j < _m; ++j )
+                    row->_scalar += ( invB[i * _m + j] * b[j] );
+            }
 
             // Now update the row's coefficients for basic variable i
             for ( unsigned j = 0; j < _n - _m; ++j )

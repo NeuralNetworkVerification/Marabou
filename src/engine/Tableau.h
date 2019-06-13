@@ -69,10 +69,12 @@ public:
     /*
       Set/get the values of the right hand side vector, b, of size m.
       Set either the whole vector or a specific entry
+      Can also check whether the b vector is 0, without retrieving it.
     */
     void setRightHandSide( const double *b );
     void setRightHandSide( unsigned index, double value );
     const double *getRightHandSide() const;
+    bool rightHandSizeIsZero() const;
 
     /*
       Perform backward/forward transformations using the basis factorization.

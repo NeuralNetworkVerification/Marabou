@@ -163,6 +163,7 @@ public:
     virtual void restoreState( const TableauState &state ) = 0;
     virtual void setStatistics( Statistics *statistics ) = 0;
     virtual const double *getRightHandSide() const = 0;
+    virtual bool rightHandSizeIsZero() const = 0;
     virtual void forwardTransformation( const double *y, double *x ) const = 0;
     virtual void backwardTransformation( const double *y, double *x ) const = 0;
     virtual double getSumOfInfeasibilities() const = 0;
