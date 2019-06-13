@@ -43,6 +43,7 @@ Engine::Engine()
     , _constraintBoundTightener( *_tableau )
     , _numVisitedStatesAtPreviousRestoration( 0 )
     , _networkLevelReasoner( NULL )
+    , _lastEBBTIteration( 0 )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -165,7 +166,13 @@ bool Engine::solve( unsigned timeoutInSeconds )
             }
 
             if ( _tableau->basisMatrixAvailable() )
-                explicitBasisBoundTightening();
+            {
+                if ( _statistics.getNumMainLoopIterations() - _lastEBBTIteration > 300 )
+                {
+                    _lastEBBTIteration = _statistics.getNumMainLoopIterations();
+                    explicitBasisBoundTightening();
+                }
+            }
 
             // Perform any SmtCore-initiated case splits
             if ( _smtCore.needToSplit() )
@@ -1530,6 +1537,8 @@ void Engine::tightenBoundsOnConstraintMatrix()
 
 void Engine::explicitBasisBoundTightening()
 {
+    printf( "Explicit BBT: iteration %llu\n", _statistics.getNumMainLoopIterations() );
+
     struct timespec start = TimeUtils::sampleMicro();
 
     bool saturation = GlobalConfiguration::EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION;

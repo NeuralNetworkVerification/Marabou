@@ -407,6 +407,8 @@ private:
     double *createConstraintMatrix();
     void addAuxiliaryVariables();
     void augmentInitialBasisIfNeeded( List<unsigned> &initialBasis, const List<unsigned> &basicRows );
+
+    unsigned _lastEBBTIteration;
 };
 
 #endif // __Engine_h__
