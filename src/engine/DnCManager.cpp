@@ -21,14 +21,11 @@
 #include "MStringf.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "QueryDivider.h"
-#include "TimeUtils.h"
 
 #include <atomic>
 #include <chrono>
 #include <cmath>
 #include <thread>
-#include <queue>
-#include <vector>
 
 static void dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine,
                       std::atomic_uint &numUnsolvedSubQueries,
