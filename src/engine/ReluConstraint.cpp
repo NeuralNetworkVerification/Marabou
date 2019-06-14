@@ -155,7 +155,6 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
         // A negative lower bound for b could tighten aux's upper bound
         else if ( _auxVarInUse && variable == _b && bound < 0 )
         {
-            printf( "Here! %p\n", _constraintBoundTightener );
             _constraintBoundTightener->registerTighterUpperBound( _aux, -bound );
         }
 
