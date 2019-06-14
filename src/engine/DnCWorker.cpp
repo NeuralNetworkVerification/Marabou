@@ -100,7 +100,7 @@ void DnCWorker::run()
                 SubQueries subQueries;
                 _queryDivider->createSubQueries( pow( 2, _onlineDivides ),
                                                  *subQuery, subQueries );
-                bool pushed = false;
+                bool pushed = true;
                 for ( auto &subQuery : subQueries )
                 {
                     pushed = pushed && _workload->push( std::move( subQuery ) );
