@@ -16,12 +16,8 @@
 #ifndef __DnCManager_h__
 #define __DnCManager_h__
 
-#include "AcasParser.h"
 #include "DivideStrategy.h"
 #include "Engine.h"
-#include "MStringf.h"
-#include "PiecewiseLinearCaseSplit.h"
-#include "PropertyParser.h"
 #include "SubQuery.h"
 
 #include <atomic>

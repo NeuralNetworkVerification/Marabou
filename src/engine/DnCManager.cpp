@@ -13,6 +13,7 @@
 
  **/
 
+#include "AcasParser.h"
 #include "Debug.h"
 #include "DivideStrategy.h"
 #include "DnCManager.h"
@@ -20,6 +21,7 @@
 #include "LargestIntervalDivider.h"
 #include "MStringf.h"
 #include "PiecewiseLinearCaseSplit.h"
+#include "PropertyParser.h"
 #include "QueryDivider.h"
 
 #include <atomic>
