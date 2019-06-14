@@ -54,17 +54,16 @@ DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
     , _networkFilePath( networkFilePath )
     , _propertyFilePath( propertyFilePath )
     , _exitCode( DnCManager::NOT_DONE )
-{
-};
+{};
 
 void DnCManager::solve()
 {
     if ( !createEngines() )
-        {
-            _exitCode = DnCManager::UNSAT;
-            printResult();
-            return;
-        }
+    {
+        _exitCode = DnCManager::UNSAT;
+        printResult();
+        return;
+    }
 
     Vector<std::atomic_bool*> quitThreads;
     for ( unsigned i = 0; i < _numWorkers; i++ )
@@ -80,22 +79,22 @@ void DnCManager::solve()
     WorkerQueue* workload = new WorkerQueue( 0 );
     bool pushed = false;
     for ( auto &subQuery : subQueries )
-        {
-            pushed = workload->push( subQuery );
-            assert( pushed );
-        }
+    {
+        pushed = workload->push( subQuery );
+        assert( pushed );
+    }
 
     // Spawn threads and start solving
     std::vector<std::thread> threads;
     for ( unsigned threadId = 0; threadId < _numWorkers; threadId++ )
-        {
-            threads.push_back( std::thread( dncSolve, workload,
-                                            _engines[ threadId ],
-                                            std::ref( numUnsolvedSubqueries ),
-                                            std::ref( shouldQuitSolving ),
-                                            threadId, _onlineDivides,
-                                            _timeoutFactor, _divideStrategy ) );
-        }
+    {
+        threads.push_back( std::thread( dncSolve, workload,
+                                        _engines[ threadId ],
+                                        std::ref( numUnsolvedSubqueries ),
+                                        std::ref( shouldQuitSolving ),
+                                        threadId, _onlineDivides,
+                                        _timeoutFactor, _divideStrategy ) );
+    }
 
     // Wait until either all subqueries are solved or a satisfying assignment is
     // found by some worker
@@ -107,7 +106,7 @@ void DnCManager::solve()
     for ( auto &quitThread : quitThreads )
         *quitThread = true;
 
-    for ( auto& thread : threads )
+    for ( auto &thread : threads )
         thread.join();
 
     updateDnCExitCode();
@@ -125,18 +124,31 @@ void DnCManager::updateDnCExitCode()
 {
     bool hasSat = false;
     bool hasError = false;
-    for ( auto& engine : _engines )
+    bool hasNotDone = false;
+    bool hasQuitRequested = false;
+    for ( auto &engine : _engines )
+    {
+        Engine::ExitCode result = engine->getExitCode( );
+        if ( result == Engine::SAT )
         {
-            Engine::ExitCode result = engine->getExitCode( );
-            if ( result == Engine::SAT )
-                hasSat = true;
-            else if ( result == Engine::ERROR )
-                hasError = true;
+            hasSat = true;
+            break;
         }
+        else if ( result == Engine::ERROR )
+            hasError = true;
+        else if ( result == Engine::QUIT_REQUESTED )
+            hasQuitRequested = true;
+        else if ( result == Engine::NOT_DONE )
+            hasNotDone = true;
+    }
     if ( hasSat )
         _exitCode = DnCManager::SAT;
     else if ( hasError )
         _exitCode = DnCManager::ERROR;
+    else if ( hasQuitRequested )
+        _exitCode = DnCManager::QUIT_REQUESTED;
+    else if ( hasNotDone )
+        _exitCode = DnCManager::NOT_DONE;
     else
         _exitCode = DnCManager::UNSAT;
 }
@@ -144,25 +156,28 @@ void DnCManager::updateDnCExitCode()
 void DnCManager::printResult()
 {
     switch ( _exitCode )
-        {
-        case DnCManager::SAT:
-            std::cout << "DnCManager::solve SAT query" << std::endl;
-            break;
-        case DnCManager::UNSAT:
-            std::cout << "DnCManager::solve UNSAT query" << std::endl;
-            break;
-        case DnCManager::ERROR:
-            std::cout << "DnCManager::solve ERROR" << std::endl;
-            break;
-        case DnCManager::NOT_DONE:
-            std::cout << "DnCManager::solve NOT_DONE" << std::endl;
-            break;
-        case DnCManager::TIMEOUT:
-            std::cout << "DnCManager::solve TIMEOUT" << std::endl;
-            break;
-        default:
-            std::cout << std::endl;
-        }
+    {
+    case DnCManager::SAT:
+        std::cout << "DnCManager::solve SAT query" << std::endl;
+        break;
+    case DnCManager::UNSAT:
+        std::cout << "DnCManager::solve UNSAT query" << std::endl;
+        break;
+    case DnCManager::ERROR:
+        std::cout << "DnCManager::solve ERROR" << std::endl;
+        break;
+    case DnCManager::NOT_DONE:
+        std::cout << "DnCManager::solve NOT_DONE" << std::endl;
+        break;
+    case DnCManager::QUIT_REQUESTED:
+        std::cout << "DnCManager::solve QUIT_REQUESTED" << std::endl;
+        break;
+    case DnCManager::TIMEOUT:
+        std::cout << "DnCManager::solve TIMEOUT" << std::endl;
+        break;
+    default:
+        ASSERT( false );
+    }
 }
 
 bool DnCManager::createEngines()
@@ -181,13 +196,13 @@ bool DnCManager::createEngines()
 
     // Create engines for each thread
     for ( unsigned i = 0; i < _numWorkers; i++ )
-        {
-            auto engine = std::make_shared<Engine>();
-            InputQuery *inputQuery = new InputQuery();
-            *inputQuery = *baseInputQuery;
-            engine->processInputQuery( *inputQuery );
-            _engines.append( engine );
-        }
+    {
+        auto engine = std::make_shared<Engine>();
+        InputQuery *inputQuery = new InputQuery();
+        *inputQuery = *baseInputQuery;
+        engine->processInputQuery( *inputQuery );
+        _engines.append( engine );
+    }
     return true;
 }
 
@@ -196,46 +211,46 @@ void DnCManager::initialDivide( SubQueries &subQueries )
     const List<unsigned>& inputVariables = _baseEngine->getInputVariables();
     std::unique_ptr<QueryDivider> queryDivider = nullptr;
     if (_divideStrategy == DivideStrategy::LargestInterval )
-        {
-            queryDivider = std::unique_ptr<QueryDivider>
-                ( new LargestIntervalDivider( inputVariables, _timeoutFactor ) );
-        } else
-        { // Default
-            queryDivider = std::unique_ptr<QueryDivider>
-                ( new LargestIntervalDivider( inputVariables, _timeoutFactor ) );
-        }
+    {
+        queryDivider = std::unique_ptr<QueryDivider>
+            ( new LargestIntervalDivider( inputVariables, _timeoutFactor ) );
+    } else
+    { // Default
+        queryDivider = std::unique_ptr<QueryDivider>
+            ( new LargestIntervalDivider( inputVariables, _timeoutFactor ) );
+    }
 
     std::string queryId = "";
     // Create a new case split
     QueryDivider::InputRegion initialRegion;
     InputQuery *inputQuery = _baseEngine->getInputQuery();
     for ( auto& variable : inputVariables )
-        {
-            initialRegion._lowerBounds[ variable ] =
-                inputQuery->getLowerBounds()[ variable ];
-            initialRegion._upperBounds[ variable ] =
-                inputQuery->getUpperBounds()[ variable ];
-        }
+    {
+        initialRegion._lowerBounds[ variable ] =
+            inputQuery->getLowerBounds()[ variable ];
+        initialRegion._upperBounds[ variable ] =
+            inputQuery->getUpperBounds()[ variable ];
+    }
     auto split = std::unique_ptr<PiecewiseLinearCaseSplit>
         ( new PiecewiseLinearCaseSplit() );
     // Add bound as equations for each input variable
     for ( auto& variable : inputVariables )
-        {
-            double lb = initialRegion._lowerBounds[ variable ];
-            double ub = initialRegion._upperBounds[ variable ];
-          split->storeBoundTightening( Tightening( variable, lb,
-                                                   Tightening::LB ) );
-          split->storeBoundTightening( Tightening( variable, ub,
-                                                   Tightening::UB ) );
-        }
+    {
+        double lb = initialRegion._lowerBounds[ variable ];
+        double ub = initialRegion._upperBounds[ variable ];
+        split->storeBoundTightening( Tightening( variable, lb,
+                                                 Tightening::LB ) );
+        split->storeBoundTightening( Tightening( variable, ub,
+                                                 Tightening::UB ) );
+    }
 
     // Construct the new subquery and add it to subqueries
     SubQuery subQuery =
-        {
-            queryId,
-            std::move( split ),
-            _initialTimeout,
-        };
+    {
+        queryId,
+        std::move( split ),
+        _initialTimeout,
+    };
 
     queryDivider->createSubQueries( pow( 2, _initialDivides ), subQuery,
                                     subQueries );

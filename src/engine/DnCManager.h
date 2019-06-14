@@ -36,6 +36,7 @@ class DnCManager
     SAT = 1,
     ERROR = 2,
     TIMEOUT = 3,
+    QUIT_REQUESTED = 4,
 
     NOT_DONE = 999,
   };

@@ -90,15 +90,12 @@ public:
 
     const Statistics *getStatistics() const;
 
+    InputQuery *getInputQuery();
+
     /*
       Get the exit code
     */
     Engine::ExitCode getExitCode() const;
-
-    /*
-      Get the input query
-    */
-    InputQuery *getInputQuery();
 
     /*
       Get the quitRequested flag

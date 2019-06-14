@@ -53,11 +53,11 @@ void DnCWorker::setQueryDivider( DivideStrategy divideStrategy )
     // For now, there is only one strategy
     ASSERT( divideStrategy == DivideStrategy::LargestInterval );
     if ( divideStrategy == DivideStrategy::LargestInterval )
-        {
-            const List<unsigned> &inputVariables = _engine->getInputVariables();
-            _queryDivider = std::unique_ptr<LargestIntervalDivider>
-                ( new LargestIntervalDivider( inputVariables, _timeoutFactor ) );
-        }
+    {
+        const List<unsigned> &inputVariables = _engine->getInputVariables();
+        _queryDivider = std::unique_ptr<LargestIntervalDivider>
+            ( new LargestIntervalDivider( inputVariables, _timeoutFactor ) );
+    }
 }
 
 void DnCWorker::run()
@@ -77,8 +77,6 @@ void DnCWorker::run()
             // Create a new statistics object for each subQuery
             Statistics *statistics = new Statistics();
             _engine->resetStatistics( *statistics );
-            // What is our policy for statistics in DnC mode?
-            // is there some global statistics, also?
             // TODO: each worker is going to keep a map from *CaseSplit to an
             // object of class DnCStatistics, which contains some basic
             // statistics. The maps are owned by the DnCManager.
@@ -144,7 +142,7 @@ void DnCWorker::run()
                 return;
             }
 
-            // reset the engine state
+            // Reset the engine state
             _engine->restoreState( *_initialState );
             _engine->clearViolatedPLConstraints();
             _engine->resetSmtCore();
@@ -180,10 +178,8 @@ String DnCWorker::exitCodeToString( Engine::ExitCode result )
     case Engine::QUIT_REQUESTED:
         return "QUIT_REQUESTED";
     default:
-        {
-            ASSERT( false );
-            return "UNKNOWN (this should never happen)";
-        }
+        ASSERT( false );
+        return "UNKNOWN (this should never happen)";
     }
 }
 

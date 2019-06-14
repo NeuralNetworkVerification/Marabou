@@ -1616,6 +1616,11 @@ const Statistics *Engine::getStatistics() const
     return &_statistics;
 }
 
+InputQuery *Engine::getInputQuery()
+{
+    return &_preprocessedQuery;
+}
+
 void Engine::log( const String &message )
 {
     if ( GlobalConfiguration::ENGINE_LOGGING )
@@ -1664,11 +1669,6 @@ void Engine::quitSignal()
 Engine::ExitCode Engine::getExitCode() const
 {
     return _exitCode;
-}
-
-InputQuery *Engine::getInputQuery()
-{
-    return &_preprocessedQuery;
 }
 
 std::atomic_bool *Engine::getQuitRequested()
