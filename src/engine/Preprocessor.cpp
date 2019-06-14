@@ -706,16 +706,11 @@ void Preprocessor::setStatistics( Statistics *statistics )
 
 void Preprocessor::addPlAuxiliaryEquations()
 {
-    // First, collect all the new equations
     const List<PiecewiseLinearConstraint *> &plConstraints
         ( _preprocessed.getPiecewiseLinearConstraints() );
 
-    List<Equation> newEquations;
     for ( const auto &constraint : plConstraints )
-        constraint->getAuxiliaryEquations( newEquations );
-
-    for ( Equation equation : newEquations )
-        _preprocessed.addEquation( equation );
+        constraint->addAuxiliaryEquations( _preprocessed );
 }
 
 void Preprocessor::dumpAllBounds( const String &message )

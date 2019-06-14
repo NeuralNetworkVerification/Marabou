@@ -16,14 +16,12 @@
 #ifndef __DivideStrategy_h__
 #define __DivideStrategy_h__
 
-/*
-  Representing different splitting strategy
-*/
-enum DivideStrategy {
-  LargestInterval,
+enum DivideStrategy
+{
+    LargestInterval,
 };
 
-#endif
+#endif // __DivideStrategy_h__
 
 //
 // Local Variables:

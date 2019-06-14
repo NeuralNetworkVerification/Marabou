@@ -62,9 +62,24 @@ public:
     void notifyLowerBound( unsigned /* variable */, double /* bound */ ) {}
     void notifyUpperBound( unsigned /* variable */, double /* bound */ ) {}
     void setStatistics( Statistics */* statistics */ ) {}
-    void registerTighterLowerBound( unsigned /* variable */, double /* bound */ ) {}
-    void registerTighterUpperBound( unsigned /* variable */, double /* bound */ ) {}
-    void getConstraintTightenings( List<Tightening> &/* tightenings */ ) const {}
+
+    mutable List<Tightening> _tightenings;
+
+    void registerTighterLowerBound( unsigned variable, double bound )
+    {
+        _tightenings.append( Tightening( variable, bound, Tightening::LB ) );
+    }
+
+    void registerTighterUpperBound( unsigned variable, double bound )
+    {
+        _tightenings.append( Tightening( variable, bound, Tightening::UB ) );
+    }
+
+    void getConstraintTightenings( List<Tightening> &tightenings ) const
+    {
+        tightenings = _tightenings;
+        _tightenings.clear();
+    }
 };
 
 #endif // __MockConstraintBoundTightener_h__

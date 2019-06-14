@@ -114,7 +114,7 @@ class MaxConstraint : public PiecewiseLinearConstraint
       For preprocessing: get any auxiliary equations that this constraint would
       like to add to the equation pool.
     */
-    void getAuxiliaryEquations( List<Equation> &newEquations ) const;
+    void addAuxiliaryEquations( InputQuery &inputQuery );
 
     /*
       Returns string with shape:

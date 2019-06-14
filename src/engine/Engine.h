@@ -51,6 +51,7 @@ public:
         SAT = 1,
         ERROR = 2,
         TIMEOUT = 3,
+        QUIT_REQUESTED = 4,
 
         NOT_DONE = 999,
     };
@@ -109,6 +110,31 @@ public:
     */
     List<unsigned> getInputVariables() const;
 
+    /*
+      Add equations and tightenings from a split.
+    */
+    void applySplit( const PiecewiseLinearCaseSplit &split );
+
+    /*
+      Reset the statistics object
+    */
+    void resetStatistics( const Statistics &statistics );
+
+    /*
+      Clear the violated PL constraints
+    */
+    void clearViolatedPLConstraints();
+
+    /*
+      PSA: The following two methods are for DnC only and should be used very
+      cauciously.
+     */
+    void resetSmtCore();
+
+    void resetExitCode();
+
+    void resetBoundTighteners();
+
 private:
     enum BasisRestorationRequired {
         RESTORATION_NOT_NEEDED = 0,
@@ -122,10 +148,6 @@ private:
         PERFORMED_WEAK_RESTORATION = 2,
     };
 
-    /*
-      Add equations and tightenings from a split.
-    */
-    void applySplit( const PiecewiseLinearCaseSplit &split );
 
     /*
       Perform bound tightening operations that require

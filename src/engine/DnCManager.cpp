@@ -30,10 +30,16 @@
 #include <queue>
 #include <vector>
 
-static void dncSolve()
+static void dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine,
+                      std::atomic_uint &numUnsolvedSubQueries,
+                      std::atomic_bool &shouldQuitSolving,
+                      unsigned threadId, unsigned onlineDivides,
+                      float timeoutFactor, DivideStrategy divideStrategy )
 {
-  DnCWorker worker;
-  worker.run();
+    DnCWorker worker (workload, engine, std::ref( numUnsolvedSubQueries ),
+                      std::ref( shouldQuitSolving ), threadId, onlineDivides,
+                      timeoutFactor, divideStrategy );
+    worker.run();
 }
 
 
@@ -73,10 +79,10 @@ void DnCManager::solve()
 
     // Create objects shared across workers
     std::atomic_uint numUnsolvedSubqueries( subQueries.size() );
-    std::atomic_bool foundSolutionInSomeThread( false );
+    std::atomic_bool shouldQuitSolving( false );
     WorkerQueue* workload = new WorkerQueue( 0 );
     bool pushed = false;
-    for ( auto& subQuery : subQueries )
+    for ( auto &subQuery : subQueries )
         {
             pushed = workload->push( subQuery );
             assert( pushed );
@@ -86,17 +92,22 @@ void DnCManager::solve()
     std::vector<std::thread> threads;
     for ( unsigned threadId = 0; threadId < _numWorkers; threadId++ )
         {
-            threads.push_back( std::thread( dncSolve ) );
+            threads.push_back( std::thread( dncSolve, workload,
+                                            _engines[ threadId ],
+                                            std::ref( numUnsolvedSubqueries ),
+                                            std::ref( shouldQuitSolving ),
+                                            threadId, _onlineDivides,
+                                            _timeoutFactor, _divideStrategy ) );
         }
 
     // Wait until either all subqueries are solved or a satisfying assignment is
     // found by some worker
     while ( numUnsolvedSubqueries.load() > 0 &&
-            !foundSolutionInSomeThread.load() )
+            !shouldQuitSolving.load() )
         std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
 
     // Now that we are done, quit all workers
-    for ( auto& quitThread : quitThreads )
+    for ( auto &quitThread : quitThreads )
         *quitThread = true;
 
     for ( auto& thread : threads )
@@ -161,7 +172,7 @@ bool DnCManager::createEngines()
 {
     // Create the base engine
     _baseEngine = std::make_shared<Engine>();
-    InputQuery* baseInputQuery = new InputQuery();
+    InputQuery *baseInputQuery = new InputQuery();
     // inputQuery is owned by engine
     AcasParser acasParser ( _networkFilePath );
     acasParser.generateQuery( *baseInputQuery );
@@ -175,7 +186,7 @@ bool DnCManager::createEngines()
     for ( unsigned i = 0; i < _numWorkers; i++ )
         {
             auto engine = std::make_shared<Engine>();
-            InputQuery* inputQuery = new InputQuery();
+            InputQuery *inputQuery = new InputQuery();
             *inputQuery = *baseInputQuery;
             engine->processInputQuery( *inputQuery );
             _engines.append( engine );
@@ -183,7 +194,7 @@ bool DnCManager::createEngines()
     return true;
 }
 
-void DnCManager::initialDivide( SubQueries& subQueries )
+void DnCManager::initialDivide( SubQueries &subQueries )
 {
     const List<unsigned>& inputVariables = _baseEngine->getInputVariables();
     std::unique_ptr<QueryDivider> queryDivider = nullptr;
@@ -200,7 +211,7 @@ void DnCManager::initialDivide( SubQueries& subQueries )
     std::string queryId = "";
     // Create a new case split
     QueryDivider::InputRegion initialRegion;
-    InputQuery* inputQuery = _baseEngine->getInputQuery();
+    InputQuery *inputQuery = _baseEngine->getInputQuery();
     for ( auto& variable : inputVariables )
         {
             initialRegion._lowerBounds[ variable ] =

@@ -125,7 +125,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
             printf( "Final statistics:\n" );
             _statistics.print();
 
-            _exitCode = Engine::TIMEOUT;
+            _exitCode = Engine::QUIT_REQUESTED;
             return false;
         }
 
@@ -1767,6 +1767,43 @@ bool Engine::shouldExitDueToTimeout( unsigned timeout ) const
         return false;
 
     return _statistics.getTotalTime() / MILLISECONDS_TO_SECONDS > timeout;
+}
+
+
+void Engine::resetStatistics( const Statistics &statistics )
+{
+    _statistics = statistics;
+    _smtCore.setStatistics( &_statistics );
+    _tableau->setStatistics( &_statistics );
+    _rowBoundTightener->setStatistics( &_statistics );
+    _constraintBoundTightener->setStatistics( &_statistics );
+    _preprocessor.setStatistics( &_statistics );
+    _activeEntryStrategy = _projectedSteepestEdgeRule;
+    _activeEntryStrategy->setStatistics( &_statistics );
+
+    _statistics.stampStartingTime();
+}
+
+void Engine::clearViolatedPLConstraints()
+{
+    _violatedPlConstraints.clear();
+    _plConstraintToFix = NULL;
+}
+
+void Engine::resetSmtCore()
+{
+    _smtCore = SmtCore( this );
+}
+
+void Engine::resetExitCode()
+{
+    _exitCode = Engine::NOT_DONE;
+}
+
+void Engine::resetBoundTighteners()
+{
+    _constraintBoundTightener->resetBounds();
+    _rowBoundTightener->resetBounds();
 }
 
 //
