@@ -15,6 +15,9 @@
 
 #include <QueryDivider.h>
 
+QueryDivider::~QueryDivider()
+{};
+
 void QueryDivider::bisectInputRegion( const InputRegion &inputRegion,
                                       unsigned dimensionToBisect,
                                       List<InputRegion> &inputRegions )

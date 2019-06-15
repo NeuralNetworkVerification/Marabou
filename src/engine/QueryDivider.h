@@ -29,6 +29,8 @@ public:
         Map<unsigned, double> _upperBounds;
     };
 
+    virtual ~QueryDivider() = 0;
+
     /*
       Divide the previousSubquery into |numNewSubQueries| new subqueries and
       store them in subqueries
