@@ -35,13 +35,11 @@ static void dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine,
                       unsigned threadId, unsigned onlineDivides,
                       float timeoutFactor, DivideStrategy divideStrategy )
 {
-    DnCWorker worker (workload, engine, std::ref( numUnsolvedSubQueries ),
+    DnCWorker worker( workload, engine, std::ref( numUnsolvedSubQueries ),
                       std::ref( shouldQuitSolving ), threadId, onlineDivides,
                       timeoutFactor, divideStrategy );
     worker.run();
 }
-
-
 
 DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
                         unsigned initialTimeout, unsigned onlineDivides,
@@ -56,7 +54,8 @@ DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
     , _networkFilePath( networkFilePath )
     , _propertyFilePath( propertyFilePath )
     , _exitCode( DnCManager::NOT_DONE )
-{};
+{
+}
 
 void DnCManager::solve()
 {
@@ -67,7 +66,7 @@ void DnCManager::solve()
         return;
     }
 
-    Vector<std::atomic_bool*> quitThreads;
+    Vector<std::atomic_bool *> quitThreads;
     for ( unsigned i = 0; i < _numWorkers; i++ )
         quitThreads.append( _engines[i]->getQuitRequested() );
 
@@ -188,21 +187,23 @@ bool DnCManager::createEngines()
     _baseEngine = std::make_shared<Engine>();
     InputQuery *baseInputQuery = new InputQuery();
     // inputQuery is owned by engine
-    AcasParser acasParser ( _networkFilePath );
+    AcasParser acasParser( _networkFilePath );
     acasParser.generateQuery( *baseInputQuery );
+
     if ( _propertyFilePath != "" )
         PropertyParser( ).parse( _propertyFilePath, *baseInputQuery );
+
     if ( !_baseEngine->processInputQuery( *baseInputQuery ) )
-            // Solved by preprocessing, we are done!
-            return false;
+        // Solved by preprocessing, we are done!
+        return false;
 
     // Create engines for each thread
-    for ( unsigned i = 0; i < _numWorkers; i++ )
+    for ( unsigned i = 0; i < _numWorkers; ++i ) // Guy: ++ prefix is the default because it is more efficient in general. Use suffix form only when you need it.
     {
         auto engine = std::make_shared<Engine>();
         InputQuery *inputQuery = new InputQuery();
         *inputQuery = *baseInputQuery;
-        engine->processInputQuery( *inputQuery );
+        engine->processInputQuery( *inputQuery ); // Guy: do we need to check if processInputQuery returns false?
         _engines.append( engine );
     }
     return true;
@@ -210,36 +211,40 @@ bool DnCManager::createEngines()
 
 void DnCManager::initialDivide( SubQueries &subQueries )
 {
-    const List<unsigned>& inputVariables = _baseEngine->getInputVariables();
+    const List<unsigned> inputVariables( _baseEngine->getInputVariables() );
     std::unique_ptr<QueryDivider> queryDivider = nullptr;
-    if (_divideStrategy == DivideStrategy::LargestInterval )
+    if ( _divideStrategy == DivideStrategy::LargestInterval )
     {
         queryDivider = std::unique_ptr<QueryDivider>
             ( new LargestIntervalDivider( inputVariables, _timeoutFactor ) );
-    } else
-    { // Default
+    }
+    else
+    {
+        // Default
         queryDivider = std::unique_ptr<QueryDivider>
             ( new LargestIntervalDivider( inputVariables, _timeoutFactor ) );
     }
 
-    std::string queryId = "";
+    String queryId = "";
     // Create a new case split
     QueryDivider::InputRegion initialRegion;
     InputQuery *inputQuery = _baseEngine->getInputQuery();
-    for ( auto& variable : inputVariables )
+    for ( const auto &variable : inputVariables )
     {
-        initialRegion._lowerBounds[ variable ] =
-            inputQuery->getLowerBounds()[ variable ];
-        initialRegion._upperBounds[ variable ] =
-            inputQuery->getUpperBounds()[ variable ];
+        initialRegion._lowerBounds[variable] =
+            inputQuery->getLowerBounds()[variable];
+        initialRegion._upperBounds[variable] =
+            inputQuery->getUpperBounds()[variable];
     }
+
     auto split = std::unique_ptr<PiecewiseLinearCaseSplit>
         ( new PiecewiseLinearCaseSplit() );
+
     // Add bound as equations for each input variable
-    for ( auto& variable : inputVariables )
+    for ( const auto &variable : inputVariables )
     {
-        double lb = initialRegion._lowerBounds[ variable ];
-        double ub = initialRegion._upperBounds[ variable ];
+        double lb = initialRegion._lowerBounds[variable];
+        double ub = initialRegion._upperBounds[variable];
         split->storeBoundTightening( Tightening( variable, lb,
                                                  Tightening::LB ) );
         split->storeBoundTightening( Tightening( variable, ub,
