@@ -1,7 +1,14 @@
 language: cpp
 
+dist: trusty
+
 script:
   - make
+
+matrix:
+  include:
+    - compiler: gcc
+    - compiler: clang 
 
 notifications:
   email:

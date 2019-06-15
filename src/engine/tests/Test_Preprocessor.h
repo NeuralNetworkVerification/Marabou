@@ -245,7 +245,6 @@ public:
         // x0.ub = 10
         TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 1 ), 0 ) );
         TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 1 ), 10 ) );
-        printf( "lower bound for x0 is: %lf\n", processed.getLowerBound( 0 ) );
 
         TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 0 ), FloatUtils::negativeInfinity() ) ); //
         TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 0 ), 10 ) );
