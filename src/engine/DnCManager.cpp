@@ -67,7 +67,7 @@ void DnCManager::solve()
     }
 
     Vector<std::atomic_bool *> quitThreads;
-    for ( unsigned i = 0; i < _numWorkers; i++ )
+    for ( unsigned i = 0; i < _numWorkers; ++i )
         quitThreads.append( _engines[i]->getQuitRequested() );
 
     // Conduct the initial division of the input region
@@ -87,7 +87,7 @@ void DnCManager::solve()
 
     // Spawn threads and start solving
     std::vector<std::thread> threads;
-    for ( unsigned threadId = 0; threadId < _numWorkers; threadId++ )
+    for ( unsigned threadId = 0; threadId < _numWorkers; ++threadId )
     {
         threads.push_back( std::thread( dncSolve, workload,
                                         _engines[ threadId ],
@@ -198,12 +198,12 @@ bool DnCManager::createEngines()
         return false;
 
     // Create engines for each thread
-    for ( unsigned i = 0; i < _numWorkers; ++i ) // Guy: ++ prefix is the default because it is more efficient in general. Use suffix form only when you need it.
+    for ( unsigned i = 0; i < _numWorkers; ++i )
     {
         auto engine = std::make_shared<Engine>();
         InputQuery *inputQuery = new InputQuery();
         *inputQuery = *baseInputQuery;
-        engine->processInputQuery( *inputQuery ); // Guy: do we need to check if processInputQuery returns false?
+        engine->processInputQuery( *inputQuery );
         _engines.append( engine );
     }
     return true;
