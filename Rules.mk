@@ -46,8 +46,6 @@ LOCAL_INCLUDES += \
 	$(COMMON_DIR) \
 	$(CXXTEST_DIR) \
 
-LDFLAGS= -pthread
-
 CFLAGS += \
 	-MMD \
 	-Wall \
@@ -57,15 +55,16 @@ CFLAGS += \
 	-std=c++0x \
 	\
 	-g \
+	-lpthread \
 
 %.obj: %.cpp
 	@echo "CC\t" $@
-	@$(COMPILE) -c -o $@ $< $(CFLAGS) $(addprefix -I, $(LOCAL_INCLUDES)) $(LDFLAGS) $(LDFLAGS)
+	@$(COMPILE) -c -o $@ $< $(CFLAGS) $(addprefix -I, $(LOCAL_INCLUDES))
 
 
 %.obj: %.cxx
 	@echo "CC\t" $@
-	@$(COMPILE) -c -o $@ $< $(CFLAGS) $(CXXFLAGS) $(addprefix -I, $(LOCAL_INCLUDES)) $(LDFLAGS)
+	@$(COMPILE) -c -o $@ $< $(CFLAGS) $(CXXFLAGS) $(addprefix -I, $(LOCAL_INCLUDES))
 
 #
 # Linking C/C++
@@ -74,6 +73,7 @@ CFLAGS += \
 LIBRARY_DIR += \
 
 LIBRARIES += \
+	pthread \
 
 LINK_FLAGS += \
 
@@ -89,7 +89,7 @@ OBJECTS = $(SOURCES:%.cpp=%.obj)
 
 %.elf: $(OBJECTS)
 	@echo "LD\t" $@
-	@$(LINK) $(LINK_FLAGS) -o $@ $^ $(addprefix -L, $(LIBRARY_DIR)) $(addprefix -l, $(LIBRARIES)) $(LDFLAGS)
+	@$(LINK) $(LINK_FLAGS) -o $@ $^ $(addprefix -L, $(LIBRARY_DIR)) $(addprefix -l, $(LIBRARIES))
 
 .PRECIOUS: %.obj
 
@@ -134,7 +134,7 @@ runner.cxx:
 
 %.tests: $(TEST_OBJECTS)
 	@echo "LD\t" $@
-	@$(LINK) -o $@ $^ $(addprefix -L, $(LIBRARY_DIR)) $(addprefix -l, $(LIBRARIES)) $(LDFLAGS)
+	@$(LINK) -o $@ $^ $(addprefix -L, $(LIBRARY_DIR)) $(addprefix -l, $(LIBRARIES))
 
 .PRECIOUS: %.cxx %.obj
 
