@@ -4,6 +4,7 @@ SOURCES += \
 	AcasParser.cpp \
 	BerkeleyNeuralNetwork.cpp \
 	BerkeleyParser.cpp \
+	MpsParser.cpp \
 	PropertyParser.cpp \
 
 #

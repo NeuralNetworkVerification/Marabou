@@ -5,10 +5,10 @@ include $(ROOT_DIR)/Places.mk
 SUBDIRS += \
 
 LOCAL_INCLUDES += \
-	.. \
 	$(BASIS_FACTORIZATION_DIR) \
 	$(CONFIGURATION_DIR) \
 	$(ENGINE_DIR) \
+	$(INPUT_PARSER_DIR) \
 
 LINK_FLAGS += \
 
@@ -41,7 +41,6 @@ vpath %.cpp $(INPUT_PARSER_DIR)
 
 SOURCES += \
 	main.cpp \
-	../MpsParser.cpp \
 
 TARGET = mps.elf
 
