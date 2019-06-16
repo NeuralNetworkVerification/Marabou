@@ -45,6 +45,7 @@ LOCAL_INCLUDES += \
 	. \
 	$(COMMON_DIR) \
 	$(CXXTEST_DIR) \
+	$(BOOST_INCLUDES) \
 
 CFLAGS += \
 	-MMD \
