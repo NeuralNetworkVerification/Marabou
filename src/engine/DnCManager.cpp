@@ -252,12 +252,7 @@ void DnCManager::initialDivide( SubQueries &subQueries )
     }
 
     // Construct the new subquery and add it to subqueries
-    SubQuery subQuery =
-    {
-        queryId,
-        std::move( split ),
-        _initialTimeout,
-    };
+    SubQuery subQuery( queryId, split, _initialTimeout );
 
     queryDivider->createSubQueries( pow( 2, _initialDivides ), subQuery,
                                     subQueries );
