@@ -55,7 +55,6 @@ CFLAGS += \
 	-std=c++0x \
 	\
 	-g \
-	-lpthread \
 
 %.obj: %.cpp
 	@echo "CC\t" $@
