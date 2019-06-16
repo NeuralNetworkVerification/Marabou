@@ -10,6 +10,7 @@ LOCAL_INCLUDES += \
 	$(COMMON_TEST_DIR) \
 	$(CONFIGURATION_DIR) \
 	$(INPUT_PARSER_DIR) \
+	$(BOOST_INCLUDES) \
 
 TEST_FILES = $(wildcard Test_*.h)
 
