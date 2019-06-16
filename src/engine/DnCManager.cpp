@@ -66,7 +66,7 @@ void DnCManager::solve()
         return;
     }
 
-    Vector<std::atomic_bool *> quitThreads;
+    List<std::atomic_bool *> quitThreads;
     for ( unsigned i = 0; i < _numWorkers; ++i )
         quitThreads.append( _engines[i]->getQuitRequested() );
 
@@ -77,16 +77,17 @@ void DnCManager::solve()
     // Create objects shared across workers
     std::atomic_uint numUnsolvedSubqueries( subQueries.size() );
     std::atomic_bool shouldQuitSolving( false );
-    WorkerQueue* workload = new WorkerQueue( 0 );
+    WorkerQueue *workload = new WorkerQueue( 0 );
     bool pushed = false;
+    (void)pushed;
     for ( auto &subQuery : subQueries )
     {
         pushed = workload->push( subQuery );
-        assert( pushed );
+        ASSERT( pushed );
     }
 
     // Spawn threads and start solving
-    std::vector<std::thread> threads;
+    std::list<std::thread> threads; // TODO: change this to List (compliation error)
     for ( unsigned threadId = 0; threadId < _numWorkers; ++threadId )
     {
         threads.push_back( std::thread( dncSolve, workload,
@@ -112,7 +113,7 @@ void DnCManager::solve()
 
     updateDnCExitCode();
     printResult();
-    delete workload;
+    delete workload; // TODO: in case of an exception, this won't get deleted. Better make workload a mmeber of the class, and delete it in the destructor if needed. See our standard freeMemoryIfNeeded() function, e.g. in Tableau.cpp.
     return;
 }
 
