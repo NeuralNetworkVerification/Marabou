@@ -73,6 +73,7 @@ void DnCManager::freeMemoryIfNeeded()
             _workload->pop(subQuery);
             delete subQuery;
         }
+        subQuery = NULL;
         delete _workload;
         _workload = NULL;
     }
@@ -135,7 +136,6 @@ void DnCManager::solve()
 
     updateDnCExitCode();
     printResult();
-    delete workload; // TODO: in case of an exception, this won't get deleted. Better make workload a mmeber of the class, and delete it in the destructor if needed. See our standard freeMemoryIfNeeded() function, e.g. in Tableau.cpp.
     return;
 }
 
