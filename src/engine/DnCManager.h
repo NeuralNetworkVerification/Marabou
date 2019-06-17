@@ -113,7 +113,10 @@ private:
     */
     unsigned _onlineDivides;
 
-    // Guy: add a comment
+    /*
+      When a subQuery is created from dividing a query, the new timeout is the
+      old timeout times this factor
+    */
     float _timeoutFactor;
 
     /*
