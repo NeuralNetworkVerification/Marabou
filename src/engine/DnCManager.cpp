@@ -54,7 +54,28 @@ DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
     , _networkFilePath( networkFilePath )
     , _propertyFilePath( propertyFilePath )
     , _exitCode( DnCManager::NOT_DONE )
+    , _workload ( NULL )
 {
+}
+
+DnCManager::~DnCManager()
+{
+    freeMemoryIfNeeded();
+}
+
+void DnCManager::freeMemoryIfNeeded()
+{
+    if ( _workload )
+    {
+        SubQuery* subQuery;
+        while ( !_workload->empty() )
+        {
+            _workload->pop(subQuery);
+            delete subQuery;
+        }
+        delete _workload;
+        _workload = NULL;
+    }
 }
 
 void DnCManager::solve()
@@ -71,6 +92,7 @@ void DnCManager::solve()
         quitThreads.append( _engines[i]->getQuitRequested() );
 
     // Conduct the initial division of the input region
+    _workload = new WorkerQueue (0 );
     SubQueries subQueries;
     initialDivide( subQueries );
 

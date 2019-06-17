@@ -42,6 +42,10 @@ public:
                 DivideStrategy divideStrategy, String networkFilePath,
                 String propertyFilePath );
 
+    ~DnCManager();
+
+    void freeMemoryIfNeeded();
+
     /*
       Perform the Divide-and-conquer solving
     */
@@ -127,6 +131,11 @@ private:
       The exit code of the DnCManager.
     */
     DnCExitCode _exitCode;
+
+    /*
+      Set of subQueries to be solved by workers
+    */
+    WorkerQueue* _workload;
 };
 
 #endif // __DnCManager_h__
