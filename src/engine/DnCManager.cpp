@@ -54,7 +54,7 @@ DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
     , _networkFilePath( networkFilePath )
     , _propertyFilePath( propertyFilePath )
     , _exitCode( DnCManager::NOT_DONE )
-    , _workload ( NULL )
+    , _workload( NULL )
 {
 }
 
@@ -67,13 +67,13 @@ void DnCManager::freeMemoryIfNeeded()
 {
     if ( _workload )
     {
-        SubQuery* subQuery;
+        SubQuery *subQuery;
         while ( !_workload->empty() )
         {
-            _workload->pop(subQuery);
+            _workload->pop( subQuery );
             delete subQuery;
         }
-        subQuery = NULL;
+
         delete _workload;
         _workload = NULL;
     }
@@ -93,7 +93,10 @@ void DnCManager::solve()
         quitThreads.append( _engines[i]->getQuitRequested() );
 
     // Conduct the initial division of the input region
-    _workload = new WorkerQueue (0 );
+    _workload = new WorkerQueue( 0 );
+    if ( !_workload )
+        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "DnCManager::workload" );
+
     SubQueries subQueries;
     initialDivide( subQueries );
 
