@@ -120,10 +120,12 @@ public:
     void dump( String &output ) const;
 
     /*
-      For preprocessing: get any auxiliary equations that this constraint would
-      like to add to the equation pool.
+      For preprocessing: get any auxiliary equations that this
+      constraint would like to add to the equation pool. In the ReLU
+      case, this is an equation of the form aux = f - b, where aux is
+      non-negative.
     */
-    void getAuxiliaryEquations( List<Equation> &newEquations ) const;
+    void addAuxiliaryEquations( InputQuery &inputQuery );
 
     /*
       Ask the piecewise linear constraint to contribute a component to the cost
@@ -149,6 +151,12 @@ public:
     PhaseStatus getPhaseStatus() const;
 
     /*
+      Check if the aux variable is in use and retrieve it
+    */
+    bool auxVariableInUse() const;
+    unsigned getAux() const;
+
+    /*
       Return true if and only if this piecewise linear constraint supports
       symbolic bound tightening.
     */
@@ -157,6 +165,8 @@ public:
 private:
     unsigned _b, _f;
     PhaseStatus _phaseStatus;
+    bool _auxVarInUse;
+    unsigned _aux;
 
     PiecewiseLinearCaseSplit getInactiveSplit() const;
     PiecewiseLinearCaseSplit getActiveSplit() const;

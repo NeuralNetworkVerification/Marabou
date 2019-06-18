@@ -454,7 +454,7 @@ void Tableau::computeBasicStatus( unsigned basicIndex )
     {
         _basicStatus[basicIndex] = Tableau::ABOVE_UB;
     }
-    else if ( value < relaxex   dLb )
+    else if ( value < relaxedLb )
     {
         _basicStatus[basicIndex] = Tableau::BELOW_LB;
     }

@@ -5,7 +5,6 @@ include $(ROOT_DIR)/Places.mk
 SUBDIRS += \
 
 LOCAL_INCLUDES += \
-	.. \
 	$(BASIS_FACTORIZATION_DIR) \
 	$(CONFIGURATION_DIR) \
 	$(ENGINE_DIR) \

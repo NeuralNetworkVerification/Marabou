@@ -17,6 +17,7 @@
 #include "FloatUtils.h"
 #include "IConstraintBoundTightener.h"
 #include "ITableau.h"
+#include "InputQuery.h"
 #include "List.h"
 #include "MStringf.h"
 #include "MaxConstraint.h"
@@ -418,15 +419,26 @@ void MaxConstraint::eliminateVariable( unsigned var, double /*value*/ )
         _obsolete = true;
 }
 
-void MaxConstraint::getAuxiliaryEquations( List<Equation> & newEquations ) const
+void MaxConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
 {
     for ( auto element : _elements )
     {
-        Equation equ( Equation::GE );
-        equ.addAddend( 1.0, _f );
-        equ.addAddend( -1.0, element );
-        equ.setScalar( 0 );
-        newEquations.append( equ );
+        // Create an aux variable
+        unsigned auxVariable = inputQuery.getNumberOfVariables();
+        inputQuery.setNumberOfVariables( auxVariable + 1 );
+
+        // f >= element, or f - elemenet - aux = 0, for non-negative aux
+        Equation equation( Equation::EQ );
+        equation.addAddend( 1.0, _f );
+        equation.addAddend( -1.0, element );
+        equation.addAddend( -1.0, auxVariable );
+        equation.setScalar( 0 );
+        inputQuery.addEquation( equation );
+
+        // Set the bounds for the aux variable
+        inputQuery.setLowerBound( auxVariable, 0 );
+
+        // Todo: upper bound for aux?
     }
 }
 

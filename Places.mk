@@ -7,7 +7,7 @@ SRC_DIR           = $(ROOT_DIR)/src
 
 TOOLS_DIR	  = $(PROJECT_DIR)/tools
 CXXTEST_DIR 	  = $(TOOLS_DIR)/cxxtest
-BOOST_LIBS 	  = $(TOOLS_DIR)/boost_1_68_0/installed/lib
+BOOST_LIBS_DIR	  = $(TOOLS_DIR)/boost_1_68_0/installed/lib
 BOOST_INCLUDES	  = $(TOOLS_DIR)/boost_1_68_0/installed/include
 
 INPUT_PARSER_DIR  = $(SRC_DIR)/input_parsers

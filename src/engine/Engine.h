@@ -33,6 +33,8 @@
 #include "SmtCore.h"
 #include "Statistics.h"
 
+#include <atomic>
+
 class EngineState;
 class InputQuery;
 class PiecewiseLinearConstraint;
@@ -49,8 +51,9 @@ public:
         SAT = 1,
         ERROR = 2,
         TIMEOUT = 3,
-        PHASETWOSUCCESS = 4,
-        PHASETWOFAILUER = 5,
+        QUIT_REQUESTED = 4,
+        PHASETWOSUCCESS = 5,
+        PHASETWOFAILUER = 6,
 
         NOT_DONE = 999,
     };
@@ -99,10 +102,47 @@ public:
 
     const Statistics *getStatistics() const;
 
+    InputQuery *getInputQuery();
+
     /*
       Get the exit code
     */
     Engine::ExitCode getExitCode() const;
+
+    /*
+      Get the quitRequested flag
+    */
+    std::atomic_bool *getQuitRequested();
+
+    /*
+      Get the list of input variables
+    */
+    List<unsigned> getInputVariables() const;
+
+    /*
+      Add equations and tightenings from a split.
+    */
+    void applySplit( const PiecewiseLinearCaseSplit &split );
+
+    /*
+      Reset the statistics object
+    */
+    void resetStatistics( const Statistics &statistics );
+
+    /*
+      Clear the violated PL constraints
+    */
+    void clearViolatedPLConstraints();
+
+    /*
+      PSA: The following two methods are for DnC only and should be used very
+      cauciously.
+     */
+    void resetSmtCore();
+
+    void resetExitCode();
+
+    void resetBoundTighteners();
 
 private:
     enum BasisRestorationRequired {
@@ -117,10 +157,6 @@ private:
         PERFORMED_WEAK_RESTORATION = 2,
     };
 
-    /*
-      Add equations and tightenings from a split.
-    */
-    void applySplit( const PiecewiseLinearCaseSplit &split );
 
     /*
       Perform bound tightening operations that require
@@ -226,9 +262,9 @@ private:
     AutoCostFunctionManager _costFunctionManager;
 
     /*
-      Indicates a user request to quit
+      Indicates a user/DnCManager request to quit
     */
-    bool _quitRequested;
+    std::atomic_bool _quitRequested;
 
     /*
       A code indicating how the run terminated.

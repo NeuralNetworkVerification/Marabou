@@ -125,7 +125,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
             printf( "Final statistics:\n" );
             _statistics.print();
 
-            _exitCode = Engine::TIMEOUT;
+            _exitCode = Engine::QUIT_REQUESTED;
             return false;
         }
 
@@ -488,10 +488,7 @@ void Engine::performSimplexStep()
             // Cost function is fresh --- failure is real.
             struct timespec end = TimeUtils::sampleMicro();
             _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
-            if (_phase == ONE)
-                throw InfeasibleQueryException();
-            else
-                throw SimplexPhaseTwoStuckException();
+            throw InfeasibleQueryException();
         }
     }
 
@@ -1644,6 +1641,11 @@ const Statistics *Engine::getStatistics() const
     return &_statistics;
 }
 
+InputQuery *Engine::getInputQuery()
+{
+    return &_preprocessedQuery;
+}
+
 void Engine::log( const String &message )
 {
     if ( GlobalConfiguration::ENGINE_LOGGING )
@@ -1692,6 +1694,16 @@ void Engine::quitSignal()
 Engine::ExitCode Engine::getExitCode() const
 {
     return _exitCode;
+}
+
+std::atomic_bool *Engine::getQuitRequested()
+{
+    return &_quitRequested;
+}
+
+List<unsigned> Engine::getInputVariables() const
+{
+    return _preprocessedQuery.getInputVariables();
 }
 
 void Engine::performSymbolicBoundTightening()
@@ -1782,8 +1794,46 @@ bool Engine::shouldExitDueToTimeout( unsigned timeout ) const
     return _statistics.getTotalTime() / MILLISECONDS_TO_SECONDS > timeout;
 }
 
+
 Engine::Phase Engine::getPhase() const {
     return _phase;
+}
+
+
+void Engine::resetStatistics( const Statistics &statistics )
+{
+    _statistics = statistics;
+    _smtCore.setStatistics( &_statistics );
+    _tableau->setStatistics( &_statistics );
+    _rowBoundTightener->setStatistics( &_statistics );
+    _constraintBoundTightener->setStatistics( &_statistics );
+    _preprocessor.setStatistics( &_statistics );
+    _activeEntryStrategy = _projectedSteepestEdgeRule;
+    _activeEntryStrategy->setStatistics( &_statistics );
+
+    _statistics.stampStartingTime();
+}
+
+void Engine::clearViolatedPLConstraints()
+{
+    _violatedPlConstraints.clear();
+    _plConstraintToFix = NULL;
+}
+
+void Engine::resetSmtCore()
+{
+    _smtCore = SmtCore( this );
+}
+
+void Engine::resetExitCode()
+{
+    _exitCode = Engine::NOT_DONE;
+}
+
+void Engine::resetBoundTighteners()
+{
+    _constraintBoundTightener->resetBounds();
+    _rowBoundTightener->resetBounds();
 }
 
 //

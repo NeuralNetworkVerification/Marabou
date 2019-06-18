@@ -49,23 +49,6 @@ def read_tf(filename, inputName=None, outputName=None, savedModel=False, savedMo
     """
     return MarabouNetworkTF(filename, inputName, outputName, savedModel, savedModelTags)
 
-def read_tf_weights_as_var(filename, inputVals, inputName=None, outputName=None, savedModel=False, savedModelTags=[]):
-    """
-    Constructs a MarabouNetworkTF object from a frozen Tensorflow protobuf and an input. The network weights are the variables 
-
-    Args:
-        filename: (string) If savedModel is false, path to the frozen graph .pb file.
-                           If savedModel is true, path to SavedModel folder, which
-                           contains .pb file and variables subdirectory.
-        inputVals: (array) The network input.
-        inputName: (string) optional, name of operation corresponding to input.
-        outputName: (string) optional, name of operation corresponding to output.
-        savedModel: (bool) If false, load frozen graph. If true, load SavedModel object.
-        savedModelTags: (list of strings) If loading a SavedModel, the user must specify tags used.
-    Returns:
-        marabouNetworkTF: (MarabouNetworkTF) representing network
-    """
-    return MarabouNetworkTFWeightsAsVar(filename, inputVals, inputName, outputName, savedModel, savedModelTags)
 
 
 def load_query(filename, verbose=True, timeout=0):

@@ -166,7 +166,7 @@ void CostFunctionManager::computeCoreCostFunction()
     _costFunctionStatus = ICostFunctionManager::COST_FUNCTION_JUST_COMPUTED;
 }
 
-void CostFunctionManager::x adjustBasicCostAccuracy()
+void CostFunctionManager::adjustBasicCostAccuracy()
 {
     unsigned variable;
     double assignment, lb, relaxedLb, ub, relaxedUb;
