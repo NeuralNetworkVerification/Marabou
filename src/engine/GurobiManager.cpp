@@ -32,7 +32,7 @@ void GurobiManager::setStatistics( Statistics *statistics )
     _statistics = statistics;
 }
 
-void GurobiManager::tightenBoundsOfVar(unsigned objectiveVar)
+void GurobiManager::tightenBoundsOfVar(unsigned objectiveVar, bool shouldTightenUpperBound, bool shouldTightenLowerBound)
 {
     struct timespec start = TimeUtils::sampleMicro();
 
@@ -91,26 +91,30 @@ void GurobiManager::tightenBoundsOfVar(unsigned objectiveVar)
         // Set objective
         GRBLinExpr objectiveExpr = vars[objectiveVar];
 
-        // Optimize min value
-        try {
-            model.setObjective(objectiveExpr, GRB_MINIMIZE);
-            model.optimize();
-            double minValue = model.get(GRB_DoubleAttr_ObjVal);
-            _tableau.tightenLowerBound(objectiveVar, minValue);
-            // printf("\tMin: %.2f\n", minValue);
-        } catch (...) {
-            // printf("\tMin value haven't changed\n");
+        if (shouldTightenLowerBound) {
+            // Optimize min value
+            try {
+                model.setObjective(objectiveExpr, GRB_MINIMIZE);
+                model.optimize();
+                double minValue = model.get(GRB_DoubleAttr_ObjVal);
+                _tableau.tightenLowerBound(objectiveVar, minValue);
+                // printf("\tMin: %.2f\n", minValue);
+            } catch (...) {
+                // printf("\tMin value haven't changed\n");
+            }
         }
 
-        // Optimize max value
-        try {
-            model.setObjective(objectiveExpr, GRB_MAXIMIZE);
-            model.optimize();
-            double maxValue = model.get(GRB_DoubleAttr_ObjVal);
-            _tableau.tightenUpperBound(objectiveVar, maxValue);
-            // printf("\tMax: %.2f\n", maxValue);
-        } catch(...) {
-            // printf("\tMax value haven't changed\n");
+        if (shouldTightenUpperBound) {
+            // Optimize max value
+            try {
+                model.setObjective(objectiveExpr, GRB_MAXIMIZE);
+                model.optimize();
+                double maxValue = model.get(GRB_DoubleAttr_ObjVal);
+                _tableau.tightenUpperBound(objectiveVar, maxValue);
+                // printf("\tMax: %.2f\n", maxValue);
+            } catch(...) {
+                // printf("\tMax value haven't changed\n");
+            }
         }
 
     } catch(GRBException e) {

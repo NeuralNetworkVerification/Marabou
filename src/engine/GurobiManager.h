@@ -30,7 +30,7 @@ public:
     GurobiManager(ITableau &tableau);
     ~GurobiManager();
 
-	void tightenBoundsOfVar(unsigned objectiveVar);
+	void tightenBoundsOfVar(unsigned objectiveVar, bool shouldTightenUpperBound, bool shouldTightenLowerBound);
 
     /*
       Have the Gurobi manager start reporting statistics.
