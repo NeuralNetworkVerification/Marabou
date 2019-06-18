@@ -23,6 +23,7 @@
 #include "PiecewiseLinearCaseSplit.h"
 #include "PropertyParser.h"
 #include "QueryDivider.h"
+#include "ReluplexError.h"
 
 #include <atomic>
 #include <chrono>
