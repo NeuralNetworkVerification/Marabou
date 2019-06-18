@@ -46,6 +46,7 @@ LOCAL_INCLUDES += \
 	$(COMMON_DIR) \
 	$(CXXTEST_DIR) \
 	$(GUROBI_INCLUDES) \
+	$(BOOST_INCLUDES) \
 
 CFLAGS += \
 	-MMD \
@@ -76,6 +77,7 @@ LIBRARY_DIR += \
 LIBRARIES += \
 	gurobi_c++ \
 	gurobi81 \
+	pthread \
 
 LINK_FLAGS += \
 

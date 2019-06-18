@@ -5,11 +5,14 @@ SOURCES += \
 	CostFunctionManager.cpp \
 	DantzigsRule.cpp \
 	DegradationChecker.cpp \
+	DnCManager.cpp \
+	DnCWorker.cpp \
 	Engine.cpp \
 	EngineState.cpp \
 	EntrySelectionStrategy.cpp \
 	Equation.cpp \
 	InputQuery.cpp \
+	LargestIntervalDivider.cpp \
 	MaxConstraint.cpp \
 	NetworkLevelReasoner.cpp \
 	PiecewiseLinearCaseSplit.cpp \
@@ -17,6 +20,7 @@ SOURCES += \
 	PrecisionRestorer.cpp \
 	Preprocessor.cpp \
 	ProjectedSteepestEdge.cpp \
+	QueryDivider.cpp \
 	ReluConstraint.cpp \
 	RowBoundTightener.cpp \
 	Simulator.cpp \

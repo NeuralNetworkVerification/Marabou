@@ -17,7 +17,7 @@
 '''
 
 from .MarabouUtils import *
-from . import MarabouNetwork
+from maraboupy import MarabouNetwork
 import numpy as np
 
 class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
