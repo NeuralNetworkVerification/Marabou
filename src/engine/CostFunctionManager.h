@@ -26,6 +26,7 @@ class CostFunctionManager : public ICostFunctionManager
 {
 public:
     CostFunctionManager( ITableau *talbeau );
+    CostFunctionManager( ITableau *talbeau, double *costFunction );
     ~CostFunctionManager();
 
     /*

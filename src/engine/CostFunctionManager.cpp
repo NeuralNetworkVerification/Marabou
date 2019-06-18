@@ -21,14 +21,26 @@
 #include "TableauRow.h"
 
 CostFunctionManager::CostFunctionManager( ITableau *tableau )
-    : _tableau( tableau )
-    , _costFunction( NULL )
-    , _basicCosts( NULL )
-    , _multipliers( NULL )
-    , _n( 0 )
-    , _m( 0 )
-    , _costFunctionStatus( COST_FUNCTION_INVALID )
-    , _ANColumn( NULL )
+        : _tableau( tableau )
+        , _costFunction( NULL )
+        , _basicCosts( NULL )
+        , _multipliers( NULL )
+        , _n( 0 )
+        , _m( 0 )
+        , _costFunctionStatus( COST_FUNCTION_INVALID )
+        , _ANColumn( NULL )
+{
+}
+
+CostFunctionManager::CostFunctionManager( ITableau *tableau , double *costFunction)
+        : _tableau( tableau )
+        , _costFunction( costFunction )
+        , _basicCosts( NULL )
+        , _multipliers( NULL )
+        , _n( 0 )
+        , _m( 0 )
+        , _costFunctionStatus( COST_FUNCTION_INVALID )
+        , _ANColumn( NULL )
 {
 }
 
@@ -88,7 +100,7 @@ void CostFunctionManager::computeCostFunction( const Map<unsigned, double> &heur
 
       The heuristic cost may include variables that are basic and variables
       that are non-basic. The basic variables are added to the vector of basic
-      costs, which is normally used in computing the core cost fuction.
+      costs, which is normally used in computing the core cost function.
       Afterwards, once the modified core cost function has been computed,
       the remaining, non-basic variables are added.
     */
@@ -154,7 +166,7 @@ void CostFunctionManager::computeCoreCostFunction()
     _costFunctionStatus = ICostFunctionManager::COST_FUNCTION_JUST_COMPUTED;
 }
 
-void CostFunctionManager::adjustBasicCostAccuracy()
+void CostFunctionManager::x adjustBasicCostAccuracy()
 {
     unsigned variable;
     double assignment, lb, relaxedLb, ub, relaxedUb;

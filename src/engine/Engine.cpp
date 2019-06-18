@@ -157,7 +157,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
             // Restoration is not required
             _basisRestorationPerformed = Engine::NO_RESTORATION_PERFORMED;
 
-            // Possible restoration due to preceision degradation
+            // Possible restoration due to precision degradation
             if ( shouldCheckDegradation() && highDegradation() )
             {
                 performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
@@ -186,7 +186,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 throw InfeasibleQueryException();
             }
 
-            if ( allVarsWithinBounds() )
+            if ( _phase == ONE && allVarsWithinBounds() )
             {
                 // The linear portion of the problem has been solved.
                 // Check the status of the PL constraints
@@ -210,7 +210,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
                     return true;
                 }
 
-                // We have violated piecewise-linear constraints.
+                // We have violated piecewise-linear constraints
                 performConstraintFixingStep();
 
                 // Finally, take this opporunity to tighten any bounds
@@ -227,6 +227,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
             }
 
             // We have out-of-bounds variables.
+            // Or we are performing phase TWO of the simplex algorithm
             performSimplexStep();
             continue;
         }
@@ -259,6 +260,19 @@ bool Engine::solve( unsigned timeoutInSeconds )
         }
         catch ( const InfeasibleQueryException & )
         {
+            if (_phase == TWO)
+            {
+                // Simplex phase two has finished
+                printf( "\nEngine::solve: found an optimal (minimal) solution for the cost function\n" );
+                printf("\nThe cost function is: ");
+                _costFunctionManager->dumpCostFunction();
+                printf("\nThe optimal assignment is: ");
+                _tableau->dumpAssignment();
+                _exitCode = Engine::PHASETWOSUCCESS;
+                return true;
+
+            }
+
             // The current query is unsat, and we need to pop.
             // If we're at level 0, the whole query is unsat.
             if ( !_smtCore.popSplit() )
@@ -345,17 +359,28 @@ void Engine::performSimplexStep()
     DEBUG({
             // Since we're performing a simplex step, there are out-of-bounds variables.
             // Therefore, if the cost function is fresh, it should not be zero.
+            // Likewise, if we are performing phase TWO of simplex, the const function should
+            // be never recomputed.
             if ( _costFunctionManager->costFunctionJustComputed() )
             {
                 const double *costFunction = _costFunctionManager->getCostFunction();
                 unsigned size = _tableau->getN() - _tableau->getM();
                 bool found = false;
-                for ( unsigned i = 0; i < size; ++i )
+
+                if (_phase == TWO)
                 {
-                    if ( !FloatUtils::isZero( costFunction[i] ) )
-                    {
-                        found = true;
-                        break;
+                    printf( "Error! Phase two of simplex, "
+                            "but the cost function was found invalid in performSimplexStep: \n");
+                    _costFunctionManager->dumpCostFunction();
+                    throw ReluplexError( ReluplexError::DEBUGGING_ERROR,
+                                         "Cost function invalid in phase TWO" );
+                }
+                else {
+                    for (unsigned i = 0; i < size; ++i) {
+                        if (!FloatUtils::isZero(costFunction[i])) {
+                            found = true;
+                            break;
+                        }
                     }
                 }
 
@@ -448,7 +473,7 @@ void Engine::performSimplexStep()
             _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
             return;
         }
-        else if ( !_costFunctionManager->costFunctionJustComputed() )
+        else if ( !_costFunctionManager->costFunctionJustComputed() || (_phase == ONE))
         {
             // This failure might have resulted from a corrupt cost function.
             ASSERT( _costFunctionManager->getCostFunctionStatus() ==
@@ -463,7 +488,10 @@ void Engine::performSimplexStep()
             // Cost function is fresh --- failure is real.
             struct timespec end = TimeUtils::sampleMicro();
             _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
-            throw InfeasibleQueryException();
+            if (_phase == ONE)
+                throw InfeasibleQueryException();
+            else
+                throw SimplexPhaseTwoStuckException();
         }
     }
 
@@ -1752,6 +1780,10 @@ bool Engine::shouldExitDueToTimeout( unsigned timeout ) const
         return false;
 
     return _statistics.getTotalTime() / MILLISECONDS_TO_SECONDS > timeout;
+}
+
+Engine::Phase Engine::getPhase() const {
+    return _phase;
 }
 
 //

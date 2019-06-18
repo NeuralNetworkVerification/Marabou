@@ -268,7 +268,7 @@ public:
     void computeCostFunction();
 
     /*
-      Updat the cost function for an adjacement basis. Requires the
+      Update the cost function for an adjacement [Guy, adjacent?] basis. Requires the
       change column and pivot row to have been computed previously.
     */
     void updateCostFunctionForPivot();

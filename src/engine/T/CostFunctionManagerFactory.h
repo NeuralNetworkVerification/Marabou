@@ -24,6 +24,7 @@ class ITableau;
 namespace T
 {
 	ICostFunctionManager *createCostFunctionManager( ITableau *tableau );
+    ICostFunctionManager *createCostFunctionManager( ITableau *tableau , double *costFunction);
 	void discardCostFunctionManager( ICostFunctionManager *costFunctionManager );
 }
 

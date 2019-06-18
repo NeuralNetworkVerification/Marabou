@@ -49,8 +49,18 @@ public:
         SAT = 1,
         ERROR = 2,
         TIMEOUT = 3,
+        PHASETWOSUCCESS = 4,
+        PHASETWOFAILUER = 5,
 
         NOT_DONE = 999,
+    };
+
+    /*
+        Phase of simplex -- one (no optimization) or two (with optimization)
+     */
+    enum Phase {
+        ONE = 1,
+        TWO = 2,
     };
 
     /*
@@ -85,6 +95,8 @@ public:
     */
     void quitSignal();
 
+    Engine::Phase getPhase() const;
+
     const Statistics *getStatistics() const;
 
     /*
@@ -115,6 +127,9 @@ private:
       access to the explicit basis matrix.
     */
     void explicitBasisBoundTightening();
+
+    /* phase (one or two) of the current simplex run */
+    Phase _phase;
 
     /*
       Collect and print various statistics.

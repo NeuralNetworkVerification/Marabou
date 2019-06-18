@@ -13,6 +13,8 @@
 
 **/
 
+#include <T/CostFunctionManagerFactory.h>
+
 #include "CostFunctionManager.h"
 
 class ITableau;
@@ -24,10 +26,16 @@ namespace T
 		return new CostFunctionManager( tableau );
 	}
 
+    ICostFunctionManager *createCostFunctionManager(ITableau *tableau, double *costFunction) {
+        return new CostFunctionManager( tableau , costFunction);
+    }
+
 	void discardCostFunctionManager( ICostFunctionManager *costFunctionManager )
 	{
 		delete costFunctionManager;
 	}
+
+
 }
 
 //

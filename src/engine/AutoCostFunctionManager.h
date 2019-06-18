@@ -27,6 +27,11 @@ public:
 		_costFunctionManager = T::createCostFunctionManager( tableau );
 	}
 
+    AutoCostFunctionManager( ITableau *tableau , double *costFunction)
+    {
+        _costFunctionManager = T::createCostFunctionManager( tableau, costFunction );
+    }
+
 	~AutoCostFunctionManager()
 	{
 		T::discardCostFunctionManager( _costFunctionManager );

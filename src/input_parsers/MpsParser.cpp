@@ -172,7 +172,7 @@ void MpsParser::parseColumn( const String &line )
         else
         {
             // The pair describes a coefficient in an unknown equation (the objective function?)
-            if ( !coefficient == 0 )
+            if ( !(coefficient == 0) )
                 throw InputParserError( InputParserError::UNEXPECTED_INPUT,
                                         Stringf( "Problematic pair: %s, %.2lf", equationName.ascii(), coefficient ).ascii() );
         }
