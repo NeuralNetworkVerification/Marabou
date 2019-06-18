@@ -98,6 +98,11 @@ public:
     Engine::ExitCode getExitCode() const;
 
     /*
+      Get the quitRequested flag
+    */
+    std::atomic_bool *getQuitRequested();
+
+    /*
       Get the list of input variables
     */
     List<unsigned> getInputVariables() const;
@@ -242,7 +247,7 @@ private:
     AutoCostFunctionManager _costFunctionManager;
 
     /*
-      Indicates a user request to quit
+      Indicates a user/DnCManager request to quit
     */
     std::atomic_bool _quitRequested;
 

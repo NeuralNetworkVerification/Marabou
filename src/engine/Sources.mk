@@ -5,6 +5,7 @@ SOURCES += \
 	CostFunctionManager.cpp \
 	DantzigsRule.cpp \
 	DegradationChecker.cpp \
+	DnCManager.cpp \
 	DnCWorker.cpp \
 	Engine.cpp \
 	EngineState.cpp \

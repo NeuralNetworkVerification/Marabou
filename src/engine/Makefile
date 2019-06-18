@@ -6,16 +6,15 @@ SUBDIRS += \
 	tests \
 
 LOCAL_INCLUDES += \
-	.. \
 	$(BASIS_FACTORIZATION_DIR) \
 	$(CONFIGURATION_DIR) \
 	$(INPUT_PARSER_DIR) \
-	$(BOOST_INCLUDES)
+	$(BOOST_INCLUDES) \
 
 LINK_FLAGS += \
 
 LIBRARY_DIR += \
-	$(BOOST_LIBS) \
+	$(BOOST_LIBS_DIR) \
 
 LIBRARIES += \
 	boost_program_options \

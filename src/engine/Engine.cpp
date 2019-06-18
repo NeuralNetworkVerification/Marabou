@@ -1671,6 +1671,11 @@ Engine::ExitCode Engine::getExitCode() const
     return _exitCode;
 }
 
+std::atomic_bool *Engine::getQuitRequested()
+{
+    return &_quitRequested;
+}
+
 List<unsigned> Engine::getInputVariables() const
 {
     return _preprocessedQuery.getInputVariables();
