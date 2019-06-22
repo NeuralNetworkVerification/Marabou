@@ -52,10 +52,18 @@ void AbsConstraint::unregisterAsWatcher( ITableau *tableau )
 
 /*
   The variable watcher notifcation callbacks, about a change in a variable's value or bounds.
+  suppose A < x_b < B, C < x_f < D
+  if variable == x_b then:
+    A < 0 & B < 0 then: max{|B|, C} < x_f < min{|A|, D}
+    A < 0 & B > 0 then: max{0, C) < x_f < min{max{|A|, B}, D}
+    A > 0 & B < 0 then: ------
+    A > 0 & B > 0 then: max{A, C} < x_f < min{B, D}
+  if variable == x_f then:
+    C > 0 & D > 0 then: min{max{-D, A}, max{A, C}} < x_b < max{min{-C, A}, min{B, D}}
+
 */
 void AbsConstraint::notifyVariableValue( unsigned variable, double value)
 {
-    //todo: ask guy if its ok
     _assignment[variable] = value;
 }
 
@@ -64,30 +72,47 @@ void AbsConstraint::notifyLowerBound( unsigned variable, double bound)
     if ( _statistics )
         _statistics->incNumBoundNotificationsPlConstraints();
 
-    if ( _lowerBounds.exists( variable ) && !FloatUtils::gt( bound, _lowerBounds[variable] ) )
-        return;
-
     _lowerBounds[variable] = bound;
 
-    if ( (variable == _f || variable == _b) && FloatUtils::isPositive( bound ) )
+    if ( (variable == _b) && !FloatUtils::isNegative( bound ) )
         setPhaseStatus( PhaseStatus::PHASE_POSITIVE );
 
     if ( isActive() && _constraintBoundTightener )
     {
-        unsigned partner = ( variable == _f ) ? _b : _f;
+       if ( variable == _b)
+       {
+           if( bound < 0)
+           {
+               double newUpperBound = FloatUtils::abs(bound);
+               if ( _lowerBounds.exists( _f ) )
+               {
+                   newUpperBound = FloatUtils::min( _upperBounds[_f], newUpperBound );
+               }
+               _constraintBoundTightener->registerTighterUpperBound( _f, newUpperBound );
+           }
+           else if ( bound >= 0 )
+           {
+               double newLowerBound = bound;
+               if ( _lowerBounds.exists( _f ) )
+               {
+                   newLowerBound = FloatUtils::max( _lowerBounds[_f], newLowerBound );
+               }
+               _constraintBoundTightener->registerTighterLowerBound( _f, newLowerBound );
+           }
+       }
+       else if ( variable == _f)
+       {
+           double newUpperBound = -1 * bound;
+           double newLowerBound = bound;
+           if ( _lowerBounds.exists( _b ) )
+           {
+               newUpperBound = FloatUtils::min( _upperBounds[_b], newUpperBound );
+               newLowerBound = FloatUtils::max( _lowerBounds[_b], newLowerBound );
+           }
+           _constraintBoundTightener->registerTighterLowerBound( _b, newLowerBound );
+           _constraintBoundTightener->registerTighterUpperBound( _b, newUpperBound );
 
-        if ( _lowerBounds.exists( partner ) )
-        {
-            double otherLowerBound = _lowerBounds[partner];
-            if ( bound > otherLowerBound )
-            {
-                    _constraintBoundTightener->registerTighterLowerBound( partner, bound );
-            }
-            else
-            {
-                _constraintBoundTightener->registerTighterLowerBound( partner, bound );
-            }
-        }
+       }
     }
 }
 
@@ -96,26 +121,45 @@ void AbsConstraint::notifyUpperBound(  unsigned variable, double bound )
     if ( _statistics )
         _statistics->incNumBoundNotificationsPlConstraints();
 
-    if ( _upperBounds.exists( variable ) && !FloatUtils::lt( bound, _upperBounds[variable] ) )
-        return;
-
     _upperBounds[variable] = bound;
 
-    if ( ( variable == _f || variable == _b ) && FloatUtils::isNegative( bound ) )
+    if ( ( variable == _b ) && FloatUtils::isNegative( bound ) )
         setPhaseStatus( PhaseStatus::PHASE_NEGATIVE );
 
-    if ( isActive() && _constraintBoundTightener ) {
-        unsigned partner = (variable == _f) ? _b : _f;
-
-        if (_upperBounds.exists(partner)) {
-            double otherUpperBound = _upperBounds[partner];
-            if (bound < otherUpperBound) {
-                _constraintBoundTightener->registerTighterUpperBound(partner, bound);
+    if ( isActive() && _constraintBoundTightener )
+    {
+        if ( variable == _b)
+        {
+            if( bound < 0)
+            {
+                double newLowerBound = FloatUtils::abs(bound);
+                if ( _lowerBounds.exists( _f ) )
+                {
+                    newLowerBound = FloatUtils::max( _lowerBounds[_f], newLowerBound );
+                }
+                _constraintBoundTightener->registerTighterLowerBound( _f, newLowerBound );
+            }
+            else if ( bound >= 0 )
+            {
+                double newUpperBound = bound;
+                if ( _lowerBounds.exists( _f ) )
+                {
+                    newUpperBound = FloatUtils::max( _upperBounds[_f], newUpperBound );
+                }
+                _constraintBoundTightener->registerTighterUpperBound( _f, newUpperBound );
             }
         }
-        else
+        else if ( variable == _f)
         {
-            _constraintBoundTightener->registerTighterUpperBound( partner, bound );
+            double newUpperBound = bound;
+            double newLowerBound = -1 * bound;
+            if ( _lowerBounds.exists( _b ) )
+            {
+                newUpperBound = FloatUtils::min( _upperBounds[_b], newUpperBound );
+                newLowerBound = FloatUtils::max( _lowerBounds[_b], newLowerBound );
+            }
+            _constraintBoundTightener->registerTighterLowerBound( _b, newLowerBound );
+            _constraintBoundTightener->registerTighterUpperBound( _b, newUpperBound );
         }
     }
 }
@@ -284,7 +328,6 @@ void AbsConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
         _b = newIndex;
     else
         _f = newIndex;
-
 }
 
 /**
@@ -328,21 +371,13 @@ void AbsConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
 
 }
 
-
-
-
 void AbsConstraint::getAuxiliaryEquations( __attribute__((unused)) List<Equation> &newEquations ) const {}
-
 
 String AbsConstraint::serializeToString() const
 {
     // Output format is: Abs,f,b
     return Stringf( "Abs,%u,%u", _f, _b );
 }
-
-
-
-
 
 void AbsConstraint::setPhaseStatus( PhaseStatus phaseStatus )
 {
