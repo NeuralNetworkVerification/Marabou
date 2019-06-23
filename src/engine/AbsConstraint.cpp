@@ -185,7 +185,7 @@ bool AbsConstraint::satisfied() const
 
     // Possible violations:
     //   1. f is negative
-    //   2. f is positive, abs(b) and f are disequal
+    //   2. f is positive, abs(b) and f are not equal
 
     if ( FloatUtils::isNegative( fValue ) )
         return false;
