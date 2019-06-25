@@ -39,11 +39,20 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete mock );
     }
 
-    void test_abs_constraint() {
+    void test_abs_entailed_tighteningst() {
         unsigned b = 1;
         unsigned f = 4;
 
         AbsConstraint abs(b, f);
+        List<Tightening> entailedTightenings;
+        abs.notifyUpperBound( b, 7 );
+        abs.notifyUpperBound( f, 7 );
+
+        abs.notifyLowerBound( b, -1 );
+        abs.notifyLowerBound( f, 0 );
+        abs.getEntailedTightenings( entailedTightenings );
+//        TS_ASSERT( entailedTightenings.empty() );
+
         TS_ASSERT(abs.duplicateConstraint())
     }
 };
