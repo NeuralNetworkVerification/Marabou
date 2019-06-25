@@ -51,11 +51,11 @@ void AbsConstraint::unregisterAsWatcher( ITableau *tableau )
 
 
 /*
-  The variable watcher notifcation callbacks, about a change in a variable's value or bounds.
+  The variable watcher notification callbacks, about a change in a variable's value or bounds.
   suppose A < x_b < B, C < x_f < D
   if variable == x_b then:
     A < 0 & B < 0 then: max{|B|, C} < x_f < min{|A|, D}
-    A < 0 & B > 0 then: max{0, C) < x_f < min{max{|A|, B}, D}
+    A < 0 & B > 0 then: max{0, C} < x_f < min{max{|A|, B}, D}
     A > 0 & B < 0 then: ------
     A > 0 & B > 0 then: max{A, C} < x_f < min{B, D}
   if variable == x_f then:
@@ -72,11 +72,17 @@ void AbsConstraint::notifyLowerBound( unsigned variable, double bound)
     if ( _statistics )
         _statistics->incNumBoundNotificationsPlConstraints();
 
+    //update the input variable bound
+    if ( _lowerBounds.exists( variable ) && !FloatUtils::gt( bound, _lowerBounds[variable] ) )
+        return;
+
     _lowerBounds[variable] = bound;
 
+    //fix phase, only by x_b because x_b <= x_f
     if ( (variable == _b) && !FloatUtils::isNegative( bound ) )
         setPhaseStatus( PhaseStatus::PHASE_POSITIVE );
 
+    //update partner's bound
     if ( isActive() && _constraintBoundTightener )
     {
        if ( variable == _b)
@@ -121,11 +127,18 @@ void AbsConstraint::notifyUpperBound(  unsigned variable, double bound )
     if ( _statistics )
         _statistics->incNumBoundNotificationsPlConstraints();
 
-    _upperBounds[variable] = bound;
+    //update the input variable bound
+    if ( _lowerBounds.exists( variable ) && !FloatUtils::gt( bound, _lowerBounds[variable] ) )
+        return;
 
+    _lowerBounds[variable] = bound;
+
+
+    //fix phase, only by x_b because x_b <= x_f
     if ( ( variable == _b ) && FloatUtils::isNegative( bound ) )
         setPhaseStatus( PhaseStatus::PHASE_NEGATIVE );
 
+    //update partner's bound
     if ( isActive() && _constraintBoundTightener )
     {
         if ( variable == _b)
@@ -340,34 +353,27 @@ bool AbsConstraint::constraintObsolete() const
     return _haveEliminatedVariables;
 }
 
+/*
+  Get the tightenings entailed by the constraint.
+  suppose A < x_b < B, C < x_f < D, remainder C >= 0 ,D > 0
+    A > 0 & B > 0 & C >= 0 then: max{A, C} < x_b, x_f < min{B, D}
+    A > 0 & B < 0 & C >= 0 then: ------
+    A < 0 & B > 0 & C > 0  then: can't decide need to split
+    A < 0 & B > 0 & C = 0  then: max{-D, A} < x_b < min{B,D} & 0 < x_f < min{max{|A|, B}, D}
+    A < 0 & B < 0 & c >= 0 then: max{-D, A} < x_b < min{B,-C} & max{|B|, C} < x_f < min{|A|, D}
+*/
 void AbsConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
 {
+    //todo: ask guy if it's o.k
+
+    if (! _lowerBounds.exists( _f ))
+    {
+        tightenings.append( Tightening( _f, 0.0, Tightening::LB ) );
+    }
+
     ASSERT( _lowerBounds.exists( _b ) && _lowerBounds.exists( _f ) &&
             _upperBounds.exists( _b ) && _upperBounds.exists( _f ) );
 
-    // Upper bounds
-    double bUpperBound = _upperBounds[_b];
-    double fUpperBound = _upperBounds[_f];
-
-    double minUpperBound =
-            FloatUtils::lt( bUpperBound, fUpperBound ) ? bUpperBound : fUpperBound;
-    // The minimal bound is non-negative. Should match for both f and b.
-    if ( FloatUtils::lt( minUpperBound, bUpperBound ) )
-        tightenings.append( Tightening( _b, minUpperBound, Tightening::UB ) );
-    else if ( FloatUtils::lt( minUpperBound, fUpperBound ) )
-        tightenings.append( Tightening( _f, minUpperBound, Tightening::UB ) );
-
-    // Lower bounds
-    double bLowerBound = _lowerBounds[_b];
-    double fLowerBound = _lowerBounds[_f];
-
-    double maxLowerBound =
-            FloatUtils::gt( bLowerBound, fLowerBound ) ? bLowerBound : fLowerBound;
-    // The minimal bound is non-negative. Should match for both f and b.
-    if ( FloatUtils::gt( maxLowerBound, bLowerBound ) )
-        tightenings.append( Tightening( _b, minUpperBound, Tightening::LB ) );
-    else if ( FloatUtils::lt( maxLowerBound, fLowerBound ) )
-        tightenings.append( Tightening( _f, maxLowerBound, Tightening::LB ) );
 
 }
 

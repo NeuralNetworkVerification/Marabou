@@ -90,11 +90,6 @@ public:
 
 
 
-
-
-
-
-
 private:
     // variables name. example x_1, x_2, etc.
     unsigned _b, _f;
