@@ -128,10 +128,10 @@ void AbsConstraint::notifyUpperBound(  unsigned variable, double bound )
         _statistics->incNumBoundNotificationsPlConstraints();
 
     //update the input variable bound
-    if ( _lowerBounds.exists( variable ) && !FloatUtils::gt( bound, _lowerBounds[variable] ) )
+    if ( _upperBounds.exists( variable ) && !FloatUtils::lt( bound, _upperBounds[variable] ) )
         return;
 
-    _lowerBounds[variable] = bound;
+    _upperBounds[variable] = bound;
 
 
     //fix phase, only by x_b because x_b <= x_f
