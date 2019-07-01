@@ -226,6 +226,11 @@ private:
     bool _preprocessingEnabled;
 
     /*
+      Is the initial state stored?
+    */
+    bool _initialStateStored;
+
+    /*
       Work memory (of size m)
     */
     double *_work;
