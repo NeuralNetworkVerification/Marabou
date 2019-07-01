@@ -17,8 +17,7 @@ information about the input formats please check the
 
 Download
 ------------------------------------------------------------------------------
-The latest version of Marabou is available on GitHub:
-[http://github.com/GuyKatzz/Marabou].
+The latest version of Marabou is available on (GitHub)[http://github.com/GuyKatzz/Marabou].
 
 ## Static binaries
 
@@ -68,10 +67,15 @@ After building Marabou the binary is located at ... The repository contains samp
 ### Jupyter notebook using Python interface 
 An example jupyter notebook is available at ... It is ready to run assuming the python interface is build and the jupyter and python paths exported correctly.
 
-Related projects
+Acknowledgments
 -----------------------------------------------------------------------------
-Marabou is used for a number of flagship projects at [Stanford's AISafety
+Marabou is sponsored by NSF, DARPA, Intel, Siemens, Ford, GE.
+
+
+Marabou is used in a number of flagship projects at [Stanford's AISafety
 center](http://aisafety.stanford.edu).
+
+
 
 People
 -----------------------------------------------------------------------------
@@ -83,4 +87,14 @@ People
 
 [Ahmed Irfan](https://profiles.stanford.edu/ahmed-irfan)
 
-[Haoze Wu]()
+[Haoze Wu](http://www.haozewu.com/)
+
+[Derek A. Huang]() 
+[Duligur Ibeling]()
+[Kyle Julian]() 
+[Christopher Lazarus]()
+[Rachel Lim]()
+[Parth Shah]()
+[Shantanu Thakoor]() 
+[Chelsea Sidrane]()_
+...
