@@ -159,8 +159,9 @@ void DnCWorker::run()
 
 void DnCWorker::printProgress( String queryId, Engine::ExitCode result ) const
 {
-    printf( "Query %s %s, %d tasks remaining\n", queryId.ascii(),
-            exitCodeToString( result ).ascii(), _numUnsolvedSubQueries->load() );
+    printf( "Worker %d: Query %s %s, %d tasks remaining\n", _threadId,
+            queryId.ascii(), exitCodeToString( result ).ascii(),
+            _numUnsolvedSubQueries->load() );
 }
 
 String DnCWorker::exitCodeToString( Engine::ExitCode result )

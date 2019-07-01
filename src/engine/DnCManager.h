@@ -138,7 +138,7 @@ private:
     /*
       Set of subQueries to be solved by workers
     */
-    WorkerQueue* _workload;
+    WorkerQueue *_workload;
 };
 
 #endif // __DnCManager_h__

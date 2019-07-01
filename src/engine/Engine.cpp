@@ -1792,6 +1792,7 @@ void Engine::clearViolatedPLConstraints()
 
 void Engine::resetSmtCore()
 {
+    _smtCore.freeMemory();
     _smtCore = SmtCore( this );
 }
 

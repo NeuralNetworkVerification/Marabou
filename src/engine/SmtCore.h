@@ -98,6 +98,11 @@ public:
     bool checkSkewFromDebuggingSolution();
     bool splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split, String &error ) const;
 
+    /*
+      Clear the stack
+    */
+    void freeMemory();
+
 private:
     /*
       A stack entry consists of the engine state before the split,

@@ -27,7 +27,7 @@ public:
 
     std::unique_ptr<LargestIntervalDivider> queryDivider;
     List<unsigned> inputVariables;
-    unsigned timeoutFactor;
+    double timeoutFactor;
 
     void setUp()
     {
