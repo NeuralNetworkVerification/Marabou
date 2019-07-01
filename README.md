@@ -11,15 +11,18 @@ Marabou supports fully connected feed-forward and convolutional NNs with
 piece-wise linear activation functions, in the .nnet and TensorFlow formats.
 Properties can be specified using inequalites over input and output variables.
 For more details about the features of Marabou check out the [tool
-paper](marabouCAV2019.pdf) or the [slides](slides.pdf). For more information
-about the input formats please check the [wiki](TODO:formats_page).
+paper](marabouCAV2019.pdf) or the [slides](marabouSlides.pdf). For more
+information about the input formats please check the
+[wiki](https://github.com/guykatzz/Marabou/wiki/Marabou-Input-Formats).
 
 Download
 ------------------------------------------------------------------------------
 The latest version of Marabou is available on GitHub:
 [http://github.com/GuyKatzz/Marabou].
 
-Static binaries are available from ...
+## Static binaries
+
+Precompiled binaries are available [here](https://aisafety.stanford.edu/marabou/)
 
 Build and Dependencies
 ------------------------------------------------------------------------------
