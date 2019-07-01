@@ -24,6 +24,7 @@
 #include "PropertyParser.h"
 #include "QueryDivider.h"
 #include "ReluplexError.h"
+#include "TimeUtils.h"
 
 #include <atomic>
 #include <chrono>
@@ -56,6 +57,7 @@ DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
     , _propertyFilePath( propertyFilePath )
     , _exitCode( DnCManager::NOT_DONE )
     , _workload( NULL )
+    , _timeoutReached( false )
 {
 }
 
@@ -80,8 +82,12 @@ void DnCManager::freeMemoryIfNeeded()
     }
 }
 
-void DnCManager::solve()
+void DnCManager::solve( unsigned timeoutInSeconds )
 {
+
+    unsigned long long timeoutInMicroSeconds = timeoutInSeconds * 1000000;
+    struct timespec startTime = TimeUtils::sampleMicro();
+
     if ( !createEngines() )
     {
         _exitCode = DnCManager::UNSAT;
@@ -128,8 +134,12 @@ void DnCManager::solve()
     // Wait until either all subqueries are solved or a satisfying assignment is
     // found by some worker
     while ( numUnsolvedSubqueries.load() > 0 &&
-            !shouldQuitSolving.load() )
+            !shouldQuitSolving.load() &&
+            !_timeoutReached )
+    {
+        updateTimeoutReached( startTime, timeoutInMicroSeconds );
         std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
+    }
 
     // Now that we are done, quit all workers
     for ( auto &quitThread : quitThreads )
@@ -171,6 +181,8 @@ void DnCManager::updateDnCExitCode()
     }
     if ( hasSat )
         _exitCode = DnCManager::SAT;
+    else if ( _timeoutReached )
+        _exitCode = DnCManager::TIMEOUT;
     else if ( hasError )
         _exitCode = DnCManager::ERROR;
     else if ( hasQuitRequested )
@@ -306,6 +318,17 @@ void DnCManager::initialDivide( SubQueries &subQueries )
     queryDivider->createSubQueries( pow( 2, _initialDivides ), subQuery,
                                     subQueries );
 }
+
+void DnCManager::updateTimeoutReached( timespec startTime, unsigned long long
+                                       timeoutInMicroSeconds )
+{
+    if ( timeoutInMicroSeconds == 0 )
+        return;
+    struct timespec now = TimeUtils::sampleMicro();
+    _timeoutReached = TimeUtils::timePassed( startTime, now ) >=
+        timeoutInMicroSeconds;
+}
+
 
 //
 // Local Variables:

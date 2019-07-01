@@ -36,7 +36,7 @@ void DnCMarabou::run( Options *options )
     unsigned num_workers = options->getInt( Options::NUM_WORKERS );
     unsigned online_divides = options->getInt( Options::NUM_ONLINE_DIVIDES );
     //unsigned verbosity = options->getInt( Options::VERBOSITY );
-    //unsigned timeout = options->getInt( Options::TIMEOUT );
+    unsigned timeoutInSeconds = options->getInt( Options::TIMEOUT );
     float timeout_factor = options->getFloat( Options::TIMEOUT_FACTOR );
     String summaryFilePath = options->getString( Options::SUMMARY_FILE );
 
@@ -69,7 +69,7 @@ void DnCMarabou::run( Options *options )
 
     struct timespec start = TimeUtils::sampleMicro();
 
-    _dncManager->solve();
+    _dncManager->solve( timeoutInSeconds );
 
     struct timespec end = TimeUtils::sampleMicro();
 

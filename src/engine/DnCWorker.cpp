@@ -77,6 +77,12 @@ void DnCWorker::run()
             // Create a new statistics object for each subQuery
             Statistics *statistics = new Statistics();
             _engine->resetStatistics( *statistics );
+            // Reset the engine state
+            _engine->restoreState( *_initialState );
+            _engine->clearViolatedPLConstraints();
+            _engine->resetSmtCore();
+            _engine->resetBoundTighteners();
+            _engine->resetExitCode();
             // TODO: each worker is going to keep a map from *CaseSplit to an
             // object of class DnCStatistics, which contains some basic
             // statistics. The maps are owned by the DnCManager.
@@ -141,13 +147,6 @@ void DnCWorker::run()
                 *_numUnsolvedSubQueries -= 1;
                 return;
             }
-
-            // Reset the engine state
-            _engine->restoreState( *_initialState );
-            _engine->clearViolatedPLConstraints();
-            _engine->resetSmtCore();
-            _engine->resetExitCode();
-            _engine->resetBoundTighteners();
         }
         else
         {

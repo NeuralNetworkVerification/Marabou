@@ -50,7 +50,7 @@ public:
     /*
       Perform the Divide-and-conquer solving
     */
-    void solve();
+    void solve( unsigned timeoutInSeconds );
 
     /*
       Return the DnCExitCode of the DnCManager
@@ -84,6 +84,12 @@ private:
       Print the result of DnC solving
     */
     void printResult();
+
+    /*
+      Set _timeoutReached to true if timeout has reached
+    */
+    void updateTimeoutReached( timespec startTime, unsigned long long
+                               timeoutInMicroSeconds );
 
     /*
       The base engine that is used to perform the initial divides
@@ -145,6 +151,11 @@ private:
       Set of subQueries to be solved by workers
     */
     WorkerQueue *_workload;
+
+    /*
+      Whether the timeout has been reached
+    */
+    bool _timeoutReached;
 };
 
 #endif // __DnCManager_h__
