@@ -82,7 +82,7 @@ void DnCManager::freeMemoryIfNeeded()
     }
 }
 
-void DnCManager::solve( unsigned timeoutInSeconds )
+void DnCManager::solve( unsigned timeoutInSeconds, unsigned verbosity )
 {
 
     unsigned long long timeoutInMicroSeconds = timeoutInSeconds * 1000000;
