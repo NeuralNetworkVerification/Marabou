@@ -32,7 +32,7 @@ public:
     ~SmtCore();
 
     /*
-      Clear the stack
+      Clear the stack.
     */
     void freeMemory();
 
