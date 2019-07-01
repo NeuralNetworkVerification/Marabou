@@ -32,6 +32,11 @@ public:
     ~SmtCore();
 
     /*
+      Clear the stack
+    */
+    void freeMemory();
+
+    /*
       Inform the SMT core that a PL constraint is violated.
     */
     void reportViolatedConstraint( PiecewiseLinearConstraint *constraint );
@@ -97,11 +102,6 @@ public:
     void storeDebuggingSolution( const Map<unsigned, double> &debuggingSolution );
     bool checkSkewFromDebuggingSolution();
     bool splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split, String &error ) const;
-
-    /*
-      Clear the stack
-    */
-    void freeMemory();
 
 private:
     /*
