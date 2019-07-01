@@ -181,6 +181,28 @@ void DnCManager::updateDnCExitCode()
         _exitCode = DnCManager::UNSAT;
 }
 
+String DnCManager::getResultString()
+{
+    switch ( _exitCode )
+    {
+    case DnCManager::SAT:
+        return "SAT";
+    case DnCManager::UNSAT:
+        return "UNSAT";
+    case DnCManager::ERROR:
+        return "ERROR";
+    case DnCManager::NOT_DONE:
+        return "NOT_DONE";
+    case DnCManager::QUIT_REQUESTED:
+        return "QUIT_REQUESTED";
+    case DnCManager::TIMEOUT:
+        return "TIMEOUT";
+    default:
+        ASSERT( false );
+        return "";
+    }
+}
+
 void DnCManager::printResult()
 {
     switch ( _exitCode )

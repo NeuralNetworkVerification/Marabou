@@ -13,14 +13,22 @@
 
  **/
 
+#include "DnCMarabou.h"
 #include "Error.h"
 #include "Marabou.h"
+#include "Options.h"
+
 
 int main( int argc, char **argv )
 {
     try
     {
-        Marabou().run( argc, argv );
+        Options *options = Options::get();
+        options->parseOptions( argc, argv );
+        if (options->getBool( Options::DNC_MODE ))
+            DnCMarabou().run( options  );
+        else
+            Marabou().run( argc, argv );
     }
     catch ( const Error &e )
     {

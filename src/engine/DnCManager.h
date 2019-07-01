@@ -19,6 +19,7 @@
 #include "DivideStrategy.h"
 #include "Engine.h"
 #include "SubQuery.h"
+#include "Vector.h"
 
 #include <atomic>
 
@@ -55,6 +56,11 @@ public:
       Return the DnCExitCode of the DnCManager
     */
     DnCExitCode getExitCode() const;
+
+    /*
+      Get the string representation of the exitcode
+    */
+    String getResultString();
 
 private:
     /*

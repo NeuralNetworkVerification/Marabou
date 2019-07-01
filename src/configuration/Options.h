@@ -29,6 +29,20 @@ class Options
 public:
     enum BoolOptions {
         PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS = 0,
+        DNC_MODE ,
+    };
+
+    enum IntOptions {
+        NUM_WORKERS = 0,
+        NUM_INITIAL_DIVIDES,
+        NUM_ONLINE_DIVIDES,
+        INITIAL_TIMEOUT,
+        VERBOSITY,
+        TIMEOUT,
+    };
+
+    enum FloatOptions{
+        TIMEOUT_FACTOR,
     };
 
     enum StringOptions {
@@ -51,6 +65,10 @@ public:
       Retrieve the value of a boolean option
     */
     bool getBool( unsigned option ) const;
+
+    int getInt (unsigned option) const;
+
+    float getFloat (unsigned option) const;
 
     /*
       Retrieve the value of a string option
@@ -75,6 +93,8 @@ private:
       The various option values
     */
     Map<unsigned, bool> _boolOptions;
+    Map<unsigned, int> _intOptions;
+    Map<unsigned, float> _floatOptions;
     Map<unsigned, std::string> _stringOptions;
 };
 

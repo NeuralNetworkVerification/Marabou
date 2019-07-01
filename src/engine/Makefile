@@ -6,15 +6,16 @@ SUBDIRS += \
 	tests \
 
 LOCAL_INCLUDES += \
+	.. \
 	$(BASIS_FACTORIZATION_DIR) \
 	$(CONFIGURATION_DIR) \
 	$(INPUT_PARSER_DIR) \
-	$(BOOST_INCLUDES) \
+	$(BOOST_INCLUDES)
 
 LINK_FLAGS += \
 
 LIBRARY_DIR += \
-	$(BOOST_LIBS_DIR) \
+	$(BOOST_LIBS) \
 
 LIBRARIES += \
 	boost_program_options \
@@ -44,6 +45,7 @@ vpath %.cpp $(ENGINE_REAL_DIR)
 vpath %.cpp $(INPUT_PARSER_DIR)
 
 SOURCES += \
+	DnCMarabou.cpp \
 	Marabou.cpp \
 	OptionParser.cpp \
 	Options.cpp \
