@@ -34,6 +34,7 @@ Engine::Engine()
     , _smtCore( this )
     , _numPlConstraintsDisabledByValidSplits( 0 )
     , _preprocessingEnabled( false )
+    , _initialStateStored( false )
     , _work( NULL )
     , _basisRestorationRequired( Engine::RESTORATION_NOT_NEEDED )
     , _basisRestorationPerformed( Engine::NO_RESTORATION_PERFORMED )
@@ -1601,7 +1602,11 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
 
 void Engine::storeInitialEngineState()
 {
-    _precisionRestorer.storeInitialEngineState( *this );
+    if ( !_initialStateStored )
+    {
+        _precisionRestorer.storeInitialEngineState( *this );
+        _initialStateStored = true;
+    }
 }
 
 bool Engine::basisRestorationNeeded() const
@@ -1792,6 +1797,7 @@ void Engine::clearViolatedPLConstraints()
 
 void Engine::resetSmtCore()
 {
+    _smtCore.freeMemory();
     _smtCore = SmtCore( this );
 }
 
