@@ -41,7 +41,7 @@ public:
     DnCManager( unsigned numWorkers, unsigned initialDivides, unsigned
                 initialTimeout, unsigned onlineDivides, float timeoutFactor,
                 DivideStrategy divideStrategy, String networkFilePath,
-                String propertyFilePath );
+                String propertyFilePath, unsigned verbosity );
 
     ~DnCManager();
 
@@ -158,6 +158,8 @@ private:
     bool _timeoutReached;
 
     std::atomic_uint _numUnsolvedSubqueries;
+
+    unsigned _verbosity;
 };
 
 #endif // __DnCManager_h__

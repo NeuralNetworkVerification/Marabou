@@ -43,7 +43,7 @@ class String;
 class Engine : public IEngine, public SignalHandler::Signalable
 {
 public:
-    Engine();
+    Engine( unsigned verbosity=2 );
     ~Engine();
 
     enum ExitCode {
@@ -280,6 +280,14 @@ private:
       evaluation of topology-based bound tightening.
      */
     NetworkLevelReasoner *_networkLevelReasoner;
+
+    /*
+      Verbosity level:
+      0: print out minimal information
+      1: print out statistics only in the beginning and the end
+      2: print out statistics during solving
+    */
+    unsigned _verbosity;
 
     /*
       Perform a simplex step: compute the cost function, pick the

@@ -28,7 +28,7 @@
 #include "TableauRow.h"
 #include "TimeUtils.h"
 
-Engine::Engine()
+Engine::Engine( unsigned verbosity )
     : _rowBoundTightener( *_tableau )
     , _symbolicBoundTightener( NULL )
     , _smtCore( this )
@@ -44,6 +44,7 @@ Engine::Engine()
     , _constraintBoundTightener( *_tableau )
     , _numVisitedStatesAtPreviousRestoration( 0 )
     , _networkLevelReasoner( NULL )
+    , _verbosity( verbosity )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -98,9 +99,12 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
     storeInitialEngineState();
 
-    printf( "\nEngine::solve: Initial statistics\n" );
-    mainLoopStatistics();
-    printf( "\n---\n" );
+    if ( _verbosity > 0 )
+    {
+        printf( "\nEngine::solve: Initial statistics\n" );
+        mainLoopStatistics();
+        printf( "\n---\n" );
+    }
 
     struct timespec mainLoopStart = TimeUtils::sampleMicro();
     while ( true )
@@ -111,9 +115,12 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
         if ( shouldExitDueToTimeout( timeoutInSeconds ) )
         {
-            printf( "\n\nEngine: quitting due to timeout...\n\n" );
-            printf( "Final statistics:\n" );
-            _statistics.print();
+            if ( _verbosity > 0 )
+            {
+                printf( "\n\nEngine: quitting due to timeout...\n\n" );
+                printf( "Final statistics:\n" );
+                _statistics.print();
+            }
 
             _exitCode = Engine::TIMEOUT;
             _statistics.timeout();
@@ -122,9 +129,12 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
         if ( _quitRequested )
         {
-            printf( "\n\nEngine: quitting due to external request...\n\n" );
-            printf( "Final statistics:\n" );
-            _statistics.print();
+            if ( _verbosity > 0 )
+            {
+                printf( "\n\nEngine: quitting due to external request...\n\n" );
+                printf( "Final statistics:\n" );
+                _statistics.print();
+            }
 
             _exitCode = Engine::QUIT_REQUESTED;
             return false;
@@ -134,7 +144,8 @@ bool Engine::solve( unsigned timeoutInSeconds )
         {
             DEBUG( _tableau->verifyInvariants() );
 
-            mainLoopStatistics();
+            if ( _verbosity > 1 )
+                mainLoopStatistics();
 
             // If the basis has become malformed, we need to restore it
             if ( basisRestorationNeeded() )
@@ -204,9 +215,11 @@ bool Engine::solve( unsigned timeoutInSeconds )
                         _tableau->computeAssignment();
                         continue;
                     }
-
-                    printf( "\nEngine::solve: SAT assignment found\n" );
-                    _statistics.print();
+                    if ( _verbosity > 0 )
+                    {
+                        printf( "\nEngine::solve: SAT assignment found\n" );
+                        _statistics.print();
+                    }
                     _exitCode = Engine::SAT;
                     return true;
                 }
@@ -264,8 +277,11 @@ bool Engine::solve( unsigned timeoutInSeconds )
             // If we're at level 0, the whole query is unsat.
             if ( !_smtCore.popSplit() )
             {
-                printf( "\nEngine::solve: UNSAT query\n" );
-                _statistics.print();
+                if ( _verbosity > 0 )
+                {
+                    printf( "\nEngine::solve: UNSAT query\n" );
+                    _statistics.print();
+                }
                 _exitCode = Engine::UNSAT;
                 return false;
             }
@@ -621,10 +637,11 @@ void Engine::informConstraintsOfInitialBounds( InputQuery &inputQuery ) const
 
 void Engine::invokePreprocessor( const InputQuery &inputQuery, bool preprocess )
 {
-    printf( "Engine::processInputQuery: Input query (before preprocessing): "
-            "%u equations, %u variables\n",
-            inputQuery.getEquations().size(),
-            inputQuery.getNumberOfVariables() );
+    if ( _verbosity > 0 )
+        printf( "Engine::processInputQuery: Input query (before preprocessing): "
+                "%u equations, %u variables\n",
+                inputQuery.getEquations().size(),
+                inputQuery.getNumberOfVariables() );
 
     // If processing is enabled, invoke the preprocessor
     _preprocessingEnabled = preprocess;
@@ -634,10 +651,11 @@ void Engine::invokePreprocessor( const InputQuery &inputQuery, bool preprocess )
     else
         _preprocessedQuery = inputQuery;
 
-    printf( "Engine::processInputQuery: Input query (after preprocessing): "
-            "%u equations, %u variables\n\n",
-            _preprocessedQuery.getEquations().size(),
-            _preprocessedQuery.getNumberOfVariables() );
+    if ( _verbosity > 0 )
+        printf( "Engine::processInputQuery: Input query (after preprocessing): "
+                "%u equations, %u variables\n\n",
+                _preprocessedQuery.getEquations().size(),
+                _preprocessedQuery.getNumberOfVariables() );
 
     unsigned infiniteBounds = _preprocessedQuery.countInfiniteBounds();
     if ( infiniteBounds != 0 )
@@ -1029,7 +1047,8 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
     {
         informConstraintsOfInitialBounds( inputQuery );
         invokePreprocessor( inputQuery, preprocess );
-        printInputBounds( inputQuery );
+        if ( _verbosity > 0 )
+            printInputBounds( inputQuery );
 
         double *constraintMatrix = createConstraintMatrix();
         removeRedundantEquations( constraintMatrix );
@@ -1570,9 +1589,10 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
 
     // debug
     double after = _degradationChecker.computeDegradation( *_tableau );
-    printf( "Performing precision restoration. Degradation before: %.15lf. After: %.15lf\n",
-            before,
-            after );
+    if ( _verbosity > 0 )
+        printf( "Performing precision restoration. Degradation before: %.15lf. After: %.15lf\n",
+                before,
+                after );
     //
 
     if ( highDegradation() && ( restoreBasics == PrecisionRestorer::RESTORE_BASICS ) )
@@ -1591,9 +1611,10 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
 
         // debug
         double afterSecond = _degradationChecker.computeDegradation( *_tableau );
-        printf( "Performing 2nd precision restoration. Degradation before: %.15lf. After: %.15lf\n",
-                after,
-                afterSecond );
+        if ( _verbosity > 0 )
+            printf( "Performing 2nd precision restoration. Degradation before: %.15lf. After: %.15lf\n",
+                    after,
+                    afterSecond );
 
         if ( highDegradation() )
             throw ReluplexError( ReluplexError::RESTORATION_FAILED_TO_RESTORE_PRECISION );

@@ -46,7 +46,8 @@ static void dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine,
 DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
                         unsigned initialTimeout, unsigned onlineDivides,
                         float timeoutFactor, DivideStrategy divideStrategy,
-                        String networkFilePath, String propertyFilePath )
+                        String networkFilePath, String propertyFilePath,
+                        unsigned verbosity )
     : _numWorkers( numWorkers )
     , _initialDivides( initialDivides )
     , _initialTimeout( initialTimeout )
@@ -59,6 +60,7 @@ DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
     , _workload( NULL )
     , _timeoutReached( false )
     , _numUnsolvedSubqueries( 0 )
+    , _verbosity( verbosity )
 {
 }
 
@@ -263,7 +265,7 @@ bool DnCManager::createEngines()
     // Create engines for each thread
     for ( unsigned i = 0; i < _numWorkers; ++i )
     {
-        auto engine = std::make_shared<Engine>();
+        auto engine = std::make_shared<Engine>( _verbosity );
         InputQuery *inputQuery = new InputQuery();
         *inputQuery = *baseInputQuery;
         engine->processInputQuery( *inputQuery );
