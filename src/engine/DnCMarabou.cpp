@@ -62,10 +62,10 @@ void DnCMarabou::run( Options *options )
 
 
     _dncManager = std::unique_ptr<DnCManager>
-      ( new DnCManager ( numWorkers, initialDivides, initialTimeout,
-                         onlineDivides, timeoutFactor,
-                         DivideStrategy::LargestInterval, networkFilePath,
-                         propertyFilePath, verbosity ) );
+      ( new DnCManager( numWorkers, initialDivides, initialTimeout,
+                        onlineDivides, timeoutFactor,
+                        DivideStrategy::LargestInterval, networkFilePath,
+                        propertyFilePath, verbosity ) );
 
     struct timespec start = TimeUtils::sampleMicro();
 

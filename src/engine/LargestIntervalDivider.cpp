@@ -19,10 +19,8 @@
 #include "PiecewiseLinearCaseSplit.h"
 
 LargestIntervalDivider::LargestIntervalDivider( const List<unsigned>
-                                                &inputVariables, double
-                                                timeoutFactor )
+                                                &inputVariables )
     : _inputVariables( inputVariables )
-    , _timeoutFactor( timeoutFactor )
 {
 }
 
@@ -95,8 +93,7 @@ void LargestIntervalDivider::createSubQueries( unsigned numNewSubqueries,
         SubQuery *subQuery = new SubQuery;
         subQuery->_queryId = queryId;
         subQuery->_split = std::move(split);
-        subQuery->_timeoutInSeconds = (unsigned)( timeoutInSeconds *
-                                                  _timeoutFactor );
+        subQuery->_timeoutInSeconds = timeoutInSeconds;
         subQueries.append( subQuery );
     }
 }

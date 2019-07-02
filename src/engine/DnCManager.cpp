@@ -280,13 +280,13 @@ void DnCManager::initialDivide( SubQueries &subQueries )
     if ( _divideStrategy == DivideStrategy::LargestInterval )
     {
         queryDivider = std::unique_ptr<QueryDivider>
-            ( new LargestIntervalDivider( inputVariables, _timeoutFactor ) );
+            ( new LargestIntervalDivider( inputVariables ) );
     }
     else
     {
         // Default
         queryDivider = std::unique_ptr<QueryDivider>
-            ( new LargestIntervalDivider( inputVariables, _timeoutFactor ) );
+            ( new LargestIntervalDivider( inputVariables ) );
     }
 
     String queryId = "";

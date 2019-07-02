@@ -39,7 +39,7 @@ public:
 
         // Initiate the divider
         queryDivider = std::unique_ptr<LargestIntervalDivider>
-            ( new LargestIntervalDivider( inputVariables, timeoutFactor ) );
+            ( new LargestIntervalDivider( inputVariables ) );
     }
 
     void tearDown()
@@ -117,7 +117,8 @@ public:
         // Divide the previousSplit
         SubQueries subQueries;
         queryDivider->createSubQueries( numNewSubQueries, queryId,
-                                        *previousSplit, timeoutInSeconds,
+                                        *previousSplit, (unsigned)
+                                        timeoutInSeconds * timeoutFactor,
                                         subQueries );
 
         // The following four splits should be created by the queryDivider

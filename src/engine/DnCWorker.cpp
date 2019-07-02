@@ -56,7 +56,7 @@ void DnCWorker::setQueryDivider( DivideStrategy divideStrategy )
     {
         const List<unsigned> &inputVariables = _engine->getInputVariables();
         _queryDivider = std::unique_ptr<LargestIntervalDivider>
-            ( new LargestIntervalDivider( inputVariables, _timeoutFactor ) );
+            ( new LargestIntervalDivider( inputVariables ) );
     }
 }
 
@@ -107,7 +107,8 @@ void DnCWorker::run()
                 SubQueries subQueries;
                 _queryDivider->createSubQueries( pow( 2, _onlineDivides ),
                                                  queryId, *split,
-                                                 timeoutInSeconds, subQueries );
+                                                 (unsigned) timeoutInSeconds *
+                                                 _timeoutFactor, subQueries );
                 bool pushed = true;
                 for ( auto &newSubQuery : subQueries )
                 {
