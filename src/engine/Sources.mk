@@ -25,6 +25,7 @@ SOURCES += \
 	RowBoundTightener.cpp \
 	Simulator.cpp \
 	SmtCore.cpp \
+	SparseConstraintMatrixAnalyzer.cpp \
 	SymbolicBoundTightener.cpp \
 	Tableau.cpp \
 	TableauRow.cpp \
