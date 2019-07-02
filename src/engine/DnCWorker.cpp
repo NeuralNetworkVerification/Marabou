@@ -98,6 +98,7 @@ void DnCWorker::run()
             {
                 // If UNSAT, continue to solve
                 *_numUnsolvedSubQueries -= 1;
+                delete subQuery;
             }
             else if ( result == Engine::TIMEOUT )
             {
@@ -115,6 +116,7 @@ void DnCWorker::run()
                 }
                 ASSERT( pushed );
                 *_numUnsolvedSubQueries -= 1;
+                delete subQuery;
             }
             else if ( result == Engine::SAT )
             {
@@ -122,6 +124,7 @@ void DnCWorker::run()
                 // DnCManager will kill all the DnCWorkers
                 *_shouldQuitSolving = true;
                 *_numUnsolvedSubQueries -= 1;
+                delete subQuery;
                 return;
             }
             else if ( result == Engine::QUIT_REQUESTED )
@@ -129,6 +132,7 @@ void DnCWorker::run()
                 // If engine was asked to quit, quit
                 std::cout << "Quit requested by manager!" << std::endl;
                 *_numUnsolvedSubQueries -= 1;
+                delete subQuery;
                 return;
             }
             else if ( result == Engine::ERROR )
@@ -137,6 +141,7 @@ void DnCWorker::run()
                 std::cout << "Error!" << std::endl;
                 *_shouldQuitSolving = true;
                 *_numUnsolvedSubQueries -= 1;
+                delete subQuery;
                 return;
             }
             else if ( result == Engine::NOT_DONE )
@@ -146,9 +151,9 @@ void DnCWorker::run()
                 std::cout << "Not done! This should not happen." << std::endl;
                 *_shouldQuitSolving = true;
                 *_numUnsolvedSubQueries -= 1;
+                delete subQuery;
                 return;
             }
-            delete subQuery;
         }
         else
         {

@@ -111,6 +111,7 @@ void DnCManager::solve( unsigned timeoutInSeconds )
     initialDivide( subQueries );
 
     // Create objects shared across workers
+    _numUnsolvedSubqueries = subQueries.size();
     std::atomic_bool shouldQuitSolving( false );
     WorkerQueue *workload = new WorkerQueue( 0 );
     bool pushed = false;
@@ -120,8 +121,6 @@ void DnCManager::solve( unsigned timeoutInSeconds )
         pushed = workload->push( subQuery );
         ASSERT( pushed );
     }
-
-    _numUnsolvedSubqueries = subQueries.size();
 
     // Spawn threads and start solving
     std::list<std::thread> threads; // TODO: change this to List (compliation error)
@@ -329,7 +328,6 @@ void DnCManager::updateTimeoutReached( timespec startTime, unsigned long long
     _timeoutReached = TimeUtils::timePassed( startTime, now ) >=
         timeoutInMicroSeconds;
 }
-
 
 //
 // Local Variables:

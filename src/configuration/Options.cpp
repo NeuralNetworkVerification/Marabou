@@ -87,7 +87,6 @@ float Options::getFloat( unsigned option ) const
     return _floatOptions.get( option );
 }
 
-
 String Options::getString( unsigned option ) const
 {
     return String( _stringOptions.get( option ) );

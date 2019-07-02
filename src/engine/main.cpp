@@ -18,7 +18,6 @@
 #include "Marabou.h"
 #include "Options.h"
 
-
 int main( int argc, char **argv )
 {
     try

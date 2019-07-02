@@ -66,9 +66,9 @@ public:
     */
     bool getBool( unsigned option ) const;
 
-    int getInt (unsigned option) const;
+    int getInt ( unsigned option ) const;
 
-    float getFloat (unsigned option) const;
+    float getFloat ( unsigned option ) const;
 
     /*
       Retrieve the value of a string option
