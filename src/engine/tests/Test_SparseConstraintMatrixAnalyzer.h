@@ -57,8 +57,6 @@ public:
 
             TS_ASSERT_THROWS_NOTHING( analyzer->analyze() );
 
-            analyzer->dumpMatrix();
-
             double expectedResult[] = {
                 1, 0, 0, 0, 0,
                 0, 1, 0, 0, 0,

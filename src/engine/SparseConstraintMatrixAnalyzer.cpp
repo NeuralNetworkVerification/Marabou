@@ -202,8 +202,6 @@ void SparseConstraintMatrixAnalyzer::gaussianElimination()
 
                 if ( contender > largestPivot )
                 {
-                    printf( "\tbetter contender. Real indices: %u, %u\n", _rowHeaders[i], j );
-                    printf( "\tPermuted indices: %u, %u\n", i, _inverseColumnHeaders[j] );
                     largestPivot = contender;
                     bestRow = i;
                     bestColumn = _inverseColumnHeaders[j];
