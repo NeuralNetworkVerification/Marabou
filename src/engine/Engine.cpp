@@ -14,6 +14,8 @@
  ** [[ Add lengthier description here ]]
  **/
 
+#include "SparseConstraintMatrixAnalyzer.h"
+
 #include "AutoConstraintMatrixAnalyzer.h"
 #include "Debug.h"
 #include "Engine.h"
@@ -731,14 +733,16 @@ void Engine::removeRedundantEquations( const double *constraintMatrix )
     unsigned n = _preprocessedQuery.getNumberOfVariables();
 
     // Step 1: analyze the matrix to identify redundant rows
-    AutoConstraintMatrixAnalyzer analyzer;
-    analyzer->analyze( constraintMatrix, m, n );
+    // AutoConstraintMatrixAnalyzer analyzer;
+    // analyzer->analyze( constraintMatrix, m, n );
+    SparseConstraintMatrixAnalyzer analyzer( constraintMatrix, m, n );
+    analyzer.analyze();
 
     log( Stringf( "Number of redundant rows: %u out of %u",
-                  analyzer->getRedundantRows().size(), m ) );
+                  analyzer.getRedundantRows().size(), m ) );
 
     // Step 2: remove any equations corresponding to redundant rows
-    Set<unsigned> redundantRows = analyzer->getRedundantRows();
+    Set<unsigned> redundantRows = analyzer.getRedundantRows();
 
     if ( !redundantRows.empty() )
     {
