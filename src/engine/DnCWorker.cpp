@@ -71,7 +71,7 @@ void DnCWorker::run()
         if ( _workload->pop( subQuery ) )
         {
             String queryId = subQuery->_queryId;
-            PiecewiseLinearCaseSplit split = *( subQuery->_split );
+            auto split = std::move( subQuery->_split );
             unsigned timeoutInSeconds = subQuery->_timeoutInSeconds;
 
             // Create a new statistics object for each subQuery
@@ -88,7 +88,7 @@ void DnCWorker::run()
             // statistics. The maps are owned by the DnCManager.
 
             // Apply the split and solve
-            _engine->applySplit( split );
+            _engine->applySplit( *split );
             _engine->solve( timeoutInSeconds );
 
             Engine::ExitCode result = _engine->getExitCode();
@@ -105,7 +105,8 @@ void DnCWorker::run()
                 // new subQueries to the current queue
                 SubQueries subQueries;
                 _queryDivider->createSubQueries( pow( 2, _onlineDivides ),
-                                                 *subQuery, subQueries );
+                                                 queryId, *split,
+                                                 timeoutInSeconds, subQueries );
                 bool pushed = true;
                 for ( auto &subQuery : subQueries )
                 {

@@ -82,7 +82,7 @@ void DnCManager::freeMemoryIfNeeded()
     }
 }
 
-void DnCManager::solve( unsigned timeoutInSeconds, unsigned verbosity )
+void DnCManager::solve( unsigned timeoutInSeconds )
 {
 
     unsigned long long timeoutInMicroSeconds = timeoutInSeconds * 1000000;
@@ -312,11 +312,8 @@ void DnCManager::initialDivide( SubQueries &subQueries )
                                                  Tightening::UB ) );
     }
 
-    // Construct the new subquery and add it to subqueries
-    SubQuery subQuery( queryId, split, _initialTimeout );
-
-    queryDivider->createSubQueries( pow( 2, _initialDivides ), subQuery,
-                                    subQueries );
+    queryDivider->createSubQueries( pow( 2, _initialDivides ), queryId,
+                                    *split, _initialTimeout, subQueries );
 }
 
 void DnCManager::updateTimeoutReached( timespec startTime, unsigned long long

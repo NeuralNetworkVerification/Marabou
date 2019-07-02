@@ -28,7 +28,10 @@ public:
                             double timeoutFactor );
 
     void createSubQueries( unsigned numNewSubQueries,
-                           const SubQuery &previousSubQuery,
+                           const String queryIdPrefix,
+                           const PiecewiseLinearCaseSplit
+                           &previousSplit,
+                           const unsigned timeoutInSeconds,
                            SubQueries &subQueries );
 
     /*

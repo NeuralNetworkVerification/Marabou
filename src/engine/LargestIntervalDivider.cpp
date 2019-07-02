@@ -27,15 +27,13 @@ LargestIntervalDivider::LargestIntervalDivider( const List<unsigned>
 }
 
 void LargestIntervalDivider::createSubQueries( unsigned numNewSubqueries,
-                                               const SubQuery &previousSubQuery,
+                                               const String queryIdPrefix,
+                                               const PiecewiseLinearCaseSplit
+                                               &previousSplit,
+                                               const unsigned timeoutInSeconds,
                                                SubQueries &subQueries )
 {
     unsigned numBisects = (unsigned)log2( numNewSubqueries );
-
-    // Get the query id, previous case split, and the previous timeout
-    const String queryIdPrefix = previousSubQuery._queryId;
-    const PiecewiseLinearCaseSplit previousSplit = *( previousSubQuery._split );
-    const unsigned timeoutInSeconds = previousSubQuery._timeoutInSeconds;
 
     List<InputRegion> inputRegions;
 

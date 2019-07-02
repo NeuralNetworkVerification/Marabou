@@ -114,15 +114,11 @@ public:
         previousSplit->storeBoundTightening( bound5 );
         previousSplit->storeBoundTightening( bound6 );
 
-        SubQuery previousSubQuery;
-        previousSubQuery._queryId = queryId;
-        previousSubQuery._split = std::move( previousSplit );
-        previousSubQuery._timeoutInSeconds = timeoutInSeconds;
-
         // Divide the previousSplit
         SubQueries subQueries;
-        queryDivider->createSubQueries( numNewSubQueries, previousSubQuery,
-                                   subQueries );
+        queryDivider->createSubQueries( numNewSubQueries, queryId,
+                                        *previousSplit, timeoutInSeconds,
+                                        subQueries );
 
         // The following four splits should be created by the queryDivider
         Vector<PiecewiseLinearCaseSplit> newSplits;
