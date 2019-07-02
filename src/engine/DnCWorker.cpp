@@ -64,7 +64,7 @@ void DnCWorker::run()
 {
     while ( _numUnsolvedSubQueries->load() > 0 )
     {
-        std::unique_ptr<SubQuery> subQuery = nullptr;
+        SubQuery *subQuery = NULL;
         // Boost queue stores the next element into the passed-in pointer
         // and returns true if the pop is successful (aka, the queue is not empty
         // in most cases)
@@ -108,9 +108,9 @@ void DnCWorker::run()
                                                  queryId, *split,
                                                  timeoutInSeconds, subQueries );
                 bool pushed = true;
-                for ( auto &subQuery : subQueries )
+                for ( auto &newSubQuery : subQueries )
                 {
-                    pushed = pushed && _workload->push( std::move( subQuery ) );
+                    pushed = pushed && _workload->push( std::move( newSubQuery ) );
                     *_numUnsolvedSubQueries += 1;
                 }
                 ASSERT( pushed );
@@ -148,6 +148,7 @@ void DnCWorker::run()
                 *_numUnsolvedSubQueries -= 1;
                 return;
             }
+            delete subQuery;
         }
         else
         {

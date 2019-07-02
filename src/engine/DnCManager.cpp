@@ -58,6 +58,7 @@ DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
     , _exitCode( DnCManager::NOT_DONE )
     , _workload( NULL )
     , _timeoutReached( false )
+    , _numUnsolvedSubqueries( 0 )
 {
 }
 
@@ -108,7 +109,6 @@ void DnCManager::solve( unsigned timeoutInSeconds )
     initialDivide( subQueries );
 
     // Create objects shared across workers
-    std::atomic_uint numUnsolvedSubqueries( subQueries.size() );
     std::atomic_bool shouldQuitSolving( false );
     WorkerQueue *workload = new WorkerQueue( 0 );
     bool pushed = false;
@@ -119,13 +119,15 @@ void DnCManager::solve( unsigned timeoutInSeconds )
         ASSERT( pushed );
     }
 
+    _numUnsolvedSubqueries = subQueries.size();
+
     // Spawn threads and start solving
     std::list<std::thread> threads; // TODO: change this to List (compliation error)
     for ( unsigned threadId = 0; threadId < _numWorkers; ++threadId )
     {
         threads.push_back( std::thread( dncSolve, workload,
                                         _engines[ threadId ],
-                                        std::ref( numUnsolvedSubqueries ),
+                                        std::ref( _numUnsolvedSubqueries ),
                                         std::ref( shouldQuitSolving ),
                                         threadId, _onlineDivides,
                                         _timeoutFactor, _divideStrategy ) );
@@ -133,7 +135,7 @@ void DnCManager::solve( unsigned timeoutInSeconds )
 
     // Wait until either all subqueries are solved or a satisfying assignment is
     // found by some worker
-    while ( numUnsolvedSubqueries.load() > 0 &&
+    while ( _numUnsolvedSubqueries.load() > 0 &&
             !shouldQuitSolving.load() &&
             !_timeoutReached )
     {
@@ -162,7 +164,6 @@ void DnCManager::updateDnCExitCode()
 {
     bool hasSat = false;
     bool hasError = false;
-    bool hasNotDone = false;
     bool hasQuitRequested = false;
     for ( auto &engine : _engines )
     {
@@ -176,21 +177,22 @@ void DnCManager::updateDnCExitCode()
             hasError = true;
         else if ( result == Engine::QUIT_REQUESTED )
             hasQuitRequested = true;
-        else if ( result == Engine::NOT_DONE )
-            hasNotDone = true;
     }
     if ( hasSat )
         _exitCode = DnCManager::SAT;
     else if ( _timeoutReached )
         _exitCode = DnCManager::TIMEOUT;
-    else if ( hasError )
-        _exitCode = DnCManager::ERROR;
     else if ( hasQuitRequested )
         _exitCode = DnCManager::QUIT_REQUESTED;
-    else if ( hasNotDone )
-        _exitCode = DnCManager::NOT_DONE;
-    else
+    else if ( hasError )
+        _exitCode = DnCManager::ERROR;
+    else if ( _numUnsolvedSubqueries.load() == 0 )
         _exitCode = DnCManager::UNSAT;
+    else
+    {
+        ASSERT( false ); // This should never happen
+        _exitCode = DnCManager::NOT_DONE;
+    }
 }
 
 String DnCManager::getResultString()

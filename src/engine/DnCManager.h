@@ -156,6 +156,8 @@ private:
       Whether the timeout has been reached
     */
     bool _timeoutReached;
+
+    std::atomic_uint _numUnsolvedSubqueries;
 };
 
 #endif // __DnCManager_h__
