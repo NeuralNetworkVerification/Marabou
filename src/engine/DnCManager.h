@@ -19,6 +19,7 @@
 #include "DivideStrategy.h"
 #include "Engine.h"
 #include "SubQuery.h"
+#include "Vector.h"
 
 #include <atomic>
 
@@ -40,7 +41,7 @@ public:
     DnCManager( unsigned numWorkers, unsigned initialDivides, unsigned
                 initialTimeout, unsigned onlineDivides, float timeoutFactor,
                 DivideStrategy divideStrategy, String networkFilePath,
-                String propertyFilePath );
+                String propertyFilePath, unsigned verbosity );
 
     ~DnCManager();
 
@@ -49,12 +50,17 @@ public:
     /*
       Perform the Divide-and-conquer solving
     */
-    void solve();
+    void solve( unsigned timeoutInSeconds );
 
     /*
       Return the DnCExitCode of the DnCManager
     */
     DnCExitCode getExitCode() const;
+
+    /*
+      Get the string representation of the exitcode
+    */
+    String getResultString();
 
 private:
     /*
@@ -78,6 +84,12 @@ private:
       Print the result of DnC solving
     */
     void printResult();
+
+    /*
+      Set _timeoutReached to true if timeout has been reached
+    */
+    void updateTimeoutReached( timespec startTime,
+                               unsigned long long timeoutInMicroSeconds );
 
     /*
       The base engine that is used to perform the initial divides
@@ -139,6 +151,21 @@ private:
       Set of subQueries to be solved by workers
     */
     WorkerQueue *_workload;
+
+    /*
+      Whether the timeout has been reached
+    */
+    bool _timeoutReached;
+
+    /*
+      The number of currently unsolved sub queries
+    */
+    std::atomic_uint _numUnsolvedSubQueries;
+
+    /*
+      The level of verbosity
+    */
+    unsigned _verbosity;
 };
 
 #endif // __DnCManager_h__

@@ -56,7 +56,7 @@ void DnCWorker::setQueryDivider( DivideStrategy divideStrategy )
     {
         const List<unsigned> &inputVariables = _engine->getInputVariables();
         _queryDivider = std::unique_ptr<LargestIntervalDivider>
-            ( new LargestIntervalDivider( inputVariables, _timeoutFactor ) );
+            ( new LargestIntervalDivider( inputVariables ) );
     }
 }
 
@@ -64,25 +64,31 @@ void DnCWorker::run()
 {
     while ( _numUnsolvedSubQueries->load() > 0 )
     {
-        std::unique_ptr<SubQuery> subQuery = nullptr;
+        SubQuery *subQuery = NULL;
         // Boost queue stores the next element into the passed-in pointer
         // and returns true if the pop is successful (aka, the queue is not empty
         // in most cases)
         if ( _workload->pop( subQuery ) )
         {
             String queryId = subQuery->_queryId;
-            PiecewiseLinearCaseSplit split = *( subQuery->_split );
+            auto split = std::move( subQuery->_split );
             unsigned timeoutInSeconds = subQuery->_timeoutInSeconds;
 
             // Create a new statistics object for each subQuery
             Statistics *statistics = new Statistics();
             _engine->resetStatistics( *statistics );
+            // Reset the engine state
+            _engine->restoreState( *_initialState );
+            _engine->clearViolatedPLConstraints();
+            _engine->resetSmtCore();
+            _engine->resetBoundTighteners();
+            _engine->resetExitCode();
             // TODO: each worker is going to keep a map from *CaseSplit to an
             // object of class DnCStatistics, which contains some basic
             // statistics. The maps are owned by the DnCManager.
 
             // Apply the split and solve
-            _engine->applySplit( split );
+            _engine->applySplit( *split );
             _engine->solve( timeoutInSeconds );
 
             Engine::ExitCode result = _engine->getExitCode();
@@ -92,6 +98,7 @@ void DnCWorker::run()
             {
                 // If UNSAT, continue to solve
                 *_numUnsolvedSubQueries -= 1;
+                delete subQuery;
             }
             else if ( result == Engine::TIMEOUT )
             {
@@ -99,15 +106,20 @@ void DnCWorker::run()
                 // new subQueries to the current queue
                 SubQueries subQueries;
                 _queryDivider->createSubQueries( pow( 2, _onlineDivides ),
-                                                 *subQuery, subQueries );
-                bool pushed = true;
-                for ( auto &subQuery : subQueries )
+                                                 queryId, *split,
+                                                 (unsigned) timeoutInSeconds *
+                                                 _timeoutFactor, subQueries );
+                for ( auto &newSubQuery : subQueries )
                 {
-                    pushed = pushed && _workload->push( std::move( subQuery ) );
+                    if ( !_workload->push( std::move( newSubQuery ) ) )
+                    {
+                        ASSERT( false );
+                    }
+
                     *_numUnsolvedSubQueries += 1;
                 }
-                ASSERT( pushed );
                 *_numUnsolvedSubQueries -= 1;
+                delete subQuery;
             }
             else if ( result == Engine::SAT )
             {
@@ -115,6 +127,7 @@ void DnCWorker::run()
                 // DnCManager will kill all the DnCWorkers
                 *_shouldQuitSolving = true;
                 *_numUnsolvedSubQueries -= 1;
+                delete subQuery;
                 return;
             }
             else if ( result == Engine::QUIT_REQUESTED )
@@ -122,6 +135,7 @@ void DnCWorker::run()
                 // If engine was asked to quit, quit
                 std::cout << "Quit requested by manager!" << std::endl;
                 *_numUnsolvedSubQueries -= 1;
+                delete subQuery;
                 return;
             }
             else if ( result == Engine::ERROR )
@@ -130,6 +144,7 @@ void DnCWorker::run()
                 std::cout << "Error!" << std::endl;
                 *_shouldQuitSolving = true;
                 *_numUnsolvedSubQueries -= 1;
+                delete subQuery;
                 return;
             }
             else if ( result == Engine::NOT_DONE )
@@ -139,15 +154,9 @@ void DnCWorker::run()
                 std::cout << "Not done! This should not happen." << std::endl;
                 *_shouldQuitSolving = true;
                 *_numUnsolvedSubQueries -= 1;
+                delete subQuery;
                 return;
             }
-
-            // Reset the engine state
-            _engine->restoreState( *_initialState );
-            _engine->clearViolatedPLConstraints();
-            _engine->resetSmtCore();
-            _engine->resetExitCode();
-            _engine->resetBoundTighteners();
         }
         else
         {
