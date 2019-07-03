@@ -22,25 +22,17 @@
 #include "PropertyParser.h"
 #include "ReluplexError.h"
 
-
 DnCMarabou::DnCMarabou()
     : _dncManager( nullptr )
 {
 }
 
-void DnCMarabou::run( Options *options )
+void DnCMarabou::run()
 {
-    // Get options
-    unsigned initialDivides = options->getInt( Options::NUM_INITIAL_DIVIDES );
-    unsigned initialTimeout = options->getInt( Options::INITIAL_TIMEOUT );
-    unsigned numWorkers = options->getInt( Options::NUM_WORKERS );
-    unsigned onlineDivides = options->getInt( Options::NUM_ONLINE_DIVIDES );
-    unsigned verbosity = options->getInt( Options::VERBOSITY );
-    unsigned timeoutInSeconds = options->getInt( Options::TIMEOUT );
-    float timeoutFactor = options->getFloat( Options::TIMEOUT_FACTOR );
-    String summaryFilePath = options->getString( Options::SUMMARY_FILE );
-
-    String networkFilePath = options->getString( Options::INPUT_FILE_PATH );
+    /*
+      Step 1: extract the network
+    */
+    String networkFilePath = Options::get()->getString( Options::INPUT_FILE_PATH );
     if ( !File::exists( networkFilePath ) )
     {
         printf( "Error: the specified network file (%s) doesn't exist!\n",
@@ -50,16 +42,36 @@ void DnCMarabou::run( Options *options )
     }
     printf( "Network: %s\n", networkFilePath.ascii() );
 
-    String propertyFilePath = options->getString( Options::PROPERTY_FILE_PATH );
-    if ( !File::exists( propertyFilePath ) )
+    /*
+      Step 2: extract the property in question
+    */
+    String propertyFilePath = Options::get()->getString( Options::PROPERTY_FILE_PATH );
+    if ( propertyFilePath != "" )
     {
-        printf( "Error: the specified property file (%s) doesn't exist!\n",
-                propertyFilePath.ascii() );
-        throw ReluplexError( ReluplexError::FILE_DOESNT_EXIST,
-                             propertyFilePath.ascii() );
+        if ( !File::exists( propertyFilePath ) )
+        {
+            printf( "Error: the specified property file (%s) doesn't exist!\n",
+                    propertyFilePath.ascii() );
+            throw ReluplexError( ReluplexError::FILE_DOESNT_EXIST,
+                                 propertyFilePath.ascii() );
+        }
+        printf( "Property: %s\n", propertyFilePath.ascii() );
     }
-    printf( "Network: %s\n", propertyFilePath.ascii() );
+    else
+        printf( "Property: None\n" );
 
+    printf( "\n" );
+
+    /*
+      Step 3: initialzie the DNC core
+    */
+    unsigned initialDivides = Options::get()->getInt( Options::NUM_INITIAL_DIVIDES );
+    unsigned initialTimeout = Options::get()->getInt( Options::INITIAL_TIMEOUT );
+    unsigned numWorkers = Options::get()->getInt( Options::NUM_WORKERS );
+    unsigned onlineDivides = Options::get()->getInt( Options::NUM_ONLINE_DIVIDES );
+    unsigned verbosity = Options::get()->getInt( Options::VERBOSITY );
+    unsigned timeoutInSeconds = Options::get()->getInt( Options::TIMEOUT );
+    float timeoutFactor = Options::get()->getFloat( Options::TIMEOUT_FACTOR );
 
     _dncManager = std::unique_ptr<DnCManager>
       ( new DnCManager( numWorkers, initialDivides, initialTimeout,
@@ -74,16 +86,16 @@ void DnCMarabou::run( Options *options )
     struct timespec end = TimeUtils::sampleMicro();
 
     unsigned long long totalElapsed = TimeUtils::timePassed( start, end );
-    displayResults( totalElapsed, summaryFilePath );
+    displayResults( totalElapsed );
 }
 
-
-void DnCMarabou::displayResults( unsigned long long microSecondsElapsed,
-                                 String summaryFilePath ) const
+void DnCMarabou::displayResults( unsigned long long microSecondsElapsed ) const
 {
     std::cout << "Total Time: " << microSecondsElapsed / 1000000 << std::endl;
     String resultString = _dncManager->getResultString();
 
+    // Create a summary file, if requested
+    String summaryFilePath = Options::get()->getString( Options::SUMMARY_FILE );
     if ( summaryFilePath != "" )
     {
         File summaryFile( summaryFilePath );
@@ -104,3 +116,11 @@ void DnCMarabou::displayResults( unsigned long long microSecondsElapsed,
         summaryFile.write( "\n" );
     }
 }
+
+//
+// Local Variables:
+// compile-command: "make -C ../.. "
+// tags-file-name: "../../TAGS"
+// c-basic-offset: 4
+// End:
+//

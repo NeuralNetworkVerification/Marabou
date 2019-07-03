@@ -28,20 +28,27 @@ class Options
 {
 public:
     enum BoolOptions {
+        // Should the PL constraints add aux equations during preprocessing?
         PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS = 0,
-        DNC_MODE ,
+
+        // Should DNC mode be on or off
+        DNC_MODE,
     };
 
     enum IntOptions {
+        // DNC options
         NUM_WORKERS = 0,
         NUM_INITIAL_DIVIDES,
         NUM_ONLINE_DIVIDES,
         INITIAL_TIMEOUT,
-        VERBOSITY,
         TIMEOUT,
+
+        // Engine verbosity, only for DNC mode
+        VERBOSITY,
     };
 
     enum FloatOptions{
+        // DNC options
         TIMEOUT_FACTOR,
     };
 
@@ -62,17 +69,11 @@ public:
     void parseOptions( int argc, char **argv );
 
     /*
-      Retrieve the value of a boolean option
+      Retrieve the value of the various options, by type
     */
     bool getBool( unsigned option ) const;
-
-    int getInt ( unsigned option ) const;
-
-    float getFloat ( unsigned option ) const;
-
-    /*
-      Retrieve the value of a string option
-    */
+    int getInt( unsigned option ) const;
+    float getFloat( unsigned option ) const;
     String getString( unsigned option ) const;
 
 private:

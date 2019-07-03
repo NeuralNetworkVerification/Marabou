@@ -24,8 +24,10 @@ class OptionParser
 {
 public:
     OptionParser();
-    OptionParser( Map<unsigned, bool> *boolOptions, Map<unsigned, int> *intOptions,
-                  Map<unsigned, float> *floatOptions, Map<unsigned, std::string> *stringOptions );
+    OptionParser( Map<unsigned, bool> *boolOptions,
+                  Map<unsigned, int> *intOptions,
+                  Map<unsigned, float> *floatOptions,
+                  Map<unsigned, std::string> *stringOptions );
 
     /*
       Parse the command line arguments and extract the option values.
