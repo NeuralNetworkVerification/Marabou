@@ -43,7 +43,7 @@ class String;
 class Engine : public IEngine, public SignalHandler::Signalable
 {
 public:
-    Engine( unsigned verbosity=2 );
+    Engine( unsigned verbosity = 2 );
     ~Engine();
 
     enum ExitCode {

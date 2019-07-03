@@ -109,13 +109,15 @@ void DnCWorker::run()
                                                  queryId, *split,
                                                  (unsigned) timeoutInSeconds *
                                                  _timeoutFactor, subQueries );
-                bool pushed = true;
                 for ( auto &newSubQuery : subQueries )
                 {
-                    pushed = pushed && _workload->push( std::move( newSubQuery ) );
+                    if ( !_workload->push( std::move( newSubQuery ) ) )
+                    {
+                        ASSERT( false );
+                    }
+
                     *_numUnsolvedSubQueries += 1;
                 }
-                ASSERT( pushed );
                 *_numUnsolvedSubQueries -= 1;
                 delete subQuery;
             }
