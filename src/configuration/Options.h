@@ -41,10 +41,12 @@ public:
         NUM_INITIAL_DIVIDES,
         NUM_ONLINE_DIVIDES,
         INITIAL_TIMEOUT,
-        TIMEOUT,
 
-        // Engine verbosity, only for DNC mode
+        // Engine verbosity
         VERBOSITY,
+
+        // Global timeout
+        TIMEOUT,
     };
 
     enum FloatOptions{

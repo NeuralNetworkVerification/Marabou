@@ -68,7 +68,7 @@ void OptionParser::initialize()
           "(DNC) Number of times to further bisect a sub-region when a timeout occurs" )
         ( "timeout",
           boost::program_options::value<int>( &((*_intOptions)[Options::TIMEOUT]) ),
-          "Timeout" )
+          "Global timeout" )
         ( "verbosity",
           boost::program_options::value<int>( &((*_intOptions)[Options::VERBOSITY]) ),
           "Verbosity of engine::solve(). 0: does not print anything (for DnC), 1: print"
