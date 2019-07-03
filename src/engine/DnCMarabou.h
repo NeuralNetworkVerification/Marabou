@@ -1,8 +1,8 @@
 /*********************                                                        */
-/*! \file main.cpp
+/*! \file DnCMarabou.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz
+ **   Haoze Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -13,36 +13,32 @@
 
  **/
 
-#include "DnCMarabou.h"
-#include "Error.h"
-#include "Marabou.h"
+#ifndef __DnCMarabou_h__
+#define __DnCMarabou_h__
+
+#include "DnCManager.h"
 #include "Options.h"
 
-int main( int argc, char **argv )
+class DnCMarabou
 {
-    try
-    {
-        Options *options = Options::get();
-        options->parseOptions( argc, argv );
+public:
+    DnCMarabou();
 
-        if ( options->getBool( Options::DNC_MODE ) )
-            DnCMarabou().run();
-        else
-            Marabou().run();
-    }
-    catch ( const Error &e )
-    {
-        printf( "Caught a %s error. Code: %u, Errno: %i, Message: %s.\n",
-                e.getErrorClass(),
-                e.getCode(),
-                e.getErrno(),
-                e.getUserMessage() );
+    /*
+      Entry point of this class
+    */
+    void run();
 
-        return 1;
-    }
+private:
+    std::unique_ptr<DnCManager> _dncManager;
 
-    return 0;
-}
+    /*
+      Display the results
+    */
+    void displayResults( unsigned long long microSecondsElapsed ) const;
+};
+
+#endif // __DnCMarabou_h__
 
 //
 // Local Variables:

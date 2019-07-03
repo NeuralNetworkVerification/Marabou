@@ -24,11 +24,13 @@
 class LargestIntervalDivider : public QueryDivider
 {
 public:
-    LargestIntervalDivider( const List<unsigned> &inputVariables,
-                            double timeoutFactor );
+    LargestIntervalDivider( const List<unsigned> &inputVariables );
 
     void createSubQueries( unsigned numNewSubQueries,
-                           const SubQuery &previousSubQuery,
+                           const String queryIdPrefix,
+                           const PiecewiseLinearCaseSplit
+                           &previousSplit,
+                           const unsigned timeoutInSeconds,
                            SubQueries &subQueries );
 
     /*
@@ -42,10 +44,6 @@ private:
     */
     const List<unsigned> _inputVariables;
 
-    /*
-      Multiply the previous timeout with this factor
-    */
-    double _timeoutFactor;
 };
 
 #endif // __LargestIntervalDivider_h__

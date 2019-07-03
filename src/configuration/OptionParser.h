@@ -25,6 +25,8 @@ class OptionParser
 public:
     OptionParser();
     OptionParser( Map<unsigned, bool> *boolOptions,
+                  Map<unsigned, int> *intOptions,
+                  Map<unsigned, float> *floatOptions,
                   Map<unsigned, std::string> *stringOptions );
 
     /*
@@ -53,6 +55,8 @@ private:
     boost::program_options::positional_options_description _positionalOptions;
 
     Map<unsigned, bool> *_boolOptions;
+    Map<unsigned, int> *_intOptions;
+    Map<unsigned, float> *_floatOptions;
     Map<unsigned, std::string> *_stringOptions;
 };
 

@@ -36,7 +36,10 @@ public:
       store them in subqueries
     */
     virtual void createSubQueries( unsigned numNewSubQueries,
-                                   const SubQuery &previousSubQuery,
+                                   const String queryIdPrefix,
+                                   const PiecewiseLinearCaseSplit
+                                   &previousSplit,
+                                   const unsigned timeoutInSeconds,
                                    SubQueries &subQueries ) = 0;
 
     /*

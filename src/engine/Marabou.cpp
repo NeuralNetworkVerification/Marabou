@@ -36,12 +36,9 @@ Marabou::~Marabou()
     }
 }
 
-void Marabou::run( int argc, char **argv )
+void Marabou::run()
 {
     struct timespec start = TimeUtils::sampleMicro();
-
-    Options *options = Options::get();
-    options->parseOptions( argc, argv );
 
     prepareInputQuery();
     solveQuery();
@@ -87,7 +84,7 @@ void Marabou::prepareInputQuery()
 void Marabou::solveQuery()
 {
     if ( _engine.processInputQuery( _inputQuery ) )
-        _engine.solve();
+        _engine.solve( Options::get()->getInt( Options::TIMEOUT ) );
 
     if ( _engine.getExitCode() == Engine::SAT )
         _engine.extractSolution( _inputQuery );
