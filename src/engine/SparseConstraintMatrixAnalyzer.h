@@ -24,7 +24,10 @@ class String;
 class SparseConstraintMatrixAnalyzer
 {
 public:
+    // The constraint matrix is provided in row-major form
     SparseConstraintMatrixAnalyzer( const double *constraintMatrix, unsigned m, unsigned n );
+    SparseConstraintMatrixAnalyzer( SparseUnsortedList **constraintMatrix, unsigned m, unsigned n );
+
     ~SparseConstraintMatrixAnalyzer();
     void freeMemoryIfNeeded();
 

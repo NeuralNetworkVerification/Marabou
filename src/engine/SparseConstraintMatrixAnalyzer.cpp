@@ -51,6 +51,38 @@ SparseConstraintMatrixAnalyzer::SparseConstraintMatrixAnalyzer( const double *co
     _work2 = new double[_n];
 }
 
+SparseConstraintMatrixAnalyzer::SparseConstraintMatrixAnalyzer( SparseUnsortedList **constraintMatrix,
+                                                                unsigned m,
+                                                                unsigned n )
+    : _A( NULL )
+    , _m( m )
+    , _n( n )
+    , _rowHeaders( NULL )
+    , _columnHeaders( NULL )
+    , _inverseRowHeaders( NULL )
+    , _inverseColumnHeaders( NULL )
+    , _work( NULL )
+    , _work2( NULL )
+{
+    // Construct a sparse matrix
+
+    _A = new SparseUnsortedList *[_m];
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        _A[i] = new SparseUnsortedList;
+        constraintMatrix[i]->storeIntoOther( _A[i] );
+    }
+
+    _rowHeaders = new unsigned[_m];
+    _inverseRowHeaders = new unsigned[_m];
+
+    _columnHeaders = new unsigned[_n];
+    _inverseColumnHeaders = new unsigned[_n];
+
+    _work = new double[_n];
+    _work2 = new double[_n];
+}
+
 SparseConstraintMatrixAnalyzer::~SparseConstraintMatrixAnalyzer()
 {
     if ( _A )

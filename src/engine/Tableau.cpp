@@ -25,6 +25,7 @@
 #include "MalformedBasisException.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "ReluplexError.h"
+#include "SparseConstraintMatrixAnalyzer.h"
 #include "Tableau.h"
 #include "TableauRow.h"
 #include "TableauState.h"
@@ -1856,8 +1857,10 @@ unsigned Tableau::addEquation( const Equation &equation )
     }
     else
     {
-        ConstraintMatrixAnalyzer analyzer;
-        analyzer.analyze( _A, _m, _n );
+        // ConstraintMatrixAnalyzer analyzer;
+        // analyzer.analyze( _A, _m, _n );
+        SparseConstraintMatrixAnalyzer analyzer( _sparseRowsOfA, _m, _n );
+        analyzer.analyze();
         List<unsigned> independentColumns = analyzer.getIndependentColumns();
 
         try

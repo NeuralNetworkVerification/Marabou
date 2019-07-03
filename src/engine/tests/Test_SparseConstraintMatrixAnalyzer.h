@@ -218,6 +218,42 @@ public:
 
             TS_ASSERT_THROWS_NOTHING( delete analyzer );
         }
+
+        {
+            // Test when initialized from sparse lists
+
+            double A1[] = {
+                1, 0, 0, 0, 0,
+                1, 0, 0, 0, 0,
+                0, 1, 0, 2, 0,
+            };
+
+            SparseUnsortedList *matrix[3];
+            matrix[0] = new SparseUnsortedList( A1, 5 );
+            matrix[1] = new SparseUnsortedList( A1 + 5, 5 );
+            matrix[2] = new SparseUnsortedList( A1 + 10, 5 );
+
+            SparseConstraintMatrixAnalyzer *analyzer;
+            TS_ASSERT( analyzer = new SparseConstraintMatrixAnalyzer( matrix, 3, 5 ) );
+
+            TS_ASSERT_THROWS_NOTHING( analyzer->analyze() );
+
+            double expectedResult[] = {
+                2, 0, 0, 1, 0,
+                0, 1, 0, 0, 0,
+                0, 0, 0, 0, 0,
+            };
+
+            TS_ASSERT_THROWS_NOTHING( analyzer->getCanonicalForm( result ) );
+            TS_ASSERT_SAME_DATA( result, expectedResult, sizeof(expectedResult) );
+            TS_ASSERT_EQUALS( analyzer->getRank(), 2U );
+
+            TS_ASSERT_THROWS_NOTHING( delete analyzer );
+
+            delete matrix[0];
+            delete matrix[1];
+            delete matrix[2];
+        }
     }
 
     void test_independent_columns()
