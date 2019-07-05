@@ -24,7 +24,7 @@
 #include "MStringf.h"
 #include "MalformedBasisException.h"
 #include "PiecewiseLinearCaseSplit.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 #include "Tableau.h"
 #include "TableauRow.h"
 #include "TableauState.h"
@@ -212,100 +212,100 @@ void Tableau::setDimensions( unsigned m, unsigned n )
 
     _A = new CSRMatrix();
     if ( !_A )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::A" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::A" );
 
     _sparseColumnsOfA = new SparseUnsortedList *[n];
     if ( !_sparseColumnsOfA )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::sparseColumnsOfA" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::sparseColumnsOfA" );
 
     for ( unsigned i = 0; i < n; ++i )
     {
         _sparseColumnsOfA[i] = new SparseUnsortedList( _m );
         if ( !_sparseColumnsOfA[i] )
-            throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::sparseColumnsOfA[i]" );
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::sparseColumnsOfA[i]" );
     }
 
     _sparseRowsOfA = new SparseUnsortedList *[m];
     if ( !_sparseRowsOfA )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::sparseRowOfA" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::sparseRowOfA" );
 
     for ( unsigned i = 0; i < m; ++i )
     {
         _sparseRowsOfA[i] = new SparseUnsortedList( _n );
         if ( !_sparseRowsOfA[i] )
-            throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::sparseRowOfA[i]" );
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::sparseRowOfA[i]" );
     }
 
     _denseA = new double[m*n];
     if ( !_denseA )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::denseA" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::denseA" );
 
     _changeColumn = new double[m];
     if ( !_changeColumn )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::changeColumn" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::changeColumn" );
 
     _pivotRow = new TableauRow( n-m );
     if ( !_pivotRow )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::pivotRow" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::pivotRow" );
 
     _b = new double[m];
     if ( !_b )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::b" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::b" );
 
     _unitVector = new double[m];
     if ( !_unitVector )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::unitVector" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::unitVector" );
 
     _multipliers = new double[m];
     if ( !_multipliers )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::multipliers" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::multipliers" );
 
     _basicIndexToVariable = new unsigned[m];
     if ( !_basicIndexToVariable )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::basicIndexToVariable" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::basicIndexToVariable" );
 
     _variableToIndex = new unsigned[n];
     if ( !_variableToIndex )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::variableToIndex" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::variableToIndex" );
 
     _nonBasicIndexToVariable = new unsigned[n-m];
     if ( !_nonBasicIndexToVariable )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::nonBasicIndexToVariable" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::nonBasicIndexToVariable" );
 
     _nonBasicAssignment = new double[n-m];
     if ( !_nonBasicAssignment )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::nonBasicAssignment" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::nonBasicAssignment" );
 
     _lowerBounds = new double[n];
     if ( !_lowerBounds )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::lowerBounds" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::lowerBounds" );
     std::fill_n( _lowerBounds, n, FloatUtils::negativeInfinity() );
 
     _upperBounds = new double[n];
     if ( !_upperBounds )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::upperBounds" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::upperBounds" );
     std::fill_n( _upperBounds, n, FloatUtils::infinity() );
 
     _basicAssignment = new double[m];
     if ( !_basicAssignment )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::assignment" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::assignment" );
 
     _basicStatus = new unsigned[m];
     if ( !_basicStatus )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::basicStatus" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::basicStatus" );
 
     _basisFactorization = BasisFactorizationFactory::createBasisFactorization( _m, *this );
     if ( !_basisFactorization )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::basisFactorization" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::basisFactorization" );
     _basisFactorization->setStatistics( _statistics );
 
     _workM = new double[m];
     if ( !_workM )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::work" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::work" );
 
     _workN = new double[n];
     if ( !_workN )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::work" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::work" );
 
     if ( _statistics )
         _statistics->setCurrentTableauDimension( _m, _n );
@@ -1847,7 +1847,7 @@ unsigned Tableau::addEquation( const Equation &equation )
         catch ( MalformedBasisException & )
         {
             log( "addEquation failed - could not refactorize basis" );
-            throw ReluplexError( ReluplexError::FAILURE_TO_ADD_NEW_EQUATION );
+            throw MarabouError( MarabouError::FAILURE_TO_ADD_NEW_EQUATION );
         }
 
         computeCostFunction();
@@ -1871,7 +1871,7 @@ void Tableau::addRow()
     // Allocate a larger _sparseColumnsOfA, keep old ones
     SparseUnsortedList **newSparseColumnsOfA = new SparseUnsortedList *[newN];
     if ( !newSparseColumnsOfA )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newSparseColumnsOfA" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::newSparseColumnsOfA" );
 
     for ( unsigned i = 0; i < _n; ++i )
     {
@@ -1881,7 +1881,7 @@ void Tableau::addRow()
 
     newSparseColumnsOfA[newN - 1] = new SparseUnsortedList( newM );
     if ( !newSparseColumnsOfA[newN - 1] )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newSparseColumnsOfA[newN-1]" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::newSparseColumnsOfA[newN-1]" );
 
     delete[] _sparseColumnsOfA;
     _sparseColumnsOfA = newSparseColumnsOfA;
@@ -1889,7 +1889,7 @@ void Tableau::addRow()
     // Allocate a larger _sparseRowsOfA, keep old ones
     SparseUnsortedList **newSparseRowsOfA = new SparseUnsortedList *[newM];
     if ( !newSparseRowsOfA )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newSparseRowsOfA" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::newSparseRowsOfA" );
 
     for ( unsigned i = 0; i < _m; ++i )
     {
@@ -1899,7 +1899,7 @@ void Tableau::addRow()
 
     newSparseRowsOfA[newM - 1] = new SparseUnsortedList( newN );
     if ( !newSparseRowsOfA[newM - 1] )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newSparseRowsOfA[newN-1]" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::newSparseRowsOfA[newN-1]" );
 
     delete[] _sparseRowsOfA;
     _sparseRowsOfA = newSparseRowsOfA;
@@ -1907,7 +1907,7 @@ void Tableau::addRow()
     // Allocate a larger _denseA, keep old entries
     double *newDenseA = new double[newM * newN];
     if ( !newDenseA )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newDenseA" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::newDenseA" );
 
     for ( unsigned column = 0; column < _n; ++column )
     {
@@ -1922,14 +1922,14 @@ void Tableau::addRow()
     // Allocate a new changeColumn. Don't need to initialize
     double *newChangeColumn = new double[newM];
     if ( !newChangeColumn )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newChangeColumn" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::newChangeColumn" );
     delete[] _changeColumn;
     _changeColumn = newChangeColumn;
 
     // Allocate a new b and copy the old values
     double *newB = new double[newM];
     if ( !newB )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newB" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::newB" );
     std::fill( newB + _m, newB + newM, 0.0 );
     memcpy( newB, _b, _m * sizeof(double) );
     delete[] _b;
@@ -1938,28 +1938,28 @@ void Tableau::addRow()
     // Allocate a new unit vector. Don't need to initialize
     double *newUnitVector = new double[newM];
     if ( !newUnitVector )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newUnitVector" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::newUnitVector" );
     delete[] _unitVector;
     _unitVector = newUnitVector;
 
     // Allocate new multipliers. Don't need to initialize
     double *newMultipliers = new double[newM];
     if ( !newMultipliers )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newMultipliers" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::newMultipliers" );
     delete[] _multipliers;
     _multipliers = newMultipliers;
 
     // Allocate new index arrays. Copy old indices, but don't assign indices to new variables yet.
     unsigned *newBasicIndexToVariable = new unsigned[newM];
     if ( !newBasicIndexToVariable )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newBasicIndexToVariable" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::newBasicIndexToVariable" );
     memcpy( newBasicIndexToVariable, _basicIndexToVariable, _m * sizeof(unsigned) );
     delete[] _basicIndexToVariable;
     _basicIndexToVariable = newBasicIndexToVariable;
 
     unsigned *newVariableToIndex = new unsigned[newN];
     if ( !newVariableToIndex )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newVariableToIndex" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::newVariableToIndex" );
     memcpy( newVariableToIndex, _variableToIndex, _n * sizeof(unsigned) );
     delete[] _variableToIndex;
     _variableToIndex = newVariableToIndex;
@@ -1967,14 +1967,14 @@ void Tableau::addRow()
     // Allocate a new basic assignment vector, copy old values
     double *newBasicAssignment = new double[newM];
     if ( !newBasicAssignment )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newAssignment" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::newAssignment" );
     memcpy( newBasicAssignment, _basicAssignment, sizeof(double) * _m );
     delete[] _basicAssignment;
     _basicAssignment = newBasicAssignment;
 
     unsigned *newBasicStatus = new unsigned[newM];
     if ( !newBasicStatus )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newBasicStatus" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::newBasicStatus" );
     memcpy( newBasicStatus, _basicStatus, sizeof(unsigned) * _m );
     delete[] _basicStatus;
     _basicStatus = newBasicStatus;
@@ -1982,14 +1982,14 @@ void Tableau::addRow()
     // Allocate new lower and upper bound arrays, and copy old values
     double *newLowerBounds = new double[newN];
     if ( !newLowerBounds )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newLowerBounds" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::newLowerBounds" );
     memcpy( newLowerBounds, _lowerBounds, _n * sizeof(double) );
     delete[] _lowerBounds;
     _lowerBounds = newLowerBounds;
 
     double *newUpperBounds = new double[newN];
     if ( !newUpperBounds )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newUpperBounds" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::newUpperBounds" );
     memcpy( newUpperBounds, _upperBounds, _n * sizeof(double) );
     delete[] _upperBounds;
     _upperBounds = newUpperBounds;
@@ -2002,7 +2002,7 @@ void Tableau::addRow()
     IBasisFactorization *newBasisFactorization =
         BasisFactorizationFactory::createBasisFactorization( newM, *this );
     if ( !newBasisFactorization )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newBasisFactorization" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::newBasisFactorization" );
     delete _basisFactorization;
     _basisFactorization = newBasisFactorization;
     _basisFactorization->setStatistics( _statistics );
@@ -2010,13 +2010,13 @@ void Tableau::addRow()
     // Allocate a larger _workM and _workN. Don't need to initialize.
     double *newWorkM = new double[newM];
     if ( !newWorkM )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newWorkM" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::newWorkM" );
     delete[] _workM;
     _workM = newWorkM;
 
     double *newWorkN = new double[newN];
     if ( !newWorkN )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Tableau::newWorkN" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::newWorkN" );
     delete[] _workN;
     _workN = newWorkN;
 

@@ -21,7 +21,7 @@
 #include "MStringf.h"
 #include "MaxConstraint.h"
 #include "PiecewiseLinearCaseSplit.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 #include "Statistics.h"
 #include <algorithm>
 
@@ -250,7 +250,7 @@ List<unsigned> MaxConstraint::getParticipatingVariables() const
 bool MaxConstraint::satisfied() const
 {
     if ( !( _assignment.exists( _f ) && _assignment.size() > 1 ) )
-        throw ReluplexError( ReluplexError::PARTICIPATING_VARIABLES_ABSENT );
+        throw MarabouError( MarabouError::PARTICIPATING_VARIABLES_ABSENT );
 
     double fValue = _assignment.get( _f );
     return FloatUtils::areEqual( _assignment.get( _maxIndex ), fValue );
@@ -331,7 +331,7 @@ List<PiecewiseLinearConstraint::Fix> MaxConstraint::getSmartFixes( ITableau * ) 
 List<PiecewiseLinearCaseSplit> MaxConstraint::getCaseSplits() const
 {
     if ( phaseFixed() )
-        throw ReluplexError( ReluplexError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
+        throw MarabouError( MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
 
     ASSERT(	_assignment.exists( _f ) );
 

@@ -15,7 +15,7 @@
 
 #include "Debug.h"
 #include "InfeasibleQueryException.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 #include "RowBoundTightener.h"
 #include "SparseUnsortedList.h"
 #include "Statistics.h"
@@ -44,19 +44,19 @@ void RowBoundTightener::setDimensions()
 
     _lowerBounds = new double[_n];
     if ( !_lowerBounds )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "RowBoundTightener::lowerBounds" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "RowBoundTightener::lowerBounds" );
 
     _upperBounds = new double[_n];
     if ( !_upperBounds )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "RowBoundTightener::upperBounds" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "RowBoundTightener::upperBounds" );
 
     _tightenedLower = new bool[_n];
     if ( !_tightenedLower )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "RowBoundTightener::tightenedLower" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "RowBoundTightener::tightenedLower" );
 
     _tightenedUpper = new bool[_n];
     if ( !_tightenedUpper )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "RowBoundTightener::tightenedUpper" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "RowBoundTightener::tightenedUpper" );
 
     resetBounds();
 

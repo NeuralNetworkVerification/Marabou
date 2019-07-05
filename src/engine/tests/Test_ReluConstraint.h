@@ -19,7 +19,7 @@
 #include "MockTableau.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "ReluConstraint.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 
 #include <string.h>
 
@@ -66,9 +66,9 @@ public:
         TS_ASSERT( !relu.participatingVariable( 5 ) );
 
         TS_ASSERT_THROWS_EQUALS( relu.satisfied(),
-                                 const ReluplexError &e,
+                                 const MarabouError &e,
                                  e.getCode(),
-                                 ReluplexError::PARTICIPATING_VARIABLES_ABSENT );
+                                 MarabouError::PARTICIPATING_VARIABLES_ABSENT );
 
         relu.notifyVariableValue( b, 1 );
         relu.notifyVariableValue( f, 1 );
@@ -308,9 +308,9 @@ public:
 
         relu.notifyLowerBound( 1, 1.0 );
         TS_ASSERT_THROWS_EQUALS( splits = relu.getCaseSplits(),
-                                 const ReluplexError &e,
+                                 const MarabouError &e,
                                  e.getCode(),
-                                 ReluplexError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
+                                 MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
 
         relu.unregisterAsWatcher( &tableau );
 
@@ -323,9 +323,9 @@ public:
 
         relu.notifyLowerBound( 4, 1.0 );
         TS_ASSERT_THROWS_EQUALS( splits = relu.getCaseSplits(),
-                                 const ReluplexError &e,
+                                 const MarabouError &e,
                                  e.getCode(),
-                                 ReluplexError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
+                                 MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
 
         relu.unregisterAsWatcher( &tableau );
     }
@@ -346,9 +346,9 @@ public:
 
         relu.notifyUpperBound( 4, -1.0 );
         TS_ASSERT_THROWS_EQUALS( splits = relu.getCaseSplits(),
-                                  const ReluplexError &e,
+                                  const MarabouError &e,
                                   e.getCode(),
-                                  ReluplexError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
+                                  MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
 
         relu.unregisterAsWatcher( &tableau );
     }

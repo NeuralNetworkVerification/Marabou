@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file ReluplexError.h
+/*! \file MarabouError.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz, Christopher Lazarus
@@ -13,12 +13,12 @@
 
  **/
 
-#ifndef __ReluplexError_h__
-#define __ReluplexError_h__
+#ifndef __MarabouError_h__
+#define __MarabouError_h__
 
 #include "Error.h"
 
-class ReluplexError : public Error
+class MarabouError : public Error
 {
 public:
 	enum Code {
@@ -53,17 +53,17 @@ public:
         DEBUGGING_ERROR = 999,
     };
 
-    ReluplexError( ReluplexError::Code code ) : Error( "ReluplexError", (int)code )
+    MarabouError( MarabouError::Code code ) : Error( "MarabouError", (int)code )
 	{
 	}
 
-    ReluplexError( ReluplexError::Code code, const char *userMessage ) :
-        Error( "ReluplexError", (int)code, userMessage )
+    MarabouError( MarabouError::Code code, const char *userMessage ) :
+        Error( "MarabouError", (int)code, userMessage )
     {
     }
 };
 
-#endif // __ReluplexError_h__
+#endif // __MarabouError_h__
 
 //
 // Local Variables:

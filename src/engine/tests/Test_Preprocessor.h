@@ -24,7 +24,7 @@
 #include "MockErrno.h"
 #include "Preprocessor.h"
 #include "ReluConstraint.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 
 #include <string.h>
 

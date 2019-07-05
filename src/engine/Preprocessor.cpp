@@ -20,7 +20,7 @@
 #include "MStringf.h"
 #include "Map.h"
 #include "Preprocessor.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 #include "Statistics.h"
 #include "SymbolicBoundTightener.h"
 #include "Tightening.h"
@@ -555,7 +555,7 @@ void Preprocessor::eliminateVariables()
             if ( _preprocessed._sbt )
             {
                 if ( !(*constraint)->supportsSymbolicBoundTightening() )
-                    throw ReluplexError( ReluplexError::SYMBOLIC_BOUND_TIGHTENER_UNSUPPORTED_CONSTRAINT_TYPE );
+                    throw MarabouError( MarabouError::SYMBOLIC_BOUND_TIGHTENER_UNSUPPORTED_CONSTRAINT_TYPE );
 
                 ReluConstraint *relu = (ReluConstraint *)(*constraint);
                 unsigned b = relu->getB();
@@ -605,7 +605,7 @@ void Preprocessor::eliminateVariables()
             if ( _fixedVariables.exists( i ) )
             {
                 if ( !FloatUtils::areEqual( _fixedVariables[i], _preprocessed._debuggingSolution[i] ) )
-                    throw ReluplexError( ReluplexError::DEBUGGING_ERROR,
+                    throw MarabouError( MarabouError::DEBUGGING_ERROR,
                                          Stringf( "Variable %u fixed to %.5lf, "
                                                   "contradicts possible solution %.5lf",
                                                   i,
@@ -627,7 +627,7 @@ void Preprocessor::eliminateVariables()
                 {
                     if ( !FloatUtils::areEqual ( _preprocessed._debuggingSolution[newVar],
                                                  _preprocessed._debuggingSolution[oldVar] ) )
-                        throw ReluplexError( ReluplexError::DEBUGGING_ERROR,
+                        throw MarabouError( MarabouError::DEBUGGING_ERROR,
                                              Stringf( "Variable %u fixed to %.5lf, "
                                                       "merged into %u which was fixed to %.5lf",
                                                       oldVar,

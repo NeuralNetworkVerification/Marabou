@@ -17,7 +17,7 @@
 
 #include "DantzigsRule.h"
 #include "MockTableau.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 
 #include <string.h>
 

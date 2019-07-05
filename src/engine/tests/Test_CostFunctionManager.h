@@ -19,7 +19,7 @@
 #include "CostFunctionManager.h"
 #include "MockErrno.h"
 #include "MockTableau.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 
 #include <string.h>
 

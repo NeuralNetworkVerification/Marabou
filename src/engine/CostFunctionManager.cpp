@@ -17,7 +17,7 @@
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 #include "TableauRow.h"
 
 CostFunctionManager::CostFunctionManager( ITableau *tableau )
@@ -67,15 +67,15 @@ void CostFunctionManager::initialize()
 
     _costFunction = new double[_n - _m];
     if ( !_costFunction )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "CostFunctionManager::costFunction" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "CostFunctionManager::costFunction" );
 
     _basicCosts = new double[_m];
     if ( !_basicCosts )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "CostFunctionManager::basicCosts" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "CostFunctionManager::basicCosts" );
 
     _multipliers = new double[_m];
     if ( !_multipliers )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "CostFunctionManager::multipliers" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "CostFunctionManager::multipliers" );
 
     invalidateCostFunction();
 }
