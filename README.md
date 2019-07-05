@@ -21,7 +21,10 @@ The latest version of Marabou is available on (GitHub)[http://github.com/GuyKatz
 
 ## Static binaries
 
-Precompiled binaries are available [here](https://aisafety.stanford.edu/marabou/)
+Pre-compiled binaries are available for Linux and MacOS:
+
+[marabou-1.0-x86_64-linux.zip](https://aisafety.stanford.edu/marabou/marabou-1.0-x86_64-linux.zip)
+[marabou-1.0-x86_64-MacOS.zip](https://aisafety.stanford.edu/marabou/marabou-1.0-x86_64-MacOS.zip)
 
 Build and Dependencies
 ------------------------------------------------------------------------------
@@ -39,9 +42,9 @@ To build Marabou, run the following:
 cd pathToMarabouFolder
 make
 ```
-The binary will be produced in ...
+The compiled binary will be *./src/engine/marabou.elf*. 
 
-To use Python interface it needs to be built, so in addition to building Marabou run:
+To build the Python interface, in addition to building Marabou, run:
 ```
 cd maraboupy
 make
@@ -52,21 +55,26 @@ Export maraboupy folder to Python and Jupyter paths:
 PYTHON_PATH=PYTHON_PATH:/pathToMarabouFolder/maraboupy
 JUPYTER_PATH=JUPYTER_PATH:/pathToMarabouFolder/maraboupy
 ```
-and Marabou is ready to be used from a python or a jupyter script.
+and Marabou is ready to be used from a Python or a Jupyter script.
 
 Getting Started
 -----------------------------------------------------------------------------
 ### To run Marabou from Command line 
-After building Marabou the binary is located at ... The repository contains sample networks and properties in ... 
+After building Marabou the binary is located at ./src/engine/marabou.elf. The
+repository contains sample networks and properties in the *experiments* folder.
+For more information see [experiments/README.md](experiments/README.md). To use
+Marabou on an 
 
 ```
-/path/to/bin/marabou.elf resources/networks/acas/? resources/properties/acas_property_3.txt
+./src/engine/marabou.elf experiments/networks/acas/ACASXU_experimental_v2a_2_7.nnet experiments/properties/acas_property_3.txt
 ```
 
 
-### Jupyter notebook using Python interface 
-An example jupyter notebook is available at ... It is ready to run assuming the python interface is build and the jupyter and python paths exported correctly.
+### Using Python interface 
+The *maraboupy/examples* folder contains several python scripts and Jupyter notebooks that can be used An example Jupyter notebook is available [here](maraboupy/examples/Example Notebook.ipynb). 
 
+### About formats and properties
+To find out more about supported formats and how to specify network properties see [experiments/README.md](experiments/README.md)
 Acknowledgments
 -----------------------------------------------------------------------------
 Marabou is sponsored by NSF, DARPA, Intel, Siemens, Ford, GE.
