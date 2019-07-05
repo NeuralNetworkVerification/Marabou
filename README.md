@@ -87,22 +87,16 @@ center](http://aisafety.stanford.edu).
 
 People
 -----------------------------------------------------------------------------
-[Clark Barrett](http://theory.stanford.edu/~barrett/)
-
 [Guy Katz](https://www.katz-lab.com/)
-
+[Clark Barrett](http://theory.stanford.edu/~barrett/)
 [Aleksandar Zeljic](https://profiles.stanford.edu/aleksandar-zeljic)
-
 [Ahmed Irfan](https://profiles.stanford.edu/ahmed-irfan)
-
 [Haoze Wu](http://www.haozewu.com/)
-
+[Christopher Lazarus](https://profiles.stanford.edu/christopher-lazarus-garcia)
+[Kyle Julian](https://www.linkedin.com/in/kyjulian) 
+[Chelsea Sidrane](https://www.linkedin.com/in/chelseasidrane)
+[Parth Shah](https://www.linkedin.com/in/parthshah1995)
+[Shantanu Thakoor](https://in.linkedin.com/in/shantanu-thakoor-4b2630142) 
+[Rachel Lim](https://rachellim.github.io/)
 [Derek A. Huang]() 
 [Duligur Ibeling]()
-[Kyle Julian]() 
-[Christopher Lazarus]()
-[Rachel Lim]()
-[Parth Shah]()
-[Shantanu Thakoor]() 
-[Chelsea Sidrane]()_
-...
