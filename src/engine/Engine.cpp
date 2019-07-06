@@ -661,7 +661,7 @@ void Engine::invokePreprocessor( const InputQuery &inputQuery, bool preprocess )
     if ( infiniteBounds != 0 )
     {
         _exitCode = Engine::ERROR;
-        throw ReluplexError( ReluplexError::UNBOUNDED_VARIABLES_NOT_YET_SUPPORTED,
+        throw MarabouError( MarabouError::UNBOUNDED_VARIABLES_NOT_YET_SUPPORTED,
                              Stringf( "Error! Have %u infinite bounds", infiniteBounds ).ascii() );
     }
 }
@@ -722,7 +722,7 @@ double *Engine::createConstraintMatrix()
     // Step 1: create a constraint matrix from the equations
     double *constraintMatrix = new double[n*m];
     if ( !constraintMatrix )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Engine::constraintMatrix" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Engine::constraintMatrix" );
     std::fill_n( constraintMatrix, n*m, 0.0 );
 
     unsigned equationIndex = 0;
@@ -731,9 +731,7 @@ double *Engine::createConstraintMatrix()
         if ( equation._type != Equation::EQ )
         {
             _exitCode = Engine::ERROR;
-            throw MarabouError( MarabouError::UNBOUNDED_VARIABLES_NOT_YET_SUPPORTED,
-                                 Stringf( "Error! Have %u infinite bounds", infiniteBounds ).ascii() );
-            throw ReluplexError( ReluplexError::NON_EQUALITY_INPUT_EQUATION_DISCOVERED );
+            throw MarabouError( MarabouError::NON_EQUALITY_INPUT_EQUATION_DISCOVERED );
         }
 
         for ( const auto &addend : equation._addends )
@@ -1672,7 +1670,7 @@ void Engine::checkBoundCompliancyWithDebugSolution()
                         var.second,
                         _tableau->getLowerBound( var.first ) );
 
-                throw ReluplexError( ReluplexError::DEBUGGING_ERROR );
+                throw MarabouError( MarabouError::DEBUGGING_ERROR );
             }
 
             if ( FloatUtils::lt( _tableau->getUpperBound( var.first ), var.second, 1e-5 ) )
