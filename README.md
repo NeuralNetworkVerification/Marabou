@@ -1,11 +1,4 @@
-Marabou
-===============================================================================
-Marabou is a tool for verification of deep neural networks (DNNs) with piece-wise
-linear functions. It checks reachability and robustness properties on a given
-network. It is based on and extends the
-[ReluPlex](https://github.com/guykatzz/ReluplexCav2017) algorithm, replacing
-GLPK with its own simplex core enabling tighter integration with satisfiability
-modulo theory (SMT) techniques.
+#  Marabou
 
 Marabou supports fully connected feed-forward and convolutional NNs with
 piece-wise linear activation functions, in the .nnet and TensorFlow formats.
@@ -21,10 +14,9 @@ The latest version of Marabou is available on (GitHub)[http://github.com/GuyKatz
 
 ## Static binaries
 
-Pre-compiled binaries are available for Linux and MacOS:
+Pre-compiled binary for Linux is available:
 
 [marabou-1.0-x86_64-linux.zip](https://aisafety.stanford.edu/marabou/marabou-1.0-x86_64-linux.zip)
-[marabou-1.0-x86_64-MacOS.zip](https://aisafety.stanford.edu/marabou/marabou-1.0-x86_64-MacOS.zip)
 
 Build and Dependencies
 ------------------------------------------------------------------------------
@@ -60,21 +52,38 @@ and Marabou is ready to be used from a Python or a Jupyter script.
 Getting Started
 -----------------------------------------------------------------------------
 ### To run Marabou from Command line 
-After building Marabou the binary is located at ./src/engine/marabou.elf. The
-repository contains sample networks and properties in the *experiments* folder.
-For more information see [experiments/README.md](experiments/README.md). To use
+After building Marabou the binary is located at *src/engine/marabou.elf*. The
+repository contains sample networks and properties in the *resources* folder.
+For more information see [resources/README.md](resources/README.md). To use
 Marabou on an 
 
 ```
-./src/engine/marabou.elf experiments/networks/acas/ACASXU_experimental_v2a_2_7.nnet experiments/properties/acas_property_3.txt
+/src/engine/marabou.elf resources/nnet/acasxu/ACASXU_experimental_v2a_2_7.nnet resources/properties/acas_property_3.txt
 ```
 
 
 ### Using Python interface 
-The *maraboupy/examples* folder contains several python scripts and Jupyter notebooks that can be used An example Jupyter notebook is available [here](maraboupy/examples/Example Notebook.ipynb). 
+The *maraboupy/examples* folder contains several python scripts and Jupyter
+notebooks that can be used starting points. 
+
+### Using the Divide and Conquer (DNC) mode
+In the DNC mode, activated by *--dnc* Marabou decomposes the problem into *n0*
+sub-problems, specified by *--initial-divides=n0*. Each sub-problem will be
+solved with initial timeout of *t0*, supplied by *--initial-timeout=t0*. Every
+sub-problem that times out will be divided into *n* additional sub-problems,
+*--num-online-divides=n*, and the timeout is multiplied by a factor of *f*,
+*--timeout-factor=f*. Number of parallel threads *t* is specified by
+*--num-workers=t*.
+
+So to solve a problem in DNC mode with 4 initial splits and initial timeout of 5s, 4 splits on each timeout and a timeout factor of 1.5:
+```
+src/engine/marabou.elf resources/nnet/acasxu/ACASXU_experimental_v2a_2_7.nnet resources/properties/acas_property_3.txt --dnc --initial-divides=4 --initial-timeout=5 --num-online-divides=4 --timeout-factor=1.5 --num-workers=4
+```
 
 ### About formats and properties
-To find out more about supported formats and how to specify network properties see [experiments/README.md](experiments/README.md)
+To find out more about supported formats and how to specify network properties
+see [resources/README.md](resources/README.md)
+
 Acknowledgments
 -----------------------------------------------------------------------------
 Marabou is sponsored by NSF, DARPA, Intel, Siemens, Ford, GE.
