@@ -252,7 +252,9 @@ public:
         // --> x = [ 0 0 -1 ]
 
         TS_ASSERT_THROWS_NOTHING( basis.backwardTransformation( y, x ) );
-        TS_ASSERT_SAME_DATA( x, expected, sizeof(double) * 3 );
+
+        for ( unsigned i = 0; i < 3; ++i )
+            TS_ASSERT( FloatUtils::areEqual( x[i], expected[i] ) );
     }
 
 	void test_backward_transformation_with_B0()

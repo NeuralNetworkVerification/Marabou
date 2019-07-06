@@ -25,6 +25,7 @@ public:
         VARIABLE_INDEX_OUT_OF_RANGE = 0,
         UNEXPECTED_INPUT = 1,
         FILE_DOESNT_EXIST = 2,
+        UNSUPPORTED_BOUND_TYPE = 3,
     };
 
     InputParserError( InputParserError::Code code ) : Error( "InputParserError", (int)code )

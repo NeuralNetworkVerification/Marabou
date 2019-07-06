@@ -24,9 +24,10 @@
 #include "Queue.h"
 #include "Tightening.h"
 
-class IConstraintBoundTightener;
 class Equation;
+class IConstraintBoundTightener;
 class ITableau;
+class InputQuery;
 class String;
 
 class PiecewiseLinearConstraint : public ITableau::VariableWatcher
@@ -167,7 +168,7 @@ public:
       For preprocessing: get any auxiliary equations that this constraint would
       like to add to the equation pool.
     */
-    virtual void getAuxiliaryEquations( List<Equation> &newEquations ) const = 0;
+    virtual void addAuxiliaryEquations( InputQuery &/* inputQuery */ ) {}
 
     /*
       Ask the piecewise linear constraint to contribute a component to the cost
@@ -175,9 +176,7 @@ public:
       satisfied or inactive, and should be non-empty otherwise. Minimizing the returned
       equation should then lead to the constraint being "closer to satisfied".
     */
-    virtual void getCostFunctionComponent( Map<unsigned, double> &/* cost */ ) const
-    {
-    }
+    virtual void getCostFunctionComponent( Map<unsigned, double> &/* cost */ ) const {}
 
     /*
       Produce string representation of the piecewise linear constraint.

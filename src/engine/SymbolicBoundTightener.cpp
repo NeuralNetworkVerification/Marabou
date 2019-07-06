@@ -835,6 +835,55 @@ const Map<SymbolicBoundTightener::NodeIndex, unsigned> &SymbolicBoundTightener::
     return _nodeIndexToFVariable;
 }
 
+void SymbolicBoundTightener::storeIntoOther( SymbolicBoundTightener &other ) const
+{
+    other.freeMemoryIfNeeded();
+
+    other.setNumberOfLayers( _numberOfLayers );
+
+    for ( unsigned i = 0; i < _numberOfLayers; ++i )
+        other.setLayerSize( i, _layerSizes[i] );
+
+    other.allocateWeightAndBiasSpace();
+
+    for ( unsigned i = 0; i < _numberOfLayers - 1; ++i )
+    {
+        unsigned rows = _weights[i]._rows;
+        unsigned columns = _weights[i]._columns;
+
+        other._weights[i]._rows = rows;
+        other._weights[i]._columns = columns;
+
+        memcpy( other._weights[i]._positiveValues, _weights[i]._positiveValues, sizeof(double) * rows * columns );
+        memcpy( other._weights[i]._negativeValues, _weights[i]._negativeValues, sizeof(double) * rows * columns );
+    }
+
+    for ( unsigned i = 0; i < _numberOfLayers; ++i )
+    {
+        memcpy( other._biases[i], _biases[i], sizeof(double) * _layerSizes[i] );
+    }
+
+    other._inputLayerSize = _inputLayerSize;
+    other._maxLayerSize = _maxLayerSize;
+    other._inputLowerBounds = _inputLowerBounds;
+    other._inputUpperBounds = _inputUpperBounds;
+
+    for ( unsigned i = 0; i < _numberOfLayers; ++i )
+    {
+        memcpy( other._lowerBounds[i], _lowerBounds[i], sizeof(double) * _layerSizes[i] );
+        memcpy( other._upperBounds[i], _upperBounds[i], sizeof(double) * _layerSizes[i] );
+    }
+
+    other._nodeIndexToBVariable = _nodeIndexToBVariable;
+    other._nodeIndexToFVariable = _nodeIndexToFVariable;
+    other._bVariableToNodeIndex = _bVariableToNodeIndex;
+
+    other._nodeIndexToReluState = _nodeIndexToReluState;
+    other._nodeIndexToEliminatedReluState = _nodeIndexToEliminatedReluState;
+
+    other._inputNeuronToIndex = _inputNeuronToIndex;
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

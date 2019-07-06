@@ -21,7 +21,8 @@
 #include "MarabouError.h"
 
 InputQuery::InputQuery()
-    : _sbt( NULL )
+    : _networkLevelReasoner( NULL )
+    , _sbt( NULL )
 {
 }
 
@@ -217,12 +218,42 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
     for ( const auto &constraint : other._plConstraints )
         _plConstraints.append( constraint->duplicateConstraint() );
 
-    _sbt = other._sbt;
+    if ( other._networkLevelReasoner )
+    {
+        if ( !_networkLevelReasoner )
+            _networkLevelReasoner = new NetworkLevelReasoner;
+        other._networkLevelReasoner->storeIntoOther( *_networkLevelReasoner );
+    }
+    else
+    {
+        if ( _networkLevelReasoner )
+        {
+            delete _networkLevelReasoner;
+            _networkLevelReasoner = NULL;
+        }
+    }
+
+    if ( other._sbt )
+    {
+        if ( !_sbt )
+            _sbt = new SymbolicBoundTightener;
+        other._sbt->storeIntoOther( *_sbt );
+    }
+    else
+    {
+        if ( _sbt )
+        {
+            delete _sbt;
+            _sbt = NULL;
+        }
+    }
 
     return *this;
 }
 
 InputQuery::InputQuery( const InputQuery &other )
+    : _networkLevelReasoner( NULL )
+    , _sbt( NULL )
 {
     *this = other;
 }
@@ -424,6 +455,16 @@ void InputQuery::adjustInputOutputMapping( const Map<unsigned, unsigned> &oldInd
     _variableToOutputIndex.clear();
     for ( auto it : _outputIndexToVariable )
         _variableToOutputIndex[it.second] = it.first;
+}
+
+void InputQuery::setNetworkLevelReasoner( NetworkLevelReasoner *nlr )
+{
+    _networkLevelReasoner = nlr;
+}
+
+NetworkLevelReasoner *InputQuery::getNetworkLevelReasoner() const
+{
+    return _networkLevelReasoner;
 }
 
 //

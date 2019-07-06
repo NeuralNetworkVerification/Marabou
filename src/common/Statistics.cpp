@@ -57,6 +57,7 @@ Statistics::Statistics()
     , _numBoundsProposedByPlConstraints( 0 )
     , _numBoundTighteningsOnConstraintMatrix( 0 )
     , _numTighteningsFromConstraintMatrix( 0 )
+    , _numBasisRefactorizations( 0 )
     , _pseNumIterations( 0 )
     , _pseNumResetReferenceSpace( 0 )
     , _ppNumEliminatedVars( 0 )
@@ -272,6 +273,10 @@ void Statistics::print()
     printf( "\t\tNumber of bound notifications sent to PL constraints: %llu. Tightenings proposed: %llu\n"
             , _numBoundNotificationsToPlConstraints
             , _numBoundsProposedByPlConstraints );
+
+    printf( "\t--- Basis Factorization statistics ---\n" );
+    printf( "\tNumber of basis refactorizations: %llu\n",
+            _numBasisRefactorizations );
 
     printf( "\t--- Projected Steepest Edge Statistics ---\n" );
     printf( "\tNumber of iterations: %llu.\n", _pseNumIterations );
@@ -490,6 +495,11 @@ void Statistics::incNumBoundTighteningOnConstraintMatrix()
 void Statistics::incNumTighteningsFromConstraintMatrix( unsigned increment )
 {
     _numTighteningsFromConstraintMatrix += increment;
+}
+
+void Statistics::incNumBasisRefactorizations()
+{
+    ++_numBasisRefactorizations;
 }
 
 void Statistics::pseIncNumIterations()

@@ -33,6 +33,11 @@ SmtCore::SmtCore( IEngine *engine )
 
 SmtCore::~SmtCore()
 {
+    freeMemory();
+}
+
+void SmtCore::freeMemory()
+{
     for ( const auto &stackEntry : _stack )
     {
         delete stackEntry->_engineState;

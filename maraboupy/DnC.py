@@ -61,7 +61,7 @@ def main():
     solver = DnCSolver.DnCSolver(network_name, property_path, num_workers,
                                  initial_splits, online_split, init_to, to_factor,
                                  strategy, input_name, seed, log_file)
-
+    solver.write_summary_file(summary_file, True)
 
     try:
         # Initial split of the input region

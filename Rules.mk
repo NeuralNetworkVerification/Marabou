@@ -45,6 +45,7 @@ LOCAL_INCLUDES += \
 	. \
 	$(COMMON_DIR) \
 	$(CXXTEST_DIR) \
+	$(BOOST_INCLUDES) \
 
 CFLAGS += \
 	-MMD \
@@ -72,6 +73,7 @@ CFLAGS += \
 LIBRARY_DIR += \
 
 LIBRARIES += \
+	pthread \
 
 LINK_FLAGS += \
 

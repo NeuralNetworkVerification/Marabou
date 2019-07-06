@@ -13,19 +13,259 @@
 
 **/
 
+#include "File.h"
 #include "FloatUtils.h"
 #include "InputParserError.h"
 #include "InputQuery.h"
-#include "MString.h"
+#include "MStringf.h"
 #include "MpsParser.h"
 #include <cstdio>
-#include <cstdlib>
-#include <cstring>
 
-MpsParser::MpsParser( const char *filename )
+MpsParser::MpsParser( const String &path )
+    : _numRows( 0 )
+    , _numVars( 0 )
 {
-    // Parses a MPS format file
-    parse( filename );
+    parse( path );
+}
+
+void MpsParser::parse( const String &path )
+{
+    // Load file and check if it exists
+    if ( !File::exists( path ) )
+        throw InputParserError( InputParserError::FILE_DOESNT_EXIST, path.ascii() );
+
+    File file( path );
+    file.open( IFile::MODE_READ );
+
+    // Skip two header lines (NAME and ROWS)
+    file.readLine();
+    file.readLine();
+
+    // Begin parsing the "ROWS" section
+    String line;
+
+    while ( true )
+	{
+        line = file.readLine();
+
+        if ( line.contains( "COLUMNS" ) )
+             break;
+
+	    parseRow( line );
+	}
+
+    log( Stringf( "Number of rows parsed: %u", _numRows ) );
+
+    // Finished parsing rows, proceed to columns
+    while ( true )
+	{
+        line = file.readLine();
+
+        if ( line.contains( "RHS" ) )
+             break;
+
+	    parseColumn( line );
+	}
+
+    log( Stringf( "Number of variables detected: %u\n", _numVars ) );
+
+    // Finished parsing columns, proceed to rhs
+    while ( true )
+    {
+        line = file.readLine();
+
+        if ( line.contains( "BOUNDS" ) || line.contains( "ENDATA" ) )
+            break;
+
+        parseRhs( line );
+	}
+
+    // The bounds section is optional, process it if it exists
+    if ( line.contains( "BOUNDS" ) )
+    {
+        while ( true )
+        {
+            line = file.readLine();
+
+            if ( line.contains( "ENDATA" ) )
+                break;
+
+            parseBounds( line );
+        }
+    }
+
+    setRemainingBounds();
+}
+
+void MpsParser::parseRow( const String &line )
+{
+    List<String> tokens = line.tokenize( "\t\n " );
+
+    if ( tokens.size() != 2 )
+	    throw InputParserError( InputParserError::UNEXPECTED_INPUT, line.ascii() );
+
+    auto it = tokens.begin();
+    String type = *it;
+    ++it;
+    String name = *it;
+
+    // Handle the row type
+    switch ( type.ascii()[0] )
+    {
+    case 'E':
+        _equationIndexToRowType[_numRows] = RowType::EQ;
+        break;
+
+    case 'L':
+        _equationIndexToRowType[_numRows] = RowType::LE;
+        break;
+
+    case 'G':
+        _equationIndexToRowType[_numRows] = RowType::GE;
+        break;
+
+    default:
+        return;
+    }
+
+    // Store equation by name and index
+    _equationNameToIndex[name] = _numRows;
+    _equationIndexToName[_numRows] = name;
+    ++_numRows;
+}
+
+void MpsParser::parseColumn( const String &line )
+{
+    List<String> tokens = line.tokenize( "\t\n " );
+
+    // Need an odd number of tokens: row name + pairs
+    if ( tokens.size() % 2 == 0 )
+	    throw InputParserError( InputParserError::UNEXPECTED_INPUT, line.ascii() );
+
+    // Variable name and index
+    auto it = tokens.begin();
+    String name = *it;
+    ++it;
+    if ( !_variableNameToIndex.exists( name ) )
+    {
+	    _variableNameToIndex[name] = _numVars;
+	    _variableIndexToName[_numVars] = name;
+	    ++_numVars;
+    }
+
+    unsigned varIndex = _variableNameToIndex[name];
+
+    // Parse the remaining token pairs
+    while ( it != tokens.end() )
+    {
+        String equationName = *it;
+        ++it;
+        double coefficient = atof( it->ascii() );
+        ++it;
+
+        if ( _equationNameToIndex.exists( equationName ) )
+        {
+            // The pair describes a coefficient in a known equation
+            unsigned equationIndex = _equationNameToIndex[equationName];
+            _equationIndexToCoefficients[equationIndex][varIndex] = coefficient;
+        }
+        else
+        {
+            // The pair describes a coefficient in an unknown equation (the objective function?)
+            if ( coefficient != 0 )
+                throw InputParserError( InputParserError::UNEXPECTED_INPUT,
+                                        Stringf( "Problematic pair: %s, %.2lf", equationName.ascii(), coefficient ).ascii() );
+        }
+    }
+}
+
+void MpsParser::parseRhs( const String &line )
+{
+    List<String> tokens = line.tokenize( "\t\n " );
+
+    // Need an odd number of tokens: RHS + pairs
+    if ( tokens.size() % 2 == 0 )
+	    throw InputParserError( InputParserError::UNEXPECTED_INPUT, line.ascii() );
+
+    auto it = tokens.begin();
+    String name = *it;
+    ++it;
+
+    // Parse the remaining token pairs
+    while ( it != tokens.end() )
+    {
+        String equationName = *it;
+        ++it;
+        double scalar = atof( it->ascii() );
+        ++it;
+
+        if ( !_equationNameToIndex.exists( equationName ) )
+            throw InputParserError( InputParserError::UNEXPECTED_INPUT, line.ascii() );
+
+
+        unsigned equationIndex = _equationNameToIndex[equationName];
+        _equationIndexToRhs[equationIndex] = scalar;
+    }
+}
+
+void MpsParser::parseBounds( const String &line )
+{
+    List<String> tokens = line.tokenize( "\t\n " );
+
+    if ( tokens.size() != 4 )
+	    throw InputParserError( InputParserError::UNEXPECTED_INPUT, line.ascii() );
+
+    auto it = tokens.begin();
+    String type = *it;
+    ++it;
+
+    String dontCareName = *it;
+    ++it;
+    String varName = *it;
+    ++it;
+    double scalar = atof( it->ascii() );
+
+    if ( !_variableNameToIndex.exists( varName ) )
+        throw InputParserError( InputParserError::UNEXPECTED_INPUT, line.ascii() );
+
+    unsigned varIndex = _variableNameToIndex[varName];
+
+    if ( type == "UP" )
+    {
+        // Upper bound
+        if ( !_varToUpperBounds.exists( varIndex ) || ( _varToUpperBounds[varIndex] > scalar ) )
+            _varToUpperBounds[varIndex] = scalar;
+    }
+    else if ( type == "LO" )
+    {
+        // Lower bound
+        if ( !_varToLowerBounds.exists( varIndex ) || ( _varToLowerBounds[varIndex] < scalar ) )
+            _varToLowerBounds[varIndex] = scalar;
+	}
+    else if ( type == "FX" )
+    {
+        // Upper and lower bound
+        if ( !_varToUpperBounds.exists( varIndex ) || ( _varToUpperBounds[varIndex] > scalar ) )
+            _varToUpperBounds[varIndex] = scalar;
+
+        if ( !_varToLowerBounds.exists( varIndex ) || ( _varToLowerBounds[varIndex] < scalar ) )
+            _varToLowerBounds[varIndex] = scalar;
+	}
+    else
+    {
+        throw InputParserError( InputParserError::UNSUPPORTED_BOUND_TYPE, line.ascii() );
+    }
+}
+
+void MpsParser::setRemainingBounds()
+{
+    // Variables with no bounds specified have LB of 0 and UB of inf.
+    for ( unsigned i = 0; i < _numVars; ++i )
+    {
+        if ( !_varToLowerBounds.exists( i ) &&
+             ( !_varToUpperBounds.exists( i ) || _varToUpperBounds[i] >= 0 ) )
+	    _varToLowerBounds[i] = 0;
+    }
 }
 
 unsigned MpsParser::getNumVars() const
@@ -33,379 +273,87 @@ unsigned MpsParser::getNumVars() const
     return _numVars;
 }
 
-unsigned MpsParser::getNumVarsInclAux() const
+unsigned MpsParser::getNumEquations() const
 {
-    return _numVars + _numEqns;
-}
-
-unsigned MpsParser::getNumEqns() const
-{
-    return _numEqns;
-}
-
-void MpsParser::parse( const char* filename )
-{
-    // Load file and check if it exists
-    FILE *fstream = fopen( filename, "r" );
-
-    if ( fstream == NULL )
-	{
-	    // TODO: throw error
-	    return;
-	}
-
-    int bufferSize = 10240;
-    char *buffer = new char[bufferSize];
-    char *line;
-    char *token;
-
-    // Read MPS file
-    line = fgets( buffer, bufferSize, fstream ); // Skip header line: NAME	TESTPROB
-    line = fgets( buffer, bufferSize, fstream ); // Skip second line: ROWS
-
-    unsigned numRows = 0, numCols = 0;
-    while( true )
-	{
-	    line = fgets( buffer, bufferSize, fstream );
-	    token = strtok( line, DELIM );
-	    //		printf( "%s", token );
-
-	    if ( strcmp(token, "COLUMNS") == 0)
-		break; // next part
-
-	    numRows++;
-	    parseRow( token );
-	}
-
-    printf("Parsed %d rows.\n", numRows);
-    while( true )
-	{
-	    line = fgets( buffer, bufferSize, fstream );
-	    token = strtok( line, DELIM );
-	    //		printf("%s\n", token);
-
-	    if ( strcmp(token, "RHS") == 0)
-		break; // next part
-
-	    numCols++;
-	    parseColumn( token );
-	}
-    printf("Parsed %d lines of columns.\n", numCols);
-    while( true )
-	{
-	    line = fgets( buffer, bufferSize, fstream );
-	    token = strtok( line, DELIM );
-
-	    if ( strcmp( token, "BOUNDS" ) == 0 || strcmp( token, "RANGES" ) == 0 || strcmp( token, "ENDATA" ) == 0 )
-		break;
-
-	    parseRhs( token );
-	}
-
-    if ( strcmp( token, "RANGES" ) == 0 )
-    {
-	while( true )
-	{
-	    line = fgets( buffer, bufferSize, fstream );
-	    token = strtok( line, DELIM );
-
-	    if ( strcmp( token, "BOUNDS") == 0 || strcmp( token, "ENDATA" ) == 0 )
-		break;
-	    parseRanges( token );
-	}
-    }
-
-    if ( strcmp( token, "BOUNDS" ) == 0 )
-    {
-	while( true )
-	{
-	    line = fgets( buffer, bufferSize, fstream );
-	    token = strtok( line, DELIM );
-
-	    if ( strcmp( token, "ENDATA") == 0 || strcmp( token, "SOS") == 0 )
-		break; // end
-	    parseBounds( token );
-	}
-    }
-
-    parseRemainingBounds();
-
-    delete[] buffer;
-}
-
-void MpsParser::parseRemainingBounds()
-{
-    // Variables with no bounds specified have LB of 0 and UB of inf.
-    for ( unsigned i = 0; i < _numVars; ++i )
-    {
-	if ( !_varToLowerBounds.exists( i ) &&
-	     (!_varToUpperBounds.exists( i ) || _varToUpperBounds[i] >= 0 ) )
-	    _varToLowerBounds[i] = 0;
-    }
-}
-void MpsParser::parseRanges( const char *token )
-{
-    // TODO
-    printf("%s", token );
-    printf(" Not configured to handle 'RANGES' in MPS file format.\nStatus: PARSE_FAILURE\n" );
-    exit(1);
-}
-
-void MpsParser::parseBounds( const char *token )
-{
-    if ( strcmp( token, "BV" ) == 0 || strcmp( token, "UI") == 0 || strcmp( token, "LI" ) == 0 || strcmp( token, "SC" ) == 0) {
-	printf( "Only configured to handle UP, LO, FX, FR, MI, and PL bounds.\nStatus: PARSE_FAILURE\n" );
-	exit(1);
-    }
-    strtok( NULL, DELIM ); // bound name, ignore
-    String var = String( strtok( NULL, DELIM ) ); // column name
-
-    unsigned varIndex = _varToIndex[var];
-    double value = atof( strtok( NULL, DELIM ) ); // bound value
-
-    // Log bounds for each different bound type
-    if ( strcmp( token, "UP" ) == 0) {
-	if ( !_varToUpperBounds.exists(varIndex) || FloatUtils::gt(_varToUpperBounds[varIndex], value ) ) {
-	    _varToUpperBounds[varIndex] = value;
-	}
-    } else if ( strcmp( token, "LO" ) == 0 ) {
-	if ( !_varToLowerBounds.exists(varIndex) || FloatUtils::lt(_varToLowerBounds[varIndex], value ) ) {
-	    _varToLowerBounds[varIndex] = value;
-	}
-    } else if ( strcmp( token, "FX" ) == 0 ) {
-	// fixed = both upper and lower
-	if ( !_varToUpperBounds.exists(varIndex) || FloatUtils::gt(_varToUpperBounds[varIndex], value ) ) {
-	    _varToUpperBounds[varIndex] = value;
-	}
-	if ( !_varToLowerBounds.exists(varIndex) || FloatUtils::lt(_varToLowerBounds[varIndex], value ) ) {
-	    _varToLowerBounds[varIndex] = value;
-	}
-    } else if ( strcmp( token, "FR" ) == 0 ) {
-	if ( _varToUpperBounds.exists(varIndex) || _varToLowerBounds.exists( varIndex ) )
-	    throw InputParserError( InputParserError::UNEXPECTED_INPUT, "Conflicting bounds.");
-    } else if ( strcmp( token, "MI" ) == 0 ) {
-	if ( _varToLowerBounds.exists( varIndex ) )
-	    throw InputParserError( InputParserError::UNEXPECTED_INPUT, "Conflicting bounds.");
-	_varToUpperBounds[varIndex] = 0.0;
-    } else if ( strcmp( token, "PL" ) == 0 ) {
-	if ( _varToUpperBounds.exists( varIndex ) )
-	    throw InputParserError( InputParserError::UNEXPECTED_INPUT, "Conflicting bounds.");
-	_varToLowerBounds[varIndex] = 0.0;
-    } else {
-	printf( "Only configured to handle UP, LO, FX, FR, MI, and PL bounds.\nStatus: PARSE_FAILURE\n" );
-	exit(1);
-    }
-}
-
-void MpsParser::parseRhs( const char *token )
-{
-    token = strtok( NULL, DELIM ); // row name
-    while ( token != NULL ) // read an (eqn, rhs) pair
-    {
-	unsigned eqnIndex = _eqnToIndex[String( token )];
-	token = strtok( NULL, DELIM); // value
-
-	_eqnToRhs[eqnIndex] = atof( token );
-	token = strtok( NULL, DELIM); // next eqn name
-    }
+    return _numRows;
 }
 
 String MpsParser::getVarName( unsigned index ) const
 {
-    return _indexToVar[index];
+    return _variableIndexToName[index];
 }
 
-String MpsParser::getEqnName( unsigned index ) const
+String MpsParser::getEquationName( unsigned index ) const
 {
-    return _indexToEqn[index];
+    return _equationIndexToName[index];
 }
 
-String MpsParser::ftos( double val ) const
+double MpsParser::getUpperBound( unsigned index ) const
 {
-    // converts float to string
-    char buf[50];
-    sprintf( buf, "%f", val );
-    return String( buf );
-}
-String MpsParser::getUpperBound( unsigned index ) const
-{
-    return _varToUpperBounds.exists( index ) ? ftos( _varToUpperBounds[index] ) : String("NA");
+    return _varToUpperBounds.exists( index ) ? _varToUpperBounds[index] : DBL_MAX;
 }
 
-String MpsParser::getLowerBound( unsigned index ) const
+double MpsParser::getLowerBound( unsigned index ) const
 {
-    return _varToLowerBounds.exists( index ) ? ftos( _varToLowerBounds[index] ) : String("NA");
+    return _varToLowerBounds.exists( index ) ? _varToLowerBounds[index] : -DBL_MAX;
 }
 
-String MpsParser::getEqnValue( unsigned index, const InputQuery &inputQuery ) const
+void MpsParser::generateQuery( InputQuery &inputQuery ) const
 {
-    double value = 0.0;
-    const Map<unsigned, double> &coeffs = _eqnToCoeffs[index];
-    Map<unsigned, double>::const_iterator it;
+    inputQuery.setNumberOfVariables( _numVars );
 
-    for ( it = coeffs.begin(); it != coeffs.end(); ++it )
+    populateBounds( inputQuery );
+    populateEquations( inputQuery );
+}
+
+void MpsParser::populateBounds( InputQuery &inputQuery ) const
+{
+    for ( const auto &it : _varToUpperBounds )
+        inputQuery.setUpperBound( it.first, it.second );
+
+    for ( const auto &it : _varToLowerBounds )
+        inputQuery.setLowerBound( it.first, it.second );
+}
+
+void MpsParser::populateEquations( InputQuery &inputQuery ) const
+{
+    for ( unsigned index = 0; index < _numRows; ++index )
     {
-	value += it->second * inputQuery.getSolutionValue( it->first);
+        Equation equation;
+        populateEquation( equation, index );
+        inputQuery.addEquation( equation );
     }
-
-    return ftos( value );
 }
 
-String MpsParser::getEqnLB( unsigned index ) const
+void MpsParser::populateEquation( Equation &equation, unsigned index ) const
 {
-    return _eqnToRowType[index] == RowType::G || _eqnToRowType[index] == RowType::E ?
-	ftos( _eqnToRhs[index] ) : String( "NA" );
-}
+    const Map<unsigned, double> &coeffs( _equationIndexToCoefficients[index] );
 
-String MpsParser::getEqnUB( unsigned index ) const
-{
-    return _eqnToRowType[index] == RowType::L || _eqnToRowType[index] == RowType::E ?
-	ftos( _eqnToRhs[index] ) : String( "NA" );
-}
+    for ( const auto &pair : coeffs )
+		equation.addAddend( pair.second, pair.first );
 
-void MpsParser::parseColumn( const char *token )
-{
-    String name = String( token );
-    unsigned varIndex;
-
-    if ( !_varToIndex.exists( name ) )
+    switch ( _equationIndexToRowType[index] )
     {
-	    varIndex = _numVars;
-	    _varToIndex[name] = varIndex;
-	    _indexToVar[varIndex] = name;
-	    _numVars++;
-    }
-    else
-    {
-	    varIndex = _varToIndex[name];
+    case RowType::EQ:
+        equation.setType( Equation::EQ );
+        break;
+
+    case RowType::LE:
+        equation.setType( Equation::LE );
+        break;
+
+    case RowType::GE:
+        equation.setType( Equation::GE );
+        break;
     }
 
-    token = strtok( NULL, DELIM );
-    while ( token != NULL ) // read an (eqn, coeff) pair
-    {
-	//	    printf("tok: %s", token);
-	bool validEqn = _eqnToIndex.exists( String( token ) );
-
-	if ( validEqn) {
-	    unsigned eqnIndex = _eqnToIndex[String( token )];
-	    token = strtok( NULL, DELIM ); // coeff
-
-	    _eqnToCoeffs[eqnIndex][varIndex] = atof( token );
-	    token = strtok( NULL, DELIM); // next eqn name
-	} else {
-	    token = strtok( NULL, DELIM ); // coeff
-	    token = strtok( NULL, DELIM ); // next eqn name
-	}
-    }
+    equation.setScalar( _equationIndexToRhs[index] );
 }
 
-void MpsParser::parseRow( const char *token )
+void MpsParser::log( const String &message ) const
 {
-    unsigned eqnIndex = _numEqns;
-
-    char *nameC = strtok( NULL, "\t\n ");
-    //    printf("%s: %s\n", token, nameC);
-
-    // store row type
-    switch( token [0] ){
-    case 'E':
-	_eqnToRowType[eqnIndex] = RowType::E;
-	break;
-    case 'L':
-	_eqnToRowType[eqnIndex] = RowType::L;
-	break;
-    case 'G':
-	_eqnToRowType[eqnIndex] = RowType::G;
-	break;
-    default:
-	// ignore
-	return;
-    }
-
-    // save equation number
-    _numEqns++;
-    _eqnToIndex[String( nameC )] = eqnIndex;
-    _indexToEqn[eqnIndex] = String( nameC );
-}
-
-void MpsParser::generateQuery( InputQuery &inputQuery )
-{
-    inputQuery.setNumberOfVariables( _numVars + _numEqns );
-    // TODO: incl numEqns for aux variables, but obj function doesn't have aux var
-
-    setBounds( inputQuery );
-    setEqns( inputQuery );
-}
-
-void MpsParser::setBounds( InputQuery &inputQuery )
-{
-    Map<unsigned, double>::iterator it;
-    for ( it = _varToUpperBounds.begin(); it != _varToUpperBounds.end(); ++it )
-    {
-	inputQuery.setUpperBound( it->first, it->second );
-    }
-    for ( it = _varToLowerBounds.begin(); it != _varToLowerBounds.end(); ++it )
-	{
-	inputQuery.setLowerBound( it->first, it->second );
-    }
-}
-
-void MpsParser::setEqns( InputQuery &inputQuery )
-{
-    for ( unsigned eqnIndex = 0; eqnIndex < _numEqns; ++eqnIndex )
-    {    // for each coeff, set in input query
-
-	if ( _eqnToRowType[eqnIndex] == RowType::N )
-	{
-	    printf("Ignoring objective. TODO: transform optval into another constraint.\n");
-	    continue;
-	}
-
-	Equation eqn;
-
-	unsigned auxVarIndex = eqnIndex + _numVars; // TODO: obj function doesn't have aux var
-	setEqn( eqn, eqnIndex, auxVarIndex ); // sets coeffs and marks aux vars
-
-	// Set bounds on aux vars
-	switch ( _eqnToRowType[eqnIndex] ) {
-	case RowType::E:
-	    inputQuery.setLowerBound( auxVarIndex, 0 );
-	    inputQuery.setUpperBound( auxVarIndex, 0 );
-	    break;
-	case RowType::L:
-	    inputQuery.setLowerBound( auxVarIndex, 0 );
-	    break;
-	case RowType::G:
-	    inputQuery.setUpperBound( auxVarIndex, 0 );
-	    break;
-	default:
-	    // Do nothing
-	    break;
-	    // TODO: transform the optval into another constraint
-	}
-
-	// Add eqn to inputQuery
-	inputQuery.addEquation( eqn );
-
-    }
-}
-
-void MpsParser::setEqn( Equation &eqn, unsigned eqnIndex, unsigned auxVarIndex )
-{
-    Map<unsigned, double> &coeffs = _eqnToCoeffs[eqnIndex];
-    Map<unsigned, double>::iterator it;
-
-    for ( it = coeffs.begin(); it != coeffs.end(); ++ it)
-    {
-		eqn.addAddend( it->second, it->first ); // val, index
-    }
-
-    // Aux variable
-    eqn.addAddend( 1, auxVarIndex );
-    eqn.markAuxiliaryVariable( auxVarIndex );
-
-    // Rhs
-    eqn.setScalar( _eqnToRhs[eqnIndex] );
+    if ( false )
+        printf( "MpsParser: %s\n", message.ascii() );
 }
 
 //

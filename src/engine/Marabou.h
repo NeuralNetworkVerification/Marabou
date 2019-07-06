@@ -29,7 +29,7 @@ public:
     /*
       Entry point of this class
     */
-    void run( int argc, char **argv );
+    void run();
 
 private:
     InputQuery _inputQuery;

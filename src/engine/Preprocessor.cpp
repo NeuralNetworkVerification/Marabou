@@ -481,6 +481,53 @@ void Preprocessor::eliminateVariables()
     if ( _statistics )
         _statistics->ppSetNumEliminatedVars( _fixedVariables.size() + _mergedVariables.size() );
 
+
+    // Check and remove any fixed variables from the debugging solution
+    for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
+    {
+        if ( _fixedVariables.exists( i ) && _preprocessed._debuggingSolution.exists( i ) )
+        {
+            if ( !FloatUtils::areEqual( _fixedVariables[i], _preprocessed._debuggingSolution[i] ) )
+                throw ReluplexError( ReluplexError::DEBUGGING_ERROR,
+                                     Stringf( "Variable %u fixed to %.5lf, "
+                                              "contradicts possible solution %.5lf",
+                                              i,
+                                              _fixedVariables[i],
+                                              _preprocessed._debuggingSolution[i] ).ascii() );
+
+            _preprocessed._debuggingSolution.erase( i );
+        }
+    }
+
+    // Check and remove any merged variables from the debugging solution
+    for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
+    {
+        if ( _mergedVariables.exists( i ) && _preprocessed._debuggingSolution.exists( i ) )
+        {
+            double newVar = _mergedVariables[i];
+
+            if ( _preprocessed._debuggingSolution.exists( newVar ) )
+            {
+
+                if ( !FloatUtils::areEqual ( _preprocessed._debuggingSolution[i],
+                                             _preprocessed._debuggingSolution[newVar] ) )
+                    throw ReluplexError( ReluplexError::DEBUGGING_ERROR,
+                                         Stringf( "Variable %u fixed to %.5lf, "
+                                                  "merged into %u which was fixed to %.5lf",
+                                                  i,
+                                                  _preprocessed._debuggingSolution[i],
+                                                  newVar,
+                                                  _preprocessed._debuggingSolution[newVar] ).ascii() );
+            }
+            else
+            {
+                _preprocessed._debuggingSolution[newVar] = _preprocessed._debuggingSolution[i];
+            }
+
+            _preprocessed._debuggingSolution.erase( i );
+        }
+    }
+
     // Compute the new variable indices, after the elimination of fixed variables
  	int offset = 0;
 	for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
@@ -563,7 +610,9 @@ void Preprocessor::eliminateVariables()
                 _preprocessed._sbt->setEliminatedRelu( nodeIndex._layer, nodeIndex._neuron, relu->getPhaseStatus() );
             }
 
-            _statistics->ppIncNumConstraintsRemoved();
+            if ( _statistics )
+                _statistics->ppIncNumConstraintsRemoved();
+
             constraint = constraints.erase( constraint );
         }
         else
@@ -597,57 +646,22 @@ void Preprocessor::eliminateVariables()
         _preprocessed.setUpperBound( _oldIndexToNewIndex.at( i ), _preprocessed.getUpperBound( i ) );
 	}
 
-    // Make any adjustments in the stored debugging solution, if needed
-    for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
+    // Adjust variable indices in the debugging solution
+    Map<unsigned, double> copy = _preprocessed._debuggingSolution;
+    _preprocessed._debuggingSolution.clear();
+    for ( const auto &debugPair : copy )
     {
-        if ( _preprocessed._debuggingSolution.exists( i ) )
-        {
-            if ( _fixedVariables.exists( i ) )
-            {
-                if ( !FloatUtils::areEqual( _fixedVariables[i], _preprocessed._debuggingSolution[i] ) )
-                    throw MarabouError( MarabouError::DEBUGGING_ERROR,
-                                         Stringf( "Variable %u fixed to %.5lf, "
-                                                  "contradicts possible solution %.5lf",
-                                                  i,
-                                                  _fixedVariables[i],
-                                                  _preprocessed._debuggingSolution[i] ).ascii() );
+        unsigned variable = debugPair.first;
+        double value = debugPair.second;
 
-                _preprocessed._debuggingSolution.erase( i );
-            }
-            else if ( _mergedVariables.exists( i ) )
-            {
-                unsigned oldVar = i;
-                unsigned newVar = _mergedVariables[i];
+        // Go through any merges
+        while ( variableIsMerged( variable ) )
+            variable = getMergedIndex( variable );
 
-                if ( !_preprocessed._debuggingSolution.exists( newVar ) )
-                {
-                    _preprocessed._debuggingSolution[newVar] = _preprocessed._debuggingSolution[oldVar];
-                }
-                else
-                {
-                    if ( !FloatUtils::areEqual ( _preprocessed._debuggingSolution[newVar],
-                                                 _preprocessed._debuggingSolution[oldVar] ) )
-                        throw MarabouError( MarabouError::DEBUGGING_ERROR,
-                                             Stringf( "Variable %u fixed to %.5lf, "
-                                                      "merged into %u which was fixed to %.5lf",
-                                                      oldVar,
-                                                      _mergedVariables[oldVar],
-                                                      newVar,
-                                                      _mergedVariables[newVar] ).ascii() );
+        // Grab new index
+        variable = getNewIndex( variable );
 
-                }
-
-                _preprocessed._debuggingSolution.erase( oldVar );
-            }
-            else
-            {
-                _preprocessed._debuggingSolution[_oldIndexToNewIndex[i]] =
-                    _preprocessed._debuggingSolution[i];
-
-                if ( _oldIndexToNewIndex[i] != i )
-                    _preprocessed._debuggingSolution.erase( i );
-            }
-        }
+        _preprocessed._debuggingSolution[variable] = value;
     }
 
     // Adjust the number of variables in the query
@@ -692,16 +706,11 @@ void Preprocessor::setStatistics( Statistics *statistics )
 
 void Preprocessor::addPlAuxiliaryEquations()
 {
-    // First, collect all the new equations
     const List<PiecewiseLinearConstraint *> &plConstraints
         ( _preprocessed.getPiecewiseLinearConstraints() );
 
-    List<Equation> newEquations;
     for ( const auto &constraint : plConstraints )
-        constraint->getAuxiliaryEquations( newEquations );
-
-    for ( Equation equation : newEquations )
-        _preprocessed.addEquation( equation );
+        constraint->addAuxiliaryEquations( _preprocessed );
 }
 
 void Preprocessor::dumpAllBounds( const String &message )

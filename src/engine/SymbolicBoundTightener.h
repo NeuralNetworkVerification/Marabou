@@ -126,6 +126,11 @@ public:
     double getLowerBound( unsigned layer, unsigned neuron ) const;
     double getUpperBound( unsigned layer, unsigned neuron ) const;
 
+    /*
+      Duplicate the tightener
+    */
+    void storeIntoOther( SymbolicBoundTightener &other ) const;
+
 private:
     // The number of layers and their sizes
     unsigned _numberOfLayers;

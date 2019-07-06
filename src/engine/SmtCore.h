@@ -32,6 +32,11 @@ public:
     ~SmtCore();
 
     /*
+      Clear the stack.
+    */
+    void freeMemory();
+
+    /*
       Inform the SMT core that a PL constraint is violated.
     */
     void reportViolatedConstraint( PiecewiseLinearConstraint *constraint );
