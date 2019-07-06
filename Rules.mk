@@ -76,7 +76,7 @@ LIBRARIES += \
 	pthread \
 
 LINK_FLAGS += \
-
+	-static\
 #
 # Compiling Elf Files
 #
