@@ -70,6 +70,8 @@ void Options::initializeDefaultValues()
 void Options::parseOptions( int argc, char **argv )
 {
     _optionParser.parse( argc, argv );
+    if (_optionParser.valueExists("help"))
+        std::cout << "HELP!" << std::endl;
 }
 
 bool Options::getBool( unsigned option ) const
