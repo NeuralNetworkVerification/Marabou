@@ -44,8 +44,8 @@ make
 
 Export maraboupy folder to Python and Jupyter paths:
 ```
-PYTHON_PATH=PYTHON_PATH:/pathToMarabouFolder/maraboupy
-JUPYTER_PATH=JUPYTER_PATH:/pathToMarabouFolder/maraboupy
+PYTHONPATH=PYTHONPATH:/path/to/marabou/folder
+JUPYTER_PATH=JUPYTER_PATH:/path/to/marabou/folder
 ```
 and Marabou is ready to be used from a Python or a Jupyter script.
 
