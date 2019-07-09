@@ -76,8 +76,12 @@ void OptionParser::initialize()
         ( "timeout-factor",
           boost::program_options::value<float>( &((*_floatOptions)[Options::TIMEOUT_FACTOR]) ),
           "(DNC) The timeout factor" )
-        ( "help", "Prints the help message")
-        ( "version", "Prints the version")
+        ( "help",
+          boost::program_options::bool_switch( &((*_boolOptions)[Options::HELP]) ),
+          "Prints the help message")
+        ( "version",
+          boost::program_options::bool_switch( &((*_boolOptions)[Options::VERSION]) ),
+          "Prints the version number")
 
         ;
 
