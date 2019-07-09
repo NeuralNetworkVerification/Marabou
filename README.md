@@ -58,7 +58,7 @@ For more information see [resources/README.md](resources/README.md). To use
 Marabou on an 
 
 ```
-/src/engine/marabou.elf resources/nnet/acasxu/ACASXU_experimental_v2a_2_7.nnet resources/properties/acas_property_3.txt
+src/engine/marabou.elf resources/nnet/acasxu/ACASXU_experimental_v2a_2_7.nnet resources/properties/acas_property_3.txt
 ```
 
 
@@ -88,6 +88,13 @@ Acknowledgments
 -----------------------------------------------------------------------------
 Marabou is sponsored by NSF, DARPA, Intel, Siemens, Ford, GE.
 
+The Maraobu project is partially supported by grants from the Binational Science
+Foundation (2017662), the Defense Advanced Research Projects Agency
+(FA8750-18-C-0099), the Semiconductor Research Corporation (2019-AU-2898), the
+Federal Aviation Administration, Ford Motor Company, Intel Corporation, the
+Israel Science Foundation (683/18), the National Science Foundation (1814369,
+DGE-1656518), Siemens Corporation, General Electric, and the Stanford CURIS program.
+
 
 Marabou is used in a number of flagship projects at [Stanford's AISafety
 center](http://aisafety.stanford.edu).
@@ -107,5 +114,8 @@ People
 [Parth Shah](https://www.linkedin.com/in/parthshah1995)
 [Shantanu Thakoor](https://in.linkedin.com/in/shantanu-thakoor-4b2630142) 
 [Rachel Lim](https://rachellim.github.io/)
-[Derek A. Huang]() 
-[Duligur Ibeling]()
+Derek A. Huang 
+Duligur Ibeling
+Elazar Cohen
+Ben Goldberger
+Omri Cohen
