@@ -4,7 +4,7 @@ Marabou supports fully connected feed-forward and convolutional NNs with
 piece-wise linear activation functions, in the .nnet and TensorFlow formats.
 Properties can be specified using inequalites over input and output variables.
 For more details about the features of Marabou check out the [tool
-paper](marabouCAV2019.pdf) or the [slides](marabouSlides.pdf). For more
+paper](aisafety.stanford.edu/marabou/MarabouCAV2019.pdf) or the [slides](aisafety.stanford.edu/marabou/MarabouSlides.pdf). For more
 information about the input formats please check the
 [wiki](https://github.com/guykatzz/Marabou/wiki/Marabou-Input-Formats).
 
