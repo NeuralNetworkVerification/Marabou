@@ -24,17 +24,17 @@ Marabou can be built on Linux and macOS. Marabou depends on the Boost library
 which is automatically downloaded and built when you run make. Library CXXTEST
 comes included in the repository.
 
-Using Marabou through the Python interface requires Python 3.5(?). If you have a
-higher version installed you can set up a Python virtual environment, see
+Using Marabou through the Python interface requires Python 3. It may be useful
+to set up a Python virtual environment, see
 [here](https://docs.python.org/3/tutorial/venv.html) for more information.
 
 
 To build Marabou, run the following:
 ```
-cd pathToMarabouFolder
+cd path/to/marabou/repo/folder
 make
 ```
-The compiled binary will be *./src/engine/marabou.elf*. 
+The compiled binary will be in *./src/engine/marabou.elf*. 
 
 To build the Python interface, in addition to building Marabou, run:
 ```
@@ -54,8 +54,9 @@ Getting Started
 ### To run Marabou from Command line 
 After building Marabou the binary is located at *src/engine/marabou.elf*. The
 repository contains sample networks and properties in the *resources* folder.
-For more information see [resources/README.md](resources/README.md). To use
-Marabou on an 
+For more information see [resources/README.md](resources/README.md).
+
+To run Marabou, execute from the repo directory, for example:
 
 ```
 src/engine/marabou.elf resources/nnet/acasxu/ACASXU_experimental_v2a_2_7.nnet resources/properties/acas_property_3.txt
@@ -80,15 +81,10 @@ So to solve a problem in DNC mode with 4 initial splits and initial timeout of 5
 src/engine/marabou.elf resources/nnet/acasxu/ACASXU_experimental_v2a_2_7.nnet resources/properties/acas_property_3.txt --dnc --initial-divides=4 --initial-timeout=5 --num-online-divides=4 --timeout-factor=1.5 --num-workers=4
 ```
 
-### About formats and properties
-To find out more about supported formats and how to specify network properties
-see [resources/README.md](resources/README.md)
-
 Acknowledgments
 -----------------------------------------------------------------------------
-Marabou is sponsored by NSF, DARPA, Intel, Siemens, Ford, GE.
 
-The Maraobu project is partially supported by grants from the Binational Science
+The Marabou project is partially supported by grants from the Binational Science
 Foundation (2017662), the Defense Advanced Research Projects Agency
 (FA8750-18-C-0099), the Semiconductor Research Corporation (2019-AU-2898), the
 Federal Aviation Administration, Ford Motor Company, Intel Corporation, the
