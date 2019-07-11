@@ -65,7 +65,7 @@ make
 ```
 The compiled binary will be in *./src/engine/marabou.elf*. 
 
-The Python interface requires *pybind11* to be installed. Once installed, it is sufficient to run:
+The Python interface requires *pybind11*,  in addition to building Marabou, run:
 ```
 cd maraboupy
 make
@@ -94,7 +94,7 @@ src/engine/marabou.elf resources/nnet/acasxu/ACASXU_experimental_v2a_2_7.nnet re
 
 ### Using Python interface 
 The *maraboupy/examples* folder contains several python scripts and Jupyter
-notebooks that can be used starting points. 
+notebooks that can be used as starting points. 
 
 ### Using the Divide and Conquer (DNC) mode
 In the DNC mode, activated by *--dnc* Marabou decomposes the problem into *n0*
