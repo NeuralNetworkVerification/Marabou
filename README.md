@@ -65,7 +65,7 @@ make
 ```
 The compiled binary will be in *./src/engine/marabou.elf*. 
 
-To build the Python interface, in addition to building Marabou, run:
+The Python interface requires *pybind11* to be installed. Once installed, it is sufficient to run:
 ```
 cd maraboupy
 make
