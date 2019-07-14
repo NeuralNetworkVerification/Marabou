@@ -32,7 +32,7 @@ via Python interface.
 
 For more details about the features of Marabou check out the [tool
 paper](aisafety.stanford.edu/marabou/MarabouCAV2019.pdf) and the
-[slides](aisafety.stanford.edu/marabou/MarabouSlides.pdf). 
+[slides](aisafety.stanford.edu/marabou/fomlas19.html). 
 
 For more information about the input formats please check the
 [wiki](https://github.com/guykatzz/Marabou/wiki/Marabou-Input-Formats).
