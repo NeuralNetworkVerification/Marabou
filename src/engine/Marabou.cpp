@@ -22,8 +22,9 @@
 #include "PropertyParser.h"
 #include "ReluplexError.h"
 
-Marabou::Marabou()
+Marabou::Marabou( unsigned verbosity )
     : _acasParser( NULL )
+    , _engine( verbosity )
 {
 }
 
