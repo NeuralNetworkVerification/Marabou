@@ -160,6 +160,9 @@ void DnCManager::solve( unsigned timeoutInSeconds )
 
     updateDnCExitCode();
     printResult();
+    if ( _engineWithSATAssignemnt )
+        _engineWithSATAssignemnt->extractSolution( *( _engineWithSATAssignemnt->
+                                                      getInputQuery() ) );
     return;
 }
 
@@ -178,6 +181,7 @@ void DnCManager::updateDnCExitCode()
         Engine::ExitCode result = engine->getExitCode();
         if ( result == Engine::SAT )
         {
+            _engineWithSATAssignemnt = engine;
             hasSat = true;
             break;
         }
