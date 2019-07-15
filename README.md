@@ -31,15 +31,15 @@ Properties can be specified using inequalites over input and output variables or
 via Python interface. 
 
 For more details about the features of Marabou check out the [tool
-paper](aisafety.stanford.edu/marabou/MarabouCAV2019.pdf) and the
-[slides](aisafety.stanford.edu/marabou/fomlas19.html). 
+paper](https://aisafety.stanford.edu/marabou/MarabouCAV2019.pdf) and the
+[slides](https://aisafety.stanford.edu/marabou/fomlas19.html). 
 
 For more information about the input formats please check the
 [wiki](https://github.com/guykatzz/Marabou/wiki/Marabou-Input-Formats).
 
 Download
 ------------------------------------------------------------------------------
-The latest version of Marabou is available on (GitHub)[http://github.com/GuyKatzz/Marabou].
+The latest version of Marabou is available on [http://github.com/GuyKatzz/Marabou].
 
 ## Static binaries
 
@@ -129,18 +129,33 @@ center](http://aisafety.stanford.edu).
 People
 -----------------------------------------------------------------------------
 [Guy Katz](https://www.katz-lab.com/)
+
 [Clark Barrett](http://theory.stanford.edu/~barrett/)
+
 [Aleksandar Zeljic](https://profiles.stanford.edu/aleksandar-zeljic)
+
 [Ahmed Irfan](https://profiles.stanford.edu/ahmed-irfan)
+
 [Haoze Wu](http://www.haozewu.com/)
+
 [Christopher Lazarus](https://profiles.stanford.edu/christopher-lazarus-garcia)
+
 [Kyle Julian](https://www.linkedin.com/in/kyjulian) 
+
 [Chelsea Sidrane](https://www.linkedin.com/in/chelseasidrane)
+
 [Parth Shah](https://www.linkedin.com/in/parthshah1995)
+
 [Shantanu Thakoor](https://in.linkedin.com/in/shantanu-thakoor-4b2630142) 
+
 [Rachel Lim](https://rachellim.github.io/)
+
 Derek A. Huang 
+
 Duligur Ibeling
+
 Elazar Cohen
+
 Ben Goldberger
+
 Omri Cohen
