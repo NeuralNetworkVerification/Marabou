@@ -24,7 +24,7 @@
 #include "MalformedBasisException.h"
 #include "PiecewiseLinearConstraint.h"
 #include "Preprocessor.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 #include "TableauRow.h"
 #include "TimeUtils.h"
 
@@ -89,7 +89,7 @@ void Engine::adjustWorkMemorySize()
 
     _work = new double[_tableau->getM()];
     if ( !_work )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Engine::work" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Engine::work" );
 }
 
 bool Engine::solve( unsigned timeoutInSeconds )
@@ -382,7 +382,7 @@ void Engine::performSimplexStep()
                             "Recomputing cost function. New one is:\n" );
                     _costFunctionManager->computeCoreCostFunction();
                     _costFunctionManager->dumpCostFunction();
-                    throw ReluplexError( ReluplexError::DEBUGGING_ERROR,
+                    throw MarabouError( MarabouError::DEBUGGING_ERROR,
                                          "Have OOB vars but cost function is zero" );
                 }
             }
@@ -661,7 +661,7 @@ void Engine::invokePreprocessor( const InputQuery &inputQuery, bool preprocess )
     if ( infiniteBounds != 0 )
     {
         _exitCode = Engine::ERROR;
-        throw ReluplexError( ReluplexError::UNBOUNDED_VARIABLES_NOT_YET_SUPPORTED,
+        throw MarabouError( MarabouError::UNBOUNDED_VARIABLES_NOT_YET_SUPPORTED,
                              Stringf( "Error! Have %u infinite bounds", infiniteBounds ).ascii() );
     }
 }
@@ -722,7 +722,7 @@ double *Engine::createConstraintMatrix()
     // Step 1: create a constraint matrix from the equations
     double *constraintMatrix = new double[n*m];
     if ( !constraintMatrix )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Engine::constraintMatrix" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Engine::constraintMatrix" );
     std::fill_n( constraintMatrix, n*m, 0.0 );
 
     unsigned equationIndex = 0;
@@ -731,7 +731,7 @@ double *Engine::createConstraintMatrix()
         if ( equation._type != Equation::EQ )
         {
             _exitCode = Engine::ERROR;
-            throw ReluplexError( ReluplexError::NON_EQUALITY_INPUT_EQUATION_DISCOVERED );
+            throw MarabouError( MarabouError::NON_EQUALITY_INPUT_EQUATION_DISCOVERED );
         }
 
         for ( const auto &addend : equation._addends )
@@ -1181,7 +1181,7 @@ void Engine::restoreState( const EngineState &state )
     log( "Restore state starting" );
 
     if ( !state._tableauStateIsStored )
-        throw ReluplexError( ReluplexError::RESTORING_ENGINE_FROM_INVALID_STATE );
+        throw MarabouError( MarabouError::RESTORING_ENGINE_FROM_INVALID_STATE );
 
     log( "\tRestoring tableau state" );
     _tableau->restoreState( state._tableauState );
@@ -1190,7 +1190,7 @@ void Engine::restoreState( const EngineState &state )
     for ( auto &constraint : _plConstraints )
     {
         if ( !state._plConstraintToState.exists( constraint ) )
-            throw ReluplexError( ReluplexError::MISSING_PL_CONSTRAINT_STATE );
+            throw MarabouError( MarabouError::MISSING_PL_CONSTRAINT_STATE );
 
         constraint->restoreState( state._plConstraintToState[constraint] );
     }
@@ -1617,7 +1617,7 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
                     afterSecond );
 
         if ( highDegradation() )
-            throw ReluplexError( ReluplexError::RESTORATION_FAILED_TO_RESTORE_PRECISION );
+            throw MarabouError( MarabouError::RESTORATION_FAILED_TO_RESTORE_PRECISION );
     }
 }
 
@@ -1670,7 +1670,7 @@ void Engine::checkBoundCompliancyWithDebugSolution()
                         var.second,
                         _tableau->getLowerBound( var.first ) );
 
-                throw ReluplexError( ReluplexError::DEBUGGING_ERROR );
+                throw MarabouError( MarabouError::DEBUGGING_ERROR );
             }
 
             if ( FloatUtils::lt( _tableau->getUpperBound( var.first ), var.second, 1e-5 ) )
@@ -1681,7 +1681,7 @@ void Engine::checkBoundCompliancyWithDebugSolution()
                         var.second,
                         _tableau->getUpperBound( var.first ) );
 
-                throw ReluplexError( ReluplexError::DEBUGGING_ERROR );
+                throw MarabouError( MarabouError::DEBUGGING_ERROR );
             }
         }
     }
@@ -1727,7 +1727,7 @@ void Engine::performSymbolicBoundTightening()
         // We assume the input variables are the first variables
         if ( inputVariable != inputVariableIndex )
         {
-            throw ReluplexError( ReluplexError::SYMBOLIC_BOUND_TIGHTENER_FAULTY_INPUT,
+            throw MarabouError( MarabouError::SYMBOLIC_BOUND_TIGHTENER_FAULTY_INPUT,
                                  Stringf( "Sanity check failed, input variable %u with unexpected index %u", inputVariableIndex, inputVariable ).ascii() );
         }
         ++inputVariableIndex;
@@ -1743,7 +1743,7 @@ void Engine::performSymbolicBoundTightening()
     for ( const auto &constraint : _plConstraints )
     {
         if ( !constraint->supportsSymbolicBoundTightening() )
-            throw ReluplexError( ReluplexError::SYMBOLIC_BOUND_TIGHTENER_UNSUPPORTED_CONSTRAINT_TYPE );
+            throw MarabouError( MarabouError::SYMBOLIC_BOUND_TIGHTENER_UNSUPPORTED_CONSTRAINT_TYPE );
 
         ReluConstraint *relu = (ReluConstraint *)constraint;
         unsigned b = relu->getB();

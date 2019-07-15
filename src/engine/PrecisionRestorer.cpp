@@ -17,7 +17,7 @@
 #include "FloatUtils.h"
 #include "MalformedBasisException.h"
 #include "PrecisionRestorer.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 #include "SmtCore.h"
 
 void PrecisionRestorer::storeInitialEngineState( const IEngine &engine )
@@ -99,7 +99,7 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
                 }
                 catch ( MalformedBasisException & )
                 {
-                    throw ReluplexError( ReluplexError::RESTORATION_FAILED_TO_REFACTORIZE_BASIS,
+                    throw MarabouError( MarabouError::RESTORATION_FAILED_TO_REFACTORIZE_BASIS,
                                          "Precision restoration failed - could not refactorize basis after setting basics" );
                 }
             }

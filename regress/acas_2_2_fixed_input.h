@@ -22,7 +22,7 @@
 #include "GlobalConfiguration.h"
 #include "InputQuery.h"
 #include "Preprocessor.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 
 class Acas_2_2_Fixed_Input
 {
