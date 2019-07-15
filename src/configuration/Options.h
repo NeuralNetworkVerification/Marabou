@@ -33,6 +33,12 @@ public:
 
         // Should DNC mode be on or off
         DNC_MODE,
+
+        // Help flag
+        HELP,
+
+        // Version flag
+        VERSION,
     };
 
     enum IntOptions {

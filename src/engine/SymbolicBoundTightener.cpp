@@ -16,7 +16,7 @@
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "MStringf.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 #include "SymbolicBoundTightener.h"
 
 SymbolicBoundTightener::SymbolicBoundTightener()
@@ -35,7 +35,7 @@ SymbolicBoundTightener::SymbolicBoundTightener()
     , _previousLayerUpperBias( NULL )
 {
     if ( GlobalConfiguration::USE_COLUMN_MERGING_EQUATIONS )
-        throw ReluplexError( ReluplexError::SYMBOLIC_BOUND_TIGHTENER_OPTION_NOT_SUPPORTED,
+        throw MarabouError( MarabouError::SYMBOLIC_BOUND_TIGHTENER_OPTION_NOT_SUPPORTED,
                              "Cannot run SBT with Column Merging!" );
 }
 
@@ -709,7 +709,7 @@ void SymbolicBoundTightener::setReluFVariable( unsigned layer, unsigned neuron, 
 SymbolicBoundTightener::NodeIndex SymbolicBoundTightener::nodeIndexFromB( unsigned b ) const
 {
     if ( !_bVariableToNodeIndex.exists( b ) )
-        throw ReluplexError( ReluplexError::SYMBOLIC_BOUND_TIGHTENER_UNKNOWN_VARIABLE_INDEX );
+        throw MarabouError( MarabouError::SYMBOLIC_BOUND_TIGHTENER_UNKNOWN_VARIABLE_INDEX );
 
     return _bVariableToNodeIndex.at( b );
 }
@@ -810,7 +810,7 @@ void SymbolicBoundTightener::updateVariableIndices( const Map<unsigned, unsigned
     for ( unsigned i = 0; i < _inputLayerSize; ++i )
     {
         if ( mergedVariables.exists( i ) )
-            throw ReluplexError( ReluplexError::MERGED_INPUT_VARIABLE );
+            throw MarabouError( MarabouError::MERGED_INPUT_VARIABLE );
 
         if ( !oldIndexToNewIndex.exists( i ) )
         {

@@ -28,7 +28,7 @@
 #include "AcasParser.h"
 #include "Engine.h"
 #include "InputQuery.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 #include "MString.h"
 #include "FloatUtils.h"
 #include "MaxConstraint.h"
@@ -123,8 +123,8 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::s
         for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); i++)
             ret[i] = inputQuery.getSolutionValue(i);
     }
-    catch(const ReluplexError &e){
-        printf( "Caught a ReluplexError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );
+    catch(const MarabouError &e){
+        printf( "Caught a MarabouError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );
         return std::make_pair(ret, retStats);
     }
     if(output != -1)

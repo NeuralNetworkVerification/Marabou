@@ -23,14 +23,14 @@
 #include "QueryLoader.h"
 #include "ReluConstraint.h"
 #include "GlobalConfiguration.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 // TODO: add a unit test for a sanity check
 
 InputQuery QueryLoader::loadQuery( const String &fileName )
 {
     if ( !File::exists( fileName ) )
     {
-        throw ReluplexError(ReluplexError::FILE_DOES_NOT_EXIST, Stringf( "File %s not found.\n", fileName.ascii() ).ascii() );
+        throw MarabouError(MarabouError::FILE_DOES_NOT_EXIST, Stringf( "File %s not found.\n", fileName.ascii() ).ascii() );
     }
 
     InputQuery inputQuery;
@@ -111,7 +111,7 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
 
         default:
             // Throw exception
-            throw ReluplexError(ReluplexError::INVALID_EQUATION_TYPE, Stringf("Invalid Equation Type\n").ascii() );
+            throw MarabouError(MarabouError::INVALID_EQUATION_TYPE, Stringf("Invalid Equation Type\n").ascii() );
             break;
         }
 
@@ -165,7 +165,7 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         }
         else
         {
-            throw ReluplexError(ReluplexError::UNSUPPORTED_PIECEWISE_CONSTRAINT, Stringf("UNSUPPORTED PIECEWISE CONSTRAINT: %s\n", coType.ascii()).ascii() );
+            throw MarabouError(MarabouError::UNSUPPORTED_PIECEWISE_CONSTRAINT, Stringf("UNSUPPORTED PIECEWISE CONSTRAINT: %s\n", coType.ascii()).ascii() );
         }
 
         ASSERT( constraint );
