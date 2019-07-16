@@ -22,7 +22,7 @@
 #include "MockErrno.h"
 #include "MockFileFactory.h"
 #include "ReluConstraint.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 
 #include <string.h>
 
@@ -67,14 +67,14 @@ public:
         TS_ASSERT_EQUALS( inputQuery.getLowerBound( 2 ), 4 );
 
         TS_ASSERT_THROWS_EQUALS( inputQuery.getLowerBound( 5 ),
-                                 const ReluplexError &e,
+                                 const MarabouError &e,
                                  e.getCode(),
-                                 ReluplexError::VARIABLE_INDEX_OUT_OF_RANGE );
+                                 MarabouError::VARIABLE_INDEX_OUT_OF_RANGE );
 
         TS_ASSERT_THROWS_EQUALS( inputQuery.setLowerBound( 6, 1 ),
-                                 const ReluplexError &e,
+                                 const MarabouError &e,
                                  e.getCode(),
-                                 ReluplexError::VARIABLE_INDEX_OUT_OF_RANGE );
+                                 MarabouError::VARIABLE_INDEX_OUT_OF_RANGE );
     }
 
     void test_upper_bounds()
@@ -93,14 +93,14 @@ public:
         TS_ASSERT_EQUALS( inputQuery.getUpperBound( 0 ), 1 );
 
         TS_ASSERT_THROWS_EQUALS( inputQuery.getUpperBound( 5 ),
-                                 const ReluplexError &e,
+                                 const MarabouError &e,
                                  e.getCode(),
-                                 ReluplexError::VARIABLE_INDEX_OUT_OF_RANGE );
+                                 MarabouError::VARIABLE_INDEX_OUT_OF_RANGE );
 
         TS_ASSERT_THROWS_EQUALS( inputQuery.setUpperBound( 6, 1 ),
-                                 const ReluplexError &e,
+                                 const MarabouError &e,
                                  e.getCode(),
-                                 ReluplexError::VARIABLE_INDEX_OUT_OF_RANGE );
+                                 MarabouError::VARIABLE_INDEX_OUT_OF_RANGE );
     }
 
     void test_equality_operator()

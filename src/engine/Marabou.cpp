@@ -20,7 +20,7 @@
 #include "Marabou.h"
 #include "Options.h"
 #include "PropertyParser.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 
 Marabou::Marabou( unsigned verbosity )
     : _acasParser( NULL )
@@ -59,7 +59,7 @@ void Marabou::prepareInputQuery()
     if ( !File::exists( networkFilePath ) )
     {
         printf( "Error: the specified network file (%s) doesn't exist!\n", networkFilePath.ascii() );
-        throw ReluplexError( ReluplexError::FILE_DOESNT_EXIST, networkFilePath.ascii() );
+        throw MarabouError( MarabouError::FILE_DOESNT_EXIST, networkFilePath.ascii() );
     }
     printf( "Network: %s\n", networkFilePath.ascii() );
 

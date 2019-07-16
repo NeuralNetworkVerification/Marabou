@@ -15,7 +15,7 @@
 
 #include "ConstraintBoundTightener.h"
 #include "FloatUtils.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 #include "Statistics.h"
 
 ConstraintBoundTightener::ConstraintBoundTightener( const ITableau &tableau )
@@ -37,19 +37,19 @@ void ConstraintBoundTightener::setDimensions()
 
     _lowerBounds = new double[_n];
     if ( !_lowerBounds )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "ConstraintBoundTightener::lowerBounds" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "ConstraintBoundTightener::lowerBounds" );
 
     _upperBounds = new double[_n];
     if ( !_upperBounds )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "ConstraintBoundTightener::upperBounds" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "ConstraintBoundTightener::upperBounds" );
 
     _tightenedLower = new bool[_n];
     if ( !_tightenedLower )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "ConstraintBoundTightener::tightenedLower" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "ConstraintBoundTightener::tightenedLower" );
 
     _tightenedUpper = new bool[_n];
     if ( !_tightenedUpper )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "ConstraintBoundTightener::tightenedUpper" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "ConstraintBoundTightener::tightenedUpper" );
 
     resetBounds();
 }

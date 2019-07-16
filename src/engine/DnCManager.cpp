@@ -23,7 +23,7 @@
 #include "PiecewiseLinearCaseSplit.h"
 #include "PropertyParser.h"
 #include "QueryDivider.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 #include "TimeUtils.h"
 
 #include <atomic>
@@ -111,7 +111,7 @@ void DnCManager::solve( unsigned timeoutInSeconds )
     // queries in the queue
     _workload = new WorkerQueue( 0 );
     if ( !_workload )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "DnCManager::workload" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "DnCManager::workload" );
 
     SubQueries subQueries;
     initialDivide( subQueries );

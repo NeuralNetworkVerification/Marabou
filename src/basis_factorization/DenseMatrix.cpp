@@ -48,7 +48,7 @@ void DenseMatrix::allocateMemory()
 {
     _A = new double[_m * _n];
     if ( !_A )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "DenseMatrix::A" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "DenseMatrix::A" );
 }
 
 void DenseMatrix::initialize( const double *M, unsigned m, unsigned n )

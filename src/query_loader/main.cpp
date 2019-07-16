@@ -22,7 +22,7 @@
 #include "InputQuery.h"
 #include "Preprocessor.h"
 #include "QueryLoader.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 
 int main()
 {

@@ -18,7 +18,7 @@
 #include "FloatUtils.h"
 #include "InputQuery.h"
 #include "MStringf.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 
 InputQuery::InputQuery()
     : _networkLevelReasoner( NULL )
@@ -40,7 +40,7 @@ void InputQuery::setLowerBound( unsigned variable, double bound )
 {
     if ( variable >= _numberOfVariables )
     {
-        throw ReluplexError( ReluplexError::VARIABLE_INDEX_OUT_OF_RANGE,
+        throw MarabouError( MarabouError::VARIABLE_INDEX_OUT_OF_RANGE,
                              Stringf( "Variable = %u, number of variables = %u (setLowerBound)",
                                       variable, _numberOfVariables ).ascii() );
     }
@@ -52,7 +52,7 @@ void InputQuery::setUpperBound( unsigned variable, double bound )
 {
     if ( variable >= _numberOfVariables )
     {
-        throw ReluplexError( ReluplexError::VARIABLE_INDEX_OUT_OF_RANGE,
+        throw MarabouError( MarabouError::VARIABLE_INDEX_OUT_OF_RANGE,
                              Stringf( "Variable = %u, number of variables = %u (setUpperBound)",
                                       variable, _numberOfVariables ).ascii() );
     }
@@ -74,7 +74,7 @@ double InputQuery::getLowerBound( unsigned variable ) const
 {
     if ( variable >= _numberOfVariables )
     {
-        throw ReluplexError( ReluplexError::VARIABLE_INDEX_OUT_OF_RANGE,
+        throw MarabouError( MarabouError::VARIABLE_INDEX_OUT_OF_RANGE,
                              Stringf( "Variable = %u, number of variables = %u (getLowerBound)",
                                       variable, _numberOfVariables ).ascii() );
     }
@@ -89,7 +89,7 @@ double InputQuery::getUpperBound( unsigned variable ) const
 {
     if ( variable >= _numberOfVariables )
     {
-        throw ReluplexError( ReluplexError::VARIABLE_INDEX_OUT_OF_RANGE,
+        throw MarabouError( MarabouError::VARIABLE_INDEX_OUT_OF_RANGE,
                              Stringf( "Variable = %u, number of variables = %u (getUpperBound)",
                                       variable, _numberOfVariables ).ascii() );
     }
@@ -132,7 +132,7 @@ void InputQuery::setSolutionValue( unsigned variable, double value )
 double InputQuery::getSolutionValue( unsigned variable ) const
 {
     if ( !_solution.exists( variable ) )
-        throw ReluplexError( ReluplexError::VARIABLE_DOESNT_EXIST_IN_SOLUTION,
+        throw MarabouError( MarabouError::VARIABLE_DOESNT_EXIST_IN_SOLUTION,
                              Stringf( "Variable: %u", variable ).ascii() );
 
     return _solution.get( variable );
@@ -419,7 +419,7 @@ void InputQuery::adjustInputOutputMapping( const Map<unsigned, unsigned> &oldInd
     for ( const auto &it : _inputIndexToVariable )
     {
         if ( mergedVariables.exists( it.second ) )
-            throw ReluplexError( ReluplexError::MERGED_INPUT_VARIABLE,
+            throw MarabouError( MarabouError::MERGED_INPUT_VARIABLE,
                                  Stringf( "Input variable %u has been merged\n", it.second ).ascii() );
 
         if ( oldIndexToNewIndex.exists( it.second ) )
@@ -441,7 +441,7 @@ void InputQuery::adjustInputOutputMapping( const Map<unsigned, unsigned> &oldInd
     for ( const auto &it : _outputIndexToVariable )
     {
         if ( mergedVariables.exists( it.second ) )
-            throw ReluplexError( ReluplexError::MERGED_OUTPUT_VARIABLE,
+            throw MarabouError( MarabouError::MERGED_OUTPUT_VARIABLE,
                                  Stringf( "Output variable %u has been merged\n", it.second ).ascii() );
 
         if ( oldIndexToNewIndex.exists( it.second ) )

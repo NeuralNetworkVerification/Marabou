@@ -18,7 +18,7 @@
 #include "ITableau.h"
 #include "MStringf.h"
 #include "ProjectedSteepestEdge.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 #include "Statistics.h"
 #include "TableauRow.h"
 
@@ -74,19 +74,19 @@ void ProjectedSteepestEdgeRule::initialize( const ITableau &tableau )
 
     _referenceSpace = new char[_n];
     if ( !_referenceSpace )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "ProjectedSteepestEdgeRule::referenceSpace" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "ProjectedSteepestEdgeRule::referenceSpace" );
 
     _gamma = new double[_n - _m];
     if ( !_gamma )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "ProjectedSteepestEdgeRule::gamma" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "ProjectedSteepestEdgeRule::gamma" );
 
     _work1 = new double[_m];
     if ( !_work1 )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "ProjectedSteepestEdgeRule::work1" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "ProjectedSteepestEdgeRule::work1" );
 
     _work2 = new double[_m];
     if ( !_work2 )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "ProjectedSteepestEdgeRule::work2" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "ProjectedSteepestEdgeRule::work2" );
 
     resetReferenceSpace( tableau );
 }

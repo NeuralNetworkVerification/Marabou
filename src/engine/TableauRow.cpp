@@ -13,7 +13,7 @@
 
 **/
 
-#include "ReluplexError.h"
+#include "MarabouError.h"
 #include "TableauRow.h"
 
 TableauRow::TableauRow( unsigned size )
@@ -21,7 +21,7 @@ TableauRow::TableauRow( unsigned size )
 {
     _row = new TableauRow::Entry[size];
     if ( !_row )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauRow::row" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauRow::row" );
 }
 
 TableauRow::~TableauRow()
