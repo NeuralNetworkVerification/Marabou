@@ -102,6 +102,11 @@ private:
     Vector<std::shared_ptr<Engine>> _engines;
 
     /*
+      The engine with the satisfying assignment
+    */
+    std::shared_ptr<Engine> _engineWithSATAssignment;
+
+    /*
       Hyperparameters of the DnC algorithm
     */
 

@@ -178,6 +178,7 @@ void DnCManager::updateDnCExitCode()
         Engine::ExitCode result = engine->getExitCode();
         if ( result == Engine::SAT )
         {
+            _engineWithSATAssignment = engine;
             hasSat = true;
             break;
         }
@@ -230,8 +231,34 @@ void DnCManager::printResult()
     switch ( _exitCode )
     {
     case DnCManager::SAT:
+    {
         std::cout << "DnCManager::solve SAT query" << std::endl;
+
+        ASSERT( _engineWithSATAssignment != nullptr );
+
+        InputQuery *inputQuery = _engineWithSATAssignment->getInputQuery();
+        _engineWithSATAssignment->extractSolution( *( inputQuery ) );
+
+
+        double inputs[inputQuery->getNumInputVariables()];
+        double outputs[inputQuery->getNumOutputVariables()];
+        printf( "Input assignment:\n" );
+        for ( unsigned i = 0; i < inputQuery->getNumInputVariables(); ++i )
+        {
+            printf( "\tx%u = %8.4lf\n", i, inputQuery->getSolutionValue( inputQuery->inputVariableByIndex( i ) ) );
+            inputs[i] = inputQuery->getSolutionValue( inputQuery->inputVariableByIndex( i ) );
+        }
+
+        _engineWithSATAssignment->getInputQuery()->getNetworkLevelReasoner()
+            ->evaluate( inputs, outputs );
+
+        printf( "\n" );
+        printf( "Output:\n" );
+        for ( unsigned i = 0; i < inputQuery->getNumOutputVariables(); ++i )
+            printf( "\ty%u = %8.4lf\n", i, outputs[i] );
+        printf( "\n" );
         break;
+    }
     case DnCManager::UNSAT:
         std::cout << "DnCManager::solve UNSAT query" << std::endl;
         break;
