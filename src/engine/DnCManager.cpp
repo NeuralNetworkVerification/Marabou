@@ -240,22 +240,22 @@ void DnCManager::printResult()
         _engineWithSATAssignment->extractSolution( *( inputQuery ) );
 
 
-        double input[inputQuery->getNumInputVariables()];
-        double output[inputQuery->getNumOutputVariables()];
+        double inputs[inputQuery->getNumInputVariables()];
+        double outputs[inputQuery->getNumOutputVariables()];
         printf( "Input assignment:\n" );
         for ( unsigned i = 0; i < inputQuery->getNumInputVariables(); ++i )
         {
             printf( "\tx%u = %8.4lf\n", i, inputQuery->getSolutionValue( inputQuery->inputVariableByIndex( i ) ) );
-            input[i] = inputQuery->getSolutionValue( inputQuery->inputVariableByIndex( i ) );
+            inputs[i] = inputQuery->getSolutionValue( inputQuery->inputVariableByIndex( i ) );
         }
 
         _engineWithSATAssignment->getInputQuery()->getNetworkLevelReasoner()
-            ->evaluate( input, output );
+            ->evaluate( inputs, outputs );
 
         printf( "\n" );
         printf( "Output:\n" );
         for ( unsigned i = 0; i < inputQuery->getNumOutputVariables(); ++i )
-            printf( "\ty%u = %8.4lf\n", i, output[i] );
+            printf( "\ty%u = %8.4lf\n", i, outputs[i] );
         printf( "\n" );
         break;
     }
