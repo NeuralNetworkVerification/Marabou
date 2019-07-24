@@ -53,9 +53,10 @@ void PropertyParser::processSingleLine( const String &line, InputQuery &inputQue
         throw InputParserError( InputParserError::UNEXPECTED_INPUT, line.ascii() );
 
     auto it = tokens.rbegin();
+    // TODO: ASSERT(isScalar(*it))
     double scalar = extractScalar( *it );
     ++it;
-    Equation::EquationType type = extractSign( *it );
+    Equation::EquationType type = extractRelationSymbol( *it );
     ++it;
 
     // Now extract the addends. In the special case where we only have
@@ -118,6 +119,7 @@ void PropertyParser::processSingleLine( const String &line, InputQuery &inputQue
     else
     {
         // Normal case: add as an equation
+        // TODO: ASSERT (symbol is equation)
         Equation equation( type );
         equation.setScalar( scalar );
 
@@ -171,7 +173,7 @@ void PropertyParser::processSingleLine( const String &line, InputQuery &inputQue
     }
 }
 
-Equation::EquationType PropertyParser::extractSign( const String &token )
+Equation::EquationType PropertyParser::extractRelationSymbol( const String &token )
 {
     if ( token == ">=" )
         return Equation::GE;

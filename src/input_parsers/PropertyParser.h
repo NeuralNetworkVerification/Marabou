@@ -33,7 +33,7 @@ public:
 
 private:
     void processSingleLine( const String &line, InputQuery &inputQuery );
-    Equation::EquationType extractSign( const String &token );
+    Equation::EquationType extractRelationSymbol( const String &token );
     double extractScalar( const String &token );
 };
 
