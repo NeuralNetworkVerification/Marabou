@@ -347,7 +347,35 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         else:
             self.biasAddEquations(op)
 
-    def subEquations(self, op): 
+    def mulEquations(self, op):
+        """
+        Function to generate equations corresponding to mul
+        Arguments:
+            op: (tf.op) representing  mul operation
+        """
+
+        input_ops = [i.op for i in op.inputs]
+        assert len(input_ops) == 2
+        input1 = input_ops[0]
+        input2 = input_ops[1]
+        assert self.isVariable(input1)
+        assert not self.isVariable(input2)
+
+
+        curVars = self.getValues(op).reshape(-1)
+        prevVars1 = self.getValues(input1).reshape(-1)
+        prevVars2 = self.getValues(input2).reshape(-1)
+        assert len(prevVars1) == len(prevVars2)
+        assert len(curVars) == len(prevVars1)
+        for i in range(len(curVars)):
+            e = MarabouUtils.Equation()
+            e.addAddend(prevVars2[i], prevVars1[i])
+            e.addAddend(-1, curVars[i])
+            e.setScalar(0.0)
+            self.addEquation(e)
+
+
+    def subEquations(self, op):
         """
         Function to generate equations corresponding to subtraction
         Arguments:
@@ -485,6 +513,9 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             op: (tf.op) for which to generate equations
         """
         print(op.name,op.node_def.op)
+        # if op.name == "model/mul/y":
+        #     print("values =", op.values())
+        #     print(op)
 
         if op.node_def.op in ['Identity', 'Reshape', 'Pack', 'Placeholder', 'Const', 'ConcatV2', 'Shape', 'StridedSlice','Split']:
             return
@@ -503,8 +534,8 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         elif op.node_def.op == 'MaxPool':
             self.maxpoolEquations(op)
         elif op.node_def.op == 'Mul':
-            print("Error: Mul op observed and not sure what to do about this..")
-            # self.addEquations(op)
+            # print("Error: Mul op observed and I'm not sure what to do about it..")
+            self.mulEquations(op)
         else:
             print("Operation ", str(op.node_def.op), " not implemented")
             raise NotImplementedError
