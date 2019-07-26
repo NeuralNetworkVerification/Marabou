@@ -17,6 +17,17 @@
 #include "File.h"
 #include "InputParserError.h"
 #include "PropertyParser.h"
+#include <regex>
+
+static bool isScalar(const String &token)
+{
+    std::regex floatRegex("[-+]?[0-9]*\\.?[0-9]+");
+    if ( std::regex_match( token.ascii(), floatRegex ) )
+	return true;
+    else
+	return false;
+}
+
 
 void PropertyParser::parse( const String &propertyFilePath, InputQuery &inputQuery )
 {
@@ -53,7 +64,13 @@ void PropertyParser::processSingleLine( const String &line, InputQuery &inputQue
         throw InputParserError( InputParserError::UNEXPECTED_INPUT, line.ascii() );
 
     auto it = tokens.rbegin();
-    // TODO: ASSERT(isScalar(*it))
+    if ( !isScalar(*it) )
+    {
+	String msg( "Right handside must be scalar in the line: " );
+	msg += line;
+	throw InputParserError( InputParserError::UNEXPECTED_INPUT, msg.ascii() );
+    }
+
     double scalar = extractScalar( *it );
     ++it;
     Equation::EquationType type = extractRelationSymbol( *it );
