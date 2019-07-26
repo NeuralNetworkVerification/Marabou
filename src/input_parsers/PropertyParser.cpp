@@ -132,6 +132,13 @@ void PropertyParser::processSingleLine( const String &line, InputQuery &inputQue
         {
             ASSERT( type == Equation::EQ );
 
+	    if ( outputVariable )
+            {
+		String msg( "Equality not supported for output variables. Line: " );
+		msg += line;
+		throw InputParserError( InputParserError::UNEXPECTED_INPUT, msg.ascii() );
+            }
+
             if ( inputQuery.getLowerBound( variable ) < scalar )
                 inputQuery.setLowerBound( variable, scalar );
             if ( inputQuery.getUpperBound( variable ) > scalar )
@@ -154,6 +161,13 @@ void PropertyParser::processSingleLine( const String &line, InputQuery &inputQue
 
             if ( !( inputVariable xor outputVariable ) )
                 throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
+
+	    if ( outputVariable && type == Equation::EQ )
+            {
+                String msg( "Equality not supported for output variables. Line: " );
+                msg += line;
+                throw InputParserError( InputParserError::UNEXPECTED_INPUT, msg.ascii() );
+            }
 
             List<String> subTokens;
             if ( inputVariable )
