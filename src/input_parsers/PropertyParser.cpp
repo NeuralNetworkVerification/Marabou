@@ -28,6 +28,11 @@ static bool isScalar(const String &token)
 	return false;
 }
 
+static double extractScalar( const String &token )
+{
+    return atof( token.ascii() );
+}
+
 
 void PropertyParser::parse( const String &propertyFilePath, InputQuery &inputQuery )
 {
@@ -200,11 +205,6 @@ Equation::EquationType PropertyParser::extractRelationSymbol( const String &toke
         return Equation::EQ;
 
     throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
-}
-
-double PropertyParser::extractScalar( const String &token )
-{
-    return atof( token.ascii() );
 }
 
 //
