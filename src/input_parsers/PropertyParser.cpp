@@ -141,7 +141,6 @@ void PropertyParser::processSingleLine( const String &line, InputQuery &inputQue
     else
     {
         // Normal case: add as an equation
-        // TODO: ASSERT (symbol is equation)
         Equation equation( type );
         equation.setScalar( scalar );
 
