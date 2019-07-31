@@ -108,12 +108,12 @@ void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
 
         printf( "Input assignment:\n" );
         for ( unsigned i = 0; i < _inputQuery.getNumInputVariables(); ++i )
-            printf( "\tx%u = %8.4lf\n", i, _inputQuery.getSolutionValue( _inputQuery.inputVariableByIndex( i ) ) );
+            printf( "\tx%u = %lf\n", i, _inputQuery.getSolutionValue( _inputQuery.inputVariableByIndex( i ) ) );
 
         printf( "\n" );
         printf( "Output:\n" );
         for ( unsigned i = 0; i < _inputQuery.getNumOutputVariables(); ++i )
-            printf( "\ty%u = %8.4lf\n", i, _inputQuery.getSolutionValue( _inputQuery.outputVariableByIndex( i ) ) );
+            printf( "\ty%u = %lf\n", i, _inputQuery.getSolutionValue( _inputQuery.outputVariableByIndex( i ) ) );
         printf( "\n" );
     }
     else if ( result == Engine::TIMEOUT )
