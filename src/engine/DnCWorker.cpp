@@ -16,7 +16,7 @@
 #include "Debug.h"
 #include "DivideStrategy.h"
 #include "DnCWorker.h"
-#include "Engine.h"
+#include "IEngine.h"
 #include "EngineState.h"
 #include "LargestIntervalDivider.h"
 #include "MStringf.h"
@@ -28,7 +28,7 @@
 #include <cmath>
 #include <thread>
 
-DnCWorker::DnCWorker( WorkerQueue *workload, std::shared_ptr<Engine> engine,
+DnCWorker::DnCWorker( WorkerQueue *workload, std::shared_ptr<IEngine> engine,
                       std::atomic_uint &numUnsolvedSubQueries,
                       std::atomic_bool &shouldQuitSolving,
                       unsigned threadId, unsigned onlineDivides,
@@ -76,9 +76,10 @@ void DnCWorker::run()
 
             // Create a new statistics object for each subQuery
             Statistics *statistics = new Statistics();
-            _engine->resetStatistics( *statistics );
             // Reset the engine state
             _engine->restoreState( *_initialState );
+            _engine->reset( statistics );
+            _engine->resetStatistics( *statistics );
             _engine->clearViolatedPLConstraints();
             _engine->resetSmtCore();
             _engine->resetBoundTighteners();

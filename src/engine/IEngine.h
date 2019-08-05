@@ -36,6 +36,13 @@ public:
     virtual void storeState( EngineState &state, bool storeAlsoTableauState ) const = 0;
     virtual void restoreState( const EngineState &state ) = 0;
     virtual void setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints ) = 0;
+
+    /*
+      Solve the encoded query
+    */
+    virtual bool solve( unsigned timeoutInSeconds ) = 0;
+
+
 };
 
 #endif // __IEngine_h__
