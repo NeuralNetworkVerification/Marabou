@@ -481,7 +481,6 @@ void Preprocessor::eliminateVariables()
     if ( _statistics )
         _statistics->ppSetNumEliminatedVars( _fixedVariables.size() + _mergedVariables.size() );
 
-
     // Check and remove any fixed variables from the debugging solution
     for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
     {

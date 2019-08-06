@@ -141,7 +141,7 @@ void NetworkLevelReasoner::evaluate( double *input, double *output )
             }
 
             // Store weighted sum if needed
-            if ( _indexToWeightedSumAssignment.exists( index ) )
+            if ( _indexToWeightedSumVariable.exists( index ) )
                 _indexToWeightedSumAssignment[index] = _work2[targetNeuron];
 
             // Apply activation function
@@ -161,8 +161,8 @@ void NetworkLevelReasoner::evaluate( double *input, double *output )
             }
 
             // Store activation result if needed
-            if ( _indexToWeightedSumAssignment.exists( index ) )
-                _indexToWeightedSumAssignment[index] = _work2[targetNeuron];
+            if ( _indexToActivationResultVariable.exists( index ) )
+                _indexToActivationResultAssignment[index] = _work2[targetNeuron];
         }
 
         memcpy( _work1, _work2, sizeof(double) * targetLayerSize );
@@ -218,6 +218,29 @@ void NetworkLevelReasoner::storeIntoOther( NetworkLevelReasoner &other ) const
         other.setBias( pair.first._layer, pair.first._neuron, pair.second );
 
     other._indexToWeightedSumVariable = _indexToWeightedSumVariable;
+    other._indexToActivationResultVariable = _indexToActivationResultVariable;
+    other._indexToWeightedSumAssignment = _indexToWeightedSumAssignment;
+    other._indexToActivationResultAssignment = _indexToActivationResultAssignment;
+}
+
+const Map<NetworkLevelReasoner::Index, unsigned> &NetworkLevelReasoner::getIndexToWeightedSumVariable()
+{
+    return _indexToWeightedSumVariable;
+}
+
+const Map<NetworkLevelReasoner::Index, unsigned> &NetworkLevelReasoner::getIndexToActivationResultVariable()
+{
+    return _indexToActivationResultVariable;
+}
+
+const Map<NetworkLevelReasoner::Index, double> &NetworkLevelReasoner::getIndexToWeightedSumAssignment()
+{
+    return _indexToWeightedSumAssignment;
+}
+
+const Map<NetworkLevelReasoner::Index, double> &NetworkLevelReasoner::getIndexToActivationResultAssignment()
+{
+    return _indexToActivationResultAssignment;
 }
 
 //
