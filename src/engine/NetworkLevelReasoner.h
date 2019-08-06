@@ -57,7 +57,7 @@ public:
     /*
       Interface methods for performing operations on the network.
     */
-    void evaluate( double *input, double *output ) const;
+    void evaluate( double *input, double *output );
 
     /*
       Duplicate the reasoner
@@ -103,6 +103,12 @@ private:
     */
     Map<Index, unsigned> _indexToWeightedSumVariable;
     Map<Index, unsigned> _indexToActivationResultVariable;
+
+    /*
+      Store the assignment to all variables when evaluate() is called
+    */
+    Map<Index, double> _indexToWeightedSumAssignment;
+    Map<Index, double> _indexToActivationResultAssignment;
 
     void freeMemoryIfNeeded();
 };

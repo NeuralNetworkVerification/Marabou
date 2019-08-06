@@ -119,7 +119,7 @@ void NetworkLevelReasoner::setBias( unsigned layer, unsigned neuron, double bias
     _bias[Index( layer, neuron )] = bias;
 }
 
-void NetworkLevelReasoner::evaluate( double *input, double *output ) const
+void NetworkLevelReasoner::evaluate( double *input, double *output )
 {
     memcpy( _work1, input, sizeof(double) * _layerSizes[0] );
 
@@ -140,6 +140,10 @@ void NetworkLevelReasoner::evaluate( double *input, double *output ) const
                 _work2[targetNeuron] += _work1[sourceNeuron] * weight;
             }
 
+            // Store weighted sum if needed
+            if ( _indexToWeightedSumAssignment.exists( index ) )
+                _indexToWeightedSumAssignment[index] = _work2[targetNeuron];
+
             // Apply activation function
             if ( _neuronToActivationFunction.exists( index ) )
             {
@@ -155,6 +159,10 @@ void NetworkLevelReasoner::evaluate( double *input, double *output ) const
                     break;
                 }
             }
+
+            // Store activation result if needed
+            if ( _indexToWeightedSumAssignment.exists( index ) )
+                _indexToWeightedSumAssignment[index] = _work2[targetNeuron];
         }
 
         memcpy( _work1, _work2, sizeof(double) * targetLayerSize );
