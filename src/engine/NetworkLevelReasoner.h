@@ -51,6 +51,8 @@ public:
     */
     void setWeightedSumVariable( unsigned layer, unsigned neuron, unsigned variable );
     unsigned getWeightedSumVariable( unsigned layer, unsigned neuron ) const;
+    void setActivationResultVariable( unsigned layer, unsigned neuron, unsigned variable );
+    unsigned getActivationResultVariable( unsigned layer, unsigned neuron ) const;
 
     /*
       Interface methods for performing operations on the network.
@@ -96,7 +98,11 @@ private:
     double *_work1;
     double *_work2;
 
+    /*
+      Mappings of indices to weighted sum and activation result variables
+    */
     Map<Index, unsigned> _indexToWeightedSumVariable;
+    Map<Index, unsigned> _indexToActivationResultVariable;
 
     void freeMemoryIfNeeded();
 };

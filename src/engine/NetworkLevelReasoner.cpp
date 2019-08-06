@@ -177,6 +177,20 @@ unsigned NetworkLevelReasoner::getWeightedSumVariable( unsigned layer, unsigned 
     return _indexToWeightedSumVariable[index];
 }
 
+void NetworkLevelReasoner::setActivationResultVariable( unsigned layer, unsigned neuron, unsigned variable )
+{
+    _indexToActivationResultVariable[Index( layer, neuron )] = variable;
+}
+
+unsigned NetworkLevelReasoner::getActivationResultVariable( unsigned layer, unsigned neuron ) const
+{
+    Index index( layer, neuron );
+    if ( !_indexToActivationResultVariable.exists( index ) )
+        throw MarabouError( MarabouError::INVALID_WEIGHTED_SUM_INDEX, Stringf( "activation result: <%u,%u>", layer, neuron ).ascii() );
+
+    return _indexToActivationResultVariable[index];
+}
+
 void NetworkLevelReasoner::storeIntoOther( NetworkLevelReasoner &other ) const
 {
     other.freeMemoryIfNeeded();

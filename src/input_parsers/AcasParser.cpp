@@ -210,7 +210,9 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
         for ( unsigned j = 0; j < layerSize; ++j )
         {
             unsigned b = _nodeToB[NodeIndex( i, j )];
+            unsigned f = _nodeToF[NodeIndex( i, j )];
             nlr->setWeightedSumVariable( i, j, b );
+            nlr->setActivationResultVariable( i, j, f );
         }
     }
 
