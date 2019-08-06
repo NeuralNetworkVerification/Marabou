@@ -202,6 +202,18 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
         }
     }
 
+    // Variable indexing
+    for ( unsigned i = 1; i < numberOfLayers - 1; ++i )
+    {
+        unsigned layerSize = _acasNeuralNetwork.getLayerSize( i );
+
+        for ( unsigned j = 0; j < layerSize; ++j )
+        {
+            unsigned b = _nodeToB[NodeIndex( i, j )];
+            nlr->setWeightedSumVariable( i, j, b );
+        }
+    }
+
     // Store the reasoner in the input query
     inputQuery.setNetworkLevelReasoner( nlr );
 

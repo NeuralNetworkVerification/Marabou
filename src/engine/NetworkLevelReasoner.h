@@ -46,6 +46,13 @@ public:
     void setBias( unsigned layer, unsigned neuron, double bias );
 
     /*
+      Mapping from node indices to the variables representing their
+      (input) weighted sum values
+    */
+    void setWeightedSumVariable( unsigned layer, unsigned neuron, unsigned variable );
+    unsigned getWeightedSumVariable( unsigned layer, unsigned neuron ) const;
+
+    /*
       Interface methods for performing operations on the network.
     */
     void evaluate( double *input, double *output ) const;
@@ -88,6 +95,8 @@ private:
 
     double *_work1;
     double *_work2;
+
+    Map<Index, unsigned> _indexToWeightedSumVariable;
 
     void freeMemoryIfNeeded();
 };

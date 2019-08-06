@@ -13,10 +13,11 @@
 
  **/
 
-#include <cstring>
 #include "Debug.h"
+#include "MStringf.h"
 #include "NetworkLevelReasoner.h"
 #include "MarabouError.h"
+#include <cstring>
 
 NetworkLevelReasoner::NetworkLevelReasoner()
     : _weights( NULL )
@@ -162,6 +163,20 @@ void NetworkLevelReasoner::evaluate( double *input, double *output ) const
     memcpy( output, _work1, sizeof(double) * _layerSizes[_numberOfLayers - 1] );
 }
 
+void NetworkLevelReasoner::setWeightedSumVariable( unsigned layer, unsigned neuron, unsigned variable )
+{
+    _indexToWeightedSumVariable[Index( layer, neuron )] = variable;
+}
+
+unsigned NetworkLevelReasoner::getWeightedSumVariable( unsigned layer, unsigned neuron ) const
+{
+    Index index( layer, neuron );
+    if ( !_indexToWeightedSumVariable.exists( index ) )
+        throw MarabouError( MarabouError::INVALID_WEIGHTED_SUM_INDEX, Stringf( "weighted sum: <%u,%u>", layer, neuron ).ascii() );
+
+    return _indexToWeightedSumVariable[index];
+}
+
 void NetworkLevelReasoner::storeIntoOther( NetworkLevelReasoner &other ) const
 {
     other.freeMemoryIfNeeded();
@@ -179,6 +194,8 @@ void NetworkLevelReasoner::storeIntoOther( NetworkLevelReasoner &other ) const
 
     for ( const auto &pair : _bias )
         other.setBias( pair.first._layer, pair.first._neuron, pair.second );
+
+    other._indexToWeightedSumVariable = _indexToWeightedSumVariable;
 }
 
 //
