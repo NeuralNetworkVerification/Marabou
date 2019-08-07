@@ -63,6 +63,12 @@ public:
     String getResultString();
 
 private:
+    static void dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine,
+                          std::atomic_uint &numUnsolvedSubQueries,
+                          std::atomic_bool &shouldQuitSolving,
+                          unsigned threadId, unsigned onlineDivides,
+                          float timeoutFactor, DivideStrategy divideStrategy );
+
     /*
       Create the base engine from the network and property files,
       and if necessary, create engines for workers
@@ -90,6 +96,8 @@ private:
     */
     void updateTimeoutReached( timespec startTime,
                                unsigned long long timeoutInMicroSeconds );
+
+    static void log( const String &message );
 
     /*
       The base engine that is used to perform the initial divides
