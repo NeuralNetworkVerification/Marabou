@@ -151,6 +151,7 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def("setLowerBound", &InputQuery::setLowerBound)
         .def("getUpperBound", &InputQuery::getUpperBound)
         .def("getLowerBound", &InputQuery::getLowerBound)
+        .def("dump", &InputQuery::dump)
         .def("setNumberOfVariables", &InputQuery::setNumberOfVariables)
         .def("addEquation", &InputQuery::addEquation)
         .def("getSolutionValue", &InputQuery::getSolutionValue)
