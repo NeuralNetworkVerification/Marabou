@@ -187,6 +187,7 @@ public:
     /*
       Logging options
     */
+    static const bool DNC_MANAGER_LOGGING;
     static const bool ENGINE_LOGGING;
     static const bool TABLEAU_LOGGING;
     static const bool SMT_CORE_LOGGING;
