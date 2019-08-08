@@ -404,6 +404,32 @@ void InputQuery::printInputOutputBounds() const
     }
 }
 
+void InputQuery::dump() const
+{
+    printf( "Variable bounds:\n" );
+    for ( unsigned i = 0; i < _numberOfVariables; ++i )
+    {
+        printf( "\t %u: [%s, %s]\n", i,
+                _lowerBounds.exists( i ) ? Stringf( "%lf", _lowerBounds[i] ).ascii() : "-inf",
+                _upperBounds.exists( i ) ? Stringf( "%lf", _upperBounds[i] ).ascii() : "inf" );
+    }
+
+    printf( "Constraints:\n" );
+    String constraintString;
+    for ( const auto &pl : _plConstraints )
+    {
+        pl->dump( constraintString );
+        printf( "\t%s\n", constraintString.ascii() );
+    }
+
+    printf( "Equations:\n" );
+    for ( const auto &e : _equations )
+    {
+        printf( "\t" );
+        e.dump();
+    }
+}
+
 void InputQuery::setSymbolicBoundTightener( SymbolicBoundTightener *sbt )
 {
     _sbt = sbt;
