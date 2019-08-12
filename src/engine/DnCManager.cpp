@@ -31,12 +31,13 @@
 #include <cmath>
 #include <thread>
 
-static void dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine,
-                      std::atomic_uint &numUnsolvedSubQueries,
-                      std::atomic_bool &shouldQuitSolving,
-                      unsigned threadId, unsigned onlineDivides,
-                      float timeoutFactor, DivideStrategy divideStrategy )
+void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine,
+                           std::atomic_uint &numUnsolvedSubQueries,
+                           std::atomic_bool &shouldQuitSolving,
+                           unsigned threadId, unsigned onlineDivides,
+                           float timeoutFactor, DivideStrategy divideStrategy )
 {
+    log( Stringf( "Thread #%u on CPU %u", threadId, sched_getcpu() ) );
     DnCWorker worker( workload, engine, std::ref( numUnsolvedSubQueries ),
                       std::ref( shouldQuitSolving ), threadId, onlineDivides,
                       timeoutFactor, divideStrategy );
@@ -363,6 +364,12 @@ void DnCManager::updateTimeoutReached( timespec startTime, unsigned long long
     struct timespec now = TimeUtils::sampleMicro();
     _timeoutReached = TimeUtils::timePassed( startTime, now ) >=
         timeoutInMicroSeconds;
+}
+
+void DnCManager::log( const String &message )
+{
+    if ( GlobalConfiguration::DNC_MANAGER_LOGGING )
+        printf( "DnCManager: %s\n", message.ascii() );
 }
 
 //
