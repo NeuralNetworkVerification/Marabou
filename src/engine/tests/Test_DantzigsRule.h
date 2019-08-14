@@ -1,20 +1,23 @@
 /*********************                                                        */
 /*! \file Test_DantzigsRule.h
-** \verbatim
-** Top contributors (to current version):
-**   Guy Katz
-** This file is part of the Marabou project.
-** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
-** in the top-level source directory) and their institutional affiliations.
-** All rights reserved. See the file COPYING in the top-level source
-** directory for licensing information.\endverbatim
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Guy Katz
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
 **/
 
 #include <cxxtest/TestSuite.h>
 
 #include "DantzigsRule.h"
 #include "MockTableau.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 
 #include <string.h>
 
@@ -48,9 +51,8 @@ public:
 
         Set<unsigned> excluded;
         List<unsigned> candidates;
-        tableau->mockCandidates = candidates;
 
-        TS_ASSERT( !dantzigsRule.select( *tableau, excluded ) );
+        TS_ASSERT( !dantzigsRule.select( *tableau, candidates, excluded ) );
 
         tableau->setDimensions( 10, 100 );
 
@@ -58,8 +60,6 @@ public:
         candidates.append( 3 );
         candidates.append( 10 );
         candidates.append( 51 );
-
-        tableau->mockCandidates = candidates;
 
         tableau->nextCostFunction[2] = -5;
         tableau->nextCostFunction[3] = 7;
@@ -71,19 +71,17 @@ public:
         tableau->nextCostFunction[25] = -1202;
         tableau->nextCostFunction[33] = 10;
 
-        TS_ASSERT( dantzigsRule.select( *tableau, excluded ) );
+        TS_ASSERT( dantzigsRule.select( *tableau, candidates, excluded ) );
         TS_ASSERT_EQUALS( tableau->mockEnteringVariable, 10U );
 
         excluded.insert( 10 );
-        TS_ASSERT( dantzigsRule.select( *tableau, excluded ) );
+        TS_ASSERT( dantzigsRule.select( *tableau, candidates, excluded ) );
         TS_ASSERT_EQUALS( tableau->mockEnteringVariable, 51U );
         excluded.clear();
 
         candidates.append( 25 );
 
-        tableau->mockCandidates = candidates;
-
-        TS_ASSERT( dantzigsRule.select( *tableau, excluded ) );
+        TS_ASSERT( dantzigsRule.select( *tableau, candidates, excluded ) );
         TS_ASSERT_EQUALS( tableau->mockEnteringVariable, 25U );
     }
 };

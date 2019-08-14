@@ -4,10 +4,13 @@
  ** Top contributors (to current version):
  **   Guy Katz
  ** This file is part of the Marabou project.
- ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
  **/
 
 #ifndef __ForrestTomlinFactorization_h__
@@ -38,11 +41,18 @@ public:
 
     /*
       Inform the basis factorization that the basis has been changed
-      by a pivot step. This results is an eta matrix by which the
-      basis is multiplied on the right. This eta matrix is represented
-      by the column index and column vector.
+      by a pivot step. The parameters are:
+
+      1. The index of the column in question
+      2. The changeColumn -- this is the so called Eta matrix column
+      3. The new explicit column that is being added to the basis
+
+      A basis factorization may make use of just one of the two last
+      parameters.
     */
-    void pushEtaMatrix( unsigned columnIndex, const double *column );
+    void updateToAdjacentBasis( unsigned columnIndex,
+                                const double *changeColumn,
+                                const double */* newColumn */ );
 
     /*
       Perform a forward transformation, i.e. find x such that Bx = y.
@@ -63,10 +73,10 @@ public:
     void restoreFactorization( const IBasisFactorization *other );
 
 	/*
-      Set the basis matrix. This clears the previous factorization,
-      and triggers a factorization into FT format of the matrix.
+      Ask the basis factorization to obtain a fresh basis
+      (through the previously-provided oracle).
     */
-	void setBasis( const double *B );
+    void obtainFreshBasis();
 
     /*
       Return true iff the basis matrix B is explicitly available.
@@ -82,16 +92,12 @@ public:
       Get the explicit basis matrix
     */
     const double *getBasis() const;
+    const SparseMatrix *getSparseBasis() const;
 
     /*
       Compute the inverse of B (should only be called when B is explicitly available).
      */
     void invertBasis( double *result );
-
-    /*
-      Obtain the basis matrix from the oracle and compute a fresh factorization
-    */
-    void refactorizeBasis();
 
 public:
     /*

@@ -1,11 +1,23 @@
 SOURCES += \
 	BasisFactorizationFactory.cpp \
+	CSRMatrix.cpp \
 	EtaMatrix.cpp \
 	ForrestTomlinFactorization.cpp \
 	GaussianEliminator.cpp \
 	LPElement.cpp \
 	LUFactorization.cpp \
+	LUFactors.cpp \
+	SparseUnsortedArray.cpp \
+	SparseUnsortedArrays.cpp \
 	PermutationMatrix.cpp \
+	SparseColumnsOfBasis.cpp \
+	SparseEtaMatrix.cpp \
+	SparseFTFactorization.cpp \
+	SparseGaussianEliminator.cpp \
+	SparseLUFactorization.cpp \
+	SparseLUFactors.cpp \
+	SparseUnsortedList.cpp \
+	SparseUnsortedLists.cpp \
 
 #
 # Local Variables:

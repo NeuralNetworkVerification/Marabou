@@ -1,7 +1,56 @@
 ROOT_DIR = ../..
 
+include $(ROOT_DIR)/Places.mk
+
 SUBDIRS += \
 	tests \
+
+LOCAL_INCLUDES += \
+	$(BASIS_FACTORIZATION_DIR) \
+	$(CONFIGURATION_DIR) \
+	$(INPUT_PARSER_DIR) \
+	$(BOOST_INCLUDES) \
+
+LINK_FLAGS += \
+
+LIBRARY_DIR += \
+	$(BOOST_LIBS_DIR) \
+
+LIBRARIES += \
+	boost_program_options \
+
+CFLAGS = \
+	-MMD \
+	-Wall \
+	-Wextra \
+	-Werror \
+	-Wno-deprecated \
+	-std=c++0x \
+	-O3 \
+
+include $(BASIS_FACTORIZATION_DIR)/Sources.mk
+include $(COMMON_DIR)/Sources.mk
+include $(COMMON_REAL_DIR)/Sources.mk
+include $(CONFIGURATION_DIR)/Sources.mk
+include $(ENGINE_DIR)/Sources.mk
+include $(ENGINE_REAL_DIR)/Sources.mk
+include $(INPUT_PARSER_DIR)/Sources.mk
+
+vpath %.cpp $(BASIS_FACTORIZATION_DIR)
+vpath %.cpp $(COMMON_DIR)
+vpath %.cpp $(COMMON_REAL_DIR)
+vpath %.cpp $(CONFIGURATION_DIR)
+vpath %.cpp $(ENGINE_REAL_DIR)
+vpath %.cpp $(INPUT_PARSER_DIR)
+
+SOURCES += \
+	DnCMarabou.cpp \
+	Marabou.cpp \
+	OptionParser.cpp \
+	Options.cpp \
+	main.cpp \
+
+TARGET = marabou.elf
 
 include $(ROOT_DIR)/Rules.mk
 

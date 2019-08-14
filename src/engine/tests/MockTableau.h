@@ -1,13 +1,16 @@
 /*********************                                                        */
 /*! \file MockTableau.h
-** \verbatim
-** Top contributors (to current version):
-**   Guy Katz
-** This file is part of the Marabou project.
-** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
-** in the top-level source directory) and their institutional affiliations.
-** All rights reserved. See the file COPYING in the top-level source
-** directory for licensing information.\endverbatim
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Guy Katz, Duligur Ibeling, Derek Huang
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
 **/
 
 #ifndef __MockTableau_h__
@@ -16,6 +19,7 @@
 #include "FloatUtils.h"
 #include "ITableau.h"
 #include "Map.h"
+#include "SparseUnsortedList.h"
 #include "TableauRow.h"
 
 #include <cstring>
@@ -35,10 +39,12 @@ public:
         lastBtranInput = NULL;
         nextBtranOutput = NULL;
 
-        lastEntries = NULL ;
+        lastEntries = NULL;
         nextCostFunction = NULL;
 
         lastCostFunctionManager = NULL;
+
+        nextLinearlyDependentResult = false;
     }
 
     ~MockTableau()
@@ -123,10 +129,10 @@ public:
     }
 
     double *lastEntries;
-    void setEntryValue( unsigned row, unsigned column, double value )
+    void setConstraintMatrix( const double *A )
     {
         TS_ASSERT( setDimensionsCalled );
-        lastEntries[(row * lastN) + column] = value;
+        memcpy( lastEntries, A, sizeof(double) * lastM * lastN );
     }
 
     double *lastRightHandSide;
@@ -260,6 +266,8 @@ public:
     }
 
     double getChangeRatio() const { return 0; }
+    void setChangeRatio( double /* changeRatio */ ) {}
+
     void performPivot() {}
     bool performingFakePivot() const
     {
@@ -287,6 +295,14 @@ public:
     BasicAssignmentStatus getBasicAssignmentStatus() const
     {
         return BASIC_ASSIGNMENT_INVALID;
+    }
+
+    double getBasicAssignment( unsigned basicIndex ) const
+    {
+        TS_ASSERT( nextBasicIndexToVariable.exists( basicIndex ) );
+        unsigned variable = nextBasicIndexToVariable[basicIndex];
+        TS_ASSERT( nextValues.exists( variable ) );
+        return nextValues[variable];
     }
 
     void setBasicAssignmentStatus( ITableau::BasicAssignmentStatus /* status */ )
@@ -335,6 +351,9 @@ public:
     }
 
     void computeAssignment() {}
+    bool checkValueWithinBounds( unsigned variable, double value ){
+        return FloatUtils::gte( value, getLowerBound( variable ) ) && FloatUtils::lte( value, getUpperBound( variable ) );
+    }
     void dump() const {}
     void dumpAssignment() {}
     void dumpEquations() {}
@@ -396,10 +415,50 @@ public:
         return nextAColumn.get( index );
     }
 
-    double *A;
-    const double *getA() const
+    void getSparseAColumn( unsigned index, SparseUnsortedList *result ) const
     {
-        return A;
+        TS_ASSERT( nextAColumn.exists( index ) );
+        TS_ASSERT( nextAColumn.get( index ) );
+
+        for ( unsigned i = 0; i < lastM; ++i )
+        {
+            result->initialize( nextAColumn.get( index ), lastM );
+        }
+    }
+
+    mutable SparseUnsortedList sparseColumn;
+    const SparseUnsortedList *getSparseAColumn( unsigned index ) const
+    {
+        TS_ASSERT( nextAColumn.get( index ) );
+        sparseColumn.initialize( nextAColumn.get( index ), lastM );
+        return &sparseColumn;
+    }
+
+    const SparseMatrix *getSparseA() const
+    {
+        return NULL;
+    }
+
+    double *A;
+    void getSparseARow( unsigned row, SparseUnsortedList *result ) const
+    {
+        double *temp = new double[lastN];
+
+        for ( unsigned i = 0; i < lastN; ++i )
+        {
+            temp[i] = A[row*lastN + i];
+        }
+
+        result->initialize( temp, lastN );
+
+        delete[] temp;
+    }
+
+    mutable SparseUnsortedList sparseRow;
+    const SparseUnsortedList *getSparseARow( unsigned row ) const
+    {
+        sparseRow.initialize( A + ( row * lastN ), lastN );
+        return &sparseRow;
     }
 
     void performDegeneratePivot()
@@ -501,18 +560,40 @@ public:
         return true;
     }
 
-    void getBasisEquations( List<Equation *> &/* equations */ ) const
-    {
-    }
-
-    Equation *getBasisEquation( unsigned /* row */ ) const
-    {
-        return NULL;
-    }
-
     double *getInverseBasisMatrix() const
     {
         return NULL;
+    }
+
+    void refreshBasisFactorization()
+    {
+    }
+
+    void mergeColumns( unsigned /* x1 */, unsigned /* x2 */ )
+    {
+    }
+
+    unsigned lastLinearlyDependentX1;
+    unsigned lastLinearlyDependentX2;
+    double nextLinearlyDependentCoefficient;
+    bool nextLinearlyDependentResult;
+    bool areLinearlyDependent( unsigned x1,
+                               unsigned x2,
+                               double &coefficient,
+                               double &inverseCoefficient )
+    {
+        lastLinearlyDependentX1 = x1;
+        lastLinearlyDependentX2 = x2;
+
+        coefficient = nextLinearlyDependentCoefficient;
+        inverseCoefficient = 1 / coefficient;
+
+        return nextLinearlyDependentResult;
+    }
+
+    unsigned getVariableAfterMerging( unsigned /* variable */ ) const
+    {
+        return 0;
     }
 };
 

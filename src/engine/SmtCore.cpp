@@ -2,12 +2,15 @@
 /*! \file SmtCore.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz
+ **   Guy Katz, Parth Shah, Duligur Ibeling
  ** This file is part of the Marabou project.
- ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
  **/
 
 #include "Debug.h"
@@ -16,17 +19,24 @@
 #include "GlobalConfiguration.h"
 #include "IEngine.h"
 #include "MStringf.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 #include "SmtCore.h"
 
 SmtCore::SmtCore( IEngine *engine )
     : _statistics( NULL )
     , _engine( engine )
     , _needToSplit( false )
+    , _constraintForSplitting( NULL )
+    , _stateId( 0 )
 {
 }
 
 SmtCore::~SmtCore()
+{
+    freeMemory();
+}
+
+void SmtCore::freeMemory()
 {
     for ( const auto &stackEntry : _stack )
     {
@@ -49,6 +59,14 @@ void SmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
         _needToSplit = true;
         _constraintForSplitting = constraint;
     }
+}
+
+unsigned SmtCore::getViolationCounts( PiecewiseLinearConstraint *constraint ) const
+{
+    if ( !_constraintToViolationCount.exists( constraint ) )
+        return 0;
+
+    return _constraintToViolationCount[constraint];
 }
 
 bool SmtCore::needToSplit() const
@@ -81,8 +99,7 @@ void SmtCore::performSplit()
     }
 
     // Before storing the state of the engine, we:
-    //   1. Obtain the splits. This increments the AuxVariable counter before it
-    //      is stored as part of the EngineState.
+    //   1. Obtain the splits.
     //   2. Disable the constraint, so that it is marked as disbaled in the EngineState.
     List<PiecewiseLinearCaseSplit> splits = _constraintForSplitting->getCaseSplits();
     ASSERT( !splits.empty() );
@@ -91,6 +108,8 @@ void SmtCore::performSplit()
 
     // Obtain the current state of the engine
     EngineState *stateBeforeSplits = new EngineState;
+    stateBeforeSplits->_stateId = _stateId;
+    ++_stateId;
     _engine->storeState( *stateBeforeSplits, true );
 
     StackEntry *stackEntry = new StackEntry;
@@ -147,7 +166,7 @@ bool SmtCore::popSplit()
         {
             // Pops should not occur from a compliant stack!
             printf( "Error! Popping from a compliant stack\n" );
-            throw ReluplexError( ReluplexError::DEBUGGING_ERROR );
+            throw MarabouError( MarabouError::DEBUGGING_ERROR );
         }
 
         delete _stack.back()->_engineState;
@@ -162,7 +181,7 @@ bool SmtCore::popSplit()
     {
         // Pops should not occur from a compliant stack!
         printf( "Error! Popping from a compliant stack\n" );
-        throw ReluplexError( ReluplexError::DEBUGGING_ERROR );
+        throw MarabouError( MarabouError::DEBUGGING_ERROR );
     }
 
     StackEntry *stackEntry = _stack.back();
@@ -259,7 +278,7 @@ bool SmtCore::checkSkewFromDebuggingSolution()
         if ( !splitAllowsStoredSolution( split, error ) )
         {
             printf( "Error with one of the splits implied at root level:\n\t%s\n", error.ascii() );
-            throw ReluplexError( ReluplexError::DEBUGGING_ERROR );
+            throw MarabouError( MarabouError::DEBUGGING_ERROR );
         }
     }
 
@@ -273,7 +292,7 @@ bool SmtCore::checkSkewFromDebuggingSolution()
             {
                 printf( "Error! Have a split that is non-compliant with the stored solution, "
                         "without alternatives:\n\t%s\n", error.ascii() );
-                throw ReluplexError( ReluplexError::DEBUGGING_ERROR );
+                throw MarabouError( MarabouError::DEBUGGING_ERROR );
             }
 
             // Active split is non-compliant but this is fine, because there are alternatives. We're done.
@@ -287,7 +306,7 @@ bool SmtCore::checkSkewFromDebuggingSolution()
             {
                 printf( "Error with one of the splits implied at this stack level:\n\t%s\n",
                         error.ascii() );
-                throw ReluplexError( ReluplexError::DEBUGGING_ERROR );
+                throw MarabouError( MarabouError::DEBUGGING_ERROR );
             }
         }
     }
@@ -335,6 +354,39 @@ bool SmtCore::splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split, 
     }
 
     return true;
+}
+
+PiecewiseLinearConstraint *SmtCore::chooseViolatedConstraintForFixing( List<PiecewiseLinearConstraint *> &_violatedPlConstraints ) const
+{
+    ASSERT( !_violatedPlConstraints.empty() );
+
+    if ( !GlobalConfiguration::USE_LEAST_FIX )
+        return *_violatedPlConstraints.begin();
+
+    PiecewiseLinearConstraint *candidate;
+
+    // Apply the least fix heuristic
+    auto it = _violatedPlConstraints.begin();
+
+    candidate = *it;
+    unsigned minFixes = getViolationCounts( candidate );
+
+    PiecewiseLinearConstraint *contender;
+    unsigned contenderFixes;
+    while ( it != _violatedPlConstraints.end() )
+    {
+        contender = *it;
+        contenderFixes = getViolationCounts( contender );
+        if ( contenderFixes < minFixes )
+        {
+            minFixes = contenderFixes;
+            candidate = contender;
+        }
+
+        ++it;
+    }
+
+    return candidate;
 }
 
 //

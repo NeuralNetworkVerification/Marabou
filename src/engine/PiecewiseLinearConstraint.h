@@ -1,18 +1,22 @@
 /*********************                                                        */
 /*! \file PiecewiseLinearConstraint.h
-** \verbatim
-** Top contributors (to current version):
-**   Guy Katz
-** This file is part of the Marabou project.
-** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
-** in the top-level source directory) and their institutional affiliations.
-** All rights reserved. See the file COPYING in the top-level source
-** directory for licensing information.\endverbatim
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Guy Katz, Derek Huang, Duligur Ibeling
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
 **/
 
 #ifndef __PiecewiseLinearConstraint_h__
 #define __PiecewiseLinearConstraint_h__
 
+#include "FloatUtils.h"
 #include "ITableau.h"
 #include "List.h"
 #include "Map.h"
@@ -21,7 +25,9 @@
 #include "Tightening.h"
 
 class Equation;
+class IConstraintBoundTightener;
 class ITableau;
+class InputQuery;
 class String;
 
 class PiecewiseLinearConstraint : public ITableau::VariableWatcher
@@ -40,12 +46,18 @@ public:
         {
         }
 
+        bool operator==( const Fix &other ) const
+        {
+            return
+                _variable == other._variable &&
+                FloatUtils::areEqual( _value, other._value );
+        }
+
         unsigned _variable;
         double _value;
     };
 
     PiecewiseLinearConstraint();
-
     virtual ~PiecewiseLinearConstraint() {}
 
     /*
@@ -108,6 +120,11 @@ public:
     virtual List<PiecewiseLinearConstraint::Fix> getPossibleFixes() const = 0;
 
     /*
+      Return a list of smart fixes for violated constraint.
+    */
+    virtual List<PiecewiseLinearConstraint::Fix> getSmartFixes( ITableau *tableau ) const = 0;
+
+    /*
       Returns the list of case splits that this piecewise linear
       constraint breaks into. These splits need to complementary,
       i.e. if the list is {l1, l2, ..., ln-1, ln},
@@ -151,7 +168,7 @@ public:
       For preprocessing: get any auxiliary equations that this constraint would
       like to add to the equation pool.
     */
-    virtual void getAuxiliaryEquations( List<Equation> &newEquations ) const = 0;
+    virtual void addAuxiliaryEquations( InputQuery &/* inputQuery */ ) {}
 
     /*
       Ask the piecewise linear constraint to contribute a component to the cost
@@ -159,8 +176,31 @@ public:
       satisfied or inactive, and should be non-empty otherwise. Minimizing the returned
       equation should then lead to the constraint being "closer to satisfied".
     */
-    virtual void getCostFunctionComponent( Map<unsigned, double> &/* cost */ ) const
+    virtual void getCostFunctionComponent( Map<unsigned, double> &/* cost */ ) const {}
+
+    /*
+      Produce string representation of the piecewise linear constraint.
+      This representation contains only the information necessary to reproduce it
+      but does not account for state or change in state during execution. Additionally
+      the first string before a comma has the contraint type identifier
+      (ie. "relu", "max", etc)
+    */
+    virtual String serializeToString() const = 0;
+
+    /*
+      Register a constraint bound tightener. If a tightener is registered,
+      this piecewise linear constraint will inform the tightener whenever
+      it discovers a tighter (entailed) bound.
+    */
+    void registerConstraintBoundTightener( IConstraintBoundTightener *tightener );
+
+    /*
+      Return true if and only if this piecewise linear constraint supports
+      symbolic bound tightening.
+    */
+    virtual bool supportsSymbolicBoundTightening() const
     {
+        return false;
     }
 
 protected:
@@ -168,6 +208,8 @@ protected:
 	Map<unsigned, double> _assignment;
     Map<unsigned, double> _lowerBounds;
     Map<unsigned, double> _upperBounds;
+
+    IConstraintBoundTightener *_constraintBoundTightener;
 
     /*
       Statistics collection

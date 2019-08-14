@@ -1,12 +1,30 @@
+'''
+/* *******************                                                        */
+/*! \file MarabouNetworkNNet.py
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Christopher Lazarus, Andrew Wu, Kyle Julian
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** \brief [[ Add one-line brief description here ]]
+ **
+ ** [[ Add lengthier description here ]]
+ **/
+'''
+
 from .MarabouUtils import *
-from . import MarabouNetwork
+from maraboupy import MarabouNetwork
 import numpy as np
 
 class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
     """
     Class that implements a MarabouNetwork from an NNet file.
     """
-    def __init__ (self, filename):
+    def __init__ (self, filename, perform_sbt=False):
         """
         Constructs a MarabouNetworkNNet object from an .nnet file.
 
@@ -25,6 +43,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
             weights          (list of list of lists) Outer index corresponds to layer
                                 number.
             biases           (list of lists) Outer index corresponds to layer number.
+            sbt              The SymbolicBoundTightener object
         """
         super().__init__()
 
@@ -44,9 +63,6 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
             for term in equation[:-1]:
                 e.addAddend(term[1], term[0])
             e.setScalar(equation[-1])
-            # aux variable is third to last to be added
-            e.markAuxiliaryVariable(equation[-3][0])
-            
             self.addEquation(e)
 
 
@@ -61,18 +77,53 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
             self.setLowerBound(i_var, self.getInputMinimum(i_var))
             self.setUpperBound(i_var, self.getInputMaximum(i_var))
 
-
-        # Set aux variable bounds (simplex technicality)
-        for aux_var in self.aux_variables:
-            self.setLowerBound(aux_var, 0.0)
-            self.setUpperBound(aux_var, 0.0)
-
         # Set bounds for forward facing variables
         for f_var in self.f_variables:
             self.setLowerBound(f_var, 0.0)
 
         # Set the number of variables
         self.numVars = self.numberOfVariables()
+        if perform_sbt:
+            self.sbt = self.createSBT(filename)
+        else:
+            self.sbt = None
+
+    def createSBT(self, filename):
+        sbt = MarabouCore.SymbolicBoundTightener()
+        sbt.setNumberOfLayers(self.numLayers + 1)
+        for layer, size in enumerate(self.layerSizes):
+            sbt.setLayerSize(layer, size)
+        sbt.allocateWeightAndBiasSpace()
+        # Biases
+        for layer in range(len(self.biases)):
+            for node in range(len(self.biases[layer])):
+                sbt.setBias(layer + 1, node, self.biases[layer][node])
+        # Weights
+        for layer in range(len(self.weights)): # starting from the first hidden layer
+            for target in range(len(self.weights[layer])):
+                for source in range(len(self.weights[layer][target])):
+                    sbt.setWeight(layer, source, target, self.weights[layer][target][source])
+
+        # Initial bounds
+        for i in range(self.inputSize):
+            sbt.setInputLowerBound( i, self.getInputMinimum(i))
+            sbt.setInputUpperBound( i, self.getInputMaximum(i))
+        
+        # Variable indexing of hidden layers
+        for layer in range(len(self.layerSizes))[1:-1]:
+            for node in range(self.layerSizes[layer]):
+                sbt.setReluBVariable(layer, node, self.nodeTo_b(layer, node))
+                sbt.setReluFVariable(layer, node, self.nodeTo_f(layer, node))
+
+        for node in range(self.outputSize):
+            sbt.setReluFVariable(len(self.layerSizes) - 1, node, self.nodeTo_b(len(self.layerSizes) - 1, node))
+
+        return sbt
+
+    def getMarabouQuery(self):
+        ipq = super(MarabouNetworkNNet, self).getMarabouQuery()
+        ipq.setSymbolicBoundTightener(self.sbt)
+        return ipq
 
     """
     Read the nnet file, load all the values and assign the class members.
@@ -85,7 +136,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
             line = f.readline()
             cnt = 1
             while line[0:2] == "//":
-                line=f.readline() 
+                line=f.readline()
                 cnt+= 1
             #numLayers does't include the input layer!
             numLayers, inputSize, outputSize, maxLayersize = [int(x) for x in line.strip().split(",")[:-1]]
@@ -144,7 +195,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
             self.biases = biases
 
     """
-    Compute the variable number ranges for each type (b, f, aux)
+    Compute the variable number ranges for each type (b, f)
 
     Args:
         None
@@ -153,7 +204,6 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         input_variables = []
         b_variables = []
         f_variables = []
-        aux_variables = []
         output_variables = []
         
         input_variables = [i for i in range(self.layerSizes[0])]
@@ -162,22 +212,19 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         
         for layer, hidden_layer_length in enumerate(hidden_layers):
             for i in range(hidden_layer_length):
-                offset = sum([x*3 for x in hidden_layers[:layer]])
+                offset = sum([x*2 for x in hidden_layers[:layer]])
                 
                 b_variables.append(self.layerSizes[0] + offset + i)
-                aux_variables.append(self.layerSizes[0] + offset + i+hidden_layer_length)
-                f_variables.append(self.layerSizes[0] + offset + i+2*hidden_layer_length)
+                f_variables.append(self.layerSizes[0] + offset + i+hidden_layer_length)
         
         #final layer
         for i in range(self.layerSizes[-1]):
-            offset = sum([x*3 for x in hidden_layers[:len(hidden_layers) - 1]])
-            output_variables.append(self.layerSizes[0] + offset + i + 3*hidden_layers[-1])
-            aux_variables.append(self.layerSizes[0] + offset + i + 3*hidden_layers[-1] + self.layerSizes[-1])
+            offset = sum([x*2 for x in hidden_layers[:len(hidden_layers) - 1]])
+            output_variables.append(self.layerSizes[0] + offset + i + 2*hidden_layers[-1])
 
         self.inputVars = np.array([input_variables])
         self.b_variables = b_variables
         self.f_variables = f_variables
-        self.aux_variables = aux_variables
         self.outputVars = np.array([output_variables])
 
     """
@@ -196,29 +243,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         assert(node < self.layerSizes[layer])
         
         offset = self.layerSizes[0]
-        offset += sum([x*3 for x in self.layerSizes[1:layer]])
-        
-        return offset + node
-
-
-    """
-    Compute the variable number for the aux variables in that correspond to the
-        layer, node argument.
-
-    Args:
-        layer: (int) layer number.
-        node: (int) node number.
-    Returns:
-        variable number: (int) variable number that corresponds to the aux variable
-        of the node defined by the layer, node indices.
-    """
-    def nodeTo_aux(self, layer, node):
-        assert(0 < layer)
-        assert(node < self.layerSizes[layer])
-        
-        offset = self.layerSizes[0]
-        offset += sum([x*3 for x in self.layerSizes[1:layer]])
-        offset += self.layerSizes[layer]
+        offset += sum([x*2 for x in self.layerSizes[1:layer]])
         
         return offset + node
 
@@ -241,8 +266,8 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
             return node
         else:
             offset = self.layerSizes[0]
-            offset += sum([x*3 for x in self.layerSizes[1:layer]])
-            offset += 2*self.layerSizes[layer]
+            offset += sum([x*2 for x in self.layerSizes[1:layer]])
+            offset += self.layerSizes[layer]
 
             return offset + node
     """
@@ -264,27 +289,15 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
             for node in range(size):
                 #add marabou equation
-
-                #equation = MarabouBindings.Equation()
+                
                 equations_aux.append([])
-
-                #equations_aux[]
+                equations_aux[equations_count].append([self.nodeTo_b(layer, node), -1.0])
                 for previous_node in range(self.layerSizes[layer-1]):
-                    #equation.addAddend(weights[layer-1][node][previous_node], self.nodeTo_f(layer-1, previous_node))
                     equations_aux[equations_count].append([self.nodeTo_f(layer-1, previous_node), self.weights[layer-1][node][previous_node]])
                 
-                #equation.addAddend(1.0, self.nodeTo_aux(layer, node))
-                #equation.markAuxiliaryVariable(self.nodeTo_aux(layer, node))
-                equations_aux[equations_count].append([self.nodeTo_aux(layer, node), 1.0])
                 
-                #equation.addAddend(-1.0, self.nodeTo_b(layer, node))
-                equations_aux[equations_count].append([self.nodeTo_b(layer, node), -1.0])
-                
-                #equation.setScalar(-biases[layer-1][node])
                 equations_aux[equations_count].append(-self.biases[layer-1][node])
                 equations_count += 1
-                
-                #marabou_equations.append(equation)
                 
         return equations_aux
     """
@@ -305,7 +318,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         return relus
 
     def numberOfVariables(self):
-        return self.layerSizes[0] + 3*sum(self.layerSizes[1:-1]) + 2*self.layerSizes[-1]
+        return self.layerSizes[0] + 2*sum(self.layerSizes[1:-1]) + 1*self.layerSizes[-1]
 
     def getInputMinimum(self, input):
         return (self.inputMinimums[input] - self.inputMeans[input]) / self.inputRanges[input]

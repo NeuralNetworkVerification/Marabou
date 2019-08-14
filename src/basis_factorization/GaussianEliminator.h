@@ -4,62 +4,66 @@
  ** Top contributors (to current version):
  **   Guy Katz
  ** This file is part of the Marabou project.
- ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
  **/
 
 #ifndef __GaussianEliminator_h__
 #define __GaussianEliminator_h__
 
-#include "LPElement.h"
-#include "List.h"
+#include "LUFactors.h"
+#include "MString.h"
 
 class GaussianEliminator
 {
 public:
-    enum FactorizationStrategy {
-        PARTIAL_PIVOTING = 0,
-        MARKOWITZ,
-    };
-
-    GaussianEliminator( const double *A, unsigned m );
+    GaussianEliminator( unsigned m );
     ~GaussianEliminator();
 
     /*
-      The classes main method: factorize matrix A, given in row-major format,
-      into a matrix U and a sequence of L and P matrices, such that:
-
-      - U is upper triangular with its diagonal set to 1s
-      - The Ls are lower triangular
-      - The Ps are permutation matrices
-      - The rowHeaders array indicates the orders of the rows of U, where the i'th
-        row is stored in the rowHeaders[i] location in memory
+      The class' main method: perform LU-factorization of a given matrix A,
+      provided in row-wise format. Store the results in the provided LUFactors.
     */
-    void factorize( List<LPElement *> *lp,
-                    double *U,
-                    unsigned *rowHeaders,
-                    FactorizationStrategy factorizationStrategy = PARTIAL_PIVOTING );
+    void run( const double *A, LUFactors *luFactors );
 
 private:
     /*
-      The (square) matrix being factorized and its dimension
+      The dimension of the (square) matrix being factorized
     */
-    const double *_A;
     unsigned _m;
 
     /*
-      Given a column with element in indices [columnIndex, .., _m], choose the next pivot according to
-      the factorization strategy.
+      Information on the current elimination step
     */
-    unsigned choosePivotElement( unsigned columnIndex, FactorizationStrategy factorizationStrategy );
+    unsigned _uPivotRow;
+    unsigned _uPivotColumn;
+    unsigned _vPivotRow;
+    unsigned _vPivotColumn;
+    unsigned _eliminationStep;
 
     /*
-      Work memory
+      The output factorization
     */
-    double *_pivotColumn;
-    double *_LCol;
+    LUFactors *_luFactors;
+
+    /*
+      Information on the number of non-zero elements in
+      every row of the current active submatrix of U
+    */
+    unsigned *_numURowElements;
+    unsigned *_numUColumnElements;
+
+    void choosePivot();
+    void initializeFactorization( const double *A, LUFactors *luFactors );
+    void permute();
+    void eliminate();
+
+    void log( const String &message );
 };
 
 #endif // __GaussianEliminator_h__

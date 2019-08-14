@@ -1,13 +1,16 @@
 /*********************                                                        */
 /*! \file MockConstraintMatrixAnalyzer.h
-** \verbatim
-** Top contributors (to current version):
-**   Guy Katz
-** This file is part of the Marabou project.
-** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
-** in the top-level source directory) and their institutional affiliations.
-** All rights reserved. See the file COPYING in the top-level source
-** directory for licensing information.\endverbatim
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Shantanu Thakoor, Guy Katz
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
 **/
 
 #ifndef __MockConstraintMatrixAnalyzer_h__
@@ -48,16 +51,25 @@ public:
     {
     }
 
+    void analyze( const SparseMatrix */* matrix */, unsigned /* m */, unsigned /* n */ )
+    {
+    }
+
     unsigned getRank() const
     {
         return 0;
     }
 
     List<unsigned> nextIndependentColumns;
-
     List<unsigned> getIndependentColumns() const
     {
         return nextIndependentColumns;
+    }
+
+    Set<unsigned> nextRedundantRows;
+    Set<unsigned> getRedundantRows() const
+    {
+        return nextRedundantRows;
     }
 };
 

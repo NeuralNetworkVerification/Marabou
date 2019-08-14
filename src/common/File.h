@@ -2,12 +2,15 @@
 /*! \file File.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz
+ **   Guy Katz, Christopher Lazarus
  ** This file is part of the Marabou project.
- ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
  **/
 
 #ifndef __File_h__
@@ -16,17 +19,12 @@
 class ConstSimpleData;
 class HeapData;
 
+#include "IFile.h"
 #include "MString.h"
 
-class File
+class File : public IFile
 {
 public:
-    enum Mode {
-        MODE_READ,
-        MODE_WRITE_APPEND,
-        MODE_WRITE_TRUNCATE,
-    };
-
     File( const String &path );
     virtual ~File();
     void close();

@@ -1,19 +1,23 @@
 /*********************                                                        */
 /*! \file ProjectedSteepestEdge.h
-** \verbatim
-** Top contributors (to current version):
-**   Guy Katz
-** This file is part of the Marabou project.
-** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
-** in the top-level source directory) and their institutional affiliations.
-** All rights reserved. See the file COPYING in the top-level source
-** directory for licensing information.\endverbatim
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Guy Katz
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
 **/
 
 #ifndef __ProjectedSteepestEdge_h__
 #define __ProjectedSteepestEdge_h__
 
 #include "IProjectedSteepestEdge.h"
+#include "SparseUnsortedList.h"
 
 class ProjectedSteepestEdgeRule : public IProjectedSteepestEdgeRule
 {
@@ -29,7 +33,9 @@ public:
     /*
       Apply the projected steepest edge pivot selection rule.
     */
-    bool select( ITableau &tableau, const Set<unsigned> &excluded );
+    bool select( ITableau &tableau,
+                 const List<unsigned> &candidates,
+                 const Set<unsigned> &excluded );
 
     /*
       We use this hook to update gamma according to the entering
@@ -68,6 +74,7 @@ private:
     */
     double *_work1;
     double *_work2;
+    const SparseUnsortedList *_AColumn;
 
     /*
       Tableau dimensions.
@@ -78,7 +85,7 @@ private:
     /*
       Remaining iterations before resetting the reference space.
     */
-    unsigned _iterationsUntilReset;
+    int _iterationsUntilReset;
 
     /*
       The error in gamma compuated in the previous iteration.

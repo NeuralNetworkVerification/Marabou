@@ -2,35 +2,39 @@
 /*! \file DantzigsRule.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz
+ **   Guy Katz, Duligur Ibeling
  ** This file is part of the Marabou project.
- ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
  **/
 
 #include "DantzigsRule.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
 #include "MStringf.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 
-bool DantzigsRule::select( ITableau &tableau, const Set<unsigned> &excluded )
+bool DantzigsRule::select( ITableau &tableau,
+                           const List<unsigned> &candidates,
+                           const Set<unsigned> &excluded )
 {
-    List<unsigned> candidates;
-    tableau.getEntryCandidates( candidates );
+    List<unsigned> remainingCandidates = candidates;
 
-    List<unsigned>::iterator it = candidates.begin();
-    while ( it != candidates.end() )
+    List<unsigned>::iterator it = remainingCandidates.begin();
+    while ( it != remainingCandidates.end() )
     {
         if ( excluded.exists( *it ) )
-            it = candidates.erase( it );
+            it = remainingCandidates.erase( it );
         else
             ++it;
     }
 
-    if ( candidates.empty() )
+    if ( remainingCandidates.empty() )
         return false;
 
     // Dantzig's rule
@@ -51,12 +55,12 @@ bool DantzigsRule::select( ITableau &tableau, const Set<unsigned> &excluded )
     }
     log( Stringf( "Cost function: %s\n", cost.ascii() ) );
 
-    List<unsigned>::const_iterator candidate = candidates.begin();
+    List<unsigned>::const_iterator candidate = remainingCandidates.begin();
     unsigned maxIndex = *candidate;
     double maxValue = FloatUtils::abs( costFunction[maxIndex] );
     ++candidate;
 
-    while ( candidate != candidates.end() )
+    while ( candidate != remainingCandidates.end() )
     {
         double contenderValue = FloatUtils::abs( costFunction[*candidate] );
         if ( FloatUtils::gt( contenderValue, maxValue ) )

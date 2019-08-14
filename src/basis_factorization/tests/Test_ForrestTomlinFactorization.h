@@ -1,14 +1,16 @@
 /*********************                                                        */
 /*! \file Test_ForrestTomlinFactorization.h
-** \verbatim
-** Top contributors (to current version):
-**   Derek Huang
-**   Guy Katz
-** This file is part of the Marabou project.
-** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
-** in the top-level source directory) and their institutional affiliations.
-** All rights reserved. See the file COPYING in the top-level source
-** directory for licensing information.\endverbatim
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Guy Katz
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
 **/
 
 #include <cxxtest/TestSuite.h>
@@ -36,7 +38,7 @@ public:
     bool isIdentityPermutation( const PermutationMatrix *matrix )
     {
         for ( unsigned i = 0; i < matrix->getM(); ++i )
-            if ( matrix->_ordering[i] != i )
+            if ( matrix->_rowOrdering[i] != i )
                 return false;
 
         return true;
@@ -54,25 +56,6 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete mock );
     }
 
-    void test_factorization_enabled_disabled()
-    {
-        ForrestTomlinFactorization *ft;
-
-        TS_ASSERT( ft = new ForrestTomlinFactorization( 3, *oracle ) );
-
-        TS_ASSERT( ft->factorizationEnabled() );
-
-        TS_ASSERT_THROWS_NOTHING( ft->toggleFactorization( false ) );
-
-        TS_ASSERT( !ft->factorizationEnabled() );
-
-        TS_ASSERT_THROWS_NOTHING( ft->toggleFactorization( true ) );
-
-        TS_ASSERT( ft->factorizationEnabled() );
-
-        TS_ASSERT_THROWS_NOTHING( delete ft );
-    }
-
     void test_set_basis()
     {
         ForrestTomlinFactorization *ft;
@@ -86,7 +69,8 @@ public:
             -1, -3,  3, -8,
         };
 
-        TS_ASSERT_THROWS_NOTHING( ft->setBasis( basisMatrix ) );
+        oracle->storeBasis( 4, basisMatrix );
+        ft->obtainFreshBasis();
 
         // LU factorization should have occurred. There should be no A matrices,
         // and Q and R should be the identity permutation.
@@ -208,7 +192,8 @@ public:
             -1, -3,   3, -8,
         };
 
-        TS_ASSERT_THROWS_NOTHING( ft->setBasis( basisMatrix ) );
+        oracle->storeBasis( 4, basisMatrix );
+        ft->obtainFreshBasis();
 
         // LU factorization should have occurred. There should be no A matrices,
         // and Q and R should be the identity permutation.
@@ -344,7 +329,8 @@ public:
             -1, -3,  3, -8,
         };
 
-        TS_ASSERT_THROWS_NOTHING( ft->setBasis( basisMatrix ) );
+        oracle->storeBasis( 4, basisMatrix );
+        ft->obtainFreshBasis();
 
         /*
           The factorization of this matrix gives:
@@ -396,10 +382,10 @@ public:
         */
 
         PermutationMatrix Q( 4 );
-        Q._ordering[0] = 1;
-        Q._ordering[1] = 0;
-        Q._ordering[2] = 3;
-        Q._ordering[3] = 2;
+        Q._rowOrdering[0] = 1;
+        Q._rowOrdering[1] = 0;
+        Q._rowOrdering[2] = 3;
+        Q._rowOrdering[3] = 2;
 
         ft->setQ( Q );
 
@@ -472,7 +458,8 @@ public:
             -1, -3,  3, -8,
         };
 
-        TS_ASSERT_THROWS_NOTHING( ft->setBasis( basisMatrix ) );
+        oracle->storeBasis( 4, basisMatrix );
+        ft->obtainFreshBasis();
 
         /*
           The factorization of this matrix gives:
@@ -524,10 +511,10 @@ public:
         */
 
         PermutationMatrix Q( 4 );
-        Q._ordering[0] = 1;
-        Q._ordering[1] = 0;
-        Q._ordering[2] = 3;
-        Q._ordering[3] = 2;
+        Q._rowOrdering[0] = 1;
+        Q._rowOrdering[1] = 0;
+        Q._rowOrdering[2] = 3;
+        Q._rowOrdering[3] = 2;
 
         ft->setQ( Q );
 
@@ -615,7 +602,8 @@ public:
             -1, -3,  3, -8,
         };
 
-        TS_ASSERT_THROWS_NOTHING( ft->setBasis( basisMatrix ) );
+        oracle->storeBasis( 4, basisMatrix );
+        ft->obtainFreshBasis();
 
         // E1 = | 1 -4     |
         //      |    2     |
@@ -623,7 +611,7 @@ public:
         //      | 0  3 0 1 |
         double a1[] = { -4, 2, 0, 3 };
 
-        ft->pushEtaMatrix( 1, a1 );
+        ft->updateToAdjacentBasis( 1, a1, NULL );
 
         // B * E1 = | 1   14 -2  4 |
         //          | 1   21 -1  5 |
@@ -779,15 +767,15 @@ public:
         const PermutationMatrix *Q = ft->getQ();
         const PermutationMatrix *invQ = ft->getInvQ();
 
-        TS_ASSERT_EQUALS( Q->_ordering[0], 0U );
-        TS_ASSERT_EQUALS( Q->_ordering[1], 3U );
-        TS_ASSERT_EQUALS( Q->_ordering[2], 1U );
-        TS_ASSERT_EQUALS( Q->_ordering[3], 2U );
+        TS_ASSERT_EQUALS( Q->_rowOrdering[0], 0U );
+        TS_ASSERT_EQUALS( Q->_rowOrdering[1], 3U );
+        TS_ASSERT_EQUALS( Q->_rowOrdering[2], 1U );
+        TS_ASSERT_EQUALS( Q->_rowOrdering[3], 2U );
 
-        TS_ASSERT_EQUALS( invQ->_ordering[0], 0U );
-        TS_ASSERT_EQUALS( invQ->_ordering[1], 2U );
-        TS_ASSERT_EQUALS( invQ->_ordering[2], 3U );
-        TS_ASSERT_EQUALS( invQ->_ordering[3], 1U );
+        TS_ASSERT_EQUALS( invQ->_rowOrdering[0], 0U );
+        TS_ASSERT_EQUALS( invQ->_rowOrdering[1], 2U );
+        TS_ASSERT_EQUALS( invQ->_rowOrdering[2], 3U );
+        TS_ASSERT_EQUALS( invQ->_rowOrdering[3], 1U );
 
         const List<AlmostIdentityMatrix *> *A = ft->getA();
 
@@ -825,10 +813,11 @@ public:
             -1, -3,  3, -8,
         };
 
-        TS_ASSERT_THROWS_NOTHING( ft->setBasis( basisMatrix ) );
+        oracle->storeBasis( 4, basisMatrix );
+        ft->obtainFreshBasis();
 
         double a1[] = { -4, 2, 0, 3 };
-        ft->pushEtaMatrix( 1, a1 );
+        ft->updateToAdjacentBasis( 1, a1, NULL );
 
         ForrestTomlinFactorization *ft2 = new ForrestTomlinFactorization( 4, *oracle );
         ForrestTomlinFactorization *ft3 = new ForrestTomlinFactorization( 4, *oracle );
@@ -869,7 +858,8 @@ public:
             -1, -3,  3, -8,
         };
 
-        TS_ASSERT_THROWS_NOTHING( ft->setBasis( basisMatrix ) );
+        oracle->storeBasis( 4, basisMatrix );
+        ft->obtainFreshBasis();
 
         TS_ASSERT( ft->explicitBasisAvailable() );
         const double *basis;
@@ -882,7 +872,7 @@ public:
         //      |    0 1   |
         //      | 0  3 0 1 |
         double a1[] = { -4, 2, 0, 3 };
-        ft->pushEtaMatrix( 1, a1 );
+        ft->updateToAdjacentBasis( 1, a1, NULL );
 
         // B * E1 = | 1   14 -2  4 |
         //          | 1   21 -1  5 |
@@ -928,7 +918,8 @@ public:
             -1, -3,  3, -8,
         };
 
-        TS_ASSERT_THROWS_NOTHING( ft->setBasis( basisMatrix ) );
+        oracle->storeBasis( 4, basisMatrix );
+        ft->obtainFreshBasis();
 
         // invB = |  6 -3/2 -23/4 -9/4 |
         //        | -1  1/2   5/4  3/4 |
@@ -952,7 +943,7 @@ public:
         //      |    0 1   |
         //      | 0  3 0 1 |
         double a1[] = { -4, 2, 0, 3 };
-        ft->pushEtaMatrix( 1, a1 );
+        ft->updateToAdjacentBasis( 1, a1, NULL );
 
         // B * E1 = | 1   14 -2  4 |
         //          | 1   21 -1  5 |

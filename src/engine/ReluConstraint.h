@@ -1,12 +1,16 @@
 /*********************                                                        */
 /*! \file ReluConstraint.h
- ** \verbatim ** Top contributors (to current version):
- **   Guy Katz
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Guy Katz, Duligur Ibeling, Christopher Lazarus
  ** This file is part of the Marabou project.
- ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
  **/
 
 #ifndef __ReluConstraint_h__
@@ -25,6 +29,7 @@ public:
     };
 
     ReluConstraint( unsigned b, unsigned f );
+    ReluConstraint( const String &serializedRelu );
 
     /*
       Return a clone of the constraint.
@@ -72,6 +77,11 @@ public:
     List<PiecewiseLinearConstraint::Fix> getPossibleFixes() const;
 
     /*
+      Return a list of smart fixes for violated constraint.
+    */
+    List<PiecewiseLinearConstraint::Fix> getSmartFixes( ITableau *tableau ) const;
+
+    /*
       Returns the list of case splits that this piecewise linear
       constraint breaks into. These splits need to complementary,
       i.e. if the list is {l1, l2, ..., ln-1, ln},
@@ -110,10 +120,12 @@ public:
     void dump( String &output ) const;
 
     /*
-      For preprocessing: get any auxiliary equations that this constraint would
-      like to add to the equation pool.
+      For preprocessing: get any auxiliary equations that this
+      constraint would like to add to the equation pool. In the ReLU
+      case, this is an equation of the form aux = f - b, where aux is
+      non-negative.
     */
-    void getAuxiliaryEquations( List<Equation> &newEquations ) const;
+    void addAuxiliaryEquations( InputQuery &inputQuery );
 
     /*
       Ask the piecewise linear constraint to contribute a component to the cost
@@ -123,9 +135,38 @@ public:
     */
     virtual void getCostFunctionComponent( Map<unsigned, double> &cost ) const;
 
+    /*
+      Returns string with shape: relu, _f, _b
+    */
+    String serializeToString() const;
+
+    /*
+      Get the index of the B variable.
+    */
+    unsigned getB() const;
+
+    /*
+      Get the current phase status.
+    */
+    PhaseStatus getPhaseStatus() const;
+
+    /*
+      Check if the aux variable is in use and retrieve it
+    */
+    bool auxVariableInUse() const;
+    unsigned getAux() const;
+
+    /*
+      Return true if and only if this piecewise linear constraint supports
+      symbolic bound tightening.
+    */
+    bool supportsSymbolicBoundTightening() const;
+
 private:
     unsigned _b, _f;
     PhaseStatus _phaseStatus;
+    bool _auxVarInUse;
+    unsigned _aux;
 
     PiecewiseLinearCaseSplit getInactiveSplit() const;
     PiecewiseLinearCaseSplit getActiveSplit() const;

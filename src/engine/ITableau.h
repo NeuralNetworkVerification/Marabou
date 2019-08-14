@@ -1,13 +1,16 @@
 /*********************                                                        */
 /*! \file ITableau.h
-** \verbatim
-** Top contributors (to current version):
-**   Guy Katz
-** This file is part of the Marabou project.
-** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
-** in the top-level source directory) and their institutional affiliations.
-** All rights reserved. See the file COPYING in the top-level source
-** directory for licensing information.\endverbatim
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Guy Katz, Duligur Ibeling, Parth Shah
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
 **/
 
 #ifndef __ITableau_h__
@@ -20,6 +23,9 @@ class EntrySelectionStrategy;
 class Equation;
 class ICostFunctionManager;
 class PiecewiseLinearCaseSplit;
+class SparseMatrix;
+class SparseUnsortedList;
+class SparseVector;
 class Statistics;
 class TableauRow;
 class TableauState;
@@ -29,10 +35,8 @@ class ITableau
 public:
     enum BasicStatus {
         BELOW_LB = 0,
-        AT_LB = 1,
-        BETWEEN = 2,
-        AT_UB = 3,
-        ABOVE_UB = 4,
+        BETWEEN = 1,
+        ABOVE_UB = 2,
     };
 
     enum CostFunctionStatus {
@@ -90,7 +94,7 @@ public:
     virtual ~ITableau() {};
 
     virtual void setDimensions( unsigned m, unsigned n ) = 0;
-    virtual void setEntryValue( unsigned row, unsigned column, double value ) = 0;
+    virtual void setConstraintMatrix( const double *A ) = 0;
     virtual void setRightHandSide( const double *b ) = 0;
     virtual void setRightHandSide( unsigned index, double value ) = 0;
     virtual void markAsBasic( unsigned variable ) = 0;
@@ -121,6 +125,7 @@ public:
     virtual unsigned getLeavingVariable() const = 0;
     virtual unsigned getLeavingVariableIndex() const = 0;
     virtual double getChangeRatio() const = 0;
+    virtual void setChangeRatio( double changeRatio ) = 0;
     virtual bool performingFakePivot() const = 0;
     virtual void performPivot() = 0;
     virtual double ratioConstraintPerBasic( unsigned basicIndex, double coefficient, bool decrease ) = 0;
@@ -135,6 +140,7 @@ public:
     virtual void computePivotRow() = 0;
     virtual const TableauRow *getPivotRow() const = 0;
     virtual void computeAssignment() = 0;
+    virtual bool checkValueWithinBounds( unsigned variable, double value ) = 0;
     virtual void dump() const = 0;
     virtual void dumpAssignment() = 0;
     virtual void dumpEquations() = 0;
@@ -146,8 +152,12 @@ public:
     virtual unsigned getM() const = 0;
     virtual unsigned getN() const = 0;
     virtual void getTableauRow( unsigned index, TableauRow *row ) = 0;
-    virtual const double *getAColumn( unsigned index ) const = 0;
-    virtual const double *getA() const = 0;
+    virtual const double *getAColumn( unsigned variable ) const = 0;
+    virtual void getSparseAColumn( unsigned variable, SparseUnsortedList *result ) const = 0;
+    virtual void getSparseARow( unsigned row, SparseUnsortedList *result ) const = 0;
+    virtual const SparseUnsortedList *getSparseAColumn( unsigned variable ) const = 0;
+    virtual const SparseUnsortedList *getSparseARow( unsigned row ) const = 0;
+    virtual const SparseMatrix *getSparseA() const = 0;
     virtual void performDegeneratePivot() = 0;
     virtual void storeState( TableauState &state ) const = 0;
     virtual void restoreState( const TableauState &state ) = 0;
@@ -157,15 +167,18 @@ public:
     virtual void backwardTransformation( const double *y, double *x ) const = 0;
     virtual double getSumOfInfeasibilities() const = 0;
     virtual BasicAssignmentStatus getBasicAssignmentStatus() const = 0;
+    virtual double getBasicAssignment( unsigned basicIndex ) const = 0;
     virtual void setBasicAssignmentStatus( ITableau::BasicAssignmentStatus status ) = 0;
     virtual bool basicOutOfBounds( unsigned basic ) const = 0;
     virtual bool basicTooHigh( unsigned basic ) const = 0;
     virtual bool basicTooLow( unsigned basic ) const = 0;
     virtual void verifyInvariants() = 0;
     virtual bool basisMatrixAvailable() const = 0;
-    virtual void getBasisEquations( List<Equation *> &equations ) const = 0;
-    virtual Equation *getBasisEquation( unsigned row ) const = 0;
     virtual double *getInverseBasisMatrix() const = 0;
+    virtual void refreshBasisFactorization() = 0;
+    virtual void mergeColumns( unsigned x1, unsigned x2 ) = 0;
+    virtual bool areLinearlyDependent( unsigned x1, unsigned x2, double &coefficient, double &inverseCoefficient ) = 0;
+    virtual unsigned getVariableAfterMerging( unsigned variable ) const = 0;
 };
 
 #endif // __ITableau_h__

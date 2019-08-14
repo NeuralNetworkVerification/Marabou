@@ -2,20 +2,23 @@
 /*! \file LUFactorization.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Derek Huang
- **   Guy Katz
+ **   Guy Katz, Derek Huang
  ** This file is part of the Marabou project.
- ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
  **/
 
 #ifndef __LUFactorization_h__
 #define __LUFactorization_h__
 
+#include "GaussianEliminator.h"
 #include "IBasisFactorization.h"
-#include "LPElement.h"
+#include "LUFactors.h"
 #include "List.h"
 #include "MString.h"
 
@@ -34,12 +37,19 @@ public:
     void freeIfNeeded();
 
     /*
-      Adds a new eta matrix to the basis factorization. The matrix is
-      the identity matrix with the specified column replaced by the one
-      provided. If the number of stored eta matrices exceeds a certain
-      threshold, re-factorization may occur.
+      Inform the basis factorization that the basis has been changed
+      by a pivot step. The parameters are:
+
+      1. The index of the column in question
+      2. The changeColumn -- this is the so called Eta matrix column
+      3. The new explicit column that is being added to the basis
+
+      A basis factorization may make use of just one of the two last
+      parameters.
     */
-    void pushEtaMatrix( unsigned columnIndex, const double *column );
+    void updateToAdjacentBasis( unsigned columnIndex,
+                                const double *changeColumn,
+                                const double */* newColumn */ );
 
     /*
       Perform a forward transformation, i.e. find x such that x = inv(B) * y,
@@ -55,8 +65,6 @@ public:
       E1     * u1   =  u0  --> obtain u1
       ...
       En     * x    =  un  --> obtain x
-
-      For now, assume that B0 = I, so we start with u0 = y.
 
       Result needs to be of size m.
     */
@@ -77,8 +85,6 @@ public:
       u1     * E2   =  u2  --> obtain u1
       u0     * E1   =  u1  --> obtain u0
 
-      For now, assume that B0 = I, so we start with u0 = x.
-
       Result needs to be of size m.
     */
     void backwardTransformation( const double *y, double *x ) const;
@@ -91,18 +97,15 @@ public:
     void restoreFactorization( const IBasisFactorization *other );
 
 	/*
-      Factorize a matrix into LU form. The resuling upper triangular
-      matrix is stored in _U and the lower triangular and permutation matrices
-      are stored in _LP.
+      Factorize the stored _B matrix into LU form.
 	*/
-    void factorizeMatrix( double *matrix );
+    void factorizeBasis();
 
 	/*
-      Set B0 to a non-identity matrix (or have it retrieved from the oracle),
-      and then factorize it.
+      Ask the basis factorization to obtain a fresh basis
+      (through the previously-provided oracle).
 	*/
-	void setBasis( const double *B );
-    void refactorizeBasis();
+    void obtainFreshBasis();
 
 	/*
       Swap two rows of a matrix.
@@ -123,13 +126,13 @@ public:
       Get the explicit basis matrix
     */
     const double *getBasis() const;
+    const SparseMatrix *getSparseBasis() const;
 
     /*
       Compute the inverse of B0, using the LP factorization already stored.
       This can only be done when B0 is "fresh", i.e. when there are no stored etas.
      */
     void invertBasis( double *result );
-
 
 public:
     /*
@@ -152,7 +155,7 @@ private:
     /*
       The Basis matrix.
     */
-	double *_B0;
+	double *_B;
 
     /*
       The dimension of the basis matrix.
@@ -160,12 +163,9 @@ private:
     unsigned _m;
 
     /*
-      The LU factorization on B0. U is upper triangular, and LP is a
-      sequence of lower triangular eta matrices and permuatation
-      pairs.
+      The LU factors of B.
     */
-	double *_U;
-	List<LPElement *> _LP;
+    LUFactors _luFactors;
 
     /*
       A sequence of eta matrices.
@@ -173,28 +173,19 @@ private:
     List<EtaMatrix *> _etas;
 
     /*
-      Working space
+      The Gaussian eliminator, to compute basis factorizations
     */
-    double *_LCol;
+    GaussianEliminator _gaussianEliminator;
+
+    /*
+      Work memory.
+    */
+    mutable double *_z;
 
     /*
       Clear a previous factorization.
     */
 	void clearFactorization();
-
-    /*
-      Helper functions for backward- and forward-transformations.
-      Compute L*X or X*L, where X is vector of length m and L is an (m x m)
-      lower triangular eta matrix.
-    */
-	void LMultiplyLeft( const EtaMatrix *L, double *X ) const;
-    void LMultiplyRight( const EtaMatrix *L, double *X ) const;
-
-	/*
-      Multiply matrix U on the left by lower triangular eta matrix L,
-      store result in U.
-    */
-	void LFactorizationMultiply( const EtaMatrix *L );
 
     static void log( const String &message );
 };

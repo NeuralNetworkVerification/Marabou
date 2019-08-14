@@ -1,13 +1,16 @@
 /*********************                                                        */
-/*! \file File.h
-** \verbatim
-** Top contributors (to current version):
-**   Guy Katz
-** This file is part of the Marabou project.
-** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
-** in the top-level source directory) and their institutional affiliations.
-** All rights reserved. See the file COPYING in the top-level source
-** directory for licensing information.\endverbatim
+/*! \file File.cpp
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Guy Katz, Christopher Lazarus
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
 **/
 
 #include "CommonError.h"
@@ -107,17 +110,18 @@ void File::read( HeapData &buffer, unsigned maxReadSize )
 String File::readLine( char lineSeparatingChar )
 {
     enum {
-        SIZE_OF_BUFFER = 1024,
+        SIZE_OF_BUFFER = 10240,
     };
 
     Stringf separatorAsString( "%c", lineSeparatingChar );
 
     while ( !_readLineBuffer.contains( separatorAsString ) )
     {
-        char buffer[SIZE_OF_BUFFER + 1];
+        char *buffer = new char[SIZE_OF_BUFFER + 1];
         int n = T::read( _descriptor, buffer, sizeof(char) * SIZE_OF_BUFFER );
         if ( ( n == -1 ) || ( n == 0 ) )
         {
+            delete[] buffer;
             if ( _readLineBuffer != "" )
             {
                 String result = _readLineBuffer;
@@ -130,6 +134,7 @@ String File::readLine( char lineSeparatingChar )
 
         buffer[n] = 0;
         _readLineBuffer += buffer;
+        delete[] buffer;
     }
 
     String result = _readLineBuffer.substring( 0, _readLineBuffer.find( separatorAsString ) );

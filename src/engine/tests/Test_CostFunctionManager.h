@@ -1,21 +1,25 @@
- /*********************                                                        */
+/*********************                                                        */
 /*! \file Test_CostFunctionManager.h
-** \verbatim
-** Top contributors (to current version):
-**   Guy Katz
-** This file is part of the Marabou project.
-** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
-** in the top-level source directory) and their institutional affiliations.
-** All rights reserved. See the file COPYING in the top-level source
-** directory for licensing information.\endverbatim
-**/
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Guy Katz
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** \brief [[ Add one-line brief description here ]]
+ **
+ ** [[ Add lengthier description here ]]
+ **/
 
 #include <cxxtest/TestSuite.h>
 
 #include "CostFunctionManager.h"
 #include "MockErrno.h"
 #include "MockTableau.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 
 #include <string.h>
 
@@ -77,8 +81,21 @@ public:
         tableau.nextAColumn[2] = columnTwo;
 
         // We have 3 basic variables. One is too high, one too low, one within bounds.
-        tableau.nextBasicTooHigh.insert( 0 );
-        tableau.nextBasicTooLow.insert( 1 );
+
+        tableau.nextBasicIndexToVariable[0] = 5;
+        tableau.nextBasicIndexToVariable[1] = 6;
+        tableau.nextBasicIndexToVariable[2] = 7;
+
+        tableau.lowerBounds[5] = 0;
+        tableau.upperBounds[5] = 1;
+        tableau.lowerBounds[6] = 0;
+        tableau.upperBounds[6] = 1;
+        tableau.lowerBounds[7] = 0;
+        tableau.upperBounds[7] = 1;
+
+        tableau.nextValues[5] = 10; // Too high
+        tableau.nextValues[6] = -10; // Too low
+        tableau.nextValues[7] = 0.5; // Okay
 
         TS_ASSERT_THROWS_NOTHING( manager->computeCoreCostFunction() );
 
@@ -124,8 +141,20 @@ public:
         tableau.nextAColumn[2] = columnTwo;
 
         // We have 3 basic variables. One is too high, one too low, one within bounds.
-        tableau.nextBasicTooHigh.insert( 0 );
-        tableau.nextBasicTooLow.insert( 1 );
+        tableau.nextBasicIndexToVariable[0] = 5;
+        tableau.nextBasicIndexToVariable[1] = 6;
+        tableau.nextBasicIndexToVariable[2] = 7;
+
+        tableau.lowerBounds[5] = 0;
+        tableau.upperBounds[5] = 1;
+        tableau.lowerBounds[6] = 0;
+        tableau.upperBounds[6] = 1;
+        tableau.lowerBounds[7] = 0;
+        tableau.upperBounds[7] = 1;
+
+        tableau.nextValues[5] = 10; // Too high
+        tableau.nextValues[6] = -10; // Too low
+        tableau.nextValues[7] = 0.5; // Okay
 
         // The heuristic costs change a basic var and a non-basic variable
         Map<unsigned, double> heuristicCost;

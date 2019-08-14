@@ -4,14 +4,22 @@
  ** Top contributors (to current version):
  **   Guy Katz
  ** This file is part of the Marabou project.
- ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
  **/
 
 #ifndef __IBasisFactorization_h__
 #define __IBasisFactorization_h__
+
+class SparseColumnsOfBasis;
+class SparseMatrix;
+class SparseUnsortedList;
+class Statistics;
 
 class IBasisFactorization
 {
@@ -26,12 +34,13 @@ public:
     {
     public:
         virtual ~BasisColumnOracle() {}
-        virtual const double *getColumnOfBasis( unsigned column ) const = 0;
+        virtual void getColumnOfBasis( unsigned column, double *result ) const = 0;
+        virtual void getColumnOfBasis( unsigned column, SparseUnsortedList *result ) const = 0;
+        virtual void getSparseBasis( SparseColumnsOfBasis &basis ) const = 0;
     };
 
     IBasisFactorization( const BasisColumnOracle &basisColumnOracle )
-        : _factorizationEnabled( true )
-        , _basisColumnOracle( &basisColumnOracle )
+        : _basisColumnOracle( &basisColumnOracle )
     {
     }
 
@@ -39,11 +48,18 @@ public:
 
     /*
       Inform the basis factorization that the basis has been changed
-      by a pivot step. This results is an eta matrix by which the
-      basis is multiplied on the right. This eta matrix is represented
-      by the column index and column vector.
+      by a pivot step. The parameters are:
+
+      1. The index of the column in question
+      2. The changeColumn -- this is the so called Eta matrix column
+      3. The new explicit column that is being added to the basis
+
+      A basis factorization may make use of just one of the two last
+      parameters.
     */
-    virtual void pushEtaMatrix( unsigned columnIndex, const double *column ) = 0;
+    virtual void updateToAdjacentBasis( unsigned columnIndex,
+                                        const double *changeColumn,
+                                        const double *newColumn ) = 0;
 
     /*
       Perform a forward transformation, i.e. find x such that Bx = y.
@@ -64,24 +80,10 @@ public:
     virtual void restoreFactorization( const IBasisFactorization *other ) = 0;
 
 	/*
-      Set the basis matrix, or ask the basis factorization to obtain it
-      itself (through the previously-provided oracle).
+      Ask the basis factorization to obtain a fresh basis
+      (through the previously-provided oracle).
 	*/
-    virtual void setBasis( const double *B ) = 0;
-    virtual void refactorizeBasis() = 0;
-
-    /*
-      Control/check whether factorization is enabled.
-    */
-    bool factorizationEnabled() const
-    {
-        return _factorizationEnabled;
-    }
-
-    void toggleFactorization( bool value )
-    {
-        _factorizationEnabled = value;
-    }
+    virtual void obtainFreshBasis() = 0;
 
     /*
       Return true iff the basis matrix B is explicitly available.
@@ -97,18 +99,22 @@ public:
       Get the explicit basis matrix
     */
     virtual const double *getBasis() const = 0;
+    virtual const SparseMatrix *getSparseBasis() const = 0;
 
     /*
       Compute the inverse of B (should only be called when B is explicitly available).
      */
     virtual void invertBasis( double *result ) = 0;
 
-private:
     /*
-      A flag that controls whether factorization is enabled or
-      disabled.
+      Have the Basis Factoriaztion object start reporting statistics.
     */
-    bool _factorizationEnabled;
+    virtual void setStatistics( Statistics * ) {};
+
+    /*
+      For debugging
+    */
+    virtual void dump() const {};
 
 protected:
     const BasisColumnOracle *_basisColumnOracle;

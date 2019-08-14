@@ -1,13 +1,16 @@
 /*********************                                                        */
 /*! \file MockCostFunctionManager.h
-** \verbatim
-** Top contributors (to current version):
-**   Guy Katz
-** This file is part of the Marabou project.
-** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
-** in the top-level source directory) and their institutional affiliations.
-** All rights reserved. See the file COPYING in the top-level source
-** directory for licensing information.\endverbatim
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Guy Katz
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
 **/
 
 #ifndef __MockCostFunctionManager_h__
@@ -92,10 +95,24 @@ public:
     {
     }
 
-    void updateCostFunctionForPivot( unsigned /* enteringVariableIndex */,
-                                     unsigned /* leavingVariableIndex */,
-                                     double /* pivotElement */,
-                                     const TableauRow */* pivotRow */ )
+    double updateCostFunctionForPivot( unsigned /* enteringVariableIndex */,
+                                       unsigned /* leavingVariableIndex */,
+                                       double /* pivotElement */,
+                                       const TableauRow */* pivotRow */,
+                                       const double */* changeColumn */
+                                       )
+    {
+        return 0;
+    }
+
+    Map <unsigned, double> nextBasicCost;
+    double getBasicCost( unsigned basicIndex ) const
+    {
+        TS_ASSERT( nextBasicCost.exists( basicIndex ) );
+        return nextBasicCost[basicIndex];
+    }
+
+    void adjustBasicCostAccuracy()
     {
     }
 

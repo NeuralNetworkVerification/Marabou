@@ -2,18 +2,21 @@
 /*! \file main_regress.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz
+ **   Guy Katz, Derek Huang, Shantanu Thakoor
  ** This file is part of the Marabou project.
- ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
  **/
 
 #include <cstdio>
 
 #include "RegressUtils.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 
 #include "acas_1_1_no_constraints.h"
 #include "acas_1_1_fixed_input.h"
@@ -25,6 +28,7 @@
 #include "max_infeasible_1.h"
 #include "max_relu_feasible_1.h"
 #include "relu_feasible_1.h"
+#include "relu_feasible_2.h"
 
 void lps()
 {
@@ -45,6 +49,9 @@ void relus()
     printTitle( "ReLUs / Sat" );
     Relu_Feasible_1 rf1;
     rf1.run();
+
+    Relu_Feasible_2 rf2;
+    rf2.run();
 
     Acas_1_1_Fixed_Input acas_1_1_fixed_input;
     acas_1_1_fixed_input.run();
@@ -78,8 +85,8 @@ void max_relu()
 int main()
 {
     try
-	{
-		lps();
+    {
+        lps();
 
     	relus();
 
@@ -89,7 +96,7 @@ int main()
 
         printf( "\n\n" );
 	}
-	catch( const ReluplexError &e )
+	catch( const MarabouError &e )
 	{
 		printf( "%u", e.getCode() );
 	}

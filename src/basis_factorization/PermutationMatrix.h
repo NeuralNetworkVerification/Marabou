@@ -4,10 +4,13 @@
  ** Top contributors (to current version):
  **   Guy Katz
  ** This file is part of the Marabou project.
- ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
  **/
 
 #ifndef __PermutationMatrix_h__
@@ -33,6 +36,12 @@ public:
     bool isIdentity() const;
 
     /*
+      Change the permutation so that two rows/columns are swapped
+    */
+    void swapRows( unsigned a, unsigned b );
+    void swapColumns( unsigned a, unsigned b );
+
+    /*
       Produce the inverse of the permutation matrix
     */
     PermutationMatrix *invert() const;
@@ -50,9 +59,17 @@ public:
     unsigned getM() const;
 
     /*
-      The row permutation ordering
+      Clone the permutation matrix
     */
-    unsigned *_ordering;
+    void storeToOther( PermutationMatrix *other ) const;
+
+    /*
+      The row and column permutation orderings
+      _rowOrdering[i] = j implies that entry [i,j] is 1,
+      and _columnOrdering[j] = i is equivalent
+    */
+    unsigned *_rowOrdering;
+    unsigned *_columnOrdering;
 
     /*
       Debugging

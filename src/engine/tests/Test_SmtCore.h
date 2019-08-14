@@ -2,12 +2,15 @@
 /*! \file Test_SmtCore.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz
+ **   Guy Katz, Duligur Ibeling, Derek Huang
  ** This file is part of the Marabou project.
- ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
  **/
 
 #include <cxxtest/TestSuite.h>
@@ -92,6 +95,11 @@ public:
             return List<PiecewiseLinearConstraint::Fix>();
         }
 
+        List<PiecewiseLinearConstraint::Fix> getSmartFixes( ITableau * ) const
+        {
+            return List<PiecewiseLinearConstraint::Fix>();
+        }
+
         List<PiecewiseLinearCaseSplit> nextSplits;
         List<PiecewiseLinearCaseSplit> getCaseSplits() const
         {
@@ -132,6 +140,11 @@ public:
 
         void getAuxiliaryEquations( List<Equation> &/* newEquations */ ) const
         {
+        }
+
+        String serializeToString() const
+        {
+            return "";
         }
     };
 

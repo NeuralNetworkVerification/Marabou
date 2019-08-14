@@ -1,13 +1,16 @@
 /*********************                                                        */
 /*! \file Tableau.h
-** \verbatim
-** Top contributors (to current version):
-**   Guy Katz
-** This file is part of the Marabou project.
-** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
-** in the top-level source directory) and their institutional affiliations.
-** All rights reserved. See the file COPYING in the top-level source
-** directory for licensing information.\endverbatim
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Guy Katz, Duligur Ibeling, Parth Shah
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
 **/
 
 #ifndef __Tableau_h__
@@ -18,6 +21,9 @@
 #include "MString.h"
 #include "Map.h"
 #include "Set.h"
+#include "SparseColumnsOfBasis.h"
+#include "SparseMatrix.h"
+#include "SparseUnsortedList.h"
 #include "Statistics.h"
 
 class Equation;
@@ -39,9 +45,9 @@ public:
     void setDimensions( unsigned m, unsigned n );
 
     /*
-      Set the value of a specific entry in the tableau
+      Initialize the constraint matrix
     */
-    void setEntryValue( unsigned row, unsigned column, double value );
+    void setConstraintMatrix( const double *A );
 
     /*
       Set which variable will enter the basis. The input is the
@@ -185,6 +191,12 @@ public:
     void computeAssignment();
 
     /*
+      Check whether a given value falls within a variable's bounds,
+      i.e. lowerBound <= value <= upperBound.
+    */
+    bool checkValueWithinBounds( unsigned variable, double value );
+
+    /*
       Compute the status of the basic variable based on current assignment
     */
     void computeBasicStatus();
@@ -208,6 +220,7 @@ public:
     unsigned getLeavingVariable() const;
     unsigned getLeavingVariableIndex() const;
     double getChangeRatio() const;
+    void setChangeRatio( double changeRatio );
 
     /*
       Returns true iff the current iteration is a fake pivot, i.e. the
@@ -307,10 +320,15 @@ public:
     void getTableauRow( unsigned index, TableauRow *row );
 
     /*
-      Get the original constraint matrix A or a column thereof.
+      Get the original constraint matrix A or a column thereof,
+      in dense form.
     */
-    const double *getA() const;
+    const SparseMatrix *getSparseA() const;
     const double *getAColumn( unsigned variable ) const;
+    void getSparseAColumn( unsigned variable, SparseUnsortedList *result ) const;
+    void getSparseARow( unsigned row, SparseUnsortedList *result ) const;
+    const SparseUnsortedList *getSparseAColumn( unsigned variable ) const;
+    const SparseUnsortedList *getSparseARow( unsigned row ) const;
 
     /*
       Store and restore the Tableau's state. Needed for case splitting
@@ -363,9 +381,10 @@ public:
     double getSumOfInfeasibilities() const;
 
     /*
-      The current state of the basic assignment
+      The current state and values of the basic assignment
     */
     BasicAssignmentStatus getBasicAssignmentStatus() const;
+    double getBasicAssignment( unsigned basicIndex ) const;
     void setBasicAssignmentStatus( ITableau::BasicAssignmentStatus status );
 
     /*
@@ -387,18 +406,49 @@ public:
     */
     bool basisMatrixAvailable() const;
     void makeBasisMatrixAvailable();
-    void getBasisEquations( List<Equation *> &equations ) const;
-    Equation *getBasisEquation( unsigned row ) const;
     double *getInverseBasisMatrix() const;
 
-    const double *getColumnOfBasis( unsigned column ) const;
+    void getColumnOfBasis( unsigned column, double *result ) const;
+    void getColumnOfBasis( unsigned column, SparseUnsortedList *result ) const;
+    void getSparseBasis( SparseColumnsOfBasis &basis ) const;
+
+    /*
+      Trigger a re-computing of the basis factorization. This can
+      be triggered, e.g., if a high numerical degradation has
+      been observed.
+    */
+    void refreshBasisFactorization();
+
+    /*
+      Merge two columns of the constraint matrix and re-initialize
+      the tableau.
+    */
+    void mergeColumns( unsigned x1, unsigned x2 );
+
+    /*
+      Check whether two variables are linearly dependent. If so, the function
+      returns true and places in coefficient the value c such that
+
+        x2 = ... + c * x1 + ...
+
+      The inverse coefficient is just 1/c.
+    */
+    bool areLinearlyDependent( unsigned x1, unsigned x2, double &coefficient, double &inverseCoefficient );
+
+    /*
+      When we start merging columns, variables effectively get renamed.
+      Further, it is possible that x1 is renamed to x2, and x2 is then
+      renamed to x3. This function returns the final name of its input
+      variable, after the merging has been applied.
+     */
+    unsigned getVariableAfterMerging( unsigned variable ) const;
 
 private:
     /*
       Variable watchers
     */
     typedef List<VariableWatcher *> VariableWatchers;
-    Map<unsigned, VariableWatchers> _variableToWatchers;
+    HashMap<unsigned, VariableWatchers> _variableToWatchers;
     List<VariableWatcher *> _globalWatchers;
 
     /*
@@ -413,14 +463,14 @@ private:
     unsigned _m;
 
     /*
-      The matrix
+      The constraint matrix A, and a collection of its
+      sparse columns. The matrix is also stored in dense
+      form (column-major).
     */
-    double *_A;
-
-    /*
-      A single column matrix from A
-    */
-    double *_a;
+    SparseMatrix *_A;
+    SparseUnsortedList **_sparseColumnsOfA;
+    SparseUnsortedList **_sparseRowsOfA;
+    double *_denseA;
 
     /*
       Used to compute inv(B)*a
@@ -438,9 +488,10 @@ private:
     double *_b;
 
     /*
-      Working memory (of size m).
+      Working memory (of size m and n).
     */
-    double *_work;
+    double *_workM;
+    double *_workN;
 
     /*
       A unit vector of size m
@@ -540,6 +591,19 @@ private:
     ICostFunctionManager *_costFunctionManager;
 
     /*
+      _mergedVariables[x] = y means that x = y, and that
+      variable x has been merged into variable y. So, when
+      extracting a solution for x, we should read the value of y.
+     */
+    Map<unsigned, unsigned> _mergedVariables;
+
+    /*
+      True if and only if the rhs vector _b is all zeros. This can
+      simplify some of the computations.
+     */
+    bool _rhsIsAllZeros;
+
+    /*
       Free all allocated memory.
     */
     void freeMemoryIfNeeded();
@@ -554,6 +618,12 @@ private:
       without re-computing it from scratch.
      */
     void updateAssignmentForPivot();
+
+    /*
+      Ratio tests for determining the leaving variable
+    */
+    void standardRatioTest( double *changeColumn );
+    void harrisRatioTest( double *changeColumn );
 
     static void log( const String &message );
 

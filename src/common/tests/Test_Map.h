@@ -1,3 +1,19 @@
+/*********************                                                        */
+/*! \file Test_Map.h
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Guy Katz
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** \brief [[ Add one-line brief description here ]]
+ **
+ ** [[ Add lengthier description here ]]
+ **/
+
 #include <cxxtest/TestSuite.h>
 
 #include "MString.h"
@@ -93,6 +109,30 @@ public:
                                  const CommonError &e,
                                  e.getCode(),
                                  CommonError::KEY_DOESNT_EXIST_IN_MAP );
+    }
+
+    void test_map_erase_using_iterator()
+    {
+        Map<unsigned, unsigned> map;
+
+        map[0] = 10;
+        map[1] = 11;
+        map[2] = 12;
+
+        auto it = map.begin();
+
+        it = map.erase( it );
+
+        TS_ASSERT_EQUALS( map.size(), 2U );
+        TS_ASSERT_EQUALS( it->first, 1U );
+        TS_ASSERT_EQUALS( it->second, 11U );
+
+        ++it;
+
+        it = map.erase( it );
+        TS_ASSERT_EQUALS( it, map.end() );
+
+        TS_ASSERT_EQUALS( map.size(), 1U );
     }
 
     void test_iterating()

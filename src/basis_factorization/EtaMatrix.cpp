@@ -1,13 +1,16 @@
-/********************                                                        */
+/*********************                                                        */
 /*! \file EtaMatrix.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz
+ **   Guy Katz, Derek Huang
  ** This file is part of the Marabou project.
- ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
  **/
 
 #include "BasisFactorizationError.h"
@@ -95,8 +98,9 @@ void EtaMatrix::dump() const
     printf( "\n" );
 }
 
-void EtaMatrix::toMatrix( double *A )
+void EtaMatrix::toMatrix( double *A ) const
 {
+    std::fill_n( A, _m * _m, 0.0 );
 	for ( unsigned i = 0; i < _m; ++i )
     {
 		A[i * _m + i] = 1.;

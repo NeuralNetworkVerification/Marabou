@@ -4,10 +4,13 @@
  ** Top contributors (to current version):
  **   Guy Katz
  ** This file is part of the Marabou project.
- ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
  **/
 
 #ifndef __TableauState_h__
@@ -15,7 +18,9 @@
 
 #include "IBasisFactorization.h"
 #include "ITableau.h"
+#include "Map.h"
 #include "Set.h"
+#include "SparseMatrix.h"
 
 class TableauState
 {
@@ -47,7 +52,10 @@ public:
     /*
       The matrix
     */
-    double *_A;
+    SparseMatrix *_A;
+    SparseUnsortedList **_sparseColumnsOfA;
+    SparseUnsortedList **_sparseRowsOfA;
+    double *_denseA;
 
     /*
       The right hand side
@@ -104,6 +112,13 @@ public:
       Indicator whether the bounds are valid
     */
     bool _boundsValid;
+
+    /*
+      _mergedVariables[x] = y means that x = y, and that
+      variable x has been merged into variable y. So, when
+      extracting a solution for x, we should read the value of y.
+     */
+    Map<unsigned, unsigned> _mergedVariables;
 };
 
 #endif // __TableauState_h__

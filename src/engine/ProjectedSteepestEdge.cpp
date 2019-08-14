@@ -1,13 +1,16 @@
 /*********************                                                        */
 /*! \file ProjectedSteepestEdge.cpp
-** \verbatim
-** Top contributors (to current version):
-**   Guy Katz
-** This file is part of the Marabou project.
-** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
-** in the top-level source directory) and their institutional affiliations.
-** All rights reserved. See the file COPYING in the top-level source
-** directory for licensing information.\endverbatim
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Guy Katz, Duligur Ibeling
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
 **/
 
 #include "Debug.h"
@@ -15,7 +18,7 @@
 #include "ITableau.h"
 #include "MStringf.h"
 #include "ProjectedSteepestEdge.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 #include "Statistics.h"
 #include "TableauRow.h"
 
@@ -24,6 +27,7 @@ ProjectedSteepestEdgeRule::ProjectedSteepestEdgeRule()
     , _gamma( NULL )
     , _work1( NULL )
     , _work2( NULL )
+    , _AColumn( NULL )
     , _iterationsUntilReset( GlobalConfiguration::PSE_ITERATIONS_BEFORE_RESET )
     , _errorInGamma( 0.0 )
 {
@@ -70,19 +74,19 @@ void ProjectedSteepestEdgeRule::initialize( const ITableau &tableau )
 
     _referenceSpace = new char[_n];
     if ( !_referenceSpace )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "ProjectedSteepestEdgeRule::referenceSpace" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "ProjectedSteepestEdgeRule::referenceSpace" );
 
     _gamma = new double[_n - _m];
     if ( !_gamma )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "ProjectedSteepestEdgeRule::gamma" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "ProjectedSteepestEdgeRule::gamma" );
 
     _work1 = new double[_m];
     if ( !_work1 )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "ProjectedSteepestEdgeRule::work1" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "ProjectedSteepestEdgeRule::work1" );
 
     _work2 = new double[_m];
     if ( !_work2 )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "ProjectedSteepestEdgeRule::work2" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "ProjectedSteepestEdgeRule::work2" );
 
     resetReferenceSpace( tableau );
 }
@@ -98,27 +102,28 @@ void ProjectedSteepestEdgeRule::resetReferenceSpace( const ITableau &tableau )
     }
 
     _iterationsUntilReset = GlobalConfiguration::PSE_ITERATIONS_BEFORE_RESET;
+    _errorInGamma = 0.0;
 
     if ( _statistics )
         _statistics->pseIncNumResetReferenceSpace();
 }
 
-bool ProjectedSteepestEdgeRule::select( ITableau &tableau, const Set<unsigned> &excluded )
+bool ProjectedSteepestEdgeRule::select( ITableau &tableau,
+                                        const List<unsigned> &candidates,
+                                        const Set<unsigned> &excluded )
 {
-    // Obtain the list of eligible non-basic variables to consider
-    List<unsigned> candidates;
-    tableau.getEntryCandidates( candidates );
+    List<unsigned> remainingCandidates = candidates;
 
-    List<unsigned>::iterator it = candidates.begin();
-    while ( it != candidates.end() )
+    List<unsigned>::iterator it = remainingCandidates.begin();
+    while ( it != remainingCandidates.end() )
     {
         if ( excluded.exists( *it ) )
-            it = candidates.erase( it );
+            it = remainingCandidates.erase( it );
         else
             ++it;
     }
 
-    if ( candidates.empty() )
+    if ( remainingCandidates.empty() )
     {
         log( "No candidates, select returning false" );
         return false;
@@ -138,22 +143,22 @@ bool ProjectedSteepestEdgeRule::select( ITableau &tableau, const Set<unsigned> &
       is maximal.
     */
 
-    it = candidates.begin();
+    it = remainingCandidates.begin();
     unsigned bestCandidate = *it;
     double gammaValue = _gamma[*it];
     double bestValue =
-        !FloatUtils::isPositive( gammaValue ) ? 0 : ( costFunction[*it] * costFunction[*it] ) / _gamma[*it];
+        ( gammaValue < DBL_EPSILON ) ? 0 : ( costFunction[*it] * costFunction[*it] ) / gammaValue;
 
     ++it;
 
-    while ( it != candidates.end() )
+    while ( it != remainingCandidates.end() )
     {
         unsigned contender = *it;
         gammaValue = _gamma[*it];
         double contenderValue =
-            !FloatUtils::isPositive( gammaValue ) ? 0 : ( costFunction[*it] * costFunction[*it] ) / _gamma[*it];
+            ( gammaValue < DBL_EPSILON ) ? 0 : ( costFunction[*it] * costFunction[*it] ) / gammaValue;
 
-        if ( FloatUtils::gt( contenderValue, bestValue ) )
+        if ( contenderValue > bestValue )
         {
             bestCandidate = contender;
             bestValue = contenderValue;
@@ -181,11 +186,13 @@ void ProjectedSteepestEdgeRule::prePivotHook( const ITableau &tableau, bool fake
     }
 
     // When this hook is called, the entering and leaving variables have
-    // already been determined. These are the actual varaibles, not the indices.
+    // already been determined.
     unsigned entering = tableau.getEnteringVariable();
     unsigned enteringIndex = tableau.variableToIndex( entering );
     unsigned leaving = tableau.getLeavingVariable();
     unsigned leavingIndex = tableau.variableToIndex( leaving );
+
+    ASSERT( entering != leaving );
 
     const double *changeColumn = tableau.getChangeColumn();
     const TableauRow &pivotRow = *tableau.getPivotRow();
@@ -200,7 +207,6 @@ void ProjectedSteepestEdgeRule::prePivotHook( const ITableau &tableau, bool fake
 
     // Auxiliary variables
     double r, s, t1, t2;
-    const double *AColumn;
 
     // Compute GLPK's u vector
     for ( unsigned i = 0; i < m; ++i )
@@ -220,7 +226,8 @@ void ProjectedSteepestEdgeRule::prePivotHook( const ITableau &tableau, bool fake
         if ( i == enteringIndex )
             continue;
 
-        if ( FloatUtils::isZero( pivotRow[i] ) )
+        if ( ( -GlobalConfiguration::PSE_GAMMA_UPDATE_TOLERANCE < pivotRow[i] ) &&
+             ( pivotRow[i] < +GlobalConfiguration::PSE_GAMMA_UPDATE_TOLERANCE ) )
             continue;
 
         r = pivotRow[i] / -changeColumn[leavingIndex];
@@ -228,16 +235,17 @@ void ProjectedSteepestEdgeRule::prePivotHook( const ITableau &tableau, bool fake
         /* compute inner product s[j] = N'[j] * u, where N[j] = A[k]
          * is constraint matrix column corresponding to xN[j] */
         unsigned nonBasic = tableau.nonBasicIndexToVariable( i );
-        AColumn = tableau.getAColumn( nonBasic );
+
+        _AColumn = tableau.getSparseAColumn( nonBasic );
         s = 0.0;
-        for ( unsigned j = 0; j < m; ++j )
-            s += AColumn[j] * _work2[j];
+        for ( const auto &entry : *_AColumn )
+            s += entry._value * _work2[entry._index];
 
         /* compute new gamma[j] */
         t1 = _gamma[i] + r * ( r * accurateGamma + s + s );
         t2 = ( ( _referenceSpace[nonBasic] ? 1.0 : 0.0 ) +
                ( ( _referenceSpace[entering] ? 1.0 : 0.0 ) * r * r ) );
-        _gamma[i] = FloatUtils::max( t1, t2 );
+        _gamma[i] = ( t1 > t2 ? t1 : t2 );
     }
 
     log( "PrePivotHook done" );
@@ -276,7 +284,7 @@ void ProjectedSteepestEdgeRule::postPivotHook( const ITableau &tableau, bool fak
 
     // If the iteration limit has been exhausted, reset the reference space
     --_iterationsUntilReset;
-    if ( _iterationsUntilReset == 0 )
+    if ( _iterationsUntilReset <= 0 )
     {
         log( "PostPivotHook reseting ref space (iterations)" );
         resetReferenceSpace( tableau );
@@ -284,7 +292,7 @@ void ProjectedSteepestEdgeRule::postPivotHook( const ITableau &tableau, bool fak
     }
 
     // If the error is too great, reset the reference space.
-    if ( FloatUtils::gt( _errorInGamma, GlobalConfiguration::PSE_GAMMA_ERROR_THRESHOLD ) )
+    if ( _errorInGamma > GlobalConfiguration::PSE_GAMMA_ERROR_THRESHOLD )
     {
         log( Stringf( "PostPivotHook reseting ref space (degradation). Error = %.15lf", _errorInGamma ) );
         resetReferenceSpace( tableau );

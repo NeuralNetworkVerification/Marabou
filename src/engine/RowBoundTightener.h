@@ -1,13 +1,16 @@
 /*********************                                                        */
 /*! \file RowBoundTightener.h
-** \verbatim
-** Top contributors (to current version):
-**   Duligur Ibeling
-** This file is part of the Marabou project.
-** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
-** in the top-level source directory) and their institutional affiliations.
-** All rights reserved. See the file COPYING in the top-level source
-** directory for licensing information.\endverbatim
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Guy Katz
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
 **/
 
 #ifndef __RowBoundTightener_h__
@@ -52,14 +55,6 @@ public:
       Callback from the Tableau, to inform of a change in dimensions
     */
     void notifyDimensionChange( unsigned m, unsigned n );
-
-    /*
-      Derive and enqueue new bounds for all varaibles, using the
-      explicit basis matrix B0 that should be available through the
-      tableau. Can also do this until saturation, meaning that we
-      continue until no new bounds are learned.
-     */
-    void examineBasisMatrix( bool untilSaturation );
 
     /*
       Derive and enqueue new bounds for all varaibles, using the
@@ -137,20 +132,6 @@ private:
       Free internal work memory.
     */
     void freeMemoryIfNeeded();
-
-    /*
-      Do a single pass over the basis matrix and derive any
-      tighter bounds. Return the number of new bounds are learned.
-    */
-    unsigned onePassOverBasisMatrix();
-
-    /*
-      Process the basis row and attempt to derive tighter
-      lower/upper bounds for the specified variable. Return the number of
-      tighter bounds that have been found.
-     */
-    unsigned tightenOnSingleEquation( Equation &equation,
-                                      Equation::Addend varBeingTightened );
 
     /*
       Do a single pass over the constraint matrix and derive any

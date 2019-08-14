@@ -1,13 +1,16 @@
 /*********************                                                        */
 /*! \file Test_MaxConstraint.h
-** \verbatim
-** Top contributors (to current version):
-**   Derek Huang
-** This file is part of the Marabou project.
-** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
-** in the top-level source directory) and their institutional affiliations.
-** All rights reserved. See the file COPYING in the top-level source
-** directory for licensing information.\endverbatim
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Derek Huang, Shantanu Thakoor, Guy Katz
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
 **/
 
 #include <cxxtest/TestSuite.h>
@@ -15,7 +18,7 @@
 #include "MaxConstraint.h"
 #include "MockTableau.h"
 #include "PiecewiseLinearCaseSplit.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 
 #include <string.h>
 
@@ -275,6 +278,68 @@ public:
         TS_ASSERT_EQUALS( addend->_variable, f );
 	}
 
+	void test_max_var_elims()
+	{
+		unsigned f = 1;
+		Set<unsigned> elements;
+
+		elements.insert( 2 );
+		elements.insert( 3 );
+
+		MaxConstraint max( f, elements );
+
+		max.notifyUpperBound( 2, 8 );
+		max.notifyLowerBound( 2, 1 );
+		max.notifyUpperBound( 3, 6 );
+		max.notifyLowerBound( 3, 1 );
+
+		max.notifyUpperBound( 1, 10 );
+		max.notifyLowerBound( 1, 0 );
+		TS_ASSERT( max.getParticipatingVariables().exists( 2 ) );
+		TS_ASSERT( max.getParticipatingVariables().exists( 3 ) );
+
+		max.notifyLowerBound( 1, 6 );
+		TS_ASSERT( max.getParticipatingVariables().exists( 2 ) );
+		TS_ASSERT( max.getParticipatingVariables().exists( 3 ) );
+
+		max.notifyLowerBound( 2, 7 );
+		TS_ASSERT( max.getParticipatingVariables().exists( 2 ) );
+		TS_ASSERT( !max.getParticipatingVariables().exists( 3 ) );
+	}
+
+    void test_get_entailed_tightenings()
+    {
+		unsigned f = 1;
+		Set<unsigned> elements;
+
+		elements.insert( 2 );
+		elements.insert( 3 );
+
+		MaxConstraint max( f, elements );
+
+		max.notifyLowerBound( 2, 1 );
+    	max.notifyUpperBound( 2, 8 );
+        // No lower bound for 3
+    	max.notifyUpperBound( 3, 6 );
+
+        List<Tightening> tightenings;
+        TS_ASSERT_THROWS_NOTHING( max.getEntailedTightenings( tightenings ) );
+
+        // expect f to be in the range [1, 8]
+        TS_ASSERT_EQUALS( tightenings.size(), 2U );
+        auto it = tightenings.begin();
+
+        TS_ASSERT_EQUALS( it->_variable, 1U );
+        TS_ASSERT_EQUALS( it->_value, 8 );
+        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+
+        ++it;
+
+        TS_ASSERT_EQUALS( it->_variable, 1U );
+        TS_ASSERT_EQUALS( it->_value, 1 );
+        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
+	}
+
 	void test_max_obsolete()
     {
 		unsigned f = 1;
@@ -336,6 +401,22 @@ public:
     void test_max_duplicate()
     {
         TS_TRACE( "TODO: add a test for duplicate" );
+    }
+
+    void test_serialize_and_unserialize()
+    {
+        unsigned f = 42;
+        Set<unsigned> elements;
+
+        for ( unsigned i = 2; i < 7; ++i )
+			elements.insert( i );
+
+        MaxConstraint originalMax( f, elements );
+        String originalSerialized = originalMax.serializeToString();
+        MaxConstraint recoveredMax( originalSerialized );
+
+        TS_ASSERT_EQUALS( originalMax.serializeToString(),
+                          recoveredMax.serializeToString() );
     }
 };
 

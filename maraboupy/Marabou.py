@@ -1,8 +1,26 @@
+'''
+/* *******************                                                        */
+/*! \file Marabou.py
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Christopher Lazarus, Kyle Julian, Andrew Wu
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** \brief [[ Add one-line brief description here ]]
+ **
+ ** [[ Add lengthier description here ]]
+ **/
+'''
+
 #Marabou File
 from .MarabouNetworkNNet import *
 from .MarabouNetworkTF import *
 
-def read_nnet(filename):
+def read_nnet(filename, sbt=False):
     """
     Constructs a MarabouNetworkNnet object from a .nnet file
 
@@ -11,7 +29,7 @@ def read_nnet(filename):
     Returns:
         marabouNetworkNNet: (MarabouNetworkNNet) representing network
     """
-    return MarabouNetworkNNet(filename)
+    return MarabouNetworkNNet(filename, perform_sbt=sbt)
 
 
 def read_tf(filename, inputName=None, outputName=None, savedModel=False, savedModelTags=[]):
@@ -30,3 +48,8 @@ def read_tf(filename, inputName=None, outputName=None, savedModel=False, savedMo
         marabouNetworkTF: (MarabouNetworkTF) representing network
     """
     return MarabouNetworkTF(filename, inputName, outputName, savedModel, savedModelTags)
+
+
+
+def load_query(filename, verbose=True, timeout=0):
+    MarabouNetwork.loadQuery(filename, verbose, timeout=0)

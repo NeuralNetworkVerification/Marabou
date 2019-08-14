@@ -2,18 +2,22 @@
 /*! \file RowBoundTightener.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Duligur Ibeling
+ **   Guy Katz
  ** This file is part of the Marabou project.
- ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
  **/
 
 #include "Debug.h"
 #include "InfeasibleQueryException.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 #include "RowBoundTightener.h"
+#include "SparseUnsortedList.h"
 #include "Statistics.h"
 
 RowBoundTightener::RowBoundTightener( const ITableau &tableau )
@@ -40,19 +44,19 @@ void RowBoundTightener::setDimensions()
 
     _lowerBounds = new double[_n];
     if ( !_lowerBounds )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "RowBoundTightener::lowerBounds" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "RowBoundTightener::lowerBounds" );
 
     _upperBounds = new double[_n];
     if ( !_upperBounds )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "RowBoundTightener::upperBounds" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "RowBoundTightener::upperBounds" );
 
     _tightenedLower = new bool[_n];
     if ( !_tightenedLower )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "RowBoundTightener::tightenedLower" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "RowBoundTightener::tightenedLower" );
 
     _tightenedUpper = new bool[_n];
     if ( !_tightenedUpper )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "RowBoundTightener::tightenedUpper" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "RowBoundTightener::tightenedUpper" );
 
     resetBounds();
 
@@ -201,14 +205,18 @@ void RowBoundTightener::examineImplicitInvertedBasisMatrix( bool untilSaturation
     // The tightening procedure may throw an exception, in which case we need
     // to release the rows.
     unsigned newBoundsLearned;
+    unsigned maxNumberOfIterations = untilSaturation ?
+        GlobalConfiguration::ROW_BOUND_TIGHTENER_SATURATION_ITERATIONS : 1;
     do
     {
         newBoundsLearned = onePassOverInvertedBasisRows();
 
         if ( _statistics && ( newBoundsLearned > 0 ) )
             _statistics->incNumTighteningsFromExplicitBasis( newBoundsLearned );
+
+        --maxNumberOfIterations;
     }
-    while ( untilSaturation && ( newBoundsLearned > 0 ) );
+    while ( ( maxNumberOfIterations != 0 ) && ( newBoundsLearned > 0 ) );
 }
 
 void RowBoundTightener::examineInvertedBasisMatrix( bool untilSaturation )
@@ -241,10 +249,12 @@ void RowBoundTightener::examineInvertedBasisMatrix( bool untilSaturation )
 
                 // Dot product of the i'th row of inv(B) with the appropriate
                 // column of An
-                const double *ANColumn = _tableau.getAColumn( row->_row[j]._var );
+
+                const SparseUnsortedList *column = _tableau.getSparseAColumn( row->_row[j]._var );
                 row->_row[j]._coefficient = 0;
-                for ( unsigned k = 0; k < _m; ++k )
-                    row->_row[j]._coefficient -= ( invB[i * _m + k] * ANColumn[k] );
+
+                for ( const auto &entry : *column )
+                    row->_row[j]._coefficient -= invB[i*_m + entry._index] * entry._value;
             }
 
             // Store the lhs variable
@@ -256,14 +266,18 @@ void RowBoundTightener::examineInvertedBasisMatrix( bool untilSaturation )
         // to release the rows.
 
         unsigned newBoundsLearned;
+        unsigned maxNumberOfIterations = untilSaturation ?
+            GlobalConfiguration::ROW_BOUND_TIGHTENER_SATURATION_ITERATIONS : 1;
         do
         {
             newBoundsLearned = onePassOverInvertedBasisRows();
 
             if ( _statistics && ( newBoundsLearned > 0 ) )
                 _statistics->incNumTighteningsFromExplicitBasis( newBoundsLearned );
+
+            --maxNumberOfIterations;
         }
-        while ( untilSaturation && ( newBoundsLearned > 0 ) );
+        while ( ( maxNumberOfIterations != 0 ) && ( newBoundsLearned > 0 ) );
     }
     catch ( ... )
     {
@@ -453,111 +467,6 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
     return result;
 }
 
-void RowBoundTightener::examineBasisMatrix( bool untilSaturation )
-{
-    unsigned newBoundsLearned;
-
-    /*
-      If working until saturation, do single passes over the matrix until no new bounds
-      are learned. Otherwise, just do a single pass.
-    */
-    do
-    {
-        newBoundsLearned = onePassOverBasisMatrix();
-
-        if ( _statistics && ( newBoundsLearned > 0 ) )
-            _statistics->incNumTighteningsFromExplicitBasis( newBoundsLearned );
-    }
-    while ( untilSaturation && ( newBoundsLearned > 0 ) );
-}
-
-unsigned RowBoundTightener::onePassOverBasisMatrix()
-{
-    unsigned newBounds = 0;
-
-    List<Equation *> basisEquations;
-    _tableau.getBasisEquations( basisEquations );
-    for ( const auto &equation : basisEquations )
-        for ( const auto &addend : equation->_addends )
-            newBounds += tightenOnSingleEquation( *equation, addend );
-
-    for ( const auto &equation : basisEquations )
-        delete equation;
-
-    return newBounds;
-}
-
-unsigned RowBoundTightener::tightenOnSingleEquation( Equation &equation,
-                                                     Equation::Addend varBeingTightened )
-{
-    ASSERT( !FloatUtils::isZero( varBeingTightened._coefficient ) );
-    unsigned result = 0;
-
-    // The equation is of the form a * varBeingTightened + sum (bi * xi) = c,
-    // or: a * varBeingTightened = c - sum (bi * xi)
-
-    // We first compute the lower and upper bounds for the expression c - sum (bi * xi)
-    double upperBound = equation._scalar;
-    double lowerBound = equation._scalar;
-
-    for ( auto addend : equation._addends )
-    {
-        if ( varBeingTightened._variable == addend._variable )
-            continue;
-
-        double addendLB = _lowerBounds[addend._variable];
-        double addendUB = _upperBounds[addend._variable];
-
-        if ( FloatUtils::isNegative( addend._coefficient ) )
-        {
-            lowerBound -= addend._coefficient * addendLB;
-            upperBound -= addend._coefficient * addendUB;
-        }
-
-        if ( FloatUtils::isPositive( addend._coefficient ) )
-        {
-            lowerBound -= addend._coefficient * addendUB;
-            upperBound -= addend._coefficient * addendLB;
-        }
-    }
-
-    // We know that lb < a * varBeingTightened < ub.
-    // We want to divide by a, but we care about the sign:
-    //    If a is positive: lb/a < x < ub/a
-    //    If a is negative: lb/a > x > ub/a
-    lowerBound = lowerBound / varBeingTightened._coefficient;
-    upperBound = upperBound / varBeingTightened._coefficient;
-
-    if ( FloatUtils::isNegative( varBeingTightened._coefficient ) )
-    {
-        double temp = upperBound;
-        upperBound = lowerBound;
-        lowerBound = temp;
-    }
-
-    // Tighten lower bound if needed
-    if ( FloatUtils::lt( _lowerBounds[varBeingTightened._variable], lowerBound ) )
-    {
-        _lowerBounds[varBeingTightened._variable] = lowerBound;
-        _tightenedLower[varBeingTightened._variable] = true;
-        ++result;
-    }
-
-    // Tighten upper bound if needed
-    if ( FloatUtils::gt( _upperBounds[varBeingTightened._variable], upperBound ) )
-    {
-        _upperBounds[varBeingTightened._variable] = upperBound;
-        _tightenedUpper[varBeingTightened._variable] = true;
-        ++result;
-    }
-
-    if ( FloatUtils::gt( _lowerBounds[varBeingTightened._variable],
-                         _upperBounds[varBeingTightened._variable] ) )
-        throw InfeasibleQueryException();
-
-    return result;
-}
-
 void RowBoundTightener::examineConstraintMatrix( bool untilSaturation )
 {
     unsigned newBoundsLearned;
@@ -566,14 +475,18 @@ void RowBoundTightener::examineConstraintMatrix( bool untilSaturation )
       If working until saturation, do single passes over the matrix until no new bounds
       are learned. Otherwise, just do a single pass.
     */
+    unsigned maxNumberOfIterations = untilSaturation ?
+        GlobalConfiguration::ROW_BOUND_TIGHTENER_SATURATION_ITERATIONS : 1;
     do
     {
         newBoundsLearned = onePassOverConstraintMatrix();
 
         if ( _statistics && ( newBoundsLearned > 0 ) )
             _statistics->incNumTighteningsFromConstraintMatrix( newBoundsLearned );
+
+        --maxNumberOfIterations;
     }
-    while ( untilSaturation && ( newBoundsLearned > 0 ) );
+    while ( ( maxNumberOfIterations != 0 ) && ( newBoundsLearned > 0 ) );
 }
 
 unsigned RowBoundTightener::onePassOverConstraintMatrix()
@@ -601,14 +514,14 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
           sum ci xi - b
     */
     unsigned n = _tableau.getN();
-    unsigned m = _tableau.getM();
 
     unsigned result = 0;
 
-    const double *A = _tableau.getA();
+    const SparseUnsortedList *sparseRow = _tableau.getSparseARow( row );
     const double *b = _tableau.getRightHandSide();
 
     double ci;
+    unsigned index;
 
     // Compute ci * lb, ci * ub, flag signs for all entries
     enum {
@@ -617,21 +530,18 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
         NEGATIVE = 2,
     };
 
-    for ( unsigned i = 0; i < n; ++i )
+    std::fill_n( _ciSign, n, ZERO );
+    std::fill_n( _ciTimesLb, n, 0 );
+    std::fill_n( _ciTimesUb, n, 0 );
+
+    for ( const auto &entry : *sparseRow )
     {
-        ci = A[i*m + row];
+        index = entry._index;
+        ci = entry._value;
 
-        if ( FloatUtils::isZero( ci ) )
-        {
-            _ciSign[i] = ZERO;
-            _ciTimesLb[i] = 0;
-            _ciTimesUb[i] = 0;
-            continue;
-        }
-
-        _ciSign[i] = FloatUtils::isPositive( ci ) ? POSITIVE : NEGATIVE;
-        _ciTimesLb[i] = ci * _lowerBounds[i];
-        _ciTimesUb[i] = ci * _upperBounds[i];
+        _ciSign[index] = FloatUtils::isPositive( ci ) ? POSITIVE : NEGATIVE;
+        _ciTimesLb[index] = ci * _lowerBounds[index];
+        _ciTimesUb[index] = ci * _upperBounds[index];
     }
 
     /*
@@ -672,35 +582,33 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
     double lowerBound;
     double upperBound;
 
-    // Now consider each individual xi
-    for ( unsigned i = 0; i < n; ++i )
+    // Now consider each individual xi with non zero coefficient
+    for ( const auto &entry : *sparseRow )
     {
-        // If ci = 0, nothing to do.
-        if ( _ciSign[i] == ZERO )
-            continue;
+        index = entry._index;
 
         lowerBound = auxLb;
         upperBound = auxUb;
 
         // Adjust the aux bounds to remove xi
-        if ( _ciSign[i] == NEGATIVE )
+        if ( _ciSign[index] == NEGATIVE )
         {
-            lowerBound += _ciTimesLb[i];
-            upperBound += _ciTimesUb[i];
+            lowerBound += _ciTimesLb[index];
+            upperBound += _ciTimesUb[index];
         }
         else
         {
-            lowerBound += _ciTimesUb[i];
-            upperBound += _ciTimesLb[i];
+            lowerBound += _ciTimesUb[index];
+            upperBound += _ciTimesLb[index];
         }
 
         // Now divide everything by ci, switching signs if needed.
-        ci = A[i*m + row];
+        ci = entry._value;
 
         lowerBound = lowerBound / ci;
         upperBound = upperBound / ci;
 
-        if ( _ciSign[i] == NEGATIVE )
+        if ( _ciSign[index] == NEGATIVE )
         {
             double temp = upperBound;
             upperBound = lowerBound;
@@ -708,21 +616,21 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
         }
 
         // If a tighter bound is found, store it
-        if ( FloatUtils::lt( _lowerBounds[i], lowerBound ) )
+        if ( FloatUtils::lt( _lowerBounds[index], lowerBound ) )
         {
-            _lowerBounds[i] = lowerBound;
-            _tightenedLower[i] = true;
+            _lowerBounds[index] = lowerBound;
+            _tightenedLower[index] = true;
             ++result;
         }
 
-        if ( FloatUtils::gt( _upperBounds[i], upperBound ) )
+        if ( FloatUtils::gt( _upperBounds[index], upperBound ) )
         {
-            _upperBounds[i] = upperBound;
-            _tightenedUpper[i] = true;
+            _upperBounds[index] = upperBound;
+            _tightenedUpper[index] = true;
             ++result;
         }
 
-        if ( FloatUtils::gt( _lowerBounds[i], _upperBounds[i] ) )
+        if ( FloatUtils::gt( _lowerBounds[index], _upperBounds[index] ) )
             throw InfeasibleQueryException();
     }
 

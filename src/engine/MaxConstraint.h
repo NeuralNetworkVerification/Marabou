@@ -1,13 +1,16 @@
 /*********************                                                        */
 /*! \file MaxConstraint.h
-** \verbatim
-** Top contributors (to current version):
-**   Derek Huang
-** This file is part of the Marabou project.
-** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
-** in the top-level source directory) and their institutional affiliations.
-** All rights reserved. See the file COPYING in the top-level source
-** directory for licensing information.\endverbatim
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Derek Huang, Guy Katz, Duligur Ibeling
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
 **/
 
 #ifndef __MaxConstraint_h__
@@ -22,6 +25,7 @@ class MaxConstraint : public PiecewiseLinearConstraint
     ~MaxConstraint();
 
     MaxConstraint( unsigned f, const Set<unsigned> &elements );
+    MaxConstraint( const String &serializedMax );
 
     /*
       Return a clone of the constraint.
@@ -87,6 +91,11 @@ class MaxConstraint : public PiecewiseLinearConstraint
     PiecewiseLinearCaseSplit getValidCaseSplit() const;
 
     /*
+      Return a list of smart fixes for violated constraint.
+    */
+    List<PiecewiseLinearConstraint::Fix> getSmartFixes( ITableau *tableau ) const;
+
+    /*
       Preprocessing related functions, to inform that a variable has been eliminated completely
       because it was fixed to some value, or that a variable's index has changed (e.g., x4 is now
       called x2). constraintObsolete() returns true iff and the constraint has become obsolote
@@ -105,31 +114,29 @@ class MaxConstraint : public PiecewiseLinearConstraint
       For preprocessing: get any auxiliary equations that this constraint would
       like to add to the equation pool.
     */
-    void getAuxiliaryEquations( List<Equation> &newEquations ) const;
+    void addAuxiliaryEquations( InputQuery &inputQuery );
+
+    /*
+      Returns string with shape:
+      max, _f, element_1, element_2, ... , element_n
+    */
+    String serializeToString() const;
 
  private:
     unsigned _f;
-    unsigned _maxIndex;
     Set<unsigned> _elements;
-    Set<unsigned> _eliminated;
-    unsigned _maxElim;
-    bool _phaseFixed;
-    unsigned _fixedPhase;
+    unsigned _maxIndex;
+    bool _maxIndexSet;
     double _maxLowerBound;
+    bool _obsolete;
 
-    bool _removePL;
-
-    /*
-      Check whether the phase has been fixed.
-    */
-    void checkForFixedPhaseOnAlterationToBounds();
+    void resetMaxIndex();
 
     /*
       Returns the phase where variable argMax has maximum value.
     */
     PiecewiseLinearCaseSplit getSplit( unsigned argMax ) const;
 
-    void tightenPL( Tightening tighten, List<Tightening> & tightenings );
 };
 
 #endif // __MaxConstraint_h__

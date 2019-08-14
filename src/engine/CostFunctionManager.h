@@ -1,13 +1,16 @@
 /*********************                                                        */
 /*! \file CostFunctionManager.h
-** \verbatim
-** Top contributors (to current version):
-**   Guy Katz
-** This file is part of the Marabou project.
-** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
-** in the top-level source directory) and their institutional affiliations.
-** All rights reserved. See the file COPYING in the top-level source
-** directory for licensing information.\endverbatim
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Guy Katz
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
 **/
 
 #ifndef __CostFunctionManager_h__
@@ -15,6 +18,7 @@
 
 #include "ICostFunctionManager.h"
 #include "Map.h"
+#include "SparseUnsortedList.h"
 
 class ITableau;
 
@@ -55,10 +59,22 @@ public:
       Update the cost fucntion just before a coming pivot step, to avoid having to compute
       it from scratch afterwards.
     */
-    void updateCostFunctionForPivot( unsigned enteringVariableIndex,
-                                     unsigned leavingVariableIndex,
-                                     double pivotElement,
-                                     const TableauRow *pivotRow );
+    double updateCostFunctionForPivot( unsigned enteringVariableIndex,
+                                       unsigned leavingVariableIndex,
+                                       double pivotElement,
+                                       const TableauRow *pivotRow,
+                                       const double *changeColumn );
+
+    /*
+      Return the basic cost of a basic variable (by index)
+    */
+    double getBasicCost( unsigned basicIndex ) const;
+
+    /*
+      Check whether the basic costs are accurate with respect to the current assignment.
+      Adjust them and recompute the reduced costs if they are not.
+    */
+    void adjustBasicCostAccuracy();
 
     /*
       For debugging purposes: dump the cost function.
@@ -88,6 +104,11 @@ private:
       Status of the cost function.
     */
     CostFunctionStatus _costFunctionStatus;
+
+    /*
+      Work memeory
+    */
+    const SparseUnsortedList *_ANColumn;
 
     /*
       Free memory.

@@ -2,19 +2,22 @@
 /*! \file CostFunctionManager.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz
+ **   Guy Katz, Duligur Ibeling
  ** This file is part of the Marabou project.
- ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
  **/
 
 #include "CostFunctionManager.h"
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 #include "TableauRow.h"
 
 CostFunctionManager::CostFunctionManager( ITableau *tableau )
@@ -25,6 +28,7 @@ CostFunctionManager::CostFunctionManager( ITableau *tableau )
     , _n( 0 )
     , _m( 0 )
     , _costFunctionStatus( COST_FUNCTION_INVALID )
+    , _ANColumn( NULL )
 {
 }
 
@@ -63,15 +67,15 @@ void CostFunctionManager::initialize()
 
     _costFunction = new double[_n - _m];
     if ( !_costFunction )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "CostFunctionManager::costFunction" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "CostFunctionManager::costFunction" );
 
     _basicCosts = new double[_m];
     if ( !_basicCosts )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "CostFunctionManager::basicCosts" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "CostFunctionManager::basicCosts" );
 
     _multipliers = new double[_m];
     if ( !_multipliers )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "CostFunctionManager::multipliers" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "CostFunctionManager::multipliers" );
 
     invalidateCostFunction();
 }
@@ -150,16 +154,100 @@ void CostFunctionManager::computeCoreCostFunction()
     _costFunctionStatus = ICostFunctionManager::COST_FUNCTION_JUST_COMPUTED;
 }
 
-void CostFunctionManager::computeBasicOOBCosts()
+void CostFunctionManager::adjustBasicCostAccuracy()
 {
+    unsigned variable;
+    double assignment, lb, relaxedLb, ub, relaxedUb;
+
+    bool needToRecompute = false;
     for ( unsigned i = 0; i < _m; ++i )
     {
-        if ( _tableau->basicTooLow( i ) )
-            _basicCosts[i] = -1;
-        else if ( _tableau->basicTooHigh( i ) )
-            _basicCosts[i] = 1;
+        variable = _tableau->basicIndexToVariable( i );
+        assignment = _tableau->getBasicAssignment( i );
+
+        if ( _basicCosts[i] < 0 )
+        {
+            lb = _tableau->getLowerBound( variable );
+            relaxedLb =
+                lb -
+                ( GlobalConfiguration::BASIC_COSTS_ADDITIVE_TOLERANCE +
+                  GlobalConfiguration::BASIC_COSTS_MULTIPLICATIVE_TOLERANCE * FloatUtils::abs( lb ) );
+
+            // Current basic cost is negative, assignment should be too small
+            if ( assignment >= relaxedLb )
+            {
+                needToRecompute = true;
+                _basicCosts[i] = 0;
+            }
+        }
+        else if ( _basicCosts[i] > 0 )
+        {
+            ub = _tableau->getUpperBound( variable );
+            relaxedUb =
+                ub +
+                ( GlobalConfiguration::BASIC_COSTS_ADDITIVE_TOLERANCE +
+                  GlobalConfiguration::BASIC_COSTS_MULTIPLICATIVE_TOLERANCE * FloatUtils::abs( ub ) );
+
+            // Current basic cost is positive, assignment should be too large
+            if ( assignment <= relaxedUb )
+            {
+                needToRecompute = true;
+                _basicCosts[i] = 0;
+            }
+        }
         else
-            _basicCosts[i] = 0;
+        {
+            /*
+              It seems to make sense to adjust anything that had cost 0 but should be
+              1 or -1, but apparently this leads to cycling.
+            */
+        }
+
+    }
+
+    if ( needToRecompute )
+    {
+        computeMultipliers();
+        computeReducedCosts();
+
+        _costFunctionStatus = ICostFunctionManager::COST_FUNCTION_JUST_COMPUTED;
+    }
+}
+
+void CostFunctionManager::computeBasicOOBCosts()
+{
+    unsigned variable;
+    double assignment, lb, relaxedLb, ub, relaxedUb;
+    for ( unsigned i = 0; i < _m; ++i )
+    {
+        variable = _tableau->basicIndexToVariable( i );
+        assignment = _tableau->getBasicAssignment( i );
+
+        lb = _tableau->getLowerBound( variable );
+        relaxedLb =
+            lb -
+            ( GlobalConfiguration::BASIC_COSTS_ADDITIVE_TOLERANCE +
+              GlobalConfiguration::BASIC_COSTS_MULTIPLICATIVE_TOLERANCE * FloatUtils::abs( lb ) );
+
+        if ( assignment < relaxedLb )
+        {
+            _basicCosts[i] = -1;
+            continue;
+        }
+
+        ub = _tableau->getUpperBound( variable );
+        relaxedUb =
+            ub +
+            ( GlobalConfiguration::BASIC_COSTS_ADDITIVE_TOLERANCE +
+              GlobalConfiguration::BASIC_COSTS_MULTIPLICATIVE_TOLERANCE * FloatUtils::abs( ub ) );
+
+        if ( assignment > relaxedUb )
+        {
+            _basicCosts[i] = 1;
+            continue;
+        }
+
+        _basicCosts[i] = 0;
     }
 }
 
@@ -177,9 +265,10 @@ void CostFunctionManager::computeReducedCosts()
 void CostFunctionManager::computeReducedCost( unsigned nonBasic )
 {
     unsigned nonBasicIndex = _tableau->nonBasicIndexToVariable( nonBasic );
-    const double *ANColumn = _tableau->getAColumn( nonBasicIndex );
-    for ( unsigned j = 0; j < _m; ++j )
-        _costFunction[nonBasic] -= ( _multipliers[j] * ANColumn[j] );
+    _ANColumn = _tableau->getSparseAColumn( nonBasicIndex );
+
+    for ( const auto &entry : *_ANColumn )
+        _costFunction[nonBasic] -= ( _multipliers[entry._index] * entry._value );
 }
 
 void CostFunctionManager::dumpCostFunction() const
@@ -215,10 +304,12 @@ const double *CostFunctionManager::getCostFunction() const
     return _costFunction;
 }
 
-void CostFunctionManager::updateCostFunctionForPivot( unsigned enteringVariableIndex,
-                                                      unsigned leavingVariableIndex,
-                                                      double pivotElement,
-                                                      const TableauRow *pivotRow )
+double CostFunctionManager::updateCostFunctionForPivot( unsigned enteringVariableIndex,
+                                                        unsigned leavingVariableIndex,
+                                                        double pivotElement,
+                                                        const TableauRow *pivotRow,
+                                                        const double *changeColumn
+                                                        )
 {
     /*
       This method is invoked when the non-basic _enteringVariable and
@@ -243,8 +334,21 @@ void CostFunctionManager::updateCostFunctionForPivot( unsigned enteringVariableI
     ASSERT( _tableau->getM() == _m );
     ASSERT( _tableau->getN() == _n );
 
+    /*
+      The current reduced cost of the entering variable is stored in
+      _costFunction, but since we have the change column we can compute a
+      more accurate version from scratch
+    */
+    double enteringVariableCost = 0;
+    for ( unsigned i = 0; i < _m; ++i )
+        enteringVariableCost -= _basicCosts[i] * changeColumn[i];
+
+    double normalizedError =
+        FloatUtils::abs( enteringVariableCost - _costFunction[enteringVariableIndex] ) /
+        ( FloatUtils::abs( enteringVariableCost ) + 1.0 );
+
     // Update the cost of the new non-basic
-    _costFunction[enteringVariableIndex] /= pivotElement;
+    _costFunction[enteringVariableIndex] = enteringVariableCost / pivotElement;
 
     for ( unsigned i = 0; i < _n - _m; ++i )
     {
@@ -252,27 +356,17 @@ void CostFunctionManager::updateCostFunctionForPivot( unsigned enteringVariableI
             _costFunction[i] -= (*pivotRow)[i] * _costFunction[enteringVariableIndex];
     }
 
-    unsigned leavingVariableStatus = _tableau->getBasicStatusByIndex( leavingVariableIndex );
-
-    // Update the basic cost for the leaving variable, which may have changed
-    // since we last computed it
-    switch ( leavingVariableStatus )
-    {
-    case ITableau::ABOVE_UB:
-        _basicCosts[leavingVariableIndex] = 1;
-        break;
-    case ITableau::BELOW_LB:
-        _basicCosts[leavingVariableIndex] = -1;
-        break;
-    default:
-        _basicCosts[leavingVariableIndex] = 0;
-        break;
-    }
-
-    // If the leaving variable was previously out of bounds, this is no longer
-    // the case. Adjust the non-basic cost.
+    /*
+      The leaving variable might have contributed to the cost function, but it will
+      soon be made within bounds. So, we adjust the reduced costs accordingly.
+    */
     _costFunction[enteringVariableIndex] -= _basicCosts[leavingVariableIndex];
+
+    // The entering varibale is non-basic, so it is within bounds.
+    _basicCosts[leavingVariableIndex] = 0;
+
     _costFunctionStatus = ICostFunctionManager::COST_FUNCTION_UPDATED;
+    return normalizedError;
 }
 
 bool CostFunctionManager::costFunctionInvalid() const
@@ -288,6 +382,11 @@ void CostFunctionManager::invalidateCostFunction()
 bool CostFunctionManager::costFunctionJustComputed() const
 {
     return _costFunctionStatus == ICostFunctionManager::COST_FUNCTION_JUST_COMPUTED;
+}
+
+double CostFunctionManager::getBasicCost( unsigned basicIndex ) const
+{
+    return _basicCosts[basicIndex];
 }
 
 //

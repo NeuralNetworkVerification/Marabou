@@ -1,13 +1,16 @@
 /*********************                                                        */
-/*! \file FloatUtils.h
-** \verbatim
-** Top contributors (to current version):
-**   Guy Katz
-** This file is part of the Marabou project.
-** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
-** in the top-level source directory) and their institutional affiliations.
-** All rights reserved. See the file COPYING in the top-level source
-** directory for licensing information.\endverbatim
+/*! \file FloatUtils.cpp
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Guy Katz, Duligur Ibeling
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
 **/
 
 #include "FloatUtils.h"
@@ -48,7 +51,12 @@ bool FloatUtils::areDisequal( double x, double y, double epsilon )
 
 bool FloatUtils::isZero( double x, double epsilon )
 {
-    return areEqual( x, 0.0, epsilon );
+    return ( -epsilon <= x ) && ( x <= epsilon );
+}
+
+double FloatUtils::roundToZero( double x, double epsilon )
+{
+    return isZero( x, epsilon ) ? 0.0 : x;
 }
 
 bool FloatUtils::isPositive( double x, double epsilon )

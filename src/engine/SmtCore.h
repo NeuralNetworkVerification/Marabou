@@ -1,13 +1,16 @@
 /*********************                                                        */
 /*! \file SmtCore.h
-** \verbatim
-** Top contributors (to current version):
-**   Guy Katz
-** This file is part of the Marabou project.
-** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
-** in the top-level source directory) and their institutional affiliations.
-** All rights reserved. See the file COPYING in the top-level source
-** directory for licensing information.\endverbatim
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Guy Katz, Parth Shah
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
 **/
 
 #ifndef __SmtCore_h__
@@ -29,9 +32,20 @@ public:
     ~SmtCore();
 
     /*
+      Clear the stack.
+    */
+    void freeMemory();
+
+    /*
       Inform the SMT core that a PL constraint is violated.
     */
     void reportViolatedConstraint( PiecewiseLinearConstraint *constraint );
+
+    /*
+      Get the number of times a specific PL constraint has been reported as
+      violated.
+    */
+    unsigned getViolationCounts( PiecewiseLinearConstraint* constraint ) const;
 
     /*
       Reset all reported violation counts.
@@ -75,6 +89,12 @@ public:
       Have the SMT core start reporting statistics.
     */
     void setStatistics( Statistics *statistics );
+
+    /*
+      Have the SMT core choose, among a set of violated PL constraints, which
+      constraint should be repaired (without splitting)
+    */
+    PiecewiseLinearConstraint *chooseViolatedConstraintForFixing( List<PiecewiseLinearConstraint *> &_violatedPlConstraints ) const;
 
     /*
       For debugging purposes only - store a correct possible solution
@@ -135,6 +155,12 @@ private:
       For debugging purposes only
     */
     Map<unsigned, double> _debuggingSolution;
+
+    /*
+      A unique ID allocated to every state that is stored, for
+      debugging purposes.
+    */
+    unsigned _stateId;
 };
 
 #endif // __SmtCore_h__

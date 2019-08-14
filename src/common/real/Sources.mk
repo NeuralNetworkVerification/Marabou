@@ -1,6 +1,7 @@
 SOURCES += \
 	CommonReal.cpp \
 	Errno.cpp \
+	FileFactory.cpp \
 
 #
 # Local Variables:

@@ -1,11 +1,27 @@
-The authors, designers, and main contributors to Reluwise are listed below.
-Reluwise's copyright is held by these individuals and the affiliated
+The authors, designers, and main contributors to Marabou are listed below.
+Marabou's copyright is held by these individuals and the affiliated
 institutions at the time of their contributions (note that some authors have
 had more than one affiliated institution). See the file COPYING for details on
-the copyright and licensing of Reluwise.
+the copyright and licensing of Marabou.
 
-The core designers and authors of Reluwise are:
+The core designers and authors of Marabou are:
 
-  Guy Katz, Stanford University.
-  Clark Barrett, Stanford University.
-  David Dill, Stanford University.
+  Guy Katz, The Hebrew University of Jerusalem
+  Derek A. Huang, Stanford University
+  Duligur Ibeling, Stanford University
+  Kyle Julian, Stanford University
+  Christopher Lazarus, Stanford University
+  Rachel Lim, Stanford University
+  Parth Shah, Stanford University
+  Shantanu Thakoor, Stanford University
+  Andrew Wu, Stanford University
+  Aleksandar Zeljic, Stanford University
+  Mykel Kochenderfer, Stanford University
+  Clark Barrett, Stanford University
+
+Other contributors to the Marabou codebase are listed in the THANKS file.
+
+The project was partially supported by funding from the Intel Corporation,
+the Federal Aviation Administration, the Israel Science Foundation
+(grant number 683/18), and the Binational Science Foundation (grant
+number 2017662).

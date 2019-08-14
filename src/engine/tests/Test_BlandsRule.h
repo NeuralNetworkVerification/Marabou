@@ -1,20 +1,23 @@
 /*********************                                                        */
 /*! \file Test_BlandsRule.h
-** \verbatim
-** Top contributors (to current version):
-**   Guy Katz
-** This file is part of the Marabou project.
-** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
-** in the top-level source directory) and their institutional affiliations.
-** All rights reserved. See the file COPYING in the top-level source
-** directory for licensing information.\endverbatim
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Guy Katz, Duligur Ibeling
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
 **/
 
 #include <cxxtest/TestSuite.h>
 
 #include "BlandsRule.h"
 #include "MockTableau.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 
 #include <string.h>
 
@@ -47,9 +50,8 @@ public:
 
         Set<unsigned> excluded;
         List<unsigned> candidates;
-        tableau->mockCandidates = candidates;
 
-        TS_ASSERT( !blandsRule.select( *tableau, excluded ) );
+        TS_ASSERT( !blandsRule.select( *tableau, candidates, excluded ) );
 
         candidates.append( 3 );
         tableau->nextNonBasicIndexToVariable[3] = 20;
@@ -63,13 +65,11 @@ public:
         candidates.append( 51 );
         tableau->nextNonBasicIndexToVariable[51] = 6;
 
-        tableau->mockCandidates = candidates;
-
-        TS_ASSERT( blandsRule.select( *tableau, excluded ) );
+        TS_ASSERT( blandsRule.select( *tableau, candidates, excluded ) );
         TS_ASSERT_EQUALS( tableau->mockEnteringVariable, 10U );
 
         excluded.insert( 10 );
-        TS_ASSERT( blandsRule.select( *tableau, excluded ) );
+        TS_ASSERT( blandsRule.select( *tableau, candidates, excluded ) );
         TS_ASSERT_EQUALS( tableau->mockEnteringVariable, 51U );
         excluded.clear();
 
@@ -80,7 +80,7 @@ public:
 
         // TS_ASSERT_EQUALS( blandsRule.select( candidates, *tableau ), 100U );
 
-        TS_ASSERT( blandsRule.select( *tableau, excluded ) );
+        TS_ASSERT( blandsRule.select( *tableau, candidates, excluded ) );
         TS_ASSERT_EQUALS( tableau->mockEnteringVariable, 100U );
     }
 };

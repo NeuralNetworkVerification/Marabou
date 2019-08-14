@@ -4,10 +4,13 @@
  ** Top contributors (to current version):
  **   Guy Katz
  ** This file is part of the Marabou project.
- ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
  **/
 
 #ifndef __CommonError_h__
@@ -32,6 +35,7 @@ public:
         WRITE_FAILED = 10,
         READ_FAILED = 11,
         LIST_IS_EMPTY = 12,
+        KEY_DOESNT_EXIST_IN_HASHMAP = 13,
     };
 
     CommonError( CommonError::Code code ) : Error( "CommonError", (int)code )

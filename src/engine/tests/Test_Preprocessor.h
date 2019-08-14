@@ -1,13 +1,18 @@
- /*********************                                                        */
+/*********************                                                        */
 /*! \file Test_Preprocessor.h
-** \verbatim
-** Top contributors (to current version):
-**   Derek Huang
-** This file is part of the Marabou project.
-** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
-** in the top-level source directory) and their institutional affiliations.
-** All rights reserved. See the file COPYING in the top-level source
-** directory for licensing information.\endverbatim **/
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Guy Katz, Derek Huang, Shantanu Thakoor
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** \brief [[ Add one-line brief description here ]]
+ **
+ ** [[ Add lengthier description here ]]
+ **/
 
 #include <cxxtest/TestSuite.h>
 
@@ -19,7 +24,7 @@
 #include "MockErrno.h"
 #include "Preprocessor.h"
 #include "ReluConstraint.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 
 #include <string.h>
 
@@ -197,145 +202,150 @@ public:
 
     void test_tighten_bounds_using_constraints()
     {
-		 InputQuery inputQuery;
+        InputQuery inputQuery;
 
-		 inputQuery.setNumberOfVariables( 17 );
-		 inputQuery.setLowerBound( 1, 0 );
-		 inputQuery.setUpperBound( 1, 10 );
-         inputQuery.setLowerBound( 2, 5 );
-         inputQuery.setUpperBound( 2, 13 );
-         inputQuery.setUpperBound( 3, 10 );
-   		 inputQuery.setLowerBound( 4, 4 );
-		 inputQuery.setLowerBound( 5, 0 );
-		 inputQuery.setUpperBound( 5, 1 );
-		 inputQuery.setLowerBound( 6, 0 );
-		 inputQuery.setUpperBound( 6, 2 );
-		 inputQuery.setLowerBound( 7, -1 );
-		 inputQuery.setUpperBound( 7, 0 );
-		 inputQuery.setLowerBound( 8, 0 );
-		 inputQuery.setUpperBound( 8, 2 );
-		 inputQuery.setLowerBound( 9, 0 );
-		 inputQuery.setUpperBound( 9, 1 );
-		 inputQuery.setLowerBound( 10, -1 );
-		 inputQuery.setUpperBound( 10, 0 );
+        inputQuery.setNumberOfVariables( 17 );
+        inputQuery.setLowerBound( 1, 0 );
+        inputQuery.setUpperBound( 1, 10 );
+        inputQuery.setLowerBound( 2, 5 );
+        inputQuery.setUpperBound( 2, 13 );
+        inputQuery.setUpperBound( 3, 10 );
+        inputQuery.setLowerBound( 4, 4 );
+        inputQuery.setLowerBound( 5, 0 );
+        inputQuery.setUpperBound( 5, 1 );
+        inputQuery.setLowerBound( 6, 0 );
+        inputQuery.setUpperBound( 6, 2 );
+        inputQuery.setLowerBound( 7, -1 );
+        inputQuery.setUpperBound( 7, 0 );
+        inputQuery.setLowerBound( 8, 0 );
+        inputQuery.setUpperBound( 8, 2 );
+        inputQuery.setLowerBound( 9, 0 );
+        inputQuery.setUpperBound( 9, 1 );
+        inputQuery.setLowerBound( 10, -1 );
+        inputQuery.setUpperBound( 10, 0 );
 
-		 ReluConstraint *relu = new ReluConstraint( 0, 1 );
-		 MaxConstraint *max1 = new MaxConstraint( 2, Set<unsigned>( { 4, 3 } ) );
-		 MaxConstraint *max2 = new MaxConstraint( 5, Set<unsigned>( { 6, 7 } ) );
-		 MaxConstraint *max3 = new MaxConstraint( 8, Set<unsigned>( { 9, 10 } ) );
+        ReluConstraint *relu = new ReluConstraint( 0, 1 );
+        MaxConstraint *max1 = new MaxConstraint( 2, Set<unsigned>( { 4, 3 } ) );
+        MaxConstraint *max2 = new MaxConstraint( 5, Set<unsigned>( { 6, 7 } ) );
+        MaxConstraint *max3 = new MaxConstraint( 8, Set<unsigned>( { 9, 10 } ) );
 
-		 inputQuery.addPiecewiseLinearConstraint( relu );
-		 inputQuery.addPiecewiseLinearConstraint( max1 );
-		 inputQuery.addPiecewiseLinearConstraint( max2 );
-		 inputQuery.addPiecewiseLinearConstraint( max3 );
+        relu->notifyLowerBound( 0, FloatUtils::negativeInfinity() );
 
-         InputQuery processed = Preprocessor().preprocess( inputQuery, false );
+        inputQuery.addPiecewiseLinearConstraint( relu );
+        inputQuery.addPiecewiseLinearConstraint( max1 );
+        inputQuery.addPiecewiseLinearConstraint( max2 );
+        inputQuery.addPiecewiseLinearConstraint( max3 );
 
-		 // x1 = Relu( x0 ) = max( 0, x0 )
-		 // x1 \in [0, 10]
-		 // x0 \in [-inf, +inf]
-		 // x0.lb = -inf
-		 // x0.ub = 10
-		 TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 1 ), 0 ) );
-		 TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 1 ), 10 ) );
-		 TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 0 ), FloatUtils::negativeInfinity() ) );
-		 TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 0 ), 10 ) );
+        InputQuery processed = Preprocessor().preprocess( inputQuery, false );
 
-         // x2 = Max( x3, x4 )
-		 // x2 \in [5, 13]
-		 // x3 \in [-inf, 10]
-		 // x4 \in [4, inf]
-		 // x2.lb = 5
-		 // x2.ub = 13
-		 // x3.lb = -inf
-		 // x3.ub = 10
-		 // x4.lb = 4
-		 // x4.ub = 13
-		 TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 2 ), 5 ) );
-		 TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 2 ), 13 ) );
-		 TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 3 ), FloatUtils::negativeInfinity() ) );
-		 TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 3 ), 10 ) );
-		 TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 4 ), 4 ) );
-		 TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 4 ), 13 ) );
+        // x1 = Relu( x0 ) = max( 0, x0 )
+        // x1 \in [0, 10]
+        // x0 \in [-inf, +inf]
+        // x0.lb = -inf
+        // x0.ub = 10
+        TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 1 ), 0 ) );
+        TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 1 ), 10 ) );
 
-         // x5 = Max( x6, x7 )
-		 // x5 \in [0, 1]
-		 // x6 \in [0, 2]
-		 // x7 \in [-1, 0]
-		 // x5.lb = 0
-		 // x5.ub = 1
-		 // x6.lb = 0
-		 // x6.ub = 1
-		 TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 5 ), 0 ) );
-		 TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 5 ), 1 ) );
-		 TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 6 ), 0 ) );
-		 TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 6 ), 1 ) );
-		 TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 7 ), -1 ) );
-		 TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 7 ), 0 ) );
+        TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 0 ), FloatUtils::negativeInfinity() ) ); //
+        TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 0 ), 10 ) );
 
-         // x8 = Max( x9, x10 )
-		 // x8 \in [0, 2]
-		 // x9 \in [0, 1]
-		 // x10 \in [-1, 0]
-		 // x8.lb = 0
-		 // x8.ub = 1
-		 TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 8 ), 0 ) );
-		 TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 8 ), 1 ) );
-		 TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 9 ), 0 ) );
-		 TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 9 ), 1 ) );
-		 TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 10 ), -1 ) );
-		 TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 10 ), 0 ) );
+        // x2 = Max( x3, x4 )
+        // x2 \in [5, 13]
+        // x3 \in [-inf, 10]
+        // x4 \in [4, inf]
+        // x2.lb = 5
+        // x2.ub = 13
+        // x3.lb = -inf
+        // x3.ub = 10
+        // x4.lb = 4
+        // x4.ub = 13
+        TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 2 ), 5 ) );
+        TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 2 ), 13 ) );
+        TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 3 ), FloatUtils::negativeInfinity() ) );
+        TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 3 ), 10 ) );
+        TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 4 ), 4 ) );
+        TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 4 ), 13 ) );
+
+        // x5 = Max( x6, x7 )
+        // x5 \in [0, 1]
+        // x6 \in [0, 2]
+        // x7 \in [-1, 0]
+        // x5.lb = 0
+        // x5.ub = 1
+        // x6.lb = 0
+        // x6.ub = 1
+        TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 5 ), 0 ) );
+        TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 5 ), 1 ) );
+        TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 6 ), 0 ) );
+        TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 6 ), 1 ) );
+        TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 7 ), -1 ) );
+        TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 7 ), 0 ) );
+
+        // x8 = Max( x9, x10 )
+        // x8 \in [0, 2]
+        // x9 \in [0, 1]
+        // x10 \in [-1, 0]
+        // x8.lb = 0
+        // x8.ub = 1
+        TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 8 ), 0 ) );
+        TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 8 ), 1 ) );
+        TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 9 ), 0 ) );
+        TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 9 ), 1 ) );
+        TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 10 ), -1 ) );
+        TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 10 ), 0 ) );
     }
 
 	void test_tighten_bounds_using_equations_and_constraints()
 	{
-         InputQuery inputQuery;
+        InputQuery inputQuery;
 
-		 inputQuery.setNumberOfVariables( 7 );
-         inputQuery.setLowerBound( 1, 0 );
-         inputQuery.setUpperBound( 1, 1 );
-         inputQuery.setLowerBound( 2, 2 );
-         inputQuery.setUpperBound( 2, 3 );
-         inputQuery.setLowerBound( 3, 0 );
-         inputQuery.setUpperBound( 3, 0 );
-		 inputQuery.setLowerBound( 4, 5 );
-		 inputQuery.setUpperBound( 4, 7 );
+        inputQuery.setNumberOfVariables( 7 );
+        inputQuery.setLowerBound( 1, 0 );
+        inputQuery.setUpperBound( 1, 1 );
+        inputQuery.setLowerBound( 2, 2 );
+        inputQuery.setUpperBound( 2, 3 );
+        inputQuery.setLowerBound( 3, 0 );
+        inputQuery.setUpperBound( 3, 0 );
+        inputQuery.setLowerBound( 4, 5 );
+        inputQuery.setUpperBound( 4, 7 );
 
-		 ReluConstraint *relu = new ReluConstraint( 5, 0 );
-		 MaxConstraint *max = new MaxConstraint( 6, Set<unsigned>( { 4, 0 } ) );
-		 inputQuery.addPiecewiseLinearConstraint( relu );
-		 inputQuery.addPiecewiseLinearConstraint( max );
+        ReluConstraint *relu = new ReluConstraint( 0, 5 );
+        MaxConstraint *max = new MaxConstraint( 6, Set<unsigned>( { 4, 0 } ) );
+        inputQuery.addPiecewiseLinearConstraint( relu );
+        inputQuery.addPiecewiseLinearConstraint( max );
 
-         // 2 * x0 + x1 - x2 = 10
-         //
-         // x0 = 5 - 1/2 x1 + 1/2 x2
-         //
-         // x0.lb = 5 - 1/2 x1.ub + 1/2 x2.lb = 5 - 1/2 + 1 = 5.5
-         // x0.ub = 5 - 1/2 x1.lb + 1/2 x2.ub = 5 - 0 + 1.5 = 6.5
-		 //
-		 // x5 = Relu( 0, x0 )
-		 // x5.lb = 5.5
-		 // x5.ub = 6.5
-		 //
-		 // x6 = Max( x0, x4 )
-		 // x6.lb = 5.5
-		 // x6.ub = 7
+        relu->notifyLowerBound( 0, FloatUtils::negativeInfinity() );
 
-         Equation equation;
-         equation.addAddend( 2, 0 );
-         equation.addAddend( 1, 1 );
-         equation.addAddend( -1, 2 );
-         equation.setScalar( 10 );
-         inputQuery.addEquation( equation );
+        // 2 * x0 + x1 - x2 = 10
+        //
+        // x0 = 5 - 1/2 x1 + 1/2 x2
+        //
+        // x0.lb = 5 - 1/2 x1.ub + 1/2 x2.lb = 5 - 1/2 + 1 = 5.5
+        // x0.ub = 5 - 1/2 x1.lb + 1/2 x2.ub = 5 - 0 + 1.5 = 6.5
+        //
+        // x5 = Relu( 0, x0 )
+        // x5.lb = 5.5
+        // x5.ub = 6.5
+        //
+        // x6 = Max( x0, x4 )
+        // x6.lb = 5.5
+        // x6.ub = 7
 
-		 InputQuery processed = Preprocessor().preprocess( inputQuery, false );
+        Equation equation;
+        equation.addAddend( 2, 0 );
+        equation.addAddend( 1, 1 );
+        equation.addAddend( -1, 2 );
+        equation.setScalar( 10 );
+        inputQuery.addEquation( equation );
 
-         TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 0 ), 5.5 ) );
-         TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 0 ), 6.5 ) );
-		 TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 5 ), 5.5 ) );
-		 TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 5 ), 6.5 ) );
-		 TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 6 ), 5.5 ) );
-		 TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 6 ), 7 ) );
+        InputQuery processed = Preprocessor().preprocess( inputQuery, false );
+
+        TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 0 ), 5.5 ) );
+        TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 0 ), 6.5 ) );
+        TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 5 ), 5.5 ) );
+        TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 5 ), 6.5 ) );
+        TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 6 ), 5.5 ) );
+        TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 6 ), 7 ) );
     }
 
 	void test_variable_elimination()
@@ -420,10 +430,7 @@ public:
         equation1.setScalar( 10 );
         inputQuery.addEquation( equation1 );
 
-        TS_TRACE( "Start" );
-
         InputQuery processed = Preprocessor().preprocess( inputQuery, false );
-        TS_TRACE( "End" );
 
         TS_ASSERT_EQUALS( processed.getNumberOfVariables(), 4U );
 
@@ -446,6 +453,76 @@ public:
         ++it;
         TS_ASSERT_EQUALS( it->_coefficient, 1 );
         TS_ASSERT_EQUALS( it->_variable, 3U );
+    }
+
+    void test_identical_variable_elimination()
+    {
+        InputQuery inputQuery;
+
+        inputQuery.setNumberOfVariables( 4 );
+        for ( unsigned i = 0; i < 4; ++i )
+        {
+            inputQuery.setLowerBound( i, -3 );
+            inputQuery.setUpperBound( i, 5 );
+        }
+
+        // 2x0 - 2x1 = 0
+        Equation equation1;
+        equation1.addAddend(  2, 0 );
+        equation1.addAddend( -2, 1 );
+        equation1.setScalar( 0 );
+        inputQuery.addEquation( equation1 );
+
+        // x0 + x1 + x2 = 1
+        Equation equation2;
+        equation2.addAddend( 1, 0 );
+        equation2.addAddend( 1, 1 );
+        equation2.addAddend( 1, 2 );
+        equation2.setScalar( 1 );
+        inputQuery.addEquation( equation2 );
+
+        ReluConstraint *relu1 = new ReluConstraint( 1, 3 );
+        relu1->notifyLowerBound( 1, -3 );
+
+        inputQuery.addPiecewiseLinearConstraint( relu1 );
+
+        Preprocessor preprocessor;
+        InputQuery processed = preprocessor.preprocess( inputQuery, true );
+
+        if ( !GlobalConfiguration::PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS )
+        {
+            TS_ASSERT_EQUALS( processed.getEquations().size(), 1U );
+        }
+        else
+        {
+            TS_ASSERT( processed.getEquations().size() > 1U );
+        }
+
+        // Check that equation has been updated as needed
+        Equation preprocessedEquation = *processed.getEquations().begin();
+
+        // Make sure that variable x0 has been merged into x1
+        TS_ASSERT( preprocessor.variableIsMerged( 0 ) );
+        TS_ASSERT_EQUALS( preprocessor.getMergedIndex( 0 ), 1U );
+
+        TS_ASSERT_EQUALS( preprocessor.getNewIndex( 1 ), 0U );
+        TS_ASSERT_EQUALS( preprocessor.getNewIndex( 2 ), 1U );
+        TS_ASSERT_EQUALS( preprocessor.getNewIndex( 3 ), 2U );
+
+        // Variables have been renamed, so we should have 2x0 + x1 (x0 is the new x1)
+        List<Equation::Addend>::iterator addend = preprocessedEquation._addends.begin();
+        TS_ASSERT_EQUALS( addend->_coefficient, 2.0 );
+        TS_ASSERT_EQUALS( addend->_variable, 0U );
+        ++addend;
+        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, 1U );
+        TS_ASSERT_EQUALS( preprocessedEquation._scalar, 1.0 );
+
+        for ( const auto &plConstraint: processed.getPiecewiseLinearConstraints() )
+        {
+            TS_ASSERT( plConstraint->participatingVariable( 0 ));
+            TS_ASSERT( plConstraint->participatingVariable( 2 ));
+        }
     }
 
     void test_todo()

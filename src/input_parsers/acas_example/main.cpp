@@ -2,12 +2,15 @@
 /*! \file main.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz
+ **   Guy Katz, Derek Huang
  ** This file is part of the Marabou project.
- ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
  **/
 
 #include <cstdio>
@@ -18,7 +21,7 @@
 #include "GlobalConfiguration.h"
 #include "InputQuery.h"
 #include "Preprocessor.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 
 int main()
 {
@@ -55,8 +58,8 @@ int main()
         // }
 
         // Simple constraint on an output variable
-        unsigned variable = acasParser.getOutputVariable( 0 );
-        inputQuery.setLowerBound( variable, 0.5 );
+        // unsigned variable = acasParser.getOutputVariable( 0 );
+        // inputQuery.setLowerBound( variable, 0.5 );
 
 		// Feed the query to the engine
         Engine engine;
@@ -108,9 +111,9 @@ int main()
 
         printf( "\nTotal error: %.15lf\n", error );
     }
-    catch ( const ReluplexError &e )
+    catch ( const MarabouError &e )
     {
-        printf( "Caught a ReluplexError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );
+        printf( "Caught a MarabouError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );
         return 0;
     }
 

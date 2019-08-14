@@ -2,17 +2,21 @@
 /*! \file Engine.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz
+ **   Guy Katz, Duligur Ibeling, Andrew Wu
  ** This file is part of the Marabou project.
- ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
  **/
 
 #ifndef __Engine_h__
 #define __Engine_h__
 
+#include "AutoConstraintBoundTightener.h"
 #include "AutoCostFunctionManager.h"
 #include "AutoProjectedSteepestEdge.h"
 #include "AutoRowBoundTightener.h"
@@ -29,6 +33,8 @@
 #include "SmtCore.h"
 #include "Statistics.h"
 
+#include <atomic>
+
 class EngineState;
 class InputQuery;
 class PiecewiseLinearConstraint;
@@ -37,14 +43,24 @@ class String;
 class Engine : public IEngine, public SignalHandler::Signalable
 {
 public:
-    Engine();
+    Engine( unsigned verbosity = 2 );
     ~Engine();
 
+    enum ExitCode {
+        UNSAT = 0,
+        SAT = 1,
+        ERROR = 2,
+        TIMEOUT = 3,
+        QUIT_REQUESTED = 4,
+
+        NOT_DONE = 999,
+    };
+
     /*
-      Attempt to find a feasible solution for the input. Returns true
-      if found, false if infeasible.
+      Attempt to find a feasible solution for the input within a time limit
+      (a timeout of 0 means no time limit). Returns true if found, false if infeasible.
     */
-    bool solve();
+    bool solve( unsigned timeoutInSeconds = 0 );
 
     /*
       Process the input query and pass the needed information to the
@@ -74,6 +90,48 @@ public:
 
     const Statistics *getStatistics() const;
 
+    InputQuery *getInputQuery();
+
+    /*
+      Get the exit code
+    */
+    Engine::ExitCode getExitCode() const;
+
+    /*
+      Get the quitRequested flag
+    */
+    std::atomic_bool *getQuitRequested();
+
+    /*
+      Get the list of input variables
+    */
+    List<unsigned> getInputVariables() const;
+
+    /*
+      Add equations and tightenings from a split.
+    */
+    void applySplit( const PiecewiseLinearCaseSplit &split );
+
+    /*
+      Reset the statistics object
+    */
+    void resetStatistics( const Statistics &statistics );
+
+    /*
+      Clear the violated PL constraints
+    */
+    void clearViolatedPLConstraints();
+
+    /*
+      PSA: The following two methods are for DnC only and should be used very
+      cauciously.
+     */
+    void resetSmtCore();
+
+    void resetExitCode();
+
+    void resetBoundTighteners();
+
 private:
     enum BasisRestorationRequired {
         RESTORATION_NOT_NEEDED = 0,
@@ -87,10 +145,6 @@ private:
         PERFORMED_WEAK_RESTORATION = 2,
     };
 
-    /*
-      Add equations and tightenings from a split.
-    */
-    void applySplit( const PiecewiseLinearCaseSplit &split );
 
     /*
       Perform bound tightening operations that require
@@ -116,7 +170,7 @@ private:
     /*
       Piecewise linear constraints that are currently violated.
     */
-    List<PiecewiseLinearConstraint *>_violatedPlConstraints;
+    List<PiecewiseLinearConstraint *> _violatedPlConstraints;
 
     /*
       A single, violated PL constraint, selected for fixing.
@@ -140,6 +194,11 @@ private:
       Bound tightener.
     */
     AutoRowBoundTightener _rowBoundTightener;
+
+    /*
+      Symbolic bound tightnere.
+    */
+    SymbolicBoundTightener *_symbolicBoundTightener;
 
     /*
       The SMT engine is in charge of case splitting.
@@ -167,6 +226,11 @@ private:
     bool _preprocessingEnabled;
 
     /*
+      Is the initial state stored?
+    */
+    bool _initialStateStored;
+
+    /*
       Work memory (of size m)
     */
     double *_work;
@@ -188,9 +252,42 @@ private:
     AutoCostFunctionManager _costFunctionManager;
 
     /*
-      Indicates a user request to quit
+      Indicates a user/DnCManager request to quit
     */
-    bool _quitRequested;
+    std::atomic_bool _quitRequested;
+
+    /*
+      A code indicating how the run terminated.
+    */
+    ExitCode _exitCode;
+
+    /*
+      An object in charge of managing bound tightenings
+      proposed by the PiecewiseLinearConstriants.
+    */
+    AutoConstraintBoundTightener _constraintBoundTightener;
+
+    /*
+      The number of visited states when we performed the previous
+      restoration. This field serves as an indication of whether or
+      not progress has been made since the previous restoration.
+    */
+    unsigned long long _numVisitedStatesAtPreviousRestoration;
+
+    /*
+      An object that knows the topology of the network being checked,
+      and can be used for various operations such as network
+      evaluation of topology-based bound tightening.
+     */
+    NetworkLevelReasoner *_networkLevelReasoner;
+
+    /*
+      Verbosity level:
+      0: print out minimal information
+      1: print out statistics only in the beginning and the end
+      2: print out statistics during solving
+    */
+    unsigned _verbosity;
 
     /*
       Perform a simplex step: compute the cost function, pick the
@@ -252,9 +349,10 @@ private:
 
     /*
       Apply all valid case splits proposed by the constraints.
+      Return true if a valid case split has been applied.
     */
-    void applyAllValidConstraintCaseSplits();
-    void applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constraint );
+    bool applyAllValidConstraintCaseSplits();
+    bool applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constraint );
 
     /*
       Update statitstics, print them if needed.
@@ -293,6 +391,40 @@ private:
       with the stored solution
     */
     void checkBoundCompliancyWithDebugSolution();
+
+    /*
+      A helper function for merging the columns of two variables.
+      This function will ensure that the variables are non-basic
+      and then attempt to merge them. Returns true if successful,
+      false otherwise.
+    */
+    bool attemptToMergeVariables( unsigned x1, unsigned x2 );
+
+    /*
+      Perform a round of symbolic bound tightening, taking into
+      account the current state of the piecewise linear constraints.
+    */
+    void performSymbolicBoundTightening();
+
+    /*
+      Check whether a timeout value has been provided and exceeded.
+    */
+    bool shouldExitDueToTimeout( unsigned timeout ) const;
+
+    /*
+      Helper functions for input query preprocessing
+    */
+    void informConstraintsOfInitialBounds( InputQuery &inputQuery ) const;
+    void invokePreprocessor( const InputQuery &inputQuery, bool preprocess );
+    void printInputBounds( const InputQuery &inputQuery ) const;
+    void storeEquationsInDegradationChecker();
+    void removeRedundantEquations( const double *constraintMatrix );
+    void selectInitialVariablesForBasis( const double *constraintMatrix, List<unsigned> &initialBasis, List<unsigned> &basicRows );
+    void initializeTableau( const double *constraintMatrix, const List<unsigned> &initialBasis );
+    void initializeNetworkLevelReasoning();
+    double *createConstraintMatrix();
+    void addAuxiliaryVariables();
+    void augmentInitialBasisIfNeeded( List<unsigned> &initialBasis, const List<unsigned> &basicRows );
 };
 
 #endif // __Engine_h__

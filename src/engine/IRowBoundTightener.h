@@ -1,13 +1,16 @@
 /*********************                                                        */
 /*! \file IRowBoundTightener.h
-** \verbatim
-** Top contributors (to current version):
-**   Guy Katz
-** This file is part of the Marabou project.
-** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
-** in the top-level source directory) and their institutional affiliations.
-** All rights reserved. See the file COPYING in the top-level source
-** directory for licensing information.\endverbatim
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Guy Katz
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
 **/
 
 #ifndef __IRowBoundTightener_h__
@@ -35,14 +38,6 @@ public:
       Clear all learned bounds, without reallocating memory.
     */
     virtual void clear() = 0;
-
-    /*
-      Derive and enqueue new bounds for all varaibles, using the
-      explicit basis matrix B0 that should be available through the
-      tableau. Can also do this until saturation, meaning that we
-      continue until no new bounds are learned.
-     */
-    virtual void examineBasisMatrix( bool untilSaturation ) = 0;
 
     /*
       Derive and enqueue new bounds for all varaibles, using the

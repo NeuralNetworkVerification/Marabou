@@ -1,161 +1,416 @@
-/********************                                                        */
+/*********************                                                        */
 /*! \file GaussianEliminator.cpp
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz
  ** This file is part of the Marabou project.
- ** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
  **/
 
 #include "BasisFactorizationError.h"
+#include "Debug.h"
 #include "EtaMatrix.h"
 #include "FloatUtils.h"
 #include "GaussianEliminator.h"
+#include "GlobalConfiguration.h"
+#include "MStringf.h"
 #include "MalformedBasisException.h"
 
 #include <cstdio>
 
-GaussianEliminator::GaussianEliminator( const double *A, unsigned m )
-    : _A( A )
-    , _m( m )
-    , _pivotColumn( NULL )
-    , _LCol( NULL )
+GaussianEliminator::GaussianEliminator( unsigned m )
+    : _m( m )
+    , _numURowElements( NULL )
+    , _numUColumnElements( NULL )
 {
-    _pivotColumn = new double[_m];
-    if ( !_pivotColumn )
+    _numURowElements = new unsigned[_m];
+    if ( !_numURowElements )
         throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
-                                       "GaussianEliminator::pivotColumn" );
+                                       "GaussianEliminator::numURowElements" );
 
-    _LCol = new double[_m];
-    if ( !_LCol )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "LUFactorization::LCol" );
+    _numUColumnElements = new unsigned[_m];
+    if ( !_numUColumnElements )
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                       "GaussianEliminator::numUColumnElements" );
 }
 
 GaussianEliminator::~GaussianEliminator()
 {
-    if ( _pivotColumn )
+    if ( _numURowElements )
     {
-        delete[] _pivotColumn;
-        _pivotColumn = NULL;
+        delete[] _numURowElements;
+        _numURowElements = NULL;
     }
 
-    if ( _LCol )
+    if ( _numUColumnElements )
     {
-        delete[] _LCol;
-        _LCol = NULL;
+        delete[] _numUColumnElements;
+        _numUColumnElements = NULL;
     }
 }
 
-unsigned GaussianEliminator::choosePivotElement( unsigned columnIndex, FactorizationStrategy factorizationStrategy )
+void GaussianEliminator::initializeFactorization( const double *A, LUFactors *luFactors )
 {
-    if ( factorizationStrategy != PARTIAL_PIVOTING )
-    {
-        printf( "Error! Only strategy currently supported is partial pivoting!\n" );
-        exit( 1 );
-    }
+    // Allocate the work space
+    _luFactors = luFactors;
 
-    double largestElement = FloatUtils::abs( _pivotColumn[columnIndex] );
-    unsigned bestRowIndex = columnIndex;
+    /*
+      Initially:
 
-    for ( unsigned i = columnIndex + 1; i < _m; ++i )
-    {
-        double contender = FloatUtils::abs( _pivotColumn[i] );
-        if ( FloatUtils::gt( contender, largestElement ) )
-        {
-            largestElement = contender;
-            bestRowIndex = i;
-        }
-    }
-
-    // No non-zero pivot has been found, matrix cannot be factorized
-    if ( FloatUtils::isZero( largestElement ) )
-        throw MalformedBasisException();
-
-    return bestRowIndex;
-}
-
-void GaussianEliminator::factorize( List<LPElement *> *lp,
-                                    double *U,
-                                    unsigned *rowHeaders,
-                                    FactorizationStrategy factorizationStrategy )
-{
-    // Initialize U to the stored A
-	memcpy( U, _A, sizeof(double) * _m * _m );
-
-    // Reset the row headers. The i'th row is stored as the rowHeaders[i]'th row in memory
+        P = Q = I
+        V = U = A
+        F = L = I
+    */
+    memcpy( _luFactors->_V, A, sizeof(double) * _m * _m );
+    std::fill_n( _luFactors->_F, _m * _m, 0 );
     for ( unsigned i = 0; i < _m; ++i )
-        rowHeaders[i] = i;
+        _luFactors->_F[i*_m +i] = 1;
 
-    // Iterate over the columns of U
-    for ( unsigned pivotColumnIndex = 0; pivotColumnIndex < _m; ++pivotColumnIndex )
+    _luFactors->_P.resetToIdentity();
+    _luFactors->_Q.resetToIdentity();
+
+    // Count number of non-zeros in U ( = A )
+    std::fill_n( _numURowElements, _m, 0 );
+    std::fill_n( _numUColumnElements, _m, 0 );
+    for ( unsigned i = 0; i < _m; ++i )
     {
-        // Extract the current column
-        for ( unsigned i = pivotColumnIndex; i < _m; ++i )
-            _pivotColumn[i] = U[rowHeaders[i] * _m + pivotColumnIndex];
-
-        // Select the new pivot element according to the factorization strategy
-        unsigned bestRowIndex = choosePivotElement( pivotColumnIndex, factorizationStrategy );
-
-        // Swap the pivot row to the top of the column if needed
-        if ( bestRowIndex != pivotColumnIndex )
+        for ( unsigned j = 0; j < _m; ++j )
         {
-            // Swap the rows through the headers
-            unsigned tempIndex = rowHeaders[pivotColumnIndex];
-            rowHeaders[pivotColumnIndex] = rowHeaders[bestRowIndex];
-            rowHeaders[bestRowIndex] = tempIndex;
-
-            // Also swap in the work vector
-            double tempVal = _pivotColumn[pivotColumnIndex];
-            _pivotColumn[pivotColumnIndex] = _pivotColumn[bestRowIndex];
-            _pivotColumn[bestRowIndex] = tempVal;
-
-            std::pair<unsigned, unsigned> *P = new std::pair<unsigned, unsigned>( pivotColumnIndex, bestRowIndex );
-            lp->appendHead( new LPElement( NULL, P ) );
-        }
-
-        // The matrix now has a non-zero value at entry (pivotColumnIndex, pivotColumnIndex),
-        // so we can perform Gaussian elimination for the subsequent rows
-
-        // TODO: don't need the full LCol, can switch to a dedicated lower-triangular matrix datatype
-        bool eliminationRequired = !FloatUtils::areEqual( _pivotColumn[pivotColumnIndex], 1.0 );
-        std::fill_n( _LCol, _m, 0 );
-        _LCol[pivotColumnIndex] = 1 / _pivotColumn[pivotColumnIndex];
-		for ( unsigned j = pivotColumnIndex + 1; j < _m; ++j )
-        {
-            if ( !FloatUtils::isZero( _pivotColumn[j] ) )
+            if ( !FloatUtils::isZero( A[i*_m + j] ) )
             {
-                eliminationRequired = true;
-                _LCol[j] = -_pivotColumn[j] * _LCol[pivotColumnIndex];
+                ++_numURowElements[i];
+                ++_numUColumnElements[j];
             }
         }
+    }
+}
 
-        if ( eliminationRequired )
+void GaussianEliminator::permute()
+{
+    /*
+      The element selected for pivoting is U[p,q],
+      We want to update P and Q to move u[p,q] to position [k,k] in U (= P'VQ'), where k is the current
+      eliminiation step.
+    */
+
+    _luFactors->_P.swapColumns( _uPivotRow, _eliminationStep );
+    _luFactors->_Q.swapRows( _uPivotColumn, _eliminationStep );
+
+    // Adjust the element counters
+    unsigned temp;
+    temp = _numURowElements[_uPivotRow];
+    _numURowElements[_uPivotRow] = _numURowElements[_eliminationStep];
+    _numURowElements[_eliminationStep] = temp;
+
+    temp = _numUColumnElements[_uPivotColumn];
+    _numUColumnElements[_uPivotColumn] = _numUColumnElements[_eliminationStep];
+    _numUColumnElements[_eliminationStep] = temp;
+}
+
+void GaussianEliminator::run( const double *A, LUFactors *luFactors )
+{
+    // Initialize the LU factors
+    initializeFactorization( A, luFactors );
+
+    // Main factorization loop
+    for ( _eliminationStep = 0; _eliminationStep < _m; ++_eliminationStep )
+    {
+        /*
+          Step 1:
+          -------
+          Choose a pivot element from the active submatrix of U. This
+          can be any non-zero coefficient. Store the result in:
+             _uPivotRow, _uPivotColumn (indices in U)
+             _vPivotRow, _vPivotColumn (indices in V)
+        */
+        choosePivot();
+
+        /*
+          Step 2:
+          -------
+          Element V[p,q] has been selected as the pivot. Find the
+          corresponding element of U and move it to position [k,k],
+          where k is the current elimination step.
+        */
+        permute();
+
+        /*
+          Step 3:
+          -------
+          Perform the actual elimination on U, while maintaining the
+          equation A = FV.
+        */
+        eliminate();
+    }
+
+    /*
+    DEBUG({
+            // Check that the factorization is correct
+            double *product = new double[_m * _m];
+            std::fill_n( product, _m * _m, 0 );
+
+            for ( unsigned i = 0; i < _m; ++i )
+                for ( unsigned j = 0; j < _m; ++j )
+                    for ( unsigned k = 0; k < _m; ++k )
+                    {
+                        product[i*_m+j] += ( _luFactors->_F[i*_m+k] * _luFactors->_V[k*_m+j] );
+                    }
+
+            for ( unsigned i = 0; i < _m; ++i )
+                for ( unsigned j = 0; j < _m; ++j )
+                {
+                    ASSERT( FloatUtils::areEqual( product[i*_m+j], A[i*_m+j] ) );
+                }
+        });
+    */
+}
+
+void GaussianEliminator::choosePivot()
+{
+    log( "Choose pivot invoked" );
+
+    /*
+      Apply the Markowitz rule: in the active sub-matrix,
+      let p_i denote the number of non-zero elements in the i'th
+      equation, and let q_j denote the number of non-zero elements
+      in the q'th column.
+
+      We pick a pivot a_ij \neq 0 that minimizes (p_i - 1)(q_i - 1).
+    */
+
+    bool found = false;
+
+    // If there's a singleton row, use it as the pivot row
+    for ( unsigned i = _eliminationStep; i < _m; ++i )
+    {
+        if ( _numURowElements[i] == 1 )
         {
-            // Store the resulting lower-triangular eta matrix
-            EtaMatrix *L = new EtaMatrix( _m, pivotColumnIndex, _LCol );
-            lp->appendHead( new LPElement( L, NULL ) );
+            _uPivotRow = i;
+            _vPivotRow = _luFactors->_P._columnOrdering[i];
 
-            // Perform the actual elimination step on U. First, perform in-place multiplication
-            // for all rows below the pivot row
-            for ( unsigned row = pivotColumnIndex + 1; row < _m; ++row )
+            // Locate the singleton element
+            for ( unsigned j = _eliminationStep; j < _m; ++j )
             {
-                U[rowHeaders[row] * _m + pivotColumnIndex] = 0.0;
-                for ( unsigned col = pivotColumnIndex + 1; col < _m; ++col )
-                    U[rowHeaders[row] * _m + col] += L->_column[row] * U[rowHeaders[pivotColumnIndex] * _m + col];
+                unsigned vCol = _luFactors->_Q._rowOrdering[j];
+                if ( !FloatUtils::isZero( _luFactors->_V[_vPivotRow*_m + vCol] ) )
+                {
+                    _vPivotColumn = vCol;
+                    _uPivotColumn = j;
+
+                    found = true;
+                    break;
+                }
             }
 
-            // Finally, perform the multiplication for the pivot row
-            // itself. We change this row last because it is required for all
-            // previous multiplication operations.
-            for ( unsigned i = pivotColumnIndex + 1; i < _m; ++i )
-                U[rowHeaders[pivotColumnIndex] * _m + i] *= L->_column[pivotColumnIndex];
+            ASSERT( found );
 
-            U[rowHeaders[pivotColumnIndex] * _m + pivotColumnIndex] = 1.0;
+            log( Stringf( "Choose pivot selected a pivot (singleton row): V[%u,%u] = %lf",
+                          _vPivotRow,
+                          _vPivotColumn,
+                          _luFactors->_V[_vPivotRow*_m + _vPivotColumn] ) );
+
+            return;
         }
-	}
+    }
+
+    // If there's a singleton column, use it as the pivot column
+    for ( unsigned i = _eliminationStep; i < _m; ++i )
+    {
+        if ( _numUColumnElements[i] == 1 )
+        {
+            _uPivotColumn = i;
+            _vPivotColumn = _luFactors->_Q._rowOrdering[i];
+
+            // Locate the singleton element
+            for ( unsigned j = _eliminationStep; j < _m; ++j )
+            {
+                unsigned vRow = _luFactors->_P._columnOrdering[j];
+                if ( !FloatUtils::isZero( _luFactors->_V[vRow*_m + _vPivotColumn] ) )
+                {
+                    _vPivotRow = vRow;
+                    _uPivotRow = j;
+
+                    found = true;
+                    break;
+                }
+            }
+
+            ASSERT( found );
+
+            log( Stringf( "Choose pivot selected a pivot (singleton column): V[%u,%u] = %lf",
+                          _vPivotRow,
+                          _vPivotColumn,
+                          _luFactors->_V[_vPivotRow*_m + _vPivotColumn] ) );
+            return;
+        }
+    }
+
+    // No singletons, apply the Markowitz rule. Find the element with acceptable
+    // magnitude that has the smallet Markowitz rule.
+    // Fail if no elements exists that are within acceptable magnitude
+
+    // Todo: more clever heuristics to reduce the search space
+    unsigned minimalCost = _m * _m;
+    double pivotEntry = 0.0;
+    for ( unsigned column = _eliminationStep; column < _m; ++column )
+    {
+        // First find the maximal element in the column
+        double maxInColumn = 0;
+        for ( unsigned row = _eliminationStep; row < _m; ++row )
+        {
+            unsigned vRow = _luFactors->_P._columnOrdering[row];
+            unsigned vColumn = _luFactors->_Q._rowOrdering[column];
+            double contender = FloatUtils::abs( _luFactors->_V[vRow*_m + vColumn] );
+
+            if ( FloatUtils::gt( contender, maxInColumn ) )
+                maxInColumn = contender;
+        }
+
+        if ( FloatUtils::isZero( maxInColumn ) )
+        {
+            if ( !found )
+                throw BasisFactorizationError( BasisFactorizationError::GAUSSIAN_ELIMINATION_FAILED,
+                                               "Have a zero column" );
+
+        }
+
+        // Now scan the column for candidates
+        for ( unsigned row = _eliminationStep; row < _m; ++row )
+        {
+            unsigned vRow = _luFactors->_P._columnOrdering[row];
+            unsigned vColumn = _luFactors->_Q._rowOrdering[column];
+            double contender = FloatUtils::abs( _luFactors->_V[vRow*_m + vColumn] );
+
+            // Only consider large-enough elements
+            if ( FloatUtils::gt( contender,
+                                 maxInColumn * GlobalConfiguration::GAUSSIAN_ELIMINATION_PIVOT_SCALE_THRESHOLD ) )
+            {
+                unsigned cost = ( _numURowElements[row] - 1 ) * ( _numUColumnElements[column] - 1 );
+
+                ASSERT( ( cost != minimalCost ) || found );
+
+                if ( ( cost < minimalCost ) ||
+                     ( ( cost == minimalCost ) && FloatUtils::gt( contender, pivotEntry ) ) )
+                {
+                    minimalCost = cost;
+                    _uPivotRow = row;
+                    _uPivotColumn = column;
+                    _vPivotRow = vRow;
+                    _vPivotColumn = vColumn;
+                    pivotEntry = contender;
+                    found = true;
+                }
+            }
+        }
+    }
+
+    log( Stringf( "Choose pivot selected a pivot: V[%u,%u] = %lf (cost %u)", _vPivotRow, _vPivotColumn, _luFactors->_V[_vPivotRow*_m + _vPivotColumn], minimalCost ) );
+
+    if ( !found )
+        throw BasisFactorizationError( BasisFactorizationError::GAUSSIAN_ELIMINATION_FAILED,
+                                       "Couldn't find a pivot" );
+}
+
+void GaussianEliminator::eliminate()
+{
+    unsigned fColumnIndex = _luFactors->_P._columnOrdering[_eliminationStep];
+
+    /*
+      The pivot row is not eliminated per se, but it is excluded
+      from the active submatrix, so we adjust the element counters
+    */
+    _numURowElements[_eliminationStep] = 0;
+    for ( unsigned uColumn = _eliminationStep; uColumn < _m; ++uColumn )
+    {
+        unsigned vColumn = _luFactors->_Q._rowOrdering[uColumn];
+        if ( !FloatUtils::isZero( _luFactors->_V[_vPivotRow*_m + vColumn] ) )
+            --_numUColumnElements[uColumn];
+    }
+
+    /*
+      Eliminate all entries below the pivot element U[k,k]
+      We know that V[_pivotRow, _pivotColumn] = U[k,k].
+    */
+    double pivotElement = _luFactors->_V[_vPivotRow*_m + _vPivotColumn];
+
+    log( Stringf( "Eliminate called. Pivot element: %lf", pivotElement ) );
+
+    // Process all rows below the pivot row.
+    for ( unsigned row = _eliminationStep + 1; row < _m; ++row )
+    {
+        /*
+          Compute the Gaussian row multiplier for this row.
+          The multiplier is: - U[row,k] / pivotElement
+          We compute it in terms of V
+        */
+        unsigned vRowIndex = _luFactors->_P._columnOrdering[row];
+        double subDiagonalEntry = _luFactors->_V[vRowIndex*_m + _vPivotColumn];
+
+        // Ignore zero entries
+        if ( FloatUtils::isZero( subDiagonalEntry ) )
+            continue;
+
+        double rowMultiplier = -subDiagonalEntry / pivotElement;
+        log( Stringf( "\tWorking on V row: %u. Multiplier: %lf", vRowIndex, rowMultiplier ) );
+
+        // Eliminate the row
+        _luFactors->_V[vRowIndex*_m + _vPivotColumn] = 0;
+        --_numUColumnElements[_eliminationStep];
+        --_numURowElements[row];
+
+        for ( unsigned column = _eliminationStep + 1; column < _m; ++column )
+        {
+            unsigned vColIndex = _luFactors->_Q._rowOrdering[column];
+
+            bool wasZero = FloatUtils::isZero( _luFactors->_V[vRowIndex*_m + vColIndex] );
+
+            _luFactors->_V[vRowIndex*_m + vColIndex] +=
+                rowMultiplier * _luFactors->_V[_vPivotRow*_m + vColIndex];
+
+            bool isZero = FloatUtils::isZero( _luFactors->_V[vRowIndex*_m + vColIndex] );
+
+            if ( wasZero != isZero )
+            {
+                if ( wasZero )
+                {
+                    ++_numUColumnElements[column];
+                    ++_numURowElements[row];
+                }
+                else
+                {
+                    --_numUColumnElements[column];
+                    --_numURowElements[row];
+                }
+            }
+
+            if ( isZero )
+                _luFactors->_V[vRowIndex*_m + vColIndex] = 0;
+        }
+
+        /*
+          Store the row multiplier in matrix F, using F = PLP'.
+          F's rows are ordered same as V's
+        */
+        _luFactors->_F[vRowIndex*_m + fColumnIndex] = -rowMultiplier;
+    }
+
+    /*
+      Put 1 in L's diagonal.
+      TODO: This can be made implicit
+    */
+    _luFactors->_F[fColumnIndex*_m + fColumnIndex] = 1;
+}
+
+void GaussianEliminator::log( const String &message )
+{
+    if ( GlobalConfiguration::GAUSSIAN_ELIMINATION_LOGGING )
+        printf( "GaussianEliminator: %s\n", message.ascii() );
 }
 
 //

@@ -1,23 +1,27 @@
 /*********************                                                        */
 /*! \file Preprocessor.h
-** \verbatim
-** Top contributors (to current version):
-**   Derek Huang
-** This file is part of the Marabou project.
-** Copyright (c) 2016-2017 by the authors listed in the file AUTHORS
-** in the top-level source directory) and their institutional affiliations.
-** All rights reserved. See the file COPYING in the top-level source
-** directory for licensing information.\endverbatim
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Guy Katz, Derek Huang, Shantanu Thakoor
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
 **/
 
 #ifndef __Preprocessor_h__
 #define __Preprocessor_h__
 
 #include "Equation.h"
+#include "InputQuery.h"
 #include "List.h"
 #include "Map.h"
 #include "PiecewiseLinearConstraint.h"
-#include "InputQuery.h"
+#include "Set.h"
 
 class Preprocessor
 {
@@ -41,6 +45,12 @@ public:
     double getFixedValue( unsigned index ) const;
 
     /*
+      Obtain the values of variables that have been merged.
+    */
+    bool variableIsMerged( unsigned index ) const;
+    unsigned getMergedIndex( unsigned index ) const;
+
+    /*
       Obtain the new index of a variable.
     */
     unsigned getNewIndex( unsigned oldIndex ) const;
@@ -62,9 +72,19 @@ private:
 	bool processConstraints();
 
     /*
-      Eliminate any variables that have become files
+      If there exists an equation x = x', replace all instances of x with x'
+    */
+    bool processIdenticalVariables();
+
+    /*
+      Collect all variables whose lower and upper bounds are equal
+    */
+    void collectFixedValues();
+
+    /*
+      Eliminate any variables that have become fixed or merged with an identical variable
 	*/
-	void eliminateFixedVariables();
+	void eliminateVariables();
 
     /*
       Call on the PL constraints to add any auxiliary equations
@@ -88,10 +108,21 @@ private:
     Map<unsigned, double> _fixedVariables;
 
     /*
+      Variables that have been merged with other varaibles, due to
+      equations of the form x1 = x2
+    */
+    Map<unsigned, unsigned> _mergedVariables;
+
+    /*
       Mapping of old variable indices to new varibale indices, if
       indices were changed during preprocessing.
     */
     Map<unsigned, unsigned> _oldIndexToNewIndex;
+
+    /*
+      For debugging only
+    */
+    void dumpAllBounds( const String &message );
 };
 
 #endif // __Preprocessor_h__

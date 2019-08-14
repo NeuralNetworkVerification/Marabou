@@ -1,3 +1,19 @@
+/*********************                                                        */
+/*! \file MarabouCore.cpp
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Christopher Lazarus, Andrew Wu, Shantanu Thakoor
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** \brief [[ Add one-line brief description here ]]
+ **
+ ** [[ Add lengthier description here ]]
+ **/
+
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <map>
@@ -9,12 +25,15 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
+#include "AcasParser.h"
 #include "Engine.h"
 #include "InputQuery.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
+#include "MString.h"
 #include "FloatUtils.h"
 #include "MaxConstraint.h"
 #include "PiecewiseLinearConstraint.h"
+#include "PropertyParser.h"
 #include "ReluConstraint.h"
 #include "Set.h"
 
@@ -70,7 +89,21 @@ void addMaxConstraint(InputQuery& ipq, std::set<unsigned> elements, unsigned v){
     ipq.addPiecewiseLinearConstraint(m);
 }
 
-std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::string redirect=""){
+
+void createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::string propertyFilePath){
+  AcasParser* acasParser = new AcasParser( String(networkFilePath) );
+  acasParser->generateQuery( inputQuery );
+  String propertyFilePathM = String(propertyFilePath);
+  if ( propertyFilePath != "" )
+    {
+      printf( "Property: %s\n", propertyFilePathM.ascii() );
+      PropertyParser().parse( propertyFilePathM, inputQuery );
+    }
+  else
+    printf( "Property: None\n" );
+}
+
+std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::string redirect="", unsigned timeout=0){
     // Arguments: InputQuery object, filename to redirect output
     // Returns: map from variable number to value
     std::map<int, double> ret;
@@ -81,16 +114,17 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::s
     try{
         Engine engine;
         if(!engine.processInputQuery(inputQuery)) return std::make_pair(ret, *(engine.getStatistics()));
-        
-        if(!engine.solve()) return std::make_pair(ret, *(engine.getStatistics()));
-        
-        engine.extractSolution(inputQuery);
+
+        if(!engine.solve(timeout)) return std::make_pair(ret, *(engine.getStatistics()));
+
+        if (engine.getExitCode() == Engine::SAT)
+            engine.extractSolution(inputQuery);
         retStats = *(engine.getStatistics());
         for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); i++)
             ret[i] = inputQuery.getSolutionValue(i);
     }
-    catch(const ReluplexError &e){
-        printf( "Caught a ReluplexError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );
+    catch(const MarabouError &e){
+        printf( "Caught a MarabouError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );
         return std::make_pair(ret, retStats);
     }
     if(output != -1)
@@ -98,11 +132,17 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::s
     return std::make_pair(ret, retStats);
 }
 
+void saveQuery(InputQuery& inputQuery, std::string filename){
+    inputQuery.saveQuery(String(filename));
+}
+
 // Code necessary to generate Python library
 // Describes which classes and functions are exposed to API
 PYBIND11_MODULE(MarabouCore, m) {
     m.doc() = "Marabou API Library";
+    m.def("createInputQuery", &createInputQuery, "Create input query from network and property file");
     m.def("solve", &solve, "Takes in a description of the InputQuery and returns the solution");
+    m.def("saveQuery", &saveQuery, "Serializes the inputQuery in the given filename");
     m.def("addReluConstraint", &addReluConstraint, "Add a Relu constraint to the InputQuery");
     m.def("addMaxConstraint", &addMaxConstraint, "Add a Max constraint to the InputQuery");
     py::class_<InputQuery>(m, "InputQuery")
@@ -111,13 +151,36 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def("setLowerBound", &InputQuery::setLowerBound)
         .def("getUpperBound", &InputQuery::getUpperBound)
         .def("getLowerBound", &InputQuery::getLowerBound)
+        .def("dump", &InputQuery::dump)
         .def("setNumberOfVariables", &InputQuery::setNumberOfVariables)
-        .def("addEquation", &InputQuery::addEquation);
-    py::class_<Equation>(m, "Equation")
+        .def("addEquation", &InputQuery::addEquation)
+        .def("getSolutionValue", &InputQuery::getSolutionValue)
+        .def("getNumInputVariables", &InputQuery::getNumInputVariables)
+        .def("getNumOutputVariables", &InputQuery::getNumOutputVariables)
+        .def("inputVariableByIndex", &InputQuery::inputVariableByIndex)
+        .def("outputVariableByIndex", &InputQuery::outputVariableByIndex)
+        .def("setSymbolicBoundTightener", &InputQuery::setSymbolicBoundTightener);
+    py::class_<SymbolicBoundTightener, std::unique_ptr<SymbolicBoundTightener,py::nodelete>>(m, "SymbolicBoundTightener")
         .def(py::init())
-        .def("addAddend", &Equation::addAddend)
-        .def("setScalar", &Equation::setScalar)
-        .def("markAuxiliaryVariable", &Equation::markAuxiliaryVariable);
+        .def("setNumberOfLayers", &SymbolicBoundTightener::setNumberOfLayers)
+        .def("setLayerSize", &SymbolicBoundTightener::setLayerSize)
+        .def("allocateWeightAndBiasSpace", &SymbolicBoundTightener::allocateWeightAndBiasSpace)
+        .def("setBias", &SymbolicBoundTightener::setBias)
+        .def("setWeight", &SymbolicBoundTightener::setWeight)
+        .def("setInputLowerBound", &SymbolicBoundTightener::setInputLowerBound)
+        .def("setInputUpperBound", &SymbolicBoundTightener::setInputUpperBound)
+        .def("setReluBVariable", &SymbolicBoundTightener::setReluBVariable)
+        .def("setReluFVariable", &SymbolicBoundTightener::setReluFVariable);
+    py::class_<Equation> eq(m, "Equation");
+    eq.def(py::init());
+    eq.def(py::init<Equation::EquationType>());
+    eq.def("addAddend", &Equation::addAddend);
+    eq.def("setScalar", &Equation::setScalar);
+    py::enum_<Equation::EquationType>(eq, "EquationType")
+        .value("EQ", Equation::EquationType::EQ)
+        .value("GE", Equation::EquationType::GE)
+        .value("LE", Equation::EquationType::LE)
+        .export_values();
     py::class_<Statistics>(m, "Statistics")
         .def("getMaxStackDepth", &Statistics::getMaxStackDepth)
         .def("getNumPops", &Statistics::getNumPops)
@@ -128,5 +191,9 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def("getMaxDegradation", &Statistics::getMaxDegradation)
         .def("getNumPrecisionRestorations", &Statistics::getNumPrecisionRestorations)
         .def("getNumSimplexPivotSelectionsIgnoredForStability", &Statistics::getNumSimplexPivotSelectionsIgnoredForStability)
-        .def("getNumSimplexUnstablePivots", &Statistics::getNumSimplexUnstablePivots);
+        .def("getNumSimplexUnstablePivots", &Statistics::getNumSimplexUnstablePivots)
+        .def("getNumMainLoopIterations", &Statistics::getNumMainLoopIterations)
+        .def("getTimeSimplexStepsMicro", &Statistics::getTimeSimplexStepsMicro)
+        .def("getNumConstraintFixingSteps", &Statistics::getNumConstraintFixingSteps)
+        .def("hasTimedOut", &Statistics::hasTimedOut);
 }
