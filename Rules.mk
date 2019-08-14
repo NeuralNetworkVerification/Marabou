@@ -53,6 +53,8 @@ CFLAGS += \
 	-Wextra \
 	-Werror \
 	-Wno-deprecated \
+	-Wno-deprecated-copy \
+	-Wno-maybe-uninitialized \
 	-std=c++0x \
 
 %.obj: %.cpp
