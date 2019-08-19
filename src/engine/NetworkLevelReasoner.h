@@ -106,8 +106,7 @@ public:
       to inform us of changes in variable indices
     */
     void updateVariableIndices( const Map<unsigned, unsigned> &oldIndexToNewIndex,
-                                const Map<unsigned, unsigned> &mergedVariables,
-                                const Map<unsigned, double> &fixedVariableValues );
+                                const Map<unsigned, unsigned> &mergedVariables );
 
 private:
     unsigned _numberOfLayers;

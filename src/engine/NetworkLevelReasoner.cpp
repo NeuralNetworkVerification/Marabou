@@ -244,8 +244,7 @@ const Map<NetworkLevelReasoner::Index, double> &NetworkLevelReasoner::getIndexTo
 }
 
 void NetworkLevelReasoner::updateVariableIndices( const Map<unsigned, unsigned> &oldIndexToNewIndex,
-                                                  const Map<unsigned, unsigned> &mergedVariables,
-                                                  const Map<unsigned, double> &/* fixedVariableValues */ )
+                                                  const Map<unsigned, unsigned> &mergedVariables )
 {
     // First, do a pass to handle any merged variables
     auto bIt = _indexToWeightedSumVariable.begin();
