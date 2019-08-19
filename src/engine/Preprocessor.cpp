@@ -481,7 +481,6 @@ void Preprocessor::eliminateVariables()
     if ( _statistics )
         _statistics->ppSetNumEliminatedVars( _fixedVariables.size() + _mergedVariables.size() );
 
-
     // Check and remove any fixed variables from the debugging solution
     for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
     {
@@ -633,6 +632,10 @@ void Preprocessor::eliminateVariables()
     // Let the SBT know of changes in indices and merged variables
     if ( _preprocessed._sbt )
         _preprocessed._sbt->updateVariableIndices( _oldIndexToNewIndex, _mergedVariables, _fixedVariables );
+
+    // Let the NLR know of changes in indices and merged variables
+    if ( _preprocessed._networkLevelReasoner )
+        _preprocessed._networkLevelReasoner->updateVariableIndices( _oldIndexToNewIndex, _mergedVariables );
 
     // Update the lower/upper bound maps
     for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
