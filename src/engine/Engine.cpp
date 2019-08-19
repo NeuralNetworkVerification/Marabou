@@ -1059,7 +1059,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         List<unsigned> initialBasis;
         List<unsigned> basicRows;
-        selectInitialVariablesForBasis( constraintMatrix, initialBasis, basicRows ); // HERE
+        selectInitialVariablesForBasis( constraintMatrix, initialBasis, basicRows );
         addAuxiliaryVariables();
         augmentInitialBasisIfNeeded( initialBasis, basicRows );
 
@@ -1844,6 +1844,12 @@ void Engine::warmStart()
     unsigned numInputVariables = _preprocessedQuery.getNumInputVariables();
     unsigned numOutputVariables = _preprocessedQuery.getNumOutputVariables();
 
+    if ( numInputVariables == 0 )
+    {
+        // Trivial case: all inputs are fixed, nothing to evaluate
+        return;
+    }
+
     double *inputAssignment = new double[numInputVariables];
     double *outputAssignment = new double[numOutputVariables];
 
@@ -1865,7 +1871,6 @@ void Engine::warmStart()
             _tableau->setNonBasicAssignment( variable, assignment.second, false );
     }
 
-    // Try to update as many variables as possible to match their assignment
     for ( const auto &assignment : _networkLevelReasoner->getIndexToActivationResultAssignment() )
     {
         unsigned variable = _networkLevelReasoner->getActivationResultVariable( assignment.first._layer, assignment.first._neuron );
@@ -1874,6 +1879,8 @@ void Engine::warmStart()
             _tableau->setNonBasicAssignment( variable, assignment.second, false );
     }
 
+    // We did what we could for the non-basics; now let the tableau compute
+    // the basic assignment
     _tableau->computeAssignment();
 
     delete[] outputAssignment;

@@ -243,6 +243,94 @@ const Map<NetworkLevelReasoner::Index, double> &NetworkLevelReasoner::getIndexTo
     return _indexToActivationResultAssignment;
 }
 
+void NetworkLevelReasoner::updateVariableIndices( const Map<unsigned, unsigned> &oldIndexToNewIndex,
+                                                  const Map<unsigned, unsigned> &mergedVariables,
+                                                  const Map<unsigned, double> &/* fixedVariableValues */ )
+{
+    // First, do a pass to handle any merged variables
+    auto bIt = _indexToWeightedSumVariable.begin();
+    while ( bIt != _indexToWeightedSumVariable.end() )
+    {
+        unsigned b = bIt->second;
+
+        while ( mergedVariables.exists( b ) )
+        {
+            bIt->second = mergedVariables[b];
+            b = bIt->second;
+        }
+
+        ++bIt;
+    }
+
+    auto fIt = _indexToActivationResultVariable.begin();
+    while ( fIt != _indexToActivationResultVariable.end() )
+    {
+        unsigned f = fIt->second;
+
+        while ( mergedVariables.exists( f ) )
+        {
+            fIt->second = mergedVariables[f];
+            f = fIt->second;
+        }
+
+        ++fIt;
+    }
+
+    // Now handle re-indexing
+    bIt = _indexToWeightedSumVariable.begin();
+    while ( bIt != _indexToWeightedSumVariable.end() )
+    {
+        unsigned b = bIt->second;
+
+        if ( !oldIndexToNewIndex.exists( b ) )
+        {
+            // This variable has been eliminated, remove from map
+            bIt = _indexToWeightedSumVariable.erase( bIt );
+        }
+        else
+        {
+            if ( oldIndexToNewIndex[b] == b )
+            {
+                // Index hasn't changed, skip
+            }
+            else
+            {
+                // Index has changed
+                bIt->second = oldIndexToNewIndex[b];
+            }
+
+            ++bIt;
+            continue;
+        }
+    }
+
+    fIt = _indexToActivationResultVariable.begin();
+    while ( fIt != _indexToActivationResultVariable.end() )
+    {
+        unsigned f = fIt->second;
+        if ( !oldIndexToNewIndex.exists( f ) )
+        {
+            // This variable has been eliminated, remove from map
+            fIt = _indexToActivationResultVariable.erase( fIt );
+        }
+        else
+        {
+            if ( oldIndexToNewIndex[f] == f )
+            {
+                // Index hasn't changed, skip
+            }
+            else
+            {
+                // Index has changed
+                fIt->second = oldIndexToNewIndex[f];
+            }
+
+            ++fIt;
+            continue;
+        }
+    }
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

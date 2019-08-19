@@ -145,13 +145,6 @@ private:
     */
     void freeConstraintsIfNeeded();
 
-    /*
-      An object that knows the topology of the network being checked,
-      and can be used for various operations such as network
-      evaluation of topology-based bound tightening.
-     */
-    NetworkLevelReasoner *_networkLevelReasoner;
-
 public:
     /*
       Mapping of input/output variables to their indices.
@@ -162,6 +155,16 @@ public:
     Map<unsigned, unsigned> _variableToOutputIndex;
     Map<unsigned, unsigned> _outputIndexToVariable;
 
+    /*
+      An object that knows the topology of the network being checked,
+      and can be used for various operations such as network
+      evaluation of topology-based bound tightening.
+     */
+    NetworkLevelReasoner *_networkLevelReasoner;
+
+    /*
+      Symbolic bound tightener.
+    */
     SymbolicBoundTightener *_sbt;
 };
 

@@ -28,6 +28,12 @@ class NetworkLevelReasoner
 public:
     struct Index
     {
+        Index()
+            : _layer( 0 )
+            , _neuron( 0 )
+        {
+        }
+
         Index( unsigned layer, unsigned neuron )
             : _layer( layer )
             , _neuron( neuron )
@@ -99,7 +105,9 @@ public:
       Methods that are typically invoked by the preprocessor,
       to inform us of changes in variable indices
     */
-    void mergeIdenticalVariable( unsigned v1, unsigned v2 );
+    void updateVariableIndices( const Map<unsigned, unsigned> &oldIndexToNewIndex,
+                                const Map<unsigned, unsigned> &mergedVariables,
+                                const Map<unsigned, double> &fixedVariableValues );
 
 private:
     unsigned _numberOfLayers;
