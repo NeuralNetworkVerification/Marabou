@@ -1071,7 +1071,9 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         initializeNetworkLevelReasoning();
         initializeTableau( constraintMatrix, initialBasis );
-        warmStart();
+
+        if ( GlobalConfiguration::WARM_START )
+            warmStart();
 
         delete[] constraintMatrix;
 
