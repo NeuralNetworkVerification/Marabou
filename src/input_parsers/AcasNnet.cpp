@@ -83,19 +83,19 @@ AcasNnet *load_network(const char* filename)
     }
 
     //Load Mean and Range of inputs
-    nnet->means = new double[(((nnet->inputSize)+1))];
+    nnet->means = new double[(nnet->inputSize)];
     line = fgets(buffer,bufferSize,fstream);
     record = strtok(line,",\n");
-    for (i = 0; i<((nnet->inputSize)+1); i++)
+    for (i = 0; i<(nnet->inputSize); i++)
     {
         nnet->means[i] = atof(record);
         record = strtok(NULL,",\n");
     }
 
-    nnet->ranges = new double[(((nnet->inputSize)+1))];
+    nnet->ranges = new double[(nnet->inputSize)];
     line = fgets(buffer,bufferSize,fstream);
     record = strtok(line,",\n");
-    for (i = 0; i<((nnet->inputSize)+1); i++)
+    for (i = 0; i<(nnet->inputSize); i++)
     {
         nnet->ranges[i] = atof(record);
         record = strtok(NULL,",\n");
