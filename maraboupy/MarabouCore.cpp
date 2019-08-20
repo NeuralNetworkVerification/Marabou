@@ -116,28 +116,32 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::s
         output=redirectOutputToFile(redirect);
     try{
         Options::get()->setInt(Options::TIMEOUT, timeout);
-        Engine* engine;
         if(dnc)
         {
             DnCMarabou dncMarabou;
             dncMarabou.run(inputQuery);
-            engine = &(dncMarabou.getEngine());
+            Engine& engine = dncMarabou.getEngine();
+            if (engine.getExitCode() == Engine::SAT)
+            {
+                engine.extractSolution(inputQuery);
+                for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); i++)
+                    ret[i] = inputQuery.getSolutionValue(i);
+            }
+            retStats = *(engine.getStatistics());
         }
         else
         {
             Marabou marabou;
             marabou.run(inputQuery);
-            engine = &(marabou.getEngine());
+            Engine& engine = marabou.getEngine();
+            if (engine.getExitCode() == Engine::SAT)
+            {
+                engine.extractSolution(inputQuery);
+                for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); i++)
+                    ret[i] = inputQuery.getSolutionValue(i);
+            }
+            retStats = *(engine.getStatistics());
         }
-        
-        if (engine->getExitCode() == Engine::SAT)
-        {
-            engine->extractSolution(inputQuery);
-            for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); i++)
-                ret[i] = inputQuery.getSolutionValue(i);
-        }
-        retStats = *(engine->getStatistics());
-
     }
     catch(const MarabouError &e){
         printf( "Caught a MarabouError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );

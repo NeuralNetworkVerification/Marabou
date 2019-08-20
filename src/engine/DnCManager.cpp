@@ -82,6 +82,11 @@ void DnCManager::freeMemoryIfNeeded()
         delete _workload;
         _workload = NULL;
     }
+    if ( _baseInputQuery )
+    {
+        delete _baseInputQuery;
+        _baseInputQuery = NULL;
+    }
 }
 
 void DnCManager::solve( unsigned timeoutInSeconds )
