@@ -71,7 +71,7 @@ const GlobalConfiguration::BasisFactorizationType GlobalConfiguration::BASIS_FAC
     GlobalConfiguration::SPARSE_FORREST_TOMLIN_FACTORIZATION;
 
 // Logging
-const bool GlobalConfiguration::DNC_MANAGER_LOGGING = false;
+const bool GlobalConfiguration::DNC_MANAGER_LOGGING = true;
 const bool GlobalConfiguration::ENGINE_LOGGING = false;
 const bool GlobalConfiguration::TABLEAU_LOGGING = false;
 const bool GlobalConfiguration::SMT_CORE_LOGGING = false;

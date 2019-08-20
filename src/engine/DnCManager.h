@@ -40,8 +40,7 @@ public:
 
     DnCManager( unsigned numWorkers, unsigned initialDivides, unsigned
                 initialTimeout, unsigned onlineDivides, float timeoutFactor,
-                DivideStrategy divideStrategy, String networkFilePath,
-                String propertyFilePath, unsigned verbosity );
+                DivideStrategy divideStrategy, InputQuery &inputQuery, unsigned verbosity );
 
     ~DnCManager();
 
@@ -61,6 +60,11 @@ public:
       Get the string representation of the exitcode
     */
     String getResultString();
+
+    /*
+      Get the engine with SAT assignment
+    */
+    Engine& getEngineWithSATAssignment();
 
 private:
     /*
@@ -153,10 +157,9 @@ private:
     DivideStrategy _divideStrategy;
 
     /*
-      Path to the network and property files
+      The Inputquery
     */
-    String _networkFilePath;
-    String _propertyFilePath;
+    InputQuery* _baseInputQuery;
 
     /*
       The exit code of the DnCManager.

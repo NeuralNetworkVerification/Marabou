@@ -47,16 +47,14 @@ void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine
 DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
                         unsigned initialTimeout, unsigned onlineDivides,
                         float timeoutFactor, DivideStrategy divideStrategy,
-                        String networkFilePath, String propertyFilePath,
-                        unsigned verbosity )
+                        InputQuery &inputQuery, unsigned verbosity )
     : _numWorkers( numWorkers )
     , _initialDivides( initialDivides )
     , _initialTimeout( initialTimeout )
     , _onlineDivides( onlineDivides )
     , _timeoutFactor( timeoutFactor )
     , _divideStrategy( divideStrategy )
-    , _networkFilePath( networkFilePath )
-    , _propertyFilePath( propertyFilePath )
+    , _baseInputQuery( &inputQuery )
     , _exitCode( DnCManager::NOT_DONE )
     , _workload( NULL )
     , _timeoutReached( false )
@@ -227,6 +225,13 @@ String DnCManager::getResultString()
     }
 }
 
+Engine& DnCManager::getEngineWithSATAssignment()
+{
+    ASSERT( _engineWithSATAssignment != nullptr );
+    
+    return *(_engineWithSATAssignment.get());
+}
+
 void DnCManager::printResult()
 {
     switch ( _exitCode )
@@ -284,16 +289,8 @@ bool DnCManager::createEngines()
 {
     // Create the base engine
     _baseEngine = std::make_shared<Engine>();
-    InputQuery *baseInputQuery = new InputQuery();
-
-    // InputQuery is owned by engine
-    AcasParser acasParser( _networkFilePath );
-    acasParser.generateQuery( *baseInputQuery );
-
-    if ( _propertyFilePath != "" )
-        PropertyParser().parse( _propertyFilePath, *baseInputQuery );
-
-    if ( !_baseEngine->processInputQuery( *baseInputQuery ) )
+    
+    if ( !_baseEngine->processInputQuery( *_baseInputQuery ) )
         // Solved by preprocessing, we are done!
         return false;
 
@@ -302,7 +299,7 @@ bool DnCManager::createEngines()
     {
         auto engine = std::make_shared<Engine>( _verbosity );
         InputQuery *inputQuery = new InputQuery();
-        *inputQuery = *baseInputQuery;
+        *inputQuery = *_baseInputQuery;
         engine->processInputQuery( *inputQuery );
         _engines.append( engine );
     }

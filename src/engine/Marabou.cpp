@@ -39,15 +39,27 @@ Marabou::~Marabou()
 
 void Marabou::run()
 {
-    struct timespec start = TimeUtils::sampleMicro();
-
     prepareInputQuery();
+    run(_inputQuery);
+}
+
+void Marabou::run(InputQuery &inputQuery)
+{
+    struct timespec start = TimeUtils::sampleMicro();
+    if(_inputQuery.getNumberOfVariables() == 0){
+        _inputQuery = inputQuery;
+    }
     solveQuery();
 
     struct timespec end = TimeUtils::sampleMicro();
 
     unsigned long long totalElapsed = TimeUtils::timePassed( start, end );
     displayResults( totalElapsed );
+}
+
+Engine& Marabou::getEngine()
+{
+    return _engine;
 }
 
 void Marabou::prepareInputQuery()

@@ -18,6 +18,7 @@
 
 #include "DnCManager.h"
 #include "Options.h"
+#include "InputQuery.h"
 
 class DnCMarabou
 {
@@ -28,7 +29,8 @@ public:
       Entry point of this class
     */
     void run();
-
+    void run(InputQuery &inputQuery);
+    Engine& getEngine();
 private:
     std::unique_ptr<DnCManager> _dncManager;
 

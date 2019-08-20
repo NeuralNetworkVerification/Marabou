@@ -165,7 +165,7 @@ class MarabouNetwork:
 
         return ipq
 
-    def solve(self, filename="", verbose=True, timeout=0):
+    def solve(self, filename="", verbose=True, timeout=0, dnc=False):
         """
         Function to solve query represented by this network
         Arguments:
@@ -178,7 +178,7 @@ class MarabouNetwork:
                     to how an input query was solved.
         """
         ipq = self.getMarabouQuery()
-        vals, stats = MarabouCore.solve(ipq, filename, timeout)
+        vals, stats = MarabouCore.solve(ipq, filename, timeout, dnc)
         if verbose:
             if stats.hasTimedOut():
                 print("TO")

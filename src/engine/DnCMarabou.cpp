@@ -21,6 +21,8 @@
 #include "Options.h"
 #include "PropertyParser.h"
 #include "MarabouError.h"
+#include "InputQuery.h"
+#include "AcasParser.h"
 
 DnCMarabou::DnCMarabou()
     : _dncManager( nullptr )
@@ -61,7 +63,19 @@ void DnCMarabou::run()
         printf( "Property: None\n" );
 
     printf( "\n" );
+    InputQuery *baseInputQuery = new InputQuery();
 
+    // InputQuery is owned by engine
+    AcasParser acasParser( networkFilePath );
+    acasParser.generateQuery( *baseInputQuery );
+    if ( propertyFilePath != "" )
+        PropertyParser().parse( propertyFilePath, *baseInputQuery );
+
+    run(*baseInputQuery);
+}
+
+void DnCMarabou::run(InputQuery &inputQuery)
+{
     /*
       Step 3: initialzie the DNC core
     */
@@ -75,9 +89,9 @@ void DnCMarabou::run()
 
     _dncManager = std::unique_ptr<DnCManager>
       ( new DnCManager( numWorkers, initialDivides, initialTimeout,
-                        onlineDivides, timeoutFactor,
-                        DivideStrategy::LargestInterval, networkFilePath,
-                        propertyFilePath, verbosity ) );
+                        onlineDivides, timeoutFactor, 
+                        DivideStrategy::LargestInterval, inputQuery,
+                        verbosity ) );
 
     struct timespec start = TimeUtils::sampleMicro();
 
@@ -88,6 +102,12 @@ void DnCMarabou::run()
     unsigned long long totalElapsed = TimeUtils::timePassed( start, end );
     displayResults( totalElapsed );
 }
+
+Engine& DnCMarabou::getEngine()
+{
+    return _dncManager->getEngineWithSATAssignment();
+}
+
 
 void DnCMarabou::displayResults( unsigned long long microSecondsElapsed ) const
 {

@@ -12,9 +12,12 @@ LOCAL_INCLUDES += \
 	$(CONFIGURATION_DIR) \
 	$(ENGINE_DIR) \
 	$(INPUT_PARSER_DIR) \
-	$(PYBIND11_INCLUDES) \
+	$(BOOST_INCLUDES) \
 
 LINK_FLAGS += \
+
+LIBRARIES += \
+	boost_program_options \
 
 LOCAL_LIBRARIES += \
 
@@ -47,12 +50,12 @@ TARGET = $(API_NAME)
 
 include ../Rules.mk
 
-COMPILE = c++ -std=c++11 -O3 -fPIC $(PYBIND11_INCLUDES)
-LINK 	= c++ -std=c++11 -O3 -fPIC -shared -Wl,-undefined,dynamic_lookup $(PYBIND11_INCLUDES)
+COMPILE = g++ -std=c++11 -O3 -fPIC $(PYBIND11_INCLUDES) $(addprefix -I, $(LOCAL_INCLUDES))
+LINK 	= g++ -std=c++11 -O3 -fPIC -shared -Wl,-undefined,dynamic_lookup $(PYBIND11_INCLUDES) $(addprefix -I, $(LOCAL_INCLUDES))
 
 $(TARGET): $(OBJECTS)
 	@echo "LD\t" $@
-	@$(LINK) $(LINK_FLAGS) -o $@ $^ $(addprefix -l, $(SYSTEM_LIBRARIES)) $(addprefix -l, $(LOCAL_LIBRARIES))
+	@$(LINK) $(LINK_FLAGS) -o $@ $^ $(addprefix -l, $(SYSTEM_LIBRARIES)) $(addprefix -l, $(LOCAL_LIBRARIES)) $(addprefix -l, $(LIBRARIES))
 
 #
 # Local Variables:

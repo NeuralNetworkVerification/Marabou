@@ -30,6 +30,8 @@ public:
       Entry point of this class
     */
     void run();
+    void run(InputQuery &inputQuery);
+    Engine& getEngine();
 
 private:
     InputQuery _inputQuery;

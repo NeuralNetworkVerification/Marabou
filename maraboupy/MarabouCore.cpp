@@ -36,6 +36,9 @@
 #include "PropertyParser.h"
 #include "ReluConstraint.h"
 #include "Set.h"
+#include "DnCMarabou.h"
+#include "Marabou.h"
+#include "Options.h"
 
 namespace py = pybind11;
 
@@ -103,7 +106,7 @@ void createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::
     printf( "Property: None\n" );
 }
 
-std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::string redirect="", unsigned timeout=0){
+std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::string redirect="", unsigned timeout=0, bool dnc=false){
     // Arguments: InputQuery object, filename to redirect output
     // Returns: map from variable number to value
     std::map<int, double> ret;
@@ -112,16 +115,29 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::s
     if(redirect.length()>0)
         output=redirectOutputToFile(redirect);
     try{
-        Engine engine;
-        if(!engine.processInputQuery(inputQuery)) return std::make_pair(ret, *(engine.getStatistics()));
+        Options::get()->setInt(Options::TIMEOUT, timeout);
+        Engine* engine;
+        if(dnc)
+        {
+            DnCMarabou dncMarabou;
+            dncMarabou.run(inputQuery);
+            engine = &(dncMarabou.getEngine());
+        }
+        else
+        {
+            Marabou marabou;
+            marabou.run(inputQuery);
+            engine = &(marabou.getEngine());
+        }
+        
+        if (engine->getExitCode() == Engine::SAT)
+        {
+            engine->extractSolution(inputQuery);
+            for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); i++)
+                ret[i] = inputQuery.getSolutionValue(i);
+        }
+        retStats = *(engine->getStatistics());
 
-        if(!engine.solve(timeout)) return std::make_pair(ret, *(engine.getStatistics()));
-
-        if (engine.getExitCode() == Engine::SAT)
-            engine.extractSolution(inputQuery);
-        retStats = *(engine.getStatistics());
-        for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); i++)
-            ret[i] = inputQuery.getSolutionValue(i);
     }
     catch(const MarabouError &e){
         printf( "Caught a MarabouError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );
