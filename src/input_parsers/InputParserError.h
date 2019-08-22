@@ -26,6 +26,7 @@ public:
         UNEXPECTED_INPUT = 1,
         FILE_DOESNT_EXIST = 2,
         UNSUPPORTED_BOUND_TYPE = 3,
+        NETWORK_LEVEL_REASONING_DISABLED = 4,
     };
 
     InputParserError( InputParserError::Code code ) : Error( "InputParserError", (int)code )

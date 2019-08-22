@@ -76,6 +76,10 @@ public:
     // threshold, the preprocessor will treat it as fixed.
     static const double PREPROCESSOR_ALMOST_FIXED_THRESHOLD;
 
+    // Try to set the initial tableau assignment to an assignment that is legal with
+    // respect to the input network.
+    static const bool WARM_START;
+
     // How often should the main loop check the current degradation?
     static const unsigned DEGRADATION_CHECKING_FREQUENCY;
 
@@ -187,6 +191,7 @@ public:
     /*
       Logging options
     */
+    static const bool DNC_MANAGER_LOGGING;
     static const bool ENGINE_LOGGING;
     static const bool TABLEAU_LOGGING;
     static const bool SMT_CORE_LOGGING;
