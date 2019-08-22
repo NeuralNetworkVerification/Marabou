@@ -17,6 +17,10 @@
 
 #include <string.h>
 
+//todo: delete before submit
+#include <iostream>
+
+
 
 class MockForAbsConstraint
         : public MockErrno
@@ -38,6 +42,39 @@ public:
     {
         TS_ASSERT_THROWS_NOTHING( delete mock );
     }
+
+
+    void test_abs_duplicate_and_restore()
+    {
+        AbsConstraint *abs1 = new AbsConstraint( 4, 6 );
+        abs1->setActiveConstraint( false );
+        abs1->notifyVariableValue( 4, 1.0 );
+        abs1->notifyVariableValue( 6, 1.0 );
+
+        abs1->notifyLowerBound( 4, -8.0 );
+        abs1->notifyUpperBound( 4, 8.0 );
+
+        abs1->notifyLowerBound( 6, 0.0 );
+        abs1->notifyUpperBound( 6, 8.0 );
+
+        PiecewiseLinearConstraint *abs2 = abs1->duplicateConstraint();
+
+        abs1->notifyVariableValue( 4, -2 );
+
+        std::cout<<"test response"<< std::endl;
+
+        TS_ASSERT( !abs1->satisfied() );
+
+        TS_ASSERT( !abs2->isActive() );
+        TS_ASSERT( abs2->satisfied() );
+
+        abs2->restoreState( abs1 );
+        TS_ASSERT( !abs2->satisfied() );
+
+        TS_ASSERT_THROWS_NOTHING( delete abs2 );
+    }
+
+
 
     void test_abs_entailed_tighteningst() {
         unsigned b = 1;
