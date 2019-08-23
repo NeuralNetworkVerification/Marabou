@@ -50,8 +50,8 @@ TARGET = $(API_NAME)
 
 include ../Rules.mk
 
-COMPILE = g++ -std=c++11 -O3 -fPIC $(PYBIND11_INCLUDES) $(addprefix -I, $(LOCAL_INCLUDES))
-LINK 	= g++ -std=c++11 -O3 -fPIC -shared -Wl,-undefined,dynamic_lookup $(PYBIND11_INCLUDES) $(addprefix -I, $(LOCAL_INCLUDES))
+COMPILE = g++ -std=c++11 -O3 -fPIC $(PYBIND11_INCLUDES)
+LINK 	= g++ -std=c++11 -O3 -fPIC -shared -Wl,-undefined,dynamic_lookup $(PYBIND11_INCLUDES)
 
 $(TARGET): $(OBJECTS)
 	@echo "LD\t" $@
