@@ -17,10 +17,6 @@
 
 #include <string.h>
 
-//todo: delete before submit
-#include <iostream>
-
-
 
 class MockForAbsConstraint
         : public MockErrno
@@ -72,7 +68,7 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete abs2 );
     }
 
-    void test_register_and_unregister__as_watcher()
+    void test_register_and_unregister_as_watcher()
     {
         unsigned b = 1;
         unsigned f = 4;
@@ -80,8 +76,6 @@ public:
         MockTableau tableau;
 
         AbsConstraint abs( b, f );
-
-        std::cout<<"test response"<< std::endl;
 
         TS_ASSERT_THROWS_NOTHING( abs.registerAsWatcher( &tableau ) );
 
@@ -102,6 +96,116 @@ public:
         TS_ASSERT( tableau.lastUnregisteredVariableToWatcher[b].exists( &abs ) );
         TS_ASSERT_EQUALS( tableau.lastUnregisteredVariableToWatcher[f].size(), 1U );
         TS_ASSERT( tableau.lastUnregisteredVariableToWatcher[f].exists( &abs ) );
+    }
+
+    void test_participatingVariable_and_getParticipatingVariables()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        AbsConstraint abs( b, f );
+
+        List<unsigned> participatingVariables;
+
+        TS_ASSERT_THROWS_NOTHING( participatingVariables = abs.getParticipatingVariables() );
+        TS_ASSERT_EQUALS( participatingVariables.size(), 2U );
+        auto it = participatingVariables.begin();
+        TS_ASSERT_EQUALS( *it, b );
+        ++it;
+        TS_ASSERT_EQUALS( *it, f );
+
+        TS_ASSERT_EQUALS(abs.getParticipatingVariables(), List<unsigned>({1,4}))
+
+        TS_ASSERT( abs.participatingVariable( b ) );
+        TS_ASSERT( abs.participatingVariable( f ) );
+        TS_ASSERT( !abs.participatingVariable( 2 ) );
+        TS_ASSERT( !abs.participatingVariable( 0 ) );
+        TS_ASSERT( !abs.participatingVariable( 5 ) );
+
+        //todo:
+//        TS_ASSERT_THROWS_EQUALS( abs.satisfied(),const ReluplexError &e,
+//                e.getCode(), ReluplexError::PARTICIPATING_VARIABLES_ABSENT );
+    }
+
+    void test_abs_notifyVariableValue_and_satisfied()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        AbsConstraint abs( b, f );
+
+        //x_b = x_f --> SAT
+        abs.notifyVariableValue( b, 5 );
+        abs.notifyVariableValue( f, 5 );
+        TS_ASSERT( abs.satisfied() );
+
+        //-x_b = x_f --> SAT
+        abs.notifyVariableValue( b, -5 );
+        abs.notifyVariableValue( f, 5 );
+        TS_ASSERT( abs.satisfied() );
+
+        //x_b = -x_f --> UNSAT
+        abs.notifyVariableValue( b, 5 );
+        abs.notifyVariableValue( f, -5 );
+        TS_ASSERT( !abs.satisfied() );
+
+        //x_f < 0 --> UNSAT
+        abs.notifyVariableValue( f, -1 );
+        abs.notifyVariableValue( b, -5 );
+        TS_ASSERT( !abs.satisfied() );
+
+        abs.notifyVariableValue( b, 1 );
+        TS_ASSERT( !abs.satisfied() );
+
+        //x_b > x_f -->UNSAT
+        abs.notifyVariableValue( b, 5 );
+        abs.notifyVariableValue( f, 4 );
+        TS_ASSERT( !abs.satisfied() );
+
+        abs.notifyVariableValue( b, -4 );
+        abs.notifyVariableValue( f, -5 );
+        TS_ASSERT( !abs.satisfied() );
+
+        //x_b < x_f -->UNSAT
+        abs.notifyVariableValue( f, 1 );
+        abs.notifyVariableValue( b, -2 );
+        TS_ASSERT( !abs.satisfied() );
+
+        abs.notifyVariableValue( f, -1 );
+        abs.notifyVariableValue( b, -2 );
+        TS_ASSERT( !abs.satisfied() );
+    }
+
+
+    void test_abs_updateVariableIndex()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        AbsConstraint abs( b, f );
+
+        TS_TRACE("abs test response");
+        
+        // Changing variable indices
+        abs.notifyVariableValue( b, 1 );
+        abs.notifyVariableValue( f, 1 );
+        TS_ASSERT( abs.satisfied() );
+
+        unsigned newB = 12;
+        unsigned newF = 14;
+
+        TS_ASSERT_THROWS_NOTHING( abs.updateVariableIndex( b, newB ) );
+        TS_ASSERT_THROWS_NOTHING( abs.updateVariableIndex( f, newF ) );
+
+        TS_ASSERT( abs.satisfied() );
+
+        abs.notifyVariableValue( newF, 2 );
+
+        TS_ASSERT( !abs.satisfied() );
+
+        abs.notifyVariableValue( newB, 2 );
+
+        TS_ASSERT( abs.satisfied() );
     }
 
 
