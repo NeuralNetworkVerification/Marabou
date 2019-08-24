@@ -61,8 +61,6 @@ public:
 
         abs1->notifyVariableValue( 4, -2 );
 
-        std::cout<<"test response"<< std::endl;
-
         TS_ASSERT( !abs1->satisfied() );
 
         TS_ASSERT( !abs2->isActive() );
@@ -74,6 +72,37 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete abs2 );
     }
 
+    void test_register_and_unregister__as_watcher()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        MockTableau tableau;
+
+        AbsConstraint abs( b, f );
+
+        std::cout<<"test response"<< std::endl;
+
+        TS_ASSERT_THROWS_NOTHING( abs.registerAsWatcher( &tableau ) );
+
+        TS_ASSERT_EQUALS( tableau.lastRegisteredVariableToWatcher.size(), 2U );
+        TS_ASSERT( tableau.lastUnregisteredVariableToWatcher.empty() );
+        TS_ASSERT_EQUALS( tableau.lastRegisteredVariableToWatcher[b].size(), 1U );
+        TS_ASSERT( tableau.lastRegisteredVariableToWatcher[b].exists( &abs ) );
+        TS_ASSERT_EQUALS( tableau.lastRegisteredVariableToWatcher[f].size(), 1U );
+        TS_ASSERT( tableau.lastRegisteredVariableToWatcher[f].exists( &abs ) );
+
+        tableau.lastRegisteredVariableToWatcher.clear();
+
+        TS_ASSERT_THROWS_NOTHING( abs.unregisterAsWatcher( &tableau ) );
+
+        TS_ASSERT( tableau.lastRegisteredVariableToWatcher.empty() );
+        TS_ASSERT_EQUALS( tableau.lastUnregisteredVariableToWatcher.size(), 2U );
+        TS_ASSERT_EQUALS( tableau.lastUnregisteredVariableToWatcher[b].size(), 1U );
+        TS_ASSERT( tableau.lastUnregisteredVariableToWatcher[b].exists( &abs ) );
+        TS_ASSERT_EQUALS( tableau.lastUnregisteredVariableToWatcher[f].size(), 1U );
+        TS_ASSERT( tableau.lastUnregisteredVariableToWatcher[f].exists( &abs ) );
+    }
 
 
     void test_abs_entailed_tighteningst() {
