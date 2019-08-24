@@ -185,7 +185,7 @@ public:
         AbsConstraint abs( b, f );
 
         TS_TRACE("abs test response");
-        
+
         // Changing variable indices
         abs.notifyVariableValue( b, 1 );
         abs.notifyVariableValue( f, 1 );
@@ -206,6 +206,78 @@ public:
         abs.notifyVariableValue( newB, 2 );
 
         TS_ASSERT( abs.satisfied() );
+    }
+
+
+    void test_abs_getPossibleFixes()
+    {
+        // Possible violations:
+        //   1. f is positive, b is positive, b and f are unequal
+        //   2. f is positive, b is negative, -b and f are unequal
+
+        unsigned b = 1;
+        unsigned f = 4;
+
+        AbsConstraint abs( b, f );
+
+        List<PiecewiseLinearConstraint::Fix> fixes;
+        List<PiecewiseLinearConstraint::Fix>::iterator it;
+
+        //   1. f is positive, b is positive, b and f are unequal
+        abs.notifyVariableValue( b, 2 );
+        abs.notifyVariableValue( f, 1 );
+
+        fixes = abs.getPossibleFixes();
+        it = fixes.begin();
+        TS_ASSERT_EQUALS( it->_variable, b );
+        TS_ASSERT_EQUALS( it->_value, 1 );
+        ++it;
+        TS_ASSERT_EQUALS( it->_variable, f );
+        TS_ASSERT_EQUALS( it->_value, 2 );
+
+        //   2. f is positive, b is negative, -b and f are unequal
+        abs.notifyVariableValue( b, -2 );
+        abs.notifyVariableValue( f, 1 );
+
+        fixes = abs.getPossibleFixes();
+        it = fixes.begin();
+        TS_ASSERT_EQUALS( it->_variable, b );
+        TS_ASSERT_EQUALS( it->_value, 1 );
+        ++it;
+        TS_ASSERT_EQUALS( it->_variable, f );
+        TS_ASSERT_EQUALS( it->_value, 2 );
+    }
+
+    void test_eliminate_variable_b()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        MockTableau tableau;
+
+        AbsConstraint abs( b, f );
+
+        abs.registerAsWatcher( &tableau );
+
+        TS_ASSERT( !abs.constraintObsolete() );
+        TS_ASSERT_THROWS_NOTHING( abs.eliminateVariable( b, 5 ) );
+        TS_ASSERT( abs.constraintObsolete() );
+    }
+
+    void test_eliminate_variable_f()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        MockTableau tableau;
+
+        AbsConstraint abs( b, f );
+
+        abs.registerAsWatcher( &tableau );
+
+        TS_ASSERT( !abs.constraintObsolete() );
+        TS_ASSERT_THROWS_NOTHING( abs.eliminateVariable( f, 5 ) );
+        TS_ASSERT( abs.constraintObsolete() );
     }
 
 
