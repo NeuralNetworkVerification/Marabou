@@ -222,8 +222,8 @@ List<PiecewiseLinearConstraint::Fix> AbsConstraint::getPossibleFixes() const
     List<PiecewiseLinearConstraint::Fix> fixes;
 
     // Possible violations:
-    //   1. f is positive, b is positive, b and f are disequal
-    //   2. f is positive, b is negative, -b and f are disequal
+    //   1. f is positive, b is positive, b and f are unequal
+    //   2. f is positive, b is negative, -b and f are unequal
 
     if ( FloatUtils::isPositive( fValue ) ) {
         fixes.append(PiecewiseLinearConstraint::Fix(_b, fValue));
@@ -309,7 +309,6 @@ void AbsConstraint::eliminateVariable(__attribute__((unused)) unsigned variable,
 
     // In a Abs constraint, if a variable is removed the entire constraint can be discarded.
     _haveEliminatedVariables = true;
-
 }
 
 void AbsConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
@@ -364,8 +363,6 @@ bool AbsConstraint::constraintObsolete() const
 */
 void AbsConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
 {
-    //todo: ask guy if it's o.k
-
     if (! _lowerBounds.exists( _f ))
     {
         tightenings.append( Tightening( _f, 0.0, Tightening::LB ) );
@@ -380,7 +377,6 @@ void AbsConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
     // Lower bounds
     double bLowerBound = _lowerBounds[_b];
     double fLowerBound = _lowerBounds[_f];
-
 
     if (!FloatUtils::isNegative( bLowerBound ) & !FloatUtils::isNegative( bUpperBound ) & !FloatUtils::isNegative( fLowerBound ))
     {
