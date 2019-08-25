@@ -26,7 +26,6 @@ Marabou::Marabou( unsigned verbosity )
     : _acasParser( NULL )
     , _engine( verbosity )
 {
-    _inputQuery.setNumberOfVariables(0);
 }
 
 Marabou::~Marabou()

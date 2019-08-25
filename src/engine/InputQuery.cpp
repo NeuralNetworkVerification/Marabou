@@ -21,7 +21,8 @@
 #include "MarabouError.h"
 
 InputQuery::InputQuery()
-    : _networkLevelReasoner( NULL )
+    : _numberOfVariables(0)
+    , _networkLevelReasoner( NULL )
     , _sbt( NULL )
 {
 }
