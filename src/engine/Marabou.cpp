@@ -39,18 +39,15 @@ Marabou::~Marabou()
 
 void Marabou::run()
 {
-    prepareInputQuery();
-    run( _inputQuery );
+    InputQuery inputQuery = prepareInputQuery();
+    run( inputQuery );
 }
 
 void Marabou::run( InputQuery &inputQuery )
 {
     struct timespec start = TimeUtils::sampleMicro();
 
-    // Guy: Reconisder this
-    if ( _inputQuery.getNumberOfVariables() == 0 )
-        _inputQuery = inputQuery;
-
+    _inputQuery = inputQuery;
     solveQuery();
 
     struct timespec end = TimeUtils::sampleMicro();
@@ -64,7 +61,7 @@ Engine& Marabou::getEngine()
     return _engine;
 }
 
-void Marabou::prepareInputQuery()
+InputQuery Marabou::prepareInputQuery()
 {
     /*
       Step 1: extract the network
@@ -77,9 +74,10 @@ void Marabou::prepareInputQuery()
     }
     printf( "Network: %s\n", networkFilePath.ascii() );
 
+    InputQuery inputQuery;
     // For now, assume the network is given in ACAS format
     _acasParser = new AcasParser( networkFilePath );
-    _acasParser->generateQuery( _inputQuery );
+    _acasParser->generateQuery( inputQuery );
 
     /*
       Step 2: extract the property in question
@@ -88,12 +86,13 @@ void Marabou::prepareInputQuery()
     if ( propertyFilePath != "" )
     {
         printf( "Property: %s\n", propertyFilePath.ascii() );
-        PropertyParser().parse( propertyFilePath, _inputQuery );
+        PropertyParser().parse( propertyFilePath, inputQuery );
     }
     else
         printf( "Property: None\n" );
 
     printf( "\n" );
+    return inputQuery;
 }
 
 void Marabou::solveQuery()

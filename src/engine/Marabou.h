@@ -47,7 +47,7 @@ private:
       Extract the input files: network and property, and use them
       to generate the input query
     */
-    void prepareInputQuery();
+    InputQuery prepareInputQuery();
 
     /*
       Invoke the engine to solve the input query
