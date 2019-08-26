@@ -64,7 +64,7 @@ public:
     /*
       Get the engine with SAT assignment
     */
-    Engine& getEngineWithSATAssignment();
+    Engine &getEngineWithSATAssignment();
 
 private:
     /*
@@ -157,9 +157,9 @@ private:
     DivideStrategy _divideStrategy;
 
     /*
-      The Inputquery
+      The Input Query
     */
-    InputQuery* _baseInputQuery;
+    InputQuery *_baseInputQuery;
 
     /*
       The exit code of the DnCManager.

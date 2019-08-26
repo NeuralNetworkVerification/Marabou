@@ -90,7 +90,7 @@ public:
     void setBool( unsigned option, bool value );
     void setInt( unsigned option, int value );
     void setFloat( unsigned option, float value );
-    void setString( unsigned option, std::string value );
+    void setString( unsigned option, String value );
 
 private:
     /*

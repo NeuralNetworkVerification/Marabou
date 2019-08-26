@@ -40,15 +40,17 @@ Marabou::~Marabou()
 void Marabou::run()
 {
     prepareInputQuery();
-    run(_inputQuery);
+    run( _inputQuery );
 }
 
-void Marabou::run(InputQuery &inputQuery)
+void Marabou::run( InputQuery &inputQuery )
 {
     struct timespec start = TimeUtils::sampleMicro();
-    if(_inputQuery.getNumberOfVariables() == 0){
+
+    // Guy: Reconisder this
+    if ( _inputQuery.getNumberOfVariables() == 0 )
         _inputQuery = inputQuery;
-    }
+
     solveQuery();
 
     struct timespec end = TimeUtils::sampleMicro();

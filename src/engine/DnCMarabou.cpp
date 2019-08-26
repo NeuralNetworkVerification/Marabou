@@ -62,19 +62,21 @@ void DnCMarabou::run()
     else
         printf( "Property: None\n" );
 
-    printf( "\n" );
-    InputQuery *baseInputQuery = new InputQuery();
+    /*
+      Step 3: populate the base input query using network and property
+    */
 
-    // InputQuery is owned by engine
+    InputQuery baseInputQuery;
+
     AcasParser acasParser( networkFilePath );
-    acasParser.generateQuery( *baseInputQuery );
+    acasParser.generateQuery( baseInputQuery );
     if ( propertyFilePath != "" )
-        PropertyParser().parse( propertyFilePath, *baseInputQuery );
+        PropertyParser().parse( propertyFilePath, baseInputQuery );
 
-    run(*baseInputQuery);
+    run( baseInputQuery );
 }
 
-void DnCMarabou::run(InputQuery &inputQuery)
+void DnCMarabou::run( InputQuery &inputQuery )
 {
     /*
       Step 3: initialzie the DNC core
@@ -89,7 +91,7 @@ void DnCMarabou::run(InputQuery &inputQuery)
 
     _dncManager = std::unique_ptr<DnCManager>
       ( new DnCManager( numWorkers, initialDivides, initialTimeout,
-                        onlineDivides, timeoutFactor, 
+                        onlineDivides, timeoutFactor,
                         DivideStrategy::LargestInterval, inputQuery,
                         verbosity ) );
 
@@ -107,7 +109,6 @@ Engine& DnCMarabou::getEngine()
 {
     return _dncManager->getEngineWithSATAssignment();
 }
-
 
 void DnCMarabou::displayResults( unsigned long long microSecondsElapsed ) const
 {

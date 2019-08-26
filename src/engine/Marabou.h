@@ -27,11 +27,18 @@ public:
     ~Marabou();
 
     /*
-      Entry point of this class
+      Entry point of this class. The inputQuery is either supplied
+      externally (e.g., through the Python interface), or is extracted
+      according to the option values (e.g., if run from the command
+      line)
     */
     void run();
-    void run(InputQuery &inputQuery);
-    Engine& getEngine();
+    void run( InputQuery &inputQuery );
+
+    /*
+      Return the internal Engine object
+    */
+    Engine &getEngine();
 
 private:
     InputQuery _inputQuery;

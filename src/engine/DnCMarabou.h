@@ -26,11 +26,20 @@ public:
     DnCMarabou();
 
     /*
-      Entry point of this class
+      Entry point of this class. The inputQuery is either supplied
+      externally (e.g., through the Python interface), or is extracted
+      according to the option values (e.g., if run from the command
+      line)
     */
     void run();
-    void run(InputQuery &inputQuery);
-    Engine& getEngine();
+    void run( InputQuery &inputQuery );
+
+    /*
+      After the query is solved, return the engine with the SAT
+      assignment
+    */
+    Engine &getEngine();
+
 private:
     std::unique_ptr<DnCManager> _dncManager;
 

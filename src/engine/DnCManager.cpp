@@ -82,11 +82,6 @@ void DnCManager::freeMemoryIfNeeded()
         delete _workload;
         _workload = NULL;
     }
-    if ( _baseInputQuery )
-    {
-        delete _baseInputQuery;
-        _baseInputQuery = NULL;
-    }
 }
 
 void DnCManager::solve( unsigned timeoutInSeconds )
@@ -233,8 +228,7 @@ String DnCManager::getResultString()
 Engine& DnCManager::getEngineWithSATAssignment()
 {
     ASSERT( _engineWithSATAssignment != nullptr );
-    
-    return *(_engineWithSATAssignment.get());
+    return *_engineWithSATAssignment.get();
 }
 
 void DnCManager::printResult()
@@ -294,7 +288,7 @@ bool DnCManager::createEngines()
 {
     // Create the base engine
     _baseEngine = std::make_shared<Engine>();
-    
+
     if ( !_baseEngine->processInputQuery( *_baseInputQuery ) )
         // Solved by preprocessing, we are done!
         return false;
