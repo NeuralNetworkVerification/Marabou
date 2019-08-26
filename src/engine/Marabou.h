@@ -39,9 +39,14 @@ public:
       Return the internal Engine exit code
     */
     InputQuery::ExitCode getExitCode() const;
-    
+
+    /*
+      Return the Engine Statistics
+    */
+    const Statistics *getStatistics() const;
+
 private:
-    InputQuery _inputQuery;
+    InputQuery *_inputQuery;
 
     /*
       Extract the input files: network and property, and use them

@@ -47,7 +47,7 @@ void Marabou::run( InputQuery &inputQuery )
 {
     struct timespec start = TimeUtils::sampleMicro();
 
-    _inputQuery = inputQuery;
+    _inputQuery = &inputQuery;
     solveQuery();
 
     struct timespec end = TimeUtils::sampleMicro();
@@ -59,6 +59,11 @@ void Marabou::run( InputQuery &inputQuery )
 InputQuery::ExitCode Marabou::getExitCode() const
 {
     return _engine.getExitCode();
+}
+
+const Statistics *Marabou::getStatistics() const
+{
+    return _engine.getStatistics();
 }
 
 InputQuery Marabou::prepareInputQuery()
@@ -97,11 +102,11 @@ InputQuery Marabou::prepareInputQuery()
 
 void Marabou::solveQuery()
 {
-    if ( _engine.processInputQuery( _inputQuery ) )
+    if ( _engine.processInputQuery( *_inputQuery ) )
         _engine.solve( Options::get()->getInt( Options::TIMEOUT ) );
 
     if ( _engine.getExitCode() == InputQuery::SAT )
-        _engine.extractSolution( _inputQuery );
+        _engine.extractSolution( *_inputQuery );
 }
 
 void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
@@ -120,13 +125,13 @@ void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
         printf( "SAT\n\n" );
 
         printf( "Input assignment:\n" );
-        for ( unsigned i = 0; i < _inputQuery.getNumInputVariables(); ++i )
-            printf( "\tx%u = %lf\n", i, _inputQuery.getSolutionValue( _inputQuery.inputVariableByIndex( i ) ) );
+        for ( unsigned i = 0; i < _inputQuery->getNumInputVariables(); ++i )
+            printf( "\tx%u = %lf\n", i, _inputQuery->getSolutionValue( _inputQuery->inputVariableByIndex( i ) ) );
 
         printf( "\n" );
         printf( "Output:\n" );
-        for ( unsigned i = 0; i < _inputQuery.getNumOutputVariables(); ++i )
-            printf( "\ty%u = %lf\n", i, _inputQuery.getSolutionValue( _inputQuery.outputVariableByIndex( i ) ) );
+        for ( unsigned i = 0; i < _inputQuery->getNumOutputVariables(); ++i )
+            printf( "\ty%u = %lf\n", i, _inputQuery->getSolutionValue( _inputQuery->outputVariableByIndex( i ) ) );
         printf( "\n" );
     }
     else if ( result == InputQuery::TIMEOUT )

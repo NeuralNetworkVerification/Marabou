@@ -38,6 +38,11 @@ public:
       Return the internal Engine exit code
     */
     InputQuery::ExitCode getExitCode() const;
+  
+    /*
+      Return the Engine Statistics
+    */
+    const Statistics *getStatistics() const;
 
 private:
     std::unique_ptr<DnCManager> _dncManager;

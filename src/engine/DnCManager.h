@@ -44,6 +44,11 @@ public:
       Return the DnCExitCode of the DnCManager
     */
     InputQuery::ExitCode getExitCode() const;
+    
+    /*
+      Return the Engine Statistics
+    */
+    const Statistics *getStatistics() const;
 
     /*
       Get the string representation of the exitcode

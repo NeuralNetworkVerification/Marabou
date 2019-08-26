@@ -110,6 +110,11 @@ InputQuery::ExitCode DnCMarabou::getExitCode() const
     return _dncManager->getExitCode();
 }
 
+const Statistics *DnCMarabou::getStatistics() const
+{
+    return _dncManager->getStatistics();
+}
+
 void DnCMarabou::displayResults( unsigned long long microSecondsElapsed ) const
 {
     std::cout << "Total Time: " << microSecondsElapsed / 1000000 << std::endl;

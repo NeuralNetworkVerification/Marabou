@@ -26,7 +26,6 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include "AcasParser.h"
-#include "Engine.h"
 #include "InputQuery.h"
 #include "MarabouError.h"
 #include "MString.h"
@@ -112,6 +111,7 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::s
     std::map<int, double> ret;
     Statistics retStats;
     int output=-1;
+    InputQuery::ExitCode exitCode;
     if(redirect.length()>0)
         output=redirectOutputToFile(redirect);
     try{
@@ -120,27 +120,15 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::s
         {
             DnCMarabou dncMarabou;
             dncMarabou.run(inputQuery);
-            Engine& engine = dncMarabou.getEngine();
-            if (engine.getExitCode() == Engine::SAT)
-            {
-                engine.extractSolution(inputQuery);
-                for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); i++)
-                    ret[i] = inputQuery.getSolutionValue(i);
-            }
-            retStats = *(engine.getStatistics());
+            exitCode = dncMarabou.getExitCode();
+            retStats = *(dncMarabou.getStatistics());
         }
         else
         {
             Marabou marabou;
             marabou.run(inputQuery);
-            Engine& engine = marabou.getEngine();
-            if (engine.getExitCode() == Engine::SAT)
-            {
-                engine.extractSolution(inputQuery);
-                for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); i++)
-                    ret[i] = inputQuery.getSolutionValue(i);
-            }
-            retStats = *(engine.getStatistics());
+            exitCode = marabou.getExitCode();
+            retStats = *(marabou.getStatistics());
         }
     }
     catch(const MarabouError &e){
@@ -149,6 +137,8 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::s
     }
     if(output != -1)
         restoreOutputStream(output);
+    if ( exitCode == InputQuery::SAT )
+        ret = inputQuery.getVariablesSolution();
     return std::make_pair(ret, retStats);
 }
 

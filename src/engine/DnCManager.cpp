@@ -158,6 +158,8 @@ void DnCManager::solve( unsigned timeoutInSeconds )
         thread.join();
 
     updateDnCExitCode();
+    if ( _exitCode == InputQuery::SAT )
+        _engineWithSATAssignment->extractSolution( *_baseInputQuery );
     printResult();
     return;
 }
@@ -165,6 +167,11 @@ void DnCManager::solve( unsigned timeoutInSeconds )
 InputQuery::ExitCode DnCManager::getExitCode() const
 {
     return _exitCode;
+}
+
+const Statistics *DnCManager::getStatistics() const
+{
+    return _engineWithSATAssignment->getStatistics();
 }
 
 void DnCManager::updateDnCExitCode()
