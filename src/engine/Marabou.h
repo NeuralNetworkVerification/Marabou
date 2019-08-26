@@ -36,10 +36,10 @@ public:
     void run( InputQuery &inputQuery );
 
     /*
-      Return the internal Engine object
+      Return the internal Engine exit code
     */
-    Engine &getEngine();
-
+    InputQuery::ExitCode getExitCode() const;
+    
 private:
     InputQuery _inputQuery;
 

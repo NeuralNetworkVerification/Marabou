@@ -35,10 +35,9 @@ public:
     void run( InputQuery &inputQuery );
 
     /*
-      After the query is solved, return the engine with the SAT
-      assignment
+      Return the internal Engine exit code
     */
-    Engine &getEngine();
+    InputQuery::ExitCode getExitCode() const;
 
 private:
     std::unique_ptr<DnCManager> _dncManager;

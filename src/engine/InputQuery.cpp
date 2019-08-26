@@ -139,6 +139,14 @@ double InputQuery::getSolutionValue( unsigned variable ) const
     return _solution.get( variable );
 }
 
+std::map<int, double> InputQuery::getVariablesSolution() const
+{
+    std::map<int, double> ret;
+    for(unsigned int i=0; i<getNumberOfVariables(); i++)
+        ret[i] = getSolutionValue( i );
+    return ret;
+}
+
 void InputQuery::addPiecewiseLinearConstraint( PiecewiseLinearConstraint *constraint )
 {
     _plConstraints.append( constraint );

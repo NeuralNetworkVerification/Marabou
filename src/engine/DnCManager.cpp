@@ -55,7 +55,7 @@ DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
     , _timeoutFactor( timeoutFactor )
     , _divideStrategy( divideStrategy )
     , _baseInputQuery( &inputQuery )
-    , _exitCode( DnCManager::NOT_DONE )
+    , _exitCode( InputQuery::NOT_DONE )
     , _workload( NULL )
     , _timeoutReached( false )
     , _numUnsolvedSubQueries( 0 )
@@ -96,7 +96,7 @@ void DnCManager::solve( unsigned timeoutInSeconds )
     // Preprocess the input query and create an engine for each of the threads
     if ( !createEngines() )
     {
-        _exitCode = DnCManager::UNSAT;
+        _exitCode = InputQuery::UNSAT;
         printResult();
         return;
     }
@@ -162,7 +162,7 @@ void DnCManager::solve( unsigned timeoutInSeconds )
     return;
 }
 
-DnCManager::DnCExitCode DnCManager::getExitCode() const
+InputQuery::ExitCode DnCManager::getExitCode() const
 {
     return _exitCode;
 }
@@ -174,32 +174,32 @@ void DnCManager::updateDnCExitCode()
     bool hasQuitRequested = false;
     for ( auto &engine : _engines )
     {
-        Engine::ExitCode result = engine->getExitCode();
-        if ( result == Engine::SAT )
+        InputQuery::ExitCode result = engine->getExitCode();
+        if ( result == InputQuery::SAT )
         {
             _engineWithSATAssignment = engine;
             hasSat = true;
             break;
         }
-        else if ( result == Engine::ERROR )
+        else if ( result == InputQuery::ERROR )
             hasError = true;
-        else if ( result == Engine::QUIT_REQUESTED )
+        else if ( result == InputQuery::QUIT_REQUESTED )
             hasQuitRequested = true;
     }
     if ( hasSat )
-        _exitCode = DnCManager::SAT;
+        _exitCode = InputQuery::SAT;
     else if ( _timeoutReached )
-        _exitCode = DnCManager::TIMEOUT;
+        _exitCode = InputQuery::TIMEOUT;
     else if ( hasQuitRequested )
-        _exitCode = DnCManager::QUIT_REQUESTED;
+        _exitCode = InputQuery::QUIT_REQUESTED;
     else if ( hasError )
-        _exitCode = DnCManager::ERROR;
+        _exitCode = InputQuery::ERROR;
     else if ( _numUnsolvedSubQueries.load() == 0 )
-        _exitCode = DnCManager::UNSAT;
+        _exitCode = InputQuery::UNSAT;
     else
     {
         ASSERT( false ); // This should never happen
-        _exitCode = DnCManager::NOT_DONE;
+        _exitCode = InputQuery::NOT_DONE;
     }
 }
 
@@ -207,17 +207,17 @@ String DnCManager::getResultString()
 {
     switch ( _exitCode )
     {
-    case DnCManager::SAT:
+    case InputQuery::SAT:
         return "SAT";
-    case DnCManager::UNSAT:
+    case InputQuery::UNSAT:
         return "UNSAT";
-    case DnCManager::ERROR:
+    case InputQuery::ERROR:
         return "ERROR";
-    case DnCManager::NOT_DONE:
+    case InputQuery::NOT_DONE:
         return "NOT_DONE";
-    case DnCManager::QUIT_REQUESTED:
+    case InputQuery::QUIT_REQUESTED:
         return "QUIT_REQUESTED";
-    case DnCManager::TIMEOUT:
+    case InputQuery::TIMEOUT:
         return "TIMEOUT";
     default:
         ASSERT( false );
@@ -225,17 +225,11 @@ String DnCManager::getResultString()
     }
 }
 
-Engine& DnCManager::getEngineWithSATAssignment()
-{
-    ASSERT( _engineWithSATAssignment != nullptr );
-    return *_engineWithSATAssignment.get();
-}
-
 void DnCManager::printResult()
 {
     switch ( _exitCode )
     {
-    case DnCManager::SAT:
+    case InputQuery::SAT:
     {
         std::cout << "DnCManager::solve SAT query" << std::endl;
 
@@ -264,19 +258,19 @@ void DnCManager::printResult()
         printf( "\n" );
         break;
     }
-    case DnCManager::UNSAT:
+    case InputQuery::UNSAT:
         std::cout << "DnCManager::solve UNSAT query" << std::endl;
         break;
-    case DnCManager::ERROR:
+    case InputQuery::ERROR:
         std::cout << "DnCManager::solve ERROR" << std::endl;
         break;
-    case DnCManager::NOT_DONE:
+    case InputQuery::NOT_DONE:
         std::cout << "DnCManager::solve NOT_DONE" << std::endl;
         break;
-    case DnCManager::QUIT_REQUESTED:
+    case InputQuery::QUIT_REQUESTED:
         std::cout << "DnCManager::solve QUIT_REQUESTED" << std::endl;
         break;
-    case DnCManager::TIMEOUT:
+    case InputQuery::TIMEOUT:
         std::cout << "DnCManager::solve TIMEOUT" << std::endl;
         break;
     default:

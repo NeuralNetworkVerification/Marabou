@@ -46,12 +46,12 @@ private:
     /*
       Convert the exitCode to string
     */
-    static String exitCodeToString( Engine::ExitCode result );
+    static String exitCodeToString( InputQuery::ExitCode result );
 
     /*
       Print the current progress
     */
-    void printProgress( String queryId, Engine::ExitCode result ) const;
+    void printProgress( String queryId, InputQuery::ExitCode result ) const;
 
     /*
       The queue of subqueries (shared across threads)

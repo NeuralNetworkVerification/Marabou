@@ -56,9 +56,9 @@ void Marabou::run( InputQuery &inputQuery )
     displayResults( totalElapsed );
 }
 
-Engine& Marabou::getEngine()
+InputQuery::ExitCode Marabou::getExitCode() const
 {
-    return _engine;
+    return _engine.getExitCode();
 }
 
 InputQuery Marabou::prepareInputQuery()
@@ -100,21 +100,21 @@ void Marabou::solveQuery()
     if ( _engine.processInputQuery( _inputQuery ) )
         _engine.solve( Options::get()->getInt( Options::TIMEOUT ) );
 
-    if ( _engine.getExitCode() == Engine::SAT )
+    if ( _engine.getExitCode() == InputQuery::SAT )
         _engine.extractSolution( _inputQuery );
 }
 
 void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
 {
-    Engine::ExitCode result = _engine.getExitCode();
+    InputQuery::ExitCode result = _engine.getExitCode();
     String resultString;
 
-    if ( result == Engine::UNSAT )
+    if ( result == InputQuery::UNSAT )
     {
         resultString = "UNSAT";
         printf( "UNSAT\n" );
     }
-    else if ( result == Engine::SAT )
+    else if ( result == InputQuery::SAT )
     {
         resultString = "SAT";
         printf( "SAT\n\n" );
@@ -129,12 +129,12 @@ void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
             printf( "\ty%u = %lf\n", i, _inputQuery.getSolutionValue( _inputQuery.outputVariableByIndex( i ) ) );
         printf( "\n" );
     }
-    else if ( result == Engine::TIMEOUT )
+    else if ( result == InputQuery::TIMEOUT )
     {
         resultString = "TIMEOUT";
         printf( "Timeout\n" );
     }
-    else if ( result == Engine::ERROR )
+    else if ( result == InputQuery::ERROR )
     {
         resultString = "ERROR";
         printf( "Error\n" );

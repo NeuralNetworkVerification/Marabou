@@ -91,16 +91,16 @@ void DnCWorker::run()
             _engine->applySplit( *split );
             _engine->solve( timeoutInSeconds );
 
-            Engine::ExitCode result = _engine->getExitCode();
+            InputQuery::ExitCode result = _engine->getExitCode();
             printProgress( queryId, result );
             // Switch on the result
-            if ( result == Engine::UNSAT )
+            if ( result == InputQuery::UNSAT )
             {
                 // If UNSAT, continue to solve
                 *_numUnsolvedSubQueries -= 1;
                 delete subQuery;
             }
-            else if ( result == Engine::TIMEOUT )
+            else if ( result == InputQuery::TIMEOUT )
             {
                 // If TIMEOUT, split the current input region and add the
                 // new subQueries to the current queue
@@ -121,7 +121,7 @@ void DnCWorker::run()
                 *_numUnsolvedSubQueries -= 1;
                 delete subQuery;
             }
-            else if ( result == Engine::SAT )
+            else if ( result == InputQuery::SAT )
             {
                 // If SAT, set the shouldQuitSolving flag to true, so that the
                 // DnCManager will kill all the DnCWorkers
@@ -130,7 +130,7 @@ void DnCWorker::run()
                 delete subQuery;
                 return;
             }
-            else if ( result == Engine::QUIT_REQUESTED )
+            else if ( result == InputQuery::QUIT_REQUESTED )
             {
                 // If engine was asked to quit, quit
                 std::cout << "Quit requested by manager!" << std::endl;
@@ -138,7 +138,7 @@ void DnCWorker::run()
                 delete subQuery;
                 return;
             }
-            else if ( result == Engine::ERROR )
+            else if ( result == InputQuery::ERROR )
             {
                 // If ERROR, set the shouldQuitSolving flag to true and quit
                 std::cout << "Error!" << std::endl;
@@ -147,7 +147,7 @@ void DnCWorker::run()
                 delete subQuery;
                 return;
             }
-            else if ( result == Engine::NOT_DONE )
+            else if ( result == InputQuery::NOT_DONE )
             {
                 // If NOT_DONE, set the shouldQuitSolving flag to true and quit
                 ASSERT( false );
@@ -166,26 +166,26 @@ void DnCWorker::run()
     }
 }
 
-void DnCWorker::printProgress( String queryId, Engine::ExitCode result ) const
+void DnCWorker::printProgress( String queryId, InputQuery::ExitCode result ) const
 {
     printf( "Worker %d: Query %s %s, %d tasks remaining\n", _threadId,
             queryId.ascii(), exitCodeToString( result ).ascii(),
             _numUnsolvedSubQueries->load() );
 }
 
-String DnCWorker::exitCodeToString( Engine::ExitCode result )
+String DnCWorker::exitCodeToString( InputQuery::ExitCode result )
 {
     switch ( result )
     {
-    case Engine::UNSAT:
+    case InputQuery::UNSAT:
         return "UNSAT";
-    case Engine::SAT:
+    case InputQuery::SAT:
         return "SAT";
-    case Engine::ERROR:
+    case InputQuery::ERROR:
         return "ERROR";
-    case Engine::TIMEOUT:
+    case InputQuery::TIMEOUT:
         return "TIMEOUT";
-    case Engine::QUIT_REQUESTED:
+    case InputQuery::QUIT_REQUESTED:
         return "QUIT_REQUESTED";
     default:
         ASSERT( false );

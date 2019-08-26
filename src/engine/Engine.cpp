@@ -40,7 +40,7 @@ Engine::Engine( unsigned verbosity )
     , _basisRestorationPerformed( Engine::NO_RESTORATION_PERFORMED )
     , _costFunctionManager( _tableau )
     , _quitRequested( false )
-    , _exitCode( Engine::NOT_DONE )
+    , _exitCode( InputQuery::NOT_DONE )
     , _constraintBoundTightener( *_tableau )
     , _numVisitedStatesAtPreviousRestoration( 0 )
     , _networkLevelReasoner( NULL )
@@ -122,7 +122,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 _statistics.print();
             }
 
-            _exitCode = Engine::TIMEOUT;
+            _exitCode = InputQuery::TIMEOUT;
             _statistics.timeout();
             return false;
         }
@@ -136,7 +136,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 _statistics.print();
             }
 
-            _exitCode = Engine::QUIT_REQUESTED;
+            _exitCode = InputQuery::QUIT_REQUESTED;
             return false;
         }
 
@@ -220,7 +220,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
                         printf( "\nEngine::solve: SAT assignment found\n" );
                         _statistics.print();
                     }
-                    _exitCode = Engine::SAT;
+                    _exitCode = InputQuery::SAT;
                     return true;
                 }
 
@@ -267,7 +267,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
             else
             {
                 printf( "Engine: Cannot restore tableau!\n" );
-                _exitCode = Engine::ERROR;
+                _exitCode = InputQuery::ERROR;
                 return false;
             }
         }
@@ -282,13 +282,13 @@ bool Engine::solve( unsigned timeoutInSeconds )
                     printf( "\nEngine::solve: UNSAT query\n" );
                     _statistics.print();
                 }
-                _exitCode = Engine::UNSAT;
+                _exitCode = InputQuery::UNSAT;
                 return false;
             }
         }
         catch ( ... )
         {
-            _exitCode = Engine::ERROR;
+            _exitCode = InputQuery::ERROR;
             printf( "Engine: Unknown error!\n" );
             return false;
         }
@@ -660,7 +660,7 @@ void Engine::invokePreprocessor( const InputQuery &inputQuery, bool preprocess )
     unsigned infiniteBounds = _preprocessedQuery.countInfiniteBounds();
     if ( infiniteBounds != 0 )
     {
-        _exitCode = Engine::ERROR;
+        _exitCode = InputQuery::ERROR;
         throw MarabouError( MarabouError::UNBOUNDED_VARIABLES_NOT_YET_SUPPORTED,
                              Stringf( "Error! Have %u infinite bounds", infiniteBounds ).ascii() );
     }
@@ -730,7 +730,7 @@ double *Engine::createConstraintMatrix()
     {
         if ( equation._type != Equation::EQ )
         {
-            _exitCode = Engine::ERROR;
+            _exitCode = InputQuery::ERROR;
             throw MarabouError( MarabouError::NON_EQUALITY_INPUT_EQUATION_DISCOVERED );
         }
 
@@ -1084,7 +1084,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         struct timespec end = TimeUtils::sampleMicro();
         _statistics.setPreprocessingTime( TimeUtils::timePassed( start, end ) );
 
-        _exitCode = Engine::UNSAT;
+        _exitCode = InputQuery::UNSAT;
         return false;
     }
 
@@ -1692,7 +1692,7 @@ void Engine::quitSignal()
     _quitRequested = true;
 }
 
-Engine::ExitCode Engine::getExitCode() const
+InputQuery::ExitCode Engine::getExitCode() const
 {
     return _exitCode;
 }
@@ -1824,7 +1824,7 @@ void Engine::resetSmtCore()
 
 void Engine::resetExitCode()
 {
-    _exitCode = Engine::NOT_DONE;
+    _exitCode = InputQuery::NOT_DONE;
 }
 
 void Engine::resetBoundTighteners()

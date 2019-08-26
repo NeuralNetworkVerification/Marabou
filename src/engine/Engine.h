@@ -46,16 +46,6 @@ public:
     Engine( unsigned verbosity = 2 );
     ~Engine();
 
-    enum ExitCode {
-        UNSAT = 0,
-        SAT = 1,
-        ERROR = 2,
-        TIMEOUT = 3,
-        QUIT_REQUESTED = 4,
-
-        NOT_DONE = 999,
-    };
-
     /*
       Attempt to find a feasible solution for the input within a time limit
       (a timeout of 0 means no time limit). Returns true if found, false if infeasible.
@@ -95,7 +85,7 @@ public:
     /*
       Get the exit code
     */
-    Engine::ExitCode getExitCode() const;
+    InputQuery::ExitCode getExitCode() const;
 
     /*
       Get the quitRequested flag
@@ -259,7 +249,7 @@ private:
     /*
       A code indicating how the run terminated.
     */
-    ExitCode _exitCode;
+    InputQuery::ExitCode _exitCode;
 
     /*
       An object in charge of managing bound tightenings

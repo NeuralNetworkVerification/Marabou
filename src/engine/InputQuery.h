@@ -27,10 +27,21 @@
 class InputQuery
 {
 public:
+    
+    enum ExitCode {
+        UNSAT = 0,
+        SAT = 1,
+        ERROR = 2,
+        TIMEOUT = 3,
+        QUIT_REQUESTED = 4,
+
+        NOT_DONE = 999,
+    };
+
     InputQuery();
     ~InputQuery();
 
-    /*
+        /*
       Methods for setting and getting the input part of the query
     */
     void setNumberOfVariables( unsigned numberOfVariables );
@@ -69,7 +80,7 @@ public:
     */
     void setSolutionValue( unsigned variable, double value );
     double getSolutionValue( unsigned variable ) const;
-
+    std::map<int, double> getVariablesSolution() const;
     /*
       Count the number of infinite bounds in the input query.
     */

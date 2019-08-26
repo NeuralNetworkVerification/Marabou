@@ -27,17 +27,6 @@ class DnCManager
 {
 public:
 
-    enum DnCExitCode
-        {
-            UNSAT = 0,
-            SAT = 1,
-            ERROR = 2,
-            TIMEOUT = 3,
-            QUIT_REQUESTED = 4,
-
-            NOT_DONE = 999,
-        };
-
     DnCManager( unsigned numWorkers, unsigned initialDivides, unsigned
                 initialTimeout, unsigned onlineDivides, float timeoutFactor,
                 DivideStrategy divideStrategy, InputQuery &inputQuery, unsigned verbosity );
@@ -54,17 +43,12 @@ public:
     /*
       Return the DnCExitCode of the DnCManager
     */
-    DnCExitCode getExitCode() const;
+    InputQuery::ExitCode getExitCode() const;
 
     /*
       Get the string representation of the exitcode
     */
     String getResultString();
-
-    /*
-      Get the engine with SAT assignment
-    */
-    Engine &getEngineWithSATAssignment();
 
 private:
     /*
@@ -164,7 +148,7 @@ private:
     /*
       The exit code of the DnCManager.
     */
-    DnCExitCode _exitCode;
+    InputQuery::ExitCode _exitCode;
 
     /*
       Set of subQueries to be solved by workers

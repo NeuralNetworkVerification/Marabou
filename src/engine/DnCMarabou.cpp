@@ -105,9 +105,9 @@ void DnCMarabou::run( InputQuery &inputQuery )
     displayResults( totalElapsed );
 }
 
-Engine& DnCMarabou::getEngine()
+InputQuery::ExitCode DnCMarabou::getExitCode() const
 {
-    return _dncManager->getEngineWithSATAssignment();
+    return _dncManager->getExitCode();
 }
 
 void DnCMarabou::displayResults( unsigned long long microSecondsElapsed ) const
