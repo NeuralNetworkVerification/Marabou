@@ -60,20 +60,17 @@ int main( int argc, char **argv )
             printHelpMessage();
             return 0;
         };
-        printf("here4");
 
         if ( options->getBool( Options::VERSION ) )
         {
             printVersion();
             return 0;
         };
-        printf("here5");
 
         if ( options->getBool( Options::DNC_MODE ) )
             DnCMarabou().run();
         else
             Marabou( options->getInt( Options::VERBOSITY ) ).run();
-        printf("here6");
     }
     catch ( const Error &e )
     {
