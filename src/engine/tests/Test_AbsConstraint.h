@@ -309,8 +309,10 @@ public:
         abs.notifyLowerBound( b, 1);
         abs.notifyLowerBound( f, 2);
 
+
         // 1 < x_b < 7 , 2 < x_f < 7 -> 2 < x_b
         abs.getEntailedTightenings( entailedTightenings );
+
 
         TS_TRACE("\n");
         TS_TRACE("\n");
@@ -335,25 +337,19 @@ public:
         TS_TRACE(abs.get_lower_bound(f));
         TS_TRACE(abs.get_lower_bound(b));
 
+   //     abs.notifyLowerBound( f, 3);
 
         // B < D , A = C
         //3 < x_b < 6 , 3 < x_f < 7 -> x_f < 6
         abs.notifyUpperBound(b, 6);
         entailedTightenings.clear();
         abs.getEntailedTightenings( entailedTightenings );
-//        TS_ASSERT_EQUALS( entailedTightenings.size(),1U );
+        TS_ASSERT_EQUALS( entailedTightenings.size(),1U );
 
         it = entailedTightenings.begin();
         TS_TRACE(it->_variable);
         TS_TRACE(it->_value);
         TS_TRACE(it->_type);
-        it++;
-        TS_TRACE(it->_variable);
-        TS_TRACE(it->_value);
-        TS_TRACE(it->_type);
-//        TS_ASSERT_EQUALS( it->_variable, f );
-//        TS_ASSERT_EQUALS( it->_value, 6 );
-//        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
 
     }
 };
