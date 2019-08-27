@@ -133,7 +133,6 @@ void AbsConstraint::notifyUpperBound(  unsigned variable, double bound )
 
     _upperBounds[variable] = bound;
 
-
     //fix phase, only by x_b because x_b <= x_f
     if ( ( variable == _b ) && FloatUtils::isNegative( bound ) )
         setPhaseStatus( PhaseStatus::PHASE_NEGATIVE );
@@ -155,9 +154,9 @@ void AbsConstraint::notifyUpperBound(  unsigned variable, double bound )
             else if ( bound >= 0 )
             {
                 double newUpperBound = bound;
-                if ( _lowerBounds.exists( _f ) )
+                if ( _upperBounds.exists( _f ) )
                 {
-                    newUpperBound = FloatUtils::max( _upperBounds[_f], newUpperBound );
+                    newUpperBound = FloatUtils::min( _upperBounds[_f], newUpperBound );
                 }
                 _constraintBoundTightener->registerTighterUpperBound( _f, newUpperBound );
             }
@@ -228,8 +227,6 @@ List<PiecewiseLinearConstraint::Fix> AbsConstraint::getPossibleFixes() const
     fixes.append(PiecewiseLinearConstraint::Fix(_b, fValue));
     fixes.append(PiecewiseLinearConstraint::Fix(_b, -fValue));
     fixes.append(PiecewiseLinearConstraint::Fix(_f, abs(bValue)));
-    }
-
     return fixes;
 }
 
@@ -381,7 +378,7 @@ void AbsConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
     if (!FloatUtils::isNegative( bLowerBound ) & !FloatUtils::isNegative( bUpperBound ) & !FloatUtils::isNegative( fLowerBound ))
     {
         // update lower bound x_f or x_b
-        if ( FloatUtils::gt( bLowerBound, fLowerBound ) )
+        if ( FloatUtils::lt( fLowerBound, bLowerBound) )
             tightenings.append( Tightening( _f, bLowerBound, Tightening::LB ) );
         else if ( FloatUtils::lt( bLowerBound, fLowerBound ) )
             tightenings.append( Tightening( _b, fLowerBound, Tightening::LB ) );
@@ -389,7 +386,7 @@ void AbsConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
         // update upper bound x_f or x_b
         if ( FloatUtils::lt( bUpperBound, fUpperBound ) )
             tightenings.append( Tightening( _f, bUpperBound, Tightening::UB ) );
-        else if ( FloatUtils::gt( bUpperBound, fUpperBound ) )
+        else if ( FloatUtils::lt(  fUpperBound, bUpperBound ) )
             tightenings.append( Tightening( _b, fUpperBound, Tightening::UB ) );
     }
 
@@ -406,7 +403,6 @@ void AbsConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
         double tempBound = FloatUtils::max(FloatUtils::abs(bLowerBound) , bLowerBound);
         if ( FloatUtils::lt( tempBound, fUpperBound) )
             tightenings.append( Tightening( _f, tempBound, Tightening::UB ) );
-
     }
 
     if (FloatUtils::isNegative(bLowerBound) & FloatUtils::isNegative(bUpperBound) & !FloatUtils::isNegative(fLowerBound))
