@@ -18,6 +18,8 @@
 #include <string.h>
 
 
+#include <iostream>
+
 class MockForAbsConstraint
         : public MockErrno
 {
@@ -184,8 +186,6 @@ public:
 
         AbsConstraint abs( b, f );
 
-        TS_TRACE("abs test response");
-
         // Changing variable indices
         abs.notifyVariableValue( b, 1 );
         abs.notifyVariableValue( f, 1 );
@@ -229,13 +229,13 @@ public:
         abs.notifyVariableValue( f, 1 );
 
         fixes = abs.getPossibleFixes();
-        TS_ASSERT_EQUALS( fixes.size(),3 );
+        TS_ASSERT_EQUALS( fixes.size(),3U );
         it = fixes.begin();
         TS_ASSERT_EQUALS( it->_variable, b );
         TS_ASSERT_EQUALS( it->_value, 1 );
         ++it;
         TS_ASSERT_EQUALS( it->_variable, b );
-        TS_ASSERT_EQUALS( it->_value, -2 );
+        TS_ASSERT_EQUALS( it->_value, -1 );
         ++it;
         TS_ASSERT_EQUALS( it->_variable, f );
         TS_ASSERT_EQUALS( it->_value, 2 );
@@ -245,7 +245,7 @@ public:
         abs.notifyVariableValue( f, 1 );
 
         fixes = abs.getPossibleFixes();
-        TS_ASSERT_EQUALS( fixes.size(),3 );
+        TS_ASSERT_EQUALS( fixes.size(),3U );
         it = fixes.begin();
         TS_ASSERT_EQUALS( it->_variable, b );
         TS_ASSERT_EQUALS( it->_value, 1 );
@@ -290,23 +290,71 @@ public:
     }
 
 
-//    void test_abs_entailed_tighteningst() {
-//        unsigned b = 1;
-//        unsigned f = 4;
-//
-//        AbsConstraint abs(b, f);
-//        List<Tightening> entailedTightenings;
-//        abs.notifyUpperBound( b, 7 );
-//        abs.notifyUpperBound( f, 7 );
-//        abs.getEntailedTightenings( entailedTightenings );
-//        TS_ASSERT( !entailedTightenings.empty() );
-//
-//        abs.notifyLowerBound( b, 6);
-//        abs.notifyLowerBound( f, -6);
-//        abs.getEntailedTightenings( entailedTightenings );
-//        TS_ASSERT( entailedTightenings.empty() );
-//
-//
-//    }
+    void test_abs_entailed_tighteningst() {
+        /**
+         * suppose A < x_b < B, C < x_f < D, remainder C >= 0 ,D > 0
+         */
+        unsigned b = 1;
+        unsigned f = 4;
+
+        AbsConstraint abs(b, f);
+        List<Tightening> entailedTightenings;
+        List<Tightening>::iterator it;
+
+
+        //A > 0 & B > 0 & C > 0
+        // B = D , A < C
+        abs.notifyUpperBound( b, 7 );
+        abs.notifyUpperBound( f, 7 );
+        abs.notifyLowerBound( b, 1);
+        abs.notifyLowerBound( f, 2);
+
+        // 1 < x_b < 7 , 2 < x_f < 7 -> 2 < x_b
+        abs.getEntailedTightenings( entailedTightenings );
+
+        TS_TRACE("\n");
+        TS_TRACE("\n");
+        TS_TRACE("abs test response");
+        TS_ASSERT_EQUALS( entailedTightenings.size(),1U );
+        it = entailedTightenings.begin();
+        TS_ASSERT_EQUALS( it->_variable, b );
+        TS_ASSERT_EQUALS( it->_value, 2 );
+        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
+
+        // B = D , A < C
+        //3 < x_b < 7 , 2 < x_f < 7 -> 3 < x_f
+        abs.notifyLowerBound( b, 3);
+        entailedTightenings.clear();
+        abs.getEntailedTightenings( entailedTightenings );
+        TS_ASSERT_EQUALS( entailedTightenings.size(),1U );
+        it = entailedTightenings.begin();
+        TS_ASSERT_EQUALS( it->_variable, f );
+        TS_ASSERT_EQUALS( it->_value, 3 );
+        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
+
+        TS_TRACE(abs.get_lower_bound(f));
+        TS_TRACE(abs.get_lower_bound(b));
+
+
+        // B < D , A = C
+        //3 < x_b < 6 , 3 < x_f < 7 -> x_f < 6
+        abs.notifyUpperBound(b, 6);
+        entailedTightenings.clear();
+        abs.getEntailedTightenings( entailedTightenings );
+//        TS_ASSERT_EQUALS( entailedTightenings.size(),1U );
+
+        it = entailedTightenings.begin();
+        TS_TRACE(it->_variable);
+        TS_TRACE(it->_value);
+        TS_TRACE(it->_type);
+        it++;
+        TS_TRACE(it->_variable);
+        TS_TRACE(it->_value);
+        TS_TRACE(it->_type);
+//        TS_ASSERT_EQUALS( it->_variable, f );
+//        TS_ASSERT_EQUALS( it->_value, 6 );
+//        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+
+    }
 };
 #endif //MARABOU_TEST_ABSCONSTRAINT_H
