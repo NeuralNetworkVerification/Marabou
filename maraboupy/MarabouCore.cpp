@@ -114,7 +114,7 @@ std::pair<std::map<unsigned, double>, Statistics> solve(InputQuery inputQuery, s
     if(redirect.length()>0)
         output=redirectOutputToFile(redirect);
     try{
-        //        Options::get()->setInt(Options::TIMEOUT, timeout);
+        Options::get()->setInt(Options::TIMEOUT, timeout);
         (void)timeout;
 
         if(dnc)

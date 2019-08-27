@@ -24,10 +24,8 @@ Options *Options::get()
 }
 
 Options::Options()
-    : _optionParser( &_boolOptions, &_intOptions, &_floatOptions, &_stringOptions )
 {
     initializeDefaultValues();
-    _optionParser.initialize();
 }
 
 Options::Options( const Options & )
@@ -43,6 +41,8 @@ void Options::initializeDefaultValues()
     */
     _boolOptions[DNC_MODE] = false;
     _boolOptions[PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS] = false;
+    _boolOptions[HELP] = false;
+    _boolOptions[VERSION] = false;
 
     /*
       Int options
@@ -65,11 +65,6 @@ void Options::initializeDefaultValues()
     _stringOptions[INPUT_FILE_PATH] = "";
     _stringOptions[PROPERTY_FILE_PATH] = "";
     _stringOptions[SUMMARY_FILE] = "";
-}
-
-void Options::parseOptions( int argc, char **argv )
-{
-    _optionParser.parse( argc, argv );
 }
 
 bool Options::getBool( unsigned option ) const

@@ -17,6 +17,7 @@
 #include "Error.h"
 #include "Marabou.h"
 #include "Options.h"
+#include "OptionParser.h"
 
 void printVersion()
 {
@@ -51,24 +52,28 @@ int main( int argc, char **argv )
     try
     {
         Options *options = Options::get();
-        options->parseOptions( argc, argv );
+        OptionParser parser = OptionParser();
+        parser.parse(  argc, argv );
 
         if ( options->getBool( Options::HELP ) )
         {
             printHelpMessage();
             return 0;
         };
+        printf("here4");
 
         if ( options->getBool( Options::VERSION ) )
         {
             printVersion();
             return 0;
         };
+        printf("here5");
 
         if ( options->getBool( Options::DNC_MODE ) )
             DnCMarabou().run();
         else
             Marabou( options->getInt( Options::VERBOSITY ) ).run();
+        printf("here6");
     }
     catch ( const Error &e )
     {

@@ -18,8 +18,6 @@
 
 #include "MString.h"
 #include "Map.h"
-#include "OptionParser.h"
-#include "boost/program_options.hpp"
 
 /*
   A singleton class that contains all the options and their values.
@@ -72,11 +70,6 @@ public:
     static Options *get();
 
     /*
-      Parse the command line arguments and extract the option values.
-    */
-    void parseOptions( int argc, char **argv );
-
-    /*
       Retrieve the value of the various options, by type
     */
     bool getBool( unsigned option ) const;
@@ -103,8 +96,6 @@ private:
       Initialize the default option values
     */
     void initializeDefaultValues();
-
-    OptionParser _optionParser;
 
     /*
       The various option values

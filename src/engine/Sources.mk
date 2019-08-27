@@ -7,6 +7,8 @@ SOURCES += \
 	DegradationChecker.cpp \
 	DnCManager.cpp \
 	DnCWorker.cpp \
+	DnCMarabou.cpp \
+	Marabou.cpp \
 	Engine.cpp \
 	EngineState.cpp \
 	EntrySelectionStrategy.cpp \
