@@ -169,28 +169,8 @@ void DnCWorker::run()
 void DnCWorker::printProgress( String queryId, InputQuery::ExitCode result ) const
 {
     printf( "Worker %d: Query %s %s, %d tasks remaining\n", _threadId,
-            queryId.ascii(), exitCodeToString( result ).ascii(),
+            queryId.ascii(), InputQuery::exitCodeToString( result ).ascii(),
             _numUnsolvedSubQueries->load() );
-}
-
-String DnCWorker::exitCodeToString( InputQuery::ExitCode result )
-{
-    switch ( result )
-    {
-    case InputQuery::UNSAT:
-        return "UNSAT";
-    case InputQuery::SAT:
-        return "SAT";
-    case InputQuery::ERROR:
-        return "ERROR";
-    case InputQuery::TIMEOUT:
-        return "TIMEOUT";
-    case InputQuery::QUIT_REQUESTED:
-        return "QUIT_REQUESTED";
-    default:
-        ASSERT( false );
-        return "UNKNOWN (this should never happen)";
-    }
 }
 
 //

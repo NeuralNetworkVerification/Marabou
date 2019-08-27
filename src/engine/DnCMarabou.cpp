@@ -26,7 +26,18 @@
 
 DnCMarabou::DnCMarabou()
     : _dncManager( nullptr )
+    , _inputQuery( nullptr )
+    , _allocatedInputQuery( false )
 {
+}
+
+DnCMarabou::~DnCMarabou()
+{
+    if ( _allocatedInputQuery && _inputQuery )
+    {
+        delete _inputQuery;
+        _inputQuery = NULL;
+    }
 }
 
 void DnCMarabou::run()
@@ -66,18 +77,21 @@ void DnCMarabou::run()
       Step 3: populate the base input query using network and property
     */
 
-    InputQuery baseInputQuery;
+    InputQuery *baseInputQuery = new InputQuery;
+    _allocatedInputQuery = true;
 
     AcasParser acasParser( networkFilePath );
-    acasParser.generateQuery( baseInputQuery );
+    acasParser.generateQuery( *baseInputQuery );
     if ( propertyFilePath != "" )
-        PropertyParser().parse( propertyFilePath, baseInputQuery );
+        PropertyParser().parse( propertyFilePath, *baseInputQuery );
 
-    run( baseInputQuery );
+    run( *baseInputQuery );
 }
 
 void DnCMarabou::run( InputQuery &inputQuery )
 {
+    _inputQuery = &inputQuery;
+
     /*
       Step 3: initialzie the DNC core
     */
@@ -92,7 +106,7 @@ void DnCMarabou::run( InputQuery &inputQuery )
     _dncManager = std::unique_ptr<DnCManager>
       ( new DnCManager( numWorkers, initialDivides, initialTimeout,
                         onlineDivides, timeoutFactor,
-                        DivideStrategy::LargestInterval, inputQuery,
+                        DivideStrategy::LargestInterval, *_inputQuery,
                         verbosity ) );
 
     struct timespec start = TimeUtils::sampleMicro();
@@ -101,13 +115,15 @@ void DnCMarabou::run( InputQuery &inputQuery )
 
     struct timespec end = TimeUtils::sampleMicro();
 
+    _inputQuery->setExitCode( _dncManager->getExitCode() );
+
     unsigned long long totalElapsed = TimeUtils::timePassed( start, end );
     displayResults( totalElapsed );
 }
 
 InputQuery::ExitCode DnCMarabou::getExitCode() const
 {
-    return _dncManager->getExitCode();
+    return _inputQuery->getExitCode();
 }
 
 const Statistics *DnCMarabou::getStatistics() const

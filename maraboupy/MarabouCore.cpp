@@ -138,7 +138,7 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::s
     if(output != -1)
         restoreOutputStream(output);
     if ( exitCode == InputQuery::SAT )
-        ret = inputQuery.getVariablesSolution();
+        ret = inputQuery.getSolution();
     return std::make_pair(ret, retStats);
 }
 

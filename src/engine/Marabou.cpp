@@ -23,7 +23,9 @@
 #include "MarabouError.h"
 
 Marabou::Marabou( unsigned verbosity )
-    : _acasParser( NULL )
+    : _inputQuery( NULL )
+    , _allocatedInputQuery( false )
+    , _acasParser( NULL )
     , _engine( verbosity )
 {
 }
@@ -35,12 +37,18 @@ Marabou::~Marabou()
         delete _acasParser;
         _acasParser = NULL;
     }
+
+    if ( _allocatedInputQuery && _inputQuery )
+    {
+        delete _inputQuery;
+        _inputQuery = NULL;
+    }
 }
 
 void Marabou::run()
 {
-    InputQuery inputQuery = prepareInputQuery();
-    run( inputQuery );
+    InputQuery *inputQuery = prepareInputQuery();
+    run( *inputQuery );
 }
 
 void Marabou::run( InputQuery &inputQuery )
@@ -58,7 +66,7 @@ void Marabou::run( InputQuery &inputQuery )
 
 InputQuery::ExitCode Marabou::getExitCode() const
 {
-    return _engine.getExitCode();
+    return _inputQuery->getExitCode();
 }
 
 const Statistics *Marabou::getStatistics() const
@@ -66,7 +74,7 @@ const Statistics *Marabou::getStatistics() const
     return _engine.getStatistics();
 }
 
-InputQuery Marabou::prepareInputQuery()
+InputQuery *Marabou::prepareInputQuery()
 {
     /*
       Step 1: extract the network
@@ -79,10 +87,12 @@ InputQuery Marabou::prepareInputQuery()
     }
     printf( "Network: %s\n", networkFilePath.ascii() );
 
-    InputQuery inputQuery;
+    InputQuery *inputQuery = new InputQuery;
+    _allocatedInputQuery = true;
+
     // For now, assume the network is given in ACAS format
     _acasParser = new AcasParser( networkFilePath );
-    _acasParser->generateQuery( inputQuery );
+    _acasParser->generateQuery( *inputQuery );
 
     /*
       Step 2: extract the property in question
@@ -90,13 +100,12 @@ InputQuery Marabou::prepareInputQuery()
     String propertyFilePath = Options::get()->getString( Options::PROPERTY_FILE_PATH );
     if ( propertyFilePath != "" )
     {
-        printf( "Property: %s\n", propertyFilePath.ascii() );
-        PropertyParser().parse( propertyFilePath, inputQuery );
+        printf( "Property: %s\n\n", propertyFilePath.ascii() );
+        PropertyParser().parse( propertyFilePath, *inputQuery );
     }
     else
-        printf( "Property: None\n" );
+        printf( "Property: None\n\n" );
 
-    printf( "\n" );
     return inputQuery;
 }
 
@@ -105,13 +114,15 @@ void Marabou::solveQuery()
     if ( _engine.processInputQuery( *_inputQuery ) )
         _engine.solve( Options::get()->getInt( Options::TIMEOUT ) );
 
-    if ( _engine.getExitCode() == InputQuery::SAT )
+    _inputQuery->setExitCode( _engine.getExitCode() );
+
+    if ( _inputQuery->getExitCode() == InputQuery::SAT )
         _engine.extractSolution( *_inputQuery );
 }
 
 void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
 {
-    InputQuery::ExitCode result = _engine.getExitCode();
+    InputQuery::ExitCode result = _inputQuery->getExitCode();
     String resultString;
 
     if ( result == InputQuery::UNSAT )

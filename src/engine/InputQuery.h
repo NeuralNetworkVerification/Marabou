@@ -27,7 +27,6 @@
 class InputQuery
 {
 public:
-    
     enum ExitCode {
         UNSAT = 0,
         SAT = 1,
@@ -41,7 +40,7 @@ public:
     InputQuery();
     ~InputQuery();
 
-        /*
+    /*
       Methods for setting and getting the input part of the query
     */
     void setNumberOfVariables( unsigned numberOfVariables );
@@ -80,7 +79,8 @@ public:
     */
     void setSolutionValue( unsigned variable, double value );
     double getSolutionValue( unsigned variable ) const;
-    std::map<int, double> getVariablesSolution() const;
+    Map<unsigned, double> getSolution() const;
+
     /*
       Count the number of infinite bounds in the input query.
     */
@@ -142,6 +142,13 @@ public:
     void setNetworkLevelReasoner( NetworkLevelReasoner *nlr );
     NetworkLevelReasoner *getNetworkLevelReasoner() const;
 
+    /*
+      Exit code methods
+    */
+    void setExitCode( ExitCode exitCode );
+    ExitCode getExitCode() const;
+    static String exitCodeToString( ExitCode exitCode );
+
 private:
     unsigned _numberOfVariables;
     List<Equation> _equations;
@@ -150,6 +157,11 @@ private:
     List<PiecewiseLinearConstraint *> _plConstraints;
 
     Map<unsigned, double> _solution;
+
+    /*
+      The exit code for this query
+    */
+    ExitCode _exitCode;
 
     /*
       Free any stored pl constraints.

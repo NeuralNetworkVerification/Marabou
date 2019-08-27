@@ -44,11 +44,6 @@ private:
     void setQueryDivider( DivideStrategy divideStrategy );
 
     /*
-      Convert the exitCode to string
-    */
-    static String exitCodeToString( InputQuery::ExitCode result );
-
-    /*
       Print the current progress
     */
     void printProgress( String queryId, InputQuery::ExitCode result ) const;

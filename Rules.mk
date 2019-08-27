@@ -74,7 +74,6 @@ LIBRARY_DIR += \
 
 LIBRARIES += \
 	pthread \
-	boost_program_options \
 
 LINK_FLAGS += \
 

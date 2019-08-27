@@ -24,6 +24,7 @@ class DnCMarabou
 {
 public:
     DnCMarabou();
+    ~DnCMarabou();
 
     /*
       Entry point of this class. The inputQuery is either supplied
@@ -35,10 +36,10 @@ public:
     void run( InputQuery &inputQuery );
 
     /*
-      Return the internal Engine exit code
+      Return the exit code of the input query that was run
     */
     InputQuery::ExitCode getExitCode() const;
-  
+
     /*
       Return the Engine Statistics
     */
@@ -46,6 +47,13 @@ public:
 
 private:
     std::unique_ptr<DnCManager> _dncManager;
+
+    InputQuery *_inputQuery;
+
+    /*
+      Indicates whether the input query should be freed() when the object dies
+    */
+    bool _allocatedInputQuery;
 
     /*
       Display the results

@@ -139,12 +139,14 @@ double InputQuery::getSolutionValue( unsigned variable ) const
     return _solution.get( variable );
 }
 
-std::map<int, double> InputQuery::getVariablesSolution() const
+Map<unsigned, double> InputQuery::getSolution() const
 {
-    std::map<int, double> ret;
-    for(unsigned int i=0; i<getNumberOfVariables(); i++)
-        ret[i] = getSolutionValue( i );
-    return ret;
+    Map<unsigned, double> solution;
+
+    for ( unsigned i = 0; i < getNumberOfVariables(); ++i )
+        solution[i] = getSolutionValue( i );
+
+    return solution;
 }
 
 void InputQuery::addPiecewiseLinearConstraint( PiecewiseLinearConstraint *constraint )
@@ -500,6 +502,36 @@ void InputQuery::setNetworkLevelReasoner( NetworkLevelReasoner *nlr )
 NetworkLevelReasoner *InputQuery::getNetworkLevelReasoner() const
 {
     return _networkLevelReasoner;
+}
+
+void InputQuery::setExitCode( ExitCode exitCode )
+{
+    _exitCode = exitCode;
+}
+
+InputQuery::ExitCode InputQuery::getExitCode() const
+{
+    return _exitCode;
+}
+
+String InputQuery::exitCodeToString( InputQuery::ExitCode exitCode )
+{
+    switch ( exitCode )
+    {
+    case InputQuery::UNSAT:
+        return "UNSAT";
+    case InputQuery::SAT:
+        return "SAT";
+    case InputQuery::ERROR:
+        return "ERROR";
+    case InputQuery::TIMEOUT:
+        return "TIMEOUT";
+    case InputQuery::QUIT_REQUESTED:
+        return "QUIT_REQUESTED";
+    default:
+        ASSERT( false );
+        return "UNKNOWN (this should never happen)";
+    }
 }
 
 //

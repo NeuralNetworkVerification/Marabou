@@ -36,12 +36,12 @@ public:
     void run( InputQuery &inputQuery );
 
     /*
-      Return the internal Engine exit code
+      Return the exit code of the input query that was run
     */
     InputQuery::ExitCode getExitCode() const;
 
     /*
-      Return the Engine Statistics
+      Return the Statistics gathered during the run
     */
     const Statistics *getStatistics() const;
 
@@ -49,10 +49,15 @@ private:
     InputQuery *_inputQuery;
 
     /*
+      Indicates whether the input query should be freed() when the object dies
+    */
+    bool _allocatedInputQuery;
+
+    /*
       Extract the input files: network and property, and use them
       to generate the input query
     */
-    InputQuery prepareInputQuery();
+    InputQuery *prepareInputQuery();
 
     /*
       Invoke the engine to solve the input query

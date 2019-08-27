@@ -23,7 +23,6 @@ void printVersion()
     std::cout << "Marabou version 1.0.0 " << std::endl;
 }
 
-
 void printHelpMessage()
 {
     printVersion();
@@ -60,7 +59,7 @@ int main( int argc, char **argv )
             return 0;
         };
 
-        if (options->getBool( Options::VERSION ) )
+        if ( options->getBool( Options::VERSION ) )
         {
             printVersion();
             return 0;
