@@ -44,10 +44,7 @@ vpath %.cpp $(ENGINE_REAL_DIR)
 vpath %.cpp $(INPUT_PARSER_DIR)
 
 SOURCES += \
-	DnCMarabou.cpp \
-	Marabou.cpp \
 	OptionParser.cpp \
-	Options.cpp \
 	main.cpp \
 
 TARGET = marabou.elf

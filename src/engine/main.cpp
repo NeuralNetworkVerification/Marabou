@@ -16,8 +16,8 @@
 #include "DnCMarabou.h"
 #include "Error.h"
 #include "Marabou.h"
-#include "Options.h"
 #include "OptionParser.h"
+#include "Options.h"
 
 void printVersion()
 {

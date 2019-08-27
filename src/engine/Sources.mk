@@ -6,15 +6,15 @@ SOURCES += \
 	DantzigsRule.cpp \
 	DegradationChecker.cpp \
 	DnCManager.cpp \
-	DnCWorker.cpp \
 	DnCMarabou.cpp \
-	Marabou.cpp \
+	DnCWorker.cpp \
 	Engine.cpp \
 	EngineState.cpp \
 	EntrySelectionStrategy.cpp \
 	Equation.cpp \
 	InputQuery.cpp \
 	LargestIntervalDivider.cpp \
+	Marabou.cpp \
 	MaxConstraint.cpp \
 	NetworkLevelReasoner.cpp \
 	PiecewiseLinearCaseSplit.cpp \

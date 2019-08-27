@@ -14,8 +14,8 @@
 **/
 
 #include "Debug.h"
-#include "Options.h"
 #include "OptionParser.h"
+#include "Options.h"
 
 OptionParser::OptionParser()
     : _optionDescription( "Supported options" )
@@ -25,35 +25,34 @@ OptionParser::OptionParser()
 void OptionParser::setOptions()
 {
     Options *options = Options::get();
-    if (_variableMap.count("pl-aux-eq"))
-        options->setBool(Options::PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS, _variableMap["pl-aux-eq"].as<bool>());
-    if (_variableMap.count("dnc"))
-        options->setBool(Options::DNC_MODE, _variableMap["dnc"].as<bool>());
-    if (_variableMap.count("input"))
-        options->setString(Options::INPUT_FILE_PATH, _variableMap["input"].as<std::string>());
-    if (_variableMap.count("property"))
-        options->setString(Options::PROPERTY_FILE_PATH, _variableMap["property"].as<std::string>());
-    if (_variableMap.count("summary-file"))
-        options->setString(Options::SUMMARY_FILE, _variableMap["summary-file"].as<std::string>());
-    if (_variableMap.count("num-workers"))
-        options->setInt(Options::NUM_WORKERS, _variableMap["num-workers"].as<int>());
-    if (_variableMap.count("initial-divides"))
-        options->setInt(Options::NUM_INITIAL_DIVIDES, _variableMap["initial-divides"].as<int>());
-    if (_variableMap.count("initial-timeout"))
-        options->setInt(Options::INITIAL_TIMEOUT, _variableMap["initial-timeout"].as<int>());
-    if (_variableMap.count("num-online-divides"))
-        options->setInt(Options::NUM_ONLINE_DIVIDES, _variableMap["num-online-divides"].as<int>());
-    if (_variableMap.count("timeout"))
-        options->setInt(Options::TIMEOUT, _variableMap["timeout"].as<int>());
-    if (_variableMap.count("verbosity"))
-        options->setInt(Options::VERBOSITY, _variableMap["verbosity"].as<int>());
-    if (_variableMap.count("timeout-factor"))
-        options->setFloat(Options::TIMEOUT_FACTOR, _variableMap["timeout-factor"].as<float>());
-    if (_variableMap.count("help"))
-        options->setBool(Options::HELP, _variableMap["help"].as<bool>());
-    if (_variableMap.count("version"))
-        options->setBool(Options::VERSION, _variableMap["version"].as<bool>());
-
+    if ( _variableMap.count( "pl-aux-eq" ) )
+        options->setBool( Options::PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS, _variableMap["pl-aux-eq"].as<bool>() );
+    if ( _variableMap.count( "dnc" ) )
+        options->setBool( Options::DNC_MODE, _variableMap["dnc"].as<bool>() );
+    if ( _variableMap.count( "input" ) )
+        options->setString( Options::INPUT_FILE_PATH, _variableMap["input"].as<std::string>() );
+    if ( _variableMap.count( "property" ) )
+        options->setString( Options::PROPERTY_FILE_PATH, _variableMap["property"].as<std::string>() );
+    if ( _variableMap.count( "summary-file" ) )
+        options->setString( Options::SUMMARY_FILE, _variableMap["summary-file"].as<std::string>() );
+    if ( _variableMap.count( "num-workers" ) )
+        options->setInt( Options::NUM_WORKERS, _variableMap["num-workers"].as<int>() );
+    if ( _variableMap.count( "initial-divides" ) )
+        options->setInt( Options::NUM_INITIAL_DIVIDES, _variableMap["initial-divides"].as<int>() );
+    if ( _variableMap.count( "initial-timeout" ) )
+        options->setInt( Options::INITIAL_TIMEOUT, _variableMap["initial-timeout"].as<int>() );
+    if ( _variableMap.count( "num-online-divides" ) )
+        options->setInt( Options::NUM_ONLINE_DIVIDES, _variableMap["num-online-divides"].as<int>() );
+    if ( _variableMap.count( "timeout" ) )
+        options->setInt( Options::TIMEOUT, _variableMap["timeout"].as<int>() );
+    if ( _variableMap.count( "verbosity" ) )
+        options->setInt( Options::VERBOSITY, _variableMap["verbosity"].as<int>() );
+    if ( _variableMap.count( "timeout-factor" ) )
+        options->setFloat( Options::TIMEOUT_FACTOR, _variableMap["timeout-factor"].as<float>() );
+    if ( _variableMap.count( "help" ) )
+        options->setBool( Options::HELP, _variableMap["help"].as<bool>() );
+    if ( _variableMap.count( "version" ) )
+        options->setBool( Options::VERSION, _variableMap["version"].as<bool>() );
 }
 
 void OptionParser::parse( int argc, char **argv )

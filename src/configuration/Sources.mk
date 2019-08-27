@@ -1,6 +1,7 @@
 SOURCES += \
 	GlobalConfiguration.cpp \
 	Options.cpp \
+
 #
 # Local Variables:
 # compile-command: "make -C ../.. "

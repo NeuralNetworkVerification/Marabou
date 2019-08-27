@@ -41,10 +41,10 @@ public:
     int extractIntValue( const String &option );
 
     /*
-      Sets the allowed options and their default values
+      Updates the global Options() values based on the parsed values
     */
     void setOptions();
-    
+
 private:
     boost::program_options::variables_map _variableMap;
     boost::program_options::options_description _optionDescription;
