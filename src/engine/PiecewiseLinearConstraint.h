@@ -204,6 +204,11 @@ public:
         return false;
     }
 
+    int get_lower_bound(int i)
+    {
+        return _lowerBounds[i];
+    }
+
 protected:
     bool _constraintActive;
 	Map<unsigned, double> _assignment;
