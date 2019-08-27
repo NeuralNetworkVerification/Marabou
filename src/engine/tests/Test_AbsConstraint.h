@@ -224,13 +224,18 @@ public:
         List<PiecewiseLinearConstraint::Fix>::iterator it;
 
         //   1. f is positive, b is positive, b and f are unequal
+
         abs.notifyVariableValue( b, 2 );
         abs.notifyVariableValue( f, 1 );
 
         fixes = abs.getPossibleFixes();
+        TS_ASSERT_EQUALS( fixes.size(),3 );
         it = fixes.begin();
         TS_ASSERT_EQUALS( it->_variable, b );
         TS_ASSERT_EQUALS( it->_value, 1 );
+        ++it;
+        TS_ASSERT_EQUALS( it->_variable, b );
+        TS_ASSERT_EQUALS( it->_value, -2 );
         ++it;
         TS_ASSERT_EQUALS( it->_variable, f );
         TS_ASSERT_EQUALS( it->_value, 2 );
@@ -240,9 +245,13 @@ public:
         abs.notifyVariableValue( f, 1 );
 
         fixes = abs.getPossibleFixes();
+        TS_ASSERT_EQUALS( fixes.size(),3 );
         it = fixes.begin();
         TS_ASSERT_EQUALS( it->_variable, b );
         TS_ASSERT_EQUALS( it->_value, 1 );
+        ++it;
+        TS_ASSERT_EQUALS( it->_variable, b );
+        TS_ASSERT_EQUALS( it->_value, -1 );
         ++it;
         TS_ASSERT_EQUALS( it->_variable, f );
         TS_ASSERT_EQUALS( it->_value, 2 );
