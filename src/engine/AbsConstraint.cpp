@@ -90,7 +90,7 @@ void AbsConstraint::notifyLowerBound( unsigned variable, double bound)
            if( bound < 0)
            {
                double newUpperBound = FloatUtils::abs(bound);
-               if ( _lowerBounds.exists( _f ) )
+               if ( _upperBounds.exists( _f ) )
                {
                    newUpperBound = FloatUtils::min( _upperBounds[_f], newUpperBound );
                }
@@ -225,9 +225,9 @@ List<PiecewiseLinearConstraint::Fix> AbsConstraint::getPossibleFixes() const
     //   1. f is positive, b is positive, b and f are unequal
     //   2. f is positive, b is negative, -b and f are unequal
 
-    if ( FloatUtils::isPositive( fValue ) ) {
-        fixes.append(PiecewiseLinearConstraint::Fix(_b, fValue));
-        fixes.append(PiecewiseLinearConstraint::Fix(_f, abs(bValue)));
+    fixes.append(PiecewiseLinearConstraint::Fix(_b, fValue));
+    fixes.append(PiecewiseLinearConstraint::Fix(_b, -fValue));
+    fixes.append(PiecewiseLinearConstraint::Fix(_f, abs(bValue)));
     }
 
     return fixes;
