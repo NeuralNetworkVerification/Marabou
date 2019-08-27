@@ -37,7 +37,6 @@
 #include "Set.h"
 #include "DnCMarabou.h"
 #include "Marabou.h"
-#include "Options.h"
 
 namespace py = pybind11;
 
@@ -105,17 +104,19 @@ void createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::
     printf( "Property: None\n" );
 }
 
-std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::string redirect="", unsigned timeout=0, bool dnc=false){
+std::pair<std::map<unsigned, double>, Statistics> solve(InputQuery inputQuery, std::string redirect="", unsigned timeout=0, bool dnc=false){
     // Arguments: InputQuery object, filename to redirect output
     // Returns: map from variable number to value
-    std::map<int, double> ret;
+    std::map<unsigned, double> ret;
     Statistics retStats;
     int output=-1;
     InputQuery::ExitCode exitCode;
     if(redirect.length()>0)
         output=redirectOutputToFile(redirect);
     try{
-        Options::get()->setInt(Options::TIMEOUT, timeout);
+        //        Options::get()->setInt(Options::TIMEOUT, timeout);
+        (void)timeout;
+
         if(dnc)
         {
             DnCMarabou dncMarabou;
@@ -165,6 +166,7 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def("setNumberOfVariables", &InputQuery::setNumberOfVariables)
         .def("addEquation", &InputQuery::addEquation)
         .def("getSolutionValue", &InputQuery::getSolutionValue)
+        .def("getSolution", &InputQuery::getSolution)
         .def("getNumInputVariables", &InputQuery::getNumInputVariables)
         .def("getNumOutputVariables", &InputQuery::getNumOutputVariables)
         .def("inputVariableByIndex", &InputQuery::inputVariableByIndex)

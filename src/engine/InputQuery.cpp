@@ -139,9 +139,9 @@ double InputQuery::getSolutionValue( unsigned variable ) const
     return _solution.get( variable );
 }
 
-Map<unsigned, double> InputQuery::getSolution() const
+std::map<unsigned, double> InputQuery::getSolution() const
 {
-    Map<unsigned, double> solution;
+    std::map<unsigned, double> solution;
 
     for ( unsigned i = 0; i < getNumberOfVariables(); ++i )
         solution[i] = getSolutionValue( i );

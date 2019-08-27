@@ -79,7 +79,7 @@ public:
     */
     void setSolutionValue( unsigned variable, double value );
     double getSolutionValue( unsigned variable ) const;
-    Map<unsigned, double> getSolution() const;
+    std::map<unsigned, double> getSolution() const;
 
     /*
       Count the number of infinite bounds in the input query.

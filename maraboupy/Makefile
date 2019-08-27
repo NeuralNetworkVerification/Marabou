@@ -12,12 +12,8 @@ LOCAL_INCLUDES += \
 	$(CONFIGURATION_DIR) \
 	$(ENGINE_DIR) \
 	$(INPUT_PARSER_DIR) \
-	$(BOOST_INCLUDES) \
 
 LINK_FLAGS += \
-
-LIBRARIES += \
-	boost_program_options \
 
 LOCAL_LIBRARIES += \
 
