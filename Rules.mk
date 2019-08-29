@@ -2,6 +2,11 @@
 # Utilities
 #
 
+GIT_HASH=`git rev-parse HEAD`
+GIT_BRANCH=`git rev-parse --abbrev-ref HEAD)`
+MARABOU_VERSION=1.0.+
+export VERSION_FLAGS=-DGIT_HASH=\"$(GIT_HASH)\" -DGIT_BRANCH=\"$(GIT_BRANCH)\" -DMARABOU_VERSION=\"$(MARABOU_VERSION)\"
+
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
 	COMPILER = g++
@@ -54,6 +59,9 @@ CFLAGS += \
 	-Werror \
 	-Wno-deprecated \
 	-std=c++0x \
+
+CFLAGS += \
+	$(VERSION_FLAGS) \
 
 %.obj: %.cpp
 	@echo "CC\t" $@
