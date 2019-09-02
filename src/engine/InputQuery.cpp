@@ -303,17 +303,21 @@ void InputQuery::saveQuery( const String &fileName )
     queryFile->write( Stringf( "%u\n", _numberOfVariables ) );
     // Number of Bounds
     queryFile->write( Stringf( "%u\n", _lowerBounds.size() ) );
-
     // Number of Equations
     queryFile->write( Stringf( "%u\n", _equations.size() ) );
-
     // Number of constraints
-    queryFile->write( Stringf( "%u", _plConstraints.size() ) );
-
+    queryFile->write( Stringf( "%u\n", _plConstraints.size() ) );
+    // Number of input variables
+    queryFile->write( Stringf( "%u\n", _inputIndexToVariable.size() ) );
+    // Number of output variables
+    queryFile->write( Stringf( "%u", _outputIndexToVariable.size() ) );
+    
     printf("Number of variables: %u\n", _numberOfVariables);
     printf("Number of bounds: %u\n", _lowerBounds.size());
     printf("Number of equations: %u\n", _equations.size());
     printf("Number of constraints: %u\n", _plConstraints.size());
+    printf("Number of input variables: %u\n", _inputIndexToVariable.size());
+    printf("Number of output variables: %u\n", _outputIndexToVariable.size());
 
     // Bounds
     for ( const auto &lb : _lowerBounds )
@@ -344,6 +348,16 @@ void InputQuery::saveQuery( const String &fileName )
         queryFile->write( Stringf( "\n%u,", j ) );
         queryFile->write( constraint->serializeToString() );
         ++j;
+    }
+
+    for ( const auto &it : _inputIndexToVariable )
+    {
+        queryFile->write( Stringf( "\n%d,%d", it.first, it.second ) );
+    }
+
+    for ( const auto &it : _outputIndexToVariable )
+    {
+        queryFile->write( Stringf( "\n%d,%d", it.first, it.second ) );
     }
 
     queryFile->close();

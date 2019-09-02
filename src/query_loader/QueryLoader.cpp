@@ -41,11 +41,15 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
     unsigned numBounds = atoi( input.readLine().trim().ascii() );
     unsigned numEquations = atoi( input.readLine().trim().ascii() );
     unsigned numConstraints = atoi( input.readLine().trim().ascii() );
+    unsigned numInputVars = atoi( input.readLine().ascii() );
+    unsigned numOutputVars = atoi( input.readLine().ascii() );
 
     log(Stringf("Number of variables: %u\n", numVars));
     log(Stringf("Number of bounds: %u\n", numBounds));
     log(Stringf("Number of equations: %u\n", numEquations));
     log(Stringf("Number of constraints: %u\n", numConstraints));
+    log(Stringf("Number of input variables: %u\n", numInputVars));
+    log(Stringf("Number of output variables: %u\n", numOutputVars));
 
     inputQuery.setNumberOfVariables( numVars );
 
@@ -170,6 +174,48 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
 
         ASSERT( constraint );
         inputQuery.addPiecewiseLinearConstraint( constraint );
+    }
+
+    // Input Variables
+    for ( unsigned i = 0; i < numInputVars; ++i )
+    {   
+        log(Stringf("InputVar: %u\n", i));
+        String line = input.readLine();
+        List<String> tokens = line.tokenize( "," );
+
+        // format: <var, lb, ub>
+        ASSERT(tokens.size() == 2);
+
+        auto it = tokens.begin();
+        unsigned index = atoi( it->ascii() );
+        ++it;
+
+        unsigned var = atof( it->ascii() );
+        ++it;
+
+        log(Stringf("Index: %u, Var: %u\n", index, var));
+        inputQuery.markInputVariable( var, index );
+    }
+    
+    // Output Variables
+    for ( unsigned i = 0; i < numOutputVars; ++i )
+    {   
+        log(Stringf("OutputVar: %u\n", i));
+        String line = input.readLine();
+        List<String> tokens = line.tokenize( "," );
+
+        // format: <var, lb, ub>
+        ASSERT(tokens.size() == 2);
+
+        auto it = tokens.begin();
+        unsigned index = atoi( it->ascii() );
+        ++it;
+
+        unsigned var = atof( it->ascii() );
+        ++it;
+
+        log(Stringf("Index: %u, Var: %u\n", index, var));
+        inputQuery.markOutputVariable( var, index );
     }
 
     return inputQuery;
