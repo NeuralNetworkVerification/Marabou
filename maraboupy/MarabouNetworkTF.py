@@ -528,7 +528,6 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         Returns:
             outputValues: (np array) representing output of network
         """
-        print("Evaluating without Marabou")
         inputValuesReshaped = []
         for j in range(len(self.inputOps)):
             inputOp = self.inputOps[j]
