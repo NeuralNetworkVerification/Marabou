@@ -3,7 +3,7 @@
 #
 
 GIT_HASH=`git rev-parse HEAD`
-GIT_BRANCH=`git rev-parse --abbrev-ref HEAD)`
+GIT_BRANCH=`git rev-parse --abbrev-ref HEAD`
 MARABOU_VERSION=1.0.+
 export VERSION_FLAGS=-DGIT_HASH=\"$(GIT_HASH)\" -DGIT_BRANCH=\"$(GIT_BRANCH)\" -DMARABOU_VERSION=\"$(MARABOU_VERSION)\"
 
