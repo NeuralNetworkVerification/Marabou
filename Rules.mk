@@ -72,6 +72,7 @@ LIBRARY_DIR += \
 
 LIBRARIES += \
 	pthread \
+	openblas \
 
 LINK_FLAGS += \
 

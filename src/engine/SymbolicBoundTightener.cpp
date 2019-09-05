@@ -18,6 +18,7 @@
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "SymbolicBoundTightener.h"
+#include <chrono>
 
 SymbolicBoundTightener::SymbolicBoundTightener()
     : _layerSizes( NULL )
@@ -370,31 +371,22 @@ void SymbolicBoundTightener::run( bool useLinearConcretization )
 
             newUB, newLB dimensions: inputLayerSize x layerSize
         */
-
-        for ( unsigned i = 0; i < _inputLayerSize; ++i )
-        {
-            for ( unsigned j = 0; j < currentLayerSize; ++j )
-            {
-                for ( unsigned k = 0; k < previousLayerSize; ++k )
-                {
-                    _currentLayerLowerBounds[i * currentLayerSize + j] +=
-                        _previousLayerUpperBounds[i * previousLayerSize + k] *
-                        weights._negativeValues[k * currentLayerSize + j];
-
-                    _currentLayerLowerBounds[i * currentLayerSize + j] +=
-                        _previousLayerLowerBounds[i * previousLayerSize + k] *
-                        weights._positiveValues[k * currentLayerSize + j];
-
-                    _currentLayerUpperBounds[i * currentLayerSize + j] +=
-                        _previousLayerUpperBounds[i * previousLayerSize + k] *
-                        weights._positiveValues[k * currentLayerSize + j];
-
-                    _currentLayerUpperBounds[i * currentLayerSize + j] +=
-                        _previousLayerLowerBounds[i * previousLayerSize + k] *
-                        weights._negativeValues[k * currentLayerSize + j];
-                }
-            }
-        }
+        auto start = std::chrono::high_resolution_clock::now();
+        matrixMultiplication( _previousLayerUpperBounds, weights._positiveValues,
+                              _currentLayerUpperBounds, _inputLayerSize,
+                              previousLayerSize, currentLayerSize );
+        matrixMultiplication( _previousLayerLowerBounds, weights._negativeValues,
+                              _currentLayerUpperBounds, _inputLayerSize,
+                              _layerSizes[currentLayer - 1], _layerSizes[currentLayer] );
+        matrixMultiplication( _previousLayerLowerBounds, weights._positiveValues,
+                              _currentLayerLowerBounds, _inputLayerSize,
+                              previousLayerSize, currentLayerSize );
+        matrixMultiplication( _previousLayerUpperBounds, weights._negativeValues,
+                              _currentLayerLowerBounds, _inputLayerSize,
+                              previousLayerSize, currentLayerSize );
+        auto finish = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed = finish - start;
+        std::cout << "Elapsed time: " << elapsed.count() << " s\n";
 
         /*
           Compute the biases for the new layer
@@ -882,6 +874,15 @@ void SymbolicBoundTightener::storeIntoOther( SymbolicBoundTightener &other ) con
     other._nodeIndexToEliminatedReluState = _nodeIndexToEliminatedReluState;
 
     other._inputNeuronToIndex = _inputNeuronToIndex;
+}
+
+void SymbolicBoundTightener::matrixMultiplication( double *matA, double *matB,
+                                                   double *matC, unsigned rowsA,
+                                                   unsigned columnsA,
+                                                   unsigned columnsB )
+{
+    cblas_dgemm( CblasColMajor, CblasTrans, CblasNoTrans, rowsA, columnsB,
+                 columnsA, 1, matA, rowsA, matB, columnsA, 1, matC, rowsA);
 }
 
 //

@@ -19,6 +19,8 @@
 #include "MString.h"
 #include "Map.h"
 
+#include "cblas.h"
+
 // Todo: remove this include later
 #include "ReluConstraint.h"
 
@@ -177,6 +179,15 @@ private:
 
     void freeMemoryIfNeeded();
     static void log( const String &message );
+
+    // Matrix operation
+
+    /*
+      Compute matA * matB + matC and store the result in matC
+    */
+    void matrixMultiplication( double *matA, double *matB, double *matC,
+                               unsigned rowsA, unsigned columnsA,
+                               unsigned columnsB );
 };
 
 #endif // __SymbolicBoundTightener_h__
