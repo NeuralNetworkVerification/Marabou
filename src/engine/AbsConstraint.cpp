@@ -75,8 +75,16 @@ void AbsConstraint::notifyLowerBound( unsigned variable, double bound)
     //update the input variable bound
     if ( _lowerBounds.exists( variable ) && !FloatUtils::gt( bound, _lowerBounds[variable] ) )
         return;
+    //todo ask guy about the return and the exists
+    if ((variable == _f) && FloatUtils::isNegative( bound ) && !_lowerBounds.exists( variable ) )
+    {
+        _lowerBounds[variable] = FloatUtils::max( _lowerBounds[_f], 0.0 );
+        return;
+    }
+    else{
+        _lowerBounds[variable] = bound;
+    }
 
-    _lowerBounds[variable] = bound;
 
     //fix phase, only by x_b because x_b <= x_f
     if ( (variable == _b) && !FloatUtils::isNegative( bound ) )
@@ -131,7 +139,16 @@ void AbsConstraint::notifyUpperBound(  unsigned variable, double bound )
     if ( _upperBounds.exists( variable ) && !FloatUtils::lt( bound, _upperBounds[variable] ) )
         return;
 
-    _upperBounds[variable] = bound;
+    //todo ask guy about the return and the exists
+    if ((variable == _f) && FloatUtils::isNegative( bound ) && !_upperBounds.exists( variable ) )
+    {
+        _upperBounds[variable] = FloatUtils::min( _upperBounds[_f], 0.0 );
+        return;
+    }
+    else {
+        _upperBounds[variable] = bound;
+    }
+
 
     //fix phase, only by x_b because x_b <= x_f
     if ( ( variable == _b ) && FloatUtils::isNegative( bound ) )
@@ -362,7 +379,7 @@ void AbsConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
 {
     if (! _lowerBounds.exists( _f ))
     {
-        tightenings.append( Tightening( _f, 0.0, Tightening::LB ) );
+        tightenings.append( Tightening( _f, 0.0, Tightening::LB) );
     }
 
     ASSERT( _lowerBounds.exists( _b ) && _lowerBounds.exists( _f ) &&

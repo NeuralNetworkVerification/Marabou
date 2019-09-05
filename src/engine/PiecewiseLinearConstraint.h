@@ -209,6 +209,12 @@ public:
         return _lowerBounds[i];
     }
 
+
+    int get_upper_bound(int i)
+    {
+        return _upperBounds[i];
+    }
+
 protected:
     bool _constraintActive;
 	Map<unsigned, double> _assignment;
