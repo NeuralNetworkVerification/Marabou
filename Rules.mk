@@ -46,6 +46,7 @@ LOCAL_INCLUDES += \
 	$(COMMON_DIR) \
 	$(CXXTEST_DIR) \
 	$(BOOST_INCLUDES) \
+	$(OPENBLAS_INCLUDES) \
 
 CFLAGS += \
 	-MMD \
@@ -69,6 +70,7 @@ CFLAGS += \
 #
 
 LIBRARY_DIR += \
+	$(OPENBLAS_LIBS_DIR) \
 
 LIBRARIES += \
 	pthread \

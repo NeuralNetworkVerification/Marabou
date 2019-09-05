@@ -3,6 +3,7 @@ language: cpp
 dist: trusty
 
 script:
+  - tools/get-openBLAS.sh
   - make
 
 matrix:

@@ -9,6 +9,8 @@ TOOLS_DIR	  = $(PROJECT_DIR)/tools
 CXXTEST_DIR 	  = $(TOOLS_DIR)/cxxtest
 BOOST_LIBS_DIR	  = $(TOOLS_DIR)/boost_1_68_0/installed/lib
 BOOST_INCLUDES	  = $(TOOLS_DIR)/boost_1_68_0/installed/include
+OPENBLAS_LIBS_DIR	= $(TOOLS_DIR)/OpenBLAS/installed/lib
+OPENBLAS_INCLUDES	= $(TOOLS_DIR)/OpenBLAS/installed/include
 
 INPUT_PARSER_DIR  = $(SRC_DIR)/input_parsers
 

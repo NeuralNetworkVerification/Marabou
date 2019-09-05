@@ -18,7 +18,6 @@
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "SymbolicBoundTightener.h"
-#include <chrono>
 
 SymbolicBoundTightener::SymbolicBoundTightener()
     : _layerSizes( NULL )
@@ -371,7 +370,6 @@ void SymbolicBoundTightener::run( bool useLinearConcretization )
 
             newUB, newLB dimensions: inputLayerSize x layerSize
         */
-        auto start = std::chrono::high_resolution_clock::now();
         matrixMultiplication( _previousLayerUpperBounds, weights._positiveValues,
                               _currentLayerUpperBounds, _inputLayerSize,
                               previousLayerSize, currentLayerSize );
@@ -384,9 +382,6 @@ void SymbolicBoundTightener::run( bool useLinearConcretization )
         matrixMultiplication( _previousLayerUpperBounds, weights._negativeValues,
                               _currentLayerLowerBounds, _inputLayerSize,
                               previousLayerSize, currentLayerSize );
-        auto finish = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> elapsed = finish - start;
-        std::cout << "Elapsed time: " << elapsed.count() << " s\n";
 
         /*
           Compute the biases for the new layer
