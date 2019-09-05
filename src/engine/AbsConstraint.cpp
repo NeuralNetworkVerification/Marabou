@@ -75,11 +75,12 @@ void AbsConstraint::notifyLowerBound( unsigned variable, double bound)
     //update the input variable bound
     if ( _lowerBounds.exists( variable ) && !FloatUtils::gt( bound, _lowerBounds[variable] ) )
         return;
+    if ((variable == _f) &&  && FloatUtils::isNegative( bound ) && _lowerBounds.exists( variable))
+        return;
     //todo ask guy about the return and the exists
     if ((variable == _f) && FloatUtils::isNegative( bound ) && !_lowerBounds.exists( variable ) )
     {
-        _lowerBounds[variable] = FloatUtils::max( _lowerBounds[_f], 0.0 );
-        return;
+        _lowerBounds[variable] = 0.0;
     }
     else{
         _lowerBounds[variable] = bound;
@@ -142,8 +143,7 @@ void AbsConstraint::notifyUpperBound(  unsigned variable, double bound )
     //todo ask guy about the return and the exists
     if ((variable == _f) && FloatUtils::isNegative( bound ) && !_upperBounds.exists( variable ) )
     {
-        _upperBounds[variable] = FloatUtils::min( _upperBounds[_f], 0.0 );
-        return;
+        _upperBounds[variable] = 0.0;
     }
     else {
         _upperBounds[variable] = bound;
