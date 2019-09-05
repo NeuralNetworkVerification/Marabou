@@ -290,7 +290,7 @@ public:
     }
 
 
-    void test_abs_entailed_tighteningst() {
+    void test_abs_entailed_tighteningst1() {
         /**
          * suppose A < x_b < B, C < x_f < D, remainder C >= 0 ,D > 0
          */
@@ -308,11 +308,8 @@ public:
         abs.notifyUpperBound( f, 7 );
         abs.notifyLowerBound( b, 1);
         abs.notifyLowerBound( f, 2);
-
-
         // 1 < x_b < 7 , 2 < x_f < 7 -> 2 < x_b
         abs.getEntailedTightenings( entailedTightenings );
-
 
         TS_TRACE("\n");
         TS_TRACE("\n");
@@ -323,9 +320,10 @@ public:
         TS_ASSERT_EQUALS( it->_value, 2 );
         TS_ASSERT_EQUALS( it->_type, Tightening::LB );
 
-        // B = D , A < C
-        //3 < x_b < 7 , 2 < x_f < 7 -> 3 < x_f
+        // B = D , A > C
+        //1 < x_b < 7 , 2 < x_f < 7
         abs.notifyLowerBound( b, 3);
+        //--> 3 < x_b --> 3 < x_f
         entailedTightenings.clear();
         abs.getEntailedTightenings( entailedTightenings );
         TS_ASSERT_EQUALS( entailedTightenings.size(),1U );
@@ -334,23 +332,193 @@ public:
         TS_ASSERT_EQUALS( it->_value, 3 );
         TS_ASSERT_EQUALS( it->_type, Tightening::LB );
 
-        TS_TRACE(abs.get_lower_bound(f));
-        TS_TRACE(abs.get_lower_bound(b));
+        abs.notifyLowerBound( f, 3);
 
-   //     abs.notifyLowerBound( f, 3);
 
         // B < D , A = C
-        //3 < x_b < 6 , 3 < x_f < 7 -> x_f < 6
+        //3 < x_b < 6 , 3 < x_f < 7
         abs.notifyUpperBound(b, 6);
+        //--> x_f < 6
         entailedTightenings.clear();
         abs.getEntailedTightenings( entailedTightenings );
         TS_ASSERT_EQUALS( entailedTightenings.size(),1U );
 
         it = entailedTightenings.begin();
-        TS_TRACE(it->_variable);
-        TS_TRACE(it->_value);
-        TS_TRACE(it->_type);
+        TS_ASSERT_EQUALS( it->_variable, f );
+        TS_ASSERT_EQUALS( it->_value, 6 );
+        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
 
+        abs.notifyUpperBound( f, 6);
+
+
+        // B > D , A = C
+        //3 < x_b < 6 , 3 < x_f < 6
+        abs.notifyUpperBound(b, 7);
+        // --> x_b < 6
+        TS_TRACE(abs.get_upper_bound(f));
+        TS_TRACE(abs.get_upper_bound(b));
+
+        entailedTightenings.clear();
+//        abs.getEntailedTightenings( entailedTightenings );
+//        TS_ASSERT_EQUALS( entailedTightenings.size(),0U );
+//        it = entailedTightenings.begin();
+//        TS_TRACE(it->_variable);
+//        TS_TRACE(it->_value);
+//        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+//        it++;
+//        TS_TRACE(it->_variable);
+//        TS_TRACE(it->_value);
+//        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+
+
+        //A > 0 & B > 0 & C < 0
+        // B = D , A > C
+        //3 < x_b < 6 , 3 < x_f < 6
+        abs.notifyLowerBound(f, -3);
+        // --> 3 < x_f
+        entailedTightenings.clear();
+        abs.getEntailedTightenings( entailedTightenings );
+        TS_ASSERT_EQUALS( entailedTightenings.size(),0U );
+
+        //A > 0 & B > 0 & C < 0
+        // B = D , A > C
+        //-3 < x_b < 6 , 3 < x_f < 6 --> ---
+        abs.notifyLowerBound(b, -3);
+        entailedTightenings.clear();
+        abs.getEntailedTightenings( entailedTightenings );
+        TS_ASSERT_EQUALS( entailedTightenings.size(),0U );
+    }
+
+
+    void test_abs_entailed_tighteningst2() {
+        /**
+         * suppose A < x_b < B, C < x_f < D, remainder C >= 0 ,D > 0
+         */
+        unsigned b = 1;
+        unsigned f = 4;
+
+        AbsConstraint abs(b, f);
+        List<Tightening> entailedTightenings;
+        List<Tightening>::iterator it;
+
+
+        //A < 0 & B < 0 & C < 0
+        // B = D , A > C
+        abs.notifyUpperBound( b, -1 );
+        abs.notifyUpperBound( f, -1 );
+        abs.notifyLowerBound( b, -7);
+        abs.notifyLowerBound( f, -8);
+        print_bounds(abs, b,f);
+        // -7 < x_b < -1 , -8 < x_f < 0
+        abs.getEntailedTightenings( entailedTightenings );
+        print_entailed_Tightenings(entailedTightenings);
+        TS_TRACE("abs test response");
+        TS_ASSERT_EQUALS( entailedTightenings.size(),1U );
+        it = entailedTightenings.begin();
+        TS_ASSERT_EQUALS( it->_variable, f );
+        TS_ASSERT_EQUALS( it->_value, -7 );
+        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
+
+//        // B = D , A > C
+//        //1 < x_b < 7 , 2 < x_f < 7
+//        abs.notifyLowerBound( b, 3);
+//        //--> 3 < x_b --> 3 < x_f
+//        entailedTightenings.clear();
+//        abs.getEntailedTightenings( entailedTightenings );
+//        TS_ASSERT_EQUALS( entailedTightenings.size(),1U );
+//        it = entailedTightenings.begin();
+//        TS_ASSERT_EQUALS( it->_variable, f );
+//        TS_ASSERT_EQUALS( it->_value, 3 );
+//        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
+//
+//        abs.notifyLowerBound( f, 3);
+//
+//
+//        // B < D , A = C
+//        //3 < x_b < 6 , 3 < x_f < 7
+//        abs.notifyUpperBound(b, 6);
+//        //--> x_f < 6
+//        entailedTightenings.clear();
+//        abs.getEntailedTightenings( entailedTightenings );
+//        TS_ASSERT_EQUALS( entailedTightenings.size(),1U );
+//
+//        it = entailedTightenings.begin();
+//        TS_ASSERT_EQUALS( it->_variable, f );
+//        TS_ASSERT_EQUALS( it->_value, 6 );
+//        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+//
+//        abs.notifyUpperBound( f, 6);
+//
+//
+//        // B > D , A = C
+//        //3 < x_b < 6 , 3 < x_f < 6
+//        abs.notifyUpperBound(b, 7);
+//        // --> x_b < 6
+//        TS_TRACE(abs.get_upper_bound(f));
+//        TS_TRACE(abs.get_upper_bound(b));
+//
+//        entailedTightenings.clear();
+////        abs.getEntailedTightenings( entailedTightenings );
+////        TS_ASSERT_EQUALS( entailedTightenings.size(),0U );
+////        it = entailedTightenings.begin();
+////        TS_TRACE(it->_variable);
+////        TS_TRACE(it->_value);
+////        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+////        it++;
+////        TS_TRACE(it->_variable);
+////        TS_TRACE(it->_value);
+////        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+//
+//
+//        //A > 0 & B > 0 & C < 0
+//        // B = D , A > C
+//        //3 < x_b < 6 , 3 < x_f < 6
+//        abs.notifyLowerBound(f, -3);
+//        // --> 3 < x_f
+//        entailedTightenings.clear();
+//        abs.getEntailedTightenings( entailedTightenings );
+//        TS_ASSERT_EQUALS( entailedTightenings.size(),0U );
+//
+//        //A > 0 & B > 0 & C < 0
+//        // B = D , A > C
+//        //-3 < x_b < 6 , 3 < x_f < 6 --> ---
+//        abs.notifyLowerBound(b, -3);
+//        entailedTightenings.clear();
+//        abs.getEntailedTightenings( entailedTightenings );
+//        TS_ASSERT_EQUALS( entailedTightenings.size(),0U );
+    }
+
+    void print_bounds(AbsConstraint abs, unsigned b, unsigned f)
+    {
+        TS_TRACE("b upper bound");
+        TS_TRACE(abs.get_upper_bound(b));
+        TS_TRACE("f upper bound");
+        TS_TRACE(abs.get_upper_bound(f));
+
+        TS_TRACE("b lower bound");
+        TS_TRACE(abs.get_lower_bound(b));
+        TS_TRACE("f lower bound");
+        TS_TRACE(abs.get_lower_bound(f));
+    }
+
+
+    void print_entailed_Tightenings(List<Tightening> entailedTightenings)
+    {
+        List<Tightening>::iterator it;
+        it = entailedTightenings.begin();
+
+        for (unsigned int i = 0; i < entailedTightenings.size(); i++)
+        {
+            TS_TRACE("entailedTightenings var, value, type");
+            TS_TRACE(it->_variable);
+            TS_TRACE(it->_value);
+            TS_TRACE(it->_type);
+            TS_ASSERT_EQUALS( it->_type, Tightening::LB );
+            it++;
+
+        }
+
+//
     }
 };
 #endif //MARABOU_TEST_ABSCONSTRAINT_H
