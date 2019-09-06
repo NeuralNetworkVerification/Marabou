@@ -215,7 +215,10 @@ bool Engine::solve( unsigned timeoutInSeconds )
                     if ( _tableau->getBasicAssignmentStatus() !=
                          ITableau::BASIC_ASSIGNMENT_JUST_COMPUTED )
                     {
-                        printf( "Before declaring SAT, recomputing...\n" );
+                        if ( _verbosity > 0 )
+                        {
+                            printf( "Before declaring SAT, recomputing...\n" );
+                        }
                         // Make sure that the assignment is precise before declaring success
                         _tableau->computeAssignment();
                         continue;
