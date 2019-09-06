@@ -114,14 +114,16 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, std::
     if(redirect.length()>0)
         output=redirectOutputToFile(redirect);
     try{
-        Engine *engine = new Engine(verbosity);
-        if(!engine->processInputQuery(inputQuery)) return std::make_pair(ret, *(engine->getStatistics()));
+        Engine engine;
+        engine.setVerbosity(verbosity);
 
-        if(!engine->solve(timeout)) return std::make_pair(ret, *(engine->getStatistics()));
+        if(!engine.processInputQuery(inputQuery)) return std::make_pair(ret, *(engine.getStatistics()));
 
-        if (engine->getExitCode() == Engine::SAT)
-            engine->extractSolution(inputQuery);
-        retStats = *(engine->getStatistics());
+        if(!engine.solve(timeout)) return std::make_pair(ret, *(engine.getStatistics()));
+
+        if (engine.getExitCode() == Engine::SAT)
+            engine.extractSolution(inputQuery);
+        retStats = *(engine.getStatistics());
         for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); i++)
             ret[i] = inputQuery.getSolutionValue(i);
     }

@@ -132,6 +132,7 @@ public:
 
     void resetBoundTighteners();
 
+    void setVerbosity (unsigned verbosity);
 private:
     enum BasisRestorationRequired {
         RESTORATION_NOT_NEEDED = 0,

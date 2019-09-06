@@ -34,7 +34,7 @@ def define_network():
 
     return network
 
-def test_solve_partial_aqguments():
+def test_solve_partial_arguments():
     network = define_network()
     MarabouCore.solve(network)
 
