@@ -15,6 +15,7 @@
 
 #include <cxxtest/TestSuite.h>
 
+/* #include "MockErrno.h" */
 #include "BasisFactorizationError.h"
 #include "EtaMatrix.h"
 #include "FloatUtils.h"

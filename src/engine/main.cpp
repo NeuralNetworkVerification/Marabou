@@ -18,7 +18,6 @@
 #include "Marabou.h"
 #include "Options.h"
 
-
 static std::string getCompiler() {
     std::stringstream ss;
 #ifdef __GNUC__
@@ -41,7 +40,9 @@ static std::string getCompiledDateTime() {
 
 void printVersion()
 {
-    std::cout << "Marabou version " << MARABOU_VERSION << " [" << GIT_BRANCH << " " << GIT_HASH << "]"
+    std::cout << 
+        "Marabou version " << MARABOU_VERSION << 
+        " [" << GIT_BRANCH << " " << GIT_COMMIT_HASH << "]"
 	      << "\ncompiled with " << getCompiler()
 	      << "\non " << getCompiledDateTime()
 	      << std::endl;
