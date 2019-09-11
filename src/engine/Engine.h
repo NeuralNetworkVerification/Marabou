@@ -412,6 +412,13 @@ private:
     bool shouldExitDueToTimeout( unsigned timeout ) const;
 
     /*
+      Evaluate the network on legal inputs; obtain the assignment
+      for as many intermediate nodes as possible; and then try
+      to assign these values to the corresponding variables.
+    */
+    void warmStart();
+
+    /*
       Helper functions for input query preprocessing
     */
     void informConstraintsOfInitialBounds( InputQuery &inputQuery ) const;

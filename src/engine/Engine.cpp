@@ -22,9 +22,9 @@
 #include "InputQuery.h"
 #include "MStringf.h"
 #include "MalformedBasisException.h"
+#include "MarabouError.h"
 #include "PiecewiseLinearConstraint.h"
 #include "Preprocessor.h"
-#include "MarabouError.h"
 #include "TableauRow.h"
 #include "TimeUtils.h"
 
@@ -210,7 +210,10 @@ bool Engine::solve( unsigned timeoutInSeconds )
                     if ( _tableau->getBasicAssignmentStatus() !=
                          ITableau::BASIC_ASSIGNMENT_JUST_COMPUTED )
                     {
-                        printf( "Before declaring SAT, recomputing...\n" );
+                        if ( _verbosity > 0 )
+                        {
+                            printf( "Before declaring SAT, recomputing...\n" );
+                        }
                         // Make sure that the assignment is precise before declaring success
                         _tableau->computeAssignment();
                         continue;
@@ -1059,7 +1062,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         List<unsigned> initialBasis;
         List<unsigned> basicRows;
-        selectInitialVariablesForBasis( constraintMatrix, initialBasis, basicRows ); // HERE
+        selectInitialVariablesForBasis( constraintMatrix, initialBasis, basicRows );
         addAuxiliaryVariables();
         augmentInitialBasisIfNeeded( initialBasis, basicRows );
 
@@ -1069,8 +1072,11 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         delete[] constraintMatrix;
         constraintMatrix = createConstraintMatrix();
 
-        initializeTableau( constraintMatrix, initialBasis );
         initializeNetworkLevelReasoning();
+        initializeTableau( constraintMatrix, initialBasis );
+
+        if ( GlobalConfiguration::WARM_START )
+            warmStart();
 
         delete[] constraintMatrix;
 
@@ -1831,6 +1837,59 @@ void Engine::resetBoundTighteners()
 {
     _constraintBoundTightener->resetBounds();
     _rowBoundTightener->resetBounds();
+}
+
+void Engine::warmStart()
+{
+    // An NLR is required for a warm start
+    if ( !_networkLevelReasoner )
+        return;
+
+    // First, choose an arbitrary assignment for the input variables
+    unsigned numInputVariables = _preprocessedQuery.getNumInputVariables();
+    unsigned numOutputVariables = _preprocessedQuery.getNumOutputVariables();
+
+    if ( numInputVariables == 0 )
+    {
+        // Trivial case: all inputs are fixed, nothing to evaluate
+        return;
+    }
+
+    double *inputAssignment = new double[numInputVariables];
+    double *outputAssignment = new double[numOutputVariables];
+
+    for ( unsigned i = 0; i < numInputVariables; ++i )
+    {
+        unsigned variable = _preprocessedQuery.inputVariableByIndex( i );
+        inputAssignment[i] = _tableau->getLowerBound( variable );
+    }
+
+    // Evaluate the network for this assignment
+    _networkLevelReasoner->evaluate( inputAssignment, outputAssignment );
+
+    // Try to update as many variables as possible to match their assignment
+    for ( const auto &assignment : _networkLevelReasoner->getIndexToWeightedSumAssignment() )
+    {
+        unsigned variable = _networkLevelReasoner->getWeightedSumVariable( assignment.first._layer, assignment.first._neuron );
+
+        if ( !_tableau->isBasic( variable ) )
+            _tableau->setNonBasicAssignment( variable, assignment.second, false );
+    }
+
+    for ( const auto &assignment : _networkLevelReasoner->getIndexToActivationResultAssignment() )
+    {
+        unsigned variable = _networkLevelReasoner->getActivationResultVariable( assignment.first._layer, assignment.first._neuron );
+
+        if ( !_tableau->isBasic( variable ) )
+            _tableau->setNonBasicAssignment( variable, assignment.second, false );
+    }
+
+    // We did what we could for the non-basics; now let the tableau compute
+    // the basic assignment
+    _tableau->computeAssignment();
+
+    delete[] outputAssignment;
+    delete[] inputAssignment;
 }
 
 //
