@@ -32,7 +32,7 @@ class SparseGaussianEliminatorTestSuite : public CxxTest::TestSuite
 public:
     MockForSparseGaussianEliminator *mock;
 
-    SparseGaussianEliminatorTestSuite()
+    ~SparseGaussianEliminatorTestSuite()
     {
         for ( const auto vector : cleanup )
             delete vector;

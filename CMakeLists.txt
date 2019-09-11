@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # TODO: Should default be ON or OFF ?
 option(BUILD_PYTHON "Build Python" ON)
 option(RUN_TEST "run cxxtest unit testing" ON)
-option(RUN_MEMORY_TEST "run cxxtest unit testing with ASAN" ON)
+option(RUN_MEMORY_TEST "run cxxtest unit testing with ASAN" OFF)
 
 set(MARABOU_LIB MarabouHelper)
 set(MARABOU_TEST_LIB MarabouHelperTest)

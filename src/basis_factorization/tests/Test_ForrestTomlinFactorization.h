@@ -443,6 +443,8 @@ public:
             for ( unsigned i = 0; i < 4; ++i )
                 TS_ASSERT( FloatUtils::areEqual( x[i], expectedX[i] ) );
         }
+
+        TS_ASSERT_THROWS_NOTHING( delete ft );
     }
 
     void test_backward_transformation()
@@ -583,6 +585,8 @@ public:
             for ( unsigned i = 0; i < 4; ++i )
                 TS_ASSERT( FloatUtils::areEqual( x[i], expectedX[i] ) );
         }
+        TS_ASSERT_THROWS_NOTHING( delete ft );
+
     }
 
     void test_push_eta_matrix_refactorization()
@@ -839,6 +843,10 @@ public:
             TS_ASSERT_EQUALS( x1[i], x2[i] );
             TS_ASSERT_EQUALS( x1[i], x3[i] );
         }
+
+        TS_ASSERT_THROWS_NOTHING(delete ft);
+        TS_ASSERT_THROWS_NOTHING(delete ft2);
+        TS_ASSERT_THROWS_NOTHING(delete ft3);
     }
 
     void test_get_basis()

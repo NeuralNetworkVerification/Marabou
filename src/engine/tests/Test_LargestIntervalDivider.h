@@ -199,6 +199,8 @@ public:
                     TS_ASSERT( *(subQuery->_split) == newSplits[index] );
                 TS_ASSERT( subQuery->_timeoutInSeconds == correctTimeoutInSeconds );
                 index++;
+                delete subQuery;
+
             }
     }
 };

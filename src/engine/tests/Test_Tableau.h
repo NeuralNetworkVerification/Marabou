@@ -788,6 +788,7 @@ public:
         TS_ASSERT( FloatUtils::areEqual( entry._coefficient, -1 ) );
 
         TS_ASSERT_EQUALS( row._scalar, 69 );
+        TS_ASSERT_THROWS_NOTHING( delete tableau );
     }
 
     void test_degenerate_pivot()
@@ -987,6 +988,8 @@ public:
         entry = row._row[3];
         TS_ASSERT_EQUALS( entry._var, 3U );
         TS_ASSERT_EQUALS( entry._coefficient, -1 );
+        
+        TS_ASSERT_THROWS_NOTHING( delete tableau );
     }
 
     void test_store_and_restore()
