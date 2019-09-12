@@ -193,15 +193,15 @@ public:
                                                         timeoutFactor );
         unsigned index = 0;
         for ( const auto &subQuery : subQueries )
-            {
-                TS_ASSERT( subQuery->_queryId == queryId +
-                           Stringf( "-%u", index + 1 ) )
-                    TS_ASSERT( *(subQuery->_split) == newSplits[index] );
-                TS_ASSERT( subQuery->_timeoutInSeconds == correctTimeoutInSeconds );
-                index++;
-                delete subQuery;
+        {
+            TS_ASSERT( subQuery->_queryId == queryId +
+                       Stringf( "-%u", index + 1 ) )
+                TS_ASSERT( *(subQuery->_split) == newSplits[index] );
+            TS_ASSERT( subQuery->_timeoutInSeconds == correctTimeoutInSeconds );
+            ++index;
 
-            }
+            delete subQuery;
+        }
     }
 };
 

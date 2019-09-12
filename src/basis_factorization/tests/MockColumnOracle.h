@@ -29,7 +29,7 @@ public:
     {
     }
 
-    void freeInternal()
+    void freeMemoryIfNeeded()
     {
         if ( _basis )
         {
@@ -52,16 +52,17 @@ public:
             _sparseBasis = NULL;
         }
     }
+
     ~MockColumnOracle()
     {
-        freeInternal();
+        freeMemoryIfNeeded();
     }
 
     void storeBasis( unsigned m, const double *basis )
     {
-        // In some tests we might call storeBasis twice and we will loose the
+        // In some tests we might call storeBasis twice and we will lose the
         // pointers
-        freeInternal();
+        freeMemoryIfNeeded();
         _m = m;
         _basis = new double[_m * _m];
         _sparseBasis = new SparseColumnsOfBasis( _m );
