@@ -58,7 +58,7 @@ if (RUN_MEMORY_TEST)
 endif()
 
 # ignored-qualifiers is because of some of the cxx tests
-set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS} "-Wno-ignore-qualifiers -g") 
+set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS} -Wno-ignored-qualifiers -Wno-terminate -g) 
 set(RELEASE_FLAGS  ${COMPILE_FLAGS} -O3)
 
 
