@@ -105,7 +105,7 @@ For more information see [resources/README.md](resources/README.md).
 To run Marabou, execute from the repo directory, for example:
 
 ```
-./Marabou resources/nnet/acasxu/ACASXU_experimental_v2a_2_7.nnet resources/properties/acas_property_3.txt
+./build/Marabou resources/nnet/acasxu/ACASXU_experimental_v2a_2_7.nnet resources/properties/acas_property_3.txt
 ```
 
 
