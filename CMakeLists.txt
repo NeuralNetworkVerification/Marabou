@@ -10,11 +10,13 @@ option(RUN_MEMORY_TEST "run cxxtest unit testing with ASAN" ON)
 set(MARABOU_LIB MarabouHelper)
 set(MARABOU_TEST_LIB MarabouHelperTest)
 set(MARABOU_EXE Marabou)
+set(MARABOU_REGRESS Regress)
 set(MARABOU_PY MarabouCore)
 
 set(TOOLS_DIR "${PROJECT_SOURCE_DIR}/tools")
 set(SRC_DIR "${PROJECT_SOURCE_DIR}/src")
 set(PYTHON_API_DIR "${PROJECT_SOURCE_DIR}/maraboupy")
+set(REGRESS_DIR "${PROJECT_SOURCE_DIR}/regress")
 
 set(ENGINE_DIR "${SRC_DIR}/engine")
 set(PYBIND11_DIR "${TOOLS_DIR}/pybind11-2.3.0")
@@ -31,8 +33,17 @@ file(GLOB SRCS_COMMON_MOCK "${COMMON_MOCK}/*.cpp")
 # API's (executable and python at the moment)
 add_library(${MARABOU_LIB} ${SRCS_COMMON_REAL} )
 add_executable(${MARABOU_EXE} ${ENGINE_DIR}/main.cpp)
+add_executable(${MARABOU_REGRESS} ${REGRESS_DIR}/main_regress.cpp)
 
 
+
+    # Build regress 
+target_link_libraries(${MARABOU_REGRESS} PRIVATE ${MARABOU_LIB}
+    ${DEBUG_FLAGS})
+target_include_directories(${MARABOU_REGRESS} PRIVATE ${LIBS_INCLUDES})
+target_compile_options(${MARABOU_REGRESS} PRIVATE ${DEBUG_FLAGS}) 
+set_target_properties(${MARABOU_REGRESS} PROPERTIES  
+    LIBRARY_OUTPUT_DIRECTORY ${REGRESS_DIR})
 
 if(MSVC)
     # TODO: TEST this
@@ -45,6 +56,11 @@ endif()
 if (RUN_MEMORY_TEST)
     set(MEMORY_FLAGS -fsanitize=address -fno-omit-frame-pointer -O1)
 endif()
+
+# ignored-qualifiers is because of some of the cxx tests
+set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS} -Wno-ignored-qualifiers -Wno-terminate -g) 
+set(RELEASE_FLAGS  ${COMPILE_FLAGS} -O3)
+
 
 # Find boost
 if (NOT EXISTS ${BOOST_DIR})
@@ -68,12 +84,13 @@ list(APPEND LIBS Threads::Threads)
 # build a static library     
 target_link_libraries(${MARABOU_LIB} ${LIBS})
 target_include_directories(${MARABOU_LIB} PRIVATE ${LIBS_INCLUDES})
-target_compile_options(${MARABOU_LIB} PRIVATE ${COMPILE_FLAGS} ${RELEASE_FLAGS})
+target_compile_options(${MARABOU_LIB} PRIVATE ${RELEASE_FLAGS})
 
 
 # Build marabou executable
 target_link_libraries(${MARABOU_EXE} ${MARABOU_LIB})
 target_include_directories(${MARABOU_EXE} PRIVATE ${LIBS_INCLUDES})
+
 
 # Build Python marabou
 if (${BUILD_PYTHON})
@@ -89,7 +106,7 @@ if (${BUILD_PYTHON})
 
     set_target_properties(${MARABOU_PY} PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY ${PYTHON_API_DIR})
-    target_compile_options(${MARABOU_LIB} PRIVATE -fPIC ${COMPILE_FLAGS}) 
+    target_compile_options(${MARABOU_LIB} PRIVATE -fPIC ${RELEASE_FLAGS}) 
 endif()
 
 
@@ -112,16 +129,17 @@ if (RUN_TEST)
 
     target_link_libraries(${MARABOU_TEST_LIB} ${LIBS})
     target_include_directories(${MARABOU_TEST_LIB} PRIVATE ${LIBS_INCLUDES})
-    target_compile_options(${MARABOU_TEST_LIB} PRIVATE ${COMPILE_FLAGS}
-        ${MEMORY_FLAGS} -g)
+    target_compile_options(${MARABOU_TEST_LIB} PRIVATE ${DEBUG_FLAGS})
     add_subdirectory(${COMMON_DIR_TEST})
     add_subdirectory(${ENGINE_DIR_TEST})
     add_subdirectory(${BASIS_DIR_TEST})
+
 endif()
 
 
 add_subdirectory(${SRC_DIR})
 add_subdirectory(${TOOLS_DIR})
+add_subdirectory(${REGRESS_DIR})
 
 
 execute_process(

@@ -110,7 +110,7 @@ public:
 
     void test_initialize_bounds()
     {
-        Tableau *tableau;
+        Tableau *tableau = NULL;
 
         TS_ASSERT( tableau = new Tableau );
 
@@ -128,7 +128,7 @@ public:
 
     void test_initalize_basis_get_value()
     {
-        Tableau *tableau;
+        Tableau *tableau = NULL;
 
         TS_ASSERT( tableau = new Tableau );
 
@@ -173,7 +173,7 @@ public:
 
     void test_watcher__value_changes()
     {
-        Tableau *tableau;
+        Tableau *tableau = NULL;
 
         TS_ASSERT( tableau = new Tableau );
 
@@ -229,7 +229,7 @@ public:
 
     void test_get_entering_variable__have_eligible_variables()
     {
-        Tableau *tableau;
+        Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
 
         TS_ASSERT( tableau = new Tableau );
@@ -281,7 +281,7 @@ public:
 
     void test_get_entering_variable__no_eligible_variables()
     {
-        Tableau *tableau;
+        Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
 
         TS_ASSERT( tableau = new Tableau );
@@ -333,7 +333,7 @@ public:
 
     void test_get_get_leaving_variable()
     {
-        Tableau *tableau;
+        Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
 
         TS_ASSERT( tableau = new Tableau );
@@ -444,7 +444,7 @@ public:
 
     void test_perform_pivot_nonbasic_goes_to_opposite_bound()
     {
-        Tableau *tableau;
+        Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
 
         TS_ASSERT( tableau = new Tableau );
@@ -506,7 +506,7 @@ public:
 
     void test_perform_pivot_nonbasic_becomes_basic()
     {
-        Tableau *tableau;
+        Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
 
         TS_ASSERT( tableau = new Tableau );
@@ -584,7 +584,7 @@ public:
 
     void test_get_row()
     {
-        Tableau *tableau;
+        Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
 
         TS_ASSERT( tableau = new Tableau );
@@ -793,7 +793,7 @@ public:
 
     void test_degenerate_pivot()
     {
-        Tableau *tableau;
+        Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
 
         TS_ASSERT( tableau = new Tableau );
@@ -994,7 +994,7 @@ public:
 
     void test_store_and_restore()
     {
-        Tableau *tableau;
+        Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
 
         TS_ASSERT( tableau = new Tableau );
@@ -1124,7 +1124,7 @@ public:
 
     void test_add_equation()
     {
-        Tableau *tableau;
+        Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
 
         TS_ASSERT( tableau = new Tableau );
@@ -1281,7 +1281,7 @@ public:
 
     void test_tighten_bounds()
     {
-        Tableau *tableau;
+        Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
 
         TS_ASSERT( tableau = new Tableau );
@@ -1358,7 +1358,7 @@ public:
 
     void test_are_dependent()
     {
-        Tableau *tableau;
+        Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
 
         TS_ASSERT( tableau = new Tableau );
