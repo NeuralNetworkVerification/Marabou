@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 option(BUILD_PYTHON "Build Python" ON)
 option(RUN_TEST "run cxxtest unit testing" ON)
 option(RUN_MEMORY_TEST "run cxxtest unit testing with ASAN" ON)
+option(RUN_REGRESS_TEST "run regression tests" OFF)
 
 set(MARABOU_LIB MarabouHelper)
 set(MARABOU_TEST_LIB MarabouHelperTest)
@@ -23,6 +24,7 @@ set(PYBIND11_DIR "${TOOLS_DIR}/pybind11-2.3.0")
 set(BOOST_DIR "${TOOLS_DIR}/boost_1_68_0")
 set(COMMON_DIR "${SRC_DIR}/common")
 set(BASIS_DIR "${SRC_DIR}/basis_factorization")
+set(ACAS_REGRESS_NET "${REGRESS_DIR}/acas_nnet")
 
 set(COMMON_REAL "${COMMON_DIR}/real")
 set(COMMON_MOCK "${COMMON_DIR}/mock")
@@ -36,14 +38,21 @@ add_executable(${MARABOU_EXE} ${ENGINE_DIR}/main.cpp)
 add_executable(${MARABOU_REGRESS} ${REGRESS_DIR}/main_regress.cpp)
 
 
-
-    # Build regress 
+# Build regress 
 target_link_libraries(${MARABOU_REGRESS} PRIVATE ${MARABOU_LIB}
     ${DEBUG_FLAGS})
 target_include_directories(${MARABOU_REGRESS} PRIVATE ${LIBS_INCLUDES})
 target_compile_options(${MARABOU_REGRESS} PRIVATE ${DEBUG_FLAGS}) 
-set_target_properties(${MARABOU_REGRESS} PROPERTIES  
-    LIBRARY_OUTPUT_DIRECTORY ${REGRESS_DIR})
+file(MAKE_DIRECTORY logs)
+file(COPY ${ACAS_REGRESS_NET} DESTINATION .) 
+if (RUN_REGRESS_TEST)
+    add_custom_command(TARGET ${MARABOU_REGRESS} 
+                   POST_BUILD
+                   COMMAND Regress --output-on-failure || exit
+                   0)
+endif()
+# set_target_properties(${MARABOU_REGRESS} PROPERTIES  
+#     LIBRARY_OUTPUT_DIRECTORY ${REGRESS_DIR})
 
 if(MSVC)
     # TODO: TEST this
@@ -58,7 +67,8 @@ if (RUN_MEMORY_TEST)
 endif()
 
 # ignored-qualifiers is because of some of the cxx tests
-set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS} -Wno-ignored-qualifiers -Wno-terminate -g) 
+set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS} -g) 
+set(CXXTEST_FLAGS ${DEBUG_FLAGS}  -Wno-ignored-qualifiers -Wno-terminate)
 set(RELEASE_FLAGS  ${COMPILE_FLAGS} -O3)
 
 
@@ -129,7 +139,7 @@ if (RUN_TEST)
 
     target_link_libraries(${MARABOU_TEST_LIB} ${LIBS})
     target_include_directories(${MARABOU_TEST_LIB} PRIVATE ${LIBS_INCLUDES})
-    target_compile_options(${MARABOU_TEST_LIB} PRIVATE ${DEBUG_FLAGS})
+    target_compile_options(${MARABOU_TEST_LIB} PRIVATE ${CXXTEST_FLAGS})
     add_subdirectory(${COMMON_DIR_TEST})
     add_subdirectory(${ENGINE_DIR_TEST})
     add_subdirectory(${BASIS_DIR_TEST})

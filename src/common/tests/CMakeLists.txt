@@ -8,8 +8,8 @@ if (RUN_TEST)
     set(COMMON_UNIT_TEST unittest_common)
     CXXTEST_ADD_TEST(${COMMON_UNIT_TEST} common.cc ${TESTS} ${SRCS_COMMON_MOCK}) 
     target_include_directories(${COMMON_UNIT_TEST} PUBLIC "../${CMAKE_CURRENT_SOURCE_DIR}" ${CMAKE_CURRENT_SOURCE_DIR})
-    target_link_libraries(${COMMON_UNIT_TEST}  ${MARABOU_TEST_LIB} ${DEBUG_FLAGS})
-    target_compile_options(${COMMON_UNIT_TEST} PRIVATE ${DEBUG_FLAGS})
+    target_link_libraries(${COMMON_UNIT_TEST}  ${MARABOU_TEST_LIB} ${CXXTEST_FLAGS})
+    target_compile_options(${COMMON_UNIT_TEST} PRIVATE ${CXXTEST_FLAGS})
 
     # Add the exit 0 so the executable will always be generated, otherwise the
     # build fails (exit is not zero) and cmake removes everything
