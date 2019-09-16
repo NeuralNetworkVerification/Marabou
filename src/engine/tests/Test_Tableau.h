@@ -988,7 +988,7 @@ public:
         entry = row._row[3];
         TS_ASSERT_EQUALS( entry._var, 3U );
         TS_ASSERT_EQUALS( entry._coefficient, -1 );
-        
+
         TS_ASSERT_THROWS_NOTHING( delete tableau );
     }
 
@@ -1058,7 +1058,7 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau->computeAssignment() );
 
         // Store the tableau
-        TableauState *tableauState;
+        TableauState *tableauState = NULL;
         TS_ASSERT( tableauState = new TableauState );
 
         TS_ASSERT_THROWS_NOTHING( tableau->storeState( *tableauState ) );
