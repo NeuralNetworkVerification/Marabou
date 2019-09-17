@@ -3,6 +3,7 @@ project(Marabou)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 option(BUILD_PYTHON "Build Python" ON)
 option(RUN_TEST "run cxxtest unit testing" ON)
 option(RUN_MEMORY_TEST "run cxxtest unit testing with ASAN" ON)
@@ -51,8 +52,22 @@ if (RUN_REGRESS_TEST)
                    COMMAND Regress --output-on-failure || exit
                    0)
 endif()
-# set_target_properties(${MARABOU_REGRESS} PROPERTIES  
-#     LIBRARY_OUTPUT_DIRECTORY ${REGRESS_DIR})
+
+# Default value false
+set(PYTHON32 FALSE)
+if (BUILD_PYTHON)
+    execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
+        "import struct; print(struct.calcsize('@P'));"
+    RESULT_VARIABLE _PYTHON_SUCCESS
+    OUTPUT_VARIABLE PYTHON_SIZEOF_VOID_P 
+    ERROR_VARIABLE _PYTHON_ERROR_VALUE)
+    message("${PYTHON_SIZEOF_VOID_P}")
+    if (PYTHON_SIZEOF_VOID_P EQUAL 4)
+        set(PYTHON32 TRUE)
+    endif()
+endif()
+
+message("PYTHON32: ${PYTHON32}")
 
 if(MSVC)
     # TODO: TEST this
@@ -61,7 +76,12 @@ else()
     set(COMPILE_FLAGS  -Wall -Wextra  -Werror -MMD) #-Wno-deprecated
     set(RELEASE_FLAGS -O3) #-Wno-deprecated
 endif()
-
+if (PYTHON32)
+    message("PYTHON32")
+    message(${CMAKE_SIZEOF_VOID_P})
+    set(CMAKE_CXX_FLAGS -m32)
+    set(CMAKE_C_FLAGS -m32)
+endif()
 if (RUN_MEMORY_TEST)
     set(MEMORY_FLAGS -fsanitize=address -fno-omit-frame-pointer -O1)
 endif()
@@ -80,8 +100,15 @@ if (NOT EXISTS ${BOOST_DIR})
 endif()
 
 # Boost
-set(BOOST_ROOT "${BOOST_DIR}/installed")
-set(BOOST_INCLUDES "${BOOST_DIR}/installed/include")
+if(${PYTHON32})
+    message("use boost 32")
+    set(BOOST_ROOT "${BOOST_DIR}/installed32")
+    set(BOOST_INCLUDES "${BOOST_DIR}/installed32/include")
+else()
+    message("use boost 64")
+    set(BOOST_ROOT "${BOOST_DIR}/installed")
+    set(BOOST_INCLUDES "${BOOST_DIR}/installed/include")
+endif()
 find_package(Boost REQUIRED COMPONENTS program_options)
 set(LIBS_INCLUDES ${BOOST_INCLUDES})
 set(LIBS ${Boost_LIBRARIES})
