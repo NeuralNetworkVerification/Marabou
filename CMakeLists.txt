@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(BUILD_PYTHON "Build Python" ON)
+option(FORCE_PYTHON_BUILD "Build python even if there is only python32" OFF)
 option(RUN_TEST "run cxxtest unit testing" ON)
 option(RUN_MEMORY_TEST "run cxxtest unit testing with ASAN" ON)
 option(RUN_REGRESS_TEST "run regression tests" OFF)
@@ -27,6 +28,9 @@ set(COMMON_DIR "${SRC_DIR}/common")
 set(BASIS_DIR "${SRC_DIR}/basis_factorization")
 set(ACAS_REGRESS_NET "${REGRESS_DIR}/acas_nnet")
 
+# This is suppose to set the PYTHON_EXECUTABLE variable
+find_package(Python REQUIRED)
+
 set(COMMON_REAL "${COMMON_DIR}/real")
 set(COMMON_MOCK "${COMMON_DIR}/mock")
 file(GLOB SRCS_COMMON_REAL "${COMMON_REAL}/*.cpp")
@@ -40,12 +44,11 @@ add_executable(${MARABOU_REGRESS} ${REGRESS_DIR}/main_regress.cpp)
 
 
 # Build regress 
-target_link_libraries(${MARABOU_REGRESS} PRIVATE ${MARABOU_LIB}
-    ${DEBUG_FLAGS})
+target_link_libraries(${MARABOU_REGRESS} PRIVATE ${MARABOU_LIB})
+
 target_include_directories(${MARABOU_REGRESS} PRIVATE ${LIBS_INCLUDES})
-target_compile_options(${MARABOU_REGRESS} PRIVATE ${DEBUG_FLAGS}) 
-file(MAKE_DIRECTORY logs)
-file(COPY ${ACAS_REGRESS_NET} DESTINATION .) 
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/logs)
+file(COPY ${ACAS_REGRESS_NET} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}) 
 if (RUN_REGRESS_TEST)
     add_custom_command(TARGET ${MARABOU_REGRESS} 
                    POST_BUILD
@@ -55,19 +58,20 @@ endif()
 
 # Default value false
 set(PYTHON32 FALSE)
-if (BUILD_PYTHON)
-    execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
+# message("python ex: ${Python_EXECUTABLE}")
+if(${BUILD_PYTHON})
+    execute_process(COMMAND "${Python_EXECUTABLE}" "-c"
         "import struct; print(struct.calcsize('@P'));"
     RESULT_VARIABLE _PYTHON_SUCCESS
     OUTPUT_VARIABLE PYTHON_SIZEOF_VOID_P 
     ERROR_VARIABLE _PYTHON_ERROR_VALUE)
-    message("${PYTHON_SIZEOF_VOID_P}")
-    if (PYTHON_SIZEOF_VOID_P EQUAL 4)
+    # message("PYTHON SIZEOF VOID p ${PYTHON_SIZEOF_VOID_P}")
+    if (PYTHON_SIZEOF_VOID_P EQUAL 4 AND NOT ${FORCE_PYTHON_BUILD})
         set(PYTHON32 TRUE)
+        message(WARNING "Python version is 32bit, please use build_python.sh in
+        maraboupy folder")
     endif()
 endif()
-
-message("PYTHON32: ${PYTHON32}")
 
 if(MSVC)
     # TODO: TEST this
@@ -76,17 +80,11 @@ else()
     set(COMPILE_FLAGS  -Wall -Wextra  -Werror -MMD) #-Wno-deprecated
     set(RELEASE_FLAGS -O3) #-Wno-deprecated
 endif()
-if (PYTHON32)
-    message("PYTHON32")
-    message(${CMAKE_SIZEOF_VOID_P})
-    set(CMAKE_CXX_FLAGS -m32)
-    set(CMAKE_C_FLAGS -m32)
-endif()
+
 if (RUN_MEMORY_TEST)
     set(MEMORY_FLAGS -fsanitize=address -fno-omit-frame-pointer -O1)
 endif()
 
-# ignored-qualifiers is because of some of the cxx tests
 set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS} -g) 
 set(CXXTEST_FLAGS ${DEBUG_FLAGS}  -Wno-ignored-qualifiers -Wno-terminate)
 set(RELEASE_FLAGS  ${COMPILE_FLAGS} -O3)
@@ -100,12 +98,10 @@ if (NOT EXISTS ${BOOST_DIR})
 endif()
 
 # Boost
-if(${PYTHON32})
-    message("use boost 32")
+if(${CMAKE_SIZEOF_VOID_P} EQUAL 4)
     set(BOOST_ROOT "${BOOST_DIR}/installed32")
     set(BOOST_INCLUDES "${BOOST_DIR}/installed32/include")
 else()
-    message("use boost 64")
     set(BOOST_ROOT "${BOOST_DIR}/installed")
     set(BOOST_INCLUDES "${BOOST_DIR}/installed/include")
 endif()
@@ -130,6 +126,20 @@ target_include_directories(${MARABOU_EXE} PRIVATE ${LIBS_INCLUDES})
 
 
 # Build Python marabou
+if (${FORCE_PYTHON_BUILD})
+    set(BUILD_PYTHON ON)
+    # message("FORCE PYTHON BUILD")
+else()
+    if (${BUILD_PYTHON} AND NOT ${PYTHON32})
+        set(BUILD_PYTHON ON)
+        # message("BUILD_PYTHON: ${BUILD_PYTHON}")
+        # message("PYTHON32: ${PYTHON32}")
+    else()
+        set(BUILD_PYTHON OFF)
+    endif()
+endif()
+
+# message("BUILD_PYTHON: ${BUILD_PYTHON}")
 if (${BUILD_PYTHON})
     if (NOT EXISTS ${PYBIND11_DIR})
         message("didnt find pybind, getting it")
@@ -185,7 +195,6 @@ execute_process(
   OUTPUT_VARIABLE GIT_BRANCH
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
-
 # Get the latest abbreviated commit hash of the working branch
 execute_process(
   COMMAND git log -1 --format=%h
