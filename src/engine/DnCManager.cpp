@@ -14,6 +14,7 @@
  **/
 
 #include "AcasParser.h"
+#include "CrossPlatform.h"
 #include "Debug.h"
 #include "DivideStrategy.h"
 #include "DnCManager.h"
@@ -37,9 +38,9 @@ void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine
                            unsigned threadId, unsigned onlineDivides,
                            float timeoutFactor, DivideStrategy divideStrategy )
 {
-    #if defined(__linux) || defined(__linux__)
-    log( Stringf( "Thread #%u on CPU %u", threadId, sched_getcpu() ) );
-    #endif
+    unsigned cpuId = 0;
+    getCPUId( cpuId );
+    log( Stringf( "Thread #%u on CPU %u", threadId, cpuId ) );
 
     DnCWorker worker( workload, engine, std::ref( numUnsolvedSubQueries ),
                       std::ref( shouldQuitSolving ), threadId, onlineDivides,
