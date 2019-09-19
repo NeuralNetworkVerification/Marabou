@@ -45,6 +45,8 @@ Engine::Engine( unsigned verbosity )
     , _numVisitedStatesAtPreviousRestoration( 0 )
     , _networkLevelReasoner( NULL )
     , _verbosity( verbosity )
+    , _lastNumVisitedStates( 0 )
+    , _lastIterationWithProgress( 0 )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -147,6 +149,9 @@ bool Engine::solve( unsigned timeoutInSeconds )
             if ( _verbosity > 1 )
                 mainLoopStatistics();
 
+            // Check whether progress has been made recently
+            checkOverallProgress();
+
             // If the basis has become malformed, we need to restore it
             if ( basisRestorationNeeded() )
             {
@@ -210,7 +215,10 @@ bool Engine::solve( unsigned timeoutInSeconds )
                     if ( _tableau->getBasicAssignmentStatus() !=
                          ITableau::BASIC_ASSIGNMENT_JUST_COMPUTED )
                     {
-                        printf( "Before declaring SAT, recomputing...\n" );
+                        if ( _verbosity > 0 )
+                        {
+                            printf( "Before declaring SAT, recomputing...\n" );
+                        }
                         // Make sure that the assignment is precise before declaring success
                         _tableau->computeAssignment();
                         continue;
@@ -1887,6 +1895,32 @@ void Engine::warmStart()
 
     delete[] outputAssignment;
     delete[] inputAssignment;
+}
+
+void Engine::checkOverallProgress()
+{
+    // Get fresh statistics
+    unsigned numVisitedStates = _statistics.getNumVisitedTreeStates();
+    unsigned long long currentIteration = _statistics.getNumMainLoopIterations();
+
+    if ( numVisitedStates > _lastNumVisitedStates )
+    {
+        // Progress has been made
+        _lastNumVisitedStates = numVisitedStates;
+        _lastIterationWithProgress = _statistics.getNumMainLoopIterations();
+    }
+    else
+    {
+        // No progress has been made. If it's been too long, request a restoration
+        if ( currentIteration >
+             _lastIterationWithProgress +
+             GlobalConfiguration::MAX_ITERATIONS_WITHOUT_PROGRESS )
+        {
+            log( "checkOverallProgress detected cycling. Requesting a precision restoration" );
+            _basisRestorationRequired = Engine::STRONG_RESTORATION_NEEDED;
+            _lastIterationWithProgress = currentIteration;
+        }
+    }
 }
 
 //
