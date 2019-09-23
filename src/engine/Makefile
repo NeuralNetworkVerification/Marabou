@@ -26,7 +26,7 @@ CFLAGS = \
 	-Werror \
 	-Wno-deprecated \
 	-std=c++0x \
-	-g \
+	-O3 \
 
 include $(BASIS_FACTORIZATION_DIR)/Sources.mk
 include $(COMMON_DIR)/Sources.mk
@@ -44,8 +44,13 @@ vpath %.cpp $(ENGINE_REAL_DIR)
 vpath %.cpp $(INPUT_PARSER_DIR)
 
 SOURCES += \
-		   variables_test.cpp
-TARGET = variables_test.elf
+	DnCMarabou.cpp \
+	Marabou.cpp \
+	OptionParser.cpp \
+	Options.cpp \
+	main.cpp \
+
+TARGET = marabou.elf
 
 include $(ROOT_DIR)/Rules.mk
 
