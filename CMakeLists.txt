@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.12)
+cmake_minimum_required (VERSION 3.10)
 project(Marabou)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -28,8 +28,6 @@ set(COMMON_DIR "${SRC_DIR}/common")
 set(BASIS_DIR "${SRC_DIR}/basis_factorization")
 set(ACAS_REGRESS_NET "${REGRESS_DIR}/acas_nnet")
 
-# This is suppose to set the PYTHON_EXECUTABLE variable
-find_package(Python REQUIRED)
 
 set(COMMON_REAL "${COMMON_DIR}/real")
 set(COMMON_MOCK "${COMMON_DIR}/mock")
@@ -90,24 +88,28 @@ set(CXXTEST_FLAGS ${DEBUG_FLAGS}  -Wno-ignored-qualifiers -Wno-terminate)
 set(RELEASE_FLAGS  ${COMPILE_FLAGS} -O3)
 
 
-# Find boost
-if (NOT EXISTS ${BOOST_DIR})
-    # bash file that downloads and install boost 1_68_0, the name need to match
-    # BOOST_DIR variable
-    execute_process(COMMAND ${TOOLS_DIR}/download_boost.sh)
-endif()
 
 # Boost
 if(${CMAKE_SIZEOF_VOID_P} EQUAL 4)
     set(BOOST_ROOT "${BOOST_DIR}/installed32")
-    set(BOOST_INCLUDES "${BOOST_DIR}/installed32/include")
+    # set(BOOST_INCLUDES "${BOOST_DIR}/installed32/include")
 else()
     set(BOOST_ROOT "${BOOST_DIR}/installed")
-    set(BOOST_INCLUDES "${BOOST_DIR}/installed/include")
+    # set(BOOST_INCLUDES "${BOOST_DIR}/installed/include")
 endif()
 find_package(Boost REQUIRED COMPONENTS program_options)
-set(LIBS_INCLUDES ${BOOST_INCLUDES})
+# Find boost
+if (NOT ${Boost_FOUND})
+# if (NOT EXISTS ${BOOST_DIR})
+    # bash file that downloads and install boost 1_68_0, the name need to match
+    # BOOST_DIR variable
+    execute_process(COMMAND ${TOOLS_DIR}/download_boost.sh)
+    find_package(Boost REQUIRED COMPONENTS program_options)
+endif()
+# message("Boost_INCLUDE_DIRS ${Boost_INCLUDE_DIRS}")
+set(LIBS_INCLUDES ${Boost_INCLUDE_DIRS})
 set(LIBS ${Boost_LIBRARIES})
+
 
 # pthread
 set(THREADS_PREFER_PTHREAD_FLAG ON)
@@ -141,6 +143,9 @@ endif()
 
 # message("BUILD_PYTHON: ${BUILD_PYTHON}")
 if (${BUILD_PYTHON})
+    # This is suppose to set the PYTHON_EXECUTABLE variable
+    find_package(Python REQUIRED)
+    
     if (NOT EXISTS ${PYBIND11_DIR})
         message("didnt find pybind, getting it")
         execute_process(COMMAND ${TOOLS_DIR}/download_pybind11.sh)
@@ -168,6 +173,7 @@ if (RUN_TEST)
     set(ENGINE_DIR_TEST "${ENGINE_DIR}/tests")
 
     set(CMAKE_PREFIX_PATH ${TOOLS_DIR}/cxxtest)
+    set(CXXTEST_USE_PYTHON FALSE)
     find_package(CxxTest)
     if(CXXTEST_FOUND)
         include_directories(${CXXTEST_INCLUDE_DIR})
