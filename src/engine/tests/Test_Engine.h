@@ -80,6 +80,7 @@ public:
         TS_ASSERT( costFunctionManager->wasDiscarded );
     }
 
+
     void test_process_input_query()
     {
         //   0  <= x0 <= 2

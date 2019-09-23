@@ -670,8 +670,8 @@ void Preprocessor::eliminateVariables()
     // We assume that fixedVariables and mergedVariables are disjoint but that
     // is not always the case
     unsigned variableCount = _preprocessed.getNumberOfVariables() - _fixedVariables.size() - _mergedVariables.size(); 
-    if ( _preprocessed.getNumberOfVariables() <  _fixedVariables.size() + _mergedVariables.size() ) 
-        variableCount = 0;
+    /* if ( _preprocessed.getNumberOfVariables() <  _fixedVariables.size() + _mergedVariables.size() ) */ 
+    /*     variableCount = 0; */
 
     // Adjust the number of variables in the query
     _preprocessed.setNumberOfVariables( variableCount );

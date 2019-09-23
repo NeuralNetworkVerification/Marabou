@@ -32,6 +32,8 @@ TAGS:
 
 include $(ROOT_DIR)/Rules.mk
 
+TARGET = merged_fix_variables.elf
+
 #
 # Local Variables:
 # compile-command: "make -C . "
