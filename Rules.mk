@@ -59,6 +59,7 @@ CFLAGS += \
 	-Werror \
 	-Wno-deprecated \
 	-std=c++0x \
+	-g \
 
 CFLAGS += \
 	$(VERSION_FLAGS) \
@@ -95,7 +96,7 @@ OBJECTS = $(SOURCES:%.cpp=%.obj)
 
 %.elf: $(OBJECTS)
 	@echo "LD\t" $@
-	@$(LINK) $(LINK_FLAGS) -o $@ $^ $(addprefix -L, $(LIBRARY_DIR)) $(addprefix -l, $(LIBRARIES))
+	@$(LINK) $(LINK_FLAGS) -g -o $@ $^ $(addprefix -L, $(LIBRARY_DIR)) $(addprefix -l, $(LIBRARIES)) -DDEBUG_ON
 
 .PRECIOUS: %.obj
 
