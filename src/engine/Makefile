@@ -26,7 +26,7 @@ CFLAGS = \
 	-Werror \
 	-Wno-deprecated \
 	-std=c++0x \
-	-O3 \
+	-g \
 
 include $(BASIS_FACTORIZATION_DIR)/Sources.mk
 include $(COMMON_DIR)/Sources.mk
