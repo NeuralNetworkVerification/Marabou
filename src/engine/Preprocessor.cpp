@@ -692,14 +692,8 @@ void Preprocessor::eliminateVariables()
         _preprocessed._debuggingSolution[variable] = value;
     }
 
-    // We assume that fixedVariables and mergedVariables are disjoint but that
-    // is not always the case
-    unsigned variableCount = _preprocessed.getNumberOfVariables() - _fixedVariables.size() - _mergedVariables.size(); 
-    /* if ( _preprocessed.getNumberOfVariables() <  _fixedVariables.size() + _mergedVariables.size() ) */ 
-    /*     variableCount = 0; */
-
     // Adjust the number of variables in the query
-    _preprocessed.setNumberOfVariables( variableCount );
+    _preprocessed.setNumberOfVariables( _preprocessed.getNumberOfVariables() - _fixedVariables.size() - _mergedVariables.size() );
 
     // Adjust the input/output mappings in the query
     _preprocessed.adjustInputOutputMapping( _oldIndexToNewIndex, _mergedVariables );
