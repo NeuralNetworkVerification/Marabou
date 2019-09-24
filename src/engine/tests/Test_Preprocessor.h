@@ -530,55 +530,57 @@ public:
 		InputQuery inputQuery;
         inputQuery.setNumberOfVariables( 20 );
 
-        /* INPUT */
-        inputQuery.setLowerBound(0, 0.1 );
-        inputQuery.setUpperBound(0, 0.1 );
-        inputQuery.setLowerBound(1, 0.2 );
-        inputQuery.setUpperBound(1, 0.2 );
-        inputQuery.setLowerBound(2, 0.3 );
-        inputQuery.setUpperBound(2, 0.3 );
-        inputQuery.setLowerBound(3, 0.4 );
-        inputQuery.setUpperBound(3, 0.4 );
+        /* Input */
+        inputQuery.setLowerBound( 0, 0.1 );
+        inputQuery.setUpperBound( 0, 0.1 );
+        inputQuery.setLowerBound( 1, 0.2 );
+        inputQuery.setUpperBound( 1, 0.2 );
+        inputQuery.setLowerBound( 2, 0.3 );
+        inputQuery.setUpperBound( 2, 0.3 );
+        inputQuery.setLowerBound( 3, 0.4 );
+        inputQuery.setUpperBound( 3, 0.4 );
 
-        // RNN CELL 1
-        inputQuery.setLowerBound(4, 0 );
-        inputQuery.setUpperBound(4, 10 );
-        inputQuery.setLowerBound(5, 0 );
-        inputQuery.setUpperBound(5, 5000);
-        inputQuery.setLowerBound(6, -5000);
-        inputQuery.setUpperBound(6, 5000);
-        inputQuery.setLowerBound(7, 0);
-        inputQuery.setUpperBound(7, 5000);
+        // RNN cell 1
+        inputQuery.setLowerBound( 4, 0 );
+        inputQuery.setUpperBound( 4, 10 );
+        inputQuery.setLowerBound( 5, 0 );
+        inputQuery.setUpperBound( 5, 5000 );
+        inputQuery.setLowerBound( 6, -5000 );
+        inputQuery.setUpperBound( 6, 5000 );
+        inputQuery.setLowerBound( 7, 0 );
+        inputQuery.setUpperBound( 7, 5000 );
 
-        // RNN CELL 2
-        inputQuery.setLowerBound(8, 0 );
-        inputQuery.setUpperBound(8, 10 );
-        inputQuery.setLowerBound(9, 0 );
-        inputQuery.setUpperBound(9, 500000);
-        TS_ASSERT_THROWS_NOTHING ( inputQuery.setLowerBound(10, -5000 ) ) ;
-        inputQuery.setUpperBound(10, 500000 );
-        inputQuery.setLowerBound(11, 0 );
-        inputQuery.setUpperBound(11, 500000 );
+        // RNN cell 2
+        inputQuery.setLowerBound( 8, 0 );
+        inputQuery.setUpperBound( 8, 10 );
+        inputQuery.setLowerBound( 9, 0 );
+        inputQuery.setUpperBound( 9, 500000 );
 
-        // RNN CELL 3
-        inputQuery.setLowerBound(12, 0 );
-        inputQuery.setUpperBound(12, 10 );
-        inputQuery.setLowerBound(13, 0 );
-        inputQuery.setUpperBound(13, 500000);
-        inputQuery.setLowerBound(14, -500000 );
-        inputQuery.setUpperBound(14, 500000 );
-        inputQuery.setLowerBound(15, 0 );
-        inputQuery.setUpperBound(15, 500000 );
+        TS_ASSERT_THROWS_NOTHING( inputQuery.setLowerBound( 10, -5000 ) );
 
-        // RNN CELL 4
-        inputQuery.setLowerBound(16, 0 );
-        inputQuery.setUpperBound(16, 10 );
-        inputQuery.setLowerBound(17, 0 );
-        inputQuery.setUpperBound(17, 500000);
-        inputQuery.setLowerBound(18, -500000 );
-        inputQuery.setUpperBound(18, 500000 );
-        inputQuery.setLowerBound(19, 0 );
-        inputQuery.setUpperBound(19, 500000 );
+        inputQuery.setUpperBound( 10, 500000 );
+        inputQuery.setLowerBound( 11, 0 );
+        inputQuery.setUpperBound( 11, 500000 );
+
+        // RNN cell 3
+        inputQuery.setLowerBound( 12, 0 );
+        inputQuery.setUpperBound( 12, 10 );
+        inputQuery.setLowerBound( 13, 0 );
+        inputQuery.setUpperBound( 13, 500000 );
+        inputQuery.setLowerBound( 14, -500000 );
+        inputQuery.setUpperBound( 14, 500000 );
+        inputQuery.setLowerBound( 15, 0 );
+        inputQuery.setUpperBound( 15, 500000 );
+
+        // RNN cell 4
+        inputQuery.setLowerBound( 16, 0 );
+        inputQuery.setUpperBound( 16, 10 );
+        inputQuery.setLowerBound( 17, 0 );
+        inputQuery.setUpperBound( 17, 500000 );
+        inputQuery.setLowerBound( 18, -500000 );
+        inputQuery.setUpperBound( 18, 500000 );
+        inputQuery.setLowerBound( 19, 0 );
+        inputQuery.setUpperBound( 19, 500000 );
 
         ReluConstraint *relu1 = new ReluConstraint( 6, 7 );
         relu1->notifyLowerBound( 6, -50000 );
@@ -588,12 +590,11 @@ public:
         relu3->notifyLowerBound( 14 , -50000 );
         ReluConstraint *relu4 = new ReluConstraint( 18, 19 );
         relu4->notifyLowerBound( 18 , -50000 );
-        inputQuery.addPiecewiseLinearConstraint( relu1 );
 
+        inputQuery.addPiecewiseLinearConstraint( relu1 );
         inputQuery.addPiecewiseLinearConstraint( relu2 );
         inputQuery.addPiecewiseLinearConstraint( relu3 );
         inputQuery.addPiecewiseLinearConstraint( relu4 );
-
 
         Equation equation1;
         equation1.addAddend( -0.03, 0 );
@@ -620,16 +621,16 @@ public:
         eq_eq->addAddend( 1, 4 );
         eq_eq->addAddend( -1, 8 );
         eq_eq->setScalar( 0 );
-        inputQuery.addEquation( *eq_eq);
+        inputQuery.addEquation( *eq_eq );
         delete eq_eq;
 
         eq_eq = new Equation();
         eq_eq->addAddend( 1, 4 );
         eq_eq->addAddend( -1, 12 );
         eq_eq->setScalar( 0 );
-        inputQuery.addEquation( *eq_eq);
+        inputQuery.addEquation( *eq_eq );
         delete eq_eq;
-        
+
         eq_eq = new Equation();
         eq_eq->addAddend( 1, 8 );
         eq_eq->setScalar( 0 );
@@ -667,9 +668,9 @@ public:
         delete eq_eq;
 
         auto processedQuery = Preprocessor().preprocess( inputQuery );
-        TS_ASSERT_EQUALS ( processedQuery.getNumberOfVariables(), 0U );
-
+        TS_ASSERT_EQUALS( processedQuery.getNumberOfVariables(), 0U );
     }
+
     void test_todo()
     {
         TS_TRACE( "In test_variable_elimination, test something about updated bounds and updated PL constraints" );
