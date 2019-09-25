@@ -14,11 +14,11 @@
  **/
 
 #include "AcasParser.h"
-#include "CrossPlatform.h"
 #include "Debug.h"
 #include "DivideStrategy.h"
 #include "DnCManager.h"
 #include "DnCWorker.h"
+#include "GetCPUData.h"
 #include "LargestIntervalDivider.h"
 #include "MStringf.h"
 #include "PiecewiseLinearCaseSplit.h"
@@ -26,7 +26,6 @@
 #include "QueryDivider.h"
 #include "MarabouError.h"
 #include "TimeUtils.h"
-
 #include <atomic>
 #include <chrono>
 #include <cmath>
