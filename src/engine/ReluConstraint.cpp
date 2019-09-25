@@ -20,7 +20,7 @@
 #include "MStringf.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "ReluConstraint.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 #include "Statistics.h"
 #include "TableauRow.h"
 
@@ -231,7 +231,7 @@ List<unsigned> ReluConstraint::getParticipatingVariables() const
 bool ReluConstraint::satisfied() const
 {
     if ( !( _assignment.exists( _b ) && _assignment.exists( _f ) ) )
-        throw ReluplexError( ReluplexError::PARTICIPATING_VARIABLES_ABSENT );
+        throw MarabouError( MarabouError::PARTICIPATING_VARIABLES_ABSENT );
 
     double bValue = _assignment.get( _b );
     double fValue = _assignment.get( _f );
@@ -407,7 +407,7 @@ List<PiecewiseLinearConstraint::Fix> ReluConstraint::getSmartFixes( ITableau *ta
 List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
 {
     if ( _phaseStatus != PhaseStatus::PHASE_NOT_FIXED )
-        throw ReluplexError( ReluplexError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
+        throw MarabouError( MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
 
     List<PiecewiseLinearCaseSplit> splits;
 
@@ -476,17 +476,27 @@ PiecewiseLinearCaseSplit ReluConstraint::getValidCaseSplit() const
 
 void ReluConstraint::dump( String &output ) const
 {
-    output = Stringf( "ReluConstraint: x%u = ReLU( x%u ). Active? %s. PhaseStatus = %u (%s). "
-                      "b in [%lf, %lf]. f in [%lf, %lf]",
+    output = Stringf( "ReluConstraint: x%u = ReLU( x%u ). Active? %s. PhaseStatus = %u (%s).\n",
                       _f, _b,
                       _constraintActive ? "Yes" : "No",
-                      _phaseStatus, phaseToString( _phaseStatus ).ascii(),
-                      _lowerBounds[_b], _upperBounds[_b], _lowerBounds[_f], _upperBounds[_f]
+                      _phaseStatus, phaseToString( _phaseStatus ).ascii()
                       );
 
+    output += Stringf( "b in [%s, %s], ",
+                       _lowerBounds.exists( _b ) ? Stringf( "%lf", _lowerBounds[_b] ).ascii() : "-inf",
+                       _upperBounds.exists( _b ) ? Stringf( "%lf", _upperBounds[_b] ).ascii() : "inf" );
+
+    output += Stringf( "f in [%s, %s]",
+                       _lowerBounds.exists( _f ) ? Stringf( "%lf", _lowerBounds[_f] ).ascii() : "-inf",
+                       _upperBounds.exists( _f ) ? Stringf( "%lf", _upperBounds[_f] ).ascii() : "inf" );
+
     if ( _auxVarInUse )
-        output += Stringf( ". Aux var: %u. Range: [%lf, %lf]\n",
-                           _aux, _lowerBounds[_aux], _upperBounds[_aux] );
+    {
+        output += Stringf( ". Aux var: %u. Range: [%s, %s]\n",
+                           _aux,
+                           _lowerBounds.exists( _aux ) ? Stringf( "%lf", _lowerBounds[_aux] ).ascii() : "-inf",
+                           _upperBounds.exists( _aux ) ? Stringf( "%lf", _upperBounds[_aux] ).ascii() : "inf" );
+    }
 }
 
 void ReluConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )

@@ -17,7 +17,7 @@
 #include "FloatUtils.h"
 #include "ITableau.h"
 #include "MStringf.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 
 bool DantzigsRule::select( ITableau &tableau,
                            const List<unsigned> &candidates,

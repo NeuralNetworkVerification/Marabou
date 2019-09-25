@@ -15,7 +15,7 @@
 
 #include "BasisFactorizationFactory.h"
 #include "CSRMatrix.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 #include "SparseUnsortedList.h"
 #include "TableauState.h"
 
@@ -142,69 +142,69 @@ void TableauState::setDimensions( unsigned m, unsigned n, const IBasisFactorizat
 
     _A = new CSRMatrix();
     if ( !_A )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::A" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::A" );
 
     _sparseColumnsOfA = new SparseUnsortedList *[n];
     if ( !_sparseColumnsOfA )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::sparseColumnsOfA" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::sparseColumnsOfA" );
 
     for ( unsigned i = 0; i < n; ++i )
     {
         _sparseColumnsOfA[i] = new SparseUnsortedList;
         if ( !_sparseColumnsOfA[i] )
-            throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::sparseColumnsOfA[i]" );
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::sparseColumnsOfA[i]" );
     }
 
     _sparseRowsOfA = new SparseUnsortedList *[m];
     if ( !_sparseRowsOfA )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::sparseRowsOfA" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::sparseRowsOfA" );
 
     for ( unsigned i = 0; i < m; ++i )
     {
         _sparseRowsOfA[i] = new SparseUnsortedList;
         if ( !_sparseRowsOfA[i] )
-            throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::sparseRowsOfA[i]" );
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::sparseRowsOfA[i]" );
     }
 
     _denseA = new double[m*n];
     if ( !_denseA )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::denseA" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::denseA" );
 
     _b = new double[m];
     if ( !_b )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::b" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::b" );
 
     _lowerBounds = new double[n];
     if ( !_lowerBounds )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::lowerBounds" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::lowerBounds" );
 
     _upperBounds = new double[n];
     if ( !_upperBounds )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::upperBounds" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::upperBounds" );
 
     _basicAssignment = new double[m];
     if ( !_basicAssignment )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::assignment" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::assignment" );
 
     _nonBasicAssignment = new double[n-m];
     if ( !_nonBasicAssignment )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::nonBasicAssignment" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::nonBasicAssignment" );
 
     _basicIndexToVariable = new unsigned[m];
     if ( !_basicIndexToVariable )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::basicIndexToVariable" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::basicIndexToVariable" );
 
     _nonBasicIndexToVariable = new unsigned[n-m];
     if ( !_nonBasicIndexToVariable )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::nonBasicIndexToVariable" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::nonBasicIndexToVariable" );
 
     _variableToIndex = new unsigned[n];
     if ( !_variableToIndex )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::variableToIndex" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::variableToIndex" );
 
     _basisFactorization = BasisFactorizationFactory::createBasisFactorization( m, oracle );
     if ( !_basisFactorization )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "TableauState::basisFactorization" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::basisFactorization" );
 }
 
 //

@@ -15,7 +15,7 @@
 
 #include "BlandsRule.h"
 #include "ITableau.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 
 bool BlandsRule::select( ITableau &tableau,
                          const List<unsigned> &candidates,

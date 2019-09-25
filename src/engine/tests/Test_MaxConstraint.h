@@ -18,7 +18,7 @@
 #include "MaxConstraint.h"
 #include "MockTableau.h"
 #include "PiecewiseLinearCaseSplit.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 
 #include <string.h>
 

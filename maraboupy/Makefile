@@ -19,7 +19,6 @@ LINK_FLAGS += \
 LOCAL_LIBRARIES += \
 
 CFLAGS += \
-	-DDEBUG_ON \
 
 SUFFIX = $(shell python3-config --extension-suffix)
 API_NAME = $(addprefix MarabouCore, $(SUFFIX))

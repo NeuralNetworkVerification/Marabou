@@ -22,9 +22,9 @@
 #include "InputQuery.h"
 #include "MStringf.h"
 #include "MalformedBasisException.h"
+#include "MarabouError.h"
 #include "PiecewiseLinearConstraint.h"
 #include "Preprocessor.h"
-#include "ReluplexError.h"
 #include "TableauRow.h"
 #include "TimeUtils.h"
 
@@ -45,6 +45,8 @@ Engine::Engine( unsigned verbosity )
     , _numVisitedStatesAtPreviousRestoration( 0 )
     , _networkLevelReasoner( NULL )
     , _verbosity( verbosity )
+    , _lastNumVisitedStates( 0 )
+    , _lastIterationWithProgress( 0 )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -89,7 +91,7 @@ void Engine::adjustWorkMemorySize()
 
     _work = new double[_tableau->getM()];
     if ( !_work )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Engine::work" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Engine::work" );
 }
 
 bool Engine::solve( unsigned timeoutInSeconds )
@@ -146,6 +148,9 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
             if ( _verbosity > 1 )
                 mainLoopStatistics();
+
+            // Check whether progress has been made recently
+            checkOverallProgress();
 
             // If the basis has become malformed, we need to restore it
             if ( basisRestorationNeeded() )
@@ -210,7 +215,10 @@ bool Engine::solve( unsigned timeoutInSeconds )
                     if ( _tableau->getBasicAssignmentStatus() !=
                          ITableau::BASIC_ASSIGNMENT_JUST_COMPUTED )
                     {
-                        printf( "Before declaring SAT, recomputing...\n" );
+                        if ( _verbosity > 0 )
+                        {
+                            printf( "Before declaring SAT, recomputing...\n" );
+                        }
                         // Make sure that the assignment is precise before declaring success
                         _tableau->computeAssignment();
                         continue;
@@ -382,7 +390,7 @@ void Engine::performSimplexStep()
                             "Recomputing cost function. New one is:\n" );
                     _costFunctionManager->computeCoreCostFunction();
                     _costFunctionManager->dumpCostFunction();
-                    throw ReluplexError( ReluplexError::DEBUGGING_ERROR,
+                    throw MarabouError( MarabouError::DEBUGGING_ERROR,
                                          "Have OOB vars but cost function is zero" );
                 }
             }
@@ -661,7 +669,7 @@ void Engine::invokePreprocessor( const InputQuery &inputQuery, bool preprocess )
     if ( infiniteBounds != 0 )
     {
         _exitCode = Engine::ERROR;
-        throw ReluplexError( ReluplexError::UNBOUNDED_VARIABLES_NOT_YET_SUPPORTED,
+        throw MarabouError( MarabouError::UNBOUNDED_VARIABLES_NOT_YET_SUPPORTED,
                              Stringf( "Error! Have %u infinite bounds", infiniteBounds ).ascii() );
     }
 }
@@ -722,7 +730,7 @@ double *Engine::createConstraintMatrix()
     // Step 1: create a constraint matrix from the equations
     double *constraintMatrix = new double[n*m];
     if ( !constraintMatrix )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Engine::constraintMatrix" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Engine::constraintMatrix" );
     std::fill_n( constraintMatrix, n*m, 0.0 );
 
     unsigned equationIndex = 0;
@@ -731,7 +739,7 @@ double *Engine::createConstraintMatrix()
         if ( equation._type != Equation::EQ )
         {
             _exitCode = Engine::ERROR;
-            throw ReluplexError( ReluplexError::NON_EQUALITY_INPUT_EQUATION_DISCOVERED );
+            throw MarabouError( MarabouError::NON_EQUALITY_INPUT_EQUATION_DISCOVERED );
         }
 
         for ( const auto &addend : equation._addends )
@@ -1059,7 +1067,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         List<unsigned> initialBasis;
         List<unsigned> basicRows;
-        selectInitialVariablesForBasis( constraintMatrix, initialBasis, basicRows ); // HERE
+        selectInitialVariablesForBasis( constraintMatrix, initialBasis, basicRows );
         addAuxiliaryVariables();
         augmentInitialBasisIfNeeded( initialBasis, basicRows );
 
@@ -1069,8 +1077,11 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         delete[] constraintMatrix;
         constraintMatrix = createConstraintMatrix();
 
-        initializeTableau( constraintMatrix, initialBasis );
         initializeNetworkLevelReasoning();
+        initializeTableau( constraintMatrix, initialBasis );
+
+        if ( GlobalConfiguration::WARM_START )
+            warmStart();
 
         delete[] constraintMatrix;
 
@@ -1181,7 +1192,7 @@ void Engine::restoreState( const EngineState &state )
     log( "Restore state starting" );
 
     if ( !state._tableauStateIsStored )
-        throw ReluplexError( ReluplexError::RESTORING_ENGINE_FROM_INVALID_STATE );
+        throw MarabouError( MarabouError::RESTORING_ENGINE_FROM_INVALID_STATE );
 
     log( "\tRestoring tableau state" );
     _tableau->restoreState( state._tableauState );
@@ -1190,7 +1201,7 @@ void Engine::restoreState( const EngineState &state )
     for ( auto &constraint : _plConstraints )
     {
         if ( !state._plConstraintToState.exists( constraint ) )
-            throw ReluplexError( ReluplexError::MISSING_PL_CONSTRAINT_STATE );
+            throw MarabouError( MarabouError::MISSING_PL_CONSTRAINT_STATE );
 
         constraint->restoreState( state._plConstraintToState[constraint] );
     }
@@ -1617,7 +1628,7 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
                     afterSecond );
 
         if ( highDegradation() )
-            throw ReluplexError( ReluplexError::RESTORATION_FAILED_TO_RESTORE_PRECISION );
+            throw MarabouError( MarabouError::RESTORATION_FAILED_TO_RESTORE_PRECISION );
     }
 }
 
@@ -1670,7 +1681,7 @@ void Engine::checkBoundCompliancyWithDebugSolution()
                         var.second,
                         _tableau->getLowerBound( var.first ) );
 
-                throw ReluplexError( ReluplexError::DEBUGGING_ERROR );
+                throw MarabouError( MarabouError::DEBUGGING_ERROR );
             }
 
             if ( FloatUtils::lt( _tableau->getUpperBound( var.first ), var.second, 1e-5 ) )
@@ -1681,7 +1692,7 @@ void Engine::checkBoundCompliancyWithDebugSolution()
                         var.second,
                         _tableau->getUpperBound( var.first ) );
 
-                throw ReluplexError( ReluplexError::DEBUGGING_ERROR );
+                throw MarabouError( MarabouError::DEBUGGING_ERROR );
             }
         }
     }
@@ -1727,7 +1738,7 @@ void Engine::performSymbolicBoundTightening()
         // We assume the input variables are the first variables
         if ( inputVariable != inputVariableIndex )
         {
-            throw ReluplexError( ReluplexError::SYMBOLIC_BOUND_TIGHTENER_FAULTY_INPUT,
+            throw MarabouError( MarabouError::SYMBOLIC_BOUND_TIGHTENER_FAULTY_INPUT,
                                  Stringf( "Sanity check failed, input variable %u with unexpected index %u", inputVariableIndex, inputVariable ).ascii() );
         }
         ++inputVariableIndex;
@@ -1743,7 +1754,7 @@ void Engine::performSymbolicBoundTightening()
     for ( const auto &constraint : _plConstraints )
     {
         if ( !constraint->supportsSymbolicBoundTightening() )
-            throw ReluplexError( ReluplexError::SYMBOLIC_BOUND_TIGHTENER_UNSUPPORTED_CONSTRAINT_TYPE );
+            throw MarabouError( MarabouError::SYMBOLIC_BOUND_TIGHTENER_UNSUPPORTED_CONSTRAINT_TYPE );
 
         ReluConstraint *relu = (ReluConstraint *)constraint;
         unsigned b = relu->getB();
@@ -1831,6 +1842,85 @@ void Engine::resetBoundTighteners()
 {
     _constraintBoundTightener->resetBounds();
     _rowBoundTightener->resetBounds();
+}
+
+void Engine::warmStart()
+{
+    // An NLR is required for a warm start
+    if ( !_networkLevelReasoner )
+        return;
+
+    // First, choose an arbitrary assignment for the input variables
+    unsigned numInputVariables = _preprocessedQuery.getNumInputVariables();
+    unsigned numOutputVariables = _preprocessedQuery.getNumOutputVariables();
+
+    if ( numInputVariables == 0 )
+    {
+        // Trivial case: all inputs are fixed, nothing to evaluate
+        return;
+    }
+
+    double *inputAssignment = new double[numInputVariables];
+    double *outputAssignment = new double[numOutputVariables];
+
+    for ( unsigned i = 0; i < numInputVariables; ++i )
+    {
+        unsigned variable = _preprocessedQuery.inputVariableByIndex( i );
+        inputAssignment[i] = _tableau->getLowerBound( variable );
+    }
+
+    // Evaluate the network for this assignment
+    _networkLevelReasoner->evaluate( inputAssignment, outputAssignment );
+
+    // Try to update as many variables as possible to match their assignment
+    for ( const auto &assignment : _networkLevelReasoner->getIndexToWeightedSumAssignment() )
+    {
+        unsigned variable = _networkLevelReasoner->getWeightedSumVariable( assignment.first._layer, assignment.first._neuron );
+
+        if ( !_tableau->isBasic( variable ) )
+            _tableau->setNonBasicAssignment( variable, assignment.second, false );
+    }
+
+    for ( const auto &assignment : _networkLevelReasoner->getIndexToActivationResultAssignment() )
+    {
+        unsigned variable = _networkLevelReasoner->getActivationResultVariable( assignment.first._layer, assignment.first._neuron );
+
+        if ( !_tableau->isBasic( variable ) )
+            _tableau->setNonBasicAssignment( variable, assignment.second, false );
+    }
+
+    // We did what we could for the non-basics; now let the tableau compute
+    // the basic assignment
+    _tableau->computeAssignment();
+
+    delete[] outputAssignment;
+    delete[] inputAssignment;
+}
+
+void Engine::checkOverallProgress()
+{
+    // Get fresh statistics
+    unsigned numVisitedStates = _statistics.getNumVisitedTreeStates();
+    unsigned long long currentIteration = _statistics.getNumMainLoopIterations();
+
+    if ( numVisitedStates > _lastNumVisitedStates )
+    {
+        // Progress has been made
+        _lastNumVisitedStates = numVisitedStates;
+        _lastIterationWithProgress = _statistics.getNumMainLoopIterations();
+    }
+    else
+    {
+        // No progress has been made. If it's been too long, request a restoration
+        if ( currentIteration >
+             _lastIterationWithProgress +
+             GlobalConfiguration::MAX_ITERATIONS_WITHOUT_PROGRESS )
+        {
+            log( "checkOverallProgress detected cycling. Requesting a precision restoration" );
+            _basisRestorationRequired = Engine::STRONG_RESTORATION_NEEDED;
+            _lastIterationWithProgress = currentIteration;
+        }
+    }
 }
 
 //

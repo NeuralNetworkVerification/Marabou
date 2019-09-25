@@ -20,10 +20,11 @@
 #include "Marabou.h"
 #include "Options.h"
 #include "PropertyParser.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 
-Marabou::Marabou()
+Marabou::Marabou( unsigned verbosity )
     : _acasParser( NULL )
+    , _engine( verbosity )
 {
 }
 
@@ -58,7 +59,7 @@ void Marabou::prepareInputQuery()
     if ( !File::exists( networkFilePath ) )
     {
         printf( "Error: the specified network file (%s) doesn't exist!\n", networkFilePath.ascii() );
-        throw ReluplexError( ReluplexError::FILE_DOESNT_EXIST, networkFilePath.ascii() );
+        throw MarabouError( MarabouError::FILE_DOESNT_EXIST, networkFilePath.ascii() );
     }
     printf( "Network: %s\n", networkFilePath.ascii() );
 
@@ -107,12 +108,12 @@ void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
 
         printf( "Input assignment:\n" );
         for ( unsigned i = 0; i < _inputQuery.getNumInputVariables(); ++i )
-            printf( "\tx%u = %8.4lf\n", i, _inputQuery.getSolutionValue( _inputQuery.inputVariableByIndex( i ) ) );
+            printf( "\tx%u = %lf\n", i, _inputQuery.getSolutionValue( _inputQuery.inputVariableByIndex( i ) ) );
 
         printf( "\n" );
         printf( "Output:\n" );
         for ( unsigned i = 0; i < _inputQuery.getNumOutputVariables(); ++i )
-            printf( "\ty%u = %8.4lf\n", i, _inputQuery.getSolutionValue( _inputQuery.outputVariableByIndex( i ) ) );
+            printf( "\ty%u = %lf\n", i, _inputQuery.getSolutionValue( _inputQuery.outputVariableByIndex( i ) ) );
         printf( "\n" );
     }
     else if ( result == Engine::TIMEOUT )

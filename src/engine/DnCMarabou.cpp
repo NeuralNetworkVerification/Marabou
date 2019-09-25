@@ -20,7 +20,7 @@
 #include "MStringf.h"
 #include "Options.h"
 #include "PropertyParser.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 
 DnCMarabou::DnCMarabou()
     : _dncManager( nullptr )
@@ -37,7 +37,7 @@ void DnCMarabou::run()
     {
         printf( "Error: the specified network file (%s) doesn't exist!\n",
                 networkFilePath.ascii() );
-        throw ReluplexError( ReluplexError::FILE_DOESNT_EXIST,
+        throw MarabouError( MarabouError::FILE_DOESNT_EXIST,
                              networkFilePath.ascii() );
     }
     printf( "Network: %s\n", networkFilePath.ascii() );
@@ -52,7 +52,7 @@ void DnCMarabou::run()
         {
             printf( "Error: the specified property file (%s) doesn't exist!\n",
                     propertyFilePath.ascii() );
-            throw ReluplexError( ReluplexError::FILE_DOESNT_EXIST,
+            throw MarabouError( MarabouError::FILE_DOESNT_EXIST,
                                  propertyFilePath.ascii() );
         }
         printf( "Property: %s\n", propertyFilePath.ascii() );

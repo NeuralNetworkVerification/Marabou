@@ -16,7 +16,7 @@
 #include <cstdio>
 
 #include "RegressUtils.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 
 #include "acas_1_1_no_constraints.h"
 #include "acas_1_1_fixed_input.h"
@@ -96,7 +96,7 @@ int main()
 
         printf( "\n\n" );
 	}
-	catch( const ReluplexError &e )
+	catch( const MarabouError &e )
 	{
 		printf( "%u", e.getCode() );
 	}
