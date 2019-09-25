@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file File.h
+/*! \file GetCPUData.h
 ** \verbatim
 ** Top contributors (to current version):
 **   Haoze Wu
