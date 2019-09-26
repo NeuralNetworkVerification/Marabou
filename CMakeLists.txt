@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(BUILD_PYTHON "Build Python" ON)
 option(FORCE_PYTHON_BUILD "Build python even if there is only python32" OFF)
-option(RUN_TEST "run cxxtest unit testing" ON)
+option(RUN_TEST "run cxxtest unit testing" OFF)
 option(RUN_MEMORY_TEST "run cxxtest unit testing with ASAN" ON)
 option(RUN_REGRESS_TEST "run regression tests" OFF)
 
