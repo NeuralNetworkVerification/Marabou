@@ -13,7 +13,7 @@ option(RUN_REGRESS_TEST "run regression tests" OFF)
 set(MARABOU_LIB MarabouHelper)
 set(MARABOU_TEST_LIB MarabouHelperTest)
 set(MARABOU_EXE Marabou)
-set(MARABOU_REGRESS Regress)
+set(MARABOU_REGRESS Regression)
 set(MARABOU_PY MarabouCore)
 
 set(TOOLS_DIR "${PROJECT_SOURCE_DIR}/tools")
@@ -56,7 +56,6 @@ endif()
 
 # Default value false
 set(PYTHON32 FALSE)
-# message("python ex: ${Python_EXECUTABLE}")
 if(${BUILD_PYTHON})
     execute_process(COMMAND "${Python_EXECUTABLE}" "-c"
         "import struct; print(struct.calcsize('@P'));"
@@ -100,13 +99,11 @@ endif()
 find_package(Boost REQUIRED COMPONENTS program_options)
 # Find boost
 if (NOT ${Boost_FOUND})
-# if (NOT EXISTS ${BOOST_DIR})
     # bash file that downloads and install boost 1_68_0, the name need to match
     # BOOST_DIR variable
     execute_process(COMMAND ${TOOLS_DIR}/download_boost.sh)
     find_package(Boost REQUIRED COMPONENTS program_options)
 endif()
-# message("Boost_INCLUDE_DIRS ${Boost_INCLUDE_DIRS}")
 set(LIBS_INCLUDES ${Boost_INCLUDE_DIRS})
 set(LIBS ${Boost_LIBRARIES})
 
@@ -130,12 +127,9 @@ target_include_directories(${MARABOU_EXE} PRIVATE ${LIBS_INCLUDES})
 # Build Python marabou
 if (${FORCE_PYTHON_BUILD})
     set(BUILD_PYTHON ON)
-    # message("FORCE PYTHON BUILD")
 else()
     if (${BUILD_PYTHON} AND NOT ${PYTHON32})
         set(BUILD_PYTHON ON)
-        # message("BUILD_PYTHON: ${BUILD_PYTHON}")
-        # message("PYTHON32: ${PYTHON32}")
     else()
         set(BUILD_PYTHON OFF)
     endif()
@@ -164,36 +158,42 @@ endif()
 
 
 add_library(${MARABOU_TEST_LIB})
-if (RUN_TEST)
-    set (TEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/tests)
-    file(MAKE_DIRECTORY ${TEST_DIR})
+set (TEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/tests)
+file(MAKE_DIRECTORY ${TEST_DIR})
 
-    set(BASIS_DIR_TEST "${BASIS_DIR}/tests")
-    set(COMMON_DIR_TEST "${COMMON_DIR}/tests")
-    set(ENGINE_DIR_TEST "${ENGINE_DIR}/tests")
-
-    set(CMAKE_PREFIX_PATH ${TOOLS_DIR}/cxxtest)
-    set(CXXTEST_USE_PYTHON FALSE)
-    find_package(CxxTest)
-    if(CXXTEST_FOUND)
-        include_directories(${CXXTEST_INCLUDE_DIR})
-        enable_testing()
-    endif()
-
-    target_link_libraries(${MARABOU_TEST_LIB} ${LIBS})
-    target_include_directories(${MARABOU_TEST_LIB} PRIVATE ${LIBS_INCLUDES})
-    target_compile_options(${MARABOU_TEST_LIB} PRIVATE ${CXXTEST_FLAGS})
-    add_subdirectory(${COMMON_DIR_TEST})
-    add_subdirectory(${ENGINE_DIR_TEST})
-    add_subdirectory(${BASIS_DIR_TEST})
-
+set(CMAKE_PREFIX_PATH ${TOOLS_DIR}/cxxtest)
+set(CXXTEST_USE_PYTHON FALSE)
+find_package(CxxTest)
+if(CXXTEST_FOUND)
+    include_directories(${CXXTEST_INCLUDE_DIR})
+    enable_testing()
 endif()
 
+target_link_libraries(${MARABOU_TEST_LIB} ${LIBS})
+target_include_directories(${MARABOU_TEST_LIB} PRIVATE ${LIBS_INCLUDES})
+target_compile_options(${MARABOU_TEST_LIB} PRIVATE ${CXXTEST_FLAGS})
+
+
+
+add_custom_target(build-tests ALL)
+add_custom_target(check
+      COMMAND ctest --output-on-failure -j${CTEST_NTHREADS} $$ARGS
+      DEPENDS build-tests)
+
+if (RUN_TEST)
+    # make ctest verbose 
+    set(CTEST_OUTPUT_ON_FAILURE 1)
+    add_custom_command(
+        TARGET build-tests
+        POST_BUILD
+        COMMAND ctest --output-on-failure 
+    )
+
+endif()
 
 add_subdirectory(${SRC_DIR})
 add_subdirectory(${TOOLS_DIR})
 add_subdirectory(${REGRESS_DIR})
-
 
 execute_process(
   COMMAND git rev-parse --abbrev-ref HEAD
