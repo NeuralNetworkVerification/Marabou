@@ -96,7 +96,7 @@ else()
     set(BOOST_ROOT "${BOOST_DIR}/installed")
     # set(BOOST_INCLUDES "${BOOST_DIR}/installed/include")
 endif()
-find_package(Boost REQUIRED COMPONENTS program_options)
+find_package(Boost COMPONENTS program_options)
 # Find boost
 if (NOT ${Boost_FOUND})
     # bash file that downloads and install boost 1_68_0, the name need to match
