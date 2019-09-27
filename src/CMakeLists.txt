@@ -27,6 +27,7 @@ macro(marabou_add_test test_name test_dir add_common_real)
         set(test_src ${test_src} ${SRCS_COMMON_MOCK})
     endif()
     add_executable(${name} ${test_src} ${test_header})
+    target_compile_options(${name} PRIVATE ${CXXTEST_FLAGS})
     add_dependencies(build-tests ${name})
     target_include_directories(${name}  PRIVATE ${LIBS_INCLUDES} 
         )
