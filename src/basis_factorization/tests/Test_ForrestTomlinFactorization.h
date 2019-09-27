@@ -58,7 +58,7 @@ public:
 
     void test_set_basis()
     {
-        ForrestTomlinFactorization *ft;
+        ForrestTomlinFactorization *ft = NULL;
 
         TS_ASSERT( ft = new ForrestTomlinFactorization( 4, *oracle ) );
 
@@ -181,7 +181,7 @@ public:
 
     void test_set_basis_2()
     {
-        ForrestTomlinFactorization *ft;
+        ForrestTomlinFactorization *ft = NULL;
 
         TS_ASSERT( ft = new ForrestTomlinFactorization( 4, *oracle ) );
 
@@ -318,7 +318,7 @@ public:
 
     void test_forward_transformation()
     {
-        ForrestTomlinFactorization *ft;
+        ForrestTomlinFactorization *ft = NULL;
 
         TS_ASSERT( ft = new ForrestTomlinFactorization( 4, *oracle ) );
 
@@ -449,7 +449,7 @@ public:
 
     void test_backward_transformation()
     {
-        ForrestTomlinFactorization *ft;
+        ForrestTomlinFactorization *ft = NULL;
 
         TS_ASSERT( ft = new ForrestTomlinFactorization( 4, *oracle ) );
 
@@ -591,7 +591,7 @@ public:
 
     void test_push_eta_matrix_refactorization()
     {
-        ForrestTomlinFactorization *ft;
+        ForrestTomlinFactorization *ft = NULL;
 
         TS_ASSERT( ft = new ForrestTomlinFactorization( 4, *oracle ) );
 
@@ -806,7 +806,7 @@ public:
 
     void test_store_and_restore()
     {
-        ForrestTomlinFactorization *ft;
+        ForrestTomlinFactorization *ft = NULL;
 
         TS_ASSERT( ft = new ForrestTomlinFactorization( 4, *oracle ) );
 
@@ -851,7 +851,7 @@ public:
 
     void test_get_basis()
     {
-        ForrestTomlinFactorization *ft;
+        ForrestTomlinFactorization *ft = NULL;
 
         TS_ASSERT( ft = new ForrestTomlinFactorization( 4, *oracle ) );
 
@@ -870,7 +870,7 @@ public:
         ft->obtainFreshBasis();
 
         TS_ASSERT( ft->explicitBasisAvailable() );
-        const double *basis;
+        const double *basis = NULL;
         TS_ASSERT_THROWS_NOTHING( basis = ft->getBasis() );
         for ( unsigned i = 0; i < 16; ++i )
             TS_ASSERT( FloatUtils::areEqual( basisMatrix[i], basis[i] ) );
@@ -911,7 +911,7 @@ public:
 
     void test_invert_basis()
     {
-        ForrestTomlinFactorization *ft;
+        ForrestTomlinFactorization *ft = NULL;
 
         TS_ASSERT( ft = new ForrestTomlinFactorization( 4, *oracle ) );
 

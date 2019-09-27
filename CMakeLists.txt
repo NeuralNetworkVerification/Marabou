@@ -180,7 +180,7 @@ add_custom_target(check
       COMMAND ctest --output-on-failure -j${CTEST_NTHREADS} $$ARGS
       DEPENDS build-tests)
 
-if (RUN_TEST)
+if (${RUN_TEST})
     # make ctest verbose 
     set(CTEST_OUTPUT_ON_FAILURE 1)
     add_custom_command(
