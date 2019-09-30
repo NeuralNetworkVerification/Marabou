@@ -18,6 +18,7 @@
 #include "DivideStrategy.h"
 #include "DnCManager.h"
 #include "DnCWorker.h"
+#include "GetCPUData.h"
 #include "LargestIntervalDivider.h"
 #include "MStringf.h"
 #include "PiecewiseLinearCaseSplit.h"
@@ -25,7 +26,6 @@
 #include "QueryDivider.h"
 #include "MarabouError.h"
 #include "TimeUtils.h"
-
 #include <atomic>
 #include <chrono>
 #include <cmath>
@@ -37,7 +37,10 @@ void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine
                            unsigned threadId, unsigned onlineDivides,
                            float timeoutFactor, DivideStrategy divideStrategy )
 {
-    log( Stringf( "Thread #%u on CPU %u", threadId, sched_getcpu() ) );
+    unsigned cpuId = 0;
+    getCPUId( cpuId );
+    log( Stringf( "Thread #%u on CPU %u", threadId, cpuId ) );
+
     DnCWorker worker( workload, engine, std::ref( numUnsolvedSubQueries ),
                       std::ref( shouldQuitSolving ), threadId, onlineDivides,
                       timeoutFactor, divideStrategy );
