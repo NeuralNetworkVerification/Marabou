@@ -83,7 +83,11 @@ if (RUN_MEMORY_TEST)
 endif()
 
 set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS} -g) 
-set(CXXTEST_FLAGS ${DEBUG_FLAGS}  -Wno-ignored-qualifiers -Wno-terminate)
+set(CXXTEST_FLAGS ${DEBUG_FLAGS}  -Wno-ignored-qualifiers)
+
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    set(CXXTEST_FLAGS -Wno-terminate)
+endif()
 set(RELEASE_FLAGS  ${COMPILE_FLAGS} -O3)
 
 
