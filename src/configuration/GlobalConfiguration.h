@@ -80,6 +80,10 @@ public:
     // respect to the input network.
     static const bool WARM_START;
 
+    // The maximal number of iterations without new tree states being visited, before
+    // the engine performs a precision restoration.
+    static const unsigned MAX_ITERATIONS_WITHOUT_PROGRESS;
+
     // How often should the main loop check the current degradation?
     static const unsigned DEGRADATION_CHECKING_FREQUENCY;
 
