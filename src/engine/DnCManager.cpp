@@ -234,7 +234,7 @@ void DnCManager::printResult()
     {
     case DnCManager::SAT:
     {
-        std::cout << "SAT" << std::endl;
+        std::cout << "SAT\n" << std::endl;
 
         ASSERT( _engineWithSATAssignment != nullptr );
 
