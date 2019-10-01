@@ -230,6 +230,7 @@ String DnCManager::getResultString()
 
 void DnCManager::printResult()
 {
+    std::cout << std::endl;
     switch ( _exitCode )
     {
     case DnCManager::SAT:
