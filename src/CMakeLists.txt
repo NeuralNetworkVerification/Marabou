@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.12)
 
-macro(marabou_add_test test_name test_dir add_common_real) 
+macro(marabou_add_test test_name test_dir add_common_real labels) 
     get_filename_component(name ${test_name} NAME_WE)
     set(test_src ${name}.cc)
 
@@ -35,8 +35,7 @@ macro(marabou_add_test test_name test_dir add_common_real)
     add_custom_command(TARGET ${name} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${name}> "${test_bin_dir}/${name}")
     add_test(${name} "${test_bin_dir}/${name}")
-    set_tests_properties(${name} PROPERTIES LABELS "${test_dir}")
- 
+    set_tests_properties(${name} PROPERTIES LABELS "${test_dir} ${labels}")
 endmacro()
 
 add_subdirectory(configuration)
