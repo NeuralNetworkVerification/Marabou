@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(BUILD_PYTHON "Build Python" ON)
 option(FORCE_PYTHON_BUILD "Build python even if there is only python32" OFF)
-option(RUN_TEST "run cxxtest unit testing" OFF)
+option(RUN_UNIT_TEST "run cxxtest unit testing" OFF)
 option(RUN_MEMORY_TEST "run cxxtest unit testing with ASAN" ON)
 option(RUN_REGRESS_TEST "run regression tests" OFF)
 
@@ -82,11 +82,11 @@ if (RUN_MEMORY_TEST)
     set(MEMORY_FLAGS -fsanitize=address -fno-omit-frame-pointer -O1)
 endif()
 
-set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS} -g) 
+set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS} -g -DDEBUG_ON) 
 set(CXXTEST_FLAGS ${DEBUG_FLAGS}  -Wno-ignored-qualifiers)
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    set(CXXTEST_FLAGS -Wno-terminate)
+    set(CXXTEST_FLAGS ${CXXTEST_FLAGS} -Wno-terminate)
 endif()
 set(RELEASE_FLAGS  ${COMPILE_FLAGS} -O3)
 
@@ -184,13 +184,13 @@ add_custom_target(check
       COMMAND ctest --output-on-failure -j${CTEST_NTHREADS} $$ARGS
       DEPENDS build-tests)
 
-if (${RUN_TEST})
+if (${RUN_UNIT_TEST})
     # make ctest verbose 
     set(CTEST_OUTPUT_ON_FAILURE 1)
     add_custom_command(
         TARGET build-tests
         POST_BUILD
-        COMMAND ctest --output-on-failure 
+        COMMAND ctest --output-on-failure  -L unit
     )
 
 endif()

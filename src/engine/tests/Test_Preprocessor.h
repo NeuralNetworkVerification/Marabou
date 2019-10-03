@@ -667,8 +667,9 @@ public:
         inputQuery.addEquation( *eq_eq);
         delete eq_eq;
 
-        auto processedQuery = Preprocessor().preprocess( inputQuery );
-        TS_ASSERT_EQUALS( processedQuery.getNumberOfVariables(), 0U );
+        InputQuery processed = Preprocessor().preprocess( inputQuery );
+        TS_ASSERT_EQUALS( processed.getNumberOfVariables(), 0U );
+        processed.~InputQuery();
     }
 
     void test_todo()
