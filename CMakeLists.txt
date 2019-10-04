@@ -142,7 +142,7 @@ endif()
 # message("BUILD_PYTHON: ${BUILD_PYTHON}")
 if (${BUILD_PYTHON})
     # This is suppose to set the PYTHON_EXECUTABLE variable
-    find_package(Python3 REQUIRED)
+    find_package(Python REQUIRED)
     
     if (NOT EXISTS ${PYBIND11_DIR})
         message("didnt find pybind, getting it")
