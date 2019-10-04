@@ -1,9 +1,12 @@
 language: cpp
 
-dist: trusty
+dist: xenial 
 
 script:
-  - make
+  - mkdir -p build 
+  - cd build
+  - cmake .. -DRUN_UNIT_TEST=ON
+  - cmake --build . 
 
 matrix:
   include:
