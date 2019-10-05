@@ -669,7 +669,6 @@ public:
 
         InputQuery processed = Preprocessor().preprocess( inputQuery );
         TS_ASSERT_EQUALS( processed.getNumberOfVariables(), 0U );
-        TS_ASSERT( 0 );
     }
 
     void test_todo()
