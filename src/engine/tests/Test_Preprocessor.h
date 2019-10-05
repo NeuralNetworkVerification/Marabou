@@ -525,8 +525,10 @@ public:
         }
     }
 
-    /* void test_merge_and_fix_disjoint() */
-    /* { */
+    void test_merge_and_fix_disjoint()
+    {
+        TS_ASSERT( 1 );
+    }
 		/* InputQuery inputQuery; */
     /*     inputQuery.setNumberOfVariables( 20 ); */
 
