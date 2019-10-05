@@ -667,7 +667,7 @@ public:
         /* inputQuery.addEquation( *eq_eq); */
         /* delete eq_eq; */
 
-        auto processedQuery = Preprocessor().preprocess( inputQuery );
+        InputQuery processedQuery = Preprocessor().preprocess( inputQuery );
         /* TS_ASSERT_EQUALS( processedQuery.getNumberOfVariables(), 0U ); */
     }
 
