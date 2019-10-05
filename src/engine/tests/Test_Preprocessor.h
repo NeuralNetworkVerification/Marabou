@@ -522,6 +522,7 @@ public:
         {
             TS_ASSERT( plConstraint->participatingVariable( 0 ));
             TS_ASSERT( plConstraint->participatingVariable( 2 ));
+            TS_ASSERT ( 0 );
         }
     }
 
@@ -668,7 +669,7 @@ public:
         delete eq_eq;
 
         InputQuery processed = Preprocessor().preprocess( inputQuery );
-        TS_ASSERT_EQUALS( processed.getNumberOfVariables(), 0U );
+        /* TS_ASSERT_EQUALS( processed.getNumberOfVariables(), 0U ); */
     }
 
     void test_todo()
