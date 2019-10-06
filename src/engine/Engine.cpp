@@ -79,7 +79,7 @@ Engine::~Engine()
     }
 }
 
-void Engine::setVerbosity (unsigned verbosity)
+void Engine::setVerbosity( unsigned verbosity )
 {
     _verbosity = verbosity;
 }
