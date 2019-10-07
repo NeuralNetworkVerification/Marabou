@@ -526,19 +526,15 @@ public:
     }
 
     void test_merge_and_fix_disjoint()
-    /* { */
-        /* TS_ASSERT( 1 ); */
-    /* } */
     {
-        printf("test_merge_and_fix_disjoint\n");
 		InputQuery inputQuery;
         inputQuery.setNumberOfVariables( 20 );
 
-        /* /1* Input *1/ */
-        /* inputQuery.setLowerBound( 0, 0.1 ); */
-        /* inputQuery.setUpperBound( 0, 0.1 ); */
-        /* inputQuery.setLowerBound( 1, 0.2 ); */
-        /* inputQuery.setUpperBound( 1, 0.2 ); */
+        /* Input */
+        inputQuery.setLowerBound( 0, 0.1 );
+        inputQuery.setUpperBound( 0, 0.1 );
+        inputQuery.setLowerBound( 1, 0.2 );
+        inputQuery.setUpperBound( 1, 0.2 );
         inputQuery.setLowerBound( 2, 0.3 );
         inputQuery.setUpperBound( 2, 0.3 );
         inputQuery.setLowerBound( 3, 0.4 );
