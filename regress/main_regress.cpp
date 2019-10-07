@@ -18,8 +18,8 @@
 #include "RegressUtils.h"
 #include "MarabouError.h"
 
-#include "acas_1_1_no_constraints.h"
 #include "acas_1_1_fixed_input.h"
+#include "acas_1_1_no_constraints.h"
 #include "acas_2_2_fixed_input.h"
 #include "lp_feasible_1.h"
 #include "lp_feasible_2.h"
@@ -27,6 +27,8 @@
 #include "max_feasible_1.h"
 #include "max_infeasible_1.h"
 #include "max_relu_feasible_1.h"
+#include "mps_lp_feasible_1.h"
+#include "mps_lp_infeasible_1.h"
 #include "relu_feasible_1.h"
 #include "relu_feasible_2.h"
 
@@ -39,9 +41,15 @@ void lps()
     Lp_Feasible_2 lpf2;
     lpf2.run();
 
+    Mps_Lp_Feasible_1 mps_lpf1;
+    mps_lpf1.run();
+
     printTitle( "Pure LP / Unsat" );
     Lp_Infeasible_1 lpi1;
     lpi1.run();
+
+    Mps_Lp_Infeasible_1 mps_lpi1;
+    mps_lpi1.run();
 }
 
 void relus()
