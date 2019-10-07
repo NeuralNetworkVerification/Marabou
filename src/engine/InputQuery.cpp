@@ -260,6 +260,7 @@ InputQuery::InputQuery( const InputQuery &other )
 
 void InputQuery::freeConstraintsIfNeeded()
 {
+    printf("free memory of object: %p\n", this);
     for ( auto &it : _plConstraints )
         delete it;
 
