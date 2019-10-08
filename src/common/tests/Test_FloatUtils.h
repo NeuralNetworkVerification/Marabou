@@ -69,21 +69,24 @@ public:
     {
         TS_ASSERT( FloatUtils::wellFormed( -1 ) );
         TS_ASSERT( !FloatUtils::wellFormed( sqrt( -1 ) ) );
-        TS_ASSERT( !FloatUtils::wellFormed( 5.0 / 0.0 ) );
+        float zero = 0.0;
+        TS_ASSERT( !FloatUtils::wellFormed( 5.0 / zero ) );
     }
 
     void test_isnan()
     {
         TS_ASSERT( !FloatUtils::isNan( -1 ) );
         TS_ASSERT( FloatUtils::isNan( sqrt( -1 ) ) );
-        TS_ASSERT( !FloatUtils::isNan( 5.0 / 0.0 ) );
+        float zero = 0.0;
+        TS_ASSERT( !FloatUtils::isNan( 5.0 / zero ) );
     }
 
     void test_isinf()
     {
         TS_ASSERT( !FloatUtils::isInf( -1 ) );
         TS_ASSERT( !FloatUtils::isInf( sqrt( -1 ) ) );
-        TS_ASSERT( FloatUtils::isInf( 5.0 / 0.0 ) );
+        float zero = 0.0;
+        TS_ASSERT( FloatUtils::isInf( 5.0 / zero ) );
     }
 };
 
