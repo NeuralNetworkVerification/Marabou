@@ -20,3 +20,16 @@ tools/boost_1_68_0
 /tools/boost_1_68_0.tar.gz
 /cpp_interface_example/example.elf
 /src/input_parsers/mps_example/mps.elf
+
+/* CMAKE */
+CMakeLists.txt.user
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+Testing
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps
