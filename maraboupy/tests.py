@@ -38,3 +38,7 @@ def test_dump_query():
     network = define_network()
     MarabouCore.solve(network, "", 0)
     network.dump()
+
+
+if __name__ == "__main__":
+    test_dump_query()

@@ -57,6 +57,11 @@ void LUFactorization::freeIfNeeded()
     for ( it = _etas.begin(); it != _etas.end(); ++it )
         delete *it;
 
+    if ( _z )
+    {
+        delete[] _z;
+        _z = NULL;
+    }
     _etas.clear();
 }
 

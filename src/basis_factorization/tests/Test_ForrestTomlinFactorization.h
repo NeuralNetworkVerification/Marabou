@@ -58,7 +58,7 @@ public:
 
     void test_set_basis()
     {
-        ForrestTomlinFactorization *ft;
+        ForrestTomlinFactorization *ft = NULL;
 
         TS_ASSERT( ft = new ForrestTomlinFactorization( 4, *oracle ) );
 
@@ -181,7 +181,7 @@ public:
 
     void test_set_basis_2()
     {
-        ForrestTomlinFactorization *ft;
+        ForrestTomlinFactorization *ft = NULL;
 
         TS_ASSERT( ft = new ForrestTomlinFactorization( 4, *oracle ) );
 
@@ -318,7 +318,7 @@ public:
 
     void test_forward_transformation()
     {
-        ForrestTomlinFactorization *ft;
+        ForrestTomlinFactorization *ft = NULL;
 
         TS_ASSERT( ft = new ForrestTomlinFactorization( 4, *oracle ) );
 
@@ -443,11 +443,13 @@ public:
             for ( unsigned i = 0; i < 4; ++i )
                 TS_ASSERT( FloatUtils::areEqual( x[i], expectedX[i] ) );
         }
+
+        TS_ASSERT_THROWS_NOTHING( delete ft );
     }
 
     void test_backward_transformation()
     {
-        ForrestTomlinFactorization *ft;
+        ForrestTomlinFactorization *ft = NULL;
 
         TS_ASSERT( ft = new ForrestTomlinFactorization( 4, *oracle ) );
 
@@ -583,11 +585,13 @@ public:
             for ( unsigned i = 0; i < 4; ++i )
                 TS_ASSERT( FloatUtils::areEqual( x[i], expectedX[i] ) );
         }
+
+        TS_ASSERT_THROWS_NOTHING( delete ft );
     }
 
     void test_push_eta_matrix_refactorization()
     {
-        ForrestTomlinFactorization *ft;
+        ForrestTomlinFactorization *ft = NULL;
 
         TS_ASSERT( ft = new ForrestTomlinFactorization( 4, *oracle ) );
 
@@ -802,7 +806,7 @@ public:
 
     void test_store_and_restore()
     {
-        ForrestTomlinFactorization *ft;
+        ForrestTomlinFactorization *ft = NULL;
 
         TS_ASSERT( ft = new ForrestTomlinFactorization( 4, *oracle ) );
 
@@ -839,11 +843,15 @@ public:
             TS_ASSERT_EQUALS( x1[i], x2[i] );
             TS_ASSERT_EQUALS( x1[i], x3[i] );
         }
+
+        TS_ASSERT_THROWS_NOTHING( delete ft );
+        TS_ASSERT_THROWS_NOTHING( delete ft2 );
+        TS_ASSERT_THROWS_NOTHING( delete ft3 );
     }
 
     void test_get_basis()
     {
-        ForrestTomlinFactorization *ft;
+        ForrestTomlinFactorization *ft = NULL;
 
         TS_ASSERT( ft = new ForrestTomlinFactorization( 4, *oracle ) );
 
@@ -862,7 +870,7 @@ public:
         ft->obtainFreshBasis();
 
         TS_ASSERT( ft->explicitBasisAvailable() );
-        const double *basis;
+        const double *basis = NULL;
         TS_ASSERT_THROWS_NOTHING( basis = ft->getBasis() );
         for ( unsigned i = 0; i < 16; ++i )
             TS_ASSERT( FloatUtils::areEqual( basisMatrix[i], basis[i] ) );
@@ -903,7 +911,7 @@ public:
 
     void test_invert_basis()
     {
-        ForrestTomlinFactorization *ft;
+        ForrestTomlinFactorization *ft = NULL;
 
         TS_ASSERT( ft = new ForrestTomlinFactorization( 4, *oracle ) );
 

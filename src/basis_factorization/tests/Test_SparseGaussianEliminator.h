@@ -32,7 +32,7 @@ class SparseGaussianEliminatorTestSuite : public CxxTest::TestSuite
 public:
     MockForSparseGaussianEliminator *mock;
 
-    SparseGaussianEliminatorTestSuite()
+    ~SparseGaussianEliminatorTestSuite()
     {
         for ( const auto vector : cleanup )
             delete vector;
@@ -156,7 +156,7 @@ public:
             SparseColumnsOfBasis sparseCols( 3 );
             basisIntoSparseColumns( A, 3, sparseCols );
 
-            SparseGaussianEliminator *ge;
+            SparseGaussianEliminator *ge = NULL;
 
             TS_ASSERT( ge = new SparseGaussianEliminator( 3 ) );
             TS_ASSERT_THROWS_NOTHING( ge->run( &sparseCols, &lu3 ) );
@@ -192,7 +192,7 @@ public:
             SparseColumnsOfBasis sparseCols( 3 );
             basisIntoSparseColumns( A, 3, sparseCols );
 
-            SparseGaussianEliminator *ge;
+            SparseGaussianEliminator *ge = NULL;
 
             TS_ASSERT( ge = new SparseGaussianEliminator( 3 ) );
             TS_ASSERT_THROWS_NOTHING( ge->run( &sparseCols, &lu3 ) );
@@ -228,7 +228,7 @@ public:
             SparseColumnsOfBasis sparseCols( 3 );
             basisIntoSparseColumns( A, 3, sparseCols );
 
-            SparseGaussianEliminator *ge;
+            SparseGaussianEliminator *ge = NULL;
 
             TS_ASSERT( ge = new SparseGaussianEliminator( 3 ) );
             TS_ASSERT_THROWS_NOTHING( ge->run( &sparseCols, &lu3 ) );
@@ -265,7 +265,7 @@ public:
             SparseColumnsOfBasis sparseCols( 4 );
             basisIntoSparseColumns( A, 4, sparseCols );
 
-            SparseGaussianEliminator *ge;
+            SparseGaussianEliminator *ge = NULL;
 
             TS_ASSERT( ge = new SparseGaussianEliminator( 4 ) );
             TS_ASSERT_THROWS_NOTHING( ge->run( &sparseCols, &lu4 ) );
@@ -301,7 +301,7 @@ public:
             SparseColumnsOfBasis sparseCols( 3 );
             basisIntoSparseColumns( A, 3, sparseCols );
 
-            SparseGaussianEliminator *ge;
+            SparseGaussianEliminator *ge = NULL;
 
             TS_ASSERT( ge = new SparseGaussianEliminator( 3 ) );
             TS_ASSERT_THROWS_EQUALS( ge->run( &sparseCols, &lu3 ),
@@ -323,7 +323,7 @@ public:
             SparseColumnsOfBasis sparseCols( 3 );
             basisIntoSparseColumns( A, 3, sparseCols );
 
-            SparseGaussianEliminator *ge;
+            SparseGaussianEliminator *ge = NULL;
 
             TS_ASSERT( ge = new SparseGaussianEliminator( 3 ) );
             TS_ASSERT_THROWS_EQUALS( ge->run( &sparseCols, &lu3 ),
