@@ -53,23 +53,48 @@ Marabou can be built on Linux and macOS. Marabou depends on the Boost library
 which is automatically downloaded and built when you run make. Library CXXTEST
 comes included in the repository.
 
+The marabou build process is using CMake version 3.12 (or later), 
+You can get CMake [here](https://cmake.org/download/)
+
+To build marabou using CMake run:
+```
+cd path/to/marabou/repo/folder
+mkdir build 
+cd build
+cmake ..
+cmake --build .
+```
+To enable multiprocess build change the last command to:
+```
+cmake --build . -j PROC_NUM
+```
+The compiled binary will be in the *build* directory, named _Marabou_
+
+To run tests we use [ctest](https://cmake.org/cmake/help/v3.15/manual/ctest.1.html).
+The tests have labels according to level (unit/regress0/regress1...), and the code they are testing (engine/common etc...).  
+For example to run all unit tests execute in the build directory:
+```
+ctest -L unit
+```
+
+
+### Python API
 Using Marabou through the Python interface requires Python 3. It may be useful
 to set up a Python virtual environment, see
 [here](https://docs.python.org/3/tutorial/venv.html) for more information.
 
-
-To build Marabou, run the following:
+The Python interface requires *pybind11* (which is automatically downloaded), to
+build also the python API run
 ```
 cd path/to/marabou/repo/folder
-make
+mkdir build 
+cd build
+cmake .. -DBUILD_PYTHON=ON
+cmake --build .
 ```
-The compiled binary will be in *./src/engine/marabou.elf*. 
+This process will produce the binary file and the shared library for the Python 
+API, the shared library will be at maraboupy folder
 
-The Python interface requires *pybind11*,  in addition to building Marabou, run:
-```
-cd maraboupy
-make
-```
 
 Export maraboupy folder to Python and Jupyter paths:
 ```
@@ -81,14 +106,14 @@ and Marabou is ready to be used from a Python or a Jupyter script.
 Getting Started
 -----------------------------------------------------------------------------
 ### To run Marabou from Command line 
-After building Marabou the binary is located at *src/engine/marabou.elf*. The
+After building Marabou the binary is located at *build/Marabou*. The
 repository contains sample networks and properties in the *resources* folder.
 For more information see [resources/README.md](resources/README.md).
 
 To run Marabou, execute from the repo directory, for example:
 
 ```
-src/engine/marabou.elf resources/nnet/acasxu/ACASXU_experimental_v2a_2_7.nnet resources/properties/acas_property_3.txt
+./build/Marabou resources/nnet/acasxu/ACASXU_experimental_v2a_2_7.nnet resources/properties/acas_property_3.txt
 ```
 
 
@@ -107,7 +132,7 @@ sub-problem that times out will be divided into *n* additional sub-problems,
 
 So to solve a problem in DNC mode with 4 initial splits and initial timeout of 5s, 4 splits on each timeout and a timeout factor of 1.5:
 ```
-src/engine/marabou.elf resources/nnet/acasxu/ACASXU_experimental_v2a_2_7.nnet resources/properties/acas_property_3.txt --dnc --initial-divides=4 --initial-timeout=5 --num-online-divides=4 --timeout-factor=1.5 --num-workers=4
+build/Marabou resources/nnet/acasxu/ACASXU_experimental_v2a_2_7.nnet resources/properties/acas_property_3.txt --dnc --initial-divides=4 --initial-timeout=5 --num-online-divides=4 --timeout-factor=1.5 --num-workers=4
 ```
 
 Acknowledgments
