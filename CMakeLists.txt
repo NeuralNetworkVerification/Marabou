@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(BUILD_PYTHON "Build Python" ON)
 option(FORCE_PYTHON_BUILD "Build python even if there is only python32" OFF)
-option(RUN_UNIT_TEST "run cxxtest unit testing" OFF)
+option(RUN_UNIT_TEST "run cxxtest unit testing" ON)
 option(RUN_MEMORY_TEST "run cxxtest unit testing with ASAN" ON)
 option(RUN_REGRESS_TEST "run regression tests" OFF)
 
@@ -45,10 +45,6 @@ add_executable(${MARABOU_REGRESS} ${REGRESS_DIR}/main_regress.cpp)
 target_link_libraries(${MARABOU_REGRESS} PRIVATE ${MARABOU_LIB})
 
 target_include_directories(${MARABOU_REGRESS} PRIVATE ${LIBS_INCLUDES})
-file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/logs)
-file(COPY ${ACAS_REGRESS_NET} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}) 
-file(COPY "${REGRESS_DIR}/lp_feasible_1.mps" DESTINATION ${CMAKE_CURRENT_BINARY_DIR}) 
-file(COPY "${REGRESS_DIR}/lp_infeasible_1.mps" DESTINATION ${CMAKE_CURRENT_BINARY_DIR}) 
 if (RUN_REGRESS_TEST)
     add_custom_command(TARGET ${MARABOU_REGRESS} 
                    POST_BUILD
