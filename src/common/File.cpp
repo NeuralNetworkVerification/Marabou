@@ -22,8 +22,6 @@
 #include "T/unistd.h"
 #include <vector>
 
-
-
 File::File( const String &path ) : _path( path ), _descriptor( NO_DESCRIPTOR )
 {
 }
@@ -101,7 +99,6 @@ void File::write( const ConstSimpleData &data )
 
 void File::read( HeapData &buffer, unsigned maxReadSize )
 {
-
     std::vector<char> c(maxReadSize);
     char* readBuffer(c.data());
     int bytesRead;

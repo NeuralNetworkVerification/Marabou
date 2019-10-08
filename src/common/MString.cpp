@@ -108,9 +108,8 @@ List<String> String::tokenize( String delimiter ) const
 {
     List<String> tokens;
 
-	std::vector<char> c(length() + 1);
-	char* copy(c.data());
-
+    std::vector<char> c(length() + 1);
+    char* copy(c.data());
     memcpy( copy, ascii(), sizeof(char)*(length()+1) );
 
     char *token = strtok( copy, delimiter.ascii() );
