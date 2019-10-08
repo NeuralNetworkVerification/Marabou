@@ -81,6 +81,11 @@ Engine::~Engine()
     }
 }
 
+void Engine::setVerbosity( unsigned verbosity )
+{
+    _verbosity = verbosity;
+}
+
 void Engine::adjustWorkMemorySize()
 {
     if ( _work )
