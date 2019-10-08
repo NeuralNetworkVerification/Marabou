@@ -70,8 +70,10 @@ unsigned AcasNeuralNetwork::getLayerSize( unsigned layer ) const
 
 void AcasNeuralNetwork::evaluate( const Vector<double> &inputs, Vector<double> &outputs, unsigned outputSize ) const
 {
-    double input[inputs.size()];
-    double output[outputSize];
+    std::vector<double> in(inputs.size());
+    std::vector<double> out(inputs.size());
+    double *input(in.data());
+    double *output(out.data());
 
     memset( input, 0, num_inputs( _network ) );
     memset( output, 0, num_outputs( _network ) );

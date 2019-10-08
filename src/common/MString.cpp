@@ -14,6 +14,7 @@
 **/
 
 #include "MString.h"
+#include <vector>
 
 String::String( Super super ) : _super( super )
 {
@@ -107,8 +108,10 @@ List<String> String::tokenize( String delimiter ) const
 {
     List<String> tokens;
 
-    char copy[length()+1];
-    memcpy( copy, ascii(), sizeof(copy) );
+	std::vector<char> c(length() + 1);
+	char* copy(c.data());
+
+    memcpy( copy, ascii(), sizeof(char)*(length()+1) );
 
     char *token = strtok( copy, delimiter.ascii() );
 

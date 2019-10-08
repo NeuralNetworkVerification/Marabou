@@ -20,6 +20,9 @@
 #include "MStringf.h"
 #include "T/sys/stat.h"
 #include "T/unistd.h"
+#include <vector>
+
+
 
 File::File( const String &path ) : _path( path ), _descriptor( NO_DESCRIPTOR )
 {
@@ -98,7 +101,9 @@ void File::write( const ConstSimpleData &data )
 
 void File::read( HeapData &buffer, unsigned maxReadSize )
 {
-    char readBuffer[maxReadSize];
+
+    std::vector<char> c(maxReadSize);
+    char* readBuffer(c.data());
     int bytesRead;
 
     if ( ( bytesRead = T::read( _descriptor, readBuffer, sizeof(readBuffer) ) ) == -1 )

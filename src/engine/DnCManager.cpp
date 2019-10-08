@@ -30,6 +30,7 @@
 #include <chrono>
 #include <cmath>
 #include <thread>
+#include <vector>
 
 void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine,
                            std::atomic_uint &numUnsolvedSubQueries,
@@ -243,9 +244,11 @@ void DnCManager::printResult()
         InputQuery *inputQuery = _engineWithSATAssignment->getInputQuery();
         _engineWithSATAssignment->extractSolution( *( inputQuery ) );
 
+        std::vector<double> in(inputQuery->getNumInputVariables());
+        std::vector<double> out(inputQuery->getNumInputVariables());
+        double* inputs(in.data());
+        double* outputs(out.data());
 
-        double inputs[inputQuery->getNumInputVariables()];
-        double outputs[inputQuery->getNumOutputVariables()];
         printf( "Input assignment:\n" );
         for ( unsigned i = 0; i < inputQuery->getNumInputVariables(); ++i )
         {
