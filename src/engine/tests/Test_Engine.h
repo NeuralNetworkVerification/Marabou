@@ -67,7 +67,7 @@ public:
 
     void test_constructor_destructor()
     {
-        Engine *engine;
+        Engine *engine = NULL;
 
         TS_ASSERT_THROWS_NOTHING( engine = new Engine() );
 

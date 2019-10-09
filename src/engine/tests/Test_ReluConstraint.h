@@ -672,6 +672,7 @@ public:
         relu2->restoreState( relu1 );
         TS_ASSERT( !relu2->satisfied() );
 
+        TS_ASSERT_THROWS_NOTHING( delete relu1 );
         TS_ASSERT_THROWS_NOTHING( delete relu2 );
     }
 

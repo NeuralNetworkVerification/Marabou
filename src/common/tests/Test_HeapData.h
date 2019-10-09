@@ -116,7 +116,7 @@ public:
 		char copyOfBuffer[sizeof(buffer)];
 		memcpy( copyOfBuffer, buffer, sizeof(buffer) );
 
-		HeapData *data;
+		HeapData *data = NULL;
 
 		TS_ASSERT( data = new HeapData( buffer, sizeof(buffer) ) );
 
@@ -174,7 +174,7 @@ public:
 	{
 		char buffer[] = { 1, 2, 3 };
 
-        HeapData *other;
+        HeapData *other = NULL;
 
         {
             RealMalloc realMalloc;
@@ -198,7 +198,7 @@ public:
 	{
 		char buffer[] = { 1, 2, 3 };
 
-        HeapData *other;
+        HeapData *other = NULL;
 
         {
             RealMalloc realMalloc;
@@ -238,7 +238,7 @@ public:
 
 		TS_ASSERT_EQUALS( mock->lastMallocSize, sizeof(expectedData) );
 
-        HeapData *otherHeapData;
+        HeapData *otherHeapData = NULL;
 
         {
             RealMalloc realMalloc;
@@ -267,7 +267,7 @@ public:
         char data[] = { 0x01, 0x02, 0x03 };
         ConstSimpleData constData( data, sizeof(data) );
 
-        HeapData *heapData;
+        HeapData *heapData = NULL;
 
         TS_ASSERT( heapData = new HeapData( constData ) );
 
@@ -286,14 +286,14 @@ public:
     void test_copy_constructor()
     {
         char data[] = { 0x01, 0x02, 0x03 };
-        HeapData *other;
+        HeapData *other = NULL;
 
         {
             RealMalloc realMalloc;
             other = new HeapData( data, sizeof(data) );
         }
 
-        HeapData *heapData;
+        HeapData *heapData = NULL;
 
         TS_ASSERT( heapData = new HeapData( *other ) );
 
@@ -320,7 +320,7 @@ public:
 		char copyOfBuffer[sizeof(buffer)];
 		memcpy( copyOfBuffer, buffer, sizeof(buffer) );
 
-		HeapData *data;
+		HeapData *data = NULL;
 
 		TS_ASSERT( data = new HeapData( buffer, sizeof(buffer) ) );
 

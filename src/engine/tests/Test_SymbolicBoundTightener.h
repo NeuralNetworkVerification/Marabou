@@ -56,7 +56,7 @@ public:
         sbt.setBias( 0, 1, 0 );
         sbt.setBias( 1, 0, 0 );
         sbt.setBias( 1, 1, 0 );
-        sbt.setBias( 2, 1, 0 );
+        sbt.setBias( 2, 0, 0 );
 
         // Weights
         sbt.setWeight( 0, 0, 0, 2 );
@@ -100,7 +100,7 @@ public:
         sbt.setBias( 0, 1, 0 );
         sbt.setBias( 1, 0, -15 ); // Strong negative bias for node (1,0)
         sbt.setBias( 1, 1, 0 );
-        sbt.setBias( 2, 1, 0 );
+        sbt.setBias( 2, 0, 0 );
 
         // Weights
         sbt.setWeight( 0, 0, 0, 2 );
@@ -144,7 +144,7 @@ public:
         sbt.setBias( 0, 1, 0 );
         sbt.setBias( 1, 0, -30 ); // Strong negative bias for node (1,0)
         sbt.setBias( 1, 1, 0 );
-        sbt.setBias( 2, 1, 0 );
+        sbt.setBias(2, 0, 0 );
 
         // Weights
         sbt.setWeight( 0, 0, 0, 2 );
@@ -188,7 +188,7 @@ public:
         sbt.setBias( 0, 1, 0 );
         sbt.setBias( 1, 0, -15 ); // Strong negative bias for node (1,0)
         sbt.setBias( 1, 1, 0 );
-        sbt.setBias( 2, 1, 0 );
+        sbt.setBias( 2, 0, 0 );
 
         // Weights
         sbt.setWeight( 0, 0, 0, 2 );
@@ -257,7 +257,7 @@ public:
         sbt.setBias( 0, 1, 0 );
         sbt.setBias( 1, 0, -30 ); // Strong negative bias for node (1,0)
         sbt.setBias( 1, 1, 0 );
-        sbt.setBias( 2, 1, 0 );
+        sbt.setBias( 2, 0, 0 );
 
         // Weights
         sbt.setWeight( 0, 0, 0, 2 );
