@@ -76,8 +76,8 @@ void AcasNeuralNetwork::evaluate( const Vector<double> &inputs, Vector<double> &
     double *input( inputVector.data() );
     double *output( outputVector.data() );
 
-    memset( input, 0, num_inputs( _network ) );
-    memset( output, 0, num_outputs( _network ) );
+    std::fill_n( input, num_inputs( _network ), 0 );
+    std::fill_n( output, num_outputs( _network ), 0 );
 
     for ( unsigned i = 0; i < inputs.size();  ++i )
         input[i] = inputs.get( i );
