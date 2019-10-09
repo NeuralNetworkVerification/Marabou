@@ -38,6 +38,10 @@ public:
     {
     }
 
+    Vector<T>( unsigned size ) : _container( size )
+    {
+    }
+
     virtual void append( T value )
     {
         _container.push_back( value );
@@ -50,6 +54,11 @@ public:
 
     virtual ~Vector()
     {
+    }
+
+    T *data()
+    {
+        return _container.data();
     }
 
     T get( int index ) const

@@ -21,16 +21,16 @@
 #include "GetCPUData.h"
 #include "LargestIntervalDivider.h"
 #include "MStringf.h"
+#include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PropertyParser.h"
 #include "QueryDivider.h"
-#include "MarabouError.h"
 #include "TimeUtils.h"
+#include "Vector.h"
 #include <atomic>
 #include <chrono>
 #include <cmath>
 #include <thread>
-#include <vector>
 
 void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine,
                            std::atomic_uint &numUnsolvedSubQueries,
@@ -244,10 +244,10 @@ void DnCManager::printResult()
         InputQuery *inputQuery = _engineWithSATAssignment->getInputQuery();
         _engineWithSATAssignment->extractSolution( *( inputQuery ) );
 
-        std::vector<double> in(inputQuery->getNumInputVariables());
-        std::vector<double> out(inputQuery->getNumInputVariables());
-        double* inputs(in.data());
-        double* outputs(out.data());
+        Vector<double> inputVector( inputQuery->getNumInputVariables() );
+        Vector<double> outputVector( inputQuery->getNumInputVariables() );
+        double *inputs( inputVector.data() );
+        double *outputs( outputVector.data() );
 
         printf( "Input assignment:\n" );
         for ( unsigned i = 0; i < inputQuery->getNumInputVariables(); ++i )

@@ -16,6 +16,7 @@
 #include "AcasNeuralNetwork.h"
 #include "AcasNnet.h"
 #include "FloatUtils.h"
+#include "Vector.h"
 
 #include <iostream>
 
@@ -70,10 +71,10 @@ unsigned AcasNeuralNetwork::getLayerSize( unsigned layer ) const
 
 void AcasNeuralNetwork::evaluate( const Vector<double> &inputs, Vector<double> &outputs, unsigned outputSize ) const
 {
-    std::vector<double> in(inputs.size());
-    std::vector<double> out(inputs.size());
-    double *input(in.data());
-    double *output(out.data());
+    Vector<double> inputVector( inputs.size() );
+    Vector<double> outputVector( outputs.size() );
+    double *input( inputVector.data() );
+    double *output( outputVector.data() );
 
     memset( input, 0, num_inputs( _network ) );
     memset( output, 0, num_outputs( _network ) );
