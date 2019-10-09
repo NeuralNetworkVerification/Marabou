@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.12)
+cmake_minimum_required (VERSION 3.5)
 project(Marabou)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -140,7 +140,7 @@ endif()
 # message("BUILD_PYTHON: ${BUILD_PYTHON}")
 if (${BUILD_PYTHON})
     # This is suppose to set the PYTHON_EXECUTABLE variable
-    find_package(Python REQUIRED)
+    find_package(PythonInterp 3 REQUIRED)
     
     if (NOT EXISTS ${PYBIND11_DIR})
         message("didnt find pybind, getting it")
