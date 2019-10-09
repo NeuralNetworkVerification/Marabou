@@ -51,7 +51,10 @@ bool FloatUtils::areDisequal( double x, double y, double epsilon )
 
 bool FloatUtils::isZero( double x, double epsilon )
 {
-    return ( -epsilon <= x ) && ( x <= epsilon );
+    /* return ( -epsilon <= x ) && ( x <= epsilon ); */
+    double lower = -epsilon;
+    double upper = epsilon;
+    return ((x-upper)*(x-lower) <= 0); 
 }
 
 double FloatUtils::roundToZero( double x, double epsilon )
@@ -61,12 +64,14 @@ double FloatUtils::roundToZero( double x, double epsilon )
 
 bool FloatUtils::isPositive( double x, double epsilon )
 {
-    return ( !isZero( x, epsilon ) ) && ( x > 0.0 );
+    return x > epsilon;
+    /* return ( !isZero( x, epsilon ) ) && ( x > 0.0 ); */
 }
 
 bool FloatUtils::isNegative( double x, double epsilon )
 {
-    return ( !isZero( x, epsilon ) ) && ( x < 0.0 );
+    return x < -epsilon;
+    /* return ( !isZero( x, epsilon ) ) && ( x < 0.0 ); */
 }
 
 bool FloatUtils::isFinite( double x )
