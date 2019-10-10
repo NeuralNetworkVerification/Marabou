@@ -1,9 +1,5 @@
-macro(marabou_add_regress0 net_file property_file result)
-    marabou_add_regress_test(0 ${net_file} ${property_file} ${result})
-endmacro()
-
-
 marabou_add_acasxu_test(0 "ACASXU_experimental_v2a_1_7.nnet" "3" SAT)
+marabou_add_acasxu_dnc_test(0 "ACASXU_experimental_v2a_1_7.nnet" "3" SAT)
 marabou_add_coav_test(0 "reluBenchmark0.067841053009s_UNSAT.nnet" UNSAT)
 marabou_add_coav_test(0 "reluBenchmark0.0518190860748s_UNSAT.nnet" UNSAT)
 marabou_add_coav_test(0 "reluBenchmark0.453322172165s_UNSAT.nnet" UNSAT)

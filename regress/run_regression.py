@@ -107,19 +107,23 @@ def main():
     parser.add_argument('network_file')
     parser.add_argument('property_file')
     parser.add_argument('expected_result', choices=('SAT', 'UNSAT'))
+    parser.add_argument('--dnc', action='store_true')
     args = parser.parse_args()
     marabou_binary = os.path.abspath(args.marabou_binary)
     network_file = os.path.abspath(args.network_file)
     property_file = os.path.abspath(args.property_file)
     expected_result = args.expected_result
 
+    marabou_args = []
+    if args.dnc:
+        marabou_args += ['--dnc']
     # print(marabou_binary)
     # print(network_file)
     # print(property_file)
     # print(expected_result)
     # timeout = DEFAULT_TIMEOUT
 
-    return run_marabou(marabou_binary, network_file, property_file, expected_result)
+    return run_marabou(marabou_binary, network_file, property_file, expected_result, marabou_args)
 
 # ./build/Marabou resources/nnet/coav/reluBenchmark0.041867017746s_UNSAT.nnet resources/propertie
 # s/builtin_property.txt
@@ -130,11 +134,11 @@ if __name__ == "__main__":
     else:
         sys.exit(1)
 
-    coav_results = run_folder_on_property("resources/nnet/coav/", 'resources/properties/builtin_property.txt')
-    twin_results = run_folder_on_property("resources/nnet/twin/", 'resources/properties/builtin_property.txt')
-
-    json.dump(coav_results, open("coav_results.json", "w"))
-    json.dump(twin_results, open("twin_results.json", "w"))
+    # coav_results = run_folder_on_property("resources/nnet/coav/", 'resources/properties/builtin_property.txt')
+    # twin_results = run_folder_on_property("resources/nnet/twin/", 'resources/properties/builtin_property.txt')
+    #
+    # json.dump(coav_results, open("coav_results.json", "w"))
+    # json.dump(twin_results, open("twin_results.json", "w"))
 
     # print(run_marabou("build/Marabou", "resources/nnet/acasxu/ACASXU_experimental_v2a_1_9.nnet",
     #             "resources/properties/builtin_property.txt", "SAT"))
