@@ -70,17 +70,13 @@ cmake --build . -j PROC_NUM
 ```
 The compiled binary will be in the *build* directory, named _Marabou_
 
-The tests are not running automatically but they are built. To run all test just
-run 
+To run tests we use [ctest](https://cmake.org/cmake/help/v3.15/manual/ctest.1.html).
+The tests have labels according to level (unit/regress0/regress1...), and the code they are testing (engine/common etc...).  
+For example to run all unit tests execute in the build directory:
 ```
-ctest
+ctest -L unit
 ```
-To run tests only of a specific component run (for example engine):
-```
-ctest -L engine
-```
-If you want the tests to run automatically on every build there is a flag in the
-CMakeLists.txt
+
 ### Python API
 Using Marabou through the Python interface requires Python 3. It may be useful
 to set up a Python virtual environment, see

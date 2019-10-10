@@ -123,13 +123,16 @@ public:
     void clearViolatedPLConstraints();
 
     /*
+      Set the Engine's level of verbosity
+    */
+    void setVerbosity( unsigned verbosity );
+
+    /*
       PSA: The following two methods are for DnC only and should be used very
       cauciously.
      */
     void resetSmtCore();
-
     void resetExitCode();
-
     void resetBoundTighteners();
 
 private:
