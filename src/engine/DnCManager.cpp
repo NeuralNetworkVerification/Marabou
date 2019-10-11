@@ -245,7 +245,7 @@ void DnCManager::printResult()
         _engineWithSATAssignment->extractSolution( *( inputQuery ) );
 
         Vector<double> inputVector( inputQuery->getNumInputVariables() );
-        Vector<double> outputVector( inputQuery->getNumInputVariables() );
+        Vector<double> outputVector( inputQuery->getNumOutputVariables() );
         double *inputs( inputVector.data() );
         double *outputs( outputVector.data() );
 
