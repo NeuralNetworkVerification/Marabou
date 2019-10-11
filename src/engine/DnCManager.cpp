@@ -21,11 +21,12 @@
 #include "GetCPUData.h"
 #include "LargestIntervalDivider.h"
 #include "MStringf.h"
+#include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PropertyParser.h"
 #include "QueryDivider.h"
-#include "MarabouError.h"
 #include "TimeUtils.h"
+#include "Vector.h"
 #include <atomic>
 #include <chrono>
 #include <cmath>
@@ -243,9 +244,11 @@ void DnCManager::printResult()
         InputQuery *inputQuery = _engineWithSATAssignment->getInputQuery();
         _engineWithSATAssignment->extractSolution( *( inputQuery ) );
 
+        Vector<double> inputVector( inputQuery->getNumInputVariables() );
+        Vector<double> outputVector( inputQuery->getNumOutputVariables() );
+        double *inputs( inputVector.data() );
+        double *outputs( outputVector.data() );
 
-        double inputs[inputQuery->getNumInputVariables()];
-        double outputs[inputQuery->getNumOutputVariables()];
         printf( "Input assignment:\n" );
         for ( unsigned i = 0; i < inputQuery->getNumInputVariables(); ++i )
         {
