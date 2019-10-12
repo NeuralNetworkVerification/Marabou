@@ -289,7 +289,6 @@ public:
         TS_ASSERT( abs.constraintObsolete() );
     }
 
-
     void test_abs_entailed_tighteningst1()
     {
         /**
@@ -373,7 +372,27 @@ public:
         entailedTightenings.clear();
         abs.getEntailedTightenings( entailedTightenings );
         TS_ASSERT_EQUALS( entailedTightenings.size(),0U );
+    }
 
+    void test_abs_entailed_tighteningst2()
+    {
+        /**
+         * suppose A < x_b < B, C < x_f < D, remainder C >= 0 ,D > 0
+         */
+        unsigned b = 1;
+        unsigned f = 4;
+
+        AbsConstraint abs(b, f);
+        List <Tightening> entailedTightenings;
+        List<Tightening>::iterator it;
+
+        //A < 0 & B < 0 & C < 0
+        // B = D , A > C
+        abs.notifyUpperBound( b, -1 );
+        abs.notifyUpperBound( f, -1);
+        abs.notifyLowerBound( b, -4);
+        abs.notifyLowerBound( f, -8);
+        print_bounds(abs, b,f);
     }
 
     void print_bounds(AbsConstraint abs, unsigned b, unsigned f)
