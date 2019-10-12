@@ -75,11 +75,13 @@ void AbsConstraint::notifyLowerBound( unsigned variable, double bound)
     //update the input variable bound
     if ( _lowerBounds.exists( variable ) && !FloatUtils::gt( bound, _lowerBounds[variable] ) )
         return;
-    if ((variable == _f) && FloatUtils::isNegative( bound ) && _lowerBounds.exists( variable))
-        return;
     if ((variable == _f) && FloatUtils::isZero( bound ) && !_lowerBounds.exists( variable ) )
     {
         _lowerBounds[variable] = 0.0;
+    }
+    if ((variable == _f) && FloatUtils::isNegative( bound ) )
+    {
+        return;
     }
     else{
         _lowerBounds[variable] = bound;
@@ -138,8 +140,7 @@ void AbsConstraint::notifyUpperBound(  unsigned variable, double bound )
     //update the input variable bound
     if ( _upperBounds.exists( variable ) && !FloatUtils::lt( bound, _upperBounds[variable] ) )
         return;
-
-    if ((variable == _f) && FloatUtils::isNegative( bound ) && !_upperBounds.exists( variable ) )
+    if ((variable == _f) && FloatUtils::isZero( bound ) && !_upperBounds.exists( variable ) )
     {
         _upperBounds[variable] = 0.0;
         //todo: lower bound f
@@ -147,10 +148,13 @@ void AbsConstraint::notifyUpperBound(  unsigned variable, double bound )
         _constraintBoundTightener->registerTighterLowerBound( _b, 0.0 );
         setPhaseStatus( PhaseStatus::PHASE_POSITIVE );
     }
+    else if ((variable == _f) && FloatUtils::isNegative( bound ) )
+    {
+        return;
+    }
     else {
         _upperBounds[variable] = bound;
     }
-
 
     //fix phase, only by x_b because x_b <= x_f
     if ( ( variable == _b ) && FloatUtils::isNegative( bound ) )
