@@ -27,7 +27,11 @@
 
 #include "MStringf.h"
 #include "TimeUtils.h"
+#ifdef _WIN32
+#include <T/winunistd.h>
+#else
 #include <unistd.h>
+#endif
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>

@@ -37,8 +37,8 @@ file(GLOB SRCS_COMMON_MOCK "${COMMON_MOCK}/*.cpp")
 # We build a static library that is the core of the project, the link it to the
 # API's (executable and python at the moment)
 add_library(${MARABOU_LIB} ${SRCS_COMMON_REAL} )
-add_executable(${MARABOU_EXE} ${ENGINE_DIR}/main.cpp)
-add_executable(${MARABOU_REGRESS} ${REGRESS_DIR}/main_regress.cpp)
+add_executable(${MARABOU_EXE} "${ENGINE_DIR}/main.cpp")
+add_executable(${MARABOU_REGRESS} "${REGRESS_DIR}/main_regress.cpp")
 
 
 # Build regress 
@@ -70,24 +70,36 @@ endif()
 
 if(MSVC)
     # TODO: TEST this
-    set(COMPILE_FLAGS  /W4 /WX) 
+    set(COMPILE_FLAGS)
 else()
     set(COMPILE_FLAGS  -Wall -Wextra  -Werror -MMD) #-Wno-deprecated
     set(RELEASE_FLAGS -O3) #-Wno-deprecated
 endif()
 
 if (RUN_MEMORY_TEST)
-    set(MEMORY_FLAGS -fsanitize=address -fno-omit-frame-pointer -O1)
+    if(MSVC)
+        set(MEMORY_FLAGS)
+    else()
+        set(MEMORY_FLAGS -fsanitize=address -fno-omit-frame-pointer -O1)
+    endif()
 endif()
 
-set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS} -g -DDEBUG_ON) 
-set(CXXTEST_FLAGS ${DEBUG_FLAGS}  -Wno-ignored-qualifiers)
+if(MSVC)
+    set(CXXTEST_FLAGS ${DEBUG_FLAGS} )
+    set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS})
+else() 
+    set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS} -g -DDEBUG_ON) 
+    set(CXXTEST_FLAGS ${DEBUG_FLAGS}  -Wno-ignored-qualifiers)
+endif()
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    set(CXXTEST_FLAGS ${CXXTEST_FLAGS} -Wno-terminate)
+    set(CXXTEST_FLAGS -Wno-terminate)
 endif()
-set(RELEASE_FLAGS  ${COMPILE_FLAGS} -O3)
-
+if(MSVC)
+    set(RELEASE_FLAGS  ${COMPILE_FLAGS} )
+else()
+    set(RELEASE_FLAGS  ${COMPILE_FLAGS} -O3)
+endif()
 
 
 # Boost
@@ -98,6 +110,7 @@ else()
     set(BOOST_ROOT "${BOOST_DIR}/installed")
     # set(BOOST_INCLUDES "${BOOST_DIR}/installed/include")
 endif()
+set(Boost_NAMESPACE libboost)
 find_package(Boost COMPONENTS program_options)
 # Find boost
 if (NOT ${Boost_FOUND})
@@ -144,7 +157,11 @@ if (${BUILD_PYTHON})
     
     if (NOT EXISTS ${PYBIND11_DIR})
         message("didnt find pybind, getting it")
-        execute_process(COMMAND ${TOOLS_DIR}/download_pybind11.sh)
+        if(MSVC)
+            execute_process(COMMAND ${TOOLS_DIR}/download_pybind11.bat)
+        else()
+            execute_process(COMMAND ${TOOLS_DIR}/download_pybind11.sh)
+        endif()
     endif()
     add_subdirectory(${PYBIND11_DIR})
     pybind11_add_module(${MARABOU_PY} ${PYTHON_API_DIR}/MarabouCore.cpp)
@@ -154,16 +171,20 @@ if (${BUILD_PYTHON})
 
     set_target_properties(${MARABOU_PY} PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY ${PYTHON_API_DIR})
-    target_compile_options(${MARABOU_LIB} PRIVATE -fPIC ${RELEASE_FLAGS}) 
+    if(MSVC)
+        target_compile_options(${MARABOU_LIB} PRIVATE ${RELEASE_FLAGS}) 
+    else()
+        target_compile_options(${MARABOU_LIB} PRIVATE -fPIC ${RELEASE_FLAGS}) 
+    endif()
 endif()
 
 
 
 add_library(${MARABOU_TEST_LIB})
-set (TEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/tests)
+set (TEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/tests")
 file(MAKE_DIRECTORY ${TEST_DIR})
 
-set(CMAKE_PREFIX_PATH ${TOOLS_DIR}/cxxtest)
+set(CMAKE_PREFIX_PATH "${TOOLS_DIR}/cxxtest")
 set(CXXTEST_USE_PYTHON FALSE)
 find_package(CxxTest)
 if(CXXTEST_FOUND)
