@@ -68,26 +68,18 @@ if(${BUILD_PYTHON})
     endif()
 endif()
 
-if(MSVC)
-    # TODO: TEST this
-    set(COMPILE_FLAGS)
-else()
+if(NOT MSVC)
     set(COMPILE_FLAGS  -Wall -Wextra  -Werror -MMD) #-Wno-deprecated
     set(RELEASE_FLAGS -O3) #-Wno-deprecated
 endif()
 
 if (RUN_MEMORY_TEST)
-    if(MSVC)
-        set(MEMORY_FLAGS)
-    else()
+    if(NOT MSVC)
         set(MEMORY_FLAGS -fsanitize=address -fno-omit-frame-pointer -O1)
     endif()
 endif()
 
-if(MSVC)
-    set(CXXTEST_FLAGS ${DEBUG_FLAGS} )
-    set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS})
-else() 
+if(NOT MSVC)
     set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS} -g -DDEBUG_ON) 
     set(CXXTEST_FLAGS ${DEBUG_FLAGS}  -Wno-ignored-qualifiers)
 endif()
@@ -95,15 +87,14 @@ endif()
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     set(CXXTEST_FLAGS -Wno-terminate)
 endif()
-if(MSVC)
-    set(RELEASE_FLAGS  ${COMPILE_FLAGS} )
-else()
+
+if(NOT MSVC)
     set(RELEASE_FLAGS  ${COMPILE_FLAGS} -O3)
 endif()
 
 
 # Boost
-if(${CMAKE_SIZEOF_VOID_P} EQUAL 4)
+if(${CMAKE_SIZEOF_VOID_P} EQUAL 4 AND NOT MSVC)
     set(BOOST_ROOT "${BOOST_DIR}/installed32")
     # set(BOOST_INCLUDES "${BOOST_DIR}/installed32/include")
 else()
@@ -116,7 +107,11 @@ find_package(Boost COMPONENTS program_options)
 if (NOT ${Boost_FOUND})
     # bash file that downloads and install boost 1_68_0, the name need to match
     # BOOST_DIR variable
-    execute_process(COMMAND ${TOOLS_DIR}/download_boost.sh)
+    if(MSVC)
+        execute_process(COMMAND ${TOOLS_DIR}/download_boost.bat)
+    else()
+        execute_process(COMMAND ${TOOLS_DIR}/download_boost.sh)
+    endif()
     find_package(Boost REQUIRED COMPONENTS program_options)
 endif()
 set(LIBS_INCLUDES ${Boost_INCLUDE_DIRS})
