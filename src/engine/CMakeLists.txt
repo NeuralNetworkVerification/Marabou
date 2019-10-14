@@ -1,5 +1,3 @@
-cmake_minimum_required (VERSION 3.5)
-
 add_subdirectory(real)
 add_subdirectory(mock)
 

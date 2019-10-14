@@ -1,5 +1,3 @@
-cmake_minimum_required (VERSION 3.5)
-
 file(GLOB SRCS "*.cpp")
 # file(GLOB HEADERS "*.h")
 

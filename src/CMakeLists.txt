@@ -1,5 +1,3 @@
-cmake_minimum_required (VERSION 3.5)
-
 macro(marabou_add_test test_name test_dir add_common_real labels) 
     get_filename_component(name ${test_name} NAME_WE)
     set(test_src ${name}.cc)
