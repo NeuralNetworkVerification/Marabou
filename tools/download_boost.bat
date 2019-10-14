@@ -8,7 +8,7 @@ REM TODO: add progress bar, -q is quiet, if removing it the progress bar is in m
 ECHO Downloading Boost
 wget -q  https://dl.bintray.com/boostorg/release/1.68.0/source/boost_1_68_0.tar.gz
 ECHO Unzipping Boost
-tar xzvf boost_1_68_0.tar.gz >NUL
+tar xzf boost_1_68_0.tar.gz >NUL
 ECHO Installing Boost
 CD boost_1_68_0
 
