@@ -10,7 +10,7 @@ import argparse
 
 
 DEFAULT_TIMEOUT = 600
-
+EXPECTED_RESULT_OPTIONS = ('SAT', 'UNSAT')
 
 def run_process(args, cwd, timeout, s_input=None):
     """Runs a process with a timeout `timeout` in seconds. `args` are the
@@ -45,6 +45,28 @@ def run_process(args, cwd, timeout, s_input=None):
         err = err.decode()
     return (out.strip(), err.strip(), exit_status)
 
+def analyze_process_result(out, err, exit_status, expected_result):
+    if exit_status != 0:
+        print("exit status: {}".format(exit_status))
+        return False
+    if err != '':
+        print("err: {}".format(err))
+        return False
+
+    # If the output is UNSAT there is no \n after the UNSAT statement
+    if expected_result == 'UNSAT':
+        out_lines = out.splitlines()
+        if out_lines[-1] == expected_result:
+            return True
+        else:
+            print("Expected UNSAT, but last line is in output is: ", out_lines[-1])
+            return False
+    else:
+        if '\nSAT\n' in out:
+            return True
+        else:
+            print('expected SAT, but \'\\nSAT\\n\' is not in the output. tail of the output:\n', out[-1500:])
+            return False
 
 def run_marabou(marabou_binary, network_path, property_path, expected_result, arguments=None):
     '''
@@ -61,7 +83,7 @@ def run_marabou(marabou_binary, network_path, property_path, expected_result, ar
             '"{}" does not exist or is not executable'.format(marabou_binary))
     if not os.path.isfile(network_path):
         sys.exit('"{}" does not exist or is not a file'.format(network_path))
-    if not os.path.isfile(network_path):
+    if not os.path.isfile(property_path):
         sys.exit('"{}" does not exist or is not a file'.format(property_path))
     if expected_result not in {'SAT', 'UNSAT'}:
         sys.exit('"{}" is not a marabou supported result'.format(expected_result))
@@ -71,20 +93,33 @@ def run_marabou(marabou_binary, network_path, property_path, expected_result, ar
         args += arguments
     out, err, exit_status = run_process(args, os.curdir, DEFAULT_TIMEOUT)
 
-    if exit_status != 0:
-        print("exit status: {}".format(exit_status))
-        return False
-    if err != '':
-        print("err: {}".format(err))
-        return False
+    return analyze_process_result(out, err, exit_status, expected_result)
 
-    # If the output is UNSAT there is no \n after the UNSAT statement
-    if expected_result == 'UNSAT':
-        out_lines = out.splitlines()
-        return out_lines[-1] == expected_result
-    else:
-        return '\nSAT\n' in out
 
+def run_mpsparser(mps_binary, network_path, expected_result, arguments=None):
+    '''
+    Run marabou and assert the result is according to the expected_result
+    :param marabou_binary: path to marabou executable
+    :param network_path: path to nnet file to pass too marabou
+    :param property_path: path to property file to pass to marabou to verify
+    :param expected_result: SAT / UNSAT
+    :param arguments list of arguments to pass to Marabou (for example DnC mode)
+    :return: True / False if test pass or not
+    '''
+    if not os.access(mps_binary, os.X_OK):
+        sys.exit(
+            '"{}" does not exist or is not executable'.format(mps_binary))
+    if not os.path.isfile(network_path):
+        sys.exit('"{}" does not exist or is not a file'.format(network_path))
+    if expected_result not in {'SAT', 'UNSAT'}:
+        sys.exit('"{}" is not a marabou supported result'.format(expected_result))
+
+    args = [mps_binary, network_path]
+    if isinstance(arguments, list):
+        args += arguments
+    out, err, exit_status = run_process(args, os.curdir, DEFAULT_TIMEOUT)
+
+    return analyze_process_result(out, err, exit_status, expected_result)
 
 def run_folder_on_property(folder, property_file):
     results = {}
@@ -97,33 +132,39 @@ def run_folder_on_property(folder, property_file):
 
     return results
 
-
 def main():
     parser = argparse.ArgumentParser(
         description=
-        'Runs benchmark and checks for correct exit status and output.')
+        'Runs benchmark and checks for correct exit status and output. supports nnet and mps file format')
 
     parser.add_argument('marabou_binary')
     parser.add_argument('network_file')
-    parser.add_argument('property_file')
-    parser.add_argument('expected_result', choices=('SAT', 'UNSAT'))
+    parser.add_argument('property_file', nargs='?', default='')
+    parser.add_argument('expected_result', choices=EXPECTED_RESULT_OPTIONS)
     parser.add_argument('--dnc', action='store_true')
+
     args = parser.parse_args()
-    marabou_binary = os.path.abspath(args.marabou_binary)
+
+    binary = os.path.abspath(args.marabou_binary)
     network_file = os.path.abspath(args.network_file)
-    property_file = os.path.abspath(args.property_file)
     expected_result = args.expected_result
+
+    if args.network_file.endswith('nnet'):
+        property_file = os.path.abspath(args.property_file)
+    # else:
+    #     if args.property_file not in EXPECTED_RESULT_OPTIONS:
+    #         raise NotImplementedError("expected result must be SAT or UNSAT")
+        # expected_result = args.property_file
 
     marabou_args = []
     if args.dnc:
         marabou_args += ['--dnc']
-    # print(marabou_binary)
-    # print(network_file)
-    # print(property_file)
-    # print(expected_result)
-    # timeout = DEFAULT_TIMEOUT
-
-    return run_marabou(marabou_binary, network_file, property_file, expected_result, marabou_args)
+    if args.network_file.endswith('nnet'):
+        return run_marabou(binary, network_file, property_file, expected_result, marabou_args)
+    elif args.network_file.endswith('mps'):
+        return run_mpsparser(binary, network_file, expected_result, marabou_args)
+    else:
+        raise NotImplementedError('supporting only nnet and mps file format')
 
 # ./build/Marabou resources/nnet/coav/reluBenchmark0.041867017746s_UNSAT.nnet resources/propertie
 # s/builtin_property.txt
