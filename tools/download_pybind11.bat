@@ -3,7 +3,6 @@ SET mydir=%~dp0
 SET curdir=%cd%
 
 CD %mydir%
-ECHO %mydir%
 
 REM TODO: add progress bar, -q is quite, if removing it the progress bar is in multiple lines
 ECHO Downloading pybind
