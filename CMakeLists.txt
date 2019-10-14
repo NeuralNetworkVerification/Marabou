@@ -85,7 +85,7 @@ if (NOT MSVC)
 endif()
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-	set(CXXTEST_FLAGS ${CSSTEST_FLAGS} -Wno-terminate)
+    set(CXXTEST_FLAGS ${CXXTEST_FLAGS} -Wno-terminate)
 endif()
 
 if (NOT MSVC)
