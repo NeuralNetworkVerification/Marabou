@@ -68,7 +68,7 @@ if(${BUILD_PYTHON})
     endif()
 endif()
 
-if(NOT MSVC)
+if (NOT MSVC)
     set(COMPILE_FLAGS  -Wall -Wextra  -Werror -MMD) #-Wno-deprecated
     set(RELEASE_FLAGS -O3) #-Wno-deprecated
 endif()
@@ -79,7 +79,7 @@ if (RUN_MEMORY_TEST)
     endif()
 endif()
 
-if(NOT MSVC)
+if (NOT MSVC)
     set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS} -g -DDEBUG_ON) 
     set(CXXTEST_FLAGS ${DEBUG_FLAGS}  -Wno-ignored-qualifiers)
 endif()
@@ -88,20 +88,23 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	set(CXXTEST_FLAGS ${CSSTEST_FLAGS} -Wno-terminate)
 endif()
 
-if(NOT MSVC)
+if (NOT MSVC)
     set(RELEASE_FLAGS  ${COMPILE_FLAGS} -O3)
 endif()
 
 
 # Boost
-if(${CMAKE_SIZEOF_VOID_P} EQUAL 4 AND NOT MSVC)
+if (${CMAKE_SIZEOF_VOID_P} EQUAL 4 AND NOT MSVC)
     set(BOOST_ROOT "${BOOST_DIR}/installed32")
     # set(BOOST_INCLUDES "${BOOST_DIR}/installed32/include")
 else()
     set(BOOST_ROOT "${BOOST_DIR}/installed")
     # set(BOOST_INCLUDES "${BOOST_DIR}/installed/include")
 endif()
-set(Boost_NAMESPACE libboost)
+
+if (MSVC)
+    set(Boost_NAMESPACE libboost)
+endif()
 find_package(Boost COMPONENTS program_options)
 # Find boost
 if (NOT ${Boost_FOUND})
