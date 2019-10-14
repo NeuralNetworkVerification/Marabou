@@ -37,7 +37,7 @@ paper](https://aisafety.stanford.edu/marabou/MarabouCAV2019.pdf) and the
 For more information about the input formats please check the
 [wiki](https://github.com/guykatzz/Marabou/wiki/Marabou-Input-Formats).
 
-## Download
+Download
 ------------------------------------------------------------------------------
 The latest version of Marabou is available on [http://github.com/GuyKatzz/Marabou].
 
@@ -47,7 +47,7 @@ Pre-compiled binary for Linux is available:
 
 [marabou-1.0-x86_64-linux.zip](https://aisafety.stanford.edu/marabou/marabou-1.0-x86_64-linux.zip)
 
-## Build and Dependencies
+Build and Dependencies
 ------------------------------------------------------------------------------
 
 Marabou depends on the Boost library,
