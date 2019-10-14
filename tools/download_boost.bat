@@ -12,11 +12,7 @@ tar xzvf boost_1_68_0.tar.gz >NUL
 ECHO Installing Boost
 CD boost_1_68_0
 
-REM BOOST_ROOT was set by CMake, but the batch file doesn't have the variable, so set it again
-SET BOOST_ROOT=%cd%\boost
-MKDIR installed
-
-bootstrap.bat >NUL
-b2.exe --prefix=%cd%\installed --with-program_options link=static install toolset=msvc >NUL
+CALL bootstrap.bat >NUL
+CALL b2.exe --prefix="%cd%\installed" --with-program_options link=static install toolset=msvc >NUL
 
 CD %curdir%
