@@ -85,7 +85,7 @@ if(NOT MSVC)
 endif()
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    set(CXXTEST_FLAGS -Wno-terminate)
+	set(CXXTEST_FLAGS ${CSSTEST_FLAGS} -Wno-terminate)
 endif()
 
 if(NOT MSVC)
@@ -152,7 +152,7 @@ if (${BUILD_PYTHON})
     
     if (NOT EXISTS ${PYBIND11_DIR})
         message("didnt find pybind, getting it")
-        if(MSVC)
+	if(MSVC)
             execute_process(COMMAND ${TOOLS_DIR}/download_pybind11.bat)
         else()
             execute_process(COMMAND ${TOOLS_DIR}/download_pybind11.sh)
@@ -166,9 +166,7 @@ if (${BUILD_PYTHON})
 
     set_target_properties(${MARABOU_PY} PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY ${PYTHON_API_DIR})
-    if(MSVC)
-        target_compile_options(${MARABOU_LIB} PRIVATE ${RELEASE_FLAGS}) 
-    else()
+    if(NOT MSVC)
         target_compile_options(${MARABOU_LIB} PRIVATE -fPIC ${RELEASE_FLAGS}) 
     endif()
 endif()
