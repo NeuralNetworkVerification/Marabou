@@ -34,6 +34,11 @@ set(COMMON_MOCK "${COMMON_DIR}/mock")
 file(GLOB SRCS_COMMON_REAL "${COMMON_REAL}/*.cpp")
 file(GLOB SRCS_COMMON_MOCK "${COMMON_MOCK}/*.cpp")
 
+set(MPS_PARSER mps.elf)
+set(ACAS_PARSER acas.elf)
+set(BERKELEY_PARSER berkeley.elf)
+set(INPUT_PARSERS_DIR input_parsers)
+
 # We build a static library that is the core of the project, the link it to the
 # API's (executable and python at the moment)
 add_library(${MARABOU_LIB} ${SRCS_COMMON_REAL} )
@@ -192,6 +197,11 @@ if (${RUN_UNIT_TEST})
     )
 
 endif()
+
+# Add the input parsers
+add_custom_target(build_input_parsers)
+add_dependencies(build_input_parsers ${MPS_PARSER} ${ACAS_PARSER}
+    ${BERKELEY_PARSER})
 
 add_subdirectory(${SRC_DIR})
 add_subdirectory(${TOOLS_DIR})

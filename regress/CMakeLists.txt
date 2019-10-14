@@ -1,5 +1,3 @@
-cmake_minimum_required (VERSION 3.12)
-
 file(GLOB SRCS "*.cpp")
 # file(GLOB HEADERS "*.h")
 
@@ -46,14 +44,15 @@ macro(marabou_add_acasxu_dnc_test level net_file prop_num result)
         "${CMAKE_SOURCE_DIR}/resources/properties/acas_property_${prop_num}.txt" "${result}" "--dnc" "acasxu")
 endmacro()
 
+            
 macro(marabou_add_regress_mps_test level net_file result arguments
          test_properties)
     get_filename_component(net_name ${net_file} NAME)
     set(test_name "${net_name}")
     add_test(${test_name}
             ${run_regress_script}
-            ${CMAKE_BINARY_DIR}/${MPS_PARSER}
-                ${net_file}
+                ${CMAKE_BINARY_DIR}/${INPUT_PARSERS_DIR}/${MPS_PARSER}
+                "${CMAKE_SOURCE_DIR}/${net_file}"
                 ${result}
                 ${arguments})
     set_tests_properties(${test_name} PROPERTIES LABELS "regress${level}

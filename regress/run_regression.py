@@ -105,7 +105,7 @@ def run_mpsparser(mps_binary, network_path, expected_result, arguments=None):
     :param expected_result: SAT / UNSAT
     :param arguments list of arguments to pass to Marabou (for example DnC mode)
     :return: True / False if test pass or not
-    '''
+    ''' 
     if not os.access(mps_binary, os.X_OK):
         sys.exit(
             '"{}" does not exist or is not executable'.format(mps_binary))
