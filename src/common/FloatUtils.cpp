@@ -62,17 +62,17 @@ double FloatUtils::roundToZero( double x, double epsilon )
     return isZero( x, epsilon ) ? 0.0 : x;
 }
 
-bool FloatUtils::isPositive( double x, double epsilon )
-{
-    return x > epsilon;
-    /* return ( !isZero( x, epsilon ) ) && ( x > 0.0 ); */
-}
+/* bool FloatUtils::isPositive( double x, double epsilon ) */
+/* { */
+/*     return x > epsilon; */
+/*     /1* return ( !isZero( x, epsilon ) ) && ( x > 0.0 ); *1/ */
+/* } */
 
-bool FloatUtils::isNegative( double x, double epsilon )
-{
-    return x < -epsilon;
-    /* return ( !isZero( x, epsilon ) ) && ( x < 0.0 ); */
-}
+/* bool FloatUtils::isNegative( double x, double epsilon ) */
+/* { */
+/*     return x < -epsilon; */
+/*     /1* return ( !isZero( x, epsilon ) ) && ( x < 0.0 ); *1/ */
+/* } */
 
 bool FloatUtils::isFinite( double x )
 {

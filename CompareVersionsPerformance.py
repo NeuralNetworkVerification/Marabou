@@ -5,9 +5,10 @@ import threading
 from timeit import default_timer as timer
 from pprint  import pprint
 
-NEW_VERSION_DIR = "new_version"
+NEW_VERSION_DIR = "build_inline"
 ORIGINAL_VERSION_DIR = "build"
 DEFAULT_TIMEOUT = 60 * 60
+NUM_TIMES_TO_EXECUTE = 5
 
 NET_DIR = "resources/nnet"
 PROP_DIR = "resources/properties"
@@ -50,17 +51,21 @@ def run_process(args, cwd, timeout, s_input=None):
 
 
 def time_marabou(version_dir, net_path, property_path):
-    new_start = timer()
-    args = [os.path.join(version_dir, "Marabou"), net_path, property_path]
+    total_time = 0
+    for j in range(NUM_TIMES_TO_EXECUTE):
+        start = timer()
+        args = [os.path.join(version_dir, "Marabou"), net_path, property_path]
 
-    out, err, exit = run_process(args, os.curdir, DEFAULT_TIMEOUT)
-    new_end = timer()
-    if exit != 0:
-        new_end = 999999
-    return new_end - new_start
+        out, err, exit = run_process(args, os.curdir, DEFAULT_TIMEOUT)
+        end = timer()
+        if exit != 0:
+            end = 999999
+        total_time += end - start
+    return total_time / NUM_TIMES_TO_EXECUTE
 
 
 def get_all_timings(net_paths, property_paths):
+
     assert len(net_paths) == len(property_paths)
 
     all_times = {}
@@ -69,12 +74,13 @@ def get_all_timings(net_paths, property_paths):
         cur_times['new'] = time_marabou(NEW_VERSION_DIR, net_paths[i], property_paths[i])
         cur_times['original'] = time_marabou(ORIGINAL_VERSION_DIR, net_paths[i], property_paths[i])
         all_times[net_paths[i] + "_" + property_paths[i]] = cur_times
-        pprint(cur_times)
+
 
     json.dump(all_times, open("marabou_timing.json", 'w'))
     return all_times
 
 if __name__ == "__main__":
+
     paths = ((NET_DIR + '/acasxu/ACASXU_experimental_v2a_3_3.nnet', PROP_DIR + "/acas_property_3.txt"), # UNSAT 3
              (NET_DIR + '/acasxu/ACASXU_experimental_v2a_2_5.nnet', PROP_DIR + "/acas_property_2.txt"), # SAT 482
              (NET_DIR + '/acasxu/ACASXU_experimental_v2a_2_8.nnet', PROP_DIR + "/acas_property_4.txt"),  # UNSAT 308
