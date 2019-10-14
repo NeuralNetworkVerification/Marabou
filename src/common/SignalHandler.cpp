@@ -38,17 +38,17 @@ void SignalHandler::initialize()
 {
 
 #ifdef _WIN32
-	signal(SIGINT, got_signal);
-	signal(SIGTERM, got_signal);
-	signal(SIGABRT, got_signal);
+    signal( SIGINT, got_signal );
+    signal( SIGTERM, got_signal );
+    signal( SIGABRT, got_signal );
 
 #else
     struct sigaction sa;
     memset( &sa, 0, sizeof(sa) );
     sa.sa_handler = got_signal;
     sigfillset( &sa.sa_mask );
-	sigaction( SIGQUIT, &sa, NULL );
-	sigaction( SIGTERM, &sa, NULL );
+    sigaction( SIGQUIT, &sa, NULL );
+    sigaction( SIGTERM, &sa, NULL );
 #endif
 
 }
