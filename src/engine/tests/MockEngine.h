@@ -107,10 +107,9 @@ public:
     }
 
     IEngine::ExitCode _exitCode;
-
     bool solve( unsigned timeoutInSeconds )
     {
-        return _exitCode;
+        return timeoutInSeconds > 0;
     }
 
     void setExitCode( IEngine::ExitCode exitCode )
