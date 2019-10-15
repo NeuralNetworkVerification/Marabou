@@ -26,15 +26,10 @@ matrix:
     - os: windows
       script:
       - choco install python3 --params "/InstallDir:C:\Python3"
-      - echo "PATH=$PATH"
-      - export PATH="$(powershell -Command '("Process", "Machine" | % { [Environment]::GetEnvironmentVariable("PATH", $_) -Split ";" -Replace "\\$", "" } | Select -Unique | % { cygpath $_ }) -Join ":"')"
-      - echo "PATH=$PATH"
-      - ls /c/ProgramData/chocolatey/bin
-      - ls /c/Python
-      - ls /c/Python/Scripts
+      - /c/Python3/python --version
       - mkdir -p build
       - cd build
-      - travis_wait 2 cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=/c/Python/python -G"Visual Studio 15 2017 Win64"
+      - travis_wait 20 cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=/c/Python3/python -G"Visual Studio 15 2017 Win64"
       - cmake --build . --config Release
 
 notifications:
