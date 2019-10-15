@@ -27,7 +27,7 @@ matrix:
       script:
       - mkdir -p build
       - cd build
-      - cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=$(which $PY_CMD) -G"Visual Studio 15 2017 Win64"
+      - travis_wait 20 cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=$(which $PY_CMD) -G"Visual Studio 15 2017 Win64"
       - cmake --build . --config Release
 
 notifications:
