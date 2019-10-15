@@ -26,7 +26,7 @@
 class DnCWorker
 {
 public:
-    DnCWorker( WorkerQueue *workload, std::shared_ptr<Engine> engine,
+    DnCWorker( WorkerQueue *workload, std::shared_ptr<IEngine> engine,
                std::atomic_uint &numUnsolvedSubqueries,
                std::atomic_bool &shouldQuitSolving, unsigned threadId,
                unsigned onlineDivides, float timeoutFactor,
@@ -46,18 +46,18 @@ private:
     /*
       Convert the exitCode to string
     */
-    static String exitCodeToString( Engine::ExitCode result );
+    static String exitCodeToString( IEngine::ExitCode result );
 
     /*
       Print the current progress
     */
-    void printProgress( String queryId, Engine::ExitCode result ) const;
+    void printProgress( String queryId, IEngine::ExitCode result ) const;
 
     /*
       The queue of subqueries (shared across threads)
     */
     WorkerQueue *_workload;
-    std::shared_ptr<Engine> _engine;
+    std::shared_ptr<IEngine> _engine;
 
     /*
       The number of unsolved subqueries

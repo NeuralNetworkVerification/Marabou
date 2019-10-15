@@ -74,16 +74,10 @@ void DnCWorker::run()
             auto split = std::move( subQuery->_split );
             unsigned timeoutInSeconds = subQuery->_timeoutInSeconds;
 
-            // Create a new statistics object for each subQuery
-            Statistics *statistics = new Statistics();
             // Reset the engine state
             _engine->restoreState( *_initialState );
-            _engine->reset( statistics );
-            _engine->resetStatistics( *statistics );
-            _engine->clearViolatedPLConstraints();
-            _engine->resetSmtCore();
-            _engine->resetBoundTighteners();
-            _engine->resetExitCode();
+            _engine->reset();
+
             // TODO: each worker is going to keep a map from *CaseSplit to an
             // object of class DnCStatistics, which contains some basic
             // statistics. The maps are owned by the DnCManager.
@@ -92,16 +86,16 @@ void DnCWorker::run()
             _engine->applySplit( *split );
             _engine->solve( timeoutInSeconds );
 
-            Engine::ExitCode result = _engine->getExitCode();
+            IEngine::ExitCode result = _engine->getExitCode();
             printProgress( queryId, result );
             // Switch on the result
-            if ( result == Engine::UNSAT )
+            if ( result == IEngine::UNSAT )
             {
                 // If UNSAT, continue to solve
                 *_numUnsolvedSubQueries -= 1;
                 delete subQuery;
             }
-            else if ( result == Engine::TIMEOUT )
+            else if ( result == IEngine::TIMEOUT )
             {
                 // If TIMEOUT, split the current input region and add the
                 // new subQueries to the current queue
@@ -122,7 +116,7 @@ void DnCWorker::run()
                 *_numUnsolvedSubQueries -= 1;
                 delete subQuery;
             }
-            else if ( result == Engine::SAT )
+            else if ( result == IEngine::SAT )
             {
                 // If SAT, set the shouldQuitSolving flag to true, so that the
                 // DnCManager will kill all the DnCWorkers
@@ -131,7 +125,7 @@ void DnCWorker::run()
                 delete subQuery;
                 return;
             }
-            else if ( result == Engine::QUIT_REQUESTED )
+            else if ( result == IEngine::QUIT_REQUESTED )
             {
                 // If engine was asked to quit, quit
                 std::cout << "Quit requested by manager!" << std::endl;
@@ -139,7 +133,7 @@ void DnCWorker::run()
                 delete subQuery;
                 return;
             }
-            else if ( result == Engine::ERROR )
+            else if ( result == IEngine::ERROR )
             {
                 // If ERROR, set the shouldQuitSolving flag to true and quit
                 std::cout << "Error!" << std::endl;
@@ -148,7 +142,7 @@ void DnCWorker::run()
                 delete subQuery;
                 return;
             }
-            else if ( result == Engine::NOT_DONE )
+            else if ( result == IEngine::NOT_DONE )
             {
                 // If NOT_DONE, set the shouldQuitSolving flag to true and quit
                 ASSERT( false );
@@ -167,26 +161,26 @@ void DnCWorker::run()
     }
 }
 
-void DnCWorker::printProgress( String queryId, Engine::ExitCode result ) const
+void DnCWorker::printProgress( String queryId, IEngine::ExitCode result ) const
 {
     printf( "Worker %d: Query %s %s, %d tasks remaining\n", _threadId,
             queryId.ascii(), exitCodeToString( result ).ascii(),
             _numUnsolvedSubQueries->load() );
 }
 
-String DnCWorker::exitCodeToString( Engine::ExitCode result )
+String DnCWorker::exitCodeToString( IEngine::ExitCode result )
 {
     switch ( result )
     {
-    case Engine::UNSAT:
+    case IEngine::UNSAT:
         return "UNSAT";
-    case Engine::SAT:
+    case IEngine::SAT:
         return "SAT";
-    case Engine::ERROR:
+    case IEngine::ERROR:
         return "ERROR";
-    case Engine::TIMEOUT:
+    case IEngine::TIMEOUT:
         return "TIMEOUT";
-    case Engine::QUIT_REQUESTED:
+    case IEngine::QUIT_REQUESTED:
         return "QUIT_REQUESTED";
     default:
         ASSERT( false );

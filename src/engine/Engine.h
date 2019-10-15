@@ -46,16 +46,6 @@ public:
     Engine( unsigned verbosity = 2 );
     ~Engine();
 
-    enum ExitCode {
-        UNSAT = 0,
-        SAT = 1,
-        ERROR = 2,
-        TIMEOUT = 3,
-        QUIT_REQUESTED = 4,
-
-        NOT_DONE = 999,
-    };
-
     /*
       Attempt to find a feasible solution for the input within a time limit
       (a timeout of 0 means no time limit). Returns true if found, false if infeasible.
@@ -111,6 +101,8 @@ public:
       Add equations and tightenings from a split.
     */
     void applySplit( const PiecewiseLinearCaseSplit &split );
+
+    void reset();
 
     /*
       Reset the statistics object

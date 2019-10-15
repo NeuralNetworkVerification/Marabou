@@ -1806,6 +1806,16 @@ bool Engine::shouldExitDueToTimeout( unsigned timeout ) const
     return _statistics.getTotalTime() / MILLISECONDS_TO_SECONDS > timeout;
 }
 
+void Engine::reset()
+{
+    Statistics *statistics = new Statistics();
+    resetStatistics( *statistics );
+    clearViolatedPLConstraints();
+    resetSmtCore();
+    resetBoundTighteners();
+    resetExitCode();
+}
+
 
 void Engine::resetStatistics( const Statistics &statistics )
 {

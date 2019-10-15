@@ -29,6 +29,8 @@ public:
         wasDiscarded = false;
 
         lastStoredState = NULL;
+
+        _exitCode = NOT_DONE;
     }
 
     ~MockEngine()
@@ -103,6 +105,34 @@ public:
     void setNumPlConstraintsDisabledByValidSplits( unsigned /* numConstraints */ )
     {
     }
+
+    IEngine::ExitCode _exitCode;
+
+    bool solve( unsigned timeoutInSeconds )
+    {
+        return _exitCode;
+    }
+
+    void setExitCode( IEngine::ExitCode exitCode )
+    {
+        _exitCode = exitCode;
+    }
+
+    IEngine::ExitCode getExitCode() const
+    {
+        return _exitCode;
+    }
+
+    void reset()
+    {
+    }
+
+    List<unsigned> _inputVariables;
+    List<unsigned> getInputVariables() const
+    {
+        return _inputVariables;
+    }
+
 };
 
 #endif // __MockEngine_h__
