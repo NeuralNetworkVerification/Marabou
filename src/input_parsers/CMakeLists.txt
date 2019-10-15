@@ -1,5 +1,3 @@
-cmake_minimum_required (VERSION 3.12)
-
 set(MPS_PARSER mps.elf)
 set(ACAS_PARSER acas.elf)
 set(BERKELEY_PARSER berkeley.elf)
