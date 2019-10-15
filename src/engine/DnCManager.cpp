@@ -18,14 +18,15 @@
 #include "DivideStrategy.h"
 #include "DnCManager.h"
 #include "DnCWorker.h"
+#include "GetCPUData.h"
 #include "LargestIntervalDivider.h"
 #include "MStringf.h"
+#include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PropertyParser.h"
 #include "QueryDivider.h"
-#include "MarabouError.h"
 #include "TimeUtils.h"
-
+#include "Vector.h"
 #include <atomic>
 #include <chrono>
 #include <cmath>
@@ -37,7 +38,10 @@ void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine
                            unsigned threadId, unsigned onlineDivides,
                            float timeoutFactor, DivideStrategy divideStrategy )
 {
-    log( Stringf( "Thread #%u on CPU %u", threadId, sched_getcpu() ) );
+    unsigned cpuId = 0;
+    getCPUId( cpuId );
+    log( Stringf( "Thread #%u on CPU %u", threadId, cpuId ) );
+
     DnCWorker worker( workload, engine, std::ref( numUnsolvedSubQueries ),
                       std::ref( shouldQuitSolving ), threadId, onlineDivides,
                       timeoutFactor, divideStrategy );
@@ -240,9 +244,11 @@ void DnCManager::printResult()
         InputQuery *inputQuery = _engineWithSATAssignment->getInputQuery();
         _engineWithSATAssignment->extractSolution( *( inputQuery ) );
 
+        Vector<double> inputVector( inputQuery->getNumInputVariables() );
+        Vector<double> outputVector( inputQuery->getNumOutputVariables() );
+        double *inputs( inputVector.data() );
+        double *outputs( outputVector.data() );
 
-        double inputs[inputQuery->getNumInputVariables()];
-        double outputs[inputQuery->getNumOutputVariables()];
         printf( "Input assignment:\n" );
         for ( unsigned i = 0; i < inputQuery->getNumInputVariables(); ++i )
         {

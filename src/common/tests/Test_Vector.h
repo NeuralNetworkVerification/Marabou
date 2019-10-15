@@ -35,6 +35,28 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete mockErrno );
     }
 
+    void test_constructor_size()
+    {
+        unsigned size = 3;
+
+        Vector<double> vector( size );
+
+        TS_ASSERT_EQUALS( vector.size(), 3u );
+    }
+
+    void test_constructor_value()
+    {
+        unsigned size = 3;
+        double value = 10.0;
+
+        Vector<double> vector( size, value );
+
+        TS_ASSERT_EQUALS( vector.size(), 3u );
+        TS_ASSERT_EQUALS( vector[0], value );
+        TS_ASSERT_EQUALS( vector[1], value );
+        TS_ASSERT_EQUALS( vector[2], value );
+    }
+
     void test_brackets()
     {
         Vector<String> vector;

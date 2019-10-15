@@ -637,6 +637,8 @@ void Preprocessor::eliminateVariables()
             if ( _statistics )
                 _statistics->ppIncNumConstraintsRemoved();
 
+            delete *constraint;
+            *constraint = NULL;
             constraint = constraints.erase( constraint );
         }
         else
