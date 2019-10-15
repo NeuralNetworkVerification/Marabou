@@ -30,6 +30,7 @@ matrix:
       - export PATH="$(powershell -Command '("Process", "Machine" | % { [Environment]::GetEnvironmentVariable("PATH", $_) -Split ";" -Replace "\\$", "" } | Select -Unique | % { cygpath $_ }) -Join ":"')"
       - echo "PATH=$PATH"
       - which python
+      - python --version
       - which python3
       - mkdir -p build
       - cd build
