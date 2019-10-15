@@ -2,6 +2,9 @@ language: cpp
 
 before_install:
   - PY_CMD=python3
+  - if [ "$TRAVIS_OS_NAME" = "windows" ]; then powershell Start-Process -PassThru -Wait PowerShell -ArgumentList "'-Command Set-MpPreference -DisableArchiveScanning \$true'"    ; fi
+  - if [ "$TRAVIS_OS_NAME" = "windows" ]; then powershell Start-Process -PassThru -Wait PowerShell -ArgumentList "'-Command Set-MpPreference -DisableBehaviorMonitoring \$true'" ; fi
+  - if [ "$TRAVIS_OS_NAME" = "windows" ]; then powershell Start-Process -PassThru -Wait PowerShell -ArgumentList "'-Command Set-MpPreference -DisableRealtimeMonitoring \$true'" ; fi
 
 matrix:
   include:
@@ -26,10 +29,9 @@ matrix:
     - os: windows
       script:
       - choco install python3 --params "/InstallDir:C:\Python3"
-      - /c/Python3/python --version
       - mkdir -p build
       - cd build
-      - travis_wait 20 cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=/c/Python3/python -G"Visual Studio 15 2017 Win64"
+      - cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=/c/Python3/python -G"Visual Studio 15 2017 Win64"
       - cmake --build . --config Release
 
 notifications:

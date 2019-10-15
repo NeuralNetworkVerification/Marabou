@@ -20,7 +20,7 @@
 #include "Simulator.h"
 
 #ifdef _WIN32
-#include "time.h"
+#include <time.h>
 #endif
 
 void Simulator::runSimulations( const InputQuery &inputQuery, unsigned numberOfSimulations )
