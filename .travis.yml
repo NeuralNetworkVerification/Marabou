@@ -1,20 +1,34 @@
 language: cpp
 
-dist: xenial 
-
 before_install:
   - PY_CMD=python3
 
-script:
-  - mkdir -p build 
-  - cd build
-  - cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=$(which $PY_CMD) 
-  - cmake --build . -j 2
-
 matrix:
   include:
-    - compiler: gcc
-    - compiler: clang 
+    - os: linux
+      dist: xenial
+      compiler: gcc
+      script:
+      - mkdir -p build
+      - cd build
+      - cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=$(which $PY_CMD)
+      - cmake --build . -j 2
+
+    - os: linux
+      dist: xenial
+      compiler: clang
+      script:
+      - mkdir - p build
+      - cd build
+      - cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=$(which $PY_CMD)
+      - cmake --build . -j 2
+
+    - os: windows
+      script:
+      - mkdir -p build
+      - cd build
+      - cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=$(which $PY_CMD) -G"Visual Studio 15 2017 Win64"
+      - cmake --build . --config Release
 
 notifications:
   email:
