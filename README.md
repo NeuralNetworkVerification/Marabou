@@ -83,8 +83,8 @@ ctest -L unit
 ```
 ### Build Instructions for Windows using Visual Studio
 
-First, install Visual Studio and select the "Desktop development with C++" workload. 
-Ensure that CMake and wget are installed and added to your PATH.
+First, install Visual Studio 2017 or later and select the "Desktop development with C++" workload. 
+Ensure that CMake is installed and added to your PATH.
 
 Open a command prompt and run:
 ```
@@ -95,8 +95,8 @@ cmake .. -G"Visual Studio 15 2017 Win64"
 cmake --build . --config Release
 ```
 This process builds Marabou using the generator "Visual Studio 15 2017 Win64". 
-For 32-bit machines, omit Win64. Other generators can also be used, 
-but "Visual Studio 15 2017 Win64" has been tested.
+For 32-bit machines, omit Win64. Other generators and older versions of Visual Studio can likely be used as well, 
+but only "Visual Studio 15 2017 Win64" has been tested.
 
 The Marabou executable file will be written to the build/Release folder. To build in 
 Debug mode, simply run "cmake --build . --config Debug", and the executables will be 
