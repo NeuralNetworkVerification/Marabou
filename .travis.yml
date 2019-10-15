@@ -26,7 +26,11 @@ matrix:
     - os: windows
       script:
       - choco install python3
-      - powershell refreshenv
+      - echo "PATH=$PATH"
+      - export PATH="$(powershell -Command '("Process", "Machine" | % {
+        [Environment]::GetEnvironmentVariable("PATH", $_) -Split ";" -Replace "\\$", ""
+      } | Select -Unique | % { cygpath $_ }) -Join ":"')"
+      - echo "PATH=$PATH"
       - mkdir -p build
       - cd build
       - travis_wait 20 cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=$(which $PY_CMD) -G"Visual Studio 15 2017 Win64"
