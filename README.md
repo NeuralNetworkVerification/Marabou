@@ -54,7 +54,7 @@ Marabou depends on the Boost library,
 which is automatically downloaded and built when you run make. Library CXXTEST
 comes included in the repository.
 
-The marabou build process uses CMake version 3.12 (or later).
+The marabou build process uses CMake version 3.2 (or later).
 You can get CMake [here](https://cmake.org/download/).
 
 Marabou can be built for Linux, MacOS, or Windows machines.
