@@ -25,6 +25,7 @@ matrix:
 
     - os: windows
       script:
+      - choco install python3
       - mkdir -p build
       - cd build
       - travis_wait 20 cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=$(which $PY_CMD) -G"Visual Studio 15 2017 Win64"
