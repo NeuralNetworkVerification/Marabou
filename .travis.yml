@@ -31,6 +31,9 @@ matrix:
       - echo "PATH=$PATH"
       - which python
       - python --version
+      - ls /c/ProgramData/chocolatey/bin
+      - ls /c/Python38
+      - ls /c/Python38/Scripts
       - which python3
       - mkdir -p build
       - cd build
