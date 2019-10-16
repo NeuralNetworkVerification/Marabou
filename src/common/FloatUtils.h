@@ -18,25 +18,37 @@
 
 #include "GlobalConfiguration.h"
 #include "MString.h"
+#include "Debug.h"
 
 #include <cfloat>
 
 class FloatUtils
 {
 public:
+    inline static bool isZero( double x, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS )
+    {
+        ASSERT( epsilon > 0 ); 
+        double lower = -epsilon;
+        double upper = epsilon;
+        return ( x - upper ) * ( x - lower ) <= 0;
+    }
+    inline static bool isPositive( double x, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS )
+    {
+        ASSERT( epsilon > 0 ); 
+        return x > epsilon;
+    }
+    inline static bool isNegative( double x, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS )
+    {
+        ASSERT( epsilon > 0 ); 
+        return x < -epsilon;
+    }
+
     static bool areEqual( double x, double y, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
     static double abs( double x );
     static bool areDisequal( double x,
                              double y,
                              double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
-static bool isZero( double x, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
     static double roundToZero( double x, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
-inline static bool isPositive( double x, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS ){
-    return x > epsilon;
-}
-inline static bool isNegative( double x, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS ){
-    return x < -epsilon;
-}
     static bool gt( double x, double y, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
     static bool gte( double x, double y, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
     static bool lt( double x, double y, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );

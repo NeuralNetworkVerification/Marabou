@@ -49,30 +49,10 @@ bool FloatUtils::areDisequal( double x, double y, double epsilon )
     return !areEqual( x, y, epsilon );
 }
 
-bool FloatUtils::isZero( double x, double epsilon )
-{
-    /* return ( -epsilon <= x ) && ( x <= epsilon ); */
-    double lower = -epsilon;
-    double upper = epsilon;
-    return ((x-upper)*(x-lower) <= 0); 
-}
-
 double FloatUtils::roundToZero( double x, double epsilon )
 {
     return isZero( x, epsilon ) ? 0.0 : x;
 }
-
-/* bool FloatUtils::isPositive( double x, double epsilon ) */
-/* { */
-/*     return x > epsilon; */
-/*     /1* return ( !isZero( x, epsilon ) ) && ( x > 0.0 ); *1/ */
-/* } */
-
-/* bool FloatUtils::isNegative( double x, double epsilon ) */
-/* { */
-/*     return x < -epsilon; */
-/*     /1* return ( !isZero( x, epsilon ) ) && ( x < 0.0 ); *1/ */
-/* } */
 
 bool FloatUtils::isFinite( double x )
 {
