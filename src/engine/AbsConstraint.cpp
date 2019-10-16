@@ -401,11 +401,19 @@ void AbsConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
 
     if (!FloatUtils::isNegative( bLowerBound ) & !FloatUtils::isNegative( bUpperBound ) & !FloatUtils::isNegative( fLowerBound ))
     {
+        //there is no overlap
+        if( FloatUtils::lt(bUpperBound, fLowerBound) || FloatUtils::lt(fUpperBound, bLowerBound)) {
+            return;
+        }
         // update lower bound x_f or x_b
-        if ( FloatUtils::lt( fLowerBound, bLowerBound) )
+        else if ( FloatUtils::lt( fLowerBound, bLowerBound) )
+        {
             tightenings.append( Tightening( _f, bLowerBound, Tightening::LB ) );
+        }
         else if ( FloatUtils::lt( bLowerBound, fLowerBound ) )
+        {
             tightenings.append( Tightening( _b, fLowerBound, Tightening::LB ) );
+        }
 
         // update upper bound x_f or x_b
         if ( FloatUtils::lt( bUpperBound, fUpperBound ) )
@@ -416,6 +424,7 @@ void AbsConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
 
     if (FloatUtils::isNegative(bLowerBound) & !FloatUtils::isNegative(bUpperBound) & FloatUtils::isZero(fLowerBound))
     {
+        //have to be overlap
         // update lower bound x_b
         if ( FloatUtils::gt(-1*fUpperBound, bLowerBound ) )
             tightenings.append( Tightening( _b, -1*fUpperBound , Tightening::LB ) );
@@ -429,8 +438,31 @@ void AbsConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
             tightenings.append( Tightening( _f, tempBound, Tightening::UB ) );
     }
 
+    if (FloatUtils::isNegative(bLowerBound) & !FloatUtils::isNegative(bUpperBound) & !FloatUtils::isZero(fLowerBound))
+    {
+        if ( FloatUtils::gt(FloatUtils::abs(bLowerBound),fUpperBound ))
+            tightenings.append( Tightening( _b,-1*fUpperBound , Tightening::LB ));
+        if ( FloatUtils::gt(fLowerBound, FloatUtils::abs(bLowerBound)))
+            tightenings.append( Tightening( _b,fLowerBound , Tightening::LB ) );
+
+        // update upper bound x_f and x_b
+        if ( FloatUtils::lt( fUpperBound, bUpperBound))
+            tightenings.append( Tightening( _b, fUpperBound, Tightening::UB ) );
+        else if ( FloatUtils::gt( fLowerBound, bUpperBound))
+            tightenings.append( Tightening( _b, -1*fLowerBound, Tightening::UB ) );
+
+        double tempBound = FloatUtils::max(FloatUtils::abs(bLowerBound) , bUpperBound);
+        if ( FloatUtils::lt( tempBound, fUpperBound) )
+            tightenings.append( Tightening( _f, tempBound, Tightening::UB ) );
+    }
+
     if (FloatUtils::isNegative(bLowerBound) & FloatUtils::isNegative(bUpperBound) & !FloatUtils::isNegative(fLowerBound))
     {
+        //there is no overlap
+        if(FloatUtils::lt( fUpperBound ,FloatUtils::abs(bUpperBound)) ||
+        FloatUtils::lt(FloatUtils::abs(bLowerBound), fLowerBound)) {
+            return;
+        }
         // update lower bound x_f and x_b
         if ( FloatUtils::gt(-1*fUpperBound, bLowerBound ) )
             tightenings.append( Tightening( _b, -1*fUpperBound , Tightening::LB ) );
@@ -443,9 +475,6 @@ void AbsConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
         if ( FloatUtils::lt( FloatUtils::abs(bLowerBound), fUpperBound) )
             tightenings.append( Tightening( _f, FloatUtils::abs(bLowerBound), Tightening::UB ) );
     }
-
-
-
 }
 
 void AbsConstraint::getAuxiliaryEquations( __attribute__((unused)) List<Equation> &newEquations ) const {}
