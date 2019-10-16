@@ -5,8 +5,9 @@ import threading
 from timeit import default_timer as timer
 from pprint  import pprint
 
-NEW_VERSION_DIR = "build_inline"
-ORIGINAL_VERSION_DIR = "build"
+BASELINE_DIR = "build_no_optimize"
+INLINE_DIR = "build_inline"
+INLINE_OPTIMIZE_DIR = "build_inline_optimize"
 DEFAULT_TIMEOUT = 60 * 60
 NUM_TIMES_TO_EXECUTE = 5
 
@@ -51,7 +52,7 @@ def run_process(args, cwd, timeout, s_input=None):
 
 
 def time_marabou(version_dir, net_path, property_path):
-    total_time = 0
+    times = []
     for j in range(NUM_TIMES_TO_EXECUTE):
         start = timer()
         args = [os.path.join(version_dir, "Marabou"), net_path, property_path]
@@ -60,8 +61,8 @@ def time_marabou(version_dir, net_path, property_path):
         end = timer()
         if exit != 0:
             end = 999999
-        total_time += end - start
-    return total_time / NUM_TIMES_TO_EXECUTE
+        times.append(end - start)
+    return times 
 
 
 def get_all_timings(net_paths, property_paths):
@@ -71,9 +72,15 @@ def get_all_timings(net_paths, property_paths):
     all_times = {}
     for i in range(len(net_paths)):
         cur_times = {}
-        cur_times['new'] = time_marabou(NEW_VERSION_DIR, net_paths[i], property_paths[i])
-        cur_times['original'] = time_marabou(ORIGINAL_VERSION_DIR, net_paths[i], property_paths[i])
+        cur_times['base_line'] = time_marabou(BASELINE_DIR, net_paths[i], property_paths[i])
+        cur_times['inline'] = time_marabou(INLINE_DIR, net_paths[i], property_paths[i])
+        cur_times['inline_optimize'] = time_marabou(INLINE_OPTIMIZE_DIR, net_paths[i], property_paths[i])
         all_times[net_paths[i] + "_" + property_paths[i]] = cur_times
+        print("avg {} :\n\tbase_line: {}\n\tinline: {}\n\tinline_optimize: {}\n".format(
+                net_paths[i] + "_" + property_paths[i],
+                sum(cur_times['base_line']) / len(cur_times['base_line']),
+                sum(cur_times['inline']) / len(cur_times['inline']),
+                sum(cur_times['inline_optimize']) / len(cur_times['inline_optimize'])))
 
 
     json.dump(all_times, open("marabou_timing.json", 'w'))
@@ -81,8 +88,9 @@ def get_all_timings(net_paths, property_paths):
 
 if __name__ == "__main__":
 
-    paths = ((NET_DIR + '/acasxu/ACASXU_experimental_v2a_3_3.nnet', PROP_DIR + "/acas_property_3.txt"), # UNSAT 3
+    paths = ((NET_DIR + '/coav/reluBenchmark0.803817987442s_SAT.nnet', PROP_DIR + 'builtin_property.txt'),
              (NET_DIR + '/acasxu/ACASXU_experimental_v2a_2_5.nnet', PROP_DIR + "/acas_property_2.txt"), # SAT 482
+            (NET_DIR + '/acasxu/ACASXU_experimental_v2a_3_3.nnet', PROP_DIR + "/acas_property_3.txt"), # UNSAT 3
              (NET_DIR + '/acasxu/ACASXU_experimental_v2a_2_8.nnet', PROP_DIR + "/acas_property_4.txt"),  # UNSAT 308
              )
 
