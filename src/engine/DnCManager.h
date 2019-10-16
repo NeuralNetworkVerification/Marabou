@@ -62,6 +62,11 @@ public:
     */
     String getResultString();
 
+    /*
+      Print the result of DnC solving
+    */
+    void printResult();
+
 private:
     /*
       Create and run a DnCWorker
@@ -88,11 +93,6 @@ private:
       exitCode.
     */
     void updateDnCExitCode();
-
-    /*
-      Print the result of DnC solving
-    */
-    void printResult();
 
     /*
       Set _timeoutReached to true if timeout has been reached
