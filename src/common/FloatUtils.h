@@ -16,9 +16,9 @@
 #ifndef __FloatUtils_h__
 #define __FloatUtils_h__
 
+#include "Debug.h"
 #include "GlobalConfiguration.h"
 #include "MString.h"
-#include "Debug.h"
 
 #include <cfloat>
 
@@ -32,11 +32,13 @@ public:
         double upper = epsilon;
         return ( x - upper ) * ( x - lower ) <= 0;
     }
+
     inline static bool isPositive( double x, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS )
     {
         ASSERT( epsilon > 0 ); 
         return x > epsilon;
     }
+
     inline static bool isNegative( double x, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS )
     {
         ASSERT( epsilon > 0 ); 
