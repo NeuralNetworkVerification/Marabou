@@ -12,7 +12,7 @@ target_include_directories(${MARABOU_TEST_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DI
 
 set (COMMON_TESTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tests")
 macro(common_add_unit_test name)
-    marabou_add_test(${COMMON_TESTS_DIR}/Test_${name} common FALSE "unit")
+    marabou_add_test(${COMMON_TESTS_DIR}/Test_${name} common FALSE TRUE "unit")
 endmacro()
 
 common_add_unit_test(ConstSimpleData)
