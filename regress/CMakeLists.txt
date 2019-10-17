@@ -17,6 +17,8 @@ macro(marabou_add_regress_test level net_file property_file result arguments
     ${result} ${test_properties}")
 endmacro()
 
+# We can add an argument to the arguments list (similar to dnc), to change the
+# 10minutes default timeout
 macro(marabou_add_twin_test level net_file result)
     marabou_add_regress_test(${level} ${net_file}
         "${CMAKE_SOURCE_DIR}/resources/properties/builtin_property.txt" ${result} "" "twin")

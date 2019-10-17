@@ -68,7 +68,7 @@ def analyze_process_result(out, err, exit_status, expected_result):
             print('expected SAT, but \'\\nSAT\' is not in the output. tail of the output:\n', out[-1500:])
             return False
 
-def run_marabou(marabou_binary, network_path, property_path, expected_result, arguments=None):
+def run_marabou(marabou_binary, network_path, property_path, expected_result, timeout=DEFAULT_TIMEOUT, arguments=None):
     '''
     Run marabou and assert the result is according to the expected_result
     :param marabou_binary: path to marabou executable
@@ -91,7 +91,7 @@ def run_marabou(marabou_binary, network_path, property_path, expected_result, ar
     args = [marabou_binary, network_path, property_path]
     if isinstance(arguments, list):
         args += arguments
-    out, err, exit_status = run_process(args, os.curdir, DEFAULT_TIMEOUT)
+    out, err, exit_status = run_process(args, os.curdir, timeout)
 
     return analyze_process_result(out, err, exit_status, expected_result)
 
@@ -125,7 +125,7 @@ def run_folder_on_property(folder, property_file):
     results = {}
     for net in os.listdir(folder):
         start = timer()
-        result = run_marabou("build/Marabou", os.path.join(folder, net), property_file, "SAT")
+        result = run_marabou("build/Marabou", os.path.join(folder, net), property_file, "SAT", DEFAULT_TIMEOUT)
         end = timer()
         results[net] = (end - start, result)
         print("{}, time(sec): {}, SAT: {}".format(net, end - start, result))
@@ -142,6 +142,7 @@ def main():
     parser.add_argument('property_file', nargs='?', default='')
     parser.add_argument('expected_result', choices=EXPECTED_RESULT_OPTIONS)
     parser.add_argument('--dnc', action='store_true')
+    parser.add_argument('--timeout', nargs='?', const=DEFAULT_TIMEOUT, type=int)
 
     args = parser.parse_args()
 
@@ -151,23 +152,16 @@ def main():
 
     if args.network_file.endswith('nnet'):
         property_file = os.path.abspath(args.property_file)
-    # else:
-    #     if args.property_file not in EXPECTED_RESULT_OPTIONS:
-    #         raise NotImplementedError("expected result must be SAT or UNSAT")
-        # expected_result = args.property_file
 
     marabou_args = []
     if args.dnc:
         marabou_args += ['--dnc']
     if args.network_file.endswith('nnet'):
-        return run_marabou(binary, network_file, property_file, expected_result, marabou_args)
+        return run_marabou(binary, network_file, property_file, expected_result, args.timeout, marabou_args)
     elif args.network_file.endswith('mps'):
         return run_mpsparser(binary, network_file, expected_result, marabou_args)
     else:
         raise NotImplementedError('supporting only nnet and mps file format')
-
-# ./build/Marabou resources/nnet/coav/reluBenchmark0.041867017746s_UNSAT.nnet resources/propertie
-# s/builtin_property.txt
 
 if __name__ == "__main__":
     if main():
@@ -175,14 +169,5 @@ if __name__ == "__main__":
     else:
         sys.exit(1)
 
-    # coav_results = run_folder_on_property("resources/nnet/coav/", 'resources/properties/builtin_property.txt')
-    # twin_results = run_folder_on_property("resources/nnet/twin/", 'resources/properties/builtin_property.txt')
-    #
-    # json.dump(coav_results, open("coav_results.json", "w"))
-    # json.dump(twin_results, open("twin_results.json", "w"))
-
-    # print(run_marabou("build/Marabou", "resources/nnet/acasxu/ACASXU_experimental_v2a_1_9.nnet",
-    #             "resources/properties/builtin_property.txt", "SAT"))
-
-    print(run_marabou("build/Marabou", "resources/nnet/twin/twin_ladder-5_inp-4_layers-5_width-10_margin.nnet",
-                      "resources/properties/builtin_property.txt", "UNSAT"))
+    # print(run_marabou("build/Marabou", "resources/nnet/twin/twin_ladder-5_inp-4_layers-5_width-10_margin.nnet",
+    #                   "resources/properties/builtin_property.txt", "UNSAT"))
