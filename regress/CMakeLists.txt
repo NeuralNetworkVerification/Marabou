@@ -68,6 +68,6 @@ add_subdirectory(regress5)
 
 add_custom_target(regress
   COMMAND
-    ctest --output-on-failure -L "regress[0-2]" -j${CTEST_NTHREADS} $$ARGS
+    ctest --output-on-failure -L "regress0" -j${CTEST_NTHREADS} $$ARGS
   DEPENDS build-regress)
  
