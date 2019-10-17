@@ -848,97 +848,6 @@ public:
         TS_ASSERT_EQUALS( it->_value, 20 );
         TS_ASSERT_EQUALS( it->_type, Tightening::UB );
     }
-//
-//    void test_abs_case_splits()
-//    {
-//        unsigned b = 1;
-//        unsigned f = 4;
-//
-//        AbsConstraint abs( b, f );
-//
-//        List<PiecewiseLinearConstraint::Fix> fixes;
-//        List<PiecewiseLinearConstraint::Fix>::iterator it;
-//
-//        List<PiecewiseLinearCaseSplit> splits = abs.getCaseSplits();
-//
-//        Equation positiveEquation, negativeEquation;
-//
-//        TS_ASSERT_EQUALS( splits.size(), 2U );
-//
-//        List<PiecewiseLinearCaseSplit>::iterator split1 = splits.begin();
-//        List<PiecewiseLinearCaseSplit>::iterator split2 = split1;
-//        ++split2;
-//
-//        TS_ASSERT( isPositiveSplit( b, f, split1 ) || isPositiveSplit( b, f, split2 ) );
-//        TS_ASSERT( isNegativeSplit( b, f, split1 ) || isNegativeSplit( b, f, split2 ) );
-//    }
-//
-//    bool isPositiveSplit( unsigned b, unsigned f, List<PiecewiseLinearCaseSplit>::iterator &split )
-//    {
-//        List<Tightening> bounds = split->getBoundTightenings();
-//
-//        auto bound = bounds.begin();
-//        Tightening bound1 = *bound;
-//
-//        TS_ASSERT_EQUALS( bound1._variable, b );
-//        TS_ASSERT_EQUALS( bound1._value, 0.0 );
-//
-//        if ( bound1._type != Tightening::LB )
-//            return false;
-//
-//        TS_ASSERT_EQUALS( bounds.size(), 1U );
-//
-//        Equation positiveEquation;
-//        auto equations = split->getEquations();
-//        TS_ASSERT_EQUALS( equations.size(), 1U );
-//        positiveEquation = split->getEquations().front();
-//        TS_ASSERT_EQUALS( positiveEquation._addends.size(), 2U );
-//        TS_ASSERT_EQUALS( positiveEquation._scalar, 0.0 );
-//
-//        auto addend = positiveEquation._addends.begin();
-//        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
-//        TS_ASSERT_EQUALS( addend->_variable, b );
-//
-//        ++addend;
-//        TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
-//        TS_ASSERT_EQUALS( addend->_variable, f );
-//
-//        TS_ASSERT_EQUALS( positiveEquation._type, Equation::EQ );
-//
-//        return true;
-//    }
-//
-//    bool isNegativeSplit( unsigned b, unsigned f, List<PiecewiseLinearCaseSplit>::iterator &split )
-//    {
-//        List<Tightening> bounds = split->getBoundTightenings();
-//
-//        auto bound = bounds.begin();
-//        Tightening bound1 = *bound;
-//
-//        TS_ASSERT_EQUALS( bound1._variable, b );
-//        TS_ASSERT_EQUALS( bound1._value, 0.0 );
-//
-//        if ( bound1._type != Tightening::UB )
-//            return false;
-//
-//        Equation negativeEquation;
-//        auto equations = split->getEquations();
-//        TS_ASSERT_EQUALS( equations.size(), 1U );
-//        negativeEquation = split->getEquations().front();
-//        TS_ASSERT_EQUALS( negativeEquation._addends.size(), 2U );
-//        TS_ASSERT_EQUALS( negativeEquation._scalar, 0.0 );
-//
-//        auto addend = negativeEquation._addends.begin();
-//        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
-//        TS_ASSERT_EQUALS( addend->_variable, b );
-//
-//        ++addend;
-//        TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
-//        TS_ASSERT_EQUALS( addend->_variable, f );
-//
-//        TS_ASSERT_EQUALS( negativeEquation._type, Equation::EQ );
-//        return true;
-//    }
 
     void print_bounds(AbsConstraint abs, unsigned b, unsigned f)
     {
@@ -965,7 +874,137 @@ public:
             TS_TRACE(it->_type);
             it++;
         }
+    }
 
+    void test_abs_case_splits()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        AbsConstraint abs( b, f );
+
+        List<PiecewiseLinearConstraint::Fix> fixes;
+        List<PiecewiseLinearConstraint::Fix>::iterator it;
+
+        List<PiecewiseLinearCaseSplit> splits = abs.getCaseSplits();
+
+        Equation positiveEquation, negativeEquation;
+
+        TS_ASSERT_EQUALS( splits.size(), 2U );
+
+        List<PiecewiseLinearCaseSplit>::iterator split1 = splits.begin();
+        List<PiecewiseLinearCaseSplit>::iterator split2 = split1;
+        ++split2;
+
+        TS_ASSERT( isPositiveSplit( b, f, split1 ) || isPositiveSplit( b, f, split2 ) );
+        TS_ASSERT( isNegativeSplit( b, f, split1 ) || isNegativeSplit( b, f, split2 ) );
+    }
+
+    bool isPositiveSplit( unsigned b, unsigned f, List<PiecewiseLinearCaseSplit>::iterator &split )
+    {
+        List<Tightening> bounds = split->getBoundTightenings();
+
+        auto bound = bounds.begin();
+        Tightening bound1 = *bound;
+
+        TS_ASSERT_EQUALS( bound1._variable, b );
+        TS_ASSERT_EQUALS( bound1._value, 0.0 );
+
+        if ( bound1._type != Tightening::LB )
+            return false;
+
+        TS_ASSERT_EQUALS( bounds.size(), 1U );
+
+        Equation positiveEquation;
+        auto equations = split->getEquations();
+        TS_ASSERT_EQUALS( equations.size(), 1U );
+        positiveEquation = split->getEquations().front();
+        TS_ASSERT_EQUALS( positiveEquation._addends.size(), 2U );
+        TS_ASSERT_EQUALS( positiveEquation._scalar, 0.0 );
+
+        auto addend = positiveEquation._addends.begin();
+        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, b );
+
+        ++addend;
+        TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, f );
+
+        TS_ASSERT_EQUALS( positiveEquation._type, Equation::EQ );
+
+        return true;
+    }
+
+    bool isNegativeSplit( unsigned b, unsigned f, List<PiecewiseLinearCaseSplit>::iterator &split )
+    {
+        List<Tightening> bounds = split->getBoundTightenings();
+
+        auto bound = bounds.begin();
+        Tightening bound1 = *bound;
+
+        TS_ASSERT_EQUALS( bound1._variable, b );
+        TS_ASSERT_EQUALS( bound1._value, 0.0 );
+
+        if ( bound1._type != Tightening::UB )
+            return false;
+
+        Equation negativeEquation;
+        auto equations = split->getEquations();
+        TS_ASSERT_EQUALS( equations.size(), 1U );
+        negativeEquation = split->getEquations().front();
+        TS_ASSERT_EQUALS( negativeEquation._addends.size(), 2U );
+        TS_ASSERT_EQUALS( negativeEquation._scalar, 0.0 );
+
+        auto addend = negativeEquation._addends.begin();
+        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, b );
+
+        ++addend;
+        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, f );
+
+        TS_ASSERT_EQUALS( negativeEquation._type, Equation::EQ );
+        return true;
+    }
+
+    void test_fix_active() {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        MockTableau tableau;
+
+        AbsConstraint abs(b, f);
+
+        abs.registerAsWatcher(&tableau);
+
+        List <PiecewiseLinearCaseSplit> splits = abs.getCaseSplits();
+        TS_ASSERT_EQUALS(splits.size(), 2U);
+
+        abs.notifyLowerBound(1, 1.0);
+        TS_ASSERT_THROWS_EQUALS(splits = abs.getCaseSplits(),
+        const AbsError &e,
+        e.getCode(),
+                AbsError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
+
+        abs.unregisterAsWatcher(&tableau);
+
+        abs = AbsConstraint( b, f );
+
+
+        abs.registerAsWatcher( &tableau );
+
+        splits = abs.getCaseSplits();
+        TS_ASSERT_EQUALS( splits.size(), 2U );
+
+        abs.notifyUpperBound( 1, -2.0 );
+        print_bounds(abs, b, f);
+        TS_ASSERT_THROWS_EQUALS( splits = abs.getCaseSplits(),
+        const AbsError &e,
+        e.getCode(),
+                AbsError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
+
+        abs.unregisterAsWatcher( &tableau );
+    }
 
 };
 
