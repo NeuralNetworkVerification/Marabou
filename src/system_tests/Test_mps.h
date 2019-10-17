@@ -18,8 +18,7 @@
 #include "Engine.h"
 #include "InputQuery.h"
 #include "MpsParser.h"
-/* #include <cstdio> */
-
+#include "MString.h"
 
 class MpsTestSuite : public CxxTest::TestSuite
 {
@@ -35,7 +34,7 @@ public:
 
     void test_infesiable() 
     {
-        const char *filename = "./lp_infeasible_1.mps";
+        const String filename = RESOURCES_DIR  "/mps/lp_infeasible_1.mps";
 
         // Extract an input query from the network
         InputQuery inputQuery;
@@ -55,7 +54,7 @@ public:
 
     void test_fesiable() 
     {
-        const char *filename = "./lp_feasible_1.mps";
+        const char *filename = RESOURCES_DIR "/mps/lp_feasible_1.mps";
 
         // Extract an input query from the network
         InputQuery inputQuery;

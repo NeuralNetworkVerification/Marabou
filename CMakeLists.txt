@@ -8,26 +8,24 @@ option(BUILD_PYTHON "Build Python" ON)
 option(FORCE_PYTHON_BUILD "Build python even if there is only python32" OFF)
 option(RUN_UNIT_TEST "run cxxtest unit testing" ON)
 option(RUN_MEMORY_TEST "run cxxtest unit testing with ASAN" ON)
-# option(RUN_REGRESS_TEST "run regression tests" OFF)
+option(RUN_REGRESS_TEST "run regression tests" OFF)
 
 set(MARABOU_LIB MarabouHelper)
 set(MARABOU_TEST_LIB MarabouHelperTest)
 set(MARABOU_EXE Marabou)
-# set(MARABOU_REGRESS Regression)
 set(MARABOU_PY MarabouCore)
 
 set(TOOLS_DIR "${PROJECT_SOURCE_DIR}/tools")
 set(SRC_DIR "${PROJECT_SOURCE_DIR}/src")
 set(PYTHON_API_DIR "${PROJECT_SOURCE_DIR}/maraboupy")
 set(RESOURCES_DIR "${PROJECT_SOURCE_DIR}/resources")
-# set(REGRESS_DIR "${PROJECT_SOURCE_DIR}/regress")
+set(REGRESS_DIR "${PROJECT_SOURCE_DIR}/regress")
 
 set(ENGINE_DIR "${SRC_DIR}/engine")
 set(PYBIND11_DIR "${TOOLS_DIR}/pybind11-2.3.0")
 set(BOOST_DIR "${TOOLS_DIR}/boost_1_68_0")
 set(COMMON_DIR "${SRC_DIR}/common")
 set(BASIS_DIR "${SRC_DIR}/basis_factorization")
-# set(ACAS_REGRESS_NET "${REGRESS_DIR}/acas_nnet")
 
 
 set(COMMON_REAL "${COMMON_DIR}/real")
@@ -49,19 +47,6 @@ set(INPUT_PARSERS_DIR input_parsers)
 # API's (executable and python at the moment)
 add_library(${MARABOU_LIB} ${SRCS_COMMON_REAL} ${SRCS_ENGINE_REAL})
 add_executable(${MARABOU_EXE} ${ENGINE_DIR}/main.cpp)
-# add_executable(${MARABOU_REGRESS} ${REGRESS_DIR}/main_regress.cpp)
-
-
-# Build regress 
-# target_link_libraries(${MARABOU_REGRESS} PRIVATE ${MARABOU_LIB})
-
-# target_include_directories(${MARABOU_REGRESS} PRIVATE ${LIBS_INCLUDES})
-# if (RUN_REGRESS_TEST)
-#     add_custom_command(TARGET ${MARABOU_REGRESS} 
-#                    POST_BUILD
-#                    COMMAND Regress --output-on-failure || exit
-#                    0)
-# endif()
 
 # Default value false
 set(PYTHON32 FALSE)
@@ -91,6 +76,7 @@ if (RUN_MEMORY_TEST)
     set(MEMORY_FLAGS -fsanitize=address -fno-omit-frame-pointer -O1)
 endif()
 
+add_definitions(-DRESOURCES_DIR="${RESOURCES_DIR}")
 set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS} -g -DDEBUG_ON) 
 set(CXXTEST_FLAGS ${DEBUG_FLAGS}  -Wno-ignored-qualifiers)
 
@@ -211,8 +197,7 @@ add_dependencies(build_input_parsers ${MPS_PARSER} ${ACAS_PARSER}
 
 add_subdirectory(${SRC_DIR})
 add_subdirectory(${TOOLS_DIR})
-# add_subdirectory(${REGRESS_DIR})
-# add_subdirectory("tests")
+add_subdirectory(${REGRESS_DIR})
 
 execute_process(
   COMMAND git rev-parse --abbrev-ref HEAD
