@@ -101,7 +101,8 @@ public:
         }
         else
         {
-            TS_ASSERT_THROWS_NOTHING ( ! engine.solve() );
+            bool result = engine.solve();
+            TS_ASSERT( ! result );
         }
     }
 

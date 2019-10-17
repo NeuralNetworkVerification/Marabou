@@ -48,7 +48,8 @@ public:
             TS_ASSERT( 1 );
         }
         else {
-            TS_ASSERT_THROWS_NOTHING ( ! engine.solve() );
+            bool result = engine.solve();
+            TS_ASSERT ( ! result );
         }
     }
 
