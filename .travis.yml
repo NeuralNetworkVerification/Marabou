@@ -11,7 +11,7 @@ script:
   - cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=$(which $PY_CMD) 
   - cmake --build . -j 2
   - ctest -L system -j 2
-  - ctest -L regress[0-1] -j 2
+  - ctest -L regress0 -j 2
 
 matrix:
   include:
