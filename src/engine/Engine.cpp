@@ -67,18 +67,6 @@ Engine::~Engine()
         delete[] _work;
         _work = NULL;
     }
-
-    if ( _symbolicBoundTightener )
-    {
-        delete _symbolicBoundTightener;
-        _symbolicBoundTightener = NULL;
-    }
-
-    if ( _networkLevelReasoner )
-    {
-        delete _networkLevelReasoner;
-        _networkLevelReasoner = NULL;
-    }
 }
 
 void Engine::setVerbosity( unsigned verbosity )
