@@ -2,6 +2,10 @@ language: cpp
 
 dist: xenial 
 
+cache:
+  directories:
+    - tools 
+
 before_install:
   - PY_CMD=python3
 
@@ -11,7 +15,7 @@ script:
   - cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=$(which $PY_CMD) 
   - cmake --build . -j 2
   - ctest -L system -j 2
-  -  if [ "$TRAVIS_COMPILER=gcc" ]; then ctest -L regress0 -j 2; fi 
+  - ctest -L regress0 -j 2
 
 matrix:
   include:
