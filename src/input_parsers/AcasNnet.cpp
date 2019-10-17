@@ -14,6 +14,7 @@
 **/
 
 #include "AcasNnet.h"
+#include "InputParserError.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -28,7 +29,7 @@ AcasNnet *load_network(const char* filename)
 
     if (fstream == NULL)
     {
-        return NULL;
+        throw InputParserError( InputParserError::FILE_DOESNT_EXIST);
     }
 
     //Initialize variables
