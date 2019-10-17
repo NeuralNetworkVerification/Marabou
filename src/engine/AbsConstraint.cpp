@@ -12,11 +12,11 @@
 
 
 AbsConstraint::AbsConstraint(unsigned b, unsigned f )
-    //var names
-    : _b( b )
-    , _f( f )
-    // one of our variables terminated
-    , _haveEliminatedVariables( false )
+//var names
+        : _b( b )
+        , _f( f )
+        // one of our variables terminated
+        , _haveEliminatedVariables( false )
 {
     //bound tightening
     setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
@@ -95,40 +95,40 @@ void AbsConstraint::notifyLowerBound( unsigned variable, double bound)
     //update partner's bound
     if ( isActive() && _constraintBoundTightener )
     {
-       if ( variable == _b)
-       {
-           if( bound < 0)
-           {
-               double newUpperBound = FloatUtils::abs(bound);
-               if ( _upperBounds.exists( _f ) )
-               {
-                   newUpperBound = FloatUtils::min( _upperBounds[_f], newUpperBound );
-               }
-               _constraintBoundTightener->registerTighterUpperBound( _f, newUpperBound );
-           }
-           else if ( bound >= 0 )
-           {
-               double newLowerBound = bound;
-               if ( _lowerBounds.exists( _f ) )
-               {
-                   newLowerBound = FloatUtils::max( _lowerBounds[_f], newLowerBound );
-               }
-               _constraintBoundTightener->registerTighterLowerBound( _f, newLowerBound );
-           }
-       }
-       else if ( variable == _f)
-       {
-           double newUpperBound = -1 * bound;
-           double newLowerBound = bound;
-           if ( _lowerBounds.exists( _b ) )
-           {
-               newUpperBound = FloatUtils::min( _upperBounds[_b], newUpperBound );
-               newLowerBound = FloatUtils::max( _lowerBounds[_b], newLowerBound );
-           }
-           _constraintBoundTightener->registerTighterLowerBound( _b, newLowerBound );
-           _constraintBoundTightener->registerTighterUpperBound( _b, newUpperBound );
+        if ( variable == _b)
+        {
+            if( bound < 0)
+            {
+                double newUpperBound = FloatUtils::abs(bound);
+                if ( _upperBounds.exists( _f ) )
+                {
+                    newUpperBound = FloatUtils::min( _upperBounds[_f], newUpperBound );
+                }
+                _constraintBoundTightener->registerTighterUpperBound( _f, newUpperBound );
+            }
+            else if ( bound >= 0 )
+            {
+                double newLowerBound = bound;
+                if ( _lowerBounds.exists( _f ) )
+                {
+                    newLowerBound = FloatUtils::max( _lowerBounds[_f], newLowerBound );
+                }
+                _constraintBoundTightener->registerTighterLowerBound( _f, newLowerBound );
+            }
+        }
+        else if ( variable == _f)
+        {
+            double newUpperBound = -1 * bound;
+            double newLowerBound = bound;
+            if ( _lowerBounds.exists( _b ) )
+            {
+                newUpperBound = FloatUtils::min( _upperBounds[_b], newUpperBound );
+                newLowerBound = FloatUtils::max( _lowerBounds[_b], newLowerBound );
+            }
+            _constraintBoundTightener->registerTighterLowerBound( _b, newLowerBound );
+            _constraintBoundTightener->registerTighterUpperBound( _b, newUpperBound );
 
-       }
+        }
     }
 }
 
@@ -323,7 +323,7 @@ PiecewiseLinearCaseSplit AbsConstraint::getValidCaseSplit() const
 
 
 void AbsConstraint::eliminateVariable(__attribute__((unused)) unsigned variable,
-        __attribute__((unused)) double fixedValue )
+                                      __attribute__((unused)) double fixedValue )
 {
     ASSERT( variable == _b || variable == _f );
 
@@ -401,12 +401,8 @@ void AbsConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
 
     if (!FloatUtils::isNegative( bLowerBound ) & !FloatUtils::isNegative( bUpperBound ) & !FloatUtils::isNegative( fLowerBound ))
     {
-        //there is no overlap
-        if( FloatUtils::lt(bUpperBound, fLowerBound) || FloatUtils::lt(fUpperBound, bLowerBound)) {
-            return;
-        }
         // update lower bound x_f or x_b
-        else if ( FloatUtils::lt( fLowerBound, bLowerBound) )
+        if ( FloatUtils::lt( fLowerBound, bLowerBound) )
         {
             tightenings.append( Tightening( _f, bLowerBound, Tightening::LB ) );
         }
@@ -459,10 +455,10 @@ void AbsConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
     if (FloatUtils::isNegative(bLowerBound) & FloatUtils::isNegative(bUpperBound) & !FloatUtils::isNegative(fLowerBound))
     {
         //there is no overlap
-        if(FloatUtils::lt( fUpperBound ,FloatUtils::abs(bUpperBound)) ||
-        FloatUtils::lt(FloatUtils::abs(bLowerBound), fLowerBound)) {
-            return;
-        }
+//        if(FloatUtils::lt( fUpperBound ,FloatUtils::abs(bUpperBound)) ||
+//        FloatUtils::lt(FloatUtils::abs(bLowerBound), fLowerBound)) {
+//            return;
+//        }
         // update lower bound x_f and x_b
         if ( FloatUtils::gt(-1*fUpperBound, bLowerBound ) )
             tightenings.append( Tightening( _b, -1*fUpperBound , Tightening::LB ) );
