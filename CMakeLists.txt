@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.12)
+cmake_minimum_required (VERSION 3.2)
 project(Marabou)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -51,7 +51,7 @@ add_executable(${MARABOU_EXE} ${ENGINE_DIR}/main.cpp)
 # Default value false
 set(PYTHON32 FALSE)
 if(${BUILD_PYTHON})
-    execute_process(COMMAND "${Python_EXECUTABLE}" "-c"
+    execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
         "import struct; print(struct.calcsize('@P'));"
     RESULT_VARIABLE _PYTHON_SUCCESS
     OUTPUT_VARIABLE PYTHON_SIZEOF_VOID_P 
@@ -134,10 +134,9 @@ else()
     endif()
 endif()
 
-# message("BUILD_PYTHON: ${BUILD_PYTHON}")
 if (${BUILD_PYTHON})
     # This is suppose to set the PYTHON_EXECUTABLE variable
-    find_package(Python REQUIRED)
+    find_package(PythonInterp REQUIRED)
     
     if (NOT EXISTS ${PYBIND11_DIR})
         message("didnt find pybind, getting it")
@@ -175,6 +174,7 @@ target_compile_options(${MARABOU_TEST_LIB} PRIVATE ${CXXTEST_FLAGS})
 
 
 add_custom_target(build-tests ALL)
+
 add_custom_target(check
       COMMAND ctest --output-on-failure -j${CTEST_NTHREADS} $$ARGS
       DEPENDS build-tests)

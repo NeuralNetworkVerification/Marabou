@@ -53,7 +53,7 @@ Marabou can be built on Linux and macOS. Marabou depends on the Boost library
 which is automatically downloaded and built when you run make. Library CXXTEST
 comes included in the repository.
 
-The marabou build process is using CMake version 3.12 (or later), 
+The marabou build process is using CMake version 3.2 (or later), 
 You can get CMake [here](https://cmake.org/download/)
 
 To build marabou using CMake run:
@@ -71,11 +71,13 @@ cmake --build . -j PROC_NUM
 The compiled binary will be in the *build* directory, named _Marabou_
 
 To run tests we use [ctest](https://cmake.org/cmake/help/v3.15/manual/ctest.1.html).
-The tests have labels according to level (unit/regress0/regress1...), and the code they are testing (engine/common etc...).  
+The tests have labels according to level (unit/system/regress0/regress1...), and the code they are testing (engine/common etc...).  
 For example to run all unit tests execute in the build directory:
 ```
 ctest -L unit
 ```
+On every build we run the unit tests, and on every pull request we run unit,
+system, regress0 and regress1.
 
 ### Python API
 Using Marabou through the Python interface requires Python 3. It may be useful

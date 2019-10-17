@@ -1,3 +1,5 @@
+add_custom_target(build-regress)
+
 set(run_regress_script ${CMAKE_CURRENT_LIST_DIR}/run_regression.py)
 macro(marabou_add_regress_test level net_file property_file result arguments
          test_properties)
@@ -60,3 +62,10 @@ add_subdirectory(regress3)
 add_subdirectory(regress4)
 add_subdirectory(regress5)
 
+
+
+add_custom_target(regress
+  COMMAND
+    ctest --output-on-failure -L "regress[0-2]" -j${CTEST_NTHREADS} $$ARGS
+  DEPENDS build-regress)
+ 

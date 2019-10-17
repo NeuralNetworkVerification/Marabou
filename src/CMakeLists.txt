@@ -1,4 +1,5 @@
-cmake_minimum_required (VERSION 3.12)
+add_custom_target(build-unit-tests ALL)
+add_dependencies(build-tests build-unit-tests)
 
 macro(marabou_add_test test_name test_dir add_common_real add_engine_real labels) 
     get_filename_component(name ${test_name} NAME_WE)
@@ -33,7 +34,6 @@ macro(marabou_add_test test_name test_dir add_common_real add_engine_real labels
     endif()
     add_executable(${name} ${test_src} ${test_header})
     target_compile_options(${name} PRIVATE ${CXXTEST_FLAGS})
-    add_dependencies(build-tests ${name})
     target_include_directories(${name}  PRIVATE ${LIBS_INCLUDES} 
         )
     target_link_libraries(${name}  ${MARABOU_TEST_LIB} ${CXXTEST_FLAGS})
@@ -41,6 +41,7 @@ macro(marabou_add_test test_name test_dir add_common_real add_engine_real labels
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${name}> "${test_bin_dir}/${name}")
     add_test(${name} "${test_bin_dir}/${name}")
     set_tests_properties(${name} PROPERTIES LABELS "${test_dir} ${labels}")
+    add_dependencies(build-tests ${name})
 endmacro()
 
 add_subdirectory(configuration)

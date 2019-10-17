@@ -62,10 +62,10 @@ def analyze_process_result(out, err, exit_status, expected_result):
             print("Expected UNSAT, but last line is in output is: ", out_lines[-1])
             return False
     else:
-        if '\nSAT\n' in out:
+        if '\nSAT' in out:
             return True
         else:
-            print('expected SAT, but \'\\nSAT\\n\' is not in the output. tail of the output:\n', out[-1500:])
+            print('expected SAT, but \'\\nSAT\' is not in the output. tail of the output:\n', out[-1500:])
             return False
 
 def run_marabou(marabou_binary, network_path, property_path, expected_result, arguments=None):

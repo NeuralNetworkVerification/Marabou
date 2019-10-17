@@ -1,8 +1,3 @@
-cmake_minimum_required (VERSION 3.12)
-
-# add_subdirectory(real)
-# add_subdirectory(mock)
-
 file(GLOB SRCS "*.cpp")
 file(GLOB HEADERS "*.h")
 
