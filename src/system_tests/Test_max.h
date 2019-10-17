@@ -33,23 +33,20 @@ public:
     {
     }
 
-    
-
     void test_max_infeasible() 
     {
         double large = 1000;
 
         InputQuery inputQuery;
         inputQuery.setNumberOfVariables( 9 );
-
-
-       	inputQuery.setLowerBound( 0, -large );
+        
+        inputQuery.setLowerBound( 0, -large );
         inputQuery.setUpperBound( 0, 0 );
 
         inputQuery.setLowerBound( 1, 0.5 );
         inputQuery.setUpperBound( 1, large );
 
-		 inputQuery.setLowerBound( 2, 0 );
+        inputQuery.setLowerBound( 2, 0 );
         inputQuery.setUpperBound( 2, large );
 
         inputQuery.setLowerBound( 3, -large );
@@ -67,8 +64,8 @@ public:
         inputQuery.setUpperBound( 7, 0 );
         inputQuery.setLowerBound( 8, 0 );
         inputQuery.setUpperBound( 8, 0 );
-
- 		Equation equation1;
+        
+        Equation equation1;
         equation1.addAddend( 1, 0 );
         equation1.addAddend( -1, 1 );
         equation1.addAddend( 1, 6 );
@@ -140,7 +137,7 @@ public:
         inputQuery.setLowerBound( 8, 0 );
         inputQuery.setUpperBound( 8, 0 );
 
- 		Equation equation1;
+        Equation equation1;
         equation1.addAddend( 1, 0 );
         equation1.addAddend( -1, 1 );
         equation1.addAddend( 1, 6 );

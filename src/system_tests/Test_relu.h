@@ -33,7 +33,7 @@ public:
     {
     }
 
-    void test_reslu_1() 
+    void test_relu_1() 
     {
         double large = 1000;
 
@@ -138,11 +138,9 @@ public:
         }
 
         TS_ASSERT ( correctSolution );
-        /* TS_ASSERT_THROWS_NOTHING( delete relu1 ); */
-        /* TS_ASSERT_THROWS_NOTHING( delete relu2 ); */
     }
 
-    void test_reslu_2() 
+    void test_relu_2() 
     {
         InputQuery inputQuery;
         inputQuery.setNumberOfVariables( 6 );
@@ -223,8 +221,6 @@ public:
         }
 
         TS_ASSERT ( correctSolution );
-        /* TS_ASSERT_THROWS_NOTHING( delete relu1 ); */
-        /* TS_ASSERT_THROWS_NOTHING( delete relu2 ); */
     }
 
 };
