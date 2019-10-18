@@ -19,7 +19,8 @@
 
 #include <cxxtest/Mock.h>
 #ifdef _WIN32
-#include <T/winunistd.h>
+#define ssize_t int
+#include <process.h>
 #else
 #include <unistd.h>
 #endif

@@ -22,18 +22,18 @@ struct timespec TimeUtils::sampleMicro()
 #ifdef _WIN32
 	LARGE_INTEGER count;
 
-	if (g_first_time)
+	if ( g_first_time )
 	{
 		g_first_time = 0;
 
-		if (0 == QueryPerformanceFrequency(&g_counts_per_sec))
+		if ( 0 == QueryPerformanceFrequency( &g_counts_per_sec ) )
 		{
 			g_counts_per_sec.QuadPart = 0;
 		}
 	}
-	QueryPerformanceCounter(&count);
+	QueryPerformanceCounter( &count );
 	now.tv_sec = count.QuadPart / g_counts_per_sec.QuadPart;
-	now.tv_nsec = ((count.QuadPart % g_counts_per_sec.QuadPart) * static_cast<long>(1000000000)) / g_counts_per_sec.QuadPart;
+	now.tv_nsec = ( ( count.QuadPart % g_counts_per_sec.QuadPart ) * static_cast<long>( 1000000000 ) ) / g_counts_per_sec.QuadPart;
 #else
     clock_gettime( CLOCK_MONOTONIC, &now );
 #endif

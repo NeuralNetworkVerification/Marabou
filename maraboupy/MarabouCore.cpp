@@ -37,7 +37,7 @@
 #include "Set.h"
 
 #ifdef _WIN32
-#include <T/winunistd.h>
+#define STDOUT_FILENO 1
 #else
 #include <unistd.h>
 #endif

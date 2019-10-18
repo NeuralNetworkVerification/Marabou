@@ -27,14 +27,16 @@
 
 #include "MStringf.h"
 #include "TimeUtils.h"
-#ifdef _WIN32
-#include <T/winunistd.h>
-#else
-#include <unistd.h>
-#endif
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
+
+#ifdef _WIN32
+#include <io.h>
+#define STDOUT_FILENO 1
+#else
+#include <unistd.h>
+#endif
 
 void printTitle( const String &title )
 {

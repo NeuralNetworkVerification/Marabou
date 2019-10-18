@@ -41,7 +41,6 @@ void SignalHandler::initialize()
     signal( SIGINT, got_signal );
     signal( SIGTERM, got_signal );
     signal( SIGABRT, got_signal );
-
 #else
     struct sigaction sa;
     memset( &sa, 0, sizeof(sa) );
