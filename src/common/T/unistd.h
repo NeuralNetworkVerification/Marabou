@@ -18,7 +18,12 @@
 #define __T__Unistd_h__
 
 #include <cxxtest/Mock.h>
+#ifdef _WIN32
+#define ssize_t int
+#include <process.h>
+#else
 #include <unistd.h>
+#endif
 
 typedef struct stat StructStat;
 
@@ -27,10 +32,12 @@ CXXTEST_MOCK_GLOBAL( int,
 					 ( int fd ),
 					 ( fd ) );
 
+#ifndef _WIN32
 CXXTEST_MOCK_GLOBAL( pid_t,
 					 fork,
 					 (),
 					 () );
+#endif
 
 CXXTEST_MOCK_GLOBAL( ssize_t,
                      write,
@@ -51,6 +58,7 @@ CXXTEST_MOCK_GLOBAL( int,
                      ( const char *path, StructStat *buf ),
                      ( path, buf ) );
 
+#ifndef _WIN32
 CXXTEST_MOCK_GLOBAL( unsigned,
                      sleep,
                      ( unsigned seconds ),
@@ -60,6 +68,7 @@ CXXTEST_MOCK_GLOBAL( int,
                      pipe,
                      ( int fildes[2] ),
                      ( fildes ) );
+#endif
 
 CXXTEST_MOCK_GLOBAL( int,
                      execvp,

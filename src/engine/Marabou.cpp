@@ -22,6 +22,10 @@
 #include "PropertyParser.h"
 #include "MarabouError.h"
 
+#ifdef _WIN32
+#undef ERROR
+#endif
+
 Marabou::Marabou( unsigned verbosity )
     : _acasParser( NULL )
     , _engine( verbosity )

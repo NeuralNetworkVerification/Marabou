@@ -28,6 +28,10 @@
 // TODO: get rid of this include
 #include "ReluConstraint.h"
 
+#ifdef _WIN32
+#undef INFINITE
+#endif
+
 Preprocessor::Preprocessor()
     : _statistics( NULL )
 {
