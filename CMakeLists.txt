@@ -48,20 +48,6 @@ set(INPUT_PARSERS_DIR input_parsers)
 add_library(${MARABOU_LIB} ${SRCS_COMMON_REAL} ${SRCS_ENGINE_REAL})
 add_executable(${MARABOU_EXE} "${ENGINE_DIR}/main.cpp")
 
-
-
-# Build regress 
-# add_executable(${MARABOU_REGRESS} "${REGRESS_DIR}/main_regress.cpp")
-# target_link_libraries(${MARABOU_REGRESS} PRIVATE ${MARABOU_LIB})
-
-# target_include_directories(${MARABOU_REGRESS} PRIVATE ${LIBS_INCLUDES})
-# if (RUN_REGRESS_TEST)
-#     add_custom_command(TARGET ${MARABOU_REGRESS} 
-#                    POST_BUILD
-#                    COMMAND Regress --output-on-failure || exit
-#                    0)
-# endif()
-
 # Default value false
 set(PYTHON32 FALSE)
 if(${BUILD_PYTHON})
