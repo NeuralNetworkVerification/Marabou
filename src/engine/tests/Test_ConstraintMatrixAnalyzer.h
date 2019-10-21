@@ -46,7 +46,7 @@ public:
         double result[15];
 
         {
-            ConstraintMatrixAnalyzer *analyzer;
+            ConstraintMatrixAnalyzer *analyzer = NULL;
             TS_ASSERT( analyzer = new ConstraintMatrixAnalyzer );
 
             double A1[] = {
@@ -70,7 +70,7 @@ public:
         }
 
         {
-            ConstraintMatrixAnalyzer *analyzer;
+            ConstraintMatrixAnalyzer *analyzer = NULL;
             TS_ASSERT( analyzer = new ConstraintMatrixAnalyzer );
 
             double A1[] = {
@@ -95,7 +95,7 @@ public:
         }
 
         {
-            ConstraintMatrixAnalyzer *analyzer;
+            ConstraintMatrixAnalyzer *analyzer = NULL;
             TS_ASSERT( analyzer = new ConstraintMatrixAnalyzer );
 
             double A1[] = {
@@ -120,7 +120,7 @@ public:
         }
 
         {
-            ConstraintMatrixAnalyzer *analyzer;
+            ConstraintMatrixAnalyzer *analyzer = NULL;
             TS_ASSERT( analyzer = new ConstraintMatrixAnalyzer );
 
             double A1[] = {
@@ -145,7 +145,7 @@ public:
         }
 
         {
-            ConstraintMatrixAnalyzer *analyzer;
+            ConstraintMatrixAnalyzer *analyzer = NULL;
             TS_ASSERT( analyzer = new ConstraintMatrixAnalyzer );
 
             double A1[] = {
@@ -170,7 +170,7 @@ public:
         }
 
         {
-            ConstraintMatrixAnalyzer *analyzer;
+            ConstraintMatrixAnalyzer *analyzer = NULL;
             TS_ASSERT( analyzer = new ConstraintMatrixAnalyzer );
 
             double A1[] = {
@@ -195,7 +195,7 @@ public:
         }
 
         {
-            ConstraintMatrixAnalyzer *analyzer;
+            ConstraintMatrixAnalyzer *analyzer = NULL;
             TS_ASSERT( analyzer = new ConstraintMatrixAnalyzer );
 
             double A1[] = {
@@ -223,7 +223,7 @@ public:
     void test_independent_columns()
     {
         {
-            ConstraintMatrixAnalyzer *analyzer;
+            ConstraintMatrixAnalyzer *analyzer = NULL;
             TS_ASSERT( analyzer = new ConstraintMatrixAnalyzer );
 
             double A1[] = {
@@ -247,7 +247,7 @@ public:
         }
 
         {
-            ConstraintMatrixAnalyzer *analyzer;
+            ConstraintMatrixAnalyzer *analyzer = NULL;
             TS_ASSERT( analyzer = new ConstraintMatrixAnalyzer );
 
             double A1[] = {
@@ -271,7 +271,7 @@ public:
         }
 
         {
-            ConstraintMatrixAnalyzer *analyzer;
+            ConstraintMatrixAnalyzer *analyzer = NULL;
             TS_ASSERT( analyzer = new ConstraintMatrixAnalyzer );
 
             double A1[] = {

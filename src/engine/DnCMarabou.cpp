@@ -92,8 +92,8 @@ void DnCMarabou::run()
 void DnCMarabou::displayResults( unsigned long long microSecondsElapsed ) const
 {
     std::cout << "Total Time: " << microSecondsElapsed / 1000000 << std::endl;
+    _dncManager->printResult();
     String resultString = _dncManager->getResultString();
-
     // Create a summary file, if requested
     String summaryFilePath = Options::get()->getString( Options::SUMMARY_FILE );
     if ( summaryFilePath != "" )

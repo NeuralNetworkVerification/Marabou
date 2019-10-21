@@ -27,7 +27,7 @@
 #endif
 
 #ifdef DEBUG_ON
-#  define ASSERTM(x, y)                         \
+#  define ASSERTM(x, y, ...)                     \
     {                                           \
         if ( !( x ) )                           \
         {                                       \
@@ -36,7 +36,7 @@
         }                                       \
     }
 #else
-#  define ASSERTM(x, y)
+#  define ASSERTM(x, y, ...)
 #endif
 
 #ifdef DEBUG_ON

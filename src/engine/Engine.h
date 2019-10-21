@@ -123,13 +123,16 @@ public:
     void clearViolatedPLConstraints();
 
     /*
+      Set the Engine's level of verbosity
+    */
+    void setVerbosity( unsigned verbosity );
+
+    /*
       PSA: The following two methods are for DnC only and should be used very
       cauciously.
      */
     void resetSmtCore();
-
     void resetExitCode();
-
     void resetBoundTighteners();
 
 private:
@@ -290,6 +293,16 @@ private:
     unsigned _verbosity;
 
     /*
+      Records for checking whether the solution process is, overall,
+      making progress. _lastNumVisitedStates stores the previous number
+      of visited tree states, and _lastIterationWithProgress stores the
+      last iteration number where the number of visited tree states was
+      observed to increase.
+    */
+    unsigned _lastNumVisitedStates;
+    unsigned long long _lastIterationWithProgress;
+
+    /*
       Perform a simplex step: compute the cost function, pick the
       entering and leaving variables and perform a pivot.
     */
@@ -417,6 +430,12 @@ private:
       to assign these values to the corresponding variables.
     */
     void warmStart();
+
+    /*
+      Check whether the number of visited tree states has increased
+      recently. If not, request a precision restoration.
+    */
+    void checkOverallProgress();
 
     /*
       Helper functions for input query preprocessing
