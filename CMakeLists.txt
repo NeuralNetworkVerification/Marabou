@@ -12,7 +12,7 @@ option(RUN_REGRESS_TEST "run regression tests" OFF)
 
 set(MARABOU_LIB MarabouHelper)
 set(MARABOU_TEST_LIB MarabouHelperTest)
-set(MARABOU_EXE Marabou)
+set(MARABOU_EXE Marabou${CMAKE_EXECUTABLE_SUFFIX})
 set(MARABOU_PY MarabouCore)
 
 set(TOOLS_DIR "${PROJECT_SOURCE_DIR}/tools")
@@ -95,6 +95,7 @@ if (NOT MSVC)
     set(CXXTEST_FLAGS ${DEBUG_FLAGS}  -Wno-ignored-qualifiers)
 else()
     set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS} /DDEBUG_ON)
+    add_definitions(-DNOMINMAX) # remove min max macros
 endif()
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
@@ -107,12 +108,12 @@ endif()
 
 
 # Boost
-if (${CMAKE_SIZEOF_VOID_P} EQUAL 4 AND NOT MSVC)
+if (MSVC)
+    set(BOOST_ROOT "${BOOST_DIR}/win_installed")
+elseif (${CMAKE_SIZEOF_VOID_P} EQUAL 4 AND NOT MSVC)
     set(BOOST_ROOT "${BOOST_DIR}/installed32")
-    # set(BOOST_INCLUDES "${BOOST_DIR}/installed32/include")
 else()
     set(BOOST_ROOT "${BOOST_DIR}/installed")
-    # set(BOOST_INCLUDES "${BOOST_DIR}/installed/include")
 endif()
 
 if (MSVC)
