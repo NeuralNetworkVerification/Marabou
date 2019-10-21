@@ -23,6 +23,10 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#ifdef _WIN32
+#include <File.h>
+#endif
+
 CXXTEST_MOCK_GLOBAL( int,
 					 open,
 					 ( const char *pathname, int flags, mode_t mode ),

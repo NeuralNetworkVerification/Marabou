@@ -1,14 +1,5 @@
 language: cpp
 
-dist: xenial 
-
-cache:
-  directories:
-    - tools/boost_1_68_0
-    - tools/pybind11-2.3.0
-
-before_install:
-  - PY_CMD=python3
 
 script:
   - mkdir -p build 
@@ -18,10 +9,43 @@ script:
   - ctest -L system -j 2
   - ctest -L regress0 -j 2
 
+before_install:
+  - PY_CMD=python3
+  - if [ "$TRAVIS_OS_NAME" = "windows" ]; then powershell Start-Process -PassThru -Wait PowerShell -ArgumentList "'-Command Set-MpPreference -DisableArchiveScanning \$true'"    ; fi
+  - if [ "$TRAVIS_OS_NAME" = "windows" ]; then powershell Start-Process -PassThru -Wait PowerShell -ArgumentList "'-Command Set-MpPreference -DisableBehaviorMonitoring \$true'" ; fi
+  - if [ "$TRAVIS_OS_NAME" = "windows" ]; then powershell Start-Process -PassThru -Wait PowerShell -ArgumentList "'-Command Set-MpPreference -DisableRealtimeMonitoring \$true'" ; fi
+
 matrix:
   include:
-    - compiler: gcc
-    - compiler: clang 
+    - os: linux
+      dist: xenial
+      compiler: gcc
+      script:
+      - mkdir -p build
+      - cd build
+      - cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=$(which $PY_CMD)
+      - cmake --build . -j 2
+      - ctest -L system -j 2
+      - ctest -L regress0 -j 2
+
+    - os: linux
+      dist: xenial
+      compiler: clang
+      script:
+      - mkdir - p build
+      - cd build
+      - cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=$(which $PY_CMD)
+      - cmake --build . -j 2
+      - ctest -L system -j 2
+
+    - os: windows
+      script:
+      - choco install python3 --params "/InstallDir:C:\Python3"
+      - mkdir -p build
+      - cd build
+      - cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=/c/Python3/python -G"Visual Studio 15 2017 Win64"
+      - cmake --build . --config Release
+      - ctest -L system -j 2
 
 notifications:
   email:
