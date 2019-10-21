@@ -1,5 +1,10 @@
 language: cpp
 
+cache:
+  directories:
+    - tools/boost_1_68_0
+    - tools/pybind11-2.3.0
+
 
 script:
   - mkdir -p build 
