@@ -5,14 +5,6 @@ cache:
     - tools/boost_1_68_0
 
 
-script:
-  - mkdir -p build 
-  - cd build
-  - cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=$(which $PY_CMD) 
-  - cmake --build . -j 2
-  - ctest -L system -j 2
-  - ctest -L regress0 -j 2
-
 before_install:
   - PY_CMD=python3
   - if [ "$TRAVIS_OS_NAME" = "windows" ]; then powershell Start-Process -PassThru -Wait PowerShell -ArgumentList "'-Command Set-MpPreference -DisableArchiveScanning \$true'"    ; fi
