@@ -106,7 +106,6 @@ void DnCManager::solve( unsigned timeoutInSeconds )
     if ( !createEngines() )
     {
         _exitCode = DnCManager::UNSAT;
-        printResult();
         return;
     }
 
@@ -167,7 +166,6 @@ void DnCManager::solve( unsigned timeoutInSeconds )
         thread.join();
 
     updateDnCExitCode();
-    printResult();
     return;
 }
 
@@ -236,11 +234,12 @@ String DnCManager::getResultString()
 
 void DnCManager::printResult()
 {
+    std::cout << std::endl;
     switch ( _exitCode )
     {
     case DnCManager::SAT:
     {
-        std::cout << "DnCManager::solve SAT query" << std::endl;
+        std::cout << "SAT\n" << std::endl;
 
         ASSERT( _engineWithSATAssignment != nullptr );
 
@@ -270,19 +269,19 @@ void DnCManager::printResult()
         break;
     }
     case DnCManager::UNSAT:
-        std::cout << "DnCManager::solve UNSAT query" << std::endl;
+        std::cout << "UNSAT" << std::endl;
         break;
     case DnCManager::ERROR:
-        std::cout << "DnCManager::solve ERROR" << std::endl;
+        std::cout << "ERROR" << std::endl;
         break;
     case DnCManager::NOT_DONE:
-        std::cout << "DnCManager::solve NOT_DONE" << std::endl;
+        std::cout << "NOT_DONE" << std::endl;
         break;
     case DnCManager::QUIT_REQUESTED:
-        std::cout << "DnCManager::solve QUIT_REQUESTED" << std::endl;
+        std::cout << "QUIT_REQUESTED" << std::endl;
         break;
     case DnCManager::TIMEOUT:
-        std::cout << "DnCManager::solve TIMEOUT" << std::endl;
+        std::cout << "TIMEOUT" << std::endl;
         break;
     default:
         ASSERT( false );
