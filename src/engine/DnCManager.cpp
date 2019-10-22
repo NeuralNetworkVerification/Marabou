@@ -150,13 +150,14 @@ void DnCManager::solve( unsigned timeoutInSeconds )
 
     // Wait until either all subQueries are solved or a satisfying assignment is
     // found by some worker
-    while ( _numUnsolvedSubQueries.load() > 0 &&
-            !shouldQuitSolving.load() &&
-            !_timeoutReached )
+    while ( !_timeoutReached )
     {
         updateTimeoutReached( startTime, timeoutInMicroSeconds );
         std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
     }
+
+    if ( _timeoutReached )
+        shouldQuitSolving = true;
 
     // Now that we are done, tell all workers to quit
     for ( auto &quitThread : quitThreads )
