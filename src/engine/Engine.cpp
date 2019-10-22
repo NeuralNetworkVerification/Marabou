@@ -1821,7 +1821,6 @@ void Engine::reset()
     resetExitCode();
 }
 
-
 void Engine::resetStatistics( const Statistics &statistics )
 {
     _statistics = statistics;
