@@ -50,7 +50,7 @@ macro(marabou_add_regress_mps_test level net_file result arguments
     add_test(${test_name}
             ${run_regress_script}
                 ${CMAKE_BINARY_DIR}/${INPUT_PARSERS_DIR}/${MPS_PARSER}
-                "${CMAKE_SOURCE_DIR}/${net_file}"
+                "${CMAKE_SOURCE_DIR}/resources/mps/${net_file}"
                 ${result}
                 ${arguments})
     set_tests_properties(${test_name} PROPERTIES LABELS "regress${level}

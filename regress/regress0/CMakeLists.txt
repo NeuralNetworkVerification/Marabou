@@ -1,5 +1,5 @@
-marabou_add_regress_mps_test(0 "regress/lp_feasible_1.mps" "SAT" "" "mps")
-marabou_add_regress_mps_test(0 "regress/lp_infeasible_1.mps" "UNSAT" "" "mps")
+marabou_add_regress_mps_test(0 "lp_feasible_1.mps" "SAT" "" "mps")
+marabou_add_regress_mps_test(0 "lp_infeasible_1.mps" "UNSAT" "" "mps")
 
 marabou_add_acasxu_test(0 "ACASXU_experimental_v2a_1_7.nnet" "3" SAT)
 marabou_add_acasxu_dnc_test(0 "ACASXU_experimental_v2a_1_9.nnet" "4" SAT)
