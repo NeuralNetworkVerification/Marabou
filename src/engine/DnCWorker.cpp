@@ -91,6 +91,8 @@ void DnCWorker::popOneSubQueryAndSolve()
         {
             // If UNSAT, continue to solve
             *_numUnsolvedSubQueries -= 1;
+            if ( _numUnsolvedSubQueries->load() == 0 )
+                *_shouldQuitSolving = true;
             delete subQuery;
         }
         else if ( result == IEngine::TIMEOUT )

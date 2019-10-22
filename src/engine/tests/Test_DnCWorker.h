@@ -126,7 +126,40 @@ public:
         TS_ASSERT( !shouldQuitSolving.load() );
     }
 
-    void test_case_unsat()
+    void test_case_unsat_not_done()
+    {
+        //  Pop 2 subQueries from the workload, set the mock engine to report
+        //  unsat on solving it.
+        //  In this case, we only decrement the value of numUnsolvedSubQueries
+        //
+        //  1. The size of workload should become 1
+        //  2. The value of numUnsolvedSubQueries should become 1
+        //  3. The value of shouldQuitSolving should still be false
+
+        // Create the subQuery to be added to workLoad
+        TS_ASSERT( clearSubQueries() == 0 );
+
+        createPlaceHolderSubQuery();
+        createPlaceHolderSubQuery();
+        engine->setExitCode( IEngine::UNSAT );
+        std::atomic_uint numUnsolvedSubQueries( 2 );
+        std::atomic_bool shouldQuitSolving( false );
+        unsigned threadId = 0;
+        unsigned onlineDivides = 2;
+        float timeoutFactor = 1;
+        DivideStrategy divideStrategy = DivideStrategy::LargestInterval;
+        DnCWorker dncWorker( workload, engine, numUnsolvedSubQueries,
+                             shouldQuitSolving, threadId, onlineDivides,
+                              timeoutFactor, divideStrategy );
+
+        dncWorker.popOneSubQueryAndSolve();
+        TS_ASSERT( engine->getExitCode() == IEngine::UNSAT );
+        TS_ASSERT( clearSubQueries() == 1 );
+        TS_ASSERT( numUnsolvedSubQueries.load() == 1 );
+        TS_ASSERT( !shouldQuitSolving.load() );
+    }
+
+    void test_case_unsat_done()
     {
         //  Pop a subQuery from the workload, set the mock engine to report
         //  unsat on solving it.
@@ -155,7 +188,7 @@ public:
         TS_ASSERT( engine->getExitCode() == IEngine::UNSAT );
         TS_ASSERT( clearSubQueries() == 0 );
         TS_ASSERT( numUnsolvedSubQueries.load() == 0 );
-        TS_ASSERT( !shouldQuitSolving.load() );
+        TS_ASSERT( shouldQuitSolving.load() );
     }
 
     void test_case_sat()
