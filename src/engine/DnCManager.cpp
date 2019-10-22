@@ -45,9 +45,9 @@ void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine
     DnCWorker worker( workload, engine, std::ref( numUnsolvedSubQueries ),
                       std::ref( shouldQuitSolving ), threadId, onlineDivides,
                       timeoutFactor, divideStrategy );
-    while ( numUnsolvedSubQueries.load() > 0 && worker.popOneSubQueryAndSolve() )
+    while ( numUnsolvedSubQueries.load() > 0 && !shouldQuitSolving.load() )
     {
-        continue;
+        worker.popOneSubQueryAndSolve();
     }
 }
 

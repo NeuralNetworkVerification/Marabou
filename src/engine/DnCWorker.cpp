@@ -60,7 +60,7 @@ void DnCWorker::setQueryDivider( DivideStrategy divideStrategy )
     }
 }
 
-bool DnCWorker::popOneSubQueryAndSolve()
+void DnCWorker::popOneSubQueryAndSolve()
 {
     SubQuery *subQuery = NULL;
     // Boost queue stores the next element into the passed-in pointer
@@ -92,7 +92,6 @@ bool DnCWorker::popOneSubQueryAndSolve()
             // If UNSAT, continue to solve
             *_numUnsolvedSubQueries -= 1;
             delete subQuery;
-            return true;
         }
         else if ( result == IEngine::TIMEOUT )
         {
@@ -114,44 +113,38 @@ bool DnCWorker::popOneSubQueryAndSolve()
             }
             *_numUnsolvedSubQueries -= 1;
             delete subQuery;
-            return true;
-        }
-        else if ( result == IEngine::SAT )
-        {
-            // If SAT, set the shouldQuitSolving flag to true, so that the
-            // DnCManager will kill all the DnCWorkers
-            *_shouldQuitSolving = true;
-            *_numUnsolvedSubQueries -= 1;
-            delete subQuery;
-            return false;
         }
         else if ( result == IEngine::QUIT_REQUESTED )
         {
             // If engine was asked to quit, quit
             std::cout << "Quit requested by manager!" << std::endl;
-            *_numUnsolvedSubQueries -= 1;
             delete subQuery;
             ASSERT( _shouldQuitSolving->load() );
-            return false;
-        }
-        else if ( result == IEngine::ERROR )
+            }
+        else
         {
-            // If ERROR, set the shouldQuitSolving flag to true and quit
-            std::cout << "Error!" << std::endl;
+            // We must quit solving if the result is not UNSAT or TIMEOUT
             *_shouldQuitSolving = true;
-            *_numUnsolvedSubQueries -= 1;
-            delete subQuery;
-            return false;
-        }
-        else if ( result == IEngine::NOT_DONE )
-        {
-            // If NOT_DONE, set the shouldQuitSolving flag to true and quit
-            ASSERT( false );
-            std::cout << "Not done! This should not happen." << std::endl;
-            *_shouldQuitSolving = true;
-            *_numUnsolvedSubQueries -= 1;
-            delete subQuery;
-            return false;
+            if ( result == IEngine::SAT )
+            {
+                // If SAT, set the shouldQuitSolving flag to true, so that the
+                // DnCManager will kill all the DnCWorkers
+                *_numUnsolvedSubQueries -= 1;
+                delete subQuery;
+            }
+            else if ( result == IEngine::ERROR )
+            {
+                // If ERROR, set the shouldQuitSolving flag to true and quit
+                std::cout << "Error!" << std::endl;
+                delete subQuery;
+            }
+            else // result == IEngine::NOT_DONE
+            {
+                // If NOT_DONE, set the shouldQuitSolving flag to true and quit
+                ASSERT( false );
+                std::cout << "Not done! This should not happen." << std::endl;
+                delete subQuery;
+            }
         }
     }
     else
@@ -159,7 +152,6 @@ bool DnCWorker::popOneSubQueryAndSolve()
         // If the queue is empty but the pop fails, wait and retry
         std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
     }
-    return true;
 }
 
 void DnCWorker::printProgress( String queryId, IEngine::ExitCode result ) const
