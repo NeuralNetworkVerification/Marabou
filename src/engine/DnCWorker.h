@@ -33,9 +33,10 @@ public:
                DivideStrategy divideStrategy );
 
     /*
-      Repeatedly handling subQueries from the input worker queue
+      Pop one subQuery, solve it and handle the result
+      Return true if the DnCWorker should continue running
     */
-    void run();
+    bool popOneSubQueryAndSolve();
 
 private:
     /*

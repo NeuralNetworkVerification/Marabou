@@ -29,8 +29,6 @@ public:
         wasDiscarded = false;
 
         lastStoredState = NULL;
-
-        _exitCode = NOT_DONE;
     }
 
     ~MockEngine()
@@ -106,10 +104,18 @@ public:
     {
     }
 
+    unsigned _timeToSolve;
     IEngine::ExitCode _exitCode;
     bool solve( unsigned timeoutInSeconds )
     {
-        return timeoutInSeconds > 0;
+        if ( timeoutInSeconds >= _timeToSolve )
+            _exitCode = IEngine::TIMEOUT;
+        return _exitCode == IEngine::SAT;
+    }
+
+    void setTimeToSolve( unsigned timeToSolve )
+    {
+        _timeToSolve = timeToSolve;
     }
 
     void setExitCode( IEngine::ExitCode exitCode )
@@ -127,10 +133,16 @@ public:
     }
 
     List<unsigned> _inputVariables;
+    void setInputVariables( List<unsigned> &inputVariables )
+    {
+        _inputVariables = inputVariables;
+    }
+
     List<unsigned> getInputVariables() const
     {
         return _inputVariables;
     }
+
 
 };
 
