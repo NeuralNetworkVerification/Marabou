@@ -19,7 +19,14 @@
 #include "MString.h"
 
 #include <time.h>
+
+#ifdef _WIN32
+#include <winsock2.h>
+static BOOL gFirstTime = 1;
+static LARGE_INTEGER gCountsPerSec;
+#else
 #include <sys/time.h>
+#endif
 
 class TimeUtils
 {

@@ -49,12 +49,17 @@ Pre-compiled binary for Linux is available:
 
 Build and Dependencies
 ------------------------------------------------------------------------------
-Marabou can be built on Linux and macOS. Marabou depends on the Boost library
+
+Marabou depends on the Boost library,
 which is automatically downloaded and built when you run make. Library CXXTEST
 comes included in the repository.
 
-The marabou build process is using CMake version 3.2 (or later), 
-You can get CMake [here](https://cmake.org/download/)
+The marabou build process uses CMake version 3.2 (or later).
+You can get CMake [here](https://cmake.org/download/).
+
+Marabou can be built for Linux, MacOS, or Windows machines.
+
+### Build Instructions for Linux or MacOS
 
 To build marabou using CMake run:
 ```
@@ -76,15 +81,34 @@ For example to run all unit tests execute in the build directory:
 ```
 ctest -L unit
 ```
+### Build Instructions for Windows using Visual Studio
 
+First, install Visual Studio 2017 or later and select the "Desktop development with C++" workload. 
+Ensure that CMake is installed and added to your PATH.
+
+Open a command prompt and run:
+```
+cd path\to\marabou\repo\folder
+mkdir build 
+cd build
+cmake .. -G"Visual Studio 15 2017 Win64"
+cmake --build . --config Release
+```
+This process builds Marabou using the generator "Visual Studio 15 2017 Win64". 
+For 32-bit machines, omit Win64. Other generators and older versions of Visual Studio can likely be used as well, 
+but only "Visual Studio 15 2017 Win64" has been tested.
+
+The Marabou executable file will be written to the build/Release folder. To build in 
+Debug mode, simply run "cmake --build . --config Debug", and the executables will be 
+written to build/Debug.
 
 ### Python API
 Using Marabou through the Python interface requires Python 3. It may be useful
 to set up a Python virtual environment, see
 [here](https://docs.python.org/3/tutorial/venv.html) for more information.
 
-The Python interface requires *pybind11* (which is automatically downloaded), to
-build also the python API run
+The Python interface requires *pybind11* (which is automatically downloaded). 
+To also build the python API on Linux or MacOS, run:
 ```
 cd path/to/marabou/repo/folder
 mkdir build 
@@ -92,30 +116,47 @@ cd build
 cmake .. -DBUILD_PYTHON=ON
 cmake --build .
 ```
+On Windows, run:
+```
+cd path\to\marabou\repo\folder
+mkdir build 
+cd build
+cmake .. -G"Visual Studio 15 2017 Win64" -DBUILD_PYTHON=ON
+cmake --build . --config Release
+```
 This process will produce the binary file and the shared library for the Python 
-API, the shared library will be at maraboupy folder
-
+API. The shared library will be in the maraboupy folder for Linux and MacOS. 
+On Windows, the shared library is written to a Release subfolder in maraboupy, 
+so you will need to move the Release/\*pyd file to the maraboupy folder:
+```
+cd path\to\marabou\repo\folder\maraboupy
+move Release\*pyd .
+```
 
 Export maraboupy folder to Python and Jupyter paths:
 ```
 PYTHONPATH=PYTHONPATH:/path/to/marabou/folder
 JUPYTER_PATH=JUPYTER_PATH:/path/to/marabou/folder
 ```
-and Marabou is ready to be used from a Python or a Jupyter script.
+and Marabou is ready to be used from a Python or a Jupyter script. On Windows, 
+edit your environmental variables so PYTHONPATH includes the marabou folder.
 
 Getting Started
 -----------------------------------------------------------------------------
 ### To run Marabou from Command line 
-After building Marabou the binary is located at *build/Marabou*. The
+After building Marabou the binary is located at *build/Marabou* (or *build\Release\Marabou.exe* for Windows). The
 repository contains sample networks and properties in the *resources* folder.
 For more information see [resources/README.md](resources/README.md).
 
 To run Marabou, execute from the repo directory, for example:
-
 ```
 ./build/Marabou resources/nnet/acasxu/ACASXU_experimental_v2a_2_7.nnet resources/properties/acas_property_3.txt
 ```
-
+on Linux or MacOS, or 
+```
+build\Release\Marabou.exe resources\nnet\acasxu\ACASXU_experimental_v2a_2_7.nnet resources\properties\acas_property_3.txt
+```
+on Windows.
 
 ### Using Python interface 
 The *maraboupy/examples* folder contains several python scripts and Jupyter
