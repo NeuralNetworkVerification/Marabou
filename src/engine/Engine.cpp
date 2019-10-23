@@ -1813,16 +1813,16 @@ bool Engine::shouldExitDueToTimeout( unsigned timeout ) const
 
 void Engine::reset()
 {
-    Statistics *statistics = new Statistics();
-    resetStatistics( *statistics );
+    resetStatistics();
     clearViolatedPLConstraints();
     resetSmtCore();
     resetBoundTighteners();
     resetExitCode();
 }
 
-void Engine::resetStatistics( const Statistics &statistics )
+void Engine::resetStatistics()
 {
+    Statistics statistics;
     _statistics = statistics;
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );

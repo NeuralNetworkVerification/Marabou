@@ -19,6 +19,7 @@
 #include "IEngine.h"
 #include "EngineState.h"
 #include "LargestIntervalDivider.h"
+#include "MarabouError.h"
 #include "MStringf.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "SubQuery.h"
@@ -108,7 +109,7 @@ void DnCWorker::popOneSubQueryAndSolve()
             {
                 if ( !_workload->push( std::move( newSubQuery ) ) )
                 {
-                    ASSERT( false );
+                    throw MarabouError( MarabouError::UNSUCCESSFUL_QUEUE_PUSH );
                 }
 
                 *_numUnsolvedSubQueries += 1;
@@ -126,18 +127,19 @@ void DnCWorker::popOneSubQueryAndSolve()
         else
         {
             // We must quit solving if the result is not UNSAT or TIMEOUT
-            *_shouldQuitSolving = true;
             if ( result == IEngine::SAT )
             {
                 // If SAT, set the shouldQuitSolving flag to true, so that the
                 // DnCManager will kill all the DnCWorkers
                 *_numUnsolvedSubQueries -= 1;
+                *_shouldQuitSolving = true;
                 delete subQuery;
             }
             else if ( result == IEngine::ERROR )
             {
                 // If ERROR, set the shouldQuitSolving flag to true and quit
                 std::cout << "Error!" << std::endl;
+                *_shouldQuitSolving = true;
                 delete subQuery;
             }
             else // result == IEngine::NOT_DONE
@@ -145,6 +147,7 @@ void DnCWorker::popOneSubQueryAndSolve()
                 // If NOT_DONE, set the shouldQuitSolving flag to true and quit
                 ASSERT( false );
                 std::cout << "Not done! This should not happen." << std::endl;
+                *_shouldQuitSolving = true;
                 delete subQuery;
             }
         }

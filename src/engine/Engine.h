@@ -111,7 +111,7 @@ public:
     /*
       Reset the statistics object
     */
-    void resetStatistics( const Statistics &statistics );
+    void resetStatistics();
 
     /*
       Clear the violated PL constraints
