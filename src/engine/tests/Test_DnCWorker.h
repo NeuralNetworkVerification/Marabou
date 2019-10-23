@@ -24,29 +24,31 @@ class DnCWorkerTestSuite : public CxxTest::TestSuite
 {
 public:
 
-    WorkerQueue *workload;
-    std::shared_ptr<MockEngine> engine;
+    WorkerQueue *_workload;
+    std::shared_ptr<MockEngine> _engine;
+
+    DnCWorkerTestSuite()
+        : _workload( NULL )
+    {
+    }
 
     void setUp()
     {
-        workload = new WorkerQueue(0);
-        // Initialize the mockEngine
+        _workload = new WorkerQueue( 0 );
 
-        engine = std::make_shared<MockEngine>();
-        List<unsigned> inputVariables;
-        inputVariables.append(1);
-        inputVariables.append(2);
-        inputVariables.append(3);
-        engine->setInputVariables( inputVariables );
+        // Initialize the mockEngine
+        _engine = std::make_shared<MockEngine>();
+        List<unsigned> inputVariables = { 1, 2, 3 };
+        _engine->setInputVariables( inputVariables );
     }
 
     void tearDown()
     {
-        if ( workload )
+        if ( _workload )
         {
             clearSubQueries();
-            delete workload;
-            workload = NULL;
+            delete _workload;
+            _workload = NULL;
         }
     }
 
@@ -55,12 +57,13 @@ public:
     {
         unsigned counter = 0;
         SubQuery *subQuery;
-        while ( !workload->empty() )
+        while ( !_workload->empty() )
         {
-            workload->pop( subQuery );
+            _workload->pop( subQuery );
             delete subQuery;
             ++counter;
         }
+
         return counter;
     }
 
@@ -88,9 +91,9 @@ public:
         split->storeBoundTightening( bound6 );
 
         subQuery->_queryId = "";
-        subQuery->_split = std::move(split);
+        subQuery->_split = std::move( split );
         subQuery->_timeoutInSeconds = 5;
-        TS_ASSERT( workload->push( std::move( subQuery ) ) );
+        TS_ASSERT( _workload->push( std::move( subQuery ) ) );
     }
 
     void test_case_timeout()
@@ -107,20 +110,20 @@ public:
         TS_ASSERT( clearSubQueries() == 0 );
 
         createPlaceHolderSubQuery();
-        engine->setTimeToSolve( 10 );
-        engine->setExitCode( IEngine::TIMEOUT );
+        _engine->setTimeToSolve( 10 );
+        _engine->setExitCode( IEngine::TIMEOUT );
         std::atomic_uint numUnsolvedSubQueries( 1 );
         std::atomic_bool shouldQuitSolving( false );
         unsigned threadId = 0;
         unsigned onlineDivides = 2;
         float timeoutFactor = 1;
         DivideStrategy divideStrategy = DivideStrategy::LargestInterval;
-        DnCWorker dncWorker( workload, engine, numUnsolvedSubQueries,
+        DnCWorker dncWorker( _workload, _engine, numUnsolvedSubQueries,
                              shouldQuitSolving, threadId, onlineDivides,
-                              timeoutFactor, divideStrategy );
+                             timeoutFactor, divideStrategy );
 
         dncWorker.popOneSubQueryAndSolve();
-        TS_ASSERT( engine->getExitCode() == IEngine::TIMEOUT );
+        TS_ASSERT( _engine->getExitCode() == IEngine::TIMEOUT );
         TS_ASSERT( clearSubQueries() == 4 );
         TS_ASSERT( numUnsolvedSubQueries.load() == 4 );
         TS_ASSERT( !shouldQuitSolving.load() );
@@ -141,19 +144,19 @@ public:
 
         createPlaceHolderSubQuery();
         createPlaceHolderSubQuery();
-        engine->setExitCode( IEngine::UNSAT );
+        _engine->setExitCode( IEngine::UNSAT );
         std::atomic_uint numUnsolvedSubQueries( 2 );
         std::atomic_bool shouldQuitSolving( false );
         unsigned threadId = 0;
         unsigned onlineDivides = 2;
         float timeoutFactor = 1;
         DivideStrategy divideStrategy = DivideStrategy::LargestInterval;
-        DnCWorker dncWorker( workload, engine, numUnsolvedSubQueries,
+        DnCWorker dncWorker( _workload, _engine, numUnsolvedSubQueries,
                              shouldQuitSolving, threadId, onlineDivides,
                               timeoutFactor, divideStrategy );
 
         dncWorker.popOneSubQueryAndSolve();
-        TS_ASSERT( engine->getExitCode() == IEngine::UNSAT );
+        TS_ASSERT( _engine->getExitCode() == IEngine::UNSAT );
         TS_ASSERT( clearSubQueries() == 1 );
         TS_ASSERT( numUnsolvedSubQueries.load() == 1 );
         TS_ASSERT( !shouldQuitSolving.load() );
@@ -173,19 +176,19 @@ public:
         TS_ASSERT( clearSubQueries() == 0 );
 
         createPlaceHolderSubQuery();
-        engine->setExitCode( IEngine::UNSAT );
+        _engine->setExitCode( IEngine::UNSAT );
         std::atomic_uint numUnsolvedSubQueries( 1 );
         std::atomic_bool shouldQuitSolving( false );
         unsigned threadId = 0;
         unsigned onlineDivides = 2;
         float timeoutFactor = 1;
         DivideStrategy divideStrategy = DivideStrategy::LargestInterval;
-        DnCWorker dncWorker( workload, engine, numUnsolvedSubQueries,
+        DnCWorker dncWorker( _workload, _engine, numUnsolvedSubQueries,
                              shouldQuitSolving, threadId, onlineDivides,
                               timeoutFactor, divideStrategy );
 
         dncWorker.popOneSubQueryAndSolve();
-        TS_ASSERT( engine->getExitCode() == IEngine::UNSAT );
+        TS_ASSERT( _engine->getExitCode() == IEngine::UNSAT );
         TS_ASSERT( clearSubQueries() == 0 );
         TS_ASSERT( numUnsolvedSubQueries.load() == 0 );
         TS_ASSERT( shouldQuitSolving.load() );
@@ -206,19 +209,19 @@ public:
         TS_ASSERT( clearSubQueries() == 0 );
 
         createPlaceHolderSubQuery();
-        engine->setExitCode( IEngine::SAT );
+        _engine->setExitCode( IEngine::SAT );
         std::atomic_uint numUnsolvedSubQueries( 1 );
         std::atomic_bool shouldQuitSolving( false );
         unsigned threadId = 0;
         unsigned onlineDivides = 2;
         float timeoutFactor = 1;
         DivideStrategy divideStrategy = DivideStrategy::LargestInterval;
-        DnCWorker dncWorker( workload, engine, numUnsolvedSubQueries,
+        DnCWorker dncWorker( _workload, _engine, numUnsolvedSubQueries,
                              shouldQuitSolving, threadId, onlineDivides,
                               timeoutFactor, divideStrategy );
 
         dncWorker.popOneSubQueryAndSolve();
-        TS_ASSERT( engine->getExitCode() == IEngine::SAT );
+        TS_ASSERT( _engine->getExitCode() == IEngine::SAT );
         TS_ASSERT( clearSubQueries() == 0 );
         TS_ASSERT( numUnsolvedSubQueries.load() == 0 );
         TS_ASSERT( shouldQuitSolving.load() );
@@ -236,18 +239,18 @@ public:
         TS_ASSERT( clearSubQueries() == 0 );
 
         createPlaceHolderSubQuery();
-        engine->setExitCode( IEngine::QUIT_REQUESTED );
+        _engine->setExitCode( IEngine::QUIT_REQUESTED );
         std::atomic_uint numUnsolvedSubQueries( 1 );
         std::atomic_bool shouldQuitSolving( true );
         unsigned threadId = 0;
         unsigned onlineDivides = 2;
         float timeoutFactor = 1;
         DivideStrategy divideStrategy = DivideStrategy::LargestInterval;
-        DnCWorker dncWorker( workload, engine, numUnsolvedSubQueries,
+        DnCWorker dncWorker( _workload, _engine, numUnsolvedSubQueries,
                              shouldQuitSolving, threadId, onlineDivides,
                               timeoutFactor, divideStrategy );
         dncWorker.popOneSubQueryAndSolve();
-        TS_ASSERT( engine->getExitCode() == IEngine::QUIT_REQUESTED );
+        TS_ASSERT( _engine->getExitCode() == IEngine::QUIT_REQUESTED );
         TS_ASSERT( numUnsolvedSubQueries.load() == 1 );
     }
 
@@ -264,19 +267,19 @@ public:
         TS_ASSERT( clearSubQueries() == 0 );
 
         createPlaceHolderSubQuery();
-        engine->setExitCode( IEngine::ERROR );
+        _engine->setExitCode( IEngine::ERROR );
         std::atomic_uint numUnsolvedSubQueries( 1 );
         std::atomic_bool shouldQuitSolving( false );
         unsigned threadId = 0;
         unsigned onlineDivides = 2;
         float timeoutFactor = 1;
         DivideStrategy divideStrategy = DivideStrategy::LargestInterval;
-        DnCWorker dncWorker( workload, engine, numUnsolvedSubQueries,
+        DnCWorker dncWorker( _workload, _engine, numUnsolvedSubQueries,
                              shouldQuitSolving, threadId, onlineDivides,
                               timeoutFactor, divideStrategy );
 
         dncWorker.popOneSubQueryAndSolve();
-        TS_ASSERT( engine->getExitCode() == IEngine::ERROR );
+        TS_ASSERT( _engine->getExitCode() == IEngine::ERROR );
         TS_ASSERT( numUnsolvedSubQueries.load() == 1 );
         TS_ASSERT( shouldQuitSolving.load() );
     }
