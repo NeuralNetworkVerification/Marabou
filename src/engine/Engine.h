@@ -102,6 +102,10 @@ public:
     */
     void applySplit( const PiecewiseLinearCaseSplit &split );
 
+    /*
+      Reset the state of the engine, before solving a new query
+      (as part of DnC mode).
+    */
     void reset();
 
     /*

@@ -142,8 +142,6 @@ public:
     {
         return _inputVariables;
     }
-
-
 };
 
 #endif // __MockEngine_h__

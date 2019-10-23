@@ -50,14 +50,18 @@ public:
     virtual void setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints ) = 0;
 
     /*
-      Solve the encoded query
+      Solve the encoded query.
     */
     virtual bool solve( unsigned timeoutInSeconds ) = 0;
 
+    /*
+      Retrieve the exit code.
+    */
     virtual ExitCode getExitCode() const = 0;
 
     /*
-      Methods for DnC
+      Methods for DnC: reset the engine state for re-use,
+      get input variables.
     */
     virtual void reset() = 0;
     virtual List<unsigned> getInputVariables() const = 0;

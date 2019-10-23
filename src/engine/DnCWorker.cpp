@@ -102,7 +102,7 @@ void DnCWorker::popOneSubQueryAndSolve()
             SubQueries subQueries;
             _queryDivider->createSubQueries( pow( 2, _onlineDivides ),
                                              queryId, *split,
-                                             (unsigned) timeoutInSeconds *
+                                             (unsigned)timeoutInSeconds *
                                              _timeoutFactor, subQueries );
             for ( auto &newSubQuery : subQueries )
             {
@@ -122,7 +122,7 @@ void DnCWorker::popOneSubQueryAndSolve()
             std::cout << "Quit requested by manager!" << std::endl;
             delete subQuery;
             ASSERT( _shouldQuitSolving->load() );
-            }
+        }
         else
         {
             // We must quit solving if the result is not UNSAT or TIMEOUT
