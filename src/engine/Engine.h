@@ -35,6 +35,10 @@
 
 #include <atomic>
 
+#ifdef _WIN32
+#undef ERROR
+#endif
+
 class EngineState;
 class InputQuery;
 class PiecewiseLinearConstraint;
@@ -129,7 +133,7 @@ public:
 
     /*
       PSA: The following two methods are for DnC only and should be used very
-      cauciously.
+      cautiously.
      */
     void resetSmtCore();
     void resetExitCode();

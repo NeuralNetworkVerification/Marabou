@@ -19,7 +19,24 @@
 struct timespec TimeUtils::sampleMicro()
 {
     struct timespec now;
+#ifdef _WIN32
+	LARGE_INTEGER count;
+
+	if ( gFirstTime )
+	{
+		gFirstTime = 0;
+
+		if ( 0 == QueryPerformanceFrequency( &gCountsPerSec ) )
+		{
+			gCountsPerSec.QuadPart = 0;
+		}
+	}
+	QueryPerformanceCounter( &count );
+	now.tv_sec = count.QuadPart / gCountsPerSec.QuadPart;
+	now.tv_nsec = ( ( count.QuadPart % gCountsPerSec.QuadPart ) * static_cast<long>( 1000000000 ) ) / gCountsPerSec.QuadPart;
+#else
     clock_gettime( CLOCK_MONOTONIC, &now );
+#endif
     return now;
 }
 
@@ -39,8 +56,8 @@ unsigned long long TimeUtils::timePassed( const struct timespec &then,
 
 String TimeUtils::now()
 {
-    time_t secodnsSinceEpoch = time( NULL );
-    struct tm *formattedTime = localtime( &secodnsSinceEpoch );
+    time_t secondsSinceEpoch = time( NULL );
+    struct tm *formattedTime = localtime( &secondsSinceEpoch);
 
     return Stringf( "%02u:%02u:%02u", formattedTime->tm_hour, formattedTime->tm_min, formattedTime->tm_sec );
 }
