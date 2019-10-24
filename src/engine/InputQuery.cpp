@@ -290,8 +290,10 @@ void InputQuery::saveQuery( const String &fileName )
 
     // Number of variables
     queryFile->write( Stringf( "%u\n", _numberOfVariables ) );
+
     // Number of Bounds
     queryFile->write( Stringf( "%u\n", _lowerBounds.size() ) );
+    queryFile->write( Stringf( "%u\n", _upperBounds.size() ) );
 
     // Number of Equations
     queryFile->write( Stringf( "%u\n", _equations.size() ) );
@@ -300,16 +302,39 @@ void InputQuery::saveQuery( const String &fileName )
     queryFile->write( Stringf( "%u", _plConstraints.size() ) );
 
     printf("Number of variables: %u\n", _numberOfVariables);
-    printf("Number of bounds: %u\n", _lowerBounds.size());
+    printf("Number of lower bounds: %u\n", _lowerBounds.size());
+    printf("Number of upper bounds: %u\n", _upperBounds.size());
     printf("Number of equations: %u\n", _equations.size());
     printf("Number of constraints: %u\n", _plConstraints.size());
 
-    // Bounds
+    // Input Variables
+    queryFile->write( Stringf( "\n%u", getNumInputVariables() ) );
+    unsigned i = 0;
+    for ( const auto &inVar : getInputVariables() )
+    {
+        queryFile->write( Stringf( "\n%u,%u", i, inVar ) );
+        ++i;
+    }
+
+    // Output Variables
+    queryFile->write(Stringf( "\n%u", getNumOutputVariables() ) );
+    i = 0;
+    for ( const auto &outVar : getOutputVariables() )
+    {
+        queryFile->write( Stringf( "\n%u,%u", i, outVar ) );
+        ++i;
+    }
+
+    // Lower Bounds
     for ( const auto &lb : _lowerBounds )
-        queryFile->write( Stringf( "\n%d,%f,%f", lb.first, lb.second, _upperBounds[lb.first] ) );
+        queryFile->write( Stringf( "\n%d,%f", lb.first, lb.second ) );
+    
+    // Upper Bounds
+    for (const auto &ub : _upperBounds)
+        queryFile->write( Stringf( "\n%d,%f", ub.first, ub.second ) );
 
     // Equations
-    unsigned i = 0;
+    i = 0;
     for ( const auto &e : _equations )
     {
         // Equation number
@@ -376,6 +401,15 @@ List<unsigned> InputQuery::getInputVariables() const
 {
     List<unsigned> result;
     for ( const auto &pair : _variableToInputIndex )
+        result.append( pair.first );
+
+    return result;
+}
+
+List<unsigned> InputQuery::getOutputVariables() const
+{
+    List<unsigned> result;
+    for ( const auto &pair : _variableToOutputIndex )
         result.append( pair.first );
 
     return result;

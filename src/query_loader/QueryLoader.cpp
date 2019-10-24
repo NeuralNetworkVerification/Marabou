@@ -38,21 +38,51 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
     input.open( File::MODE_READ );
 
     unsigned numVars = atoi( input.readLine().trim().ascii() );
-    unsigned numBounds = atoi( input.readLine().trim().ascii() );
+    unsigned numLowerBounds = atoi( input.readLine().trim().ascii() );
+    unsigned numUpperBounds = atoi( input.readLine().trim().ascii() );
     unsigned numEquations = atoi( input.readLine().trim().ascii() );
     unsigned numConstraints = atoi( input.readLine().trim().ascii() );
 
     log(Stringf("Number of variables: %u\n", numVars));
-    log(Stringf("Number of bounds: %u\n", numBounds));
+    log(Stringf("Number of lower bounds: %u\n", numLowerBounds));
+    log(Stringf("Number of upper bounds: %u\n", numUpperBounds));
     log(Stringf("Number of equations: %u\n", numEquations));
     log(Stringf("Number of constraints: %u\n", numConstraints));
 
     inputQuery.setNumberOfVariables( numVars );
 
-    // Bounds
-    for ( unsigned i = 0; i < numBounds; ++i )
+    // Input Variables
+    unsigned numInputVars = atoi( input.readLine().trim().ascii() );
+    for (unsigned i = 0; i < numInputVars; ++i)
+    {
+        String line = input.readLine();
+        List<String> tokens = line.tokenize( "," );
+        auto it = tokens.begin();
+        unsigned inputIndex = atoi( it->ascii() );
+        it++;
+        unsigned variable = atoi( it->ascii() );
+        it++;
+        inputQuery.markInputVariable( variable, inputIndex );
+    }
+
+    // Output Variables
+    unsigned numOutputVars = atoi(input.readLine().trim().ascii());
+    for (unsigned i = 0; i < numOutputVars; ++i)
+    {
+        String line = input.readLine();
+        List<String> tokens = line.tokenize( "," );
+        auto it = tokens.begin();
+        unsigned outputIndex = atoi( it->ascii() );
+        it++;
+        unsigned variable = atoi( it->ascii() );
+        it++;
+        inputQuery.markOutputVariable( variable, outputIndex );
+    }
+
+    // Lower Bounds
+    for ( unsigned i = 0; i < numLowerBounds; ++i )
     {   
-        log(Stringf("Bound: %u\n", i));
+        log( Stringf( "Bound: %u\n", i ) );
         String line = input.readLine();
         List<String> tokens = line.tokenize( "," );
 
@@ -66,11 +96,28 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         double lb = atof( it->ascii() );
         ++it;
 
+        log( Stringf( "Var: %u, L: %f\n", varToBound, lb ) );
+        inputQuery.setLowerBound( varToBound, lb );
+    }
+
+    // Upper Bounds
+    for ( unsigned i = 0; i < numUpperBounds; ++i )
+    {
+        log( Stringf( "Bound: %u\n", i ) );
+        String line = input.readLine();
+        List<String> tokens = line.tokenize( "," );
+
+        // format: <var, lb, ub>
+        ASSERT( tokens.size() == 3 );
+
+        auto it = tokens.begin();
+        unsigned varToBound = atoi( it->ascii() );
+        ++it;
+
         double ub = atof( it->ascii() );
         ++it;
 
-        log(Stringf("Var: %u, L: %f, U: %f\n", varToBound, lb, ub));
-        inputQuery.setLowerBound( varToBound, lb );
+        log( Stringf( "Var: %u, U: %f\n", varToBound, ub ) );
         inputQuery.setUpperBound( varToBound, ub );
     }
 

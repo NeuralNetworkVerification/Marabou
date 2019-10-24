@@ -137,6 +137,17 @@ class MarabouNetwork:
         ipq = MarabouCore.InputQuery()
         ipq.setNumberOfVariables(self.numVars)
 
+        i = 0
+        for inputVarArray in self.inputVars:
+            for inputVar in inputVarArray.flatten():
+                ipq.markInputVariable(inputVar, i)
+                i+=1
+
+        i = 0
+        for outputVar in self.outputVars.flatten():
+            ipq.markOutputVariable(outputVar, i)
+            i+=1
+
         for e in self.equList:
             eq = MarabouCore.Equation(e.EquationType)
             for (c, v) in e.addendList:
@@ -165,12 +176,17 @@ class MarabouNetwork:
 
         return ipq
 
-    def solve(self, filename="", verbose=True, timeout=0):
+    def solve(self, filename="", verbose=True, timeout=0, verbosity=2):
         """
         Function to solve query represented by this network
         Arguments:
             filename: (string) path to redirect output to
-            verbose: (bool) whether to print out solution
+            verbose: (bool) whether to print out solution after solve finishes
+            timeout: (int) time in seconds when Marabou will time out
+            verbosity: (int) determines how much Marabou prints during solving
+                    0: No printing
+                    1: Some printing
+                    2 (default): Standard printing
         Returns:
             vals: (dict: int->float) empty if UNSAT, else SATisfying solution
             stats: (Statistics) a Statistics object as defined in Marabou,
@@ -178,7 +194,7 @@ class MarabouNetwork:
                     to how an input query was solved.
         """
         ipq = self.getMarabouQuery()
-        vals, stats = MarabouCore.solve(ipq, filename, timeout)
+        vals, stats = MarabouCore.solve(ipq, filename, timeout, verbosity)
         if verbose:
             if stats.hasTimedOut():
                 print("TO")
@@ -199,42 +215,12 @@ class MarabouNetwork:
         """
         Serializes the inputQuery in the given filename
         Arguments:
-            filename: (string) path to redirect output to
+            filename: (string) file to write serialized inputQuery
         Returns:
             None
         """
         ipq = self.getMarabouQuery()
         MarabouCore.saveQuery(ipq, filename)
-
-    def loadQuery(self, filename="", verbose=True, timeout=0):
-        """
-        Function to solve query represented by this network
-        Arguments:
-            filename: (string) path to redirect output to
-            verbose: (bool) whether to print out solution
-        Returns:
-            vals: (dict: int->float) empty if UNSAT, else SATisfying solution
-            stats: (Statistics) a Statistics object as defined in Marabou,
-                    it has multiple methods that provide information related
-                    to how an input query was solved.
-        """
-        #ipq = self.getMarabouQuery()
-        ipq = MarabouCore.loadQuery(filename)
-        vals, stats = MarabouCore.solve(ipq, filename, timeout=0)
-        if verbose:
-            if stats.hasTimedOut():
-                print ("TIMEOUT")
-            elif len(vals)==0:
-                print("UNSAT")
-            else:
-                print("SAT")
-                for i in range(self.inputVars.size):
-                    print("input {} = {}".format(i, vals[self.inputVars.item(i)]))
-
-                for i in range(self.outputVars.size):
-                    print("output {} = {}".format(i, vals[self.outputVars.item(i)]))
-
-        return [vals, stats]
 
     def evaluateWithMarabou(self, inputValues, filename="evaluateWithMarabou.log", timeout=0):
         """
