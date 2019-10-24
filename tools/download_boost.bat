@@ -13,6 +13,6 @@ ECHO Installing Boost
 CD boost_1_68_0
 
 CALL bootstrap.bat >NUL
-CALL b2.exe --prefix="%cd%\installed" --with-program_options link=static install toolset=msvc >NUL
+CALL b2.exe --prefix="%cd%\win_installed" --with-program_options link=static install toolset=msvc >NUL
 
 CD %curdir%

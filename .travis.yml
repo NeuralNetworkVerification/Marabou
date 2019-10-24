@@ -3,16 +3,7 @@ language: cpp
 cache:
   directories:
     - tools/boost_1_68_0
-    # - tools/pybind11-2.3.0
 
-
-script:
-  - mkdir -p build 
-  - cd build
-  - cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=$(which $PY_CMD) 
-  - cmake --build . -j 2
-  - ctest -L system -j 2
-  - ctest -L regress0 -j 2
 
 before_install:
   - PY_CMD=python3
@@ -31,7 +22,7 @@ matrix:
       - cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=$(which $PY_CMD)
       - cmake --build . -j 2
       - ctest -L system -j 2
-      - ctest -L regress0 -j 2
+      - ctest -L regress[0-1] -j 2
 
     - os: linux
       dist: xenial
@@ -42,6 +33,7 @@ matrix:
       - cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=$(which $PY_CMD)
       - cmake --build . -j 2
       - ctest -L system -j 2
+      - ctest -L regress0 -j 2
 
     - os: windows
       script:
@@ -51,6 +43,7 @@ matrix:
       - cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=/c/Python3/python -G"Visual Studio 15 2017 Win64"
       - cmake --build . --config Release
       - ctest -L system -j 2
+      # - ctest -L regress0 -j 2 # does not work ...
 
 notifications:
   email:

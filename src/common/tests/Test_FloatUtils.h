@@ -19,11 +19,6 @@
 #include "FloatUtils.h"
 #include <math.h>
 
-#ifdef _WIN32
-#undef max
-#undef min
-#endif
-
 class FloatUtilsTestSuite : public CxxTest::TestSuite
 {
 public:

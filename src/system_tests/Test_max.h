@@ -194,11 +194,11 @@ public:
              FloatUtils::lt( value_x3, 0.5 ) || FloatUtils::gt( value_x3, 1 ) ||
 			 FloatUtils::lt( value_x2f, 0.0 ) )
 
-       	TS_ASSERT( FloatUtils::areEqual
-             ( FloatUtils::max( value_x2b, FloatUtils::max( value_x0, value_x2f ) ), value_x2b ) )
+        double x2_relu = FloatUtils::max( value_x2b, FloatUtils::max( value_x0, value_x2f ) );
+       	TS_ASSERT( FloatUtils::areEqual( x2_relu, value_x2b ) )
 
-		TS_ASSERT ( FloatUtils::areEqual
-             ( FloatUtils::max( value_x1b, FloatUtils::max( value_x0, FloatUtils::max( value_x2b, value_x1f ) ) ), value_x3 ) )
+        double x1_relu = FloatUtils::max( value_x1b, FloatUtils::max( value_x0, FloatUtils::max( value_x2b, value_x1f ) ) );
+		TS_ASSERT ( FloatUtils::areEqual( x1_relu, value_x3 ) )
 
     }
 };
