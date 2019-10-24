@@ -126,28 +126,27 @@ void DnCWorker::popOneSubQueryAndSolve()
         }
         else
         {
-            // We must quit solving if the result is not UNSAT or TIMEOUT
+            // We must set the quit flag to true  if the result is not UNSAT or
+            // TIMEOUT. This way, the DnCManager will kill all the DnCWorkers.
+
+            *_shouldQuitSolving = true;
             if ( result == IEngine::SAT )
             {
-                // If SAT, set the shouldQuitSolving flag to true, so that the
-                // DnCManager will kill all the DnCWorkers
+                // case SAT
                 *_numUnsolvedSubQueries -= 1;
-                *_shouldQuitSolving = true;
                 delete subQuery;
             }
             else if ( result == IEngine::ERROR )
             {
-                // If ERROR, set the shouldQuitSolving flag to true and quit
+                // case ERROR
                 std::cout << "Error!" << std::endl;
-                *_shouldQuitSolving = true;
                 delete subQuery;
             }
             else // result == IEngine::NOT_DONE
             {
-                // If NOT_DONE, set the shouldQuitSolving flag to true and quit
+                // case NOT_DONE
                 ASSERT( false );
                 std::cout << "Not done! This should not happen." << std::endl;
-                *_shouldQuitSolving = true;
                 delete subQuery;
             }
         }
