@@ -1,23 +1,22 @@
 /*********************                                                        */
-/*! \file Test_RowBoundTightener.h
+/*! \file Test_max.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz
+ **   Derek Huang, Guy Katz, Duligur Ibeling	
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** [[ Add lengthier description here ]]
 
-**/
+ **/
 
 #include <cxxtest/TestSuite.h>
 
 #include "Engine.h"
-#include "InputQuery.h"
 #include "FloatUtils.h"
+#include "InputQuery.h"
 #include "MaxConstraint.h"
 
 
@@ -102,7 +101,7 @@ public:
         else
         {
             bool result = engine.solve();
-            TS_ASSERT( ! result );
+            TS_ASSERT( !result );
         }
     }
 
@@ -189,7 +188,7 @@ public:
 
         TS_ASSERT( FloatUtils::areEqual( value_x3, value_x1f + value_x2f ) )
 
-        TS_ASSERT( ! FloatUtils::lt( value_x0, 0 ) || FloatUtils::gt( value_x0, 1 ) ||
+        TS_ASSERT( !FloatUtils::lt( value_x0, 0 ) || FloatUtils::gt( value_x0, 1 ) ||
              FloatUtils::lt( value_x1f, 0 ) ||
              FloatUtils::lt( value_x3, 0.5 ) || FloatUtils::gt( value_x3, 1 ) ||
 			 FloatUtils::lt( value_x2f, 0.0 ) )

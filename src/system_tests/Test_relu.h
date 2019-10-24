@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file Test_RowBoundTightener.h
+/*! \file Test_relu.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz
@@ -17,8 +17,8 @@
 
 #include "Engine.h"
 #include "InputQuery.h"
-#include "ReluConstraint.h"
 #include "FloatUtils.h"
+#include "ReluConstraint.h"
 
 
 class ReluTestSuite : public CxxTest::TestSuite

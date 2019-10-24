@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file Test_RowBoundTightener.h
+/*! \file Test_mps.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz
@@ -42,14 +42,14 @@ public:
         MpsParser mpsParser( filename );
         mpsParser.generateQuery( inputQuery );
         Engine engine;
-        if ( ! engine.processInputQuery( inputQuery ) )
+        if ( !engine.processInputQuery( inputQuery ) )
         {
             // got infeasible in preprocess stage
             TS_ASSERT( 1 );
         }
         else {
             bool result = engine.solve();
-            TS_ASSERT ( ! result );
+            TS_ASSERT ( !result );
         }
     }
 

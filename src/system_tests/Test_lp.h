@@ -145,7 +145,7 @@ public:
         else 
         {
             result = engine.solve();
-            TS_ASSERT( ! result );
+            TS_ASSERT( !result );
         }
     }
 };
