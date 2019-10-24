@@ -21,7 +21,6 @@
 #include <set>
 #include <string>
 #include <utility>
-#include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
@@ -36,6 +35,12 @@
 #include "PropertyParser.h"
 #include "ReluConstraint.h"
 #include "Set.h"
+
+#ifdef _WIN32
+#define STDOUT_FILENO 1
+#else
+#include <unistd.h>
+#endif
 
 namespace py = pybind11;
 
