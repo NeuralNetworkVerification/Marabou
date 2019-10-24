@@ -22,8 +22,8 @@
 
 #ifdef _WIN32
 #include <winsock2.h>
-static BOOL g_first_time = 1;
-static LARGE_INTEGER g_counts_per_sec;
+static BOOL gFirstTime = 1;
+static LARGE_INTEGER gCountsPerSec;
 #else
 #include <sys/time.h>
 #endif

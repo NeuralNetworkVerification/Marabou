@@ -76,6 +76,7 @@ if (RUN_MEMORY_TEST)
 endif()
 
 add_definitions(-DRESOURCES_DIR="${RESOURCES_DIR}")
+
 if (NOT MSVC)
     set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS} -g -DDEBUG_ON) 
     set(CXXTEST_FLAGS ${DEBUG_FLAGS}  -Wno-ignored-qualifiers)
@@ -100,6 +101,13 @@ elseif (${CMAKE_SIZEOF_VOID_P} EQUAL 4 AND NOT MSVC)
     set(BOOST_ROOT "${BOOST_DIR}/installed32")
 else()
     set(BOOST_ROOT "${BOOST_DIR}/installed")
+endif()
+
+if (MSVC)
+    set(SCRIPT_EXTENSION bat)
+    set(Boost_NAMESPACE libboost)
+else()
+    set(SCRIPT_EXTENSION sh)
 endif()
 
 if (MSVC)
