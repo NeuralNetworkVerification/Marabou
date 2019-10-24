@@ -24,7 +24,6 @@
 #include "ReluConstraint.h"
 #include "GlobalConfiguration.h"
 #include "MarabouError.h"
-// TODO: add a unit test for a sanity check
 
 InputQuery QueryLoader::loadQuery( const String &fileName )
 {
@@ -86,8 +85,8 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         String line = input.readLine();
         List<String> tokens = line.tokenize( "," );
 
-        // format: <var, lb, ub>
-        ASSERT(tokens.size() == 3);
+        // format: <var, lb>
+        ASSERT(tokens.size() == 2);
 
         auto it = tokens.begin();
         unsigned varToBound = atoi( it->ascii() );
@@ -107,8 +106,8 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         String line = input.readLine();
         List<String> tokens = line.tokenize( "," );
 
-        // format: <var, lb, ub>
-        ASSERT( tokens.size() == 3 );
+        // format: <var, ub>
+        ASSERT( tokens.size() == 2 );
 
         auto it = tokens.begin();
         unsigned varToBound = atoi( it->ascii() );
