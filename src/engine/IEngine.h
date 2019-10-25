@@ -18,6 +18,10 @@
 
 #include "List.h"
 
+#ifdef _WIN32
+#undef ERROR
+#endif
+
 class EngineState;
 class Equation;
 class PiecewiseLinearCaseSplit;
