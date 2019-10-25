@@ -96,7 +96,7 @@ public:
         TS_ASSERT( _workload->push( std::move( subQuery ) ) );
     }
 
-    void test_case_timeout()
+    void test_pop_one_sub_query_and_solve()
     {
         //  Pop a subQuery from the workload, set the mock engine to report
         //  timeout on solving the subQuery.
@@ -127,42 +127,65 @@ public:
         TS_ASSERT( clearSubQueries() == 4 );
         TS_ASSERT( numUnsolvedSubQueries.load() == 4 );
         TS_ASSERT( !shouldQuitSolving.load() );
-    
 
+        //  Pop 2 subQueries from the workload, set the mock engine to report
+        //  unsat on solving it.
+        //  In this case, we only decrement the value of numUnsolvedSubQueries
+        //
+        //  1. The size of workload should become 1
+        //  2. The value of numUnsolvedSubQueries should become 1
+        //  3. The value of shouldQuitSolving should still be false
         TS_ASSERT( clearSubQueries() == 0 );
 
         createPlaceHolderSubQuery();
         createPlaceHolderSubQuery();
         _engine->setExitCode( IEngine::UNSAT );
-        numUnsolvedSubQueries=( 2 );
-        shouldQuitSolving=( false );
+        numUnsolvedSubQueries= 2;
+        shouldQuitSolving= false;
 		dncWorker = DnCWorker( _workload, _engine, numUnsolvedSubQueries,
-                             shouldQuitSolving, threadId, onlineDivides,
-                              timeoutFactor, divideStrategy );
+                               shouldQuitSolving, threadId, onlineDivides,
+                               timeoutFactor, divideStrategy );
 
         dncWorker.popOneSubQueryAndSolve();
         TS_ASSERT( _engine->getExitCode() == IEngine::UNSAT );
         TS_ASSERT( clearSubQueries() == 1 );
         TS_ASSERT( numUnsolvedSubQueries.load() == 1 );
         TS_ASSERT( !shouldQuitSolving.load() );
-   
+
+        //  Pop a subQuery from the workload, set the mock engine to report
+        //  unsat on solving it.
+        //  In this case, we only decrement the value of numUnsolvedSubQueries
+        //
+        //  1. The size of workload should become 0
+        //  2. The value of numUnsolvedSubQueries should become 0
+        //  3. The value of shouldQuitSolving should still be false
+
+        // Create the subQuery to be added to workLoad
         TS_ASSERT( clearSubQueries() == 0 );
 
         createPlaceHolderSubQuery();
         _engine->setExitCode( IEngine::UNSAT );
-        numUnsolvedSubQueries=( 1 );
-        shouldQuitSolving=( false );
+        numUnsolvedSubQueries= 1;
+        shouldQuitSolving= false;
 
         dncWorker = DnCWorker( _workload, _engine, numUnsolvedSubQueries,
-                             shouldQuitSolving, threadId, onlineDivides,
-                              timeoutFactor, divideStrategy );
+                               shouldQuitSolving, threadId, onlineDivides,
+                               timeoutFactor, divideStrategy );
 
         dncWorker.popOneSubQueryAndSolve();
         TS_ASSERT( _engine->getExitCode() == IEngine::UNSAT );
         TS_ASSERT( clearSubQueries() == 0 );
         TS_ASSERT( numUnsolvedSubQueries.load() == 0 );
         TS_ASSERT( shouldQuitSolving.load() );
- 
+
+        //  Pop a subQuery from the workload, set the mock engine to report
+        //  sat on solving it.
+        //  In this case, we decrement the value of numUnsolvedSubQueries, and
+        //  set shouldQuitSolving to be true.
+        //
+        //  1. The size of workload should become 0
+        //  2. The value of numUnsolvedSubQueries should become 0
+        //  3. The value of shouldQuitSolving should become true
         TS_ASSERT( clearSubQueries() == 0 );
 
         createPlaceHolderSubQuery();
@@ -178,20 +201,35 @@ public:
         TS_ASSERT( clearSubQueries() == 0 );
         TS_ASSERT( numUnsolvedSubQueries.load() == 0 );
         TS_ASSERT( shouldQuitSolving.load() );
- 
+
+        //  Pop a subQuery from the workload, set the mock engine's exitCode
+        //  to be QuitRequested, and shouldQuitSolving to be true.
+        //  In this case, the DnCWorker should quit.
+        //
+        //  1. There should still be 1 unsolved subQuery
+
+        // Create the subQuery to be added to workLoad
         TS_ASSERT( clearSubQueries() == 0 );
 
         createPlaceHolderSubQuery();
         _engine->setExitCode( IEngine::QUIT_REQUESTED );
-        numUnsolvedSubQueries=( 1 );
-        shouldQuitSolving =  (true );
+        numUnsolvedSubQueries= 1;
+        shouldQuitSolving =  true;
 		dncWorker = DnCWorker( _workload, _engine, numUnsolvedSubQueries,
-                             shouldQuitSolving, threadId, onlineDivides,
-                              timeoutFactor, divideStrategy );
+                               shouldQuitSolving, threadId, onlineDivides,
+                               timeoutFactor, divideStrategy );
         dncWorker.popOneSubQueryAndSolve();
         TS_ASSERT( _engine->getExitCode() == IEngine::QUIT_REQUESTED );
         TS_ASSERT( numUnsolvedSubQueries.load() == 1 );
-   
+
+        //  Pop a subQuery from the workload, set the mock engine's exitCode
+        //  to be error
+        //  In this case, the DnCWorker should quit.
+        //
+        //  1. The value of numUnsolvedSubQueries should become 0
+        //  2. The value of shouldQuitSolving should become true
+
+        // Create the subQuery to be added to workLoad
         TS_ASSERT( clearSubQueries() == 0 );
 
         createPlaceHolderSubQuery();
@@ -199,8 +237,8 @@ public:
          numUnsolvedSubQueries= 1;
         shouldQuitSolving = false;
 		dncWorker = DnCWorker( _workload, _engine, numUnsolvedSubQueries,
-                             shouldQuitSolving, threadId, onlineDivides,
-                              timeoutFactor, divideStrategy );
+                               shouldQuitSolving, threadId, onlineDivides,
+                               timeoutFactor, divideStrategy );
 
         dncWorker.popOneSubQueryAndSolve();
         TS_ASSERT( _engine->getExitCode() == IEngine::ERROR );
