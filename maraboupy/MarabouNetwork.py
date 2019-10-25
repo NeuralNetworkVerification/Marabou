@@ -184,9 +184,9 @@ class MarabouNetwork:
             verbose: (bool) whether to print out solution after solve finishes
             timeout: (int) time in seconds when Marabou will time out
             verbosity: (int) determines how much Marabou prints during solving
-                    0: No printing
-                    1: Some printing
-                    2 (default): Standard printing
+                    0: print out minimal information
+                    1: print out statistics only in the beginning and the end
+                    2: print out statistics during solving
         Returns:
             vals: (dict: int->float) empty if UNSAT, else SATisfying solution
             stats: (Statistics) a Statistics object as defined in Marabou,
