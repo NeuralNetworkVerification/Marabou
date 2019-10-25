@@ -96,6 +96,7 @@ public:
         TS_ASSERT( _workload->push( std::move( subQuery ) ) );
     }
 
+    // Test different branches of DnCWorker.popOneSubQueryAndSolve()
     void test_pop_one_sub_query_and_solve()
     {
         //  Pop a subQuery from the workload, set the mock engine to report
