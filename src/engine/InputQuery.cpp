@@ -301,11 +301,11 @@ void InputQuery::saveQuery( const String &fileName )
     // Number of constraints
     queryFile->write( Stringf( "%u", _plConstraints.size() ) );
 
-    printf("Number of variables: %u\n", _numberOfVariables);
-    printf("Number of lower bounds: %u\n", _lowerBounds.size());
-    printf("Number of upper bounds: %u\n", _upperBounds.size());
-    printf("Number of equations: %u\n", _equations.size());
-    printf("Number of constraints: %u\n", _plConstraints.size());
+    printf( "Number of variables: %u\n", _numberOfVariables );
+    printf( "Number of lower bounds: %u\n", _lowerBounds.size() );
+    printf( "Number of upper bounds: %u\n", _upperBounds.size() );
+    printf( "Number of equations: %u\n", _equations.size() );
+    printf( "Number of constraints: %u\n", _plConstraints.size() );
 
     // Input Variables
     queryFile->write( Stringf( "\n%u", getNumInputVariables() ) );
@@ -317,7 +317,7 @@ void InputQuery::saveQuery( const String &fileName )
     }
 
     // Output Variables
-    queryFile->write(Stringf( "\n%u", getNumOutputVariables() ) );
+    queryFile->write( Stringf( "\n%u", getNumOutputVariables() ) );
     i = 0;
     for ( const auto &outVar : getOutputVariables() )
     {
@@ -330,7 +330,7 @@ void InputQuery::saveQuery( const String &fileName )
         queryFile->write( Stringf( "\n%d,%f", lb.first, lb.second ) );
     
     // Upper Bounds
-    for (const auto &ub : _upperBounds)
+    for ( const auto &ub : _upperBounds )
         queryFile->write( Stringf( "\n%d,%f", ub.first, ub.second ) );
 
     // Equations
