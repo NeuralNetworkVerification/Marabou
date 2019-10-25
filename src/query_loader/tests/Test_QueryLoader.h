@@ -1,8 +1,8 @@
 /*********************                                                        */
-/*! \file Test_LUFactorization.h
+/*! \file Test_QueryLoader.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz
+ **   Kyle Julian
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -14,7 +14,6 @@
 **/
 
 #include <cxxtest/TestSuite.h>
-//#include <cstdio>
 
 #include "AutoFile.h"
 #include "Equation.h"
@@ -44,7 +43,7 @@ public:
     void test_load_query()
     {
 
-		// Set up simple query as a test
+        // Set up simple query as a test
         InputQuery inputQuery;
         inputQuery.setNumberOfVariables( 6 );
 
@@ -59,7 +58,7 @@ public:
 
         // Output layer with one variable
         inputQuery.markOutputVariable( 5, 0 );
-		inputQuery.setUpperBound(5, 3.0);
+        inputQuery.setUpperBound(5, 3.0);
 
         // Equations 
         // First equation, input to first ReLU
@@ -92,28 +91,28 @@ public:
         inputQuery.saveQuery( "TEST_QUERY.txt" );
         InputQuery inputQuery2 = QueryLoader::loadQuery( "TEST_QUERY.txt" );
 
-		// Check that inputQuery is unchanged when saving and loading the query
-		// Number of variables unchanged
+        // Check that inputQuery is unchanged when saving and loading the query
+        // Number of variables unchanged
         TS_ASSERT( inputQuery.getNumberOfVariables() == inputQuery2.getNumberOfVariables() );
-		TS_ASSERT( inputQuery.getNumInputVariables() == inputQuery2.getNumInputVariables() );
-		TS_ASSERT( inputQuery.getNumOutputVariables() == inputQuery2.getNumOutputVariables() );
+        TS_ASSERT( inputQuery.getNumInputVariables() == inputQuery2.getNumInputVariables() );
+        TS_ASSERT( inputQuery.getNumOutputVariables() == inputQuery2.getNumOutputVariables() );
 
-		// Input and output variables unchanged
-		TS_ASSERT( inputQuery.getInputVariables() == inputQuery2.getInputVariables() );
-		TS_ASSERT( inputQuery.getOutputVariables() == inputQuery2.getOutputVariables() );
+        // Input and output variables unchanged
+        TS_ASSERT( inputQuery.getInputVariables() == inputQuery2.getInputVariables() );
+        TS_ASSERT( inputQuery.getOutputVariables() == inputQuery2.getOutputVariables() );
 
-		// Bounds unchanged
-		TS_ASSERT( inputQuery.getLowerBounds() == inputQuery2.getLowerBounds() );
-		TS_ASSERT( inputQuery.getUpperBounds() == inputQuery2.getUpperBounds() );
+        // Bounds unchanged
+        TS_ASSERT( inputQuery.getLowerBounds() == inputQuery2.getLowerBounds() );
+        TS_ASSERT( inputQuery.getUpperBounds() == inputQuery2.getUpperBounds() );
 
-		// Number of infinite bounds unchanged
-		TS_ASSERT( inputQuery.countInfiniteBounds() == inputQuery2.countInfiniteBounds() );
+        // Number of infinite bounds unchanged
+        TS_ASSERT( inputQuery.countInfiniteBounds() == inputQuery2.countInfiniteBounds() );
 
-		// Equations unchanged
-		TS_ASSERT( inputQuery.getEquations() == inputQuery2.getEquations() );
+        // Equations unchanged
+        TS_ASSERT( inputQuery.getEquations() == inputQuery2.getEquations() );
 
-		// Constraints unchanged
-		TS_ASSERT( inputQuery.getPiecewiseLinearConstraints() == inputQuery.getPiecewiseLinearConstraints() );
+        // Constraints unchanged
+        TS_ASSERT( inputQuery.getPiecewiseLinearConstraints() == inputQuery.getPiecewiseLinearConstraints() );
     }
 };
 
