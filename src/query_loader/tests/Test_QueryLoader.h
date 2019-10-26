@@ -20,6 +20,8 @@
 #include "InputQuery.h"
 #include "QueryLoader.h"
 
+#define QUERY_TEST_FILE "QueryTest.txt"
+
 class MockForQueryLoader
 {
 public:
@@ -38,6 +40,7 @@ public:
     void tearDown()
     {
         TS_ASSERT_THROWS_NOTHING( delete mock );
+        remove( QUERY_TEST_FILE );
     }
 
     void test_load_query()
@@ -58,7 +61,7 @@ public:
 
         // Output layer with one variable
         inputQuery.markOutputVariable( 5, 0 );
-        inputQuery.setUpperBound(5, 3.0);
+        inputQuery.setUpperBound( 5, 3.0 );
 
         // Equations 
         // First equation, input to first ReLU
@@ -88,8 +91,8 @@ public:
         inputQuery.addEquation( equation2 );
 
         // Save the query and then reload the query
-        inputQuery.saveQuery( "TEST_QUERY.txt" );
-        InputQuery inputQuery2 = QueryLoader::loadQuery( "TEST_QUERY.txt" );
+        inputQuery.saveQuery( QUERY_TEST_FILE );
+        InputQuery inputQuery2 = QueryLoader::loadQuery( QUERY_TEST_FILE );
 
         // Check that inputQuery is unchanged when saving and loading the query
         // Number of variables unchanged

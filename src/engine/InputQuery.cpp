@@ -286,9 +286,7 @@ void InputQuery::saveQuery( const String &fileName )
     AutoFile queryFile( fileName );
     queryFile->open( IFile::MODE_WRITE_TRUNCATE );
 
-    // General query information
-
-    // Number of variables
+    // Number of Variables
     queryFile->write( Stringf( "%u\n", _numberOfVariables ) );
 
     // Number of Bounds
@@ -298,7 +296,7 @@ void InputQuery::saveQuery( const String &fileName )
     // Number of Equations
     queryFile->write( Stringf( "%u\n", _equations.size() ) );
 
-    // Number of constraints
+    // Number of Constraints
     queryFile->write( Stringf( "%u", _plConstraints.size() ) );
 
     printf( "Number of variables: %u\n", _numberOfVariables );
@@ -307,23 +305,29 @@ void InputQuery::saveQuery( const String &fileName )
     printf( "Number of equations: %u\n", _equations.size() );
     printf( "Number of constraints: %u\n", _plConstraints.size() );
 
-    // Input Variables
+    // Number of Input Variables
     queryFile->write( Stringf( "\n%u", getNumInputVariables() ) );
+
+    // Input Variables
     unsigned i = 0;
     for ( const auto &inVar : getInputVariables() )
     {
         queryFile->write( Stringf( "\n%u,%u", i, inVar ) );
         ++i;
     }
+    ASSERT( i == getNumInputVariables() );
+
+    // Number of Output Variables
+    queryFile->write( Stringf( "\n%u", getNumOutputVariables() ) );
 
     // Output Variables
-    queryFile->write( Stringf( "\n%u", getNumOutputVariables() ) );
     i = 0;
     for ( const auto &outVar : getOutputVariables() )
     {
         queryFile->write( Stringf( "\n%u,%u", i, outVar ) );
         ++i;
     }
+    ASSERT( i == getNumOutputVariables() );
 
     // Lower Bounds
     for ( const auto &lb : _lowerBounds )
@@ -341,7 +345,7 @@ void InputQuery::saveQuery( const String &fileName )
         queryFile->write( Stringf( "\n%u,", i ) );
 
         // Equation type
-        queryFile->write( Stringf( "%01u,", e._type ) );
+        queryFile->write( Stringf( "%01d,", e._type ) );
 
         // Equation scalar
         queryFile->write( Stringf( "%f", e._scalar ) );
@@ -351,13 +355,14 @@ void InputQuery::saveQuery( const String &fileName )
         ++i;
     }
 
-    unsigned j = 0;
+    // Constraints
+    i = 0;
     for ( const auto &constraint : _plConstraints )
     {
         // Constraint number
-        queryFile->write( Stringf( "\n%u,", j ) );
+        queryFile->write( Stringf( "\n%u,", i ) );
         queryFile->write( constraint->serializeToString() );
-        ++j;
+        ++i;
     }
 
     queryFile->close();
