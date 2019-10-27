@@ -45,6 +45,7 @@ public:
         MERGED_INPUT_VARIABLE = 20,
         MERGED_OUTPUT_VARIABLE = 21,
         INVALID_WEIGHTED_SUM_INDEX = 22,
+        UNSUCCESSFUL_QUEUE_PUSH = 23,
 
         // Error codes for Query Loader
         FILE_DOES_NOT_EXIST = 100,

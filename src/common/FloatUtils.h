@@ -21,6 +21,11 @@
 
 #include <cfloat>
 
+#ifdef _WIN32
+#undef max
+#undef min
+#endif
+
 class FloatUtils
 {
 public:
