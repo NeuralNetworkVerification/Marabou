@@ -45,7 +45,6 @@ public:
 
     void test_load_query()
     {
-
         // Set up simple query as a test
         InputQuery inputQuery;
         inputQuery.setNumberOfVariables( 6 );
@@ -63,7 +62,7 @@ public:
         inputQuery.markOutputVariable( 5, 0 );
         inputQuery.setUpperBound( 5, 3.0 );
 
-        // Equations 
+        // Equations
         // First equation, input to first ReLU
         Equation equation0;
         equation0.addAddend( -1.0, 1 ); // Equation output

@@ -80,7 +80,7 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
 
     // Lower Bounds
     for ( unsigned i = 0; i < numLowerBounds; ++i )
-    {   
+    {
         log( Stringf( "Bound: %u\n", i ) );
         String line = input.readLine();
         List<String> tokens = line.tokenize( "," );
@@ -128,7 +128,7 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
 
         List<String> tokens = line.tokenize( "," );
         ASSERT( tokens.size() > 4 );
-        
+
         auto it = tokens.begin();
 
         // Skip equation number
@@ -211,7 +211,7 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         }
         else
         {
-            throw MarabouError( MarabouError::UNSUPPORTED_PIECEWISE_CONSTRAINT, Stringf( "UNSUPPORTED PIECEWISE CONSTRAINT: %s\n", coType.ascii() ).ascii() );
+            throw MarabouError( MarabouError::UNSUPPORTED_PIECEWISE_CONSTRAINT, Stringf( "Unsupported piecewise constraint: %s\n", coType.ascii() ).ascii() );
         }
 
         ASSERT( constraint );
@@ -226,6 +226,7 @@ void QueryLoader::log( const String &message )
     if ( GlobalConfiguration::QUERY_LOADER_LOGGING )
         printf( "Engine: %s\n", message.ascii() );
 }
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "
