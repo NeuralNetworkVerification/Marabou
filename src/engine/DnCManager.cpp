@@ -61,6 +61,28 @@ DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
     , _divideStrategy( divideStrategy )
     , _networkFilePath( networkFilePath )
     , _propertyFilePath( propertyFilePath )
+    , _baseInputQuery( NULL )
+    , _exitCode( DnCManager::NOT_DONE )
+    , _workload( NULL )
+    , _timeoutReached( false )
+    , _numUnsolvedSubQueries( 0 )
+    , _verbosity( verbosity )
+{
+}
+
+DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
+                        unsigned initialTimeout, unsigned onlineDivides,
+                        float timeoutFactor, DivideStrategy divideStrategy,
+                        InputQuery *inputQuery, unsigned verbosity )
+    : _numWorkers( numWorkers )
+    , _initialDivides( initialDivides )
+    , _initialTimeout( initialTimeout )
+    , _onlineDivides( onlineDivides )
+    , _timeoutFactor( timeoutFactor )
+    , _divideStrategy( divideStrategy )
+    , _networkFilePath( "" )
+    , _propertyFilePath( "" )
+    , _baseInputQuery( inputQuery )
     , _exitCode( DnCManager::NOT_DONE )
     , _workload( NULL )
     , _timeoutReached( false )
@@ -289,14 +311,19 @@ bool DnCManager::createEngines()
 {
     // Create the base engine
     _baseEngine = std::make_shared<Engine>();
+
     InputQuery *baseInputQuery = new InputQuery();
 
-    // InputQuery is owned by engine
-    AcasParser acasParser( _networkFilePath );
-    acasParser.generateQuery( *baseInputQuery );
-
-    if ( _propertyFilePath != "" )
-        PropertyParser().parse( _propertyFilePath, *baseInputQuery );
+    if ( _baseInputQuery )
+        *baseInputQuery = *_baseInputQuery;
+    else
+    {
+        // InputQuery is owned by engine
+        AcasParser acasParser( _networkFilePath );
+        acasParser.generateQuery( *baseInputQuery );
+        if ( _propertyFilePath != "" )
+            PropertyParser().parse( _propertyFilePath, *baseInputQuery );
+    }
 
     if ( !_baseEngine->processInputQuery( *baseInputQuery ) )
         // Solved by preprocessing, we are done!
