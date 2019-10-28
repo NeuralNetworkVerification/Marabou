@@ -14,33 +14,33 @@
  ** [[ Add lengthier description here ]]
  **/
 
+#include "AutoFile.h"
 #include "Debug.h"
 #include "Equation.h"
-#include "File.h"
 #include "GlobalConfiguration.h"
 #include "InputQuery.h"
+#include "MStringf.h"
 #include "MarabouError.h"
 #include "MaxConstraint.h"
-#include "MStringf.h"
 #include "QueryLoader.h"
 #include "ReluConstraint.h"
 
 InputQuery QueryLoader::loadQuery( const String &fileName )
 {
-    if ( !File::exists( fileName ) )
+    if ( !IFile::exists( fileName ) )
     {
         throw MarabouError( MarabouError::FILE_DOES_NOT_EXIST, Stringf( "File %s not found.\n", fileName.ascii() ).ascii() );
     }
 
     InputQuery inputQuery;
-    File input = File( fileName );
-    input.open( File::MODE_READ );
+    AutoFile input( fileName );
+    input->open( IFile::MODE_READ );
 
-    unsigned numVars = atoi( input.readLine().trim().ascii() );
-    unsigned numLowerBounds = atoi( input.readLine().trim().ascii() );
-    unsigned numUpperBounds = atoi( input.readLine().trim().ascii() );
-    unsigned numEquations = atoi( input.readLine().trim().ascii() );
-    unsigned numConstraints = atoi( input.readLine().trim().ascii() );
+    unsigned numVars = atoi( input->readLine().trim().ascii() );
+    unsigned numLowerBounds = atoi( input->readLine().trim().ascii() );
+    unsigned numUpperBounds = atoi( input->readLine().trim().ascii() );
+    unsigned numEquations = atoi( input->readLine().trim().ascii() );
+    unsigned numConstraints = atoi( input->readLine().trim().ascii() );
 
     log( Stringf( "Number of variables: %u\n", numVars ) );
     log( Stringf( "Number of lower bounds: %u\n", numLowerBounds ) );
@@ -51,10 +51,10 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
     inputQuery.setNumberOfVariables( numVars );
 
     // Input Variables
-    unsigned numInputVars = atoi( input.readLine().trim().ascii() );
+    unsigned numInputVars = atoi( input->readLine().trim().ascii() );
     for ( unsigned i = 0; i < numInputVars; ++i )
     {
-        String line = input.readLine();
+        String line = input->readLine();
         List<String> tokens = line.tokenize( "," );
         auto it = tokens.begin();
         unsigned inputIndex = atoi( it->ascii() );
@@ -65,10 +65,10 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
     }
 
     // Output Variables
-    unsigned numOutputVars = atoi( input.readLine().trim().ascii() );
+    unsigned numOutputVars = atoi( input->readLine().trim().ascii() );
     for ( unsigned i = 0; i < numOutputVars; ++i )
     {
-        String line = input.readLine();
+        String line = input->readLine();
         List<String> tokens = line.tokenize( "," );
         auto it = tokens.begin();
         unsigned outputIndex = atoi( it->ascii() );
@@ -82,7 +82,7 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
     for ( unsigned i = 0; i < numLowerBounds; ++i )
     {
         log( Stringf( "Bound: %u\n", i ) );
-        String line = input.readLine();
+        String line = input->readLine();
         List<String> tokens = line.tokenize( "," );
 
         // format: <var, lb>
@@ -103,7 +103,7 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
     for ( unsigned i = 0; i < numUpperBounds; ++i )
     {
         log( Stringf( "Bound: %u\n", i ) );
-        String line = input.readLine();
+        String line = input->readLine();
         List<String> tokens = line.tokenize( "," );
 
         // format: <var, ub>
@@ -124,7 +124,7 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
     for( unsigned i = 0; i < numEquations; ++i )
     {
         log( Stringf( "Equation: %u ", i ) );
-        String line = input.readLine();
+        String line = input->readLine();
 
         List<String> tokens = line.tokenize( "," );
         ASSERT( tokens.size() > 4 );
@@ -175,14 +175,14 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
 
             equation.addAddend( coeff, varNo );
         }
-        inputQuery.addEquation( equation );
 
+        inputQuery.addEquation( equation );
     }
 
     // Constraints
-    for( unsigned i = 0; i < numConstraints; ++i )
+    for ( unsigned i = 0; i < numConstraints; ++i )
     {
-        String line = input.readLine();
+        String line = input->readLine();
 
         List<String> tokens = line.tokenize( "," );
         auto it = tokens.begin();

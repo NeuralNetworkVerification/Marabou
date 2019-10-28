@@ -18,13 +18,22 @@
 #include "AutoFile.h"
 #include "Equation.h"
 #include "InputQuery.h"
+#include "MockFileFactory.h"
 #include "QueryLoader.h"
+#include "T/unistd.h"
 
-#define QUERY_TEST_FILE "QueryTest.txt"
+const String QUERY_TEST_FILE( "QueryTest.txt" );
 
 class MockForQueryLoader
+    : public MockFileFactory
+    , public T::Base_stat
 {
 public:
+    int stat( const char */* path */, StructStat */* buf */ )
+    {
+        // 0 means file exists
+        return 0;
+    }
 };
 
 class QueryLoaderTestSuite : public CxxTest::TestSuite
@@ -40,7 +49,6 @@ public:
     void tearDown()
     {
         TS_ASSERT_THROWS_NOTHING( delete mock );
-        remove( QUERY_TEST_FILE );
     }
 
     void test_load_query()
@@ -91,6 +99,10 @@ public:
 
         // Save the query and then reload the query
         inputQuery.saveQuery( QUERY_TEST_FILE );
+
+        mock->mockFile.wasCreated = false;
+        mock->mockFile.wasDiscarded = false;
+
         InputQuery inputQuery2 = QueryLoader::loadQuery( QUERY_TEST_FILE );
 
         // Check that inputQuery is unchanged when saving and loading the query
