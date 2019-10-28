@@ -65,7 +65,6 @@ public:
     File( const String &path );
     virtual ~File();
     void close();
-    static bool exists( const String &path );
     static bool directory( const String &path );
     static unsigned getSize( const String &path );
     void open( Mode openMode );
