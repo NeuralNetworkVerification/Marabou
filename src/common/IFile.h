@@ -34,7 +34,9 @@ public:
     virtual void read( HeapData &buffer, unsigned maxReadSize ) = 0;
     virtual void close() = 0;
 
-	virtual ~IFile() {}
+    static bool exists( const String &path );
+
+    virtual ~IFile() {}
 };
 
 #endif // __IFile_h__
