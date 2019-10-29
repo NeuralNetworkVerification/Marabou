@@ -9,7 +9,7 @@ target_include_directories(${MARABOU_TEST_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DI
 
 set (QUERY_LOADER_TESTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tests")
 macro(query_loader_add_unit_test name)
-    marabou_add_test(${QUERY_LOADER_TESTS_DIR}/Test_${name} query_loader FALSE "unit")
+    marabou_add_test(${QUERY_LOADER_TESTS_DIR}/Test_${name} query_loader FALSE FALSE "unit")
 endmacro()
 
 query_loader_add_unit_test(QueryLoader)

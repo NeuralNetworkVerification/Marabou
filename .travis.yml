@@ -43,7 +43,7 @@ matrix:
       - cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=/c/Python3/python -G"Visual Studio 15 2017 Win64"
       - cmake --build . --config Release
       - ctest -L system -j 2
-      # - ctest -L regress0 -j 2 # does not work ...
+      - ctest -L regress0 -j 2 # does not work ...
 
 notifications:
   email:
