@@ -50,16 +50,6 @@ public:
     Engine( unsigned verbosity = 2 );
     ~Engine();
 
-    enum ExitCode {
-        UNSAT = 0,
-        SAT = 1,
-        ERROR = 2,
-        TIMEOUT = 3,
-        QUIT_REQUESTED = 4,
-
-        NOT_DONE = 999,
-    };
-
     /*
       Attempt to find a feasible solution for the input within a time limit
       (a timeout of 0 means no time limit). Returns true if found, false if infeasible.
@@ -117,9 +107,15 @@ public:
     void applySplit( const PiecewiseLinearCaseSplit &split );
 
     /*
+      Reset the state of the engine, before solving a new query
+      (as part of DnC mode).
+    */
+    void reset();
+
+    /*
       Reset the statistics object
     */
-    void resetStatistics( const Statistics &statistics );
+    void resetStatistics();
 
     /*
       Clear the violated PL constraints

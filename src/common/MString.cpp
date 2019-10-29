@@ -155,7 +155,7 @@ String String::trim() const
 
     for ( unsigned i = 0; i < length(); ++i )
     {
-        if ( ( !firstNonSpaceFound ) && ( _super[i] != ' ' ) )
+        if ( ( !firstNonSpaceFound ) && ( _super[i] != ' ' ) && ( _super[i] != '\n' ) )
         {
             firstNonSpace = i;
             firstNonSpaceFound = true;
@@ -167,7 +167,7 @@ String String::trim() const
         }
     }
 
-    if ( lastNonSpace == 0 )
+    if ( !firstNonSpaceFound )
     {
         return "";
     }
