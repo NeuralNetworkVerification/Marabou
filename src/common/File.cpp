@@ -36,12 +36,6 @@ void File::close()
     closeIfNeeded();
 }
 
-bool File::exists( const String &path )
-{
-    struct stat DONT_CARE;
-    return T::stat( path.ascii(), &DONT_CARE ) == 0;
-}
-
 bool File::directory( const String &path )
 {
     struct stat fileData;
