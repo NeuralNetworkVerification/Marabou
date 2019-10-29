@@ -967,7 +967,7 @@ public:
         return true;
     }
 
-    void test_fix_active() {
+    void test_fix_positive_and_negative() {
         unsigned b = 1;
         unsigned f = 4;
 
@@ -997,7 +997,6 @@ public:
         TS_ASSERT_EQUALS( splits.size(), 2U );
 
         abs.notifyUpperBound( 1, -2.0 );
-        print_bounds(abs, b, f);
         TS_ASSERT_THROWS_EQUALS( splits = abs.getCaseSplits(),
         const AbsError &e,
         e.getCode(),
@@ -1006,6 +1005,164 @@ public:
         abs.unregisterAsWatcher( &tableau );
     }
 
+    void test_constraint_phase_gets_fixed()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        MockTableau tableau;
+
+        // Upper bounds
+        {
+            AbsConstraint abs( b, f );
+            TS_ASSERT( !abs.phaseFixed() );
+            abs.notifyUpperBound( b, -1.0 );
+            TS_ASSERT( abs.phaseFixed() );
+        }
+
+        {
+            AbsConstraint abs( b, f );
+            TS_ASSERT( !abs.phaseFixed() );
+            abs.notifyUpperBound( b, 0.0 );
+            TS_ASSERT( abs.phaseFixed() );
+        }
+
+        {
+            AbsConstraint abs( b, f );
+            TS_ASSERT( !abs.phaseFixed() );
+            abs.notifyUpperBound( f, 5 );
+            TS_ASSERT( !abs.phaseFixed() );
+        }
+
+        {
+            AbsConstraint abs( b, f );
+            TS_ASSERT( !abs.phaseFixed() );
+            abs.notifyUpperBound( b, 3.0 );
+            TS_ASSERT( !abs.phaseFixed() );
+        }
+
+
+        // Lower bounds
+        {
+            AbsConstraint abs( b, f );
+            TS_ASSERT( !abs.phaseFixed() );
+            abs.notifyLowerBound( b, 3.0 );
+            TS_ASSERT( abs.phaseFixed() );
+        }
+
+        {
+            AbsConstraint abs( b, f );
+            TS_ASSERT( !abs.phaseFixed() );
+            abs.notifyLowerBound( b, 0.0 );
+            TS_ASSERT( abs.phaseFixed() );
+        }
+
+        {
+            AbsConstraint abs( b, f );
+            TS_ASSERT( !abs.phaseFixed() );
+            abs.notifyLowerBound( f, 6.0 );
+            TS_ASSERT( !abs.phaseFixed() );
+        }
+
+        {
+            AbsConstraint abs( b, f );
+            TS_ASSERT( !abs.phaseFixed() );
+            abs.notifyLowerBound( b, -2.5 );
+            TS_ASSERT( !abs.phaseFixed() );
+        }
+    }
+
+    void test_valid_split_abs_phase_fixed_to_active()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        AbsConstraint abs( b, f );
+
+        List<PiecewiseLinearConstraint::Fix> fixes;
+        List<PiecewiseLinearConstraint::Fix>::iterator it;
+
+        TS_ASSERT( !abs.phaseFixed() );
+        TS_ASSERT_THROWS_NOTHING( abs.notifyLowerBound( b, 5 ) );
+        TS_ASSERT( abs.phaseFixed() );
+
+        PiecewiseLinearCaseSplit split;
+        TS_ASSERT_THROWS_NOTHING( split = abs.getValidCaseSplit() );
+
+        Equation activeEquation;
+
+        List<Tightening> bounds = split.getBoundTightenings();
+
+        TS_ASSERT_EQUALS( bounds.size(), 1U );
+        auto bound = bounds.begin();
+        Tightening bound1 = *bound;
+
+        TS_ASSERT_EQUALS( bound1._variable, b );
+        TS_ASSERT_EQUALS( bound1._type, Tightening::LB );
+        TS_ASSERT_EQUALS( bound1._value, 0.0 );
+
+        auto equations = split.getEquations();
+        TS_ASSERT_EQUALS( equations.size(), 1U );
+        activeEquation = split.getEquations().front();
+        TS_ASSERT_EQUALS( activeEquation._addends.size(), 2U );
+        TS_ASSERT_EQUALS( activeEquation._scalar, 0.0 );
+
+        auto addend = activeEquation._addends.begin();
+        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, b );
+
+        ++addend;
+        TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, f );
+
+        TS_ASSERT_EQUALS( activeEquation._type, Equation::EQ );
+    }
+
+    void test_valid_split_abs_phase_fixed_to_inactive()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        AbsConstraint abs( b, f );
+
+        List<PiecewiseLinearConstraint::Fix> fixes;
+        List<PiecewiseLinearConstraint::Fix>::iterator it;
+
+        TS_ASSERT( !abs.phaseFixed() );
+        TS_ASSERT_THROWS_NOTHING( abs.notifyUpperBound( b, -2 ) );
+        TS_ASSERT( abs.phaseFixed() );
+
+        PiecewiseLinearCaseSplit split;
+        TS_ASSERT_THROWS_NOTHING( split = abs.getValidCaseSplit() );
+
+        Equation activeEquation;
+
+        List<Tightening> bounds = split.getBoundTightenings();
+
+        TS_ASSERT_EQUALS( bounds.size(), 1U );
+        auto bound = bounds.begin();
+        Tightening bound1 = *bound;
+
+        TS_ASSERT_EQUALS( bound1._variable, b );
+        TS_ASSERT_EQUALS( bound1._type, Tightening::UB );
+        TS_ASSERT_EQUALS( bound1._value, 0.0 );
+
+        auto equations = split.getEquations();
+        TS_ASSERT_EQUALS( equations.size(), 1U );
+        activeEquation = split.getEquations().front();
+        TS_ASSERT_EQUALS( activeEquation._addends.size(), 2U );
+        TS_ASSERT_EQUALS( activeEquation._scalar, 0.0 );
+
+        auto addend = activeEquation._addends.begin();
+        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, b );
+
+        ++addend;
+        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, f );
+
+        TS_ASSERT_EQUALS( activeEquation._type, Equation::EQ );
+    }
 };
 
 #endif //MARABOU_TEST_ABSCONSTRAINT_H
