@@ -157,7 +157,7 @@ void AbsConstraint::notifyUpperBound(  unsigned variable, double bound )
     }
 
     //fix phase, only by x_b because x_b <= x_f
-    if ( ( variable == _b ) && FloatUtils::isNegative( bound ) )
+    if ( ( variable == _b ) && !FloatUtils::isPositive( bound ) )
         setPhaseStatus( PhaseStatus::PHASE_NEGATIVE );
 
     //update partner's bound
