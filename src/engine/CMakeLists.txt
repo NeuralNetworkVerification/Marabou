@@ -34,6 +34,7 @@ engine_add_unit_test(ReluConstraint)
 engine_add_unit_test(RowBoundTightener)
 engine_add_unit_test(SymbolicBoundTightener)
 engine_add_unit_test(Tableau)
+engine_add_unit_test(DnCWorker)
 
 if (${BUILD_PYTHON})
     target_include_directories(${MARABOU_PY} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
