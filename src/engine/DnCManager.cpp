@@ -251,6 +251,19 @@ String DnCManager::getResultString()
     }
 }
 
+void DnCManager::getSolution( std::map<int, double> &ret )
+{
+    ASSERT( _engineWithSATAssignment != nullptr );
+
+    InputQuery *inputQuery = _engineWithSATAssignment->getInputQuery();
+    _engineWithSATAssignment->extractSolution( *( inputQuery ) );
+
+    for ( unsigned i = 0; i < inputQuery->getNumberOfVariables(); ++i )
+        ret[i] = inputQuery->getSolutionValue( i );
+
+    return;
+}
+
 void DnCManager::printResult()
 {
     std::cout << std::endl;
@@ -315,7 +328,18 @@ bool DnCManager::createEngines()
     InputQuery *baseInputQuery = new InputQuery();
 
     if ( _baseInputQuery )
-        *baseInputQuery = *_baseInputQuery;
+        {
+            for ( const auto & var : _baseInputQuery->getInputVariables() )
+                {
+                    std::cout << var << std::endl;
+                }
+            *baseInputQuery = *_baseInputQuery;
+            for ( const auto & var : baseInputQuery->getInputVariables() )
+                {
+                    std::cout << var << std::endl;
+                }
+
+        }
     else
     {
         // InputQuery is owned by engine
@@ -345,6 +369,7 @@ bool DnCManager::createEngines()
 void DnCManager::initialDivide( SubQueries &subQueries )
 {
     const List<unsigned> inputVariables( _baseEngine->getInputVariables() );
+
     std::unique_ptr<QueryDivider> queryDivider = nullptr;
     if ( _divideStrategy == DivideStrategy::LargestInterval )
     {

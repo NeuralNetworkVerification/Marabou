@@ -73,6 +73,11 @@ public:
     */
     void printResult();
 
+    /*
+      Store the solution into the map
+    */
+    void getSolution( std::map<int, double> &ret );
+
 private:
     /*
       Create and run a DnCWorker

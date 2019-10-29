@@ -25,6 +25,7 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include "AcasParser.h"
+#include "DnCManager.h"
 #include "Engine.h"
 #include "InputQuery.h"
 #include "MarabouError.h"
@@ -94,7 +95,6 @@ void addMaxConstraint(InputQuery& ipq, std::set<unsigned> elements, unsigned v){
     ipq.addPiecewiseLinearConstraint(m);
 }
 
-
 void createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::string propertyFilePath){
   AcasParser* acasParser = new AcasParser( String(networkFilePath) );
   acasParser->generateQuery( inputQuery );
@@ -110,7 +110,7 @@ void createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::
 
 /* The default parameters here are just for readability, you should specify
  * them in the to make them work*/
-std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, std::string redirect="", unsigned timeout=0, unsigned verbosity = 2){
+std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, std::string redirect="", unsigned timeout=0, unsigned verbosity=2, bool dnc=false){
     // Arguments: InputQuery object, filename to redirect output
     // Returns: map from variable number to value
     std::map<int, double> ret;
@@ -124,13 +124,42 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, std::
 
         if(!engine.processInputQuery(inputQuery)) return std::make_pair(ret, *(engine.getStatistics()));
 
-        if(!engine.solve(timeout)) return std::make_pair(ret, *(engine.getStatistics()));
+        if ( dnc )
+        {
+            std::cout << "print" << std::endl;
+            for ( const auto & var : inputQuery.getInputVariables() )
+                std::cout << var << std::endl;
+            auto dncManager = std::unique_ptr<DnCManager>
+                ( new DnCManager( 1, 2, 5, 1, 1.5, DivideStrategy::LargestInterval,
+                                  &inputQuery, verbosity ) );
+            dncManager->solve( timeout );
+            switch ( dncManager->getExitCode() )
+            {
+            case DnCManager::SAT:
+            {
+                retStats = Statistics();
+                dncManager->getSolution( ret );
+                break;
+            }
+            case DnCManager::TIMEOUT:
+            {
+                retStats = Statistics();
+                retStats.timeout();
+                return std::make_pair( ret, Statistics() );
+            }
+            default:
+                return std::make_pair( ret, Statistics() ); // TODO: meaningful DnCStatistics
+            }
+        } else
+        {
+            if(!engine.solve(timeout)) return std::make_pair(ret, *(engine.getStatistics()));
 
-        if (engine.getExitCode() == Engine::SAT)
-            engine.extractSolution(inputQuery);
-        retStats = *(engine.getStatistics());
-        for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); i++)
-            ret[i] = inputQuery.getSolutionValue(i);
+            if (engine.getExitCode() == Engine::SAT)
+                engine.extractSolution(inputQuery);
+            retStats = *(engine.getStatistics());
+            for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); ++i)
+                ret[i] = inputQuery.getSolutionValue(i);
+        }
     }
     catch(const MarabouError &e){
         printf( "Caught a MarabouError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );
@@ -150,7 +179,7 @@ void saveQuery(InputQuery& inputQuery, std::string filename){
 PYBIND11_MODULE(MarabouCore, m) {
     m.doc() = "Marabou API Library";
     m.def("createInputQuery", &createInputQuery, "Create input query from network and property file");
-    m.def("solve", &solve, "Takes in a description of the InputQuery and returns the solution", py::arg("inputQuery"), py::arg("redirect") = "", py::arg("timeout") = 0, py::arg("verbosity") = 2);
+    m.def("solve", &solve, "Takes in a description of the InputQuery and returns the solution", py::arg("inputQuery"), py::arg("redirect") = "", py::arg("timeout") = 0, py::arg("verbosity") = 2, py::arg("dnc") = false);
     m.def("saveQuery", &saveQuery, "Serializes the inputQuery in the given filename");
     m.def("addReluConstraint", &addReluConstraint, "Add a Relu constraint to the InputQuery");
     m.def("addMaxConstraint", &addMaxConstraint, "Add a Max constraint to the InputQuery");
@@ -167,6 +196,8 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def("getNumInputVariables", &InputQuery::getNumInputVariables)
         .def("getNumOutputVariables", &InputQuery::getNumOutputVariables)
         .def("inputVariableByIndex", &InputQuery::inputVariableByIndex)
+        .def("markInputVariable", &InputQuery::markInputVariable)
+        .def("markOutputVariable", &InputQuery::markOutputVariable)
         .def("outputVariableByIndex", &InputQuery::outputVariableByIndex)
         .def("setSymbolicBoundTightener", &InputQuery::setSymbolicBoundTightener);
     py::class_<SymbolicBoundTightener, std::unique_ptr<SymbolicBoundTightener,py::nodelete>>(m, "SymbolicBoundTightener")
