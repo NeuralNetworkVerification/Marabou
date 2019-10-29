@@ -179,7 +179,6 @@ class MarabouNetwork:
         for i, var in enumerate(self.outputVars[0]):
             ipq.markOutputVariable(i, var)
 
-
         return ipq
 
     def solve(self, filename="", verbose=True, timeout=0, verbosity=2, dnc=False):
@@ -254,7 +253,6 @@ class MarabouNetwork:
 
         outputDict = MarabouCore.solve(ipq, filename, timeout)
         outputValues = outputVars.reshape(-1).astype(np.float64)
-
         for i in range(len(outputValues)):
             outputValues[i] = (outputDict[0])[outputValues[i]]
         outputValues = outputValues.reshape(outputVars.shape)

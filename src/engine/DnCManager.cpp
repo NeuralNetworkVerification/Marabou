@@ -333,18 +333,7 @@ bool DnCManager::createEngines()
     InputQuery *baseInputQuery = new InputQuery();
 
     if ( _baseInputQuery )
-        {
-            for ( const auto & var : _baseInputQuery->getInputVariables() )
-                {
-                    std::cout << var << std::endl;
-                }
-            *baseInputQuery = *_baseInputQuery;
-            for ( const auto & var : baseInputQuery->getInputVariables() )
-                {
-                    std::cout << var << std::endl;
-                }
-
-        }
+        *baseInputQuery = *_baseInputQuery;
     else
     {
         // InputQuery is owned by engine
@@ -374,7 +363,6 @@ bool DnCManager::createEngines()
 void DnCManager::initialDivide( SubQueries &subQueries )
 {
     const List<unsigned> inputVariables( _baseEngine->getInputVariables() );
-
     std::unique_ptr<QueryDivider> queryDivider = nullptr;
     if ( _divideStrategy == DivideStrategy::LargestInterval )
     {
