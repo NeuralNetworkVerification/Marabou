@@ -200,7 +200,7 @@ add_custom_target(build-tests ALL)
 
 add_custom_target(check
       COMMAND ctest --output-on-failure -j${CTEST_NTHREADS} $$ARGS
-      DEPENDS build-tests)
+      DEPENDS build-tests build_input_parsers ${MARABOU_EXE})
 
 if (${RUN_UNIT_TEST})
     # make ctest verbose 

@@ -84,6 +84,14 @@ ctest -L unit
 On every build we run the unit tests, and on every pull request we run unit,
 system, regress0 and regress1.
 
+Another option to build and run all of the tests is: 
+```
+cd path/to/marabou/repo/folder
+mkdir build 
+cd build
+cmake ..
+make check -j PROC_NUM
+```
 ### Build Instructions for Windows using Visual Studio
 
 First, install Visual Studio 2017 or later and select the "Desktop development with C++" workload. 
