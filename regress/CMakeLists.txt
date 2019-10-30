@@ -6,9 +6,9 @@ macro(marabou_add_regress_test level net_file property_file result arguments
     get_filename_component(net_name ${net_file} NAME)
     get_filename_component(prop_name ${property_file} NAME)
     set(test_name "${net_name}%${prop_name}%${arguments}")
-    add_test(${test_name}
-            ${run_regress_script}
-            ${CMAKE_BINARY_DIR}/${MARABOU_EXE}
+    add_test("${test_name}"
+            ${PYTHON_EXECUTABLE} ${run_regress_script}
+                ${MARABOU_EXE_PATH}
                 ${net_file}
                 ${property_file}
                 ${result}
@@ -43,13 +43,15 @@ macro(marabou_add_acasxu_dnc_test level net_file prop_num result)
 endmacro()
 
             
+
+message(${MPS_PARSER_PATH})
 macro(marabou_add_regress_mps_test level net_file result arguments
          test_properties)
     get_filename_component(net_name ${net_file} NAME)
     set(test_name "${net_name}")
     add_test(${test_name}
-            ${run_regress_script}
-                ${CMAKE_BINARY_DIR}/${INPUT_PARSERS_DIR}/${MPS_PARSER}
+            ${PYTHON_EXECUTABLE} ${run_regress_script}
+                ${MPS_PARSER_PATH}
                 "${CMAKE_SOURCE_DIR}/resources/mps/${net_file}"
                 ${result}
                 ${arguments})

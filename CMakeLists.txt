@@ -28,6 +28,8 @@ set(COMMON_DIR "${SRC_DIR}/common")
 set(BASIS_DIR "${SRC_DIR}/basis_factorization")
 
 
+set(BIN_DIR "${CMAKE_BINARY_DIR}/bin")
+
 set(COMMON_REAL "${COMMON_DIR}/real")
 set(COMMON_MOCK "${COMMON_DIR}/mock")
 file(GLOB SRCS_COMMON_REAL "${COMMON_REAL}/*.cpp")
@@ -38,15 +40,20 @@ set(ENGINE_MOCK "${ENGINE_DIR}/mock")
 file(GLOB SRCS_ENGINE_REAL "${ENGINE_REAL}/*.cpp")
 file(GLOB SRCS_ENGINE_MOCK "${ENGINE_MOCK}/*.cpp")
 
-set(MPS_PARSER mps.elf)
-set(ACAS_PARSER acas.elf)
-set(BERKELEY_PARSER berkeley.elf)
+set(MPS_PARSER mps)
+set(ACAS_PARSER acas)
+set(BERKELEY_PARSER berkeley)
 set(INPUT_PARSERS_DIR input_parsers)
 
 # We build a static library that is the core of the project, the link it to the
 # API's (executable and python at the moment)
 add_library(${MARABOU_LIB} ${SRCS_COMMON_REAL} ${SRCS_ENGINE_REAL})
 add_executable(${MARABOU_EXE} "${ENGINE_DIR}/main.cpp")
+set(MARABOU_EXE_PATH "${BIN_DIR}/${MARABOU_EXE}")
+add_custom_command(TARGET ${MARABOU_EXE} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${MARABOU_EXE}> ${MARABOU_EXE_PATH} )
+
+set(MPS_PARSER_PATH "${BIN_DIR}/${MPS_PARSER}")
 
 # Default value false
 set(PYTHON32 FALSE)

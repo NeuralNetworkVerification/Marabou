@@ -121,16 +121,16 @@ def run_mpsparser(mps_binary, network_path, expected_result, arguments=None):
 
     return analyze_process_result(out, err, exit_status, expected_result)
 
-def run_folder_on_property(folder, property_file):
-    results = {}
-    for net in os.listdir(folder):
-        start = timer()
-        result = run_marabou("build/Marabou", os.path.join(folder, net), property_file, "SAT", DEFAULT_TIMEOUT)
-        end = timer()
-        results[net] = (end - start, result)
-        print("{}, time(sec): {}, SAT: {}".format(net, end - start, result))
+# def run_folder_on_property(folder, property_file):
+#     results = {}
+#     for net in os.listdir(folder):
+#         start = timer()
+#         result = run_marabou("build/Marabou", os.path.join(folder, net), property_file, "SAT", DEFAULT_TIMEOUT)
+#         end = timer()
+#         results[net] = (end - start, result)
+#         print("{}, time(sec): {}, SAT: {}".format(net, end - start, result))
 
-    return results
+#     return results
 
 def main():
     parser = argparse.ArgumentParser(
@@ -146,7 +146,7 @@ def main():
 
     args = parser.parse_args()
 
-    binary = os.path.abspath(args.marabou_binary)
+    binary = args.marabou_binary
     network_file = os.path.abspath(args.network_file)
     expected_result = args.expected_result
 

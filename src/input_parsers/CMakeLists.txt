@@ -25,6 +25,9 @@ macro(marabou_parser name dir)
 endmacro()
 
 marabou_parser(${MPS_PARSER} ${MPS_DIR})
+add_custom_command(TARGET ${MPS_PARSER} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${MPS_PARSER}> ${MPS_PARSER_PATH} )
+
 marabou_parser(${BERKELEY_PARSER} ${BERKELEY_DIR})
 marabou_parser(${ACAS_PARSER} ${ACAS_DIR})
 # set_target_properties(${MPS_PARSER} PROPERTIES RUNTIME_OUTPUT_DIRECTORY  ${PARSERS_OUT_DIR})
