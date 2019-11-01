@@ -128,7 +128,7 @@ struct MarabouOptions {
     unsigned _timeoutInSeconds;
     float _timeoutFactor;
     unsigned _verbosity;
-    float _dnc;
+    bool _dnc;
 };
 
 /* The default parameters here are just for readability, you should specify
