@@ -84,11 +84,6 @@ public:
     float getFloat( unsigned option ) const;
     String getString( unsigned option ) const;
 
-    void setBool( unsigned option, bool val );
-    void setInt( unsigned option, int val );
-    void setFloat( unsigned option, float val );
-    void setString( unsigned option, std::string val );
-
 private:
     /*
       Disable default constructor and copy constructor

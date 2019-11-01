@@ -92,26 +92,6 @@ String Options::getString( unsigned option ) const
     return String( _stringOptions.get( option ) );
 }
 
-void Options::setBool( unsigned option, bool val )
-{
-    _boolOptions[option] = val;
-}
-
-void Options::setInt( unsigned option, int val )
-{
-    _intOptions[option] = val;
-}
-
-void Options::setFloat( unsigned option, float val )
-{
-    _floatOptions[option] = val;
-}
-
-void Options::setString( unsigned option, std::string val )
-{
-    _stringOptions[option] = val;
-}
-
 //
 // Local Variables:
 // compile-command: "make -C ../.. "
