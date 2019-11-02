@@ -1,16 +1,12 @@
-#!/usr/bin/env python3
-
+import argparse
 import os
 import subprocess
 import sys
 import threading
-from timeit import default_timer as timer
-import json
-import argparse
-
 
 DEFAULT_TIMEOUT = 600
 EXPECTED_RESULT_OPTIONS = ('SAT', 'UNSAT')
+
 
 def run_process(args, cwd, timeout, s_input=None):
     """Runs a process with a timeout `timeout` in seconds. `args` are the
@@ -45,6 +41,7 @@ def run_process(args, cwd, timeout, s_input=None):
         err = err.decode()
     return (out.strip(), err.strip(), exit_status)
 
+
 def analyze_process_result(out, err, exit_status, expected_result):
     if exit_status != 0:
         print("exit status: {}".format(exit_status))
@@ -67,6 +64,7 @@ def analyze_process_result(out, err, exit_status, expected_result):
         else:
             print('expected SAT, but \'\\nSAT\' is not in the output. tail of the output:\n', out[-1500:])
             return False
+
 
 def run_marabou(marabou_binary, network_path, property_path, expected_result, timeout=DEFAULT_TIMEOUT, arguments=None):
     '''
@@ -105,7 +103,7 @@ def run_mpsparser(mps_binary, network_path, expected_result, arguments=None):
     :param expected_result: SAT / UNSAT
     :param arguments list of arguments to pass to Marabou (for example DnC mode)
     :return: True / False if test pass or not
-    ''' 
+    '''
     if not os.access(mps_binary, os.X_OK):
         sys.exit(
             '"{}" does not exist or is not executable'.format(mps_binary))
@@ -121,16 +119,6 @@ def run_mpsparser(mps_binary, network_path, expected_result, arguments=None):
 
     return analyze_process_result(out, err, exit_status, expected_result)
 
-# def run_folder_on_property(folder, property_file):
-#     results = {}
-#     for net in os.listdir(folder):
-#         start = timer()
-#         result = run_marabou("build/Marabou", os.path.join(folder, net), property_file, "SAT", DEFAULT_TIMEOUT)
-#         end = timer()
-#         results[net] = (end - start, result)
-#         print("{}, time(sec): {}, SAT: {}".format(net, end - start, result))
-
-#     return results
 
 def main():
     parser = argparse.ArgumentParser(
@@ -163,11 +151,9 @@ def main():
     else:
         raise NotImplementedError('supporting only nnet and mps file format')
 
+
 if __name__ == "__main__":
     if main():
         sys.exit(0)
     else:
         sys.exit(1)
-
-    # print(run_marabou("build/Marabou", "resources/nnet/twin/twin_ladder-5_inp-4_layers-5_width-10_margin.nnet",
-    #                   "resources/properties/builtin_property.txt", "UNSAT"))

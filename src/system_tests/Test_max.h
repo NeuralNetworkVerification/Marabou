@@ -188,10 +188,12 @@ public:
 
         TS_ASSERT( FloatUtils::areEqual( value_x3, value_x1f + value_x2f ) )
 
-        TS_ASSERT( !FloatUtils::lt( value_x0, 0 ) || FloatUtils::gt( value_x0, 1 ) ||
-             FloatUtils::lt( value_x1f, 0 ) ||
-             FloatUtils::lt( value_x3, 0.5 ) || FloatUtils::gt( value_x3, 1 ) ||
-			 FloatUtils::lt( value_x2f, 0.0 ) )
+        TS_ASSERT( !FloatUtils::lt( value_x0, 0 ) ) 
+        TS_ASSERT( !FloatUtils::gt( value_x0, 1 ) ) 
+        TS_ASSERT( !FloatUtils::lt( value_x1f, 0 ) )
+        TS_ASSERT( !FloatUtils::lt( value_x3, 0.5 ) )
+        TS_ASSERT( !FloatUtils::gt( value_x3, 1 ) )
+        TS_ASSERT( !FloatUtils::lt( value_x2f, 0.0 ) )
 
         double x2_relu = FloatUtils::max( value_x2b, FloatUtils::max( value_x0, value_x2f ) );
        	TS_ASSERT( FloatUtils::areEqual( x2_relu, value_x2b ) )
