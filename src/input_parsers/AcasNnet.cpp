@@ -30,7 +30,7 @@ AcasNnet *load_network(const char* filename)
 
     if (fstream == NULL)
     {
-        throw InputParserError( InputParserError::FILE_DOESNT_EXIST);
+        throw InputParserError( InputParserError::FILE_DOESNT_EXIST );
     }
 
     //Initialize variables

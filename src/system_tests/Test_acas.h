@@ -112,7 +112,6 @@ public:
         }
 
         TS_ASSERT( FloatUtils::lt( maxError, 0.00001 ) );
-
     }
 
     void test_acas_1_1_fixed_input()
@@ -158,8 +157,6 @@ public:
         TS_ASSERT( FloatUtils::lt( maxError, 0.00001 ) );
 
     }
-
-    
 };
 
 //

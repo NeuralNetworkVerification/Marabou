@@ -18,7 +18,6 @@
 #include "Engine.h"
 #include "InputQuery.h"
 
-
 class LpTestSuite : public CxxTest::TestSuite
 {
 public:

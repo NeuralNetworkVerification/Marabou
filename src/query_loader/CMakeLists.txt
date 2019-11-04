@@ -9,7 +9,9 @@ target_include_directories(${MARABOU_TEST_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DI
 
 set (QUERY_LOADER_TESTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tests")
 macro(query_loader_add_unit_test name)
-    marabou_add_test(${QUERY_LOADER_TESTS_DIR}/Test_${name} query_loader FALSE FALSE "unit")
+    set(USE_MOCK_COMMON FALSE)
+    set(USE_MOCK_ENGINE FALSE)
+    marabou_add_test(${QUERY_LOADER_TESTS_DIR}/Test_${name} query_loader USE_MOCK_COMMON USE_MOCK_ENGINE "unit")
 endmacro()
 
 query_loader_add_unit_test(QueryLoader)

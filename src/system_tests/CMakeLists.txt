@@ -1,6 +1,9 @@
 set (SYSTEM_TESTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 macro(add_system_test name)
-    marabou_add_test(${SYSTEM_TESTS_DIR}/Test_${name} lp TRUE TRUE "system")
+    set(USE_MOCK_COMMON TRUE)
+    set(USE_MOCK_ENGINE TRUE)
+    marabou_add_test(${SYSTEM_TESTS_DIR}/Test_${name} lp USE_MOCK_COMMON
+        USE_MOCK_ENGINE "system")
 endmacro()
 
 add_system_test(lp)

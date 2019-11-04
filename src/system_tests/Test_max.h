@@ -86,8 +86,8 @@ public:
         equation3.setScalar( 0 );
         inputQuery.addEquation( equation3 );
 
-		MaxConstraint *max1 = new MaxConstraint( 5, Set<unsigned>( { 0, 2, 3 } ) );
-		MaxConstraint *max2 = new MaxConstraint( 3, Set<unsigned>( { 0, 4 } ) );
+        MaxConstraint *max1 = new MaxConstraint( 5, Set<unsigned>( { 0, 2, 3 } ) );
+        MaxConstraint *max2 = new MaxConstraint( 3, Set<unsigned>( { 0, 4 } ) );
 
 		inputQuery.addPiecewiseLinearConstraint( max1 );
 		inputQuery.addPiecewiseLinearConstraint( max2 );
