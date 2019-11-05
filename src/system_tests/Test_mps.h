@@ -44,7 +44,7 @@ public:
         Engine engine;
         if ( !engine.processInputQuery( inputQuery ) )
         {
-            // got infeasible in preprocess stage
+            // Got infeasible in preprocess stage
             TS_ASSERT( 1 );
         }
         else {
