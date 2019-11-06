@@ -173,15 +173,7 @@ class MarabouNetwork:
         for u in self.upperBounds:
             assert u < self.numVars
             ipq.setUpperBound(u, self.upperBounds[u])
-
-        inputVarsFlattened = (np.array(self.inputVars).reshape(-1))
-        outputVarsFlattened = (np.array(self.outputVars).reshape(-1))
-
-        for i, var in enumerate(inputVarsFlattened):
-            ipq.markInputVariable(i, var)
-        for i, var in enumerate(outputVarsFlattened):
-            ipq.markOutputVariable(i, var)
-
+            
         return ipq
 
     def solve(self, filename="", verbose=True, options=None):
