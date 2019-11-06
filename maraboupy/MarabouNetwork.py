@@ -174,9 +174,12 @@ class MarabouNetwork:
             assert u < self.numVars
             ipq.setUpperBound(u, self.upperBounds[u])
 
-        for i, var in enumerate(self.inputVars[0]):
+        inputVarsFlattened = (np.array(self.inputVars).reshape(-1))
+        outputVarsFlattened = (np.array(self.outputVars).reshape(-1))
+
+        for i, var in enumerate(inputVarsFlattened):
             ipq.markInputVariable(i, var)
-        for i, var in enumerate(self.outputVars[0]):
+        for i, var in enumerate(outputVarsFlattened):
             ipq.markOutputVariable(i, var)
 
         return ipq
