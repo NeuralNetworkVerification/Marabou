@@ -29,6 +29,17 @@ InputQuery::InputQuery()
 InputQuery::~InputQuery()
 {
     freeConstraintsIfNeeded();
+    if ( _networkLevelReasoner )
+    {
+        delete _networkLevelReasoner;
+        _networkLevelReasoner = NULL;
+    }
+
+    if ( _sbt )
+    {
+        delete _sbt;
+        _sbt = NULL;
+    }
 }
 
 void InputQuery::setNumberOfVariables( unsigned numberOfVariables )

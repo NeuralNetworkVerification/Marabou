@@ -32,7 +32,9 @@
 #include <string.h>
 
 Tableau::Tableau()
-    : _A( NULL )
+    : _n ( 0 )
+    , _m ( 0 )
+    , _A( NULL )
     , _sparseColumnsOfA( NULL )
     , _sparseRowsOfA( NULL )
     , _denseA( NULL )

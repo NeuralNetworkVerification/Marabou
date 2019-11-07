@@ -76,10 +76,21 @@ cmake --build . -j PROC_NUM
 The compiled binary will be in the *build* directory, named _Marabou_
 
 To run tests we use [ctest](https://cmake.org/cmake/help/v3.15/manual/ctest.1.html).
-The tests have labels according to level (unit/regress0/regress1...), and the code they are testing (engine/common etc...).  
+The tests have labels according to level (unit/system/regress0/regress1...), and the code they are testing (engine/common etc...).  
 For example to run all unit tests execute in the build directory:
 ```
 ctest -L unit
+```
+On every build we run the unit tests, and on every pull request we run unit,
+system, regress0 and regress1.
+
+Another option to build and run all of the tests is: 
+```
+cd path/to/marabou/repo/folder
+mkdir build 
+cd build
+cmake ..
+make check -j PROC_NUM
 ```
 ### Build Instructions for Windows using Visual Studio
 
@@ -175,6 +186,20 @@ So to solve a problem in DNC mode with 4 initial splits and initial timeout of 5
 ```
 build/Marabou resources/nnet/acasxu/ACASXU_experimental_v2a_2_7.nnet resources/properties/acas_property_3.txt --dnc --initial-divides=4 --initial-timeout=5 --num-online-divides=4 --timeout-factor=1.5 --num-workers=4
 ```
+
+### Tests
+We have three types of tests:  
+* unit tests - test specific small components, the tests are located alongside the code in a _tests_ folder (for example: _src/engine/tests_), to add a new set of tests, add a file named *Test_FILENAME* (where *FILENAME* is what you want to test), and add it to the CMakeLists.txt file (for example src/engine/CMakeLists.txt)
+* system tests - test an end to end use case but still have access to internal functionality. Those tests are located in _src/system_tests_. To add new set of tests create a file named *Test_FILENAME*, and add it also to _src/system_tests/CMakeLists.txt_.
+* regression tests - test end to end functionality thorugh the API, each test is defined by:  
+  * network_file - description of the "neural network" supporting nnet and mps formats (using the extension to decdie on the format)  
+  * property_file - optional, constraint on the input and output variables  
+  * expected_result - SAT/UNSAT  
+
+The tests are divided into 5 levels to allow variability in running time, to add a new regression tests: 
+  * add the description of the network and property to the _resources_ sub-folder 
+  * add the test to: _regress/regressLEVEL/CMakeLists.txt_ (where LEVEL is within 0-5) 
+In each build we run unit_tests and system_tests, on pull request we run regression 0 & 1, in the future we will run other levels of regression weekly / monthly. 
 
 Acknowledgments
 -----------------------------------------------------------------------------
