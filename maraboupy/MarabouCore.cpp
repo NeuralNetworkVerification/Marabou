@@ -233,8 +233,6 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def("getNumberOfVariables", &InputQuery::getNumberOfVariables)
         .def("getNumInputVariables", &InputQuery::getNumInputVariables)
         .def("getNumOutputVariables", &InputQuery::getNumOutputVariables)
-        .def("markInputVariable", &InputQuery::markInputVariable)
-        .def("markOutputVariable", &InputQuery::markOutputVariable)
         .def("inputVariableByIndex", &InputQuery::inputVariableByIndex)
         .def("markInputVariable", &InputQuery::markInputVariable)
         .def("markOutputVariable", &InputQuery::markOutputVariable)
