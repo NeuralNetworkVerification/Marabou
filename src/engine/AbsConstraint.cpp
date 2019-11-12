@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 
 #include "AbsConstraint.h"
 #include "ITableau.h"
@@ -385,11 +387,16 @@ void AbsConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
 {
     if (! _lowerBounds.exists( _f ))
     {
+        printf("index:%d \n",_f);
         tightenings.append( Tightening( _f, 0.0, Tightening::LB) );
+        printf("index:%d, %d \n",_f, _lowerBounds.exists( _f ));
     }
 
+    printf("index:%d , the bound: %d, %d, %d,%d,",_f, _lowerBounds.exists( _b ),  _lowerBounds.exists( _f ),
+          _upperBounds.exists( _b ), _upperBounds.exists( _f ));
     ASSERT( _lowerBounds.exists( _b ) && _lowerBounds.exists( _f ) &&
             _upperBounds.exists( _b ) && _upperBounds.exists( _f ) );
+
 
 
     // Upper bounds
