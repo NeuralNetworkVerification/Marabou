@@ -29,6 +29,7 @@
 #include "max_relu_feasible_1.h"
 #include "relu_feasible_1.h"
 #include "relu_feasible_2.h"
+#include "abs_feasible_2.h"
 
 void lps()
 {
@@ -63,6 +64,15 @@ void relus()
     acas_1_1_no_constraints.run();
 }
 
+
+void abs()
+{
+    printTitle( "Abs / Sat" );
+    Abs_Feasible_2 rf2;
+    rf2.run();
+}
+
+
 void max()
 {
     printTitle( "Maxes / Sat" );
@@ -86,6 +96,8 @@ int main()
 {
     try
     {
+        abs();
+
         lps();
 
     	relus();
