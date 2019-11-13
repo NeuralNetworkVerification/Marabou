@@ -21,10 +21,25 @@
 #include "MString.h"
 
 #include <cfloat>
+#include <math.h>
 
 class FloatUtils
 {
 public:
+    static bool areEqual( double x, double y, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
+    static String doubleToString( double x,
+                                  unsigned precision = GlobalConfiguration::DEFAULT_DOUBLE_TO_STRING_PRECISION );
+
+    static bool isNan( double x );
+    /* { */
+    /*     return isnan( x ); */
+    /* } */
+
+    static bool isInf( double x );
+    /* { */
+    /*     return isinf( x ); */
+    /* } */
+
     static bool isZero( double x, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS )
     {
         ASSERT( epsilon > 0 ); 
@@ -112,19 +127,6 @@ public:
         return !isNan( x ) && !isInf( x );
     }
 
-    static bool isNan( double x )
-    {
-        return isnan( x );
-    }
-
-    static bool isInf( double x )
-    {
-        return isinf( x );
-    }
-
-    static bool areEqual( double x, double y, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
-    static String doubleToString( double x,
-                                  unsigned precision = GlobalConfiguration::DEFAULT_DOUBLE_TO_STRING_PRECISION );
 };
 
 #endif // __FloatUtils_h__

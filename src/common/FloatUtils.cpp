@@ -15,7 +15,6 @@
 
 #include "FloatUtils.h"
 #include <iomanip>
-#include <math.h>
 #include <sstream>
 
 // https://randomascii.wordpress.com/2012/02/25/comparing-floating-point-numbers-2012-edition/
@@ -118,15 +117,15 @@ String FloatUtils::doubleToString( double x, unsigned precision )
 /*     return !isNan( x ) && !isInf( x ); */
 /* } */
 
-/* bool FloatUtils::isNan( double x ) */
-/* { */
-/*     return isnan( x ); */
-/* } */
+bool FloatUtils::isNan( double x )
+{
+    return isnan( x );
+}
 
-/* bool FloatUtils::isInf( double x ) */
-/* { */
-/*     return isinf( x ); */
-/* } */
+bool FloatUtils::isInf( double x )
+{
+    return isinf( x );
+}
 
 //
 // Local Variables:
