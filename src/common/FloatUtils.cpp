@@ -39,65 +39,65 @@ bool FloatUtils::areEqual( double x, double y, double epsilon )
     return false;
 }
 
-double FloatUtils::abs( double x )
-{
-    return fabs( x );
-}
+/* double FloatUtils::abs( double x ) */
+/* { */
+/*     return fabs( x ); */
+/* } */
 
-bool FloatUtils::areDisequal( double x, double y, double epsilon )
-{
-    return !areEqual( x, y, epsilon );
-}
+/* bool FloatUtils::areDisequal( double x, double y, double epsilon ) */
+/* { */
+/*     return !areEqual( x, y, epsilon ); */
+/* } */
 
-double FloatUtils::roundToZero( double x, double epsilon )
-{
-    return isZero( x, epsilon ) ? 0.0 : x;
-}
+/* double FloatUtils::roundToZero( double x, double epsilon ) */
+/* { */
+/*     return isZero( x, epsilon ) ? 0.0 : x; */
+/* } */
 
-bool FloatUtils::isFinite( double x )
-{
-    return ( x != infinity() ) && ( x != negativeInfinity() );
-}
+/* bool FloatUtils::isFinite( double x ) */
+/* { */
+/*     return ( x != infinity() ) && ( x != negativeInfinity() ); */
+/* } */
 
-bool FloatUtils::gt( double x, double y, double epsilon )
-{
-    return isPositive( x - y, epsilon );
-}
+/* bool FloatUtils::gt( double x, double y, double epsilon ) */
+/* { */
+/*     return isPositive( x - y, epsilon ); */
+/* } */
 
-bool FloatUtils::gte( double x, double y, double epsilon )
-{
-    return !isNegative( x - y, epsilon );
-}
+/* bool FloatUtils::gte( double x, double y, double epsilon ) */
+/* { */
+/*     return !isNegative( x - y, epsilon ); */
+/* } */
 
-bool FloatUtils::lt( double x, double y, double epsilon )
-{
-    return gt( y, x, epsilon );
-}
+/* bool FloatUtils::lt( double x, double y, double epsilon ) */
+/* { */
+/*     return gt( y, x, epsilon ); */
+/* } */
 
-bool FloatUtils::lte( double x, double y, double epsilon )
-{
-    return gte( y, x, epsilon );
-}
+/* bool FloatUtils::lte( double x, double y, double epsilon ) */
+/* { */
+/*     return gte( y, x, epsilon ); */
+/* } */
 
-double FloatUtils::min( double x, double y, double epsilon )
-{
-    return lt( x, y, epsilon ) ? x : y;
-}
+/* double FloatUtils::min( double x, double y, double epsilon ) */
+/* { */
+/*     return lt( x, y, epsilon ) ? x : y; */
+/* } */
 
-double FloatUtils::max( double x, double y, double epsilon )
-{
-    return gt( x, y, epsilon ) ? x : y;
-}
+/* double FloatUtils::max( double x, double y, double epsilon ) */
+/* { */
+/*     return gt( x, y, epsilon ) ? x : y; */
+/* } */
 
-double FloatUtils::infinity()
-{
-    return DBL_MAX;
-}
+/* double FloatUtils::infinity() */
+/* { */
+/*     return DBL_MAX; */
+/* } */
 
-double FloatUtils::negativeInfinity()
-{
-    return -DBL_MAX;
-}
+/* double FloatUtils::negativeInfinity() */
+/* { */
+/*     return -DBL_MAX; */
+/* } */
 
 String FloatUtils::doubleToString( double x, unsigned precision )
 {
@@ -113,20 +113,20 @@ String FloatUtils::doubleToString( double x, unsigned precision )
     return str;
 }
 
-bool FloatUtils::wellFormed( double x )
-{
-    return !isNan( x ) && !isInf( x );
-}
+/* bool FloatUtils::wellFormed( double x ) */
+/* { */
+/*     return !isNan( x ) && !isInf( x ); */
+/* } */
 
-bool FloatUtils::isNan( double x )
-{
-    return isnan( x );
-}
+/* bool FloatUtils::isNan( double x ) */
+/* { */
+/*     return isnan( x ); */
+/* } */
 
-bool FloatUtils::isInf( double x )
-{
-    return isinf( x );
-}
+/* bool FloatUtils::isInf( double x ) */
+/* { */
+/*     return isinf( x ); */
+/* } */
 
 //
 // Local Variables:
