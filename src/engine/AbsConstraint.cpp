@@ -81,7 +81,7 @@ void AbsConstraint::notifyLowerBound( unsigned variable, double bound)
     {
         _lowerBounds[variable] = 0.0;
     }
-    if ((variable == _f) && FloatUtils::isNegative( bound ) )
+    if ((variable == _f) && !FloatUtils::isPositive( bound ) )
     {
         return;
     }
