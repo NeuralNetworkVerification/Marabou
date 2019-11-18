@@ -82,7 +82,8 @@ private:
     /*
       Create and run a DnCWorker
     */
-    static void dncSolve( WorkerQueue *workload, std::shared_ptr<IEngine> engine,
+    static void dncSolve( WorkerQueue *workload, InputQuery *inputQuery,
+                          std::shared_ptr<Engine> engine,
                           std::atomic_uint &numUnsolvedSubQueries,
                           std::atomic_bool &shouldQuitSolving,
                           unsigned threadId, unsigned onlineDivides,

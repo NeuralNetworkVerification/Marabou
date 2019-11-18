@@ -33,7 +33,8 @@
 #include <cmath>
 #include <thread>
 
-void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<IEngine> engine,
+void DnCManager::dncSolve( WorkerQueue *workload, InputQuery *inputQuery,
+                           std::shared_ptr<Engine> engine,
                            std::atomic_uint &numUnsolvedSubQueries,
                            std::atomic_bool &shouldQuitSolving,
                            unsigned threadId, unsigned onlineDivides,
@@ -43,6 +44,7 @@ void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<IEngine> engin
     getCPUId( cpuId );
     log( Stringf( "Thread #%u on CPU %u", threadId, cpuId ) );
 
+    engine->processInputQuery( *inputQuery );
     DnCWorker worker( workload, engine, std::ref( numUnsolvedSubQueries ),
                       std::ref( shouldQuitSolving ), threadId, onlineDivides,
                       timeoutFactor, divideStrategy );
@@ -163,7 +165,9 @@ void DnCManager::solve( unsigned timeoutInSeconds )
     std::list<std::thread> threads;
     for ( unsigned threadId = 0; threadId < _numWorkers; ++threadId )
     {
-        threads.push_back( std::thread( dncSolve, workload,
+        InputQuery *inputQuery = new InputQuery();
+        *inputQuery = *_baseInputQuery;
+        threads.push_back( std::thread( dncSolve, workload, inputQuery,
                                         _engines[ threadId ],
                                         std::ref( _numUnsolvedSubQueries ),
                                         std::ref( shouldQuitSolving ),
@@ -331,20 +335,17 @@ bool DnCManager::createEngines()
     // Create the base engine
     _baseEngine = std::make_shared<Engine>();
 
-    InputQuery *baseInputQuery = new InputQuery();
-
-    if ( _baseInputQuery )
-        *baseInputQuery = *_baseInputQuery;
-    else
+    if ( !_baseInputQuery )
     {
+        _baseInputQuery = new InputQuery();
         // InputQuery is owned by engine
         AcasParser acasParser( _networkFilePath );
-        acasParser.generateQuery( *baseInputQuery );
+        acasParser.generateQuery( *_baseInputQuery );
         if ( _propertyFilePath != "" )
-            PropertyParser().parse( _propertyFilePath, *baseInputQuery );
+            PropertyParser().parse( _propertyFilePath, *_baseInputQuery );
     }
 
-    if ( !_baseEngine->processInputQuery( *baseInputQuery ) )
+    if ( !_baseEngine->processInputQuery( *_baseInputQuery ) )
         // Solved by preprocessing, we are done!
         return false;
 
@@ -352,9 +353,6 @@ bool DnCManager::createEngines()
     for ( unsigned i = 0; i < _numWorkers; ++i )
     {
         auto engine = std::make_shared<Engine>( _verbosity );
-        InputQuery *inputQuery = new InputQuery();
-        *inputQuery = *baseInputQuery;
-        engine->processInputQuery( *inputQuery );
         _engines.append( engine );
     }
 
