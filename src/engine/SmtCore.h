@@ -103,6 +103,11 @@ public:
     bool checkSkewFromDebuggingSolution();
     bool splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split, String &error ) const;
 
+    /*
+      Valid splits that were implied by level 0 of the stack.
+    */
+    List<PiecewiseLinearCaseSplit> _impliedValidSplitsAtRoot;
+
 private:
     /*
       A stack entry consists of the engine state before the split,
@@ -117,11 +122,6 @@ private:
         List<PiecewiseLinearCaseSplit> _alternativeSplits;
         EngineState *_engineState;
     };
-
-    /*
-      Valid splits that were implied by level 0 of the stack.
-    */
-    List<PiecewiseLinearCaseSplit> _impliedValidSplitsAtRoot;
 
     /*
       Collect and print various statistics.

@@ -88,7 +88,7 @@ void Marabou::prepareInputQuery()
 
 void Marabou::solveQuery()
 {
-    if ( _engine.processInputQuery( _inputQuery ) )
+    if ( _engine.processInputQuery( _inputQuery ) && _engine.lookAheadPropagate() )
         _engine.solve( Options::get()->getInt( Options::TIMEOUT ) );
 
     if ( _engine.getExitCode() == Engine::SAT )

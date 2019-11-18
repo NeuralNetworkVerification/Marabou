@@ -141,6 +141,9 @@ public:
                        Map <PiecewiseLinearConstraint *, double>
                        &runtimeEstimates );
 
+    bool lookAheadPropagate();
+
+    bool quickSolve();
 
  private:
     enum BasisRestorationRequired {

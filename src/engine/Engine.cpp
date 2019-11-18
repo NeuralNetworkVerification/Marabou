@@ -28,6 +28,8 @@
 #include "TableauRow.h"
 #include "TimeUtils.h"
 
+#include "Vector.h"
+
 Engine::Engine( unsigned verbosity )
     : _rowBoundTightener( *_tableau )
     , _symbolicBoundTightener( NULL )
@@ -85,6 +87,143 @@ void Engine::adjustWorkMemorySize()
     _work = new double[_tableau->getM()];
     if ( !_work )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "Engine::work" );
+}
+
+bool Engine::lookAheadPropagate()
+{
+    unsigned numActive = 0;
+    for ( const auto &plConstraint : _plConstraints )
+    {
+        if ( plConstraint->isActive() && !plConstraint->phaseFixed() )
+            ++numActive;
+    }
+    std::cout << numActive  << " Active Constraints\n\n" << std::endl;
+    while ( true )
+    {
+        bool progressMade = false;
+        for ( const auto &plConstraint : _plConstraints )
+        {
+            if ( plConstraint->isActive() && !plConstraint->phaseFixed() )
+            {
+                String s;
+                plConstraint->dump( s );
+                std::cout << s.ascii() << std::endl;
+
+                auto caseSplits = plConstraint->getCaseSplits();
+                EngineState *stateBeforeSplit = new EngineState();
+                storeState( *stateBeforeSplit, true );
+                bool first = true;
+                List<PiecewiseLinearCaseSplit> commonSplits;
+                Vector<PiecewiseLinearCaseSplit> feasibleSplits;
+                Vector<List<PiecewiseLinearCaseSplit>> feasibleImpliedSplits;
+                for ( const auto &caseSplit : caseSplits )
+                {
+                    applySplit( caseSplit );
+                    if ( quickSolve() )
+                    {
+                        feasibleSplits.append( caseSplit );
+                        List<PiecewiseLinearCaseSplit> temp = _smtCore._impliedValidSplitsAtRoot;
+                        feasibleImpliedSplits.append( temp );
+                    }
+                    if ( first )
+                    {
+                        commonSplits = _smtCore._impliedValidSplitsAtRoot;
+                        first = false;
+                    } else
+                    {
+                        List<PiecewiseLinearCaseSplit> newCommonSplits;
+                        for ( const auto &commonSplit : commonSplits )
+                        {
+                            if ( _smtCore._impliedValidSplitsAtRoot.exists( commonSplit ) )
+                                newCommonSplits.append( commonSplit );
+                        }
+                        commonSplits = newCommonSplits;
+                    }
+                    reset();
+                    restoreState( *stateBeforeSplit );
+                }
+                // at this point, we check if there is any common split that we can directly apply
+                // and see if the plConstraint can be fixed
+                if ( feasibleSplits.size() == 0 )
+                {
+                    _exitCode = IEngine::UNSAT;
+                    return false;
+                }
+                else if ( feasibleSplits.size() == 1 )
+                {
+                    std::cout << "1: Fixed " << 1 + feasibleImpliedSplits[0].size() << " ReLUs" << std::endl;
+                    progressMade = true;
+                    applySplit( feasibleSplits[0] );
+                    for ( const auto &feasibleImpliedSplit : feasibleImpliedSplits[0] )
+                        applySplit( feasibleImpliedSplit );
+                }
+                else
+                {
+                    if ( !commonSplits.empty() )
+                        std::cout << "2: Fixed " << commonSplits.size() << " ReLUs" << std::endl;
+                    for ( const auto &commonSplit : commonSplits )
+                        applySplit( commonSplit );
+                }
+                while ( applyAllValidConstraintCaseSplits() )
+                {
+                    std::cout << "Performing SBT" << std::endl;
+                    performSymbolicBoundTightening();
+                }
+            }
+        }
+        unsigned numActive = 0;
+
+        for ( const auto &plConstraint : _plConstraints )
+            {
+                if ( plConstraint->isActive() && !plConstraint->phaseFixed() )
+                    ++numActive;
+            }
+        std::cout << numActive  << " Active Constraints\n\n" << std::endl;
+        if ( !progressMade )
+            break;
+    }
+    reset();
+    return true;
+}
+
+bool Engine::quickSolve()
+{
+    try
+    {
+        if ( _tableau->basisMatrixAvailable() )
+            explicitBasisBoundTightening();
+
+        tightenBoundsOnConstraintMatrix();
+        applyAllBoundTightenings();
+
+        while ( applyAllValidConstraintCaseSplits() )
+            performSymbolicBoundTightening();
+
+        if ( !_tableau->allBoundsValid() )
+        {
+            // Some variable bounds are invalid, so the query is unsat
+            throw InfeasibleQueryException();
+        }
+
+        if ( allVarsWithinBounds() )
+        {
+            return true;
+        }
+
+
+        // We have out-of-bounds variables.
+        performSimplexStep();
+        return true;
+    }
+    catch ( const InfeasibleQueryException & )
+    {
+        std::cout << "UNSAT!" << std::endl;
+        return false;
+    }
+    catch ( ... )
+    {
+        return true;
+    }
 }
 
 bool Engine::solve( unsigned timeoutInSeconds )
@@ -184,7 +323,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
                 do
                 {
-                    performSymbolicBoundTightening();
+                    //performSymbolicBoundTightening();
                 }
                 while ( applyAllValidConstraintCaseSplits() );
                 continue;
@@ -236,7 +375,8 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 checkBoundCompliancyWithDebugSolution();
 
                 while ( applyAllValidConstraintCaseSplits() )
-                    performSymbolicBoundTightening();
+                    continue;
+                    //performSymbolicBoundTightening();
 
                 continue;
             }
