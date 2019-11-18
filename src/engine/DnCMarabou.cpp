@@ -72,11 +72,13 @@ void DnCMarabou::run()
     unsigned verbosity = Options::get()->getInt( Options::VERBOSITY );
     unsigned timeoutInSeconds = Options::get()->getInt( Options::TIMEOUT );
     float timeoutFactor = Options::get()->getFloat( Options::TIMEOUT_FACTOR );
+    DivideStrategy divideStrategy = setDivideStrategyFromOptions
+        ( Options::get()->getString( Options::DIVIDE_STRATEGY ) );
 
     _dncManager = std::unique_ptr<DnCManager>
       ( new DnCManager( numWorkers, initialDivides, initialTimeout,
                         onlineDivides, timeoutFactor,
-                        DivideStrategy::LargestInterval, networkFilePath,
+                        divideStrategy, networkFilePath,
                         propertyFilePath, verbosity ) );
 
     struct timespec start = TimeUtils::sampleMicro();
@@ -115,6 +117,19 @@ void DnCMarabou::displayResults( unsigned long long microSecondsElapsed ) const
 
         summaryFile.write( "\n" );
     }
+}
+
+DivideStrategy DnCMarabou::setDivideStrategyFromOptions( const String strategy )
+{
+    if ( strategy == "split-relu" )
+        return DivideStrategy::SplitRelu;
+    else if ( strategy == "largest-interval" )
+        return DivideStrategy::LargestInterval;
+    else
+        {
+            printf ("Unknown divide strategy, using default (SplitRelu).\n");
+            return DivideStrategy::SplitRelu;
+        }
 }
 
 //

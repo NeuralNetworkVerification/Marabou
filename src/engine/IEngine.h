@@ -17,6 +17,7 @@
 #define __IEngine_h__
 
 #include "List.h"
+#include "Map.h"
 
 #ifdef _WIN32
 #undef ERROR
@@ -25,6 +26,7 @@
 class EngineState;
 class Equation;
 class PiecewiseLinearCaseSplit;
+class PiecewiseLinearConstraint;
 
 class IEngine
 {
@@ -69,6 +71,12 @@ public:
     */
     virtual void reset() = 0;
     virtual List<unsigned> getInputVariables() const = 0;
+
+    virtual bool propagate() = 0;
+    virtual void getEstimates( Map <PiecewiseLinearConstraint *, double>
+                               &balanceEstimates,
+                               Map <PiecewiseLinearConstraint *, double>
+                               &runtimeEstimates ) = 0;
 };
 
 #endif // __IEngine_h__

@@ -19,6 +19,7 @@
 #include "IEngine.h"
 #include "List.h"
 #include "PiecewiseLinearCaseSplit.h"
+#include "PiecewiseLinearConstraint.h"
 
 class MockEngine : public IEngine
 {
@@ -142,6 +143,21 @@ public:
     {
         return _inputVariables;
     }
+
+    bool propagate()
+    {
+        return true;
+    }
+
+    void getEstimates( Map <PiecewiseLinearConstraint *, double>
+                       &balanceEstimates,
+                       Map <PiecewiseLinearConstraint *, double>
+                       &runtimeEstimates )
+    {
+        balanceEstimates.clear();
+        runtimeEstimates.clear();
+    }
+
 };
 
 #endif // __MockEngine_h__

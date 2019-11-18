@@ -65,6 +65,7 @@ void Options::initializeDefaultValues()
     _stringOptions[INPUT_FILE_PATH] = "";
     _stringOptions[PROPERTY_FILE_PATH] = "";
     _stringOptions[SUMMARY_FILE] = "";
+    _stringOptions[DIVIDE_STRATEGY] = "";
 }
 
 void Options::parseOptions( int argc, char **argv )

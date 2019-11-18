@@ -1924,6 +1924,65 @@ void Engine::checkOverallProgress()
     }
 }
 
+bool Engine::propagate()
+{
+    try
+    {
+        // Tighten any bounds
+        // and perform any valid case splits.
+        if ( _tableau->basisMatrixAvailable() )
+            explicitBasisBoundTightening();
+
+        tightenBoundsOnConstraintMatrix();
+        applyAllBoundTightenings();
+        return true;
+        }
+    catch ( const InfeasibleQueryException & )
+    {
+        return false;
+    }
+}
+
+void Engine::getEstimates( Map <PiecewiseLinearConstraint *, double>
+                           &balanceEstimates,
+                           Map <PiecewiseLinearConstraint *, double>
+                           &runtimeEstimates )
+{
+    for ( const auto &plConstraint : _plConstraints )
+    {
+        if ( plConstraint->isActive() && !plConstraint->phaseFixed() )
+        {
+            unsigned b = ( ( ReluConstraint * ) plConstraint )->getB();
+            double currentLb = _tableau->getLowerBound( b );
+            double currentUb = _tableau->getUpperBound( b );
+            double width = currentUb - currentLb;
+            double balance = abs( currentLb + currentUb )
+                / ( currentUb - currentLb );
+            balanceEstimates[plConstraint] = balance;
+            runtimeEstimates[plConstraint] = width;
+        }
+    }
+
+    Map<double, PiecewiseLinearConstraint *> temp1;
+    for ( const auto& entry : runtimeEstimates )
+        temp1[entry.second] = entry.first;
+    double index = 1;
+    for ( const auto& entry : temp1 )
+    {
+        runtimeEstimates[entry.second] = index++;
+    }
+
+    Map<double, PiecewiseLinearConstraint *> temp2;
+    for ( const auto& entry : balanceEstimates )
+        temp2[entry.second] = entry.first;
+    index = 1;
+    for ( const auto& entry : temp2 )
+    {
+        balanceEstimates[entry.second] = index++;
+    }
+    return;
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

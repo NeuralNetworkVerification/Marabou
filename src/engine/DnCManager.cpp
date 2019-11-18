@@ -25,6 +25,7 @@
 #include "PiecewiseLinearCaseSplit.h"
 #include "PropertyParser.h"
 #include "QueryDivider.h"
+#include "ReluDivider.h"
 #include "TimeUtils.h"
 #include "Vector.h"
 #include <atomic>
@@ -32,7 +33,7 @@
 #include <cmath>
 #include <thread>
 
-void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine,
+void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<IEngine> engine,
                            std::atomic_uint &numUnsolvedSubQueries,
                            std::atomic_bool &shouldQuitSolving,
                            unsigned threadId, unsigned onlineDivides,
@@ -399,7 +400,7 @@ void DnCManager::initialDivide( SubQueries &subQueries )
     {
         // Default
         queryDivider = std::unique_ptr<QueryDivider>
-            ( new LargestIntervalDivider( inputVariables ) );
+            ( new ReluDivider( _baseEngine ) );
     }
 
     queryDivider->createSubQueries( pow( 2, _initialDivides ), queryId,

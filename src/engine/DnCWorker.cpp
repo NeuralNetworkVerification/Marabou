@@ -22,6 +22,8 @@
 #include "MarabouError.h"
 #include "MStringf.h"
 #include "PiecewiseLinearCaseSplit.h"
+#include "QueryDivider.h"
+#include "ReluDivider.h"
 #include "SubQuery.h"
 
 #include <atomic>
@@ -52,12 +54,16 @@ DnCWorker::DnCWorker( WorkerQueue *workload, std::shared_ptr<IEngine> engine,
 void DnCWorker::setQueryDivider( DivideStrategy divideStrategy )
 {
     // For now, there is only one strategy
-    ASSERT( divideStrategy == DivideStrategy::LargestInterval );
     if ( divideStrategy == DivideStrategy::LargestInterval )
     {
         const List<unsigned> &inputVariables = _engine->getInputVariables();
         _queryDivider = std::unique_ptr<LargestIntervalDivider>
             ( new LargestIntervalDivider( inputVariables ) );
+    }
+    else
+    {
+        _queryDivider = std::unique_ptr<QueryDivider>
+            ( new ReluDivider( _engine ) );
     }
 }
 

@@ -135,7 +135,14 @@ public:
     void resetExitCode();
     void resetBoundTighteners();
 
-private:
+    bool propagate();
+    void getEstimates( Map <PiecewiseLinearConstraint *, double>
+                       &balanceEstimates,
+                       Map <PiecewiseLinearConstraint *, double>
+                       &runtimeEstimates );
+
+
+ private:
     enum BasisRestorationRequired {
         RESTORATION_NOT_NEEDED = 0,
         STRONG_RESTORATION_NEEDED = 1,

@@ -16,6 +16,7 @@
 #ifndef __DnCMarabou_h__
 #define __DnCMarabou_h__
 
+#include "DivideStrategy.h"
 #include "DnCManager.h"
 #include "Options.h"
 
@@ -36,6 +37,11 @@ private:
       Display the results
     */
     void displayResults( unsigned long long microSecondsElapsed ) const;
+
+    /*
+      Set the divide strategy according to the command line argument
+    */
+    DivideStrategy setDivideStrategyFromOptions( const String strategy );
 };
 
 #endif // __DnCMarabou_h__

@@ -20,7 +20,7 @@ enum DivideStrategy
 {
     ActivationVariance,
     LargestInterval,
-    ReluLookAhead,
+    SplitRelu,
 };
 
 #endif // __DivideStrategy_h__
