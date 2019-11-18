@@ -333,7 +333,7 @@ void DnCManager::printResult()
 bool DnCManager::createEngines()
 {
     // Create the base engine
-    _baseEngine = std::make_shared<Engine>();
+    _baseEngine = std::make_shared<Engine>( _verbosity );
 
     if ( !_baseInputQuery )
     {
