@@ -77,7 +77,7 @@ void AbsConstraint::notifyLowerBound( unsigned variable, double bound)
     //update the input variable bound
     if ( _lowerBounds.exists( variable ) && !FloatUtils::gt( bound, _lowerBounds[variable] ) )
         return;
-    if ((variable == _f) && FloatUtils::isZero( bound ) && !_lowerBounds.exists( variable ) )
+    if ((variable == _f) && !_lowerBounds.exists( variable ) )
     {
         _lowerBounds[variable] = 0.0;
     }
@@ -387,13 +387,13 @@ void AbsConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
 {
     if (! _lowerBounds.exists( _f ))
     {
-        printf("index:%d \n",_f);
+//        printf("index:%d \n",_f);
         tightenings.append( Tightening( _f, 0.0, Tightening::LB) );
-        printf("index:%d, %d \n",_f, _lowerBounds.exists( _f ));
+//        printf("index:%d, %d \n",_f, _lowerBounds.exists( _f ));
     }
 
-    printf("index:%d , the bound: %d, %d, %d,%d,",_f, _lowerBounds.exists( _b ),  _lowerBounds.exists( _f ),
-          _upperBounds.exists( _b ), _upperBounds.exists( _f ));
+//    printf("index:%d , the bound: %d, %d, %d,%d,",_f, _lowerBounds.exists( _b ),  _lowerBounds.exists( _f ),
+//          _upperBounds.exists( _b ), _upperBounds.exists( _f ));
     ASSERT( _lowerBounds.exists( _b ) && _lowerBounds.exists( _f ) &&
             _upperBounds.exists( _b ) && _upperBounds.exists( _f ) );
 
