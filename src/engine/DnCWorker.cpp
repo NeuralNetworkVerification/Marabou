@@ -107,6 +107,7 @@ void DnCWorker::popOneSubQueryAndSolve()
             // If TIMEOUT, split the current input region and add the
             // new subQueries to the current queue
             SubQueries subQueries;
+	    _engine->restoreState( *_initialState );
             _queryDivider->createSubQueries( pow( 2, _onlineDivides ),
                                              queryId, *split,
                                              (unsigned)timeoutInSeconds *
