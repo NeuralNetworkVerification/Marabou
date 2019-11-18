@@ -1956,8 +1956,8 @@ void Engine::getEstimates( Map <PiecewiseLinearConstraint *, double>
             double currentLb = _tableau->getLowerBound( b );
             double currentUb = _tableau->getUpperBound( b );
             double width = currentUb - currentLb;
-            double balance = abs( currentLb + currentUb )
-                / ( currentUb - currentLb );
+	    double sum = currentLb + currentUb;
+            double balance = ( sum > 0 ? sum : -sum ) / width;
             balanceEstimates[plConstraint] = balance;
             runtimeEstimates[plConstraint] = width;
         }
@@ -1968,18 +1968,13 @@ void Engine::getEstimates( Map <PiecewiseLinearConstraint *, double>
         temp1[entry.second] = entry.first;
     double index = 1;
     for ( const auto& entry : temp1 )
-    {
         runtimeEstimates[entry.second] = index++;
-    }
-
     Map<double, PiecewiseLinearConstraint *> temp2;
     for ( const auto& entry : balanceEstimates )
         temp2[entry.second] = entry.first;
     index = 1;
     for ( const auto& entry : temp2 )
-    {
         balanceEstimates[entry.second] = index++;
-    }
     return;
 }
 
