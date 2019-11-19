@@ -47,6 +47,20 @@ void SmtCore::freeMemory()
     _stack.clear();
 }
 
+void SmtCore::reportViolatedConstraintPrep( PiecewiseLinearConstraint *constraint )
+{
+    if ( !_constraintToViolationCount.exists( constraint ) )
+        _constraintToViolationCount[constraint] = 0;
+
+    ++_constraintToViolationCount[constraint];
+
+    if ( _constraintToViolationCount[constraint] >= 10 )
+        {
+            _needToSplit = true;
+            _constraintForSplitting = constraint;
+        }
+}
+
 void SmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
 {
     if ( !_constraintToViolationCount.exists( constraint ) )

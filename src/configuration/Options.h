@@ -34,6 +34,8 @@ public:
         // Should DNC mode be on or off
         DNC_MODE,
 
+        LOOK_AHEAD_PREPROCESSING,
+
         // Help flag
         HELP,
 

@@ -36,6 +36,8 @@ public:
     */
     void freeMemory();
 
+    void reportViolatedConstraintPrep( PiecewiseLinearConstraint *constraint );
+
     /*
       Inform the SMT core that a PL constraint is violated.
     */

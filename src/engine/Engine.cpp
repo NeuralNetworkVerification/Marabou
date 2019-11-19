@@ -31,7 +31,8 @@
 #include "Vector.h"
 
 Engine::Engine( unsigned verbosity )
-    : _rowBoundTightener( *_tableau )
+    : _exitCode( Engine::NOT_DONE )
+    , _rowBoundTightener( *_tableau )
     , _symbolicBoundTightener( NULL )
     , _smtCore( this )
     , _numPlConstraintsDisabledByValidSplits( 0 )
@@ -42,7 +43,6 @@ Engine::Engine( unsigned verbosity )
     , _basisRestorationPerformed( Engine::NO_RESTORATION_PERFORMED )
     , _costFunctionManager( _tableau )
     , _quitRequested( false )
-    , _exitCode( Engine::NOT_DONE )
     , _constraintBoundTightener( *_tableau )
     , _numVisitedStatesAtPreviousRestoration( 0 )
     , _networkLevelReasoner( NULL )
@@ -89,26 +89,31 @@ void Engine::adjustWorkMemorySize()
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "Engine::work" );
 }
 
-bool Engine::lookAheadPropagate()
+static void numberOfActive( const List<PiecewiseLinearConstraint *> &plConstraints )
 {
     unsigned numActive = 0;
-    for ( const auto &plConstraint : _plConstraints )
-    {
-        if ( plConstraint->isActive() && !plConstraint->phaseFixed() )
-            ++numActive;
-    }
-    std::cout << numActive  << " Active Constraints\n\n" << std::endl;
+    for ( const auto &plConstraint : plConstraints )
+        {
+            if ( plConstraint->isActive() && !plConstraint->phaseFixed() )
+                ++numActive;
+        }
+    std::cout << numActive  << " Active Constraints" << std::endl;
+}
+
+bool Engine::lookAheadPropagate( List<PiecewiseLinearCaseSplit> &allSplits )
+{
+    std::cout << "Start preprocessing" << std::endl;
+    numberOfActive( _plConstraints );
+    PiecewiseLinearConstraint *lastUpdated = NULL;
     while ( true )
     {
         bool progressMade = false;
         for ( const auto &plConstraint : _plConstraints )
         {
+            if ( plConstraint == lastUpdated )
+                break;
             if ( plConstraint->isActive() && !plConstraint->phaseFixed() )
             {
-                String s;
-                plConstraint->dump( s );
-                std::cout << s.ascii() << std::endl;
-
                 auto caseSplits = plConstraint->getCaseSplits();
                 EngineState *stateBeforeSplit = new EngineState();
                 storeState( *stateBeforeSplit, true );
@@ -119,7 +124,8 @@ bool Engine::lookAheadPropagate()
                 for ( const auto &caseSplit : caseSplits )
                 {
                     applySplit( caseSplit );
-                    if ( quickSolve() )
+                    quickSolve();
+                    if ( _exitCode != IEngine::UNSAT )
                     {
                         feasibleSplits.append( caseSplit );
                         List<PiecewiseLinearCaseSplit> temp = _smtCore._impliedValidSplitsAtRoot;
@@ -147,83 +153,198 @@ bool Engine::lookAheadPropagate()
                 if ( feasibleSplits.size() == 0 )
                 {
                     _exitCode = IEngine::UNSAT;
+                    std::cout << "Finished preprocessing early!" << std::endl;
                     return false;
                 }
                 else if ( feasibleSplits.size() == 1 )
                 {
-                    std::cout << "1: Fixed " << 1 + feasibleImpliedSplits[0].size() << " ReLUs" << std::endl;
+                    std::cout << "1: Fixed " << feasibleImpliedSplits[0].size() << " ReLUs" << std::endl;
                     progressMade = true;
+                    lastUpdated = plConstraint;
                     applySplit( feasibleSplits[0] );
+                    allSplits.append( feasibleSplits[0] );
                     for ( const auto &feasibleImpliedSplit : feasibleImpliedSplits[0] )
+                    {
                         applySplit( feasibleImpliedSplit );
+                        allSplits.append( feasibleSplits[0] );
+                    }
+                    numberOfActive( _plConstraints );
                 }
-                else
+                else if ( !commonSplits.empty() )
                 {
-                    if ( !commonSplits.empty() )
-                        std::cout << "2: Fixed " << commonSplits.size() << " ReLUs" << std::endl;
+                    std::cout << "2: Fixed " << commonSplits.size() << " ReLUs" << std::endl;
                     for ( const auto &commonSplit : commonSplits )
+                    {
                         applySplit( commonSplit );
+                        allSplits.append( feasibleSplits[0] );
+                    }
+                    numberOfActive( _plConstraints );
+                    progressMade = true;
+                    lastUpdated = plConstraint;
                 }
-                while ( applyAllValidConstraintCaseSplits() )
-                {
-                    std::cout << "Performing SBT" << std::endl;
-                    performSymbolicBoundTightening();
-                }
+                applyAllValidConstraintCaseSplits();
             }
         }
-        unsigned numActive = 0;
-
-        for ( const auto &plConstraint : _plConstraints )
-            {
-                if ( plConstraint->isActive() && !plConstraint->phaseFixed() )
-                    ++numActive;
-            }
-        std::cout << numActive  << " Active Constraints\n\n" << std::endl;
         if ( !progressMade )
             break;
+        do
+        {
+            std::cout << "Performing SBT" << std::endl;
+            performSymbolicBoundTightening();
+        } while ( applyAllValidConstraintCaseSplits() );
     }
-    reset();
+    std::cout << "Finished preprocessing" << std::endl;
     return true;
 }
 
-bool Engine::quickSolve()
+void Engine::quickSolve()
 {
-    try
+    while ( true )
     {
-        if ( _tableau->basisMatrixAvailable() )
-            explicitBasisBoundTightening();
-
-        tightenBoundsOnConstraintMatrix();
-        applyAllBoundTightenings();
-
-        while ( applyAllValidConstraintCaseSplits() )
-            performSymbolicBoundTightening();
-
-        if ( !_tableau->allBoundsValid() )
+        try
         {
-            // Some variable bounds are invalid, so the query is unsat
-            throw InfeasibleQueryException();
-        }
+            mainLoopStatistics( 0 );
 
-        if ( allVarsWithinBounds() )
+            // Check whether progress has been made recently
+            checkOverallProgress();
+
+            // If the basis has become malformed, we need to restore it
+            if ( basisRestorationNeeded() )
+            {
+                if ( _basisRestorationRequired == Engine::STRONG_RESTORATION_NEEDED )
+                {
+                    performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
+                    _basisRestorationPerformed = Engine::PERFORMED_STRONG_RESTORATION;
+                }
+                else
+                {
+                    performPrecisionRestoration( PrecisionRestorer::DO_NOT_RESTORE_BASICS );
+                    _basisRestorationPerformed = Engine::PERFORMED_WEAK_RESTORATION;
+                }
+
+                _numVisitedStatesAtPreviousRestoration = _statistics.getNumVisitedTreeStates();
+                _basisRestorationRequired = Engine::RESTORATION_NOT_NEEDED;
+                continue;
+            }
+
+            // Restoration is not required
+            _basisRestorationPerformed = Engine::NO_RESTORATION_PERFORMED;
+
+            // Possible restoration due to preceision degradation
+            if ( shouldCheckDegradation() && highDegradation() )
+            {
+                performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
+                continue;
+            }
+
+            if ( _tableau->basisMatrixAvailable() )
+                explicitBasisBoundTightening();
+
+            // Perform any SmtCore-initiated case splits
+            if ( _smtCore.needToSplit() )
+            {
+                applyAllValidConstraintCaseSplits();
+                return;
+            }
+
+            if ( !_tableau->allBoundsValid() )
+            {
+                // Some variable bounds are invalid, so the query is unsat
+                throw InfeasibleQueryException();
+            }
+
+            if ( allVarsWithinBounds() )
+            {
+                // The linear portion of the problem has been solved.
+                // Check the status of the PL constraints
+                collectViolatedPlConstraints();
+
+                // If all constraints are satisfied, we are possibly done
+                if ( allPlConstraintsHold() )
+                {
+                    if ( _tableau->getBasicAssignmentStatus() !=
+                         ITableau::BASIC_ASSIGNMENT_JUST_COMPUTED )
+                    {
+                        if ( _verbosity > 0 )
+                        {
+                            printf( "Before declaring SAT, recomputing...\n" );
+                        }
+                        // Make sure that the assignment is precise before declaring success
+                        _tableau->computeAssignment();
+                        continue;
+                    }
+                    if ( _verbosity > 0 )
+                    {
+                        printf( "\nEngine::solve: SAT assignment found\n" );
+                        _statistics.print();
+                    }
+                    _exitCode = Engine::SAT;
+                    return;
+                }
+
+                // We have violated piecewise-linear constraints.
+                // Select a violated constraint as the target
+                selectViolatedPlConstraint();
+                // Report the violated constraint to the SMT engine
+                _smtCore.reportViolatedConstraintPrep( _plConstraintToFix );
+                // Attempt to fix the constraint
+                fixViolatedPlConstraintIfPossible();
+
+                // Finally, take this opporunity to tighten any bounds
+                // and perform any valid case splits.
+                tightenBoundsOnConstraintMatrix();
+                applyAllBoundTightenings();
+                //applyAllValidConstraintCaseSplits();
+                while ( applyAllValidConstraintCaseSplits() )
+                    performSymbolicBoundTightening( false );
+
+                continue;
+            }
+
+            // We have out-of-bounds variables.
+            performSimplexStep();
+            continue;
+        }
+        catch ( const MalformedBasisException & )
         {
-            return true;
+            // Debug
+            printf( "MalformedBasisException caught!\n" );
+            //
+
+            if ( _basisRestorationPerformed == Engine::NO_RESTORATION_PERFORMED )
+            {
+                if ( _numVisitedStatesAtPreviousRestoration != _statistics.getNumVisitedTreeStates() )
+                {
+                    // We've tried a strong restoration before, and it didn't work. Do a weak restoration
+                    _basisRestorationRequired = Engine::WEAK_RESTORATION_NEEDED;
+                }
+                else
+                {
+                    _basisRestorationRequired = Engine::STRONG_RESTORATION_NEEDED;
+                }
+            }
+            else if ( _basisRestorationPerformed == Engine::PERFORMED_STRONG_RESTORATION )
+                _basisRestorationRequired = Engine::WEAK_RESTORATION_NEEDED;
+            else
+            {
+                printf( "Engine: Cannot restore tableau!\n" );
+                _exitCode = Engine::ERROR;
+                return;
+            }
         }
-
-
-        // We have out-of-bounds variables.
-        performSimplexStep();
-        return true;
+        catch ( const InfeasibleQueryException & )
+        {
+            _exitCode = Engine::UNSAT;
+            return;
+        }
+        catch ( ... )
+        {
+            _exitCode = Engine::ERROR;
+            printf( "Engine: Unknown error!\n" );
+            return;
+        }
     }
-    catch ( const InfeasibleQueryException & )
-    {
-        std::cout << "UNSAT!" << std::endl;
-        return false;
-    }
-    catch ( ... )
-    {
-        return true;
-    }
+    return;
 }
 
 bool Engine::solve( unsigned timeoutInSeconds )
@@ -236,8 +357,12 @@ bool Engine::solve( unsigned timeoutInSeconds )
     if ( _verbosity > 0 )
     {
         printf( "\nEngine::solve: Initial statistics\n" );
-        mainLoopStatistics();
+        mainLoopStatistics( 2 );
         printf( "\n---\n" );
+    }
+    else
+    {
+        mainLoopStatistics( 0 );
     }
 
     struct timespec mainLoopStart = TimeUtils::sampleMicro();
@@ -278,8 +403,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
         {
             DEBUG( _tableau->verifyInvariants() );
 
-            if ( _verbosity > 1 )
-                mainLoopStatistics();
+            mainLoopStatistics( _verbosity );
 
             // Check whether progress has been made recently
             checkOverallProgress();
@@ -323,7 +447,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
                 do
                 {
-                    //performSymbolicBoundTightening();
+                    performSymbolicBoundTightening( false );
                 }
                 while ( applyAllValidConstraintCaseSplits() );
                 continue;
@@ -375,8 +499,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 checkBoundCompliancyWithDebugSolution();
 
                 while ( applyAllValidConstraintCaseSplits() )
-                    continue;
-                    //performSymbolicBoundTightening();
+                    performSymbolicBoundTightening( false );
 
                 continue;
             }
@@ -436,7 +559,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
     }
 }
 
-void Engine::mainLoopStatistics()
+void Engine::mainLoopStatistics( unsigned verbosity )
 {
     struct timespec start = TimeUtils::sampleMicro();
 
@@ -450,7 +573,7 @@ void Engine::mainLoopStatistics()
     _statistics.setNumPlSMTSplits( _plConstraints.size() -
                                    activeConstraints - _numPlConstraintsDisabledByValidSplits );
 
-    if ( _statistics.getNumMainLoopIterations() % GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
+    if ( verbosity > 1 && _statistics.getNumMainLoopIterations() % GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
         _statistics.print();
 
     _statistics.incNumMainLoopIterations();
@@ -1851,9 +1974,10 @@ List<unsigned> Engine::getInputVariables() const
     return _preprocessedQuery.getInputVariables();
 }
 
-void Engine::performSymbolicBoundTightening()
+void Engine::performSymbolicBoundTightening( bool performSbt )
 {
-    if ( ( !GlobalConfiguration::USE_SYMBOLIC_BOUND_TIGHTENING ) ||
+    if ( ( !performSbt ) ||
+         ( !GlobalConfiguration::USE_SYMBOLIC_BOUND_TIGHTENING ) ||
          ( !_symbolicBoundTightener ) )
         return;
 

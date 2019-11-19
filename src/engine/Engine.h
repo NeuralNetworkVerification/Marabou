@@ -141,9 +141,14 @@ public:
                        Map <PiecewiseLinearConstraint *, double>
                        &runtimeEstimates );
 
-    bool lookAheadPropagate();
+    bool lookAheadPropagate( List<PiecewiseLinearCaseSplit> &allSplits );
 
-    bool quickSolve();
+    void quickSolve();
+
+    /*
+      A code indicating how the run terminated.
+    */
+    ExitCode _exitCode;
 
  private:
     enum BasisRestorationRequired {
@@ -270,11 +275,6 @@ public:
     std::atomic_bool _quitRequested;
 
     /*
-      A code indicating how the run terminated.
-    */
-    ExitCode _exitCode;
-
-    /*
       An object in charge of managing bound tightenings
       proposed by the PiecewiseLinearConstriants.
     */
@@ -380,7 +380,7 @@ public:
     /*
       Update statitstics, print them if needed.
     */
-    void mainLoopStatistics();
+    void mainLoopStatistics( unsigned verbosity = 2 );
 
     /*
       Check if the current degradation is high
@@ -427,7 +427,7 @@ public:
       Perform a round of symbolic bound tightening, taking into
       account the current state of the piecewise linear constraints.
     */
-    void performSymbolicBoundTightening();
+    void performSymbolicBoundTightening( bool performSbt = true );
 
     /*
       Check whether a timeout value has been provided and exceeded.

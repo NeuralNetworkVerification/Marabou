@@ -88,9 +88,31 @@ void Marabou::prepareInputQuery()
 
 void Marabou::solveQuery()
 {
-    if ( _engine.processInputQuery( _inputQuery ) && _engine.lookAheadPropagate() )
-        _engine.solve( Options::get()->getInt( Options::TIMEOUT ) );
-
+    if ( _engine.processInputQuery( _inputQuery ))
+    {
+        if ( Options::get()->getBool( Options::LOOK_AHEAD_PREPROCESSING) )
+        {
+            Engine engine ( 0 );
+            InputQuery *inputQuery = new InputQuery();
+            *inputQuery = _inputQuery;
+            engine.processInputQuery( *inputQuery );
+            List<PiecewiseLinearCaseSplit> splits;
+            if ( engine.lookAheadPropagate( splits ) )
+            {
+                for ( const auto &split : splits )
+                    _engine.applySplit( split );
+                _engine.solve( Options::get()->getInt( Options::TIMEOUT ) );
+            }
+            else
+            {
+                _engine._exitCode = IEngine::UNSAT;
+            }
+        }
+        else
+        {
+            _engine.solve( Options::get()->getInt( Options::TIMEOUT ) );
+        }
+    }
     if ( _engine.getExitCode() == Engine::SAT )
         _engine.extractSolution( _inputQuery );
 }
