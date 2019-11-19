@@ -17,6 +17,7 @@
 '''
 
 from maraboupy import MarabouCore
+from maraboupy.Marabou import createOptions
 
 # The example from the CAV'17 paper:
 #   0   <= x0  <= 1
@@ -84,7 +85,8 @@ inputQuery.addEquation(equation3)
 MarabouCore.addReluConstraint(inputQuery, 1, 2)
 MarabouCore.addReluConstraint(inputQuery, 3, 4)
 
-vars1, stats1 = MarabouCore.solve(inputQuery, "", 0)
+options = createOptions()
+vars1, stats1 = MarabouCore.solve(inputQuery, options, "")
 if len(vars1) > 0:
     print("SAT")
     print(vars1)
