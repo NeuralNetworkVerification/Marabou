@@ -71,6 +71,7 @@ void AbsConstraint::notifyVariableValue( unsigned variable, double value)
 
 void AbsConstraint::notifyLowerBound( unsigned variable, double bound)
 {
+
     if ( _statistics )
         _statistics->incNumBoundNotificationsPlConstraints();
 
@@ -115,7 +116,7 @@ void AbsConstraint::notifyLowerBound( unsigned variable, double bound)
                 _constraintBoundTightener->registerTighterLowerBound( _f, newLowerBound );
             }
         }
-        else if ( variable == _f)
+        else if ( variable == _f && bound > 0)
         {
             double newUpperBound = -1 * bound;
             double newLowerBound = bound;
@@ -190,7 +191,7 @@ void AbsConstraint::notifyUpperBound(  unsigned variable, double bound )
                 _constraintBoundTightener->registerTighterUpperBound( _f, newUpperBound );
             }
         }
-        else if ( variable == _f)
+        else if ( variable == _f && bound > 0 )
         {
             double newUpperBound = bound;
             double newLowerBound = -1 * bound;
