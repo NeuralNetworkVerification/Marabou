@@ -162,14 +162,14 @@ public:
     */
     bool supportsSymbolicBoundTightening() const;
 
+    PiecewiseLinearCaseSplit getInactiveSplit() const;
+    PiecewiseLinearCaseSplit getActiveSplit() const;
+
 private:
     unsigned _b, _f;
     PhaseStatus _phaseStatus;
     bool _auxVarInUse;
     unsigned _aux;
-
-    PiecewiseLinearCaseSplit getInactiveSplit() const;
-    PiecewiseLinearCaseSplit getActiveSplit() const;
 
     bool _haveEliminatedVariables;
 

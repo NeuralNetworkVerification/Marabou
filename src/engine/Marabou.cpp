@@ -96,11 +96,10 @@ void Marabou::solveQuery()
             InputQuery *inputQuery = new InputQuery();
             *inputQuery = _inputQuery;
             engine.processInputQuery( *inputQuery );
-            List<PiecewiseLinearCaseSplit> splits;
-            if ( engine.lookAheadPropagate( splits ) )
+            Map<unsigned, unsigned> bToPhase;
+            if ( engine.lookAheadPropagate( bToPhase ) )
             {
-                for ( const auto &split : splits )
-                    _engine.applySplit( split );
+                _engine.applySplits( bToPhase );
                 _engine.solve( Options::get()->getInt( Options::TIMEOUT ) );
             }
             else

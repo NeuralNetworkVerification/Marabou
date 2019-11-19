@@ -100,13 +100,18 @@ static void numberOfActive( const List<PiecewiseLinearConstraint *> &plConstrain
     std::cout << numActive  << " Active Constraints" << std::endl;
 }
 
-bool Engine::lookAheadPropagate( List<PiecewiseLinearCaseSplit> &allSplits )
+bool Engine::lookAheadPropagate( Map<unsigned, unsigned> &allSplits )
 {
     std::cout << "Start preprocessing" << std::endl;
     numberOfActive( _plConstraints );
     PiecewiseLinearConstraint *lastUpdated = NULL;
     while ( true )
     {
+        do
+        {
+            std::cout << "Performing SBT" << std::endl;
+            performSymbolicBoundTightening();
+        } while ( applyAllValidConstraintCaseSplits() );
         bool progressMade = false;
         for ( const auto &plConstraint : _plConstraints )
         {
@@ -117,9 +122,6 @@ bool Engine::lookAheadPropagate( List<PiecewiseLinearCaseSplit> &allSplits )
                 auto caseSplits = plConstraint->getCaseSplits();
                 EngineState *stateBeforeSplit = new EngineState();
                 storeState( *stateBeforeSplit, true );
-                bool first = true;
-                List<PiecewiseLinearCaseSplit> commonSplits;
-                Vector<PiecewiseLinearCaseSplit> feasibleSplits;
                 Vector<List<PiecewiseLinearCaseSplit>> feasibleImpliedSplits;
                 for ( const auto &caseSplit : caseSplits )
                 {
@@ -127,73 +129,42 @@ bool Engine::lookAheadPropagate( List<PiecewiseLinearCaseSplit> &allSplits )
                     quickSolve();
                     if ( _exitCode != IEngine::UNSAT )
                     {
-                        feasibleSplits.append( caseSplit );
                         List<PiecewiseLinearCaseSplit> temp = _smtCore._impliedValidSplitsAtRoot;
                         feasibleImpliedSplits.append( temp );
-                    }
-                    if ( first )
-                    {
-                        commonSplits = _smtCore._impliedValidSplitsAtRoot;
-                        first = false;
-                    } else
-                    {
-                        List<PiecewiseLinearCaseSplit> newCommonSplits;
-                        for ( const auto &commonSplit : commonSplits )
-                        {
-                            if ( _smtCore._impliedValidSplitsAtRoot.exists( commonSplit ) )
-                                newCommonSplits.append( commonSplit );
-                        }
-                        commonSplits = newCommonSplits;
                     }
                     reset();
                     restoreState( *stateBeforeSplit );
                 }
                 // at this point, we check if there is any common split that we can directly apply
                 // and see if the plConstraint can be fixed
-                if ( feasibleSplits.size() == 0 )
+                if ( feasibleImpliedSplits.size() == 0 )
                 {
                     _exitCode = IEngine::UNSAT;
                     std::cout << "Finished preprocessing early!" << std::endl;
                     return false;
                 }
-                else if ( feasibleSplits.size() == 1 )
+                else if ( feasibleImpliedSplits.size() == 1 )
                 {
                     std::cout << "1: Fixed " << feasibleImpliedSplits[0].size() << " ReLUs" << std::endl;
                     progressMade = true;
                     lastUpdated = plConstraint;
-                    applySplit( feasibleSplits[0] );
-                    allSplits.append( feasibleSplits[0] );
                     for ( const auto &feasibleImpliedSplit : feasibleImpliedSplits[0] )
-                    {
                         applySplit( feasibleImpliedSplit );
-                        allSplits.append( feasibleSplits[0] );
-                    }
                     numberOfActive( _plConstraints );
-                }
-                else if ( !commonSplits.empty() )
-                {
-                    std::cout << "2: Fixed " << commonSplits.size() << " ReLUs" << std::endl;
-                    for ( const auto &commonSplit : commonSplits )
-                    {
-                        applySplit( commonSplit );
-                        allSplits.append( feasibleSplits[0] );
-                    }
-                    numberOfActive( _plConstraints );
-                    progressMade = true;
-                    lastUpdated = plConstraint;
                 }
                 applyAllValidConstraintCaseSplits();
             }
         }
         if ( !progressMade )
             break;
-        do
-        {
-            std::cout << "Performing SBT" << std::endl;
-            performSymbolicBoundTightening();
-        } while ( applyAllValidConstraintCaseSplits() );
     }
     std::cout << "Finished preprocessing" << std::endl;
+
+    for ( const auto &plConstraint : _plConstraints )
+    {
+        if ( plConstraint->phaseFixed() )
+            allSplits[((ReluConstraint *)plConstraint)->getB()] = ((ReluConstraint *)plConstraint)->getPhaseStatus();
+    }
     return true;
 }
 
@@ -345,6 +316,25 @@ void Engine::quickSolve()
         }
     }
     return;
+}
+
+void Engine::applySplits( const Map<unsigned, unsigned> &bToPhase )
+{
+    for ( const auto &plConstraint : _plConstraints )
+    {
+        ReluConstraint * constraint = ( ReluConstraint *)plConstraint;
+        if ( constraint->isActive() )
+        {
+            unsigned b = constraint->getB();
+            if ( bToPhase.exists( b ) )
+            {
+                if ( bToPhase[b] == ReluConstraint::PHASE_ACTIVE )
+                    applySplit( constraint->getActiveSplit() );
+                else
+                    applySplit( constraint->getInactiveSplit() );
+            }
+        }
+    }
 }
 
 bool Engine::solve( unsigned timeoutInSeconds )

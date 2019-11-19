@@ -50,6 +50,8 @@ public:
     Engine( unsigned verbosity = 2 );
     ~Engine();
 
+    void applySplits( const Map<unsigned, unsigned> &bToPhase );
+
     /*
       Attempt to find a feasible solution for the input within a time limit
       (a timeout of 0 means no time limit). Returns true if found, false if infeasible.
@@ -141,7 +143,7 @@ public:
                        Map <PiecewiseLinearConstraint *, double>
                        &runtimeEstimates );
 
-    bool lookAheadPropagate( List<PiecewiseLinearCaseSplit> &allSplits );
+    bool lookAheadPropagate( Map<unsigned, unsigned> &allSplits );
 
     void quickSolve();
 
