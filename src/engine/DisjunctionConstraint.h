@@ -148,6 +148,12 @@ private:
     List<PiecewiseLinearCaseSplit> _disjuncts;
 
     /*
+      The disjuncts that are still possible, given the current
+      lower and upper bounds
+    */
+    List<PiecewiseLinearCaseSplit> _feasibleDisjuncts;
+
+    /*
       The list of variables that appear in any of the disjuncts
     */
     Set<unsigned> _participatingVariables;
@@ -163,6 +169,14 @@ private:
       assignment
     */
     bool disjunctSatisfied( const PiecewiseLinearCaseSplit &disjunct ) const;
+
+    /*
+      Go over the list of disjuncts and find just the ones that are
+      still possible, given the current varibale bounds
+    */
+    void updateFeasibleDisjuncts();
+    bool disjunctIsFeasible( const PiecewiseLinearCaseSplit &disjunct ) const;
+
 };
 
 #endif // __DisjunctionConstraint_h__

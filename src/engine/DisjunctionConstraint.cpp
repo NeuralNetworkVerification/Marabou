@@ -17,6 +17,7 @@
 
 DisjunctionConstraint::DisjunctionConstraint( const List<PiecewiseLinearCaseSplit> &disjuncts )
     : _disjuncts( disjuncts )
+    , _feasibleDisjuncts( disjuncts )
 {
     extractParticipatingVariables();
 }
@@ -65,6 +66,8 @@ void DisjunctionConstraint::notifyLowerBound( unsigned variable, double bound )
         return;
 
     _lowerBounds[variable] = bound;
+
+    updateFeasibleDisjuncts();
 }
 
 void DisjunctionConstraint::notifyUpperBound( unsigned variable, double bound )
@@ -76,6 +79,8 @@ void DisjunctionConstraint::notifyUpperBound( unsigned variable, double bound )
         return;
 
     _upperBounds[variable] = bound;
+
+    updateFeasibleDisjuncts();
 }
 
 bool DisjunctionConstraint::participatingVariable( unsigned variable ) const
@@ -120,13 +125,12 @@ List<PiecewiseLinearCaseSplit> DisjunctionConstraint::getCaseSplits() const
 
 bool DisjunctionConstraint::phaseFixed() const
 {
-    return false;
+    return _feasibleDisjuncts.size() == 1;
 }
 
 PiecewiseLinearCaseSplit DisjunctionConstraint::getValidCaseSplit() const
 {
-    PiecewiseLinearCaseSplit split;
-    return split;
+    return *_feasibleDisjuncts.begin();
 }
 
 void DisjunctionConstraint::dump( String &// output
@@ -248,6 +252,38 @@ bool DisjunctionConstraint::disjunctSatisfied( const PiecewiseLinearCaseSplit &d
 
         if ( !FloatUtils::areEqual( result, equation._scalar ) )
             return false;
+    }
+
+    return true;
+}
+
+void DisjunctionConstraint::updateFeasibleDisjuncts()
+{
+    _feasibleDisjuncts.clear();
+
+    for ( const auto &disjunct : _disjuncts )
+    {
+        if ( disjunctIsFeasible( disjunct ) )
+            _feasibleDisjuncts.append( disjunct );
+    }
+}
+
+bool DisjunctionConstraint::disjunctIsFeasible( const PiecewiseLinearCaseSplit &disjunct ) const
+{
+    for ( const auto &bound : disjunct.getBoundTightenings() )
+    {
+        if ( bound._type == Tightening::LB )
+        {
+            if ( _upperBounds.exists( bound._variable ) &&
+                 _upperBounds[bound._variable] < bound._value )
+                return false;
+        }
+        else
+        {
+            if ( _lowerBounds.exists( bound._variable ) &&
+                 _lowerBounds[bound._variable] > bound._value )
+                return false;
+        }
     }
 
     return true;

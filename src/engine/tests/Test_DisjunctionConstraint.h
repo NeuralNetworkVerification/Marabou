@@ -166,6 +166,66 @@ public:
         dc.notifyVariableValue( 1, 8 );
         TS_ASSERT( !dc.satisfied() );
     }
+
+    void test_phase_fixed()
+    {
+        List<PiecewiseLinearCaseSplit> caseSplits = { *cs1, *cs2, *cs3 };
+        /*
+          x0 <= 1       -->   x1 = 2
+          1 <= x0 <= 5  -->   x1 = x0
+          5 <= x0       -->   x1 = 2x2 + 5
+        */
+
+        {
+            DisjunctionConstraint dc( caseSplits );
+
+            dc.notifyLowerBound( 0, -10 );
+            dc.notifyUpperBound( 0, 10 );
+            dc.notifyLowerBound( 1, -10 );
+            dc.notifyUpperBound( 1, 10 );
+            dc.notifyLowerBound( 2, -10 );
+            dc.notifyUpperBound( 2, 10 );
+
+            TS_ASSERT( !dc.phaseFixed() );
+
+            dc.notifyLowerBound( 0, -1 );
+            TS_ASSERT( !dc.phaseFixed() );
+
+            dc.notifyLowerBound( 0, 2 );
+            TS_ASSERT( !dc.phaseFixed() );
+
+            dc.notifyLowerBound( 0, 6 );
+            TS_ASSERT( dc.phaseFixed() );
+
+            PiecewiseLinearCaseSplit validSplit = dc.getValidCaseSplit();
+            TS_ASSERT_EQUALS( validSplit, *cs3 );
+        }
+
+        {
+            DisjunctionConstraint dc( caseSplits );
+
+            dc.notifyLowerBound( 0, -10 );
+            dc.notifyUpperBound( 0, 10 );
+            dc.notifyLowerBound( 1, -10 );
+            dc.notifyUpperBound( 1, 10 );
+            dc.notifyLowerBound( 2, -10 );
+            dc.notifyUpperBound( 2, 10 );
+
+            TS_ASSERT( !dc.phaseFixed() );
+
+            dc.notifyUpperBound( 0, 7 );
+            TS_ASSERT( !dc.phaseFixed() );
+
+            dc.notifyUpperBound( 0, 2 );
+            TS_ASSERT( !dc.phaseFixed() );
+
+            dc.notifyUpperBound( 0, -2 );
+            TS_ASSERT( dc.phaseFixed() );
+
+            PiecewiseLinearCaseSplit validSplit = dc.getValidCaseSplit();
+            TS_ASSERT_EQUALS( validSplit, *cs1 );
+        }
+    }
 };
 
 //
