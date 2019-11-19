@@ -291,6 +291,25 @@ public:
         TS_ASSERT( abs.constraintObsolete() );
     }
 
+
+    void test_abs_entailed_tighteningst0()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        AbsConstraint abs(b, f);
+        List<Tightening> entailedTightenings;
+        List<Tightening>::iterator it;
+
+        // B = D , A < C
+        // A < C < BD
+        abs.notifyLowerBound( f,-1);
+//        TS_TRACE("f lower bound");
+//        TS_TRACE(abs.get_lower_bound(f));
+//        TS_ASSERT_EQUALS( abs.get_lower_bound(f), 0);
+
+    }
+
     void test_abs_entailed_tighteningst1()
     {
         /**
@@ -1163,6 +1182,7 @@ public:
 
         TS_ASSERT_EQUALS( activeEquation._type, Equation::EQ );
     }
+
 };
 
 #endif //MARABOU_TEST_ABSCONSTRAINT_H
