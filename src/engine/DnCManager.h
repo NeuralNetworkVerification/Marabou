@@ -18,6 +18,7 @@
 
 #include "DivideStrategy.h"
 #include "Engine.h"
+#include "InputQuery.h"
 #include "SubQuery.h"
 #include "Vector.h"
 
@@ -43,6 +44,11 @@ public:
                 DivideStrategy divideStrategy, String networkFilePath,
                 String propertyFilePath, unsigned verbosity );
 
+    DnCManager( unsigned numWorkers, unsigned initialDivides, unsigned
+                initialTimeout, unsigned onlineDivides, float timeoutFactor,
+                DivideStrategy divideStrategy, InputQuery *inputQuery,
+                unsigned verbosity );
+
     ~DnCManager();
 
     void freeMemoryIfNeeded();
@@ -66,6 +72,11 @@ public:
       Print the result of DnC solving
     */
     void printResult();
+
+    /*
+      Store the solution into the map
+    */
+    void getSolution( std::map<int, double> &ret );
 
 private:
     /*
@@ -157,6 +168,12 @@ private:
     */
     String _networkFilePath;
     String _propertyFilePath;
+
+    /*
+      Alternatively, we could construct the DnCManager by directly providing the
+      inputQuery instead of the network and property filepaths.
+    */
+    InputQuery *_baseInputQuery;
 
     /*
       The exit code of the DnCManager.

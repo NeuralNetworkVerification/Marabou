@@ -10,15 +10,22 @@ option(RUN_UNIT_TEST "run cxxtest unit testing" ON)
 option(RUN_MEMORY_TEST "run cxxtest unit testing with ASAN" ON)
 option(RUN_REGRESS_TEST "run regression tests" OFF)
 
+set(DEFAULT_PYTHON_VERSION "3" CACHE STRING "Default Python version 2/3")
+set(PYTHON_VERSIONS_SUPPORTED 2 3)
+list(FIND PYTHON_VERSIONS_SUPPORTED ${DEFAULT_PYTHON_VERSION} index)
+if(index EQUAL -1)
+    message(FATAL_ERROR "python version must be one of ${PYTHON_VERSIONS_SUPPORTED}")
+endif()
+
 set(MARABOU_LIB MarabouHelper)
 set(MARABOU_TEST_LIB MarabouHelperTest)
-set(MARABOU_EXE Marabou)
-set(MARABOU_REGRESS Regression)
+set(MARABOU_EXE Marabou${CMAKE_EXECUTABLE_SUFFIX})
 set(MARABOU_PY MarabouCore)
 
 set(TOOLS_DIR "${PROJECT_SOURCE_DIR}/tools")
 set(SRC_DIR "${PROJECT_SOURCE_DIR}/src")
 set(PYTHON_API_DIR "${PROJECT_SOURCE_DIR}/maraboupy")
+set(RESOURCES_DIR "${PROJECT_SOURCE_DIR}/resources")
 set(REGRESS_DIR "${PROJECT_SOURCE_DIR}/regress")
 
 set(ENGINE_DIR "${SRC_DIR}/engine")
@@ -26,31 +33,34 @@ set(PYBIND11_DIR "${TOOLS_DIR}/pybind11-2.3.0")
 set(BOOST_DIR "${TOOLS_DIR}/boost_1_68_0")
 set(COMMON_DIR "${SRC_DIR}/common")
 set(BASIS_DIR "${SRC_DIR}/basis_factorization")
-set(ACAS_REGRESS_NET "${REGRESS_DIR}/acas_nnet")
 
+
+set(BIN_DIR "${CMAKE_BINARY_DIR}/bin")
 
 set(COMMON_REAL "${COMMON_DIR}/real")
 set(COMMON_MOCK "${COMMON_DIR}/mock")
 file(GLOB SRCS_COMMON_REAL "${COMMON_REAL}/*.cpp")
 file(GLOB SRCS_COMMON_MOCK "${COMMON_MOCK}/*.cpp")
 
+set(ENGINE_REAL "${ENGINE_DIR}/real")
+set(ENGINE_MOCK "${ENGINE_DIR}/mock")
+file(GLOB SRCS_ENGINE_REAL "${ENGINE_REAL}/*.cpp")
+file(GLOB SRCS_ENGINE_MOCK "${ENGINE_MOCK}/*.cpp")
+
+set(MPS_PARSER mps)
+set(ACAS_PARSER acas)
+set(BERKELEY_PARSER berkeley)
+set(INPUT_PARSERS_DIR input_parsers)
+
 # We build a static library that is the core of the project, the link it to the
 # API's (executable and python at the moment)
-add_library(${MARABOU_LIB} ${SRCS_COMMON_REAL} )
+add_library(${MARABOU_LIB} ${SRCS_COMMON_REAL} ${SRCS_ENGINE_REAL})
 add_executable(${MARABOU_EXE} "${ENGINE_DIR}/main.cpp")
-add_executable(${MARABOU_REGRESS} "${REGRESS_DIR}/main_regress.cpp")
+set(MARABOU_EXE_PATH "${BIN_DIR}/${MARABOU_EXE}")
+add_custom_command(TARGET ${MARABOU_EXE} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${MARABOU_EXE}> ${MARABOU_EXE_PATH} )
 
-
-# Build regress 
-target_link_libraries(${MARABOU_REGRESS} PRIVATE ${MARABOU_LIB})
-
-target_include_directories(${MARABOU_REGRESS} PRIVATE ${LIBS_INCLUDES})
-if (RUN_REGRESS_TEST)
-    add_custom_command(TARGET ${MARABOU_REGRESS} 
-                   POST_BUILD
-                   COMMAND Regress --output-on-failure || exit
-                   0)
-endif()
+set(MPS_PARSER_PATH "${BIN_DIR}/${MPS_PARSER}")
 
 # Default value false
 set(PYTHON32 FALSE)
@@ -79,11 +89,14 @@ if (RUN_MEMORY_TEST)
     endif()
 endif()
 
+add_definitions(-DRESOURCES_DIR="${RESOURCES_DIR}")
+
 if (NOT MSVC)
     set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS} -g -DDEBUG_ON) 
     set(CXXTEST_FLAGS ${DEBUG_FLAGS}  -Wno-ignored-qualifiers)
 else()
     set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS} /DDEBUG_ON)
+    add_definitions(-DNOMINMAX) # remove min max macros
 endif()
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
@@ -96,12 +109,19 @@ endif()
 
 
 # Boost
-if (${CMAKE_SIZEOF_VOID_P} EQUAL 4 AND NOT MSVC)
+if (MSVC)
+    set(BOOST_ROOT "${BOOST_DIR}/win_installed")
+elseif (${CMAKE_SIZEOF_VOID_P} EQUAL 4 AND NOT MSVC)
     set(BOOST_ROOT "${BOOST_DIR}/installed32")
-    # set(BOOST_INCLUDES "${BOOST_DIR}/installed32/include")
 else()
     set(BOOST_ROOT "${BOOST_DIR}/installed")
-    # set(BOOST_INCLUDES "${BOOST_DIR}/installed/include")
+endif()
+
+if (MSVC)
+    set(SCRIPT_EXTENSION bat)
+    set(Boost_NAMESPACE libboost)
+else()
+    set(SCRIPT_EXTENSION sh)
 endif()
 
 if (MSVC)
@@ -150,8 +170,14 @@ else()
 endif()
 
 if (${BUILD_PYTHON})
+
     # This is suppose to set the PYTHON_EXECUTABLE variable
-    find_package(PythonInterp REQUIRED)
+    # First try to find the default python version
+    find_package(PythonInterp ${DEFAULT_PYTHON_VERSION})
+    if (NOT EXISTS ${PYTHON_EXECUTABLE})
+        # If the default didn't work just find any python version
+        find_package(PythonInterp REQUIRED)
+    endif()
     
     if (NOT EXISTS ${PYBIND11_DIR})
         message("didnt find pybind, getting it")
@@ -191,9 +217,10 @@ target_compile_options(${MARABOU_TEST_LIB} PRIVATE ${CXXTEST_FLAGS})
 
 
 add_custom_target(build-tests ALL)
+
 add_custom_target(check
       COMMAND ctest --output-on-failure -j${CTEST_NTHREADS} $$ARGS
-      DEPENDS build-tests)
+      DEPENDS build-tests build_input_parsers ${MARABOU_EXE})
 
 if (${RUN_UNIT_TEST})
     # make ctest verbose 
@@ -205,6 +232,11 @@ if (${RUN_UNIT_TEST})
     )
 
 endif()
+
+# Add the input parsers
+add_custom_target(build_input_parsers)
+add_dependencies(build_input_parsers ${MPS_PARSER} ${ACAS_PARSER}
+    ${BERKELEY_PARSER})
 
 add_subdirectory(${SRC_DIR})
 add_subdirectory(${TOOLS_DIR})

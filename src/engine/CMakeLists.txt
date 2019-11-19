@@ -1,6 +1,3 @@
-add_subdirectory(real)
-add_subdirectory(mock)
-
 file(GLOB SRCS "*.cpp")
 file(GLOB HEADERS "*.h")
 
@@ -13,7 +10,10 @@ target_include_directories(${MARABOU_TEST_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DI
 
 set (ENGINE_TESTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tests")
 macro(engine_add_unit_test name)
-    marabou_add_test(${ENGINE_TESTS_DIR}/Test_${name} engine FALSE, "unit")
+    set(USE_MOCK_COMMON FALSE)
+    set(USE_MOCK_ENGINE FALSE)
+    marabou_add_test(${ENGINE_TESTS_DIR}/Test_${name} engine USE_MOCK_COMMON
+        USE_MOCK_ENGINE "unit")
 endmacro()
 
 engine_add_unit_test(SmtCore)
