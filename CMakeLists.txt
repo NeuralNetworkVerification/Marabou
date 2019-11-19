@@ -16,7 +16,6 @@ list(FIND PYTHON_VERSIONS_SUPPORTED ${DEFAULT_PYTHON_VERSION} index)
 if(index EQUAL -1)
     message(FATAL_ERROR "python version must be one of ${PYTHON_VERSIONS_SUPPORTED}")
 endif()
-message("PYTHON_V: ${DEFAULT_PYTHON_VERSION}")
 
 set(MARABOU_LIB MarabouHelper)
 set(MARABOU_TEST_LIB MarabouHelperTest)
