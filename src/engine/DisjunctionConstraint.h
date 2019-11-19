@@ -158,6 +158,11 @@ private:
     */
     void extractParticipatingVariables();
 
+    /*
+      Check whether a particular disjunct is satisfied by the current
+      assignment
+    */
+    bool disjunctSatisfied( const PiecewiseLinearCaseSplit &disjunct ) const;
 };
 
 #endif // __DisjunctionConstraint_h__

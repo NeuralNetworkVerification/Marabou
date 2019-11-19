@@ -57,12 +57,12 @@ public:
         eq2.setScalar( 0 );
         cs2->addEquation( eq2 );
 
-        // 5 <= x0 <= 5, x1 = 2x2
+        // 5 <= x0 , x1 = 2x2 + 5
         cs3->storeBoundTightening( Tightening( 0, 5, Tightening::LB ) );
         Equation eq3;
-        eq3.addAddend( 1, 0 );
+        eq3.addAddend( 1, 1 );
         eq3.addAddend( -2, 2 );
-        eq3.setScalar( 0 );
+        eq3.setScalar( 5 );
         cs3->addEquation( eq3 );
     }
 
@@ -118,6 +118,53 @@ public:
         TS_ASSERT( !dc2.participatingVariable( 1 ) );
         TS_ASSERT( dc2.participatingVariable( 5 ) );
         TS_ASSERT( !dc2.participatingVariable( 17 ) );
+    }
+
+    void test_satisfied()
+    {
+        List<PiecewiseLinearCaseSplit> caseSplits = { *cs1, *cs2, *cs3 };
+        DisjunctionConstraint dc( caseSplits );
+
+        /*
+          x0 <= 1       -->   x1 = 2
+          1 <= x0 <= 5  -->   x1 = x0
+          5 <= x0       -->   x1 = 2x2 + 5
+        */
+
+        dc.notifyVariableValue( 0, -5 );
+        dc.notifyVariableValue( 1, 2 );
+        TS_ASSERT( dc.satisfied() );
+
+        dc.notifyVariableValue( 0, -3 );
+        TS_ASSERT( dc.satisfied() );
+
+        dc.notifyVariableValue( 12, 4 );
+        TS_ASSERT( dc.satisfied() );
+
+        dc.notifyVariableValue( 0, 3 );
+        TS_ASSERT( !dc.satisfied() );
+
+        dc.notifyVariableValue( 1, 3 );
+        TS_ASSERT( dc.satisfied() );
+
+        dc.notifyVariableValue( 2, 4 );
+        TS_ASSERT( dc.satisfied() );
+
+        dc.notifyVariableValue( 1, 2 );
+        TS_ASSERT( !dc.satisfied() );
+
+        dc.notifyVariableValue( 0, 7 );
+        dc.notifyVariableValue( 1, 7 );
+        TS_ASSERT( !dc.satisfied() );
+
+        dc.notifyVariableValue( 2, 1 );
+        TS_ASSERT( dc.satisfied() );
+
+        dc.notifyVariableValue( 0, 15 );
+        TS_ASSERT( dc.satisfied() );
+
+        dc.notifyVariableValue( 1, 8 );
+        TS_ASSERT( !dc.satisfied() );
     }
 };
 

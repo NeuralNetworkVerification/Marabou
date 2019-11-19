@@ -92,7 +92,11 @@ List<unsigned> DisjunctionConstraint::getParticipatingVariables() const
 
 bool DisjunctionConstraint::satisfied() const
 {
-    return true;
+    for ( const auto &disjunct : _disjuncts )
+        if ( disjunctSatisfied( disjunct ) )
+            return true;
+
+    return false;
 }
 
 List<PiecewiseLinearConstraint::Fix> DisjunctionConstraint::getPossibleFixes() const
@@ -198,19 +202,53 @@ void DisjunctionConstraint::extractParticipatingVariables()
     for ( const auto &disjunct : _disjuncts )
     {
         // Extract from bounds
-        List<Tightening> bounds = disjunct.getBoundTightenings();
-
-        for ( const auto &bound : bounds )
+        for ( const auto &bound : disjunct.getBoundTightenings() )
             _participatingVariables.insert( bound._variable );
 
         // Extract from equations
-        List<Equation> equations = disjunct.getEquations();
-        for ( const auto &equation : equations )
+        for ( const auto &equation : disjunct.getEquations() )
         {
             for ( const auto &addend : equation._addends )
                 _participatingVariables.insert( addend._variable );
         }
     }
+}
+
+bool DisjunctionConstraint::disjunctSatisfied( const PiecewiseLinearCaseSplit &disjunct ) const
+{
+    // Check whether the bounds are satisfied
+    for ( const auto &bound : disjunct.getBoundTightenings() )
+    {
+        if ( bound._type == Tightening::LB )
+        {
+            if ( _assignment[bound._variable] < bound._value )
+                return false;
+        }
+        else
+        {
+            if ( _assignment[bound._variable] > bound._value )
+                return false;
+        }
+    }
+
+    // Check whether the equations are satisfied
+    for ( const auto &equation : disjunct.getEquations() )
+    {
+        printf( "Processing equation: \n");
+        equation.dump();
+
+        double result = 0;
+
+        for ( const auto &addend : equation._addends )
+            result += addend._coefficient * _assignment[addend._variable];
+
+        printf( "\tresult: %lf\n", result );
+
+        if ( !FloatUtils::areEqual( result, equation._scalar ) )
+            return false;
+    }
+
+    return true;
 }
 
 //
