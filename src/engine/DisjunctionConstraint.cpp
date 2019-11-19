@@ -18,6 +18,7 @@
 DisjunctionConstraint::DisjunctionConstraint( const List<PiecewiseLinearCaseSplit> &disjuncts )
     : _disjuncts( disjuncts )
 {
+    extractParticipatingVariables();
 }
 
 DisjunctionConstraint::DisjunctionConstraint( const String &// serializedDisjunction
@@ -75,15 +76,18 @@ void DisjunctionConstraint::notifyUpperBound( unsigned variable, double bound )
     _upperBounds[variable] = bound;
 }
 
-bool DisjunctionConstraint::participatingVariable( unsigned // variable
-                                                   ) const
+bool DisjunctionConstraint::participatingVariable( unsigned variable ) const
 {
-    return false;
+    return _participatingVariables.exists( variable );
 }
 
 List<unsigned> DisjunctionConstraint::getParticipatingVariables() const
 {
-    return List<unsigned>();
+    List<unsigned> variables;
+    for ( const auto &var : _participatingVariables )
+        variables.append( var );
+
+    return variables;
 }
 
 bool DisjunctionConstraint::satisfied() const
@@ -185,6 +189,28 @@ String DisjunctionConstraint::serializeToString() const
 bool DisjunctionConstraint::supportsSymbolicBoundTightening() const
 {
     return false;
+}
+
+void DisjunctionConstraint::extractParticipatingVariables()
+{
+    _participatingVariables.clear();
+
+    for ( const auto &disjunct : _disjuncts )
+    {
+        // Extract from bounds
+        List<Tightening> bounds = disjunct.getBoundTightenings();
+
+        for ( const auto &bound : bounds )
+            _participatingVariables.insert( bound._variable );
+
+        // Extract from equations
+        List<Equation> equations = disjunct.getEquations();
+        for ( const auto &equation : equations )
+        {
+            for ( const auto &addend : equation._addends )
+                _participatingVariables.insert( addend._variable );
+        }
+    }
 }
 
 //

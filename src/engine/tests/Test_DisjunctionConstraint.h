@@ -77,7 +77,7 @@ public:
 
     void test_get_case_splits()
     {
-        List<PiecewiseLinearCaseSplit> caseSplits = { *cs1, *cs2, *cs2 };
+        List<PiecewiseLinearCaseSplit> caseSplits = { *cs1, *cs2, *cs3 };
         DisjunctionConstraint dc( caseSplits );
 
         List<PiecewiseLinearCaseSplit> returnedSplits;
@@ -85,6 +85,39 @@ public:
 
         TS_ASSERT_EQUALS( returnedSplits.size(), caseSplits.size() );
         TS_ASSERT_EQUALS( returnedSplits, caseSplits );
+    }
+
+    void test_getParticipatingVariables()
+    {
+        List<PiecewiseLinearCaseSplit> caseSplits = { *cs1, *cs2, *cs3 };
+        DisjunctionConstraint dc( caseSplits );
+
+        List<unsigned> varibales = dc.getParticipatingVariables();
+
+        TS_ASSERT_EQUALS( varibales.size(), 3U );
+        TS_ASSERT( varibales.exists( 0 ) );
+        TS_ASSERT( varibales.exists( 1 ) );
+        TS_ASSERT( varibales.exists( 2 ) );
+
+        TS_ASSERT( dc.participatingVariable( 0 ) );
+        TS_ASSERT( dc.participatingVariable( 1 ) );
+        TS_ASSERT( dc.participatingVariable( 2 ) );
+        TS_ASSERT( !dc.participatingVariable( 3 ) );
+
+        PiecewiseLinearCaseSplit cs4;
+        cs4.storeBoundTightening( Tightening( 5, 17, Tightening::LB ) );
+        caseSplits = { cs4 };
+
+        DisjunctionConstraint dc2( caseSplits );
+        varibales = dc2.getParticipatingVariables();
+
+        TS_ASSERT_EQUALS( varibales.size(), 1U );
+        TS_ASSERT( varibales.exists( 5 ) );
+
+        TS_ASSERT( !dc2.participatingVariable( 0 ) );
+        TS_ASSERT( !dc2.participatingVariable( 1 ) );
+        TS_ASSERT( dc2.participatingVariable( 5 ) );
+        TS_ASSERT( !dc2.participatingVariable( 17 ) );
     }
 };
 

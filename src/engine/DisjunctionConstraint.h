@@ -142,7 +142,22 @@ public:
     bool supportsSymbolicBoundTightening() const;
 
 private:
+    /*
+      The disjuncts that form this PL constraint
+    */
     List<PiecewiseLinearCaseSplit> _disjuncts;
+
+    /*
+      The list of variables that appear in any of the disjuncts
+    */
+    Set<unsigned> _participatingVariables;
+
+    /*
+      Go over the participating disjuncts and extract from them the list
+      of participating variables
+    */
+    void extractParticipatingVariables();
+
 };
 
 #endif // __DisjunctionConstraint_h__
