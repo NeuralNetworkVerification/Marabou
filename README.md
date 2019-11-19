@@ -114,10 +114,10 @@ Debug mode, simply run "cmake --build . --config Debug", and the executables wil
 written to build/Debug.
 
 ### Python API
-Using Marabou through the Python interface requires Python 3. It may be useful
-to set up a Python virtual environment, see
+It may be useful to set up a Python virtual environment, see
 [here](https://docs.python.org/3/tutorial/venv.html) for more information.
 
+The python interface was tested only on versions >3.5 and >2.7. The build process preffers python3 but will work if there is only python 2.7 avilable. (To control the default change the DEFAULT_PYTHON_VERSION variable).  
 The Python interface requires *pybind11* (which is automatically downloaded). 
 To also build the python API on Linux or MacOS, run:
 ```
