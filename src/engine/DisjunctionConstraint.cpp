@@ -39,14 +39,16 @@ void DisjunctionConstraint::restoreState( const PiecewiseLinearConstraint *state
     *this = *disjunction;
 }
 
-void DisjunctionConstraint::registerAsWatcher( ITableau *// tableau
-                                               )
+void DisjunctionConstraint::registerAsWatcher( ITableau *tableau )
 {
+    for ( const auto &variable : _participatingVariables )
+        tableau->registerToWatchVariable( this, variable );
 }
 
-void DisjunctionConstraint::unregisterAsWatcher( ITableau *// tableau
-                                                 )
+void DisjunctionConstraint::unregisterAsWatcher( ITableau *tableau )
 {
+    for ( auto &variable : _participatingVariables )
+        tableau->unregisterToWatchVariable( this, variable );
 }
 
 void DisjunctionConstraint::notifyVariableValue( unsigned variable, double value )
