@@ -100,7 +100,7 @@ static void numberOfActive( const List<PiecewiseLinearConstraint *> &plConstrain
     std::cout << numActive  << " Active Constraints" << std::endl;
 }
 
-bool Engine::lookAheadPropagate( Map<unsigned, unsigned> &allSplits )
+bool Engine::lookAheadPropagate( Map<unsigned, unsigned> &allSplits, bool sbtOnly )
 {
     std::cout << "Start preprocessing" << std::endl;
     numberOfActive( _plConstraints );
@@ -112,6 +112,8 @@ bool Engine::lookAheadPropagate( Map<unsigned, unsigned> &allSplits )
             std::cout << "Performing SBT" << std::endl;
             performSymbolicBoundTightening();
         } while ( applyAllValidConstraintCaseSplits() );
+        if ( sbtOnly )
+            break;
         bool progressMade = false;
         for ( const auto &plConstraint : _plConstraints )
         {

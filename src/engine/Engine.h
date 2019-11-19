@@ -143,7 +143,7 @@ public:
                        Map <PiecewiseLinearConstraint *, double>
                        &runtimeEstimates );
 
-    bool lookAheadPropagate( Map<unsigned, unsigned> &allSplits );
+    bool lookAheadPropagate( Map<unsigned, unsigned> &allSplits, bool sbtOnly );
 
     void quickSolve();
 

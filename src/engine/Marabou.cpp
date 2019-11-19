@@ -90,26 +90,20 @@ void Marabou::solveQuery()
 {
     if ( _engine.processInputQuery( _inputQuery ))
     {
-        if ( Options::get()->getBool( Options::LOOK_AHEAD_PREPROCESSING) )
+        Engine engine ( 0 );
+        InputQuery *inputQuery = new InputQuery();
+        *inputQuery = _inputQuery;
+        engine.processInputQuery( *inputQuery );
+        Map<unsigned, unsigned> bToPhase;
+        if ( engine.lookAheadPropagate( bToPhase, !Options::get()->getBool
+                                        ( Options::LOOK_AHEAD_PREPROCESSING) ) )
         {
-            Engine engine ( 0 );
-            InputQuery *inputQuery = new InputQuery();
-            *inputQuery = _inputQuery;
-            engine.processInputQuery( *inputQuery );
-            Map<unsigned, unsigned> bToPhase;
-            if ( engine.lookAheadPropagate( bToPhase ) )
-            {
-                _engine.applySplits( bToPhase );
-                _engine.solve( Options::get()->getInt( Options::TIMEOUT ) );
-            }
-            else
-            {
-                _engine._exitCode = IEngine::UNSAT;
-            }
+            _engine.applySplits( bToPhase );
+            _engine.solve( Options::get()->getInt( Options::TIMEOUT ) );
         }
         else
         {
-            _engine.solve( Options::get()->getInt( Options::TIMEOUT ) );
+            _engine._exitCode = IEngine::UNSAT;
         }
     }
     if ( _engine.getExitCode() == Engine::SAT )
