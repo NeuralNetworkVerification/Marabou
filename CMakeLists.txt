@@ -10,6 +10,13 @@ option(RUN_UNIT_TEST "run cxxtest unit testing" ON)
 option(RUN_MEMORY_TEST "run cxxtest unit testing with ASAN" ON)
 option(RUN_REGRESS_TEST "run regression tests" OFF)
 
+set(DEFAULT_PYTHON_VERSION "3" CACHE STRING "Default Python version 2/3")
+set(PYTHON_VERSIONS_SUPPORTED 2 3)
+list(FIND PYTHON_VERSIONS_SUPPORTED ${DEFAULT_PYTHON_VERSION} index)
+if(index EQUAL -1)
+    message(FATAL_ERROR "python version must be one of ${PYTHON_VERSIONS_SUPPORTED}")
+endif()
+
 set(MARABOU_LIB MarabouHelper)
 set(MARABOU_TEST_LIB MarabouHelperTest)
 set(MARABOU_EXE Marabou${CMAKE_EXECUTABLE_SUFFIX})
@@ -163,8 +170,14 @@ else()
 endif()
 
 if (${BUILD_PYTHON})
+
     # This is suppose to set the PYTHON_EXECUTABLE variable
-    find_package(PythonInterp REQUIRED)
+    # First try to find the default python version
+    find_package(PythonInterp ${DEFAULT_PYTHON_VERSION})
+    if (NOT EXISTS ${PYTHON_EXECUTABLE})
+        # If the default didn't work just find any python version
+        find_package(PythonInterp REQUIRED)
+    endif()
     
     if (NOT EXISTS ${PYBIND11_DIR})
         message("didnt find pybind, getting it")
