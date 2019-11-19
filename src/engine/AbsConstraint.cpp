@@ -129,13 +129,13 @@ void AbsConstraint::notifyLowerBound( unsigned variable, double bound)
             _constraintBoundTightener->registerTighterUpperBound( _b, newUpperBound );
 
         }
-    }
 
-    // Also, if for some reason we only know a negative lower bound for f,
-    // we attempt to tighten it to 0
-    if ( bound < 0 && variable == _f )
-    {
-        _constraintBoundTightener->registerTighterLowerBound( _f, 0 );
+        // Also, if for some reason we only know a negative lower bound for f,
+        // we attempt to tighten it to 0
+        if ( bound < 0 && variable == _f )
+        {
+            _constraintBoundTightener->registerTighterLowerBound( _f, 0 );
+        }
     }
 }
 
