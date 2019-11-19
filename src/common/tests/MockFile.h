@@ -19,6 +19,7 @@
 
 #include "HeapData.h"
 #include "IFile.h"
+#include "MStringf.h"
 
 class MockFile : public IFile
 {
@@ -58,13 +59,20 @@ public:
         lastOpenMode = mode;
     }
 
-    void write( const String &/* line */ )
+    String writtenLines;
+    void write( const String &line )
     {
+        writtenLines += line;
     }
 
-    String readLine( char /* lineSeparatingChar */ )
+    String readLine( char lineSeparatingChar )
     {
-        return "";
+        Stringf separatorAsString( "%c", lineSeparatingChar );
+
+        String result = writtenLines.substring( 0, writtenLines.find( separatorAsString ) );
+        writtenLines = writtenLines.substring( writtenLines.find( separatorAsString ) + 1,
+                                               writtenLines.length() );
+        return result;
     }
 
     void read( HeapData &/* buffer */, unsigned /* maxReadSize */ )

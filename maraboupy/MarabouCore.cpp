@@ -21,21 +21,28 @@
 #include <set>
 #include <string>
 #include <utility>
-#include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
 #include "AcasParser.h"
+#include "DnCManager.h"
 #include "Engine.h"
+#include "FloatUtils.h"
 #include "InputQuery.h"
 #include "MarabouError.h"
 #include "MString.h"
-#include "FloatUtils.h"
 #include "MaxConstraint.h"
 #include "PiecewiseLinearConstraint.h"
 #include "PropertyParser.h"
+#include "QueryLoader.h"
 #include "ReluConstraint.h"
 #include "Set.h"
+
+#ifdef _WIN32
+#define STDOUT_FILENO 1
+#else
+#include <unistd.h>
+#endif
 
 namespace py = pybind11;
 
@@ -89,7 +96,6 @@ void addMaxConstraint(InputQuery& ipq, std::set<unsigned> elements, unsigned v){
     ipq.addPiecewiseLinearConstraint(m);
 }
 
-
 void createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::string propertyFilePath){
   AcasParser* acasParser = new AcasParser( String(networkFilePath) );
   acasParser->generateQuery( inputQuery );
@@ -103,7 +109,32 @@ void createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::
     printf( "Property: None\n" );
 }
 
-std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::string redirect="", unsigned timeout=0){
+struct MarabouOptions {
+    MarabouOptions()
+        : _numWorkers( 4 )
+        , _initialTimeout( 5 )
+        , _initialDivides( 0 )
+        , _onlineDivides( 2 )
+        , _timeoutInSeconds( 0 )
+        , _timeoutFactor( 1.5 )
+        , _verbosity( 2 )
+        , _dnc( false )
+    {};
+
+    unsigned _numWorkers;
+    unsigned _initialTimeout;
+    unsigned _initialDivides;
+    unsigned _onlineDivides;
+    unsigned _timeoutInSeconds;
+    float _timeoutFactor;
+    unsigned _verbosity;
+    bool _dnc;
+};
+
+/* The default parameters here are just for readability, you should specify
+ * them in the to make them work*/
+std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, MarabouOptions &options,
+                                                   std::string redirect=""){
     // Arguments: InputQuery object, filename to redirect output
     // Returns: map from variable number to value
     std::map<int, double> ret;
@@ -112,16 +143,55 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery inputQuery, std::s
     if(redirect.length()>0)
         output=redirectOutputToFile(redirect);
     try{
+        bool verbosity = options._verbosity;
+        unsigned timeoutInSeconds = options._timeoutInSeconds;
+        bool dnc = options._dnc;
+
         Engine engine;
+        engine.setVerbosity(verbosity);
+
         if(!engine.processInputQuery(inputQuery)) return std::make_pair(ret, *(engine.getStatistics()));
+        if ( dnc )
+        {
+            unsigned initialDivides = options._initialDivides;
+            unsigned initialTimeout = options._initialTimeout;
+            unsigned numWorkers = options._numWorkers;
+            unsigned onlineDivides = options._onlineDivides;
+            float timeoutFactor = options._timeoutFactor;
 
-        if(!engine.solve(timeout)) return std::make_pair(ret, *(engine.getStatistics()));
+            auto dncManager = std::unique_ptr<DnCManager>
+                ( new DnCManager( numWorkers, initialDivides, initialTimeout, onlineDivides,
+                                  timeoutFactor, DivideStrategy::LargestInterval,
+                                  &inputQuery, verbosity ) );
 
-        if (engine.getExitCode() == Engine::SAT)
-            engine.extractSolution(inputQuery);
-        retStats = *(engine.getStatistics());
-        for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); i++)
-            ret[i] = inputQuery.getSolutionValue(i);
+            dncManager->solve( timeoutInSeconds );
+            switch ( dncManager->getExitCode() )
+            {
+            case DnCManager::SAT:
+            {
+                retStats = Statistics();
+                dncManager->getSolution( ret );
+                break;
+            }
+            case DnCManager::TIMEOUT:
+            {
+                retStats = Statistics();
+                retStats.timeout();
+                return std::make_pair( ret, Statistics() );
+            }
+            default:
+                return std::make_pair( ret, Statistics() ); // TODO: meaningful DnCStatistics
+            }
+        } else
+        {
+            if(!engine.solve(timeoutInSeconds)) return std::make_pair(ret, *(engine.getStatistics()));
+
+            if (engine.getExitCode() == Engine::SAT)
+                engine.extractSolution(inputQuery);
+            retStats = *(engine.getStatistics());
+            for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); ++i)
+                ret[i] = inputQuery.getSolutionValue(i);
+        }
     }
     catch(const MarabouError &e){
         printf( "Caught a MarabouError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );
@@ -136,13 +206,18 @@ void saveQuery(InputQuery& inputQuery, std::string filename){
     inputQuery.saveQuery(String(filename));
 }
 
+InputQuery loadQuery(std::string filename){
+    return QueryLoader::loadQuery(String(filename));
+}
+
 // Code necessary to generate Python library
 // Describes which classes and functions are exposed to API
 PYBIND11_MODULE(MarabouCore, m) {
     m.doc() = "Marabou API Library";
     m.def("createInputQuery", &createInputQuery, "Create input query from network and property file");
-    m.def("solve", &solve, "Takes in a description of the InputQuery and returns the solution");
+    m.def("solve", &solve, "Takes in a description of the InputQuery and returns the solution", py::arg("inputQuery"), py::arg("options"), py::arg("redirect") = "");
     m.def("saveQuery", &saveQuery, "Serializes the inputQuery in the given filename");
+    m.def("loadQuery", &loadQuery, "Loads and returns a serialized inputQuery from the given filename");
     m.def("addReluConstraint", &addReluConstraint, "Add a Relu constraint to the InputQuery");
     m.def("addMaxConstraint", &addMaxConstraint, "Add a Max constraint to the InputQuery");
     py::class_<InputQuery>(m, "InputQuery")
@@ -155,11 +230,24 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def("setNumberOfVariables", &InputQuery::setNumberOfVariables)
         .def("addEquation", &InputQuery::addEquation)
         .def("getSolutionValue", &InputQuery::getSolutionValue)
+        .def("getNumberOfVariables", &InputQuery::getNumberOfVariables)
         .def("getNumInputVariables", &InputQuery::getNumInputVariables)
         .def("getNumOutputVariables", &InputQuery::getNumOutputVariables)
         .def("inputVariableByIndex", &InputQuery::inputVariableByIndex)
+        .def("markInputVariable", &InputQuery::markInputVariable)
+        .def("markOutputVariable", &InputQuery::markOutputVariable)
         .def("outputVariableByIndex", &InputQuery::outputVariableByIndex)
         .def("setSymbolicBoundTightener", &InputQuery::setSymbolicBoundTightener);
+    py::class_<MarabouOptions>(m, "Options")
+        .def(py::init())
+        .def_readwrite("_numWorkers", &MarabouOptions::_numWorkers)
+        .def_readwrite("_initialTimeout", &MarabouOptions::_initialTimeout)
+        .def_readwrite("_initialDivides", &MarabouOptions::_initialDivides)
+        .def_readwrite("_onlineDivides", &MarabouOptions::_onlineDivides)
+        .def_readwrite("_timeoutInSeconds", &MarabouOptions::_timeoutInSeconds)
+        .def_readwrite("_timeoutFactor", &MarabouOptions::_timeoutFactor)
+        .def_readwrite("_verbosity", &MarabouOptions::_verbosity)
+        .def_readwrite("_dnc", &MarabouOptions::_dnc);
     py::class_<SymbolicBoundTightener, std::unique_ptr<SymbolicBoundTightener,py::nodelete>>(m, "SymbolicBoundTightener")
         .def(py::init())
         .def("setNumberOfLayers", &SymbolicBoundTightener::setNumberOfLayers)

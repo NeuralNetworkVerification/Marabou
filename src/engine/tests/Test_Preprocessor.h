@@ -555,9 +555,7 @@ public:
         inputQuery.setUpperBound( 8, 10 );
         inputQuery.setLowerBound( 9, 0 );
         inputQuery.setUpperBound( 9, 500000 );
-
-        TS_ASSERT_THROWS_NOTHING( inputQuery.setLowerBound( 10, -5000 ) );
-
+        inputQuery.setLowerBound( 10, -5000 );
         inputQuery.setUpperBound( 10, 500000 );
         inputQuery.setLowerBound( 11, 0 );
         inputQuery.setUpperBound( 11, 500000 );
@@ -583,13 +581,13 @@ public:
         inputQuery.setUpperBound( 19, 500000 );
 
         ReluConstraint *relu1 = new ReluConstraint( 6, 7 );
-        relu1->notifyLowerBound( 6, -50000 );
+        relu1->notifyLowerBound( 6, FloatUtils::negativeInfinity() );
         ReluConstraint *relu2 = new ReluConstraint( 10, 11 );
-        relu2->notifyLowerBound( 10 , -50000 );
+        relu2->notifyLowerBound( 10, FloatUtils::negativeInfinity() );
         ReluConstraint *relu3 = new ReluConstraint( 14, 15 );
-        relu3->notifyLowerBound( 14 , -50000 );
+        relu3->notifyLowerBound( 14, FloatUtils::negativeInfinity() );
         ReluConstraint *relu4 = new ReluConstraint( 18, 19 );
-        relu4->notifyLowerBound( 18 , -50000 );
+        relu4->notifyLowerBound( 18, FloatUtils::negativeInfinity() );
 
         inputQuery.addPiecewiseLinearConstraint( relu1 );
         inputQuery.addPiecewiseLinearConstraint( relu2 );
@@ -667,8 +665,8 @@ public:
         inputQuery.addEquation( *eq_eq);
         delete eq_eq;
 
-        auto processedQuery = Preprocessor().preprocess( inputQuery );
-        TS_ASSERT_EQUALS( processedQuery.getNumberOfVariables(), 0U );
+        InputQuery processed = Preprocessor().preprocess( inputQuery );
+        TS_ASSERT_EQUALS( processed.getNumberOfVariables(), 0U );
     }
 
     void test_todo()
