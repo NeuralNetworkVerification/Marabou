@@ -15,7 +15,8 @@
 #include "DisjunctionConstraint.h"
 #include "Statistics.h"
 
-DisjunctionConstraint::DisjunctionConstraint()
+DisjunctionConstraint::DisjunctionConstraint( const List<PiecewiseLinearCaseSplit> &disjuncts )
+    : _disjuncts( disjuncts )
 {
 }
 
@@ -26,7 +27,7 @@ DisjunctionConstraint::DisjunctionConstraint( const String &// serializedDisjunc
 
 PiecewiseLinearConstraint *DisjunctionConstraint::duplicateConstraint() const
 {
-    DisjunctionConstraint *clone = new DisjunctionConstraint();
+    DisjunctionConstraint *clone = new DisjunctionConstraint( _disjuncts );
     *clone = *this;
     return clone;
 }
@@ -104,8 +105,7 @@ List<PiecewiseLinearConstraint::Fix> DisjunctionConstraint::getSmartFixes( ITabl
 
 List<PiecewiseLinearCaseSplit> DisjunctionConstraint::getCaseSplits() const
 {
-    List<PiecewiseLinearCaseSplit> splits;
-    return splits;
+    return _disjuncts;
 }
 
 bool DisjunctionConstraint::phaseFixed() const

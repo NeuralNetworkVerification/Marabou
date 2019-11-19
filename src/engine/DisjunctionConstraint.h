@@ -22,7 +22,8 @@
 class DisjunctionConstraint : public PiecewiseLinearConstraint
 {
 public:
-    DisjunctionConstraint();
+    ~DisjunctionConstraint() {};
+    DisjunctionConstraint( const List<PiecewiseLinearCaseSplit> &disjuncts );
     DisjunctionConstraint( const String &serializedDisjunction );
 
     /*
@@ -141,6 +142,7 @@ public:
     bool supportsSymbolicBoundTightening() const;
 
 private:
+    List<PiecewiseLinearCaseSplit> _disjuncts;
 };
 
 #endif // __DisjunctionConstraint_h__
