@@ -6,9 +6,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(BUILD_PYTHON "Build Python" ON)
 option(FORCE_PYTHON_BUILD "Build python even if there is only python32" OFF)
-option(RUN_UNIT_TEST "run cxxtest unit testing" ON)
-option(RUN_MEMORY_TEST "run cxxtest unit testing with ASAN" ON)
-option(RUN_REGRESS_TEST "run regression tests" OFF)
+option(RUN_UNIT_TEST "run unit tests on build" ON)
+option(RUN_REGRESS_TEST "run regression tests on build" OFF)
+option(RUN_SYSTEM_TEST "run system tests on build" OFF)
+option(RUN_MEMORY_TEST "run cxxtest testing with ASAN ON" ON)
 
 set(DEFAULT_PYTHON_VERSION "3" CACHE STRING "Default Python version 2/3")
 set(PYTHON_VERSIONS_SUPPORTED 2 3)
@@ -51,6 +52,17 @@ set(MPS_PARSER mps)
 set(ACAS_PARSER acas)
 set(BERKELEY_PARSER berkeley)
 set(INPUT_PARSERS_DIR input_parsers)
+
+#-----------------------------------------------------------------------------#
+# Determine number of threads available, used to configure (default) parallel
+# execution of custom test targets (can be overriden with ARGS=-jN).
+
+include(ProcessorCount)
+ProcessorCount(CTEST_NTHREADS)
+if(CTEST_NTHREADS EQUAL 0)
+  set(CTEST_NTHREADS 1)
+endif()
+
 
 # We build a static library that is the core of the project, the link it to the
 # API's (executable and python at the moment)
@@ -222,15 +234,35 @@ add_custom_target(check
       COMMAND ctest --output-on-failure -j${CTEST_NTHREADS} $$ARGS
       DEPENDS build-tests build_input_parsers ${MARABOU_EXE})
 
+
+# Decide which tests to run and execute
+set(TESTS_TO_RUN "")
+# ctest uses regex, so create the string to look: (unit|system) ...
+macro(append_tests_to_run new_val)
+    if ("${TESTS_TO_RUN}" STREQUAL "")
+        set(TESTS_TO_RUN ${new_val})
+    else()
+        set(TESTS_TO_RUN "${TESTS_TO_RUN}|${new_val}")
+    endif()
+endmacro()
+
 if (${RUN_UNIT_TEST})
+    append_tests_to_run("unit")
+endif()
+if (${RUN_REGRESS_TEST})
+    append_tests_to_run("regress[0-5]")
+endif()
+if (${RUN_SYSTEM_TEST})
+    append_tests_to_run("system")
+endif()
+if (NOT ${TESTS_TO_RUN} STREQUAL "")
     # make ctest verbose 
     set(CTEST_OUTPUT_ON_FAILURE 1)
     add_custom_command(
         TARGET build-tests
         POST_BUILD
-        COMMAND ctest --output-on-failure  -L unit
+        COMMAND ctest --output-on-failure  -L "\"(${TESTS_TO_RUN})\"" -j${CTEST_NTHREADS} $$ARGS
     )
-
 endif()
 
 # Add the input parsers
