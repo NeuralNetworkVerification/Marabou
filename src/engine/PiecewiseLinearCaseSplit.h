@@ -48,6 +48,11 @@ public:
     */
     bool operator==( const PiecewiseLinearCaseSplit &other ) const;
 
+    /*
+      Change the index of a variable that appears in this case split
+    */
+    void updateVariableIndex( unsigned oldIndex, unsigned newIndex );
+
 private:
     /*
       Bound tightening information.

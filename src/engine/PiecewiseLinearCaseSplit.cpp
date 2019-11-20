@@ -67,6 +67,18 @@ bool PiecewiseLinearCaseSplit::operator==( const PiecewiseLinearCaseSplit &other
     return ( _bounds == other._bounds ) && ( _equations == other._equations );
 }
 
+void PiecewiseLinearCaseSplit::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
+{
+    for ( auto &bound : _bounds )
+    {
+        if ( bound._variable == oldIndex )
+            bound._variable = newIndex;
+    }
+
+    for ( auto &equation : _equations )
+        equation.updateVariableIndex( oldIndex, newIndex );
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

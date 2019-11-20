@@ -171,6 +171,9 @@ void DisjunctionConstraint::updateVariableIndex( unsigned oldIndex, unsigned new
         _upperBounds.erase( oldIndex );
     }
 
+    for ( auto &disjunct : _disjuncts )
+        disjunct.updateVariableIndex( oldIndex, newIndex );
+
     extractParticipatingVariables();
 }
 
