@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file Test_relu.h
+/*! \file Test_Disjunction.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz
@@ -18,10 +18,9 @@
 #include "Engine.h"
 #include "InputQuery.h"
 #include "FloatUtils.h"
-#include "ReluConstraint.h"
+#include "DisjunctionConstraint.h"
 
-
-class ReluTestSuite : public CxxTest::TestSuite
+class DisjunctionTestSuite : public CxxTest::TestSuite
 {
 public:
     void setUp()
@@ -32,7 +31,7 @@ public:
     {
     }
 
-    void test_relu_1()
+    void test_disjunction_1()
     {
         double large = 1000;
 
@@ -86,11 +85,47 @@ public:
         equation3.setScalar( 0 );
         inputQuery.addEquation( equation3 );
 
-        ReluConstraint *relu1 = new ReluConstraint( 1, 2 );
-        ReluConstraint *relu2 = new ReluConstraint( 3, 4 );
+        /*
+          We encode the two ReLU constraints:
 
-        inputQuery.addPiecewiseLinearConstraint( relu1 );
-        inputQuery.addPiecewiseLinearConstraint( relu2 );
+            x2 = ReLU( x1 )
+            x4 = ReLU( x3 )
+
+          as Disjunction constrints
+        */
+
+        PiecewiseLinearCaseSplit relu1Active;
+        relu1Active.storeBoundTightening( Tightening( 1, 0, Tightening::UB ) );
+        relu1Active.storeBoundTightening( Tightening( 2, 0, Tightening::UB ) );
+
+        PiecewiseLinearCaseSplit relu1Inactive;
+        relu1Active.storeBoundTightening( Tightening( 1, 0, Tightening::LB ) );
+        Equation eq1;
+        eq1.addAddend( 1, 1 );
+        eq1.addAddend( -1, 2 );
+        eq1.setScalar( 0 );
+        relu1Inactive.addEquation( eq1 );
+
+        List<PiecewiseLinearCaseSplit> caseSplits1 = { relu1Active, relu1Inactive };
+        DisjunctionConstraint *disjunction1 = new DisjunctionConstraint( caseSplits1 );
+
+        PiecewiseLinearCaseSplit relu2Active;
+        relu2Active.storeBoundTightening( Tightening( 3, 0, Tightening::UB ) );
+        relu2Active.storeBoundTightening( Tightening( 4, 0, Tightening::UB ) );
+
+        PiecewiseLinearCaseSplit relu2Inactive;
+        relu2Active.storeBoundTightening( Tightening( 3, 0, Tightening::LB ) );
+        Equation eq2;
+        eq2.addAddend( 1, 3 );
+        eq2.addAddend( -1, 4 );
+        eq2.setScalar( 0 );
+        relu2Inactive.addEquation( eq2 );
+
+        List<PiecewiseLinearCaseSplit> caseSplits2 = { relu2Active, relu2Inactive };
+        DisjunctionConstraint *disjunction2 = new DisjunctionConstraint( caseSplits2 );
+
+        inputQuery.addPiecewiseLinearConstraint( disjunction1 );
+        inputQuery.addPiecewiseLinearConstraint( disjunction2 );
 
         Engine engine;
         TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
@@ -136,9 +171,12 @@ public:
         }
 
         TS_ASSERT( correctSolution );
+
+        delete disjunction1;
+        delete disjunction2;
     }
 
-    void test_relu_2()
+    void test_disjunction_2()
     {
         InputQuery inputQuery;
         inputQuery.setNumberOfVariables( 6 );
@@ -168,17 +206,52 @@ public:
         equation3.setScalar( 0 );
         inputQuery.addEquation( equation3 );
 
-        ReluConstraint *relu1 = new ReluConstraint( 1, 2 );
-        ReluConstraint *relu2 = new ReluConstraint( 3, 4 );
+        /*
+          We encode the two ReLU constraints:
 
-        inputQuery.addPiecewiseLinearConstraint( relu1 );
-        inputQuery.addPiecewiseLinearConstraint( relu2 );
+            x2 = ReLU( x1 )
+            x4 = ReLU( x3 )
+
+          as Disjunction constrints
+        */
+
+        PiecewiseLinearCaseSplit relu1Active;
+        relu1Active.storeBoundTightening( Tightening( 1, 0, Tightening::UB ) );
+        relu1Active.storeBoundTightening( Tightening( 2, 0, Tightening::UB ) );
+
+        PiecewiseLinearCaseSplit relu1Inactive;
+        relu1Active.storeBoundTightening( Tightening( 1, 0, Tightening::LB ) );
+        Equation eq1;
+        eq1.addAddend( 1, 1 );
+        eq1.addAddend( -1, 2 );
+        eq1.setScalar( 0 );
+        relu1Inactive.addEquation( eq1 );
+
+        List<PiecewiseLinearCaseSplit> caseSplits1 = { relu1Active, relu1Inactive };
+        DisjunctionConstraint *disjunction1 = new DisjunctionConstraint( caseSplits1 );
+
+        PiecewiseLinearCaseSplit relu2Active;
+        relu2Active.storeBoundTightening( Tightening( 3, 0, Tightening::UB ) );
+        relu2Active.storeBoundTightening( Tightening( 4, 0, Tightening::UB ) );
+
+        PiecewiseLinearCaseSplit relu2Inactive;
+        relu2Active.storeBoundTightening( Tightening( 3, 0, Tightening::LB ) );
+        Equation eq2;
+        eq2.addAddend( 1, 3 );
+        eq2.addAddend( -1, 4 );
+        eq2.setScalar( 0 );
+        relu2Inactive.addEquation( eq2 );
+
+        List<PiecewiseLinearCaseSplit> caseSplits2 = { relu2Active, relu2Inactive };
+        DisjunctionConstraint *disjunction2 = new DisjunctionConstraint( caseSplits2 );
+
+        inputQuery.addPiecewiseLinearConstraint( disjunction1 );
+        inputQuery.addPiecewiseLinearConstraint( disjunction2 );
 
         Engine engine;
         TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
 
         TS_ASSERT_THROWS_NOTHING ( engine.solve() );
-
 
         engine.extractSolution( inputQuery );
 
@@ -219,6 +292,9 @@ public:
         }
 
         TS_ASSERT( correctSolution );
+
+        delete disjunction1;
+        delete disjunction2;
     }
 };
 
