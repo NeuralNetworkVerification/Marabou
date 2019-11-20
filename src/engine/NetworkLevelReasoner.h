@@ -66,6 +66,8 @@ public:
         ReLU,
     };
 
+    typedef ActivationPattern Map<Index, unsigned>;
+
     void setNumberOfLayers( unsigned numberOfLayers );
     void setLayerSize( unsigned layer, unsigned size );
     void allocateWeightMatrices();
@@ -95,6 +97,11 @@ public:
       Interface methods for performing operations on the network.
     */
     void evaluate( double *input, double *output );
+
+    /*
+      Interface methods for performing operations on the network.
+    */
+    void getActivationPattern( const Vector<double> &input, ActivationPattern &pattern );
 
     /*
       Duplicate the reasoner
