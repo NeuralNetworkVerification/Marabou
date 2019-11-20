@@ -2,7 +2,7 @@
 /*! \file DisjunctionConstraint.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz, Parth Shah, Derek Huang
+ **   Guy Katz
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -12,7 +12,10 @@
  ** [[ Add lengthier description here ]]
  **/
 
+#include "Debug.h"
 #include "DisjunctionConstraint.h"
+#include "MStringf.h"
+#include "MarabouError.h"
 #include "Statistics.h"
 
 DisjunctionConstraint::DisjunctionConstraint( const List<PiecewiseLinearCaseSplit> &disjuncts )
@@ -22,9 +25,10 @@ DisjunctionConstraint::DisjunctionConstraint( const List<PiecewiseLinearCaseSpli
     extractParticipatingVariables();
 }
 
-DisjunctionConstraint::DisjunctionConstraint( const String &// serializedDisjunction
-                                              )
+DisjunctionConstraint::DisjunctionConstraint( const String &/* serializedDisjunction */ )
 {
+    throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED,
+                        "Construct DisjunctionConstraint from String" );
 }
 
 PiecewiseLinearConstraint *DisjunctionConstraint::duplicateConstraint() const
@@ -48,7 +52,7 @@ void DisjunctionConstraint::registerAsWatcher( ITableau *tableau )
 
 void DisjunctionConstraint::unregisterAsWatcher( ITableau *tableau )
 {
-    for ( auto &variable : _participatingVariables )
+    for ( const auto &variable : _participatingVariables )
         tableau->unregisterToWatchVariable( this, variable );
 }
 
@@ -108,12 +112,10 @@ bool DisjunctionConstraint::satisfied() const
 
 List<PiecewiseLinearConstraint::Fix> DisjunctionConstraint::getPossibleFixes() const
 {
-    List<PiecewiseLinearConstraint::Fix> fixes;
-    return fixes;
+    return List<PiecewiseLinearConstraint::Fix>();
 }
 
-List<PiecewiseLinearConstraint::Fix> DisjunctionConstraint::getSmartFixes( ITableau *// tableau
-                                                                           ) const
+List<PiecewiseLinearConstraint::Fix> DisjunctionConstraint::getSmartFixes( ITableau */* tableau */ ) const
 {
     return getPossibleFixes();
 }
@@ -133,18 +135,23 @@ PiecewiseLinearCaseSplit DisjunctionConstraint::getValidCaseSplit() const
     return *_feasibleDisjuncts.begin();
 }
 
-void DisjunctionConstraint::dump( String &// output
-                                  ) const
+void DisjunctionConstraint::dump( String &output ) const
 {
+    output = Stringf( "DisjunctionConstraint:\n" );
+
+    for ( const auto &disjunct : _disjuncts )
+    {
+        String disjunctOutput;
+        disjunct.dump( disjunctOutput );
+        output += Stringf( "\t%s\n", disjunctOutput );
+    }
+
+    output += Stringf( "Active? %s.", _constraintActive ? "Yes" : "No" );
 }
 
 void DisjunctionConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
-	// ASSERT( oldIndex == _b || oldIndex == _f || ( _auxVarInUse && oldIndex == _aux ) );
-    // ASSERT( !_assignment.exists( newIndex ) &&
-    //         !_lowerBounds.exists( newIndex ) &&
-    //         !_upperBounds.exists( newIndex ) &&
-    //         newIndex != _b && newIndex != _f && ( !_auxVarInUse || newIndex != _aux ) );
+    ASSERT( !participatingVariable( newIndex ) );
 
     if ( _assignment.exists( oldIndex ) )
     {
@@ -163,37 +170,37 @@ void DisjunctionConstraint::updateVariableIndex( unsigned oldIndex, unsigned new
         _upperBounds[newIndex] = _upperBounds.get( oldIndex );
         _upperBounds.erase( oldIndex );
     }
+
+    extractParticipatingVariables();
 }
 
-void DisjunctionConstraint::eliminateVariable( unsigned // variable
-                                               , double // fixedValue
-                                               )
+void DisjunctionConstraint::eliminateVariable( unsigned /* variable */, double /* fixedValue */ )
 {
+    throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED,
+                        "Eliminate variable from a DisjunctionConstraint" );
 }
 
 bool DisjunctionConstraint::constraintObsolete() const
 {
-    return false;
+    return _feasibleDisjuncts.empty();
 }
 
-void DisjunctionConstraint::getEntailedTightenings( List<Tightening> &// tightenings
-                                                    ) const
+void DisjunctionConstraint::getEntailedTightenings( List<Tightening> &/* tightenings */ ) const
 {
 }
 
-void DisjunctionConstraint::addAuxiliaryEquations( InputQuery &// inputQuery
-                                                   )
+void DisjunctionConstraint::addAuxiliaryEquations( InputQuery &/* inputQuery */ )
 {
 }
 
-void DisjunctionConstraint::getCostFunctionComponent( Map<unsigned, double> &// cost
-                                                      ) const
+void DisjunctionConstraint::getCostFunctionComponent( Map<unsigned, double> &/* cost */ ) const
 {
 }
 
 String DisjunctionConstraint::serializeToString() const
 {
-    return String();
+    throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED,
+                        "Serialize DisjunctionConstraint to String" );
 }
 
 bool DisjunctionConstraint::supportsSymbolicBoundTightening() const
@@ -240,15 +247,9 @@ bool DisjunctionConstraint::disjunctSatisfied( const PiecewiseLinearCaseSplit &d
     // Check whether the equations are satisfied
     for ( const auto &equation : disjunct.getEquations() )
     {
-        printf( "Processing equation: \n");
-        equation.dump();
-
         double result = 0;
-
         for ( const auto &addend : equation._addends )
             result += addend._coefficient * _assignment[addend._variable];
-
-        printf( "\tresult: %lf\n", result );
 
         if ( !FloatUtils::areEqual( result, equation._scalar ) )
             return false;

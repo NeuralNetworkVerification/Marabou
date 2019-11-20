@@ -13,6 +13,7 @@
 
 **/
 
+#include "MStringf.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include <cstdio>
 
@@ -36,22 +37,29 @@ List<Equation> PiecewiseLinearCaseSplit::getEquations() const
 	return _equations;
 }
 
-void PiecewiseLinearCaseSplit::dump() const
+void PiecewiseLinearCaseSplit::dump( String &output ) const
 {
-    printf( "\nDumping piecewise linear case split\n" );
-    printf( "\tBounds are:\n" );
+    output = String( "\nDumping piecewise linear case split\n" );
+    output += String( "\tBounds are:\n" );
     for ( const auto &bound : _bounds )
     {
-        printf( "\t\tVariable: %u. New bound: %.2lf. Bound type: %s\n",
-                bound._variable, bound._value, bound._type == Tightening::LB ? "lower" : "upper" );
+        output += Stringf( "\t\tVariable: %u. New bound: %.2lf. Bound type: %s\n",
+                           bound._variable, bound._value, bound._type == Tightening::LB ? "lower" : "upper" );
     }
 
-    printf( "\n\tEquations are:\n" );
+    output += String( "\n\tEquations are:\n" );
     for ( const auto &equation : _equations )
     {
-        printf( "\t\t" );
+        output += String( "\t\t" );
         equation.dump();
     }
+}
+
+void PiecewiseLinearCaseSplit::dump() const
+{
+    String output;
+    dump( output );
+    printf( "%s", output.ascii() );
 }
 
 bool PiecewiseLinearCaseSplit::operator==( const PiecewiseLinearCaseSplit &other ) const

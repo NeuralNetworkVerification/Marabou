@@ -18,6 +18,7 @@
 
 #include "Equation.h"
 #include "IEngine.h"
+#include "MString.h"
 #include "Pair.h"
 #include "Tightening.h"
 
@@ -40,6 +41,7 @@ public:
       Dump the case split - for debugging purposes.
     */
     void dump() const;
+    void dump( String &output ) const;
 
     /*
       Equality operator.
