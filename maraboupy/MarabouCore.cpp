@@ -164,7 +164,7 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
                                   timeoutFactor, DivideStrategy::LargestInterval,
                                   &inputQuery, verbosity ) );
 
-            dncManager->solve( timeoutInSeconds );
+            dncManager->solve( timeoutInSeconds, true );
             switch ( dncManager->getExitCode() )
             {
             case DnCManager::SAT:

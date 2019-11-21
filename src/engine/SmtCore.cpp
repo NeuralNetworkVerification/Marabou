@@ -445,6 +445,8 @@ StackEntry *SmtCore::duplicateStackEntry( const StackEntry &stackEntry )
     return copy;
 }
 
+
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

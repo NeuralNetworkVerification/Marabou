@@ -33,7 +33,6 @@ public:
       The stack.
     */
     List< StackEntry *> _stack;
-
 };
 
 #endif // __SmtState_h__
