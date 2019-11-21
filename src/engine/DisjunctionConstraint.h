@@ -176,7 +176,6 @@ private:
     */
     void updateFeasibleDisjuncts();
     bool disjunctIsFeasible( const PiecewiseLinearCaseSplit &disjunct ) const;
-
 };
 
 #endif // __DisjunctionConstraint_h__
