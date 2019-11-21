@@ -143,7 +143,7 @@ void DisjunctionConstraint::dump( String &output ) const
     {
         String disjunctOutput;
         disjunct.dump( disjunctOutput );
-        output += Stringf( "\t%s\n", disjunctOutput );
+        output += Stringf( "\t%s\n", disjunctOutput.ascii() );
     }
 
     output += Stringf( "Active? %s.", _constraintActive ? "Yes" : "No" );
