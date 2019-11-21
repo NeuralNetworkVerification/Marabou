@@ -74,6 +74,7 @@ void DnCMarabou::run()
     float timeoutFactor = Options::get()->getFloat( Options::TIMEOUT_FACTOR );
     DivideStrategy divideStrategy = setDivideStrategyFromOptions
         ( Options::get()->getString( Options::DIVIDE_STRATEGY ) );
+    bool restoreTreeStates = Options::get()->getBool( Options::RESTORE_TREE_STATES );
 
     _dncManager = std::unique_ptr<DnCManager>
       ( new DnCManager( numWorkers, initialDivides, initialTimeout,
@@ -83,7 +84,7 @@ void DnCMarabou::run()
 
     struct timespec start = TimeUtils::sampleMicro();
 
-    _dncManager->solve( timeoutInSeconds );
+    _dncManager->solve( timeoutInSeconds, restoreTreeStates );
 
     struct timespec end = TimeUtils::sampleMicro();
 

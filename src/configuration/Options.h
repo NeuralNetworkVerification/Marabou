@@ -34,6 +34,9 @@ public:
         // Should DNC mode be on or off
         DNC_MODE,
 
+        // Restore tree states in DnC mode
+        RESTORE_TREE_STATES,
+
         // Help flag
         HELP,
 

@@ -135,6 +135,18 @@ public:
     void resetExitCode();
     void resetBoundTighteners();
 
+    /*
+      Apply the stack to the newly created SmtCore, returns false if UNSAT is
+      found in this process.
+    */
+    bool restoreSmtState( SmtState &smtState );
+
+    /*
+      Store the stack of the timed-out query
+    */
+    void storeSmtState( SmtState &smtState );
+
+
     bool propagate();
     void getEstimates( Map <PiecewiseLinearConstraint *, double>
                        &balanceEstimates,

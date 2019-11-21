@@ -56,7 +56,7 @@ public:
     /*
       Perform the Divide-and-conquer solving
     */
-    void solve( unsigned timeoutInSeconds );
+    void solve( unsigned timeoutInSeconds, bool restoreTreeStates );
 
     /*
       Return the DnCExitCode of the DnCManager
@@ -87,7 +87,8 @@ private:
                           std::atomic_uint &numUnsolvedSubQueries,
                           std::atomic_bool &shouldQuitSolving,
                           unsigned threadId, unsigned onlineDivides,
-                          float timeoutFactor, DivideStrategy divideStrategy );
+                          float timeoutFactor, DivideStrategy divideStrategy,
+                          bool restoreTreeStates );
 
     /*
       Create the base engine from the network and property files,

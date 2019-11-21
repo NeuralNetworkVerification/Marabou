@@ -67,7 +67,7 @@ void DnCWorker::setQueryDivider( DivideStrategy divideStrategy )
     }
 }
 
-void DnCWorker::popOneSubQueryAndSolve()
+void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
 {
     SubQuery *subQuery = NULL;
     // Boost queue stores the next element into the passed-in pointer

@@ -158,6 +158,19 @@ public:
         runtimeEstimates.clear();
     }
 
+    mutable SmtState *lastRestoredSmtState;
+    bool restoreSmtState( SmtState &smtState )
+    {
+        lastRestoredSmtState = &smtState;
+        return true;
+    }
+
+    mutable SmtState *lastStoredSmtState;
+    void storeSmtState( SmtState &smtState )
+    {
+        lastStoredSmtState = &smtState;
+    }
+
 };
 
 #endif // __MockEngine_h__

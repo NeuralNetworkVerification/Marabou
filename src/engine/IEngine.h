@@ -27,6 +27,7 @@ class EngineState;
 class Equation;
 class PiecewiseLinearCaseSplit;
 class PiecewiseLinearConstraint;
+class SmtState;
 
 class IEngine
 {
@@ -53,6 +54,8 @@ public:
     */
     virtual void storeState( EngineState &state, bool storeAlsoTableauState ) const = 0;
     virtual void restoreState( const EngineState &state ) = 0;
+    virtual void storeSmtState( SmtState &smtState ) = 0;
+    virtual bool restoreSmtState( SmtState &smtState ) = 0;
     virtual void setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints ) = 0;
 
     /*
