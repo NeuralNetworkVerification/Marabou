@@ -298,15 +298,28 @@ public:
         unsigned f = 4;
 
         AbsConstraint abs(b, f);
-//        List<Tightening> entailedTightenings;
-//        List<Tightening>::iterator it;
+        List<Tightening> entailedTightenings;
+        List<Tightening>::iterator it;
 
         // B = D , A < C
         // A < C < BD
+        abs.notifyUpperBound( f,10);
+        abs.notifyUpperBound( b,10);
         abs.notifyLowerBound( f,-1);
         TS_TRACE("f lower bound");
         TS_TRACE(abs.get_lower_bound(f));
-        TS_ASSERT_EQUALS( abs.get_lower_bound(f), 0);
+        TS_ASSERT_EQUALS( abs.get_lower_bound(f), -1);
+        abs.notifyLowerBound( b, 5);
+        TS_ASSERT( abs.phaseFixed() );
+        TS_TRACE("f lower bound");
+        TS_TRACE(abs.get_lower_bound(f));
+        abs.getEntailedTightenings( entailedTightenings );
+//        print_entailed_Tightenings(entailedTightenings);
+//        TS_ASSERT_EQUALS( entailedTightenings.size(),1U );
+//        it = entailedTightenings.begin();
+//        TS_ASSERT_EQUALS( it->_variable, f );
+//        TS_ASSERT_EQUALS( it->_value, 5 );
+//        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
 
     }
 
