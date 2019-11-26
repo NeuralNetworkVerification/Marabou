@@ -87,12 +87,12 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
 
         else:
             ### Read protobuf file and begin session ###
-            with tf.gfile.GFile(filename, "rb") as f:
-                graph_def = tf.GraphDef()
+            with tf.compat.v1.gfile.GFile(filename, "rb") as f:
+                graph_def = tf.compat.v1.GraphDef()
                 graph_def.ParseFromString(f.read())
             with tf.Graph().as_default() as graph:
                 tf.import_graph_def(graph_def, name="")
-            self.sess = tf.Session(graph=graph)
+            self.sess = tf.compat.v1.Session(graph=graph)
             ### END reading protobuf ###
 
         ### Find operations corresponding to input and output ###
