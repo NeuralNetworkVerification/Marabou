@@ -37,7 +37,6 @@ static std::string getCompiledDateTime() {
     return __DATE__ " " __TIME__;
 }
 
-
 void printVersion()
 {
     std::cout << 
@@ -48,13 +47,13 @@ void printVersion()
 	      << std::endl;
 }
 
-
 void printHelpMessage()
 {
     printVersion();
-    std::cout << std::endl << "Usage: ./marabou.elf --input=NeuralNetFile --property=PropertyFile" << std::endl << std::endl;
+    std::cout << std::endl << "Usage: ./build/Marabou --input=NeuralNetFile --property=PropertyFile" << std::endl << std::endl;
     std::cout << "\t--input - Neural network file " << std::endl;
     std::cout << "\t--property -  Property file " << std::endl;
+    std::cout << "\t--input-query - InputQuery file " << std::endl;
     std::cout << "\t--summary-file - Summary file " << std::endl;
     std::cout << "\t--timeout - Global timeout " << std::endl;
     std::cout << "\t--help - Prints the help message " << std::endl;

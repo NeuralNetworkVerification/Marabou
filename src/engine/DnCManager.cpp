@@ -54,28 +54,6 @@ void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine
 DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
                         unsigned initialTimeout, unsigned onlineDivides,
                         float timeoutFactor, DivideStrategy divideStrategy,
-                        String networkFilePath, String propertyFilePath,
-                        unsigned verbosity )
-    : _numWorkers( numWorkers )
-    , _initialDivides( initialDivides )
-    , _initialTimeout( initialTimeout )
-    , _onlineDivides( onlineDivides )
-    , _timeoutFactor( timeoutFactor )
-    , _divideStrategy( divideStrategy )
-    , _networkFilePath( networkFilePath )
-    , _propertyFilePath( propertyFilePath )
-    , _baseInputQuery( NULL )
-    , _exitCode( DnCManager::NOT_DONE )
-    , _workload( NULL )
-    , _timeoutReached( false )
-    , _numUnsolvedSubQueries( 0 )
-    , _verbosity( verbosity )
-{
-}
-
-DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
-                        unsigned initialTimeout, unsigned onlineDivides,
-                        float timeoutFactor, DivideStrategy divideStrategy,
                         InputQuery *inputQuery, unsigned verbosity )
     : _numWorkers( numWorkers )
     , _initialDivides( initialDivides )
@@ -83,8 +61,6 @@ DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
     , _onlineDivides( onlineDivides )
     , _timeoutFactor( timeoutFactor )
     , _divideStrategy( divideStrategy )
-    , _networkFilePath( "" )
-    , _propertyFilePath( "" )
     , _baseInputQuery( inputQuery )
     , _exitCode( DnCManager::NOT_DONE )
     , _workload( NULL )
@@ -283,25 +259,14 @@ void DnCManager::printResult()
         InputQuery *inputQuery = _engineWithSATAssignment->getInputQuery();
         _engineWithSATAssignment->extractSolution( *( inputQuery ) );
 
-        Vector<double> inputVector( inputQuery->getNumInputVariables() );
-        Vector<double> outputVector( inputQuery->getNumOutputVariables() );
-        double *inputs( inputVector.data() );
-        double *outputs( outputVector.data() );
-
         printf( "Input assignment:\n" );
         for ( unsigned i = 0; i < inputQuery->getNumInputVariables(); ++i )
-        {
             printf( "\tx%u = %lf\n", i, inputQuery->getSolutionValue( inputQuery->inputVariableByIndex( i ) ) );
-            inputs[i] = inputQuery->getSolutionValue( inputQuery->inputVariableByIndex( i ) );
-        }
-
-        _engineWithSATAssignment->getInputQuery()->getNetworkLevelReasoner()
-            ->evaluate( inputs, outputs );
 
         printf( "\n" );
         printf( "Output:\n" );
         for ( unsigned i = 0; i < inputQuery->getNumOutputVariables(); ++i )
-            printf( "\ty%u = %lf\n", i, outputs[i] );
+            printf( "\ty%u = %lf\n", i, inputQuery->getSolutionValue( inputQuery->outputVariableByIndex( i ) ) );
         printf( "\n" );
         break;
     }
@@ -332,16 +297,7 @@ bool DnCManager::createEngines()
 
     InputQuery *baseInputQuery = new InputQuery();
 
-    if ( _baseInputQuery )
-        *baseInputQuery = *_baseInputQuery;
-    else
-    {
-        // InputQuery is owned by engine
-        AcasParser acasParser( _networkFilePath );
-        acasParser.generateQuery( *baseInputQuery );
-        if ( _propertyFilePath != "" )
-            PropertyParser().parse( _propertyFilePath, *baseInputQuery );
-    }
+    *baseInputQuery = *_baseInputQuery;
 
     if ( !_baseEngine->processInputQuery( *baseInputQuery ) )
         // Solved by preprocessing, we are done!
