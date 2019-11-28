@@ -55,7 +55,7 @@ void InputQuery::setLowerBound( unsigned variable, double bound )
                              Stringf( "Variable = %u, number of variables = %u (setLowerBound)",
                                       variable, _numberOfVariables ).ascii() );
     }
-//    printf( "Variable = %d, lower bound = %f\n",variable,bound);
+
     _lowerBounds[variable] = bound;
 }
 
@@ -67,14 +67,13 @@ void InputQuery::setUpperBound( unsigned variable, double bound )
                              Stringf( "Variable = %u, number of variables = %u (setUpperBound)",
                                       variable, _numberOfVariables ).ascii() );
     }
-//    printf( "Variable = %d, upper bound = %f\n",variable,bound);
+
     _upperBounds[variable] = bound;
 }
 
 void InputQuery::addEquation( const Equation &equation )
 {
     _equations.append( equation );
-//    equation.dump();
 }
 
 unsigned InputQuery::getNumberOfVariables() const
