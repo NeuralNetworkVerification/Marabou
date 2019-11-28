@@ -197,7 +197,6 @@ class MarabouNetwork:
         if options == None:
             options = MarabouCore.Options()
         vals, stats = MarabouCore.solve(ipq, options, filename)
-
         if verbose:
             if stats.hasTimedOut():
                 print("TO")
