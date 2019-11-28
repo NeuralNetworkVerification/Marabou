@@ -28,6 +28,10 @@
 // TODO: get rid of this include
 #include "ReluConstraint.h"
 
+#ifdef _WIN32
+#undef INFINITE
+#endif
+
 Preprocessor::Preprocessor()
     : _statistics( NULL )
 {
@@ -74,17 +78,42 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     }
 
     collectFixedValues();
+    separateMergedAndFixed();
 
     if ( attemptVariableElimination )
         eliminateVariables();
 
+    return _preprocessed;
+}
+
+void Preprocessor::separateMergedAndFixed()
+{
+    Map<unsigned, double> noLongerMerged;
+
+    for ( const auto &merged : _mergedVariables )
+    {
+        // In case of a chained merging, go all the way to the final target
+        unsigned finalMergeTarget = merged.second;
+        while ( _mergedVariables.exists( finalMergeTarget ) )
+            finalMergeTarget = _mergedVariables[finalMergeTarget];
+
+        // Is the merge target fixed?
+        if ( _fixedVariables.exists( finalMergeTarget ) )
+            noLongerMerged[merged.first] = _fixedVariables[finalMergeTarget];
+    }
+
+    // We have collected all the merged variables that should actually be fixed
+    for ( const auto &merged : noLongerMerged )
+    {
+        _mergedVariables.erase( merged.first );
+        _fixedVariables[merged.first] = merged.second;
+    }
+
     DEBUG({
-            // For now, assume merged and fixed variable sets are disjoint
+            // After this operation, the merged and fixed variable sets are disjoint
             for ( const auto &fixed : _fixedVariables )
                 ASSERT( !_mergedVariables.exists( fixed.first ) );
           });
-
-    return _preprocessed;
 }
 
 void Preprocessor::makeAllEquationsEqualities()
@@ -481,7 +510,6 @@ void Preprocessor::eliminateVariables()
     if ( _statistics )
         _statistics->ppSetNumEliminatedVars( _fixedVariables.size() + _mergedVariables.size() );
 
-
     // Check and remove any fixed variables from the debugging solution
     for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
     {
@@ -613,6 +641,8 @@ void Preprocessor::eliminateVariables()
             if ( _statistics )
                 _statistics->ppIncNumConstraintsRemoved();
 
+            delete *constraint;
+            *constraint = NULL;
             constraint = constraints.erase( constraint );
         }
         else
@@ -633,6 +663,10 @@ void Preprocessor::eliminateVariables()
     // Let the SBT know of changes in indices and merged variables
     if ( _preprocessed._sbt )
         _preprocessed._sbt->updateVariableIndices( _oldIndexToNewIndex, _mergedVariables, _fixedVariables );
+
+    // Let the NLR know of changes in indices and merged variables
+    if ( _preprocessed._networkLevelReasoner )
+        _preprocessed._networkLevelReasoner->updateVariableIndices( _oldIndexToNewIndex, _mergedVariables );
 
     // Update the lower/upper bound maps
     for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )

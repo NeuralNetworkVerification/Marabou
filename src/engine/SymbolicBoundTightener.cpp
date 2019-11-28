@@ -254,6 +254,7 @@ void SymbolicBoundTightener::allocateWeightAndBiasSpace()
 
 void SymbolicBoundTightener::setBias( unsigned layer, unsigned neuron, double bias )
 {
+    //TODO: check that layer and neuron are not off bounds
     _biases[layer][neuron] = bias;
 }
 

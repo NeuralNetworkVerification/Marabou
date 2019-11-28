@@ -14,6 +14,7 @@
 **/
 
 #include "MString.h"
+#include "Vector.h"
 
 String::String( Super super ) : _super( super )
 {
@@ -107,8 +108,9 @@ List<String> String::tokenize( String delimiter ) const
 {
     List<String> tokens;
 
-    char copy[length()+1];
-    memcpy( copy, ascii(), sizeof(copy) );
+    Vector<char> copyVector( length() + 1 );
+    char *copy( copyVector.data() );
+    memcpy( copy, ascii(), sizeof(char) * ( length() + 1 ) );
 
     char *token = strtok( copy, delimiter.ascii() );
 
@@ -153,7 +155,7 @@ String String::trim() const
 
     for ( unsigned i = 0; i < length(); ++i )
     {
-        if ( ( !firstNonSpaceFound ) && ( _super[i] != ' ' ) )
+        if ( ( !firstNonSpaceFound ) && ( _super[i] != ' ' ) && ( _super[i] != '\n' ) )
         {
             firstNonSpace = i;
             firstNonSpaceFound = true;
@@ -165,7 +167,7 @@ String String::trim() const
         }
     }
 
-    if ( lastNonSpace == 0 )
+    if ( !firstNonSpaceFound )
     {
         return "";
     }

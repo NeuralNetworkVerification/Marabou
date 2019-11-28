@@ -24,6 +24,10 @@
 #include "Statistics.h"
 #include "TableauRow.h"
 
+#ifdef _WIN32
+#define __attribute__(x)
+#endif
+
 ReluConstraint::ReluConstraint( unsigned b, unsigned f )
     : _b( b )
     , _f( f )
@@ -476,17 +480,27 @@ PiecewiseLinearCaseSplit ReluConstraint::getValidCaseSplit() const
 
 void ReluConstraint::dump( String &output ) const
 {
-    output = Stringf( "ReluConstraint: x%u = ReLU( x%u ). Active? %s. PhaseStatus = %u (%s). "
-                      "b in [%lf, %lf]. f in [%lf, %lf]",
+    output = Stringf( "ReluConstraint: x%u = ReLU( x%u ). Active? %s. PhaseStatus = %u (%s).\n",
                       _f, _b,
                       _constraintActive ? "Yes" : "No",
-                      _phaseStatus, phaseToString( _phaseStatus ).ascii(),
-                      _lowerBounds[_b], _upperBounds[_b], _lowerBounds[_f], _upperBounds[_f]
+                      _phaseStatus, phaseToString( _phaseStatus ).ascii()
                       );
 
+    output += Stringf( "b in [%s, %s], ",
+                       _lowerBounds.exists( _b ) ? Stringf( "%lf", _lowerBounds[_b] ).ascii() : "-inf",
+                       _upperBounds.exists( _b ) ? Stringf( "%lf", _upperBounds[_b] ).ascii() : "inf" );
+
+    output += Stringf( "f in [%s, %s]",
+                       _lowerBounds.exists( _f ) ? Stringf( "%lf", _lowerBounds[_f] ).ascii() : "-inf",
+                       _upperBounds.exists( _f ) ? Stringf( "%lf", _upperBounds[_f] ).ascii() : "inf" );
+
     if ( _auxVarInUse )
-        output += Stringf( ". Aux var: %u. Range: [%lf, %lf]\n",
-                           _aux, _lowerBounds[_aux], _upperBounds[_aux] );
+    {
+        output += Stringf( ". Aux var: %u. Range: [%s, %s]\n",
+                           _aux,
+                           _lowerBounds.exists( _aux ) ? Stringf( "%lf", _lowerBounds[_aux] ).ascii() : "-inf",
+                           _upperBounds.exists( _aux ) ? Stringf( "%lf", _upperBounds[_aux] ).ascii() : "inf" );
+    }
 }
 
 void ReluConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
@@ -710,7 +724,12 @@ void ReluConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
     // Adjust the bounds for the new variable
     ASSERT( _lowerBounds.exists( _b ) );
     inputQuery.setLowerBound( _aux, 0 );
-    inputQuery.setUpperBound( _aux, -_lowerBounds[_b] );
+
+    // Generally, aux.ub = -b.lb. However, if b.lb is positive (active
+    // phase), then aux.ub needs to be 0
+    double auxUpperBound =
+        _lowerBounds[_b] > 0 ? 0 : -_lowerBounds[_b];
+    inputQuery.setUpperBound( _aux, auxUpperBound );
 
     // We now care about the auxiliary variable, as well
     _auxVarInUse = true;

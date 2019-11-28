@@ -18,6 +18,7 @@
 
 #include "DivideStrategy.h"
 #include "Engine.h"
+#include "InputQuery.h"
 #include "SubQuery.h"
 #include "Vector.h"
 
@@ -43,6 +44,11 @@ public:
                 DivideStrategy divideStrategy, String networkFilePath,
                 String propertyFilePath, unsigned verbosity );
 
+    DnCManager( unsigned numWorkers, unsigned initialDivides, unsigned
+                initialTimeout, unsigned onlineDivides, float timeoutFactor,
+                DivideStrategy divideStrategy, InputQuery *inputQuery,
+                unsigned verbosity );
+
     ~DnCManager();
 
     void freeMemoryIfNeeded();
@@ -62,7 +68,26 @@ public:
     */
     String getResultString();
 
+    /*
+      Print the result of DnC solving
+    */
+    void printResult();
+
+    /*
+      Store the solution into the map
+    */
+    void getSolution( std::map<int, double> &ret );
+
 private:
+    /*
+      Create and run a DnCWorker
+    */
+    static void dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine,
+                          std::atomic_uint &numUnsolvedSubQueries,
+                          std::atomic_bool &shouldQuitSolving,
+                          unsigned threadId, unsigned onlineDivides,
+                          float timeoutFactor, DivideStrategy divideStrategy );
+
     /*
       Create the base engine from the network and property files,
       and if necessary, create engines for workers
@@ -81,15 +106,12 @@ private:
     void updateDnCExitCode();
 
     /*
-      Print the result of DnC solving
-    */
-    void printResult();
-
-    /*
       Set _timeoutReached to true if timeout has been reached
     */
     void updateTimeoutReached( timespec startTime,
                                unsigned long long timeoutInMicroSeconds );
+
+    static void log( const String &message );
 
     /*
       The base engine that is used to perform the initial divides
@@ -146,6 +168,12 @@ private:
     */
     String _networkFilePath;
     String _propertyFilePath;
+
+    /*
+      Alternatively, we could construct the DnCManager by directly providing the
+      inputQuery instead of the network and property filepaths.
+    */
+    InputQuery *_baseInputQuery;
 
     /*
       The exit code of the DnCManager.

@@ -27,7 +27,7 @@ public:
 	{
 		char data[] = { 'a','b','c' };
 
-		ConstSimpleData *constSimpleData;
+		ConstSimpleData *constSimpleData = NULL;
 
 		TS_ASSERT( constSimpleData = new ConstSimpleData( data, sizeof(data) ) );
 
@@ -50,7 +50,7 @@ public:
 
         HeapData heapData( data, sizeof(data) );
 
-		ConstSimpleData *constSimpleData;
+		ConstSimpleData *constSimpleData = NULL;
 
 		TS_ASSERT( constSimpleData = new ConstSimpleData( heapData ) );
 

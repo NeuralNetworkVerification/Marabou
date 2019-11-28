@@ -18,9 +18,34 @@
 #include "Marabou.h"
 #include "Options.h"
 
+static std::string getCompiler() {
+    std::stringstream ss;
+#ifdef __GNUC__
+    ss << "GCC";
+#else /* __GNUC__ */
+    ss << "unknown compiler";
+#endif /* __GNUC__ */
+#ifdef __VERSION__
+    ss << " version " << __VERSION__;
+#else /* __VERSION__ */
+    ss << ", unknown version";
+#endif /* __VERSION__ */
+    return ss.str();
+}
+
+static std::string getCompiledDateTime() {
+    return __DATE__ " " __TIME__;
+}
+
+
 void printVersion()
 {
-    std::cout << "Marabou version 1.0.0 " << std::endl;
+    std::cout << 
+        "Marabou version " << MARABOU_VERSION << 
+        " [" << GIT_BRANCH << " " << GIT_COMMIT_HASH << "]"
+	      << "\ncompiled with " << getCompiler()
+	      << "\non " << getCompiledDateTime()
+	      << std::endl;
 }
 
 
