@@ -13,7 +13,6 @@
 
  **/
 
-#include "AcasParser.h"
 #include "Debug.h"
 #include "DivideStrategy.h"
 #include "DnCManager.h"
@@ -23,7 +22,6 @@
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
-#include "PropertyParser.h"
 #include "QueryDivider.h"
 #include "TimeUtils.h"
 #include "Vector.h"
