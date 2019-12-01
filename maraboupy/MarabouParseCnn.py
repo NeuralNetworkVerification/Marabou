@@ -1,6 +1,8 @@
 
 
 from maraboupy import Marabou
+from maraboupy import MarabouCore
+from maraboupy import MarabouNetworkNX
 import networkx as nx
 import queue
 import copy
@@ -27,8 +29,8 @@ class Cnn(nx.DiGraph):
 
     def __init__(self, in_l_size):
         super().__init__()
-        self.out_l = [] # L is for layer.        
-        self.in_l = []  # L is for layer.
+        self.out_l = list() # L is for layer.        
+        self.in_l = list()  # L is for layer.
         self.l_num = 0  # L is for layer.        
         for i in range(in_l_size):
             new_n = n2str(0,i)
@@ -38,12 +40,12 @@ class Cnn(nx.DiGraph):
 
     def __str__(self):
         out = ""
-        for e in self.edges():
-            out = out + str(e) + "\n"
+        for u,v,w in self.edges.data('weight'):
+            out = out + "({},{}), w:={}".format(u,v,w)+ "\n"
         return out
 
     def add_filter(self, f):
-        new_l = []
+        new_l = list()
         self.l_num += 1
         for i in range(len(self.out_l) - f.window_size + 1):
             act_n = n2str(self.l_num, i)
@@ -56,7 +58,8 @@ class Cnn(nx.DiGraph):
     def add_layer(self, w_dict): #Assume some element will be added. in the form of int->int dict.
         self.l_num += 1
         new_l = []
-        max_node_new_l = 0
+        max_node_new_l = -1
+        new_l = list()
         for i in range(len(self.out_l)):
             new_wn = w_dict[i]
             if len(new_wn) == 0:
@@ -67,14 +70,15 @@ class Cnn(nx.DiGraph):
                 max_node_new_l = max_n_ind
                 for j in range(last_max + 1, max_node_new_l + 1):
                     self.add_node(n2str(self.l_num, j))
+                    new_l.append(n2str(self.l_num, j))
             i_str = n2str(self.l_num - 1, i)
             print("For i={} we have list={}".format(i,new_wn))
             for wn in new_wn:
                 n_str = n2str(self.l_num, wn[0])
                 w = wn[1]
-                self.add_edge(i_str, n_str, weight=w)                                                                       
-    
-    
+                self.add_edge(i_str, n_str, weight=w)
+        self.out_l = new_l
+        
 def cone_of_influencers(graph, vertex):
     graph.remove_nodes_from(nx.algorithms.dag.descendants(graph,vertex))
     ancestors = nx.algorithms.dag.ancestors(graph,vertex)
@@ -92,8 +96,8 @@ if __name__ == "__main__":
     cnn.add_filter(f)
     cnn.add_filter(f)
     W = {
-        0 : [(0,1),(1,1),(2,1)],
-        1 : [(0,1),(1,1),(2,1)]
+        0 : [(0,2),(1,1),(2,1)],
+        1 : [(0,1),(1,1),(2,-1)]
         }
     cnn.add_layer(W)
     print(cnn)
@@ -103,7 +107,27 @@ if __name__ == "__main__":
         labels[n] = n
     nx.draw_networkx(cnn, pos=nx.circular_layout(cnn))
     plt.savefig('testplot.png')
-    
-    '''for n in cnn.out_l:
+    [print((n, nbrdict)) for n, nbrdict in cnn.adjacency()]
+
+    print(cnn.in_l)
+    print("out")
+    print(cnn.out_l)
+    in_prop = {n : (-MarabouNetworkNX.large, MarabouNetworkNX.large) for n in cnn.in_l}
+    out_prop = {n : (-MarabouNetworkNX.large, MarabouNetworkNX.large) for n in cnn.out_l}    
+
+    iq = MarabouNetworkNX.networkxToInputQuery(cnn, in_prop, out_prop)
+
+    print("Start solving")
+
+    vars1, stats1 = MarabouCore.solve(iq, Marabou.createOptions())
+    print("Finish solving")
+
+    if len(vars1)>0:
+        print("SAT")
+        print(vars1)
+    else:
+        print("UNSAT")
+
+    for n in cnn.out_l:
         print("COI {}\n".format(n))
-        print(cone_of_influencers(cnn,n))'''
+        print(cone_of_influencers(cnn,n))
