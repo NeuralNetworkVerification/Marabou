@@ -11,8 +11,6 @@ def networkxToInputQuery(net, input_bounds, output_bounds):
         for v, wdict in nbrdict.items():
             degree[u]['out'] += 1
             degree[v]['in'] += 1
-            #degree[u] = (degree[u]['in'], degree[u]['out'] + 1)
-            #degree[v] = (degree[v]['in'] + 1, degree[v]['out'])
             incoming[v].append((u,wdict["weight"]))
 
     input_nodes = set()

@@ -2,9 +2,7 @@
 
 from maraboupy import Marabou
 from maraboupy import MarabouCore
-from maraboupy import MarabouNetworkNX
 import networkx as nx
-import queue
 import copy
 import matplotlib.pyplot as plt
 
@@ -72,62 +70,52 @@ class Cnn(nx.DiGraph):
                     self.add_node(n2str(self.l_num, j))
                     new_l.append(n2str(self.l_num, j))
             i_str = n2str(self.l_num - 1, i)
-            print("For i={} we have list={}".format(i,new_wn))
+            #print("For i={} we have list={}".format(i,new_wn))
             for wn in new_wn:
                 n_str = n2str(self.l_num, wn[0])
                 w = wn[1]
                 self.add_edge(i_str, n_str, weight=w)
         self.out_l = new_l
+
+    def print_to_file(file):
+        labels = {n : n for n in self.nodes()}
+        nx.draw_networkx(self, pos=nx.circular_layout(self))
+        plt.savefig(file)
+
+    def solve(in_prop, out_props):
+        #example:
+        #in_prop = {n : (-mnx.large, mnx.large) for n in cnn.in_l}
+        #out_prop = {n : (-mnx.large, mnx.large) for n in cnn.out_l}
+        iq = mnx.networkxToInputQuery(self, in_prop, out_prop)
+
+        print("Start solving")
+        vars1, stats1 = MarabouCore.solve(iq, Marabou.createOptions())
+        print("Finish solving")
         
-def cone_of_influencers(graph, vertex):
-    graph.remove_nodes_from(nx.algorithms.dag.descendants(graph,vertex))
+        if len(vars1)>0:
+            print("SAT")
+            print(vars1)
+        else:
+            print("UNSAT")
+
+        
+'''def coi(graph, vertex):
+    #graph.remove_nodes_from(nx.algorithms.dag.descendants(graph,vertex))
     ancestors = nx.algorithms.dag.ancestors(graph,vertex)
-    #print(ancestors)
     graph_copy = copy.deepcopy(graph)
     for u in graph:
         if (u not in ancestors) and (u != vertex):
             graph_copy.remove_node(u)
+    return graph_copy'''
+
+def coi(graph, vertices): # Cone of Influencers
+    ancestors = set()
+    for vertex in vertices:
+        ancestors = set.union(ancestors, nx.algorithms.dag.ancestors(graph,vertex))
+        #print(ancestors)
+    graph_copy = copy.deepcopy(graph)
+    for u in graph:
+        if (u not in ancestors) and (u not in vertices):
+            graph_copy.remove_node(u)
     return graph_copy
  
-if __name__ == "__main__":
-
-    cnn = Cnn(6)
-    f = Filter([1, 1, 1])
-    cnn.add_filter(f)
-    cnn.add_filter(f)
-    W = {
-        0 : [(0,2),(1,1),(2,1)],
-        1 : [(0,1),(1,1),(2,-1)]
-        }
-    cnn.add_layer(W)
-    print(cnn)
-
-    labels = {}
-    for n in cnn.nodes():
-        labels[n] = n
-    nx.draw_networkx(cnn, pos=nx.circular_layout(cnn))
-    plt.savefig('testplot.png')
-    [print((n, nbrdict)) for n, nbrdict in cnn.adjacency()]
-
-    print(cnn.in_l)
-    print("out")
-    print(cnn.out_l)
-    in_prop = {n : (-MarabouNetworkNX.large, MarabouNetworkNX.large) for n in cnn.in_l}
-    out_prop = {n : (-MarabouNetworkNX.large, MarabouNetworkNX.large) for n in cnn.out_l}    
-
-    iq = MarabouNetworkNX.networkxToInputQuery(cnn, in_prop, out_prop)
-
-    print("Start solving")
-
-    vars1, stats1 = MarabouCore.solve(iq, Marabou.createOptions())
-    print("Finish solving")
-
-    if len(vars1)>0:
-        print("SAT")
-        print(vars1)
-    else:
-        print("UNSAT")
-
-    for n in cnn.out_l:
-        print("COI {}\n".format(n))
-        print(cone_of_influencers(cnn,n))
