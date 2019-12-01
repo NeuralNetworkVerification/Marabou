@@ -81,7 +81,8 @@ def solve_query(ipq, filename="", verbose=True, timeout=0, verbosity=2):
                 it has multiple methods that provide information related
                 to how an input query was solved.
     """
-    vals, stats = MarabouCore.solve(ipq, filename, timeout, verbosity)
+    options = createOptions(timeoutInSeconds=timeout, verbosity=verbosity)
+    vals, stats = MarabouCore.solve(ipq, options, filename)
     if verbose:
         if stats.hasTimedOut():
             print ("TIMEOUT")

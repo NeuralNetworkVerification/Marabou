@@ -1,6 +1,5 @@
 from maraboupy import MarabouCore
 from maraboupy.Marabou import createOptions
-# import pytest
 
 large = 100
 def define_network():

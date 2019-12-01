@@ -17,6 +17,7 @@
 '''
 
 from maraboupy import MarabouCore
+from maraboupy.Marabou import createOptions
 
 # The example from the CAV'17 paper:
 #   0   <= x0  <= 1
@@ -28,8 +29,8 @@ from maraboupy import MarabouCore
 #  x0 + x2b = 0
 #  x1f + x2f - x3 = 0
 #
+#  x1f = Relu(x1b)
 #  x2f = Relu(x2b)
-#  x3f = Relu(x3b)
 #
 #   x0: x0
 #   x1: x1b
@@ -81,12 +82,13 @@ equation3.addAddend(-1, 5)
 equation3.setScalar(0)
 inputQuery.addEquation(equation3)
 
-MarabouCore.addReluConstraint(inputQuery,1,2)
-MarabouCore.addReluConstraint(inputQuery,3,4)
+MarabouCore.addReluConstraint(inputQuery, 1, 2)
+MarabouCore.addReluConstraint(inputQuery, 3, 4)
 
-vars1, stats1 = MarabouCore.solve(inputQuery, "", 0)
-if len(vars1)>0:
-	print("SAT")
-	print(vars1)
+options = createOptions()
+vars1, stats1 = MarabouCore.solve(inputQuery, options, "")
+if len(vars1) > 0:
+    print("SAT")
+    print(vars1)
 else:
-	print("UNSAT")
+    print("UNSAT")
