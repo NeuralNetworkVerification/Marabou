@@ -257,14 +257,31 @@ void DnCManager::printResult()
         InputQuery *inputQuery = _engineWithSATAssignment->getInputQuery();
         _engineWithSATAssignment->extractSolution( *( inputQuery ) );
 
+        Vector<double> inputVector( inputQuery->getNumInputVariables() );
+        Vector<double> outputVector( inputQuery->getNumOutputVariables() );
+        double *inputs( inputVector.data() );
+        double *outputs( outputVector.data() );
+
         printf( "Input assignment:\n" );
         for ( unsigned i = 0; i < inputQuery->getNumInputVariables(); ++i )
+        {
             printf( "\tx%u = %lf\n", i, inputQuery->getSolutionValue( inputQuery->inputVariableByIndex( i ) ) );
+            inputs[i] = inputQuery->getSolutionValue( inputQuery->inputVariableByIndex( i ) );
+        }
+
+        NetworkLevelReasoner *nlr = inputQuery->getNetworkLevelReasoner();
+        if ( nlr )
+            nlr->evaluate( inputs, outputs );
 
         printf( "\n" );
         printf( "Output:\n" );
         for ( unsigned i = 0; i < inputQuery->getNumOutputVariables(); ++i )
-            printf( "\ty%u = %lf\n", i, inputQuery->getSolutionValue( inputQuery->outputVariableByIndex( i ) ) );
+        {
+            if ( nlr )
+                printf( "\tnlr y%u = %lf\n", i, outputs[i] );
+            else
+                printf( "\ty%u = %lf\n", i, inputQuery->getSolutionValue( inputQuery->outputVariableByIndex( i ) ) );            
+        }
         printf( "\n" );
         break;
     }
