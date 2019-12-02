@@ -52,8 +52,8 @@ void OptionParser::initialize()
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::PROPERTY_FILE_PATH]) ),
           "Property file" )
         ( "input-query",
-          boost::program_options::value<std::string>( &((*_stringOptions)[Options::INPUTQUERY_FILE_PATH]) ),
-          "inputQuery file" )
+          boost::program_options::value<std::string>( &((*_stringOptions)[Options::INPUT_QUERY_FILE_PATH]) ),
+          "Input Query file" )
         ( "summary-file",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::SUMMARY_FILE]) ),
           "Summary file" )

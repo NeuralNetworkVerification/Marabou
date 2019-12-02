@@ -32,7 +32,7 @@ DnCMarabou::DnCMarabou()
 
 void DnCMarabou::run()
 {
-    String inputQueryFilePath = Options::get()->getString( Options::INPUTQUERY_FILE_PATH );
+    String inputQueryFilePath = Options::get()->getString( Options::INPUT_QUERY_FILE_PATH );
     if ( inputQueryFilePath.length() > 0 )
     {
         /*
@@ -43,6 +43,7 @@ void DnCMarabou::run()
             printf( "Error: the specified inputQuery file (%s) doesn't exist!\n", inputQueryFilePath.ascii() );
             throw MarabouError( MarabouError::FILE_DOESNT_EXIST, inputQueryFilePath.ascii() );
         }
+
         printf( "InputQuery: %s\n", inputQueryFilePath.ascii() );
         _inputQuery = QueryLoader::loadQuery( inputQueryFilePath );
     }
@@ -60,6 +61,7 @@ void DnCMarabou::run()
                                 networkFilePath.ascii() );
         }
         printf( "Network: %s\n", networkFilePath.ascii() );
+
         /*
           Step 2: extract the property in question
         */
@@ -77,7 +79,7 @@ void DnCMarabou::run()
         }
         else
             printf( "Property: None\n" );
-        
+
         AcasParser acasParser( networkFilePath );
         acasParser.generateQuery( _inputQuery );
         if ( propertyFilePath != "" )
@@ -86,7 +88,7 @@ void DnCMarabou::run()
     printf( "\n" );
 
     /*
-      initialzie the DNC core
+      Step 3: initialize the DNC core
     */
     unsigned initialDivides = Options::get()->getInt( Options::NUM_INITIAL_DIVIDES );
     unsigned initialTimeout = Options::get()->getInt( Options::INITIAL_TIMEOUT );

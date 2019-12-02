@@ -57,24 +57,25 @@ void Marabou::run()
 
 void Marabou::prepareInputQuery()
 {
-    /*
-      Step 1: extract the query
-    */
-    String inputQueryFilePath = Options::get()->getString( Options::INPUTQUERY_FILE_PATH );
+    String inputQueryFilePath = Options::get()->getString( Options::INPUT_QUERY_FILE_PATH );
     if ( inputQueryFilePath.length() > 0 )
     {
+        /*
+          Step 1: extract the query
+        */
         if ( !File::exists( inputQueryFilePath ) )
         {
             printf( "Error: the specified inputQuery file (%s) doesn't exist!\n", inputQueryFilePath.ascii() );
             throw MarabouError( MarabouError::FILE_DOESNT_EXIST, inputQueryFilePath.ascii() );
         }
+
         printf( "InputQuery: %s\n", inputQueryFilePath.ascii() );
         _inputQuery = QueryLoader::loadQuery(inputQueryFilePath);
     }
     else
     {
         /*
-        Step 1: extract the network
+          Step 1: extract the network
         */
         String networkFilePath = Options::get()->getString( Options::INPUT_FILE_PATH );
         if ( !File::exists( networkFilePath ) )
@@ -89,7 +90,7 @@ void Marabou::prepareInputQuery()
         _acasParser->generateQuery( _inputQuery );
 
         /*
-        Step 2: extract the property in question
+          Step 2: extract the property in question
         */
         String propertyFilePath = Options::get()->getString( Options::PROPERTY_FILE_PATH );
         if ( propertyFilePath != "" )
