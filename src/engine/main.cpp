@@ -37,24 +37,23 @@ static std::string getCompiledDateTime() {
     return __DATE__ " " __TIME__;
 }
 
-
 void printVersion()
 {
-    std::cout << 
-        "Marabou version " << MARABOU_VERSION << 
+    std::cout <<
+        "Marabou version " << MARABOU_VERSION <<
         " [" << GIT_BRANCH << " " << GIT_COMMIT_HASH << "]"
 	      << "\ncompiled with " << getCompiler()
 	      << "\non " << getCompiledDateTime()
 	      << std::endl;
 }
 
-
 void printHelpMessage()
 {
     printVersion();
-    std::cout << std::endl << "Usage: ./marabou.elf --input=NeuralNetFile --property=PropertyFile" << std::endl << std::endl;
+    std::cout << std::endl << "Usage: ./build/Marabou --input=NeuralNetFile --property=PropertyFile" << std::endl << std::endl;
     std::cout << "\t--input - Neural network file " << std::endl;
     std::cout << "\t--property -  Property file " << std::endl;
+    std::cout << "\t--input-query - InputQuery file " << std::endl;
     std::cout << "\t--summary-file - Summary file " << std::endl;
     std::cout << "\t--timeout - Global timeout " << std::endl;
     std::cout << "\t--help - Prints the help message " << std::endl;
@@ -66,11 +65,10 @@ void printHelpMessage()
     std::cout << "\t--initial-timeout - (DNC) The initial timeout " << std::endl;
     std::cout << "\t--num-online-divides - (DNC) Number of further bisections after a timeout" << std::endl;
     std::cout << "\t--timeout-factor - (DNC) The timeout factor " << std::endl;
-    std::cout << "\t--verbosity - Verbosity of engine::solve() " << std::endl; 
+    std::cout << "\t--verbosity - Verbosity of engine::solve() " << std::endl;
     std::cout << "\t\t 0: does not print anything (recommended for DNC mode)," << std::endl;
     std::cout << "\t\t 1: print out statistics in the beginning and the end," << std::endl;
     std::cout << "\t\t 2: print out statistics during solving. " << std::endl;
-
 }
 
 int main( int argc, char **argv )
@@ -91,8 +89,6 @@ int main( int argc, char **argv )
             printVersion();
             return 0;
         };
-
-
 
         if ( options->getBool( Options::DNC_MODE ) )
             DnCMarabou().run();

@@ -21,6 +21,7 @@
 #include "Options.h"
 #include "PropertyParser.h"
 #include "MarabouError.h"
+#include "QueryLoader.h"
 
 #ifdef _WIN32
 #undef ERROR
@@ -56,34 +57,52 @@ void Marabou::run()
 
 void Marabou::prepareInputQuery()
 {
-    /*
-      Step 1: extract the network
-    */
-    String networkFilePath = Options::get()->getString( Options::INPUT_FILE_PATH );
-    if ( !File::exists( networkFilePath ) )
+    String inputQueryFilePath = Options::get()->getString( Options::INPUT_QUERY_FILE_PATH );
+    if ( inputQueryFilePath.length() > 0 )
     {
-        printf( "Error: the specified network file (%s) doesn't exist!\n", networkFilePath.ascii() );
-        throw MarabouError( MarabouError::FILE_DOESNT_EXIST, networkFilePath.ascii() );
-    }
-    printf( "Network: %s\n", networkFilePath.ascii() );
+        /*
+          Step 1: extract the query
+        */
+        if ( !File::exists( inputQueryFilePath ) )
+        {
+            printf( "Error: the specified inputQuery file (%s) doesn't exist!\n", inputQueryFilePath.ascii() );
+            throw MarabouError( MarabouError::FILE_DOESNT_EXIST, inputQueryFilePath.ascii() );
+        }
 
-    // For now, assume the network is given in ACAS format
-    _acasParser = new AcasParser( networkFilePath );
-    _acasParser->generateQuery( _inputQuery );
-
-    /*
-      Step 2: extract the property in question
-    */
-    String propertyFilePath = Options::get()->getString( Options::PROPERTY_FILE_PATH );
-    if ( propertyFilePath != "" )
-    {
-        printf( "Property: %s\n", propertyFilePath.ascii() );
-        PropertyParser().parse( propertyFilePath, _inputQuery );
+        printf( "InputQuery: %s\n", inputQueryFilePath.ascii() );
+        _inputQuery = QueryLoader::loadQuery(inputQueryFilePath);
     }
     else
-        printf( "Property: None\n" );
+    {
+        /*
+          Step 1: extract the network
+        */
+        String networkFilePath = Options::get()->getString( Options::INPUT_FILE_PATH );
+        if ( !File::exists( networkFilePath ) )
+        {
+            printf( "Error: the specified network file (%s) doesn't exist!\n", networkFilePath.ascii() );
+            throw MarabouError( MarabouError::FILE_DOESNT_EXIST, networkFilePath.ascii() );
+        }
+        printf( "Network: %s\n", networkFilePath.ascii() );
 
-    printf( "\n" );
+        // For now, assume the network is given in ACAS format
+        _acasParser = new AcasParser( networkFilePath );
+        _acasParser->generateQuery( _inputQuery );
+
+        /*
+          Step 2: extract the property in question
+        */
+        String propertyFilePath = Options::get()->getString( Options::PROPERTY_FILE_PATH );
+        if ( propertyFilePath != "" )
+        {
+            printf( "Property: %s\n", propertyFilePath.ascii() );
+            PropertyParser().parse( propertyFilePath, _inputQuery );
+        }
+        else
+            printf( "Property: None\n" );
+
+        printf( "\n" );
+    }
 }
 
 void Marabou::solveQuery()
