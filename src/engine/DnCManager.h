@@ -41,11 +41,6 @@ public:
 
     DnCManager( unsigned numWorkers, unsigned initialDivides, unsigned
                 initialTimeout, unsigned onlineDivides, float timeoutFactor,
-                DivideStrategy divideStrategy, String networkFilePath,
-                String propertyFilePath, unsigned verbosity );
-
-    DnCManager( unsigned numWorkers, unsigned initialDivides, unsigned
-                initialTimeout, unsigned onlineDivides, float timeoutFactor,
                 DivideStrategy divideStrategy, InputQuery *inputQuery,
                 unsigned verbosity );
 
@@ -162,12 +157,6 @@ private:
       The strategy for dividing a query
     */
     DivideStrategy _divideStrategy;
-
-    /*
-      Path to the network and property files
-    */
-    String _networkFilePath;
-    String _propertyFilePath;
 
     /*
       Alternatively, we could construct the DnCManager by directly providing the
