@@ -29,6 +29,7 @@
 #include "max_relu_feasible_1.h"
 #include "relu_feasible_1.h"
 #include "relu_feasible_2.h"
+#include "abs_feasible_1.h"
 #include "abs_feasible_2.h"
 
 void lps()
@@ -68,8 +69,12 @@ void relus()
 void abs()
 {
     printTitle( "Abs / Sat" );
-    Abs_Feasible_2 rf2;
-    rf2.run();
+
+    Abs_Feasible_1 af1;
+    af1.run();
+
+    Abs_Feasible_2 af2;
+    af2.run();
 }
 
 
