@@ -204,13 +204,13 @@ public:
         return false;
     }
 
-    int get_lower_bound(int i)
+    double get_lower_bound(int i)
     {
         return _lowerBounds[i];
     }
 
 
-    int get_upper_bound(int i)
+    double get_upper_bound(int i)
     {
         return _upperBounds[i];
     }
