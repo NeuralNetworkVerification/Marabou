@@ -306,20 +306,19 @@ public:
         abs.notifyUpperBound( f,10);
         abs.notifyUpperBound( b,10);
         abs.notifyLowerBound( f,-1);
-        TS_TRACE("f lower bound");
-        TS_TRACE(abs.get_lower_bound(f));
         TS_ASSERT_EQUALS( abs.get_lower_bound(f), -1);
         abs.notifyLowerBound( b, 5);
         TS_ASSERT( abs.phaseFixed() );
-        TS_TRACE("f lower bound");
-        TS_TRACE(abs.get_lower_bound(f));
         abs.getEntailedTightenings( entailedTightenings );
-//        print_entailed_Tightenings(entailedTightenings);
-//        TS_ASSERT_EQUALS( entailedTightenings.size(),1U );
-//        it = entailedTightenings.begin();
-//        TS_ASSERT_EQUALS( it->_variable, f );
-//        TS_ASSERT_EQUALS( it->_value, 5 );
-//        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
+        TS_ASSERT_EQUALS( entailedTightenings.size(),2U );
+        it = entailedTightenings.begin();
+        TS_ASSERT_EQUALS( it->_variable, f );
+        TS_ASSERT_EQUALS( it->_value, 0 );
+        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
+        it++;
+        TS_ASSERT_EQUALS( it->_variable, f );
+        TS_ASSERT_EQUALS( it->_value, 5 );
+        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
 
     }
 
@@ -693,19 +692,19 @@ public:
         // -5 < x_b < 3 ,6 < x_f < 7
         entailedTightenings.clear();
         abs.getEntailedTightenings( entailedTightenings );
-        TS_ASSERT_EQUALS( entailedTightenings.size(),3U );
-        it = entailedTightenings.begin();
-        TS_ASSERT_EQUALS( it->_variable, b );
-        TS_ASSERT_EQUALS( it->_value, 6 );
-        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
-        it++;
-        TS_ASSERT_EQUALS( it->_variable, b );
-        TS_ASSERT_EQUALS( it->_value, -6 );
-        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
-        it++;
-        TS_ASSERT_EQUALS( it->_variable, f );
-        TS_ASSERT_EQUALS( it->_value, 5 );
-        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+        TS_ASSERT_EQUALS( entailedTightenings.size(),0U );
+//        it = entailedTightenings.begin();
+//        TS_ASSERT_EQUALS( it->_variable, b );
+//        TS_ASSERT_EQUALS( it->_value, 6 );
+//        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
+//        it++;
+//        TS_ASSERT_EQUALS( it->_variable, b );
+//        TS_ASSERT_EQUALS( it->_value, -6 );
+//        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+//        it++;
+//        TS_ASSERT_EQUALS( it->_variable, f );
+//        TS_ASSERT_EQUALS( it->_value, 5 );
+//        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
     }
 
 
@@ -824,8 +823,9 @@ public:
         // -12 < x_b < -2 ,7 < x_f < 15
         entailedTightenings.clear();
         abs.getEntailedTightenings( entailedTightenings );
+
         TS_ASSERT_EQUALS( entailedTightenings.size(),2U );
-        it = entailedTightenings.begin();
+        it = entailedTightenings.begin();;
         TS_ASSERT_EQUALS( it->_variable, b );
         TS_ASSERT_EQUALS( it->_value, -7 );
         TS_ASSERT_EQUALS( it->_type, Tightening::UB );
@@ -879,6 +879,28 @@ public:
         TS_ASSERT_EQUALS( it->_variable, f );
         TS_ASSERT_EQUALS( it->_value, 20 );
         TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+    }
+
+    void test_abs_entailed_tighteningst6_more() {
+        /**
+         * suppose A < x_b < B, C < x_f < D, remainder C >= 0 ,D > 0
+         * A < 0 & B < 0 & C > 0
+         */
+        unsigned b = 1;
+        unsigned f = 4;
+
+        AbsConstraint abs(b, f);
+        List <Tightening> entailedTightenings;
+        List<Tightening>::iterator it;
+
+        abs.notifyUpperBound(b, 1);
+        abs.notifyUpperBound(f, 4);
+        abs.notifyLowerBound(b, -1);
+        abs.notifyLowerBound(f, 2);
+
+        // -20 < x_b < -2 ,25 < x_f < 30
+        abs.getEntailedTightenings(entailedTightenings);
+        TS_ASSERT_EQUALS( entailedTightenings.size(),0U );
     }
 
     void print_bounds(AbsConstraint abs, unsigned b, unsigned f)
