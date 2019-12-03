@@ -1,9 +1,10 @@
 //
-// Created by shirana on 10/11/2019.
+// Created by shirana on 03/12/2019.
 //
 
-#ifndef MARABOU_ABS_FEASIBLE_H
-#define MARABOU_ABS_FEASIBLE_H
+#ifndef MARABOU_ABS_FEASIBLE_1_H
+#define MARABOU_ABS_FEASIBLE_1_H
+
 
 
 #include "Engine.h"
@@ -11,7 +12,7 @@
 #include "InputQuery.h"
 #include "AbsConstraint.h"
 
-class Abs_Feasible_2
+class Abs_Feasible_1
 {
 public:
     void run()
@@ -42,8 +43,8 @@ public:
         inputQuery.setLowerBound( 0, -1 );
         inputQuery.setUpperBound( 0, 1 );
 
-        inputQuery.setLowerBound( 5, 0.5 );
-        inputQuery.setUpperBound( 5, 1 );
+        inputQuery.setLowerBound( 5, 2 );
+        inputQuery.setUpperBound( 5, 4 );
 
         Equation equation1;
         equation1.addAddend( 1, 0 );
@@ -70,7 +71,7 @@ public:
         inputQuery.addPiecewiseLinearConstraint( abs1 );
         inputQuery.addPiecewiseLinearConstraint( abs2 );
 
-        int outputStream = redirectOutputToFile( "logs/abs_feasible_2.txt" );
+        int outputStream = redirectOutputToFile( "logs/abs_feasible_1.txt" );
 
         struct timespec start = TimeUtils::sampleMicro();
 
@@ -79,7 +80,7 @@ public:
         {
             struct timespec end = TimeUtils::sampleMicro();
             restoreOutputStream( outputStream );
-            printFailed( "abs_feasible_2", start, end );
+            printFailed( "abs_feasible_1", start, end );
             return;
         }
 
@@ -91,7 +92,7 @@ public:
 
         if ( !result )
         {
-            printFailed( "abs_feasible_2", start, end );
+            printFailed( "abs_feasible_1", start, end );
             return;
         }
 
@@ -108,6 +109,14 @@ public:
         double value_x3 = inputQuery.getSolutionValue( 5 );
 
 
+        printf(" value_x0:%f\n", value_x0);
+        printf(" value_x3:%f\n", value_x3);
+        printf("value_x1b: %f, value_x1f: %f \n" , value_x1b, value_x1f );
+        printf("value_x2b: %f, value_x2f: %f \n" , value_x2b, value_x2f );
+        printf("lower bound x1b: %f, upper bound x1b: %f \n" , abs1->get_lower_bound(1), abs1->get_upper_bound(1));
+        printf("lower bound x1f: %f, upper bound x1f: %f \n" , abs1->get_lower_bound(2), abs1->get_upper_bound(2));
+        printf("lower bound x2b: %f, upper bound x2b: %f \n" , abs1->get_lower_bound(3), abs1->get_upper_bound(3));
+        printf("lower bound x2f: %f, upper bound x2f: %f \n" , abs1->get_lower_bound(4), abs1->get_upper_bound(4));
 
         if ( !FloatUtils::areEqual( value_x0, value_x1b ) )
             correctSolution = false;
@@ -127,7 +136,7 @@ public:
 
         if ( FloatUtils::lt( value_x0, -1 ) || FloatUtils::gt( value_x0, 1 ) ||
              FloatUtils::lt( value_x1f, 0 ) || FloatUtils::lt( value_x2f, 0 ) ||
-             FloatUtils::lt( value_x3, 0.5 ) || FloatUtils::gt( value_x3, 1 ) )
+             FloatUtils::lt( value_x3, 2 ) || FloatUtils::gt( value_x3, 4 ) )
         {
             correctSolution = false;
         }
@@ -143,11 +152,11 @@ public:
         }
 
         if ( !correctSolution )
-            printFailed( "abs_feasible_2", start, end );
+            printFailed( "abs_feasible_1", start, end );
         else
-            printPassed( "abs_feasible_2", start, end );
+            printPassed( "abs_feasible_1", start, end );
     }
 };
 
 
-#endif //MARABOU_ABS_FEASIBLE_H
+#endif //MARABOU_ABS_FEASIBLE_1_H
