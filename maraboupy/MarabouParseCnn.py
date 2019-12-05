@@ -5,6 +5,8 @@ from maraboupy import MarabouCore
 import networkx as nx
 import copy
 import matplotlib.pyplot as plt
+from math import ceil
+from maraboupy import MarabouNetworkNX as mnx
 
 def l2str(layer_i):
     N = 26
@@ -25,22 +27,36 @@ class Filter:
 
 class Cnn(nx.DiGraph):
 
-    def __init__(self, in_l_size):
-        super().__init__()
-        self.out_l = list() # L is for layer.        
-        self.in_l = list()  # L is for layer.
-        self.l_num = 0  # L is for layer.        
-        for i in range(in_l_size):
-            new_n = n2str(0,i)
-            self.add_node(new_n)
-            self.out_l.append(new_n)
-            self.in_l.append(new_n)
+    red = '#ff293e'
+    blue = '#1f78b4'
+    #-------------Graphics: print the network-------------#
+    
+    def draw_layer(self,layer):      
+        self.layout.update({n : ((i * self.draw_scale), - self.next_lyr_pos* self.draw_scale) for i,n in enumerate(layer)})
+        self.next_lyr_pos += self.draw_scale
+
+    def cnn_layout(self):
+        return self.layout
+    
+    def print_to_file(self,file, mark=[]):
+        fog_x_w = 0.7 * len(self.in_l)
+        fig_y_w = 0.7 * max(self.l_num, ceil( 1 * self.l_num))#(2/3)
+        plt.figure(figsize=(fog_x_w, fig_y_w), dpi=100)
+        labels = {n : n for n in self.nodes()}
+        if mark:
+            node_colors = [Cnn.red if n in mark else Cnn.blue for n in self.nodes()]
+        else :
+            node_colors = Cnn.blue       
+        nx.draw_networkx(self, pos=self.cnn_layout(), with_labels=True, labels=labels, node_color=node_colors)
+        plt.savefig(file)    
 
     def __str__(self):
         out = ""
         for u,v,w in self.edges.data('weight'):
             out = out + "({},{}), w:={}".format(u,v,w)+ "\n"
         return out
+
+    #-------------Add filters and layers-------------#
 
     def add_filter(self, f):
         new_l = list()
@@ -52,6 +68,7 @@ class Cnn(nx.DiGraph):
             for j, w in enumerate(f.weights):
                 self.add_edge(self.out_l[i + j], act_n, weight=w)
         self.out_l = new_l
+        self.draw_layer(new_l)
 
     def add_layer(self, w_dict): #Assume some element will be added. in the form of int->int dict.
         self.l_num += 1
@@ -76,12 +93,10 @@ class Cnn(nx.DiGraph):
                 w = wn[1]
                 self.add_edge(i_str, n_str, weight=w)
         self.out_l = new_l
+        self.draw_layer(new_l)
 
-    def print_to_file(file):
-        labels = {n : n for n in self.nodes()}
-        nx.draw_networkx(self, pos=nx.circular_layout(self))
-        plt.savefig(file)
-
+    #-------------Solve the network-------------#        
+        
     def solve(in_prop, out_props):
         #example:
         #in_prop = {n : (-mnx.large, mnx.large) for n in cnn.in_l}
@@ -98,24 +113,32 @@ class Cnn(nx.DiGraph):
         else:
             print("UNSAT")
 
-        
-'''def coi(graph, vertex):
-    #graph.remove_nodes_from(nx.algorithms.dag.descendants(graph,vertex))
-    ancestors = nx.algorithms.dag.ancestors(graph,vertex)
-    graph_copy = copy.deepcopy(graph)
-    for u in graph:
-        if (u not in ancestors) and (u != vertex):
-            graph_copy.remove_node(u)
-    return graph_copy'''
+    #-------------Init-------------#            
 
-def coi(graph, vertices): # Cone of Influencers
-    ancestors = set()
-    for vertex in vertices:
-        ancestors = set.union(ancestors, nx.algorithms.dag.ancestors(graph,vertex))
-        #print(ancestors)
-    graph_copy = copy.deepcopy(graph)
-    for u in graph:
-        if (u not in ancestors) and (u not in vertices):
-            graph_copy.remove_node(u)
-    return graph_copy
+    def __init__(self, in_l_size):
+        super().__init__()
+        self.out_l = list() # L is for layer.        
+        self.in_l = list()  # L is for layer.
+        self.l_num = 0  # L is for layer.
+        self.next_lyr_pos = 0
+        self.layout = dict()
+        self.draw_scale = 1
+        for i in range(in_l_size):
+            new_n = n2str(0,i)
+            self.add_node(new_n)
+            self.out_l.append(new_n)
+            self.in_l.append(new_n)
+        self.draw_layer(self.in_l)
+
+    #-------------Find the Cone of Influence of a set of vertices-------------#
+
+    def coi(graph, vertices): # Cone of Influencers
+        ancestors = set()
+        for vertex in vertices:
+            ancestors = set.union(ancestors, nx.algorithms.dag.ancestors(graph, vertex))
+        graph_copy = copy.deepcopy(graph)
+        for u in graph:
+                if (u not in ancestors) and (u not in vertices):
+                    graph_copy.remove_node(u)
+        return graph_copy
  
