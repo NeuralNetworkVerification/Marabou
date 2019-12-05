@@ -108,15 +108,26 @@ public:
         double value_x2f = inputQuery.getSolutionValue( 4 );
         double value_x3 = inputQuery.getSolutionValue( 5 );
 
-
         printf(" value_x0:%f\n", value_x0);
         printf(" value_x3:%f\n", value_x3);
         printf("value_x1b: %f, value_x1f: %f \n" , value_x1b, value_x1f );
         printf("value_x2b: %f, value_x2f: %f \n" , value_x2b, value_x2f );
-        printf("lower bound x1b: %f, upper bound x1b: %f \n" , abs1->get_lower_bound(1), abs1->get_upper_bound(1));
-        printf("lower bound x1f: %f, upper bound x1f: %f \n" , abs1->get_lower_bound(2), abs1->get_upper_bound(2));
-        printf("lower bound x2b: %f, upper bound x2b: %f \n" , abs1->get_lower_bound(3), abs1->get_upper_bound(3));
-        printf("lower bound x2f: %f, upper bound x2f: %f \n" , abs1->get_lower_bound(4), abs1->get_upper_bound(4));
+
+        printf("lower bound x1b: %f, upper bound x1b: %f \n" ,
+               inputQuery.getLowerBound( 1 ),
+               inputQuery.getUpperBound( 1 ) );
+
+        printf("lower bound x1f: %f, upper bound x1f: %f \n" ,
+               inputQuery.getLowerBound( 2 ),
+               inputQuery.getUpperBound( 2 ) );
+
+        printf("lower bound x2b: %f, upper bound x2b: %f \n" ,
+               inputQuery.getLowerBound( 3 ),
+               inputQuery.getUpperBound( 3 ) );
+
+        printf("lower bound x2f: %f, upper bound x2f: %f \n" ,
+               inputQuery.getLowerBound( 4 ),
+               inputQuery.getUpperBound( 4 ) );
 
         if ( !FloatUtils::areEqual( value_x0, value_x1b ) )
             correctSolution = false;

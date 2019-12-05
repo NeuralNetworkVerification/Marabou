@@ -352,6 +352,29 @@ List<unsigned> InputQuery::getInputVariables() const
     return result;
 }
 
+void InputQuery::printAllBounds() const
+{
+    printf( "InputQuery: Dumping all bounds\n" );
+
+    for ( unsigned i = 0; i < _numberOfVariables; ++i )
+    {
+        printf( "\tx%u: [", i );
+        if ( _lowerBounds.exists( i ) )
+            printf( "%lf, ", _lowerBounds[i] );
+        else
+            printf( "-INF, " );
+
+        if ( _upperBounds.exists( i ) )
+            printf( "%lf]", _upperBounds[i] );
+        else
+            printf( "+INF]" );
+        printf( "\n" );
+
+    }
+
+    printf( "\n\n" );
+}
+
 void InputQuery::printInputOutputBounds() const
 {
     printf( "Dumping bounds of the input and output variables:\n" );
