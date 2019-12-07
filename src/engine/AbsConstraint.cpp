@@ -431,11 +431,11 @@ void AbsConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
 
     if (FloatUtils::isNegative(bLowerBound) && !FloatUtils::isNegative(bUpperBound) && FloatUtils::isPositive(fLowerBound))
     {
-        if (FloatUtils::lt(bUpperBound, fLowerBound) &&
-        FloatUtils::lt(FloatUtils::abs(bLowerBound), fLowerBound) )
-        {
-            return;
-        }
+//        if (FloatUtils::lt(bUpperBound, fLowerBound) &&
+//        FloatUtils::lt(FloatUtils::abs(bLowerBound), fLowerBound) )
+//        {
+//            return;
+//        }
         if ( FloatUtils::gt(FloatUtils::abs(bLowerBound),fUpperBound ))
             tightenings.append( Tightening( _b,-1*fUpperBound , Tightening::LB ));
         if ( FloatUtils::gt(fLowerBound, FloatUtils::abs(bLowerBound)))
