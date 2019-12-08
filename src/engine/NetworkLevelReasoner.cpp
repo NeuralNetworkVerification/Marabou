@@ -171,22 +171,6 @@ void NetworkLevelReasoner::evaluate( double *input, double *output )
     memcpy( output, _work1, sizeof(double) * _layerSizes[_numberOfLayers - 1] );
 }
 
-void getActivationPattern( const Vector<double> &input, ActivationPattern &pattern )
-{
-    // This is bad
-    double *inputArray = new double[input.size()];
-    double *outputArray = new double[_layerSizes[_numberOfLayers - 1]];
-    for ( unsigned i = 0; i < input.size(); ++i )
-        inputArray[i] = input[i];
-    evaluate( inputArray, outputArray );
-    for ( const auto &entry : _indexToActivationResultAssignment )
-    {
-        pattern[entry.first] = entry.second > 0 ? 1 : 0;
-    }
-    delete inputArray;
-    delete outputArray;
-}
-
 void NetworkLevelReasoner::setWeightedSumVariable( unsigned layer, unsigned neuron, unsigned variable )
 {
     _indexToWeightedSumVariable[Index( layer, neuron )] = variable;
