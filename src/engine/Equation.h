@@ -17,6 +17,7 @@
 #define __Equation_h__
 
 #include "List.h"
+#include "MString.h"
 
 /*
    A class representing a single equation.
@@ -76,6 +77,7 @@ public:
     bool equivalent( const Equation &other ) const;
 
     void dump() const;
+    void dump( String &output ) const;
 };
 
 #endif // __Equation_h__

@@ -80,7 +80,7 @@ if(${BUILD_PYTHON})
     execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
         "import struct; print(struct.calcsize('@P'));"
     RESULT_VARIABLE _PYTHON_SUCCESS
-    OUTPUT_VARIABLE PYTHON_SIZEOF_VOID_P 
+    OUTPUT_VARIABLE PYTHON_SIZEOF_VOID_P
     ERROR_VARIABLE _PYTHON_ERROR_VALUE)
     # message("PYTHON SIZEOF VOID p ${PYTHON_SIZEOF_VOID_P}")
     if (PYTHON_SIZEOF_VOID_P EQUAL 4 AND NOT ${FORCE_PYTHON_BUILD})
@@ -104,7 +104,7 @@ endif()
 add_definitions(-DRESOURCES_DIR="${RESOURCES_DIR}")
 
 if (NOT MSVC)
-    set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS} -g -DDEBUG_ON) 
+    set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS} -g -DDEBUG_ON)
     set(CXXTEST_FLAGS ${DEBUG_FLAGS}  -Wno-ignored-qualifiers)
 else()
     set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS} /DDEBUG_ON)
@@ -159,7 +159,7 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 list(APPEND LIBS Threads::Threads)
 
-# build a static library     
+# build a static library
 target_link_libraries(${MARABOU_LIB} ${LIBS})
 target_include_directories(${MARABOU_LIB} PRIVATE ${LIBS_INCLUDES})
 target_compile_options(${MARABOU_LIB} PRIVATE ${RELEASE_FLAGS})
@@ -190,7 +190,7 @@ if (${BUILD_PYTHON})
         # If the default didn't work just find any python version
         find_package(PythonInterp REQUIRED)
     endif()
-    
+
     if (NOT EXISTS ${PYBIND11_DIR})
         message("didnt find pybind, getting it")
 	execute_process(COMMAND ${TOOLS_DIR}/download_pybind11.${SCRIPT_EXTENSION})
@@ -204,7 +204,7 @@ if (${BUILD_PYTHON})
     set_target_properties(${MARABOU_PY} PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY ${PYTHON_API_DIR})
     if(NOT MSVC)
-        target_compile_options(${MARABOU_LIB} PRIVATE -fPIC ${RELEASE_FLAGS}) 
+        target_compile_options(${MARABOU_LIB} PRIVATE -fPIC ${RELEASE_FLAGS})
     endif()
 endif()
 
@@ -256,7 +256,7 @@ if (${RUN_SYSTEM_TEST})
     append_tests_to_run("system")
 endif()
 if (NOT ${TESTS_TO_RUN} STREQUAL "")
-    # make ctest verbose 
+    # make ctest verbose
     set(CTEST_OUTPUT_ON_FAILURE 1)
     add_custom_command(
         TARGET build-tests
@@ -293,4 +293,3 @@ set(MARABOU_VERSION 1.0.+)
 add_definitions("-DGIT_COMMIT_HASH=\"${GIT_COMMIT_HASH}\"")
 add_definitions("-DGIT_BRANCH=\"${GIT_BRANCH}\"")
 add_definitions("-DMARABOU_VERSION=\"${MARABOU_VERSION}\"")
-
