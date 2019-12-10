@@ -32,9 +32,9 @@
 
 Engine::Engine( unsigned verbosity )
     : _exitCode( Engine::NOT_DONE )
+    , _smtCore( this )
     , _rowBoundTightener( *_tableau )
     , _symbolicBoundTightener( NULL )
-    , _smtCore( this )
     , _numPlConstraintsDisabledByValidSplits( 0 )
     , _preprocessingEnabled( false )
     , _initialStateStored( false )
@@ -89,7 +89,7 @@ void Engine::adjustWorkMemorySize()
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "Engine::work" );
 }
 
-static void numberOfActive( const List<PiecewiseLinearConstraint *> &plConstraints )
+void Engine::numberOfActive( const List<PiecewiseLinearConstraint *> &plConstraints )
 {
     unsigned numActive = 0;
     for ( const auto &plConstraint : plConstraints )

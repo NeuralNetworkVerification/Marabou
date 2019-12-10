@@ -147,10 +147,20 @@ public:
 
     void quickSolve();
 
+    static void numberOfActive( const List<PiecewiseLinearConstraint *>
+                                &plConstraints );
+
     /*
       A code indicating how the run terminated.
     */
     ExitCode _exitCode;
+
+    /*
+      The SMT engine is in charge of case splitting.
+    */
+    SmtCore _smtCore;
+
+    bool applyAllValidConstraintCaseSplits();
 
  private:
     enum BasisRestorationRequired {
@@ -219,11 +229,6 @@ public:
       Symbolic bound tightnere.
     */
     SymbolicBoundTightener *_symbolicBoundTightener;
-
-    /*
-      The SMT engine is in charge of case splitting.
-    */
-    SmtCore _smtCore;
 
     /*
       Number of pl constraints disabled by valid splits.
@@ -376,7 +381,6 @@ public:
       Apply all valid case splits proposed by the constraints.
       Return true if a valid case split has been applied.
     */
-    bool applyAllValidConstraintCaseSplits();
     bool applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constraint );
 
     /*

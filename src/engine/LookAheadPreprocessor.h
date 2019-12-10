@@ -13,9 +13,12 @@
 
  **/
 
+#include <Engine.h>
 #include <PiecewiseLinearCaseSplit.h>
 
+#include <List.h>
 #include <Map.h>
+#include <Vector.h>
 
 #include <boost/lockfree/queue.hpp>
 
@@ -29,17 +32,30 @@ public:
     typedef boost::lockfree::queue<List<PiecewiseLinearCaseSplit> *,
         boost::lockfree::fixed_sized<false>>WorkerQueue;
 
-    LookAheadPreprocessor();
+    LookAheadPreprocessor( unsigned numWorkers,
+                           const InputQuery &inputQuery );
 
     void run( Map<unsigned, unsigned> &bToPhase );
 
+    static void preprocessWorker( LookAheadPreprocessor::WorkerQueue
+                                  *workload, std::shared_ptr<Engine>
+                                  engine, unsigned threadId,
+                                  List<PiecewiseLinearCaseSplit> &impliedCaseSplits );
 
 private:
 
     /*
       Set of subQueries to be solved by workers
     */
-    WorkerQueue *_workload;
+    LookAheadPreprocessor::WorkerQueue *_workload;
+
+    List<List<PiecewiseLinearCaseSplit>> _allPiecewiseLinearCaseSplits;
+
+    unsigned _numWorkers;
+
+    const InputQuery _baseInputQuery;
+
+    Vector<std::shared_ptr<Engine>> _engines;
 
     void createEngines();
 };

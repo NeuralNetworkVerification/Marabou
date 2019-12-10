@@ -17,6 +17,7 @@
 #include "AcasParser.h"
 #include "File.h"
 #include "MStringf.h"
+#include "LookAheadPreprocessor.h"
 #include "Marabou.h"
 #include "Options.h"
 #include "PropertyParser.h"
@@ -95,9 +96,12 @@ void Marabou::solveQuery()
         *inputQuery = _inputQuery;
         engine.processInputQuery( *inputQuery );
         Map<unsigned, unsigned> bToPhase;
-        if ( engine.lookAheadPropagate( bToPhase, !Options::get()->getBool
-                                        ( Options::LOOK_AHEAD_PREPROCESSING) ) )
+        if ( Options::get()->getBool( Options::LOOK_AHEAD_PREPROCESSING ) )
         {
+            auto lookAheadPreprocessor = new LookAheadPreprocessor
+                ( Options::get()->getInt( Options::NUM_WORKERS ), *inputQuery );
+            lookAheadPreprocessor->run( bToPhase );
+
             _engine.applySplits( bToPhase );
             _engine.solve( Options::get()->getInt( Options::TIMEOUT ) );
         }

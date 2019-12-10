@@ -28,6 +28,7 @@ public:
         PHASE_INACTIVE = 2,
     };
 
+    ReluConstraint( unsigned b, unsigned f, unsigned id );
     ReluConstraint( unsigned b, unsigned f );
     ReluConstraint( const String &serializedRelu );
 
@@ -165,7 +166,9 @@ public:
     PiecewiseLinearCaseSplit getInactiveSplit() const;
     PiecewiseLinearCaseSplit getActiveSplit() const;
 
+
 private:
+    unsigned _id;
     unsigned _b, _f;
     PhaseStatus _phaseStatus;
     bool _auxVarInUse;
