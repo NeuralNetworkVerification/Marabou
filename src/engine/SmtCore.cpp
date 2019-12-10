@@ -246,6 +246,12 @@ void SmtCore::recordImpliedValidSplit( PiecewiseLinearCaseSplit &validSplit )
     checkSkewFromDebuggingSolution();
 }
 
+void SmtCore::recordImpliedIdToPhase( unsigned id, unsigned phaseStatus )
+{
+    if ( _stack.empty() )
+        _impliedIdToPhaseAtRoot[id] = phaseStatus;
+}
+
 void SmtCore::allSplitsSoFar( List<PiecewiseLinearCaseSplit> &result ) const
 {
     result.clear();

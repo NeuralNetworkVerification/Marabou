@@ -835,6 +835,11 @@ unsigned ReluConstraint::getAux() const
     return _aux;
 }
 
+unsigned ReluConstraint::getId() const
+{
+    return _id;
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

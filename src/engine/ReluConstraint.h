@@ -166,6 +166,7 @@ public:
     PiecewiseLinearCaseSplit getInactiveSplit() const;
     PiecewiseLinearCaseSplit getActiveSplit() const;
 
+    unsigned getId() const;
 
 private:
     unsigned _id;

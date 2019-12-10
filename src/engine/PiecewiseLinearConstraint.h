@@ -203,6 +203,8 @@ public:
         return false;
     }
 
+    virtual unsigned getId() const = 0;
+
 protected:
     bool _constraintActive;
 	Map<unsigned, double> _assignment;

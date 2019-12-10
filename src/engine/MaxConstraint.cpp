@@ -467,6 +467,12 @@ String MaxConstraint::serializeToString() const
     return output;
 }
 
+unsigned MaxConstraint::getId() const
+{
+    return _id;
+}
+
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

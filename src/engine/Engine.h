@@ -50,7 +50,7 @@ public:
     Engine( unsigned verbosity = 2 );
     ~Engine();
 
-    void applySplits( const Map<unsigned, unsigned> &bToPhase );
+    void applySplits( const Map<unsigned, unsigned> &idToPhase );
 
     /*
       Attempt to find a feasible solution for the input within a time limit
@@ -147,8 +147,7 @@ public:
 
     void quickSolve();
 
-    static void numberOfActive( const List<PiecewiseLinearConstraint *>
-                                &plConstraints );
+    void numberOfActive();
 
     /*
       A code indicating how the run terminated.
@@ -161,6 +160,19 @@ public:
     SmtCore _smtCore;
 
     bool applyAllValidConstraintCaseSplits();
+
+    PiecewiseLinearConstraint *getConstraintFromId( unsigned id );
+
+    /*
+      Mapping id to PiecewiseLinearConstraint
+    */
+    Map<unsigned, PiecewiseLinearConstraint *> _idToConstraint;
+
+    /*
+      Perform a round of symbolic bound tightening, taking into
+      account the current state of the piecewise linear constraints.
+    */
+    void performSymbolicBoundTightening( bool performSbt = true );
 
  private:
     enum BasisRestorationRequired {
@@ -428,12 +440,6 @@ public:
       false otherwise.
     */
     bool attemptToMergeVariables( unsigned x1, unsigned x2 );
-
-    /*
-      Perform a round of symbolic bound tightening, taking into
-      account the current state of the piecewise linear constraints.
-    */
-    void performSymbolicBoundTightening( bool performSbt = true );
 
     /*
       Check whether a timeout value has been provided and exceeded.

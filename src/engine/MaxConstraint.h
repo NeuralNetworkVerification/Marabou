@@ -123,6 +123,8 @@ class MaxConstraint : public PiecewiseLinearConstraint
     */
     String serializeToString() const;
 
+    unsigned getId() const;
+
  private:
     unsigned _id;
     unsigned _f;

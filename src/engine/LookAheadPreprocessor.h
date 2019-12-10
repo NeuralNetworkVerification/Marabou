@@ -29,18 +29,19 @@ class LookAheadPreprocessor
 {
 public:
     // Synchronized Queue containing the Sub-Queries shared by workers
-    typedef boost::lockfree::queue<List<PiecewiseLinearCaseSplit> *,
-        boost::lockfree::fixed_sized<false>>WorkerQueue;
+    typedef boost::lockfree::queue<unsigned, boost::lockfree::fixed_sized<false>>
+        WorkerQueue;
 
     LookAheadPreprocessor( unsigned numWorkers,
                            const InputQuery &inputQuery );
 
-    void run( Map<unsigned, unsigned> &bToPhase );
+    bool run( Map<unsigned, unsigned> &idToPhase );
 
     static void preprocessWorker( LookAheadPreprocessor::WorkerQueue
-                                  *workload, std::shared_ptr<Engine>
-                                  engine, unsigned threadId,
-                                  List<PiecewiseLinearCaseSplit> &impliedCaseSplits );
+                                  *workload, Engine *engine,
+                                  InputQuery *inputQuery, unsigned threadId,
+                                  Map<unsigned, unsigned> &impliedCaseSplits,
+                                  std::atomic_bool &shouldQuitPreprocessing );
 
 private:
 
@@ -49,13 +50,14 @@ private:
     */
     LookAheadPreprocessor::WorkerQueue *_workload;
 
-    List<List<PiecewiseLinearCaseSplit>> _allPiecewiseLinearCaseSplits;
+    List<unsigned> _allPiecewiseLinearConstraints;
 
     unsigned _numWorkers;
 
     const InputQuery _baseInputQuery;
 
-    Vector<std::shared_ptr<Engine>> _engines;
+    Vector<Engine *> _engines;
+    Vector<InputQuery *> _inputQueries;
 
     void createEngines();
 };

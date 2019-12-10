@@ -81,6 +81,8 @@ public:
     */
     void recordImpliedValidSplit( PiecewiseLinearCaseSplit &validSplit );
 
+    void recordImpliedIdToPhase( unsigned id, unsigned phaseStatus );
+
     /*
       Return a list of all splits performed so far, both SMT-originating and valid ones,
       in the correct order.
@@ -109,6 +111,8 @@ public:
       Valid splits that were implied by level 0 of the stack.
     */
     List<PiecewiseLinearCaseSplit> _impliedValidSplitsAtRoot;
+
+    Map<unsigned, unsigned> _impliedIdToPhaseAtRoot;
 
 private:
     /*

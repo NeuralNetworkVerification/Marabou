@@ -47,12 +47,12 @@ void Marabou::run()
     struct timespec start = TimeUtils::sampleMicro();
 
     prepareInputQuery();
-    solveQuery();
+    unsigned long long preprocessTime = solveQuery();
 
     struct timespec end = TimeUtils::sampleMicro();
 
     unsigned long long totalElapsed = TimeUtils::timePassed( start, end );
-    displayResults( totalElapsed );
+    displayResults( preprocessTime, totalElapsed );
 }
 
 void Marabou::prepareInputQuery()
@@ -87,34 +87,39 @@ void Marabou::prepareInputQuery()
     printf( "\n" );
 }
 
-void Marabou::solveQuery()
+unsigned long long Marabou::solveQuery()
 {
+    unsigned long long totalElapsed = 0;
     if ( _engine.processInputQuery( _inputQuery ))
     {
-        Engine engine ( 0 );
-        InputQuery *inputQuery = new InputQuery();
-        *inputQuery = _inputQuery;
-        engine.processInputQuery( *inputQuery );
-        Map<unsigned, unsigned> bToPhase;
+        Map<unsigned, unsigned> idToPhase;
         if ( Options::get()->getBool( Options::LOOK_AHEAD_PREPROCESSING ) )
         {
+            struct timespec start = TimeUtils::sampleMicro();
             auto lookAheadPreprocessor = new LookAheadPreprocessor
-                ( Options::get()->getInt( Options::NUM_WORKERS ), *inputQuery );
-            lookAheadPreprocessor->run( bToPhase );
-
-            _engine.applySplits( bToPhase );
-            _engine.solve( Options::get()->getInt( Options::TIMEOUT ) );
+                ( Options::get()->getInt( Options::NUM_WORKERS ),
+                  *_engine.getInputQuery() );
+            bool feasible = lookAheadPreprocessor->run( idToPhase );
+            struct timespec end = TimeUtils::sampleMicro();
+            totalElapsed = TimeUtils::timePassed( start, end );
+            if ( feasible )
+                _engine.applySplits( idToPhase );
+            else
+            {
+                // Solved by preprocessing, we are done!
+                _engine._exitCode = Engine::UNSAT;
+                return totalElapsed;
+            }
         }
-        else
-        {
-            _engine._exitCode = IEngine::UNSAT;
-        }
+        _engine.solve( Options::get()->getInt( Options::TIMEOUT ) );
     }
     if ( _engine.getExitCode() == Engine::SAT )
         _engine.extractSolution( _inputQuery );
+    return totalElapsed;
 }
 
-void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
+void Marabou::displayResults( unsigned long long preprocessTime,
+                              unsigned long long microSecondsElapsed ) const
 {
     Engine::ExitCode result = _engine.getExitCode();
     String resultString;
@@ -167,6 +172,9 @@ void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
 
         // Field #2: total elapsed time
         summaryFile.write( Stringf( " %u ", microSecondsElapsed / 1000000 ) ); // In seconds
+
+        // Field #2: total preprocess time
+        summaryFile.write( Stringf( "%u ", preprocessTime / 1000000 ) ); // In seconds
 
         // Field #3: number of visited tree states
         summaryFile.write( Stringf( "%u ",

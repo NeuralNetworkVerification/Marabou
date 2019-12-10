@@ -89,10 +89,10 @@ void Engine::adjustWorkMemorySize()
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "Engine::work" );
 }
 
-void Engine::numberOfActive( const List<PiecewiseLinearConstraint *> &plConstraints )
+void Engine::numberOfActive()
 {
     unsigned numActive = 0;
-    for ( const auto &plConstraint : plConstraints )
+    for ( const auto &plConstraint : _plConstraints )
         {
             if ( plConstraint->isActive() && !plConstraint->phaseFixed() )
                 ++numActive;
@@ -103,7 +103,7 @@ void Engine::numberOfActive( const List<PiecewiseLinearConstraint *> &plConstrai
 bool Engine::lookAheadPropagate( Map<unsigned, unsigned> &allSplits, bool sbtOnly )
 {
     std::cout << "Start preprocessing" << std::endl;
-    numberOfActive( _plConstraints );
+    numberOfActive();
     PiecewiseLinearConstraint *lastUpdated = NULL;
     while ( true )
     {
@@ -152,7 +152,7 @@ bool Engine::lookAheadPropagate( Map<unsigned, unsigned> &allSplits, bool sbtOnl
                     lastUpdated = plConstraint;
                     for ( const auto &feasibleImpliedSplit : feasibleImpliedSplits[0] )
                         applySplit( feasibleImpliedSplit );
-                    numberOfActive( _plConstraints );
+                    numberOfActive();
                 }
                 applyAllValidConstraintCaseSplits();
             }
@@ -172,7 +172,7 @@ bool Engine::lookAheadPropagate( Map<unsigned, unsigned> &allSplits, bool sbtOnl
 
 void Engine::quickSolve()
 {
-    while ( true )
+    while ( _smtCore.getStackDepth() < GlobalConfiguration::QUICK_SOLVE_STACK_DEPTH_THRESHOLD )
     {
         try
         {
@@ -320,21 +320,18 @@ void Engine::quickSolve()
     return;
 }
 
-void Engine::applySplits( const Map<unsigned, unsigned> &bToPhase )
+void Engine::applySplits( const Map<unsigned, unsigned> &idToPhase )
 {
-    for ( const auto &plConstraint : _plConstraints )
+    for ( const auto entry : idToPhase )
     {
-        ReluConstraint * constraint = ( ReluConstraint *)plConstraint;
+        unsigned id = entry.first;
+        ReluConstraint * constraint = ( ReluConstraint *) _idToConstraint[id];
         if ( constraint->isActive() )
         {
-            unsigned b = constraint->getB();
-            if ( bToPhase.exists( b ) )
-            {
-                if ( bToPhase[b] == ReluConstraint::PHASE_ACTIVE )
-                    applySplit( constraint->getActiveSplit() );
-                else
-                    applySplit( constraint->getInactiveSplit() );
-            }
+            if ( entry.second == ReluConstraint::PHASE_ACTIVE )
+                applySplit( constraint->getActiveSplit() );
+            else
+                applySplit( constraint->getInactiveSplit() );
         }
     }
 }
@@ -436,7 +433,6 @@ bool Engine::solve( unsigned timeoutInSeconds )
             if ( _smtCore.needToSplit() )
             {
                 _smtCore.performSplit();
-
                 do
                 {
                     performSymbolicBoundTightening( false );
@@ -1267,13 +1263,16 @@ void Engine::initializeTableau( const double *constraintMatrix, const List<unsig
 
     // Register the constraint bound tightener to all the PL constraints
     for ( auto &plConstraint : _preprocessedQuery.getPiecewiseLinearConstraints() )
+    {
         plConstraint->registerConstraintBoundTightener( _constraintBoundTightener );
+    }
 
     _plConstraints = _preprocessedQuery.getPiecewiseLinearConstraints();
     for ( const auto &constraint : _plConstraints )
     {
         constraint->registerAsWatcher( _tableau );
         constraint->setStatistics( &_statistics );
+        _idToConstraint[constraint->getId()] = constraint;
     }
 
     _tableau->initializeTableau( initialBasis );
@@ -1757,6 +1756,7 @@ bool Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
         constraint->setActiveConstraint( false );
         PiecewiseLinearCaseSplit validSplit = constraint->getValidCaseSplit();
         _smtCore.recordImpliedValidSplit( validSplit );
+        _smtCore.recordImpliedIdToPhase( constraint->getId(), ((ReluConstraint *) constraint)->getPhaseStatus() );
         applySplit( validSplit );
         ++_numPlConstraintsDisabledByValidSplits;
 
@@ -2237,6 +2237,11 @@ void Engine::getEstimates( Map <PiecewiseLinearConstraint *, double>
         balanceEstimates[entry.second] = index++;
     }
     return;
+}
+
+PiecewiseLinearConstraint *Engine::getConstraintFromId( unsigned id )
+{
+    return _idToConstraint[id];
 }
 
 //

@@ -43,12 +43,13 @@ private:
     /*
       Invoke the engine to solve the input query
     */
-    void solveQuery();
+    unsigned long long solveQuery();
 
     /*
       Display the results
     */
-    void displayResults( unsigned long long microSecondsElapsed ) const;
+    void displayResults( unsigned long long preprocessTime,
+                         unsigned long long microSecondsElapsed ) const;
 
     /*
       ACAS network parser
