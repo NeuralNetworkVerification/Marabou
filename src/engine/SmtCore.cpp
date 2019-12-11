@@ -54,7 +54,7 @@ void SmtCore::reportViolatedConstraintPrep( PiecewiseLinearConstraint *constrain
 
     ++_constraintToViolationCount[constraint];
 
-    if ( _constraintToViolationCount[constraint] >= 10 )
+    if ( _constraintToViolationCount[constraint] >= 5 )
         {
             _needToSplit = true;
             _constraintForSplitting = constraint;

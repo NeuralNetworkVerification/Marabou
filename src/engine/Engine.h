@@ -159,6 +159,8 @@ public:
     */
     SmtCore _smtCore;
 
+    bool _processed;
+
     bool applyAllValidConstraintCaseSplits();
 
     PiecewiseLinearConstraint *getConstraintFromId( unsigned id );

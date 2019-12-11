@@ -33,6 +33,7 @@
 Engine::Engine( unsigned verbosity )
     : _exitCode( Engine::NOT_DONE )
     , _smtCore( this )
+    , _processed( false )
     , _rowBoundTightener( *_tableau )
     , _symbolicBoundTightener( NULL )
     , _numPlConstraintsDisabledByValidSplits( 0 )
@@ -1296,6 +1297,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 {
     log( "processInputQuery starting\n" );
 
+    _processed = true;
     struct timespec start = TimeUtils::sampleMicro();
 
     try

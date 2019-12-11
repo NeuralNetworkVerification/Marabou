@@ -32,9 +32,8 @@ void LookAheadPreprocessor::preprocessWorker( LookAheadPreprocessor::WorkerQueue
     getCPUId( cpuId );
     printf( "Thread #%u on CPU %u\n", threadId, cpuId );
 
-    if ( !engine )
+    if ( !engine->_processed )
     {
-        engine = new Engine( 0 );
         engine->processInputQuery( *inputQuery, false );
         std::cout << "Engine created!" << std::endl;
     }
@@ -47,6 +46,7 @@ void LookAheadPreprocessor::preprocessWorker( LookAheadPreprocessor::WorkerQueue
         engine->performSymbolicBoundTightening();
     } while ( engine->applyAllValidConstraintCaseSplits() );
     idToPhase = engine->_smtCore._impliedIdToPhaseAtRoot;
+    std::cout << idToPhase.size() << std::endl;
 
     // Repeatedly pop from queue
     while ( !workload->empty() )
@@ -213,7 +213,7 @@ void LookAheadPreprocessor::createEngines()
     // Create engines for each thread
     for ( unsigned i = 0; i < _numWorkers; ++i )
     {
-        Engine *engine = NULL;
+        Engine *engine = new Engine( 0 );
         InputQuery *inputQuery = new InputQuery();
         *inputQuery = _baseInputQuery;
         _engines.append( engine );
