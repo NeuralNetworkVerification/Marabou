@@ -101,80 +101,28 @@ void Engine::numberOfActive()
     std::cout << numActive  << " Active Constraints" << std::endl;
 }
 
-bool Engine::lookAheadPropagate( Map<unsigned, unsigned> &allSplits, bool sbtOnly )
+void Engine::quickSolve( unsigned depthThreshold )
 {
-    std::cout << "Start preprocessing" << std::endl;
-    numberOfActive();
-    PiecewiseLinearConstraint *lastUpdated = NULL;
-    while ( true )
+    _statistics.stampStartingTime();
+    struct timespec mainLoopStart = TimeUtils::sampleMicro();
+    while ( _smtCore.getStackDepth() < depthThreshold )
     {
-        do
+        struct timespec mainLoopEnd = TimeUtils::sampleMicro();
+        _statistics.addTimeMainLoop( TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
+        mainLoopStart = mainLoopEnd;
+
+        // if ( shouldExitDueToTimeout( GlobalConfiguration::QUICK_SOLVE_TIMEOUT ) )
+        // {
+        //     _exitCode = Engine::TIMEOUT;
+        //     _statistics.timeout();
+        //     return;
+        // }
+
+        if ( _quitRequested )
         {
-            std::cout << "Performing SBT" << std::endl;
-            performSymbolicBoundTightening();
-        } while ( applyAllValidConstraintCaseSplits() );
-        if ( sbtOnly )
-            break;
-        bool progressMade = false;
-        for ( const auto &plConstraint : _plConstraints )
-        {
-            if ( plConstraint == lastUpdated )
-                break;
-            if ( plConstraint->isActive() && !plConstraint->phaseFixed() )
-            {
-                auto caseSplits = plConstraint->getCaseSplits();
-                EngineState *stateBeforeSplit = new EngineState();
-                storeState( *stateBeforeSplit, true );
-                Vector<List<PiecewiseLinearCaseSplit>> feasibleImpliedSplits;
-                for ( const auto &caseSplit : caseSplits )
-                {
-                    applySplit( caseSplit );
-                    quickSolve();
-                    if ( _exitCode != IEngine::UNSAT )
-                    {
-                        List<PiecewiseLinearCaseSplit> temp = _smtCore._impliedValidSplitsAtRoot;
-                        feasibleImpliedSplits.append( temp );
-                    }
-                    reset();
-                    restoreState( *stateBeforeSplit );
-                }
-                // at this point, we check if there is any common split that we can directly apply
-                // and see if the plConstraint can be fixed
-                if ( feasibleImpliedSplits.size() == 0 )
-                {
-                    _exitCode = IEngine::UNSAT;
-                    std::cout << "Finished preprocessing early!" << std::endl;
-                    return false;
-                }
-                else if ( feasibleImpliedSplits.size() == 1 )
-                {
-                    std::cout << "1: Fixed " << feasibleImpliedSplits[0].size() << " ReLUs" << std::endl;
-                    progressMade = true;
-                    lastUpdated = plConstraint;
-                    for ( const auto &feasibleImpliedSplit : feasibleImpliedSplits[0] )
-                        applySplit( feasibleImpliedSplit );
-                    numberOfActive();
-                }
-                applyAllValidConstraintCaseSplits();
-            }
+            _exitCode = Engine::QUIT_REQUESTED;
+            return;
         }
-        if ( !progressMade )
-            break;
-    }
-    std::cout << "Finished preprocessing" << std::endl;
-
-    for ( const auto &plConstraint : _plConstraints )
-    {
-        if ( plConstraint->phaseFixed() )
-            allSplits[((ReluConstraint *)plConstraint)->getB()] = ((ReluConstraint *)plConstraint)->getPhaseStatus();
-    }
-    return true;
-}
-
-void Engine::quickSolve()
-{
-    while ( _smtCore.getStackDepth() < GlobalConfiguration::QUICK_SOLVE_STACK_DEPTH_THRESHOLD )
-    {
         try
         {
             mainLoopStatistics( 0 );
@@ -211,14 +159,14 @@ void Engine::quickSolve()
                 continue;
             }
 
-            if ( _tableau->basisMatrixAvailable() )
-                explicitBasisBoundTightening();
+            //if ( _tableau->basisMatrixAvailable() )
+            //    explicitBasisBoundTightening();
 
             // Perform any SmtCore-initiated case splits
             if ( _smtCore.needToSplit() )
             {
-                applyAllValidConstraintCaseSplits();
-                return;
+                _smtCore.performSplit();
+                continue;
             }
 
             if ( !_tableau->allBoundsValid() )
@@ -259,24 +207,34 @@ void Engine::quickSolve()
                 // We have violated piecewise-linear constraints.
                 // Select a violated constraint as the target
                 selectViolatedPlConstraint();
-                // Report the violated constraint to the SMT engine
                 _smtCore.reportViolatedConstraintPrep( _plConstraintToFix );
-                // Attempt to fix the constraint
+                //selectBranchingPlConstraint();
+                // Report the violated constraint to the SMT engine
                 fixViolatedPlConstraintIfPossible();
 
                 // Finally, take this opporunity to tighten any bounds
                 // and perform any valid case splits.
                 tightenBoundsOnConstraintMatrix();
                 applyAllBoundTightenings();
-                //applyAllValidConstraintCaseSplits();
+                // For debugging purposes
+                checkBoundCompliancyWithDebugSolution();
+
                 while ( applyAllValidConstraintCaseSplits() )
                     performSymbolicBoundTightening( false );
-
                 continue;
+            }
+            else if ( _statistics.getNumMainLoopIterations() % 100 == 0 )
+            {
+               tightenBoundsOnConstraintMatrix();
+               applyAllBoundTightenings();
+
+               while ( applyAllValidConstraintCaseSplits() )
+                   performSymbolicBoundTightening( false );
             }
 
             // We have out-of-bounds variables.
             performSimplexStep();
+
             continue;
         }
         catch ( const MalformedBasisException & )
@@ -308,8 +266,18 @@ void Engine::quickSolve()
         }
         catch ( const InfeasibleQueryException & )
         {
-            _exitCode = Engine::UNSAT;
-            return;
+            // The current query is unsat, and we need to pop.
+            // If we're at level 0, the whole query is unsat.
+            if ( !_smtCore.popSplit() )
+            {
+                if ( _verbosity > 0 )
+                    {
+                        printf( "\nEngine::solve: UNSAT query\n" );
+                        _statistics.print();
+                    }
+                _exitCode = Engine::UNSAT;
+                return;
+            }
         }
         catch ( ... )
         {
@@ -495,6 +463,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
             // We have out-of-bounds variables.
             performSimplexStep();
+
             continue;
         }
         catch ( const MalformedBasisException & )
@@ -1415,6 +1384,24 @@ void Engine::selectViolatedPlConstraint()
     ASSERT( _plConstraintToFix );
 }
 
+void Engine::selectBranchingPlConstraint()
+{
+    Map<PiecewiseLinearConstraint *, double> balanceEstimates;
+    Map<PiecewiseLinearConstraint *, double> runtimeEstimates;
+    getEstimates( balanceEstimates, runtimeEstimates );
+    PiecewiseLinearConstraint *best = NULL;
+    double bestRank = balanceEstimates.size();
+    for ( const auto &entry : balanceEstimates ){
+        double newRank = entry.second + runtimeEstimates[entry.first];
+        if ( newRank < bestRank )
+        {
+            best = entry.first;
+            bestRank = newRank;
+        }
+    }
+    _smtCore.reportViolatedConstraintPrep( best );
+}
+
 void Engine::reportPlViolation()
 {
     _smtCore.reportViolatedConstraint( _plConstraintToFix );
@@ -2059,11 +2046,11 @@ bool Engine::shouldExitDueToTimeout( unsigned timeout ) const
 
 void Engine::reset()
 {
-    resetStatistics();
     clearViolatedPLConstraints();
     resetSmtCore();
     resetBoundTighteners();
     resetExitCode();
+    resetStatistics();
 }
 
 void Engine::resetStatistics()
@@ -2078,6 +2065,7 @@ void Engine::resetStatistics()
     _activeEntryStrategy->setStatistics( &_statistics );
 
     _statistics.stampStartingTime();
+    _statistics.setPreprocessingTime( 0 );
 }
 
 void Engine::clearViolatedPLConstraints()
@@ -2193,6 +2181,11 @@ bool Engine::propagate()
 
         tightenBoundsOnConstraintMatrix();
         applyAllBoundTightenings();
+        do
+            {
+                performSymbolicBoundTightening( false );
+            }
+        while ( applyAllValidConstraintCaseSplits() );
         return true;
         }
     catch ( const InfeasibleQueryException & )

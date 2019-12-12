@@ -145,7 +145,7 @@ public:
 
     bool lookAheadPropagate( Map<unsigned, unsigned> &allSplits, bool sbtOnly );
 
-    void quickSolve();
+    void quickSolve( unsigned depthThreshold );
 
     void numberOfActive();
 
@@ -176,6 +176,13 @@ public:
     */
     void performSymbolicBoundTightening( bool performSbt = true );
 
+    /*
+      Collect and print various statistics.
+    */
+    Statistics _statistics;
+
+    void storeInitialEngineState();
+
  private:
     enum BasisRestorationRequired {
         RESTORATION_NOT_NEEDED = 0,
@@ -195,11 +202,6 @@ public:
       access to the explicit basis matrix.
     */
     void explicitBasisBoundTightening();
-
-    /*
-      Collect and print various statistics.
-    */
-    Statistics _statistics;
 
     /*
       The tableau object maintains the equations, assignments and bounds.
@@ -370,6 +372,8 @@ public:
     */
     void selectViolatedPlConstraint();
 
+    void selectBranchingPlConstraint();
+
     /*
       Report the violated PL constraint to the SMT engine.
     */
@@ -422,7 +426,6 @@ public:
       Store the original engine state within the precision restorer.
       Restore the tableau from the original version.
     */
-    void storeInitialEngineState();
     void performPrecisionRestoration( PrecisionRestorer::RestoreBasics restoreBasics );
     bool basisRestorationNeeded() const;
 

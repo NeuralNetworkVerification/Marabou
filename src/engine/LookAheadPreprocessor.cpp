@@ -16,6 +16,7 @@
 #include "GetCPUData.h"
 #include <InputQuery.h>
 #include <LookAheadPreprocessor.h>
+#include "GlobalConfiguration.h"
 
 #include <thread>
 
@@ -26,45 +27,73 @@ void LookAheadPreprocessor::preprocessWorker( LookAheadPreprocessor::WorkerQueue
                                               Map<unsigned, unsigned>
                                               &idToPhase,
                                               std::atomic_bool
-                                              &shouldQuitPreprocessing )
+                                              &shouldQuitPreprocessing,
+                                              std::mutex &mtx,
+                                              std::atomic_int &lastFixed )
 {
-    unsigned cpuId = 0;
-    getCPUId( cpuId );
-    printf( "Thread #%u on CPU %u\n", threadId, cpuId );
+    //unsigned cpuId = 0;
+    //getCPUId( cpuId );
+    //printf( "Thread #%u on CPU %u\n", threadId, cpuId );
 
     if ( !engine->_processed )
     {
         engine->processInputQuery( *inputQuery, false );
-        std::cout << "Engine created!" << std::endl;
     }
+
     // Apply all splits
     engine->applySplits( idToPhase );
-    idToPhase.clear();
-
     do
     {
         engine->performSymbolicBoundTightening();
     } while ( engine->applyAllValidConstraintCaseSplits() );
-    idToPhase = engine->_smtCore._impliedIdToPhaseAtRoot;
-    std::cout << idToPhase.size() << std::endl;
 
+    mtx.lock();
+    for ( const auto &entry : engine->_smtCore._impliedIdToPhaseAtRoot )
+        idToPhase[entry.first] = entry.second;
+    mtx.unlock();
+
+    unsigned prevSize = idToPhase.size();
+
+    unsigned numPlConstraints = engine->getInputQuery()->getPiecewiseLinearConstraints().size();
     // Repeatedly pop from queue
     while ( !workload->empty() )
     {
         unsigned id = 0;
         workload->pop( id );
 
-        std::cout << id << std::endl;
+        if ( (int) id - lastFixed.load() > int(numPlConstraints / 2 ) )
+        {
+            std::cout << "No progress. Quit early!" << std::endl;
+            shouldQuitPreprocessing = true;
+            return;
+        }
+        else if ( (int) id == lastFixed.load() )
+        {
+            std::cout << "No new info for subsequent constraints!" << std::endl;
+            shouldQuitPreprocessing = true;
+            return;
+        }
 
+        // Sync up
+        if ( idToPhase.size() > prevSize )
+        {
+            prevSize = idToPhase.size();
+            engine->applySplits( idToPhase );
+        }
         PiecewiseLinearConstraint *plConstraint = engine->
             getConstraintFromId( id );
 
         if ( (!plConstraint->isActive()) || plConstraint->phaseFixed() )
             continue;
+
+        engine->storeInitialEngineState();
+
+        // Try to propagate
         auto caseSplits = plConstraint->getCaseSplits();
 
         EngineState *stateBeforeSplit = new EngineState();
         engine->storeState( *stateBeforeSplit, true );
+
         Map<unsigned, unsigned> commonImpliedIdToPhase;
         Map<unsigned, unsigned> idToCount;
         Vector<List<PiecewiseLinearCaseSplit>> feasibleImpliedSplits;
@@ -73,7 +102,17 @@ void LookAheadPreprocessor::preprocessWorker( LookAheadPreprocessor::WorkerQueue
         for ( const auto &caseSplit : caseSplits )
         {
             engine->applySplit( caseSplit );
-            engine->quickSolve();
+            unsigned depthThreshold = (numPlConstraints - id) / GlobalConfiguration::QUICK_SOLVE_STACK_DEPTH_THRESHOLD;
+            if ( depthThreshold > 0 )
+                engine->quickSolve( depthThreshold );
+
+            // print stats
+            //engine->_statistics.print();
+
+            if ( engine->_exitCode == IEngine::QUIT_REQUESTED )
+                return;
+            if ( engine->_exitCode == IEngine::ERROR )
+                return;
             if ( engine->_exitCode != IEngine::UNSAT )
             {
                 List<PiecewiseLinearCaseSplit> temp = engine->
@@ -103,17 +142,21 @@ void LookAheadPreprocessor::preprocessWorker( LookAheadPreprocessor::WorkerQueue
         if ( feasibleImpliedSplits.size() == 0 )
         {
             engine->_exitCode = IEngine::UNSAT;
-            std::cout << "Finished preprocessing early!" << std::endl;
+            std::cout << "UNSAT! Finished preprocessing early!" << std::endl;
+            lastFixed = -2;
             shouldQuitPreprocessing = true;
             return;
         }
         else if ( feasibleImpliedSplits.size() == 1 )
         {
-            for ( const auto &feasibleImpliedSplit : feasibleImpliedSplits[0] )
-                engine->applySplit( feasibleImpliedSplit );
+            printf("Thread %u fixed relu %u\n", threadId, plConstraint->getId() );
+            lastFixed = plConstraint->getId();
+            engine->applySplits( feasibleImpliedIdToPhase[0] );
+            mtx.lock();
             for ( const auto &entry : feasibleImpliedIdToPhase[0] )
                 idToPhase[entry.first] = entry.second;
-            idToPhase[plConstraint->getId()] = feasibleStatus[0];
+            prevSize = idToPhase.size();
+            mtx.unlock();
         }
         else
         {
@@ -122,7 +165,10 @@ void LookAheadPreprocessor::preprocessWorker( LookAheadPreprocessor::WorkerQueue
             {
                 if ( idToCount[entry.first] == caseSplits.size() )
                 {
+                    mtx.lock();
                     idToPhase[entry.first] = entry.second;
+                    prevSize = idToPhase.size();
+                    mtx.unlock();
                     commonCount += 1;
                 }
             }
@@ -143,7 +189,7 @@ LookAheadPreprocessor::LookAheadPreprocessor( unsigned numWorkers,
 bool LookAheadPreprocessor::run( Map<unsigned, unsigned> &idToPhase )
 {
     bool progressMade = true;
-    Vector<Map<unsigned, unsigned>> allIdToPhase;
+    //Vector<Map<unsigned, unsigned>> allIdToPhase;
 
     // Prepare the mechanism through which we can ask the engines to quit
     List<std::atomic_bool *> quitThreads;
@@ -152,15 +198,16 @@ bool LookAheadPreprocessor::run( Map<unsigned, unsigned> &idToPhase )
 
     std::atomic_bool shouldQuitPreprocessing( false );
 
+    for ( const auto plConstraint : _baseInputQuery.getPiecewiseLinearConstraints() )
+        _allPiecewiseLinearConstraints.append( plConstraint->getId() );
+
+    std::mutex mtx;
+    std::atomic_int lastFixed ( -1 );
+
     while ( progressMade )
     {
-        allIdToPhase.clear();
-        for ( unsigned i = 0; i < _numWorkers; ++i )
-        {
-            allIdToPhase.append( idToPhase );
-        }
-        for ( const auto plConstraint : _baseInputQuery.getPiecewiseLinearConstraints() )
-            _allPiecewiseLinearConstraints.append( plConstraint->getId() );
+        std::cout << "new look ahead preprocessing iteration" << std::endl;
+        unsigned previousSize = idToPhase.size();
         for ( auto id : _allPiecewiseLinearConstraints )
             if ( !_workload->push( id ) )
                 std::cout << "Pushed failed!" << std::endl;
@@ -172,9 +219,10 @@ bool LookAheadPreprocessor::run( Map<unsigned, unsigned> &idToPhase )
                                             _engines[threadId],
                                             _inputQueries[threadId],
                                             threadId,
-                                            std::ref( allIdToPhase[threadId] ),
-                                            std::ref( shouldQuitPreprocessing )
-                                            ) );
+                                            std::ref( idToPhase ),
+                                            std::ref( shouldQuitPreprocessing ),
+                                            std::ref( mtx ),
+                                            std::ref( lastFixed ) ) );
         }
 
         while ( (!shouldQuitPreprocessing.load()) && (!_workload->empty()) )
@@ -190,15 +238,16 @@ bool LookAheadPreprocessor::run( Map<unsigned, unsigned> &idToPhase )
             thread.join();
 
         if ( shouldQuitPreprocessing.load() )
-            return false;
+        {
+            std::cout << "Preprocessing done!" << std::endl;
+            std::cout << "Number of fixed Relus: " << idToPhase.size() << std::endl;
+            return lastFixed.load() != -2;
+        }
 
-        unsigned previousSize = idToPhase.size();
-        for ( const auto &_idToPhase : allIdToPhase )
-            for ( auto &entry : _idToPhase )
-                idToPhase[entry.first] = entry.second;
-
-        if ( idToPhase.size() > previousSize )
+        if ( idToPhase.size() > previousSize && lastFixed.load() != -1 )
+        {
             progressMade = true;
+        }
         else
             progressMade = false;
         std::cout << "Number of fixed Relus: " << idToPhase.size() << std::endl;

@@ -20,7 +20,9 @@
 #include <Map.h>
 #include <Vector.h>
 
+#include <mutex>
 #include <boost/lockfree/queue.hpp>
+
 
 #ifndef __LookAheadPreprocessor_h__
 #define __LookAheadPreprocessor_h__
@@ -41,7 +43,9 @@ public:
                                   *workload, Engine *engine,
                                   InputQuery *inputQuery, unsigned threadId,
                                   Map<unsigned, unsigned> &impliedCaseSplits,
-                                  std::atomic_bool &shouldQuitPreprocessing );
+                                  std::atomic_bool &shouldQuitPreprocessing,
+                                  std::mutex &mtx,
+                                  std::atomic_int &lastFixed );
 
 private:
 
