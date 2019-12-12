@@ -61,7 +61,10 @@ void LookAheadPreprocessor::preprocessWorker( LookAheadPreprocessor::WorkerQueue
         unsigned id = 0;
         workload->pop( id );
 
-        if ( (int) id - lastFixed.load() > int(numPlConstraints / 2 ) )
+        std::cout << id << " " << idToPhase.size() << std::endl;
+
+        if ( id > numPlConstraints / 2 &&
+             (int) id - lastFixed.load() > int( numPlConstraints / 10 ) )
         {
             std::cout << "No progress. Quit early!" << std::endl;
             shouldQuitPreprocessing = true;
@@ -70,6 +73,7 @@ void LookAheadPreprocessor::preprocessWorker( LookAheadPreprocessor::WorkerQueue
         else if ( (int) id == lastFixed.load() )
         {
             std::cout << "No new info for subsequent constraints!" << std::endl;
+            lastFixed = -3;
             shouldQuitPreprocessing = true;
             return;
         }
@@ -102,15 +106,21 @@ void LookAheadPreprocessor::preprocessWorker( LookAheadPreprocessor::WorkerQueue
         for ( const auto &caseSplit : caseSplits )
         {
             engine->applySplit( caseSplit );
-            unsigned depthThreshold = (numPlConstraints - id) / GlobalConfiguration::QUICK_SOLVE_STACK_DEPTH_THRESHOLD;
-            if ( depthThreshold > 0 )
+
+            unsigned depthThreshold = (numPlConstraints - id) /
+                GlobalConfiguration::QUICK_SOLVE_STACK_DEPTH_THRESHOLD;
+            if ( depthThreshold / 2 > 0 )
                 engine->quickSolve( depthThreshold );
+            //engine->quickSolve( 1 );
 
             // print stats
             //engine->_statistics.print();
 
             if ( engine->_exitCode == IEngine::QUIT_REQUESTED )
+                {
+                std::cout << "Here!" << std::endl;
                 return;
+                }
             if ( engine->_exitCode == IEngine::ERROR )
                 return;
             if ( engine->_exitCode != IEngine::UNSAT )
@@ -239,9 +249,20 @@ bool LookAheadPreprocessor::run( Map<unsigned, unsigned> &idToPhase )
 
         if ( shouldQuitPreprocessing.load() )
         {
-            std::cout << "Preprocessing done!" << std::endl;
-            std::cout << "Number of fixed Relus: " << idToPhase.size() << std::endl;
-            return lastFixed.load() != -2;
+            while ( !_workload->empty() )
+            {
+                unsigned _id = 0;
+                _workload->pop( _id );
+            }
+            if ( lastFixed.load() >= -1 )
+                for ( auto &quitThread : quitThreads )
+                    *quitThread =false;
+            else
+            {
+                std::cout << "Preprocessing done!" << std::endl;
+                std::cout << "Number of fixed Relus: " << idToPhase.size() << std::endl;
+                return lastFixed.load() != -2;
+            }
         }
 
         if ( idToPhase.size() > previousSize && lastFixed.load() != -1 )
@@ -251,6 +272,7 @@ bool LookAheadPreprocessor::run( Map<unsigned, unsigned> &idToPhase )
         else
             progressMade = false;
         std::cout << "Number of fixed Relus: " << idToPhase.size() << std::endl;
+        std::cout << "Here!!" << std::endl;
     }
     std::cout << "Preprocessing done!" << std::endl;
     std::cout << "Number of fixed Relus: " << idToPhase.size() << std::endl;
