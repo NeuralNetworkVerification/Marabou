@@ -109,9 +109,8 @@ void LookAheadPreprocessor::preprocessWorker( LookAheadPreprocessor::WorkerQueue
 
             unsigned depthThreshold = (numPlConstraints - id) /
                 GlobalConfiguration::QUICK_SOLVE_STACK_DEPTH_THRESHOLD;
-            if ( depthThreshold / 2 > 0 )
+            if ( depthThreshold > 0 )
                 engine->quickSolve( depthThreshold );
-            //engine->quickSolve( 1 );
 
             // print stats
             //engine->_statistics.print();
