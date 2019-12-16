@@ -63,17 +63,9 @@ void LookAheadPreprocessor::preprocessWorker( LookAheadPreprocessor::WorkerQueue
 
         std::cout << id << " " << idToPhase.size() << std::endl;
 
-        if ( id > numPlConstraints / 2 &&
-             (int) id - lastFixed.load() > int( numPlConstraints / 10 ) )
-        {
-            std::cout << "No progress. Quit early!" << std::endl;
-            shouldQuitPreprocessing = true;
-            return;
-        }
-        else if ( (int) id == lastFixed.load() )
+        if ( (int) id == lastFixed.load() )
         {
             std::cout << "No new info for subsequent constraints!" << std::endl;
-            lastFixed = -3;
             shouldQuitPreprocessing = true;
             return;
         }
@@ -117,7 +109,6 @@ void LookAheadPreprocessor::preprocessWorker( LookAheadPreprocessor::WorkerQueue
 
             if ( engine->_exitCode == IEngine::QUIT_REQUESTED )
                 {
-                std::cout << "Here!" << std::endl;
                 return;
                 }
             if ( engine->_exitCode == IEngine::ERROR )
@@ -248,20 +239,9 @@ bool LookAheadPreprocessor::run( Map<unsigned, unsigned> &idToPhase )
 
         if ( shouldQuitPreprocessing.load() )
         {
-            while ( !_workload->empty() )
-            {
-                unsigned _id = 0;
-                _workload->pop( _id );
-            }
-            if ( lastFixed.load() >= -1 )
-                for ( auto &quitThread : quitThreads )
-                    *quitThread =false;
-            else
-            {
-                std::cout << "Preprocessing done!" << std::endl;
-                std::cout << "Number of fixed Relus: " << idToPhase.size() << std::endl;
-                return lastFixed.load() != -2;
-            }
+            std::cout << "Preprocessing done!" << std::endl;
+            std::cout << "Number of fixed Relus: " << idToPhase.size() << std::endl;
+            return lastFixed.load() != -2;
         }
 
         if ( idToPhase.size() > previousSize && lastFixed.load() != -1 )
@@ -271,7 +251,6 @@ bool LookAheadPreprocessor::run( Map<unsigned, unsigned> &idToPhase )
         else
             progressMade = false;
         std::cout << "Number of fixed Relus: " << idToPhase.size() << std::endl;
-        std::cout << "Here!!" << std::endl;
     }
     std::cout << "Preprocessing done!" << std::endl;
     std::cout << "Number of fixed Relus: " << idToPhase.size() << std::endl;
