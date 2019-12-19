@@ -1,4 +1,10 @@
 //
+// Created by shirana on 19/12/2019.
+//
+
+#ifndef MARABOU_ABS_FEASIBLE_3_H
+#define MARABOU_ABS_FEASIBLE_3_H
+//
 // Created by shirana on 10/11/2019.
 //
 
@@ -11,7 +17,7 @@
 #include "InputQuery.h"
 #include "AbsConstraint.h"
 
-class Abs_Feasible_2
+class Abs_Feasible_3
 {
 public:
     void run()
@@ -39,7 +45,7 @@ public:
         InputQuery inputQuery;
         inputQuery.setNumberOfVariables( 6 );
 
-        inputQuery.setLowerBound( 0, 1 );
+        inputQuery.setLowerBound( 0, 3 );
         inputQuery.setUpperBound( 0, 9 );
 
         inputQuery.setLowerBound( 5, 4 );
@@ -70,7 +76,7 @@ public:
         inputQuery.addPiecewiseLinearConstraint( abs1 );
         inputQuery.addPiecewiseLinearConstraint( abs2 );
 
-        int outputStream = redirectOutputToFile( "logs/abs_feasible_2.txt" );
+        int outputStream = redirectOutputToFile( "logs/abs_feasible_3.txt" );
 
         struct timespec start = TimeUtils::sampleMicro();
 
@@ -79,7 +85,7 @@ public:
         {
             struct timespec end = TimeUtils::sampleMicro();
             restoreOutputStream( outputStream );
-            printFailed( "abs_feasible_2", start, end );
+            printFailed( "abs_feasible_3", start, end );
             return;
         }
 
@@ -91,7 +97,7 @@ public:
 
         if ( !result )
         {
-            printFailed( "abs_feasible_2", start, end );
+            printFailed( "abs_feasible_3", start, end );
             return;
         }
 
@@ -128,7 +134,7 @@ public:
             correctSolution = false;
         }
 
-        if ( FloatUtils::lt( value_x0, 1 ) || FloatUtils::gt( value_x0, 9 ) ||
+        if ( FloatUtils::lt( value_x0, 3 ) || FloatUtils::gt( value_x0, 9 ) ||
              FloatUtils::lt( value_x1f, 0 ) || FloatUtils::lt( value_x2f, 0 ) ||
              FloatUtils::lt( value_x3, 4 ) || FloatUtils::gt( value_x3, 5 ) )
         {
@@ -146,11 +152,13 @@ public:
         }
 
         if ( !correctSolution )
-            printFailed( "abs_feasible_2", start, end );
+            printFailed( "abs_feasible_3", start, end );
         else
-            printPassed( "abs_feasible_2", start, end );
+            printPassed( "abs_feasible_3", start, end );
     }
 };
 
 
 #endif //MARABOU_ABS_FEASIBLE_H
+
+#endif //MARABOU_ABS_FEASIBLE_3_H
