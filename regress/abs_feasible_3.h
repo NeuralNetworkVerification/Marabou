@@ -4,12 +4,6 @@
 
 #ifndef MARABOU_ABS_FEASIBLE_3_H
 #define MARABOU_ABS_FEASIBLE_3_H
-//
-// Created by shirana on 10/11/2019.
-//
-
-#ifndef MARABOU_ABS_FEASIBLE_H
-#define MARABOU_ABS_FEASIBLE_H
 
 
 #include "Engine.h"
@@ -45,11 +39,11 @@ public:
         InputQuery inputQuery;
         inputQuery.setNumberOfVariables( 6 );
 
-        inputQuery.setLowerBound( 0, 3 );
-        inputQuery.setUpperBound( 0, 9 );
+        inputQuery.setLowerBound( 0, -5 );
+        inputQuery.setUpperBound( 0, -3 );
 
-        inputQuery.setLowerBound( 5, 4 );
-        inputQuery.setUpperBound( 5, 5 );
+        inputQuery.setLowerBound( 5, 9 );
+        inputQuery.setUpperBound( 5, 10 );
 
         Equation equation1;
         equation1.addAddend( 1, 0 );
@@ -76,7 +70,7 @@ public:
         inputQuery.addPiecewiseLinearConstraint( abs1 );
         inputQuery.addPiecewiseLinearConstraint( abs2 );
 
-        int outputStream = redirectOutputToFile( "logs/abs_feasible_3.txt" );
+//        int outputStream = redirectOutputToFile( "logs/abs_feasible_3.txt" );
 
         struct timespec start = TimeUtils::sampleMicro();
 
@@ -84,7 +78,7 @@ public:
         if ( !engine.processInputQuery( inputQuery ) )
         {
             struct timespec end = TimeUtils::sampleMicro();
-            restoreOutputStream( outputStream );
+//            restoreOutputStream( outputStream );
             printFailed( "abs_feasible_3", start, end );
             return;
         }
@@ -93,7 +87,7 @@ public:
 
         struct timespec end = TimeUtils::sampleMicro();
 
-        restoreOutputStream( outputStream );
+//        restoreOutputStream( outputStream );
 
         if ( !result )
         {
@@ -134,9 +128,9 @@ public:
             correctSolution = false;
         }
 
-        if ( FloatUtils::lt( value_x0, 3 ) || FloatUtils::gt( value_x0, 9 ) ||
+        if ( FloatUtils::lt( value_x0, -5 ) || FloatUtils::gt( value_x0, -3 ) ||
              FloatUtils::lt( value_x1f, 0 ) || FloatUtils::lt( value_x2f, 0 ) ||
-             FloatUtils::lt( value_x3, 4 ) || FloatUtils::gt( value_x3, 5 ) )
+             FloatUtils::lt( value_x3, 9 ) || FloatUtils::gt( value_x3, 10 ) )
         {
             correctSolution = false;
         }
@@ -157,8 +151,5 @@ public:
             printPassed( "abs_feasible_3", start, end );
     }
 };
-
-
-#endif //MARABOU_ABS_FEASIBLE_H
 
 #endif //MARABOU_ABS_FEASIBLE_3_H
