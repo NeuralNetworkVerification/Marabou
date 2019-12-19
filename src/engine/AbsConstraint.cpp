@@ -401,16 +401,13 @@ void AbsConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
     if (!FloatUtils::isNegative( bLowerBound ) && !FloatUtils::isNegative( bUpperBound ))
     {
         // update lower bound x_f or x_b
-        if ( FloatUtils::lt( fLowerBound, bLowerBound) )
-            tightenings.append( Tightening( _f, bLowerBound, Tightening::LB ) );
-        else if ( FloatUtils::lt( bLowerBound, fLowerBound ) )
-            tightenings.append( Tightening( _b, fLowerBound, Tightening::LB ) );
+
+        tightenings.append( Tightening( _f, bLowerBound, Tightening::LB ) );
+        tightenings.append( Tightening( _b, fLowerBound, Tightening::LB ) );
 
         // update upper bound x_f or x_b
-        if ( FloatUtils::lt( bUpperBound, fUpperBound ) )
-            tightenings.append( Tightening( _f, bUpperBound, Tightening::UB ) );
-        else if ( FloatUtils::lt(  fUpperBound, bUpperBound ) )
-            tightenings.append( Tightening( _b, fUpperBound, Tightening::UB ) );
+        tightenings.append( Tightening( _f, bUpperBound, Tightening::UB ) );
+        tightenings.append( Tightening( _b, fUpperBound, Tightening::UB ) );
     }
 
     if (FloatUtils::isNegative(bLowerBound) && !FloatUtils::isNegative(bUpperBound) && !FloatUtils::isPositive(fLowerBound))
