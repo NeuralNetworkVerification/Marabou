@@ -395,15 +395,24 @@ void AbsConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
 //    printf("fUpperBound: %f, fLowerBound: %f ", fUpperBound, fLowerBound);
 
     // F's lower bound should always be non-negative
+    double fake_Lower_bound;
     if ( FloatUtils::isNegative( fLowerBound ) )
+    {
         tightenings.append( Tightening( _f, 0.0, Tightening::LB ) );
+        fake_Lower_bound = 0.0;
+    }
+    else
+    {
+        fake_Lower_bound = fLowerBound;
+    }
+
 
     if (!FloatUtils::isNegative( bLowerBound ) && !FloatUtils::isNegative( bUpperBound ))
     {
         // update lower bound x_f or x_b
 
         tightenings.append( Tightening( _f, bLowerBound, Tightening::LB ) );
-        tightenings.append( Tightening( _b, fLowerBound, Tightening::LB ) );
+        tightenings.append( Tightening( _b, fake_Lower_bound, Tightening::LB ) );
 
         // update upper bound x_f or x_b
         tightenings.append( Tightening( _f, bUpperBound, Tightening::UB ) );
@@ -414,25 +423,15 @@ void AbsConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
     {
         //have to be overlap
         // update lower bound x_b
-        if ( FloatUtils::gt(-1*fUpperBound, bLowerBound ) )
-            tightenings.append( Tightening( _b, -1*fUpperBound , Tightening::LB ) );
-
+        tightenings.append( Tightening( _b, -1*fUpperBound , Tightening::LB ) );
 
         // update upper bound x_f and x_b
-        if ( FloatUtils::lt( fUpperBound, bUpperBound) )
-            tightenings.append( Tightening( _b, fUpperBound, Tightening::UB ) );
-        double tempBound = FloatUtils::max(FloatUtils::abs(bLowerBound) , bUpperBound);
-        if ( FloatUtils::lt( tempBound, fUpperBound) )
-            tightenings.append( Tightening( _f, tempBound, Tightening::UB ) );
+        tightenings.append( Tightening( _b, fUpperBound, Tightening::UB ) );
+        tightenings.append( Tightening( _f, FloatUtils::max(FloatUtils::abs(bLowerBound) , bUpperBound), Tightening::UB ) );
     }
 
     if (FloatUtils::isNegative(bLowerBound) && !FloatUtils::isNegative(bUpperBound) && FloatUtils::isPositive(fLowerBound))
     {
-//        if (FloatUtils::lt(bUpperBound, fLowerBound) &&
-//        FloatUtils::lt(FloatUtils::abs(bLowerBound), fLowerBound) )
-//        {
-//            return;
-//        }
         if ( FloatUtils::gt(FloatUtils::abs(bLowerBound),fUpperBound ))
             tightenings.append( Tightening( _b,-1*fUpperBound , Tightening::LB ));
         if ( FloatUtils::gt(fLowerBound, FloatUtils::abs(bLowerBound)))
@@ -451,30 +450,13 @@ void AbsConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
 
     if (FloatUtils::isNegative(bLowerBound) && FloatUtils::isNegative(bUpperBound) )
     {
-        //there is no overlap
-//        if(FloatUtils::lt( fUpperBound ,FloatUtils::abs(bUpperBound)) ||
-//        FloatUtils::lt(FloatUtils::abs(bLowerBound), fLowerBound)) {
-//            return;
-//        }
-
-
-        double fakeFLowerBound = fLowerBound;
-
-        if (FloatUtils::isNegative(fLowerBound))
-            fakeFLowerBound = 0.0;
-
-
         // update lower bound x_f and x_b
-        if ( FloatUtils::gt(-1*fUpperBound, bLowerBound ) )
-            tightenings.append( Tightening( _b, -1*fUpperBound , Tightening::LB ) );
-        if (FloatUtils::gt(FloatUtils::abs(bUpperBound), fakeFLowerBound ))
-            tightenings.append( Tightening( _f, FloatUtils::abs(bUpperBound), Tightening::LB ) );
+        tightenings.append( Tightening( _f, FloatUtils::abs(bUpperBound), Tightening::LB ) );
+        tightenings.append( Tightening( _b, -1*fUpperBound , Tightening::LB ) );
 
         // update upper bound x_f and x_b
-        if ( FloatUtils::lt( -fakeFLowerBound, bUpperBound) )
-            tightenings.append( Tightening( _b, -fakeFLowerBound, Tightening::UB ) );
-        if ( FloatUtils::lt( FloatUtils::abs(bLowerBound), fUpperBound) )
-            tightenings.append( Tightening( _f, FloatUtils::abs(bLowerBound), Tightening::UB ) );
+        tightenings.append( Tightening( _f, FloatUtils::abs(bLowerBound), Tightening::UB ) );
+        tightenings.append( Tightening( _b, -fake_Lower_bound, Tightening::UB ) );
     }
 }
 
