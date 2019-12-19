@@ -2,8 +2,8 @@
 // Created by shirana on 10/11/2019.
 //
 
-#ifndef MARABOU_ABS_FEASIBLE_H
-#define MARABOU_ABS_FEASIBLE_H
+#ifndef MARABOU_ABS_FEASIBLE_2_H
+#define MARABOU_ABS_FEASIBLE_2_H
 
 
 #include "Engine.h"
@@ -39,10 +39,10 @@ public:
         InputQuery inputQuery;
         inputQuery.setNumberOfVariables( 6 );
 
-        inputQuery.setLowerBound( 0, 1 );
-        inputQuery.setUpperBound( 0, 9 );
+        inputQuery.setLowerBound( 0, -1 );
+        inputQuery.setUpperBound( 0, 1 );
 
-        inputQuery.setLowerBound( 5, 4 );
+        inputQuery.setLowerBound( 5, 0.5);
         inputQuery.setUpperBound( 5, 5 );
 
         Equation equation1;
@@ -128,9 +128,9 @@ public:
             correctSolution = false;
         }
 
-        if ( FloatUtils::lt( value_x0, 1 ) || FloatUtils::gt( value_x0, 9 ) ||
+        if ( FloatUtils::lt( value_x0, -1 ) || FloatUtils::gt( value_x0, 1 ) ||
              FloatUtils::lt( value_x1f, 0 ) || FloatUtils::lt( value_x2f, 0 ) ||
-             FloatUtils::lt( value_x3, 4 ) || FloatUtils::gt( value_x3, 5 ) )
+             FloatUtils::lt( value_x3, 0.5 ) || FloatUtils::gt( value_x3, 5 ) )
         {
             correctSolution = false;
         }
@@ -153,4 +153,5 @@ public:
 };
 
 
-#endif //MARABOU_ABS_FEASIBLE_H
+#endif //MARABOU_ABS_FEASIBLE_2_H
+
