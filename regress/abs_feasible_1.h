@@ -43,8 +43,8 @@ public:
         inputQuery.setLowerBound( 0, -1 );
         inputQuery.setUpperBound( 0, 1 );
 
-        inputQuery.setLowerBound( 5, 2 );
-        inputQuery.setUpperBound( 5, 4 );
+        inputQuery.setLowerBound( 5, 5 );
+        inputQuery.setUpperBound( 5, 6 );
 
         Equation equation1;
         equation1.addAddend( 1, 0 );
@@ -80,7 +80,7 @@ public:
         {
             struct timespec end = TimeUtils::sampleMicro();
             restoreOutputStream( outputStream );
-            printFailed( "abs_feasible_1", start, end );
+            printPassed( "abs_feasible_1", start, end );
             return;
         }
 
