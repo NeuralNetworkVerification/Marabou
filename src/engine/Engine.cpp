@@ -1089,8 +1089,8 @@ void Engine::extractSolution( InputQuery &inputQuery )
             if ( _preprocessor.variableIsFixed( variable ) )
             {
                 inputQuery.setSolutionValue( i, _preprocessor.getFixedValue( variable ) );
-                inputQuery.setLowerBound( i, _tableau->getLowerBound( variable ) );
-                inputQuery.setUpperBound( i, _tableau->getUpperBound( variable ) );
+                inputQuery.setLowerBound( i, _preprocessor.getFixedValue( variable ) );
+                inputQuery.setUpperBound( i, _preprocessor.getFixedValue( variable ) );
                 continue;
             }
 
