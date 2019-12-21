@@ -76,15 +76,17 @@ void DnCMarabou::run()
         ( Options::get()->getString( Options::DIVIDE_STRATEGY ) );
     bool restoreTreeStates = Options::get()->getBool( Options::RESTORE_TREE_STATES );
 
-    std::cout << "Initial divides: ";
-    std::cout << "Initial timeout: ";
-    std::cout << "Number of workers: ";
-    std::cout << "Online divides: ";
-    std::cout << "Verbosity: ";
-    std::cout << "Timeout: ";
-    std::cout << "Timeout factor: ";
-    std::cout << "Divide Strategy: ";
-    std::cout << "Perform tree state restoration";
+    std::cout << "Initial divides: " << initialDivides << std::endl;
+    std::cout << "Initial timeout: " << initialTimeout << std::endl;
+    std::cout << "Number of workers: " << numWorkers << std::endl;
+    std::cout << "Online divides: " << onlineDivides  << std::endl;
+    std::cout << "Verbosity: " << verbosity << std::endl;
+    std::cout << "Timeout: " << timeoutInSeconds  << std::endl;
+    std::cout << "Timeout factor: "  << timeoutFactor << std::endl;
+    std::cout << "Divide Strategy: " << Options::get()->
+        getString( Options::DIVIDE_STRATEGY ).ascii() << std::endl;
+    std::cout << "Perform tree state restoration: " << ( restoreTreeStates ? "Yes" : "No" )
+              << std::endl;
     
     _dncManager = std::unique_ptr<DnCManager>
       ( new DnCManager( numWorkers, initialDivides, initialTimeout,
