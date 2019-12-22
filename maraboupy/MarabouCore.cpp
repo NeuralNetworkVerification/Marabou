@@ -119,6 +119,7 @@ struct MarabouOptions {
         , _timeoutFactor( 1.5 )
         , _verbosity( 2 )
         , _dnc( false )
+        , _restoreTreeStates( false )
     {};
 
     unsigned _numWorkers;
@@ -129,6 +130,7 @@ struct MarabouOptions {
     float _timeoutFactor;
     unsigned _verbosity;
     bool _dnc;
+    bool _restoreTreeStates;
 };
 
 /* The default parameters here are just for readability, you should specify
@@ -158,13 +160,14 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
             unsigned numWorkers = options._numWorkers;
             unsigned onlineDivides = options._onlineDivides;
             float timeoutFactor = options._timeoutFactor;
+            bool restoreTreeStates = options._restoreTreeStates;
 
             auto dncManager = std::unique_ptr<DnCManager>
                 ( new DnCManager( numWorkers, initialDivides, initialTimeout, onlineDivides,
                                   timeoutFactor, DivideStrategy::LargestInterval,
                                   &inputQuery, verbosity ) );
 
-            dncManager->solve( timeoutInSeconds, true );
+            dncManager->solve( timeoutInSeconds, restoreTreeStates );
             switch ( dncManager->getExitCode() )
             {
             case DnCManager::SAT:
@@ -247,7 +250,8 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_timeoutInSeconds", &MarabouOptions::_timeoutInSeconds)
         .def_readwrite("_timeoutFactor", &MarabouOptions::_timeoutFactor)
         .def_readwrite("_verbosity", &MarabouOptions::_verbosity)
-        .def_readwrite("_dnc", &MarabouOptions::_dnc);
+        .def_readwrite("_dnc", &MarabouOptions::_dnc)
+        .def_readwrite("_restoreTreeStates", &MarabouOptions::_restoreTreeStates);
     py::class_<SymbolicBoundTightener, std::unique_ptr<SymbolicBoundTightener,py::nodelete>>(m, "SymbolicBoundTightener")
         .def(py::init())
         .def("setNumberOfLayers", &SymbolicBoundTightener::setNumberOfLayers)
