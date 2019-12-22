@@ -164,7 +164,7 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
 
             auto dncManager = std::unique_ptr<DnCManager>
                 ( new DnCManager( numWorkers, initialDivides, initialTimeout, onlineDivides,
-                                  timeoutFactor, DivideStrategy::LargestInterval,
+                                  timeoutFactor, DivideStrategy::SplitRelu,
                                   &inputQuery, verbosity ) );
 
             dncManager->solve( timeoutInSeconds, restoreTreeStates );
