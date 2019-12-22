@@ -28,8 +28,19 @@
 #define __attribute__(x)
 #endif
 
+ReluConstraint::ReluConstraint( unsigned b, unsigned f, unsigned id )
+    : _id( id )
+    , _b( b )
+    , _f( f )
+    , _auxVarInUse( false )
+    , _haveEliminatedVariables( false )
+{
+    setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
+}
+
 ReluConstraint::ReluConstraint( unsigned b, unsigned f )
-    : _b( b )
+    : _id( 0 )
+    , _b( b )
     , _f( f )
     , _auxVarInUse( false )
     , _haveEliminatedVariables( false )
@@ -75,7 +86,7 @@ ReluConstraint::ReluConstraint( const String &serializedRelu )
 
 PiecewiseLinearConstraint *ReluConstraint::duplicateConstraint() const
 {
-    ReluConstraint *clone = new ReluConstraint( _b, _f );
+    ReluConstraint *clone = new ReluConstraint( _b, _f, _id );
     *clone = *this;
     return clone;
 }
@@ -822,6 +833,11 @@ bool ReluConstraint::auxVariableInUse() const
 unsigned ReluConstraint::getAux() const
 {
     return _aux;
+}
+
+unsigned ReluConstraint::getId() const
+{
+    return _id;
 }
 
 //

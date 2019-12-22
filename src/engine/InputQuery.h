@@ -58,6 +58,8 @@ public:
     */
     void markInputVariable( unsigned variable, unsigned inputIndex );
     void markOutputVariable( unsigned variable, unsigned inputIndex );
+    void markIdToPiecewiseLinearConstriant( unsigned id,
+                                            PiecewiseLinearConstraint *relu );
     unsigned inputVariableByIndex( unsigned index ) const;
     unsigned outputVariableByIndex( unsigned index ) const;
     unsigned getNumInputVariables() const;

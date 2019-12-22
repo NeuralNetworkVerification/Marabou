@@ -146,6 +146,11 @@ public:
         {
             return "";
         }
+
+        unsigned getId() const
+        {
+            return 0;
+        }
     };
 
     void setUp()

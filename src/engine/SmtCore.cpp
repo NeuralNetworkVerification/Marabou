@@ -47,6 +47,20 @@ void SmtCore::freeMemory()
     _stack.clear();
 }
 
+void SmtCore::reportViolatedConstraintPrep( PiecewiseLinearConstraint *constraint )
+{
+    if ( !_constraintToViolationCount.exists( constraint ) )
+        _constraintToViolationCount[constraint] = 0;
+
+    ++_constraintToViolationCount[constraint];
+
+    if ( _constraintToViolationCount[constraint] >= GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD_QUICK )
+    {
+        _needToSplit = true;
+        _constraintForSplitting = constraint;
+    }
+}
+
 void SmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
 {
     if ( !_constraintToViolationCount.exists( constraint ) )
@@ -230,6 +244,12 @@ void SmtCore::recordImpliedValidSplit( PiecewiseLinearCaseSplit &validSplit )
         _stack.back()->_impliedValidSplits.append( validSplit );
 
     checkSkewFromDebuggingSolution();
+}
+
+void SmtCore::recordImpliedIdToPhase( unsigned id, unsigned phaseStatus )
+{
+    if ( _stack.empty() )
+        _impliedIdToPhaseAtRoot[id] = phaseStatus;
 }
 
 void SmtCore::allSplitsSoFar( List<PiecewiseLinearCaseSplit> &result ) const

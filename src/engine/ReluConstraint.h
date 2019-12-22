@@ -28,6 +28,7 @@ public:
         PHASE_INACTIVE = 2,
     };
 
+    ReluConstraint( unsigned b, unsigned f, unsigned id );
     ReluConstraint( unsigned b, unsigned f );
     ReluConstraint( const String &serializedRelu );
 
@@ -162,14 +163,17 @@ public:
     */
     bool supportsSymbolicBoundTightening() const;
 
+    PiecewiseLinearCaseSplit getInactiveSplit() const;
+    PiecewiseLinearCaseSplit getActiveSplit() const;
+
+    unsigned getId() const;
+
 private:
+    unsigned _id;
     unsigned _b, _f;
     PhaseStatus _phaseStatus;
     bool _auxVarInUse;
     unsigned _aux;
-
-    PiecewiseLinearCaseSplit getInactiveSplit() const;
-    PiecewiseLinearCaseSplit getActiveSplit() const;
 
     bool _haveEliminatedVariables;
 

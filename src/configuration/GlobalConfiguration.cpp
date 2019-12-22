@@ -17,6 +17,8 @@
 #include "MString.h"
 #include <cstdio>
 
+const unsigned GlobalConfiguration::QUICK_SOLVE_STACK_DEPTH_THRESHOLD = 40;
+const unsigned GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD_QUICK = 3;
 const double GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS = 0.0000000001;
 const unsigned GlobalConfiguration::DEFAULT_DOUBLE_TO_STRING_PRECISION = 10;
 const unsigned GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY = 10000;
@@ -45,12 +47,12 @@ const double GlobalConfiguration::COST_FUNCTION_ERROR_THRESHOLD = 0.0000000001;
 
 const bool GlobalConfiguration::USE_HARRIS_RATIO_TEST = true;
 
-const bool GlobalConfiguration::USE_SYMBOLIC_BOUND_TIGHTENING = false;
+const bool GlobalConfiguration::USE_SYMBOLIC_BOUND_TIGHTENING = true;
 const bool GlobalConfiguration::USE_LINEAR_CONCRETIZATION = true;
 const double GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT = 0.00000005;
 
 const bool GlobalConfiguration::PREPROCESS_INPUT_QUERY = true;
-const bool GlobalConfiguration::PREPROCESSOR_ELIMINATE_VARIABLES = true;
+const bool GlobalConfiguration::PREPROCESSOR_ELIMINATE_VARIABLES = false;
 const bool GlobalConfiguration::PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS = true;
 const double GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD = 0.00001;
 

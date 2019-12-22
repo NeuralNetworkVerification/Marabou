@@ -37,6 +37,8 @@ public:
         // Restore tree states in DnC mode
         RESTORE_TREE_STATES,
 
+        LOOK_AHEAD_PREPROCESSING,
+
         // Help flag
         HELP,
 

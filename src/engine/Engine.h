@@ -50,6 +50,8 @@ public:
     Engine( unsigned verbosity = 2 );
     ~Engine();
 
+    void applySplits( const Map<unsigned, unsigned> &idToPhase );
+
     /*
       Attempt to find a feasible solution for the input within a time limit
       (a timeout of 0 means no time limit). Returns true if found, false if infeasible.
@@ -153,6 +155,45 @@ public:
                        Map <PiecewiseLinearConstraint *, double>
                        &runtimeEstimates );
 
+    bool lookAheadPropagate( Map<unsigned, unsigned> &allSplits, bool sbtOnly );
+
+    void quickSolve( unsigned depthThreshold );
+
+    void numberOfActive();
+
+    /*
+      A code indicating how the run terminated.
+    */
+    ExitCode _exitCode;
+
+    /*
+      The SMT engine is in charge of case splitting.
+    */
+    SmtCore _smtCore;
+
+    bool _processed;
+
+    bool applyAllValidConstraintCaseSplits();
+
+    PiecewiseLinearConstraint *getConstraintFromId( unsigned id );
+
+    /*
+      Mapping id to PiecewiseLinearConstraint
+    */
+    Map<unsigned, PiecewiseLinearConstraint *> _idToConstraint;
+
+    /*
+      Perform a round of symbolic bound tightening, taking into
+      account the current state of the piecewise linear constraints.
+    */
+    void performSymbolicBoundTightening( bool performSbt = true );
+
+    /*
+      Collect and print various statistics.
+    */
+    Statistics _statistics;
+
+    void storeInitialEngineState();
 
  private:
     enum BasisRestorationRequired {
@@ -173,11 +214,6 @@ public:
       access to the explicit basis matrix.
     */
     void explicitBasisBoundTightening();
-
-    /*
-      Collect and print various statistics.
-    */
-    Statistics _statistics;
 
     /*
       The tableau object maintains the equations, assignments and bounds.
@@ -221,11 +257,6 @@ public:
       Symbolic bound tightnere.
     */
     SymbolicBoundTightener *_symbolicBoundTightener;
-
-    /*
-      The SMT engine is in charge of case splitting.
-    */
-    SmtCore _smtCore;
 
     /*
       Number of pl constraints disabled by valid splits.
@@ -277,11 +308,6 @@ public:
       Indicates a user/DnCManager request to quit
     */
     std::atomic_bool _quitRequested;
-
-    /*
-      A code indicating how the run terminated.
-    */
-    ExitCode _exitCode;
 
     /*
       An object in charge of managing bound tightenings
@@ -358,6 +384,8 @@ public:
     */
     void selectViolatedPlConstraint();
 
+    void selectBranchingPlConstraint();
+
     /*
       Report the violated PL constraint to the SMT engine.
     */
@@ -383,13 +411,12 @@ public:
       Apply all valid case splits proposed by the constraints.
       Return true if a valid case split has been applied.
     */
-    bool applyAllValidConstraintCaseSplits();
     bool applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constraint );
 
     /*
       Update statitstics, print them if needed.
     */
-    void mainLoopStatistics();
+    void mainLoopStatistics( unsigned verbosity = 2 );
 
     /*
       Check if the current degradation is high
@@ -411,7 +438,6 @@ public:
       Store the original engine state within the precision restorer.
       Restore the tableau from the original version.
     */
-    void storeInitialEngineState();
     void performPrecisionRestoration( PrecisionRestorer::RestoreBasics restoreBasics );
     bool basisRestorationNeeded() const;
 
@@ -431,12 +457,6 @@ public:
       false otherwise.
     */
     bool attemptToMergeVariables( unsigned x1, unsigned x2 );
-
-    /*
-      Perform a round of symbolic bound tightening, taking into
-      account the current state of the piecewise linear constraints.
-    */
-    void performSymbolicBoundTightening();
 
     /*
       Check whether a timeout value has been provided and exceeded.

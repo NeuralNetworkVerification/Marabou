@@ -21,6 +21,10 @@ class GlobalConfiguration
 public:
     static void print();
 
+    // The stack depth for quick solve in look-ahead preprocessing.
+    static const unsigned QUICK_SOLVE_STACK_DEPTH_THRESHOLD;
+    static const unsigned CONSTRAINT_VIOLATION_THRESHOLD_QUICK;
+
     // The default epsilon used for comparing doubles
     static const double DEFAULT_EPSILON_FOR_COMPARISONS;
 

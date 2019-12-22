@@ -44,6 +44,7 @@ void Options::initializeDefaultValues()
     _boolOptions[DNC_MODE] = false;
     _boolOptions[PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS] = false;
     _boolOptions[RESTORE_TREE_STATES] = false;
+    _boolOptions[LOOK_AHEAD_PREPROCESSING] = false;
 
     /*
       Int options
