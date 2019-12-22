@@ -472,3 +472,4 @@ void AbsConstraint::setPhaseStatus( PhaseStatus phaseStatus )
 {
     _phaseStatus = phaseStatus;
 }
+

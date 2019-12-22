@@ -31,6 +31,7 @@
 #include "relu_feasible_2.h"
 #include "abs_feasible_1.h"
 #include "abs_feasible_2.h"
+#include "abs_feasible_3.h"
 
 void lps()
 {
@@ -75,6 +76,9 @@ void abs()
 
     Abs_Feasible_2 af2;
     af2.run();
+
+    Abs_Feasible_3 af3;
+    af3.run();
 }
 
 
