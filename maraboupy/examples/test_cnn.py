@@ -1,7 +1,7 @@
 from maraboupy import MarabouNetworkNX as mnx
 from maraboupy import MarabouParseCnn as mcnn
 from itertools import combinations, product
-from math import ceil
+from math  import ceil
 import matplotlib.pyplot as plt
 import random
 

@@ -7,6 +7,7 @@ import copy
 import matplotlib.pyplot as plt
 from math import ceil
 from maraboupy import MarabouNetworkNX as mnx
+from collections import deque
 
 def l2str(layer_i):
     N = 26
@@ -141,4 +142,29 @@ class Cnn(nx.DiGraph):
                 if (u not in ancestors) and (u not in vertices):
                     graph_copy.remove_node(u)
         return graph_copy
- 
+
+
+    #https://gist.github.com/Tal-Golan/94d968001b5065260e5dae4774bc6f7a#file-build_networkx_subgraph_from_tf_graph-py
+    def tf_graph_to_nx(startingPoints,endPoints):
+
+        def childNodes(curNode):
+            isGradientNode=lambda node: node.name.split(sep='/')[0]=='gradients'            
+            return set([childNode for op in curNode.consumers() for childNode in op.outputs if not isGradientNode(childNode)])
+          
+        # visit all nodes in the graph between startingPoint (deep net input) and endPoint (predictions)
+        # and build a networkx directed graph        
+        DG=nx.DiGraph()
+        nodesToVisit=deque(list(startingPoints))
+        nodesVisited=deque()
+        while nodesToVisit:
+            curNode=nodesToVisit.popleft()
+            nodesVisited.append(curNode)      
+            DG.add_node(curNode)
+            if not curNode in endPoint:
+                nodesToVisit.extend(childNodes(curNode)-set(nodesVisited)-set(nodesToVisit))
+                for childNode in childNodes(curNode):
+                    DG.add_edge(curNode,childNode) 
+        
+        # make sure it's acyclic
+        assert nx.is_directed_acyclic_graph(DG), "loops detected in the graph"
+        return DG
