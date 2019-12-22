@@ -36,6 +36,7 @@ void ReluDivider::createSubQueries( unsigned numNewSubqueries, const String
     auto split = new PiecewiseLinearCaseSplit();
     *split = previousSplit;
     splits.append( split );
+    _engine->propagate();
 
     // Repeatedly bisect the dimension with the largest interval
     for ( unsigned i = 0; i < numBisects; ++i )

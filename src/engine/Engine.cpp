@@ -1928,11 +1928,6 @@ bool Engine::propagate()
 {
     try
     {
-        // Tighten any bounds
-        // and perform any valid case splits.
-        if ( _tableau->basisMatrixAvailable() )
-            explicitBasisBoundTightening();
-
         tightenBoundsOnConstraintMatrix();
         applyAllBoundTightenings();
         return true;
@@ -2003,8 +1998,6 @@ bool Engine::restoreSmtState( SmtState &smtState )
             _smtCore.replayStackEntry( stackEntry );
             // Do all the bound propagation, and set ReLU constraints to inactive (at
             // least the one corresponding to the _activeSplit applied above.
-            if ( _tableau->basisMatrixAvailable() )
-                explicitBasisBoundTightening();
             tightenBoundsOnConstraintMatrix();
             applyAllBoundTightenings();
         }
