@@ -114,13 +114,16 @@ PiecewiseLinearConstraint *ReluDivider::computeBestChoice()
     Map<PiecewiseLinearConstraint *, double> runtimeEstimates;
     _engine->getEstimates( balanceEstimates, runtimeEstimates );
     PiecewiseLinearConstraint *best = NULL;
-    double bestRank = balanceEstimates.size();
-    for ( const auto &entry : balanceEstimates ){
-        double newRank = entry.second + runtimeEstimates[entry.first];
-        if ( newRank < bestRank )
+    double bestRank = balanceEstimates.size() * 2;
+    for ( const auto &entry : runtimeEstimates ){
+        if ( entry.second < 30 )
         {
-            best = entry.first;
-            bestRank = newRank;
+            double newRank = entry.second + balanceEstimates[entry.first];
+            if ( newRank < bestRank )
+            {
+                best = entry.first;
+                bestRank = newRank;
+            }
         }
     }
     return best;
