@@ -43,12 +43,12 @@ private:
     /*
       Invoke the engine to solve the input query
     */
-    unsigned long long solveQuery();
+    unsigned solveQuery();
 
     /*
       Display the results
     */
-    void displayResults( unsigned long long preprocessTime,
+    void displayResults( unsigned numFixed,
                          unsigned long long microSecondsElapsed ) const;
 
     /*

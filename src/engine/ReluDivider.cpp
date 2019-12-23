@@ -38,7 +38,6 @@ void ReluDivider::createSubQueries( unsigned numNewSubqueries, const String
     splits.append( split );
     _engine->propagate();
 
-    // Repeatedly bisect the dimension with the largest interval
     for ( unsigned i = 0; i < numBisects; ++i )
     {
         List<PiecewiseLinearCaseSplit *> newSplits;
@@ -111,18 +110,18 @@ PiecewiseLinearConstraint *ReluDivider::getPLConstraintToSplit
 
 PiecewiseLinearConstraint *ReluDivider::computeBestChoice()
 {
-    Map<PiecewiseLinearConstraint *, double> balanceEstimates;
-    Map<PiecewiseLinearConstraint *, double> runtimeEstimates;
+    Map<unsigned, double> balanceEstimates;
+    Map<unsigned, double> runtimeEstimates;
     _engine->getEstimates( balanceEstimates, runtimeEstimates );
     PiecewiseLinearConstraint *best = NULL;
     double bestRank = balanceEstimates.size() * 2;
     for ( const auto &entry : runtimeEstimates ){
-        if ( entry.second < 30 )
+        if ( entry.second < GlobalConfiguration::RUNTIME_ESTIMATE_THRESHOLD )
         {
             double newRank = entry.second + balanceEstimates[entry.first];
             if ( newRank < bestRank )
             {
-                best = entry.first;
+                best = _engine->getConstraintFromId( entry.first );
                 bestRank = newRank;
             }
         }

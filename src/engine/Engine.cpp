@@ -111,13 +111,6 @@ void Engine::quickSolve( unsigned depthThreshold )
         _statistics.addTimeMainLoop( TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
         mainLoopStart = mainLoopEnd;
 
-        // if ( shouldExitDueToTimeout( GlobalConfiguration::QUICK_SOLVE_TIMEOUT ) )
-        // {
-        //     _exitCode = Engine::TIMEOUT;
-        //     _statistics.timeout();
-        //     return;
-        // }
-
         if ( _quitRequested )
         {
             _exitCode = Engine::QUIT_REQUESTED;
@@ -1384,23 +1377,23 @@ void Engine::selectViolatedPlConstraint()
     ASSERT( _plConstraintToFix );
 }
 
-void Engine::selectBranchingPlConstraint()
-{
-    Map<PiecewiseLinearConstraint *, double> balanceEstimates;
-    Map<PiecewiseLinearConstraint *, double> runtimeEstimates;
-    getEstimates( balanceEstimates, runtimeEstimates );
-    PiecewiseLinearConstraint *best = NULL;
-    double bestRank = balanceEstimates.size();
-    for ( const auto &entry : balanceEstimates ){
-        double newRank = entry.second + runtimeEstimates[entry.first];
-        if ( newRank < bestRank )
-        {
-            best = entry.first;
-            bestRank = newRank;
-        }
-    }
-    _smtCore.reportViolatedConstraintPrep( best );
-}
+//void Engine::selectBranchingPlConstraint()
+//{
+//   Map<PiecewiseLinearConstraint *, double> balanceEstimates;
+//    Map<PiecewiseLinearConstraint *, double> runtimeEstimates;
+//    getEstimates( balanceEstimates, runtimeEstimates );
+//    PiecewiseLinearConstraint *best = NULL;
+//    double bestRank = balanceEstimates.size();
+//    for ( const auto &entry : balanceEstimates ){
+//        double newRank = entry.second + runtimeEstimates[entry.first];
+//        if ( newRank < bestRank )
+//       {
+//            best = entry.first;
+//            bestRank = newRank;
+//        }
+//    }
+//    _smtCore.reportViolatedConstraintPrep( best );
+//}
 
 void Engine::reportPlViolation()
 {
@@ -2189,10 +2182,8 @@ bool Engine::propagate()
     }
 }
 
-void Engine::getEstimates( Map <PiecewiseLinearConstraint *, double>
-                           &balanceEstimates,
-                           Map <PiecewiseLinearConstraint *, double>
-                           &runtimeEstimates )
+void Engine::getEstimates( Map <unsigned, double> &balanceEstimates,
+                           Map <unsigned, double> &runtimeEstimates )
 {
     for ( const auto &plConstraint : _plConstraints )
     {
@@ -2202,20 +2193,21 @@ void Engine::getEstimates( Map <PiecewiseLinearConstraint *, double>
             double currentLb = _tableau->getLowerBound( b );
             double currentUb = _tableau->getUpperBound( b );
             double width = currentUb - currentLb;
-	    double sum = currentLb + currentUb;
+            double sum = currentLb + currentUb;
             double balance = ( sum > 0 ? sum : -sum ) / width;
-            balanceEstimates[plConstraint] = balance;
-            runtimeEstimates[plConstraint] = width;
+            balanceEstimates[plConstraint->getId()] = balance;
+            runtimeEstimates[plConstraint->getId()] = width;
         }
     }
 
-    Map<double, PiecewiseLinearConstraint *> temp1;
+    // Sort the map
+    Map<double, unsigned> temp1;
     for ( const auto& entry : runtimeEstimates )
         temp1[entry.second] = entry.first;
     double index = 1;
     for ( const auto& entry : temp1 )
         runtimeEstimates[entry.second] = index++;
-    Map<double, PiecewiseLinearConstraint *> temp2;
+    Map<double, unsigned> temp2;
     for ( const auto& entry : balanceEstimates )
         temp2[entry.second] = entry.first;
     index = 1;

@@ -54,14 +54,11 @@ void LookAheadPreprocessor::preprocessWorker( LookAheadPreprocessor::WorkerQueue
 
     unsigned prevSize = idToPhase.size();
 
-    unsigned numPlConstraints = engine->getInputQuery()->getPiecewiseLinearConstraints().size();
     // Repeatedly pop from queue
     while ( !workload->empty() )
     {
         unsigned id = 0;
         workload->pop( id );
-
-        std::cout << id << " " << idToPhase.size() << std::endl;
 
         if ( (int) id == lastFixed.load() )
         {
@@ -98,19 +95,10 @@ void LookAheadPreprocessor::preprocessWorker( LookAheadPreprocessor::WorkerQueue
         for ( const auto &caseSplit : caseSplits )
         {
             engine->applySplit( caseSplit );
-
-            unsigned depthThreshold = (numPlConstraints - id) /
-                GlobalConfiguration::QUICK_SOLVE_STACK_DEPTH_THRESHOLD;
-            if ( depthThreshold > 0 )
-                engine->quickSolve( depthThreshold );
-
-            // print stats
-            //engine->_statistics.print();
+            engine->quickSolve( GlobalConfiguration::QUICK_SOLVE_STACK_DEPTH_THRESHOLD );
 
             if ( engine->_exitCode == IEngine::QUIT_REQUESTED )
-                {
                 return;
-                }
             if ( engine->_exitCode == IEngine::ERROR )
                 return;
             if ( engine->_exitCode != IEngine::UNSAT )

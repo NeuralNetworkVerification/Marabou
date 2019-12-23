@@ -47,12 +47,12 @@ void Marabou::run()
     struct timespec start = TimeUtils::sampleMicro();
 
     prepareInputQuery();
-    unsigned long long preprocessTime = solveQuery();
+    unsigned numFixed = solveQuery();
 
     struct timespec end = TimeUtils::sampleMicro();
 
     unsigned long long totalElapsed = TimeUtils::timePassed( start, end );
-    displayResults( preprocessTime, totalElapsed );
+    displayResults( numFixed, totalElapsed );
 }
 
 void Marabou::prepareInputQuery()
@@ -87,38 +87,39 @@ void Marabou::prepareInputQuery()
     printf( "\n" );
 }
 
-unsigned long long Marabou::solveQuery()
+unsigned Marabou::solveQuery()
 {
-    unsigned long long totalElapsed = 0;
+    Map<unsigned, unsigned> idToPhase;
     if ( _engine.processInputQuery( _inputQuery ))
     {
-        Map<unsigned, unsigned> idToPhase;
         if ( Options::get()->getBool( Options::LOOK_AHEAD_PREPROCESSING ) )
         {
-            struct timespec start = TimeUtils::sampleMicro();
             auto lookAheadPreprocessor = new LookAheadPreprocessor
                 ( Options::get()->getInt( Options::NUM_WORKERS ),
                   *_engine.getInputQuery() );
             bool feasible = lookAheadPreprocessor->run( idToPhase );
-            struct timespec end = TimeUtils::sampleMicro();
-            totalElapsed = TimeUtils::timePassed( start, end );
             if ( feasible )
                 _engine.applySplits( idToPhase );
             else
             {
                 // Solved by preprocessing, we are done!
                 _engine._exitCode = Engine::UNSAT;
-                return totalElapsed;
+                return idToPhase.size();
             }
         }
-        _engine.solve( Options::get()->getInt( Options::TIMEOUT ) );
+        if ( !Options::get()->getBool( Options::PREPROCESS_ONLY ) )
+            _engine.solve( Options::get()->getInt( Options::TIMEOUT ) );
+        else
+        {
+            return idToPhase.size();
+        }
     }
     if ( _engine.getExitCode() == Engine::SAT )
         _engine.extractSolution( _inputQuery );
-    return totalElapsed;
+    return idToPhase.size();
 }
 
-void Marabou::displayResults( unsigned long long preprocessTime,
+void Marabou::displayResults( unsigned numFixed,
                               unsigned long long microSecondsElapsed ) const
 {
     Engine::ExitCode result = _engine.getExitCode();
@@ -173,16 +174,12 @@ void Marabou::displayResults( unsigned long long preprocessTime,
         // Field #2: total elapsed time
         summaryFile.write( Stringf( " %u ", microSecondsElapsed / 1000000 ) ); // In seconds
 
-        // Field #2: total preprocess time
-        summaryFile.write( Stringf( "%u ", preprocessTime / 1000000 ) ); // In seconds
+        // Field #2: number of fixed relus by look ahead preprocessing
+        summaryFile.write( Stringf( "%u ", numFixed ) );
 
         // Field #3: number of visited tree states
         summaryFile.write( Stringf( "%u ",
                                     _engine.getStatistics()->getNumVisitedTreeStates() ) );
-
-        // Field #4: average pivot time in micro seconds
-        summaryFile.write( Stringf( "%u",
-                                    _engine.getStatistics()->getAveragePivotTimeInMicro() ) );
 
         summaryFile.write( "\n" );
     }

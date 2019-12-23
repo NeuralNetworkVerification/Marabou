@@ -149,9 +149,9 @@ public:
         return true;
     }
 
-    void getEstimates( Map <PiecewiseLinearConstraint *, double>
+    void getEstimates( Map <unsigned, double>
                        &balanceEstimates,
-                       Map <PiecewiseLinearConstraint *, double>
+                       Map <unsigned, double>
                        &runtimeEstimates )
     {
         balanceEstimates.clear();
@@ -169,6 +169,12 @@ public:
     void storeSmtState( SmtState &smtState )
     {
         lastStoredSmtState = &smtState;
+    }
+
+    PiecewiseLinearConstraint *getConstraintFromId( unsigned id )
+    {
+        std::cout << id << std::endl;
+        return NULL;
     }
 
 };

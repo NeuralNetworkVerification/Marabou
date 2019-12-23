@@ -150,10 +150,8 @@ public:
 
 
     bool propagate();
-    void getEstimates( Map <PiecewiseLinearConstraint *, double>
-                       &balanceEstimates,
-                       Map <PiecewiseLinearConstraint *, double>
-                       &runtimeEstimates );
+    void getEstimates( Map <unsigned, double> &balanceEstimates,
+                       Map <unsigned, double> &runtimeEstimates );
 
     bool lookAheadPropagate( Map<unsigned, unsigned> &allSplits, bool sbtOnly );
 
@@ -384,7 +382,7 @@ public:
     */
     void selectViolatedPlConstraint();
 
-    void selectBranchingPlConstraint();
+    //void selectBranchingPlConstraint();
 
     /*
       Report the violated PL constraint to the SMT engine.
