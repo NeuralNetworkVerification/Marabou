@@ -29,7 +29,9 @@
 #include "Engine.h"
 #include "FloatUtils.h"
 #include "InputQuery.h"
+#include "LookAheadPreprocessor.h"
 #include "MarabouError.h"
+#include "Map.h"
 #include "MString.h"
 #include "MaxConstraint.h"
 #include "PiecewiseLinearConstraint.h"
@@ -120,6 +122,7 @@ struct MarabouOptions {
         , _verbosity( 2 )
         , _dnc( false )
         , _restoreTreeStates( false )
+	, _lookAheadPreprocessing( false )
     {};
 
     unsigned _numWorkers;
@@ -131,6 +134,7 @@ struct MarabouOptions {
     unsigned _verbosity;
     bool _dnc;
     bool _restoreTreeStates;
+  bool _lookAheadPreprocessing;
 };
 
 /* The default parameters here are just for readability, you should specify
@@ -148,11 +152,48 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
         bool verbosity = options._verbosity;
         unsigned timeoutInSeconds = options._timeoutInSeconds;
         bool dnc = options._dnc;
-
+	bool lookAheadPreprocessing = options._lookAheadPreprocessing;
+	
         Engine engine;
         engine.setVerbosity(verbosity);
 
         if(!engine.processInputQuery(inputQuery)) return std::make_pair(ret, *(engine.getStatistics()));
+
+	Map<unsigned, unsigned> idToPhase;
+	if ( lookAheadPreprocessing )
+	{
+	    struct timespec start = TimeUtils::sampleMicro();
+            auto lookAheadPreprocessor = new LookAheadPreprocessor
+                ( Options::get()->getInt( Options::NUM_WORKERS ),
+                  *engine.getInputQuery() );
+            bool feasible = lookAheadPreprocessor->run( idToPhase );
+	    struct timespec end = TimeUtils::sampleMicro();
+	    unsigned long long totalElapsed = TimeUtils::timePassed( start, end );
+	    String summaryFilePath = Options::get()->getString( Options::SUMMARY_FILE );
+	    if ( summaryFilePath != "" )
+	    {
+		File summaryFile( summaryFilePath + ".preprocess" );
+		summaryFile.open( File::MODE_WRITE_TRUNCATE );
+		
+		// Field #1: result
+		summaryFile.write( ( feasible ? "UNKNOWN" : "UNSAT" ) );
+		
+		// Field #2: total elapsed time
+		summaryFile.write( Stringf( " %u ", totalElapsed / 1000000 ) ); // In seconds
+		
+		// Field #3: number of fixed relus by look ahead preprocessing
+		summaryFile.write( Stringf( "%u ", idToPhase.size() ) );	    
+		summaryFile.write( "\n" );
+	    }
+	    if ( !feasible )
+	    {
+                // Solved by preprocessing, we are done!
+                engine._exitCode = Engine::UNSAT;
+		retStats = *(engine.getStatistics());
+                return std::make_pair( ret, Statistics() );
+            }
+
+	}
         if ( dnc )
         {
             unsigned initialDivides = options._initialDivides;
@@ -165,7 +206,7 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
             auto dncManager = std::unique_ptr<DnCManager>
                 ( new DnCManager( numWorkers, initialDivides, initialTimeout, onlineDivides,
                                   timeoutFactor, DivideStrategy::SplitRelu,
-                                  &inputQuery, verbosity ) );
+                                  &inputQuery, verbosity, idToPhase ) );
 
             dncManager->solve( timeoutInSeconds, restoreTreeStates );
             switch ( dncManager->getExitCode() )
@@ -187,6 +228,7 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
             }
         } else
         {
+	    engine.applySplits( idToPhase );
             if(!engine.solve(timeoutInSeconds)) return std::make_pair(ret, *(engine.getStatistics()));
 
             if (engine.getExitCode() == Engine::SAT)

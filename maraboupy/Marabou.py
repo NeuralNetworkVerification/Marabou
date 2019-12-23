@@ -62,7 +62,8 @@ def load_query(filename):
     return MarabouCore.loadQuery(filename)
 
 
-def solve_query(ipq, filename="", verbose=True, timeout=0, verbosity=2):
+def solve_query(ipq, filename="", verbose=True, timeout=0, verbosity=2,
+                preprocesser_summary=""):
     """
     Function to solve query represented by this network
     Arguments:
@@ -81,7 +82,7 @@ def solve_query(ipq, filename="", verbose=True, timeout=0, verbosity=2):
                 it has multiple methods that provide information related
                 to how an input query was solved.
     """
-    vals, stats = MarabouCore.solve(ipq, filename, timeout, verbosity)
+    vals, stats = MarabouCore.solve(ipq, filename, timeout, verbosity, preprocesser_summary)
     if verbose:
         if stats.hasTimedOut():
             print ("TIMEOUT")

@@ -47,12 +47,12 @@ void Marabou::run()
     struct timespec start = TimeUtils::sampleMicro();
 
     prepareInputQuery();
-    unsigned numFixed = solveQuery();
+    solveQuery();
 
     struct timespec end = TimeUtils::sampleMicro();
 
     unsigned long long totalElapsed = TimeUtils::timePassed( start, end );
-    displayResults( numFixed, totalElapsed );
+    displayResults( totalElapsed );
 }
 
 void Marabou::prepareInputQuery()
@@ -87,40 +87,53 @@ void Marabou::prepareInputQuery()
     printf( "\n" );
 }
 
-unsigned Marabou::solveQuery()
+void Marabou::solveQuery()
 {
-    Map<unsigned, unsigned> idToPhase;
     if ( _engine.processInputQuery( _inputQuery ))
     {
+	struct timespec start = TimeUtils::sampleMicro();
+	Map<unsigned, unsigned> idToPhase;
         if ( Options::get()->getBool( Options::LOOK_AHEAD_PREPROCESSING ) )
         {
             auto lookAheadPreprocessor = new LookAheadPreprocessor
                 ( Options::get()->getInt( Options::NUM_WORKERS ),
                   *_engine.getInputQuery() );
             bool feasible = lookAheadPreprocessor->run( idToPhase );
+	    struct timespec end = TimeUtils::sampleMicro();
+	    unsigned long long totalElapsed = TimeUtils::timePassed( start, end );
+
+	    String summaryFilePath = Options::get()->getString( Options::SUMMARY_FILE );
+	    if ( summaryFilePath != "" )
+	    {
+		File summaryFile( summaryFilePath + ".preprocess" );
+		summaryFile.open( File::MODE_WRITE_TRUNCATE );
+		
+		// Field #1: result
+		summaryFile.write( ( feasible ? "UNKNOWN" : "UNSAT" ) );
+		
+		// Field #2: total elapsed time
+		summaryFile.write( Stringf( " %u ", totalElapsed / 1000000 ) ); // In seconds
+		
+		// Field #3: number of fixed relus by look ahead preprocessing
+		summaryFile.write( Stringf( "%u ", idToPhase.size() ) );	    
+		summaryFile.write( "\n" );
+	    }
+	    
             if ( feasible )
                 _engine.applySplits( idToPhase );
             else
             {
                 // Solved by preprocessing, we are done!
                 _engine._exitCode = Engine::UNSAT;
-                return idToPhase.size();
             }
         }
-        if ( !Options::get()->getBool( Options::PREPROCESS_ONLY ) )
-            _engine.solve( Options::get()->getInt( Options::TIMEOUT ) );
-        else
-        {
-            return idToPhase.size();
-        }
+	_engine.solve( Options::get()->getInt( Options::TIMEOUT ) );
     }
     if ( _engine.getExitCode() == Engine::SAT )
         _engine.extractSolution( _inputQuery );
-    return idToPhase.size();
 }
 
-void Marabou::displayResults( unsigned numFixed,
-                              unsigned long long microSecondsElapsed ) const
+void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
 {
     Engine::ExitCode result = _engine.getExitCode();
     String resultString;
@@ -173,9 +186,6 @@ void Marabou::displayResults( unsigned numFixed,
 
         // Field #2: total elapsed time
         summaryFile.write( Stringf( " %u ", microSecondsElapsed / 1000000 ) ); // In seconds
-
-        // Field #2: number of fixed relus by look ahead preprocessing
-        summaryFile.write( Stringf( "%u ", numFixed ) );
 
         // Field #3: number of visited tree states
         summaryFile.write( Stringf( "%u ",

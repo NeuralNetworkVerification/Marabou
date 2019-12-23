@@ -33,6 +33,8 @@
 #include <cmath>
 #include <thread>
 
+#include "Map.h"
+
 void DnCManager::dncSolve( WorkerQueue *workload, InputQuery *inputQuery,
                            std::shared_ptr<Engine> engine,
                            std::atomic_uint &numUnsolvedSubQueries,
@@ -59,7 +61,7 @@ DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
                         unsigned initialTimeout, unsigned onlineDivides,
                         float timeoutFactor, DivideStrategy divideStrategy,
                         String networkFilePath, String propertyFilePath,
-                        unsigned verbosity )
+                        unsigned verbosity, Map<unsigned, unsigned> idToPhase )
     : _numWorkers( numWorkers )
     , _initialDivides( initialDivides )
     , _initialTimeout( initialTimeout )
@@ -74,13 +76,15 @@ DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
     , _timeoutReached( false )
     , _numUnsolvedSubQueries( 0 )
     , _verbosity( verbosity )
+    , _idToPhase( idToPhase )
 {
 }
 
 DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
                         unsigned initialTimeout, unsigned onlineDivides,
                         float timeoutFactor, DivideStrategy divideStrategy,
-                        InputQuery *inputQuery, unsigned verbosity )
+                        InputQuery *inputQuery, unsigned verbosity,
+			Map<unsigned, unsigned> idToPhase )
     : _numWorkers( numWorkers )
     , _initialDivides( initialDivides )
     , _initialTimeout( initialTimeout )
@@ -95,6 +99,7 @@ DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
     , _timeoutReached( false )
     , _numUnsolvedSubQueries( 0 )
     , _verbosity( verbosity )
+    , _idToPhase( idToPhase )
 {
 }
 
@@ -174,7 +179,7 @@ void DnCManager::solve( unsigned timeoutInSeconds, bool restoreTreeStates )
                                         std::ref( shouldQuitSolving ),
                                         threadId, _onlineDivides,
                                         _timeoutFactor, _divideStrategy,
-                                        restoreTreeStates ) );
+                                        restoreTreeStates, _idToPhase ) );
     }
 
     // Wait until either all subQueries are solved or a satisfying assignment is
