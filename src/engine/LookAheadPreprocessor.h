@@ -37,10 +37,12 @@ public:
     LookAheadPreprocessor( unsigned numWorkers,
                            const InputQuery &inputQuery );
 
+    ~LookAheadPreprocessor();
+
     bool run( Map<unsigned, unsigned> &idToPhase );
 
     static void preprocessWorker( LookAheadPreprocessor::WorkerQueue
-                                  *workload, Engine *engine,
+                                  &workload, Engine *engine,
                                   InputQuery *inputQuery, unsigned threadId,
                                   Map<unsigned, unsigned> &impliedCaseSplits,
                                   std::atomic_bool &shouldQuitPreprocessing,
@@ -52,7 +54,7 @@ private:
     /*
       Set of subQueries to be solved by workers
     */
-    LookAheadPreprocessor::WorkerQueue *_workload;
+    LookAheadPreprocessor::WorkerQueue _workload;
 
     List<unsigned> _allPiecewiseLinearConstraints;
 

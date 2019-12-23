@@ -28,11 +28,13 @@
 #include "DnCManager.h"
 #include "Engine.h"
 #include "FloatUtils.h"
+#include "File.h"
 #include "InputQuery.h"
 #include "LookAheadPreprocessor.h"
 #include "MarabouError.h"
 #include "Map.h"
 #include "MString.h"
+#include "MStringf.h"
 #include "MaxConstraint.h"
 #include "PiecewiseLinearConstraint.h"
 #include "PropertyParser.h"
@@ -134,13 +136,15 @@ struct MarabouOptions {
     unsigned _verbosity;
     bool _dnc;
     bool _restoreTreeStates;
-  bool _lookAheadPreprocessing;
+    bool _lookAheadPreprocessing;
 };
 
 /* The default parameters here are just for readability, you should specify
  * them in the to make them work*/
 std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, MarabouOptions &options,
-                                                   std::string redirect=""){
+                                                   std::string summaryFilePath,
+                                                   std::string redirect="" )
+{
     // Arguments: InputQuery object, filename to redirect output
     // Returns: map from variable number to value
     std::map<int, double> ret;
@@ -152,53 +156,44 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
         bool verbosity = options._verbosity;
         unsigned timeoutInSeconds = options._timeoutInSeconds;
         bool dnc = options._dnc;
-	bool lookAheadPreprocessing = options._lookAheadPreprocessing;
-	
+        bool lookAheadPreprocessing = options._lookAheadPreprocessing;
+        unsigned numWorkers = options._numWorkers;
+
         Engine engine;
         engine.setVerbosity(verbosity);
 
         if(!engine.processInputQuery(inputQuery)) return std::make_pair(ret, *(engine.getStatistics()));
 
-	Map<unsigned, unsigned> idToPhase;
-	if ( lookAheadPreprocessing )
-	{
-	    struct timespec start = TimeUtils::sampleMicro();
+        Map<unsigned, unsigned> idToPhase;
+        if ( lookAheadPreprocessing )
+        {
+            struct timespec start = TimeUtils::sampleMicro();
             auto lookAheadPreprocessor = new LookAheadPreprocessor
-                ( Options::get()->getInt( Options::NUM_WORKERS ),
-                  *engine.getInputQuery() );
+                ( numWorkers, *(engine.getInputQuery()) );
             bool feasible = lookAheadPreprocessor->run( idToPhase );
-	    struct timespec end = TimeUtils::sampleMicro();
-	    unsigned long long totalElapsed = TimeUtils::timePassed( start, end );
-	    String summaryFilePath = Options::get()->getString( Options::SUMMARY_FILE );
-	    if ( summaryFilePath != "" )
-	    {
-		File summaryFile( summaryFilePath + ".preprocess" );
-		summaryFile.open( File::MODE_WRITE_TRUNCATE );
-		
-		// Field #1: result
-		summaryFile.write( ( feasible ? "UNKNOWN" : "UNSAT" ) );
-		
-		// Field #2: total elapsed time
-		summaryFile.write( Stringf( " %u ", totalElapsed / 1000000 ) ); // In seconds
-		
-		// Field #3: number of fixed relus by look ahead preprocessing
-		summaryFile.write( Stringf( "%u ", idToPhase.size() ) );	    
-		summaryFile.write( "\n" );
-	    }
-	    if ( !feasible )
-	    {
-                // Solved by preprocessing, we are done!
-                engine._exitCode = Engine::UNSAT;
-		retStats = *(engine.getStatistics());
-                return std::make_pair( ret, Statistics() );
-            }
+            struct timespec end = TimeUtils::sampleMicro();
+            unsigned long long totalElapsed = TimeUtils::timePassed( start, end );
+            if ( summaryFilePath != "" )
+            {
+                File summaryFile( summaryFilePath + ".preprocess" );
+                summaryFile.open( File::MODE_WRITE_TRUNCATE );
 
-	}
+                // Field #1: result
+                summaryFile.write( ( feasible ? "UNKNOWN" : "UNSAT" ) );
+
+                // Field #2: total elapsed time
+                summaryFile.write( Stringf( " %u ", totalElapsed / 1000000 ) ); // In seconds
+
+                // Field #3: number of fixed relus by look ahead preprocessing
+                summaryFile.write( Stringf( "%u ", idToPhase.size() ) );
+                summaryFile.write( "\n" );
+            }
+            if ( !feasible ) return std::make_pair(ret, *(engine.getStatistics()));
+        }
         if ( dnc )
         {
             unsigned initialDivides = options._initialDivides;
             unsigned initialTimeout = options._initialTimeout;
-            unsigned numWorkers = options._numWorkers;
             unsigned onlineDivides = options._onlineDivides;
             float timeoutFactor = options._timeoutFactor;
             bool restoreTreeStates = options._restoreTreeStates;
@@ -260,7 +255,8 @@ InputQuery loadQuery(std::string filename){
 PYBIND11_MODULE(MarabouCore, m) {
     m.doc() = "Marabou API Library";
     m.def("createInputQuery", &createInputQuery, "Create input query from network and property file");
-    m.def("solve", &solve, "Takes in a description of the InputQuery and returns the solution", py::arg("inputQuery"), py::arg("options"), py::arg("redirect") = "");
+    m.def("solve", &solve, "Takes in a description of the InputQuery and returns the solution", py::arg("inputQuery"), py::arg("options"),
+          py::arg("summaryFilePath"),  py::arg("redirect") = "");
     m.def("saveQuery", &saveQuery, "Serializes the inputQuery in the given filename");
     m.def("loadQuery", &loadQuery, "Loads and returns a serialized inputQuery from the given filename");
     m.def("addReluConstraint", &addReluConstraint, "Add a Relu constraint to the InputQuery");

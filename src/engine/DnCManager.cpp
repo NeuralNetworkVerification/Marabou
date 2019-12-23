@@ -41,13 +41,16 @@ void DnCManager::dncSolve( WorkerQueue *workload, InputQuery *inputQuery,
                            std::atomic_bool &shouldQuitSolving,
                            unsigned threadId, unsigned onlineDivides,
                            float timeoutFactor, DivideStrategy divideStrategy,
-                           bool restoreTreeStates )
+                           bool restoreTreeStates, Map<unsigned, unsigned>
+                           idToPhase )
 {
     unsigned cpuId = 0;
     getCPUId( cpuId );
     log( Stringf( "Thread #%u on CPU %u", threadId, cpuId ) );
 
-    engine->processInputQuery( *inputQuery );
+    engine->processInputQuery( *inputQuery, false );
+    engine->applySplits( idToPhase );
+
     DnCWorker worker( workload, engine, std::ref( numUnsolvedSubQueries ),
                       std::ref( shouldQuitSolving ), threadId, onlineDivides,
                       timeoutFactor, divideStrategy );
@@ -60,32 +63,10 @@ void DnCManager::dncSolve( WorkerQueue *workload, InputQuery *inputQuery,
 DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
                         unsigned initialTimeout, unsigned onlineDivides,
                         float timeoutFactor, DivideStrategy divideStrategy,
-                        String networkFilePath, String propertyFilePath,
-                        unsigned verbosity, Map<unsigned, unsigned> idToPhase )
-    : _numWorkers( numWorkers )
-    , _initialDivides( initialDivides )
-    , _initialTimeout( initialTimeout )
-    , _onlineDivides( onlineDivides )
-    , _timeoutFactor( timeoutFactor )
-    , _divideStrategy( divideStrategy )
-    , _networkFilePath( networkFilePath )
-    , _propertyFilePath( propertyFilePath )
-    , _baseInputQuery( NULL )
-    , _exitCode( DnCManager::NOT_DONE )
-    , _workload( NULL )
-    , _timeoutReached( false )
-    , _numUnsolvedSubQueries( 0 )
-    , _verbosity( verbosity )
-    , _idToPhase( idToPhase )
-{
-}
-
-DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
-                        unsigned initialTimeout, unsigned onlineDivides,
-                        float timeoutFactor, DivideStrategy divideStrategy,
                         InputQuery *inputQuery, unsigned verbosity,
-			Map<unsigned, unsigned> idToPhase )
-    : _numWorkers( numWorkers )
+                        Map<unsigned, unsigned> idToPhase )
+    : _exitCode( DnCManager::NOT_DONE )
+    , _numWorkers( numWorkers )
     , _initialDivides( initialDivides )
     , _initialTimeout( initialTimeout )
     , _onlineDivides( onlineDivides )
@@ -94,8 +75,6 @@ DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
     , _networkFilePath( "" )
     , _propertyFilePath( "" )
     , _baseInputQuery( inputQuery )
-    , _exitCode( DnCManager::NOT_DONE )
-    , _workload( NULL )
     , _timeoutReached( false )
     , _numUnsolvedSubQueries( 0 )
     , _verbosity( verbosity )
@@ -110,17 +89,11 @@ DnCManager::~DnCManager()
 
 void DnCManager::freeMemoryIfNeeded()
 {
-    if ( _workload )
+    SubQuery *subQuery;
+    while ( !_workload->empty() )
     {
-        SubQuery *subQuery;
-        while ( !_workload->empty() )
-        {
-            _workload->pop( subQuery );
-            delete subQuery;
-        }
-
-        delete _workload;
-        _workload = NULL;
+        _workload->pop( subQuery );
+        delete subQuery;
     }
 }
 
@@ -147,20 +120,17 @@ void DnCManager::solve( unsigned timeoutInSeconds, bool restoreTreeStates )
 
     // Partition the input query into initial subqueries, and place these
     // queries in the queue
-    _workload = new WorkerQueue( 0 );
-    if ( !_workload )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "DnCManager::workload" );
-
     SubQueries subQueries;
     initialDivide( subQueries );
 
     // Create objects shared across workers
     _numUnsolvedSubQueries = subQueries.size();
     std::atomic_bool shouldQuitSolving( false );
-    WorkerQueue *workload = new WorkerQueue( 0 );
+
+    _workload = new WorkerQueue( 0 );
     for ( auto &subQuery : subQueries )
     {
-        if ( !workload->push( subQuery ) )
+        if ( !_workload->push( subQuery ) )
         {
             // This should never happen
             ASSERT( false );
@@ -173,8 +143,8 @@ void DnCManager::solve( unsigned timeoutInSeconds, bool restoreTreeStates )
     {
         InputQuery *inputQuery = new InputQuery();
         *inputQuery = *_baseInputQuery;
-        threads.push_back( std::thread( dncSolve, workload, inputQuery,
-                                        _engines[ threadId ],
+        threads.push_back( std::thread( dncSolve, _workload,
+                                        inputQuery, _engines[ threadId ],
                                         std::ref( _numUnsolvedSubQueries ),
                                         std::ref( shouldQuitSolving ),
                                         threadId, _onlineDivides,
@@ -342,19 +312,7 @@ bool DnCManager::createEngines()
     // Create the base engine
     _baseEngine = std::make_shared<Engine>( _verbosity );
 
-    if ( !_baseInputQuery )
-    {
-        _baseInputQuery = new InputQuery();
-        // InputQuery is owned by engine
-        AcasParser acasParser( _networkFilePath );
-        acasParser.generateQuery( *_baseInputQuery );
-        if ( _propertyFilePath != "" )
-            PropertyParser().parse( _propertyFilePath, *_baseInputQuery );
-    }
-
-    if ( !_baseEngine->processInputQuery( *_baseInputQuery ) )
-        // Solved by preprocessing, we are done!
-        return false;
+    _baseEngine->processInputQuery( *_baseInputQuery, false );
 
     // Create engines for each thread
     for ( unsigned i = 0; i < _numWorkers; ++i )

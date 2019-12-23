@@ -14,9 +14,11 @@
  ** [[ Add lengthier description here ]]
  **/
 
+#include "AcasParser.h"
 #include "DnCManager.h"
 #include "DnCMarabou.h"
 #include "File.h"
+#include "LookAheadPreprocessor.h"
 #include "MStringf.h"
 #include "Options.h"
 #include "PropertyParser.h"
@@ -25,6 +27,8 @@
 DnCMarabou::DnCMarabou()
     : _dncManager( nullptr )
 {
+    unsigned verbosity = Options::get()->getInt( Options::VERBOSITY );
+    _baseEngine = std::make_shared<Engine>( verbosity );
 }
 
 void DnCMarabou::run()
@@ -76,32 +80,68 @@ void DnCMarabou::run()
         ( Options::get()->getString( Options::DIVIDE_STRATEGY ) );
     bool restoreTreeStates = Options::get()->getBool( Options::RESTORE_TREE_STATES );
 
-    std::cout << "Initial divides: " << initialDivides << std::endl;
-    std::cout << "Initial timeout: " << initialTimeout << std::endl;
-    std::cout << "Number of workers: " << numWorkers << std::endl;
-    std::cout << "Online divides: " << onlineDivides  << std::endl;
-    std::cout << "Verbosity: " << verbosity << std::endl;
-    std::cout << "Timeout: " << timeoutInSeconds  << std::endl;
-    std::cout << "Timeout factor: "  << timeoutFactor << std::endl;
-    std::cout << "Divide Strategy: " << Options::get()->
-        getString( Options::DIVIDE_STRATEGY ).ascii() << std::endl;
-    std::cout << "Perform tree state restoration: " << ( restoreTreeStates ? "Yes" : "No" )
-              << std::endl;
-    
-    _dncManager = std::unique_ptr<DnCManager>
-      ( new DnCManager( numWorkers, initialDivides, initialTimeout,
-                        onlineDivides, timeoutFactor,
-                        divideStrategy, networkFilePath,
-                        propertyFilePath, verbosity ) );
-
     struct timespec start = TimeUtils::sampleMicro();
 
-    _dncManager->solve( timeoutInSeconds, restoreTreeStates );
+    // InputQuery is owned by engine
+    InputQuery *baseInputQuery = new InputQuery();
 
+    AcasParser acasParser( networkFilePath );
+    acasParser.generateQuery( *baseInputQuery );
+    if ( propertyFilePath != "" )
+        PropertyParser().parse( propertyFilePath, *baseInputQuery );
+
+    Map<unsigned, unsigned> idToPhase;
+    if ( !_baseEngine->processInputQuery( *baseInputQuery ) ||
+         lookAheadPreprocessing( idToPhase ) )
+        // Solved by preprocessing, we are done!
+    {
+        _dncManager = std::unique_ptr<DnCManager>
+            ( new DnCManager( numWorkers, initialDivides, initialTimeout,
+                              onlineDivides, timeoutFactor, divideStrategy,
+                              _baseEngine->getInputQuery(), verbosity,
+                              idToPhase ) );
+        _dncManager->solve( timeoutInSeconds, restoreTreeStates );
+    }
+    else
+    {
+        _dncManager->_exitCode = DnCManager::UNSAT;
+    }
     struct timespec end = TimeUtils::sampleMicro();
 
     unsigned long long totalElapsed = TimeUtils::timePassed( start, end );
     displayResults( totalElapsed );
+}
+
+bool DnCMarabou::lookAheadPreprocessing( Map<unsigned, unsigned> &idToPhase )
+{
+    bool feasible = true;
+    if ( Options::get()->getBool( Options::LOOK_AHEAD_PREPROCESSING ) )
+    {
+        struct timespec start = TimeUtils::sampleMicro();
+        auto lookAheadPreprocessor = new LookAheadPreprocessor
+            ( Options::get()->getInt( Options::NUM_WORKERS ),
+              *(_baseEngine->getInputQuery()) );
+        feasible = lookAheadPreprocessor->run( idToPhase );
+        struct timespec end = TimeUtils::sampleMicro();
+        unsigned long long totalElapsed = TimeUtils::timePassed( start, end );
+        String summaryFilePath = Options::get()->getString( Options::SUMMARY_FILE );
+        if ( summaryFilePath != "" )
+        {
+            File summaryFile( summaryFilePath + ".preprocess" );
+            summaryFile.open( File::MODE_WRITE_TRUNCATE );
+
+            // Field #1: result
+            summaryFile.write( ( feasible ? "UNKNOWN" : "UNSAT" ) );
+
+            // Field #2: total elapsed time
+            summaryFile.write( Stringf( " %u ", totalElapsed / 1000000 ) ); // In seconds
+
+            // Field #3: number of fixed relus by look ahead preprocessing
+            summaryFile.write( Stringf( "%u ", idToPhase.size() ) );
+            summaryFile.write( "\n" );
+        }
+    }
+    return feasible;
 }
 
 void DnCMarabou::displayResults( unsigned long long microSecondsElapsed ) const

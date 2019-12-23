@@ -31,7 +31,11 @@ public:
     void run();
 
 private:
+    std::shared_ptr<Engine> _baseEngine;
+
     std::unique_ptr<DnCManager> _dncManager;
+
+    bool lookAheadPreprocessing( Map<unsigned, unsigned> &idToPhase );
 
     /*
       Display the results

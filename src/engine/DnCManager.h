@@ -42,12 +42,13 @@ public:
     DnCManager( unsigned numWorkers, unsigned initialDivides, unsigned
                 initialTimeout, unsigned onlineDivides, float timeoutFactor,
                 DivideStrategy divideStrategy, String networkFilePath,
-                String propertyFilePath, unsigned verbosity );
+                String propertyFilePath, unsigned verbosity,
+                Map<unsigned, unsigned> idToPhase );
 
     DnCManager( unsigned numWorkers, unsigned initialDivides, unsigned
                 initialTimeout, unsigned onlineDivides, float timeoutFactor,
                 DivideStrategy divideStrategy, InputQuery *inputQuery,
-                unsigned verbosity );
+                unsigned verbosity, Map<unsigned, unsigned> idToPhase );
 
     ~DnCManager();
 
@@ -78,6 +79,11 @@ public:
     */
     void getSolution( std::map<int, double> &ret );
 
+    /*
+      The exit code of the DnCManager.
+    */
+    DnCExitCode _exitCode;
+
 private:
     /*
       Create and run a DnCWorker
@@ -88,7 +94,7 @@ private:
                           std::atomic_bool &shouldQuitSolving,
                           unsigned threadId, unsigned onlineDivides,
                           float timeoutFactor, DivideStrategy divideStrategy,
-                          bool restoreTreeStates );
+                          bool restoreTreeStates, Map<unsigned, unsigned> idToPhase );
 
     /*
       Create the base engine from the network and property files,
@@ -178,11 +184,6 @@ private:
     InputQuery *_baseInputQuery;
 
     /*
-      The exit code of the DnCManager.
-    */
-    DnCExitCode _exitCode;
-
-    /*
       Set of subQueries to be solved by workers
     */
     WorkerQueue *_workload;
@@ -201,6 +202,8 @@ private:
       The level of verbosity
     */
     unsigned _verbosity;
+
+    Map<unsigned, unsigned> _idToPhase;
 };
 
 #endif // __DnCManager_h__

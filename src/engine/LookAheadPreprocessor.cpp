@@ -14,14 +14,31 @@
  **/
 
 #include "GetCPUData.h"
-#include <InputQuery.h>
-#include <LookAheadPreprocessor.h>
+#include "InputQuery.h"
+#include "LookAheadPreprocessor.h"
 #include "GlobalConfiguration.h"
 
 #include <thread>
 
+LookAheadPreprocessor::LookAheadPreprocessor( unsigned numWorkers,
+                                              const InputQuery &inputQuery )
+    : _workload( 0 )
+    , _numWorkers ( numWorkers )
+    , _baseInputQuery( inputQuery )
+
+{
+    createEngines();
+    // _workload = LookAheadPreprocessor::WorkerQueue( 0 );
+}
+
+LookAheadPreprocessor::~LookAheadPreprocessor()
+{
+    for ( const auto &engine : _engines )
+        delete engine;
+}
+
 void LookAheadPreprocessor::preprocessWorker( LookAheadPreprocessor::WorkerQueue
-                                              *workload, Engine *engine,
+                                              &workload, Engine *engine,
                                               InputQuery *inputQuery,
                                               unsigned threadId,
                                               Map<unsigned, unsigned>
@@ -55,10 +72,10 @@ void LookAheadPreprocessor::preprocessWorker( LookAheadPreprocessor::WorkerQueue
     unsigned prevSize = idToPhase.size();
 
     // Repeatedly pop from queue
-    while ( !workload->empty() )
+    while ( !workload.empty() )
     {
         unsigned id = 0;
-        workload->pop( id );
+        workload.pop( id );
 
         if ( (int) id == lastFixed.load() )
         {
@@ -92,10 +109,16 @@ void LookAheadPreprocessor::preprocessWorker( LookAheadPreprocessor::WorkerQueue
         Vector<List<PiecewiseLinearCaseSplit>> feasibleImpliedSplits;
         Vector<Map<unsigned, unsigned>> feasibleImpliedIdToPhase;
         Vector<unsigned> feasibleStatus;
+
+        unsigned threshold = GlobalConfiguration::QUICK_SOLVE_STACK_DEPTH_THRESHOLD *
+            ( engine->_idToConstraint.size() - id ) / engine->_idToConstraint.size();
+        std::cout << id << std::endl;
+        if ( threshold == 0 ) continue;
+
         for ( const auto &caseSplit : caseSplits )
         {
             engine->applySplit( caseSplit );
-            engine->quickSolve( GlobalConfiguration::QUICK_SOLVE_STACK_DEPTH_THRESHOLD );
+            engine->quickSolve( threshold );
 
             if ( engine->_exitCode == IEngine::QUIT_REQUESTED )
                 return;
@@ -165,15 +188,6 @@ void LookAheadPreprocessor::preprocessWorker( LookAheadPreprocessor::WorkerQueue
     }
 }
 
-LookAheadPreprocessor::LookAheadPreprocessor( unsigned numWorkers,
-                                              const InputQuery &inputQuery )
-    : _numWorkers ( numWorkers )
-    , _baseInputQuery( inputQuery )
-{
-    createEngines();
-    _workload = new LookAheadPreprocessor::WorkerQueue( 0 );
-}
-
 bool LookAheadPreprocessor::run( Map<unsigned, unsigned> &idToPhase )
 {
     bool progressMade = true;
@@ -197,13 +211,14 @@ bool LookAheadPreprocessor::run( Map<unsigned, unsigned> &idToPhase )
         std::cout << "new look ahead preprocessing iteration" << std::endl;
         unsigned previousSize = idToPhase.size();
         for ( auto id : _allPiecewiseLinearConstraints )
-            if ( !_workload->push( id ) )
+            if ( !_workload.push( id ) )
                 std::cout << "Pushed failed!" << std::endl;
         // Spawn threads and start solving
         std::list<std::thread> threads;
         for ( unsigned threadId = 0; threadId < _numWorkers; ++threadId )
         {
-            threads.push_back( std::thread( preprocessWorker, _workload,
+            threads.push_back( std::thread( preprocessWorker,
+                                            std::ref( _workload ),
                                             _engines[threadId],
                                             _inputQueries[threadId],
                                             threadId,
@@ -213,7 +228,7 @@ bool LookAheadPreprocessor::run( Map<unsigned, unsigned> &idToPhase )
                                             std::ref( lastFixed ) ) );
         }
 
-        while ( (!shouldQuitPreprocessing.load()) && (!_workload->empty()) )
+        while ( (!shouldQuitPreprocessing.load()) && (!_workload.empty()) )
         {
             std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
         }

@@ -45,6 +45,8 @@ private:
     */
     void solveQuery();
 
+    bool lookAheadPreprocessing();
+
     /*
       Display the results
     */
