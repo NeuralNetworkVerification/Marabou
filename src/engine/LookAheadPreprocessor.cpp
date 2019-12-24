@@ -115,7 +115,6 @@ void LookAheadPreprocessor::preprocessWorker( LookAheadPreprocessor::WorkerQueue
         factor = 1 < factor ? 1 : factor;
         unsigned threshold = (unsigned) GlobalConfiguration::QUICK_SOLVE_STACK_DEPTH_THRESHOLD *
                      factor;
-        std::cout << id << " " << "Thresh: " << factor << " " << threshold << std::endl;
         if ( threshold == 0 ) continue;
 
         for ( const auto &caseSplit : caseSplits )

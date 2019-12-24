@@ -99,7 +99,7 @@ def solve_query(ipq, filename="", verbose=True, timeout=0, verbosity=2,
 
 def createOptions( numWorkers=4, initialTimeout=5, initialDivides=0, onlineDivides=2,
                    timeoutInSeconds=0, timeoutFactor=1.5, verbosity=2, dnc=False,
-                   restoreTreeStates=False, lookAheadPreprocessing=False ):
+                   restoreTreeStates=False, lookAheadPreprocessing=False, preprocessOnly=False ):
     """
     Create an option object
     """
@@ -114,4 +114,5 @@ def createOptions( numWorkers=4, initialTimeout=5, initialDivides=0, onlineDivid
     options._dnc = dnc
     options._restoreTreeStates = restoreTreeStates
     options._lookAheadPreprocessing = lookAheadPreprocessing
+    options._preprocessOnly = preprocessOnly
     return options

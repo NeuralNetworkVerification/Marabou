@@ -125,6 +125,7 @@ struct MarabouOptions {
         , _dnc( false )
         , _restoreTreeStates( false )
         , _lookAheadPreprocessing( false )
+        , _preprocessOnly( false )
     {};
 
     unsigned _numWorkers;
@@ -137,6 +138,7 @@ struct MarabouOptions {
     bool _dnc;
     bool _restoreTreeStates;
     bool _lookAheadPreprocessing;
+    bool _preprocessOnly;
 };
 
 /* The default parameters here are just for readability, you should specify
@@ -157,6 +159,7 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
         unsigned timeoutInSeconds = options._timeoutInSeconds;
         bool dnc = options._dnc;
         bool lookAheadPreprocessing = options._lookAheadPreprocessing;
+        bool preprocessOnly = options._preprocessOnly;
         unsigned numWorkers = options._numWorkers;
 
         Engine engine;
@@ -188,7 +191,15 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
                 summaryFile.write( Stringf( "%u ", idToPhase.size() ) );
                 summaryFile.write( "\n" );
             }
-            if ( !feasible ) return std::make_pair(ret, *(engine.getStatistics()));
+            if ( summaryFilePath != "" )
+            {
+                File fixedFile( summaryFilePath + ".fixed" );
+                fixedFile.open( File::MODE_WRITE_TRUNCATE );
+                for ( const auto entry : idToPhase )
+                    fixedFile.write( Stringf( "%u %u\n", entry.first, entry.second ) );
+            }
+
+            if ( (!feasible) || preprocessOnly ) return std::make_pair(ret, *(engine.getStatistics()));
         }
         if ( dnc )
         {
@@ -290,7 +301,8 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_verbosity", &MarabouOptions::_verbosity)
         .def_readwrite("_dnc", &MarabouOptions::_dnc)
         .def_readwrite("_restoreTreeStates", &MarabouOptions::_restoreTreeStates)
-        .def_readwrite("_lookAheadPreprocessing", &MarabouOptions::_lookAheadPreprocessing);
+        .def_readwrite("_lookAheadPreprocessing", &MarabouOptions::_lookAheadPreprocessing)
+        .def_readwrite("_preprocessOnly", &MarabouOptions::_preprocessOnly);
     py::class_<SymbolicBoundTightener, std::unique_ptr<SymbolicBoundTightener,py::nodelete>>(m, "SymbolicBoundTightener")
         .def(py::init())
         .def("setNumberOfLayers", &SymbolicBoundTightener::setNumberOfLayers)

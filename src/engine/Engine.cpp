@@ -1246,22 +1246,18 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
     try
     {
-        std::cout << "informing constraints of initial bounds\n";
         informConstraintsOfInitialBounds( inputQuery );
         invokePreprocessor( inputQuery, preprocess );
         if ( _verbosity > 0 )
             printInputBounds( inputQuery );
 
-        std::cout << "create constraint matrix\n";
         double *constraintMatrix = createConstraintMatrix();
         removeRedundantEquations( constraintMatrix );
 
-        std::cout << "create constraint matrix2\n";
         // The equations have changed, recreate the constraint matrix
         delete[] constraintMatrix;
         constraintMatrix = createConstraintMatrix();
 
-        std::cout << "Add auxiliary variable\n";
         List<unsigned> initialBasis;
         List<unsigned> basicRows;
         selectInitialVariablesForBasis( constraintMatrix, initialBasis, basicRows );

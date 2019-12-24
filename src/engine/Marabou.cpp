@@ -90,7 +90,8 @@ void Marabou::prepareInputQuery()
 void Marabou::solveQuery()
 {
     if ( _engine.processInputQuery( _inputQuery ) &&
-         lookAheadPreprocessing() )
+         lookAheadPreprocessing() && !Options::get()->
+         getBool( Options::PREPROCESS_ONLY ) )
     {
         _engine.solve( Options::get()->getInt( Options::TIMEOUT ) );
     }
@@ -128,6 +129,17 @@ bool Marabou::lookAheadPreprocessing()
             summaryFile.write( Stringf( "%u ", idToPhase.size() ) );
             summaryFile.write( "\n" );
         }
+        if ( summaryFilePath != "" )
+        {
+            File fixedFile( summaryFilePath + ".fixed" );
+            fixedFile.open( File::MODE_WRITE_TRUNCATE );
+
+            for ( const auto entry : idToPhase )
+            {
+                fixedFile.write( Stringf( "%u %u\n", entry.first, entry.second ) );
+            }
+        }
+
         if ( feasible )
             _engine.applySplits( idToPhase );
         else

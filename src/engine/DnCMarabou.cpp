@@ -95,12 +95,15 @@ void DnCMarabou::run()
          lookAheadPreprocessing( idToPhase ) )
         // Solved by preprocessing, we are done!
     {
-        _dncManager = std::unique_ptr<DnCManager>
-            ( new DnCManager( numWorkers, initialDivides, initialTimeout,
-                              onlineDivides, timeoutFactor, divideStrategy,
-                              _baseEngine->getInputQuery(), verbosity,
-                              idToPhase ) );
-        _dncManager->solve( timeoutInSeconds, restoreTreeStates );
+        if ( !Options::get()->getBool( Options::PREPROCESS_ONLY ) )
+        {
+            _dncManager = std::unique_ptr<DnCManager>
+                ( new DnCManager( numWorkers, initialDivides, initialTimeout,
+                                  onlineDivides, timeoutFactor, divideStrategy,
+                                  _baseEngine->getInputQuery(), verbosity,
+                                  idToPhase ) );
+            _dncManager->solve( timeoutInSeconds, restoreTreeStates );
+        }
     }
     else
     {
@@ -139,6 +142,14 @@ bool DnCMarabou::lookAheadPreprocessing( Map<unsigned, unsigned> &idToPhase )
             // Field #3: number of fixed relus by look ahead preprocessing
             summaryFile.write( Stringf( "%u ", idToPhase.size() ) );
             summaryFile.write( "\n" );
+        }
+        if ( summaryFilePath != "" )
+        {
+            File fixedFile( summaryFilePath + ".fixed" );
+            fixedFile.open( File::MODE_WRITE_TRUNCATE );
+
+            for ( const auto entry : idToPhase )
+                fixedFile.write( Stringf( "%u %u\n", entry.first, entry.second ) );
         }
     }
     return feasible;

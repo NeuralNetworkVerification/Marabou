@@ -40,6 +40,8 @@ public:
         // Perform look-ahead preprocessing
         LOOK_AHEAD_PREPROCESSING,
 
+        PREPROCESS_ONLY,
+
         // Help flag
         HELP,
 
