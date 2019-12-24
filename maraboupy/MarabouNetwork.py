@@ -156,9 +156,11 @@ class MarabouNetwork:
             eq.setScalar(e.scalar)
             ipq.addEquation(eq)
 
+        id_ = 0
         for r in self.reluList:
             assert r[1] < self.numVars and r[0] < self.numVars
-            MarabouCore.addReluConstraint(ipq, r[0], r[1])
+            MarabouCore.addReluConstraint(ipq, r[0], r[1], id_)
+            id_ += 1
 
         for m in self.maxList:
             assert m[1] < self.numVars

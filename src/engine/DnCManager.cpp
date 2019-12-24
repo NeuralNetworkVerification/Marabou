@@ -51,6 +51,8 @@ void DnCManager::dncSolve( WorkerQueue *workload, InputQuery *inputQuery,
     engine->processInputQuery( *inputQuery, false );
     engine->applySplits( idToPhase );
 
+    engine->numberOfActive();
+
     DnCWorker worker( workload, engine, std::ref( numUnsolvedSubQueries ),
                       std::ref( shouldQuitSolving ), threadId, onlineDivides,
                       timeoutFactor, divideStrategy );
@@ -89,12 +91,16 @@ DnCManager::~DnCManager()
 
 void DnCManager::freeMemoryIfNeeded()
 {
-    SubQuery *subQuery;
-    while ( !_workload->empty() )
+    if ( _workload )
     {
-        _workload->pop( subQuery );
-        delete subQuery;
+        SubQuery *subQuery;
+        while ( !_workload->empty() )
+        {
+            _workload->pop( subQuery );
+            delete subQuery;
+        }
     }
+    delete _workload;
 }
 
 void DnCManager::solve( unsigned timeoutInSeconds, bool restoreTreeStates )
@@ -311,7 +317,6 @@ bool DnCManager::createEngines()
 {
     // Create the base engine
     _baseEngine = std::make_shared<Engine>( _verbosity );
-
     _baseEngine->processInputQuery( *_baseInputQuery, false );
 
     // Create engines for each thread

@@ -125,32 +125,14 @@ void Engine::quickSolve( unsigned depthThreshold )
 
             // If the basis has become malformed, we need to restore it
             if ( basisRestorationNeeded() )
-            {
-                if ( _basisRestorationRequired == Engine::STRONG_RESTORATION_NEEDED )
-                {
-                    performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
-                    _basisRestorationPerformed = Engine::PERFORMED_STRONG_RESTORATION;
-                }
-                else
-                {
-                    performPrecisionRestoration( PrecisionRestorer::DO_NOT_RESTORE_BASICS );
-                    _basisRestorationPerformed = Engine::PERFORMED_WEAK_RESTORATION;
-                }
-
-                _numVisitedStatesAtPreviousRestoration = _statistics.getNumVisitedTreeStates();
-                _basisRestorationRequired = Engine::RESTORATION_NOT_NEEDED;
-                continue;
-            }
+                return;
 
             // Restoration is not required
             _basisRestorationPerformed = Engine::NO_RESTORATION_PERFORMED;
 
             // Possible restoration due to preceision degradation
             if ( shouldCheckDegradation() && highDegradation() )
-            {
-                performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
-                continue;
-            }
+                return;
 
             //if ( _tableau->basisMatrixAvailable() )
             //    explicitBasisBoundTightening();
@@ -1264,18 +1246,22 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
     try
     {
+        std::cout << "informing constraints of initial bounds\n";
         informConstraintsOfInitialBounds( inputQuery );
         invokePreprocessor( inputQuery, preprocess );
         if ( _verbosity > 0 )
             printInputBounds( inputQuery );
 
+        std::cout << "create constraint matrix\n";
         double *constraintMatrix = createConstraintMatrix();
         removeRedundantEquations( constraintMatrix );
 
+        std::cout << "create constraint matrix2\n";
         // The equations have changed, recreate the constraint matrix
         delete[] constraintMatrix;
         constraintMatrix = createConstraintMatrix();
 
+        std::cout << "Add auxiliary variable\n";
         List<unsigned> initialBasis;
         List<unsigned> basicRows;
         selectInitialVariablesForBasis( constraintMatrix, initialBasis, basicRows );

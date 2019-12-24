@@ -17,7 +17,7 @@
 #include "MString.h"
 #include <cstdio>
 
-const unsigned GlobalConfiguration::QUICK_SOLVE_STACK_DEPTH_THRESHOLD = 3;
+const unsigned GlobalConfiguration::QUICK_SOLVE_STACK_DEPTH_THRESHOLD = 2;
 const unsigned GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD_QUICK = 3;
 const unsigned GlobalConfiguration::RUNTIME_ESTIMATE_THRESHOLD = 30;
 const double GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS = 0.0000000001;

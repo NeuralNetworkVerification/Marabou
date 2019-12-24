@@ -28,7 +28,6 @@ LookAheadPreprocessor::LookAheadPreprocessor( unsigned numWorkers,
 
 {
     createEngines();
-    // _workload = LookAheadPreprocessor::WorkerQueue( 0 );
 }
 
 LookAheadPreprocessor::~LookAheadPreprocessor()
@@ -110,15 +109,19 @@ void LookAheadPreprocessor::preprocessWorker( LookAheadPreprocessor::WorkerQueue
         Vector<Map<unsigned, unsigned>> feasibleImpliedIdToPhase;
         Vector<unsigned> feasibleStatus;
 
-        unsigned threshold = GlobalConfiguration::QUICK_SOLVE_STACK_DEPTH_THRESHOLD *
-            ( engine->_idToConstraint.size() - id ) / engine->_idToConstraint.size();
-        std::cout << id << std::endl;
+        unsigned numActive = (engine->_idToConstraint.size() - idToPhase.size());
+
+        double factor = ((double) engine->_idToConstraint.size() - id ) / numActive;
+        factor = 1 < factor ? 1 : factor;
+        unsigned threshold = (unsigned) GlobalConfiguration::QUICK_SOLVE_STACK_DEPTH_THRESHOLD *
+                     factor;
+        std::cout << id << " " << "Thresh: " << factor << " " << threshold << std::endl;
         if ( threshold == 0 ) continue;
 
         for ( const auto &caseSplit : caseSplits )
         {
             engine->applySplit( caseSplit );
-            engine->quickSolve( threshold );
+            engine->quickSolve( threshold + 1 );
 
             if ( engine->_exitCode == IEngine::QUIT_REQUESTED )
                 return;

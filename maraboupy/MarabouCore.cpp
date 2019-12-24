@@ -87,8 +87,8 @@ void restoreOutputStream(int outputStream)
     close(outputStream);
 }
 
-void addReluConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
-    PiecewiseLinearConstraint* r = new ReluConstraint(var1, var2);
+void addReluConstraint(InputQuery& ipq, unsigned var1, unsigned var2, unsigned id){
+    PiecewiseLinearConstraint* r = new ReluConstraint(var1, var2, id);
     ipq.addPiecewiseLinearConstraint(r);
 }
 
@@ -124,7 +124,7 @@ struct MarabouOptions {
         , _verbosity( 2 )
         , _dnc( false )
         , _restoreTreeStates( false )
-	, _lookAheadPreprocessing( false )
+        , _lookAheadPreprocessing( false )
     {};
 
     unsigned _numWorkers;
@@ -201,7 +201,7 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
             auto dncManager = std::unique_ptr<DnCManager>
                 ( new DnCManager( numWorkers, initialDivides, initialTimeout, onlineDivides,
                                   timeoutFactor, DivideStrategy::SplitRelu,
-                                  &inputQuery, verbosity, idToPhase ) );
+                                  engine.getInputQuery(), verbosity, idToPhase ) );
 
             dncManager->solve( timeoutInSeconds, restoreTreeStates );
             switch ( dncManager->getExitCode() )
@@ -223,7 +223,7 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
             }
         } else
         {
-	    engine.applySplits( idToPhase );
+            engine.applySplits( idToPhase );
             if(!engine.solve(timeoutInSeconds)) return std::make_pair(ret, *(engine.getStatistics()));
 
             if (engine.getExitCode() == Engine::SAT)
@@ -289,7 +289,8 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_timeoutFactor", &MarabouOptions::_timeoutFactor)
         .def_readwrite("_verbosity", &MarabouOptions::_verbosity)
         .def_readwrite("_dnc", &MarabouOptions::_dnc)
-        .def_readwrite("_restoreTreeStates", &MarabouOptions::_restoreTreeStates);
+        .def_readwrite("_restoreTreeStates", &MarabouOptions::_restoreTreeStates)
+        .def_readwrite("_lookAheadPreprocessing", &MarabouOptions::_lookAheadPreprocessing);
     py::class_<SymbolicBoundTightener, std::unique_ptr<SymbolicBoundTightener,py::nodelete>>(m, "SymbolicBoundTightener")
         .def(py::init())
         .def("setNumberOfLayers", &SymbolicBoundTightener::setNumberOfLayers)
