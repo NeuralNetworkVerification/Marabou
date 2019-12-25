@@ -2186,6 +2186,12 @@ void Engine::getEstimates( Map <unsigned, double> &balanceEstimates,
     Map<double, unsigned> temp1;
     for ( const auto& entry : runtimeEstimates )
         temp1[entry.second] = entry.first;
+
+    for ( const auto &entry : temp1 )
+    {
+        std::cout << entry.first << " " << entry.second << std::endl;
+    }
+
     double index = 1;
     for ( const auto& entry : temp1 )
         runtimeEstimates[entry.second] = index++;
@@ -2195,6 +2201,8 @@ void Engine::getEstimates( Map <unsigned, double> &balanceEstimates,
     index = 1;
     for ( const auto& entry : temp2 )
         balanceEstimates[entry.second] = index++;
+
+
     return;
 }
 
