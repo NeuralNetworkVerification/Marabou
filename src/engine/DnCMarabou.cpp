@@ -91,19 +91,16 @@ void DnCMarabou::run()
         PropertyParser().parse( propertyFilePath, *baseInputQuery );
 
     Map<unsigned, unsigned> idToPhase;
-    if ( !_baseEngine->processInputQuery( *baseInputQuery ) ||
-         lookAheadPreprocessing( idToPhase ) )
-        // Solved by preprocessing, we are done!
+    if ( _baseEngine->processInputQuery( *baseInputQuery ) &&
+         lookAheadPreprocessing( idToPhase ) &&
+         !Options::get()->getBool( Options::PREPROCESS_ONLY ) )
     {
-        if ( !Options::get()->getBool( Options::PREPROCESS_ONLY ) )
-        {
-            _dncManager = std::unique_ptr<DnCManager>
-                ( new DnCManager( numWorkers, initialDivides, initialTimeout,
-                                  onlineDivides, timeoutFactor, divideStrategy,
-                                  _baseEngine->getInputQuery(), verbosity,
-                                  idToPhase ) );
-            _dncManager->solve( timeoutInSeconds, restoreTreeStates );
-        }
+        _dncManager = std::unique_ptr<DnCManager>
+            ( new DnCManager( numWorkers, initialDivides, initialTimeout,
+                              onlineDivides, timeoutFactor, divideStrategy,
+                              _baseEngine->getInputQuery(), verbosity,
+                              idToPhase ) );
+        _dncManager->solve( timeoutInSeconds, restoreTreeStates );
     }
     else
     {
