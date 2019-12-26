@@ -52,6 +52,8 @@ public:
 
     void applySplits( const Map<unsigned, unsigned> &idToPhase );
 
+    void setBiasedRatio( float biasedRatio );
+
     /*
       Attempt to find a feasible solution for the input within a time limit
       (a timeout of 0 means no time limit). Returns true if found, false if infeasible.
@@ -194,6 +196,9 @@ public:
     void storeInitialEngineState();
 
  private:
+
+    float _biasedRatio;
+
     enum BasisRestorationRequired {
         RESTORATION_NOT_NEEDED = 0,
         STRONG_RESTORATION_NEEDED = 1,

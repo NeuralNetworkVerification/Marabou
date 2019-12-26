@@ -66,6 +66,7 @@ public:
     enum FloatOptions{
         // DNC options
         TIMEOUT_FACTOR,
+        BIASED_RATIO,
     };
 
     enum StringOptions {

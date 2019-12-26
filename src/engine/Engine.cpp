@@ -280,6 +280,11 @@ void Engine::applySplits( const Map<unsigned, unsigned> &idToPhase )
     }
 }
 
+void Engine::setBiasedRatio( float biasedRatio )
+{
+    _biasedRatio = biasedRatio;
+}
+
 bool Engine::solve( unsigned timeoutInSeconds )
 {
     SignalHandler::getInstance()->initialize();

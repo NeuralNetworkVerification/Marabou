@@ -82,6 +82,8 @@ public:
     */
     List<PiecewiseLinearConstraint::Fix> getSmartFixes( ITableau *tableau ) const;
 
+    void setDirection( int direction );
+
     /*
       Returns the list of case splits that this piecewise linear
       constraint breaks into. These splits need to complementary,
@@ -162,6 +164,13 @@ public:
       symbolic bound tightening.
     */
     bool supportsSymbolicBoundTightening() const;
+
+    /*
+      -1: ambiguous
+       0: inactive
+       1: active
+    */
+    int _direction;
 
     PiecewiseLinearCaseSplit getInactiveSplit() const;
     PiecewiseLinearCaseSplit getActiveSplit() const;
