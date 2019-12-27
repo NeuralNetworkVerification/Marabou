@@ -21,6 +21,7 @@
 #include "AutoProjectedSteepestEdge.h"
 #include "AutoRowBoundTightener.h"
 #include "AutoTableau.h"
+#include "BiasStrategy.h"
 #include "BlandsRule.h"
 #include "DantzigsRule.h"
 #include "DegradationChecker.h"
@@ -52,7 +53,7 @@ public:
 
     void applySplits( const Map<unsigned, unsigned> &idToPhase );
 
-    void setBiasedRatio( unsigned biasedLayer );
+    void setBiasedPhases( unsigned biasedLayer, BiasStrategy strategy );
 
     /*
       Attempt to find a feasible solution for the input within a time limit

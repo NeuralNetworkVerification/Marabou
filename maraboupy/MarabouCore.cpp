@@ -25,7 +25,9 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include "AcasParser.h"
+#include "BiasStrategy.h"
 #include "DnCManager.h"
+#include "DivideStrategy.h"
 #include "Engine.h"
 #include "FloatUtils.h"
 #include "File.h"
@@ -127,6 +129,8 @@ struct MarabouOptions {
         , _restoreTreeStates( false )
         , _lookAheadPreprocessing( false )
         , _preprocessOnly( false )
+        , _divideStrategy( "largest-interval" )
+        , _biasStrategy( "centroid" )
     {};
 
     unsigned _numWorkers;
@@ -141,7 +145,37 @@ struct MarabouOptions {
     bool _restoreTreeStates;
     bool _lookAheadPreprocessing;
     bool _preprocessOnly;
+    std::string _divideStrategy;
+    std::string _biasStrategy;
 };
+
+BiasStrategy setBiasStrategyFromOptions( const String strategy )
+{
+    if ( strategy == "centroid" )
+        return BiasStrategy::Centroid;
+    else if ( strategy == "sampling" )
+        return BiasStrategy::Sampling;
+    else if ( strategy == "random" )
+        return BiasStrategy::Random;
+    else
+        {
+            printf ("Unknown divide strategy, using default (centroid).\n");
+            return BiasStrategy::Centroid;
+        }
+}
+
+DivideStrategy setDivideStrategyFromOptions( const String strategy )
+{
+    if ( strategy == "split-relu" )
+        return DivideStrategy::SplitRelu;
+    else if ( strategy == "largest-interval" )
+        return DivideStrategy::LargestInterval;
+    else
+        {
+            printf ("Unknown divide strategy, using default (SplitRelu).\n");
+            return DivideStrategy::SplitRelu;
+        }
+}
 
 /* The default parameters here are just for readability, you should specify
  * them in the to make them work*/
@@ -164,6 +198,8 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
         bool preprocessOnly = options._preprocessOnly;
         unsigned numWorkers = options._numWorkers;
         unsigned focusLayer = options._focusLayer;
+        DivideStrategy divideStrategy = setDivideStrategyFromOptions( options._divideStrategy );
+        BiasStrategy biasStrategy = setBiasStrategyFromOptions( options._biasStrategy );
 
         Engine engine;
         engine.setVerbosity(verbosity);
@@ -214,10 +250,11 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
 
             auto dncManager = std::unique_ptr<DnCManager>
                 ( new DnCManager( numWorkers, initialDivides, initialTimeout, onlineDivides,
-                                  timeoutFactor, DivideStrategy::SplitRelu,
-                                  engine.getInputQuery(), verbosity, idToPhase ) );
+                                  timeoutFactor, divideStrategy,
+                                  engine.getInputQuery(), verbosity, idToPhase,
+                                  focusLayer, biasStrategy ) );
 
-            dncManager->solve( timeoutInSeconds, restoreTreeStates, focusLayer );
+            dncManager->solve( timeoutInSeconds, restoreTreeStates );
             switch ( dncManager->getExitCode() )
             {
             case DnCManager::SAT:
@@ -238,7 +275,7 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
         } else
         {
             engine.applySplits( idToPhase );
-            engine.setBiasedRatio( focusLayer );
+            engine.setBiasedPhases( focusLayer, biasStrategy );
             if(!engine.solve(timeoutInSeconds)) return std::make_pair(ret, *(engine.getStatistics()));
 
             if (engine.getExitCode() == Engine::SAT)
@@ -307,7 +344,9 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_dnc", &MarabouOptions::_dnc)
         .def_readwrite("_restoreTreeStates", &MarabouOptions::_restoreTreeStates)
         .def_readwrite("_lookAheadPreprocessing", &MarabouOptions::_lookAheadPreprocessing)
-        .def_readwrite("_preprocessOnly", &MarabouOptions::_preprocessOnly);
+        .def_readwrite("_preprocessOnly", &MarabouOptions::_preprocessOnly)
+        .def_readwrite("_divideStrategy", &MarabouOptions::_divideStrategy)
+        .def_readwrite("_biasstrategy", &MarabouOptions::_biasStrategy);
     py::class_<SymbolicBoundTightener, std::unique_ptr<SymbolicBoundTightener,py::nodelete>>(m, "SymbolicBoundTightener")
         .def(py::init())
         .def("setNumberOfLayers", &SymbolicBoundTightener::setNumberOfLayers)

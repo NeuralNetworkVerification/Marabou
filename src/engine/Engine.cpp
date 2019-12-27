@@ -30,6 +30,8 @@
 
 #include "Vector.h"
 
+#include <random>
+
 Engine::Engine( unsigned verbosity )
     : _exitCode( Engine::NOT_DONE )
     , _smtCore( this )
@@ -280,18 +282,44 @@ void Engine::applySplits( const Map<unsigned, unsigned> &idToPhase )
     }
 }
 
-void Engine::setBiasedRatio( unsigned biasedLayer )
+void Engine::setBiasedPhases( unsigned biasedLayer, BiasStrategy strategy )
 {
-    Vector<double> centroid;
-    getCentroid( centroid );
-    auto pattern = NetworkLevelReasoner::ActivationPattern();
-    _networkLevelReasoner->getActivationPattern( centroid, pattern );
-
-    for ( unsigned layer = 1; layer < biasedLayer; ++layer )
+    std::cout << "Bias the first " << biasedLayer << " layers" << std::endl;
+    if ( biasedLayer == 0 )
     {
-        auto ids = _networkLevelReasoner->_layerToIds[layer];
-        for ( const auto id : ids )
-            ( (ReluConstraint *) getConstraintFromId( id ) )->setDirection( pattern[id] );
+        return;
+    }
+
+    if ( strategy == BiasStrategy::Centroid )
+    {
+        auto pattern = NetworkLevelReasoner::ActivationPattern();
+        Vector<double> centroid;
+        getCentroid( centroid );
+        _networkLevelReasoner->getActivationPattern( centroid, pattern );
+        for ( unsigned layer = 1; layer < biasedLayer + 1; ++layer )
+        {
+            auto ids = _networkLevelReasoner->_layerToIds[layer];
+            for ( const auto id : ids )
+                ( (ReluConstraint *) getConstraintFromId( id ) )->setDirection( pattern[id] );
+        }
+    }
+    else if ( strategy == BiasStrategy::Sampling )
+    {
+
+    }
+    else // random
+    {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<> dis( 0, 1 );
+        for ( unsigned layer = 1; layer < biasedLayer; ++layer )
+        {
+            auto ids = _networkLevelReasoner->_layerToIds[layer];
+            for ( const auto id : ids )
+            {
+                ( (ReluConstraint *) getConstraintFromId( id ) )->setDirection( dis( gen ) );
+            }
+        }
     }
 }
 
@@ -2201,11 +2229,6 @@ void Engine::getEstimates( Map <unsigned, double> &balanceEstimates,
     Map<double, unsigned> temp1;
     for ( const auto& entry : runtimeEstimates )
         temp1[entry.second] = entry.first;
-
-    for ( const auto &entry : temp1 )
-    {
-        std::cout << entry.first << " " << entry.second << std::endl;
-    }
 
     double index = 1;
     for ( const auto& entry : temp1 )

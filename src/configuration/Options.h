@@ -77,6 +77,7 @@ public:
         SUMMARY_FILE,
 
         DIVIDE_STRATEGY,
+        BIAS_STRATEGY,
     };
 
     /*

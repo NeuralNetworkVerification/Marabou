@@ -65,7 +65,10 @@ void OptionParser::initialize()
           "Summary file" )
         ( "divide-strategy",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::DIVIDE_STRATEGY]) ),
-          "(DNC) Strategy for dividing a query into subqueries (split-relu/largest-interval)" )
+          "(DNC) Strategy for dividing a query into subqueries (split-relu/largest-interval/activationPattern)" )
+        ( "bias-strategy",
+          boost::program_options::value<std::string>( &((*_stringOptions)[Options::BIAS_STRATEGY]) ),
+          "(DNC) Strategy for biasing the fix (centroid/sampling/random)" )
         ( "num-workers",
           boost::program_options::value<int>( &((*_intOptions)[Options::NUM_WORKERS]) ),
           "(DNC) Number of workers" )

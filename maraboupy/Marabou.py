@@ -101,7 +101,8 @@ def createOptions( numWorkers=4, initialTimeout=5, initialDivides=0,
                    onlineDivides=2, timeoutInSeconds=0, focusLayer=0,
                    timeoutFactor=1.5, verbosity=2, dnc=False,
                    restoreTreeStates=False, lookAheadPreprocessing=False,
-                   preprocessOnly=False ):
+                   preprocessOnly=False, divideStrategy="split-relu",
+                   biasStrategy="centroid" ):
     """
     Create an option object
     """
@@ -118,4 +119,6 @@ def createOptions( numWorkers=4, initialTimeout=5, initialDivides=0,
     options._restoreTreeStates = restoreTreeStates
     options._lookAheadPreprocessing = lookAheadPreprocessing
     options._preprocessOnly = preprocessOnly
+    options._divideStrategy = divideStrategy
+    options._biasStrategy = biasStrategy
     return options

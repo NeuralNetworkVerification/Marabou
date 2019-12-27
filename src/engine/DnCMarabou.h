@@ -16,6 +16,7 @@
 #ifndef __DnCMarabou_h__
 #define __DnCMarabou_h__
 
+#include "BiasStrategy.h"
 #include "DivideStrategy.h"
 #include "DnCManager.h"
 #include "Options.h"
@@ -41,6 +42,11 @@ private:
       Display the results
     */
     void displayResults( unsigned long long microSecondsElapsed ) const;
+
+    /*
+      Set the bias strategy according to the command line argument
+    */
+    BiasStrategy setBiasStrategyFromOptions( const String strategy );
 
     /*
       Set the divide strategy according to the command line argument

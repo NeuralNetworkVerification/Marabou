@@ -69,6 +69,7 @@ void Options::initializeDefaultValues()
     _stringOptions[PROPERTY_FILE_PATH] = "";
     _stringOptions[SUMMARY_FILE] = "";
     _stringOptions[DIVIDE_STRATEGY] = "";
+    _stringOptions[BIAS_STRATEGY] = "";
 }
 
 void Options::parseOptions( int argc, char **argv )

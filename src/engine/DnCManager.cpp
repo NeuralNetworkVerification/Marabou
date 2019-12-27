@@ -42,7 +42,8 @@ void DnCManager::dncSolve( WorkerQueue *workload, InputQuery *inputQuery,
                            unsigned threadId, unsigned onlineDivides,
                            float timeoutFactor, DivideStrategy divideStrategy,
                            bool restoreTreeStates, Map<unsigned, unsigned>
-                           idToPhase, unsigned biasedLayer )
+                           idToPhase, unsigned biasedLayer,
+                           BiasStrategy strategy )
 {
     unsigned cpuId = 0;
     getCPUId( cpuId );
@@ -50,7 +51,7 @@ void DnCManager::dncSolve( WorkerQueue *workload, InputQuery *inputQuery,
 
     engine->processInputQuery( *inputQuery, false );
     engine->applySplits( idToPhase );
-    engine->setBiasedRatio( biasedLayer );
+    engine->setBiasedPhases( biasedLayer, strategy );
 
     engine->numberOfActive();
 
@@ -67,7 +68,8 @@ DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
                         unsigned initialTimeout, unsigned onlineDivides,
                         float timeoutFactor, DivideStrategy divideStrategy,
                         InputQuery *inputQuery, unsigned verbosity,
-                        Map<unsigned, unsigned> idToPhase )
+                        Map<unsigned, unsigned> idToPhase, unsigned biasedLayer,
+                        BiasStrategy biasStrategy )
     : _exitCode( DnCManager::NOT_DONE )
     , _numWorkers( numWorkers )
     , _initialDivides( initialDivides )
@@ -82,6 +84,8 @@ DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
     , _numUnsolvedSubQueries( 0 )
     , _verbosity( verbosity )
     , _idToPhase( idToPhase )
+    , _biasedLayer( biasedLayer )
+    , _biasStrategy( biasStrategy )
 {
 }
 
@@ -104,8 +108,7 @@ void DnCManager::freeMemoryIfNeeded()
     delete _workload;
 }
 
-void DnCManager::solve( unsigned timeoutInSeconds, bool restoreTreeStates,
-                        unsigned biasedLayer )
+void DnCManager::solve( unsigned timeoutInSeconds, bool restoreTreeStates )
 {
     enum {
         MICROSECONDS_IN_SECOND = 1000000
@@ -158,7 +161,7 @@ void DnCManager::solve( unsigned timeoutInSeconds, bool restoreTreeStates,
                                         threadId, _onlineDivides,
                                         _timeoutFactor, _divideStrategy,
                                         restoreTreeStates, _idToPhase,
-                                        biasedLayer ) );
+                                        _biasedLayer, _biasStrategy ) );
     }
 
     // Wait until either all subQueries are solved or a satisfying assignment is
