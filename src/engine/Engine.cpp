@@ -312,12 +312,13 @@ void Engine::setBiasedPhases( unsigned biasedLayer, BiasStrategy strategy )
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_int_distribution<> dis( 0, 1 );
-        for ( unsigned layer = 1; layer < biasedLayer; ++layer )
+        for ( unsigned layer = 1; layer < biasedLayer + 1; ++layer )
         {
             auto ids = _networkLevelReasoner->_layerToIds[layer];
             for ( const auto id : ids )
             {
-                ( (ReluConstraint *) getConstraintFromId( id ) )->setDirection( dis( gen ) );
+                unsigned direction = dis( gen );
+                ( (ReluConstraint *) getConstraintFromId( id ) )->setDirection( direction );
             }
         }
     }
