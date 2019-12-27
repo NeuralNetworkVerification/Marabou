@@ -21,8 +21,6 @@ echo $args
 source /barrett/scratch/haozewu/py3.5/bin/activate
 root="/barrett/scratch/haozewu/Targeted_attack/experiments/"
 
-export PYTHONPATH=${PYTHONPATH}:/barrett/scratch/haozewu/Targeted_Attack/Marabou
-
 if [ "$type" == "acas" ]; then
     $marabou $network $property --summary-file=$summary $args
 elif [ "$type" == "mnist" ]; then

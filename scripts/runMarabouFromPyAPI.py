@@ -24,6 +24,9 @@ def parse_args():
     p.add_argument('--restore-tree-states', action='store_true', default=False)
     p.add_argument('--look-ahead-preprocessing', action='store_true', default=False)
     p.add_argument('--preprocess-only', action='store_true', default=False)
+    p.add_argument('--divide-strategy', required=False, type=str, default='split-relu')
+    p.add_argument('--bias-strategy', required=False, type=str, default='centroid')
+    p.add_argument('--focus-layer', required=False, type=int, default=0)
     opts = p.parse_args()
     return opts
 
@@ -64,12 +67,16 @@ timeout_factor = opts.timeout_factor
 restore_tree_states = opts.restore_tree_states
 look_ahead_preprocessing = opts.look_ahead_preprocessing
 preprocess_only = opts.preprocess_only
+bias_strategy = opts.bias_strategy
+divide_strategy = opts.divide_strategy
+focus_layer = opts.focus_layer
 
 options = Marabou.createOptions(dnc=dnc, verbosity=verbosity, initialDivides=initial_divides,
                                 initialTimeout=initial_timeout, numWorkers=num_workers,
                                 onlineDivides=online_divides, timeoutFactor=timeout_factor,
                                 lookAheadPreprocessing=look_ahead_preprocessing,
-                                preprocessOnly=preprocess_only)
+                                preprocessOnly=preprocess_only, focusLayer=focus_layer,
+                                divideStrategy=divide_strategy, biasStrategy=bias_strategy)
 
 start = time.time()
 vals, stats = network.solve(summaryFilePath=summary_file, options=options)
