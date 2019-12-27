@@ -171,9 +171,30 @@ void NetworkLevelReasoner::evaluate( double *input, double *output )
     memcpy( output, _work1, sizeof(double) * _layerSizes[_numberOfLayers - 1] );
 }
 
+void NetworkLevelReasoner::getActivationPattern( Vector<double> &input,
+                                                 NetworkLevelReasoner::ActivationPattern &pattern )
+{
+    // This is bad
+    double *inputArray = new double[input.size()];
+    double *outputArray = new double[_layerSizes[_numberOfLayers - 1]];
+    for ( unsigned i = 0; i < input.size(); ++i )
+        inputArray[i] = input[i];
+    evaluate( inputArray, outputArray );
+    for ( const auto entry : _idToNodeIndex )
+        pattern[entry.first] = (_indexToWeightedSumAssignment[entry.second] > 0 ? 1 : 0);
+    delete inputArray;
+    delete outputArray;
+}
+
 void NetworkLevelReasoner::setWeightedSumVariable( unsigned layer, unsigned neuron, unsigned variable )
 {
     _indexToWeightedSumVariable[Index( layer, neuron )] = variable;
+}
+
+void NetworkLevelReasoner::updateVariableToNodeIndex()
+{
+    for ( auto &entry : _indexToWeightedSumVariable )
+        _weightedSumVariableToIndex[entry.second] = entry.first;
 }
 
 unsigned NetworkLevelReasoner::getWeightedSumVariable( unsigned layer, unsigned neuron ) const
@@ -185,9 +206,33 @@ unsigned NetworkLevelReasoner::getWeightedSumVariable( unsigned layer, unsigned 
     return _indexToWeightedSumVariable[index];
 }
 
+NetworkLevelReasoner::Index NetworkLevelReasoner::getNodeIndex( unsigned variable ) const
+{
+    if ( !_weightedSumVariableToIndex.exists( variable ) )
+        throw MarabouError( MarabouError::INVALID_WEIGHTED_SUM_INDEX, Stringf( "weighted sum: <%u>", variable ).ascii() );
+
+    return _weightedSumVariableToIndex[variable];
+
+}
+
 void NetworkLevelReasoner::setActivationResultVariable( unsigned layer, unsigned neuron, unsigned variable )
 {
     _indexToActivationResultVariable[Index( layer, neuron )] = variable;
+}
+
+void NetworkLevelReasoner::setIdToNodeIndex( unsigned id, unsigned layer, unsigned neuron )
+{
+    _idToNodeIndex[id] = Index( layer, neuron );
+}
+
+void NetworkLevelReasoner::setLayerToIds( unsigned layer, unsigned id )
+{
+    if ( !_layerToIds.exists( layer ) )
+    {
+        List<unsigned> ids;
+        _layerToIds[layer] = ids;
+    }
+    _layerToIds[layer].append( id );
 }
 
 unsigned NetworkLevelReasoner::getActivationResultVariable( unsigned layer, unsigned neuron ) const
@@ -221,6 +266,8 @@ void NetworkLevelReasoner::storeIntoOther( NetworkLevelReasoner &other ) const
     other._indexToActivationResultVariable = _indexToActivationResultVariable;
     other._indexToWeightedSumAssignment = _indexToWeightedSumAssignment;
     other._indexToActivationResultAssignment = _indexToActivationResultAssignment;
+    other._idToNodeIndex = _idToNodeIndex;
+    other._layerToIds = _layerToIds;
 }
 
 const Map<NetworkLevelReasoner::Index, unsigned> &NetworkLevelReasoner::getIndexToWeightedSumVariable()

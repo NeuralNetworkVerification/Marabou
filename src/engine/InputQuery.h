@@ -50,7 +50,6 @@ public:
     void removeEquationsByIndex( const Set<unsigned> indices );
 
     void addPiecewiseLinearConstraint( PiecewiseLinearConstraint *constraint );
-    void setLayerToIds( unsigned layer, unsigned id );
     const List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints() const;
 	List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints();
 
@@ -158,8 +157,6 @@ public:
     Map<unsigned, unsigned> _inputIndexToVariable;
     Map<unsigned, unsigned> _variableToOutputIndex;
     Map<unsigned, unsigned> _outputIndexToVariable;
-
-    Map<unsigned, List<unsigned>> _layerToIds;
 
     /*
       An object that knows the topology of the network being checked,

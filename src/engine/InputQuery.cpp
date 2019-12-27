@@ -154,16 +154,6 @@ void InputQuery::addPiecewiseLinearConstraint( PiecewiseLinearConstraint *constr
     _plConstraints.append( constraint );
 }
 
-void InputQuery::setLayerToIds( unsigned layer, unsigned id )
-{
-    if ( !_layerToIds.exists( layer ) )
-    {
-        List<unsigned> ids;
-        _layerToIds[layer] = ids;
-    }
-    _layerToIds[layer].append( id );
-}
-
 List<PiecewiseLinearConstraint *> &InputQuery::getPiecewiseLinearConstraints()
 {
     return _plConstraints;

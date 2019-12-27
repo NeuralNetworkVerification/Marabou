@@ -17,6 +17,7 @@
 #define __NetworkLevelReasoner_h__
 
 #include "Map.h"
+#include "Vector.h"
 
 /*
   A class for performing operations that require knowledge of network
@@ -66,6 +67,8 @@ public:
         ReLU,
     };
 
+    typedef Map<unsigned, unsigned> ActivationPattern;
+
     void setNumberOfLayers( unsigned numberOfLayers );
     void setLayerSize( unsigned layer, unsigned size );
     void allocateWeightMatrices();
@@ -80,6 +83,13 @@ public:
     void setWeightedSumVariable( unsigned layer, unsigned neuron, unsigned variable );
     unsigned getWeightedSumVariable( unsigned layer, unsigned neuron ) const;
     void setActivationResultVariable( unsigned layer, unsigned neuron, unsigned variable );
+
+    void updateVariableToNodeIndex();
+    Index getNodeIndex( unsigned variable ) const;
+
+    void setIdToNodeIndex( unsigned id, unsigned layer, unsigned neuron );
+    void setLayerToIds( unsigned layer, unsigned id );
+
     unsigned getActivationResultVariable( unsigned layer, unsigned neuron ) const;
     const Map<Index, unsigned> &getIndexToWeightedSumVariable();
     const Map<Index, unsigned> &getIndexToActivationResultVariable();
@@ -97,6 +107,12 @@ public:
     void evaluate( double *input, double *output );
 
     /*
+      Interface methods for performing operations on the network.
+    */
+    void getActivationPattern( Vector<double> &input,
+                               NetworkLevelReasoner::ActivationPattern &pattern );
+
+    /*
       Duplicate the reasoner
     */
     void storeIntoOther( NetworkLevelReasoner &other ) const;
@@ -107,6 +123,12 @@ public:
     */
     void updateVariableIndices( const Map<unsigned, unsigned> &oldIndexToNewIndex,
                                 const Map<unsigned, unsigned> &mergedVariables );
+
+    /*
+      Mapping from plConstraint id to node index
+    */
+    Map<unsigned, Index> _idToNodeIndex;
+    Map<unsigned, List<unsigned>> _layerToIds;
 
 private:
     unsigned _numberOfLayers;
@@ -127,6 +149,8 @@ private:
     */
     Map<Index, unsigned> _indexToWeightedSumVariable;
     Map<Index, unsigned> _indexToActivationResultVariable;
+
+    Map<unsigned, Index> _weightedSumVariableToIndex;
 
     /*
       Store the assignment to all variables when evaluate() is called

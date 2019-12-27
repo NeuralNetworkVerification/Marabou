@@ -93,6 +93,7 @@ void Marabou::solveQuery()
          lookAheadPreprocessing() && !Options::get()->
          getBool( Options::PREPROCESS_ONLY ) )
     {
+        _engine.setBiasedRatio( Options::get()->getInt( Options::FOCUS_LAYER ) );
         _engine.solve( Options::get()->getInt( Options::TIMEOUT ) );
     }
     if ( _engine.getExitCode() == Engine::SAT )

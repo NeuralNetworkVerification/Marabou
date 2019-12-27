@@ -280,9 +280,19 @@ void Engine::applySplits( const Map<unsigned, unsigned> &idToPhase )
     }
 }
 
-void Engine::setBiasedRatio( float biasedRatio )
+void Engine::setBiasedRatio( unsigned biasedLayer )
 {
-    _biasedRatio = biasedRatio;
+    Vector<double> centroid;
+    getCentroid( centroid );
+    auto pattern = NetworkLevelReasoner::ActivationPattern();
+    _networkLevelReasoner->getActivationPattern( centroid, pattern );
+
+    for ( unsigned layer = 1; layer < biasedLayer; ++layer )
+    {
+        auto ids = _networkLevelReasoner->_layerToIds[layer];
+        for ( const auto id : ids )
+            ( (ReluConstraint *) getConstraintFromId( id ) )->setDirection( pattern[id] );
+    }
 }
 
 bool Engine::solve( unsigned timeoutInSeconds )
@@ -2269,6 +2279,17 @@ void Engine::storeSmtState( SmtState &smtState )
 PiecewiseLinearConstraint *Engine::getConstraintFromId( unsigned id )
 {
     return _idToConstraint[id];
+}
+
+void Engine::getCentroid( Vector<double> &centroid )
+{
+    const List<unsigned> inputVariables = getInputVariables();
+    ASSERT( inputVariables.size() == _preprocessedQuery.getNumInputVariables() );
+    // Assuming that the order of the inputVariables is consistent with the
+    // network topology in the _networklevelreasoner
+    for ( auto const &var : inputVariables )
+        centroid.append( ( _tableau->getLowerBound( var ) +
+                           _tableau->getUpperBound( var ) ) / 2 );
 }
 
 //

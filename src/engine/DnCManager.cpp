@@ -22,6 +22,7 @@
 #include "LargestIntervalDivider.h"
 #include "MStringf.h"
 #include "MarabouError.h"
+#include "Options.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PropertyParser.h"
 #include "QueryDivider.h"
@@ -42,7 +43,7 @@ void DnCManager::dncSolve( WorkerQueue *workload, InputQuery *inputQuery,
                            unsigned threadId, unsigned onlineDivides,
                            float timeoutFactor, DivideStrategy divideStrategy,
                            bool restoreTreeStates, Map<unsigned, unsigned>
-                           idToPhase )
+                           idToPhase, unsigned biasedLayer )
 {
     unsigned cpuId = 0;
     getCPUId( cpuId );
@@ -50,6 +51,7 @@ void DnCManager::dncSolve( WorkerQueue *workload, InputQuery *inputQuery,
 
     engine->processInputQuery( *inputQuery, false );
     engine->applySplits( idToPhase );
+    engine->setBiasedRatio( biasedLayer );
 
     engine->numberOfActive();
 
@@ -143,6 +145,8 @@ void DnCManager::solve( unsigned timeoutInSeconds, bool restoreTreeStates )
         }
     }
 
+    unsigned biasedLayer = Options::get()->getInt( Options::FOCUS_LAYER );
+
     // Spawn threads and start solving
     std::list<std::thread> threads;
     for ( unsigned threadId = 0; threadId < _numWorkers; ++threadId )
@@ -155,7 +159,8 @@ void DnCManager::solve( unsigned timeoutInSeconds, bool restoreTreeStates )
                                         std::ref( shouldQuitSolving ),
                                         threadId, _onlineDivides,
                                         _timeoutFactor, _divideStrategy,
-                                        restoreTreeStates, _idToPhase ) );
+                                        restoreTreeStates, _idToPhase,
+                                        biasedLayer ) );
     }
 
     // Wait until either all subQueries are solved or a satisfying assignment is

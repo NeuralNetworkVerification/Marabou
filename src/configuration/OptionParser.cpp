@@ -81,6 +81,9 @@ void OptionParser::initialize()
         ( "timeout",
           boost::program_options::value<int>( &((*_intOptions)[Options::TIMEOUT]) ),
           "Global timeout" )
+        ( "focus-layer",
+          boost::program_options::value<int>( &((*_intOptions)[Options::FOCUS_LAYER]) ),
+          "Layer to focus the search on." )
         ( "verbosity",
           boost::program_options::value<int>( &((*_intOptions)[Options::VERBOSITY]) ),
           "Verbosity of engine::solve(). 0: does not print anything (for DnC), 1: print"
@@ -88,9 +91,6 @@ void OptionParser::initialize()
         ( "timeout-factor",
           boost::program_options::value<float>( &((*_floatOptions)[Options::TIMEOUT_FACTOR]) ),
           "(DNC) The timeout factor" )
-        ( "biased-ratio",
-          boost::program_options::value<float>( &((*_floatOptions)[Options::BIASED_RATIO]) ),
-          "Biased ratio" )
         ( "help",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::HELP]) ),
           "Prints the help message")

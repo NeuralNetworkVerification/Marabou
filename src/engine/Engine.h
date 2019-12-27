@@ -52,7 +52,7 @@ public:
 
     void applySplits( const Map<unsigned, unsigned> &idToPhase );
 
-    void setBiasedRatio( float biasedRatio );
+    void setBiasedRatio( unsigned biasedLayer );
 
     /*
       Attempt to find a feasible solution for the input within a time limit
@@ -176,6 +176,11 @@ public:
     bool applyAllValidConstraintCaseSplits();
 
     PiecewiseLinearConstraint *getConstraintFromId( unsigned id );
+
+    /*
+      Get the centroid of the input region
+    */
+    void getCentroid( Vector<double> &centroid );
 
     /*
       Mapping id to PiecewiseLinearConstraint

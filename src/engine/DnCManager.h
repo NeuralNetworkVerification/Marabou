@@ -94,7 +94,8 @@ private:
                           std::atomic_bool &shouldQuitSolving,
                           unsigned threadId, unsigned onlineDivides,
                           float timeoutFactor, DivideStrategy divideStrategy,
-                          bool restoreTreeStates, Map<unsigned, unsigned> idToPhase );
+                          bool restoreTreeStates, Map<unsigned, unsigned> idToPhase,
+                          unsigned biasedLayer );
 
     /*
       Create the base engine from the network and property files,

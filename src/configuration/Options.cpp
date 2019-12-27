@@ -55,12 +55,12 @@ void Options::initializeDefaultValues()
     _intOptions[INITIAL_TIMEOUT] = 5;
     _intOptions[VERBOSITY] = 2;
     _intOptions[TIMEOUT] = 0;
+    _intOptions[FOCUS_LAYER] = 0;
 
     /*
       Float options
     */
     _floatOptions[TIMEOUT_FACTOR] = 1.5;
-    _floatOptions[BIASED_RATIO] = 0;
 
     /*
       String options
