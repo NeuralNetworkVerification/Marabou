@@ -22,7 +22,6 @@
 #include "LargestIntervalDivider.h"
 #include "MStringf.h"
 #include "MarabouError.h"
-#include "Options.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PropertyParser.h"
 #include "QueryDivider.h"
@@ -105,7 +104,8 @@ void DnCManager::freeMemoryIfNeeded()
     delete _workload;
 }
 
-void DnCManager::solve( unsigned timeoutInSeconds, bool restoreTreeStates )
+void DnCManager::solve( unsigned timeoutInSeconds, bool restoreTreeStates,
+                        unsigned biasedLayer )
 {
     enum {
         MICROSECONDS_IN_SECOND = 1000000
@@ -144,8 +144,6 @@ void DnCManager::solve( unsigned timeoutInSeconds, bool restoreTreeStates )
             ASSERT( false );
         }
     }
-
-    unsigned biasedLayer = Options::get()->getInt( Options::FOCUS_LAYER );
 
     // Spawn threads and start solving
     std::list<std::thread> threads;

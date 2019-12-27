@@ -120,6 +120,7 @@ struct MarabouOptions {
         , _initialDivides( 0 )
         , _onlineDivides( 2 )
         , _timeoutInSeconds( 0 )
+        , _focusLayer( 0 )
         , _timeoutFactor( 1.5 )
         , _verbosity( 2 )
         , _dnc( false )
@@ -133,6 +134,7 @@ struct MarabouOptions {
     unsigned _initialDivides;
     unsigned _onlineDivides;
     unsigned _timeoutInSeconds;
+    unsigned _focusLayer;
     float _timeoutFactor;
     unsigned _verbosity;
     bool _dnc;
@@ -161,6 +163,7 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
         bool lookAheadPreprocessing = options._lookAheadPreprocessing;
         bool preprocessOnly = options._preprocessOnly;
         unsigned numWorkers = options._numWorkers;
+        unsigned focusLayer = options._focusLayer;
 
         Engine engine;
         engine.setVerbosity(verbosity);
@@ -214,7 +217,7 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
                                   timeoutFactor, DivideStrategy::SplitRelu,
                                   engine.getInputQuery(), verbosity, idToPhase ) );
 
-            dncManager->solve( timeoutInSeconds, restoreTreeStates );
+            dncManager->solve( timeoutInSeconds, restoreTreeStates, focusLayer );
             switch ( dncManager->getExitCode() )
             {
             case DnCManager::SAT:
@@ -235,6 +238,7 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
         } else
         {
             engine.applySplits( idToPhase );
+            engine.setBiasedRatio( focusLayer );
             if(!engine.solve(timeoutInSeconds)) return std::make_pair(ret, *(engine.getStatistics()));
 
             if (engine.getExitCode() == Engine::SAT)
@@ -297,6 +301,7 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_initialDivides", &MarabouOptions::_initialDivides)
         .def_readwrite("_onlineDivides", &MarabouOptions::_onlineDivides)
         .def_readwrite("_timeoutInSeconds", &MarabouOptions::_timeoutInSeconds)
+        .def_readwrite("_focusLayer", &MarabouOptions::_focusLayer)
         .def_readwrite("_timeoutFactor", &MarabouOptions::_timeoutFactor)
         .def_readwrite("_verbosity", &MarabouOptions::_verbosity)
         .def_readwrite("_dnc", &MarabouOptions::_dnc)

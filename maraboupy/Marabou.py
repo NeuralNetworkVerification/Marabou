@@ -97,9 +97,11 @@ def solve_query(ipq, filename="", verbose=True, timeout=0, verbosity=2,
 
     return [vals, stats]
 
-def createOptions( numWorkers=4, initialTimeout=5, initialDivides=0, onlineDivides=2,
-                   timeoutInSeconds=0, timeoutFactor=1.5, verbosity=2, dnc=False,
-                   restoreTreeStates=False, lookAheadPreprocessing=False, preprocessOnly=False ):
+def createOptions( numWorkers=4, initialTimeout=5, initialDivides=0,
+                   onlineDivides=2, timeoutInSeconds=0, focusLayer=0,
+                   timeoutFactor=1.5, verbosity=2, dnc=False,
+                   restoreTreeStates=False, lookAheadPreprocessing=False,
+                   preprocessOnly=False ):
     """
     Create an option object
     """
@@ -109,6 +111,7 @@ def createOptions( numWorkers=4, initialTimeout=5, initialDivides=0, onlineDivid
     options._initialDivides = initialDivides
     options._onlineDivides = onlineDivides
     options._timeoutInSeconds = timeoutInSeconds
+    options._focusLayer = focusLayer
     options._timeoutFactor = timeoutFactor
     options._verbosity = verbosity
     options._dnc = dnc

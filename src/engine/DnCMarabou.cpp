@@ -79,6 +79,7 @@ void DnCMarabou::run()
     DivideStrategy divideStrategy = setDivideStrategyFromOptions
         ( Options::get()->getString( Options::DIVIDE_STRATEGY ) );
     bool restoreTreeStates = Options::get()->getBool( Options::RESTORE_TREE_STATES );
+    unsigned biasedLayer = Options::get()->getInt( Options::FOCUS_LAYER );
 
     struct timespec start = TimeUtils::sampleMicro();
 
@@ -100,7 +101,7 @@ void DnCMarabou::run()
                               onlineDivides, timeoutFactor, divideStrategy,
                               _baseEngine->getInputQuery(), verbosity,
                               idToPhase ) );
-        _dncManager->solve( timeoutInSeconds, restoreTreeStates );
+        _dncManager->solve( timeoutInSeconds, restoreTreeStates, biasedLayer );
     }
     else
     {
