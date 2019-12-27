@@ -14,6 +14,7 @@
  ** [[ Add lengthier description here ]]
  **/
 
+#include "ActivationPatternSampler.h"
 #include "AutoConstraintMatrixAnalyzer.h"
 #include "Debug.h"
 #include "Engine.h"
@@ -284,6 +285,8 @@ void Engine::applySplits( const Map<unsigned, unsigned> &idToPhase )
 
 void Engine::setBiasedPhases( unsigned biasedLayer, BiasStrategy strategy )
 {
+    if ( !_networkLevelReasoner )
+        return;
     std::cout << "Bias the first " << biasedLayer << " layers" << std::endl;
     if ( biasedLayer == 0 )
     {
@@ -305,7 +308,33 @@ void Engine::setBiasedPhases( unsigned biasedLayer, BiasStrategy strategy )
     }
     else if ( strategy == BiasStrategy::Sampling )
     {
-
+        auto inputVariables = getInputVariables();
+        ActivationPatternSampler sampler( inputVariables,
+                                          _networkLevelReasoner );
+        ActivationPatternSampler::InputRegion initialRegion;
+        for ( const auto &variable : inputVariables )
+        {
+            initialRegion._lowerBounds[variable] =
+                _tableau->getLowerBound( variable );
+            initialRegion._upperBounds[variable] =
+                _tableau->getUpperBound( variable );
+        }
+        sampler.samplePoints( initialRegion, 10000 );
+        sampler.computeActivationPatterns();
+        sampler.updatePhaseEstimate();
+        auto idToPhaseStatusEstimate = sampler.getIdToPhaseStatusEstimate();
+        for ( unsigned layer = 1; layer < biasedLayer + 1; ++layer )
+        {
+            auto ids = _networkLevelReasoner->_layerToIds[layer];
+            for ( const auto id : ids )
+            {
+                auto phase = idToPhaseStatusEstimate[id];
+                if ( phase == ReluConstraint::PHASE_ACTIVE )
+                    ( (ReluConstraint *) getConstraintFromId( id ) )->setDirection( 1 );
+                else if ( phase == ReluConstraint::PHASE_INACTIVE )
+                    ( (ReluConstraint *) getConstraintFromId( id ) )->setDirection( 0 );
+            }
+        }
     }
     else // random
     {
