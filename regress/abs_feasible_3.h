@@ -70,7 +70,7 @@ public:
         inputQuery.addPiecewiseLinearConstraint( abs1 );
         inputQuery.addPiecewiseLinearConstraint( abs2 );
 
-//        int outputStream = redirectOutputToFile( "logs/abs_feasible_3.txt" );
+        int outputStream = redirectOutputToFile( "logs/abs_feasible_3.txt" );
 
         struct timespec start = TimeUtils::sampleMicro();
 
@@ -78,7 +78,7 @@ public:
         if ( !engine.processInputQuery( inputQuery ) )
         {
             struct timespec end = TimeUtils::sampleMicro();
-//            restoreOutputStream( outputStream );
+            restoreOutputStream( outputStream );
             printFailed( "abs_feasible_3", start, end );
             return;
         }
@@ -87,7 +87,7 @@ public:
 
         struct timespec end = TimeUtils::sampleMicro();
 
-//        restoreOutputStream( outputStream );
+        restoreOutputStream( outputStream );
 
         if ( !result )
         {
@@ -107,10 +107,10 @@ public:
         double value_x2f = inputQuery.getSolutionValue( 4 );
         double value_x3 = inputQuery.getSolutionValue( 5 );
 
-        printf(" value_x0:%f\n", value_x0);
-        printf(" value_x3:%f\n", value_x3);
-        printf("value_x1b: %f, value_x1f: %f \n" , value_x1b, value_x1f );
-        printf("value_x2b: %f, value_x2f: %f \n" , value_x2b, value_x2f );
+//        printf(" value_x0:%f\n", value_x0);
+//        printf(" value_x3:%f\n", value_x3);
+//        printf("value_x1b: %f, value_x1f: %f \n" , value_x1b, value_x1f );
+//        printf("value_x2b: %f, value_x2f: %f \n" , value_x2b, value_x2f );
 
         if ( !FloatUtils::areEqual( value_x0, value_x1b ) )
             correctSolution = false;
