@@ -32,8 +32,8 @@ public:
 
         for ( unsigned i = 0; i < 5; ++i )
         {
-            inputQuery.setLowerBound( num_variables + i, -0.1 );
-            inputQuery.setUpperBound( num_variables + i, 0.1);
+            inputQuery.setLowerBound( num_variables + i, 0.01 );
+            inputQuery.setUpperBound( num_variables + i, 0.02);
             inputQuery.markInputVariable(num_variables + i, i );
         }
 
@@ -78,14 +78,11 @@ public:
 
         engine.extractSolution( inputQuery );
 
-        //todo: how to check on new network
-
         // Run through the original network to check correctness
         Vector<double> inputs;
         for ( unsigned i = 0; i < 5; ++i )
         {
-            unsigned variable = acasParser.getInputVariable( i );
-            inputs.append( inputQuery.getSolutionValue( variable ) );
+            inputs.append( inputQuery.getSolutionValue( num_variables + i ) );
         }
 
         Vector<double> outputs;
@@ -94,7 +91,7 @@ public:
 
         for ( unsigned i = 0; i < 5; ++i )
         {
-            unsigned variable = acasParser.getOutputVariable( i );
+            unsigned variable = inputQuery.outputVariableByIndex(i);
             double newError = FloatUtils::abs( outputs[i] - inputQuery.getSolutionValue( variable ) );
             if ( FloatUtils::gt( newError, maxError ) )
                 maxError = newError;
