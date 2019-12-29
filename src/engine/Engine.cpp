@@ -303,7 +303,11 @@ void Engine::setBiasedPhases( unsigned biasedLayer, BiasStrategy strategy )
         {
             auto ids = _networkLevelReasoner->_layerToIds[layer];
             for ( const auto id : ids )
-                ( (ReluConstraint *) getConstraintFromId( id ) )->setDirection( pattern[id] );
+            {
+                auto constraint = (ReluConstraint *) getConstraintFromId( id );
+                if ( constraint )
+                    constraint->setDirection( pattern[id] );
+            }
         }
     }
     else if ( strategy == BiasStrategy::Sampling )
@@ -328,11 +332,15 @@ void Engine::setBiasedPhases( unsigned biasedLayer, BiasStrategy strategy )
             auto ids = _networkLevelReasoner->_layerToIds[layer];
             for ( const auto id : ids )
             {
-                auto phase = idToPhaseStatusEstimate[id];
-                if ( phase == ReluConstraint::PHASE_ACTIVE )
-                    ( (ReluConstraint *) getConstraintFromId( id ) )->setDirection( 1 );
-                else if ( phase == ReluConstraint::PHASE_INACTIVE )
-                    ( (ReluConstraint *) getConstraintFromId( id ) )->setDirection( 0 );
+                auto constraint = (ReluConstraint *) getConstraintFromId( id );
+                if ( constraint )
+                {
+                    auto phase = idToPhaseStatusEstimate[id];
+                    if ( phase == ReluConstraint::PHASE_ACTIVE )
+                        constraint->setDirection( 1 );
+                    else if ( phase == ReluConstraint::PHASE_INACTIVE )
+                        constraint->setDirection( 0 );
+                }
             }
         }
     }
@@ -346,8 +354,12 @@ void Engine::setBiasedPhases( unsigned biasedLayer, BiasStrategy strategy )
             auto ids = _networkLevelReasoner->_layerToIds[layer];
             for ( const auto id : ids )
             {
-                unsigned direction = dis( gen );
-                ( (ReluConstraint *) getConstraintFromId( id ) )->setDirection( direction );
+                auto constraint = (ReluConstraint *) getConstraintFromId( id );
+                if ( constraint )
+                {
+                    unsigned direction = dis( gen );
+                    constraint->setDirection( direction );
+                }
             }
         }
     }
@@ -1320,7 +1332,9 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
     try
     {
         informConstraintsOfInitialBounds( inputQuery );
+
         invokePreprocessor( inputQuery, preprocess );
+
         if ( _verbosity > 0 )
             printInputBounds( inputQuery );
 
