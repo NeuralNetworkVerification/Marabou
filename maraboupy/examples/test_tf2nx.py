@@ -82,7 +82,9 @@ if not from_file:
 else:
     model = load_model(model_file)
 
-
-nx_cnn = mcnn.Cnn(mcnn.Cnn.keras_to_nx())
+print("Starting conversion fron Keras to DiGraph")
+di_graph = mcnn.Cnn.keras_to_nx(model)
+print("Starting conversion fron DiGraph to CNN")
+nx_cnn = mcnn.Cnn.init_from_nx_DiGraph(di_graph)
 nx_cnn.print_to_file("cnn_print_nx.png")
 

@@ -118,7 +118,7 @@ class Cnn(nx.DiGraph):
             print(vars1)
         else:
             print("UNSAT")
-
+                
     #-------------Init-------------#            
 
     def __init__(self, in_l_size):
@@ -136,15 +136,47 @@ class Cnn(nx.DiGraph):
             self.in_l.append(new_n)
         self.draw_layer(self.in_l)
 
+    #-------------Init from existing NX-------------# 
+
+    def init_from_nx_DiGraph(di_graph):
+        cnn = Cnn(0)
+        cnn.clear()
+        cnn.add_nodes_from(di_graph.nodes())
+        cnn.add_edges_from(di_graph.edges())
+        cnn.in_l = set() 
+        cnn.out_l = set()       
+        for n in cnn.nodes():
+            if not cnn.in_edges(n):
+                cnn.in_l.add(n)
+            if not cnn.out_edges(n):
+                cnn.out_l.add(n)                
+        cnn.l_num = 0  # L is for layer. TODO
+        cnn.next_lyr_pos = 0
+        cnn.layout = dict()
+        visited = set()
+        to_visit = cnn.in_l
+        while to_visit:
+            cnn.draw_layer(to_visit)
+            cnn.l_num += 1
+            visited = set.union(visited, to_visit)
+            to_visit = set.difference(set([s for s in [u for u in to_visit]]), visited)
+        return cnn
+        
+        
+            
+        
+
     #-------------Find the Cone of Influence of a set of vertices-------------#
 
     def coi(graph, vertices): # Cone of Influencers
         ancestors = set()
+        descendants = set()
         for vertex in vertices:
-            ancestors = set.union(ancestors, nx.algorithms.dag.ancestors(graph, vertex))
+            ancestors = set.union(ancestors, nx.algorithms.dag.ancestors(graph, vertex)) 
+            descendants = set.union(descendants, nx.algorithms.dag.descendants(graph, vertex))
         graph_copy = copy.deepcopy(graph)
         for u in graph:
-                if (u not in ancestors) and (u not in vertices):
+                if (u not in ancestors) and (u not in vertices) and (u not in descendants):
                     graph_copy.remove_node(u)
         return graph_copy
 
@@ -155,41 +187,54 @@ class Cnn(nx.DiGraph):
     def freeze_session(session, keep_var_names=None, output_names=None, clear_devices=True):
         graph = session.graph
         with graph.as_default():
-            freeze_var_names = list(set(v.op.name for v in tf.global_variables()).difference(keep_var_names or []))
+            freeze_var_names = list(set(v.op.name for v in tf.compat.v1.global_variables()).difference(keep_var_names or []))
             output_names = output_names or []
-            output_names += [v.op.name for v in tf.global_variables()]
+            output_names += [v.op.name for v in tf.compat.v1.global_variables()]
             # Graph -> GraphDef ProtoBuf
             input_graph_def = graph.as_graph_def()
             if clear_devices:
                 for node in input_graph_def.node:
                     node.device = ""
-                    frozen_graph = convert_variables_to_constants(session, input_graph_def, output_names, freeze_var_names)
+            frozen_graph = convert_variables_to_constants(session, input_graph_def, output_names, freeze_var_names)
         return frozen_graph
     #frozen_graph = freeze_session(K.get_session(), output_names=[out.op.name for out in model.outputs])
 
-    
-
+    def my_node_eq(lhs, rhs, session):
+        if lhs.shape.as_list() != rhs.shape.as_list():
+            print("shape false")
+            return False
+        else :
+            print("same shape, result={}".format(lhs == rhs))
+            
+            return all(tf.math.equal(lhs,rhs).eval(session=session))
+        
     #-------------TF to NetworkX-------------#
     #https://gist.github.com/Tal-Golan/94d968001b5065260e5dae4774bc6f7a#file-build_networkx_subgraph_from_tf_graph-py
-    def tf_graph_to_nx(startingPoints,endPoints):
+    def tf_graph_to_nx(startingPoints,endPoints, session):
 
         def childNodes(curNode):
             isGradientNode=lambda node: node.name.split(sep='/')[0]=='gradients'            
-            return set([childNode for op in curNode.consumers() for childNode in op.outputs if not isGradientNode(childNode)])
+            return set([childNode.experimental_ref() for op in curNode.deref().consumers() for childNode in op.outputs if not isGradientNode(childNode)])
           
-        # visit all nodes in the graph between startingPoint (deep net input) and endPoint (predictions)
+        # visit all nodes in the graph between startingPoints (deep net input) and endPoints (predictions)
         # and build a networkx directed graph        
         DG=nx.DiGraph()
-        nodesToVisit=deque(list(startingPoints))
+        nodesToVisit=deque([s.experimental_ref() for s in startingPoints])
         nodesVisited=deque()
         while nodesToVisit:
             curNode=nodesToVisit.popleft()
-            nodesVisited.append(curNode)      
+            nodesVisited.append(curNode)
             DG.add_node(curNode)
-            if not curNode in endPoint:
+            node_eq_list = [Cnn.my_node_eq(endPoint,curNode.deref(), session) for endPoint in endPoints]
+            print("List: {}".format(node_eq_list))
+            if not any(node_eq_list):
                 nodesToVisit.extend(childNodes(curNode)-set(nodesVisited)-set(nodesToVisit))
                 for childNode in childNodes(curNode):
-                    DG.add_edge(curNode,childNode) 
+                    DG.add_edge(curNode, childNode)
+
+        print("Found these nodes: {}".format(len(DG.nodes())))
+        print("Found these edges: {}".format(len(DG.edges())))
+        
         
         # make sure it's acyclic
         assert nx.is_directed_acyclic_graph(DG), "loops detected in the graph"
@@ -197,9 +242,12 @@ class Cnn(nx.DiGraph):
 
 
     #-------------Keras to NetworkX-------------#
-    def keras_to_nx():
-        frozen_graph = Cnn.freeze_session(K.get_session(), output_names=[out.op.name for out in model.outputs])
+    def keras_to_nx(model):
+        session = tf.compat.v1.keras.backend.get_session()
+        #frozen_graph = Cnn.freeze_session(tf.compat.v1.keras.backend.get_session(), output_names=[out.op.name for out in model.outputs])
         inputs  = model.inputs
         outputs = model.outputs
-        return tf_graph_to_nx(inputs, outputs)
+        print("Found these inputs: {}".format(inputs))
+        print("Found these outputs: {}".format(outputs))        
+        return Cnn.tf_graph_to_nx(inputs, outputs, session)
         
