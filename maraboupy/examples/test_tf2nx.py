@@ -1,15 +1,21 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 import sys
+import os
 import tensorflow as tf
 from tensorflow.keras import datasets, layers, models
 from tensorflow.keras.models import load_model
 import matplotlib.pyplot as plt
 import numpy as np
 
-from_file = False
+from maraboupy import MarabouParseCnn as mcnn
+
 if len(sys.argv) > 1:
     model_file = str(sys.argv[1])
     from_file = True
+else:
+    model_file = './cnn_model.h5'
+    from_file  = os.path.isfile(model_file)
+    
 
     
 print(from_file)
@@ -71,8 +77,12 @@ if not from_file:
     test_loss, test_acc = model.evaluate(test_images,  test_labels, verbose=2)
     
     model.summary()
-
     model.save('cnn_model.h5')
 
 else:
     model = load_model(model_file)
+
+
+nx_cnn = mcnn.Cnn(mcnn.Cnn.keras_to_nx())
+nx_cnn.print_to_file("cnn_print_nx.png")
+

@@ -9,6 +9,11 @@ from math import ceil
 from maraboupy import MarabouNetworkNX as mnx
 from collections import deque
 
+import tensorflow as tf
+from tensorflow.keras import backend as K
+from tensorflow.python.framework.graph_util import convert_variables_to_constants
+
+
 def l2str(layer_i):
     N = 26
     if layer_i == 0:
@@ -144,6 +149,27 @@ class Cnn(nx.DiGraph):
         return graph_copy
 
 
+
+    #-------------Keras to TF-------------#
+    #https://www.dlology.com/blog/how-to-convert-trained-keras-model-to-tensorflow-and-make-prediction/
+    def freeze_session(session, keep_var_names=None, output_names=None, clear_devices=True):
+        graph = session.graph
+        with graph.as_default():
+            freeze_var_names = list(set(v.op.name for v in tf.global_variables()).difference(keep_var_names or []))
+            output_names = output_names or []
+            output_names += [v.op.name for v in tf.global_variables()]
+            # Graph -> GraphDef ProtoBuf
+            input_graph_def = graph.as_graph_def()
+            if clear_devices:
+                for node in input_graph_def.node:
+                    node.device = ""
+                    frozen_graph = convert_variables_to_constants(session, input_graph_def, output_names, freeze_var_names)
+        return frozen_graph
+    #frozen_graph = freeze_session(K.get_session(), output_names=[out.op.name for out in model.outputs])
+
+    
+
+    #-------------TF to NetworkX-------------#
     #https://gist.github.com/Tal-Golan/94d968001b5065260e5dae4774bc6f7a#file-build_networkx_subgraph_from_tf_graph-py
     def tf_graph_to_nx(startingPoints,endPoints):
 
@@ -168,3 +194,12 @@ class Cnn(nx.DiGraph):
         # make sure it's acyclic
         assert nx.is_directed_acyclic_graph(DG), "loops detected in the graph"
         return DG
+
+
+    #-------------Keras to NetworkX-------------#
+    def keras_to_nx():
+        frozen_graph = Cnn.freeze_session(K.get_session(), output_names=[out.op.name for out in model.outputs])
+        inputs  = model.inputs
+        outputs = model.outputs
+        return tf_graph_to_nx(inputs, outputs)
+        

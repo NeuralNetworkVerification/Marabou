@@ -20,7 +20,7 @@ def networkxToInputQuery(net, input_bounds, output_bounds):
         in_deg = degree[n]['in']
         out_deg = degree[n]['out']
         var_list.append(n)
-        if in_deg == 0 and out_deg > 0:k
+        if in_deg == 0 and out_deg > 0:
             input_nodes.add(n)
         elif in_deg > 0 and out_deg > 0:
             var_list.append(n)
