@@ -9,7 +9,9 @@ target_include_directories(${MARABOU_TEST_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DI
  
 set (BASIS_FACTORIZATION_TESTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tests")
 macro(basis_factorization_add_unit_test name)
-    marabou_add_test(${BASIS_FACTORIZATION_TESTS_DIR}/Test_${name} basis_factorization TRUE "unit")
+    set(USE_MOCK_COMMON TRUE)
+    set(USE_MOCK_ENGINE TRUE)
+    marabou_add_test(${BASIS_FACTORIZATION_TESTS_DIR}/Test_${name} basis_factorization USE_MOCK_COMMON USE_MOCK_ENGINE "unit")
 endmacro()
 
 basis_factorization_add_unit_test(CSRMatrix)
