@@ -16,7 +16,8 @@
  **/
 '''
 
-from maraboupy import MarabouCore
+#from maraboupy
+import MarabouCore
 
 # The example from the CAV'17 paper:
 #   0   <= x0  <= 1

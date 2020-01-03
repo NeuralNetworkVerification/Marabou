@@ -16,13 +16,30 @@
  **/
 '''
 
-from maraboupy import MarabouCore
+import MarabouCore
 import numpy as np
 
 class MarabouNetwork:
     """
     Abstract class representing general Marabou network
     Defines functions common to MarabouNetworkNnet and MarabouNetworkTF
+    """
+
+    """
+
+    Attributes:
+        self.numVars
+        self.equList = []
+        self.reluList = []
+        self.maxList = []
+        self.varsParticipatingInConstraints = set()
+        self.lowerBounds = dict()
+        self.upperBounds = dict()
+        self.inputVars = []
+        self.outputVars = np.array([])
+
+
+
     """
     def __init__(self):
         """

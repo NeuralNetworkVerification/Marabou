@@ -1,5 +1,7 @@
-from maraboupy import MarabouCore
-import pytest
+#import sys
+#sys.path.append(./'maraboupy')
+import MarabouCore
+#import pytest
 
 large = 100
 def define_network():
