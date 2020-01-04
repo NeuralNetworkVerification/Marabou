@@ -27,6 +27,7 @@ def parse_args():
     p.add_argument('--divide-strategy', required=False, type=str, default='split-relu')
     p.add_argument('--bias-strategy', required=False, type=str, default='centroid')
     p.add_argument('--focus-layer', required=False, type=int, default=0)
+    p.add_argument('--fixed-relu', required=False, type=str, default=None)
     opts = p.parse_args()
     return opts
 
@@ -36,6 +37,8 @@ config_file = opts.config_file
 network_file = opts.network_file
 property_file = opts.property_file
 summary_file = opts.summary_file
+fixed_relu_file = opts.fixed_relu
+
 
 cfg = configparser.ConfigParser()
 cfg.read(config_file)
@@ -79,7 +82,8 @@ options = Marabou.createOptions(dnc=dnc, verbosity=verbosity, initialDivides=ini
                                 divideStrategy=divide_strategy, biasStrategy=bias_strategy)
 
 start = time.time()
-vals, stats = network.solve(summaryFilePath=summary_file, options=options)
+vals, stats = network.solve(summaryFilePath=summary_file, fixedReluFilePath=fixed_relu_file,
+                            options=options)
 end = time.time()
 t = end-start
 
