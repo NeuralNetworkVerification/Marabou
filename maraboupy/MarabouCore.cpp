@@ -29,6 +29,7 @@
 #include "Engine.h"
 #include "FloatUtils.h"
 #include "File.h"
+#include "FixedReluParser.h"
 #include "InputQuery.h"
 #include "LookAheadPreprocessor.h"
 #include "MarabouError.h"
@@ -144,7 +145,7 @@ struct MarabouOptions {
 /* The default parameters here are just for readability, you should specify
  * them in the to make them work*/
 std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, MarabouOptions &options,
-                                                   std::string summaryFilePath,
+                                                   std::string summaryFilePath, std::string fixedReluFilePath,
                                                    std::string redirect="" )
 {
     // Arguments: InputQuery object, filename to redirect output
@@ -168,6 +169,13 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
         if(!engine.processInputQuery(inputQuery)) return std::make_pair(ret, *(engine.getStatistics()));
 
         Map<unsigned, unsigned> idToPhase;
+
+        if ( fixedReluFilePath != "" )
+        {
+            String fixedReluFilePathM = String( fixedReluFilePath );
+            FixedReluParser().parse( fixedReluFilePathM, idToPhase );
+        }
+
         if ( lookAheadPreprocessing )
         {
             struct timespec start = TimeUtils::sampleMicro();
@@ -267,7 +275,7 @@ PYBIND11_MODULE(MarabouCore, m) {
     m.doc() = "Marabou API Library";
     m.def("createInputQuery", &createInputQuery, "Create input query from network and property file");
     m.def("solve", &solve, "Takes in a description of the InputQuery and returns the solution", py::arg("inputQuery"), py::arg("options"),
-          py::arg("summaryFilePath"),  py::arg("redirect") = "");
+          py::arg("summaryFilePath"), py::arg("fixedReluFilePath"),  py::arg("redirect") = "");
     m.def("saveQuery", &saveQuery, "Serializes the inputQuery in the given filename");
     m.def("loadQuery", &loadQuery, "Loads and returns a serialized inputQuery from the given filename");
     m.def("addReluConstraint", &addReluConstraint, "Add a Relu constraint to the InputQuery");

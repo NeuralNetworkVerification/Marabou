@@ -16,6 +16,7 @@
 
 #include "AcasParser.h"
 #include "File.h"
+#include "FixedReluParser.h"
 #include "MStringf.h"
 #include "LookAheadPreprocessor.h"
 #include "Marabou.h"
@@ -93,6 +94,15 @@ void Marabou::solveQuery()
          lookAheadPreprocessing() && !Options::get()->
          getBool( Options::PREPROCESS_ONLY ) )
     {
+        String fixedReluFilePath = Options::get()->getString( Options::FIXED_RELU_PATH );
+        if ( fixedReluFilePath != "" )
+        {
+            Map<unsigned, unsigned> idToPhase;
+            printf( "Fixed Relus: %s\n", fixedReluFilePath.ascii() );
+            FixedReluParser().parse( fixedReluFilePath, idToPhase );
+            _engine.applySplits( idToPhase );
+        }
+
         _engine.solve( Options::get()->getInt( Options::TIMEOUT ) );
     }
     if ( _engine.getExitCode() == Engine::SAT )

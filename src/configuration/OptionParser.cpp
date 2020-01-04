@@ -60,6 +60,9 @@ void OptionParser::initialize()
         ( "property",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::PROPERTY_FILE_PATH]) ),
           "Property file" )
+        ( "fixed-relu",
+          boost::program_options::value<std::string>( &((*_stringOptions)[Options::FIXED_RELU_PATH]) ),
+          "Fixed relus file" )
         ( "summary-file",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::SUMMARY_FILE]) ),
           "Summary file" )

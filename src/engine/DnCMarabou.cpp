@@ -18,6 +18,7 @@
 #include "DnCManager.h"
 #include "DnCMarabou.h"
 #include "File.h"
+#include "FixedReluParser.h"
 #include "LookAheadPreprocessor.h"
 #include "MStringf.h"
 #include "Options.h"
@@ -97,6 +98,13 @@ void DnCMarabou::run()
     {
         if ( !Options::get()->getBool( Options::PREPROCESS_ONLY ) )
         {
+            String fixedReluFilePath = Options::get()->getString( Options::FIXED_RELU_PATH );
+            if ( fixedReluFilePath != "" )
+            {
+                printf( "Fixed Relus: %s\n", fixedReluFilePath.ascii() );
+                FixedReluParser().parse( fixedReluFilePath, idToPhase );
+            }
+
             _dncManager = std::unique_ptr<DnCManager>
                 ( new DnCManager( numWorkers, initialDivides, initialTimeout,
                                   onlineDivides, timeoutFactor, divideStrategy,
