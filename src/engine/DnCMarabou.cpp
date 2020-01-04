@@ -80,6 +80,9 @@ void DnCMarabou::run()
     DivideStrategy divideStrategy = setDivideStrategyFromOptions
         ( Options::get()->getString( Options::DIVIDE_STRATEGY ) );
     bool restoreTreeStates = Options::get()->getBool( Options::RESTORE_TREE_STATES );
+    unsigned biasedLayer = Options::get()->getInt( Options::FOCUS_LAYER );
+    BiasStrategy biasStrategy = setBiasStrategyFromOptions
+        ( Options::get()->getString( Options::BIAS_STRATEGY ) );
 
     struct timespec start = TimeUtils::sampleMicro();
 
@@ -92,9 +95,9 @@ void DnCMarabou::run()
         PropertyParser().parse( propertyFilePath, *baseInputQuery );
 
     Map<unsigned, unsigned> idToPhase;
-    if ( !_baseEngine->processInputQuery( *baseInputQuery ) ||
-         lookAheadPreprocessing( idToPhase ) )
-        // Solved by preprocessing, we are done!
+    if ( _baseEngine->processInputQuery( *baseInputQuery ) &&
+         lookAheadPreprocessing( idToPhase ) &&
+         !Options::get()->getBool( Options::PREPROCESS_ONLY ) )
     {
         if ( !Options::get()->getBool( Options::PREPROCESS_ONLY ) )
         {
@@ -109,7 +112,7 @@ void DnCMarabou::run()
                 ( new DnCManager( numWorkers, initialDivides, initialTimeout,
                                   onlineDivides, timeoutFactor, divideStrategy,
                                   _baseEngine->getInputQuery(), verbosity,
-                                  idToPhase ) );
+                                  idToPhase, biasedLayer, biasStrategy ) );
             _dncManager->solve( timeoutInSeconds, restoreTreeStates );
         }
     }
@@ -191,6 +194,21 @@ void DnCMarabou::displayResults( unsigned long long microSecondsElapsed ) const
     }
 }
 
+BiasStrategy DnCMarabou::setBiasStrategyFromOptions( const String strategy )
+{
+    if ( strategy == "centroid" )
+        return BiasStrategy::Centroid;
+    else if ( strategy == "sampling" )
+        return BiasStrategy::Sampling;
+    else if ( strategy == "random" )
+        return BiasStrategy::Random;
+    else
+    {
+        printf ("Unknown bias strategy, using default (centroid).\n");
+        return BiasStrategy::Centroid;
+    }
+}
+
 DivideStrategy DnCMarabou::setDivideStrategyFromOptions( const String strategy )
 {
     if ( strategy == "split-relu" )
@@ -198,10 +216,10 @@ DivideStrategy DnCMarabou::setDivideStrategyFromOptions( const String strategy )
     else if ( strategy == "largest-interval" )
         return DivideStrategy::LargestInterval;
     else
-        {
-            printf ("Unknown divide strategy, using default (SplitRelu).\n");
-            return DivideStrategy::SplitRelu;
-        }
+    {
+        printf ("Unknown divide strategy, using default (SplitRelu).\n");
+        return DivideStrategy::SplitRelu;
+    }
 }
 
 //

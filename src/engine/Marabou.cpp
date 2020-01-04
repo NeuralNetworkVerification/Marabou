@@ -103,6 +103,10 @@ void Marabou::solveQuery()
             _engine.applySplits( idToPhase );
         }
 
+        BiasStrategy biasStrategy = setBiasStrategyFromOptions
+            ( Options::get()->getString( Options::BIAS_STRATEGY ) );
+        _engine.setBiasedPhases( Options::get()->getInt( Options::FOCUS_LAYER ),
+                                 biasStrategy );
         _engine.solve( Options::get()->getInt( Options::TIMEOUT ) );
     }
     if ( _engine.getExitCode() == Engine::SAT )
@@ -219,6 +223,21 @@ void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
 
         summaryFile.write( "\n" );
     }
+}
+
+BiasStrategy Marabou::setBiasStrategyFromOptions( const String strategy )
+{
+    if ( strategy == "centroid" )
+        return BiasStrategy::Centroid;
+    else if ( strategy == "sampling" )
+        return BiasStrategy::Sampling;
+    else if ( strategy == "random" )
+        return BiasStrategy::Random;
+    else
+        {
+            printf ("Unknown bias strategy, using default (centroid).\n");
+            return BiasStrategy::Centroid;
+        }
 }
 
 //

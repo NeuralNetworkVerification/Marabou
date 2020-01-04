@@ -177,6 +177,11 @@ public:
         return NULL;
     }
 
+    void setBiasedPhases( unsigned biasedLayer, BiasStrategy strategy )
+    {
+        std::cout << biasedLayer << " " << strategy << std::endl;
+    }
+
 };
 
 #endif // __MockEngine_h__

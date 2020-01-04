@@ -41,14 +41,9 @@ public:
 
     DnCManager( unsigned numWorkers, unsigned initialDivides, unsigned
                 initialTimeout, unsigned onlineDivides, float timeoutFactor,
-                DivideStrategy divideStrategy, String networkFilePath,
-                String propertyFilePath, unsigned verbosity,
-                Map<unsigned, unsigned> idToPhase );
-
-    DnCManager( unsigned numWorkers, unsigned initialDivides, unsigned
-                initialTimeout, unsigned onlineDivides, float timeoutFactor,
                 DivideStrategy divideStrategy, InputQuery *inputQuery,
-                unsigned verbosity, Map<unsigned, unsigned> idToPhase );
+                unsigned verbosity, Map<unsigned, unsigned> idToPhase,
+                unsigned biasedLayer, BiasStrategy strategy );
 
     ~DnCManager();
 
@@ -94,7 +89,8 @@ private:
                           std::atomic_bool &shouldQuitSolving,
                           unsigned threadId, unsigned onlineDivides,
                           float timeoutFactor, DivideStrategy divideStrategy,
-                          bool restoreTreeStates, Map<unsigned, unsigned> idToPhase );
+                          bool restoreTreeStates, Map<unsigned, unsigned> idToPhase,
+                          unsigned biasedLayer, BiasStrategy strategy );
 
     /*
       Create the base engine from the network and property files,
@@ -204,6 +200,10 @@ private:
     unsigned _verbosity;
 
     Map<unsigned, unsigned> _idToPhase;
+
+    unsigned _biasedLayer;
+
+    BiasStrategy _biasStrategy;
 };
 
 #endif // __DnCManager_h__

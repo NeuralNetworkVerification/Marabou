@@ -68,7 +68,10 @@ void OptionParser::initialize()
           "Summary file" )
         ( "divide-strategy",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::DIVIDE_STRATEGY]) ),
-          "(DNC) Strategy for dividing a query into subqueries (split-relu/largest-interval)" )
+          "(DNC) Strategy for dividing a query into subqueries (split-relu/largest-interval/activationPattern)" )
+        ( "bias-strategy",
+          boost::program_options::value<std::string>( &((*_stringOptions)[Options::BIAS_STRATEGY]) ),
+          "(DNC) Strategy for biasing the fix (centroid/sampling/random)" )
         ( "num-workers",
           boost::program_options::value<int>( &((*_intOptions)[Options::NUM_WORKERS]) ),
           "(DNC) Number of workers" )
@@ -84,6 +87,9 @@ void OptionParser::initialize()
         ( "timeout",
           boost::program_options::value<int>( &((*_intOptions)[Options::TIMEOUT]) ),
           "Global timeout" )
+        ( "focus-layer",
+          boost::program_options::value<int>( &((*_intOptions)[Options::FOCUS_LAYER]) ),
+          "Layer to focus the search on." )
         ( "verbosity",
           boost::program_options::value<int>( &((*_intOptions)[Options::VERBOSITY]) ),
           "Verbosity of engine::solve(). 0: does not print anything (for DnC), 1: print"

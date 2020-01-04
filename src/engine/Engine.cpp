@@ -14,6 +14,7 @@
  ** [[ Add lengthier description here ]]
  **/
 
+#include "ActivationPatternSampler.h"
 #include "AutoConstraintMatrixAnalyzer.h"
 #include "Debug.h"
 #include "Engine.h"
@@ -29,6 +30,8 @@
 #include "TimeUtils.h"
 
 #include "Vector.h"
+
+#include <random>
 
 Engine::Engine( unsigned verbosity )
     : _exitCode( Engine::NOT_DONE )
@@ -276,6 +279,88 @@ void Engine::applySplits( const Map<unsigned, unsigned> &idToPhase )
                 applySplit( constraint->getActiveSplit() );
             else
                 applySplit( constraint->getInactiveSplit() );
+        }
+    }
+}
+
+void Engine::setBiasedPhases( unsigned biasedLayer, BiasStrategy strategy )
+{
+    if ( !_networkLevelReasoner )
+        return;
+    std::cout << "Bias the first " << biasedLayer << " layers" << std::endl;
+    if ( biasedLayer == 0 )
+    {
+        return;
+    }
+
+    if ( strategy == BiasStrategy::Centroid )
+    {
+        auto pattern = NetworkLevelReasoner::ActivationPattern();
+        Vector<double> centroid;
+        getCentroid( centroid );
+        _networkLevelReasoner->getActivationPattern( centroid, pattern );
+        for ( unsigned layer = 1; layer < biasedLayer + 1; ++layer )
+        {
+            auto ids = _networkLevelReasoner->_layerToIds[layer];
+            for ( const auto id : ids )
+            {
+                auto constraint = (ReluConstraint *) getConstraintFromId( id );
+                if ( constraint )
+                    constraint->setDirection( pattern[id] );
+            }
+        }
+    }
+    else if ( strategy == BiasStrategy::Sampling )
+    {
+        auto inputVariables = getInputVariables();
+        ActivationPatternSampler sampler( inputVariables,
+                                          _networkLevelReasoner );
+        ActivationPatternSampler::InputRegion initialRegion;
+        for ( const auto &variable : inputVariables )
+        {
+            initialRegion._lowerBounds[variable] =
+                _tableau->getLowerBound( variable );
+            initialRegion._upperBounds[variable] =
+                _tableau->getUpperBound( variable );
+        }
+        sampler.samplePoints( initialRegion, 10000 );
+        sampler.computeActivationPatterns();
+        sampler.updatePhaseEstimate();
+        auto idToPhaseStatusEstimate = sampler.getIdToPhaseStatusEstimate();
+        for ( unsigned layer = 1; layer < biasedLayer + 1; ++layer )
+        {
+            auto ids = _networkLevelReasoner->_layerToIds[layer];
+            for ( const auto id : ids )
+            {
+                auto constraint = (ReluConstraint *) getConstraintFromId( id );
+                if ( constraint )
+                {
+                    auto phase = idToPhaseStatusEstimate[id];
+                    if ( phase == ReluConstraint::PHASE_ACTIVE )
+                        constraint->setDirection( 1 );
+                    else if ( phase == ReluConstraint::PHASE_INACTIVE )
+                        constraint->setDirection( 0 );
+                }
+            }
+        }
+    }
+    else // random
+    {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<> dis( 0, 1 );
+        for ( unsigned layer = 1; layer < biasedLayer + 1; ++layer )
+        {
+            auto ids = _networkLevelReasoner->_layerToIds[layer];
+            for ( const auto id : ids )
+            {
+                auto constraint = (ReluConstraint *) getConstraintFromId( id );
+                if ( constraint )
+                {
+                    unsigned direction = dis( gen );
+                    constraint->setDirection( direction );
+                }
+            }
         }
     }
 }
@@ -1247,7 +1332,9 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
     try
     {
         informConstraintsOfInitialBounds( inputQuery );
+
         invokePreprocessor( inputQuery, preprocess );
+
         if ( _verbosity > 0 )
             printInputBounds( inputQuery );
 
@@ -2186,6 +2273,7 @@ void Engine::getEstimates( Map <unsigned, double> &balanceEstimates,
     Map<double, unsigned> temp1;
     for ( const auto& entry : runtimeEstimates )
         temp1[entry.second] = entry.first;
+
     double index = 1;
     for ( const auto& entry : temp1 )
         runtimeEstimates[entry.second] = index++;
@@ -2195,6 +2283,8 @@ void Engine::getEstimates( Map <unsigned, double> &balanceEstimates,
     index = 1;
     for ( const auto& entry : temp2 )
         balanceEstimates[entry.second] = index++;
+
+
     return;
 }
 
@@ -2256,6 +2346,17 @@ void Engine::storeSmtState( SmtState &smtState )
 PiecewiseLinearConstraint *Engine::getConstraintFromId( unsigned id )
 {
     return _idToConstraint[id];
+}
+
+void Engine::getCentroid( Vector<double> &centroid )
+{
+    const List<unsigned> inputVariables = getInputVariables();
+    ASSERT( inputVariables.size() == _preprocessedQuery.getNumInputVariables() );
+    // Assuming that the order of the inputVariables is consistent with the
+    // network topology in the _networklevelreasoner
+    for ( auto const &var : inputVariables )
+        centroid.append( ( _tableau->getLowerBound( var ) +
+                           _tableau->getUpperBound( var ) ) / 2 );
 }
 
 //

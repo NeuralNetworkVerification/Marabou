@@ -16,6 +16,7 @@
 #ifndef __DnCWorker_h__
 #define __DnCWorker_h__
 
+#include "BiasStrategy.h"
 #include "DivideStrategy.h"
 #include "Engine.h"
 #include "PiecewiseLinearCaseSplit.h"
@@ -30,7 +31,8 @@ public:
                std::atomic_uint &numUnsolvedSubqueries,
                std::atomic_bool &shouldQuitSolving, unsigned threadId,
                unsigned onlineDivides, float timeoutFactor,
-               DivideStrategy divideStrategy );
+               DivideStrategy divideStrategy, unsigned biasedLayer,
+               BiasStrategy biasStrategy );
 
     /*
       Pop one subQuery, solve it and handle the result
@@ -80,6 +82,10 @@ private:
     unsigned _threadId;
     unsigned _onlineDivides;
     float _timeoutFactor;
+
+    unsigned _biasedLayer;
+    BiasStrategy _biasStrategy;
+
 };
 
 #endif // __DnCWorker_h__

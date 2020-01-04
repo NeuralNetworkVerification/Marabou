@@ -19,6 +19,8 @@
 #include "List.h"
 #include "Map.h"
 
+#include "BiasStrategy.h"
+
 #ifdef _WIN32
 #undef ERROR
 #endif
@@ -83,6 +85,7 @@ public:
 
     virtual PiecewiseLinearConstraint *getConstraintFromId( unsigned id ) = 0;
 
+    virtual void setBiasedPhases( unsigned biasedLayer, BiasStrategy strategy ) = 0;
 };
 
 #endif // __IEngine_h__

@@ -52,6 +52,8 @@ private:
     */
     void displayResults( unsigned long long microSecondsElapsed ) const;
 
+    BiasStrategy setBiasStrategyFromOptions( const String strategy );
+
     /*
       ACAS network parser
     */

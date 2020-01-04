@@ -21,6 +21,7 @@
 #include "AutoProjectedSteepestEdge.h"
 #include "AutoRowBoundTightener.h"
 #include "AutoTableau.h"
+#include "BiasStrategy.h"
 #include "BlandsRule.h"
 #include "DantzigsRule.h"
 #include "DegradationChecker.h"
@@ -51,6 +52,8 @@ public:
     ~Engine();
 
     void applySplits( const Map<unsigned, unsigned> &idToPhase );
+
+    void setBiasedPhases( unsigned biasedLayer, BiasStrategy strategy );
 
     /*
       Attempt to find a feasible solution for the input within a time limit
@@ -176,6 +179,11 @@ public:
     PiecewiseLinearConstraint *getConstraintFromId( unsigned id );
 
     /*
+      Get the centroid of the input region
+    */
+    void getCentroid( Vector<double> &centroid );
+
+    /*
       Mapping id to PiecewiseLinearConstraint
     */
     Map<unsigned, PiecewiseLinearConstraint *> _idToConstraint;
@@ -194,6 +202,9 @@ public:
     void storeInitialEngineState();
 
  private:
+
+    float _biasedRatio;
+
     enum BasisRestorationRequired {
         RESTORATION_NOT_NEEDED = 0,
         STRONG_RESTORATION_NEEDED = 1,

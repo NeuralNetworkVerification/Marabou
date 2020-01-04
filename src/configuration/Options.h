@@ -61,6 +61,9 @@ public:
 
         // Global timeout
         TIMEOUT,
+
+        // Biased search
+        FOCUS_LAYER,
     };
 
     enum FloatOptions{
@@ -75,6 +78,7 @@ public:
         SUMMARY_FILE,
 
         DIVIDE_STRATEGY,
+        BIAS_STRATEGY,
     };
 
     /*
