@@ -354,7 +354,7 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_lookAheadPreprocessing", &MarabouOptions::_lookAheadPreprocessing)
         .def_readwrite("_preprocessOnly", &MarabouOptions::_preprocessOnly)
         .def_readwrite("_divideStrategy", &MarabouOptions::_divideStrategy)
-        .def_readwrite("_biasstrategy", &MarabouOptions::_biasStrategy);
+        .def_readwrite("_biasStrategy", &MarabouOptions::_biasStrategy);
     py::class_<SymbolicBoundTightener, std::unique_ptr<SymbolicBoundTightener,py::nodelete>>(m, "SymbolicBoundTightener")
         .def(py::init())
         .def("setNumberOfLayers", &SymbolicBoundTightener::setNumberOfLayers)
