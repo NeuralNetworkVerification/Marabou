@@ -33,8 +33,7 @@ class MarabouNNetMCMH:
         good_set =[]
         for i in range(N):
             inputs = self.createRandomInputsList()
-            output = self.marabou_nnet.evaluateNetworkToLayer(inputs,last_layer=0) #Normalizing!
-            if self.outputOutOfBounds(output)[0]:
+            if self.badInput(inputs): #Normalizing!
                 print 'A counter example found! input = ', inputs
                 sys.exit()
             layer_output = self.marabou_nnet.evaluateNetworkToLayer(inputs,last_layer=layer, normalize_inputs=True, normalize_outputs=False)
@@ -71,19 +70,23 @@ class MarabouNNetMCMH:
     # returns TRUE if the input is legal (within bounds for input variables) but leads to an illegal output
     def badInput(self,inputs):
         assert len(inputs) == self.marabou_nnet.inputSize
-        for input_variable in marabou_nnet.inputVars.flatten():
+        for input_variable in self.marabou_nnet.inputVars.flatten():
             value = inputs[input_variable]
             assert value >= self.marabou_nnet.lowerBounds[input_variable]
             assert value <= self.marabou_nnet.upperBounds[input_variable]
         output = self.marabou_nnet.evaluateNetworkToLayer(inputs,last_layer=0,normalize_inputs=True,normalize_outputs=True)
-        return self.outputsOfInputBounds(output)[0]
+        return self.outputOutOfBounds(output)[0]
 
 
 
     def outputVariableToIndex(self,output_variable):
         return output_variable-self.marabou_nnet.numVars+self.marabou_nnet.outputSize
 
-    def outputsOfInputBounds(self):
+
+    #Creates a list of outputs of the input "extreme"
+    #Checks whether all these outputs are legal (within bounds)
+    #Creates a list of "empiric bounds" for the output variables based on the results
+    def outputsOfInputExtremes(self):
         outputs = []
         input_size = self.marabou_nnet.inputSize
         output_lower_bounds = dict()
@@ -119,7 +122,9 @@ class MarabouNNetMCMH:
             print "output = ", output
             outputs.append(output)
 
-            self.outputOutOfBounds(output)
+            if self.outputOutOfBounds(output)[0]:
+                print 'A counterexample found! input = ', inputs
+                sys.exit()
 
 
             # Computing the smallest and the largest ouputs for output variables
@@ -141,8 +146,8 @@ class MarabouNNetMCMH:
 
 
 
-network_filename = "../resources/nnet/acasxu/ACASXU_experimental_v2a_1_1.nnet"
-property_filename = "../resources/properties/acas_property_1.txt"
+network_filename = "../resources/nnet/acasxu/ACASXU_experimental_v2a_1_9.nnet"
+property_filename = "../resources/properties/acas_property_4.txt"
 
 
 #marabou_nnet = MarabouNetworkNNetIPQ("../resources/nnet/acasxu/ACASXU_experimental_v2a_1_1.nnet","../resources/properties/acas_property_1.txt",compute_ipq=True)
@@ -193,14 +198,18 @@ print nnet_object.marabou_nnet.evaluateNetworkToLayer(random_inputs_list,0,norma
 nnet_object.marabou_nnet.testInputBounds()
 nnet_object.marabou_nnet.testOutputBounds()
 
+
+
+
+nnet_object.outputsOfInputExtremes()
+
 nnet_object.createInitialGoodSet(layer=5,N=1000)
 
 
+#print(nnet_object.good_set)
 
-print(nnet_object.good_set)
 
-
-print "TAKE THAT, YUVAL JACOBI!"
+print "success!"
 
 
 
