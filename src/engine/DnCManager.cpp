@@ -51,12 +51,12 @@ void DnCManager::dncSolve( WorkerQueue *workload, InputQuery *inputQuery,
 
     engine->processInputQuery( *inputQuery, false );
     engine->applySplits( idToPhase );
+    engine->setBiasedPhases( biasedLayer, biasStrategy );
     engine->numberOfActive();
 
     DnCWorker worker( workload, engine, std::ref( numUnsolvedSubQueries ),
                       std::ref( shouldQuitSolving ), threadId, onlineDivides,
-                      timeoutFactor, divideStrategy, biasedLayer,
-                      biasStrategy );
+                      timeoutFactor, divideStrategy );
     while ( !shouldQuitSolving.load() )
     {
         worker.popOneSubQueryAndSolve( restoreTreeStates );

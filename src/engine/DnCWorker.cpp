@@ -35,8 +35,7 @@ DnCWorker::DnCWorker( WorkerQueue *workload, std::shared_ptr<IEngine> engine,
                       std::atomic_uint &numUnsolvedSubQueries,
                       std::atomic_bool &shouldQuitSolving,
                       unsigned threadId, unsigned onlineDivides,
-                      float timeoutFactor, DivideStrategy divideStrategy,
-                      unsigned biasedLayer, BiasStrategy biasStrategy )
+                      float timeoutFactor, DivideStrategy divideStrategy )
     : _workload( workload )
     , _engine( engine )
     , _numUnsolvedSubQueries( &numUnsolvedSubQueries )
@@ -44,8 +43,6 @@ DnCWorker::DnCWorker( WorkerQueue *workload, std::shared_ptr<IEngine> engine,
     , _threadId( threadId )
     , _onlineDivides( onlineDivides )
     , _timeoutFactor( timeoutFactor )
-    , _biasedLayer ( biasedLayer )
-    , _biasStrategy ( biasStrategy )
 {
     setQueryDivider( divideStrategy );
 
@@ -102,7 +99,6 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
         Engine::ExitCode result;
         if ( fullSolveNeeded )
         {
-            _engine->setBiasedPhases( _biasedLayer, _biasStrategy );
             _engine->solve( timeoutInSeconds );
             result = _engine->getExitCode();
         } else
