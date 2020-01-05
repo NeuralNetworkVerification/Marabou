@@ -1,20 +1,22 @@
 
 
 import MarabouNetworkNNet
+import MarabouCore
 import numpy as np
 
 class MarabouNetworkNNetIPQ(MarabouNetworkNNet.MarabouNetworkNNet):
     """
     Class that implements a MarabouNetwork from an NNet file.
     """
-    def __init__ (self, filename, perform_sbt=False, compute_ipq = False):
+    def __init__ (self, filename, property_filename = "", perform_sbt=False, compute_ipq = False):
         """
         Constructs a MarabouNetworkNNet object from an .nnet file.
 
         Args:
             filename: path to the .nnet file.
         Attributes:
-            ipq             an Input Query object comtaining the Input Query corresponding to the network
+            ipq1             an Input Query object containing the Input Query corresponding to the network
+            ipq2             an Input Query object created from the file (and maybe property file)
 
             numLayers        (int) The number of layers in the network
             layerSizes       (list of ints) Layer sizes.
@@ -49,19 +51,24 @@ class MarabouNetworkNNetIPQ(MarabouNetworkNNet.MarabouNetworkNNet):
 
 
         """
-        super().__init__(filename,perform_sbt)
+        super(MarabouNetworkNNetIPQ,self).__init__(filename,perform_sbt)
         if compute_ipq:
-            self.ipq = self.getMarabouQuery()
+            self.ipq1 = self.getMarabouQuery()
         else:
-            self.ipq = MarabouCore.InputQuery()
+            self.ipq1 = MarabouCore.InputQuery()
+        self.ipq2 = self.getMarabouQuery()
+        MarabouCore.createInputQuery(self.ipq2,filename,property_filename)
 
 
     def computeIPQ(self):
-        self.ipq = self.getMarabouQuery()
+        self.ipq1 = self.getMarabouQuery()
+
+    def getInputQuery(self,networkFilename,propertyFilename):
+        MarabouCore.createInputQuery(self.ipq2,networkFilename,propertyFilename)
 
 
-    def readProperty(self,filename):
-        PropertyParser.parse(filename,self.ipq)
+ #   def readProperty(self,filename):
+ #       MarabouCore.PropertyParser().parse(filename,self.ipq)
 
 
     # Re-tightens bounds on variables from the Input Query
@@ -72,20 +79,241 @@ class MarabouNetworkNNetIPQ(MarabouNetworkNNet.MarabouNetworkNNet):
         self.tighten_bBounds()
 
     def tightenInputBounds(self):
-        for var in self.inputVars:
-             true_lower_bound = ipq.getLowerBound(var)
-             true_upper_bound = ipq.getUpperBound(var)
-             if self.lowerBounds(var) < true_lower_bound:
-                 self.setLowerBounds(var,true_lower_bound)
-                 print("Adjusting lower bound for input variable",var,"to be",true_lower_bound)
-             if self.upperBounds(var) > true_upper_bound:
-                 self.setUpperBounds(var,true_upper_bound)
-                 print("Adjusting upper bound for input variable",var,"to be",true_upper_bound)
+        for var in self.inputVars.flatten():
+             true_lower_bound = self.ipq2.getLowerBound(var)
+             true_upper_bound = self.ipq2.getUpperBound(var)
+             if self.lowerBounds[var] < true_lower_bound:
+                 self.setLowerBound(var,true_lower_bound)
+                 print 'Adjusting lower bound for input variable',var,"to be",true_lower_bound
+             if self.upperBounds[var] > true_upper_bound:
+                 self.setUpperBound(var,true_upper_bound)
+                 print "Adjusting upper bound for input variable",var,"to be",true_upper_bound
+
+    def tightenOutputBounds(self):
+        for var in self.outputVars.flatten():
+            true_lower_bound = self.ipq2.getLowerBound(var)
+            true_upper_bound = self.ipq2.getUpperBound(var)
+            if (not self.lowerBoundExists(var) or self.lowerBounds[var] < true_lower_bound):
+                self.setLowerBound(var, true_lower_bound)
+                print 'Adjusting lower bound for output variable', var, "to be", true_lower_bound
+            if (not self.upperBoundExists(var) or self.upperBounds[var] > true_upper_bound):
+                self.setUpperBound(var, true_upper_bound)
+                print "Adjusting upper bound for output variable", var, "to be", true_upper_bound
+
+    def tighten_bBounds(self):
+        for var in self.b_variables:
+            true_lower_bound = self.ipq2.getLowerBound(var)
+            true_upper_bound = self.ipq2.getUpperBound(var)
+            if (not self.lowerBoundExists(var) or self.lowerBounds[var] < true_lower_bound):
+                self.setLowerBound(var, true_lower_bound)
+                print 'Adjusting lower bound for b variable', var, "to be", true_lower_bound
+            if (not self.upperBoundExists(var) or self.upperBounds[var] > true_upper_bound):
+                self.setUpperBound(var, true_upper_bound)
+                print "Adjusting upper bound for b variable", var, "to be", true_upper_bound
 
 
+    def tighten_fBounds(self):
+        for var in self.f_variables:
+            true_lower_bound = self.ipq2.getLowerBound(var)
+            true_upper_bound = self.ipq2.getUpperBound(var)
+            if (not self.lowerBoundExists(var) or self.lowerBounds[var] < true_lower_bound):
+                self.setLowerBound(var, true_lower_bound)
+                print 'Adjusting lower bound for f variable', var, "to be", true_lower_bound
+            if (not self.upperBoundExists(var) or self.upperBounds[var] > true_upper_bound):
+                self.setUpperBound(var, true_upper_bound)
+                print "Adjusting upper bound for f variable", var, "to be", true_upper_bound
 
 
+    def testInputBounds(self):
+        for var in self.inputVars.flatten():
+            print var, ": between ", self.lowerBounds[var],  " and ", self.upperBounds[var]
+
+    def testOutputBounds(self):
+        for var in self.outputVars.flatten():
+            if self.lowerBoundExists(var) and self.upperBoundExists(var):
+                print var, ": between ", self.lowerBounds[var],  " and ", self.upperBounds[var]
 
 
+    def tightenBounds1(self):
+        self.tightenInputBounds1()
+        self.tightenOutputBounds1()
+        self.tighten_fBounds1()
+        self.tighten_bBounds1()
+
+
+    def tightenInputBounds1(self):
+        for var in self.inputVars.flatten():
+             true_lower_bound = self.ipq1.getLowerBound(var)
+             true_upper_bound = self.ipq1.getUpperBound(var)
+             if self.lowerBounds[var] < true_lower_bound:
+                 self.setLowerBound(var,true_lower_bound)
+                 print 'Adjusting lower bound for input variable',var,"to be",true_lower_bound
+             if self.upperBounds[var] > true_upper_bound:
+                 self.setUpperBound(var,true_upper_bound)
+                 print "Adjusting upper bound for input variable",var,"to be",true_upper_bound
+
+    def tightenOutputBounds1(self):
+        for var in self.outputVars.flatten():
+            true_lower_bound = self.ipq1.getLowerBound(var)
+            true_upper_bound = self.ipq1.getUpperBound(var)
+            if (not self.lowerBoundExists(var) or self.lowerBounds[var] < true_lower_bound):
+                self.setLowerBound(var, true_lower_bound)
+                print 'Adjusting lower bound for output variable', var, "to be", true_lower_bound
+            if (not self.upperBoundExists(var) or self.upperBounds[var] > true_upper_bound):
+                self.setUpperBound(var, true_upper_bound)
+                print "Adjusting upper bound for output variable", var, "to be", true_upper_bound
+
+
+    def tighten_bBounds1(self):
+        for var in self.b_variables:
+            true_lower_bound = self.ipq1.getLowerBound(var)
+            true_upper_bound = self.ipq1.getUpperBound(var)
+            if (not self.lowerBoundExists(var) or self.lowerBounds[var] < true_lower_bound):
+                self.setLowerBound(var, true_lower_bound)
+                print 'Adjusting lower bound for b variable', var, "to be", true_lower_bound
+            if (not self.upperBoundExists(var) or self.upperBounds[var] > true_upper_bound):
+                self.setUpperBound(var, true_upper_bound)
+                print "Adjusting upper bound for b variable", var, "to be", true_upper_bound
+
+
+    def tighten_fBounds1(self):
+        for var in self.f_variables:
+            true_lower_bound = self.ipq1.getLowerBound(var)
+            true_upper_bound = self.ipq1.getUpperBound(var)
+            if (not self.lowerBoundExists(var) or self.lowerBounds[var] < true_lower_bound):
+                self.setLowerBound(var, true_lower_bound)
+                print 'Adjusting lower bound for f variable', var, "to be", true_lower_bound
+            if (not self.upperBoundExists(var) or self.upperBounds[var] > true_upper_bound):
+                self.setUpperBound(var, true_upper_bound)
+                print "Adjusting upper bound for f variable", var, "to be", true_upper_bound
+
+
+    """
+    Evaluate the network directly, without Marabou
+    Computes the output at a given layer (ouptut layer by default)
+    
+
+    Args:
+        inputs (numpy array of floats): Network inputs to be evaluated
+
+    Returns:
+        (numpy array of floats): Network output
+        
+   """
+
+    def evaluateNetworkToLayer(self, inputs, last_layer = 0, normalize_inputs=True, normalize_outputs=True, activate_output_layer=False):
+        numLayers = self.numLayers
+        inputSize = self.inputSize
+        outputSize = self.outputSize
+        biases = self.biases
+        weights = self.weights
+        mins = self.inputMinimums
+        maxes = self.inputMaximums
+        means = self.inputMeans
+        ranges = self.inputRanges
+
+        #The default output layer is the last (output) layer
+        if last_layer == 0:
+            last_layer = numLayers
+
+        # Prepare the inputs to the neural network
+        if (normalize_inputs):
+            inputsNorm = np.zeros(inputSize)
+            for i in range(inputSize):
+                if inputs[i] < mins[i]:
+                    inputsNorm[i] = (mins[i] - means[i]) / ranges[i]
+                elif inputs[i] > maxes[i]:
+                    inputsNorm[i] = (maxes[i] - means[i]) / ranges[i]
+                else:
+                    inputsNorm[i] = (inputs[i] - means[i]) / ranges[i]
+        else:
+            inputsNorm = inputs
+
+        # Evaluate the neural network
+        for layer in range(last_layer-1):
+            inputsNorm = np.maximum(np.dot(weights[layer], inputsNorm) + biases[layer], 0)
+
+        layer+=1
+        #print layer
+        #print last_layer
+
+
+        if (activate_output_layer):
+            outputs = np.maximum(np.dot(weights[layer], inputsNorm) + biases[layer], 0)
+        else:
+            outputs = np.dot(weights[layer], inputsNorm) + biases[layer]
+
+        # Undo output normalization
+        if (normalize_outputs):
+            for i in range(outputSize):
+                outputs[i] = outputs[i] * ranges[layer-1] + means[layer-1]
+
+        return outputs
+
+    """
+     Evaluate network using multiple sets of inputs
+
+     Args:
+         inputs (numpy array of floats): Array of network inputs to be evaluated.
+
+     Returns:
+         (numpy array of floats): Network outputs for each set of inputs
+         
+    NOT TESTED
+     """
+
+    def evaluateNetworkMultipleToLayer(self, inputs, last_layer =0, normalize_inputs=True, normalize_outputs=True,
+                                  activate_output_layer=False):
+
+        numLayers = self.numLayers
+        inputSize = self.inputSize
+        outputSize = self.outputSize
+        biases = self.biases
+        weights = self.weights
+        inputs = np.array(inputs).T
+        mins = self.inputMinimums
+        maxes = self.inputMaximums
+        means = self.inputMeans
+        ranges = self.inputRanges
+
+        # Prepare the inputs to the neural network
+        numInputs = inputs.shape[1]
+
+        if last_layer == 0:
+            last_layer = numLayers
+
+
+        if (normalize_inputs):
+            inputsNorm = np.zeros((inputSize, numInputs))
+            for i in range(inputSize):
+                for j in range(numInputs):
+                    if inputs[i, j] < mins[i]:
+                        inputsNorm[i, j] = (mins[i] - means[i]) / ranges[i]
+                    elif inputs[i, j] > maxes[i]:
+                        inputsNorm[i, j] = (maxes[i] - means[i]) / ranges[i]
+                    else:
+                        inputsNorm[i, j] = (inputs[i, j] - means[i]) / ranges[i]
+        else:
+            inputsNorm = inputs
+
+        # Evaluate the neural network
+        for layer in range(last_layer - 1):
+            inputsNorm = np.maximum(np.dot(weights[layer], inputsNorm) + biases[layer].reshape((len(biases[layer]), 1)),
+                                    0)
+
+        layer+=1
+
+        if (activate_output_layer):
+            outputs = np.maximum(np.dot(weights[layer], inputsNorm) + biases[layer].reshape((len(biases[layer]), 1)), 0)
+        else:
+            outputs = np.dot(weights[-1], inputsNorm) + biases[-1].reshape((len(biases[-1]), 1))
+
+        # Undo output normalization
+        if (normalize_outputs):
+            for i in range(outputSize):
+                for j in range(numInputs):
+                    outputs[i, j] = outputs[i, j] * self.ranges[layer-1] + self.means[layer-1]
+
+        return outputs.T
 
 

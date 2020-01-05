@@ -68,7 +68,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
 
         """
-        super().__init__()
+        super(MarabouNetworkNNet,self).__init__()
 
         # read the file and load values
         self.read_nnet(filename)
@@ -369,17 +369,21 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         outputSize = self.outputSize
         biases = self.biases
         weights = self.weights
+        mins = self.inputMinimums
+        maxes = self.inputMaximums
+        means = self.inputMeans
+        ranges = self.inputRanges
 
         # Prepare the inputs to the neural network
         if (normalize_inputs):
             inputsNorm = np.zeros(inputSize)
             for i in range(inputSize):
-                if inputs[i] < self.mins[i]:
-                    inputsNorm[i] = (self.mins[i] - self.means[i]) / self.ranges[i]
-                elif inputs[i] > self.maxes[i]:
-                    inputsNorm[i] = (self.maxes[i] - self.means[i]) / self.ranges[i]
+                if inputs[i] < mins[i]:
+                    inputsNorm[i] = (mins[i] - means[i]) / ranges[i]
+                elif inputs[i] > maxes[i]:
+                    inputsNorm[i] = (maxes[i] - means[i]) / ranges[i]
                 else:
-                    inputsNorm[i] = (inputs[i] - self.means[i]) / self.ranges[i]
+                    inputsNorm[i] = (inputs[i] - means[i]) / ranges[i]
         else:
             inputsNorm = inputs
 
@@ -395,7 +399,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         # Undo output normalization
         if (normalize_outputs):
             for i in range(outputSize):
-                outputs[i] = outputs[i] * self.ranges[-1] + self.means[-1]
+                outputs[i] = outputs[i] * ranges[-1] + means[-1]
 
         return outputs
 
@@ -407,6 +411,8 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
      Returns:
          (numpy array of floats): Network outputs for each set of inputs
+         
+    NOT TESTED
      """
 
     def evaluateNetworkMultiple(self, inputs, normalize_inputs=True, normalize_outputs=True,
@@ -418,20 +424,24 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         biases = self.biases
         weights = self.weights
         inputs = np.array(inputs).T
+        mins = self.inputMinimums
+        maxes = self.inputMaximums
+        means = self.inputMeans
+        ranges = self.inputRanges
+
 
         # Prepare the inputs to the neural network
         numInputs = inputs.shape[1]
 
         if (normalize_inputs):
-            inputsNorm = np.zeros((inputSize, numInputs))
+            inputsNorm = np.zeros(inputSize)
             for i in range(inputSize):
-                for j in range(numInputs):
-                    if inputs[i, j] < self.mins[i]:
-                        inputsNorm[i, j] = (self.mins[i] - self.means[i]) / self.ranges[i]
-                    elif inputs[i, j] > self.maxes[i]:
-                        inputsNorm[i, j] = (self.maxes[i] - self.means[i]) / self.ranges[i]
-                    else:
-                        inputsNorm[i, j] = (inputs[i, j] - self.means[i]) / self.ranges[i]
+                if inputs[i] < mins[i]:
+                    inputsNorm[i] = (mins[i] - means[i]) / ranges[i]
+                elif inputs[i] > maxes[i]:
+                    inputsNorm[i] = (maxes[i] - means[i]) / ranges[i]
+                else:
+                    inputsNorm[i] = (inputs[i] - means[i]) / ranges[i]
         else:
             inputsNorm = inputs
 
@@ -449,6 +459,6 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         if (normalize_outputs):
             for i in range(outputSize):
                 for j in range(numInputs):
-                    outputs[i, j] = outputs[i, j] * self.ranges[-1] + self.means[-1]
+                    outputs[i, j] = outputs[i, j] * ranges[-1] + means[-1]
 
         return outputs.T

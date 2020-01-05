@@ -19,7 +19,7 @@
 import MarabouCore
 import numpy as np
 
-class MarabouNetwork:
+class MarabouNetwork(object):
     """
     Abstract class representing general Marabou network
     Defines functions common to MarabouNetworkNnet and MarabouNetworkTF
