@@ -11,62 +11,60 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('-r', "--run", type=str, default=None, help='runname')
 parser.add_argument("--timeout", type=int, default=1200, help='the timeout')
-parser.add_argument("--combined-filename", type=str, default=None, help="if not none, dump the combined summary file")
 parser.add_argument("-p", '--plot', action='store_true', help="make plots")
 parser.add_argument("--benchmark", type=str, default='all', help='benchmark sets to consider. (acas/mnist/boeing)')
-parser.add_argument("--preprocessing", action='store_true', help="preprocessing")
 parser.add_argument('-n', "--num-instances", type=int, default=None, help="Number of instances")
 parser.add_argument("-t", "--threshold", type=int, default=30)
-parser.add_argument("--sub", type=str,default="")
 args = parser.parse_args()
 
 benchmark = args.benchmark.split(',')
-sub = args.sub.split(",")
 run = args.run
 timeout = args.timeout
 plot = args.plot
-preprocessing = args.preprocessing
 threshold = args.threshold
 
 summaries = []
 runs = []
+benchmarkNames = []
 
-files = []
+names = []
 for filename in os.listdir(run):
-    files.append(filename)
-files = sorted(files)
-
-for filename in files:
     if "benchmark_set_" in filename:
-        skip = True
-        for s in sub:
-            if s in filename:
-                skip = False
-        if skip:
-            continue
         print(filename)
+        names.append(filename)
+
+names = sorted(names)
+for filename in names:
+    if True:
         num_instances = 0
         temp_summary = {}
-        runs.append(filename[14:])
+        runs.append(filename[14:-3])
         with open(os.path.join(run, filename), 'r') as benchmark_file:
             for line in benchmark_file.readlines():
                 num_instances += 1
                 summary_filename = line.split()[4]
-                skip = True
+                skip = False
                 if benchmark[0] != 'all':
                     for b in benchmark:
-                        if b in summary_filename:
-                            skip = False
-                    if skip:
-                        continue
+                        if b not in summary_filename:
+                            skip = True
+                if skip:
+                    continue
                 if os.path.isfile(summary_filename):
+                    if "preprocess" in filename:
+                        benchmarkNames.append(os.path.basename(summary_filename).split('.')[0])
+                        summary_filename += ".postPreprocessing"
+                        if not os.path.isfile(summary_filename):
+                            continue
+                    elif os.path.basename(summary_filename).split('.')[0] not in benchmarkNames:
+                        continue
                     with open(summary_filename, 'r') as in_file:
                         for line in in_file.readlines():
                             if line.split()[0] == "UNKNOWN" or float(line.split()[1]) >= timeout:
                                 continue
                             temp_summary[os.path.basename(summary_filename).split('.')[0]] = (line.split()[0], int(float(line.split()[1])))
         summaries.append(temp_summary)                                        
-
+        
 if args.num_instances != None:
     num_instances = args.num_instances
 summary = {}
@@ -123,7 +121,7 @@ total_times = []
 
 print("Number of runs:{}".format(len(runs)))
 for filename in runs:
-    filenames.append(os.path.basename(filename))
+    filenames.append(os.path.basename(filename[:-1]))
 
 for i in range(len(summaries)):
     SAT_time = SAT_times[i]

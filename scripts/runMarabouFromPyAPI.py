@@ -27,7 +27,7 @@ def parse_args():
     p.add_argument('--divide-strategy', required=False, type=str, default='split-relu')
     p.add_argument('--bias-strategy', required=False, type=str, default='centroid')
     p.add_argument('--focus-layer', required=False, type=int, default=0)
-    p.add_argument('--fixed-relu', required=False, type=str, default=None)
+    p.add_argument('--fixed-relu', required=False, type=str, default="")
     opts = p.parse_args()
     return opts
 
