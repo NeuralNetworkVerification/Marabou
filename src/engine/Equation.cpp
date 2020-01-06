@@ -15,6 +15,7 @@
 
 #include "Equation.h"
 #include "FloatUtils.h"
+#include "MStringf.h"
 #include "Map.h"
 
 Equation::Addend::Addend( double coefficient, unsigned variable )
@@ -114,33 +115,41 @@ bool Equation::equivalent( const Equation &other ) const
 
 void Equation::dump() const
 {
+    String output;
+    dump( output );
+    printf( "%s", output.ascii() );
+}
+
+void Equation::dump( String &output ) const
+{
+    output = "";
     for ( const auto &addend : _addends )
     {
         if ( FloatUtils::isZero( addend._coefficient ) )
             continue;
 
         if ( FloatUtils::isPositive( addend._coefficient ) )
-            printf( "+" );
+            output += String( "+" );
 
-        printf( "%.2lfx%u ", addend._coefficient, addend._variable );
+        output += Stringf( "%.2lfx%u ", addend._coefficient, addend._variable );
     }
 
     switch ( _type )
     {
     case Equation::GE:
-        printf( " >= " );
+        output += String( " >= " );
         break;
 
     case Equation::LE:
-        printf( " <= " );
+        output += String( " <= " );
         break;
 
     case Equation::EQ:
-        printf( " = " );
+        output += String( " = " );
         break;
     }
 
-    printf( "%.2lf\n", _scalar );
+    output += Stringf( "%.2lf\n", _scalar );
 }
 
 bool Equation::isVariableMergingEquation( unsigned &x1, unsigned &x2 ) const

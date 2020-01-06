@@ -18,6 +18,7 @@
 
 #include "DnCManager.h"
 #include "Options.h"
+#include "InputQuery.h"
 
 class DnCMarabou
 {
@@ -31,7 +32,7 @@ public:
 
 private:
     std::unique_ptr<DnCManager> _dncManager;
-
+    InputQuery _inputQuery;
     /*
       Display the results
     */

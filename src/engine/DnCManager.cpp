@@ -13,7 +13,6 @@
 
  **/
 
-#include "AcasParser.h"
 #include "Debug.h"
 #include "DivideStrategy.h"
 #include "DnCManager.h"
@@ -23,7 +22,6 @@
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
-#include "PropertyParser.h"
 #include "QueryDivider.h"
 #include "TimeUtils.h"
 #include "Vector.h"
@@ -54,16 +52,14 @@ void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine
 DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
                         unsigned initialTimeout, unsigned onlineDivides,
                         float timeoutFactor, DivideStrategy divideStrategy,
-                        String networkFilePath, String propertyFilePath,
-                        unsigned verbosity )
+                        InputQuery *inputQuery, unsigned verbosity )
     : _numWorkers( numWorkers )
     , _initialDivides( initialDivides )
     , _initialTimeout( initialTimeout )
     , _onlineDivides( onlineDivides )
     , _timeoutFactor( timeoutFactor )
     , _divideStrategy( divideStrategy )
-    , _networkFilePath( networkFilePath )
-    , _propertyFilePath( propertyFilePath )
+    , _baseInputQuery( inputQuery )
     , _exitCode( DnCManager::NOT_DONE )
     , _workload( NULL )
     , _timeoutReached( false )
@@ -234,6 +230,19 @@ String DnCManager::getResultString()
     }
 }
 
+void DnCManager::getSolution( std::map<int, double> &ret )
+{
+    ASSERT( _engineWithSATAssignment != nullptr );
+
+    InputQuery *inputQuery = _engineWithSATAssignment->getInputQuery();
+    _engineWithSATAssignment->extractSolution( *( inputQuery ) );
+
+    for ( unsigned i = 0; i < inputQuery->getNumberOfVariables(); ++i )
+        ret[i] = inputQuery->getSolutionValue( i );
+
+    return;
+}
+
 void DnCManager::printResult()
 {
     std::cout << std::endl;
@@ -260,13 +269,19 @@ void DnCManager::printResult()
             inputs[i] = inputQuery->getSolutionValue( inputQuery->inputVariableByIndex( i ) );
         }
 
-        _engineWithSATAssignment->getInputQuery()->getNetworkLevelReasoner()
-            ->evaluate( inputs, outputs );
+        NetworkLevelReasoner *nlr = inputQuery->getNetworkLevelReasoner();
+        if ( nlr )
+            nlr->evaluate( inputs, outputs );
 
         printf( "\n" );
         printf( "Output:\n" );
         for ( unsigned i = 0; i < inputQuery->getNumOutputVariables(); ++i )
-            printf( "\ty%u = %lf\n", i, outputs[i] );
+        {
+            if ( nlr )
+                printf( "\tnlr y%u = %lf\n", i, outputs[i] );
+            else
+                printf( "\ty%u = %lf\n", i, inputQuery->getSolutionValue( inputQuery->outputVariableByIndex( i ) ) );            
+        }
         printf( "\n" );
         break;
     }
@@ -294,14 +309,10 @@ bool DnCManager::createEngines()
 {
     // Create the base engine
     _baseEngine = std::make_shared<Engine>();
+
     InputQuery *baseInputQuery = new InputQuery();
 
-    // InputQuery is owned by engine
-    AcasParser acasParser( _networkFilePath );
-    acasParser.generateQuery( *baseInputQuery );
-
-    if ( _propertyFilePath != "" )
-        PropertyParser().parse( _propertyFilePath, *baseInputQuery );
+    *baseInputQuery = *_baseInputQuery;
 
     if ( !_baseEngine->processInputQuery( *baseInputQuery ) )
         // Solved by preprocessing, we are done!

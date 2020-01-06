@@ -190,10 +190,10 @@ class MarabouNetwork(object):
         for u in self.upperBounds:
             assert u < self.numVars
             ipq.setUpperBound(u, self.upperBounds[u])
-
+            
         return ipq
 
-    def solve(self, filename="", verbose=True, timeout=0, verbosity=2):
+    def solve(self, filename="", verbose=True, options=None):
         """
         Function to solve query represented by this network
         Arguments:
@@ -211,7 +211,9 @@ class MarabouNetwork(object):
                     to how an input query was solved.
         """
         ipq = self.getMarabouQuery()
-        vals, stats = MarabouCore.solve(ipq, filename, timeout, verbosity)
+        if options == None:
+            options = MarabouCore.Options()
+        vals, stats = MarabouCore.solve(ipq, options, filename)
         if verbose:
             if stats.hasTimedOut():
                 print("TO")
@@ -239,7 +241,7 @@ class MarabouNetwork(object):
         ipq = self.getMarabouQuery()
         MarabouCore.saveQuery(ipq, filename)
 
-    def evaluateWithMarabou(self, inputValues, filename="evaluateWithMarabou.log", timeout=0):
+    def evaluateWithMarabou(self, inputValues, filename="evaluateWithMarabou.log", options=None):
         """
         Function to evaluate network at a given point using Marabou as solver
         Arguments:
@@ -263,14 +265,16 @@ class MarabouNetwork(object):
             ipq.setLowerBound(k, inputDict[k])
             ipq.setUpperBound(k, inputDict[k])
 
-        outputDict = MarabouCore.solve(ipq, filename, timeout)
+        if options == None:
+            options = MarabouCore.Options()
+        outputDict = MarabouCore.solve(ipq, options, filename)
         outputValues = outputVars.reshape(-1).astype(np.float64)
         for i in range(len(outputValues)):
             outputValues[i] = (outputDict[0])[outputValues[i]]
         outputValues = outputValues.reshape(outputVars.shape)
         return outputValues
 
-    def evaluate(self, inputValues, useMarabou=True, timeout=0):
+    def evaluate(self, inputValues, useMarabou=True, options=None):
         """
         Function to evaluate network at a given point
         Arguments:
@@ -280,7 +284,7 @@ class MarabouNetwork(object):
             outputValues: (np array) representing output of network
         """
         if useMarabou:
-            return self.evaluateWithMarabou(inputValues, timeout=timeout)
+            return self.evaluateWithMarabou(inputValues, options=options)
         if not useMarabou:
             return self.evaluateWithoutMarabou(inputValues)
 

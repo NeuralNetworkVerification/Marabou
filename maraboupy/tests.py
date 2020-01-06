@@ -1,7 +1,8 @@
-#import sys
-#sys.path.append(./'maraboupy')
-import MarabouCore
-#import pytest
+
+
+from maraboupy import MarabouCore
+from maraboupy.Marabou import createOptions
+
 
 large = 100
 def define_network():
@@ -38,13 +39,16 @@ def define_network():
 
 def test_solve_partial_arguments():
     network = define_network()
-    MarabouCore.solve(network)
+    options = createOptions()
+    MarabouCore.solve(network, options)
 
 def test_dump_query():
     network = define_network()
-    MarabouCore.solve(network, "", 0, 0)
+    options = createOptions()
+    MarabouCore.solve(network, options, "")
     network.dump()
 
 
 if __name__ == "__main__":
     test_dump_query()
+    test_solve_partial_arguments()
