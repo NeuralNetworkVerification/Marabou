@@ -59,6 +59,8 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         self.sess = None
         self.biasAddRelations = list()
 
+        self.reluOps = []
+
     def readFromPb(self, filename, inputNames, outputName, savedModel, savedModelTags):
         """
         Constructs a MarabouNetworkTF object from a frozen Tensorflow protobuf or SavedModel
@@ -446,6 +448,8 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         assert len(prev) == len(cur)
         ### END getting inputs ###
 
+        self.reluOps.append(op)
+
         ### Generate actual equations ###
         for i in range(len(prev)):
             self.addRelu(prev[i], cur[i])
@@ -540,5 +544,28 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         feed_dict = dict(zip(inputNames, inputValuesReshaped))
         outputName = self.outputOp.name
         out = self.sess.run(outputName + ":0", feed_dict=feed_dict)
-
         return out[0]
+
+    def getReluPattern(self, inputValues):
+        """
+        Function to evaluate network at a given point using Tensorflow
+        Arguments:
+            inputValues: list of (np array)s representing inputs to network
+        Returns:
+            outputValues: (np array) representing output of network
+        """
+        inputValuesReshaped = []
+        for j in range(len(self.inputOps)):
+            inputOp = self.inputOps[j]
+            inputShape = self.shapeMap[inputOp]
+            inputShape = [i if i is not None else 1 for i in inputShape]
+            # Try to reshape given input to correct shape
+            inputValuesReshaped.append(inputValues[j].reshape(inputShape))
+
+        inputNames = [o.name+":0" for o in self.inputOps]
+        feed_dict = dict(zip(inputNames, inputValuesReshaped))
+
+        reluNames = [op.name+":0" for op in self.reluOps]
+        out = self.sess.run(reluNames, feed_dict=feed_dict)
+        results = [o.flatten() for o in out]
+        return [(result > 0).astype(int) for result in results]

@@ -152,6 +152,12 @@ double InputQuery::getSolutionValue( unsigned variable ) const
 void InputQuery::addPiecewiseLinearConstraint( PiecewiseLinearConstraint *constraint )
 {
     _plConstraints.append( constraint );
+    _idToConstraint[((ReluConstraint *)constraint)->getId()] = (ReluConstraint *)constraint;
+}
+
+void InputQuery::setDirection( unsigned id, int direction )
+{
+    _idToConstraint[id]->setDirection( direction );
 }
 
 List<PiecewiseLinearConstraint *> &InputQuery::getPiecewiseLinearConstraints()
@@ -227,7 +233,11 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
 
     freeConstraintsIfNeeded();
     for ( const auto &constraint : other._plConstraints )
-        _plConstraints.append( constraint->duplicateConstraint() );
+    {
+        auto dup = constraint->duplicateConstraint();
+        _plConstraints.append( dup );
+        _idToConstraint[((ReluConstraint *) dup)->getId()] = (ReluConstraint *) dup;
+    }
 
     if ( other._networkLevelReasoner )
     {

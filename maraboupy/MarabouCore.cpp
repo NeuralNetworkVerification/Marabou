@@ -103,6 +103,10 @@ void addMaxConstraint(InputQuery& ipq, std::set<unsigned> elements, unsigned v){
     ipq.addPiecewiseLinearConstraint(m);
 }
 
+void setDirection(InputQuery& ipq, unsigned id, unsigned phase){
+    ipq.setDirection(id, phase);
+}
+
 void createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::string propertyFilePath){
   AcasParser* acasParser = new AcasParser( String(networkFilePath) );
   acasParser->generateQuery( inputQuery );
@@ -321,6 +325,7 @@ PYBIND11_MODULE(MarabouCore, m) {
     m.def("loadQuery", &loadQuery, "Loads and returns a serialized inputQuery from the given filename");
     m.def("addReluConstraint", &addReluConstraint, "Add a Relu constraint to the InputQuery");
     m.def("addMaxConstraint", &addMaxConstraint, "Add a Max constraint to the InputQuery");
+    m.def("setDirection", &setDirection, "Set direction of a relu");
     py::class_<InputQuery>(m, "InputQuery")
         .def(py::init())
         .def("setUpperBound", &InputQuery::setUpperBound)

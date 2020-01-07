@@ -50,6 +50,8 @@ public:
     void removeEquationsByIndex( const Set<unsigned> indices );
 
     void addPiecewiseLinearConstraint( PiecewiseLinearConstraint *constraint );
+    void setDirection( unsigned id, int direction );
+
     const List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints() const;
 	List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints();
 
@@ -140,6 +142,8 @@ private:
     Map<unsigned, double> _lowerBounds;
     Map<unsigned, double> _upperBounds;
     List<PiecewiseLinearConstraint *> _plConstraints;
+
+    Map<unsigned, ReluConstraint *> _idToConstraint;
 
     Map<unsigned, double> _solution;
 

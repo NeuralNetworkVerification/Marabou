@@ -198,6 +198,22 @@ class MarabouNetwork:
         ipq = self.getMarabouQuery()
         if options == None:
             options = MarabouCore.Options()
+        if options._focusLayer > 0:
+            centroid = []
+            i = 0
+            for inputVarArray in self.inputVars:
+                for inputVar in inputVarArray.flatten():
+                    centroid.append((self.lowerBounds[i] + self.upperBounds[i])/2)
+                    i+=1
+            shape = np.array(self.inputVars).shape[1:]
+            centroid = np.array(centroid).reshape(shape)
+            pattern = self.getReluPattern(centroid)
+            i = 0
+            for layer in range(min(len(pattern), options._focusLayer)):
+                for p in pattern[layer]:
+                    MarabouCore.setDirection(ipq, i, p)
+                    i += 1
+
         vals, stats = MarabouCore.solve(ipq, options, summaryFilePath, fixedReluFilePath, filename)
         if verbose:
             if stats.hasTimedOut():
