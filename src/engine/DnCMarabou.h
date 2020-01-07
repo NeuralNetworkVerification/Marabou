@@ -20,6 +20,7 @@
 #include "DivideStrategy.h"
 #include "DnCManager.h"
 #include "Options.h"
+#include "InputQuery.h"
 
 class DnCMarabou
 {
@@ -37,6 +38,8 @@ private:
     std::unique_ptr<DnCManager> _dncManager;
 
     bool lookAheadPreprocessing( Map<unsigned, unsigned> &idToPhase );
+
+    InputQuery _inputQuery;
 
     /*
       Display the results

@@ -75,7 +75,6 @@ void LookAheadPreprocessor::preprocessWorker( LookAheadPreprocessor::WorkerQueue
     {
         unsigned id = 0;
         workload.pop( id );
-        std::cout << id << std::endl;
         if ( (int) id == lastFixed.load() )
         {
             std::cout << "No new info for subsequent constraints!" << std::endl;
@@ -110,10 +109,12 @@ void LookAheadPreprocessor::preprocessWorker( LookAheadPreprocessor::WorkerQueue
         Vector<unsigned> feasibleStatus;
 
         unsigned numActive = (engine->_idToConstraint.size() - idToPhase.size());
-
-        double factor = ((double) engine->_idToConstraint.size() - id ) / numActive;
+        double temp = (int) engine->_idToConstraint.size() - (int) id;
+        if (temp < 0)
+            temp = 0;
+        double factor = temp / numActive;
         factor = 1 < factor ? 1 : factor;
-        unsigned threshold = (unsigned) GlobalConfiguration::QUICK_SOLVE_STACK_DEPTH_THRESHOLD *
+        unsigned threshold = (int) GlobalConfiguration::QUICK_SOLVE_STACK_DEPTH_THRESHOLD *
                      factor;
         if ( threshold == 0 ) continue;
 

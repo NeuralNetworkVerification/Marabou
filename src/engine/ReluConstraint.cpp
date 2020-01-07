@@ -771,7 +771,12 @@ void ReluConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
     // Adjust the bounds for the new variable
     ASSERT( _lowerBounds.exists( _b ) );
     inputQuery.setLowerBound( _aux, 0 );
-    inputQuery.setUpperBound( _aux, -_lowerBounds[_b] );
+
+    // Generally, aux.ub = -b.lb. However, if b.lb is positive (active
+    // phase), then aux.ub needs to be 0
+    double auxUpperBound =
+        _lowerBounds[_b] > 0 ? 0 : -_lowerBounds[_b];
+    inputQuery.setUpperBound( _aux, auxUpperBound );
 
     // We now care about the auxiliary variable, as well
     _auxVarInUse = true;

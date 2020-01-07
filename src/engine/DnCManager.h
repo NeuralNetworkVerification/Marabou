@@ -168,12 +168,6 @@ private:
     DivideStrategy _divideStrategy;
 
     /*
-      Path to the network and property files
-    */
-    String _networkFilePath;
-    String _propertyFilePath;
-
-    /*
       Alternatively, we could construct the DnCManager by directly providing the
       inputQuery instead of the network and property filepaths.
     */

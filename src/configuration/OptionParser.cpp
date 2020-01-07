@@ -63,6 +63,9 @@ void OptionParser::initialize()
         ( "fixed-relu",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::FIXED_RELU_PATH]) ),
           "Fixed relus file" )
+        ( "input-query",
+          boost::program_options::value<std::string>( &((*_stringOptions)[Options::INPUT_QUERY_FILE_PATH]) ),
+          "Input Query file" )
         ( "summary-file",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::SUMMARY_FILE]) ),
           "Summary file" )

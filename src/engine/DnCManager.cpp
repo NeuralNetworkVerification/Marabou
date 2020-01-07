@@ -13,7 +13,6 @@
 
  **/
 
-#include "AcasParser.h"
 #include "Debug.h"
 #include "DivideStrategy.h"
 #include "DnCManager.h"
@@ -23,7 +22,6 @@
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
-#include "PropertyParser.h"
 #include "QueryDivider.h"
 #include "ReluDivider.h"
 #include "TimeUtils.h"
@@ -76,8 +74,6 @@ DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
     , _onlineDivides( onlineDivides )
     , _timeoutFactor( timeoutFactor )
     , _divideStrategy( divideStrategy )
-    , _networkFilePath( "" )
-    , _propertyFilePath( "" )
     , _baseInputQuery( inputQuery )
     , _timeoutReached( false )
     , _numUnsolvedSubQueries( 0 )
@@ -288,13 +284,19 @@ void DnCManager::printResult()
             inputs[i] = inputQuery->getSolutionValue( inputQuery->inputVariableByIndex( i ) );
         }
 
-        _engineWithSATAssignment->getInputQuery()->getNetworkLevelReasoner()
-            ->evaluate( inputs, outputs );
+        NetworkLevelReasoner *nlr = inputQuery->getNetworkLevelReasoner();
+        if ( nlr )
+            nlr->evaluate( inputs, outputs );
 
         printf( "\n" );
         printf( "Output:\n" );
         for ( unsigned i = 0; i < inputQuery->getNumOutputVariables(); ++i )
-            printf( "\ty%u = %lf\n", i, outputs[i] );
+        {
+            if ( nlr )
+                printf( "\tnlr y%u = %lf\n", i, outputs[i] );
+            else
+                printf( "\ty%u = %lf\n", i, inputQuery->getSolutionValue( inputQuery->outputVariableByIndex( i ) ) );            
+        }
         printf( "\n" );
         break;
     }

@@ -75,6 +75,7 @@ public:
         INPUT_FILE_PATH = 0,
         PROPERTY_FILE_PATH,
         FIXED_RELU_PATH,
+        INPUT_QUERY_FILE_PATH,
         SUMMARY_FILE,
 
         DIVIDE_STRATEGY,

@@ -68,6 +68,7 @@ void Options::initializeDefaultValues()
     _stringOptions[INPUT_FILE_PATH] = "";
     _stringOptions[PROPERTY_FILE_PATH] = "";
     _stringOptions[FIXED_RELU_PATH] = "";
+    _stringOptions[INPUT_QUERY_FILE_PATH] = "";
     _stringOptions[SUMMARY_FILE] = "";
     _stringOptions[DIVIDE_STRATEGY] = "";
     _stringOptions[BIAS_STRATEGY] = "";
