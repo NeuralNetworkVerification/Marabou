@@ -75,7 +75,7 @@ void LookAheadPreprocessor::preprocessWorker( LookAheadPreprocessor::WorkerQueue
     {
         unsigned id = 0;
         workload.pop( id );
-
+        std::cout << id << std::endl;
         if ( (int) id == lastFixed.load() )
         {
             std::cout << "No new info for subsequent constraints!" << std::endl;
