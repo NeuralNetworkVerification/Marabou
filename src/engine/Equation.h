@@ -1,4 +1,4 @@
-/*********************                                                        */
+ /*********************                                                        */
 /*! \file Equation.h
  ** \verbatim
  ** Top contributors (to current version):

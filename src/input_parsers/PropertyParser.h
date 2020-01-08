@@ -34,6 +34,13 @@ public:
 private:
     void processSingleLine( const String &line, InputQuery &inputQuery );
     Equation::EquationType extractRelationSymbol( const String &token );
+
+    /* Does exactly the same as processSingleLine, BUT:
+     * returns True if the result of the processing is an equation
+     * in which case the argument return_equation will contain this equation,
+     * otherwise will be left unchanged
+    */
+    bool returnEquationSingleLine(const String &line, InputQuery &inputQuery, Equation &return_equation);
 };
 
 #endif // __PropertyParser_h__

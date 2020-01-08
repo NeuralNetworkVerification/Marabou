@@ -225,6 +225,177 @@ void PropertyParser::processSingleLine( const String &line, InputQuery &inputQue
     }
 }
 
+
+bool PropertyParser::returnEquationSingleLine(const String &line, InputQuery &inputQuery, Equation &return_equation )
+{
+    List<String> tokens = line.tokenize( " " );
+
+    if ( tokens.size() < 3 )
+        throw InputParserError( InputParserError::UNEXPECTED_INPUT, line.ascii() );
+
+    auto it = tokens.rbegin();
+    if ( !isScalar( *it ) )
+    {
+        Stringf message( "Right handside must be scalar in the line: %s", line.ascii() );
+        throw InputParserError( InputParserError::UNEXPECTED_INPUT, message.ascii() );
+    }
+
+    double scalar = extractScalar( *it );
+    ++it;
+    Equation::EquationType type = extractRelationSymbol( *it );
+    ++it;
+
+    // Now extract the addends. In the special case where we only have
+    // one addend, we add this equation as a bound. Otherwise, we add
+    // as an equation.
+    if ( tokens.size() == 3 )
+    {
+        // Special case: add as a bound
+        String token = (*it).trim();
+
+        bool inputVariable = token.contains( "x" );
+        bool outputVariable = token.contains( "y" );
+        bool weightedSumVariable = token.contains( "ws" );
+
+        // Make sure that we have identified precisely one kind of variable
+        unsigned variableKindSanity = 0;
+        if ( inputVariable ) ++variableKindSanity;
+        if ( outputVariable ) ++variableKindSanity;
+        if ( weightedSumVariable ) ++variableKindSanity;
+
+        if ( variableKindSanity != 1 )
+            throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
+
+        // Determine the index (in input query terms) of the variable whose
+        // bound is being set.
+
+        unsigned variable = 0;
+        List<String> subTokens;
+
+        if ( inputVariable )
+        {
+            subTokens = token.tokenize( "x" );
+
+            if ( subTokens.size() != 1 )
+                throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
+
+            unsigned justIndex = atoi( subTokens.rbegin()->ascii() );
+
+            ASSERT( justIndex < inputQuery.getNumInputVariables() );
+            variable = inputQuery.inputVariableByIndex( justIndex );
+        }
+        else if ( outputVariable )
+        {
+            subTokens = token.tokenize( "y" );
+
+            if ( subTokens.size() != 1 )
+                throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
+
+            unsigned justIndex = atoi( subTokens.rbegin()->ascii() );
+
+            ASSERT( justIndex < inputQuery.getNumOutputVariables() );
+            variable = inputQuery.outputVariableByIndex( justIndex );
+        }
+        else if ( weightedSumVariable )
+        {
+            // These variables are of the form ws_2_5
+            subTokens = token.tokenize( "_" );
+
+            if ( subTokens.size() != 3 )
+                throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
+
+            auto subToken = subTokens.begin();
+            ++subToken;
+            unsigned layerIndex = atoi( subToken->ascii() );
+            ++subToken;
+            unsigned nodeIndex = atoi( subToken->ascii() );
+
+            NetworkLevelReasoner *nlr = inputQuery.getNetworkLevelReasoner();
+            if ( !nlr )
+                throw InputParserError( InputParserError::NETWORK_LEVEL_REASONING_DISABLED );
+
+            variable = nlr->getWeightedSumVariable( layerIndex, nodeIndex );
+        }
+
+        if ( type == Equation::GE )
+        {
+            if ( inputQuery.getLowerBound( variable ) < scalar )
+                inputQuery.setLowerBound( variable, scalar );
+        }
+        else if ( type == Equation::LE )
+        {
+            if ( inputQuery.getUpperBound( variable ) > scalar )
+                inputQuery.setUpperBound( variable, scalar );
+        }
+        else
+        {
+            ASSERT( type == Equation::EQ );
+
+            if ( inputQuery.getLowerBound( variable ) < scalar )
+                inputQuery.setLowerBound( variable, scalar );
+            if ( inputQuery.getUpperBound( variable ) > scalar )
+                inputQuery.setUpperBound( variable, scalar );
+        }
+    }
+    else
+    {
+        // Normal case: add as an equation
+        Equation equation( type );
+        equation.setScalar( scalar );
+
+        while ( it != tokens.rend() )
+        {
+            String token = (*it).trim();
+
+            bool inputVariable = token.contains( "x" );
+            bool outputVariable = token.contains( "y" );
+
+            if ( !( inputVariable ^ outputVariable ) )
+                throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
+
+            List<String> subTokens;
+            if ( inputVariable )
+                subTokens = token.tokenize( "x" );
+            else
+                subTokens = token.tokenize( "y" );
+
+            if ( subTokens.size() != 2 )
+                throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
+
+            unsigned justIndex = atoi( subTokens.rbegin()->ascii() );
+            unsigned variable;
+
+            if ( inputVariable )
+            {
+                ASSERT( justIndex < inputQuery.getNumInputVariables() );
+                variable = inputQuery.inputVariableByIndex( justIndex );
+            }
+            else
+            {
+                ASSERT( justIndex < inputQuery.getNumOutputVariables() );
+                variable = inputQuery.outputVariableByIndex( justIndex );
+            }
+
+            String coefficientString = *subTokens.begin();
+            double coefficient;
+            if ( coefficientString == "+" )
+                coefficient = 1;
+            else if ( coefficientString == "-" )
+                coefficient = -1;
+            else
+                coefficient = atof( coefficientString.ascii() );
+
+            equation.addAddend( coefficient, variable );
+            ++it;
+        }
+
+        inputQuery.addEquation( equation )
+        return_equation = equation;
+        return true;
+    }
+    return false;
+}
+
 Equation::EquationType PropertyParser::extractRelationSymbol( const String &token )
 {
     if ( token == ">=" )
