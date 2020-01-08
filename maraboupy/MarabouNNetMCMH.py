@@ -34,7 +34,7 @@ class MarabouNNetMCMH:
         for i in range(N):
             inputs = self.createRandomInputsList()
             if self.badInput(inputs): #Normalizing!
-                print 'A counter example found! input = ', inputs
+                print ('A counter example found! input = ', inputs)
                 sys.exit()
             layer_output = self.marabou_nnet.evaluateNetworkToLayer(inputs,last_layer=layer, normalize_inputs=True, normalize_outputs=False)
             good_set.append(layer_output)
@@ -115,15 +115,15 @@ class MarabouNNetMCMH:
                     assert self.marabou_nnet.lowerBoundExists(input_var)
                     inputs[input_var] = self.marabou_nnet.lowerBounds[input_var]
 
-            print "input = ", inputs
+            print ("input = ", inputs)
 
             #Evaluating the network on the input
             output = self.marabou_nnet.evaluateNetworkToLayer(inputs,last_layer=0,normalize_inputs=True,normalize_outputs=True)
-            print "output = ", output
+            print ("output = ", output)
             outputs.append(output)
 
             if self.outputOutOfBounds(output)[0]:
-                print 'A counterexample found! input = ', inputs
+                print ('A counterexample found! input = ', inputs)
                 sys.exit()
 
 
@@ -137,8 +137,8 @@ class MarabouNNetMCMH:
 
 
         #print len(outputs)
-        print "lower bounds = ", output_lower_bounds
-        print "upper bounds = ", output_upper_bounds
+        print ("lower bounds = ", output_lower_bounds)
+        print ("upper bounds = ", output_upper_bounds)
 
         #print(outputs)
 
@@ -194,7 +194,7 @@ nnet_object = MarabouNNetMCMH(filename=network_filename,property_filename=proper
 
 random_inputs_list = nnet_object.createRandomInputsList()
 
-print nnet_object.marabou_nnet.evaluateNetworkToLayer(random_inputs_list,0,normalize_inputs=True,normalize_outputs=True)
+print (nnet_object.marabou_nnet.evaluateNetworkToLayer(random_inputs_list,0,normalize_inputs=True,normalize_outputs=True))
 nnet_object.marabou_nnet.testInputBounds()
 nnet_object.marabou_nnet.testOutputBounds()
 
@@ -209,7 +209,7 @@ nnet_object.createInitialGoodSet(layer=5,N=1000)
 #print(nnet_object.good_set)
 
 
-print "success!"
+print ("success!")
 
 
 
