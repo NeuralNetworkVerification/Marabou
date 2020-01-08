@@ -280,7 +280,9 @@ void Engine::applySplits( const Map<unsigned, unsigned> &idToPhase )
             else
                 applySplit( constraint->getInactiveSplit() );
         }
+
     }
+    propagate();
 }
 
 void Engine::setBiasedPhases( unsigned biasedLayer, BiasStrategy strategy )
@@ -2236,7 +2238,6 @@ bool Engine::propagate()
 {
     try
     {
-        tightenBoundsOnConstraintMatrix();
         applyAllBoundTightenings();
         do
             {
