@@ -1,6 +1,7 @@
 
 
 import MarabouNetworkNNet
+#import MarabouNetworkNNetExtendedParent
 import MarabouCore
 import numpy as np
 
@@ -14,6 +15,8 @@ class MarabouNetworkNNetIPQ(MarabouNetworkNNet.MarabouNetworkNNet):
 
         Args:
             filename: path to the .nnet file.
+            property_filename: path to the property file
+
         Attributes:
             ipq1             an Input Query object containing the Input Query corresponding to the network
             ipq2             an Input Query object created from the file (and maybe property file)
@@ -51,7 +54,7 @@ class MarabouNetworkNNetIPQ(MarabouNetworkNNet.MarabouNetworkNNet):
 
 
         """
-        super(MarabouNetworkNNetIPQ,self).__init__(filename,perform_sbt)
+        super(MarabouNetworkNNetIPQ,self).__init__(filename=filename,property_filename=property_filename,perform_sbt=perform_sbt,compute_ipq=compute_ipq)
         if compute_ipq:
             self.ipq1 = self.getMarabouQuery()
         else:

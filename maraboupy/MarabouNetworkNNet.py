@@ -24,7 +24,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
     """
     Class that implements a MarabouNetwork from an NNet file.
     """
-    def __init__ (self, filename, perform_sbt=False):
+    def __init__ (self, filename, property_filename = "", perform_sbt=False, compute_ipq = False):
         """
         Constructs a MarabouNetworkNNet object from an .nnet file.
 
