@@ -188,3 +188,4 @@ nnet_object.createInitialGoodSet(layer=5,N=1000)
 
 
 
+

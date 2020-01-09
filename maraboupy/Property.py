@@ -41,7 +41,7 @@ class Property:
         self.exec_bounds = []
 
         if property_filename == "":
-            print('No property file!'')
+            print('No property file!')
             self.equations = []
             self.bounds = []
         else:
