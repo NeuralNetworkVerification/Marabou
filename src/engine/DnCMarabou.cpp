@@ -96,18 +96,52 @@ void DnCMarabou::run()
       Step 3: initialize the DNC core
     */
     unsigned initialDivides = Options::get()->getInt( Options::NUM_INITIAL_DIVIDES );
-    unsigned initialTimeout = Options::get()->getInt( Options::INITIAL_TIMEOUT );
+
+    int initialTimeoutInt = Options::get()->getInt( Options::INITIAL_TIMEOUT );
+    unsigned initialTimeout = 0;
+    if ( initialTimeoutInt < 0 )
+        initialTimeout = _inputQuery.getPiecewiseLinearConstraints().size() / 2.5;
+    else
+        initialTimeout = static_cast<unsigned>(initialTimeoutInt);
+
     unsigned numWorkers = Options::get()->getInt( Options::NUM_WORKERS );
     unsigned onlineDivides = Options::get()->getInt( Options::NUM_ONLINE_DIVIDES );
     unsigned verbosity = Options::get()->getInt( Options::VERBOSITY );
     unsigned timeoutInSeconds = Options::get()->getInt( Options::TIMEOUT );
     float timeoutFactor = Options::get()->getFloat( Options::TIMEOUT_FACTOR );
-    DivideStrategy divideStrategy = setDivideStrategyFromOptions
-        ( Options::get()->getString( Options::DIVIDE_STRATEGY ) );
+
+    DivideStrategy divideStrategy = DivideStrategy::SplitRelu;
+    if ( Options::get()->getString( Options::DIVIDE_STRATEGY ) == "auto" )
+    {
+        if ( _inputQuery.getInputVariables().size() < 10  )
+            divideStrategy = DivideStrategy::LargestInterval;
+        else
+            divideStrategy = DivideStrategy::SplitRelu;
+    }
+    else
+        divideStrategy = setDivideStrategyFromOptions
+            ( Options::get()->getString( Options::DIVIDE_STRATEGY ) );
+
+
     bool restoreTreeStates = Options::get()->getBool( Options::RESTORE_TREE_STATES );
     unsigned biasedLayer = Options::get()->getInt( Options::FOCUS_LAYER );
     BiasStrategy biasStrategy = setBiasStrategyFromOptions
         ( Options::get()->getString( Options::BIAS_STRATEGY ) );
+
+    std::cout << "Initial Divides: " << initialDivides << std::endl;
+    std::cout << "Initial Timeout: " << initialTimeout << std::endl;
+    std::cout << "Number of Workers: " << numWorkers << std::endl;
+    std::cout << "Online Divides: " << onlineDivides  << std::endl;
+    std::cout << "Verbosity: " << verbosity << std::endl;
+    std::cout << "Timeout: " << timeoutInSeconds  << std::endl;
+    std::cout << "Timeout Factor: "  << timeoutFactor << std::endl;
+    std::cout << "Divide Strategy: " << ( divideStrategy ==
+                                          DivideStrategy::LargestInterval ?
+                                          "Largest Interval" : "Split Relu" )
+              << std::endl;
+    std::cout << "Focus Layers: " << biasedLayer << std::endl;
+    std::cout << "Perform tree state restoration: " << ( restoreTreeStates ? "Yes" : "No" )
+              << std::endl;
 
     struct timespec start = TimeUtils::sampleMicro();
 

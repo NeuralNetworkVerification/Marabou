@@ -50,9 +50,9 @@ void Options::initializeDefaultValues()
       Int options
     */
     _intOptions[NUM_WORKERS] = 4;
-    _intOptions[NUM_INITIAL_DIVIDES] = 0;
+    _intOptions[NUM_INITIAL_DIVIDES] = 2;
     _intOptions[NUM_ONLINE_DIVIDES] = 2;
-    _intOptions[INITIAL_TIMEOUT] = 5;
+    _intOptions[INITIAL_TIMEOUT] = -1;
     _intOptions[VERBOSITY] = 2;
     _intOptions[TIMEOUT] = 0;
     _intOptions[FOCUS_LAYER] = 0;
@@ -70,7 +70,7 @@ void Options::initializeDefaultValues()
     _stringOptions[FIXED_RELU_PATH] = "";
     _stringOptions[INPUT_QUERY_FILE_PATH] = "";
     _stringOptions[SUMMARY_FILE] = "";
-    _stringOptions[DIVIDE_STRATEGY] = "";
+    _stringOptions[DIVIDE_STRATEGY] = "auto";
     _stringOptions[BIAS_STRATEGY] = "";
 }
 
