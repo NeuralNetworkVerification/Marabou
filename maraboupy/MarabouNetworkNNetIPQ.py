@@ -109,10 +109,10 @@ class MarabouNetworkNNetIPQ(MarabouNetworkNNet.MarabouNetworkNNet):
             true_upper_bound = self.ipq2.getUpperBound(var)
             if (not self.lowerBoundExists(var) or self.lowerBounds[var] < true_lower_bound):
                 self.setLowerBound(var, true_lower_bound)
-                print('Adjusting lower bound for b variable', var, "to be", true_lower_bound)
+                #print('Adjusting lower bound for b variable', var, "to be", true_lower_bound)
             if (not self.upperBoundExists(var) or self.upperBounds[var] > true_upper_bound):
                 self.setUpperBound(var, true_upper_bound)
-                print("Adjusting upper bound for b variable", var, "to be", true_upper_bound)
+                #print("Adjusting upper bound for b variable", var, "to be", true_upper_bound)
 
     def tighten_fBounds(self):
         for var in self.f_variables:
@@ -120,10 +120,10 @@ class MarabouNetworkNNetIPQ(MarabouNetworkNNet.MarabouNetworkNNet):
             true_upper_bound = self.ipq2.getUpperBound(var)
             if (not self.lowerBoundExists(var) or self.lowerBounds[var] < true_lower_bound):
                 self.setLowerBound(var, true_lower_bound)
-                print('Adjusting lower bound for f variable', var, "to be", true_lower_bound)
+                #print('Adjusting lower bound for f variable', var, "to be", true_lower_bound)
             if (not self.upperBoundExists(var) or self.upperBounds[var] > true_upper_bound):
                 self.setUpperBound(var, true_upper_bound)
-                print("Adjusting upper bound for f variable", var, "to be", true_upper_bound)
+                #print("Adjusting upper bound for f variable", var, "to be", true_upper_bound)
 
     def testInputBounds(self):
         for var in self.inputVars.flatten():

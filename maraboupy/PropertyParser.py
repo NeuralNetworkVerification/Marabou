@@ -2,8 +2,8 @@ import re
 
 '''
     Parses a property file using regular expressions
-    Replaces occurrences of x?? (where ?? are digits) by inputs[??]
-    Replaces occurrences of y?? (where ?? are digits) by outputs[??]
+    Replaces occurrences of x?? (where ?? are digits) by x[??]
+    Replaces occurrences of y?? (where ?? are digits) by y[??]
     (for convenience of evaluating the expression with python's parser)
     Returns two lists of strings: equations and bounds
 '''
@@ -22,8 +22,8 @@ def parseProperty(property_filename):
     reg_equation = re.compile(r'[+-][xy](\d+) ([+-][xy](\d+) )+(<=|>=|=) [+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?$')
     # matches a string that is a legal equation with input (x??) or output (y??) variables
 
-    reg_bound = re.compile(r'[x|y](\d+) (<=|>=|=) [+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?')
-    # matches a string which represents a legal bound on an input or output variable
+    reg_bound = re.compile(r'[xy](\d+) (<=|>=|=) [+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?')
+    # matches a string which represents a legal bound on an input or an output variable
 
 
     try:
@@ -34,23 +34,25 @@ def parseProperty(property_filename):
 
                     print('equation')
 
-                    #replace xi by inputs[i] and yi by output[i]
+                    #replace xi by x[i] and yi by y[i]
                     new_str = line.strip()
-                    new_str = reg_input.sub(r"inputs[\1]", new_str)
+                    new_str = reg_input.sub(r"x[\1]", new_str)
 
-                    new_str = reg_output.sub(r"output[\1]", new_str)
+                    new_str = reg_output.sub(r"y[\1]", new_str)
 
                     print(new_str)
 
                     equations.append(new_str)
                 else: #New bound
-                    assert reg_bound.match(line)
+                    assert reg_bound.match(line) #At this point the line has to match a legal bound string
 
-                    # replace xi by inputs[i] and yi by output[i]
+                    print('bound')
+
+                    # replace xi by x[i] and yi by y[i]
                     new_str = line.strip()
-                    new_str = reg_input.sub(r"inputs[\1]", new_str)
+                    new_str = reg_input.sub(r"x[\1]", new_str)
 
-                    new_str = reg_output.sub(r"output[\1]", new_str)
+                    new_str = reg_output.sub(r"y[\1]", new_str)
 
                     bounds.append(new_str)
                 line = f.readline()

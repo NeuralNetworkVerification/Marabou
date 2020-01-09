@@ -17,7 +17,7 @@ import numpy as np
 class MarabouNNetMCMH:
 
     def __init__(self,filename,property_filename):
-        self.marabou_nnet = MarabouNetworkNNetIPQ(filename=filename,property_filename=property_filename)
+        self.marabou_nnet = MarabouNetworkNNetExtended(filename=filename,property_filename=property_filename)
         self.ipq = self.marabou_nnet.ipq2
         self.marabou_nnet.tightenBounds()
         self.good_set = []
@@ -46,6 +46,7 @@ class MarabouNNetMCMH:
                 print ('A counter example found! input = ', inputs)
 
                 sys.exit()
+
             layer_output = self.marabou_nnet.evaluateNetworkToLayer(inputs,last_layer=layer, normalize_inputs=True, normalize_outputs=False)
             good_set.append(layer_output)
         self.good_set = good_set
@@ -85,7 +86,10 @@ class MarabouNNetMCMH:
             assert value >= self.marabou_nnet.lowerBounds[input_variable]
             assert value <= self.marabou_nnet.upperBounds[input_variable]
         output = self.marabou_nnet.evaluateNetworkToLayer(inputs,last_layer=0,normalize_inputs=False,normalize_outputs=True)
-        return self.outputOutOfBounds(output)[0]
+
+        equations_hold = self.marabou_nnet.property.verify_equations_exec(inputs,output)
+
+        return self.outputOutOfBounds(output)[0] or  (not equations_hold)
 
 
 
@@ -139,6 +143,13 @@ class MarabouNNetMCMH:
                 sys.exit()
 
 
+            if not self.marabou_nnet.property.verify_equations_exec(inputs,output): #Normalizing outputs!
+                print('A counterexample found! input = ', inputs)
+
+                sys.exit()
+
+
+
             # Computing the smallest and the largest ouputs for output variables
             for output_var in self.marabou_nnet.outputVars.flatten():
                 output_var_index = self.outputVariableToIndex(output_var)
@@ -162,146 +173,18 @@ network_filename = "../resources/nnet/acasxu/ACASXU_experimental_v2a_1_9.nnet"
 property_filename = "../resources/properties/acas_property_4.txt"
 property_filename1 = "../resources/properties/acas_property_1.txt"
 
-#network_filename = "../regress/acas_nnet/ACASXU_run2a_1_9_batch_2000.nnet"
-
-
-#marabou_nnet = MarabouNetworkNNetIPQ("../resources/nnet/acasxu/ACASXU_experimental_v2a_1_1.nnet","../resources/properties/acas_property_1.txt",compute_ipq=True)
-#marabou_nnet.readProperty("../resources/properties/acas_property_1.txt")
-
-#marabou_nnet = MarabouNetworkNNetIPQ("../resources/nnet/acasxu/ACASXU_experimental_v2a_1_1.nnet",perform_sbt=True,compute_ipq=True)
-
-#print marabou_nnet.ipq2 == marabou_nnet.ipq1
-
-
-#marabou_nnet.testInputBounds()
-#marabou_nnet.tightenInputBounds()
-#marabou_nnet.testInputBounds()
-#marabou_nnet.testOutputBounds()
-#marabou_nnet.tightenOutputBounds()
-
-
-#marabou_nnet.testOutputBounds()
-
-
-#marabou_nnet.tightenBounds()
-
-#marabou_nnet.testInputBounds()
-#marabou_nnet.testOutputBounds()
-
-
-#input_var_list = marabou_nnet.ipq2.getInputVariables()
-
-#print np.random.uniform(size=5)
-
-
-
-
-
-#print marabou_nnet.evaluateNetworkToLayer(random_inputs_list,0,normalize_inputs=True,normalize_outputs=True)
-#print marabou_nnet.evaluateNetwork(random_inputs_list,normalize_inputs=True,normalize_outputs=False)
-#print marabou_nnet.evaluateNetworkMultipleToLayer(random_inputs_list,0,normalize_inputs=True,normalize_outputs=True)
-#print marabou_nnet.evaluateNetworkMultiple(random_inputs_list,normalize_inputs=True,normalize_outputs=True)
-
 
 
 nnet_object = MarabouNNetMCMH(filename=network_filename,property_filename=property_filename)
+nnet_object.marabou_nnet.property.compute_executables()
 
-
-random_inputs_list = nnet_object.createRandomInputsList()
-
-print(nnet_object.marabou_nnet.evaluateNetworkToLayer(random_inputs_list, 0, normalize_inputs=True,
-                                                      normalize_outputs=False))
-
-nnet_object.marabou_nnet.testInputBounds()
-nnet_object.marabou_nnet.testOutputBounds()
-
-
-
+#print(nnet_object.marabou_nnet.property.exec_bounds)
+#print(nnet_object.marabou_nnet.property.exec_equations)
 
 nnet_object.outputsOfInputExtremes()
 
-nnet_object.createInitialGoodSet(layer=5,N=10)
-
-
-#print(nnet_object.good_set)
-
-
-print("success!")
-#x = compiler.parse('x+y<=5')
-#print(x)
-x = parser.expr('x+y<=5').compile()
-print(x)
-
-str = 'x0+y1'
-
-regexp = r'([x|y])(\d+)([+|-])([(x|y])(\d+)'
-
-match = re.search(regexp,str)
-print(match.start(), match.end())
-
-print(str)
-new_str = re.sub(regexp,r'\4\2\3\1\5',str)
-print(new_str)
-
-regexp = r'[x](\d+)'
-match = re.search(regexp,str)
-print(match.start(), match.end())
-
-str = 'x50 + y4 - x2 - y1'
-
-new_str = str
-
-print(str)
-
-reg_input = re.compile(r'[x](\d+)')
-reg_output = re.compile(r'[y](\d+)')
-
-new_str = reg_input.sub(r"inputs[\1]",new_str)
-
-new_str = reg_output.sub(r"output[\1]",new_str)
-
-print(new_str)
-
-inputs = [i for i in range(100)]
-output = [i*10 for i in range(10)]
-
-print(inputs[50], '+', output[4], '-', inputs[2], '-', output[1])
-
-reg_equation = re.compile(r'.*[x|y](\d+).*[x|y](\d+)')
-print(reg_equation.match(str))
-print(reg_equation.match('0>=x1'))
-if reg_equation.match(str):
-    print('MATCH')
-
-reg_bound = re.compile(r'[x|y](\d+) (<=|>=|=) [+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?$')
-
-reg_equation = re.compile(r'[+-][xy](\d+) ([+-][xy](\d+) )+(<=|>=|=) [+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?$')
-
-if reg_bound.match('x1 = +00.156e05'):
-    print('MATCH2')
-
-if reg_equation.match('+y0 +x1 >= -0.5'):
-    print('MATCH')
-
-x = parser.expr(new_str).compile()
-print(eval(x))
-
-print(str)
-
-#nnet_object = MarabouNetworkNNetProperty(network_filename,property_filename)
-
-#print nnet_object.property.equations
-#print nnet_object.property.bounds
-
-
-nnet_object = MarabouNetworkNNetExtended(filename=network_filename,property_filename=property_filename)
+nnet_object.createInitialGoodSet(layer=5,N=1000)
 
 
 
 
-nnet_object.tightenBounds()
-nnet_object.testInputBounds()
-nnet_object.testOutputBounds()
-
-print(nnet_object.property.equations)
-print(nnet_object.property.bounds)

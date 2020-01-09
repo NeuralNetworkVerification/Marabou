@@ -20,11 +20,15 @@ from MarabouUtils import *
 import MarabouNetwork
 import numpy as np
 
+
+
+
 class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
     """
     Class that implements a MarabouNetwork from an NNet file.
     """
-    def __init__ (self, filename, property_filename = "", perform_sbt=False, compute_ipq = False):
+
+    def __init__(self, filename, property_filename="", perform_sbt=False, compute_ipq=False):
         """
         Constructs a MarabouNetworkNNet object from an .nnet file.
 
