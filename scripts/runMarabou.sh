@@ -27,6 +27,8 @@ elif [ "$type" == "mnist" ]; then
     $marabou $network $property --summary-file=$summary $args
 elif [ "$type" == "boeing" ]; then
     python3 "$root"scripts/runMarabouFromPyAPI.py -n $network -p $property -c $config -s $summary $args
+elif [ "$type" == "kyle" ]; then
+    python3 "$root"scripts/runMarabouFromPyAPI.py -n $network -p $property -c $config -s $summary $args
 else
     echo "Unknown benchmark!"
 fi

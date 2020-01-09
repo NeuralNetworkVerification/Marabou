@@ -15,15 +15,21 @@ parser.add_argument("--combined-filename", type=str, default=None, help="if not 
 parser.add_argument("-p", '--plot', action='store_true', help="make plots")
 parser.add_argument("--benchmark", type=str, default='all', help='benchmark sets to consider. (acas/mnist/boeing)')
 parser.add_argument("--preprocessing", action='store_true', help="preprocessing")
-parser.add_argument('-n', "--num-instances", type=int, default=None, help="Number of instances")
+parser.add_argument("--preprocess-timeout", type=int, default=None, help="preprocessing")
 parser.add_argument("-t", "--threshold", type=int, default=30)
 parser.add_argument("--sub", type=str,default="")
+parser.add_argument("--exc", type=str,default="")
 args = parser.parse_args()
 
 benchmark = args.benchmark.split(',')
 sub = args.sub.split(",")
+exc = args.exc.split(",")
 run = args.run
 timeout = args.timeout
+if args.preprocess_timeout:
+    preprocess_timeout = args.preprocess_timeout
+else:
+    preprocess_timeout = args.timeout
 plot = args.plot
 preprocessing = args.preprocessing
 threshold = args.threshold
@@ -36,39 +42,57 @@ for filename in os.listdir(run):
     files.append(filename)
 files = sorted(files)
 
+preprocess_times = {}
+
 for filename in files:
     if "benchmark_set_" in filename:
         skip = True
         for s in sub:
             if s in filename:
                 skip = False
+        for s in exc:
+            if s != "" and s in filename:
+                skip = True
         if skip:
             continue
-        print(filename)
         num_instances = 0
         temp_summary = {}
         runs.append(filename[14:])
         with open(os.path.join(run, filename), 'r') as benchmark_file:
             for line in benchmark_file.readlines():
-                num_instances += 1
                 summary_filename = line.split()[4]
-                skip = True
                 if benchmark[0] != 'all':
+                    skip = True
                     for b in benchmark:
-                        if b in summary_filename:
+                        if b in os.path.basename(summary_filename):
                             skip = False
                     if skip:
                         continue
-                if os.path.isfile(summary_filename):
-                    with open(summary_filename, 'r') as in_file:
+                num_instances += 1
+                if args.preprocessing and "preprocess" in filename and os.path.isfile(summary_filename + ".preprocess"): 
+                    with open(summary_filename + ".preprocess") as in_file:
                         for line in in_file.readlines():
-                            if line.split()[0] == "UNKNOWN" or float(line.split()[1]) >= timeout:
-                                continue
-                            temp_summary[os.path.basename(summary_filename).split('.')[0]] = (line.split()[0], int(float(line.split()[1])))
+                            assert(int(line.split()[1]) <= preprocess_timeout)
+                            preprocess_time = int(line.split()[1])
+                            num_fixed = int(line.split()[2])
+                            preprocess_times[os.path.basename(summary_filename).split('.')[0]] = ( preprocess_time, num_fixed )
+ 
+                if os.path.isfile(summary_filename):
+                    if args.preprocessing and "preprocess" in filename: 
+                        with open(summary_filename, 'r') as in_file:
+                            for line in in_file.readlines():
+                                if line.split()[0] == "UNKNOWN" or float(line.split()[1])-preprocess_time >= timeout:
+                                    continue
+                                temp_summary[os.path.basename(summary_filename).split('.')[0]] = ( line.split()[0],
+                                                                                                   int(float(line.split()[1]))-preprocess_time )                                
+                    else:
+                        with open(summary_filename, 'r') as in_file:
+                            for line in in_file.readlines():
+                                if line.split()[0] == "UNKNOWN" or float(line.split()[1]) >= timeout:
+                                    continue
+                                temp_summary[os.path.basename(summary_filename).split('.')[0]] = (line.split()[0], int(float(line.split()[1])))
         summaries.append(temp_summary)                                        
 
-if args.num_instances != None:
-    num_instances = args.num_instances
 summary = {}
 for temp_summary in summaries:
     for queryname in temp_summary:
@@ -88,7 +112,8 @@ for queryname in summary:
     assert(resultAdded)
     if queryname in summaries[0] and queryname in summaries[1]:
         if (summaries[0][queryname][0] != summaries[1][queryname][0]):
-            print(queryname, summaries[0][queryname][0], summaries[1][queryname][0])
+            print("Result doesn't align!", queryname, summaries[0][queryname][0], summaries[1][queryname][0])
+            
         assert(summaries[0][queryname][0] == summaries[1][queryname][0])
 
 SAT_times = []
@@ -99,8 +124,16 @@ for i in range(len(summaries)):
     SAT_times.append([])
     UNSAT_times.append([])
 
+preprocess_time_SAT = []
+preprocess_time_UNSAT = []
 for queryname in summary:
     result = summary[queryname][0]
+    if args.preprocessing:
+        if result == "SAT":
+            preprocess_time_SAT.append(preprocess_times[queryname])
+        elif result == "UNSAT":
+            preprocess_time_UNSAT.append(preprocess_times[queryname])
+
     startIndex = 0
     for i, time in enumerate(summary[queryname][1:]):
         assert( time <= timeout )
@@ -166,13 +199,17 @@ print("Total SAT time: {}".format(sum(parallelSAT)))
 print("Total UNSAT time: {}".format(sum(parallelUNSAT)))
 print("Total time: {}".format(sum(parallelSAT + parallelUNSAT) + timeout * (num_instances - len(parallelSAT + parallelUNSAT))))
 
-if not plot:
+if not plot or len(filenames) > 2:
     exit()
 
 SAT1_time = SAT_times[0]
 SAT2_time = SAT_times[1]
 UNSAT1_time = UNSAT_times[0]
 UNSAT2_time = UNSAT_times[1]
+if args.preprocessing:
+    assert(len(preprocess_time_SAT) == len(SAT1_time))
+    assert(len(preprocess_time_UNSAT) == len(UNSAT1_time))
+
 filename1 = filenames[0]
 filename2 = filenames[1]
 
@@ -183,6 +220,9 @@ plt.xlim(0,timeout)
 plt.ylim(0,timeout)
 plt.xlabel(filename1)
 plt.ylabel(filename2)
+if args.preprocessing:
+    for i, txt in enumerate(preprocess_time_SAT):
+        plt.annotate(txt, (SAT1_time[i], SAT2_time[i]), fontsize=8)
 plt.gca().set_aspect('equal', adjustable='box')
 plt.savefig(filename1 + "_" + filename2 + "_{}_SAT.png".format(benchmark[0]))
 plt.clf()
@@ -194,6 +234,9 @@ plt.xlim(0,timeout)
 plt.ylim(0,timeout)
 plt.xlabel(filename1)
 plt.ylabel(filename2)
+if args.preprocessing:
+    for i, txt in enumerate(preprocess_time_UNSAT):
+        plt.annotate(txt, (UNSAT1_time[i], UNSAT2_time[i]),fontsize=8)
 plt.gca().set_aspect('equal', adjustable='box')
 plt.savefig(filename1 + "_" + filename2 + "_{}_UNSAT.png".format(benchmark[0]))
 plt.clf()
@@ -205,5 +248,9 @@ plt.xlim(0,timeout)
 plt.ylim(0,timeout)
 plt.xlabel(filename1)
 plt.ylabel(filename2)
+if args.preprocessing:
+    for i, txt in enumerate(preprocess_time_SAT + preprocess_time_UNSAT):
+        plt.annotate(txt, ((SAT1_time + UNSAT1_time)[i], (SAT2_time + UNSAT2_time)[i]),fontsize=8)
+
 plt.gca().set_aspect('equal', adjustable='box')
 plt.savefig(filename1 + "_" + filename2 + "_{}_ALL.png".format(benchmark[0]))
