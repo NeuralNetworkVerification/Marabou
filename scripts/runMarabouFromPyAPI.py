@@ -28,6 +28,8 @@ def parse_args():
     p.add_argument('--bias-strategy', required=False, type=str, default='centroid')
     p.add_argument('--focus-layer', required=False, type=int, default=0)
     p.add_argument('--fixed-relu', required=False, type=str, default="")
+    p.add_argument("--max-depth", required=False, type=int, default=5, help="max depth")
+
     opts = p.parse_args()
     return opts
 
@@ -73,13 +75,15 @@ preprocess_only = opts.preprocess_only
 bias_strategy = opts.bias_strategy
 divide_strategy = opts.divide_strategy
 focus_layer = opts.focus_layer
+max_depth = opts.max_depth
 
 options = Marabou.createOptions(dnc=dnc, verbosity=verbosity, initialDivides=initial_divides,
                                 initialTimeout=initial_timeout, numWorkers=num_workers,
                                 onlineDivides=online_divides, timeoutFactor=timeout_factor,
                                 lookAheadPreprocessing=look_ahead_preprocessing,
                                 preprocessOnly=preprocess_only, focusLayer=focus_layer,
-                                divideStrategy=divide_strategy, biasStrategy=bias_strategy)
+                                divideStrategy=divide_strategy, biasStrategy=bias_strategy,
+                                maxDepth=max_depth)
 
 start = time.time()
 vals, stats = network.solve(summaryFilePath=summary_file, fixedReluFilePath=fixed_relu_file,
