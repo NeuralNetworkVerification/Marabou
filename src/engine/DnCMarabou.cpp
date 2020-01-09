@@ -125,6 +125,7 @@ void DnCMarabou::run()
 
     bool restoreTreeStates = Options::get()->getBool( Options::RESTORE_TREE_STATES );
     unsigned biasedLayer = Options::get()->getInt( Options::FOCUS_LAYER );
+    unsigned maxDepth = Options::get()->getInt( Options::MAX_DEPTH );
     BiasStrategy biasStrategy = setBiasStrategyFromOptions
         ( Options::get()->getString( Options::BIAS_STRATEGY ) );
 
@@ -140,6 +141,7 @@ void DnCMarabou::run()
                                           "Largest Interval" : "Split Relu" )
               << std::endl;
     std::cout << "Focus Layers: " << biasedLayer << std::endl;
+    std::cout << "Max Depth: " << maxDepth << std::endl;
     std::cout << "Perform tree state restoration: " << ( restoreTreeStates ? "Yes" : "No" )
               << std::endl;
 
@@ -163,7 +165,8 @@ void DnCMarabou::run()
                 ( new DnCManager( numWorkers, initialDivides, initialTimeout,
                                   onlineDivides, timeoutFactor, divideStrategy,
                                   _baseEngine->getInputQuery(), verbosity,
-                                  idToPhase, biasedLayer, biasStrategy ) );
+                                  idToPhase, biasedLayer, biasStrategy,
+                                  maxDepth ) );
             _dncManager->solve( timeoutInSeconds, restoreTreeStates );
         }
     }

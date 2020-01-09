@@ -35,7 +35,8 @@ DnCWorker::DnCWorker( WorkerQueue *workload, std::shared_ptr<IEngine> engine,
                       std::atomic_uint &numUnsolvedSubQueries,
                       std::atomic_bool &shouldQuitSolving,
                       unsigned threadId, unsigned onlineDivides,
-                      float timeoutFactor, DivideStrategy divideStrategy )
+                      float timeoutFactor, DivideStrategy divideStrategy,
+                      unsigned maxDepth )
     : _workload( workload )
     , _engine( engine )
     , _numUnsolvedSubQueries( &numUnsolvedSubQueries )
@@ -43,6 +44,7 @@ DnCWorker::DnCWorker( WorkerQueue *workload, std::shared_ptr<IEngine> engine,
     , _threadId( threadId )
     , _onlineDivides( onlineDivides )
     , _timeoutFactor( timeoutFactor )
+    , _maxDepth( maxDepth )
 {
     setQueryDivider( divideStrategy );
 
@@ -81,6 +83,8 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
         if ( restoreTreeStates && subQuery->_smtState )
             smtState = std::move( subQuery->_smtState );
         unsigned timeoutInSeconds = subQuery->_timeoutInSeconds;
+        if ( queryId.tokenize( "-" ).size() >= _maxDepth )
+            timeoutInSeconds = 0;
 
         // Reset the engine state
         _engine->restoreState( *_initialState );
@@ -140,7 +144,6 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
                                              queryId, *split,
                                              (unsigned)timeoutInSeconds *
                                              _timeoutFactor, subQueries );
-
             unsigned i = 0;
             for ( auto &newSubQuery : subQueries )
             {

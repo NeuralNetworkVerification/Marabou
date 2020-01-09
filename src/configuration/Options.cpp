@@ -56,6 +56,7 @@ void Options::initializeDefaultValues()
     _intOptions[VERBOSITY] = 2;
     _intOptions[TIMEOUT] = 0;
     _intOptions[FOCUS_LAYER] = 0;
+    _intOptions[MAX_DEPTH] = 5;
 
     /*
       Float options

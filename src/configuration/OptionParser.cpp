@@ -93,6 +93,9 @@ void OptionParser::initialize()
         ( "focus-layer",
           boost::program_options::value<int>( &((*_intOptions)[Options::FOCUS_LAYER]) ),
           "Layer to focus the search on." )
+        ( "max-depth",
+          boost::program_options::value<int>( &((*_intOptions)[Options::MAX_DEPTH]) ),
+          "The deepest level that the DnC can have." )
         ( "verbosity",
           boost::program_options::value<int>( &((*_intOptions)[Options::VERBOSITY]) ),
           "Verbosity of engine::solve(). 0: does not print anything (for DnC), 1: print"

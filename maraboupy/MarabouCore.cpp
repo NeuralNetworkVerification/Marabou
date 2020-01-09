@@ -123,7 +123,7 @@ void createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::
 struct MarabouOptions {
     MarabouOptions()
         : _numWorkers( 4 )
-        , _initialTimeout( 5 )
+        , _initialTimeout( -1 )
         , _initialDivides( 0 )
         , _onlineDivides( 2 )
         , _timeoutInSeconds( 0 )
@@ -134,12 +134,13 @@ struct MarabouOptions {
         , _restoreTreeStates( false )
         , _lookAheadPreprocessing( false )
         , _preprocessOnly( false )
-        , _divideStrategy( "largest-interval" )
+        , _divideStrategy( "auto" )
         , _biasStrategy( "centroid" )
+        , _maxDepth( 5 )
     {};
 
     unsigned _numWorkers;
-    unsigned _initialTimeout;
+    int _initialTimeout;
     unsigned _initialDivides;
     unsigned _onlineDivides;
     unsigned _timeoutInSeconds;
@@ -152,6 +153,7 @@ struct MarabouOptions {
     bool _preprocessOnly;
     std::string _divideStrategy;
     std::string _biasStrategy;
+    unsigned _maxDepth;
 };
 
 BiasStrategy setBiasStrategyFromOptions( const String strategy )
@@ -201,9 +203,19 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
         bool dnc = options._dnc;
         bool lookAheadPreprocessing = options._lookAheadPreprocessing;
         bool preprocessOnly = options._preprocessOnly;
-        unsigned numWorkers = options._numWorkers;
         unsigned focusLayer = options._focusLayer;
-        DivideStrategy divideStrategy = setDivideStrategyFromOptions( options._divideStrategy );
+        unsigned numWorkers = options._numWorkers;
+
+        DivideStrategy divideStrategy = DivideStrategy::SplitRelu;
+        if ( options._divideStrategy == "auto" )
+        {
+            if ( inputQuery.getInputVariables().size() < 10  )
+                divideStrategy = DivideStrategy::LargestInterval;
+            else
+                divideStrategy = DivideStrategy::SplitRelu;
+        }
+        else
+            divideStrategy = setDivideStrategyFromOptions( options._divideStrategy );
         BiasStrategy biasStrategy = setBiasStrategyFromOptions( options._biasStrategy );
 
         Engine engine;
@@ -255,16 +267,39 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
         if ( dnc )
         {
             unsigned initialDivides = options._initialDivides;
-            unsigned initialTimeout = options._initialTimeout;
+            int initialTimeoutInt = options._initialTimeout;
+            unsigned initialTimeout = 0;
+            if ( initialTimeoutInt < 0 )
+                initialTimeout = inputQuery.getPiecewiseLinearConstraints().size() / 2.5;
+            else
+                initialTimeout = static_cast<unsigned>(initialTimeoutInt);
+
             unsigned onlineDivides = options._onlineDivides;
             float timeoutFactor = options._timeoutFactor;
             bool restoreTreeStates = options._restoreTreeStates;
+            unsigned maxDepth = options._maxDepth;
+
+            std::cout << "Initial Divides: " << initialDivides << std::endl;
+            std::cout << "Initial Timeout: " << initialTimeout << std::endl;
+            std::cout << "Number of Workers: " << numWorkers << std::endl;
+            std::cout << "Online Divides: " << onlineDivides  << std::endl;
+            std::cout << "Verbosity: " << verbosity << std::endl;
+            std::cout << "Timeout: " << timeoutInSeconds  << std::endl;
+            std::cout << "Timeout Factor: "  << timeoutFactor << std::endl;
+            std::cout << "Divide Strategy: " << ( divideStrategy ==
+                                                  DivideStrategy::LargestInterval ?
+                                                  "Largest Interval" : "Split Relu" )
+                      << std::endl;
+            std::cout << "Focus Layers: " << focusLayer << std::endl;
+            std::cout << "Max Depth: " << maxDepth << std::endl;
+            std::cout << "Perform tree state restoration: " << ( restoreTreeStates ? "Yes" : "No" )
+                      << std::endl;
 
             auto dncManager = std::unique_ptr<DnCManager>
                 ( new DnCManager( numWorkers, initialDivides, initialTimeout, onlineDivides,
                                   timeoutFactor, divideStrategy,
                                   engine.getInputQuery(), verbosity, idToPhase,
-                                  focusLayer, biasStrategy ) );
+                                  focusLayer, biasStrategy, maxDepth ) );
 
             dncManager->solve( timeoutInSeconds, restoreTreeStates );
             switch ( dncManager->getExitCode() )
@@ -287,7 +322,6 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
         } else
         {
             engine.applySplits( idToPhase );
-            engine.setBiasedPhases( focusLayer, biasStrategy );
             if(!engine.solve(timeoutInSeconds)) return std::make_pair(ret, *(engine.getStatistics()));
 
             if (engine.getExitCode() == Engine::SAT)
@@ -359,7 +393,8 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_lookAheadPreprocessing", &MarabouOptions::_lookAheadPreprocessing)
         .def_readwrite("_preprocessOnly", &MarabouOptions::_preprocessOnly)
         .def_readwrite("_divideStrategy", &MarabouOptions::_divideStrategy)
-        .def_readwrite("_biasStrategy", &MarabouOptions::_biasStrategy);
+        .def_readwrite("_biasStrategy", &MarabouOptions::_biasStrategy)
+        .def_readwrite("_maxDepth", &MarabouOptions::_maxDepth);
     py::class_<SymbolicBoundTightener, std::unique_ptr<SymbolicBoundTightener,py::nodelete>>(m, "SymbolicBoundTightener")
         .def(py::init())
         .def("setNumberOfLayers", &SymbolicBoundTightener::setNumberOfLayers)
