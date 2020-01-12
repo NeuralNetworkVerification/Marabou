@@ -55,7 +55,7 @@ public:
         equation.setScalar(0);
         inputQuery.addEquation(equation);
         inputQuery.setLowerBound( num_variables + 10, 0 );
-        inputQuery.setUpperBound( num_variables + 10, 0.2);
+        inputQuery.setUpperBound( num_variables + 10, 7);
 
         for ( unsigned i = 1; i < 5; ++i ){
             Equation equation;
@@ -107,9 +107,9 @@ public:
 
         for ( unsigned i = 0; i < 5; ++i )
         {
-            unsigned variable = inputQuery.outputVariableByIndex(i);
-            double newError = FloatUtils::abs( outputs[i] - inputQuery.getSolutionValue( variable ) );
-            if ( FloatUtils::gt( newError, maxError ) )
+//            unsigned variable = inputQuery.outputVariableByIndex(i);
+            double newError = FloatUtils::abs( outputs[i]  - (-0.0228164) );
+            if ( !FloatUtils::gt( newError, maxError ) )
                 maxError = newError;
         }
 
