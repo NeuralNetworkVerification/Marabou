@@ -5,6 +5,8 @@
 #ifndef MARABOU_ACAS_ABS_FIXED_INPUT_H
 #define MARABOU_ACAS_ABS_FIXED_INPUT_H
 
+#include <iostream>
+
 #include "AcasParser.h"
 #include "Engine.h"
 #include "FloatUtils.h"
@@ -76,6 +78,23 @@ public:
             if ( FloatUtils::gt( newError, maxError ) )
                 maxError = newError;
         }
+        double min;
+        int index = 0;
+        for(unsigned i = 0; i < 5; i++)
+        {
+            std::cout << "\n The " << i << "'s output is: " << outputs[i] <<std::endl;
+            if (i == 0)
+            {
+                min = outputs[i];
+            }
+            if (outputs[i] < min)
+            {
+                min = outputs[i];
+                index = 0;
+            }
+        }
+
+        std::cout << "\n The " << index << " is the min value\n" <<std::endl;
 
         if ( FloatUtils::gt( maxError, 0.00001 ) )
             printFailed( "acas_abs_fixed_input", start, end );

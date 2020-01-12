@@ -35,6 +35,29 @@
 #include "acas_abs_fixed_input.h"
 #include "acas_abs_constraints.h"
 
+void abs()
+{
+    printTitle( "Abs / Sat" );
+
+//    Abs_Feasible_1 af1;
+//    af1.run();
+//
+//    Abs_Feasible_2 af2;
+//    af2.run();
+//
+//    Abs_Feasible_3 af3;
+//    af3.run();
+
+    Acas_abs_Fixed_Input acas_abs_fixed_input;
+    acas_abs_fixed_input.run();
+
+    Acas_Abs_Constraints acas_abs_constraints;
+    acas_abs_constraints.run();
+
+}
+
+
+
 void lps()
 {
     printTitle( "Pure LP / Sat" );
@@ -69,26 +92,6 @@ void relus()
 }
 
 
-void abs()
-{
-    printTitle( "Abs / Sat" );
-
-    Abs_Feasible_1 af1;
-    af1.run();
-
-    Abs_Feasible_2 af2;
-    af2.run();
-
-    Abs_Feasible_3 af3;
-    af3.run();
-
-    Acas_abs_Fixed_Input acas_abs_fixed_input;
-    acas_abs_fixed_input.run();
-
-    Acas_Abs_Constraints acas_abs_constraints;
-    acas_abs_constraints.run();
-
-}
 
 
 void max()
@@ -115,6 +118,8 @@ int main()
     try
     {
         abs();
+
+        return 0;
 
         lps();
 

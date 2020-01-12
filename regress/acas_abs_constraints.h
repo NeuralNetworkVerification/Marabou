@@ -2,8 +2,8 @@
 // Created by shirana on 27/12/2019.
 //
 
-#ifndef MARABOU_ACAS_ABS_NO_CONSTRAINTS_H
-#define MARABOU_ACAS_ABS_NO_CONSTRAINTS_H
+#ifndef MARABOU_ACAS_ABS_CONSTRAINTS_H
+#define MARABOU_ACAS_ABS_CONSTRAINTS_H
 
 #define b 1
 
@@ -28,30 +28,46 @@ public:
         acasParser.generateQuery( inputQuery );
 
         unsigned num_variables = inputQuery.getNumberOfVariables();
-        inputQuery.setNumberOfVariables( num_variables + 10 );
-
-        for ( unsigned i = 0; i < 5; ++i )
-        {
-            inputQuery.setLowerBound( num_variables + i, 0.01 );
-            inputQuery.setUpperBound( num_variables + i, 0.02);
-            inputQuery.markInputVariable(num_variables + i, i );
-        }
+        inputQuery.setNumberOfVariables( num_variables + 16 );
 
         for ( unsigned i = 0; i < 5; ++i )
         {
             Equation equation;
-            equation.addAddend(1, num_variables + i);
-            equation.addAddend(-1, num_variables + i + 5);
+            unsigned variable = acasParser.getInputVariable( i );
+            equation.addAddend( 1, variable );
+            equation.addAddend( -1 , num_variables + i );
             equation.setScalar(b);
             inputQuery.addEquation(equation);
         }
 
         for ( unsigned i = 0; i < 5; ++i )
         {
-            unsigned variable = acasParser.getInputVariable( i );
-            AbsConstraint *abs = new AbsConstraint( num_variables + i + 5, variable );
+            AbsConstraint *abs = new AbsConstraint( num_variables + i, num_variables + i + 5 );
             inputQuery.addPiecewiseLinearConstraint( abs );
         }
+
+        Equation equation;
+        equation.addAddend( -1, num_variables + 10  );
+        for ( unsigned i = 0; i < 5; ++i )
+        {
+            equation.addAddend( 1, num_variables + i + 5  );
+        }
+        equation.setScalar(0);
+        inputQuery.addEquation(equation);
+        inputQuery.setLowerBound( num_variables + 10, 0 );
+        inputQuery.setUpperBound( num_variables + 10, 0.2);
+
+        for ( unsigned i = 1; i < 5; ++i ){
+            Equation equation;
+            unsigned variable = acasParser.getOutputVariable( i );
+            //unsigned min_var = acasParser.getOutputVariable( 0 );
+            equation.addAddend( 1, variable );
+            equation.addAddend( -1 , num_variables + 11 + i);
+            inputQuery.setLowerBound( num_variables + 11 + i, 0 );
+            equation.setScalar(-0.0228164);
+            inputQuery.addEquation(equation);
+        }
+
 
         struct timespec start = TimeUtils::sampleMicro();
 
