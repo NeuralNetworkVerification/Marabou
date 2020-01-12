@@ -36,7 +36,6 @@ void ReluDivider::createSubQueries( unsigned numNewSubqueries, const String
     auto split = new PiecewiseLinearCaseSplit();
     *split = previousSplit;
     splits.append( split );
-    _engine->propagate();
 
     for ( unsigned i = 0; i < numBisects; ++i )
     {
@@ -62,8 +61,10 @@ void ReluDivider::createSubQueries( unsigned numNewSubqueries, const String
                     for ( const auto &tightening : split->getBoundTightenings() )
                         newSplit->storeBoundTightening( tightening );
 
-                    for ( const auto &equation : split->getEquations() )
-                        newSplit->addEquation( equation );
+                    // Only store bounds for now. Storing Equation results in segfault
+                    // some time for some reason.
+                    //for ( const auto &equation : split->getEquations() )
+                    //    newSplit->addEquation( equation );
 
                     newSplits.append( newSplit );
                 }
@@ -114,7 +115,7 @@ PiecewiseLinearConstraint *ReluDivider::computeBestChoice()
     Map<unsigned, double> runtimeEstimates;
     _engine->getEstimates( balanceEstimates, runtimeEstimates );
     PiecewiseLinearConstraint *best = NULL;
-    double bestRank = balanceEstimates.size() * 3;
+    double bestRank = balanceEstimates.size() * 2;
     for ( const auto &entry : runtimeEstimates ){
         if ( entry.second < GlobalConfiguration::RUNTIME_ESTIMATE_THRESHOLD )
         {

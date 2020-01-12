@@ -276,7 +276,13 @@ void Engine::applySplits( const Map<unsigned, unsigned> &idToPhase )
         if ( constraint->isActive() )
         {
             if ( entry.second == ReluConstraint::PHASE_ACTIVE )
-                applySplit( constraint->getActiveSplit() );
+            {
+                auto activeSplit = constraint->getActiveSplit();
+                auto splitToApply = PiecewiseLinearCaseSplit();
+                for ( const auto &bound : activeSplit.getBoundTightenings() )
+                    splitToApply.storeBoundTightening( bound );
+                applySplit( splitToApply );
+            }
             else
                 applySplit( constraint->getInactiveSplit() );
         }
@@ -2238,6 +2244,7 @@ bool Engine::propagate()
 {
     try
     {
+        tightenBoundsOnConstraintMatrix();
         applyAllBoundTightenings();
         do
             {
@@ -2305,7 +2312,7 @@ bool Engine::restoreSmtState( SmtState &smtState )
         // For debugging purposes
         checkBoundCompliancyWithDebugSolution();
         do
-            performSymbolicBoundTightening();
+            performSymbolicBoundTightening( false );
         while ( applyAllValidConstraintCaseSplits() );
 
         // Step 2: replay the stack
