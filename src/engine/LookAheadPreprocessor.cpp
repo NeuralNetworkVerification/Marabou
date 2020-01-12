@@ -118,8 +118,12 @@ void LookAheadPreprocessor::preprocessWorker( LookAheadPreprocessor::WorkerQueue
                      factor;
         if ( threshold == 0 ) continue;
 
-        for ( const auto &caseSplit : caseSplits )
+        for ( const auto &_caseSplit : caseSplits )
         {
+            auto caseSplit = PiecewiseLinearCaseSplit();
+            for ( const auto &bound : _caseSplit.getBoundTightenings() )
+                caseSplit.storeBoundTightening( bound );
+
             engine->applySplit( caseSplit );
             engine->quickSolve( threshold + 1 );
 
