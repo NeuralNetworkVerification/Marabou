@@ -7,6 +7,9 @@
 
 #define b 0
 #define LARGE 100
+#define BOUND 5
+#define NOT_MIN_VAR 1
+#define MIN_VAR 0
 
 #include "AcasParser.h"
 #include "Engine.h"
@@ -37,9 +40,9 @@ public:
             Equation equation;
             unsigned variable = acasParser.getInputVariable( i );
 
-            // Generate query adds bounds, we want to over ride them and use the bounds from the equations
-            inputQuery.setLowerBound( variable, -LARGE );
-            inputQuery.setUpperBound( variable, LARGE );
+//            // Generate query adds bounds, we want to over ride them and use the bounds from the equations
+//            inputQuery.setLowerBound( variable, -LARGE );
+//            inputQuery.setUpperBound( variable, LARGE );
 
             equation.addAddend( 1, variable );
             equation.addAddend( -1 , num_variables + i );
@@ -61,13 +64,13 @@ public:
         }
         equation.setScalar(0);
         inputQuery.addEquation(equation);
-        inputQuery.setLowerBound( num_variables + 10, 0.001 );
-        inputQuery.setUpperBound( num_variables + 10, 0.002);
+//        inputQuery.setLowerBound( num_variables + 10, 0.001 );
+        inputQuery.setUpperBound( num_variables + 10, BOUND);
 
-        unsigned min_var = acasParser.getOutputVariable( 0 );
+        unsigned min_var = acasParser.getOutputVariable( MIN_VAR );
         Equation equation_out;
-        equation_out.setType( Equation::GE );
-        unsigned variable = acasParser.getOutputVariable( 1 );
+        equation_out.setType( Equation::LE );
+        unsigned variable = acasParser.getOutputVariable(NOT_MIN_VAR );
         equation_out.addAddend( 1, variable );
         equation_out.addAddend( -1 , min_var);
         equation_out.setScalar(0);
@@ -76,13 +79,16 @@ public:
         struct timespec start = TimeUtils::sampleMicro();
 
         Engine engine;
+
         if ( !engine.processInputQuery( inputQuery ) )
         {
+
             struct timespec end = TimeUtils::sampleMicro();
 //            restoreOutputStream( outputStream );
             printFailed( "acas_abs_constraints", start, end );
             return;
         }
+
 
         bool result = engine.solve();
 
@@ -92,37 +98,48 @@ public:
 
         if ( !result )
         {
+            printf("it's unsat\n");
             printFailed( "acas_abs_constraints", start, end );
             return;
         }
 
         engine.extractSolution( inputQuery );
 
-//        // Run through the original network to check correctness
-//        Vector<double> inputs;
-//        for ( unsigned i = 0; i < 5; ++i )
-//        {
-//            inputs.append( inputQuery.getSolutionValue( num_variables + i ) );
-//        }
-//
-//        Vector<double> outputs;
-//        acasParser.evaluate( inputs, outputs );
-//        double maxError = 0.0;
+        // Run through the original network to check correctness
+        Vector<double> inputs;
+        for ( unsigned i = 0; i < 5; ++i )
+        {
+            inputs.append( inputQuery.getSolutionValue( i ) );
+        }
 
-        //unsigned min_var = inputQuery.outputVariableByIndex(0);
-//        for ( unsigned i = 0; i < 5; ++i )
-//        {
-//            unsigned variable = inputQuery.outputVariableByIndex(i);
-//            double newError = FloatUtils::abs( outputs[i]  - outputs[var] );
-//            if ( !FloatUtils::lt( newError, maxError ) )
-//                maxError = newError;
-//        }
-//
-//        if ( FloatUtils::gt( maxError, 0.00001 ) )
-//            printFailed( "acas_abs_constraints", start, end );
-//        else
-//            printPassed( "acas_abs_constraints", start, end );
-        printPassed( "acas_abs_constraints", start, end );
+        Vector<double> outputs;
+        acasParser.evaluate( inputs, outputs );
+
+        double min_var_out = outputs[MIN_VAR];
+        double variable_out = outputs[NOT_MIN_VAR];
+        if ( !FloatUtils::gt(  min_var_out , variable_out ) )
+        {
+            printf("min var %f", min_var_out);
+            printf("var %f", variable_out);
+            printf("not min val\n");
+            printFailed( "acas_abs_constraints", start, end );
+        }
+
+
+        double sum = 0.0;
+        for ( unsigned i = 0; i < 5; ++i )
+        {
+            unsigned var = acasParser.getInputVariable( i );
+            sum += FloatUtils::abs( inputs[var] - b );
+            if ( !FloatUtils::gt( BOUND, sum ) )
+            {
+                printf("not sum\n");
+                printFailed( "acas_1_1_no_constraints", start, end );
+            }
+
+        }
+
+        printPassed( "acas_1_1_no_constraints", start, end );
     }
 };
 
