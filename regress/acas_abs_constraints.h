@@ -5,7 +5,8 @@
 #ifndef MARABOU_ACAS_ABS_CONSTRAINTS_H
 #define MARABOU_ACAS_ABS_CONSTRAINTS_H
 
-#define b 1
+#define b 0
+#define LARGE 100
 
 #include "AcasParser.h"
 #include "Engine.h"
@@ -20,20 +21,26 @@ class Acas_Abs_Constraints
 public:
     void run()
     {
-        int outputStream = redirectOutputToFile( "logs/acas_abs_constraints.txt" );
+//        int outputStream = redirectOutputToFile( "logs/acas_abs_constraints.txt" );
 
         InputQuery inputQuery;
 
         AcasParser acasParser( "./acas_nnet/ACASXU_run2a_1_1_batch_2000.nnet" );
         acasParser.generateQuery( inputQuery );
 
+
         unsigned num_variables = inputQuery.getNumberOfVariables();
-        inputQuery.setNumberOfVariables( num_variables + 16 );
+        inputQuery.setNumberOfVariables( num_variables + 11 );
 
         for ( unsigned i = 0; i < 5; ++i )
         {
             Equation equation;
             unsigned variable = acasParser.getInputVariable( i );
+
+            // Generate query adds bounds, we want to over ride them and use the bounds from the equations
+            inputQuery.setLowerBound( variable, -LARGE );
+            inputQuery.setUpperBound( variable, LARGE );
+
             equation.addAddend( 1, variable );
             equation.addAddend( -1 , num_variables + i );
             equation.setScalar(b);
@@ -54,20 +61,17 @@ public:
         }
         equation.setScalar(0);
         inputQuery.addEquation(equation);
-        inputQuery.setLowerBound( num_variables + 10, 0 );
-        inputQuery.setUpperBound( num_variables + 10, 7);
+        inputQuery.setLowerBound( num_variables + 10, 0.001 );
+        inputQuery.setUpperBound( num_variables + 10, 0.002);
 
-        for ( unsigned i = 1; i < 5; ++i ){
-            Equation equation;
-            unsigned variable = acasParser.getOutputVariable( i );
-            //unsigned min_var = acasParser.getOutputVariable( 0 );
-            equation.addAddend( 1, variable );
-            equation.addAddend( -1 , num_variables + 11 + i);
-            inputQuery.setLowerBound( num_variables + 11 + i, 0 );
-            equation.setScalar(-0.0228164);
-            inputQuery.addEquation(equation);
-        }
-
+        unsigned min_var = acasParser.getOutputVariable( 0 );
+        Equation equation_out;
+        equation_out.setType( Equation::GE );
+        unsigned variable = acasParser.getOutputVariable( 1 );
+        equation_out.addAddend( 1, variable );
+        equation_out.addAddend( -1 , min_var);
+        equation_out.setScalar(0);
+        inputQuery.addEquation(equation_out);
 
         struct timespec start = TimeUtils::sampleMicro();
 
@@ -75,7 +79,7 @@ public:
         if ( !engine.processInputQuery( inputQuery ) )
         {
             struct timespec end = TimeUtils::sampleMicro();
-            restoreOutputStream( outputStream );
+//            restoreOutputStream( outputStream );
             printFailed( "acas_abs_constraints", start, end );
             return;
         }
@@ -84,7 +88,7 @@ public:
 
         struct timespec end = TimeUtils::sampleMicro();
 
-        restoreOutputStream( outputStream );
+//        restoreOutputStream( outputStream );
 
         if ( !result )
         {
@@ -94,29 +98,31 @@ public:
 
         engine.extractSolution( inputQuery );
 
-        // Run through the original network to check correctness
-        Vector<double> inputs;
-        for ( unsigned i = 0; i < 5; ++i )
-        {
-            inputs.append( inputQuery.getSolutionValue( num_variables + i ) );
-        }
+//        // Run through the original network to check correctness
+//        Vector<double> inputs;
+//        for ( unsigned i = 0; i < 5; ++i )
+//        {
+//            inputs.append( inputQuery.getSolutionValue( num_variables + i ) );
+//        }
+//
+//        Vector<double> outputs;
+//        acasParser.evaluate( inputs, outputs );
+//        double maxError = 0.0;
 
-        Vector<double> outputs;
-        acasParser.evaluate( inputs, outputs );
-        double maxError = 0.0;
-
-        for ( unsigned i = 0; i < 5; ++i )
-        {
+        //unsigned min_var = inputQuery.outputVariableByIndex(0);
+//        for ( unsigned i = 0; i < 5; ++i )
+//        {
 //            unsigned variable = inputQuery.outputVariableByIndex(i);
-            double newError = FloatUtils::abs( outputs[i]  - (-0.0228164) );
-            if ( !FloatUtils::gt( newError, maxError ) )
-                maxError = newError;
-        }
-
-        if ( FloatUtils::gt( maxError, 0.00001 ) )
-            printFailed( "acas_abs_constraints", start, end );
-        else
-            printPassed( "acas_abs_constraints", start, end );
+//            double newError = FloatUtils::abs( outputs[i]  - outputs[var] );
+//            if ( !FloatUtils::lt( newError, maxError ) )
+//                maxError = newError;
+//        }
+//
+//        if ( FloatUtils::gt( maxError, 0.00001 ) )
+//            printFailed( "acas_abs_constraints", start, end );
+//        else
+//            printPassed( "acas_abs_constraints", start, end );
+        printPassed( "acas_abs_constraints", start, end );
     }
 };
 

@@ -30,8 +30,8 @@ public:
         for ( unsigned i = 0; i < 5; ++i )
         {
             unsigned variable = acasParser.getInputVariable( i );
-            inputQuery.setLowerBound( variable, 1.0 );
-            inputQuery.setUpperBound( variable, 1.0 );
+            inputQuery.setLowerBound( variable, 0.0 );
+            inputQuery.setUpperBound( variable, 0.0 );
         }
 
         struct timespec start = TimeUtils::sampleMicro();
