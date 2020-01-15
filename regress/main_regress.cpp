@@ -35,6 +35,9 @@
 #include "acas_abs_fixed_input.h"
 #include "acas_abs_constraints.h"
 
+#define SMALL_BOUND 0.1
+#define BIG_BOUND 5
+
 void abs()
 {
     printTitle( "Abs / Sat" );
@@ -52,7 +55,16 @@ void abs()
     acas_abs_fixed_input.run();
 
     Acas_Abs_Constraints acas_abs_constraints;
-    acas_abs_constraints.run();
+    acas_abs_constraints.run(5);
+
+//    double bound = SMALL_BOUND;
+//    while (bound <= BIG_BOUND)
+//    {
+//        Acas_Abs_Constraints acas_abs_constraints;
+//        acas_abs_constraints.run(bound);
+//        bound += 0.5;
+//    }
+
 
 }
 
