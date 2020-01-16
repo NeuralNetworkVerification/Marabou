@@ -3,20 +3,27 @@
 from maraboupy import Marabou
 from maraboupy import MarabouCore
 import networkx as nx
-import torch
-from torch_geometric.utils.convert import to_networkx
-from torch_geometric.data import Data
+#import torch
+#from torch_geometric.utils.convert import to_networkx
+#from torch_geometric.data import Data
 
 import copy
 import matplotlib.pyplot as plt
 from math import ceil
 from maraboupy import MarabouNetworkNX as mnx
 
+import numpy as np
+from tensorflow.python.framework import tensor_util
+from tensorflow.python.framework import graph_util
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+import tensorflow as tf
+from tensorflow.python.framework.graph_util import convert_variables_to_constants
+from tensorflow.keras import backend
 
 #from collections import deque
-#import tensorflow as tf
-#from tensorflow.keras import backend as K
-#from tensorflow.python.framework.graph_util import convert_variables_to_constants
+
 
 
 def l2str(layer_i):
@@ -165,13 +172,7 @@ class Cnn(nx.DiGraph):
             cnn.l_num += 1
             visited = set.union(visited, to_visit)
             to_visit = set.difference(set([s for s in [u for u in to_visit]]), visited)
-        return cnn
-
-    #-------------Init from Torch-------------# 
-
-    def init_from_torch(di_graph):
-        
-   
+        return cnn   
 
     #-------------Find the Cone of Influence of a set of vertices-------------#
 
@@ -187,8 +188,19 @@ class Cnn(nx.DiGraph):
                     graph_copy.remove_node(u)
         return graph_copy
 
+    #-------------TF to NetworkX-------------#
+    
+    def get_session(filename):
+        with tf.compat.v1.gfile.GFile(filename, "rb") as f:
+            graph_def = tf.compat.v1.GraphDef()
+            graph_def.ParseFromString(f.read())
+        with tf.Graph().as_default() as graph:
+            tf.import_graph_def(graph_def, name="")
+        return  tf.compat.v1.Session(graph=graph)
 
-'''
+    def get_operations(sess):
+        return sess.graph.get_operations()
+        
     #-------------Keras to TF-------------#
     #https://www.dlology.com/blog/how-to-convert-trained-keras-model-to-tensorflow-and-make-prediction/
     def freeze_session(session, keep_var_names=None, output_names=None, clear_devices=True):
@@ -204,7 +216,18 @@ class Cnn(nx.DiGraph):
                     node.device = ""
             frozen_graph = convert_variables_to_constants(session, input_graph_def, output_names, freeze_var_names)
         return frozen_graph
-    #frozen_graph = freeze_session(K.get_session(), output_names=[out.op.name for out in model.outputs])
+    #Use:
+    #frozen_graph = freeze_session(backend.get_session(), output_names=[out.op.name for out in model.outputs]) 
+
+    def save_frozen_graph(file_name, frozen_graph):
+        # Save to ./model/tf_model.pb
+        tf.train.write_graph(frozen_graph, "model", file_name, as_text=False)
+
+    def save_keras_model_to_pb(model, file_name):
+        frozen_graph = Cnn.freeze_session(backend.get_session(), output_names=[out.op.name for out in model.outputs])
+        Cnn.save_frozen_graph(file_name, frozen_graph)
+        
+'''   
 
     def my_node_eq(lhs, rhs, session):
         if lhs.shape.as_list() != rhs.shape.as_list():
@@ -257,4 +280,5 @@ class Cnn(nx.DiGraph):
         print("Found these inputs: {}".format(inputs))
         print("Found these outputs: {}".format(outputs))        
         return Cnn.tf_graph_to_nx(inputs, outputs, session)'''
-        
+                
+            

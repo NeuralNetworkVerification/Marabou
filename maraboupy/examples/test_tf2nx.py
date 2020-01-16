@@ -9,11 +9,12 @@ import numpy as np
 
 from maraboupy import MarabouParseCnn as mcnn
 
+file_name = './cnn_model.h5'
 if len(sys.argv) > 1:
     model_file = str(sys.argv[1])
     from_file = True
 else:
-    model_file = './cnn_model.h5'
+    model_file = file_name
     from_file  = os.path.isfile(model_file)
     
 
@@ -77,14 +78,28 @@ if not from_file:
     test_loss, test_acc = model.evaluate(test_images,  test_labels, verbose=2)
     
     model.summary()
-    model.save('cnn_model.h5')
+    model.save(file_name)
 
 else:
     model = load_model(model_file)
 
-print("Starting conversion fron Keras to DiGraph")
-di_graph = mcnn.Cnn.keras_to_nx(model)
-print("Starting conversion fron DiGraph to CNN")
-nx_cnn = mcnn.Cnn.init_from_nx_DiGraph(di_graph)
-nx_cnn.print_to_file("cnn_print_nx.png")
+#mcnn.Cnn.save_keras_model_to_pb(model,'cnn.pb')
+for i, layer in enumerate(model.layers[0:1]):
+    print("Layer {}".format(i))
+    print("*************INPUTS*************")
+    print(layer.input)
+    print("*************INPUT_SHAPES*************")    
+    print(layer.input_shape)    
+    print("*************OUTPUTS*************")    
+    print(layer.output)
+    print("*************OUTPUT_SHAPES*************")    
+    print(layer.output_shape)
+    print("*************WEIGHTS*************")    
+    print(layer.weights)    
+
+#print("Starting conversion fron Keras to DiGraph")
+#di_graph = mcnn.Cnn.keras_to_nx(model)
+#print("Starting conversion fron DiGraph to CNN")
+#nx_cnn = mcnn.Cnn.init_from_nx_DiGraph(di_graph)
+#nx_cnn.print_to_file("cnn_print_nx.png")
 
