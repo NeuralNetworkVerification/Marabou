@@ -23,7 +23,7 @@
 LookAheadPreprocessor::LookAheadPreprocessor( unsigned numWorkers,
                                               const InputQuery &inputQuery )
     : _workload( 0 )
-    , _numWorkers ( 2 * numWorkers )
+    , _numWorkers ( 4 * numWorkers )
     , _baseInputQuery( inputQuery )
 
 {
