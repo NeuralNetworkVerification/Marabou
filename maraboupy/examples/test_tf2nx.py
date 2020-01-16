@@ -84,18 +84,34 @@ else:
     model = load_model(model_file)
 
 #mcnn.Cnn.save_keras_model_to_pb(model,'cnn.pb')
-for i, layer in enumerate(model.layers[0:1]):
-    print("Layer {}".format(i))
-    print("*************INPUTS*************")
-    print(layer.input)
-    print("*************INPUT_SHAPES*************")    
-    print(layer.input_shape)    
-    print("*************OUTPUTS*************")    
-    print(layer.output)
-    print("*************OUTPUT_SHAPES*************")    
-    print(layer.output_shape)
-    print("*************WEIGHTS*************")    
-    print(layer.weights)    
+
+with open('tf2nx_output.txt', 'a') as file:
+    out = ""
+    for i, layer in enumerate(model.layers):
+        out += "Layer {}".format(i) + "\n"
+        out += "*************CONFIG*************\n"
+        out += str(layer.get_config()) + "\n"
+        print(layer.get_config())
+        if "activation" in layer.get_config():
+            out += "*************ACTIVATION*************\n"            
+            out += str(layer.get_config()["activation"]) + "\n"
+        else:
+            out += "*************LAYER_NAME*************\n"            
+            out += str(layer.get_config()["name"]) + "\n"
+        out += "*************INPUTS*************\n"
+        out += str(layer.input) + "\n"
+        out += "*************INPUT_SHAPES*************\n"    
+        out += str(layer.input_shape) + "\n"
+        out += "*************OUTPUTS*************\n"    
+        out += str(layer.output) + "\n"
+        out += "*************OUTPUT_SHAPES*************\n"    
+        out += str(layer.output_shape) + "\n"
+        out += "*************WEIGHTS*************\n"    
+        out += str(layer.weights) + "\n"
+    print(out)
+    file.write(out)
+    
+
 
 #print("Starting conversion fron Keras to DiGraph")
 #di_graph = mcnn.Cnn.keras_to_nx(model)
