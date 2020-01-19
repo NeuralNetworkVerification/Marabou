@@ -294,7 +294,24 @@ void Engine::applySplits( const Map<unsigned, unsigned> &idToPhase )
 void Engine::setBiasedPhases( unsigned biasedLayer, BiasStrategy strategy )
 {
     if ( !_networkLevelReasoner )
+    {
+        if ( strategy == BiasStrategy::Random )
+        {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_int_distribution<> dis( 0, 1 );
+            for ( const auto &constraint : _plConstraints )
+            {
+                auto reluConstraint = (ReluConstraint *) constraint;
+                if ( reluConstraint->_direction != -1 )
+                {
+                    unsigned direction = dis( gen );
+                    reluConstraint->setDirection( direction );
+                }
+            }
+        }
         return;
+    }
     std::cout << "Bias the first " << biasedLayer << " layers" << std::endl;
     if ( biasedLayer == 0 )
     {

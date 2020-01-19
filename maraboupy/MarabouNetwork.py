@@ -211,7 +211,11 @@ class MarabouNetwork:
             i = 0
             for layer in range(min(len(pattern), options._focusLayer)):
                 for p in pattern[layer]:
-                    MarabouCore.setDirection(ipq, i, p)
+                    if options._biasStrategy == "centroid":
+                        MarabouCore.setDirection(ipq, i, p)
+                    elif options._biasStrategy == "random":
+                        r = np.random.choice([0, 1])
+                        MarabouCore.setDirection(ipq, i, r)
                     i += 1
 
         vals, stats = MarabouCore.solve(ipq, options, summaryFilePath, fixedReluFilePath, filename)
