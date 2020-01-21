@@ -17,8 +17,14 @@
 '''
 
 from maraboupy import Marabou
+from maraboupy import MarabouCore
 import numpy as np
 
+# Set the Marabou option to restrict printing
+options = MarabouCore.Options()
+options._verbosity = 0
+
+### FULLY CONNECTED NETWORK EXAMPLE ###
 # Network corresponds to inputs x0, x1
 # Outputs: y0 = |x0| + |x1|, y1 = x0^2 + x1^2
 print("Fully Connected Network Example")
@@ -46,9 +52,42 @@ network.setLowerBound(outputVars[1], 194.0)
 network.setUpperBound(outputVars[1], 210.0)
 
 # Call to Marabou solver
-vals, stats = network.solve("marabou.log")
+vals, stats = network.solve(options = options)
 
-# Can also read convolutional networks with max-pool layers
+
+### CONVOLUTIONAL NETWORK EXAMPLE ###
+# Network maps 8x16 grayscale images two values
+print("\nConvolutional Network Example")
+filename = './networks/AutoTaxi.onnx'
+network = Marabou.read_onnx(filename)
+
+# Get the input and output variable numbers; [0] since first dimension is batch size
+inputVars = network.inputVars[0][0]
+outputVars = network.outputVars[0]
+
+delta = 0.03
+for h in range(inputVars.shape[0]):
+    for w in range(inputVars.shape[1]):
+        network.setLowerBound(inputVars[h][w][0], 0.5-delta)
+        network.setUpperBound(inputVars[h][w][0], 0.5+delta)
+
+# Set output bounds
+network.setLowerBound(outputVars[0], 6.0)
+
+# Call to Marabou solver (should be SAT)
+print("Check query with less restrictive output constraint (Should be SAT)")
+vals, stats = network.solve(options = options)
+
+
+# Set more restrictive output bounds
+network.setLowerBound(outputVars[0], 7.0)
+
+# Call to Marabou solver (should be UNSAT)
+print("Check query with more restrictive output constraint (Should be UNSAT)")
+vals, stats = network.solve(options = options)
+
+
+### CONVOLUTIONAL NETWORK WITH MAX-POOL EXAMPLE ###
 print("\nConvolutional Network with Max Pool Example")
 filename = './networks/graph_test_cnn.onnx'
 network = Marabou.read_onnx(filename)
@@ -57,7 +96,7 @@ network = Marabou.read_onnx(filename)
 inputVars = network.inputVars[0]
 outputVars = network.outputVars
 
-marabouEval = network.evaluateWithMarabou([np.ones(inputVars.shape)])
+marabouEval = network.evaluateWithMarabou([np.ones(inputVars.shape)], options = options)
 onnxEval = network.evaluateWithoutMarabou([np.ones(inputVars.shape)])
 
 print("Marabou Evaluation:")

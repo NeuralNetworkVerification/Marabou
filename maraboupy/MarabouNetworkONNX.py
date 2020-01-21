@@ -23,6 +23,7 @@ from onnx import numpy_helper
 from onnx.helper import get_attribute_value
 from maraboupy import MarabouUtils
 from maraboupy import MarabouNetwork
+from onnx import TensorProto
 
 class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
     def __init__(self, filename, inputNames=None, outputName=None):
@@ -45,7 +46,6 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         """
         super().clear()
         self.madeGraphEquations = []
-        self.madeShapes = []
         self.varMap = dict()
         self.constantMap = dict()
         self.shapeMap = dict()
@@ -88,18 +88,10 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         self.inputNames = inputNames
         self.outputName = outputName
         
-        # First process the shapes of all nodes in the network.
-        # The graph only specifies shapes for inputs, output, and constants,
-        # and the rest must be inferred from node operations.
+        # Process the shapes and values of the graph while making Marabou equations and constraints 
         self.foundnInputFlags = 0
-        self.processShapes()
+        self.processGraph()
         assert self.foundnInputFlags == len(self.inputNames)
-        
-        # To be consistent with other network parsers, input variables are assigned first
-        self.processInput()
-        
-        # Assign the remaining variables and compile lists of equations and relus
-        self.makeGraphEquations(self.outputName)
         
         # If the given inputNames/outputName specify only a portion of the network, then we will have
         # shape information saved not relevant to the portion of the network. Remove extra shapes.
@@ -110,183 +102,93 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         # If this is skipped, the output variables will be the last variables defined.
         self.reassignOutputVariables()
         
-    def processShapes(self):
+    def processGraph(self):
         """
-        Determine the shape of all nodes and save to self.shapeMap
+        Processes the ONNX graph to produce Marabou equations
         """
         # Add shapes for the graph's inputs
         for node in self.graph.input:
             self.shapeMap[node.name] = list([dim.dim_value if dim.dim_value > 0 else 1 for dim in node.type.tensor_type.shape.dim])
-            self.madeShapes += [node.name]
+            self.madeGraphEquations += [node.name]
+            
+            # If we find one of the specified inputs, create new variables
             if node.name in self.inputNames:
                 self.foundnInputFlags += 1
+                self.makeNewVariables(node.name)
+                self.inputVars += [np.array(self.varMap[node.name])] 
                 
         # Add shapes for constants
         for node in self.graph.initializer:
             self.shapeMap[node.name] = list(node.dims)
-            self.madeShapes += [node.name]
+            self.madeGraphEquations += [node.name]
             
-        # Add the remaining shapes
-        self.makeShapes(self.outputName)
+        # Recursively create remaining shapes and equations as needed
+        self.makeGraphEquations(self.outputName, True)
 
-    def makeShapes(self, nodeName):
+    def makeGraphEquations(self, nodeName, makeEquations):
         """
-        Recursively add shapes to self.shapeMap for nodes that are the result of an operation
+        Recursively populates self.shapeMap, self.varMap, and self.constantMap while creating Marabou equations
+        and constraints as needed
         Arguments:
             nodeName: (str) name of node for making the shape
-        """
-        if nodeName in self.madeShapes:
-            return
-        
-        if nodeName in self.inputNames:
-            self.foundnInputFlags += 1      
-        self.madeShapes += [nodeName]
-        
-        # Recursively call makeShapes, then call computeShape
-        # This ensures that shapes of a node's inputs have been computed first 
-        for inNodeName in self.getInputNodes(nodeName):
-            self.makeShapes(inNodeName)
-        self.computeShape(nodeName)
-            
-    def computeShape(self, nodeName):
-        """
-        Compute the shape of a node assuming the input shapes have been computed already.
-        Arguments:
-            nodeName: (str) name of node for which we want to compute the output shape
-        """
-        node = self.getNode(nodeName)
-        
-        if node.op_type == "MaxPool":
-            # Exract information about max pool
-            kernel_shape = [1, 1]
-            strides = [1, 1]
-            for attr in node.attribute:
-                if attr.name == 'kernel_shape':
-                    kernel_shape = get_attribute_value(attr)
-                elif attr.name == 'strides':
-                    strides = get_attribute_value(attr)
-                    
-            # Compute output shape
-            inputShape = self.shapeMap[node.input[0]]
-            outputShape = [dim for dim in inputShape]
-            outputShape[2] = int(np.ceil((inputShape[2] - ((kernel_shape[0] - 1) + 1) + 1) / strides[0]))
-            outputShape[3] = int(np.ceil((inputShape[3] - ((kernel_shape[1] - 1) + 1) + 1) / strides[1]))
-            self.shapeMap[nodeName] = outputShape
-            
-        elif node.op_type == "Conv":
-            # Extract information about convolution
-            strides = [1, 1]
-            pads = [0, 0, 0, 0]
-            for attr in node.attribute:
-                if attr.name == 'strides':
-                    strides = get_attribute_value(attr)
-                elif attr.name == 'pads':
-                    pads = get_attribute_value(attr)
-            pad_left, pad_bottom, pad_right, pad_top = pads
-
-            # Get input shape information
-            # First input should be variable tensor, the second a weight matrix defining filters
-            shape0 = self.shapeMap[node.input[0]]
-            shape1 = self.shapeMap[node.input[1]]
-            input_channels = shape0[1]
-            input_width = shape0[2]
-            input_height = shape0[3]
-            num_filters = shape1[0]
-            filter_channels = shape1[1]
-            filter_width = shape1[2]
-            filter_height = shape1[3]
-
-            # The number of channels should match between input variable and filters
-            assert input_channels == filter_channels
-
-            # Compute output shape
-            out_width = (input_width - filter_width + pad_left + pad_right) // strides[0] + 1
-            out_height = (input_height - filter_height + pad_bottom + pad_top) // strides[1] + 1
-            self.shapeMap[nodeName] = [shape0[0], num_filters, out_width, out_height]
-
-        elif node.op_type == "Transpose":
-            # Extract the permutation indices from attributes
-            perm = None
-            for attr in node.attribute:
-                if attr.name == "perm":
-                    perm = get_attribute_value(attr)
-            self.shapeMap[nodeName] = [self.shapeMap[node.input[0]][p] for p in perm]
-        elif node.op_type == "Identity":
-            self.shapeMap[nodeName] = self.shapeMap[node.input[0]]
-        elif node.op_type == 'Gemm':
-            self.shapeMap[nodeName] = self.shapeMap[node.input[2]]
-        elif node.op_type == 'MatMul':
-            shape0 = self.shapeMap[node.input[0]]
-            shape1 = self.shapeMap[node.input[1]]
-            assert shape0[-1] == shape1[0]
-            self.shapeMap[nodeName] = shape0[:-1] + shape1[1:]
-        elif node.op_type in ['Relu', 'Add']:
-            self.shapeMap[nodeName] = self.shapeMap[node.input[0]]  
-        else:
-            print("Operation %s not implemented" % (node.op_type))
-            raise NotImplementedError
-        
-    def makeGraphEquations(self, nodeName):
-        """
-        Function to generate equations for network necessary to calculate the node
-        Arguments:
-            nodeName: (str) representing the name of the node for which we want to generate network equations
+            makeEquations: (bool) create Marabou equations for this node
         """
         if nodeName in self.madeGraphEquations:
             return
         
+        if nodeName in self.inputNames:
+            self.foundnInputFlags += 1   
+            # If an inputName is an intermediate layer of the network, we don't need to create Marabou
+            # equations for its inputs. However, we still need to call makeMarabouEquations in order to
+            # compute shapes. We just need to set the makeEquations flag to false
+            makeEquations = False
         self.madeGraphEquations += [nodeName]
         
-        # Recursively call makeGraphEquations before makeNeuronEquations to ensure that each
-        # node's input variables are defined before making equations for the output
-        for inNodeName in self.getInputNodes(nodeName, saveConstant=True):
-            self.makeGraphEquations(inNodeName)
-        self.makeNeuronEquations(nodeName)
+        # Recursively call makeGraphEquations, then call makeMarabouEquations
+        # This ensures that shapes and values of a node's inputs have been computed first 
+        for inNodeName in self.getInputNodes(nodeName):
+            self.makeGraphEquations(inNodeName, makeEquations)
+            
+        # Compute node's shape and create Marabou equations as needed
+        self.makeMarabouEquations(nodeName, makeEquations)
         
-    def makeNeuronEquations(self, nodeName):
-        """
-        Function to generate equations corresponding to given node
-        Arguments:
-            nodeName: (str) for which to generate equations
-        """
-        # Variables that are inputs are not generated from equations
+        # Create new variables when we find one of the inputs
         if nodeName in self.inputNames:
-            return
-        
-        # Only need to compute equations once
-        if nodeName in self.varMap:
-            return
-        
+            self.makeNewVariables(nodeName)
+            self.inputVars += [np.array(self.varMap[nodeName])]  
+            
+    def makeMarabouEquations(self, nodeName, makeEquations):
+        """
+        Compute the shape and values of a node assuming the input shapes and values have been computed already.
+        Arguments:
+            nodeName: (str) name of node for which we want to compute the output shape
+            makeEquations: (bool) create Marabou equations for this node
+        """
         node = self.getNode(nodeName)
-
-        if node.op_type == 'Transpose':
-            self.transpose(node)
-        elif node.op_type == 'Identity':
+        
+        if node.op_type == 'Identity': 
             self.identity(node)
-        elif node.op_type == 'Conv':
-            self.convEquations(node)
-        elif node.op_type == 'MaxPool':
-            self.maxpoolEquations(node)
+        elif node.op_type == 'Cast':
+            self.cast(node)
+        elif node.op_type == 'Reshape':
+            self.reshape(node)
+        elif node.op_type == "Transpose":
+            self.transpose(node)
+        elif node.op_type == "MaxPool":
+            self.maxpoolEquations(node, makeEquations)
+        elif node.op_type == "Conv":
+            self.convEquations(node, makeEquations)
         elif node.op_type == 'Gemm':
-            self.gemmEquations(node)
+            self.gemmEquations(node, makeEquations)
         elif node.op_type == 'MatMul':
-            self.matMulEquations(node)
+            self.matMulEquations(node, makeEquations)
         elif node.op_type == 'Add':
-            self.addEquations(node)
-        elif node.op_type == 'Relu':
-            self.reluEquations(node)
+            self.addEquations(node, makeEquations)
+        elif node.op_type == 'Relu': 
+            self.reluEquations(node, makeEquations)
         else:
             print("Operation %s not implemented" % (node.op_type))
-            raise NotImplementedError          
-    
-    def processInput(self):
-        """
-        Make variables for input/output operations and save them in inputVars/outputVars
-        """
-        for nodeName in self.inputNames:
-            self.makeNewVariables(nodeName)
-        self.inputVars = [np.array(self.varMap[name]) for name in self.inputNames]
-        self.madeGraphEquations += self.inputNames            
+            raise NotImplementedError                 
     
     def getNode(self, nodeName):
         """
@@ -317,7 +219,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         assert all([np.equal(np.mod(i, 1), 0) for i in v.reshape(-1)]) # check if integers
         return v
         
-    def getInputNodes(self, nodeName, saveConstant = False):
+    def getInputNodes(self, nodeName):
         """
         Get names of nodes that are inputs to the given node
         Arguments:
@@ -331,23 +233,10 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         for inp in node.input:
             if len([nde for nde in self.graph.node if inp in nde.output]):
                 inNodes += [inp]
-            elif saveConstant and len([nde for nde in self.graph.initializer if nde.name == inp]):
+            elif len([nde for nde in self.graph.initializer if nde.name == inp]):
                 self.constantMap[inp] = [numpy_helper.to_array(init) for init in self.graph.initializer if init.name == inp][0]
         return inNodes
-    
-    def transpose(self, node):
-        """
-        Function representing transpose
-        Arguments:
-            node: (node) representing transpose operation
-        """
-        nodeName = node.output[0]
-        perm = None
-        for attr in node.attribute:
-            if attr.name == "perm":
-                perm = get_attribute_value(attr)
-        self.varMap[nodeName] = np.transpose(self.varMap[node.input[0]], perm)
-    
+        
     def identity(self, node):
         """
         Function representing identity
@@ -355,18 +244,118 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             node: (node) representing identity operation
         """
         nodeName = node.output[0]
-        self.varMap[nodeName] = self.varMap[node.input[0]]
+        inputName = node.input[0]
+        self.shapeMap[nodeName] = self.shapeMap[inputName]
+        if inputName in self.varMap:
+            self.varMap[nodeName] = self.varMap[inputName]
+        elif inputName in self.constantMap:
+            self.constantMap[nodeName] = self.constantMap[inputName]
+            
+    def cast(self, node):
+        """
+        Function representing cast
+        Arguments:
+            node: (node) representing cast operation
+        """
+        nodeName = node.output[0]
+        inputName = node.input[0]
+        self.shapeMap[nodeName] = self.shapeMap[inputName]
+        
+        # Try to find type to cast to. If not found, raise error
+        to = None
+        for attr in node.attribute:
+            if attr.name == "to":
+                to = get_attribute_value(attr)
+        if to is None:
+            print("Casting type not specified with attribute 'to'")
+            raise RuntimeError
+            
+        # Cast input array to correct type, and throw error if type is unknown
+        if inputName in self.constantMap:
+            if to == TensorProto.FLOAT16:
+                self.constantMap[nodeName] = self.constantMap[inputName].astype('float16')
+            elif to == TensorProto.FLOAT:
+                self.constantMap[nodeName] = self.constantMap[inputName].astype('float32')
+            elif to == TensorProto.DOUBLE:
+                self.constantMap[nodeName] = self.constantMap[inputName].astype('double')
+            elif to == TensorProto.UINT8:
+                self.constantMap[nodeName] = self.constantMap[inputName].astype('uint8')
+            elif to == TensorProto.UINT16:
+                self.constantMap[nodeName] = self.constantMap[inputName].astype('uint16')
+            elif to == TensorProto.UINT32:
+                self.constantMap[nodeName] = self.constantMap[inputName].astype('uint32')
+            elif to == TensorProto.UINT64:
+                self.constantMap[nodeName] = self.constantMap[inputName].astype('uint64')
+            elif to == TensorProto.INT8:
+                self.constantMap[nodeName] = self.constantMap[inputName].astype('int8')
+            elif to == TensorProto.INT16:
+                self.constantMap[nodeName] = self.constantMap[inputName].astype('int16')
+            elif to == TensorProto.INT32:
+                self.constantMap[nodeName] = self.constantMap[inputName].astype('int32')
+            elif to == TensorProto.INT64:
+                self.constantMap[nodeName] = self.constantMap[inputName].astype('int64')
+            else:
+                print("Unknown type for casting: %d" % to)
+                print("Check here for ONNX TensorProto: https://github.com/onnx/onnx/blob/master/onnx/onnx.proto")
+                raise NotImplementedError
+                
+        # We shouldn't be casting variables to different types, since Marabou assumes variables have double precision
+        elif inputName in self.varMap:
+            print("Casting variables not allowed with Marabou")
+            raise NotImplementedError
+
+    def reshape(self, node):
+        """
+        Function representing reshape
+        Arguments:
+            node: (node) representing reshape operation
+        """
+        nodeName = node.output[0]
+        inputName1, inputName2 = node.input
+        
+        # Assume first input is array to be reshaped, second input is the new shape array
+        reshapeVals = self.constantMap[inputName2]
+        self.shapeMap[nodeName] = list(np.zeros(self.shapeMap[inputName1]).reshape(reshapeVals).shape)
+        if inputName1 in self.varMap:
+            self.varMap[nodeName] = self.varMap[inputName1].reshape(reshapeVals)
+        elif inputName1 in self.constantMap:
+            self.constantMap[nodeName] = self.constantMap[inputName1].reshape(reshapeVals)
+            
+    def transpose(self, node):
+        """
+        Function representing transpose
+        Arguments:
+            node: (node) representing transpose operation
+        """
+        nodeName = node.output[0]
+        inputName = node.input[0]
+        
+        # Get attributes
+        perm = None
+        for attr in node.attribute:
+            if attr.name == "perm":
+                perm = get_attribute_value(attr)
+        if perm is None:
+            print("Permutation indices not specified by attibute 'perm'")
+            raise RuntimeError
+        self.shapeMap[nodeName] = [self.shapeMap[inputName][p] for p in perm]
+        if inputName in self.varMap:
+            self.varMap[nodeName] = np.transpose(self.varMap[node.input[0]], perm)
+        elif inputName in self.constantMap:
+            self.constantMap[nodeName] = np.transpose(self.constant[inputName], perm)
     
-    def maxpoolEquations(self, node):
+    def maxpoolEquations(self, node, makeEquations):
         """
         Function to generate maxpooling equations
         Arguments:
             node: (node) representing maxpool operation
+            makeEquations: (bool) True if we need to create new variables and maxpool constraints
         """
         nodeName = node.output[0]
+        
         ### Get variables and constants of inputs ###
         inVars = self.varMap[node.input[0]]
-        outVars = self.makeNewVariables(nodeName)
+        inputShape = self.shapeMap[node.input[0]]
         
         kernel_shape = [1, 1]
         strides = [1, 1]
@@ -375,22 +364,30 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
                 kernel_shape = get_attribute_value(attr)
             elif attr.name == 'strides':
                 strides = get_attribute_value(attr)
-
-        for i in range(outVars.shape[2]):
-            for j in range(outVars.shape[3]):
-                for k in range(outVars.shape[1]):
-                    maxVars = set()
-                    for di in range(strides[0]*i, strides[0]*i + kernel_shape[0]):
-                        for dj in range(strides[1]*j, strides[1]*j + kernel_shape[1]):
-                            if di < inVars.shape[2] and dj < inVars.shape[3]:
-                                maxVars.add(inVars[0][k][di][dj])
-                    self.addMaxConstraint(maxVars, outVars[0][k][i][j])
+                
+        outputShape = [dim for dim in inputShape]
+        outputShape[2] = int(np.ceil((inputShape[2] - ((kernel_shape[0] - 1) + 1) + 1) / strides[0]))
+        outputShape[3] = int(np.ceil((inputShape[3] - ((kernel_shape[1] - 1) + 1) + 1) / strides[1]))
+        self.shapeMap[nodeName] = outputShape
         
-    def convEquations(self, node):
+        if makeEquations:
+            outVars = self.makeNewVariables(nodeName)
+            for i in range(outputShape[2]):
+                for j in range(outputShape[3]):
+                    for k in range(outputShape[1]):
+                        maxVars = set()
+                        for di in range(strides[0]*i, strides[0]*i + kernel_shape[0]):
+                            for dj in range(strides[1]*j, strides[1]*j + kernel_shape[1]):
+                                if di < inputShape[2] and dj < inputShape[3]:
+                                    maxVars.add(inVars[0][k][di][dj])
+                        self.addMaxConstraint(maxVars, outVars[0][k][i][j])
+        
+    def convEquations(self, node, makeEquations):
         """
         Function to generate maxpooling equations
         Arguments:
             node: (node) representing the 2D Convolution operation
+            makeEquations: (bool) True if we need to create new variables and write Marabou equations
         """
         nodeName = node.output[0]
         
@@ -423,40 +420,43 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         out_width = (input_width - filter_width + pad_left + pad_right) // strides[0] + 1
         out_height = (input_height - filter_height + pad_bottom + pad_top) // strides[1] + 1
         out_channels = num_filters
+        self.shapeMap[nodeName] = [shape0[0], out_channels, out_width, out_height]
         
-        inVars = self.varMap[node.input[0]]
-        weights = self.constantMap[node.input[1]]
-        outVars = self.makeNewVariables(nodeName)
+        if makeEquations:
+            inVars = self.varMap[node.input[0]]
+            weights = self.constantMap[node.input[1]]
+            outVars = self.makeNewVariables(nodeName)
 
-        ### Generate actual equations ###
-        # There is one equation for every output variable
-        for i in range(out_width):
-            for j in range(out_height):
-                for k in range(out_channels): # Out_channel corresponds to filter number
-                    e = MarabouUtils.Equation()
-                    
-                    # The equation convolves the filter with the specified input region
-                    # Iterate over the filter
-                    for di in range(filter_width):
-                        for dj in range(filter_height):
-                            for dk in range(filter_channels):
-                                w_ind = int(strides[0]*i+di - pad_left)
-                                h_ind = int(strides[1]*j+dj - pad_top)
-                                if h_ind < input_height and h_ind >= 0 and w_ind < input_width and w_ind >= 0:
-                                    var = inVars[0][dk][w_ind][h_ind]
-                                    c = weights[k][dk][di][dj]       
-                                    e.addAddend(c, var)
+            ### Generate actual equations ###
+            # There is one equation for every output variable
+            for i in range(out_width):
+                for j in range(out_height):
+                    for k in range(out_channels): # Out_channel corresponds to filter number
+                        e = MarabouUtils.Equation()
 
-                    # Add output variable
-                    e.addAddend(-1, outVars[0][k][i][j])
-                    e.setScalar(0.0)
-                    self.addEquation(e)
+                        # The equation convolves the filter with the specified input region
+                        # Iterate over the filter
+                        for di in range(filter_width):
+                            for dj in range(filter_height):
+                                for dk in range(filter_channels):
+                                    w_ind = int(strides[0]*i+di - pad_left)
+                                    h_ind = int(strides[1]*j+dj - pad_top)
+                                    if h_ind < input_height and h_ind >= 0 and w_ind < input_width and w_ind >= 0:
+                                        var = inVars[0][dk][w_ind][h_ind]
+                                        c = weights[k][dk][di][dj]       
+                                        e.addAddend(c, var)
+
+                        # Add output variable
+                        e.addAddend(-1, outVars[0][k][i][j])
+                        e.setScalar(0.0)
+                        self.addEquation(e)
         
-    def gemmEquations(self, node):  
+    def gemmEquations(self, node, makeEquations):  
         """
         Function to generate equations corresponding to Gemm (general matrix multiplication)
         Arguments:
             node: (node) representing the Gemm operation
+            makeEquations: (bool) True if we need to create new variables and write Marabou equations
         """  
         nodeName = node.output[0]
         
@@ -469,110 +469,121 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         input2 = self.constantMap[inputName2]
         input3 = self.constantMap[inputName3]
         
-        # Pad shape if needed
-        if len(shape1) == 1:
-            shape1 = [1] + shape1
-            input1 = input1.reshape(shape1)
-        elif shape1[1] == 1:
-            shape1 = shape1[::-1]
-            input1 = input1.reshape(shape1)
-        if len(shape3) == 1:
-            shape3 = [1] + shape3
-            input3 = input3.reshape(shape3)
-        if shape1[0] != shape3[0]:
-            shape3 = shape3[::-1]
-            input3 = input3.reshape(shape3)
-            
-        # Assume that first input is variables, second is Matrix for MatMul, and third is bias addition
-        assert shape1[-1] == shape2[0]
-        assert shape1[0] == shape3[0]
-        assert shape2[1] == shape3[1]
-            
-        # Create new variables
-        outputVariables = self.makeNewVariables(nodeName)
-        outputVariables = outputVariables.reshape(shape3)
-        # Generate equations
-        for i in range(shape1[0]):
-            for j in range(shape2[1]):
-                e = MarabouUtils.Equation()
-                for k in range(shape1[1]):
-                    e.addAddend(input2[k][j], input1[i][k])
-                
-                # Put output variable as the last addend last
-                e.addAddend(-1, outputVariables[i][j])
-                e.setScalar(-input3[i][j])
-                self.addEquation(e)
+        self.shapeMap[nodeName] = self.shapeMap[inputName3]
+        if makeEquations:
+        
+            # Pad shape if needed
+            if len(shape1) == 1:
+                shape1 = [1] + shape1
+                input1 = input1.reshape(shape1)
+            elif shape1[1] == 1:
+                shape1 = shape1[::-1]
+                input1 = input1.reshape(shape1)
+            if len(shape3) == 1:
+                shape3 = [1] + shape3
+                input3 = input3.reshape(shape3)
+            if shape1[0] != shape3[0]:
+                shape3 = shape3[::-1]
+                input3 = input3.reshape(shape3)
+
+            # Assume that first input is variables, second is Matrix for MatMul, and third is bias addition
+            assert shape1[-1] == shape2[0]
+            assert shape1[0] == shape3[0]
+            assert shape2[1] == shape3[1]
+
+            # Create new variables
+            self.shapeMap[nodeName] = self.shapeMap[node.input[2]]
+            outputVariables = self.makeNewVariables(nodeName)
+            outputVariables = outputVariables.reshape(shape3)
+            # Generate equations
+            for i in range(shape1[0]):
+                for j in range(shape2[1]):
+                    e = MarabouUtils.Equation()
+                    for k in range(shape1[1]):
+                        e.addAddend(input2[k][j], input1[i][k])
+
+                    # Put output variable as the last addend last
+                    e.addAddend(-1, outputVariables[i][j])
+                    e.setScalar(-input3[i][j])
+                    self.addEquation(e)
     
-    def matMulEquations(self, node):
+    def matMulEquations(self, node, makeEquations):
         """
         Function to generate equations corresponding to matrix multiplication
         Arguments:
             node: (node) representing the MatMul operation
+            makeEquations: (bool) True if we need to create new variables and write Marabou equations
         """
         nodeName = node.output[0]
         
         # Get inputs and determine which inputs are constants and which are variables
         inputName1, inputName2 = node.input
+        shape1 = self.shapeMap[inputName1]
+        shape2 = self.shapeMap[inputName2]
+        assert shape1[-1] == shape2[0]
+        self.shapeMap[nodeName] = shape1[:-1] + shape2[1:]
+        
+            
         firstInputConstant = False; secondInputConstant = False
         if inputName1 in self.constantMap:
             input1 = self.constantMap[inputName1]
             firstInputConstant = True
         else:
             input1 = self.varMap[inputName1]
-            
+
         if inputName2 in self.constantMap:
             input2 = self.constantMap[inputName2]
             secondInputConstant = True
         else:
             input2 = self.varMap[inputName2]
-            
+
         # Assume that at least one input is a constant (We cannot represent variable products with linear equations)
         assert firstInputConstant or secondInputConstant
-        
+
         # If both inputs are constant, than the output is constant as well, and we don't need new variables or equations
         if firstInputConstant and secondInputConstant:
             self.constantMap[nodeName] = np.matmul(input1,input2)
             return
-            
-        # Create new variables
-        outputVariables = self.makeNewVariables(nodeName)
 
-        shape1 = self.shapeMap[inputName1]
-        shape2 = self.shapeMap[inputName2]
-        # Generate equations
-        for i in range(shape1[0]):
-            # Differntiate between matrix-vector multiplication and matrix-matrix multiplication
-            if len(shape2)>1:
-                for j in range(shape2[1]):
+        if makeEquations:
+            # Create new variables
+            outputVariables = self.makeNewVariables(nodeName)
+
+            # Generate equations
+            for i in range(shape1[0]):
+                # Differntiate between matrix-vector multiplication and matrix-matrix multiplication
+                if len(shape2)>1:
+                    for j in range(shape2[1]):
+                        e = MarabouUtils.Equation()
+                        for k in range(shape1[1]):
+                            if firstInputConstant:
+                                e.addAddend(input1[i][k], input2[k][j])
+                            else:
+                                e.addAddend(input2[k][j], input1[i][k])
+
+                        # Put output variable as the last addend last
+                        e.addAddend(-1, outputVariables[i][j])
+                        e.setScalar(0.0)
+                        self.addEquation(e)
+                else:
                     e = MarabouUtils.Equation()
                     for k in range(shape1[1]):
                         if firstInputConstant:
-                            e.addAddend(input1[i][k], input2[k][j])
+                            e.addAddend(input1[i][k], input2[k])
                         else:
-                            e.addAddend(input2[k][j], input1[i][k])
+                            e.addAddend(input2[k], input1[i][k])
 
                     # Put output variable as the last addend last
-                    e.addAddend(-1, outputVariables[i][j])
+                    e.addAddend(-1, outputVariables[i])
                     e.setScalar(0.0)
                     self.addEquation(e)
-            else:
-                e = MarabouUtils.Equation()
-                for k in range(shape1[1]):
-                    if firstInputConstant:
-                        e.addAddend(input1[i][k], input2[k])
-                    else:
-                        e.addAddend(input2[k], input1[i][k])
-
-                # Put output variable as the last addend last
-                e.addAddend(-1, outputVariables[i])
-                e.setScalar(0.0)
-                self.addEquation(e)
     
-    def addEquations(self, node):
+    def addEquations(self, node, makeEquations):
         """
         Function to generate equations corresponding to addition
         Arguments:
             node: (node) representing the Add operation
+            makeEquations: (bool) True if we need to create new variables and write Marabou equations
         """
         nodeName = node.output[0]
         
@@ -580,6 +591,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         inputName1, inputName2 = node.input
         shape1 = self.shapeMap[inputName1]
         shape2 = self.shapeMap[inputName2]
+        self.shapeMap[nodeName] = shape1  
         
         # Decide which inputs are variables and which are constants
         firstInputConstant = False; secondInputConstant = False
@@ -599,6 +611,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             
         # The shape after broadcasting must match
         assert input1.shape == input2.shape
+        self.shapeMap[nodeName] = shape1
             
         # If both inputs to add are constant, then the output is constant too
         # No new variables are needed, we just need to store the output in constantMap
@@ -607,7 +620,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         
         # If both inputs are variables, then we need a new variable to represent
         # the sum of the two variables
-        elif not firstInputConstant and not secondInputConstant:
+        elif makeEquations and not firstInputConstant and not secondInputConstant:
             outputVariables = self.makeNewVariables(nodeName)
             input1 = input1.reshape(-1)
             input2 = input2.reshape(-1)
@@ -625,7 +638,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         # Instead, we can just edit the scalar term of the existing linear equation.
         # However, if the input variables are not outputs of linear equations (input variables or outputs of 
         # activation functions) then we will need new equations.
-        else:
+        elif makeEquations:
             if firstInputConstant:
                 constInput = input1
                 varInput = input2
@@ -662,25 +675,29 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
                     e.setScalar(-constInput[i])
                     self.addEquation(e)
     
-    def reluEquations(self, node):
+    def reluEquations(self, node, makeEquations):
         """
         Function to generate equations corresponding to pointwise Relu
         Arguments:
             node: (node) representing the Relu operation
+            makeEquations: (bool) True if we need to create new variables and add new Relus
         """
         nodeName = node.output[0]
-        
-        # Get variables
         inputName = node.input[0]
-        inputVars = self.varMap[inputName].reshape(-1)
-        outputVars = self.makeNewVariables(nodeName).reshape(-1)
-        assert len(inputVars) == len(outputVars)
+        self.shapeMap[nodeName] = self.shapeMap[inputName] 
+        
+        if makeEquations:
+        
+            # Get variables
+            inputVars = self.varMap[inputName].reshape(-1)
+            outputVars = self.makeNewVariables(nodeName).reshape(-1)
+            assert len(inputVars) == len(outputVars)
 
-        # Generate equations
-        for i in range(len(inputVars)):
-            self.addRelu(inputVars[i], outputVars[i])
-        for f in outputVars:
-            self.setLowerBound(f, 0.0)
+            # Generate equations
+            for i in range(len(inputVars)):
+                self.addRelu(inputVars[i], outputVars[i])
+            for f in outputVars:
+                self.setLowerBound(f, 0.0)
                      
     def cleanShapes(self):
         """
