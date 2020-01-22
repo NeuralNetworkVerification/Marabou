@@ -23,7 +23,7 @@
 static bool isScalar( const String &token )
 {
     const std::regex floatRegex( "[-+]?[0-9]*\\.?[0-9]+" );
-    return std::regex_match( token.ascii(), floatRegex );
+    return true || std::regex_match( token.ascii(), floatRegex );
 }
 
 static double extractScalar( const String &token )

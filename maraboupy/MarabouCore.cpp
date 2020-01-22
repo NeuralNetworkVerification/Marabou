@@ -137,6 +137,7 @@ struct MarabouOptions {
         , _divideStrategy( "auto" )
         , _biasStrategy( "centroid" )
         , _maxDepth( 5 )
+	, _maxTreeDepth( 10 )  
     {};
 
     unsigned _numWorkers;
@@ -154,6 +155,7 @@ struct MarabouOptions {
     std::string _divideStrategy;
     std::string _biasStrategy;
     unsigned _maxDepth;
+    unsigned _maxTreeDepth;
 };
 
 BiasStrategy setBiasStrategyFromOptions( const String strategy )
@@ -205,7 +207,8 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
         bool preprocessOnly = options._preprocessOnly;
         unsigned focusLayer = options._focusLayer;
         unsigned numWorkers = options._numWorkers;
-
+	unsigned maxTreeDepth = options._maxTreeDepth;
+	
         DivideStrategy divideStrategy = DivideStrategy::SplitRelu;
         if ( options._divideStrategy == "auto" )
         {
@@ -235,8 +238,9 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
         {
             struct timespec start = TimeUtils::sampleMicro();
             auto lookAheadPreprocessor = new LookAheadPreprocessor
-                ( numWorkers, *(engine.getInputQuery()) );
-            bool feasible = lookAheadPreprocessor->run( idToPhase );
+	      ( numWorkers, *(engine.getInputQuery()), maxTreeDepth );
+	    List<unsigned> maxTimes;
+            bool feasible = lookAheadPreprocessor->run( idToPhase, maxTimes );
             struct timespec end = TimeUtils::sampleMicro();
             unsigned long long totalElapsed = TimeUtils::timePassed( start, end );
             if ( summaryFilePath != "" )
@@ -252,6 +256,9 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
 
                 // Field #3: number of fixed relus by look ahead preprocessing
                 summaryFile.write( Stringf( "%u ", idToPhase.size() ) );
+
+		for ( const auto& maxTime : maxTimes )
+		    summaryFile.write( Stringf( "%u ", maxTime ) );
                 summaryFile.write( "\n" );
             }
             if ( summaryFilePath != "" )
@@ -296,19 +303,19 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
                       << std::endl;
 
             auto dncManager = std::unique_ptr<DnCManager>
-                ( new DnCManager( numWorkers, initialDivides, initialTimeout, onlineDivides,
-                                  timeoutFactor, divideStrategy,
-                                  engine.getInputQuery(), verbosity, idToPhase,
-                                  focusLayer, biasStrategy, maxDepth ) );
-
+	      ( new DnCManager( numWorkers, initialDivides, initialTimeout, onlineDivides,
+				timeoutFactor, divideStrategy,
+				engine.getInputQuery(), verbosity, idToPhase,
+				focusLayer, biasStrategy, maxDepth ) );
+	    
             dncManager->solve( timeoutInSeconds, restoreTreeStates );
             switch ( dncManager->getExitCode() )
-            {
-            case DnCManager::SAT:
-            {
-                retStats = Statistics();
-                dncManager->getSolution( ret );
-                break;
+	    {
+	    case DnCManager::SAT:
+	    {
+	      retStats = Statistics();
+	      dncManager->getSolution( ret );
+	      break;
             }
             case DnCManager::TIMEOUT:
             {
@@ -394,7 +401,8 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_preprocessOnly", &MarabouOptions::_preprocessOnly)
         .def_readwrite("_divideStrategy", &MarabouOptions::_divideStrategy)
         .def_readwrite("_biasStrategy", &MarabouOptions::_biasStrategy)
-        .def_readwrite("_maxDepth", &MarabouOptions::_maxDepth);
+        .def_readwrite("_maxDepth", &MarabouOptions::_maxDepth)
+        .def_readwrite("_maxTreeDepth", &MarabouOptions::_maxTreeDepth );
     py::class_<SymbolicBoundTightener, std::unique_ptr<SymbolicBoundTightener,py::nodelete>>(m, "SymbolicBoundTightener")
         .def(py::init())
         .def("setNumberOfLayers", &SymbolicBoundTightener::setNumberOfLayers)

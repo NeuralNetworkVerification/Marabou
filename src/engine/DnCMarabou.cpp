@@ -186,10 +186,12 @@ bool DnCMarabou::lookAheadPreprocessing( Map<unsigned, unsigned> &idToPhase )
     if ( Options::get()->getBool( Options::LOOK_AHEAD_PREPROCESSING ) )
     {
         struct timespec start = TimeUtils::sampleMicro();
+	unsigned maxDepth = Options::get()->getInt( Options::MAX_TREE_DEPTH );
         auto lookAheadPreprocessor = new LookAheadPreprocessor
             ( Options::get()->getInt( Options::NUM_WORKERS ),
-              *(_baseEngine->getInputQuery()) );
-        feasible = lookAheadPreprocessor->run( idToPhase );
+              *(_baseEngine->getInputQuery()), maxDepth );
+	List<unsigned> maxTimes;
+        feasible = lookAheadPreprocessor->run( idToPhase, maxTimes );
         struct timespec end = TimeUtils::sampleMicro();
         unsigned long long totalElapsed = TimeUtils::timePassed( start, end );
         String summaryFilePath = Options::get()->getString( Options::SUMMARY_FILE );
@@ -206,7 +208,10 @@ bool DnCMarabou::lookAheadPreprocessing( Map<unsigned, unsigned> &idToPhase )
 
             // Field #3: number of fixed relus by look ahead preprocessing
             summaryFile.write( Stringf( "%u ", idToPhase.size() ) );
-            summaryFile.write( "\n" );
+
+	    for ( const auto& maxTime : maxTimes )
+		summaryFile.write( Stringf( "%u ", maxTime ) );
+	    summaryFile.write( "\n" );
         }
         if ( summaryFilePath != "" )
         {

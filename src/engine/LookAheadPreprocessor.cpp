@@ -21,11 +21,12 @@
 #include <thread>
 
 LookAheadPreprocessor::LookAheadPreprocessor( unsigned numWorkers,
-                                              const InputQuery &inputQuery )
+                                              const InputQuery &inputQuery,
+					      unsigned maxDepth )
     : _workload( 0 )
-    , _numWorkers ( 4 * numWorkers )
+    , _numWorkers ( numWorkers * 2 )
     , _baseInputQuery( inputQuery )
-
+    , _maxDepth( maxDepth )
 {
     createEngines();
 }
@@ -45,7 +46,9 @@ void LookAheadPreprocessor::preprocessWorker( LookAheadPreprocessor::WorkerQueue
                                               std::atomic_bool
                                               &shouldQuitPreprocessing,
                                               std::mutex &mtx,
-                                              std::atomic_int &lastFixed )
+                                              std::atomic_int &lastFixed,
+					      std::atomic_int &maxTime,
+					      unsigned maxDepth )
 {
     //unsigned cpuId = 0;
     //getCPUId( cpuId );
@@ -114,8 +117,7 @@ void LookAheadPreprocessor::preprocessWorker( LookAheadPreprocessor::WorkerQueue
             temp = 0;
         double factor = temp / numActive;
         factor = 1 < factor ? 1 : factor;
-        unsigned threshold = (int) GlobalConfiguration::QUICK_SOLVE_STACK_DEPTH_THRESHOLD *
-                     factor;
+        unsigned threshold = (int) maxDepth * factor;
         if ( threshold == 0 ) continue;
 
         for ( const auto &_caseSplit : caseSplits )
@@ -125,7 +127,16 @@ void LookAheadPreprocessor::preprocessWorker( LookAheadPreprocessor::WorkerQueue
                 caseSplit.storeBoundTightening( bound );
 
             engine->applySplit( caseSplit );
+
+	    struct timespec start = TimeUtils::sampleMicro();
             engine->quickSolve( threshold + 1 );
+	    struct timespec end = TimeUtils::sampleMicro();
+	    unsigned long long totalElapsed = TimeUtils::timePassed( start, end );
+	    unsigned time =  totalElapsed / 1000000;
+	    if ( static_cast<int>(time) > maxTime.load() )
+	    {
+		maxTime = static_cast<int>(time);
+	    }
 
             if ( engine->_exitCode == IEngine::QUIT_REQUESTED )
                 return;
@@ -195,7 +206,8 @@ void LookAheadPreprocessor::preprocessWorker( LookAheadPreprocessor::WorkerQueue
     }
 }
 
-bool LookAheadPreprocessor::run( Map<unsigned, unsigned> &idToPhase )
+bool LookAheadPreprocessor::run( Map<unsigned, unsigned> &idToPhase,
+				 List<unsigned> &maxTimes )
 {
     bool progressMade = true;
     //Vector<Map<unsigned, unsigned>> allIdToPhase;
@@ -215,6 +227,7 @@ bool LookAheadPreprocessor::run( Map<unsigned, unsigned> &idToPhase )
 
     while ( progressMade )
     {
+	std::atomic_int maxTime ( 0 );
         std::cout << "new look ahead preprocessing iteration" << std::endl;
         unsigned previousSize = idToPhase.size();
         for ( auto id : _allPiecewiseLinearConstraints )
@@ -232,7 +245,9 @@ bool LookAheadPreprocessor::run( Map<unsigned, unsigned> &idToPhase )
                                             std::ref( idToPhase ),
                                             std::ref( shouldQuitPreprocessing ),
                                             std::ref( mtx ),
-                                            std::ref( lastFixed ) ) );
+                                            std::ref( lastFixed ),
+					    std::ref( maxTime ),
+					    _maxDepth ) );
         }
 
         while ( (!shouldQuitPreprocessing.load()) && (!_workload.empty()) )
@@ -247,6 +262,8 @@ bool LookAheadPreprocessor::run( Map<unsigned, unsigned> &idToPhase )
         for ( auto &thread : threads )
             thread.join();
 
+	maxTimes.append( maxTime.load() );
+	    
         if ( shouldQuitPreprocessing.load() )
         {
             std::cout << "Preprocessing done!" << std::endl;

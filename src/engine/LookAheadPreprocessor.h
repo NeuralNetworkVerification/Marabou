@@ -35,11 +35,12 @@ public:
         WorkerQueue;
 
     LookAheadPreprocessor( unsigned numWorkers,
-                           const InputQuery &inputQuery );
+                           const InputQuery &inputQuery,
+			   unsigned maxDepth );
 
     ~LookAheadPreprocessor();
 
-    bool run( Map<unsigned, unsigned> &idToPhase );
+    bool run( Map<unsigned, unsigned> &idToPhase, List<unsigned> &maxTimes );
 
     static void preprocessWorker( LookAheadPreprocessor::WorkerQueue
                                   &workload, Engine *engine,
@@ -47,7 +48,9 @@ public:
                                   Map<unsigned, unsigned> &impliedCaseSplits,
                                   std::atomic_bool &shouldQuitPreprocessing,
                                   std::mutex &mtx,
-                                  std::atomic_int &lastFixed );
+                                  std::atomic_int &lastFixed,
+				  std::atomic_int &maxTime,
+				  unsigned maxDepth );
 
 private:
 
@@ -64,6 +67,8 @@ private:
 
     Vector<Engine *> _engines;
     Vector<InputQuery *> _inputQueries;
+
+    unsigned _maxDepth;
 
     void createEngines();
 };

@@ -2286,7 +2286,7 @@ void Engine::getEstimates( Map <unsigned, double> &balanceEstimates,
             unsigned b = ( ( ReluConstraint * ) plConstraint )->getB();
             double currentLb = _tableau->getLowerBound( b );
             double currentUb = _tableau->getUpperBound( b );
-            double width = plConstraint->getId();
+            double width = currentUb - currentLb;
             double sum = currentLb + currentUb;
             double balance = ( sum > 0 ? sum : -sum ) / width;
             balanceEstimates[plConstraint->getId()] = balance;

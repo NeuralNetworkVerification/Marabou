@@ -57,6 +57,8 @@ void Options::initializeDefaultValues()
     _intOptions[TIMEOUT] = 0;
     _intOptions[FOCUS_LAYER] = 0;
     _intOptions[MAX_DEPTH] = 5;
+    _intOptions[MAX_TREE_DEPTH] = 10;
+
 
     /*
       Float options
