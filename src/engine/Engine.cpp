@@ -2276,6 +2276,42 @@ bool Engine::propagate()
     }
 }
 
+void Engine::getEstimatesReal( Map <unsigned, double> &balanceEstimates,
+                               Map <unsigned, double> &runtimeEstimates )
+{
+    for ( const auto &plConstraint : _plConstraints )
+    {
+        if ( plConstraint->isActive() && !plConstraint->phaseFixed() )
+        {
+            unsigned b = ( ( ReluConstraint * ) plConstraint )->getB();
+            double currentLb = _tableau->getLowerBound( b );
+            double currentUb = _tableau->getUpperBound( b );
+            double width = currentUb - currentLb;
+            double sum = currentLb + currentUb;
+            double balance = sum / width;
+            balanceEstimates[plConstraint->getId()] = balance;
+            runtimeEstimates[plConstraint->getId()] = width;
+        }
+    }
+
+    // Sort the map
+    Map<double, unsigned> temp1;
+    for ( const auto& entry : runtimeEstimates )
+        temp1[entry.second] = entry.first;
+
+    double index = 1;
+    for ( const auto& entry : temp1 )
+        runtimeEstimates[entry.second] = index++;
+    Map<double, unsigned> temp2;
+    for ( const auto& entry : balanceEstimates )
+        temp2[entry.second] = entry.first;
+    for ( const auto& entry : temp2 )
+        balanceEstimates[entry.second] = entry.first;
+
+
+    return;
+}
+
 void Engine::getEstimates( Map <unsigned, double> &balanceEstimates,
                            Map <unsigned, double> &runtimeEstimates )
 {

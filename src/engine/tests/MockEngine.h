@@ -149,6 +149,15 @@ public:
         return true;
     }
 
+    void getEstimatesReal( Map <unsigned, double>
+                           &balanceEstimates,
+                           Map <unsigned, double>
+                           &runtimeEstimates )
+    {
+        balanceEstimates.clear();
+        runtimeEstimates.clear();
+    }
+
     void getEstimates( Map <unsigned, double>
                        &balanceEstimates,
                        Map <unsigned, double>

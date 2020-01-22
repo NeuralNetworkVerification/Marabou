@@ -207,7 +207,12 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
         bool preprocessOnly = options._preprocessOnly;
         unsigned focusLayer = options._focusLayer;
         unsigned numWorkers = options._numWorkers;
-	unsigned maxTreeDepth = options._maxTreeDepth;
+        int initialTimeoutInt = options._initialTimeout;
+        unsigned initialTimeout = 0;
+        if ( initialTimeoutInt < 0 )
+            initialTimeout = inputQuery.getPiecewiseLinearConstraints().size() / 2.5;
+        else
+            initialTimeout = static_cast<unsigned>(initialTimeoutInt);
 	
         DivideStrategy divideStrategy = DivideStrategy::SplitRelu;
         if ( options._divideStrategy == "auto" )
@@ -238,7 +243,7 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
         {
             struct timespec start = TimeUtils::sampleMicro();
             auto lookAheadPreprocessor = new LookAheadPreprocessor
-	      ( numWorkers, *(engine.getInputQuery()), maxTreeDepth );
+	      ( numWorkers, *(engine.getInputQuery()), initialTimeout );
 	    List<unsigned> maxTimes;
             bool feasible = lookAheadPreprocessor->run( idToPhase, maxTimes );
             struct timespec end = TimeUtils::sampleMicro();
@@ -274,13 +279,6 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
         if ( dnc )
         {
             unsigned initialDivides = options._initialDivides;
-            int initialTimeoutInt = options._initialTimeout;
-            unsigned initialTimeout = 0;
-            if ( initialTimeoutInt < 0 )
-                initialTimeout = inputQuery.getPiecewiseLinearConstraints().size() / 2.5;
-            else
-                initialTimeout = static_cast<unsigned>(initialTimeoutInt);
-
             unsigned onlineDivides = options._onlineDivides;
             float timeoutFactor = options._timeoutFactor;
             bool restoreTreeStates = options._restoreTreeStates;

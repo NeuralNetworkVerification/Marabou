@@ -36,7 +36,7 @@ public:
 
     LookAheadPreprocessor( unsigned numWorkers,
                            const InputQuery &inputQuery,
-			   unsigned maxDepth );
+                           unsigned initialTimeout );
 
     ~LookAheadPreprocessor();
 
@@ -49,8 +49,8 @@ public:
                                   std::atomic_bool &shouldQuitPreprocessing,
                                   std::mutex &mtx,
                                   std::atomic_int &lastFixed,
-				  std::atomic_int &maxTime,
-				  unsigned maxDepth );
+                                  std::atomic_int &maxTime,
+                                  unsigned initialTimeout );
 
 private:
 
@@ -68,7 +68,7 @@ private:
     Vector<Engine *> _engines;
     Vector<InputQuery *> _inputQueries;
 
-    unsigned _maxDepth;
+    unsigned _initialTimeout;
 
     void createEngines();
 };
