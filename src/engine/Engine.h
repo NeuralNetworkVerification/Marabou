@@ -201,6 +201,8 @@ public:
 
     void storeInitialEngineState();
 
+    unsigned numberOfConstraints();
+    
  private:
 
     float _biasedRatio;

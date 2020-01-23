@@ -84,6 +84,8 @@ public:
                                &runtimeEstimates ) = 0;
 
     virtual PiecewiseLinearConstraint *getConstraintFromId( unsigned id ) = 0;
+
+    virtual unsigned numberOfConstraints() = 0;
 };
 
 #endif // __IEngine_h__

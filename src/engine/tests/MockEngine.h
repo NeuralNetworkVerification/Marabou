@@ -31,7 +31,7 @@ public:
 
         lastStoredState = NULL;
     }
-
+    
     ~MockEngine()
     {
     }
@@ -177,6 +177,11 @@ public:
         return NULL;
     }
 
+    unsigned numberOfConstraints()
+    {
+	return 0;
+    }
+    
 };
 
 #endif // __MockEngine_h__

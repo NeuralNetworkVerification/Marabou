@@ -49,6 +49,8 @@ private:
       The engine
     */
     std::shared_ptr<IEngine> _engine;
+
+    unsigned _threshold;
 };
 
 #endif // __ReluDivider_h__

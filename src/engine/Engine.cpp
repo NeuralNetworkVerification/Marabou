@@ -2384,6 +2384,11 @@ void Engine::getCentroid( Vector<double> &centroid )
                            _tableau->getUpperBound( var ) ) / 2 );
 }
 
+unsigned Engine::numberOfConstraints()
+{
+    return _plConstraints.size();
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "
