@@ -213,7 +213,7 @@ class MarabouNetwork:
                 for p in pattern[layer]:
                     if options._biasStrategy == "centroid":
                         MarabouCore.setDirection(ipq, i, p)
-                    elif options._biasStrategy == "random":
+                    elif options._biasStrategy == "estimate" or options._biasStrategy == "random":
                         r = np.random.choice([0, 1])
                         MarabouCore.setDirection(ipq, i, r)
                     i += 1
