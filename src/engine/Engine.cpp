@@ -331,7 +331,10 @@ void Engine::setBiasedPhases( unsigned biasedLayer, BiasStrategy strategy )
         }
         return;
     }
-    std::cout << "Bias the first " << biasedLayer << " layers" << std::endl;
+    if ( _networkLevelReasoner->_layerToIds.size() < biasedLayer )
+    {
+        biasedLayer = _networkLevelReasoner->_layerToIds.size();
+    }
     if ( biasedLayer == 0 )
     {
         return;
