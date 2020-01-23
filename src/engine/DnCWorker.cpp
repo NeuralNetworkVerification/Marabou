@@ -106,7 +106,8 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates, unsigned biasedL
         Engine::ExitCode result;
         if ( fullSolveNeeded )
         {
-            _engine->setBiasedPhases( biasedLayer, biasStrategy );
+            if ( biasStrategy == Estimate )
+                _engine->setBiasedPhases( biasedLayer, biasStrategy );
             _engine->solve( timeoutInSeconds );
             result = _engine->getExitCode();
         } else

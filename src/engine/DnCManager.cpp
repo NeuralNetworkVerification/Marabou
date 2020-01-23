@@ -50,6 +50,8 @@ void DnCManager::dncSolve( WorkerQueue *workload, InputQuery *inputQuery,
     engine->processInputQuery( *inputQuery, false );
     engine->applySplits( idToPhase );
     engine->propagate();
+    engine->setBiasedPhases( biasedLayer, biasStrategy );
+    engine->numberOfActive();
 
     DnCWorker worker( workload, engine, std::ref( numUnsolvedSubQueries ),
                       std::ref( shouldQuitSolving ), threadId, onlineDivides,
