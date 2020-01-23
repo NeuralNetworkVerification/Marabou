@@ -140,12 +140,19 @@ bool Marabou::lookAheadPreprocessing()
         Map<unsigned, unsigned> idToPhase;
 
         struct timespec start = TimeUtils::sampleMicro();
-	unsigned maxDepth = Options::get()->getInt( Options::MAX_TREE_DEPTH );
+
+        int initialTimeoutInt = Options::get()->getInt( Options::INITIAL_TIMEOUT );
+        unsigned initialTimeout = 0;
+        if ( initialTimeoutInt < 0 )
+            initialTimeout = _inputQuery.getPiecewiseLinearConstraints().size() / 2.5;
+        else
+            initialTimeout = static_cast<unsigned>(initialTimeoutInt);
+
         auto lookAheadPreprocessor = new LookAheadPreprocessor
             ( Options::get()->getInt( Options::NUM_WORKERS ),
-              *_engine.getInputQuery(), maxDepth );
+              *_engine.getInputQuery(), initialTimeout );
 
- 	List<unsigned> maxTimes;
+        List<unsigned> maxTimes;
         feasible = lookAheadPreprocessor->run( idToPhase, maxTimes );
         struct timespec end = TimeUtils::sampleMicro();
         unsigned long long totalElapsed = TimeUtils::timePassed( start, end );

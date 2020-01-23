@@ -153,6 +153,10 @@ public:
 
 
     bool propagate();
+
+    void getEstimatesReal( Map <unsigned, double> &balanceEstimates,
+                           Map <unsigned, double> &runtimeEstimates );
+
     void getEstimates( Map <unsigned, double> &balanceEstimates,
                        Map <unsigned, double> &runtimeEstimates );
 
