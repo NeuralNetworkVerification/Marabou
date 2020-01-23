@@ -37,7 +37,9 @@ public:
       Pop one subQuery, solve it and handle the result
       Return true if the DnCWorker should continue running
     */
-    void popOneSubQueryAndSolve( bool restoreTreeStates = false );
+    void popOneSubQueryAndSolve( bool restoreTreeStates = false, unsigned
+                                 biasedLayer=0,
+                                 BiasStrategy biasStrategy=BiasStrategy::Centroid );
 
 private:
     /*

@@ -265,6 +265,8 @@ BiasStrategy Marabou::setBiasStrategyFromOptions( const String strategy )
         return BiasStrategy::Sampling;
     else if ( strategy == "random" )
         return BiasStrategy::Random;
+    else if ( strategy == "estimate" )
+        return BiasStrategy::Estimate;
     else
         {
             printf ("Unknown bias strategy, using default (centroid).\n");

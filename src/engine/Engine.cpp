@@ -293,9 +293,28 @@ void Engine::applySplits( const Map<unsigned, unsigned> &idToPhase )
 
 void Engine::setBiasedPhases( unsigned biasedLayer, BiasStrategy strategy )
 {
+    if ( biasedLayer == 0 )
+        return;
     if ( !_networkLevelReasoner )
     {
-        if ( strategy == BiasStrategy::Random )
+        if ( strategy == BiasStrategy::Estimate )
+        {
+            Map<unsigned, double> balanceEstimates;
+            Map<unsigned, double> runtimeEstimates;
+            getEstimatesReal( balanceEstimates, runtimeEstimates );
+            for ( const auto &constraint : _plConstraints )
+            {
+                auto reluConstraint = (ReluConstraint *) constraint;
+                if ( reluConstraint->_direction != -1 )
+                {
+                    unsigned direction =
+                        ( balanceEstimates[constraint->getId()] > 0 ?
+                          1 : 0 );
+                    reluConstraint->setDirection( direction );
+                }
+            }
+        }
+        else if ( strategy == BiasStrategy::Random )
         {
             std::random_device rd;
             std::mt19937 gen(rd());
@@ -365,6 +384,27 @@ void Engine::setBiasedPhases( unsigned biasedLayer, BiasStrategy strategy )
                         constraint->setDirection( 1 );
                     else if ( phase == ReluConstraint::PHASE_INACTIVE )
                         constraint->setDirection( 0 );
+                }
+            }
+        }
+    }
+    else if ( strategy == BiasStrategy::Estimate )
+    {
+        Map<unsigned, double> balanceEstimates;
+        Map<unsigned, double> runtimeEstimates;
+        getEstimatesReal( balanceEstimates, runtimeEstimates );
+        for ( unsigned layer = 1; layer < biasedLayer + 1; ++layer )
+        {
+            auto ids = _networkLevelReasoner->_layerToIds[layer];
+            for ( const auto id : ids )
+            {
+                auto constraint = (ReluConstraint *) getConstraintFromId( id );
+                if ( constraint )
+                {
+
+                    unsigned direction = ( balanceEstimates[constraint->getId()] > 0 ?
+                                           1 : 0 );
+                    constraint->setDirection( direction );
                 }
             }
         }

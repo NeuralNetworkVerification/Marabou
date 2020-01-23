@@ -69,7 +69,8 @@ void DnCWorker::setQueryDivider( DivideStrategy divideStrategy )
     }
 }
 
-void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
+void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates, unsigned biasedLayer,
+                                        BiasStrategy biasStrategy )
 {
     SubQuery *subQuery = NULL;
     // Boost queue stores the next element into the passed-in pointer
@@ -105,6 +106,7 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
         Engine::ExitCode result;
         if ( fullSolveNeeded )
         {
+            _engine->setBiasedPhases( biasedLayer, biasStrategy );
             _engine->solve( timeoutInSeconds );
             result = _engine->getExitCode();
         } else

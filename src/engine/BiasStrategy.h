@@ -19,6 +19,7 @@
 enum BiasStrategy
 {
     Centroid,
+    Estimate,
     Sampling,
     Random
 };
