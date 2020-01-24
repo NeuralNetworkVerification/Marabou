@@ -2333,7 +2333,7 @@ void Engine::getEstimatesReal( Map <unsigned, double> &balanceEstimates,
             double sum = currentLb + currentUb;
             double balance = sum / width;
             balanceEstimates[plConstraint->getId()] = balance;
-            runtimeEstimates[plConstraint->getId()] = width;
+            runtimeEstimates[plConstraint->getId()] = plConstraint->getId();
         }
     }
 
