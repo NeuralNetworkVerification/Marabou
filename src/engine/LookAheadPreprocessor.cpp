@@ -101,8 +101,7 @@ void LookAheadPreprocessor::preprocessWorker( LookAheadPreprocessor::WorkerQueue
 
         float balanceEstimate = balanceEstimates[id];
         if ( (!plConstraint->isActive()) || plConstraint->phaseFixed()
-             || runtimeEstimates[id] > runtimeEstimates.size() ||
-             ( balanceEstimate > -0.4 && balanceEstimate < 0.4 ) )
+             || runtimeEstimates[id] > runtimeEstimates.size() )
             continue;
 
         engine->storeInitialEngineState();
@@ -122,7 +121,7 @@ void LookAheadPreprocessor::preprocessWorker( LookAheadPreprocessor::WorkerQueue
         engine->applySplit( caseSplit );
 
         struct timespec start = TimeUtils::sampleMicro();
-        engine->solve( initialTimeout / 10 );
+        engine->solve( initialTimeout / 10 + 1 );
         struct timespec end = TimeUtils::sampleMicro();
         unsigned long long totalElapsed = TimeUtils::timePassed( start, end );
         unsigned time =  totalElapsed / 1000000;
