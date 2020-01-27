@@ -651,6 +651,14 @@ void Engine::invokePreprocessor( const InputQuery &inputQuery, bool preprocess )
 
     printf( "\tNumber of ReLUs: %u\n", inputQuery.getPiecewiseLinearConstraints().size() );
 
+    unsigned plCounter = 1;
+    for ( const auto &plc : inputQuery.getPiecewiseLinearConstraints() )
+    {
+        String res;
+        plc->dump( res );
+        printf( "\tConstraint %u: %s\n", plCounter++, res.ascii() );
+    }
+
     unsigned numOfEqs = inputQuery.getEquations().size();
 
     printf( "Dumping %u equations:\n", numOfEqs );
