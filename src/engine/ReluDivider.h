@@ -42,8 +42,6 @@ public:
                                                        PiecewiseLinearCaseSplit
                                                        &split );
 
-    PiecewiseLinearConstraint *computeBestChoice();
-
 private:
     /*
       The engine

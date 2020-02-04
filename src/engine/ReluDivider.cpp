@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file ReluLookAheadDivider.h
+/*! \file ReluDivider.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Haoze Wu
@@ -64,11 +64,6 @@ void ReluDivider::createSubQueries( unsigned numNewSubqueries, const String
                     for ( const auto &tightening : split->getBoundTightenings() )
                         newSplit->storeBoundTightening( tightening );
 
-                    // Only store bounds for now. Storing Equation results in segfault
-                    // some time for some reason.
-                    //for ( const auto &equation : split->getEquations() )
-                    //    newSplit->addEquation( equation );
-
                     newSplits.append( newSplit );
                 }
             }
@@ -106,31 +101,26 @@ PiecewiseLinearConstraint *ReluDivider::getPLConstraintToSplit
 
     PiecewiseLinearConstraint *constraintToSplit = NULL;
     if ( _engine->propagate() )
-        constraintToSplit = computeBestChoice();
+    {
+	Map<unsigned, double> balanceEstimates;
+	Map<unsigned, double> runtimeEstimates;
+	_engine->getEstimates( balanceEstimates, runtimeEstimates );
+	double highestRank = balanceEstimates.size() * 2;
+	for ( const auto &entry : runtimeEstimates ){
+	    if ( entry.second < _threshold )
+	    {
+		double newRank = balanceEstimates[entry.first];
+		if ( newRank < highestRank )
+		{
+		    constraintToSplit = _engine->getConstraintFromId( entry.first );
+		    highestRank = newRank;
+		}
+	    }
+	}
+    }
     _engine->restoreState( *engineStateBeforeSplit );
     delete engineStateBeforeSplit;
     return constraintToSplit;
-}
-
-PiecewiseLinearConstraint *ReluDivider::computeBestChoice()
-{
-    Map<unsigned, double> balanceEstimates;
-    Map<unsigned, double> runtimeEstimates;
-    _engine->getEstimates( balanceEstimates, runtimeEstimates );
-    PiecewiseLinearConstraint *best = NULL;
-    double bestRank = balanceEstimates.size() * 2;
-    for ( const auto &entry : runtimeEstimates ){
-        if ( entry.second <  _threshold )
-        {
-            double newRank = balanceEstimates[entry.first];
-            if ( newRank < bestRank )
-            {
-                best = _engine->getConstraintFromId( entry.first );
-                bestRank = newRank;
-            }
-        }
-    }
-    return best;
 }
 
 //
