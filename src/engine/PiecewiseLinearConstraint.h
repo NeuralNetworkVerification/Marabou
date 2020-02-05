@@ -203,6 +203,15 @@ public:
         return false;
     }
 
+    /*
+      Return true if and only if this piecewise linear constraint supports
+      the polarity metric
+    */
+    virtual bool supportPolarity() const
+    {
+        return false;
+    }
+
 protected:
     bool _constraintActive;
 	Map<unsigned, double> _assignment;

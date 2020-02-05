@@ -162,11 +162,31 @@ public:
     */
     bool supportsSymbolicBoundTightening() const;
 
+    bool supportPolarity() const;
+
+    /*
+      Return the polarity of the current ReLU
+    */
+    double computePolarity() const;
+
+    /*
+      Update the preferring direction for fixing and handling case split
+    */
+    void updateDirection();
+
+
 private:
     unsigned _b, _f;
     PhaseStatus _phaseStatus;
     bool _auxVarInUse;
     unsigned _aux;
+
+    /*
+      Denotes which case split to handle first.
+      And which phase status to repair a relu into.
+    */
+    PhaseStatus _direction;
+
 
     PiecewiseLinearCaseSplit getInactiveSplit() const;
     PiecewiseLinearCaseSplit getActiveSplit() const;

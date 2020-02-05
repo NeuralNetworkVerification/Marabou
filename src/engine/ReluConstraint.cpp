@@ -32,6 +32,7 @@ ReluConstraint::ReluConstraint( unsigned b, unsigned f )
     : _b( b )
     , _f( f )
     , _auxVarInUse( false )
+    , _direction( PhaseStatus::PHASE_NOT_FIXED )
     , _haveEliminatedVariables( false )
 {
     setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
@@ -275,14 +276,30 @@ List<PiecewiseLinearConstraint::Fix> ReluConstraint::getPossibleFixes() const
         }
         else
         {
-            fixes.append( PiecewiseLinearConstraint::Fix( _b, fValue ) );
-            fixes.append( PiecewiseLinearConstraint::Fix( _f, 0 ) );
+            if ( _direction == PHASE_INACTIVE )
+            {
+                fixes.append( PiecewiseLinearConstraint::Fix( _f, 0 ) );
+                fixes.append( PiecewiseLinearConstraint::Fix( _b, fValue ) );
+            }
+            else
+            {
+                fixes.append( PiecewiseLinearConstraint::Fix( _b, fValue ) );
+                fixes.append( PiecewiseLinearConstraint::Fix( _f, 0 ) );
+            }
         }
     }
     else
     {
-        fixes.append( PiecewiseLinearConstraint::Fix( _b, 0 ) );
-        fixes.append( PiecewiseLinearConstraint::Fix( _f, bValue ) );
+        if ( _direction == PHASE_ACTIVE )
+        {
+            fixes.append( PiecewiseLinearConstraint::Fix( _f, bValue ) );
+            fixes.append( PiecewiseLinearConstraint::Fix( _b, 0 ) );
+        }
+        else
+        {
+            fixes.append( PiecewiseLinearConstraint::Fix( _b, 0 ) );
+            fixes.append( PiecewiseLinearConstraint::Fix( _f, bValue ) );
+        }
     }
 
     return fixes;
@@ -414,6 +431,19 @@ List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
         throw MarabouError( MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
 
     List<PiecewiseLinearCaseSplit> splits;
+
+    if ( _direction == PHASE_INACTIVE )
+    {
+        splits.append( getInactiveSplit() );
+        splits.append( getActiveSplit() );
+        return splits;
+    }
+    else if ( _direction == PHASE_ACTIVE )
+    {
+        splits.append( getActiveSplit() );
+        splits.append( getInactiveSplit() );
+        return splits;
+    }
 
     // If we have existing knowledge about the assignment, use it to
     // influence the order of splits
@@ -819,6 +849,11 @@ bool ReluConstraint::supportsSymbolicBoundTightening() const
     return true;
 }
 
+bool ReluConstraint::supportPolarity() const
+{
+    return true;
+}
+
 bool ReluConstraint::auxVariableInUse() const
 {
     return _auxVarInUse;
@@ -828,6 +863,22 @@ unsigned ReluConstraint::getAux() const
 {
     return _aux;
 }
+
+double ReluConstraint::computePolarity() const
+{
+    double currentLb = _lowerBounds[_b];
+    double currentUb = _upperBounds[_b];
+    if ( currentLb >= 0 || currentUb <= 0 ) return 1;
+    double width = currentUb - currentLb;
+    double sum = currentUb + currentLb;
+    return sum / width;
+}
+
+void ReluConstraint::updateDirection()
+{
+    _direction = ( computePolarity() > 0 ) ? PHASE_ACTIVE : PHASE_INACTIVE;
+}
+
 
 //
 // Local Variables:
