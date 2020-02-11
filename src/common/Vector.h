@@ -34,6 +34,8 @@ public:
     {
     }
 
+    Vector<T>( const Vector<T> &rhs) = default;
+    
     Vector<T>( const std::initializer_list<T> &initializerList ) : _container( initializerList )
     {
     }
