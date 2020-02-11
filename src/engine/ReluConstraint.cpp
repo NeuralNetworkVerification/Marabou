@@ -438,7 +438,7 @@ List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
         splits.append( getActiveSplit() );
         return splits;
     }
-    else if ( _direction == PHASE_ACTIVE )
+    if ( _direction == PHASE_ACTIVE )
     {
         splits.append( getActiveSplit() );
         splits.append( getInactiveSplit() );
@@ -868,7 +868,8 @@ double ReluConstraint::computePolarity() const
 {
     double currentLb = _lowerBounds[_b];
     double currentUb = _upperBounds[_b];
-    if ( currentLb >= 0 || currentUb <= 0 ) return 1;
+    if ( currentLb >= 0 ) return 1;
+    if (  currentUb <= 0 ) return -1;
     double width = currentUb - currentLb;
     double sum = currentUb + currentLb;
     return sum / width;

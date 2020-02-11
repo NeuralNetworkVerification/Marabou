@@ -1931,7 +1931,7 @@ void Engine::updateDirections()
         for ( const auto &constraint : _plConstraints )
             if ( constraint->supportPolarity() &&
                  constraint->isActive() && !constraint->phaseFixed() )
-                ( (ReluConstraint *) constraint )->updateDirection();
+                constraint->updateDirection();
 }
 
 //

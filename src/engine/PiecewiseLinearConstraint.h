@@ -212,6 +212,14 @@ public:
         return false;
     }
 
+    /*
+      Return true if and only if this piecewise linear constraint supports
+      the polarity metric
+    */
+    virtual void updateDirection()
+    {
+    }
+
 protected:
     bool _constraintActive;
 	Map<unsigned, double> _assignment;

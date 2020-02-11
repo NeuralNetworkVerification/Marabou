@@ -17,6 +17,8 @@
 #include "MString.h"
 #include <cstdio>
 
+// Use the polarity metrics to decide which branch to take first in a case split
+// and how to repair a ReLU constraint.
 const bool GlobalConfiguration::USE_POLARITY_BASED_DIRECTION_HEURISTICS = true;
 
 const double GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS = 0.0000000001;
