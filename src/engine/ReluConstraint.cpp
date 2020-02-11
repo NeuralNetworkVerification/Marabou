@@ -880,7 +880,6 @@ void ReluConstraint::updateDirection()
     _direction = ( computePolarity() > 0 ) ? PHASE_ACTIVE : PHASE_INACTIVE;
 }
 
-
 //
 // Local Variables:
 // compile-command: "make -C ../.. "
