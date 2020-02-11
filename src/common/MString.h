@@ -23,14 +23,14 @@
 class String
 {
 public:
-	typedef std::string Super;
+    typedef std::string Super;
 
-	String( Super super );
-	String();
+    String( Super super );
+    String();
     String( const char *string, unsigned length );
-	String( const char *string );
+    String( const char *string );
 
-	unsigned length() const;
+    unsigned length() const;
     const char *ascii() const;
     char operator[]( int index ) const;
     char &operator[]( int index );
