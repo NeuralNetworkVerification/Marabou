@@ -30,6 +30,8 @@ public:
     String( const char *string, unsigned length );
     String( const char *string );
 
+    String(const String &rhs) = default;
+
     unsigned length() const;
     const char *ascii() const;
     char operator[]( int index ) const;
