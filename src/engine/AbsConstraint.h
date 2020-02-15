@@ -5,11 +5,7 @@
 #ifndef MARABOU_ABSCONSTRAINT_H
 #define MARABOU_ABSCONSTRAINT_H
 
-
-
-
 #include "PiecewiseLinearConstraint.h"
-
 
 class AbsConstraint : public PiecewiseLinearConstraint
 {
@@ -48,7 +44,6 @@ public:
     void notifyLowerBound( unsigned variable, double bound );
     void notifyUpperBound( unsigned variable, double bound );
 
-
     /*
        Returns true iff the variable participates in this piecewise
        linear constraint.
@@ -70,25 +65,58 @@ public:
     */
     List<PiecewiseLinearConstraint::Fix> getPossibleFixes() const;
 
+    /*
+     * call to get possible fixes todo:add some heuristic
+     */
     List<PiecewiseLinearConstraint::Fix> getSmartFixes( ITableau *tableau ) const;
 
+    /*
+     * call to getNegativeSplit() and getPositiveSplit() todo:add some heuristic
+     */
     List<PiecewiseLinearCaseSplit> getCaseSplits() const;
 
+    /*
+     * Check if the constraint's phase has been fixed.
+     */
     bool phaseFixed() const;
 
+    /*
+     * If the constraint's phase has been fixed, get the (valid) case split.
+     */
     PiecewiseLinearCaseSplit getValidCaseSplit() const;
 
+    /*
+      Preprocessing related functions, to inform that a variable has been eliminated completely
+      because it was fixed to some value, or that a variable's index has changed (e.g., x4 is now
+      called x2). constraintObsolete() returns true iff and the constraint has become obsolote
+      as a result of variable eliminations.
+     */
     void eliminateVariable( unsigned variable, double fixedValue );
     void updateVariableIndex( unsigned oldIndex, unsigned newIndex );
+    
+    /*
+     * check if the constraint is redundant
+     * return true iff and the constraint has become obsolote
+     * as a result of variable eliminations.
+     */
     bool constraintObsolete() const;
 
+    /*
+     Get the tightenings entailed by the constraint.
+    */
     void getEntailedTightenings( List<Tightening> &tightenings ) const;
 
+    /*
+     *
+     */
     void getAuxiliaryEquations( List<Equation> &newEquations ) const;
 
+    /*
+     *
+     */
     String serializeToString() const;
 
-
+    bool supportsSymbolicBoundTightening() const;
 
 private:
     // variables name. example x_1, x_2, etc.
@@ -102,7 +130,6 @@ private:
 
     PiecewiseLinearCaseSplit getPositiveSplit() const;
     PiecewiseLinearCaseSplit getNegativeSplit() const;
-
 
     /*
       Set the phase status not fixed pos neg.
