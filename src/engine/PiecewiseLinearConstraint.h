@@ -213,8 +213,7 @@ public:
     }
 
     /*
-      Return true if and only if this piecewise linear constraint supports
-      the polarity metric
+      Update the preferred direction to take first when branching on this PLConstraint
     */
     virtual void updateDirection()
     {
