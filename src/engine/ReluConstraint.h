@@ -175,15 +175,15 @@ public:
       We divide the sum by the width of the interval so that the polarity is
       always between -1 and 1. The closer it is to 0, the more symmetric the
       bound is.
-
     */
     double computePolarity() const;
 
     /*
-      Update the preferring direction for fixing and handling case split
+      Update the preferred direction for fixing and handling case split
     */
     void updateDirection();
 
+    PhaseStatus getDirection() const;
 
 private:
     unsigned _b, _f;
@@ -196,7 +196,6 @@ private:
       And which phase status to repair a relu into.
     */
     PhaseStatus _direction;
-
 
     PiecewiseLinearCaseSplit getInactiveSplit() const;
     PiecewiseLinearCaseSplit getActiveSplit() const;

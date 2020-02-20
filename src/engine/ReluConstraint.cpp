@@ -869,7 +869,7 @@ double ReluConstraint::computePolarity() const
     double currentLb = _lowerBounds[_b];
     double currentUb = _upperBounds[_b];
     if ( currentLb >= 0 ) return 1;
-    if (  currentUb <= 0 ) return -1;
+    if ( currentUb <= 0 ) return -1;
     double width = currentUb - currentLb;
     double sum = currentUb + currentLb;
     return sum / width;
@@ -878,6 +878,11 @@ double ReluConstraint::computePolarity() const
 void ReluConstraint::updateDirection()
 {
     _direction = ( computePolarity() > 0 ) ? PHASE_ACTIVE : PHASE_INACTIVE;
+}
+
+ReluConstraint::PhaseStatus ReluConstraint::getDirection() const
+{
+    return _direction;
 }
 
 //
