@@ -21,9 +21,6 @@
 ReluDivider::ReluDivider( std::shared_ptr<IEngine> engine )
     : _engine( std::move( engine ) )
 {
-    _threshold = _engine->numberOfConstraints() / 20;
-    if ( _threshold < 5 )
-	_threshold = 5;
 }
 
 void ReluDivider::createSubQueries( unsigned numNewSubqueries, const String
@@ -100,7 +97,8 @@ PiecewiseLinearConstraint *ReluDivider::getPLConstraintToSplit
 
     PiecewiseLinearConstraint *constraintToSplit = NULL;
     if ( _engine->propagate() )
-        _engine->pickBranchingReLUBasedOnPolarity();
+        constraintToSplit = engine->pickBranchingReLUBasedOnPolarity();
+    _engine->restoreState( *engineStateBeforeSplit );
     delete engineStateBeforeSplit;
     return constraintToSplit;
 }

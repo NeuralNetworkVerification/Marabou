@@ -1934,6 +1934,13 @@ void Engine::updateDirections()
                 constraint->updateDirection();
 }
 
+PiecewiseLinearConstraint *Engine::pickBranchingReLUBasedOnPolarity()
+{
+
+}
+
+
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "
