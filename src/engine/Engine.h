@@ -302,8 +302,6 @@ private:
     unsigned _lastNumVisitedStates;
     unsigned long long _lastIterationWithProgress;
 
-    Set<PiecewiseLinearConstraint *> _scores;
-
     /*
       Perform a simplex step: compute the cost function, pick the
       entering and leaving variables and perform a pivot.
