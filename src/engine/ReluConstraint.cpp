@@ -14,7 +14,9 @@
 
 #include "ConstraintBoundTightener.h"
 #include "Debug.h"
+#include "DivideStrategy.h"
 #include "FloatUtils.h"
+#include "GlobalConfiguration.h"
 #include "ITableau.h"
 #include "InputQuery.h"
 #include "MStringf.h"
@@ -33,13 +35,16 @@ ReluConstraint::ReluConstraint( unsigned b, unsigned f )
     , _f( f )
     , _auxVarInUse( false )
     , _direction( PhaseStatus::PHASE_NOT_FIXED )
+    , _score( 0 )
     , _haveEliminatedVariables( false )
 {
     setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
 }
 
 ReluConstraint::ReluConstraint( const String &serializedRelu )
-    : _haveEliminatedVariables( false )
+    : _score( 0 )
+    , _haveEliminatedVariables( false )
+
 {
     String constraintType = serializedRelu.substring( 0, 4 );
     ASSERT( constraintType == String( "relu" ) );
@@ -864,6 +869,13 @@ unsigned ReluConstraint::getAux() const
     return _aux;
 }
 
+double ReluConstraint::computeInterval() const
+{
+    double currentLb = _lowerBounds[_b];
+    double currentUb = _upperBounds[_b];
+    return currentUb - currentLb;
+}
+
 double ReluConstraint::computePolarity() const
 {
     double currentLb = _lowerBounds[_b];
@@ -878,6 +890,18 @@ double ReluConstraint::computePolarity() const
 void ReluConstraint::updateDirection()
 {
     _direction = ( computePolarity() > 0 ) ? PHASE_ACTIVE : PHASE_INACTIVE;
+}
+
+void ReluConstraint::updateScore()
+{
+    if ( GlobalConfiguration::BRANCHING_HEURISTICS == DivideStrategy::SmallestReluInterval )
+    {
+        _score = 1 / computeInterval();
+    }
+    else if ( GlobalConfiguration::BRANCHING_HEURISTICS == DivideStrategy::LargestInterval )
+    {
+        _score = 0;
+    }
 }
 
 ReluConstraint::PhaseStatus ReluConstraint::getDirection() const

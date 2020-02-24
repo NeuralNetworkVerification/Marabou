@@ -19,6 +19,7 @@
 enum DivideStrategy
 {
     LargestInterval,
+    SmallestReluInterval,
 };
 
 #endif // __DivideStrategy_h__

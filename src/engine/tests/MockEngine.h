@@ -142,6 +142,16 @@ public:
     {
         return _inputVariables;
     }
+
+    void updateScores()
+    {
+    }
+
+    PiecewiseLinearConstraint *pickBranchPLConstraint()
+    {
+        return NULL;
+    }
+
 };
 
 #endif // __MockEngine_h__

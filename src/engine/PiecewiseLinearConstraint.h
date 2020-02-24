@@ -60,6 +60,11 @@ public:
     PiecewiseLinearConstraint();
     virtual ~PiecewiseLinearConstraint() {}
 
+    bool operator<( const PiecewiseLinearConstraint &other ) const
+    {
+        return _score < other._score;
+    }
+
     /*
       Return a clone of the constraint.
     */
@@ -219,11 +224,17 @@ public:
     {
     }
 
+    virtual void updateScore()
+    {
+    }
+
 protected:
     bool _constraintActive;
 	Map<unsigned, double> _assignment;
     Map<unsigned, double> _lowerBounds;
     Map<unsigned, double> _upperBounds;
+
+    double _score;
 
     IConstraintBoundTightener *_constraintBoundTightener;
 

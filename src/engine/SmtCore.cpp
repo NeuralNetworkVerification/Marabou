@@ -14,6 +14,7 @@
  **/
 
 #include "Debug.h"
+#include "DivideStrategy.h"
 #include "EngineState.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
@@ -57,7 +58,14 @@ void SmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
     if ( _constraintToViolationCount[constraint] >= GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD )
     {
         _needToSplit = true;
-        _constraintForSplitting = constraint;
+        if ( GlobalConfiguration::BRANCHING_HEURISTICS == DivideStrategy::SmallestReluInterval )
+        {
+            pickBranchReLU();
+        }
+        else
+        {
+            _constraintForSplitting = constraint;
+        }
     }
 }
 
@@ -387,6 +395,14 @@ PiecewiseLinearConstraint *SmtCore::chooseViolatedConstraintForFixing( List<Piec
     }
 
     return candidate;
+}
+
+void SmtCore::pickBranchReLU()
+{
+    if ( _needToSplit && ( !_constraintForSplitting ) )
+    {
+        _constraintForSplitting = _engine->pickBranchPLConstraint();
+    }
 }
 
 //

@@ -178,10 +178,14 @@ public:
     */
     double computePolarity() const;
 
+    double computeInterval() const;
+
     /*
       Update the preferred direction for fixing and handling case split
     */
     void updateDirection();
+
+    void updateScore();
 
     PhaseStatus getDirection() const;
 
@@ -196,6 +200,8 @@ private:
       And which phase status to repair a relu into.
     */
     PhaseStatus _direction;
+
+    float _score;
 
     PiecewiseLinearCaseSplit getInactiveSplit() const;
     PiecewiseLinearCaseSplit getActiveSplit() const;

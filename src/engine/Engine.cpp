@@ -1934,12 +1934,24 @@ void Engine::updateDirections()
                 constraint->updateDirection();
 }
 
-PiecewiseLinearConstraint *Engine::pickBranchingReLUBasedOnPolarity()
+void Engine::updateScores()
 {
-
+    _plConstraintsSet.clear();
+    for ( const auto plConstraint : _plConstraints )
+    {
+        if ( plConstraint->isActive() && !plConstraint->phaseFixed() )
+        {
+            plConstraint->updateScore();
+            _plConstraintsSet.insert( plConstraint );
+        }
+    }
 }
 
-
+PiecewiseLinearConstraint *Engine::pickBranchPLConstraint()
+{
+    updateScores();
+    return _plConstraintsSet.pop();
+}
 
 //
 // Local Variables:

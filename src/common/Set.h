@@ -183,6 +183,14 @@ public:
         return *it;
     }
 
+    Value pop()
+    {
+        auto it = begin();
+        _container.erase( *it );
+        return *it;
+    }
+
+
 protected:
     Super _container;
 };

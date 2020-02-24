@@ -24,6 +24,7 @@
 #include "BlandsRule.h"
 #include "DantzigsRule.h"
 #include "DegradationChecker.h"
+#include "DivideStrategy.h"
 #include "IEngine.h"
 #include "InputQuery.h"
 #include "Map.h"
@@ -135,6 +136,10 @@ public:
     void resetExitCode();
     void resetBoundTighteners();
 
+    PiecewiseLinearConstraint *pickBranchPLConstraint();
+
+    void updateScores();
+
 private:
     enum BasisRestorationRequired {
         RESTORATION_NOT_NEEDED = 0,
@@ -169,6 +174,8 @@ private:
       The existing piecewise-linear constraints.
     */
     List<PiecewiseLinearConstraint *> _plConstraints;
+
+    Set<PiecewiseLinearConstraint *> _plConstraintsSet;
 
     /*
       Piecewise linear constraints that are currently violated.
