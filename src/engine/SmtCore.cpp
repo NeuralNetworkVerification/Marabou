@@ -21,6 +21,7 @@
 #include "IEngine.h"
 #include "MStringf.h"
 #include "MarabouError.h"
+#include "ReluConstraint.h"
 #include "SmtCore.h"
 
 SmtCore::SmtCore( IEngine *engine )
@@ -402,6 +403,7 @@ void SmtCore::pickBranchReLU()
     if ( _needToSplit && ( !_constraintForSplitting ) )
     {
         _constraintForSplitting = _engine->pickBranchPLConstraint();
+        //std::cout << ((ReluConstraint *)_constraintForSplitting)->computeInterval() << std::endl;
     }
 }
 
