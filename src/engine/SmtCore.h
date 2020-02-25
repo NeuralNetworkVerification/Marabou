@@ -103,7 +103,7 @@ public:
     bool checkSkewFromDebuggingSolution();
     bool splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split, String &error ) const;
 
-    void pickBranchReLU();
+    void pickBranchPLConstraint();
 
 private:
     /*

@@ -59,14 +59,10 @@ void SmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
     if ( _constraintToViolationCount[constraint] >= GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD )
     {
         _needToSplit = true;
-        if ( GlobalConfiguration::BRANCHING_HEURISTICS == DivideStrategy::SmallestReluInterval )
-        {
-            pickBranchReLU();
-        }
-        else
-        {
+        if ( GlobalConfiguration::BRANCHING_HEURISTICS == DivideStrategy::ReLUViolation )
             _constraintForSplitting = constraint;
-        }
+        else
+            pickBranchPLConstraint();
     }
 }
 
@@ -398,12 +394,11 @@ PiecewiseLinearConstraint *SmtCore::chooseViolatedConstraintForFixing( List<Piec
     return candidate;
 }
 
-void SmtCore::pickBranchReLU()
+void SmtCore::pickBranchPLConstraint()
 {
     if ( _needToSplit && ( !_constraintForSplitting ) )
     {
         _constraintForSplitting = _engine->pickBranchPLConstraint();
-        //std::cout << ((ReluConstraint *)_constraintForSplitting)->computeInterval() << std::endl;
     }
 }
 

@@ -35,14 +35,14 @@ ReluConstraint::ReluConstraint( unsigned b, unsigned f )
     , _f( f )
     , _auxVarInUse( false )
     , _direction( PhaseStatus::PHASE_NOT_FIXED )
-    , _score( 0 )
+    , _score( -1 )
     , _haveEliminatedVariables( false )
 {
     setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
 }
 
 ReluConstraint::ReluConstraint( const String &serializedRelu )
-    : _score( 0 )
+    : _score( -1 )
     , _haveEliminatedVariables( false )
 
 {
@@ -892,21 +892,23 @@ void ReluConstraint::updateDirection()
     _direction = ( computePolarity() > 0 ) ? PHASE_ACTIVE : PHASE_INACTIVE;
 }
 
-void ReluConstraint::updateScore()
-{
-    if ( GlobalConfiguration::BRANCHING_HEURISTICS == DivideStrategy::SmallestReluInterval )
-    {
-        _score = 1 / computeInterval();
-    }
-    else if ( GlobalConfiguration::BRANCHING_HEURISTICS == DivideStrategy::LargestInterval )
-    {
-        _score = 0;
-    }
-}
-
 ReluConstraint::PhaseStatus ReluConstraint::getDirection() const
 {
     return _direction;
+}
+
+void ReluConstraint::updateScore()
+{
+    if ( GlobalConfiguration::BRANCHING_HEURISTICS ==
+         DivideStrategy::ReLUInterval )
+    {
+        _score = 1 / computeInterval();
+    }
+    if ( GlobalConfiguration::BRANCHING_HEURISTICS ==
+         DivideStrategy::Polarity )
+    {
+        _score = 1 / std::abs( computePolarity() );
+    }
 }
 
 //

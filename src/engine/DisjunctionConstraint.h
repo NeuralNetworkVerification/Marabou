@@ -147,6 +147,8 @@ private:
     */
     List<PiecewiseLinearCaseSplit> _disjuncts;
 
+    double _score;
+
     /*
       The disjuncts that are still possible, given the current
       lower and upper bounds

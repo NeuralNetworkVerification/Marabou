@@ -18,8 +18,13 @@
 
 enum DivideStrategy
 {
+    // Input splitting
     LargestInterval,
-    SmallestReluInterval,
+
+    // Relu splitting
+    ReLUInterval,
+    Polarity,
+    ReLUViolation,
 };
 
 #endif // __DivideStrategy_h__

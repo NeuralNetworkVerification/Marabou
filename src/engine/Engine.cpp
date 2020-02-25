@@ -1950,7 +1950,9 @@ void Engine::updateScores()
 PiecewiseLinearConstraint *Engine::pickBranchPLConstraint()
 {
     updateScores();
-    return _plConstraintsSet.pop();
+    auto constraint = *_plConstraintsSet.begin();
+    _plConstraintsSet.erase( constraint );
+    return constraint;
 }
 
 //

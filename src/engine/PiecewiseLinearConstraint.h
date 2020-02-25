@@ -234,6 +234,11 @@ protected:
     Map<unsigned, double> _lowerBounds;
     Map<unsigned, double> _upperBounds;
 
+    /*
+      The score denotes priority for branching. When score is negative, the PL constraint
+      is not being considered for splitting.
+      We pick the PL constraint with the highest score to branch.
+     */
     double _score;
 
     IConstraintBoundTightener *_constraintBoundTightener;
