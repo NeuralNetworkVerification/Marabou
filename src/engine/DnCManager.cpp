@@ -77,7 +77,7 @@ void DnCManager::freeMemoryIfNeeded()
 {
     if ( _workload )
     {
-        SubQuery *subQuery;
+        SubQuery *subQuery = NULL;
         while ( !_workload->empty() )
         {
             _workload->pop( subQuery );
@@ -347,7 +347,7 @@ void DnCManager::initialDivide( SubQueries &subQueries )
             ( new LargestIntervalDivider( inputVariables ) );
     }
 
-    String queryId = "";
+    String queryId;
     // Create a new case split
     QueryDivider::InputRegion initialRegion;
     InputQuery *inputQuery = _baseEngine->getInputQuery();

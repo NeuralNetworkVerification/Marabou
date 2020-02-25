@@ -869,6 +869,7 @@ unsigned ReluConstraint::getAux() const
     return _aux;
 }
 
+<<<<<<< HEAD
 double ReluConstraint::computeInterval() const
 {
     double currentLb = _lowerBounds[_b];
@@ -876,6 +877,8 @@ double ReluConstraint::computeInterval() const
     return currentUb - currentLb;
 }
 
+=======
+>>>>>>> a691ace2b419592e552896040635b1a96ed8ead4
 double ReluConstraint::computePolarity() const
 {
     double currentLb = _lowerBounds[_b];
@@ -897,6 +900,7 @@ ReluConstraint::PhaseStatus ReluConstraint::getDirection() const
     return _direction;
 }
 
+<<<<<<< HEAD
 void ReluConstraint::updateScore()
 {
     if ( GlobalConfiguration::BRANCHING_HEURISTICS ==
@@ -911,6 +915,8 @@ void ReluConstraint::updateScore()
     }
 }
 
+=======
+>>>>>>> a691ace2b419592e552896040635b1a96ed8ead4
 //
 // Local Variables:
 // compile-command: "make -C ../.. "
