@@ -280,5 +280,120 @@ class Cnn(nx.DiGraph):
         print("Found these inputs: {}".format(inputs))
         print("Found these outputs: {}".format(outputs))        
         return Cnn.tf_graph_to_nx(inputs, outputs, session)'''
+
+###############################################################################################################
+###############################################################################################################
+###############################################################################################################
+        
+def n2str_md(layer_i,node_cor):
+    return l2str(layer_i) + str(node_cor)
+
+class Filter:    
+    def __init__(self, weights):
+        self.dim = dict()
+        self.dim["x"] = weights.shape()[0]
+        self.dim["y"] = weights.shape()[1]
+        self.dim["d"] = weights.shape()[2] #Input depth
+        self.dim["f"] = weights.shape()[3] #Filter amount
+        self.weights = weights
+
+class Cnn2D(nx.DiGraph):
+
+    def __str__(self):
+        out = ""
+        for u,v,w in self.edges.data('weight'):
+            out = out + "({},{}), w:={}".format(u,v,w)+ "\n"
+        return out
+
+    #-------------Add filters and layers-------------#
+
+    def add_filter(self, f):
+        if f.dim["d"] is not self.out_dim["d"]:
+            raise Exception("Filter and layer depth should be equal")
+        new_l = dict()
+        self.l_num += 1
+        for x_i in range(self.out_dim["x"] - f.dim["x"] + 1):
+            for y_i in range(self.out_dim["y"] - f.dim["y"] + 1):                
+                for f_i in range(f.dim["f"]):
+                    act_n = n2str_md(self.l_num, [x_i, y_i, d_i])
+                    self.add_node(act_n)
+                    new_l[(x_i, y_i, f_i)] = act_n 
+                    for x_j, y_j, d_j in itertools.product(range(f.dim["x"]),range(f.dim["y"]),range(f.dim["d"]))):
+                        self.add_edge(self.out_l[(x_i + x_j, y_i + y_j, d_j)], act_n, weight=w[x_j][y_j][d_j][f_i])
+        self.out_dim["x"] = self.out_dim["x"] - f.dim["x"]
+        self.out_dim["y"] = self.out_dim["y"] - f.dim["y"]
+        self.out_dim["d"] = f.dim["f"]
+        self.out_l = new_l
+
+    def add_layer(self, w_dict): #Assume some element will be added. in the form of int->int dict.
+        self.l_num += 1
+        new_l = []
+        max_node_new_l = -1
+        new_l = list()
+        for i in range(len(self.out_l)):
+            new_wn = w_dict[i]
+            if len(new_wn) == 0:
+                continue
+            max_n_ind = max(nw[0] for nw in new_wn)
+            if max_node_new_l < max_n_ind:
+                last_max = max_node_new_l
+                max_node_new_l = max_n_ind
+                for j in range(last_max + 1, max_node_new_l + 1):
+                    self.add_node(n2str_md(self.l_num, [j]))
+                    new_l.append(n2str_md(self.l_num, [j]))
+            i_str = n2str_md(self.l_num - 1, [i])
+            for wn in new_wn:
+                n_str = n2str_md(self.l_num, [wn[0]])
+                w = wn[1]
+                self.add_edge(i_str, n_str, weight=w)
+        self.out_l = new_l
+
+    #-------------Solve the network-------------#        
+        
+    def solve(in_prop, out_props):
+        #example:
+        #in_prop = {n : (-mnx.large, mnx.large) for n in cnn.in_l}
+        #out_prop = {n : (-mnx.large, mnx.large) for n in cnn.out_l}
+        iq = mnx.networkxToInputQuery(self, in_prop, out_prop)
+
+        print("Start solving")
+        vars1, stats1 = MarabouCore.solve(iq, Marabou.createOptions())
+        print("Finish solving")
+        
+        if len(vars1)>0:
+            print("SAT")
+            print(vars1)
+        else:
+            print("UNSAT")
                 
-            
+    #-------------Init-------------#            
+
+    def __init__(self, in_l_size):
+        super().__init__()
+        self.in_l = dict()  # L is for layer.
+        self.l_num = 0  # L is for layer.
+        self.next_lyr_pos = 0
+        self.layout = dict()
+        self.out_dim = {"x":in_l_size["x"] , "y":in_l_size["y"], "d":in_l_size["d"]}
+        self.out_l = dict()
+        for x in range(self.out_dim["x"]):
+            for y in range(self.out_dim["y"]):
+                for d in range(self.out_dim["d"]):
+                    new_n = n2str_md(0,[x, y, d])
+                    self.add_node(new_n)
+                    self.out_l[(x,y,d)] = new_n
+                    self.in_l[(x,y,d)] = new_n
+
+    #-------------Find the Cone of Influence of a set of vertices-------------#
+
+    def coi(graph, vertices): # Cone of Influencers
+        ancestors = set()
+        descendants = set()
+        for vertex in vertices:
+            ancestors = set.union(ancestors, nx.algorithms.dag.ancestors(graph, vertex)) 
+            descendants = set.union(descendants, nx.algorithms.dag.descendants(graph, vertex))
+        graph_copy = copy.deepcopy(graph)
+        for u in graph:
+                if (u not in ancestors) and (u not in vertices) and (u not in descendants):
+                    graph_copy.remove_node(u)
+        return graph_copy
