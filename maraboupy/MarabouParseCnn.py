@@ -21,7 +21,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import tensorflow as tf
 from tensorflow.python.framework.graph_util import convert_variables_to_constants
 from tensorflow.keras import backend
-
+import itertools
 #from collections import deque
 
 
@@ -291,10 +291,10 @@ def n2str_md(layer_i,node_cor):
 class Filter:    
     def __init__(self, weights):
         self.dim = dict()
-        self.dim["x"] = weights.shape()[0]
-        self.dim["y"] = weights.shape()[1]
-        self.dim["d"] = weights.shape()[2] #Input depth
-        self.dim["f"] = weights.shape()[3] #Filter amount
+        self.dim["x"] = weights.shape[0]
+        self.dim["y"] = weights.shape[1]
+        self.dim["d"] = weights.shape[2] #Input depth
+        self.dim["f"] = weights.shape[3] #Filter amount
         self.weights = weights
 
 class Cnn2D(nx.DiGraph):
@@ -315,11 +315,11 @@ class Cnn2D(nx.DiGraph):
         for x_i in range(self.out_dim["x"] - f.dim["x"] + 1):
             for y_i in range(self.out_dim["y"] - f.dim["y"] + 1):                
                 for f_i in range(f.dim["f"]):
-                    act_n = n2str_md(self.l_num, [x_i, y_i, d_i])
+                    act_n = n2str_md(self.l_num, [x_i, y_i, f_i])
                     self.add_node(act_n)
                     new_l[(x_i, y_i, f_i)] = act_n 
-                    for x_j, y_j, d_j in itertools.product(range(f.dim["x"]),range(f.dim["y"]),range(f.dim["d"]))):
-                        self.add_edge(self.out_l[(x_i + x_j, y_i + y_j, d_j)], act_n, weight=w[x_j][y_j][d_j][f_i])
+                    for x_j, y_j, d_j in itertools.product(range(f.dim["x"]),range(f.dim["y"]),range(f.dim["d"])):
+                        self.add_edge(self.out_l[(x_i + x_j, y_i + y_j, d_j)], act_n, weight=f.weights[x_j][y_j][d_j][f_i])
         self.out_dim["x"] = self.out_dim["x"] - f.dim["x"]
         self.out_dim["y"] = self.out_dim["y"] - f.dim["y"]
         self.out_dim["d"] = f.dim["f"]
