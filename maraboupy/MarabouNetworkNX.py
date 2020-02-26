@@ -1,7 +1,7 @@
 from maraboupy import Marabou, MarabouCore
 import networkx as nx
 
-large = 10.0
+large = 100.0
     
 def networkxToInputQuery(net, input_bounds, output_bounds):
 
@@ -13,6 +13,10 @@ def networkxToInputQuery(net, input_bounds, output_bounds):
             degree[v]['in'] += 1
             incoming[v].append((u,wdict["weight"]))
 
+    print("Incoming=")
+    for k,v in incoming.items():
+        print(str(k) + ":" + str(v))
+
     input_nodes = set()
     output_nodes = set()
     var_list = list()
@@ -22,10 +26,26 @@ def networkxToInputQuery(net, input_bounds, output_bounds):
         var_list.append(n)
         if in_deg == 0 and out_deg > 0:
             input_nodes.add(n)
-        elif in_deg > 0 and out_deg > 0 and net.nodes[n]["function"] is "Relu":
+        elif in_deg > 0 and net.nodes[n]["function"] is "Relu":
             var_list.append(n)
-        elif in_deg > 0 and out_deg == 0:
+        if out_deg == 0:
             output_nodes.add(n)
+
+    print("Incoming=")
+    for k,v in incoming.items():
+        print(str(k) + ":" + str(v))
+
+    print("var_list=")
+    for v in var_list:
+        print(str(v))
+
+    print("input_nodes=")
+    for v in input_nodes:
+        print(str(v))
+
+    print("output_nodes=")
+    for v in output_nodes:
+        print(str(v))          
 
     inputQuery = MarabouCore.InputQuery()
     inputQuery.setNumberOfVariables(len(var_list))

@@ -391,8 +391,6 @@ class Cnn2D(nx.DiGraph):
         
     def add_dense(self, w_dict, function="Relu"): #Assume some element will be added. in the form of cor->(cor,weight) dict.
         self.l_num += 1
-        new_l = []
-        max_node_new_l = -1
         new_l = dict()
         max_t_x = 0
         max_t_y = 0
@@ -413,7 +411,7 @@ class Cnn2D(nx.DiGraph):
                 self.add_edge(source, target, weight=w)
         for x,y,d in itertools.product(range(max_t_x+1),range(max_t_y+1),range(max_t_d+1)):
             if (x,y,d) not in new_l:
-                target = n2str_md(self.l_num, (x,y,d))
+                target = n2str_md(self.l_num, [x,y,d])
                 self.add_node(target, function="Relu")
                 new_l[(x,y,d)] = target
         self.out_l = new_l

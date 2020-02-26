@@ -55,6 +55,35 @@ def create_cnn2D():
 
     return cnn
 
+def create_min_cnn2D():
+    in_l_size = {"x":3 , "y":3, "d":1 }
+    
+    #3 X 4 X 2 X 2
+    f_1_l = np.array([[ [ [1.111 , 1.112] , [1.121 , 1.122] ] , [ [1.211 , 1.212] , [1.221 , 1.222] ] ],
+                      [ [ [2.111 , 2.112] , [2.121 , 2.122] ] , [ [2.211 , 2.212] , [2.221 , 2.222] ] ]])
+    f_1 = mcnn.Filter(f_1_l)
+
+    #output : ?x X ?y X 2d
+    f_2 = mcnn.Filter([],"MaxPool", [1,1,f_1.dim["d"]])
+
+    cnn = mcnn.Cnn2D(in_l_size)
+    cnn.add_filter(f_1)
+    print("Added f_1")
+    cnn.add_filter(f_2)
+    print("Added f_2")    
+    cnn.add_flatten()
+    print("Added flatten")
+    cnn.add_dense({cor : [((j,0,0),1) for j in range(4) if j != 2] for cor in cnn.out_l})
+    print("Added dense")
+    print("Out dim:" + str([k + "=" + str(v) for k,v in cnn.out_dim.items()]))
+    
+    #for n,v in cnn.nodes.items():
+    #    print(str(n) + ":" + (v["function"] if "function" in v else ""))
+    #for i,e in enumerate(sorted(cnn.edges, key= lambda e : e[::-1])):
+    #    print(str(i) + ":" + str(e) + ":" + str(cnn.edges[e]["weight"]))
+
+    return cnn
+
 
 def train_cnn2D():
     file_name = './cnn_model.h5'
@@ -131,7 +160,7 @@ def train_cnn2D():
         
 if __name__ == "__main__": 
 
-    cnn = create_cnn2D()
+    cnn = create_min_cnn2D()
     print(cnn.in_l.values())
     print(cnn.out_l.values())
     for n,v in cnn.nodes.items():
