@@ -42,7 +42,6 @@ ReluConstraint::ReluConstraint( unsigned b, unsigned f )
 
 ReluConstraint::ReluConstraint( const String &serializedRelu )
     : _haveEliminatedVariables( false )
-
 {
     String constraintType = serializedRelu.substring( 0, 4 );
     ASSERT( constraintType == String( "relu" ) );
