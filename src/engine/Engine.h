@@ -456,6 +456,13 @@ private:
     double *createConstraintMatrix();
     void addAuxiliaryVariables();
     void augmentInitialBasisIfNeeded( List<unsigned> &initialBasis, const List<unsigned> &basicRows );
+
+    /*
+      Update the preferred direction to perform fixes and the preferred order
+      to handle case splits
+    */
+    void updateDirections();
+
 };
 
 #endif // __Engine_h__

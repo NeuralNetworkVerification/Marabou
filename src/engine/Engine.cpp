@@ -92,6 +92,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
 
+    updateDirections();
     storeInitialEngineState();
 
     if ( _verbosity > 0 )
@@ -1929,7 +1930,15 @@ void Engine::setConstraintViolationThreshold( unsigned threshold )
     _smtCore.setConstraintViolationThreshold( threshold );
 }
 
-//
+void Engine::updateDirections()
+{
+    if ( GlobalConfiguration::USE_POLARITY_BASED_DIRECTION_HEURISTICS )
+        for ( const auto &constraint : _plConstraints )
+            if ( constraint->supportPolarity() &&
+                 constraint->isActive() && !constraint->phaseFixed() )
+                constraint->updateDirection();
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "
