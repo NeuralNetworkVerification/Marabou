@@ -33,6 +33,23 @@
 ReluConstraint::ReluConstraint( unsigned b, unsigned f )
     : _b( b )
     , _f( f )
+    , _layer( 0 )
+    , _auxVarInUse( false )
+    , _direction( PhaseStatus::PHASE_NOT_FIXED )
+    , _score( -1 )
+    , _haveEliminatedVariables( false )
+{
+    setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
+    if ( GlobalConfiguration::BRANCHING_HEURISTICS == DivideStrategy::EarliestReLU )
+    {
+        _score = _layer;
+    }
+}
+
+ReluConstraint::ReluConstraint( unsigned b, unsigned f, unsigned layer )
+    : _b( b )
+    , _f( f )
+    , _layer( layer )
     , _auxVarInUse( false )
     , _direction( PhaseStatus::PHASE_NOT_FIXED )
     , _score( -1 )
@@ -42,7 +59,8 @@ ReluConstraint::ReluConstraint( unsigned b, unsigned f )
 }
 
 ReluConstraint::ReluConstraint( const String &serializedRelu )
-    : _score( -1 )
+    : _layer( 0 )
+    , _score( -1 )
     , _haveEliminatedVariables( false )
 
 {
@@ -869,7 +887,6 @@ unsigned ReluConstraint::getAux() const
     return _aux;
 }
 
-<<<<<<< HEAD
 double ReluConstraint::computeInterval() const
 {
     double currentLb = _lowerBounds[_b];
@@ -877,8 +894,6 @@ double ReluConstraint::computeInterval() const
     return currentUb - currentLb;
 }
 
-=======
->>>>>>> a691ace2b419592e552896040635b1a96ed8ead4
 double ReluConstraint::computePolarity() const
 {
     double currentLb = _lowerBounds[_b];
@@ -900,23 +915,6 @@ ReluConstraint::PhaseStatus ReluConstraint::getDirection() const
     return _direction;
 }
 
-<<<<<<< HEAD
-void ReluConstraint::updateScore()
-{
-    if ( GlobalConfiguration::BRANCHING_HEURISTICS ==
-         DivideStrategy::ReLUInterval )
-    {
-        _score = 1 / computeInterval();
-    }
-    if ( GlobalConfiguration::BRANCHING_HEURISTICS ==
-         DivideStrategy::Polarity )
-    {
-        _score = 1 / std::abs( computePolarity() );
-    }
-}
-
-=======
->>>>>>> a691ace2b419592e552896040635b1a96ed8ead4
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

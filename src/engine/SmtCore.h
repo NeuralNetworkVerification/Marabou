@@ -97,13 +97,16 @@ public:
     PiecewiseLinearConstraint *chooseViolatedConstraintForFixing( List<PiecewiseLinearConstraint *> &_violatedPlConstraints ) const;
 
     /*
+      Pick the piecewise linear constraint for branching
+    */
+    void pickBranchPLConstraint();
+
+    /*
       For debugging purposes only - store a correct possible solution
     */
     void storeDebuggingSolution( const Map<unsigned, double> &debuggingSolution );
     bool checkSkewFromDebuggingSolution();
     bool splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split, String &error ) const;
-
-    void pickBranchPLConstraint();
 
 private:
     /*

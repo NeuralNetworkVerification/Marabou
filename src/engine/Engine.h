@@ -129,16 +129,23 @@ public:
     void setVerbosity( unsigned verbosity );
 
     /*
+      Pick the piecewise linear constraint for branching
+    */
+    PiecewiseLinearConstraint *pickBranchPLConstraint();
+
+    /*
+      Update the scores of each candidate branching PL constraints
+    */
+    void updateScores();
+
+
+    /*
       PSA: The following two methods are for DnC only and should be used very
       cautiously.
      */
     void resetSmtCore();
     void resetExitCode();
     void resetBoundTighteners();
-
-    PiecewiseLinearConstraint *pickBranchPLConstraint();
-
-    void updateScores();
 
 private:
     enum BasisRestorationRequired {
@@ -175,7 +182,10 @@ private:
     */
     List<PiecewiseLinearConstraint *> _plConstraints;
 
-    Set<PiecewiseLinearConstraint *> _plConstraintsSet;
+    /*
+      The orderred set of candidate PL constraints for branching
+    */
+    Set<PiecewiseLinearConstraint *> _candidatePlConstraints;
 
     /*
       Piecewise linear constraints that are currently violated.

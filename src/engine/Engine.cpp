@@ -1936,13 +1936,13 @@ void Engine::updateDirections()
 
 void Engine::updateScores()
 {
-    _plConstraintsSet.clear();
+    _candidatePlConstraints.clear();
     for ( const auto plConstraint : _plConstraints )
     {
         if ( plConstraint->isActive() && !plConstraint->phaseFixed() )
         {
             plConstraint->updateScore();
-            _plConstraintsSet.insert( plConstraint );
+            _candidatePlConstraints.insert( plConstraint );
         }
     }
 }
@@ -1950,8 +1950,8 @@ void Engine::updateScores()
 PiecewiseLinearConstraint *Engine::pickBranchPLConstraint()
 {
     updateScores();
-    auto constraint = *_plConstraintsSet.begin();
-    _plConstraintsSet.erase( constraint );
+    auto constraint = *_candidatePlConstraints.begin();
+    _candidatePlConstraints.erase( constraint );
     return constraint;
 }
 

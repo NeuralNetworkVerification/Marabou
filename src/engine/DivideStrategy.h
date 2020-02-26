@@ -22,8 +22,7 @@ enum DivideStrategy
     LargestInterval,
 
     // Relu splitting
-    ReLUInterval,
-    Polarity,
+    EarliestReLU,
     ReLUViolation,
 };
 
