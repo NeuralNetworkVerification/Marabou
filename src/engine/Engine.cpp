@@ -1925,11 +1925,6 @@ void Engine::checkOverallProgress()
     }
 }
 
-void Engine::setConstraintViolationThreshold( unsigned threshold )
-{
-    _smtCore.setConstraintViolationThreshold( threshold );
-}
-
 void Engine::updateDirections()
 {
     if ( GlobalConfiguration::USE_POLARITY_BASED_DIRECTION_HEURISTICS )
@@ -1937,6 +1932,11 @@ void Engine::updateDirections()
             if ( constraint->supportPolarity() &&
                  constraint->isActive() && !constraint->phaseFixed() )
                 constraint->updateDirection();
+}
+
+void Engine::setConstraintViolationThreshold( unsigned threshold )
+{
+    _smtCore.setConstraintViolationThreshold( threshold );
 }
 
 //
