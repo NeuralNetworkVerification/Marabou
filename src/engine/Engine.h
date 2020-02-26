@@ -129,12 +129,12 @@ public:
     void setVerbosity( unsigned verbosity );
 
     /*
-      Pick the piecewise linear constraint for branching
+      Pick the piecewise linear constraint for splitting
     */
     PiecewiseLinearConstraint *pickSplitPLConstraint();
 
     /*
-      Update the scores of each candidate branching PL constraints
+      Update the scores of each candidate splitting PL constraints
     */
     void updateScores();
 
@@ -182,7 +182,7 @@ private:
     List<PiecewiseLinearConstraint *> _plConstraints;
 
     /*
-      The ordered set of candidate PL constraints for branching
+      The ordered set of candidate PL constraints for splitting
     */
     Set<PiecewiseLinearConstraint *> _candidatePlConstraints;
 

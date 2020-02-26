@@ -97,7 +97,7 @@ public:
     PiecewiseLinearConstraint *chooseViolatedConstraintForFixing( List<PiecewiseLinearConstraint *> &_violatedPlConstraints ) const;
 
     /*
-      Pick the piecewise linear constraint for branching
+      Pick the piecewise linear constraint for splitting
     */
     void pickSplitPLConstraint();
 

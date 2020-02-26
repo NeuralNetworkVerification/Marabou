@@ -73,7 +73,7 @@ public:
     virtual void updateScores() = 0;
 
     /*
-      Pick the piecewise linear constraint for branching
+      Pick the piecewise linear constraint for splitting
     */
     virtual PiecewiseLinearConstraint *pickSplitPLConstraint() = 0;
 

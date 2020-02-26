@@ -218,7 +218,7 @@ public:
     }
 
     /*
-      Update the preferred direction to take first when branching on this PLConstraint
+      Update the preferred direction to take first when splitting on this PLConstraint
     */
     virtual void updateDirection()
     {
@@ -243,7 +243,7 @@ protected:
     Map<unsigned, double> _upperBounds;
 
     /*
-      The score denotes priority for branching. When score is negative, the PL constraint
+      The score denotes priority for splitting. When score is negative, the PL constraint
       is not being considered for splitting.
       We pick the PL constraint with the highest score to branch.
      */
