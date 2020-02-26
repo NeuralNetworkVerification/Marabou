@@ -29,7 +29,6 @@ public:
     };
 
     ReluConstraint( unsigned b, unsigned f );
-    ReluConstraint( unsigned b, unsigned f, unsigned layer );
     ReluConstraint( const String &serializedRelu );
 
     /*
@@ -187,7 +186,7 @@ public:
     PhaseStatus getDirection() const;
 
 private:
-    unsigned _b, _f, _layer;
+    unsigned _b, _f;
     PhaseStatus _phaseStatus;
     bool _auxVarInUse;
     unsigned _aux;

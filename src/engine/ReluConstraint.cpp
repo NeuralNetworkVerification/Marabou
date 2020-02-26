@@ -33,22 +33,6 @@
 ReluConstraint::ReluConstraint( unsigned b, unsigned f )
     : _b( b )
     , _f( f )
-    , _layer( 0 )
-    , _auxVarInUse( false )
-    , _direction( PhaseStatus::PHASE_NOT_FIXED )
-    , _haveEliminatedVariables( false )
-{
-    setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
-    if ( GlobalConfiguration::BRANCHING_HEURISTICS == DivideStrategy::EarliestReLU )
-    {
-        _score = _layer;
-    }
-}
-
-ReluConstraint::ReluConstraint( unsigned b, unsigned f, unsigned layer )
-    : _b( b )
-    , _f( f )
-    , _layer( layer )
     , _auxVarInUse( false )
     , _direction( PhaseStatus::PHASE_NOT_FIXED )
     , _haveEliminatedVariables( false )
@@ -57,8 +41,7 @@ ReluConstraint::ReluConstraint( unsigned b, unsigned f, unsigned layer )
 }
 
 ReluConstraint::ReluConstraint( const String &serializedRelu )
-    : _layer( 0 )
-    , _haveEliminatedVariables( false )
+    : _haveEliminatedVariables( false )
 
 {
     String constraintType = serializedRelu.substring( 0, 4 );

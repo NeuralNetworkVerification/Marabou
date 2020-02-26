@@ -228,6 +228,14 @@ public:
     {
     }
 
+    /*
+      Update _score with score
+    */
+    void setScore( double score )
+    {
+        _score = score;
+    }
+
 protected:
     bool _constraintActive;
 	Map<unsigned, double> _assignment;
