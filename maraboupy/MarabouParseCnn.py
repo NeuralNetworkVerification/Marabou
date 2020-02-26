@@ -115,7 +115,7 @@ class Cnn(nx.DiGraph):
 
     #-------------Solve the network-------------#        
         
-    def solve(in_prop, out_props):
+    def solve(self, in_prop, out_prop):
         #example:
         #in_prop = {n : (-mnx.large, mnx.large) for n in cnn.in_l}
         #out_prop = {n : (-mnx.large, mnx.large) for n in cnn.out_l}
@@ -317,6 +317,7 @@ class Cnn2D(nx.DiGraph):
     #-------------Add filters and layers-------------#
 
     def add_filter(self, f):
+        print("Out dim:" + str([k + "=" + str(v) for k,v in self.out_dim.items()]))
         new_l = dict()
         self.l_num += 1 #TODO adapt to max pooling
         for x_i in range(self.out_dim["x"] - f.dim["x"] + 1):
@@ -339,8 +340,8 @@ class Cnn2D(nx.DiGraph):
                         new_l[(x_i, y_i, f_i)] = act_n 
                         for x_j, y_j in itertools.product(range(f.dim["x"]),range(f.dim["y"])):
                             self.add_edge(self.out_l[(x_i + x_j, y_i + y_j, f_i)], act_n, weight=1)
-        self.out_dim["x"] = self.out_dim["x"] - f.dim["x"]
-        self.out_dim["y"] = self.out_dim["y"] - f.dim["y"]
+        self.out_dim["x"] = self.out_dim["x"] - f.dim["x"] + 1
+        self.out_dim["y"] = self.out_dim["y"] - f.dim["y"] + 1
         self.out_dim["d"] = f.dim["f"]
         self.out_l = new_l
 
@@ -375,7 +376,7 @@ class Cnn2D(nx.DiGraph):
 
     #-------------Solve the network-------------#        
         
-    def solve(in_prop, out_props):
+    def solve(self, in_prop, out_prop):
         #example:
         #in_prop = {n : (-mnx.large, mnx.large) for n in cnn.in_l}
         #out_prop = {n : (-mnx.large, mnx.large) for n in cnn.out_l}

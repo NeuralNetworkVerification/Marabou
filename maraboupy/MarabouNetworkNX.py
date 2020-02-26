@@ -2,7 +2,7 @@ from maraboupy import Marabou, MarabouCore
 import networkx as nx
 
 large = 10.0
-
+    
 def networkxToInputQuery(net, input_bounds, output_bounds):
 
     degree = {n : {'in':0,'out':0} for n in net.nodes()}
@@ -22,11 +22,11 @@ def networkxToInputQuery(net, input_bounds, output_bounds):
         var_list.append(n)
         if in_deg == 0 and out_deg > 0:
             input_nodes.add(n)
-        elif in_deg > 0 and out_deg > 0:
+        elif in_deg > 0 and out_deg > 0 and net.nodes[n]["function"] is "Relu":
             var_list.append(n)
         elif in_deg > 0 and out_deg == 0:
             output_nodes.add(n)
-                                                        
+
     inputQuery = MarabouCore.InputQuery()
     inputQuery.setNumberOfVariables(len(var_list))
 
@@ -38,7 +38,7 @@ def networkxToInputQuery(net, input_bounds, output_bounds):
         inputQuery.setLowerBound(var_list.index(n), output_bounds[n][0]) 
         inputQuery.setUpperBound(var_list.index(n), output_bounds[n][1])
 
-    for n in filter(lambda n: incoming[n], net.nodes()):
+    for n in filter(lambda n: incoming[n] and net.nodes[n]["function"] is "Relu", net.nodes()):
         equation = MarabouCore.Equation()
         equation.addAddend(-1, var_list.index(n))
         [[equation.addAddend(w, var_list.index(u)) if u in input_nodes else equation.addAddend(w, var_list.index(u) + 1)] for u,w in incoming[n]]
@@ -51,8 +51,11 @@ def networkxToInputQuery(net, input_bounds, output_bounds):
         if v == var_list[i - 1]:
             inputQuery.setLowerBound(i, 0)
             inputQuery.setUpperBound(i, large)
-            MarabouCore.addReluConstraint(inputQuery,i-1,i)
-            
+            MarabouCore.addReluConstraint(inputQuery, i-1, i)
+
+    for n in filter(lambda n: incoming[n] and net.nodes[n]["function"] is "MaxPool", net.nodes()):
+        MarabouCore.addMaxConstraint(inputQuery, set([var_list.index(u[0]) for u in incoming[n]]), var_list.index(n))
+
     return inputQuery
 
     
