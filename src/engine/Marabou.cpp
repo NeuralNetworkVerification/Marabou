@@ -15,6 +15,7 @@
  **/
 
 #include "AcasParser.h"
+#include "GlobalConfiguration.h"
 #include "File.h"
 #include "MStringf.h"
 #include "Marabou.h"
@@ -106,7 +107,14 @@ void Marabou::prepareInputQuery()
         /*
           Step 3: extract options
         */
-        unsigned splitThreshold = Options::get()->getInt( Options::SPLIT_THRESHOLD );
+        int splitThreshold = Options::get()->getInt( Options::SPLIT_THRESHOLD );
+        if ( splitThreshold < 0 )
+        {
+            printf( "Invalid constraint violation threshold value %d,"
+                    " using default value %u.\n\n", splitThreshold,
+                    GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD );
+            splitThreshold = GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD;
+        }
         _engine.setConstraintViolationThreshold( splitThreshold );
     }
 }

@@ -78,7 +78,7 @@ void OptionParser::initialize()
           "out statistics in the beginning and end, 2: print out statistics during solving." )
         ( "split-threshold",
           boost::program_options::value<int>( &((*_intOptions)[Options::SPLIT_THRESHOLD]) ),
-          "Threshold to split" )
+          "Max number of tries to repair a relu before splitting" )
         ( "timeout-factor",
           boost::program_options::value<float>( &((*_floatOptions)[Options::TIMEOUT_FACTOR]) ),
           "(DNC) The timeout factor" )
