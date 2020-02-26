@@ -102,6 +102,12 @@ void Marabou::prepareInputQuery()
             printf( "Property: None\n" );
 
         printf( "\n" );
+
+        /*
+          Step 3: extract options
+        */
+        unsigned splitThreshold = Options::get()->getInt( Options::SPLIT_THRESHOLD );
+        _engine.setConstraintViolationThreshold( splitThreshold );
     }
 }
 

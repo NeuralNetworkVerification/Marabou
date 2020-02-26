@@ -53,6 +53,7 @@ void Options::initializeDefaultValues()
     _intOptions[INITIAL_TIMEOUT] = 5;
     _intOptions[VERBOSITY] = 2;
     _intOptions[TIMEOUT] = 0;
+    _boolOptions[SPLIT_THRESHOLD] = 20;
 
     /*
       Float options
