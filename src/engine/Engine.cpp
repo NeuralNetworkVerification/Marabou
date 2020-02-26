@@ -1934,6 +1934,11 @@ void Engine::updateDirections()
                 constraint->updateDirection();
 }
 
+void Engine::setConstraintViolationThreshold( unsigned threshold )
+{
+    _smtCore.setConstraintViolationThreshold( threshold );
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "
