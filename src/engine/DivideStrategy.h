@@ -22,8 +22,8 @@ enum DivideStrategy
     LargestInterval,
 
     // Relu splitting
-    EarliestReLU,
-    ReLUViolation,
+    EarliestReLU, // Pick a ReLU that appears in the earliest layer
+    ReLUViolation, // Pick the ReLU that has been violated for the most times
 };
 
 #endif // __DivideStrategy_h__

@@ -166,8 +166,6 @@ private:
       debugging purposes.
     */
     unsigned _stateId;
-
-    Set<PiecewiseLinearConstraint *> _scores;
 };
 
 #endif // __SmtCore_h__
