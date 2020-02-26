@@ -6,23 +6,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 
+import sys
+import os
+import tensorflow as tf
+from tensorflow.keras import datasets, layers, models
+from tensorflow.keras.models import load_model
+import re
 
-def create_cnn2D(in_l_len, f_w, layers):
-    cnn2d = mcnn.Cnn2D(in_l_len)
-    f = mcnn.Filter(f_w)
-    for j in range(layers):
-        cnn2d.add_filter(f)
-    return cnn2d
-
-def avg_coi_nodes(cnn, subset_size):
-    avg = lambda list: 0 if len(list) == 0 else (sum(list) / len(list))
-    return avg([mcnn.Cnn.coi(cnn, list(elements)).number_of_nodes() for elements in combinations(cnn.out_l, subset_size)])
-
-def measure_coi_size(in_l_len, f_len, layers, subset_sizes):
-    cnn = create_cnn(in_l_len, [1 for i in range(f_len)], layers)
-    return cnn, cnn.number_of_nodes(), {subset_size : avg_coi_nodes(cnn,subset_size) for subset_size in subset_sizes}        
-        
-if __name__ == "__main__": 
+def create_cnn2D():
     in_l_size = {"x":8 , "y":8, "d":2 }
     
     #3 X 4 X 2 X 2
@@ -53,12 +44,103 @@ if __name__ == "__main__":
     print("Added f_4")
     print("Out dim:" + str([k + "=" + str(v) for k,v in cnn.out_dim.items()]))
     
-    for n,v in cnn.nodes.items():
-        print(str(n) + ":" + (v["function"] if "function" in v else ""))
-    for i,e in enumerate(sorted(cnn.edges, key= lambda e : e[::-1])):
-        print(str(i) + ":" + str(e) + ":" + str(cnn.edges[e]["weight"]))
+    #for n,v in cnn.nodes.items():
+    #    print(str(n) + ":" + (v["function"] if "function" in v else ""))
+    #for i,e in enumerate(sorted(cnn.edges, key= lambda e : e[::-1])):
+    #    print(str(i) + ":" + str(e) + ":" + str(cnn.edges[e]["weight"]))
 
+    return cnn
+
+
+def train_cnn2D():
+    file_name = './cnn_model.h5'
+    
+    (train_images, train_labels), (test_images, test_labels) = datasets.cifar10.load_data()
+
+    # Normalize pixel values to be between 0 and 1
+    train_images, test_images = train_images / 255.0, test_images / 255.0
+
+    class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
+
+    plt.figure(figsize=(10,10))
+    for i in range(25):
+        plt.subplot(5,5,i+1)
+        plt.xticks([])
+        plt.yticks([])
+        plt.grid(False)
+        plt.imshow(train_images[i], cmap=plt.cm.binary)
+        # The CIFAR labels happen to be arrays, 
+        # which is why you need the extra index
+        plt.xlabel(class_names[train_labels[i][0]])
+    plt.show()
+
+    model = models.Sequential()
+    model.add(layers.Conv2D(32, (3, 3), activation='relu', input_shape=(32, 32, 3)))
+    model.add(layers.MaxPooling2D((2, 2)))
+    model.add(layers.Conv2D(64, (3, 3), activation='relu'))
+    model.add(layers.MaxPooling2D((2, 2)))
+    model.add(layers.Conv2D(64, (3, 3), activation='relu'))
+
+    model.add(layers.Flatten())
+    model.add(layers.Dense(64, activation='relu'))
+    model.add(layers.Dense(10, activation='softmax'))
+
+    model.summary()
+
+    model.compile(optimizer='adam',
+                  loss='sparse_categorical_crossentropy',
+                  metrics=['accuracy'])
+
+    print(np.shape(train_images))
+    print(np.shape(train_labels))
+    print(np.shape(test_images))
+    print(np.shape(test_labels))
+
+    history = model.fit(train_images, train_labels, epochs=10, validation_data=(test_images, test_labels))
+
+#   plt.plot(history.histoy['accuracy'], label='accuracy')
+#   plt.plot(history.history['val_accuracy'], label = 'val_accuracy')
+#   plt.xlabel('Epoch')
+#   plt.ylabel('Accuracy')
+#   plt.ylim([0.5, 1])
+#   plt.legend(loc='lower right')
+
+    test_loss, test_acc = model.evaluate(test_images,  test_labels, verbose=2)    
+    model.summary()
+    model.save(file_name)
+
+    cnn = mcnn.Cnn2D(in_l_size)
+    
+    for layer in model.layers:
+        if layer.get_config()["name"].startswith("conv2d"):
+            f = mcnn.Filter(layer.weights)
+            cnn.add_filter(f)                
+        elif layer.get_config()["name"].startswith("max_pooling2d"):
+            f = mcnn.Filter(([],"MaxPool", list(layer.get_config()["pool_size"])))
+            cnn.add_filter(f)
+        elif layer.get_config()["name"].startswith("dense"):
+            pass
+            
+        
+if __name__ == "__main__": 
+
+    cnn = create_cnn2D()
     in_prop  = {n : (-mnx.large, mnx.large) for n in cnn.in_l.values()}
     out_prop = {n : (-mnx.large, mnx.large) for n in cnn.out_l.values()}
     cnn.solve(in_prop, out_prop)
+
+    print("********************************************** COI **********************************************")
+    print(list(cnn.out_l.values()))
+    coi_cnn = mcnn.Cnn2D.coi(cnn,[mcnn.n2str_md(4,[0,0,0])])
+
+    #print(coi_cnn.in_l.values())
+    #print(coi_cnn.out_l.values())
+    #for n,v in coi_cnn.nodes.items():
+    #    print(str(n) + ":" + (v["function"] if "function" in v else ""))
+    #for i,e in enumerate(sorted(coi_cnn.edges, key= lambda e : e[::-1])):
+    #    print(str(i) + ":" + str(e) + ":" + str(coi_cnn.edges[e]["weight"]))  
+    
+    in_prop  = {n : (-mnx.large, mnx.large) for n in coi_cnn.in_l.values()}
+    out_prop = {n : (-mnx.large, mnx.large) for n in coi_cnn.out_l.values()}    
+    coi_cnn.solve(in_prop, out_prop)
         

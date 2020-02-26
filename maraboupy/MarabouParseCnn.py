@@ -38,7 +38,7 @@ def l2str(layer_i):
 def n2str(layer_i,node_i):
     return l2str(layer_i) + str(node_i)
 
-class Filter:    
+class Filter1D:    
     def __init__(self, weights):
         self.window_size = len(weights)
         self.weights = weights
@@ -302,11 +302,38 @@ class Filter:
             self.dim["x"] = shape[0]
             self.dim["y"] = shape[1]
             self.dim["d"] = 1
-            self.dim["f"] = shape[2]
+            self.dim["f"] = None
             self.weights = None
         self.function = function
 
 class Cnn2D(nx.DiGraph):
+    
+    #-------------Init-------------#            
+
+    def __init__(self, in_l_size):
+        super().__init__()
+        self.in_l = dict()  # L is for layer.
+        self.l_num = 0  # L is for layer.
+        self.next_lyr_pos = 0
+        self.layout = dict()
+        self.out_dim = {"x":in_l_size["x"] , "y":in_l_size["y"], "d":in_l_size["d"]}
+        self.out_l = dict()
+        for x in range(self.out_dim["x"]):
+            for y in range(self.out_dim["y"]):
+                for d in range(self.out_dim["d"]):
+                    new_n = n2str_md(0,[x, y, d])
+                    self.add_node(new_n)
+                    self.out_l[(x,y,d)] = new_n
+                    self.in_l[(x,y,d)] = new_n
+
+    def remove_node(self, n):
+        keys_out = [k for k,v in self.out_l.items() if v == n]
+        for k in keys_out:
+            del self.out_l[k]        
+        keys_in = [k for k,v in self.in_l.items() if v == n]
+        for k in keys_in:
+            del self.in_l[k]
+        super().remove_node(n)
 
     def __str__(self):
         out = ""
@@ -318,13 +345,14 @@ class Cnn2D(nx.DiGraph):
 
     def add_filter(self, f):
         print("Out dim:" + str([k + "=" + str(v) for k,v in self.out_dim.items()]))
-        new_l = dict()
+        new_l = dict()        
         self.l_num += 1 #TODO adapt to max pooling
         for x_i in range(self.out_dim["x"] - f.dim["x"] + 1):
             for y_i in range(self.out_dim["y"] - f.dim["y"] + 1):
-                if f.function is "Relu":                
-                    if f.dim["d"] is not self.out_dim["d"]:
-                        raise Exception("Relu: Filter and layer depth should be equal")
+                if f.function is "Relu":
+                    f.dim["d"] = self.out_dim["d"]
+                    #if f.dim["d"] is not self.out_dim["d"]:
+                    #    raise Exception("Relu: Filter and layer depth should be equal")
                     for f_i in range(f.dim["f"]):
                         act_n = n2str_md(self.l_num, [x_i, y_i, f_i])
                         self.add_node(act_n, function=f.function)
@@ -332,8 +360,9 @@ class Cnn2D(nx.DiGraph):
                         for x_j, y_j, d_j in itertools.product(range(f.dim["x"]),range(f.dim["y"]),range(f.dim["d"])):
                             self.add_edge(self.out_l[(x_i + x_j, y_i + y_j, d_j)], act_n, weight=f.weights[x_j][y_j][d_j][f_i])
                 elif f.function is "MaxPool":
-                    if f.dim["f"] is not self.out_dim["d"]:
-                        raise Exception("MaxPool: Filter number and layer depth should be equal")
+                    f.dim["f"] = self.out_dim["d"]
+                    #if f.dim["f"] is not self.out_dim["d"]:
+                    #    raise Exception("MaxPool: Filter number and layer depth should be equal")
                     for f_i in range(f.dim["f"]):
                         act_n = n2str_md(self.l_num, [x_i, y_i, f_i])
                         self.add_node(act_n, function=f.function)
@@ -391,25 +420,9 @@ class Cnn2D(nx.DiGraph):
             print(vars1)
         else:
             print("UNSAT")
+
+        
                 
-    #-------------Init-------------#            
-
-    def __init__(self, in_l_size):
-        super().__init__()
-        self.in_l = dict()  # L is for layer.
-        self.l_num = 0  # L is for layer.
-        self.next_lyr_pos = 0
-        self.layout = dict()
-        self.out_dim = {"x":in_l_size["x"] , "y":in_l_size["y"], "d":in_l_size["d"]}
-        self.out_l = dict()
-        for x in range(self.out_dim["x"]):
-            for y in range(self.out_dim["y"]):
-                for d in range(self.out_dim["d"]):
-                    new_n = n2str_md(0,[x, y, d])
-                    self.add_node(new_n)
-                    self.out_l[(x,y,d)] = new_n
-                    self.in_l[(x,y,d)] = new_n
-
     #-------------Find the Cone of Influence of a set of vertices-------------#
 
     def coi(graph, vertices): # Cone of Influencers
