@@ -1947,7 +1947,7 @@ void Engine::updateScores()
     }
 }
 
-PiecewiseLinearConstraint *Engine::pickBranchPLConstraint()
+PiecewiseLinearConstraint *Engine::pickSplitPLConstraint()
 {
     updateScores();
     auto constraint = *_candidatePlConstraints.begin();

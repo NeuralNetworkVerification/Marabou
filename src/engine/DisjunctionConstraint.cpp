@@ -20,7 +20,6 @@
 
 DisjunctionConstraint::DisjunctionConstraint( const List<PiecewiseLinearCaseSplit> &disjuncts )
     : _disjuncts( disjuncts )
-    , _score( -1 )
     , _feasibleDisjuncts( disjuncts )
 {
     extractParticipatingVariables();

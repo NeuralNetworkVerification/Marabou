@@ -147,11 +147,10 @@ public:
     {
     }
 
-    PiecewiseLinearConstraint *pickBranchPLConstraint()
+    PiecewiseLinearConstraint *pickSplitPLConstraint()
     {
         return NULL;
     }
-
 };
 
 #endif // __MockEngine_h__

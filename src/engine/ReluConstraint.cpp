@@ -36,7 +36,6 @@ ReluConstraint::ReluConstraint( unsigned b, unsigned f )
     , _layer( 0 )
     , _auxVarInUse( false )
     , _direction( PhaseStatus::PHASE_NOT_FIXED )
-    , _score( -1 )
     , _haveEliminatedVariables( false )
 {
     setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
@@ -52,7 +51,6 @@ ReluConstraint::ReluConstraint( unsigned b, unsigned f, unsigned layer )
     , _layer( layer )
     , _auxVarInUse( false )
     , _direction( PhaseStatus::PHASE_NOT_FIXED )
-    , _score( -1 )
     , _haveEliminatedVariables( false )
 {
     setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
@@ -60,7 +58,6 @@ ReluConstraint::ReluConstraint( unsigned b, unsigned f, unsigned layer )
 
 ReluConstraint::ReluConstraint( const String &serializedRelu )
     : _layer( 0 )
-    , _score( -1 )
     , _haveEliminatedVariables( false )
 
 {

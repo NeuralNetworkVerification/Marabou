@@ -198,8 +198,6 @@ private:
     */
     PhaseStatus _direction;
 
-    float _score;
-
     PiecewiseLinearCaseSplit getInactiveSplit() const;
     PiecewiseLinearCaseSplit getActiveSplit() const;
 

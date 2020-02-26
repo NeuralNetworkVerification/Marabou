@@ -62,7 +62,7 @@ void SmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
         if ( GlobalConfiguration::BRANCHING_HEURISTICS == DivideStrategy::ReLUViolation )
             _constraintForSplitting = constraint;
         else
-            pickBranchPLConstraint();
+            pickSplitPLConstraint();
     }
 }
 
@@ -394,11 +394,11 @@ PiecewiseLinearConstraint *SmtCore::chooseViolatedConstraintForFixing( List<Piec
     return candidate;
 }
 
-void SmtCore::pickBranchPLConstraint()
+void SmtCore::pickSplitPLConstraint()
 {
-    if ( _needToSplit && ( !_constraintForSplitting ) )
+    if ( _needToSplit && !_constraintForSplitting )
     {
-        _constraintForSplitting = _engine->pickBranchPLConstraint();
+        _constraintForSplitting = _engine->pickSplitPLConstraint();
     }
 }
 

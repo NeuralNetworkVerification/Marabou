@@ -131,13 +131,12 @@ public:
     /*
       Pick the piecewise linear constraint for branching
     */
-    PiecewiseLinearConstraint *pickBranchPLConstraint();
+    PiecewiseLinearConstraint *pickSplitPLConstraint();
 
     /*
       Update the scores of each candidate branching PL constraints
     */
     void updateScores();
-
 
     /*
       PSA: The following two methods are for DnC only and should be used very
@@ -183,7 +182,7 @@ private:
     List<PiecewiseLinearConstraint *> _plConstraints;
 
     /*
-      The orderred set of candidate PL constraints for branching
+      The ordered set of candidate PL constraints for branching
     */
     Set<PiecewiseLinearConstraint *> _candidatePlConstraints;
 

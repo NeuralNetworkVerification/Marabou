@@ -99,7 +99,7 @@ public:
     /*
       Pick the piecewise linear constraint for branching
     */
-    void pickBranchPLConstraint();
+    void pickSplitPLConstraint();
 
     /*
       For debugging purposes only - store a correct possible solution

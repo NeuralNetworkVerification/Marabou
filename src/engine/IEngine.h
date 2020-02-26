@@ -70,12 +70,12 @@ public:
     virtual void reset() = 0;
     virtual List<unsigned> getInputVariables() const = 0;
 
-    virtual void updateScores()=0;
+    virtual void updateScores() = 0;
 
     /*
       Pick the piecewise linear constraint for branching
     */
-    virtual PiecewiseLinearConstraint *pickBranchPLConstraint()=0;
+    virtual PiecewiseLinearConstraint *pickSplitPLConstraint() = 0;
 
 };
 
