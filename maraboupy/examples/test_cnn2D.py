@@ -42,6 +42,10 @@ def create_cnn2D():
     print("Added f_3")
     cnn.add_filter(f_4)
     print("Added f_4")
+    cnn.add_flatten()
+    print("Added flatten")
+    cnn.add_dense({cor : [((j,0,0),1) for j in range(3)] for cor in cnn.out_l})
+    print("Added dense")
     print("Out dim:" + str([k + "=" + str(v) for k,v in cnn.out_dim.items()]))
     
     #for n,v in cnn.nodes.items():
@@ -83,10 +87,10 @@ def train_cnn2D():
 
     model.add(layers.Flatten())
     model.add(layers.Dense(64, activation='relu'))
-    model.add(layers.Dense(10, activation='softmax'))
+    model.add(layers.Dense(10, activation='relu'))
 
     model.summary()
-
+    '''
     model.compile(optimizer='adam',
                   loss='sparse_categorical_crossentropy',
                   metrics=['accuracy'])
@@ -96,18 +100,19 @@ def train_cnn2D():
     print(np.shape(test_images))
     print(np.shape(test_labels))
 
+    
     history = model.fit(train_images, train_labels, epochs=10, validation_data=(test_images, test_labels))
 
-#   plt.plot(history.histoy['accuracy'], label='accuracy')
-#   plt.plot(history.history['val_accuracy'], label = 'val_accuracy')
-#   plt.xlabel('Epoch')
-#   plt.ylabel('Accuracy')
-#   plt.ylim([0.5, 1])
-#   plt.legend(loc='lower right')
+    plt.plot(history.histoy['accuracy'], label='accuracy')
+    plt.plot(history.history['val_accuracy'], label = 'val_accuracy')
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy')
+    plt.ylim([0.5, 1])
+    plt.legend(loc='lower right')
 
     test_loss, test_acc = model.evaluate(test_images,  test_labels, verbose=2)    
     model.summary()
-    model.save(file_name)
+    model.save(file_name)'''
 
     cnn = mcnn.Cnn2D(in_l_size)
     
@@ -118,17 +123,26 @@ def train_cnn2D():
         elif layer.get_config()["name"].startswith("max_pooling2d"):
             f = mcnn.Filter(([],"MaxPool", list(layer.get_config()["pool_size"])))
             cnn.add_filter(f)
+        elif layer.get_config()["name"].startswith("flatten"):
+            cnn.add_flat()
         elif layer.get_config()["name"].startswith("dense"):
-            pass
+            cnn.add_dense({(i,0,0):[((j,0,0), layer.weights[i][j]) for j in range(layer.output_shape[1])] for i in range(layer.input_shape[1])})
             
         
 if __name__ == "__main__": 
 
     cnn = create_cnn2D()
+    print(cnn.in_l.values())
+    print(cnn.out_l.values())
+    for n,v in cnn.nodes.items():
+        print(str(n) + ":" + (v["function"] if "function" in v else ""))
+    for i,e in enumerate(sorted(cnn.edges, key= lambda e : e[::-1])):
+        print(str(i) + ":" + str(e) + ":" + str(cnn.edges[e]["weight"]))     
     in_prop  = {n : (-mnx.large, mnx.large) for n in cnn.in_l.values()}
     out_prop = {n : (-mnx.large, mnx.large) for n in cnn.out_l.values()}
     cnn.solve(in_prop, out_prop)
 
+    '''TODO reenter
     print("********************************************** COI **********************************************")
     print(list(cnn.out_l.values()))
     coi_cnn = mcnn.Cnn2D.coi(cnn,[mcnn.n2str_md(4,[0,0,0])])
@@ -142,5 +156,5 @@ if __name__ == "__main__":
     
     in_prop  = {n : (-mnx.large, mnx.large) for n in coi_cnn.in_l.values()}
     out_prop = {n : (-mnx.large, mnx.large) for n in coi_cnn.out_l.values()}    
-    coi_cnn.solve(in_prop, out_prop)
+    coi_cnn.solve(in_prop, out_prop)'''
         

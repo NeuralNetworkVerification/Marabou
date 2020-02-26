@@ -38,7 +38,7 @@ def networkxToInputQuery(net, input_bounds, output_bounds):
         inputQuery.setLowerBound(var_list.index(n), output_bounds[n][0]) 
         inputQuery.setUpperBound(var_list.index(n), output_bounds[n][1])
 
-    for n in filter(lambda n: incoming[n] and net.nodes[n]["function"] is "Relu", net.nodes()):
+    for n in filter(lambda n: incoming[n] and net.nodes[n]["function"] in {"Relu", "Flatten"}, net.nodes()):
         equation = MarabouCore.Equation()
         equation.addAddend(-1, var_list.index(n))
         [[equation.addAddend(w, var_list.index(u)) if u in input_nodes else equation.addAddend(w, var_list.index(u) + 1)] for u,w in incoming[n]]

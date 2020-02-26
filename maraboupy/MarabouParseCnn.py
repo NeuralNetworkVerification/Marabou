@@ -344,7 +344,7 @@ class Cnn2D(nx.DiGraph):
     #-------------Add filters and layers-------------#
 
     def add_filter(self, f):
-        print("Out dim:" + str([k + "=" + str(v) for k,v in self.out_dim.items()]))
+        print("init Out dim:" + str([k + "=" + str(v) for k,v in self.out_dim.items()]))
         new_l = dict()        
         self.l_num += 1 #TODO adapt to max pooling
         for x_i in range(self.out_dim["x"] - f.dim["x"] + 1):
@@ -373,8 +373,23 @@ class Cnn2D(nx.DiGraph):
         self.out_dim["y"] = self.out_dim["y"] - f.dim["y"] + 1
         self.out_dim["d"] = f.dim["f"]
         self.out_l = new_l
+        print("Post Out dim:" + str([k + "=" + str(v) for k,v in self.out_dim.items()]))
 
-    def add_layer(self, w_dict): #Assume some element will be added. in the form of cor->(cor,weight) dict.
+    def add_flatten(self):
+        new_l = dict()        
+        self.l_num += 1
+        for x_i in range(self.out_dim["x"]):
+            for y_i in range(self.out_dim["y"]):
+                for d_i in range(self.out_dim["d"]):
+                    flat_i = (x_i * self.out_dim["y"] + y_i) * self.out_dim["d"] + d_i
+                    act_n = n2str_md(self.l_num, [flat_i,0,0])
+                    self.add_node(act_n, function="Flatten")
+                    new_l[(flat_i,0,0)] = act_n
+                    self.add_edge(self.out_l[(x_i,y_i,d_i)], act_n, weight=1)
+        self.out_l = new_l
+        self.out_dim = {"x": len(new_l), "y":1, "d":1}
+        
+    def add_dense(self, w_dict, function="Relu"): #Assume some element will be added. in the form of cor->(cor,weight) dict.
         self.l_num += 1
         new_l = []
         max_node_new_l = -1
@@ -386,11 +401,11 @@ class Cnn2D(nx.DiGraph):
             cor_w = w_dict[(x,y,d)]
             if len(cor_w) == 0:
                 continue
-            source = n2str_md(self.l_num - 1, (x,y,d))
+            source = n2str_md(self.l_num - 1, [x,y,d])
             for cor, w in cor_w:
-                target = n2str_md(self.l_num, cor)
+                target = n2str_md(self.l_num, list(cor))
                 if cor not in new_l:
-                    self.add_node(target)
+                    self.add_node(target, function=function)
                     new_l[tuple(cor)] = target
                     max_t_x = max(cor[0], max_t_x)
                     max_t_y = max(cor[1], max_t_y)
@@ -399,7 +414,7 @@ class Cnn2D(nx.DiGraph):
         for x,y,d in itertools.product(range(max_t_x+1),range(max_t_y+1),range(max_t_d+1)):
             if (x,y,d) not in new_l:
                 target = n2str_md(self.l_num, (x,y,d))
-                self.add_node(target)
+                self.add_node(target, function="Relu")
                 new_l[(x,y,d)] = target
         self.out_l = new_l
 
