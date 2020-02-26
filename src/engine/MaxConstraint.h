@@ -130,6 +130,7 @@ class MaxConstraint : public PiecewiseLinearConstraint
     bool _maxIndexSet;
     double _maxLowerBound;
     bool _obsolete;
+
     void resetMaxIndex();
 
     /*

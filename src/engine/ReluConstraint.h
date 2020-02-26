@@ -179,8 +179,6 @@ public:
     */
     double computePolarity() const;
 
-    double computeInterval() const;
-
     /*
       Update the preferred direction for fixing and handling case split
     */

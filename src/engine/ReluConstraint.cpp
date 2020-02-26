@@ -887,13 +887,6 @@ unsigned ReluConstraint::getAux() const
     return _aux;
 }
 
-double ReluConstraint::computeInterval() const
-{
-    double currentLb = _lowerBounds[_b];
-    double currentUb = _upperBounds[_b];
-    return currentUb - currentLb;
-}
-
 double ReluConstraint::computePolarity() const
 {
     double currentLb = _lowerBounds[_b];
