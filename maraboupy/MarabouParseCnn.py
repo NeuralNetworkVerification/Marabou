@@ -289,13 +289,22 @@ def n2str_md(layer_i,node_cor):
     return l2str(layer_i) + str(node_cor)
 
 class Filter:    
-    def __init__(self, weights):
-        self.dim = dict()
-        self.dim["x"] = weights.shape[0]
-        self.dim["y"] = weights.shape[1]
-        self.dim["d"] = weights.shape[2] #Input depth
-        self.dim["f"] = weights.shape[3] #Filter amount
-        self.weights = weights
+    def __init__(self, weights, function="Relu", shape=None):
+        if function is "Relu":
+            self.dim = dict()
+            self.dim["x"] = weights.shape[0]
+            self.dim["y"] = weights.shape[1]
+            self.dim["d"] = weights.shape[2] #Input depth
+            self.dim["f"] = weights.shape[3] #Filter amount
+            self.weights = weights
+        elif function is "MaxPool":
+            self.dim = dict()
+            self.dim["x"] = shape[0]
+            self.dim["y"] = shape[1]
+            self.dim["d"] = 1
+            self.dim["f"] = shape[2]
+            self.weights = None
+        self.function = function
 
 class Cnn2D(nx.DiGraph):
 
@@ -308,44 +317,60 @@ class Cnn2D(nx.DiGraph):
     #-------------Add filters and layers-------------#
 
     def add_filter(self, f):
-        if f.dim["d"] is not self.out_dim["d"]:
-            raise Exception("Filter and layer depth should be equal")
         new_l = dict()
-        self.l_num += 1
+        self.l_num += 1 #TODO adapt to max pooling
         for x_i in range(self.out_dim["x"] - f.dim["x"] + 1):
-            for y_i in range(self.out_dim["y"] - f.dim["y"] + 1):                
-                for f_i in range(f.dim["f"]):
-                    act_n = n2str_md(self.l_num, [x_i, y_i, f_i])
-                    self.add_node(act_n)
-                    new_l[(x_i, y_i, f_i)] = act_n 
-                    for x_j, y_j, d_j in itertools.product(range(f.dim["x"]),range(f.dim["y"]),range(f.dim["d"])):
-                        self.add_edge(self.out_l[(x_i + x_j, y_i + y_j, d_j)], act_n, weight=f.weights[x_j][y_j][d_j][f_i])
+            for y_i in range(self.out_dim["y"] - f.dim["y"] + 1):
+                if f.function is "Relu":                
+                    if f.dim["d"] is not self.out_dim["d"]:
+                        raise Exception("Relu: Filter and layer depth should be equal")
+                    for f_i in range(f.dim["f"]):
+                        act_n = n2str_md(self.l_num, [x_i, y_i, f_i])
+                        self.add_node(act_n, function=f.function)
+                        new_l[(x_i, y_i, f_i)] = act_n 
+                        for x_j, y_j, d_j in itertools.product(range(f.dim["x"]),range(f.dim["y"]),range(f.dim["d"])):
+                            self.add_edge(self.out_l[(x_i + x_j, y_i + y_j, d_j)], act_n, weight=f.weights[x_j][y_j][d_j][f_i])
+                elif f.function is "MaxPool":
+                    if f.dim["f"] is not self.out_dim["d"]:
+                        raise Exception("MaxPool: Filter number and layer depth should be equal")
+                    for f_i in range(f.dim["f"]):
+                        act_n = n2str_md(self.l_num, [x_i, y_i, f_i])
+                        self.add_node(act_n, function=f.function)
+                        new_l[(x_i, y_i, f_i)] = act_n 
+                        for x_j, y_j in itertools.product(range(f.dim["x"]),range(f.dim["y"])):
+                            self.add_edge(self.out_l[(x_i + x_j, y_i + y_j, f_i)], act_n, weight=1)
         self.out_dim["x"] = self.out_dim["x"] - f.dim["x"]
         self.out_dim["y"] = self.out_dim["y"] - f.dim["y"]
         self.out_dim["d"] = f.dim["f"]
         self.out_l = new_l
 
-    def add_layer(self, w_dict): #Assume some element will be added. in the form of int->int dict.
+    def add_layer(self, w_dict): #Assume some element will be added. in the form of cor->(cor,weight) dict.
         self.l_num += 1
         new_l = []
         max_node_new_l = -1
-        new_l = list()
-        for i in range(len(self.out_l)):
-            new_wn = w_dict[i]
-            if len(new_wn) == 0:
+        new_l = dict()
+        max_t_x = 0
+        max_t_y = 0
+        max_t_d = 0
+        for x,y,d in self.out_l:
+            cor_w = w_dict[(x,y,d)]
+            if len(cor_w) == 0:
                 continue
-            max_n_ind = max(nw[0] for nw in new_wn)
-            if max_node_new_l < max_n_ind:
-                last_max = max_node_new_l
-                max_node_new_l = max_n_ind
-                for j in range(last_max + 1, max_node_new_l + 1):
-                    self.add_node(n2str_md(self.l_num, [j]))
-                    new_l.append(n2str_md(self.l_num, [j]))
-            i_str = n2str_md(self.l_num - 1, [i])
-            for wn in new_wn:
-                n_str = n2str_md(self.l_num, [wn[0]])
-                w = wn[1]
-                self.add_edge(i_str, n_str, weight=w)
+            source = n2str_md(self.l_num - 1, (x,y,d))
+            for cor, w in cor_w:
+                target = n2str_md(self.l_num, cor)
+                if cor not in new_l:
+                    self.add_node(target)
+                    new_l[tuple(cor)] = target
+                    max_t_x = max(cor[0], max_t_x)
+                    max_t_y = max(cor[1], max_t_y)
+                    max_t_d = max(cor[2], max_t_d)
+                self.add_edge(source, target, weight=w)
+        for x,y,d in itertools.product(range(max_t_x+1),range(max_t_y+1),range(max_t_d+1)):
+            if (x,y,d) not in new_l:
+                target = n2str_md(self.l_num, (x,y,d))
+                self.add_node(target)
+                new_l[(x,y,d)] = target
         self.out_l = new_l
 
     #-------------Solve the network-------------#        
