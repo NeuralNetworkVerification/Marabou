@@ -140,7 +140,7 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
                 // Store the SmtCore state
                 if ( restoreTreeStates )
                 {
-                    newSubQuery->_smtState = std::move( newSmtStates[i] );
+                    newSubQuery->_smtState = std::move( newSmtStates[i++] );
                 }
 
                 if ( !_workload->push( std::move( newSubQuery ) ) )
