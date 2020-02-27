@@ -89,10 +89,7 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
 
         bool fullSolveNeeded = true; // denotes whether we need to solve the subquery
         if ( restoreTreeStates && smtState )
-        {
-            std::cout << "Restoring tree states" << std::endl;
             fullSolveNeeded = _engine->restoreSmtState( *smtState );
-        }
         IEngine::ExitCode result = IEngine::NOT_DONE;
         if ( fullSolveNeeded )
         {
