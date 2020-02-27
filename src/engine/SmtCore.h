@@ -18,7 +18,9 @@
 
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
+#include "SmtState.h"
 #include "Stack.h"
+#include "StackEntry.h"
 #include "Statistics.h"
 
 class EngineState;
@@ -97,6 +99,16 @@ public:
     PiecewiseLinearConstraint *chooseViolatedConstraintForFixing( List<PiecewiseLinearConstraint *> &_violatedPlConstraints ) const;
 
     /*
+      Replay a stackEntry
+    */
+    void replayStackEntry( StackEntry *stackEntry );
+
+    /*
+      Store the current stack into smtState
+    */
+    void storeSmtState( SmtState &smtState );
+
+    /*
       For debugging purposes only - store a correct possible solution
     */
     void storeDebuggingSolution( const Map<unsigned, double> &debuggingSolution );
@@ -105,18 +117,9 @@ public:
 
 private:
     /*
-      A stack entry consists of the engine state before the split,
-      the active split, the alternative splits (in case of backtrack),
-      and also any implied splits that were discovered subsequently.
+      duplicate the StackEntry
     */
-    struct StackEntry
-    {
-    public:
-        PiecewiseLinearCaseSplit _activeSplit;
-        List<PiecewiseLinearCaseSplit> _impliedValidSplits;
-        List<PiecewiseLinearCaseSplit> _alternativeSplits;
-        EngineState *_engineState;
-    };
+    StackEntry *duplicateStackEntry( const StackEntry &stackEntry );
 
     /*
       Valid splits that were implied by level 0 of the stack.
