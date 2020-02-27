@@ -98,6 +98,8 @@ public:
     */
     PiecewiseLinearConstraint *chooseViolatedConstraintForFixing( List<PiecewiseLinearConstraint *> &_violatedPlConstraints ) const;
 
+    void setConstraintViolationThreshold( unsigned threshold );
+
     /*
       Replay a stackEntry
     */
@@ -164,6 +166,11 @@ private:
       debugging purposes.
     */
     unsigned _stateId;
+
+    /*
+      Split when some relu has been violated for this many times
+    */
+    unsigned _constraintViolationThreshold;
 };
 
 #endif // __SmtCore_h__

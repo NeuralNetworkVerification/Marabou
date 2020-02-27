@@ -99,11 +99,22 @@ void DnCMarabou::run()
     float timeoutFactor = Options::get()->getFloat( Options::TIMEOUT_FACTOR );
     bool restoreTreeStates = Options::get()->getBool( Options::RESTORE_TREE_STATES );
 
+    int splitThreshold = Options::get()->getInt( Options::SPLIT_THRESHOLD );
+    if ( splitThreshold < 0 )
+    {
+        printf( "Invalid constraint violation threshold value %d,"
+                " using default value %u.\n\n", splitThreshold,
+                GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD );
+        splitThreshold = GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD;
+    }
+
     _dncManager = std::unique_ptr<DnCManager>
       ( new DnCManager( numWorkers, initialDivides, initialTimeout,
                         onlineDivides, timeoutFactor,
                         DivideStrategy::LargestInterval, &_inputQuery,
                         verbosity ) );
+    _dncManager->setConstraintViolationThreshold( splitThreshold );
+
     struct timespec start = TimeUtils::sampleMicro();
 
     _dncManager->solve( timeoutInSeconds, restoreTreeStates );

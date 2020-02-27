@@ -79,6 +79,9 @@ void OptionParser::initialize()
           boost::program_options::value<int>( &((*_intOptions)[Options::VERBOSITY]) ),
           "Verbosity of engine::solve(). 0: does not print anything (for DnC), 1: print"
           "out statistics in the beginning and end, 2: print out statistics during solving." )
+        ( "split-threshold",
+          boost::program_options::value<int>( &((*_intOptions)[Options::SPLIT_THRESHOLD]) ),
+          "Max number of tries to repair a relu before splitting" )
         ( "timeout-factor",
           boost::program_options::value<float>( &((*_floatOptions)[Options::TIMEOUT_FACTOR]) ),
           "(DNC) The timeout factor" )

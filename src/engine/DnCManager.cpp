@@ -18,6 +18,7 @@
 #include "DnCManager.h"
 #include "DnCWorker.h"
 #include "GetCPUData.h"
+#include "GlobalConfiguration.h"
 #include "LargestIntervalDivider.h"
 #include "MStringf.h"
 #include "MarabouError.h"
@@ -66,6 +67,7 @@ DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
     , _timeoutReached( false )
     , _numUnsolvedSubQueries( 0 )
     , _verbosity( verbosity )
+    , _constraintViolationThreshold( GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD )
 {
 }
 
@@ -327,6 +329,7 @@ bool DnCManager::createEngines()
         InputQuery *inputQuery = new InputQuery();
         *inputQuery = *baseInputQuery;
         engine->processInputQuery( *inputQuery );
+        engine->setConstraintViolationThreshold( _constraintViolationThreshold );
         _engines.append( engine );
     }
 
@@ -393,6 +396,11 @@ void DnCManager::log( const String &message )
 {
     if ( GlobalConfiguration::DNC_MANAGER_LOGGING )
         printf( "DnCManager: %s\n", message.ascii() );
+}
+
+void DnCManager::setConstraintViolationThreshold( unsigned threshold )
+{
+    _constraintViolationThreshold = threshold;
 }
 
 //
