@@ -63,7 +63,6 @@ void DnCWorker::setQueryDivider( DivideStrategy divideStrategy )
 
 void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
 {
-    std::cout << restoreTreeStates << std::endl;
     SubQuery *subQuery = NULL;
     // Boost queue stores the next element into the passed-in pointer
     // and returns true if the pop is successful (aka, the queue is not empty
@@ -73,6 +72,8 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
         String queryId = subQuery->_queryId;
         auto split = std::move( subQuery->_split );
         std::unique_ptr<SmtState> smtState = nullptr;
+        if ( restoreTreeStates && subQuery->_smtState )
+            smtState = std::move( subQuery->_smtState );
         unsigned timeoutInSeconds = subQuery->_timeoutInSeconds;
 
         // Reset the engine state
@@ -88,9 +89,11 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
 
         bool fullSolveNeeded = true; // denotes whether we need to solve the subquery
         if ( restoreTreeStates && smtState )
+        {
+            std::cout << "Restoring tree states" << std::endl;
             fullSolveNeeded = _engine->restoreSmtState( *smtState );
-
-        IEngine::ExitCode result;
+        }
+        IEngine::ExitCode result = IEngine::NOT_DONE;
         if ( fullSolveNeeded )
         {
             _engine->solve( timeoutInSeconds );
@@ -130,8 +133,7 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
                 }
             }
 
-            _queryDivider->createSubQueries( pow( 2, _onlineDivides ),
-                                             queryId, *split,
+            _queryDivider->createSubQueries( numNewSubQueries, queryId, *split,
                                              (unsigned)timeoutInSeconds *
                                              _timeoutFactor, subQueries );
 
