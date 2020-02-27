@@ -97,6 +97,7 @@ void DnCMarabou::run()
     unsigned verbosity = Options::get()->getInt( Options::VERBOSITY );
     unsigned timeoutInSeconds = Options::get()->getInt( Options::TIMEOUT );
     float timeoutFactor = Options::get()->getFloat( Options::TIMEOUT_FACTOR );
+    bool restoreTreeStates = Options::get()->getBool( Options::RESTORE_TREE_STATES );
 
     _dncManager = std::unique_ptr<DnCManager>
       ( new DnCManager( numWorkers, initialDivides, initialTimeout,
@@ -105,7 +106,7 @@ void DnCMarabou::run()
                         verbosity ) );
     struct timespec start = TimeUtils::sampleMicro();
 
-    _dncManager->solve( timeoutInSeconds );
+    _dncManager->solve( timeoutInSeconds, restoreTreeStates );
 
     struct timespec end = TimeUtils::sampleMicro();
 

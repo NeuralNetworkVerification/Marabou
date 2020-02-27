@@ -61,8 +61,9 @@ void DnCWorker::setQueryDivider( DivideStrategy divideStrategy )
     }
 }
 
-void DnCWorker::popOneSubQueryAndSolve()
+void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
 {
+    std::cout << restoreTreeStates << std::endl;
     SubQuery *subQuery = NULL;
     // Boost queue stores the next element into the passed-in pointer
     // and returns true if the pop is successful (aka, the queue is not empty

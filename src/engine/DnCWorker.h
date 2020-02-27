@@ -36,7 +36,7 @@ public:
       Pop one subQuery, solve it and handle the result
       Return true if the DnCWorker should continue running
     */
-    void popOneSubQueryAndSolve();
+    void popOneSubQueryAndSolve( bool restoreTreeStates=true );
 
 private:
     /*
