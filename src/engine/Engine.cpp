@@ -102,6 +102,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
         printf( "\n---\n" );
     }
 
+    bool splitJustPerformed = true;
     struct timespec mainLoopStart = TimeUtils::sampleMicro();
     while ( true )
     {
@@ -178,16 +179,21 @@ bool Engine::solve( unsigned timeoutInSeconds )
             if ( _tableau->basisMatrixAvailable() )
                 explicitBasisBoundTightening();
 
-            // Perform any SmtCore-initiated case splits
-            if ( _smtCore.needToSplit() )
+            if ( splitJustPerformed )
             {
-                _smtCore.performSplit();
-
                 do
                 {
                     performSymbolicBoundTightening();
                 }
                 while ( applyAllValidConstraintCaseSplits() );
+                splitJustPerformed = false;
+            }
+
+            // Perform any SmtCore-initiated case splits
+            if ( _smtCore.needToSplit() )
+            {
+                _smtCore.performSplit();
+                splitJustPerformed = true;
                 continue;
             }
 
@@ -287,6 +293,11 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 _exitCode = Engine::UNSAT;
                 return false;
             }
+            else
+            {
+                splitJustPerformed = true;
+            }
+
         }
         catch ( ... )
         {
