@@ -1945,6 +1945,27 @@ void Engine::updateDirections()
                 constraint->updateDirection();
 }
 
+void Engine::updateScores()
+{
+    _candidatePlConstraints.clear();
+    for ( const auto plConstraint : _plConstraints )
+    {
+        if ( plConstraint->isActive() && !plConstraint->phaseFixed() )
+        {
+            plConstraint->updateScore();
+            _candidatePlConstraints.insert( plConstraint );
+        }
+    }
+}
+
+PiecewiseLinearConstraint *Engine::pickSplitPLConstraint()
+{
+    updateScores();
+    auto constraint = *_candidatePlConstraints.begin();
+    _candidatePlConstraints.erase( constraint );
+    return constraint;
+}
+
 void Engine::setConstraintViolationThreshold( unsigned threshold )
 {
     _smtCore.setConstraintViolationThreshold( threshold );

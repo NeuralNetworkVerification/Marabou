@@ -110,6 +110,8 @@ public:
     // The number of violations of a constraints after which the SMT core will initiate a case split
     static const unsigned CONSTRAINT_VIOLATION_THRESHOLD;
 
+    static const unsigned SPLITTING_HEURISTICS;
+
     // How often should we perform full bound tightening, on the entire contraints matrix A.
     static const unsigned BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY;
 
