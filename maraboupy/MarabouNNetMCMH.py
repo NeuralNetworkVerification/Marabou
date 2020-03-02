@@ -42,12 +42,12 @@ class MarabouNNetMCMH:
         for i in range(N):
             inputs = self.createRandomInputsList()
 
-            if self.badInput(inputs): #Normalizes outputs!
+            if self.badInput(inputs): #Trying to not Normalize outputs!
                 print ('A counter example found! input = ', inputs)
 
                 sys.exit()
 
-            layer_output = self.marabou_nnet.evaluateNetworkToLayer(inputs,last_layer=layer, normalize_inputs=True, normalize_outputs=False)
+            layer_output = self.marabou_nnet.evaluateNetworkToLayer(inputs,last_layer=layer, normalize_inputs=False, normalize_outputs=False)
             good_set.append(layer_output)
         self.good_set = good_set
 
@@ -85,7 +85,7 @@ class MarabouNNetMCMH:
             value = inputs[input_variable]
             assert value >= self.marabou_nnet.lowerBounds[input_variable]
             assert value <= self.marabou_nnet.upperBounds[input_variable]
-        output = self.marabou_nnet.evaluateNetworkToLayer(inputs,last_layer=0,normalize_inputs=False,normalize_outputs=True)
+        output = self.marabou_nnet.evaluateNetworkToLayer(inputs,last_layer=0,normalize_inputs=False,normalize_outputs=False)
 
         equations_hold = self.marabou_nnet.property.verify_equations_exec(inputs,output)
 
@@ -133,7 +133,7 @@ class MarabouNNetMCMH:
 
             #Evaluating the network on the input
 
-            output = self.marabou_nnet.evaluateNetworkToLayer(inputs,last_layer=0,normalize_inputs=False,normalize_outputs=True)
+            output = self.marabou_nnet.evaluateNetworkToLayer(inputs,last_layer=0,normalize_inputs=False,normalize_outputs=False)
             print("output = ", output)
             outputs.append(output)
 
@@ -185,6 +185,10 @@ nnet_object.outputsOfInputExtremes()
 
 nnet_object.createInitialGoodSet(layer=5,N=1000)
 
+
+
+nnet_object = MarabouNetworkNNetExtended()
+print(nnet_object.numLayers)
 
 
 

@@ -28,7 +28,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
     Class that implements a MarabouNetwork from an NNet file.
     """
 
-    def __init__(self, filename, property_filename="", perform_sbt=False, compute_ipq=False):
+    def __init__(self, filename = "", perform_sbt=False):
         """
         Constructs a MarabouNetworkNNet object from an .nnet file.
 
@@ -74,9 +74,139 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         """
         super(MarabouNetworkNNet,self).__init__()
 
+        if not filename:
+            self.numLayers = 0
+            self.layerSizes = []
+            self.inputSize = 0
+            self.outputSize = 0
+            self.maxLayersize = 0
+            self.inputMinimums = []
+            self.inputMaximums = []
+            self.inputMeans = []
+            self.inputRanges = []
+            self.weights = []
+            self.biases = []
+
+            self.sbt = None
+            return
+            
+
         # read the file and load values
         self.read_nnet(filename)
 
+        self.computeNetworkAttributes(perform_sbt,filename)
+
+    def clearNetwork(self):
+        # call clear() from parent
+        self.clear()
+
+        self.numLayers = 0
+        self.layerSizes = 0
+        self.inputSize = 0
+        self.outputSize = 0
+        self.maxLayersize = 0
+        self.inputMinimums = []
+        self.inputMaximums = []
+        self.inputMeans = []
+        self.inputRanges = []
+        self.weights = []
+        self.biases = []
+
+        self.sbt = None
+
+
+
+
+
+
+    def resetNetworkFromParameters(self,inputMinimums,inputMaximums, inputMeans,inputRanges, weights,biases,\
+                                   numLayers=-1,layerSizes=[],inputSize=-1,outputSize=-1,maxLayersize=-1,perform_sbt = False):
+
+        #Clearing the attributes that will be computed (clear() method from parent)
+        self.clear()
+
+        # Compute network parameters that can be computed from the rest
+        _numLayers = len(weights)
+        _inputSize = len(inputMinimums)
+        _outputSize = len(biases[-1])
+
+        # Find maximum size of any hidden layer
+        _maxLayerSize = _inputSize
+        for b in biases:
+            if len(b) > _maxLayerSize:
+                _maxLayerSize = len(b)
+        # Create a list of layer Sizes
+        _layerSizes = []
+        _layerSizes.append(_inputSize)
+        for b in biases:
+            _layerSizes.append(len(b))
+
+        print(len(inputMinimums))
+        print(biases)
+
+        if numLayers == -1:
+            numLayers = _numLayers
+        if inputSize == -1:
+            inputSize = _inputSize
+        if outputSize == -1:
+            outputSize = _outputSize
+        if layerSizes == []:
+            layerSizes = _layerSizes
+        if maxLayersize == -1:
+            maxLayersize = _maxLayerSize
+
+        # Checking that the parameters provided in the arguments agrees with what we have computed
+
+        inputError = False
+        if numLayers != _numLayers:
+            numLayers = _numLayers
+            inputError = True
+            errorPlace = 1
+        if inputSize != _inputSize:
+            inputSize = _inputSize
+            inputError = True
+            errorPlace = 2
+        if outputSize != _outputSize:
+            outputSize = _outputSize
+            inputError = True
+            errorPlace = 3
+        if layerSizes != _layerSizes:
+            print(layerSizes)
+            print(_layerSizes)
+            layerSizes = _layerSizes
+            inputError = True
+            errorPlace = 4
+        if maxLayersize != _maxLayerSize:
+            maxLayersize = _maxLayerSize
+            inputError = True
+            errorPlace = 5
+
+
+
+
+        if inputError:
+            print("\nSomething was wrong with the arguments, corrected! Error code : ",errorPlace,"\n")
+
+
+        self.numLayers = numLayers
+        self.layerSizes = layerSizes
+        self.inputSize = inputSize
+        self.outputSize = outputSize
+        self.maxLayersize = maxLayersize
+        self.inputMinimums = inputMinimums
+        self.inputMaximums = inputMaximums
+        self.inputMeans = inputMeans
+        self.inputRanges = inputRanges
+        self.weights = weights
+        self.biases = biases
+
+        self.computeNetworkAttributes(perform_sbt,filename="")
+        # NOTE: here we assume tha the filename is not used in createSBT()
+        # To-do (necessary? desireable?): create a new filename for the network
+
+
+
+    def computeNetworkAttributes(self,perform_sbt,filename=""):
         # compute variable ranges
         self.variableRanges()
 
@@ -115,6 +245,13 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         else:
             self.sbt = None
 
+
+
+    '''
+    Creates a symbolic bound tightener
+    
+    CHECK: is the filename attribute used??
+    '''
     def createSBT(self, filename):
         sbt = MarabouCore.SymbolicBoundTightener()
         sbt.setNumberOfLayers(self.numLayers + 1)
@@ -407,6 +544,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
         return outputs
 
+
     """
      Evaluate network using multiple sets of inputs
 
@@ -466,3 +604,56 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
                     outputs[i, j] = outputs[i, j] * ranges[-1] + means[-1]
 
         return outputs.T
+
+
+
+    """
+    Evaluate the network directly, without Marabou, starting from a given layer
+    To-do: change this method to "evaluate without Marabou" defined in MarabouNetwork?
+
+    Args:
+        inputs (numpy array of floats): Network inputs to be evaluated
+
+    Returns:
+        (numpy array of floats): Network output
+   """
+
+    # def evaluateNetworkFromLayer(self, inputs, normalize_inputs=True, normalize_outputs=True, activate_output_layer=False):
+    #     numLayers = self.numLayers
+    #     inputSize = self.inputSize
+    #     outputSize = self.outputSize
+    #     biases = self.biases
+    #     weights = self.weights
+    #     mins = self.inputMinimums
+    #     maxes = self.inputMaximums
+    #     means = self.inputMeans
+    #     ranges = self.inputRanges
+    #
+    #     # Prepare the inputs to the neural network
+    #     if (normalize_inputs):
+    #         inputsNorm = np.zeros(inputSize)
+    #         for i in range(inputSize):
+    #             if inputs[i] < mins[i]:
+    #                 inputsNorm[i] = (mins[i] - means[i]) / ranges[i]
+    #             elif inputs[i] > maxes[i]:
+    #                 inputsNorm[i] = (maxes[i] - means[i]) / ranges[i]
+    #             else:
+    #                 inputsNorm[i] = (inputs[i] - means[i]) / ranges[i]
+    #     else:
+    #         inputsNorm = inputs
+    #
+    #     # Evaluate the neural network
+    #     for layer in range(numLayers - 1):
+    #         inputsNorm = np.maximum(np.dot(weights[layer], inputsNorm) + biases[layer], 0)
+    #
+    #     if (activate_output_layer):
+    #         outputs = np.maximum(np.dot(weights[-1], inputsNorm) + biases[-1], 0)
+    #     else:
+    #         outputs = np.dot(weights[-1], inputsNorm) + biases[-1]
+    #
+    #     # Undo output normalization
+    #     if (normalize_outputs):
+    #         for i in range(outputSize):
+    #             outputs[i] = outputs[i] * ranges[-1] + means[-1]
+    #
+    #     return outputs

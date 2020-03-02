@@ -1,15 +1,15 @@
 
 
 import MarabouNetworkNNet
-#import MarabouNetworkNNetExtendedParent
+import MarabouNetworkNNetExtendedParent
 import MarabouCore
 import numpy as np
 
-class MarabouNetworkNNetIPQ(MarabouNetworkNNet.MarabouNetworkNNet):
+class MarabouNetworkNNetIPQ(MarabouNetworkNNetExtendedParent.MarabouNetworkNNetExtendedParent):
     """
     Class that implements a MarabouNetwork from an NNet file.
     """
-    def __init__ (self, filename, property_filename = "", perform_sbt=False, compute_ipq = False):
+    def __init__ (self, filename="", property_filename = "", perform_sbt=False, compute_ipq = False):
         """
         Constructs a MarabouNetworkNNet object from an .nnet file.
 
@@ -60,7 +60,8 @@ class MarabouNetworkNNetIPQ(MarabouNetworkNNet.MarabouNetworkNNet):
         else:
             self.ipq1 = MarabouCore.InputQuery()
         self.ipq2 = self.getMarabouQuery()
-        MarabouCore.createInputQuery(self.ipq2,filename,property_filename)
+        if filename:
+            MarabouCore.createInputQuery(self.ipq2,filename,property_filename)
 
 
     def computeIPQ(self):

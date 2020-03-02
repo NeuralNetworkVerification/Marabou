@@ -8,7 +8,7 @@ class MarabouNetworkNNetExtended(MarabouNetworkNNetIPQ,MarabouNetworkNNetPropert
     Read a property from a property file and stores as a Property object
     Computes the input query and stores as an InputQuery object
     """
-    def __init__ (self, filename, property_filename = "", perform_sbt=False, compute_ipq = False):
+    def __init__ (self, filename="", property_filename = "", perform_sbt=False, compute_ipq = False):
         """
         Constructs a MarabouNetworkNNet object from an .nnet file.
 
