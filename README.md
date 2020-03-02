@@ -35,11 +35,11 @@ paper](https://aisafety.stanford.edu/marabou/MarabouCAV2019.pdf) and the
 [slides](https://aisafety.stanford.edu/marabou/fomlas19.html). 
 
 For more information about the input formats please check the
-[wiki](https://github.com/guykatzz/Marabou/wiki/Marabou-Input-Formats).
+[wiki](https://github.com/NeuralNetworkVerification/Marabou/wiki/Marabou-Input-Formats).
 
 Download
 ------------------------------------------------------------------------------
-The latest version of Marabou is available on [http://github.com/GuyKatzz/Marabou].
+The latest version of Marabou is available on [https://github.com/NeuralNetworkVerification/Marabou].
 
 ## Static binaries
 

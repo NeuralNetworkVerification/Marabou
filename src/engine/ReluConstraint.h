@@ -162,11 +162,40 @@ public:
     */
     bool supportsSymbolicBoundTightening() const;
 
+    bool supportPolarity() const;
+
+    /*
+      Return the polarity of this ReLU, which computes how symmetric
+      the bound of the input to this ReLU is with respect to 0.
+      Let LB be the lowerbound, and UB be the upperbound.
+      If LB >= 0, polarity is 1.
+      If UB <= 0, polarity is -1.
+      If LB < 0, and UB > 0, polarity is ( LB + UB ) / (UB - LB).
+
+      We divide the sum by the width of the interval so that the polarity is
+      always between -1 and 1. The closer it is to 0, the more symmetric the
+      bound is.
+    */
+    double computePolarity() const;
+
+    /*
+      Update the preferred direction for fixing and handling case split
+    */
+    void updateDirection();
+
+    PhaseStatus getDirection() const;
+
 private:
     unsigned _b, _f;
     PhaseStatus _phaseStatus;
     bool _auxVarInUse;
     unsigned _aux;
+
+    /*
+      Denotes which case split to handle first.
+      And which phase status to repair a relu into.
+    */
+    PhaseStatus _direction;
 
     PiecewiseLinearCaseSplit getInactiveSplit() const;
     PiecewiseLinearCaseSplit getActiveSplit() const;
