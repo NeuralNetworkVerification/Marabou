@@ -24,6 +24,7 @@
 #include "BlandsRule.h"
 #include "DantzigsRule.h"
 #include "DegradationChecker.h"
+#include "DivideStrategy.h"
 #include "IEngine.h"
 #include "InputQuery.h"
 #include "Map.h"
@@ -128,8 +129,18 @@ public:
     void setVerbosity( unsigned verbosity );
 
     /*
+      Pick the piecewise linear constraint for splitting
+    */
+    PiecewiseLinearConstraint *pickSplitPLConstraint();
+
+    /*
+      Update the scores of each candidate splitting PL constraints
+    */
+    void updateScores();
+
+    /*
       Set the constraint violation threshold of SmtCore
-     */
+    */
     void setConstraintViolationThreshold( unsigned threshold );
 
     /*
@@ -174,6 +185,11 @@ private:
       The existing piecewise-linear constraints.
     */
     List<PiecewiseLinearConstraint *> _plConstraints;
+
+    /*
+      The ordered set of candidate PL constraints for splitting
+    */
+    Set<PiecewiseLinearConstraint *> _candidatePlConstraints;
 
     /*
       Piecewise linear constraints that are currently violated.
@@ -462,7 +478,6 @@ private:
       to handle case splits
     */
     void updateDirections();
-
 };
 
 #endif // __Engine_h__

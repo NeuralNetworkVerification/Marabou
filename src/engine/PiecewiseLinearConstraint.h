@@ -60,6 +60,11 @@ public:
     PiecewiseLinearConstraint();
     virtual ~PiecewiseLinearConstraint() {}
 
+    bool operator<( const PiecewiseLinearConstraint &other ) const
+    {
+        return _score < other._score;
+    }
+
     /*
       Return a clone of the constraint.
     */
@@ -213,10 +218,22 @@ public:
     }
 
     /*
-      Update the preferred direction to take first when branching on this PLConstraint
+      Update the preferred direction to take first when splitting on this PLConstraint
     */
     virtual void updateDirection()
     {
+    }
+
+    virtual void updateScore()
+    {
+    }
+
+    /*
+      Update _score with score
+    */
+    void setScore( double score )
+    {
+        _score = score;
     }
 
 protected:
@@ -224,6 +241,13 @@ protected:
 	Map<unsigned, double> _assignment;
     Map<unsigned, double> _lowerBounds;
     Map<unsigned, double> _upperBounds;
+
+    /*
+      The score denotes priority for splitting. When score is negative, the PL constraint
+      is not being considered for splitting.
+      We pick the PL constraint with the highest score to branch.
+     */
+    double _score;
 
     IConstraintBoundTightener *_constraintBoundTightener;
 
