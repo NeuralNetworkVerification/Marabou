@@ -141,9 +141,6 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         for b in biases:
             _layerSizes.append(len(b))
 
-        print(len(inputMinimums))
-        print(biases)
-
         if numLayers == -1:
             numLayers = _numLayers
         if inputSize == -1:
@@ -171,8 +168,10 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
             inputError = True
             errorPlace = 3
         if layerSizes != _layerSizes:
-            print(layerSizes)
-            print(_layerSizes)
+            # print(len(biases))
+            # print([len(b) for b in biases])
+            # print(layerSizes)
+            # print(_layerSizes)
             layerSizes = _layerSizes
             inputError = True
             errorPlace = 4
@@ -247,12 +246,16 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
 
 
-    '''
-    Creates a symbolic bound tightener
-    
-    CHECK: is the filename attribute used??
-    '''
+
     def createSBT(self, filename):
+
+        '''
+        Creates a symbolic bound tightener
+
+        CHECK: is the filename attribute used??
+        '''
+
+
         sbt = MarabouCore.SymbolicBoundTightener()
         sbt.setNumberOfLayers(self.numLayers + 1)
         for layer, size in enumerate(self.layerSizes):
@@ -289,13 +292,16 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         ipq.setSymbolicBoundTightener(self.sbt)
         return ipq
 
-    """
-    Read the nnet file, load all the values and assign the class members.
 
-    Args:
-        filename: path to the .nnet file.
-    """
     def read_nnet(self, file_name):
+
+        """
+        Read the nnet file, load all the values and assign the class members.
+
+        Args:
+            filename: path to the .nnet file.
+        """
+
         with open(file_name) as f:
             line = f.readline()
             cnt = 1
@@ -358,13 +364,16 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
             self.weights = weights
             self.biases = biases
 
-    """
-    Compute the variable number ranges for each type (input, output, b, f)
 
-    Args:
-        None
-    """
     def variableRanges(self):
+
+        """
+        Compute the variable number ranges for each type (input, output, b, f)
+
+        Args:
+            None
+        """
+
         input_variables = []
         b_variables = []
         f_variables = []
@@ -391,18 +400,21 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         self.f_variables = f_variables
         self.outputVars = np.array([output_variables])
 
-    """
-    Compute the variable number for the b variables in that correspond to the
-        layer, node argument.
 
-    Args:
-        layer: (int) layer number.
-        node: (int) node number.
-    Returns:
-        variable number: (int) variable number that corresponds to the b variable
-        of the node defined by the layer, node indices.
-    """
     def nodeTo_b(self, layer, node):
+
+        """
+        Compute the variable number for the b variables in that correspond to the
+            layer, node argument.
+
+        Args:
+            layer: (int) layer number.
+            node: (int) node number.
+        Returns:
+            variable number: (int) variable number that corresponds to the b variable
+            of the node defined by the layer, node indices.
+        """
+
         assert(0 < layer)
         assert(node < self.layerSizes[layer])
         
@@ -411,18 +423,21 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         
         return offset + node
 
-    """
-    Compute the variable number for the f variables in that correspond to the
-        layer, node argument.
 
-    Args:
-        layer: (int) layer number.
-        node: (int) node number.
-    Returns:
-        variable number: (int) variable number that corresponds to the f variable
-        of the node defined by the layer, node indices.
-    """
     def nodeTo_f(self, layer, node):
+
+        """
+        Compute the variable number for the f variables in that correspond to the
+            layer, node argument.
+
+        Args:
+            layer: (int) layer number.
+            node: (int) node number.
+        Returns:
+            variable number: (int) variable number that corresponds to the f variable
+            of the node defined by the layer, node indices.
+        """
+
         assert(layer < len(self.layerSizes))
         assert(node < self.layerSizes[layer])
         
@@ -434,15 +449,17 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
             offset += self.layerSizes[layer]
 
             return offset + node
-    """
-    Constructs the equation representation from the class members
-    Arguments:
-        None
-    Returns:
-        equations_aux   (list of lists) that represents all the equations in
-            the network.
-    """
+
     def buildEquations(self):
+
+        """
+        Constructs the equation representation from the class members
+        Arguments:
+            None
+        Returns:
+            equations_aux   (list of lists) that represents all the equations in
+                the network.
+        """
         equations_aux = []
         equations_count = 0
         marabou_equations = []
@@ -464,15 +481,19 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
                 equations_count += 1
                 
         return equations_aux
-    """
-    Identify all relus and their associated variable numbers.
-    Arguments:
-        None
-    Returns:
-        relus   (list of lists) that represents all the relus in
-            the network.
-    """
+
+
     def findRelus(self):
+
+        """
+        Identify all relus and their associated variable numbers.
+        Arguments:
+            None
+        Returns:
+            relus   (list of lists) that represents all the relus in
+                the network.
+        """
+
         relus = []
         hidden_layers = self.layerSizes[1:-1]
         for layer, size in enumerate(hidden_layers):
@@ -493,18 +514,20 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
 
 
-    """
-    Evaluate the network directly, without Marabou
-    To-do: change this method to "evaluate without Marabou" defined in MarabouNetwork?
 
-    Args:
-        inputs (numpy array of floats): Network inputs to be evaluated
-
-    Returns:
-        (numpy array of floats): Network output
-   """
 
     def evaluateNetwork(self, inputs, normalize_inputs=True, normalize_outputs=True, activate_output_layer=False):
+
+        """
+        Evaluate the network directly, without Marabou
+
+        Args:
+            inputs (numpy array of floats): Network inputs to be evaluated
+
+        Returns:
+            (numpy array of floats): Network output
+       """
+
         numLayers = self.numLayers
         inputSize = self.inputSize
         outputSize = self.outputSize
@@ -545,20 +568,22 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         return outputs
 
 
-    """
-     Evaluate network using multiple sets of inputs
 
-     Args:
-         inputs (numpy array of floats): Array of network inputs to be evaluated.
-
-     Returns:
-         (numpy array of floats): Network outputs for each set of inputs
-         
-    NOT TESTED
-     """
 
     def evaluateNetworkMultiple(self, inputs, normalize_inputs=True, normalize_outputs=True,
                                   activate_output_layer=False):
+
+        """
+         Evaluate network using multiple sets of inputs
+
+         Args:
+             inputs (numpy array of floats): Array of network inputs to be evaluated.
+
+         Returns:
+             (numpy array of floats): Network outputs for each set of inputs
+
+        NOT TESTED
+         """
 
         numLayers = self.numLayers
         inputSize = self.inputSize
@@ -607,53 +632,128 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
 
 
-    """
-    Evaluate the network directly, without Marabou, starting from a given layer
-    To-do: change this method to "evaluate without Marabou" defined in MarabouNetwork?
+    # def evaluateNetwork(self, inputs, normalize_inputs=True, normalize_outputs=True, activate_output_layer=False):
+    #     return self.evaluateNetworkToLayer(inputs,last_layer=0,normalize_inputs=normalize_inputs,normalize_outputs=normalize_outputs,activate_output_layer=activate_output_layer)
 
-    Args:
-        inputs (numpy array of floats): Network inputs to be evaluated
 
-    Returns:
-        (numpy array of floats): Network output
-   """
+    def evaluateNetworkToLayer(self, inputs, last_layer = 0, normalize_inputs=False, normalize_outputs=False, activate_output_layer=False):
 
-    # def evaluateNetworkFromLayer(self, inputs, normalize_inputs=True, normalize_outputs=True, activate_output_layer=False):
-    #     numLayers = self.numLayers
-    #     inputSize = self.inputSize
-    #     outputSize = self.outputSize
-    #     biases = self.biases
-    #     weights = self.weights
-    #     mins = self.inputMinimums
-    #     maxes = self.inputMaximums
-    #     means = self.inputMeans
-    #     ranges = self.inputRanges
-    #
-    #     # Prepare the inputs to the neural network
-    #     if (normalize_inputs):
-    #         inputsNorm = np.zeros(inputSize)
-    #         for i in range(inputSize):
-    #             if inputs[i] < mins[i]:
-    #                 inputsNorm[i] = (mins[i] - means[i]) / ranges[i]
-    #             elif inputs[i] > maxes[i]:
-    #                 inputsNorm[i] = (maxes[i] - means[i]) / ranges[i]
-    #             else:
-    #                 inputsNorm[i] = (inputs[i] - means[i]) / ranges[i]
-    #     else:
-    #         inputsNorm = inputs
-    #
-    #     # Evaluate the neural network
-    #     for layer in range(numLayers - 1):
-    #         inputsNorm = np.maximum(np.dot(weights[layer], inputsNorm) + biases[layer], 0)
-    #
-    #     if (activate_output_layer):
-    #         outputs = np.maximum(np.dot(weights[-1], inputsNorm) + biases[-1], 0)
-    #     else:
-    #         outputs = np.dot(weights[-1], inputsNorm) + biases[-1]
-    #
-    #     # Undo output normalization
-    #     if (normalize_outputs):
-    #         for i in range(outputSize):
-    #             outputs[i] = outputs[i] * ranges[-1] + means[-1]
-    #
-    #     return outputs
+        """
+        Evaluate the network directly, without Marabou
+        Computes the output at a given layer (ouptut layer by default)
+
+
+        Args:
+            inputs (numpy array of floats): Network inputs to be evaluated
+
+        Returns:
+            (numpy array of floats): Network output
+
+       """
+
+        numLayers = self.numLayers
+        inputSize = self.inputSize
+        outputSize = self.outputSize
+        biases = self.biases
+        weights = self.weights
+        mins = self.inputMinimums
+        maxes = self.inputMaximums
+        means = self.inputMeans
+        ranges = self.inputRanges
+
+        #The default output layer is the last (output) layer
+        if last_layer == 0:
+            last_layer = numLayers
+
+        # Prepare the inputs to the neural network
+        if (normalize_inputs):
+            inputsNorm = np.zeros(inputSize)
+            for i in range(inputSize):
+                if inputs[i] < mins[i]:
+                    inputsNorm[i] = (mins[i] - means[i]) / ranges[i]
+                elif inputs[i] > maxes[i]:
+                    inputsNorm[i] = (maxes[i] - means[i]) / ranges[i]
+                else:
+                    inputsNorm[i] = (inputs[i] - means[i]) / ranges[i]
+        else:
+            inputsNorm = inputs
+
+        # Evaluate the neural network
+        for layer in range(last_layer-1):
+            inputsNorm = np.maximum(np.dot(weights[layer], inputsNorm) + biases[layer], 0)
+
+        layer+=1
+        #print layer
+        #print last_layer
+
+
+        if (activate_output_layer):
+            outputs = np.maximum(np.dot(weights[layer], inputsNorm) + biases[layer], 0)
+        else:
+            outputs = np.dot(weights[layer], inputsNorm) + biases[layer]
+
+        # Undo output normalization
+        if (normalize_outputs):
+            for i in range(outputSize):
+                outputs[i] = outputs[i] * ranges[layer-1] + means[layer-1]
+
+        return outputs
+
+
+
+
+
+    def evaluateNetworkFromLayer(self, inputs, first_layer = 0, normalize_inputs=False, normalize_outputs=False, activate_output_layer=False):
+
+        """
+        Evaluate the network directly, without Marabou, starting after a given layer (input layer by default)
+
+        Args:
+            inputs (numpy array of floats): Layer inputs to be evaluated
+
+        Returns:
+            (numpy array of floats): Network output
+       """
+
+        numLayers = self.numLayers
+        inputSize = self.inputSize
+        outputSize = self.outputSize
+        biases = self.biases
+        weights = self.weights
+        mins = self.inputMinimums
+        maxes = self.inputMaximums
+        means = self.inputMeans
+        ranges = self.inputRanges
+
+        # Prepare the inputs to the neural network
+        # if (normalize_inputs):
+        #     inputsNorm = np.zeros(inputSize)
+        #     for i in range(inputSize):
+        #         if inputs[i] < mins[i]:
+        #             inputsNorm[i] = (mins[i] - means[i]) / ranges[i]
+        #         elif inputs[i] > maxes[i]:
+        #             inputsNorm[i] = (maxes[i] - means[i]) / ranges[i]
+        #         else:
+        #             inputsNorm[i] = (inputs[i] - means[i]) / ranges[i]
+        # else:
+        #     inputsNorm = inputs
+
+
+        # We do not allow normalizations of the inputs here for now.
+        inputsNorm  = inputs
+
+        # Evaluate the neural network
+        for layer in range(first_layer,numLayers-1):
+            inputsNorm = np.maximum(np.dot(weights[layer], inputsNorm) + biases[layer], 0)
+
+        if (activate_output_layer):
+            outputs = np.maximum(np.dot(weights[-1], inputsNorm) + biases[-1], 0)
+        else:
+            outputs = np.dot(weights[-1], inputsNorm) + biases[-1]
+
+        # Undo output normalization
+        if (normalize_outputs):
+            for i in range(outputSize):
+                outputs[i] = outputs[i] * ranges[-1] + means[-1]
+
+        return outputs

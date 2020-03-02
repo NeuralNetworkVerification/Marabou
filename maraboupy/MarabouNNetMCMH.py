@@ -172,7 +172,7 @@ class MarabouNNetMCMH:
 network_filename = "../resources/nnet/acasxu/ACASXU_experimental_v2a_1_9.nnet"
 property_filename = "../resources/properties/acas_property_4.txt"
 property_filename1 = "../resources/properties/acas_property_1.txt"
-network_filename = "../maraboupy/regress_acas_nnet/ACASXU_run2a_1_7_batch_2000.nnet"
+#network_filename = "../maraboupy/regress_acas_nnet/ACASXU_run2a_1_7_batch_2000.nnet"
 
 
 nnet_object = MarabouNNetMCMH(filename=network_filename,property_filename=property_filename)

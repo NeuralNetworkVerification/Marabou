@@ -186,67 +186,67 @@ class MarabouNetworkNNetIPQ(MarabouNetworkNNetExtendedParent.MarabouNetworkNNetE
                 self.setUpperBound(var, true_upper_bound)
                 print("Adjusting upper bound for f variable", var, "to be", true_upper_bound)
 
-    """
-    Evaluate the network directly, without Marabou
-    Computes the output at a given layer (ouptut layer by default)
-    
-
-    Args:
-        inputs (numpy array of floats): Network inputs to be evaluated
-
-    Returns:
-        (numpy array of floats): Network output
-        
-   """
-
-    def evaluateNetworkToLayer(self, inputs, last_layer = 0, normalize_inputs=True, normalize_outputs=True, activate_output_layer=False):
-        numLayers = self.numLayers
-        inputSize = self.inputSize
-        outputSize = self.outputSize
-        biases = self.biases
-        weights = self.weights
-        mins = self.inputMinimums
-        maxes = self.inputMaximums
-        means = self.inputMeans
-        ranges = self.inputRanges
-
-        #The default output layer is the last (output) layer
-        if last_layer == 0:
-            last_layer = numLayers
-
-        # Prepare the inputs to the neural network
-        if (normalize_inputs):
-            inputsNorm = np.zeros(inputSize)
-            for i in range(inputSize):
-                if inputs[i] < mins[i]:
-                    inputsNorm[i] = (mins[i] - means[i]) / ranges[i]
-                elif inputs[i] > maxes[i]:
-                    inputsNorm[i] = (maxes[i] - means[i]) / ranges[i]
-                else:
-                    inputsNorm[i] = (inputs[i] - means[i]) / ranges[i]
-        else:
-            inputsNorm = inputs
-
-        # Evaluate the neural network
-        for layer in range(last_layer-1):
-            inputsNorm = np.maximum(np.dot(weights[layer], inputsNorm) + biases[layer], 0)
-
-        layer+=1
-        #print layer
-        #print last_layer
-
-
-        if (activate_output_layer):
-            outputs = np.maximum(np.dot(weights[layer], inputsNorm) + biases[layer], 0)
-        else:
-            outputs = np.dot(weights[layer], inputsNorm) + biases[layer]
-
-        # Undo output normalization
-        if (normalize_outputs):
-            for i in range(outputSize):
-                outputs[i] = outputs[i] * ranges[layer-1] + means[layer-1]
-
-        return outputs
+   #  """
+   #  Evaluate the network directly, without Marabou
+   #  Computes the output at a given layer (ouptut layer by default)
+   #
+   #
+   #  Args:
+   #      inputs (numpy array of floats): Network inputs to be evaluated
+   #
+   #  Returns:
+   #      (numpy array of floats): Network output
+   #
+   # """
+   #
+   #  def evaluateNetworkToLayer(self, inputs, last_layer = 0, normalize_inputs=True, normalize_outputs=True, activate_output_layer=False):
+   #      numLayers = self.numLayers
+   #      inputSize = self.inputSize
+   #      outputSize = self.outputSize
+   #      biases = self.biases
+   #      weights = self.weights
+   #      mins = self.inputMinimums
+   #      maxes = self.inputMaximums
+   #      means = self.inputMeans
+   #      ranges = self.inputRanges
+   #
+   #      #The default output layer is the last (output) layer
+   #      if last_layer == 0:
+   #          last_layer = numLayers
+   #
+   #      # Prepare the inputs to the neural network
+   #      if (normalize_inputs):
+   #          inputsNorm = np.zeros(inputSize)
+   #          for i in range(inputSize):
+   #              if inputs[i] < mins[i]:
+   #                  inputsNorm[i] = (mins[i] - means[i]) / ranges[i]
+   #              elif inputs[i] > maxes[i]:
+   #                  inputsNorm[i] = (maxes[i] - means[i]) / ranges[i]
+   #              else:
+   #                  inputsNorm[i] = (inputs[i] - means[i]) / ranges[i]
+   #      else:
+   #          inputsNorm = inputs
+   #
+   #      # Evaluate the neural network
+   #      for layer in range(last_layer-1):
+   #          inputsNorm = np.maximum(np.dot(weights[layer], inputsNorm) + biases[layer], 0)
+   #
+   #      layer+=1
+   #      #print layer
+   #      #print last_layer
+   #
+   #
+   #      if (activate_output_layer):
+   #          outputs = np.maximum(np.dot(weights[layer], inputsNorm) + biases[layer], 0)
+   #      else:
+   #          outputs = np.dot(weights[layer], inputsNorm) + biases[layer]
+   #
+   #      # Undo output normalization
+   #      if (normalize_outputs):
+   #          for i in range(outputSize):
+   #              outputs[i] = outputs[i] * ranges[layer-1] + means[layer-1]
+   #
+   #      return outputs
 
     """
      Evaluate network using multiple sets of inputs

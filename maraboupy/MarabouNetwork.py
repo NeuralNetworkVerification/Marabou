@@ -300,3 +300,18 @@ class MarabouNetwork(object):
         outNotMar = self.evaluate(inputs, useMarabou=False)
         err = np.abs(outMar - outNotMar)
         return err
+
+
+    def evaluateWithoutMarabou(self, inputs):
+        """
+        Function to evaluate network directly (without Marabou) at a given point
+        Arguments:
+            inputValues: list of (np arrays) representing input to network
+            useMarabou: (bool) whether to use Marabou solver or TF/NNet
+        Returns:
+            outputValues: (np array) representing output of network
+
+        NOTE: evaluateNetwork is only implemented for MarabouNetworkNNet!
+        """
+        return self.evaluateNetwork(inputs,normalize_inputs=False,normalize_outputs=False)
+

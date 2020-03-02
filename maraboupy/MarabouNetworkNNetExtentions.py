@@ -2,6 +2,7 @@
 
 from MarabouNetworkNNetExtended import *
 from  MarabouNetworkNNet import *
+import numpy as np
 
 def splitList(list,l):
     return list[:l], list[l:]
@@ -18,17 +19,18 @@ def splitNNet(marabou_nnet: MarabouNetworkNNet, layer: int):
         weights1, weights2 = splitList(marabou_nnet.weights, layer)
         biases1, biases2 = splitList(marabou_nnet.biases, layer)
 
-        layerSizes1, layerSizes2 = splitList(marabou_nnet.layerSizes,layer) #!TO ADD TO THE NEW NETWORKS!
+        # layerSizes1, layerSizes2 = splitList(marabou_nnet.layerSizes,layer+1)
+        # Chose not to implement the split here and compute later; creates problems.
 
-        print("layesizes = ",marabou_nnet.layerSizes)
-        print("layesizes1 = ",layerSizes1)
-        print("layesizes2 = ",layerSizes2)
+        # print("layesizes = ",marabou_nnet.layerSizes)
+        # print("layesizes1 = ",layerSizes1)
+        # print("layesizes2 = ",layerSizes2)
 
         new_input_size = marabou_nnet.layerSizes[layer + 1]
 
         mins1 = marabou_nnet.inputMinimums
 
-        print(mins1)
+        # print(mins1)
 
         maxs1 = marabou_nnet.inputMaximums
 
@@ -50,8 +52,8 @@ def splitNNet(marabou_nnet: MarabouNetworkNNet, layer: int):
         
         #mins2,maxs2 = marabou_nnet.returnBounds(layer)
 
-        #maxs2 = [0]*new_input_size  # Not sure!
-        #mins2 = [0]*new_input_size  # Not sure!
+        maxs2 = [0]*new_input_size  # Not sure!
+        mins2 = [0]*new_input_size  # Not sure!
 
         '''
         No normalization for the new input layer
@@ -71,8 +73,8 @@ def splitNNet(marabou_nnet: MarabouNetworkNNet, layer: int):
         marabou_nnet1 = MarabouNetworkNNetExtended()
         marabou_nnet2 = MarabouNetworkNNetExtended()
 
-        marabou_nnet1.resetNetworkFromParameters(mins1, maxs1, means1, ranges1, weights1, biases1,numLayers=-1,layerSizes=layerSizes1)
-        marabou_nnet2.resetNetworkFromParameters(mins2, maxs2, means2, ranges2, weights2, biases2,numLayers=-1,layerSizes=layerSizes2)
+        marabou_nnet1.resetNetworkFromParameters(mins1, maxs1, means1, ranges1, weights1, biases1)
+        marabou_nnet2.resetNetworkFromParameters(mins2, maxs2, means2, ranges2, weights2, biases2)
 
 
 #        nnet1 = NNet(weights1, biases1, mins1, maxs1, means1, ranges1)
@@ -81,9 +83,44 @@ def splitNNet(marabou_nnet: MarabouNetworkNNet, layer: int):
         return marabou_nnet1,marabou_nnet2
 
 
+def createRandomInputsForNetwork(marabou_nnet: MarabouNetworkNNet):
+
+        inputs = []
+        for input_var in marabou_nnet.inputVars.flatten():
+            assert marabou_nnet.upperBoundExists(input_var)
+            assert marabou_nnet.lowerBoundExists(input_var)
+            random_value = np.random.uniform(low=marabou_nnet.lowerBounds[input_var],
+                                             high=marabou_nnet.upperBounds[input_var])
+            inputs.append(random_value)
+        return inputs
+
+def computeRandomOutputs(marabou_nnet: MarabouNetworkNNet, N: int):
+        output_set =[]
+        for i in range(N):
+            inputs = createRandomInputsForNetwork(marabou_nnet)
+
+
+            layer_output = marabou_nnet.evaluateNetwork(inputs, normalize_inputs=False, normalize_outputs=False)
+            output_set.append(layer_output)
+
+        return output_set
+
+
+
+def computeRandomOutputsToLayer(marabou_nnet: MarabouNetworkNNet,layer: int, N: int):
+        output_set =[]
+        for i in range(N):
+            inputs = createRandomInputsForNetwork(marabou_nnet)
+
+
+            layer_output = marabou_nnet.evaluateNetworkToLayer(inputs,last_layer=layer, normalize_inputs=False, normalize_outputs=False)
+            output_set.append(layer_output)
+
+        return output_set
 
 
 nnet = MarabouNetworkNNetExtended("../resources/nnet/acasxu/ACASXU_experimental_v2a_1_9.nnet")
+
 
 print (type(MarabouNetworkNNet))
 
@@ -92,12 +129,46 @@ print (type(MarabouNetworkNNet))
 
 property_filename = "../resources/properties/acas_property_4.txt"
 property_filename1 = "../resources/properties/acas_property_1.txt"
-network_filename = "../maraboupy/regress_acas_nnet/ACASXU_run2a_1_7_batch_2000.nnet"
+#network_filename = "../maraboupy/regress_acas_nnet/ACASXU_run2a_1_7_batch_2000.nnet"
+network_filename = "../resources/nnet/acasxu/ACASXU_experimental_v2a_1_9.nnet"
 
 layer = 2
 
 nnet_object = MarabouNetworkNNetExtended(filename=network_filename,property_filename=property_filename)
 
+#print("length of biases", len(nnet_object.biases))
+
+
 nnet_object1, nnet_object2 = splitNNet(marabou_nnet=nnet_object,layer=layer)
+
+
+
+#TESTING THE SPLIT FUNCTIONALITY AND DIFFERENT METHODS OF EVALUATION. WORKS!
+
+N = 10
+
+for i in range(N):
+        inputs = createRandomInputsForNetwork(nnet_object)
+
+        layer_output = nnet_object.evaluateNetworkToLayer(inputs, last_layer=layer, normalize_inputs=False, normalize_outputs=False, activate_output_layer=True)
+        output1 = nnet_object1.evaluateNetworkToLayer(inputs,last_layer=0, normalize_inputs=False, normalize_outputs=False, activate_output_layer=True
+                                                    )
+
+        if not (layer_output == output1).all():
+               print("Failed1")
+
+        true_output = nnet_object.evaluateNetworkToLayer(inputs, last_layer=0, normalize_inputs=False, normalize_outputs=False)
+        output2 = nnet_object2.evaluateNetworkToLayer(layer_output,last_layer=0, normalize_inputs=False, normalize_outputs=False)
+        output2b = nnet_object.evaluateNetworkFromLayer(layer_output,first_layer=layer)
+        true_outputb = nnet_object.evaluateNetworkFromLayer(inputs)
+        true_outputc = nnet_object.evaluateNetwork(inputs,normalize_inputs=False,normalize_outputs=False)
+        # true_outputd = nnet_object.evaluateWithMarabou(inputs) #Failed, requires a different type of input!
+
+        # print(i, "   ", inputs, "   ", "\n", true_output, "\n", output2, "\n", true_output == output2)
+        if not (true_outputb == output2b).all():
+               print("Failed2")
+
+        if not (true_outputc == output2b).all():
+               print("Failed2")
 
 
