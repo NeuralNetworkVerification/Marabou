@@ -53,6 +53,8 @@ public:
 
         // Global timeout
         TIMEOUT,
+
+        SPLIT_THRESHOLD,
     };
 
     enum FloatOptions{

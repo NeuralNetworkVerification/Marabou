@@ -18,6 +18,7 @@
 #include "DnCManager.h"
 #include "DnCWorker.h"
 #include "GetCPUData.h"
+#include "GlobalConfiguration.h"
 #include "LargestIntervalDivider.h"
 #include "MStringf.h"
 #include "MarabouError.h"
@@ -65,6 +66,7 @@ DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
     , _timeoutReached( false )
     , _numUnsolvedSubQueries( 0 )
     , _verbosity( verbosity )
+    , _constraintViolationThreshold( GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD )
 {
 }
 
@@ -77,7 +79,7 @@ void DnCManager::freeMemoryIfNeeded()
 {
     if ( _workload )
     {
-        SubQuery *subQuery;
+        SubQuery *subQuery = NULL;
         while ( !_workload->empty() )
         {
             _workload->pop( subQuery );
@@ -325,6 +327,7 @@ bool DnCManager::createEngines()
         InputQuery *inputQuery = new InputQuery();
         *inputQuery = *baseInputQuery;
         engine->processInputQuery( *inputQuery );
+        engine->setConstraintViolationThreshold( _constraintViolationThreshold );
         _engines.append( engine );
     }
 
@@ -347,7 +350,7 @@ void DnCManager::initialDivide( SubQueries &subQueries )
             ( new LargestIntervalDivider( inputVariables ) );
     }
 
-    String queryId = "";
+    String queryId;
     // Create a new case split
     QueryDivider::InputRegion initialRegion;
     InputQuery *inputQuery = _baseEngine->getInputQuery();
@@ -391,6 +394,11 @@ void DnCManager::log( const String &message )
 {
     if ( GlobalConfiguration::DNC_MANAGER_LOGGING )
         printf( "DnCManager: %s\n", message.ascii() );
+}
+
+void DnCManager::setConstraintViolationThreshold( unsigned threshold )
+{
+    _constraintViolationThreshold = threshold;
 }
 
 //

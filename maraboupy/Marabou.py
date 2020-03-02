@@ -19,6 +19,7 @@
 #Marabou File
 from .MarabouNetworkNNet import *
 from .MarabouNetworkTF import *
+from .MarabouNetworkONNX import *
 from .MarabouCore import *
 
 def read_nnet(filename, sbt=False):
@@ -33,7 +34,7 @@ def read_nnet(filename, sbt=False):
     return MarabouNetworkNNet(filename, perform_sbt=sbt)
 
 
-def read_tf(filename, inputName=None, outputName=None, savedModel=False, savedModelTags=[]):
+def read_tf(filename, inputNames=None, outputName=None, savedModel=False, savedModelTags=[]):
     """
     Constructs a MarabouNetworkTF object from a frozen Tensorflow protobuf
 
@@ -41,15 +42,27 @@ def read_tf(filename, inputName=None, outputName=None, savedModel=False, savedMo
         filename: (string) If savedModel is false, path to the frozen graph .pb file.
                            If savedModel is true, path to SavedModel folder, which
                            contains .pb file and variables subdirectory.
-        inputName: (string) optional, name of operation corresponding to input.
+        inputNames: (list of strings) optional, list of operation names corresponding to inputs.
         outputName: (string) optional, name of operation corresponding to output.
         savedModel: (bool) If false, load frozen graph. If true, load SavedModel object.
         savedModelTags: (list of strings) If loading a SavedModel, the user must specify tags used.
     Returns:
         marabouNetworkTF: (MarabouNetworkTF) representing network
     """
-    return MarabouNetworkTF(filename, inputName, outputName, savedModel, savedModelTags)
+    return MarabouNetworkTF(filename, inputNames, outputName, savedModel, savedModelTags)
 
+def read_onnx(filename, inputNames=None, outputName=None):
+    """
+    Constructs a MarabouNetworkONNX object from an ONNX file
+
+    Args:
+        filename: (string) Path to the ONNX file
+        inputNames: (list of strings) optional, list of node names corresponding to inputs.
+        outputName: (string) optional, name of node corresponding to output.
+    Returns:
+        marabouNetworkONNX: (MarabouNetworkONNX) representing network
+    """
+    return MarabouNetworkONNX(filename, inputNames, outputName)
 
 def load_query(filename):
     """
