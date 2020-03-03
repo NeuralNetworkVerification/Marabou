@@ -26,6 +26,11 @@
 #include "Statistics.h"
 #include <algorithm>
 
+#ifdef _WIN32
+#undef max
+#undef min
+#endif
+
 MaxConstraint::MaxConstraint( unsigned f, const Set<unsigned> &elements )
     : _f( f )
     , _elements( elements )

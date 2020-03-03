@@ -1,0 +1,42 @@
+file(GLOB SRCS "*.cpp")
+file(GLOB HEADERS "*.h")
+
+
+target_sources(${MARABOU_LIB} PRIVATE ${SRCS})
+target_include_directories(${MARABOU_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+
+target_sources(${MARABOU_TEST_LIB} PRIVATE ${SRCS})
+target_include_directories(${MARABOU_TEST_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+
+set (ENGINE_TESTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tests")
+macro(engine_add_unit_test name)
+    set(USE_MOCK_COMMON FALSE)
+    set(USE_MOCK_ENGINE FALSE)
+    marabou_add_test(${ENGINE_TESTS_DIR}/Test_${name} engine USE_MOCK_COMMON
+        USE_MOCK_ENGINE "unit")
+endmacro()
+
+engine_add_unit_test(BlandsRule)
+engine_add_unit_test(ConstraintBoundTightener)
+engine_add_unit_test(ConstraintMatrixAnalyzer)
+engine_add_unit_test(CostFunctionManager)
+engine_add_unit_test(DantzigsRule)
+engine_add_unit_test(DegradationChecker)
+engine_add_unit_test(DisjunctionConstraint)
+engine_add_unit_test(DnCWorker)
+engine_add_unit_test(Engine)
+engine_add_unit_test(InputQuery)
+engine_add_unit_test(LargestIntervalDivider)
+engine_add_unit_test(MaxConstraint)
+engine_add_unit_test(NetworkLevelReasoner)
+engine_add_unit_test(Preprocessor)
+engine_add_unit_test(ProjectedSteepestEdge)
+engine_add_unit_test(ReluConstraint)
+engine_add_unit_test(RowBoundTightener)
+engine_add_unit_test(SmtCore)
+engine_add_unit_test(SymbolicBoundTightener)
+engine_add_unit_test(Tableau)
+
+if (${BUILD_PYTHON})
+    target_include_directories(${MARABOU_PY} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+endif()

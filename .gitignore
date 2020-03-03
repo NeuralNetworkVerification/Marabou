@@ -18,5 +18,21 @@ TAGS
 tools/boost_1_68_0
 /tools/boost.unzipped
 /tools/boost_1_68_0.tar.gz
+/tools/pybind11-2.3.0
 /cpp_interface_example/example.elf
 /src/input_parsers/mps_example/mps.elf
+
+/* CMAKE */
+CMakeLists.txt.user
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+Testing
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps
+/tools/pybind11_2_3_0.tar.gz
+build

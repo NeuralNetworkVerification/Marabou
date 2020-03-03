@@ -103,6 +103,54 @@ public:
     void setNumPlConstraintsDisabledByValidSplits( unsigned /* numConstraints */ )
     {
     }
+
+    unsigned _timeToSolve;
+    IEngine::ExitCode _exitCode;
+    bool solve( unsigned timeoutInSeconds )
+    {
+        if ( timeoutInSeconds >= _timeToSolve )
+            _exitCode = IEngine::TIMEOUT;
+        return _exitCode == IEngine::SAT;
+    }
+
+    void setTimeToSolve( unsigned timeToSolve )
+    {
+        _timeToSolve = timeToSolve;
+    }
+
+    void setExitCode( IEngine::ExitCode exitCode )
+    {
+        _exitCode = exitCode;
+    }
+
+    IEngine::ExitCode getExitCode() const
+    {
+        return _exitCode;
+    }
+
+    void reset()
+    {
+    }
+
+    List<unsigned> _inputVariables;
+    void setInputVariables( List<unsigned> &inputVariables )
+    {
+        _inputVariables = inputVariables;
+    }
+
+    List<unsigned> getInputVariables() const
+    {
+        return _inputVariables;
+    }
+
+    void updateScores()
+    {
+    }
+
+    PiecewiseLinearConstraint *pickSplitPLConstraint()
+    {
+        return NULL;
+    }
 };
 
 #endif // __MockEngine_h__

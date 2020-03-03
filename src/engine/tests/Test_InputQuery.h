@@ -19,7 +19,6 @@
 #include "FloatUtils.h"
 #include "InputQuery.h"
 #include "MockErrno.h"
-#include "MockErrno.h"
 #include "MockFileFactory.h"
 #include "ReluConstraint.h"
 #include "MarabouError.h"

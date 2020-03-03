@@ -45,6 +45,8 @@ Engine::Engine( unsigned verbosity )
     , _numVisitedStatesAtPreviousRestoration( 0 )
     , _networkLevelReasoner( NULL )
     , _verbosity( verbosity )
+    , _lastNumVisitedStates( 0 )
+    , _lastIterationWithProgress( 0 )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -65,18 +67,11 @@ Engine::~Engine()
         delete[] _work;
         _work = NULL;
     }
+}
 
-    if ( _symbolicBoundTightener )
-    {
-        delete _symbolicBoundTightener;
-        _symbolicBoundTightener = NULL;
-    }
-
-    if ( _networkLevelReasoner )
-    {
-        delete _networkLevelReasoner;
-        _networkLevelReasoner = NULL;
-    }
+void Engine::setVerbosity( unsigned verbosity )
+{
+    _verbosity = verbosity;
 }
 
 void Engine::adjustWorkMemorySize()
@@ -97,6 +92,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
 
+    updateDirections();
     storeInitialEngineState();
 
     if ( _verbosity > 0 )
@@ -106,6 +102,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
         printf( "\n---\n" );
     }
 
+    bool splitJustPerformed = true;
     struct timespec mainLoopStart = TimeUtils::sampleMicro();
     while ( true )
     {
@@ -147,6 +144,9 @@ bool Engine::solve( unsigned timeoutInSeconds )
             if ( _verbosity > 1 )
                 mainLoopStatistics();
 
+            // Check whether progress has been made recently
+            checkOverallProgress();
+
             // If the basis has become malformed, we need to restore it
             if ( basisRestorationNeeded() )
             {
@@ -179,16 +179,21 @@ bool Engine::solve( unsigned timeoutInSeconds )
             if ( _tableau->basisMatrixAvailable() )
                 explicitBasisBoundTightening();
 
-            // Perform any SmtCore-initiated case splits
-            if ( _smtCore.needToSplit() )
+            if ( splitJustPerformed )
             {
-                _smtCore.performSplit();
-
                 do
                 {
                     performSymbolicBoundTightening();
                 }
                 while ( applyAllValidConstraintCaseSplits() );
+                splitJustPerformed = false;
+            }
+
+            // Perform any SmtCore-initiated case splits
+            if ( _smtCore.needToSplit() )
+            {
+                _smtCore.performSplit();
+                splitJustPerformed = true;
                 continue;
             }
 
@@ -210,7 +215,10 @@ bool Engine::solve( unsigned timeoutInSeconds )
                     if ( _tableau->getBasicAssignmentStatus() !=
                          ITableau::BASIC_ASSIGNMENT_JUST_COMPUTED )
                     {
-                        printf( "Before declaring SAT, recomputing...\n" );
+                        if ( _verbosity > 0 )
+                        {
+                            printf( "Before declaring SAT, recomputing...\n" );
+                        }
                         // Make sure that the assignment is precise before declaring success
                         _tableau->computeAssignment();
                         continue;
@@ -285,6 +293,11 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 _exitCode = Engine::UNSAT;
                 return false;
             }
+            else
+            {
+                splitJustPerformed = true;
+            }
+
         }
         catch ( ... )
         {
@@ -1798,16 +1811,24 @@ bool Engine::shouldExitDueToTimeout( unsigned timeout ) const
     return _statistics.getTotalTime() / MILLISECONDS_TO_SECONDS > timeout;
 }
 
-
-void Engine::resetStatistics( const Statistics &statistics )
+void Engine::reset()
 {
+    resetStatistics();
+    clearViolatedPLConstraints();
+    resetSmtCore();
+    resetBoundTighteners();
+    resetExitCode();
+}
+
+void Engine::resetStatistics()
+{
+    Statistics statistics;
     _statistics = statistics;
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
     _rowBoundTightener->setStatistics( &_statistics );
     _constraintBoundTightener->setStatistics( &_statistics );
     _preprocessor.setStatistics( &_statistics );
-    _activeEntryStrategy = _projectedSteepestEdgeRule;
     _activeEntryStrategy->setStatistics( &_statistics );
 
     _statistics.stampStartingTime();
@@ -1887,6 +1908,67 @@ void Engine::warmStart()
 
     delete[] outputAssignment;
     delete[] inputAssignment;
+}
+
+void Engine::checkOverallProgress()
+{
+    // Get fresh statistics
+    unsigned numVisitedStates = _statistics.getNumVisitedTreeStates();
+    unsigned long long currentIteration = _statistics.getNumMainLoopIterations();
+
+    if ( numVisitedStates > _lastNumVisitedStates )
+    {
+        // Progress has been made
+        _lastNumVisitedStates = numVisitedStates;
+        _lastIterationWithProgress = _statistics.getNumMainLoopIterations();
+    }
+    else
+    {
+        // No progress has been made. If it's been too long, request a restoration
+        if ( currentIteration >
+             _lastIterationWithProgress +
+             GlobalConfiguration::MAX_ITERATIONS_WITHOUT_PROGRESS )
+        {
+            log( "checkOverallProgress detected cycling. Requesting a precision restoration" );
+            _basisRestorationRequired = Engine::STRONG_RESTORATION_NEEDED;
+            _lastIterationWithProgress = currentIteration;
+        }
+    }
+}
+
+void Engine::updateDirections()
+{
+    if ( GlobalConfiguration::USE_POLARITY_BASED_DIRECTION_HEURISTICS )
+        for ( const auto &constraint : _plConstraints )
+            if ( constraint->supportPolarity() &&
+                 constraint->isActive() && !constraint->phaseFixed() )
+                constraint->updateDirection();
+}
+
+void Engine::updateScores()
+{
+    _candidatePlConstraints.clear();
+    for ( const auto plConstraint : _plConstraints )
+    {
+        if ( plConstraint->isActive() && !plConstraint->phaseFixed() )
+        {
+            plConstraint->updateScore();
+            _candidatePlConstraints.insert( plConstraint );
+        }
+    }
+}
+
+PiecewiseLinearConstraint *Engine::pickSplitPLConstraint()
+{
+    updateScores();
+    auto constraint = *_candidatePlConstraints.begin();
+    _candidatePlConstraints.erase( constraint );
+    return constraint;
+}
+
+void Engine::setConstraintViolationThreshold( unsigned threshold )
+{
+    _smtCore.setConstraintViolationThreshold( threshold );
 }
 
 //

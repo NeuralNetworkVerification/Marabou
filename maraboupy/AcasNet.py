@@ -16,7 +16,8 @@
  **/
 '''
 
-from . import MarabouCore
+from maraboupy import MarabouCore
+from maraboupy.Marabou import createOptions
 import numpy as np
 
 class AcasNet:
@@ -74,7 +75,8 @@ class AcasNet:
                   satisfying assignment to the input and output variables
             stats: (Statistics) the Statistics object as defined in Marabou
         """
-        vals, stats = MarabouCore.solve(self.ipq, filename, timeout)
+        options = createOptions(timeoutInSeconds=timeout)
+        vals, stats = MarabouCore.solve(self.ipq, options, filename)
         assignment = []
         if len(vals) > 0:
             for i in range(self.ipq.getNumInputVariables()):
