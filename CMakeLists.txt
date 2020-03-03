@@ -32,6 +32,7 @@ set(REGRESS_DIR "${PROJECT_SOURCE_DIR}/regress")
 set(ENGINE_DIR "${SRC_DIR}/engine")
 set(PYBIND11_DIR "${TOOLS_DIR}/pybind11-2.3.0")
 set(BOOST_DIR "${TOOLS_DIR}/boost_1_68_0")
+set(CBLAS_DIR "${TOOLS_DIR}/OpenBLAS")
 set(COMMON_DIR "${SRC_DIR}/common")
 set(BASIS_DIR "${SRC_DIR}/basis_factorization")
 
@@ -152,6 +153,15 @@ if (NOT ${Boost_FOUND})
 endif()
 set(LIBS_INCLUDES ${Boost_INCLUDE_DIRS})
 set(LIBS ${Boost_LIBRARIES})
+
+#OpenBLAS
+find_package(OpenBLAS REQUIRED)
+if (NOT ${OpenBLAS_FOUND})
+    execute_process(COMMAND ${TOOLS_DIR}/get-openBLAS.${SCRIPT_EXTENSION})
+    find_package(OpenBLAS REQUIRED)
+endif()
+set(LIBS_INCLUDES ${OpenBLAS_INCLUDE_DIRS})
+list(APPEND LIBS ${OpenBLAS_LIBRARIES})
 
 
 # pthread

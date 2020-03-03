@@ -287,7 +287,7 @@ void SymbolicBoundTightener::run( bool useLinearConcretization )
 {
     /*
       Initialize the symbolic bounds for the first layer. Each variable has symbolic
-      upper and lower bound 1 for itself, 0 for all other varibales.
+      upper and lower bound 1 for itself, 0 for all other variables.
       The input layer has no biases.
     */
     std::fill_n( _previousLayerLowerBounds, _maxLayerSize * _inputLayerSize, 0 );
