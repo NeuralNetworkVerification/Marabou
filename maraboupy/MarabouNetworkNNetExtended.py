@@ -1,21 +1,48 @@
 
+
+'''
+/* *******************                                                        */
+/*! \file MarabouNetworkNNetExtended.py
+ ** \verbatim
+ ** Top contributors (to current version):
+ ** Alex Usvyatsov
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** \brief
+ ** This class extends MarabouNetworkNNet class.
+ ** Inherits from both MarabouNetworkNNetIPQ and MarabouNetworkNNetProperty
+ **
+ ** [[ Add lengthier description here ]]
+ **/
+'''
+
+
+
 from MarabouNetworkNNetProperty import *
 from  MarabouNetworkNNetIPQ import *
 
 class MarabouNetworkNNetExtended(MarabouNetworkNNetIPQ,MarabouNetworkNNetProperty):
     """
-    Class that implements a MarabouNetwork from an NNet file.
-    Read a property from a property file and stores as a Property object
-    Computes the input query and stores as an InputQuery object
+    Class that implements a MarabouNetwork from an NNet file
+    Includes extended features: Property and IPQ
     """
     def __init__ (self, filename="", property_filename = "", perform_sbt=False, compute_ipq = False):
         """
-        Constructs a MarabouNetworkNNet object from an .nnet file.
+        Constructs a MarabouNetworkNNetExtended object from an .nnet file.
+
+        Read a property from a property file and stores as a Property object
+        Computes the input query and stores as an InputQuery object
+
 
         Args:
             filename: path to the .nnet file.
             property_filename: path to the property file
-        Attributes:
+
+        Attributes from MarabouNetworkNNet:
             ipq1             an Input Query object containing the Input Query computed directly from the network
             ipq2             an Input Query object created from the file (and maybe a property file)
             property         Property object
@@ -41,7 +68,7 @@ class MarabouNetworkNNetExtended(MarabouNetworkNNetIPQ,MarabouNetworkNNetPropert
             f_variables
             outputVars
 
-        Attributes from parent (MarabouNetwork)
+        Attributes from MarabouNetwork
 
             self.numVars
             self.equList = []

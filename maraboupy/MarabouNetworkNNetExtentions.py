@@ -1,10 +1,28 @@
 
+'''
+/* *******************                                                        */
+/*! \file MarabouNetworkNNetExtensions.py
+ ** \verbatim
+ ** Top contributors (to current version):
+ ** Alex Usvyatsov
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** \brief
+ ** Implements several operations on objets of types MarabouNetworkNNet
+ ** Main feature implemented here is splitting a network of type into two
+ **
+ ** [[ Add lengthier description here ]]
+ **/
+'''
+
 
 from MarabouNetworkNNetExtended import *
 from  MarabouNetworkNNet import *
 import numpy as np
-import filecmp
-from subprocess import call
 
 def splitList(list,l):
     return list[:l], list[l:]
@@ -54,8 +72,8 @@ def splitNNet(marabou_nnet: MarabouNetworkNNet, layer: int):
         
         #mins2,maxs2 = marabou_nnet.returnBounds(layer)
 
-        maxs2 = [0]*new_input_size  # Not sure!
-        mins2 = [0]*new_input_size  # Not sure!
+        maxs2 = [0]*new_input_size  # Change!
+        mins2 = [0]*new_input_size  # Change!
 
         '''
         No normalization for the new input layer
@@ -78,9 +96,6 @@ def splitNNet(marabou_nnet: MarabouNetworkNNet, layer: int):
         marabou_nnet1.resetNetworkFromParameters(mins1, maxs1, means1, ranges1, weights1, biases1)
         marabou_nnet2.resetNetworkFromParameters(mins2, maxs2, means2, ranges2, weights2, biases2)
 
-
-#        nnet1 = NNet(weights1, biases1, mins1, maxs1, means1, ranges1)
-#        nnet2 = NNet(weights2, biases2, mins2, maxs2, means2, ranges2)
 
         return marabou_nnet1,marabou_nnet2
 
@@ -119,120 +134,4 @@ def computeRandomOutputsToLayer(marabou_nnet: MarabouNetworkNNet,layer: int, N: 
             output_set.append(layer_output)
 
         return output_set
-
-
-nnet = MarabouNetworkNNetExtended("../resources/nnet/acasxu/ACASXU_experimental_v2a_1_9.nnet")
-
-
-print (type(MarabouNetworkNNet))
-
-
-
-
-property_filename = "../resources/properties/acas_property_4.txt"
-property_filename1 = "../resources/properties/acas_property_1.txt"
-#network_filename = "../maraboupy/regress_acas_nnet/ACASXU_run2a_1_7_batch_2000.nnet"
-network_filename = "../resources/nnet/acasxu/ACASXU_experimental_v2a_1_9.nnet"
-
-layer = 2
-
-nnet_object = MarabouNetworkNNetExtended(filename=network_filename,property_filename=property_filename)
-
-#print("length of biases", len(nnet_object.biases))
-
-
-print("1:")
-print(nnet_object.inputRanges)
-print(nnet_object.inputMeans)
-
-
-nnet_object1, nnet_object2 = splitNNet(marabou_nnet=nnet_object,layer=layer)
-
-print("2:")
-print(nnet_object.inputRanges)
-print(nnet_object.inputMeans)
-
-
-
-#TESTING THE SPLIT FUNCTIONALITY AND DIFFERENT METHODS OF EVALUATION. WORKS!
-
-N = 10
-
-for i in range(N):
-        inputs = createRandomInputsForNetwork(nnet_object)
-
-        layer_output = nnet_object.evaluateNetworkToLayer(inputs, last_layer=layer, normalize_inputs=False, normalize_outputs=False, activate_output_layer=True)
-        output1 = nnet_object1.evaluateNetworkToLayer(inputs,last_layer=0, normalize_inputs=False, normalize_outputs=False, activate_output_layer=True
-                                                    )
-
-        if not (layer_output == output1).all():
-               print("Failed1")
-
-        true_output = nnet_object.evaluateNetworkToLayer(inputs, last_layer=0, normalize_inputs=False, normalize_outputs=False)
-        output2 = nnet_object2.evaluateNetworkToLayer(layer_output,last_layer=0, normalize_inputs=False, normalize_outputs=False)
-        output2b = nnet_object.evaluateNetworkFromLayer(layer_output,first_layer=layer)
-        true_outputb = nnet_object.evaluateNetworkFromLayer(inputs)
-        true_outputc = nnet_object.evaluateNetwork(inputs,normalize_inputs=False,normalize_outputs=False)
-        # true_outputd = nnet_object.evaluateWithMarabou(inputs) #Failed, requires a different type of input!
-
-        # print(i, "   ", inputs, "   ", "\n", true_output, "\n", output2, "\n", true_output == output2)
-        if not (true_outputb == output2b).all():
-               print("Failed2")
-
-        if not (true_outputc == output2b).all():
-               print("Failed2")
-
-
-
-# TESTING WRITE TO FILE
-
-
-output_filename = "ACASXU_experimental_v2a_1_9_output.nnet"
-output_filename1 = "ACASXU_experimental_v2a_1_9_output1.nnet"
-output_filename2 = "ACASXU_experimental_v2a_1_9_output2.nnet"
-
-#print("??",nnet_object.inputRanges)
-#print("??",nnet_object.inputMeans)
-
-nnet_object.writeNNet(output_filename)
-
-#print(filecmp.cmp(output_filename,network_filename))
-
-call(['diff',output_filename,network_filename])
-
-nnet_object1.writeNNet(output_filename1)
-nnet_object2.writeNNet(output_filename2)
-
-nnet_object_a = MarabouNetworkNNetExtended(filename=output_filename,property_filename=property_filename)
-nnet_object1_a = MarabouNetworkNNetExtended(filename=output_filename1)
-nnet_object2_a = MarabouNetworkNNetExtended(filename=output_filename2)
-
-
-
-# COMPARING RESULTS OF THE NETWORKS CREATED FROM NEW FILES TO THE ORIGINALS ONES.
-
-for i in range(N):
-        inputs = createRandomInputsForNetwork(nnet_object_a)
-
-        layer_output = nnet_object_a.evaluateNetworkToLayer(inputs, last_layer=layer, normalize_inputs=False, normalize_outputs=False, activate_output_layer=True)
-        output1 = nnet_object1_a.evaluateNetworkToLayer(inputs,last_layer=0, normalize_inputs=False, normalize_outputs=False, activate_output_layer=True
-                                                    )
-
-        if not (layer_output == output1).all():
-               print("Failed1")
-
-        true_output = nnet_object_a.evaluateNetworkToLayer(inputs, last_layer=0, normalize_inputs=False, normalize_outputs=False)
-        output2 = nnet_object2_a.evaluateNetworkToLayer(layer_output,last_layer=0, normalize_inputs=False, normalize_outputs=False)
-        output2b = nnet_object_a.evaluateNetworkFromLayer(layer_output,first_layer=layer)
-        true_outputb = nnet_object_a.evaluateNetworkFromLayer(inputs)
-        true_outputc = nnet_object_a.evaluateNetwork(inputs,normalize_inputs=False,normalize_outputs=False)
-        true_outputd = nnet_object.evaluateNetwork(inputs,normalize_inputs=False,normalize_outputs=False)
-        # true_outputd = nnet_object.evaluateWithMarabou(inputs) #Failed, requires a different type of input!
-
-        # print(i, "   ", inputs, "   ", "\n", true_output, "\n", output2, "\n", true_output == output2)
-        if not (true_outputb == output2b).all():
-               print("Failed2")
-
-        if not (true_outputd == true_outputc).all():
-               print("Failed2")
 

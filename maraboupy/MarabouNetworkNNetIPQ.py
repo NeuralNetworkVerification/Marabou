@@ -1,6 +1,29 @@
 
 
-import MarabouNetworkNNet
+'''
+/* *******************                                                        */
+/*! \file MarabouNetworkNNeIPQ.py
+ ** \verbatim
+ ** Top contributors (to current version):
+ ** Alex Usvyatsov
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** \brief
+ ** This class extends MarabouNetworkNNet class
+ ** Adds an Input Query object as an additional attribute
+ ** Adds features that allow updating the the MarabouNetworkNNet object from the IPQ
+ **
+ ** [[ Add lengthier description here ]]
+ **/
+'''
+
+
+
+
 import MarabouNetworkNNetExtendedParent
 import MarabouCore
 import numpy as np
@@ -11,7 +34,10 @@ class MarabouNetworkNNetIPQ(MarabouNetworkNNetExtendedParent.MarabouNetworkNNetE
     """
     def __init__ (self, filename="", property_filename = "", perform_sbt=False, compute_ipq = False):
         """
-        Constructs a MarabouNetworkNNet object from an .nnet file.
+        Constructs a MarabouNetworkNNetIPQ object from an .nnet file.
+        Computes InputQuery, potentially in two ways
+        ipq1 is computed from the MarabouNetworkNNet object itself
+        ipq2 is computed directly from the nnet file
 
         Args:
             filename: path to the .nnet file.
@@ -20,6 +46,8 @@ class MarabouNetworkNNetIPQ(MarabouNetworkNNetExtendedParent.MarabouNetworkNNetE
         Attributes:
             ipq1             an Input Query object containing the Input Query corresponding to the network
             ipq2             an Input Query object created from the file (and maybe property file)
+
+        Attributes from MarabouNetworkNNet:
 
             numLayers        (int) The number of layers in the network
             layerSizes       (list of ints) Layer sizes.
@@ -40,7 +68,7 @@ class MarabouNetworkNNetIPQ(MarabouNetworkNNetExtendedParent.MarabouNetworkNNetE
             f_variables
             outputVars
 
-        Attributes from parent (MarabouNetwork)
+        Attributes from MarabouNetwork
 
             self.numVars
             self.equList = []
@@ -247,71 +275,4 @@ class MarabouNetworkNNetIPQ(MarabouNetworkNNetExtendedParent.MarabouNetworkNNetE
    #              outputs[i] = outputs[i] * ranges[layer-1] + means[layer-1]
    #
    #      return outputs
-
-    """
-     Evaluate network using multiple sets of inputs
-
-     Args:
-         inputs (numpy array of floats): Array of network inputs to be evaluated.
-
-     Returns:
-         (numpy array of floats): Network outputs for each set of inputs
-         
-    NOT TESTED
-     """
-
-    def evaluateNetworkMultipleToLayer(self, inputs, last_layer =0, normalize_inputs=True, normalize_outputs=True,
-                                  activate_output_layer=False):
-
-        numLayers = self.numLayers
-        inputSize = self.inputSize
-        outputSize = self.outputSize
-        biases = self.biases
-        weights = self.weights
-        inputs = np.array(inputs).T
-        mins = self.inputMinimums
-        maxes = self.inputMaximums
-        means = self.inputMeans
-        ranges = self.inputRanges
-
-        # Prepare the inputs to the neural network
-        numInputs = inputs.shape[1]
-
-        if last_layer == 0:
-            last_layer = numLayers
-
-
-        if (normalize_inputs):
-            inputsNorm = np.zeros((inputSize, numInputs))
-            for i in range(inputSize):
-                for j in range(numInputs):
-                    if inputs[i, j] < mins[i]:
-                        inputsNorm[i, j] = (mins[i] - means[i]) / ranges[i]
-                    elif inputs[i, j] > maxes[i]:
-                        inputsNorm[i, j] = (maxes[i] - means[i]) / ranges[i]
-                    else:
-                        inputsNorm[i, j] = (inputs[i, j] - means[i]) / ranges[i]
-        else:
-            inputsNorm = inputs
-
-        # Evaluate the neural network
-        for layer in range(last_layer - 1):
-            inputsNorm = np.maximum(np.dot(weights[layer], inputsNorm) + biases[layer].reshape((len(biases[layer]), 1)),
-                                    0)
-
-        layer+=1
-
-        if (activate_output_layer):
-            outputs = np.maximum(np.dot(weights[layer], inputsNorm) + biases[layer].reshape((len(biases[layer]), 1)), 0)
-        else:
-            outputs = np.dot(weights[-1], inputsNorm) + biases[-1].reshape((len(biases[-1]), 1))
-
-        # Undo output normalization
-        if (normalize_outputs):
-            for i in range(outputSize):
-                for j in range(numInputs):
-                    outputs[i, j] = outputs[i, j] * self.ranges[layer-1] + self.means[layer-1]
-
-        return outputs.T
-
 

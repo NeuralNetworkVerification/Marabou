@@ -1,4 +1,25 @@
-import MarabouNetworkNNet
+
+'''
+/* *******************                                                        */
+/*! \file MarabouNetworkNNetProperty.py
+ ** \verbatim
+ ** Top contributors (to current version):
+ ** Alex Usvyatsov
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** \brief
+ ** This class extends MarabouNetworkNNet class
+ ** Adds property (to be proven) as an attribute
+ **
+ ** [[ Add lengthier description here ]]
+ **/
+'''
+
+
 import MarabouNetworkNNetExtendedParent
 from Property import *
 
@@ -11,7 +32,7 @@ class MarabouNetworkNNetProperty(MarabouNetworkNNetExtendedParent.MarabouNetwork
 
     def __init__ (self, filename="", property_filename="", perform_sbt=False, compute_ipq=False):
         """
-        Constructs a MarabouNetworkNNet object from an .nnet file.
+        Constructs a MarabouNetworkNNetProperty object from an .nnet file.
         Imports a property from a property file
 
         Args:
@@ -20,6 +41,8 @@ class MarabouNetworkNNetProperty(MarabouNetworkNNetExtendedParent.MarabouNetwork
         Attributes:
 
             property         Property object
+
+        Attributes from MarabouNetworkNNet:
 
             numLayers        (int) The number of layers in the network
             layerSizes       (list of ints) Layer sizes.
@@ -40,7 +63,7 @@ class MarabouNetworkNNetProperty(MarabouNetworkNNetExtendedParent.MarabouNetwork
             f_variables
             outputVars
 
-        Attributes from parent (MarabouNetwork)
+        Attributes from MarabouNetwork
 
             self.numVars
             self.equList = []

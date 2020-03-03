@@ -1,19 +1,42 @@
+
+
+'''
+/* *******************                                                        */
+/*! \file Property.py
+ ** \verbatim
+ ** Top contributors (to current version):
+ ** Alex Usvyatsov
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** \brief
+ ** This class represensts property (expression) of a neural network to be verified
+ **
+ ** [[ Add lengthier description here ]]
+ **/
+'''
+
+
+
 import PropertyParser
 import parser
 
 
-'''
-    Python class that represents a property 
-    Contains two lists of strings: equations and properties
-    Currently only supports properties that mention input and output variables only
-    input variable i is referred to as inputs[i]
-    output variable i is referred to as output[i]
-    Evaluates the expressions (equations and bounds) with python's parser, by 
-    turning the string into an executable expression
-'''
 
 
 class Property:
+    '''
+        Python class that represents a property
+        Contains two lists of strings: equations and properties
+        Currently only supports properties that mention input and output variables only
+        input variable i is referred to as inputs[i]
+        output variable i is referred to as output[i]
+        Evaluates the expressions (equations and bounds) with python's parser, by
+        turning the string into an executable expression
+    '''
 
     def __init__(self,property_filename,compute_executable_bounds = False, compute_executable_equations = False):
         """
