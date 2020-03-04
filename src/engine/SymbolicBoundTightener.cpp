@@ -375,8 +375,8 @@ void SymbolicBoundTightener::run( bool useLinearConcretization )
                               _currentLayerUpperBounds, previousLayerSize,
                               _inputLayerSize, currentLayerSize );
         matrixMultiplication( _previousLayerLowerBounds, weights._negativeValues,
-                              _currentLayerUpperBounds, _layerSizes[currentLayer - 1],
-                              _inputLayerSize, _layerSizes[currentLayer] );
+                              _currentLayerUpperBounds, previousLayerSize,
+                              _inputLayerSize, currentLayerSize );
         matrixMultiplication( _previousLayerLowerBounds, weights._positiveValues,
                               _currentLayerLowerBounds, previousLayerSize,
                               _inputLayerSize, currentLayerSize );
@@ -384,6 +384,26 @@ void SymbolicBoundTightener::run( bool useLinearConcretization )
                               _currentLayerLowerBounds, previousLayerSize,
                               _inputLayerSize, currentLayerSize );
 
+        log( "\nBefore adding bias, newLB is:\n" );
+        for ( unsigned i = 0; i < _inputLayerSize; ++i )
+            {
+                log( "\t" );
+                for ( unsigned j = 0; j < _layerSizes[currentLayer]; ++j )
+                    {
+                        log( Stringf( "%.2lf ", _currentLayerLowerBounds[i*_layerSizes[currentLayer] + j] ) );
+                    }
+                log( "\n" );
+            }
+        log( "\nnew UB is:\n" );
+        for ( unsigned i = 0; i < _inputLayerSize; ++i )
+            {
+                log( "\t" );
+                for ( unsigned j = 0; j < _layerSizes[currentLayer]; ++j )
+                    {
+                        log( Stringf( "%.2lf ", _currentLayerUpperBounds[i*_layerSizes[currentLayer] + j] ) );
+                    }
+                log( "\n" );
+            }
 
 
         /*
