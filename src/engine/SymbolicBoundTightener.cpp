@@ -300,6 +300,27 @@ void SymbolicBoundTightener::run( bool useLinearConcretization )
     std::fill_n( _previousLayerLowerBias, _maxLayerSize, 0 );
     std::fill_n( _previousLayerUpperBias, _maxLayerSize, 0 );
 
+    log( "Initializing.\n\tLB matrix:\n" );
+    for ( unsigned i = 0; i < _inputLayerSize; ++i )
+    {
+        log( "\t" );
+        for ( unsigned j = 0; j < _inputLayerSize; ++j )
+        {
+            log( Stringf( "%.2lf ", _previousLayerLowerBounds[i*_inputLayerSize + j] ) );
+        }
+        log( "\n" );
+    }
+    log( "\nUB matrix:\n" );
+    for ( unsigned i = 0; i < _inputLayerSize; ++i )
+    {
+        log( "\t" );
+        for ( unsigned j = 0; j < _inputLayerSize; ++j )
+        {
+            log( Stringf( "%.2lf ", _previousLayerUpperBounds[i*_inputLayerSize + j] ) );
+        }
+        log( "\n" );
+    }
+
     for ( unsigned currentLayer = 1; currentLayer < _numberOfLayers; ++currentLayer )
     {
         log( Stringf( "\nStarting work on layer %u\n", currentLayer ) );
@@ -856,9 +877,15 @@ void SymbolicBoundTightener::matrixMultiplication( double *matA, double *matB,
                                                    unsigned columnsA,
                                                    unsigned columnsB )
 {
-    std::cout << "rowsA " << rowsA << " " << columnsA << " " << columnsB << std::endl;
+    double alpha = 1;
+    double beta = 1;
+    // Conceptually, cblas_dgemm computes alpha * A B + beta * C and stores the result
+    // in C.
+    // See https://developer.apple.com/documentation/accelerate/1513282-cblas_dgemm?language=objc
+    // for the documnetation of cblas_dgemm.
+    //
     cblas_dgemm( CblasRowMajor, CblasNoTrans, CblasNoTrans, rowsA, columnsB,
-                 columnsA, 1, matA, columnsA, matB, columnsB, 1, matC, columnsB);
+                 columnsA, alpha, matA, columnsA, matB, columnsB, beta, matC, columnsB);
 }
 
 //
