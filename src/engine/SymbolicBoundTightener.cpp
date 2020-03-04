@@ -372,17 +372,19 @@ void SymbolicBoundTightener::run( bool useLinearConcretization )
             newUB, newLB dimensions: inputLayerSize x layerSize
         */
         matrixMultiplication( _previousLayerUpperBounds, weights._positiveValues,
-                              _currentLayerUpperBounds, _inputLayerSize,
-                              previousLayerSize, currentLayerSize );
+                              _currentLayerUpperBounds, previousLayerSize,
+                              _inputLayerSize, currentLayerSize );
         matrixMultiplication( _previousLayerLowerBounds, weights._negativeValues,
-                              _currentLayerUpperBounds, _inputLayerSize,
-                              _layerSizes[currentLayer - 1], _layerSizes[currentLayer] );
+                              _currentLayerUpperBounds, _layerSizes[currentLayer - 1],
+                              _inputLayerSize, _layerSizes[currentLayer] );
         matrixMultiplication( _previousLayerLowerBounds, weights._positiveValues,
-                              _currentLayerLowerBounds, _inputLayerSize,
-                              previousLayerSize, currentLayerSize );
+                              _currentLayerLowerBounds, previousLayerSize,
+                              _inputLayerSize, currentLayerSize );
         matrixMultiplication( _previousLayerUpperBounds, weights._negativeValues,
-                              _currentLayerLowerBounds, _inputLayerSize,
-                              previousLayerSize, currentLayerSize );
+                              _currentLayerLowerBounds, previousLayerSize,
+                              _inputLayerSize, currentLayerSize );
+
+
 
         /*
           Compute the biases for the new layer
@@ -877,8 +879,9 @@ void SymbolicBoundTightener::matrixMultiplication( double *matA, double *matB,
                                                    unsigned columnsA,
                                                    unsigned columnsB )
 {
-    cblas_dgemm( CblasColMajor, CblasTrans, CblasNoTrans, rowsA, columnsB,
-                 columnsA, 1, matA, rowsA, matB, columnsA, 1, matC, rowsA);
+    std::cout << "rowsA " << rowsA << " " << columnsA << " " << columnsB << std::endl;
+    cblas_dgemm( CblasRowMajor, CblasNoTrans, CblasNoTrans, rowsA, columnsB,
+                 columnsA, 1, matA, columnsA, matB, columnsB, 1, matC, columnsB);
 }
 
 //
