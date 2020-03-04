@@ -300,27 +300,6 @@ void SymbolicBoundTightener::run( bool useLinearConcretization )
     std::fill_n( _previousLayerLowerBias, _maxLayerSize, 0 );
     std::fill_n( _previousLayerUpperBias, _maxLayerSize, 0 );
 
-    log( "Initializing.\n\tLB matrix:\n" );
-    for ( unsigned i = 0; i < _inputLayerSize; ++i )
-    {
-        log( "\t" );
-        for ( unsigned j = 0; j < _inputLayerSize; ++j )
-        {
-            log( Stringf( "%.2lf ", _previousLayerLowerBounds[i*_inputLayerSize + j] ) );
-        }
-        log( "\n" );
-    }
-    log( "\nUB matrix:\n" );
-    for ( unsigned i = 0; i < _inputLayerSize; ++i )
-    {
-        log( "\t" );
-        for ( unsigned j = 0; j < _inputLayerSize; ++j )
-        {
-            log( Stringf( "%.2lf ", _previousLayerUpperBounds[i*_inputLayerSize + j] ) );
-        }
-        log( "\n" );
-    }
-
     for ( unsigned currentLayer = 1; currentLayer < _numberOfLayers; ++currentLayer )
     {
         log( Stringf( "\nStarting work on layer %u\n", currentLayer ) );
@@ -372,39 +351,17 @@ void SymbolicBoundTightener::run( bool useLinearConcretization )
             newUB, newLB dimensions: inputLayerSize x layerSize
         */
         matrixMultiplication( _previousLayerUpperBounds, weights._positiveValues,
-                              _currentLayerUpperBounds, previousLayerSize,
-                              _inputLayerSize, currentLayerSize );
+                              _currentLayerUpperBounds, _inputLayerSize,
+                              previousLayerSize, currentLayerSize );
         matrixMultiplication( _previousLayerLowerBounds, weights._negativeValues,
-                              _currentLayerUpperBounds, previousLayerSize,
-                              _inputLayerSize, currentLayerSize );
+                              _currentLayerUpperBounds, _inputLayerSize,
+                              previousLayerSize, currentLayerSize );
         matrixMultiplication( _previousLayerLowerBounds, weights._positiveValues,
-                              _currentLayerLowerBounds, previousLayerSize,
-                              _inputLayerSize, currentLayerSize );
+                              _currentLayerLowerBounds, _inputLayerSize,
+                              previousLayerSize, currentLayerSize );
         matrixMultiplication( _previousLayerUpperBounds, weights._negativeValues,
-                              _currentLayerLowerBounds, previousLayerSize,
-                              _inputLayerSize, currentLayerSize );
-
-        log( "\nBefore adding bias, newLB is:\n" );
-        for ( unsigned i = 0; i < _inputLayerSize; ++i )
-            {
-                log( "\t" );
-                for ( unsigned j = 0; j < _layerSizes[currentLayer]; ++j )
-                    {
-                        log( Stringf( "%.2lf ", _currentLayerLowerBounds[i*_layerSizes[currentLayer] + j] ) );
-                    }
-                log( "\n" );
-            }
-        log( "\nnew UB is:\n" );
-        for ( unsigned i = 0; i < _inputLayerSize; ++i )
-            {
-                log( "\t" );
-                for ( unsigned j = 0; j < _layerSizes[currentLayer]; ++j )
-                    {
-                        log( Stringf( "%.2lf ", _currentLayerUpperBounds[i*_layerSizes[currentLayer] + j] ) );
-                    }
-                log( "\n" );
-            }
-
+                              _currentLayerLowerBounds, _inputLayerSize,
+                              previousLayerSize, currentLayerSize );
 
         /*
           Compute the biases for the new layer
