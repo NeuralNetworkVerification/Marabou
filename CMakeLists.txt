@@ -155,10 +155,13 @@ set(LIBS_INCLUDES ${Boost_INCLUDE_DIRS})
 set(LIBS ${Boost_LIBRARIES})
 
 #OpenBLAS
+
 find_package(OpenBLAS REQUIRED)
 if (NOT ${OpenBLAS_FOUND})
-    execute_process(COMMAND ${TOOLS_DIR}/get-openBLAS.${SCRIPT_EXTENSION})
-    find_package(OpenBLAS REQUIRED)
+        execute_process(COMMAND ${TOOLS_DIR}/get-openBLAS.${SCRIPT_EXTENSION})
+        find_package(OpenBLAS REQUIRED)
+else()
+        message("Found OpenBLAS!")
 endif()
 set(LIBS_INCLUDES ${OpenBLAS_INCLUDE_DIRS})
 list(APPEND LIBS ${OpenBLAS_LIBRARIES})
