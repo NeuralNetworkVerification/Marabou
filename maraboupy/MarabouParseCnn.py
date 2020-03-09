@@ -236,6 +236,10 @@ def n2str_md(layer_i,node_cor):
 
 class Filter:    
     def __init__(self, weights, function="Relu", shape=None):
+        if isinstance(weights, list):
+            print("This is the list:{}".format(weights))
+            weights = np.array(weights)
+            print(weights.shape)
         if function is "Relu":
             self.dim = dict()
             self.dim["x"] = weights.shape[0]

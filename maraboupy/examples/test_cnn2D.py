@@ -143,6 +143,7 @@ def train_cnn2D():
     model.summary()
     model.save(file_name)'''
 
+    in_l_size = {"x":32 , "y":32, "d":3 }
     cnn = mcnn.Cnn2D(in_l_size)
     
     for layer in model.layers:
@@ -161,31 +162,16 @@ def train_cnn2D():
 if __name__ == "__main__": 
 
     #cnn = create_min_cnn2D()
-    cnn = create_cnn2D()    
-    print(cnn.in_l.values())
-    print(cnn.out_l.values())
-    for n,v in cnn.nodes.items():
-        print(str(n) + ":" + (v["function"] if "function" in v else ""))
-    for i,e in enumerate(sorted(cnn.edges, key= lambda e : e[::-1])):
-        print(str(i) + ":" + str(e) + ":" + str(cnn.edges[e]["weight"]))     
-    ##in_prop  = {n : (-mnx.large, mnx.large) for n in cnn.in_l.values()} TODO
+    #cnn = create_cnn2D()
+    cnn = train_cnn2D()
     in_prop  = {n : (0.0001,20) for n in cnn.in_l.values()}
-    print("Out values={}".format(cnn.out_l.values()))
     out_prop = {n : (-5, mnx.large) for n in cnn.out_l.values()}
     cnn.solve(in_prop, out_prop)
 
-    print("********************************************** COI **********************************************")
+    print("*********************************** COI **********************************************")
     print(list(cnn.out_l.values()))
     coi_cnn = mcnn.Cnn2D.coi(cnn,[mcnn.n2str_md(4,[0,0,0])])
-
-    #print(coi_cnn.in_l.values())
-    #print(coi_cnn.out_l.values())
-    #for n,v in coi_cnn.nodes.items():
-    #    print(str(n) + ":" + (v["function"] if "function" in v else ""))
-    #for i,e in enumerate(sorted(coi_cnn.edges, key= lambda e : e[::-1])):
-    #    print(str(i) + ":" + str(e) + ":" + str(coi_cnn.edges[e]["weight"]))  
-    
-    #in_prop  = {n : (1,2) for n in coi_cnn.in_l.values()}
-    #out_prop = {n : (-5, 60) for n in coi_cnn.out_l.values()}    
-    #coi_cnn.solve(in_prop, out_prop)
+    in_prop  = {n : (0.0001,20) for n in cnn.in_l.values()}
+    out_prop = {n : (-5, mnx.large) for n in coi_cnn.out_l.values()}    
+    coi_cnn.solve(in_prop, out_prop)
         
