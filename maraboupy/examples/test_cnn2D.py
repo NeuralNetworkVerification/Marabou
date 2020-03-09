@@ -73,8 +73,8 @@ def create_min_cnn2D():
     print("Added f_2")    
     cnn.add_flatten()
     print("Added flatten")
-    ##cnn.add_dense({cor : [((j,0,0),1) for j in range(4)] for cor in cnn.out_l}) TODO
-    ##print("Added dense") TODO
+    cnn.add_dense({cor : [((j,0,0),1) for j in range(4)] for cor in cnn.out_l})
+    print("Added dense")
     print("Out dim:" + str([k + "=" + str(v) for k,v in cnn.out_dim.items()]))
     
     #for n,v in cnn.nodes.items():
@@ -160,7 +160,8 @@ def train_cnn2D():
         
 if __name__ == "__main__": 
 
-    cnn = create_min_cnn2D()
+    #cnn = create_min_cnn2D()
+    cnn = create_cnn2D()    
     print(cnn.in_l.values())
     print(cnn.out_l.values())
     for n,v in cnn.nodes.items():
@@ -168,12 +169,11 @@ if __name__ == "__main__":
     for i,e in enumerate(sorted(cnn.edges, key= lambda e : e[::-1])):
         print(str(i) + ":" + str(e) + ":" + str(cnn.edges[e]["weight"]))     
     ##in_prop  = {n : (-mnx.large, mnx.large) for n in cnn.in_l.values()} TODO
-    in_prop  = {n : (1,2) for n in cnn.in_l.values()}
+    in_prop  = {n : (0.0001,20) for n in cnn.in_l.values()}
     print("Out values={}".format(cnn.out_l.values()))
-    out_prop = {n : (-5, 20) for n in cnn.out_l.values()}
+    out_prop = {n : (-5, mnx.large) for n in cnn.out_l.values()}
     cnn.solve(in_prop, out_prop)
 
-    '''TODO reenter
     print("********************************************** COI **********************************************")
     print(list(cnn.out_l.values()))
     coi_cnn = mcnn.Cnn2D.coi(cnn,[mcnn.n2str_md(4,[0,0,0])])
@@ -185,7 +185,7 @@ if __name__ == "__main__":
     #for i,e in enumerate(sorted(coi_cnn.edges, key= lambda e : e[::-1])):
     #    print(str(i) + ":" + str(e) + ":" + str(coi_cnn.edges[e]["weight"]))  
     
-    in_prop  = {n : (-mnx.large, mnx.large) for n in coi_cnn.in_l.values()}
-    out_prop = {n : (-mnx.large, mnx.large) for n in coi_cnn.out_l.values()}    
-    coi_cnn.solve(in_prop, out_prop)'''
+    #in_prop  = {n : (1,2) for n in coi_cnn.in_l.values()}
+    #out_prop = {n : (-5, 60) for n in coi_cnn.out_l.values()}    
+    #coi_cnn.solve(in_prop, out_prop)
         

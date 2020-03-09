@@ -1,7 +1,7 @@
 from maraboupy import Marabou, MarabouCore
 import networkx as nx
 
-large = 100.0
+large = 10000.0
     
 def networkxToInputQuery(net, input_bounds, output_bounds):
 
@@ -68,14 +68,16 @@ def networkxToInputQuery(net, input_bounds, output_bounds):
             raise Exception("WTF")
         if i == 0:
             continue
-        if v == var_list[i - 1] and v not in output_nodes:
-            inputQuery.setLowerBound(i, 0)
-            inputQuery.setUpperBound(i, large)
-            print("Set bound v{} in [{},{}] (Relu)".format(i, 0, large))
+        if v == var_list[i - 1]:
+            if v not in output_nodes:
+                inputQuery.setLowerBound(i, 0)
+                inputQuery.setUpperBound(i, large)
+                print("Set bound v{} in [{},{}] (Relu)".format(i, 0, large))
             print("Set v{}=ReLu(v{})".format(i, i-1))
             MarabouCore.addReluConstraint(inputQuery, i-1, i)
 
     for n in filter(lambda n: incoming[n] and net.nodes[n]["function"] is "MaxPool", net.nodes()):
+        print("Set MaxConstraint {}=max({})".format(var_list.index(n), set([var_list.index(u[0]) for u in incoming[n]]))) 
         MarabouCore.addMaxConstraint(inputQuery, set([var_list.index(u[0]) for u in incoming[n]]), var_list.index(n))
 
     return inputQuery

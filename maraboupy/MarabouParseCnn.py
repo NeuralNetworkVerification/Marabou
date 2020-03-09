@@ -226,60 +226,6 @@ class Cnn(nx.DiGraph):
     def save_keras_model_to_pb(model, file_name):
         frozen_graph = Cnn.freeze_session(backend.get_session(), output_names=[out.op.name for out in model.outputs])
         Cnn.save_frozen_graph(file_name, frozen_graph)
-        
-'''   
-
-    def my_node_eq(lhs, rhs, session):
-        if lhs.shape.as_list() != rhs.shape.as_list():
-            print("shape false")
-            return False
-        else :
-            print("same shape, result={}".format(lhs == rhs))
-            
-            return all(tf.math.equal(lhs,rhs).eval(session=session))
-        
-    #-------------TF to NetworkX-------------#
-    #https://gist.github.com/Tal-Golan/94d968001b5065260e5dae4774bc6f7a#file-build_networkx_subgraph_from_tf_graph-py
-    def tf_graph_to_nx(startingPoints,endPoints, session):
-
-        def childNodes(curNode):
-            isGradientNode=lambda node: node.name.split(sep='/')[0]=='gradients'            
-            return set([childNode.experimental_ref() for op in curNode.deref().consumers() for childNode in op.outputs if not isGradientNode(childNode)])
-          
-        # visit all nodes in the graph between startingPoints (deep net input) and endPoints (predictions)
-        # and build a networkx directed graph        
-        DG=nx.DiGraph()
-        nodesToVisit=deque([s.experimental_ref() for s in startingPoints])
-        nodesVisited=deque()
-        while nodesToVisit:
-            curNode=nodesToVisit.popleft()
-            nodesVisited.append(curNode)
-            DG.add_node(curNode)
-            node_eq_list = [Cnn.my_node_eq(endPoint,curNode.deref(), session) for endPoint in endPoints]
-            print("List: {}".format(node_eq_list))
-            if not any(node_eq_list):
-                nodesToVisit.extend(childNodes(curNode)-set(nodesVisited)-set(nodesToVisit))
-                for childNode in childNodes(curNode):
-                    DG.add_edge(curNode, childNode)
-
-        print("Found these nodes: {}".format(len(DG.nodes())))
-        print("Found these edges: {}".format(len(DG.edges())))
-        
-        
-        # make sure its acyclic
-        assert nx.is_directed_acyclic_graph(DG), "loops detected in the graph"
-        return DG
-
-
-    #-------------Keras to NetworkX-------------#
-    def keras_to_nx(model):
-        session = tf.compat.v1.keras.backend.get_session()
-        #frozen_graph = Cnn.freeze_session(tf.compat.v1.keras.backend.get_session(), output_names=[out.op.name for out in model.outputs])
-        inputs  = model.inputs
-        outputs = model.outputs
-        print("Found these inputs: {}".format(inputs))
-        print("Found these outputs: {}".format(outputs))        
-        return Cnn.tf_graph_to_nx(inputs, outputs, session)'''
 
 ###############################################################################################################
 ###############################################################################################################
