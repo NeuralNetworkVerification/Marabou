@@ -73,8 +73,8 @@ def create_min_cnn2D():
     print("Added f_2")    
     cnn.add_flatten()
     print("Added flatten")
-    cnn.add_dense({cor : [((j,0,0),1) for j in range(4) if j != 2] for cor in cnn.out_l})
-    print("Added dense")
+    ##cnn.add_dense({cor : [((j,0,0),1) for j in range(4)] for cor in cnn.out_l}) TODO
+    ##print("Added dense") TODO
     print("Out dim:" + str([k + "=" + str(v) for k,v in cnn.out_dim.items()]))
     
     #for n,v in cnn.nodes.items():
@@ -167,8 +167,10 @@ if __name__ == "__main__":
         print(str(n) + ":" + (v["function"] if "function" in v else ""))
     for i,e in enumerate(sorted(cnn.edges, key= lambda e : e[::-1])):
         print(str(i) + ":" + str(e) + ":" + str(cnn.edges[e]["weight"]))     
-    in_prop  = {n : (-mnx.large, mnx.large) for n in cnn.in_l.values()}
-    out_prop = {n : (-mnx.large, mnx.large) for n in cnn.out_l.values()}
+    ##in_prop  = {n : (-mnx.large, mnx.large) for n in cnn.in_l.values()} TODO
+    in_prop  = {n : (1,2) for n in cnn.in_l.values()}
+    print("Out values={}".format(cnn.out_l.values()))
+    out_prop = {n : (-5, 20) for n in cnn.out_l.values()}
     cnn.solve(in_prop, out_prop)
 
     '''TODO reenter

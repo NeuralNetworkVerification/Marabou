@@ -322,7 +322,7 @@ class Cnn2D(nx.DiGraph):
             for y in range(self.out_dim["y"]):
                 for d in range(self.out_dim["d"]):
                     new_n = n2str_md(0,[x, y, d])
-                    self.add_node(new_n)
+                    self.add_node(new_n, function="Input")
                     self.out_l[(x,y,d)] = new_n
                     self.in_l[(x,y,d)] = new_n
 

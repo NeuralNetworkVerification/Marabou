@@ -5,6 +5,7 @@ large = 100.0
     
 def networkxToInputQuery(net, input_bounds, output_bounds):
 
+    var_offset = lambda u: 0 if net.nodes[u]["function"] is not "Relu" or u in input_nodes else 1
     degree = {n : {'in':0,'out':0} for n in net.nodes()}
     incoming = {n : [] for n in net.nodes()}
     for u, nbrdict in  net.adjacency():
@@ -36,16 +37,11 @@ def networkxToInputQuery(net, input_bounds, output_bounds):
         print(str(k) + ":" + str(v))
 
     print("var_list=")
-    for v in var_list:
-        print(str(v))
+    for i,v in enumerate(var_list):
+        print("{}:{}".format(str(i),str(v)))
 
-    print("input_nodes=")
-    for v in input_nodes:
-        print(str(v))
-
-    print("output_nodes=")
-    for v in output_nodes:
-        print(str(v))          
+    print("input_nodes={}".format(str([v for v in input_nodes])))
+    print("output_nodes={}".format(str([v for v in output_nodes])))    
 
     inputQuery = MarabouCore.InputQuery()
     inputQuery.setNumberOfVariables(len(var_list))
@@ -54,23 +50,29 @@ def networkxToInputQuery(net, input_bounds, output_bounds):
         inputQuery.setLowerBound(var_list.index(n), input_bounds[n][0])
         inputQuery.setUpperBound(var_list.index(n), input_bounds[n][1])
 
-    for n in output_nodes:
-        inputQuery.setLowerBound(var_list.index(n), output_bounds[n][0]) 
-        inputQuery.setUpperBound(var_list.index(n), output_bounds[n][1])
-
-    for n in filter(lambda n: incoming[n] and net.nodes[n]["function"] in {"Relu", "Flatten"}, net.nodes()):
+    for n in output_nodes:        
+        inputQuery.setLowerBound(var_list.index(n) + var_offset(n), output_bounds[n][0] if net.nodes[n]["function"] is not "Relu" else 0) 
+        inputQuery.setUpperBound(var_list.index(n) + var_offset(n), output_bounds[n][1])
+        print("Set bound v{} in [{},{}] (output)".format(var_list.index(n) + var_offset(n), output_bounds[n][0] if net.nodes[n]["function"] is not "Relu" else 0, output_bounds[n][1]))
+        
+    for n in filter(lambda n: incoming[n] and net.nodes[n]["function"] in {"Relu", "Flatten"}, net.nodes()):        
         equation = MarabouCore.Equation()
         equation.addAddend(-1, var_list.index(n))
-        [[equation.addAddend(w, var_list.index(u)) if u in input_nodes else equation.addAddend(w, var_list.index(u) + 1)] for u,w in incoming[n]]
+        [[equation.addAddend(w, var_list.index(u) + var_offset(u))] for u,w in incoming[n]]
+        print("v{} = sum{}".format(var_list.index(n), str(["{}*v{}".format(w,var_list.index(u) + var_offset(u)) for u,w in incoming[n]])))
         equation.setScalar(0)
         inputQuery.addEquation(equation)
 
-    for i,v in enumerate(var_list,1):
-        if i >= len(var_list):
-            break
-        if v == var_list[i - 1]:
+    for i,v in enumerate(var_list):
+        if v is not var_list[i]:
+            raise Exception("WTF")
+        if i == 0:
+            continue
+        if v == var_list[i - 1] and v not in output_nodes:
             inputQuery.setLowerBound(i, 0)
             inputQuery.setUpperBound(i, large)
+            print("Set bound v{} in [{},{}] (Relu)".format(i, 0, large))
+            print("Set v{}=ReLu(v{})".format(i, i-1))
             MarabouCore.addReluConstraint(inputQuery, i-1, i)
 
     for n in filter(lambda n: incoming[n] and net.nodes[n]["function"] is "MaxPool", net.nodes()):
