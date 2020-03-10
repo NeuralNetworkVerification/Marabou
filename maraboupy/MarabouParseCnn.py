@@ -235,12 +235,19 @@ def n2str_md(layer_i,node_cor):
     return l2str(layer_i) + str(node_cor)
 
 class Filter:    
-    def __init__(self, weights, function="Relu", shape=None):
-        if isinstance(weights, list):
-            print("This is the list:{}".format(weights))
-            weights = np.array(weights)
-            print(weights.shape)
+    def __init__(self, weights, function="Relu", shape=None):                    
         if function is "Relu":
+            if isinstance(weights, list):
+                #TODO ignored bias
+                #print("This is the list:{}".format(weights))
+                #for i,l in enumerate(weights):
+                #    print("\nElement {}:{}\n".format(str(i),l))
+                #print("\nLEN={}\n".format(len(weights)))
+                #print("\nVARS\n" + weights.vars())
+                #print("\nDIR\n" + weights.dir())            
+                weights = np.array(weights[0].numpy())        
+                print(weights)
+                print(weights.shape)            
             self.dim = dict()
             self.dim["x"] = weights.shape[0]
             self.dim["y"] = weights.shape[1]
@@ -332,6 +339,8 @@ class Cnn2D(nx.DiGraph):
             for y_i in range(self.out_dim["y"]):
                 for d_i in range(self.out_dim["d"]):
                     flat_i = (x_i * self.out_dim["y"] + y_i) * self.out_dim["d"] + d_i
+                    if flat_i >= self.out_dim["x"]*self.out_dim["y"]*self.out_dim["d"]:
+                        raise Exception("Flatten out of size:x={},y={},d={}".format(x_i,y_i,d_i))
                     act_n = n2str_md(self.l_num, [flat_i,0,0])
                     self.add_node(act_n, function="Flatten")
                     new_l[(flat_i,0,0)] = act_n
@@ -346,6 +355,9 @@ class Cnn2D(nx.DiGraph):
         max_t_y = 0
         max_t_d = 0
         for x,y,d in self.out_l:
+            print("x={},y={},d={}".format(x,y,d))
+            if (x,y,d) not in w_dict:
+                raise Exception("Node not in w_dict, x={},y={},d={}\n w_dict=".format(x,y,d,str(w_dict)))
             cor_w = w_dict[(x,y,d)]
             if len(cor_w) == 0:
                 continue
@@ -359,11 +371,13 @@ class Cnn2D(nx.DiGraph):
                     max_t_y = max(cor[1], max_t_y)
                     max_t_d = max(cor[2], max_t_d)
                 self.add_edge(source, target, weight=w)
+        print("Finished stage 1")
         for x,y,d in itertools.product(range(max_t_x+1),range(max_t_y+1),range(max_t_d+1)):
             if (x,y,d) not in new_l:
                 target = n2str_md(self.l_num, [x,y,d])
                 self.add_node(target, function="Relu")
                 new_l[(x,y,d)] = target
+        print("Finished stage 2")                
         self.out_l = new_l
 
     #-------------Solve the network-------------#        
@@ -394,8 +408,15 @@ class Cnn2D(nx.DiGraph):
         for vertex in vertices:
             ancestors = set.union(ancestors, nx.algorithms.dag.ancestors(graph, vertex)) 
             descendants = set.union(descendants, nx.algorithms.dag.descendants(graph, vertex))
-        graph_copy = copy.deepcopy(graph)
-        for u in graph:
-                if (u not in ancestors) and (u not in vertices) and (u not in descendants):
-                    graph_copy.remove_node(u)
-        return graph_copy
+        print("Finished finding COI")            
+        #graph_copy = copy.deepcopy(graph)
+        #print("Finished copying")
+        #for u in graph:
+        #        if (u not in ancestors) and (u not in vertices) and (u not in descendants):
+        #            graph_copy.remove_node(u)
+        remove_nodes = [u for u in graph.nodes() if (u not in ancestors) and (u not in vertices) and (u not in descendants)]
+        print("Finished Marking")
+        for u in remove_nodes:
+            graph.remove_node(u)
+        print("Finished removing non-COI nodes")                    
+        return graph

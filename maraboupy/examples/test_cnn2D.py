@@ -95,28 +95,19 @@ def train_cnn2D():
 
     class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
 
-    plt.figure(figsize=(10,10))
-    for i in range(25):
-        plt.subplot(5,5,i+1)
-        plt.xticks([])
-        plt.yticks([])
-        plt.grid(False)
-        plt.imshow(train_images[i], cmap=plt.cm.binary)
-        # The CIFAR labels happen to be arrays, 
-        # which is why you need the extra index
-        plt.xlabel(class_names[train_labels[i][0]])
-    plt.show()
-
     model = models.Sequential()
-    model.add(layers.Conv2D(32, (3, 3), activation='relu', input_shape=(32, 32, 3)))
+    model.add(layers.Conv2D(2, (3, 3), activation='relu', input_shape=(32, 32, 3)))    
+    #model.add(layers.Conv2D(32, (3, 3), activation='relu', input_shape=(32, 32, 3)))
     model.add(layers.MaxPooling2D((2, 2)))
-    model.add(layers.Conv2D(64, (3, 3), activation='relu'))
+    model.add(layers.Conv2D(2, (3, 3), activation='relu'))
+    #model.add(layers.Conv2D(64, (3, 3), activation='relu'))
     model.add(layers.MaxPooling2D((2, 2)))
-    model.add(layers.Conv2D(64, (3, 3), activation='relu'))
+    model.add(layers.Conv2D(2, (3, 3), activation='relu')) 
+    #model.add(layers.Conv2D(64, (3, 3), activation='relu')) 
 
     model.add(layers.Flatten())
-    model.add(layers.Dense(64, activation='relu'))
-    model.add(layers.Dense(10, activation='relu'))
+    #model.add(layers.Dense(64, activation='relu'))TODO
+    #model.add(layers.Dense(10, activation='relu'))TODO
 
     model.summary()
     '''
@@ -151,12 +142,17 @@ def train_cnn2D():
             f = mcnn.Filter(layer.weights)
             cnn.add_filter(f)                
         elif layer.get_config()["name"].startswith("max_pooling2d"):
-            f = mcnn.Filter(([],"MaxPool", list(layer.get_config()["pool_size"])))
+            f = mcnn.Filter([],function="MaxPool", shape=list(layer.get_config()["pool_size"]))
             cnn.add_filter(f)
         elif layer.get_config()["name"].startswith("flatten"):
-            cnn.add_flat()
+            cnn.add_flatten()
         elif layer.get_config()["name"].startswith("dense"):
-            cnn.add_dense({(i,0,0):[((j,0,0), layer.weights[i][j]) for j in range(layer.output_shape[1])] for i in range(layer.input_shape[1])})
+            print("In shape:{}\nOut shape:{}".format(layer.input_shape, layer.output_shape))
+            print(layer.weights)
+            weights = layer.weights[0].numpy()
+            cnn.add_dense({(i,0,0):[((j,0,0), weights[i][j]) for j in range(layer.output_shape[1])] for i in range(layer.input_shape[1])}) #TODO no bias included
+
+    return cnn
             
         
 if __name__ == "__main__": 
@@ -166,12 +162,21 @@ if __name__ == "__main__":
     cnn = train_cnn2D()
     in_prop  = {n : (0.0001,20) for n in cnn.in_l.values()}
     out_prop = {n : (-5, mnx.large) for n in cnn.out_l.values()}
-    cnn.solve(in_prop, out_prop)
+    for i,n in enumerate(cnn.nodes()):
+        print("{}:{}".format(i,n))    
+    print("Start solving CNN")
+    #cnn.solve(in_prop, out_prop) TODO
+    print("Finish solving CNN")
 
     print("*********************************** COI **********************************************")
     print(list(cnn.out_l.values()))
-    coi_cnn = mcnn.Cnn2D.coi(cnn,[mcnn.n2str_md(4,[0,0,0])])
-    in_prop  = {n : (0.0001,20) for n in cnn.in_l.values()}
-    out_prop = {n : (-5, mnx.large) for n in coi_cnn.out_l.values()}    
+    print("COI node:{}".format(mcnn.n2str_md(cnn.l_num,[0,0,0])))
+    coi_cnn = mcnn.Cnn2D.coi(cnn,[mcnn.n2str_md(cnn.l_num,[0,0,0])])
+    for i,n in enumerate(coi_cnn.nodes()):
+        print("{}:{}".format(i,n))
+    in_prop  = {n : (0.0001,20) for n in coi_cnn.in_l.values()}
+    out_prop = {n : (-5, mnx.large) for n in coi_cnn.out_l.values()}
+    print("Start solving COI CNN")    
     coi_cnn.solve(in_prop, out_prop)
+    print("Finish solving COI CNN")        
         
