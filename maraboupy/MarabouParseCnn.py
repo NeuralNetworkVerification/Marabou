@@ -415,8 +415,9 @@ class Cnn2D(nx.DiGraph):
         #        if (u not in ancestors) and (u not in vertices) and (u not in descendants):
         #            graph_copy.remove_node(u)
         remove_nodes = [u for u in graph.nodes() if (u not in ancestors) and (u not in vertices) and (u not in descendants)]
+        graph_copy = copy.deepcopy(graph)
         #print("Finished Marking")
         for u in remove_nodes:
-            graph.remove_node(u)
+            graph_copy.remove_node(u)
         #print("Finished removing non-COI nodes")                    
-        return graph
+        return graph_copy
