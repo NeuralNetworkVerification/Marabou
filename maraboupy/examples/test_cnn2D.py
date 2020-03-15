@@ -6,7 +6,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 
-from PIL import Image
 import sys
 import os
 import tensorflow as tf
@@ -67,24 +66,21 @@ def train_cnn2D():
     train_images, test_images = train_images / 255.0, test_images / 255.0
 
     class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
-
-    if isinstance(train_images[0], Image):
-        print("Yes")
-    else:
-        print("No")
-    exit()
-    x = 16
-    y = 16
+    
+    x = 32#16
+    y = 32#16
     d = 3
     input_shape_crop = (x,y,d) #(32, 32, 3)
-    train_images_crop = list()
-    test_images_crop = list()
-    for im in train_images:
-        train_images_crop.append(im.crop(0,0,x,y))
-        #train_images_crop.append([[[im[x_i][y_i][d_i] for d_i in range(d)] for y_i in range(y)] for x_i in range(x)])
-    for im in test_images:
-        test_images_crop.append(im.crop(0,0,x,y))        
-        #test_images_crop.append([[[im[x_i][y_i][d_i] for d_i in range(d)] for y_i in range(y)] for x_i in range(x)])
+    train_images_crop = train_images
+    test_images_crop = test_images
+    #train_images_crop = list()
+    #test_images_crop = list()
+    #for im in train_images:
+    #    train_images_crop.append(im.crop(0,0,x,y))
+    #    #train_images_crop.append([[[im[x_i][y_i][d_i] for d_i in range(d)] for y_i in range(y)] for x_i in range(x)])
+    #for im in test_images:
+    #    test_images_crop.append(im.crop(0,0,x,y))        
+    #    #test_images_crop.append([[[im[x_i][y_i][d_i] for d_i in range(d)] for y_i in range(y)] for x_i in range(x)])
     
     #exit() #TODO
     
