@@ -85,7 +85,7 @@ def train_cnn2D():
     #exit() #TODO
     
     model = models.Sequential()
-    model.add(layers.Conv2D(1, (4, 4), activation='relu', input_shape=input_shape_crop))    
+    model.add(layers.Conv2D(2, (4, 4), activation='relu', input_shape=input_shape_crop))    
     ###model.add(layers.Conv2D(32, (3, 3), activation='relu', input_shape=(32, 32, 3)))
     model.add(layers.MaxPooling2D((4, 4)))
     #model.add(layers.Conv2D(2, (3, 3), activation='relu'))
@@ -102,17 +102,10 @@ def train_cnn2D():
     model.compile(optimizer='adam',
                   loss='sparse_categorical_crossentropy',
                   metrics=['accuracy'])    
-    history = model.fit(train_images_crop, train_labels, epochs=10, validation_data=(test_images_crop, test_labels))
-    #plt.plot(history.histoy['accuracy'], label='accuracy')
-    #plt.plot(history.history['val_accuracy'], label = 'val_accuracy')
-    #plt.xlabel('Epoch')
-    #plt.ylabel('Accuracy')
-    #plt.ylim([0.5, 1])
-    #plt.legend(loc='lower right')
-    #plt.show(block=False)
+    '''history = model.fit(train_images_crop, train_labels, epochs=10, validation_data=(test_images_crop, test_labels))
     test_loss, test_acc = model.evaluate(test_images,  test_labels, verbose=2)    
     model.summary()
-    model.save(file_name)
+    model.save(file_name)'''#TODO
 
     in_l_size = {"x":32 , "y":32, "d":3 }
     cnn = mcnn.Cnn2D(in_l_size)
@@ -174,7 +167,7 @@ if __name__ == "__main__":
                 raise Exception("{} not in cnn_orig".format(v))
         coi_cnn = mcnn.Cnn2D.coi(cnn_orig, sample)
         start = time.time()        
-        coi_cnn.solve(in_prop(coi_cnn), out_prop(coi_cnn))
+        #coi_cnn.solve(in_prop(coi_cnn), out_prop(coi_cnn)) TODO
         end = time.time()
         coi_timing.append(end - start)
         coi_net_nodes.append(len(coi_cnn.nodes()))
@@ -185,7 +178,7 @@ if __name__ == "__main__":
             print("*********************************** Original **********************************************")
             print("Start solving CNN")
             start = time.time()        
-            cnn_orig.solve(in_prop(cnn_orig), out_prop(cnn_orig))
+            #cnn_orig.solve(in_prop(cnn_orig), out_prop(cnn_orig)) TODO
             end = time.time()        
             orig_timing.append(end - start)
             orig_net_nodes.append(len(cnn_orig.nodes()))

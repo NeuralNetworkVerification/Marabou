@@ -235,25 +235,18 @@ def n2str_md(layer_i,node_cor):
     return l2str(layer_i) + str(node_cor)
 
 class Filter:    
-    def __init__(self, weights, function="Relu", shape=None):                    
+    def __init__(self, weights, bias=None function="Relu", shape=None):                    
         if function is "Relu":
-            if isinstance(weights, list):
-                #TODO ignored bias
-                #print("This is the list:{}".format(weights))
-                #for i,l in enumerate(weights):
-                #    print("\nElement {}:{}\n".format(str(i),l))
-                #print("\nLEN={}\n".format(len(weights)))
-                #print("\nVARS\n" + weights.vars())
-                #print("\nDIR\n" + weights.dir())            
-                weights = np.array(weights[0].numpy())        
-                #print(weights)
-                #print(weights.shape)            
+            if isinstance(weights, list):                
+                weights = np.array(weights[0].numpy())
+                bias = np.array(weights[1].numpy())
             self.dim = dict()
             self.dim["x"] = weights.shape[0]
             self.dim["y"] = weights.shape[1]
             self.dim["d"] = weights.shape[2] #Input depth
             self.dim["f"] = weights.shape[3] #Filter amount
             self.weights = weights
+            self.bias = bias
         elif function is "MaxPool":
             self.dim = dict()
             self.dim["x"] = shape[0]
@@ -261,6 +254,7 @@ class Filter:
             self.dim["d"] = 1
             self.dim["f"] = None
             self.weights = None
+            self.bias = None
         self.function = function
 
 class Cnn2D(nx.DiGraph):
@@ -332,7 +326,7 @@ class Cnn2D(nx.DiGraph):
         self.out_l = new_l
         #print("Post Out dim:" + str([k + "=" + str(v) for k,v in self.out_dim.items()]))
 
-    def add_flatten(self):
+    d ef add_flatten(self):
         new_l = dict()        
         self.l_num += 1
         for x_i in range(self.out_dim["x"]):
