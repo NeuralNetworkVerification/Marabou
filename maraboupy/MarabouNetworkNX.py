@@ -12,7 +12,7 @@ def my_print(s):
 def networkxToInputQuery(net, input_bounds, output_bounds, verbose=False):
     global verbose_g
     verbose_g = verbose 
-    var_offset = lambda u: 0 if net.nodes[u]["function"] is not "Relu" or u in input_nodes else 1
+    var_offset = lambda u: 0 if net.nodes[u]["function"] is not "Relu" or u in input_nodes else 1 #This is needed because I create two adjecent variables for ReLu nodes.
     degree = {n : {'in':0,'out':0} for n in net.nodes()}
     incoming = {n : [] for n in net.nodes()}
     for u, nbrdict in  net.adjacency():
@@ -64,10 +64,10 @@ def networkxToInputQuery(net, input_bounds, output_bounds, verbose=False):
         
     for n in filter(lambda n: incoming[n] and net.nodes[n]["function"] in {"Relu", "Flatten"}, net.nodes()):        
         equation = MarabouCore.Equation()
-        equation.addAddend(-1, var_list.index(n))
-        [[equation.addAddend(w, var_list.index(u) + var_offset(u))] for u,w in incoming[n]]
+        equation.addAddend(1, var_list.index(n))
+        [[equation.addAddend(-w, var_list.index(u) + var_offset(u))] for u,w in incoming[n]]
         my_print("v{} = sum{}".format(var_list.index(n), str(["{}*v{}".format(w,var_list.index(u) + var_offset(u)) for u,w in incoming[n]])))
-        equation.setScalar(0)
+        equation.setScalar(net.nodes[n]["bias"])
         inputQuery.addEquation(equation)
 
     for i,v in enumerate(var_list):

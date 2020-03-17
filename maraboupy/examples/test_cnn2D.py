@@ -85,9 +85,9 @@ def train_cnn2D():
     #exit() #TODO
     
     model = models.Sequential()
-    model.add(layers.Conv2D(2, (4, 4), activation='relu', input_shape=input_shape_crop))    
+    model.add(layers.Conv2D(2, (3, 3), activation='relu', input_shape=input_shape_crop))
     ###model.add(layers.Conv2D(32, (3, 3), activation='relu', input_shape=(32, 32, 3)))
-    model.add(layers.MaxPooling2D((4, 4)))
+    model.add(layers.MaxPooling2D((2, 2)))
     #model.add(layers.Conv2D(2, (3, 3), activation='relu'))
     ###model.add(layers.Conv2D(64, (3, 3), activation='relu'))
     #model.add(layers.MaxPooling2D((2, 2)))
@@ -95,17 +95,17 @@ def train_cnn2D():
     ###model.add(layers.Conv2D(64, (3, 3), activation='relu')) 
 
     model.add(layers.Flatten())
-    #model.add(layers.Dense(64, activation='relu'))
+    model.add(layers.Dense(64, activation='relu'))
     #model.add(layers.Dense(10, activation='relu'))
     model.summary()
 
     model.compile(optimizer='adam',
                   loss='sparse_categorical_crossentropy',
                   metrics=['accuracy'])    
-    '''history = model.fit(train_images_crop, train_labels, epochs=10, validation_data=(test_images_crop, test_labels))
+    history = model.fit(train_images_crop, train_labels, epochs=10, validation_data=(test_images_crop, test_labels))
     test_loss, test_acc = model.evaluate(test_images,  test_labels, verbose=2)    
     model.summary()
-    model.save(file_name)'''#TODO
+    model.save(file_name)
 
     in_l_size = {"x":32 , "y":32, "d":3 }
     cnn = mcnn.Cnn2D(in_l_size)
@@ -123,7 +123,8 @@ def train_cnn2D():
             print("In shape:{}\nOut shape:{}".format(layer.input_shape, layer.output_shape))
             print(layer.weights)
             weights = layer.weights[0].numpy()
-            cnn.add_dense({(i,0,0):[((j,0,0), weights[i][j]) for j in range(layer.output_shape[1])] for i in range(layer.input_shape[1])}) #TODO no bias included
+            #cnn.add_dense({(i,0,0):[((j,0,0), weights[i][j]) for j in range(layer.output_shape[1])] for i in range(layer.input_shape[1])}) #TODO no bias included
+            cnn.add_dense(layer.weights)
 
     return cnn
 
@@ -167,7 +168,7 @@ if __name__ == "__main__":
                 raise Exception("{} not in cnn_orig".format(v))
         coi_cnn = mcnn.Cnn2D.coi(cnn_orig, sample)
         start = time.time()        
-        #coi_cnn.solve(in_prop(coi_cnn), out_prop(coi_cnn)) TODO
+        coi_cnn.solve(in_prop(coi_cnn), out_prop(coi_cnn))
         end = time.time()
         coi_timing.append(end - start)
         coi_net_nodes.append(len(coi_cnn.nodes()))

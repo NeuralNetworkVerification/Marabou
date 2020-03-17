@@ -235,11 +235,11 @@ def n2str_md(layer_i,node_cor):
     return l2str(layer_i) + str(node_cor)
 
 class Filter:    
-    def __init__(self, weights, bias=None function="Relu", shape=None):                    
+    def __init__(self, weights, bias=None, function="Relu", shape=None):                    
         if function is "Relu":
             if isinstance(weights, list):                
                 weights = np.array(weights[0].numpy())
-                bias = np.array(weights[1].numpy())
+                bias = np.array(weights[1])
             self.dim = dict()
             self.dim["x"] = weights.shape[0]
             self.dim["y"] = weights.shape[1]
@@ -298,18 +298,24 @@ class Cnn2D(nx.DiGraph):
         #print("init Out dim:" + str([k + "=" + str(v) for k,v in self.out_dim.items()]))
         new_l = dict()        
         self.l_num += 1 #TODO adapt to max pooling
-        for x_i in range(self.out_dim["x"] - f.dim["x"] + 1):
-            for y_i in range(self.out_dim["y"] - f.dim["y"] + 1):
+        if f.function is "MaxPool":
+            stride = {"x":f.dim["x"], "y":f.dim["y"]}
+        else:
+            stride = {"x":1, "y":1}
+        x_list = range(0, self.out_dim["x"] - f.dim["x"] + 1, stride["x"])
+        y_list = range(0, self.out_dim["y"] - f.dim["y"] + 1, stride["y"])
+        for x_i, x_cor in enumerate(x_list):
+            for y_i, y_cor in enumerate(y_list):
                 if f.function is "Relu":
                     f.dim["d"] = self.out_dim["d"]
                     #if f.dim["d"] is not self.out_dim["d"]:
                     #    raise Exception("Relu: Filter and layer depth should be equal")
                     for f_i in range(f.dim["f"]):
                         act_n = n2str_md(self.l_num, [x_i, y_i, f_i])
-                        self.add_node(act_n, function=f.function)
+                        self.add_node(act_n, function=f.function, bias=f.bias[f_i])
                         new_l[(x_i, y_i, f_i)] = act_n 
                         for x_j, y_j, d_j in itertools.product(range(f.dim["x"]),range(f.dim["y"]),range(f.dim["d"])):
-                            self.add_edge(self.out_l[(x_i + x_j, y_i + y_j, d_j)], act_n, weight=f.weights[x_j][y_j][d_j][f_i])
+                            self.add_edge(self.out_l[(x_cor + x_j, y_cor + y_j, d_j)], act_n, weight=f.weights[x_j][y_j][d_j][f_i])
                 elif f.function is "MaxPool":
                     f.dim["f"] = self.out_dim["d"]
                     #if f.dim["f"] is not self.out_dim["d"]:
@@ -317,16 +323,16 @@ class Cnn2D(nx.DiGraph):
                     for f_i in range(f.dim["f"]):
                         act_n = n2str_md(self.l_num, [x_i, y_i, f_i])
                         self.add_node(act_n, function=f.function)
-                        new_l[(x_i, y_i, f_i)] = act_n 
+                        new_l[(x_i, y_i, f_i)] = act_n
                         for x_j, y_j in itertools.product(range(f.dim["x"]),range(f.dim["y"])):
-                            self.add_edge(self.out_l[(x_i + x_j, y_i + y_j, f_i)], act_n, weight=1)
-        self.out_dim["x"] = self.out_dim["x"] - f.dim["x"] + 1
-        self.out_dim["y"] = self.out_dim["y"] - f.dim["y"] + 1
+                            self.add_edge(self.out_l[(x_cor + x_j, y_cor + y_j, f_i)], act_n, weight=1)
+        self.out_dim["x"] = len(x_list)
+        self.out_dim["y"] = len(y_list)
         self.out_dim["d"] = f.dim["f"]
         self.out_l = new_l
         #print("Post Out dim:" + str([k + "=" + str(v) for k,v in self.out_dim.items()]))
 
-    d ef add_flatten(self):
+    def add_flatten(self):
         new_l = dict()        
         self.l_num += 1
         for x_i in range(self.out_dim["x"]):
@@ -342,7 +348,12 @@ class Cnn2D(nx.DiGraph):
         self.out_l = new_l
         self.out_dim = {"x": len(new_l), "y":1, "d":1}
         
-    def add_dense(self, w_dict, function="Relu"): #Assume some element will be added. in the form of cor->(cor,weight) dict.
+    def add_dense(self, weights, function="Relu"): #Assume some element will be added. in the form of cor->(cor,weight) dict.
+        
+        weights_mat = weights[0].numpy()
+        bias_vec = weights[1].numpy()       
+        w_dict = {(i,0,0):[((j,0,0), weights_mat[i][j]) for j in range(weights_mat.shape[1])] for i in range(weights_mat.shape[0])} #i is source, j is target.
+        
         self.l_num += 1
         new_l = dict()
         max_t_x = 0
@@ -351,7 +362,9 @@ class Cnn2D(nx.DiGraph):
         for x,y,d in self.out_l:
             #print("x={},y={},d={}".format(x,y,d))
             if (x,y,d) not in w_dict:
-                raise Exception("Node not in w_dict, x={},y={},d={}\n w_dict=".format(x,y,d,str(w_dict)))
+                print(self.out_l.keys())
+                print(w_dict.keys())
+                raise Exception("Node not in w_dict, x={},y={},d={}\n w_dict=".format(x,y,d,str(w_dict)))                
             cor_w = w_dict[(x,y,d)]
             if len(cor_w) == 0:
                 continue
@@ -359,7 +372,7 @@ class Cnn2D(nx.DiGraph):
             for cor, w in cor_w:
                 target = n2str_md(self.l_num, list(cor))
                 if cor not in new_l:
-                    self.add_node(target, function=function)
+                    self.add_node(target, bias=bias_vec[cor[0]] ,function=function)
                     new_l[tuple(cor)] = target
                     max_t_x = max(cor[0], max_t_x)
                     max_t_y = max(cor[1], max_t_y)
@@ -373,6 +386,7 @@ class Cnn2D(nx.DiGraph):
                 new_l[(x,y,d)] = target
         #print("Finished stage 2")                
         self.out_l = new_l
+        self.out_dim = {"x":max_t_x+1 , "y":max_t_y+1 , "d":max_t_d+1 }
 
     #-------------Solve the network-------------#        
         
@@ -402,16 +416,8 @@ class Cnn2D(nx.DiGraph):
         for vertex in vertices:
             ancestors = set.union(ancestors, nx.algorithms.dag.ancestors(graph, vertex)) 
             descendants = set.union(descendants, nx.algorithms.dag.descendants(graph, vertex))
-        #print("Finished finding COI")            
-        #graph_copy = copy.deepcopy(graph)
-        #print("Finished copying")
-        #for u in graph:
-        #        if (u not in ancestors) and (u not in vertices) and (u not in descendants):
-        #            graph_copy.remove_node(u)
         remove_nodes = [u for u in graph.nodes() if (u not in ancestors) and (u not in vertices) and (u not in descendants)]
         graph_copy = copy.deepcopy(graph)
-        #print("Finished Marking")
         for u in remove_nodes:
             graph_copy.remove_node(u)
-        #print("Finished removing non-COI nodes")                    
         return graph_copy
