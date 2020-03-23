@@ -14,7 +14,9 @@
 
 #include "ConstraintBoundTightener.h"
 #include "Debug.h"
+#include "DivideStrategy.h"
 #include "FloatUtils.h"
+#include "GlobalConfiguration.h"
 #include "ITableau.h"
 #include "InputQuery.h"
 #include "MStringf.h"

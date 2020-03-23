@@ -14,12 +14,14 @@
  **/
 
 #include "Debug.h"
+#include "DivideStrategy.h"
 #include "EngineState.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
 #include "IEngine.h"
 #include "MStringf.h"
 #include "MarabouError.h"
+#include "ReluConstraint.h"
 #include "SmtCore.h"
 
 SmtCore::SmtCore( IEngine *engine )
@@ -60,7 +62,10 @@ void SmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
          _constraintViolationThreshold )
     {
         _needToSplit = true;
-        _constraintForSplitting = constraint;
+        if ( GlobalConfiguration::SPLITTING_HEURISTICS == DivideStrategy::ReLUViolation )
+            _constraintForSplitting = constraint;
+        else
+            pickSplitPLConstraint();
     }
 }
 
@@ -395,6 +400,14 @@ PiecewiseLinearConstraint *SmtCore::chooseViolatedConstraintForFixing( List<Piec
     }
 
     return candidate;
+}
+
+void SmtCore::pickSplitPLConstraint()
+{
+    if ( _needToSplit && !_constraintForSplitting )
+    {
+        _constraintForSplitting = _engine->pickSplitPLConstraint();
+    }
 }
 
 //

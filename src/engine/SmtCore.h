@@ -99,6 +99,11 @@ public:
     void setConstraintViolationThreshold( unsigned threshold );
 
     /*
+      Pick the piecewise linear constraint for splitting
+    */
+    void pickSplitPLConstraint();
+
+    /*
       For debugging purposes only - store a correct possible solution
     */
     void storeDebuggingSolution( const Map<unsigned, double> &debuggingSolution );
