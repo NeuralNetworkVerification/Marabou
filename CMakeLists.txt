@@ -380,6 +380,7 @@ add_dependencies(build_input_parsers ${MPS_PARSER} ${ACAS_PARSER}
 add_subdirectory(${SRC_DIR})
 add_subdirectory(${TOOLS_DIR})
 add_subdirectory(${REGRESS_DIR})
+add_subdirectory(${CVC4_DIR})
 
 execute_process(
   COMMAND git rev-parse --abbrev-ref HEAD
