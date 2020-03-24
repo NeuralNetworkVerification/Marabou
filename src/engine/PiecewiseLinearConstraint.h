@@ -239,12 +239,12 @@ public:
     /*
       Retrieve the current lower and upper bounds
     */
-    double get_lower_bound(int i)
+    double getLowerBound( unsigned i ) const
     {
         return _lowerBounds[i];
     }
 
-    double get_upper_bound(int i)
+    double getUpperBound( unsigned i ) const
     {
         return _upperBounds[i];
     }

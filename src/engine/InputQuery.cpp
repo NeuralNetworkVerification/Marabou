@@ -422,7 +422,6 @@ List<unsigned> InputQuery::getInputVariables() const
     return result;
 }
 
-
 List<unsigned> InputQuery::getOutputVariables() const
 {
     List<unsigned> result;
