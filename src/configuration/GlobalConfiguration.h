@@ -134,6 +134,9 @@ public:
     // The tolerance for checking whether f = Relu( b ), to determine a ReLU's statisfaction
     static const double RELU_CONSTRAINT_COMPARISON_TOLERANCE;
 
+    // The tolerance for checking whether f = abs( b ), to determine a ABS's statisfaction
+    static const double ABS_CONSTRAINT_COMPARISON_TOLERANCE;
+
     // Should the initial basis be comprised only of auxiliary (row) variables?
     static const bool ONLY_AUX_INITIAL_BASIS;
 

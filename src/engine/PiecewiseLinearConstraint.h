@@ -236,6 +236,19 @@ public:
         _score = score;
     }
 
+    /*
+      Retrieve the current lower and upper bounds
+    */
+    double get_lower_bound(int i)
+    {
+        return _lowerBounds[i];
+    }
+
+    double get_upper_bound(int i)
+    {
+        return _upperBounds[i];
+    }
+
 protected:
     bool _constraintActive;
 	Map<unsigned, double> _assignment;

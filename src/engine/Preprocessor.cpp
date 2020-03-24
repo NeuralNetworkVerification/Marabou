@@ -41,6 +41,8 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
 {
     _preprocessed = query;
 
+    attemptVariableElimination = false;
+
     /*
       Initial work: if needed, have the PL constraints add their additional
       equations to the pool.
@@ -64,11 +66,21 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
       Then, eliminate fixed variables.
     */
 
+//    printf( "PP: starting. Dumping all bounds\n" );
+//    _preprocessed.printAllBounds();
+
     bool continueTightening = true;
+    unsigned count = 0;
     while ( continueTightening )
     {
+        ++count;
+//        printf( "PP iteration: %u\n", count );
+
         continueTightening = processEquations();
+//        _preprocessed.printAllBounds();
+
         continueTightening = processConstraints() || continueTightening;
+//        _preprocessed.printAllBounds();
 
         if ( attemptVariableElimination )
             continueTightening = processIdenticalVariables() || continueTightening;

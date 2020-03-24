@@ -57,7 +57,7 @@ public:
       Methods for handling input and output variables
     */
     void markInputVariable( unsigned variable, unsigned inputIndex );
-    void markOutputVariable( unsigned variable, unsigned inputIndex );
+    void markOutputVariable( unsigned variable, unsigned outputIndex );
     unsigned inputVariableByIndex( unsigned index ) const;
     unsigned outputVariableByIndex( unsigned index ) const;
     unsigned getNumInputVariables() const;
@@ -118,6 +118,7 @@ public:
     */
     void printInputOutputBounds() const;
     void dump() const;
+    void printAllBounds() const;
 
     /*
       Adjsut the input/output variable mappings because variables have been merged

@@ -343,7 +343,7 @@ void InputQuery::saveQuery( const String &fileName )
     // Lower Bounds
     for ( const auto &lb : _lowerBounds )
         queryFile->write( Stringf( "\n%d,%f", lb.first, lb.second ) );
-    
+
     // Upper Bounds
     for ( const auto &ub : _upperBounds )
         queryFile->write( Stringf( "\n%d,%f", ub.first, ub.second ) );
@@ -422,6 +422,7 @@ List<unsigned> InputQuery::getInputVariables() const
     return result;
 }
 
+
 List<unsigned> InputQuery::getOutputVariables() const
 {
     List<unsigned> result;
@@ -429,6 +430,29 @@ List<unsigned> InputQuery::getOutputVariables() const
         result.append( pair.first );
 
     return result;
+}
+
+void InputQuery::printAllBounds() const
+{
+    printf( "InputQuery: Dumping all bounds\n" );
+
+    for ( unsigned i = 0; i < _numberOfVariables; ++i )
+    {
+        printf( "\tx%u: [", i );
+        if ( _lowerBounds.exists( i ) )
+            printf( "%lf, ", _lowerBounds[i] );
+        else
+            printf( "-INF, " );
+
+        if ( _upperBounds.exists( i ) )
+            printf( "%lf]", _upperBounds[i] );
+        else
+            printf( "+INF]" );
+        printf( "\n" );
+
+    }
+
+    printf( "\n\n" );
 }
 
 void InputQuery::printInputOutputBounds() const
