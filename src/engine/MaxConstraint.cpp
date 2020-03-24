@@ -17,13 +17,19 @@
 #include "FloatUtils.h"
 #include "IConstraintBoundTightener.h"
 #include "ITableau.h"
+#include "InputQuery.h"
 #include "List.h"
 #include "MStringf.h"
 #include "MaxConstraint.h"
 #include "PiecewiseLinearCaseSplit.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 #include "Statistics.h"
 #include <algorithm>
+
+#ifdef _WIN32
+#undef max
+#undef min
+#endif
 
 MaxConstraint::MaxConstraint( unsigned f, const Set<unsigned> &elements )
     : _f( f )
@@ -250,7 +256,7 @@ List<unsigned> MaxConstraint::getParticipatingVariables() const
 bool MaxConstraint::satisfied() const
 {
     if ( !( _assignment.exists( _f ) && _assignment.size() > 1 ) )
-        throw ReluplexError( ReluplexError::PARTICIPATING_VARIABLES_ABSENT );
+        throw MarabouError( MarabouError::PARTICIPATING_VARIABLES_ABSENT );
 
     double fValue = _assignment.get( _f );
     return FloatUtils::areEqual( _assignment.get( _maxIndex ), fValue );
@@ -331,7 +337,7 @@ List<PiecewiseLinearConstraint::Fix> MaxConstraint::getSmartFixes( ITableau * ) 
 List<PiecewiseLinearCaseSplit> MaxConstraint::getCaseSplits() const
 {
     if ( phaseFixed() )
-        throw ReluplexError( ReluplexError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
+        throw MarabouError( MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
 
     ASSERT(	_assignment.exists( _f ) );
 
@@ -418,15 +424,26 @@ void MaxConstraint::eliminateVariable( unsigned var, double /*value*/ )
         _obsolete = true;
 }
 
-void MaxConstraint::getAuxiliaryEquations( List<Equation> & newEquations ) const
+void MaxConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
 {
     for ( auto element : _elements )
     {
-        Equation equ( Equation::GE );
-        equ.addAddend( 1.0, _f );
-        equ.addAddend( -1.0, element );
-        equ.setScalar( 0 );
-        newEquations.append( equ );
+        // Create an aux variable
+        unsigned auxVariable = inputQuery.getNumberOfVariables();
+        inputQuery.setNumberOfVariables( auxVariable + 1 );
+
+        // f >= element, or f - elemenet - aux = 0, for non-negative aux
+        Equation equation( Equation::EQ );
+        equation.addAddend( 1.0, _f );
+        equation.addAddend( -1.0, element );
+        equation.addAddend( -1.0, auxVariable );
+        equation.setScalar( 0 );
+        inputQuery.addEquation( equation );
+
+        // Set the bounds for the aux variable
+        inputQuery.setLowerBound( auxVariable, 0 );
+
+        // Todo: upper bound for aux?
     }
 }
 

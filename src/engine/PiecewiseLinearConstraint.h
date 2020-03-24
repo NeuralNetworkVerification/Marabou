@@ -24,9 +24,10 @@
 #include "Queue.h"
 #include "Tightening.h"
 
-class IConstraintBoundTightener;
 class Equation;
+class IConstraintBoundTightener;
 class ITableau;
+class InputQuery;
 class String;
 
 class PiecewiseLinearConstraint : public ITableau::VariableWatcher
@@ -58,6 +59,11 @@ public:
 
     PiecewiseLinearConstraint();
     virtual ~PiecewiseLinearConstraint() {}
+
+    bool operator<( const PiecewiseLinearConstraint &other ) const
+    {
+        return _score < other._score;
+    }
 
     /*
       Return a clone of the constraint.
@@ -167,7 +173,7 @@ public:
       For preprocessing: get any auxiliary equations that this constraint would
       like to add to the equation pool.
     */
-    virtual void getAuxiliaryEquations( List<Equation> &newEquations ) const = 0;
+    virtual void addAuxiliaryEquations( InputQuery &/* inputQuery */ ) {}
 
     /*
       Ask the piecewise linear constraint to contribute a component to the cost
@@ -175,9 +181,7 @@ public:
       satisfied or inactive, and should be non-empty otherwise. Minimizing the returned
       equation should then lead to the constraint being "closer to satisfied".
     */
-    virtual void getCostFunctionComponent( Map<unsigned, double> &/* cost */ ) const
-    {
-    }
+    virtual void getCostFunctionComponent( Map<unsigned, double> &/* cost */ ) const {}
 
     /*
       Produce string representation of the piecewise linear constraint.
@@ -204,11 +208,41 @@ public:
         return false;
     }
 
+    /*
+      Return true if and only if this piecewise linear constraint supports
+      the polarity metric
+    */
+    virtual bool supportPolarity() const
+    {
+        return false;
+    }
+
+    /*
+      Update the preferred direction to take first when splitting on this PLConstraint
+    */
+    virtual void updateDirection()
+    {
+    }
+
+    virtual void updateScore()
+    {
+    }
+
+    /*
+      Update _score with score
+    */
+    void setScore( double score )
+    {
+        _score = score;
+    }
+
+    /*
+      Retrieve the current lower and upper bounds
+    */
     double get_lower_bound(int i)
     {
         return _lowerBounds[i];
     }
-
 
     double get_upper_bound(int i)
     {
@@ -220,6 +254,13 @@ protected:
 	Map<unsigned, double> _assignment;
     Map<unsigned, double> _lowerBounds;
     Map<unsigned, double> _upperBounds;
+
+    /*
+      The score denotes priority for splitting. When score is negative, the PL constraint
+      is not being considered for splitting.
+      We pick the PL constraint with the highest score to branch.
+     */
+    double _score;
 
     IConstraintBoundTightener *_constraintBoundTightener;
 

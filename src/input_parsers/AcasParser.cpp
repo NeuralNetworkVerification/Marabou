@@ -14,6 +14,7 @@
 **/
 
 #include "AcasParser.h"
+#include "DivideStrategy.h"
 #include "FloatUtils.h"
 #include "InputParserError.h"
 #include "InputQuery.h"
@@ -155,6 +156,9 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
             unsigned b = _nodeToB[NodeIndex(i, j)];
             unsigned f = _nodeToF[NodeIndex(i, j)];
             PiecewiseLinearConstraint *relu = new ReluConstraint( b, f );
+            if ( GlobalConfiguration::SPLITTING_HEURISTICS ==
+                 DivideStrategy::EarliestReLU )
+                relu->setScore( i );
             inputQuery.addPiecewiseLinearConstraint( relu );
         }
     }
@@ -199,6 +203,20 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
         for ( unsigned neuron = 0; neuron < layerSize; ++neuron )
         {
             nlr->setNeuronActivationFunction( layer, neuron, NetworkLevelReasoner::ReLU );
+        }
+    }
+
+    // Variable indexing
+    for ( unsigned i = 1; i < numberOfLayers - 1; ++i )
+    {
+        unsigned layerSize = _acasNeuralNetwork.getLayerSize( i );
+
+        for ( unsigned j = 0; j < layerSize; ++j )
+        {
+            unsigned b = _nodeToB[NodeIndex( i, j )];
+            unsigned f = _nodeToF[NodeIndex( i, j )];
+            nlr->setWeightedSumVariable( i, j, b );
+            nlr->setActivationResultVariable( i, j, f );
         }
     }
 
@@ -254,7 +272,7 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
                 unsigned b = _nodeToB[NodeIndex( i, j )];
                 sbt->setReluBVariable( i, j, b );
 
-                unsigned f = _nodeToF[NodeIndex(i, j)];
+                unsigned f = _nodeToF[NodeIndex( i, j )];
                 sbt->setReluFVariable( i, j, f );
             }
         }
@@ -264,7 +282,7 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
             sbt->setReluFVariable( numberOfLayers - 1, i, _nodeToB[NodeIndex( numberOfLayers - 1, i )] );
         }
 
-        inputQuery.setSymbolicBoundTightener(sbt);
+        inputQuery.setSymbolicBoundTightener( sbt );
     }
 }
 

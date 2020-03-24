@@ -16,8 +16,12 @@
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "Preprocessor.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 #include "Simulator.h"
+
+#ifdef _WIN32
+#include <time.h>
+#endif
 
 void Simulator::runSimulations( const InputQuery &inputQuery, unsigned numberOfSimulations )
 {
@@ -55,10 +59,10 @@ void Simulator::storeOriginalQuery( const InputQuery &inputQuery )
     _originalQuery = Preprocessor().preprocess( _originalQuery, false );
 
     if ( _originalQuery.countInfiniteBounds() != 0 )
-        throw ReluplexError( ReluplexError::SIMULATOR_ERROR, "Preprocessed query has infinite bounds" );
+        throw MarabouError( MarabouError::SIMULATOR_ERROR, "Preprocessed query has infinite bounds" );
 
     if ( _originalQuery.getNumInputVariables() == 0 )
-        throw ReluplexError( ReluplexError::SIMULATOR_ERROR, "Preprocessed query has no input variables" );
+        throw MarabouError( MarabouError::SIMULATOR_ERROR, "Preprocessed query has no input variables" );
 }
 
 void Simulator::runSingleSimulation()
@@ -91,7 +95,7 @@ void Simulator::runSingleSimulation()
         // Make sure that a value has been calculated for every variable
         ASSERT( !preprocessor.variableIsMerged( i ) );
         if ( !preprocessor.variableIsFixed( i ) )
-            throw ReluplexError( ReluplexError::SIMULATOR_ERROR, "Could not calculate an exact assignment" );
+            throw MarabouError( MarabouError::SIMULATOR_ERROR, "Could not calculate an exact assignment" );
 
         ASSERT( FloatUtils::areEqual( query.getLowerBound( i ),
                                       query.getUpperBound( i ) ) );

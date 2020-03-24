@@ -21,7 +21,7 @@
 #include "GlobalConfiguration.h"
 #include "InputQuery.h"
 #include "Preprocessor.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 
 int main()
 {
@@ -111,9 +111,9 @@ int main()
 
         printf( "\nTotal error: %.15lf\n", error );
     }
-    catch ( const ReluplexError &e )
+    catch ( const MarabouError &e )
     {
-        printf( "Caught a ReluplexError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );
+        printf( "Caught a MarabouError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );
         return 0;
     }
 

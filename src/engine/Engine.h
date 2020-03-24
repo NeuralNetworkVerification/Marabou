@@ -24,6 +24,7 @@
 #include "BlandsRule.h"
 #include "DantzigsRule.h"
 #include "DegradationChecker.h"
+#include "DivideStrategy.h"
 #include "IEngine.h"
 #include "InputQuery.h"
 #include "Map.h"
@@ -33,6 +34,12 @@
 #include "SmtCore.h"
 #include "Statistics.h"
 
+#include <atomic>
+
+#ifdef _WIN32
+#undef ERROR
+#endif
+
 class EngineState;
 class InputQuery;
 class PiecewiseLinearConstraint;
@@ -41,17 +48,8 @@ class String;
 class Engine : public IEngine, public SignalHandler::Signalable
 {
 public:
-    Engine();
+    Engine( unsigned verbosity = 2 );
     ~Engine();
-
-    enum ExitCode {
-        UNSAT = 0,
-        SAT = 1,
-        ERROR = 2,
-        TIMEOUT = 3,
-
-        NOT_DONE = 999,
-    };
 
     /*
       Attempt to find a feasible solution for the input within a time limit
@@ -87,10 +85,71 @@ public:
 
     const Statistics *getStatistics() const;
 
+    InputQuery *getInputQuery();
+
     /*
       Get the exit code
     */
     Engine::ExitCode getExitCode() const;
+
+    /*
+      Get the quitRequested flag
+    */
+    std::atomic_bool *getQuitRequested();
+
+    /*
+      Get the list of input variables
+    */
+    List<unsigned> getInputVariables() const;
+
+    /*
+      Add equations and tightenings from a split.
+    */
+    void applySplit( const PiecewiseLinearCaseSplit &split );
+
+    /*
+      Reset the state of the engine, before solving a new query
+      (as part of DnC mode).
+    */
+    void reset();
+
+    /*
+      Reset the statistics object
+    */
+    void resetStatistics();
+
+    /*
+      Clear the violated PL constraints
+    */
+    void clearViolatedPLConstraints();
+
+    /*
+      Set the Engine's level of verbosity
+    */
+    void setVerbosity( unsigned verbosity );
+
+    /*
+      Pick the piecewise linear constraint for splitting
+    */
+    PiecewiseLinearConstraint *pickSplitPLConstraint();
+
+    /*
+      Update the scores of each candidate splitting PL constraints
+    */
+    void updateScores();
+
+    /*
+      Set the constraint violation threshold of SmtCore
+    */
+    void setConstraintViolationThreshold( unsigned threshold );
+
+    /*
+      PSA: The following two methods are for DnC only and should be used very
+      cautiously.
+     */
+    void resetSmtCore();
+    void resetExitCode();
+    void resetBoundTighteners();
 
 private:
     enum BasisRestorationRequired {
@@ -105,10 +164,6 @@ private:
         PERFORMED_WEAK_RESTORATION = 2,
     };
 
-    /*
-      Add equations and tightenings from a split.
-    */
-    void applySplit( const PiecewiseLinearCaseSplit &split );
 
     /*
       Perform bound tightening operations that require
@@ -130,6 +185,11 @@ private:
       The existing piecewise-linear constraints.
     */
     List<PiecewiseLinearConstraint *> _plConstraints;
+
+    /*
+      The ordered set of candidate PL constraints for splitting
+    */
+    Set<PiecewiseLinearConstraint *> _candidatePlConstraints;
 
     /*
       Piecewise linear constraints that are currently violated.
@@ -190,6 +250,11 @@ private:
     bool _preprocessingEnabled;
 
     /*
+      Is the initial state stored?
+    */
+    bool _initialStateStored;
+
+    /*
       Work memory (of size m)
     */
     double *_work;
@@ -211,9 +276,9 @@ private:
     AutoCostFunctionManager _costFunctionManager;
 
     /*
-      Indicates a user request to quit
+      Indicates a user/DnCManager request to quit
     */
-    bool _quitRequested;
+    std::atomic_bool _quitRequested;
 
     /*
       A code indicating how the run terminated.
@@ -239,6 +304,24 @@ private:
       evaluation of topology-based bound tightening.
      */
     NetworkLevelReasoner *_networkLevelReasoner;
+
+    /*
+      Verbosity level:
+      0: print out minimal information
+      1: print out statistics only in the beginning and the end
+      2: print out statistics during solving
+    */
+    unsigned _verbosity;
+
+    /*
+      Records for checking whether the solution process is, overall,
+      making progress. _lastNumVisitedStates stores the previous number
+      of visited tree states, and _lastIterationWithProgress stores the
+      last iteration number where the number of visited tree states was
+      observed to increase.
+    */
+    unsigned _lastNumVisitedStates;
+    unsigned long long _lastIterationWithProgress;
 
     /*
       Perform a simplex step: compute the cost function, pick the
@@ -363,6 +446,19 @@ private:
     bool shouldExitDueToTimeout( unsigned timeout ) const;
 
     /*
+      Evaluate the network on legal inputs; obtain the assignment
+      for as many intermediate nodes as possible; and then try
+      to assign these values to the corresponding variables.
+    */
+    void warmStart();
+
+    /*
+      Check whether the number of visited tree states has increased
+      recently. If not, request a precision restoration.
+    */
+    void checkOverallProgress();
+
+    /*
       Helper functions for input query preprocessing
     */
     void informConstraintsOfInitialBounds( InputQuery &inputQuery ) const;
@@ -376,6 +472,12 @@ private:
     double *createConstraintMatrix();
     void addAuxiliaryVariables();
     void augmentInitialBasisIfNeeded( List<unsigned> &initialBasis, const List<unsigned> &basicRows );
+
+    /*
+      Update the preferred direction to perform fixes and the preferred order
+      to handle case splits
+    */
+    void updateDirections();
 };
 
 #endif // __Engine_h__

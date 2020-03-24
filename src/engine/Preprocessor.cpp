@@ -20,13 +20,17 @@
 #include "MStringf.h"
 #include "Map.h"
 #include "Preprocessor.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 #include "Statistics.h"
 #include "SymbolicBoundTightener.h"
 #include "Tightening.h"
 
 // TODO: get rid of this include
 #include "ReluConstraint.h"
+
+#ifdef _WIN32
+#undef INFINITE
+#endif
 
 Preprocessor::Preprocessor()
     : _statistics( NULL )
@@ -86,17 +90,42 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     }
 
     collectFixedValues();
+    separateMergedAndFixed();
 
     if ( attemptVariableElimination )
         eliminateVariables();
 
+    return _preprocessed;
+}
+
+void Preprocessor::separateMergedAndFixed()
+{
+    Map<unsigned, double> noLongerMerged;
+
+    for ( const auto &merged : _mergedVariables )
+    {
+        // In case of a chained merging, go all the way to the final target
+        unsigned finalMergeTarget = merged.second;
+        while ( _mergedVariables.exists( finalMergeTarget ) )
+            finalMergeTarget = _mergedVariables[finalMergeTarget];
+
+        // Is the merge target fixed?
+        if ( _fixedVariables.exists( finalMergeTarget ) )
+            noLongerMerged[merged.first] = _fixedVariables[finalMergeTarget];
+    }
+
+    // We have collected all the merged variables that should actually be fixed
+    for ( const auto &merged : noLongerMerged )
+    {
+        _mergedVariables.erase( merged.first );
+        _fixedVariables[merged.first] = merged.second;
+    }
+
     DEBUG({
-            // For now, assume merged and fixed variable sets are disjoint
+            // After this operation, the merged and fixed variable sets are disjoint
             for ( const auto &fixed : _fixedVariables )
                 ASSERT( !_mergedVariables.exists( fixed.first ) );
           });
-
-    return _preprocessed;
 }
 
 void Preprocessor::makeAllEquationsEqualities()
@@ -493,6 +522,52 @@ void Preprocessor::eliminateVariables()
     if ( _statistics )
         _statistics->ppSetNumEliminatedVars( _fixedVariables.size() + _mergedVariables.size() );
 
+    // Check and remove any fixed variables from the debugging solution
+    for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
+    {
+        if ( _fixedVariables.exists( i ) && _preprocessed._debuggingSolution.exists( i ) )
+        {
+            if ( !FloatUtils::areEqual( _fixedVariables[i], _preprocessed._debuggingSolution[i] ) )
+                throw MarabouError( MarabouError::DEBUGGING_ERROR,
+                                     Stringf( "Variable %u fixed to %.5lf, "
+                                              "contradicts possible solution %.5lf",
+                                              i,
+                                              _fixedVariables[i],
+                                              _preprocessed._debuggingSolution[i] ).ascii() );
+
+            _preprocessed._debuggingSolution.erase( i );
+        }
+    }
+
+    // Check and remove any merged variables from the debugging solution
+    for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
+    {
+        if ( _mergedVariables.exists( i ) && _preprocessed._debuggingSolution.exists( i ) )
+        {
+            double newVar = _mergedVariables[i];
+
+            if ( _preprocessed._debuggingSolution.exists( newVar ) )
+            {
+
+                if ( !FloatUtils::areEqual ( _preprocessed._debuggingSolution[i],
+                                             _preprocessed._debuggingSolution[newVar] ) )
+                    throw MarabouError( MarabouError::DEBUGGING_ERROR,
+                                         Stringf( "Variable %u fixed to %.5lf, "
+                                                  "merged into %u which was fixed to %.5lf",
+                                                  i,
+                                                  _preprocessed._debuggingSolution[i],
+                                                  newVar,
+                                                  _preprocessed._debuggingSolution[newVar] ).ascii() );
+            }
+            else
+            {
+                _preprocessed._debuggingSolution[newVar] = _preprocessed._debuggingSolution[i];
+            }
+
+            _preprocessed._debuggingSolution.erase( i );
+        }
+    }
+
     // Compute the new variable indices, after the elimination of fixed variables
  	int offset = 0;
 	for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
@@ -567,7 +642,7 @@ void Preprocessor::eliminateVariables()
             if ( _preprocessed._sbt )
             {
                 if ( !(*constraint)->supportsSymbolicBoundTightening() )
-                    throw ReluplexError( ReluplexError::SYMBOLIC_BOUND_TIGHTENER_UNSUPPORTED_CONSTRAINT_TYPE );
+                    throw MarabouError( MarabouError::SYMBOLIC_BOUND_TIGHTENER_UNSUPPORTED_CONSTRAINT_TYPE );
 
                 ReluConstraint *relu = (ReluConstraint *)(*constraint);
                 unsigned b = relu->getB();
@@ -578,6 +653,8 @@ void Preprocessor::eliminateVariables()
             if ( _statistics )
                 _statistics->ppIncNumConstraintsRemoved();
 
+            delete *constraint;
+            *constraint = NULL;
             constraint = constraints.erase( constraint );
         }
         else
@@ -599,6 +676,10 @@ void Preprocessor::eliminateVariables()
     if ( _preprocessed._sbt )
         _preprocessed._sbt->updateVariableIndices( _oldIndexToNewIndex, _mergedVariables, _fixedVariables );
 
+    // Let the NLR know of changes in indices and merged variables
+    if ( _preprocessed._networkLevelReasoner )
+        _preprocessed._networkLevelReasoner->updateVariableIndices( _oldIndexToNewIndex, _mergedVariables );
+
     // Update the lower/upper bound maps
     for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
 	{
@@ -611,57 +692,22 @@ void Preprocessor::eliminateVariables()
         _preprocessed.setUpperBound( _oldIndexToNewIndex.at( i ), _preprocessed.getUpperBound( i ) );
 	}
 
-    // Make any adjustments in the stored debugging solution, if needed
-    for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
+    // Adjust variable indices in the debugging solution
+    Map<unsigned, double> copy = _preprocessed._debuggingSolution;
+    _preprocessed._debuggingSolution.clear();
+    for ( const auto &debugPair : copy )
     {
-        if ( _preprocessed._debuggingSolution.exists( i ) )
-        {
-            if ( _fixedVariables.exists( i ) )
-            {
-                if ( !FloatUtils::areEqual( _fixedVariables[i], _preprocessed._debuggingSolution[i] ) )
-                    throw ReluplexError( ReluplexError::DEBUGGING_ERROR,
-                                         Stringf( "Variable %u fixed to %.5lf, "
-                                                  "contradicts possible solution %.5lf",
-                                                  i,
-                                                  _fixedVariables[i],
-                                                  _preprocessed._debuggingSolution[i] ).ascii() );
+        unsigned variable = debugPair.first;
+        double value = debugPair.second;
 
-                _preprocessed._debuggingSolution.erase( i );
-            }
-            else if ( _mergedVariables.exists( i ) )
-            {
-                unsigned oldVar = i;
-                unsigned newVar = _mergedVariables[i];
+        // Go through any merges
+        while ( variableIsMerged( variable ) )
+            variable = getMergedIndex( variable );
 
-                if ( !_preprocessed._debuggingSolution.exists( newVar ) )
-                {
-                    _preprocessed._debuggingSolution[newVar] = _preprocessed._debuggingSolution[oldVar];
-                }
-                else
-                {
-                    if ( !FloatUtils::areEqual ( _preprocessed._debuggingSolution[newVar],
-                                                 _preprocessed._debuggingSolution[oldVar] ) )
-                        throw ReluplexError( ReluplexError::DEBUGGING_ERROR,
-                                             Stringf( "Variable %u fixed to %.5lf, "
-                                                      "merged into %u which was fixed to %.5lf",
-                                                      oldVar,
-                                                      _mergedVariables[oldVar],
-                                                      newVar,
-                                                      _mergedVariables[newVar] ).ascii() );
+        // Grab new index
+        variable = getNewIndex( variable );
 
-                }
-
-                _preprocessed._debuggingSolution.erase( oldVar );
-            }
-            else
-            {
-                _preprocessed._debuggingSolution[_oldIndexToNewIndex[i]] =
-                    _preprocessed._debuggingSolution[i];
-
-                if ( _oldIndexToNewIndex[i] != i )
-                    _preprocessed._debuggingSolution.erase( i );
-            }
-        }
+        _preprocessed._debuggingSolution[variable] = value;
     }
 
     // Adjust the number of variables in the query
@@ -706,16 +752,11 @@ void Preprocessor::setStatistics( Statistics *statistics )
 
 void Preprocessor::addPlAuxiliaryEquations()
 {
-    // First, collect all the new equations
     const List<PiecewiseLinearConstraint *> &plConstraints
         ( _preprocessed.getPiecewiseLinearConstraints() );
 
-    List<Equation> newEquations;
     for ( const auto &constraint : plConstraints )
-        constraint->getAuxiliaryEquations( newEquations );
-
-    for ( Equation equation : newEquations )
-        _preprocessed.addEquation( equation );
+        constraint->addAuxiliaryEquations( _preprocessed );
 }
 
 void Preprocessor::dumpAllBounds( const String &message )

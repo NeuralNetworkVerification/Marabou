@@ -34,7 +34,17 @@ public:
     {
     }
 
+    Vector<T>( const Vector<T> &rhs) = default;
+    
     Vector<T>( const std::initializer_list<T> &initializerList ) : _container( initializerList )
+    {
+    }
+
+    Vector<T>( unsigned size ) : _container( size )
+    {
+    }
+
+    Vector<T>( unsigned size, T value ) : _container( size, value )
     {
     }
 
@@ -50,6 +60,11 @@ public:
 
     virtual ~Vector()
     {
+    }
+
+    T *data()
+    {
+        return _container.data();
     }
 
     T get( int index ) const

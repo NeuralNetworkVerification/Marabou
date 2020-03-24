@@ -24,7 +24,7 @@ Options *Options::get()
 }
 
 Options::Options()
-    : _optionParser( &_boolOptions, &_stringOptions )
+    : _optionParser( &_boolOptions, &_intOptions, &_floatOptions, &_stringOptions )
 {
     initializeDefaultValues();
     _optionParser.initialize();
@@ -39,15 +39,33 @@ Options::Options( const Options & )
 void Options::initializeDefaultValues()
 {
     /*
+      Bool options
+    */
+    _boolOptions[DNC_MODE] = false;
+    _boolOptions[PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS] = false;
+
+    /*
       Int options
     */
-    _boolOptions[PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS] = false;
+    _intOptions[NUM_WORKERS] = 4;
+    _intOptions[NUM_INITIAL_DIVIDES] = 0;
+    _intOptions[NUM_ONLINE_DIVIDES] = 2;
+    _intOptions[INITIAL_TIMEOUT] = 5;
+    _intOptions[VERBOSITY] = 2;
+    _intOptions[TIMEOUT] = 0;
+    _intOptions[SPLIT_THRESHOLD] = 20;
+
+    /*
+      Float options
+    */
+    _floatOptions[TIMEOUT_FACTOR] = 1.5;
 
     /*
       String options
     */
     _stringOptions[INPUT_FILE_PATH] = "";
     _stringOptions[PROPERTY_FILE_PATH] = "";
+    _stringOptions[INPUT_QUERY_FILE_PATH] = "";
     _stringOptions[SUMMARY_FILE] = "";
 }
 
@@ -59,6 +77,16 @@ void Options::parseOptions( int argc, char **argv )
 bool Options::getBool( unsigned option ) const
 {
     return _boolOptions.get( option );
+}
+
+int Options::getInt( unsigned option ) const
+{
+    return _intOptions.get( option );
+}
+
+float Options::getFloat( unsigned option ) const
+{
+    return _floatOptions.get( option );
 }
 
 String Options::getString( unsigned option ) const

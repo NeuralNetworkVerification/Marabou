@@ -22,18 +22,19 @@
 #include "InputQuery.h"
 #include "MStringf.h"
 #include "MalformedBasisException.h"
+#include "MarabouError.h"
 #include "PiecewiseLinearConstraint.h"
 #include "Preprocessor.h"
-#include "ReluplexError.h"
 #include "TableauRow.h"
 #include "TimeUtils.h"
 
-Engine::Engine()
+Engine::Engine( unsigned verbosity )
     : _rowBoundTightener( *_tableau )
     , _symbolicBoundTightener( NULL )
     , _smtCore( this )
     , _numPlConstraintsDisabledByValidSplits( 0 )
     , _preprocessingEnabled( false )
+    , _initialStateStored( false )
     , _work( NULL )
     , _basisRestorationRequired( Engine::RESTORATION_NOT_NEEDED )
     , _basisRestorationPerformed( Engine::NO_RESTORATION_PERFORMED )
@@ -43,6 +44,9 @@ Engine::Engine()
     , _constraintBoundTightener( *_tableau )
     , _numVisitedStatesAtPreviousRestoration( 0 )
     , _networkLevelReasoner( NULL )
+    , _verbosity( verbosity )
+    , _lastNumVisitedStates( 0 )
+    , _lastIterationWithProgress( 0 )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -63,18 +67,11 @@ Engine::~Engine()
         delete[] _work;
         _work = NULL;
     }
+}
 
-    if ( _symbolicBoundTightener )
-    {
-        delete _symbolicBoundTightener;
-        _symbolicBoundTightener = NULL;
-    }
-
-    if ( _networkLevelReasoner )
-    {
-        delete _networkLevelReasoner;
-        _networkLevelReasoner = NULL;
-    }
+void Engine::setVerbosity( unsigned verbosity )
+{
+    _verbosity = verbosity;
 }
 
 void Engine::adjustWorkMemorySize()
@@ -87,7 +84,7 @@ void Engine::adjustWorkMemorySize()
 
     _work = new double[_tableau->getM()];
     if ( !_work )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Engine::work" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Engine::work" );
 }
 
 bool Engine::solve( unsigned timeoutInSeconds )
@@ -95,12 +92,17 @@ bool Engine::solve( unsigned timeoutInSeconds )
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
 
+    updateDirections();
     storeInitialEngineState();
 
-    printf( "\nEngine::solve: Initial statistics\n" );
-    mainLoopStatistics();
-    printf( "\n---\n" );
+    if ( _verbosity > 0 )
+    {
+        printf( "\nEngine::solve: Initial statistics\n" );
+        mainLoopStatistics();
+        printf( "\n---\n" );
+    }
 
+    bool splitJustPerformed = true;
     struct timespec mainLoopStart = TimeUtils::sampleMicro();
     while ( true )
     {
@@ -110,9 +112,12 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
         if ( shouldExitDueToTimeout( timeoutInSeconds ) )
         {
-            printf( "\n\nEngine: quitting due to timeout...\n\n" );
-            printf( "Final statistics:\n" );
-            _statistics.print();
+            if ( _verbosity > 0 )
+            {
+                printf( "\n\nEngine: quitting due to timeout...\n\n" );
+                printf( "Final statistics:\n" );
+                _statistics.print();
+            }
 
             _exitCode = Engine::TIMEOUT;
             _statistics.timeout();
@@ -121,11 +126,14 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
         if ( _quitRequested )
         {
-            printf( "\n\nEngine: quitting due to external request...\n\n" );
-            printf( "Final statistics:\n" );
-            _statistics.print();
+            if ( _verbosity > 0 )
+            {
+                printf( "\n\nEngine: quitting due to external request...\n\n" );
+                printf( "Final statistics:\n" );
+                _statistics.print();
+            }
 
-            _exitCode = Engine::TIMEOUT;
+            _exitCode = Engine::QUIT_REQUESTED;
             return false;
         }
 
@@ -133,7 +141,11 @@ bool Engine::solve( unsigned timeoutInSeconds )
         {
             DEBUG( _tableau->verifyInvariants() );
 
-            mainLoopStatistics();
+            if ( _verbosity > 1 )
+                mainLoopStatistics();
+
+            // Check whether progress has been made recently
+            checkOverallProgress();
 
             // If the basis has become malformed, we need to restore it
             if ( basisRestorationNeeded() )
@@ -167,16 +179,21 @@ bool Engine::solve( unsigned timeoutInSeconds )
             if ( _tableau->basisMatrixAvailable() )
                 explicitBasisBoundTightening();
 
-            // Perform any SmtCore-initiated case splits
-            if ( _smtCore.needToSplit() )
+            if ( splitJustPerformed )
             {
-                _smtCore.performSplit();
-
                 do
                 {
                     performSymbolicBoundTightening();
                 }
                 while ( applyAllValidConstraintCaseSplits() );
+                splitJustPerformed = false;
+            }
+
+            // Perform any SmtCore-initiated case splits
+            if ( _smtCore.needToSplit() )
+            {
+                _smtCore.performSplit();
+                splitJustPerformed = true;
                 continue;
             }
 
@@ -198,14 +215,19 @@ bool Engine::solve( unsigned timeoutInSeconds )
                     if ( _tableau->getBasicAssignmentStatus() !=
                          ITableau::BASIC_ASSIGNMENT_JUST_COMPUTED )
                     {
-                        printf( "Before declaring SAT, recomputing...\n" );
+                        if ( _verbosity > 0 )
+                        {
+                            printf( "Before declaring SAT, recomputing...\n" );
+                        }
                         // Make sure that the assignment is precise before declaring success
                         _tableau->computeAssignment();
                         continue;
                     }
-
-                    printf( "\nEngine::solve: SAT assignment found\n" );
-                    _statistics.print();
+                    if ( _verbosity > 0 )
+                    {
+                        printf( "\nEngine::solve: SAT assignment found\n" );
+                        _statistics.print();
+                    }
                     _exitCode = Engine::SAT;
                     return true;
                 }
@@ -263,11 +285,19 @@ bool Engine::solve( unsigned timeoutInSeconds )
             // If we're at level 0, the whole query is unsat.
             if ( !_smtCore.popSplit() )
             {
-                printf( "\nEngine::solve: UNSAT query\n" );
-                _statistics.print();
+                if ( _verbosity > 0 )
+                {
+                    printf( "\nEngine::solve: UNSAT query\n" );
+                    _statistics.print();
+                }
                 _exitCode = Engine::UNSAT;
                 return false;
             }
+            else
+            {
+                splitJustPerformed = true;
+            }
+
         }
         catch ( ... )
         {
@@ -365,7 +395,7 @@ void Engine::performSimplexStep()
                             "Recomputing cost function. New one is:\n" );
                     _costFunctionManager->computeCoreCostFunction();
                     _costFunctionManager->dumpCostFunction();
-                    throw ReluplexError( ReluplexError::DEBUGGING_ERROR,
+                    throw MarabouError( MarabouError::DEBUGGING_ERROR,
                                          "Have OOB vars but cost function is zero" );
                 }
             }
@@ -620,10 +650,11 @@ void Engine::informConstraintsOfInitialBounds( InputQuery &inputQuery ) const
 
 void Engine::invokePreprocessor( const InputQuery &inputQuery, bool preprocess )
 {
-    printf( "Engine::processInputQuery: Input query (before preprocessing): "
-            "%u equations, %u variables\n",
-            inputQuery.getEquations().size(),
-            inputQuery.getNumberOfVariables() );
+    if ( _verbosity > 0 )
+        printf( "Engine::processInputQuery: Input query (before preprocessing): "
+                "%u equations, %u variables\n",
+                inputQuery.getEquations().size(),
+                inputQuery.getNumberOfVariables() );
 
     // If processing is enabled, invoke the preprocessor
     _preprocessingEnabled = preprocess;
@@ -633,16 +664,17 @@ void Engine::invokePreprocessor( const InputQuery &inputQuery, bool preprocess )
     else
         _preprocessedQuery = inputQuery;
 
-    printf( "Engine::processInputQuery: Input query (after preprocessing): "
-            "%u equations, %u variables\n\n",
-            _preprocessedQuery.getEquations().size(),
-            _preprocessedQuery.getNumberOfVariables() );
+    if ( _verbosity > 0 )
+        printf( "Engine::processInputQuery: Input query (after preprocessing): "
+                "%u equations, %u variables\n\n",
+                _preprocessedQuery.getEquations().size(),
+                _preprocessedQuery.getNumberOfVariables() );
 
     unsigned infiniteBounds = _preprocessedQuery.countInfiniteBounds();
     if ( infiniteBounds != 0 )
     {
         _exitCode = Engine::ERROR;
-        throw ReluplexError( ReluplexError::UNBOUNDED_VARIABLES_NOT_YET_SUPPORTED,
+        throw MarabouError( MarabouError::UNBOUNDED_VARIABLES_NOT_YET_SUPPORTED,
                              Stringf( "Error! Have %u infinite bounds", infiniteBounds ).ascii() );
     }
 }
@@ -703,7 +735,7 @@ double *Engine::createConstraintMatrix()
     // Step 1: create a constraint matrix from the equations
     double *constraintMatrix = new double[n*m];
     if ( !constraintMatrix )
-        throw ReluplexError( ReluplexError::ALLOCATION_FAILED, "Engine::constraintMatrix" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Engine::constraintMatrix" );
     std::fill_n( constraintMatrix, n*m, 0.0 );
 
     unsigned equationIndex = 0;
@@ -712,7 +744,7 @@ double *Engine::createConstraintMatrix()
         if ( equation._type != Equation::EQ )
         {
             _exitCode = Engine::ERROR;
-            throw ReluplexError( ReluplexError::NON_EQUALITY_INPUT_EQUATION_DISCOVERED );
+            throw MarabouError( MarabouError::NON_EQUALITY_INPUT_EQUATION_DISCOVERED );
         }
 
         for ( const auto &addend : equation._addends )
@@ -1028,7 +1060,8 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
     {
         informConstraintsOfInitialBounds( inputQuery );
         invokePreprocessor( inputQuery, preprocess );
-        printInputBounds( inputQuery );
+        if ( _verbosity > 0 )
+            printInputBounds( inputQuery );
 
         double *constraintMatrix = createConstraintMatrix();
         removeRedundantEquations( constraintMatrix );
@@ -1039,7 +1072,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         List<unsigned> initialBasis;
         List<unsigned> basicRows;
-        selectInitialVariablesForBasis( constraintMatrix, initialBasis, basicRows ); // HERE
+        selectInitialVariablesForBasis( constraintMatrix, initialBasis, basicRows );
         addAuxiliaryVariables();
         augmentInitialBasisIfNeeded( initialBasis, basicRows );
 
@@ -1049,8 +1082,11 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         delete[] constraintMatrix;
         constraintMatrix = createConstraintMatrix();
 
-        initializeTableau( constraintMatrix, initialBasis );
         initializeNetworkLevelReasoning();
+        initializeTableau( constraintMatrix, initialBasis );
+
+        if ( GlobalConfiguration::WARM_START )
+            warmStart();
 
         delete[] constraintMatrix;
 
@@ -1167,7 +1203,7 @@ void Engine::restoreState( const EngineState &state )
     log( "Restore state starting" );
 
     if ( !state._tableauStateIsStored )
-        throw ReluplexError( ReluplexError::RESTORING_ENGINE_FROM_INVALID_STATE );
+        throw MarabouError( MarabouError::RESTORING_ENGINE_FROM_INVALID_STATE );
 
     log( "\tRestoring tableau state" );
     _tableau->restoreState( state._tableauState );
@@ -1176,7 +1212,7 @@ void Engine::restoreState( const EngineState &state )
     for ( auto &constraint : _plConstraints )
     {
         if ( !state._plConstraintToState.exists( constraint ) )
-            throw ReluplexError( ReluplexError::MISSING_PL_CONSTRAINT_STATE );
+            throw MarabouError( MarabouError::MISSING_PL_CONSTRAINT_STATE );
 
         constraint->restoreState( state._plConstraintToState[constraint] );
     }
@@ -1575,9 +1611,10 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
 
     // debug
     double after = _degradationChecker.computeDegradation( *_tableau );
-    printf( "Performing precision restoration. Degradation before: %.15lf. After: %.15lf\n",
-            before,
-            after );
+    if ( _verbosity > 0 )
+        printf( "Performing precision restoration. Degradation before: %.15lf. After: %.15lf\n",
+                before,
+                after );
     //
 
     if ( highDegradation() && ( restoreBasics == PrecisionRestorer::RESTORE_BASICS ) )
@@ -1596,18 +1633,23 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
 
         // debug
         double afterSecond = _degradationChecker.computeDegradation( *_tableau );
-        printf( "Performing 2nd precision restoration. Degradation before: %.15lf. After: %.15lf\n",
-                after,
-                afterSecond );
+        if ( _verbosity > 0 )
+            printf( "Performing 2nd precision restoration. Degradation before: %.15lf. After: %.15lf\n",
+                    after,
+                    afterSecond );
 
         if ( highDegradation() )
-            throw ReluplexError( ReluplexError::RESTORATION_FAILED_TO_RESTORE_PRECISION );
+            throw MarabouError( MarabouError::RESTORATION_FAILED_TO_RESTORE_PRECISION );
     }
 }
 
 void Engine::storeInitialEngineState()
 {
-    _precisionRestorer.storeInitialEngineState( *this );
+    if ( !_initialStateStored )
+    {
+        _precisionRestorer.storeInitialEngineState( *this );
+        _initialStateStored = true;
+    }
 }
 
 bool Engine::basisRestorationNeeded() const
@@ -1620,6 +1662,11 @@ bool Engine::basisRestorationNeeded() const
 const Statistics *Engine::getStatistics() const
 {
     return &_statistics;
+}
+
+InputQuery *Engine::getInputQuery()
+{
+    return &_preprocessedQuery;
 }
 
 void Engine::log( const String &message )
@@ -1640,11 +1687,12 @@ void Engine::checkBoundCompliancyWithDebugSolution()
             if ( FloatUtils::gt( _tableau->getLowerBound( var.first ), var.second, 1e-5 ) )
             {
                 printf( "Error! The stack is compliant, but learned an non-compliant bound: "
-                        "Solution for %u is %.15lf, but learned lower bound %.15lf\n",
+                        "Solution for x%u is %.15lf, but learned lower bound %.15lf\n",
                         var.first,
                         var.second,
                         _tableau->getLowerBound( var.first ) );
-                throw ReluplexError( ReluplexError::DEBUGGING_ERROR );
+
+                throw MarabouError( MarabouError::DEBUGGING_ERROR );
             }
 
             if ( FloatUtils::lt( _tableau->getUpperBound( var.first ), var.second, 1e-5 ) )
@@ -1655,7 +1703,7 @@ void Engine::checkBoundCompliancyWithDebugSolution()
                         var.second,
                         _tableau->getUpperBound( var.first ) );
 
-                throw ReluplexError( ReluplexError::DEBUGGING_ERROR );
+                throw MarabouError( MarabouError::DEBUGGING_ERROR );
             }
         }
     }
@@ -1669,6 +1717,16 @@ void Engine::quitSignal()
 Engine::ExitCode Engine::getExitCode() const
 {
     return _exitCode;
+}
+
+std::atomic_bool *Engine::getQuitRequested()
+{
+    return &_quitRequested;
+}
+
+List<unsigned> Engine::getInputVariables() const
+{
+    return _preprocessedQuery.getInputVariables();
 }
 
 void Engine::performSymbolicBoundTightening()
@@ -1691,7 +1749,7 @@ void Engine::performSymbolicBoundTightening()
         // We assume the input variables are the first variables
         if ( inputVariable != inputVariableIndex )
         {
-            throw ReluplexError( ReluplexError::SYMBOLIC_BOUND_TIGHTENER_FAULTY_INPUT,
+            throw MarabouError( MarabouError::SYMBOLIC_BOUND_TIGHTENER_FAULTY_INPUT,
                                  Stringf( "Sanity check failed, input variable %u with unexpected index %u", inputVariableIndex, inputVariable ).ascii() );
         }
         ++inputVariableIndex;
@@ -1707,7 +1765,7 @@ void Engine::performSymbolicBoundTightening()
     for ( const auto &constraint : _plConstraints )
     {
         if ( !constraint->supportsSymbolicBoundTightening() )
-            throw ReluplexError( ReluplexError::SYMBOLIC_BOUND_TIGHTENER_UNSUPPORTED_CONSTRAINT_TYPE );
+            throw MarabouError( MarabouError::SYMBOLIC_BOUND_TIGHTENER_UNSUPPORTED_CONSTRAINT_TYPE );
 
         ReluConstraint *relu = (ReluConstraint *)constraint;
         unsigned b = relu->getB();
@@ -1757,6 +1815,166 @@ bool Engine::shouldExitDueToTimeout( unsigned timeout ) const
         return false;
 
     return _statistics.getTotalTime() / MILLISECONDS_TO_SECONDS > timeout;
+}
+
+void Engine::reset()
+{
+    resetStatistics();
+    clearViolatedPLConstraints();
+    resetSmtCore();
+    resetBoundTighteners();
+    resetExitCode();
+}
+
+void Engine::resetStatistics()
+{
+    Statistics statistics;
+    _statistics = statistics;
+    _smtCore.setStatistics( &_statistics );
+    _tableau->setStatistics( &_statistics );
+    _rowBoundTightener->setStatistics( &_statistics );
+    _constraintBoundTightener->setStatistics( &_statistics );
+    _preprocessor.setStatistics( &_statistics );
+    _activeEntryStrategy->setStatistics( &_statistics );
+
+    _statistics.stampStartingTime();
+}
+
+void Engine::clearViolatedPLConstraints()
+{
+    _violatedPlConstraints.clear();
+    _plConstraintToFix = NULL;
+}
+
+void Engine::resetSmtCore()
+{
+    _smtCore.freeMemory();
+    _smtCore = SmtCore( this );
+}
+
+void Engine::resetExitCode()
+{
+    _exitCode = Engine::NOT_DONE;
+}
+
+void Engine::resetBoundTighteners()
+{
+    _constraintBoundTightener->resetBounds();
+    _rowBoundTightener->resetBounds();
+}
+
+void Engine::warmStart()
+{
+    // An NLR is required for a warm start
+    if ( !_networkLevelReasoner )
+        return;
+
+    // First, choose an arbitrary assignment for the input variables
+    unsigned numInputVariables = _preprocessedQuery.getNumInputVariables();
+    unsigned numOutputVariables = _preprocessedQuery.getNumOutputVariables();
+
+    if ( numInputVariables == 0 )
+    {
+        // Trivial case: all inputs are fixed, nothing to evaluate
+        return;
+    }
+
+    double *inputAssignment = new double[numInputVariables];
+    double *outputAssignment = new double[numOutputVariables];
+
+    for ( unsigned i = 0; i < numInputVariables; ++i )
+    {
+        unsigned variable = _preprocessedQuery.inputVariableByIndex( i );
+        inputAssignment[i] = _tableau->getLowerBound( variable );
+    }
+
+    // Evaluate the network for this assignment
+    _networkLevelReasoner->evaluate( inputAssignment, outputAssignment );
+
+    // Try to update as many variables as possible to match their assignment
+    for ( const auto &assignment : _networkLevelReasoner->getIndexToWeightedSumAssignment() )
+    {
+        unsigned variable = _networkLevelReasoner->getWeightedSumVariable( assignment.first._layer, assignment.first._neuron );
+
+        if ( !_tableau->isBasic( variable ) )
+            _tableau->setNonBasicAssignment( variable, assignment.second, false );
+    }
+
+    for ( const auto &assignment : _networkLevelReasoner->getIndexToActivationResultAssignment() )
+    {
+        unsigned variable = _networkLevelReasoner->getActivationResultVariable( assignment.first._layer, assignment.first._neuron );
+
+        if ( !_tableau->isBasic( variable ) )
+            _tableau->setNonBasicAssignment( variable, assignment.second, false );
+    }
+
+    // We did what we could for the non-basics; now let the tableau compute
+    // the basic assignment
+    _tableau->computeAssignment();
+
+    delete[] outputAssignment;
+    delete[] inputAssignment;
+}
+
+void Engine::checkOverallProgress()
+{
+    // Get fresh statistics
+    unsigned numVisitedStates = _statistics.getNumVisitedTreeStates();
+    unsigned long long currentIteration = _statistics.getNumMainLoopIterations();
+
+    if ( numVisitedStates > _lastNumVisitedStates )
+    {
+        // Progress has been made
+        _lastNumVisitedStates = numVisitedStates;
+        _lastIterationWithProgress = _statistics.getNumMainLoopIterations();
+    }
+    else
+    {
+        // No progress has been made. If it's been too long, request a restoration
+        if ( currentIteration >
+             _lastIterationWithProgress +
+             GlobalConfiguration::MAX_ITERATIONS_WITHOUT_PROGRESS )
+        {
+            log( "checkOverallProgress detected cycling. Requesting a precision restoration" );
+            _basisRestorationRequired = Engine::STRONG_RESTORATION_NEEDED;
+            _lastIterationWithProgress = currentIteration;
+        }
+    }
+}
+
+void Engine::updateDirections()
+{
+    if ( GlobalConfiguration::USE_POLARITY_BASED_DIRECTION_HEURISTICS )
+        for ( const auto &constraint : _plConstraints )
+            if ( constraint->supportPolarity() &&
+                 constraint->isActive() && !constraint->phaseFixed() )
+                constraint->updateDirection();
+}
+
+void Engine::updateScores()
+{
+    _candidatePlConstraints.clear();
+    for ( const auto plConstraint : _plConstraints )
+    {
+        if ( plConstraint->isActive() && !plConstraint->phaseFixed() )
+        {
+            plConstraint->updateScore();
+            _candidatePlConstraints.insert( plConstraint );
+        }
+    }
+}
+
+PiecewiseLinearConstraint *Engine::pickSplitPLConstraint()
+{
+    updateScores();
+    auto constraint = *_candidatePlConstraints.begin();
+    _candidatePlConstraints.erase( constraint );
+    return constraint;
+}
+
+void Engine::setConstraintViolationThreshold( unsigned threshold )
+{
+    _smtCore.setConstraintViolationThreshold( threshold );
 }
 
 //

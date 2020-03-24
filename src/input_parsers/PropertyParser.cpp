@@ -16,7 +16,20 @@
 #include "Debug.h"
 #include "File.h"
 #include "InputParserError.h"
+#include "MStringf.h"
 #include "PropertyParser.h"
+#include <regex>
+
+static bool isScalar( const String &token )
+{
+    const std::regex floatRegex( "[-+]?[0-9]*\\.?[0-9]+" );
+    return std::regex_match( token.ascii(), floatRegex );
+}
+
+static double extractScalar( const String &token )
+{
+    return atof( token.ascii() );
+}
 
 void PropertyParser::parse( const String &propertyFilePath, InputQuery &inputQuery )
 {
@@ -53,9 +66,15 @@ void PropertyParser::processSingleLine( const String &line, InputQuery &inputQue
         throw InputParserError( InputParserError::UNEXPECTED_INPUT, line.ascii() );
 
     auto it = tokens.rbegin();
+    if ( !isScalar( *it ) )
+    {
+        Stringf message( "Right handside must be scalar in the line: %s", line.ascii() );
+        throw InputParserError( InputParserError::UNEXPECTED_INPUT, message.ascii() );
+    }
+
     double scalar = extractScalar( *it );
     ++it;
-    Equation::EquationType type = extractSign( *it );
+    Equation::EquationType type = extractRelationSymbol( *it );
     ++it;
 
     // Now extract the addends. In the special case where we only have
@@ -68,31 +87,66 @@ void PropertyParser::processSingleLine( const String &line, InputQuery &inputQue
 
         bool inputVariable = token.contains( "x" );
         bool outputVariable = token.contains( "y" );
+        bool weightedSumVariable = token.contains( "ws" );
 
-        if ( !( inputVariable xor outputVariable ) )
+        // Make sure that we have identified precisely one kind of variable
+        unsigned variableKindSanity = 0;
+        if ( inputVariable ) ++variableKindSanity;
+        if ( outputVariable ) ++variableKindSanity;
+        if ( weightedSumVariable ) ++variableKindSanity;
+
+        if ( variableKindSanity != 1 )
             throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
 
+        // Determine the index (in input query terms) of the variable whose
+        // bound is being set.
+
+        unsigned variable = 0;
         List<String> subTokens;
-        if ( inputVariable )
-            subTokens = token.tokenize( "x" );
-        else
-            subTokens = token.tokenize( "y" );
-
-        if ( subTokens.size() != 1 )
-            throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
-
-        unsigned justIndex = atoi( subTokens.rbegin()->ascii() );
-        unsigned variable;
 
         if ( inputVariable )
         {
+            subTokens = token.tokenize( "x" );
+
+            if ( subTokens.size() != 1 )
+                throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
+
+            unsigned justIndex = atoi( subTokens.rbegin()->ascii() );
+
             ASSERT( justIndex < inputQuery.getNumInputVariables() );
             variable = inputQuery.inputVariableByIndex( justIndex );
         }
-        else
+        else if ( outputVariable )
         {
+            subTokens = token.tokenize( "y" );
+
+            if ( subTokens.size() != 1 )
+                throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
+
+            unsigned justIndex = atoi( subTokens.rbegin()->ascii() );
+
             ASSERT( justIndex < inputQuery.getNumOutputVariables() );
             variable = inputQuery.outputVariableByIndex( justIndex );
+        }
+        else if ( weightedSumVariable )
+        {
+            // These variables are of the form ws_2_5
+            subTokens = token.tokenize( "_" );
+
+            if ( subTokens.size() != 3 )
+                throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
+
+            auto subToken = subTokens.begin();
+            ++subToken;
+            unsigned layerIndex = atoi( subToken->ascii() );
+            ++subToken;
+            unsigned nodeIndex = atoi( subToken->ascii() );
+
+            NetworkLevelReasoner *nlr = inputQuery.getNetworkLevelReasoner();
+            if ( !nlr )
+                throw InputParserError( InputParserError::NETWORK_LEVEL_REASONING_DISABLED );
+
+            variable = nlr->getWeightedSumVariable( layerIndex, nodeIndex );
         }
 
         if ( type == Equation::GE )
@@ -128,7 +182,7 @@ void PropertyParser::processSingleLine( const String &line, InputQuery &inputQue
             bool inputVariable = token.contains( "x" );
             bool outputVariable = token.contains( "y" );
 
-            if ( !( inputVariable xor outputVariable ) )
+            if ( !( inputVariable ^ outputVariable ) )
                 throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
 
             List<String> subTokens;
@@ -171,7 +225,7 @@ void PropertyParser::processSingleLine( const String &line, InputQuery &inputQue
     }
 }
 
-Equation::EquationType PropertyParser::extractSign( const String &token )
+Equation::EquationType PropertyParser::extractRelationSymbol( const String &token )
 {
     if ( token == ">=" )
         return Equation::GE;
@@ -181,11 +235,6 @@ Equation::EquationType PropertyParser::extractSign( const String &token )
         return Equation::EQ;
 
     throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
-}
-
-double PropertyParser::extractScalar( const String &token )
-{
-    return atof( token.ascii() );
 }
 
 //

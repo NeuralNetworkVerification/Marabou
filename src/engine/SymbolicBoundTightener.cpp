@@ -16,7 +16,7 @@
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "MStringf.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 #include "SymbolicBoundTightener.h"
 
 SymbolicBoundTightener::SymbolicBoundTightener()
@@ -35,7 +35,7 @@ SymbolicBoundTightener::SymbolicBoundTightener()
     , _previousLayerUpperBias( NULL )
 {
     if ( GlobalConfiguration::USE_COLUMN_MERGING_EQUATIONS )
-        throw ReluplexError( ReluplexError::SYMBOLIC_BOUND_TIGHTENER_OPTION_NOT_SUPPORTED,
+        throw MarabouError( MarabouError::SYMBOLIC_BOUND_TIGHTENER_OPTION_NOT_SUPPORTED,
                              "Cannot run SBT with Column Merging!" );
 }
 
@@ -254,6 +254,7 @@ void SymbolicBoundTightener::allocateWeightAndBiasSpace()
 
 void SymbolicBoundTightener::setBias( unsigned layer, unsigned neuron, double bias )
 {
+    //TODO: check that layer and neuron are not off bounds
     _biases[layer][neuron] = bias;
 }
 
@@ -709,7 +710,7 @@ void SymbolicBoundTightener::setReluFVariable( unsigned layer, unsigned neuron, 
 SymbolicBoundTightener::NodeIndex SymbolicBoundTightener::nodeIndexFromB( unsigned b ) const
 {
     if ( !_bVariableToNodeIndex.exists( b ) )
-        throw ReluplexError( ReluplexError::SYMBOLIC_BOUND_TIGHTENER_UNKNOWN_VARIABLE_INDEX );
+        throw MarabouError( MarabouError::SYMBOLIC_BOUND_TIGHTENER_UNKNOWN_VARIABLE_INDEX );
 
     return _bVariableToNodeIndex.at( b );
 }
@@ -810,7 +811,7 @@ void SymbolicBoundTightener::updateVariableIndices( const Map<unsigned, unsigned
     for ( unsigned i = 0; i < _inputLayerSize; ++i )
     {
         if ( mergedVariables.exists( i ) )
-            throw ReluplexError( ReluplexError::MERGED_INPUT_VARIABLE );
+            throw MarabouError( MarabouError::MERGED_INPUT_VARIABLE );
 
         if ( !oldIndexToNewIndex.exists( i ) )
         {
@@ -833,6 +834,55 @@ void SymbolicBoundTightener::updateVariableIndices( const Map<unsigned, unsigned
 const Map<SymbolicBoundTightener::NodeIndex, unsigned> &SymbolicBoundTightener::getNodeIndexToFMapping() const
 {
     return _nodeIndexToFVariable;
+}
+
+void SymbolicBoundTightener::storeIntoOther( SymbolicBoundTightener &other ) const
+{
+    other.freeMemoryIfNeeded();
+
+    other.setNumberOfLayers( _numberOfLayers );
+
+    for ( unsigned i = 0; i < _numberOfLayers; ++i )
+        other.setLayerSize( i, _layerSizes[i] );
+
+    other.allocateWeightAndBiasSpace();
+
+    for ( unsigned i = 0; i < _numberOfLayers - 1; ++i )
+    {
+        unsigned rows = _weights[i]._rows;
+        unsigned columns = _weights[i]._columns;
+
+        other._weights[i]._rows = rows;
+        other._weights[i]._columns = columns;
+
+        memcpy( other._weights[i]._positiveValues, _weights[i]._positiveValues, sizeof(double) * rows * columns );
+        memcpy( other._weights[i]._negativeValues, _weights[i]._negativeValues, sizeof(double) * rows * columns );
+    }
+
+    for ( unsigned i = 0; i < _numberOfLayers; ++i )
+    {
+        memcpy( other._biases[i], _biases[i], sizeof(double) * _layerSizes[i] );
+    }
+
+    other._inputLayerSize = _inputLayerSize;
+    other._maxLayerSize = _maxLayerSize;
+    other._inputLowerBounds = _inputLowerBounds;
+    other._inputUpperBounds = _inputUpperBounds;
+
+    for ( unsigned i = 0; i < _numberOfLayers; ++i )
+    {
+        memcpy( other._lowerBounds[i], _lowerBounds[i], sizeof(double) * _layerSizes[i] );
+        memcpy( other._upperBounds[i], _upperBounds[i], sizeof(double) * _layerSizes[i] );
+    }
+
+    other._nodeIndexToBVariable = _nodeIndexToBVariable;
+    other._nodeIndexToFVariable = _nodeIndexToFVariable;
+    other._bVariableToNodeIndex = _bVariableToNodeIndex;
+
+    other._nodeIndexToReluState = _nodeIndexToReluState;
+    other._nodeIndexToEliminatedReluState = _nodeIndexToEliminatedReluState;
+
+    other._inputNeuronToIndex = _inputNeuronToIndex;
 }
 
 //

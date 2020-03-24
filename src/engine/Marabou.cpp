@@ -15,15 +15,22 @@
  **/
 
 #include "AcasParser.h"
+#include "GlobalConfiguration.h"
 #include "File.h"
 #include "MStringf.h"
 #include "Marabou.h"
 #include "Options.h"
 #include "PropertyParser.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
+#include "QueryLoader.h"
 
-Marabou::Marabou()
+#ifdef _WIN32
+#undef ERROR
+#endif
+
+Marabou::Marabou( unsigned verbosity )
     : _acasParser( NULL )
+    , _engine( verbosity )
 {
 }
 
@@ -36,12 +43,9 @@ Marabou::~Marabou()
     }
 }
 
-void Marabou::run( int argc, char **argv )
+void Marabou::run()
 {
     struct timespec start = TimeUtils::sampleMicro();
-
-    Options *options = Options::get();
-    options->parseOptions( argc, argv );
 
     prepareInputQuery();
     solveQuery();
@@ -54,40 +58,71 @@ void Marabou::run( int argc, char **argv )
 
 void Marabou::prepareInputQuery()
 {
-    /*
-      Step 1: extract the network
-    */
-    String networkFilePath = Options::get()->getString( Options::INPUT_FILE_PATH );
-    if ( !File::exists( networkFilePath ) )
+    String inputQueryFilePath = Options::get()->getString( Options::INPUT_QUERY_FILE_PATH );
+    if ( inputQueryFilePath.length() > 0 )
     {
-        printf( "Error: the specified network file (%s) doesn't exist!\n", networkFilePath.ascii() );
-        throw ReluplexError( ReluplexError::FILE_DOESNT_EXIST, networkFilePath.ascii() );
-    }
-    printf( "Network: %s\n", networkFilePath.ascii() );
+        /*
+          Step 1: extract the query
+        */
+        if ( !File::exists( inputQueryFilePath ) )
+        {
+            printf( "Error: the specified inputQuery file (%s) doesn't exist!\n", inputQueryFilePath.ascii() );
+            throw MarabouError( MarabouError::FILE_DOESNT_EXIST, inputQueryFilePath.ascii() );
+        }
 
-    // For now, assume the network is given in ACAS format
-    _acasParser = new AcasParser( networkFilePath );
-    _acasParser->generateQuery( _inputQuery );
-
-    /*
-      Step 2: extract the property in question
-    */
-    String propertyFilePath = Options::get()->getString( Options::PROPERTY_FILE_PATH );
-    if ( propertyFilePath != "" )
-    {
-        printf( "Property: %s\n", propertyFilePath.ascii() );
-        PropertyParser().parse( propertyFilePath, _inputQuery );
+        printf( "InputQuery: %s\n", inputQueryFilePath.ascii() );
+        _inputQuery = QueryLoader::loadQuery(inputQueryFilePath);
     }
     else
-        printf( "Property: None\n" );
+    {
+        /*
+          Step 1: extract the network
+        */
+        String networkFilePath = Options::get()->getString( Options::INPUT_FILE_PATH );
+        if ( !File::exists( networkFilePath ) )
+        {
+            printf( "Error: the specified network file (%s) doesn't exist!\n", networkFilePath.ascii() );
+            throw MarabouError( MarabouError::FILE_DOESNT_EXIST, networkFilePath.ascii() );
+        }
+        printf( "Network: %s\n", networkFilePath.ascii() );
 
-    printf( "\n" );
+        // For now, assume the network is given in ACAS format
+        _acasParser = new AcasParser( networkFilePath );
+        _acasParser->generateQuery( _inputQuery );
+
+        /*
+          Step 2: extract the property in question
+        */
+        String propertyFilePath = Options::get()->getString( Options::PROPERTY_FILE_PATH );
+        if ( propertyFilePath != "" )
+        {
+            printf( "Property: %s\n", propertyFilePath.ascii() );
+            PropertyParser().parse( propertyFilePath, _inputQuery );
+        }
+        else
+            printf( "Property: None\n" );
+
+        printf( "\n" );
+
+        /*
+          Step 3: extract options
+        */
+        int splitThreshold = Options::get()->getInt( Options::SPLIT_THRESHOLD );
+        if ( splitThreshold < 0 )
+        {
+            printf( "Invalid constraint violation threshold value %d,"
+                    " using default value %u.\n\n", splitThreshold,
+                    GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD );
+            splitThreshold = GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD;
+        }
+        _engine.setConstraintViolationThreshold( splitThreshold );
+    }
 }
 
 void Marabou::solveQuery()
 {
     if ( _engine.processInputQuery( _inputQuery ) )
-        _engine.solve();
+        _engine.solve( Options::get()->getInt( Options::TIMEOUT ) );
 
     if ( _engine.getExitCode() == Engine::SAT )
         _engine.extractSolution( _inputQuery );
@@ -106,16 +141,16 @@ void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
     else if ( result == Engine::SAT )
     {
         resultString = "SAT";
-        printf( "SAT\n\n" );
+        printf( "SAT\n" );
 
         printf( "Input assignment:\n" );
         for ( unsigned i = 0; i < _inputQuery.getNumInputVariables(); ++i )
-            printf( "\tx%u = %8.4lf\n", i, _inputQuery.getSolutionValue( _inputQuery.inputVariableByIndex( i ) ) );
+            printf( "\tx%u = %lf\n", i, _inputQuery.getSolutionValue( _inputQuery.inputVariableByIndex( i ) ) );
 
         printf( "\n" );
         printf( "Output:\n" );
         for ( unsigned i = 0; i < _inputQuery.getNumOutputVariables(); ++i )
-            printf( "\ty%u = %8.4lf\n", i, _inputQuery.getSolutionValue( _inputQuery.outputVariableByIndex( i ) ) );
+            printf( "\ty%u = %lf\n", i, _inputQuery.getSolutionValue( _inputQuery.outputVariableByIndex( i ) ) );
         printf( "\n" );
     }
     else if ( result == Engine::TIMEOUT )

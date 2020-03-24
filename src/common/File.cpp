@@ -20,6 +20,7 @@
 #include "MStringf.h"
 #include "T/sys/stat.h"
 #include "T/unistd.h"
+#include "Vector.h"
 
 File::File( const String &path ) : _path( path ), _descriptor( NO_DESCRIPTOR )
 {
@@ -33,12 +34,6 @@ File::~File()
 void File::close()
 {
     closeIfNeeded();
-}
-
-bool File::exists( const String &path )
-{
-    struct stat DONT_CARE;
-    return T::stat( path.ascii(), &DONT_CARE ) == 0;
 }
 
 bool File::directory( const String &path )
@@ -98,7 +93,8 @@ void File::write( const ConstSimpleData &data )
 
 void File::read( HeapData &buffer, unsigned maxReadSize )
 {
-    char readBuffer[maxReadSize];
+    Vector<char> readVector( maxReadSize );
+    char *readBuffer( readVector.data() );
     int bytesRead;
 
     if ( ( bytesRead = T::read( _descriptor, readBuffer, sizeof(readBuffer) ) ) == -1 )

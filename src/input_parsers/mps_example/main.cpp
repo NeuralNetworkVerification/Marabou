@@ -41,11 +41,11 @@ int main( int argc, char *argv[] )
 
     if ( !preprocess || !engine.solve() )
     {
-        printf( "\n\nQuery is unsat\n" );
+        printf( "UNSAT\n" );
         return 0;
     }
 
-    printf( "Status:\tSAT\n\n" );
+    printf( "SAT\n" );
 
     // Uncomment the below to print the solution
 

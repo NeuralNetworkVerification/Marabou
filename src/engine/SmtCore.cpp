@@ -14,12 +14,14 @@
  **/
 
 #include "Debug.h"
+#include "DivideStrategy.h"
 #include "EngineState.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
 #include "IEngine.h"
 #include "MStringf.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
+#include "ReluConstraint.h"
 #include "SmtCore.h"
 
 SmtCore::SmtCore( IEngine *engine )
@@ -28,10 +30,17 @@ SmtCore::SmtCore( IEngine *engine )
     , _needToSplit( false )
     , _constraintForSplitting( NULL )
     , _stateId( 0 )
+    , _constraintViolationThreshold
+      ( GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD )
 {
 }
 
 SmtCore::~SmtCore()
+{
+    freeMemory();
+}
+
+void SmtCore::freeMemory()
 {
     for ( const auto &stackEntry : _stack )
     {
@@ -49,10 +58,14 @@ void SmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
 
     ++_constraintToViolationCount[constraint];
 
-    if ( _constraintToViolationCount[constraint] >= GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD )
+    if ( _constraintToViolationCount[constraint] >=
+         _constraintViolationThreshold )
     {
         _needToSplit = true;
-        _constraintForSplitting = constraint;
+        if ( GlobalConfiguration::SPLITTING_HEURISTICS == DivideStrategy::ReLUViolation )
+            _constraintForSplitting = constraint;
+        else
+            pickSplitPLConstraint();
     }
 }
 
@@ -161,7 +174,7 @@ bool SmtCore::popSplit()
         {
             // Pops should not occur from a compliant stack!
             printf( "Error! Popping from a compliant stack\n" );
-            throw ReluplexError( ReluplexError::DEBUGGING_ERROR );
+            throw MarabouError( MarabouError::DEBUGGING_ERROR );
         }
 
         delete _stack.back()->_engineState;
@@ -176,7 +189,7 @@ bool SmtCore::popSplit()
     {
         // Pops should not occur from a compliant stack!
         printf( "Error! Popping from a compliant stack\n" );
-        throw ReluplexError( ReluplexError::DEBUGGING_ERROR );
+        throw MarabouError( MarabouError::DEBUGGING_ERROR );
     }
 
     StackEntry *stackEntry = _stack.back();
@@ -273,7 +286,7 @@ bool SmtCore::checkSkewFromDebuggingSolution()
         if ( !splitAllowsStoredSolution( split, error ) )
         {
             printf( "Error with one of the splits implied at root level:\n\t%s\n", error.ascii() );
-            throw ReluplexError( ReluplexError::DEBUGGING_ERROR );
+            throw MarabouError( MarabouError::DEBUGGING_ERROR );
         }
     }
 
@@ -287,7 +300,7 @@ bool SmtCore::checkSkewFromDebuggingSolution()
             {
                 printf( "Error! Have a split that is non-compliant with the stored solution, "
                         "without alternatives:\n\t%s\n", error.ascii() );
-                throw ReluplexError( ReluplexError::DEBUGGING_ERROR );
+                throw MarabouError( MarabouError::DEBUGGING_ERROR );
             }
 
             // Active split is non-compliant but this is fine, because there are alternatives. We're done.
@@ -301,7 +314,7 @@ bool SmtCore::checkSkewFromDebuggingSolution()
             {
                 printf( "Error with one of the splits implied at this stack level:\n\t%s\n",
                         error.ascii() );
-                throw ReluplexError( ReluplexError::DEBUGGING_ERROR );
+                throw MarabouError( MarabouError::DEBUGGING_ERROR );
             }
         }
     }
@@ -351,6 +364,11 @@ bool SmtCore::splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split, 
     return true;
 }
 
+void SmtCore::setConstraintViolationThreshold( unsigned threshold )
+{
+    _constraintViolationThreshold = threshold;
+}
+
 PiecewiseLinearConstraint *SmtCore::chooseViolatedConstraintForFixing( List<PiecewiseLinearConstraint *> &_violatedPlConstraints ) const
 {
     ASSERT( !_violatedPlConstraints.empty() );
@@ -382,6 +400,14 @@ PiecewiseLinearConstraint *SmtCore::chooseViolatedConstraintForFixing( List<Piec
     }
 
     return candidate;
+}
+
+void SmtCore::pickSplitPLConstraint()
+{
+    if ( _needToSplit && !_constraintForSplitting )
+    {
+        _constraintForSplitting = _engine->pickSplitPLConstraint();
+    }
 }
 
 //

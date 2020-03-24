@@ -23,13 +23,13 @@
 class Marabou
 {
 public:
-    Marabou();
+    Marabou( unsigned verbosity = 2 );
     ~Marabou();
 
     /*
       Entry point of this class
     */
-    void run( int argc, char **argv );
+    void run();
 
 private:
     InputQuery _inputQuery;

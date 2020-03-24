@@ -56,7 +56,7 @@ public:
         sbt.setBias( 0, 1, 0 );
         sbt.setBias( 1, 0, 0 );
         sbt.setBias( 1, 1, 0 );
-        sbt.setBias( 2, 1, 0 );
+        sbt.setBias( 2, 0, 0 );
 
         // Weights
         sbt.setWeight( 0, 0, 0, 2 );
@@ -100,7 +100,7 @@ public:
         sbt.setBias( 0, 1, 0 );
         sbt.setBias( 1, 0, -15 ); // Strong negative bias for node (1,0)
         sbt.setBias( 1, 1, 0 );
-        sbt.setBias( 2, 1, 0 );
+        sbt.setBias( 2, 0, 0 );
 
         // Weights
         sbt.setWeight( 0, 0, 0, 2 );
@@ -144,7 +144,7 @@ public:
         sbt.setBias( 0, 1, 0 );
         sbt.setBias( 1, 0, -30 ); // Strong negative bias for node (1,0)
         sbt.setBias( 1, 1, 0 );
-        sbt.setBias( 2, 1, 0 );
+        sbt.setBias(2, 0, 0 );
 
         // Weights
         sbt.setWeight( 0, 0, 0, 2 );
@@ -188,7 +188,7 @@ public:
         sbt.setBias( 0, 1, 0 );
         sbt.setBias( 1, 0, -15 ); // Strong negative bias for node (1,0)
         sbt.setBias( 1, 1, 0 );
-        sbt.setBias( 2, 1, 0 );
+        sbt.setBias( 2, 0, 0 );
 
         // Weights
         sbt.setWeight( 0, 0, 0, 2 );
@@ -239,6 +239,51 @@ public:
         TS_ASSERT( sbt.getLowerBound( 2, 0 ) > -11 - 0.001 );
         TS_ASSERT( sbt.getUpperBound( 2, 0 ) > -5 );
         TS_ASSERT( sbt.getUpperBound( 2, 0 ) < -5 + 0.001 );
+    }
+
+    void test_duplicate()
+    {
+        SymbolicBoundTightener sbt;
+
+        sbt.setNumberOfLayers( 3 );
+        sbt.setLayerSize( 0, 2 );
+        sbt.setLayerSize( 1, 2 );
+        sbt.setLayerSize( 2, 1 );
+
+        sbt.allocateWeightAndBiasSpace();
+
+        // All biases are 0
+        sbt.setBias( 0, 0, 0 );
+        sbt.setBias( 0, 1, 0 );
+        sbt.setBias( 1, 0, -30 ); // Strong negative bias for node (1,0)
+        sbt.setBias( 1, 1, 0 );
+        sbt.setBias( 2, 0, 0 );
+
+        // Weights
+        sbt.setWeight( 0, 0, 0, 2 );
+        sbt.setWeight( 0, 0, 1, 1 );
+        sbt.setWeight( 0, 1, 0, 3 );
+        sbt.setWeight( 0, 1, 1, 1 );
+        sbt.setWeight( 1, 0, 0, 1 );
+        sbt.setWeight( 1, 1, 0, -1 );
+
+        // Initial bounds
+        sbt.setInputLowerBound( 0, 4 );
+        sbt.setInputUpperBound( 0, 6 );
+        sbt.setInputLowerBound( 1, 1 );
+        sbt.setInputUpperBound( 1, 5 );
+
+        SymbolicBoundTightener sbt2;
+        TS_ASSERT_THROWS_NOTHING( sbt.storeIntoOther( sbt2 ) );
+
+        // Run the tightener
+        TS_ASSERT_THROWS_NOTHING( sbt2.run( false ) ); // Test with costant concretization
+
+        // Expected range: [-11, -5], +- epsilon
+        TS_ASSERT( sbt2.getLowerBound( 2, 0 ) < -11 );
+        TS_ASSERT( sbt2.getLowerBound( 2, 0 ) > -11 - 0.001 );
+        TS_ASSERT( sbt2.getUpperBound( 2, 0 ) > -5 );
+        TS_ASSERT( sbt2.getUpperBound( 2, 0 ) < -5 + 0.001 );
     }
 
     void test_todo()

@@ -19,7 +19,7 @@
 #include "Equation.h"
 #include "MockCostFunctionManager.h"
 #include "MockErrno.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 #include "Tableau.h"
 #include "TableauRow.h"
 #include "TableauState.h"
@@ -110,7 +110,7 @@ public:
 
     void test_initialize_bounds()
     {
-        Tableau *tableau;
+        Tableau *tableau = NULL;
 
         TS_ASSERT( tableau = new Tableau );
 
@@ -128,7 +128,7 @@ public:
 
     void test_initalize_basis_get_value()
     {
-        Tableau *tableau;
+        Tableau *tableau = NULL;
 
         TS_ASSERT( tableau = new Tableau );
 
@@ -173,7 +173,7 @@ public:
 
     void test_watcher__value_changes()
     {
-        Tableau *tableau;
+        Tableau *tableau = NULL;
 
         TS_ASSERT( tableau = new Tableau );
 
@@ -229,7 +229,7 @@ public:
 
     void test_get_entering_variable__have_eligible_variables()
     {
-        Tableau *tableau;
+        Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
 
         TS_ASSERT( tableau = new Tableau );
@@ -281,7 +281,7 @@ public:
 
     void test_get_entering_variable__no_eligible_variables()
     {
-        Tableau *tableau;
+        Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
 
         TS_ASSERT( tableau = new Tableau );
@@ -333,7 +333,7 @@ public:
 
     void test_get_get_leaving_variable()
     {
-        Tableau *tableau;
+        Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
 
         TS_ASSERT( tableau = new Tableau );
@@ -444,7 +444,7 @@ public:
 
     void test_perform_pivot_nonbasic_goes_to_opposite_bound()
     {
-        Tableau *tableau;
+        Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
 
         TS_ASSERT( tableau = new Tableau );
@@ -506,7 +506,7 @@ public:
 
     void test_perform_pivot_nonbasic_becomes_basic()
     {
-        Tableau *tableau;
+        Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
 
         TS_ASSERT( tableau = new Tableau );
@@ -584,7 +584,7 @@ public:
 
     void test_get_row()
     {
-        Tableau *tableau;
+        Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
 
         TS_ASSERT( tableau = new Tableau );
@@ -788,11 +788,12 @@ public:
         TS_ASSERT( FloatUtils::areEqual( entry._coefficient, -1 ) );
 
         TS_ASSERT_EQUALS( row._scalar, 69 );
+        TS_ASSERT_THROWS_NOTHING( delete tableau );
     }
 
     void test_degenerate_pivot()
     {
-        Tableau *tableau;
+        Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
 
         TS_ASSERT( tableau = new Tableau );
@@ -987,11 +988,13 @@ public:
         entry = row._row[3];
         TS_ASSERT_EQUALS( entry._var, 3U );
         TS_ASSERT_EQUALS( entry._coefficient, -1 );
+
+        TS_ASSERT_THROWS_NOTHING( delete tableau );
     }
 
     void test_store_and_restore()
     {
-        Tableau *tableau;
+        Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
 
         TS_ASSERT( tableau = new Tableau );
@@ -1055,7 +1058,7 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau->computeAssignment() );
 
         // Store the tableau
-        TableauState *tableauState;
+        TableauState *tableauState = NULL;
         TS_ASSERT( tableauState = new TableauState );
 
         TS_ASSERT_THROWS_NOTHING( tableau->storeState( *tableauState ) );
@@ -1121,7 +1124,7 @@ public:
 
     void test_add_equation()
     {
-        Tableau *tableau;
+        Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
 
         TS_ASSERT( tableau = new Tableau );
@@ -1278,7 +1281,7 @@ public:
 
     void test_tighten_bounds()
     {
-        Tableau *tableau;
+        Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
 
         TS_ASSERT( tableau = new Tableau );
@@ -1355,7 +1358,7 @@ public:
 
     void test_are_dependent()
     {
-        Tableau *tableau;
+        Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
 
         TS_ASSERT( tableau = new Tableau );

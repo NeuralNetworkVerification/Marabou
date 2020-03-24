@@ -19,7 +19,7 @@
 #include "CostFunctionManager.h"
 #include "MockErrno.h"
 #include "MockTableau.h"
-#include "ReluplexError.h"
+#include "MarabouError.h"
 
 #include <string.h>
 
@@ -45,7 +45,7 @@ public:
 
     void test_constructor()
     {
-        CostFunctionManager *manager;
+        CostFunctionManager *manager = NULL;
         MockTableau tableau;
         TS_ASSERT( manager = new CostFunctionManager( &tableau ) );
 
@@ -57,7 +57,7 @@ public:
 
     void test_compute_core_cost_function()
     {
-        CostFunctionManager *manager;
+        CostFunctionManager *manager = NULL;
         MockTableau tableau;
 
         unsigned n = 5;
@@ -117,7 +117,7 @@ public:
 
     void test_compute_cost_function()
     {
-        CostFunctionManager *manager;
+        CostFunctionManager *manager = NULL;
         MockTableau tableau;
 
         unsigned n = 5;

@@ -28,6 +28,10 @@
 #include "T/sys/stat.h"
 #include "T/unistd.h"
 
+#ifdef _WIN32
+#include <algorithm>
+#endif
+
 class MockForFile :
 	public RealMalloc,
     public MockErrno,

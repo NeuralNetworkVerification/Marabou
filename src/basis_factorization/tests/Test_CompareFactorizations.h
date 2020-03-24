@@ -48,10 +48,10 @@ public:
 
     void test_compare_ft_and_lu()
     {
-        ForrestTomlinFactorization *ft;
-        LUFactorization *lu;
-        SparseFTFactorization *sft;
-        SparseLUFactorization *slu;
+        ForrestTomlinFactorization *ft = NULL;
+        LUFactorization *lu = NULL;
+        SparseFTFactorization *sft = NULL;
+        SparseLUFactorization *slu = NULL;
 
         TS_ASSERT( ft = new ForrestTomlinFactorization( 4, *oracle ) );
         TS_ASSERT( lu = new LUFactorization( 4, *oracle ) );
