@@ -19,17 +19,13 @@
 #include <cstdlib>
 
 
-#define USE_DEBUG !NDEBUG
-
-
-
-#ifdef USE_DEBUG
+#ifndef NDEBUG
 #  define DEBUG(x) x
 #else
 #  define DEBUG(x)
 #endif
 
-#ifdef USE_DEBUG
+#ifndef NDEBUG
 #  define ASSERTM(x, y, ...)                     \
     {                                           \
         if ( !( x ) )                           \
@@ -42,7 +38,7 @@
 #  define ASSERTM(x, y, ...)
 #endif
 
-#ifdef USE_DEBUG
+#ifndef NDEBUG
 #  define ASSERT(x)                             \
     {                                           \
         if ( !( x ) )                           \
