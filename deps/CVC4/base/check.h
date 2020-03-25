@@ -204,7 +204,7 @@ class AssertArgumentException : public Exception
 
 #define InternalError() CVC4_FATAL() << "Internal error detected"
 
-#define IllegalArgument(arg, msg...)      \
+#define IllegalArgument(arg, msg, ...)    \
   throw ::CVC4::IllegalArgumentException( \
       "",                                 \
       #arg,                               \
@@ -212,7 +212,7 @@ class AssertArgumentException : public Exception
       ::CVC4::IllegalArgumentException::formatVariadic(msg).c_str());
 // This cannot use check argument directly as this forces
 // CheckArgument to use a va_list. This is unsupported in Swig.
-#define PrettyCheckArgument(cond, arg, msg...)                            \
+#define PrettyCheckArgument(cond, arg, msg, ...)                            \
   do                                                                      \
   {                                                                       \
     if (__builtin_expect((!(cond)), false))                               \
@@ -224,7 +224,7 @@ class AssertArgumentException : public Exception
           ::CVC4::IllegalArgumentException::formatVariadic(msg).c_str()); \
     }                                                                     \
   } while (0)
-#define AlwaysAssertArgument(cond, arg, msg...)                         \
+#define AlwaysAssertArgument(cond, arg, msg, ...)                         \
   do                                                                    \
   {                                                                     \
     if (__builtin_expect((!(cond)), false))                             \
@@ -235,15 +235,16 @@ class AssertArgumentException : public Exception
   } while (0)
 
 #ifdef CVC4_ASSERTIONS
-#define AssertArgument(cond, arg, msg...) AlwaysAssertArgument(cond, arg, ##msg)
-#define DebugCheckArgument(cond, arg, msg...) CheckArgument(cond, arg, ##msg)
+#define AssertArgument(cond, arg, msg, ...) AlwaysAssertArgument(cond, arg, ##msg)
+#define DebugCheckArgument(cond, arg, msg, ...) CheckArgument(cond, arg, ##msg)
 #else                                     /* ! CVC4_ASSERTIONS */
-#define AssertArgument(cond, arg, msg...) /*__builtin_expect( ( cond ), true \
+#define AssertArgument(cond, arg, msg, ...) /*__builtin_expect( ( cond ), true \
                                              )*/
 #define DebugCheckArgument( \
-    cond, arg, msg...) /*__builtin_expect( ( cond ), true )*/
+    cond, arg, msg, ...) /*__builtin_expect( ( cond ), true )*/
 #endif                 /* CVC4_ASSERTIONS */
 
 }  // namespace CVC4
 
-#endif /* CVC4__CHECK_H */
+#endif /* CVC4
+__CHECK_H */
