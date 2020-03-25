@@ -104,10 +104,10 @@ endif()
 add_definitions(-DRESOURCES_DIR="${RESOURCES_DIR}")
 
 if (NOT MSVC)
-    set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS} -g -DDEBUG_ON)
+    set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS} -g)
     set(CXXTEST_FLAGS ${DEBUG_FLAGS}  -Wno-ignored-qualifiers)
 else()
-    set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS} /DDEBUG_ON)
+    set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS}) 
     add_definitions(-DNOMINMAX) # remove min max macros
 endif()
 
