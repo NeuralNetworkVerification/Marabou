@@ -73,6 +73,12 @@ To enable multiprocess build change the last command to:
 ```
 cmake --build . -j PROC_NUM
 ```
+To compile in debug mode (default is release)
+```
+cmake .. -DCMAKE_BUILD_TYPE=Debug
+cmake --build .
+```
+
 The compiled binary will be in the *build* directory, named _Marabou_
 
 To run tests we use [ctest](https://cmake.org/cmake/help/v3.15/manual/ctest.1.html).
