@@ -1,41 +1,42 @@
-//
-// Created by shirana on 6/13/19.
-//
+/*********************                                                        */
+/*! \file Test_ReluConstraint.h
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Shiran Aziz
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
 
-#ifndef MARABOU_TEST_ABSCONSTRAINT_H
-#define MARABOU_TEST_ABSCONSTRAINT_H
-
-
+**/
 
 #include <cxxtest/TestSuite.h>
 
+#include "AbsError.h"
+#include "AbsoluteValueConstraint.h"
 #include "MockErrno.h"
 #include "MockTableau.h"
 #include "PiecewiseLinearCaseSplit.h"
-#include "AbsConstraint.h"
-#include "AbsError.h"
-
+#include <iostream>
 #include <string.h>
 
-
-#include <iostream>
-
-
-
-class MockForAbsConstraint
+class MockForAbsoluteValueConstraint
         : public MockErrno
 {
 public:
 };
 
-class AbsConstraintTestSuite : public CxxTest::TestSuite
+class AbsoluteValueConstraintTestSuite : public CxxTest::TestSuite
 {
 public:
-    MockForAbsConstraint *mock;
+    MockForAbsoluteValueConstraint *mock;
 
     void setUp()
     {
-        TS_ASSERT( mock = new MockForAbsConstraint );
+        TS_ASSERT( mock = new MockForAbsoluteValueConstraint );
     }
 
     void tearDown()
@@ -45,27 +46,27 @@ public:
 
     void test_abs_duplicate_and_restore()
     {
-        AbsConstraint *abs1 = new AbsConstraint( 4, 6 );
-        abs1->setActiveConstraint( false );
-        abs1->notifyVariableValue( 4, 1.0 );
-        abs1->notifyVariableValue( 6, 1.0 );
+        AbsoluteValueConstraint abs1( 4, 6 );
+        abs1.setActiveConstraint( false );
+        abs1.notifyVariableValue( 4, 1.0 );
+        abs1.notifyVariableValue( 6, 1.0 );
 
-        abs1->notifyLowerBound( 4, -8.0 );
-        abs1->notifyUpperBound( 4, 8.0 );
+        abs1.notifyLowerBound( 4, -8.0 );
+        abs1.notifyUpperBound( 4, 8.0 );
 
-        abs1->notifyLowerBound( 6, 0.0 );
-        abs1->notifyUpperBound( 6, 8.0 );
+        abs1.notifyLowerBound( 6, 0.0 );
+        abs1.notifyUpperBound( 6, 8.0 );
 
-        PiecewiseLinearConstraint *abs2 = abs1->duplicateConstraint();
+        PiecewiseLinearConstraint *abs2 = abs1.duplicateConstraint();
 
-        abs1->notifyVariableValue( 4, -2 );
+        abs1.notifyVariableValue( 4, -2 );
 
-        TS_ASSERT( !abs1->satisfied() );
+        TS_ASSERT( !abs1.satisfied() );
 
         TS_ASSERT( !abs2->isActive() );
         TS_ASSERT( abs2->satisfied() );
 
-        abs2->restoreState( abs1 );
+        abs2->restoreState( &abs1 );
         TS_ASSERT( !abs2->satisfied() );
 
         TS_ASSERT_THROWS_NOTHING( delete abs2 );
@@ -78,7 +79,7 @@ public:
 
         MockTableau tableau;
 
-        AbsConstraint abs( b, f );
+        AbsoluteValueConstraint abs( b, f );
 
         TS_ASSERT_THROWS_NOTHING( abs.registerAsWatcher( &tableau ) );
 
@@ -101,12 +102,12 @@ public:
         TS_ASSERT( tableau.lastUnregisteredVariableToWatcher[f].exists( &abs ) );
     }
 
-    void test_participatingVariable_and_getParticipatingVariables()
+    void test_participating_variables()
     {
         unsigned b = 1;
         unsigned f = 4;
 
-        AbsConstraint abs( b, f );
+        AbsoluteValueConstraint abs( b, f );
 
         List<unsigned> participatingVariables;
 
@@ -130,12 +131,12 @@ public:
 //                e.getCode(), ReluplexError::PARTICIPATING_VARIABLES_ABSENT );
     }
 
-    void test_abs_notifyVariableValue_and_satisfied()
+    void test_abs_notify_variable_value_and_satisfied()
     {
         unsigned b = 1;
         unsigned f = 4;
 
-        AbsConstraint abs( b, f );
+        AbsoluteValueConstraint abs( b, f );
 
         //x_b = x_f --> SAT
         abs.notifyVariableValue( b, 5 );
@@ -179,12 +180,12 @@ public:
         TS_ASSERT( !abs.satisfied() );
     }
 
-    void test_abs_updateVariableIndex()
+    void test_abs_update_variable_index()
     {
         unsigned b = 1;
         unsigned f = 4;
 
-        AbsConstraint abs( b, f );
+        AbsoluteValueConstraint abs( b, f );
 
         // Changing variable indices
         abs.notifyVariableValue( b, 1 );
@@ -208,7 +209,6 @@ public:
         TS_ASSERT( abs.satisfied() );
     }
 
-
     void test_abs_getPossibleFixes()
     {
         // Possible violations:
@@ -218,7 +218,7 @@ public:
         unsigned b = 1;
         unsigned f = 4;
 
-        AbsConstraint abs( b, f );
+        AbsoluteValueConstraint abs( b, f );
 
         List<PiecewiseLinearConstraint::Fix> fixes;
         List<PiecewiseLinearConstraint::Fix>::iterator it;
@@ -264,7 +264,7 @@ public:
 
         MockTableau tableau;
 
-        AbsConstraint abs( b, f );
+        AbsoluteValueConstraint abs( b, f );
 
         abs.registerAsWatcher( &tableau );
 
@@ -280,7 +280,7 @@ public:
 
         MockTableau tableau;
 
-        AbsConstraint abs( b, f );
+        AbsoluteValueConstraint abs( b, f );
 
         abs.registerAsWatcher( &tableau );
 
@@ -289,7 +289,7 @@ public:
         TS_ASSERT( abs.constraintObsolete() );
     }
 
-    void test_abs_Entailed_Tightenings_1()
+    void test_abs_entailed_tightenings_1()
     {
         /**
          * suppose A < x_b < B, C < x_f < D, remainder C >= 0 ,D > 0
@@ -298,7 +298,7 @@ public:
         unsigned b = 1;
         unsigned f = 4;
 
-        AbsConstraint abs( b, f );
+        AbsoluteValueConstraint abs( b, f );
         List<Tightening> entailedTightenings;
 
         // B = D , A < C
@@ -313,8 +313,8 @@ public:
 
         abs.notifyLowerBound( b, 3 );
         // B = D , A > C
-        //C < A < BD
-        //3 < x_b < 7 , 2 < x_f < 7
+        // C < A < BD
+        // 3 < x_b < 7 , 2 < x_f < 7
         entailedTightenings.clear();
         abs.getEntailedTightenings( entailedTightenings );
         assert_lower_upper_bound( f, b, 3, 2, 7, 7, entailedTightenings );
@@ -322,8 +322,8 @@ public:
         abs.notifyLowerBound( f, 3 );
         abs.notifyUpperBound( b, 6 );
         // B < D , A = C
-        //CA < B < D
-        //3 < x_b < 6 , 3 < x_f < 7
+        // CA < B < D
+        // 3 < x_b < 6 , 3 < x_f < 7
         entailedTightenings.clear();
         abs.getEntailedTightenings( entailedTightenings );
         assert_lower_upper_bound( f, b, 3, 3, 6, 7, entailedTightenings );
@@ -332,33 +332,33 @@ public:
         abs.notifyUpperBound( f, 6 );
         abs.notifyUpperBound( b, 7 );
         // B > D , A = C
-        //CA < B < D
-        //3 < x_b < 6 , 3 < x_f < 6
-        // --> x_b < 6
+        // CA < B < D
+        // 3 < x_b < 6 , 3 < x_f < 6
+        //  --> x_b < 6
         entailedTightenings.clear();
         abs.getEntailedTightenings( entailedTightenings );
         assert_lower_upper_bound( f, b, 3, 3, 6, 6, entailedTightenings );
 
         abs.notifyLowerBound( f, -3 );
-        //A > 0 & B > 0 & C < 0
+        // A > 0 & B > 0 & C < 0
         // B = D , A > C
-        //3 < x_b < 6 , 3 < x_f < 6
+        // 3 < x_b < 6 , 3 < x_f < 6
         // --> 3 < x_f
-        //CA < B < D
+        // CA < B < D
         entailedTightenings.clear();
         abs.getEntailedTightenings( entailedTightenings );
         assert_lower_upper_bound( f, b, 3, 3, 6, 6, entailedTightenings );
 
         abs.notifyLowerBound( b, 5 );
         abs.notifyUpperBound( f, 5 );
-        //C <DA<B
-        //5 < x_b < 6 , 3 < x_f < 5
+        // C <DA<B
+        // 5 < x_b < 6 , 3 < x_f < 5
         entailedTightenings.clear();
         abs.getEntailedTightenings( entailedTightenings );
         assert_lower_upper_bound(f, b, 5, 3, 6, 5, entailedTightenings );
     }
 
-    void test_abs_Entailed_Tightenings_2()
+    void test_abs_entailed_tightenings_2()
     {
         /**
          * A > 0 & B > 0 & C > 0
@@ -366,11 +366,11 @@ public:
         unsigned b = 1;
         unsigned f = 4;
 
-        AbsConstraint abs( b, f );
+        AbsoluteValueConstraint abs( b, f );
         List<Tightening> entailedTightenings;
 
         // A < B < C < D
-        //8 < b < 18, 48 < f < 64
+        // 8 < b < 18, 48 < f < 64
         abs.notifyUpperBound( b, 18 );
         abs.notifyUpperBound( f, 64 );
         abs.notifyLowerBound( b, 8 );
@@ -379,7 +379,7 @@ public:
         assert_lower_upper_bound(f, b, 8, 48, 18, 64, entailedTightenings);
     }
 
-    void test_abs_Entailed_Tightenings_3()
+    void test_abs_entailed_tightenings_3()
     {
         /**
          * A > 0 & B > 0 & C > 0
@@ -387,11 +387,11 @@ public:
         unsigned b = 1;
         unsigned f = 4;
 
-        AbsConstraint abs( b, f );
+        AbsoluteValueConstraint abs( b, f );
         List<Tightening> entailedTightenings;
 
         // C < D < A < B
-        //3 < b < 4, 1 < f < 2
+        // 3 < b < 4, 1 < f < 2
         abs.notifyUpperBound( b, 4 );
         abs.notifyUpperBound( f, 2 );
         abs.notifyLowerBound( b, 3 );
@@ -400,7 +400,7 @@ public:
         assert_lower_upper_bound( f, b, 3, 1, 4, 2, entailedTightenings );
     }
 
-    void test_abs_Entailed_Tightenings_4()
+    void test_abs_entailed_tightenings_4()
     {
         /**
          * suppose A < x_b < B, C < x_f < D, remainder C >= 0 ,D > 0
@@ -409,7 +409,7 @@ public:
         unsigned b = 1;
         unsigned f = 4;
 
-        AbsConstraint abs( b, f );
+        AbsoluteValueConstraint abs( b, f );
         List <Tightening> entailedTightenings;
         List<Tightening>::iterator it;
 
@@ -419,37 +419,37 @@ public:
         abs.notifyLowerBound( f, 0 );
 
         // B > D , A < C
-        //AC<D<B
+        // AC < D < B
         // 0 < x_b < 7 ,0 < x_f < 6
         abs.getEntailedTightenings( entailedTightenings );
         assert_lower_upper_bound( f, b, 0, 0, 7, 6, entailedTightenings );
 
         abs.notifyUpperBound( b, 5 );
-        //AC<B<D
+        // AC < B < D
         // 0 < x_b < 5 ,0 < x_f < 6
         entailedTightenings.clear();
         abs.getEntailedTightenings( entailedTightenings );
         assert_lower_upper_bound( f, b, 0, 0, 5, 6, entailedTightenings );
 
         abs.notifyLowerBound( b, 1 );
-        //C<A<B<D
+        // C < A < B < D
         // 1 < x_b < 5 ,0 < x_f < 6
         entailedTightenings.clear();
         abs.getEntailedTightenings( entailedTightenings );
         assert_lower_upper_bound( f, b, 1, 0, 5, 6, entailedTightenings );
 
         abs.notifyUpperBound( f, 4 );
-        //C<A<D<B
+        // C < A < D < B
         // 1 < x_b < 5 ,0 < x_f < 4
         entailedTightenings.clear();
         abs.getEntailedTightenings( entailedTightenings );
         assert_lower_upper_bound( f, b, 1, 0, 5, 4, entailedTightenings );
 
-        //non overlap
+        // Non overlap
         abs.notifyUpperBound( f, 2 );
         abs.notifyLowerBound( b, 3 );
 
-        //C<D<A<B
+        // C < D < A < B
         // 3 < x_b < 5 ,0 < x_f < 2
         entailedTightenings.clear();
         abs.getEntailedTightenings( entailedTightenings );
@@ -457,15 +457,16 @@ public:
         assert_lower_upper_bound( f, b, 3, 0, 5, 2, entailedTightenings );
     }
 
-    void test_abs_Entailed_Tightenings_5() {
+    void test_abs_entailed_tightenings_5()
+    {
         /**
-         * suppose A < x_b < B, C < x_f < D, remainder C >= 0 ,D > 0
+         * Suppose A < x_b < B, C < x_f < D, remainder C >= 0 ,D > 0
          * A > 0 & B > 0 & C >0
          */
         unsigned b = 1;
         unsigned f = 4;
 
-        AbsConstraint abs( b, f );
+        AbsoluteValueConstraint abs( b, f );
         List <Tightening> entailedTightenings;
 
         abs.notifyUpperBound( b, 6 );
@@ -473,14 +474,14 @@ public:
         abs.notifyLowerBound( b, 4 );
         abs.notifyLowerBound( f, 3 );
 
-        //C<A<D<B
+        // C < A < D < B
         // 4 < x_b < 6 ,3 < x_f < 5
         entailedTightenings.clear();
         abs.getEntailedTightenings( entailedTightenings );
         assert_lower_upper_bound( f, b, 4, 3, 6, 5, entailedTightenings );
     }
 
-    void test_abs_Entailed_Tightenings_6()
+    void test_abs_entailed_tightenings_6()
     {
         /**
          * suppose A < x_b < B, C < x_f < D, remainder C >= 0 ,D > 0
@@ -489,7 +490,7 @@ public:
         unsigned b = 1;
         unsigned f = 4;
 
-        AbsConstraint abs( b, f );
+        AbsoluteValueConstraint abs( b, f );
         List <Tightening> entailedTightenings;
         List<Tightening>::iterator it;
 
@@ -499,7 +500,7 @@ public:
         abs.notifyLowerBound( f, 2 );
 
         // B < D , A < C
-        //A<0<C<B<D
+        // A < 0 < C < B < D
         // -6 < x_b < 3 ,2 < x_f < 4
         abs.getEntailedTightenings( entailedTightenings );
         TS_ASSERT_EQUALS( entailedTightenings.size(), 1U );
@@ -509,7 +510,7 @@ public:
         TS_ASSERT_EQUALS( it->_type, Tightening::LB );
 
         abs.notifyUpperBound( b, 2 );
-        //A<0<B<C<D
+        // A < 0 < B < C < D
         // -6 < x_b < 2 ,2 < x_f < 4
         entailedTightenings.clear();
         abs.getEntailedTightenings( entailedTightenings );
@@ -519,9 +520,9 @@ public:
         TS_ASSERT_EQUALS( it->_value, -4 );
         TS_ASSERT_EQUALS( it->_type, Tightening::LB );
 
-        //non overlap
+        // Non overlap
         abs.notifyUpperBound( b, 1 );
-        //A<0<B<C<D
+        // A < 0 < B < C < D
         // -6 < x_b < 1 ,2 < x_f < 4
         entailedTightenings.clear();
         abs.getEntailedTightenings( entailedTightenings );
@@ -536,16 +537,16 @@ public:
         TS_ASSERT_EQUALS( it->_type, Tightening::UB );
     }
 
-    void test_abs_Entailed_Tightenings_7()
+    void test_abs_entailed_tightenings_7()
     {
         /**
-         * suppose A < x_b < B, C < x_f < D, remainder C >= 0 ,D > 0
+         * Suppose A < x_b < B, C < x_f < D, remainder C >= 0 ,D > 0
          * A < 0 & B > 0 & C > 0
          */
         unsigned b = 1;
         unsigned f = 4;
 
-        AbsConstraint abs( b, f );
+        AbsoluteValueConstraint abs( b, f );
         List <Tightening> entailedTightenings;
         List<Tightening>::iterator it;
 
@@ -555,7 +556,7 @@ public:
         abs.notifyLowerBound( b, -5 );
         abs.notifyLowerBound( f, 3 );
 
-        //A<0<C<D<B
+        // A < 0 < C < D < B
         // -5 < x_b < 10 ,3 < x_f < 7
         abs.getEntailedTightenings( entailedTightenings );
         TS_ASSERT_EQUALS( entailedTightenings.size(), 1U );
@@ -565,7 +566,7 @@ public:
         TS_ASSERT_EQUALS( it->_type, Tightening::UB );
 
         abs.notifyLowerBound( f, 6 );
-        //A<0<C<D<B
+        // A < 0 < C < D < B
         // -5 < x_b < 10 ,6 < x_f < 7
         entailedTightenings.clear();
         abs.getEntailedTightenings( entailedTightenings );
@@ -580,7 +581,7 @@ public:
         TS_ASSERT_EQUALS( it->_type, Tightening::UB );
 
         abs.notifyUpperBound( b, 3 );
-        //A<0<C<D<B
+        // A < 0 < C < D < B
         // -5 < x_b < 3 ,6 < x_f < 7
         entailedTightenings.clear();
         abs.getEntailedTightenings( entailedTightenings );
@@ -599,16 +600,16 @@ public:
         TS_ASSERT_EQUALS( it->_type, Tightening::UB );
     }
 
-    void test_abs_Entailed_Tightenings_8()
+    void test_abs_entailed_tightenings_8()
     {
         /**
-         * suppose A < x_b < B, C < x_f < D, remainder C >= 0 ,D > 0
+         * Suppose A < x_b < B, C < x_f < D, remainder C >= 0 ,D > 0
          * A < 0 & B > 0 & C = 0
          */
         unsigned b = 1;
         unsigned f = 4;
 
-        AbsConstraint abs( b, f );
+        AbsoluteValueConstraint abs( b, f );
         List <Tightening> entailedTightenings;
         List<Tightening>::iterator it;
 
@@ -665,16 +666,16 @@ public:
         assert_lower_upper_bound( f, b, 3, 0, 5, 6, entailedTightenings );
     }
 
-    void test_abs_Entailed_Tightenings_9()
+    void test_abs_entailed_tightenings_9()
     {
         /**
-         * suppose A < x_b < B, C < x_f < D, remainder C >= 0 ,D > 0
+         * Suppose A < x_b < B, C < x_f < D, remainder C >= 0 ,D > 0
          * A < 0 & B < 0 & C > 0
          */
         unsigned b = 1;
         unsigned f = 4;
 
-        AbsConstraint abs( b, f );
+        AbsoluteValueConstraint abs( b, f );
         List <Tightening> entailedTightenings;
         List<Tightening>::iterator it;
 
@@ -706,15 +707,16 @@ public:
         assert_lower_upper_bound( f, b, 8, -15, 12, -7, entailedTightenings );
     }
 
-    void test_abs_Entailed_Tightenings_10() {
+    void test_abs_entailed_tightenings_10()
+    {
         /**
-         * suppose A < x_b < B, C < x_f < D, remainder C >= 0 ,D > 0
+         * Suppose A < x_b < B, C < x_f < D, remainder C >= 0 ,D > 0
          * A < 0 & B < 0 & C > 0
          */
         unsigned b = 1;
         unsigned f = 4;
 
-        AbsConstraint abs( b, f );
+        AbsoluteValueConstraint abs( b, f );
         List <Tightening> entailedTightenings;
         List<Tightening>::iterator it;
 
@@ -728,15 +730,16 @@ public:
         assert_lower_upper_bound(f, b, 2, -30, 20, -25, entailedTightenings );
     }
 
-    void test_abs_Entailed_Tightenings_11(){
+    void test_abs_entailed_tightenings_11()
+    {
         /**
-         * suppose A < x_b < B, C < x_f < D, remainder C >= 0 ,D > 0
+         * Suppose A < x_b < B, C < x_f < D, remainder C >= 0 ,D > 0
          * A < 0 & B > 0 & C > 0
          */
         unsigned b = 1;
         unsigned f = 4;
 
-        AbsConstraint abs(b, f);
+        AbsoluteValueConstraint abs(b, f);
         List <Tightening> entailedTightenings;
         List<Tightening>::iterator it;
 
@@ -762,16 +765,16 @@ public:
         TS_ASSERT_EQUALS( it->_type, Tightening::UB );
     }
 
-  void test_abs_Entailed_Tightenings_12()
+  void test_abs_entailed_tightenings_12()
   {
       /**
-       * suppose A < x_b < B, C < x_f < D, remainder C >= 0 ,D > 0
+       * Suppose A < x_b < B, C < x_f < D, remainder C >= 0 ,D > 0
        * A > 0 & B > 0 & C >0
        */
         unsigned b = 1;
         unsigned f = 4;
 
-        AbsConstraint abs( b, f );
+        AbsoluteValueConstraint abs( b, f );
         List<Tightening> entailedTightenings;
         List<Tightening>::iterator it;
 
@@ -780,7 +783,7 @@ public:
         abs.notifyUpperBound( f, 10 );
         abs.notifyUpperBound( b, 10 );
         abs.notifyLowerBound( f, -1 );
-        TS_ASSERT_EQUALS( abs.get_lower_bound( f ), -1 );
+        TS_ASSERT_EQUALS( abs.getLowerBound( f ), -1 );
         abs.notifyLowerBound( b, 5 );
         TS_ASSERT( abs.phaseFixed() );
         abs.getEntailedTightenings( entailedTightenings );
@@ -807,40 +810,12 @@ public:
         TS_ASSERT_EQUALS( it->_type, Tightening::UB );
     }
 
-
-    void print_bounds(AbsConstraint abs, unsigned b, unsigned f)
-    {
-        TS_TRACE("b upper bound");
-        TS_TRACE(abs.get_upper_bound(b));
-        TS_TRACE("f upper bound");
-        TS_TRACE(abs.get_upper_bound(f));
-
-        TS_TRACE("b lower bound");
-        TS_TRACE(abs.get_lower_bound(b));
-        TS_TRACE("f lower bound");
-        TS_TRACE(abs.get_lower_bound(f));
-    }
-
-
-    void print_entailed_Tightenings(List<Tightening> entailedTightenings) {
-        List<Tightening>::iterator it;
-        it = entailedTightenings.begin();
-
-        for (unsigned int i = 0; i < entailedTightenings.size(); i++) {
-            TS_TRACE("entailedTightenings var, value, type");
-            TS_TRACE(it->_variable);
-            TS_TRACE(it->_value);
-            TS_TRACE(it->_type);
-            it++;
-        }
-    }
-
     void test_abs_case_splits()
     {
         unsigned b = 1;
         unsigned f = 4;
 
-        AbsConstraint abs( b, f );
+        AbsoluteValueConstraint abs( b, f );
 
         List<PiecewiseLinearConstraint::Fix> fixes;
         List<PiecewiseLinearConstraint::Fix>::iterator it;
@@ -926,13 +901,14 @@ public:
         return true;
     }
 
-    void test_fix_positive_and_negative() {
+    void test_fix_positive_and_negative()
+    {
         unsigned b = 1;
         unsigned f = 4;
 
         MockTableau tableau;
 
-        AbsConstraint abs(b, f);
+        AbsoluteValueConstraint abs(b, f);
 
         abs.registerAsWatcher(&tableau);
 
@@ -947,8 +923,7 @@ public:
 
         abs.unregisterAsWatcher(&tableau);
 
-        abs = AbsConstraint( b, f );
-
+        abs = AbsoluteValueConstraint( b, f );
 
         abs.registerAsWatcher( &tableau );
 
@@ -973,58 +948,57 @@ public:
 
         // Upper bounds
         {
-            AbsConstraint abs( b, f );
+            AbsoluteValueConstraint abs( b, f );
             TS_ASSERT( !abs.phaseFixed() );
             abs.notifyUpperBound( b, -1.0 );
             TS_ASSERT( abs.phaseFixed() );
         }
 
         {
-            AbsConstraint abs( b, f );
+            AbsoluteValueConstraint abs( b, f );
             TS_ASSERT( !abs.phaseFixed() );
             abs.notifyUpperBound( b, 0.0 );
             TS_ASSERT( abs.phaseFixed() );
         }
 
         {
-            AbsConstraint abs( b, f );
+            AbsoluteValueConstraint abs( b, f );
             TS_ASSERT( !abs.phaseFixed() );
             abs.notifyUpperBound( f, 5 );
             TS_ASSERT( !abs.phaseFixed() );
         }
 
         {
-            AbsConstraint abs( b, f );
+            AbsoluteValueConstraint abs( b, f );
             TS_ASSERT( !abs.phaseFixed() );
             abs.notifyUpperBound( b, 3.0 );
             TS_ASSERT( !abs.phaseFixed() );
         }
 
-
         // Lower bounds
         {
-            AbsConstraint abs( b, f );
+            AbsoluteValueConstraint abs( b, f );
             TS_ASSERT( !abs.phaseFixed() );
             abs.notifyLowerBound( b, 3.0 );
             TS_ASSERT( abs.phaseFixed() );
         }
 
         {
-            AbsConstraint abs( b, f );
+            AbsoluteValueConstraint abs( b, f );
             TS_ASSERT( !abs.phaseFixed() );
             abs.notifyLowerBound( b, 0.0 );
             TS_ASSERT( abs.phaseFixed() );
         }
 
         {
-            AbsConstraint abs( b, f );
+            AbsoluteValueConstraint abs( b, f );
             TS_ASSERT( !abs.phaseFixed() );
             abs.notifyLowerBound( f, 6.0 );
             TS_ASSERT( !abs.phaseFixed() );
         }
 
         {
-            AbsConstraint abs( b, f );
+            AbsoluteValueConstraint abs( b, f );
             TS_ASSERT( !abs.phaseFixed() );
             abs.notifyLowerBound( b, -2.5 );
             TS_ASSERT( !abs.phaseFixed() );
@@ -1036,7 +1010,7 @@ public:
         unsigned b = 1;
         unsigned f = 4;
 
-        AbsConstraint abs( b, f );
+        AbsoluteValueConstraint abs( b, f );
 
         List<PiecewiseLinearConstraint::Fix> fixes;
         List<PiecewiseLinearConstraint::Fix>::iterator it;
@@ -1082,7 +1056,7 @@ public:
         unsigned b = 1;
         unsigned f = 4;
 
-        AbsConstraint abs( b, f );
+        AbsoluteValueConstraint abs( b, f );
 
         List<PiecewiseLinearConstraint::Fix> fixes;
         List<PiecewiseLinearConstraint::Fix>::iterator it;
@@ -1145,8 +1119,12 @@ public:
         TS_ASSERT_EQUALS( it->_value, bUpper);
         TS_ASSERT_EQUALS( it->_type, Tightening::UB );
     }
-
-
 };
 
-#endif //MARABOU_TEST_ABSCONSTRAINT_H
+//
+// Local Variables:
+// compile-command: "make -C ../../.. "
+// tags-file-name: "../../../TAGS"
+// c-basic-offset: 4
+// End:
+//
