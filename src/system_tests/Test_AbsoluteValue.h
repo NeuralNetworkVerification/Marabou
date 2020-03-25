@@ -16,6 +16,7 @@
 #include <cxxtest/TestSuite.h>
 
 #include "AbsoluteValueConstraint.h"
+#include "AcasParser.h"
 #include "Engine.h"
 #include "FloatUtils.h"
 #include "InputQuery.h"
@@ -50,7 +51,7 @@ public:
         //    1 variable for sum( x''i )
 
         unsigned numVariables = inputQuery.getNumberOfVariables();
-        inputQuery.setNumberOfVariables( num_variables + 11 );
+        inputQuery.setNumberOfVariables( numVariables + 11 );
 
         // x_i - x'_i = b -> x_i - b = x'_i
         for ( unsigned i = 0; i < 5; ++i )
@@ -62,7 +63,7 @@ public:
             equation.addAddend( 1, variable );
 
             // x'_i - new variable
-            equation.addAddend( -1 , num_variables + i );
+            equation.addAddend( -1 , numVariables + i );
 
             equation.setScalar( b );
             inputQuery.addEquation( equation );
@@ -71,24 +72,25 @@ public:
         // x''_i = abs( x'_i ) = abs( x_i - b )
         for ( unsigned i = 0; i < 5; ++i )
         {
-            AbsConstraint *abs = new AbsConstraint( numVariables + i, numVariables + i + 5 );
+            AbsoluteValueConstraint *abs = new AbsoluteValueConstraint
+                ( numVariables + i, numVariables + i + 5 );
             inputQuery.addPiecewiseLinearConstraint( abs );
         }
 
         // t = sum( x''_i ) , 0 <= i <= 5
         //  -> sum( abs( x'_i ) ) = sum( abs( x_i - b ) ) , 0 <= i <= 5
         Equation equation;
-        equation.addAddend( -1, num_variables + 10 );
+        equation.addAddend( -1, numVariables + 10 );
         for ( unsigned i = 0; i < 5; ++i )
         {
-            equation.addAddend( 1, num_variables + i + 5 );
+            equation.addAddend( 1, numVariables + i + 5 );
         }
         equation.setScalar( 0 );
         inputQuery.addEquation(equation);
 
         // t <= bound
         const unsigned bound = 5;
-        inputQuery.setUpperBound( num_variables + 10, bound );
+        inputQuery.setUpperBound( numVariables + 10, bound );
 
         // Add the equation minVar >= runnerUp
         const unsigned minVarIndex = 0;
@@ -105,17 +107,10 @@ public:
         inputQuery.addEquation( equationOut );
 
         // Run the query
-        struct timespec start = TimeUtils::sampleMicro();
         Engine engine;
-        if ( !engine.processInputQuery( inputQuery ) )
-        {
-            struct timespec end = TimeUtils::sampleMicro();
-            printFailed( "acas_abs_constraints - engine error ", start, end );
-            return;
-        }
+        TS_ASSERT( engine.processInputQuery( inputQuery ) );
 
         bool result = engine.solve();
-        struct timespec end = TimeUtils::sampleMicro();
         if ( !result )
         {
             // No counter example found, this is acceptable
@@ -136,7 +131,7 @@ public:
         double runnerUpOut = outputs[runnerUpIndex];
 
         // Check whether minVar >= runnerUp, as we asked
-        TS_ASSERT( FloatUtils::gt(  min_var_out , variable_out ) );
+        TS_ASSERT( FloatUtils::gt( minVarOut , runnerUpOut ) );
 
         // Check whether the sum of inptus <= BOUND
         double sum = 0.0;
