@@ -46,7 +46,7 @@ ReluConstraint::ReluConstraint( const String &serializedRelu )
     String constraintType = serializedRelu.substring( 0, 4 );
     ASSERT( constraintType == String( "relu" ) );
 
-    // remove the constraint type in serialized form
+    // Remove the constraint type in serialized form
     String serializedValues = serializedRelu.substring( 5, serializedRelu.length() - 5 );
     List<String> values = serializedValues.tokenize( "," );
 
