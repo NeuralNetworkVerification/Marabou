@@ -15,11 +15,10 @@
 
 #include <cxxtest/TestSuite.h>
 
-#include "Engine.h"
-#include "InputQuery.h"
-#include "FloatUtils.h"
 #include "AbsoluteValueConstraint.h"
-
+#include "Engine.h"
+#include "FloatUtils.h"
+#include "InputQuery.h"
 
 class AbsoluteValueTestSuite : public CxxTest::TestSuite
 {

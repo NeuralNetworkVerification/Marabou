@@ -1,16 +1,30 @@
+/*********************                                                        */
+/*! \file ReluConstraint.cpp
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Shiran Aziz, Guy Katz
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+ **/
+
 #include <stdio.h>
 
-#include "AbsConstraint.h"
-#include "ITableau.h"
-#include "FloatUtils.h"
 #include "AbsError.h"
-#include "Debug.h"
-#include "PiecewiseLinearCaseSplit.h"
-#include "MStringf.h"
-#include "Statistics.h"
+#include "AbsoluteValueConstraint.h"
 #include "ConstraintBoundTightener.h"
+#include "Debug.h"
+#include "FloatUtils.h"
+#include "ITableau.h"
+#include "MStringf.h"
+#include "PiecewiseLinearCaseSplit.h"
+#include "Statistics.h"
 
-AbsConstraint::AbsConstraint( unsigned b, unsigned f )
+AbsoluteValueConstraint::AbsoluteValueConstraint( unsigned b, unsigned f )
 //var names
         : _b( b )
         , _f( f )
@@ -21,26 +35,26 @@ AbsConstraint::AbsConstraint( unsigned b, unsigned f )
     setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
 }
 
-PiecewiseLinearConstraint *AbsConstraint::duplicateConstraint() const
+PiecewiseLinearConstraint *AbsoluteValueConstraint::duplicateConstraint() const
 {
-    AbsConstraint *clone = new AbsConstraint( _b, _f );
+    AbsoluteValueConstraint *clone = new AbsoluteValueConstraint( _b, _f );
     *clone = *this;
     return clone;
 }
 
-void AbsConstraint::restoreState( const PiecewiseLinearConstraint *state )
+void AbsoluteValueConstraint::restoreState( const PiecewiseLinearConstraint *state )
 {
-    const AbsConstraint *abs = dynamic_cast<const AbsConstraint *>( state );
+    const AbsoluteValueConstraint *abs = dynamic_cast<const AbsoluteValueConstraint *>( state );
     *this = *abs;
 }
 
-void AbsConstraint::registerAsWatcher( ITableau *tableau )
+void AbsoluteValueConstraint::registerAsWatcher( ITableau *tableau )
 {
     tableau->registerToWatchVariable( this, _b );
     tableau->registerToWatchVariable( this, _f );
 }
 
-void AbsConstraint::unregisterAsWatcher( ITableau *tableau )
+void AbsoluteValueConstraint::unregisterAsWatcher( ITableau *tableau )
 {
     tableau->unregisterToWatchVariable( this, _b );
     tableau->unregisterToWatchVariable( this, _f );
@@ -57,12 +71,12 @@ void AbsConstraint::unregisterAsWatcher( ITableau *tableau )
   if variable == x_f then:
     C > 0 & D > 0 then: min{max{-D, A}, max{A, C}} < x_b < max{min{-C, A}, min{B, D}}
 */
-void AbsConstraint::notifyVariableValue( unsigned variable, double value )
+void AbsoluteValueConstraint::notifyVariableValue( unsigned variable, double value )
 {
     _assignment[variable] = value;
 }
 
-void AbsConstraint::notifyLowerBound( unsigned variable, double bound )
+void AbsoluteValueConstraint::notifyLowerBound( unsigned variable, double bound )
 {
     if ( _statistics )
         _statistics->incNumBoundNotificationsPlConstraints();
@@ -123,7 +137,7 @@ void AbsConstraint::notifyLowerBound( unsigned variable, double bound )
     }
 }
 
-void AbsConstraint::notifyUpperBound( unsigned variable, double bound )
+void AbsoluteValueConstraint::notifyUpperBound( unsigned variable, double bound )
 {
     if ( _statistics )
         _statistics->incNumBoundNotificationsPlConstraints();
@@ -182,17 +196,17 @@ void AbsConstraint::notifyUpperBound( unsigned variable, double bound )
     }
 }
 
-bool AbsConstraint::participatingVariable(unsigned variable ) const
+bool AbsoluteValueConstraint::participatingVariable(unsigned variable ) const
 {
     return ( variable == _b ) || ( variable == _f );
 }
 
-List<unsigned> AbsConstraint::getParticipatingVariables() const
+List<unsigned> AbsoluteValueConstraint::getParticipatingVariables() const
 {
     return List<unsigned>( { _b, _f } );
 }
 
-bool AbsConstraint::satisfied() const
+bool AbsoluteValueConstraint::satisfied() const
 {
     if ( !( _assignment.exists( _b ) && _assignment.exists( _f ) ) )
         throw AbsError( AbsError::PARTICIPATING_VARIABLES_ABSENT );
@@ -210,7 +224,7 @@ bool AbsConstraint::satisfied() const
     return FloatUtils::areEqual( FloatUtils::abs(bValue), fValue, GlobalConfiguration::ABS_CONSTRAINT_COMPARISON_TOLERANCE);
 }
 
-List<PiecewiseLinearConstraint::Fix> AbsConstraint::getPossibleFixes() const
+List<PiecewiseLinearConstraint::Fix> AbsoluteValueConstraint::getPossibleFixes() const
 {
     ASSERT( !satisfied() );
     ASSERT( _assignment.exists( _b ) );
@@ -233,12 +247,12 @@ List<PiecewiseLinearConstraint::Fix> AbsConstraint::getPossibleFixes() const
     return fixes;
 }
 
-List<PiecewiseLinearConstraint::Fix> AbsConstraint::getSmartFixes( __attribute__((unused)) ITableau *tableau ) const
+List<PiecewiseLinearConstraint::Fix> AbsoluteValueConstraint::getSmartFixes( __attribute__((unused)) ITableau *tableau ) const
 {
     return getPossibleFixes();
 }
 
-List<PiecewiseLinearCaseSplit> AbsConstraint::getCaseSplits() const
+List<PiecewiseLinearCaseSplit> AbsoluteValueConstraint::getCaseSplits() const
 {
     if ( _phaseStatus != PhaseStatus::PHASE_NOT_FIXED )
         throw AbsError( AbsError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
@@ -251,7 +265,7 @@ List<PiecewiseLinearCaseSplit> AbsConstraint::getCaseSplits() const
     return splits;
 }
 
-PiecewiseLinearCaseSplit AbsConstraint::getNegativeSplit() const {
+PiecewiseLinearCaseSplit AbsoluteValueConstraint::getNegativeSplit() const {
     // Negative phase: b <=0, b + f = 0
     PiecewiseLinearCaseSplit negativePhase;
 
@@ -268,7 +282,7 @@ PiecewiseLinearCaseSplit AbsConstraint::getNegativeSplit() const {
     return negativePhase;
 }
 
-PiecewiseLinearCaseSplit AbsConstraint::getPositiveSplit() const {
+PiecewiseLinearCaseSplit AbsoluteValueConstraint::getPositiveSplit() const {
     // Positive phase: b >= 0, b - f = 0
     PiecewiseLinearCaseSplit positivePhase;
 
@@ -285,12 +299,12 @@ PiecewiseLinearCaseSplit AbsConstraint::getPositiveSplit() const {
     return positivePhase;
 }
 
-bool AbsConstraint::phaseFixed() const
+bool AbsoluteValueConstraint::phaseFixed() const
 {
     return _phaseStatus != PhaseStatus::PHASE_NOT_FIXED;
 }
 
-PiecewiseLinearCaseSplit AbsConstraint::getValidCaseSplit() const
+PiecewiseLinearCaseSplit AbsoluteValueConstraint::getValidCaseSplit() const
 {
     ASSERT( _phaseStatus != PhaseStatus::PHASE_NOT_FIXED );
 
@@ -300,7 +314,7 @@ PiecewiseLinearCaseSplit AbsConstraint::getValidCaseSplit() const
     return getNegativeSplit();
 }
 
-void AbsConstraint::eliminateVariable(__attribute__((unused)) unsigned variable,
+void AbsoluteValueConstraint::eliminateVariable(__attribute__((unused)) unsigned variable,
                                       __attribute__((unused)) double fixedValue )
 {
     ASSERT( variable == _b || variable == _f );
@@ -309,7 +323,7 @@ void AbsConstraint::eliminateVariable(__attribute__((unused)) unsigned variable,
     _haveEliminatedVariables = true;
 }
 
-void AbsConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
+void AbsoluteValueConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
     ASSERT( oldIndex == _b || oldIndex == _f );
     ASSERT( !_assignment.exists( newIndex ) &&
@@ -340,7 +354,7 @@ void AbsConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
         _f = newIndex;
 }
 
-bool AbsConstraint::constraintObsolete() const
+bool AbsoluteValueConstraint::constraintObsolete() const
 {
     return _haveEliminatedVariables;
 }
@@ -348,7 +362,7 @@ bool AbsConstraint::constraintObsolete() const
 /*
   Get the tightenings entailed by the constraint.
 */
-void AbsConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
+void AbsoluteValueConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
 {
     if (! _lowerBounds.exists( _f ))
     {
@@ -432,20 +446,28 @@ void AbsConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
     }
 }
 
-void AbsConstraint::getAuxiliaryEquations( __attribute__((unused)) List<Equation> &newEquations ) const {}
+void AbsoluteValueConstraint::getAuxiliaryEquations( __attribute__((unused)) List<Equation> &newEquations ) const {}
 
-String AbsConstraint::serializeToString() const
+String AbsoluteValueConstraint::serializeToString() const
 {
     // Output format is: Abs,f,b
     return Stringf( "Abs,%u,%u", _f, _b );
 }
 
-void AbsConstraint::setPhaseStatus( PhaseStatus phaseStatus )
+void AbsoluteValueConstraint::setPhaseStatus( PhaseStatus phaseStatus )
 {
     _phaseStatus = phaseStatus;
 }
 
-bool AbsConstraint::supportsSymbolicBoundTightening() const
+bool AbsoluteValueConstraint::supportsSymbolicBoundTightening() const
 {
     return false;
 }
+
+//
+// Local Variables:
+// compile-command: "make -C ../.. "
+// tags-file-name: "../../TAGS"
+// c-basic-offset: 4
+// End:
+//

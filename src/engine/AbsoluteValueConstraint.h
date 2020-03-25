@@ -1,13 +1,24 @@
-//
-// Created by shirana on 5/22/19.
-//
+/*********************                                                        */
+/*! \file ReluConstraint.h
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Shiran Aziz, Guy Katz
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
 
-#ifndef MARABOU_ABSCONSTRAINT_H
-#define MARABOU_ABSCONSTRAINT_H
+ **/
+
+#ifndef __AbsoluteValueConstraint_h__
+#define __AbsoluteValueConstraint_h__
 
 #include "PiecewiseLinearConstraint.h"
 
-class AbsConstraint : public PiecewiseLinearConstraint
+class AbsoluteValueConstraint : public PiecewiseLinearConstraint
 {
 
 public:
@@ -17,7 +28,7 @@ public:
         PHASE_NEGATIVE = 2,
     };
 
-    AbsConstraint(unsigned b, unsigned f );
+    AbsoluteValueConstraint(unsigned b, unsigned f );
 
     /*
     Return a clone of the constraint.
@@ -93,7 +104,7 @@ public:
      */
     void eliminateVariable( unsigned variable, double fixedValue );
     void updateVariableIndex( unsigned oldIndex, unsigned newIndex );
-    
+
     /*
      * check if the constraint is redundant
      * return true iff and the constraint has become obsolote
@@ -137,4 +148,12 @@ private:
     void setPhaseStatus( PhaseStatus phaseStatus );
 };
 
-#endif //MARABOU_ABSCONSTRAINT_H
+#endif // __AbsoluteValueConstraint_h__
+
+//
+// Local Variables:
+// compile-command: "make -C ../.. "
+// tags-file-name: "../../TAGS"
+// c-basic-offset: 4
+// End:
+//
