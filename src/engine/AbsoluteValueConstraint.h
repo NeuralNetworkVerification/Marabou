@@ -28,29 +28,28 @@ public:
         PHASE_NEGATIVE = 2,
     };
 
-    AbsoluteValueConstraint(unsigned b, unsigned f );
+    AbsoluteValueConstraint( unsigned b, unsigned f );
 
     /*
-    Return a clone of the constraint.
-  */
+      Return a clone of the constraint.
+    */
     PiecewiseLinearConstraint *duplicateConstraint() const;
 
     /*
       Restore the state of this constraint from the given one.
     */
-    void restoreState(const PiecewiseLinearConstraint *state);
+    void restoreState( const PiecewiseLinearConstraint *state );
 
     /*
       Register/unregister the constraint with a talbeau.
      */
-    void registerAsWatcher(ITableau *tableau);
-
-    void unregisterAsWatcher(ITableau *tableau);
+    void registerAsWatcher( ITableau *tableau);
+    void unregisterAsWatcher( ITableau *tableau);
 
     /*
-    These callbacks are invoked when a watched variable's value
-    changes, or when its bounds change.
-  */
+      These callbacks are invoked when a watched variable's value
+      changes, or when its bounds change.
+    */
     void notifyVariableValue( unsigned variable, double value );
     void notifyLowerBound( unsigned variable, double bound );
     void notifyUpperBound( unsigned variable, double bound );
@@ -59,7 +58,7 @@ public:
        Returns true iff the variable participates in this piecewise
        linear constraint.
      */
-    bool participatingVariable(unsigned variable) const;
+    bool participatingVariable( unsigned variable ) const;
 
     /*
       Get the list of variables participating in this constraint.
@@ -72,23 +71,27 @@ public:
     bool satisfied() const;
 
     /*
-    Returns a list of possible fixes for the violated constraint.
+      Returns a list of possible fixes for the violated constraint.
     */
     List<PiecewiseLinearConstraint::Fix> getPossibleFixes() const;
 
     /*
-     * call to get possible fixes todo:add some heuristic
-     */
+      Return a list of smart fixes for violated constraint.
+      Currently not implemented, just calls getPossibleFixes().
+    */
     List<PiecewiseLinearConstraint::Fix> getSmartFixes( ITableau *tableau ) const;
 
     /*
-     * call to getNegativeSplit() and getPositiveSplit() todo:add some heuristic
-     */
+      Returns the list of case splits that this piecewise linear
+      constraint breaks into. These splits need to complementary,
+      i.e. if the list is {l1, l2, ..., ln-1, ln},
+      then ~l1 /\ ~l2 /\ ... /\ ~ln-1 --> ln.
+    */
     List<PiecewiseLinearCaseSplit> getCaseSplits() const;
 
     /*
-     * Check if the constraint's phase has been fixed.
-     */
+      Check if the constraint's phase has been fixed.
+    */
     bool phaseFixed() const;
 
     /*
@@ -97,55 +100,63 @@ public:
     PiecewiseLinearCaseSplit getValidCaseSplit() const;
 
     /*
-      Preprocessing related functions, to inform that a variable has been eliminated completely
-      because it was fixed to some value, or that a variable's index has changed (e.g., x4 is now
-      called x2). constraintObsolete() returns true iff and the constraint has become obsolote
-      as a result of variable eliminations.
+      Preprocessing related functions, to inform that a variable has
+      been eliminated completely because it was fixed to some value,
+      or that a variable's index has changed (e.g., x4 is now called
+      x2). constraintObsolete() returns true iff and the constraint
+      has become obsolote as a result of variable eliminations.
      */
     void eliminateVariable( unsigned variable, double fixedValue );
     void updateVariableIndex( unsigned oldIndex, unsigned newIndex );
-
-    /*
-     * check if the constraint is redundant
-     * return true iff and the constraint has become obsolote
-     * as a result of variable eliminations.
-     */
     bool constraintObsolete() const;
 
     /*
-     Get the tightenings entailed by the constraint.
+      Get the tightenings entailed by the constraint.
     */
     void getEntailedTightenings( List<Tightening> &tightenings ) const;
 
     /*
-     *
-     */
+      For preprocessing: get any auxiliary equations that this
+      constraint would like to add to the equation pool. In the ReLU
+      case, this is an equation of the form aux = f - b, where aux is
+      non-negative.
+    */
     void getAuxiliaryEquations( List<Equation> &newEquations ) const;
 
     /*
-     *
+      Returns string with shape: abs, _f, _b
      */
     String serializeToString() const;
 
+    /*
+      Return true if and only if this piecewise linear constraint supports
+      symbolic bound tightening.
+    */
     bool supportsSymbolicBoundTightening() const;
 
 private:
-    // variables name. example x_1, x_2, etc.
+    /*
+      The variables that make up this constraint; _f = | _b |.
+    */
     unsigned _b, _f;
 
-    // if one of our variable i.e _b or _f have been terminated
-    // caused by bound tightening
+    /*
+      True iff _b or _f have been eliminated.
+    */
     bool _haveEliminatedVariables;
 
+    /*
+      The phase status of this constraint: positive, negative, or not
+      yet fixed.
+    */
     PhaseStatus _phaseStatus;
-
-    PiecewiseLinearCaseSplit getPositiveSplit() const;
-    PiecewiseLinearCaseSplit getNegativeSplit() const;
+    void setPhaseStatus( PhaseStatus phaseStatus );
 
     /*
-      Set the phase status not fixed pos neg.
+      The two case splits.
     */
-    void setPhaseStatus( PhaseStatus phaseStatus );
+    PiecewiseLinearCaseSplit getPositiveSplit() const;
+    PiecewiseLinearCaseSplit getNegativeSplit() const;
 };
 
 #endif // __AbsoluteValueConstraint_h__

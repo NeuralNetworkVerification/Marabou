@@ -328,7 +328,6 @@ public:
         abs.getEntailedTightenings( entailedTightenings );
         assert_lower_upper_bound( f, b, 3, 3, 6, 7, entailedTightenings );
 
-
         abs.notifyUpperBound( f, 6 );
         abs.notifyUpperBound( b, 7 );
         // B > D , A = C
