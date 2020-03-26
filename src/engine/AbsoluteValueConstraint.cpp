@@ -309,8 +309,6 @@ void AbsoluteValueConstraint::eliminateVariable(__attribute__((unused)) unsigned
     _haveEliminatedVariables = true;
 }
 
-// Got here
-
 void AbsoluteValueConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
     ASSERT( oldIndex == _b || oldIndex == _f );
@@ -318,6 +316,7 @@ void AbsoluteValueConstraint::updateVariableIndex( unsigned oldIndex, unsigned n
             !_lowerBounds.exists( newIndex ) &&
             !_upperBounds.exists( newIndex ) &&
             newIndex != _b && newIndex != _f );
+
     if ( _assignment.exists( oldIndex ) )
     {
         _assignment[newIndex] = _assignment.get( oldIndex );
@@ -347,15 +346,8 @@ bool AbsoluteValueConstraint::constraintObsolete() const
     return _haveEliminatedVariables;
 }
 
-/*
-  Get the tightenings entailed by the constraint.
-*/
 void AbsoluteValueConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
 {
-    if (! _lowerBounds.exists( _f ))
-    {
-        tightenings.append( Tightening( _f, 0.0, Tightening::LB ) );
-    }
     ASSERT( _lowerBounds.exists( _b ) && _lowerBounds.exists( _f ) &&
             _upperBounds.exists( _b ) && _upperBounds.exists( _f ) );
 
@@ -366,80 +358,73 @@ void AbsoluteValueConstraint::getEntailedTightenings( List<Tightening> &tighteni
     double bLowerBound = _lowerBounds[_b];
     double fLowerBound = _lowerBounds[_f];
 
-//    printf("bUpperBound: %f, bLowerBound: %f ", bUpperBound, bLowerBound);
-//    printf("fUpperBound: %f, fLowerBound: %f ", fUpperBound, fLowerBound);
-
     // F's lower bound should always be non-negative
-    double fake_Lower_bound;
-    if ( FloatUtils::isNegative( fLowerBound ) )
+    if ( fLowerBound < 0 )
     {
         tightenings.append( Tightening( _f, 0.0, Tightening::LB ) );
-        fake_Lower_bound = 0.0;
-    }
-    else
-    {
-        fake_Lower_bound = fLowerBound;
+        fLowerBound = 0;
     }
 
-    if (!FloatUtils::isNegative( bLowerBound ) && !FloatUtils::isNegative( bUpperBound ) )
+    if ( bLowerBound >= 0 )
     {
-        // update lower bound x_f or x_b
-
+        // Positive phase, all bounds much match
         tightenings.append( Tightening( _f, bLowerBound, Tightening::LB ) );
-        tightenings.append( Tightening( _b, fake_Lower_bound, Tightening::LB ) );
+        tightenings.append( Tightening( _b, fLowerBound, Tightening::LB ) );
 
-        // update upper bound x_f or x_b
         tightenings.append( Tightening( _f, bUpperBound, Tightening::UB ) );
         tightenings.append( Tightening( _b, fUpperBound, Tightening::UB ) );
     }
 
-    if (FloatUtils::isNegative( bLowerBound ) && !FloatUtils::isNegative( bUpperBound ) && !FloatUtils::isPositive( fLowerBound ) )
+    else if ( bUpperBound <= 0 )
     {
-        //have to be overlap
-        // update lower bound x_b
-        tightenings.append( Tightening( _b, -1*fUpperBound , Tightening::LB ) );
+        // Negative phase, all bounds must match
 
-        // update upper bound x_f and x_b
+        tightenings.append( Tightening( _f, -bUpperBound, Tightening::LB ) );
+        tightenings.append( Tightening( _b, -fUpperBound, Tightening::LB ) );
+
+        tightenings.append( Tightening( _f, -bLowerBound, Tightening::UB ) );
+        tightenings.append( Tightening( _b, -fLowerBound, Tightening::UB ) );
+    }
+
+    else if ( bLowerBound < 0 && bUpperBound >= 0 && FloatUtils::isZero( fLowerBound ) )
+    {
+        // Phase undetermined, b can be either positive or negative, f can be 0
+        tightenings.append( Tightening( _b, -fUpperBound , Tightening::LB ) );
         tightenings.append( Tightening( _b, fUpperBound, Tightening::UB ) );
-        tightenings.append( Tightening( _f, FloatUtils::max( FloatUtils::abs( bLowerBound ) , bUpperBound ), Tightening::UB ) );
+        tightenings.append( Tightening( _f, FloatUtils::max( -bLowerBound , bUpperBound ), Tightening::UB ) );
     }
 
-    if (FloatUtils::isNegative( bLowerBound ) && !FloatUtils::isNegative( bUpperBound ) && FloatUtils::isPositive( fLowerBound ) )
+    else if ( bLowerBound < 0 && bUpperBound >= 0 && fLowerBound > 0 )
     {
-        if ( FloatUtils::gt( FloatUtils::abs( bLowerBound), fUpperBound ) )
-            tightenings.append( Tightening( _b, -1*fUpperBound, Tightening::LB ) );
-        if ( FloatUtils::gt( fLowerBound, FloatUtils::abs( bLowerBound ) ) )
+        // Phase undetermined, b can be either positive or negative, f strictly positive
+        tightenings.append( Tightening( _b, -fUpperBound, Tightening::LB ) );
+
+        if ( fLowerBound > -bLowerBound )
+        {
+            // Constraint is actually in the positive phsae
             tightenings.append( Tightening( _b, fLowerBound, Tightening::LB ) );
+        }
 
-        // update upper bound x_f and x_b
-        if ( FloatUtils::lt( fUpperBound, bUpperBound ) )
-            tightenings.append( Tightening( _b, fUpperBound, Tightening::UB ) );
-        else if ( FloatUtils::gt( fLowerBound, bUpperBound ) )
-            tightenings.append( Tightening( _b, -1*fLowerBound, Tightening::UB ) );
+        if ( fLowerBound > bUpperBound )
+        {
+            // Constraint is actually in the negative phsae
+            tightenings.append( Tightening( _b, -fLowerBound, Tightening::UB ) );
+        }
 
-        double tempBound = FloatUtils::max(FloatUtils::abs(bLowerBound) , bUpperBound);
-        if ( FloatUtils::lt( tempBound, fUpperBound) )
-            tightenings.append( Tightening( _f, tempBound, Tightening::UB ) );
-    }
-
-    if ( FloatUtils::isNegative( bLowerBound ) && FloatUtils::isNegative( bUpperBound ) )
-    {
-        // update lower bound x_f and x_b
-        tightenings.append( Tightening( _f, FloatUtils::abs( bUpperBound ), Tightening::LB ) );
-        tightenings.append( Tightening( _b, -1*fUpperBound ,Tightening::LB ) );
-
-        // update upper bound x_f and x_b
-        tightenings.append( Tightening( _f, FloatUtils::abs(bLowerBound), Tightening::UB ) );
-        tightenings.append( Tightening( _b, -fake_Lower_bound, Tightening::UB ) );
+        tightenings.append( Tightening( _b, fUpperBound, Tightening::UB ) );
+        tightenings.append( Tightening( _f, FloatUtils::max( -bLowerBound, bUpperBound ), Tightening::UB ) );
     }
 }
 
-void AbsoluteValueConstraint::getAuxiliaryEquations( __attribute__((unused)) List<Equation> &newEquations ) const {}
+void AbsoluteValueConstraint::getAuxiliaryEquations( __attribute__((unused)) List<Equation> &newEquations ) const
+{
+    // Currently unsupported
+}
 
 String AbsoluteValueConstraint::serializeToString() const
 {
     // Output format is: Abs,f,b
-    return Stringf( "Abs,%u,%u", _f, _b );
+    return Stringf( "absoluteValue,%u,%u", _f, _b );
 }
 
 void AbsoluteValueConstraint::setPhaseStatus( PhaseStatus phaseStatus )

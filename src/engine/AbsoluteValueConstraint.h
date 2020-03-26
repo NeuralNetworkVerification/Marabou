@@ -124,7 +124,7 @@ public:
     void getAuxiliaryEquations( List<Equation> &newEquations ) const;
 
     /*
-      Returns string with shape: abs, _f, _b
+      Returns string with shape: absoluteValue,_f,_b
      */
     String serializeToString() const;
 
