@@ -41,8 +41,6 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
 {
     _preprocessed = query;
 
-    attemptVariableElimination = false;
-
     /*
       Initial work: if needed, have the PL constraints add their additional
       equations to the pool.
