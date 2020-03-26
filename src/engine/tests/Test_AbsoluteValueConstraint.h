@@ -16,6 +16,7 @@
 #include <cxxtest/TestSuite.h>
 
 #include "AbsoluteValueConstraint.h"
+#include "MarabouError.h"
 #include "MockErrno.h"
 #include "MockTableau.h"
 #include "PiecewiseLinearCaseSplit.h"
