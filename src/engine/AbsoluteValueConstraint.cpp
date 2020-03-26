@@ -83,9 +83,8 @@ void AbsoluteValueConstraint::notifyLowerBound( unsigned variable, double bound 
 
     _lowerBounds[variable] = bound;
 
-    // If b has a non-negative lower bound, phase is fixed
-    if ( ( variable == _b ) && bound >= 0 )
-        setPhaseStatus( PhaseStatus::PHASE_POSITIVE );
+    // Check whether the phase has become fixed
+    fixPhaseIfNeeded();
 
     // Update partner's bound
     if ( isActive() && _constraintBoundTightener )
@@ -94,10 +93,8 @@ void AbsoluteValueConstraint::notifyLowerBound( unsigned variable, double bound 
         {
             if ( bound < 0 )
             {
-                double newUpperBound = FloatUtils::abs( bound );
-                if ( _upperBounds.exists( _f ) )
-                    newUpperBound = FloatUtils::min( _upperBounds[_f], newUpperBound );
-                _constraintBoundTightener->registerTighterUpperBound( _f, newUpperBound );
+                double fUpperBound = FloatUtils::max( -bound, _upperBounds[_b] );
+                _constraintBoundTightener->registerTighterUpperBound( _f, fUpperBound );
             }
             else
             {
@@ -106,22 +103,8 @@ void AbsoluteValueConstraint::notifyLowerBound( unsigned variable, double bound 
         }
         else
         {
-            if ( bound > 0 )
-            {
-                // F has a strictly positive lower bound
-
-                // TODO: review this
-                double newUpperBound = -1 * bound;
-                double newLowerBound = bound;
-
-                if ( _lowerBounds.exists( _b ) )
-                {
-                    newUpperBound = FloatUtils::min( _upperBounds[_b], newUpperBound );
-                    newLowerBound = FloatUtils::max( _lowerBounds[_b], newLowerBound );
-                }
-                _constraintBoundTightener->registerTighterLowerBound( _b, newLowerBound );
-                _constraintBoundTightener->registerTighterUpperBound( _b, newUpperBound );
-            }
+            // F's lower bound can only cause bound propagations if it
+            // fixes the phase of the constraint, so no need to bother
         }
 
         // Also, if for some reason we only know a negative lower bound for f,
@@ -141,9 +124,8 @@ void AbsoluteValueConstraint::notifyUpperBound( unsigned variable, double bound 
 
     _upperBounds[variable] = bound;
 
-    // If b has a non-positive upper bound, phase is fixed
-    if ( ( variable == _b ) && bound <= 0 )
-        setPhaseStatus( PhaseStatus::PHASE_NEGATIVE );
+    // Check whether the phase has become fixed
+    fixPhaseIfNeeded();
 
     // Update partner's bound
     if ( isActive() && _constraintBoundTightener )
@@ -152,10 +134,8 @@ void AbsoluteValueConstraint::notifyUpperBound( unsigned variable, double bound 
         {
             if ( bound > 0 )
             {
-                double newUpperBound = bound;
-                if ( _upperBounds.exists( _f ) )
-                    newUpperBound = FloatUtils::min( _upperBounds[_f], newUpperBound );
-                _constraintBoundTightener->registerTighterUpperBound( _f, newUpperBound );
+                double fUpperBound = FloatUtils::max( bound, -_lowerBounds[_b] );
+                _constraintBoundTightener->registerTighterUpperBound( _f, fUpperBound );
             }
             else
             {
@@ -164,21 +144,12 @@ void AbsoluteValueConstraint::notifyUpperBound( unsigned variable, double bound 
         }
         else
         {
-            if ( bound > 0 )
-            {
-                // F has a strictly positive upper bound
+            // F's upper bound can restrict both bounds of B
+            if ( bound < _upperBounds[_b] )
+                _constraintBoundTightener->registerTighterUpperBound( _b, bound );
 
-                // TODO: review this
-                double newUpperBound = bound;
-                double newLowerBound = -1 * bound;
-                if ( _lowerBounds.exists( _b ) )
-                {
-                    newUpperBound = FloatUtils::min( _upperBounds[_b], newUpperBound );
-                    newLowerBound = FloatUtils::max( _lowerBounds[_b], newLowerBound );
-                }
-                _constraintBoundTightener->registerTighterLowerBound( _b, newLowerBound );
-                _constraintBoundTightener->registerTighterUpperBound( _b, newUpperBound );
-            }
+            if ( -bound > _lowerBounds[_b] )
+                _constraintBoundTightener->registerTighterLowerBound( _b, -bound );
         }
     }
 }
@@ -427,6 +398,42 @@ String AbsoluteValueConstraint::serializeToString() const
 {
     // Output format is: Abs,f,b
     return Stringf( "absoluteValue,%u,%u", _f, _b );
+}
+
+void AbsoluteValueConstraint::fixPhaseIfNeeded()
+{
+    // Option 1: b's range is strictly positive
+    if ( _lowerBounds.exists( _b ) && _lowerBounds[_b] >= 0 )
+    {
+        setPhaseStatus( PHASE_POSITIVE );
+        return;
+    }
+
+    // Option 2: b's range is strictly negative:
+    if ( _upperBounds.exists( _b ) && _upperBounds[_b] <= 0 )
+    {
+        setPhaseStatus( PHASE_NEGATIVE );
+        return;
+    }
+
+    if ( !_lowerBounds.exists( _f ) )
+        return;
+
+    // Option 3: f's range is strictly disjoint from b's positive
+    // range
+    if ( _upperBounds.exists( _b ) && _lowerBounds[_f] > _upperBounds[_b] )
+    {
+        setPhaseStatus( PHASE_NEGATIVE );
+        return;
+    }
+
+    // Option 4: f's range is strictly disjoint from b's negative
+    // range, in absolute value
+    if ( _lowerBounds.exists( _b ) && _lowerBounds[_f] > -_lowerBounds[_b] )
+    {
+        setPhaseStatus( PHASE_POSITIVE );
+        return;
+    }
 }
 
 void AbsoluteValueConstraint::setPhaseStatus( PhaseStatus phaseStatus )

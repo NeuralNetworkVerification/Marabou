@@ -90,8 +90,9 @@ public:
     List<PiecewiseLinearCaseSplit> getCaseSplits() const;
 
     /*
-      Check if the constraint's phase has been fixed.
+      Check whether the constraint's phase has been fixed.
     */
+    void fixPhaseIfNeeded();
     bool phaseFixed() const;
 
     /*
