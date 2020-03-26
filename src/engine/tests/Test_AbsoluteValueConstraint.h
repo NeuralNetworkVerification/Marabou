@@ -280,18 +280,12 @@ public:
 
     void test_abs_entailed_tightenings_positive_phase_1()
     {
-        /**
-         * Suppose A < x_b < B, C < x_f < D, and C >= 0, D > 0
-         * A > 0 & B > 0 & C > 0
-         */
         unsigned b = 1;
         unsigned f = 4;
 
         AbsoluteValueConstraint abs( b, f );
         List<Tightening> entailedTightenings;
 
-        // B = D , A < C
-        // A < C < BD
         abs.notifyLowerBound( b, 1 );
         abs.notifyLowerBound( f, 2 );
         abs.notifyUpperBound( b, 7 );
@@ -302,8 +296,6 @@ public:
         assert_lower_upper_bound( f, b, 1, 2, 7, 7, entailedTightenings );
 
         abs.notifyLowerBound( b, 3 );
-        // B = D , A > C
-        // C < A < BD
         // 3 < x_b < 7 , 2 < x_f < 7
         entailedTightenings.clear();
         abs.getEntailedTightenings( entailedTightenings );
@@ -311,8 +303,6 @@ public:
 
         abs.notifyLowerBound( f, 3 );
         abs.notifyUpperBound( b, 6 );
-        // B < D , A = C
-        // CA < B < D
         // 3 < x_b < 6 , 3 < x_f < 7
         entailedTightenings.clear();
         abs.getEntailedTightenings( entailedTightenings );
@@ -320,8 +310,6 @@ public:
 
         abs.notifyUpperBound( f, 6 );
         abs.notifyUpperBound( b, 7 );
-        // B > D , A = C
-        // CA < B < D
         // 3 < x_b < 6 , 3 < x_f < 6
         //  --> x_b < 6
         entailedTightenings.clear();
@@ -329,18 +317,14 @@ public:
         assert_lower_upper_bound( f, b, 3, 3, 6, 6, entailedTightenings );
 
         abs.notifyLowerBound( f, -3 );
-        // A > 0 & B > 0 & C < 0
-        // B = D , A > C
         // 3 < x_b < 6 , 3 < x_f < 6
         // --> 3 < x_f
-        // CA < B < D
         entailedTightenings.clear();
         abs.getEntailedTightenings( entailedTightenings );
         assert_lower_upper_bound( f, b, 3, 3, 6, 6, entailedTightenings );
 
         abs.notifyLowerBound( b, 5 );
         abs.notifyUpperBound( f, 5 );
-        // C <DA<B
         // 5 < x_b < 6 , 3 < x_f < 5
         entailedTightenings.clear();
         abs.getEntailedTightenings( entailedTightenings );
@@ -349,16 +333,12 @@ public:
 
     void test_abs_entailed_tightenings_positive_phase_2()
     {
-        /**
-         * A > 0 & B > 0 & C > 0
-         */
         unsigned b = 1;
         unsigned f = 4;
 
         AbsoluteValueConstraint abs( b, f );
         List<Tightening> entailedTightenings;
 
-        // A < B < C < D
         // 8 < b < 18, 48 < f < 64
         abs.notifyUpperBound( b, 18 );
         abs.notifyUpperBound( f, 64 );
@@ -370,16 +350,12 @@ public:
 
     void test_abs_entailed_tightenings_positive_phase_3()
     {
-        /**
-         * A > 0 & B > 0 & C > 0
-         */
         unsigned b = 1;
         unsigned f = 4;
 
         AbsoluteValueConstraint abs( b, f );
         List<Tightening> entailedTightenings;
 
-        // C < D < A < B
         // 3 < b < 4, 1 < f < 2
         abs.notifyUpperBound( b, 4 );
         abs.notifyUpperBound( f, 2 );
@@ -391,10 +367,6 @@ public:
 
     void test_abs_entailed_tightenings_positive_phase_4()
     {
-        /**
-         * Suppose A < x_b < B, C < x_f < D, and C >= 0, D > 0
-         * A > 0 & B > 0 & C = 0
-         */
         unsigned b = 1;
         unsigned f = 4;
 
@@ -407,28 +379,23 @@ public:
         abs.notifyLowerBound( b, 0 );
         abs.notifyLowerBound( f, 0 );
 
-        // B > D , A < C
-        // AC < D < B
         // 0 < x_b < 7 ,0 < x_f < 6
         abs.getEntailedTightenings( entailedTightenings );
         assert_lower_upper_bound( f, b, 0, 0, 7, 6, entailedTightenings );
 
         abs.notifyUpperBound( b, 5 );
-        // AC < B < D
         // 0 < x_b < 5 ,0 < x_f < 6
         entailedTightenings.clear();
         abs.getEntailedTightenings( entailedTightenings );
         assert_lower_upper_bound( f, b, 0, 0, 5, 6, entailedTightenings );
 
         abs.notifyLowerBound( b, 1 );
-        // C < A < B < D
         // 1 < x_b < 5 ,0 < x_f < 6
         entailedTightenings.clear();
         abs.getEntailedTightenings( entailedTightenings );
         assert_lower_upper_bound( f, b, 1, 0, 5, 6, entailedTightenings );
 
         abs.notifyUpperBound( f, 4 );
-        // C < A < D < B
         // 1 < x_b < 5 ,0 < x_f < 4
         entailedTightenings.clear();
         abs.getEntailedTightenings( entailedTightenings );
@@ -438,7 +405,6 @@ public:
         abs.notifyUpperBound( f, 2 );
         abs.notifyLowerBound( b, 3 );
 
-        // C < D < A < B
         // 3 < x_b < 5 ,0 < x_f < 2
         entailedTightenings.clear();
         abs.getEntailedTightenings( entailedTightenings );
@@ -448,10 +414,6 @@ public:
 
     void test_abs_entailed_tightenings_positive_phase_5()
     {
-        /**
-         * Suppose A < x_b < B, C < x_f < D, and C >= 0, D > 0
-         * A > 0 & B > 0 & C >0
-         */
         unsigned b = 1;
         unsigned f = 4;
 
@@ -463,7 +425,6 @@ public:
         abs.notifyLowerBound( b, 4 );
         abs.notifyLowerBound( f, 3 );
 
-        // C < A < D < B
         // 4 < x_b < 6 ,3 < x_f < 5
         entailedTightenings.clear();
         abs.getEntailedTightenings( entailedTightenings );
@@ -472,10 +433,6 @@ public:
 
     void test_abs_entailed_tightenings_positive_phase_6()
     {
-        /**
-         * Suppose A < x_b < B, C < x_f < D, remainder C >= 0 ,D > 0
-         * A > 0 & B > 0 & C >0
-         */
         unsigned b = 1;
         unsigned f = 4;
 
@@ -483,8 +440,6 @@ public:
         List<Tightening> entailedTightenings;
         List<Tightening>::iterator it;
 
-        // B = D , A < C
-        // A < C < BD
         abs.notifyLowerBound( b, 5 );
         abs.notifyUpperBound( b, 10 );
         abs.notifyLowerBound( f, -1 );
@@ -507,10 +462,6 @@ public:
 
     void test_abs_entailed_tightenings_phase_not_fixed_f_strictly_positive()
     {
-        /**
-         * suppose A < x_b < B, C < x_f < D, remainder C >= 0 ,D > 0
-         * A < 0 & B > 0 & C > 0
-         */
         unsigned b = 1;
         unsigned f = 4;
 
@@ -523,8 +474,6 @@ public:
         abs.notifyLowerBound( f, 2 );
         abs.notifyUpperBound( f, 4 );
 
-        // B < D , A < C
-        // A < 0 < C < B < D
         // -6 < x_b < 3 ,2 < x_f < 4
         abs.getEntailedTightenings( entailedTightenings );
 
@@ -538,7 +487,6 @@ public:
 
         entailedTightenings.clear();
 
-        // A < 0 < B < C < D
         // -6 < x_b < 2 ,2 < x_f < 4
         abs.notifyUpperBound( b, 2 );
         abs.getEntailedTightenings( entailedTightenings );
@@ -553,7 +501,6 @@ public:
 
         entailedTightenings.clear();
 
-        // A < 0 < B < C < D
         // -6 < x_b < 1 ,2 < x_f < 4, now stuck in negative phase
         abs.notifyUpperBound( b, 1 );
         abs.getEntailedTightenings( entailedTightenings );
@@ -570,10 +517,6 @@ public:
 
     void test_abs_entailed_tightenings_phase_not_fixed_f_strictly_positive_2()
     {
-        /**
-         * Suppose A < x_b < B, C < x_f < D, and C >= 0, D > 0
-         * A < 0 & B > 0 & C > 0
-         */
         unsigned b = 1;
         unsigned f = 4;
 
@@ -586,9 +529,7 @@ public:
         abs.notifyLowerBound( f, 3 );
         abs.notifyUpperBound( f, 7 );
 
-        // A < 0 < C < D < B
         // -5 < x_b < 10 ,3 < x_f < 7
-
         abs.getEntailedTightenings( entailedTightenings );
         assert_tightenings_match( entailedTightenings,
                                   List<Tightening>
@@ -600,7 +541,6 @@ public:
 
         entailedTightenings.clear();
 
-        // A < 0 < C < D < B
         // -5 < x_b < 10 ,6 < x_f < 7, positive phase
         abs.notifyLowerBound( f, 6 );
 
@@ -616,7 +556,6 @@ public:
 
         entailedTightenings.clear();
 
-        // A < 0 < C < D < B
         // -5 < x_b < 3 ,6 < x_f < 7
 
         // Extreme case, disjoint ranges
@@ -637,10 +576,6 @@ public:
 
     void test_abs_entailed_tightenings_phase_not_fixed_f_strictly_positive_3()
     {
-        /**
-         * Suppose A < x_b < B, C < x_f < D, remainder C >= 0 ,D > 0
-         * A < 0 & B > 0 & C > 0
-         */
         unsigned b = 1;
         unsigned f = 4;
 
@@ -668,10 +603,6 @@ public:
 
     void test_abs_entailed_tightenings_phase_not_fixed_f_non_negative()
     {
-        /**
-         * Suppose A < x_b < B, C < x_f < D, remainder C >= 0 ,D > 0
-         * A < 0 & B > 0 & C = 0
-         */
         unsigned b = 1;
         unsigned f = 4;
 
@@ -684,7 +615,6 @@ public:
         abs.notifyLowerBound( f, 0 );
         abs.notifyUpperBound( f, 6 );
 
-        // B > D , A < C
         // -7 < x_b < 7 ,0 < x_f < 6
         abs.getEntailedTightenings( entailedTightenings );
         assert_tightenings_match( entailedTightenings,
@@ -740,10 +670,6 @@ public:
 
     void test_abs_entailed_tightenings_negative_phase()
     {
-        /**
-         * Suppose A < x_b < B, C < x_f < D, remainder C >= 0 ,D > 0
-         * A < 0 & B < 0 & C > 0
-         */
         unsigned b = 1;
         unsigned f = 4;
 
@@ -813,11 +739,6 @@ public:
 
     void test_abs_entailed_tightenings_negative_phase_2()
     {
-        /**
-         * Suppose A < x_b < B, C < x_f < D, remainder C >= 0 ,D > 0
-         * A < 0 & B < 0 & C > 0
-         */
-
         unsigned b = 1;
         unsigned f = 4;
 
