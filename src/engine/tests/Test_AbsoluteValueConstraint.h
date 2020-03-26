@@ -15,7 +15,6 @@
 
 #include <cxxtest/TestSuite.h>
 
-#include "AbsError.h"
 #include "AbsoluteValueConstraint.h"
 #include "MockErrno.h"
 #include "MockTableau.h"
@@ -916,9 +915,9 @@ public:
 
         abs.notifyLowerBound(1, 1.0);
         TS_ASSERT_THROWS_EQUALS(splits = abs.getCaseSplits(),
-        const AbsError &e,
+        const MarabouError &e,
         e.getCode(),
-                AbsError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
+                MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
 
         abs.unregisterAsWatcher(&tableau);
 
@@ -931,9 +930,9 @@ public:
 
         abs.notifyUpperBound( 1, -2.0 );
         TS_ASSERT_THROWS_EQUALS( splits = abs.getCaseSplits(),
-        const AbsError &e,
+        const MarabouError &e,
         e.getCode(),
-                AbsError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
+                MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
 
         abs.unregisterAsWatcher( &tableau );
     }

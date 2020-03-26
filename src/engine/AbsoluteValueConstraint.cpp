@@ -12,13 +12,13 @@
  ** [[ Add lengthier description here ]]
  **/
 
-#include "AbsError.h"
 #include "AbsoluteValueConstraint.h"
 #include "ConstraintBoundTightener.h"
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
 #include "MStringf.h"
+#include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "Statistics.h"
 
@@ -196,7 +196,7 @@ List<unsigned> AbsoluteValueConstraint::getParticipatingVariables() const
 bool AbsoluteValueConstraint::satisfied() const
 {
     if ( !( _assignment.exists( _b ) && _assignment.exists( _f ) ) )
-        throw AbsError( AbsError::PARTICIPATING_VARIABLES_ABSENT );
+        throw MarabouError( MarabouError::PARTICIPATING_VARIABLES_ABSENT );
 
     double bValue = _assignment.get( _b );
     double fValue = _assignment.get( _f );
@@ -245,7 +245,7 @@ List<PiecewiseLinearConstraint::Fix> AbsoluteValueConstraint::getSmartFixes( __a
 List<PiecewiseLinearCaseSplit> AbsoluteValueConstraint::getCaseSplits() const
 {
     if ( _phaseStatus != PhaseStatus::PHASE_NOT_FIXED )
-        throw AbsError( AbsError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
+        throw MarabouError( MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
 
     List<PiecewiseLinearCaseSplit> splits;
     splits.append( getNegativeSplit() );
