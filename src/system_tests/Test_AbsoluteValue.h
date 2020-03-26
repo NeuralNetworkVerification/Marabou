@@ -32,7 +32,114 @@ public:
     {
     }
 
-    void test_absoluate_value()
+    void test_absoluate_value_unsat()
+    {
+        InputQuery inputQuery;
+        inputQuery.setNumberOfVariables( 6 );
+
+        inputQuery.setLowerBound( 0, -1 );
+        inputQuery.setUpperBound( 0, 1 );
+
+        inputQuery.setLowerBound( 5, 5 );
+        inputQuery.setUpperBound( 5, 6 );
+
+        Equation equation1;
+        equation1.addAddend( 1, 0 );
+        equation1.addAddend( -1, 1 );
+        equation1.setScalar( 0 );
+        inputQuery.addEquation( equation1 );
+
+        Equation equation2;
+        equation2.addAddend( 1, 0 );
+        equation2.addAddend( 1, 3 );
+        equation2.setScalar( 0 );
+        inputQuery.addEquation( equation2 );
+
+        Equation equation3;
+        equation3.addAddend( 1, 2 );
+        equation3.addAddend( 1, 4 );
+        equation3.addAddend( -1, 5 );
+        equation3.setScalar( 0 );
+        inputQuery.addEquation( equation3 );
+
+        AbsoluteValueConstraint *abs1 = new AbsoluteValueConstraint( 1, 2 );
+        AbsoluteValueConstraint *abs2 = new AbsoluteValueConstraint( 3, 4 );
+
+        inputQuery.addPiecewiseLinearConstraint( abs1 );
+        inputQuery.addPiecewiseLinearConstraint( abs2 );
+
+        Engine engine;
+        if ( !engine.processInputQuery( inputQuery ) )
+        {
+            // Expected result
+            return;
+        }
+
+        TS_ASSERT( !engine.solve() );
+    }
+
+    void test_absoluate_value_sat()
+    {
+        InputQuery inputQuery;
+        inputQuery.setNumberOfVariables( 6 );
+
+        inputQuery.setLowerBound( 0, -1 );
+        inputQuery.setUpperBound( 0, 1 );
+
+        inputQuery.setLowerBound( 5, 0.5 );
+        inputQuery.setUpperBound( 5, 6 );
+
+        Equation equation1;
+        equation1.addAddend( 1, 0 );
+        equation1.addAddend( -1, 1 );
+        equation1.setScalar( 0 );
+        inputQuery.addEquation( equation1 );
+
+        Equation equation2;
+        equation2.addAddend( 1, 0 );
+        equation2.addAddend( 1, 3 );
+        equation2.setScalar( 0 );
+        inputQuery.addEquation( equation2 );
+
+        Equation equation3;
+        equation3.addAddend( 1, 2 );
+        equation3.addAddend( 1, 4 );
+        equation3.addAddend( -1, 5 );
+        equation3.setScalar( 0 );
+        inputQuery.addEquation( equation3 );
+
+        AbsoluteValueConstraint *abs1 = new AbsoluteValueConstraint( 1, 2 );
+        AbsoluteValueConstraint *abs2 = new AbsoluteValueConstraint( 3, 4 );
+
+        inputQuery.addPiecewiseLinearConstraint( abs1 );
+        inputQuery.addPiecewiseLinearConstraint( abs2 );
+
+        Engine engine;
+        TS_ASSERT( engine.processInputQuery( inputQuery ) );
+        TS_ASSERT( engine.solve() );
+
+        engine.extractSolution( inputQuery );
+
+        double value_x0 = inputQuery.getSolutionValue( 0 );
+        double value_x1b = inputQuery.getSolutionValue( 1 );
+        double value_x1f = inputQuery.getSolutionValue( 2 );
+        double value_x2b = inputQuery.getSolutionValue( 3 );
+        double value_x2f = inputQuery.getSolutionValue( 4 );
+        double value_x3 = inputQuery.getSolutionValue( 5 );
+
+        TS_ASSERT( FloatUtils::areEqual( value_x0, value_x1b ) );
+        TS_ASSERT( FloatUtils::areEqual( value_x0, -value_x2b ) );
+        TS_ASSERT( FloatUtils::areEqual( value_x3, value_x1f + value_x2f ) );
+
+        TS_ASSERT( FloatUtils::gte( value_x0, -1 ) && FloatUtils::lte( value_x0, 1 ) );
+        TS_ASSERT( FloatUtils::gte( value_x1f, 0 ) && FloatUtils::lte( value_x1f, 1 ) );
+        TS_ASSERT( FloatUtils::gte( value_x3, 0.5 ) && FloatUtils::lte( value_x1f, 6 ) );
+
+        TS_ASSERT( FloatUtils::areEqual( FloatUtils::abs( value_x1b ), value_x1f ) );
+        TS_ASSERT( FloatUtils::areEqual( FloatUtils::abs( value_x2b ), value_x2f ) );
+    }
+
+    void test_absoluate_value_on_acas()
     {
         InputQuery inputQuery;
         AcasParser acasParser( RESOURCES_DIR "/nnet/acasxu/ACASXU_experimental_v2a_1_1.nnet" );
