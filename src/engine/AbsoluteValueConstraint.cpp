@@ -270,7 +270,8 @@ PiecewiseLinearCaseSplit AbsoluteValueConstraint::getNegativeSplit() const
     return negativePhase;
 }
 
-PiecewiseLinearCaseSplit AbsoluteValueConstraint::getPositiveSplit() const {
+PiecewiseLinearCaseSplit AbsoluteValueConstraint::getPositiveSplit() const
+{
     PiecewiseLinearCaseSplit positivePhase;
 
     // Positive phase: b >= 0, b - f = 0
@@ -398,21 +399,22 @@ void AbsoluteValueConstraint::getEntailedTightenings( List<Tightening> &tighteni
     {
         // Phase undetermined, b can be either positive or negative, f strictly positive
         tightenings.append( Tightening( _b, -fUpperBound, Tightening::LB ) );
+        tightenings.append( Tightening( _b, fUpperBound, Tightening::UB ) );
+        tightenings.append( Tightening( _f, FloatUtils::max( -bLowerBound, bUpperBound ), Tightening::UB ) );
 
+        // Below we test if the phase has actually become fixed
         if ( fLowerBound > -bLowerBound )
         {
-            // Constraint is actually in the positive phsae
+            // Positive phsae
             tightenings.append( Tightening( _b, fLowerBound, Tightening::LB ) );
         }
 
         if ( fLowerBound > bUpperBound )
         {
-            // Constraint is actually in the negative phsae
+            // Negative phsae
             tightenings.append( Tightening( _b, -fLowerBound, Tightening::UB ) );
         }
 
-        tightenings.append( Tightening( _b, fUpperBound, Tightening::UB ) );
-        tightenings.append( Tightening( _f, FloatUtils::max( -bLowerBound, bUpperBound ), Tightening::UB ) );
     }
 }
 
