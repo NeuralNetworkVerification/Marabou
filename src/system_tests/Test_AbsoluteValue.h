@@ -38,77 +38,63 @@ public:
         AcasParser acasParser( RESOURCES_DIR "/nnet/acasxu/ACASXU_experimental_v2a_1_1.nnet" );
         acasParser.generateQuery( inputQuery );
 
-        const double b = 0;
-
-        // We run an adversarial robustness query, by bounding the expression
+        // We run an adversarial-robustness-like query around 0, by
+        // bounding the expression
         //
-        //   \sum_{i=1}^5 | x_i - b |
+        //   \sum_{i=1}^5 | x_i |
         //
-        // where x_i are the input nodes. This requires adding 11 new variables to the query:
+        // where x_i are the input nodes. This requires adding 6 new
+        // variables to the query:
         //
-        //    5 variables for x'_i = x_i - b
-        //    5 variables for x''_i = abs( x'_i )
-        //    1 variable for sum( x''i )
+        //    5 variables for x'_i = abs( x_i )
+        //    1 variable for sum( x'i )
 
         unsigned numVariables = inputQuery.getNumberOfVariables();
-        inputQuery.setNumberOfVariables( numVariables + 11 );
+        inputQuery.setNumberOfVariables( numVariables + 6 );
 
-        // x_i - x'_i = b -> x_i - b = x'_i
+        // Individual absolute values
         for ( unsigned i = 0; i < 5; ++i )
         {
-            Equation equation;
-            unsigned variable = acasParser.getInputVariable( i );
-
-            // x_i - input to acas
-            equation.addAddend( 1, variable );
-
-            // x'_i - new variable
-            equation.addAddend( -1 , numVariables + i );
-
-            equation.setScalar( b );
-            inputQuery.addEquation( equation );
-        }
-
-        // x''_i = abs( x'_i ) = abs( x_i - b )
-        for ( unsigned i = 0; i < 5; ++i )
-        {
+            unsigned inputVariable = acasParser.getInputVariable( i );
             AbsoluteValueConstraint *abs = new AbsoluteValueConstraint
-                ( numVariables + i, numVariables + i + 5 );
+                ( inputVariable, numVariables + i );
             inputQuery.addPiecewiseLinearConstraint( abs );
         }
 
-        // t = sum( x''_i ) , 0 <= i <= 5
-        //  -> sum( abs( x'_i ) ) = sum( abs( x_i - b ) ) , 0 <= i <= 5
+        // Sum of absolute values
         Equation equation;
-        equation.addAddend( -1, numVariables + 10 );
+        equation.addAddend( -1, numVariables + 5 );
         for ( unsigned i = 0; i < 5; ++i )
         {
-            equation.addAddend( 1, numVariables + i + 5 );
+            equation.addAddend( 1, numVariables + i );
         }
-        equation.setScalar( 0 );
-        inputQuery.addEquation(equation);
+        inputQuery.addEquation( equation );
 
-        // t <= bound
-        const unsigned bound = 5;
-        inputQuery.setUpperBound( numVariables + 10, bound );
+        // Bound the maximal L1 change (delta)
+        const double delta = 0.01;
+        inputQuery.setUpperBound( numVariables + 5, delta );
 
-        // Add the equation minVar >= runnerUp
-        const unsigned minVarIndex = 0;
-        const unsigned runnerUpIndex = 1;
+        // Output constraint: we seek a point in which output 0 gets
+        // a lower score than output 1
+        unsigned minimalOutputVar = acasParser.getOutputVariable( 0 );
+        unsigned largerOutputVar = acasParser.getOutputVariable( 1 );
 
-        unsigned minVar = acasParser.getOutputVariable( minVarIndex );
         Equation equationOut;
         equationOut.setType( Equation::LE );
 
-        unsigned runnerUp = acasParser.getOutputVariable( runnerUpIndex );
-        equationOut.addAddend( 1, runnerUp );
-        equationOut.addAddend( -1 , minVar );
+        // minimal - larger <= 0    -->     larger >= minimal
+        equationOut.addAddend( 1 , minimalOutputVar );
+        equationOut.addAddend( -1, largerOutputVar );
         equationOut.setScalar( 0 );
         inputQuery.addEquation( equationOut );
 
         // Run the query
         Engine engine;
-        TS_ASSERT( engine.processInputQuery( inputQuery ) );
+        if( !engine.processInputQuery( inputQuery ) )
+        {
+            // No counter example found, this is acceptable
+            return;
+        }
 
         bool result = engine.solve();
         if ( !result )
@@ -122,26 +108,25 @@ public:
         // Run through the original network to check correctness
         Vector<double> inputs;
         for ( unsigned i = 0; i < 5; ++i )
+        {
             inputs.append( inputQuery.getSolutionValue( i ) );
+        }
 
         Vector<double> outputs;
         acasParser.evaluate( inputs, outputs );
 
-        double minVarOut = outputs[minVarIndex];
-        double runnerUpOut = outputs[runnerUpIndex];
+        double minimalOutputValue = outputs[0];
+        double largerOutputValue = outputs[1];
 
         // Check whether minVar >= runnerUp, as we asked
-        TS_ASSERT( FloatUtils::gt( minVarOut , runnerUpOut ) );
+        TS_ASSERT( FloatUtils::gte( largerOutputValue, minimalOutputValue ) );
 
-        // Check whether the sum of inptus <= BOUND
+        // Check whether the sum of inptus <= delta
         double sum = 0.0;
         for ( unsigned i = 0; i < 5; ++i )
-        {
-            unsigned var = acasParser.getInputVariable( i );
-            sum += FloatUtils::abs( inputs[var] - b );
-        }
+            sum += FloatUtils::abs( inputs[i] );
 
-        TS_ASSERT( FloatUtils::gt( bound, sum ) );
+        TS_ASSERT( FloatUtils::gte( delta, sum, 0.001 ) );
     }
 };
 
