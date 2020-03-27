@@ -208,7 +208,7 @@ List<PiecewiseLinearConstraint::Fix> AbsoluteValueConstraint::getPossibleFixes()
     return fixes;
 }
 
-List<PiecewiseLinearConstraint::Fix> AbsoluteValueConstraint::getSmartFixes( __attribute__((unused)) ITableau *tableau ) const
+List<PiecewiseLinearConstraint::Fix> AbsoluteValueConstraint::getSmartFixes( ITableau */* tableau */ ) const
 {
     return getPossibleFixes();
 }
@@ -273,8 +273,7 @@ PiecewiseLinearCaseSplit AbsoluteValueConstraint::getValidCaseSplit() const
     return getNegativeSplit();
 }
 
-void AbsoluteValueConstraint::eliminateVariable(__attribute__((unused)) unsigned variable,
-                                                __attribute__((unused)) double fixedValue )
+void AbsoluteValueConstraint::eliminateVariable( unsigned /* variable */, double /* fixedValue */ )
 {
     // In an absolute value constraint, if a variable is removed the
     // entire constraint can be discarded
@@ -389,7 +388,7 @@ void AbsoluteValueConstraint::getEntailedTightenings( List<Tightening> &tighteni
     }
 }
 
-void AbsoluteValueConstraint::getAuxiliaryEquations( __attribute__((unused)) List<Equation> &newEquations ) const
+void AbsoluteValueConstraint::getAuxiliaryEquations( List<Equation> &/* newEquations */ ) const
 {
     // Currently unsupported
 }
