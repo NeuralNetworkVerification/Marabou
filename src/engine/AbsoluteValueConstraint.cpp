@@ -203,7 +203,7 @@ List<PiecewiseLinearConstraint::Fix> AbsoluteValueConstraint::getPossibleFixes()
 
     fixes.append( PiecewiseLinearConstraint::Fix( _b, fValue ) );
     fixes.append( PiecewiseLinearConstraint::Fix( _b, -fValue ) );
-    fixes.append( PiecewiseLinearConstraint::Fix( _f, abs( bValue ) ) );
+    fixes.append( PiecewiseLinearConstraint::Fix( _f, FloatUtils::abs( bValue ) ) );
 
     return fixes;
 }
