@@ -60,18 +60,6 @@ void AbsoluteValueConstraint::notifyVariableValue( unsigned variable, double val
     _assignment[variable] = value;
 }
 
-/*
-  The variable watcher notification callbacks, about a change in a variable's value or bounds.
-  suppose A < x_b < B, C < x_f < D
-  if variable == x_b then:
-    A < 0 & B < 0 then: max{|B|, C} < x_f < min{|A|, D}
-    A < 0 & B > 0 then: max{0, C} < x_f < min{max{|A|, B}, D}
-    A > 0 & B < 0 then: ------
-    A > 0 & B > 0 then: max{A, C} < x_f < min{B, D}
-  if variable == x_f then:
-    C > 0 & D > 0 then: min{max{-D, A}, max{A, C}} < x_b < max{min{-C, A}, min{B, D}}
-*/
-
 void AbsoluteValueConstraint::notifyLowerBound( unsigned variable, double bound )
 {
     if ( _statistics )
@@ -376,13 +364,13 @@ void AbsoluteValueConstraint::getEntailedTightenings( List<Tightening> &tighteni
         // Below we test if the phase has actually become fixed
         if ( fLowerBound > -bLowerBound )
         {
-            // Positive phsae
+            // Positive phase
             tightenings.append( Tightening( _b, fLowerBound, Tightening::LB ) );
         }
 
         if ( fLowerBound > bUpperBound )
         {
-            // Negative phsae
+            // Negative phase
             tightenings.append( Tightening( _b, -fLowerBound, Tightening::UB ) );
         }
 

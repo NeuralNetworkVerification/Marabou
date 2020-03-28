@@ -83,9 +83,10 @@ public:
 
     /*
       Returns the list of case splits that this piecewise linear
-      constraint breaks into. These splits need to complementary,
-      i.e. if the list is {l1, l2, ..., ln-1, ln},
-      then ~l1 /\ ~l2 /\ ... /\ ~ln-1 --> ln.
+      constraint breaks into:
+
+      y = |x| <-->
+         ( x <= 0 /\ y = -x ) \/ ( x >= 0 /\ y =  x )
     */
     List<PiecewiseLinearCaseSplit> getCaseSplits() const;
 
