@@ -92,13 +92,12 @@ void AbsoluteValueConstraint::notifyLowerBound( unsigned variable, double bound 
         else
         {
             // F's lower bound can only cause bound propagations if it
-            // fixes the phase of the constraint, so no need to bother
+            // fixes the phase of the constraint, so no need to
+            // bother.  The only exception is if the lower bound is,
+            // for some reason, negative
+            if ( bound < 0 )
+                _constraintBoundTightener->registerTighterLowerBound( _f, 0 );
         }
-
-        // Also, if for some reason we only know a negative lower bound for f,
-        // we attempt to tighten it to 0
-        if ( bound < 0 && variable == _f )
-            _constraintBoundTightener->registerTighterLowerBound( _f, 0 );
     }
 }
 
@@ -203,8 +202,7 @@ List<PiecewiseLinearConstraint::Fix> AbsoluteValueConstraint::getSmartFixes( __a
 
 List<PiecewiseLinearCaseSplit> AbsoluteValueConstraint::getCaseSplits() const
 {
-    if ( _phaseStatus != PhaseStatus::PHASE_NOT_FIXED )
-        throw MarabouError( MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
+    ASSERT( _phaseStatus == PhaseStatus::PHASE_NOT_FIXED );
 
     List<PiecewiseLinearCaseSplit> splits;
     splits.append( getNegativeSplit() );
