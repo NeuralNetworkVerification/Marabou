@@ -92,7 +92,7 @@ endif()
 
 if (NOT MSVC)
     set(COMPILE_FLAGS  -Wall -Wextra  -Werror -MMD) #-Wno-deprecated
-    set(RELEASE_FLAGS -O3) #-Wno-deprecated
+    set(RELEASE_FLAGS ${COMPILE_FLAGS} -O3) #-Wno-deprecated
 endif()
 
 if (RUN_MEMORY_TEST)
@@ -104,10 +104,10 @@ endif()
 add_definitions(-DRESOURCES_DIR="${RESOURCES_DIR}")
 
 if (NOT MSVC)
-    set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS} -g -DDEBUG_ON)
+    set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS} -g)
     set(CXXTEST_FLAGS ${DEBUG_FLAGS}  -Wno-ignored-qualifiers)
 else()
-    set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS} /DDEBUG_ON)
+    set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS}) 
     add_definitions(-DNOMINMAX) # remove min max macros
 endif()
 
@@ -115,9 +115,6 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     set(CXXTEST_FLAGS ${CXXTEST_FLAGS} -Wno-terminate)
 endif()
 
-if (NOT MSVC)
-    set(RELEASE_FLAGS  ${COMPILE_FLAGS} -O3)
-endif()
 
 
 # Boost
