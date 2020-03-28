@@ -854,45 +854,6 @@ public:
         return true;
     }
 
-    void test_get_splits_from_fixed_constraints()
-    {
-        unsigned b = 1;
-        unsigned f = 4;
-
-        MockTableau tableau;
-
-        AbsoluteValueConstraint abs( b, f );
-
-        abs.registerAsWatcher( &tableau );
-
-        List <PiecewiseLinearCaseSplit> splits = abs.getCaseSplits();
-        TS_ASSERT_EQUALS( splits.size(), 2U );
-
-        abs.notifyLowerBound( 1, 1.0 );
-
-        TS_ASSERT_THROWS_EQUALS( splits = abs.getCaseSplits(),
-                                 const MarabouError &e,
-                                 e.getCode(),
-                                 MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
-
-        abs.unregisterAsWatcher( &tableau );
-
-        abs = AbsoluteValueConstraint( b, f );
-
-        abs.registerAsWatcher( &tableau );
-
-        splits = abs.getCaseSplits();
-        TS_ASSERT_EQUALS( splits.size(), 2U );
-
-        abs.notifyUpperBound( 1, -2.0 );
-        TS_ASSERT_THROWS_EQUALS( splits = abs.getCaseSplits(),
-                                 const MarabouError &e,
-                                 e.getCode(),
-                                 MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
-
-        abs.unregisterAsWatcher( &tableau );
-    }
-
     void test_constraint_phase_gets_fixed()
     {
         unsigned b = 1;
