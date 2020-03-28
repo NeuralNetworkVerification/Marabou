@@ -67,18 +67,6 @@ Engine::~Engine()
         delete[] _work;
         _work = NULL;
     }
-
-    if ( _symbolicBoundTightener )
-    {
-        delete _symbolicBoundTightener;
-        _symbolicBoundTightener = NULL;
-    }
-
-    if ( _networkLevelReasoner )
-    {
-        delete _networkLevelReasoner;
-        _networkLevelReasoner = NULL;
-    }
 }
 
 void Engine::setVerbosity( unsigned verbosity )
@@ -104,6 +92,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
 
+    updateDirections();
     storeInitialEngineState();
 
     if ( _verbosity > 0 )
@@ -113,6 +102,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
         printf( "\n---\n" );
     }
 
+    bool splitJustPerformed = true;
     struct timespec mainLoopStart = TimeUtils::sampleMicro();
     while ( true )
     {
@@ -189,16 +179,21 @@ bool Engine::solve( unsigned timeoutInSeconds )
             if ( _tableau->basisMatrixAvailable() )
                 explicitBasisBoundTightening();
 
-            // Perform any SmtCore-initiated case splits
-            if ( _smtCore.needToSplit() )
+            if ( splitJustPerformed )
             {
-                _smtCore.performSplit();
-
                 do
                 {
                     performSymbolicBoundTightening();
                 }
                 while ( applyAllValidConstraintCaseSplits() );
+                splitJustPerformed = false;
+            }
+
+            // Perform any SmtCore-initiated case splits
+            if ( _smtCore.needToSplit() )
+            {
+                _smtCore.performSplit();
+                splitJustPerformed = true;
                 continue;
             }
 
@@ -298,6 +293,11 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 _exitCode = Engine::UNSAT;
                 return false;
             }
+            else
+            {
+                splitJustPerformed = true;
+            }
+
         }
         catch ( ... )
         {
@@ -1811,16 +1811,24 @@ bool Engine::shouldExitDueToTimeout( unsigned timeout ) const
     return _statistics.getTotalTime() / MILLISECONDS_TO_SECONDS > timeout;
 }
 
-
-void Engine::resetStatistics( const Statistics &statistics )
+void Engine::reset()
 {
+    resetStatistics();
+    clearViolatedPLConstraints();
+    resetSmtCore();
+    resetBoundTighteners();
+    resetExitCode();
+}
+
+void Engine::resetStatistics()
+{
+    Statistics statistics;
     _statistics = statistics;
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
     _rowBoundTightener->setStatistics( &_statistics );
     _constraintBoundTightener->setStatistics( &_statistics );
     _preprocessor.setStatistics( &_statistics );
-    _activeEntryStrategy = _projectedSteepestEdgeRule;
     _activeEntryStrategy->setStatistics( &_statistics );
 
     _statistics.stampStartingTime();
@@ -1926,6 +1934,41 @@ void Engine::checkOverallProgress()
             _lastIterationWithProgress = currentIteration;
         }
     }
+}
+
+void Engine::updateDirections()
+{
+    if ( GlobalConfiguration::USE_POLARITY_BASED_DIRECTION_HEURISTICS )
+        for ( const auto &constraint : _plConstraints )
+            if ( constraint->supportPolarity() &&
+                 constraint->isActive() && !constraint->phaseFixed() )
+                constraint->updateDirection();
+}
+
+void Engine::updateScores()
+{
+    _candidatePlConstraints.clear();
+    for ( const auto plConstraint : _plConstraints )
+    {
+        if ( plConstraint->isActive() && !plConstraint->phaseFixed() )
+        {
+            plConstraint->updateScore();
+            _candidatePlConstraints.insert( plConstraint );
+        }
+    }
+}
+
+PiecewiseLinearConstraint *Engine::pickSplitPLConstraint()
+{
+    updateScores();
+    auto constraint = *_candidatePlConstraints.begin();
+    _candidatePlConstraints.erase( constraint );
+    return constraint;
+}
+
+void Engine::setConstraintViolationThreshold( unsigned threshold )
+{
+    _smtCore.setConstraintViolationThreshold( threshold );
 }
 
 //

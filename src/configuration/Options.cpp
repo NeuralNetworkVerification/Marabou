@@ -53,6 +53,7 @@ void Options::initializeDefaultValues()
     _intOptions[INITIAL_TIMEOUT] = 5;
     _intOptions[VERBOSITY] = 2;
     _intOptions[TIMEOUT] = 0;
+    _intOptions[SPLIT_THRESHOLD] = 20;
 
     /*
       Float options
@@ -64,6 +65,7 @@ void Options::initializeDefaultValues()
     */
     _stringOptions[INPUT_FILE_PATH] = "";
     _stringOptions[PROPERTY_FILE_PATH] = "";
+    _stringOptions[INPUT_QUERY_FILE_PATH] = "";
     _stringOptions[SUMMARY_FILE] = "";
 }
 

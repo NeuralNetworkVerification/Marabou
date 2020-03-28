@@ -182,7 +182,7 @@ void PropertyParser::processSingleLine( const String &line, InputQuery &inputQue
             bool inputVariable = token.contains( "x" );
             bool outputVariable = token.contains( "y" );
 
-            if ( !( inputVariable xor outputVariable ) )
+            if ( !( inputVariable ^ outputVariable ) )
                 throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
 
             List<String> subTokens;

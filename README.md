@@ -35,11 +35,11 @@ paper](https://aisafety.stanford.edu/marabou/MarabouCAV2019.pdf) and the
 [slides](https://aisafety.stanford.edu/marabou/fomlas19.html). 
 
 For more information about the input formats please check the
-[wiki](https://github.com/guykatzz/Marabou/wiki/Marabou-Input-Formats).
+[wiki](https://github.com/NeuralNetworkVerification/Marabou/wiki/Marabou-Input-Formats).
 
 Download
 ------------------------------------------------------------------------------
-The latest version of Marabou is available on [http://github.com/GuyKatzz/Marabou].
+The latest version of Marabou is available on [https://github.com/NeuralNetworkVerification/Marabou].
 
 ## Static binaries
 
@@ -49,12 +49,17 @@ Pre-compiled binary for Linux is available:
 
 Build and Dependencies
 ------------------------------------------------------------------------------
-Marabou can be built on Linux and macOS. Marabou depends on the Boost library
+
+Marabou depends on the Boost library,
 which is automatically downloaded and built when you run make. Library CXXTEST
 comes included in the repository.
 
-The marabou build process is using CMake version 3.12 (or later), 
-You can get CMake [here](https://cmake.org/download/)
+The marabou build process uses CMake version 3.2 (or later).
+You can get CMake [here](https://cmake.org/download/).
+
+Marabou can be built for Linux, MacOS, or Windows machines.
+
+### Build Instructions for Linux or MacOS
 
 To build marabou using CMake run:
 ```
@@ -68,23 +73,59 @@ To enable multiprocess build change the last command to:
 ```
 cmake --build . -j PROC_NUM
 ```
+To compile in debug mode (default is release)
+```
+cmake .. -DCMAKE_BUILD_TYPE=Debug
+cmake --build .
+```
+
 The compiled binary will be in the *build* directory, named _Marabou_
 
 To run tests we use [ctest](https://cmake.org/cmake/help/v3.15/manual/ctest.1.html).
-The tests have labels according to level (unit/regress0/regress1...), and the code they are testing (engine/common etc...).  
+The tests have labels according to level (unit/system/regress0/regress1...), and the code they are testing (engine/common etc...).  
 For example to run all unit tests execute in the build directory:
 ```
 ctest -L unit
 ```
+On every build we run the unit tests, and on every pull request we run unit,
+system, regress0 and regress1.
 
+Another option to build and run all of the tests is: 
+```
+cd path/to/marabou/repo/folder
+mkdir build 
+cd build
+cmake ..
+make check -j PROC_NUM
+```
+### Build Instructions for Windows using Visual Studio
+
+First, install Visual Studio 2017 or later and select the "Desktop development with C++" workload. 
+Ensure that CMake is installed and added to your PATH.
+
+Open a command prompt and run:
+```
+cd path\to\marabou\repo\folder
+mkdir build 
+cd build
+cmake .. -G"Visual Studio 15 2017 Win64"
+cmake --build . --config Release
+```
+This process builds Marabou using the generator "Visual Studio 15 2017 Win64". 
+For 32-bit machines, omit Win64. Other generators and older versions of Visual Studio can likely be used as well, 
+but only "Visual Studio 15 2017 Win64" has been tested.
+
+The Marabou executable file will be written to the build/Release folder. To build in 
+Debug mode, simply run "cmake --build . --config Debug", and the executables will be 
+written to build/Debug.
 
 ### Python API
-Using Marabou through the Python interface requires Python 3. It may be useful
-to set up a Python virtual environment, see
+It may be useful to set up a Python virtual environment, see
 [here](https://docs.python.org/3/tutorial/venv.html) for more information.
 
-The Python interface requires *pybind11* (which is automatically downloaded), to
-build also the python API run
+The python interface was tested only on versions >3.5 and >2.7. The build process preffers python3 but will work if there is only python 2.7 avilable. (To control the default change the DEFAULT_PYTHON_VERSION variable).  
+The Python interface requires *pybind11* (which is automatically downloaded). 
+To also build the python API on Linux or MacOS, run:
 ```
 cd path/to/marabou/repo/folder
 mkdir build 
@@ -92,30 +133,47 @@ cd build
 cmake .. -DBUILD_PYTHON=ON
 cmake --build .
 ```
+On Windows, run:
+```
+cd path\to\marabou\repo\folder
+mkdir build 
+cd build
+cmake .. -G"Visual Studio 15 2017 Win64" -DBUILD_PYTHON=ON
+cmake --build . --config Release
+```
 This process will produce the binary file and the shared library for the Python 
-API, the shared library will be at maraboupy folder
-
+API. The shared library will be in the maraboupy folder for Linux and MacOS. 
+On Windows, the shared library is written to a Release subfolder in maraboupy, 
+so you will need to move the Release/\*pyd file to the maraboupy folder:
+```
+cd path\to\marabou\repo\folder\maraboupy
+move Release\*pyd .
+```
 
 Export maraboupy folder to Python and Jupyter paths:
 ```
 PYTHONPATH=PYTHONPATH:/path/to/marabou/folder
 JUPYTER_PATH=JUPYTER_PATH:/path/to/marabou/folder
 ```
-and Marabou is ready to be used from a Python or a Jupyter script.
+and Marabou is ready to be used from a Python or a Jupyter script. On Windows, 
+edit your environmental variables so PYTHONPATH includes the marabou folder.
 
 Getting Started
 -----------------------------------------------------------------------------
 ### To run Marabou from Command line 
-After building Marabou the binary is located at *build/Marabou*. The
+After building Marabou the binary is located at *build/Marabou* (or *build\Release\Marabou.exe* for Windows). The
 repository contains sample networks and properties in the *resources* folder.
 For more information see [resources/README.md](resources/README.md).
 
 To run Marabou, execute from the repo directory, for example:
-
 ```
 ./build/Marabou resources/nnet/acasxu/ACASXU_experimental_v2a_2_7.nnet resources/properties/acas_property_3.txt
 ```
-
+on Linux or MacOS, or 
+```
+build\Release\Marabou.exe resources\nnet\acasxu\ACASXU_experimental_v2a_2_7.nnet resources\properties\acas_property_3.txt
+```
+on Windows.
 
 ### Using Python interface 
 The *maraboupy/examples* folder contains several python scripts and Jupyter
@@ -134,6 +192,20 @@ So to solve a problem in DNC mode with 4 initial splits and initial timeout of 5
 ```
 build/Marabou resources/nnet/acasxu/ACASXU_experimental_v2a_2_7.nnet resources/properties/acas_property_3.txt --dnc --initial-divides=4 --initial-timeout=5 --num-online-divides=4 --timeout-factor=1.5 --num-workers=4
 ```
+
+### Tests
+We have three types of tests:  
+* unit tests - test specific small components, the tests are located alongside the code in a _tests_ folder (for example: _src/engine/tests_), to add a new set of tests, add a file named *Test_FILENAME* (where *FILENAME* is what you want to test), and add it to the CMakeLists.txt file (for example src/engine/CMakeLists.txt)
+* system tests - test an end to end use case but still have access to internal functionality. Those tests are located in _src/system_tests_. To add new set of tests create a file named *Test_FILENAME*, and add it also to _src/system_tests/CMakeLists.txt_.
+* regression tests - test end to end functionality thorugh the API, each test is defined by:  
+  * network_file - description of the "neural network" supporting nnet and mps formats (using the extension to decdie on the format)  
+  * property_file - optional, constraint on the input and output variables  
+  * expected_result - SAT/UNSAT  
+
+The tests are divided into 5 levels to allow variability in running time, to add a new regression tests: 
+  * add the description of the network and property to the _resources_ sub-folder 
+  * add the test to: _regress/regressLEVEL/CMakeLists.txt_ (where LEVEL is within 0-5) 
+In each build we run unit_tests and system_tests, on pull request we run regression 0 & 1, in the future we will run other levels of regression weekly / monthly. 
 
 Acknowledgments
 -----------------------------------------------------------------------------

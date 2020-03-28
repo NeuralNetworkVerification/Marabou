@@ -21,6 +21,10 @@
 #include <iostream>
 #include <set>
 
+#ifdef _WIN32
+#include <iterator>
+#endif
+
 template<class Value>
 class Set
 {

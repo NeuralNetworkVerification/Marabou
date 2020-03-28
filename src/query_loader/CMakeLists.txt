@@ -1,11 +1,21 @@
-cmake_minimum_required (VERSION 3.12)
-
 file(GLOB SRCS "*.cpp")
 file(GLOB HEADERS "*.h")
-file(GLOB SRC_EXCLUDE "main.cpp")
-
-list(REMOVE_ITEM SRCS "${SRC_EXCLUDE}")
 
 target_sources(${MARABOU_LIB} PRIVATE ${SRCS})
 target_include_directories(${MARABOU_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
+target_sources(${MARABOU_TEST_LIB} PRIVATE ${SRCS})
+target_include_directories(${MARABOU_TEST_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+
+set (QUERY_LOADER_TESTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tests")
+macro(query_loader_add_unit_test name)
+    set(USE_MOCK_COMMON FALSE)
+    set(USE_MOCK_ENGINE FALSE)
+    marabou_add_test(${QUERY_LOADER_TESTS_DIR}/Test_${name} query_loader USE_MOCK_COMMON USE_MOCK_ENGINE "unit")
+endmacro()
+
+query_loader_add_unit_test(QueryLoader)
+
+if (${BUILD_PYTHON})
+    target_include_directories(${MARABOU_PY} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+endif()

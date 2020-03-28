@@ -32,7 +32,9 @@
 #include <string.h>
 
 Tableau::Tableau()
-    : _A( NULL )
+    : _n ( 0 )
+    , _m ( 0 )
+    , _A( NULL )
     , _sparseColumnsOfA( NULL )
     , _sparseRowsOfA( NULL )
     , _denseA( NULL )
@@ -1815,6 +1817,9 @@ unsigned Tableau::addEquation( const Equation &equation )
     // Populate the new row of b
     _b[_m - 1] = equation._scalar;
 
+    if ( !FloatUtils::isZero( _b[_m - 1] ) )
+        _rhsIsAllZeros = false;
+    
     /*
       Attempt to make the auxiliary variable the new basic variable.
       This usually works.

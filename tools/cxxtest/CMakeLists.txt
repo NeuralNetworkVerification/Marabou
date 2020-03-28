@@ -1,5 +1,3 @@
-cmake_minimum_required (VERSION 3.12)
-
 file(GLOB HEADERS "cxxtest/*.h")
 
 target_sources(${MARABOU_LIB} PRIVATE ${SRCS})

@@ -24,6 +24,7 @@
 #include "BlandsRule.h"
 #include "DantzigsRule.h"
 #include "DegradationChecker.h"
+#include "DivideStrategy.h"
 #include "IEngine.h"
 #include "InputQuery.h"
 #include "Map.h"
@@ -35,6 +36,10 @@
 
 #include <atomic>
 
+#ifdef _WIN32
+#undef ERROR
+#endif
+
 class EngineState;
 class InputQuery;
 class PiecewiseLinearConstraint;
@@ -45,16 +50,6 @@ class Engine : public IEngine, public SignalHandler::Signalable
 public:
     Engine( unsigned verbosity = 2 );
     ~Engine();
-
-    enum ExitCode {
-        UNSAT = 0,
-        SAT = 1,
-        ERROR = 2,
-        TIMEOUT = 3,
-        QUIT_REQUESTED = 4,
-
-        NOT_DONE = 999,
-    };
 
     /*
       Attempt to find a feasible solution for the input within a time limit
@@ -113,9 +108,15 @@ public:
     void applySplit( const PiecewiseLinearCaseSplit &split );
 
     /*
+      Reset the state of the engine, before solving a new query
+      (as part of DnC mode).
+    */
+    void reset();
+
+    /*
       Reset the statistics object
     */
-    void resetStatistics( const Statistics &statistics );
+    void resetStatistics();
 
     /*
       Clear the violated PL constraints
@@ -128,8 +129,23 @@ public:
     void setVerbosity( unsigned verbosity );
 
     /*
+      Pick the piecewise linear constraint for splitting
+    */
+    PiecewiseLinearConstraint *pickSplitPLConstraint();
+
+    /*
+      Update the scores of each candidate splitting PL constraints
+    */
+    void updateScores();
+
+    /*
+      Set the constraint violation threshold of SmtCore
+    */
+    void setConstraintViolationThreshold( unsigned threshold );
+
+    /*
       PSA: The following two methods are for DnC only and should be used very
-      cauciously.
+      cautiously.
      */
     void resetSmtCore();
     void resetExitCode();
@@ -169,6 +185,11 @@ private:
       The existing piecewise-linear constraints.
     */
     List<PiecewiseLinearConstraint *> _plConstraints;
+
+    /*
+      The ordered set of candidate PL constraints for splitting
+    */
+    Set<PiecewiseLinearConstraint *> _candidatePlConstraints;
 
     /*
       Piecewise linear constraints that are currently violated.
@@ -451,6 +472,12 @@ private:
     double *createConstraintMatrix();
     void addAuxiliaryVariables();
     void augmentInitialBasisIfNeeded( List<unsigned> &initialBasis, const List<unsigned> &basicRows );
+
+    /*
+      Update the preferred direction to perform fixes and the preferred order
+      to handle case splits
+    */
+    void updateDirections();
 };
 
 #endif // __Engine_h__

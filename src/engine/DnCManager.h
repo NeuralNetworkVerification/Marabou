@@ -18,6 +18,7 @@
 
 #include "DivideStrategy.h"
 #include "Engine.h"
+#include "InputQuery.h"
 #include "SubQuery.h"
 #include "Vector.h"
 
@@ -40,8 +41,8 @@ public:
 
     DnCManager( unsigned numWorkers, unsigned initialDivides, unsigned
                 initialTimeout, unsigned onlineDivides, float timeoutFactor,
-                DivideStrategy divideStrategy, String networkFilePath,
-                String propertyFilePath, unsigned verbosity );
+                DivideStrategy divideStrategy, InputQuery *inputQuery,
+                unsigned verbosity );
 
     ~DnCManager();
 
@@ -61,6 +62,18 @@ public:
       Get the string representation of the exitcode
     */
     String getResultString();
+
+    /*
+      Print the result of DnC solving
+    */
+    void printResult();
+
+    /*
+      Store the solution into the map
+    */
+    void getSolution( std::map<int, double> &ret );
+
+    void setConstraintViolationThreshold( unsigned threshold );
 
 private:
     /*
@@ -88,11 +101,6 @@ private:
       exitCode.
     */
     void updateDnCExitCode();
-
-    /*
-      Print the result of DnC solving
-    */
-    void printResult();
 
     /*
       Set _timeoutReached to true if timeout has been reached
@@ -153,10 +161,10 @@ private:
     DivideStrategy _divideStrategy;
 
     /*
-      Path to the network and property files
+      Alternatively, we could construct the DnCManager by directly providing the
+      inputQuery instead of the network and property filepaths.
     */
-    String _networkFilePath;
-    String _propertyFilePath;
+    InputQuery *_baseInputQuery;
 
     /*
       The exit code of the DnCManager.
@@ -182,6 +190,12 @@ private:
       The level of verbosity
     */
     unsigned _verbosity;
+
+    /*
+      The constraint violation threshold for each worker engine
+    */
+    unsigned _constraintViolationThreshold;
+
 };
 
 #endif // __DnCManager_h__

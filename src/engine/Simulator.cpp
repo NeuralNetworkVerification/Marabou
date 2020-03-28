@@ -19,6 +19,10 @@
 #include "MarabouError.h"
 #include "Simulator.h"
 
+#ifdef _WIN32
+#include <time.h>
+#endif
+
 void Simulator::runSimulations( const InputQuery &inputQuery, unsigned numberOfSimulations )
 {
     unsigned seed = time( NULL );
