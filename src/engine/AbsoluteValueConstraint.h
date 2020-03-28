@@ -86,7 +86,7 @@ public:
       constraint breaks into:
 
       y = |x| <-->
-         ( x <= 0 /\ y = -x ) \/ ( x >= 0 /\ y =  x )
+         ( x <= 0 /\ y = -x ) \/ ( x >= 0 /\ y = x )
     */
     List<PiecewiseLinearCaseSplit> getCaseSplits() const;
 
