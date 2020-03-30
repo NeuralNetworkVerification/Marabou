@@ -32,10 +32,11 @@ set(REGRESS_DIR "${PROJECT_SOURCE_DIR}/regress")
 set(ENGINE_DIR "${SRC_DIR}/engine")
 set(PYBIND11_DIR "${TOOLS_DIR}/pybind11-2.3.0")
 set(BOOST_DIR "${TOOLS_DIR}/boost_1_68_0")
-set(OpenBLAS_DIR "${TOOLS_DIR}/OpenBLAS")
+set(OPENBLAS_DIR "${TOOLS_DIR}/OpenBLAS-0.3.9")
 set(COMMON_DIR "${SRC_DIR}/common")
 set(BASIS_DIR "${SRC_DIR}/basis_factorization")
 
+set(OPENBLAS_LIB openblas)
 
 set(BIN_DIR "${CMAKE_BINARY_DIR}/bin")
 
@@ -108,7 +109,7 @@ if (NOT MSVC)
     set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS} -g)
     set(CXXTEST_FLAGS ${DEBUG_FLAGS}  -Wno-ignored-qualifiers)
 else()
-    set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS}) 
+    set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS})
     add_definitions(-DNOMINMAX) # remove min max macros
 endif()
 
@@ -151,10 +152,12 @@ endif()
 set(LIBS_INCLUDES ${Boost_INCLUDE_DIRS})
 set(LIBS ${Boost_LIBRARIES})
 
+
 #OpenBLAS
-find_package( BLAS REQUIRED )
-list(APPEND LIBS ${BLAS_LIBRARIES})
-message( STATUS BLAS found: ${BLAS_LIBRARIES} )
+add_library(${OPENBLAS_LIB} SHARED IMPORTED)
+set_target_properties( ${OPENBLAS_LIB} PROPERTIES IMPORTED_LOCATION ${OPENBLAS_DIR}/installed/lib/libopenblas.a )
+list(APPEND LIBS ${OPENBLAS_LIB})
+target_include_directories(${OPENBLAS_LIB} INTERFACE ${OPENBLAS_DIR}/installed/include)
 
 # pthread
 set(THREADS_PREFER_PTHREAD_FLAG ON)
