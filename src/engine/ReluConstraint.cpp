@@ -491,7 +491,7 @@ PiecewiseLinearCaseSplit ReluConstraint::getActiveSplit() const
     if ( _auxVarInUse )
     {
         // Special case: aux var in use.
-        // Because aux = f - b, we just set aux = 0.
+        // Because aux = f - b and aux >= 0, we just add that aux <= 0.
         activePhase.storeBoundTightening( Tightening( _aux, 0.0, Tightening::UB ) );
     }
     else
