@@ -67,6 +67,13 @@ cd path/to/marabou/repo/folder
 mkdir build 
 cd build
 cmake ..
+```
+For configuring to build a static Marabou binary, use the following flag
+```
+cmake .. -DBUILD_STATIC_MARABOU=ON
+```
+To build, run the following:
+```
 cmake --build .
 ```
 To enable multiprocess build change the last command to:
