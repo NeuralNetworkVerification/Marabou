@@ -217,7 +217,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
                     {
                         if ( _verbosity > 0 )
                         {
-                            printf( "Before declaring SAT, recomputing...\n" );
+                            printf( "Before declaring sat, recomputing...\n" );
                         }
                         // Make sure that the assignment is precise before declaring success
                         _tableau->computeAssignment();
@@ -225,7 +225,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
                     }
                     if ( _verbosity > 0 )
                     {
-                        printf( "\nEngine::solve: SAT assignment found\n" );
+                        printf( "\nEngine::solve: sat assignment found\n" );
                         _statistics.print();
                     }
                     _exitCode = Engine::SAT;
@@ -287,7 +287,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
             {
                 if ( _verbosity > 0 )
                 {
-                    printf( "\nEngine::solve: UNSAT query\n" );
+                    printf( "\nEngine::solve: unsat query\n" );
                     _statistics.print();
                 }
                 _exitCode = Engine::UNSAT;
