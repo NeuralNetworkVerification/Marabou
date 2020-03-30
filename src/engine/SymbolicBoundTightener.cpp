@@ -287,7 +287,7 @@ void SymbolicBoundTightener::run( bool useLinearConcretization )
 {
     /*
       Initialize the symbolic bounds for the first layer. Each variable has symbolic
-      upper and lower bound 1 for itself, 0 for all other varibales.
+      upper and lower bound 1 for itself, 0 for all other variables.
       The input layer has no biases.
     */
     std::fill_n( _previousLayerLowerBounds, _maxLayerSize * _inputLayerSize, 0 );
@@ -371,31 +371,18 @@ void SymbolicBoundTightener::run( bool useLinearConcretization )
 
             newUB, newLB dimensions: inputLayerSize x layerSize
         */
-
-        for ( unsigned i = 0; i < _inputLayerSize; ++i )
-        {
-            for ( unsigned j = 0; j < currentLayerSize; ++j )
-            {
-                for ( unsigned k = 0; k < previousLayerSize; ++k )
-                {
-                    _currentLayerLowerBounds[i * currentLayerSize + j] +=
-                        _previousLayerUpperBounds[i * previousLayerSize + k] *
-                        weights._negativeValues[k * currentLayerSize + j];
-
-                    _currentLayerLowerBounds[i * currentLayerSize + j] +=
-                        _previousLayerLowerBounds[i * previousLayerSize + k] *
-                        weights._positiveValues[k * currentLayerSize + j];
-
-                    _currentLayerUpperBounds[i * currentLayerSize + j] +=
-                        _previousLayerUpperBounds[i * previousLayerSize + k] *
-                        weights._positiveValues[k * currentLayerSize + j];
-
-                    _currentLayerUpperBounds[i * currentLayerSize + j] +=
-                        _previousLayerLowerBounds[i * previousLayerSize + k] *
-                        weights._negativeValues[k * currentLayerSize + j];
-                }
-            }
-        }
+        matrixMultiplication( _previousLayerUpperBounds, weights._positiveValues,
+                              _currentLayerUpperBounds, _inputLayerSize,
+                              previousLayerSize, currentLayerSize );
+        matrixMultiplication( _previousLayerLowerBounds, weights._negativeValues,
+                              _currentLayerUpperBounds, _inputLayerSize,
+                              previousLayerSize, currentLayerSize );
+        matrixMultiplication( _previousLayerLowerBounds, weights._positiveValues,
+                              _currentLayerLowerBounds, _inputLayerSize,
+                              previousLayerSize, currentLayerSize );
+        matrixMultiplication( _previousLayerUpperBounds, weights._negativeValues,
+                              _currentLayerLowerBounds, _inputLayerSize,
+                              previousLayerSize, currentLayerSize );
 
         /*
           Compute the biases for the new layer
@@ -883,6 +870,22 @@ void SymbolicBoundTightener::storeIntoOther( SymbolicBoundTightener &other ) con
     other._nodeIndexToEliminatedReluState = _nodeIndexToEliminatedReluState;
 
     other._inputNeuronToIndex = _inputNeuronToIndex;
+}
+
+void SymbolicBoundTightener::matrixMultiplication( double *matA, double *matB,
+                                                   double *matC, unsigned rowsA,
+                                                   unsigned columnsA,
+                                                   unsigned columnsB )
+{
+    double alpha = 1;
+    double beta = 1;
+    // Conceptually, cblas_dgemm computes alpha * A B + beta * C and stores the result
+    // in C.
+    // See https://developer.apple.com/documentation/accelerate/1513282-cblas_dgemm?language=objc
+    // for the documnetation of cblas_dgemm.
+    //
+    cblas_dgemm( CblasRowMajor, CblasNoTrans, CblasNoTrans, rowsA, columnsB,
+                 columnsA, alpha, matA, columnsA, matB, columnsB, beta, matC, columnsB);
 }
 
 //
