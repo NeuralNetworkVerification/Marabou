@@ -152,10 +152,13 @@ endif()
 set(LIBS_INCLUDES ${Boost_INCLUDE_DIRS})
 set(LIBS ${Boost_LIBRARIES})
 
-
 #OpenBLAS
+if(NOT EXISTS "${OPENBLAS_DIR}/installed/lib/libopenblas.a")
+    execute_process(COMMAND ${TOOLS_DIR}/get-openBLAS.sh)
+endif()
+
 add_library(${OPENBLAS_LIB} SHARED IMPORTED)
-set_target_properties( ${OPENBLAS_LIB} PROPERTIES IMPORTED_LOCATION ${OPENBLAS_DIR}/installed/lib/libopenblas.a )
+set_target_properties(${OPENBLAS_LIB} PROPERTIES IMPORTED_LOCATION ${OPENBLAS_DIR}/installed/lib/libopenblas.a)
 list(APPEND LIBS ${OPENBLAS_LIB})
 target_include_directories(${OPENBLAS_LIB} INTERFACE ${OPENBLAS_DIR}/installed/include)
 
