@@ -520,8 +520,6 @@ void Preprocessor::collectFixedValues()
         }
         else if ( !usedVariables.exists( i ) )
         {
-            printf( "Have an unused var: x%u\n", i );
-
             // If possible, choose a value that matches the debugging
             // solution. Otherwise, pick the lower bound
             if ( _preprocessed._debuggingSolution.exists( i ) &&
