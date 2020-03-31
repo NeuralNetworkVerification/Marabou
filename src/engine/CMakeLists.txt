@@ -16,6 +16,7 @@ macro(engine_add_unit_test name)
         USE_MOCK_ENGINE "unit")
 endmacro()
 
+engine_add_unit_test(AbsoluteValueConstraint)
 engine_add_unit_test(BlandsRule)
 engine_add_unit_test(ConstraintBoundTightener)
 engine_add_unit_test(ConstraintMatrixAnalyzer)
