@@ -179,6 +179,15 @@ bool Equation::isVariableMergingEquation( unsigned &x1, unsigned &x2 ) const
     return false;
 }
 
+Set<unsigned> Equation::getParticipatingVariables() const
+{
+    Set<unsigned> result;
+    for ( const auto &addend : _addends )
+        result.insert( addend._variable );
+
+    return result;
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "
