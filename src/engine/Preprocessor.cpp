@@ -69,7 +69,6 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     {
         continueTightening = processEquations();
         continueTightening = processConstraints() || continueTightening;
-
         if ( attemptVariableElimination )
             continueTightening = processIdenticalVariables() || continueTightening;
 
