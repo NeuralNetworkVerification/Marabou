@@ -4,6 +4,7 @@ project(Marabou)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+option(BUILD_STATIC_MARABOU "Build static Marabou binary" OFF)
 option(BUILD_PYTHON "Build Python" ON)
 option(FORCE_PYTHON_BUILD "Build python even if there is only python32" OFF)
 option(RUN_UNIT_TEST "run unit tests on build" ON)
@@ -107,7 +108,7 @@ if (NOT MSVC)
     set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS} -g)
     set(CXXTEST_FLAGS ${DEBUG_FLAGS}  -Wno-ignored-qualifiers)
 else()
-    set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS}) 
+    set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS})
     add_definitions(-DNOMINMAX) # remove min max macros
 endif()
 
@@ -156,8 +157,13 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 list(APPEND LIBS Threads::Threads)
 
-# build a static library
-target_link_libraries(${MARABOU_LIB} ${LIBS})
+if (BUILD_STATIC_MARABOU)
+  # build a static library
+  target_link_libraries(${MARABOU_LIB} ${LIBS} -static)
+else()
+  target_link_libraries(${MARABOU_LIB} ${LIBS})
+endif()
+
 target_include_directories(${MARABOU_LIB} PRIVATE ${LIBS_INCLUDES})
 target_compile_options(${MARABOU_LIB} PRIVATE ${RELEASE_FLAGS})
 

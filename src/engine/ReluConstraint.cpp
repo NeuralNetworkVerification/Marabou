@@ -46,7 +46,7 @@ ReluConstraint::ReluConstraint( const String &serializedRelu )
     String constraintType = serializedRelu.substring( 0, 4 );
     ASSERT( constraintType == String( "relu" ) );
 
-    // remove the constraint type in serialized form
+    // Remove the constraint type in serialized form
     String serializedValues = serializedRelu.substring( 5, serializedRelu.length() - 5 );
     List<String> values = serializedValues.tokenize( "," );
 
@@ -487,11 +487,22 @@ PiecewiseLinearCaseSplit ReluConstraint::getActiveSplit() const
     // Active phase: b >= 0, b - f = 0
     PiecewiseLinearCaseSplit activePhase;
     activePhase.storeBoundTightening( Tightening( _b, 0.0, Tightening::LB ) );
-    Equation activeEquation( Equation::EQ );
-    activeEquation.addAddend( 1, _b );
-    activeEquation.addAddend( -1, _f );
-    activeEquation.setScalar( 0 );
-    activePhase.addEquation( activeEquation );
+
+    if ( _auxVarInUse )
+    {
+        // Special case: aux var in use.
+        // Because aux = f - b and aux >= 0, we just add that aux <= 0.
+        activePhase.storeBoundTightening( Tightening( _aux, 0.0, Tightening::UB ) );
+    }
+    else
+    {
+        Equation activeEquation( Equation::EQ );
+        activeEquation.addAddend( 1, _b );
+        activeEquation.addAddend( -1, _f );
+        activeEquation.setScalar( 0 );
+        activePhase.addEquation( activeEquation );
+    }
+
     return activePhase;
 }
 
