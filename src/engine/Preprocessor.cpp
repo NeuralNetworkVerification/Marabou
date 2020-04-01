@@ -69,7 +69,6 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     {
         continueTightening = processEquations();
         continueTightening = processConstraints() || continueTightening;
-
         if ( attemptVariableElimination )
             continueTightening = processIdenticalVariables() || continueTightening;
 
@@ -494,10 +493,45 @@ bool Preprocessor::processIdenticalVariables()
 
 void Preprocessor::collectFixedValues()
 {
+    // Compute all used variables:
+    //   1. Variables that appear in equations
+    //   2. Variables that participate in PL constraints
+    //   3. Variables that have been merged (and hence, previously
+    //      appeared in an equation)
+    Set<unsigned> usedVariables;
+    for ( const auto &equation : _preprocessed.getEquations() )
+        usedVariables += equation.getParticipatingVariables();
+    for ( const auto &constraint : _preprocessed.getPiecewiseLinearConstraints() )
+    {
+        for ( const auto &var : constraint->getParticipatingVariables() )
+            usedVariables.insert( var );
+    }
+    for ( const auto &merged : _mergedVariables )
+        usedVariables.insert( merged.first );
+
+    // Collect any variables with identical lower and upper bounds, or
+    // which are unused
 	for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
 	{
         if ( FloatUtils::areEqual( _preprocessed.getLowerBound( i ), _preprocessed.getUpperBound( i ) ) )
+        {
             _fixedVariables[i] = _preprocessed.getLowerBound( i );
+        }
+        else if ( !usedVariables.exists( i ) )
+        {
+            // If possible, choose a value that matches the debugging
+            // solution. Otherwise, pick the lower bound
+            if ( _preprocessed._debuggingSolution.exists( i ) &&
+                 _preprocessed._debuggingSolution[i] >= _preprocessed.getLowerBound( i ) &&
+                 _preprocessed._debuggingSolution[i] <= _preprocessed.getUpperBound( i ) )
+            {
+                _fixedVariables[i] = _preprocessed._debuggingSolution[i];
+            }
+            else
+            {
+                _fixedVariables[i] = _preprocessed.getLowerBound( i );
+            }
+        }
 	}
 }
 
