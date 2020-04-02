@@ -148,6 +148,8 @@ cd build
 cmake .. -G"Visual Studio 15 2017 Win64" -DBUILD_PYTHON=ON
 cmake --build . --config Release
 ```
+Make sure the detected python ("Found PythonInterp: ....") is a windows python and not cygwin or something like that (if it is cygwin, use -DPYTHON_EXECUTABLE flag to override the default python, or manuialy download the linux pybind and locate it in the tools directory)
+
 This process will produce the binary file and the shared library for the Python 
 API. The shared library will be in the maraboupy folder for Linux and MacOS. 
 On Windows, the shared library is written to a Release subfolder in maraboupy, 
