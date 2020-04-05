@@ -236,6 +236,19 @@ public:
         _score = score;
     }
 
+    /*
+      Retrieve the current lower and upper bounds
+    */
+    double getLowerBound( unsigned i ) const
+    {
+        return _lowerBounds[i];
+    }
+
+    double getUpperBound( unsigned i ) const
+    {
+        return _upperBounds[i];
+    }
+
 protected:
     bool _constraintActive;
 	Map<unsigned, double> _assignment;

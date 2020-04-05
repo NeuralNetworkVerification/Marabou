@@ -1125,6 +1125,8 @@ void Engine::extractSolution( InputQuery &inputQuery )
             if ( _preprocessor.variableIsFixed( variable ) )
             {
                 inputQuery.setSolutionValue( i, _preprocessor.getFixedValue( variable ) );
+                inputQuery.setLowerBound( i, _preprocessor.getFixedValue( variable ) );
+                inputQuery.setUpperBound( i, _preprocessor.getFixedValue( variable ) );
                 continue;
             }
 
@@ -1134,10 +1136,14 @@ void Engine::extractSolution( InputQuery &inputQuery )
 
             // Finally, set the assigned value
             inputQuery.setSolutionValue( i, _tableau->getValue( variable ) );
+            inputQuery.setLowerBound( i, _tableau->getLowerBound( variable ) );
+            inputQuery.setUpperBound( i, _tableau->getUpperBound( variable ) );
         }
         else
         {
             inputQuery.setSolutionValue( i, _tableau->getValue( i ) );
+            inputQuery.setLowerBound( i, _tableau->getLowerBound( i ) );
+            inputQuery.setUpperBound( i, _tableau->getUpperBound( i ) );
         }
     }
 }
