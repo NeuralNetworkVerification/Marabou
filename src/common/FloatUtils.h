@@ -36,21 +36,12 @@ public:
                                   unsigned precision = GlobalConfiguration::DEFAULT_DOUBLE_TO_STRING_PRECISION );
 
     static bool isNan( double x );
-    /* { */
-    /*     return isnan( x ); */
-    /* } */
 
     static bool isInf( double x );
-    /* { */
-    /*     return isinf( x ); */
-    /* } */
 
     static bool isZero( double x, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS )
     {
-        ASSERT( epsilon > 0 ); 
-        double lower = -epsilon;
-        double upper = epsilon;
-        return ( x - upper ) * ( x - lower ) <= 0;
+        return ( -epsilon <= x ) && ( x <= epsilon );
     }
 
     static bool isPositive( double x, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS )
