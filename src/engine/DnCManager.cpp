@@ -215,9 +215,9 @@ String DnCManager::getResultString()
     switch ( _exitCode )
     {
     case DnCManager::SAT:
-        return "SAT";
+        return "sat";
     case DnCManager::UNSAT:
-        return "UNSAT";
+        return "unsat";
     case DnCManager::ERROR:
         return "ERROR";
     case DnCManager::NOT_DONE:
@@ -252,7 +252,7 @@ void DnCManager::printResult()
     {
     case DnCManager::SAT:
     {
-        std::cout << "SAT\n" << std::endl;
+        std::cout << "sat\n" << std::endl;
 
         ASSERT( _engineWithSATAssignment != nullptr );
 
@@ -288,7 +288,7 @@ void DnCManager::printResult()
         break;
     }
     case DnCManager::UNSAT:
-        std::cout << "UNSAT" << std::endl;
+        std::cout << "unsat" << std::endl;
         break;
     case DnCManager::ERROR:
         std::cout << "ERROR" << std::endl;
