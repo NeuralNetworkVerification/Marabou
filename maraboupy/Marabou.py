@@ -88,9 +88,9 @@ def solve_query(ipq, filename="", verbose=True, timeout=0, verbosity=2,
         if stats.hasTimedOut():
             print ("TIMEOUT")
         elif len(vals)==0:
-            print("UNSAT")
+            print("unsat")
         else:
-            print("SAT")
+            print("sat")
             for i in range(ipq.getNumInputVariables()):
                 print("input {} = {}".format(i, vals[ipq.inputVariableByIndex(i)]))
             for i in range(ipq.getNumOutputVariables()):

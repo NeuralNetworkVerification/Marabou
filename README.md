@@ -35,11 +35,11 @@ paper](https://aisafety.stanford.edu/marabou/MarabouCAV2019.pdf) and the
 [slides](https://aisafety.stanford.edu/marabou/fomlas19.html). 
 
 For more information about the input formats please check the
-[wiki](https://github.com/guykatzz/Marabou/wiki/Marabou-Input-Formats).
+[wiki](https://github.com/NeuralNetworkVerification/Marabou/wiki/Marabou-Input-Formats).
 
 Download
 ------------------------------------------------------------------------------
-The latest version of Marabou is available on [http://github.com/GuyKatzz/Marabou].
+The latest version of Marabou is available on [https://github.com/NeuralNetworkVerification/Marabou].
 
 ## Static binaries
 
@@ -67,12 +67,25 @@ cd path/to/marabou/repo/folder
 mkdir build 
 cd build
 cmake ..
+```
+For configuring to build a static Marabou binary, use the following flag
+```
+cmake .. -DBUILD_STATIC_MARABOU=ON
+```
+To build, run the following:
+```
 cmake --build .
 ```
 To enable multiprocess build change the last command to:
 ```
 cmake --build . -j PROC_NUM
 ```
+To compile in debug mode (default is release)
+```
+cmake .. -DCMAKE_BUILD_TYPE=Debug
+cmake --build .
+```
+
 The compiled binary will be in the *build* directory, named _Marabou_
 
 To run tests we use [ctest](https://cmake.org/cmake/help/v3.15/manual/ctest.1.html).
@@ -135,6 +148,8 @@ cd build
 cmake .. -G"Visual Studio 15 2017 Win64" -DBUILD_PYTHON=ON
 cmake --build . --config Release
 ```
+Make sure the detected python ("Found PythonInterp: ....") is a windows python and not cygwin or something like that (if it is cygwin, use -DPYTHON_EXECUTABLE flag to override the default python, or manuialy download the linux pybind and locate it in the tools directory)
+
 This process will produce the binary file and the shared library for the Python 
 API. The shared library will be in the maraboupy folder for Linux and MacOS. 
 On Windows, the shared library is written to a Release subfolder in maraboupy, 
@@ -194,7 +209,7 @@ We have three types of tests:
 * regression tests - test end to end functionality thorugh the API, each test is defined by:  
   * network_file - description of the "neural network" supporting nnet and mps formats (using the extension to decdie on the format)  
   * property_file - optional, constraint on the input and output variables  
-  * expected_result - SAT/UNSAT  
+  * expected_result - sat/unsat  
 
 The tests are divided into 5 levels to allow variability in running time, to add a new regression tests: 
   * add the description of the network and property to the _resources_ sub-folder 
