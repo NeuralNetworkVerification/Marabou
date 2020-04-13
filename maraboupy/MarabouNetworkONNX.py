@@ -342,7 +342,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         if inputName in self.varMap:
             self.varMap[nodeName] = np.transpose(self.varMap[node.input[0]], perm)
         elif inputName in self.constantMap:
-            self.constantMap[nodeName] = np.transpose(self.constant[inputName], perm)
+            self.constantMap[nodeName] = np.transpose(self.constantMap[inputName], perm)
     
     def maxpoolEquations(self, node, makeEquations):
         """
