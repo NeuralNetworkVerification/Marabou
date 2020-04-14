@@ -172,6 +172,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             self.cast(node)
         elif node.op_type == 'Reshape':
             self.reshape(node)
+        elif node.op_type == 'Flatten':
+            self.flatten(node)
         elif node.op_type == "Transpose":
             self.transpose(node)
         elif node.op_type == "MaxPool":
@@ -320,7 +322,36 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             self.varMap[nodeName] = self.varMap[inputName1].reshape(reshapeVals)
         elif inputName1 in self.constantMap:
             self.constantMap[nodeName] = self.constantMap[inputName1].reshape(reshapeVals)
-            
+    
+    def flatten(self, node):
+        """
+        Function representing flatten
+        Arguments:
+            node: (node) representing reshape operation
+        """
+
+        nodeName = node.output[0]
+
+        # Assume first input is array to be reshaped, second input is up to which dimension
+        # (exclusive) the tensor should be flattened
+
+        if len(node.input) == 1:
+            inputName1 = node.input[0]
+            flattenUpTo = 1
+        elif len(node.input) == 2:
+            inputName1, inputName2 = node.input
+            flattenUpTo = self.constantMap[inputName2]
+        else:
+            print('Invalid number of inputs for Flatten')
+
+        newShape = self.shapeMap[inputName1][:flattenUpTo] + [-1]
+        self.shapeMap[nodeName] = list(np.zeros(self.shapeMap[inputName1]).reshape(newShape).shape)
+
+        if inputName1 in self.varMap:
+            self.varMap[nodeName] = self.varMap[inputName1].reshape(newShape)
+        elif inputName1 in self.constantMap:
+            self.constantMap[nodeName] = self.constantMap[inputName1].reshape(newShape)
+    
     def transpose(self, node):
         """
         Function representing transpose
