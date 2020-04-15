@@ -104,7 +104,7 @@ def train_cnn2D():
 
     batch_size = 128
     num_classes = 10
-    epochs = 12
+    epochs = 5
 
     img_rows, img_cols = x, y
     
@@ -171,7 +171,7 @@ def train_cnn2D():
     plt.ylabel('Accuracy')
     plt.ylim([0.5, 1])
     plt.legend(loc='lower right')
-    plt.show()
+    #plt.show() #TODO FIXME save the figure.
     
     test_loss, test_acc = model.evaluate(test_images,  test_labels, verbose=2)
     print('Test loss:', test_loss)
@@ -179,22 +179,16 @@ def train_cnn2D():
     model.summary()
     model.save(file_name)
 
-    for i in range(10):
-        plt.figure()
-        rand = np.random.random([x,y,d]) 
-        plt.imshow(rand.reshape((x,y)))
-        plt.show()
-        rand_label = model.predict(np.array([rand]))
-        print(rand_label)
-        
-    exit()
-    in_l_size = {"x":x , "y":y, "d":d }
+    rand_im = rand = np.random.random([x,y,d])
+    rand_label = model.predict(np.array([rand]))
+    
+     in_l_size = {"x":x , "y":y, "d":d }
 
     ###################
     ####Return CNN Obj
     ###################
     
-    return mcnn.Cnn2D.keras_model_to_Cnn2D(in_l_size, model)
+    return mcnn.Cnn2D.keras_model_to_Cnn2D(in_l_size, model), rand_im, rand_label
 
 
 
@@ -212,10 +206,18 @@ def train_cnn2D():
 
 if __name__ == "__main__": 
 
+    ###################
+    ####Train CNN
+    ###################
+    
     print("Start generating CNN")
-    cnn_orig = train_cnn2D()
+    cnn_orig, rand_im, rand_label = train_cnn2D()
     print("Finish Generating CNN")
 
+    #########################
+    #### Set experiment CFG.
+    #########################
+    
     num_of_samples = 3
     sample_size = 3
     samples = [random.sample(set(cnn_orig.out_l.values()), k=sample_size) for i in range(num_of_samples)]
@@ -231,13 +233,15 @@ if __name__ == "__main__":
     orig_net_edges = list()    
     coi_timing = list()
     orig_timing = list()
+
+    ##############################
+    ####Measure Verification Step
+    ##############################
     
     for j, sample in enumerate(samples):
         
         print("*********************************** COI **********************************************")    
         print("COI nodes:{}".format(str(sample)))
-        #coi_cnn = mcnn.Cnn2D.coi(cnn,[mcnn.n2str_md(cnn.l_num,[0,0,0])])
-        #in_prop_coi  = {n : (0.0001,20) for n in coi_cnn.in_l.values()}
         print("Start solving COI CNN")
         for v in sample:
             if v not in cnn_orig.nodes():
@@ -251,17 +255,20 @@ if __name__ == "__main__":
         coi_net_edges.append(len(coi_cnn.edges()))
         print("Finish solving COI CNN")
 
-        if j == (len(samples) - 1):
-            print("*********************************** Original **********************************************")
-            print("Start solving CNN")
-            start = time.time()        
-            #cnn_orig.solve(in_prop(cnn_orig), out_prop(cnn_orig)) TODO
-            end = time.time()        
-            orig_timing.append(end - start)
-            orig_net_nodes.append(len(cnn_orig.nodes()))
-            orig_net_edges.append(len(cnn_orig.edges()))    
-            print("Finish solving CNN")
+    print("*********************************** Original **********************************************")
+    print("Start solving CNN")
+    start = time.time()        
+    #cnn_orig.solve(in_prop(cnn_orig), out_prop(cnn_orig)) TODO
+    end = time.time()        
+    orig_timing.append(end - start)
+    orig_net_nodes.append(len(cnn_orig.nodes()))
+    orig_net_edges.append(len(cnn_orig.edges()))    
+    print("Finish solving CNN")
 
+    ####################
+    ####Process Results
+    ####################
+            
     if len(orig_timing) == 1:
         orig_timing = orig_timing * len(coi_timing)
     if len(orig_net_nodes) == 1:
@@ -277,6 +284,10 @@ if __name__ == "__main__":
     edges_ratio = [coi/orig for coi, orig in zip(coi_net_edges, orig_net_edges)]
     time_ratio  = [coi/orig for coi, orig in zip(coi_timing,    orig_timing)]
 
+    ####################
+    ####Plot Graphs
+    ####################
+    
     plt.figure(1)
     plt.subplot(131)
     plt.plot(coi_timing, 'rs', orig_timing, 'b^')
