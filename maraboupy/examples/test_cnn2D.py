@@ -8,12 +8,25 @@ import random
 
 import sys
 import os
+
+#from tensorflow.keras import datasets, layers, models, utils
+#from tensorflow.keras import backend as K
+#from tensorflow.keras.models import load_model
+
 import tensorflow as tf
-from tensorflow.keras import datasets, layers, models
-from tensorflow.keras.models import load_model
+from tensorflow import keras
+from tensorflow.keras.datasets import mnist
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
+from tensorflow.keras import backend as K
+
 import re
 import time
 import statistics as stat
+
+#####################################
+####Toy Examples of CNN construction
+#####################################
 
 def create_cnn2D():
     in_l_size = {"x":8 , "y":8, "d":2 }    
@@ -57,65 +70,145 @@ def create_min_cnn2D():
     return cnn
 
 
+
+
+
+
+
+#####################################
+####Train a CNN with MNIST DateSet
+#####################################
+
 def train_cnn2D():
+
+    ##################
+    ####Get Dataset
+    ##################
+    
     file_name = './cnn_model.h5'
     
-    (train_images, train_labels), (test_images, test_labels) = datasets.cifar10.load_data()
+    (train_images, train_labels), (test_images, test_labels) = mnist.load_data()
 
-    # Normalize pixel values to be between 0 and 1
-    train_images, test_images = train_images / 255.0, test_images / 255.0
+    ##################
+    ####Shape and CFG
+    ##################
 
-    class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
-    
-    x = 32#16
-    y = 32#16
-    d = 3
-    input_shape_crop = (x,y,d) #(32, 32, 3)
-    train_images_crop = train_images
-    test_images_crop = test_images
-    #train_images_crop = list()
-    #test_images_crop = list()
-    #for im in train_images:
-    #    train_images_crop.append(im.crop(0,0,x,y))
-    #    #train_images_crop.append([[[im[x_i][y_i][d_i] for d_i in range(d)] for y_i in range(y)] for x_i in range(x)])
-    #for im in test_images:
-    #    test_images_crop.append(im.crop(0,0,x,y))        
-    #    #test_images_crop.append([[[im[x_i][y_i][d_i] for d_i in range(d)] for y_i in range(y)] for x_i in range(x)])
-    
-    #exit() #TODO
-    
-    model = models.Sequential()
-    model.add(layers.Conv2D(1, (4, 4), activation='relu', input_shape=input_shape_crop))
-    ###model.add(layers.Conv2D(32, (3, 3), activation='relu', input_shape=(32, 32, 3)))
-    model.add(layers.MaxPooling2D((2, 2)))
-    #model.add(layers.Conv2D(2, (3, 3), activation='relu'))
-    ###model.add(layers.Conv2D(64, (3, 3), activation='relu'))
-    #model.add(layers.MaxPooling2D((2, 2)))
-    #model.add(layers.Conv2D(2, (3, 3), activation='relu')) 
-    ###model.add(layers.Conv2D(64, (3, 3), activation='relu')) 
+    bias_active = True #FIXME
 
-    model.add(layers.Flatten())
-    model.add(layers.Dense(64, activation='relu'))
-    #model.add(layers.Dense(10, activation='relu'))
+    x = train_images[0].shape[0]
+    y = train_images[0].shape[1] if len(train_images[0].shape) > 1 else 1
+    d = train_images[0].shape[2] if len(train_images[0].shape) > 2 else 1
+    input_shape = (x,y,d)
+
+    print("Finished here")
+
+    batch_size = 128
+    num_classes = 10
+    epochs = 12
+
+    img_rows, img_cols = x, y
+    
+    if K.image_data_format() == 'channels_first':
+        train_images = train_images.reshape(train_images.shape[0], 1, img_rows, img_cols)
+        test_images = test_images.reshape(test_images.shape[0], 1, img_rows, img_cols)
+        input_shape = (1, img_rows, img_cols)
+    else:
+        train_images = train_images.reshape(train_images.shape[0], img_rows, img_cols, 1)
+        test_images = test_images.reshape(test_images.shape[0], img_rows, img_cols, 1)
+        input_shape = (img_rows, img_cols, 1)
+
+        train_images = train_images.astype('float32')
+        test_images = test_images.astype('float32')
+        train_images /= 255
+        test_images /= 255
+        print('train_images shape:', train_images.shape)
+        print(train_images.shape[0], 'train samples')
+        print(test_images.shape[0], 'test samples')
+
+        # convert class vectors to binary class matrices
+        train_labels = keras.utils.to_categorical(train_labels, num_classes)
+        test_labels = keras.utils.to_categorical(test_labels, num_classes)
+
+    print("Labels shape")
+    print(train_labels.shape)
+    print(test_labels.shape)    
+
+    ##################
+    ####Layers
+    ##################
+    
+    model = Sequential()
+    model.add(Conv2D(5, (3, 3), activation='relu', input_shape=input_shape, use_bias=bias_active))
+    model.add(MaxPooling2D((2, 2)))
+    model.add(Conv2D(5, (2, 2), activation='relu', use_bias=bias_active))
+    model.add(MaxPooling2D((2, 2)))
+    model.add(Conv2D(1, (2, 5), activation='relu', use_bias=bias_active)) 
+    model.add(Flatten())
     model.summary()
 
-    #model.compile(optimizer='adam',
-    #              loss='sparse_categorical_crossentropy',
-    #              metrics=['accuracy'])    
-    #history = model.fit(train_images_crop, train_labels, epochs=10, validation_data=(test_images_crop, test_labels))
-    #test_loss, test_acc = model.evaluate(test_images,  test_labels, verbose=2)    
+    ###################
+    ####Fit
+    ###################
+    
+    #model.compile(loss=keras.losses.categorical_crossentropy,
+    #              optimizer=keras.optimizers.Adadelta(),
+    #              metrics=['accuracy'])
+
+    model.compile(optimizer='adam',
+              loss=keras.losses.categorical_crossentropy,
+              metrics=['accuracy'])
+    
+    history = model.fit(train_images, train_labels, batch_size=batch_size, epochs=epochs, verbose=1, validation_data=(test_images, test_labels))
+    
+    ###################
+    ####Evaluate
+    ###################
+    
+    print(history.history)
+    plt.plot(history.history['accuracy'], label='accuracy')
+    plt.plot(history.history['val_accuracy'], label = 'val_accuracy')
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy')
+    plt.ylim([0.5, 1])
+    plt.legend(loc='lower right')
+    plt.show()
+    
+    test_loss, test_acc = model.evaluate(test_images,  test_labels, verbose=2)
+    print('Test loss:', test_loss)
+    print('Test accuracy:', test_acc)
     model.summary()
     model.save(file_name)
 
-    in_l_size = {"x":32 , "y":32, "d":3 }
+    for i in range(10):
+        plt.figure()
+        rand = np.random.random([x,y,d]) 
+        plt.imshow(rand.reshape((x,y)))
+        plt.show()
+        rand_label = model.predict(np.array([rand]))
+        print(rand_label)
+        
+    exit()
+    in_l_size = {"x":x , "y":y, "d":d }
 
+    ###################
+    ####Return CNN Obj
+    ###################
+    
     return mcnn.Cnn2D.keras_model_to_Cnn2D(in_l_size, model)
 
 
 
-################################################################################################            
-## Main Script #################################################################################
-################################################################################################
+
+
+
+
+
+
+
+
+###################################################
+#### Main Test Script
+###################################################
 
 if __name__ == "__main__": 
 
