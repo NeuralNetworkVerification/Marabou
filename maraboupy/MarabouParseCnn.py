@@ -237,7 +237,9 @@ def n2str_md(layer_i,node_cor):
 class Filter:    
     def __init__(self, weights, bias=None, function="Relu", shape=None):                    
         if function is "Relu":
-            if isinstance(weights, list):                
+            if isinstance(weights, list):
+                print("This filter is compiled:")
+                [print(w) for w in weights]                
                 weights = np.array(weights[0].numpy())
                 bias = np.array(weights[1])
             self.dim = dict()
@@ -312,6 +314,8 @@ class Cnn2D(nx.DiGraph):
                     #    raise Exception("Relu: Filter and layer depth should be equal")
                     for f_i in range(f.dim["f"]):
                         act_n = n2str_md(self.l_num, [x_i, y_i, f_i])
+                        if any([dim > 1 for dim in f.bias[f_i].shape]):
+                            raise Exception("Bias should be a scalar. Bias =\n{}\n".format(f.bias[f_i]))
                         self.add_node(act_n, function=f.function, bias=f.bias[f_i])
                         new_l[(x_i, y_i, f_i)] = act_n 
                         for x_j, y_j, d_j in itertools.product(range(f.dim["x"]),range(f.dim["y"]),range(f.dim["d"])):
@@ -351,7 +355,10 @@ class Cnn2D(nx.DiGraph):
     def add_dense(self, weights, function="Relu"): #Assume some element will be added. in the form of cor->(cor,weight) dict.
         
         weights_mat = weights[0].numpy()
-        bias_vec = weights[1].numpy()       
+        bias_vec = weights[1].numpy()
+        print("This is bias=" + str(bias_vec))
+        if sum([1 for dim in bias_vec.shape if dim > 1]) > 1 or len(bias_vec.shape) > 2:
+            raise Exception("Bias should be a 1d vector. Bias vec=\n{}\n".format(bias_vec))
         w_dict = {(i,0,0):[((j,0,0), weights_mat[i][j]) for j in range(weights_mat.shape[1])] for i in range(weights_mat.shape[0])} #i is source, j is target.
         
         self.l_num += 1
@@ -421,3 +428,26 @@ class Cnn2D(nx.DiGraph):
         for u in remove_nodes:
             graph_copy.remove_node(u)
         return graph_copy
+
+
+    def keras_model_to_Cnn2D(in_l_size, model):
+        cnn = Cnn2D(in_l_size)
+        for layer in model.layers:
+            if layer.get_config()["name"].startswith("conv2d"):
+                f = Filter(layer.weights)
+                cnn.add_filter(f)                
+            elif layer.get_config()["name"].startswith("max_pooling2d"):
+                f = Filter([],function="MaxPool", shape=list(layer.get_config()["pool_size"]))
+                cnn.add_filter(f)
+            elif layer.get_config()["name"].startswith("flatten"):
+                cnn.add_flatten()
+            elif layer.get_config()["name"].startswith("dense"):
+                print("In shape:{}\nOut shape:{}".format(layer.input_shape, layer.output_shape))
+                print(layer.weights)
+                weights = layer.weights[0].numpy()
+                #cnn.add_dense({(i,0,0):[((j,0,0), weights[i][j]) for j in range(layer.output_shape[1])] for i in range(layer.input_shape[1])}) #TODO no bias included
+                cnn.add_dense(layer.weights)
+                
+        return cnn
+
+        
