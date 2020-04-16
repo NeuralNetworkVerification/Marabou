@@ -329,28 +329,28 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         Arguments:
             node: (node) representing reshape operation
         """
-
         nodeName = node.output[0]
 
-        # Assume first input is array to be reshaped, second input is up to which dimension
-        # (exclusive) the tensor should be flattened
+        # Assume first input is array to be reshaped
+        inputName = node.input[0]
+        
+        axis = None
+        for attr in node.attribute:
+            if attr.name == "axis":
+                axis = get_attribute_value(attr)
+        if axis is None:
+            print("Casting type not specified with attribute 'axis'")
+            raise RuntimeError
 
-        if len(node.input) == 1:
-            inputName1 = node.input[0]
-            flattenUpTo = 1
-        elif len(node.input) == 2:
-            inputName1, inputName2 = node.input
-            flattenUpTo = self.constantMap[inputName2]
-        else:
-            print('Invalid number of inputs for Flatten')
+        dimension1 = np.prod(self.shapeMap[inputName][:axis])
+        dimension2 = np.prod(self.shapeMap[inputName][axis:])
+        newShape = [dimension1, dimension2]
+        self.shapeMap[nodeName] = list(np.zeros(self.shapeMap[inputName]).reshape(newShape).shape)
 
-        newShape = self.shapeMap[inputName1][:flattenUpTo] + [-1]
-        self.shapeMap[nodeName] = list(np.zeros(self.shapeMap[inputName1]).reshape(newShape).shape)
-
-        if inputName1 in self.varMap:
-            self.varMap[nodeName] = self.varMap[inputName1].reshape(newShape)
-        elif inputName1 in self.constantMap:
-            self.constantMap[nodeName] = self.constantMap[inputName1].reshape(newShape)
+        if inputName in self.varMap:
+            self.varMap[nodeName] = self.varMap[inputName].reshape(newShape)
+        elif inputName in self.constantMap:
+            self.constantMap[nodeName] = self.constantMap[inputName].reshape(newShape)
     
     def transpose(self, node):
         """
