@@ -322,18 +322,21 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             self.varMap[nodeName] = self.varMap[inputName1].reshape(reshapeVals)
         elif inputName1 in self.constantMap:
             self.constantMap[nodeName] = self.constantMap[inputName1].reshape(reshapeVals)
-    
+
     def flatten(self, node):
         """
-        Function representing flatten
+        Function representing flatten.
+        Unlike numpy.flatten(), ONNX's Flatten operation reshapes
+        a (d_0, d_1, ..., d_n) tensor into a 2D tensor with shape
+        (d_0 * d_1 * ... * d_(axis-1), d_axis * d_(axis+1) * ... * d_n).
         Arguments:
-            node: (node) representing reshape operation
+            node: (node) representing flatten operation
         """
+
         nodeName = node.output[0]
 
-        # Assume first input is array to be reshaped
+        # Assume first input is array to be flattened
         inputName = node.input[0]
-        
         axis = None
         for attr in node.attribute:
             if attr.name == "axis":
@@ -342,16 +345,16 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             print("Casting type not specified with attribute 'axis'")
             raise RuntimeError
 
-        dimension1 = np.prod(self.shapeMap[inputName][:axis])
-        dimension2 = np.prod(self.shapeMap[inputName][axis:])
+        dimension1 = int(np.prod(self.shapeMap[inputName][:axis]))
+        dimension2 = int(np.prod(self.shapeMap[inputName][axis:]))
         newShape = [dimension1, dimension2]
-        self.shapeMap[nodeName] = list(np.zeros(self.shapeMap[inputName]).reshape(newShape).shape)
+        self.shapeMap[nodeName] = newShape
 
         if inputName in self.varMap:
             self.varMap[nodeName] = self.varMap[inputName].reshape(newShape)
         elif inputName in self.constantMap:
             self.constantMap[nodeName] = self.constantMap[inputName].reshape(newShape)
-    
+            
     def transpose(self, node):
         """
         Function representing transpose
@@ -500,6 +503,24 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         input2 = self.constantMap[inputName2]
         input3 = self.constantMap[inputName3]
         
+        # Transpose first two inputs if needed,
+        # and save scaling parameters alpha and beta if set
+        alpha = 1.0
+        beta = 1.0
+        for attr in node.attribute:
+            if attr.name == 'transA':
+                if get_attribute_value(attr):
+                    input1 = np.tranpose(input1)
+                    shape1 = shape1[::-1]
+            elif attr.name == 'transB':
+                if get_attribute_value(attr):
+                    input2 = np.transpose(input2)
+                    shape2 = shape2[::-1]
+            elif attr.name == 'alpha':
+                alpha = get_attribute_value(attr)
+            elif attr.name == 'beta':
+                beta = get_attribute_value(attr)
+        
         self.shapeMap[nodeName] = self.shapeMap[inputName3]
         if makeEquations:
         
@@ -531,11 +552,11 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
                 for j in range(shape2[1]):
                     e = MarabouUtils.Equation()
                     for k in range(shape1[1]):
-                        e.addAddend(input2[k][j], input1[i][k])
+                        e.addAddend(input2[k][j]*alpha, input1[i][k])
 
                     # Put output variable as the last addend last
                     e.addAddend(-1, outputVariables[i][j])
-                    e.setScalar(-input3[i][j])
+                    e.setScalar(-input3[i][j]*beta)
                     self.addEquation(e)
     
     def matMulEquations(self, node, makeEquations):
@@ -553,7 +574,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         shape2 = self.shapeMap[inputName2]
         assert shape1[-1] == shape2[0]
         self.shapeMap[nodeName] = shape1[:-1] + shape2[1:]
-        
+            
             
         firstInputConstant = False; secondInputConstant = False
         if inputName1 in self.constantMap:
@@ -567,6 +588,11 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             secondInputConstant = True
         else:
             input2 = self.varMap[inputName2]
+            
+        # Broadcast first input to make sure the first input is a matrix
+        if len(shape1) == 1:
+            shape1 = [1] + shape1
+            input1 = input1.reshape(shape1)
 
         # Assume that at least one input is a constant (We cannot represent variable products with linear equations)
         assert firstInputConstant or secondInputConstant
@@ -579,10 +605,14 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         if makeEquations:
             # Create new variables
             outputVariables = self.makeNewVariables(nodeName)
+            
+            # Pad the output if needed (matrix-matrix multiplication)
+            if len(outputVariables.shape) == 1 and len(shape2) > 1:
+                outputVariables = outputVariables.reshape([1, outputVariables.shape[0]])
 
             # Generate equations
             for i in range(shape1[0]):
-                # Differntiate between matrix-vector multiplication and matrix-matrix multiplication
+                # Differentiate between matrix-vector multiplication and matrix-matrix multiplication
                 if len(shape2)>1:
                     for j in range(shape2[1]):
                         e = MarabouUtils.Equation()
