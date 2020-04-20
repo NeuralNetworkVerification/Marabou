@@ -16,7 +16,9 @@
 #include <cxxtest/TestSuite.h>
 
 #include "FloatUtils.h"
+#include "MockTableau.h"
 #include "NetworkLevelReasoner.h"
+#include "Tightening.h"
 
 class MockForNetworkLevelReasoner
 {
@@ -46,7 +48,7 @@ public:
                 b
           y           e    g
                 c
-         */
+        */
 
         nlr.setNumberOfLayers( 4 );
 
@@ -55,7 +57,7 @@ public:
         nlr.setLayerSize( 2, 2 );
         nlr.setLayerSize( 3, 2 );
 
-        nlr.allocateWeightMatrices();
+        nlr.allocateMemoryByTopology();
 
         // Weights
         nlr.setWeight( 0, 0, 0, 1 );
@@ -77,6 +79,25 @@ public:
         // Biases
         nlr.setBias( 1, 0, 1 );
         nlr.setBias( 2, 1, 2 );
+
+        // Variable indexing
+        nlr.setActivationResultVariable( 0, 0, 0 );
+        nlr.setActivationResultVariable( 0, 1, 1 );
+
+        nlr.setWeightedSumVariable( 1, 0, 2 );
+        nlr.setActivationResultVariable( 1, 0, 3 );
+        nlr.setWeightedSumVariable( 1, 1, 4 );
+        nlr.setActivationResultVariable( 1, 1, 5 );
+        nlr.setWeightedSumVariable( 1, 2, 6 );
+        nlr.setActivationResultVariable( 1, 2, 7 );
+
+        nlr.setWeightedSumVariable( 2, 0, 8 );
+        nlr.setActivationResultVariable( 2, 0, 9 );
+        nlr.setWeightedSumVariable( 2, 1, 10 );
+        nlr.setActivationResultVariable( 2, 1, 11 );
+
+        nlr.setWeightedSumVariable( 3, 0, 12 );
+        nlr.setWeightedSumVariable( 3, 1, 13 );
     }
 
     void test_evaluate()
@@ -205,6 +226,64 @@ public:
 
         TS_ASSERT( FloatUtils::areEqual( output1[0], output2[0] ) );
         TS_ASSERT( FloatUtils::areEqual( output1[1], output2[1] ) );
+    }
+
+    void test_interval_arithmetic_bound_propagation()
+    {
+        NetworkLevelReasoner nlr;
+        populateNetwork( nlr );
+
+        MockTableau tableau;
+
+        // Initialize the input bounds
+        tableau.setLowerBound( 0, -1 );
+        tableau.setUpperBound( 0, 1 );
+        tableau.setLowerBound( 1, -1 );
+        tableau.setUpperBound( 1, 1 );
+
+        nlr.setTableau( &tableau );
+
+        // Initialize
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainInputBounds() );
+
+        // Perform the tightening pass
+        TS_ASSERT_THROWS_NOTHING( nlr.intervalArithmeticBoundPropagation() );
+
+        List<Tightening> expectedBounds({
+                Tightening( 2, 0, Tightening::LB ),
+                Tightening( 2, 2, Tightening::UB ),
+                Tightening( 3, 0, Tightening::LB ),
+                Tightening( 3, 2, Tightening::UB ),
+
+                Tightening( 4, -5, Tightening::LB ),
+                Tightening( 4, 5, Tightening::UB ),
+                Tightening( 5, 0, Tightening::LB ),
+                Tightening( 5, 5, Tightening::UB ),
+
+                Tightening( 6, -1, Tightening::LB ),
+                Tightening( 6, 1, Tightening::UB ),
+                Tightening( 7, 0, Tightening::LB ),
+                Tightening( 7, 1, Tightening::UB ),
+
+                Tightening( 8, -1, Tightening::LB ),
+                Tightening( 8, 7, Tightening::UB ),
+                Tightening( 9, 0, Tightening::LB ),
+                Tightening( 9, 7, Tightening::UB ),
+
+                Tightening( 10, -1, Tightening::LB ),
+                Tightening( 10, 7, Tightening::UB ),
+                Tightening( 11, 0, Tightening::LB ),
+                Tightening( 11, 7, Tightening::UB ),
+
+                Tightening( 12, 0, Tightening::LB ),
+                Tightening( 12, 7, Tightening::UB ),
+                Tightening( 13, 0, Tightening::LB ),
+                Tightening( 13, 28, Tightening::UB ),
+                    });
+
+        List<Tightening> bounds;
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        TS_ASSERT_EQUALS( expectedBounds, bounds );
     }
 };
 

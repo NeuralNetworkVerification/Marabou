@@ -178,7 +178,7 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
     for ( unsigned i = 0; i < numberOfLayers; ++i )
         nlr->setLayerSize( i, _acasNeuralNetwork.getLayerSize( i ) );
 
-    nlr->allocateWeightMatrices();
+    nlr->allocateMemoryByTopology();
 
     // Biases
     for ( unsigned i = 1; i < numberOfLayers; ++i )
@@ -218,6 +218,20 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
             nlr->setWeightedSumVariable( i, j, b );
             nlr->setActivationResultVariable( i, j, f );
         }
+    }
+
+    // Input variables are treated as "activation results"; output
+    // variables are treated as "weighted sums"
+    for ( unsigned i = 0; i < _acasNeuralNetwork.getLayerSize( 0 ); ++i )
+    {
+        unsigned var = _nodeToF[NodeIndex( 0, i )];
+        nlr->setActivationResultVariable( 0, i, var );
+    }
+
+    for ( unsigned i = 0; i < _acasNeuralNetwork.getLayerSize( numberOfLayers - 1 ); ++i )
+    {
+        unsigned var = _nodeToB[NodeIndex( 0, i )];
+        nlr->setWeightedSumVariable( numberOfLayers - 1, i, var );
     }
 
     // Store the reasoner in the input query
