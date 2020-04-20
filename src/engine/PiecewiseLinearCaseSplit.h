@@ -29,13 +29,13 @@ public:
       Store information regarding a bound tightening.
     */
     void storeBoundTightening( const Tightening &tightening );
-    List<Tightening> getBoundTightenings() const;
+    const List<Tightening> & getBoundTightenings() const;
 
     /*
       Store information regarding a new equation to be added.
     */
     void addEquation( const Equation &equation );
-  	List<Equation> getEquations() const;
+  	const List<Equation> & getEquations() const;
 
     /*
       Dump the case split - for debugging purposes.
