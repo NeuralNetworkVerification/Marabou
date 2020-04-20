@@ -135,13 +135,13 @@ void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
 
     if ( result == Engine::UNSAT )
     {
-        resultString = "UNSAT";
-        printf( "UNSAT\n" );
+        resultString = "unsat";
+        printf( "unsat\n" );
     }
     else if ( result == Engine::SAT )
     {
-        resultString = "SAT";
-        printf( "SAT\n" );
+        resultString = "sat";
+        printf( "sat\n" );
 
         printf( "Input assignment:\n" );
         for ( unsigned i = 0; i < _inputQuery.getNumInputVariables(); ++i )

@@ -15,7 +15,6 @@
 
 #include "FloatUtils.h"
 #include <iomanip>
-#include <math.h>
 #include <sstream>
 
 // https://randomascii.wordpress.com/2012/02/25/comparing-floating-point-numbers-2012-edition/
@@ -39,81 +38,6 @@ bool FloatUtils::areEqual( double x, double y, double epsilon )
     return false;
 }
 
-double FloatUtils::abs( double x )
-{
-    return fabs( x );
-}
-
-bool FloatUtils::areDisequal( double x, double y, double epsilon )
-{
-    return !areEqual( x, y, epsilon );
-}
-
-bool FloatUtils::isZero( double x, double epsilon )
-{
-    return ( -epsilon <= x ) && ( x <= epsilon );
-}
-
-double FloatUtils::roundToZero( double x, double epsilon )
-{
-    return isZero( x, epsilon ) ? 0.0 : x;
-}
-
-bool FloatUtils::isPositive( double x, double epsilon )
-{
-    return ( !isZero( x, epsilon ) ) && ( x > 0.0 );
-}
-
-bool FloatUtils::isNegative( double x, double epsilon )
-{
-    return ( !isZero( x, epsilon ) ) && ( x < 0.0 );
-}
-
-bool FloatUtils::isFinite( double x )
-{
-    return ( x != infinity() ) && ( x != negativeInfinity() );
-}
-
-bool FloatUtils::gt( double x, double y, double epsilon )
-{
-    return isPositive( x - y, epsilon );
-}
-
-bool FloatUtils::gte( double x, double y, double epsilon )
-{
-    return !isNegative( x - y, epsilon );
-}
-
-bool FloatUtils::lt( double x, double y, double epsilon )
-{
-    return gt( y, x, epsilon );
-}
-
-bool FloatUtils::lte( double x, double y, double epsilon )
-{
-    return gte( y, x, epsilon );
-}
-
-double FloatUtils::min( double x, double y, double epsilon )
-{
-    return lt( x, y, epsilon ) ? x : y;
-}
-
-double FloatUtils::max( double x, double y, double epsilon )
-{
-    return gt( x, y, epsilon ) ? x : y;
-}
-
-double FloatUtils::infinity()
-{
-    return DBL_MAX;
-}
-
-double FloatUtils::negativeInfinity()
-{
-    return -DBL_MAX;
-}
-
 String FloatUtils::doubleToString( double x, unsigned precision )
 {
     std::ostringstream strout;
@@ -126,11 +50,6 @@ String FloatUtils::doubleToString( double x, unsigned precision )
         str = str.substr(0, str.size() - 1);
 
     return str;
-}
-
-bool FloatUtils::wellFormed( double x )
-{
-    return !isNan( x ) && !isInf( x );
 }
 
 bool FloatUtils::isNan( double x )
