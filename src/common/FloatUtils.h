@@ -45,7 +45,6 @@ public:
         double lower = -epsilon; 
         double upper = epsilon;                                                                                                               
         return ( x - upper ) * ( x - lower ) <= 0;
-        /* return ( -epsilon <= x ) && ( x <= epsilon ); */
     }
 
     static bool isPositive( double x, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS )
