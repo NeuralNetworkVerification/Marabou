@@ -209,7 +209,7 @@ We have three types of tests:
 * regression tests - test end to end functionality thorugh the API, each test is defined by:  
   * network_file - description of the "neural network" supporting nnet and mps formats (using the extension to decdie on the format)  
   * property_file - optional, constraint on the input and output variables  
-  * expected_result - SAT/UNSAT  
+  * expected_result - sat/unsat  
 
 The tests are divided into 5 levels to allow variability in running time, to add a new regression tests: 
   * add the description of the network and property to the _resources_ sub-folder 

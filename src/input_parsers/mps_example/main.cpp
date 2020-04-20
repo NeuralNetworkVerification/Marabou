@@ -41,11 +41,11 @@ int main( int argc, char *argv[] )
 
     if ( !preprocess || !engine.solve() )
     {
-        printf( "UNSAT\n" );
+        printf( "unsat\n" );
         return 0;
     }
 
-    printf( "SAT\n" );
+    printf( "sat\n" );
 
     // Uncomment the below to print the solution
 
