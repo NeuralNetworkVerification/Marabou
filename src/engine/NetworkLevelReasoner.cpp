@@ -467,8 +467,20 @@ void NetworkLevelReasoner::intervalArithmeticBoundPropagation()
 
             if ( i != _numberOfLayers - 1 )
             {
-                _lowerBoundsActivations[i][j] = lb > 0 ? lb : 0;
-                _upperBoundsActivations[i][j] = ub;
+                // Apply activation function
+                ASSERT( _neuronToActivationFunction.exists( index ) );
+
+                switch ( _neuronToActivationFunction[index] )
+                {
+                case ReLU:
+                    _lowerBoundsActivations[i][j] = lb > 0 ? lb : 0;
+                    _upperBoundsActivations[i][j] = ub;
+                    break;
+
+                default:
+                    ASSERT( false );
+                    break;
+                }
             }
         }
     }
