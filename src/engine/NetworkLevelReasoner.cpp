@@ -330,6 +330,7 @@ void NetworkLevelReasoner::updateVariableIndices( const Map<unsigned, unsigned> 
     }
 }
 
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "
