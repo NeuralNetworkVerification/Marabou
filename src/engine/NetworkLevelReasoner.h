@@ -18,7 +18,6 @@
 
 #include "ITableau.h"
 #include "Map.h"
-#include "SymbolicBoundTightener.h"
 #include "Tightening.h"
 
 /*
@@ -120,7 +119,7 @@ public:
     /*
       Bound propagation methods:
 
-        - obtainInputBounds: obtain the current bounds on input variables
+        - obtainCurrentBounds: obtain the current bounds on all variables
           from the tableau.
 
         - Interval arithmetic: compute the bounds of a layer's neurons
@@ -139,10 +138,10 @@ public:
     */
 
     void setTableau( const ITableau *tableau );
-    void obtainInputBounds();
+    void obtainCurrentBounds();
     void intervalArithmeticBoundPropagation();
 
-    void initializeSymbolicBoundTightening();
+    // void initializeSymbolicBoundTightening();
     void symbolicBoundPropagation();
 
     void getConstraintTightenings( List<Tightening> &tightenings ) const;
@@ -187,6 +186,20 @@ private:
       Symbolic bound tightening
     */
     SymbolicBoundTightener _symbolicBoundTightener;
+
+    /*
+      Work space for symbolic bound propagation
+    */
+    double *_currentLayerLowerBounds;
+    double *_currentLayerUpperBounds;
+    double *_currentLayerLowerBias;
+    double *_currentLayerUpperBias;
+
+    double *_previousLayerLowerBounds;
+    double *_previousLayerUpperBounds;
+    double *_previousLayerLowerBias;
+    double *_previousLayerUpperBias;
+
 };
 
 #endif // __NetworkLevelReasoner_h__

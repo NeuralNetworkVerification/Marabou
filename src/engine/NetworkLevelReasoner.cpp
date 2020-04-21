@@ -30,6 +30,14 @@ NetworkLevelReasoner::NetworkLevelReasoner()
     , _upperBoundsWeightedSums( NULL )
     , _lowerBoundsActivations( NULL )
     , _upperBoundsActivations( NULL )
+    , _currentLayerLowerBounds( NULL )
+    , _currentLayerUpperBounds( NULL )
+    , _currentLayerLowerBias( NULL )
+    , _currentLayerUpperBias( NULL )
+    , _previousLayerLowerBounds( NULL )
+    , _previousLayerUpperBounds( NULL )
+    , _previousLayerLowerBias( NULL )
+    , _previousLayerUpperBias( NULL )
 {
 }
 
@@ -126,6 +134,55 @@ void NetworkLevelReasoner::freeMemoryIfNeeded()
         delete[] _upperBoundsActivations;
         _upperBoundsActivations = NULL;
     }
+
+
+    if ( _currentLayerLowerBounds )
+    {
+        delete[] _currentLayerLowerBounds;
+        _currentLayerLowerBounds = NULL;
+    }
+
+    if ( _currentLayerUpperBounds )
+    {
+        delete[] _currentLayerUpperBounds;
+        _currentLayerUpperBounds = NULL;
+    }
+
+    if ( _currentLayerLowerBias )
+    {
+        delete[] _currentLayerLowerBias;
+        _currentLayerLowerBias = NULL;
+    }
+
+    if ( _currentLayerUpperBias )
+    {
+        delete[] _currentLayerUpperBias;
+        _currentLayerUpperBias = NULL;
+    }
+
+    if ( _previousLayerLowerBounds )
+    {
+        delete[] _previousLayerLowerBounds;
+        _previousLayerLowerBounds = NULL;
+    }
+
+    if ( _previousLayerUpperBounds )
+    {
+        delete[] _previousLayerUpperBounds;
+        _previousLayerUpperBounds = NULL;
+    }
+
+    if ( _previousLayerLowerBias )
+    {
+        delete[] _previousLayerLowerBias;
+        _previousLayerLowerBias = NULL;
+    }
+
+    if ( _previousLayerUpperBias )
+    {
+        delete[] _previousLayerUpperBias;
+        _previousLayerUpperBias = NULL;
+    }
 }
 
 void NetworkLevelReasoner::setNumberOfLayers( unsigned numberOfLayers )
@@ -186,6 +243,16 @@ void NetworkLevelReasoner::allocateMemoryByTopology()
              !_lowerBoundsActivations[i] || !_lowerBoundsActivations[i] )
             throw MarabouError( MarabouError::ALLOCATION_FAILED, "NetworkLevelReasoner::bounds[i]" );
     }
+
+    _currentLayerLowerBounds = new double[_maxLayerSize * _layerSizes[0]];
+    _currentLayerUpperBounds = new double[_maxLayerSize * _layerSizes[0]];
+    _currentLayerLowerBias = new double[_maxLayerSize];
+    _currentLayerUpperBias = new double[_maxLayerSize];
+
+    _previousLayerLowerBounds = new double[_maxLayerSize * _layerSizes[0]];
+    _previousLayerUpperBounds = new double[_maxLayerSize * _layerSizes[0]];
+    _previousLayerLowerBias = new double[_maxLayerSize];
+    _previousLayerUpperBias = new double[_maxLayerSize];
 }
 
 void NetworkLevelReasoner::setNeuronActivationFunction( unsigned layer, unsigned neuron, ActivationFunction activationFuction )
@@ -417,15 +484,28 @@ void NetworkLevelReasoner::updateVariableIndices( const Map<unsigned, unsigned> 
     }
 }
 
-void NetworkLevelReasoner::obtainInputBounds()
+void NetworkLevelReasoner::obtainCurrentBounds()
 {
     ASSERT( _tableau );
 
-    for ( unsigned i = 0; i < _layerSizes[0]; ++i )
+    for ( unsigned i = 0; i < _numberOfLayers - 1; ++i )
     {
-        unsigned varIndex = _indexToActivationResultVariable[Index( 0, i )];
-        _lowerBoundsActivations[0][i] = _tableau->getLowerBound( varIndex );
-        _upperBoundsActivations[0][i] = _tableau->getUpperBound( varIndex );
+        for ( unsigned j = 0; j < _layerSizes[i]; ++j )
+        {
+            unsigned varIndex = _indexToActivationResultVariable[Index( i, j )];
+            _lowerBoundsActivations[i][j] = _tableau->getLowerBound( varIndex );
+            _upperBoundsActivations[i][j] = _tableau->getUpperBound( varIndex );
+        }
+    }
+
+    for ( unsigned i = 1; i < _numberOfLayers; ++i )
+    {
+        for ( unsigned j = 0; j < _layerSizes[i]; ++j )
+        {
+            unsigned varIndex = _indexToWeightedSumVariable[Index( i, j )];
+            _lowerBoundsActivations[i][j] = _tableau->getLowerBound( varIndex );
+            _upperBoundsActivations[i][j] = _tableau->getUpperBound( varIndex );
+        }
     }
 }
 
@@ -486,47 +566,278 @@ void NetworkLevelReasoner::intervalArithmeticBoundPropagation()
     }
 }
 
-void NetworkLevelReasoner::initializeSymbolicBoundTightening()
-{
-    // Ensure that the network is a ReLU network
-    DEBUG({
-            for ( unsigned i = 1; i < _numberOfLayers; ++i )
-            {
-                for ( unsigned j = 0; j < _layerSizes[i]; ++j )
-                {
-                    Index index( i, j );
-                    ASSERT( _neuronToActivationFunction.exists( index ) &&
-                            _neuronToActivationFunction[index] ==
-                            NetworkLevelReasoner::ReLU );
-                }
-            }
-        });
+// void NetworkLevelReasoner::initializeSymbolicBoundTightening()
+// {
+//     // Layers and their sizes
+//     _symbolicBoundTightener.setNumberOfLayers( _numberOfLayers );
 
-    // Layers and their sizes
-    _symbolicBoundTightener.setNumberOfLayers( _numberOfLayers );
+//     for ( unsigned i = 0; i < _numberOfLayers; ++i )
+//         _symbolicBoundTightener.setLayerSize( i, _layerSizes[i] );
 
-    for ( unsigned i = 0; i < _numberOfLayers; ++i )
-        _symbolicBoundTightener.setLayerSize( i, _layerSizes[i] );
+//     _symbolicBoundTightener.allocateWeightAndBiasSpace();
 
-    _symbolicBoundTightener.allocateWeightAndBiasSpace();
+//     // Weights
+//     for ( unsigned i = 1; i < _numberOfLayers; ++i )
+//         for ( unsigned j = 0; j < _layerSizes[i]; ++j )
+//             for ( unsigned k = 0; k < _layerSizes[i-1]; ++k )
+//             {
+//                 double weight = _weights[i - 1][k * _layerSizes[i] + j];
+//                 _symbolicBoundTightener.setWeight( i - 1, k, j, weight );
+//             }
 
-    // Weights
-    for ( unsigned i = 1; i < _numberOfLayers; ++i )
-        for ( unsigned j = 0; j < _layerSizes[i]; ++j )
-            for ( unsigned k = 0; k < _layerSizes[i-1]; ++k )
-            {
-                double weight = _weights[i - 1][k * _layerSizes[i] + j];
-                _symbolicBoundTightener.setWeight( i - 1, k, j, weight );
-            }
+//     // Biases
+//     for ( unsigned i = 1; i < _numberOfLayers; ++i )
+//         for ( unsigned j = 0; j < _layerSizes[i]; ++j )
+//             _symbolicBoundTightener.setBias( i, j, _bias[Index( i, j )] );
 
-    // Biases
-    for ( unsigned i = 1; i < _numberOfLayers; ++i )
-        for ( unsigned j = 0; j < _layerSizes[i]; ++j )
-            _symbolicBoundTightener.setBias( i, j, _bias[Index( i, j )] );
-}
+//     // Weighted sum and activation result variables
+//     for ( unsigned i = 1; i < _numberOfLayers; ++i )
+//     {
+//         for ( unsigned j = 0; j < _layerSizes[i]; ++j )
+//         {
+//             Index index( i, j );
+
+//             ASSERT( _neuronToActivationFunction.exists( index ) &&
+//                     _neuronToActivationFunction[index] ==
+//                     NetworkLevelReasoner::ReLU );
+
+//             _symbolicBoundTightener.setReluBVariable( i, j, _indexToWeightedSumVariable[index] );
+//             _symbolicBoundTightener.setReluFVariable( i, j, _indexToActivationResultVariable[index] );
+//         }
+//     }
+// }
 
 void NetworkLevelReasoner::symbolicBoundPropagation()
 {
+    /*
+      Initialize the symbolic bounds for the first layer. Each
+      variable has symbolic upper and lower bound 1 for itself, 0 for
+      all other varibales. The input layer has no biases.
+    */
+
+    std::fill_n( _previousLayerLowerBounds, _maxLayerSize * _inputLayerSize, 0 );
+    std::fill_n( _previousLayerUpperBounds, _maxLayerSize * _inputLayerSize, 0 );
+    for ( unsigned i = 0; i < _inputLayerSize; ++i )
+    {
+        _previousLayerLowerBounds[i * _inputLayerSize + i] = 1;
+        _previousLayerUpperBounds[i * _inputLayerSize + i] = 1;
+    }
+    std::fill_n( _previousLayerLowerBias, _maxLayerSize, 0 );
+    std::fill_n( _previousLayerUpperBias, _maxLayerSize, 0 );
+
+    // log( "Initializing.\n\tLB matrix:\n" );
+    // for ( unsigned i = 0; i < _inputLayerSize; ++i )
+    // {
+    //     log( "\t" );
+    //     for ( unsigned j = 0; j < _inputLayerSize; ++j )
+    //     {
+    //         log( Stringf( "%.2lf ", _previousLayerLowerBounds[i*_inputLayerSize + j] ) );
+    //     }
+    //     log( "\n" );
+    // }
+    // log( "\nUB matrix:\n" );
+    // for ( unsigned i = 0; i < _inputLayerSize; ++i )
+    // {
+    //     log( "\t" );
+    //     for ( unsigned j = 0; j < _inputLayerSize; ++j )
+    //     {
+    //         log( Stringf( "%.2lf ", _previousLayerUpperBounds[i*_inputLayerSize + j] ) );
+    //     }
+    //     log( "\n" );
+    // }
+
+    for ( unsigned currentLayer = 1; currentLayer < _numberOfLayers; ++currentLayer )
+    {
+        log( Stringf( "\nStarting work on layer %u\n", currentLayer ) );
+
+        unsigned currentLayerSize = _layerSizes[currentLayer];
+        unsigned previousLayerSize = _layerSizes[currentLayer - 1];
+
+        /*
+          Computing symbolic bounds for layer i, based on layer i-1.
+          We assume that the bounds for the previous layer have been
+          computed.
+        */
+        std::fill_n( _currentLayerLowerBounds, _maxLayerSize * _inputLayerSize, 0 );
+        std::fill_n( _currentLayerUpperBounds, _maxLayerSize * _inputLayerSize, 0 );
+
+        // Grab the weights
+        WeightMatrix weights = _weights[currentLayer-1];
+
+        // log( "Positive weights:\n" );
+        // for ( unsigned i = 0; i < _layerSizes[currentLayer - 1]; ++i )
+        // {
+        //     log( "\t" );
+        //     for ( unsigned j = 0; j < _layerSizes[currentLayer]; ++j )
+        //     {
+        //         log( Stringf( "%.2lf ", weights._positiveValues[i*_layerSizes[currentLayer] + j] ) );
+        //     }
+        //     log( "\n" );
+        // }
+        // log( "\nNegative weights:\n" );
+        // for ( unsigned i = 0; i < _layerSizes[currentLayer - 1]; ++i )
+        // {
+        //     log( "\t" );
+        //     for ( unsigned j = 0; j < _layerSizes[currentLayer]; ++j )
+        //     {
+        //         log( Stringf( "%.2lf ", weights._negativeValues[i*_layerSizes[currentLayer] + j] ) );
+        //     }
+        //     log( "\n" );
+        // }
+
+        /*
+          Perform the multiplication.
+
+            newUB = oldUB * posWeights + oldLB * negWeights
+            newLB = oldUB * negWeights + oldLB * posWeights
+
+            dimensions for oldUB and oldLB: inputLayerSize x previousLayerSize
+            dimensions for posWeights and negWeights: previousLayerSize x layerSize
+
+            newUB, newLB dimensions: inputLayerSize x layerSize
+        */
+
+        for ( unsigned i = 0; i < _inputLayerSize; ++i )
+        {
+            for ( unsigned j = 0; j < currentLayerSize; ++j )
+            {
+                for ( unsigned k = 0; k < previousLayerSize; ++k )
+                {
+                    _currentLayerLowerBounds[i * currentLayerSize + j] +=
+                        _previousLayerUpperBounds[i * previousLayerSize + k] *
+                        weights._negativeValues[k * currentLayerSize + j];
+
+                    _currentLayerLowerBounds[i * currentLayerSize + j] +=
+                        _previousLayerLowerBounds[i * previousLayerSize + k] *
+                        weights._positiveValues[k * currentLayerSize + j];
+
+                    _currentLayerUpperBounds[i * currentLayerSize + j] +=
+                        _previousLayerUpperBounds[i * previousLayerSize + k] *
+                        weights._positiveValues[k * currentLayerSize + j];
+
+                    _currentLayerUpperBounds[i * currentLayerSize + j] +=
+                        _previousLayerLowerBounds[i * previousLayerSize + k] *
+                        weights._negativeValues[k * currentLayerSize + j];
+                }
+            }
+        }
+
+        /*
+          Compute the biases for the new layer
+        */
+        for ( unsigned j = 0; j < currentLayerSize; ++j )
+        {
+            _currentLayerLowerBias[j] = _biases[currentLayer][j];
+            _currentLayerUpperBias[j] = _biases[currentLayer][j];
+
+            // Add the weighted bias from the previous layer
+            for ( unsigned k = 0; k < previousLayerSize; ++k )
+            {
+                double weight = weights._positiveValues[k * currentLayerSize + j] + weights._negativeValues[k * currentLayerSize + j];
+
+                if ( weight > 0 )
+                {
+                    _currentLayerLowerBias[j] += _previousLayerLowerBias[k] * weight;
+                    _currentLayerUpperBias[j] += _previousLayerUpperBias[k] * weight;
+                }
+                else
+                {
+                    _currentLayerLowerBias[j] += _previousLayerUpperBias[k] * weight;
+                    _currentLayerUpperBias[j] += _previousLayerLowerBias[k] * weight;
+                }
+            }
+        }
+
+        // log( "\nAfter matrix multiplication, newLB is:\n" );
+        // for ( unsigned i = 0; i < _inputLayerSize; ++i )
+        // {
+        //     log( "\t" );
+        //     for ( unsigned j = 0; j < _layerSizes[currentLayer]; ++j )
+        //     {
+        //         log( Stringf( "%.2lf ", _currentLayerLowerBounds[i*_layerSizes[currentLayer] + j] ) );
+        //     }
+        //     log( "\n" );
+        // }
+        // log( "\nnew UB is:\n" );
+        // for ( unsigned i = 0; i < _inputLayerSize; ++i )
+        // {
+        //     log( "\t" );
+        //     for ( unsigned j = 0; j < _layerSizes[currentLayer]; ++j )
+        //     {
+        //         log( Stringf( "%.2lf ", _currentLayerUpperBounds[i*_layerSizes[currentLayer] + j] ) );
+        //     }
+        //     log( "\n" );
+        // }
+
+        /*
+          We now have the symbolic representation for the new
+          layer. Next, we compute new lower and upper bounds for
+          it. For each of these bounds, we compute an upper bound and
+          a lower bound.
+
+          newUB, newLB dimensions: inputLayerSize x layerSize
+        */
+        for ( unsigned i = 0; i < currentLayerSize; ++i )
+        {
+            // lbLb: the lower bound for the expression of the lower bound
+            // lbUb: the upper bound for the expression of the lower bound
+            // etc
+
+            double lbLb = 0;
+            double lbUb = 0;
+            double ubLb = 0;
+            double ubUb = 0;
+
+            for ( unsigned j = 0; j < _inputLayerSize; ++j )
+            {
+                double entry = _currentLayerLowerBounds[j * currentLayerSize + i];
+
+                if ( entry >= 0 )
+                {
+                    lbLb += ( entry * _lowerBoundsActivations[0][j] );
+                    lbUb += ( entry * _upperBoundsActivations[0][j] );
+                }
+                else
+                {
+                    lbLb += ( entry * _upperBoundsActivations[0][j] );
+                    lbUb += ( entry * _lowerBoundsActivations[0][j] );
+                }
+
+                lbLb -= GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
+                lbUb += GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
+
+                entry = _currentLayerUpperBounds[j * currentLayerSize + i];
+
+                if ( entry >= 0 )
+                {
+                    ubLb += ( entry * _lowerBoundsActivations[0][j] );
+                    ubUb += ( entry * _upperBoundsActivations[0][j] );
+                }
+                else
+                {
+                    ubLb += ( entry * _upperBoundsActivations[0][j] );
+                    ubUb += ( entry * _lowerBoundsActivations[0][j] );
+                }
+
+                ubLb -= GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
+                ubUb += GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
+            }
+
+            // Add the network bias to all bounds
+            lbLb += _currentLayerLowerBias[i];
+            lbUb += _currentLayerLowerBias[i];
+            ubLb += _currentLayerUpperBias[i];
+            ubUb += _currentLayerUpperBias[i];
+
+            log( Stringf( "Neuron %u: Computed concrete lb: %lf, ub: %lf\n", i, lbLb, ubUb ) );
+
+            // Handle the ReLU activation. We know that:
+            //   lbLb <= true LB <= lbUb
+            //   ubLb <= true UB <= ubUb
+
+            // GOT HERE //
+        }
+    }
 }
 
 void NetworkLevelReasoner::getConstraintTightenings( List<Tightening> &tightenings ) const
@@ -560,6 +871,12 @@ void NetworkLevelReasoner::getConstraintTightenings( List<Tightening> &tightenin
             }
         }
     }
+}
+
+void SymbolicBoundTightener::log( const String &message )
+{
+    if ( GlobalConfiguration::NETWORK_LEVEL_REASONER_LOGGING )
+        printf( "%s", message.ascii() );
 }
 
 //

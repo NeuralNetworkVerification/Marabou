@@ -207,16 +207,30 @@ public:
 
         MockTableau tableau;
 
-        // Initialize the input bounds
+        // Initialize the bounds
         tableau.setLowerBound( 0, -1 );
         tableau.setUpperBound( 0, 1 );
         tableau.setLowerBound( 1, -1 );
         tableau.setUpperBound( 1, 1 );
 
+        double large = 1000;
+        tableau.setLowerBound( 2, -large ); tableau.setUpperBound( 2, large );
+        tableau.setLowerBound( 3, -large ); tableau.setUpperBound( 3, large );
+        tableau.setLowerBound( 4, -large ); tableau.setUpperBound( 4, large );
+        tableau.setLowerBound( 5, -large ); tableau.setUpperBound( 5, large );
+        tableau.setLowerBound( 6, -large ); tableau.setUpperBound( 6, large );
+        tableau.setLowerBound( 7, -large ); tableau.setUpperBound( 7, large );
+        tableau.setLowerBound( 8, -large ); tableau.setUpperBound( 8, large );
+        tableau.setLowerBound( 9, -large ); tableau.setUpperBound( 9, large );
+        tableau.setLowerBound( 10, -large ); tableau.setUpperBound( 10, large );
+        tableau.setLowerBound( 11, -large ); tableau.setUpperBound( 11, large );
+        tableau.setLowerBound( 12, -large ); tableau.setUpperBound( 12, large );
+        tableau.setLowerBound( 13, -large ); tableau.setUpperBound( 13, large );
+
         nlr.setTableau( &tableau );
 
         // Initialize
-        TS_ASSERT_THROWS_NOTHING( nlr.obtainInputBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
 
         // Perform the tightening pass
         TS_ASSERT_THROWS_NOTHING( nlr.intervalArithmeticBoundPropagation() );
@@ -257,14 +271,27 @@ public:
         TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
         TS_ASSERT_EQUALS( expectedBounds, bounds );
 
-        // Change the input bounds
+        // Change the current bounds
         tableau.setLowerBound( 0, -3 );
         tableau.setUpperBound( 0, 1 );
         tableau.setLowerBound( 1, -1 );
         tableau.setUpperBound( 1, 2 );
 
+        tableau.setLowerBound( 2, -large ); tableau.setUpperBound( 2, large );
+        tableau.setLowerBound( 3, -large ); tableau.setUpperBound( 3, large );
+        tableau.setLowerBound( 4, -large ); tableau.setUpperBound( 4, large );
+        tableau.setLowerBound( 5, -large ); tableau.setUpperBound( 5, large );
+        tableau.setLowerBound( 6, -large ); tableau.setUpperBound( 6, large );
+        tableau.setLowerBound( 7, -large ); tableau.setUpperBound( 7, large );
+        tableau.setLowerBound( 8, -large ); tableau.setUpperBound( 8, large );
+        tableau.setLowerBound( 9, -large ); tableau.setUpperBound( 9, large );
+        tableau.setLowerBound( 10, -large ); tableau.setUpperBound( 10, large );
+        tableau.setLowerBound( 11, -large ); tableau.setUpperBound( 11, large );
+        tableau.setLowerBound( 12, -large ); tableau.setUpperBound( 12, large );
+        tableau.setLowerBound( 13, -large ); tableau.setUpperBound( 13, large );
+
         // Initialize
-        TS_ASSERT_THROWS_NOTHING( nlr.obtainInputBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
 
         // Perform the tightening pass
         TS_ASSERT_THROWS_NOTHING( nlr.intervalArithmeticBoundPropagation() );

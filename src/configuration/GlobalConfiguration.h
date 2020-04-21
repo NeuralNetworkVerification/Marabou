@@ -212,6 +212,7 @@ public:
     static const bool GAUSSIAN_ELIMINATION_LOGGING;
     static const bool QUERY_LOADER_LOGGING;
     static const bool SYMBOLIC_BOUND_TIGHTENER_LOGGING;
+    static const bool NETWORK_LEVEL_REASONER_LOGGING;
 };
 
 #endif // __GlobalConfiguration_h__
