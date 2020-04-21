@@ -18,6 +18,7 @@
 
 #include "ITableau.h"
 #include "Map.h"
+#include "SymbolicBoundTightener.h"
 #include "Tightening.h"
 
 /*
@@ -124,11 +125,25 @@ public:
 
         - Interval arithmetic: compute the bounds of a layer's neurons
           based on the concrete bounds of the previous layer.
+
+        - Symbolic: for each neuron in the network, we compute lower
+          and upper bounds on the lower and upper bounds of the
+          neuron. This bounds are expressed as linear combinations of
+          the input neurons. Sometimes these bounds let us simplify
+          expressions and obtain tighter bounds (e.g., if the upper
+          bound on the upper bound of a ReLU node is negative, that
+          ReLU is inactive and its output can be set to 0.
+
+          Initialize should be called once, before the bound
+          propagation is performed.
     */
 
     void setTableau( const ITableau *tableau );
     void obtainInputBounds();
     void intervalArithmeticBoundPropagation();
+
+    void initializeSymbolicBoundTightening();
+    void symbolicBoundPropagation();
 
     void getConstraintTightenings( List<Tightening> &tightenings ) const;
 
@@ -161,12 +176,17 @@ private:
     Map<Index, double> _indexToActivationResultAssignment;
 
     /*
-      Work space for bound tightening.
+      Work space for bound tightening
     */
     double **_lowerBoundsWeightedSums;
     double **_upperBoundsWeightedSums;
     double **_lowerBoundsActivations;
     double **_upperBoundsActivations;
+
+    /*
+      Symbolic bound tightening
+    */
+    SymbolicBoundTightener _symbolicBoundTightener;
 };
 
 #endif // __NetworkLevelReasoner_h__
