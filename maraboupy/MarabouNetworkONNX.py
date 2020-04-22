@@ -332,7 +332,6 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         Arguments:
             node: (node) representing flatten operation
         """
-
         nodeName = node.output[0]
 
         # Assume first input is array to be flattened
