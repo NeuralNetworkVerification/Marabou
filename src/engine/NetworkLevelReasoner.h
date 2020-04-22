@@ -151,9 +151,12 @@ private:
     Map<unsigned, unsigned> _layerSizes;
     Map<Index, ActivationFunction> _neuronToActivationFunction;
     double **_weights;
+    double **_positiveWeights;
+    double **_negativeWeights;
     Map<Index, double> _bias;
 
     unsigned _maxLayerSize;
+    unsigned _inputLayerSize;
 
     double *_work1;
     double *_work2;
@@ -183,11 +186,6 @@ private:
     double **_upperBoundsActivations;
 
     /*
-      Symbolic bound tightening
-    */
-    SymbolicBoundTightener _symbolicBoundTightener;
-
-    /*
       Work space for symbolic bound propagation
     */
     double *_currentLayerLowerBounds;
@@ -200,6 +198,7 @@ private:
     double *_previousLayerLowerBias;
     double *_previousLayerUpperBias;
 
+    static void log( const String &message );
 };
 
 #endif // __NetworkLevelReasoner_h__

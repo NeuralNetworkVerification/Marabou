@@ -18,11 +18,15 @@
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "NetworkLevelReasoner.h"
+#include "ReluConstraint.h"
 #include <cstring>
 
 NetworkLevelReasoner::NetworkLevelReasoner()
     : _weights( NULL )
+    , _positiveWeights( NULL )
+    , _negativeWeights( NULL )
     , _maxLayerSize( 0 )
+    , _inputLayerSize( 0 )
     , _work1( NULL )
     , _work2( NULL )
     , _tableau( NULL )
@@ -61,6 +65,36 @@ void NetworkLevelReasoner::freeMemoryIfNeeded()
 
         delete[] _weights;
         _weights = NULL;
+    }
+
+    if ( _positiveWeights )
+    {
+        for ( unsigned i = 0; i < _numberOfLayers - 1; ++i )
+        {
+            if ( _positiveWeights[i] )
+            {
+                delete[] _positiveWeights[i];
+                _positiveWeights[i] = NULL;
+            }
+        }
+
+        delete[] _positiveWeights;
+        _positiveWeights = NULL;
+    }
+
+    if ( _negativeWeights )
+    {
+        for ( unsigned i = 0; i < _numberOfLayers - 1; ++i )
+        {
+            if ( _negativeWeights[i] )
+            {
+                delete[] _negativeWeights[i];
+                _negativeWeights[i] = NULL;
+            }
+        }
+
+        delete[] _negativeWeights;
+        _negativeWeights = NULL;
     }
 
     if ( _work1 )
@@ -197,13 +231,16 @@ void NetworkLevelReasoner::setLayerSize( unsigned layer, unsigned size )
 
     if ( size > _maxLayerSize )
         _maxLayerSize = size;
+
+    if ( layer == 0 )
+        _inputLayerSize = size;
 }
 
 void NetworkLevelReasoner::allocateMemoryByTopology()
 {
     freeMemoryIfNeeded();
 
-    _weights = new double*[_numberOfLayers - 1];
+    _weights = new double *[_numberOfLayers - 1];
     if ( !_weights )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "NetworkLevelReasoner::weights" );
 
@@ -213,6 +250,30 @@ void NetworkLevelReasoner::allocateMemoryByTopology()
         if ( !_weights[i] )
             throw MarabouError( MarabouError::ALLOCATION_FAILED, "NetworkLevelReasoner::weights[i]" );
         std::fill_n( _weights[i], _layerSizes[i] * _layerSizes[i+1], 0 );
+    }
+
+    _positiveWeights = new double *[_numberOfLayers - 1];
+    if ( !_positiveWeights )
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "NetworkLevelReasoner::positiveWeights" );
+
+    for ( unsigned i = 0; i < _numberOfLayers - 1; ++i )
+    {
+        _positiveWeights[i] = new double[_layerSizes[i] * _layerSizes[i+1]];
+        if ( !_positiveWeights[i] )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "NetworkLevelReasoner::positiveWeights[i]" );
+        std::fill_n( _positiveWeights[i], _layerSizes[i] * _layerSizes[i+1], 0 );
+    }
+
+    _negativeWeights = new double *[_numberOfLayers - 1];
+    if ( !_negativeWeights )
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "NetworkLevelReasoner::negativeWeights" );
+
+    for ( unsigned i = 0; i < _numberOfLayers - 1; ++i )
+    {
+        _negativeWeights[i] = new double[_layerSizes[i] * _layerSizes[i+1]];
+        if ( !_negativeWeights[i] )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "NetworkLevelReasoner::negativeWeights[i]" );
+        std::fill_n( _negativeWeights[i], _layerSizes[i] * _layerSizes[i+1], 0 );
     }
 
     _work1 = new double[_maxLayerSize];
@@ -266,6 +327,11 @@ void NetworkLevelReasoner::setWeight( unsigned sourceLayer, unsigned sourceNeuro
 
     unsigned targetLayerSize = _layerSizes[sourceLayer + 1];
     _weights[sourceLayer][sourceNeuron * targetLayerSize + targetNeuron] = weight;
+
+    if ( weight > 0 )
+        _positiveWeights[sourceLayer][sourceNeuron * targetLayerSize + targetNeuron] = weight;
+    else
+        _negativeWeights[sourceLayer][sourceNeuron * targetLayerSize + targetNeuron] = weight;
 }
 
 void NetworkLevelReasoner::setBias( unsigned layer, unsigned neuron, double bias )
@@ -366,7 +432,11 @@ void NetworkLevelReasoner::storeIntoOther( NetworkLevelReasoner &other ) const
         other.setNeuronActivationFunction( pair.first._layer, pair.first._neuron, pair.second );
 
     for ( unsigned i = 0; i < _numberOfLayers - 1; ++i )
+    {
         memcpy( other._weights[i], _weights[i], sizeof(double) * _layerSizes[i] * _layerSizes[i+1] );
+        memcpy( other._positiveWeights[i], _positiveWeights[i], sizeof(double) * _layerSizes[i] * _layerSizes[i+1] );
+        memcpy( other._negativeWeights[i], _negativeWeights[i], sizeof(double) * _layerSizes[i] * _layerSizes[i+1] );
+    }
 
     for ( const auto &pair : _bias )
         other.setBias( pair.first._layer, pair.first._neuron, pair.second );
@@ -625,31 +695,8 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
     std::fill_n( _previousLayerLowerBias, _maxLayerSize, 0 );
     std::fill_n( _previousLayerUpperBias, _maxLayerSize, 0 );
 
-    // log( "Initializing.\n\tLB matrix:\n" );
-    // for ( unsigned i = 0; i < _inputLayerSize; ++i )
-    // {
-    //     log( "\t" );
-    //     for ( unsigned j = 0; j < _inputLayerSize; ++j )
-    //     {
-    //         log( Stringf( "%.2lf ", _previousLayerLowerBounds[i*_inputLayerSize + j] ) );
-    //     }
-    //     log( "\n" );
-    // }
-    // log( "\nUB matrix:\n" );
-    // for ( unsigned i = 0; i < _inputLayerSize; ++i )
-    // {
-    //     log( "\t" );
-    //     for ( unsigned j = 0; j < _inputLayerSize; ++j )
-    //     {
-    //         log( Stringf( "%.2lf ", _previousLayerUpperBounds[i*_inputLayerSize + j] ) );
-    //     }
-    //     log( "\n" );
-    // }
-
     for ( unsigned currentLayer = 1; currentLayer < _numberOfLayers; ++currentLayer )
     {
-        log( Stringf( "\nStarting work on layer %u\n", currentLayer ) );
-
         unsigned currentLayerSize = _layerSizes[currentLayer];
         unsigned previousLayerSize = _layerSizes[currentLayer - 1];
 
@@ -660,30 +707,6 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
         */
         std::fill_n( _currentLayerLowerBounds, _maxLayerSize * _inputLayerSize, 0 );
         std::fill_n( _currentLayerUpperBounds, _maxLayerSize * _inputLayerSize, 0 );
-
-        // Grab the weights
-        WeightMatrix weights = _weights[currentLayer-1];
-
-        // log( "Positive weights:\n" );
-        // for ( unsigned i = 0; i < _layerSizes[currentLayer - 1]; ++i )
-        // {
-        //     log( "\t" );
-        //     for ( unsigned j = 0; j < _layerSizes[currentLayer]; ++j )
-        //     {
-        //         log( Stringf( "%.2lf ", weights._positiveValues[i*_layerSizes[currentLayer] + j] ) );
-        //     }
-        //     log( "\n" );
-        // }
-        // log( "\nNegative weights:\n" );
-        // for ( unsigned i = 0; i < _layerSizes[currentLayer - 1]; ++i )
-        // {
-        //     log( "\t" );
-        //     for ( unsigned j = 0; j < _layerSizes[currentLayer]; ++j )
-        //     {
-        //         log( Stringf( "%.2lf ", weights._negativeValues[i*_layerSizes[currentLayer] + j] ) );
-        //     }
-        //     log( "\n" );
-        // }
 
         /*
           Perform the multiplication.
@@ -705,19 +728,23 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
                 {
                     _currentLayerLowerBounds[i * currentLayerSize + j] +=
                         _previousLayerUpperBounds[i * previousLayerSize + k] *
-                        weights._negativeValues[k * currentLayerSize + j];
+                        _negativeWeights[currentLayer - 1][k * currentLayerSize + j];
+                    //weights._negativeValues[k * currentLayerSize + j];
 
                     _currentLayerLowerBounds[i * currentLayerSize + j] +=
                         _previousLayerLowerBounds[i * previousLayerSize + k] *
-                        weights._positiveValues[k * currentLayerSize + j];
+                        _positiveWeights[currentLayer - 1][k * currentLayerSize + j];
+                    // weights._positiveValues[k * currentLayerSize + j];
 
                     _currentLayerUpperBounds[i * currentLayerSize + j] +=
                         _previousLayerUpperBounds[i * previousLayerSize + k] *
-                        weights._positiveValues[k * currentLayerSize + j];
+                        _positiveWeights[currentLayer - 1][k * currentLayerSize + j];
+                    // weights._positiveValues[k * currentLayerSize + j];
 
                     _currentLayerUpperBounds[i * currentLayerSize + j] +=
                         _previousLayerLowerBounds[i * previousLayerSize + k] *
-                        weights._negativeValues[k * currentLayerSize + j];
+                        _negativeWeights[currentLayer - 1][k * currentLayerSize + j];
+                    // weights._negativeValues[k * currentLayerSize + j];
                 }
             }
         }
@@ -727,13 +754,13 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
         */
         for ( unsigned j = 0; j < currentLayerSize; ++j )
         {
-            _currentLayerLowerBias[j] = _biases[currentLayer][j];
-            _currentLayerUpperBias[j] = _biases[currentLayer][j];
+            _currentLayerLowerBias[j] = _bias[Index( currentLayer, j )];
+            _currentLayerUpperBias[j] = _bias[Index( currentLayer, j )];
 
             // Add the weighted bias from the previous layer
             for ( unsigned k = 0; k < previousLayerSize; ++k )
             {
-                double weight = weights._positiveValues[k * currentLayerSize + j] + weights._negativeValues[k * currentLayerSize + j];
+                double weight = _weights[currentLayer - 1][k * currentLayerSize + j];
 
                 if ( weight > 0 )
                 {
@@ -748,27 +775,6 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
             }
         }
 
-        // log( "\nAfter matrix multiplication, newLB is:\n" );
-        // for ( unsigned i = 0; i < _inputLayerSize; ++i )
-        // {
-        //     log( "\t" );
-        //     for ( unsigned j = 0; j < _layerSizes[currentLayer]; ++j )
-        //     {
-        //         log( Stringf( "%.2lf ", _currentLayerLowerBounds[i*_layerSizes[currentLayer] + j] ) );
-        //     }
-        //     log( "\n" );
-        // }
-        // log( "\nnew UB is:\n" );
-        // for ( unsigned i = 0; i < _inputLayerSize; ++i )
-        // {
-        //     log( "\t" );
-        //     for ( unsigned j = 0; j < _layerSizes[currentLayer]; ++j )
-        //     {
-        //         log( Stringf( "%.2lf ", _currentLayerUpperBounds[i*_layerSizes[currentLayer] + j] ) );
-        //     }
-        //     log( "\n" );
-        // }
-
         /*
           We now have the symbolic representation for the new
           layer. Next, we compute new lower and upper bounds for
@@ -779,9 +785,11 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
         */
         for ( unsigned i = 0; i < currentLayerSize; ++i )
         {
-            // lbLb: the lower bound for the expression of the lower bound
-            // lbUb: the upper bound for the expression of the lower bound
-            // etc
+            /*
+              lbLb: the lower bound for the expression of the lower bound
+              lbUb: the upper bound for the expression of the lower bound
+              etc.
+            */
 
             double lbLb = 0;
             double lbUb = 0;
@@ -829,14 +837,110 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
             ubLb += _currentLayerUpperBias[i];
             ubUb += _currentLayerUpperBias[i];
 
-            log( Stringf( "Neuron %u: Computed concrete lb: %lf, ub: %lf\n", i, lbLb, ubUb ) );
+            /*
+              We now have the tightest bounds we can for the weighted
+              sum variable. If they are tigheter than what was
+              previously known, store them.
+            */
+            if ( _lowerBoundsWeightedSums[currentLayer][i] < lbLb )
+                _lowerBoundsWeightedSums[currentLayer][i] = lbLb;
+            if ( _upperBoundsWeightedSums[currentLayer][i] > ubUb )
+                _upperBoundsWeightedSums[currentLayer][i] = ubUb;
 
-            // Handle the ReLU activation. We know that:
-            //   lbLb <= true LB <= lbUb
-            //   ubLb <= true UB <= ubUb
+            /*
+              Next, we see what can be deduced regarding the bounds of
+              the activation result
+            */
+            if ( currentLayer < _numberOfLayers - 1 )
+            {
+                ReluConstraint::PhaseStatus reluPhase = ReluConstraint::PHASE_NOT_FIXED;
+                if ( _lowerBoundsWeightedSums[currentLayer][i] >= 0 )
+                    reluPhase = ReluConstraint::PHASE_ACTIVE;
+                else if ( _upperBoundsWeightedSums[currentLayer][i] <= 0 )
+                    reluPhase = ReluConstraint::PHASE_INACTIVE;
 
-            // GOT HERE //
+                /*
+                  If the ReLU phase is not fixed yet, see whether the
+                  newly computed bounds imply that it should be fixed.
+                */
+                if ( reluPhase == ReluConstraint::PHASE_NOT_FIXED )
+                {
+                    // If we got here, we know that lbLb < 0 and ubUb
+                    // > 0 There are four possible cases, depending on
+                    // whether ubLb and lbUb are negative or positive
+                    // (see Neurify paper, page 14).
+
+                    // Upper bound
+                    if ( ubLb <= 0 )
+                    {
+                        // ubLb < 0 < ubUb
+                        // Concretize the upper bound using the Ehler's-like approximation
+                        for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                            _currentLayerUpperBounds[j * currentLayerSize + i] =
+                                _currentLayerUpperBounds[j * currentLayerSize + i] * ubUb / ( ubUb - ubLb );
+
+                        // Do the same for the bias, and then adjust
+                        _currentLayerUpperBias[i] = _currentLayerUpperBias[i] * ubUb / ( ubUb - ubLb );
+                        _currentLayerUpperBias[i] -= ubLb * ubUb / ( ubUb - ubLb );
+                    }
+
+                    // Lower bound
+                    if ( lbUb <= 0 )
+                    {
+                        for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                            _currentLayerLowerBounds[j * currentLayerSize + i] = 0;
+
+                        _currentLayerLowerBias[i] = 0;
+                    }
+                    else
+                    {
+                        for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                            _currentLayerLowerBounds[j * currentLayerSize + i] =
+                                _currentLayerLowerBounds[j * currentLayerSize + i] * lbUb / ( lbUb - lbLb );
+
+                        _currentLayerLowerBias[i] = _currentLayerLowerBias[i] * lbUb / ( lbUb - lbLb );
+                    }
+
+                    lbLb = 0;
+                }
+                else
+                {
+                    // The phase of this ReLU is fixed!
+                    if ( reluPhase == ReluConstraint::PHASE_ACTIVE )
+                    {
+                        // Active ReLU, bounds are propagated as is
+                    }
+                    else
+                    {
+                        // Inactive ReLU, returns zero
+                        lbLb = 0;
+                        lbUb = 0;
+                        ubLb = 0;
+                        ubUb = 0;
+
+                        for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                        {
+                            _currentLayerLowerBounds[j * currentLayerSize + i] = 0;
+                            _currentLayerUpperBounds[j * currentLayerSize + i] = 0;
+                        }
+                        _currentLayerLowerBias[i] = 0;
+                        _currentLayerUpperBias[i] = 0;
+                    }
+                }
+            }
+
+            // Store the bounds for this neuron
+            if ( _lowerBoundsActivations[currentLayer][i] < lbLb )
+                _lowerBoundsActivations[currentLayer][i] = lbLb;
+            if ( _upperBoundsActivations[currentLayer][i] > ubUb )
+                _upperBoundsActivations[currentLayer][i] = ubUb;
         }
+
+        // Prepare for next iteration
+        memcpy( _previousLayerLowerBounds, _currentLayerLowerBounds, sizeof(double) * _maxLayerSize * _inputLayerSize );
+        memcpy( _previousLayerUpperBounds, _currentLayerUpperBounds, sizeof(double) * _maxLayerSize * _inputLayerSize );
+        memcpy( _previousLayerLowerBias, _currentLayerLowerBias, sizeof(double) * _maxLayerSize );
+        memcpy( _previousLayerUpperBias, _currentLayerUpperBias, sizeof(double) * _maxLayerSize );
     }
 }
 
@@ -873,7 +977,7 @@ void NetworkLevelReasoner::getConstraintTightenings( List<Tightening> &tightenin
     }
 }
 
-void SymbolicBoundTightener::log( const String &message )
+void NetworkLevelReasoner::log( const String &message )
 {
     if ( GlobalConfiguration::NETWORK_LEVEL_REASONER_LOGGING )
         printf( "%s", message.ascii() );
