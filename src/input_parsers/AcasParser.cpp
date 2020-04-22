@@ -230,7 +230,7 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
 
     for ( unsigned i = 0; i < _acasNeuralNetwork.getLayerSize( numberOfLayers - 1 ); ++i )
     {
-        unsigned var = _nodeToB[NodeIndex( 0, i )];
+        unsigned var = _nodeToB[NodeIndex( numberOfLayers - 1, i )];
         nlr->setWeightedSumVariable( numberOfLayers - 1, i, var );
     }
 

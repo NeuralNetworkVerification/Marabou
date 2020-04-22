@@ -577,6 +577,10 @@ void NetworkLevelReasoner::obtainCurrentBounds()
             _upperBoundsActivations[i][j] = _tableau->getUpperBound( varIndex );
         }
     }
+
+    printf( "NLR: current input bounds:\n" );
+    for ( unsigned i = 0; i < _inputLayerSize; ++i )
+        printf( "\tx%u: [%lf, %lf]\n", i, _lowerBoundsActivations[0][i], _upperBoundsActivations[0][i] );
 }
 
 void NetworkLevelReasoner::setTableau( const ITableau *tableau )
