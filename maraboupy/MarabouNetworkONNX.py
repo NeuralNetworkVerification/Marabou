@@ -575,7 +575,6 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         assert shape1[-1] == shape2[0]
         self.shapeMap[nodeName] = shape1[:-1] + shape2[1:]
             
-            
         firstInputConstant = False; secondInputConstant = False
         if inputName1 in self.constantMap:
             input1 = self.constantMap[inputName1]
