@@ -337,13 +337,10 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
 
         # Assume first input is array to be flattened
         inputName = node.input[0]
-        axis = None
+        axis = 1
         for attr in node.attribute:
             if attr.name == "axis":
                 axis = get_attribute_value(attr)
-        if axis is None:
-            print("Casting type not specified with attribute 'axis'")
-            raise RuntimeError
 
         dimension1 = int(np.prod(self.shapeMap[inputName][:axis]))
         dimension2 = int(np.prod(self.shapeMap[inputName][axis:]))
