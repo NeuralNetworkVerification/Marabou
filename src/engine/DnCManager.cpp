@@ -30,9 +30,6 @@
 #include <chrono>
 #include <cmath>
 #include <thread>
-#include <fstream>
-
-#include "util/util.hh"
 
 void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine,
                            InputQuery *inputQuery,
