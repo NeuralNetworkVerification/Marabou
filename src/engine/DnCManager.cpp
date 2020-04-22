@@ -30,8 +30,12 @@
 #include <chrono>
 #include <cmath>
 #include <thread>
+#include <fstream>
+
+#include "util/util.hh"
 
 void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine,
+                           InputQuery *inputQuery,
                            std::atomic_uint &numUnsolvedSubQueries,
                            std::atomic_bool &shouldQuitSolving,
                            unsigned threadId, unsigned onlineDivides,
@@ -40,6 +44,8 @@ void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine
     unsigned cpuId = 0;
     getCPUId( cpuId );
     log( Stringf( "Thread #%u on CPU %u", threadId, cpuId ) );
+
+    engine->processInputQuery( *inputQuery, false );
 
     DnCWorker worker( workload, engine, std::ref( numUnsolvedSubQueries ),
                       std::ref( shouldQuitSolving ), threadId, onlineDivides,
@@ -138,8 +144,11 @@ void DnCManager::solve( unsigned timeoutInSeconds )
     std::list<std::thread> threads;
     for ( unsigned threadId = 0; threadId < _numWorkers; ++threadId )
     {
-        threads.push_back( std::thread( dncSolve, workload,
-                                        _engines[ threadId ],
+        InputQuery *inputQuery = new InputQuery();
+        // Get the processed input query from the base engine
+        *inputQuery = *( _baseEngine->getInputQuery() );
+        threads.push_back( std::thread( dncSolve, workload, _engines[ threadId ],
+                                        inputQuery,
                                         std::ref( _numUnsolvedSubQueries ),
                                         std::ref( shouldQuitSolving ),
                                         threadId, _onlineDivides,
@@ -311,22 +320,13 @@ bool DnCManager::createEngines()
 {
     // Create the base engine
     _baseEngine = std::make_shared<Engine>();
-
-    InputQuery *baseInputQuery = new InputQuery();
-
-    *baseInputQuery = *_baseInputQuery;
-
-    if ( !_baseEngine->processInputQuery( *baseInputQuery ) )
+    if ( !_baseEngine->processInputQuery( *_baseInputQuery ) )
         // Solved by preprocessing, we are done!
         return false;
-
     // Create engines for each thread
     for ( unsigned i = 0; i < _numWorkers; ++i )
     {
         auto engine = std::make_shared<Engine>( _verbosity );
-        InputQuery *inputQuery = new InputQuery();
-        *inputQuery = *baseInputQuery;
-        engine->processInputQuery( *inputQuery );
         engine->setConstraintViolationThreshold( _constraintViolationThreshold );
         _engines.append( engine );
     }
