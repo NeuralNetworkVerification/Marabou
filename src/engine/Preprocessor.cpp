@@ -670,9 +670,6 @@ void Preprocessor::eliminateVariables()
                 unsigned b = relu->getB();
                 SymbolicBoundTightener::NodeIndex nodeIndex = _preprocessed._sbt->nodeIndexFromB( b );
                 _preprocessed._sbt->setEliminatedRelu( nodeIndex._layer, nodeIndex._neuron, relu->getPhaseStatus() );
-                printf( "Eliminating a RELU!!!\n" );
-                exit( 0 );
-
             }
 
             if ( _statistics )

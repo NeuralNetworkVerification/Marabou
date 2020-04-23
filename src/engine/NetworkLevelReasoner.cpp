@@ -169,7 +169,6 @@ void NetworkLevelReasoner::freeMemoryIfNeeded()
         _upperBoundsActivations = NULL;
     }
 
-
     if ( _currentLayerLowerBounds )
     {
         delete[] _currentLayerLowerBounds;
@@ -635,47 +634,6 @@ void NetworkLevelReasoner::intervalArithmeticBoundPropagation()
         }
     }
 }
-
-// void NetworkLevelReasoner::initializeSymbolicBoundTightening()
-// {
-//     // Layers and their sizes
-//     _symbolicBoundTightener.setNumberOfLayers( _numberOfLayers );
-
-//     for ( unsigned i = 0; i < _numberOfLayers; ++i )
-//         _symbolicBoundTightener.setLayerSize( i, _layerSizes[i] );
-
-//     _symbolicBoundTightener.allocateWeightAndBiasSpace();
-
-//     // Weights
-//     for ( unsigned i = 1; i < _numberOfLayers; ++i )
-//         for ( unsigned j = 0; j < _layerSizes[i]; ++j )
-//             for ( unsigned k = 0; k < _layerSizes[i-1]; ++k )
-//             {
-//                 double weight = _weights[i - 1][k * _layerSizes[i] + j];
-//                 _symbolicBoundTightener.setWeight( i - 1, k, j, weight );
-//             }
-
-//     // Biases
-//     for ( unsigned i = 1; i < _numberOfLayers; ++i )
-//         for ( unsigned j = 0; j < _layerSizes[i]; ++j )
-//             _symbolicBoundTightener.setBias( i, j, _bias[Index( i, j )] );
-
-//     // Weighted sum and activation result variables
-//     for ( unsigned i = 1; i < _numberOfLayers; ++i )
-//     {
-//         for ( unsigned j = 0; j < _layerSizes[i]; ++j )
-//         {
-//             Index index( i, j );
-
-//             ASSERT( _neuronToActivationFunction.exists( index ) &&
-//                     _neuronToActivationFunction[index] ==
-//                     NetworkLevelReasoner::ReLU );
-
-//             _symbolicBoundTightener.setReluBVariable( i, j, _indexToWeightedSumVariable[index] );
-//             _symbolicBoundTightener.setReluFVariable( i, j, _indexToActivationResultVariable[index] );
-//         }
-//     }
-// }
 
 void NetworkLevelReasoner::symbolicBoundPropagation()
 {
