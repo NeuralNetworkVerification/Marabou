@@ -183,7 +183,6 @@ bool Engine::solve( unsigned timeoutInSeconds )
             {
                 do
                 {
-                    printf( "performing SBT after doing a split\n" );
                     performSymbolicBoundTightening();
                 }
                 while ( applyAllValidConstraintCaseSplits() );
@@ -245,7 +244,6 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
                 while ( applyAllValidConstraintCaseSplits() )
                 {
-                    printf( "performing SBT after applying valid splits\n" );
                     performSymbolicBoundTightening();
                 }
 
@@ -1840,15 +1838,12 @@ void Engine::performSymbolicBoundTightening()
     // Step 3: Extract the bounds
     List<Tightening> tightenings;
     _networkLevelReasoner->getConstraintTightenings( tightenings );
-    printf( "Dumping bounds discovered by SBT\n" );
 
     for ( const auto &tightening : tightenings )
     {
         if ( tightening._type == Tightening::LB &&
              _tableau->getLowerBound( tightening._variable ) < tightening._value )
         {
-            printf( "\tx%u >= %lf\n", tightening._variable, tightening._value );
-
             _tableau->tightenLowerBound( tightening._variable, tightening._value );
             ++numTightenedBounds;
         }
@@ -1857,8 +1852,6 @@ void Engine::performSymbolicBoundTightening()
         if ( tightening._type == Tightening::UB &&
              _tableau->getUpperBound( tightening._variable ) > tightening._value )
         {
-            printf( "\tx%u <= %lf\n", tightening._variable, tightening._value );
-
             _tableau->tightenUpperBound( tightening._variable, tightening._value );
             ++numTightenedBounds;
         }
