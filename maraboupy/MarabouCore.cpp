@@ -257,7 +257,7 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def("setWeight", &NetworkLevelReasoner::setWeight)
         .def("allocateMemoryByTopology", &NetworkLevelReasoner::allocateMemoryByTopology)
         .def("setWeightedSumVariable", &NetworkLevelReasoner::setWeightedSumVariable)
-        .def("setActivationResultVariable", &NetworkLevelReasoner::setActivationResultVariable)
+        .def("setActivationResultVariable", &NetworkLevelReasoner::setActivationResultVariable);
     py::class_<Equation> eq(m, "Equation");
     eq.def(py::init());
     eq.def(py::init<Equation::EquationType>());
