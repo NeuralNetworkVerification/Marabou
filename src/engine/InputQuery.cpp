@@ -22,7 +22,6 @@
 
 InputQuery::InputQuery()
     : _networkLevelReasoner( NULL )
-    , _sbt( NULL )
 {
 }
 
@@ -33,12 +32,6 @@ InputQuery::~InputQuery()
     {
         delete _networkLevelReasoner;
         _networkLevelReasoner = NULL;
-    }
-
-    if ( _sbt )
-    {
-        delete _sbt;
-        _sbt = NULL;
     }
 }
 
@@ -244,27 +237,11 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
         }
     }
 
-    if ( other._sbt )
-    {
-        if ( !_sbt )
-            _sbt = new SymbolicBoundTightener;
-        other._sbt->storeIntoOther( *_sbt );
-    }
-    else
-    {
-        if ( _sbt )
-        {
-            delete _sbt;
-            _sbt = NULL;
-        }
-    }
-
     return *this;
 }
 
 InputQuery::InputQuery( const InputQuery &other )
     : _networkLevelReasoner( NULL )
-    , _sbt( NULL )
 {
     *this = other;
 }
@@ -501,11 +478,6 @@ void InputQuery::dump() const
         printf( "\t" );
         e.dump();
     }
-}
-
-void InputQuery::setSymbolicBoundTightener( SymbolicBoundTightener *sbt )
-{
-    _sbt = sbt;
 }
 
 void InputQuery::adjustInputOutputMapping( const Map<unsigned, unsigned> &oldIndexToNewIndex,

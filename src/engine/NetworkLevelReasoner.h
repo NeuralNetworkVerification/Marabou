@@ -65,7 +65,7 @@ public:
       functions, weights and biases, etc.
     */
     enum ActivationFunction {
-        ReLU,
+        ReLU = 0,
     };
 
     void setNumberOfLayers( unsigned numberOfLayers );

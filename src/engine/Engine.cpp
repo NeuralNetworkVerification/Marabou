@@ -30,7 +30,6 @@
 
 Engine::Engine( unsigned verbosity )
     : _rowBoundTightener( *_tableau )
-    , _symbolicBoundTightener( NULL )
     , _smtCore( this )
     , _numPlConstraintsDisabledByValidSplits( 0 )
     , _preprocessingEnabled( false )
@@ -1048,9 +1047,6 @@ void Engine::initializeNetworkLevelReasoning()
 
     if ( _networkLevelReasoner )
         _networkLevelReasoner->setTableau( _tableau );
-
-    if ( _preprocessedQuery._sbt )
-        _symbolicBoundTightener = _preprocessedQuery._sbt;
 }
 
 bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
@@ -1732,89 +1728,6 @@ List<unsigned> Engine::getInputVariables() const
     return _preprocessedQuery.getInputVariables();
 }
 
-// void Engine::performSymbolicBoundTightening()
-// {
-//     if ( ( !GlobalConfiguration::USE_SYMBOLIC_BOUND_TIGHTENING ) ||
-//          ( !_symbolicBoundTightener ) )
-//         return;
-
-//     struct timespec start = TimeUtils::sampleMicro();
-
-//     unsigned numTightenedBounds = 0;
-
-//     // Clear any previously stored information
-//     _symbolicBoundTightener->clearReluStatuses();
-
-//     // Step 1: tell the SBT about input bounds; maybe they were tightened
-//     unsigned inputVariableIndex = 0;
-//     for ( const auto &inputVariable : _preprocessedQuery.getInputVariables() )
-//     {
-//         // We assume the input variables are the first variables
-//         if ( inputVariable != inputVariableIndex )
-//         {
-//             throw MarabouError( MarabouError::SYMBOLIC_BOUND_TIGHTENER_FAULTY_INPUT,
-//                                  Stringf( "Sanity check failed, input variable %u with unexpected index %u", inputVariableIndex, inputVariable ).ascii() );
-//         }
-//         ++inputVariableIndex;
-
-//         double min = _tableau->getLowerBound( inputVariable );
-//         double max = _tableau->getUpperBound( inputVariable );
-
-//         _symbolicBoundTightener->setInputLowerBound( inputVariable, min );
-//         _symbolicBoundTightener->setInputUpperBound( inputVariable, max );
-//     }
-
-//     // Step 2: tell the SBT about the state of the ReLU constraints
-//     for ( const auto &constraint : _plConstraints )
-//     {
-//         if ( !constraint->supportsSymbolicBoundTightening() )
-//             throw MarabouError( MarabouError::SYMBOLIC_BOUND_TIGHTENER_UNSUPPORTED_CONSTRAINT_TYPE );
-
-//         ReluConstraint *relu = (ReluConstraint *)constraint;
-//         unsigned b = relu->getB();
-//         SymbolicBoundTightener::NodeIndex nodeIndex = _symbolicBoundTightener->nodeIndexFromB( b );
-//         _symbolicBoundTightener->setReluStatus( nodeIndex._layer, nodeIndex._neuron, relu->getPhaseStatus() );
-//     }
-
-//     // Step 3: perfrom the bound tightening
-//     _symbolicBoundTightener->run();
-
-//     // Stpe 4: extract any tighter bounds that were discovered
-//     printf( "Dumping bounds discovered by SBT\n" );
-
-//     for ( const auto &pair : _symbolicBoundTightener->getNodeIndexToFMapping() )
-//     {
-//         unsigned layer = pair.first._layer;
-//         unsigned neuron = pair.first._neuron;
-//         unsigned var = pair.second;
-
-//         double lb = _symbolicBoundTightener->getLowerBound( layer, neuron );
-//         double ub = _symbolicBoundTightener->getUpperBound( layer, neuron );
-
-//         double currentLb = _tableau->getLowerBound( var );
-//         double currentUb = _tableau->getUpperBound( var );
-
-//         _tableau->tightenLowerBound( var, lb );
-//         _tableau->tightenUpperBound( var, ub );
-
-//         if ( FloatUtils::lt( ub, currentUb ) )
-//         {
-//             printf( "\tx%u <= %lf\n", var, ub );
-//             ++numTightenedBounds;
-//         }
-
-//         if ( FloatUtils::gt( lb, currentLb ) )
-//         {
-//             printf( "\tx%u >= %lf\n", var, lb );
-//             ++numTightenedBounds;
-//         }
-//     }
-
-//     struct timespec end = TimeUtils::sampleMicro();
-//     _statistics.addTimeForSymbolicBoundTightening( TimeUtils::timePassed( start, end ) );
-//     _statistics.incNumTighteningsFromSymbolicBoundTightening( numTightenedBounds );
-// }
-
 void Engine::performSymbolicBoundTightening()
 {
     if ( ( !GlobalConfiguration::USE_SYMBOLIC_BOUND_TIGHTENING ) ||
@@ -1824,8 +1737,6 @@ void Engine::performSymbolicBoundTightening()
     struct timespec start = TimeUtils::sampleMicro();
 
     unsigned numTightenedBounds = 0;
-
-    _symbolicBoundTightener->clearReluStatuses();
 
     // Step 1: tell the NLR about the current bounds
     _networkLevelReasoner->obtainCurrentBounds();
