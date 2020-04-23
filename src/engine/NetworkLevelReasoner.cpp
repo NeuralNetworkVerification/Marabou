@@ -573,8 +573,8 @@ void NetworkLevelReasoner::obtainCurrentBounds()
         for ( unsigned j = 0; j < _layerSizes[i]; ++j )
         {
             unsigned varIndex = _indexToWeightedSumVariable[Index( i, j )];
-            _lowerBoundsActivations[i][j] = _tableau->getLowerBound( varIndex );
-            _upperBoundsActivations[i][j] = _tableau->getUpperBound( varIndex );
+            _lowerBoundsWeightedSums[i][j] = _tableau->getLowerBound( varIndex );
+            _upperBoundsWeightedSums[i][j] = _tableau->getUpperBound( varIndex );
         }
     }
 
