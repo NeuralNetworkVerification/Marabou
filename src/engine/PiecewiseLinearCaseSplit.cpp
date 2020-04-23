@@ -22,7 +22,7 @@ void PiecewiseLinearCaseSplit::storeBoundTightening( const Tightening &tightenin
     _bounds.append( tightening );
 }
 
-List<Tightening> PiecewiseLinearCaseSplit::getBoundTightenings() const
+const List<Tightening> & PiecewiseLinearCaseSplit::getBoundTightenings() const
 {
     return _bounds;
 }
@@ -32,7 +32,7 @@ void PiecewiseLinearCaseSplit::addEquation( const Equation &equation )
 	_equations.append( equation );
 }
 
-List<Equation> PiecewiseLinearCaseSplit::getEquations() const
+const List<Equation> & PiecewiseLinearCaseSplit::getEquations() const
 {
 	return _equations;
 }
