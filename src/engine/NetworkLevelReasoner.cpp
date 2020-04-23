@@ -444,8 +444,12 @@ void NetworkLevelReasoner::storeIntoOther( NetworkLevelReasoner &other ) const
 
     other._indexToWeightedSumVariable = _indexToWeightedSumVariable;
     other._indexToActivationResultVariable = _indexToActivationResultVariable;
+    other._weightedSumVariableToIndex = _weightedSumVariableToIndex;
+    other._activationResultVariableToIndex = _activationResultVariableToIndex;
     other._indexToWeightedSumAssignment = _indexToWeightedSumAssignment;
     other._indexToActivationResultAssignment = _indexToActivationResultAssignment;
+    other._eliminatedWeightedSumVariables = _eliminatedWeightedSumVariables;
+    other._eliminatedActivationResultVariables = _eliminatedActivationResultVariables;
 }
 
 const Map<NetworkLevelReasoner::Index, unsigned> &NetworkLevelReasoner::getIndexToWeightedSumVariable()
@@ -563,9 +567,18 @@ void NetworkLevelReasoner::obtainCurrentBounds()
     {
         for ( unsigned j = 0; j < _layerSizes[i]; ++j )
         {
-            unsigned varIndex = _indexToActivationResultVariable[Index( i, j )];
-            _lowerBoundsActivations[i][j] = _tableau->getLowerBound( varIndex );
-            _upperBoundsActivations[i][j] = _tableau->getUpperBound( varIndex );
+            if ( _indexToActivationResultVariable.exists( Index( i, j ) ) )
+            {
+                unsigned varIndex = _indexToActivationResultVariable[Index( i, j )];
+                _lowerBoundsActivations[i][j] = _tableau->getLowerBound( varIndex );
+                _upperBoundsActivations[i][j] = _tableau->getUpperBound( varIndex );
+            }
+            else
+            {
+                ASSERT( _eliminatedActivationResultVariables.exists( Index( i, j ) ) );
+                _lowerBoundsActivations[i][j] = _eliminatedActivationResultVariables[Index( i, j )];
+                _upperBoundsActivations[i][j] = _eliminatedActivationResultVariables[Index( i, j )];
+            }
         }
     }
 
@@ -573,9 +586,18 @@ void NetworkLevelReasoner::obtainCurrentBounds()
     {
         for ( unsigned j = 0; j < _layerSizes[i]; ++j )
         {
-            unsigned varIndex = _indexToWeightedSumVariable[Index( i, j )];
-            _lowerBoundsWeightedSums[i][j] = _tableau->getLowerBound( varIndex );
-            _upperBoundsWeightedSums[i][j] = _tableau->getUpperBound( varIndex );
+            if ( _indexToWeightedSumVariable.exists( Index( i, j ) ) )
+            {
+                unsigned varIndex = _indexToWeightedSumVariable[Index( i, j )];
+                _lowerBoundsWeightedSums[i][j] = _tableau->getLowerBound( varIndex );
+                _upperBoundsWeightedSums[i][j] = _tableau->getUpperBound( varIndex );
+            }
+            else
+            {
+                ASSERT( _eliminatedWeightedSumVariables.exists( Index( i, j ) ) );
+                _lowerBoundsWeightedSums[i][j] = _eliminatedWeightedSumVariables[Index( i, j )];
+                _upperBoundsWeightedSums[i][j] = _eliminatedWeightedSumVariables[Index( i, j )];
+            }
         }
     }
 }
@@ -689,22 +711,18 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
                     _currentLayerLowerBounds[i * currentLayerSize + j] +=
                         _previousLayerUpperBounds[i * previousLayerSize + k] *
                         _negativeWeights[currentLayer - 1][k * currentLayerSize + j];
-                    //weights._negativeValues[k * currentLayerSize + j];
 
                     _currentLayerLowerBounds[i * currentLayerSize + j] +=
                         _previousLayerLowerBounds[i * previousLayerSize + k] *
                         _positiveWeights[currentLayer - 1][k * currentLayerSize + j];
-                    // weights._positiveValues[k * currentLayerSize + j];
 
                     _currentLayerUpperBounds[i * currentLayerSize + j] +=
                         _previousLayerUpperBounds[i * previousLayerSize + k] *
                         _positiveWeights[currentLayer - 1][k * currentLayerSize + j];
-                    // weights._positiveValues[k * currentLayerSize + j];
 
                     _currentLayerUpperBounds[i * currentLayerSize + j] +=
                         _previousLayerLowerBounds[i * previousLayerSize + k] *
                         _negativeWeights[currentLayer - 1][k * currentLayerSize + j];
-                    // weights._negativeValues[k * currentLayerSize + j];
                 }
             }
         }
@@ -813,8 +831,29 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
             */
             if ( currentLayer < _numberOfLayers - 1 )
             {
+                /*
+                  There are two ways we can determine that a ReLU has become fixed:
+
+                    1. If the ReLU's variables have been externally fixed
+                    2. lbLb >= 0 (ACTIVE) or ubUb <= 0 (INACTIVE)
+                */
+
                 ReluConstraint::PhaseStatus reluPhase = ReluConstraint::PHASE_NOT_FIXED;
-                if ( _lowerBoundsWeightedSums[currentLayer][i] >= 0 )
+                if ( _eliminatedWeightedSumVariables.exists( Index( currentLayer, i ) ) )
+                {
+                    if ( _eliminatedWeightedSumVariables[Index( currentLayer, i )] <= 0 )
+                        reluPhase = ReluConstraint::PHASE_INACTIVE;
+                    else
+                        reluPhase = ReluConstraint::PHASE_ACTIVE;
+                }
+                else if ( _eliminatedActivationResultVariables.exists( Index( currentLayer, i ) ) )
+                {
+                    if ( FloatUtils::isZero( _eliminatedWeightedSumVariables[Index( currentLayer, i )] ) )
+                        reluPhase = ReluConstraint::PHASE_INACTIVE;
+                    else
+                        reluPhase = ReluConstraint::PHASE_ACTIVE;
+                }
+                else if ( _lowerBoundsWeightedSums[currentLayer][i] >= 0 )
                     reluPhase = ReluConstraint::PHASE_ACTIVE;
                 else if ( _upperBoundsWeightedSums[currentLayer][i] <= 0 )
                     reluPhase = ReluConstraint::PHASE_INACTIVE;
@@ -915,23 +954,29 @@ void NetworkLevelReasoner::getConstraintTightenings( List<Tightening> &tightenin
             Index index( i, j );
 
             // Weighted sums
-            tightenings.append( Tightening( _indexToWeightedSumVariable[index],
-                                            _lowerBoundsWeightedSums[i][j],
-                                            Tightening::LB ) );
+            if ( _indexToWeightedSumVariable.exists( index ) )
+            {
+                tightenings.append( Tightening( _indexToWeightedSumVariable[index],
+                                                _lowerBoundsWeightedSums[i][j],
+                                                Tightening::LB ) );
 
-            tightenings.append( Tightening( _indexToWeightedSumVariable[index],
-                                            _upperBoundsWeightedSums[i][j],
-                                            Tightening::UB ) );
+                tightenings.append( Tightening( _indexToWeightedSumVariable[index],
+                                                _upperBoundsWeightedSums[i][j],
+                                                Tightening::UB ) );
+            }
 
             // Activation results
             if ( i != _numberOfLayers - 1 )
             {
-                tightenings.append( Tightening( _indexToActivationResultVariable[index],
-                                                _lowerBoundsActivations[i][j],
-                                                Tightening::LB ) );
-                tightenings.append( Tightening( _indexToActivationResultVariable[index],
-                                                _upperBoundsActivations[i][j],
-                                                Tightening::UB ) );
+                if ( _indexToActivationResultVariable.exists( index ) )
+                {
+                    tightenings.append( Tightening( _indexToActivationResultVariable[index],
+                                                    _lowerBoundsActivations[i][j],
+                                                    Tightening::LB ) );
+                    tightenings.append( Tightening( _indexToActivationResultVariable[index],
+                                                    _upperBoundsActivations[i][j],
+                                                    Tightening::UB ) );
+                }
             }
         }
     }
