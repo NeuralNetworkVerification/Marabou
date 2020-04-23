@@ -393,6 +393,7 @@ void NetworkLevelReasoner::evaluate( double *input, double *output )
 void NetworkLevelReasoner::setWeightedSumVariable( unsigned layer, unsigned neuron, unsigned variable )
 {
     _indexToWeightedSumVariable[Index( layer, neuron )] = variable;
+    _weightedSumVariableToIndex[variable] = Index( layer, neuron );
 }
 
 unsigned NetworkLevelReasoner::getWeightedSumVariable( unsigned layer, unsigned neuron ) const
@@ -407,6 +408,7 @@ unsigned NetworkLevelReasoner::getWeightedSumVariable( unsigned layer, unsigned 
 void NetworkLevelReasoner::setActivationResultVariable( unsigned layer, unsigned neuron, unsigned variable )
 {
     _indexToActivationResultVariable[Index( layer, neuron )] = variable;
+    _activationResultVariableToIndex[variable] = Index( layer, neuron );
 }
 
 unsigned NetworkLevelReasoner::getActivationResultVariable( unsigned layer, unsigned neuron ) const
@@ -932,6 +934,29 @@ void NetworkLevelReasoner::getConstraintTightenings( List<Tightening> &tightenin
                                                 Tightening::UB ) );
             }
         }
+    }
+}
+
+void NetworkLevelReasoner::eliminateVariable( unsigned variable, double value )
+{
+    if ( _weightedSumVariableToIndex.exists( variable ) )
+    {
+        Index index = _weightedSumVariableToIndex[variable];
+
+        _indexToWeightedSumVariable.erase( index );
+        _weightedSumVariableToIndex.erase( variable );
+
+        _eliminatedWeightedSumVariables[index] = value;
+    }
+
+    if ( _activationResultVariableToIndex.exists( variable ) )
+    {
+        Index index = _activationResultVariableToIndex[variable];
+
+        _indexToActivationResultVariable.erase( index );
+        _activationResultVariableToIndex.erase( variable );
+
+        _eliminatedActivationResultVariables[index] = value;
     }
 }
 

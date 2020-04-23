@@ -590,6 +590,13 @@ void Preprocessor::eliminateVariables()
         }
     }
 
+    // Inform the NLR about eliminated varibales
+    if ( _preprocessed._networkLevelReasoner )
+    {
+        for ( const auto &fixed : _fixedVariables )
+            _preprocessed._networkLevelReasoner->eliminateVariable( fixed.first, fixed.second );
+    }
+
     // Compute the new variable indices, after the elimination of fixed variables
  	int offset = 0;
 	for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )

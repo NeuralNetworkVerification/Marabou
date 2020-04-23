@@ -110,9 +110,11 @@ public:
     void storeIntoOther( NetworkLevelReasoner &other ) const;
 
     /*
-      Methods that are typically invoked by the preprocessor,
-      to inform us of changes in variable indices
+      Methods that are typically invoked by the preprocessor, to
+      inform us of changes in variable indices or if a variable has
+      been eliminated
     */
+    void eliminateVariable( unsigned variable, double value );
     void updateVariableIndices( const Map<unsigned, unsigned> &oldIndexToNewIndex,
                                 const Map<unsigned, unsigned> &mergedVariables );
 
@@ -140,8 +142,6 @@ public:
     void setTableau( const ITableau *tableau );
     void obtainCurrentBounds();
     void intervalArithmeticBoundPropagation();
-
-    // void initializeSymbolicBoundTightening();
     void symbolicBoundPropagation();
 
     void getConstraintTightenings( List<Tightening> &tightenings ) const;
@@ -170,12 +170,20 @@ private:
     */
     Map<Index, unsigned> _indexToWeightedSumVariable;
     Map<Index, unsigned> _indexToActivationResultVariable;
+    Map<unsigned, Index> _weightedSumVariableToIndex;
+    Map<unsigned, Index> _activationResultVariableToIndex;
 
     /*
       Store the assignment to all variables when evaluate() is called
     */
     Map<Index, double> _indexToWeightedSumAssignment;
     Map<Index, double> _indexToActivationResultAssignment;
+
+    /*
+      Store eliminated variables
+    */
+    Map<Index, double> _eliminatedWeightedSumVariables;
+    Map<Index, double> _eliminatedActivationResultVariables;
 
     /*
       Work space for bound tightening
