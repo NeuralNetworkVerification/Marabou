@@ -122,7 +122,7 @@ void LookAheadPreprocessor::preprocessWorker( LookAheadPreprocessor::WorkerQueue
         engine->applySplit( caseSplit );
 
         struct timespec start = TimeUtils::sampleMicro();
-        engine->solve( initialTimeout / 10 );
+        engine->solve( 2 );
         struct timespec end = TimeUtils::sampleMicro();
         unsigned long long totalElapsed = TimeUtils::timePassed( start, end );
         unsigned time =  totalElapsed / 1000000;
