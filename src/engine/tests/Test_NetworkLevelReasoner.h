@@ -331,6 +331,120 @@ public:
         TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
         TS_ASSERT_EQUALS( expectedBounds2, bounds );
     }
+
+    void test_symbolic_bound_tightening()
+    {
+        NetworkLevelReasoner nlr;
+
+        nlr.setNumberOfLayers( 3 );
+
+        nlr.setLayerSize( 0, 2 );
+        nlr.setLayerSize( 1, 2 );
+        nlr.setLayerSize( 2, 1 );
+
+        nlr.allocateMemoryByTopology();
+
+        // Weights
+        nlr.setWeight( 0, 0, 0, 2 );
+        nlr.setWeight( 0, 0, 1, 1 );
+        nlr.setWeight( 0, 1, 0, 3 );
+        nlr.setWeight( 0, 1, 1, 1 );
+        nlr.setWeight( 1, 0, 0, 1 );
+        nlr.setWeight( 1, 1, 0, -1 );
+
+        // All biases are 0
+        nlr.setBias( 0, 0, 0 );
+        nlr.setBias( 0, 1, 0 );
+        nlr.setBias( 1, 0, 0 );
+        nlr.setBias( 1, 1, 0 );
+        nlr.setBias( 2, 0, 0 );
+
+        // Variable indexing
+        nlr.setActivationResultVariable( 0, 0, 0 );
+        nlr.setActivationResultVariable( 0, 1, 1 );
+
+        nlr.setWeightedSumVariable( 1, 0, 2 );
+        nlr.setWeightedSumVariable( 1, 1, 3 );
+        nlr.setActivationResultVariable( 1, 0, 4 );
+        nlr.setActivationResultVariable( 1, 1, 5 );
+
+        nlr.setWeightedSumVariable( 2, 0, 6 );
+
+        // Mark nodes as ReLUs
+        nlr.setNeuronActivationFunction( 1, 0, NetworkLevelReasoner::ReLU );
+        nlr.setNeuronActivationFunction( 1, 1, NetworkLevelReasoner::ReLU );
+
+        // Prepare initial bounds
+        MockTableau tableau;
+        nlr.setTableau( &tableau );
+
+        double large = 1000000;
+
+        tableau.setLowerBound( 0, 4 );
+        tableau.setUpperBound( 0, 6 );
+        tableau.setLowerBound( 1, 1 );
+        tableau.setUpperBound( 1, 5 );
+
+        tableau.setLowerBound( 2, -large ); tableau.setUpperBound( 2, large );
+        tableau.setLowerBound( 3, -large ); tableau.setUpperBound( 3, large );
+        tableau.setLowerBound( 4, -large ); tableau.setUpperBound( 4, large );
+        tableau.setLowerBound( 5, -large ); tableau.setUpperBound( 5, large );
+        tableau.setLowerBound( 6, -large ); tableau.setUpperBound( 6, large );
+
+        // Invoke SBT
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.symbolicBoundPropagation() );
+
+        /*
+          Input ranges:
+
+          x0: [4, 6]
+          x1: [1, 5]
+
+          Layer 1:
+
+          x2.lb = 2x0 + 3x1   : [11, 27]
+          x2.ub = 2x0 + 3x1   : [11, 27]
+
+          x3.lb =  x0 +  x1   : [5, 11]
+          x3.ub =  x0 +  x1   : [5, 11]
+
+          Both ReLUs active, bound survive through activations:
+
+          x4.lb = 2x0 + 3x1   : [11, 27]
+          x4.ub = 2x0 + 3x1   : [11, 27]
+
+          x5.lb =  x0 +  x1   : [5, 11]
+          x5.ub =  x0 +  x1   : [5, 11]
+
+          Layer 2:
+
+          x6.lb =  x0 + 2x1   : [6, 16]
+          x6.ub =  x0 + 2x1   : [6, 16]
+        */
+
+        List<Tightening> expectedBounds({
+                Tightening( 2, 11, Tightening::LB ),
+                Tightening( 2, 27, Tightening::UB ),
+                Tightening( 3, 5, Tightening::LB ),
+                Tightening( 3, 11, Tightening::UB ),
+
+                Tightening( 4, 11, Tightening::LB ),
+                Tightening( 4, 27, Tightening::UB ),
+                Tightening( 5, 5, Tightening::LB ),
+                Tightening( 5, 11, Tightening::UB ),
+
+                Tightening( 6, 6, Tightening::LB ),
+                Tightening( 6, 16, Tightening::UB ),
+                    });
+
+        List<Tightening> bounds;
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+
+        TS_ASSERT_EQUALS( expectedBounds.size(), bounds.size() );
+        for ( const auto &bound : bounds )
+            TS_ASSERT( expectedBounds.exists( bound ) );
+    }
 };
 
 //

@@ -789,9 +789,6 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
                     lbUb += ( entry * _lowerBoundsActivations[0][j] );
                 }
 
-                lbLb -= GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
-                lbUb += GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
-
                 entry = _currentLayerUpperBounds[j * currentLayerSize + i];
 
                 if ( entry >= 0 )
@@ -804,9 +801,6 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
                     ubLb += ( entry * _upperBoundsActivations[0][j] );
                     ubUb += ( entry * _lowerBoundsActivations[0][j] );
                 }
-
-                ubLb -= GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
-                ubUb += GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
             }
 
             // Add the network bias to all bounds
