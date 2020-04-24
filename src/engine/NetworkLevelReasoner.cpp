@@ -242,7 +242,7 @@ void NetworkLevelReasoner::evaluate( double *input, double *output )
                     break;
 
                 default:
-                    ASSERT( false );
+                    throw MarabouError( MarabouError::NETWORK_LEVEL_REASONER_ACTIVATION_NOT_SUPPORTED );
                     break;
                 }
             }
