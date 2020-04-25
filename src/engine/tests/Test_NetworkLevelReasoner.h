@@ -108,7 +108,7 @@ public:
         nlr.setNeuronActivationFunction( 2, 1, NetworkLevelReasoner::ReLU );
     }
 
-    void test_evaluate()
+    void test_evaluate_relus()
     {
         NetworkLevelReasoner nlr;
 
@@ -143,6 +143,39 @@ public:
 
         TS_ASSERT( FloatUtils::areEqual( output[0], 0 ) );
         TS_ASSERT( FloatUtils::areEqual( output[1], 0 ) );
+    }
+
+    void test_evaluate_relus_and_abs()
+    {
+        NetworkLevelReasoner nlr;
+
+        populateNetwork( nlr );
+
+        // Override activation functions for the first hidden layer
+        nlr.setNeuronActivationFunction( 1, 0, NetworkLevelReasoner::AbsoluteValue );
+        nlr.setNeuronActivationFunction( 1, 1, NetworkLevelReasoner::AbsoluteValue );
+        nlr.setNeuronActivationFunction( 1, 2, NetworkLevelReasoner::AbsoluteValue );
+
+        nlr.setWeight( 1, 2, 1, -5 );
+
+        double input[2];
+        double output[2];
+
+        input[0] = 1;
+        input[1] = 1;
+
+        TS_ASSERT_THROWS_NOTHING( nlr.evaluate( input, output ) );
+
+        TS_ASSERT( FloatUtils::areEqual( output[0], 2 ) );
+        TS_ASSERT( FloatUtils::areEqual( output[1], 2 ) );
+
+        input[0] = 1;
+        input[1] = 2;
+
+        TS_ASSERT_THROWS_NOTHING( nlr.evaluate( input, output ) );
+
+        TS_ASSERT( FloatUtils::areEqual( output[0], 4 ) );
+        TS_ASSERT( FloatUtils::areEqual( output[1], 4 ) );
     }
 
     void test_store_into_other()
