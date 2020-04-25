@@ -987,6 +987,8 @@ void NetworkLevelReasoner::reluSymbolicPropagation( const Index &index, double &
             _currentLayerUpperBias[i] = 0;
         }
     }
+
+    ASSERT( lbLb >= 0 );
 }
 
 void NetworkLevelReasoner::absoluteValueSymbolicPropagation( const Index &index, double &lbLb, double &lbUb, double &ubLb, double &ubUb )
@@ -1023,20 +1025,21 @@ void NetworkLevelReasoner::absoluteValueSymbolicPropagation( const Index &index,
         // If we got here, we know that lbLb < 0 < lbUb In this case,
         // we do naive concretization: lb is 0, ub is the max between
         // -lbLb and ubUb.
-
         for ( unsigned j = 0; j < _inputLayerSize; ++j )
             _currentLayerUpperBounds[j * currentLayerSize + i] = 0;
-
 
         for ( unsigned j = 0; j < _inputLayerSize; ++j )
             _currentLayerLowerBounds[j * currentLayerSize + i] = 0;
 
         if ( -_currentLayerLowerBias[i] > _currentLayerUpperBias[i] )
             _currentLayerUpperBias[i] = -_currentLayerLowerBias[i];
-        _currentLayerLowerBias[i] = 0;
 
+        if ( -lbLb > ubUb )
+            ubUb = -lbLb;
         lbLb = 0;
-        ubUb = _currentLayerUpperBias[i];
+
+        _currentLayerLowerBias[i] = lbLb;
+        _currentLayerUpperBias[i] = ubUb;
     }
     else
     {
@@ -1049,28 +1052,35 @@ void NetworkLevelReasoner::absoluteValueSymbolicPropagation( const Index &index,
         {
             // Negative AbsoluteValue, bounds are negated and flipped
             double temp;
-
             for ( unsigned j = 0; j < _inputLayerSize; ++j )
             {
                 temp = _currentLayerUpperBounds[j * currentLayerSize + i];
                 _currentLayerUpperBounds[j * currentLayerSize + i] =
                     -_currentLayerLowerBounds[j * currentLayerSize + i];
-                _currentLayerLowerBounds[j * currentLayerSize + i] = temp;
+                _currentLayerLowerBounds[j * currentLayerSize + i] = -temp;
             }
 
             temp = _currentLayerLowerBias[i];
             _currentLayerLowerBias[i] = -_currentLayerUpperBias[i];
             _currentLayerUpperBias[i] = -temp;
 
+            // Old lb, negated, is the new ub
             temp = lbLb;
-            ubUb = -lbLb;
-            lbLb = -temp;
+            lbLb = -ubUb;
+            ubUb = -temp;
 
             temp = lbUb;
             lbUb = -ubLb;
             ubLb = -temp;
+
+            // In extreme cases (constraint set externally), lbLb
+            // could be negative - so adjust this
+            if ( lbLb < 0 )
+                lbLb = 0;
         }
     }
+
+    ASSERT( lbLb >= 0 );
 }
 
 void NetworkLevelReasoner::getConstraintTightenings( List<Tightening> &tightenings ) const
