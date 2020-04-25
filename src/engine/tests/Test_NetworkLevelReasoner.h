@@ -169,14 +169,6 @@ public:
         TS_ASSERT( FloatUtils::areEqual( output1[0], output2[0] ) );
         TS_ASSERT( FloatUtils::areEqual( output1[1], output2[1] ) );
 
-        // Set all neurons to ReLU, except for input and output neurons
-        nlr.setNeuronActivationFunction( 1, 0, NetworkLevelReasoner::ReLU );
-        nlr.setNeuronActivationFunction( 1, 1, NetworkLevelReasoner::ReLU );
-        nlr.setNeuronActivationFunction( 1, 2, NetworkLevelReasoner::ReLU );
-
-        nlr.setNeuronActivationFunction( 2, 0, NetworkLevelReasoner::ReLU );
-        nlr.setNeuronActivationFunction( 2, 1, NetworkLevelReasoner::ReLU );
-
         TS_ASSERT_THROWS_NOTHING( nlr.storeIntoOther( nlr2 ) );
 
         // With ReLUs, Inputs are zeros, only biases count

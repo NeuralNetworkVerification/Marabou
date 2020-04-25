@@ -13,6 +13,7 @@
 
  **/
 
+#include "AbsoluteValueConstraint.h"
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "MStringf.h"
@@ -363,14 +364,20 @@ void NetworkLevelReasoner::evaluate( double *input, double *output )
             if ( _indexToWeightedSumVariable.exists( index ) )
                 _indexToWeightedSumAssignment[index] = _work2[targetNeuron];
 
-            // Apply activation function
-            if ( _neuronToActivationFunction.exists( index ) )
+            // Apply activation function, unless computing the output layer
+            if ( targetLayer != _numberOfLayers - 1 )
             {
+                ASSERT( _neuronToActivationFunction.exists( index ) );
+
                 switch ( _neuronToActivationFunction[index] )
                 {
                 case ReLU:
                     if ( _work2[targetNeuron] < 0 )
                         _work2[targetNeuron] = 0;
+                    break;
+
+                case AbsoluteValue:
+                    _work2[targetNeuron] = FloatUtils::abs( _work2[targetNeuron] );
                     break;
 
                 default:
@@ -650,6 +657,26 @@ void NetworkLevelReasoner::intervalArithmeticBoundPropagation()
                     _upperBoundsActivations[i][j] = ub;
                     break;
 
+                case AbsoluteValue:
+                    if ( lb > 0 )
+                    {
+                        _lowerBoundsActivations[i][j] = lb;
+                        _upperBoundsActivations[i][j] = ub;
+                    }
+                    else if ( ub < 0 )
+                    {
+                        _lowerBoundsActivations[i][j] = -ub;
+                        _upperBoundsActivations[i][j] = -lb;
+                    }
+                    else
+                    {
+                        // lb < 0 < ub
+                        _lowerBoundsActivations[i][j] = 0;
+                        _upperBoundsActivations[i][j] = FloatUtils::max( ub, -lb );
+                    }
+
+                    break;
+
                 default:
                     ASSERT( false );
                     break;
@@ -825,108 +852,31 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
             */
             if ( currentLayer < _numberOfLayers - 1 )
             {
-                /*
-                  There are two ways we can determine that a ReLU has become fixed:
+                // Propagate according to the specific activation function
+                Index index( currentLayer, i );
+                ASSERT( _neuronToActivationFunction.exists( index ) );
 
-                    1. If the ReLU's variables have been externally fixed
-                    2. lbLb >= 0 (ACTIVE) or ubUb <= 0 (INACTIVE)
-                */
-
-                ReluConstraint::PhaseStatus reluPhase = ReluConstraint::PHASE_NOT_FIXED;
-                if ( _eliminatedWeightedSumVariables.exists( Index( currentLayer, i ) ) )
+                switch ( _neuronToActivationFunction[index] )
                 {
-                    if ( _eliminatedWeightedSumVariables[Index( currentLayer, i )] <= 0 )
-                        reluPhase = ReluConstraint::PHASE_INACTIVE;
-                    else
-                        reluPhase = ReluConstraint::PHASE_ACTIVE;
+                case ReLU:
+                    reluSymbolicPropagation( index, lbLb, lbUb, ubLb, ubUb );
+                    break;
+
+                case AbsoluteValue:
+                    absoluteValueSymbolicPropagation( index, lbLb, lbUb, ubLb, ubUb );
+                    break;
+
+                default:
+                    ASSERT( false );
+                    break;
                 }
-                else if ( _eliminatedActivationResultVariables.exists( Index( currentLayer, i ) ) )
-                {
-                    if ( FloatUtils::isZero( _eliminatedWeightedSumVariables[Index( currentLayer, i )] ) )
-                        reluPhase = ReluConstraint::PHASE_INACTIVE;
-                    else
-                        reluPhase = ReluConstraint::PHASE_ACTIVE;
-                }
-                else if ( _lowerBoundsWeightedSums[currentLayer][i] >= 0 )
-                    reluPhase = ReluConstraint::PHASE_ACTIVE;
-                else if ( _upperBoundsWeightedSums[currentLayer][i] <= 0 )
-                    reluPhase = ReluConstraint::PHASE_INACTIVE;
 
-                /*
-                  If the ReLU phase is not fixed yet, see whether the
-                  newly computed bounds imply that it should be fixed.
-                */
-                if ( reluPhase == ReluConstraint::PHASE_NOT_FIXED )
-                {
-                    // If we got here, we know that lbLb < 0 and ubUb
-                    // > 0 There are four possible cases, depending on
-                    // whether ubLb and lbUb are negative or positive
-                    // (see Neurify paper, page 14).
-
-                    // Upper bound
-                    if ( ubLb <= 0 )
-                    {
-                        // ubLb < 0 < ubUb
-                        // Concretize the upper bound using the Ehler's-like approximation
-                        for ( unsigned j = 0; j < _inputLayerSize; ++j )
-                            _currentLayerUpperBounds[j * currentLayerSize + i] =
-                                _currentLayerUpperBounds[j * currentLayerSize + i] * ubUb / ( ubUb - ubLb );
-
-                        // Do the same for the bias, and then adjust
-                        _currentLayerUpperBias[i] = _currentLayerUpperBias[i] * ubUb / ( ubUb - ubLb );
-                        _currentLayerUpperBias[i] -= ubLb * ubUb / ( ubUb - ubLb );
-                    }
-
-                    // Lower bound
-                    if ( lbUb <= 0 )
-                    {
-                        for ( unsigned j = 0; j < _inputLayerSize; ++j )
-                            _currentLayerLowerBounds[j * currentLayerSize + i] = 0;
-
-                        _currentLayerLowerBias[i] = 0;
-                    }
-                    else
-                    {
-                        for ( unsigned j = 0; j < _inputLayerSize; ++j )
-                            _currentLayerLowerBounds[j * currentLayerSize + i] =
-                                _currentLayerLowerBounds[j * currentLayerSize + i] * lbUb / ( lbUb - lbLb );
-
-                        _currentLayerLowerBias[i] = _currentLayerLowerBias[i] * lbUb / ( lbUb - lbLb );
-                    }
-
-                    lbLb = 0;
-                }
-                else
-                {
-                    // The phase of this ReLU is fixed!
-                    if ( reluPhase == ReluConstraint::PHASE_ACTIVE )
-                    {
-                        // Active ReLU, bounds are propagated as is
-                    }
-                    else
-                    {
-                        // Inactive ReLU, returns zero
-                        lbLb = 0;
-                        lbUb = 0;
-                        ubLb = 0;
-                        ubUb = 0;
-
-                        for ( unsigned j = 0; j < _inputLayerSize; ++j )
-                        {
-                            _currentLayerLowerBounds[j * currentLayerSize + i] = 0;
-                            _currentLayerUpperBounds[j * currentLayerSize + i] = 0;
-                        }
-                        _currentLayerLowerBias[i] = 0;
-                        _currentLayerUpperBias[i] = 0;
-                    }
-                }
+                // Store the bounds for this neuron
+                if ( _lowerBoundsActivations[currentLayer][i] < lbLb )
+                    _lowerBoundsActivations[currentLayer][i] = lbLb;
+                if ( _upperBoundsActivations[currentLayer][i] > ubUb )
+                    _upperBoundsActivations[currentLayer][i] = ubUb;
             }
-
-            // Store the bounds for this neuron
-            if ( _lowerBoundsActivations[currentLayer][i] < lbLb )
-                _lowerBoundsActivations[currentLayer][i] = lbLb;
-            if ( _upperBoundsActivations[currentLayer][i] > ubUb )
-                _upperBoundsActivations[currentLayer][i] = ubUb;
         }
 
         // Prepare for next iteration
@@ -934,6 +884,192 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
         memcpy( _previousLayerUpperBounds, _currentLayerUpperBounds, sizeof(double) * _maxLayerSize * _inputLayerSize );
         memcpy( _previousLayerLowerBias, _currentLayerLowerBias, sizeof(double) * _maxLayerSize );
         memcpy( _previousLayerUpperBias, _currentLayerUpperBias, sizeof(double) * _maxLayerSize );
+    }
+}
+
+void NetworkLevelReasoner::reluSymbolicPropagation( const Index &index, double &lbLb, double &lbUb, double &ubLb, double &ubUb )
+{
+    /*
+      There are two ways we can determine that a ReLU has become fixed:
+
+      1. If the ReLU's variables have been externally fixed
+      2. lbLb >= 0 (ACTIVE) or ubUb <= 0 (INACTIVE)
+    */
+    unsigned currentLayer = index._layer;
+    unsigned i = index._neuron;
+    unsigned currentLayerSize = _layerSizes[currentLayer];
+
+    ReluConstraint::PhaseStatus reluPhase = ReluConstraint::PHASE_NOT_FIXED;
+    if ( _eliminatedWeightedSumVariables.exists( index ) )
+    {
+        if ( _eliminatedWeightedSumVariables[index] <= 0 )
+            reluPhase = ReluConstraint::PHASE_INACTIVE;
+        else
+            reluPhase = ReluConstraint::PHASE_ACTIVE;
+    }
+    else if ( _eliminatedActivationResultVariables.exists( index ) )
+    {
+        if ( FloatUtils::isZero( _eliminatedWeightedSumVariables[index] ) )
+            reluPhase = ReluConstraint::PHASE_INACTIVE;
+        else
+            reluPhase = ReluConstraint::PHASE_ACTIVE;
+    }
+    else if ( _lowerBoundsWeightedSums[currentLayer][i] >= 0 )
+        reluPhase = ReluConstraint::PHASE_ACTIVE;
+    else if ( _upperBoundsWeightedSums[currentLayer][i] <= 0 )
+        reluPhase = ReluConstraint::PHASE_INACTIVE;
+
+    /*
+      If the ReLU phase is not fixed yet, see whether the
+      newly computed bounds imply that it should be fixed.
+    */
+    if ( reluPhase == ReluConstraint::PHASE_NOT_FIXED )
+    {
+        // If we got here, we know that lbLb < 0 and ubUb
+        // > 0 There are four possible cases, depending on
+        // whether ubLb and lbUb are negative or positive
+        // (see Neurify paper, page 14).
+
+        // Upper bound
+        if ( ubLb <= 0 )
+        {
+            // ubLb < 0 < ubUb
+            // Concretize the upper bound using the Ehler's-like approximation
+            for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                _currentLayerUpperBounds[j * currentLayerSize + i] =
+                    _currentLayerUpperBounds[j * currentLayerSize + i] * ubUb / ( ubUb - ubLb );
+
+            // Do the same for the bias, and then adjust
+            _currentLayerUpperBias[i] = _currentLayerUpperBias[i] * ubUb / ( ubUb - ubLb );
+            _currentLayerUpperBias[i] -= ubLb * ubUb / ( ubUb - ubLb );
+        }
+
+        // Lower bound
+        if ( lbUb <= 0 )
+        {
+            for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                _currentLayerLowerBounds[j * currentLayerSize + i] = 0;
+
+            _currentLayerLowerBias[i] = 0;
+        }
+        else
+        {
+            for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                _currentLayerLowerBounds[j * currentLayerSize + i] =
+                    _currentLayerLowerBounds[j * currentLayerSize + i] * lbUb / ( lbUb - lbLb );
+
+            _currentLayerLowerBias[i] = _currentLayerLowerBias[i] * lbUb / ( lbUb - lbLb );
+        }
+
+        lbLb = 0;
+    }
+    else
+    {
+        // The phase of this ReLU is fixed!
+        if ( reluPhase == ReluConstraint::PHASE_ACTIVE )
+        {
+            // Active ReLU, bounds are propagated as is
+        }
+        else
+        {
+            // Inactive ReLU, returns zero
+            lbLb = 0;
+            lbUb = 0;
+            ubLb = 0;
+            ubUb = 0;
+
+            for ( unsigned j = 0; j < _inputLayerSize; ++j )
+            {
+                _currentLayerLowerBounds[j * currentLayerSize + i] = 0;
+                _currentLayerUpperBounds[j * currentLayerSize + i] = 0;
+            }
+            _currentLayerLowerBias[i] = 0;
+            _currentLayerUpperBias[i] = 0;
+        }
+    }
+}
+
+void NetworkLevelReasoner::absoluteValueSymbolicPropagation( const Index &index, double &lbLb, double &lbUb, double &ubLb, double &ubUb )
+{
+    /*
+      There are two ways we can determine that an AbsoluteValue has become fixed:
+
+      1. If the weighted sum variable has been externally fixed
+      2. If the weighted sum bounds are lb >= 0 (POSITIVE) or ub <= 0 (NEGATIVE)
+    */
+    unsigned currentLayer = index._layer;
+    unsigned i = index._neuron;
+    unsigned currentLayerSize = _layerSizes[currentLayer];
+
+    AbsoluteValueConstraint::PhaseStatus absPhase = AbsoluteValueConstraint::PHASE_NOT_FIXED;
+    if ( _eliminatedWeightedSumVariables.exists( index ) )
+    {
+        if ( _eliminatedWeightedSumVariables[index] <= 0 )
+            absPhase = AbsoluteValueConstraint::PHASE_NEGATIVE;
+        else
+            absPhase = AbsoluteValueConstraint::PHASE_POSITIVE;
+    }
+    else if ( _lowerBoundsWeightedSums[currentLayer][i] >= 0 )
+        absPhase = AbsoluteValueConstraint::PHASE_POSITIVE;
+    else if ( _upperBoundsWeightedSums[currentLayer][i] <= 0 )
+        absPhase = AbsoluteValueConstraint::PHASE_NEGATIVE;
+
+    /*
+      If the phase is not fixed yet, see whether the
+      newly computed bounds imply that it should be fixed.
+    */
+    if ( absPhase == AbsoluteValueConstraint::PHASE_NOT_FIXED )
+    {
+        // If we got here, we know that lbLb < 0 < lbUb In this case,
+        // we do naive concretization: lb is 0, ub is the max between
+        // -lbLb and ubUb.
+
+        for ( unsigned j = 0; j < _inputLayerSize; ++j )
+            _currentLayerUpperBounds[j * currentLayerSize + i] = 0;
+
+
+        for ( unsigned j = 0; j < _inputLayerSize; ++j )
+            _currentLayerLowerBounds[j * currentLayerSize + i] = 0;
+
+        if ( -_currentLayerLowerBias[i] > _currentLayerUpperBias[i] )
+            _currentLayerUpperBias[i] = -_currentLayerLowerBias[i];
+        _currentLayerLowerBias[i] = 0;
+
+        lbLb = 0;
+        ubUb = _currentLayerUpperBias[i];
+    }
+    else
+    {
+        // The phase of this AbsoluteValueConstraint is fixed!
+        if ( absPhase == AbsoluteValueConstraint::PHASE_POSITIVE )
+        {
+            // Positive AbsoluteValue, bounds are propagated as is
+        }
+        else
+        {
+            // Negative AbsoluteValue, bounds are negated and flipped
+            double temp;
+
+            for ( unsigned j = 0; j < _inputLayerSize; ++j )
+            {
+                temp = _currentLayerUpperBounds[j * currentLayerSize + i];
+                _currentLayerUpperBounds[j * currentLayerSize + i] =
+                    -_currentLayerLowerBounds[j * currentLayerSize + i];
+                _currentLayerLowerBounds[j * currentLayerSize + i] = temp;
+            }
+
+            temp = _currentLayerLowerBias[i];
+            _currentLayerLowerBias[i] = -_currentLayerUpperBias[i];
+            _currentLayerUpperBias[i] = -temp;
+
+            temp = lbLb;
+            ubUb = -lbLb;
+            lbLb = -temp;
+
+            temp = lbUb;
+            lbUb = -ubLb;
+            ubLb = -temp;
+        }
     }
 }
 
