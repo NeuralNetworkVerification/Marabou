@@ -225,7 +225,7 @@ public:
         TS_ASSERT( FloatUtils::areEqual( output1[1], output2[1] ) );
     }
 
-    void test_interval_arithmetic_bound_propagation()
+    void test_interval_arithmetic_bound_propagation_relu_constraints()
     {
         NetworkLevelReasoner nlr;
         populateNetwork( nlr );
@@ -351,6 +351,145 @@ public:
                 Tightening( 12, 7, Tightening::UB ),
                 Tightening( 13, 0, Tightening::LB ),
                 Tightening( 13, 28, Tightening::UB ),
+                    });
+
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        TS_ASSERT_EQUALS( expectedBounds2, bounds );
+    }
+
+    void test_interval_arithmetic_bound_propagation_abs_constraints()
+    {
+        NetworkLevelReasoner nlr;
+        populateNetwork( nlr );
+
+        nlr.setNeuronActivationFunction( 1, 0, NetworkLevelReasoner::AbsoluteValue );
+        nlr.setNeuronActivationFunction( 1, 1, NetworkLevelReasoner::AbsoluteValue );
+        nlr.setNeuronActivationFunction( 1, 2, NetworkLevelReasoner::AbsoluteValue );
+
+        nlr.setNeuronActivationFunction( 2, 0, NetworkLevelReasoner::AbsoluteValue );
+        nlr.setNeuronActivationFunction( 2, 1, NetworkLevelReasoner::AbsoluteValue );
+
+        MockTableau tableau;
+
+        // Initialize the bounds
+        tableau.setLowerBound( 0, -1 );
+        tableau.setUpperBound( 0, 2 );
+        tableau.setLowerBound( 1, -1 );
+        tableau.setUpperBound( 1, 2 );
+
+        double large = 1000;
+        tableau.setLowerBound( 2, -large ); tableau.setUpperBound( 2, large );
+        tableau.setLowerBound( 3, -large ); tableau.setUpperBound( 3, large );
+        tableau.setLowerBound( 4, -large ); tableau.setUpperBound( 4, large );
+        tableau.setLowerBound( 5, -large ); tableau.setUpperBound( 5, large );
+        tableau.setLowerBound( 6, -large ); tableau.setUpperBound( 6, large );
+        tableau.setLowerBound( 7, -large ); tableau.setUpperBound( 7, large );
+        tableau.setLowerBound( 8, -large ); tableau.setUpperBound( 8, large );
+        tableau.setLowerBound( 9, -large ); tableau.setUpperBound( 9, large );
+        tableau.setLowerBound( 10, -large ); tableau.setUpperBound( 10, large );
+        tableau.setLowerBound( 11, -large ); tableau.setUpperBound( 11, large );
+        tableau.setLowerBound( 12, -large ); tableau.setUpperBound( 12, large );
+        tableau.setLowerBound( 13, -large ); tableau.setUpperBound( 13, large );
+
+        nlr.setTableau( &tableau );
+
+        // Initialize
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+
+        // Perform the tightening pass
+        TS_ASSERT_THROWS_NOTHING( nlr.intervalArithmeticBoundPropagation() );
+
+        List<Tightening> expectedBounds({
+                Tightening( 2, 0, Tightening::LB ),
+                Tightening( 2, 3, Tightening::UB ),
+                Tightening( 3, 0, Tightening::LB ),
+                Tightening( 3, 3, Tightening::UB ),
+
+                Tightening( 4, -8, Tightening::LB ),
+                Tightening( 4, 7, Tightening::UB ),
+                Tightening( 5, 0, Tightening::LB ),
+                Tightening( 5, 8, Tightening::UB ),
+
+                Tightening( 6, -1, Tightening::LB ),
+                Tightening( 6, 2, Tightening::UB ),
+                Tightening( 7, 0, Tightening::LB ),
+                Tightening( 7, 2, Tightening::UB ),
+
+                Tightening( 8, -2, Tightening::LB ),
+                Tightening( 8, 11, Tightening::UB ),
+                Tightening( 9, 0, Tightening::LB ),
+                Tightening( 9, 11, Tightening::UB ),
+
+                Tightening( 10, -3, Tightening::LB ),
+                Tightening( 10, 10, Tightening::UB ),
+                Tightening( 11, 0, Tightening::LB ),
+                Tightening( 11, 10, Tightening::UB ),
+
+                Tightening( 12, 0, Tightening::LB ),
+                Tightening( 12, 11, Tightening::UB ),
+                Tightening( 13, 0, Tightening::LB ),
+                Tightening( 13, 41, Tightening::UB ),
+                    });
+
+        List<Tightening> bounds;
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        TS_ASSERT_EQUALS( expectedBounds, bounds );
+
+        // Change the current bounds
+        tableau.setLowerBound( 0, -3 );
+        tableau.setUpperBound( 0, 1 );
+        tableau.setLowerBound( 1, -1 );
+        tableau.setUpperBound( 1, 2 );
+
+        tableau.setLowerBound( 2, -large ); tableau.setUpperBound( 2, large );
+        tableau.setLowerBound( 3, -large ); tableau.setUpperBound( 3, large );
+        tableau.setLowerBound( 4, -large ); tableau.setUpperBound( 4, large );
+        tableau.setLowerBound( 5, -large ); tableau.setUpperBound( 5, large );
+        tableau.setLowerBound( 6, -large ); tableau.setUpperBound( 6, large );
+        tableau.setLowerBound( 7, -large ); tableau.setUpperBound( 7, large );
+        tableau.setLowerBound( 8, -large ); tableau.setUpperBound( 8, large );
+        tableau.setLowerBound( 9, -large ); tableau.setUpperBound( 9, large );
+        tableau.setLowerBound( 10, -large ); tableau.setUpperBound( 10, large );
+        tableau.setLowerBound( 11, -large ); tableau.setUpperBound( 11, large );
+        tableau.setLowerBound( 12, -large ); tableau.setUpperBound( 12, large );
+        tableau.setLowerBound( 13, -large ); tableau.setUpperBound( 13, large );
+
+        // Initialize
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+
+        // Perform the tightening pass
+        TS_ASSERT_THROWS_NOTHING( nlr.intervalArithmeticBoundPropagation() );
+
+        List<Tightening> expectedBounds2({
+                Tightening( 2, -2, Tightening::LB ),
+                Tightening( 2, 2, Tightening::UB ),
+                Tightening( 3, 0, Tightening::LB ),
+                Tightening( 3, 2, Tightening::UB ),
+
+                Tightening( 4, -12, Tightening::LB ),
+                Tightening( 4, 5, Tightening::UB ),
+                Tightening( 5, 0, Tightening::LB ),
+                Tightening( 5, 12, Tightening::UB ),
+
+                Tightening( 6, -1, Tightening::LB ),
+                Tightening( 6, 2, Tightening::UB ),
+                Tightening( 7, 0, Tightening::LB ),
+                Tightening( 7, 2, Tightening::UB ),
+
+                Tightening( 8, -2, Tightening::LB ),
+                Tightening( 8, 14, Tightening::UB ),
+                Tightening( 9, 0, Tightening::LB ),
+                Tightening( 9, 14, Tightening::UB ),
+
+                Tightening( 10, -2, Tightening::LB ),
+                Tightening( 10, 14, Tightening::UB ),
+                Tightening( 11, 0, Tightening::LB ),
+                Tightening( 11, 14, Tightening::UB ),
+
+                Tightening( 12, 0, Tightening::LB ),
+                Tightening( 12, 14, Tightening::UB ),
+                Tightening( 13, 0, Tightening::LB ),
+                Tightening( 13, 56, Tightening::UB ),
                     });
 
         TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
