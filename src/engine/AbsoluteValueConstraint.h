@@ -28,6 +28,10 @@ public:
         PHASE_NEGATIVE = 2,
     };
 
+    /*
+      The f variable is the absolute value of the b variable:
+      f = | b |
+    */
     AbsoluteValueConstraint( unsigned b, unsigned f );
 
     /*

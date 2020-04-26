@@ -28,6 +28,10 @@ public:
         PHASE_INACTIVE = 2,
     };
 
+    /*
+      The f variable is the relu output on the b variable:
+      f = relu( b )
+    */
     ReluConstraint( unsigned b, unsigned f );
     ReluConstraint( const String &serializedRelu );
 
