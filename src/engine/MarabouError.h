@@ -46,6 +46,7 @@ public:
         MERGED_OUTPUT_VARIABLE = 21,
         INVALID_WEIGHTED_SUM_INDEX = 22,
         UNSUCCESSFUL_QUEUE_PUSH = 23,
+        NETWORK_LEVEL_REASONER_ACTIVATION_NOT_SUPPORTED = 24,
 
         // Error codes for Query Loader
         FILE_DOES_NOT_EXIST = 100,

@@ -14,9 +14,10 @@
  **/
 
 #include "Debug.h"
+#include "FloatUtils.h"
 #include "MStringf.h"
-#include "NetworkLevelReasoner.h"
 #include "MarabouError.h"
+#include "NetworkLevelReasoner.h"
 #include <cstring>
 
 NetworkLevelReasoner::NetworkLevelReasoner()
@@ -24,6 +25,11 @@ NetworkLevelReasoner::NetworkLevelReasoner()
     , _maxLayerSize( 0 )
     , _work1( NULL )
     , _work2( NULL )
+    , _tableau( NULL )
+    , _lowerBoundsWeightedSums( NULL )
+    , _upperBoundsWeightedSums( NULL )
+    , _lowerBoundsActivations( NULL )
+    , _upperBoundsActivations( NULL )
 {
 }
 
@@ -60,6 +66,66 @@ void NetworkLevelReasoner::freeMemoryIfNeeded()
         delete[] _work2;
         _work2 = NULL;
     }
+
+    if ( _lowerBoundsWeightedSums )
+    {
+        for ( unsigned i = 0; i < _numberOfLayers; ++i )
+        {
+            if ( _lowerBoundsWeightedSums[i] )
+            {
+                delete[] _lowerBoundsWeightedSums[i];
+                _lowerBoundsWeightedSums[i] = NULL;
+            }
+        }
+
+        delete[] _lowerBoundsWeightedSums;
+        _lowerBoundsWeightedSums = NULL;
+    }
+
+    if ( _upperBoundsWeightedSums )
+    {
+        for ( unsigned i = 0; i < _numberOfLayers; ++i )
+        {
+            if ( _upperBoundsWeightedSums[i] )
+            {
+                delete[] _upperBoundsWeightedSums[i];
+                _upperBoundsWeightedSums[i] = NULL;
+            }
+        }
+
+        delete[] _upperBoundsWeightedSums;
+        _upperBoundsWeightedSums = NULL;
+    }
+
+    if ( _lowerBoundsActivations )
+    {
+        for ( unsigned i = 0; i < _numberOfLayers; ++i )
+        {
+            if ( _lowerBoundsActivations[i] )
+            {
+                delete[] _lowerBoundsActivations[i];
+                _lowerBoundsActivations[i] = NULL;
+            }
+        }
+
+        delete[] _lowerBoundsActivations;
+        _lowerBoundsActivations = NULL;
+    }
+
+    if ( _upperBoundsActivations )
+    {
+        for ( unsigned i = 0; i < _numberOfLayers; ++i )
+        {
+            if ( _upperBoundsActivations[i] )
+            {
+                delete[] _upperBoundsActivations[i];
+                _upperBoundsActivations[i] = NULL;
+            }
+        }
+
+        delete[] _upperBoundsActivations;
+        _upperBoundsActivations = NULL;
+    }
 }
 
 void NetworkLevelReasoner::setNumberOfLayers( unsigned numberOfLayers )
@@ -76,7 +142,7 @@ void NetworkLevelReasoner::setLayerSize( unsigned layer, unsigned size )
         _maxLayerSize = size;
 }
 
-void NetworkLevelReasoner::allocateWeightMatrices()
+void NetworkLevelReasoner::allocateMemoryByTopology()
 {
     freeMemoryIfNeeded();
 
@@ -99,6 +165,27 @@ void NetworkLevelReasoner::allocateWeightMatrices()
     _work2 = new double[_maxLayerSize];
     if ( !_work2 )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "NetworkLevelReasoner::work2" );
+
+    _lowerBoundsWeightedSums = new double *[_numberOfLayers];
+    _upperBoundsWeightedSums = new double *[_numberOfLayers];
+    _lowerBoundsActivations = new double *[_numberOfLayers];
+    _upperBoundsActivations = new double *[_numberOfLayers];
+
+    if ( !_lowerBoundsWeightedSums || !_upperBoundsWeightedSums ||
+         !_lowerBoundsActivations || !_upperBoundsActivations )
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "NetworkLevelReasoner::bounds" );
+
+    for ( unsigned i = 0; i < _numberOfLayers; ++i )
+    {
+        _lowerBoundsWeightedSums[i] = new double[_layerSizes[i]];
+        _upperBoundsWeightedSums[i] = new double[_layerSizes[i]];
+        _lowerBoundsActivations[i] = new double[_layerSizes[i]];
+        _upperBoundsActivations[i] = new double[_layerSizes[i]];
+
+        if ( !_lowerBoundsWeightedSums[i] || !_lowerBoundsWeightedSums[i] ||
+             !_lowerBoundsActivations[i] || !_lowerBoundsActivations[i] )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "NetworkLevelReasoner::bounds[i]" );
+    }
 }
 
 void NetworkLevelReasoner::setNeuronActivationFunction( unsigned layer, unsigned neuron, ActivationFunction activationFuction )
@@ -155,7 +242,7 @@ void NetworkLevelReasoner::evaluate( double *input, double *output )
                     break;
 
                 default:
-                    ASSERT( false );
+                    throw MarabouError( MarabouError::NETWORK_LEVEL_REASONER_ACTIVATION_NOT_SUPPORTED );
                     break;
                 }
             }
@@ -206,7 +293,7 @@ void NetworkLevelReasoner::storeIntoOther( NetworkLevelReasoner &other ) const
     other.setNumberOfLayers( _numberOfLayers );
     for ( const auto &pair : _layerSizes )
         other.setLayerSize( pair.first, pair.second );
-    other.allocateWeightMatrices();
+    other.allocateMemoryByTopology();
 
     for ( const auto &pair : _neuronToActivationFunction )
         other.setNeuronActivationFunction( pair.first._layer, pair.first._neuron, pair.second );
@@ -326,6 +413,108 @@ void NetworkLevelReasoner::updateVariableIndices( const Map<unsigned, unsigned> 
 
             ++fIt;
             continue;
+        }
+    }
+}
+
+void NetworkLevelReasoner::obtainInputBounds()
+{
+    ASSERT( _tableau );
+
+    for ( unsigned i = 0; i < _layerSizes[0]; ++i )
+    {
+        unsigned varIndex = _indexToActivationResultVariable[Index( 0, i )];
+        _lowerBoundsActivations[0][i] = _tableau->getLowerBound( varIndex );
+        _upperBoundsActivations[0][i] = _tableau->getUpperBound( varIndex );
+    }
+}
+
+void NetworkLevelReasoner::setTableau( const ITableau *tableau )
+{
+    _tableau = tableau;
+}
+
+void NetworkLevelReasoner::intervalArithmeticBoundPropagation()
+{
+    for ( unsigned i = 1; i < _numberOfLayers; ++i )
+    {
+        for ( unsigned j = 0; j < _layerSizes[i]; ++j )
+        {
+            Index index( i, j );
+            double lb = _bias.exists( index ) ? _bias[index] : 0;
+            double ub = _bias.exists( index ) ? _bias[index] : 0;
+
+            for ( unsigned k = 0; k < _layerSizes[i - 1]; ++k )
+            {
+                double previousLb = _lowerBoundsActivations[i - 1][k];
+                double previousUb = _upperBoundsActivations[i - 1][k];
+                double weight = _weights[i - 1][k * _layerSizes[i] + j];
+
+                if ( weight > 0 )
+                {
+                    lb += weight * previousLb;
+                    ub += weight * previousUb;
+                }
+                else
+                {
+                    lb += weight * previousUb;
+                    ub += weight * previousLb;
+                }
+            }
+
+            _lowerBoundsWeightedSums[i][j] = lb;
+            _upperBoundsWeightedSums[i][j] = ub;
+
+            if ( i != _numberOfLayers - 1 )
+            {
+                // Apply activation function
+                ASSERT( _neuronToActivationFunction.exists( index ) );
+
+                switch ( _neuronToActivationFunction[index] )
+                {
+                case ReLU:
+                    _lowerBoundsActivations[i][j] = lb > 0 ? lb : 0;
+                    _upperBoundsActivations[i][j] = ub;
+                    break;
+
+                default:
+                    ASSERT( false );
+                    break;
+                }
+            }
+        }
+    }
+}
+
+void NetworkLevelReasoner::getConstraintTightenings( List<Tightening> &tightenings ) const
+{
+    tightenings.clear();
+
+    for ( unsigned i = 1; i < _numberOfLayers; ++i )
+    {
+        for ( unsigned j = 0; j < _layerSizes[i]; ++j )
+        {
+            Index index( i, j );
+
+            // Weighted sums
+            tightenings.append( Tightening( _indexToWeightedSumVariable[index],
+                                            _lowerBoundsWeightedSums[i][j],
+                                            Tightening::LB ) );
+
+            tightenings.append( Tightening( _indexToWeightedSumVariable[index],
+                                            _upperBoundsWeightedSums[i][j],
+                                            Tightening::UB ) );
+
+            // Activation results
+            if ( i != _numberOfLayers - 1 )
+            {
+                tightenings.append( Tightening( _indexToActivationResultVariable[index],
+                                                _lowerBoundsActivations[i][j],
+                                                Tightening::LB ) );
+                tightenings.append( Tightening( _indexToActivationResultVariable[index],
+                                                _upperBoundsActivations[i][j],
+                                                Tightening::UB ) );
+            }
         }
     }
 }
