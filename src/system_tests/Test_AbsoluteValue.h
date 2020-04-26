@@ -175,6 +175,7 @@ public:
         {
             equation.addAddend( 1, numVariables + i );
         }
+        equation.setScalar( 0 );
         inputQuery.addEquation( equation );
 
         // Bound the maximal L1 change (delta)
