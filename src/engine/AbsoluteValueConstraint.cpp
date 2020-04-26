@@ -30,6 +30,11 @@ AbsoluteValueConstraint::AbsoluteValueConstraint( unsigned b, unsigned f )
     setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
 }
 
+PiecewiseLinearFunctionType AbsoluteValueConstraint::getType() const
+{
+    return PiecewiseLinearFunctionType::ABSOLUTE_VALUE;
+}
+
 PiecewiseLinearConstraint *AbsoluteValueConstraint::duplicateConstraint() const
 {
     AbsoluteValueConstraint *clone = new AbsoluteValueConstraint( _b, _f );

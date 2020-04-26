@@ -41,6 +41,16 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
 {
     _preprocessed = query;
 
+
+    /*
+      If a network level reasoner has not been provided, attempt to
+      construct one
+    */
+    if ( !_preprocessed._networkLevelReasoner )
+    {
+        constructNetworkLevelReasoner();
+    }
+
     /*
       Initial work: if needed, have the PL constraints add their additional
       equations to the pool.
@@ -791,6 +801,14 @@ void Preprocessor::dumpAllBounds( const String &message )
     }
 
     printf( "\n" );
+}
+
+void Preprocessor::constructNetworkLevelReasoner()
+{
+    ASSERT( !_preprocessed._networkLevelReasoner );
+
+    // Currently only ReLUs and AbsoluteValues are supported
+    // for ( const auto &constraint : _preprocessed._plConstraints )
 }
 
 //
