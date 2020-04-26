@@ -18,6 +18,7 @@
 
 #include "ITableau.h"
 #include "Map.h"
+#include "PiecewiseLinearFunctionType.h"
 #include "Tightening.h"
 
 /*
@@ -58,6 +59,8 @@ public:
 
     NetworkLevelReasoner();
     ~NetworkLevelReasoner();
+
+    static bool functionTypeSupported( PiecewiseLinearFunctionType type );
 
     /*
       Interface methods for populating the network: settings its

@@ -21,7 +21,8 @@
 #include <cstring>
 
 NetworkLevelReasoner::NetworkLevelReasoner()
-    : _weights( NULL )
+    : _numberOfLayers( 0 )
+    , _weights( NULL )
     , _maxLayerSize( 0 )
     , _work1( NULL )
     , _work2( NULL )
@@ -145,6 +146,9 @@ void NetworkLevelReasoner::setLayerSize( unsigned layer, unsigned size )
 void NetworkLevelReasoner::allocateMemoryByTopology()
 {
     freeMemoryIfNeeded();
+
+    if ( _numberOfLayers == 0 )
+        return;
 
     _weights = new double*[_numberOfLayers - 1];
     if ( !_weights )
@@ -517,6 +521,17 @@ void NetworkLevelReasoner::getConstraintTightenings( List<Tightening> &tightenin
             }
         }
     }
+}
+
+bool NetworkLevelReasoner::functionTypeSupported( PiecewiseLinearFunctionType type )
+{
+    if ( type == PiecewiseLinearFunctionType::RELU )
+        return true;
+
+    if ( type == PiecewiseLinearFunctionType::ABSOLUTE_VALUE )
+        return true;
+
+    return false;
 }
 
 //

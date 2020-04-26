@@ -807,8 +807,117 @@ void Preprocessor::constructNetworkLevelReasoner()
 {
     ASSERT( !_preprocessed._networkLevelReasoner );
 
-    // Currently only ReLUs and AbsoluteValues are supported
-    // for ( const auto &constraint : _preprocessed._plConstraints )
+    const List<Equation> &equations( _preprocessed.getEquations() );
+    const List<PiecewiseLinearConstraint *> plConstraints( _preprocessed.getPiecewiseLinearConstraints() );
+
+    // If the activation functions are not yet supported by the NLR,
+    // abort
+    for ( const auto constraint : plConstraints )
+        if ( !NetworkLevelReasoner::functionTypeSupported( constraint->getType() ) )
+            return;
+
+    // Attempt to figure out the layered structure
+    List<unsigned> inputLayer;
+    List<List<unsigned>> weightedSumLayers;
+    List<List<unsigned>> activationLayers;
+    List<unsigned> outputLayer;
+
+    // The input layer should be defined in the input query
+    inputLayer = _preprocessed.getInputVariables();
+    List<unsigned> *previousLayer = &inputLayer;
+
+    unsigned numVariablesHandledSoFar = inputLayer.size();
+
+    // Now, attempt to figure out the topology, layer by layer
+    while ( numVariablesHandledSoFar < _preprocessed.getNumInputVariables() )
+    {
+        List<unsigned> newWeightedSumLayer;
+        for ( const auto &eq : equations )
+        {
+            Set<unsigned> eqVars = eq.getParticipatingVariables();
+            for ( const auto &var : *previousLayer )
+                eqVars.erase( var );
+
+            if ( eqVars.size() == 1 )
+                newWeightedSumLayer.append( *eqVars.begin() );
+        }
+
+        // If a new layer has not been discovered, we've failed
+        if ( newWeightedSumLayer.empty() )
+            break;
+
+        // If this layer is the output layer, we're done
+        bool outputLayerFound = false;
+        if ( newWeightedSumLayer.size() == outputLayer.size() )
+        {
+            outputLayerFound = true;
+            for ( const auto &var : outputLayer )
+            {
+                if ( !newWeightedSumLayer.exists( var ) )
+                {
+                    outputLayerFound = false;
+                    break;
+                }
+            }
+        }
+
+        if ( outputLayerFound )
+        {
+            // We're done
+            numVariablesHandledSoFar += newWeightedSumLayer.size();
+            break;
+        }
+
+        // This was not the output layer. Continue to find the activation results
+        weightedSumLayers.append( newWeightedSumLayer );
+        List<unsigned> newActivaitonLayer;
+        for ( unsigned wsVar : newWeightedSumLayer )
+        {
+            bool found = false;
+            bool activationVariable;
+            for ( const auto &constraint : plConstraints )
+            {
+                List<unsigned> participatingVariables = constraint->getParticipatingVariables();
+                ASSERT( participatingVariables.size() == 2 );
+                if ( participatingVariables.exists( wsVar ) )
+                {
+                    participatingVariables.erase( wsVar );
+                    activationVariable = *participatingVariables.begin();
+                    found = true;
+                    break;
+                }
+            }
+
+            if ( found )
+                newActivaitonLayer.append( activationVariable );
+        }
+
+        // If a new activation has not been discovered, we've failed
+        if ( newActivaitonLayer.size() != newWeightedSumLayer.size() )
+            break;
+
+        numVariablesHandledSoFar += newActivaitonLayer.size();
+        activationLayers.append( newActivaitonLayer );
+
+        // Prepare for the next iteration
+        previousLayer = &(*activationLayers.rbegin());
+    }
+
+    // We are succesful iff all variables are accounted for
+    if ( numVariablesHandledSoFar != _preprocessed.getNumInputVariables() )
+        return;
+
+    NetworkLevelReasoner *nlr =  new NetworkLevelReasoner;
+
+    nlr->setNumberOfLayers( 1 + weightedSumLayers.size() + 1 );
+    nlr->setLayerSize( 0, inputLayer.size() );
+    unsigned i = 1;
+    for ( const auto &layer : weightedSumLayers )
+        nlr->setLayerSize( i, layer.size() );
+    nlr->setLayerSize( 1 + weightedSumLayers.size(), outputLayer.size() );
+    nlr->allocateMemoryByTopology();
+
+    _preprocessed._networkLevelReasoner = nlr;
 }
 
 //
