@@ -962,6 +962,25 @@ bool Preprocessor::constructNetworkLevelReasoner()
         nlr->setLayerSize( i, layerToLayerSize[i] );
     nlr->allocateMemoryByTopology();
 
+    // Hidden layers: go neuron by neuron and store the information
+    for ( unsigned layer = 1; layer < totalNumberOfLayers - 1; ++layer )
+    {
+        for ( unsigned neuron = 0; neuron < layerToLayerSize[layer]; ++neuron )
+        {
+            Index index( layer, neuron );
+            const Equation *eq = indexToNeuron[index]._weightedSumEquation;
+            eq->dump();
+
+            /*
+              The equation has the form
+
+                2x1 + 3x2 - y = 5
+
+              Where y is our weighted sum variable
+            */
+        }
+    }
+
     // Biases
 
     // Weights
