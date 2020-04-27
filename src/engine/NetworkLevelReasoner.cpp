@@ -22,7 +22,8 @@
 #include <cstring>
 
 NetworkLevelReasoner::NetworkLevelReasoner()
-    : _weights( NULL )
+    : _numberOfLayers( 0 )
+    , _weights( NULL )
     , _positiveWeights( NULL )
     , _negativeWeights( NULL )
     , _maxLayerSize( 0 )
@@ -239,7 +240,10 @@ void NetworkLevelReasoner::allocateMemoryByTopology()
 {
     freeMemoryIfNeeded();
 
-    _weights = new double *[_numberOfLayers - 1];
+    if ( _numberOfLayers == 0 )
+        return;
+
+    _weights = new double*[_numberOfLayers - 1];
     if ( !_weights )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "NetworkLevelReasoner::weights" );
 
@@ -1003,6 +1007,17 @@ void NetworkLevelReasoner::log( const String &message )
 {
     if ( GlobalConfiguration::NETWORK_LEVEL_REASONER_LOGGING )
         printf( "%s", message.ascii() );
+}
+
+bool NetworkLevelReasoner::functionTypeSupported( PiecewiseLinearFunctionType type )
+{
+    if ( type == PiecewiseLinearFunctionType::RELU )
+        return true;
+
+    if ( type == PiecewiseLinearFunctionType::ABSOLUTE_VALUE )
+        return true;
+
+    return false;
 }
 
 //

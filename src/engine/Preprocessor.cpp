@@ -37,6 +37,16 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
 {
     _preprocessed = query;
 
+
+    /*
+      If a network level reasoner has not been provided, attempt to
+      construct one
+    */
+    if ( !_preprocessed._networkLevelReasoner )
+    {
+        constructNetworkLevelReasoner();
+    }
+
     /*
       Initial work: if needed, have the PL constraints add their additional
       equations to the pool.
@@ -779,6 +789,160 @@ void Preprocessor::dumpAllBounds( const String &message )
     }
 
     printf( "\n" );
+}
+
+void Preprocessor::constructNetworkLevelReasoner()
+{
+    ASSERT( !_preprocessed._networkLevelReasoner );
+
+    printf( "Construct NLR starting!\n" );
+
+    const List<Equation> &equations( _preprocessed.getEquations() );
+    const List<PiecewiseLinearConstraint *> plConstraints( _preprocessed.getPiecewiseLinearConstraints() );
+
+    // If the activation functions are not yet supported by the NLR,
+    // abort
+    for ( const auto constraint : plConstraints )
+        if ( !NetworkLevelReasoner::functionTypeSupported( constraint->getType() ) )
+            return;
+
+    printf( "Passed PL check\n" );
+
+    // Attempt to figure out the layered structure
+    List<unsigned> inputLayer;
+    List<List<unsigned>> weightedSumLayers;
+    List<List<unsigned>> activationLayers;
+    List<unsigned> outputLayer;
+
+    // The input and output layer should be defined in the input query
+    inputLayer = _preprocessed.getInputVariables();
+    List<unsigned> *previousLayer = &inputLayer;
+    unsigned numVariablesHandledSoFar = inputLayer.size();
+
+    outputLayer = _preprocessed.getOutputVariables();
+
+    // Now, attempt to figure out the topology, layer by layer
+    while ( numVariablesHandledSoFar < _preprocessed.getNumberOfVariables() )
+    {
+        printf( "Figuring out a WS layer\n" );
+
+        List<unsigned> newWeightedSumLayer;
+        for ( const auto &eq : equations )
+        {
+            printf( "\tProcessing this equation:\n" );
+            eq.dump();
+
+            Set<unsigned> eqVars = eq.getParticipatingVariables();
+            for ( const auto &var : *previousLayer )
+                eqVars.erase( var );
+
+            if ( eqVars.size() == 1 )
+            {
+                printf( "EQ is a match!\n" );
+                newWeightedSumLayer.append( *eqVars.begin() );
+            }
+            else
+            {
+                printf( "EQ is not a match!\n" );
+            }
+        }
+
+        // If a new layer has not been discovered, we've failed
+        if ( newWeightedSumLayer.empty() )
+            break;
+
+        numVariablesHandledSoFar += newWeightedSumLayer.size();
+
+        // If this layer is the output layer, we're done
+        bool outputLayerFound = false;
+        if ( newWeightedSumLayer.size() == outputLayer.size() )
+        {
+            outputLayerFound = true;
+            for ( const auto &var : outputLayer )
+            {
+                if ( !newWeightedSumLayer.exists( var ) )
+                {
+                    outputLayerFound = false;
+                    break;
+                }
+            }
+        }
+
+        if ( outputLayerFound )
+        {
+            printf( "Output layer discovered, we're done!\n" );
+            // We're done
+            break;
+        }
+
+        printf( "Have a new WS layer:\n" );
+        for ( unsigned var : newWeightedSumLayer )
+            printf( "\t%u", var );
+        printf( "\n" );
+
+        // This was not the output layer. Continue to find the activation results
+        weightedSumLayers.append( newWeightedSumLayer );
+        List<unsigned> newActivaitonLayer;
+        for ( unsigned wsVar : newWeightedSumLayer )
+        {
+            printf( "\tLooking for x%u's activation\n", wsVar );
+
+            bool found = false;
+            unsigned activationVariable;
+            for ( const auto &constraint : plConstraints )
+            {
+                List<unsigned> participatingVariables = constraint->getParticipatingVariables();
+                ASSERT( participatingVariables.size() == 2 );
+                if ( participatingVariables.exists( wsVar ) )
+                {
+                    participatingVariables.erase( wsVar );
+                    activationVariable = *participatingVariables.begin();
+                    found = true;
+                    break;
+                }
+            }
+
+            if ( found )
+            {
+                printf( "\t\tdecided that the activation is x%u\n", activationVariable );
+                newActivaitonLayer.append( activationVariable );
+            }
+        }
+
+        // If a new activation has not been discovered, we've failed
+        if ( newActivaitonLayer.size() != newWeightedSumLayer.size() )
+            break;
+
+
+        printf( "Have a new activation layer:\n" );
+        for ( unsigned var : newActivaitonLayer )
+            printf( "\t%u", var );
+        printf( "\n" );
+
+        numVariablesHandledSoFar += newActivaitonLayer.size();
+        activationLayers.append( newActivaitonLayer );
+
+        // Prepare for the next iteration
+        previousLayer = &(*activationLayers.rbegin());
+    }
+
+    printf( "Handled %u out of %u variables!\n", numVariablesHandledSoFar, _preprocessed.getNumberOfVariables() );
+
+    // We are succesful iff all variables are accounted for
+    if ( numVariablesHandledSoFar != _preprocessed.getNumberOfVariables() )
+        return;
+
+    NetworkLevelReasoner *nlr =  new NetworkLevelReasoner;
+
+    nlr->setNumberOfLayers( 1 + weightedSumLayers.size() + 1 );
+    nlr->setLayerSize( 0, inputLayer.size() );
+    unsigned i = 1;
+    for ( const auto &layer : weightedSumLayers )
+        nlr->setLayerSize( i, layer.size() );
+    nlr->setLayerSize( 1 + weightedSumLayers.size(), outputLayer.size() );
+    nlr->allocateMemoryByTopology();
+
+    _preprocessed._networkLevelReasoner = nlr;
 }
 
 //

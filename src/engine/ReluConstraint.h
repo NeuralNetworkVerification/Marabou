@@ -36,6 +36,11 @@ public:
     ReluConstraint( const String &serializedRelu );
 
     /*
+      Get the type of this constraint.
+    */
+    PiecewiseLinearFunctionType getType() const;
+
+    /*
       Return a clone of the constraint.
     */
     PiecewiseLinearConstraint *duplicateConstraint() const;

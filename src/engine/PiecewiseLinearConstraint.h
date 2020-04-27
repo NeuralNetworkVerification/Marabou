@@ -21,6 +21,7 @@
 #include "List.h"
 #include "Map.h"
 #include "PiecewiseLinearCaseSplit.h"
+#include "PiecewiseLinearFunctionType.h"
 #include "Queue.h"
 #include "Tightening.h"
 
@@ -64,6 +65,11 @@ public:
     {
         return _score < other._score;
     }
+
+    /*
+      Get the type of this constraint.
+    */
+    virtual PiecewiseLinearFunctionType getType() const = 0;
 
     /*
       Return a clone of the constraint.
