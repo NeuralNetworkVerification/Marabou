@@ -43,11 +43,11 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     */
     if ( !_preprocessed._networkLevelReasoner )
     {
-        printf( "Input query did not contain a network level reasoner. Attemping to construct one...\n" );
+        printf( "PP: constructing an NLR... " );
         if ( constructNetworkLevelReasoner() )
-            printf( "Network level reasoner successfully constructed\n" );
+            printf( "successful\n" );
         else
-            printf( "Could not build the network level reasoner, continuing without one\n" );
+            printf( "unsuccessful\n" );
     }
 
     /*
@@ -796,6 +796,43 @@ void Preprocessor::dumpAllBounds( const String &message )
 
 bool Preprocessor::constructNetworkLevelReasoner()
 {
+    /*
+      Data structures that we will need for mapping out the DNN
+    */
+    struct Index
+    {
+        Index( unsigned layer, unsigned neuron )
+            : _layer( layer )
+            , _neuron( neuron )
+        {
+        }
+
+        bool operator<( const Index &other ) const
+        {
+            if ( _layer < other._layer )
+                return true;
+
+            return _neuron < other._neuron;
+        }
+
+        unsigned _layer;
+        unsigned _neuron;
+    };
+
+    struct NeuronInformation
+    {
+        unsigned _weightedSumVariable;
+        unsigned _activationVariable;
+
+        PiecewiseLinearFunctionType _activationType;
+
+        const Equation *_weightedSumEquation;
+        const PiecewiseLinearConstraint *_activationFunction;
+    };
+
+    Map<Index, NeuronInformation> indexToNeuron;
+    Map<unsigned, unsigned> layerToLayerSize;
+
     ASSERT( !_preprocessed._networkLevelReasoner );
 
     const List<Equation> &equations( _preprocessed.getEquations() );
@@ -809,46 +846,57 @@ bool Preprocessor::constructNetworkLevelReasoner()
 
     // Attempt to figure out the layered structure
     List<unsigned> inputLayer;
-    List<List<unsigned>> weightedSumLayers;
-    List<List<unsigned>> activationLayers;
+    List<unsigned> previousLayer;
+    List<unsigned> currentLayer;
     List<unsigned> outputLayer;
+
+    unsigned currentLayerIndex = 1;
+    layerToLayerSize[0] = inputLayer.size();
 
     // The input and output layer should be defined in the input query
     inputLayer = _preprocessed.getInputVariables();
-    List<unsigned> *previousLayer = &inputLayer;
+    previousLayer = inputLayer;
     unsigned numVariablesHandledSoFar = inputLayer.size();
 
     outputLayer = _preprocessed.getOutputVariables();
 
     // Now, attempt to figure out the topology, layer by layer
-    //    while ( numVariablesHandledSoFar < _preprocessed.getNumberOfVariables() )
     while ( true )
     {
-        List<unsigned> newWeightedSumLayer;
+        currentLayer.clear();
         for ( const auto &eq : equations )
         {
             Set<unsigned> eqVars = eq.getParticipatingVariables();
-            for ( const auto &var : *previousLayer )
+            for ( const auto &var : previousLayer )
                 eqVars.erase( var );
 
             if ( eqVars.size() == 1 )
-                newWeightedSumLayer.append( *eqVars.begin() );
+            {
+                // We have identified the weithed sum for a new neuron
+                NeuronInformation neuronInfo;
+                neuronInfo._weightedSumVariable = *eqVars.begin();
+                neuronInfo._weightedSumEquation = &eq;
+
+                indexToNeuron[Index( currentLayerIndex, currentLayer.size() )] = neuronInfo;
+                currentLayer.append( *eqVars.begin() );
+            }
         }
 
         // If a new layer has not been discovered, we're done
-        if ( newWeightedSumLayer.empty() )
+        if ( currentLayer.empty() )
             break;
 
-        numVariablesHandledSoFar += newWeightedSumLayer.size();
+        numVariablesHandledSoFar += currentLayer.size();
+        layerToLayerSize[currentLayerIndex] = currentLayer.size();
 
         // If this layer is the output layer, we're done
         bool outputLayerFound = false;
-        if ( newWeightedSumLayer.size() == outputLayer.size() )
+        if ( currentLayer.size() == outputLayer.size() )
         {
             outputLayerFound = true;
             for ( const auto &var : outputLayer )
             {
-                if ( !newWeightedSumLayer.exists( var ) )
+                if ( !currentLayer.exists( var ) )
                 {
                     outputLayerFound = false;
                     break;
@@ -860,53 +908,65 @@ bool Preprocessor::constructNetworkLevelReasoner()
             break;
 
         // This was not the output layer. Continue to find the activation results
-        weightedSumLayers.append( newWeightedSumLayer );
-        List<unsigned> newActivaitonLayer;
-        for ( unsigned wsVar : newWeightedSumLayer )
+        previousLayer = currentLayer;
+        currentLayer.clear();
+        for ( unsigned wsVar : previousLayer )
         {
-            bool found = false;
-            unsigned activationVariable;
             for ( const auto &constraint : plConstraints )
             {
                 List<unsigned> participatingVariables = constraint->getParticipatingVariables();
                 ASSERT( participatingVariables.size() == 2 );
                 if ( participatingVariables.exists( wsVar ) )
                 {
+                    // We have identified the activation result of a weighted sum variable
+                    Index index( currentLayerIndex, currentLayer.size() );
+                    ASSERT( indexToNeuron.exists( index ) );
+
                     participatingVariables.erase( wsVar );
-                    activationVariable = *participatingVariables.begin();
-                    found = true;
+                    indexToNeuron[index]._activationVariable = *participatingVariables.begin();
+                    indexToNeuron[index]._activationType = constraint->getType();
+                    indexToNeuron[index]._activationFunction = constraint;
+
+                    currentLayer.append( *participatingVariables.begin() );
                     break;
                 }
             }
-
-            if ( found )
-                newActivaitonLayer.append( activationVariable );
         }
 
         // If a new activation layer has not been discovered, we're done
-        if ( newActivaitonLayer.size() != newWeightedSumLayer.size() )
+        if ( currentLayer.size() != previousLayer.size() )
             break;
 
-        numVariablesHandledSoFar += newActivaitonLayer.size();
-        activationLayers.append( newActivaitonLayer );
+        numVariablesHandledSoFar += currentLayer.size();
 
         // Prepare for the next iteration
-        previousLayer = &(*activationLayers.rbegin());
+        previousLayer = currentLayer;
+        ++currentLayerIndex;
     }
 
     // If not all variables have been accounted for, we've failed
     if ( numVariablesHandledSoFar != _preprocessed.getNumberOfVariables() )
         return false;
 
-    // Network topology successfully discovered, construct the NLR
-    NetworkLevelReasoner *nlr =  new NetworkLevelReasoner;
-    nlr->setNumberOfLayers( 1 + weightedSumLayers.size() + 1 );
-    nlr->setLayerSize( 0, inputLayer.size() );
-    unsigned i = 1;
-    for ( const auto &layer : weightedSumLayers )
-        nlr->setLayerSize( i, layer.size() );
-    nlr->setLayerSize( 1 + weightedSumLayers.size(), outputLayer.size() );
+    /*
+      Network topology successfully discovered, construct the NLR
+    */
+    NetworkLevelReasoner *nlr = new NetworkLevelReasoner;
+
+    // Allocate memory
+    unsigned totalNumberOfLayers = currentLayerIndex + 1;
+
+    nlr->setNumberOfLayers( totalNumberOfLayers );
+
+    for ( unsigned i = 0; i < totalNumberOfLayers; ++i )
+        nlr->setLayerSize( i, layerToLayerSize[i] );
     nlr->allocateMemoryByTopology();
+
+    // Biases
+
+    // Weights
+
+    // Store the complete NLR
     _preprocessed._networkLevelReasoner = nlr;
 
     return true;
