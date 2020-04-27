@@ -32,7 +32,7 @@
 #include <thread>
 
 void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine,
-                           InputQuery *inputQuery,
+                           InputQuery &inputQuery,
                            std::atomic_uint &numUnsolvedSubQueries,
                            std::atomic_bool &shouldQuitSolving,
                            unsigned threadId, unsigned onlineDivides,
@@ -42,7 +42,7 @@ void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine
     getCPUId( cpuId );
     log( Stringf( "Thread #%u on CPU %u", threadId, cpuId ) );
 
-    engine->processInputQuery( *inputQuery, false );
+    engine->processInputQuery( inputQuery, false );
 
     DnCWorker worker( workload, engine, std::ref( numUnsolvedSubQueries ),
                       std::ref( shouldQuitSolving ), threadId, onlineDivides,
@@ -141,11 +141,10 @@ void DnCManager::solve( unsigned timeoutInSeconds )
     std::list<std::thread> threads;
     for ( unsigned threadId = 0; threadId < _numWorkers; ++threadId )
     {
-        InputQuery *inputQuery = new InputQuery();
         // Get the processed input query from the base engine
-        *inputQuery = *( _baseEngine->getInputQuery() );
+        InputQuery inputQuery = *( _baseEngine->getInputQuery() );
         threads.push_back( std::thread( dncSolve, workload, _engines[ threadId ],
-                                        inputQuery,
+                                        std::ref( inputQuery ),
                                         std::ref( _numUnsolvedSubQueries ),
                                         std::ref( shouldQuitSolving ),
                                         threadId, _onlineDivides,
