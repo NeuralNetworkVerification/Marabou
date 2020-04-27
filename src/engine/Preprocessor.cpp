@@ -22,11 +22,7 @@
 #include "Preprocessor.h"
 #include "MarabouError.h"
 #include "Statistics.h"
-#include "SymbolicBoundTightener.h"
 #include "Tightening.h"
-
-// TODO: get rid of this include
-#include "ReluConstraint.h"
 
 #ifdef _WIN32
 #undef INFINITE
@@ -590,6 +586,13 @@ void Preprocessor::eliminateVariables()
         }
     }
 
+    // Inform the NLR about eliminated varibales
+    if ( _preprocessed._networkLevelReasoner )
+    {
+        for ( const auto &fixed : _fixedVariables )
+            _preprocessed._networkLevelReasoner->eliminateVariable( fixed.first, fixed.second );
+    }
+
     // Compute the new variable indices, after the elimination of fixed variables
  	int offset = 0;
 	for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
@@ -661,17 +664,6 @@ void Preprocessor::eliminateVariables()
 
         if ( (*constraint)->constraintObsolete() )
         {
-            if ( _preprocessed._sbt )
-            {
-                if ( !(*constraint)->supportsSymbolicBoundTightening() )
-                    throw MarabouError( MarabouError::SYMBOLIC_BOUND_TIGHTENER_UNSUPPORTED_CONSTRAINT_TYPE );
-
-                ReluConstraint *relu = (ReluConstraint *)(*constraint);
-                unsigned b = relu->getB();
-                SymbolicBoundTightener::NodeIndex nodeIndex = _preprocessed._sbt->nodeIndexFromB( b );
-                _preprocessed._sbt->setEliminatedRelu( nodeIndex._layer, nodeIndex._neuron, relu->getPhaseStatus() );
-            }
-
             if ( _statistics )
                 _statistics->ppIncNumConstraintsRemoved();
 
@@ -693,10 +685,6 @@ void Preprocessor::eliminateVariables()
                 constraint->updateVariableIndex( variable, _oldIndexToNewIndex.at( variable ) );
         }
 	}
-
-    // Let the SBT know of changes in indices and merged variables
-    if ( _preprocessed._sbt )
-        _preprocessed._sbt->updateVariableIndices( _oldIndexToNewIndex, _mergedVariables, _fixedVariables );
 
     // Let the NLR know of changes in indices and merged variables
     if ( _preprocessed._networkLevelReasoner )
