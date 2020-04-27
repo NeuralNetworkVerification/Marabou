@@ -65,7 +65,7 @@ public:
       functions, weights and biases, etc.
     */
     enum ActivationFunction {
-        ReLU,
+        ReLU = 0,
     };
 
     void setNumberOfLayers( unsigned numberOfLayers );
@@ -110,25 +110,39 @@ public:
     void storeIntoOther( NetworkLevelReasoner &other ) const;
 
     /*
-      Methods that are typically invoked by the preprocessor,
-      to inform us of changes in variable indices
+      Methods that are typically invoked by the preprocessor, to
+      inform us of changes in variable indices or if a variable has
+      been eliminated
     */
+    void eliminateVariable( unsigned variable, double value );
     void updateVariableIndices( const Map<unsigned, unsigned> &oldIndexToNewIndex,
                                 const Map<unsigned, unsigned> &mergedVariables );
 
     /*
       Bound propagation methods:
 
-        - obtainInputBounds: obtain the current bounds on input variables
+        - obtainCurrentBounds: obtain the current bounds on all variables
           from the tableau.
 
         - Interval arithmetic: compute the bounds of a layer's neurons
           based on the concrete bounds of the previous layer.
+
+        - Symbolic: for each neuron in the network, we compute lower
+          and upper bounds on the lower and upper bounds of the
+          neuron. This bounds are expressed as linear combinations of
+          the input neurons. Sometimes these bounds let us simplify
+          expressions and obtain tighter bounds (e.g., if the upper
+          bound on the upper bound of a ReLU node is negative, that
+          ReLU is inactive and its output can be set to 0.
+
+          Initialize should be called once, before the bound
+          propagation is performed.
     */
 
     void setTableau( const ITableau *tableau );
-    void obtainInputBounds();
+    void obtainCurrentBounds();
     void intervalArithmeticBoundPropagation();
+    void symbolicBoundPropagation();
 
     void getConstraintTightenings( List<Tightening> &tightenings ) const;
 
@@ -137,9 +151,12 @@ private:
     Map<unsigned, unsigned> _layerSizes;
     Map<Index, ActivationFunction> _neuronToActivationFunction;
     double **_weights;
+    double **_positiveWeights;
+    double **_negativeWeights;
     Map<Index, double> _bias;
 
     unsigned _maxLayerSize;
+    unsigned _inputLayerSize;
 
     double *_work1;
     double *_work2;
@@ -153,6 +170,8 @@ private:
     */
     Map<Index, unsigned> _indexToWeightedSumVariable;
     Map<Index, unsigned> _indexToActivationResultVariable;
+    Map<unsigned, Index> _weightedSumVariableToIndex;
+    Map<unsigned, Index> _activationResultVariableToIndex;
 
     /*
       Store the assignment to all variables when evaluate() is called
@@ -161,12 +180,33 @@ private:
     Map<Index, double> _indexToActivationResultAssignment;
 
     /*
-      Work space for bound tightening.
+      Store eliminated variables
+    */
+    Map<Index, double> _eliminatedWeightedSumVariables;
+    Map<Index, double> _eliminatedActivationResultVariables;
+
+    /*
+      Work space for bound tightening
     */
     double **_lowerBoundsWeightedSums;
     double **_upperBoundsWeightedSums;
     double **_lowerBoundsActivations;
     double **_upperBoundsActivations;
+
+    /*
+      Work space for symbolic bound propagation
+    */
+    double *_currentLayerLowerBounds;
+    double *_currentLayerUpperBounds;
+    double *_currentLayerLowerBias;
+    double *_currentLayerUpperBias;
+
+    double *_previousLayerLowerBounds;
+    double *_previousLayerUpperBounds;
+    double *_previousLayerLowerBias;
+    double *_previousLayerUpperBias;
+
+    static void log( const String &message );
 };
 
 #endif // __NetworkLevelReasoner_h__

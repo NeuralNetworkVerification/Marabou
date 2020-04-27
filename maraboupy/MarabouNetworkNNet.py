@@ -24,7 +24,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
     """
     Class that implements a MarabouNetwork from an NNet file.
     """
-    def __init__ (self, filename, perform_sbt=False):
+    def __init__ (self, filename, use_nlr=False):
         """
         Constructs a MarabouNetworkNNet object from an .nnet file.
 
@@ -32,10 +32,10 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
             filename: path to the .nnet file.
         Attributes:
             numLayers        (int) The number of layers in the network
-            layerSizes       (list of ints) Layer sizes.   
+            layerSizes       (list of ints) Layer sizes.
             inputSize        (int) Size of the input.
             outputSize       (int) Size of the output.
-            maxLayersize     (int) Size of largest layer. 
+            maxLayersize     (int) Size of largest layer.
             inputMinimums    (list of floats) Minimum value for each input.
             inputMaximums    (list of floats) Maximum value for each input.
             inputMeans       (list of floats) Mean value for each input.
@@ -43,7 +43,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
             weights          (list of list of lists) Outer index corresponds to layer
                                 number.
             biases           (list of lists) Outer index corresponds to layer number.
-            sbt              The SymbolicBoundTightener object
+            nlr              The NetworkLeverReasoner object
         """
         super().__init__()
 
@@ -83,46 +83,50 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
         # Set the number of variables
         self.numVars = self.numberOfVariables()
-        if perform_sbt:
-            self.sbt = self.createSBT(filename)
+        if use_nlr:
+            self.nlr = self.createNLR(filename)
         else:
-            self.sbt = None
+            self.nlr = None
 
-    def createSBT(self, filename):
-        sbt = MarabouCore.SymbolicBoundTightener()
-        sbt.setNumberOfLayers(self.numLayers + 1)
+    def createNLR(self, filename):
+        nlr = MarabouCore.NetworkLevelReasoner()
+        nlr.setNumberOfLayers(self.numLayers + 1)
         for layer, size in enumerate(self.layerSizes):
-            sbt.setLayerSize(layer, size)
-        sbt.allocateWeightAndBiasSpace()
+            nlr.setLayerSize(layer, size)
+        nlr.allocateMemoryByTopology()
         # Biases
         for layer in range(len(self.biases)):
             for node in range(len(self.biases[layer])):
-                sbt.setBias(layer + 1, node, self.biases[layer][node])
+                nlr.setBias(layer + 1, node, self.biases[layer][node])
         # Weights
         for layer in range(len(self.weights)): # starting from the first hidden layer
             for target in range(len(self.weights[layer])):
                 for source in range(len(self.weights[layer][target])):
-                    sbt.setWeight(layer, source, target, self.weights[layer][target][source])
+                    nlr.setWeight(layer, source, target, self.weights[layer][target][source])
 
-        # Initial bounds
-        for i in range(self.inputSize):
-            sbt.setInputLowerBound( i, self.getInputMinimum(i))
-            sbt.setInputUpperBound( i, self.getInputMaximum(i))
-        
-        # Variable indexing of hidden layers
+        # Activation Functions
+        RELU = 0;
+        for layer in range(len(self.weights) - 1): # only hidden layers
+            for neuron in range(len(self.weights[layer])):
+                nlr.setNeuronActivationFunction(layer, neuron, RELU );
+
+        # Variable indexing
         for layer in range(len(self.layerSizes))[1:-1]:
             for node in range(self.layerSizes[layer]):
-                sbt.setReluBVariable(layer, node, self.nodeTo_b(layer, node))
-                sbt.setReluFVariable(layer, node, self.nodeTo_f(layer, node))
+                nlr.setWeightedSumVariable(layer, node, self.nodeTo_b(layer, node))
+                nlr.setActivationResultVariable(layer, node, self.nodeTo_f(layer, node))
+
+        for node in range(self.inputSize):
+            nlr.setActivationResultVariable(0, node, self.nodeTo_f(0, node))
 
         for node in range(self.outputSize):
-            sbt.setReluFVariable(len(self.layerSizes) - 1, node, self.nodeTo_b(len(self.layerSizes) - 1, node))
+            nlr.setWeightedSumVariable(len(self.layerSizes) - 1, node, self.nodeTo_b(len(self.layerSizes) - 1, node))
 
-        return sbt
+        return nlr
 
     def getMarabouQuery(self):
         ipq = super(MarabouNetworkNNet, self).getMarabouQuery()
-        ipq.setSymbolicBoundTightener(self.sbt)
+        ipq.setNetworkLevelReasoner(self.nlr)
         return ipq
 
     """
@@ -205,18 +209,18 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         b_variables = []
         f_variables = []
         output_variables = []
-        
+
         input_variables = [i for i in range(self.layerSizes[0])]
-        
+
         hidden_layers = self.layerSizes[1:-1]
-        
+
         for layer, hidden_layer_length in enumerate(hidden_layers):
             for i in range(hidden_layer_length):
                 offset = sum([x*2 for x in hidden_layers[:layer]])
-                
+
                 b_variables.append(self.layerSizes[0] + offset + i)
                 f_variables.append(self.layerSizes[0] + offset + i+hidden_layer_length)
-        
+
         #final layer
         for i in range(self.layerSizes[-1]):
             offset = sum([x*2 for x in hidden_layers[:len(hidden_layers) - 1]])
@@ -241,10 +245,10 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
     def nodeTo_b(self, layer, node):
         assert(0 < layer)
         assert(node < self.layerSizes[layer])
-        
+
         offset = self.layerSizes[0]
         offset += sum([x*2 for x in self.layerSizes[1:layer]])
-        
+
         return offset + node
 
     """
@@ -261,7 +265,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
     def nodeTo_f(self, layer, node):
         assert(layer < len(self.layerSizes))
         assert(node < self.layerSizes[layer])
-        
+
         if layer == 0:
             return node
         else:
@@ -289,16 +293,16 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
             for node in range(size):
                 #add marabou equation
-                
+
                 equations_aux.append([])
                 equations_aux[equations_count].append([self.nodeTo_b(layer, node), -1.0])
                 for previous_node in range(self.layerSizes[layer-1]):
                     equations_aux[equations_count].append([self.nodeTo_f(layer-1, previous_node), self.weights[layer-1][node][previous_node]])
-                
-                
+
+
                 equations_aux[equations_count].append(-self.biases[layer-1][node])
                 equations_count += 1
-                
+
         return equations_aux
     """
     Identify all relus and their associated variable numbers.
@@ -314,7 +318,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         for layer, size in enumerate(hidden_layers):
             for node in range(size):
                 relus.append([self.nodeTo_b(layer+1, node), self.nodeTo_f(layer+1, node)])
-                
+
         return relus
 
     def numberOfVariables(self):
