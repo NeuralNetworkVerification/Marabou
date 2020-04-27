@@ -69,6 +69,7 @@ public:
     */
     enum ActivationFunction {
         ReLU = 0,
+        AbsoluteValue = 1,
     };
 
     void setNumberOfLayers( unsigned numberOfLayers );
@@ -208,6 +209,13 @@ private:
     double *_previousLayerUpperBounds;
     double *_previousLayerLowerBias;
     double *_previousLayerUpperBias;
+
+    /*
+      Helper functions that perform symbolic bound propagation for a
+      single neuron, according to its activation function
+    */
+    void reluSymbolicPropagation( const Index &index, double &lbLb, double &lbUb, double &ubLb, double &ubUb );
+    void absoluteValueSymbolicPropagation( const Index &index, double &lbLb, double &lbUb, double &ubLb, double &ubUb );
 
     static void log( const String &message );
 };
