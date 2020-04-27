@@ -164,10 +164,6 @@ public:
     // Whether symbolic bound tightening should be used or not
     static const bool USE_SYMBOLIC_BOUND_TIGHTENING;
 
-    // If symbolic bound tightening is used, should linear concretization (as
-    // opposed to constant concretization) be used.
-    static const bool USE_LINEAR_CONCRETIZATION;
-
     // Symbolic tightening rounding constant
     static const double SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
 
@@ -212,6 +208,7 @@ public:
     static const bool GAUSSIAN_ELIMINATION_LOGGING;
     static const bool QUERY_LOADER_LOGGING;
     static const bool SYMBOLIC_BOUND_TIGHTENER_LOGGING;
+    static const bool NETWORK_LEVEL_REASONER_LOGGING;
 };
 
 #endif // __GlobalConfiguration_h__

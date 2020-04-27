@@ -22,7 +22,6 @@
 #include "Map.h"
 #include "NetworkLevelReasoner.h"
 #include "PiecewiseLinearConstraint.h"
-#include "SymbolicBoundTightener.h"
 
 class InputQuery
 {
@@ -94,11 +93,6 @@ public:
     InputQuery( const InputQuery &other );
 
     /*
-      Attach a symbolic bound tightener to the input query
-    */
-    void setSymbolicBoundTightener( SymbolicBoundTightener *sbt );
-
-    /*
       Debugging methods
     */
 
@@ -163,11 +157,6 @@ public:
       evaluation of topology-based bound tightening.
      */
     NetworkLevelReasoner *_networkLevelReasoner;
-
-    /*
-      Symbolic bound tightener.
-    */
-    SymbolicBoundTightener *_sbt;
 };
 
 #endif // __InputQuery_h__

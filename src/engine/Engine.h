@@ -220,11 +220,6 @@ private:
     AutoRowBoundTightener _rowBoundTightener;
 
     /*
-      Symbolic bound tightnere.
-    */
-    SymbolicBoundTightener *_symbolicBoundTightener;
-
-    /*
       The SMT engine is in charge of case splitting.
     */
     SmtCore _smtCore;

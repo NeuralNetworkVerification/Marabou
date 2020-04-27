@@ -35,7 +35,6 @@ engine_add_unit_test(ProjectedSteepestEdge)
 engine_add_unit_test(ReluConstraint)
 engine_add_unit_test(RowBoundTightener)
 engine_add_unit_test(SmtCore)
-engine_add_unit_test(SymbolicBoundTightener)
 engine_add_unit_test(Tableau)
 
 if (${BUILD_PYTHON})
