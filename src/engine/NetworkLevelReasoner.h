@@ -62,19 +62,9 @@ public:
 
     static bool functionTypeSupported( PiecewiseLinearFunctionType type );
 
-    /*
-      Interface methods for populating the network: settings its
-      number of layers and the layer sizes, kinds of activation
-      functions, weights and biases, etc.
-    */
-    enum ActivationFunction {
-        ReLU = 0,
-        AbsoluteValue = 1,
-    };
-
     void setNumberOfLayers( unsigned numberOfLayers );
     void setLayerSize( unsigned layer, unsigned size );
-    void setNeuronActivationFunction( unsigned layer, unsigned neuron, ActivationFunction activationFuction );
+    void setNeuronActivationFunction( unsigned layer, unsigned neuron, PiecewiseLinearFunctionType activationFuction );
     void setWeight( unsigned sourceLayer, unsigned sourceNeuron, unsigned targetNeuron, double weight );
     void setBias( unsigned layer, unsigned neuron, double bias );
 
@@ -153,7 +143,7 @@ public:
 private:
     unsigned _numberOfLayers;
     Map<unsigned, unsigned> _layerSizes;
-    Map<Index, ActivationFunction> _neuronToActivationFunction;
+    Map<Index, PiecewiseLinearFunctionType> _neuronToActivationFunction;
     double **_weights;
     double **_positiveWeights;
     double **_negativeWeights;

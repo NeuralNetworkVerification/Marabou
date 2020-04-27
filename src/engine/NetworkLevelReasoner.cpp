@@ -320,7 +320,7 @@ void NetworkLevelReasoner::allocateMemoryByTopology()
     _previousLayerUpperBias = new double[_maxLayerSize];
 }
 
-void NetworkLevelReasoner::setNeuronActivationFunction( unsigned layer, unsigned neuron, ActivationFunction activationFuction )
+void NetworkLevelReasoner::setNeuronActivationFunction( unsigned layer, unsigned neuron, PiecewiseLinearFunctionType activationFuction )
 {
     _neuronToActivationFunction[Index( layer, neuron )] = activationFuction;
 }
@@ -375,12 +375,12 @@ void NetworkLevelReasoner::evaluate( double *input, double *output )
 
                 switch ( _neuronToActivationFunction[index] )
                 {
-                case ReLU:
+                case PiecewiseLinearFunctionType::RELU:
                     if ( _work2[targetNeuron] < 0 )
                         _work2[targetNeuron] = 0;
                     break;
 
-                case AbsoluteValue:
+                case PiecewiseLinearFunctionType::ABSOLUTE_VALUE:
                     _work2[targetNeuron] = FloatUtils::abs( _work2[targetNeuron] );
                     break;
 
@@ -656,12 +656,12 @@ void NetworkLevelReasoner::intervalArithmeticBoundPropagation()
 
                 switch ( _neuronToActivationFunction[index] )
                 {
-                case ReLU:
+                case PiecewiseLinearFunctionType::RELU:
                     _lowerBoundsActivations[i][j] = lb > 0 ? lb : 0;
                     _upperBoundsActivations[i][j] = ub;
                     break;
 
-                case AbsoluteValue:
+                case PiecewiseLinearFunctionType::ABSOLUTE_VALUE:
                     if ( lb > 0 )
                     {
                         _lowerBoundsActivations[i][j] = lb;
@@ -862,11 +862,11 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
 
                 switch ( _neuronToActivationFunction[index] )
                 {
-                case ReLU:
+                case PiecewiseLinearFunctionType::RELU:
                     reluSymbolicPropagation( index, lbLb, lbUb, ubLb, ubUb );
                     break;
 
-                case AbsoluteValue:
+                case PiecewiseLinearFunctionType::ABSOLUTE_VALUE:
                     absoluteValueSymbolicPropagation( index, lbLb, lbUb, ubLb, ubUb );
                     break;
 
