@@ -37,14 +37,17 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
 {
     _preprocessed = query;
 
-
     /*
       If a network level reasoner has not been provided, attempt to
       construct one
     */
     if ( !_preprocessed._networkLevelReasoner )
     {
-        constructNetworkLevelReasoner();
+        printf( "Input query did not contain a network level reasoner. Attemping to construct one...\n" );
+        if ( constructNetworkLevelReasoner() )
+            printf( "Network level reasoner successfully constructed\n" );
+        else
+            printf( "Could not build the network level reasoner, continuing without one\n" );
     }
 
     /*
@@ -791,11 +794,9 @@ void Preprocessor::dumpAllBounds( const String &message )
     printf( "\n" );
 }
 
-void Preprocessor::constructNetworkLevelReasoner()
+bool Preprocessor::constructNetworkLevelReasoner()
 {
     ASSERT( !_preprocessed._networkLevelReasoner );
-
-    printf( "Construct NLR starting!\n" );
 
     const List<Equation> &equations( _preprocessed.getEquations() );
     const List<PiecewiseLinearConstraint *> plConstraints( _preprocessed.getPiecewiseLinearConstraints() );
@@ -804,9 +805,7 @@ void Preprocessor::constructNetworkLevelReasoner()
     // abort
     for ( const auto constraint : plConstraints )
         if ( !NetworkLevelReasoner::functionTypeSupported( constraint->getType() ) )
-            return;
-
-    printf( "Passed PL check\n" );
+            return false;
 
     // Attempt to figure out the layered structure
     List<unsigned> inputLayer;
@@ -822,32 +821,21 @@ void Preprocessor::constructNetworkLevelReasoner()
     outputLayer = _preprocessed.getOutputVariables();
 
     // Now, attempt to figure out the topology, layer by layer
-    while ( numVariablesHandledSoFar < _preprocessed.getNumberOfVariables() )
+    //    while ( numVariablesHandledSoFar < _preprocessed.getNumberOfVariables() )
+    while ( true )
     {
-        printf( "Figuring out a WS layer\n" );
-
         List<unsigned> newWeightedSumLayer;
         for ( const auto &eq : equations )
         {
-            printf( "\tProcessing this equation:\n" );
-            eq.dump();
-
             Set<unsigned> eqVars = eq.getParticipatingVariables();
             for ( const auto &var : *previousLayer )
                 eqVars.erase( var );
 
             if ( eqVars.size() == 1 )
-            {
-                printf( "EQ is a match!\n" );
                 newWeightedSumLayer.append( *eqVars.begin() );
-            }
-            else
-            {
-                printf( "EQ is not a match!\n" );
-            }
         }
 
-        // If a new layer has not been discovered, we've failed
+        // If a new layer has not been discovered, we're done
         if ( newWeightedSumLayer.empty() )
             break;
 
@@ -869,24 +857,13 @@ void Preprocessor::constructNetworkLevelReasoner()
         }
 
         if ( outputLayerFound )
-        {
-            printf( "Output layer discovered, we're done!\n" );
-            // We're done
             break;
-        }
-
-        printf( "Have a new WS layer:\n" );
-        for ( unsigned var : newWeightedSumLayer )
-            printf( "\t%u", var );
-        printf( "\n" );
 
         // This was not the output layer. Continue to find the activation results
         weightedSumLayers.append( newWeightedSumLayer );
         List<unsigned> newActivaitonLayer;
         for ( unsigned wsVar : newWeightedSumLayer )
         {
-            printf( "\tLooking for x%u's activation\n", wsVar );
-
             bool found = false;
             unsigned activationVariable;
             for ( const auto &constraint : plConstraints )
@@ -903,21 +880,12 @@ void Preprocessor::constructNetworkLevelReasoner()
             }
 
             if ( found )
-            {
-                printf( "\t\tdecided that the activation is x%u\n", activationVariable );
                 newActivaitonLayer.append( activationVariable );
-            }
         }
 
-        // If a new activation has not been discovered, we've failed
+        // If a new activation layer has not been discovered, we're done
         if ( newActivaitonLayer.size() != newWeightedSumLayer.size() )
             break;
-
-
-        printf( "Have a new activation layer:\n" );
-        for ( unsigned var : newActivaitonLayer )
-            printf( "\t%u", var );
-        printf( "\n" );
 
         numVariablesHandledSoFar += newActivaitonLayer.size();
         activationLayers.append( newActivaitonLayer );
@@ -926,14 +894,12 @@ void Preprocessor::constructNetworkLevelReasoner()
         previousLayer = &(*activationLayers.rbegin());
     }
 
-    printf( "Handled %u out of %u variables!\n", numVariablesHandledSoFar, _preprocessed.getNumberOfVariables() );
-
-    // We are succesful iff all variables are accounted for
+    // If not all variables have been accounted for, we've failed
     if ( numVariablesHandledSoFar != _preprocessed.getNumberOfVariables() )
-        return;
+        return false;
 
+    // Network topology successfully discovered, construct the NLR
     NetworkLevelReasoner *nlr =  new NetworkLevelReasoner;
-
     nlr->setNumberOfLayers( 1 + weightedSumLayers.size() + 1 );
     nlr->setLayerSize( 0, inputLayer.size() );
     unsigned i = 1;
@@ -941,8 +907,9 @@ void Preprocessor::constructNetworkLevelReasoner()
         nlr->setLayerSize( i, layer.size() );
     nlr->setLayerSize( 1 + weightedSumLayers.size(), outputLayer.size() );
     nlr->allocateMemoryByTopology();
-
     _preprocessed._networkLevelReasoner = nlr;
+
+    return true;
 }
 
 //
