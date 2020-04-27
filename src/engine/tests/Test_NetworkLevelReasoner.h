@@ -139,6 +139,11 @@ public:
         input[0] = 1;
         input[1] = 2;
 
+        nlr.setWeightedSumVariable( 2, 0, 8 );
+        nlr.setActivationResultVariable( 2, 0, 9 );
+        nlr.setWeightedSumVariable( 2, 1, 10 );
+        nlr.setActivationResultVariable( 2, 1, 11 );
+
         TS_ASSERT_THROWS_NOTHING( nlr.evaluate( input, output ) );
 
         TS_ASSERT( FloatUtils::areEqual( output[0], 0 ) );
@@ -1145,7 +1150,6 @@ public:
         for ( const auto &bound : bounds )
             TS_ASSERT( expectedBounds.exists( bound ) );
     }
-
 };
 
 //
