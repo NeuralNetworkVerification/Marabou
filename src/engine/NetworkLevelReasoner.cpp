@@ -678,7 +678,7 @@ void NetworkLevelReasoner::intervalArithmeticBoundPropagation()
                     break;
 
                 default:
-                    ASSERT( false );
+                    throw MarabouError( MarabouError::NETWORK_LEVEL_REASONER_ACTIVATION_NOT_SUPPORTED );
                     break;
                 }
             }
@@ -867,7 +867,7 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
                     break;
 
                 default:
-                    ASSERT( false );
+                    throw MarabouError( MarabouError::NETWORK_LEVEL_REASONER_ACTIVATION_NOT_SUPPORTED );
                     break;
                 }
 
@@ -988,7 +988,8 @@ void NetworkLevelReasoner::reluSymbolicPropagation( const Index &index, double &
         }
     }
 
-    ASSERT( lbLb >= 0 );
+    if ( lbLb < 0 )
+        lbLb = 0;
 }
 
 void NetworkLevelReasoner::absoluteValueSymbolicPropagation( const Index &index, double &lbLb, double &lbUb, double &ubLb, double &ubUb )
@@ -1075,12 +1076,11 @@ void NetworkLevelReasoner::absoluteValueSymbolicPropagation( const Index &index,
 
             // In extreme cases (constraint set externally), lbLb
             // could be negative - so adjust this
-            if ( lbLb < 0 )
-                lbLb = 0;
         }
     }
 
-    ASSERT( lbLb >= 0 );
+    if ( lbLb < 0 )
+        lbLb = 0;
 }
 
 void NetworkLevelReasoner::getConstraintTightenings( List<Tightening> &tightenings ) const
