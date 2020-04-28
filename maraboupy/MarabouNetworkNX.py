@@ -67,7 +67,10 @@ def networkxToInputQuery(net, input_bounds, output_bounds, verbose=False):
         equation.addAddend(1, var_list.index(n))
         [[equation.addAddend(-w, var_list.index(u) + var_offset(u))] for u,w in incoming[n]]
         my_print("v{} = sum{}".format(var_list.index(n), str(["{}*v{}".format(w,var_list.index(u) + var_offset(u)) for u,w in incoming[n]])))
-        equation.setScalar(net.nodes[n]["bias"])
+        if "bias" in net.nodes[n]:
+                 equation.setScalar(net.nodes[n]["bias"])
+        else:
+                 equation.setScalar(0)
         inputQuery.addEquation(equation)
 
     for i,v in enumerate(var_list):

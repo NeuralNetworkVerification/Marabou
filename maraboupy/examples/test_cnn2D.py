@@ -1,3 +1,4 @@
+from __future__ import division
 from maraboupy import MarabouNetworkNX as mnx
 from maraboupy import MarabouParseCnn as mcnn
 from itertools import combinations, product
@@ -8,6 +9,9 @@ import random
 
 import sys
 import os
+
+sys.path.append("/cs/labs/guykatz/matanos/Marabou")
+sys.path.append("/cs/labs/guykatz/matanos/Marabou/maraboupy")
 
 #from tensorflow.keras import datasets, layers, models, utils
 #from tensorflow.keras import backend as K
@@ -22,11 +26,13 @@ from tensorflow.keras import backend as K
 
 import re
 import time
+import datetime
 import statistics as stat
+from pathlib import Path
 
 #####################################
 ####Toy Examples of CNN construction
-#####################################
+#####################################1
 
 def create_cnn2D():
     in_l_size = {"x":8 , "y":8, "d":2 }    
@@ -104,7 +110,7 @@ def train_cnn2D():
 
     batch_size = 128
     num_classes = 10
-    epochs = 5
+    epochs = 5 #FIXME
 
     img_rows, img_cols = x, y
     
@@ -150,33 +156,33 @@ def train_cnn2D():
     ####Fit
     ###################
 
-    #model.compile(optimizer='adam', TODO
-    #          loss=keras.losses.categorical_crossentropy,
-    #          metrics=['accuracy'])
+    '''model.compile(optimizer='adam',
+                  loss=keras.losses.categorical_crossentropy,
+                  metrics=['accuracy'])
     
-    #history = model.fit(train_images, train_labels, batch_size=batch_size, epochs=epochs, verbose=1, validation_data=(test_images, test_labels)) TODO
-    
+    history = model.fit(train_images, train_labels, batch_size=batch_size, epochs=epochs, verbose=1, validation_data=(test_images, test_labels))
+
     ###################
     ####Evaluate
     ###################
     
-    #print(history.history) TODO
-    #plt.plot(history.history['accuracy'], label='accuracy')
-    #plt.plot(history.history['val_accuracy'], label = 'val_accuracy')
-    #plt.xlabel('Epoch')
-    #plt.ylabel('Accuracy')
-    #plt.ylim([0.5, 1])
-    #plt.legend(loc='lower right')
-    #plt.show() #TODO FIXME save the figure.
+    print(history.history)
+    plt.plot(history.history['accuracy'], label='accuracy')
+    plt.plot(history.history['val_accuracy'], label = 'val_accuracy')
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy')
+    plt.ylim([0.5, 1])
+    plt.legend(loc='lower right')
+    plt.show(block=False) #TODO FIXME save the figure.
     
-    #test_loss, test_acc = model.evaluate(test_images,  test_labels, verbose=2)
-    #print('Test loss:', test_loss)
-    #print('Test accuracy:', test_acc)
-    #model.summary()
-    #model.save(file_name)
+    test_loss, test_acc = model.evaluate(test_images,  test_labels, verbose=2)
+    print('Test loss:', test_loss)
+    print('Test accuracy:', test_acc)
+    model.summary()
+    model.save(file_name) '''
 
-    #rand_im = np.random.random([x,y,d])
-    #rand_label = model.predict(np.array([rand]))
+    rand_im = np.random.random([x,y,d])
+    rand_label = model.predict(np.array([rand_im]))[0]
     rand_im = None
     rand_label = None
     in_l_size = {"x":x , "y":y, "d":d }
@@ -206,6 +212,14 @@ if __name__ == "__main__":
     ###################
     ####Train CNN
     ###################
+
+    target_dir = sys.argv[1]
+    target_dir = str(Path(target_dir).resolve())
+    mycwd = os.getcwd()
+    local_dir = "test_cnn2D_output_dir" + datetime.datetime.now().strftime("_%m-%d-%Y__%H-%M-%S")
+    os.chdir(target_dir)
+    os.mkdir(local_dir)
+    os.chdir(target_dir + "/" + local_dir)
     
     print("Start generating CNN")
     cnn_orig, rand_im, rand_label = train_cnn2D()
@@ -226,23 +240,16 @@ if __name__ == "__main__":
     ####Measure Verification Step
     ##############################
 
-    coi_nodes   = dict()
-    coi_edges   = dict()
-    coi_runtime  = dict()
-    coi_var = dict()
-    coi_mean = dict()    
-    orig_edges  = list()
-    orig_nodes  = list()
-    orig_runtime = list()   
+    coi_measure = dict()
+    orig_measure = dict()
 
-    N = 10 #Number of samples per k.
+    N = 1 #Number of samples per k.
     ks = [1,2,3,4]
+    num_out = len(set(cnn_orig.out_l.values()))
     for k in ks : # number of output neurons.
-
+        
         samples = [random.sample(set(cnn_orig.out_l.values()), k=k) for i in range(N)]
-
-        coi_nodes[k], coi_edges[k], coi_runtime[k] = list(), list(), list()
-        coi_mean[k], coi_var[k] = list(), list()
+        coi_measure[k] = list()
         for j, sample in enumerate(samples):
         
             print("*********************************** COI **********************************************")    
@@ -253,15 +260,15 @@ if __name__ == "__main__":
                     raise Exception("{} not in cnn_orig".format(v))
                 coi_cnn = mcnn.Cnn2D.coi(cnn_orig, sample)
                 start = time.time()        
-                #coi_cnn.solve(in_prop(coi_cnn), out_prop(coi_cnn))
+                coi_cnn.solve(in_prop(coi_cnn), out_prop(coi_cnn))
                 end = time.time()
-                coi_runtime[k].append(end - start)
-                coi_nodes[k].append(len(coi_cnn.nodes()))
-                coi_edges[k].append(len(coi_cnn.edges()))
                 cor = [max([int(c) for c in re.findall("%(\d+)", samp)]) for samp in sample]
-                if k > 1:
-                    coi_var[k].append(stat.variance(cor))
-                    coi_mean[k].append(stat.mean(cor))
+                coi_measure[k].append({"cor"  : cor,
+                                       "cor_var"  : None if k == 1 else stat.variance(cor),
+                                       "cor_mean" : None if k == 1 else stat.mean(cor),
+                                       "nodes"    : len(coi_cnn.nodes()),
+                                       "edges"    : len(coi_cnn.edges()),
+                                       "time"     : end - start})
                     
                 print("Finish solving COI CNN")
 
@@ -270,38 +277,79 @@ if __name__ == "__main__":
     start = time.time()        
     #cnn_orig.solve(in_prop(cnn_orig), out_prop(cnn_orig))
     end = time.time()        
-    orig_runtime.append(end - start)
-    orig_nodes.append(len(cnn_orig.nodes()))
-    orig_edges.append(len(cnn_orig.edges()))    
+    orig_measure = {"cor"  : cor,
+                    "cor_var"  : None,
+                    "cor_mean" : None,
+                    "nodes"    : len(cnn_orig.nodes()),
+                    "edges"    : len(cnn_orig.edges()),
+                    "time"     : end - start}
     print("Finish solving CNN")
 
     ####################
     ####Process Results
     ####################
             
-    if len(orig_runtime) == 1:
-        orig_runtime = orig_runtime * N
-    if len(orig_nodes) == 1:
-        orig_nodes = orig_nodes * N
-    if len(orig_edges) == 1:
-        orig_edges = orig_edges * N
+    #if len(orig_runtime) == 1:
+    #    orig_runtime = orig_runtime * N
+    #if len(orig_nodes) == 1:
+    #    orig_nodes = orig_nodes * N
+    #if len(orig_edges) == 1:
+    #    orig_edges = orig_edges * N
 
-
-    orig_mean = stat.mean(orig_runtime)    
-    orig_variance = stat.variance(orig_runtime)
-
-
-    coi_rt_mean = {k : stat.mean(coi_runtime[k]) for k in ks}
-    coi_rt_variance = {k : stat.variance(coi_runtime[k]) for k in ks}
-    
-    nodes_ratio = {k : [coi/orig for coi, orig in zip(coi_nodes[k], orig_nodes)] for k in ks} 
-    edges_ratio = {k : [coi/orig for coi, orig in zip(coi_edges[k], orig_edges)] for k in ks}
-    time_ratio  = {k : [coi/orig for coi, orig in zip(coi_runtime[k], orig_runtime)] for k in ks}
+    coi_nodes_mean     = {k : stat.mean([samp["nodes"] for samp in measure])     for k,measure in coi_measure.items()}
+    coi_nodes_variance = {k : stat.variance([samp["nodes"] for samp in measure]) for k,measure in coi_measure.items()}
+    coi_edges_mean     = {k : stat.mean([samp["edges"] for samp in measure])     for k,measure in coi_measure.items()}
+    coi_edges_variance = {k : stat.variance([samp["edges"] for samp in measure]) for k,measure in coi_measure.items()}
+    coi_rt_mean        = {k : stat.mean([samp["time"] for samp in measure])      for k,measure in coi_measure.items()}
+    coi_rt_variance    = {k : stat.variance([samp["time"] for samp in measure])  for k,measure in coi_measure.items()}
 
     ####################
     ####Plot Graphs
     ####################
-    
+
+    ###NEW GRAPHS
+    plt.figure(1)
+    plt.plot([n / num_out for n in (list(coi_nodes_mean.keys()) + [num_out])], list(coi_nodes_mean.values()) + [orig_measure["nodes"]],   'r', label='Nodes', markevery=None, marker='o')
+    plt.plot([n / num_out for n in (list(coi_edges_mean.keys()) + [num_out])], list(coi_edges_mean.values()) + [orig_measure["edges"]],   'b', label='Edges', markevery=None, marker='o')
+    plt.plot([n / num_out for n in (list(coi_rt_mean.keys())    + [num_out])], list(coi_rt_mean.values())    + [orig_measure["time"]],    'g', label='Runtime', markevery=None, marker='o')
+    plt.title('Network prop. vs. COI trimming (ratio)')
+    plt.legend()
+    plt.show(block=True) #TODO
+    plt.savefig('test_cnn2D_prop_vs_trim.png')
+
+    for k in [k for k in coi_measure.keys() if k > 1]:
+        cor_var = [samp["cor_var"] for samp in coi_measure[k]]
+        nodes   = [samp["nodes"]   for samp in coi_measure[k]]
+        plt.figure(2)
+        plt.plot(cor_var, nodes, label="k={}".format(k), markevery=None, marker='o', linestyle="None")
+    plt.title('Network nodes vs. output nodes variance')
+    plt.legend()
+    plt.show(block=True) #TODO
+    plt.savefig('test_cnn2D_nodes_vs_variance.png')
+
+    for k in [k for k in coi_measure.keys() if k > 1]:
+        cor_var = [samp["cor_var"] for samp in coi_measure[k]]
+        edges   = [samp["edges"]   for samp in coi_measure[k]]
+        plt.figure(2)
+        plt.plot(cor_var, edges, label="k={}".format(k), markevery=None, marker='o', linestyle="None")
+    plt.title('Network edges vs. output variance')
+    plt.legend()
+    plt.show(block=True) #TODO
+    plt.savefig('test_cnn2D_edges_vs_variance.png')    
+
+    for k in [k for k in coi_measure.keys() if k > 1]:
+        cor_var = [samp["cor_var"] for samp in coi_measure[k]]
+        time   = [samp["time"]   for samp in coi_measure[k]]
+        plt.figure(3)
+        plt.plot(cor_var, time, label="k={}".format(k), markevery=None, marker='o', linestyle="None")
+    plt.title('Network runtime vs. output variance')
+    plt.legend()
+    plt.show(block=True) #TODO
+    plt.savefig('test_cnn2D_runtime_vs_variance.png')
+
+    exit() #TODO
+
+    ###OLD GRAPHS
     plt.figure(1)
     plt.subplot(131)
     plt.plot(coi_runtime[1], 'rs', orig_runtime, 'b^')
@@ -318,7 +366,7 @@ if __name__ == "__main__":
     plt.legend(('COI', 'Orig'))    
     plt.title('Edges')
     plt.grid(True)
-    plt.show(block=False)
+    plt.show(block=True) #TODO
     plt.savefig('test_cnn2D_coi_vs_orig_1.png')
 
     plt.figure(2)
@@ -327,7 +375,7 @@ if __name__ == "__main__":
     plt.plot(time_ratio[1], 'g', label='Runtime')
     plt.title('COI / Orig CNN ratio')
     plt.legend()
-    plt.show(block=False)
+    plt.show(block=True) #TODO
     plt.savefig('test_cnn2D_coi_vs_orig_2.png')    
 
     plt.figure(3)
@@ -335,7 +383,7 @@ if __name__ == "__main__":
     plt.plot(time_ratio[1], edges_ratio[1], 'b', label='Edges/Time')
     plt.title('COI / Orig CNN ratio correlation')
     plt.legend()
-    plt.show(block=False)
+    plt.show(block=True) #TODO
     plt.savefig('test_cnn2D_coi_vs_orig_3.png')
 
     with open('test_cnn2D_output.txt', 'w') as file:
@@ -345,7 +393,7 @@ if __name__ == "__main__":
         file.write("Orig runtime (seconds):{} \n".format(str(orig_runtime)))
         file.write("Orig number of nodes:{} \n".format(orig_nodes))
         file.write("Orig number of edges:{} \n".format(orig_edges))                
-        
+    os.chdir(mycwd)
     
 
 
