@@ -23,7 +23,9 @@ matrix:
     - os: linux
       dist: xenial
       compiler: gcc
-      install: $PY_CMD -m pip install -r maraboupy/test_requirements.txt
+      install: 
+      - $PY_CMD -m pip install --upgrade pip
+      - $PY_CMD -m pip install -r maraboupy/test_requirements.txt
       script:
       - mkdir -p build
       - cd build
@@ -37,7 +39,9 @@ matrix:
     - os: linux
       dist: xenial
       compiler: clang
-      install: $PY_CMD -m pip install -r maraboupy/test_requirements.txt
+      install: 
+      - $PY_CMD -m pip install --upgrade pip
+      - $PY_CMD -m pip install -r maraboupy/test_requirements.txt
       script:
       - mkdir - p build
       - cd build
@@ -51,6 +55,7 @@ matrix:
     - os: windows
       script:
       - choco install python3 --params "/InstallDir:C:\Python3"
+      - /c/Python3/Scripts/pip install --upgrade pip
       - /c/Python3/Scripts/pip install -r maraboupy/test_requirements.txt
       - mkdir -p build
       - cd build
