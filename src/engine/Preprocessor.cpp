@@ -817,6 +817,8 @@ bool Preprocessor::constructNetworkLevelReasoner()
         {
             if ( _layer < other._layer )
                 return true;
+            if ( _layer > other._layer )
+                return false;
 
             return _neuron < other._neuron;
         }
@@ -880,6 +882,7 @@ bool Preprocessor::constructNetworkLevelReasoner()
         Index index( 0, count );
         indexToNeuron[index] = neuronInfo;
         variableToIndex[neuron] = index;
+        ++count;
     }
 
     // Now, attempt to figure out the topology, layer by layer
