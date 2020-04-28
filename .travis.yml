@@ -17,7 +17,7 @@ matrix:
       python: 3.5
       dist: xenial
       compiler: gcc
-      install: pip install -r maraboupy/test_requirements.txt
+      install: pip3 install -r maraboupy/test_requirements.txt
       script:
       - which $PY_CMD
       - which pip
@@ -33,9 +33,10 @@ matrix:
       - $PY_CMD -m pytest maraboupy/test
 
     - os: linux
+      python: 3.5
       dist: xenial
       compiler: clang
-      install: pip install -r maraboupy/test_requirements.txt
+      install: pip3 install -r maraboupy/test_requirements.txt
       script:
       - mkdir - p build
       - cd build
