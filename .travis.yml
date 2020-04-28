@@ -24,7 +24,9 @@ matrix:
       dist: xenial
       compiler: gcc
       install: 
-      - $PY_CMD -m pip install --upgrade pip setuptools
+      - $PY_CMD -m pip install --upgrade pip
+      - $PY_CMD -m pip install --upgrade setuptools
+      - $PY_CMD -m pip install wheel
       - $PY_CMD -m pip install -r maraboupy/test_requirements.txt
       script:
       - mkdir -p build
@@ -40,7 +42,9 @@ matrix:
       dist: xenial
       compiler: clang
       install: 
-      - $PY_CMD -m pip install --upgrade pip setuptools
+      - $PY_CMD -m pip install --upgrade pip
+      - $PY_CMD -m pip install --upgrade setuptools
+      - $PY_CMD -m pip install wheel
       - $PY_CMD -m pip install -r maraboupy/test_requirements.txt
       script:
       - mkdir - p build
@@ -54,7 +58,7 @@ matrix:
 
     - os: windows
       script:
-      - choco install python --version=3.5.4 --params "/InstallDir:C:\Python3"
+      - choco install python3 --version=3.5.4 --params "/InstallDir:C:\Python3"
       - /c/Python3/Scripts/pip install --user --upgrade pip setuptools
       - /c/Python3/Scripts/pip install --user -r maraboupy/test_requirements.txt
       - mkdir -p build
