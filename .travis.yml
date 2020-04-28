@@ -55,8 +55,8 @@ matrix:
     - os: windows
       script:
       - choco install python3 --params "/InstallDir:C:\Python3"
-      - /c/Python3/Scripts/pip install --upgrade pip
-      - /c/Python3/Scripts/pip install -r maraboupy/test_requirements.txt
+      - /c/Python3/Scripts/pip install --user --upgrade pip
+      - /c/Python3/Scripts/pip install --user -r maraboupy/test_requirements.txt
       - mkdir -p build
       - cd build
       - cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=/c/Python3/python -G"Visual Studio 15 2017 Win64"
