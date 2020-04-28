@@ -1,3 +1,10 @@
+import warnings
+warnings.filterwarnings('ignore',category=FutureWarning)
+warnings.filterwarnings('ignore',category=DeprecationWarning)
+
+import sys
+sys.path.append('.')
+
 import unittest
 from maraboupy import Marabou
 from maraboupy import MarabouCore
