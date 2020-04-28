@@ -1045,12 +1045,13 @@ bool Preprocessor::constructNetworkLevelReasoner()
                             factor * addend._coefficient );
         }
 
+        nlr->setWeightedSumVariable( index._layer,
+                                     index._neuron,
+                                     neuronInfo._weightedSumVariable );
+
         // Activation functions
         if ( neuronInfo._activationFunction )
         {
-            nlr->setWeightedSumVariable( index._layer,
-                                         index._neuron,
-                                         neuronInfo._weightedSumVariable );
             nlr->setActivationResultVariable( index._layer,
                                               index._neuron,
                                               neuronInfo._activationVariable );
