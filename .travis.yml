@@ -30,6 +30,7 @@ matrix:
       - cmake --build . -j 2
       - ctest -L system -j 2
       - ctest -L regress[0-1] -j 2
+      - cd ..
       - $PY_CMD -m pytest ../maraboupy/test
 
     - os: linux
@@ -43,6 +44,7 @@ matrix:
       - cmake --build . -j 2
       - ctest -L system -j 2
       - ctest -L regress0 -j 2
+      - cd ..
       - $PY_CMD -m pytest ../maraboupy/test
 
     - os: windows
@@ -55,6 +57,7 @@ matrix:
       - cmake --build . --config Release
       - ctest -L system -j 2
       - ctest -L regress0 -j 2 # does not work ...
+      - cd ..
       - /c/Python3/python -m pytest ../maraboupy/test
 
 notifications:

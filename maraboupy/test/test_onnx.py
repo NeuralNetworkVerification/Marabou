@@ -1,6 +1,4 @@
 import unittest
-import sys
-sys.path.append('../..')
 from maraboupy import Marabou
 from maraboupy import MarabouCore
 import numpy as np
@@ -9,7 +7,7 @@ import numpy as np
 OPT = MarabouCore.Options()      # Define options 
 OPT._verbosity = 0               # Turn off printing
 TOL = 1e-5                       # Set tolerance for checking Marabou evaluations
-FOLDER = "../../resources/onnx/" # Folder for test networks
+FOLDER = "resources/onnx/" # Folder for test networks
 
 class Test_ONNX(unittest.TestCase):
     
