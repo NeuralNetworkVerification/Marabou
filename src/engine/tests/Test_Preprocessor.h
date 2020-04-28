@@ -735,6 +735,18 @@ public:
         TS_ASSERT( !inputQuery._networkLevelReasoner );
         InputQuery processed = Preprocessor().preprocess( inputQuery );
         TS_ASSERT( processed._networkLevelReasoner );
+
+        NetworkLevelReasoner *nlr = processed._networkLevelReasoner;
+
+        double inputs1[2] = { 1, -2 };
+        double inputs2[2] = { -4, 3 };
+        double output;
+
+        TS_ASSERT_THROWS_NOTHING( nlr->evaluate( inputs1, &output ) );
+        TS_ASSERT_EQUALS( output, 0 );
+
+        TS_ASSERT_THROWS_NOTHING( nlr->evaluate( inputs2, &output ) );
+        TS_ASSERT_EQUALS( output, 1 );
     }
 
     void test_todo()
