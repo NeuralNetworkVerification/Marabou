@@ -24,18 +24,13 @@ matrix:
       compiler: gcc
       install: $PY_CMD -m pip install -r maraboupy/test_requirements.txt
       script:
-      - which $PY_CMD
-      - which pip
-      - which pip3
-      - which python
-      - ls /usr/bin
       - mkdir -p build
       - cd build
       - cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=$(which $PY_CMD)
       - cmake --build . -j 2
       - ctest -L system -j 2
       - ctest -L regress[0-1] -j 2
-      - $PY_CMD -m pytest maraboupy/test
+      - $PY_CMD -m pytest ../maraboupy/test
 
     - os: linux
       dist: xenial
@@ -48,7 +43,7 @@ matrix:
       - cmake --build . -j 2
       - ctest -L system -j 2
       - ctest -L regress0 -j 2
-      - $PY_CMD -m pytest maraboupy/test
+      - $PY_CMD -m pytest ../maraboupy/test
 
     - os: windows
       script:
@@ -60,7 +55,7 @@ matrix:
       - cmake --build . --config Release
       - ctest -L system -j 2
       - ctest -L regress0 -j 2 # does not work ...
-      - /c/Python3/python -m pytest maraboupy/test
+      - /c/Python3/python -m pytest ../maraboupy/test
 
 notifications:
   email:
