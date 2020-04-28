@@ -1,6 +1,4 @@
-pytest
-pytest-cov
-coveralls
-numpy
-onnx
-onnxruntime
+pytest==5.4.1
+numpy==1.18.2
+onnx==1.6.0
+onnxruntime==0.4.0

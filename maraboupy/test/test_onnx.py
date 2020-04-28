@@ -1,4 +1,6 @@
 import unittest
+import sys
+sys.path.append('../..')
 from maraboupy import Marabou
 from maraboupy import MarabouCore
 import numpy as np
