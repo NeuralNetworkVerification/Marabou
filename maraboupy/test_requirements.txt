@@ -1,0 +1,6 @@
+pytest
+pytest-cov
+coveralls
+numpy
+onnx
+onnxruntime

@@ -16,6 +16,7 @@ matrix:
     - os: linux
       dist: xenial
       compiler: gcc
+      install: pip3 install -r maraboupy/test_requirements.txt
       script:
       - mkdir -p build
       - cd build
@@ -23,6 +24,7 @@ matrix:
       - cmake --build . -j 2
       - ctest -L system -j 2
       - ctest -L regress[0-1] -j 2
+      - $PY_CMD -m pytest maraboupy/test
 
     - os: linux
       dist: xenial
@@ -34,16 +36,19 @@ matrix:
       - cmake --build . -j 2
       - ctest -L system -j 2
       - ctest -L regress0 -j 2
+      - $PY_CMD -m pytest maraboupy/test
 
     - os: windows
       script:
       - choco install python3 --params "/InstallDir:C:\Python3"
+      - /c/Python3/pip install -r maraboupy/test_requirements.txt
       - mkdir -p build
       - cd build
       - cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=/c/Python3/python -G"Visual Studio 15 2017 Win64"
       - cmake --build . --config Release
       - ctest -L system -j 2
       - ctest -L regress0 -j 2 # does not work ...
+      - /c/Python3/python -m pytest maraboupy/test
 
 notifications:
   email:
