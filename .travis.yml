@@ -16,8 +16,12 @@ matrix:
     - os: linux
       dist: xenial
       compiler: gcc
-      install: pip install -r maraboupy/test_requirements.txt
       script:
+      - which $PY_CMD
+      - which pip)
+      - which pip3)
+      - which python)
+      - ls /usr/bin
       - mkdir -p build
       - cd build
       - cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=$(which $PY_CMD)
