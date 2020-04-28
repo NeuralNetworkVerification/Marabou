@@ -801,6 +801,12 @@ bool Preprocessor::constructNetworkLevelReasoner()
     */
     struct Index
     {
+        Index()
+            : _layer( 0 )
+            , _neuron( 0 )
+        {
+        }
+
         Index( unsigned layer, unsigned neuron )
             : _layer( layer )
             , _neuron( neuron )
@@ -821,6 +827,12 @@ bool Preprocessor::constructNetworkLevelReasoner()
 
     struct NeuronInformation
     {
+        NeuronInformation()
+            : _weightedSumEquation( NULL )
+            , _activationFunction( NULL )
+        {
+        }
+
         unsigned _weightedSumVariable;
         unsigned _activationVariable;
 
@@ -831,6 +843,7 @@ bool Preprocessor::constructNetworkLevelReasoner()
     };
 
     Map<Index, NeuronInformation> indexToNeuron;
+    Map<unsigned, Index> variableToIndex;
     Map<unsigned, unsigned> layerToLayerSize;
 
     ASSERT( !_preprocessed._networkLevelReasoner );
@@ -849,16 +862,25 @@ bool Preprocessor::constructNetworkLevelReasoner()
     List<unsigned> previousLayer;
     List<unsigned> currentLayer;
     List<unsigned> outputLayer;
-
     unsigned currentLayerIndex = 1;
-    layerToLayerSize[0] = inputLayer.size();
 
     // The input and output layer should be defined in the input query
     inputLayer = _preprocessed.getInputVariables();
     previousLayer = inputLayer;
     unsigned numVariablesHandledSoFar = inputLayer.size();
-
     outputLayer = _preprocessed.getOutputVariables();
+    layerToLayerSize[0] = inputLayer.size();
+
+    // Store the input neurons in the topology
+    unsigned count = 0;
+    for ( const auto &neuron : inputLayer )
+    {
+        NeuronInformation neuronInfo;
+        neuronInfo._activationVariable = neuron;
+        Index index( 0, count );
+        indexToNeuron[index] = neuronInfo;
+        variableToIndex[neuron] = index;
+    }
 
     // Now, attempt to figure out the topology, layer by layer
     while ( true )
@@ -866,6 +888,10 @@ bool Preprocessor::constructNetworkLevelReasoner()
         currentLayer.clear();
         for ( const auto &eq : equations )
         {
+            // Only consider equalities
+            if ( eq._type != Equation::EQ )
+                continue;
+
             Set<unsigned> eqVars = eq.getParticipatingVariables();
             for ( const auto &var : previousLayer )
                 eqVars.erase( var );
@@ -877,8 +903,11 @@ bool Preprocessor::constructNetworkLevelReasoner()
                 neuronInfo._weightedSumVariable = *eqVars.begin();
                 neuronInfo._weightedSumEquation = &eq;
 
-                indexToNeuron[Index( currentLayerIndex, currentLayer.size() )] = neuronInfo;
+                Index index( currentLayerIndex, currentLayer.size() );
+                indexToNeuron[index] = neuronInfo;
                 currentLayer.append( *eqVars.begin() );
+
+                variableToIndex[*eqVars.begin()] = index;
             }
         }
 
@@ -924,6 +953,7 @@ bool Preprocessor::constructNetworkLevelReasoner()
 
                     participatingVariables.erase( wsVar );
                     indexToNeuron[index]._activationVariable = *participatingVariables.begin();
+                    variableToIndex[*participatingVariables.begin()] = index;
                     indexToNeuron[index]._activationType = constraint->getType();
                     indexToNeuron[index]._activationFunction = constraint;
 
@@ -962,30 +992,71 @@ bool Preprocessor::constructNetworkLevelReasoner()
         nlr->setLayerSize( i, layerToLayerSize[i] );
     nlr->allocateMemoryByTopology();
 
-    // Hidden layers: go neuron by neuron and store the information
-    for ( unsigned layer = 1; layer < totalNumberOfLayers - 1; ++layer )
+    // Go over the neurons and store weights, biases and activation functions
+    for ( const auto &entry : indexToNeuron )
     {
-        for ( unsigned neuron = 0; neuron < layerToLayerSize[layer]; ++neuron )
+        Index index = entry.first;
+        NeuronInformation neuronInfo = entry.second;
+        const Equation *eq = neuronInfo._weightedSumEquation;
+
+        /*
+          Input neurons get special treatment: no equation, no bias,
+          no activation function
+        */
+        if ( index._layer == 0 )
         {
-            Index index( layer, neuron );
-            const Equation *eq = indexToNeuron[index]._weightedSumEquation;
-            eq->dump();
+            nlr->setActivationResultVariable( 0,
+                                              index._neuron,
+                                              neuronInfo._activationVariable );
+            continue;
+        }
 
-            /*
-              The equation has the form
+        /*
+          We assume equations have the form
 
-                2x1 + 3x2 - y = 5
+             2x1 + 3x2 - y = 5
 
-              Where y is our weighted sum variable
-            */
+          Where y is our weighted sum variable. If y's coefficient is
+          not -1, we make it -1 by multiplying everything else
+        */
+        ASSERT( !FloatUtils::isZero( eq->getCoefficient( neuronInfo._weightedSumVariable ) ) );
+        double factor = -1.0 / eq->getCoefficient( neuronInfo._weightedSumVariable );
+
+        // Bias
+        nlr->setBias( index._layer, index._neuron, factor * eq->_scalar );
+
+        // Weighted sum
+        for ( const auto &addend : eq->_addends )
+        {
+            if ( addend._variable == neuronInfo._weightedSumVariable )
+                continue;
+
+            ASSERT( variableToIndex.exists( addend._variable ) );
+            Index sourceIndex = variableToIndex[addend._variable];
+
+            ASSERT( sourceIndex._layer + 1 == index._layer );
+
+            nlr->setWeight( sourceIndex._layer,
+                            sourceIndex._neuron,
+                            index._neuron,
+                            factor * addend._coefficient );
+        }
+
+        // Activation functions
+        if ( neuronInfo._activationFunction )
+        {
+            nlr->setWeightedSumVariable( index._layer,
+                                         index._neuron,
+                                         neuronInfo._weightedSumVariable );
+            nlr->setActivationResultVariable( index._layer,
+                                              index._neuron,
+                                              neuronInfo._activationVariable );
+            nlr->setNeuronActivationFunction( index._layer,
+                                              index._neuron,
+                                              neuronInfo._activationType );
         }
     }
 
-    // Biases
-
-    // Weights
-
-    // Store the complete NLR
     _preprocessed._networkLevelReasoner = nlr;
 
     return true;

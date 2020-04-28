@@ -190,6 +190,17 @@ Set<unsigned> Equation::getParticipatingVariables() const
     return result;
 }
 
+double Equation::getCoefficient( unsigned variable ) const
+{
+    for ( const auto &addend : _addends )
+    {
+        if ( addend._variable == variable )
+            return addend._coefficient;
+    }
+
+    return 0;
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "
