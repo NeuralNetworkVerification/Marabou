@@ -140,6 +140,11 @@ public:
 
     void getConstraintTightenings( List<Tightening> &tightenings ) const;
 
+    /*
+      For debugging purposes: dump the network topology
+    */
+    void dumpTopology() const;
+
 private:
     unsigned _numberOfLayers;
     Map<unsigned, unsigned> _layerSizes;

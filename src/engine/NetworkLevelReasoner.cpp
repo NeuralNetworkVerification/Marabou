@@ -1166,6 +1166,82 @@ bool NetworkLevelReasoner::functionTypeSupported( PiecewiseLinearFunctionType ty
     return false;
 }
 
+void NetworkLevelReasoner::dumpTopology() const
+{
+    printf( "Number of layers: %u.\n", _numberOfLayers );
+    for ( unsigned i = 0; i < _numberOfLayers; ++i )
+        printf( "\t%u\n", _layerSizes[i] );
+
+    for ( unsigned i = 0; i < _numberOfLayers; ++i )
+    {
+        unsigned layerSize = _layerSizes[i];
+        printf( "\nDumping info for layer %u:\n", i );
+        printf( "\tNeurons:\n" );
+        for ( unsigned j = 0; j < layerSize; ++j )
+        {
+            printf( "\t\t" );
+            Index index( i, j );
+            if ( _indexToWeightedSumVariable.exists( index ) )
+                printf( "%4u ", _indexToWeightedSumVariable[index] );
+            else
+                printf( "   " );
+
+            printf( "--> " );
+
+            if ( _indexToActivationResultVariable.exists( index ) )
+                printf( "%4u ", _indexToActivationResultVariable[index] );
+
+            if ( _neuronToActivationFunction.exists( index ) )
+            {
+                switch ( _neuronToActivationFunction[index] )
+                {
+                case PiecewiseLinearFunctionType::RELU:
+                    printf( "   (ReLU)" );
+                    break;
+
+                case PiecewiseLinearFunctionType::ABSOLUTE_VALUE:
+                    printf( "   (Absolute Value)" );
+                    break;
+
+                default:
+                    printf( "   (Unknown)" );
+                    break;
+                }
+            }
+
+            printf( "\n" );
+        }
+
+        if ( i > 0 )
+        {
+            printf( "\n\tEquations:\n" );
+            for ( unsigned j = 0; j < layerSize; ++j )
+            {
+                printf( "\t\tx%u = ", _indexToWeightedSumVariable[Index( i, j )]);
+                for ( unsigned k = 0; k < _layerSizes[i-1]; ++k )
+                {
+                    double weight = _weights[i-1][k * layerSize + j];
+                    if ( FloatUtils::isZero( weight ) )
+                        continue;
+
+                    if ( weight < 0 )
+                        printf( " - %.5lfx%u", -weight, _indexToActivationResultVariable[Index( i - 1, k )] );
+                    else
+                        printf( " + %.5lfx%u", weight, _indexToActivationResultVariable[Index( i - 1, k )] );
+                }
+
+                double bias = _bias[Index( i, j )];
+                if ( bias > 0 )
+                    printf( " + %.2lf", bias );
+                else
+                    printf( " - %.2lf", -bias );
+                printf( "\n" );
+            }
+        }
+    }
+
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "
