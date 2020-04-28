@@ -1026,7 +1026,7 @@ bool Preprocessor::constructNetworkLevelReasoner()
         double factor = -1.0 / eq->getCoefficient( neuronInfo._weightedSumVariable );
 
         // Bias
-        nlr->setBias( index._layer, index._neuron, factor * eq->_scalar );
+        nlr->setBias( index._layer, index._neuron, factor * -eq->_scalar );
 
         // Weighted sum
         for ( const auto &addend : eq->_addends )
