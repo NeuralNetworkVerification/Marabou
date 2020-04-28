@@ -16,7 +16,7 @@ matrix:
     - os: linux
       dist: xenial
       compiler: gcc
-      install: pip3 install -r maraboupy/test_requirements.txt
+      install: pip install -r maraboupy/test_requirements.txt
       script:
       - mkdir -p build
       - cd build
@@ -29,6 +29,7 @@ matrix:
     - os: linux
       dist: xenial
       compiler: clang
+      install: pip install -r maraboupy/test_requirements.txt
       script:
       - mkdir - p build
       - cd build
@@ -41,7 +42,7 @@ matrix:
     - os: windows
       script:
       - choco install python3 --params "/InstallDir:C:\Python3"
-      - /c/Python3/pip install -r maraboupy/test_requirements.txt
+      - /c/Python3/Scripts/pip install -r maraboupy/test_requirements.txt
       - mkdir -p build
       - cd build
       - cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=/c/Python3/python -G"Visual Studio 15 2017 Win64"
