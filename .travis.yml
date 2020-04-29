@@ -4,9 +4,8 @@ cache:
   directories:
     - tools/boost_1_68_0
 
-
 before_install:
-  - PY_CMD=python3
+  - if [ "$TRAVIS_OS_NAME" = "windows" ]; then PY_CMD=python ; else PY_CMD=python3 ; fi
   - if [ "$TRAVIS_OS_NAME" = "windows" ]; then powershell Start-Process -PassThru -Wait PowerShell -ArgumentList "'-Command Set-MpPreference -DisableArchiveScanning \$true'"    ; fi
   - if [ "$TRAVIS_OS_NAME" = "windows" ]; then powershell Start-Process -PassThru -Wait PowerShell -ArgumentList "'-Command Set-MpPreference -DisableBehaviorMonitoring \$true'" ; fi
   - if [ "$TRAVIS_OS_NAME" = "windows" ]; then powershell Start-Process -PassThru -Wait PowerShell -ArgumentList "'-Command Set-MpPreference -DisableRealtimeMonitoring \$true'" ; fi
@@ -18,16 +17,18 @@ addons:
     - python3-pip
     - python3-setuptools
 
+install:
+  - if [ "$TRAVIS_OS_NAME" = "windows" ]; then choco install python3 --version=3.5.4 --params "/InstallDir:C:\Python3"; fi
+  - $PY_CMD -m pip install --user --upgrade pip
+  - $PY_CMD -m pip install --user --upgrade setuptools
+  - $PY_CMD -m pip install --user wheel
+  - $PY_CMD -m pip install --user -r maraboupy/test_requirements.txt
+
 matrix:
   include:
     - os: linux
       dist: xenial
       compiler: gcc
-      install: 
-      - $PY_CMD -m pip install --upgrade pip
-      - $PY_CMD -m pip install --upgrade setuptools
-      - $PY_CMD -m pip install wheel
-      - $PY_CMD -m pip install -r maraboupy/test_requirements.txt
       script:
       - mkdir -p build
       - cd build
@@ -41,11 +42,6 @@ matrix:
     - os: linux
       dist: xenial
       compiler: clang
-      install: 
-      - $PY_CMD -m pip install --upgrade pip
-      - $PY_CMD -m pip install --upgrade setuptools
-      - $PY_CMD -m pip install wheel
-      - $PY_CMD -m pip install -r maraboupy/test_requirements.txt
       script:
       - mkdir - p build
       - cd build
@@ -57,22 +53,16 @@ matrix:
       - $PY_CMD -m pytest maraboupy/test
 
     - os: windows
-      install:
-      - choco install python3 --version=3.5.4 --params "/InstallDir:C:\Python3"
-      - /c/Python3/Scripts/pip install --user --upgrade pip
-      - /c/Python3/Scripts/pip install --user --upgrade setuptools
-      - /c/Python3/Scripts/pip install --user wheel
-      - /c/Python3/Scripts/pip install --user -r maraboupy/test_requirements.txt
       script:
       - mkdir -p build
       - cd build
-      - cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=/c/Python3/python -G"Visual Studio 15 2017 Win64"
+      - cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=$(which $PY_CMD) -G"Visual Studio 15 2017 Win64"
       - cmake --build . --config Release
       - ctest -L system -j 2
       - ctest -L regress0 -j 2 # does not work ...
       - cd ..
-      - copy maraboupy/Release/* maraboupy
-      - /c/Python3/python -m pytest maraboupy/test
+      - cp maraboupy/Release/* maraboupy
+      - $PY_CMD -m pytest maraboupy/test
 
 notifications:
   email:
