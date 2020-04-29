@@ -5,7 +5,7 @@ cache:
     - tools/boost_1_68_0
 
 before_install:
-  - if [ "$TRAVIS_OS_NAME" = "windows" ]; then PY_CMD=python ; else PY_CMD=python3 ; fi
+  - if [ "$TRAVIS_OS_NAME" = "windows" ]; then PY_CMD=/c/Python3/python ; else PY_CMD=python3 ; fi
   - if [ "$TRAVIS_OS_NAME" = "windows" ]; then powershell Start-Process -PassThru -Wait PowerShell -ArgumentList "'-Command Set-MpPreference -DisableArchiveScanning \$true'"    ; fi
   - if [ "$TRAVIS_OS_NAME" = "windows" ]; then powershell Start-Process -PassThru -Wait PowerShell -ArgumentList "'-Command Set-MpPreference -DisableBehaviorMonitoring \$true'" ; fi
   - if [ "$TRAVIS_OS_NAME" = "windows" ]; then powershell Start-Process -PassThru -Wait PowerShell -ArgumentList "'-Command Set-MpPreference -DisableRealtimeMonitoring \$true'" ; fi
