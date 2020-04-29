@@ -57,10 +57,13 @@ matrix:
       - $PY_CMD -m pytest maraboupy/test
 
     - os: windows
-      script:
+      install:
       - choco install python3 --version=3.5.4 --params "/InstallDir:C:\Python3"
-      - /c/Python3/Scripts/pip install --user --upgrade pip setuptools
+      - /c/Python3/Scripts/pip install --user --upgrade pip
+      - /c/Python3/Scripts/pip install --user --upgrade setuptools
+      - /c/Python3/Scripts/pip install --user wheel
       - /c/Python3/Scripts/pip install --user -r maraboupy/test_requirements.txt
+      script:
       - mkdir -p build
       - cd build
       - cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=/c/Python3/python -G"Visual Studio 15 2017 Win64"
@@ -68,6 +71,7 @@ matrix:
       - ctest -L system -j 2
       - ctest -L regress0 -j 2 # does not work ...
       - cd ..
+      - copy maraboupy/Release/* maraboupy
       - /c/Python3/python -m pytest maraboupy/test
 
 notifications:
