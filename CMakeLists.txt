@@ -11,6 +11,7 @@ option(RUN_UNIT_TEST "run unit tests on build" ON)
 option(RUN_REGRESS_TEST "run regression tests on build" OFF)
 option(RUN_SYSTEM_TEST "run system tests on build" OFF)
 option(RUN_MEMORY_TEST "run cxxtest testing with ASAN ON" ON)
+option(RUN_PYTHON_TEST "run python API tests if building with python" ON)
 
 set(DEFAULT_PYTHON_VERSION "3" CACHE STRING "Default Python version 2/3")
 set(PYTHON_VERSIONS_SUPPORTED 2 3)
@@ -267,6 +268,15 @@ if (NOT ${TESTS_TO_RUN} STREQUAL "")
         COMMAND ctest --output-on-failure  -L "\"(${TESTS_TO_RUN})\"" -j${CTEST_NTHREADS} $$ARGS
     )
 endif()
+
+if (${BUILD_PYTHON} AND ${RUN_PYTHON_TEST})
+    set(CTEST_OUTPUT_ON_FAILURE 1)
+    add_custom_command(
+        TARGET build-tests
+        POST_BUILD 
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PYTHON_API_DIR}/test
+    )
+endif()    
 
 # Add the input parsers
 add_custom_target(build_input_parsers)
