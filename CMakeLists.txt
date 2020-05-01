@@ -270,10 +270,17 @@ if (NOT ${TESTS_TO_RUN} STREQUAL "")
 endif()
 
 if (${BUILD_PYTHON} AND ${RUN_PYTHON_TEST})
-    set(CTEST_OUTPUT_ON_FAILURE 1)
+    if (MSVC)
+        add_custom_command(
+            TARGET build-tests
+            POST_BUILD
+            COMMAND cp ${PYTHON_API_DIR}/Release/* ${PYTHON_API_DIR}
+        )
+    endif()
+
     add_custom_command(
         TARGET build-tests
-        POST_BUILD 
+        POST_BUILD
         COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PYTHON_API_DIR}/test
     )
 endif()    
