@@ -15,12 +15,18 @@
  ** [[ Add lengthier description here ]]
  **/
 '''
-
-#Marabou File
-from .MarabouNetworkNNet import *
-from .MarabouNetworkTF import *
-from .MarabouNetworkONNX import *
 from .MarabouCore import *
+from .MarabouNetworkNNet import *
+
+# Import parsers if required packages are installed
+try:
+    from .MarabouNetworkTF import *
+except ImportError:
+    pass
+try:
+    from .MarabouNetworkONNX import *
+except ImportError:
+    pass
 
 def read_nnet(filename, sbt=False):
     """
