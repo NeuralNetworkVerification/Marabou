@@ -15,6 +15,7 @@
  ** [[ Add lengthier description here ]]
  **/
 '''
+import warnings
 from .MarabouCore import *
 from .MarabouNetworkNNet import *
 
@@ -22,11 +23,11 @@ from .MarabouNetworkNNet import *
 try:
     from .MarabouNetworkTF import *
 except ImportError:
-    pass
+    warnings.warn("Tensorflow parser is unavailable because tensorflow package is not installed")
 try:
     from .MarabouNetworkONNX import *
 except ImportError:
-    pass
+    warnings.warn("ONNX parser is unavailable because onnx or onnxruntime packages are not installed")
 
 def read_nnet(filename, sbt=False):
     """
