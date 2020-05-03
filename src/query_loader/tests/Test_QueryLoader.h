@@ -20,6 +20,7 @@
 #include "InputQuery.h"
 #include "MockFileFactory.h"
 #include "QueryLoader.h"
+#include "ReluConstraint.h"
 #include "T/unistd.h"
 
 const String QUERY_TEST_FILE( "QueryTest.txt" );

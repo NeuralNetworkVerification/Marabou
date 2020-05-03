@@ -30,12 +30,14 @@ bool Equation::Addend::operator==( const Addend &other ) const
 }
 
 Equation::Equation()
-    : _type( Equation::EQ )
+    : _scalar( 0 )
+    , _type( Equation::EQ )
 {
 }
 
 Equation::Equation( EquationType type )
-    : _type( type )
+    : _scalar( 0 )
+    , _type( type )
 {
 }
 
