@@ -17,6 +17,7 @@
 '''
 
 from .MarabouUtils import *
+from maraboupy import MarabouCore
 from maraboupy import MarabouNetwork
 import numpy as np
 
@@ -105,10 +106,10 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
                     nlr.setWeight(layer, source, target, self.weights[layer][target][source])
 
         # Activation Functions
-        RELU = 0;
+        RELU = MarabouCore.NetworkLevelReasoner.ReLU;
         for layer in range(len(self.weights) - 1): # only hidden layers
             for neuron in range(len(self.weights[layer])):
-                nlr.setNeuronActivationFunction(layer, neuron, RELU );
+                nlr.setNeuronActivationFunction(layer + 1, neuron, RELU );
 
         # Variable indexing
         for layer in range(len(self.layerSizes))[1:-1]:

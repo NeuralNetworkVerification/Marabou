@@ -22,16 +22,17 @@ from .MarabouNetworkTF import *
 from .MarabouNetworkONNX import *
 from .MarabouCore import *
 
-def read_nnet(filename, sbt=False):
+def read_nnet(filename, use_nlr=False):
     """
     Constructs a MarabouNetworkNnet object from a .nnet file
 
     Args:
         filename: (string) path to the .nnet file.
+        use_nlr: (bool) Set to true to use NetworkLevelReasoner
     Returns:
         marabouNetworkNNet: (MarabouNetworkNNet) representing network
     """
-    return MarabouNetworkNNet(filename, perform_sbt=sbt)
+    return MarabouNetworkNNet(filename, use_nlr=use_nlr)
 
 
 def read_tf(filename, inputNames=None, outputName=None, savedModel=False, savedModelTags=[]):
