@@ -20,12 +20,6 @@
 #include "PropertyParser.h"
 #include <regex>
 
-static bool isScalar( const String &token )
-{
-    const std::regex floatRegex( "[-+]?[0-9]*\\.?[0-9]+" );
-    return true || std::regex_match( token.ascii(), floatRegex );
-}
-
 static double extractScalar( const String &token )
 {
     return atof( token.ascii() );
@@ -66,11 +60,6 @@ void PropertyParser::processSingleLine( const String &line, InputQuery &inputQue
         throw InputParserError( InputParserError::UNEXPECTED_INPUT, line.ascii() );
 
     auto it = tokens.rbegin();
-    if ( !isScalar( *it ) )
-    {
-        Stringf message( "Right handside must be scalar in the line: %s", line.ascii() );
-        throw InputParserError( InputParserError::UNEXPECTED_INPUT, message.ascii() );
-    }
 
     double scalar = extractScalar( *it );
     ++it;
