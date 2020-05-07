@@ -172,6 +172,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             self.cast(node)
         elif node.op_type == 'Reshape':
             self.reshape(node)
+        elif node.op_type == 'Flatten':
+            self.flatten(node)
         elif node.op_type == "Transpose":
             self.transpose(node)
         elif node.op_type == "MaxPool":
@@ -320,6 +322,34 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             self.varMap[nodeName] = self.varMap[inputName1].reshape(reshapeVals)
         elif inputName1 in self.constantMap:
             self.constantMap[nodeName] = self.constantMap[inputName1].reshape(reshapeVals)
+
+    def flatten(self, node):
+        """
+        Function representing flatten.
+        Unlike numpy.flatten(), ONNX's Flatten operation reshapes
+        a (d_0, d_1, ..., d_n) tensor into a 2D tensor with shape
+        (d_0 * d_1 * ... * d_(axis-1), d_axis * d_(axis+1) * ... * d_n).
+        Arguments:
+            node: (node) representing flatten operation
+        """
+        nodeName = node.output[0]
+
+        # Assume first input is array to be flattened
+        inputName = node.input[0]
+        axis = 1
+        for attr in node.attribute:
+            if attr.name == "axis":
+                axis = get_attribute_value(attr)
+
+        dimension1 = int(np.prod(self.shapeMap[inputName][:axis]))
+        dimension2 = int(np.prod(self.shapeMap[inputName][axis:]))
+        newShape = [dimension1, dimension2]
+        self.shapeMap[nodeName] = newShape
+
+        if inputName in self.varMap:
+            self.varMap[nodeName] = self.varMap[inputName].reshape(newShape)
+        elif inputName in self.constantMap:
+            self.constantMap[nodeName] = self.constantMap[inputName].reshape(newShape)
             
     def transpose(self, node):
         """

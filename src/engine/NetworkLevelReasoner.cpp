@@ -642,8 +642,10 @@ void NetworkLevelReasoner::intervalArithmeticBoundPropagation()
                 }
             }
 
-            _lowerBoundsWeightedSums[i][j] = lb;
-            _upperBoundsWeightedSums[i][j] = ub;
+            if ( lb > _lowerBoundsWeightedSums[i][j] )
+                _lowerBoundsWeightedSums[i][j] = lb;
+            if ( ub < _upperBoundsWeightedSums[i][j] )
+                _upperBoundsWeightedSums[i][j] = ub;
 
             if ( i != _numberOfLayers - 1 )
             {
@@ -653,26 +655,39 @@ void NetworkLevelReasoner::intervalArithmeticBoundPropagation()
                 switch ( _neuronToActivationFunction[index] )
                 {
                 case ReLU:
-                    _lowerBoundsActivations[i][j] = lb > 0 ? lb : 0;
-                    _upperBoundsActivations[i][j] = ub;
+                    if ( lb < 0 )
+                        lb = 0;
+
+                    if ( lb > _lowerBoundsActivations[i][j] )
+                        _lowerBoundsActivations[i][j] = lb;
+                    if ( ub < _upperBoundsActivations[i][j] )
+                        _upperBoundsActivations[i][j] = ub;
+
                     break;
 
                 case AbsoluteValue:
                     if ( lb > 0 )
                     {
-                        _lowerBoundsActivations[i][j] = lb;
-                        _upperBoundsActivations[i][j] = ub;
+                        if ( lb > _lowerBoundsActivations[i][j] )
+                            _lowerBoundsActivations[i][j] = lb;
+                        if ( ub < _upperBoundsActivations[i][j] )
+                            _upperBoundsActivations[i][j] = ub;
                     }
                     else if ( ub < 0 )
                     {
-                        _lowerBoundsActivations[i][j] = -ub;
-                        _upperBoundsActivations[i][j] = -lb;
+                        if ( -ub > _lowerBoundsActivations[i][j] )
+                            _lowerBoundsActivations[i][j] = -ub;
+                        if ( -lb < _upperBoundsActivations[i][j] )
+                            _upperBoundsActivations[i][j] = -lb;
                     }
                     else
                     {
                         // lb < 0 < ub
-                        _lowerBoundsActivations[i][j] = 0;
-                        _upperBoundsActivations[i][j] = FloatUtils::max( ub, -lb );
+                        if ( _lowerBoundsActivations[i][j] < 0 )
+                            _lowerBoundsActivations[i][j] = 0;
+
+                        if ( FloatUtils::max( ub, -lb ) < _upperBoundsActivations[i][j] )
+                            _upperBoundsActivations[i][j] = FloatUtils::max( ub, -lb );
                     }
 
                     break;
