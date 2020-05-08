@@ -162,8 +162,6 @@ public:
 
     bool lookAheadPropagate( Map<unsigned, unsigned> &allSplits, bool sbtOnly );
 
-    void quickSolve( unsigned depthThreshold );
-
     void numberOfActive();
 
     /*

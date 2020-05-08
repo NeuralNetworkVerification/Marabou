@@ -104,169 +104,6 @@ void Engine::numberOfActive()
     std::cout << numActive  << " Active Constraints" << std::endl;
 }
 
-void Engine::quickSolve( unsigned depthThreshold )
-{
-    _statistics.stampStartingTime();
-    struct timespec mainLoopStart = TimeUtils::sampleMicro();
-    while ( _smtCore.getStackDepth() < depthThreshold )
-    {
-        struct timespec mainLoopEnd = TimeUtils::sampleMicro();
-        _statistics.addTimeMainLoop( TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
-        mainLoopStart = mainLoopEnd;
-
-        if ( _quitRequested )
-        {
-            _exitCode = Engine::QUIT_REQUESTED;
-            return;
-        }
-        try
-        {
-            mainLoopStatistics( 0 );
-
-            // Check whether progress has been made recently
-            checkOverallProgress();
-
-            // If the basis has become malformed, we need to restore it
-            if ( basisRestorationNeeded() )
-                return;
-
-            // Restoration is not required
-            _basisRestorationPerformed = Engine::NO_RESTORATION_PERFORMED;
-
-            // Possible restoration due to preceision degradation
-            if ( shouldCheckDegradation() && highDegradation() )
-                return;
-
-            //if ( _tableau->basisMatrixAvailable() )
-            //    explicitBasisBoundTightening();
-
-            // Perform any SmtCore-initiated case splits
-            if ( _smtCore.needToSplit() )
-            {
-                _smtCore.performSplit();
-                continue;
-            }
-
-            if ( !_tableau->allBoundsValid() )
-            {
-                // Some variable bounds are invalid, so the query is unsat
-                throw InfeasibleQueryException();
-            }
-
-            if ( allVarsWithinBounds() )
-            {
-                // The linear portion of the problem has been solved.
-                // Check the status of the PL constraints
-                collectViolatedPlConstraints();
-
-                // If all constraints are satisfied, we are possibly done
-                if ( allPlConstraintsHold() )
-                {
-                    if ( _tableau->getBasicAssignmentStatus() !=
-                         ITableau::BASIC_ASSIGNMENT_JUST_COMPUTED )
-                    {
-                        if ( _verbosity > 0 )
-                        {
-                            printf( "Before declaring SAT, recomputing...\n" );
-                        }
-                        // Make sure that the assignment is precise before declaring success
-                        _tableau->computeAssignment();
-                        continue;
-                    }
-                    if ( _verbosity > 0 )
-                    {
-                        printf( "\nEngine::solve: SAT assignment found\n" );
-                        _statistics.print();
-                    }
-                    _exitCode = Engine::SAT;
-                    return;
-                }
-
-                // We have violated piecewise-linear constraints.
-                // Select a violated constraint as the target
-                selectViolatedPlConstraint();
-                _smtCore.reportViolatedConstraintPrep( _plConstraintToFix );
-                //selectBranchingPlConstraint();
-                // Report the violated constraint to the SMT engine
-                fixViolatedPlConstraintIfPossible();
-
-                // Finally, take this opporunity to tighten any bounds
-                // and perform any valid case splits.
-                tightenBoundsOnConstraintMatrix();
-                applyAllBoundTightenings();
-                // For debugging purposes
-                checkBoundCompliancyWithDebugSolution();
-
-                while ( applyAllValidConstraintCaseSplits() )
-                    performSymbolicBoundTightening( false );
-                continue;
-            }
-            else if ( _statistics.getNumMainLoopIterations() % 100 == 0 )
-            {
-               tightenBoundsOnConstraintMatrix();
-               applyAllBoundTightenings();
-
-               while ( applyAllValidConstraintCaseSplits() )
-                   performSymbolicBoundTightening( false );
-            }
-
-            // We have out-of-bounds variables.
-            performSimplexStep();
-
-            continue;
-        }
-        catch ( const MalformedBasisException & )
-        {
-            // Debug
-            printf( "MalformedBasisException caught!\n" );
-            //
-
-            if ( _basisRestorationPerformed == Engine::NO_RESTORATION_PERFORMED )
-            {
-                if ( _numVisitedStatesAtPreviousRestoration != _statistics.getNumVisitedTreeStates() )
-                {
-                    // We've tried a strong restoration before, and it didn't work. Do a weak restoration
-                    _basisRestorationRequired = Engine::WEAK_RESTORATION_NEEDED;
-                }
-                else
-                {
-                    _basisRestorationRequired = Engine::STRONG_RESTORATION_NEEDED;
-                }
-            }
-            else if ( _basisRestorationPerformed == Engine::PERFORMED_STRONG_RESTORATION )
-                _basisRestorationRequired = Engine::WEAK_RESTORATION_NEEDED;
-            else
-            {
-                printf( "Engine: Cannot restore tableau!\n" );
-                _exitCode = Engine::ERROR;
-                return;
-            }
-        }
-        catch ( const InfeasibleQueryException & )
-        {
-            // The current query is unsat, and we need to pop.
-            // If we're at level 0, the whole query is unsat.
-            if ( !_smtCore.popSplit() )
-            {
-                if ( _verbosity > 0 )
-                    {
-                        printf( "\nEngine::solve: unsat query\n" );
-                        _statistics.print();
-                    }
-                _exitCode = Engine::UNSAT;
-                return;
-            }
-        }
-        catch ( ... )
-        {
-            _exitCode = Engine::ERROR;
-            printf( "Engine: Unknown error!\n" );
-            return;
-        }
-    }
-    return;
-}
-
 void Engine::applySplits( const Map<unsigned, unsigned> &idToPhase )
 {
     for ( const auto entry : idToPhase )
@@ -452,6 +289,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
     }
 
     struct timespec mainLoopStart = TimeUtils::sampleMicro();
+    bool performSBT = getInputVariables().size() < 30;
     while ( true )
     {
         struct timespec mainLoopEnd = TimeUtils::sampleMicro();
@@ -532,7 +370,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 _smtCore.performSplit();
                 do
                 {
-                    performSymbolicBoundTightening( false );
+                    performSymbolicBoundTightening( performSBT );
                 }
                 while ( applyAllValidConstraintCaseSplits() );
                 continue;
@@ -584,7 +422,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 checkBoundCompliancyWithDebugSolution();
 
                 while ( applyAllValidConstraintCaseSplits() )
-                    performSymbolicBoundTightening( false );
+                    performSymbolicBoundTightening( performSBT );
 
                 continue;
             }
@@ -2306,9 +2144,10 @@ bool Engine::propagate()
     {
         tightenBoundsOnConstraintMatrix();
         applyAllBoundTightenings();
+	bool performSBT = getInputVariables().size() < 30;
         do
             {
-                performSymbolicBoundTightening( false );
+                performSymbolicBoundTightening( performSBT );
             }
         while ( applyAllValidConstraintCaseSplits() );
         return true;
@@ -2396,6 +2235,7 @@ bool Engine::restoreSmtState( SmtState &smtState )
 {
     try
     {
+	bool performSBT = getInputVariables().size() < 30;
         // Step 1: all implied valid splits at root
         for ( auto &validSplit : smtState._impliedValidSplitsAtRoot )
         {
@@ -2408,7 +2248,7 @@ bool Engine::restoreSmtState( SmtState &smtState )
         // For debugging purposes
         checkBoundCompliancyWithDebugSolution();
         do
-            performSymbolicBoundTightening( false );
+            performSymbolicBoundTightening( performSBT );
         while ( applyAllValidConstraintCaseSplits() );
 
         // Step 2: replay the stack
