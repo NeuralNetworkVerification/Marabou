@@ -203,7 +203,6 @@ void DnCManager::splitOnly( const String& propertyFilePath, const String& subpro
 
     size_t subQi = 0;
     for (const SubQuery* subQueryPointer : subQueries) {
-        std::cerr << "subQi: " << subQi << std::endl;
         const SubQuery &subQuery = *subQueryPointer;
         const std::string subpropFilePath = subpropertyPrefix.ascii() + std::to_string(subQi);
 
