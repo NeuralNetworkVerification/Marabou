@@ -107,8 +107,8 @@ void DnCManager::freeMemoryIfNeeded()
               delete subQuery;
             }
         }
+        delete _workload;
     }
-    delete _workload;
 }
 
 void DnCManager::solve( unsigned timeoutInSeconds, bool restoreTreeStates )

@@ -189,7 +189,7 @@ private:
     /*
       Set of subQueries to be solved by workers
     */
-    WorkerQueue *_workload;
+    WorkerQueue *_workload = nullptr;
 
     /*
       Whether the timeout has been reached
