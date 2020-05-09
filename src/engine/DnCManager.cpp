@@ -28,6 +28,7 @@
 #include "TimeUtils.h"
 #include "Vector.h"
 #include <atomic>
+#include <fstream>
 #include <chrono>
 #include <cmath>
 #include <thread>
@@ -190,6 +191,43 @@ void DnCManager::solve( unsigned timeoutInSeconds, bool restoreTreeStates )
     return;
 }
 
+void DnCManager::splitOnly( const String& propertyFilePath, const String& subpropertyPrefix )
+{
+    // Create the base engine
+    createBaseEngine();
+
+    // Partition the input query into initial subqueries, and place these
+    // queries in the queue
+    SubQueries subQueries;
+    initialDivide( subQueries );
+
+    size_t subQi = 0;
+    for (const SubQuery* subQueryPointer : subQueries) {
+        std::cerr << "subQi: " << subQi << std::endl;
+        const SubQuery &subQuery = *subQueryPointer;
+        const std::string subpropFilePath = subpropertyPrefix.ascii() + std::to_string(subQi);
+
+        // Emit subproblem property file
+        {
+            std::ifstream oldFile{ propertyFilePath.ascii() };
+            std::ofstream propFile{ subpropFilePath };
+            propFile << oldFile.rdbuf();
+            const auto& split = subQuery._split;
+            auto bounds = split->getBoundTightenings();
+            for ( const auto bound : bounds )
+            {
+                propFile << "x"
+                         << bound._variable
+                         << (bound._type == Tightening::LB ? " >= " : " <= ")
+                         << bound._value
+                         << "\n";
+            }
+        }
+        ++subQi;
+    }
+
+}
+
 DnCManager::DnCExitCode DnCManager::getExitCode() const
 {
     return _exitCode;
@@ -328,12 +366,17 @@ void DnCManager::printResult()
     }
 }
 
-bool DnCManager::createEngines()
+void DnCManager::createBaseEngine()
 {
     // Create the base engine
     _baseEngine = std::make_shared<Engine>( _verbosity );
     _baseEngine->processInputQuery( *_baseInputQuery, false );
     _baseEngine->applySplits( _idToPhase );
+}
+
+bool DnCManager::createEngines()
+{
+    createBaseEngine();
 
     // Create engines for each thread
     for ( unsigned i = 0; i < _numWorkers; ++i )

@@ -90,7 +90,7 @@ int main( int argc, char **argv )
             return 0;
         };
 
-        if ( options->getBool( Options::DNC_MODE ) )
+        if ( options->getBool( Options::DNC_MODE ) || options->getBool( Options::SPLIT_ONLY ) )
             DnCMarabou().run();
         else
             Marabou( options->getInt( Options::VERBOSITY ) ).run();
