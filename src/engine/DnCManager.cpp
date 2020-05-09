@@ -18,6 +18,7 @@
 #include "DnCManager.h"
 #include "DnCWorker.h"
 #include "GetCPUData.h"
+#include "GlobalConfiguration.h"
 #include "LargestIntervalDivider.h"
 #include "MStringf.h"
 #include "MarabouError.h"
@@ -84,6 +85,7 @@ DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
     , _biasedLayer( biasedLayer )
     , _biasStrategy( biasStrategy )
     , _maxDepth( maxDepth )
+    , _constraintViolationThreshold( GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD )
 {
 }
 
@@ -335,6 +337,7 @@ bool DnCManager::createEngines()
     for ( unsigned i = 0; i < _numWorkers; ++i )
     {
         auto engine = std::make_shared<Engine>( _verbosity );
+	engine->setConstraintViolationThreshold( _constraintViolationThreshold );
         _engines.append( engine );
     }
 
@@ -401,6 +404,11 @@ void DnCManager::log( const String &message )
 {
     if ( GlobalConfiguration::DNC_MANAGER_LOGGING )
         printf( "DnCManager: %s\n", message.ascii() );
+}
+
+void DnCManager::setConstraintViolationThreshold( unsigned threshold )
+{
+    _constraintViolationThreshold = threshold;
 }
 
 //

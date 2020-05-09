@@ -19,6 +19,7 @@
 #include "FixedReluParser.h"
 #include "MStringf.h"
 #include "LookAheadPreprocessor.h"
+#include "GlobalConfiguration.h"
 #include "Marabou.h"
 #include "Options.h"
 #include "PropertyParser.h"
@@ -104,6 +105,20 @@ void Marabou::prepareInputQuery()
             printf( "Property: None\n" );
 
         printf( "\n" );
+
+
+        /*
+          Step 3: extract options
+	*/
+        int splitThreshold = Options::get()->getInt( Options::SPLIT_THRESHOLD );
+        if ( splitThreshold < 0 )
+	    {
+		printf( "Invalid constraint violation threshold value %d,"
+			" using default value %u.\n\n", splitThreshold,
+			GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD );
+		splitThreshold = GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD;
+	    }
+        _engine.setConstraintViolationThreshold( splitThreshold );
     }
 }
 

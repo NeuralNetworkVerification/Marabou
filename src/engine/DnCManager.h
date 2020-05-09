@@ -79,6 +79,8 @@ public:
     */
     DnCExitCode _exitCode;
 
+    void setConstraintViolationThreshold( unsigned threshold );
+
 private:
     /*
       Create and run a DnCWorker
@@ -201,6 +203,12 @@ private:
     BiasStrategy _biasStrategy;
 
     unsigned _maxDepth;
+
+    /*
+      The constraint violation threshold for each worker engine
+    */
+    unsigned _constraintViolationThreshold;
+
 };
 
 #endif // __DnCManager_h__

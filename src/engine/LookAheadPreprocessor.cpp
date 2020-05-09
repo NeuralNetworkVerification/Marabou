@@ -22,11 +22,11 @@
 
 LookAheadPreprocessor::LookAheadPreprocessor( unsigned numWorkers,
                                               const InputQuery &inputQuery,
-                                              unsigned initialTimeout )
+                                              unsigned splitThreshold )
     : _workload( 0 )
     , _numWorkers ( numWorkers )
     , _baseInputQuery( inputQuery )
-    , _initialTimeout( initialTimeout )
+    , _initialTimeout( splitThreshold )
 {
     createEngines();
 }
@@ -48,14 +48,14 @@ void LookAheadPreprocessor::preprocessWorker( LookAheadPreprocessor::WorkerQueue
                                               std::mutex &mtx,
                                               std::atomic_int &lastFixed,
                                               std::atomic_int &maxTime,
-                                              unsigned initialTimeout )
+                                              unsigned splitThreshold )
 {
 
-    std::cout << "initial timeout" << initialTimeout << std::endl;
-
+    printf("Worker started");
     if ( !engine->_processed )
     {
         engine->processInputQuery( *inputQuery, false );
+	engine->setConstraintViolationThreshold( splitThreshold );
     }
 
     // Apply all splits

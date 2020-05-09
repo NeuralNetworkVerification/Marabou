@@ -103,7 +103,8 @@ def createOptions( numWorkers=4, initialTimeout=-1, initialDivides=0,
                    timeoutFactor=1.5, verbosity=2, dnc=False,
                    restoreTreeStates=False, lookAheadPreprocessing=False,
                    preprocessOnly=False, divideStrategy="auto",
-                   biasStrategy="centroid", maxDepth=5, maxTreeDepth=10 ):
+                   biasStrategy="estimate", maxDepth=5, maxTreeDepth=10,
+                   splitThreshold=20):
     """
     Create an option object
     """
@@ -124,4 +125,5 @@ def createOptions( numWorkers=4, initialTimeout=-1, initialDivides=0,
     options._biasStrategy = biasStrategy
     options._maxDepth = maxDepth
     options._maxTreeDepth = maxTreeDepth
+    options._splitThreshold = splitThreshold
     return options

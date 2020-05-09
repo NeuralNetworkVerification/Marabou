@@ -42,6 +42,9 @@ void OptionParser::initialize()
         ( "pl-aux-eq",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS]) ),
           "PL constraints generate auxiliary equations" )
+        ( "split-threshold",
+          boost::program_options::value<int>( &((*_intOptions)[Options::SPLIT_THRESHOLD]) ),
+          "Max number of tries to repair a relu before splitting" )
         ( "dnc",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::DNC_MODE]) ),
           "Use the divide-and-conquer solving mode" )

@@ -68,6 +68,8 @@ public:
         MAX_DEPTH,
 
 	MAX_TREE_DEPTH,
+
+        SPLIT_THRESHOLD,
     };
 
     enum FloatOptions{

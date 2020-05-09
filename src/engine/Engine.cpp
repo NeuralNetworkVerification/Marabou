@@ -19,6 +19,7 @@
 #include "Debug.h"
 #include "Engine.h"
 #include "EngineState.h"
+#include "GlobalConfiguration.h"
 #include "InfeasibleQueryException.h"
 #include "InputQuery.h"
 #include "MStringf.h"
@@ -53,6 +54,7 @@ Engine::Engine( unsigned verbosity )
     , _verbosity( verbosity )
     , _lastNumVisitedStates( 0 )
     , _lastIterationWithProgress( 0 )
+    , _constraintViolationThreshold( GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -280,6 +282,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
     if ( _verbosity > 0 )
     {
         printf( "\nEngine::solve: Initial statistics\n" );
+	printf( "Constraint violation threshold: %d\n", _constraintViolationThreshold);
         mainLoopStatistics( 2 );
         printf( "\n---\n" );
     }
@@ -290,6 +293,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
     struct timespec mainLoopStart = TimeUtils::sampleMicro();
     bool performSBT = getInputVariables().size() < 30;
+    printf("Perform SBT %d", performSBT);
     while ( true )
     {
         struct timespec mainLoopEnd = TimeUtils::sampleMicro();
@@ -2019,6 +2023,7 @@ void Engine::reset()
     resetBoundTighteners();
     resetExitCode();
     resetStatistics();
+    setConstraintViolationThreshold( _constraintViolationThreshold );
 }
 
 void Engine::resetStatistics()
@@ -2306,6 +2311,12 @@ void Engine::getCentroid( Vector<double> &centroid )
 unsigned Engine::numberOfConstraints()
 {
     return _plConstraints.size();
+}
+
+void Engine::setConstraintViolationThreshold( unsigned threshold )
+{
+    _constraintViolationThreshold = threshold;
+    _smtCore.setConstraintViolationThreshold( threshold );
 }
 
 //
