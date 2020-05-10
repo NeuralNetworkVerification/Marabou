@@ -175,7 +175,7 @@ void DnCMarabou::run()
             FixedReluParser().parse( fixedReluFilePath, idToPhase );
         }
 
-<<<<<<< HEAD
+
             _dncManager = std::unique_ptr<DnCManager>
                 ( new DnCManager( numWorkers, initialDivides, initialTimeout,
                                   onlineDivides, timeoutFactor, divideStrategy,
@@ -183,13 +183,7 @@ void DnCMarabou::run()
                                   idToPhase, biasedLayer, biasStrategy,
                                   maxDepth ) );
 	    _dncManager->setConstraintViolationThreshold( splitThreshold );
-=======
-        _dncManager = std::unique_ptr<DnCManager>
-            ( new DnCManager( numWorkers, initialDivides, initialTimeout,
-                              onlineDivides, timeoutFactor, divideStrategy,
-                              _baseEngine->getInputQuery(), verbosity,
-                              idToPhase, biasedLayer, biasStrategy,
-                              maxDepth ) );
+
         if ( Options::get()->getBool( Options::SPLIT_ONLY ) )
         {
             _dncManager->splitOnly( Options::get()->getString( Options::PROPERTY_FILE_PATH ),
@@ -197,7 +191,6 @@ void DnCMarabou::run()
         }
         else
         {
->>>>>>> Add --split-only flag
             _dncManager->solve( timeoutInSeconds, restoreTreeStates );
         }
     }
