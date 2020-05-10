@@ -42,6 +42,7 @@ void Options::initializeDefaultValues()
       Bool options
     */
     _boolOptions[DNC_MODE] = false;
+    _boolOptions[SPLIT_ONLY] = false;
     _boolOptions[PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS] = false;
     _boolOptions[RESTORE_TREE_STATES] = false;
     _boolOptions[LOOK_AHEAD_PREPROCESSING] = false;
@@ -75,6 +76,7 @@ void Options::initializeDefaultValues()
     _stringOptions[SUMMARY_FILE] = "";
     _stringOptions[DIVIDE_STRATEGY] = "auto";
     _stringOptions[BIAS_STRATEGY] = "";
+    _stringOptions[SUBPROPERTY_PREFIX] = "subproperty";
 }
 
 void Options::parseOptions( int argc, char **argv )

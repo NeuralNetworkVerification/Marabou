@@ -55,6 +55,11 @@ public:
     void solve( unsigned timeoutInSeconds, bool restoreTreeStates );
 
     /*
+      Perform the initial division for DnC solving, output it, and exit
+    */
+    void splitOnly( const String& propertyFilePath, const String& subpropertyPrefix );
+
+    /*
       Return the DnCExitCode of the DnCManager
     */
     DnCExitCode getExitCode() const;
@@ -100,6 +105,11 @@ private:
       and if necessary, create engines for workers
     */
     bool createEngines();
+
+    /*
+      Create the base engine from the network and property files.
+    */
+    void createBaseEngine();
 
     /*
       Divide up the input region and store them in subqueries
@@ -179,7 +189,7 @@ private:
     /*
       Set of subQueries to be solved by workers
     */
-    WorkerQueue *_workload;
+    WorkerQueue *_workload = nullptr;
 
     /*
       Whether the timeout has been reached

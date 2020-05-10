@@ -34,6 +34,9 @@ public:
         // Should DNC mode be on or off
         DNC_MODE,
 
+        // Are we just splitting the property?
+        SPLIT_ONLY,
+
         // Restore tree states in DnC mode
         RESTORE_TREE_STATES,
 
@@ -86,6 +89,7 @@ public:
 
         DIVIDE_STRATEGY,
         BIAS_STRATEGY,
+        SUBPROPERTY_PREFIX,
     };
 
     /*

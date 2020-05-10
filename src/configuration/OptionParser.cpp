@@ -48,6 +48,9 @@ void OptionParser::initialize()
         ( "dnc",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::DNC_MODE]) ),
           "Use the divide-and-conquer solving mode" )
+        ( "split-only",
+          boost::program_options::bool_switch( &((*_boolOptions)[Options::SPLIT_ONLY]) ),
+          "Only split the property" )
         ( "restore-tree-states",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::RESTORE_TREE_STATES]) ),
           "Restore tree states in dnc mode" )
@@ -78,6 +81,9 @@ void OptionParser::initialize()
         ( "bias-strategy",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::BIAS_STRATEGY]) ),
           "(DNC) Strategy for biasing the fix (centroid/sampling/random)" )
+        ( "subproperty-prefix",
+          boost::program_options::value<std::string>( &((*_stringOptions)[Options::SUBPROPERTY_PREFIX]) ),
+          "(Split only) Prefix of filenames to output subproperties to" )
         ( "num-workers",
           boost::program_options::value<int>( &((*_intOptions)[Options::NUM_WORKERS]) ),
           "(DNC) Number of workers" )
