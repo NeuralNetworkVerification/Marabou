@@ -22,11 +22,7 @@
 #include "Preprocessor.h"
 #include "MarabouError.h"
 #include "Statistics.h"
-#include "SymbolicBoundTightener.h"
 #include "Tightening.h"
-
-// TODO: get rid of this include
-#include "ReluConstraint.h"
 
 #ifdef _WIN32
 #undef INFINITE
@@ -69,7 +65,6 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     {
         continueTightening = processEquations();
         continueTightening = processConstraints() || continueTightening;
-
         if ( attemptVariableElimination )
             continueTightening = processIdenticalVariables() || continueTightening;
 
@@ -494,10 +489,45 @@ bool Preprocessor::processIdenticalVariables()
 
 void Preprocessor::collectFixedValues()
 {
+    // Compute all used variables:
+    //   1. Variables that appear in equations
+    //   2. Variables that participate in PL constraints
+    //   3. Variables that have been merged (and hence, previously
+    //      appeared in an equation)
+    Set<unsigned> usedVariables;
+    for ( const auto &equation : _preprocessed.getEquations() )
+        usedVariables += equation.getParticipatingVariables();
+    for ( const auto &constraint : _preprocessed.getPiecewiseLinearConstraints() )
+    {
+        for ( const auto &var : constraint->getParticipatingVariables() )
+            usedVariables.insert( var );
+    }
+    for ( const auto &merged : _mergedVariables )
+        usedVariables.insert( merged.first );
+
+    // Collect any variables with identical lower and upper bounds, or
+    // which are unused
 	for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
 	{
         if ( FloatUtils::areEqual( _preprocessed.getLowerBound( i ), _preprocessed.getUpperBound( i ) ) )
+        {
             _fixedVariables[i] = _preprocessed.getLowerBound( i );
+        }
+        else if ( !usedVariables.exists( i ) )
+        {
+            // If possible, choose a value that matches the debugging
+            // solution. Otherwise, pick the lower bound
+            if ( _preprocessed._debuggingSolution.exists( i ) &&
+                 _preprocessed._debuggingSolution[i] >= _preprocessed.getLowerBound( i ) &&
+                 _preprocessed._debuggingSolution[i] <= _preprocessed.getUpperBound( i ) )
+            {
+                _fixedVariables[i] = _preprocessed._debuggingSolution[i];
+            }
+            else
+            {
+                _fixedVariables[i] = _preprocessed.getLowerBound( i );
+            }
+        }
 	}
 }
 
@@ -554,6 +584,13 @@ void Preprocessor::eliminateVariables()
 
             _preprocessed._debuggingSolution.erase( i );
         }
+    }
+
+    // Inform the NLR about eliminated varibales
+    if ( _preprocessed._networkLevelReasoner )
+    {
+        for ( const auto &fixed : _fixedVariables )
+            _preprocessed._networkLevelReasoner->eliminateVariable( fixed.first, fixed.second );
     }
 
     // Compute the new variable indices, after the elimination of fixed variables
@@ -627,17 +664,6 @@ void Preprocessor::eliminateVariables()
 
         if ( (*constraint)->constraintObsolete() )
         {
-            if ( _preprocessed._sbt )
-            {
-                if ( !(*constraint)->supportsSymbolicBoundTightening() )
-                    throw MarabouError( MarabouError::SYMBOLIC_BOUND_TIGHTENER_UNSUPPORTED_CONSTRAINT_TYPE );
-
-                ReluConstraint *relu = (ReluConstraint *)(*constraint);
-                unsigned b = relu->getB();
-                SymbolicBoundTightener::NodeIndex nodeIndex = _preprocessed._sbt->nodeIndexFromB( b );
-                _preprocessed._sbt->setEliminatedRelu( nodeIndex._layer, nodeIndex._neuron, relu->getPhaseStatus() );
-            }
-
             if ( _statistics )
                 _statistics->ppIncNumConstraintsRemoved();
 
@@ -659,10 +685,6 @@ void Preprocessor::eliminateVariables()
                 constraint->updateVariableIndex( variable, _oldIndexToNewIndex.at( variable ) );
         }
 	}
-
-    // Let the SBT know of changes in indices and merged variables
-    if ( _preprocessed._sbt )
-        _preprocessed._sbt->updateVariableIndices( _oldIndexToNewIndex, _mergedVariables, _fixedVariables );
 
     // Let the NLR know of changes in indices and merged variables
     if ( _preprocessed._networkLevelReasoner )

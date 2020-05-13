@@ -88,7 +88,7 @@ MarabouCore.addReluConstraint(inputQuery, 3, 4)
 options = createOptions()
 vars1, stats1 = MarabouCore.solve(inputQuery, options, "")
 if len(vars1) > 0:
-    print("SAT")
+    print("sat")
     print(vars1)
 else:
-    print("UNSAT")
+    print("unsat")
