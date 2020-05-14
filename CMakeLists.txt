@@ -12,6 +12,11 @@ option(RUN_REGRESS_TEST "run regression tests on build" OFF)
 option(RUN_SYSTEM_TEST "run system tests on build" OFF)
 option(RUN_MEMORY_TEST "run cxxtest testing with ASAN ON" ON)
 
+option(USE_OPENBLAS "Do symbolic bound tighting using blast" ON)
+if (MSVC)
+    set(USE_OPENBLAS OFF)
+endif()
+
 set(DEFAULT_PYTHON_VERSION "3" CACHE STRING "Default Python version 2/3")
 set(PYTHON_VERSIONS_SUPPORTED 2 3)
 list(FIND PYTHON_VERSIONS_SUPPORTED ${DEFAULT_PYTHON_VERSION} index)
@@ -153,15 +158,19 @@ endif()
 set(LIBS_INCLUDES ${Boost_INCLUDE_DIRS})
 set(LIBS ${Boost_LIBRARIES})
 
-#OpenBLAS
-if(NOT EXISTS "${OPENBLAS_DIR}/installed/lib/libopenblas.a")
-    execute_process(COMMAND ${TOOLS_DIR}/get-openBLAS.sh)
-endif()
 
-add_library(${OPENBLAS_LIB} SHARED IMPORTED)
-set_target_properties(${OPENBLAS_LIB} PROPERTIES IMPORTED_LOCATION ${OPENBLAS_DIR}/installed/lib/libopenblas.a)
-list(APPEND LIBS ${OPENBLAS_LIB})
-target_include_directories(${OPENBLAS_LIB} INTERFACE ${OPENBLAS_DIR}/installed/include)
+if (${USE_OPENBLAS})
+    add_compile_definitions(USE_OPENBLAS)
+    #OpenBLAS
+    if(NOT EXISTS "${OPENBLAS_DIR}/installed/lib/libopenblas.a")
+        execute_process(COMMAND ${TOOLS_DIR}/get-openBLAS.sh)
+    endif()
+
+    add_library(${OPENBLAS_LIB} SHARED IMPORTED)
+    set_target_properties(${OPENBLAS_LIB} PROPERTIES IMPORTED_LOCATION ${OPENBLAS_DIR}/installed/lib/libopenblas.a)
+    list(APPEND LIBS ${OPENBLAS_LIB})
+    target_include_directories(${OPENBLAS_LIB} INTERFACE ${OPENBLAS_DIR}/installed/include)
+endif()
 
 # pthread
 set(THREADS_PREFER_PTHREAD_FLAG ON)
