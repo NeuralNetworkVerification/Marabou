@@ -38,7 +38,7 @@ def test_KJ_TaxiNet():
     Uses Transpose, Conv, Add, Relu, Cast, Reshape, 
     Matmul, and Identity layers
     """
-    filename =  "KJ_TaxiNet.onnx"
+    filename =  "KJ_TinyTaxiNet.onnx"
     evaluateFile(filename)
     
 def test_conv_mp1():
