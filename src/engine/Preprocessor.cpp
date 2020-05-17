@@ -908,9 +908,9 @@ bool Preprocessor::constructNetworkLevelReasoner()
 
                 Index index( currentLayerIndex, currentLayer.size() );
                 indexToNeuron[index] = neuronInfo;
-                currentLayer.append( *eqVars.begin() );
+                currentLayer.append( neuronInfo._weightedSumVariable );
 
-                variableToIndex[*eqVars.begin()] = index;
+                variableToIndex[neuronInfo._weightedSumVariable] = index;
             }
         }
 
