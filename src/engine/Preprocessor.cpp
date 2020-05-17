@@ -869,9 +869,9 @@ bool Preprocessor::constructNetworkLevelReasoner()
     // The input and output layer should be defined in the input query
     inputLayer = _preprocessed.getInputVariables();
     previousLayer = inputLayer;
-    unsigned numVariablesHandledSoFar = inputLayer.size();
-    outputLayer = _preprocessed.getOutputVariables();
     layerToLayerSize[0] = inputLayer.size();
+    unsigned numVariablesHandledSoFar = layerToLayerSize[0];
+    outputLayer = _preprocessed.getOutputVariables();
 
     // Store the input neurons in the topology
     unsigned count = 0;
@@ -901,7 +901,7 @@ bool Preprocessor::constructNetworkLevelReasoner()
 
             if ( eqVars.size() == 1 )
             {
-                // We have identified the weithed sum for a new neuron
+                // We have identified the weighted sum for a new neuron
                 NeuronInformation neuronInfo;
                 neuronInfo._weightedSumVariable = *eqVars.begin();
                 neuronInfo._weightedSumEquation = &eq;

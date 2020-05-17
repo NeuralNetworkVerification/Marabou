@@ -1224,10 +1224,7 @@ void NetworkLevelReasoner::dumpTopology() const
                     if ( FloatUtils::isZero( weight ) )
                         continue;
 
-                    if ( weight < 0 )
-                        printf( " - %.5lfx%u", -weight, _indexToActivationResultVariable[Index( i - 1, k )] );
-                    else
-                        printf( " + %.5lfx%u", weight, _indexToActivationResultVariable[Index( i - 1, k )] );
+                    printf( " %+.5lfx%u", -weight, _indexToActivationResultVariable[Index( i - 1, k )] );
                 }
 
                 double bias = _bias[Index( i, j )];
