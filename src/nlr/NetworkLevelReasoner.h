@@ -33,51 +33,29 @@ namespace NLR {
 class NetworkLevelReasoner : public Layer::LayerOwner
 {
 public:
-    NetworkLevelReasoner()
-    {
-    }
-
-    ~NetworkLevelReasoner()
-    {
-        for ( const auto &layer : _layerIndexToLayer )
-            delete layer.second;
-        _layerIndexToLayer.clear();
-    }
+    NetworkLevelReasoner();
+    ~NetworkLevelReasoner();
 
     static bool functionTypeSupported( PiecewiseLinearFunctionType type );
 
-    void addLayer( unsigned layerIndex, Layer::Type type, unsigned layerSize )
-    {
-        Layer *layer = new Layer( layerIndex, type, layerSize, this );
-        _layerIndexToLayer[layerIndex] = layer;
-    }
+    void addLayer( unsigned layerIndex, Layer::Type type, unsigned layerSize );
+    void addLayerDependency( unsigned sourceLayer, unsigned targetLayer );
+    void setWeight( unsigned sourceLayer,
+                    unsigned sourceNeuron,
+                    unsigned targetLayer,
+                    unsigned targetNeuron,
+                    double weight );
+    void setBias( unsigned layer, unsigned neuron, double bias );
+    void addActivationSource( unsigned sourceLayer,
+                              unsigned sourceNeuron,
+                              unsigned targetLeyer,
+                              unsigned targetNeuron );
+    const Layer *getLayer( unsigned index ) const;
 
-    Map<unsigned, Layer *> _layerIndexToLayer;
-
-    void addLayerDependency( unsigned sourceLayer, unsigned targetLayer )
-    {
-        _layerIndexToLayer[targetLayer]->addSourceLayer( sourceLayer, _layerIndexToLayer[sourceLayer]->getSize() );
-    }
-
-    void setWeight( unsigned sourceLayer, unsigned sourceNeuron, unsigned targetLayer, unsigned targetNeuron, double weight )
-    {
-        _layerIndexToLayer[targetLayer]->setWeight( sourceLayer, sourceNeuron, targetNeuron, weight );
-    }
-
-    void setBias( unsigned layer, unsigned neuron, double bias )
-    {
-        _layerIndexToLayer[layer]->setBias( neuron, bias );
-    }
-
-    void addActivationSource( unsigned sourceLayer, unsigned sourceNeuron, unsigned targetLeyer, unsigned targetNeuron )
-    {
-        _layerIndexToLayer[targetLeyer]->addActivationSource( sourceLayer, sourceNeuron, targetNeuron );
-    }
-
-    const Layer *getLayer( unsigned index ) const
-    {
-        return _layerIndexToLayer[index];
-    }
+    /*
+      Interface methods for performing operations on the network.
+    */
+    void evaluate( double *input , double *output );
 
     // /*
     //   A method that allocates all internal memory structures, based on
@@ -103,11 +81,6 @@ public:
     */
     // const Map<NeuronIndex, double> &getIndexToWeightedSumAssignment();
     // const Map<NeuronIndex, double> &getIndexToActivationResultAssignment();
-
-    /*
-      Interface methods for performing operations on the network.
-    */
-    void evaluate( double *input , double *output );
 
     /*
       Duplicate the reasoner
@@ -155,6 +128,9 @@ public:
     //   For debugging purposes: dump the network topology
     // */
     // void dumpTopology() const;
+
+private:
+    Map<unsigned, Layer *> _layerIndexToLayer;
 
 // private:
 //     unsigned _numberOfLayers;

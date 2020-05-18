@@ -24,6 +24,82 @@
 
 namespace NLR {
 
+NetworkLevelReasoner::NetworkLevelReasoner()
+{
+}
+
+~NetworkLevelReasoner::NetworkLevelReasoner()
+{
+    for ( const auto &layer : _layerIndexToLayer )
+        delete layer.second;
+    _layerIndexToLayer.clear();
+}
+
+bool NetworkLevelReasoner::functionTypeSupported( PiecewiseLinearFunctionType type )
+{
+    if ( type == PiecewiseLinearFunctionType::RELU )
+        return true;
+
+    if ( type == PiecewiseLinearFunctionType::ABSOLUTE_VALUE )
+        return true;
+
+    return false;
+}
+
+void NetworkLevelReasoner::addLayer( unsigned layerIndex, Layer::Type type, unsigned layerSize )
+{
+    Layer *layer = new Layer( layerIndex, type, layerSize, this );
+    _layerIndexToLayer[layerIndex] = layer;
+}
+
+
+void NetworkLevelReasoner::addLayerDependency( unsigned sourceLayer, unsigned targetLayer )
+{
+    _layerIndexToLayer[targetLayer]->addSourceLayer( sourceLayer, _layerIndexToLayer[sourceLayer]->getSize() );
+}
+
+void NetworkLevelReasoner::setWeight( unsigned sourceLayer,
+                                      unsigned sourceNeuron,
+                                      unsigned targetLayer,
+                                      unsigned targetNeuron,
+                                      double weight )
+{
+    _layerIndexToLayer[targetLayer]->setWeight
+        ( sourceLayer, sourceNeuron, targetNeuron, weight );
+}
+
+void NetworkLevelReasoner::setBias( unsigned layer, unsigned neuron, double bias )
+{
+    _layerIndexToLayer[layer]->setBias( neuron, bias );
+}
+
+void NetworkLevelReasoner::addActivationSource( unsigned sourceLayer,
+                                                unsigned sourceNeuron,
+                                                unsigned targetLeyer,
+                                                unsigned targetNeuron )
+{
+    _layerIndexToLayer[targetLeyer]->addActivationSource( sourceLayer, sourceNeuron, targetNeuron );
+}
+
+const Layer *NetworkLevelReasoner::getLayer( unsigned index ) const
+{
+    return _layerIndexToLayer[index];
+}
+
+void NetworkLevelReasoner::evaluate( double *input, double *output )
+{
+    _layerIndexToLayer[0]->setAssignment( input );
+    for ( unsigned i = 1; i < _layerIndexToLayer.size(); ++i )
+        _layerIndexToLayer[i]->computeAssignment();
+
+    const Layer *outputLayer = _layerIndexToLayer[_layerIndexToLayer.size() - 1];
+    memcpy( output,
+            outputLayer->getAssignment(),
+            sizeof(double) * outputLayer->getSize() );
+}
+
+
+
 // NetworkLevelReasoner::NetworkLevelReasoner()
 //     : _numberOfLayers( 0 )
 //     , _weights( NULL )
@@ -345,19 +421,6 @@ namespace NLR {
 //     _bias[NeuronIndex( layer, neuron )] = bias;
 // }
 
-void NetworkLevelReasoner::evaluate( double *input, double *output )
-{
-    printf( "Evaluate called" );
-
-    _layerIndexToLayer[0]->setAssignment( input );
-    for ( unsigned i = 1; i < _layerIndexToLayer.size(); ++i )
-        _layerIndexToLayer[i]->computeAssignment();
-
-    const Layer *outputLayer = _layerIndexToLayer[_layerIndexToLayer.size() - 1];
-    memcpy( output,
-            outputLayer->getAssignment(),
-            sizeof(double) * outputLayer->getSize() );
-}
 
 // void NetworkLevelReasoner::setWeightedSumVariable( unsigned layer, unsigned neuron, unsigned variable )
 // {
@@ -1128,16 +1191,6 @@ void NetworkLevelReasoner::evaluate( double *input, double *output )
 //         printf( "%s", message.ascii() );
 // }
 
-bool NetworkLevelReasoner::functionTypeSupported( PiecewiseLinearFunctionType type )
-{
-    if ( type == PiecewiseLinearFunctionType::RELU )
-        return true;
-
-    if ( type == PiecewiseLinearFunctionType::ABSOLUTE_VALUE )
-        return true;
-
-    return false;
-}
 
 // void NetworkLevelReasoner::dumpTopology() const
 // {
