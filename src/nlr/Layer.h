@@ -18,6 +18,7 @@
 
 #include "Debug.h"
 #include "FloatUtils.h"
+#include "MarabouError.h"
 
 namespace NLR {
 
@@ -29,6 +30,7 @@ public:
     public:
         virtual ~LayerOwner() {}
         virtual const Layer *getLayer( unsigned index ) const = 0;
+        virtual const ITableau *getTableau() const = 0;
     };
 
     enum Type {
@@ -55,12 +57,20 @@ public:
         , _layerOwner( layerOwner )
         , _bias( NULL )
         , _assignment( NULL )
+        , _lb( NULL )
+        , _ub( NULL )
     {
         if ( _type == WEIGHTED_SUM || _type == OUTPUT )
         {
             _bias = new double[size];
             std::fill_n( _bias, size, 0 );
         }
+
+        _lb = new double[size];
+        _ub = new double[size];
+
+        std::fill_n( _lb, size, 0 );
+        std::fill_n( _ub, size, 0 );
 
         _assignment = new double[size];
     }
@@ -82,8 +92,6 @@ public:
 
     void computeAssignment()
     {
-        printf( "Compute assignment called for layer %u\n", _layerIndex );
-
         ASSERT( _type != INPUT );
 
         if ( _type == WEIGHTED_SUM || _type == OUTPUT )
@@ -104,25 +112,48 @@ public:
                         _assignment[j] += ( sourceAssignment[i] * weights[i * _size + j] );
             }
         }
+
         else if ( _type == RELU )
         {
             for ( unsigned i = 0; i < _size; ++i )
             {
                 NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
-                double weightedSum = _layerOwner->getLayer( sourceIndex._layer )->getAssignment( sourceIndex._neuron );
+                double inputValue = _layerOwner->getLayer( sourceIndex._layer )->getAssignment( sourceIndex._neuron );
 
-                _assignment[i] = FloatUtils::max( weightedSum, 0 );
+                _assignment[i] = FloatUtils::max( inputValue, 0 );
             }
         }
-        else
+
+        else if ( _type == ABSOLUTE_VALUE )
         {
-            ASSERT( false );
+            for ( unsigned i = 0; i < _size; ++i )
+            {
+                NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
+                double inputValue = _layerOwner->getLayer( sourceIndex._layer )->getAssignment( sourceIndex._neuron );
+
+                _assignment[i] = FloatUtils::abs( inputValue );
+            }
         }
 
-        printf( "\tComputed the following assignment:\n" );
-        for ( unsigned i = 0; i < _size; ++i )
+        else if ( _type == MAX )
         {
-            printf( "\t\tx%u = %lf\n", i, _assignment[i] );
+            for ( unsigned i = 0; i < _size; ++i )
+            {
+                _assignment[i] = FloatUtils::negativeInfinity();
+
+                for ( const auto &input : _neuronToActivationSources[i] )
+                {
+                    double value = _layerOwner->getLayer( input._layer )->getAssignment( input._neuron );
+                    if ( value > _assignment[i] )
+                        _assignment[i] = value;
+                }
+            }
+        }
+
+        else
+        {
+            printf( "Error! Neuron type %u unsupported\n", _type );
+            throw MarabouError( MarabouError::NETWORK_LEVEL_REASONER_ACTIVATION_NOT_SUPPORTED );
         }
     }
 
@@ -169,6 +200,27 @@ public:
         return _size;
     }
 
+    void setNeuronVariable( unsigned neuron, unsigned variable )
+    {
+        _neuronToVariable[neuron] = variable;
+    }
+
+    void obtainCurrentBounds()
+    {
+        for ( unsigned i = 0; i < _size; ++i )
+        {
+            if ( _neuronToVariable.exists( i ) )
+            {
+                unsigned variable = _neuronToVariable[i];
+                _lb[i] = _layerOwner->getTableau()->getLowerBound( variable );
+                _ub[i] = _layerOwner->getTableau()->getUpperBound( variable );
+            }
+            else
+            {
+                // TODO: handle eliminated activation varibales
+            }
+        }
+    }
 
 private:
     unsigned _layerIndex;
@@ -183,7 +235,12 @@ private:
 
     double *_assignment;
 
+    double *_lb;
+    double *_ub;
+
     Map<unsigned, List<NeuronIndex>> _neuronToActivationSources;
+
+    Map<unsigned, unsigned> _neuronToVariable;
 
     void freeMemoryIfNeeded()
     {
@@ -201,6 +258,18 @@ private:
         {
             delete[] _assignment;
             _assignment = NULL;
+        }
+
+        if ( _lb )
+        {
+            delete[] _lb;
+            _lb = NULL;
+        }
+
+        if ( _ub )
+        {
+            delete[] _ub;
+            _ub = NULL;
         }
     }
 };

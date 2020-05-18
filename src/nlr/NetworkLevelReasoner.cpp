@@ -25,6 +25,7 @@
 namespace NLR {
 
 NetworkLevelReasoner::NetworkLevelReasoner()
+    : _tableau( NULL )
 {
 }
 
@@ -51,7 +52,6 @@ void NetworkLevelReasoner::addLayer( unsigned layerIndex, Layer::Type type, unsi
     Layer *layer = new Layer( layerIndex, type, layerSize, this );
     _layerIndexToLayer[layerIndex] = layer;
 }
-
 
 void NetworkLevelReasoner::addLayerDependency( unsigned sourceLayer, unsigned targetLayer )
 {
@@ -97,6 +97,12 @@ void NetworkLevelReasoner::evaluate( double *input, double *output )
             outputLayer->getAssignment(),
             sizeof(double) * outputLayer->getSize() );
 }
+
+void NetworkLevelReasoner::setNeuronVariable( NeuronIndex index, unsigned variable )
+{
+    _layerIndexToLayer[index._layer]->setNeuronVariable( index._neuron, variable );
+}
+
 
 
 
@@ -591,53 +597,22 @@ void NetworkLevelReasoner::evaluate( double *input, double *output )
 //     }
 // }
 
-// void NetworkLevelReasoner::obtainCurrentBounds()
-// {
-//     ASSERT( _tableau );
+void NetworkLevelReasoner::obtainCurrentBounds()
+{
+    ASSERT( _tableau );
+    for ( const auto &layer : _layerIndexToLayer )
+        layer.second->obtainCurrentBounds();
+}
 
-//     for ( unsigned i = 0; i < _numberOfLayers - 1; ++i )
-//     {
-//         for ( unsigned j = 0; j < _layerSizes[i]; ++j )
-//         {
-//             if ( _indexToActivationResultVariable.exists( NeuronIndex( i, j ) ) )
-//             {
-//                 unsigned varIndex = _indexToActivationResultVariable[NeuronIndex( i, j )];
-//                 _lowerBoundsActivations[i][j] = _tableau->getLowerBound( varIndex );
-//                 _upperBoundsActivations[i][j] = _tableau->getUpperBound( varIndex );
-//             }
-//             else
-//             {
-//                 ASSERT( _eliminatedActivationResultVariables.exists( NeuronIndex( i, j ) ) );
-//                 _lowerBoundsActivations[i][j] = _eliminatedActivationResultVariables[NeuronIndex( i, j )];
-//                 _upperBoundsActivations[i][j] = _eliminatedActivationResultVariables[NeuronIndex( i, j )];
-//             }
-//         }
-//     }
+void NetworkLevelReasoner::setTableau( const ITableau *tableau )
+{
+    _tableau = tableau;
+}
 
-//     for ( unsigned i = 1; i < _numberOfLayers; ++i )
-//     {
-//         for ( unsigned j = 0; j < _layerSizes[i]; ++j )
-//         {
-//             if ( _indexToWeightedSumVariable.exists( NeuronIndex( i, j ) ) )
-//             {
-//                 unsigned varIndex = _indexToWeightedSumVariable[NeuronIndex( i, j )];
-//                 _lowerBoundsWeightedSums[i][j] = _tableau->getLowerBound( varIndex );
-//                 _upperBoundsWeightedSums[i][j] = _tableau->getUpperBound( varIndex );
-//             }
-//             else
-//             {
-//                 ASSERT( _eliminatedWeightedSumVariables.exists( NeuronIndex( i, j ) ) );
-//                 _lowerBoundsWeightedSums[i][j] = _eliminatedWeightedSumVariables[NeuronIndex( i, j )];
-//                 _upperBoundsWeightedSums[i][j] = _eliminatedWeightedSumVariables[NeuronIndex( i, j )];
-//             }
-//         }
-//     }
-// }
-
-// void NetworkLevelReasoner::setTableau( const ITableau *tableau )
-// {
-//     _tableau = tableau;
-// }
+const ITableau *NetworkLevelReasoner::getTableau() const
+{
+    return _tableau;
+}
 
 // void NetworkLevelReasoner::intervalArithmeticBoundPropagation()
 // {

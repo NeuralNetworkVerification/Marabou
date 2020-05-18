@@ -57,12 +57,46 @@ public:
     */
     void evaluate( double *input , double *output );
 
+    void setNeuronVariable( NeuronIndex index, unsigned variable );
+
+    /*
+      Bound propagation methods:
+
+        - obtainCurrentBounds: obtain the current bounds on all variables
+          from the tableau.
+
+        - Interval arithmetic: compute the bounds of a layer's neurons
+          based on the concrete bounds of the previous layer.
+
+        - Symbolic: for each neuron in the network, we compute lower
+          and upper bounds on the lower and upper bounds of the
+          neuron. This bounds are expressed as linear combinations of
+          the input neurons. Sometimes these bounds let us simplify
+          expressions and obtain tighter bounds (e.g., if the upper
+          bound on the upper bound of a ReLU node is negative, that
+          ReLU is inactive and its output can be set to 0.
+
+          Initialize should be called once, before the bound
+          propagation is performed.
+    */
+
+    void setTableau( const ITableau *tableau );
+    const ITableau *getTableau() const;
+
+    void obtainCurrentBounds();
+    // void intervalArithmeticBoundPropagation();
+    // void symbolicBoundPropagation();
+
+    // void getConstraintTightenings( List<Tightening> &tightenings ) const;
+
     // /*
-    //   A method that allocates all internal memory structures, based on
-    //   the network's topology. Should be invoked after the layer sizes
-    //   have been provided.
+    //   For debugging purposes: dump the network topology
     // */
-    // void allocateMemoryByTopology();
+    // void dumpTopology() const;
+
+
+
+
 
     /*
       Mapping from node indices to the variables representing their
@@ -96,39 +130,6 @@ public:
     // void updateVariableIndices( const Map<unsigned, unsigned> &oldIndexToNewIndex,
     //                             const Map<unsigned, unsigned> &mergedVariables );
 
-    /*
-      Bound propagation methods:
-
-        - obtainCurrentBounds: obtain the current bounds on all variables
-          from the tableau.
-
-        - Interval arithmetic: compute the bounds of a layer's neurons
-          based on the concrete bounds of the previous layer.
-
-        - Symbolic: for each neuron in the network, we compute lower
-          and upper bounds on the lower and upper bounds of the
-          neuron. This bounds are expressed as linear combinations of
-          the input neurons. Sometimes these bounds let us simplify
-          expressions and obtain tighter bounds (e.g., if the upper
-          bound on the upper bound of a ReLU node is negative, that
-          ReLU is inactive and its output can be set to 0.
-
-          Initialize should be called once, before the bound
-          propagation is performed.
-    */
-
-    // void setTableau( const ITableau *tableau );
-    // void obtainCurrentBounds();
-    // void intervalArithmeticBoundPropagation();
-    // void symbolicBoundPropagation();
-
-    // void getConstraintTightenings( List<Tightening> &tightenings ) const;
-
-    // /*
-    //   For debugging purposes: dump the network topology
-    // */
-    // void dumpTopology() const;
-
 private:
     Map<unsigned, Layer *> _layerIndexToLayer;
 
@@ -147,7 +148,7 @@ private:
 //     double *_work1;
 //     double *_work2;
 
-//     const ITableau *_tableau;
+    const ITableau *_tableau;
 
 //     void freeMemoryIfNeeded();
 
