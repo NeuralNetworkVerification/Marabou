@@ -139,6 +139,7 @@ struct MarabouOptions {
         , _maxDepth( 4 )
 	, _maxTreeDepth( 10 )  
 	, _splitThreshold( 20 )
+      , _preprocessingTime( 2 )
     {};
 
     unsigned _numWorkers;
@@ -157,7 +158,8 @@ struct MarabouOptions {
     std::string _biasStrategy;
     unsigned _maxDepth;
     unsigned _maxTreeDepth;
-    unsigned _splitThreshold;
+    int _splitThreshold;
+  unsigned _preprocessingTime;
 };
 
 BiasStrategy setBiasStrategyFromOptions( const String strategy )
@@ -218,7 +220,9 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
         else
             initialTimeout = static_cast<unsigned>(initialTimeoutInt);
 	
-	unsigned splitThreshold = options._splitThreshold;
+	int splitThreshold = options._splitThreshold;
+	if (splitThreshold == -1)
+	  splitThreshold = (inputQuery.getInputVariables().size() < 10) ? 1 : 20;
 
         DivideStrategy divideStrategy = DivideStrategy::SplitRelu;
         if ( options._divideStrategy == "auto" )
@@ -247,9 +251,10 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
 
         if ( lookAheadPreprocessing )
         {
+            unsigned preprocessingTime = options._preprocessingTime;
             struct timespec start = TimeUtils::sampleMicro();
             auto lookAheadPreprocessor = new LookAheadPreprocessor
-	      ( numWorkers, *(engine.getInputQuery()), splitThreshold );
+	      ( numWorkers, *(engine.getInputQuery()), splitThreshold, preprocessingTime );
 	    List<unsigned> maxTimes;
             bool feasible = lookAheadPreprocessor->run( idToPhase, maxTimes );
             struct timespec end = TimeUtils::sampleMicro();
@@ -409,7 +414,8 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_biasStrategy", &MarabouOptions::_biasStrategy)
         .def_readwrite("_maxDepth", &MarabouOptions::_maxDepth)
         .def_readwrite("_maxTreeDepth", &MarabouOptions::_maxTreeDepth )
-        .def_readwrite("_splitThreshold", &MarabouOptions::_splitThreshold);
+        .def_readwrite("_splitThreshold", &MarabouOptions::_splitThreshold)
+        .def_readwrite("_preprocessingTime", &MarabouOptions::_preprocessingTime);
     py::class_<SymbolicBoundTightener, std::unique_ptr<SymbolicBoundTightener,py::nodelete>>(m, "SymbolicBoundTightener")
         .def(py::init())
         .def("setNumberOfLayers", &SymbolicBoundTightener::setNumberOfLayers)
