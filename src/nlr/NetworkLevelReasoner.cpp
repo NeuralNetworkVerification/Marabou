@@ -324,7 +324,7 @@ void NetworkLevelReasoner::allocateMemoryByTopology()
 
 void NetworkLevelReasoner::setNeuronActivationFunction( unsigned layer, unsigned neuron, PiecewiseLinearFunctionType activationFuction )
 {
-    _neuronToActivationFunction[Index( layer, neuron )] = activationFuction;
+    _neuronToActivationFunction[NeuronIndex( layer, neuron )] = activationFuction;
 }
 
 void NetworkLevelReasoner::setWeight( unsigned sourceLayer, unsigned sourceNeuron, unsigned targetNeuron, double weight )
@@ -342,7 +342,7 @@ void NetworkLevelReasoner::setWeight( unsigned sourceLayer, unsigned sourceNeuro
 
 void NetworkLevelReasoner::setBias( unsigned layer, unsigned neuron, double bias )
 {
-    _bias[Index( layer, neuron )] = bias;
+    _bias[NeuronIndex( layer, neuron )] = bias;
 }
 
 void NetworkLevelReasoner::evaluate( double *input, double *output )
@@ -357,7 +357,7 @@ void NetworkLevelReasoner::evaluate( double *input, double *output )
 
         for ( unsigned targetNeuron = 0; targetNeuron < targetLayerSize; ++targetNeuron )
         {
-            Index index( targetLayer, targetNeuron );
+            NeuronIndex index( targetLayer, targetNeuron );
             _work2[targetNeuron] = _bias.exists( index ) ? _bias[index] : 0;
 
             for ( unsigned sourceNeuron = 0; sourceNeuron < sourceLayerSize; ++sourceNeuron )
@@ -405,13 +405,13 @@ void NetworkLevelReasoner::evaluate( double *input, double *output )
 
 void NetworkLevelReasoner::setWeightedSumVariable( unsigned layer, unsigned neuron, unsigned variable )
 {
-    _indexToWeightedSumVariable[Index( layer, neuron )] = variable;
-    _weightedSumVariableToIndex[variable] = Index( layer, neuron );
+    _indexToWeightedSumVariable[NeuronIndex( layer, neuron )] = variable;
+    _weightedSumVariableToIndex[variable] = NeuronIndex( layer, neuron );
 }
 
 unsigned NetworkLevelReasoner::getWeightedSumVariable( unsigned layer, unsigned neuron ) const
 {
-    Index index( layer, neuron );
+    NeuronIndex index( layer, neuron );
     if ( !_indexToWeightedSumVariable.exists( index ) )
         throw MarabouError( MarabouError::INVALID_WEIGHTED_SUM_INDEX, Stringf( "weighted sum: <%u,%u>", layer, neuron ).ascii() );
 
@@ -420,13 +420,13 @@ unsigned NetworkLevelReasoner::getWeightedSumVariable( unsigned layer, unsigned 
 
 void NetworkLevelReasoner::setActivationResultVariable( unsigned layer, unsigned neuron, unsigned variable )
 {
-    _indexToActivationResultVariable[Index( layer, neuron )] = variable;
-    _activationResultVariableToIndex[variable] = Index( layer, neuron );
+    _indexToActivationResultVariable[NeuronIndex( layer, neuron )] = variable;
+    _activationResultVariableToIndex[variable] = NeuronIndex( layer, neuron );
 }
 
 unsigned NetworkLevelReasoner::getActivationResultVariable( unsigned layer, unsigned neuron ) const
 {
-    Index index( layer, neuron );
+    NeuronIndex index( layer, neuron );
     if ( !_indexToActivationResultVariable.exists( index ) )
         throw MarabouError( MarabouError::INVALID_WEIGHTED_SUM_INDEX, Stringf( "activation result: <%u,%u>", layer, neuron ).ascii() );
 
@@ -465,22 +465,22 @@ void NetworkLevelReasoner::storeIntoOther( NetworkLevelReasoner &other ) const
     other._eliminatedActivationResultVariables = _eliminatedActivationResultVariables;
 }
 
-const Map<NetworkLevelReasoner::Index, unsigned> &NetworkLevelReasoner::getIndexToWeightedSumVariable()
+const Map<NeuronIndex, unsigned> &NetworkLevelReasoner::getIndexToWeightedSumVariable()
 {
     return _indexToWeightedSumVariable;
 }
 
-const Map<NetworkLevelReasoner::Index, unsigned> &NetworkLevelReasoner::getIndexToActivationResultVariable()
+const Map<NeuronIndex, unsigned> &NetworkLevelReasoner::getIndexToActivationResultVariable()
 {
     return _indexToActivationResultVariable;
 }
 
-const Map<NetworkLevelReasoner::Index, double> &NetworkLevelReasoner::getIndexToWeightedSumAssignment()
+const Map<NeuronIndex, double> &NetworkLevelReasoner::getIndexToWeightedSumAssignment()
 {
     return _indexToWeightedSumAssignment;
 }
 
-const Map<NetworkLevelReasoner::Index, double> &NetworkLevelReasoner::getIndexToActivationResultAssignment()
+const Map<NeuronIndex, double> &NetworkLevelReasoner::getIndexToActivationResultAssignment()
 {
     return _indexToActivationResultAssignment;
 }
@@ -580,17 +580,17 @@ void NetworkLevelReasoner::obtainCurrentBounds()
     {
         for ( unsigned j = 0; j < _layerSizes[i]; ++j )
         {
-            if ( _indexToActivationResultVariable.exists( Index( i, j ) ) )
+            if ( _indexToActivationResultVariable.exists( NeuronIndex( i, j ) ) )
             {
-                unsigned varIndex = _indexToActivationResultVariable[Index( i, j )];
+                unsigned varIndex = _indexToActivationResultVariable[NeuronIndex( i, j )];
                 _lowerBoundsActivations[i][j] = _tableau->getLowerBound( varIndex );
                 _upperBoundsActivations[i][j] = _tableau->getUpperBound( varIndex );
             }
             else
             {
-                ASSERT( _eliminatedActivationResultVariables.exists( Index( i, j ) ) );
-                _lowerBoundsActivations[i][j] = _eliminatedActivationResultVariables[Index( i, j )];
-                _upperBoundsActivations[i][j] = _eliminatedActivationResultVariables[Index( i, j )];
+                ASSERT( _eliminatedActivationResultVariables.exists( NeuronIndex( i, j ) ) );
+                _lowerBoundsActivations[i][j] = _eliminatedActivationResultVariables[NeuronIndex( i, j )];
+                _upperBoundsActivations[i][j] = _eliminatedActivationResultVariables[NeuronIndex( i, j )];
             }
         }
     }
@@ -599,17 +599,17 @@ void NetworkLevelReasoner::obtainCurrentBounds()
     {
         for ( unsigned j = 0; j < _layerSizes[i]; ++j )
         {
-            if ( _indexToWeightedSumVariable.exists( Index( i, j ) ) )
+            if ( _indexToWeightedSumVariable.exists( NeuronIndex( i, j ) ) )
             {
-                unsigned varIndex = _indexToWeightedSumVariable[Index( i, j )];
+                unsigned varIndex = _indexToWeightedSumVariable[NeuronIndex( i, j )];
                 _lowerBoundsWeightedSums[i][j] = _tableau->getLowerBound( varIndex );
                 _upperBoundsWeightedSums[i][j] = _tableau->getUpperBound( varIndex );
             }
             else
             {
-                ASSERT( _eliminatedWeightedSumVariables.exists( Index( i, j ) ) );
-                _lowerBoundsWeightedSums[i][j] = _eliminatedWeightedSumVariables[Index( i, j )];
-                _upperBoundsWeightedSums[i][j] = _eliminatedWeightedSumVariables[Index( i, j )];
+                ASSERT( _eliminatedWeightedSumVariables.exists( NeuronIndex( i, j ) ) );
+                _lowerBoundsWeightedSums[i][j] = _eliminatedWeightedSumVariables[NeuronIndex( i, j )];
+                _upperBoundsWeightedSums[i][j] = _eliminatedWeightedSumVariables[NeuronIndex( i, j )];
             }
         }
     }
@@ -626,7 +626,7 @@ void NetworkLevelReasoner::intervalArithmeticBoundPropagation()
     {
         for ( unsigned j = 0; j < _layerSizes[i]; ++j )
         {
-            Index index( i, j );
+            NeuronIndex index( i, j );
             double lb = _bias.exists( index ) ? _bias[index] : 0;
             double ub = _bias.exists( index ) ? _bias[index] : 0;
 
@@ -780,8 +780,8 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
         */
         for ( unsigned j = 0; j < currentLayerSize; ++j )
         {
-            _currentLayerLowerBias[j] = _bias[Index( currentLayer, j )];
-            _currentLayerUpperBias[j] = _bias[Index( currentLayer, j )];
+            _currentLayerLowerBias[j] = _bias[NeuronIndex( currentLayer, j )];
+            _currentLayerUpperBias[j] = _bias[NeuronIndex( currentLayer, j )];
 
             // Add the weighted bias from the previous layer
             for ( unsigned k = 0; k < previousLayerSize; ++k )
@@ -874,7 +874,7 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
             if ( currentLayer < _numberOfLayers - 1 )
             {
                 // Propagate according to the specific activation function
-                Index index( currentLayer, i );
+                NeuronIndex index( currentLayer, i );
                 ASSERT( _neuronToActivationFunction.exists( index ) );
 
                 switch ( _neuronToActivationFunction[index] )
@@ -908,7 +908,7 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
     }
 }
 
-void NetworkLevelReasoner::reluSymbolicPropagation( const Index &index, double &lbLb, double &lbUb, double &ubLb, double &ubUb )
+void NetworkLevelReasoner::reluSymbolicPropagation( const NeuronIndex &index, double &lbLb, double &lbUb, double &ubLb, double &ubUb )
 {
     /*
       There are two ways we can determine that a ReLU has become fixed:
@@ -1013,7 +1013,7 @@ void NetworkLevelReasoner::reluSymbolicPropagation( const Index &index, double &
         lbLb = 0;
 }
 
-void NetworkLevelReasoner::absoluteValueSymbolicPropagation( const Index &index, double &lbLb, double &lbUb, double &ubLb, double &ubUb )
+void NetworkLevelReasoner::absoluteValueSymbolicPropagation( const NeuronIndex &index, double &lbLb, double &lbUb, double &ubLb, double &ubUb )
 {
     /*
       There are two ways we can determine that an AbsoluteValue has become fixed:
@@ -1112,7 +1112,7 @@ void NetworkLevelReasoner::getConstraintTightenings( List<Tightening> &tightenin
     {
         for ( unsigned j = 0; j < _layerSizes[i]; ++j )
         {
-            Index index( i, j );
+            NeuronIndex index( i, j );
 
             // Weighted sums
             if ( _indexToWeightedSumVariable.exists( index ) )
@@ -1147,7 +1147,7 @@ void NetworkLevelReasoner::eliminateVariable( unsigned variable, double value )
 {
     if ( _weightedSumVariableToIndex.exists( variable ) )
     {
-        Index index = _weightedSumVariableToIndex[variable];
+        NeuronIndex index = _weightedSumVariableToIndex[variable];
 
         _indexToWeightedSumVariable.erase( index );
         _weightedSumVariableToIndex.erase( variable );
@@ -1157,7 +1157,7 @@ void NetworkLevelReasoner::eliminateVariable( unsigned variable, double value )
 
     if ( _activationResultVariableToIndex.exists( variable ) )
     {
-        Index index = _activationResultVariableToIndex[variable];
+        NeuronIndex index = _activationResultVariableToIndex[variable];
 
         _indexToActivationResultVariable.erase( index );
         _activationResultVariableToIndex.erase( variable );
@@ -1197,7 +1197,7 @@ void NetworkLevelReasoner::dumpTopology() const
         for ( unsigned j = 0; j < layerSize; ++j )
         {
             printf( "\t\t" );
-            Index index( i, j );
+            NeuronIndex index( i, j );
             if ( _indexToWeightedSumVariable.exists( index ) )
                 printf( "%4u ", _indexToWeightedSumVariable[index] );
             else
@@ -1234,17 +1234,17 @@ void NetworkLevelReasoner::dumpTopology() const
             printf( "\n\tEquations:\n" );
             for ( unsigned j = 0; j < layerSize; ++j )
             {
-                printf( "\t\tx%u = ", _indexToWeightedSumVariable[Index( i, j )]);
+                printf( "\t\tx%u = ", _indexToWeightedSumVariable[NeuronIndex( i, j )]);
                 for ( unsigned k = 0; k < _layerSizes[i-1]; ++k )
                 {
                     double weight = _weights[i-1][k * layerSize + j];
                     if ( FloatUtils::isZero( weight ) )
                         continue;
 
-                    printf( " %+.5lfx%u", -weight, _indexToActivationResultVariable[Index( i - 1, k )] );
+                    printf( " %+.5lfx%u", -weight, _indexToActivationResultVariable[NeuronIndex( i - 1, k )] );
                 }
 
-                double bias = _bias[Index( i, j )];
+                double bias = _bias[NeuronIndex( i, j )];
                 if ( bias > 0 )
                     printf( " + %.2lf", bias );
                 else
