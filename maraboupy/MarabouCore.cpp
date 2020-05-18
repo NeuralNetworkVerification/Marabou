@@ -177,7 +177,7 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
             {
                 retStats = Statistics();
                 retStats.timeout();
-                return std::make_pair( ret, Statistics() );
+                return std::make_pair( ret, retStats );
             }
             default:
                 return std::make_pair( ret, Statistics() ); // TODO: meaningful DnCStatistics
