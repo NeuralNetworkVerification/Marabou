@@ -28,7 +28,7 @@ NetworkLevelReasoner::NetworkLevelReasoner()
 {
 }
 
-~NetworkLevelReasoner::NetworkLevelReasoner()
+NetworkLevelReasoner::~NetworkLevelReasoner()
 {
     for ( const auto &layer : _layerIndexToLayer )
         delete layer.second;
