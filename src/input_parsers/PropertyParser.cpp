@@ -142,7 +142,7 @@ void PropertyParser::processSingleLine( const String &line, InputQuery &inputQue
             ++subToken;
             unsigned nodeIndex = atoi( subToken->ascii() );
 
-            NetworkLevelReasoner *nlr = inputQuery.getNetworkLevelReasoner();
+            NLR::NetworkLevelReasoner *nlr = inputQuery.getNetworkLevelReasoner();
             if ( !nlr )
                 throw InputParserError( InputParserError::NETWORK_LEVEL_REASONING_DISABLED );
 

@@ -22,6 +22,8 @@
 #include "ReluConstraint.h"
 #include <cstring>
 
+namespace NLR {
+
 NetworkLevelReasoner::NetworkLevelReasoner()
     : _numberOfLayers( 0 )
     , _weights( NULL )
@@ -1253,6 +1255,8 @@ void NetworkLevelReasoner::dumpTopology() const
     }
 
 }
+
+} // namespace NLR
 
 //
 // Local Variables:

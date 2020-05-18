@@ -21,6 +21,8 @@
 #include "PiecewiseLinearFunctionType.h"
 #include "Tightening.h"
 
+namespace NLR {
+
 /*
   A class for performing operations that require knowledge of network
   level structure and topology.
@@ -214,6 +216,8 @@ private:
 
     static void log( const String &message );
 };
+
+} // namespace NLR
 
 #endif // __NetworkLevelReasoner_h__
 

@@ -124,8 +124,8 @@ public:
     /*
       Include a network level reasoner in the query
     */
-    void setNetworkLevelReasoner( NetworkLevelReasoner *nlr );
-    NetworkLevelReasoner *getNetworkLevelReasoner() const;
+    void setNetworkLevelReasoner( NLR::NetworkLevelReasoner *nlr );
+    NLR::NetworkLevelReasoner *getNetworkLevelReasoner() const;
 
 private:
     unsigned _numberOfVariables;
@@ -156,7 +156,7 @@ public:
       and can be used for various operations such as network
       evaluation of topology-based bound tightening.
      */
-    NetworkLevelReasoner *_networkLevelReasoner;
+    NLR::NetworkLevelReasoner *_networkLevelReasoner;
 };
 
 #endif // __InputQuery_h__

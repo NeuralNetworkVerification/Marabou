@@ -736,7 +736,7 @@ public:
         InputQuery processed = Preprocessor().preprocess( inputQuery );
         TS_ASSERT( processed._networkLevelReasoner );
 
-        NetworkLevelReasoner *nlr = processed._networkLevelReasoner;
+        NLR::NetworkLevelReasoner *nlr = processed._networkLevelReasoner;
 
         double inputs1[2] = { 1, -2 };
         double inputs2[2] = { -4, 3 };

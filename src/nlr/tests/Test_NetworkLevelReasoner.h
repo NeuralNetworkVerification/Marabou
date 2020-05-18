@@ -16,7 +16,7 @@
 #include <cxxtest/TestSuite.h>
 
 #include "FloatUtils.h"
-#include "MockTableau.h"
+#include "../../engine/tests/MockTableau.h" // TODO: fix this
 #include "NetworkLevelReasoner.h"
 #include "Tightening.h"
 
@@ -40,7 +40,7 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete mock );
     }
 
-    void populateNetwork( NetworkLevelReasoner &nlr )
+    void populateNetwork( NLR::NetworkLevelReasoner &nlr )
     {
         /*
                 a
@@ -110,7 +110,7 @@ public:
 
     void test_evaluate_relus()
     {
-        NetworkLevelReasoner nlr;
+        NLR::NetworkLevelReasoner nlr;
 
         populateNetwork( nlr );
 
@@ -152,7 +152,7 @@ public:
 
     void test_evaluate_relus_and_abs()
     {
-        NetworkLevelReasoner nlr;
+        NLR::NetworkLevelReasoner nlr;
 
         populateNetwork( nlr );
 
@@ -185,11 +185,11 @@ public:
 
     void test_store_into_other()
     {
-        NetworkLevelReasoner nlr;
+        NLR::NetworkLevelReasoner nlr;
 
         populateNetwork( nlr );
 
-        NetworkLevelReasoner nlr2;
+        NLR::NetworkLevelReasoner nlr2;
 
         TS_ASSERT_THROWS_NOTHING( nlr.storeIntoOther( nlr2 ) );
 
@@ -232,7 +232,7 @@ public:
 
     void test_interval_arithmetic_bound_propagation_relu_constraints()
     {
-        NetworkLevelReasoner nlr;
+        NLR::NetworkLevelReasoner nlr;
         populateNetwork( nlr );
 
         MockTableau tableau;
@@ -364,7 +364,7 @@ public:
 
     void test_interval_arithmetic_bound_propagation_abs_constraints()
     {
-        NetworkLevelReasoner nlr;
+        NLR::NetworkLevelReasoner nlr;
         populateNetwork( nlr );
 
         nlr.setNeuronActivationFunction( 1, 0, PiecewiseLinearFunctionType::ABSOLUTE_VALUE );
@@ -501,7 +501,7 @@ public:
         TS_ASSERT_EQUALS( expectedBounds2, bounds );
     }
 
-    void populateNetworkSBT( NetworkLevelReasoner &nlr, MockTableau &tableau )
+    void populateNetworkSBT( NLR::NetworkLevelReasoner &nlr, MockTableau &tableau )
     {
         /*
               2      R       1
@@ -566,7 +566,7 @@ public:
 
     void test_sbt_relus_all_active()
     {
-        NetworkLevelReasoner nlr;
+        NLR::NetworkLevelReasoner nlr;
         MockTableau tableau;
         nlr.setTableau( &tableau );
         populateNetworkSBT( nlr, tableau );
@@ -633,7 +633,7 @@ public:
 
     void test_sbt_relus_active_and_inactive()
     {
-        NetworkLevelReasoner nlr;
+        NLR::NetworkLevelReasoner nlr;
         MockTableau tableau;
         nlr.setTableau( &tableau );
         populateNetworkSBT( nlr, tableau );
@@ -704,7 +704,7 @@ public:
 
     void test_sbt_relus_active_and_not_fixed()
     {
-        NetworkLevelReasoner nlr;
+        NLR::NetworkLevelReasoner nlr;
         MockTableau tableau;
         nlr.setTableau( &tableau );
         populateNetworkSBT( nlr, tableau );
@@ -779,7 +779,7 @@ public:
 
     void test_sbt_relus_active_and_externally_fixed()
     {
-        NetworkLevelReasoner nlr;
+        NLR::NetworkLevelReasoner nlr;
         MockTableau tableau;
         nlr.setTableau( &tableau );
         populateNetworkSBT( nlr, tableau );
@@ -853,7 +853,7 @@ public:
 
     void test_sbt_abs_all_positive()
     {
-        NetworkLevelReasoner nlr;
+        NLR::NetworkLevelReasoner nlr;
         MockTableau tableau;
         nlr.setTableau( &tableau );
         populateNetworkSBT( nlr, tableau );
@@ -923,7 +923,7 @@ public:
 
     void test_sbt_abs_positive_and_negative()
     {
-        NetworkLevelReasoner nlr;
+        NLR::NetworkLevelReasoner nlr;
         MockTableau tableau;
         nlr.setTableau( &tableau );
         populateNetworkSBT( nlr, tableau );
@@ -997,7 +997,7 @@ public:
 
     void test_sbt_absolute_values_positive_and_not_fixed()
     {
-        NetworkLevelReasoner nlr;
+        NLR::NetworkLevelReasoner nlr;
         MockTableau tableau;
         nlr.setTableau( &tableau );
         populateNetworkSBT( nlr, tableau );
@@ -1074,7 +1074,7 @@ public:
 
     void test_sbt_absolute_values_active_and_externally_fixed()
     {
-        NetworkLevelReasoner nlr;
+        NLR::NetworkLevelReasoner nlr;
         MockTableau tableau;
         nlr.setTableau( &tableau );
         populateNetworkSBT( nlr, tableau );
@@ -1151,11 +1151,3 @@ public:
             TS_ASSERT( expectedBounds.exists( bound ) );
     }
 };
-
-//
-// Local Variables:
-// compile-command: "make -C ../../.. "
-// tags-file-name: "../../../TAGS"
-// c-basic-offset: 4
-// End:
-//

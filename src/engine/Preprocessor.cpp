@@ -856,7 +856,7 @@ bool Preprocessor::constructNetworkLevelReasoner()
     // If the activation functions are not yet supported by the NLR,
     // abort
     for ( const auto constraint : plConstraints )
-        if ( !NetworkLevelReasoner::functionTypeSupported( constraint->getType() ) )
+        if ( !NLR::NetworkLevelReasoner::functionTypeSupported( constraint->getType() ) )
             return false;
 
     // Attempt to figure out the layered structure
@@ -984,7 +984,7 @@ bool Preprocessor::constructNetworkLevelReasoner()
     /*
       Network topology successfully discovered, construct the NLR
     */
-    NetworkLevelReasoner *nlr = new NetworkLevelReasoner;
+    NLR::NetworkLevelReasoner *nlr = new NLR::NetworkLevelReasoner;
 
     // Allocate memory
     unsigned totalNumberOfLayers = currentLayerIndex + 1;
