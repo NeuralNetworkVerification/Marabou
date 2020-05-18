@@ -21,6 +21,7 @@
 #include "Map.h"
 #include "PiecewiseLinearFunctionType.h"
 #include "Tightening.h"
+#include "Layer.h"
 
 namespace NLR {
 
@@ -29,63 +30,98 @@ namespace NLR {
   level structure and topology.
 */
 
-class NetworkLevelReasoner
+class NetworkLevelReasoner : public Layer::LayerOwner
 {
 public:
-    NetworkLevelReasoner();
-    ~NetworkLevelReasoner();
+    NetworkLevelReasoner()
+    {
+    }
+
+    ~NetworkLevelReasoner()
+    {
+        for ( const auto &layer : _layerIndexToLayer )
+            delete layer.second;
+        _layerIndexToLayer.clear();
+    }
 
     static bool functionTypeSupported( PiecewiseLinearFunctionType type );
 
-    void setNumberOfLayers( unsigned numberOfLayers );
-    void setLayerSize( unsigned layer, unsigned size );
-    void setNeuronActivationFunction( unsigned layer, unsigned neuron, PiecewiseLinearFunctionType activationFuction );
-    void setWeight( unsigned sourceLayer, unsigned sourceNeuron, unsigned targetNeuron, double weight );
-    void setBias( unsigned layer, unsigned neuron, double bias );
+    void addLayer( unsigned layerIndex, Layer::Type type, unsigned layerSize )
+    {
+        Layer *layer = new Layer( layerIndex, type, layerSize, this );
+        _layerIndexToLayer[layerIndex] = layer;
+    }
 
-    /*
-      A method that allocates all internal memory structures, based on
-      the network's topology. Should be invoked after the layer sizes
-      have been provided.
-    */
-    void allocateMemoryByTopology();
+    Map<unsigned, Layer *> _layerIndexToLayer;
+
+    void addLayerDependency( unsigned sourceLayer, unsigned targetLayer )
+    {
+        _layerIndexToLayer[targetLayer]->addSourceLayer( sourceLayer, _layerIndexToLayer[sourceLayer]->getSize() );
+    }
+
+    void setWeight( unsigned sourceLayer, unsigned sourceNeuron, unsigned targetLayer, unsigned targetNeuron, double weight )
+    {
+        _layerIndexToLayer[targetLayer]->setWeight( sourceLayer, sourceNeuron, targetNeuron, weight );
+    }
+
+    void setBias( unsigned layer, unsigned neuron, double bias )
+    {
+        _layerIndexToLayer[layer]->setBias( neuron, bias );
+    }
+
+    void addActivationSource( unsigned sourceLayer, unsigned sourceNeuron, unsigned targetLeyer, unsigned targetNeuron )
+    {
+        _layerIndexToLayer[targetLeyer]->addActivationSource( sourceLayer, sourceNeuron, targetNeuron );
+    }
+
+    const Layer *getLayer( unsigned index ) const
+    {
+        return _layerIndexToLayer[index];
+    }
+
+    // /*
+    //   A method that allocates all internal memory structures, based on
+    //   the network's topology. Should be invoked after the layer sizes
+    //   have been provided.
+    // */
+    // void allocateMemoryByTopology();
 
     /*
       Mapping from node indices to the variables representing their
       weighted sum values and activation result values.
     */
-    void setWeightedSumVariable( unsigned layer, unsigned neuron, unsigned variable );
-    unsigned getWeightedSumVariable( unsigned layer, unsigned neuron ) const;
-    void setActivationResultVariable( unsigned layer, unsigned neuron, unsigned variable );
-    unsigned getActivationResultVariable( unsigned layer, unsigned neuron ) const;
-    const Map<NeuronIndex, unsigned> &getIndexToWeightedSumVariable();
-    const Map<NeuronIndex, unsigned> &getIndexToActivationResultVariable();
+    // void setWeightedSumVariable( unsigned layer, unsigned neuron, unsigned variable );
+    // unsigned getWeightedSumVariable( unsigned layer, unsigned neuron ) const;
+    // void setActivationResultVariable( unsigned layer, unsigned neuron, unsigned variable );
+    // unsigned getActivationResultVariable( unsigned layer, unsigned neuron ) const;
+    // const Map<NeuronIndex, unsigned> &getIndexToWeightedSumVariable();
+    // const Map<NeuronIndex, unsigned> &getIndexToActivationResultVariable();
 
     /*
       Mapping from node indices to the nodes' assignments, as computed
       by evaluate()
     */
-    const Map<NeuronIndex, double> &getIndexToWeightedSumAssignment();
-    const Map<NeuronIndex, double> &getIndexToActivationResultAssignment();
+    // const Map<NeuronIndex, double> &getIndexToWeightedSumAssignment();
+    // const Map<NeuronIndex, double> &getIndexToActivationResultAssignment();
 
     /*
       Interface methods for performing operations on the network.
     */
-    void evaluate( double *input, double *output );
+    void evaluate( double *input , double *output );
 
     /*
       Duplicate the reasoner
     */
-    void storeIntoOther( NetworkLevelReasoner &other ) const;
+    // void storeIntoOther( NetworkLevelReasoner &other ) const;
 
     /*
       Methods that are typically invoked by the preprocessor, to
       inform us of changes in variable indices or if a variable has
       been eliminated
     */
-    void eliminateVariable( unsigned variable, double value );
-    void updateVariableIndices( const Map<unsigned, unsigned> &oldIndexToNewIndex,
-                                const Map<unsigned, unsigned> &mergedVariables );
+    // void eliminateVariable( unsigned variable, double value );
+    // void updateVariableIndices( const Map<unsigned, unsigned> &oldIndexToNewIndex,
+    //                             const Map<unsigned, unsigned> &mergedVariables );
 
     /*
       Bound propagation methods:
@@ -108,86 +144,86 @@ public:
           propagation is performed.
     */
 
-    void setTableau( const ITableau *tableau );
-    void obtainCurrentBounds();
-    void intervalArithmeticBoundPropagation();
-    void symbolicBoundPropagation();
+    // void setTableau( const ITableau *tableau );
+    // void obtainCurrentBounds();
+    // void intervalArithmeticBoundPropagation();
+    // void symbolicBoundPropagation();
 
-    void getConstraintTightenings( List<Tightening> &tightenings ) const;
+    // void getConstraintTightenings( List<Tightening> &tightenings ) const;
 
-    /*
-      For debugging purposes: dump the network topology
-    */
-    void dumpTopology() const;
+    // /*
+    //   For debugging purposes: dump the network topology
+    // */
+    // void dumpTopology() const;
 
-private:
-    unsigned _numberOfLayers;
-    Map<unsigned, unsigned> _layerSizes;
-    Map<NeuronIndex, PiecewiseLinearFunctionType> _neuronToActivationFunction;
-    double **_weights;
-    double **_positiveWeights;
-    double **_negativeWeights;
-    Map<NeuronIndex, double> _bias;
+// private:
+//     unsigned _numberOfLayers;
+//     Map<unsigned, unsigned> _layerSizes;
+//     Map<NeuronIndex, PiecewiseLinearFunctionType> _neuronToActivationFunction;
+//     double **_weights;
+//     double **_positiveWeights;
+//     double **_negativeWeights;
+//     Map<NeuronIndex, double> _bias;
 
-    unsigned _maxLayerSize;
-    unsigned _inputLayerSize;
+//     unsigned _maxLayerSize;
+//     unsigned _inputLayerSize;
 
-    double *_work1;
-    double *_work2;
+//     double *_work1;
+//     double *_work2;
 
-    const ITableau *_tableau;
+//     const ITableau *_tableau;
 
-    void freeMemoryIfNeeded();
+//     void freeMemoryIfNeeded();
 
-    /*
-      Mappings of indices to weighted sum and activation result variables
-    */
-    Map<NeuronIndex, unsigned> _indexToWeightedSumVariable;
-    Map<NeuronIndex, unsigned> _indexToActivationResultVariable;
-    Map<unsigned, NeuronIndex> _weightedSumVariableToIndex;
-    Map<unsigned, NeuronIndex> _activationResultVariableToIndex;
+//     /*
+//       Mappings of indices to weighted sum and activation result variables
+//     */
+//     Map<NeuronIndex, unsigned> _indexToWeightedSumVariable;
+//     Map<NeuronIndex, unsigned> _indexToActivationResultVariable;
+//     Map<unsigned, NeuronIndex> _weightedSumVariableToIndex;
+//     Map<unsigned, NeuronIndex> _activationResultVariableToIndex;
 
-    /*
-      Store the assignment to all variables when evaluate() is called
-    */
-    Map<NeuronIndex, double> _indexToWeightedSumAssignment;
-    Map<NeuronIndex, double> _indexToActivationResultAssignment;
+//     /*
+//       Store the assignment to all variables when evaluate() is called
+//     */
+//     Map<NeuronIndex, double> _indexToWeightedSumAssignment;
+//     Map<NeuronIndex, double> _indexToActivationResultAssignment;
 
-    /*
-      Store eliminated variables
-    */
-    Map<NeuronIndex, double> _eliminatedWeightedSumVariables;
-    Map<NeuronIndex, double> _eliminatedActivationResultVariables;
+//     /*
+//       Store eliminated variables
+//     */
+//     Map<NeuronIndex, double> _eliminatedWeightedSumVariables;
+//     Map<NeuronIndex, double> _eliminatedActivationResultVariables;
 
-    /*
-      Work space for bound tightening
-    */
-    double **_lowerBoundsWeightedSums;
-    double **_upperBoundsWeightedSums;
-    double **_lowerBoundsActivations;
-    double **_upperBoundsActivations;
+//     /*
+//       Work space for bound tightening
+//     */
+//     double **_lowerBoundsWeightedSums;
+//     double **_upperBoundsWeightedSums;
+//     double **_lowerBoundsActivations;
+//     double **_upperBoundsActivations;
 
-    /*
-      Work space for symbolic bound propagation
-    */
-    double *_currentLayerLowerBounds;
-    double *_currentLayerUpperBounds;
-    double *_currentLayerLowerBias;
-    double *_currentLayerUpperBias;
+//     /*
+//       Work space for symbolic bound propagation
+//     */
+//     double *_currentLayerLowerBounds;
+//     double *_currentLayerUpperBounds;
+//     double *_currentLayerLowerBias;
+//     double *_currentLayerUpperBias;
 
-    double *_previousLayerLowerBounds;
-    double *_previousLayerUpperBounds;
-    double *_previousLayerLowerBias;
-    double *_previousLayerUpperBias;
+//     double *_previousLayerLowerBounds;
+//     double *_previousLayerUpperBounds;
+//     double *_previousLayerLowerBias;
+//     double *_previousLayerUpperBias;
 
-    /*
-      Helper functions that perform symbolic bound propagation for a
-      single neuron, according to its activation function
-    */
-    void reluSymbolicPropagation( const NeuronIndex &index, double &lbLb, double &lbUb, double &ubLb, double &ubUb );
-    void absoluteValueSymbolicPropagation( const NeuronIndex &index, double &lbLb, double &lbUb, double &ubLb, double &ubUb );
+//     /*
+//       Helper functions that perform symbolic bound propagation for a
+//       single neuron, according to its activation function
+//     */
+//     void reluSymbolicPropagation( const NeuronIndex &index, double &lbLb, double &lbUb, double &ubLb, double &ubUb );
+//     void absoluteValueSymbolicPropagation( const NeuronIndex &index, double &lbLb, double &lbUb, double &ubLb, double &ubUb );
 
-    static void log( const String &message );
+//     static void log( const String &message );
 };
 
 } // namespace NLR
