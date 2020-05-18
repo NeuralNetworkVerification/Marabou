@@ -85,7 +85,7 @@ public:
 
     void obtainCurrentBounds();
     // void intervalArithmeticBoundPropagation();
-    // void symbolicBoundPropagation();
+    void symbolicBoundPropagation();
 
     // void getConstraintTightenings( List<Tightening> &tightenings ) const;
 

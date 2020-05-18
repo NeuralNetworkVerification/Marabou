@@ -59,6 +59,9 @@ public:
         , _assignment( NULL )
         , _lb( NULL )
         , _ub( NULL )
+        , _inputLayerSize( 0 )
+        , _symbolicLb( NULL )
+        , _symbolicUb( NULL )
     {
         if ( _type == WEIGHTED_SUM || _type == OUTPUT )
         {
@@ -73,6 +76,16 @@ public:
         std::fill_n( _ub, size, 0 );
 
         _assignment = new double[size];
+
+        _inputLayerSize = ( type == INPUT ) ? size : layerOwner->getLayer( 0 )->getSize();
+        if ( GlobalConfiguration::USE_SYMBOLIC_BOUND_TIGHTENING )
+        {
+            _symbolicLb = new double[size * _inputLayerSize];
+            _symbolicUb = new double[size * _inputLayerSize];
+
+            std::fill_n( _symbolicLb, size * _inputLayerSize, 0 );
+            std::fill_n( _symbolicUb, size * _inputLayerSize, 0 );
+        }
     }
 
     void setAssignment( const double *values )
@@ -222,6 +235,51 @@ public:
         }
     }
 
+    void computeSymbolicBounds()
+    {
+        switch ( _type )
+        {
+
+        case INPUT:
+
+            std::fill_n( _symbolicLb, _size * _inputLayerSize, 0 );
+            std::fill_n( _symbolicUb, _size * _inputLayerSize, 0 );
+
+            // For the input layer, the bounds are just the identity polynomials
+            for ( unsigned i = 0; i < _size; ++i )
+            {
+                _symbolicLb[_size * i + i] = 1;
+                _symbolicUb[_size * i + i] = 1;
+            }
+
+            break;
+
+        case WEIGHTED_SUM:
+        case OUTPUT:
+
+            break;
+
+        case RELU:
+
+            break;
+
+
+        case ABSOLUTE_VALUE:
+
+            break;
+
+
+        case MAX:
+
+            break;
+
+        default:
+            printf( "Error! Actiation type %u unsupported\n", _type );
+            throw MarabouError( MarabouError::NETWORK_LEVEL_REASONER_ACTIVATION_NOT_SUPPORTED );
+            break;
+        }
+    }
+
 private:
     unsigned _layerIndex;
     Type _type;
@@ -241,6 +299,10 @@ private:
     Map<unsigned, List<NeuronIndex>> _neuronToActivationSources;
 
     Map<unsigned, unsigned> _neuronToVariable;
+
+    unsigned _inputLayerSize;
+    double *_symbolicLb;
+    double *_symbolicUb;
 
     void freeMemoryIfNeeded()
     {
@@ -270,6 +332,18 @@ private:
         {
             delete[] _ub;
             _ub = NULL;
+        }
+
+        if ( _symbolicLb )
+        {
+            delete[] _symbolicLb;
+            _symbolicLb = NULL;
+        }
+
+        if ( _symbolicUb )
+        {
+            delete[] _symbolicUb;
+            _symbolicUb = NULL;
         }
     }
 };
