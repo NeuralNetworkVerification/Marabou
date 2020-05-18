@@ -258,9 +258,11 @@ PYBIND11_MODULE(MarabouCore, m) {
     nlr.def("allocateMemoryByTopology", &NetworkLevelReasoner::allocateMemoryByTopology);
     nlr.def("setWeightedSumVariable", &NetworkLevelReasoner::setWeightedSumVariable);
     nlr.def("setActivationResultVariable", &NetworkLevelReasoner::setActivationResultVariable);
-    py::enum_<NetworkLevelReasoner::ActivationFunction>(nlr, "ActivationFunction")
-        .value("ReLU", NetworkLevelReasoner::ActivationFunction::ReLU)
-        .value("AbsoluteValue", NetworkLevelReasoner::ActivationFunction::AbsoluteValue)
+    py::enum_<PiecewiseLinearFunctionType>(m, "PiecewiseLinearFunctionType")
+        .value("ReLU", PiecewiseLinearFunctionType::RELU)
+        .value("AbsoluteValue", PiecewiseLinearFunctionType::ABSOLUTE_VALUE)
+        .value("Max", PiecewiseLinearFunctionType::MAX)
+        .value("Disjunction", PiecewiseLinearFunctionType::DISJUNCTION)
         .export_values();
     py::class_<Equation> eq(m, "Equation");
     eq.def(py::init());
