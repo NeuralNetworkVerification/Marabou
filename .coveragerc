@@ -1,3 +1,0 @@
-[run]
-omit = maraboupy/test/*
-       maraboupy/__init__.py
