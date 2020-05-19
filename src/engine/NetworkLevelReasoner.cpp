@@ -469,6 +469,8 @@ void NetworkLevelReasoner::storeIntoOther( NetworkLevelReasoner &other ) const
     other._indexToActivationResultAssignment = _indexToActivationResultAssignment;
     other._eliminatedWeightedSumVariables = _eliminatedWeightedSumVariables;
     other._eliminatedActivationResultVariables = _eliminatedActivationResultVariables;
+
+    other._indexToPiecewiseLinearConstraint = _indexToPiecewiseLinearConstraint;
 }
 
 const Map<NetworkLevelReasoner::Index, unsigned> &NetworkLevelReasoner::getIndexToWeightedSumVariable()
@@ -489,6 +491,11 @@ const Map<NetworkLevelReasoner::Index, double> &NetworkLevelReasoner::getIndexTo
 const Map<NetworkLevelReasoner::Index, double> &NetworkLevelReasoner::getIndexToActivationResultAssignment()
 {
     return _indexToActivationResultAssignment;
+}
+
+Map<NetworkLevelReasoner::Index, PiecewiseLinearConstraint *> NetworkLevelReasoner::getIndexToPLConstraint()
+{
+    return _indexToPiecewiseLinearConstraint;
 }
 
 void NetworkLevelReasoner::setIndexToPLConstraint( unsigned layer,

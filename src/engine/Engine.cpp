@@ -1933,7 +1933,8 @@ void Engine::updateScores()
             for ( unsigned neuron = 0; neuron < size; ++neuron ){
                 auto plConstraint = _networkLevelReasoner->
                     getPLConstraintFromIndex( layer, neuron );
-                if ( plConstraint->isActive() && !plConstraint->phaseFixed() )
+                if ( plConstraint && plConstraint->isActive()
+                     && !plConstraint->phaseFixed() )
                 {
                     plConstraint->updateScore();
                     _candidatePlConstraints.insert( plConstraint );

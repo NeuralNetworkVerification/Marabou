@@ -98,6 +98,8 @@ public:
     const Map<Index, unsigned> &getIndexToActivationResultVariable();
     void setIndexToPLConstraint( unsigned layer, unsigned neuron,
                                  PiecewiseLinearConstraint *constraint );
+
+    Map<Index, PiecewiseLinearConstraint *> getIndexToPLConstraint();
     PiecewiseLinearConstraint *getPLConstraintFromIndex( unsigned layer,
                                                          unsigned neuron );
 

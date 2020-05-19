@@ -146,6 +146,9 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
         }
     }
 
+    // Populate the Network-Level Reasoner
+    NetworkLevelReasoner *nlr = new NetworkLevelReasoner;
+
     // Add the ReLU constraints
     for ( unsigned i = 1; i < numberOfLayers - 1; ++i )
     {
@@ -156,6 +159,7 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
             unsigned b = _nodeToB[NodeIndex(i, j)];
             unsigned f = _nodeToF[NodeIndex(i, j)];
             PiecewiseLinearConstraint *relu = new ReluConstraint( b, f );
+            nlr->setIndexToPLConstraint( i, j, relu );
             relu->setScore( i );
             inputQuery.addPiecewiseLinearConstraint( relu );
         }
@@ -167,9 +171,6 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
 
     for ( unsigned i = 0; i < outputLayerSize; ++i )
         inputQuery.markOutputVariable( _nodeToB[NodeIndex( numberOfLayers - 1, i )], i );
-
-    // Populate the Network-Level Reasoner
-    NetworkLevelReasoner *nlr = new NetworkLevelReasoner;
 
     nlr->setNumberOfLayers( numberOfLayers );
 
