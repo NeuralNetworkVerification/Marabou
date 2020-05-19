@@ -479,6 +479,24 @@ const Map<NetworkLevelReasoner::Index, double> &NetworkLevelReasoner::getIndexTo
     return _indexToActivationResultAssignment;
 }
 
+void NetworkLevelReasoner::setIndexToPLConstraint( unsigned layer,
+                                                   unsigned neuron,
+                                                   PiecewiseLinearConstraint
+                                                   *constraint )
+{
+    _indexToPiecewiseLinearConstraint[Index( layer, neuron )] = constraint;
+}
+
+const PiecewiseLinearConstraint * NetworkLevelReasoner::getPLConstraintFromIndex
+( unsigned layer, unsigned neuron )
+{
+    Index index( layer, neuron );
+    if ( !_indexToPiecewiseLinearConstraint.exists( index ) )
+        throw MarabouError( MarabouError::INVALID_MAP_INDEX,
+                            Stringf( "Index: <%u,%u>", layer, neuron ).ascii() );
+    return _indexToPiecewiseLinearConstraint[index];
+}
+
 void NetworkLevelReasoner::updateVariableIndices( const Map<unsigned, unsigned> &oldIndexToNewIndex,
                                                   const Map<unsigned, unsigned> &mergedVariables )
 {

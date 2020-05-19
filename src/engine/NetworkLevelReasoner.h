@@ -19,6 +19,7 @@
 #include "ITableau.h"
 #include "Map.h"
 #include "Tightening.h"
+#include "PiecewiseLinearConstraint.h"
 
 /*
   A class for performing operations that require knowledge of network
@@ -75,6 +76,8 @@ public:
     void setWeight( unsigned sourceLayer, unsigned sourceNeuron, unsigned targetNeuron, double weight );
     void setBias( unsigned layer, unsigned neuron, double bias );
 
+    void getLayerSize( unsigned layer );
+
     /*
       A method that allocates all internal memory structures, based on
       the network's topology. Should be invoked after the layer sizes
@@ -92,6 +95,10 @@ public:
     unsigned getActivationResultVariable( unsigned layer, unsigned neuron ) const;
     const Map<Index, unsigned> &getIndexToWeightedSumVariable();
     const Map<Index, unsigned> &getIndexToActivationResultVariable();
+    void setIndexToPLConstraint( unsigned layer, unsigned neuron,
+                                 PiecewiseLinearConstraint *constraint );
+    const PiecewiseLinearConstraint *getPLConstraintFromIndex( unsigned layer,
+                                                               unsigned neuron );
 
     /*
       Mapping from node indices to the nodes' assignments, as computed
@@ -173,6 +180,7 @@ private:
     Map<Index, unsigned> _indexToActivationResultVariable;
     Map<unsigned, Index> _weightedSumVariableToIndex;
     Map<unsigned, Index> _activationResultVariableToIndex;
+    Map<Index, PiecewiseLinearConstraint *> _indexToPiecewiseLinearConstraint;
 
     /*
       Store the assignment to all variables when evaluate() is called

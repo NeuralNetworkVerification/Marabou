@@ -1921,6 +1921,11 @@ void Engine::updateDirections()
 void Engine::updateScores()
 {
     _candidatePlConstraints.clear();
+    // if ( GlobalConfiguration::SPLITTING_HEURISTICS == DivideStrategy::Polarity )
+    //{
+    //    unsigned layer = 1;
+    //    _networkLevelReasoner->
+    //}
     for ( const auto plConstraint : _plConstraints )
     {
         if ( plConstraint->isActive() && !plConstraint->phaseFixed() )
