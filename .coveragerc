@@ -1,6 +1,3 @@
 [run]
 omit = maraboupy/test/*
        maraboupy/__init__.py
-
-[tool:pytest]
-addopts = --cov=maraboupy
