@@ -1928,11 +1928,15 @@ void Engine::updateScores()
     if ( _networkLevelReasoner && GlobalConfiguration::SPLITTING_HEURISTICS ==
          DivideStrategy::Polarity )
     {
+        log( Stringf( "Using polarity heuristics..." ) );
+        std::cout << "Numlayer" << _networkLevelReasoner->
+            getNumberOfLayers() << std::endl;
         for ( unsigned layer = 1; layer < _networkLevelReasoner->
-                  getNumberOfLayers(); ++layer )
+                  getNumberOfLayers() - 1; ++layer )
         {
             unsigned size = _networkLevelReasoner->getLayerSize( layer );
             for ( unsigned neuron = 0; neuron < size; ++neuron ){
+                log( Stringf( "examining neuron (%u, %u)", layer, neuron ) );
                 auto plConstraint = _networkLevelReasoner->
                     getPLConstraintFromIndex( layer, neuron );
                 if ( plConstraint && plConstraint->isActive()
@@ -1962,6 +1966,7 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraint()
 {
     log( Stringf( "Picking a split PLConstraint..." ) );
     updateScores();
+    log( Stringf( "Done updating scores..." ) );
     auto constraint = *_candidatePlConstraints.begin();
     log( Stringf( "Picked..." ) );
     return constraint;
