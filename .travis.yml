@@ -66,6 +66,9 @@ matrix:
       - cp maraboupy/Release/* maraboupy
       - $PY_CMD -m pytest maraboupy/test
 
+after_success:
+  - codecov
+
 notifications:
   email:
     on_success: change
