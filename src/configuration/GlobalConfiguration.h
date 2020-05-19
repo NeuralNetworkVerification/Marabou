@@ -195,6 +195,11 @@ public:
     };
     static const BasisFactorizationType BASIS_FACTORIZATION_TYPE;
 
+    /* In the polarity-based branching heuristics, only this many earliest nodes
+       are considered to branch on.
+    */
+    static const unsigned RUNTIME_ESTIMATE_THRESHOLD;
+
     /*
       Logging options
     */
