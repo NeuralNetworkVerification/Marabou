@@ -1,0 +1,5 @@
+comment: false
+
+ignore:
+  - "**/__init__.py"
+  - "maraboupy/test"
