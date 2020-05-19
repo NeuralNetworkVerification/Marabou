@@ -1046,7 +1046,9 @@ void Engine::initializeNetworkLevelReasoning()
     _networkLevelReasoner = _preprocessedQuery.getNetworkLevelReasoner();
 
     if ( _networkLevelReasoner )
+    {
         _networkLevelReasoner->setTableau( _tableau );
+    }
 }
 
 bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
@@ -1921,11 +1923,29 @@ void Engine::updateDirections()
 void Engine::updateScores()
 {
     _candidatePlConstraints.clear();
-    // if ( GlobalConfiguration::SPLITTING_HEURISTICS == DivideStrategy::Polarity )
-    //{
-    //    unsigned layer = 1;
-    //    _networkLevelReasoner->
-    //}
+    if ( _networkLevelReasoner && GlobalConfiguration::SPLITTING_HEURISTICS ==
+         DivideStrategy::Polarity )
+    {
+        for ( unsigned layer = 1; layer < _networkLevelReasoner->
+                  getNumberOfLayers(); ++layer )
+        {
+            unsigned size = _networkLevelReasoner->getLayerSize( layer );
+            for ( unsigned neuron = 0; neuron < size; ++neuron ){
+                auto plConstraint = _networkLevelReasoner->
+                    getPLConstraintFromIndex( layer, neuron );
+                if ( plConstraint->isActive() && !plConstraint->phaseFixed() )
+                {
+                    plConstraint->updateScore();
+                    _candidatePlConstraints.insert( plConstraint );
+                    if ( _candidatePlConstraints.size() >=
+                         GlobalConfiguration::RUNTIME_ESTIMATE_THRESHOLD )
+                        return;
+                }
+            }
+            ++layer;
+        }
+        return;
+    }
     for ( const auto plConstraint : _plConstraints )
     {
         if ( plConstraint->isActive() && !plConstraint->phaseFixed() )

@@ -76,7 +76,8 @@ public:
     void setWeight( unsigned sourceLayer, unsigned sourceNeuron, unsigned targetNeuron, double weight );
     void setBias( unsigned layer, unsigned neuron, double bias );
 
-    void getLayerSize( unsigned layer );
+    unsigned getLayerSize( unsigned layer );
+    unsigned getNumberOfLayers();
 
     /*
       A method that allocates all internal memory structures, based on
@@ -97,8 +98,8 @@ public:
     const Map<Index, unsigned> &getIndexToActivationResultVariable();
     void setIndexToPLConstraint( unsigned layer, unsigned neuron,
                                  PiecewiseLinearConstraint *constraint );
-    const PiecewiseLinearConstraint *getPLConstraintFromIndex( unsigned layer,
-                                                               unsigned neuron );
+    PiecewiseLinearConstraint *getPLConstraintFromIndex( unsigned layer,
+                                                         unsigned neuron );
 
     /*
       Mapping from node indices to the nodes' assignments, as computed

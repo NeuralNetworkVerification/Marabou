@@ -339,6 +339,18 @@ void NetworkLevelReasoner::setBias( unsigned layer, unsigned neuron, double bias
     _bias[Index( layer, neuron )] = bias;
 }
 
+unsigned NetworkLevelReasoner::getLayerSize( unsigned layer )
+{
+    ASSERT( layer < _numberOfLayers );
+    return _layerSizes[ layer ];
+}
+
+unsigned NetworkLevelReasoner::getNumberOfLayers()
+{
+    return _numberOfLayers;
+}
+
+
 void NetworkLevelReasoner::evaluate( double *input, double *output )
 {
     memcpy( _work1, input, sizeof(double) * _layerSizes[0] );
@@ -487,7 +499,7 @@ void NetworkLevelReasoner::setIndexToPLConstraint( unsigned layer,
     _indexToPiecewiseLinearConstraint[Index( layer, neuron )] = constraint;
 }
 
-const PiecewiseLinearConstraint * NetworkLevelReasoner::getPLConstraintFromIndex
+PiecewiseLinearConstraint * NetworkLevelReasoner::getPLConstraintFromIndex
 ( unsigned layer, unsigned neuron )
 {
     Index index( layer, neuron );
