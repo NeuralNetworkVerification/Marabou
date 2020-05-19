@@ -143,6 +143,8 @@ public:
     */
     void setConstraintViolationThreshold( unsigned threshold );
 
+    void setSplittingStrategy( DivideStrategy splittingHeuristics );
+
     /*
       PSA: The following two methods are for DnC only and should be used very
       cautiously.
@@ -317,6 +319,8 @@ private:
     */
     unsigned _lastNumVisitedStates;
     unsigned long long _lastIterationWithProgress;
+
+    DivideStrategy _splittingHeuristics;
 
     /*
       Perform a simplex step: compute the cost function, pick the

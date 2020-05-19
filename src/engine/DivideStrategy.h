@@ -19,7 +19,7 @@
 enum DivideStrategy
 {
     // Input splitting
-    LargestInterval,
+    LargestInterval=0,
 
     // Relu splitting
     Polarity, // Pick the ReLU with the polarity closest to 0 among the first K nodes

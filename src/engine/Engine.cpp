@@ -25,6 +25,7 @@
 #include "MarabouError.h"
 #include "PiecewiseLinearConstraint.h"
 #include "Preprocessor.h"
+#include "ReluConstraint.h"
 #include "TableauRow.h"
 #include "TimeUtils.h"
 
@@ -46,6 +47,7 @@ Engine::Engine( unsigned verbosity )
     , _verbosity( verbosity )
     , _lastNumVisitedStates( 0 )
     , _lastIterationWithProgress( 0 )
+    , _splittingHeuristics( GlobalConfiguration::SPLITTING_HEURISTICS )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -1943,7 +1945,6 @@ void Engine::updateScores()
                         return;
                 }
             }
-            ++layer;
         }
         return;
     }
@@ -1959,15 +1960,21 @@ void Engine::updateScores()
 
 PiecewiseLinearConstraint *Engine::pickSplitPLConstraint()
 {
+    log( Stringf( "Picking a split PLConstraint..." ) );
     updateScores();
     auto constraint = *_candidatePlConstraints.begin();
-    _candidatePlConstraints.erase( constraint );
+    log( Stringf( "Picked..." ) );
     return constraint;
 }
 
 void Engine::setConstraintViolationThreshold( unsigned threshold )
 {
     _smtCore.setConstraintViolationThreshold( threshold );
+}
+
+void Engine::setSplittingStrategy( DivideStrategy splittingHeuristics )
+{
+    _splittingHeuristics = splittingHeuristics;
 }
 
 //
