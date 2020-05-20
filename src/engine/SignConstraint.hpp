@@ -18,8 +18,8 @@ class SignConstraint : public PiecewiseLinearConstraint
 public:
     enum PhaseStatus {
         PHASE_NOT_FIXED = 0,
-        PHASE_ACTIVE = 1, // todo change - to 'POSITIVE' -in cpp + header
-        PHASE_INACTIVE = 2, // todo change - to 'NEGATIVE' -in cpp + header
+        PHASE_POSITIVE = 1,
+        PHASE_NEGATIVE = 2,
     };
 
     SignConstraint( unsigned b, unsigned f );

@@ -110,12 +110,12 @@ List<PiecewiseLinearCaseSplit> SignConstraint::getCaseSplits() const {
 
     List <PiecewiseLinearCaseSplit> splits;
 
-    if (_direction == PHASE_INACTIVE) {
+    if (_direction == PHASE_NEGATIVE) {
         splits.append(getNegativeSplit());
         splits.append(getPositiveSplit());
         return splits;
     }
-    if (_direction == PHASE_ACTIVE) {
+    if (_direction == PHASE_POSITIVE) {
         splits.append(getPositiveSplit());
         splits.append(getNegativeSplit());
         return splits;
@@ -134,8 +134,8 @@ List<PiecewiseLinearCaseSplit> SignConstraint::getCaseSplits() const {
     } else {
         // Default: start with the inactive case, because it doesn't
         // introduce a new equation and is hence computationally cheaper.
-        splits.append(getNegativeSplit()); // todo - notice no change from ReLU function
-        splits.append(getPositiveSplit()); // todo - notice no change from ReLU function
+        splits.append(getNegativeSplit()); // notice no change from ReLU function
+        splits.append(getPositiveSplit()); // notice no change from ReLU function
     }
 
     return splits;
@@ -222,7 +222,7 @@ PiecewiseLinearCaseSplit SignConstraint::getValidCaseSplit() const
 {
     ASSERT( _phaseStatus != PhaseStatus::PHASE_NOT_FIXED );
 
-    if ( _phaseStatus == PhaseStatus::PHASE_ACTIVE )
+    if ( _phaseStatus == PhaseStatus::PHASE_POSITIVE )
         return getPositiveSplit();
 
     return getNegativeSplit();
