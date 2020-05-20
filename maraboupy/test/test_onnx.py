@@ -1,6 +1,7 @@
 # Supress warnings caused by tensorflow
 import warnings
 warnings.filterwarnings('ignore', category = DeprecationWarning)
+warnings.filterwarnings('ignore', category = PendingDeprecationWarning)
 
 import pytest
 from .. import Marabou
