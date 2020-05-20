@@ -38,6 +38,9 @@ public:
 
     static bool functionTypeSupported( PiecewiseLinearFunctionType type );
 
+    /*
+      Populate the NLR by specifying the network's topology.
+    */
     void addLayer( unsigned layerIndex, Layer::Type type, unsigned layerSize );
     void addLayerDependency( unsigned sourceLayer, unsigned targetLayer );
     void setWeight( unsigned sourceLayer,
@@ -52,18 +55,23 @@ public:
                               unsigned targetNeuron );
     const Layer *getLayer( unsigned index ) const;
 
+
     /*
-      Interface methods for performing operations on the network.
+      Bind neurons in the NLR to the Tableau variables that represent them.
+    */
+    void setNeuronVariable( NeuronIndex index, unsigned variable );
+
+    /*
+      Perform an evaluation of the network for a specific input.
     */
     void evaluate( double *input , double *output );
 
-    void setNeuronVariable( NeuronIndex index, unsigned variable );
 
     /*
       Bound propagation methods:
 
-        - obtainCurrentBounds: obtain the current bounds on all variables
-          from the tableau.
+        - obtainCurrentBounds: make the NLR obtain the current bounds
+          on all variables from the tableau.
 
         - Interval arithmetic: compute the bounds of a layer's neurons
           based on the concrete bounds of the previous layer.
@@ -78,6 +86,13 @@ public:
 
           Initialize should be called once, before the bound
           propagation is performed.
+
+        - receiveTighterBound: this is a callback from the layer
+          objects, through which they report tighter bounds.
+
+        - getConstraintTightenings: this is the function that an
+          external user calls in order to collect the tighter bounds
+          discovered by the NLR.
     */
 
     void setTableau( const ITableau *tableau );
@@ -87,7 +102,8 @@ public:
     // void intervalArithmeticBoundPropagation();
     void symbolicBoundPropagation();
 
-    // void getConstraintTightenings( List<Tightening> &tightenings ) const;
+    void receiveTighterBound( Tightening tightening );
+    void getConstraintTightenings( List<Tightening> &tightenings );
 
     // /*
     //   For debugging purposes: dump the network topology
@@ -201,6 +217,9 @@ private:
 //     void absoluteValueSymbolicPropagation( const NeuronIndex &index, double &lbLb, double &lbUb, double &ubLb, double &ubUb );
 
 //     static void log( const String &message );
+
+    // Tightenings discovered by the layers
+    List<Tightening> _boundTightenings;
 };
 
 } // namespace NLR
