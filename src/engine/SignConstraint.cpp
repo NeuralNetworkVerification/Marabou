@@ -2,7 +2,7 @@
 // Created by guyam on 5/20/20.
 //
 
-#include "SignConstraint.hpp"
+#include "SignConstraint.h"
 
 #include "ConstraintBoundTightener.h"
 #include "Debug.h"
@@ -28,7 +28,6 @@
 SignConstraint::SignConstraint( unsigned b, unsigned f )
         : _b( b )
         , _f( f )
-        , _auxVarInUse( false )
         , _direction( PhaseStatus::PHASE_NOT_FIXED )
         , _haveEliminatedVariables( false )
 {
@@ -57,8 +56,7 @@ void SignConstraint::registerAsWatcher( ITableau *tableau )
     tableau->registerToWatchVariable( this, _b );
     tableau->registerToWatchVariable( this, _f );
 
-    if ( _auxVarInUse )
-        tableau->registerToWatchVariable( this, _aux );
+
 }
 
 void SignConstraint::unregisterAsWatcher( ITableau *tableau )
@@ -66,21 +64,17 @@ void SignConstraint::unregisterAsWatcher( ITableau *tableau )
     tableau->unregisterToWatchVariable( this, _b );
     tableau->unregisterToWatchVariable( this, _f );
 
-    if ( _auxVarInUse ) // todo - check if line is relevant? (originally from ReLU)
-        tableau->unregisterToWatchVariable( this, _aux );
 }
 
 
 bool SignConstraint::participatingVariable( unsigned variable ) const
 {
-    return ( variable == _b ) || ( variable == _f ) || ( _auxVarInUse && variable == _aux );
+    return ( variable == _b ) || ( variable == _f );
 }
 
 List<unsigned> SignConstraint::getParticipatingVariables() const
 {
-    return _auxVarInUse?
-           List<unsigned>( { _b, _f, _aux } ) :
-           List<unsigned>( { _b, _f } );
+    return List<unsigned>( { _b, _f } );
 }
 
 
@@ -93,10 +87,10 @@ bool SignConstraint::satisfied() const // todo check
     double bValue = _assignment.get( _b );
     double fValue = _assignment.get( _f );
 
-    if ( FloatUtils::isNegative( bValue ) && fValue == -1 )
+    if ( FloatUtils::isNegative( bValue ) && FloatUtils::areEqual( fValue, -1 ) )
         return true;
 
-    if ( FloatUtils::isPositive( bValue ) && fValue == 1 )
+    if ( FloatUtils::isPositive( bValue ) && FloatUtils::areEqual( fValue, 1 ) )
         return true;
 
     else
@@ -249,9 +243,47 @@ void SignConstraint::getEntailedTightenings( List<Tightening> &tightenings ) con
 
 String SignConstraint::serializeToString() const
 {
-    // Output format is: relu,f,b,aux
-    if ( _auxVarInUse ) // todo - check if AUX variable used?
-        return Stringf( "sign,%u,%u,%u", _f, _b, _aux );
-
+    // Output format is: relu,f,b
     return Stringf( "sign,%u,%u", _f, _b );
+}
+
+
+
+bool SignConstraint::haveOutOfBoundVariables() const
+{
+    double bValue = _assignment.get( _b );
+    double fValue = _assignment.get( _f );
+
+    if ( FloatUtils::gt( _lowerBounds[_b], bValue ) || FloatUtils::lt( _upperBounds[_b], bValue ) )
+        return true;
+
+    if ( FloatUtils::gt( _lowerBounds[_f], fValue ) || FloatUtils::lt( _upperBounds[_f], fValue ) )
+        return true;
+
+    return false;
+}
+
+
+String SignConstraint::phaseToString( PhaseStatus phase )
+{
+    switch ( phase )
+    {
+        case PHASE_NOT_FIXED:
+            return "PHASE_NOT_FIXED";
+
+        case PHASE_POSITIVE:
+            return "PHASE_POSITIVE";
+
+        case PHASE_NEGATIVE:
+            return "PHASE_NEGATIVE";
+
+        default:
+            return "UNKNOWN";
+    }
+};
+
+
+void SignConstraint::setPhaseStatus( PhaseStatus phaseStatus )
+{
+    _phaseStatus = phaseStatus;
 }

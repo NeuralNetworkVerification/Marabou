@@ -2,8 +2,8 @@
 // Created by guyam on 5/20/20.
 //
 
-#ifndef MARABOU_SIGNCONSTRAINT_HPP
-#define MARABOU_SIGNCONSTRAINT_HPP
+#ifndef MARABOU_SIGNCONSTRAINT_H
+#define MARABOU_SIGNCONSTRAINT_H
 
 
 
@@ -61,6 +61,15 @@ public:
 
 
     /*
+      These callbacks are invoked when a watched variable's value
+      changes, or when its bounds change.
+    */
+    void notifyVariableValue( unsigned variable, double value ); //TODO implement!!
+    void notifyLowerBound( unsigned variable, double bound ); //TODO implement!!
+    void notifyUpperBound( unsigned variable, double bound ); //TODO implement!!
+
+
+    /*
       Returns true iff the variable participates in this piecewise
       linear constraint
     */
@@ -75,13 +84,13 @@ public:
     /*
       Returns a list of possible fixes for the violated constraint.
     */
-    List<PiecewiseLinearConstraint::Fix> getPossibleFixes() const;
+    List<PiecewiseLinearConstraint::Fix> getPossibleFixes() const;  //TODO implement!!
 
 
     /*
       Return a list of smart fixes for violated constraint.
     */
-    List<PiecewiseLinearConstraint::Fix> getSmartFixes( ITableau *tableau ) const;
+    List<PiecewiseLinearConstraint::Fix> getSmartFixes( ITableau *tableau ) const;  //TODO implement!!
 
 
     /*
@@ -107,7 +116,7 @@ public:
     /*
       Get the tightenings entailed by the constraint.
     */
-    void getEntailedTightenings( List<Tightening> &tightenings ) const;
+    void getEntailedTightenings( List<Tightening> &tightenings ) const;  //TODO implement!!
 
 
 
@@ -120,8 +129,6 @@ public:
 private:
     unsigned _b, _f;
     PhaseStatus _phaseStatus;
-    bool _auxVarInUse; // todo - check if 'aux' required? (originally from ReLU)
-    unsigned _aux; // todo - check if 'aux' required? (originally from ReLU)
 
     /*
       Denotes which case split to handle first.
@@ -146,7 +153,7 @@ private:
     /*
       Return true iff b or f are out of bounds.
     */
-    bool haveOutOfBoundVariables() const;
+    bool haveOutOfBoundVariables() const; // same as ReLU code
 
 
 
@@ -159,6 +166,4 @@ private:
 
 
 
-
-
-#endif //MARABOU_SIGNCONSTRAINT_HPP
+#endif //MARABOU_SIGNCONSTRAINT_H
