@@ -19,6 +19,7 @@
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "MarabouError.h"
+#include "ReluConstraint.h"
 
 namespace NLR {
 
@@ -65,6 +66,10 @@ public:
         , _symbolicUb( NULL )
         , _symbolicLowerBias( NULL )
         , _symbolicUpperBias( NULL )
+        , _symbolicLbOfLb( NULL )
+        , _symbolicUbOfLb( NULL )
+        , _symbolicLbOfUb( NULL )
+        , _symbolicUbOfUb( NULL )
     {
         if ( _type == WEIGHTED_SUM || _type == OUTPUT )
         {
@@ -94,6 +99,16 @@ public:
 
             std::fill_n( _symbolicLowerBias, size, 0 );
             std::fill_n( _symbolicUpperBias, size, 0 );
+
+            _symbolicLbOfLb = new double[size];
+            _symbolicUbOfLb = new double[size];
+            _symbolicLbOfUb = new double[size];
+            _symbolicUbOfUb = new double[size];
+
+            std::fill_n( _symbolicLbOfLb, size, 0 );
+            std::fill_n( _symbolicUbOfLb, size, 0 );
+            std::fill_n( _symbolicLbOfUb, size, 0 );
+            std::fill_n( _symbolicUbOfUb, size, 0 );
         }
     }
 
@@ -267,12 +282,6 @@ public:
 
     void computeSymbolicBounds()
     {
-        std::fill_n( _symbolicLb, _size * _inputLayerSize, 0 );
-        std::fill_n( _symbolicUb, _size * _inputLayerSize, 0 );
-
-        std::fill_n( _symbolicLowerBias, _size, 0 );
-        std::fill_n( _symbolicUpperBias, _size, 0 );
-
         switch ( _type )
         {
 
@@ -286,7 +295,7 @@ public:
             break;
 
         case RELU:
-
+            computeSymbolicBoundsForRelu();
             break;
 
 
@@ -308,6 +317,9 @@ public:
 
     void comptueSymbolicBoundsForInput()
     {
+        std::fill_n( _symbolicLb, _size * _inputLayerSize, 0 );
+        std::fill_n( _symbolicUb, _size * _inputLayerSize, 0 );
+
         // For the input layer, the bounds are just the identity polynomials
         for ( unsigned i = 0; i < _size; ++i )
         {
@@ -316,8 +328,165 @@ public:
         }
     }
 
+    void computeSymbolicBoundsForRelu()
+    {
+        for ( unsigned i = 0; i < _size; ++i )
+        {
+            /*
+              There are two ways we can determine that a ReLU has become fixed:
+
+              1. If the ReLU's variables have been externally fixed
+              2. lbLb >= 0 (ACTIVE) or ubUb <= 0 (INACTIVE)
+            */
+            NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
+            const Layer *sourceLayer = _layerOwner->getLayer( sourceIndex._layer );
+
+            /*
+              A ReLU initially "inherits" the symbolic bounds computed
+              for its input variable
+            */
+
+            unsigned sourceLayerSize = sourceLayer->getSize();
+            const double *sourceSymbolicLb = sourceLayer->getSymbolicLb();
+            const double *sourceSymbolicUb = sourceLayer->getSymbolicUb();
+
+            for ( unsigned j = 0; j < _inputLayerSize; ++j )
+            {
+                _symbolicLb[j * _size + i] = sourceSymbolicLb[j * sourceLayerSize + sourceIndex._neuron];
+                _symbolicUb[j * _size + i] = sourceSymbolicUb[j * sourceLayerSize + sourceIndex._neuron];
+                _symbolicLowerBias[i] = sourceLayer->getSymbolicLowerBias()[sourceIndex._neuron];
+                _symbolicUpperBias[i] = sourceLayer->getSymbolicUpperBias()[sourceIndex._neuron];
+            }
+
+            ReluConstraint::PhaseStatus reluPhase = ReluConstraint::PHASE_NOT_FIXED;
+
+            // if ( _eliminatedWeightedSumVariables.exists( index ) )
+            // {
+            //     if ( _eliminatedWeightedSumVariables[index] <= 0 )
+            //         reluPhase = ReluConstraint::PHASE_INACTIVE;
+            //     else
+            //         reluPhase = ReluConstraint::PHASE_ACTIVE;
+            // }
+            // else if ( _eliminatedActivationResultVariables.exists( index ) )
+            // {
+            //     if ( FloatUtils::isZero( _eliminatedWeightedSumVariables[index] ) )
+            //         reluPhase = ReluConstraint::PHASE_INACTIVE;
+            //     else
+            //         reluPhase = ReluConstraint::PHASE_ACTIVE;
+            // }
+
+            double sourceLb = sourceLayer->getLb( sourceIndex._neuron );
+            double sourceUb = sourceLayer->getUb( sourceIndex._neuron );
+
+            if ( sourceLb >= 0 )
+                reluPhase = ReluConstraint::PHASE_ACTIVE;
+            else if ( sourceUb <= 0 )
+                reluPhase = ReluConstraint::PHASE_INACTIVE;
+
+            // TODO: copy symbolicUB and symblocLB from ws neuron, and also biases
+
+            /*
+              If the ReLU phase is not fixed yet, see whether the
+              newly computed bounds imply that it should be fixed.
+            */
+            if ( reluPhase == ReluConstraint::PHASE_NOT_FIXED )
+            {
+                // If we got here, we know that lbLb < 0 and ubUb
+                // > 0 There are four possible cases, depending on
+                // whether ubLb and lbUb are negative or positive
+                // (see Neurify paper, page 14).
+
+                _symbolicLbOfLb[i] = sourceLayer->getSymbolicLbOfLb( sourceIndex._neuron );
+                _symbolicUbOfLb[i] = sourceLayer->getSymbolicUbOfLb( sourceIndex._neuron );
+                _symbolicLbOfUb[i] = sourceLayer->getSymbolicLbOfUb( sourceIndex._neuron );
+                _symbolicUbOfUb[i] = sourceLayer->getSymbolicUbOfUb( sourceIndex._neuron );
+
+                // Upper bound
+                if ( _symbolicLbOfUb[i] <= 0 )
+                {
+                    // lbOfUb[i] < 0 < ubOfUb[i]
+                    // Concretize the upper bound using the Ehler's-like approximation
+                    for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                        _symbolicUb[j * _size + i] =
+                            _symbolicUb[j * _size + i] * _symbolicUbOfUb[i] / ( _symbolicUbOfUb[i] - _symbolicLbOfUb[i] );
+
+                    // Do the same for the bias, and then adjust
+                    _symbolicUpperBias[i] = _symbolicUpperBias[i] * _symbolicUbOfUb[i] / ( _symbolicUbOfUb[i] - _symbolicLbOfUb[i] );
+                    _symbolicUpperBias[i] -= _symbolicLbOfUb[i] * _symbolicUbOfUb[i] / ( _symbolicUbOfUb[i] - _symbolicLbOfUb[i] );
+                }
+
+                // Lower bound
+                if ( _symbolicUbOfLb[i] <= 0 )
+                {
+                    for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                        _symbolicLb[j * _size + i] = 0;
+
+                    _symbolicLowerBias[i] = 0;
+                }
+                else
+                {
+                    for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                        _symbolicLb[j * _size + i] =
+                            _symbolicLb[j * _size + i] * _symbolicUbOfLb[i] / ( _symbolicUbOfLb[i] - _symbolicLbOfLb[i] );
+
+                    _symbolicLowerBias[i] = _symbolicLowerBias[i] * _symbolicUbOfLb[i] / ( _symbolicUbOfLb[i] - _symbolicLbOfLb[i] );
+                }
+
+                _symbolicLbOfLb[i] = 0;
+            }
+            else
+            {
+                // The phase of this ReLU is fixed!
+                if ( reluPhase == ReluConstraint::PHASE_ACTIVE )
+                {
+                    // Active ReLU, bounds are propagated as is
+                }
+                else
+                {
+                    // Inactive ReLU, returns zero
+                    _symbolicLbOfLb[i] = 0;
+                    _symbolicUbOfLb[i] = 0;
+                    _symbolicLbOfUb[i] = 0;
+                    _symbolicUbOfUb[i] = 0;
+
+                    for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                    {
+                        _symbolicUb[j * _size + i] = 0;
+                        _symbolicLb[j * _size + i] = 0;
+                    }
+
+                    _symbolicLowerBias[i] = 0;
+                    _symbolicLowerBias[i] = 0;
+                }
+            }
+
+            if ( _symbolicLbOfUb[i] < 0 )
+                _symbolicLbOfUb[i] = 0;
+
+            /*
+              We now have the tightest bounds we can for the relu
+              variable. If they are tigheter than what was previously
+              known, store them.
+            */
+            if ( _lb[i] < _symbolicLbOfLb[i] )
+            {
+                _lb[i] = _symbolicLbOfLb[i];
+                _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
+            }
+
+            if ( _ub[i] > _symbolicUbOfUb[i] )
+            {
+                _ub[i] = _symbolicUbOfUb[i];
+                _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
+            }
+        }
+    }
+
     void computeSymbolicBoundsForWeightedSum()
     {
+        std::fill_n( _symbolicLb, _size * _inputLayerSize, 0 );
+        std::fill_n( _symbolicUb, _size * _inputLayerSize, 0 );
+
         for ( const auto &sourceLayerIndex : _sourceLayers )
         {
             const Layer *sourceLayer = _layerOwner->getLayer( sourceLayerIndex );
@@ -411,10 +580,10 @@ public:
             */
             for ( unsigned i = 0; i < _size; ++i )
             {
-                double lbOfLb = _symbolicLowerBias[i];
-                double ubOfLb = _symbolicLowerBias[i];
-                double lbOfUb = _symbolicUpperBias[i];
-                double ubOfUb = _symbolicUpperBias[i];
+                _symbolicLbOfLb[i] = _symbolicLowerBias[i];
+                _symbolicUbOfLb[i] = _symbolicLowerBias[i];
+                _symbolicLbOfUb[i] = _symbolicUpperBias[i];
+                _symbolicUbOfUb[i] = _symbolicUpperBias[i];
 
                 for ( unsigned j = 0; j < _inputLayerSize; ++j )
                 {
@@ -425,26 +594,26 @@ public:
 
                     if ( entry >= 0 )
                     {
-                        lbOfLb += ( entry * inputLb );
-                        ubOfLb += ( entry * inputUb );
+                        _symbolicLbOfLb[i] += ( entry * inputLb );
+                        _symbolicUbOfLb[i] += ( entry * inputUb );
                     }
                     else
                     {
-                        lbOfLb += ( entry * inputUb );
-                        ubOfLb += ( entry * inputLb );
+                        _symbolicLbOfLb[i] += ( entry * inputUb );
+                        _symbolicUbOfLb[i] += ( entry * inputLb );
                     }
 
                     entry = _symbolicUb[j * _size + i];
 
                     if ( entry >= 0 )
                     {
-                        lbOfUb += ( entry * inputLb );
-                        ubOfUb += ( entry * inputUb );
+                        _symbolicLbOfUb[i] += ( entry * inputLb );
+                        _symbolicUbOfUb[i] += ( entry * inputUb );
                     }
                     else
                     {
-                        lbOfUb += ( entry * inputUb );
-                        ubOfUb += ( entry * inputLb );
+                        _symbolicLbOfUb[i] += ( entry * inputUb );
+                        _symbolicUbOfUb[i] += ( entry * inputLb );
                     }
                 }
 
@@ -453,14 +622,15 @@ public:
                   weighted sum variable. If they are tigheter than
                   what was previously known, store them.
                 */
-                if ( _lb[i] < lbOfLb )
+                if ( _lb[i] < _symbolicLbOfLb[i] )
                 {
-                    _lb[i] = lbOfLb;
+                    _lb[i] = _symbolicLbOfLb[i];
                     _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
                 }
-                if ( _ub[i] > ubOfUb )
+
+                if ( _ub[i] > _symbolicUbOfUb[i] )
                 {
-                    _ub[i] = ubOfUb;
+                    _ub[i] = _symbolicUbOfUb[i];
                     _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
                 }
             }
@@ -494,6 +664,10 @@ private:
     double *_symbolicUb;
     double *_symbolicLowerBias;
     double *_symbolicUpperBias;
+    double *_symbolicLbOfLb;
+    double *_symbolicUbOfLb;
+    double *_symbolicLbOfUb;
+    double *_symbolicUbOfUb;
 
     const double *getSymbolicLb() const
     {
@@ -513,6 +687,26 @@ private:
     const double *getSymbolicUpperBias() const
     {
         return _symbolicUpperBias;
+    }
+
+    double getSymbolicLbOfLb( unsigned neuron ) const
+    {
+        return _symbolicLbOfLb[neuron];
+    }
+
+    double getSymbolicUbOfLb( unsigned neuron ) const
+    {
+        return _symbolicUbOfLb[neuron];
+    }
+
+    double getSymbolicLbOfUb( unsigned neuron ) const
+    {
+        return _symbolicLbOfUb[neuron];
+    }
+
+    double getSymbolicUbOfUb( unsigned neuron ) const
+    {
+        return _symbolicUbOfUb[neuron];
     }
 
     void freeMemoryIfNeeded()
@@ -575,6 +769,30 @@ private:
         {
             delete[] _symbolicUpperBias;
             _symbolicUpperBias = NULL;
+        }
+
+        if ( _symbolicLbOfLb )
+        {
+            delete[] _symbolicLbOfLb;
+            _symbolicLbOfLb = NULL;
+        }
+
+        if ( _symbolicUbOfLb )
+        {
+            delete[] _symbolicUbOfLb;
+            _symbolicUbOfLb = NULL;
+        }
+
+        if ( _symbolicLbOfUb )
+        {
+            delete[] _symbolicLbOfUb;
+            _symbolicLbOfUb = NULL;
+        }
+
+        if ( _symbolicUbOfUb )
+        {
+            delete[] _symbolicUbOfUb;
+            _symbolicUbOfUb = NULL;
         }
     }
 };
