@@ -51,7 +51,7 @@ public:
         freeMemoryIfNeeded();
     }
 
-    Layer( unsigned index, Type type, unsigned size, const LayerOwner *layerOwner )
+    Layer( unsigned index, Type type, unsigned size, LayerOwner *layerOwner )
         : _layerIndex( index )
         , _type( type )
         , _size( size )
@@ -63,6 +63,8 @@ public:
         , _inputLayerSize( 0 )
         , _symbolicLb( NULL )
         , _symbolicUb( NULL )
+        , _symbolicLowerBias( NULL )
+        , _symbolicUpperBias( NULL )
     {
         if ( _type == WEIGHTED_SUM || _type == OUTPUT )
         {
@@ -86,6 +88,12 @@ public:
 
             std::fill_n( _symbolicLb, size * _inputLayerSize, 0 );
             std::fill_n( _symbolicUb, size * _inputLayerSize, 0 );
+
+            _symbolicLowerBias = new double[size];
+            _symbolicUpperBias = new double[size];
+
+            std::fill_n( _symbolicLowerBias, size, 0 );
+            std::fill_n( _symbolicUpperBias, size, 0 );
         }
     }
 
@@ -180,13 +188,24 @@ public:
         if ( _type == WEIGHTED_SUM || _type == OUTPUT )
         {
             _layerToWeights[layerNumber] = new double[layerSize * _size];
+            _layerToPositiveWeights[layerNumber] = new double[layerSize * _size];
+            _layerToNegativeWeights[layerNumber] = new double[layerSize * _size];
+
             std::fill_n( _layerToWeights[layerNumber], layerSize * _size, 0 );
+            std::fill_n( _layerToPositiveWeights[layerNumber], layerSize * _size, 0 );
+            std::fill_n( _layerToPositiveWeights[layerNumber], layerSize * _size, 0 );
         }
     }
 
     void setWeight( unsigned sourceLayer, unsigned sourceNeuron, unsigned targetNeuron, double weight )
     {
-        _layerToWeights[sourceLayer][sourceNeuron * _size + targetNeuron] = weight;
+        unsigned index = sourceNeuron * _size + targetNeuron;
+        _layerToWeights[sourceLayer][index] = weight;
+
+        if ( weight > 0 )
+            _layerToPositiveWeights[sourceLayer][index] = weight;
+        else
+            _layerToNegativeWeights[sourceLayer][index] = weight;
     }
 
     void setBias( unsigned neuron, double bias )
@@ -236,28 +255,34 @@ public:
         }
     }
 
+    double getLb( unsigned neuron ) const
+    {
+        return _lb[neuron];
+    }
+
+    double getUb( unsigned neuron ) const
+    {
+        return _ub[neuron];
+    }
+
     void computeSymbolicBounds()
     {
+        std::fill_n( _symbolicLb, _size * _inputLayerSize, 0 );
+        std::fill_n( _symbolicUb, _size * _inputLayerSize, 0 );
+
+        std::fill_n( _symbolicLowerBias, _size, 0 );
+        std::fill_n( _symbolicUpperBias, _size, 0 );
+
         switch ( _type )
         {
 
         case INPUT:
-
-            std::fill_n( _symbolicLb, _size * _inputLayerSize, 0 );
-            std::fill_n( _symbolicUb, _size * _inputLayerSize, 0 );
-
-            // For the input layer, the bounds are just the identity polynomials
-            for ( unsigned i = 0; i < _size; ++i )
-            {
-                _symbolicLb[_size * i + i] = 1;
-                _symbolicUb[_size * i + i] = 1;
-            }
-
+            comptueSymbolicBoundsForInput();
             break;
 
         case WEIGHTED_SUM:
         case OUTPUT:
-
+            computeSymbolicBoundsForWeightedSum();
             break;
 
         case RELU:
@@ -281,15 +306,178 @@ public:
         }
     }
 
+    void comptueSymbolicBoundsForInput()
+    {
+        // For the input layer, the bounds are just the identity polynomials
+        for ( unsigned i = 0; i < _size; ++i )
+        {
+            _symbolicLb[_size * i + i] = 1;
+            _symbolicUb[_size * i + i] = 1;
+        }
+    }
+
+    void computeSymbolicBoundsForWeightedSum()
+    {
+        for ( const auto &sourceLayerIndex : _sourceLayers )
+        {
+            const Layer *sourceLayer = _layerOwner->getLayer( sourceLayerIndex );
+            unsigned sourceLayerSize = sourceLayer->getSize();
+
+            /*
+              Perform the multiplication.
+
+              newUB = oldUB * posWeights + oldLB * negWeights
+              newLB = oldUB * negWeights + oldLB * posWeights
+            */
+
+            for ( unsigned i = 0; i < _inputLayerSize; ++i )
+            {
+                for ( unsigned j = 0; j < _size; ++j )
+                {
+                    for ( unsigned k = 0; k < sourceLayerSize; ++k )
+                    {
+                        _symbolicLb[i * _size + j] +=
+                            sourceLayer->getSymbolicUb()[i * sourceLayerSize + k] *
+                            _layerToNegativeWeights[sourceLayerIndex][k * _size + j];
+
+                        // _currentLayerLowerBounds[i * currentLayerSize + j] +=
+                        //     _previousLayerUpperBounds[i * previousLayerSize + k] *
+                        //     _negativeWeights[currentLayer - 1][k * currentLayerSize + j];
+
+                        _symbolicLb[i * _size + j] +=
+                            sourceLayer->getSymbolicLb()[i * sourceLayerSize + k] *
+                            _layerToPositiveWeights[sourceLayerIndex][k * _size + j];
+
+                        // _currentLayerLowerBounds[i * currentLayerSize + j] +=
+                        //     _previousLayerLowerBounds[i * previousLayerSize + k] *
+                        //     _positiveWeights[currentLayer - 1][k * currentLayerSize + j];
+
+                        _symbolicUb[i * _size + j] +=
+                            sourceLayer->getSymbolicUb()[i * sourceLayerSize + k] *
+                            _layerToPositiveWeights[sourceLayerIndex][k * _size + j];
+
+                        // _currentLayerUpperBounds[i * currentLayerSize + j] +=
+                        //     _previousLayerUpperBounds[i * previousLayerSize + k] *
+                        //     _positiveWeights[currentLayer - 1][k * currentLayerSize + j];
+
+                        _symbolicUb[i * _size + j] +=
+                            sourceLayer->getSymbolicLb()[i * sourceLayerSize + k] *
+                            _layerToNegativeWeights[sourceLayerIndex][k * _size + j];
+
+                        // _currentLayerUpperBounds[i * currentLayerSize + j] +=
+                        //     _previousLayerLowerBounds[i * previousLayerSize + k] *
+                        //     _negativeWeights[currentLayer - 1][k * currentLayerSize + j];
+
+                    }
+                }
+            }
+
+            /*
+              Compute the biases for the new layer
+            */
+            for ( unsigned j = 0; j < _size; ++j )
+            {
+                _symbolicLowerBias[j] = _bias[j];
+                _symbolicUpperBias[j] = _bias[j];
+
+                // Add the weighted bias from the source layer
+                for ( unsigned k = 0; k < sourceLayerSize; ++k )
+                {
+                    double weight = _layerToWeights[sourceLayerIndex][k * _size + j];
+
+                    if ( weight > 0 )
+                    {
+                        _symbolicLowerBias[j] += sourceLayer->getSymbolicLowerBias()[k] * weight;
+                        _symbolicUpperBias[j] += sourceLayer->getSymbolicUpperBias()[k] * weight;
+                        // _currentLayerLowerBias[j] += _previousLayerLowerBias[k] * weight;
+                        // _currentLayerUpperBias[j] += _previousLayerUpperBias[k] * weight;
+                    }
+                    else
+                    {
+                        _symbolicLowerBias[j] += sourceLayer->getSymbolicUpperBias()[k] * weight;
+                        _symbolicUpperBias[j] += sourceLayer->getSymbolicLowerBias()[k] * weight;
+
+                        // _currentLayerLowerBias[j] += _previousLayerUpperBias[k] * weight;
+                        // _currentLayerUpperBias[j] += _previousLayerLowerBias[k] * weight;
+                    }
+                }
+            }
+
+            /*
+              We now have the symbolic representation for the current
+              layer. Next, we compute new lower and upper bounds for
+              it. For each of these bounds, we compute an upper bound and
+              a lower bound.
+            */
+            for ( unsigned i = 0; i < _size; ++i )
+            {
+                double lbOfLb = _symbolicLowerBias[i];
+                double ubOfLb = _symbolicLowerBias[i];
+                double lbOfUb = _symbolicUpperBias[i];
+                double ubOfUb = _symbolicUpperBias[i];
+
+                for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                {
+                    double inputLb = _layerOwner->getLayer( 0 )->getLb( j );
+                    double inputUb = _layerOwner->getLayer( 0 )->getUb( j );
+
+                    double entry = _symbolicLb[j * _size + i];
+
+                    if ( entry >= 0 )
+                    {
+                        lbOfLb += ( entry * inputLb );
+                        ubOfLb += ( entry * inputUb );
+                    }
+                    else
+                    {
+                        lbOfLb += ( entry * inputUb );
+                        ubOfLb += ( entry * inputLb );
+                    }
+
+                    entry = _symbolicUb[j * _size + i];
+
+                    if ( entry >= 0 )
+                    {
+                        lbOfUb += ( entry * inputLb );
+                        ubOfUb += ( entry * inputUb );
+                    }
+                    else
+                    {
+                        lbOfUb += ( entry * inputUb );
+                        ubOfUb += ( entry * inputLb );
+                    }
+                }
+
+                /*
+                  We now have the tightest bounds we can for the
+                  weighted sum variable. If they are tigheter than
+                  what was previously known, store them.
+                */
+                if ( _lb[i] < lbOfLb )
+                {
+                    _lb[i] = lbOfLb;
+                    _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
+                }
+                if ( _ub[i] > ubOfUb )
+                {
+                    _ub[i] = ubOfUb;
+                    _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
+                }
+            }
+        }
+    }
+
 private:
     unsigned _layerIndex;
     Type _type;
     unsigned _size;
-    const LayerOwner *_layerOwner;
+    LayerOwner *_layerOwner;
 
     Set<unsigned> _sourceLayers;
 
     Map<unsigned, double *> _layerToWeights;
+    Map<unsigned, double *> _layerToPositiveWeights;
+    Map<unsigned, double *> _layerToNegativeWeights;
     double *_bias;
 
     double *_assignment;
@@ -304,12 +492,42 @@ private:
     unsigned _inputLayerSize;
     double *_symbolicLb;
     double *_symbolicUb;
+    double *_symbolicLowerBias;
+    double *_symbolicUpperBias;
+
+    const double *getSymbolicLb() const
+    {
+        return _symbolicLb;
+    }
+
+    const double *getSymbolicUb() const
+    {
+        return _symbolicUb;
+    }
+
+    const double *getSymbolicLowerBias() const
+    {
+        return _symbolicLowerBias;
+    }
+
+    const double *getSymbolicUpperBias() const
+    {
+        return _symbolicUpperBias;
+    }
 
     void freeMemoryIfNeeded()
     {
         for ( const auto &weights : _layerToWeights )
             delete[] weights.second;
         _layerToWeights.clear();
+
+        for ( const auto &weights : _layerToPositiveWeights )
+            delete[] weights.second;
+        _layerToPositiveWeights.clear();
+
+        for ( const auto &weights : _layerToNegativeWeights )
+            delete[] weights.second;
+        _layerToNegativeWeights.clear();
 
         if ( _bias )
         {
@@ -345,6 +563,18 @@ private:
         {
             delete[] _symbolicUb;
             _symbolicUb = NULL;
+        }
+
+        if ( _symbolicLowerBias )
+        {
+            delete[] _symbolicLowerBias;
+            _symbolicLowerBias = NULL;
+        }
+
+        if ( _symbolicUpperBias )
+        {
+            delete[] _symbolicUpperBias;
+            _symbolicUpperBias = NULL;
         }
     }
 };
