@@ -202,7 +202,7 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
         unsigned layerSize = _acasNeuralNetwork.getLayerSize( layer  );
         for ( unsigned neuron = 0; neuron < layerSize; ++neuron )
         {
-            nlr->setNeuronActivationFunction( layer, neuron, NetworkLevelReasoner::ReLU );
+            nlr->setNeuronActivationFunction( layer, neuron, PiecewiseLinearFunctionType::RELU );
         }
     }
 

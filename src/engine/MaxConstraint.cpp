@@ -65,6 +65,11 @@ MaxConstraint::~MaxConstraint()
     _elements.clear();
 }
 
+PiecewiseLinearFunctionType MaxConstraint::getType() const
+{
+    return PiecewiseLinearFunctionType::MAX;
+}
+
 PiecewiseLinearConstraint *MaxConstraint::duplicateConstraint() const
 {
     MaxConstraint *clone = new MaxConstraint( _f, _elements );

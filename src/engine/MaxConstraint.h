@@ -32,6 +32,11 @@ class MaxConstraint : public PiecewiseLinearConstraint
     MaxConstraint( const String &serializedMax );
 
     /*
+      Get the type of this constraint.
+    */
+    PiecewiseLinearFunctionType getType() const;
+
+    /*
       Return a clone of the constraint.
     */
     PiecewiseLinearConstraint *duplicateConstraint() const;
