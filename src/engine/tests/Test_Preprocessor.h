@@ -671,6 +671,84 @@ public:
         TS_ASSERT_EQUALS( processed.getNumberOfVariables(), 0U );
     }
 
+    void test_construction_of_network_level_reasoner()
+    {
+        /*
+              2      R       1
+          x0 --- x2 ---> x4 --- x6
+            \    /              /
+           1 \  /              /
+              \/           -1 /
+              /\             /
+           3 /  \           /
+            /    \   R     /
+          x1 --- x3 ---> x5
+              1
+        */
+        InputQuery inputQuery;
+
+        inputQuery.setNumberOfVariables( 7 );
+
+        // Mark inputs and outputs
+        inputQuery.markInputVariable( 0, 0 );
+        inputQuery.markInputVariable( 1, 1 );
+        inputQuery.markOutputVariable( 6, 0 );
+
+        // Specify bounds for all variables
+        for ( unsigned i = 0; i < 7; ++i )
+        {
+            inputQuery.setLowerBound( i, -10 );
+            inputQuery.setUpperBound( i, 10 );
+        }
+
+        // Specify activation functions
+        ReluConstraint *relu1 = new ReluConstraint( 2, 4 );
+        ReluConstraint *relu2 = new ReluConstraint( 3, 5 );
+        inputQuery.addPiecewiseLinearConstraint( relu1 );
+        inputQuery.addPiecewiseLinearConstraint( relu2 );
+        relu1->notifyLowerBound( 2, -10 );
+        relu2->notifyLowerBound( 3, -10 );
+
+        // Specify equations
+        Equation equation1;
+        equation1.addAddend( 2, 0 );
+        equation1.addAddend( 3, 1 );
+        equation1.addAddend( -1, 2 );
+        equation1.setScalar( 0 );
+        inputQuery.addEquation( equation1 );
+
+        Equation equation2;
+        equation2.addAddend( 1, 0 );
+        equation2.addAddend( 1, 1 );
+        equation2.addAddend( -1, 3 );
+        equation2.setScalar( 0 );
+        inputQuery.addEquation( equation2 );
+
+        Equation equation3;
+        equation3.addAddend( 1, 4 );
+        equation3.addAddend( -1, 5 );
+        equation3.addAddend( -1, 6 );
+        equation3.setScalar( 0 );
+        inputQuery.addEquation( equation3 );
+
+        // Invoke preprocessor
+        TS_ASSERT( !inputQuery._networkLevelReasoner );
+        InputQuery processed = Preprocessor().preprocess( inputQuery );
+        TS_ASSERT( processed._networkLevelReasoner );
+
+        NetworkLevelReasoner *nlr = processed._networkLevelReasoner;
+
+        double inputs1[2] = { 1, -2 };
+        double inputs2[2] = { -4, 3 };
+        double output;
+
+        TS_ASSERT_THROWS_NOTHING( nlr->evaluate( inputs1, &output ) );
+        TS_ASSERT_EQUALS( output, 0 );
+
+        TS_ASSERT_THROWS_NOTHING( nlr->evaluate( inputs2, &output ) );
+        TS_ASSERT_EQUALS( output, 1 );
+    }
+
     void test_todo()
     {
         TS_TRACE( "In test_variable_elimination, test something about updated bounds and updated PL constraints" );
