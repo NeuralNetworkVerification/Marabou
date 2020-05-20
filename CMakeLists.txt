@@ -279,13 +279,13 @@ if (${BUILD_PYTHON} AND ${RUN_PYTHON_TEST})
     endif()
     # Install python packages required for testing
     execute_process(
-	COMMAND ${PYTHON_EXECUTABLE} -m pip install -q -r ${PYTHON_API_DIR}/test_requirements.txt
+        COMMAND ${PYTHON_EXECUTABLE} -m pip install -q -r ${PYTHON_API_DIR}/test_requirements.txt
     )
     # Add python tests
     add_custom_command(
         TARGET build-tests
         POST_BUILD
-	COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PYTHON_API_DIR}/test
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PYTHON_API_DIR}/test
     )
 endif()    
 
