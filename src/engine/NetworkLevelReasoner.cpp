@@ -1243,11 +1243,7 @@ void NetworkLevelReasoner::dumpTopology() const
                 }
 
                 double bias = _bias[Index( i, j )];
-                if ( bias > 0 )
-                    printf( " + %.2lf", bias );
-                else
-                    printf( " - %.2lf", -bias );
-                printf( "\n" );
+                printf( " %+.2lf\n", bias );
             }
         }
     }
