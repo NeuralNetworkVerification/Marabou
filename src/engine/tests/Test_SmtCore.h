@@ -44,6 +44,11 @@ public:
             nextIsActive = true;
         }
 
+        PiecewiseLinearFunctionType getType() const
+        {
+            return (PiecewiseLinearFunctionType)999;
+        }
+
         PiecewiseLinearConstraint *duplicateConstraint() const
         {
             return NULL;

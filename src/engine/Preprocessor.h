@@ -100,6 +100,13 @@ private:
     void addPlAuxiliaryEquations();
 
     /*
+      Attempt to figure out the network topology and construct a
+      network level reasoner. Return true iff the construction was
+      successful
+    */
+    bool constructNetworkLevelReasoner();
+
+    /*
       The preprocessed query
     */
     InputQuery _preprocessed;
