@@ -131,22 +131,22 @@ void PropertyParser::processSingleLine( const String &line, InputQuery &inputQue
         else if ( weightedSumVariable )
         {
             // These variables are of the form ws_2_5
-            subTokens = token.tokenize( "_" );
+            // subTokens = token.tokenize( "_" );
 
-            if ( subTokens.size() != 3 )
-                throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
+            // if ( subTokens.size() != 3 )
+            //     throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
 
-            auto subToken = subTokens.begin();
-            ++subToken;
-            unsigned layerIndex = atoi( subToken->ascii() );
-            ++subToken;
-            unsigned nodeIndex = atoi( subToken->ascii() );
+            // auto subToken = subTokens.begin();
+            // ++subToken;
+            // unsigned layerIndex = atoi( subToken->ascii() );
+            // ++subToken;
+            // unsigned nodeIndex = atoi( subToken->ascii() );
 
-            NetworkLevelReasoner *nlr = inputQuery.getNetworkLevelReasoner();
-            if ( !nlr )
-                throw InputParserError( InputParserError::NETWORK_LEVEL_REASONING_DISABLED );
+            // NLR::NetworkLevelReasoner *nlr = inputQuery.getNetworkLevelReasoner();
+            // if ( !nlr )
+            //     throw InputParserError( InputParserError::NETWORK_LEVEL_REASONING_DISABLED );
 
-            variable = nlr->getWeightedSumVariable( layerIndex, nodeIndex );
+            // variable = nlr->getWeightedSumVariable( layerIndex, nodeIndex );
         }
 
         if ( type == Equation::GE )

@@ -248,16 +248,16 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_timeoutFactor", &MarabouOptions::_timeoutFactor)
         .def_readwrite("_verbosity", &MarabouOptions::_verbosity)
         .def_readwrite("_dnc", &MarabouOptions::_dnc);
-    py::class_<NetworkLevelReasoner, std::unique_ptr<NetworkLevelReasoner,py::nodelete>> nlr(m, "NetworkLevelReasoner");
+    py::class_<NLR::NetworkLevelReasoner, std::unique_ptr<NLR::NetworkLevelReasoner,py::nodelete>> nlr(m, "NetworkLevelReasoner");
     nlr.def(py::init());
-    nlr.def("setNumberOfLayers", &NetworkLevelReasoner::setNumberOfLayers);
-    nlr.def("setLayerSize", &NetworkLevelReasoner::setLayerSize);
-    nlr.def("setNeuronActivationFunction", &NetworkLevelReasoner::setNeuronActivationFunction);
-    nlr.def("setBias", &NetworkLevelReasoner::setBias);
-    nlr.def("setWeight", &NetworkLevelReasoner::setWeight);
-    nlr.def("allocateMemoryByTopology", &NetworkLevelReasoner::allocateMemoryByTopology);
-    nlr.def("setWeightedSumVariable", &NetworkLevelReasoner::setWeightedSumVariable);
-    nlr.def("setActivationResultVariable", &NetworkLevelReasoner::setActivationResultVariable);
+    nlr.def("setNumberOfLayers", &NLR::NetworkLevelReasoner::setNumberOfLayers);
+    nlr.def("setLayerSize", &NLR::NetworkLevelReasoner::setLayerSize);
+    nlr.def("setNeuronActivationFunction", &NLR::NetworkLevelReasoner::setNeuronActivationFunction);
+    nlr.def("setBias", &NLR::NetworkLevelReasoner::setBias);
+    nlr.def("setWeight", &NLR::NetworkLevelReasoner::setWeight);
+    nlr.def("allocateMemoryByTopology", &NLR::NetworkLevelReasoner::allocateMemoryByTopology);
+    nlr.def("setWeightedSumVariable", &NLR::NetworkLevelReasoner::setWeightedSumVariable);
+    nlr.def("setActivationResultVariable", &NLR::NetworkLevelReasoner::setActivationResultVariable);
     py::enum_<PiecewiseLinearFunctionType>(m, "PiecewiseLinearFunctionType")
         .value("ReLU", PiecewiseLinearFunctionType::RELU)
         .value("AbsoluteValue", PiecewiseLinearFunctionType::ABSOLUTE_VALUE)

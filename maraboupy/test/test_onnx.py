@@ -8,6 +8,7 @@ import pytest
 from .. import Marabou
 import numpy as np
 import os
+from .. import MarabouNetworkONNX
 
 # Global settings
 OPT = Marabou.createOptions(verbosity = 0) # Turn off printing
@@ -31,25 +32,25 @@ def test_fc2():
     """
     filename =  "fc2.onnx"
     evaluateFile(filename)
-    
+
 def test_KJ_TaxiNet():
     """
     Test a convolutional network, exported from tensorflow
-    Uses Transpose, Conv, Add, Relu, Cast, Reshape, 
+    Uses Transpose, Conv, Add, Relu, Cast, Reshape,
     Matmul, and Identity layers
     """
     filename =  "KJ_TinyTaxiNet.onnx"
     evaluateFile(filename)
-    
+
 def test_conv_mp1():
     """
     Test a convolutional network using max pool, exported from pytorch
-    Uses Conv, Relu, MaxPool, Constant, Reshape, Transpose, 
+    Uses Conv, Relu, MaxPool, Constant, Reshape, Transpose,
     Matmul, and Add layers
     """
     filename =  "conv_mp1.onnx"
-    evaluateFile(filename)   
-        
+    evaluateFile(filename)
+
 def evaluateFile(filename, testInputs = None):
     """
     Load network and evaluate testInputs with and without Marabou
@@ -59,12 +60,12 @@ def evaluateFile(filename, testInputs = None):
     # Load network relative to this file's location
     filename = os.path.join(os.path.dirname(__file__), NETWORK_FOLDER, filename)
     network = Marabou.read_onnx(filename)
-    
+
     # Create test points if none provided. This creates a list of test points.
     # Each test point is itself a list, representing the values for each input array.
     if not testInputs:
         testInputs = [[np.random.random(inVars.shape) for inVars in network.inputVars] for _ in range(NUM_RAND)]
-    
+
     # Evaluate test points using both Marabou and ONNX
     for testInput in testInputs:
         marabouEval = network.evaluateWithMarabou(testInput, options = OPT, filename = "").flatten()
@@ -72,4 +73,3 @@ def evaluateFile(filename, testInputs = None):
 
         # Assert that both evaluations are the same within the set tolerance
         assert max(abs(marabouEval.flatten() - onnxEval.flatten())) < TOL
-    

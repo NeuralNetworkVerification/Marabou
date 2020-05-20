@@ -222,20 +222,20 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
     for ( const auto &constraint : other._plConstraints )
         _plConstraints.append( constraint->duplicateConstraint() );
 
-    if ( other._networkLevelReasoner )
-    {
-        if ( !_networkLevelReasoner )
-            _networkLevelReasoner = new NetworkLevelReasoner;
-        other._networkLevelReasoner->storeIntoOther( *_networkLevelReasoner );
-    }
-    else
-    {
-        if ( _networkLevelReasoner )
-        {
-            delete _networkLevelReasoner;
-            _networkLevelReasoner = NULL;
-        }
-    }
+    // if ( other._networkLevelReasoner )
+    // {
+    //     if ( !_networkLevelReasoner )
+    //         _networkLevelReasoner = new NLR::NetworkLevelReasoner;
+    //     other._networkLevelReasoner->storeIntoOther( *_networkLevelReasoner );
+    // }
+    // else
+    // {
+    //     if ( _networkLevelReasoner )
+    //     {
+    //         delete _networkLevelReasoner;
+    //         _networkLevelReasoner = NULL;
+    //     }
+    // }
 
     return *this;
 }
@@ -528,12 +528,12 @@ void InputQuery::adjustInputOutputMapping( const Map<unsigned, unsigned> &oldInd
         _variableToOutputIndex[it.second] = it.first;
 }
 
-void InputQuery::setNetworkLevelReasoner( NetworkLevelReasoner *nlr )
+void InputQuery::setNetworkLevelReasoner( NLR::NetworkLevelReasoner *nlr )
 {
     _networkLevelReasoner = nlr;
 }
 
-NetworkLevelReasoner *InputQuery::getNetworkLevelReasoner() const
+NLR::NetworkLevelReasoner *InputQuery::getNetworkLevelReasoner() const
 {
     return _networkLevelReasoner;
 }
