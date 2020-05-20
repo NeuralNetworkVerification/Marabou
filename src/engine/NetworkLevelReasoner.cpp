@@ -244,7 +244,7 @@ void NetworkLevelReasoner::allocateMemoryByTopology()
     if ( _numberOfLayers == 0 )
         return;
 
-    _weights = new double*[_numberOfLayers - 1];
+    _weights = new double *[_numberOfLayers - 1];
     if ( !_weights )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "NetworkLevelReasoner::weights" );
 
@@ -1247,7 +1247,6 @@ void NetworkLevelReasoner::dumpTopology() const
             }
         }
     }
-
 }
 
 //
