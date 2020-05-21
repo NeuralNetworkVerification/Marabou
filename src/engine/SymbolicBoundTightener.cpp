@@ -872,21 +872,6 @@ void SymbolicBoundTightener::storeIntoOther( SymbolicBoundTightener &other ) con
     other._inputNeuronToIndex = _inputNeuronToIndex;
 }
 
-void SymbolicBoundTightener::matrixMultiplication( double *matA, double *matB,
-                                                   double *matC, unsigned rowsA,
-                                                   unsigned columnsA,
-                                                   unsigned columnsB )
-{
-    double alpha = 1;
-    double beta = 1;
-    // Conceptually, cblas_dgemm computes alpha * A B + beta * C and stores the result
-    // in C.
-    // See https://developer.apple.com/documentation/accelerate/1513282-cblas_dgemm?language=objc
-    // for the documnetation of cblas_dgemm.
-    //
-    cblas_dgemm( CblasRowMajor, CblasNoTrans, CblasNoTrans, rowsA, columnsB,
-                 columnsA, alpha, matA, columnsA, matB, columnsB, beta, matC, columnsB);
-}
 
 //
 // Local Variables:
