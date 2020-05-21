@@ -30,7 +30,7 @@ public:
     /*
     Returns true iff the assignment satisfies the constraint
     */
-    bool satisfied() const; // todo check implementation
+    bool satisfied() const;
 
 
     /*
@@ -64,9 +64,9 @@ public:
       These callbacks are invoked when a watched variable's value
       changes, or when its bounds change.
     */
-    void notifyVariableValue( unsigned variable, double value ); //TODO implement!!
-    void notifyLowerBound( unsigned variable, double bound ); //TODO implement!!
-    void notifyUpperBound( unsigned variable, double bound ); //TODO implement!!
+    void notifyVariableValue( unsigned variable, double value );
+    void notifyLowerBound( unsigned variable, double bound );
+    void notifyUpperBound( unsigned variable, double bound );
 
 
     /*
@@ -84,13 +84,13 @@ public:
     /*
       Returns a list of possible fixes for the violated constraint.
     */
-    List<PiecewiseLinearConstraint::Fix> getPossibleFixes() const;  //TODO implement!!
+    List<PiecewiseLinearConstraint::Fix> getPossibleFixes() const;
 
 
     /*
       Return a list of smart fixes for violated constraint.
     */
-    List<PiecewiseLinearConstraint::Fix> getSmartFixes( ITableau *tableau ) const;  //TODO implement!!
+    List<PiecewiseLinearConstraint::Fix> getSmartFixes( ITableau *tableau ) const;
 
 
     /*
@@ -116,7 +116,7 @@ public:
     /*
       Get the tightenings entailed by the constraint.
     */
-    void getEntailedTightenings( List<Tightening> &tightenings ) const;  //TODO implement!!
+    void getEntailedTightenings( List<Tightening> &tightenings ) const;
 
 
 

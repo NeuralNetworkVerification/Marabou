@@ -79,7 +79,7 @@ List<unsigned> SignConstraint::getParticipatingVariables() const
 
 
 
-bool SignConstraint::satisfied() const // todo check
+bool SignConstraint::satisfied() const
 {
     if ( !( _assignment.exists( _b ) && _assignment.exists( _f ) ) )
         throw MarabouError( MarabouError::PARTICIPATING_VARIABLES_ABSENT );
@@ -281,6 +281,171 @@ String SignConstraint::phaseToString( PhaseStatus phase )
             return "UNKNOWN";
     }
 };
+
+
+void SignConstraint::notifyVariableValue( unsigned variable, double value )
+{
+    if ( FloatUtils::isZero( value, GlobalConfiguration::RELU_CONSTRAINT_COMPARISON_TOLERANCE ) )
+        value = 0.0;
+
+    _assignment[variable] = value;
+}
+
+
+void SignConstraint::notifyLowerBound( unsigned variable, double bound )
+{
+    if ( _statistics )
+        _statistics->incNumBoundNotificationsPlConstraints();
+
+    // if lower bound exists and better than suggested 'bound' input - return
+    if ( _lowerBounds.exists( variable ) && !FloatUtils::gt( bound, _lowerBounds[variable] ) )
+        return;
+    // otherwise - update bound
+    _lowerBounds[variable] = bound;
+
+    if ( variable == _f && FloatUtils::gt( bound, -1 ))
+        setPhaseStatus( PhaseStatus::PHASE_POSITIVE );
+    else if ( variable == _b && !FloatUtils::isNegative( bound ) )  // if b (input) is >= 0
+        setPhaseStatus( PhaseStatus::PHASE_POSITIVE );
+// todo - eventually unmask code for _constraintBoundTightener
+//    if ( isActive() && _constraintBoundTightener )
+//    {
+//        // A positive lower bound is always propagated between f and b
+//        if ( bound > 0 )
+//        {
+//            unsigned partner = ( variable == _f ) ? _b : _f;
+//            _constraintBoundTightener->registerTighterLowerBound( partner, bound );
+//        }
+//
+//            // Also, if for some reason we only know a negative lower bound for f,
+//            // we attempt to tighten it to 0
+//        else if ( bound < 0 && variable == _f )
+//        {
+//            _constraintBoundTightener->registerTighterLowerBound( _f, 0 );
+//        }
+//    }
+}
+
+
+void SignConstraint::notifyUpperBound(unsigned variable, double bound)
+{
+    if ( _statistics )
+        _statistics->incNumBoundNotificationsPlConstraints();
+
+    if ( _upperBounds.exists( variable ) && !FloatUtils::lt( bound, _upperBounds[variable] ) )
+        return;
+
+    _upperBounds[variable] = bound;
+
+    if ( variable == _f && FloatUtils::lt( bound, 1 ))
+        setPhaseStatus( PhaseStatus::PHASE_NEGATIVE );
+    else if ( variable == _b && FloatUtils::isNegative( bound ) )  // if b (input) is < 0
+        setPhaseStatus( PhaseStatus::PHASE_NEGATIVE );
+// todo - eventually unmask code for _constraintBoundTightener
+//    if ( isActive() && _constraintBoundTightener )
+//    {
+//        // A positive lower bound is always propagated between f and b
+//        if ( bound > 0 )
+//        {
+//            unsigned partner = ( variable == _f ) ? _b : _f;
+//            _constraintBoundTightener->registerTighterLowerBound( partner, bound );
+//        }
+//
+//            // Also, if for some reason we only know a negative lower bound for f,
+//            // we attempt to tighten it to 0
+//        else if ( bound < 0 && variable == _f )
+//        {
+//            _constraintBoundTightener->registerTighterLowerBound( _f, 0 );
+//        }
+//    }
+}
+
+
+
+// todo - check thoroughly!
+// todo - Guy - do I need also conditions of phases?
+List<PiecewiseLinearConstraint::Fix> SignConstraint::getPossibleFixes() const
+{
+    ASSERT( !satisfied() );
+    ASSERT( _assignment.exists( _b ) );
+    ASSERT( _assignment.exists( _f ) );
+
+    double bValue = _assignment.get( _b );
+    double fValue = _assignment.get( _f );
+
+    ASSERT( !FloatUtils::isNegative( fValue ) );
+
+    List<PiecewiseLinearConstraint::Fix> fixes;
+
+    // Possible violations:
+    //   1. f is NOT +1, b is >= 0
+    //   2. f is  NOT -1, b is < 0
+    if ( !FloatUtils::isNegative( bValue ) ) // if b >= 0 -> make f = 1
+    {
+        if (!FloatUtils::areEqual(fValue, 1)) {
+            fixes.append(PiecewiseLinearConstraint::Fix(_f, 1));
+        }
+    }
+     else  // if b < 0 -> make f = (-1)
+    {
+        if (!FloatUtils::areEqual(fValue, -1)) {
+            fixes.append(PiecewiseLinearConstraint::Fix(_f, -1));
+        }
+    }
+    return fixes;
+}
+
+
+
+
+List<PiecewiseLinearConstraint::Fix> SignConstraint::getSmartFixes( ITableau *tableau ) const
+{
+    ASSERT(!satisfied());
+    ASSERT(_assignment.exists(_f) && _assignment.size() > 1);
+
+    // TODO
+    return getPossibleFixes();
+}
+
+
+
+void SignConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
+{
+    ASSERT( _lowerBounds.exists( _b ) && _lowerBounds.exists( _f ) &&
+            _upperBounds.exists( _b ) && _upperBounds.exists( _f ) );
+
+
+    double bLowerBound = _lowerBounds[_b];
+    double fLowerBound = _lowerBounds[_f];
+
+    double bUpperBound = _upperBounds[_b];
+    double fUpperBound = _upperBounds[_f];
+
+    // always make f between -1 and 1
+    tightenings.append( Tightening( _f, -1, Tightening::LB ) );
+    tightenings.append( Tightening( _f, 1, Tightening::UB ) );
+
+    // any other update can be done only if we are in the POSITIVE phase or the NEGATIVE phase
+
+    // Determine if we are in the positive phase, negative phase or unknown phase
+    if ( !FloatUtils::isNegative( bLowerBound ) ||
+         !FloatUtils::isNegative( fLowerBound ))
+    {
+        // positive case
+
+        tightenings.append( Tightening( _f, 1, Tightening::LB ) );
+    }
+    else if ( FloatUtils::isNegative( bUpperBound ) ||
+              FloatUtils::isNegative( fUpperBound ) )
+    {
+        // negative case
+
+        tightenings.append( Tightening( _f, -1, Tightening::UB ) );
+    }
+
+}
+
+
 
 
 void SignConstraint::setPhaseStatus( PhaseStatus phaseStatus )
