@@ -55,7 +55,6 @@ public:
                               unsigned targetNeuron );
     const Layer *getLayer( unsigned index ) const;
 
-
     /*
       Bind neurons in the NLR to the Tableau variables that represent them.
     */
@@ -65,7 +64,6 @@ public:
       Perform an evaluation of the network for a specific input.
     */
     void evaluate( double *input , double *output );
-
 
     /*
       Bound propagation methods:
@@ -149,21 +147,6 @@ public:
 private:
     Map<unsigned, Layer *> _layerIndexToLayer;
 
-// private:
-//     unsigned _numberOfLayers;
-//     Map<unsigned, unsigned> _layerSizes;
-//     Map<NeuronIndex, PiecewiseLinearFunctionType> _neuronToActivationFunction;
-//     double **_weights;
-//     double **_positiveWeights;
-//     double **_negativeWeights;
-//     Map<NeuronIndex, double> _bias;
-
-//     unsigned _maxLayerSize;
-//     unsigned _inputLayerSize;
-
-//     double *_work1;
-//     double *_work2;
-
     const ITableau *_tableau;
 
     void freeMemoryIfNeeded();
@@ -181,40 +164,6 @@ private:
 //     */
 //     Map<NeuronIndex, double> _indexToWeightedSumAssignment;
 //     Map<NeuronIndex, double> _indexToActivationResultAssignment;
-
-//     /*
-//       Store eliminated variables
-//     */
-//     Map<NeuronIndex, double> _eliminatedWeightedSumVariables;
-//     Map<NeuronIndex, double> _eliminatedActivationResultVariables;
-
-//     /*
-//       Work space for bound tightening
-//     */
-//     double **_lowerBoundsWeightedSums;
-//     double **_upperBoundsWeightedSums;
-//     double **_lowerBoundsActivations;
-//     double **_upperBoundsActivations;
-
-//     /*
-//       Work space for symbolic bound propagation
-//     */
-//     double *_currentLayerLowerBounds;
-//     double *_currentLayerUpperBounds;
-//     double *_currentLayerLowerBias;
-//     double *_currentLayerUpperBias;
-
-//     double *_previousLayerLowerBounds;
-//     double *_previousLayerUpperBounds;
-//     double *_previousLayerLowerBias;
-//     double *_previousLayerUpperBias;
-
-//     /*
-//       Helper functions that perform symbolic bound propagation for a
-//       single neuron, according to its activation function
-//     */
-//     void reluSymbolicPropagation( const NeuronIndex &index, double &lbLb, double &lbUb, double &ubLb, double &ubUb );
-//     void absoluteValueSymbolicPropagation( const NeuronIndex &index, double &lbLb, double &lbUb, double &ubLb, double &ubUb );
 
 //     static void log( const String &message );
 
