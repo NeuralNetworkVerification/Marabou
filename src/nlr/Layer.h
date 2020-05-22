@@ -143,6 +143,7 @@ private:
     double *_symbolicLbOfUb;
     double *_symbolicUbOfUb;
 
+    void allocateMemory();
     void freeMemoryIfNeeded();
 
     /*

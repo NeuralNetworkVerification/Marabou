@@ -46,44 +46,49 @@ Layer::Layer( unsigned index, Type type, unsigned size, LayerOwner *layerOwner )
     , _symbolicLbOfUb( NULL )
     , _symbolicUbOfUb( NULL )
 {
+    allocateMemory();
+}
+
+void Layer::allocateMemory()
+{
     if ( _type == WEIGHTED_SUM || _type == OUTPUT )
     {
-        _bias = new double[size];
-        std::fill_n( _bias, size, 0 );
+        _bias = new double[_size];
+        std::fill_n( _bias, _size, 0 );
     }
 
-    _lb = new double[size];
-    _ub = new double[size];
+    _lb = new double[_size];
+    _ub = new double[_size];
 
-    std::fill_n( _lb, size, 0 );
-    std::fill_n( _ub, size, 0 );
+    std::fill_n( _lb, _size, 0 );
+    std::fill_n( _ub, _size, 0 );
 
-    _assignment = new double[size];
+    _assignment = new double[_size];
 
-    _inputLayerSize = ( type == INPUT ) ? size : layerOwner->getLayer( 0 )->getSize();
+    _inputLayerSize = ( _type == INPUT ) ? _size : _layerOwner->getLayer( 0 )->getSize();
     if ( GlobalConfiguration::USE_SYMBOLIC_BOUND_TIGHTENING )
     {
-        _symbolicLb = new double[size * _inputLayerSize];
-        _symbolicUb = new double[size * _inputLayerSize];
+        _symbolicLb = new double[_size * _inputLayerSize];
+        _symbolicUb = new double[_size * _inputLayerSize];
 
-        std::fill_n( _symbolicLb, size * _inputLayerSize, 0 );
-        std::fill_n( _symbolicUb, size * _inputLayerSize, 0 );
+        std::fill_n( _symbolicLb, _size * _inputLayerSize, 0 );
+        std::fill_n( _symbolicUb, _size * _inputLayerSize, 0 );
 
-        _symbolicLowerBias = new double[size];
-        _symbolicUpperBias = new double[size];
+        _symbolicLowerBias = new double[_size];
+        _symbolicUpperBias = new double[_size];
 
-        std::fill_n( _symbolicLowerBias, size, 0 );
-        std::fill_n( _symbolicUpperBias, size, 0 );
+        std::fill_n( _symbolicLowerBias, _size, 0 );
+        std::fill_n( _symbolicUpperBias, _size, 0 );
 
-        _symbolicLbOfLb = new double[size];
-        _symbolicUbOfLb = new double[size];
-        _symbolicLbOfUb = new double[size];
-        _symbolicUbOfUb = new double[size];
+        _symbolicLbOfLb = new double[_size];
+        _symbolicUbOfLb = new double[_size];
+        _symbolicLbOfUb = new double[_size];
+        _symbolicUbOfUb = new double[_size];
 
-        std::fill_n( _symbolicLbOfLb, size, 0 );
-        std::fill_n( _symbolicUbOfLb, size, 0 );
-        std::fill_n( _symbolicLbOfUb, size, 0 );
-        std::fill_n( _symbolicUbOfUb, size, 0 );
+        std::fill_n( _symbolicLbOfLb, _size, 0 );
+        std::fill_n( _symbolicUbOfLb, _size, 0 );
+        std::fill_n( _symbolicLbOfUb, _size, 0 );
+        std::fill_n( _symbolicUbOfUb, _size, 0 );
     }
 }
 
@@ -683,16 +688,32 @@ unsigned Layer::getLayerIndex() const
 }
 
 Layer::Layer( const Layer *other )
+    : _bias( NULL )
+    , _assignment( NULL )
+    , _lb( NULL )
+    , _ub( NULL )
+    , _inputLayerSize( 0 )
+    , _symbolicLb( NULL )
+    , _symbolicUb( NULL )
+    , _symbolicLowerBias( NULL )
+    , _symbolicUpperBias( NULL )
+    , _symbolicLbOfLb( NULL )
+    , _symbolicUbOfLb( NULL )
+    , _symbolicLbOfUb( NULL )
+    , _symbolicUbOfUb( NULL )
 {
     _layerIndex = other->_layerIndex;
     _type = other->_type;
     _size = other->_size;
     _layerOwner = other->_layerOwner;
 
+    allocateMemory();
+
     for ( unsigned sourceLayer : other->_sourceLayers )
         addSourceLayer( sourceLayer, _layerOwner->getLayer( sourceLayer )->getSize() );
 
-    memcpy( _bias, other->_bias, sizeof(double) * _size );
+    if ( other->_bias )
+        memcpy( _bias, other->_bias, sizeof(double) * _size );
 
     _neuronToActivationSources = other->_neuronToActivationSources;
 
@@ -872,6 +893,7 @@ void Layer::dump() const
     switch ( _type )
     {
     case INPUT:
+        printf( "\t\t" );
         for ( unsigned i = 0; i < _size; ++i )
             printf( "x%u ", _neuronToVariable[i] );
 
@@ -883,9 +905,10 @@ void Layer::dump() const
 
         for ( unsigned i = 0; i < _size; ++i )
         {
-            printf( "x%u = %+.4lf\n", _neuronToVariable[i], _bias[i] );
+            printf( "\t\tx%u = %+.4lf\n", _neuronToVariable[i], _bias[i] );
             for ( const auto &sourceLayerIndex : _sourceLayers )
             {
+                printf( "\t\t\t" );
                 const Layer *sourceLayer = _layerOwner->getLayer( sourceLayerIndex );
                 for ( unsigned j = 0; j < sourceLayer->getSize(); ++j )
                 {
@@ -899,9 +922,10 @@ void Layer::dump() const
                     }
                 }
             }
+            printf( "\n" );
         }
 
-        printf( "\n\n" );
+        printf( "\n" );
         break;
 
     case RELU:
@@ -910,16 +934,18 @@ void Layer::dump() const
 
         for ( unsigned i = 0; i < _size; ++i )
         {
-            printf( "Sources for x%u: ", _neuronToVariable[i] );
+            printf( "\t\tSources for x%u: ", _neuronToVariable[i] );
 
             for ( const auto &source : _neuronToActivationSources[i] )
             {
                 const Layer *sourceLayer = _layerOwner->getLayer( source._layer );
                 printf( "x%u ", sourceLayer->_neuronToVariable[source._neuron] );
             }
+
+            printf( "\n" );
         }
 
-        printf( "\n\n" );
+        printf( "\n" );
         break;
     }
 }
