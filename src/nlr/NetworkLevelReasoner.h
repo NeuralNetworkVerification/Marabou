@@ -142,9 +142,9 @@ public:
       inform us of changes in variable indices or if a variable has
       been eliminated
     */
-    // void eliminateVariable( unsigned variable, double value );
-    // void updateVariableIndices( const Map<unsigned, unsigned> &oldIndexToNewIndex,
-    //                             const Map<unsigned, unsigned> &mergedVariables );
+    void eliminateVariable( unsigned variable, double value );
+    void updateVariableIndices( const Map<unsigned, unsigned> &oldIndexToNewIndex,
+                                const Map<unsigned, unsigned> &mergedVariables );
 
 private:
     Map<unsigned, Layer *> _layerIndexToLayer;

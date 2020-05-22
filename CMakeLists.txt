@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(BUILD_STATIC_MARABOU "Build static Marabou binary" OFF)
-option(BUILD_PYTHON "Build Python" ON)
+option(BUILD_PYTHON "Build Python" OFF)
 option(FORCE_PYTHON_BUILD "Build python even if there is only python32" OFF)
 option(RUN_UNIT_TEST "run unit tests on build" ON)
 option(RUN_REGRESS_TEST "run regression tests on build" OFF)
@@ -283,7 +283,7 @@ if (${BUILD_PYTHON} AND ${RUN_PYTHON_TEST})
         POST_BUILD
         COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PYTHON_API_DIR}/test
     )
-endif()    
+endif()
 
 # Add the input parsers
 add_custom_target(build_input_parsers)

@@ -251,6 +251,7 @@ public:
     void setNeuronVariable( unsigned neuron, unsigned variable )
     {
         _neuronToVariable[neuron] = variable;
+        _variableToNeuron[variable] = neuron;
     }
 
     void obtainCurrentBounds()
@@ -360,20 +361,13 @@ public:
 
             ReluConstraint::PhaseStatus reluPhase = ReluConstraint::PHASE_NOT_FIXED;
 
-            // if ( _eliminatedWeightedSumVariables.exists( index ) )
-            // {
-            //     if ( _eliminatedWeightedSumVariables[index] <= 0 )
-            //         reluPhase = ReluConstraint::PHASE_INACTIVE;
-            //     else
-            //         reluPhase = ReluConstraint::PHASE_ACTIVE;
-            // }
-            // else if ( _eliminatedActivationResultVariables.exists( index ) )
-            // {
-            //     if ( FloatUtils::isZero( _eliminatedWeightedSumVariables[index] ) )
-            //         reluPhase = ReluConstraint::PHASE_INACTIVE;
-            //     else
-            //         reluPhase = ReluConstraint::PHASE_ACTIVE;
-            // }
+            if ( _eliminatedVariables.exists( i ) )
+            {
+                if ( _eliminatedVariables[i] <= 0 )
+                    reluPhase = ReluConstraint::PHASE_INACTIVE;
+                else
+                    reluPhase = ReluConstraint::PHASE_ACTIVE;
+            }
 
             double sourceLb = sourceLayer->getLb( sourceIndex._neuron );
             double sourceUb = sourceLayer->getUb( sourceIndex._neuron );
@@ -382,8 +376,6 @@ public:
                 reluPhase = ReluConstraint::PHASE_ACTIVE;
             else if ( sourceUb <= 0 )
                 reluPhase = ReluConstraint::PHASE_INACTIVE;
-
-            // TODO: copy symbolicUB and symblocLB from ws neuron, and also biases
 
             /*
               If the ReLU phase is not fixed yet, see whether the
@@ -499,9 +491,12 @@ public:
               newLB = oldUB * negWeights + oldLB * posWeights
             */
 
-            for ( unsigned i = 0; i < _inputLayerSize; ++i )
+            for ( unsigned j = 0; j < _size; ++j )
             {
-                for ( unsigned j = 0; j < _size; ++j )
+                if ( _eliminatedVariables.exists( j ) )
+                    continue;
+
+                for ( unsigned i = 0; i < _inputLayerSize; ++i )
                 {
                     for ( unsigned k = 0; k < sourceLayerSize; ++k )
                     {
@@ -546,6 +541,13 @@ public:
             */
             for ( unsigned j = 0; j < _size; ++j )
             {
+                if ( _eliminatedVariables.exists( j ) )
+                {
+                    _symbolicLowerBias[j] = _eliminatedVariables[j];
+                    _symbolicUpperBias[j] = _eliminatedVariables[j];
+                    continue;
+                }
+
                 _symbolicLowerBias[j] = _bias[j];
                 _symbolicUpperBias[j] = _bias[j];
 
@@ -584,6 +586,9 @@ public:
                 _symbolicUbOfLb[i] = _symbolicLowerBias[i];
                 _symbolicLbOfUb[i] = _symbolicUpperBias[i];
                 _symbolicUbOfUb[i] = _symbolicUpperBias[i];
+
+                if ( _eliminatedVariables.exists( i ) )
+                    continue;
 
                 for ( unsigned j = 0; j < _inputLayerSize; ++j )
                 {
@@ -637,6 +642,64 @@ public:
         }
     }
 
+    void eliminateVariable( unsigned variable, double value )
+    {
+        if ( !_variableToNeuron.exists( variable ) )
+            return;
+
+        _neuronToVariable.erase( _variableToNeuron[variable] );
+        _variableToNeuron.erase( variable );
+
+        _eliminatedVariables[variable] = value;
+    }
+
+
+    void updateVariableIndices( const Map<unsigned, unsigned> &oldIndexToNewIndex,
+                                const Map<unsigned, unsigned> &mergedVariables )
+    {
+        // First, do a pass to handle any merged variables
+        auto neuronIt = _neuronToVariable.begin();
+        while ( neuronIt != _neuronToVariable.end() )
+        {
+            unsigned variable = neuronIt->second;
+            while ( mergedVariables.exists( variable ) )
+            {
+                neuronIt->second = mergedVariables[variable];
+                variable = neuronIt->second;
+            }
+
+            ++neuronIt;
+        }
+
+        // Now handle re-indexing
+        neuronIt = _neuronToVariable.begin();
+        while ( neuronIt != _neuronToVariable.end() )
+        {
+            unsigned variable = neuronIt->second;
+
+            if ( !oldIndexToNewIndex.exists( variable ) )
+            {
+                // This variable has been eliminated, remove from map
+                neuronIt = _neuronToVariable.erase( neuronIt );
+            }
+            else
+            {
+                if ( oldIndexToNewIndex[variable] == variable )
+                {
+                    // Index hasn't changed, skip
+                }
+                else
+                {
+                    // Index has changed
+                    neuronIt->second = oldIndexToNewIndex[variable];
+                }
+
+                ++neuronIt;
+                continue;
+            }
+        }
+    }
+
 private:
     unsigned _layerIndex;
     Type _type;
@@ -658,6 +721,8 @@ private:
     Map<unsigned, List<NeuronIndex>> _neuronToActivationSources;
 
     Map<unsigned, unsigned> _neuronToVariable;
+    Map<unsigned, unsigned> _variableToNeuron;
+    Map<unsigned, double> _eliminatedVariables;
 
     unsigned _inputLayerSize;
     double *_symbolicLb;
