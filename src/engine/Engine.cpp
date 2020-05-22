@@ -1043,10 +1043,10 @@ void Engine::initializeTableau( const double *constraintMatrix, const List<unsig
 
 void Engine::initializeNetworkLevelReasoning()
 {
-    // _networkLevelReasoner = _preprocessedQuery.getNetworkLevelReasoner();
+    _networkLevelReasoner = _preprocessedQuery.getNetworkLevelReasoner();
 
-    // if ( _networkLevelReasoner )
-    //     _networkLevelReasoner->setTableau( _tableau );
+    if ( _networkLevelReasoner )
+        _networkLevelReasoner->setTableau( _tableau );
 }
 
 bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
@@ -1734,41 +1734,40 @@ void Engine::performSymbolicBoundTightening()
          ( !_networkLevelReasoner ) )
         return;
 
-    // struct timespec start = TimeUtils::sampleMicro();
+    struct timespec start = TimeUtils::sampleMicro();
 
-    // unsigned numTightenedBounds = 0;
+    unsigned numTightenedBounds = 0;
 
-    // // Step 1: tell the NLR about the current bounds
-    // _networkLevelReasoner->obtainCurrentBounds();
+    // Step 1: tell the NLR about the current bounds
+    _networkLevelReasoner->obtainCurrentBounds();
 
-    // // Step 2: perform SBT
-    // _networkLevelReasoner->symbolicBoundPropagation();
+    // Step 2: perform SBT
+    _networkLevelReasoner->symbolicBoundPropagation();
 
-    // // Step 3: Extract the bounds
-    // List<Tightening> tightenings;
-    // _networkLevelReasoner->getConstraintTightenings( tightenings );
+    // Step 3: Extract the bounds
+    List<Tightening> tightenings;
+    _networkLevelReasoner->getConstraintTightenings( tightenings );
 
-    // for ( const auto &tightening : tightenings )
-    // {
-    //     if ( tightening._type == Tightening::LB &&
-    //          _tableau->getLowerBound( tightening._variable ) < tightening._value )
-    //     {
-    //         _tableau->tightenLowerBound( tightening._variable, tightening._value );
-    //         ++numTightenedBounds;
-    //     }
+    for ( const auto &tightening : tightenings )
+    {
+        if ( tightening._type == Tightening::LB &&
+             _tableau->getLowerBound( tightening._variable ) < tightening._value )
+        {
+            _tableau->tightenLowerBound( tightening._variable, tightening._value );
+            ++numTightenedBounds;
+        }
 
+        if ( tightening._type == Tightening::UB &&
+             _tableau->getUpperBound( tightening._variable ) > tightening._value )
+        {
+            _tableau->tightenUpperBound( tightening._variable, tightening._value );
+            ++numTightenedBounds;
+        }
+    }
 
-    //     if ( tightening._type == Tightening::UB &&
-    //          _tableau->getUpperBound( tightening._variable ) > tightening._value )
-    //     {
-    //         _tableau->tightenUpperBound( tightening._variable, tightening._value );
-    //         ++numTightenedBounds;
-    //     }
-    // }
-
-    // struct timespec end = TimeUtils::sampleMicro();
-    // _statistics.addTimeForSymbolicBoundTightening( TimeUtils::timePassed( start, end ) );
-    // _statistics.incNumTighteningsFromSymbolicBoundTightening( numTightenedBounds );
+    struct timespec end = TimeUtils::sampleMicro();
+    _statistics.addTimeForSymbolicBoundTightening( TimeUtils::timePassed( start, end ) );
+    _statistics.incNumTighteningsFromSymbolicBoundTightening( numTightenedBounds );
 }
 
 bool Engine::shouldExitDueToTimeout( unsigned timeout ) const
@@ -1856,7 +1855,7 @@ void Engine::warmStart()
     }
 
     // Evaluate the network for this assignment
-    // _networkLevelReasoner->evaluate( inputAssignment, outputAssignment );
+    _networkLevelReasoner->evaluate( inputAssignment, outputAssignment );
 
     // Try to update as many variables as possible to match their assignment
     // for ( const auto &assignment : _networkLevelReasoner->getIndexToWeightedSumAssignment() )
