@@ -103,7 +103,22 @@ void NetworkLevelReasoner::setNeuronVariable( NeuronIndex index, unsigned variab
     _layerIndexToLayer[index._layer]->setNeuronVariable( index._neuron, variable );
 }
 
+void NetworkLevelReasoner::receiveTighterBound( Tightening tightening )
+{
+    _boundTightenings.append( tightening );
+}
 
+void NetworkLevelReasoner::getConstraintTightenings( List<Tightening> &tightenings )
+{
+    tightenings = _boundTightenings;
+    _boundTightenings.clear();
+}
+
+void NetworkLevelReasoner::symbolicBoundPropagation()
+{
+    for ( unsigned i = 0; i < _layerIndexToLayer.size(); ++i )
+        _layerIndexToLayer[i]->computeSymbolicBounds();
+}
 
 
 // NetworkLevelReasoner::NetworkLevelReasoner()
