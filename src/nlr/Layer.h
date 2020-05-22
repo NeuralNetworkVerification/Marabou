@@ -76,6 +76,7 @@ public:
 
     unsigned getSize() const;
     unsigned getLayerIndex() const;
+    Type getLayerType() const;
 
     /*
       Set/get the assignment, or compute it from source layers
@@ -101,6 +102,12 @@ public:
     void eliminateVariable( unsigned variable, double value );
     void updateVariableIndices( const Map<unsigned, unsigned> &oldIndexToNewIndex,
                                 const Map<unsigned, unsigned> &mergedVariables );
+
+    /*
+      For debugging purposes
+    */
+    void dump() const;
+    static String typeToString( Type type );
 
 private:
     unsigned _layerIndex;

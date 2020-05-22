@@ -223,6 +223,11 @@ unsigned Layer::getSize() const
     return _size;
 }
 
+Layer::Type Layer::getLayerType() const
+{
+    return _type;
+}
+
 void Layer::setNeuronVariable( unsigned neuron, unsigned variable )
 {
     _neuronToVariable[neuron] = variable;
@@ -822,6 +827,100 @@ void Layer::freeMemoryIfNeeded()
     {
         delete[] _symbolicUbOfUb;
         _symbolicUbOfUb = NULL;
+    }
+}
+
+String Layer::typeToString( Type type )
+{
+    switch ( type )
+    {
+    case INPUT:
+        return "INPUT";
+        break;
+
+    case OUTPUT:
+        return "OUTPUT";
+        break;
+
+    case WEIGHTED_SUM:
+        return "WEIGHTED_SUM";
+        break;
+
+    case RELU:
+        return "RELU";
+        break;
+
+    case ABSOLUTE_VALUE:
+        return "ABSOLUTE_VALUE";
+        break;
+
+    case MAX:
+        return "MAX";
+        break;
+
+    default:
+        return "UNKNOWN TYPE";
+        break;
+    }
+}
+
+void Layer::dump() const
+{
+    printf( "\nDumping info for layer %u (%s):\n", _layerIndex, typeToString( _type ).ascii() );
+    printf( "\tNeurons:\n" );
+
+    switch ( _type )
+    {
+    case INPUT:
+        for ( unsigned i = 0; i < _size; ++i )
+            printf( "x%u ", _neuronToVariable[i] );
+
+        printf( "\n\n" );
+        break;
+
+    case OUTPUT:
+    case WEIGHTED_SUM:
+
+        for ( unsigned i = 0; i < _size; ++i )
+        {
+            printf( "x%u = %+.4lf\n", _neuronToVariable[i], _bias[i] );
+            for ( const auto &sourceLayerIndex : _sourceLayers )
+            {
+                const Layer *sourceLayer = _layerOwner->getLayer( sourceLayerIndex );
+                for ( unsigned j = 0; j < sourceLayer->getSize(); ++j )
+                {
+                    double weight = _layerToWeights[sourceLayerIndex][j * _size + i];
+                    if ( !FloatUtils::isZero( weight ) )
+                    {
+                        if ( sourceLayer->_neuronToVariable.exists( j ) )
+                            printf( "%+.5lfx%u ", weight, sourceLayer->_neuronToVariable[j] );
+                        else
+                            printf( "%+.5lf", weight * sourceLayer->_eliminatedNeurons[j] );
+                    }
+                }
+            }
+        }
+
+        printf( "\n\n" );
+        break;
+
+    case RELU:
+    case ABSOLUTE_VALUE:
+    case MAX:
+
+        for ( unsigned i = 0; i < _size; ++i )
+        {
+            printf( "Sources for x%u: ", _neuronToVariable[i] );
+
+            for ( const auto &source : _neuronToActivationSources[i] )
+            {
+                const Layer *sourceLayer = _layerOwner->getLayer( source._layer );
+                printf( "x%u ", sourceLayer->_neuronToVariable[source._neuron] );
+            }
+        }
+
+        printf( "\n\n" );
+        break;
     }
 }
 

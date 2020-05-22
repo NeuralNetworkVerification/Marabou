@@ -103,10 +103,10 @@ public:
     void receiveTighterBound( Tightening tightening );
     void getConstraintTightenings( List<Tightening> &tightenings );
 
-    // /*
-    //   For debugging purposes: dump the network topology
-    // */
-    // void dumpTopology() const;
+    /*
+      For debugging purposes: dump the network topology
+    */
+    void dumpTopology() const;
 
 
 
@@ -146,8 +146,10 @@ public:
 
 private:
     Map<unsigned, Layer *> _layerIndexToLayer;
-
     const ITableau *_tableau;
+
+    // Tightenings discovered by the various layers
+    List<Tightening> _boundTightenings;
 
     void freeMemoryIfNeeded();
 
@@ -165,10 +167,7 @@ private:
 //     Map<NeuronIndex, double> _indexToWeightedSumAssignment;
 //     Map<NeuronIndex, double> _indexToActivationResultAssignment;
 
-//     static void log( const String &message );
-
-    // Tightenings discovered by the layers
-    List<Tightening> _boundTightenings;
+    static void log( const String &message );
 };
 
 } // namespace NLR
