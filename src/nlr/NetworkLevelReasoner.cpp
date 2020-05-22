@@ -31,9 +31,7 @@ NetworkLevelReasoner::NetworkLevelReasoner()
 
 NetworkLevelReasoner::~NetworkLevelReasoner()
 {
-    for ( const auto &layer : _layerIndexToLayer )
-        delete layer.second;
-    _layerIndexToLayer.clear();
+    freeMemoryIfNeeded();
 }
 
 bool NetworkLevelReasoner::functionTypeSupported( PiecewiseLinearFunctionType type )
@@ -151,173 +149,12 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
 //     freeMemoryIfNeeded();
 // }
 
-// void NetworkLevelReasoner::freeMemoryIfNeeded()
-// {
-//     if ( _weights )
-//     {
-//         for ( unsigned i = 0; i < _numberOfLayers - 1; ++i )
-//         {
-//             if ( _weights[i] )
-//             {
-//                 delete[] _weights[i];
-//                 _weights[i] = NULL;
-//             }
-//         }
-
-//         delete[] _weights;
-//         _weights = NULL;
-//     }
-
-//     if ( _positiveWeights )
-//     {
-//         for ( unsigned i = 0; i < _numberOfLayers - 1; ++i )
-//         {
-//             if ( _positiveWeights[i] )
-//             {
-//                 delete[] _positiveWeights[i];
-//                 _positiveWeights[i] = NULL;
-//             }
-//         }
-
-//         delete[] _positiveWeights;
-//         _positiveWeights = NULL;
-//     }
-
-//     if ( _negativeWeights )
-//     {
-//         for ( unsigned i = 0; i < _numberOfLayers - 1; ++i )
-//         {
-//             if ( _negativeWeights[i] )
-//             {
-//                 delete[] _negativeWeights[i];
-//                 _negativeWeights[i] = NULL;
-//             }
-//         }
-
-//         delete[] _negativeWeights;
-//         _negativeWeights = NULL;
-//     }
-
-//     if ( _work1 )
-//     {
-//         delete[] _work1;
-//         _work1 = NULL;
-//     }
-
-//     if ( _work2 )
-//     {
-//         delete[] _work2;
-//         _work2 = NULL;
-//     }
-
-//     if ( _lowerBoundsWeightedSums )
-//     {
-//         for ( unsigned i = 0; i < _numberOfLayers; ++i )
-//         {
-//             if ( _lowerBoundsWeightedSums[i] )
-//             {
-//                 delete[] _lowerBoundsWeightedSums[i];
-//                 _lowerBoundsWeightedSums[i] = NULL;
-//             }
-//         }
-
-//         delete[] _lowerBoundsWeightedSums;
-//         _lowerBoundsWeightedSums = NULL;
-//     }
-
-//     if ( _upperBoundsWeightedSums )
-//     {
-//         for ( unsigned i = 0; i < _numberOfLayers; ++i )
-//         {
-//             if ( _upperBoundsWeightedSums[i] )
-//             {
-//                 delete[] _upperBoundsWeightedSums[i];
-//                 _upperBoundsWeightedSums[i] = NULL;
-//             }
-//         }
-
-//         delete[] _upperBoundsWeightedSums;
-//         _upperBoundsWeightedSums = NULL;
-//     }
-
-//     if ( _lowerBoundsActivations )
-//     {
-//         for ( unsigned i = 0; i < _numberOfLayers; ++i )
-//         {
-//             if ( _lowerBoundsActivations[i] )
-//             {
-//                 delete[] _lowerBoundsActivations[i];
-//                 _lowerBoundsActivations[i] = NULL;
-//             }
-//         }
-
-//         delete[] _lowerBoundsActivations;
-//         _lowerBoundsActivations = NULL;
-//     }
-
-//     if ( _upperBoundsActivations )
-//     {
-//         for ( unsigned i = 0; i < _numberOfLayers; ++i )
-//         {
-//             if ( _upperBoundsActivations[i] )
-//             {
-//                 delete[] _upperBoundsActivations[i];
-//                 _upperBoundsActivations[i] = NULL;
-//             }
-//         }
-
-//         delete[] _upperBoundsActivations;
-//         _upperBoundsActivations = NULL;
-//     }
-
-//     if ( _currentLayerLowerBounds )
-//     {
-//         delete[] _currentLayerLowerBounds;
-//         _currentLayerLowerBounds = NULL;
-//     }
-
-//     if ( _currentLayerUpperBounds )
-//     {
-//         delete[] _currentLayerUpperBounds;
-//         _currentLayerUpperBounds = NULL;
-//     }
-
-//     if ( _currentLayerLowerBias )
-//     {
-//         delete[] _currentLayerLowerBias;
-//         _currentLayerLowerBias = NULL;
-//     }
-
-//     if ( _currentLayerUpperBias )
-//     {
-//         delete[] _currentLayerUpperBias;
-//         _currentLayerUpperBias = NULL;
-//     }
-
-//     if ( _previousLayerLowerBounds )
-//     {
-//         delete[] _previousLayerLowerBounds;
-//         _previousLayerLowerBounds = NULL;
-//     }
-
-//     if ( _previousLayerUpperBounds )
-//     {
-//         delete[] _previousLayerUpperBounds;
-//         _previousLayerUpperBounds = NULL;
-//     }
-
-//     if ( _previousLayerLowerBias )
-//     {
-//         delete[] _previousLayerLowerBias;
-//         _previousLayerLowerBias = NULL;
-//     }
-
-//     if ( _previousLayerUpperBias )
-//     {
-//         delete[] _previousLayerUpperBias;
-//         _previousLayerUpperBias = NULL;
-//     }
-// }
+void NetworkLevelReasoner::freeMemoryIfNeeded()
+{
+    for ( const auto &layer : _layerIndexToLayer )
+        delete layer.second;
+    _layerIndexToLayer.clear();
+}
 
 // void NetworkLevelReasoner::setNumberOfLayers( unsigned numberOfLayers )
 // {
@@ -473,37 +310,18 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
 //     return _indexToActivationResultVariable[index];
 // }
 
-// void NetworkLevelReasoner::storeIntoOther( NetworkLevelReasoner &other ) const
-// {
-//     other.freeMemoryIfNeeded();
+void NetworkLevelReasoner::storeIntoOther( NetworkLevelReasoner &other ) const
+{
+    other.freeMemoryIfNeeded();
 
-//     other.setNumberOfLayers( _numberOfLayers );
-//     for ( const auto &pair : _layerSizes )
-//         other.setLayerSize( pair.first, pair.second );
-//     other.allocateMemoryByTopology();
-
-//     for ( const auto &pair : _neuronToActivationFunction )
-//         other.setNeuronActivationFunction( pair.first._layer, pair.first._neuron, pair.second );
-
-//     for ( unsigned i = 0; i < _numberOfLayers - 1; ++i )
-//     {
-//         memcpy( other._weights[i], _weights[i], sizeof(double) * _layerSizes[i] * _layerSizes[i+1] );
-//         memcpy( other._positiveWeights[i], _positiveWeights[i], sizeof(double) * _layerSizes[i] * _layerSizes[i+1] );
-//         memcpy( other._negativeWeights[i], _negativeWeights[i], sizeof(double) * _layerSizes[i] * _layerSizes[i+1] );
-//     }
-
-//     for ( const auto &pair : _bias )
-//         other.setBias( pair.first._layer, pair.first._neuron, pair.second );
-
-//     other._indexToWeightedSumVariable = _indexToWeightedSumVariable;
-//     other._indexToActivationResultVariable = _indexToActivationResultVariable;
-//     other._weightedSumVariableToIndex = _weightedSumVariableToIndex;
-//     other._activationResultVariableToIndex = _activationResultVariableToIndex;
-//     other._indexToWeightedSumAssignment = _indexToWeightedSumAssignment;
-//     other._indexToActivationResultAssignment = _indexToActivationResultAssignment;
-//     other._eliminatedWeightedSumVariables = _eliminatedWeightedSumVariables;
-//     other._eliminatedActivationResultVariables = _eliminatedActivationResultVariables;
-// }
+    for ( const auto &layer : _layerIndexToLayer )
+    {
+        const Layer *thisLayer = layer.second;
+        Layer *newLayer = new Layer( thisLayer );
+        newLayer->setLayerOwner( &other );
+        other._layerIndexToLayer[newLayer->getLayerIndex()] = newLayer;
+    }
+}
 
 // const Map<NeuronIndex, unsigned> &NetworkLevelReasoner::getIndexToWeightedSumVariable()
 // {

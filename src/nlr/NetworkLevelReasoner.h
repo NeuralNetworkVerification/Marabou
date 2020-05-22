@@ -135,7 +135,7 @@ public:
     /*
       Duplicate the reasoner
     */
-    // void storeIntoOther( NetworkLevelReasoner &other ) const;
+    void storeIntoOther( NetworkLevelReasoner &other ) const;
 
     /*
       Methods that are typically invoked by the preprocessor, to
@@ -166,7 +166,7 @@ private:
 
     const ITableau *_tableau;
 
-//     void freeMemoryIfNeeded();
+    void freeMemoryIfNeeded();
 
 //     /*
 //       Mappings of indices to weighted sum and activation result variables

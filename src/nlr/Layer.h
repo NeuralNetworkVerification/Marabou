@@ -52,6 +52,11 @@ public:
         freeMemoryIfNeeded();
     }
 
+    void setLayerOwner( LayerOwner *layerOwner )
+    {
+        _layerOwner = layerOwner;
+    }
+
     Layer( unsigned index, Type type, unsigned size, LayerOwner *layerOwner )
         : _layerIndex( index )
         , _type( type )
@@ -698,6 +703,32 @@ public:
                 continue;
             }
         }
+    }
+
+    unsigned getLayerIndex() const
+    {
+        return _layerIndex;
+    }
+
+    Layer( const Layer *other )
+    {
+        _layerIndex = other->_layerIndex;
+        _type = other->_type;
+        _size = other->_size;
+        _layerOwner = other->_layerOwner;
+
+        for ( unsigned sourceLayer : other->_sourceLayers )
+            addSourceLayer( sourceLayer, _layerOwner->getLayer( sourceLayer )->getSize() );
+
+        memcpy( _bias, other->_bias, sizeof(double) * _size );
+
+        _neuronToActivationSources = other->_neuronToActivationSources;
+
+        _neuronToVariable = other->_neuronToVariable;
+        _variableToNeuron = other->_variableToNeuron;
+        _eliminatedVariables = other->_eliminatedVariables;
+
+        _inputLayerSize = other->_inputLayerSize;
     }
 
 private:
