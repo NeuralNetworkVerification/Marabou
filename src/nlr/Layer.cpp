@@ -721,12 +721,12 @@ Layer::Layer( const Layer *other )
 
         if ( other->_layerToPositiveWeights.exists( sourceLayerEntry.first ) )
             memcpy( _layerToPositiveWeights[sourceLayerEntry.first],
-                    other->_layerToWeights[sourceLayerEntry.first],
+                    other->_layerToPositiveWeights[sourceLayerEntry.first],
                     sizeof(double) * sourceLayerEntry.second * _size );
 
         if ( other->_layerToNegativeWeights.exists( sourceLayerEntry.first ) )
         memcpy( _layerToNegativeWeights[sourceLayerEntry.first],
-                other->_layerToWeights[sourceLayerEntry.first],
+                other->_layerToNegativeWeights[sourceLayerEntry.first],
                 sizeof(double) * sourceLayerEntry.second * _size );
     }
 
