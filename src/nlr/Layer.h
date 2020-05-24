@@ -73,6 +73,8 @@ public:
                               unsigned targetNeuron );
 
     void setNeuronVariable( unsigned neuron, unsigned variable );
+    bool neuronHasVariable( unsigned neuron ) const;
+    unsigned neuronToVariable( unsigned neuron ) const;
 
     unsigned getSize() const;
     unsigned getLayerIndex() const;

@@ -53,6 +53,8 @@ public:
                               unsigned sourceNeuron,
                               unsigned targetLeyer,
                               unsigned targetNeuron );
+
+    unsigned getNumberOfLayers() const;
     const Layer *getLayer( unsigned index ) const;
 
     /*

@@ -968,4 +968,19 @@ void Layer::dump() const
     }
 }
 
+bool Layer::neuronHasVariable( unsigned neuron ) const
+{
+    ASSERT( _neuronToVariable.exists( neuron ) || _eliminatedNeurons.exists( neuron ) );
+    return _neuronToVariable.exists( neuron );
+}
+
+unsigned Layer::neuronToVariable( unsigned neuron ) const
+{
+    if ( !_neuronToVariable.exists( neuron ) )
+        ASSERT( _eliminatedNeurons.exists( neuron ) );
+
+    ASSERT( _neuronToVariable.exists( neuron ) );
+    return _neuronToVariable[neuron];
+}
+
 } // namespace NLR

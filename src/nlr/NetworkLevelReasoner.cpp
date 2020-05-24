@@ -913,4 +913,9 @@ void NetworkLevelReasoner::dumpTopology() const
         layer.second->dump();
 }
 
+unsigned NetworkLevelReasoner::getNumberOfLayers() const
+{
+    return _layerIndexToLayer.size();
+}
+
 } // namespace NLR

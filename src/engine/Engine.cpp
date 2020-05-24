@@ -1858,21 +1858,22 @@ void Engine::warmStart()
     _networkLevelReasoner->evaluate( inputAssignment, outputAssignment );
 
     // Try to update as many variables as possible to match their assignment
-    // for ( const auto &assignment : _networkLevelReasoner->getIndexToWeightedSumAssignment() )
-    // {
-    //     unsigned variable = _networkLevelReasoner->getWeightedSumVariable( assignment.first._layer, assignment.first._neuron );
+    for ( unsigned i = 0; i < _networkLevelReasoner->getNumberOfLayers(); ++i )
+    {
+        const NLR::Layer *layer = _networkLevelReasoner->getLayer( i );
+        unsigned layerSize = layer->getSize();
+        const double *assignment = layer->getAssignment();
 
-    //     if ( !_tableau->isBasic( variable ) )
-    //         _tableau->setNonBasicAssignment( variable, assignment.second, false );
-    // }
-
-    // for ( const auto &assignment : _networkLevelReasoner->getIndexToActivationResultAssignment() )
-    // {
-    //     unsigned variable = _networkLevelReasoner->getActivationResultVariable( assignment.first._layer, assignment.first._neuron );
-
-    //     if ( !_tableau->isBasic( variable ) )
-    //         _tableau->setNonBasicAssignment( variable, assignment.second, false );
-    // }
+        for ( unsigned j = 0; j < layerSize; ++j )
+        {
+            if ( layer->neuronHasVariable( j ) )
+            {
+                unsigned variable = layer->neuronToVariable( j );
+                if ( !_tableau->isBasic( variable ) )
+                    _tableau->setNonBasicAssignment( variable, assignment[j], false );
+            }
+        }
+    }
 
     // We did what we could for the non-basics; now let the tableau compute
     // the basic assignment
