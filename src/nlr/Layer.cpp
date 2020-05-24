@@ -117,12 +117,12 @@ void Layer::computeAssignment()
         memcpy( _assignment, _bias, sizeof(double) * _size );
 
         // Process each of the source layers
-        for ( unsigned sourceLayerIndex : _sourceLayers )
+        for ( auto &sourceLayerEntry : _sourceLayers )
         {
-            const Layer *sourceLayer = _layerOwner->getLayer( sourceLayerIndex );
+            const Layer *sourceLayer = _layerOwner->getLayer( sourceLayerEntry.first );
             const double *sourceAssignment = sourceLayer->getAssignment();
-            unsigned sourceSize = sourceLayer->getSize();
-            const double *weights = _layerToWeights[sourceLayerIndex];
+            unsigned sourceSize = sourceLayerEntry.second;
+            const double *weights = _layerToWeights[sourceLayerEntry.first];
 
             for ( unsigned i = 0; i < sourceSize; ++i )
                 for ( unsigned j = 0; j < _size; ++j )
@@ -178,7 +178,7 @@ void Layer::addSourceLayer( unsigned layerNumber, unsigned layerSize )
 {
     ASSERT( _type != INPUT );
 
-    _sourceLayers.insert( layerNumber );
+    _sourceLayers[layerNumber] = layerSize;
 
     if ( _type == WEIGHTED_SUM || _type == OUTPUT )
     {
@@ -462,10 +462,11 @@ void Layer::computeSymbolicBoundsForWeightedSum()
     std::fill_n( _symbolicLb, _size * _inputLayerSize, 0 );
     std::fill_n( _symbolicUb, _size * _inputLayerSize, 0 );
 
-    for ( const auto &sourceLayerIndex : _sourceLayers )
+    for ( const auto &sourceLayerEntry : _sourceLayers )
     {
-        const Layer *sourceLayer = _layerOwner->getLayer( sourceLayerIndex );
-        unsigned sourceLayerSize = sourceLayer->getSize();
+        unsigned sourceLayerIndex = sourceLayerEntry.first;
+        unsigned sourceLayerSize = sourceLayerEntry.second;
+        const Layer *sourceLayer = _layerOwner->getLayer( sourceLayerEntry.first );
 
         /*
           Perform the multiplication.
@@ -709,8 +710,25 @@ Layer::Layer( const Layer *other )
 
     allocateMemory();
 
-    for ( unsigned sourceLayer : other->_sourceLayers )
-        addSourceLayer( sourceLayer, _layerOwner->getLayer( sourceLayer )->getSize() );
+    for ( auto &sourceLayerEntry : other->_sourceLayers )
+    {
+        addSourceLayer( sourceLayerEntry.first, sourceLayerEntry.second );
+
+        if ( other->_layerToWeights.exists( sourceLayerEntry.first ) )
+            memcpy( _layerToWeights[sourceLayerEntry.first],
+                    other->_layerToWeights[sourceLayerEntry.first],
+                    sizeof(double) * sourceLayerEntry.second * _size );
+
+        if ( other->_layerToPositiveWeights.exists( sourceLayerEntry.first ) )
+            memcpy( _layerToPositiveWeights[sourceLayerEntry.first],
+                    other->_layerToWeights[sourceLayerEntry.first],
+                    sizeof(double) * sourceLayerEntry.second * _size );
+
+        if ( other->_layerToNegativeWeights.exists( sourceLayerEntry.first ) )
+        memcpy( _layerToNegativeWeights[sourceLayerEntry.first],
+                other->_layerToWeights[sourceLayerEntry.first],
+                sizeof(double) * sourceLayerEntry.second * _size );
+    }
 
     if ( other->_bias )
         memcpy( _bias, other->_bias, sizeof(double) * _size );
@@ -906,13 +924,13 @@ void Layer::dump() const
         for ( unsigned i = 0; i < _size; ++i )
         {
             printf( "\t\tx%u = %+.4lf\n", _neuronToVariable[i], _bias[i] );
-            for ( const auto &sourceLayerIndex : _sourceLayers )
+            for ( const auto &sourceLayerEntry : _sourceLayers )
             {
                 printf( "\t\t\t" );
-                const Layer *sourceLayer = _layerOwner->getLayer( sourceLayerIndex );
+                const Layer *sourceLayer = _layerOwner->getLayer( sourceLayerEntry.first );
                 for ( unsigned j = 0; j < sourceLayer->getSize(); ++j )
                 {
-                    double weight = _layerToWeights[sourceLayerIndex][j * _size + i];
+                    double weight = _layerToWeights[sourceLayerEntry.first][j * _size + i];
                     if ( !FloatUtils::isZero( weight ) )
                     {
                         if ( sourceLayer->_neuronToVariable.exists( j ) )

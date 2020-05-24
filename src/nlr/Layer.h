@@ -115,7 +115,7 @@ private:
     unsigned _size;
     LayerOwner *_layerOwner;
 
-    Set<unsigned> _sourceLayers;
+    Map<unsigned, unsigned> _sourceLayers;
 
     Map<unsigned, double *> _layerToWeights;
     Map<unsigned, double *> _layerToPositiveWeights;
