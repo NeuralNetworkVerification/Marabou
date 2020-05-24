@@ -332,9 +332,6 @@ void Layer::comptueSymbolicBoundsForInput()
 
 void Layer::computeSymbolicBoundsForRelu()
 {
-    printf( "Relu processing of layer %u starting\n", _layerIndex );
-    printf( "Number of eliminated varibales in this layer: %u\n", _eliminatedNeurons.size() );
-
     for ( unsigned i = 0; i < _size; ++i )
     {
         /*
@@ -355,15 +352,16 @@ void Layer::computeSymbolicBoundsForRelu()
         }
         else
         {
-            if ( !FloatUtils::isNegative( _lb[i] ) )
+            if ( FloatUtils::isPositive( _lb[i] ) )
                 reluPhase = ReluConstraint::PHASE_ACTIVE;
-            else if ( !FloatUtils::isPositive( _ub[i] ) )
+            else if ( FloatUtils::isZero( _ub[i] ) )
                 reluPhase = ReluConstraint::PHASE_INACTIVE;
         }
 
         ASSERT( _neuronToActivationSources.exists( i ) );
         NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
         const Layer *sourceLayer = _layerOwner->getLayer( sourceIndex._layer );
+
 
         /*
           A ReLU initially "inherits" the symbolic bounds computed
@@ -384,6 +382,11 @@ void Layer::computeSymbolicBoundsForRelu()
         double sourceLb = sourceLayer->getLb( sourceIndex._neuron );
         double sourceUb = sourceLayer->getUb( sourceIndex._neuron );
 
+        _symbolicLbOfLb[i] = sourceLayer->getSymbolicLbOfLb( sourceIndex._neuron );
+        _symbolicUbOfLb[i] = sourceLayer->getSymbolicUbOfLb( sourceIndex._neuron );
+        _symbolicLbOfUb[i] = sourceLayer->getSymbolicLbOfUb( sourceIndex._neuron );
+        _symbolicUbOfUb[i] = sourceLayer->getSymbolicUbOfUb( sourceIndex._neuron );
+
         // Has the b variable been fixed?
         if ( !FloatUtils::isNegative( sourceLb ) )
         {
@@ -402,11 +405,6 @@ void Layer::computeSymbolicBoundsForRelu()
             // > 0 There are four possible cases, depending on
             // whether ubLb and lbUb are negative or positive
             // (see Neurify paper, page 14).
-
-            _symbolicLbOfLb[i] = sourceLayer->getSymbolicLbOfLb( sourceIndex._neuron );
-            _symbolicUbOfLb[i] = sourceLayer->getSymbolicUbOfLb( sourceIndex._neuron );
-            _symbolicLbOfUb[i] = sourceLayer->getSymbolicLbOfUb( sourceIndex._neuron );
-            _symbolicUbOfUb[i] = sourceLayer->getSymbolicUbOfUb( sourceIndex._neuron );
 
             // Upper bound
             if ( _symbolicLbOfUb[i] <= 0 )
@@ -488,16 +486,8 @@ void Layer::computeSymbolicBoundsForRelu()
                 _ub[i] = _symbolicUbOfUb[i];
                 _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
             }
-
-            printf( "\tSBT bounds for x%u: [%.5lf, %.5lf]\n", _neuronToVariable[i], _lb[i], _ub[i] );
         }
-        else
-            printf( "\tSBT bounds for neuron %u [%.5lf, %.5lf] ELIMINATED\n", i, _eliminatedNeurons[i], _eliminatedNeurons[i] );
-
     }
-
-    if ( _layerIndex == 2 )
-        exit( 1 );
 }
 
 void Layer::computeSymbolicBoundsForWeightedSum()
