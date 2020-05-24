@@ -431,7 +431,7 @@ void Layer::computeSymbolicBoundsForRelu()
                 }
 
                 _symbolicLowerBias[i] = 0;
-                _symbolicLowerBias[i] = 0;
+                _symbolicUpperBias[i] = 0;
             }
         }
 

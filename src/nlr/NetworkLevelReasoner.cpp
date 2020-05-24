@@ -907,7 +907,7 @@ void NetworkLevelReasoner::dumpTopology() const
 {
     printf( "Number of layers: %u. Sizes:\n", _layerIndexToLayer.size() );
     for ( unsigned i = 0; i < _layerIndexToLayer.size(); ++i )
-        printf( "\tLayer %u: %u\n", i, _layerIndexToLayer[i]->getSize() );
+        printf( "\tLayer %u: %u \t[%s]\n", i, _layerIndexToLayer[i]->getSize(), Layer::typeToString( _layerIndexToLayer[i]->getLayerType() ).ascii() );
 
     for ( const auto &layer : _layerIndexToLayer )
         layer.second->dump();
