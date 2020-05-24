@@ -185,7 +185,6 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
         nlr->addLayerDependency( currentLayerIndex - 1, currentLayerIndex );
         ++currentLayerIndex;
 
-
         nlr->addLayer( currentLayerIndex, NLR::Layer::RELU, _acasNeuralNetwork.getLayerSize( i ) );
         nlr->addLayerDependency( currentLayerIndex - 1, currentLayerIndex );
         ++currentLayerIndex;
