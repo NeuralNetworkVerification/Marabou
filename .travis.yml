@@ -39,7 +39,7 @@ matrix:
       - ctest -L system -j 2
       - ctest -L regress[0-1] -j 2
       - cd ..
-      - $PY_CMD -m pytest maraboupy/test
+      - $PY_CMD -m pytest --cov=maraboupy maraboupy/test
 
     - os: linux
       dist: xenial
@@ -52,7 +52,7 @@ matrix:
       - ctest -L system -j 2
       - ctest -L regress0 -j 2
       - cd ..
-      - $PY_CMD -m pytest maraboupy/test
+      - $PY_CMD -m pytest --cov=maraboupy maraboupy/test
 
     - os: windows
       script:
@@ -64,7 +64,7 @@ matrix:
       - ctest -L regress0 -j 2 # does not work ...
       - cd ..
       - cp maraboupy/Release/* maraboupy
-      - $PY_CMD -m pytest maraboupy/test
+      - $PY_CMD -m pytest --cov=maraboupy maraboupy/test
 
 after_success:
   - codecov

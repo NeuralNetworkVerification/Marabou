@@ -11,7 +11,7 @@ option(RUN_UNIT_TEST "run unit tests on build" ON)
 option(RUN_REGRESS_TEST "run regression tests on build" OFF)
 option(RUN_SYSTEM_TEST "run system tests on build" OFF)
 option(RUN_MEMORY_TEST "run cxxtest testing with ASAN ON" ON)
-option(RUN_PYTHON_TEST "run python API tests if building with python" ON)
+option(RUN_PYTHON_TEST "run python API tests if building with python" OFF)
 
 set(DEFAULT_PYTHON_VERSION "3" CACHE STRING "Default Python version 2/3")
 set(PYTHON_VERSIONS_SUPPORTED 2 3)
