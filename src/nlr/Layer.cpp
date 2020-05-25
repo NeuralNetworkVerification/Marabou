@@ -308,10 +308,7 @@ void Layer::computeSymbolicBounds()
         break;
 
     case ABSOLUTE_VALUE:
-        break;
-
     case MAX:
-        break;
 
     default:
         printf( "Error! Actiation type %u unsupported\n", _type );
