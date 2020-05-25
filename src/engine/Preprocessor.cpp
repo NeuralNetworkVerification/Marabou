@@ -820,8 +820,6 @@ bool Preprocessor::constructNetworkLevelReasoner()
         ++newLayerIndex;
     }
 
-    nlr->dumpTopology();
-
     bool success =
         ( newLayerIndex > 1 ) &&
         nlr->getLayer( newLayerIndex - 1 )->getLayerType() == NLR::Layer::OUTPUT;
