@@ -109,8 +109,8 @@ private:
                                    Map<unsigned, unsigned> &handledVariableToLayer,
                                    unsigned newLayerIndex );
     bool constructReluLayer( NLR::NetworkLevelReasoner *nlr,
-                                   Map<unsigned, unsigned> &handledVariableToLayer,
-                                   unsigned newLayerIndex );
+                             Map<unsigned, unsigned> &handledVariableToLayer,
+                             unsigned newLayerIndex );
 
     /*
       The preprocessed query
