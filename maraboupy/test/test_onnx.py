@@ -8,7 +8,6 @@ import pytest
 from .. import Marabou
 import numpy as np
 import os
-from .. import MarabouNetworkONNX
 
 # Global settings
 OPT = Marabou.createOptions(verbosity = 0) # Turn off printing
