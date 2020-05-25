@@ -188,6 +188,9 @@ void Layer::addSourceLayer( unsigned layerNumber, unsigned layerSize )
 {
     ASSERT( _type != INPUT );
 
+    if ( _sourceLayers.exists( layerNumber ) )
+        return;
+
     _sourceLayers[layerNumber] = layerSize;
 
     if ( _type == WEIGHTED_SUM || _type == OUTPUT )
@@ -1013,6 +1016,12 @@ unsigned Layer::neuronToVariable( unsigned neuron ) const
 
     ASSERT( _neuronToVariable.exists( neuron ) );
     return _neuronToVariable[neuron];
+}
+
+unsigned Layer::variableToNeuron( unsigned variable ) const
+{
+    ASSERT( _variableToNeuron.exists( variable ) );
+    return _variableToNeuron[variable];
 }
 
 } // namespace NLR
