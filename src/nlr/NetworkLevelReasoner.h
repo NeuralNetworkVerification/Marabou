@@ -84,9 +84,6 @@ public:
           bound on the upper bound of a ReLU node is negative, that
           ReLU is inactive and its output can be set to 0.
 
-          Initialize should be called once, before the bound
-          propagation is performed.
-
         - receiveTighterBound: this is a callback from the layer
           objects, through which they report tighter bounds.
 
@@ -110,28 +107,6 @@ public:
     */
     void dumpTopology() const;
 
-
-
-
-
-    /*
-      Mapping from node indices to the variables representing their
-      weighted sum values and activation result values.
-    */
-    // void setWeightedSumVariable( unsigned layer, unsigned neuron, unsigned variable );
-    // unsigned getWeightedSumVariable( unsigned layer, unsigned neuron ) const;
-    // void setActivationResultVariable( unsigned layer, unsigned neuron, unsigned variable );
-    // unsigned getActivationResultVariable( unsigned layer, unsigned neuron ) const;
-    // const Map<NeuronIndex, unsigned> &getIndexToWeightedSumVariable();
-    // const Map<NeuronIndex, unsigned> &getIndexToActivationResultVariable();
-
-    /*
-      Mapping from node indices to the nodes' assignments, as computed
-      by evaluate()
-    */
-    // const Map<NeuronIndex, double> &getIndexToWeightedSumAssignment();
-    // const Map<NeuronIndex, double> &getIndexToActivationResultAssignment();
-
     /*
       Duplicate the reasoner
     */
@@ -154,20 +129,6 @@ private:
     List<Tightening> _boundTightenings;
 
     void freeMemoryIfNeeded();
-
-//     /*
-//       Mappings of indices to weighted sum and activation result variables
-//     */
-//     Map<NeuronIndex, unsigned> _indexToWeightedSumVariable;
-//     Map<NeuronIndex, unsigned> _indexToActivationResultVariable;
-//     Map<unsigned, NeuronIndex> _weightedSumVariableToIndex;
-//     Map<unsigned, NeuronIndex> _activationResultVariableToIndex;
-
-//     /*
-//       Store the assignment to all variables when evaluate() is called
-//     */
-//     Map<NeuronIndex, double> _indexToWeightedSumAssignment;
-//     Map<NeuronIndex, double> _indexToActivationResultAssignment;
 
     static void log( const String &message );
 };
