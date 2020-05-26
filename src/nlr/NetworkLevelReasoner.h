@@ -96,7 +96,7 @@ public:
     const ITableau *getTableau() const;
 
     void obtainCurrentBounds();
-    // void intervalArithmeticBoundPropagation();
+    void intervalArithmeticBoundPropagation();
     void symbolicBoundPropagation();
 
     void receiveTighterBound( Tightening tightening );

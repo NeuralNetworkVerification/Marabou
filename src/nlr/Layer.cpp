@@ -289,6 +289,181 @@ double Layer::getUb( unsigned neuron ) const
     return _ub[neuron];
 }
 
+void Layer::computeIntervalArithmeticBounds()
+{
+    ASSERT( _type != INPUT );
+
+    switch ( _type )
+    {
+    case WEIGHTED_SUM:
+    case OUTPUT:
+        computeIntervalArithmeticBoundsForWeightedSum();
+        break;
+
+    case RELU:
+        computeIntervalArithmeticBoundsForRelu();
+        break;
+
+    case ABSOLUTE_VALUE:
+        computeIntervalArithmeticBoundsForAbs();
+        break;
+
+    case MAX:
+
+    default:
+        printf( "Error! Actiation type %u unsupported\n", _type );
+        throw MarabouError( MarabouError::NETWORK_LEVEL_REASONER_ACTIVATION_NOT_SUPPORTED );
+        break;
+    }
+}
+
+void Layer::computeIntervalArithmeticBoundsForWeightedSum()
+{
+    double *newLb = new double[_size];
+    double *newUb = new double[_size];
+
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        if ( _eliminatedNeurons.exists( i ) )
+            continue;
+
+        newLb[i] = _bias[i];
+        newUb[i] = _bias[i];
+    }
+
+    for ( const auto &sourceLayerEntry : _sourceLayers )
+    {
+        unsigned sourceLayerIndex = sourceLayerEntry.first;
+        unsigned sourceLayerSize = sourceLayerEntry.second;
+        const Layer *sourceLayer = _layerOwner->getLayer( sourceLayerIndex );
+        const double *weights = _layerToWeights[sourceLayerIndex];
+
+        for ( unsigned i = 0; i < _size; ++i )
+        {
+            for ( unsigned j = 0; j < sourceLayerSize; ++j )
+            {
+                double previousLb = sourceLayer->getLb( j );
+                double previousUb = sourceLayer->getUb( j );
+                double weight = weights[j * _size + i];
+
+                if ( weight > 0 )
+                {
+                    newLb[i] += weight * previousLb;
+                    newUb[i] += weight * previousUb;
+                }
+                else
+                {
+                    newLb[i] += weight * previousUb;
+                    newUb[i] += weight * previousLb;
+                }
+            }
+        }
+    }
+
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        if ( newLb[i] > _lb[i] )
+        {
+            _lb[i] = newLb[i];
+            _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
+        }
+        if ( newUb[i] < _ub[i] )
+        {
+            _ub[i] = newUb[i];
+            _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
+        }
+    }
+
+    delete[] newLb;
+    delete[] newUb;
+}
+
+void Layer::computeIntervalArithmeticBoundsForRelu()
+{
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        if ( _eliminatedNeurons.exists( i ) )
+            continue;
+
+        NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
+        const Layer *sourceLayer = _layerOwner->getLayer( sourceIndex._layer );
+
+        double lb = sourceLayer->getLb( sourceIndex._neuron );
+        double ub = sourceLayer->getUb( sourceIndex._neuron );
+
+        if ( lb < 0 )
+            lb = 0;
+
+        if ( lb > _lb[i] )
+        {
+            _lb[i] = lb;
+            _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
+        }
+        if ( ub < _ub[i] )
+        {
+            _ub[i] = ub;
+            _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
+        }
+    }
+}
+
+void Layer::computeIntervalArithmeticBoundsForAbs()
+{
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        if ( _eliminatedNeurons.exists( i ) )
+            continue;
+
+        NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
+        const Layer *sourceLayer = _layerOwner->getLayer( sourceIndex._layer );
+
+        double lb = sourceLayer->getLb( sourceIndex._neuron );
+        double ub = sourceLayer->getUb( sourceIndex._neuron );
+
+        if ( lb > 0 )
+        {
+            if ( lb > _lb[i] )
+            {
+                _lb[i] = lb;
+                _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
+            }
+            if ( ub < _ub[i] )
+            {
+                _ub[i] = ub;
+                _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
+            }
+        }
+        else if ( ub < 0 )
+        {
+            if ( -ub > _lb[i] )
+            {
+                _lb[i] = -ub;
+                _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
+            }
+            if ( -lb < _ub[i] )
+            {
+                _ub[i] = -lb;
+                _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
+            }
+        }
+        else
+        {
+            // lb < 0 < ub
+            if ( _lb[i] < 0 )
+            {
+                _lb[i] = 0;
+                _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
+            }
+
+            if ( FloatUtils::max( ub, -lb ) < _ub[i] )
+            {
+                _ub[i] = FloatUtils::max( ub, -lb );
+                _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
+            }
+        }
+    }
+}
+
 void Layer::computeSymbolicBounds()
 {
     switch ( _type )
@@ -361,7 +536,6 @@ void Layer::computeSymbolicBoundsForRelu()
         ASSERT( _neuronToActivationSources.exists( i ) );
         NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
         const Layer *sourceLayer = _layerOwner->getLayer( sourceIndex._layer );
-
 
         /*
           A ReLU initially "inherits" the symbolic bounds computed
@@ -652,7 +826,6 @@ void Layer::eliminateVariable( unsigned variable, double value )
 
     _neuronToVariable.erase( _variableToNeuron[variable] );
     _variableToNeuron.erase( variable );
-
 }
 
 void Layer::updateVariableIndices( const Map<unsigned, unsigned> &oldIndexToNewIndex,

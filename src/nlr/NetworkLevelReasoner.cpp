@@ -118,6 +118,12 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
         _layerIndexToLayer[i]->computeSymbolicBounds();
 }
 
+void NetworkLevelReasoner::intervalArithmeticBoundPropagation()
+{
+    for ( unsigned i = 1; i < _layerIndexToLayer.size(); ++i )
+        _layerIndexToLayer[i]->computeIntervalArithmeticBounds();
+}
+
 void NetworkLevelReasoner::freeMemoryIfNeeded()
 {
     for ( const auto &layer : _layerIndexToLayer )

@@ -98,6 +98,7 @@ public:
 
     void obtainCurrentBounds();
     void computeSymbolicBounds();
+    void computeIntervalArithmeticBounds();
 
     /*
       Preprocessing functionality: variable elimination and reindexing
@@ -155,6 +156,13 @@ private:
     void comptueSymbolicBoundsForInput();
     void computeSymbolicBoundsForRelu();
     void computeSymbolicBoundsForWeightedSum();
+
+    /*
+      Helper functions for interval bound tightening
+    */
+    void computeIntervalArithmeticBoundsForWeightedSum();
+    void computeIntervalArithmeticBoundsForRelu();
+    void computeIntervalArithmeticBoundsForAbs();
 
     const double *getSymbolicLb() const;
     const double *getSymbolicUb() const;
