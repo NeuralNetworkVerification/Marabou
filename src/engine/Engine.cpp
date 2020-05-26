@@ -46,7 +46,6 @@ Engine::Engine( unsigned verbosity )
     , _verbosity( verbosity )
     , _lastNumVisitedStates( 0 )
     , _lastIterationWithProgress( 0 )
-    , _splittingHeuristics( GlobalConfiguration::SPLITTING_HEURISTICS )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -1976,11 +1975,6 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraint()
 void Engine::setConstraintViolationThreshold( unsigned threshold )
 {
     _smtCore.setConstraintViolationThreshold( threshold );
-}
-
-void Engine::setSplittingStrategy( DivideStrategy splittingHeuristics )
-{
-    _splittingHeuristics = splittingHeuristics;
 }
 
 //

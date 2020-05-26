@@ -320,8 +320,6 @@ private:
     unsigned _lastNumVisitedStates;
     unsigned long long _lastIterationWithProgress;
 
-    DivideStrategy _splittingHeuristics;
-
     /*
       Perform a simplex step: compute the cost function, pick the
       entering and leaving variables and perform a pivot.
