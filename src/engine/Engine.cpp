@@ -1046,9 +1046,7 @@ void Engine::initializeNetworkLevelReasoning()
     _networkLevelReasoner = _preprocessedQuery.getNetworkLevelReasoner();
 
     if ( _networkLevelReasoner )
-    {
         _networkLevelReasoner->setTableau( _tableau );
-    }
 }
 
 bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
@@ -1928,6 +1926,7 @@ void Engine::updateScores()
     {
         // We find the earliest K ReLUs that have not been fixed, update
         // their scores, and pop them to the _candidatePlConstraints
+        // K is equal to GlobalConfiguration::RUNTIME_ESTIMATE_THRESHOLD
         log( Stringf( "Using polarity heuristics..." ) );
         std::cout << "Numlayer" << _networkLevelReasoner->
             getNumberOfLayers() << std::endl;
