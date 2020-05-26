@@ -350,7 +350,6 @@ unsigned NetworkLevelReasoner::getNumberOfLayers()
     return _numberOfLayers;
 }
 
-
 void NetworkLevelReasoner::evaluate( double *input, double *output )
 {
     memcpy( _work1, input, sizeof(double) * _layerSizes[0] );
@@ -469,7 +468,6 @@ void NetworkLevelReasoner::storeIntoOther( NetworkLevelReasoner &other ) const
     other._indexToActivationResultAssignment = _indexToActivationResultAssignment;
     other._eliminatedWeightedSumVariables = _eliminatedWeightedSumVariables;
     other._eliminatedActivationResultVariables = _eliminatedActivationResultVariables;
-
     other._indexToPiecewiseLinearConstraint = _indexToPiecewiseLinearConstraint;
 }
 

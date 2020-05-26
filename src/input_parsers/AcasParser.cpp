@@ -160,7 +160,9 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
             unsigned f = _nodeToF[NodeIndex(i, j)];
             PiecewiseLinearConstraint *relu = new ReluConstraint( b, f );
             nlr->setIndexToPLConstraint( i, j, relu );
-            relu->setScore( i );
+            if ( GlobalConfiguration::SPLITTING_HEURISTICS ==
+                 DivideStrategy::EarliestReLU )
+                relu->setScore( i );
             inputQuery.addPiecewiseLinearConstraint( relu );
         }
     }

@@ -898,6 +898,12 @@ ReluConstraint::PhaseStatus ReluConstraint::getDirection() const
     return _direction;
 }
 
+void ReluConstraint::updateScore()
+{
+    _score = std::abs( computePolarity() );
+}
+
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

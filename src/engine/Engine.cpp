@@ -25,7 +25,6 @@
 #include "MarabouError.h"
 #include "PiecewiseLinearConstraint.h"
 #include "Preprocessor.h"
-#include "ReluConstraint.h"
 #include "TableauRow.h"
 #include "TimeUtils.h"
 
@@ -1928,6 +1927,8 @@ void Engine::updateScores()
     if ( _networkLevelReasoner && GlobalConfiguration::SPLITTING_HEURISTICS ==
          DivideStrategy::Polarity )
     {
+        // We find the earliest K ReLUs that have not been fixed, update
+        // their scores, and pop them to the _candidatePlConstraints
         log( Stringf( "Using polarity heuristics..." ) );
         std::cout << "Numlayer" << _networkLevelReasoner->
             getNumberOfLayers() << std::endl;
