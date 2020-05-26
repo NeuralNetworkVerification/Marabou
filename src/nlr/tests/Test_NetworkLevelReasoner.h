@@ -91,13 +91,6 @@ public:
         nlr.addActivationSource( 3, 0, 4, 0 );
         nlr.addActivationSource( 3, 1, 4, 1 );
 
-        // Layer dependenices
-        nlr.addLayerDependency( 0, 1 );
-        nlr.addLayerDependency( 1, 2 );
-        nlr.addLayerDependency( 2, 3 );
-        nlr.addLayerDependency( 3, 4 );
-        nlr.addLayerDependency( 4, 5 );
-
         // Variable indexing
         nlr.setNeuronVariable( NLR::NeuronIndex( 0, 0 ), 0 );
         nlr.setNeuronVariable( NLR::NeuronIndex( 0, 1 ), 1 );
@@ -671,135 +664,131 @@ public:
 
     }
 
-    // void populateNetworkSBT( NLR::NetworkLevelReasoner &nlr, MockTableau &tableau )
-    // {
-    //     /*
-    //           2      R       1
-    //       x0 --- x2 ---> x4 --- x6
-    //         \    /              /
-    //        1 \  /              /
-    //           \/           -1 /
-    //           /\             /
-    //        3 /  \           /
-    //         /    \   R     /
-    //       x1 --- x3 ---> x5
-    //           1
-    //     */
+    void populateNetworkSBT( NLR::NetworkLevelReasoner &nlr, MockTableau &tableau )
+    {
+        /*
+              2      R       1
+          x0 --- x2 ---> x4 --- x6
+            \    /              /
+           1 \  /              /
+              \/           -1 /
+              /\             /
+           3 /  \           /
+            /    \   R     /
+          x1 --- x3 ---> x5
+              1
+        */
 
-    //     nlr.setNumberOfLayers( 3 );
+        // Create the layers
+        nlr.addLayer( 0, NLR::Layer::INPUT, 2 );
+        nlr.addLayer( 1, NLR::Layer::WEIGHTED_SUM, 2 );
+        nlr.addLayer( 2, NLR::Layer::RELU, 2 );
+        nlr.addLayer( 3, NLR::Layer::OUTPUT, 1 );
 
-    //     nlr.setLayerSize( 0, 2 );
-    //     nlr.setLayerSize( 1, 2 );
-    //     nlr.setLayerSize( 2, 1 );
+        // Mark layer dependencies
+        for ( unsigned i = 1; i <= 3; ++i )
+            nlr.addLayerDependency( i - 1, i );
 
-    //     nlr.allocateMemoryByTopology();
+        // Weights
+        nlr.setWeight( 0, 0, 1, 0, 2 );
+        nlr.setWeight( 0, 0, 1, 1, 1 );
+        nlr.setWeight( 0, 1, 1, 0, 3 );
+        nlr.setWeight( 0, 1, 1, 1, 1 );
+        nlr.setWeight( 2, 0, 3, 0, 1 );
+        nlr.setWeight( 2, 1, 3, 0, -1 );
 
-    //     // Weights
-    //     nlr.setWeight( 0, 0, 0, 2 );
-    //     nlr.setWeight( 0, 0, 1, 1 );
-    //     nlr.setWeight( 0, 1, 0, 3 );
-    //     nlr.setWeight( 0, 1, 1, 1 );
-    //     nlr.setWeight( 1, 0, 0, 1 );
-    //     nlr.setWeight( 1, 1, 0, -1 );
+        // Mark the ReLU sources
+        nlr.addActivationSource( 1, 0, 2, 0 );
+        nlr.addActivationSource( 1, 1, 2, 1 );
 
-    //     // All biases are 0
-    //     nlr.setBias( 0, 0, 0 );
-    //     nlr.setBias( 0, 1, 0 );
-    //     nlr.setBias( 1, 0, 0 );
-    //     nlr.setBias( 1, 1, 0 );
-    //     nlr.setBias( 2, 0, 0 );
+        // Variable indexing
+        nlr.setNeuronVariable( NLR::NeuronIndex( 0, 0 ), 0 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 0, 1 ), 1 );
 
-    //     // Variable indexing
-    //     nlr.setActivationResultVariable( 0, 0, 0 );
-    //     nlr.setActivationResultVariable( 0, 1, 1 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 1, 0 ), 2 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 1, 1 ), 3 );
 
-    //     nlr.setWeightedSumVariable( 1, 0, 2 );
-    //     nlr.setWeightedSumVariable( 1, 1, 3 );
-    //     nlr.setActivationResultVariable( 1, 0, 4 );
-    //     nlr.setActivationResultVariable( 1, 1, 5 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 2, 0 ), 4 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 2, 1 ), 5 );
 
-    //     nlr.setWeightedSumVariable( 2, 0, 6 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 3, 0 ), 6 );
 
-    //     // Mark nodes as ReLUs
-    //     nlr.setNeuronActivationFunction( 1, 0, PiecewiseLinearFunctionType::RELU );
-    //     nlr.setNeuronActivationFunction( 1, 1, PiecewiseLinearFunctionType::RELU );
+        // Very loose bounds for neurons except inputs
+        double large = 1000000;
 
-    //     // Very loose bounds for neurons except inputs
-    //     double large = 1000000;
+        tableau.setLowerBound( 2, -large ); tableau.setUpperBound( 2, large );
+        tableau.setLowerBound( 3, -large ); tableau.setUpperBound( 3, large );
+        tableau.setLowerBound( 4, -large ); tableau.setUpperBound( 4, large );
+        tableau.setLowerBound( 5, -large ); tableau.setUpperBound( 5, large );
+        tableau.setLowerBound( 6, -large ); tableau.setUpperBound( 6, large );
+    }
 
-    //     tableau.setLowerBound( 2, -large ); tableau.setUpperBound( 2, large );
-    //     tableau.setLowerBound( 3, -large ); tableau.setUpperBound( 3, large );
-    //     tableau.setLowerBound( 4, -large ); tableau.setUpperBound( 4, large );
-    //     tableau.setLowerBound( 5, -large ); tableau.setUpperBound( 5, large );
-    //     tableau.setLowerBound( 6, -large ); tableau.setUpperBound( 6, large );
-    // }
+    void test_sbt_relus_all_active()
+    {
+        NLR::NetworkLevelReasoner nlr;
+        MockTableau tableau;
+        nlr.setTableau( &tableau );
+        populateNetworkSBT( nlr, tableau );
 
-    // void test_sbt_relus_all_active()
-    // {
-    //     NLR::NetworkLevelReasoner nlr;
-    //     MockTableau tableau;
-    //     nlr.setTableau( &tableau );
-    //     populateNetworkSBT( nlr, tableau );
+        tableau.setLowerBound( 0, 4 );
+        tableau.setUpperBound( 0, 6 );
+        tableau.setLowerBound( 1, 1 );
+        tableau.setUpperBound( 1, 5 );
 
-    //     tableau.setLowerBound( 0, 4 );
-    //     tableau.setUpperBound( 0, 6 );
-    //     tableau.setLowerBound( 1, 1 );
-    //     tableau.setUpperBound( 1, 5 );
+        // Invoke SBT
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.symbolicBoundPropagation() );
 
-    //     // Invoke SBT
-    //     TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
-    //     TS_ASSERT_THROWS_NOTHING( nlr.symbolicBoundPropagation() );
+        /*
+          Input ranges:
 
-    //     /*
-    //       Input ranges:
+          x0: [4, 6]
+          x1: [1, 5]
 
-    //       x0: [4, 6]
-    //       x1: [1, 5]
+          Layer 1:
 
-    //       Layer 1:
+          x2.lb = 2x0 + 3x1   : [11, 27]
+          x2.ub = 2x0 + 3x1   : [11, 27]
 
-    //       x2.lb = 2x0 + 3x1   : [11, 27]
-    //       x2.ub = 2x0 + 3x1   : [11, 27]
+          x3.lb =  x0 +  x1   : [5, 11]
+          x3.ub =  x0 +  x1   : [5, 11]
 
-    //       x3.lb =  x0 +  x1   : [5, 11]
-    //       x3.ub =  x0 +  x1   : [5, 11]
+          Both ReLUs active, bound survive through activations:
 
-    //       Both ReLUs active, bound survive through activations:
+          x4.lb = 2x0 + 3x1   : [11, 27]
+          x4.ub = 2x0 + 3x1   : [11, 27]
 
-    //       x4.lb = 2x0 + 3x1   : [11, 27]
-    //       x4.ub = 2x0 + 3x1   : [11, 27]
+          x5.lb =  x0 +  x1   : [5, 11]
+          x5.ub =  x0 +  x1   : [5, 11]
 
-    //       x5.lb =  x0 +  x1   : [5, 11]
-    //       x5.ub =  x0 +  x1   : [5, 11]
+          Layer 2:
 
-    //       Layer 2:
+          x6.lb =  x0 + 2x1   : [6, 16]
+          x6.ub =  x0 + 2x1   : [6, 16]
+        */
 
-    //       x6.lb =  x0 + 2x1   : [6, 16]
-    //       x6.ub =  x0 + 2x1   : [6, 16]
-    //     */
+        List<Tightening> expectedBounds({
+                Tightening( 2, 11, Tightening::LB ),
+                Tightening( 2, 27, Tightening::UB ),
+                Tightening( 3, 5, Tightening::LB ),
+                Tightening( 3, 11, Tightening::UB ),
 
-    //     List<Tightening> expectedBounds({
-    //             Tightening( 2, 11, Tightening::LB ),
-    //             Tightening( 2, 27, Tightening::UB ),
-    //             Tightening( 3, 5, Tightening::LB ),
-    //             Tightening( 3, 11, Tightening::UB ),
+                Tightening( 4, 11, Tightening::LB ),
+                Tightening( 4, 27, Tightening::UB ),
+                Tightening( 5, 5, Tightening::LB ),
+                Tightening( 5, 11, Tightening::UB ),
 
-    //             Tightening( 4, 11, Tightening::LB ),
-    //             Tightening( 4, 27, Tightening::UB ),
-    //             Tightening( 5, 5, Tightening::LB ),
-    //             Tightening( 5, 11, Tightening::UB ),
+                Tightening( 6, 6, Tightening::LB ),
+                Tightening( 6, 16, Tightening::UB ),
+                    });
 
-    //             Tightening( 6, 6, Tightening::LB ),
-    //             Tightening( 6, 16, Tightening::UB ),
-    //                 });
+        List<Tightening> bounds;
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
 
-    //     List<Tightening> bounds;
-    //     TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
-
-    //     TS_ASSERT_EQUALS( expectedBounds.size(), bounds.size() );
-    //     for ( const auto &bound : bounds )
-    //         TS_ASSERT( expectedBounds.exists( bound ) );
-    // }
+        TS_ASSERT_EQUALS( expectedBounds.size(), bounds.size() );
+        for ( const auto &bound : expectedBounds )
+            TS_ASSERT( bounds.exists( bound ) );
+    }
 
     // void test_sbt_relus_active_and_inactive()
     // {

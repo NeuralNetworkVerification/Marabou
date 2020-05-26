@@ -201,7 +201,7 @@ void Layer::addSourceLayer( unsigned layerNumber, unsigned layerSize )
 
         std::fill_n( _layerToWeights[layerNumber], layerSize * _size, 0 );
         std::fill_n( _layerToPositiveWeights[layerNumber], layerSize * _size, 0 );
-        std::fill_n( _layerToPositiveWeights[layerNumber], layerSize * _size, 0 );
+        std::fill_n( _layerToNegativeWeights[layerNumber], layerSize * _size, 0 );
     }
 }
 
