@@ -1920,7 +1920,6 @@ void Engine::updateDirections()
 
 void Engine::updateScores()
 {
-    _candidatePlConstraints.clear();
     if ( _networkLevelReasoner && GlobalConfiguration::SPLITTING_HEURISTICS ==
          DivideStrategy::Polarity )
     {
@@ -1928,14 +1927,12 @@ void Engine::updateScores()
         // their scores, and pop them to the _candidatePlConstraints
         // K is equal to GlobalConfiguration::RUNTIME_ESTIMATE_THRESHOLD
         log( Stringf( "Using polarity heuristics..." ) );
-        std::cout << "Numlayer" << _networkLevelReasoner->
-            getNumberOfLayers() << std::endl;
         for ( unsigned layer = 1; layer < _networkLevelReasoner->
                   getNumberOfLayers() - 1; ++layer )
         {
+            log( Stringf( "examining layer %u", layer ) );
             unsigned size = _networkLevelReasoner->getLayerSize( layer );
             for ( unsigned neuron = 0; neuron < size; ++neuron ){
-                log( Stringf( "examining neuron (%u, %u)", layer, neuron ) );
                 auto plConstraint = _networkLevelReasoner->
                     getPLConstraintFromIndex( layer, neuron );
                 if ( plConstraint && plConstraint->isActive()
@@ -1951,24 +1948,40 @@ void Engine::updateScores()
         }
         return;
     }
-    for ( const auto plConstraint : _plConstraints )
+    else if ( GlobalConfiguration::SPLITTING_HEURISTICS ==
+              DivideStrategy::EarliestReLU )
     {
-        if ( plConstraint->isActive() && !plConstraint->phaseFixed() )
+        for ( const auto plConstraint : _plConstraints )
         {
-            plConstraint->updateScore();
-            _candidatePlConstraints.insert( plConstraint );
+            if ( plConstraint->isActive() && !plConstraint->phaseFixed() )
+            {
+                plConstraint->updateScore();
+                _candidatePlConstraints.insert( plConstraint );
+            }
         }
+        return;
     }
+    // Otherwise, we fall back to the constraint violation based splitting
+    // heuristic
 }
 
 PiecewiseLinearConstraint *Engine::pickSplitPLConstraint()
 {
+    _candidatePlConstraints.clear();
     log( Stringf( "Picking a split PLConstraint..." ) );
     updateScores();
     log( Stringf( "Done updating scores..." ) );
-    auto constraint = *_candidatePlConstraints.begin();
-    log( Stringf( "Picked..." ) );
-    return constraint;
+    if ( _candidatePlConstraints.empty() )
+    {
+        log( Stringf( "Unable to pick using the current strategy..." ) );
+        return NULL;
+    }
+    else
+    {
+        auto constraint = *_candidatePlConstraints.begin();
+        log( Stringf( "Picked..." ) );
+        return constraint;
+    }
 }
 
 void Engine::setConstraintViolationThreshold( unsigned threshold )

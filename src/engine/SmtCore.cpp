@@ -62,10 +62,9 @@ void SmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
          _constraintViolationThreshold )
     {
         _needToSplit = true;
-        if ( GlobalConfiguration::SPLITTING_HEURISTICS == DivideStrategy::ReLUViolation )
+        if ( GlobalConfiguration::SPLITTING_HEURISTICS ==
+             DivideStrategy::ReLUViolation || !pickSplitPLConstraint() )
             _constraintForSplitting = constraint;
-        else
-            pickSplitPLConstraint();
     }
 }
 
@@ -402,12 +401,13 @@ PiecewiseLinearConstraint *SmtCore::chooseViolatedConstraintForFixing( List<Piec
     return candidate;
 }
 
-void SmtCore::pickSplitPLConstraint()
+bool SmtCore::pickSplitPLConstraint()
 {
     if ( _needToSplit && !_constraintForSplitting )
     {
         _constraintForSplitting = _engine->pickSplitPLConstraint();
     }
+    return _constraintForSplitting != NULL;
 }
 
 //
