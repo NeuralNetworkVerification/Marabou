@@ -790,225 +790,225 @@ public:
             TS_ASSERT( bounds.exists( bound ) );
     }
 
-    // void test_sbt_relus_active_and_inactive()
-    // {
-    //     NLR::NetworkLevelReasoner nlr;
-    //     MockTableau tableau;
-    //     nlr.setTableau( &tableau );
-    //     populateNetworkSBT( nlr, tableau );
+    void test_sbt_relus_active_and_inactive()
+    {
+        NLR::NetworkLevelReasoner nlr;
+        MockTableau tableau;
+        nlr.setTableau( &tableau );
+        populateNetworkSBT( nlr, tableau );
 
-    //     tableau.setLowerBound( 0, 4 );
-    //     tableau.setUpperBound( 0, 6 );
-    //     tableau.setLowerBound( 1, 1 );
-    //     tableau.setUpperBound( 1, 5 );
+        tableau.setLowerBound( 0, 4 );
+        tableau.setUpperBound( 0, 6 );
+        tableau.setLowerBound( 1, 1 );
+        tableau.setUpperBound( 1, 5 );
 
-    //     // Strong negative bias for x2, which is node (1,0)
-    //     nlr.setBias( 1, 0, -30 );
+        // Strong negative bias for x2, which is node (1,0)
+        nlr.setBias( 1, 0, -30 );
 
-    //     // Invoke SBT
-    //     TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
-    //     TS_ASSERT_THROWS_NOTHING( nlr.symbolicBoundPropagation() );
+        // Invoke SBT
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.symbolicBoundPropagation() );
 
-    //     /*
-    //       Input ranges:
+        /*
+          Input ranges:
 
-    //       x0: [4, 6]
-    //       x1: [1, 5]
+          x0: [4, 6]
+          x1: [1, 5]
 
-    //       Layer 1:
+          Layer 1:
 
-    //       x2.lb = 2x0 + 3x1 - 30   : [-19, -3]
-    //       x2.ub = 2x0 + 3x1 - 30   : [-19, -3]
+          x2.lb = 2x0 + 3x1 - 30   : [-19, -3]
+          x2.ub = 2x0 + 3x1 - 30   : [-19, -3]
 
-    //       x3.lb =  x0 +  x1   : [5, 11]
-    //       x3.ub =  x0 +  x1   : [5, 11]
+          x3.lb =  x0 +  x1   : [5, 11]
+          x3.ub =  x0 +  x1   : [5, 11]
 
-    //       First ReLU is inactive, bounds get zeroed
-    //       Second ReLU is active, bounds surive the activation
+          First ReLU is inactive, bounds get zeroed
+          Second ReLU is active, bounds surive the activation
 
-    //       x4.lb = 0
-    //       x4.ub = 0
+          x4.lb = 0
+          x4.ub = 0
 
-    //       x5.lb =  x0 +  x1   : [5, 11]
-    //       x5.ub =  x0 +  x1   : [5, 11]
+          x5.lb =  x0 +  x1   : [5, 11]
+          x5.ub =  x0 +  x1   : [5, 11]
 
-    //       Layer 2:
+          Layer 2:
 
-    //       x6.lb =  - x0 - x1  : [-11, -5]
-    //       x6.ub =  - x0 - x1  : [-11, -5]
-    //     */
+          x6.lb =  - x0 - x1  : [-11, -5]
+          x6.ub =  - x0 - x1  : [-11, -5]
+        */
 
-    //     List<Tightening> expectedBounds({
-    //             Tightening( 2, -19, Tightening::LB ),
-    //             Tightening( 2, -3, Tightening::UB ),
-    //             Tightening( 3, 5, Tightening::LB ),
-    //             Tightening( 3, 11, Tightening::UB ),
+        List<Tightening> expectedBounds({
+                Tightening( 2, -19, Tightening::LB ),
+                Tightening( 2, -3, Tightening::UB ),
+                Tightening( 3, 5, Tightening::LB ),
+                Tightening( 3, 11, Tightening::UB ),
 
-    //             Tightening( 4, 0, Tightening::LB ),
-    //             Tightening( 4, 0, Tightening::UB ),
-    //             Tightening( 5, 5, Tightening::LB ),
-    //             Tightening( 5, 11, Tightening::UB ),
+                Tightening( 4, 0, Tightening::LB ),
+                Tightening( 4, 0, Tightening::UB ),
+                Tightening( 5, 5, Tightening::LB ),
+                Tightening( 5, 11, Tightening::UB ),
 
-    //             Tightening( 6, -11, Tightening::LB ),
-    //             Tightening( 6, -5, Tightening::UB ),
-    //                 });
+                Tightening( 6, -11, Tightening::LB ),
+                Tightening( 6, -5, Tightening::UB ),
+                    });
 
-    //     List<Tightening> bounds;
-    //     TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        List<Tightening> bounds;
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
 
-    //     TS_ASSERT_EQUALS( expectedBounds.size(), bounds.size() );
-    //     for ( const auto &bound : bounds )
-    //         TS_ASSERT( expectedBounds.exists( bound ) );
-    // }
+        TS_ASSERT_EQUALS( expectedBounds.size(), bounds.size() );
+        for ( const auto &bound : bounds )
+            TS_ASSERT( expectedBounds.exists( bound ) );
+    }
 
-    // void test_sbt_relus_active_and_not_fixed()
-    // {
-    //     NLR::NetworkLevelReasoner nlr;
-    //     MockTableau tableau;
-    //     nlr.setTableau( &tableau );
-    //     populateNetworkSBT( nlr, tableau );
+    void test_sbt_relus_active_and_not_fixed()
+    {
+        NLR::NetworkLevelReasoner nlr;
+        MockTableau tableau;
+        nlr.setTableau( &tableau );
+        populateNetworkSBT( nlr, tableau );
 
-    //     tableau.setLowerBound( 0, 4 );
-    //     tableau.setUpperBound( 0, 6 );
-    //     tableau.setLowerBound( 1, 1 );
-    //     tableau.setUpperBound( 1, 5 );
+        tableau.setLowerBound( 0, 4 );
+        tableau.setUpperBound( 0, 6 );
+        tableau.setLowerBound( 1, 1 );
+        tableau.setUpperBound( 1, 5 );
 
-    //     // Strong negative bias for x2, which is node (1,0)
-    //     nlr.setBias( 1, 0, -15 );
+        // Strong negative bias for x2, which is node (1,0)
+        nlr.setBias( 1, 0, -15 );
 
-    //     // Invoke SBT
-    //     TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
-    //     TS_ASSERT_THROWS_NOTHING( nlr.symbolicBoundPropagation() );
+        // Invoke SBT
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.symbolicBoundPropagation() );
 
-    //     /*
-    //       Input ranges:
+        /*
+          Input ranges:
 
-    //       x0: [4, 6]
-    //       x1: [1, 5]
+          x0: [4, 6]
+          x1: [1, 5]
 
-    //       Layer 1:
+          Layer 1:
 
-    //       x2.lb = 2x0 + 3x1 - 15   : [-4, 12]
-    //       x2.ub = 2x0 + 3x1 - 15   : [-4, 12]
+          x2.lb = 2x0 + 3x1 - 15   : [-4, 12]
+          x2.ub = 2x0 + 3x1 - 15   : [-4, 12]
 
-    //       x3.lb =  x0 +  x1   : [5, 11]
-    //       x3.ub =  x0 +  x1   : [5, 11]
+          x3.lb =  x0 +  x1   : [5, 11]
+          x3.ub =  x0 +  x1   : [5, 11]
 
-    //       First ReLU is undecided, bound is concretized.
-    //         Coefficient: 12/(12--4) = 12/16 = 0.75
-    //       Second ReLU is active, bounds surive the activation
+          First ReLU is undecided, bound is concretized.
+            Coefficient: 12/(12--4) = 12/16 = 0.75
+          Second ReLU is active, bounds surive the activation
 
-    //       x4 range: [0, 12]
-    //       x4.lb = 0.75( 2x0 + 3x1 ) - 0.75 * 15      = 1.5x0 + 2.25x1 - 11.25
-    //       x4.ub = 0.75( 2x0 + 3x1 ) - 0.75 * 15 + 3  = 1.5x0 + 2.25x1 -  8.25
+          x4 range: [0, 12]
+          x4.lb = 0.75( 2x0 + 3x1 ) - 0.75 * 15      = 1.5x0 + 2.25x1 - 11.25
+          x4.ub = 0.75( 2x0 + 3x1 ) - 0.75 * 15 + 3  = 1.5x0 + 2.25x1 -  8.25
 
-    //       x5.lb =  x0 +  x1   : [5, 11]
-    //       x5.ub =  x0 +  x1   : [5, 11]
+          x5.lb =  x0 +  x1   : [5, 11]
+          x5.ub =  x0 +  x1   : [5, 11]
 
-    //       Layer 2:
+          Layer 2:
 
-    //       x6.lb =  0.5x0 + 1.25x1 - 11.25
-    //       x6.ub =  0.5x0 + 1.25x1 -  8.25
+          x6.lb =  0.5x0 + 1.25x1 - 11.25
+          x6.ub =  0.5x0 + 1.25x1 -  8.25
 
-    //       x6 range: [2 + 1.25 - 11.25 = -8, 3 + 6.25 - 8.25 = 1] = [-8, 1]
-    //     */
+          x6 range: [2 + 1.25 - 11.25 = -8, 3 + 6.25 - 8.25 = 1] = [-8, 1]
+        */
 
-    //     List<Tightening> expectedBounds({
-    //             Tightening( 2, -4, Tightening::LB ),
-    //             Tightening( 2, 12, Tightening::UB ),
-    //             Tightening( 3, 5, Tightening::LB ),
-    //             Tightening( 3, 11, Tightening::UB ),
+        List<Tightening> expectedBounds({
+                Tightening( 2, -4, Tightening::LB ),
+                Tightening( 2, 12, Tightening::UB ),
+                Tightening( 3, 5, Tightening::LB ),
+                Tightening( 3, 11, Tightening::UB ),
 
-    //             Tightening( 4, 0, Tightening::LB ),
-    //             Tightening( 4, 12, Tightening::UB ),
-    //             Tightening( 5, 5, Tightening::LB ),
-    //             Tightening( 5, 11, Tightening::UB ),
+                Tightening( 4, 0, Tightening::LB ),
+                Tightening( 4, 12, Tightening::UB ),
+                Tightening( 5, 5, Tightening::LB ),
+                Tightening( 5, 11, Tightening::UB ),
 
-    //             Tightening( 6, -8, Tightening::LB ),
-    //             Tightening( 6, 1, Tightening::UB ),
-    //                 });
+                Tightening( 6, -8, Tightening::LB ),
+                Tightening( 6, 1, Tightening::UB ),
+                    });
 
-    //     List<Tightening> bounds;
-    //     TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        List<Tightening> bounds;
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
 
-    //     TS_ASSERT_EQUALS( expectedBounds.size(), bounds.size() );
-    //     for ( const auto &bound : bounds )
-    //         TS_ASSERT( expectedBounds.exists( bound ) );
-    // }
+        TS_ASSERT_EQUALS( expectedBounds.size(), bounds.size() );
+        for ( const auto &bound : bounds )
+            TS_ASSERT( expectedBounds.exists( bound ) );
+    }
 
-    // void test_sbt_relus_active_and_externally_fixed()
-    // {
-    //     NLR::NetworkLevelReasoner nlr;
-    //     MockTableau tableau;
-    //     nlr.setTableau( &tableau );
-    //     populateNetworkSBT( nlr, tableau );
+    void test_sbt_relus_active_and_externally_fixed()
+    {
+        NLR::NetworkLevelReasoner nlr;
+        MockTableau tableau;
+        nlr.setTableau( &tableau );
+        populateNetworkSBT( nlr, tableau );
 
-    //     tableau.setLowerBound( 0, 4 );
-    //     tableau.setUpperBound( 0, 6 );
-    //     tableau.setLowerBound( 1, 1 );
-    //     tableau.setUpperBound( 1, 5 );
+        tableau.setLowerBound( 0, 4 );
+        tableau.setUpperBound( 0, 6 );
+        tableau.setLowerBound( 1, 1 );
+        tableau.setUpperBound( 1, 5 );
 
-    //     // Strong negative bias for x2, which is node (1,0). Should make the node unfixed.
-    //     nlr.setBias( 1, 0, -15 );
+        // Strong negative bias for x2, which is node (1,0). Should make the node unfixed.
+        nlr.setBias( 1, 0, -15 );
 
-    //     // However, one of the ReLU's variables has been eliminated
-    //     nlr.eliminateVariable( 2, -3 );
+        // However, one of the ReLU's variables has been eliminated
+        nlr.eliminateVariable( 2, -3 );
 
-    //     // Invoke SBT
-    //     TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
-    //     TS_ASSERT_THROWS_NOTHING( nlr.symbolicBoundPropagation() );
+        // Invoke SBT
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.symbolicBoundPropagation() );
 
-    //     /*
-    //       Input ranges:
+        /*
+          Input ranges:
 
-    //       x0: [4, 6]
-    //       x1: [1, 5]
+          x0: [4, 6]
+          x1: [1, 5]
 
-    //       Layer 1:
+          Layer 1:
 
-    //       x2.lb = 2x0 + 3x1 - 15   : [-4, 12]
-    //       x2.ub = 2x0 + 3x1 - 15   : [-4, 12]
+          x2.lb = 2x0 + 3x1 - 15   : [-4, 12]
+          x2.ub = 2x0 + 3x1 - 15   : [-4, 12]
 
-    //       x3.lb =  x0 +  x1   : [5, 11]
-    //       x3.ub =  x0 +  x1   : [5, 11]
+          x3.lb =  x0 +  x1   : [5, 11]
+          x3.ub =  x0 +  x1   : [5, 11]
 
-    //       First ReLU is inactive (set externally), bounds get zeroed
-    //       Second ReLU is active, bounds surive the activation
+          First ReLU is inactive (set externally), bounds get zeroed
+          Second ReLU is active, bounds surive the activation
 
-    //       x4.lb = 0
-    //       x4.ub = 0
+          x4.lb = 0
+          x4.ub = 0
 
-    //       x5.lb =  x0 +  x1   : [5, 11]
-    //       x5.ub =  x0 +  x1   : [5, 11]
+          x5.lb =  x0 +  x1   : [5, 11]
+          x5.ub =  x0 +  x1   : [5, 11]
 
-    //       Layer 2:
+          Layer 2:
 
-    //       x6.lb =  - x0 - x1  : [-11, -5]
-    //       x6.ub =  - x0 - x1  : [-11, -5]
-    //     */
+          x6.lb =  - x0 - x1  : [-11, -5]
+          x6.ub =  - x0 - x1  : [-11, -5]
+        */
 
-    //     List<Tightening> expectedBounds({
-    //             // x2 does not appear, because it has been eliminated
+        List<Tightening> expectedBounds({
+                // x2 does not appear, because it has been eliminated
 
-    //             Tightening( 3, 5, Tightening::LB ),
-    //             Tightening( 3, 11, Tightening::UB ),
+                Tightening( 3, 5, Tightening::LB ),
+                Tightening( 3, 11, Tightening::UB ),
 
-    //             Tightening( 4, 0, Tightening::LB ),
-    //             Tightening( 4, 0, Tightening::UB ),
-    //             Tightening( 5, 5, Tightening::LB ),
-    //             Tightening( 5, 11, Tightening::UB ),
+                Tightening( 4, 0, Tightening::LB ),
+                Tightening( 4, 0, Tightening::UB ),
+                Tightening( 5, 5, Tightening::LB ),
+                Tightening( 5, 11, Tightening::UB ),
 
-    //             Tightening( 6, -11, Tightening::LB ),
-    //             Tightening( 6, -5, Tightening::UB ),
-    //                 });
+                Tightening( 6, -11, Tightening::LB ),
+                Tightening( 6, -5, Tightening::UB ),
+                    });
 
-    //     List<Tightening> bounds;
-    //     TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        List<Tightening> bounds;
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
 
-    //     TS_ASSERT_EQUALS( expectedBounds.size(), bounds.size() );
-    //     for ( const auto &bound : bounds )
-    //         TS_ASSERT( expectedBounds.exists( bound ) );
-    // }
+        TS_ASSERT_EQUALS( expectedBounds.size(), bounds.size() );
+        for ( const auto &bound : bounds )
+            TS_ASSERT( expectedBounds.exists( bound ) );
+    }
 
     // void test_sbt_abs_all_positive()
     // {
