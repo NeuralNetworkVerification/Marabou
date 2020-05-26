@@ -505,13 +505,41 @@ void Layer::comptueSymbolicBoundsForInput()
     {
         _symbolicLb[_size * i + i] = 1;
         _symbolicUb[_size * i + i] = 1;
+
+        _symbolicLbOfLb[i] = _lb[i];
+        _symbolicUbOfLb[i] = _ub[i];
+        _symbolicLbOfUb[i] = _lb[i];
+        _symbolicUbOfUb[i] = _ub[i];
+
+        _symbolicLowerBias[i] = 0;
+        _symbolicUpperBias[i] = 0;
     }
 }
 
 void Layer::computeSymbolicBoundsForRelu()
 {
+    std::fill_n( _symbolicLb, _size * _inputLayerSize, 0 );
+    std::fill_n( _symbolicUb, _size * _inputLayerSize, 0 );
+
     for ( unsigned i = 0; i < _size; ++i )
     {
+        if ( _eliminatedNeurons.exists( i ) )
+        {
+            _symbolicLowerBias[i] = _eliminatedNeurons[i];
+            _symbolicUpperBias[i] = _eliminatedNeurons[i];
+
+            _symbolicLbOfLb[i] = _eliminatedNeurons[i];
+            _symbolicUbOfLb[i] = _eliminatedNeurons[i];
+            _symbolicLbOfUb[i] = _eliminatedNeurons[i];
+            _symbolicUbOfUb[i] = _eliminatedNeurons[i];
+        }
+    }
+
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        if ( _eliminatedNeurons.exists( i ) )
+            continue;
+
         /*
           There are two ways we can determine that a ReLU has become fixed:
 
@@ -521,20 +549,10 @@ void Layer::computeSymbolicBoundsForRelu()
         ReluConstraint::PhaseStatus reluPhase = ReluConstraint::PHASE_NOT_FIXED;
 
         // Has the f variable been eliminated or fixed?
-        if ( _eliminatedNeurons.exists( i ) )
-        {
-            if ( FloatUtils::isZero( _eliminatedNeurons[i] ) )
-                reluPhase = ReluConstraint::PHASE_INACTIVE;
-            else
-                reluPhase = ReluConstraint::PHASE_ACTIVE;
-        }
-        else
-        {
-            if ( FloatUtils::isPositive( _lb[i] ) )
-                reluPhase = ReluConstraint::PHASE_ACTIVE;
-            else if ( FloatUtils::isZero( _ub[i] ) )
-                reluPhase = ReluConstraint::PHASE_INACTIVE;
-        }
+        if ( FloatUtils::isPositive( _lb[i] ) )
+            reluPhase = ReluConstraint::PHASE_ACTIVE;
+        else if ( FloatUtils::isZero( _ub[i] ) )
+            reluPhase = ReluConstraint::PHASE_INACTIVE;
 
         ASSERT( _neuronToActivationSources.exists( i ) );
         NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
@@ -552,9 +570,9 @@ void Layer::computeSymbolicBoundsForRelu()
         {
             _symbolicLb[j * _size + i] = sourceSymbolicLb[j * sourceLayerSize + sourceIndex._neuron];
             _symbolicUb[j * _size + i] = sourceSymbolicUb[j * sourceLayerSize + sourceIndex._neuron];
-            _symbolicLowerBias[i] = sourceLayer->getSymbolicLowerBias()[sourceIndex._neuron];
-            _symbolicUpperBias[i] = sourceLayer->getSymbolicUpperBias()[sourceIndex._neuron];
         }
+        _symbolicLowerBias[i] = sourceLayer->getSymbolicLowerBias()[sourceIndex._neuron];
+        _symbolicUpperBias[i] = sourceLayer->getSymbolicUpperBias()[sourceIndex._neuron];
 
         double sourceLb = sourceLayer->getLb( sourceIndex._neuron );
         double sourceUb = sourceLayer->getUb( sourceIndex._neuron );
@@ -669,18 +687,13 @@ void Layer::computeSymbolicBoundsForRelu()
 
 void Layer::computeSymbolicBoundsForAbsoluteValue()
 {
+    std::fill_n( _symbolicLb, _size * _inputLayerSize, 0 );
+    std::fill_n( _symbolicUb, _size * _inputLayerSize, 0 );
+
     for ( unsigned i = 0; i < _size; ++i )
     {
-        AbsoluteValueConstraint::PhaseStatus absPhase = AbsoluteValueConstraint::PHASE_NOT_FIXED;
-
         if ( _eliminatedNeurons.exists( i ) )
         {
-            for ( unsigned j = 0; j < _inputLayerSize; ++j )
-                _symbolicLb[j * _size + i] = 0;
-
-            for ( unsigned j = 0; j < _inputLayerSize; ++j )
-                _symbolicUb[j * _size + i] = 0;
-
             _symbolicLowerBias[i] = _eliminatedNeurons[i];
             _symbolicUpperBias[i] = _eliminatedNeurons[i];
 
@@ -691,6 +704,8 @@ void Layer::computeSymbolicBoundsForAbsoluteValue()
 
             continue;
         }
+
+        AbsoluteValueConstraint::PhaseStatus absPhase = AbsoluteValueConstraint::PHASE_NOT_FIXED;
 
         ASSERT( _neuronToActivationSources.exists( i ) );
         NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
@@ -717,9 +732,9 @@ void Layer::computeSymbolicBoundsForAbsoluteValue()
         _symbolicLbOfUb[i] = sourceLayer->getSymbolicLbOfUb( sourceIndex._neuron );
         _symbolicUbOfUb[i] = sourceLayer->getSymbolicUbOfUb( sourceIndex._neuron );
 
-        if ( sourceLb >= 0 || _symbolicLbOfLb[i] >= 0 )
+        if ( sourceLb >= 0 )
             absPhase = AbsoluteValueConstraint::PHASE_POSITIVE;
-        else if ( sourceUb <= 0 || _symbolicUbOfUb[i] <= 0 )
+        else if ( sourceUb <= 0 )
             absPhase = AbsoluteValueConstraint::PHASE_NEGATIVE;
 
         if ( absPhase == AbsoluteValueConstraint::PHASE_NOT_FIXED )
@@ -806,6 +821,20 @@ void Layer::computeSymbolicBoundsForWeightedSum()
     std::fill_n( _symbolicLb, _size * _inputLayerSize, 0 );
     std::fill_n( _symbolicUb, _size * _inputLayerSize, 0 );
 
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        if ( _eliminatedNeurons.exists( i ) )
+        {
+            _symbolicLowerBias[i] = _eliminatedNeurons[i];
+            _symbolicUpperBias[i] = _eliminatedNeurons[i];
+
+            _symbolicLbOfLb[i] = _eliminatedNeurons[i];
+            _symbolicUbOfLb[i] = _eliminatedNeurons[i];
+            _symbolicLbOfUb[i] = _eliminatedNeurons[i];
+            _symbolicUbOfUb[i] = _eliminatedNeurons[i];
+        }
+    }
+
     for ( const auto &sourceLayerEntry : _sourceLayers )
     {
         unsigned sourceLayerIndex = sourceLayerEntry.first;
@@ -819,13 +848,13 @@ void Layer::computeSymbolicBoundsForWeightedSum()
           newLB = oldUB * negWeights + oldLB * posWeights
         */
 
-        for ( unsigned j = 0; j < _size; ++j )
+        for ( unsigned i = 0; i < _inputLayerSize; ++i )
         {
-            if ( _eliminatedNeurons.exists( j ) )
-                continue;
-
-            for ( unsigned i = 0; i < _inputLayerSize; ++i )
+            for ( unsigned j = 0; j < _size; ++j )
             {
+                if ( _eliminatedNeurons.exists( j ) )
+                    continue;
+
                 for ( unsigned k = 0; k < sourceLayerSize; ++k )
                 {
                     _symbolicLb[i * _size + j] +=
@@ -853,11 +882,7 @@ void Layer::computeSymbolicBoundsForWeightedSum()
         for ( unsigned j = 0; j < _size; ++j )
         {
             if ( _eliminatedNeurons.exists( j ) )
-            {
-                _symbolicLowerBias[j] = _eliminatedNeurons[j];
-                _symbolicUpperBias[j] = _eliminatedNeurons[j];
                 continue;
-            }
 
             _symbolicLowerBias[j] = _bias[j];
             _symbolicUpperBias[j] = _bias[j];
@@ -888,13 +913,13 @@ void Layer::computeSymbolicBoundsForWeightedSum()
         */
         for ( unsigned i = 0; i < _size; ++i )
         {
+            if ( _eliminatedNeurons.exists( i ) )
+                continue;
+
             _symbolicLbOfLb[i] = _symbolicLowerBias[i];
             _symbolicUbOfLb[i] = _symbolicLowerBias[i];
             _symbolicLbOfUb[i] = _symbolicUpperBias[i];
             _symbolicUbOfUb[i] = _symbolicUpperBias[i];
-
-            if ( _eliminatedNeurons.exists( i ) )
-                continue;
 
             for ( unsigned j = 0; j < _inputLayerSize; ++j )
             {
