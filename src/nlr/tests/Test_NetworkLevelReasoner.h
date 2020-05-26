@@ -1010,303 +1010,458 @@ public:
             TS_ASSERT( expectedBounds.exists( bound ) );
     }
 
-    // void test_sbt_abs_all_positive()
-    // {
-    //     NLR::NetworkLevelReasoner nlr;
-    //     MockTableau tableau;
-    //     nlr.setTableau( &tableau );
-    //     populateNetworkSBT( nlr, tableau );
+    void test_sbt_abs_all_positive()
+    {
+        NLR::NetworkLevelReasoner nlr;
+        MockTableau tableau;
+        nlr.setTableau( &tableau );
 
-    //     nlr.setNeuronActivationFunction( 1, 0, PiecewiseLinearFunctionType::RELU );
-    //     nlr.setNeuronActivationFunction( 1, 1, PiecewiseLinearFunctionType::RELU );
+        // Create the layers
+        nlr.addLayer( 0, NLR::Layer::INPUT, 2 );
+        nlr.addLayer( 1, NLR::Layer::WEIGHTED_SUM, 2 );
+        nlr.addLayer( 2, NLR::Layer::ABSOLUTE_VALUE, 2 );
+        nlr.addLayer( 3, NLR::Layer::OUTPUT, 1 );
 
-    //     tableau.setLowerBound( 0, 4 );
-    //     tableau.setUpperBound( 0, 6 );
-    //     tableau.setLowerBound( 1, 1 );
-    //     tableau.setUpperBound( 1, 5 );
+        // Mark layer dependencies
+        for ( unsigned i = 1; i <= 3; ++i )
+            nlr.addLayerDependency( i - 1, i );
 
-    //     // Invoke SBT
-    //     TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
-    //     TS_ASSERT_THROWS_NOTHING( nlr.symbolicBoundPropagation() );
+        // Weights
+        nlr.setWeight( 0, 0, 1, 0, 2 );
+        nlr.setWeight( 0, 0, 1, 1, 1 );
+        nlr.setWeight( 0, 1, 1, 0, 3 );
+        nlr.setWeight( 0, 1, 1, 1, 1 );
+        nlr.setWeight( 2, 0, 3, 0, 1 );
+        nlr.setWeight( 2, 1, 3, 0, -1 );
+
+        // Mark the ReLU sources
+        nlr.addActivationSource( 1, 0, 2, 0 );
+        nlr.addActivationSource( 1, 1, 2, 1 );
+
+        // Variable indexing
+        nlr.setNeuronVariable( NLR::NeuronIndex( 0, 0 ), 0 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 0, 1 ), 1 );
+
+        nlr.setNeuronVariable( NLR::NeuronIndex( 1, 0 ), 2 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 1, 1 ), 3 );
+
+        nlr.setNeuronVariable( NLR::NeuronIndex( 2, 0 ), 4 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 2, 1 ), 5 );
+
+        nlr.setNeuronVariable( NLR::NeuronIndex( 3, 0 ), 6 );
+
+        // Very loose bounds for neurons except inputs
+        double large = 1000000;
+
+        tableau.setLowerBound( 2, -large ); tableau.setUpperBound( 2, large );
+        tableau.setLowerBound( 3, -large ); tableau.setUpperBound( 3, large );
+        tableau.setLowerBound( 4, -large ); tableau.setUpperBound( 4, large );
+        tableau.setLowerBound( 5, -large ); tableau.setUpperBound( 5, large );
+        tableau.setLowerBound( 6, -large ); tableau.setUpperBound( 6, large );
+
+        tableau.setLowerBound( 0, 4 );
+        tableau.setUpperBound( 0, 6 );
+        tableau.setLowerBound( 1, 1 );
+        tableau.setUpperBound( 1, 5 );
+
+        // Invoke SBT
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.symbolicBoundPropagation() );
+
+        /*
+          Input ranges:
+
+          x0: [4, 6]
+          x1: [1, 5]
+
+          Layer 1:
+
+          x2.lb = 2x0 + 3x1   : [11, 27]
+          x2.ub = 2x0 + 3x1   : [11, 27]
+
+          x3.lb =  x0 +  x1   : [5, 11]
+          x3.ub =  x0 +  x1   : [5, 11]
+
+          Both absolute values positive, bound survive through activations:
+
+          x4.lb = 2x0 + 3x1   : [11, 27]
+          x4.ub = 2x0 + 3x1   : [11, 27]
 
-    //     /*
-    //       Input ranges:
+          x5.lb =  x0 +  x1   : [5, 11]
+          x5.ub =  x0 +  x1   : [5, 11]
 
-    //       x0: [4, 6]
-    //       x1: [1, 5]
+          Layer 2:
 
-    //       Layer 1:
+          x6.lb =  x0 + 2x1   : [6, 16]
+          x6.ub =  x0 + 2x1   : [6, 16]
+        */
 
-    //       x2.lb = 2x0 + 3x1   : [11, 27]
-    //       x2.ub = 2x0 + 3x1   : [11, 27]
+        List<Tightening> expectedBounds({
+                Tightening( 2, 11, Tightening::LB ),
+                Tightening( 2, 27, Tightening::UB ),
+                Tightening( 3, 5, Tightening::LB ),
+                Tightening( 3, 11, Tightening::UB ),
 
-    //       x3.lb =  x0 +  x1   : [5, 11]
-    //       x3.ub =  x0 +  x1   : [5, 11]
+                Tightening( 4, 11, Tightening::LB ),
+                Tightening( 4, 27, Tightening::UB ),
+                Tightening( 5, 5, Tightening::LB ),
+                Tightening( 5, 11, Tightening::UB ),
 
-    //       Both absolute values positive, bound survive through activations:
+                Tightening( 6, 6, Tightening::LB ),
+                Tightening( 6, 16, Tightening::UB ),
+                    });
 
-    //       x4.lb = 2x0 + 3x1   : [11, 27]
-    //       x4.ub = 2x0 + 3x1   : [11, 27]
+        List<Tightening> bounds;
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
 
-    //       x5.lb =  x0 +  x1   : [5, 11]
-    //       x5.ub =  x0 +  x1   : [5, 11]
+        TS_ASSERT_EQUALS( expectedBounds.size(), bounds.size() );
+        for ( const auto &bound : bounds )
+            TS_ASSERT( expectedBounds.exists( bound ) );
+    }
 
-    //       Layer 2:
+    void test_sbt_abs_positive_and_negative()
+    {
+        NLR::NetworkLevelReasoner nlr;
+        MockTableau tableau;
+        nlr.setTableau( &tableau );
 
-    //       x6.lb =  x0 + 2x1   : [6, 16]
-    //       x6.ub =  x0 + 2x1   : [6, 16]
-    //     */
+        // Create the layers
+        nlr.addLayer( 0, NLR::Layer::INPUT, 2 );
+        nlr.addLayer( 1, NLR::Layer::WEIGHTED_SUM, 2 );
+        nlr.addLayer( 2, NLR::Layer::ABSOLUTE_VALUE, 2 );
+        nlr.addLayer( 3, NLR::Layer::OUTPUT, 1 );
 
-    //     List<Tightening> expectedBounds({
-    //             Tightening( 2, 11, Tightening::LB ),
-    //             Tightening( 2, 27, Tightening::UB ),
-    //             Tightening( 3, 5, Tightening::LB ),
-    //             Tightening( 3, 11, Tightening::UB ),
+        // Mark layer dependencies
+        for ( unsigned i = 1; i <= 3; ++i )
+            nlr.addLayerDependency( i - 1, i );
 
-    //             Tightening( 4, 11, Tightening::LB ),
-    //             Tightening( 4, 27, Tightening::UB ),
-    //             Tightening( 5, 5, Tightening::LB ),
-    //             Tightening( 5, 11, Tightening::UB ),
+        // Weights
+        nlr.setWeight( 0, 0, 1, 0, 2 );
+        nlr.setWeight( 0, 0, 1, 1, 1 );
+        nlr.setWeight( 0, 1, 1, 0, 3 );
+        nlr.setWeight( 0, 1, 1, 1, 1 );
+        nlr.setWeight( 2, 0, 3, 0, 1 );
+        nlr.setWeight( 2, 1, 3, 0, -1 );
 
-    //             Tightening( 6, 6, Tightening::LB ),
-    //             Tightening( 6, 16, Tightening::UB ),
-    //                 });
+        // Mark the ReLU sources
+        nlr.addActivationSource( 1, 0, 2, 0 );
+        nlr.addActivationSource( 1, 1, 2, 1 );
 
-    //     List<Tightening> bounds;
-    //     TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        // Variable indexing
+        nlr.setNeuronVariable( NLR::NeuronIndex( 0, 0 ), 0 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 0, 1 ), 1 );
 
-    //     TS_ASSERT_EQUALS( expectedBounds.size(), bounds.size() );
-    //     for ( const auto &bound : bounds )
-    //         TS_ASSERT( expectedBounds.exists( bound ) );
-    // }
+        nlr.setNeuronVariable( NLR::NeuronIndex( 1, 0 ), 2 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 1, 1 ), 3 );
+
+        nlr.setNeuronVariable( NLR::NeuronIndex( 2, 0 ), 4 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 2, 1 ), 5 );
+
+        nlr.setNeuronVariable( NLR::NeuronIndex( 3, 0 ), 6 );
+
+        // Very loose bounds for neurons except inputs
+        double large = 1000000;
+
+        tableau.setLowerBound( 2, -large ); tableau.setUpperBound( 2, large );
+        tableau.setLowerBound( 3, -large ); tableau.setUpperBound( 3, large );
+        tableau.setLowerBound( 4, -large ); tableau.setUpperBound( 4, large );
+        tableau.setLowerBound( 5, -large ); tableau.setUpperBound( 5, large );
+        tableau.setLowerBound( 6, -large ); tableau.setUpperBound( 6, large );
+
+        tableau.setLowerBound( 0, 4 );
+        tableau.setUpperBound( 0, 6 );
+        tableau.setLowerBound( 1, 1 );
+        tableau.setUpperBound( 1, 5 );
 
-    // void test_sbt_abs_positive_and_negative()
-    // {
-    //     NLR::NetworkLevelReasoner nlr;
-    //     MockTableau tableau;
-    //     nlr.setTableau( &tableau );
-    //     populateNetworkSBT( nlr, tableau );
+        // Strong negative bias for x2, which is node (1,0)
+        nlr.setBias( 1, 0, -30 );
 
-    //     nlr.setNeuronActivationFunction( 1, 0, PiecewiseLinearFunctionType::ABSOLUTE_VALUE );
-    //     nlr.setNeuronActivationFunction( 1, 1, PiecewiseLinearFunctionType::ABSOLUTE_VALUE );
+        // Invoke SBT
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.symbolicBoundPropagation() );
+
+        /*
+          Input ranges:
 
-    //     tableau.setLowerBound( 0, 4 );
-    //     tableau.setUpperBound( 0, 6 );
-    //     tableau.setLowerBound( 1, 1 );
-    //     tableau.setUpperBound( 1, 5 );
+          x0: [4, 6]
+          x1: [1, 5]
+
+          Layer 1:
+
+          x2.lb = 2x0 + 3x1 - 30   : [-19, -3]
+          x2.ub = 2x0 + 3x1 - 30   : [-19, -3]
 
-    //     // Strong negative bias for x2, which is node (1,0)
-    //     nlr.setBias( 1, 0, -30 );
+          x3.lb =  x0 +  x1   : [5, 11]
+          x3.ub =  x0 +  x1   : [5, 11]
 
-    //     // Invoke SBT
-    //     TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
-    //     TS_ASSERT_THROWS_NOTHING( nlr.symbolicBoundPropagation() );
+          First absolute value is negative, bounds get flipped
+          Second absolute value is positive, bounds surive the activation
 
-    //     /*
-    //       Input ranges:
+          x4.lb = -2x0 -3x1 + 30   : [3, 19]
+          x4.ub = -2x0 -3x1 + 30   : [3, 19]
 
-    //       x0: [4, 6]
-    //       x1: [1, 5]
+          x5.lb =  x0 +  x1   : [5, 11]
+          x5.ub =  x0 +  x1   : [5, 11]
 
-    //       Layer 1:
+          Layer 2:
 
-    //       x2.lb = 2x0 + 3x1 - 30   : [-19, -3]
-    //       x2.ub = 2x0 + 3x1 - 30   : [-19, -3]
+          x6.lb =  - 3x0 - 4x1 + 30  : [-8, 14]
+          x6.ub =  - 3x0 - 4x1 + 30  : [-8, 14]
+        */
 
-    //       x3.lb =  x0 +  x1   : [5, 11]
-    //       x3.ub =  x0 +  x1   : [5, 11]
+        List<Tightening> expectedBounds({
+                Tightening( 2, -19, Tightening::LB ),
+                Tightening( 2, -3, Tightening::UB ),
+                Tightening( 3, 5, Tightening::LB ),
+                Tightening( 3, 11, Tightening::UB ),
 
-    //       First absolute value is negative, bounds get flipped
-    //       Second absolute value is positive, bounds surive the activation
+                Tightening( 4, 3, Tightening::LB ),
+                Tightening( 4, 19, Tightening::UB ),
+                Tightening( 5, 5, Tightening::LB ),
+                Tightening( 5, 11, Tightening::UB ),
 
-    //       x4.lb = -2x0 -3x1 + 30   : [3, 19]
-    //       x4.ub = -2x0 -3x1 + 30   : [3, 19]
+                Tightening( 6, -8, Tightening::LB ),
+                Tightening( 6, 14, Tightening::UB ),
+                    });
 
-    //       x5.lb =  x0 +  x1   : [5, 11]
-    //       x5.ub =  x0 +  x1   : [5, 11]
+        List<Tightening> bounds;
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        TS_ASSERT_EQUALS( expectedBounds.size(), bounds.size() );
 
-    //       Layer 2:
+        for ( const auto &bound : bounds )
+            TS_ASSERT( expectedBounds.exists( bound ) );
+    }
 
-    //       x6.lb =  - 3x0 - 4x1 + 30  : [-8, 14]
-    //       x6.ub =  - 3x0 - 4x1 + 30  : [-8, 14]
-    //     */
+    void test_sbt_absolute_values_positive_and_not_fixed()
+    {
+        NLR::NetworkLevelReasoner nlr;
+        MockTableau tableau;
+        nlr.setTableau( &tableau );
 
-    //     List<Tightening> expectedBounds({
-    //             Tightening( 2, -19, Tightening::LB ),
-    //             Tightening( 2, -3, Tightening::UB ),
-    //             Tightening( 3, 5, Tightening::LB ),
-    //             Tightening( 3, 11, Tightening::UB ),
+        // Create the layers
+        nlr.addLayer( 0, NLR::Layer::INPUT, 2 );
+        nlr.addLayer( 1, NLR::Layer::WEIGHTED_SUM, 2 );
+        nlr.addLayer( 2, NLR::Layer::ABSOLUTE_VALUE, 2 );
+        nlr.addLayer( 3, NLR::Layer::OUTPUT, 1 );
 
-    //             Tightening( 4, 3, Tightening::LB ),
-    //             Tightening( 4, 19, Tightening::UB ),
-    //             Tightening( 5, 5, Tightening::LB ),
-    //             Tightening( 5, 11, Tightening::UB ),
+        // Mark layer dependencies
+        for ( unsigned i = 1; i <= 3; ++i )
+            nlr.addLayerDependency( i - 1, i );
 
-    //             Tightening( 6, -8, Tightening::LB ),
-    //             Tightening( 6, 14, Tightening::UB ),
-    //                 });
+        // Weights
+        nlr.setWeight( 0, 0, 1, 0, 2 );
+        nlr.setWeight( 0, 0, 1, 1, 1 );
+        nlr.setWeight( 0, 1, 1, 0, 3 );
+        nlr.setWeight( 0, 1, 1, 1, 1 );
+        nlr.setWeight( 2, 0, 3, 0, 1 );
+        nlr.setWeight( 2, 1, 3, 0, -1 );
 
-    //     List<Tightening> bounds;
-    //     TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
-    //     TS_ASSERT_EQUALS( expectedBounds.size(), bounds.size() );
+        // Mark the ReLU sources
+        nlr.addActivationSource( 1, 0, 2, 0 );
+        nlr.addActivationSource( 1, 1, 2, 1 );
 
-    //     for ( const auto &bound : bounds )
-    //         TS_ASSERT( expectedBounds.exists( bound ) );
-    // }
+        // Variable indexing
+        nlr.setNeuronVariable( NLR::NeuronIndex( 0, 0 ), 0 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 0, 1 ), 1 );
 
-    // void test_sbt_absolute_values_positive_and_not_fixed()
-    // {
-    //     NLR::NetworkLevelReasoner nlr;
-    //     MockTableau tableau;
-    //     nlr.setTableau( &tableau );
-    //     populateNetworkSBT( nlr, tableau );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 1, 0 ), 2 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 1, 1 ), 3 );
 
-    //     nlr.setNeuronActivationFunction( 1, 0, PiecewiseLinearFunctionType::ABSOLUTE_VALUE );
-    //     nlr.setNeuronActivationFunction( 1, 1, PiecewiseLinearFunctionType::ABSOLUTE_VALUE );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 2, 0 ), 4 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 2, 1 ), 5 );
 
-    //     tableau.setLowerBound( 0, 4 );
-    //     tableau.setUpperBound( 0, 6 );
-    //     tableau.setLowerBound( 1, 1 );
-    //     tableau.setUpperBound( 1, 5 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 3, 0 ), 6 );
+
+        // Very loose bounds for neurons except inputs
+        double large = 1000000;
 
-    //     // Strong negative bias for x2, which is node (1,0)
-    //     nlr.setBias( 1, 0, -15 );
+        tableau.setLowerBound( 2, -large ); tableau.setUpperBound( 2, large );
+        tableau.setLowerBound( 3, -large ); tableau.setUpperBound( 3, large );
+        tableau.setLowerBound( 4, -large ); tableau.setUpperBound( 4, large );
+        tableau.setLowerBound( 5, -large ); tableau.setUpperBound( 5, large );
+        tableau.setLowerBound( 6, -large ); tableau.setUpperBound( 6, large );
 
-    //     // Invoke SBT
-    //     TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
-    //     TS_ASSERT_THROWS_NOTHING( nlr.symbolicBoundPropagation() );
+        tableau.setLowerBound( 0, 4 );
+        tableau.setUpperBound( 0, 6 );
+        tableau.setLowerBound( 1, 1 );
+        tableau.setUpperBound( 1, 5 );
 
-    //     /*
-    //       Input ranges:
+        // Strong negative bias for x2, which is node (1,0)
+        nlr.setBias( 1, 0, -15 );
 
-    //       x0: [4, 6]
-    //       x1: [1, 5]
+        // Invoke SBT
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.symbolicBoundPropagation() );
 
-    //       Layer 1:
+        /*
+          Input ranges:
 
-    //       x2.lb = 2x0 + 3x1 - 15   : [-4, 12]
-    //       x2.ub = 2x0 + 3x1 - 15   : [-4, 12]
+          x0: [4, 6]
+          x1: [1, 5]
 
-    //       x3.lb =  x0 +  x1   : [5, 11]
-    //       x3.ub =  x0 +  x1   : [5, 11]
+          Layer 1:
 
-    //       First absolute value is undecided, bounds are concretized.
-    //       Second ReLU is active, bounds surive the activation
+          x2.lb = 2x0 + 3x1 - 15   : [-4, 12]
+          x2.ub = 2x0 + 3x1 - 15   : [-4, 12]
 
-    //       x4 range: [0, 12]
-    //       x4.lb = 0
-    //       x4.ub = 12
+          x3.lb =  x0 +  x1   : [5, 11]
+          x3.ub =  x0 +  x1   : [5, 11]
 
-    //       x5.lb =  x0 +  x1   : [5, 11]
-    //       x5.ub =  x0 +  x1   : [5, 11]
+          First absolute value is undecided, bounds are concretized.
+          Second ReLU is active, bounds surive the activation
 
-    //       Layer 2:
+          x4 range: [0, 12]
+          x4.lb = 0
+          x4.ub = 12
 
-    //       x6.lb =  - x0 - x1       : [-11, -5]
-    //       x6.ub =  - x0 - x1 + 12  : [  1,  7]
+          x5.lb =  x0 +  x1   : [5, 11]
+          x5.ub =  x0 +  x1   : [5, 11]
 
-    //       x6 range: [-11, 7]
-    //     */
+          Layer 2:
 
-    //     List<Tightening> expectedBounds({
-    //             Tightening( 2, -4, Tightening::LB ),
-    //             Tightening( 2, 12, Tightening::UB ),
-    //             Tightening( 3, 5, Tightening::LB ),
-    //             Tightening( 3, 11, Tightening::UB ),
+          x6.lb =  - x0 - x1       : [-11, -5]
+          x6.ub =  - x0 - x1 + 12  : [  1,  7]
 
-    //             Tightening( 4, 0, Tightening::LB ),
-    //             Tightening( 4, 12, Tightening::UB ),
-    //             Tightening( 5, 5, Tightening::LB ),
-    //             Tightening( 5, 11, Tightening::UB ),
+          x6 range: [-11, 7]
+        */
 
-    //             Tightening( 6, -11, Tightening::LB ),
-    //             Tightening( 6, 7, Tightening::UB ),
-    //                 });
+        List<Tightening> expectedBounds({
+                Tightening( 2, -4, Tightening::LB ),
+                Tightening( 2, 12, Tightening::UB ),
+                Tightening( 3, 5, Tightening::LB ),
+                Tightening( 3, 11, Tightening::UB ),
 
-    //     List<Tightening> bounds;
-    //     TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+                Tightening( 4, 0, Tightening::LB ),
+                Tightening( 4, 12, Tightening::UB ),
+                Tightening( 5, 5, Tightening::LB ),
+                Tightening( 5, 11, Tightening::UB ),
 
-    //     TS_ASSERT_EQUALS( expectedBounds.size(), bounds.size() );
-    //     for ( const auto &bound : bounds )
-    //         TS_ASSERT( expectedBounds.exists( bound ) );
-    // }
+                Tightening( 6, -11, Tightening::LB ),
+                Tightening( 6, 7, Tightening::UB ),
+                    });
 
-    // void test_sbt_absolute_values_active_and_externally_fixed()
-    // {
-    //     NLR::NetworkLevelReasoner nlr;
-    //     MockTableau tableau;
-    //     nlr.setTableau( &tableau );
-    //     populateNetworkSBT( nlr, tableau );
+        List<Tightening> bounds;
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
 
-    //     nlr.setNeuronActivationFunction( 1, 0, PiecewiseLinearFunctionType::ABSOLUTE_VALUE );
-    //     nlr.setNeuronActivationFunction( 1, 1, PiecewiseLinearFunctionType::ABSOLUTE_VALUE );
+        TS_ASSERT_EQUALS( expectedBounds.size(), bounds.size() );
+        for ( const auto &bound : bounds )
+            TS_ASSERT( expectedBounds.exists( bound ) );
+    }
 
-    //     tableau.setLowerBound( 0, 4 );
-    //     tableau.setUpperBound( 0, 6 );
-    //     tableau.setLowerBound( 1, 1 );
-    //     tableau.setUpperBound( 1, 5 );
+    void test_sbt_absolute_values_active_and_externally_fixed()
+    {
+        NLR::NetworkLevelReasoner nlr;
+        MockTableau tableau;
+        nlr.setTableau( &tableau );
 
-    //     // Strong negative bias for x2, which is node (1,0). Should make the node unfixed.
-    //     nlr.setBias( 1, 0, -15 );
+        // Create the layers
+        nlr.addLayer( 0, NLR::Layer::INPUT, 2 );
+        nlr.addLayer( 1, NLR::Layer::WEIGHTED_SUM, 2 );
+        nlr.addLayer( 2, NLR::Layer::ABSOLUTE_VALUE, 2 );
+        nlr.addLayer( 3, NLR::Layer::OUTPUT, 1 );
 
-    //     // However, the weighted sum variable has been eliminated
-    //     nlr.eliminateVariable( 2, -3 );
+        // Mark layer dependencies
+        for ( unsigned i = 1; i <= 3; ++i )
+            nlr.addLayerDependency( i - 1, i );
 
-    //     // Invoke SBT
-    //     TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
-    //     TS_ASSERT_THROWS_NOTHING( nlr.symbolicBoundPropagation() );
+        // Weights
+        nlr.setWeight( 0, 0, 1, 0, 2 );
+        nlr.setWeight( 0, 0, 1, 1, 1 );
+        nlr.setWeight( 0, 1, 1, 0, 3 );
+        nlr.setWeight( 0, 1, 1, 1, 1 );
+        nlr.setWeight( 2, 0, 3, 0, 1 );
+        nlr.setWeight( 2, 1, 3, 0, -1 );
 
-    //     /*
-    //       Input ranges:
+        // Mark the ReLU sources
+        nlr.addActivationSource( 1, 0, 2, 0 );
+        nlr.addActivationSource( 1, 1, 2, 1 );
 
-    //       x0: [4, 6]
-    //       x1: [1, 5]
+        // Variable indexing
+        nlr.setNeuronVariable( NLR::NeuronIndex( 0, 0 ), 0 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 0, 1 ), 1 );
 
-    //       Layer 1:
+        nlr.setNeuronVariable( NLR::NeuronIndex( 1, 0 ), 2 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 1, 1 ), 3 );
 
-    //       x2.lb = 2x0 + 3x1 - 15   : [-4, 12]
-    //       x2.ub = 2x0 + 3x1 - 15   : [-4, 12]
+        nlr.setNeuronVariable( NLR::NeuronIndex( 2, 0 ), 4 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 2, 1 ), 5 );
 
-    //       x3.lb =  x0 +  x1   : [5, 11]
-    //       x3.ub =  x0 +  x1   : [5, 11]
+        nlr.setNeuronVariable( NLR::NeuronIndex( 3, 0 ), 6 );
 
-    //       First absolute value is negative (set externally), bounds get flipped
-    //       Second absolute value is positive, bounds surive the activation
+        // Very loose bounds for neurons except inputs
+        double large = 1000000;
 
-    //       x4.lb = -2x0 - 3x1 + 15   : [-12, 4]
-    //       x4.ub = -2x0 - 3x1 + 15   : [-12, 4]
+        tableau.setLowerBound( 2, -large ); tableau.setUpperBound( 2, large );
+        tableau.setLowerBound( 3, -large ); tableau.setUpperBound( 3, large );
+        tableau.setLowerBound( 4, -large ); tableau.setUpperBound( 4, large );
+        tableau.setLowerBound( 5, -large ); tableau.setUpperBound( 5, large );
+        tableau.setLowerBound( 6, -large ); tableau.setUpperBound( 6, large );
 
-    //       Bounds for x4: [0, 4]
+        tableau.setLowerBound( 0, 4 );
+        tableau.setUpperBound( 0, 6 );
+        tableau.setLowerBound( 1, 1 );
+        tableau.setUpperBound( 1, 5 );
 
-    //       x5.lb =  x0 +  x1   : [5, 11]
-    //       x5.ub =  x0 +  x1   : [5, 11]
+        // Strong negative bias for x2, which is node (1,0). Should make the node unfixed.
+        nlr.setBias( 1, 0, -15 );
 
-    //       Layer 2:
+        // However, the weighted sum variable has been eliminated
+        nlr.eliminateVariable( 2, -3 );
 
-    //       x6.lb =  - 3x0 - 4x1 + 15  : [-23, -1]
-    //       x6.ub =  - 3x0 - 4x1 + 15  : [-23, -1]
-    //     */
+        // Invoke SBT
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.symbolicBoundPropagation() );
 
-    //     List<Tightening> expectedBounds({
-    //             // x2 does not appear, because it has been eliminated
+        /*
+          Input ranges:
 
-    //             Tightening( 3, 5, Tightening::LB ),
-    //             Tightening( 3, 11, Tightening::UB ),
+          x0: [4, 6]
+          x1: [1, 5]
 
-    //             Tightening( 4, 0, Tightening::LB ),
-    //             Tightening( 4, 4, Tightening::UB ),
-    //             Tightening( 5, 5, Tightening::LB ),
-    //             Tightening( 5, 11, Tightening::UB ),
+          Layer 1:
 
-    //             Tightening( 6, -23, Tightening::LB ),
-    //             Tightening( 6, -1, Tightening::UB ),
-    //                 });
+          x2 is eliminated, everything set to -3
 
-    //     List<Tightening> bounds;
-    //     TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+          x3.lb =  x0 +  x1   : [5, 11]
+          x3.ub =  x0 +  x1   : [5, 11]
 
-    //     TS_ASSERT_EQUALS( expectedBounds.size(), bounds.size() );
-    //     for ( const auto &bound : bounds )
-    //         TS_ASSERT( expectedBounds.exists( bound ) );
-    // }
+          Second absolute value is positive, bounds surive the activation
+
+          x4: all set to 3
+
+          x5.lb =  x0 +  x1   : [5, 11]
+          x5.ub =  x0 +  x1   : [5, 11]
+
+          Layer 2:
+
+          x6.lb =  - x0 - x1 + 3  : [-8, -2]
+          x6.ub =  - x0 - x1 + 3  : [-8, -2]
+        */
+
+        List<Tightening> expectedBounds({
+                // x2 does not appear, because it has been eliminated
+
+                Tightening( 3, 5, Tightening::LB ),
+                Tightening( 3, 11, Tightening::UB ),
+
+                Tightening( 4, 3, Tightening::LB ),
+                Tightening( 4, 3, Tightening::UB ),
+                Tightening( 5, 5, Tightening::LB ),
+                Tightening( 5, 11, Tightening::UB ),
+
+                Tightening( 6, -8, Tightening::LB ),
+                Tightening( 6, -2, Tightening::UB ),
+                    });
+
+        List<Tightening> bounds;
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+
+        printf( "Dumpign discovered bounds:\n" );
+        for ( const auto &bound : bounds )
+            bound.dump();
+
+        TS_ASSERT_EQUALS( expectedBounds.size(), bounds.size() );
+        for ( const auto &bound : bounds )
+            TS_ASSERT( expectedBounds.exists( bound ) );
+    }
 };

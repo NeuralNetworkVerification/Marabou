@@ -483,6 +483,9 @@ void Layer::computeSymbolicBounds()
         break;
 
     case ABSOLUTE_VALUE:
+        computeSymbolicBoundsForAbsoluteValue();
+        break;
+
     case MAX:
 
     default:
@@ -520,7 +523,7 @@ void Layer::computeSymbolicBoundsForRelu()
         // Has the f variable been eliminated or fixed?
         if ( _eliminatedNeurons.exists( i ) )
         {
-            if ( _eliminatedNeurons[i] <= 0 )
+            if ( FloatUtils::isZero( _eliminatedNeurons[i] ) )
                 reluPhase = ReluConstraint::PHASE_INACTIVE;
             else
                 reluPhase = ReluConstraint::PHASE_ACTIVE;
@@ -644,6 +647,140 @@ void Layer::computeSymbolicBoundsForRelu()
 
         /*
           We now have the tightest bounds we can for the relu
+          variable. If they are tigheter than what was previously
+          known, store them.
+        */
+        if ( !_eliminatedNeurons.exists( i ) )
+        {
+            if ( _lb[i] < _symbolicLbOfLb[i] )
+            {
+                _lb[i] = _symbolicLbOfLb[i];
+                _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
+            }
+
+            if ( _ub[i] > _symbolicUbOfUb[i] )
+            {
+                _ub[i] = _symbolicUbOfUb[i];
+                _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
+            }
+        }
+    }
+}
+
+void Layer::computeSymbolicBoundsForAbsoluteValue()
+{
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        AbsoluteValueConstraint::PhaseStatus absPhase = AbsoluteValueConstraint::PHASE_NOT_FIXED;
+
+        if ( _eliminatedNeurons.exists( i ) )
+        {
+            for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                _symbolicLb[j * _size + i] = 0;
+
+            for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                _symbolicUb[j * _size + i] = 0;
+
+            _symbolicLowerBias[i] = _eliminatedNeurons[i];
+            _symbolicUpperBias[i] = _eliminatedNeurons[i];
+
+            _symbolicLbOfLb[i] = _eliminatedNeurons[i];
+            _symbolicUbOfLb[i] = _eliminatedNeurons[i];
+            _symbolicLbOfUb[i] = _eliminatedNeurons[i];
+            _symbolicUbOfUb[i] = _eliminatedNeurons[i];
+
+            continue;
+        }
+
+        ASSERT( _neuronToActivationSources.exists( i ) );
+        NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
+        const Layer *sourceLayer = _layerOwner->getLayer( sourceIndex._layer );
+
+        unsigned sourceLayerSize = sourceLayer->getSize();
+        const double *sourceSymbolicLb = sourceLayer->getSymbolicLb();
+        const double *sourceSymbolicUb = sourceLayer->getSymbolicUb();
+
+        for ( unsigned j = 0; j < _inputLayerSize; ++j )
+        {
+            _symbolicLb[j * _size + i] = sourceSymbolicLb[j * sourceLayerSize + sourceIndex._neuron];
+            _symbolicUb[j * _size + i] = sourceSymbolicUb[j * sourceLayerSize + sourceIndex._neuron];
+        }
+
+        _symbolicLowerBias[i] = sourceLayer->getSymbolicLowerBias()[sourceIndex._neuron];
+        _symbolicUpperBias[i] = sourceLayer->getSymbolicUpperBias()[sourceIndex._neuron];
+
+        double sourceLb = sourceLayer->getLb( sourceIndex._neuron );
+        double sourceUb = sourceLayer->getUb( sourceIndex._neuron );
+
+        _symbolicLbOfLb[i] = sourceLayer->getSymbolicLbOfLb( sourceIndex._neuron );
+        _symbolicUbOfLb[i] = sourceLayer->getSymbolicUbOfLb( sourceIndex._neuron );
+        _symbolicLbOfUb[i] = sourceLayer->getSymbolicLbOfUb( sourceIndex._neuron );
+        _symbolicUbOfUb[i] = sourceLayer->getSymbolicUbOfUb( sourceIndex._neuron );
+
+        if ( sourceLb >= 0 || _symbolicLbOfLb[i] >= 0 )
+            absPhase = AbsoluteValueConstraint::PHASE_POSITIVE;
+        else if ( sourceUb <= 0 || _symbolicUbOfUb[i] <= 0 )
+            absPhase = AbsoluteValueConstraint::PHASE_NEGATIVE;
+
+        if ( absPhase == AbsoluteValueConstraint::PHASE_NOT_FIXED )
+        {
+            // If we got here, we know that lbOfLb < 0 < ubOfUb. In this case,
+            // we do naive concretization: lb is 0, ub is the max between
+            // -lb and ub of the input neuron
+            for ( unsigned j = 0; j < _inputLayerSize; ++j )
+            {
+                _symbolicLb[j * _size + i] = 0;
+                _symbolicUb[j * _size + i] = 0;
+            }
+
+            _symbolicLowerBias[i] = 0;
+            _symbolicUpperBias[i] = FloatUtils::max( -sourceLb, sourceUb );
+
+            _symbolicLbOfLb[i] = 0;
+            _symbolicUbOfLb[i] = _symbolicUpperBias[i];
+            _symbolicLbOfUb[i] = 0;
+            _symbolicUbOfUb[i] = _symbolicUpperBias[i];
+        }
+        else
+        {
+            // The phase of this AbsoluteValueConstraint is fixed!
+            if ( absPhase == AbsoluteValueConstraint::PHASE_POSITIVE )
+            {
+                // Positive AbsoluteValue, bounds are propagated as is
+            }
+            else
+            {
+                // Negative AbsoluteValue, bounds are negated and flipped
+                double temp;
+                for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                {
+                    temp = _symbolicUb[j * _size + i];
+                    _symbolicUb[j * _size + i] = -_symbolicLb[j * _size + i];
+                    _symbolicLb[j * _size + i] = -temp;
+                }
+
+                temp = _symbolicLowerBias[i];
+                _symbolicLowerBias[i] = -_symbolicUpperBias[i];
+                _symbolicUpperBias[i] = -temp;
+
+                // Old lb, negated, is the new ub
+                temp = _symbolicLbOfLb[i];
+                _symbolicLbOfLb[i] = -_symbolicUbOfUb[i];
+                _symbolicUbOfUb[i] = -temp;
+
+                temp = _symbolicUbOfLb[i];
+                _symbolicUbOfLb[i] = -_symbolicLbOfUb[i];
+                _symbolicLbOfUb[i] = -temp;
+            }
+        }
+
+        // In extreme cases (constraint set externally), _symbolicLbOfLb
+        // could be negative - so adjust this
+        if ( _symbolicLbOfLb[i] < 0 )
+            _symbolicLbOfLb[i] = 0;
+
+        /*
+          We now have the tightest bounds we can for the abs
           variable. If they are tigheter than what was previously
           known, store them.
         */

@@ -16,6 +16,7 @@
 #ifndef __Layer_h__
 #define __Layer_h__
 
+#include "AbsoluteValueConstraint.h"
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "MarabouError.h"
@@ -155,6 +156,7 @@ private:
     */
     void comptueSymbolicBoundsForInput();
     void computeSymbolicBoundsForRelu();
+    void computeSymbolicBoundsForAbsoluteValue();
     void computeSymbolicBoundsForWeightedSum();
 
     /*
