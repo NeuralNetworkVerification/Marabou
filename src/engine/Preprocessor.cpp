@@ -1069,7 +1069,7 @@ bool Preprocessor::constructNetworkLevelReasoner()
 void Preprocessor::log( const String &message )
 {
     if ( GlobalConfiguration::PREPROCESSOR_LOGGING )
-        printf( "PREPROCESSOR: %s\n", message.ascii() );
+        printf( "Preprocessor: %s\n", message.ascii() );
 }
 
 //
