@@ -139,7 +139,6 @@ private:
     */
     void dumpAllBounds( const String &message );
 
-
     static void log( const String &message );
 
 };
