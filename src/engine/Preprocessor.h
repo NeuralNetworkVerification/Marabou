@@ -138,6 +138,10 @@ private:
       For debugging only
     */
     void dumpAllBounds( const String &message );
+
+
+    static void log( const String &message );
+
 };
 
 #endif // __Preprocessor_h__
