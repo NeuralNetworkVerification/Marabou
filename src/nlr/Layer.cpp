@@ -105,9 +105,6 @@ const double *Layer::getAssignment() const
 
 double Layer::getAssignment( unsigned neuron ) const
 {
-    if ( _eliminatedNeurons.exists( neuron ) )
-        return _eliminatedNeurons[neuron];
-
     return _assignment[neuron];
 }
 
@@ -324,9 +321,6 @@ void Layer::computeIntervalArithmeticBoundsForWeightedSum()
 
     for ( unsigned i = 0; i < _size; ++i )
     {
-        if ( _eliminatedNeurons.exists( i ) )
-            continue;
-
         newLb[i] = _bias[i];
         newUb[i] = _bias[i];
     }
@@ -362,6 +356,9 @@ void Layer::computeIntervalArithmeticBoundsForWeightedSum()
 
     for ( unsigned i = 0; i < _size; ++i )
     {
+        if ( _eliminatedNeurons.exists( i ) )
+            continue;
+
         if ( newLb[i] > _lb[i] )
         {
             _lb[i] = newLb[i];
@@ -506,13 +503,22 @@ void Layer::comptueSymbolicBoundsForInput()
         _symbolicLb[_size * i + i] = 1;
         _symbolicUb[_size * i + i] = 1;
 
-        _symbolicLbOfLb[i] = _lb[i];
-        _symbolicUbOfLb[i] = _ub[i];
-        _symbolicLbOfUb[i] = _lb[i];
-        _symbolicUbOfUb[i] = _ub[i];
-
         _symbolicLowerBias[i] = 0;
         _symbolicUpperBias[i] = 0;
+
+        double lb = _lb[i];
+        double ub = _ub[i];
+
+        if ( _eliminatedNeurons.exists( i ) )
+        {
+            lb = _eliminatedNeurons[i];
+            ub = _eliminatedNeurons[i];
+        }
+
+        _symbolicLbOfLb[i] = lb;
+        _symbolicUbOfLb[i] = ub;
+        _symbolicLbOfUb[i] = lb;
+        _symbolicUbOfUb[i] = ub;
     }
 }
 
@@ -583,14 +589,12 @@ void Layer::computeSymbolicBoundsForRelu()
         _symbolicUbOfUb[i] = sourceLayer->getSymbolicUbOfUb( sourceIndex._neuron );
 
         // Has the b variable been fixed?
-        if ( !FloatUtils::isNegative( sourceLb ) )
+        if ( FloatUtils::isPositive( sourceLb ) )
         {
-            ASSERT( reluPhase != ReluConstraint::PHASE_INACTIVE );
             reluPhase = ReluConstraint::PHASE_ACTIVE;
         }
         else if ( !FloatUtils::isPositive( sourceUb ) )
         {
-            ASSERT( reluPhase != ReluConstraint::PHASE_ACTIVE );
             reluPhase = ReluConstraint::PHASE_INACTIVE;
         }
 
@@ -668,19 +672,16 @@ void Layer::computeSymbolicBoundsForRelu()
           variable. If they are tigheter than what was previously
           known, store them.
         */
-        if ( !_eliminatedNeurons.exists( i ) )
+        if ( _lb[i] < _symbolicLbOfLb[i] )
         {
-            if ( _lb[i] < _symbolicLbOfLb[i] )
-            {
-                _lb[i] = _symbolicLbOfLb[i];
-                _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
-            }
+            _lb[i] = _symbolicLbOfLb[i];
+            _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
+        }
 
-            if ( _ub[i] > _symbolicUbOfUb[i] )
-            {
-                _ub[i] = _symbolicUbOfUb[i];
-                _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
-            }
+        if ( _ub[i] > _symbolicUbOfUb[i] )
+        {
+            _ub[i] = _symbolicUbOfUb[i];
+            _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
         }
     }
 }
@@ -799,19 +800,16 @@ void Layer::computeSymbolicBoundsForAbsoluteValue()
           variable. If they are tigheter than what was previously
           known, store them.
         */
-        if ( !_eliminatedNeurons.exists( i ) )
+        if ( _lb[i] < _symbolicLbOfLb[i] )
         {
-            if ( _lb[i] < _symbolicLbOfLb[i] )
-            {
-                _lb[i] = _symbolicLbOfLb[i];
-                _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
-            }
+            _lb[i] = _symbolicLbOfLb[i];
+            _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
+        }
 
-            if ( _ub[i] > _symbolicUbOfUb[i] )
-            {
-                _ub[i] = _symbolicUbOfUb[i];
-                _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
-            }
+        if ( _ub[i] > _symbolicUbOfUb[i] )
+        {
+            _ub[i] = _symbolicUbOfUb[i];
+            _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
         }
     }
 }
@@ -958,19 +956,16 @@ void Layer::computeSymbolicBoundsForWeightedSum()
               weighted sum variable. If they are tigheter than
               what was previously known, store them.
             */
-            if ( !_eliminatedNeurons.exists( i ) )
+            if ( _lb[i] < _symbolicLbOfLb[i] )
             {
-                if ( _lb[i] < _symbolicLbOfLb[i] )
-                {
-                    _lb[i] = _symbolicLbOfLb[i];
-                    _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
-                }
+                _lb[i] = _symbolicLbOfLb[i];
+                _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
+            }
 
-                if ( _ub[i] > _symbolicUbOfUb[i] )
-                {
-                    _ub[i] = _symbolicUbOfUb[i];
-                    _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
-                }
+            if ( _ub[i] > _symbolicUbOfUb[i] )
+            {
+                _ub[i] = _symbolicUbOfUb[i];
+                _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
             }
         }
     }
@@ -981,11 +976,10 @@ void Layer::eliminateVariable( unsigned variable, double value )
     if ( !_variableToNeuron.exists( variable ) )
         return;
 
-    ASSERT( _type != INPUT );
-    ASSERT( _type != OUTPUT );
-
-    _eliminatedNeurons[_variableToNeuron[variable]] = value;
-
+    unsigned neuron = _variableToNeuron[variable];
+    _eliminatedNeurons[neuron] = value;
+    _lb[neuron] = value;
+    _ub[neuron] = value;
     _neuronToVariable.erase( _variableToNeuron[variable] );
     _variableToNeuron.erase( variable );
 }
