@@ -30,7 +30,6 @@
 
 Engine::Engine( unsigned verbosity )
     : _rowBoundTightener( *_tableau )
-    , _symbolicBoundTightener( NULL )
     , _smtCore( this )
     , _numPlConstraintsDisabledByValidSplits( 0 )
     , _preprocessingEnabled( false )
@@ -102,6 +101,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
         printf( "\n---\n" );
     }
 
+    bool splitJustPerformed = true;
     struct timespec mainLoopStart = TimeUtils::sampleMicro();
     while ( true )
     {
@@ -178,16 +178,21 @@ bool Engine::solve( unsigned timeoutInSeconds )
             if ( _tableau->basisMatrixAvailable() )
                 explicitBasisBoundTightening();
 
-            // Perform any SmtCore-initiated case splits
-            if ( _smtCore.needToSplit() )
+            if ( splitJustPerformed )
             {
-                _smtCore.performSplit();
-
                 do
                 {
                     performSymbolicBoundTightening();
                 }
                 while ( applyAllValidConstraintCaseSplits() );
+                splitJustPerformed = false;
+            }
+
+            // Perform any SmtCore-initiated case splits
+            if ( _smtCore.needToSplit() )
+            {
+                _smtCore.performSplit();
+                splitJustPerformed = true;
                 continue;
             }
 
@@ -211,7 +216,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
                     {
                         if ( _verbosity > 0 )
                         {
-                            printf( "Before declaring SAT, recomputing...\n" );
+                            printf( "Before declaring sat, recomputing...\n" );
                         }
                         // Make sure that the assignment is precise before declaring success
                         _tableau->computeAssignment();
@@ -219,7 +224,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
                     }
                     if ( _verbosity > 0 )
                     {
-                        printf( "\nEngine::solve: SAT assignment found\n" );
+                        printf( "\nEngine::solve: sat assignment found\n" );
                         _statistics.print();
                     }
                     _exitCode = Engine::SAT;
@@ -281,12 +286,17 @@ bool Engine::solve( unsigned timeoutInSeconds )
             {
                 if ( _verbosity > 0 )
                 {
-                    printf( "\nEngine::solve: UNSAT query\n" );
+                    printf( "\nEngine::solve: unsat query\n" );
                     _statistics.print();
                 }
                 _exitCode = Engine::UNSAT;
                 return false;
             }
+            else
+            {
+                splitJustPerformed = true;
+            }
+
         }
         catch ( ... )
         {
@@ -1035,8 +1045,8 @@ void Engine::initializeNetworkLevelReasoning()
 {
     _networkLevelReasoner = _preprocessedQuery.getNetworkLevelReasoner();
 
-    if ( _preprocessedQuery._sbt )
-        _symbolicBoundTightener = _preprocessedQuery._sbt;
+    if ( _networkLevelReasoner )
+        _networkLevelReasoner->setTableau( _tableau );
 }
 
 bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
@@ -1114,6 +1124,8 @@ void Engine::extractSolution( InputQuery &inputQuery )
             if ( _preprocessor.variableIsFixed( variable ) )
             {
                 inputQuery.setSolutionValue( i, _preprocessor.getFixedValue( variable ) );
+                inputQuery.setLowerBound( i, _preprocessor.getFixedValue( variable ) );
+                inputQuery.setUpperBound( i, _preprocessor.getFixedValue( variable ) );
                 continue;
             }
 
@@ -1123,10 +1135,14 @@ void Engine::extractSolution( InputQuery &inputQuery )
 
             // Finally, set the assigned value
             inputQuery.setSolutionValue( i, _tableau->getValue( variable ) );
+            inputQuery.setLowerBound( i, _tableau->getLowerBound( variable ) );
+            inputQuery.setUpperBound( i, _tableau->getUpperBound( variable ) );
         }
         else
         {
             inputQuery.setSolutionValue( i, _tableau->getValue( i ) );
+            inputQuery.setLowerBound( i, _tableau->getLowerBound( i ) );
+            inputQuery.setUpperBound( i, _tableau->getUpperBound( i ) );
         }
     }
 }
@@ -1715,71 +1731,39 @@ List<unsigned> Engine::getInputVariables() const
 void Engine::performSymbolicBoundTightening()
 {
     if ( ( !GlobalConfiguration::USE_SYMBOLIC_BOUND_TIGHTENING ) ||
-         ( !_symbolicBoundTightener ) )
+         ( !_networkLevelReasoner ) )
         return;
 
     struct timespec start = TimeUtils::sampleMicro();
 
     unsigned numTightenedBounds = 0;
 
-    // Clear any previously stored information
-    _symbolicBoundTightener->clearReluStatuses();
+    // Step 1: tell the NLR about the current bounds
+    _networkLevelReasoner->obtainCurrentBounds();
 
-    // Step 1: tell the SBT about input bounds; maybe they were tightened
-    unsigned inputVariableIndex = 0;
-    for ( const auto &inputVariable : _preprocessedQuery.getInputVariables() )
+    // Step 2: perform SBT
+    _networkLevelReasoner->symbolicBoundPropagation();
+
+    // Step 3: Extract the bounds
+    List<Tightening> tightenings;
+    _networkLevelReasoner->getConstraintTightenings( tightenings );
+
+    for ( const auto &tightening : tightenings )
     {
-        // We assume the input variables are the first variables
-        if ( inputVariable != inputVariableIndex )
+        if ( tightening._type == Tightening::LB &&
+             _tableau->getLowerBound( tightening._variable ) < tightening._value )
         {
-            throw MarabouError( MarabouError::SYMBOLIC_BOUND_TIGHTENER_FAULTY_INPUT,
-                                 Stringf( "Sanity check failed, input variable %u with unexpected index %u", inputVariableIndex, inputVariable ).ascii() );
+            _tableau->tightenLowerBound( tightening._variable, tightening._value );
+            ++numTightenedBounds;
         }
-        ++inputVariableIndex;
 
-        double min = _tableau->getLowerBound( inputVariable );
-        double max = _tableau->getUpperBound( inputVariable );
 
-        _symbolicBoundTightener->setInputLowerBound( inputVariable, min );
-        _symbolicBoundTightener->setInputUpperBound( inputVariable, max );
-    }
-
-    // Step 2: tell the SBT about the state of the ReLU constraints
-    for ( const auto &constraint : _plConstraints )
-    {
-        if ( !constraint->supportsSymbolicBoundTightening() )
-            throw MarabouError( MarabouError::SYMBOLIC_BOUND_TIGHTENER_UNSUPPORTED_CONSTRAINT_TYPE );
-
-        ReluConstraint *relu = (ReluConstraint *)constraint;
-        unsigned b = relu->getB();
-        SymbolicBoundTightener::NodeIndex nodeIndex = _symbolicBoundTightener->nodeIndexFromB( b );
-        _symbolicBoundTightener->setReluStatus( nodeIndex._layer, nodeIndex._neuron, relu->getPhaseStatus() );
-    }
-
-    // Step 3: perfrom the bound tightening
-    _symbolicBoundTightener->run();
-
-    // Stpe 4: extract any tighter bounds that were discovered
-    for ( const auto &pair : _symbolicBoundTightener->getNodeIndexToFMapping() )
-    {
-        unsigned layer = pair.first._layer;
-        unsigned neuron = pair.first._neuron;
-        unsigned var = pair.second;
-
-        double lb = _symbolicBoundTightener->getLowerBound( layer, neuron );
-        double ub = _symbolicBoundTightener->getUpperBound( layer, neuron );
-
-        double currentLb = _tableau->getLowerBound( var );
-        double currentUb = _tableau->getUpperBound( var );
-
-        _tableau->tightenLowerBound( var, lb );
-        _tableau->tightenUpperBound( var, ub );
-
-        if ( FloatUtils::lt( ub, currentUb ) )
+        if ( tightening._type == Tightening::UB &&
+             _tableau->getUpperBound( tightening._variable ) > tightening._value )
+        {
+            _tableau->tightenUpperBound( tightening._variable, tightening._value );
             ++numTightenedBounds;
-
-        if ( FloatUtils::gt( lb, currentLb ) )
-            ++numTightenedBounds;
+        }
     }
 
     struct timespec end = TimeUtils::sampleMicro();
@@ -1932,6 +1916,27 @@ void Engine::updateDirections()
             if ( constraint->supportPolarity() &&
                  constraint->isActive() && !constraint->phaseFixed() )
                 constraint->updateDirection();
+}
+
+void Engine::updateScores()
+{
+    _candidatePlConstraints.clear();
+    for ( const auto plConstraint : _plConstraints )
+    {
+        if ( plConstraint->isActive() && !plConstraint->phaseFixed() )
+        {
+            plConstraint->updateScore();
+            _candidatePlConstraints.insert( plConstraint );
+        }
+    }
+}
+
+PiecewiseLinearConstraint *Engine::pickSplitPLConstraint()
+{
+    updateScores();
+    auto constraint = *_candidatePlConstraints.begin();
+    _candidatePlConstraints.erase( constraint );
+    return constraint;
 }
 
 void Engine::setConstraintViolationThreshold( unsigned threshold )

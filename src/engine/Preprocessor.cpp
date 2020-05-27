@@ -22,11 +22,7 @@
 #include "Preprocessor.h"
 #include "MarabouError.h"
 #include "Statistics.h"
-#include "SymbolicBoundTightener.h"
 #include "Tightening.h"
-
-// TODO: get rid of this include
-#include "ReluConstraint.h"
 
 #ifdef _WIN32
 #undef INFINITE
@@ -40,6 +36,19 @@ Preprocessor::Preprocessor()
 InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariableElimination )
 {
     _preprocessed = query;
+
+    /*
+      If a network level reasoner has not been provided, attempt to
+      construct one
+    */
+    if ( !_preprocessed._networkLevelReasoner )
+    {
+        printf( "PP: constructing an NLR... " );
+        if ( constructNetworkLevelReasoner() )
+            printf( "successful\n" );
+        else
+            printf( "unsuccessful\n" );
+    }
 
     /*
       Initial work: if needed, have the PL constraints add their additional
@@ -69,7 +78,6 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     {
         continueTightening = processEquations();
         continueTightening = processConstraints() || continueTightening;
-
         if ( attemptVariableElimination )
             continueTightening = processIdenticalVariables() || continueTightening;
 
@@ -494,10 +502,45 @@ bool Preprocessor::processIdenticalVariables()
 
 void Preprocessor::collectFixedValues()
 {
+    // Compute all used variables:
+    //   1. Variables that appear in equations
+    //   2. Variables that participate in PL constraints
+    //   3. Variables that have been merged (and hence, previously
+    //      appeared in an equation)
+    Set<unsigned> usedVariables;
+    for ( const auto &equation : _preprocessed.getEquations() )
+        usedVariables += equation.getParticipatingVariables();
+    for ( const auto &constraint : _preprocessed.getPiecewiseLinearConstraints() )
+    {
+        for ( const auto &var : constraint->getParticipatingVariables() )
+            usedVariables.insert( var );
+    }
+    for ( const auto &merged : _mergedVariables )
+        usedVariables.insert( merged.first );
+
+    // Collect any variables with identical lower and upper bounds, or
+    // which are unused
 	for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
 	{
         if ( FloatUtils::areEqual( _preprocessed.getLowerBound( i ), _preprocessed.getUpperBound( i ) ) )
+        {
             _fixedVariables[i] = _preprocessed.getLowerBound( i );
+        }
+        else if ( !usedVariables.exists( i ) )
+        {
+            // If possible, choose a value that matches the debugging
+            // solution. Otherwise, pick the lower bound
+            if ( _preprocessed._debuggingSolution.exists( i ) &&
+                 _preprocessed._debuggingSolution[i] >= _preprocessed.getLowerBound( i ) &&
+                 _preprocessed._debuggingSolution[i] <= _preprocessed.getUpperBound( i ) )
+            {
+                _fixedVariables[i] = _preprocessed._debuggingSolution[i];
+            }
+            else
+            {
+                _fixedVariables[i] = _preprocessed.getLowerBound( i );
+            }
+        }
 	}
 }
 
@@ -554,6 +597,13 @@ void Preprocessor::eliminateVariables()
 
             _preprocessed._debuggingSolution.erase( i );
         }
+    }
+
+    // Inform the NLR about eliminated varibales
+    if ( _preprocessed._networkLevelReasoner )
+    {
+        for ( const auto &fixed : _fixedVariables )
+            _preprocessed._networkLevelReasoner->eliminateVariable( fixed.first, fixed.second );
     }
 
     // Compute the new variable indices, after the elimination of fixed variables
@@ -627,17 +677,6 @@ void Preprocessor::eliminateVariables()
 
         if ( (*constraint)->constraintObsolete() )
         {
-            if ( _preprocessed._sbt )
-            {
-                if ( !(*constraint)->supportsSymbolicBoundTightening() )
-                    throw MarabouError( MarabouError::SYMBOLIC_BOUND_TIGHTENER_UNSUPPORTED_CONSTRAINT_TYPE );
-
-                ReluConstraint *relu = (ReluConstraint *)(*constraint);
-                unsigned b = relu->getB();
-                SymbolicBoundTightener::NodeIndex nodeIndex = _preprocessed._sbt->nodeIndexFromB( b );
-                _preprocessed._sbt->setEliminatedRelu( nodeIndex._layer, nodeIndex._neuron, relu->getPhaseStatus() );
-            }
-
             if ( _statistics )
                 _statistics->ppIncNumConstraintsRemoved();
 
@@ -659,10 +698,6 @@ void Preprocessor::eliminateVariables()
                 constraint->updateVariableIndex( variable, _oldIndexToNewIndex.at( variable ) );
         }
 	}
-
-    // Let the SBT know of changes in indices and merged variables
-    if ( _preprocessed._sbt )
-        _preprocessed._sbt->updateVariableIndices( _oldIndexToNewIndex, _mergedVariables, _fixedVariables );
 
     // Let the NLR know of changes in indices and merged variables
     if ( _preprocessed._networkLevelReasoner )
@@ -757,6 +792,278 @@ void Preprocessor::dumpAllBounds( const String &message )
     }
 
     printf( "\n" );
+}
+
+bool Preprocessor::constructNetworkLevelReasoner()
+{
+    /*
+      Data structures that we will need for mapping out the DNN
+    */
+    struct Index
+    {
+        Index()
+            : _layer( 0 )
+            , _neuron( 0 )
+        {
+        }
+
+        Index( unsigned layer, unsigned neuron )
+            : _layer( layer )
+            , _neuron( neuron )
+        {
+        }
+
+        bool operator<( const Index &other ) const
+        {
+            if ( _layer < other._layer )
+                return true;
+            if ( _layer > other._layer )
+                return false;
+
+            return _neuron < other._neuron;
+        }
+
+        unsigned _layer;
+        unsigned _neuron;
+    };
+
+    struct NeuronInformation
+    {
+        NeuronInformation()
+            : _weightedSumEquation( NULL )
+            , _activationFunction( NULL )
+        {
+        }
+
+        unsigned _weightedSumVariable;
+        unsigned _activationVariable;
+
+        PiecewiseLinearFunctionType _activationType;
+
+        const Equation *_weightedSumEquation;
+        const PiecewiseLinearConstraint *_activationFunction;
+    };
+
+    Map<Index, NeuronInformation> indexToNeuron;
+    Map<unsigned, Index> variableToIndex;
+    Map<unsigned, unsigned> layerToLayerSize;
+
+    ASSERT( !_preprocessed._networkLevelReasoner );
+
+    const List<Equation> &equations( _preprocessed.getEquations() );
+    const List<PiecewiseLinearConstraint *> plConstraints( _preprocessed.getPiecewiseLinearConstraints() );
+
+    // If the activation functions are not yet supported by the NLR,
+    // abort
+    for ( const auto constraint : plConstraints )
+        if ( !NetworkLevelReasoner::functionTypeSupported( constraint->getType() ) )
+            return false;
+
+    // Attempt to figure out the layered structure
+    List<unsigned> inputLayer;
+    List<unsigned> previousLayer;
+    List<unsigned> currentLayer;
+    List<unsigned> outputLayer;
+    unsigned currentLayerIndex = 1;
+
+    // The input and output layer should be defined in the input query
+    inputLayer = _preprocessed.getInputVariables();
+    previousLayer = inputLayer;
+    layerToLayerSize[0] = inputLayer.size();
+    unsigned numVariablesHandledSoFar = layerToLayerSize[0];
+    outputLayer = _preprocessed.getOutputVariables();
+
+    // Store the input neurons in the topology
+    unsigned count = 0;
+    for ( const auto &neuron : inputLayer )
+    {
+        NeuronInformation neuronInfo;
+        neuronInfo._activationVariable = neuron;
+        Index index( 0, count );
+        indexToNeuron[index] = neuronInfo;
+        variableToIndex[neuron] = index;
+        ++count;
+    }
+
+    // Now, attempt to figure out the topology, layer by layer
+    while ( true )
+    {
+        currentLayer.clear();
+        for ( const auto &eq : equations )
+        {
+            // Only consider equalities
+            if ( eq._type != Equation::EQ )
+                continue;
+
+            Set<unsigned> eqVars = eq.getParticipatingVariables();
+            for ( const auto &var : previousLayer )
+                eqVars.erase( var );
+
+            if ( eqVars.size() == 1 )
+            {
+                // We have identified the weighted sum for a new neuron
+                NeuronInformation neuronInfo;
+                neuronInfo._weightedSumVariable = *eqVars.begin();
+                neuronInfo._weightedSumEquation = &eq;
+
+                Index index( currentLayerIndex, currentLayer.size() );
+                indexToNeuron[index] = neuronInfo;
+                currentLayer.append( neuronInfo._weightedSumVariable );
+
+                variableToIndex[neuronInfo._weightedSumVariable] = index;
+            }
+        }
+
+        // If a new layer has not been discovered, we're done
+        if ( currentLayer.empty() )
+            break;
+
+        numVariablesHandledSoFar += currentLayer.size();
+        layerToLayerSize[currentLayerIndex] = currentLayer.size();
+
+        // If this layer is the output layer, we're done
+        bool outputLayerFound = false;
+        if ( currentLayer.size() == outputLayer.size() )
+        {
+            outputLayerFound = true;
+            for ( const auto &var : outputLayer )
+            {
+                if ( !currentLayer.exists( var ) )
+                {
+                    outputLayerFound = false;
+                    break;
+                }
+            }
+        }
+
+        if ( outputLayerFound )
+            break;
+
+        // This was not the output layer. Continue to find the activation results
+        previousLayer = currentLayer;
+        currentLayer.clear();
+        for ( unsigned wsVar : previousLayer )
+        {
+            for ( const auto &constraint : plConstraints )
+            {
+                List<unsigned> participatingVariables = constraint->getParticipatingVariables();
+                ASSERT( participatingVariables.size() == 2 );
+                if ( participatingVariables.exists( wsVar ) )
+                {
+                    // We have identified the activation result of a weighted sum variable
+                    Index index( currentLayerIndex, currentLayer.size() );
+                    ASSERT( indexToNeuron.exists( index ) );
+
+                    participatingVariables.erase( wsVar );
+                    indexToNeuron[index]._activationVariable = *participatingVariables.begin();
+                    variableToIndex[*participatingVariables.begin()] = index;
+                    indexToNeuron[index]._activationType = constraint->getType();
+                    indexToNeuron[index]._activationFunction = constraint;
+
+                    currentLayer.append( *participatingVariables.begin() );
+                    break;
+                }
+            }
+        }
+
+        // If a new activation layer has not been discovered, we're done
+        if ( currentLayer.size() != previousLayer.size() )
+            break;
+
+        numVariablesHandledSoFar += currentLayer.size();
+
+        // Prepare for the next iteration
+        previousLayer = currentLayer;
+        ++currentLayerIndex;
+    }
+
+    // If not all variables have been accounted for, we've failed
+    if ( numVariablesHandledSoFar != _preprocessed.getNumberOfVariables() )
+        return false;
+
+    /*
+      Network topology successfully discovered, construct the NLR
+    */
+    NetworkLevelReasoner *nlr = new NetworkLevelReasoner;
+
+    // Allocate memory
+    unsigned totalNumberOfLayers = currentLayerIndex + 1;
+
+    nlr->setNumberOfLayers( totalNumberOfLayers );
+
+    for ( unsigned i = 0; i < totalNumberOfLayers; ++i )
+        nlr->setLayerSize( i, layerToLayerSize[i] );
+    nlr->allocateMemoryByTopology();
+
+    // Go over the neurons and store weights, biases and activation functions
+    for ( const auto &entry : indexToNeuron )
+    {
+        Index index = entry.first;
+        NeuronInformation neuronInfo = entry.second;
+        const Equation *eq = neuronInfo._weightedSumEquation;
+
+        /*
+          Input neurons get special treatment: no equation, no bias,
+          no activation function
+        */
+        if ( index._layer == 0 )
+        {
+            nlr->setActivationResultVariable( 0,
+                                              index._neuron,
+                                              neuronInfo._activationVariable );
+            continue;
+        }
+
+        /*
+          We assume equations have the form
+
+             2x1 + 3x2 - y = 5
+
+          Where y is our weighted sum variable. If y's coefficient is
+          not -1, we make it -1 by multiplying everything else
+        */
+        ASSERT( !FloatUtils::isZero( eq->getCoefficient( neuronInfo._weightedSumVariable ) ) );
+        double factor = -1.0 / eq->getCoefficient( neuronInfo._weightedSumVariable );
+
+        // Bias
+        nlr->setBias( index._layer, index._neuron, factor * -eq->_scalar );
+
+        // Weighted sum
+        for ( const auto &addend : eq->_addends )
+        {
+            if ( addend._variable == neuronInfo._weightedSumVariable )
+                continue;
+
+            ASSERT( variableToIndex.exists( addend._variable ) );
+            Index sourceIndex = variableToIndex[addend._variable];
+
+            ASSERT( sourceIndex._layer + 1 == index._layer );
+
+            nlr->setWeight( sourceIndex._layer,
+                            sourceIndex._neuron,
+                            index._neuron,
+                            factor * addend._coefficient );
+        }
+
+        nlr->setWeightedSumVariable( index._layer,
+                                     index._neuron,
+                                     neuronInfo._weightedSumVariable );
+
+        // Activation functions
+        if ( neuronInfo._activationFunction )
+        {
+            nlr->setActivationResultVariable( index._layer,
+                                              index._neuron,
+                                              neuronInfo._activationVariable );
+            nlr->setNeuronActivationFunction( index._layer,
+                                              index._neuron,
+                                              neuronInfo._activationType );
+        }
+    }
+
+    _preprocessed._networkLevelReasoner = nlr;
+
+    return true;
 }
 
 //

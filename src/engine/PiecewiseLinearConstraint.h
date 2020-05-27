@@ -21,6 +21,7 @@
 #include "List.h"
 #include "Map.h"
 #include "PiecewiseLinearCaseSplit.h"
+#include "PiecewiseLinearFunctionType.h"
 #include "Queue.h"
 #include "Tightening.h"
 
@@ -59,6 +60,16 @@ public:
 
     PiecewiseLinearConstraint();
     virtual ~PiecewiseLinearConstraint() {}
+
+    bool operator<( const PiecewiseLinearConstraint &other ) const
+    {
+        return _score < other._score;
+    }
+
+    /*
+      Get the type of this constraint.
+    */
+    virtual PiecewiseLinearFunctionType getType() const = 0;
 
     /*
       Return a clone of the constraint.
@@ -213,10 +224,35 @@ public:
     }
 
     /*
-      Update the preferred direction to take first when branching on this PLConstraint
+      Update the preferred direction to take first when splitting on this PLConstraint
     */
     virtual void updateDirection()
     {
+    }
+
+    virtual void updateScore()
+    {
+    }
+
+    /*
+      Update _score with score
+    */
+    void setScore( double score )
+    {
+        _score = score;
+    }
+
+    /*
+      Retrieve the current lower and upper bounds
+    */
+    double getLowerBound( unsigned i ) const
+    {
+        return _lowerBounds[i];
+    }
+
+    double getUpperBound( unsigned i ) const
+    {
+        return _upperBounds[i];
     }
 
 protected:
@@ -224,6 +260,13 @@ protected:
 	Map<unsigned, double> _assignment;
     Map<unsigned, double> _lowerBounds;
     Map<unsigned, double> _upperBounds;
+
+    /*
+      The score denotes priority for splitting. When score is negative, the PL constraint
+      is not being considered for splitting.
+      We pick the PL constraint with the highest score to branch.
+     */
+    double _score;
 
     IConstraintBoundTightener *_constraintBoundTightener;
 

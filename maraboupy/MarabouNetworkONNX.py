@@ -166,12 +166,16 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         """
         node = self.getNode(nodeName)
         
-        if node.op_type == 'Identity': 
+        if node.op_type == 'Constant':
+            self.constant(node)
+        elif node.op_type == 'Identity': 
             self.identity(node)
         elif node.op_type == 'Cast':
             self.cast(node)
         elif node.op_type == 'Reshape':
             self.reshape(node)
+        elif node.op_type == 'Flatten':
+            self.flatten(node)
         elif node.op_type == "Transpose":
             self.transpose(node)
         elif node.op_type == "MaxPool":
@@ -236,6 +240,20 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             elif len([nde for nde in self.graph.initializer if nde.name == inp]):
                 self.constantMap[inp] = [numpy_helper.to_array(init) for init in self.graph.initializer if init.name == inp][0]
         return inNodes
+        
+    def constant(self, node):
+        """
+        Function representing a constant tensor
+        Arguments:
+            node: (node) representing constant operation
+        """
+        nodeName = node.output[0]
+        for attr in node.attribute:
+            if attr.name == "value":
+                self.constantMap[nodeName] = numpy_helper.to_array(get_attribute_value(attr))
+                return
+        print("Could not find value of tensor constant")
+        raise RuntimeError
         
     def identity(self, node):
         """
@@ -320,6 +338,34 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             self.varMap[nodeName] = self.varMap[inputName1].reshape(reshapeVals)
         elif inputName1 in self.constantMap:
             self.constantMap[nodeName] = self.constantMap[inputName1].reshape(reshapeVals)
+
+    def flatten(self, node):
+        """
+        Function representing flatten.
+        Unlike numpy.flatten(), ONNX's Flatten operation reshapes
+        a (d_0, d_1, ..., d_n) tensor into a 2D tensor with shape
+        (d_0 * d_1 * ... * d_(axis-1), d_axis * d_(axis+1) * ... * d_n).
+        Arguments:
+            node: (node) representing flatten operation
+        """
+        nodeName = node.output[0]
+
+        # Assume first input is array to be flattened
+        inputName = node.input[0]
+        axis = 1
+        for attr in node.attribute:
+            if attr.name == "axis":
+                axis = get_attribute_value(attr)
+
+        dimension1 = int(np.prod(self.shapeMap[inputName][:axis]))
+        dimension2 = int(np.prod(self.shapeMap[inputName][axis:]))
+        newShape = [dimension1, dimension2]
+        self.shapeMap[nodeName] = newShape
+
+        if inputName in self.varMap:
+            self.varMap[nodeName] = self.varMap[inputName].reshape(newShape)
+        elif inputName in self.constantMap:
+            self.constantMap[nodeName] = self.constantMap[inputName].reshape(newShape)
             
     def transpose(self, node):
         """
@@ -342,7 +388,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         if inputName in self.varMap:
             self.varMap[nodeName] = np.transpose(self.varMap[node.input[0]], perm)
         elif inputName in self.constantMap:
-            self.constantMap[nodeName] = np.transpose(self.constant[inputName], perm)
+            self.constantMap[nodeName] = np.transpose(self.constantMap[inputName], perm)
     
     def maxpoolEquations(self, node, makeEquations):
         """
@@ -384,7 +430,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         
     def convEquations(self, node, makeEquations):
         """
-        Function to generate maxpooling equations
+        Function to generate equations for a 2D convolution
         Arguments:
             node: (node) representing the 2D Convolution operation
             makeEquations: (bool) True if we need to create new variables and write Marabou equations
@@ -412,6 +458,12 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         filter_channels = shape1[1]
         filter_width = shape1[2]
         filter_height = shape1[3]
+        
+        # The third input is optional and specifies a bias for each filter
+        # Bias is 0 if third input is not given
+        biases = np.zeros(num_filters)
+        if len(node.input) == 3:
+            biases = self.constantMap[node.input[2]]
 
         # The number of channels should match between input variable and filters
         assert input_channels == filter_channels
@@ -448,7 +500,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
 
                         # Add output variable
                         e.addAddend(-1, outVars[0][k][i][j])
-                        e.setScalar(0.0)
+                        e.setScalar(-biases[k])
                         self.addEquation(e)
         
     def gemmEquations(self, node, makeEquations):  
@@ -468,6 +520,24 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         input1 = self.varMap[inputName1]
         input2 = self.constantMap[inputName2]
         input3 = self.constantMap[inputName3]
+        
+        # Transpose first two inputs if needed,
+        # and save scaling parameters alpha and beta if set
+        alpha = 1.0
+        beta = 1.0
+        for attr in node.attribute:
+            if attr.name == 'transA':
+                if get_attribute_value(attr):
+                    input1 = np.tranpose(input1)
+                    shape1 = shape1[::-1]
+            elif attr.name == 'transB':
+                if get_attribute_value(attr):
+                    input2 = np.transpose(input2)
+                    shape2 = shape2[::-1]
+            elif attr.name == 'alpha':
+                alpha = get_attribute_value(attr)
+            elif attr.name == 'beta':
+                beta = get_attribute_value(attr)
         
         self.shapeMap[nodeName] = self.shapeMap[inputName3]
         if makeEquations:
@@ -500,11 +570,11 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
                 for j in range(shape2[1]):
                     e = MarabouUtils.Equation()
                     for k in range(shape1[1]):
-                        e.addAddend(input2[k][j], input1[i][k])
+                        e.addAddend(input2[k][j]*alpha, input1[i][k])
 
                     # Put output variable as the last addend last
                     e.addAddend(-1, outputVariables[i][j])
-                    e.setScalar(-input3[i][j])
+                    e.setScalar(-input3[i][j]*beta)
                     self.addEquation(e)
     
     def matMulEquations(self, node, makeEquations):
@@ -522,7 +592,6 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         shape2 = self.shapeMap[inputName2]
         assert shape1[-1] == shape2[0]
         self.shapeMap[nodeName] = shape1[:-1] + shape2[1:]
-        
             
         firstInputConstant = False; secondInputConstant = False
         if inputName1 in self.constantMap:
@@ -536,6 +605,11 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             secondInputConstant = True
         else:
             input2 = self.varMap[inputName2]
+            
+        # Broadcast first input to make sure the first input is a matrix
+        if len(shape1) == 1:
+            shape1 = [1] + shape1
+            input1 = input1.reshape(shape1)
 
         # Assume that at least one input is a constant (We cannot represent variable products with linear equations)
         assert firstInputConstant or secondInputConstant
@@ -548,10 +622,14 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         if makeEquations:
             # Create new variables
             outputVariables = self.makeNewVariables(nodeName)
+            
+            # Pad the output if needed (matrix-matrix multiplication)
+            if len(outputVariables.shape) == 1 and len(shape2) > 1:
+                outputVariables = outputVariables.reshape([1, outputVariables.shape[0]])
 
             # Generate equations
             for i in range(shape1[0]):
-                # Differntiate between matrix-vector multiplication and matrix-matrix multiplication
+                # Differentiate between matrix-vector multiplication and matrix-matrix multiplication
                 if len(shape2)>1:
                     for j in range(shape2[1]):
                         e = MarabouUtils.Equation()

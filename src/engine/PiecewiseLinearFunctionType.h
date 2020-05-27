@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file PiecewiseLinearConstraint.cpp
+/*! \file Engine.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz
@@ -11,28 +11,19 @@
  **
  ** [[ Add lengthier description here ]]
 
-**/
+ **/
 
-#include "PiecewiseLinearConstraint.h"
-#include "Statistics.h"
+#ifndef __PiecewiseLinearFunctionType_h__
+#define __PiecewiseLinearFunctionType_h__
 
-PiecewiseLinearConstraint::PiecewiseLinearConstraint()
-    : _constraintActive( true )
-    , _score( -1 )
-    , _constraintBoundTightener( NULL )
-    , _statistics( NULL )
-{
-}
+enum PiecewiseLinearFunctionType {
+    RELU = 0,
+    ABSOLUTE_VALUE = 1,
+    MAX = 2,
+    DISJUNCTION = 3,
+};
 
-void PiecewiseLinearConstraint::setStatistics( Statistics *statistics )
-{
-    _statistics = statistics;
-}
-
-void PiecewiseLinearConstraint::registerConstraintBoundTightener( IConstraintBoundTightener *tightener )
-{
-    _constraintBoundTightener = tightener;
-}
+#endif // __PiecewiseLinearFunctionType_h__
 
 //
 // Local Variables:

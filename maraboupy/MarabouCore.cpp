@@ -177,7 +177,7 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
             {
                 retStats = Statistics();
                 retStats.timeout();
-                return std::make_pair( ret, Statistics() );
+                return std::make_pair( ret, retStats );
             }
             default:
                 return std::make_pair( ret, Statistics() ); // TODO: meaningful DnCStatistics
@@ -237,7 +237,7 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def("markInputVariable", &InputQuery::markInputVariable)
         .def("markOutputVariable", &InputQuery::markOutputVariable)
         .def("outputVariableByIndex", &InputQuery::outputVariableByIndex)
-        .def("setSymbolicBoundTightener", &InputQuery::setSymbolicBoundTightener);
+        .def("setNetworkLevelReasoner", &InputQuery::setNetworkLevelReasoner);
     py::class_<MarabouOptions>(m, "Options")
         .def(py::init())
         .def_readwrite("_numWorkers", &MarabouOptions::_numWorkers)
@@ -248,17 +248,22 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_timeoutFactor", &MarabouOptions::_timeoutFactor)
         .def_readwrite("_verbosity", &MarabouOptions::_verbosity)
         .def_readwrite("_dnc", &MarabouOptions::_dnc);
-    py::class_<SymbolicBoundTightener, std::unique_ptr<SymbolicBoundTightener,py::nodelete>>(m, "SymbolicBoundTightener")
-        .def(py::init())
-        .def("setNumberOfLayers", &SymbolicBoundTightener::setNumberOfLayers)
-        .def("setLayerSize", &SymbolicBoundTightener::setLayerSize)
-        .def("allocateWeightAndBiasSpace", &SymbolicBoundTightener::allocateWeightAndBiasSpace)
-        .def("setBias", &SymbolicBoundTightener::setBias)
-        .def("setWeight", &SymbolicBoundTightener::setWeight)
-        .def("setInputLowerBound", &SymbolicBoundTightener::setInputLowerBound)
-        .def("setInputUpperBound", &SymbolicBoundTightener::setInputUpperBound)
-        .def("setReluBVariable", &SymbolicBoundTightener::setReluBVariable)
-        .def("setReluFVariable", &SymbolicBoundTightener::setReluFVariable);
+    py::class_<NetworkLevelReasoner, std::unique_ptr<NetworkLevelReasoner,py::nodelete>> nlr(m, "NetworkLevelReasoner");
+    nlr.def(py::init());
+    nlr.def("setNumberOfLayers", &NetworkLevelReasoner::setNumberOfLayers);
+    nlr.def("setLayerSize", &NetworkLevelReasoner::setLayerSize);
+    nlr.def("setNeuronActivationFunction", &NetworkLevelReasoner::setNeuronActivationFunction);
+    nlr.def("setBias", &NetworkLevelReasoner::setBias);
+    nlr.def("setWeight", &NetworkLevelReasoner::setWeight);
+    nlr.def("allocateMemoryByTopology", &NetworkLevelReasoner::allocateMemoryByTopology);
+    nlr.def("setWeightedSumVariable", &NetworkLevelReasoner::setWeightedSumVariable);
+    nlr.def("setActivationResultVariable", &NetworkLevelReasoner::setActivationResultVariable);
+    py::enum_<PiecewiseLinearFunctionType>(m, "PiecewiseLinearFunctionType")
+        .value("ReLU", PiecewiseLinearFunctionType::RELU)
+        .value("AbsoluteValue", PiecewiseLinearFunctionType::ABSOLUTE_VALUE)
+        .value("Max", PiecewiseLinearFunctionType::MAX)
+        .value("Disjunction", PiecewiseLinearFunctionType::DISJUNCTION)
+        .export_values();
     py::class_<Equation> eq(m, "Equation");
     eq.def(py::init());
     eq.def(py::init<Equation::EquationType>());

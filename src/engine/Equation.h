@@ -18,6 +18,7 @@
 
 #include "List.h"
 #include "MString.h"
+#include "Set.h"
 
 /*
    A class representing a single equation.
@@ -68,6 +69,17 @@ public:
       x2 are the merged variables.
     */
     bool isVariableMergingEquation( unsigned &x1, unsigned &x2 ) const;
+
+    /*
+      Get the set of indices of all variables that participate in this
+      equation.
+    */
+    Set<unsigned> getParticipatingVariables() const;
+
+    /*
+      Retrieve the coefficient of a variable
+    */
+    double getCoefficient( unsigned variable ) const;
 
     List<Addend> _addends;
     double _scalar;

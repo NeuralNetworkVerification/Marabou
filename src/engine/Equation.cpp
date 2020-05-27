@@ -30,12 +30,14 @@ bool Equation::Addend::operator==( const Addend &other ) const
 }
 
 Equation::Equation()
-    : _type( Equation::EQ )
+    : _scalar( 0 )
+    , _type( Equation::EQ )
 {
 }
 
 Equation::Equation( EquationType type )
-    : _type( type )
+    : _scalar( 0 )
+    , _type( type )
 {
 }
 
@@ -177,6 +179,26 @@ bool Equation::isVariableMergingEquation( unsigned &x1, unsigned &x2 ) const
     }
 
     return false;
+}
+
+Set<unsigned> Equation::getParticipatingVariables() const
+{
+    Set<unsigned> result;
+    for ( const auto &addend : _addends )
+        result.insert( addend._variable );
+
+    return result;
+}
+
+double Equation::getCoefficient( unsigned variable ) const
+{
+    for ( const auto &addend : _addends )
+    {
+        if ( addend._variable == variable )
+            return addend._coefficient;
+    }
+
+    return 0;
 }
 
 //
