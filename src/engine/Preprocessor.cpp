@@ -43,11 +43,11 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     */
     if ( !_preprocessed._networkLevelReasoner )
     {
-        printf( "PP: constructing an NLR... " );
+        log( "PP: constructing an NLR... " );
         if ( constructNetworkLevelReasoner() )
-            printf( "successful\n" );
+            log( "successful\n" );
         else
-            printf( "unsuccessful\n" );
+            log( "unsuccessful\n" );
     }
 
     /*
@@ -1064,6 +1064,12 @@ bool Preprocessor::constructNetworkLevelReasoner()
     _preprocessed._networkLevelReasoner = nlr;
 
     return true;
+}
+
+void Preprocessor::log( const String &message )
+{
+    if ( GlobalConfiguration::PREPROCESSOR_LOGGING )
+        printf( "Preprocessor: %s\n", message.ascii() );
 }
 
 //
