@@ -149,6 +149,20 @@ public:
     */
     void printStartingIteration( unsigned long long iteration, String message );
 
+    /* Yuval Debug */
+    unsigned long long getTimeForSymbolicBoundTightening() const;
+    void addTimeForSBTTighten( unsigned long long time );
+    void addTimeForSBTRun( unsigned long long time );
+    void addTimeForSBTInit( unsigned long long time );
+    void addTimeForSymbolicBoundExtraction( unsigned long long time );
+
+    void addTimeSBTRunLog( unsigned long long time );
+    void addTimeSBTRunInit( unsigned long long time );
+    void addTimeSBTMulti( unsigned long long time );
+    void addTimeSBTBias( unsigned long long time );
+    void addTimeSBTVals( unsigned long long time );
+    void addTimeSBTPrepareNext( unsigned long long time );
+
 private:
     // Initial timestamp
     struct timespec _startTime;
@@ -313,6 +327,21 @@ private:
     // Printing helpers
     double printPercents( unsigned long long part, unsigned long long total ) const;
     double printAverage( unsigned long long part, unsigned long long total ) const;
+
+
+    // Yuval DEBUG
+    unsigned long long _totalTimePerformingSBTTighten;
+    unsigned long long _totalTimePerformingSBTRun;
+    unsigned long long _totalTimePerformingSBTInit;
+    unsigned long long _totalTimePerformingSBTExtraction;
+
+
+    unsigned long long _totalTimePerformingSBTRunLog;
+    unsigned long long _totalTimePerformingSBTRunInit;
+    unsigned long long _totalTimePerformingSBTMulti;
+    unsigned long long _totalTimePerformingSBTBias;
+    unsigned long long _totalTimePerformingSBTVals;
+    unsigned long long _totalTimePerformingSBTPrepareNext;
 };
 
 #endif // __Statistics_h__

@@ -705,7 +705,7 @@ void NetworkLevelReasoner::intervalArithmeticBoundPropagation()
     }
 }
 
-void NetworkLevelReasoner::symbolicBoundPropagation()
+void NetworkLevelReasoner::symbolicBoundPropagation( Statistics* _statistics )
 {
     /*
       Initialize the symbolic bounds for the first layer. Each
@@ -713,6 +713,7 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
       all other varibales. The input layer has no biases.
     */
 
+    struct timespec start = TimeUtils::sampleMicro();
     std::fill_n( _previousLayerLowerBounds, _maxLayerSize * _inputLayerSize, 0 );
     std::fill_n( _previousLayerUpperBounds, _maxLayerSize * _inputLayerSize, 0 );
     for ( unsigned i = 0; i < _inputLayerSize; ++i )
@@ -722,9 +723,17 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
     }
     std::fill_n( _previousLayerLowerBias, _maxLayerSize, 0 );
     std::fill_n( _previousLayerUpperBias, _maxLayerSize, 0 );
+    struct timespec endInit = TimeUtils::sampleMicro();
 
+    struct timespec endBias;
+    struct timespec startLog;
+    struct timespec endLog;
+    struct timespec endMultiplication;
+    struct timespec endPrepareNext;
+    struct timespec endComputeVal;
     for ( unsigned currentLayer = 1; currentLayer < _numberOfLayers; ++currentLayer )
     {
+        startLog = TimeUtils::sampleMicro();
         unsigned currentLayerSize = _layerSizes[currentLayer];
         unsigned previousLayerSize = _layerSizes[currentLayer - 1];
 
@@ -736,6 +745,9 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
         std::fill_n( _currentLayerLowerBounds, _maxLayerSize * _inputLayerSize, 0 );
         std::fill_n( _currentLayerUpperBounds, _maxLayerSize * _inputLayerSize, 0 );
 
+        endLog= TimeUtils::sampleMicro();
+        if (_statistics)
+            _statistics->addTimeSBTRunLog( TimeUtils::timePassed( startLog , endLog ) );
         /*
           Perform the multiplication.
 
@@ -748,30 +760,22 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
             newUB, newLB dimensions: inputLayerSize x layerSize
         */
 
-        for ( unsigned i = 0; i < _inputLayerSize; ++i )
-        {
-            for ( unsigned j = 0; j < currentLayerSize; ++j )
-            {
-                for ( unsigned k = 0; k < previousLayerSize; ++k )
-                {
-                    _currentLayerLowerBounds[i * currentLayerSize + j] +=
-                        _previousLayerUpperBounds[i * previousLayerSize + k] *
-                        _negativeWeights[currentLayer - 1][k * currentLayerSize + j];
+        matrixMultiplication( _previousLayerUpperBounds, _positiveWeights[currentLayer - 1],
+                              _currentLayerUpperBounds, _inputLayerSize,
+                              previousLayerSize, currentLayerSize );
+        matrixMultiplication( _previousLayerLowerBounds, _negativeWeights[currentLayer - 1],
+                              _currentLayerUpperBounds, _inputLayerSize,
+                              previousLayerSize, currentLayerSize );
+        matrixMultiplication( _previousLayerLowerBounds, _positiveWeights[currentLayer - 1],
+                              _currentLayerLowerBounds, _inputLayerSize,
+                              previousLayerSize, currentLayerSize );
+        matrixMultiplication( _previousLayerUpperBounds, _negativeWeights[currentLayer - 1],
+                              _currentLayerLowerBounds, _inputLayerSize,
+                              previousLayerSize, currentLayerSize );
 
-                    _currentLayerLowerBounds[i * currentLayerSize + j] +=
-                        _previousLayerLowerBounds[i * previousLayerSize + k] *
-                        _positiveWeights[currentLayer - 1][k * currentLayerSize + j];
-
-                    _currentLayerUpperBounds[i * currentLayerSize + j] +=
-                        _previousLayerUpperBounds[i * previousLayerSize + k] *
-                        _positiveWeights[currentLayer - 1][k * currentLayerSize + j];
-
-                    _currentLayerUpperBounds[i * currentLayerSize + j] +=
-                        _previousLayerLowerBounds[i * previousLayerSize + k] *
-                        _negativeWeights[currentLayer - 1][k * currentLayerSize + j];
-                }
-            }
-        }
+        endMultiplication = TimeUtils::sampleMicro();
+        if (_statistics)
+            _statistics->addTimeSBTMulti( TimeUtils::timePassed( endLog , endMultiplication ) );
 
         /*
           Compute the biases for the new layer
@@ -798,6 +802,9 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
                 }
             }
         }
+        endBias= TimeUtils::sampleMicro();
+        if (_statistics)
+            _statistics->addTimeSBTBias( TimeUtils::timePassed( endMultiplication, endBias ) );
 
         /*
           We now have the symbolic representation for the new
@@ -897,13 +904,26 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
                     _upperBoundsActivations[currentLayer][i] = ubUb;
             }
         }
+        endComputeVal = TimeUtils::sampleMicro();
+        if (_statistics)
+            _statistics->addTimeSBTVals( TimeUtils::timePassed( endBias, endComputeVal ) );
 
         // Prepare for next iteration
-        memcpy( _previousLayerLowerBounds, _currentLayerLowerBounds, sizeof(double) * _maxLayerSize * _inputLayerSize );
-        memcpy( _previousLayerUpperBounds, _currentLayerUpperBounds, sizeof(double) * _maxLayerSize * _inputLayerSize );
-        memcpy( _previousLayerLowerBias, _currentLayerLowerBias, sizeof(double) * _maxLayerSize );
-        memcpy( _previousLayerUpperBias, _currentLayerUpperBias, sizeof(double) * _maxLayerSize );
+        std::swap( _previousLayerLowerBounds, _currentLayerLowerBounds );
+        std::swap( _previousLayerUpperBounds, _currentLayerUpperBounds );
+        std::swap( _previousLayerLowerBias, _currentLayerLowerBias );
+        std::swap(  _previousLayerUpperBias, _currentLayerUpperBias );
+        /* memcpy( _previousLayerLowerBounds, _currentLayerLowerBounds, sizeof(double) * _maxLayerSize * _inputLayerSize ); */
+        /* memcpy( _previousLayerUpperBounds, _currentLayerUpperBounds, sizeof(double) * _maxLayerSize * _inputLayerSize ); */
+        /* memcpy( _previousLayerLowerBias, _currentLayerLowerBias, sizeof(double) * _maxLayerSize ); */
+        /* memcpy( _previousLayerUpperBias, _currentLayerUpperBias, sizeof(double) * _maxLayerSize ); */
+        endPrepareNext = TimeUtils::sampleMicro();
+
+        if (_statistics)
+            _statistics->addTimeSBTPrepareNext( TimeUtils::timePassed( endComputeVal, endPrepareNext ) );
     }
+        if (_statistics)
+        _statistics->addTimeSBTRunInit( TimeUtils::timePassed( start, endInit ) );
 }
 
 void NetworkLevelReasoner::reluSymbolicPropagation( const Index &index, double &lbLb, double &lbUb, double &ubLb, double &ubUb )

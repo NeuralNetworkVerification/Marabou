@@ -18,9 +18,11 @@
 
 #include "ITableau.h"
 #include "Map.h"
+#include "MatrixMultiplication.h"
 #include "PiecewiseLinearFunctionType.h"
 #include "Tightening.h"
 
+#include "Statistics.h"
 /*
   A class for performing operations that require knowledge of network
   level structure and topology.
@@ -136,7 +138,7 @@ public:
     void setTableau( const ITableau *tableau );
     void obtainCurrentBounds();
     void intervalArithmeticBoundPropagation();
-    void symbolicBoundPropagation();
+    void symbolicBoundPropagation( Statistics* _statistics = NULL );
 
     void getConstraintTightenings( List<Tightening> &tightenings ) const;
 
