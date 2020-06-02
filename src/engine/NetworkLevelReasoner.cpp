@@ -343,6 +343,17 @@ void NetworkLevelReasoner::setBias( unsigned layer, unsigned neuron, double bias
     _bias[Index( layer, neuron )] = bias;
 }
 
+unsigned NetworkLevelReasoner::getLayerSize( unsigned layer )
+{
+    ASSERT( layer < _numberOfLayers );
+    return _layerSizes[ layer ];
+}
+
+unsigned NetworkLevelReasoner::getNumberOfLayers()
+{
+    return _numberOfLayers;
+}
+
 void NetworkLevelReasoner::evaluate( double *input, double *output )
 {
     memcpy( _work1, input, sizeof(double) * _layerSizes[0] );
@@ -461,6 +472,7 @@ void NetworkLevelReasoner::storeIntoOther( NetworkLevelReasoner &other ) const
     other._indexToActivationResultAssignment = _indexToActivationResultAssignment;
     other._eliminatedWeightedSumVariables = _eliminatedWeightedSumVariables;
     other._eliminatedActivationResultVariables = _eliminatedActivationResultVariables;
+    other._indexToPiecewiseLinearConstraint = _indexToPiecewiseLinearConstraint;
 }
 
 const Map<NetworkLevelReasoner::Index, unsigned> &NetworkLevelReasoner::getIndexToWeightedSumVariable()
@@ -481,6 +493,29 @@ const Map<NetworkLevelReasoner::Index, double> &NetworkLevelReasoner::getIndexTo
 const Map<NetworkLevelReasoner::Index, double> &NetworkLevelReasoner::getIndexToActivationResultAssignment()
 {
     return _indexToActivationResultAssignment;
+}
+
+Map<NetworkLevelReasoner::Index, PiecewiseLinearConstraint *> NetworkLevelReasoner::getIndexToPLConstraint()
+{
+    return _indexToPiecewiseLinearConstraint;
+}
+
+void NetworkLevelReasoner::setIndexToPLConstraint( unsigned layer,
+                                                   unsigned neuron,
+                                                   PiecewiseLinearConstraint
+                                                   *constraint )
+{
+    _indexToPiecewiseLinearConstraint[Index( layer, neuron )] = constraint;
+}
+
+PiecewiseLinearConstraint * NetworkLevelReasoner::getPLConstraintFromIndex
+( unsigned layer, unsigned neuron )
+{
+    Index index( layer, neuron );
+    if ( !_indexToPiecewiseLinearConstraint.exists( index ) )
+        throw MarabouError( MarabouError::INVALID_MAP_INDEX,
+                            Stringf( "Index: <%u,%u>", layer, neuron ).ascii() );
+    return _indexToPiecewiseLinearConstraint[index];
 }
 
 void NetworkLevelReasoner::updateVariableIndices( const Map<unsigned, unsigned> &oldIndexToNewIndex,
