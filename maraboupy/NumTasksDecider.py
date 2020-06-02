@@ -92,7 +92,7 @@ def boundaryPatternVariance(inputMins, inputMaxs, input_name, name=None, seed=0)
             tensor_in = graph.get_tensor_by_name(input_name)
             relus_ops = [x for x in graph.get_operations() if x.type=="Relu"]
             out_relus = tf.concat([relu.outputs[0] for relu in relus_ops], 1)
-            with tf.compat.v1.Session(graph=graph) as sess:
+            with tf.Session(graph=graph) as sess:
                 relu_values = np.array(sess.run(out_relus, feed_dict={
                     tensor_in: points_all
                 }))
