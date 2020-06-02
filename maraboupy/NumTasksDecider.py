@@ -68,8 +68,8 @@ def boundaryPatternVariance(inputMins, inputMaxs, input_name, name=None, seed=0)
     """
     import tensorflow as tf
     if name:
-        with tf.compat.v1.gfile.FastGFile(name + ".pb", "rb") as f:
-            graph_def = tf.compat.v1.GraphDef()
+        with tf.gfile.FastGFile(name + ".pb", "rb") as f:
+            graph_def = tf.GraphDef()
             graph_def.ParseFromString(f.read())
 
         with tf.Graph().as_default() as graph:
@@ -130,8 +130,8 @@ def boundaryPatternDifference(inputMins, inputMaxs, input_name,
     """
     import tensorflow as tf
     if name:
-        with tf.compat.v1.gfile.FastGFile(name + ".pb", "rb") as f:
-            graph_def = tf.compat.v1.GraphDef()
+        with tf.gfile.FastGFile(name + ".pb", "rb") as f:
+            graph_def = tf.GraphDef()
             graph_def.ParseFromString(f.read())
 
         with tf.Graph().as_default() as graph:
@@ -160,7 +160,7 @@ def boundaryPatternDifference(inputMins, inputMaxs, input_name,
             tensor_in = graph.get_tensor_by_name(input_name)
             relus_ops = [x for x in graph.get_operations() if x.type=="Relu"]
             out_relus = tf.concat([relu.outputs[0] for relu in relus_ops], 1)
-            with tf.compat.v1.Session(graph=graph) as sess:
+            with tf.Session(graph=graph) as sess:
                 relu_values = np.array(sess.run(out_relus, feed_dict={
                     tensor_in: points_all
                 }))
