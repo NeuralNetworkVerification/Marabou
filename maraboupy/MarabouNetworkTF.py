@@ -17,18 +17,19 @@
 '''
 
 import numpy as np
-from tensorflow.python.framework import tensor_util
-from tensorflow.python.framework import graph_util
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 import tensorflow as tf
+from tensorflow.python.framework import tensor_util
+from tensorflow.python.framework import graph_util
+from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
 from maraboupy import MarabouUtils
 from maraboupy import MarabouNetwork
 
 class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
-    def __init__(self, filename, inputNames=None, outputName=None, savedModel=False, savedModelTags=[]):
+    def __init__(self, filename, inputNames=None, outputName=None, savedModel_v1=False, savedModel_v2=False, savedModelTags=[]):
         """
         Constructs a MarabouNetworkTF object from a frozen Tensorflow protobuf or SavedModel
 
@@ -38,12 +39,13 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
                                contains .pb file and variables subdirectory.
             inputName: (string) optional, name of operation corresponding to input.
             outputName: (string) optional, name of operation corresponding to output.
-            savedModel: (bool) If false, load frozen graph. If true, load SavedModel object.
+            savedModel_v1: (bool) If true, load SavedModel object created from tensorflow v1.X 
+            savedModel_v2: (bool) If true, load SavedModel object created from tensorflow v2.X
             savedModelTags: (list of strings) If loading a SavedModel, the user must specify tags used.
         """
         super().__init__()
         self.biasAddRelations = list()
-        self.readFromPb(filename, inputNames, outputName, savedModel, savedModelTags)
+        self.readFromPb(filename, inputNames, outputName, savedModel_v1, savedModel_v2, savedModelTags)
         self.processBiasAddRelations()
 
     def clear(self):
@@ -59,7 +61,7 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         self.sess = None
         self.biasAddRelations = list()
 
-    def readFromPb(self, filename, inputNames, outputName, savedModel, savedModelTags):
+    def readFromPb(self, filename, inputNames, outputName, savedModel_v1, savedModel_v2, savedModelTags):
         """
         Constructs a MarabouNetworkTF object from a frozen Tensorflow protobuf or SavedModel
 
@@ -69,12 +71,13 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
                                contains .pb file and variables subdirectory.
             inputName: (string) optional, name of operation corresponding to input.
             outputName: (string) optional, name of operation corresponding to output.
-            savedModel: (bool) If false, load frozen graph. If true, load SavedModel object.
+            savedModel_v1: (bool) If true, load SavedModel object created from tensorflow v1.X 
+            savedModel_v2: (bool) If true, load SavedModel object created from tensorflow v2.X
             savedModelTags: (list of strings) If loading a SavedModel, the user must specify tags used.
         """
 
-        if savedModel:
-            ### Read SavedModel ###
+        if savedModel_v1:
+            ### Read SavedModel format created by tensorflow version 1.X ###
             sess = tf.compat.v1.Session()
             tf.compat.v1.saved_model.loader.load(sess, savedModelTags, filename)
 
@@ -83,17 +86,36 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             with tf.Graph().as_default() as graph:
                 tf.import_graph_def(simp_graph_def, name="")
             self.sess = tf.compat.v1.Session(graph=graph)
-            ### End reading SavedModel
+            ### End reading SavedModel for tensorflow version 1.X ###
 
+        elif savedModel_v2:
+            ### Read SavedModel format created by tensorflow version 2.X ###
+            sess = tf.compat.v1.Session()
+            loaded = tf.saved_model.load(filename)
+            if not savedModelTags:
+                model = loaded.signatures["serving_default"]
+            else:
+                model = loaded.signatures[savedModelTags[0]]
+                
+             # Create a concrete function from model
+            full_model = tf.function(lambda x: model(x))
+            full_model = full_model.get_concrete_function(
+                tf.TensorSpec(model.inputs[0].shape, model.inputs[0].dtype))
+
+            # Get frozen ConcreteFunction
+            frozen_func = convert_variables_to_constants_v2(full_model)
+            self.sess = tf.compat.v1.Session(graph=frozen_func.graph)
+            ### End reading SavedModel for tensorflow version 2.X ###
+            
         else:
-            ### Read protobuf file and begin session ###
+            ### Read protobuf frozen graph file and begin session ###
             with tf.io.gfile.GFile(filename, "rb") as f:
                 graph_def = tf.compat.v1.GraphDef()
                 graph_def.ParseFromString(f.read())
             with tf.Graph().as_default() as graph:
                 tf.import_graph_def(graph_def, name="")
             self.sess = tf.compat.v1.Session(graph=graph)
-            ### END reading protobuf ###
+            ### END reading protobuf frozen graph file ###
 
         ### Find operations corresponding to input and output ###
         if inputNames: # is not None
@@ -108,6 +130,9 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             outputOp = self.sess.graph.get_operation_by_name(outputName)
         else: # Assume that the last operation is the output
             outputOp = self.sess.graph.get_operations()[-1]
+            # Dig into graph until output is not an Identity operation
+            while outputOp.node_def.op == "Identity":
+                outputOp = outputOp.inputs[0].op
         self.setInputOps(inputOps)
         self.setOutputOp(outputOp)
         ### END finding input/output operations ###

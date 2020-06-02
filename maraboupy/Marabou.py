@@ -42,7 +42,7 @@ def read_nnet(filename, use_nlr=False):
     return MarabouNetworkNNet(filename, use_nlr=use_nlr)
 
 
-def read_tf(filename, inputNames=None, outputName=None, savedModel=False, savedModelTags=[]):
+def read_tf(filename, inputNames=None, outputName=None, savedModel_v1=False, savedModel_v2=False, savedModelTags=[]):
     """
     Constructs a MarabouNetworkTF object from a frozen Tensorflow protobuf
 
@@ -52,12 +52,13 @@ def read_tf(filename, inputNames=None, outputName=None, savedModel=False, savedM
                            contains .pb file and variables subdirectory.
         inputNames: (list of strings) optional, list of operation names corresponding to inputs.
         outputName: (string) optional, name of operation corresponding to output.
-        savedModel: (bool) If false, load frozen graph. If true, load SavedModel object.
+        savedModel_v1: (bool) If true, load SavedModel object created from tensorflow v1.X 
+        savedModel_v2: (bool) If true, load SavedModel object created from tensorflow v2.X
         savedModelTags: (list of strings) If loading a SavedModel, the user must specify tags used.
     Returns:
         marabouNetworkTF: (MarabouNetworkTF) representing network
     """
-    return MarabouNetworkTF(filename, inputNames, outputName, savedModel, savedModelTags)
+    return MarabouNetworkTF(filename, inputNames, outputName, savedModel_v1, savedModel_v2, savedModelTags)
 
 def read_onnx(filename, inputNames=None, outputName=None):
     """
