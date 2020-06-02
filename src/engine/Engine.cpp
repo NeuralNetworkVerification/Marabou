@@ -1947,7 +1947,6 @@ void Engine::updateScores()
                 }
             }
         }
-        return;
     }
     else if ( GlobalConfiguration::SPLITTING_HEURISTICS ==
               DivideStrategy::EarliestReLU )
@@ -1960,7 +1959,6 @@ void Engine::updateScores()
                 _candidatePlConstraints.insert( plConstraint );
             }
         }
-        return;
     }
     // Otherwise, we fall back to the constraint violation based splitting
     // heuristic
