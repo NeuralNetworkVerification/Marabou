@@ -64,6 +64,8 @@ void SmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
         _needToSplit = true;
         if ( GlobalConfiguration::SPLITTING_HEURISTICS ==
              DivideStrategy::ReLUViolation || !pickSplitPLConstraint() )
+            // If pickSplitConstraint failed to pick one, use the native
+            // relu-violation based splitting heuristic.
             _constraintForSplitting = constraint;
     }
 }
