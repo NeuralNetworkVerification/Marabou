@@ -1928,7 +1928,8 @@ void Engine::updateScores()
         // K is equal to GlobalConfiguration::RUNTIME_ESTIMATE_THRESHOLD
         log( Stringf( "Using polarity heuristics..." ) );
         for ( unsigned layer = 1; layer < _networkLevelReasoner->
-                  getNumberOfLayers() - 1; ++layer )
+                  getNumberOfLayers() - 1 && _candidatePlConstraints.size() <=
+                  GlobalConfiguration::RUNTIME_ESTIMATE_THRESHOLD; ++layer )
         {
             log( Stringf( "examining layer %u", layer ) );
             unsigned size = _networkLevelReasoner->getLayerSize( layer );
@@ -1942,7 +1943,7 @@ void Engine::updateScores()
                     _candidatePlConstraints.insert( plConstraint );
                     if ( _candidatePlConstraints.size() >=
                          GlobalConfiguration::RUNTIME_ESTIMATE_THRESHOLD )
-                        return;
+                        break;
                 }
             }
         }
