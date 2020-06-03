@@ -24,7 +24,7 @@ install:
   - $PY_CMD -m pip install --user --upgrade pip
   - $PY_CMD -m pip install --user --upgrade setuptools
   - $PY_CMD -m pip install --user wheel
-  - $PY_CMD -m pip install --user -r maraboupy/test_requirements.txt --cache-dir $HOME/.pip-cache
+  - $PY_CMD -m pip install --user -r maraboupy/test_requirements.txt --cache-dir $HOME/.pip-cache --progress-bar off
 
 matrix:
   include:
