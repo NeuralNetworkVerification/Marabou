@@ -589,7 +589,7 @@ void Layer::computeSymbolicBoundsForRelu()
         _symbolicUbOfUb[i] = sourceLayer->getSymbolicUbOfUb( sourceIndex._neuron );
 
         // Has the b variable been fixed?
-        if ( FloatUtils::isPositive( sourceLb ) )
+        if ( !FloatUtils::isNegative( sourceLb ) )
         {
             reluPhase = ReluConstraint::PHASE_ACTIVE;
         }
