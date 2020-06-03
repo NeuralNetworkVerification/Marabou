@@ -20,7 +20,7 @@
 #include "List.h"
 #include "MString.h"
 #include "Map.h"
-#include "NetworkLevelReasoner.h"
+#include "../nlr/NetworkLevelReasoner.h"
 #include "PiecewiseLinearConstraint.h"
 
 class InputQuery
