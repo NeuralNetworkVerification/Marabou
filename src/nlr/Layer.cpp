@@ -976,6 +976,8 @@ void Layer::eliminateVariable( unsigned variable, double value )
     if ( !_variableToNeuron.exists( variable ) )
         return;
 
+    ASSERT( _type != INPUT );
+
     unsigned neuron = _variableToNeuron[variable];
     _eliminatedNeurons[neuron] = value;
     _lb[neuron] = value;

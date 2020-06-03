@@ -113,6 +113,11 @@ private:
                              unsigned newLayerIndex );
 
     /*
+      All input/output variables
+    */
+    Set<unsigned> _inputOutputVariables;
+
+    /*
       The preprocessed query
     */
     InputQuery _preprocessed;
