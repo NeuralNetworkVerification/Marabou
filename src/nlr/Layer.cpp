@@ -1337,8 +1337,10 @@ bool Layer::neuronHasVariable( unsigned neuron ) const
 
 unsigned Layer::neuronToVariable( unsigned neuron ) const
 {
-    if ( !_neuronToVariable.exists( neuron ) )
-        ASSERT( _eliminatedNeurons.exists( neuron ) );
+    DEBUG({
+            if ( !_neuronToVariable.exists( neuron ) )
+                ASSERT( _eliminatedNeurons.exists( neuron ) );
+        })
 
     ASSERT( _neuronToVariable.exists( neuron ) );
     return _neuronToVariable[neuron];

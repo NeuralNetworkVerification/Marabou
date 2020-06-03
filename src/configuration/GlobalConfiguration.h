@@ -16,6 +16,8 @@
 #ifndef __GlobalConfiguration_h__
 #define __GlobalConfiguration_h__
 
+#include "DivideStrategy.h"
+
 class GlobalConfiguration
 {
 public:
@@ -110,7 +112,7 @@ public:
     // The number of violations of a constraints after which the SMT core will initiate a case split
     static const unsigned CONSTRAINT_VIOLATION_THRESHOLD;
 
-    static const unsigned SPLITTING_HEURISTICS;
+    static const DivideStrategy SPLITTING_HEURISTICS;
 
     // How often should we perform full bound tightening, on the entire contraints matrix A.
     static const unsigned BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY;
@@ -195,6 +197,11 @@ public:
     };
     static const BasisFactorizationType BASIS_FACTORIZATION_TYPE;
 
+    /* In the polarity-based branching heuristics, only this many earliest nodes
+       are considered to branch on.
+    */
+    static const unsigned RUNTIME_ESTIMATE_THRESHOLD;
+
     /*
       Logging options
     */
@@ -204,6 +211,7 @@ public:
     static const bool SMT_CORE_LOGGING;
     static const bool DANTZIGS_RULE_LOGGING;
     static const bool BASIS_FACTORIZATION_LOGGING;
+    static const bool PREPROCESSOR_LOGGING;
     static const bool PROJECTED_STEEPEST_EDGE_LOGGING;
     static const bool GAUSSIAN_ELIMINATION_LOGGING;
     static const bool QUERY_LOADER_LOGGING;

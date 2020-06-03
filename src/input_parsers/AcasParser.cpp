@@ -146,6 +146,9 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
         }
     }
 
+    // Create the network level reasoner
+    NLR::NetworkLevelReasoner *nlr = new NLR::NetworkLevelReasoner;
+
     // Add the ReLU constraints
     for ( unsigned i = 1; i < numberOfLayers - 1; ++i )
     {
@@ -156,9 +159,13 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
             unsigned b = _nodeToB[NodeIndex(i, j)];
             unsigned f = _nodeToF[NodeIndex(i, j)];
             PiecewiseLinearConstraint *relu = new ReluConstraint( b, f );
+
+            nlr->addConstraintInTopologicalOrder( relu );
+
             if ( GlobalConfiguration::SPLITTING_HEURISTICS ==
                  DivideStrategy::EarliestReLU )
                 relu->setScore( i );
+
             inputQuery.addPiecewiseLinearConstraint( relu );
         }
     }
@@ -171,8 +178,6 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
         inputQuery.markOutputVariable( _nodeToB[NodeIndex( numberOfLayers - 1, i )], i );
 
     // Populate the Network-Level Reasoner
-    NLR::NetworkLevelReasoner *nlr = new NLR::NetworkLevelReasoner;
-
     unsigned currentLayerIndex = 0;
     // Input layer
     nlr->addLayer( currentLayerIndex, NLR::Layer::INPUT, inputLayerSize );

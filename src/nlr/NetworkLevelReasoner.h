@@ -16,12 +16,12 @@
 #ifndef __NetworkLevelReasoner_h__
 #define __NetworkLevelReasoner_h__
 
-#include "NeuronIndex.h"
 #include "ITableau.h"
+#include "Layer.h"
 #include "Map.h"
+#include "NeuronIndex.h"
 #include "PiecewiseLinearFunctionType.h"
 #include "Tightening.h"
-#include "Layer.h"
 
 namespace NLR {
 
@@ -121,6 +121,13 @@ public:
     void updateVariableIndices( const Map<unsigned, unsigned> &oldIndexToNewIndex,
                                 const Map<unsigned, unsigned> &mergedVariables );
 
+    /*
+      The various piecewise-linear constraints, sorted in topological
+      order. The sorting is done externally.
+    */
+    List<PiecewiseLinearConstraint *> getConstraintsInTopologicalOrder();
+    void addConstraintInTopologicalOrder( PiecewiseLinearConstraint *constraint );
+
 private:
     Map<unsigned, Layer *> _layerIndexToLayer;
     const ITableau *_tableau;
@@ -131,6 +138,8 @@ private:
     void freeMemoryIfNeeded();
 
     static void log( const String &message );
+
+    List<PiecewiseLinearConstraint *> _constraintsInTopologicalOrder;
 };
 
 } // namespace NLR
