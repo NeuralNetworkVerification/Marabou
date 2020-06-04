@@ -408,16 +408,16 @@ void SignConstraint::getEntailedTightenings( List<Tightening> &tightenings ) con
 
     // Determine if we are in the positive phase, negative phase or unknown phase
     if ( !FloatUtils::isNegative( bLowerBound ) ||
-         !FloatUtils::isNegative( fLowerBound ))
+         FloatUtils::gt(fLowerBound, -1))
     {
-        // positive case // TODO - GUY MAIL - it is enough that f.lb > -1 to make it the positive phase (e.g., f>=-1/2 is enough)
+        // positive case
 
         tightenings.append( Tightening( _f, 1, Tightening::LB ) );
     }
     else if ( FloatUtils::isNegative( bUpperBound ) ||
-              FloatUtils::isNegative( fUpperBound ) )
+              FloatUtils::lt(fUpperBound, 1) )
     {
-        // negative case // TODO - GUY MAIL - LIKEWISE?
+        // negative case
 
         tightenings.append( Tightening( _f, -1, Tightening::UB ) );
     }
