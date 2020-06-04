@@ -166,6 +166,19 @@ endif()
 set(LIBS_INCLUDES ${Boost_INCLUDE_DIRS})
 set(LIBS ${Boost_LIBRARIES})
 
+set(GUROBI_DIR "/cs/staff/guykatz/gurobi902/linux64")
+set(GUROBI_LIB1 "gurobi_c++")
+set(GUROBI_LIB2 "gurobi90")
+
+add_library(${GUROBI_LIB1} SHARED IMPORTED)
+set_target_properties(${GUROBI_LIB1} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi_c++.a)
+list(APPEND LIBS ${GUROBI_LIB1})
+target_include_directories(${GUROBI_LIB1} INTERFACE ${GUROBI_DIR}/include/)
+
+add_library(${GUROBI_LIB2} SHARED IMPORTED)
+set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi90.so)
+list(APPEND LIBS ${GUROBI_LIB2})
+target_include_directories(${GUROBI_LIB2} INTERFACE ${GUROBI_DIR}/include/)
 
 # pthread
 set(THREADS_PREFER_PTHREAD_FLAG ON)
