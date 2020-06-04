@@ -17,18 +17,24 @@
 '''
 
 import numpy as np
-from tensorflow.python.framework import tensor_util
-from tensorflow.python.framework import graph_util
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 import tensorflow as tf
+from tensorflow.python.framework import tensor_util
+from tensorflow.python.framework import graph_util
 from maraboupy import MarabouUtils
 from maraboupy import MarabouNetwork
 
+# Try to load helper function available for tensorflow versions >=1.14.0
+try:
+    from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
+except:
+    pass
+
 class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
-    def __init__(self, filename, inputNames=None, outputName=None, savedModel=False, savedModelTags=[]):
+    def __init__(self, filename, inputNames=None, outputName=None, modelType="frozen", savedModelTags=[]):
         """
         Constructs a MarabouNetworkTF object from a frozen Tensorflow protobuf or SavedModel
 
@@ -38,12 +44,14 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
                                contains .pb file and variables subdirectory.
             inputName: (string) optional, name of operation corresponding to input.
             outputName: (string) optional, name of operation corresponding to output.
-            savedModel: (bool) If false, load frozen graph. If true, load SavedModel object.
+            modelType: (string) optional, type of model to read. The default is "frozen" for a frozen graph.
+                                Can also use "savedModel_v1" or "savedModel_v2" for the SavedModel format
+                                created from either tensorflow versions 1.X or 2.X respectively.
             savedModelTags: (list of strings) If loading a SavedModel, the user must specify tags used.
         """
         super().__init__()
         self.biasAddRelations = list()
-        self.readFromPb(filename, inputNames, outputName, savedModel, savedModelTags)
+        self.readFromPb(filename, inputNames, outputName, modelType, savedModelTags)
         self.processBiasAddRelations()
 
     def clear(self):
@@ -59,7 +67,7 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         self.sess = None
         self.biasAddRelations = list()
 
-    def readFromPb(self, filename, inputNames, outputName, savedModel, savedModelTags):
+    def readFromPb(self, filename, inputNames, outputName, modelType, savedModelTags):
         """
         Constructs a MarabouNetworkTF object from a frozen Tensorflow protobuf or SavedModel
 
@@ -69,31 +77,59 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
                                contains .pb file and variables subdirectory.
             inputName: (string) optional, name of operation corresponding to input.
             outputName: (string) optional, name of operation corresponding to output.
-            savedModel: (bool) If false, load frozen graph. If true, load SavedModel object.
+            modelType: (string) optional, type of model to read, such as "frozen" for a frozen graph.
+                                Can also use "savedModel_v1" or "savedModel_v2" for the SavedModel format
+                                created from either tensorflow versions 1.X or 2.X respectively.
             savedModelTags: (list of strings) If loading a SavedModel, the user must specify tags used.
         """
-
-        if savedModel:
-            ### Read SavedModel ###
-            sess = tf.Session()
-            tf.saved_model.loader.load(sess, savedModelTags, filename)
-
-            ### Simplify graph using outputName, which must be specified for SavedModel ###
-            simp_graph_def = graph_util.convert_variables_to_constants(sess,sess.graph.as_graph_def(),[outputName])
-            with tf.Graph().as_default() as graph:
-                tf.import_graph_def(simp_graph_def, name="")
-            self.sess = tf.Session(graph=graph)
-            ### End reading SavedModel
-
-        else:
-            ### Read protobuf file and begin session ###
-            with tf.gfile.GFile(filename, "rb") as f:
-                graph_def = tf.GraphDef()
+        
+        ### Read tensorflow model ###
+        if modelType == "frozen":
+            # Read frozen graph protobuf file
+            with tf.io.gfile.GFile(filename, "rb") as f:
+                graph_def = tf.compat.v1.GraphDef()
                 graph_def.ParseFromString(f.read())
             with tf.Graph().as_default() as graph:
                 tf.import_graph_def(graph_def, name="")
-            self.sess = tf.Session(graph=graph)
-            ### END reading protobuf ###
+            self.sess = tf.compat.v1.Session(graph=graph)
+            
+        elif modelType == "savedModel_v1":
+            # Use default tag for savedModel format for tensorflow 1.X
+            if not savedModelTags:
+                savedModelTags = ["serve"]
+                
+            # Read SavedModel format created by tensorflow version 1.X
+            sess = tf.compat.v1.Session()
+            tf.compat.v1.saved_model.loader.load(sess, savedModelTags, filename)
+
+            # Simplify graph using outputName, which must be specified for SavedModel
+            simp_graph_def = graph_util.convert_variables_to_constants(sess,sess.graph.as_graph_def(),[outputName])
+            with tf.Graph().as_default() as graph:
+                tf.import_graph_def(simp_graph_def, name="")
+            self.sess = tf.compat.v1.Session(graph=graph)
+
+        elif modelType == "savedModel_v2":
+            # Use default tag for savedModel format for tensorflow 2.X
+            if not savedModelTags:
+                savedModelTags = ["serving_default"]
+                
+            # Read SavedModel format created by tensorflow version 2.X
+            sess = tf.compat.v1.Session()
+            loaded = tf.saved_model.load(filename)
+            model = loaded.signatures[savedModelTags[0]]
+                
+            # Create a concrete function from model
+            full_model = tf.function(lambda x: model(x))
+            full_model = full_model.get_concrete_function(tf.TensorSpec(model.inputs[0].shape, model.inputs[0].dtype))
+
+            # Get frozen ConcreteFunction
+            frozen_func = convert_variables_to_constants_v2(full_model)
+            self.sess = tf.compat.v1.Session(graph=frozen_func.graph)
+            
+        else:
+            print("Unknown input to modelType")
+            print("Please use either ""frozen"", ""savedModel_v1"", or ""savedModel_v2""")
+            raise NotImplementedError
 
         ### Find operations corresponding to input and output ###
         if inputNames: # is not None
@@ -108,6 +144,9 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             outputOp = self.sess.graph.get_operation_by_name(outputName)
         else: # Assume that the last operation is the output
             outputOp = self.sess.graph.get_operations()[-1]
+            # Dig into graph until output is not an Identity operation
+            while outputOp.node_def.op == "Identity":
+                outputOp = outputOp.inputs[0].op
         self.setInputOps(inputOps)
         self.setOutputOp(outputOp)
         ### END finding input/output operations ###
@@ -209,7 +248,7 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             return tensor_util.MakeNdarray(tproto)
         ### END operations not requiring new variables ###
 
-        if op.node_def.op in ['MatMul', 'BiasAdd', 'Add', 'Sub', 'Relu', 'MaxPool', 'Conv2D', 'Placeholder']:
+        if op.node_def.op in ['MatMul', 'BiasAdd', 'Add', 'AddV2', 'Sub', 'Relu', 'MaxPool', 'Conv2D', 'Placeholder']:
             # need to create variables for these
             return self.opToVarArray(op)
 
@@ -490,7 +529,7 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             self.matMulEquations(op)
         elif op.node_def.op == 'BiasAdd':
             self.biasAddEquations(op)
-        elif op.node_def.op == 'Add':
+        elif op.node_def.op == 'Add' or op.node_def.op == 'AddV2':
             self.addEquations(op)
         elif op.node_def.op == 'Sub':
             self.subEquations(op)
