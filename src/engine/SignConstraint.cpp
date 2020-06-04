@@ -155,36 +155,6 @@ PiecewiseLinearCaseSplit SignConstraint::getPositiveSplit() const {
 
 
 
-List<PiecewiseLinearConstraint::Fix> SignConstraint::getSmartFixes( ITableau *tableau ) const {
-    ASSERT(!satisfied());
-    ASSERT(_assignment.exists(_f) && _assignment.size() > 1);
-
-    double bDeltaToFDelta;
-    double fDeltaToBDelta;
-    bool linearlyDependent = tableau->areLinearlyDependent(_b, _f, bDeltaToFDelta, fDeltaToBDelta);
-
-    /*
-      If b and f are linearly independent, there's nothing clever to be done -
-      just return the "non-smart" fixes.
-
-      We could potentially do something if both are basic, but for now we
-      return the non-smart fixes. Some dependency may be created when f or b are
-      pivoted out of the base; in which case we hope getSmartFixes will be called
-      again later, where we will be able to produce smart fixes.
-    */
-    if (!linearlyDependent)
-        return getPossibleFixes();
-
-    bool fIsBasic = tableau->isBasic(_f);
-    bool bIsBasic = tableau->isBasic(_b);
-    ASSERT(bIsBasic != fIsBasic);
-
-    List <PiecewiseLinearConstraint::Fix> fixes;
-
-    // todo fil - after consulting with Guy - TO IMPLEMENT
-
-    return fixes;
-}
 
 
 
@@ -212,14 +182,6 @@ bool SignConstraint::constraintObsolete() const
 }
 
 
-
-void SignConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
-{
-
-    // todo fil - after consulting with Guy - TO IMPLEMENT
-
-    return;
-}
 
 
 
@@ -382,6 +344,7 @@ List<PiecewiseLinearConstraint::Fix> SignConstraint::getSmartFixes( ITableau *ta
 {
     ASSERT(!satisfied());
     ASSERT(_assignment.exists(_f) && _assignment.size() > 1);
+    (void) tableau; // todo - void line added so compiler will see var used
 
     return getPossibleFixes();
 }
