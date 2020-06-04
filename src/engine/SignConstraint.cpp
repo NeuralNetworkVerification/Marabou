@@ -438,11 +438,12 @@ void SignConstraint::eliminateVariable( __attribute__((unused)) unsigned variabl
     DEBUG({
               if ( variable == _f )
               {
-                  if ( FloatUtils::gt( fixedValue, -1 ) )
+                  ASSERT((FloatUtils::areEqual(fixedValue,1))||(FloatUtils::areEqual(fixedValue,-1) ));
+                  if ( FloatUtils::areEqual(fixedValue, 1 ) )
                   {
                       ASSERT( _phaseStatus != PHASE_NEGATIVE );
                   }
-                  else if ( FloatUtils::lt( fixedValue, 1 ) )
+                  else if (FloatUtils::areEqual(fixedValue, -1 )  )
                   {
                       ASSERT( _phaseStatus != PHASE_POSITIVE );
                   }
@@ -458,7 +459,7 @@ void SignConstraint::eliminateVariable( __attribute__((unused)) unsigned variabl
                       ASSERT( _phaseStatus != PHASE_POSITIVE );
                   }
               }
-          });
+          };
     // In a Sign constraint, if a variable is removed the entire constraint can be discarded.
     _haveEliminatedVariables = true;
 }
