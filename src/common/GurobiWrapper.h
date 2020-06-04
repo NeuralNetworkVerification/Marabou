@@ -16,15 +16,60 @@
 #ifndef __GurobiWrapper_h__
 #define __GurobiWrapper_h__
 
+#include "MString.h"
+#include "Map.h"
+
 #include "gurobi_c++.h"
 
 class GurobiWrapper
 {
 public:
+    /*
+      A term has the form: coefficient * variable
+    */
+    struct Term
+    {
+        Term( double coefficient, String variable )
+            : _coefficient( coefficient )
+            , _variable( variable )
+        {
+        }
+
+        Term()
+            : _coefficient( 0 )
+            , _variable( "" )
+        {
+        }
+
+        double _coefficient;
+        String _variable;
+    };
+
     GurobiWrapper();
     ~GurobiWrapper();
 
-    void run();
+    // Add a new variabel to the model
+    void addVariable( String name, double lb, double ub );
+
+    // Add a new constraint, e.g. 3x + 4y <= -5
+    void addLeqConstraint( const List<Term> &terms, double scalar );
+
+    // A cost function to minimize
+    void setCost( const List<Term> &terms );
+
+    // Solve and extract the solution
+    void solve();
+    void extractSolution( Map<String, double> &values, double &cost );
+
+private:
+    GRBEnv *_environment;
+    GRBModel *_model;
+    Map<String, GRBVar *> _nameToVariable;
+
+    // Create a fresh model
+    void reset();
+
+    void freeMemoryIfNeeded();
 };
 
 #endif // __GurobiWrapper_h__

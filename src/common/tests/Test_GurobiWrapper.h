@@ -16,6 +16,7 @@
 
 #include <cxxtest/TestSuite.h>
 
+#include "FloatUtils.h"
 #include "GurobiWrapper.h"
 #include "MString.h"
 #include "MockErrno.h"
@@ -35,10 +36,45 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete mockErrno );
     }
 
-    void test_run()
+    void test_optimize()
     {
-        GurobiWrapper gw;
-        gw.run();
+        GurobiWrapper gurobi;
+
+        gurobi.addVariable( "x", 0, 3 );
+        gurobi.addVariable( "y", 0, 3 );
+        gurobi.addVariable( "z", 0, 3 );
+
+        // x + y + z <= 5
+        List<GurobiWrapper::Term> contraint = {
+            GurobiWrapper::Term( 1, "x" ),
+            GurobiWrapper::Term( 1, "y" ),
+            GurobiWrapper::Term( 1, "z" ),
+        };
+
+        gurobi.addLeqConstraint( contraint, 5 );
+
+        // Cost: -x - 2y + z
+        List<GurobiWrapper::Term> cost = {
+            GurobiWrapper::Term( -1, "x" ),
+            GurobiWrapper::Term( -2, "y" ),
+            GurobiWrapper::Term( +1, "z" ),
+        };
+
+        gurobi.setCost( cost );
+
+        // Solve and extract
+        TS_ASSERT_THROWS_NOTHING( gurobi.solve() );
+
+        Map<String, double> solution;
+        double costValue;
+
+        TS_ASSERT_THROWS_NOTHING( gurobi.extractSolution( solution, costValue ) );
+
+        TS_ASSERT( FloatUtils::areEqual( solution["x"], 2 ) );
+        TS_ASSERT( FloatUtils::areEqual( solution["y"], 3 ) );
+        TS_ASSERT( FloatUtils::areEqual( solution["z"], 0 ) );
+
+        TS_ASSERT( FloatUtils::areEqual( costValue, -8 ) );
     }
 };
 

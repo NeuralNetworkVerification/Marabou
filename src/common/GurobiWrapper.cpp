@@ -13,6 +13,7 @@
 
  **/
 
+#include "Debug.h"
 #include "GurobiWrapper.h"
 
 #include <iostream>
@@ -20,134 +21,103 @@
 using namespace std;
 
 GurobiWrapper::GurobiWrapper()
+    : _environment( NULL )
+    , _model( NULL )
 {
+    _environment = new GRBEnv;
+    _model = new GRBModel( *_environment );
 }
 
 GurobiWrapper::~GurobiWrapper()
 {
+    freeMemoryIfNeeded();
 }
 
-void GurobiWrapper::run()
+void GurobiWrapper::freeMemoryIfNeeded()
 {
-    GRBEnv environment = GRBEnv();
-    GRBModel model = GRBModel( environment );
+    for ( auto &entry : _nameToVariable )
+    {
+        delete entry.second;
+        entry.second = NULL;
+    }
+    _nameToVariable.clear();
 
-    double lb = 0.0, ub = 1.0;
+    if ( _model )
+    {
+        delete _model;
+        _model = NULL;
+    }
 
-    GRBVar x = model.addVar( lb, ub, 0.0, GRB_CONTINUOUS, "x" );
-    GRBVar y = model.addVar( lb, ub, 0.0, GRB_CONTINUOUS, "y" );
-    GRBVar z = model.addVar( lb, ub, 0.0, GRB_CONTINUOUS, "z" );
-
-    // Set objective for y
-
-    model.setObjective( -y );
-
-    // Add constraint: x + 2 y + 3 z <= 4
-
-    model.addConstr(x + 2 * y + 3 * z <= 4, "c0");
-
-    model.optimize();
-
-    cout << "IsMIP: " << model.get(GRB_IntAttr_IsMIP) << endl;
-
-    cout << x.get(GRB_StringAttr_VarName) << " "
-         << x.get(GRB_DoubleAttr_X) << endl;
-    cout << y.get(GRB_StringAttr_VarName) << " "
-         << y.get(GRB_DoubleAttr_X) << endl;
-    cout << z.get(GRB_StringAttr_VarName) << " "
-         << z.get(GRB_DoubleAttr_X) << endl;
-
-    cout << "Obj: " << model.get(GRB_DoubleAttr_ObjVal) << endl;
-
+    if ( _environment )
+    {
+        delete _environment;
+        _environment = NULL;
+    }
 }
 
+void GurobiWrapper::reset()
+{
+    freeMemoryIfNeeded();
+    _environment = new GRBEnv;
+    _model = new GRBModel( *_environment );
+}
 
-//         // Create variables
-//         unsigned n = _tableau.getN();
-//         unsigned m = _tableau.getM();
-//         GRBVar vars[n];
-//         for (unsigned i = 0; i < n; ++i) {
-//             double lb = _tableau.getLowerBound(i);
-//             double ub = _tableau.getUpperBound(i);
-//             vars[i] = model.addVar(lb, ub, 1.0, GRB_CONTINUOUS, "x" + std::to_string(i));
-//             // printf("\tx%u: [%.2f, %.2f]\n", i, lb, ub);
-//         }
+void GurobiWrapper::addVariable( String name, double lb, double ub )
+{
+    ASSERT( !_nameToVariable.exists( name ) );
 
-//         // Add constraints
-//         for (unsigned i = 0; i < m; ++i) {
-//             TableauRow row(n);
-//             _tableau.getTableauRow(i, &row);
+    GRBVar *newVar = new GRBVar;
+    double objectiveValue = 0;
+    *newVar = _model->addVar( lb,
+                              ub,
+                              objectiveValue,
+                              GRB_CONTINUOUS,
+                              name.ascii() );
 
-//             unsigned lhs_var_id = row._lhs;
-//             GRBLinExpr lhs = vars[lhs_var_id];
-//             // printf("\tx%u = ", lhs_var_id);
 
-//             double row_scalar = row._scalar;
-//             GRBLinExpr rhs = GRBLinExpr(row_scalar);
-//             // if (row_scalar > 0) {
-//             //     printf("%.2f ", row_scalar);
-//             // } else if (row_scalar < 0) {
-//             //     printf("%.2f ", row_scalar);
-//             // }
+    _nameToVariable[name] = newVar;
+}
 
-//             for (unsigned j = 0; j <= n - m; ++j)
-//             {
-//                 unsigned var_id = row._row[j]._var;
-//                 double coef = row._row[j]._coefficient;
-//                 GRBVar var = vars[var_id];
-//                 if (coef != 0) {
-//                     rhs += coef * var;
-//                 }
-//                 // if (coef > 0) {
-//                 //     printf("+ %.2fx%u ", coef, var_id);
-//                 // } else if (coef < 0) {
-//                 //     printf("%.2fx%u ", coef, var_id);
-//                 // }
-//             }
+void GurobiWrapper::addLeqConstraint( const List<Term> &terms, double scalar )
+{
+    GRBLinExpr constraint;
 
-//             model.addConstr(lhs, GRB_EQUAL, rhs, "c" + std::to_string(i));
-//             // printf("\n");
-//         }
+    for ( const auto &term : terms )
+    {
+        ASSERT( _nameToVariable.exists( term._variable ) );
+        constraint += GRBLinExpr( *_nameToVariable[term._variable], term._coefficient );
+    }
 
-//         // Set objective
-//         GRBLinExpr objectiveExpr = vars[objectiveVar];
+    _model->addConstr( constraint, GRB_LESS_EQUAL, scalar );
+}
 
-//         if (shouldTightenLowerBound) {
-//             // Optimize min value
-//             try {
-//                 model.setObjective(objectiveExpr, GRB_MINIMIZE);
-//                 model.optimize();
-//                 double minValue = model.get(GRB_DoubleAttr_ObjVal);
-//                 _tableau.tightenLowerBound(objectiveVar, minValue);
-//                 // printf("\tMin: %.2f\n", minValue);
-//             } catch (...) {
-//                 // printf("\tMin value haven't changed\n");
-//             }
-//         }
+void GurobiWrapper::setCost( const List<Term> &terms )
+{
+    GRBLinExpr cost;
 
-//         if (shouldTightenUpperBound) {
-//             // Optimize max value
-//             try {
-//                 model.setObjective(objectiveExpr, GRB_MAXIMIZE);
-//                 model.optimize();
-//                 double maxValue = model.get(GRB_DoubleAttr_ObjVal);
-//                 _tableau.tightenUpperBound(objectiveVar, maxValue);
-//                 // printf("\tMax: %.2f\n", maxValue);
-//             } catch(...) {
-//                 // printf("\tMax value haven't changed\n");
-//             }
-//         }
+    for ( const auto &term : terms )
+    {
+        ASSERT( _nameToVariable.exists( term._variable ) );
+        cost += GRBLinExpr( *_nameToVariable[term._variable], term._coefficient );
+    }
 
-//     } catch(GRBException e) {
-//         printf("%s%d\n", "Error code = ", e.getErrorCode());
-//         printf("%s\n", e.getMessage().c_str());
-//     } catch(...) {
-//         printf("%s\n", "Exception during optimization");
-//     }
+    _model->setObjective( cost );
+}
 
-//     struct timespec end = TimeUtils::sampleMicro();
-//     _statistics->addTimeForLPSolverTightenings( TimeUtils::timePassed( start, end ) );
-// }
+void GurobiWrapper::solve()
+{
+    _model->optimize();
+}
+
+void GurobiWrapper::extractSolution( Map<String, double> &values, double &cost )
+{
+    values.clear();
+
+    for ( const auto &variable : _nameToVariable )
+        values[variable.first] = variable.second->get( GRB_DoubleAttr_X );
+
+    cost = _model->get( GRB_DoubleAttr_ObjVal );
+}
 
 //
 // Local Variables:
