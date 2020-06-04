@@ -16,6 +16,8 @@
 #ifndef __GurobiWrapper_h__
 #define __GurobiWrapper_h__
 
+#ifdef ENABLE_GUROBI
+
 #include "MString.h"
 #include "Map.h"
 
@@ -71,6 +73,8 @@ private:
 
     void freeMemoryIfNeeded();
 };
+
+#endif // ENABLE_GUROBI
 
 #endif // __GurobiWrapper_h__
 

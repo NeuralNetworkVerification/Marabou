@@ -13,6 +13,8 @@
 
  **/
 
+#ifdef ENABLE_GUROBI
+
 #include "Debug.h"
 #include "GurobiWrapper.h"
 
@@ -118,6 +120,8 @@ void GurobiWrapper::extractSolution( Map<String, double> &values, double &cost )
 
     cost = _model->get( GRB_DoubleAttr_ObjVal );
 }
+
+#endif // ENABLE_GUROBI
 
 //
 // Local Variables:

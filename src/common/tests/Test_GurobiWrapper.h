@@ -38,6 +38,7 @@ public:
 
     void test_optimize()
     {
+#ifdef ENABLE_GUROBI
         GurobiWrapper gurobi;
 
         gurobi.addVariable( "x", 0, 3 );
@@ -75,6 +76,10 @@ public:
         TS_ASSERT( FloatUtils::areEqual( solution["z"], 0 ) );
 
         TS_ASSERT( FloatUtils::areEqual( costValue, -8 ) );
+
+#else
+        TS_ASSERT( true );
+#endif // ENABLE_GUROBI
     }
 };
 

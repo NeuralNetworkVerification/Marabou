@@ -14,7 +14,6 @@ option(RUN_MEMORY_TEST "run cxxtest testing with ASAN ON" ON)
 option(RUN_PYTHON_TEST "run python API tests if building with python" OFF)
 
 option(ENABLE_GUROBI "Enable use the Gurobi optimizer" OFF)
-set(GUROBI_DIR "/dev/null")
 
 set(DEFAULT_PYTHON_VERSION "3" CACHE STRING "Default Python version 2/3")
 set(PYTHON_VERSIONS_SUPPORTED 2 3)
@@ -169,6 +168,8 @@ set(LIBS_INCLUDES ${Boost_INCLUDE_DIRS})
 set(LIBS ${Boost_LIBRARIES})
 
 if (${ENABLE_GUROBI})
+  add_compile_definitions(ENABLE_GUROBI)
+
   set(GUROBI_LIB1 "gurobi_c++")
   set(GUROBI_LIB2 "gurobi90")
 
@@ -181,7 +182,7 @@ if (${ENABLE_GUROBI})
   set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi90.so)
   list(APPEND LIBS ${GUROBI_LIB2})
   target_include_directories(${GUROBI_LIB2} INTERFACE ${GUROBI_DIR}/include/)
-endif();
+endif()
 
 # pthread
 set(THREADS_PREFER_PTHREAD_FLAG ON)
