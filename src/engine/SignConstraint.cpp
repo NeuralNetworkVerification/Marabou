@@ -154,24 +154,6 @@ PiecewiseLinearCaseSplit SignConstraint::getPositiveSplit() const {
 }
 
 
-List<PiecewiseLinearConstraint::Fix> SignConstraint::getPossibleFixes() const {
-    ASSERT(!satisfied());
-    ASSERT(_assignment.exists(_b));
-    ASSERT(_assignment.exists(_f));
-
-    double bValue = _assignment.get(_b);
-    double fValue = _assignment.get(_f);
-
-    ASSERT(!FloatUtils::isNegative(fValue));
-
-    List <PiecewiseLinearConstraint::Fix> fixes;
-
-    // todo fil - after consulting with Guy - TO IMPLEMENT
-
-    return fixes;
-}
-
-
 
 List<PiecewiseLinearConstraint::Fix> SignConstraint::getSmartFixes( ITableau *tableau ) const {
     ASSERT(!satisfied());
@@ -373,8 +355,6 @@ List<PiecewiseLinearConstraint::Fix> SignConstraint::getPossibleFixes() const
     double bValue = _assignment.get( _b );
     double fValue = _assignment.get( _f );
 
-    ASSERT( !FloatUtils::isNegative( fValue ) );
-
     List<PiecewiseLinearConstraint::Fix> fixes;
 
     // Possible violations:
@@ -403,7 +383,6 @@ List<PiecewiseLinearConstraint::Fix> SignConstraint::getSmartFixes( ITableau *ta
     ASSERT(!satisfied());
     ASSERT(_assignment.exists(_f) && _assignment.size() > 1);
 
-    // TODO
     return getPossibleFixes();
 }
 
@@ -431,14 +410,14 @@ void SignConstraint::getEntailedTightenings( List<Tightening> &tightenings ) con
     if ( !FloatUtils::isNegative( bLowerBound ) ||
          !FloatUtils::isNegative( fLowerBound ))
     {
-        // positive case
+        // positive case // TODO - GUY MAIL - it is enough that f.lb > -1 to make it the positive phase (e.g., f>=-1/2 is enough)
 
         tightenings.append( Tightening( _f, 1, Tightening::LB ) );
     }
     else if ( FloatUtils::isNegative( bUpperBound ) ||
               FloatUtils::isNegative( fUpperBound ) )
     {
-        // negative case
+        // negative case // TODO - GUY MAIL - LIKEWISE?
 
         tightenings.append( Tightening( _f, -1, Tightening::UB ) );
     }
