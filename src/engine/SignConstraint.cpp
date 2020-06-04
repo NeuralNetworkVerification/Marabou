@@ -394,3 +394,71 @@ void SignConstraint::setPhaseStatus( PhaseStatus phaseStatus )
 {
     _phaseStatus = phaseStatus;
 }
+
+
+
+
+void SignConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
+{
+    ASSERT( oldIndex == _b || oldIndex == _f  );
+    ASSERT( !_assignment.exists( newIndex ) &&
+            !_lowerBounds.exists( newIndex ) &&
+            !_upperBounds.exists( newIndex ) &&
+            newIndex != _b && newIndex != _f );
+
+    if ( _assignment.exists( oldIndex ) )
+    {
+        _assignment[newIndex] = _assignment.get( oldIndex );
+        _assignment.erase( oldIndex );
+    }
+
+    if ( _lowerBounds.exists( oldIndex ) )
+    {
+        _lowerBounds[newIndex] = _lowerBounds.get( oldIndex );
+        _lowerBounds.erase( oldIndex );
+    }
+
+    if ( _upperBounds.exists( oldIndex ) )
+    {
+        _upperBounds[newIndex] = _upperBounds.get( oldIndex );
+        _upperBounds.erase( oldIndex );
+    }
+
+    if ( oldIndex == _b )
+        _b = newIndex;
+    else if ( oldIndex == _f )
+        _f = newIndex;
+}
+
+void SignConstraint::eliminateVariable( __attribute__((unused)) unsigned variable,
+                                        __attribute__((unused)) double fixedValue )
+{
+    ASSERT( variable == _b || variable == _f );
+
+    DEBUG({
+              if ( variable == _f )
+              {
+                  if ( FloatUtils::gt( fixedValue, -1 ) )
+                  {
+                      ASSERT( _phaseStatus != PHASE_NEGATIVE );
+                  }
+                  else if ( FloatUtils::lt( fixedValue, 1 ) )
+                  {
+                      ASSERT( _phaseStatus != PHASE_POSITIVE );
+                  }
+              }
+              else if (variable == _b)
+              {
+                  if ( FloatUtils::gte( fixedValue, 0 ) )
+                  {
+                      ASSERT( _phaseStatus != PHASE_NEGATIVE );
+                  }
+                  else if ( FloatUtils::lt( fixedValue, 0 ) )
+                  {
+                      ASSERT( _phaseStatus != PHASE_POSITIVE );
+                  }
+              }
+          });
+    // In a Sign constraint, if a variable is removed the entire constraint can be discarded.
+    _haveEliminatedVariables = true;
+}

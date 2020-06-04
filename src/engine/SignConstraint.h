@@ -2,15 +2,17 @@
 // Created by guyam on 5/20/20.
 //
 
+
 #ifndef MARABOU_SIGNCONSTRAINT_H
 #define MARABOU_SIGNCONSTRAINT_H
 
-
-
-
-
 #include "Map.h"
 #include "PiecewiseLinearConstraint.h"
+
+// todo
+
+
+
 
 
 class SignConstraint : public PiecewiseLinearConstraint
@@ -106,6 +108,16 @@ public:
     PiecewiseLinearCaseSplit getValidCaseSplit() const;
 
 
+
+    /*
+    Preprocessing related functions, to inform that a variable has
+    been eliminated completely because it was fixed to some value,
+    or that a variable's index has changed (e.g., x4 is now called
+    x2). constraintObsolete() returns true iff and the constraint
+    has become obsolote as a result of variable eliminations.
+    */
+    void eliminateVariable( unsigned variable, double fixedValue );
+    void updateVariableIndex( unsigned oldIndex, unsigned newIndex );
     /*
      Returns true iff and the constraint has become obsolote as a result of variable eliminations.
     */
