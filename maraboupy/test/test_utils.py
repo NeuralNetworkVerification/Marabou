@@ -11,6 +11,7 @@ import os
 
 # Global settings
 OPT = Marabou.createOptions(verbosity = 0)     # Turn off printing
+TOL = 1e-8                                     # Set tolerance for equality constraints
 NETWORK_FILE = "../../resources/onnx/fc1.onnx" # File for test network
 np.random.seed(123)                            # Seed random numbers for repeatability
 NUM_RAND = 1                                   # Default number of random test points per example
@@ -30,7 +31,7 @@ def test_equality_output():
 
         # Call to Marabou solver
         vals, _ = network.solve(options = OPT, verbose = False)
-        assert vals[outputVar] == outputValue
+        assert np.abs(vals[outputVar] - outputValue) < TOL
         
         # Remove inequality constraint, so that a new one can be applied in the next iteration
         network.equList = network.equList[:-1]
@@ -56,7 +57,7 @@ def test_equality_input():
     
     # Call to Marabou solver
     vals, _ = network.solve(options = OPT, verbose = False)
-    assert np.dot([vals[inVar] for inVar in inputVars], weights) == averageInputValue
+    assert np.abs(np.dot([vals[inVar] for inVar in inputVars], weights) - averageInputValue) < TOL
     assert vals[outputVar] >= minOutputValue
 
 def test_inequality_output():
