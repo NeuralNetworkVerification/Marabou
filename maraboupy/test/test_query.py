@@ -30,8 +30,8 @@ def test_query(tmpdir):
     ipq = Marabou.load_query(queryFile)
     
     # Solve the query loaded from the file and compare to the solution of the original query
-    vals_net, _ = network.solve(options = OPT, verbose = False)
-    vals_ipq, _ = Marabou.solve_query(ipq, verbosity = 0, verbose = False)
+    vals_net, _ = network.solve(options = OPT)
+    vals_ipq, _ = Marabou.solve_query(ipq, verbosity = 0)
     
     # The two value dictionaries should have the same number of variables, 
     # the same keys, and the values assigned should be within some tolerance of each other
