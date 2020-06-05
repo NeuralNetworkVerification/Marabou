@@ -30,6 +30,11 @@ AbsoluteValueConstraint::AbsoluteValueConstraint( unsigned b, unsigned f )
     setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
 }
 
+PiecewiseLinearFunctionType AbsoluteValueConstraint::getType() const
+{
+    return PiecewiseLinearFunctionType::ABSOLUTE_VALUE;
+}
+
 PiecewiseLinearConstraint *AbsoluteValueConstraint::duplicateConstraint() const
 {
     AbsoluteValueConstraint *clone = new AbsoluteValueConstraint( _b, _f );
@@ -261,6 +266,7 @@ PiecewiseLinearCaseSplit AbsoluteValueConstraint::getValidCaseSplit() const
 
 void AbsoluteValueConstraint::eliminateVariable( unsigned variable, double /* fixedValue */ )
 {
+    (void)variable;
     ASSERT( variable = _b );
 
     // In an absolute value constraint, if a variable is removed the

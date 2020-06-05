@@ -18,7 +18,9 @@
 
 #include "ITableau.h"
 #include "Map.h"
+#include "PiecewiseLinearFunctionType.h"
 #include "Tightening.h"
+#include "PiecewiseLinearConstraint.h"
 
 /*
   A class for performing operations that require knowledge of network
@@ -59,21 +61,16 @@ public:
     NetworkLevelReasoner();
     ~NetworkLevelReasoner();
 
-    /*
-      Interface methods for populating the network: settings its
-      number of layers and the layer sizes, kinds of activation
-      functions, weights and biases, etc.
-    */
-    enum ActivationFunction {
-        ReLU = 0,
-        AbsoluteValue = 1,
-    };
+    static bool functionTypeSupported( PiecewiseLinearFunctionType type );
 
     void setNumberOfLayers( unsigned numberOfLayers );
     void setLayerSize( unsigned layer, unsigned size );
-    void setNeuronActivationFunction( unsigned layer, unsigned neuron, ActivationFunction activationFuction );
+    void setNeuronActivationFunction( unsigned layer, unsigned neuron, PiecewiseLinearFunctionType activationFuction );
     void setWeight( unsigned sourceLayer, unsigned sourceNeuron, unsigned targetNeuron, double weight );
     void setBias( unsigned layer, unsigned neuron, double bias );
+
+    unsigned getLayerSize( unsigned layer );
+    unsigned getNumberOfLayers();
 
     /*
       A method that allocates all internal memory structures, based on
@@ -92,6 +89,12 @@ public:
     unsigned getActivationResultVariable( unsigned layer, unsigned neuron ) const;
     const Map<Index, unsigned> &getIndexToWeightedSumVariable();
     const Map<Index, unsigned> &getIndexToActivationResultVariable();
+    void setIndexToPLConstraint( unsigned layer, unsigned neuron,
+                                 PiecewiseLinearConstraint *constraint );
+
+    Map<Index, PiecewiseLinearConstraint *> getIndexToPLConstraint();
+    PiecewiseLinearConstraint *getPLConstraintFromIndex( unsigned layer,
+                                                         unsigned neuron );
 
     /*
       Mapping from node indices to the nodes' assignments, as computed
@@ -147,10 +150,15 @@ public:
 
     void getConstraintTightenings( List<Tightening> &tightenings ) const;
 
+    /*
+      For debugging purposes: dump the network topology
+    */
+    void dumpTopology() const;
+
 private:
     unsigned _numberOfLayers;
     Map<unsigned, unsigned> _layerSizes;
-    Map<Index, ActivationFunction> _neuronToActivationFunction;
+    Map<Index, PiecewiseLinearFunctionType> _neuronToActivationFunction;
     double **_weights;
     double **_positiveWeights;
     double **_negativeWeights;
@@ -173,6 +181,7 @@ private:
     Map<Index, unsigned> _indexToActivationResultVariable;
     Map<unsigned, Index> _weightedSumVariableToIndex;
     Map<unsigned, Index> _activationResultVariableToIndex;
+    Map<Index, PiecewiseLinearConstraint *> _indexToPiecewiseLinearConstraint;
 
     /*
       Store the assignment to all variables when evaluate() is called

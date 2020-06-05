@@ -24,7 +24,7 @@ install:
   - $PY_CMD -m pip install --user --upgrade pip
   - $PY_CMD -m pip install --user --upgrade setuptools
   - $PY_CMD -m pip install --user wheel
-  - $PY_CMD -m pip install --user -r maraboupy/test_requirements.txt --cache-dir $HOME/.pip-cache
+  - $PY_CMD -m pip install --user -r maraboupy/test_requirements.txt --cache-dir $HOME/.pip-cache --progress-bar off
 
 matrix:
   include:
@@ -39,7 +39,7 @@ matrix:
       - ctest -L system -j 2
       - ctest -L regress[0-1] -j 2
       - cd ..
-      - $PY_CMD -m pytest maraboupy/test
+      - $PY_CMD -m pytest --cov=maraboupy maraboupy/test
 
     - os: linux
       dist: xenial
@@ -47,12 +47,12 @@ matrix:
       script:
       - mkdir - p build
       - cd build
-      - cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=$(which $PY_CMD)
+      - cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=$(which $PY_CMD) -DCMAKE_BUILD_TYPE=Debug
       - cmake --build . -j 2
       - ctest -L system -j 2
       - ctest -L regress0 -j 2
       - cd ..
-      - $PY_CMD -m pytest maraboupy/test
+      - $PY_CMD -m pytest --cov=maraboupy maraboupy/test
 
     - os: windows
       script:
@@ -64,7 +64,7 @@ matrix:
       - ctest -L regress0 -j 2 # does not work ...
       - cd ..
       - cp maraboupy/Release/* maraboupy
-      - $PY_CMD -m pytest maraboupy/test
+      - $PY_CMD -m pytest --cov=maraboupy maraboupy/test
 
 after_success:
   - codecov

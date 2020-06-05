@@ -23,7 +23,8 @@
 #include <cstring>
 
 NetworkLevelReasoner::NetworkLevelReasoner()
-    : _weights( NULL )
+    : _numberOfLayers( 0 )
+    , _weights( NULL )
     , _positiveWeights( NULL )
     , _negativeWeights( NULL )
     , _maxLayerSize( 0 )
@@ -240,6 +241,9 @@ void NetworkLevelReasoner::allocateMemoryByTopology()
 {
     freeMemoryIfNeeded();
 
+    if ( _numberOfLayers == 0 )
+        return;
+
     _weights = new double *[_numberOfLayers - 1];
     if ( !_weights )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "NetworkLevelReasoner::weights" );
@@ -316,7 +320,7 @@ void NetworkLevelReasoner::allocateMemoryByTopology()
     _previousLayerUpperBias = new double[_maxLayerSize];
 }
 
-void NetworkLevelReasoner::setNeuronActivationFunction( unsigned layer, unsigned neuron, ActivationFunction activationFuction )
+void NetworkLevelReasoner::setNeuronActivationFunction( unsigned layer, unsigned neuron, PiecewiseLinearFunctionType activationFuction )
 {
     _neuronToActivationFunction[Index( layer, neuron )] = activationFuction;
 }
@@ -337,6 +341,17 @@ void NetworkLevelReasoner::setWeight( unsigned sourceLayer, unsigned sourceNeuro
 void NetworkLevelReasoner::setBias( unsigned layer, unsigned neuron, double bias )
 {
     _bias[Index( layer, neuron )] = bias;
+}
+
+unsigned NetworkLevelReasoner::getLayerSize( unsigned layer )
+{
+    ASSERT( layer < _numberOfLayers );
+    return _layerSizes[ layer ];
+}
+
+unsigned NetworkLevelReasoner::getNumberOfLayers()
+{
+    return _numberOfLayers;
 }
 
 void NetworkLevelReasoner::evaluate( double *input, double *output )
@@ -371,12 +386,12 @@ void NetworkLevelReasoner::evaluate( double *input, double *output )
 
                 switch ( _neuronToActivationFunction[index] )
                 {
-                case ReLU:
+                case PiecewiseLinearFunctionType::RELU:
                     if ( _work2[targetNeuron] < 0 )
                         _work2[targetNeuron] = 0;
                     break;
 
-                case AbsoluteValue:
+                case PiecewiseLinearFunctionType::ABSOLUTE_VALUE:
                     _work2[targetNeuron] = FloatUtils::abs( _work2[targetNeuron] );
                     break;
 
@@ -457,6 +472,7 @@ void NetworkLevelReasoner::storeIntoOther( NetworkLevelReasoner &other ) const
     other._indexToActivationResultAssignment = _indexToActivationResultAssignment;
     other._eliminatedWeightedSumVariables = _eliminatedWeightedSumVariables;
     other._eliminatedActivationResultVariables = _eliminatedActivationResultVariables;
+    other._indexToPiecewiseLinearConstraint = _indexToPiecewiseLinearConstraint;
 }
 
 const Map<NetworkLevelReasoner::Index, unsigned> &NetworkLevelReasoner::getIndexToWeightedSumVariable()
@@ -477,6 +493,29 @@ const Map<NetworkLevelReasoner::Index, double> &NetworkLevelReasoner::getIndexTo
 const Map<NetworkLevelReasoner::Index, double> &NetworkLevelReasoner::getIndexToActivationResultAssignment()
 {
     return _indexToActivationResultAssignment;
+}
+
+Map<NetworkLevelReasoner::Index, PiecewiseLinearConstraint *> NetworkLevelReasoner::getIndexToPLConstraint()
+{
+    return _indexToPiecewiseLinearConstraint;
+}
+
+void NetworkLevelReasoner::setIndexToPLConstraint( unsigned layer,
+                                                   unsigned neuron,
+                                                   PiecewiseLinearConstraint
+                                                   *constraint )
+{
+    _indexToPiecewiseLinearConstraint[Index( layer, neuron )] = constraint;
+}
+
+PiecewiseLinearConstraint * NetworkLevelReasoner::getPLConstraintFromIndex
+( unsigned layer, unsigned neuron )
+{
+    Index index( layer, neuron );
+    if ( !_indexToPiecewiseLinearConstraint.exists( index ) )
+        throw MarabouError( MarabouError::INVALID_MAP_INDEX,
+                            Stringf( "Index: <%u,%u>", layer, neuron ).ascii() );
+    return _indexToPiecewiseLinearConstraint[index];
 }
 
 void NetworkLevelReasoner::updateVariableIndices( const Map<unsigned, unsigned> &oldIndexToNewIndex,
@@ -654,7 +693,7 @@ void NetworkLevelReasoner::intervalArithmeticBoundPropagation()
 
                 switch ( _neuronToActivationFunction[index] )
                 {
-                case ReLU:
+                case PiecewiseLinearFunctionType::RELU:
                     if ( lb < 0 )
                         lb = 0;
 
@@ -665,7 +704,7 @@ void NetworkLevelReasoner::intervalArithmeticBoundPropagation()
 
                     break;
 
-                case AbsoluteValue:
+                case PiecewiseLinearFunctionType::ABSOLUTE_VALUE:
                     if ( lb > 0 )
                     {
                         if ( lb > _lowerBoundsActivations[i][j] )
@@ -873,11 +912,11 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
 
                 switch ( _neuronToActivationFunction[index] )
                 {
-                case ReLU:
+                case PiecewiseLinearFunctionType::RELU:
                     reluSymbolicPropagation( index, lbLb, lbUb, ubLb, ubUb );
                     break;
 
-                case AbsoluteValue:
+                case PiecewiseLinearFunctionType::ABSOLUTE_VALUE:
                     absoluteValueSymbolicPropagation( index, lbLb, lbUb, ubLb, ubUb );
                     break;
 
@@ -1164,6 +1203,85 @@ void NetworkLevelReasoner::log( const String &message )
 {
     if ( GlobalConfiguration::NETWORK_LEVEL_REASONER_LOGGING )
         printf( "%s", message.ascii() );
+}
+
+bool NetworkLevelReasoner::functionTypeSupported( PiecewiseLinearFunctionType type )
+{
+    if ( type == PiecewiseLinearFunctionType::RELU )
+        return true;
+
+    if ( type == PiecewiseLinearFunctionType::ABSOLUTE_VALUE )
+        return true;
+
+    return false;
+}
+
+void NetworkLevelReasoner::dumpTopology() const
+{
+    printf( "Number of layers: %u.\n", _numberOfLayers );
+    for ( unsigned i = 0; i < _numberOfLayers; ++i )
+        printf( "\t%u\n", _layerSizes[i] );
+
+    for ( unsigned i = 0; i < _numberOfLayers; ++i )
+    {
+        unsigned layerSize = _layerSizes[i];
+        printf( "\nDumping info for layer %u:\n", i );
+        printf( "\tNeurons:\n" );
+        for ( unsigned j = 0; j < layerSize; ++j )
+        {
+            printf( "\t\t" );
+            Index index( i, j );
+            if ( _indexToWeightedSumVariable.exists( index ) )
+                printf( "%4u ", _indexToWeightedSumVariable[index] );
+            else
+                printf( "   " );
+
+            printf( "--> " );
+
+            if ( _indexToActivationResultVariable.exists( index ) )
+                printf( "%4u ", _indexToActivationResultVariable[index] );
+
+            if ( _neuronToActivationFunction.exists( index ) )
+            {
+                switch ( _neuronToActivationFunction[index] )
+                {
+                case PiecewiseLinearFunctionType::RELU:
+                    printf( "   (ReLU)" );
+                    break;
+
+                case PiecewiseLinearFunctionType::ABSOLUTE_VALUE:
+                    printf( "   (Absolute Value)" );
+                    break;
+
+                default:
+                    printf( "   (Unknown)" );
+                    break;
+                }
+            }
+
+            printf( "\n" );
+        }
+
+        if ( i > 0 )
+        {
+            printf( "\n\tEquations:\n" );
+            for ( unsigned j = 0; j < layerSize; ++j )
+            {
+                printf( "\t\tx%u = ", _indexToWeightedSumVariable[Index( i, j )]);
+                for ( unsigned k = 0; k < _layerSizes[i-1]; ++k )
+                {
+                    double weight = _weights[i-1][k * layerSize + j];
+                    if ( FloatUtils::isZero( weight ) )
+                        continue;
+
+                    printf( " %+.5lfx%u", -weight, _indexToActivationResultVariable[Index( i - 1, k )] );
+                }
+
+                double bias = _bias[Index( i, j )];
+                printf( " %+.2lf\n", bias );
+            }
+        }
+    }
 }
 
 //

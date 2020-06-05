@@ -100,12 +100,12 @@ public:
         nlr.setWeightedSumVariable( 3, 1, 13 );
 
         // Mark nodes as ReLUs
-        nlr.setNeuronActivationFunction( 1, 0, NetworkLevelReasoner::ReLU );
-        nlr.setNeuronActivationFunction( 1, 1, NetworkLevelReasoner::ReLU );
-        nlr.setNeuronActivationFunction( 1, 2, NetworkLevelReasoner::ReLU );
+        nlr.setNeuronActivationFunction( 1, 0, PiecewiseLinearFunctionType::RELU );
+        nlr.setNeuronActivationFunction( 1, 1, PiecewiseLinearFunctionType::RELU );
+        nlr.setNeuronActivationFunction( 1, 2, PiecewiseLinearFunctionType::RELU );
 
-        nlr.setNeuronActivationFunction( 2, 0, NetworkLevelReasoner::ReLU );
-        nlr.setNeuronActivationFunction( 2, 1, NetworkLevelReasoner::ReLU );
+        nlr.setNeuronActivationFunction( 2, 0, PiecewiseLinearFunctionType::RELU );
+        nlr.setNeuronActivationFunction( 2, 1, PiecewiseLinearFunctionType::RELU );
     }
 
     void test_evaluate_relus()
@@ -157,9 +157,9 @@ public:
         populateNetwork( nlr );
 
         // Override activation functions for the first hidden layer
-        nlr.setNeuronActivationFunction( 1, 0, NetworkLevelReasoner::AbsoluteValue );
-        nlr.setNeuronActivationFunction( 1, 1, NetworkLevelReasoner::AbsoluteValue );
-        nlr.setNeuronActivationFunction( 1, 2, NetworkLevelReasoner::AbsoluteValue );
+        nlr.setNeuronActivationFunction( 1, 0, PiecewiseLinearFunctionType::ABSOLUTE_VALUE );
+        nlr.setNeuronActivationFunction( 1, 1, PiecewiseLinearFunctionType::ABSOLUTE_VALUE );
+        nlr.setNeuronActivationFunction( 1, 2, PiecewiseLinearFunctionType::ABSOLUTE_VALUE );
 
         nlr.setWeight( 1, 2, 1, -5 );
 
@@ -367,12 +367,12 @@ public:
         NetworkLevelReasoner nlr;
         populateNetwork( nlr );
 
-        nlr.setNeuronActivationFunction( 1, 0, NetworkLevelReasoner::AbsoluteValue );
-        nlr.setNeuronActivationFunction( 1, 1, NetworkLevelReasoner::AbsoluteValue );
-        nlr.setNeuronActivationFunction( 1, 2, NetworkLevelReasoner::AbsoluteValue );
+        nlr.setNeuronActivationFunction( 1, 0, PiecewiseLinearFunctionType::ABSOLUTE_VALUE );
+        nlr.setNeuronActivationFunction( 1, 1, PiecewiseLinearFunctionType::ABSOLUTE_VALUE );
+        nlr.setNeuronActivationFunction( 1, 2, PiecewiseLinearFunctionType::ABSOLUTE_VALUE );
 
-        nlr.setNeuronActivationFunction( 2, 0, NetworkLevelReasoner::AbsoluteValue );
-        nlr.setNeuronActivationFunction( 2, 1, NetworkLevelReasoner::AbsoluteValue );
+        nlr.setNeuronActivationFunction( 2, 0, PiecewiseLinearFunctionType::ABSOLUTE_VALUE );
+        nlr.setNeuronActivationFunction( 2, 1, PiecewiseLinearFunctionType::ABSOLUTE_VALUE );
 
         MockTableau tableau;
 
@@ -551,8 +551,8 @@ public:
         nlr.setWeightedSumVariable( 2, 0, 6 );
 
         // Mark nodes as ReLUs
-        nlr.setNeuronActivationFunction( 1, 0, NetworkLevelReasoner::ReLU );
-        nlr.setNeuronActivationFunction( 1, 1, NetworkLevelReasoner::ReLU );
+        nlr.setNeuronActivationFunction( 1, 0, PiecewiseLinearFunctionType::RELU );
+        nlr.setNeuronActivationFunction( 1, 1, PiecewiseLinearFunctionType::RELU );
 
         // Very loose bounds for neurons except inputs
         double large = 1000000;
@@ -858,8 +858,8 @@ public:
         nlr.setTableau( &tableau );
         populateNetworkSBT( nlr, tableau );
 
-        nlr.setNeuronActivationFunction( 1, 0, NetworkLevelReasoner::ReLU );
-        nlr.setNeuronActivationFunction( 1, 1, NetworkLevelReasoner::ReLU );
+        nlr.setNeuronActivationFunction( 1, 0, PiecewiseLinearFunctionType::RELU );
+        nlr.setNeuronActivationFunction( 1, 1, PiecewiseLinearFunctionType::RELU );
 
         tableau.setLowerBound( 0, 4 );
         tableau.setUpperBound( 0, 6 );
@@ -928,8 +928,8 @@ public:
         nlr.setTableau( &tableau );
         populateNetworkSBT( nlr, tableau );
 
-        nlr.setNeuronActivationFunction( 1, 0, NetworkLevelReasoner::AbsoluteValue );
-        nlr.setNeuronActivationFunction( 1, 1, NetworkLevelReasoner::AbsoluteValue );
+        nlr.setNeuronActivationFunction( 1, 0, PiecewiseLinearFunctionType::ABSOLUTE_VALUE );
+        nlr.setNeuronActivationFunction( 1, 1, PiecewiseLinearFunctionType::ABSOLUTE_VALUE );
 
         tableau.setLowerBound( 0, 4 );
         tableau.setUpperBound( 0, 6 );
@@ -1002,8 +1002,8 @@ public:
         nlr.setTableau( &tableau );
         populateNetworkSBT( nlr, tableau );
 
-        nlr.setNeuronActivationFunction( 1, 0, NetworkLevelReasoner::AbsoluteValue );
-        nlr.setNeuronActivationFunction( 1, 1, NetworkLevelReasoner::AbsoluteValue );
+        nlr.setNeuronActivationFunction( 1, 0, PiecewiseLinearFunctionType::ABSOLUTE_VALUE );
+        nlr.setNeuronActivationFunction( 1, 1, PiecewiseLinearFunctionType::ABSOLUTE_VALUE );
 
         tableau.setLowerBound( 0, 4 );
         tableau.setUpperBound( 0, 6 );
@@ -1079,8 +1079,8 @@ public:
         nlr.setTableau( &tableau );
         populateNetworkSBT( nlr, tableau );
 
-        nlr.setNeuronActivationFunction( 1, 0, NetworkLevelReasoner::AbsoluteValue );
-        nlr.setNeuronActivationFunction( 1, 1, NetworkLevelReasoner::AbsoluteValue );
+        nlr.setNeuronActivationFunction( 1, 0, PiecewiseLinearFunctionType::ABSOLUTE_VALUE );
+        nlr.setNeuronActivationFunction( 1, 1, PiecewiseLinearFunctionType::ABSOLUTE_VALUE );
 
         tableau.setLowerBound( 0, 4 );
         tableau.setUpperBound( 0, 6 );

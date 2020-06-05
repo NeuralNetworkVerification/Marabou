@@ -84,7 +84,7 @@ public:
     /*
       Remove an equation from equation list
     */
-    void removeEquation(Equation e);
+    void removeEquation( Equation e );
 
     /*
       Assignment operator and copy constructor, duplicate the constraints.
