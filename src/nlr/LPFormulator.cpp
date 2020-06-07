@@ -29,11 +29,23 @@ LPFormulator::~LPFormulator()
 {
 }
 
+void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> &layers )
+{
+    GurobiWrapper gurobi;
+    createLPRelaxation( layers, gurobi );
+    printf( "Done creating relaxation, dumping model\n" );
+
+    gurobi.dump();
+
+}
+
 void LPFormulator::createLPRelaxation( const Map<unsigned, Layer *> &layers,
                                        GurobiWrapper &gurobi )
 {
     for ( const auto &layer : layers )
     {
+        printf( "LP Formulator: starting work on layer %u\n", layer.second->getLayerIndex() );
+
         switch ( layer.second->getLayerType() )
         {
         case Layer::INPUT:
@@ -148,22 +160,35 @@ void LPFormulator::addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi,
 {
     for ( unsigned i = 0; i < layer->getSize(); ++i )
     {
+        printf( "\tNeuron: <%u, %u>\n", layer->getLayerIndex(), i );
+
         if ( !layer->neuronEliminated( i ) )
         {
+            printf( "\t\t not eliminated\n" );
+
             unsigned varibale = layer->neuronToVariable( i );
+
+            printf( "\t\tVariable is: %u\n", varibale );
+
             gurobi.addVariable( Stringf( "x%u", varibale ),
                                 layer->getLb( i ),
                                 layer->getUb( i ) );
 
             List<GurobiWrapper::Term> terms;
-            double bias = layer->getBias( i );
+            terms.append( GurobiWrapper::Term( -1, Stringf( "x%u", varibale ) ) );
+
+            double bias = -layer->getBias( i );
+
+            printf( "\t\tBias is: %.5lf\n", bias );
 
             for ( const auto &sourceLayerPair : layer->getSourceLayers() )
             {
                 const Layer *sourceLayer = _layerOwner->getLayer( sourceLayerPair.first );
                 unsigned sourceLayerSize = sourceLayerPair.second;
 
-                for ( unsigned j = 0; i < sourceLayerSize; ++j )
+                printf( "\t\tHandling source layer %u, size %u\n", sourceLayer->getLayerIndex(), sourceLayerSize );
+
+                for ( unsigned j = 0; j < sourceLayerSize; ++j )
                 {
                     double weight = layer->getWeight( sourceLayerPair.first, j, i );
                     if ( !sourceLayer->neuronEliminated( j ) )
@@ -174,7 +199,7 @@ void LPFormulator::addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi,
                     }
                     else
                     {
-                        bias -= weight * sourceLayer->getEliminatedNeuronValue( j );
+                        bias += weight * sourceLayer->getEliminatedNeuronValue( j );
                     }
                 }
             }

@@ -70,6 +70,11 @@ public:
     void solve();
     void extractSolution( Map<String, double> &values, double &cost );
 
+    void dump()
+    {
+        _model->write( "model.lp" );
+    }
+
 private:
     GRBEnv *_environment;
     GRBModel *_model;

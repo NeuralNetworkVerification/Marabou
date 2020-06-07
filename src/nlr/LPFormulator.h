@@ -27,10 +27,12 @@ public:
     LPFormulator( LayerOwner *layerOwner );
     ~LPFormulator();
 
-    void createLPRelaxation( const Map<unsigned, Layer *> &layers, GurobiWrapper &gurobi );
+    void optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> &layers );
 
 private:
     LayerOwner *_layerOwner;
+
+    void createLPRelaxation( const Map<unsigned, Layer *> &layers, GurobiWrapper &gurobi );
 
     void addInputLayerToLpRelaxation( GurobiWrapper &gurobi,
                                       const Layer *layer );
