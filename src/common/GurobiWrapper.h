@@ -53,11 +53,15 @@ public:
     // Add a new variabel to the model
     void addVariable( String name, double lb, double ub );
 
-    // Add a new constraint, e.g. 3x + 4y <= -5
+    // Add a new LEQ constraint, e.g. 3x + 4y <= -5
     void addLeqConstraint( const List<Term> &terms, double scalar );
 
-    // A cost function to minimize
+    // Add a new EQ constraint, e.g. 3x + 4y = -5
+    void addEqConstraint( const List<Term> &terms, double scalar );
+
+    // A cost function to minimize, or an objective function to maximize
     void setCost( const List<Term> &terms );
+    void setObjective( const List<Term> &terms );
 
     // Solve and extract the solution
     void solve();

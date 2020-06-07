@@ -93,6 +93,19 @@ void GurobiWrapper::addLeqConstraint( const List<Term> &terms, double scalar )
     _model->addConstr( constraint, GRB_LESS_EQUAL, scalar );
 }
 
+void GurobiWrapper::addEqConstraint( const List<Term> &terms, double scalar )
+{
+    GRBLinExpr constraint;
+
+    for ( const auto &term : terms )
+    {
+        ASSERT( _nameToVariable.exists( term._variable ) );
+        constraint += GRBLinExpr( *_nameToVariable[term._variable], term._coefficient );
+    }
+
+    _model->addConstr( constraint, GRB_EQUAL, scalar );
+}
+
 void GurobiWrapper::setCost( const List<Term> &terms )
 {
     GRBLinExpr cost;
@@ -103,7 +116,20 @@ void GurobiWrapper::setCost( const List<Term> &terms )
         cost += GRBLinExpr( *_nameToVariable[term._variable], term._coefficient );
     }
 
-    _model->setObjective( cost );
+    _model->setObjective( cost, GRB_MINIMIZE );
+}
+
+void GurobiWrapper::setObjective( const List<Term> &terms )
+{
+    GRBLinExpr cost;
+
+    for ( const auto &term : terms )
+    {
+        ASSERT( _nameToVariable.exists( term._variable ) );
+        cost += GRBLinExpr( *_nameToVariable[term._variable], term._coefficient );
+    }
+
+    _model->setObjective( cost, GRB_MAXIMIZE );
 }
 
 void GurobiWrapper::solve()

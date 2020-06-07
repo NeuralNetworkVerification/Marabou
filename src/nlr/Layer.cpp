@@ -202,6 +202,11 @@ void Layer::addSourceLayer( unsigned layerNumber, unsigned layerSize )
     }
 }
 
+const Map<unsigned, unsigned> &Layer::getSourceLayers() const
+{
+    return _sourceLayers;
+}
+
 void Layer::setWeight( unsigned sourceLayer, unsigned sourceNeuron, unsigned targetNeuron, double weight )
 {
     unsigned index = sourceNeuron * _size + targetNeuron;
@@ -213,9 +218,22 @@ void Layer::setWeight( unsigned sourceLayer, unsigned sourceNeuron, unsigned tar
         _layerToNegativeWeights[sourceLayer][index] = weight;
 }
 
+double Layer::getWeight( unsigned sourceLayer,
+                         unsigned sourceNeuron,
+                         unsigned targetNeuron ) const
+{
+    unsigned index = sourceNeuron * _size + targetNeuron;
+    return _layerToWeights[sourceLayer][index];
+}
+
 void Layer::setBias( unsigned neuron, double bias )
 {
     _bias[neuron] = bias;
+}
+
+double Layer::getBias( unsigned neuron ) const
+{
+    return _bias[neuron];
 }
 
 void Layer::addActivationSource( unsigned sourceLayer, unsigned sourceNeuron, unsigned targetNeuron )
@@ -1352,6 +1370,17 @@ unsigned Layer::variableToNeuron( unsigned variable ) const
 {
     ASSERT( _variableToNeuron.exists( variable ) );
     return _variableToNeuron[variable];
+}
+
+bool Layer::neuronEliminated( unsigned neuron ) const
+{
+    return _eliminatedNeurons.exists( neuron );
+}
+
+double Layer::getEliminatedNeuronValue( unsigned neuron ) const
+{
+    ASSERT( _eliminatedNeurons.exists( neuron ) );
+    return _eliminatedNeurons[neuron];
 }
 
 } // namespace NLR
