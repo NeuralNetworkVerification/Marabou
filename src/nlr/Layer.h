@@ -90,6 +90,8 @@ public:
       Bound related functionality: grab the current bounds from the
       Tableau, or compute bounds from source layers
     */
+    void setLb( unsigned neuron, double bound );
+    void setUb( unsigned neuron, double bound );
     double getLb( unsigned neuron ) const;
     double getUb( unsigned neuron ) const;
 

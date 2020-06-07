@@ -68,7 +68,7 @@ public:
 
     // Solve and extract the solution
     void solve();
-    void extractSolution( Map<String, double> &values, double &cost );
+    void extractSolution( Map<String, double> &values, double &costOrObjective );
 
     void dump()
     {

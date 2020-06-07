@@ -17,6 +17,7 @@
 #include "LPFormulator.h"
 #include "Layer.h"
 #include "MStringf.h"
+#include "TimeUtils.h"
 
 namespace NLR {
 
@@ -31,20 +32,91 @@ LPFormulator::~LPFormulator()
 
 void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> &layers )
 {
-    GurobiWrapper gurobi;
-    createLPRelaxation( layers, gurobi );
-    printf( "Done creating relaxation, dumping model\n" );
+    List<GurobiWrapper::Term> terms;
+    Map<String, double> dontCare;
+    double lb, ub;
 
-    gurobi.dump();
+    unsigned tighterBoundCounter = 0;
+    unsigned signChanges = 0;
 
+    struct timespec gurobiStart = TimeUtils::sampleMicro();
+
+    for ( const auto &layer : layers )
+    {
+        for ( unsigned i = 0; i < layer.second->getSize(); ++i )
+        {
+            if ( layer.second->neuronEliminated( i ) )
+                continue;
+
+            unsigned variable = layer.second->neuronToVariable( i );
+            Stringf variableName( "x%u", variable );
+
+            {
+                // Maximize
+                GurobiWrapper gurobi;
+                createLPRelaxation( layers, gurobi, 1000 );
+                terms.clear();
+                terms.append( GurobiWrapper::Term( 1, variableName ) );
+                gurobi.setObjective( terms );
+                gurobi.solve();
+                gurobi.extractSolution( dontCare, ub );
+            }
+
+            {
+                // Minimize
+                GurobiWrapper gurobi;
+                createLPRelaxation( layers, gurobi, 1000 );
+                terms.clear();
+                terms.append( GurobiWrapper::Term( 1, variableName ) );
+                gurobi.setCost( terms );
+                gurobi.solve();
+                gurobi.extractSolution( dontCare, lb );
+            }
+
+            // Store the new bounds if they are tighter
+            if ( lb > layer.second->getLb( i ) )
+            {
+                if ( FloatUtils::isNegative( layer.second->getLb( i ) ) &&
+                     !FloatUtils::isNegative( lb ) )
+                    ++signChanges;
+
+                layer.second->setLb( i, lb );
+                _layerOwner->receiveTighterBound( Tightening( variable,
+                                                              lb,
+                                                              Tightening::LB ) );
+                ++tighterBoundCounter;
+            }
+
+            if ( ub < layer.second->getUb( i ) )
+            {
+                if ( FloatUtils::isPositive( layer.second->getUb( i ) ) &&
+                     !FloatUtils::isPositive( ub ) )
+                    ++signChanges;
+
+                layer.second->setUb( i, ub );
+                _layerOwner->receiveTighterBound( Tightening( variable,
+                                                              ub,
+                                                              Tightening::UB ) );
+                ++tighterBoundCounter;
+            }
+        }
+    }
+
+    printf( "Number of tighter bounds found by Gurobi: %u. Sign changes: %u\n",
+            tighterBoundCounter, signChanges );
+
+    struct timespec gurobiEnd = TimeUtils::sampleMicro();
+    printf( "Seconds spent Gurobi'ing seconds: %llu\n", TimeUtils::timePassed( gurobiStart, gurobiEnd ) / 1000000 );
 }
 
 void LPFormulator::createLPRelaxation( const Map<unsigned, Layer *> &layers,
-                                       GurobiWrapper &gurobi )
+                                       GurobiWrapper &gurobi,
+                                       unsigned lastLayer )
 {
     for ( const auto &layer : layers )
     {
-        printf( "LP Formulator: starting work on layer %u\n", layer.second->getLayerIndex() );
+        if ( layer.first > lastLayer )
+            return;
 
         switch ( layer.second->getLayerType() )
         {
@@ -160,15 +232,9 @@ void LPFormulator::addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi,
 {
     for ( unsigned i = 0; i < layer->getSize(); ++i )
     {
-        printf( "\tNeuron: <%u, %u>\n", layer->getLayerIndex(), i );
-
         if ( !layer->neuronEliminated( i ) )
         {
-            printf( "\t\t not eliminated\n" );
-
             unsigned varibale = layer->neuronToVariable( i );
-
-            printf( "\t\tVariable is: %u\n", varibale );
 
             gurobi.addVariable( Stringf( "x%u", varibale ),
                                 layer->getLb( i ),
@@ -179,14 +245,10 @@ void LPFormulator::addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi,
 
             double bias = -layer->getBias( i );
 
-            printf( "\t\tBias is: %.5lf\n", bias );
-
             for ( const auto &sourceLayerPair : layer->getSourceLayers() )
             {
                 const Layer *sourceLayer = _layerOwner->getLayer( sourceLayerPair.first );
                 unsigned sourceLayerSize = sourceLayerPair.second;
-
-                printf( "\t\tHandling source layer %u, size %u\n", sourceLayer->getLayerIndex(), sourceLayerSize );
 
                 for ( unsigned j = 0; j < sourceLayerSize; ++j )
                 {

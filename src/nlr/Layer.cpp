@@ -309,6 +309,18 @@ double Layer::getUb( unsigned neuron ) const
     return _ub[neuron];
 }
 
+void Layer::setLb( unsigned neuron, double bound )
+{
+    ASSERT( !_eliminatedNeurons.exists( neuron ) );
+    _lb[neuron] = bound;
+}
+
+void Layer::setUb( unsigned neuron, double bound )
+{
+    ASSERT( !_eliminatedNeurons.exists( neuron ) );
+    _ub[neuron] = bound;
+}
+
 void Layer::computeIntervalArithmeticBounds()
 {
     ASSERT( _type != INPUT );

@@ -28,6 +28,9 @@ GurobiWrapper::GurobiWrapper()
 {
     _environment = new GRBEnv;
     _model = new GRBModel( *_environment );
+
+    // Suppress printing
+    _model->getEnv().set( GRB_IntParam_OutputFlag, 0 );
 }
 
 GurobiWrapper::~GurobiWrapper()
@@ -139,14 +142,14 @@ void GurobiWrapper::solve()
     _model->optimize();
 }
 
-void GurobiWrapper::extractSolution( Map<String, double> &values, double &cost )
+void GurobiWrapper::extractSolution( Map<String, double> &values, double &costOrObjective )
 {
     values.clear();
 
     for ( const auto &variable : _nameToVariable )
         values[variable.first] = variable.second->get( GRB_DoubleAttr_X );
 
-    cost = _model->get( GRB_DoubleAttr_ObjVal );
+    costOrObjective = _model->get( GRB_DoubleAttr_ObjVal );
 }
 
 #endif // ENABLE_GUROBI
