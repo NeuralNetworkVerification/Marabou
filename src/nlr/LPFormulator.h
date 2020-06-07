@@ -27,7 +27,7 @@ public:
     LPFormulator( LayerOwner *layerOwner );
     ~LPFormulator();
 
-    void createLPRelaxation( const Map<unsigned, Layer *> &layers );
+    void createLPRelaxation( const Map<unsigned, Layer *> &layers, GurobiWrapper &gurobi );
 
 private:
     LayerOwner *_layerOwner;
@@ -35,7 +35,8 @@ private:
     void addInputLayerToLpRelaxation( GurobiWrapper &gurobi,
                                       const Layer *layer );
 
-    void addReluLayerToLpRelaxation();
+    void addReluLayerToLpRelaxation( GurobiWrapper &gurobi,
+                                     const Layer *layer );
 
     void addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi,
                                             const Layer *layer );

@@ -56,6 +56,9 @@ public:
     // Add a new LEQ constraint, e.g. 3x + 4y <= -5
     void addLeqConstraint( const List<Term> &terms, double scalar );
 
+    // Add a new GEQ constraint, e.g. 3x + 4y >= -5
+    void addGeqConstraint( const List<Term> &terms, double scalar );
+
     // Add a new EQ constraint, e.g. 3x + 4y = -5
     void addEqConstraint( const List<Term> &terms, double scalar );
 
@@ -71,6 +74,8 @@ private:
     GRBEnv *_environment;
     GRBModel *_model;
     Map<String, GRBVar *> _nameToVariable;
+
+    void addConstraint( const List<Term> &terms, double scalar, char sense );
 
     // Create a fresh model
     void reset();

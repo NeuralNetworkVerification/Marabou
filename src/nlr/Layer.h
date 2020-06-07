@@ -60,11 +60,14 @@ public:
     double getWeight( unsigned sourceLayer,
                       unsigned sourceNeuron,
                       unsigned targetNeuron ) const;
+
     void setBias( unsigned neuron, double bias );
     double getBias( unsigned neuron ) const;
+
     void addActivationSource( unsigned sourceLayer,
                               unsigned sourceNeuron,
                               unsigned targetNeuron );
+    List<NeuronIndex> getActivationSources( unsigned neuron ) const;
 
     void setNeuronVariable( unsigned neuron, unsigned variable );
     bool neuronHasVariable( unsigned neuron ) const;

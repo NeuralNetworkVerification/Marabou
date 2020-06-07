@@ -29,10 +29,9 @@ LPFormulator::~LPFormulator()
 {
 }
 
-void LPFormulator::createLPRelaxation( const Map<unsigned, Layer *> &layers )
+void LPFormulator::createLPRelaxation( const Map<unsigned, Layer *> &layers,
+                                       GurobiWrapper &gurobi )
 {
-    GurobiWrapper gurobi;
-
     for ( const auto &layer : layers )
     {
         switch ( layer.second->getLayerType() )
@@ -42,7 +41,7 @@ void LPFormulator::createLPRelaxation( const Map<unsigned, Layer *> &layers )
             break;
 
         case Layer::RELU:
-            addReluLayerToLpRelaxation();
+            addReluLayerToLpRelaxation( gurobi, layer.second );
             break;
 
         case Layer::WEIGHTED_SUM:
@@ -70,8 +69,78 @@ void LPFormulator::addInputLayerToLpRelaxation( GurobiWrapper &gurobi,
     }
 }
 
-void LPFormulator::addReluLayerToLpRelaxation()
+void LPFormulator::addReluLayerToLpRelaxation( GurobiWrapper &gurobi,
+                                               const Layer *layer )
 {
+    for ( unsigned i = 0; i < layer->getSize(); ++i )
+    {
+        if ( !layer->neuronEliminated( i ) )
+        {
+            unsigned targetVariable = layer->neuronToVariable( i );
+
+            List<NeuronIndex> sources = layer->getActivationSources( i );
+            const Layer *sourceLayer = _layerOwner->getLayer( sources.begin()->_layer );
+            unsigned sourceNeuron = sources.begin()->_neuron;
+            unsigned sourceVariable = sourceLayer->neuronToVariable( sourceNeuron );
+
+            double sourceLb = sourceLayer->getLb( sourceNeuron );
+            double sourceUb = sourceLayer->getUb( sourceNeuron );
+
+            gurobi.addVariable( Stringf( "x%u", targetVariable ),
+                                0,
+                                layer->getUb( i ) );
+
+            if ( !FloatUtils::isNegative( sourceLb ) )
+            {
+                // The ReLU is active, y = x
+                if ( sourceLb < 0 )
+                    sourceLb = 0;
+
+                List<GurobiWrapper::Term> terms;
+                terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
+                terms.append( GurobiWrapper::Term( -1, Stringf( "x%u", sourceVariable ) ) );
+                gurobi.addGeqConstraint( terms, 0 );
+            }
+            else if ( !FloatUtils::isPositive( sourceUb ) )
+            {
+                // The ReLU is inactive, y = 0
+                List<GurobiWrapper::Term> terms;
+                terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
+                gurobi.addGeqConstraint( terms, 0 );
+            }
+            else
+            {
+                /*
+                  The phase of this ReLU is not yet fixed.
+
+                  For y = ReLU(x), we add the following triangular relaxation:
+
+                  1. y >= 0
+                  2. y >= x
+                  3. y is below the line the crosses (x.lb,0) and (x.ub,x.ub)
+                */
+
+                // y >= 0
+                List<GurobiWrapper::Term> terms;
+                terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
+                gurobi.addGeqConstraint( terms, 0 );
+
+                // y >= x, i.e. y - x >= 0
+                terms.append( GurobiWrapper::Term( -1, Stringf( "x%u", sourceVariable ) ) );
+                gurobi.addGeqConstraint( terms, 0 );
+
+                /*
+                  u        ul
+                  y <= ----- x - -----
+                  u - l     u - l
+                */
+                terms.clear();
+                terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
+                terms.append( GurobiWrapper::Term( -sourceUb / ( sourceUb - sourceLb ), Stringf( "x%u", sourceVariable ) ) );
+                gurobi.addLeqConstraint( terms, ( -sourceUb * sourceLb ) / ( sourceUb - sourceLb ));
+            }
+        }
+    }
 }
 
 void LPFormulator::addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi,

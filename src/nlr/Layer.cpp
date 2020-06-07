@@ -251,6 +251,11 @@ void Layer::addActivationSource( unsigned sourceLayer, unsigned sourceNeuron, un
         });
 }
 
+List<NeuronIndex> Layer::getActivationSources( unsigned neuron ) const
+{
+    return _neuronToActivationSources[neuron];
+}
+
 unsigned Layer::getSize() const
 {
     return _size;

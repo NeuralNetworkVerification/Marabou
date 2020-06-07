@@ -122,7 +122,8 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
 void NetworkLevelReasoner::lpRelaxationPropagation()
 {
     LPFormulator lpFormulator( this );
-    lpFormulator.createLPRelaxation( _layerIndexToLayer );
+    GurobiWrapper gurobi;
+    lpFormulator.createLPRelaxation( _layerIndexToLayer, gurobi );
 }
 
 void NetworkLevelReasoner::intervalArithmeticBoundPropagation()
