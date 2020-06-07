@@ -1089,6 +1089,32 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         delete[] constraintMatrix;
 
+        // New step: use LP relaxations to tighten the bounds further
+        if ( _networkLevelReasoner )
+        {
+            _networkLevelReasoner->obtainCurrentBounds();
+            _networkLevelReasoner->lpRelaxationPropagation();
+
+            List<Tightening> tightenings;
+            _networkLevelReasoner->getConstraintTightenings( tightenings );
+
+            for ( const auto &tightening : tightenings )
+            {
+                if ( tightening._type == Tightening::LB &&
+                     _tableau->getLowerBound( tightening._variable ) < tightening._value )
+                {
+                    _tableau->tightenLowerBound( tightening._variable, tightening._value );
+                }
+
+                if ( tightening._type == Tightening::UB &&
+                     _tableau->getUpperBound( tightening._variable ) > tightening._value )
+                {
+                    _tableau->tightenUpperBound( tightening._variable, tightening._value );
+                }
+            }
+        }
+        // End new step
+
         struct timespec end = TimeUtils::sampleMicro();
         _statistics.setPreprocessingTime( TimeUtils::timePassed( start, end ) );
     }
