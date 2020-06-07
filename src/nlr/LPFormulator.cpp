@@ -54,7 +54,7 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
             {
                 // Maximize
                 GurobiWrapper gurobi;
-                createLPRelaxation( layers, gurobi, 1000 );
+                createLPRelaxation( layers, gurobi, layer.first );
                 terms.clear();
                 terms.append( GurobiWrapper::Term( 1, variableName ) );
                 gurobi.setObjective( terms );
@@ -65,7 +65,7 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
             {
                 // Minimize
                 GurobiWrapper gurobi;
-                createLPRelaxation( layers, gurobi, 1000 );
+                createLPRelaxation( layers, gurobi, layer.first );
                 terms.clear();
                 terms.append( GurobiWrapper::Term( 1, variableName ) );
                 gurobi.setCost( terms );

@@ -252,9 +252,6 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
         nlr->setNeuronVariable( NLR::NeuronIndex( 2 * numberOfLayers - 3, i ), var );
     }
 
-    printf( "ACAS Parser: starting NLR constrction DONE! Dumping it\n" );
-    nlr->dumpTopology();
-
     // Store the reasoner in the input query
     inputQuery.setNetworkLevelReasoner( nlr );
 }
