@@ -53,17 +53,17 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         """
         super().__init__()
 
-        # read the file and load values
         self.normalize = normalize
+        # Read the file and load values
         self.read_nnet(filename)
 
-        # build all equations that govern the network
+        # Add equations that govern the network
         self.buildEquations()
 
-        # identify variables involved in relu constraints
+        # Add variables involved in relu constraints
         self.addRelus()
         
-        # compute variable ranges
+        # Compute variable ranges
         self.variableRanges()
 
         # Set input variable bounds
@@ -196,8 +196,9 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
             
             # Convert input bounds from their original values to normalized values if normalization is not being incorporated
             if not self.normalize:
-                self.inputMinimums = [(inMin - inMean) / inRange for inMin, inMean, inRange in zip(self.inputMinimums, self.inputMeans, self.inputRanges)]
-                self.inputMaximums = [(inMax - inMean) / inRange for inMax, inMean, inRange in zip(self.inputMaximums, self.inputMeans, self.inputRanges)]
+                for i in range(self.inputSize):
+                    self.inputMinimums[i] = (self.inputMinimums[i] - self.inputMeans[i]) / self.inputRanges[i]
+                    self.inputMaximums[i] = (self.inputMaximums[i] - self.inputMeans[i]) / self.inputRanges[i]
 
     """
     Compute the variable number ranges for each type (b, f)
@@ -288,20 +289,27 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
             for node in range(size):
                 bias = self.biases[layer-1][node]
                 
-                #add marabou equation
+                # Add marabou equation and add addend for output variable
                 e = Equation()
                 e.addAddend(-1.0, self.nodeTo_b(layer, node))
+                
+                # Add addends for weighted input variables
                 for previous_node in range(self.layerSizes[layer-1]):
                     weight = self.weights[layer-1][node][previous_node]
+                    
+                    # Adjust weights and bias of first layer to incorporate input normalization
                     if self.normalize and layer == 1:
                         weight /= self.inputRanges[previous_node]
-                        bias -= weight*self.inputMeans[previous_node]
+                        bias -= weight * self.inputMeans[previous_node]
+                    
+                    # Adjust weights of output layer to incorporate output normalization
                     elif self.normalize and layer == len(self.layerSizes) - 1:
                         weight *= self.outputRange
                     e.addAddend(weight, self.nodeTo_f(layer-1, previous_node))
                 
+                # Adjust bias of output layer to incorporate output normalization
                 if self.normalize and layer == len(self.layerSizes) - 1:
-                    bias = bias*self.outputRange + self.outputMean
+                    bias = bias * self.outputRange + self.outputMean
                 e.setScalar(-bias)
                 self.addEquation(e)
 

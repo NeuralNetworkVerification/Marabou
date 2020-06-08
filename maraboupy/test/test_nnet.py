@@ -132,7 +132,8 @@ def evaluateFile(filename, testInputs, testOutputs, normalize = False, normInput
         
         # Manually normalize input point using network's stored inputMeans and inputRanges
         if normInput:
-            testInput = [(var - varMean) / varRange for var, varMean, varRange in zip(testInput, network.inputMeans, network.inputRanges)]
+            for i in range(len(testInput)):
+                testInput[i] = (testInput[i] - network.inputMeans[i]) / network.inputRanges[i]
         marabouEval = network.evaluateWithMarabou([testInput], options = OPT, filename = "").flatten()
         
         # Manually de-normalize network output using network's stored outputMean and outputRange
