@@ -38,6 +38,12 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     _preprocessed = query;
 
     /*
+      Next, make sure all equations are of type EQUALITY. If not, turn them
+      into one.
+    */
+    makeAllEquationsEqualities();
+
+    /*
       If a network level reasoner has not been provided, attempt to
       construct one
     */
@@ -64,12 +70,6 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     */
     if ( GlobalConfiguration::PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS )
         addPlAuxiliaryEquations();
-
-    /*
-      Next, make sure all equations are of type EQUALITY. If not, turn them
-      into one.
-    */
-    makeAllEquationsEqualities();
 
     /*
       Do the preprocessing steps:
@@ -910,13 +910,22 @@ bool Preprocessor::constructWeighedSumLayer( NLR::NetworkLevelReasoner *nlr,
         return false;
 
     // The output layer is a weighted sum layer, also; have we found it?
-    List<unsigned> outputVariables = _preprocessed.getOutputVariables();
-    bool isOutput = ( outputVariables.size() == newNeurons.size() );
+    // List<unsigned> outputVariables = _preprocessed.getOutputVariables();
+    // bool isOutput = ( outputVariables.size() == newNeurons.size() );
+    // for ( const auto &newNeuron : newNeurons )
+    // {
+    //     if ( !outputVariables.exists( newNeuron._variable ) )
+    //     {
+    //         isOutput = false;
+    //         break;
+    //     }
+    // }
+    bool isOutput = false;
     for ( const auto &newNeuron : newNeurons )
     {
-        if ( !outputVariables.exists( newNeuron._variable ) )
+        if ( newNeuron._variable == _preprocessed.getNumberOfVariables() - 1 )
         {
-            isOutput = false;
+            isOutput = true;
             break;
         }
     }

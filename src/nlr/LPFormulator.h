@@ -32,7 +32,7 @@ public:
 private:
     LayerOwner *_layerOwner;
 
-    void createLPRelaxation( const Map<unsigned, Layer *> &layers, GurobiWrapper &gurobi, unsigned lastLayer );
+    void createLPRelaxation( const Map<unsigned, Layer *> &layers, GurobiWrapper &gurobi );
 
     void addInputLayerToLpRelaxation( GurobiWrapper &gurobi,
                                       const Layer *layer );
