@@ -14,6 +14,7 @@
  **/
 
 #include "GurobiWrapper.h"
+#include "InfeasibleQueryException.h"
 #include "LPFormulator.h"
 #include "Layer.h"
 #include "MStringf.h"
@@ -60,6 +61,10 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
                 terms.append( GurobiWrapper::Term( 1, variableName ) );
                 gurobi.setObjective( terms );
                 gurobi.solve();
+
+                if ( !gurobi.optimal() )
+                    throw InfeasibleQueryException();
+
                 gurobi.extractSolution( dontCare, ub );
             }
 
@@ -71,6 +76,10 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
                 terms.append( GurobiWrapper::Term( 1, variableName ) );
                 gurobi.setCost( terms );
                 gurobi.solve();
+
+                if ( !gurobi.optimal() )
+                    throw InfeasibleQueryException();
+
                 gurobi.extractSolution( dontCare, lb );
             }
 

@@ -66,6 +66,9 @@ public:
     void setCost( const List<Term> &terms );
     void setObjective( const List<Term> &terms );
 
+    // Return true iff an optimal solution has been found
+    bool optimal();
+
     // Solve and extract the solution
     void solve();
     void extractSolution( Map<String, double> &values, double &costOrObjective );
@@ -116,7 +119,7 @@ public:
     void setObjective( const List<Term> & ) {}
     void solve() {}
     void extractSolution( Map<String, double> &, double & ) {}
-
+    bool optimal() {}
     void dump() {}
 };
 

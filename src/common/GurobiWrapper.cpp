@@ -17,6 +17,7 @@
 
 #include "Debug.h"
 #include "GurobiWrapper.h"
+#include "gurobi_c.h"
 
 #include <iostream>
 
@@ -140,6 +141,11 @@ void GurobiWrapper::setObjective( const List<Term> &terms )
 void GurobiWrapper::solve()
 {
     _model->optimize();
+}
+
+bool GurobiWrapper::optimal()
+{
+    return ( _model->get( GRB_IntAttr_Status ) == GRB_OPTIMAL );
 }
 
 void GurobiWrapper::extractSolution( Map<String, double> &values, double &costOrObjective )
