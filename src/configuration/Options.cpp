@@ -94,7 +94,7 @@ String Options::getString( unsigned option ) const
     return String( _stringOptions.get( option ) );
 }
 
-bool Options::gurobiEnabled()
+bool Options::gurobiEnabled() const
 {
 #ifdef ENABLE_GUROBI
     return true;

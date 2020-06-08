@@ -1091,7 +1091,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         delete[] constraintMatrix;
 
         // New step: use LP relaxations to tighten the bounds further
-        if ( _networkLevelReasoner && Options::gurobiEnabled() )
+        if ( _networkLevelReasoner && Options::get()->gurobiEnabled() )
         {
             _networkLevelReasoner->obtainCurrentBounds();
             _networkLevelReasoner->lpRelaxationPropagation();
