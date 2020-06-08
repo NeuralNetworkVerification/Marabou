@@ -119,7 +119,7 @@ public:
     void setObjective( const List<Term> & ) {}
     void solve() {}
     void extractSolution( Map<String, double> &, double & ) {}
-    bool optimal() {}
+    bool optimal() { return true; }
     void dump() {}
 };
 
