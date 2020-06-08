@@ -210,9 +210,9 @@ void LPFormulator::addReluLayerToLpRelaxation( GurobiWrapper &gurobi,
                 gurobi.addGeqConstraint( terms, 0 );
 
                 /*
-                  u        ul
+                         u        ul
                   y <= ----- x - -----
-                  u - l     u - l
+                       u - l     u - l
                 */
                 terms.clear();
                 terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
