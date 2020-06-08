@@ -42,6 +42,8 @@ private:
 
     void addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi,
                                             const Layer *layer );
+
+    static void log( const String &message );
 };
 
 } // namespace NLR
