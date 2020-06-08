@@ -88,6 +88,38 @@ private:
     void freeMemoryIfNeeded();
 };
 
+#else
+
+#include "MString.h"
+#include "Map.h"
+
+class GurobiWrapper
+{
+public:
+    /*
+      A term has the form: coefficient * variable
+    */
+    struct Term
+    {
+        Term( double, String ) {}
+        Term() {}
+    };
+
+    GurobiWrapper() {}
+    ~GurobiWrapper() {}
+
+    void addVariable( String, double, double ) {}
+    void addLeqConstraint( const List<Term> &, double ) {}
+    void addGeqConstraint( const List<Term> &, double ) {}
+    void addEqConstraint( const List<Term> &, double ) {}
+    void setCost( const List<Term> & ) {}
+    void setObjective( const List<Term> & ) {}
+    void solve() {}
+    void extractSolution( Map<String, double> &, double & ) {}
+
+    void dump() {}
+};
+
 #endif // ENABLE_GUROBI
 
 #endif // __GurobiWrapper_h__

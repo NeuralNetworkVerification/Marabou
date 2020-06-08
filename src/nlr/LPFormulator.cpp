@@ -34,7 +34,8 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
 {
     List<GurobiWrapper::Term> terms;
     Map<String, double> dontCare;
-    double lb, ub;
+    double lb = FloatUtils::negativeInfinity();
+    double ub = FloatUtils::infinity();
 
     unsigned tighterBoundCounter = 0;
     unsigned signChanges = 0;
@@ -179,14 +180,14 @@ void LPFormulator::addReluLayerToLpRelaxation( GurobiWrapper &gurobi,
                 List<GurobiWrapper::Term> terms;
                 terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
                 terms.append( GurobiWrapper::Term( -1, Stringf( "x%u", sourceVariable ) ) );
-                gurobi.addGeqConstraint( terms, 0 );
+                gurobi.addEqConstraint( terms, 0 );
             }
             else if ( !FloatUtils::isPositive( sourceUb ) )
             {
                 // The ReLU is inactive, y = 0
                 List<GurobiWrapper::Term> terms;
                 terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
-                gurobi.addGeqConstraint( terms, 0 );
+                gurobi.addEqConstraint( terms, 0 );
             }
             else
             {
@@ -206,6 +207,8 @@ void LPFormulator::addReluLayerToLpRelaxation( GurobiWrapper &gurobi,
                 gurobi.addGeqConstraint( terms, 0 );
 
                 // y >= x, i.e. y - x >= 0
+                terms.clear();
+                terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
                 terms.append( GurobiWrapper::Term( -1, Stringf( "x%u", sourceVariable ) ) );
                 gurobi.addGeqConstraint( terms, 0 );
 
@@ -217,7 +220,7 @@ void LPFormulator::addReluLayerToLpRelaxation( GurobiWrapper &gurobi,
                 terms.clear();
                 terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
                 terms.append( GurobiWrapper::Term( -sourceUb / ( sourceUb - sourceLb ), Stringf( "x%u", sourceVariable ) ) );
-                gurobi.addLeqConstraint( terms, ( -sourceUb * sourceLb ) / ( sourceUb - sourceLb ));
+                gurobi.addLeqConstraint( terms, ( -sourceUb * sourceLb ) / ( sourceUb - sourceLb ) );
             }
         }
     }

@@ -23,6 +23,7 @@
 #include "MStringf.h"
 #include "MalformedBasisException.h"
 #include "MarabouError.h"
+#include "Options.h"
 #include "PiecewiseLinearConstraint.h"
 #include "Preprocessor.h"
 #include "TableauRow.h"
@@ -1090,7 +1091,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         delete[] constraintMatrix;
 
         // New step: use LP relaxations to tighten the bounds further
-        if ( _networkLevelReasoner )
+        if ( _networkLevelReasoner && Options::gurobiEnabled() )
         {
             _networkLevelReasoner->obtainCurrentBounds();
             _networkLevelReasoner->lpRelaxationPropagation();
