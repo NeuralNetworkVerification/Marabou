@@ -1739,23 +1739,14 @@ void Engine::performSymbolicBoundTightening()
     unsigned numTightenedBounds = 0;
 
     // Step 1: tell the NLR about the current bounds
-    struct timespec startSBTInit = TimeUtils::sampleMicro();
     _networkLevelReasoner->obtainCurrentBounds();
-    struct timespec endSBTInit = TimeUtils::sampleMicro();
-    _statistics.addTimeForSBTInit( TimeUtils::timePassed( startSBTInit, endSBTInit ) );
 
     // Step 2: perform SBT
-    struct timespec startSBTRun= TimeUtils::sampleMicro();
     _networkLevelReasoner->symbolicBoundPropagation();
-    struct timespec endSBTRun= TimeUtils::sampleMicro();
-    _statistics.addTimeForSBTRun( TimeUtils::timePassed( startSBTRun , endSBTRun ) );
 
     // Step 3: Extract the bounds
     List<Tightening> tightenings;
-    struct timespec startSBTTighten = TimeUtils::sampleMicro();
     _networkLevelReasoner->getConstraintTightenings( tightenings );
-    struct timespec endSBTTighten = TimeUtils::sampleMicro();
-    _statistics.addTimeForSBTTighten( TimeUtils::timePassed( startSBTTighten , endSBTTighten ) );
 
     for ( const auto &tightening : tightenings )
     {
@@ -1774,9 +1765,6 @@ void Engine::performSymbolicBoundTightening()
         }
     }
 
-    struct timespec end = TimeUtils::sampleMicro();
-    _statistics.addTimeForSymbolicBoundTightening( TimeUtils::timePassed( start, end ) );
-    _statistics.incNumTighteningsFromSymbolicBoundTightening( numTightenedBounds );
 }
 
 bool Engine::shouldExitDueToTimeout( unsigned timeout ) const

@@ -76,20 +76,6 @@ Statistics::Statistics()
     , _totalTimeSmtCoreMicro( 0 )
     , _timedOut( false )
 
-    , _totalTimePerformingSBTTighten( 0 )
-    , _totalTimePerformingSBTRun( 0 )
-    , _totalTimePerformingSBTInit( 0 )
-    , _totalTimePerformingSBTExtraction( 0 )
-
-    , _totalTimePerformingSBTRunLog ( 0 )
-    , _totalTimePerformingSBTRunInit( 0 )
-    , _totalTimePerformingSBTMulti( 0 )
-    , _totalTimePerformingSBTBias( 0 )
-    , _totalTimePerformingSBTVals( 0 )
-    , _totalTimePerformingSBTPrepareNext( 0 )
-{
-}
-
 void Statistics::print()
 {
     printf( "\n%s Statistics update:\n", TimeUtils::now().ascii() );
@@ -189,31 +175,6 @@ void Statistics::print()
             , _totalTimePerformingSBTRun / 1000
             );
 
-    printf("\t\t\t\t[%.2lf%%] SBT run init: %llu milli\n"
-            , printPercents(_totalTimePerformingSBTRunInit , _timeMainLoopMicro )
-            , _totalTimePerformingSBTRunInit/ 1000
-            );
-    printf("\t\t\t\t[%.2lf%%] SBT run log: %llu milli\n"
-            , printPercents(_totalTimePerformingSBTRunLog , _timeMainLoopMicro )
-            , _totalTimePerformingSBTRunLog / 1000
-            );
-
-    printf("\t\t\t\t[%.2lf%%] SBT run multiplication: %llu milli\n"
-            , printPercents(_totalTimePerformingSBTMulti, _timeMainLoopMicro )
-            , _totalTimePerformingSBTMulti/ 1000
-            );
-    printf("\t\t\t\t[%.2lf%%] SBT run bias: %llu milli\n"
-            , printPercents(_totalTimePerformingSBTBias, _timeMainLoopMicro )
-            , _totalTimePerformingSBTBias/ 1000
-            );
-    printf("\t\t\t\t[%.2lf%%] SBT run vals: %llu milli\n"
-            , printPercents(_totalTimePerformingSBTVals, _timeMainLoopMicro )
-            , _totalTimePerformingSBTVals/ 1000
-            );
-    printf("\t\t\t\t[%.2lf%%] SBT run prepare next: %llu milli\n"
-            , printPercents(_totalTimePerformingSBTPrepareNext, _timeMainLoopMicro )
-            , _totalTimePerformingSBTPrepareNext/ 1000
-            );
     printf("\t\t\t[%.2lf%%] SBT Tighten: %llu milli\n"
             , printPercents( _totalTimePerformingSBTTighten, _timeMainLoopMicro )
             , _totalTimePerformingSBTTighten/ 1000
@@ -739,51 +700,6 @@ void Statistics::incNumTighteningsFromSymbolicBoundTightening( unsigned incremen
     _numTighteningsFromSymbolicBoundTightening += increment;
 }
 
-unsigned long long Statistics::getTimeForSymbolicBoundTightening() const
-{
-    return _totalTimePerformingSymbolicBoundTightening;
-}
-void Statistics::addTimeForSymbolicBoundExtraction( unsigned long long time )
-{
-    _totalTimePerformingSBTExtraction += time;
-}
-void Statistics::addTimeForSBTInit( unsigned long long time )
-{
-    _totalTimePerformingSBTInit += time;
-}
-void Statistics::addTimeForSBTRun( unsigned long long time )
-{
-    _totalTimePerformingSBTRun += time;
-}
-void Statistics::addTimeForSBTTighten( unsigned long long time )
-{
-    _totalTimePerformingSBTTighten += time;
-}
-
-void Statistics::addTimeSBTRunLog( unsigned long long time )
-{
-    _totalTimePerformingSBTRunLog += time;
-}
-void Statistics::addTimeSBTRunInit( unsigned long long time )
-{
-    _totalTimePerformingSBTRunInit += time;
-}
-void Statistics::addTimeSBTMulti( unsigned long long time )
-{
-    _totalTimePerformingSBTMulti += time;
-}
-void Statistics::addTimeSBTBias( unsigned long long time )
-{
-    _totalTimePerformingSBTBias += time;
-}
-void Statistics::addTimeSBTVals( unsigned long long time )
-{
-    _totalTimePerformingSBTVals += time;
-}
-void Statistics::addTimeSBTPrepareNext( unsigned long long time )
-{
-    _totalTimePerformingSBTPrepareNext += time;
-}
 
 //
 //

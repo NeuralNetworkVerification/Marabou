@@ -188,7 +188,11 @@ public:
 
         nlr.addActivationSource( 3, 0, 4, 0 );
         nlr.addActivationSource( 3, 1, 4, 1 );
+<<<<<<< HEAD
         nlr.addActivationSource( 0, 0, 4, 3 );
+=======
+        nlr.addActivationSource( 0, 0, 4, 2 );
+>>>>>>> d5aca0dc116a0213c1a6242ea77179652f4e87d5
 
         nlr.setWeight( 4, 0, 5, 0, 1 );
         nlr.setWeight( 4, 1, 5, 0, 1 );

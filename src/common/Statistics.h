@@ -328,20 +328,6 @@ private:
     double printPercents( unsigned long long part, unsigned long long total ) const;
     double printAverage( unsigned long long part, unsigned long long total ) const;
 
-
-    // Yuval DEBUG
-    unsigned long long _totalTimePerformingSBTTighten;
-    unsigned long long _totalTimePerformingSBTRun;
-    unsigned long long _totalTimePerformingSBTInit;
-    unsigned long long _totalTimePerformingSBTExtraction;
-
-
-    unsigned long long _totalTimePerformingSBTRunLog;
-    unsigned long long _totalTimePerformingSBTRunInit;
-    unsigned long long _totalTimePerformingSBTMulti;
-    unsigned long long _totalTimePerformingSBTBias;
-    unsigned long long _totalTimePerformingSBTVals;
-    unsigned long long _totalTimePerformingSBTPrepareNext;
 };
 
 #endif // __Statistics_h__
