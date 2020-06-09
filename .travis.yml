@@ -2,6 +2,7 @@ language: cpp
 
 cache:
   directories:
+    - tools/boost_1_68_0
     - $HOME/.pip-cache
     - /c/Python3
 
