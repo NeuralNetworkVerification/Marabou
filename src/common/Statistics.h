@@ -149,20 +149,6 @@ public:
     */
     void printStartingIteration( unsigned long long iteration, String message );
 
-    /* Yuval Debug */
-    unsigned long long getTimeForSymbolicBoundTightening() const;
-    void addTimeForSBTTighten( unsigned long long time );
-    void addTimeForSBTRun( unsigned long long time );
-    void addTimeForSBTInit( unsigned long long time );
-    void addTimeForSymbolicBoundExtraction( unsigned long long time );
-
-    void addTimeSBTRunLog( unsigned long long time );
-    void addTimeSBTRunInit( unsigned long long time );
-    void addTimeSBTMulti( unsigned long long time );
-    void addTimeSBTBias( unsigned long long time );
-    void addTimeSBTVals( unsigned long long time );
-    void addTimeSBTPrepareNext( unsigned long long time );
-
 private:
     // Initial timestamp
     struct timespec _startTime;
@@ -327,7 +313,6 @@ private:
     // Printing helpers
     double printPercents( unsigned long long part, unsigned long long total ) const;
     double printAverage( unsigned long long part, unsigned long long total ) const;
-
 };
 
 #endif // __Statistics_h__
