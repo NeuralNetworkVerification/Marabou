@@ -90,7 +90,7 @@ public:
     /*
       Options that are determined at compile time
     */
-    static bool gurobiEnabled();
+    bool gurobiEnabled() const;
 
 private:
     /*
