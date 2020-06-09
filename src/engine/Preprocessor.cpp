@@ -852,7 +852,6 @@ bool Preprocessor::constructNetworkLevelReasoner()
     return success;
 }
 
-
 bool Preprocessor::constructWeighedSumLayer( NLR::NetworkLevelReasoner *nlr,
                                              Map<unsigned, unsigned> &handledVariableToLayer,
                                              unsigned newLayerIndex )
