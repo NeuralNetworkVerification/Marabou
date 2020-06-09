@@ -16,12 +16,12 @@
 #ifndef __NetworkLevelReasoner_h__
 #define __NetworkLevelReasoner_h__
 
-#include "NeuronIndex.h"
 #include "ITableau.h"
+#include "Layer.h"
 #include "Map.h"
+#include "NeuronIndex.h"
 #include "PiecewiseLinearFunctionType.h"
 #include "Tightening.h"
-#include "Layer.h"
 
 namespace NLR {
 
@@ -53,8 +53,9 @@ public:
                               unsigned sourceNeuron,
                               unsigned targetLeyer,
                               unsigned targetNeuron );
-    const Layer *getLayer( unsigned index ) const;
 
+    unsigned getNumberOfLayers() const;
+    const Layer *getLayer( unsigned index ) const;
 
     /*
       Bind neurons in the NLR to the Tableau variables that represent them.
@@ -65,7 +66,6 @@ public:
       Perform an evaluation of the network for a specific input.
     */
     void evaluate( double *input , double *output );
-
 
     /*
       Bound propagation methods:
@@ -84,9 +84,6 @@ public:
           bound on the upper bound of a ReLU node is negative, that
           ReLU is inactive and its output can be set to 0.
 
-          Initialize should be called once, before the bound
-          propagation is performed.
-
         - receiveTighterBound: this is a callback from the layer
           objects, through which they report tighter bounds.
 
@@ -99,127 +96,50 @@ public:
     const ITableau *getTableau() const;
 
     void obtainCurrentBounds();
-    // void intervalArithmeticBoundPropagation();
+    void intervalArithmeticBoundPropagation();
     void symbolicBoundPropagation();
 
     void receiveTighterBound( Tightening tightening );
     void getConstraintTightenings( List<Tightening> &tightenings );
 
-    // /*
-    //   For debugging purposes: dump the network topology
-    // */
-    // void dumpTopology() const;
-
-
-
-
-
     /*
-      Mapping from node indices to the variables representing their
-      weighted sum values and activation result values.
+      For debugging purposes: dump the network topology
     */
-    // void setWeightedSumVariable( unsigned layer, unsigned neuron, unsigned variable );
-    // unsigned getWeightedSumVariable( unsigned layer, unsigned neuron ) const;
-    // void setActivationResultVariable( unsigned layer, unsigned neuron, unsigned variable );
-    // unsigned getActivationResultVariable( unsigned layer, unsigned neuron ) const;
-    // const Map<NeuronIndex, unsigned> &getIndexToWeightedSumVariable();
-    // const Map<NeuronIndex, unsigned> &getIndexToActivationResultVariable();
-
-    /*
-      Mapping from node indices to the nodes' assignments, as computed
-      by evaluate()
-    */
-    // const Map<NeuronIndex, double> &getIndexToWeightedSumAssignment();
-    // const Map<NeuronIndex, double> &getIndexToActivationResultAssignment();
+    void dumpTopology() const;
 
     /*
       Duplicate the reasoner
     */
-    // void storeIntoOther( NetworkLevelReasoner &other ) const;
+    void storeIntoOther( NetworkLevelReasoner &other ) const;
 
     /*
       Methods that are typically invoked by the preprocessor, to
       inform us of changes in variable indices or if a variable has
       been eliminated
     */
-    // void eliminateVariable( unsigned variable, double value );
-    // void updateVariableIndices( const Map<unsigned, unsigned> &oldIndexToNewIndex,
-    //                             const Map<unsigned, unsigned> &mergedVariables );
+    void eliminateVariable( unsigned variable, double value );
+    void updateVariableIndices( const Map<unsigned, unsigned> &oldIndexToNewIndex,
+                                const Map<unsigned, unsigned> &mergedVariables );
+
+    /*
+      The various piecewise-linear constraints, sorted in topological
+      order. The sorting is done externally.
+    */
+    List<PiecewiseLinearConstraint *> getConstraintsInTopologicalOrder();
+    void addConstraintInTopologicalOrder( PiecewiseLinearConstraint *constraint );
 
 private:
     Map<unsigned, Layer *> _layerIndexToLayer;
-
-// private:
-//     unsigned _numberOfLayers;
-//     Map<unsigned, unsigned> _layerSizes;
-//     Map<NeuronIndex, PiecewiseLinearFunctionType> _neuronToActivationFunction;
-//     double **_weights;
-//     double **_positiveWeights;
-//     double **_negativeWeights;
-//     Map<NeuronIndex, double> _bias;
-
-//     unsigned _maxLayerSize;
-//     unsigned _inputLayerSize;
-
-//     double *_work1;
-//     double *_work2;
-
     const ITableau *_tableau;
 
-//     void freeMemoryIfNeeded();
-
-//     /*
-//       Mappings of indices to weighted sum and activation result variables
-//     */
-//     Map<NeuronIndex, unsigned> _indexToWeightedSumVariable;
-//     Map<NeuronIndex, unsigned> _indexToActivationResultVariable;
-//     Map<unsigned, NeuronIndex> _weightedSumVariableToIndex;
-//     Map<unsigned, NeuronIndex> _activationResultVariableToIndex;
-
-//     /*
-//       Store the assignment to all variables when evaluate() is called
-//     */
-//     Map<NeuronIndex, double> _indexToWeightedSumAssignment;
-//     Map<NeuronIndex, double> _indexToActivationResultAssignment;
-
-//     /*
-//       Store eliminated variables
-//     */
-//     Map<NeuronIndex, double> _eliminatedWeightedSumVariables;
-//     Map<NeuronIndex, double> _eliminatedActivationResultVariables;
-
-//     /*
-//       Work space for bound tightening
-//     */
-//     double **_lowerBoundsWeightedSums;
-//     double **_upperBoundsWeightedSums;
-//     double **_lowerBoundsActivations;
-//     double **_upperBoundsActivations;
-
-//     /*
-//       Work space for symbolic bound propagation
-//     */
-//     double *_currentLayerLowerBounds;
-//     double *_currentLayerUpperBounds;
-//     double *_currentLayerLowerBias;
-//     double *_currentLayerUpperBias;
-
-//     double *_previousLayerLowerBounds;
-//     double *_previousLayerUpperBounds;
-//     double *_previousLayerLowerBias;
-//     double *_previousLayerUpperBias;
-
-//     /*
-//       Helper functions that perform symbolic bound propagation for a
-//       single neuron, according to its activation function
-//     */
-//     void reluSymbolicPropagation( const NeuronIndex &index, double &lbLb, double &lbUb, double &ubLb, double &ubUb );
-//     void absoluteValueSymbolicPropagation( const NeuronIndex &index, double &lbLb, double &lbUb, double &ubLb, double &ubUb );
-
-//     static void log( const String &message );
-
-    // Tightenings discovered by the layers
+    // Tightenings discovered by the various layers
     List<Tightening> _boundTightenings;
+
+    void freeMemoryIfNeeded();
+
+    static void log( const String &message );
+
+    List<PiecewiseLinearConstraint *> _constraintsInTopologicalOrder;
 };
 
 } // namespace NLR

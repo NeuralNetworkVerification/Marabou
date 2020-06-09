@@ -14,6 +14,7 @@
 **/
 
 #include "Debug.h"
+#include "FloatUtils.h"
 #include "LargestIntervalDivider.h"
 #include "MStringf.h"
 #include "PiecewiseLinearCaseSplit.h"
@@ -105,17 +106,27 @@ unsigned LargestIntervalDivider::getLargestInterval( const InputRegion
     unsigned dimensionToSplit = 0;
     double largestInterval = 0;
 
+    DEBUG( bool haveCandidate = false );
+
     for ( const auto &variable : _inputVariables )
     {
         double interval = inputRegion._upperBounds[variable] -
             inputRegion._lowerBounds[variable];
-        ASSERT( interval > 0 );
+
+        if ( FloatUtils::isZero( interval ) )
+            continue;
+
+        DEBUG( haveCandidate = true );
+
         if ( interval > largestInterval )
         {
             dimensionToSplit = variable;
             largestInterval = interval;
         }
     }
+
+    ASSERT( haveCandidate );
+
     return dimensionToSplit;
 }
 

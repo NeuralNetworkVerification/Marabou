@@ -13,6 +13,7 @@ option(RUN_SYSTEM_TEST "run system tests on build" OFF)
 option(RUN_MEMORY_TEST "run cxxtest testing with ASAN ON" ON)
 option(RUN_PYTHON_TEST "run python API tests if building with python" OFF)
 
+
 set(DEFAULT_PYTHON_VERSION "3" CACHE STRING "Default Python version 2/3")
 set(PYTHON_VERSIONS_SUPPORTED 2 3)
 list(FIND PYTHON_VERSIONS_SUPPORTED ${DEFAULT_PYTHON_VERSION} index)
@@ -65,6 +66,19 @@ if(CTEST_NTHREADS EQUAL 0)
   set(CTEST_NTHREADS 1)
 endif()
 
+
+# --------------- set build type ----------------------------
+set(BUILD_TYPES Release Debug MinSizeRel RelWithDebInfo)
+
+# Set the default build type to Production
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE
+      Release CACHE STRING "Options are: Release Debug MinSizeRel RelWithDebInfo" FORCE)
+  # Provide drop down menu options in cmake-gui
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${BUILD_TYPES})
+endif()
+
+message(STATUS "Building ${CMAKE_BUILD_TYPE} build")
 
 # We build a static library that is the core of the project, the link it to the
 # API's (executable and python at the moment)
@@ -283,7 +297,7 @@ if (${BUILD_PYTHON} AND ${RUN_PYTHON_TEST})
         POST_BUILD
         COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PYTHON_API_DIR}/test
     )
-endif()    
+endif()
 
 # Add the input parsers
 add_custom_target(build_input_parsers)

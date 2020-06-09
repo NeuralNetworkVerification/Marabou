@@ -222,20 +222,20 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
     for ( const auto &constraint : other._plConstraints )
         _plConstraints.append( constraint->duplicateConstraint() );
 
-    // if ( other._networkLevelReasoner )
-    // {
-    //     if ( !_networkLevelReasoner )
-    //         _networkLevelReasoner = new NLR::NetworkLevelReasoner;
-    //     other._networkLevelReasoner->storeIntoOther( *_networkLevelReasoner );
-    // }
-    // else
-    // {
-    //     if ( _networkLevelReasoner )
-    //     {
-    //         delete _networkLevelReasoner;
-    //         _networkLevelReasoner = NULL;
-    //     }
-    // }
+    if ( other._networkLevelReasoner )
+    {
+        if ( !_networkLevelReasoner )
+            _networkLevelReasoner = new NLR::NetworkLevelReasoner;
+        other._networkLevelReasoner->storeIntoOther( *_networkLevelReasoner );
+    }
+    else
+    {
+        if ( _networkLevelReasoner )
+        {
+            delete _networkLevelReasoner;
+            _networkLevelReasoner = NULL;
+        }
+    }
 
     return *this;
 }
