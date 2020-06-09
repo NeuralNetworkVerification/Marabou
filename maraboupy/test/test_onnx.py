@@ -1,6 +1,5 @@
 # Supress warnings caused by tensorflow
 import warnings
-warnings.filterwarnings('ignore', category = FutureWarning)
 warnings.filterwarnings('ignore', category = DeprecationWarning)
 warnings.filterwarnings('ignore', category = PendingDeprecationWarning)
 
@@ -15,7 +14,7 @@ OPT = Marabou.createOptions(verbosity = 0) # Turn off printing
 TOL = 1e-4                                 # Set tolerance for checking Marabou evaluations
 NETWORK_FOLDER = "../../resources/onnx/"   # Folder for test networks
 np.random.seed(123)                        # Seed random numbers for repeatability
-NUM_RAND = 20                              # Number of random test points per example
+NUM_RAND = 20                              # Default number of random test points per example
 
 def test_fc1():
     """
@@ -33,7 +32,7 @@ def test_fc2():
     filename =  "fc2.onnx"
     evaluateFile(filename)
 
-def test_KJ_TaxiNet():
+def test_KJ_TinyTaxiNet():
     """
     Test a convolutional network, exported from tensorflow
     Uses Transpose, Conv, Add, Relu, Cast, Reshape,
@@ -51,7 +50,7 @@ def test_conv_mp1():
     filename =  "conv_mp1.onnx"
     evaluateFile(filename)
 
-def evaluateFile(filename, testInputs = None):
+def evaluateFile(filename, testInputs = None, numPoints = NUM_RAND):
     """
     Load network and evaluate testInputs with and without Marabou
     Args:
@@ -64,7 +63,7 @@ def evaluateFile(filename, testInputs = None):
     # Create test points if none provided. This creates a list of test points.
     # Each test point is itself a list, representing the values for each input array.
     if not testInputs:
-        testInputs = [[np.random.random(inVars.shape) for inVars in network.inputVars] for _ in range(NUM_RAND)]
+        testInputs = [[np.random.random(inVars.shape) for inVars in network.inputVars] for _ in range(numPoints)]
 
     # Evaluate test points using both Marabou and ONNX
     for testInput in testInputs:

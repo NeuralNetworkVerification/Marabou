@@ -99,9 +99,10 @@ public:
     void setConstraintViolationThreshold( unsigned threshold );
 
     /*
-      Pick the piecewise linear constraint for splitting
+      Pick the piecewise linear constraint for splitting, returns true
+      if a constraint for splitting is successfully picked
     */
-    void pickSplitPLConstraint();
+    bool pickSplitPLConstraint();
 
     /*
       For debugging purposes only - store a correct possible solution

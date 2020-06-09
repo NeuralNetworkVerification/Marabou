@@ -857,6 +857,11 @@ unsigned ReluConstraint::getB() const
     return _b;
 }
 
+unsigned ReluConstraint::getF() const
+{
+    return _f;
+}
+
 ReluConstraint::PhaseStatus ReluConstraint::getPhaseStatus() const
 {
     return _phaseStatus;
@@ -901,6 +906,11 @@ void ReluConstraint::updateDirection()
 ReluConstraint::PhaseStatus ReluConstraint::getDirection() const
 {
     return _direction;
+}
+
+void ReluConstraint::updateScore()
+{
+    _score = std::abs( computePolarity() );
 }
 
 //

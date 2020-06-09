@@ -2,7 +2,6 @@ language: cpp
 
 cache:
   directories:
-    - tools/boost_1_68_0
     - $HOME/.pip-cache
     - /c/Python3
 
@@ -13,18 +12,18 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" = "windows" ]; then powershell Start-Process -PassThru -Wait PowerShell -ArgumentList "'-Command Set-MpPreference -DisableRealtimeMonitoring \$true'" ; fi
 
 addons:
-  apt: 
+  apt:
     packages:
     - python3
     - python3-pip
     - python3-setuptools
 
-install: 
+install:
   - if [ "$TRAVIS_OS_NAME" = "windows" ]; then if [[ ! -d "C:\Python3" || ! -f "C:\Python3\python" ]]; then choco install python3 --version=3.5.4 --params "/InstallDir:C:\Python3"; fi fi
   - $PY_CMD -m pip install --user --upgrade pip
   - $PY_CMD -m pip install --user --upgrade setuptools
   - $PY_CMD -m pip install --user wheel
-  - $PY_CMD -m pip install --user -r maraboupy/test_requirements.txt --cache-dir $HOME/.pip-cache
+  - $PY_CMD -m pip install --user -r maraboupy/test_requirements.txt --cache-dir $HOME/.pip-cache --progress-bar off
 
 matrix:
   include:
@@ -47,7 +46,7 @@ matrix:
       script:
       - mkdir - p build
       - cd build
-      - cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=$(which $PY_CMD)
+      - cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=$(which $PY_CMD) -DCMAKE_BUILD_TYPE=Debug
       - cmake --build . -j 2
       - ctest -L system -j 2
       - ctest -L regress0 -j 2
