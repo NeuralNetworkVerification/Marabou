@@ -671,7 +671,7 @@ public:
         TS_ASSERT_EQUALS( processed.getNumberOfVariables(), 0U );
     }
 
-    void xtest_construction_of_network_level_reasoner()
+    void test_construction_of_network_level_reasoner()
     {
         /*
               2      R       1

@@ -256,7 +256,7 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
     nlr->dumpTopology();
 
     // Store the reasoner in the input query
-    // inputQuery.setNetworkLevelReasoner( nlr );
+    inputQuery.setNetworkLevelReasoner( nlr );
 }
 
 unsigned AcasParser::getNumInputVaribales() const

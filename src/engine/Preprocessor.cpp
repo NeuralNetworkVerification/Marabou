@@ -620,11 +620,11 @@ void Preprocessor::eliminateVariables()
     }
 
     // Inform the NLR about eliminated varibales
-    // if ( _preprocessed._networkLevelReasoner )
-    // {
-    //     for ( const auto &fixed : _fixedVariables )
-    //         _preprocessed._networkLevelReasoner->eliminateVariable( fixed.first, fixed.second );
-    // }
+    if ( _preprocessed._networkLevelReasoner )
+    {
+        for ( const auto &fixed : _fixedVariables )
+            _preprocessed._networkLevelReasoner->eliminateVariable( fixed.first, fixed.second );
+    }
 
     // Compute the new variable indices, after the elimination of fixed variables
  	int offset = 0;
@@ -720,8 +720,8 @@ void Preprocessor::eliminateVariables()
 	}
 
     // Let the NLR know of changes in indices and merged variables
-    // if ( _preprocessed._networkLevelReasoner )
-    //     _preprocessed._networkLevelReasoner->updateVariableIndices( _oldIndexToNewIndex, _mergedVariables );
+    if ( _preprocessed._networkLevelReasoner )
+        _preprocessed._networkLevelReasoner->updateVariableIndices( _oldIndexToNewIndex, _mergedVariables );
 
     // Update the lower/upper bound maps
     for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )

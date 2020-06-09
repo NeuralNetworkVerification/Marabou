@@ -7,7 +7,6 @@ import pytest
 from .. import Marabou
 import numpy as np
 import os
-from .. import MarabouNetworkONNX
 
 # Global settings
 OPT = Marabou.createOptions(verbosity = 0) # Turn off printing
@@ -31,7 +30,7 @@ def test_fc2():
     """
     filename =  "fc2.onnx"
     evaluateFile(filename)
-
+    
 def test_KJ_TinyTaxiNet():
     """
     Test a convolutional network, exported from tensorflow
@@ -48,8 +47,8 @@ def test_conv_mp1():
     Matmul, and Add layers
     """
     filename =  "conv_mp1.onnx"
-    evaluateFile(filename)
-
+    evaluateFile(filename)   
+        
 def evaluateFile(filename, testInputs = None, numPoints = NUM_RAND):
     """
     Load network and evaluate testInputs with and without Marabou
@@ -64,7 +63,7 @@ def evaluateFile(filename, testInputs = None, numPoints = NUM_RAND):
     # Each test point is itself a list, representing the values for each input array.
     if not testInputs:
         testInputs = [[np.random.random(inVars.shape) for inVars in network.inputVars] for _ in range(numPoints)]
-
+    
     # Evaluate test points using both Marabou and ONNX
     for testInput in testInputs:
         marabouEval = network.evaluateWithMarabou(testInput, options = OPT, filename = "").flatten()
