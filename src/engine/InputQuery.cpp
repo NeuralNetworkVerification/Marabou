@@ -219,26 +219,14 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
     _outputIndexToVariable = other._outputIndexToVariable;
 
     freeConstraintsIfNeeded();
-
-    Map<PiecewiseLinearConstraint *, PiecewiseLinearConstraint *> oldToNew;
     for ( const auto &constraint : other._plConstraints )
-    {
-        auto dup = constraint->duplicateConstraint();
-        _plConstraints.append( dup );
-        oldToNew[constraint] = dup;
-    }
+        _plConstraints.append( constraint->duplicateConstraint() );
 
     if ( other._networkLevelReasoner )
     {
         if ( !_networkLevelReasoner )
-            _networkLevelReasoner = new NetworkLevelReasoner;
-
+            _networkLevelReasoner = new NLR::NetworkLevelReasoner;
         other._networkLevelReasoner->storeIntoOther( *_networkLevelReasoner );
-        auto indexToPLConstraint = _networkLevelReasoner->getIndexToPLConstraint();
-        for ( const auto &pair : indexToPLConstraint )
-            _networkLevelReasoner->setIndexToPLConstraint( pair.first._layer,
-                                                           pair.first._neuron,
-                                                           oldToNew[pair.second] );
     }
     else
     {
@@ -540,12 +528,12 @@ void InputQuery::adjustInputOutputMapping( const Map<unsigned, unsigned> &oldInd
         _variableToOutputIndex[it.second] = it.first;
 }
 
-void InputQuery::setNetworkLevelReasoner( NetworkLevelReasoner *nlr )
+void InputQuery::setNetworkLevelReasoner( NLR::NetworkLevelReasoner *nlr )
 {
     _networkLevelReasoner = nlr;
 }
 
-NetworkLevelReasoner *InputQuery::getNetworkLevelReasoner() const
+NLR::NetworkLevelReasoner *InputQuery::getNetworkLevelReasoner() const
 {
     return _networkLevelReasoner;
 }

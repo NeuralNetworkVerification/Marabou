@@ -105,6 +105,17 @@ private:
       successful
     */
     bool constructNetworkLevelReasoner();
+    bool constructWeighedSumLayer( NLR::NetworkLevelReasoner *nlr,
+                                   Map<unsigned, unsigned> &handledVariableToLayer,
+                                   unsigned newLayerIndex );
+    bool constructReluLayer( NLR::NetworkLevelReasoner *nlr,
+                             Map<unsigned, unsigned> &handledVariableToLayer,
+                             unsigned newLayerIndex );
+
+    /*
+      All input/output variables
+    */
+    Set<unsigned> _inputOutputVariables;
 
     /*
       The preprocessed query
@@ -140,7 +151,6 @@ private:
     void dumpAllBounds( const String &message );
 
     static void log( const String &message );
-
 };
 
 #endif // __Preprocessor_h__

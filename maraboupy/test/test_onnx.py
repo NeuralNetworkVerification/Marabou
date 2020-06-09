@@ -34,16 +34,16 @@ def test_fc2():
 def test_KJ_TinyTaxiNet():
     """
     Test a convolutional network, exported from tensorflow
-    Uses Transpose, Conv, Add, Relu, Cast, Reshape, 
+    Uses Transpose, Conv, Add, Relu, Cast, Reshape,
     Matmul, and Identity layers
     """
     filename =  "KJ_TinyTaxiNet.onnx"
     evaluateFile(filename)
-    
+
 def test_conv_mp1():
     """
     Test a convolutional network using max pool, exported from pytorch
-    Uses Conv, Relu, MaxPool, Constant, Reshape, Transpose, 
+    Uses Conv, Relu, MaxPool, Constant, Reshape, Transpose,
     Matmul, and Add layers
     """
     filename =  "conv_mp1.onnx"
@@ -58,7 +58,7 @@ def evaluateFile(filename, testInputs = None, numPoints = NUM_RAND):
     # Load network relative to this file's location
     filename = os.path.join(os.path.dirname(__file__), NETWORK_FOLDER, filename)
     network = Marabou.read_onnx(filename)
-    
+
     # Create test points if none provided. This creates a list of test points.
     # Each test point is itself a list, representing the values for each input array.
     if not testInputs:
@@ -71,4 +71,3 @@ def evaluateFile(filename, testInputs = None, numPoints = NUM_RAND):
 
         # Assert that both evaluations are the same within the set tolerance
         assert max(abs(marabouEval.flatten() - onnxEval.flatten())) < TOL
-    
