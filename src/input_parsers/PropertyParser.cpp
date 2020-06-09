@@ -133,14 +133,14 @@ void PropertyParser::processSingleLine( const String &line, InputQuery &inputQue
             // These variables are of the form h_2_5
             subTokens = token.tokenize( "_" );
 
-            // if ( subTokens.size() != 3 )
-            //     throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
+            if ( subTokens.size() != 3 )
+                throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
 
-            // auto subToken = subTokens.begin();
-            // ++subToken;
-            // unsigned layerIndex = atoi( subToken->ascii() );
-            // ++subToken;
-            // unsigned nodeIndex = atoi( subToken->ascii() );
+            auto subToken = subTokens.begin();
+            ++subToken;
+            unsigned layerIndex = atoi( subToken->ascii() );
+            ++subToken;
+            unsigned nodeIndex = atoi( subToken->ascii() );
 
             NLR::NetworkLevelReasoner *nlr = inputQuery.getNetworkLevelReasoner();
             if ( !nlr )
