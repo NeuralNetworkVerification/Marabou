@@ -908,17 +908,6 @@ bool Preprocessor::constructWeighedSumLayer( NLR::NetworkLevelReasoner *nlr,
     if ( newNeurons.empty() )
         return false;
 
-    // The output layer is a weighted sum layer, also; have we found it?
-    // List<unsigned> outputVariables = _preprocessed.getOutputVariables();
-    // bool isOutput = ( outputVariables.size() == newNeurons.size() );
-    // for ( const auto &newNeuron : newNeurons )
-    // {
-    //     if ( !outputVariables.exists( newNeuron._variable ) )
-    //     {
-    //         isOutput = false;
-    //         break;
-    //     }
-    // }
     bool isOutput = false;
     for ( const auto &newNeuron : newNeurons )
     {
