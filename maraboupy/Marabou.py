@@ -36,6 +36,8 @@ def read_nnet(filename, use_nlr=False, normalize=False):
     Args:
         filename: (string) path to the .nnet file.
         use_nlr: (bool) Set to true to use NetworkLevelReasoner
+        normalize: (bool) If true, incorporate input/output normalization
+                      into first and last layers of network
     Returns:
         marabouNetworkNNet: (MarabouNetworkNNet) representing network
     """
