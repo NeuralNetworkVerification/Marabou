@@ -277,7 +277,7 @@ void DnCManager::printResult()
             inputs[i] = inputQuery->getSolutionValue( inputQuery->inputVariableByIndex( i ) );
         }
 
-        NetworkLevelReasoner *nlr = inputQuery->getNetworkLevelReasoner();
+        NLR::NetworkLevelReasoner *nlr = inputQuery->getNetworkLevelReasoner();
         if ( nlr )
             nlr->evaluate( inputs, outputs );
 
