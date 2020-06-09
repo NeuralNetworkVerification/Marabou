@@ -90,7 +90,8 @@ bool SignConstraint::satisfied() const
     if ( FloatUtils::isNegative( bValue ) && FloatUtils::areEqual( fValue, -1 ) )
         return true;
 
-    if ( FloatUtils::isPositive( bValue ) && FloatUtils::areEqual( fValue, 1 ) )
+    if ( (!FloatUtils::isNegative( bValue )) && FloatUtils::areEqual( fValue, 1 ) )
+        //if ( FloatUtils::isPositive( bValue ) && FloatUtils::areEqual( fValue, 1 ) )
         return true;
 
     else
