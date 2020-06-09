@@ -84,7 +84,46 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
         # Set the number of variables
         self.numVars = self.numberOfVariables()
-        self.nlr = None
+        if use_nlr:
+            self.nlr = self.createNLR(filename)
+        else:
+            self.nlr = None
+
+    def createNLR(self, filename):
+        nlr = MarabouCore.NetworkLevelReasoner()
+        nlr.setNumberOfLayers(self.numLayers + 1)
+        for layer, size in enumerate(self.layerSizes):
+            nlr.setLayerSize(layer, size)
+        nlr.allocateMemoryByTopology()
+        # Biases
+        for layer in range(len(self.biases)):
+            for node in range(len(self.biases[layer])):
+                nlr.setBias(layer + 1, node, self.biases[layer][node])
+        # Weights
+        for layer in range(len(self.weights)): # starting from the first hidden layer
+            for target in range(len(self.weights[layer])):
+                for source in range(len(self.weights[layer][target])):
+                    nlr.setWeight(layer, source, target, self.weights[layer][target][source])
+
+        # Activation Functions
+        RELU = MarabouCore.NetworkLevelReasoner.ReLU;
+        for layer in range(len(self.weights) - 1): # only hidden layers
+            for neuron in range(len(self.weights[layer])):
+                nlr.setNeuronActivationFunction(layer + 1, neuron, RELU );
+
+        # Variable indexing
+        for layer in range(len(self.layerSizes))[1:-1]:
+            for node in range(self.layerSizes[layer]):
+                nlr.setWeightedSumVariable(layer, node, self.nodeTo_b(layer, node))
+                nlr.setActivationResultVariable(layer, node, self.nodeTo_f(layer, node))
+
+        for node in range(self.inputSize):
+            nlr.setActivationResultVariable(0, node, self.nodeTo_f(0, node))
+
+        for node in range(self.outputSize):
+            nlr.setWeightedSumVariable(len(self.layerSizes) - 1, node, self.nodeTo_b(len(self.layerSizes) - 1, node))
+
+        return nlr
 
     def getMarabouQuery(self):
         ipq = super(MarabouNetworkNNet, self).getMarabouQuery()
