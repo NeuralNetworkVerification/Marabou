@@ -154,6 +154,7 @@ public:
       Get the index of the B variable.
     */
     unsigned getB() const;
+    unsigned getF() const;
 
     /*
       Get the current phase status.
@@ -194,6 +195,8 @@ public:
     void updateDirection();
 
     PhaseStatus getDirection() const;
+
+    void updateScore();
 
 private:
     unsigned _b, _f;

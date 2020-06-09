@@ -146,6 +146,9 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
         }
     }
 
+    // Create the network level reasoner
+    NLR::NetworkLevelReasoner *nlr = new NLR::NetworkLevelReasoner;
+
     // Add the ReLU constraints
     for ( unsigned i = 1; i < numberOfLayers - 1; ++i )
     {
@@ -156,9 +159,13 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
             unsigned b = _nodeToB[NodeIndex(i, j)];
             unsigned f = _nodeToF[NodeIndex(i, j)];
             PiecewiseLinearConstraint *relu = new ReluConstraint( b, f );
+
+            nlr->addConstraintInTopologicalOrder( relu );
+
             if ( GlobalConfiguration::SPLITTING_HEURISTICS ==
                  DivideStrategy::EarliestReLU )
                 relu->setScore( i );
+
             inputQuery.addPiecewiseLinearConstraint( relu );
         }
     }
@@ -171,19 +178,31 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
         inputQuery.markOutputVariable( _nodeToB[NodeIndex( numberOfLayers - 1, i )], i );
 
     // Populate the Network-Level Reasoner
-    NetworkLevelReasoner *nlr = new NetworkLevelReasoner;
+    unsigned currentLayerIndex = 0;
+    // Input layer
+    nlr->addLayer( currentLayerIndex, NLR::Layer::INPUT, inputLayerSize );
+    ++currentLayerIndex;
 
-    nlr->setNumberOfLayers( numberOfLayers );
+    // Hidden layers
+    for ( unsigned i = 1; i < numberOfLayers - 1; ++i )
+    {
+        nlr->addLayer( currentLayerIndex, NLR::Layer::WEIGHTED_SUM, _acasNeuralNetwork.getLayerSize( i ) );
+        nlr->addLayerDependency( currentLayerIndex - 1, currentLayerIndex );
+        ++currentLayerIndex;
 
-    for ( unsigned i = 0; i < numberOfLayers; ++i )
-        nlr->setLayerSize( i, _acasNeuralNetwork.getLayerSize( i ) );
+        nlr->addLayer( currentLayerIndex, NLR::Layer::RELU, _acasNeuralNetwork.getLayerSize( i ) );
+        nlr->addLayerDependency( currentLayerIndex - 1, currentLayerIndex );
+        ++currentLayerIndex;
+    }
 
-    nlr->allocateMemoryByTopology();
+    // Output layer
+    nlr->addLayer( currentLayerIndex, NLR::Layer::OUTPUT, outputLayerSize );
+    nlr->addLayerDependency( currentLayerIndex - 1, currentLayerIndex );
 
     // Biases
     for ( unsigned i = 1; i < numberOfLayers; ++i )
         for ( unsigned j = 0; j < _acasNeuralNetwork.getLayerSize( i ); ++j )
-            nlr->setBias( i, j, _acasNeuralNetwork.getBias( i, j ) );
+            nlr->setBias( 2 * i - 1, j, _acasNeuralNetwork.getBias( i, j ) );
 
     // Weights
     for ( unsigned layer = 0; layer < numberOfLayers - 1; ++layer )
@@ -192,21 +211,26 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
         for ( unsigned target = 0; target < targetLayerSize; ++target )
         {
             for ( unsigned source = 0; source < _acasNeuralNetwork.getLayerSize( layer ); ++source )
-                nlr->setWeight( layer, source, target, _acasNeuralNetwork.getWeight( layer, source, target ) );
+                nlr->setWeight( 2 * layer, source, ( 2 * layer ) + 1, target, _acasNeuralNetwork.getWeight( layer, source, target ) );
         }
     }
 
-    // Mark all hidden nodes as ReLU nodes, per the ACAS implicit convention
+    // Mark all the ReLU connections
     for ( unsigned layer = 1; layer < numberOfLayers - 1; ++layer )
     {
-        unsigned layerSize = _acasNeuralNetwork.getLayerSize( layer  );
+        unsigned layerSize = _acasNeuralNetwork.getLayerSize( layer );
         for ( unsigned neuron = 0; neuron < layerSize; ++neuron )
-        {
-            nlr->setNeuronActivationFunction( layer, neuron, PiecewiseLinearFunctionType::RELU );
-        }
+            nlr->addActivationSource( ( layer * 2 ) - 1, neuron, layer * 2, neuron );
     }
 
-    // Variable indexing
+    // Variable indexing, input layer
+    for ( unsigned i = 0; i < _acasNeuralNetwork.getLayerSize( 0 ); ++i )
+    {
+        unsigned var = _nodeToF[NodeIndex( 0, i )];
+        nlr->setNeuronVariable( NLR::NeuronIndex( 0, i ), var );
+    }
+
+    // Variable indexing, hidden layers
     for ( unsigned i = 1; i < numberOfLayers - 1; ++i )
     {
         unsigned layerSize = _acasNeuralNetwork.getLayerSize( i );
@@ -215,24 +239,21 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
         {
             unsigned b = _nodeToB[NodeIndex( i, j )];
             unsigned f = _nodeToF[NodeIndex( i, j )];
-            nlr->setWeightedSumVariable( i, j, b );
-            nlr->setActivationResultVariable( i, j, f );
+
+            nlr->setNeuronVariable( NLR::NeuronIndex( ( 2 * i ) - 1, j ), b );
+            nlr->setNeuronVariable( NLR::NeuronIndex( 2 * i, j ), f );
         }
     }
 
-    // Input variables are treated as "activation results"; output
-    // variables are treated as "weighted sums"
-    for ( unsigned i = 0; i < _acasNeuralNetwork.getLayerSize( 0 ); ++i )
-    {
-        unsigned var = _nodeToF[NodeIndex( 0, i )];
-        nlr->setActivationResultVariable( 0, i, var );
-    }
-
+    // Variable indexing, output layer
     for ( unsigned i = 0; i < _acasNeuralNetwork.getLayerSize( numberOfLayers - 1 ); ++i )
     {
         unsigned var = _nodeToB[NodeIndex( numberOfLayers - 1, i )];
-        nlr->setWeightedSumVariable( numberOfLayers - 1, i, var );
+        nlr->setNeuronVariable( NLR::NeuronIndex( 2 * numberOfLayers - 3, i ), var );
     }
+
+    printf( "ACAS Parser: starting NLR constrction DONE! Dumping it\n" );
+    nlr->dumpTopology();
 
     // Store the reasoner in the input query
     inputQuery.setNetworkLevelReasoner( nlr );

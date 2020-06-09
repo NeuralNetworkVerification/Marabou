@@ -2,7 +2,7 @@
 
 #ifdef USE_OPENBLAS 
 #include "cblas.h"
-    void matrixMultiplication( double *matA, double *matB, double *matC,
+    void matrixMultiplication ( const double *matA, const double *matB, double *matC,
                                unsigned rowsA, unsigned columnsA,
                                unsigned columnsB )
     {

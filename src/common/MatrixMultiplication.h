@@ -7,7 +7,7 @@
   and the size of matB is columnsA x columnsB.
   Compute matA * matB + matC and store the result in matC
 */
-void matrixMultiplication( double *matA, double *matB, double *matC,
+void matrixMultiplication( const double *matA, const double *matB, double *matC,
                            unsigned rowsA, unsigned columnsA,
                            unsigned columnsB );
 

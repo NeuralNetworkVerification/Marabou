@@ -316,7 +316,7 @@ if (${BUILD_PYTHON} AND ${RUN_PYTHON_TEST})
         POST_BUILD
         COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PYTHON_API_DIR}/test
     )
-endif()    
+endif()
 
 # Add the input parsers
 add_custom_target(build_input_parsers)

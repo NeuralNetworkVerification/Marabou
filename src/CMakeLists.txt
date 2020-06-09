@@ -1,10 +1,10 @@
 add_custom_target(build-unit-tests ALL)
 add_dependencies(build-tests build-unit-tests)
 
-macro(marabou_add_test test_name test_dir add_common_real add_engine_real labels) 
+macro(marabou_add_test test_name test_dir add_common_real add_engine_real labels)
     get_filename_component(name ${test_name} NAME_WE)
     set(test_src ${name}.cc)
-    set(name "${name}${CMAKE_EXECUTABLE_SUFFIX}") 
+    set(name "${name}${CMAKE_EXECUTABLE_SUFFIX}")
 
     set(test_header "${test_name}.h")
     set(test_bin_dir "${TEST_DIR}/${test_dir}")
@@ -35,7 +35,7 @@ macro(marabou_add_test test_name test_dir add_common_real add_engine_real labels
     endif()
     add_executable(${name} ${test_src} ${test_header})
     target_compile_options(${name} PRIVATE ${CXXTEST_FLAGS})
-    target_include_directories(${name}  PRIVATE ${LIBS_INCLUDES} 
+    target_include_directories(${name}  PRIVATE ${LIBS_INCLUDES}
         )
     target_link_libraries(${name}  ${MARABOU_TEST_LIB} ${CXXTEST_FLAGS})
     add_custom_command(TARGET ${name} POST_BUILD
@@ -52,3 +52,4 @@ add_subdirectory(common)
 add_subdirectory(system_tests)
 add_subdirectory(${INPUT_PARSERS_DIR})
 add_subdirectory(query_loader)
+add_subdirectory(nlr)

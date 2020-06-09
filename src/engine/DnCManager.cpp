@@ -277,7 +277,7 @@ void DnCManager::printResult()
             inputs[i] = inputQuery->getSolutionValue( inputQuery->inputVariableByIndex( i ) );
         }
 
-        NetworkLevelReasoner *nlr = inputQuery->getNetworkLevelReasoner();
+        NLR::NetworkLevelReasoner *nlr = inputQuery->getNetworkLevelReasoner();
         if ( nlr )
             nlr->evaluate( inputs, outputs );
 
@@ -288,7 +288,7 @@ void DnCManager::printResult()
             if ( nlr )
                 printf( "\tnlr y%u = %lf\n", i, outputs[i] );
             else
-                printf( "\ty%u = %lf\n", i, inputQuery->getSolutionValue( inputQuery->outputVariableByIndex( i ) ) );            
+                printf( "\ty%u = %lf\n", i, inputQuery->getSolutionValue( inputQuery->outputVariableByIndex( i ) ) );
         }
         printf( "\n" );
         break;

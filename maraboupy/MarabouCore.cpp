@@ -248,16 +248,13 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_timeoutFactor", &MarabouOptions::_timeoutFactor)
         .def_readwrite("_verbosity", &MarabouOptions::_verbosity)
         .def_readwrite("_dnc", &MarabouOptions::_dnc);
-    py::class_<NetworkLevelReasoner, std::unique_ptr<NetworkLevelReasoner,py::nodelete>> nlr(m, "NetworkLevelReasoner");
+    py::class_<NLR::NetworkLevelReasoner, std::unique_ptr<NLR::NetworkLevelReasoner,py::nodelete>> nlr(m, "NetworkLevelReasoner");
     nlr.def(py::init());
-    nlr.def("setNumberOfLayers", &NetworkLevelReasoner::setNumberOfLayers);
-    nlr.def("setLayerSize", &NetworkLevelReasoner::setLayerSize);
-    nlr.def("setNeuronActivationFunction", &NetworkLevelReasoner::setNeuronActivationFunction);
-    nlr.def("setBias", &NetworkLevelReasoner::setBias);
-    nlr.def("setWeight", &NetworkLevelReasoner::setWeight);
-    nlr.def("allocateMemoryByTopology", &NetworkLevelReasoner::allocateMemoryByTopology);
-    nlr.def("setWeightedSumVariable", &NetworkLevelReasoner::setWeightedSumVariable);
-    nlr.def("setActivationResultVariable", &NetworkLevelReasoner::setActivationResultVariable);
+    nlr.def("addLayer", &NLR::NetworkLevelReasoner::addLayer);
+    nlr.def("addLayerDependency", &NLR::NetworkLevelReasoner::addLayerDependency);
+    nlr.def("addActivationSource", &NLR::NetworkLevelReasoner::addActivationSource);
+    nlr.def("setBias", &NLR::NetworkLevelReasoner::setBias);
+    nlr.def("setWeight", &NLR::NetworkLevelReasoner::setWeight);
     py::enum_<PiecewiseLinearFunctionType>(m, "PiecewiseLinearFunctionType")
         .value("ReLU", PiecewiseLinearFunctionType::RELU)
         .value("AbsoluteValue", PiecewiseLinearFunctionType::ABSOLUTE_VALUE)
