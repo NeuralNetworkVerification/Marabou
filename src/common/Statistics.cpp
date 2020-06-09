@@ -75,6 +75,8 @@ Statistics::Statistics()
     , _totalTimeApplyingStoredTighteningsMicro( 0 )
     , _totalTimeSmtCoreMicro( 0 )
     , _timedOut( false )
+{
+}
 
 void Statistics::print()
 {
@@ -162,23 +164,6 @@ void Statistics::print()
             , _totalTimePerformingSymbolicBoundTightening / 1000
             );
 
-    printf("\t\t\t[%.2lf%%] SBT init: %llu milli\n"
-            , printPercents( _totalTimePerformingSBTInit, _timeMainLoopMicro )
-            , _totalTimePerformingSBTInit/ 1000
-            );
-    /* printf("\t\t[%.2lf%%] SBT extraction: %llu milli\n" */
-    /*         , printPercents( _totalTimePerformingSBTExtraction, _timeMainLoopMicro ) */
-    /*         , _totalTimePerformingSBTExtraction/ 1000 */
-    /*         ); */
-    printf("\t\t\t[%.2lf%%] SBT run: %llu milli\n"
-            , printPercents( _totalTimePerformingSBTRun, _timeMainLoopMicro )
-            , _totalTimePerformingSBTRun / 1000
-            );
-
-    printf("\t\t\t[%.2lf%%] SBT Tighten: %llu milli\n"
-            , printPercents( _totalTimePerformingSBTTighten, _timeMainLoopMicro )
-            , _totalTimePerformingSBTTighten/ 1000
-            );
     unsigned long long total =
         _timeSimplexStepsMicro +
         _timeConstraintFixingStepsMicro +
@@ -700,8 +685,6 @@ void Statistics::incNumTighteningsFromSymbolicBoundTightening( unsigned incremen
     _numTighteningsFromSymbolicBoundTightening += increment;
 }
 
-
-//
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

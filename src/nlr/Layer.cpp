@@ -846,7 +846,6 @@ void Layer::computeSymbolicBoundsForWeightedSum()
           newLB = oldUB * negWeights + oldLB * posWeights
         */
 
-<<<<<<< HEAD
         matrixMultiplication( sourceLayer->getSymbolicUb(), _layerToPositiveWeights[sourceLayerIndex],
                               _symbolicUb, _inputLayerSize,
                               sourceLayerSize, _size);
