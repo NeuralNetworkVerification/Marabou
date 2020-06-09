@@ -1757,7 +1757,6 @@ void Engine::performSymbolicBoundTightening()
             ++numTightenedBounds;
         }
 
-
         if ( tightening._type == Tightening::UB &&
              _tableau->getUpperBound( tightening._variable ) > tightening._value )
         {
@@ -1859,20 +1858,21 @@ void Engine::warmStart()
     _networkLevelReasoner->evaluate( inputAssignment, outputAssignment );
 
     // Try to update as many variables as possible to match their assignment
-    for ( const auto &assignment : _networkLevelReasoner->getIndexToWeightedSumAssignment() )
+    for ( unsigned i = 0; i < _networkLevelReasoner->getNumberOfLayers(); ++i )
     {
-        unsigned variable = _networkLevelReasoner->getWeightedSumVariable( assignment.first._layer, assignment.first._neuron );
+        const NLR::Layer *layer = _networkLevelReasoner->getLayer( i );
+        unsigned layerSize = layer->getSize();
+        const double *assignment = layer->getAssignment();
 
-        if ( !_tableau->isBasic( variable ) )
-            _tableau->setNonBasicAssignment( variable, assignment.second, false );
-    }
-
-    for ( const auto &assignment : _networkLevelReasoner->getIndexToActivationResultAssignment() )
-    {
-        unsigned variable = _networkLevelReasoner->getActivationResultVariable( assignment.first._layer, assignment.first._neuron );
-
-        if ( !_tableau->isBasic( variable ) )
-            _tableau->setNonBasicAssignment( variable, assignment.second, false );
+        for ( unsigned j = 0; j < layerSize; ++j )
+        {
+            if ( layer->neuronHasVariable( j ) )
+            {
+                unsigned variable = layer->neuronToVariable( j );
+                if ( !_tableau->isBasic( variable ) )
+                    _tableau->setNonBasicAssignment( variable, assignment[j], false );
+            }
+        }
     }
 
     // We did what we could for the non-basics; now let the tableau compute
@@ -1920,31 +1920,26 @@ void Engine::updateDirections()
 
 void Engine::updateScores()
 {
-    if ( _networkLevelReasoner && GlobalConfiguration::SPLITTING_HEURISTICS ==
-         DivideStrategy::Polarity )
+    if ( _networkLevelReasoner &&
+         GlobalConfiguration::SPLITTING_HEURISTICS == DivideStrategy::Polarity )
     {
         // We find the earliest K ReLUs that have not been fixed, update
         // their scores, and pop them to the _candidatePlConstraints
         // K is equal to GlobalConfiguration::RUNTIME_ESTIMATE_THRESHOLD
         log( Stringf( "Using polarity heuristics..." ) );
-        for ( unsigned layer = 1; layer < _networkLevelReasoner->
-                  getNumberOfLayers() - 1 && _candidatePlConstraints.size() <=
-                  GlobalConfiguration::RUNTIME_ESTIMATE_THRESHOLD; ++layer )
+
+        List<PiecewiseLinearConstraint *> constraints =
+            _networkLevelReasoner->getConstraintsInTopologicalOrder();
+
+        for ( auto &plConstraint : constraints )
         {
-            log( Stringf( "examining layer %u", layer ) );
-            unsigned size = _networkLevelReasoner->getLayerSize( layer );
-            for ( unsigned neuron = 0; neuron < size; ++neuron ){
-                auto plConstraint = _networkLevelReasoner->
-                    getPLConstraintFromIndex( layer, neuron );
-                if ( plConstraint && plConstraint->isActive()
-                     && !plConstraint->phaseFixed() )
-                {
-                    plConstraint->updateScore();
-                    _candidatePlConstraints.insert( plConstraint );
-                    if ( _candidatePlConstraints.size() >=
-                         GlobalConfiguration::RUNTIME_ESTIMATE_THRESHOLD )
-                        break;
-                }
+            if ( plConstraint->isActive() && !plConstraint->phaseFixed() )
+            {
+                plConstraint->updateScore();
+                _candidatePlConstraints.insert( plConstraint );
+                if ( _candidatePlConstraints.size() >=
+                     GlobalConfiguration::RUNTIME_ESTIMATE_THRESHOLD )
+                    break;
             }
         }
     }
@@ -1960,8 +1955,11 @@ void Engine::updateScores()
             }
         }
     }
-    // Otherwise, we fall back to the constraint violation based splitting
-    // heuristic
+    else
+    {
+        // Otherwise, we fall back to the constraint violation based
+        // splitting heuristic - nothing to do.
+    }
 }
 
 PiecewiseLinearConstraint *Engine::pickSplitPLConstraint()

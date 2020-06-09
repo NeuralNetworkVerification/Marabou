@@ -27,6 +27,7 @@ public:
         FILE_DOESNT_EXIST = 2,
         UNSUPPORTED_BOUND_TYPE = 3,
         NETWORK_LEVEL_REASONING_DISABLED = 4,
+        HIDDEN_VARIABLE_DOESNT_EXIST_IN_NLR = 5,
     };
 
     InputParserError( InputParserError::Code code ) : Error( "InputParserError", (int)code )
