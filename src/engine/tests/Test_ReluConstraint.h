@@ -36,17 +36,17 @@ class ReluConstraintTestSuite : public CxxTest::TestSuite
 public:
     MockForReluConstraint *mock;
 
-    void setUp()
+    void setUp() // todo - PASSED
     {
         TS_ASSERT( mock = new MockForReluConstraint );
     }
 
-    void tearDown()
+    void tearDown()  // todo - PASSED
     {
         TS_ASSERT_THROWS_NOTHING( delete mock );
     }
 
-    void test_relu_constraint()
+    void test_relu_constraint() // todo - PASSED
     {
         unsigned b = 1;
         unsigned f = 4;
@@ -133,7 +133,7 @@ public:
         TS_ASSERT( relu.satisfied() );
     }
 
-    void test_relu_fixes()
+    void test_relu_fixes()  // todo - PASSED
     {
         unsigned b = 1;
         unsigned f = 4;
@@ -177,7 +177,7 @@ public:
         TS_ASSERT_EQUALS( it->_value, 11 );
     }
 
-    void test_relu_case_splits()
+    void test_relu_case_splits() // todo - PASSED
     {
         unsigned b = 1;
         unsigned f = 4;
@@ -201,7 +201,7 @@ public:
         TS_ASSERT( isInactiveSplit( b, f, split1 ) || isInactiveSplit( b, f, split2 ) );
     }
 
-    bool isActiveSplit( unsigned b, unsigned f, List<PiecewiseLinearCaseSplit>::iterator &split )
+    bool isActiveSplit( unsigned b, unsigned f, List<PiecewiseLinearCaseSplit>::iterator &split ) // todo - PASSED
     {
         List<Tightening> bounds = split->getBoundTightenings();
 
@@ -236,7 +236,7 @@ public:
         return true;
     }
 
-    bool isInactiveSplit( unsigned b, unsigned f, List<PiecewiseLinearCaseSplit>::iterator &split )
+    bool isInactiveSplit( unsigned b, unsigned f, List<PiecewiseLinearCaseSplit>::iterator &split ) // todo - PASSED
     {
         List<Tightening> bounds = split->getBoundTightenings();
 
@@ -264,7 +264,7 @@ public:
         return true;
     }
 
-    void test_relu_case_splits_with_aux_var()
+    void test_relu_case_splits_with_aux_var()  // todo - IGNORE for SIGN
     {
         unsigned b = 1;
         unsigned f = 4;
@@ -301,7 +301,7 @@ public:
         TS_ASSERT( isInactiveSplit( b, f, split1 ) || isInactiveSplit( b, f, split2 ) );
     }
 
-    bool isActiveSplitWithAux( unsigned b, unsigned aux, List<PiecewiseLinearCaseSplit>::iterator &split )
+    bool isActiveSplitWithAux( unsigned b, unsigned aux, List<PiecewiseLinearCaseSplit>::iterator &split )  // todo - IGNORE for SIGN
     {
         List<Tightening> bounds = split->getBoundTightenings();
 
@@ -331,7 +331,7 @@ public:
         return true;
     }
 
-    void test_register_as_watcher()
+    void test_register_as_watcher() // todo - PASSED
     {
         unsigned b = 1;
         unsigned f = 4;
@@ -361,7 +361,7 @@ public:
         TS_ASSERT( tableau.lastUnregisteredVariableToWatcher[f].exists( &relu ) );
     }
 
-    void test_fix_active()
+    void test_fix_active() // todo - PASSED
     {
         unsigned b = 1;
         unsigned f = 4;
@@ -399,7 +399,7 @@ public:
         relu.unregisterAsWatcher( &tableau );
     }
 
-    void test_fix_inactive()
+    void test_fix_inactive() // todo - PASSED
     {
         unsigned b = 1;
         unsigned f = 4;
@@ -422,7 +422,7 @@ public:
         relu.unregisterAsWatcher( &tableau );
     }
 
-    void test_constraint_phase_gets_fixed()
+    void test_constraint_phase_gets_fixed() // todo - PASSED
     {
         unsigned b = 1;
         unsigned f = 4;
@@ -759,7 +759,7 @@ public:
         TS_ASSERT( relu.constraintObsolete() );
     }
 
-    void test_serialize_and_unserialize()
+    void test_serialize_and_unserialize()  // todo - IGNORE for SIGN
     {
         unsigned b = 42;
         unsigned f = 7;
@@ -807,7 +807,7 @@ public:
         return false;
     }
 
-    void test_relu_smart_fixes()
+    void test_relu_smart_fixes() // todo - IGNORE for SIGN
     {
         unsigned b = 1;
         unsigned f = 4;
@@ -948,7 +948,7 @@ public:
         TS_ASSERT( haveFix( fixes, f, 2 ) );
     }
 
-    void test_add_auxiliary_equations()
+    void test_add_auxiliary_equations()  // todo - IGNORE for SIGN
     {
         ReluConstraint relu( 4, 6 );
         InputQuery query;
@@ -1124,7 +1124,7 @@ public:
         }
     }
 
-    void test_polarity()
+    void test_polarity()  // todo - IGNORE for SIGN
     {
         unsigned b = 1;
         unsigned f = 4;
