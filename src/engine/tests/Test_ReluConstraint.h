@@ -36,17 +36,17 @@ class ReluConstraintTestSuite : public CxxTest::TestSuite
 public:
     MockForReluConstraint *mock;
 
-    void setUp() // todo - PASSED
+    void setUp()
     {
         TS_ASSERT( mock = new MockForReluConstraint );
     }
 
-    void tearDown()  // todo - PASSED
+    void tearDown()
     {
         TS_ASSERT_THROWS_NOTHING( delete mock );
     }
 
-    void test_relu_constraint() // todo - PASSED
+    void test_relu_constraint()
     {
         unsigned b = 1;
         unsigned f = 4;
@@ -133,7 +133,7 @@ public:
         TS_ASSERT( relu.satisfied() );
     }
 
-    void test_relu_fixes()  // todo - PASSED
+    void test_relu_fixes()
     {
         unsigned b = 1;
         unsigned f = 4;
@@ -177,7 +177,7 @@ public:
         TS_ASSERT_EQUALS( it->_value, 11 );
     }
 
-    void test_relu_case_splits() // todo - PASSED
+    void test_relu_case_splits()
     {
         unsigned b = 1;
         unsigned f = 4;
@@ -201,7 +201,7 @@ public:
         TS_ASSERT( isInactiveSplit( b, f, split1 ) || isInactiveSplit( b, f, split2 ) );
     }
 
-    bool isActiveSplit( unsigned b, unsigned f, List<PiecewiseLinearCaseSplit>::iterator &split ) // todo - PASSED
+    bool isActiveSplit( unsigned b, unsigned f, List<PiecewiseLinearCaseSplit>::iterator &split )
     {
         List<Tightening> bounds = split->getBoundTightenings();
 
@@ -236,7 +236,7 @@ public:
         return true;
     }
 
-    bool isInactiveSplit( unsigned b, unsigned f, List<PiecewiseLinearCaseSplit>::iterator &split ) // todo - PASSED
+    bool isInactiveSplit( unsigned b, unsigned f, List<PiecewiseLinearCaseSplit>::iterator &split )
     {
         List<Tightening> bounds = split->getBoundTightenings();
 
@@ -264,7 +264,7 @@ public:
         return true;
     }
 
-    void test_relu_case_splits_with_aux_var()  // todo - IGNORE for SIGN
+    void test_relu_case_splits_with_aux_var()
     {
         unsigned b = 1;
         unsigned f = 4;
@@ -301,7 +301,7 @@ public:
         TS_ASSERT( isInactiveSplit( b, f, split1 ) || isInactiveSplit( b, f, split2 ) );
     }
 
-    bool isActiveSplitWithAux( unsigned b, unsigned aux, List<PiecewiseLinearCaseSplit>::iterator &split )  // todo - IGNORE for SIGN
+    bool isActiveSplitWithAux( unsigned b, unsigned aux, List<PiecewiseLinearCaseSplit>::iterator &split )
     {
         List<Tightening> bounds = split->getBoundTightenings();
 
@@ -331,7 +331,7 @@ public:
         return true;
     }
 
-    void test_register_as_watcher() // todo - PASSED
+    void test_register_as_watcher()
     {
         unsigned b = 1;
         unsigned f = 4;
@@ -361,7 +361,7 @@ public:
         TS_ASSERT( tableau.lastUnregisteredVariableToWatcher[f].exists( &relu ) );
     }
 
-    void test_fix_active() // todo - PASSED
+    void test_fix_active()
     {
         unsigned b = 1;
         unsigned f = 4;
@@ -399,7 +399,7 @@ public:
         relu.unregisterAsWatcher( &tableau );
     }
 
-    void test_fix_inactive() // todo - PASSED
+    void test_fix_inactive()
     {
         unsigned b = 1;
         unsigned f = 4;
@@ -422,7 +422,7 @@ public:
         relu.unregisterAsWatcher( &tableau );
     }
 
-    void test_constraint_phase_gets_fixed() // todo - PASSED
+    void test_constraint_phase_gets_fixed()
     {
         unsigned b = 1;
         unsigned f = 4;
@@ -536,7 +536,7 @@ public:
         }
     }
 
-    void test_valid_split_relu_phase_fixed_to_active() // todo - PASSED - check with guy
+    void test_valid_split_relu_phase_fixed_to_active()
     {
         unsigned b = 1;
         unsigned f = 4;
@@ -582,7 +582,7 @@ public:
         TS_ASSERT_EQUALS( activeEquation._type, Equation::EQ );
     }
 
-    void test_valid_split_relu_phase_fixed_to_inactive() // todo - PASSED - check with guy
+    void test_valid_split_relu_phase_fixed_to_inactive()
     {
         unsigned b = 1;
         unsigned f = 4;
@@ -715,7 +715,7 @@ public:
         TS_ASSERT( entailedTightenings.exists( Tightening( f, 0, Tightening::UB ) ) );
     }
 
-    void test_relu_duplicate_and_restore() // todo - PASSED - check with guy
+    void test_relu_duplicate_and_restore()
     {
         ReluConstraint *relu1 = new ReluConstraint( 4, 6 );
         relu1->setActiveConstraint( false );
@@ -743,7 +743,7 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete relu2 );
     }
 
-    void test_eliminate_variable_active()  // todo - PASSED
+    void test_eliminate_variable_active()
     {
         unsigned b = 1;
         unsigned f = 4;
@@ -759,7 +759,7 @@ public:
         TS_ASSERT( relu.constraintObsolete() );
     }
 
-    void test_serialize_and_unserialize()  // todo - IGNORE for SIGN
+    void test_serialize_and_unserialize()
     {
         unsigned b = 42;
         unsigned f = 7;
@@ -795,7 +795,7 @@ public:
         TS_ASSERT_EQUALS( originalRelu.getAux(), recoveredRelu2.getAux() );
     }
 
-    bool haveFix( List<PiecewiseLinearConstraint::Fix> &fixes, unsigned var, double value ) // todo - IGNORE for SIGN
+    bool haveFix( List<PiecewiseLinearConstraint::Fix> &fixes, unsigned var, double value )
     {
         PiecewiseLinearConstraint::Fix targetFix( var, value );
         for ( const auto &fix : fixes )
@@ -807,7 +807,7 @@ public:
         return false;
     }
 
-    void test_relu_smart_fixes() // todo - IGNORE for SIGN
+    void test_relu_smart_fixes()
     {
         unsigned b = 1;
         unsigned f = 4;
@@ -948,7 +948,7 @@ public:
         TS_ASSERT( haveFix( fixes, f, 2 ) );
     }
 
-    void test_add_auxiliary_equations()  // todo - IGNORE for SIGN
+    void test_add_auxiliary_equations()
     {
         ReluConstraint relu( 4, 6 );
         InputQuery query;
@@ -1026,7 +1026,7 @@ public:
         return relu;
     }
 
-    void test_notify_bounds()
+    void test_notify_bounds() // TODO FINISH
     {
         unsigned b = 1;
         unsigned f = 4;
@@ -1124,7 +1124,7 @@ public:
         }
     }
 
-    void test_polarity()  // todo - IGNORE for SIGN
+    void test_polarity()
     {
         unsigned b = 1;
         unsigned f = 4;
