@@ -785,7 +785,7 @@ public:
 
 
 
-        sign.registerConstraintBoundTightener(tightener);
+        sign.registerConstraintBoundTightener(tightener); 
 
         return sign;
     }
