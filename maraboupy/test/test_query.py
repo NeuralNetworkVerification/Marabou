@@ -20,7 +20,8 @@ def test_query(tmpdir):
     network = load_network()
     
     # Set output constraint
-    outputVar = network.outputVars[1]
+    outputVars = network.outputVars.flatten()
+    outputVar = outputVars[1]
     minOutputValue = 70.0
     network.setLowerBound(outputVar, minOutputValue)
     
