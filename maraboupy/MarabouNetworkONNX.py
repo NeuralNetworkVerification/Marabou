@@ -903,4 +903,12 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         return sess.run([self.outputName],input_dict)[0]
 
 def getBroadcastShape(shape1, shape2):
+    """
+    Helper function to get the shape that results from broadcasting these shapes together
+    Arguments:
+        shape1: (list of int) first shape
+        shape2: (list of int) second shape
+    Returns:
+        broadcast shape
+    """
     return [l1 if l1 == l2 else max(l1, l2) for l1, l2 in itertools.zip_longest(shape1[::-1], shape2[::-1], fillvalue=1)][::-1]
