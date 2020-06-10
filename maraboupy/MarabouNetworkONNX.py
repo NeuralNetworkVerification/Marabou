@@ -898,7 +898,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             if 'float' in onnxType:
                 inputType = 'float32'
             else:
-                raise NotImplementedError("Inputs to network expected to of type 'float'%s" % onnxType)
+                raise NotImplementedError("Inputs to network expected to be of type 'float', not %s" % onnxType)
             input_dict[inputName] = inputValues[i].reshape(self.inputVars[i].shape).astype(inputType)
         return sess.run([self.outputName],input_dict)[0]
 

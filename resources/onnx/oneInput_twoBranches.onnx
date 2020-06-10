@@ -1,10 +1,13 @@
-:Ø
+:ù
 $
 W1flatten1"Flatten*
 axis 
-
+"
+flatten1cast1"Cast*	
+to 
+
 X
-flatten1
+cast1
 b1gemm0"Gemm
 
 gemm0relu0"Relu
