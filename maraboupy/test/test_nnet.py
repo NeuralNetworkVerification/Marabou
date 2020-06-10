@@ -142,3 +142,4 @@ def evaluateFile(filename, testInputs, testOutputs, normalize = False, normInput
 
         assert max(abs(marabouEval - testOutput)) < TOL
     return network
+
