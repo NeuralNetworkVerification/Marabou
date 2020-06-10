@@ -48,13 +48,7 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
       construct one
     */
     if ( !_preprocessed._networkLevelReasoner )
-    {
-        log( "PP: constructing an NLR... " );
-        if ( constructNetworkLevelReasoner() )
-            log( "successful\n" );
-        else
-            log( "unsuccessful\n" );
-    }
+        constructNetworkLevelReasoner();
 
     /*
       Collect input and output variables
@@ -816,6 +810,8 @@ void Preprocessor::dumpAllBounds( const String &message )
 
 bool Preprocessor::constructNetworkLevelReasoner()
 {
+    log( "PP: constructing an NLR... " );
+
     ASSERT( !_preprocessed._networkLevelReasoner );
     NLR::NetworkLevelReasoner *nlr = new NLR::NetworkLevelReasoner;
 
@@ -840,14 +836,28 @@ bool Preprocessor::constructNetworkLevelReasoner()
         ++newLayerIndex;
     }
 
-    bool success =
-        ( newLayerIndex > 1 ) &&
-        nlr->getLayer( newLayerIndex - 1 )->getLayerType() == NLR::Layer::OUTPUT;
+    bool success = ( newLayerIndex > 1 );
+
+    nlr->dumpTopology();
 
     if ( success )
+    {
+        unsigned count = 0;
+        for ( unsigned i = 0; i < nlr->getNumberOfLayers(); ++i )
+            count += nlr->getLayer( i )->getSize();
+
+        log( Stringf( "successful. Constructed %u layers with %u neurons (out of %u)\n",
+                      newLayerIndex,
+                      count,
+                      _preprocessed.getNumberOfVariables() ) );
+
         _preprocessed._networkLevelReasoner = nlr;
+    }
     else
+    {
+        log( "unsuccessful\n" );
         delete nlr;
+    }
 
     return success;
 }
@@ -908,18 +918,7 @@ bool Preprocessor::constructWeighedSumLayer( NLR::NetworkLevelReasoner *nlr,
     if ( newNeurons.empty() )
         return false;
 
-    bool isOutput = false;
-    for ( const auto &newNeuron : newNeurons )
-    {
-        if ( newNeuron._variable == _preprocessed.getNumberOfVariables() - 1 )
-        {
-            isOutput = true;
-            break;
-        }
-    }
-
-    NLR::Layer::Type newLayerType = isOutput ? NLR::Layer::OUTPUT : NLR::Layer::WEIGHTED_SUM;
-    nlr->addLayer( newLayerIndex, newLayerType, newNeurons.size() );
+    nlr->addLayer( newLayerIndex, NLR::Layer::WEIGHTED_SUM, newNeurons.size() );
     for ( const auto &newNeuron : newNeurons )
     {
         handledVariableToLayer[newNeuron._variable] = newLayerIndex;

@@ -32,7 +32,6 @@ public:
     enum Type {
         // Linear layers
         INPUT = 0,
-        OUTPUT,
         WEIGHTED_SUM,
 
         // Activation functions

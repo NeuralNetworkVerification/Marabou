@@ -135,7 +135,6 @@ void LPFormulator::createLPRelaxation( const Map<unsigned, Layer *> &layers,
             break;
 
         case Layer::WEIGHTED_SUM:
-        case Layer::OUTPUT:
             addWeightedSumLayerToLpRelaxation( gurobi, layer.second );
             break;
 

@@ -51,7 +51,7 @@ Layer::Layer( unsigned index, Type type, unsigned size, LayerOwner *layerOwner )
 
 void Layer::allocateMemory()
 {
-    if ( _type == WEIGHTED_SUM || _type == OUTPUT )
+    if ( _type == WEIGHTED_SUM )
     {
         _bias = new double[_size];
         std::fill_n( _bias, _size, 0 );
@@ -112,7 +112,7 @@ void Layer::computeAssignment()
 {
     ASSERT( _type != INPUT );
 
-    if ( _type == WEIGHTED_SUM || _type == OUTPUT )
+    if ( _type == WEIGHTED_SUM )
     {
         // Initialize to bias
         memcpy( _assignment, _bias, sizeof(double) * _size );
@@ -190,7 +190,7 @@ void Layer::addSourceLayer( unsigned layerNumber, unsigned layerSize )
 
     _sourceLayers[layerNumber] = layerSize;
 
-    if ( _type == WEIGHTED_SUM || _type == OUTPUT )
+    if ( _type == WEIGHTED_SUM )
     {
         _layerToWeights[layerNumber] = new double[layerSize * _size];
         _layerToPositiveWeights[layerNumber] = new double[layerSize * _size];
@@ -328,7 +328,6 @@ void Layer::computeIntervalArithmeticBounds()
     switch ( _type )
     {
     case WEIGHTED_SUM:
-    case OUTPUT:
         computeIntervalArithmeticBoundsForWeightedSum();
         break;
 
@@ -506,7 +505,6 @@ void Layer::computeSymbolicBounds()
         break;
 
     case WEIGHTED_SUM:
-    case OUTPUT:
         computeSymbolicBoundsForWeightedSum();
         break;
 
@@ -1261,10 +1259,6 @@ String Layer::typeToString( Type type )
         return "INPUT";
         break;
 
-    case OUTPUT:
-        return "OUTPUT";
-        break;
-
     case WEIGHTED_SUM:
         return "WEIGHTED_SUM";
         break;
@@ -1302,7 +1296,6 @@ void Layer::dump() const
         printf( "\n\n" );
         break;
 
-    case OUTPUT:
     case WEIGHTED_SUM:
 
         for ( unsigned i = 0; i < _size; ++i )
