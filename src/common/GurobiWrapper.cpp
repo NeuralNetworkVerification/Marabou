@@ -148,6 +148,11 @@ bool GurobiWrapper::optimal()
     return ( _model->get( GRB_IntAttr_Status ) == GRB_OPTIMAL );
 }
 
+bool GurobiWrapper::infeasbile()
+{
+    return ( _model->get( GRB_IntAttr_Status ) == GRB_INFEASIBLE );
+}
+
 void GurobiWrapper::extractSolution( Map<String, double> &values, double &costOrObjective )
 {
     values.clear();

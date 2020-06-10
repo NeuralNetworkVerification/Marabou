@@ -24,6 +24,11 @@ namespace NLR {
 class LPFormulator
 {
 public:
+    enum MinOrMax {
+        MIN = 0,
+        MAX = 1,
+    };
+
     LPFormulator( LayerOwner *layerOwner );
     ~LPFormulator();
 
@@ -42,6 +47,10 @@ private:
 
     void addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi,
                                             const Layer *layer );
+
+    double solveLPRelaxation( const Map<unsigned, Layer *> &layers,
+                              MinOrMax minOrMax,
+                              String variableName );
 
     static void log( const String &message );
 };

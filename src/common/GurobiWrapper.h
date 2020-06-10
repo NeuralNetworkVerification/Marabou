@@ -69,6 +69,9 @@ public:
     // Return true iff an optimal solution has been found
     bool optimal();
 
+    // Return true iff the instance is infeasible
+    bool infeasbile();
+
     // Solve and extract the solution
     void solve();
     void extractSolution( Map<String, double> &values, double &costOrObjective );
@@ -100,7 +103,8 @@ class GurobiWrapper
 {
 public:
     /*
-      A term has the form: coefficient * variable
+      This is a DUMMY class, for compilation purposes when Gurobi is
+      disabled.
     */
     struct Term
     {

@@ -1090,31 +1090,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         delete[] constraintMatrix;
 
-        // New step: use LP relaxations to tighten the bounds further
-        if ( _networkLevelReasoner && Options::get()->gurobiEnabled() )
-        {
-            _networkLevelReasoner->obtainCurrentBounds();
-            _networkLevelReasoner->lpRelaxationPropagation();
-
-            List<Tightening> tightenings;
-            _networkLevelReasoner->getConstraintTightenings( tightenings );
-
-            for ( const auto &tightening : tightenings )
-            {
-                if ( tightening._type == Tightening::LB &&
-                     _tableau->getLowerBound( tightening._variable ) < tightening._value )
-                {
-                    _tableau->tightenLowerBound( tightening._variable, tightening._value );
-                }
-
-                if ( tightening._type == Tightening::UB &&
-                     _tableau->getUpperBound( tightening._variable ) > tightening._value )
-                {
-                    _tableau->tightenUpperBound( tightening._variable, tightening._value );
-                }
-            }
-        }
-        // End new step
+        performLPRelaxationBoundedTightening();
 
         struct timespec end = TimeUtils::sampleMicro();
         _statistics.setPreprocessingTime( TimeUtils::timePassed( start, end ) );
@@ -1134,6 +1110,27 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
     _smtCore.storeDebuggingSolution( _preprocessedQuery._debuggingSolution );
     return true;
+}
+
+void Engine::performLPRelaxationBoundedTightening()
+{
+    if ( _networkLevelReasoner && Options::get()->gurobiEnabled() )
+    {
+        _networkLevelReasoner->obtainCurrentBounds();
+        _networkLevelReasoner->lpRelaxationPropagation();
+
+        List<Tightening> tightenings;
+        _networkLevelReasoner->getConstraintTightenings( tightenings );
+
+        for ( const auto &tightening : tightenings )
+        {
+            if ( tightening._type == Tightening::LB )
+                _tableau->tightenLowerBound( tightening._variable, tightening._value );
+
+            else if ( tightening._type == Tightening::UB )
+                _tableau->tightenUpperBound( tightening._variable, tightening._value );
+        }
+    }
 }
 
 void Engine::extractSolution( InputQuery &inputQuery )

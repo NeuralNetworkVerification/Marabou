@@ -94,15 +94,6 @@ String Options::getString( unsigned option ) const
     return String( _stringOptions.get( option ) );
 }
 
-bool Options::gurobiEnabled() const
-{
-#ifdef ENABLE_GUROBI
-    return true;
-#else
-    return false;
-#endif
-}
-
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

@@ -18,6 +18,7 @@
 #include "LPFormulator.h"
 #include "Layer.h"
 #include "MStringf.h"
+#include "NLRError.h"
 #include "TimeUtils.h"
 
 namespace NLR {
@@ -31,10 +32,37 @@ LPFormulator::~LPFormulator()
 {
 }
 
+double LPFormulator::solveLPRelaxation( const Map<unsigned, Layer *> &layers,
+                                        MinOrMax minOrMax,
+                                        String variableName )
+{
+    GurobiWrapper gurobi;
+    createLPRelaxation( layers, gurobi );
+
+    List<GurobiWrapper::Term> terms;
+    terms.append( GurobiWrapper::Term( 1, variableName ) );
+
+    if ( minOrMax == MAX )
+        gurobi.setObjective( terms );
+    else
+        gurobi.setCost( terms );
+
+    gurobi.solve();
+
+    if ( gurobi.infeasbile() )
+        throw InfeasibleQueryException();
+
+    if ( !gurobi.optimal() )
+        throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
+
+    Map<String, double> dontCare;
+    double result;
+    gurobi.extractSolution( dontCare, result );
+    return result;
+}
+
 void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> &layers )
 {
-    List<GurobiWrapper::Term> terms;
-    Map<String, double> dontCare;
     double lb = FloatUtils::negativeInfinity();
     double ub = FloatUtils::infinity();
 
@@ -53,35 +81,8 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
             unsigned variable = layer.second->neuronToVariable( i );
             Stringf variableName( "x%u", variable );
 
-            {
-                // Maximize
-                GurobiWrapper gurobi;
-                createLPRelaxation( layers, gurobi );
-                terms.clear();
-                terms.append( GurobiWrapper::Term( 1, variableName ) );
-                gurobi.setObjective( terms );
-                gurobi.solve();
-
-                if ( !gurobi.optimal() )
-                    throw InfeasibleQueryException();
-
-                gurobi.extractSolution( dontCare, ub );
-            }
-
-            {
-                // Minimize
-                GurobiWrapper gurobi;
-                createLPRelaxation( layers, gurobi );
-                terms.clear();
-                terms.append( GurobiWrapper::Term( 1, variableName ) );
-                gurobi.setCost( terms );
-                gurobi.solve();
-
-                if ( !gurobi.optimal() )
-                    throw InfeasibleQueryException();
-
-                gurobi.extractSolution( dontCare, lb );
-            }
+            lb = solveLPRelaxation( layers, MinOrMax::MIN, variableName );
+            ub = solveLPRelaxation( layers, MinOrMax::MAX, variableName );
 
             // Store the new bounds if they are tighter
             if ( lb > layer.second->getLb( i ) )

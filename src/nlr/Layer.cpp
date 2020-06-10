@@ -213,9 +213,15 @@ void Layer::setWeight( unsigned sourceLayer, unsigned sourceNeuron, unsigned tar
     _layerToWeights[sourceLayer][index] = weight;
 
     if ( weight > 0 )
+    {
         _layerToPositiveWeights[sourceLayer][index] = weight;
+        _layerToNegativeWeights[sourceLayer][index] = 0;
+    }
     else
+    {
+        _layerToPositiveWeights[sourceLayer][index] = 0;
         _layerToNegativeWeights[sourceLayer][index] = weight;
+    }
 }
 
 double Layer::getWeight( unsigned sourceLayer,

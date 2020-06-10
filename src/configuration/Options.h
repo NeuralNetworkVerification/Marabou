@@ -90,7 +90,14 @@ public:
     /*
       Options that are determined at compile time
     */
-    bool gurobiEnabled() const;
+    bool gurobiEnabled() const
+    {
+#ifdef ENABLE_GUROBI
+        return true;
+#else
+        return false;
+#endif
+    }
 
 private:
     /*
