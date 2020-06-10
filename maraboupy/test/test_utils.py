@@ -126,3 +126,4 @@ def load_network():
     network.setUpperBound(inputVars[1], 10.0)
     
     return network
+
