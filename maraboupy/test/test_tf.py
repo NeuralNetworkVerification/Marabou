@@ -24,7 +24,7 @@ def test_fc1():
     """
     filename = os.path.join(os.path.dirname(__file__), FG_FOLDER, "fc1.pb")
     network = Marabou.read_tf(filename)
-    evaluateFile(network)
+    evaluateNetwork(network)
 
 def test_KJ_TinyTaxiNet():
     """
@@ -34,7 +34,7 @@ def test_KJ_TinyTaxiNet():
     """
     filename = os.path.join(os.path.dirname(__file__), FG_FOLDER, "KJ_TinyTaxiNet.pb")
     network = Marabou.read_tf(filename)
-    evaluateFile(network)
+    evaluateNetwork(network)
     
 def test_conv_mp1():
     """
@@ -44,7 +44,7 @@ def test_conv_mp1():
     """
     filename = os.path.join(os.path.dirname(__file__), FG_FOLDER, "conv_mp1.pb")
     network = Marabou.read_tf(filename)
-    evaluateFile(network, numPoints = 5) 
+    evaluateNetwork(network, numPoints = 5) 
     
 def test_sm1_fc1():
     """
@@ -53,7 +53,7 @@ def test_sm1_fc1():
     """
     filename = os.path.join(os.path.dirname(__file__), SM1_FOLDER, "fc1")
     network = Marabou.read_tf(filename, modelType = "savedModel_v1", outputName = "add_3")
-    evaluateFile(network)
+    evaluateNetwork(network)
     
 def test_sm2_fc1():
     """
@@ -62,16 +62,14 @@ def test_sm2_fc1():
     """
     filename = os.path.join(os.path.dirname(__file__), SM2_FOLDER, "fc1")
     network = Marabou.read_tf(filename, modelType = "savedModel_v2")
-    evaluateFile(network)
+    evaluateNetwork(network)
         
-def evaluateFile(network, testInputs = None, numPoints = NUM_RAND):
+def evaluateNetwork(network, testInputs = None, numPoints = NUM_RAND):
     """
-    Load network and evaluate testInputs with and without Marabou
+    Evaluate a network at random testInputs with and without Marabou
     Args:
-        filename (str): name of network file without path
-    """
-    # Load network relative to this file's location
-    
+        network (MarabouNetwork): network loaded into Marabou to be evaluated
+    """    
     # Create test points if none provided. This creates a list of test points.
     # Each test point is itself a list, representing the values for each input array.
     if not testInputs:
