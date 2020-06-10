@@ -233,6 +233,9 @@ class MarabouNetwork:
         Returns:
             outputValues: (np array) representing output of network
         """
+        # Make sure inputValues is a list of np arrays and not list of lists
+        inputValues = [np.array(inVal) for inVal in inputValues]
+        
         inputVars = self.inputVars # list of numpy arrays
         outputVars = self.outputVars
 
