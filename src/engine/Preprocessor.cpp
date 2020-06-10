@@ -838,8 +838,6 @@ bool Preprocessor::constructNetworkLevelReasoner()
 
     bool success = ( newLayerIndex > 1 );
 
-    nlr->dumpTopology();
-
     if ( success )
     {
         unsigned count = 0;
