@@ -237,8 +237,8 @@ class MarabouNetwork:
         outputVars = self.outputVars
 
         inputDict = dict()
-        inputVarList = np.concatenate(inputVars, axis=-1).ravel()
-        inputValList = np.concatenate(inputValues).ravel()
+        inputVarList = np.concatenate([inVar.flatten() for inVar in inputVars], axis=-1).flatten()
+        inputValList = np.concatenate([inVal.flatten() for inVal in inputValues]).flatten()
         assignList = zip(inputVarList, inputValList)
         for x in assignList:
             inputDict[x[0]] = x[1]
