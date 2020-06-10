@@ -22,7 +22,8 @@ def test_equality_output():
     The first output variable should equal a randomly generated value
     """
     network = load_network()
-    outputVar = network.outputVars[0]
+    outputVars = network.outputVars.flatten()
+    outputVar = outputVars[0]
     for _ in range(NUM_RAND):
         
         # Add output equality constraints
@@ -51,7 +52,8 @@ def test_equality_input():
     MarabouUtils.addEquality(network, inputVars, weights, averageInputValue)
     
     # Lower bound on second output variable
-    outputVar = network.outputVars[1]
+    outputVars = network.outputVars.flatten()
+    outputVar = outputVars[1]
     minOutputValue = 70.0
     network.setLowerBound(outputVar, minOutputValue)
     
@@ -67,7 +69,7 @@ def test_inequality_output():
     """
     network = load_network()
     
-    outputVars = network.outputVars
+    outputVars = network.outputVars.flatten()
     weights = np.ones(outputVars.shape)
     for _ in range(NUM_RAND):
         
@@ -97,7 +99,8 @@ def test_inequality_input():
     MarabouUtils.addInequality(network, inputVars, weights, averageInputValue)
     
     # Add lower bound on second output variable
-    outputVar = network.outputVars[1]
+    outputVars = network.outputVars.flatten()
+    outputVar = outputVars[1]
     minOutputValue = 70.0
     network.setLowerBound(outputVar, minOutputValue)
     
