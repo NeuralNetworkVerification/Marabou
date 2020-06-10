@@ -1,0 +1,45 @@
+:Ñ
+(
+X1
+W1
+b1gemm1"Gemm*
+transA 
+(
+X2
+W2
+b2gemm2"Gemm*
+transB 
+
+gemm1relu1"Relu
+
+gemm2relu2"Relu
+
+relu1
+relu2add1"Add
+
+b3
+add1add2"Add
+
+b4
+b5add3"Add
+
+add2
+add3Y"Add
+test-model*p"d8/É>JþÚ¾ Ú¿o/Ò=y¼à>\z¾º&v?D½>³4½~ñ\¾ñ• ¾Œê>¬›û½æqa¿,ÎP¾µó>r"¿0+&¿<=¥]‚=h ‰>¹è2?ž×å>K`c>3Èã>BW1* "BJµ¾F‡¾!¿ <Ó¾›†>Bb1*p"dŸ×P¿®Ç¾Ó—¾>íN¼Jæ¾˜>À¾ Õ¾NjI?ñhc?ž¼p;Û}>ªÍD¿„»¾˜o.¾àŒ;?¡ˆÿ¾ºû
+½K›x?BŸ=?5g>ö<B¿$'?0S>;™¸=„¡¾BW2* "”È¾Bð)¾è¦¹>á;@?tÂª<Bb2* "˜`­>ÿ/>hÍ>°á²>‚G/?Bb3* "wgU¿p?)>¿ÏŽ¿Pd>Bb4* "ÅþN¿IE?ŽM‚>BÇä>ê½w¿Bb5Z
+X1
+
+
+Z
+X2
+
+
+b
+Y
+
+
+b
+relu1
+
+
+B
