@@ -16,6 +16,7 @@
 #include "AbsoluteValueConstraint.h"
 #include "Debug.h"
 #include "FloatUtils.h"
+#include "LPFormulator.h"
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "NetworkLevelReasoner.h"
@@ -116,6 +117,12 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
 {
     for ( unsigned i = 0; i < _layerIndexToLayer.size(); ++i )
         _layerIndexToLayer[i]->computeSymbolicBounds();
+}
+
+void NetworkLevelReasoner::lpRelaxationPropagation()
+{
+    LPFormulator lpFormulator( this );
+    lpFormulator.optimizeBoundsWithLpRelaxation( _layerIndexToLayer );
 }
 
 void NetworkLevelReasoner::intervalArithmeticBoundPropagation()

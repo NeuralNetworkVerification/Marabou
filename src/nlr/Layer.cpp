@@ -51,7 +51,7 @@ Layer::Layer( unsigned index, Type type, unsigned size, LayerOwner *layerOwner )
 
 void Layer::allocateMemory()
 {
-    if ( _type == WEIGHTED_SUM || _type == OUTPUT )
+    if ( _type == WEIGHTED_SUM )
     {
         _bias = new double[_size];
         std::fill_n( _bias, _size, 0 );
@@ -112,7 +112,7 @@ void Layer::computeAssignment()
 {
     ASSERT( _type != INPUT );
 
-    if ( _type == WEIGHTED_SUM || _type == OUTPUT )
+    if ( _type == WEIGHTED_SUM )
     {
         // Initialize to bias
         memcpy( _assignment, _bias, sizeof(double) * _size );
@@ -190,7 +190,7 @@ void Layer::addSourceLayer( unsigned layerNumber, unsigned layerSize )
 
     _sourceLayers[layerNumber] = layerSize;
 
-    if ( _type == WEIGHTED_SUM || _type == OUTPUT )
+    if ( _type == WEIGHTED_SUM )
     {
         _layerToWeights[layerNumber] = new double[layerSize * _size];
         _layerToPositiveWeights[layerNumber] = new double[layerSize * _size];
@@ -200,6 +200,11 @@ void Layer::addSourceLayer( unsigned layerNumber, unsigned layerSize )
         std::fill_n( _layerToPositiveWeights[layerNumber], layerSize * _size, 0 );
         std::fill_n( _layerToNegativeWeights[layerNumber], layerSize * _size, 0 );
     }
+}
+
+const Map<unsigned, unsigned> &Layer::getSourceLayers() const
+{
+    return _sourceLayers;
 }
 
 void Layer::setWeight( unsigned sourceLayer, unsigned sourceNeuron, unsigned targetNeuron, double weight )
@@ -213,9 +218,22 @@ void Layer::setWeight( unsigned sourceLayer, unsigned sourceNeuron, unsigned tar
         _layerToNegativeWeights[sourceLayer][index] = weight;
 }
 
+double Layer::getWeight( unsigned sourceLayer,
+                         unsigned sourceNeuron,
+                         unsigned targetNeuron ) const
+{
+    unsigned index = sourceNeuron * _size + targetNeuron;
+    return _layerToWeights[sourceLayer][index];
+}
+
 void Layer::setBias( unsigned neuron, double bias )
 {
     _bias[neuron] = bias;
+}
+
+double Layer::getBias( unsigned neuron ) const
+{
+    return _bias[neuron];
 }
 
 void Layer::addActivationSource( unsigned sourceLayer, unsigned sourceNeuron, unsigned targetNeuron )
@@ -231,6 +249,11 @@ void Layer::addActivationSource( unsigned sourceLayer, unsigned sourceNeuron, un
             if ( _type == RELU || _type == ABSOLUTE_VALUE )
                 ASSERT( _neuronToActivationSources[targetNeuron].size() == 1 );
         });
+}
+
+List<NeuronIndex> Layer::getActivationSources( unsigned neuron ) const
+{
+    return _neuronToActivationSources[neuron];
 }
 
 unsigned Layer::getSize() const
@@ -286,6 +309,18 @@ double Layer::getUb( unsigned neuron ) const
     return _ub[neuron];
 }
 
+void Layer::setLb( unsigned neuron, double bound )
+{
+    ASSERT( !_eliminatedNeurons.exists( neuron ) );
+    _lb[neuron] = bound;
+}
+
+void Layer::setUb( unsigned neuron, double bound )
+{
+    ASSERT( !_eliminatedNeurons.exists( neuron ) );
+    _ub[neuron] = bound;
+}
+
 void Layer::computeIntervalArithmeticBounds()
 {
     ASSERT( _type != INPUT );
@@ -293,7 +328,6 @@ void Layer::computeIntervalArithmeticBounds()
     switch ( _type )
     {
     case WEIGHTED_SUM:
-    case OUTPUT:
         computeIntervalArithmeticBoundsForWeightedSum();
         break;
 
@@ -471,7 +505,6 @@ void Layer::computeSymbolicBounds()
         break;
 
     case WEIGHTED_SUM:
-    case OUTPUT:
         computeSymbolicBoundsForWeightedSum();
         break;
 
@@ -1226,10 +1259,6 @@ String Layer::typeToString( Type type )
         return "INPUT";
         break;
 
-    case OUTPUT:
-        return "OUTPUT";
-        break;
-
     case WEIGHTED_SUM:
         return "WEIGHTED_SUM";
         break;
@@ -1267,7 +1296,6 @@ void Layer::dump() const
         printf( "\n\n" );
         break;
 
-    case OUTPUT:
     case WEIGHTED_SUM:
 
         for ( unsigned i = 0; i < _size; ++i )
@@ -1352,6 +1380,17 @@ unsigned Layer::variableToNeuron( unsigned variable ) const
 {
     ASSERT( _variableToNeuron.exists( variable ) );
     return _variableToNeuron[variable];
+}
+
+bool Layer::neuronEliminated( unsigned neuron ) const
+{
+    return _eliminatedNeurons.exists( neuron );
+}
+
+double Layer::getEliminatedNeuronValue( unsigned neuron ) const
+{
+    ASSERT( _eliminatedNeurons.exists( neuron ) );
+    return _eliminatedNeurons[neuron];
 }
 
 } // namespace NLR

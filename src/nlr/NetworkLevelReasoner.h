@@ -18,6 +18,7 @@
 
 #include "ITableau.h"
 #include "Layer.h"
+#include "LayerOwner.h"
 #include "Map.h"
 #include "NeuronIndex.h"
 #include "PiecewiseLinearFunctionType.h"
@@ -30,7 +31,7 @@ namespace NLR {
   level structure and topology.
 */
 
-class NetworkLevelReasoner : public Layer::LayerOwner
+class NetworkLevelReasoner : public LayerOwner
 {
 public:
     NetworkLevelReasoner();
@@ -84,6 +85,11 @@ public:
           bound on the upper bound of a ReLU node is negative, that
           ReLU is inactive and its output can be set to 0.
 
+        - LP Relaxation: invoking an LP solver on a series of LP
+          relaxations of the problem we're trying to solve, and
+          optimizing the lower and upper bounds of each of the
+          varibales.
+
         - receiveTighterBound: this is a callback from the layer
           objects, through which they report tighter bounds.
 
@@ -98,6 +104,7 @@ public:
     void obtainCurrentBounds();
     void intervalArithmeticBoundPropagation();
     void symbolicBoundPropagation();
+    void lpRelaxationPropagation();
 
     void receiveTighterBound( Tightening tightening );
     void getConstraintTightenings( List<Tightening> &tightenings );
