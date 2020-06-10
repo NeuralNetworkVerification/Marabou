@@ -9,12 +9,11 @@
 #include "Map.h"
 #include "PiecewiseLinearConstraint.h"
 
-// todo
 
 
 
 
-
+// the SIGN function labels '+1' for any input x >=0 (including 0)
 class SignConstraint : public PiecewiseLinearConstraint
 {
 public:
