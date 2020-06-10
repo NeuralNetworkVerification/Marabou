@@ -75,6 +75,7 @@ public:
       equation.
     */
     Set<unsigned> getParticipatingVariables() const;
+    List<unsigned> getListParticipatingVariables() const;
 
     /*
       Retrieve the coefficient of a variable
