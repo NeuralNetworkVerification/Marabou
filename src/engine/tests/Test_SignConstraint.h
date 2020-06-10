@@ -502,6 +502,153 @@ public:
     }
 
 
+    void test_valid_split_sign_phase_fixed_to_positive() // todo - PASSED - check with guy
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        SignConstraint sign( b, f );
+
+        List<PiecewiseLinearConstraint::Fix> fixes;
+        List<PiecewiseLinearConstraint::Fix>::iterator it;
+
+        TS_ASSERT( !sign.phaseFixed() );
+        TS_ASSERT_THROWS_NOTHING( sign.notifyLowerBound( b, -0.5 ) );
+        TS_ASSERT( !sign.phaseFixed() );
+
+        TS_ASSERT_THROWS_NOTHING( sign.notifyLowerBound( b, 0 ) );
+        TS_ASSERT( sign.phaseFixed() );
+
+        PiecewiseLinearCaseSplit split;
+        TS_ASSERT_THROWS_NOTHING( split = sign.getValidCaseSplit() );
+
+        Equation activeEquation;
+
+        List<Tightening> bounds = split.getBoundTightenings();
+
+        TS_ASSERT_EQUALS( bounds.size(), 2U );  // todo - check
+        auto bound = bounds.begin();
+        Tightening bound1 = *bound;
+
+        TS_ASSERT_EQUALS( bound1._variable, b );
+        TS_ASSERT_EQUALS( bound1._type, Tightening::LB );
+        TS_ASSERT_EQUALS( bound1._value, 0.0 );
+
+        ++bound;
+        Tightening bound2 = *bound;
+
+        TS_ASSERT_EQUALS( bound2._variable, f );
+        TS_ASSERT_EQUALS( bound2._value, 1 );
+        TS_ASSERT_EQUALS( bound2._type, Tightening::LB );
+
+        auto equations = split.getEquations();
+        TS_ASSERT( equations.empty() );
+    }
+
+
+
+    void test_valid_split_sign_phase_fixed_to_negative() // todo - PASSED - check with guy
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        SignConstraint sign( b, f );
+
+        List<PiecewiseLinearConstraint::Fix> fixes;
+        List<PiecewiseLinearConstraint::Fix>::iterator it;
+
+        TS_ASSERT( !sign.phaseFixed() );
+
+        TS_ASSERT_THROWS_NOTHING( sign.notifyUpperBound( b, 0.5 ) );
+        TS_ASSERT( !sign.phaseFixed() );
+
+        TS_ASSERT_THROWS_NOTHING( sign.notifyUpperBound( b, -2 ) );
+        TS_ASSERT( sign.phaseFixed() );
+
+        PiecewiseLinearCaseSplit split;
+        TS_ASSERT_THROWS_NOTHING( split = sign.getValidCaseSplit() );
+
+        Equation activeEquation;
+
+        List<Tightening> bounds = split.getBoundTightenings();
+
+        TS_ASSERT_EQUALS( bounds.size(), 2U ); // todo - check 
+        auto bound = bounds.begin();
+        Tightening bound1 = *bound;
+
+        TS_ASSERT_EQUALS( bound1._variable, b );
+        TS_ASSERT_EQUALS( bound1._type, Tightening::UB );
+        TS_ASSERT_EQUALS( bound1._value, 0.0 );
+
+        ++bound;
+        Tightening bound2 = *bound;
+
+        TS_ASSERT_EQUALS( bound2._variable, f );
+        TS_ASSERT_EQUALS( bound2._value, -1 );
+        TS_ASSERT_EQUALS( bound2._type, Tightening::UB );
+
+        auto equations = split.getEquations();
+        TS_ASSERT( equations.empty() );
+    }
+
+
+
+    void test_sign_duplicate_and_restore() // todo - PASSED - check with guy
+    {
+        SignConstraint *sign1 = new SignConstraint( 4, 6 );
+        sign1->setActiveConstraint( false );
+        sign1->notifyVariableValue( 4, 1.0 ); // b
+        sign1->notifyVariableValue( 6, 1.0 ); // f
+
+        sign1->notifyLowerBound( 4, -8.0 ); // b
+        sign1->notifyUpperBound( 4, 8.0 );  // b
+
+        sign1->notifyLowerBound( 6, 1 ); // f
+        sign1->notifyUpperBound( 6, 1 ); // f
+
+        PiecewiseLinearConstraint *sign2 = sign1->duplicateConstraint();
+
+        sign1->notifyVariableValue( 4, -2 ); // b
+        TS_ASSERT( !sign1->satisfied() ); // f != sign(b)
+
+        sign1->notifyVariableValue( 6, -1 ); // f
+        TS_ASSERT( sign1->satisfied() ); // f = sign(b)
+
+
+        sign1->notifyVariableValue( 6, 0.5 ); // f
+        TS_ASSERT( !sign1->satisfied() ); // f != sign(b)
+
+
+        TS_ASSERT( !sign2->isActive() );
+        TS_ASSERT( sign2->satisfied() ); // todo why?
+
+        sign2->restoreState( sign1 ); // todo why?
+        TS_ASSERT( !sign2->satisfied() ); // todo why?
+
+        TS_ASSERT_THROWS_NOTHING( delete sign1 );
+        TS_ASSERT_THROWS_NOTHING( delete sign2 );
+    }
+
+    void test_eliminate_variable_active() // todo - PASSED
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        MockTableau tableau;
+
+        SignConstraint sign( b, f );
+
+        sign.registerAsWatcher( &tableau );
+
+        TS_ASSERT( !sign.constraintObsolete() );
+        TS_ASSERT_THROWS_NOTHING( sign.eliminateVariable( b, 5 ) );
+        TS_ASSERT( sign.constraintObsolete() );
+    }
+
+
+
+
+
 };
 
 

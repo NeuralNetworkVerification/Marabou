@@ -536,7 +536,7 @@ public:
         }
     }
 
-    void test_valid_split_relu_phase_fixed_to_active()
+    void test_valid_split_relu_phase_fixed_to_active() // todo - PASSED - check with guy
     {
         unsigned b = 1;
         unsigned f = 4;
@@ -582,7 +582,7 @@ public:
         TS_ASSERT_EQUALS( activeEquation._type, Equation::EQ );
     }
 
-    void test_valid_split_relu_phase_fixed_to_inactive()
+    void test_valid_split_relu_phase_fixed_to_inactive() // todo - PASSED - check with guy
     {
         unsigned b = 1;
         unsigned f = 4;
@@ -715,7 +715,7 @@ public:
         TS_ASSERT( entailedTightenings.exists( Tightening( f, 0, Tightening::UB ) ) );
     }
 
-    void test_relu_duplicate_and_restore()
+    void test_relu_duplicate_and_restore() // todo - PASSED - check with guy
     {
         ReluConstraint *relu1 = new ReluConstraint( 4, 6 );
         relu1->setActiveConstraint( false );
@@ -743,7 +743,7 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete relu2 );
     }
 
-    void test_eliminate_variable_active()
+    void test_eliminate_variable_active()  // todo - PASSED
     {
         unsigned b = 1;
         unsigned f = 4;
@@ -795,7 +795,7 @@ public:
         TS_ASSERT_EQUALS( originalRelu.getAux(), recoveredRelu2.getAux() );
     }
 
-    bool haveFix( List<PiecewiseLinearConstraint::Fix> &fixes, unsigned var, double value )
+    bool haveFix( List<PiecewiseLinearConstraint::Fix> &fixes, unsigned var, double value ) // todo - IGNORE for SIGN
     {
         PiecewiseLinearConstraint::Fix targetFix( var, value );
         for ( const auto &fix : fixes )
