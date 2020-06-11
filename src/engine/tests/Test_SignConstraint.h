@@ -319,7 +319,7 @@ public:
         List<PiecewiseLinearCaseSplit> splits = sign.getCaseSplits();
         TS_ASSERT_EQUALS(splits.size(), 2U);
 
-        sign.notifyLowerBound(1, 0);
+        sign.notifyLowerBound(1, 0); // todo conitnue debug 1106!!!. make sure pass all tests and then last test
 //        TS_ASSERT_THROWS_EQUALS(splits = sign.getCaseSplits(),
 //                                const MarabouError &e,
 //                                e.getCode(),
