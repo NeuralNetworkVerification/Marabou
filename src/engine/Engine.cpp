@@ -94,10 +94,11 @@ bool Engine::solve( unsigned timeoutInSeconds )
     updateDirections();
     storeInitialEngineState();
 
+    mainLoopStatistics();
     if ( _verbosity > 0 )
     {
         printf( "\nEngine::solve: Initial statistics\n" );
-        mainLoopStatistics();
+        _statistics.print();
         printf( "\n---\n" );
     }
 
@@ -140,8 +141,10 @@ bool Engine::solve( unsigned timeoutInSeconds )
         {
             DEBUG( _tableau->verifyInvariants() );
 
-            if ( _verbosity > 1 )
-                mainLoopStatistics();
+            mainLoopStatistics();
+            if ( _verbosity > 1 &&  _statistics.getNumMainLoopIterations() %
+                 GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
+                _statistics.print();
 
             // Check whether progress has been made recently
             checkOverallProgress();
@@ -320,9 +323,6 @@ void Engine::mainLoopStatistics()
     _statistics.setNumPlValidSplits( _numPlConstraintsDisabledByValidSplits );
     _statistics.setNumPlSMTSplits( _plConstraints.size() -
                                    activeConstraints - _numPlConstraintsDisabledByValidSplits );
-
-    if ( _statistics.getNumMainLoopIterations() % GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
-        _statistics.print();
 
     _statistics.incNumMainLoopIterations();
 
