@@ -77,7 +77,7 @@ def test_twoBranches():
     evaluateFile(filename, outputName = 'Y')
     evaluateIntermediateLayer(filename, inputNames = ['X'], outputName = 'Y', intermediateName = 'add1')
     
-def test_multiInput_add():
+def test_multiInput_add(tmpdir):
     """
     Test a custom network that has two input arrays, which have separate Gemm and Relu operations
     before being added together. The rest of the network tries different types of Add oerations
@@ -95,8 +95,11 @@ def test_multiInput_add():
     testInputs = [[np.random.random(inVars.shape) for inVars in network_twoIn.inputVars] for _ in range(NUM_RAND)]
     
     # Evaluate test points using both Marabou and ONNX for both types of networks
+    # Also, test evaluating with Marabou without explicitly specifying options
+    # The result should be the same regardless of options used, or if a file redirect is used
+    tempFile = tmpdir.mkdir("redirect").join("marabouRedirect.log").strpath
     for testInput in testInputs:
-        marabouEval_oneIn = network_oneIn.evaluateWithMarabou([testInput[0]], options = OPT, filename = "").flatten()
+        marabouEval_oneIn = network_oneIn.evaluateWithMarabou([testInput[0]], filename = tempFile).flatten()
         marabouEval_twoIn = network_twoIn.evaluateWithMarabou(testInput, options = OPT, filename = "").flatten()
         onnxEval = network_twoIn.evaluateWithoutMarabou(testInput).flatten()
 
@@ -161,13 +164,9 @@ def evaluateFile(filename, inputNames = None, outputName = None, testInputs = No
     if not testInputs:
         testInputs = [[np.random.random(inVars.shape) for inVars in network.inputVars] for _ in range(numPoints)]
     
-    # Evaluate test points using both Marabou and ONNX
+    # Evaluate test points using both Marabou and ONNX, and assert that the error is less than TOL
     for testInput in testInputs:
-        marabouEval = network.evaluateWithMarabou(testInput, options = OPT, filename = "").flatten()
-        onnxEval = network.evaluateWithoutMarabou(testInput).flatten()
-
-        # Assert that both evaluations are the same within the set tolerance
-        assert max(abs(marabouEval.flatten() - onnxEval.flatten())) < TOL
+        assert max(network.findError(testInput, options = OPT, filename = "").flatten()) < TOL
     
 def evaluateIntermediateLayer(filename, inputNames = None, outputName = None, intermediateName = None, testInputs = None, numPoints = None):
     """
