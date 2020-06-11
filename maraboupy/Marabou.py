@@ -29,17 +29,19 @@ try:
 except ImportError:
     warnings.warn("ONNX parser is unavailable because onnx or onnxruntime packages are not installed")
 
-def read_nnet(filename, use_nlr=False):
+def read_nnet(filename, use_nlr=False, normalize=False):
     """
     Constructs a MarabouNetworkNnet object from a .nnet file
 
     Args:
         filename: (string) path to the .nnet file.
         use_nlr: (bool) Set to true to use NetworkLevelReasoner
+        normalize: (bool) If true, incorporate input/output normalization
+                      into first and last layers of network
     Returns:
         marabouNetworkNNet: (MarabouNetworkNNet) representing network
     """
-    return MarabouNetworkNNet(filename, use_nlr=use_nlr)
+    return MarabouNetworkNNet(filename, use_nlr=use_nlr, normalize=normalize)
 
 
 def read_tf(filename, inputNames=None, outputName=None, modelType="frozen", savedModelTags=[]):
