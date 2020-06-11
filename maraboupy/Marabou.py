@@ -29,19 +29,18 @@ try:
 except ImportError:
     warnings.warn("ONNX parser is unavailable because onnx or onnxruntime packages are not installed")
 
-def read_nnet(filename, use_nlr=False, normalize=False):
+def read_nnet(filename, normalize=False):
     """
     Constructs a MarabouNetworkNnet object from a .nnet file
 
     Args:
         filename: (string) path to the .nnet file.
-        use_nlr: (bool) Set to true to use NetworkLevelReasoner
         normalize: (bool) If true, incorporate input/output normalization
                       into first and last layers of network
     Returns:
         marabouNetworkNNet: (MarabouNetworkNNet) representing network
     """
-    return MarabouNetworkNNet(filename, use_nlr=use_nlr, normalize=normalize)
+    return MarabouNetworkNNet(filename, normalize=normalize)
 
 
 def read_tf(filename, inputNames=None, outputName=None, modelType="frozen", savedModelTags=[]):
@@ -91,7 +90,7 @@ def solve_query(ipq, filename="", verbose=True, timeout=0, verbosity=2):
     """
     Function to solve query represented by this network
     Arguments:
-        ipq: (MarabouCore.InputQuery) InputQuery object, which can be obtained from 
+        ipq: (MarabouCore.InputQuery) InputQuery object, which can be obtained from
                 MarabouNetwork.getInputQuery or load_query
         filename: (string) path to redirect output to
         timeout: (int) time in seconds when Marabou will time out
