@@ -56,7 +56,7 @@ double LPFormulator::solveLPRelaxation( const Map<unsigned, Layer *> &layers,
         throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
 
     Map<String, double> dontCare;
-    double result;
+    double result = 0;
     gurobi.extractSolution( dontCare, result );
     return result;
 }

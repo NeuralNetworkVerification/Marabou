@@ -124,6 +124,8 @@ public:
     void solve() {}
     void extractSolution( Map<String, double> &, double & ) {}
     bool optimal() { return true; }
+    bool infeasbile() { return false; };
+
     void dump() {}
 };
 
