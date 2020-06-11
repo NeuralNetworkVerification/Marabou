@@ -87,30 +87,27 @@ def load_query(filename):
     return MarabouCore.loadQuery(filename)
 
 
-def solve_query(ipq, filename="", verbose=True, timeout=0, verbosity=2):
+def solve_query(ipq, filename="", verbose=True, options=None):
     """
     Function to solve query represented by this network
     Arguments:
         ipq: (MarabouCore.InputQuery) InputQuery object, which can be obtained from 
                 MarabouNetwork.getInputQuery or load_query
         filename: (string) path to redirect output to
-        timeout: (int) time in seconds when Marabou will time out
         verbose: (bool) whether to print out solution after solve finishes
-        verbosity: (int) determines how much Marabou prints during solving
-                0: print out minimal information
-                1: print out statistics only in the beginning and the end
-                2: print out statistics during solving
+        options: (MarabouCore.Options) object for specifying Marabou options
     Returns:
         vals: (dict: int->float) empty if UNSAT, else SATisfying solution
         stats: (Statistics) a Statistics object as defined in Marabou,
                 it has multiple methods that provide information related
                 to how an input query was solved.
     """
-    options = createOptions(timeoutInSeconds=timeout, verbosity=verbosity)
+    if options is None:
+        options = createOptions()
     vals, stats = MarabouCore.solve(ipq, options, filename)
     if verbose:
         if stats.hasTimedOut():
-            print ("TIMEOUT")
+            print ("TO")
         elif len(vals)==0:
             print("unsat")
         else:
