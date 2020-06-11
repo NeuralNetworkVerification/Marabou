@@ -98,7 +98,7 @@ def test_acas_1_1_normalize():
     # Make sure input bounds are defined in original space
     assert abs(network.getInputMaximum(0) - 60760.0) < TOL
     assert abs(network.getInputMinimum(1) + 3.141593) < TOL
-  
+
 def test_acas_2_9_normalize():
     """
     Test the 2,9 experimental ACAS Xu network.
@@ -142,4 +142,3 @@ def evaluateFile(filename, testInputs, testOutputs, normalize = False, normInput
 
         assert max(abs(marabouEval - testOutput)) < TOL
     return network
-
