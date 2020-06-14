@@ -840,11 +840,24 @@ void Layer::computeSymbolicBoundsForWeightedSum()
         const Layer *sourceLayer = _layerOwner->getLayer( sourceLayerEntry.first );
 
         /*
-          Perform the multiplication.
+          Perform the multiplication, don't change pre calucalted bounds for
+          eliminated variables
 
           newUB = oldUB * posWeights + oldLB * negWeights
           newLB = oldUB * negWeights + oldLB * posWeights
         */
+
+        Map<unsigned, double> _eliminatedNeuronsLB;
+        Map<unsigned, double> _eliminatedNeuronsUB;
+        unsigned index;
+        for ( const auto &eliminated : _eliminatedNeurons ) {
+                for ( unsigned i = 0; i < _inputLayerSize; ++i ) {
+                    index = i * _size + eliminated.first;
+                    printf("_symbolicLB[%u] = %f\n", index, _symbolicLb[index]);
+                     _eliminatedNeuronsLB[index] = _symbolicLb[index];
+                     _eliminatedNeuronsUB[index] = _symbolicUb[index];
+                }
+        }
 
         matrixMultiplication( sourceLayer->getSymbolicUb(), _layerToPositiveWeights[sourceLayerIndex],
                               _symbolicUb, _inputLayerSize,
@@ -859,13 +872,11 @@ void Layer::computeSymbolicBoundsForWeightedSum()
                               _symbolicLb, _inputLayerSize, sourceLayerSize,
                               _size);
 
-        for ( auto it = _eliminatedNeurons.begin(); it != _eliminatedNeurons.end(); it++ )
-        {
-                unsigned j = it->first;
-                for ( unsigned i = 0; i < _inputLayerSize; ++i ) {
-                    _symbolicLb[i * _size + j] = 0;
-                    _symbolicUb[i * _size + j] = 0;
-                }
+        for ( const auto &eliminatedLB : _eliminatedNeuronsLB) {
+            _symbolicLb[eliminatedLB.first] = eliminatedLB.second;
+        }
+        for ( const auto &eliminatedUB : _eliminatedNeuronsUB) {
+            _symbolicUb[eliminatedUB.first] = eliminatedUB.second;
         }
 
         /*
