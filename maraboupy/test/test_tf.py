@@ -35,7 +35,7 @@ def test_KJ_TinyTaxiNet():
     filename = os.path.join(os.path.dirname(__file__), FG_FOLDER, "KJ_TinyTaxiNet.pb")
     network = Marabou.read_tf(filename)
     evaluateNetwork(network)
-    
+
 def test_conv_mp1():
     """
     Test a convolutional network using max pool
@@ -45,7 +45,7 @@ def test_conv_mp1():
     filename = os.path.join(os.path.dirname(__file__), FG_FOLDER, "conv_mp1.pb")
     network = Marabou.read_tf(filename)
     evaluateNetwork(network, numPoints = 5) 
-    
+
 def test_conv_mp2():
     """
     Test a convolutional network using max pool
@@ -54,7 +54,7 @@ def test_conv_mp2():
     filename = os.path.join(os.path.dirname(__file__), FG_FOLDER, "conv_mp2.pb")
     network = Marabou.read_tf(filename)
     evaluateNetwork(network, numPoints = 5) 
-    
+
 def test_conv_mp3():
     """
     Test a convolutional network using max pool
@@ -64,7 +64,7 @@ def test_conv_mp3():
     filename = os.path.join(os.path.dirname(__file__), FG_FOLDER, "conv_mp3.pb")
     network = Marabou.read_tf(filename)
     evaluateNetwork(network, numPoints = 5) 
-    
+
 def test_conv_NCHW():
     """
     Test a convolutional network using max pool
@@ -78,18 +78,17 @@ def test_conv_NCHW():
     network_nhwc = Marabou.read_tf(filename)
     filename = os.path.join(os.path.dirname(__file__), FG_FOLDER, "conv_mp5.pb")
     network_nchw = Marabou.read_tf(filename)
-    
-    testInputs = [[np.random.random(inVars.shape) for inVars in network_nhwc.inputVars] for _ in range(NUM_RAND)]
-    
+
     # Evaluate test points using both Marabou and Tensorflow, and assert that the max error is less than TOL
+    testInputs = [[np.random.random(inVars.shape) for inVars in network_nhwc.inputVars] for _ in range(NUM_RAND)]
     for testInput in testInputs:
         mar_nhwc = network_nhwc.evaluateWithMarabou(testInput, options = OPT, filename = "")
         mar_nchw = network_nchw.evaluateWithMarabou(testInput, options = OPT, filename = "")
         tf_nhwc = network_nhwc.evaluateWithoutMarabou(testInput)
-        
+
         assert max(abs(mar_nhwc - tf_nhwc).flatten()) < TOL
         assert max(abs(mar_nchw - tf_nhwc).flatten()) < TOL
-    
+
 def test_sm1_fc1():
     """
     Test a fully-connected neural network, written in the 
@@ -117,29 +116,37 @@ def test_sub_concat():
     the first dimension is an integer rather than None.
     """    
     filename = os.path.join(os.path.dirname(__file__), FG_FOLDER, "sub_concat.pb")
-    
+
     # Test default, which should find both X0 and X1 for inputs
     network = Marabou.read_tf(filename)
     evaluateNetwork(network)
     assert len(network.inputVars) == 2
     assert network.outputVars.shape == (5,2)
-    
+
     # If an intermediate layer is used as the output, which depends on only one input variable, 
     # then only that input variable is used
     network = Marabou.read_tf(filename, outputName = "Relu_2")
-    evaluateNetwork(network)
     assert len(network.inputVars) == 1
-    
+    # All output variables come from a ReLU activation, so they should be a part of a PL constraint,
+    # and they should have a lower bound
+    assert np.all([network.participatesInPLConstraint(var) for var in network.outputVars.flatten()])
+    assert np.all([network.lowerBoundExists(var) for var in network.outputVars.flatten()])
+    evaluateNetwork(network)
+    # Evaluation does not add permanent upper/lower bound values to the network
+    for inputVars in network.inputVars:
+        assert not np.any([network.lowerBoundExists(var) for var in inputVars.flatten()])
+        assert not np.any([network.upperBoundExists(var) for var in inputVars.flatten()])
+
     # Test that the output of a MatMul operation can be used as output operation
     network = Marabou.read_tf(filename, inputNames = ["X0"], outputName = "MatMul_2")
     evaluateNetwork(network)
     assert len(network.outputVars[1]) == 20
-    
+
     # Test that concatenation can be defined as output operation
     network = Marabou.read_tf(filename, inputNames = ["X0", "X1"], outputName = "concat")
     evaluateNetwork(network)
     assert len(network.outputVars[1]) == 40
-    
+
     # An intermediate layer can be used as an input, which forces that layer to have the given values
     # and ignore the equations used to create that intermediate layer
     network = Marabou.read_tf(filename, inputNames = ["X0","X1","concat"], outputName = "Y")
@@ -153,7 +160,7 @@ def test_sub_matmul():
     filename = os.path.join(os.path.dirname(__file__), FG_FOLDER, "sub_matmul.pb")
     network = Marabou.read_tf(filename)
     evaluateNetwork(network)
-    
+
 def test_errors():
     """
     Test that user errors of the parser can be caught and helpful information is given
@@ -162,40 +169,40 @@ def test_errors():
     # Bad modelType
     with pytest.raises(RuntimeError, match=r"Unknown input to modelType"):
         network = Marabou.read_tf(filename, modelType="badModelType")
-        
+
     # Input name not found in graph
     with pytest.raises(RuntimeError, match=r"input.*is not an operation"):
         network = Marabou.read_tf(filename, inputNames = ["X123"], outputName = "MatMul_2")
-        
+
     # Output name not found in graph
     with pytest.raises(RuntimeError, match=r"output.*is not an operation"):
         network = Marabou.read_tf(filename, inputNames = ["X0"], outputName = "MatMul_123")
-        
+
     # Output also used as an input
     with pytest.raises(RuntimeError, match=r"cannot be used as both input and output"):
         network = Marabou.read_tf(filename, inputNames = ["Relu"], outputName = "Relu")
-        
+
     # One of the inputs is not needed to compute the output
     with pytest.raises(RuntimeError, match=r"not all inputs contributed to the output"):
         network = Marabou.read_tf(filename, inputNames = ["X0","X1"], outputName = "MatMul_2")
-        
+
     # There are missing inputs, which are needed to compute the output
     with pytest.raises(RuntimeError, match=r"output.*depends on placeholder"):
         network = Marabou.read_tf(filename, inputNames = ["concat"], outputName = "Relu")
-        
+
     # Not enough input values are given for all input variables
     with pytest.raises(RuntimeError, match=r"Bad input given"):
         network = Marabou.read_tf(filename, inputNames = ["X0","X1"], outputName = "Y")
         testInput = [np.random.random(inVars.shape) for inVars in network.inputVars]
         testInput = testInput[1:]
         network.evaluateWithoutMarabou(testInput)
-        
+
     # Input values given have the wrong shape, and they cannot be reshaped to the correct shape
     with pytest.raises(RuntimeError, match=r"Input.*should have shape"):
         network = Marabou.read_tf(filename, inputNames = ["X0","X1"], outputName = "Y")
         testInput = [np.random.random((2,) + inVars.shape) for inVars in network.inputVars]
         network.evaluateWithoutMarabou(testInput)
-        
+
 def evaluateNetwork(network, testInputs = None, numPoints = NUM_RAND):
     """
     Evaluate a network at random testInputs with and without Marabou
@@ -206,7 +213,7 @@ def evaluateNetwork(network, testInputs = None, numPoints = NUM_RAND):
     # Each test point is itself a list, representing the values for each input array.
     if not testInputs:
         testInputs = [[np.random.random(inVars.shape) for inVars in network.inputVars] for _ in range(numPoints)]
-    
+
     # Evaluate test points using both Marabou and Tensorflow, and assert that the max error is less than TOL
     for testInput in testInputs:
         assert max(network.findError(testInput, options = OPT, filename = "").flatten()) < TOL
