@@ -57,7 +57,7 @@ public:
         nlr.addLayer( 2, NLR::Layer::RELU, 3 );
         nlr.addLayer( 3, NLR::Layer::WEIGHTED_SUM, 2 );
         nlr.addLayer( 4, NLR::Layer::RELU, 2 );
-        nlr.addLayer( 5, NLR::Layer::OUTPUT, 2 );
+        nlr.addLayer( 5, NLR::Layer::WEIGHTED_SUM, 2 );
 
         // Mark layer dependencies
         for ( unsigned i = 1; i <= 5; ++i )
@@ -160,7 +160,7 @@ public:
         nlr.addLayer( 2, NLR::Layer::RELU, 3 );
         nlr.addLayer( 3, NLR::Layer::WEIGHTED_SUM, 2 );
         nlr.addLayer( 4, NLR::Layer::RELU, 3 );
-        nlr.addLayer( 5, NLR::Layer::OUTPUT, 1 );
+        nlr.addLayer( 5, NLR::Layer::WEIGHTED_SUM, 1 );
 
         // Mark layer dependencies
         nlr.addLayerDependency( 0, 1 );
@@ -221,7 +221,7 @@ public:
         nlr.addLayer( 2, NLR::Layer::ABSOLUTE_VALUE, 3 );
         nlr.addLayer( 3, NLR::Layer::WEIGHTED_SUM, 2 );
         nlr.addLayer( 4, NLR::Layer::RELU, 2 );
-        nlr.addLayer( 5, NLR::Layer::OUTPUT, 2 );
+        nlr.addLayer( 5, NLR::Layer::WEIGHTED_SUM, 2 );
 
         // Mark layer dependencies
         for ( unsigned i = 1; i <= 5; ++i )
@@ -470,7 +470,7 @@ public:
         nlr.addLayer( 2, NLR::Layer::ABSOLUTE_VALUE, 3 );
         nlr.addLayer( 3, NLR::Layer::WEIGHTED_SUM, 2 );
         nlr.addLayer( 4, NLR::Layer::ABSOLUTE_VALUE, 2 );
-        nlr.addLayer( 5, NLR::Layer::OUTPUT, 2 );
+        nlr.addLayer( 5, NLR::Layer::WEIGHTED_SUM, 2 );
 
         // Mark layer dependencies
         for ( unsigned i = 1; i <= 5; ++i )
@@ -683,7 +683,7 @@ public:
         nlr.addLayer( 0, NLR::Layer::INPUT, 2 );
         nlr.addLayer( 1, NLR::Layer::WEIGHTED_SUM, 2 );
         nlr.addLayer( 2, NLR::Layer::RELU, 2 );
-        nlr.addLayer( 3, NLR::Layer::OUTPUT, 1 );
+        nlr.addLayer( 3, NLR::Layer::WEIGHTED_SUM, 1 );
 
         // Mark layer dependencies
         for ( unsigned i = 1; i <= 3; ++i )
@@ -1020,7 +1020,7 @@ public:
         nlr.addLayer( 0, NLR::Layer::INPUT, 2 );
         nlr.addLayer( 1, NLR::Layer::WEIGHTED_SUM, 2 );
         nlr.addLayer( 2, NLR::Layer::ABSOLUTE_VALUE, 2 );
-        nlr.addLayer( 3, NLR::Layer::OUTPUT, 1 );
+        nlr.addLayer( 3, NLR::Layer::WEIGHTED_SUM, 1 );
 
         // Mark layer dependencies
         for ( unsigned i = 1; i <= 3; ++i )
@@ -1129,7 +1129,7 @@ public:
         nlr.addLayer( 0, NLR::Layer::INPUT, 2 );
         nlr.addLayer( 1, NLR::Layer::WEIGHTED_SUM, 2 );
         nlr.addLayer( 2, NLR::Layer::ABSOLUTE_VALUE, 2 );
-        nlr.addLayer( 3, NLR::Layer::OUTPUT, 1 );
+        nlr.addLayer( 3, NLR::Layer::WEIGHTED_SUM, 1 );
 
         // Mark layer dependencies
         for ( unsigned i = 1; i <= 3; ++i )
@@ -1242,7 +1242,7 @@ public:
         nlr.addLayer( 0, NLR::Layer::INPUT, 2 );
         nlr.addLayer( 1, NLR::Layer::WEIGHTED_SUM, 2 );
         nlr.addLayer( 2, NLR::Layer::ABSOLUTE_VALUE, 2 );
-        nlr.addLayer( 3, NLR::Layer::OUTPUT, 1 );
+        nlr.addLayer( 3, NLR::Layer::WEIGHTED_SUM, 1 );
 
         // Mark layer dependencies
         for ( unsigned i = 1; i <= 3; ++i )
@@ -1358,7 +1358,7 @@ public:
         nlr.addLayer( 0, NLR::Layer::INPUT, 2 );
         nlr.addLayer( 1, NLR::Layer::WEIGHTED_SUM, 2 );
         nlr.addLayer( 2, NLR::Layer::ABSOLUTE_VALUE, 2 );
-        nlr.addLayer( 3, NLR::Layer::OUTPUT, 1 );
+        nlr.addLayer( 3, NLR::Layer::WEIGHTED_SUM, 1 );
 
         // Mark layer dependencies
         for ( unsigned i = 1; i <= 3; ++i )
