@@ -15,7 +15,7 @@ FG_FOLDER = "../../resources/tf/frozen_graph/"    # Folder for test networks wri
 SM1_FOLDER = "../../resources/tf/saved_model_v1/" # Folder for test networks written in SavedModel format from tensorflow v1.X
 SM2_FOLDER = "../../resources/tf/saved_model_v2/" # Folder for test networks written in SavedModel format from tensorflow v2.X
 np.random.seed(123)                               # Seed random numbers for repeatability
-NUM_RAND = 20                                     # Default number of random test points per example
+NUM_RAND = 10                                     # Default number of random test points per example
 
 def test_fc1():
     """
@@ -24,7 +24,7 @@ def test_fc1():
     """
     filename = os.path.join(os.path.dirname(__file__), FG_FOLDER, "fc1.pb")
     network = Marabou.read_tf(filename)
-    evaluateFile(network)
+    evaluateNetwork(network)
 
 def test_KJ_TinyTaxiNet():
     """
@@ -34,7 +34,7 @@ def test_KJ_TinyTaxiNet():
     """
     filename = os.path.join(os.path.dirname(__file__), FG_FOLDER, "KJ_TinyTaxiNet.pb")
     network = Marabou.read_tf(filename)
-    evaluateFile(network)
+    evaluateNetwork(network)
     
 def test_conv_mp1():
     """
@@ -44,7 +44,7 @@ def test_conv_mp1():
     """
     filename = os.path.join(os.path.dirname(__file__), FG_FOLDER, "conv_mp1.pb")
     network = Marabou.read_tf(filename)
-    evaluateFile(network, numPoints = 5) 
+    evaluateNetwork(network, numPoints = 5) 
     
 def test_sm1_fc1():
     """
@@ -53,7 +53,7 @@ def test_sm1_fc1():
     """
     filename = os.path.join(os.path.dirname(__file__), SM1_FOLDER, "fc1")
     network = Marabou.read_tf(filename, modelType = "savedModel_v1", outputName = "add_3")
-    evaluateFile(network)
+    evaluateNetwork(network)
     
 def test_sm2_fc1():
     """
@@ -62,26 +62,19 @@ def test_sm2_fc1():
     """
     filename = os.path.join(os.path.dirname(__file__), SM2_FOLDER, "fc1")
     network = Marabou.read_tf(filename, modelType = "savedModel_v2")
-    evaluateFile(network)
+    evaluateNetwork(network)
         
-def evaluateFile(network, testInputs = None, numPoints = NUM_RAND):
+def evaluateNetwork(network, testInputs = None, numPoints = NUM_RAND):
     """
-    Load network and evaluate testInputs with and without Marabou
+    Evaluate a network at random testInputs with and without Marabou
     Args:
-        filename (str): name of network file without path
-    """
-    # Load network relative to this file's location
-    
+        network (MarabouNetwork): network loaded into Marabou to be evaluated
+    """    
     # Create test points if none provided. This creates a list of test points.
     # Each test point is itself a list, representing the values for each input array.
     if not testInputs:
         testInputs = [[np.random.random(inVars.shape) for inVars in network.inputVars] for _ in range(numPoints)]
     
-    # Evaluate test points using both Marabou and Tensorflow
+    # Evaluate test points using both Marabou and Tensorflow, and assert that the max error is less than TOL
     for testInput in testInputs:
-        marabouEval = network.evaluateWithMarabou(testInput, options = OPT, filename = "").flatten()
-        tfEval = network.evaluateWithoutMarabou(testInput).flatten()
-
-        # Assert that both evaluations are the same within the set tolerance
-        assert max(abs(marabouEval.flatten() - tfEval.flatten())) < TOL
-    
+        assert max(network.findError(testInput, options = OPT, filename = "").flatten()) < TOL

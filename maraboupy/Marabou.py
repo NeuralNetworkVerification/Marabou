@@ -29,17 +29,19 @@ try:
 except ImportError:
     warnings.warn("ONNX parser is unavailable because onnx or onnxruntime packages are not installed")
 
-def read_nnet(filename, use_nlr=False):
+def read_nnet(filename, use_nlr=False, normalize=False):
     """
     Constructs a MarabouNetworkNnet object from a .nnet file
 
     Args:
         filename: (string) path to the .nnet file.
         use_nlr: (bool) Set to true to use NetworkLevelReasoner
+        normalize: (bool) If true, incorporate input/output normalization
+                      into first and last layers of network
     Returns:
         marabouNetworkNNet: (MarabouNetworkNNet) representing network
     """
-    return MarabouNetworkNNet(filename, use_nlr=use_nlr)
+    return MarabouNetworkNNet(filename, use_nlr=use_nlr, normalize=normalize)
 
 
 def read_tf(filename, inputNames=None, outputName=None, modelType="frozen", savedModelTags=[]):
@@ -85,30 +87,27 @@ def load_query(filename):
     return MarabouCore.loadQuery(filename)
 
 
-def solve_query(ipq, filename="", verbose=True, timeout=0, verbosity=2):
+def solve_query(ipq, filename="", verbose=True, options=None):
     """
     Function to solve query represented by this network
     Arguments:
         ipq: (MarabouCore.InputQuery) InputQuery object, which can be obtained from 
                 MarabouNetwork.getInputQuery or load_query
         filename: (string) path to redirect output to
-        timeout: (int) time in seconds when Marabou will time out
         verbose: (bool) whether to print out solution after solve finishes
-        verbosity: (int) determines how much Marabou prints during solving
-                0: print out minimal information
-                1: print out statistics only in the beginning and the end
-                2: print out statistics during solving
+        options: (MarabouCore.Options) object for specifying Marabou options
     Returns:
         vals: (dict: int->float) empty if UNSAT, else SATisfying solution
         stats: (Statistics) a Statistics object as defined in Marabou,
                 it has multiple methods that provide information related
                 to how an input query was solved.
     """
-    options = createOptions(timeoutInSeconds=timeout, verbosity=verbosity)
+    if options is None:
+        options = createOptions()
     vals, stats = MarabouCore.solve(ipq, options, filename)
     if verbose:
         if stats.hasTimedOut():
-            print ("TIMEOUT")
+            print ("TO")
         elif len(vals)==0:
             print("unsat")
         else:
