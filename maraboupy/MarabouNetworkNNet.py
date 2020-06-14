@@ -25,13 +25,13 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
     """
     Class that implements a MarabouNetwork from an NNet file.
     """
-    def __init__ (self, filename, use_nlr=False, normalize=False):
+    def __init__ (self, filename, normalize=False):
         """
         Constructs a MarabouNetworkNNet object from an .nnet file.
 
         Args:
             filename: path to the .nnet file.
-            normalize: (bool) True if network parameters should be adjusted to incorporate 
+            normalize: (bool) True if network parameters should be adjusted to incorporate
                           network input/output normalization. Otherwise, properties must be written
                           with the normalization already incorporated.
         Attributes:
@@ -49,7 +49,6 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
             weights          (list of list of lists) Outer index corresponds to layer
                                 number.
             biases           (list of lists) Outer index corresponds to layer number.
-            nlr              The NetworkLeverReasoner object
         """
         super().__init__()
 
@@ -62,7 +61,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
         # Add variables involved in relu constraints
         self.addRelus()
-        
+
         # Compute variable ranges
         self.variableRanges()
 
@@ -77,50 +76,9 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
         # Set the number of variables
         self.numVars = self.numberOfVariables()
-        if use_nlr:
-            self.nlr = self.createNLR(filename)
-        else:
-            self.nlr = None
-
-    def createNLR(self, filename):
-        nlr = MarabouCore.NetworkLevelReasoner()
-        nlr.setNumberOfLayers(self.numLayers + 1)
-        for layer, size in enumerate(self.layerSizes):
-            nlr.setLayerSize(layer, size)
-        nlr.allocateMemoryByTopology()
-        # Biases
-        for layer in range(len(self.biases)):
-            for node in range(len(self.biases[layer])):
-                nlr.setBias(layer + 1, node, self.biases[layer][node])
-        # Weights
-        for layer in range(len(self.weights)): # starting from the first hidden layer
-            for target in range(len(self.weights[layer])):
-                for source in range(len(self.weights[layer][target])):
-                    nlr.setWeight(layer, source, target, self.weights[layer][target][source])
-
-        # Activation Functions
-        RELU = MarabouCore.NetworkLevelReasoner.ReLU;
-        for layer in range(len(self.weights) - 1): # only hidden layers
-            for neuron in range(len(self.weights[layer])):
-                nlr.setNeuronActivationFunction(layer + 1, neuron, RELU );
-
-        # Variable indexing
-        for layer in range(len(self.layerSizes))[1:-1]:
-            for node in range(self.layerSizes[layer]):
-                nlr.setWeightedSumVariable(layer, node, self.nodeTo_b(layer, node))
-                nlr.setActivationResultVariable(layer, node, self.nodeTo_f(layer, node))
-
-        for node in range(self.inputSize):
-            nlr.setActivationResultVariable(0, node, self.nodeTo_f(0, node))
-
-        for node in range(self.outputSize):
-            nlr.setWeightedSumVariable(len(self.layerSizes) - 1, node, self.nodeTo_b(len(self.layerSizes) - 1, node))
-
-        return nlr
 
     def getMarabouQuery(self):
         ipq = super(MarabouNetworkNNet, self).getMarabouQuery()
-        ipq.setNetworkLevelReasoner(self.nlr)
         return ipq
 
     """
@@ -193,7 +151,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
             self.outputRange = ranges[-1]
             self.weights = weights
             self.biases = biases
-            
+
             # Convert input bounds from their original values to normalized values if normalization is not being incorporated
             if not self.normalize:
                 for i in range(self.inputSize):
@@ -288,25 +246,25 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
             for node in range(size):
                 bias = self.biases[layer-1][node]
-                
+
                 # Add marabou equation and add addend for output variable
                 e = Equation()
                 e.addAddend(-1.0, self.nodeTo_b(layer, node))
-                
+
                 # Add addends for weighted input variables
                 for previous_node in range(self.layerSizes[layer-1]):
                     weight = self.weights[layer-1][node][previous_node]
-                    
+
                     # Adjust weights and bias of first layer to incorporate input normalization
                     if self.normalize and layer == 1:
                         weight /= self.inputRanges[previous_node]
                         bias -= weight * self.inputMeans[previous_node]
-                    
+
                     # Adjust weights of output layer to incorporate output normalization
                     elif self.normalize and layer == len(self.layerSizes) - 1:
                         weight *= self.outputRange
                     e.addAddend(weight, self.nodeTo_f(layer-1, previous_node))
-                
+
                 # Adjust bias of output layer to incorporate output normalization
                 if self.normalize and layer == len(self.layerSizes) - 1:
                     bias = bias * self.outputRange + self.outputMean

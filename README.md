@@ -202,6 +202,39 @@ So to solve a problem in DNC mode with 4 initial splits and initial timeout of 5
 build/Marabou resources/nnet/acasxu/ACASXU_experimental_v2a_2_7.nnet resources/properties/acas_property_3.txt --dnc --initial-divides=4 --initial-timeout=5 --num-online-divides=4 --timeout-factor=1.5 --num-workers=4
 ```
 
+### Use LP Relaxation
+Marabou has an option to use LP relaxation for bound tightening.
+For now we use Gurobi as an LP solver. Gurobi requires a license (a free
+academic license is available), after getting one the software can be downloaded
+[here](https://www.gurobi.com/downloads/gurobi-optimizer-eula/) and [here](https://www.gurobi.com/documentation/9.0/quickstart_linux/software_installation_guid.html#section:Installation) are
+installation steps, there is a [compatibility
+issue](https://support.gurobi.com/hc/en-us/articles/360039093112-C-compilation-on-Linux) that should be addressed.
+A quick installation reference:
+```
+export INSTALL_DIR=/opt
+sudo tar xvfz gurobi9.0.2_linux64.tar.gz -C $INSTALL_DIR
+cd $INSTALL_DIR/gurobi902/linux64/src/build
+sudo make
+sudo cp libgurobi_c++.a ../../lib/
+```
+Next it is recommended to add the following to the .bashrc (but not necessary) 
+```
+export GUROBI_HOME="/opt/gurobi902/linux64"
+export PATH="${PATH}:${GUROBI_HOME}/bin"
+export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib"
+
+```
+
+After installing Gurobi compile marabou as follows:
+```
+cmake .. -DENABLE_GUROBI=ON
+cmake --build . 
+```
+If you did not set the GUROBI_HOME environment variable, then use the following:
+```
+cmake .. -DENABLE_GUROBI=ON -DGUROBI_DIR=<PATH_TO_GUROBI>
+```
+
 ### Tests
 We have three types of tests:  
 * unit tests - test specific small components, the tests are located alongside the code in a _tests_ folder (for example: _src/engine/tests_), to add a new set of tests, add a file named *Test_FILENAME* (where *FILENAME* is what you want to test), and add it to the CMakeLists.txt file (for example src/engine/CMakeLists.txt)

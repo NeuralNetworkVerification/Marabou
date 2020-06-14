@@ -87,6 +87,18 @@ public:
     float getFloat( unsigned option ) const;
     String getString( unsigned option ) const;
 
+    /*
+      Options that are determined at compile time
+    */
+    bool gurobiEnabled() const
+    {
+#ifdef ENABLE_GUROBI
+        return true;
+#else
+        return false;
+#endif
+    }
+
 private:
     /*
       Disable default constructor and copy constructor
