@@ -168,6 +168,9 @@ set(LIBS_INCLUDES ${Boost_INCLUDE_DIRS})
 set(LIBS ${Boost_LIBRARIES})
 
 if (${ENABLE_GUROBI})
+  if (NOT DEFINED GUROBI_DIR) 
+    set(GUROBI_DIR $ENV{GUROBI_HOME})
+  endif()
   add_compile_definitions(ENABLE_GUROBI)
 
   set(GUROBI_LIB1 "gurobi_c++")
