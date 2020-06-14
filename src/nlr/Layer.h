@@ -19,6 +19,7 @@
 #include "AbsoluteValueConstraint.h"
 #include "Debug.h"
 #include "FloatUtils.h"
+#include "LayerOwner.h"
 #include "MarabouError.h"
 #include "NeuronIndex.h"
 #include "ReluConstraint.h"
@@ -28,23 +29,9 @@ namespace NLR {
 class Layer
 {
 public:
-    /*
-      Callbacks, so that a layer can query information about other,
-      related layers.
-    */
-    class LayerOwner
-    {
-    public:
-        virtual ~LayerOwner() {}
-        virtual const Layer *getLayer( unsigned index ) const = 0;
-        virtual const ITableau *getTableau() const = 0;
-        virtual void receiveTighterBound( Tightening tightening ) = 0;
-    };
-
     enum Type {
         // Linear layers
         INPUT = 0,
-        OUTPUT,
         WEIGHTED_SUM,
 
         // Activation functions
@@ -63,15 +50,23 @@ public:
 
     void setLayerOwner( LayerOwner *layerOwner );
     void addSourceLayer( unsigned layerNumber, unsigned layerSize );
+    const Map<unsigned, unsigned> &getSourceLayers() const;
 
     void setWeight( unsigned sourceLayer,
                     unsigned sourceNeuron,
                     unsigned targetNeuron,
                     double weight );
+    double getWeight( unsigned sourceLayer,
+                      unsigned sourceNeuron,
+                      unsigned targetNeuron ) const;
+
     void setBias( unsigned neuron, double bias );
+    double getBias( unsigned neuron ) const;
+
     void addActivationSource( unsigned sourceLayer,
                               unsigned sourceNeuron,
                               unsigned targetNeuron );
+    List<NeuronIndex> getActivationSources( unsigned neuron ) const;
 
     void setNeuronVariable( unsigned neuron, unsigned variable );
     bool neuronHasVariable( unsigned neuron ) const;
@@ -94,6 +89,8 @@ public:
       Bound related functionality: grab the current bounds from the
       Tableau, or compute bounds from source layers
     */
+    void setLb( unsigned neuron, double bound );
+    void setUb( unsigned neuron, double bound );
     double getLb( unsigned neuron ) const;
     double getUb( unsigned neuron ) const;
 
@@ -107,6 +104,9 @@ public:
     void eliminateVariable( unsigned variable, double value );
     void updateVariableIndices( const Map<unsigned, unsigned> &oldIndexToNewIndex,
                                 const Map<unsigned, unsigned> &mergedVariables );
+
+    bool neuronEliminated( unsigned neuron ) const;
+    double getEliminatedNeuronValue( unsigned neuron ) const;
 
     /*
       For debugging purposes
