@@ -13,9 +13,9 @@ option(RUN_SYSTEM_TEST "run system tests on build" OFF)
 option(RUN_MEMORY_TEST "run cxxtest testing with ASAN ON" ON)
 option(RUN_PYTHON_TEST "run python API tests if building with python" OFF)
 
-option(USE_OPENBLAS "Do symbolic bound tighting using blast" ON)
+option(ENABLE_OPENBLAS "Do symbolic bound tighting using blast" ON)
 if (MSVC)
-    set(USE_OPENBLAS OFF)
+    set(ENABLE_OPENBLAS OFF)
 endif()
 
 set(DEFAULT_PYTHON_VERSION "3" CACHE STRING "Default Python version 2/3")
@@ -173,8 +173,8 @@ set(LIBS_INCLUDES ${Boost_INCLUDE_DIRS})
 set(LIBS ${Boost_LIBRARIES})
 
 
-if (${USE_OPENBLAS})
-    add_compile_definitions(USE_OPENBLAS)
+if (${ENABLE_OPENBLAS})
+    add_compile_definitions(ENABLE_OPENBLAS)
     #OpenBLAS
     if(NOT EXISTS "${OPENBLAS_DIR}/installed/lib/libopenblas.a")
         execute_process(COMMAND ${TOOLS_DIR}/get-openBLAS.sh)

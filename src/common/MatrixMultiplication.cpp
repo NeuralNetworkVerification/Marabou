@@ -15,7 +15,7 @@
 
 #include "MatrixMultiplication.h"
 
-#ifdef USE_OPENBLAS 
+#ifdef ENABLE_OPENBLAS 
 #include "cblas.h"
     void matrixMultiplication ( const double *matA, const double *matB, double *matC,
                                unsigned rowsA, unsigned columnsA,
@@ -31,7 +31,7 @@
                          columnsA, alpha, matA, columnsA, matB, columnsB, beta, matC, columnsB);
     }
 #else
-    void matrixMultiplication( double *matA, double *matB, double *matC,
+    void matrixMultiplication( const double *matA, const double *matB, double *matC,
                                unsigned rowsA, unsigned columnsA,
                                unsigned columnsB )
     {
