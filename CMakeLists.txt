@@ -168,6 +168,7 @@ set(LIBS_INCLUDES ${Boost_INCLUDE_DIRS})
 set(LIBS ${Boost_LIBRARIES})
 
 if (${ENABLE_GUROBI})
+  message(STATUS "Using Gurobi for LP relaxation for bound tightening")
   if (NOT DEFINED GUROBI_DIR) 
     set(GUROBI_DIR $ENV{GUROBI_HOME})
   endif()
