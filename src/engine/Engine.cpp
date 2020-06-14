@@ -23,6 +23,7 @@
 #include "MStringf.h"
 #include "MalformedBasisException.h"
 #include "MarabouError.h"
+#include "Options.h"
 #include "PiecewiseLinearConstraint.h"
 #include "Preprocessor.h"
 #include "TableauRow.h"
@@ -1089,6 +1090,8 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         delete[] constraintMatrix;
 
+        performLPRelaxationBoundedTightening();
+
         struct timespec end = TimeUtils::sampleMicro();
         _statistics.setPreprocessingTime( TimeUtils::timePassed( start, end ) );
     }
@@ -1107,6 +1110,27 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
     _smtCore.storeDebuggingSolution( _preprocessedQuery._debuggingSolution );
     return true;
+}
+
+void Engine::performLPRelaxationBoundedTightening()
+{
+    if ( _networkLevelReasoner && Options::get()->gurobiEnabled() )
+    {
+        _networkLevelReasoner->obtainCurrentBounds();
+        _networkLevelReasoner->lpRelaxationPropagation();
+
+        List<Tightening> tightenings;
+        _networkLevelReasoner->getConstraintTightenings( tightenings );
+
+        for ( const auto &tightening : tightenings )
+        {
+            if ( tightening._type == Tightening::LB )
+                _tableau->tightenLowerBound( tightening._variable, tightening._value );
+
+            else if ( tightening._type == Tightening::UB )
+                _tableau->tightenUpperBound( tightening._variable, tightening._value );
+        }
+    }
 }
 
 void Engine::extractSolution( InputQuery &inputQuery )

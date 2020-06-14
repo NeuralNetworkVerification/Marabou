@@ -456,6 +456,15 @@ void InputQuery::printInputOutputBounds() const
 
 void InputQuery::dump() const
 {
+    printf( "Total number of variables: %u\n", _numberOfVariables );
+    printf( "Input variables:\n" );
+    for ( const auto &input : _inputIndexToVariable )
+        printf( "\tx%u\n", input.second );
+
+    printf( "Output variables:\n" );
+    for ( const auto &output : _outputIndexToVariable )
+        printf( "\tx%u\n", output.second );
+
     printf( "Variable bounds:\n" );
     for ( unsigned i = 0; i < _numberOfVariables; ++i )
     {
