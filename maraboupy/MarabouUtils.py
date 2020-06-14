@@ -27,7 +27,6 @@ class Equation:
         Construct empty equation
         """
         self.addendList = []
-        self.participatingVariables = set()
         self.scalar = None
         self.EquationType = EquationType
 
@@ -47,21 +46,6 @@ class Equation:
             x: (int) variable number of variable in addend
         """
         self.addendList += [(c, x)]
-        self.participatingVariables.update([x])
-
-    def getParticipatingVariables(self):
-        """
-        Returns set of variables participating in this equation
-        """
-        return self.participatingVariables
-
-    def participatingVariable(self, var):
-        """
-        Check if the variable participates in this equation
-        Arguments:
-            var: (int) variable number to check
-        """
-        return var in self.getParticipatingVariables()
 
 def addEquality(network, vars, coeffs, scalar):
     """
