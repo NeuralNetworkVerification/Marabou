@@ -1117,7 +1117,7 @@ void Engine::performLPRelaxationBoundedTightening()
     if ( _networkLevelReasoner && Options::get()->gurobiEnabled() )
     {
         _networkLevelReasoner->obtainCurrentBounds();
-        _networkLevelReasoner->lpRelaxationPropagation();
+        _networkLevelReasoner->MILPPropagation();
 
         List<Tightening> tightenings;
         _networkLevelReasoner->getConstraintTightenings( tightenings );

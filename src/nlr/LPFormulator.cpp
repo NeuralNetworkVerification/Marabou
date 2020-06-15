@@ -34,10 +34,11 @@ LPFormulator::~LPFormulator()
 
 double LPFormulator::solveLPRelaxation( const Map<unsigned, Layer *> &layers,
                                         MinOrMax minOrMax,
-                                        String variableName )
+                                        String variableName,
+                                        unsigned lastLayer )
 {
     GurobiWrapper gurobi;
-    createLPRelaxation( layers, gurobi );
+    createLPRelaxation( layers, gurobi, lastLayer );
 
     List<GurobiWrapper::Term> terms;
     terms.append( GurobiWrapper::Term( 1, variableName ) );
@@ -81,8 +82,14 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
             unsigned variable = layer.second->neuronToVariable( i );
             Stringf variableName( "x%u", variable );
 
-            lb = solveLPRelaxation( layers, MinOrMax::MIN, variableName );
-            ub = solveLPRelaxation( layers, MinOrMax::MAX, variableName );
+            lb = solveLPRelaxation( layers,
+                                    MinOrMax::MIN,
+                                    variableName,
+                                    layer.second->getLayerIndex() );
+            ub = solveLPRelaxation( layers,
+                                    MinOrMax::MAX,
+                                    variableName,
+                                    layer.second->getLayerIndex() );
 
             // Store the new bounds if they are tighter
             if ( lb > layer.second->getLb( i ) )
@@ -121,10 +128,14 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
 }
 
 void LPFormulator::createLPRelaxation( const Map<unsigned, Layer *> &layers,
-                                       GurobiWrapper &gurobi )
+                                       GurobiWrapper &gurobi,
+                                       unsigned lastLayer )
 {
     for ( const auto &layer : layers )
     {
+        if ( layer.second->getLayerIndex() > lastLayer )
+            continue;
+
         switch ( layer.second->getLayerType() )
         {
         case Layer::INPUT:
@@ -281,7 +292,7 @@ void LPFormulator::addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi,
 
 void LPFormulator::log( const String &message )
 {
-    if ( GlobalConfiguration::PREPROCESSOR_LOGGING )
+    if ( GlobalConfiguration::NETWORK_LEVEL_REASONER_LOGGING )
         printf( "Preprocessor: %s\n", message.ascii() );
 }
 

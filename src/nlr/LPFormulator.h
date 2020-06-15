@@ -18,6 +18,7 @@
 
 #include "GurobiWrapper.h"
 #include "LayerOwner.h"
+#include <climits>
 
 namespace NLR {
 
@@ -34,10 +35,16 @@ public:
 
     void optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> &layers );
 
+    void createLPRelaxation( const Map<unsigned, Layer *> &layers,
+                             GurobiWrapper &gurobi,
+                             unsigned lastLayer = UINT_MAX);
+
+    double solveLPRelaxation( const Map<unsigned, Layer *> &layers,
+                              MinOrMax minOrMax,
+                              String variableName,
+                              unsigned lastLayer = UINT_MAX );
 private:
     LayerOwner *_layerOwner;
-
-    void createLPRelaxation( const Map<unsigned, Layer *> &layers, GurobiWrapper &gurobi );
 
     void addInputLayerToLpRelaxation( GurobiWrapper &gurobi,
                                       const Layer *layer );
@@ -47,10 +54,6 @@ private:
 
     void addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi,
                                             const Layer *layer );
-
-    double solveLPRelaxation( const Map<unsigned, Layer *> &layers,
-                              MinOrMax minOrMax,
-                              String variableName );
 
     static void log( const String &message );
 };

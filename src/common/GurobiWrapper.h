@@ -26,6 +26,11 @@
 class GurobiWrapper
 {
 public:
+    enum VariableType {
+        CONTINUOUS = 0,
+        BINARY = 1,
+    };
+
     /*
       A term has the form: coefficient * variable
     */
@@ -51,7 +56,7 @@ public:
     ~GurobiWrapper();
 
     // Add a new variabel to the model
-    void addVariable( String name, double lb, double ub );
+    void addVariable( String name, double lb, double ub, VariableType type = CONTINUOUS );
 
     // Add a new LEQ constraint, e.g. 3x + 4y <= -5
     void addLeqConstraint( const List<Term> &terms, double scalar );

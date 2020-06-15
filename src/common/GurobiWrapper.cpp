@@ -68,16 +68,31 @@ void GurobiWrapper::reset()
     _model = new GRBModel( *_environment );
 }
 
-void GurobiWrapper::addVariable( String name, double lb, double ub )
+void GurobiWrapper::addVariable( String name, double lb, double ub, VariableType type )
 {
     ASSERT( !_nameToVariable.exists( name ) );
+
+    char variableType = GRB_CONTINUOUS;
+    switch ( type )
+    {
+    case CONTINUOUS:
+        variableType = GRB_CONTINUOUS;
+        break;
+
+    case BINARY:
+        variableType = GRB_BINARY;
+        break;
+
+    default:
+        break;
+    }
 
     GRBVar *newVar = new GRBVar;
     double objectiveValue = 0;
     *newVar = _model->addVar( lb,
                               ub,
                               objectiveValue,
-                              GRB_CONTINUOUS,
+                              variableType,
                               name.ascii() );
 
 

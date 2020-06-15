@@ -17,8 +17,10 @@
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "LPFormulator.h"
+#include "MILPFormulator.h"
 #include "MStringf.h"
 #include "MarabouError.h"
+#include "NLRError.h"
 #include "NetworkLevelReasoner.h"
 #include "ReluConstraint.h"
 #include <cstring>
@@ -121,8 +123,34 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
 
 void NetworkLevelReasoner::lpRelaxationPropagation()
 {
-    LPFormulator lpFormulator( this );
-    lpFormulator.optimizeBoundsWithLpRelaxation( _layerIndexToLayer );
+    try
+    {
+        LPFormulator lpFormulator( this );
+        lpFormulator.optimizeBoundsWithLpRelaxation( _layerIndexToLayer );
+    }
+    catch ( GRBException e )
+    {
+        throw NLRError( NLRError::GUROBI_EXCEPTION,
+                        Stringf( "Gurobi exception. Gurobi Code: %u, message: %s\n",
+                                 e.getErrorCode(),
+                                 e.getMessage().c_str() ).ascii() );
+    }
+}
+
+void NetworkLevelReasoner::MILPPropagation()
+{
+    try
+    {
+        MILPFormulator milpFormulator( this );
+        milpFormulator.optimizeBoundsWithMILPEncoding( _layerIndexToLayer );
+    }
+    catch ( GRBException e )
+    {
+        throw NLRError( NLRError::GUROBI_EXCEPTION,
+                        Stringf( "Gurobi exception. Gurobi Code: %u, message: %s\n",
+                                 e.getErrorCode(),
+                                 e.getMessage().c_str() ).ascii() );
+    }
 }
 
 void NetworkLevelReasoner::intervalArithmeticBoundPropagation()
