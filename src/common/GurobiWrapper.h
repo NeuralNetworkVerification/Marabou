@@ -125,7 +125,7 @@ public:
     GurobiWrapper() {}
     ~GurobiWrapper() {}
 
-    void addVariable( String, double, double ) {}
+    void addVariable( String, double, double, VariableType ) {}
     void addLeqConstraint( const List<Term> &, double ) {}
     void addGeqConstraint( const List<Term> &, double ) {}
     void addEqConstraint( const List<Term> &, double ) {}
