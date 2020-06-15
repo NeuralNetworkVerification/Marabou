@@ -111,6 +111,11 @@ public:
       This is a DUMMY class, for compilation purposes when Gurobi is
       disabled.
     */
+    enum VariableType {
+        CONTINUOUS = 0,
+        BINARY = 1,
+    };
+
     struct Term
     {
         Term( double, String ) {}
