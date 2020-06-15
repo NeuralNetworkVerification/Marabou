@@ -123,34 +123,14 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
 
 void NetworkLevelReasoner::lpRelaxationPropagation()
 {
-    try
-    {
-        LPFormulator lpFormulator( this );
-        lpFormulator.optimizeBoundsWithLpRelaxation( _layerIndexToLayer );
-    }
-    catch ( GRBException e )
-    {
-        throw NLRError( NLRError::GUROBI_EXCEPTION,
-                        Stringf( "Gurobi exception. Gurobi Code: %u, message: %s\n",
-                                 e.getErrorCode(),
-                                 e.getMessage().c_str() ).ascii() );
-    }
+    LPFormulator lpFormulator( this );
+    lpFormulator.optimizeBoundsWithLpRelaxation( _layerIndexToLayer );
 }
 
 void NetworkLevelReasoner::MILPPropagation()
 {
-    try
-    {
-        MILPFormulator milpFormulator( this );
-        milpFormulator.optimizeBoundsWithMILPEncoding( _layerIndexToLayer );
-    }
-    catch ( GRBException e )
-    {
-        throw NLRError( NLRError::GUROBI_EXCEPTION,
-                        Stringf( "Gurobi exception. Gurobi Code: %u, message: %s\n",
-                                 e.getErrorCode(),
-                                 e.getMessage().c_str() ).ascii() );
-    }
+    MILPFormulator milpFormulator( this );
+    milpFormulator.optimizeBoundsWithMILPEncoding( _layerIndexToLayer );
 }
 
 void NetworkLevelReasoner::intervalArithmeticBoundPropagation()
