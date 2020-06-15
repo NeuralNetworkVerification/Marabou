@@ -45,6 +45,8 @@ void MILPFormulator::optimizeBoundsWithMILPEncoding( const Map<unsigned, Layer *
 
     for ( const auto &layer : layers )
     {
+        unsigned layerIndex = layer.second->getLayerIndex();
+
         /*
           The optimiziation is performed layer by layer, and for each
           individual neuron. It has 4 steps:
@@ -64,11 +66,10 @@ void MILPFormulator::optimizeBoundsWithMILPEncoding( const Map<unsigned, Layer *
             if ( layer.second->neuronEliminated( i ) )
                 continue;
 
-            if ( layer.second->getLb( i ) >= 0 ||
-                 layer.second->getUb( i ) <= 0 )
+            if ( FloatUtils::isPositive( layer.second->getLb( i ) ) ||
+                 FloatUtils::isNegative( layer.second->getUb( i ) ) )
                 continue;
 
-            unsigned layerIndex = layer.second->getLayerIndex();
             unsigned variable = layer.second->neuronToVariable( i );
             Stringf variableName( "x%u", variable );
             double newLb;
@@ -77,24 +78,25 @@ void MILPFormulator::optimizeBoundsWithMILPEncoding( const Map<unsigned, Layer *
             // LP relaxation, lower bound
             newLb = _lpFormulator.solveLPRelaxation( layers, LPFormulator::MIN, variableName, layerIndex );
             storeLbIfNeeded( layer.second, i, variable, newLb );
-            if ( newLb >= 0 )
+            if ( FloatUtils::isPositive( newLb ) )
                 continue;
 
             // LP relaxation, upper bound
             newUb = _lpFormulator.solveLPRelaxation( layers, LPFormulator::MAX, variableName, layerIndex );
             storeUbIfNeeded( layer.second, i, variable, newUb );
-            if ( newUb <= 0 )
+            if ( FloatUtils::isNegative( newUb ) )
                 continue;
 
             // MILP encoding, lower bound
             newLb = solveMILPEncoding( layers, MinOrMax::MIN, variableName, layerIndex );
             storeLbIfNeeded( layer.second, i, variable, newLb );
-            if ( newLb >= 0 )
+            if ( FloatUtils::isPositive( newLb ) )
                 continue;
 
+            // MILP encoding, upper bound
             newUb = solveMILPEncoding( layers, MinOrMax::MAX, variableName, layerIndex );
             storeUbIfNeeded( layer.second, i, variable, newUb );
-            if ( newUb <= 0 )
+            if ( FloatUtils::isNegative( newUb ) )
                 continue;
         }
     }
