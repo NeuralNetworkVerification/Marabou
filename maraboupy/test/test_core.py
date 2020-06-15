@@ -9,12 +9,12 @@ from maraboupy.Marabou import createOptions
 
 # Global settings
 OPT = createOptions(verbosity = 0) # Turn off printing
-LARGE = 100
+LARGE = 100.0                      # Large value for defining bounds
 
 def test_solve_partial_arguments():
     """
-    This function tests that MarabouCore.solve can be called with partial arguments, and checks that an UNSAT query
-    is solved correctly
+    This function tests that MarabouCore.solve can be called with partial arguments, 
+    and checks that an UNSAT query is solved correctly.
     """
     ipq = define_ipq(-2.0)
     # Test partial arguments to solve
@@ -25,20 +25,35 @@ def test_solve_partial_arguments():
 
 def test_dump_query():
     """
-    This function tests that MarabouCore.solve can be called with partial arguments, and checks that a SAT query
-    is solved correctly. This also tests the InputQuery dump() method.
+    This function tests that MarabouCore.solve can be called with all arguments and
+    checks that a SAT query is solved correctly. This also tests the InputQuery dump() method
+    as well as bound tightening during solving.
     """
     ipq = define_ipq(3.0)
+
+    # An upper bound for variable 2 was not given, so Marabou uses float max, which
+    # is much larger than LARGE
+    assert ipq.getUpperBound(2) > LARGE
+
+    # Solve
     vals, stats = MarabouCore.solve(ipq, OPT, "")
+
     # Test dump
     ipq.dump()
-    # Assert that Marabou returned SAT values, and that dictionary
-    # is equivalent to the variable bounds on the input query after solving
+
+    # Marabou should return SAT values, and the dictionary of values should
+    # satisfy all upper and lower bounds
     assert not stats.hasTimedOut()
     assert len(vals) > 0
     for var in vals:
-        assert ipq.getLowerBound(var) == vals[var]
-        assert ipq.getUpperBound(var) == vals[var]
+        assert vals[var] >= ipq.getLowerBound(var)
+        assert vals[var] <= ipq.getUpperBound(var)
+
+    # Marabou should find tighter bounds than LARGE after bound propagation, including
+    # for variable 2, where no upper bound was explicitly given
+    assert ipq.getUpperBound(1) < LARGE
+    assert ipq.getLowerBound(2) > -LARGE
+    assert ipq.getUpperBound(2) < LARGE
 
 def define_ipq(property_bound):
     """
@@ -56,12 +71,12 @@ def define_ipq(property_bound):
     ipq.setUpperBound(0, 1)
 
     # relu(x)
-    ipq.setLowerBound(1, 1)
-    ipq.setUpperBound(1, 2)
+    ipq.setLowerBound(1, 0)
+    ipq.setUpperBound(1, LARGE)
 
     # y
     ipq.setLowerBound(2, -LARGE)
-    ipq.setUpperBound(2, LARGE)
+    # if an upper/lower bound is not supplied to Marabou, Marabou uses float min/max
 
     MarabouCore.addReluConstraint(ipq, 0, 1)
 
@@ -71,8 +86,8 @@ def define_ipq(property_bound):
     output_equation.addAddend(-1, 1)
     output_equation.setScalar(0)
     ipq.addEquation(output_equation)
-    
-    # x + y <= 3
+
+    # x + y <= property_bound
     property_eq = MarabouCore.Equation(MarabouCore.Equation.LE)
     property_eq.addAddend(1, 0)
     property_eq.addAddend(1, 2)
