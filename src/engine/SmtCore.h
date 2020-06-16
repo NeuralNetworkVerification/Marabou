@@ -21,7 +21,7 @@
 #include "Stack.h"
 #include "Statistics.h"
 
-#define SMT_LOG( x... ) LOG( GlobalConfiguration::SMT_CORE_LOGGING, "SmtCore: %s\n", x )
+#define SMT_LOG( x, ... ) LOG( GlobalConfiguration::SMT_CORE_LOGGING, "SmtCore: %s\n", x )
 
 class EngineState;
 class IEngine;

@@ -21,7 +21,7 @@
 #include "LUFactors.h"
 #include "List.h"
 
-#define LU_FACTORIZATION_LOG( x... ) LOG( GlobalConfiguration::BASIS_FACTORIZATION_LOGGING, "LUFactorization: %s\n", x )
+#define LU_FACTORIZATION_LOG( x, ... ) LOG( GlobalConfiguration::BASIS_FACTORIZATION_LOGGING, "LUFactorization: %s\n", x )
 
 class EtaMatrix;
 class LPElement;

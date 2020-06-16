@@ -23,7 +23,7 @@
 #include "SparseLUFactors.h"
 #include "Statistics.h"
 
-#define SFTF_FACTORIZATION_LOG( x... ) LOG( GlobalConfiguration::BASIS_FACTORIZATION_LOGGING, "SparseFTFactorization: %s\n", x )
+#define SFTF_FACTORIZATION_LOG( x, ... ) LOG( GlobalConfiguration::BASIS_FACTORIZATION_LOGGING, "SparseFTFactorization: %s\n", x )
 
 /*
   This class performs a sparse FT factorization of a given matrix.

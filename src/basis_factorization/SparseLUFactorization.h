@@ -21,7 +21,7 @@
 #include "SparseGaussianEliminator.h"
 #include "SparseLUFactors.h"
 
-#define BASIS_FACTORIZATION_LOG( x... ) LOG( GlobalConfiguration::BASIS_FACTORIZATION_LOGGING, "SparseLUFactorization: %s\n", x )
+#define BASIS_FACTORIZATION_LOG( x, ... ) LOG( GlobalConfiguration::BASIS_FACTORIZATION_LOGGING, "SparseLUFactorization: %s\n", x )
 
 class EtaMatrix;
 class LPElement;

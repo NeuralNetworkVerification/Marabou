@@ -22,7 +22,7 @@
 #include "SparseMatrix.h"
 #include "Statistics.h"
 
-#define SGAUSSIAN_LOG( x... ) LOG( GlobalConfiguration::GAUSSIAN_ELIMINATION_LOGGING, "SparseGaussianEliminator: %s\n", x )
+#define SGAUSSIAN_LOG( x, ... ) LOG( GlobalConfiguration::GAUSSIAN_ELIMINATION_LOGGING, "SparseGaussianEliminator: %s\n", x )
 
 class SparseGaussianEliminator
 {

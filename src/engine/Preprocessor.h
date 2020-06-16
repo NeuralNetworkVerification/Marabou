@@ -23,7 +23,7 @@
 #include "PiecewiseLinearConstraint.h"
 #include "Set.h"
 
-#define PREPROCESSOR_LOG( x... ) LOG( GlobalConfiguration::PREPROCESSOR_LOGGING, "Preprocessor: %s\n", x )
+#define PREPROCESSOR_LOG( x, ... ) LOG( GlobalConfiguration::PREPROCESSOR_LOGGING, "Preprocessor: %s\n", x )
 
 class Preprocessor
 {

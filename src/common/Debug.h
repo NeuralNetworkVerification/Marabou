@@ -27,7 +27,7 @@
 #endif
 
 #ifndef NDEBUG
-#  define LOG(x, f, y...)                       \
+#  define LOG(x, f, y, ...)                     \
     {                                           \
         if ( ( x ) )                            \
         {                                       \

@@ -18,7 +18,7 @@
 
 #include "EntrySelectionStrategy.h"
 
-#define DANTZIG_LOG( x... ) LOG( GlobalConfiguration::DANTZIGS_RULE_LOGGING, "DantzigsRule: %s\n", x )
+#define DANTZIG_LOG( x, ... ) LOG( GlobalConfiguration::DANTZIGS_RULE_LOGGING, "DantzigsRule: %s\n", x )
 
 class String;
 

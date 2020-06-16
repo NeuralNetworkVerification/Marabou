@@ -19,7 +19,7 @@
 #include "IProjectedSteepestEdge.h"
 #include "SparseUnsortedList.h"
 
-#define PSEU_LOG( x... ) LOG( GlobalConfiguration::PROJECTED_STEEPEST_EDGE_LOGGING, "Projected SE: %s\n", x )
+#define PSEU_LOG( x, ... ) LOG( GlobalConfiguration::PROJECTED_STEEPEST_EDGE_LOGGING, "Projected SE: %s\n", x )
 
 class ProjectedSteepestEdgeRule : public IProjectedSteepestEdgeRule
 {
