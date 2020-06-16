@@ -18,6 +18,7 @@
 
 #include "Map.h"
 #include "PiecewiseLinearConstraint.h"
+#include <cmath>
 
 class ReluConstraint : public PiecewiseLinearConstraint
 {
