@@ -124,6 +124,7 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
 void NetworkLevelReasoner::lpRelaxationPropagation()
 {
     LPFormulator lpFormulator( this );
+    lpFormulator.setCutoff( 0 );
     lpFormulator.optimizeBoundsWithIncrementalLpRelaxation( _layerIndexToLayer );
 }
 

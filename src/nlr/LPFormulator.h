@@ -44,6 +44,13 @@ public:
     void optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned, Layer *> &layers );
 
     /*
+      When optimizing, we compute lower and upper bounds for each
+      varibale. If a cutoff value is set, once one of these bounds
+      crosses the cutoff value we do not attempt to optimize further
+    */
+    void setCutoff( double cutoff );
+
+    /*
       Calls for creating an LP relaxation instance and solving it for
       a particular variable. These calls are useful if invoked as part
       of a larger procedure, e.g. as part of a MILP-based bound
@@ -59,6 +66,9 @@ public:
                               unsigned lastLayer = UINT_MAX );
 private:
     LayerOwner *_layerOwner;
+
+    bool _cutoffInUse;
+    double _cutoffValue;
 
     void addLayerToModel( GurobiWrapper &gurobi, const Layer *layer );
 
