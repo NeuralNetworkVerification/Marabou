@@ -1130,6 +1130,8 @@ void Engine::performLPRelaxationBoundedTightening()
             else if ( tightening._type == Tightening::UB )
                 _tableau->tightenUpperBound( tightening._variable, tightening._value );
         }
+
+        applyAllValidConstraintCaseSplits();
     }
 }
 
