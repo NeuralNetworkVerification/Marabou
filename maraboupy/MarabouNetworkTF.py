@@ -231,9 +231,9 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         Arguments:
             op: (tf.op) representing output operation
         """
-        shape = tuple(op.outputs[0].shape.as_list())
+        shape = op.outputs[0].shape.as_list()
         if shape[0] == None:
-            shape = shape[1:]
+            shape[0] = 1
         self.outputShape = shape
         self.outputOp = op
 
