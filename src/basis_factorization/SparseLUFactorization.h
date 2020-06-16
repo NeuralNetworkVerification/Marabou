@@ -18,9 +18,10 @@
 
 #include "IBasisFactorization.h"
 #include "List.h"
-#include "MString.h"
 #include "SparseGaussianEliminator.h"
 #include "SparseLUFactors.h"
+
+#define BASIS_FACTORIZATION_LOG( x... ) LOG( GlobalConfiguration::BASIS_FACTORIZATION_LOGGING, "SparseLUFactorization: %s\n", x )
 
 class EtaMatrix;
 class LPElement;
@@ -180,8 +181,6 @@ private:
       Clear a previous factorization.
     */
 	void clearFactorization();
-
-    static void log( const String &message );
 };
 
 #endif // __SparseLUFactorization_h__

@@ -115,9 +115,9 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
 
     struct timespec gurobiEnd = TimeUtils::sampleMicro();
 
-    log( Stringf( "Number of tighter bounds found by Gurobi: %u. Sign changes: %u\n",
-                  tighterBoundCounter, signChanges ) );
-    log( Stringf( "Seconds spent Gurobiing: %llu\n", TimeUtils::timePassed( gurobiStart, gurobiEnd ) / 1000000 ) );
+    LPFormulator_LOG( Stringf( "Number of tighter bounds found by Gurobi: %u. Sign changes: %u\n",
+                  tighterBoundCounter, signChanges ).ascii() );
+    LPFormulator_LOG( Stringf( "Seconds spent Gurobiing: %llu\n", TimeUtils::timePassed( gurobiStart, gurobiEnd ) / 1000000 ).ascii() );
 }
 
 void LPFormulator::createLPRelaxation( const Map<unsigned, Layer *> &layers,
@@ -279,10 +279,5 @@ void LPFormulator::addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi,
     }
 }
 
-void LPFormulator::log( const String &message )
-{
-    if ( GlobalConfiguration::PREPROCESSOR_LOGGING )
-        printf( "Preprocessor: %s\n", message.ascii() );
-}
 
 } // namespace NLR

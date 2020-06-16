@@ -26,6 +26,8 @@
 #include "SparseUnsortedList.h"
 #include "Statistics.h"
 
+#define TABLEAU_LOG( x... ) LOG( GlobalConfiguration::TABLEAU_LOGGING, "Tableau: %s\n", x )
+
 class Equation;
 class ICostFunctionManager;
 class PiecewiseLinearCaseSplit;
@@ -624,8 +626,6 @@ private:
     */
     void standardRatioTest( double *changeColumn );
     void harrisRatioTest( double *changeColumn );
-
-    static void log( const String &message );
 
     /*
       For debugging purposes only

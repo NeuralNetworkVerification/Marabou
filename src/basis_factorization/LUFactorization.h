@@ -20,7 +20,8 @@
 #include "IBasisFactorization.h"
 #include "LUFactors.h"
 #include "List.h"
-#include "MString.h"
+
+#define LU_FACTORIZATION_LOG( x... ) LOG( GlobalConfiguration::BASIS_FACTORIZATION_LOGGING, "LUFactorization: %s\n", x )
 
 class EtaMatrix;
 class LPElement;
@@ -186,8 +187,6 @@ private:
       Clear a previous factorization.
     */
 	void clearFactorization();
-
-    static void log( const String &message );
 };
 
 #endif // __LUFactorization_h__

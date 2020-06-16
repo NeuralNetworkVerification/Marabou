@@ -23,6 +23,8 @@
 #include "PiecewiseLinearConstraint.h"
 #include "Set.h"
 
+#define PREPROCESSOR_LOG( x... ) LOG( GlobalConfiguration::PREPROCESSOR_LOGGING, "Preprocessor: %s\n", x )
+
 class Preprocessor
 {
 public:
@@ -149,8 +151,6 @@ private:
       For debugging only
     */
     void dumpAllBounds( const String &message );
-
-    static void log( const String &message );
 };
 
 #endif // __Preprocessor_h__

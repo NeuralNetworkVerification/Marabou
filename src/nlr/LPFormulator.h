@@ -21,6 +21,8 @@
 
 namespace NLR {
 
+#define LPFormulator_LOG(x...) LOG(GlobalConfiguration::PREPROCESSOR_LOGGING, "LP Preprocessor: %s\n", x)
+
 class LPFormulator
 {
 public:
@@ -51,8 +53,6 @@ private:
     double solveLPRelaxation( const Map<unsigned, Layer *> &layers,
                               MinOrMax minOrMax,
                               String variableName );
-
-    static void log( const String &message );
 };
 
 } // namespace NLR

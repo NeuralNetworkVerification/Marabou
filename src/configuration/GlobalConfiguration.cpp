@@ -82,7 +82,7 @@ const GlobalConfiguration::BasisFactorizationType GlobalConfiguration::BASIS_FAC
 
 const unsigned GlobalConfiguration::RUNTIME_ESTIMATE_THRESHOLD = 5;
 
-// Logging
+// Logging - note that it is enabled only in Debug mode 
 const bool GlobalConfiguration::DNC_MANAGER_LOGGING = false;
 const bool GlobalConfiguration::ENGINE_LOGGING = false;
 const bool GlobalConfiguration::TABLEAU_LOGGING = false;
@@ -95,6 +95,7 @@ const bool GlobalConfiguration::GAUSSIAN_ELIMINATION_LOGGING = false;
 const bool GlobalConfiguration::QUERY_LOADER_LOGGING = false;
 const bool GlobalConfiguration::SYMBOLIC_BOUND_TIGHTENER_LOGGING = false;
 const bool GlobalConfiguration::NETWORK_LEVEL_REASONER_LOGGING = false;
+const bool GlobalConfiguration::MPS_PARSER_LOGGING= false;
 
 const bool GlobalConfiguration::USE_SMART_FIX = false;
 const bool GlobalConfiguration::USE_LEAST_FIX = false;

@@ -17,12 +17,25 @@
 #define __Debug_h__
 
 #include <cstdlib>
+#include <stdio.h>
 
 
 #ifndef NDEBUG
 #  define DEBUG(x) x
 #else
 #  define DEBUG(x)
+#endif
+
+#ifndef NDEBUG
+#  define LOG(x, f, y...)                     \
+    {                                           \
+        if ( ( x ) )                           \
+        {                                       \
+            printf( f, y );            \
+       }                                       \
+    }
+#else
+#  define LOG(x, y, ...)  {}
 #endif
 
 #ifndef NDEBUG

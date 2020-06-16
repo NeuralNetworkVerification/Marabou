@@ -40,6 +40,8 @@
 #undef ERROR
 #endif
 
+#define ENGINE_LOG(x...) LOG(GlobalConfiguration::ENGINE_LOGGING, "Engine: %s\n", x)
+
 class EngineState;
 class InputQuery;
 class PiecewiseLinearConstraint;
@@ -411,8 +413,6 @@ private:
     void storeInitialEngineState();
     void performPrecisionRestoration( PrecisionRestorer::RestoreBasics restoreBasics );
     bool basisRestorationNeeded() const;
-
-    static void log( const String &message );
 
     /*
       For debugging purposes:

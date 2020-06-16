@@ -54,7 +54,7 @@ void MpsParser::parse( const String &path )
 	    parseRow( line );
 	}
 
-    log( Stringf( "Number of rows parsed: %u", _numRows ) );
+    MPS_LOG( Stringf( "Number of rows parsed: %u", _numRows ).ascii() );
 
     // Finished parsing rows, proceed to columns
     while ( true )
@@ -67,7 +67,7 @@ void MpsParser::parse( const String &path )
 	    parseColumn( line );
 	}
 
-    log( Stringf( "Number of variables detected: %u\n", _numVars ) );
+    MPS_LOG( Stringf( "Number of variables detected: %u\n", _numVars ).ascii() );
 
     // Finished parsing columns, proceed to rhs
     while ( true )
@@ -348,12 +348,6 @@ void MpsParser::populateEquation( Equation &equation, unsigned index ) const
     }
 
     equation.setScalar( _equationIndexToRhs[index] );
-}
-
-void MpsParser::log( const String &message ) const
-{
-    if ( false )
-        printf( "MpsParser: %s\n", message.ascii() );
 }
 
 //

@@ -24,6 +24,8 @@
 
 #include <atomic>
 
+#define DNC_MANAGER_LOG( x... ) LOG( GlobalConfiguration::DNC_MANAGER_LOGGING, "DnCManager: %s\n", x )
+
 class DnCManager
 {
 public:
@@ -108,8 +110,6 @@ private:
     */
     void updateTimeoutReached( timespec startTime,
                                unsigned long long timeoutInMicroSeconds );
-
-    static void log( const String &message );
 
     /*
       The base engine that is used to perform the initial divides

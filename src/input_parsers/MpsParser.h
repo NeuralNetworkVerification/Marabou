@@ -20,6 +20,8 @@
 #include "Map.h"
 #include "Set.h"
 
+#define MPS_LOG(x...) LOG(GlobalConfiguration::MPS_PARSER_LOGGING, "MpsParser: %s\n", x)
+
 class InputQuery;
 class String;
 
@@ -73,8 +75,6 @@ private:
     Map<unsigned, String> _variableIndexToName;
     Map<unsigned, double> _varToUpperBounds;
     Map<unsigned, double> _varToLowerBounds;
-
-    void log( const String &message ) const;
 };
 
 #endif // __MpsParser_h__

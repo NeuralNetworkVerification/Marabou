@@ -21,6 +21,8 @@
 #include "Stack.h"
 #include "Statistics.h"
 
+#define SMT_LOG( x... ) LOG( GlobalConfiguration::SMT_CORE_LOGGING, "SmtCore: %s\n", x )
+
 class EngineState;
 class IEngine;
 class String;
@@ -156,8 +158,6 @@ private:
       Count how many times each constraint has been violated.
     */
     Map<PiecewiseLinearConstraint *, unsigned> _constraintToViolationCount;
-
-    static void log( const String &message );
 
     /*
       For debugging purposes only
