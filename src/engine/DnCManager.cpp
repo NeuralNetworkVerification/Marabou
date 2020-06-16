@@ -39,6 +39,9 @@ void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine
                            float timeoutFactor, DivideStrategy divideStrategy )
 {
     unsigned cpuId = 0;
+    (void) threadId;
+    (void) cpuId;
+
     getCPUId( cpuId );
     DNC_MANAGER_LOG( Stringf( "Thread #%u on CPU %u", threadId, cpuId ).ascii() );
 
