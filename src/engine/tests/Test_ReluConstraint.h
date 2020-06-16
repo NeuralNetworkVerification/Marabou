@@ -264,6 +264,73 @@ public:
         return true;
     }
 
+    void test_relu_case_splits_with_aux_var()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        ReluConstraint relu( b, f );
+
+        relu.notifyLowerBound( b, -10 );
+        relu.notifyUpperBound( b, 5 );
+        relu.notifyUpperBound( f, 5 );
+
+        unsigned auxVar = 10;
+        InputQuery inputQuery;
+        inputQuery.setNumberOfVariables( auxVar );
+
+        relu.addAuxiliaryEquations( inputQuery );
+
+        TS_ASSERT( relu.auxVariableInUse() );
+        TS_ASSERT_EQUALS( relu.getAux(), auxVar );
+
+        List<PiecewiseLinearConstraint::Fix> fixes;
+        List<PiecewiseLinearConstraint::Fix>::iterator it;
+
+        List<PiecewiseLinearCaseSplit> splits = relu.getCaseSplits();
+
+        Equation activeEquation, inactiveEquation;
+
+        TS_ASSERT_EQUALS( splits.size(), 2U );
+
+        List<PiecewiseLinearCaseSplit>::iterator split1 = splits.begin();
+        List<PiecewiseLinearCaseSplit>::iterator split2 = split1;
+        ++split2;
+
+        TS_ASSERT( isActiveSplitWithAux( b, auxVar, split1 ) || isActiveSplitWithAux( b, auxVar, split2 ) );
+        TS_ASSERT( isInactiveSplit( b, f, split1 ) || isInactiveSplit( b, f, split2 ) );
+    }
+
+    bool isActiveSplitWithAux( unsigned b, unsigned aux, List<PiecewiseLinearCaseSplit>::iterator &split )
+    {
+        List<Tightening> bounds = split->getBoundTightenings();
+
+        TS_ASSERT_EQUALS( bounds.size(), 2U );
+
+        auto bound = bounds.begin();
+        Tightening bound1 = *bound;
+
+        TS_ASSERT_EQUALS( bound1._variable, b );
+        TS_ASSERT_EQUALS( bound1._value, 0.0 );
+
+        if ( bound1._type != Tightening::LB )
+            return false;
+
+        ++bound;
+
+        Tightening bound2 = *bound;
+
+        TS_ASSERT_EQUALS( bound2._variable, aux );
+        TS_ASSERT_EQUALS( bound2._value, 0.0 );
+
+        if ( bound2._type != Tightening::UB )
+            return false;
+
+        TS_ASSERT( split->getEquations().empty() );
+
+        return true;
+    }
+
     void test_register_as_watcher()
     {
         unsigned b = 1;
@@ -1054,6 +1121,106 @@ public:
 
             TS_ASSERT( tightenings.exists( Tightening( f, 0, Tightening::UB ) ) );
             TS_ASSERT( tightenings.exists( Tightening( b, -1, Tightening::UB ) ) );
+        }
+    }
+
+    void test_polarity()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        PiecewiseLinearCaseSplit activePhase;
+        activePhase.storeBoundTightening( Tightening( b, 0.0, Tightening::LB ) );
+        Equation activeEquation( Equation::EQ );
+        activeEquation.addAddend( 1, b );
+        activeEquation.addAddend( -1, f );
+        activeEquation.setScalar( 0 );
+        activePhase.addEquation( activeEquation );
+
+        PiecewiseLinearCaseSplit inactivePhase;
+        inactivePhase.storeBoundTightening( Tightening( b, 0.0, Tightening::UB ) );
+        inactivePhase.storeBoundTightening( Tightening( f, 0.0, Tightening::UB ) );
+
+        // b in [1, 2], polarity should be 1, and direction should be PHASE_ACTIVE
+        {
+            ReluConstraint relu( b, f );
+            relu.notifyLowerBound( b, 1 );
+            relu.notifyUpperBound( b, 2 );
+            TS_ASSERT( relu.computePolarity() == 1 );
+
+            relu.updateDirection();
+            TS_ASSERT( relu.getDirection() == ReluConstraint::PHASE_ACTIVE );
+        }
+        // b in [-2, 0], polarity should be -1, and direction should be PHASE_INACTIVE
+        {
+            ReluConstraint relu( b, f );
+            relu.notifyLowerBound( b, -2 );
+            relu.notifyUpperBound( b, 0 );
+            TS_ASSERT( relu.computePolarity() == -1 );
+
+            relu.updateDirection();
+            TS_ASSERT( relu.getDirection() == ReluConstraint::PHASE_INACTIVE );
+        }
+        // b in [-2, 2], polarity should be 0, the direction should be PHASE_INACTIVE,
+        // the inactive case should be the first element of the returned list by
+        // the getCaseSplits(), and getPossibleFix should return the inactive fix first
+        {
+            ReluConstraint relu( b, f );
+            relu.notifyLowerBound( b, -2 );
+            relu.notifyUpperBound( b, 2 );
+            TS_ASSERT( relu.computePolarity() == 0 );
+
+            relu.updateDirection();
+            TS_ASSERT( relu.getDirection() == ReluConstraint::PHASE_INACTIVE );
+
+            auto splits = relu.getCaseSplits();
+            auto it = splits.begin();
+            TS_ASSERT( *it == inactivePhase );
+
+            List<PiecewiseLinearConstraint::Fix> fixes;
+            List<PiecewiseLinearConstraint::Fix>::iterator itFix;
+
+            relu.notifyVariableValue( b, -1 );
+            relu.notifyVariableValue( f, 1 );
+
+            fixes = relu.getPossibleFixes();
+            itFix = fixes.begin();
+            TS_ASSERT_EQUALS( itFix->_variable, f );
+            TS_ASSERT_EQUALS( itFix->_value, 0 );
+            ++itFix;
+            TS_ASSERT_EQUALS( itFix->_variable, b );
+            TS_ASSERT_EQUALS( itFix->_value, 1 );
+
+        }
+        // b in [-2, 3], polarity should be 0.2, the direction should be PHASE_ACTIVE,
+        // the active case should be the first element of the returned list by
+        // the getCaseSplits(), and getPossibleFix should return the active fix first
+        {
+            ReluConstraint relu( b, f );
+            relu.notifyLowerBound( b, -2 );
+            relu.notifyUpperBound( b, 3 );
+            TS_ASSERT( relu.computePolarity() == 0.2 );
+
+            relu.updateDirection();
+            TS_ASSERT( relu.getDirection() == ReluConstraint::PHASE_ACTIVE );
+
+            auto splits = relu.getCaseSplits();
+            auto it = splits.begin();
+            TS_ASSERT( *it == activePhase );
+
+            List<PiecewiseLinearConstraint::Fix> fixes;
+            List<PiecewiseLinearConstraint::Fix>::iterator itFix;
+
+            relu.notifyVariableValue( b, -1 );
+            relu.notifyVariableValue( f, 1 );
+
+            fixes = relu.getPossibleFixes();
+            itFix = fixes.begin();
+            TS_ASSERT_EQUALS( itFix->_variable, b );
+            TS_ASSERT_EQUALS( itFix->_value, 1 );
+            ++itFix;
+            TS_ASSERT_EQUALS( itFix->_variable, f );
+            TS_ASSERT_EQUALS( itFix->_value, 0 );
         }
     }
 };

@@ -77,7 +77,8 @@ private:
     bool processIdenticalVariables();
 
     /*
-      Collect all variables whose lower and upper bounds are equal
+      Collect all variables whose lower and upper bounds are equal, or
+      which do not appear anywhere in the input query.
     */
     void collectFixedValues();
 
@@ -88,7 +89,8 @@ private:
     void separateMergedAndFixed();
 
     /*
-      Eliminate any variables that have become fixed or merged with an identical variable
+      Eliminate any variables that have become fixed or merged with an
+      identical variable
 	*/
 	void eliminateVariables();
 
@@ -96,6 +98,24 @@ private:
       Call on the PL constraints to add any auxiliary equations
     */
     void addPlAuxiliaryEquations();
+
+    /*
+      Attempt to figure out the network topology and construct a
+      network level reasoner. Return true iff the construction was
+      successful
+    */
+    bool constructNetworkLevelReasoner();
+    bool constructWeighedSumLayer( NLR::NetworkLevelReasoner *nlr,
+                                   Map<unsigned, unsigned> &handledVariableToLayer,
+                                   unsigned newLayerIndex );
+    bool constructReluLayer( NLR::NetworkLevelReasoner *nlr,
+                             Map<unsigned, unsigned> &handledVariableToLayer,
+                             unsigned newLayerIndex );
+
+    /*
+      All input/output variables
+    */
+    Set<unsigned> _inputOutputVariables;
 
     /*
       The preprocessed query
@@ -129,6 +149,8 @@ private:
       For debugging only
     */
     void dumpAllBounds( const String &message );
+
+    static void log( const String &message );
 };
 
 #endif // __Preprocessor_h__

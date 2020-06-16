@@ -182,11 +182,7 @@ class MarabouNetwork:
         Arguments:
             filename: (string) path to redirect output to
             verbose: (bool) whether to print out solution after solve finishes
-            timeout: (int) time in seconds when Marabou will time out
-            verbosity: (int) determines how much Marabou prints during solving
-                    0: print out minimal information
-                    1: print out statistics only in the beginning and the end
-                    2: print out statistics during solving
+            options: (MarabouCore.Options) object for specifying Marabou options
         Returns:
             vals: (dict: int->float) empty if UNSAT, else SATisfying solution
             stats: (Statistics) a Statistics object as defined in Marabou,
@@ -201,9 +197,9 @@ class MarabouNetwork:
             if stats.hasTimedOut():
                 print("TO")
             elif len(vals)==0:
-                print("UNSAT")
+                print("unsat")
             else:
-                print("SAT")
+                print("sat")
                 for j in range(len(self.inputVars)):
                     for i in range(self.inputVars[j].size):
                         print("input {} = {}".format(i, vals[self.inputVars[j].item(i)]))
@@ -230,15 +226,19 @@ class MarabouNetwork:
         Arguments:
             inputValues: list of (np arrays) representing input to network
             filename: (string) path to redirect output
+            options: (MarabouCore.Options) object for specifying Marabou options
         Returns:
             outputValues: (np array) representing output of network
         """
+        # Make sure inputValues is a list of np arrays and not list of lists
+        inputValues = [np.array(inVal) for inVal in inputValues]
+        
         inputVars = self.inputVars # list of numpy arrays
         outputVars = self.outputVars
 
         inputDict = dict()
-        inputVarList = np.concatenate(inputVars, axis=-1).ravel()
-        inputValList = np.concatenate(inputValues).ravel()
+        inputVarList = np.concatenate([inVar.flatten() for inVar in inputVars], axis=-1).flatten()
+        inputValList = np.concatenate([inVal.flatten() for inVal in inputValues]).flatten()
         assignList = zip(inputVarList, inputValList)
         for x in assignList:
             inputDict[x[0]] = x[1]
@@ -250,36 +250,40 @@ class MarabouNetwork:
 
         if options == None:
             options = MarabouCore.Options()
-        outputDict = MarabouCore.solve(ipq, options, filename)
+        outputDict, _ = MarabouCore.solve(ipq, options, filename)
         outputValues = outputVars.reshape(-1).astype(np.float64)
         for i in range(len(outputValues)):
-            outputValues[i] = (outputDict[0])[outputValues[i]]
+            outputValues[i] = outputDict[outputValues[i]]
         outputValues = outputValues.reshape(outputVars.shape)
         return outputValues
 
-    def evaluate(self, inputValues, useMarabou=True, options=None):
+    def evaluate(self, inputValues, useMarabou=True, options=None, filename="evaluateWithMarabou.log"):
         """
         Function to evaluate network at a given point
         Arguments:
-            inputValues: list of (np arrays) representing input to network
-            useMarabou: (bool) whether to use Marabou solver or TF/NNet
+            inputValues: list of (np arrays) representing inputs to network
+            useMarabou: (bool) whether to use Marabou solver or TF/ONNX
+            options: (MarabouCore.Options) object for specifying Marabou options
+            filename: (string) path to redirect output if using Marabou solver
         Returns:
             outputValues: (np array) representing output of network
         """
         if useMarabou:
-            return self.evaluateWithMarabou(inputValues, options=options)
+            return self.evaluateWithMarabou(inputValues, filename=filename, options=options)
         if not useMarabou:
             return self.evaluateWithoutMarabou(inputValues)
 
-    def findError(self, inputs):
+    def findError(self, inputValues, options=None, filename="evaluateWithMarabou.log"):
         """
         Function to find error between Marabou solver and TF/Nnet at a given point
         Arguments:
-            inputs: (np array) representing input to network
+            inputValues: list of (np arrays) representing inputs to network
+            options: (MarabouCore.Options) object for specifying Marabou options
+            filename: (string) path to redirect output if using Marabou solver
         Returns:
             err: (np array) representing error in each output variable
         """
-        outMar = self.evaluate(inputs, useMarabou=True)
-        outNotMar = self.evaluate(inputs, useMarabou=False)
+        outMar = self.evaluate(inputValues, useMarabou=True, options=options, filename=filename)
+        outNotMar = self.evaluate(inputValues, useMarabou=False, options=options, filename=filename)
         err = np.abs(outMar - outNotMar)
         return err

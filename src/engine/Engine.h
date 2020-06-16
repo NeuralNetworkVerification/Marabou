@@ -24,6 +24,7 @@
 #include "BlandsRule.h"
 #include "DantzigsRule.h"
 #include "DegradationChecker.h"
+#include "DivideStrategy.h"
 #include "IEngine.h"
 #include "InputQuery.h"
 #include "Map.h"
@@ -128,6 +129,21 @@ public:
     void setVerbosity( unsigned verbosity );
 
     /*
+      Pick the piecewise linear constraint for splitting
+    */
+    PiecewiseLinearConstraint *pickSplitPLConstraint();
+
+    /*
+      Update the scores of each candidate splitting PL constraints
+    */
+    void updateScores();
+
+    /*
+      Set the constraint violation threshold of SmtCore
+    */
+    void setConstraintViolationThreshold( unsigned threshold );
+
+    /*
       PSA: The following two methods are for DnC only and should be used very
       cautiously.
      */
@@ -171,6 +187,11 @@ private:
     List<PiecewiseLinearConstraint *> _plConstraints;
 
     /*
+      The ordered set of candidate PL constraints for splitting
+    */
+    Set<PiecewiseLinearConstraint *> _candidatePlConstraints;
+
+    /*
       Piecewise linear constraints that are currently violated.
     */
     List<PiecewiseLinearConstraint *> _violatedPlConstraints;
@@ -197,11 +218,6 @@ private:
       Bound tightener.
     */
     AutoRowBoundTightener _rowBoundTightener;
-
-    /*
-      Symbolic bound tightnere.
-    */
-    SymbolicBoundTightener *_symbolicBoundTightener;
 
     /*
       The SMT engine is in charge of case splitting.
@@ -282,7 +298,7 @@ private:
       and can be used for various operations such as network
       evaluation of topology-based bound tightening.
      */
-    NetworkLevelReasoner *_networkLevelReasoner;
+    NLR::NetworkLevelReasoner *_networkLevelReasoner;
 
     /*
       Verbosity level:
@@ -451,6 +467,13 @@ private:
     double *createConstraintMatrix();
     void addAuxiliaryVariables();
     void augmentInitialBasisIfNeeded( List<unsigned> &initialBasis, const List<unsigned> &basicRows );
+    void performLPRelaxationBoundedTightening();
+
+    /*
+      Update the preferred direction to perform fixes and the preferred order
+      to handle case splits
+    */
+    void updateDirections();
 };
 
 #endif // __Engine_h__

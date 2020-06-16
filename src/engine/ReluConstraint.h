@@ -28,8 +28,17 @@ public:
         PHASE_INACTIVE = 2,
     };
 
+    /*
+      The f variable is the relu output on the b variable:
+      f = relu( b )
+    */
     ReluConstraint( unsigned b, unsigned f );
     ReluConstraint( const String &serializedRelu );
+
+    /*
+      Get the type of this constraint.
+    */
+    PiecewiseLinearFunctionType getType() const;
 
     /*
       Return a clone of the constraint.
@@ -100,10 +109,11 @@ public:
     PiecewiseLinearCaseSplit getValidCaseSplit() const;
 
     /*
-      Preprocessing related functions, to inform that a variable has been eliminated completely
-      because it was fixed to some value, or that a variable's index has changed (e.g., x4 is now
-      called x2). constraintObsolete() returns true iff and the constraint has become obsolote
-      as a result of variable eliminations.
+      Preprocessing related functions, to inform that a variable has
+      been eliminated completely because it was fixed to some value,
+      or that a variable's index has changed (e.g., x4 is now called
+      x2). constraintObsolete() returns true iff and the constraint
+      has become obsolote as a result of variable eliminations.
     */
     void eliminateVariable( unsigned variable, double fixedValue );
     void updateVariableIndex( unsigned oldIndex, unsigned newIndex );
@@ -144,6 +154,7 @@ public:
       Get the index of the B variable.
     */
     unsigned getB() const;
+    unsigned getF() const;
 
     /*
       Get the current phase status.
@@ -162,11 +173,42 @@ public:
     */
     bool supportsSymbolicBoundTightening() const;
 
+    bool supportPolarity() const;
+
+    /*
+      Return the polarity of this ReLU, which computes how symmetric
+      the bound of the input to this ReLU is with respect to 0.
+      Let LB be the lowerbound, and UB be the upperbound.
+      If LB >= 0, polarity is 1.
+      If UB <= 0, polarity is -1.
+      If LB < 0, and UB > 0, polarity is ( LB + UB ) / (UB - LB).
+
+      We divide the sum by the width of the interval so that the polarity is
+      always between -1 and 1. The closer it is to 0, the more symmetric the
+      bound is.
+    */
+    double computePolarity() const;
+
+    /*
+      Update the preferred direction for fixing and handling case split
+    */
+    void updateDirection();
+
+    PhaseStatus getDirection() const;
+
+    void updateScore();
+
 private:
     unsigned _b, _f;
     PhaseStatus _phaseStatus;
     bool _auxVarInUse;
     unsigned _aux;
+
+    /*
+      Denotes which case split to handle first.
+      And which phase status to repair a relu into.
+    */
+    PhaseStatus _direction;
 
     PiecewiseLinearCaseSplit getInactiveSplit() const;
     PiecewiseLinearCaseSplit getActiveSplit() const;

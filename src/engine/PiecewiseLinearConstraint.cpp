@@ -18,6 +18,7 @@
 
 PiecewiseLinearConstraint::PiecewiseLinearConstraint()
     : _constraintActive( true )
+    , _score( -1 )
     , _constraintBoundTightener( NULL )
     , _statistics( NULL )
 {

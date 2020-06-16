@@ -87,13 +87,13 @@ void PropertyParser::processSingleLine( const String &line, InputQuery &inputQue
 
         bool inputVariable = token.contains( "x" );
         bool outputVariable = token.contains( "y" );
-        bool weightedSumVariable = token.contains( "ws" );
+        bool hiddenVariable = token.contains( "h" );
 
         // Make sure that we have identified precisely one kind of variable
         unsigned variableKindSanity = 0;
         if ( inputVariable ) ++variableKindSanity;
         if ( outputVariable ) ++variableKindSanity;
-        if ( weightedSumVariable ) ++variableKindSanity;
+        if ( hiddenVariable ) ++variableKindSanity;
 
         if ( variableKindSanity != 1 )
             throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
@@ -128,9 +128,9 @@ void PropertyParser::processSingleLine( const String &line, InputQuery &inputQue
             ASSERT( justIndex < inputQuery.getNumOutputVariables() );
             variable = inputQuery.outputVariableByIndex( justIndex );
         }
-        else if ( weightedSumVariable )
+        else if ( hiddenVariable )
         {
-            // These variables are of the form ws_2_5
+            // These variables are of the form h_2_5
             subTokens = token.tokenize( "_" );
 
             if ( subTokens.size() != 3 )
@@ -142,11 +142,18 @@ void PropertyParser::processSingleLine( const String &line, InputQuery &inputQue
             ++subToken;
             unsigned nodeIndex = atoi( subToken->ascii() );
 
-            NetworkLevelReasoner *nlr = inputQuery.getNetworkLevelReasoner();
+            NLR::NetworkLevelReasoner *nlr = inputQuery.getNetworkLevelReasoner();
             if ( !nlr )
                 throw InputParserError( InputParserError::NETWORK_LEVEL_REASONING_DISABLED );
 
-            variable = nlr->getWeightedSumVariable( layerIndex, nodeIndex );
+            if ( nlr->getNumberOfLayers() < layerIndex )
+                throw InputParserError( InputParserError::HIDDEN_VARIABLE_DOESNT_EXIST_IN_NLR );
+
+            const NLR::Layer *layer = nlr->getLayer( layerIndex );
+            if ( layer->getSize() < nodeIndex || !layer->neuronHasVariable( nodeIndex ) )
+                throw InputParserError( InputParserError::HIDDEN_VARIABLE_DOESNT_EXIST_IN_NLR );
+
+            variable = layer->neuronToVariable( nodeIndex );
         }
 
         if ( type == Equation::GE )

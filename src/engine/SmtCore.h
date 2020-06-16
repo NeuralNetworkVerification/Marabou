@@ -96,6 +96,14 @@ public:
     */
     PiecewiseLinearConstraint *chooseViolatedConstraintForFixing( List<PiecewiseLinearConstraint *> &_violatedPlConstraints ) const;
 
+    void setConstraintViolationThreshold( unsigned threshold );
+
+    /*
+      Pick the piecewise linear constraint for splitting, returns true
+      if a constraint for splitting is successfully picked
+    */
+    bool pickSplitPLConstraint();
+
     /*
       For debugging purposes only - store a correct possible solution
     */
@@ -161,6 +169,11 @@ private:
       debugging purposes.
     */
     unsigned _stateId;
+
+    /*
+      Split when some relu has been violated for this many times
+    */
+    unsigned _constraintViolationThreshold;
 };
 
 #endif // __SmtCore_h__

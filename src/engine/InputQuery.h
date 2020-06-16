@@ -22,7 +22,6 @@
 #include "Map.h"
 #include "NetworkLevelReasoner.h"
 #include "PiecewiseLinearConstraint.h"
-#include "SymbolicBoundTightener.h"
 
 class InputQuery
 {
@@ -57,7 +56,7 @@ public:
       Methods for handling input and output variables
     */
     void markInputVariable( unsigned variable, unsigned inputIndex );
-    void markOutputVariable( unsigned variable, unsigned inputIndex );
+    void markOutputVariable( unsigned variable, unsigned outputIndex );
     unsigned inputVariableByIndex( unsigned index ) const;
     unsigned outputVariableByIndex( unsigned index ) const;
     unsigned getNumInputVariables() const;
@@ -85,18 +84,13 @@ public:
     /*
       Remove an equation from equation list
     */
-    void removeEquation(Equation e);
+    void removeEquation( Equation e );
 
     /*
       Assignment operator and copy constructor, duplicate the constraints.
     */
     InputQuery &operator=( const InputQuery &other );
     InputQuery( const InputQuery &other );
-
-    /*
-      Attach a symbolic bound tightener to the input query
-    */
-    void setSymbolicBoundTightener( SymbolicBoundTightener *sbt );
 
     /*
       Debugging methods
@@ -118,6 +112,7 @@ public:
     */
     void printInputOutputBounds() const;
     void dump() const;
+    void printAllBounds() const;
 
     /*
       Adjsut the input/output variable mappings because variables have been merged
@@ -129,8 +124,8 @@ public:
     /*
       Include a network level reasoner in the query
     */
-    void setNetworkLevelReasoner( NetworkLevelReasoner *nlr );
-    NetworkLevelReasoner *getNetworkLevelReasoner() const;
+    void setNetworkLevelReasoner( NLR::NetworkLevelReasoner *nlr );
+    NLR::NetworkLevelReasoner *getNetworkLevelReasoner() const;
 
 private:
     unsigned _numberOfVariables;
@@ -161,12 +156,7 @@ public:
       and can be used for various operations such as network
       evaluation of topology-based bound tightening.
      */
-    NetworkLevelReasoner *_networkLevelReasoner;
-
-    /*
-      Symbolic bound tightener.
-    */
-    SymbolicBoundTightener *_sbt;
+    NLR::NetworkLevelReasoner *_networkLevelReasoner;
 };
 
 #endif // __InputQuery_h__

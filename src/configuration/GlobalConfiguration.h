@@ -16,10 +16,14 @@
 #ifndef __GlobalConfiguration_h__
 #define __GlobalConfiguration_h__
 
+#include "DivideStrategy.h"
+
 class GlobalConfiguration
 {
 public:
     static void print();
+
+    static const bool USE_POLARITY_BASED_DIRECTION_HEURISTICS;
 
     // The default epsilon used for comparing doubles
     static const double DEFAULT_EPSILON_FOR_COMPARISONS;
@@ -108,6 +112,8 @@ public:
     // The number of violations of a constraints after which the SMT core will initiate a case split
     static const unsigned CONSTRAINT_VIOLATION_THRESHOLD;
 
+    static const DivideStrategy SPLITTING_HEURISTICS;
+
     // How often should we perform full bound tightening, on the entire contraints matrix A.
     static const unsigned BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY;
 
@@ -127,8 +133,11 @@ public:
     // PSE's Gamma function's update tolerance
     static const double PSE_GAMMA_UPDATE_TOLERANCE;
 
-    // The tolerance for checking whether f = Relu( b ), to determine a ReLU's statisfaction
+    // The tolerance for checking whether f = Relu( b )
     static const double RELU_CONSTRAINT_COMPARISON_TOLERANCE;
+
+    // The tolerance for checking whether f = Abs( b )
+    static const double ABS_CONSTRAINT_COMPARISON_TOLERANCE;
 
     // Should the initial basis be comprised only of auxiliary (row) variables?
     static const bool ONLY_AUX_INITIAL_BASIS;
@@ -156,10 +165,6 @@ public:
 
     // Whether symbolic bound tightening should be used or not
     static const bool USE_SYMBOLIC_BOUND_TIGHTENING;
-
-    // If symbolic bound tightening is used, should linear concretization (as
-    // opposed to constant concretization) be used.
-    static const bool USE_LINEAR_CONCRETIZATION;
 
     // Symbolic tightening rounding constant
     static const double SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
@@ -192,6 +197,11 @@ public:
     };
     static const BasisFactorizationType BASIS_FACTORIZATION_TYPE;
 
+    /* In the polarity-based branching heuristics, only this many earliest nodes
+       are considered to branch on.
+    */
+    static const unsigned RUNTIME_ESTIMATE_THRESHOLD;
+
     /*
       Logging options
     */
@@ -201,10 +211,12 @@ public:
     static const bool SMT_CORE_LOGGING;
     static const bool DANTZIGS_RULE_LOGGING;
     static const bool BASIS_FACTORIZATION_LOGGING;
+    static const bool PREPROCESSOR_LOGGING;
     static const bool PROJECTED_STEEPEST_EDGE_LOGGING;
     static const bool GAUSSIAN_ELIMINATION_LOGGING;
     static const bool QUERY_LOADER_LOGGING;
     static const bool SYMBOLIC_BOUND_TIGHTENER_LOGGING;
+    static const bool NETWORK_LEVEL_REASONER_LOGGING;
 };
 
 #endif // __GlobalConfiguration_h__

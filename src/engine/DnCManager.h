@@ -73,11 +73,14 @@ public:
     */
     void getSolution( std::map<int, double> &ret );
 
+    void setConstraintViolationThreshold( unsigned threshold );
+
 private:
     /*
       Create and run a DnCWorker
     */
     static void dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine,
+                          std::unique_ptr<InputQuery> inputQuery,
                           std::atomic_uint &numUnsolvedSubQueries,
                           std::atomic_bool &shouldQuitSolving,
                           unsigned threadId, unsigned onlineDivides,
@@ -188,6 +191,12 @@ private:
       The level of verbosity
     */
     unsigned _verbosity;
+
+    /*
+      The constraint violation threshold for each worker engine
+    */
+    unsigned _constraintViolationThreshold;
+
 };
 
 #endif // __DnCManager_h__

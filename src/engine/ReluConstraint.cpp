@@ -14,7 +14,9 @@
 
 #include "ConstraintBoundTightener.h"
 #include "Debug.h"
+#include "DivideStrategy.h"
 #include "FloatUtils.h"
+#include "GlobalConfiguration.h"
 #include "ITableau.h"
 #include "InputQuery.h"
 #include "MStringf.h"
@@ -32,6 +34,7 @@ ReluConstraint::ReluConstraint( unsigned b, unsigned f )
     : _b( b )
     , _f( f )
     , _auxVarInUse( false )
+    , _direction( PhaseStatus::PHASE_NOT_FIXED )
     , _haveEliminatedVariables( false )
 {
     setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
@@ -43,7 +46,7 @@ ReluConstraint::ReluConstraint( const String &serializedRelu )
     String constraintType = serializedRelu.substring( 0, 4 );
     ASSERT( constraintType == String( "relu" ) );
 
-    // remove the constraint type in serialized form
+    // Remove the constraint type in serialized form
     String serializedValues = serializedRelu.substring( 5, serializedRelu.length() - 5 );
     List<String> values = serializedValues.tokenize( "," );
 
@@ -71,6 +74,11 @@ ReluConstraint::ReluConstraint( const String &serializedRelu )
     }
 
     setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
+}
+
+PiecewiseLinearFunctionType ReluConstraint::getType() const
+{
+    return PiecewiseLinearFunctionType::RELU;
 }
 
 PiecewiseLinearConstraint *ReluConstraint::duplicateConstraint() const
@@ -275,14 +283,30 @@ List<PiecewiseLinearConstraint::Fix> ReluConstraint::getPossibleFixes() const
         }
         else
         {
-            fixes.append( PiecewiseLinearConstraint::Fix( _b, fValue ) );
-            fixes.append( PiecewiseLinearConstraint::Fix( _f, 0 ) );
+            if ( _direction == PHASE_INACTIVE )
+            {
+                fixes.append( PiecewiseLinearConstraint::Fix( _f, 0 ) );
+                fixes.append( PiecewiseLinearConstraint::Fix( _b, fValue ) );
+            }
+            else
+            {
+                fixes.append( PiecewiseLinearConstraint::Fix( _b, fValue ) );
+                fixes.append( PiecewiseLinearConstraint::Fix( _f, 0 ) );
+            }
         }
     }
     else
     {
-        fixes.append( PiecewiseLinearConstraint::Fix( _b, 0 ) );
-        fixes.append( PiecewiseLinearConstraint::Fix( _f, bValue ) );
+        if ( _direction == PHASE_ACTIVE )
+        {
+            fixes.append( PiecewiseLinearConstraint::Fix( _f, bValue ) );
+            fixes.append( PiecewiseLinearConstraint::Fix( _b, 0 ) );
+        }
+        else
+        {
+            fixes.append( PiecewiseLinearConstraint::Fix( _b, 0 ) );
+            fixes.append( PiecewiseLinearConstraint::Fix( _f, bValue ) );
+        }
     }
 
     return fixes;
@@ -415,6 +439,19 @@ List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
 
     List<PiecewiseLinearCaseSplit> splits;
 
+    if ( _direction == PHASE_INACTIVE )
+    {
+        splits.append( getInactiveSplit() );
+        splits.append( getActiveSplit() );
+        return splits;
+    }
+    if ( _direction == PHASE_ACTIVE )
+    {
+        splits.append( getActiveSplit() );
+        splits.append( getInactiveSplit() );
+        return splits;
+    }
+
     // If we have existing knowledge about the assignment, use it to
     // influence the order of splits
     if ( _assignment.exists( _f ) )
@@ -455,11 +492,22 @@ PiecewiseLinearCaseSplit ReluConstraint::getActiveSplit() const
     // Active phase: b >= 0, b - f = 0
     PiecewiseLinearCaseSplit activePhase;
     activePhase.storeBoundTightening( Tightening( _b, 0.0, Tightening::LB ) );
-    Equation activeEquation( Equation::EQ );
-    activeEquation.addAddend( 1, _b );
-    activeEquation.addAddend( -1, _f );
-    activeEquation.setScalar( 0 );
-    activePhase.addEquation( activeEquation );
+
+    if ( _auxVarInUse )
+    {
+        // Special case: aux var in use.
+        // Because aux = f - b and aux >= 0, we just add that aux <= 0.
+        activePhase.storeBoundTightening( Tightening( _aux, 0.0, Tightening::UB ) );
+    }
+    else
+    {
+        Equation activeEquation( Equation::EQ );
+        activeEquation.addAddend( 1, _b );
+        activeEquation.addAddend( -1, _f );
+        activeEquation.setScalar( 0 );
+        activePhase.addEquation( activeEquation );
+    }
+
     return activePhase;
 }
 
@@ -809,12 +857,22 @@ unsigned ReluConstraint::getB() const
     return _b;
 }
 
+unsigned ReluConstraint::getF() const
+{
+    return _f;
+}
+
 ReluConstraint::PhaseStatus ReluConstraint::getPhaseStatus() const
 {
     return _phaseStatus;
 }
 
 bool ReluConstraint::supportsSymbolicBoundTightening() const
+{
+    return true;
+}
+
+bool ReluConstraint::supportPolarity() const
 {
     return true;
 }
@@ -827,6 +885,32 @@ bool ReluConstraint::auxVariableInUse() const
 unsigned ReluConstraint::getAux() const
 {
     return _aux;
+}
+
+double ReluConstraint::computePolarity() const
+{
+    double currentLb = _lowerBounds[_b];
+    double currentUb = _upperBounds[_b];
+    if ( currentLb >= 0 ) return 1;
+    if ( currentUb <= 0 ) return -1;
+    double width = currentUb - currentLb;
+    double sum = currentUb + currentLb;
+    return sum / width;
+}
+
+void ReluConstraint::updateDirection()
+{
+    _direction = ( computePolarity() > 0 ) ? PHASE_ACTIVE : PHASE_INACTIVE;
+}
+
+ReluConstraint::PhaseStatus ReluConstraint::getDirection() const
+{
+    return _direction;
+}
+
+void ReluConstraint::updateScore()
+{
+    _score = std::abs( computePolarity() );
 }
 
 //

@@ -12,6 +12,8 @@ add_system_test(max)
 add_system_test(mps)
 add_system_test(relu)
 add_system_test(Disjunction)
+add_system_test(AbsoluteValue)
+
 file(COPY "${RESOURCES_DIR}/mps/lp_feasible_1.mps" DESTINATION ${CMAKE_BINARY_DIR})
 file(COPY "${RESOURCES_DIR}/mps/lp_infeasible_1.mps" DESTINATION ${CMAKE_BINARY_DIR})
 file(COPY ${ACAS_REGRESS_NET} DESTINATION ${CMAKE_BINARY_DIR})
