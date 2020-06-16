@@ -131,7 +131,8 @@ void NetworkLevelReasoner::lpRelaxationPropagation()
 void NetworkLevelReasoner::MILPPropagation()
 {
     MILPFormulator milpFormulator( this );
-    milpFormulator.optimizeBoundsWithMILPEncoding( _layerIndexToLayer );
+    milpFormulator.setCutoff( 0 );
+    milpFormulator.optimizeBoundsWithIncrementalMILPEncoding( _layerIndexToLayer );
 }
 
 void NetworkLevelReasoner::intervalArithmeticBoundPropagation()

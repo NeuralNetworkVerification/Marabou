@@ -33,16 +33,43 @@ public:
     ~MILPFormulator();
 
     void optimizeBoundsWithMILPEncoding( const Map<unsigned, Layer *> &layers );
+    void optimizeBoundsWithIncrementalMILPEncoding( const Map<unsigned, Layer *> &layers );
+
+    /*
+      When optimizing, we compute lower and upper bounds for each
+      varibale. If a cutoff value is set, once one of these bounds
+      crosses the cutoff value we do not attempt to optimize further
+    */
+    void setCutoff( double cutoff );
 
 private:
     LayerOwner *_layerOwner;
     LPFormulator _lpFormulator;
     unsigned _signChanges;
     unsigned _tighterBoundCounter;
+    unsigned _cutoffs;
+    bool _cutoffInUse;
+    double _cutoffValue;
+
+    bool tightenLowerBound( GurobiWrapper &gurobi,
+                            Layer *layer,
+                            unsigned neuron,
+                            unsigned variable,
+                            double &currentLb,
+                            double &newLb );
+
+    bool tightenUpperBound( GurobiWrapper &gurobi,
+                            Layer *layer,
+                            unsigned neuron,
+                            unsigned variable,
+                            double &currentUb,
+                            double &newUb );
 
     void createMILPEncoding( const Map<unsigned, Layer *> &layers,
                              GurobiWrapper &gurobi,
                              unsigned lastLayer = UINT_MAX );
+
+    void addLayerToModel( GurobiWrapper &gurobi, const Layer *layer );
 
     void addReluLayerToMILPFormulation( GurobiWrapper &gurobi,
                                         const Layer *layer );

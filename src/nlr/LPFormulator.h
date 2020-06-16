@@ -64,13 +64,12 @@ public:
                               MinOrMax minOrMax,
                               String variableName,
                               unsigned lastLayer = UINT_MAX );
+    void addLayerToModel( GurobiWrapper &gurobi, const Layer *layer );
+
 private:
     LayerOwner *_layerOwner;
-
     bool _cutoffInUse;
     double _cutoffValue;
-
-    void addLayerToModel( GurobiWrapper &gurobi, const Layer *layer );
 
     void addInputLayerToLpRelaxation( GurobiWrapper &gurobi,
                                       const Layer *layer );

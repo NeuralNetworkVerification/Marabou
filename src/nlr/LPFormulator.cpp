@@ -306,8 +306,7 @@ void LPFormulator::addLayerToModel( GurobiWrapper &gurobi, const Layer *layer )
         break;
 
     default:
-        printf( "Unsupported layer!\n" );
-        exit( 1 );
+        throw NLRError( NLRError::LAYER_TYPE_NOT_SUPPORTED, "MILPFormulator" );
         break;
     }
 }
@@ -452,7 +451,7 @@ void LPFormulator::setCutoff( double cutoff )
 
 void LPFormulator::log( const String &message )
 {
-    // if ( GlobalConfiguration::NETWORK_LEVEL_REASONER_LOGGING )
+    if ( GlobalConfiguration::NETWORK_LEVEL_REASONER_LOGGING )
         printf( "Preprocessor: %s\n", message.ascii() );
 }
 
