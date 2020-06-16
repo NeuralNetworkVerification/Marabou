@@ -39,7 +39,7 @@ network = Marabou.read_onnx(filename)
 
 # Get the input and output variable numbers; [0] since first dimension is batch size
 inputVars = network.inputVars[0][0]
-outputVars = network.outputVars
+outputVars = network.outputVars[0]
 
 # Set input bounds
 network.setLowerBound(inputVars[0],-10.0)

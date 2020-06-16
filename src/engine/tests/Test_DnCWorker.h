@@ -56,11 +56,15 @@ public:
     unsigned clearSubQueries()
     {
         unsigned counter = 0;
-        SubQuery *subQuery;
+        SubQuery *subQuery = NULL;
         while ( !_workload->empty() )
         {
             _workload->pop( subQuery );
-            delete subQuery;
+            if ( subQuery )
+            {
+                delete subQuery;
+                subQuery = NULL;
+            }
             ++counter;
         }
 

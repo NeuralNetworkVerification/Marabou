@@ -19,10 +19,11 @@
 enum DivideStrategy
 {
     // Input splitting
-    LargestInterval,
+    LargestInterval = 0,
 
     // Relu splitting
-    EarliestReLU, // Pick a ReLU that appears in the earliest layer
+    Polarity,      // Pick the ReLU with the polarity closest to 0 among the first K nodes
+    EarliestReLU,  // Pick a ReLU that appears in the earliest layer
     ReLUViolation, // Pick the ReLU that has been violated for the most times
 };
 

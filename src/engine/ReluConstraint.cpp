@@ -26,6 +26,7 @@
 #include "Statistics.h"
 #include "TableauRow.h"
 
+
 #ifdef _WIN32
 #define __attribute__(x)
 #endif
@@ -857,6 +858,11 @@ unsigned ReluConstraint::getB() const
     return _b;
 }
 
+unsigned ReluConstraint::getF() const
+{
+    return _f;
+}
+
 ReluConstraint::PhaseStatus ReluConstraint::getPhaseStatus() const
 {
     return _phaseStatus;
@@ -901,6 +907,11 @@ void ReluConstraint::updateDirection()
 ReluConstraint::PhaseStatus ReluConstraint::getDirection() const
 {
     return _direction;
+}
+
+void ReluConstraint::updateScore()
+{
+    _score = std::abs( computePolarity() );
 }
 
 //

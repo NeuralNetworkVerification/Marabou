@@ -298,7 +298,7 @@ private:
       and can be used for various operations such as network
       evaluation of topology-based bound tightening.
      */
-    NetworkLevelReasoner *_networkLevelReasoner;
+    NLR::NetworkLevelReasoner *_networkLevelReasoner;
 
     /*
       Verbosity level:
@@ -467,6 +467,7 @@ private:
     double *createConstraintMatrix();
     void addAuxiliaryVariables();
     void augmentInitialBasisIfNeeded( List<unsigned> &initialBasis, const List<unsigned> &basicRows );
+    void performLPRelaxationBoundedTightening();
 
     /*
       Update the preferred direction to perform fixes and the preferred order

@@ -225,7 +225,7 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
     if ( other._networkLevelReasoner )
     {
         if ( !_networkLevelReasoner )
-            _networkLevelReasoner = new NetworkLevelReasoner;
+            _networkLevelReasoner = new NLR::NetworkLevelReasoner;
         other._networkLevelReasoner->storeIntoOther( *_networkLevelReasoner );
     }
     else
@@ -456,6 +456,15 @@ void InputQuery::printInputOutputBounds() const
 
 void InputQuery::dump() const
 {
+    printf( "Total number of variables: %u\n", _numberOfVariables );
+    printf( "Input variables:\n" );
+    for ( const auto &input : _inputIndexToVariable )
+        printf( "\tx%u\n", input.second );
+
+    printf( "Output variables:\n" );
+    for ( const auto &output : _outputIndexToVariable )
+        printf( "\tx%u\n", output.second );
+
     printf( "Variable bounds:\n" );
     for ( unsigned i = 0; i < _numberOfVariables; ++i )
     {
@@ -528,12 +537,12 @@ void InputQuery::adjustInputOutputMapping( const Map<unsigned, unsigned> &oldInd
         _variableToOutputIndex[it.second] = it.first;
 }
 
-void InputQuery::setNetworkLevelReasoner( NetworkLevelReasoner *nlr )
+void InputQuery::setNetworkLevelReasoner( NLR::NetworkLevelReasoner *nlr )
 {
     _networkLevelReasoner = nlr;
 }
 
-NetworkLevelReasoner *InputQuery::getNetworkLevelReasoner() const
+NLR::NetworkLevelReasoner *InputQuery::getNetworkLevelReasoner() const
 {
     return _networkLevelReasoner;
 }

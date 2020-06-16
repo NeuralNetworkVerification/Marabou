@@ -17,9 +17,12 @@
 '''
 import warnings
 from .MarabouCore import *
-from .MarabouNetworkNNet import *
 
 # Import parsers if required packages are installed
+try:
+    from .MarabouNetworkNNet import *
+except ImportError:
+    warnings.warn("NNet parser is unavailable because the numpy package is not installed")
 try:
     from .MarabouNetworkTF import *
 except ImportError:
@@ -29,20 +32,21 @@ try:
 except ImportError:
     warnings.warn("ONNX parser is unavailable because onnx or onnxruntime packages are not installed")
 
-def read_nnet(filename, use_nlr=False):
+def read_nnet(filename, normalize=False):
     """
     Constructs a MarabouNetworkNnet object from a .nnet file
 
     Args:
         filename: (string) path to the .nnet file.
-        use_nlr: (bool) Set to true to use NetworkLevelReasoner
+        normalize: (bool) If true, incorporate input/output normalization
+                      into first and last layers of network
     Returns:
         marabouNetworkNNet: (MarabouNetworkNNet) representing network
     """
-    return MarabouNetworkNNet(filename, use_nlr=use_nlr)
+    return MarabouNetworkNNet(filename, normalize=normalize)
 
 
-def read_tf(filename, inputNames=None, outputName=None, savedModel=False, savedModelTags=[]):
+def read_tf(filename, inputNames=None, outputName=None, modelType="frozen", savedModelTags=[]):
     """
     Constructs a MarabouNetworkTF object from a frozen Tensorflow protobuf
 
@@ -52,12 +56,14 @@ def read_tf(filename, inputNames=None, outputName=None, savedModel=False, savedM
                            contains .pb file and variables subdirectory.
         inputNames: (list of strings) optional, list of operation names corresponding to inputs.
         outputName: (string) optional, name of operation corresponding to output.
-        savedModel: (bool) If false, load frozen graph. If true, load SavedModel object.
+        modelType: (string) optional, type of model to read. The default is "frozen" for a frozen graph.
+                            Can also use "savedModel_v1" or "savedModel_v2" for the SavedModel format
+                            created from either tensorflow versions 1.X or 2.X respectively.
         savedModelTags: (list of strings) If loading a SavedModel, the user must specify tags used.
     Returns:
         marabouNetworkTF: (MarabouNetworkTF) representing network
     """
-    return MarabouNetworkTF(filename, inputNames, outputName, savedModel, savedModelTags)
+    return MarabouNetworkTF(filename, inputNames, outputName, modelType, savedModelTags)
 
 def read_onnx(filename, inputNames=None, outputName=None):
     """
@@ -83,30 +89,27 @@ def load_query(filename):
     return MarabouCore.loadQuery(filename)
 
 
-def solve_query(ipq, filename="", verbose=True, timeout=0, verbosity=2):
+def solve_query(ipq, filename="", verbose=True, options=None):
     """
     Function to solve query represented by this network
     Arguments:
-        ipq: (MarabouCore.InputQuery) InputQuery object, which can be obtained from 
+        ipq: (MarabouCore.InputQuery) InputQuery object, which can be obtained from
                 MarabouNetwork.getInputQuery or load_query
         filename: (string) path to redirect output to
-        timeout: (int) time in seconds when Marabou will time out
         verbose: (bool) whether to print out solution after solve finishes
-        verbosity: (int) determines how much Marabou prints during solving
-                0: print out minimal information
-                1: print out statistics only in the beginning and the end
-                2: print out statistics during solving
+        options: (MarabouCore.Options) object for specifying Marabou options
     Returns:
         vals: (dict: int->float) empty if UNSAT, else SATisfying solution
         stats: (Statistics) a Statistics object as defined in Marabou,
                 it has multiple methods that provide information related
                 to how an input query was solved.
     """
-    options = createOptions(timeoutInSeconds=timeout, verbosity=verbosity)
+    if options is None:
+        options = createOptions()
     vals, stats = MarabouCore.solve(ipq, options, filename)
     if verbose:
         if stats.hasTimedOut():
-            print ("TIMEOUT")
+            print ("TO")
         elif len(vals)==0:
             print("unsat")
         else:

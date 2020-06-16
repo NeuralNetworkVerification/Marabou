@@ -23,6 +23,7 @@
 #include "MStringf.h"
 #include "MalformedBasisException.h"
 #include "MarabouError.h"
+#include "Options.h"
 #include "PiecewiseLinearConstraint.h"
 #include "Preprocessor.h"
 #include "TableauRow.h"
@@ -94,10 +95,11 @@ bool Engine::solve( unsigned timeoutInSeconds )
     updateDirections();
     storeInitialEngineState();
 
+    mainLoopStatistics();
     if ( _verbosity > 0 )
     {
         printf( "\nEngine::solve: Initial statistics\n" );
-        mainLoopStatistics();
+        _statistics.print();
         printf( "\n---\n" );
     }
 
@@ -140,8 +142,10 @@ bool Engine::solve( unsigned timeoutInSeconds )
         {
             DEBUG( _tableau->verifyInvariants() );
 
-            if ( _verbosity > 1 )
-                mainLoopStatistics();
+            mainLoopStatistics();
+            if ( _verbosity > 1 &&  _statistics.getNumMainLoopIterations() %
+                 GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
+                _statistics.print();
 
             // Check whether progress has been made recently
             checkOverallProgress();
@@ -320,9 +324,6 @@ void Engine::mainLoopStatistics()
     _statistics.setNumPlValidSplits( _numPlConstraintsDisabledByValidSplits );
     _statistics.setNumPlSMTSplits( _plConstraints.size() -
                                    activeConstraints - _numPlConstraintsDisabledByValidSplits );
-
-    if ( _statistics.getNumMainLoopIterations() % GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
-        _statistics.print();
 
     _statistics.incNumMainLoopIterations();
 
@@ -1089,6 +1090,8 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         delete[] constraintMatrix;
 
+        performLPRelaxationBoundedTightening();
+
         struct timespec end = TimeUtils::sampleMicro();
         _statistics.setPreprocessingTime( TimeUtils::timePassed( start, end ) );
     }
@@ -1107,6 +1110,27 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
     _smtCore.storeDebuggingSolution( _preprocessedQuery._debuggingSolution );
     return true;
+}
+
+void Engine::performLPRelaxationBoundedTightening()
+{
+    if ( _networkLevelReasoner && Options::get()->gurobiEnabled() )
+    {
+        _networkLevelReasoner->obtainCurrentBounds();
+        _networkLevelReasoner->lpRelaxationPropagation();
+
+        List<Tightening> tightenings;
+        _networkLevelReasoner->getConstraintTightenings( tightenings );
+
+        for ( const auto &tightening : tightenings )
+        {
+            if ( tightening._type == Tightening::LB )
+                _tableau->tightenLowerBound( tightening._variable, tightening._value );
+
+            else if ( tightening._type == Tightening::UB )
+                _tableau->tightenUpperBound( tightening._variable, tightening._value );
+        }
+    }
 }
 
 void Engine::extractSolution( InputQuery &inputQuery )
@@ -1757,7 +1781,6 @@ void Engine::performSymbolicBoundTightening()
             ++numTightenedBounds;
         }
 
-
         if ( tightening._type == Tightening::UB &&
              _tableau->getUpperBound( tightening._variable ) > tightening._value )
         {
@@ -1859,20 +1882,21 @@ void Engine::warmStart()
     _networkLevelReasoner->evaluate( inputAssignment, outputAssignment );
 
     // Try to update as many variables as possible to match their assignment
-    for ( const auto &assignment : _networkLevelReasoner->getIndexToWeightedSumAssignment() )
+    for ( unsigned i = 0; i < _networkLevelReasoner->getNumberOfLayers(); ++i )
     {
-        unsigned variable = _networkLevelReasoner->getWeightedSumVariable( assignment.first._layer, assignment.first._neuron );
+        const NLR::Layer *layer = _networkLevelReasoner->getLayer( i );
+        unsigned layerSize = layer->getSize();
+        const double *assignment = layer->getAssignment();
 
-        if ( !_tableau->isBasic( variable ) )
-            _tableau->setNonBasicAssignment( variable, assignment.second, false );
-    }
-
-    for ( const auto &assignment : _networkLevelReasoner->getIndexToActivationResultAssignment() )
-    {
-        unsigned variable = _networkLevelReasoner->getActivationResultVariable( assignment.first._layer, assignment.first._neuron );
-
-        if ( !_tableau->isBasic( variable ) )
-            _tableau->setNonBasicAssignment( variable, assignment.second, false );
+        for ( unsigned j = 0; j < layerSize; ++j )
+        {
+            if ( layer->neuronHasVariable( j ) )
+            {
+                unsigned variable = layer->neuronToVariable( j );
+                if ( !_tableau->isBasic( variable ) )
+                    _tableau->setNonBasicAssignment( variable, assignment[j], false );
+            }
+        }
     }
 
     // We did what we could for the non-basics; now let the tableau compute
@@ -1920,23 +1944,65 @@ void Engine::updateDirections()
 
 void Engine::updateScores()
 {
-    _candidatePlConstraints.clear();
-    for ( const auto plConstraint : _plConstraints )
+    if ( _networkLevelReasoner &&
+         GlobalConfiguration::SPLITTING_HEURISTICS == DivideStrategy::Polarity )
     {
-        if ( plConstraint->isActive() && !plConstraint->phaseFixed() )
+        // We find the earliest K ReLUs that have not been fixed, update
+        // their scores, and pop them to the _candidatePlConstraints
+        // K is equal to GlobalConfiguration::RUNTIME_ESTIMATE_THRESHOLD
+        log( Stringf( "Using polarity heuristics..." ) );
+
+        List<PiecewiseLinearConstraint *> constraints =
+            _networkLevelReasoner->getConstraintsInTopologicalOrder();
+
+        for ( auto &plConstraint : constraints )
         {
-            plConstraint->updateScore();
-            _candidatePlConstraints.insert( plConstraint );
+            if ( plConstraint->isActive() && !plConstraint->phaseFixed() )
+            {
+                plConstraint->updateScore();
+                _candidatePlConstraints.insert( plConstraint );
+                if ( _candidatePlConstraints.size() >=
+                     GlobalConfiguration::RUNTIME_ESTIMATE_THRESHOLD )
+                    break;
+            }
         }
+    }
+    else if ( GlobalConfiguration::SPLITTING_HEURISTICS ==
+              DivideStrategy::EarliestReLU )
+    {
+        for ( const auto plConstraint : _plConstraints )
+        {
+            if ( plConstraint->isActive() && !plConstraint->phaseFixed() )
+            {
+                plConstraint->updateScore();
+                _candidatePlConstraints.insert( plConstraint );
+            }
+        }
+    }
+    else
+    {
+        // Otherwise, we fall back to the constraint violation based
+        // splitting heuristic - nothing to do.
     }
 }
 
 PiecewiseLinearConstraint *Engine::pickSplitPLConstraint()
 {
+    _candidatePlConstraints.clear();
+    log( Stringf( "Picking a split PLConstraint..." ) );
     updateScores();
-    auto constraint = *_candidatePlConstraints.begin();
-    _candidatePlConstraints.erase( constraint );
-    return constraint;
+    log( Stringf( "Done updating scores..." ) );
+    if ( _candidatePlConstraints.empty() )
+    {
+        log( Stringf( "Unable to pick using the current strategy..." ) );
+        return NULL;
+    }
+    else
+    {
+        auto constraint = *_candidatePlConstraints.begin();
+        log( Stringf( "Picked..." ) );
+        return constraint;
+    }
 }
 
 void Engine::setConstraintViolationThreshold( unsigned threshold )
