@@ -27,19 +27,19 @@
 #endif
 
 #ifndef NDEBUG
-#  define LOG(x, f, y...)                     \
+#  define LOG(x, f, y...)                       \
     {                                           \
-        if ( ( x ) )                           \
+        if ( ( x ) )                            \
         {                                       \
-            printf( f, y );            \
-       }                                       \
+            printf( f, y );                     \
+       }                                        \
     }
 #else
 #  define LOG(x, y, ...)  {}
 #endif
 
 #ifndef NDEBUG
-#  define ASSERTM(x, y, ...)                     \
+#  define ASSERTM(x, y, ...)                    \
     {                                           \
         if ( !( x ) )                           \
         {                                       \
