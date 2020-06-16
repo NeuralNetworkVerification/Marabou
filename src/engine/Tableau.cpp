@@ -713,6 +713,11 @@ bool Tableau::performingFakePivot() const
 
 void Tableau::performPivot()
 {
+
+    bool decrease;
+    unsigned  nonBasic;
+    (void) decrease;
+    (void) nonBasic;
     if ( _leavingVariable == _m )
     {
         if ( _statistics )
@@ -723,8 +728,8 @@ void Tableau::performPivot()
         ASSERT( ( enteringReducedCost <= -GlobalConfiguration::ENTRY_ELIGIBILITY_TOLERANCE ) ||
                 ( enteringReducedCost >= +GlobalConfiguration::ENTRY_ELIGIBILITY_TOLERANCE ) );
 
-        bool decrease = ( enteringReducedCost >= +GlobalConfiguration::ENTRY_ELIGIBILITY_TOLERANCE );
-        unsigned nonBasic = _nonBasicIndexToVariable[_enteringVariable];
+        decrease = ( enteringReducedCost >= +GlobalConfiguration::ENTRY_ELIGIBILITY_TOLERANCE );
+        nonBasic = _nonBasicIndexToVariable[_enteringVariable];
 
         TABLEAU_LOG( Stringf( "Performing 'fake' pivot. Variable x%u jumping to %s bound",
                       _nonBasicIndexToVariable[_enteringVariable],

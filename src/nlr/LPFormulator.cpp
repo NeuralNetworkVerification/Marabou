@@ -68,8 +68,12 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
 
     unsigned tighterBoundCounter = 0;
     unsigned signChanges = 0;
+    struct timespec gurobiStart;
+    (void) gurobiStart;
+    struct timespec gurobiEnd;
+    (void) gurobiEnd;
 
-    struct timespec gurobiStart = TimeUtils::sampleMicro();
+    gurobiStart = TimeUtils::sampleMicro();
 
     for ( const auto &layer : layers )
     {
@@ -113,7 +117,7 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
         }
     }
 
-    struct timespec gurobiEnd = TimeUtils::sampleMicro();
+    gurobiEnd = TimeUtils::sampleMicro();
 
     LPFormulator_LOG( Stringf( "Number of tighter bounds found by Gurobi: %u. Sign changes: %u\n",
                   tighterBoundCounter, signChanges ).ascii() );
