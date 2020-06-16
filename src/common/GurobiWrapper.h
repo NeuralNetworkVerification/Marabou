@@ -58,6 +58,10 @@ public:
     // Add a new variabel to the model
     void addVariable( String name, double lb, double ub, VariableType type = CONTINUOUS );
 
+    // Set the lower or upper bound for an existing variable
+    void setLowerBound( String name, double lb );
+    void setUpperBound( String name, double ub );
+
     // Add a new LEQ constraint, e.g. 3x + 4y <= -5
     void addLeqConstraint( const List<Term> &terms, double scalar );
 
@@ -81,10 +85,13 @@ public:
     void solve();
     void extractSolution( Map<String, double> &values, double &costOrObjective );
 
-    void dump()
-    {
-        _model->write( "model.lp" );
-    }
+    // Reset the underlying model
+    void reset();
+
+    // Dump the model to a file. Note that the suffix of the file is
+    // used by Gurobi to determine the format. Using ".lp" is a good
+    // default
+    void dumpModel( String name );
 
 private:
     GRBEnv *_environment;
@@ -92,9 +99,6 @@ private:
     Map<String, GRBVar *> _nameToVariable;
 
     void addConstraint( const List<Term> &terms, double scalar, char sense );
-
-    // Create a fresh model
-    void reset();
 
     void freeMemoryIfNeeded();
 };

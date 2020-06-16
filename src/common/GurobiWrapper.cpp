@@ -64,9 +64,7 @@ void GurobiWrapper::freeMemoryIfNeeded()
 
 void GurobiWrapper::reset()
 {
-    freeMemoryIfNeeded();
-    _environment = new GRBEnv;
-    _model = new GRBModel( *_environment );
+    _model->reset();
 }
 
 void GurobiWrapper::addVariable( String name, double lb, double ub, VariableType type )
@@ -107,6 +105,18 @@ void GurobiWrapper::addVariable( String name, double lb, double ub, VariableType
                                     e.getErrorCode(),
                                     e.getMessage().c_str() ).ascii() );
     }
+}
+
+void GurobiWrapper::setLowerBound( String name, double lb )
+{
+    GRBVar var = _model->getVarByName( name.ascii() );
+    var.set( GRB_DoubleAttr_LB, lb );
+}
+
+void GurobiWrapper::setUpperBound( String name, double ub )
+{
+    GRBVar var = _model->getVarByName( name.ascii() );
+    var.set( GRB_DoubleAttr_UB, ub );
 }
 
 void GurobiWrapper::addLeqConstraint( const List<Term> &terms, double scalar )
@@ -237,6 +247,11 @@ void GurobiWrapper::extractSolution( Map<String, double> &values, double &costOr
                                     e.getErrorCode(),
                                     e.getMessage().c_str() ).ascii() );
     }
+}
+
+void GurobiWrapper::dumpModel( String name )
+{
+    _model->write( name.ascii() );
 }
 
 #endif // ENABLE_GUROBI

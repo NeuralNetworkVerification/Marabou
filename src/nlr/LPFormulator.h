@@ -33,8 +33,22 @@ public:
     LPFormulator( LayerOwner *layerOwner );
     ~LPFormulator();
 
+    /*
+      Perform bound tightening based on LP-relaxation. Use these calls
+      if the LPFormulator is used in stand-alone mode. The process can
+      also be performed incrementally, which means that the underlying
+      LP model is adjusted from the previous call, instead of being
+      constructed from scratch
+    */
     void optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> &layers );
+    void optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned, Layer *> &layers );
 
+    /*
+      Calls for creating an LP relaxation instance and solving it for
+      a particular variable. These calls are useful if invoked as part
+      of a larger procedure, e.g. as part of a MILP-based bound
+      tightening
+    */
     void createLPRelaxation( const Map<unsigned, Layer *> &layers,
                              GurobiWrapper &gurobi,
                              unsigned lastLayer = UINT_MAX);
@@ -45,6 +59,8 @@ public:
                               unsigned lastLayer = UINT_MAX );
 private:
     LayerOwner *_layerOwner;
+
+    void addLayerToModel( GurobiWrapper &gurobi, const Layer *layer );
 
     void addInputLayerToLpRelaxation( GurobiWrapper &gurobi,
                                       const Layer *layer );

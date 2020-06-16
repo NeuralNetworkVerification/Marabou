@@ -62,6 +62,104 @@ double LPFormulator::solveLPRelaxation( const Map<unsigned, Layer *> &layers,
     return result;
 }
 
+void LPFormulator::optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned, Layer *> &layers )
+{
+    GurobiWrapper gurobi;
+    List<GurobiWrapper::Term> terms;
+    Map<String, double> dontCare;
+    double lb;
+    double ub;
+
+    unsigned tighterBoundCounter = 0;
+    unsigned signChanges = 0;
+
+    struct timespec gurobiStart = TimeUtils::sampleMicro();
+
+    for ( unsigned i = 0; i < _layerOwner->getNumberOfLayers(); ++i )
+    {
+        /*
+          Go over the layers, one by one. Each time encode the layer,
+          and then issue queries on each of its variables
+        */
+        ASSERT( layers.exists( i ) );
+        Layer *layer = layers[i];
+        addLayerToModel( gurobi, layer );
+
+        for ( unsigned j = 0; j < layer->getSize(); ++j )
+        {
+            if ( layer->neuronEliminated( j ) )
+                continue;
+
+            unsigned variable = layer->neuronToVariable( j );
+            Stringf variableName( "x%u", variable );
+
+            terms.clear();
+            terms.append( GurobiWrapper::Term( 1, variableName ) );
+
+            // Maximize
+            gurobi.reset();
+            gurobi.setObjective( terms );
+            gurobi.solve();
+            if ( gurobi.infeasbile() )
+                throw InfeasibleQueryException();
+
+            if ( !gurobi.optimal() )
+                throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
+
+            gurobi.extractSolution( dontCare, ub );
+
+            // Minimize
+            gurobi.reset();
+            gurobi.setCost( terms );
+            gurobi.solve();
+            if ( gurobi.infeasbile() )
+                throw InfeasibleQueryException();
+
+            if ( !gurobi.optimal() )
+                throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
+
+            gurobi.extractSolution( dontCare, lb );
+
+            // If the bounds are tighter, store them
+            if ( lb > layer->getLb( j ) )
+            {
+                gurobi.setLowerBound( variableName, lb );
+
+                if ( FloatUtils::isNegative( layer->getLb( j ) ) &&
+                     !FloatUtils::isNegative( lb ) )
+                    ++signChanges;
+
+                layer->setLb( j, lb );
+                _layerOwner->receiveTighterBound( Tightening( variable,
+                                                              lb,
+                                                              Tightening::LB ) );
+                ++tighterBoundCounter;
+            }
+
+            if ( ub < layer->getUb( j ) )
+            {
+                gurobi.setUpperBound( variableName, ub );
+
+                if ( FloatUtils::isPositive( layer->getUb( j ) ) &&
+                     !FloatUtils::isPositive( ub ) )
+                    ++signChanges;
+
+                layer->setUb( j, ub );
+                _layerOwner->receiveTighterBound( Tightening( variable,
+                                                              ub,
+                                                              Tightening::UB ) );
+                ++tighterBoundCounter;
+            }
+        }
+    }
+
+    struct timespec gurobiEnd = TimeUtils::sampleMicro();
+
+    log( Stringf( "Number of tighter bounds found by Gurobi: %u. Sign changes: %u\n",
+                  tighterBoundCounter, signChanges ) );
+    log( Stringf( "Seconds spent Gurobiing: %llu\n", TimeUtils::timePassed( gurobiStart, gurobiEnd ) / 1000000 ) );
+}
+
 void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> &layers )
 {
     double lb = FloatUtils::negativeInfinity();
@@ -136,25 +234,30 @@ void LPFormulator::createLPRelaxation( const Map<unsigned, Layer *> &layers,
         if ( layer.second->getLayerIndex() > lastLayer )
             continue;
 
-        switch ( layer.second->getLayerType() )
-        {
-        case Layer::INPUT:
-            addInputLayerToLpRelaxation( gurobi, layer.second );
-            break;
+        addLayerToModel( gurobi, layer.second );
+    }
+}
 
-        case Layer::RELU:
-            addReluLayerToLpRelaxation( gurobi, layer.second );
-            break;
+void LPFormulator::addLayerToModel( GurobiWrapper &gurobi, const Layer *layer )
+{
+    switch ( layer->getLayerType() )
+    {
+    case Layer::INPUT:
+        addInputLayerToLpRelaxation( gurobi, layer );
+        break;
 
-        case Layer::WEIGHTED_SUM:
-            addWeightedSumLayerToLpRelaxation( gurobi, layer.second );
-            break;
+    case Layer::RELU:
+        addReluLayerToLpRelaxation( gurobi, layer );
+        break;
 
-        default:
-            printf( "Unsupported layer!\n" );
-            exit( 1 );
-            break;
-        }
+    case Layer::WEIGHTED_SUM:
+        addWeightedSumLayerToLpRelaxation( gurobi, layer );
+        break;
+
+    default:
+        printf( "Unsupported layer!\n" );
+        exit( 1 );
+        break;
     }
 }
 
@@ -292,7 +395,7 @@ void LPFormulator::addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi,
 
 void LPFormulator::log( const String &message )
 {
-    if ( GlobalConfiguration::NETWORK_LEVEL_REASONER_LOGGING )
+    // if ( GlobalConfiguration::NETWORK_LEVEL_REASONER_LOGGING )
         printf( "Preprocessor: %s\n", message.ascii() );
 }
 
