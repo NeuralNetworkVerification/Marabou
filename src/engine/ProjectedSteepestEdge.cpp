@@ -125,7 +125,7 @@ bool ProjectedSteepestEdgeRule::select( ITableau &tableau,
 
     if ( remainingCandidates.empty() )
     {
-        PSEU_LOG( "No candidates, select returning false" );
+        PSE_LOG( "No candidates, select returning false" );
         return false;
     }
 
@@ -177,11 +177,11 @@ bool ProjectedSteepestEdgeRule::select( ITableau &tableau,
 
 void ProjectedSteepestEdgeRule::prePivotHook( const ITableau &tableau, bool fakePivot )
 {
-    PSEU_LOG( "PrePivotHook called" );
+    PSE_LOG( "PrePivotHook called" );
     // If the pivot is fake, gamma does not need to be updated
     if ( fakePivot )
     {
-        PSEU_LOG( "PrePivotHook done - fake pivot" );
+        PSE_LOG( "PrePivotHook done - fake pivot" );
         return;
     }
 
@@ -248,7 +248,7 @@ void ProjectedSteepestEdgeRule::prePivotHook( const ITableau &tableau, bool fake
         _gamma[i] = ( t1 > t2 ? t1 : t2 );
     }
 
-    PSEU_LOG( "PrePivotHook done" );
+    PSE_LOG( "PrePivotHook done" );
 }
 
 double ProjectedSteepestEdgeRule::computeAccurateGamma( double &accurateGamma, const ITableau &tableau )
@@ -273,12 +273,12 @@ double ProjectedSteepestEdgeRule::computeAccurateGamma( double &accurateGamma, c
 
 void ProjectedSteepestEdgeRule::postPivotHook( const ITableau &tableau, bool fakePivot )
 {
-    PSEU_LOG( "PostPivotHook called" );
+    PSE_LOG( "PostPivotHook called" );
 
     // If the pivot is fake, no need to reset the reference space.
     if ( fakePivot )
     {
-        PSEU_LOG( "PostPivotHook done - fake pivot" );
+        PSE_LOG( "PostPivotHook done - fake pivot" );
         return;
     }
 
@@ -286,7 +286,7 @@ void ProjectedSteepestEdgeRule::postPivotHook( const ITableau &tableau, bool fak
     --_iterationsUntilReset;
     if ( _iterationsUntilReset <= 0 )
     {
-        PSEU_LOG( "PostPivotHook reseting ref space (iterations)" );
+        PSE_LOG( "PostPivotHook reseting ref space (iterations)" );
         resetReferenceSpace( tableau );
         return;
     }
@@ -294,12 +294,12 @@ void ProjectedSteepestEdgeRule::postPivotHook( const ITableau &tableau, bool fak
     // If the error is too great, reset the reference space.
     if ( _errorInGamma > GlobalConfiguration::PSE_GAMMA_ERROR_THRESHOLD )
     {
-        PSEU_LOG( Stringf( "PostPivotHook reseting ref space (degradation). Error = %.15lf", _errorInGamma ).ascii() );
+        PSE_LOG( Stringf( "PostPivotHook reseting ref space (degradation). Error = %.15lf", _errorInGamma ).ascii() );
         resetReferenceSpace( tableau );
         return;
     }
 
-    PSEU_LOG( "PostPivotHook done (ref space not reset)" );
+    PSE_LOG( "PostPivotHook done (ref space not reset)" );
 }
 
 void ProjectedSteepestEdgeRule::resizeHook( const ITableau &tableau )

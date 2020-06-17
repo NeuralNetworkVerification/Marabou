@@ -32,10 +32,10 @@
         if ( ( x ) )                            \
         {                                       \
             printf( f, y );                     \
-       }                                        \
+        }                                       \
     }
 #else
-#  define LOG(x, y, ...)  {}
+#  define LOG(x, f, y, ...)  {}
 #endif
 
 #ifndef NDEBUG
