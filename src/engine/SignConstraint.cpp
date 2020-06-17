@@ -237,29 +237,27 @@ void SignConstraint::notifyVariableValue( unsigned variable, double value )
 }
 
 
-void SignConstraint::notifyLowerBound( unsigned variable, double bound )
-{
-    if ( _statistics )
+void SignConstraint::notifyLowerBound( unsigned variable, double bound ) {
+    if (_statistics)
         _statistics->incNumBoundNotificationsPlConstraints();
 
     // if lower bound exists and better than suggested 'bound' input - return
-    if ( _lowerBounds.exists( variable ) && !FloatUtils::gt( bound, _lowerBounds[variable] ) )
+    if (_lowerBounds.exists(variable) && !FloatUtils::gt(bound, _lowerBounds[variable]))
         return;
     // otherwise - update bound
     _lowerBounds[variable] = bound;
 
-    if ( variable == _f && FloatUtils::gt( bound, -1 )) {
+    if (variable == _f && FloatUtils::gt(bound, -1)) {
         setPhaseStatus(PhaseStatus::PHASE_POSITIVE);
         _constraintBoundTightener->registerTighterLowerBound(_f, 1); // todo added 1106
-    }
-    else if ( variable == _b && !FloatUtils::isNegative( bound ) )  // if b (input) is >= 0
+    } else if (variable == _b && !FloatUtils::isNegative(bound))  // if b (input) is >= 0
     {
         setPhaseStatus(PhaseStatus::PHASE_POSITIVE);
         _constraintBoundTightener->registerTighterLowerBound(_f, 1); // todo added 1106
-        _constraintBoundTightener->registerTighterLowerBound( _b, bound ); // todo added 1106
+        _constraintBoundTightener->registerTighterLowerBound(_b, bound); // todo added 1106
 
     }
-
+}
 
 
 
@@ -281,30 +279,29 @@ void SignConstraint::notifyLowerBound( unsigned variable, double bound )
 //            _constraintBoundTightener->registerTighterLowerBound( _f, 0 );
 //        }
 //    }
-}
+//}
 
 
-void SignConstraint::notifyUpperBound(unsigned variable, double bound)
-{
-    if ( _statistics )
+void SignConstraint::notifyUpperBound(unsigned variable, double bound) {
+    if (_statistics)
         _statistics->incNumBoundNotificationsPlConstraints();
 
-    if ( _upperBounds.exists( variable ) && !FloatUtils::lt( bound, _upperBounds[variable] ) )
+    if (_upperBounds.exists(variable) && !FloatUtils::lt(bound, _upperBounds[variable]))
         return;
     // otherwise - update bound
     _upperBounds[variable] = bound;
 
-    if ( variable == _f && FloatUtils::lt( bound, 1 )) {
+    if (variable == _f && FloatUtils::lt(bound, 1)) {
         setPhaseStatus(PhaseStatus::PHASE_NEGATIVE);
         _constraintBoundTightener->registerTighterUpperBound(_f, -1); // todo added 1106
-    }
-    else if ( variable == _b && FloatUtils::isNegative( bound ) )  // if b (input) is < 0
+    } else if (variable == _b && FloatUtils::isNegative(bound))  // if b (input) is < 0
     {
         setPhaseStatus(PhaseStatus::PHASE_NEGATIVE);
         _constraintBoundTightener->registerTighterUpperBound(_f, -1); // todo added 1106
-        _constraintBoundTightener->registerTighterUpperBound( variable, bound ); // todo added 1106
+        _constraintBoundTightener->registerTighterUpperBound(variable, bound); // todo added 1106
 
     }
+}
 
 // todo - eventually unmask code for _constraintBoundTightener
 //    if ( isActive() && _constraintBoundTightener )
@@ -323,7 +320,7 @@ void SignConstraint::notifyUpperBound(unsigned variable, double bound)
 //            _constraintBoundTightener->registerTighterLowerBound( _f, 0 );
 //        }
 //    }
-}
+//}
 
 
 
