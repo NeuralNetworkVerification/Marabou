@@ -1,3 +1,7 @@
+[![codecov.io](
+  https://codecov.io/github/NeuralNetworkVerification/Marabou/coverage.svg?branch=master)](
+    https://codecov.io/github/NeuralNetworkVerification/Marabou?branch=master)
+
 #  Marabou
 Deep neural networks are revolutionizing the way complex systems are designed.
 Instead of spending long hours hand-crafting complex software, many engineers
