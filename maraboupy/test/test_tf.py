@@ -26,6 +26,15 @@ def test_fc1():
     network = Marabou.read_tf(filename)
     evaluateNetwork(network)
 
+def test_fc2():
+    """
+    Test a fully-connected neural network.
+    This network tests different types of Mul and RealDiv layers.
+    """
+    filename = os.path.join(os.path.dirname(__file__), FG_FOLDER, "fc2.pb")
+    network = Marabou.read_tf(filename, outputName = "y")
+    evaluateNetwork(network)
+
 def test_KJ_TinyTaxiNet():
     """
     Test a convolutional network without max-pooling
@@ -44,7 +53,7 @@ def test_conv_mp1():
     """
     filename = os.path.join(os.path.dirname(__file__), FG_FOLDER, "conv_mp1.pb")
     network = Marabou.read_tf(filename)
-    evaluateNetwork(network, numPoints = 5) 
+    evaluateNetwork(network, numPoints = 3)
 
 def test_conv_mp2():
     """
@@ -53,7 +62,7 @@ def test_conv_mp2():
     """
     filename = os.path.join(os.path.dirname(__file__), FG_FOLDER, "conv_mp2.pb")
     network = Marabou.read_tf(filename)
-    evaluateNetwork(network, numPoints = 5) 
+    evaluateNetwork(network, numPoints = 3)
 
 def test_conv_mp3():
     """
@@ -63,7 +72,7 @@ def test_conv_mp3():
     """
     filename = os.path.join(os.path.dirname(__file__), FG_FOLDER, "conv_mp3.pb")
     network = Marabou.read_tf(filename)
-    evaluateNetwork(network, numPoints = 5) 
+    evaluateNetwork(network, numPoints = 3)
 
 def test_conv_NCHW():
     """
@@ -80,7 +89,7 @@ def test_conv_NCHW():
     network_nchw = Marabou.read_tf(filename)
 
     # Evaluate test points using both Marabou and Tensorflow, and assert that the max error is less than TOL
-    testInputs = [[np.random.random(inVars.shape) for inVars in network_nhwc.inputVars] for _ in range(NUM_RAND)]
+    testInputs = [[np.random.random(inVars.shape) for inVars in network_nhwc.inputVars] for _ in range(5)]
     for testInput in testInputs:
         mar_nhwc = network_nhwc.evaluateWithMarabou(testInput, options = OPT, filename = "")
         mar_nchw = network_nchw.evaluateWithMarabou(testInput, options = OPT, filename = "")
@@ -97,7 +106,7 @@ def test_sm1_fc1():
     filename = os.path.join(os.path.dirname(__file__), SM1_FOLDER, "fc1")
     network = Marabou.read_tf(filename, modelType = "savedModel_v1", outputName = "add_3")
     evaluateNetwork(network)
-    
+
 def test_sm2_fc1():
     """
     Test a fully-connected neural network, written in the 
