@@ -825,51 +825,50 @@ public:
     }
 
 
-//
-//    void test_notify_bounds()  // TODO CHECK
-//    {
-//        unsigned b = 1;
-//        unsigned f = 4;
-//
-//        MockConstraintBoundTightener tightener;
-//        List<Tightening> tightenings;
-//
-//        tightener.getConstraintTightenings(tightenings);
-//
-//        SignConstraint sign = prepareSign( b, f, &tightener );
-//
-//
-//
-//
-////        SignConstraint sign(b, f);
-////        sign.notifyLowerBound(b, -5);
-////        sign.notifyUpperBound(b, 5);
-//
-//
-//        {
-//            sign.notifyLowerBound(b, -5);
-//            tightener.getConstraintTightenings(tightenings);
-//            TS_ASSERT(tightenings.empty());
-//
-//            sign.notifyLowerBound( b, -2 );
-//            tightener.getConstraintTightenings( tightenings );
-//            TS_ASSERT( tightenings.empty() );
-//
-//            sign.notifyLowerBound( f, -3 );
-//            tightener.getConstraintTightenings( tightenings );
-//            TS_ASSERT( tightenings.empty() );
-//
-//
-//            sign.notifyUpperBound( b, 20 );
-//            tightener.getConstraintTightenings( tightenings );
-//            TS_ASSERT( tightenings.empty() );
-//
-//            sign.notifyUpperBound( f, 23 );
-//            tightener.getConstraintTightenings( tightenings );
-//            TS_ASSERT( tightenings.empty() );
-//        }
-//
-//
+
+    void test_notify_bounds()  // TODO CHECK
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        MockConstraintBoundTightener tightener;
+        List<Tightening> tightenings;
+
+        tightener.getConstraintTightenings(tightenings);
+
+        SignConstraint sign = prepareSign( b, f, &tightener );
+
+        sign.notifyLowerBound(b, -5);
+        sign.notifyUpperBound(b, 5);
+
+        {
+            sign.notifyLowerBound(b, -5);
+            tightener.getConstraintTightenings(tightenings);
+            TS_ASSERT(tightenings.empty());
+
+            sign.notifyLowerBound(b, -7);
+            tightener.getConstraintTightenings(tightenings);
+            TS_ASSERT(tightenings.empty());
+
+            sign.notifyLowerBound( f, -3 );
+            tightener.getConstraintTightenings( tightenings );
+            TS_ASSERT( tightenings.empty() );
+
+            sign.notifyUpperBound( b, 20 );
+            tightener.getConstraintTightenings( tightenings );
+            TS_ASSERT( tightenings.empty() );
+
+            sign.notifyUpperBound( f, 23 );
+            tightener.getConstraintTightenings( tightenings );
+            TS_ASSERT( tightenings.empty() );
+
+            sign.notifyLowerBound( b, -2 ); // todo check!
+            tightener.getConstraintTightenings( tightenings );
+            TS_ASSERT( !tightenings.empty() );
+
+        }
+
+
 //        {
 //            // Tighter upper bound for b/f that is positive
 //            SignConstraint sign = prepareSign( b, f, &tightener );
@@ -899,10 +898,10 @@ public:
 //
 //            TS_ASSERT( tightenings.exists( Tightening( f, 0, Tightening::UB ) ) );
 //        }
-//
-//
-//
-//    }
+
+
+
+    }
 
 
 };

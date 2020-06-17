@@ -246,15 +246,16 @@ void SignConstraint::notifyLowerBound( unsigned variable, double bound ) {
         return;
     // otherwise - update bound
     _lowerBounds[variable] = bound;
+    // todo - guy do I call constraint bound tightener even when phase is not fixed but I got a tighter bound? same in notifyUpper
 
     if (variable == _f && FloatUtils::gt(bound, -1)) {
         setPhaseStatus(PhaseStatus::PHASE_POSITIVE);
-        _constraintBoundTightener->registerTighterLowerBound(_f, 1); // todo added 1106
+        _constraintBoundTightener->registerTighterLowerBound(_f, 1);
     } else if (variable == _b && !FloatUtils::isNegative(bound))  // if b (input) is >= 0
     {
         setPhaseStatus(PhaseStatus::PHASE_POSITIVE);
-        _constraintBoundTightener->registerTighterLowerBound(_f, 1); // todo added 1106
-        _constraintBoundTightener->registerTighterLowerBound(_b, bound); // todo added 1106
+        _constraintBoundTightener->registerTighterLowerBound(_f, 1);
+        _constraintBoundTightener->registerTighterLowerBound(_b, bound);
 
     }
 }
