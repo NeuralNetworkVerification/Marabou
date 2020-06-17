@@ -246,11 +246,11 @@ void SignConstraint::notifyLowerBound( unsigned variable, double bound ) {
         return;
     // otherwise - update bound
     _lowerBounds[variable] = bound;
-    // todo - guy do I call constraint bound tightener even when phase is not fixed but I got a tighter bound? same in notifyUpper
 
     if (variable == _f && FloatUtils::gt(bound, -1)) {
         setPhaseStatus(PhaseStatus::PHASE_POSITIVE);
         _constraintBoundTightener->registerTighterLowerBound(_f, 1);
+        _constraintBoundTightener->registerTighterLowerBound(_b, 0);
     } else if (variable == _b && !FloatUtils::isNegative(bound))  // if b (input) is >= 0
     {
         setPhaseStatus(PhaseStatus::PHASE_POSITIVE);
@@ -294,12 +294,14 @@ void SignConstraint::notifyUpperBound(unsigned variable, double bound) {
 
     if (variable == _f && FloatUtils::lt(bound, 1)) {
         setPhaseStatus(PhaseStatus::PHASE_NEGATIVE);
-        _constraintBoundTightener->registerTighterUpperBound(_f, -1); // todo added 1106
+        _constraintBoundTightener->registerTighterUpperBound(_f, -1);
+        _constraintBoundTightener->registerTighterUpperBound(_b, 0);
+
     } else if (variable == _b && FloatUtils::isNegative(bound))  // if b (input) is < 0
     {
         setPhaseStatus(PhaseStatus::PHASE_NEGATIVE);
-        _constraintBoundTightener->registerTighterUpperBound(_f, -1); // todo added 1106
-        _constraintBoundTightener->registerTighterUpperBound(variable, bound); // todo added 1106
+        _constraintBoundTightener->registerTighterUpperBound(_f, -1);
+        _constraintBoundTightener->registerTighterUpperBound(_b, bound);
 
     }
 }

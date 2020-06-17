@@ -862,42 +862,80 @@ public:
             tightener.getConstraintTightenings( tightenings );
             TS_ASSERT( tightenings.empty() );
 
-            sign.notifyLowerBound( b, -2 ); // todo check!
+            sign.notifyLowerBound( f, -1 );
             tightener.getConstraintTightenings( tightenings );
-            TS_ASSERT( !tightenings.empty() );
+            TS_ASSERT( tightenings.empty() );
+
+
+            sign.notifyUpperBound( f, 1 );
+            tightener.getConstraintTightenings( tightenings );
+            TS_ASSERT( tightenings.empty() );
+
+            sign.notifyLowerBound( b, -2 ); // although higher lower bound - then bounds are reported only if phase is fixed!
+            tightener.getConstraintTightenings( tightenings );
+            TS_ASSERT( tightenings.empty() );
 
         }
 
 
-//        {
-//            // Tighter upper bound for b/f that is positive
-//            SignConstraint sign = prepareSign( b, f, &tightener );
-//            sign.notifyUpperBound( b, 13 );
-//            tightener.getConstraintTightenings( tightenings );
-//            TS_ASSERT( tightenings.exists( Tightening( f, 13, Tightening::UB ) ) );
-//
-//            sign.notifyUpperBound( f, 12 );
-//            tightener.getConstraintTightenings( tightenings );
-//            TS_ASSERT( tightenings.exists( Tightening( b, 12, Tightening::UB ) ) );
-//        }
-//
-//        {
-//            // Tighter upper bound 0 for f
-//            SignConstraint sign = prepareSign( b, f, &tightener );
-//            sign.notifyUpperBound( f, 0 );
-//            tightener.getConstraintTightenings( tightenings );
-//
-//            TS_ASSERT( tightenings.exists( Tightening( b, 0, Tightening::UB ) ) );
-//        }
-//
-//        {
-//            // Tighter negative upper bound for b
-//            SignConstraint sign = prepareSign( b, f, &tightener );
-//            sign.notifyUpperBound( b, -1 );
-//            tightener.getConstraintTightenings( tightenings );
-//
-//            TS_ASSERT( tightenings.exists( Tightening( f, 0, Tightening::UB ) ) );
-//        }
+        {
+            // Tighter lower bound for b/f that is positive
+            SignConstraint sign = prepareSign( b, f, &tightener );
+            sign.notifyLowerBound( b, 13 );
+            tightener.getConstraintTightenings( tightenings );
+            TS_ASSERT_EQUALS(tightenings.size(), 2U);
+            TS_ASSERT( tightenings.exists( Tightening( b, 13, Tightening::LB ) ) );
+            TS_ASSERT( tightenings.exists( Tightening( f, 1, Tightening::LB ) ) );
+
+            sign.notifyUpperBound( f, -0.5 );
+            tightener.getConstraintTightenings( tightenings );
+            TS_ASSERT( tightenings.exists( Tightening( f, -1, Tightening::UB ) ) );
+            TS_ASSERT( tightenings.exists( Tightening( b, 0, Tightening::UB ) ) );
+        }
+
+        {
+            // Tighter upper bound 0 for f
+            SignConstraint sign = prepareSign( b, f, &tightener );
+            sign.notifyUpperBound( f, 0 );
+            tightener.getConstraintTightenings( tightenings );
+            TS_ASSERT_EQUALS(tightenings.size(), 2U);
+            TS_ASSERT( tightenings.exists( Tightening( b, 0, Tightening::UB ) ) );
+            TS_ASSERT( tightenings.exists( Tightening( f, -1, Tightening::UB ) ) );
+
+        }
+
+
+        {
+            // upper bound 0 for b is inconclusive (TRICKY) - because for 0 its +1, for <0 its '-1'
+            SignConstraint sign = prepareSign( b, f, &tightener );
+            sign.notifyUpperBound( b, 0 );
+            tightener.getConstraintTightenings( tightenings );
+            TS_ASSERT( tightenings.empty() );
+
+        }
+
+
+        {
+            // lower bound 0 for b is '+1'
+            SignConstraint sign = prepareSign( b, f, &tightener );
+            sign.notifyLowerBound( b, 0 );
+            tightener.getConstraintTightenings( tightenings );
+            TS_ASSERT_EQUALS(tightenings.size(), 2U);
+            TS_ASSERT( tightenings.exists( Tightening( b, 0, Tightening::LB ) ) );
+            TS_ASSERT( tightenings.exists( Tightening( f, 1, Tightening::LB ) ) );
+
+        }
+
+
+        {
+            // Tighter negative upper bound for b
+            SignConstraint sign = prepareSign( b, f, &tightener );
+            sign.notifyUpperBound( f, 0.5 );
+            tightener.getConstraintTightenings( tightenings );
+            TS_ASSERT_EQUALS(tightenings.size(), 2U);
+            TS_ASSERT( tightenings.exists( Tightening( f, -1, Tightening::UB ) ) );
+            TS_ASSERT( tightenings.exists( Tightening( b, 0, Tightening::UB ) ) );
+        }
 
 
 
