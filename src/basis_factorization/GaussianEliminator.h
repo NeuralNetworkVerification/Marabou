@@ -17,7 +17,8 @@
 #define __GaussianEliminator_h__
 
 #include "LUFactors.h"
-#include "MString.h"
+
+#define GAUSSIAN_LOG( x, ... ) LOG( GlobalConfiguration::GAUSSIAN_ELIMINATION_LOGGING, "GaussianEliminator: %s\n", x )
 
 class GaussianEliminator
 {
@@ -62,8 +63,6 @@ private:
     void initializeFactorization( const double *A, LUFactors *luFactors );
     void permute();
     void eliminate();
-
-    void log( const String &message );
 };
 
 #endif // __GaussianEliminator_h__

@@ -810,7 +810,7 @@ void Preprocessor::dumpAllBounds( const String &message )
 
 bool Preprocessor::constructNetworkLevelReasoner()
 {
-    log( "PP: constructing an NLR... " );
+    PREPROCESSOR_LOG( "PP: constructing an NLR... " );
 
     ASSERT( !_preprocessed._networkLevelReasoner );
     NLR::NetworkLevelReasoner *nlr = new NLR::NetworkLevelReasoner;
@@ -844,16 +844,16 @@ bool Preprocessor::constructNetworkLevelReasoner()
         for ( unsigned i = 0; i < nlr->getNumberOfLayers(); ++i )
             count += nlr->getLayer( i )->getSize();
 
-        log( Stringf( "successful. Constructed %u layers with %u neurons (out of %u)\n",
+        PREPROCESSOR_LOG( Stringf( "successful. Constructed %u layers with %u neurons (out of %u)\n",
                       newLayerIndex,
                       count,
-                      _preprocessed.getNumberOfVariables() ) );
+                      _preprocessed.getNumberOfVariables() ).ascii() );
 
         _preprocessed._networkLevelReasoner = nlr;
     }
     else
     {
-        log( "unsuccessful\n" );
+        PREPROCESSOR_LOG( "unsuccessful\n" );
         delete nlr;
     }
 
@@ -1036,12 +1036,6 @@ bool Preprocessor::constructReluLayer( NLR::NetworkLevelReasoner *nlr,
     }
 
     return true;
-}
-
-void Preprocessor::log( const String &message )
-{
-    if ( GlobalConfiguration::PREPROCESSOR_LOGGING )
-        printf( "Preprocessor: %s\n", message.ascii() );
 }
 
 //

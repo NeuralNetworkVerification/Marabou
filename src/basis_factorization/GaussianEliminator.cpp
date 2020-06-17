@@ -173,7 +173,7 @@ void GaussianEliminator::run( const double *A, LUFactors *luFactors )
 
 void GaussianEliminator::choosePivot()
 {
-    log( "Choose pivot invoked" );
+    GAUSSIAN_LOG( "Choose pivot invoked" );
 
     /*
       Apply the Markowitz rule: in the active sub-matrix,
@@ -210,10 +210,10 @@ void GaussianEliminator::choosePivot()
 
             ASSERT( found );
 
-            log( Stringf( "Choose pivot selected a pivot (singleton row): V[%u,%u] = %lf",
+            GAUSSIAN_LOG( Stringf( "Choose pivot selected a pivot (singleton row): V[%u,%u] = %lf",
                           _vPivotRow,
                           _vPivotColumn,
-                          _luFactors->_V[_vPivotRow*_m + _vPivotColumn] ) );
+                          _luFactors->_V[_vPivotRow*_m + _vPivotColumn] ).ascii() );
 
             return;
         }
@@ -243,10 +243,10 @@ void GaussianEliminator::choosePivot()
 
             ASSERT( found );
 
-            log( Stringf( "Choose pivot selected a pivot (singleton column): V[%u,%u] = %lf",
+            GAUSSIAN_LOG( Stringf( "Choose pivot selected a pivot (singleton column): V[%u,%u] = %lf",
                           _vPivotRow,
                           _vPivotColumn,
-                          _luFactors->_V[_vPivotRow*_m + _vPivotColumn] ) );
+                          _luFactors->_V[_vPivotRow*_m + _vPivotColumn] ).ascii() );
             return;
         }
     }
@@ -310,7 +310,7 @@ void GaussianEliminator::choosePivot()
         }
     }
 
-    log( Stringf( "Choose pivot selected a pivot: V[%u,%u] = %lf (cost %u)", _vPivotRow, _vPivotColumn, _luFactors->_V[_vPivotRow*_m + _vPivotColumn], minimalCost ) );
+    GAUSSIAN_LOG( Stringf( "Choose pivot selected a pivot: V[%u,%u] = %lf (cost %u)", _vPivotRow, _vPivotColumn, _luFactors->_V[_vPivotRow*_m + _vPivotColumn], minimalCost ).ascii() );
 
     if ( !found )
         throw BasisFactorizationError( BasisFactorizationError::GAUSSIAN_ELIMINATION_FAILED,
@@ -339,7 +339,7 @@ void GaussianEliminator::eliminate()
     */
     double pivotElement = _luFactors->_V[_vPivotRow*_m + _vPivotColumn];
 
-    log( Stringf( "Eliminate called. Pivot element: %lf", pivotElement ) );
+    GAUSSIAN_LOG( Stringf( "Eliminate called. Pivot element: %lf", pivotElement ).ascii() );
 
     // Process all rows below the pivot row.
     for ( unsigned row = _eliminationStep + 1; row < _m; ++row )
@@ -357,7 +357,7 @@ void GaussianEliminator::eliminate()
             continue;
 
         double rowMultiplier = -subDiagonalEntry / pivotElement;
-        log( Stringf( "\tWorking on V row: %u. Multiplier: %lf", vRowIndex, rowMultiplier ) );
+        GAUSSIAN_LOG( Stringf( "\tWorking on V row: %u. Multiplier: %lf", vRowIndex, rowMultiplier ).ascii() );
 
         // Eliminate the row
         _luFactors->_V[vRowIndex*_m + _vPivotColumn] = 0;
@@ -405,12 +405,6 @@ void GaussianEliminator::eliminate()
       TODO: This can be made implicit
     */
     _luFactors->_F[fColumnIndex*_m + fColumnIndex] = 1;
-}
-
-void GaussianEliminator::log( const String &message )
-{
-    if ( GlobalConfiguration::GAUSSIAN_ELIMINATION_LOGGING )
-        printf( "GaussianEliminator: %s\n", message.ascii() );
 }
 
 //
