@@ -12,7 +12,9 @@ option(RUN_REGRESS_TEST "run regression tests on build" OFF)
 option(RUN_SYSTEM_TEST "run system tests on build" OFF)
 option(RUN_MEMORY_TEST "run cxxtest testing with ASAN ON" ON)
 option(RUN_PYTHON_TEST "run python API tests if building with python" OFF)
-option(CODE_COVERAGE  "add code coverage" ON)
+
+# To run coverage we need to add -g and -O0 flags, so we allow it only in debug mode
+option(CODE_COVERAGE  "add code coverage" OFF)  
 
 option(ENABLE_GUROBI "Enable use the Gurobi optimizer" OFF)
 
@@ -82,15 +84,13 @@ message(STATUS "Building ${CMAKE_BUILD_TYPE} build")
 
 
 #-------------------------set code coverage----------------------------------#
-# TODO: Disable if build type is release
-if(CODE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-  # Add required flags (GCC & LLVM/Clang)
-  set(COVERAGE_COMPILER_FLAGS "-g -O0 --coverage -fprofile-arcs -ftest-coverage"
-    CACHE INTERNAL "")
+# Allow coverage only in debug mode only in gcc
+if(CODE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND CMAKE_BUILD_TYPE MATCHES Debug)
+  message(STATUS "Building with code coverage")
+  set(COVERAGE_COMPILER_FLAGS "-g -O0 --coverage" CACHE INTERNAL "")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COVERAGE_COMPILER_FLAGS}")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
-endif(CODE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-
+endif()
 
 
 # We build a static library that is the core of the project, the link it to the
