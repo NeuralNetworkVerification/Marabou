@@ -17,6 +17,7 @@ addons:
     - python3
     - python3-pip
     - python3-setuptools
+    - lcov
 
 install:
   - if [ "$TRAVIS_OS_NAME" = "windows" ]; then if [[ ! -d "C:\Python3" || ! -f "C:\Python3\python" ]]; then choco install python3 --version=3.5.4 --params "/InstallDir:C:\Python3"; fi fi
