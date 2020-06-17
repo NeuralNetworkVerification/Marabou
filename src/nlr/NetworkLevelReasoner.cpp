@@ -193,11 +193,6 @@ void NetworkLevelReasoner::eliminateVariable( unsigned variable, double value )
         layer.second->eliminateVariable( variable, value );
 }
 
-void NetworkLevelReasoner::log( const String &message )
-{
-    if ( GlobalConfiguration::NETWORK_LEVEL_REASONER_LOGGING )
-        printf( "%s", message.ascii() );
-}
 
 void NetworkLevelReasoner::dumpTopology() const
 {

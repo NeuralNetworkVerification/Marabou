@@ -22,6 +22,8 @@
 
 namespace NLR {
 
+#define LPFormulator_LOG(x, ...) LOG(GlobalConfiguration::PREPROCESSOR_LOGGING, "LP Preprocessor: %s\n", x)
+
 class LPFormulator
 {
 public:
@@ -79,8 +81,6 @@ private:
 
     void addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi,
                                             const Layer *layer );
-
-    static void log( const String &message );
 };
 
 } // namespace NLR
