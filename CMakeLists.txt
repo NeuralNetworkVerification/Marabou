@@ -13,6 +13,9 @@ option(RUN_SYSTEM_TEST "run system tests on build" OFF)
 option(RUN_MEMORY_TEST "run cxxtest testing with ASAN ON" ON)
 option(RUN_PYTHON_TEST "run python API tests if building with python" OFF)
 
+# To run coverage we need to add -g and -O0 flags, so we allow it only in debug mode
+option(CODE_COVERAGE  "add code coverage" OFF)  
+
 option(ENABLE_GUROBI "Enable use the Gurobi optimizer" OFF)
 
 set(DEFAULT_PYTHON_VERSION "3" CACHE STRING "Default Python version 2/3")
@@ -67,7 +70,6 @@ if(CTEST_NTHREADS EQUAL 0)
   set(CTEST_NTHREADS 1)
 endif()
 
-
 # --------------- set build type ----------------------------
 set(BUILD_TYPES Release Debug MinSizeRel RelWithDebInfo)
 
@@ -78,8 +80,18 @@ if(NOT CMAKE_BUILD_TYPE)
   # Provide drop down menu options in cmake-gui
   set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${BUILD_TYPES})
 endif()
-
 message(STATUS "Building ${CMAKE_BUILD_TYPE} build")
+
+
+#-------------------------set code coverage----------------------------------#
+# Allow coverage only in debug mode only in gcc
+if(CODE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND CMAKE_BUILD_TYPE MATCHES Debug)
+  message(STATUS "Building with code coverage")
+  set(COVERAGE_COMPILER_FLAGS "-g -O0 --coverage" CACHE INTERNAL "")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COVERAGE_COMPILER_FLAGS}")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
+endif()
+
 
 # We build a static library that is the core of the project, the link it to the
 # API's (executable and python at the moment)
@@ -348,3 +360,4 @@ set(MARABOU_VERSION 1.0.+)
 add_definitions("-DGIT_COMMIT_HASH=\"${GIT_COMMIT_HASH}\"")
 add_definitions("-DGIT_BRANCH=\"${GIT_BRANCH}\"")
 add_definitions("-DMARABOU_VERSION=\"${MARABOU_VERSION}\"")
+
