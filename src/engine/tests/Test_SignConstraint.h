@@ -306,7 +306,7 @@ public:
     }
 
 
-    void test_fix_positive() {
+    void test_fix_positive() { 
         unsigned b = 1;
         unsigned f = 4;
 
