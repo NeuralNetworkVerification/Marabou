@@ -69,10 +69,10 @@ void LPFormulator::optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned
     GurobiWrapper gurobi;
     List<GurobiWrapper::Term> terms;
     Map<String, double> dontCare;
-    double lb;
-    double ub;
-    double currentLb;
-    double currentUb;
+    double lb = 0;
+    double ub = 0;
+    double currentLb = 0;
+    double currentUb = 0;
 
     unsigned tighterBoundCounter = 0;
     unsigned signChanges = 0;

@@ -130,6 +130,8 @@ public:
     ~GurobiWrapper() {}
 
     void addVariable( String, double, double, VariableType type = CONTINUOUS ) { (void)type; }
+    void setLowerBound( String, double ) {};
+    void setUpperBound( String, double ) {};
     void addLeqConstraint( const List<Term> &, double ) {}
     void addGeqConstraint( const List<Term> &, double ) {}
     void addEqConstraint( const List<Term> &, double ) {}
@@ -137,6 +139,7 @@ public:
     void setObjective( const List<Term> & ) {}
     void solve() {}
     void extractSolution( Map<String, double> &, double & ) {}
+    void reset() {}
     bool optimal() { return true; }
     bool infeasbile() { return false; };
 
