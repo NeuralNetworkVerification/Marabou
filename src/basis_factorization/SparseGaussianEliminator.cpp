@@ -206,7 +206,7 @@ void SparseGaussianEliminator::factorize()
 
 void SparseGaussianEliminator::choosePivot()
 {
-    log( "Choose pivot invoked" );
+    SGAUSSIAN_LOG( "Choose pivot invoked" );
 
     /*
       Apply the Markowitz rule: in the active sub-matrix,
@@ -241,10 +241,10 @@ void SparseGaussianEliminator::choosePivot()
             _uPivotColumn = _sparseLUFactors->_Q._columnOrdering[_vPivotColumn];
             _pivotElement = entry->_value;
 
-            log( Stringf( "Choose pivot selected a pivot (singleton row): V[%u,%u] = %lf",
+            SGAUSSIAN_LOG( Stringf( "Choose pivot selected a pivot (singleton row): V[%u,%u] = %lf",
                           _vPivotRow,
                           _vPivotColumn,
-                          _pivotElement ) );
+                          _pivotElement ).ascii() );
             return;
         }
     }
@@ -286,10 +286,10 @@ void SparseGaussianEliminator::choosePivot()
 
             ASSERT( found );
 
-            log( Stringf( "Choose pivot selected a pivot (singleton column): V[%u,%u] = %lf",
+            SGAUSSIAN_LOG( Stringf( "Choose pivot selected a pivot (singleton column): V[%u,%u] = %lf",
                           _vPivotRow,
                           _vPivotColumn,
-                          _pivotElement ) );
+                          _pivotElement ).ascii() );
             return;
         }
     }
@@ -373,7 +373,7 @@ void SparseGaussianEliminator::choosePivot()
         throw BasisFactorizationError( BasisFactorizationError::GAUSSIAN_ELIMINATION_FAILED,
                                        "Couldn't find a pivot" );
 
-    log( Stringf( "Choose pivot selected a pivot: V[%u,%u] = %lf (cost %u)", _vPivotRow, _vPivotColumn, _pivotElement, minimalCost ) );
+    SGAUSSIAN_LOG( Stringf( "Choose pivot selected a pivot: V[%u,%u] = %lf (cost %u)", _vPivotRow, _vPivotColumn, _pivotElement, minimalCost ).ascii() );
 }
 
 void SparseGaussianEliminator::eliminate()
@@ -483,12 +483,6 @@ void SparseGaussianEliminator::eliminate()
 
     // Store the pivot element
     _sparseLUFactors->_vDiagonalElements[_vPivotRow] = _pivotElement;
-}
-
-void SparseGaussianEliminator::log( const String &message )
-{
-    if ( GlobalConfiguration::GAUSSIAN_ELIMINATION_LOGGING )
-        printf( "SparseGaussianEliminator: %s\n", message.ascii() );
 }
 
 void SparseGaussianEliminator::setStatistics( Statistics *statistics )
