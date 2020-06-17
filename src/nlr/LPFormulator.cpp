@@ -200,7 +200,6 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
 
     for ( const auto &currentLayer : layers )
     {
-        ASSERT( layers.exists( i ) );
         Layer *layer = currentLayer.second;
 
         for ( unsigned i = 0; i < layer->getSize(); ++i )
