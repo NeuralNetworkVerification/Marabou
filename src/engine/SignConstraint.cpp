@@ -247,11 +247,11 @@ void SignConstraint::notifyLowerBound( unsigned variable, double bound ) {
     // otherwise - update bound
     _lowerBounds[variable] = bound;
 
-    if (variable == _f && FloatUtils::gt(bound, -1)) {
+    if (variable == _f && FloatUtils::gt(bound, -1) && _constraintBoundTightener) {
         setPhaseStatus(PhaseStatus::PHASE_POSITIVE);
         _constraintBoundTightener->registerTighterLowerBound(_f, 1);
         _constraintBoundTightener->registerTighterLowerBound(_b, 0);
-    } else if (variable == _b && !FloatUtils::isNegative(bound))  // if b (input) is >= 0
+    } else if (variable == _b && !FloatUtils::isNegative(bound) && _constraintBoundTightener)  // if b (input) is >= 0
     {
         setPhaseStatus(PhaseStatus::PHASE_POSITIVE);
         _constraintBoundTightener->registerTighterLowerBound(_f, 1);
@@ -263,26 +263,6 @@ void SignConstraint::notifyLowerBound( unsigned variable, double bound ) {
 
 
 
-// todo - eventually unmask code for _constraintBoundTightener
-//    if ( isActive() && _constraintBoundTightener )
-//    {
-//        // A positive lower bound is always propagated between f and b
-//        if ( bound > 0 )
-//        {
-//            unsigned partner = ( variable == _f ) ? _b : _f;
-//            _constraintBoundTightener->registerTighterLowerBound( partner, bound );
-//        }
-//
-//            // Also, if for some reason we only know a negative lower bound for f,
-//            // we attempt to tighten it to 0
-//        else if ( bound < 0 && variable == _f )
-//        {
-//            _constraintBoundTightener->registerTighterLowerBound( _f, 0 );
-//        }
-//    }
-//}
-
-
 void SignConstraint::notifyUpperBound(unsigned variable, double bound) {
     if (_statistics)
         _statistics->incNumBoundNotificationsPlConstraints();
@@ -292,12 +272,12 @@ void SignConstraint::notifyUpperBound(unsigned variable, double bound) {
     // otherwise - update bound
     _upperBounds[variable] = bound;
 
-    if (variable == _f && FloatUtils::lt(bound, 1)) {
+    if (variable == _f && FloatUtils::lt(bound, 1) && _constraintBoundTightener ) {
         setPhaseStatus(PhaseStatus::PHASE_NEGATIVE);
         _constraintBoundTightener->registerTighterUpperBound(_f, -1);
         _constraintBoundTightener->registerTighterUpperBound(_b, 0);
 
-    } else if (variable == _b && FloatUtils::isNegative(bound))  // if b (input) is < 0
+    } else if (variable == _b && FloatUtils::isNegative(bound) && _constraintBoundTightener )  // if b (input) is < 0
     {
         setPhaseStatus(PhaseStatus::PHASE_NEGATIVE);
         _constraintBoundTightener->registerTighterUpperBound(_f, -1);
@@ -306,24 +286,6 @@ void SignConstraint::notifyUpperBound(unsigned variable, double bound) {
     }
 }
 
-// todo - eventually unmask code for _constraintBoundTightener
-//    if ( isActive() && _constraintBoundTightener )
-//    {
-//        // A positive lower bound is always propagated between f and b
-//        if ( bound > 0 )
-//        {
-//            unsigned partner = ( variable == _f ) ? _b : _f;
-//            _constraintBoundTightener->registerTighterLowerBound( partner, bound );
-//        }
-//
-//            // Also, if for some reason we only know a negative lower bound for f,
-//            // we attempt to tighten it to 0
-//        else if ( bound < 0 && variable == _f )
-//        {
-//            _constraintBoundTightener->registerTighterLowerBound( _f, 0 );
-//        }
-//    }
-//}
 
 
 
