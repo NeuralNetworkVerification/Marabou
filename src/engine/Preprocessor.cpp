@@ -44,11 +44,9 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     makeAllEquationsEqualities();
 
     /*
-      If a network level reasoner has not been provided, attempt to
-      construct one
+      Attempt to construct a network level reasonor
     */
-    if ( !_preprocessed._networkLevelReasoner )
-        _preprocessed.constructNetworkLevelReasoner();
+    _preprocessed.constructNetworkLevelReasoner();
 
     /*
       Collect input and output variables
