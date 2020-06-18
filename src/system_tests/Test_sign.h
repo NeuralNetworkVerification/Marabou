@@ -23,7 +23,6 @@
 #include "FloatUtils.h"
 #include "SignConstraint.h"
 
-#include "ReluConstraint.h"
 
 #ifndef MARABOU_TEST_SIGN_H
 #define MARABOU_TEST_SIGN_H
@@ -40,87 +39,93 @@ public:
     }
 
 
-    void test_sign_2() // similar to test
+    void test_sign_2() // similar to test_relu_2
     {
         InputQuery inputQuery;
         inputQuery.setNumberOfVariables( 6 );
 
-        inputQuery.setLowerBound( 0, 0 );
-        inputQuery.setUpperBound( 0, 1 );
+        // 0 <= x0 <= 10
+        inputQuery.setLowerBound( 0, 1 );
+        inputQuery.setUpperBound( 0, 10 );
 
-        inputQuery.setLowerBound( 5, 0.5 );
-        inputQuery.setUpperBound( 5, 1 );
+        // todo change!!
+        inputQuery.setLowerBound( 5, 0.01 ); // unSAT! x5 = 0 always
+
 
         Equation equation1;
         equation1.addAddend( 1, 0 );
         equation1.addAddend( -1, 1 );
         equation1.setScalar( 0 );
-        inputQuery.addEquation( equation1 );
+        inputQuery.addEquation( equation1 ); // x1 = x0
 
         Equation equation2;
         equation2.addAddend( 1, 0 );
         equation2.addAddend( 1, 3 );
         equation2.setScalar( 0 );
-        inputQuery.addEquation( equation2 );
+        inputQuery.addEquation( equation2 ); // x1 = - x3
 
         Equation equation3;
         equation3.addAddend( 1, 2 );
         equation3.addAddend( 1, 4 );
         equation3.addAddend( -1, 5 );
         equation3.setScalar( 0 );
-        inputQuery.addEquation( equation3 );
+        inputQuery.addEquation( equation3 ); // x5 = x2 + x4
 
-        ReluConstraint *relu1 = new ReluConstraint( 1, 2 );
-        ReluConstraint *relu2 = new ReluConstraint( 3, 4 );
+        SignConstraint *sign1 = new SignConstraint( 1, 2 ); //  x2 = sign (x1)
+        SignConstraint *sign2 = new SignConstraint( 3, 4 ); //  x4 = sign (x3)
 
-        inputQuery.addPiecewiseLinearConstraint( relu1 );
-        inputQuery.addPiecewiseLinearConstraint( relu2 );
+        inputQuery.addPiecewiseLinearConstraint( sign1 );
+        inputQuery.addPiecewiseLinearConstraint( sign2 );
 
         Engine engine;
-        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
+        TS_ASSERT( engine.processInputQuery( inputQuery ) ); // was originally "TS_ASSET_THROWS_NOTHING"
 
-        TS_ASSERT_THROWS_NOTHING ( engine.solve() );
+        //TS_ASSERT( engine.solve() ); // was originally "TS_ASSET_THROWS_NOTHING"
 
 
-        engine.extractSolution( inputQuery );
 
-        bool correctSolution = true;
-        // Sanity test
 
-        double value_x0 = inputQuery.getSolutionValue( 0 );
-        double value_x1b = inputQuery.getSolutionValue( 1 );
-        double value_x1f = inputQuery.getSolutionValue( 2 );
-        double value_x2b = inputQuery.getSolutionValue( 3 );
-        double value_x2f = inputQuery.getSolutionValue( 4 );
-        double value_x3 = inputQuery.getSolutionValue( 5 );
 
-        if ( !FloatUtils::areEqual( value_x0, value_x1b ) )
-            correctSolution = false;
 
-        if ( !FloatUtils::areEqual( value_x0, -value_x2b ) )
-            correctSolution = false;
+//        engine.extractSolution( inputQuery );
 
-        if ( !FloatUtils::areEqual( value_x3, value_x1f + value_x2f ) )
-            correctSolution = false;
-
-        if ( FloatUtils::lt( value_x0, 0 ) || FloatUtils::gt( value_x0, 1 ) ||
-             FloatUtils::lt( value_x1f, 0 ) || FloatUtils::lt( value_x2f, 0 ) ||
-             FloatUtils::lt( value_x3, 0.5 ) || FloatUtils::gt( value_x3, 1 ) )
-        {
-            correctSolution = false;
-        }
-
-        if ( FloatUtils::isPositive( value_x1f ) && !FloatUtils::areEqual( value_x1b, value_x1f ) )
-        {
-            correctSolution = false;
-        }
-
-        if ( FloatUtils::isPositive( value_x2f ) && !FloatUtils::areEqual( value_x2b, value_x2f ) )
-        {
-            correctSolution = false;
-        }
-
-        TS_ASSERT( correctSolution );
+//        bool correctSolution = true;
+//        // Sanity test
+//
+//        double value_x0 = inputQuery.getSolutionValue( 0 );
+//        double value_x1b = inputQuery.getSolutionValue( 1 );
+//        double value_x1f = inputQuery.getSolutionValue( 2 );
+//        double value_x2b = inputQuery.getSolutionValue( 3 );
+//        double value_x2f = inputQuery.getSolutionValue( 4 );
+//        double value_x3 = inputQuery.getSolutionValue( 5 );
+//
+//        if ( !FloatUtils::areEqual( value_x0, value_x1b ) )
+//            correctSolution = false;
+//
+//        if ( !FloatUtils::areEqual( value_x0, -value_x2b ) )
+//            correctSolution = false;
+//
+//        if ( !FloatUtils::areEqual( value_x3, value_x1f + value_x2f ) )
+//            correctSolution = false;
+//
+//        if ( FloatUtils::lt( value_x0, 0 ) || FloatUtils::gt( value_x0, 1 ) ||
+//             FloatUtils::lt( value_x1f, 0 ) || FloatUtils::lt( value_x2f, 0 ) ||
+//             FloatUtils::lt( value_x3, 0.5 ) || FloatUtils::gt( value_x3, 1 ) )
+//        {
+//            correctSolution = false;
+//        }
+//
+//        if ( FloatUtils::isPositive( value_x1f ) && !FloatUtils::areEqual( value_x1b, value_x1f ) )
+//        {
+//            correctSolution = false;
+//        }
+//
+//        if ( FloatUtils::isPositive( value_x2f ) && !FloatUtils::areEqual( value_x2b, value_x2f ) )
+//        {
+//            correctSolution = false;
+//        }
+//
+//        TS_ASSERT( correctSolution );
     }
 };
 

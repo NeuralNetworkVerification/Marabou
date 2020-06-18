@@ -1011,9 +1011,9 @@ public:
         dontCare.setNumberOfVariables( aux );
 
         relu.notifyLowerBound( b, -10 );
-        relu.notifyLowerBound( f, 0 );
-
         relu.notifyUpperBound( b, 15 );
+
+        relu.notifyLowerBound( f, 0 );
         relu.notifyUpperBound( f, 15 );
 
         TS_ASSERT_THROWS_NOTHING( relu.addAuxiliaryEquations( dontCare ) );
@@ -1021,7 +1021,7 @@ public:
         relu.notifyLowerBound( aux, 0 );
         relu.notifyUpperBound( aux, 10 );
 
-        relu.registerConstraintBoundTightener( tightener );
+        relu.registerConstraintBoundTightener( tightener ); // here
 
         return relu;
     }
