@@ -62,28 +62,21 @@ void DnCMarabou::run()
         }
         printf( "Network: %s\n", networkFilePath.ascii() );
 
+        AcasParser acasParser( networkFilePath );
+        acasParser.generateQuery( _inputQuery );
+        _inputQuery.constructNetworkLevelReasoner();
+
         /*
           Step 2: extract the property in question
         */
         String propertyFilePath = Options::get()->getString( Options::PROPERTY_FILE_PATH );
         if ( propertyFilePath != "" )
         {
-            if ( !File::exists( propertyFilePath ) )
-            {
-                printf( "Error: the specified property file (%s) doesn't exist!\n",
-                        propertyFilePath.ascii() );
-                throw MarabouError( MarabouError::FILE_DOESNT_EXIST,
-                                    propertyFilePath.ascii() );
-            }
             printf( "Property: %s\n", propertyFilePath.ascii() );
+            PropertyParser().parse( propertyFilePath, _inputQuery );
         }
         else
             printf( "Property: None\n" );
-
-        AcasParser acasParser( networkFilePath );
-        acasParser.generateQuery( _inputQuery );
-        if ( propertyFilePath != "" )
-            PropertyParser().parse( propertyFilePath, _inputQuery );
     }
     printf( "\n" );
 
