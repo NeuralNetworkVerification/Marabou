@@ -89,6 +89,7 @@ void Marabou::prepareInputQuery()
         // For now, assume the network is given in ACAS format
         _acasParser = new AcasParser( networkFilePath );
         _acasParser->generateQuery( _inputQuery );
+        _inputQuery.constructNetworkLevelReasoner();
 
         /*
           Step 2: extract the property in question
