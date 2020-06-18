@@ -553,7 +553,8 @@ bool InputQuery::constructNetworkLevelReasoner()
 {
     INPUT_QUERY_LOG( "PP: constructing an NLR... " );
 
-    ASSERT( !_networkLevelReasoner );
+    if ( _networkLevelReasoner )
+        delete _networkLevelReasoner;
     NLR::NetworkLevelReasoner *nlr = new NLR::NetworkLevelReasoner;
 
     Map<unsigned, unsigned> handledVariableToLayer;
