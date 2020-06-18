@@ -48,7 +48,6 @@ public:
         inputQuery.setLowerBound( 0, 1 );
         inputQuery.setUpperBound( 0, 10 );
 
-        // todo change!!
         inputQuery.setLowerBound( 5, 0.01 ); // unSAT! x5 = 0 always
 
 
@@ -150,13 +149,6 @@ public:
         double value_x5 = inputQuery.getSolutionValue( 5 );
 
 
-//        (void) correctSolution;
-//        (void) value_x0;
-//        (void) value_x1;
-//        (void) value_x2;
-//        (void) value_x3;
-//        (void) value_x4;
-//        (void) value_x5;
 
         if ( !FloatUtils::areEqual( value_x0, value_x1 ) ) // we want x1 = x0
             correctSolution = false;
@@ -199,7 +191,7 @@ public:
             correctSolution = false;
         }
 
-        if ( FloatUtils::gt( value_x5, 17 ) ) // we want x5 <= 17 // todo remove '!'
+        if ( FloatUtils::gt( value_x5, 17 ) ) // we want x5 <= 17
         {
             correctSolution = false;
         }
