@@ -1,8 +1,11 @@
 import os
 os.chdir('..')
 
-from MarabouNetworkNNetExtensions import *
-
+try:
+    from MarabouNetworkNNetExtensions import *
+except ImportError:
+    from maraboupy.MarabouNetworkNNetExtensions import *
+    
 from subprocess import call
 
 property_filename = "../resources/properties/acas_property_4.txt"
