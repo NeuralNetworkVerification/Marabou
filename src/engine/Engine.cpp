@@ -1090,7 +1090,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         delete[] constraintMatrix;
 
-        performLPRelaxationBoundedTightening();
+        performMILPSolverBoundedTightening();
 
         struct timespec end = TimeUtils::sampleMicro();
         _statistics.setPreprocessingTime( TimeUtils::timePassed( start, end ) );
@@ -1112,12 +1112,24 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
     return true;
 }
 
-void Engine::performLPRelaxationBoundedTightening()
+void Engine::performMILPSolverBoundedTightening()
 {
     if ( _networkLevelReasoner && Options::get()->gurobiEnabled() )
     {
         _networkLevelReasoner->obtainCurrentBounds();
-        _networkLevelReasoner->lpRelaxationPropagation();
+
+        switch ( GlobalConfiguration::MILP_SOLVER_BOUND_TIGHTENING_TYPE )
+        {
+        case GlobalConfiguration::LP_RELAXATION:
+        case GlobalConfiguration::LP_RELAXATION_INCREMENTAL:
+            _networkLevelReasoner->lpRelaxationPropagation();
+            break;
+
+        case GlobalConfiguration::MILP_ENCODING:
+        case GlobalConfiguration::MILP_ENCODING_INCREMENTAL:
+            _networkLevelReasoner->MILPPropagation();
+            break;
+        }
 
         List<Tightening> tightenings;
         _networkLevelReasoner->getConstraintTightenings( tightenings );
@@ -1130,6 +1142,8 @@ void Engine::performLPRelaxationBoundedTightening()
             else if ( tightening._type == Tightening::UB )
                 _tableau->tightenUpperBound( tightening._variable, tightening._value );
         }
+
+        applyAllValidConstraintCaseSplits();
     }
 }
 
