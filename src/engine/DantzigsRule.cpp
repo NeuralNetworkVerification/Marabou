@@ -53,7 +53,7 @@ bool DantzigsRule::select( ITableau &tableau,
              cost += "+";
         cost += Stringf( "%.3lf*nb[%u] ", costFunction[i], i );
     }
-    log( Stringf( "Cost function: %s\n", cost.ascii() ) );
+    DANTZIG_LOG( Stringf( "Cost function: %s\n", cost.ascii() ).ascii() );
 
     List<unsigned>::const_iterator candidate = remainingCandidates.begin();
     unsigned maxIndex = *candidate;
@@ -71,16 +71,10 @@ bool DantzigsRule::select( ITableau &tableau,
         ++candidate;
     }
 
-    log( Stringf( "Largest coefficient: %.3lf. Corresponding variable: %u\n", maxValue, maxIndex ) );
+    DANTZIG_LOG( Stringf( "Largest coefficient: %.3lf. Corresponding variable: %u\n", maxValue, maxIndex ).ascii() );
 
     tableau.setEnteringVariableIndex( maxIndex );
     return true;
-}
-
-void DantzigsRule::log( const String &message )
-{
-    if ( GlobalConfiguration::DANTZIGS_RULE_LOGGING )
-        printf( "DantzigsRule: %s\n", message.ascii() );
 }
 
 //

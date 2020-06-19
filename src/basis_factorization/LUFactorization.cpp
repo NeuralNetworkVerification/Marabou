@@ -20,7 +20,6 @@
 #include "GlobalConfiguration.h"
 #include "LPElement.h"
 #include "LUFactorization.h"
-#include "MStringf.h"
 #include "MalformedBasisException.h"
 
 LUFactorization::LUFactorization( unsigned m, const BasisColumnOracle &basisColumnOracle )
@@ -90,7 +89,7 @@ void LUFactorization::updateToAdjacentBasis( unsigned columnIndex,
 
 	if ( _etas.size() > GlobalConfiguration::REFACTORIZATION_THRESHOLD )
 	{
-        log( "Number of etas exceeds threshold. Refactoring basis\n" );
+        LU_FACTORIZATION_LOG( "Number of etas exceeds threshold. Refactoring basis\n" );
         obtainFreshBasis();
 	}
 }
@@ -221,12 +220,6 @@ void LUFactorization::invertBasis( double *result )
     ASSERT( result );
 
     _luFactors.invertBasis( result );
-}
-
-void LUFactorization::log( const String &message )
-{
-    if ( GlobalConfiguration::BASIS_FACTORIZATION_LOGGING )
-        printf( "LUFactorization: %s\n", message.ascii() );
 }
 
 bool LUFactorization::explicitBasisAvailable() const
