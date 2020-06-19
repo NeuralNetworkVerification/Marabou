@@ -16,7 +16,11 @@
  **/
 '''
 
-from maraboupy import MarabouCore
+try:
+    from maraboupy import MarabouCore
+except ImportError:
+    import MarabouCore
+
 import numpy as np
 
 class MarabouNetwork:

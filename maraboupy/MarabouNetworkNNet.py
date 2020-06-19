@@ -16,9 +16,15 @@
  **/
 '''
 
-from .MarabouUtils import *
-from maraboupy import MarabouCore
-from maraboupy import MarabouNetwork
+try:
+    from .MarabouUtils import *
+    from maraboupy import MarabouCore
+    from maraboupy import MarabouNetwork
+except ImportError:
+    from MarabouUtils import *
+    import MarabouCore
+    import MarabouNetwork
+
 import numpy as np
 
 class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
