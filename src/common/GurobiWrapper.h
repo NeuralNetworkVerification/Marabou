@@ -26,6 +26,11 @@
 class GurobiWrapper
 {
 public:
+    enum VariableType {
+        CONTINUOUS = 0,
+        BINARY = 1,
+    };
+
     /*
       A term has the form: coefficient * variable
     */
@@ -51,7 +56,11 @@ public:
     ~GurobiWrapper();
 
     // Add a new variabel to the model
-    void addVariable( String name, double lb, double ub );
+    void addVariable( String name, double lb, double ub, VariableType type = CONTINUOUS );
+
+    // Set the lower or upper bound for an existing variable
+    void setLowerBound( String name, double lb );
+    void setUpperBound( String name, double ub );
 
     // Add a new LEQ constraint, e.g. 3x + 4y <= -5
     void addLeqConstraint( const List<Term> &terms, double scalar );
@@ -76,10 +85,13 @@ public:
     void solve();
     void extractSolution( Map<String, double> &values, double &costOrObjective );
 
-    void dump()
-    {
-        _model->write( "model.lp" );
-    }
+    // Reset the underlying model
+    void reset();
+
+    // Dump the model to a file. Note that the suffix of the file is
+    // used by Gurobi to determine the format. Using ".lp" is a good
+    // default
+    void dumpModel( String name );
 
 private:
     GRBEnv *_environment;
@@ -87,9 +99,6 @@ private:
     Map<String, GRBVar *> _nameToVariable;
 
     void addConstraint( const List<Term> &terms, double scalar, char sense );
-
-    // Create a fresh model
-    void reset();
 
     void freeMemoryIfNeeded();
 };
@@ -106,6 +115,11 @@ public:
       This is a DUMMY class, for compilation purposes when Gurobi is
       disabled.
     */
+    enum VariableType {
+        CONTINUOUS = 0,
+        BINARY = 1,
+    };
+
     struct Term
     {
         Term( double, String ) {}
@@ -115,7 +129,9 @@ public:
     GurobiWrapper() {}
     ~GurobiWrapper() {}
 
-    void addVariable( String, double, double ) {}
+    void addVariable( String, double, double, VariableType type = CONTINUOUS ) { (void)type; }
+    void setLowerBound( String, double ) {};
+    void setUpperBound( String, double ) {};
     void addLeqConstraint( const List<Term> &, double ) {}
     void addGeqConstraint( const List<Term> &, double ) {}
     void addEqConstraint( const List<Term> &, double ) {}
@@ -123,6 +139,7 @@ public:
     void setObjective( const List<Term> & ) {}
     void solve() {}
     void extractSolution( Map<String, double> &, double & ) {}
+    void reset() {}
     bool optimal() { return true; }
     bool infeasbile() { return false; };
 
