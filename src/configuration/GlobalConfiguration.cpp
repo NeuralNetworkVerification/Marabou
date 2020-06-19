@@ -76,13 +76,16 @@ const GlobalConfiguration::ExplicitBasisBoundTighteningType GlobalConfiguration:
     GlobalConfiguration::COMPUTE_INVERTED_BASIS_MATRIX;
 const bool GlobalConfiguration::EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION = false;
 
+const GlobalConfiguration::MILPSolverBoundTighteningType GlobalConfiguration::MILP_SOLVER_BOUND_TIGHTENING_TYPE =
+    GlobalConfiguration::MILP_ENCODING_INCREMENTAL;
+
 const unsigned GlobalConfiguration::REFACTORIZATION_THRESHOLD = 100;
 const GlobalConfiguration::BasisFactorizationType GlobalConfiguration::BASIS_FACTORIZATION_TYPE =
     GlobalConfiguration::SPARSE_FORREST_TOMLIN_FACTORIZATION;
 
 const unsigned GlobalConfiguration::RUNTIME_ESTIMATE_THRESHOLD = 5;
 
-// Logging - note that it is enabled only in Debug mode 
+// Logging - note that it is enabled only in Debug mode
 const bool GlobalConfiguration::DNC_MANAGER_LOGGING = false;
 const bool GlobalConfiguration::ENGINE_LOGGING = false;
 const bool GlobalConfiguration::TABLEAU_LOGGING = false;

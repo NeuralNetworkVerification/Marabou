@@ -125,14 +125,26 @@ void NetworkLevelReasoner::lpRelaxationPropagation()
 {
     LPFormulator lpFormulator( this );
     lpFormulator.setCutoff( 0 );
-    lpFormulator.optimizeBoundsWithIncrementalLpRelaxation( _layerIndexToLayer );
+
+    if ( GlobalConfiguration::MILP_SOLVER_BOUND_TIGHTENING_TYPE ==
+         GlobalConfiguration::LP_RELAXATION )
+        lpFormulator.optimizeBoundsWithLpRelaxation( _layerIndexToLayer );
+    else if ( GlobalConfiguration::MILP_SOLVER_BOUND_TIGHTENING_TYPE ==
+              GlobalConfiguration::LP_RELAXATION_INCREMENTAL )
+        lpFormulator.optimizeBoundsWithIncrementalLpRelaxation( _layerIndexToLayer );
 }
 
 void NetworkLevelReasoner::MILPPropagation()
 {
     MILPFormulator milpFormulator( this );
     milpFormulator.setCutoff( 0 );
-    milpFormulator.optimizeBoundsWithIncrementalMILPEncoding( _layerIndexToLayer );
+
+    if ( GlobalConfiguration::MILP_SOLVER_BOUND_TIGHTENING_TYPE ==
+         GlobalConfiguration::MILP_ENCODING )
+        milpFormulator.optimizeBoundsWithMILPEncoding( _layerIndexToLayer );
+    else if ( GlobalConfiguration::MILP_SOLVER_BOUND_TIGHTENING_TYPE ==
+              GlobalConfiguration::MILP_ENCODING_INCREMENTAL )
+        milpFormulator.optimizeBoundsWithIncrementalMILPEncoding( _layerIndexToLayer );
 }
 
 void NetworkLevelReasoner::intervalArithmeticBoundPropagation()
