@@ -15,7 +15,7 @@ FG_FOLDER = "../../resources/tf/frozen_graph/"    # Folder for test networks wri
 SM1_FOLDER = "../../resources/tf/saved_model_v1/" # Folder for test networks written in SavedModel format from tensorflow v1.X
 SM2_FOLDER = "../../resources/tf/saved_model_v2/" # Folder for test networks written in SavedModel format from tensorflow v2.X
 np.random.seed(123)                               # Seed random numbers for repeatability
-NUM_RAND = 10                                     # Default number of random test points per example
+NUM_RAND = 5                                      # Default number of random test points per example
 
 def test_fc1():
     """
@@ -49,11 +49,10 @@ def test_conv_mp1():
     """
     Test a convolutional network using max pool
     Uses Const, Identity, Placeholder, Conv2D, Add, Relu, and MaxPool layers
-    The number of test points is decreased to reduce test time of this larger test network
     """
     filename = os.path.join(os.path.dirname(__file__), FG_FOLDER, "conv_mp1.pb")
     network = Marabou.read_tf(filename)
-    evaluateNetwork(network, numPoints = 3)
+    evaluateNetwork(network)
 
 def test_conv_mp2():
     """
@@ -62,7 +61,7 @@ def test_conv_mp2():
     """
     filename = os.path.join(os.path.dirname(__file__), FG_FOLDER, "conv_mp2.pb")
     network = Marabou.read_tf(filename)
-    evaluateNetwork(network, numPoints = 3)
+    evaluateNetwork(network)
 
 def test_conv_mp3():
     """
@@ -72,7 +71,7 @@ def test_conv_mp3():
     """
     filename = os.path.join(os.path.dirname(__file__), FG_FOLDER, "conv_mp3.pb")
     network = Marabou.read_tf(filename)
-    evaluateNetwork(network, numPoints = 3)
+    evaluateNetwork(network)
 
 def test_conv_NCHW():
     """
