@@ -21,9 +21,13 @@
 '''
 
 
-
-from MarabouNetworkNNetProperty import *
-from MarabouNetworkNNetIPQ import *
+try:
+    from MarabouNetworkNNetProperty import *
+    from MarabouNetworkNNetIPQ import *
+except ImportError:
+    from maraboupy.MarabouNetworkNNetProperty import *
+    from maraboupy.MarabouNetworkNNetIPQ import *
+    
 
 class MarabouNetworkNNetQuery(MarabouNetworkNNetIPQ, MarabouNetworkNNetProperty):
     """

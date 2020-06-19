@@ -1,12 +1,15 @@
-import os
-os.chdir('..')
+import sys
+sys.path.append('../maraboupy/')
 
-from MarabouNetworkNNetExtensions import *
-
+try:
+    from MarabouNetworkNNetExtensions import *
+except ImportError:
+    from maraboupy.MarabouNetworkNNetExtensions import *
+    
 from subprocess import call
 
-property_filename = "../resources/properties/acas_property_4.txt"
-network_filename = "../resources/nnet/acasxu/ACASXU_experimental_v2a_1_9.nnet"
+property_filename = "./resources/properties/acas_property_4.txt"
+network_filename = "./resources/nnet/acasxu/ACASXU_experimental_v2a_1_9.nnet"
 
 layer = 2
 
