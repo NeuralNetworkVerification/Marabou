@@ -144,8 +144,6 @@ private:
 
     void freeMemoryIfNeeded();
 
-    static void log( const String &message );
-
     List<PiecewiseLinearConstraint *> _constraintsInTopologicalOrder;
 };
 

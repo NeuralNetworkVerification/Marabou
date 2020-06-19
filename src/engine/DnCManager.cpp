@@ -39,8 +39,11 @@ void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine
                            float timeoutFactor, DivideStrategy divideStrategy )
 {
     unsigned cpuId = 0;
+    (void) threadId;
+    (void) cpuId;
+
     getCPUId( cpuId );
-    log( Stringf( "Thread #%u on CPU %u", threadId, cpuId ) );
+    DNC_MANAGER_LOG( Stringf( "Thread #%u on CPU %u", threadId, cpuId ).ascii() );
 
     engine->processInputQuery( *inputQuery, false );
 
@@ -385,12 +388,6 @@ void DnCManager::updateTimeoutReached( timespec startTime, unsigned long long
     struct timespec now = TimeUtils::sampleMicro();
     _timeoutReached = TimeUtils::timePassed( startTime, now ) >=
         timeoutInMicroSeconds;
-}
-
-void DnCManager::log( const String &message )
-{
-    if ( GlobalConfiguration::DNC_MANAGER_LOGGING )
-        printf( "DnCManager: %s\n", message.ascii() );
 }
 
 void DnCManager::setConstraintViolationThreshold( unsigned threshold )
