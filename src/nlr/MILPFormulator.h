@@ -74,6 +74,10 @@ private:
     void addReluLayerToMILPFormulation( GurobiWrapper &gurobi,
                                         const Layer *layer );
 
+    void addNeuronToModel( GurobiWrapper &gurobi,
+                           const Layer *layer,
+                           unsigned neuron );
+
     double solveMILPEncoding( const Map<unsigned, Layer *> &layers,
                               MinOrMax minOrMax,
                               String variableName,

@@ -104,8 +104,14 @@ void MILPFormulator::optimizeBoundsWithIncrementalMILPEncoding( const Map<unsign
             if ( tightenLowerBound( gurobi, layer, j, variable, currentLb, newLb ) )
                 continue;
 
-            // Add the MILP encoding
-            addLayerToModel( gurobi, layer );
+            // If the current layer is a weighted sum layer, the MILP
+            // encoding doesn't add any additional assertions to the
+            // model, and we can stop here.
+            if ( layer->getLayerType() == Layer::INPUT ||
+                 layer->getLayerType() == Layer::WEIGHTED_SUM )
+                continue;
+
+            addNeuronToModel( gurobi, layer, j );
 
             // Maximize, using just the exact MILP encoding
             if ( tightenUpperBound( gurobi, layer, j, variable, currentUb, newUb ) )
@@ -250,59 +256,67 @@ void MILPFormulator::addLayerToModel( GurobiWrapper &gurobi, const Layer *layer 
     }
 }
 
+void MILPFormulator::addNeuronToModel( GurobiWrapper &gurobi, const Layer *layer, unsigned neuron )
+{
+    if ( layer->getLayerType() != Layer::RELU )
+        throw NLRError( NLRError::LAYER_TYPE_NOT_SUPPORTED, "MILPFormulator" );
+
+    if ( layer->neuronEliminated( neuron ) )
+        return;
+
+    unsigned targetVariable = layer->neuronToVariable( neuron );
+
+    List<NeuronIndex> sources = layer->getActivationSources( neuron );
+    const Layer *sourceLayer = _layerOwner->getLayer( sources.begin()->_layer );
+    unsigned sourceNeuron = sources.begin()->_neuron;
+    unsigned sourceVariable = sourceLayer->neuronToVariable( sourceNeuron );
+
+    double sourceLb = sourceLayer->getLb( sourceNeuron );
+    double sourceUb = sourceLayer->getUb( sourceNeuron );
+
+    if ( !FloatUtils::isNegative( sourceLb ) ||
+         !FloatUtils::isPositive( sourceUb ) )
+    {
+        // This ReLU is fixed in one of its phases
+        return;
+    }
+
+    /*
+      The underlying LP relaxation defines the triangular
+      region; we add the indicator variable a \in {0,1}:
+
+      y <= x - l ( 1 - a )
+      y <= u a
+
+      Or, alternatively:
+
+      y - x -la <= -l
+      y - ua <= 0
+    */
+
+    gurobi.addVariable( Stringf( "a%u", targetVariable ),
+                        0,
+                        1,
+                        GurobiWrapper::BINARY );
+
+    List<GurobiWrapper::Term> terms;
+    terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
+    terms.append( GurobiWrapper::Term( -1, Stringf( "x%u", sourceVariable ) ) );
+    terms.append( GurobiWrapper::Term( -sourceLb, Stringf( "a%u", targetVariable ) ) );
+    gurobi.addLeqConstraint( terms, -sourceLb );
+
+    terms.clear();
+    terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
+    terms.append( GurobiWrapper::Term( -sourceUb, Stringf( "a%u", targetVariable ) ) );
+    gurobi.addLeqConstraint( terms, 0 );
+}
+
 void MILPFormulator::addReluLayerToMILPFormulation( GurobiWrapper &gurobi,
                                                     const Layer *layer )
 {
     for ( unsigned i = 0; i < layer->getSize(); ++i )
     {
-        if ( !layer->neuronEliminated( i ) )
-        {
-            unsigned targetVariable = layer->neuronToVariable( i );
-
-            List<NeuronIndex> sources = layer->getActivationSources( i );
-            const Layer *sourceLayer = _layerOwner->getLayer( sources.begin()->_layer );
-            unsigned sourceNeuron = sources.begin()->_neuron;
-            unsigned sourceVariable = sourceLayer->neuronToVariable( sourceNeuron );
-
-            double sourceLb = sourceLayer->getLb( sourceNeuron );
-            double sourceUb = sourceLayer->getUb( sourceNeuron );
-
-            if ( !FloatUtils::isNegative( sourceLb ) ||
-                 !FloatUtils::isPositive( sourceUb ) )
-            {
-                // This ReLU is fixed on one of its phases
-                continue;
-            }
-
-            /*
-              The underlying LP relaxation defines the triangular
-              region; we add the indicator variable a \in {0,1}:
-
-                y <= x - l ( 1 - a )
-                y <= u a
-
-                Or, alternatively:
-
-                y - x -la <= -l
-                y - ua <= 0
-            */
-
-            gurobi.addVariable( Stringf( "a%u", targetVariable ),
-                                0,
-                                1,
-                                GurobiWrapper::BINARY );
-
-            List<GurobiWrapper::Term> terms;
-            terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
-            terms.append( GurobiWrapper::Term( -1, Stringf( "x%u", sourceVariable ) ) );
-            terms.append( GurobiWrapper::Term( -sourceLb, Stringf( "a%u", targetVariable ) ) );
-            gurobi.addLeqConstraint( terms, -sourceLb );
-
-            terms.clear();
-            terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
-            terms.append( GurobiWrapper::Term( -sourceUb, Stringf( "a%u", targetVariable ) ) );
-            gurobi.addLeqConstraint( terms, 0 );
-        }
+        addNeuronToModel( gurobi, layer, i );
     }
 }
 
