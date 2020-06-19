@@ -17,6 +17,7 @@
 #define __Debug_h__
 
 #include <cstdlib>
+#include <stdio.h>
 
 
 #ifndef NDEBUG
@@ -26,7 +27,19 @@
 #endif
 
 #ifndef NDEBUG
-#  define ASSERTM(x, y, ...)                     \
+#  define LOG(x, f, y, ...)                     \
+    {                                           \
+        if ( ( x ) )                            \
+        {                                       \
+            printf( f, y );                     \
+        }                                       \
+    }
+#else
+#  define LOG(x, f, y, ...)  {}
+#endif
+
+#ifndef NDEBUG
+#  define ASSERTM(x, y, ...)                    \
     {                                           \
         if ( !( x ) )                           \
         {                                       \

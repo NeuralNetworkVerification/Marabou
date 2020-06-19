@@ -19,6 +19,8 @@
 #include "IProjectedSteepestEdge.h"
 #include "SparseUnsortedList.h"
 
+#define PSE_LOG( x, ... ) LOG( GlobalConfiguration::PROJECTED_STEEPEST_EDGE_LOGGING, "Projected SE: %s\n", x )
+
 class ProjectedSteepestEdgeRule : public IProjectedSteepestEdgeRule
 {
 public:
@@ -107,8 +109,6 @@ private:
       Free all data structures.
     */
     void freeIfNeeded();
-
-    static void log( const String &message );
 };
 
 #endif // __ProjectedSteepestEdge_h__

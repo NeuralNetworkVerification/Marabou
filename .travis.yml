@@ -17,6 +17,7 @@ addons:
     - python3
     - python3-pip
     - python3-setuptools
+    - lcov
 
 install:
   - if [ "$TRAVIS_OS_NAME" = "windows" ]; then if [[ ! -d "C:\Python3" || ! -f "C:\Python3\python" ]]; then choco install python3 --version=3.5.4 --params "/InstallDir:C:\Python3"; fi fi
@@ -33,12 +34,18 @@ matrix:
       script:
       - mkdir -p build
       - cd build
-      - cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=$(which $PY_CMD)
+      - cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=$(which $PY_CMD) -DCMAKE_BUILD_TYPE=Debug -DCODE_COVERAGE=ON
       - cmake --build . -j 2
       - ctest -L system -j 2
       - ctest -L regress[0-1] -j 2
       - cd ..
       - $PY_CMD -m pytest --cov=maraboupy maraboupy/test
+      - lcov --capture --directory . --output-file coverage.info
+      - lcov --remove coverage.info '/usr/*' '*/tools/*' '*.cc' '*/tests/*' '*Test_*.h' --output-file coverage.info 
+      - lcov --list coverage.info 
+      # Uploading report to CodeCov
+      - bash <(curl -s https://codecov.io/bash) -f coverage.info || echo "Codecov did not collect coverage reports"
+
 
     - os: linux
       dist: xenial
@@ -46,7 +53,7 @@ matrix:
       script:
       - mkdir - p build
       - cd build
-      - cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=$(which $PY_CMD) -DCMAKE_BUILD_TYPE=Debug
+      - cmake .. -DRUN_UNIT_TEST=ON -DPYTHON_EXECUTABLE=$(which $PY_CMD) 
       - cmake --build . -j 2
       - ctest -L system -j 2
       - ctest -L regress0 -j 2
