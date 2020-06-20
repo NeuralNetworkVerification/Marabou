@@ -25,8 +25,12 @@
 
 import warnings
 
-import MarabouNetworkNNetExtended
-import MarabouCore
+try:
+    import MarabouNetworkNNetExtended
+    import MarabouCore
+except ImportError:
+    import maraboupy.MarabouNetworkNNetExtended
+    import maraboupy.MarabouCore    
 
 class MarabouNetworkNNetIPQ(MarabouNetworkNNetExtended.MarabouNetworkNNetExtended):
     """
