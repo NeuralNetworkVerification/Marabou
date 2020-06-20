@@ -21,7 +21,11 @@
 
 
 
-from PropertyParser import *
+try:
+    from PropertyParser import *
+except ImportError:
+    from maraboupy.PropertyParser import *
+    
 import parser
 
 types_of_property_by_variables = ['x', 'y', 'ws', 'm']

@@ -1,5 +1,5 @@
-import os
-os.chdir('..')
+import sys
+sys.path.append('./maraboupy/')
 
 try:
     from MarabouNetworkNNetExtensions import *
@@ -8,8 +8,8 @@ except ImportError:
     
 from subprocess import call
 
-property_filename = "../resources/properties/acas_property_4.txt"
-network_filename = "../resources/nnet/acasxu/ACASXU_experimental_v2a_1_9.nnet"
+property_filename = "./resources/properties/acas_property_4.txt"
+network_filename = "./resources/nnet/acasxu/ACASXU_experimental_v2a_1_9.nnet"
 
 layer = 2
 
@@ -49,7 +49,7 @@ def test_split_nnet():
             assert (true_outputc == output2b).all()
 
 def test_write_to_file():
-    output_filename = "test/ACASXU_experimental_v2a_1_9_output.nnet"
+    output_filename = "./maraboupy/test/ACASXU_experimental_v2a_1_9_output.nnet"
 
     nnet_object = MarabouNetworkNNet(filename=network_filename)
     nnet_object.writeNNet(output_filename)
@@ -57,9 +57,9 @@ def test_write_to_file():
     call(['diff',output_filename,network_filename])
 
 def test_split_and_write():
-    output_filename = "test/ACASXU_experimental_v2a_1_9_output.nnet"
-    output_filename1 = "test/ACASXU_experimental_v2a_1_9_output1.nnet"
-    output_filename2 = "test/ACASXU_experimental_v2a_1_9_output2.nnet"
+    output_filename = "./maraboupy/test/ACASXU_experimental_v2a_1_9_output.nnet"
+    output_filename1 = "./maraboupy/test/ACASXU_experimental_v2a_1_9_output1.nnet"
+    output_filename2 = "./maraboupy/test/ACASXU_experimental_v2a_1_9_output2.nnet"
 
     try:
         nnet_object = MarabouNetworkNNetQuery(filename=network_filename, property_filename=property_filename)

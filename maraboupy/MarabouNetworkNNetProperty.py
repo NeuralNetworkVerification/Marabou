@@ -19,11 +19,12 @@
  **/
 '''
 
-
-import MarabouNetworkNNetExtended
-from Property import *
-
-
+try:
+    import MarabouNetworkNNetExtended
+    from Property import *
+except ImportError:
+    from maraboupy import MarabouNetworkNNetExtended
+    from maraboupy.Property import *
 
 class MarabouNetworkNNetProperty(MarabouNetworkNNetExtended.MarabouNetworkNNetExtended):
     """
