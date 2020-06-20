@@ -23,7 +23,7 @@ try:
     import MarabouNetworkNNetExtended
     from Property import *
 except ImportError:
-    import maraboupy.MarabouNetworkNNetExtended
+    from maraboupy import MarabouNetworkNNetExtended
     from maraboupy.Property import *
 
 class MarabouNetworkNNetProperty(MarabouNetworkNNetExtended.MarabouNetworkNNetExtended):
