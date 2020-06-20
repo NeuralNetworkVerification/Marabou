@@ -25,7 +25,7 @@
 try:
     import MarabouNetworkNNet
 except ImportError:
-    import maraboupy.MarabouNetworkNNet
+    from maraboupy import MarabouNetworkNNet
 
 class MarabouNetworkNNetExtended(MarabouNetworkNNet.MarabouNetworkNNet):
 
