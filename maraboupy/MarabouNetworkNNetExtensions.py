@@ -24,9 +24,16 @@ import warnings
 try:
     from MarabouNetworkNNetQuery import *
 except ImportError:
-    warnings.warn('Module MarabouNNetQuery not installed.')
+    try:
+        from maraboupy.MarabouNetworkNNetQuery import *
+    except ImportError:
+        warnings.warn('Module MarabouNNetQuery not installed.')
 
-from MarabouNetworkNNet import *
+try:
+    from MarabouNetworkNNet import *
+except ImportError:
+    from maraboupy.MarabouNetworkNNet import *
+    
 import numpy as np
 
 
