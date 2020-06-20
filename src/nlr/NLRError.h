@@ -22,7 +22,8 @@ class NLRError : public Error
 {
 public:
 	enum Code {
-        UNEXPECTED_RETURN_STATUS_FROM_GUROBI,
+        UNEXPECTED_RETURN_STATUS_FROM_GUROBI = 0,
+        LAYER_TYPE_NOT_SUPPORTED = 1,
     };
 
     NLRError( NLRError::Code code ) : Error( "NLRError", (int)code )

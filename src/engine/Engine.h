@@ -40,6 +40,8 @@
 #undef ERROR
 #endif
 
+#define ENGINE_LOG(x, ...) LOG(GlobalConfiguration::ENGINE_LOGGING, "Engine: %s\n", x)
+
 class EngineState;
 class InputQuery;
 class PiecewiseLinearConstraint;
@@ -412,8 +414,6 @@ private:
     void performPrecisionRestoration( PrecisionRestorer::RestoreBasics restoreBasics );
     bool basisRestorationNeeded() const;
 
-    static void log( const String &message );
-
     /*
       For debugging purposes:
       Check that the current lower and upper bounds are consistent
@@ -467,7 +467,7 @@ private:
     double *createConstraintMatrix();
     void addAuxiliaryVariables();
     void augmentInitialBasisIfNeeded( List<unsigned> &initialBasis, const List<unsigned> &basicRows );
-    void performLPRelaxationBoundedTightening();
+    void performMILPSolverBoundedTightening();
 
     /*
       Update the preferred direction to perform fixes and the preferred order

@@ -17,9 +17,12 @@
 '''
 import warnings
 from .MarabouCore import *
-from .MarabouNetworkNNet import *
 
 # Import parsers if required packages are installed
+try:
+    from .MarabouNetworkNNet import *
+except ImportError:
+    warnings.warn("NNet parser is unavailable because the numpy package is not installed")
 try:
     from .MarabouNetworkTF import *
 except ImportError:

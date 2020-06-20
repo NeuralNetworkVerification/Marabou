@@ -766,8 +766,8 @@ void Engine::removeRedundantEquations( const double *constraintMatrix )
     AutoConstraintMatrixAnalyzer analyzer;
     analyzer->analyze( constraintMatrix, m, n );
 
-    log( Stringf( "Number of redundant rows: %u out of %u",
-                  analyzer->getRedundantRows().size(), m ) );
+    ENGINE_LOG( Stringf( "Number of redundant rows: %u out of %u",
+                  analyzer->getRedundantRows().size(), m ).ascii() );
 
     // Step 2: remove any equations corresponding to redundant rows
     Set<unsigned> redundantRows = analyzer->getRedundantRows();
@@ -1052,7 +1052,7 @@ void Engine::initializeNetworkLevelReasoning()
 
 bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 {
-    log( "processInputQuery starting\n" );
+    ENGINE_LOG( "processInputQuery starting\n" );
 
     struct timespec start = TimeUtils::sampleMicro();
 
@@ -1090,14 +1090,14 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         delete[] constraintMatrix;
 
-        performLPRelaxationBoundedTightening();
+        performMILPSolverBoundedTightening();
 
         struct timespec end = TimeUtils::sampleMicro();
         _statistics.setPreprocessingTime( TimeUtils::timePassed( start, end ) );
     }
     catch ( const InfeasibleQueryException & )
     {
-        log( "processInputQuery done\n" );
+        ENGINE_LOG( "processInputQuery done\n" );
 
         struct timespec end = TimeUtils::sampleMicro();
         _statistics.setPreprocessingTime( TimeUtils::timePassed( start, end ) );
@@ -1106,18 +1106,30 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         return false;
     }
 
-    log( "processInputQuery done\n" );
+    ENGINE_LOG( "processInputQuery done\n" );
 
     _smtCore.storeDebuggingSolution( _preprocessedQuery._debuggingSolution );
     return true;
 }
 
-void Engine::performLPRelaxationBoundedTightening()
+void Engine::performMILPSolverBoundedTightening()
 {
     if ( _networkLevelReasoner && Options::get()->gurobiEnabled() )
     {
         _networkLevelReasoner->obtainCurrentBounds();
-        _networkLevelReasoner->lpRelaxationPropagation();
+
+        switch ( GlobalConfiguration::MILP_SOLVER_BOUND_TIGHTENING_TYPE )
+        {
+        case GlobalConfiguration::LP_RELAXATION:
+        case GlobalConfiguration::LP_RELAXATION_INCREMENTAL:
+            _networkLevelReasoner->lpRelaxationPropagation();
+            break;
+
+        case GlobalConfiguration::MILP_ENCODING:
+        case GlobalConfiguration::MILP_ENCODING_INCREMENTAL:
+            _networkLevelReasoner->MILPPropagation();
+            break;
+        }
 
         List<Tightening> tightenings;
         _networkLevelReasoner->getConstraintTightenings( tightenings );
@@ -1130,6 +1142,8 @@ void Engine::performLPRelaxationBoundedTightening()
             else if ( tightening._type == Tightening::UB )
                 _tableau->tightenUpperBound( tightening._variable, tightening._value );
         }
+
+        applyAllValidConstraintCaseSplits();
     }
 }
 
@@ -1223,15 +1237,15 @@ void Engine::storeState( EngineState &state, bool storeAlsoTableauState ) const
 
 void Engine::restoreState( const EngineState &state )
 {
-    log( "Restore state starting" );
+    ENGINE_LOG( "Restore state starting" );
 
     if ( !state._tableauStateIsStored )
         throw MarabouError( MarabouError::RESTORING_ENGINE_FROM_INVALID_STATE );
 
-    log( "\tRestoring tableau state" );
+    ENGINE_LOG( "\tRestoring tableau state" );
     _tableau->restoreState( state._tableauState );
 
-    log( "\tRestoring constraint states" );
+    ENGINE_LOG( "\tRestoring constraint states" );
     for ( auto &constraint : _plConstraints )
     {
         if ( !state._plConstraintToState.exists( constraint ) )
@@ -1355,8 +1369,8 @@ bool Engine::attemptToMergeVariables( unsigned x1, unsigned x2 )
 
 void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 {
-    log( "" );
-    log( "Applying a split. " );
+    ENGINE_LOG( "" );
+    ENGINE_LOG( "Applying a split. " );
 
     DEBUG( _tableau->verifyInvariants() );
 
@@ -1460,18 +1474,18 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 
         if ( bound._type == Tightening::LB )
         {
-            log( Stringf( "x%u: lower bound set to %.3lf", variable, bound._value ) );
+            ENGINE_LOG( Stringf( "x%u: lower bound set to %.3lf", variable, bound._value ).ascii() );
             _tableau->tightenLowerBound( variable, bound._value );
         }
         else
         {
-            log( Stringf( "x%u: upper bound set to %.3lf", variable, bound._value ) );
+            ENGINE_LOG( Stringf( "x%u: upper bound set to %.3lf", variable, bound._value ).ascii() );
             _tableau->tightenUpperBound( variable, bound._value );
         }
     }
 
     DEBUG( _tableau->verifyInvariants() );
-    log( "Done with split\n" );
+    ENGINE_LOG( "Done with split\n" );
 }
 
 void Engine::applyAllRowTightenings()
@@ -1537,8 +1551,8 @@ bool Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
     {
         String constraintString;
         constraint->dump( constraintString );
-        log( Stringf( "A constraint has become valid. Dumping constraint: %s",
-                      constraintString.ascii() ) );
+        ENGINE_LOG( Stringf( "A constraint has become valid. Dumping constraint: %s",
+                      constraintString.ascii() ).ascii() );
 
         constraint->setActiveConstraint( false );
         PiecewiseLinearCaseSplit validSplit = constraint->getValidCaseSplit();
@@ -1690,12 +1704,6 @@ const Statistics *Engine::getStatistics() const
 InputQuery *Engine::getInputQuery()
 {
     return &_preprocessedQuery;
-}
-
-void Engine::log( const String &message )
-{
-    if ( GlobalConfiguration::ENGINE_LOGGING )
-        printf( "Engine: %s\n", message.ascii() );
 }
 
 void Engine::checkBoundCompliancyWithDebugSolution()
@@ -1926,7 +1934,7 @@ void Engine::checkOverallProgress()
              _lastIterationWithProgress +
              GlobalConfiguration::MAX_ITERATIONS_WITHOUT_PROGRESS )
         {
-            log( "checkOverallProgress detected cycling. Requesting a precision restoration" );
+            ENGINE_LOG( "checkOverallProgress detected cycling. Requesting a precision restoration" );
             _basisRestorationRequired = Engine::STRONG_RESTORATION_NEEDED;
             _lastIterationWithProgress = currentIteration;
         }
@@ -1950,7 +1958,7 @@ void Engine::updateScores()
         // We find the earliest K ReLUs that have not been fixed, update
         // their scores, and pop them to the _candidatePlConstraints
         // K is equal to GlobalConfiguration::RUNTIME_ESTIMATE_THRESHOLD
-        log( Stringf( "Using polarity heuristics..." ) );
+        ENGINE_LOG( Stringf( "Using polarity heuristics..." ).ascii() );
 
         List<PiecewiseLinearConstraint *> constraints =
             _networkLevelReasoner->getConstraintsInTopologicalOrder();
@@ -1989,18 +1997,18 @@ void Engine::updateScores()
 PiecewiseLinearConstraint *Engine::pickSplitPLConstraint()
 {
     _candidatePlConstraints.clear();
-    log( Stringf( "Picking a split PLConstraint..." ) );
+    ENGINE_LOG( Stringf( "Picking a split PLConstraint..." ).ascii() );
     updateScores();
-    log( Stringf( "Done updating scores..." ) );
+    ENGINE_LOG( Stringf( "Done updating scores..." ).ascii() );
     if ( _candidatePlConstraints.empty() )
     {
-        log( Stringf( "Unable to pick using the current strategy..." ) );
+        ENGINE_LOG( Stringf( "Unable to pick using the current strategy..." ).ascii() );
         return NULL;
     }
     else
     {
         auto constraint = *_candidatePlConstraints.begin();
-        log( Stringf( "Picked..." ) );
+        ENGINE_LOG( Stringf( "Picked..." ).ascii() );
         return constraint;
     }
 }

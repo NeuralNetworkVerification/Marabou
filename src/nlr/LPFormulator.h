@@ -18,8 +18,11 @@
 
 #include "GurobiWrapper.h"
 #include "LayerOwner.h"
+#include <climits>
 
 namespace NLR {
+
+#define LPFormulator_LOG(x, ...) LOG(GlobalConfiguration::PREPROCESSOR_LOGGING, "LP Preprocessor: %s\n", x)
 
 class LPFormulator
 {
@@ -32,12 +35,43 @@ public:
     LPFormulator( LayerOwner *layerOwner );
     ~LPFormulator();
 
+    /*
+      Perform bound tightening based on LP-relaxation. Use these calls
+      if the LPFormulator is used in stand-alone mode. The process can
+      also be performed incrementally, which means that the underlying
+      LP model is adjusted from the previous call, instead of being
+      constructed from scratch
+    */
     void optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> &layers );
+    void optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned, Layer *> &layers );
+
+    /*
+      When optimizing, we compute lower and upper bounds for each
+      varibale. If a cutoff value is set, once one of these bounds
+      crosses the cutoff value we do not attempt to optimize further
+    */
+    void setCutoff( double cutoff );
+
+    /*
+      Calls for creating an LP relaxation instance and solving it for
+      a particular variable. These calls are useful if invoked as part
+      of a larger procedure, e.g. as part of a MILP-based bound
+      tightening
+    */
+    void createLPRelaxation( const Map<unsigned, Layer *> &layers,
+                             GurobiWrapper &gurobi,
+                             unsigned lastLayer = UINT_MAX);
+
+    double solveLPRelaxation( const Map<unsigned, Layer *> &layers,
+                              MinOrMax minOrMax,
+                              String variableName,
+                              unsigned lastLayer = UINT_MAX );
+    void addLayerToModel( GurobiWrapper &gurobi, const Layer *layer );
 
 private:
     LayerOwner *_layerOwner;
-
-    void createLPRelaxation( const Map<unsigned, Layer *> &layers, GurobiWrapper &gurobi );
+    bool _cutoffInUse;
+    double _cutoffValue;
 
     void addInputLayerToLpRelaxation( GurobiWrapper &gurobi,
                                       const Layer *layer );
@@ -47,12 +81,6 @@ private:
 
     void addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi,
                                             const Layer *layer );
-
-    double solveLPRelaxation( const Map<unsigned, Layer *> &layers,
-                              MinOrMax minOrMax,
-                              String variableName );
-
-    static void log( const String &message );
 };
 
 } // namespace NLR

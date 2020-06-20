@@ -105,6 +105,7 @@ public:
     void intervalArithmeticBoundPropagation();
     void symbolicBoundPropagation();
     void lpRelaxationPropagation();
+    void MILPPropagation();
 
     void receiveTighterBound( Tightening tightening );
     void getConstraintTightenings( List<Tightening> &tightenings );
@@ -143,8 +144,6 @@ private:
     List<Tightening> _boundTightenings;
 
     void freeMemoryIfNeeded();
-
-    static void log( const String &message );
 
     List<PiecewiseLinearConstraint *> _constraintsInTopologicalOrder;
 };
