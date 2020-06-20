@@ -29,8 +29,8 @@ try:
     import MarabouNetworkNNetExtended
     import MarabouCore
 except ImportError:
-    import maraboupy.MarabouNetworkNNetExtended
-    import maraboupy.MarabouCore    
+    from maraboupy import MarabouNetworkNNetExtended
+    from maraboupy import MarabouCore    
 
 class MarabouNetworkNNetIPQ(MarabouNetworkNNetExtended.MarabouNetworkNNetExtended):
     """
