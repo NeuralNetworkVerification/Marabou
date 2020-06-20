@@ -1,5 +1,5 @@
-import os
-os.chdir('..')
+import sys
+sys.path.append('../maraboupy/')
 
 try:
     from MarabouNetworkNNetExtensions import *
