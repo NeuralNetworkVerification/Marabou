@@ -22,8 +22,10 @@
 '''
 
 
-
-import MarabouNetworkNNet
+try:
+    import MarabouNetworkNNet
+except ImportError:
+    import maraboupy.MarabouNetworkNNet
 
 class MarabouNetworkNNetExtended(MarabouNetworkNNet.MarabouNetworkNNet):
 
