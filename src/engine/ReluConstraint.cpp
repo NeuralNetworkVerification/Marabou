@@ -26,7 +26,6 @@
 #include "Statistics.h"
 #include "TableauRow.h"
 
-
 #ifdef _WIN32
 #define __attribute__(x)
 #endif
