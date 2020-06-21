@@ -18,7 +18,6 @@
 
 #include "MatrixMultiplication.h"
 
-
 class MatrixMultiplicationTestSuite : public CxxTest::TestSuite
 {
 public:

@@ -1797,7 +1797,7 @@ void Engine::performSymbolicBoundTightening()
         }
     }
 
-    struct timespec end = TimeUtils::sampleMicro();	
+    struct timespec end = TimeUtils::sampleMicro();
     _statistics.addTimeForSymbolicBoundTightening( TimeUtils::timePassed( start, end ) );	
     _statistics.incNumTighteningsFromSymbolicBoundTightening( numTightenedBounds );	
 }
