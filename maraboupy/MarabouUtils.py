@@ -16,7 +16,10 @@
  **/
 '''
 
-from maraboupy import MarabouCore
+try:
+    from maraboupy import MarabouCore
+except ImportError:
+    import MarabouCore
 
 class Equation:
     """
