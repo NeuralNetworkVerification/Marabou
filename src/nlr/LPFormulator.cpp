@@ -40,6 +40,10 @@ double LPFormulator::solveLPRelaxation( const Map<unsigned, Layer *> &layers,
                                         unsigned lastLayer )
 {
     GurobiWrapper gurobi;
+
+    if ( _cutoffInUse )
+        gurobi.setCutoff( _cutoffValue );
+
     createLPRelaxation( layers, gurobi, lastLayer );
 
     List<GurobiWrapper::Term> terms;
@@ -55,6 +59,9 @@ double LPFormulator::solveLPRelaxation( const Map<unsigned, Layer *> &layers,
     if ( gurobi.infeasbile() )
         throw InfeasibleQueryException();
 
+    if ( gurobi.cutoffOccurred() )
+        return _cutoffValue;
+
     if ( !gurobi.optimal() )
         throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
 
@@ -67,6 +74,10 @@ double LPFormulator::solveLPRelaxation( const Map<unsigned, Layer *> &layers,
 void LPFormulator::optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned, Layer *> &layers )
 {
     GurobiWrapper gurobi;
+
+    if ( _cutoffInUse )
+        gurobi.setCutoff( _cutoffValue );
+
     List<GurobiWrapper::Term> terms;
     Map<String, double> dontCare;
     double lb = 0;
@@ -119,10 +130,17 @@ void LPFormulator::optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned
             if ( gurobi.infeasbile() )
                 throw InfeasibleQueryException();
 
-            if ( !gurobi.optimal() )
-                throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
+            if ( gurobi.cutoffOccurred() )
+            {
+                ub = _cutoffValue;
+            }
+            else
+            {
+                if ( !gurobi.optimal() )
+                    throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
 
-            gurobi.extractSolution( dontCare, ub );
+                gurobi.extractSolution( dontCare, ub );
+            }
 
             // If the bound is tighter, store it
             if ( ub < currentUb )
@@ -153,10 +171,17 @@ void LPFormulator::optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned
             if ( gurobi.infeasbile() )
                 throw InfeasibleQueryException();
 
-            if ( !gurobi.optimal() )
-                throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
+            if ( gurobi.cutoffOccurred() )
+            {
+                lb = _cutoffValue;
+            }
+            else
+            {
+                if ( !gurobi.optimal() )
+                    throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
 
-            gurobi.extractSolution( dontCare, lb );
+                gurobi.extractSolution( dontCare, lb );
+            }
 
             // If the bound is tighter, store it
             if ( lb > currentLb )

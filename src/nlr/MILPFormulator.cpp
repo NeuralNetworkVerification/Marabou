@@ -47,6 +47,9 @@ void MILPFormulator::optimizeBoundsWithIncrementalMILPEncoding( const Map<unsign
 
     GurobiWrapper gurobi;
 
+    if ( _cutoffInUse )
+        gurobi.setCutoff( _cutoffValue );
+
     double newLb;
     double newUb;
     double currentLb;
@@ -326,6 +329,10 @@ double MILPFormulator::solveMILPEncoding( const Map<unsigned, Layer *> &layers,
                                           unsigned lastLayer )
 {
     GurobiWrapper gurobi;
+
+    if ( _cutoffInUse )
+        gurobi.setCutoff( _cutoffValue );
+
     createMILPEncoding( layers, gurobi, lastLayer );
 
     List<GurobiWrapper::Term> terms;
@@ -340,6 +347,9 @@ double MILPFormulator::solveMILPEncoding( const Map<unsigned, Layer *> &layers,
 
     if ( gurobi.infeasbile() )
         throw InfeasibleQueryException();
+
+    if ( gurobi.cutoffOccurred() )
+        return _cutoffValue;
 
     if ( !gurobi.optimal() )
         throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
@@ -407,11 +417,18 @@ bool MILPFormulator::tightenUpperBound( GurobiWrapper &gurobi,
     if ( gurobi.infeasbile() )
         throw InfeasibleQueryException();
 
-    if ( !gurobi.optimal() )
-        throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
+    if ( gurobi.cutoffOccurred() )
+    {
+        newUb = _cutoffValue;
+    }
+    else
+    {
+        if ( !gurobi.optimal() )
+            throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
 
-    Map<String, double> dontCare;
-    gurobi.extractSolution( dontCare, newUb );
+        Map<String, double> dontCare;
+        gurobi.extractSolution( dontCare, newUb );
+    }
 
     // If the bound is tighter, store it
     if ( newUb < currentUb )
@@ -458,11 +475,18 @@ bool MILPFormulator::tightenLowerBound( GurobiWrapper &gurobi,
     if ( gurobi.infeasbile() )
         throw InfeasibleQueryException();
 
-    if ( !gurobi.optimal() )
-        throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
+    if ( gurobi.cutoffOccurred() )
+    {
+        newLb = _cutoffValue;
+    }
+    else
+    {
+        if ( !gurobi.optimal() )
+            throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
 
-    Map<String, double> dontCare;
-    gurobi.extractSolution( dontCare, newLb );
+        Map<String, double> dontCare;
+        gurobi.extractSolution( dontCare, newLb );
+    }
 
     // If the bound is tighter, store it
     if ( newLb > currentLb )

@@ -75,11 +75,23 @@ public:
     void setCost( const List<Term> &terms );
     void setObjective( const List<Term> &terms );
 
+    // Set a cutoff value for the objective function. For example, if
+    // maximizing x with cutoff value 0, Gurobi will return the
+    // optimal value if greater than 0, and 0 if the optimal value is
+    // less than 0.
+    void setCutoff( double cutoff );
+
     // Return true iff an optimal solution has been found
     bool optimal();
 
+    // Return true iff the cutoff value was used
+    bool cutoffOccurred();
+
     // Return true iff the instance is infeasible
     bool infeasbile();
+
+    // Specify a time limit, in seconds
+    void setTimeLimit( double seconds );
 
     // Solve and extract the solution
     void solve();

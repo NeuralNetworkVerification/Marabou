@@ -119,6 +119,11 @@ void GurobiWrapper::setUpperBound( String name, double ub )
     var.set( GRB_DoubleAttr_UB, ub );
 }
 
+void GurobiWrapper::setCutoff( double cutoff )
+{
+    _model->set( GRB_DoubleParam_Cutoff, cutoff );
+}
+
 void GurobiWrapper::addLeqConstraint( const List<Term> &terms, double scalar )
 {
     addConstraint( terms, scalar, GRB_LESS_EQUAL );
@@ -204,6 +209,11 @@ void GurobiWrapper::setObjective( const List<Term> &terms )
     }
 }
 
+void GurobiWrapper::setTimeLimit( double seconds )
+{
+    _model->set( GRB_DoubleParam_TimeLimit, seconds );
+}
+
 void GurobiWrapper::solve()
 {
     try
@@ -221,7 +231,12 @@ void GurobiWrapper::solve()
 
 bool GurobiWrapper::optimal()
 {
-    return ( _model->get( GRB_IntAttr_Status ) == GRB_OPTIMAL );
+    return _model->get( GRB_IntAttr_Status ) == GRB_OPTIMAL;
+}
+
+bool GurobiWrapper::cutoffOccurred()
+{
+    return _model->get( GRB_IntAttr_Status ) == GRB_CUTOFF;
 }
 
 bool GurobiWrapper::infeasbile()
