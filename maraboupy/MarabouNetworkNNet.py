@@ -17,7 +17,7 @@
 '''
 
 try:
-    from .MarabouUtils import *
+    from maraboupy.MarabouUtils import *
     from maraboupy import MarabouCore
     from maraboupy import MarabouNetwork
 except ImportError:
