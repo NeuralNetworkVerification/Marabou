@@ -148,7 +148,7 @@ def computeRandomOutputsToLayer(marabou_nnet: MarabouNetworkNNet,layer: int, N: 
         return output_set
 
 
-def test_split_network(nnet_object: MarabouNetworkNNet, nnet_object1: MarabouNetworkNNet, nnet_object2: MarabouNetworkNNet, N = 1000, layer = -1):
+def split_network_test(nnet_object: MarabouNetworkNNet, nnet_object1: MarabouNetworkNNet, nnet_object2: MarabouNetworkNNet, N = 1000, layer = -1):
     '''
     Runs N random inputs through the first network and subsequently through the two networks smaller (1 and 2) 
     that supposedly were created by splitting the first one, in several different ways.
@@ -163,7 +163,7 @@ def test_split_network(nnet_object: MarabouNetworkNNet, nnet_object1: MarabouNet
     '''
     for i in range(N):
             inputs = createRandomInputsForNetwork(nnet_object)
-
+            
             output1 = nnet_object1.evaluateNetworkToLayer(inputs, last_layer=-1, normalize_inputs=False,
                                                           normalize_outputs=False, activate_output_layer=True)
 
