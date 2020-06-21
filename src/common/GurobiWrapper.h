@@ -149,10 +149,12 @@ public:
     void addEqConstraint( const List<Term> &, double ) {}
     void setCost( const List<Term> & ) {}
     void setObjective( const List<Term> & ) {}
+    void setCutoff( double ) {};
     void solve() {}
     void extractSolution( Map<String, double> &, double & ) {}
     void reset() {}
     bool optimal() { return true; }
+    bool cutoffOccurred() { return false; };
     bool infeasbile() { return false; };
 
     void dump() {}
