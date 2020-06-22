@@ -901,12 +901,14 @@ void Layer::computeSymbolicBoundsForWeightedSum()
 
         // Restore the zero bound on eliminated neurons
         unsigned index;
-        for ( const auto &eliminated : _eliminatedNeurons) {
-                for ( unsigned i = 0; i < _inputLayerSize; ++i ) {
-                    index = i * _size + eliminated.first;
-                    _symbolicLb[index] = 0;
-                    _symbolicUb[index] = 0;
-                }
+        for ( const auto &eliminated : _eliminatedNeurons )
+        {
+            for ( unsigned i = 0; i < _inputLayerSize; ++i )
+            {
+                index = i * _size + eliminated.first;
+                _symbolicLb[index] = 0;
+                _symbolicUb[index] = 0;
+            }
         }
 
         /*
