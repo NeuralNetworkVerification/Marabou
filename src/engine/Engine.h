@@ -474,6 +474,8 @@ private:
       to handle case splits
     */
     void updateDirections();
+
+    unsigned _sbtRound;
 };
 
 #endif // __Engine_h__
