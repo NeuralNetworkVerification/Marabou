@@ -201,6 +201,7 @@ if (${ENABLE_GUROBI})
 endif()
 
 if (${ENABLE_OPENBLAS} AND NOT MSVC)
+    message(STATUS "using openblas for matrix multiplication")
     add_compile_definitions(ENABLE_OPENBLAS)
     #OpenBLAS
     if(NOT EXISTS "${OPENBLAS_DIR}/installed/lib/libopenblas.a")
