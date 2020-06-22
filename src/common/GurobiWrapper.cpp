@@ -17,6 +17,7 @@
 
 #include "Debug.h"
 #include "GurobiWrapper.h"
+#include "MStringf.h"
 #include "gurobi_c.h"
 
 #include <iostream>
@@ -63,25 +64,59 @@ void GurobiWrapper::freeMemoryIfNeeded()
 
 void GurobiWrapper::reset()
 {
-    freeMemoryIfNeeded();
-    _environment = new GRBEnv;
-    _model = new GRBModel( *_environment );
+    _model->reset();
 }
 
-void GurobiWrapper::addVariable( String name, double lb, double ub )
+void GurobiWrapper::addVariable( String name, double lb, double ub, VariableType type )
 {
     ASSERT( !_nameToVariable.exists( name ) );
 
-    GRBVar *newVar = new GRBVar;
-    double objectiveValue = 0;
-    *newVar = _model->addVar( lb,
-                              ub,
-                              objectiveValue,
-                              GRB_CONTINUOUS,
-                              name.ascii() );
+    char variableType = GRB_CONTINUOUS;
+    switch ( type )
+    {
+    case CONTINUOUS:
+        variableType = GRB_CONTINUOUS;
+        break;
 
+    case BINARY:
+        variableType = GRB_BINARY;
+        break;
 
-    _nameToVariable[name] = newVar;
+    default:
+        break;
+    }
+
+    try
+    {
+        GRBVar *newVar = new GRBVar;
+        double objectiveValue = 0;
+        *newVar = _model->addVar( lb,
+                                  ub,
+                                  objectiveValue,
+                                  variableType,
+                                  name.ascii() );
+
+        _nameToVariable[name] = newVar;
+    }
+    catch ( GRBException e )
+    {
+        throw CommonError( CommonError::GUROBI_EXCEPTION,
+                           Stringf( "Gurobi exception. Gurobi Code: %u, message: %s\n",
+                                    e.getErrorCode(),
+                                    e.getMessage().c_str() ).ascii() );
+    }
+}
+
+void GurobiWrapper::setLowerBound( String name, double lb )
+{
+    GRBVar var = _model->getVarByName( name.ascii() );
+    var.set( GRB_DoubleAttr_LB, lb );
+}
+
+void GurobiWrapper::setUpperBound( String name, double ub )
+{
+    GRBVar var = _model->getVarByName( name.ascii() );
+    var.set( GRB_DoubleAttr_UB, ub );
 }
 
 void GurobiWrapper::addLeqConstraint( const List<Term> &terms, double scalar )
@@ -101,46 +136,87 @@ void GurobiWrapper::addEqConstraint( const List<Term> &terms, double scalar )
 
 void GurobiWrapper::addConstraint( const List<Term> &terms, double scalar, char sense )
 {
-    GRBLinExpr constraint;
-
-    for ( const auto &term : terms )
+    try
     {
-        ASSERT( _nameToVariable.exists( term._variable ) );
-        constraint += GRBLinExpr( *_nameToVariable[term._variable], term._coefficient );
-    }
+        GRBLinExpr constraint;
 
-    _model->addConstr( constraint, sense, scalar );
+
+        for ( const auto &term : terms )
+        {
+            ASSERT( _nameToVariable.exists( term._variable ) );
+            constraint += GRBLinExpr( *_nameToVariable[term._variable], term._coefficient );
+        }
+
+        _model->addConstr( constraint, sense, scalar );
+    }
+    catch ( GRBException e )
+    {
+        throw CommonError( CommonError::GUROBI_EXCEPTION,
+                           Stringf( "Gurobi exception. Gurobi Code: %u, message: %s\n",
+                                    e.getErrorCode(),
+                                    e.getMessage().c_str() ).ascii() );
+    }
 }
 
 void GurobiWrapper::setCost( const List<Term> &terms )
 {
-    GRBLinExpr cost;
-
-    for ( const auto &term : terms )
+    try
     {
-        ASSERT( _nameToVariable.exists( term._variable ) );
-        cost += GRBLinExpr( *_nameToVariable[term._variable], term._coefficient );
-    }
+        GRBLinExpr cost;
 
-    _model->setObjective( cost, GRB_MINIMIZE );
+        for ( const auto &term : terms )
+        {
+            ASSERT( _nameToVariable.exists( term._variable ) );
+            cost += GRBLinExpr( *_nameToVariable[term._variable], term._coefficient );
+        }
+
+        _model->setObjective( cost, GRB_MINIMIZE );
+    }
+    catch ( GRBException e )
+    {
+        throw CommonError( CommonError::GUROBI_EXCEPTION,
+                           Stringf( "Gurobi exception. Gurobi Code: %u, message: %s\n",
+                                    e.getErrorCode(),
+                                    e.getMessage().c_str() ).ascii() );
+    }
 }
 
 void GurobiWrapper::setObjective( const List<Term> &terms )
 {
-    GRBLinExpr cost;
-
-    for ( const auto &term : terms )
+    try
     {
-        ASSERT( _nameToVariable.exists( term._variable ) );
-        cost += GRBLinExpr( *_nameToVariable[term._variable], term._coefficient );
-    }
+        GRBLinExpr cost;
 
-    _model->setObjective( cost, GRB_MAXIMIZE );
+        for ( const auto &term : terms )
+        {
+            ASSERT( _nameToVariable.exists( term._variable ) );
+            cost += GRBLinExpr( *_nameToVariable[term._variable], term._coefficient );
+        }
+
+        _model->setObjective( cost, GRB_MAXIMIZE );
+    }
+    catch ( GRBException e )
+    {
+        throw CommonError( CommonError::GUROBI_EXCEPTION,
+                           Stringf( "Gurobi exception. Gurobi Code: %u, message: %s\n",
+                                    e.getErrorCode(),
+                                    e.getMessage().c_str() ).ascii() );
+    }
 }
 
 void GurobiWrapper::solve()
 {
-    _model->optimize();
+    try
+    {
+        _model->optimize();
+    }
+    catch ( GRBException e )
+    {
+        throw CommonError( CommonError::GUROBI_EXCEPTION,
+                           Stringf( "Gurobi exception. Gurobi Code: %u, message: %s\n",
+                                    e.getErrorCode(),
+                                    e.getMessage().c_str() ).ascii() );
+    }
 }
 
 bool GurobiWrapper::optimal()
@@ -155,12 +231,27 @@ bool GurobiWrapper::infeasbile()
 
 void GurobiWrapper::extractSolution( Map<String, double> &values, double &costOrObjective )
 {
-    values.clear();
+    try
+    {
+        values.clear();
 
-    for ( const auto &variable : _nameToVariable )
-        values[variable.first] = variable.second->get( GRB_DoubleAttr_X );
+        for ( const auto &variable : _nameToVariable )
+            values[variable.first] = variable.second->get( GRB_DoubleAttr_X );
 
-    costOrObjective = _model->get( GRB_DoubleAttr_ObjVal );
+        costOrObjective = _model->get( GRB_DoubleAttr_ObjVal );
+    }
+    catch ( GRBException e )
+    {
+        throw CommonError( CommonError::GUROBI_EXCEPTION,
+                           Stringf( "Gurobi exception. Gurobi Code: %u, message: %s\n",
+                                    e.getErrorCode(),
+                                    e.getMessage().c_str() ).ascii() );
+    }
+}
+
+void GurobiWrapper::dumpModel( String name )
+{
+    _model->write( name.ascii() );
 }
 
 #endif // ENABLE_GUROBI

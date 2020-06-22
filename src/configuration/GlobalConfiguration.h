@@ -160,6 +160,23 @@ public:
     static const bool EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION;
 
     /*
+      MILP solver bound tighening options
+    */
+    enum MILPSolverBoundTighteningType {
+        // Only encode pure linear constraints in the underlying
+        // solver, in a way that over-approximates the query
+        LP_RELAXATION = 0,
+        LP_RELAXATION_INCREMENTAL = 1,
+        // Encode linear and integer constraints in the underlying
+        // solver, in a way that completely captures the query but is
+        // more expensive to solve
+        MILP_ENCODING = 2,
+        MILP_ENCODING_INCREMENTAL = 3,
+    };
+
+    static const MILPSolverBoundTighteningType MILP_SOLVER_BOUND_TIGHTENING_TYPE;
+
+    /*
       Symbolic bound tightening options
     */
 
