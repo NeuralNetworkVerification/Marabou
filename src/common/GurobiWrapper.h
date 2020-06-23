@@ -81,14 +81,20 @@ public:
     // less than 0.
     void setCutoff( double cutoff );
 
-    // Return true iff an optimal solution has been found
+    // Returns true iff an optimal solution has been found
     bool optimal();
 
-    // Return true iff the cutoff value was used
+    // Returns true iff the cutoff value was used
     bool cutoffOccurred();
 
-    // Return true iff the instance is infeasible
+    // Returns true iff the instance is infeasible
     bool infeasbile();
+
+    // Returns true iff the instance timed out
+    bool timeout();
+
+    // Returns true iff a feasible solution has been found
+    bool haveFeasibleSolution();
 
     // Specify a time limit, in seconds
     void setTimeLimit( double seconds );
@@ -156,6 +162,8 @@ public:
     bool optimal() { return true; }
     bool cutoffOccurred() { return false; };
     bool infeasbile() { return false; };
+    bool timeout() { return false; };
+    bool haveFeasibleSolution() { return true; };
 
     void dump() {}
 };

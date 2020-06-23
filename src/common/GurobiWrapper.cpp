@@ -241,7 +241,17 @@ bool GurobiWrapper::cutoffOccurred()
 
 bool GurobiWrapper::infeasbile()
 {
-    return ( _model->get( GRB_IntAttr_Status ) == GRB_INFEASIBLE );
+    return _model->get( GRB_IntAttr_Status ) == GRB_INFEASIBLE;
+}
+
+bool GurobiWrapper::timeout()
+{
+    return _model->get( GRB_IntAttr_Status ) == GRB_TIME_LIMIT;
+}
+
+bool GurobiWrapper::haveFeasibleSolution()
+{
+    return _model->get( GRB_IntAttr_SolCount ) > 0;
 }
 
 void GurobiWrapper::extractSolution( Map<String, double> &values, double &costOrObjective )

@@ -55,15 +55,13 @@ private:
                             Layer *layer,
                             unsigned neuron,
                             unsigned variable,
-                            double &currentLb,
-                            double &newLb );
+                            double &currentLb );
 
     bool tightenUpperBound( GurobiWrapper &gurobi,
                             Layer *layer,
                             unsigned neuron,
                             unsigned variable,
-                            double &currentUb,
-                            double &newUb );
+                            double &currentUb );
 
     void createMILPEncoding( const Map<unsigned, Layer *> &layers,
                              GurobiWrapper &gurobi,

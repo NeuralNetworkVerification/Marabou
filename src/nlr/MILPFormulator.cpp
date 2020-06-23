@@ -50,8 +50,8 @@ void MILPFormulator::optimizeBoundsWithIncrementalMILPEncoding( const Map<unsign
     if ( _cutoffInUse )
         gurobi.setCutoff( _cutoffValue );
 
-    double newLb;
-    double newUb;
+    gurobi.setTimeLimit( GlobalConfiguration::MILPSolverTimeoutValueInSeconds );
+
     double currentLb;
     double currentUb;
     List<GurobiWrapper::Term> terms;
@@ -100,11 +100,11 @@ void MILPFormulator::optimizeBoundsWithIncrementalMILPEncoding( const Map<unsign
             terms.append( GurobiWrapper::Term( 1, variableName ) );
 
             // Maximize, using just the LP relaxation for the current layer
-            if ( tightenUpperBound( gurobi, layer, j, variable, currentUb, newUb ) )
+            if ( tightenUpperBound( gurobi, layer, j, variable, currentUb ) )
                 continue;
 
             // Minimize, using just the LP relaxation for the current layer
-            if ( tightenLowerBound( gurobi, layer, j, variable, currentLb, newLb ) )
+            if ( tightenLowerBound( gurobi, layer, j, variable, currentLb ) )
                 continue;
 
             // If the current layer is a weighted sum layer, the MILP
@@ -117,11 +117,11 @@ void MILPFormulator::optimizeBoundsWithIncrementalMILPEncoding( const Map<unsign
             addNeuronToModel( gurobi, layer, j );
 
             // Maximize, using just the exact MILP encoding
-            if ( tightenUpperBound( gurobi, layer, j, variable, currentUb, newUb ) )
+            if ( tightenUpperBound( gurobi, layer, j, variable, currentUb ) )
                 continue;
 
             // Minimize, using just the exact MILP encoding
-            if ( tightenLowerBound( gurobi, layer, j, variable, currentLb, newLb ) )
+            if ( tightenLowerBound( gurobi, layer, j, variable, currentLb ) )
                 continue;
         }
     }
@@ -333,6 +333,8 @@ double MILPFormulator::solveMILPEncoding( const Map<unsigned, Layer *> &layers,
     if ( _cutoffInUse )
         gurobi.setCutoff( _cutoffValue );
 
+    gurobi.setTimeLimit( GlobalConfiguration::MILPSolverTimeoutValueInSeconds );
+
     createMILPEncoding( layers, gurobi, lastLayer );
 
     List<GurobiWrapper::Term> terms;
@@ -351,8 +353,11 @@ double MILPFormulator::solveMILPEncoding( const Map<unsigned, Layer *> &layers,
     if ( gurobi.cutoffOccurred() )
         return _cutoffValue;
 
-    if ( !gurobi.optimal() )
+    if ( !gurobi.optimal() && !gurobi.timeout() )
         throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
+
+    if ( gurobi.timeout() && !gurobi.haveFeasibleSolution() )
+        return minOrMax == MAX ? FloatUtils::infinity() : FloatUtils::negativeInfinity();
 
     Map<String, double> dontCare;
     double result = 0;
@@ -402,9 +407,10 @@ bool MILPFormulator::tightenUpperBound( GurobiWrapper &gurobi,
                                         Layer *layer,
                                         unsigned neuron,
                                         unsigned variable,
-                                        double &currentUb,
-                                        double &newUb )
+                                        double &currentUb )
 {
+    double newUb = FloatUtils::infinity();
+
     Stringf variableName( "x%u", variable );
 
     List<GurobiWrapper::Term> terms;
@@ -423,8 +429,11 @@ bool MILPFormulator::tightenUpperBound( GurobiWrapper &gurobi,
     }
     else
     {
-        if ( !gurobi.optimal() )
+        if ( !gurobi.optimal() && !gurobi.timeout() )
             throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
+
+        if ( gurobi.timeout() && !gurobi.haveFeasibleSolution() )
+            return false;
 
         Map<String, double> dontCare;
         gurobi.extractSolution( dontCare, newUb );
@@ -461,9 +470,9 @@ bool MILPFormulator::tightenLowerBound( GurobiWrapper &gurobi,
                                         Layer *layer,
                                         unsigned neuron,
                                         unsigned variable,
-                                        double &currentLb,
-                                        double &newLb )
+                                        double &currentLb )
 {
+    double newLb = FloatUtils::negativeInfinity();
     Stringf variableName( "x%u", variable );
 
     List<GurobiWrapper::Term> terms;
@@ -481,8 +490,14 @@ bool MILPFormulator::tightenLowerBound( GurobiWrapper &gurobi,
     }
     else
     {
-        if ( !gurobi.optimal() )
+        if ( !gurobi.optimal() && !gurobi.timeout() )
             throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
+
+        if ( gurobi.timeout() && !gurobi.haveFeasibleSolution() )
+        {
+            newLb = FloatUtils::negativeInfinity();
+            return false;
+        }
 
         Map<String, double> dontCare;
         gurobi.extractSolution( dontCare, newLb );
