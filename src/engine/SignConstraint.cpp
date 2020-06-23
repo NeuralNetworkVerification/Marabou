@@ -457,6 +457,7 @@ void SignConstraint::eliminateVariable( __attribute__((unused)) unsigned variabl
                       ASSERT( _phaseStatus != PHASE_POSITIVE );
                   }
               }
+
           });
     // In a Sign constraint, if a variable is removed the entire constraint can be discarded.
     _haveEliminatedVariables = true;
