@@ -1784,24 +1784,29 @@ void Engine::performSymbolicBoundTightening()
     printf( "Dumping SBT bounds (round %u):\n", _sbtRound );
     ++_sbtRound;
 
+    /* for (unsigned i = 0; i < _tableau->getN(); ++i){ */
+    /*     printf( "\tx%u >= %.5lf\n", i, _tableau->getLowerBound( i ) ); */
+    /*     printf( "\tx%u <= %.5lf\n", i, _tableau->getUpperBound( i ) ); */
+    /* } */
+
+
     for ( const auto &tightening : tightenings )
     {
+
         if ( tightening._type == Tightening::LB &&
-             _tableau->getLowerBound( tightening._variable ) < tightening._value )
+             FloatUtils::gt ( tightening._value, _tableau->getLowerBound( tightening._variable ) ) )
         {
-            printf( "\t(%u) x%u >= %.5lf\n",
-                    numTightenedBounds, tightening._variable, tightening._value );
             _tableau->tightenLowerBound( tightening._variable, tightening._value );
             ++numTightenedBounds;
+            printf( "\tx%u >= %.5lf\n", tightening._variable, tightening._value );
         }
 
         if ( tightening._type == Tightening::UB &&
-             _tableau->getUpperBound( tightening._variable ) > tightening._value )
+             FloatUtils::gt ( tightening._value, _tableau->getUpperBound( tightening._variable ) ) )
         {
-            printf( "\t(%u) x%u <= %.5lf\n",
-                    numTightenedBounds, tightening._variable, tightening._value );
             _tableau->tightenUpperBound( tightening._variable, tightening._value );
             ++numTightenedBounds;
+            printf( "\tx%u <= %.5lf\n", tightening._variable, tightening._value );
         }
     }
     printf( "(Done)\n\n" );
