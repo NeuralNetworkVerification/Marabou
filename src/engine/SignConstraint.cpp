@@ -247,16 +247,21 @@ void SignConstraint::notifyLowerBound( unsigned variable, double bound ) {
     // otherwise - update bound
     _lowerBounds[variable] = bound;
 
-    if (variable == _f && FloatUtils::gt(bound, -1) && _constraintBoundTightener) {
+    if (variable == _f && FloatUtils::gt(bound, -1)) {
         setPhaseStatus(PhaseStatus::PHASE_POSITIVE);
-        _constraintBoundTightener->registerTighterLowerBound(_f, 1);
-        _constraintBoundTightener->registerTighterLowerBound(_b, 0);
-    } else if (variable == _b && !FloatUtils::isNegative(bound) && _constraintBoundTightener)  // if b (input) is >= 0
+        if (_constraintBoundTightener){
+            _constraintBoundTightener->registerTighterLowerBound(_f, 1);
+            _constraintBoundTightener->registerTighterLowerBound(_b, 0);
+        }
+    }
+    else if (variable == _b && !FloatUtils::isNegative(bound))  // if b (input) is >= 0
     {
         setPhaseStatus(PhaseStatus::PHASE_POSITIVE);
-        _constraintBoundTightener->registerTighterLowerBound(_f, 1);
-        _constraintBoundTightener->registerTighterLowerBound(_b, bound);
-
+        if (_constraintBoundTightener)
+        {
+            _constraintBoundTightener->registerTighterLowerBound(_f, 1);
+            _constraintBoundTightener->registerTighterLowerBound(_b, bound);
+        }
     }
 }
 
@@ -272,16 +277,20 @@ void SignConstraint::notifyUpperBound(unsigned variable, double bound) {
     // otherwise - update bound
     _upperBounds[variable] = bound;
 
-    if (variable == _f && FloatUtils::lt(bound, 1) && _constraintBoundTightener ) {
+    if (variable == _f && FloatUtils::lt(bound, 1)) {
         setPhaseStatus(PhaseStatus::PHASE_NEGATIVE);
-        _constraintBoundTightener->registerTighterUpperBound(_f, -1);
-        _constraintBoundTightener->registerTighterUpperBound(_b, 0);
+        if (_constraintBoundTightener){
+            _constraintBoundTightener->registerTighterUpperBound(_f, -1);
+            _constraintBoundTightener->registerTighterUpperBound(_b, 0);
+        }
 
-    } else if (variable == _b && FloatUtils::isNegative(bound) && _constraintBoundTightener )  // if b (input) is < 0
+    } else if (variable == _b && FloatUtils::isNegative(bound))  // if b (input) is < 0
     {
         setPhaseStatus(PhaseStatus::PHASE_NEGATIVE);
-        _constraintBoundTightener->registerTighterUpperBound(_f, -1);
-        _constraintBoundTightener->registerTighterUpperBound(_b, bound);
+        if (_constraintBoundTightener){
+            _constraintBoundTightener->registerTighterUpperBound(_f, -1);
+            _constraintBoundTightener->registerTighterUpperBound(_b, bound);
+        }
 
     }
 }
