@@ -315,7 +315,7 @@ void LPFormulator::addLayerToModel( GurobiWrapper &gurobi, const Layer *layer )
         break;
 
     default:
-        throw NLRError( NLRError::LAYER_TYPE_NOT_SUPPORTED, "MILPFormulator" );
+        throw NLRError( NLRError::LAYER_TYPE_NOT_SUPPORTED, "LPFormulator" );
         break;
     }
 }
