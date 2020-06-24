@@ -164,6 +164,7 @@ public:
     bool infeasbile() { return false; };
     bool timeout() { return false; };
     bool haveFeasibleSolution() { return true; };
+    void setTimeLimit( double ) {};
 
     void dump() {}
 };
