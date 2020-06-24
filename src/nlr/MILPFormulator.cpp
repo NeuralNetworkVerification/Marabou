@@ -47,8 +47,8 @@ void MILPFormulator::optimizeBoundsWithIncrementalMILPEncoding( const Map<unsign
 
     GurobiWrapper gurobi;
 
-    if ( _cutoffInUse )
-        gurobi.setCutoff( _cutoffValue );
+    // if ( _cutoffInUse )
+    //     gurobi.setCutoff( _cutoffValue );
 
     gurobi.setTimeLimit( GlobalConfiguration::MILPSolverTimeoutValueInSeconds );
 
@@ -342,8 +342,8 @@ double MILPFormulator::solveMILPEncoding( const Map<unsigned, Layer *> &layers,
 {
     GurobiWrapper gurobi;
 
-    if ( _cutoffInUse )
-        gurobi.setCutoff( _cutoffValue );
+    // if ( _cutoffInUse )
+    //     gurobi.setCutoff( _cutoffValue );
 
     gurobi.setTimeLimit( GlobalConfiguration::MILPSolverTimeoutValueInSeconds );
 
@@ -365,16 +365,19 @@ double MILPFormulator::solveMILPEncoding( const Map<unsigned, Layer *> &layers,
     if ( gurobi.cutoffOccurred() )
         return _cutoffValue;
 
-    if ( !gurobi.optimal() && !gurobi.timeout() )
-        throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
+    if ( gurobi.optimal() )
+    {
+        Map<String, double> dontCare;
+        double result = 0;
+        gurobi.extractSolution( dontCare, result );
+        return result;
+    }
+    else if ( gurobi.timeout() )
+    {
+        return gurobi.getObjectiveBound();
+    }
 
-    if ( gurobi.timeout() && !gurobi.haveFeasibleSolution() )
-        return minOrMax == MAX ? FloatUtils::infinity() : FloatUtils::negativeInfinity();
-
-    Map<String, double> dontCare;
-    double result = 0;
-    gurobi.extractSolution( dontCare, result );
-    return result;
+    throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
 }
 
 void MILPFormulator::storeUbIfNeeded( Layer *layer, unsigned neuron, unsigned variable, double newUb )
@@ -439,17 +442,22 @@ bool MILPFormulator::tightenUpperBound( GurobiWrapper &gurobi,
     {
         newUb = _cutoffValue;
     }
-    else
+    else if ( gurobi.optimal() )
     {
-        if ( !gurobi.optimal() && !gurobi.timeout() )
-            throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
-
-        if ( gurobi.timeout() && !gurobi.haveFeasibleSolution() )
-            return false;
-
         Map<String, double> dontCare;
         gurobi.extractSolution( dontCare, newUb );
     }
+    else if ( gurobi.timeout() )
+    {
+        newUb = gurobi.getObjectiveBound();
+    }
+    else
+    {
+        throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
+    }
+
+    Map<String, double> dontCare;
+    gurobi.extractSolution( dontCare, newUb );
 
     // If the bound is tighter, store it
     if ( newUb < currentUb )
@@ -493,6 +501,7 @@ bool MILPFormulator::tightenLowerBound( GurobiWrapper &gurobi,
     gurobi.reset();
     gurobi.setCost( terms );
     gurobi.solve();
+
     if ( gurobi.infeasbile() )
         throw InfeasibleQueryException();
 
@@ -500,19 +509,18 @@ bool MILPFormulator::tightenLowerBound( GurobiWrapper &gurobi,
     {
         newLb = _cutoffValue;
     }
-    else
+    else if ( gurobi.optimal() )
     {
-        if ( !gurobi.optimal() && !gurobi.timeout() )
-            throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
-
-        if ( gurobi.timeout() && !gurobi.haveFeasibleSolution() )
-        {
-            newLb = FloatUtils::negativeInfinity();
-            return false;
-        }
-
         Map<String, double> dontCare;
         gurobi.extractSolution( dontCare, newLb );
+    }
+    else if ( gurobi.timeout() )
+    {
+        newLb = gurobi.getObjectiveBound();
+    }
+    else
+    {
+        throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
     }
 
     // If the bound is tighter, store it

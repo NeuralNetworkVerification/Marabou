@@ -99,9 +99,11 @@ public:
     // Specify a time limit, in seconds
     void setTimeLimit( double seconds );
 
-    // Solve and extract the solution
+    // Solve and extract the solution, or the best known bound on the
+    // objective function
     void solve();
     void extractSolution( Map<String, double> &values, double &costOrObjective );
+    double getObjectiveBound();
 
     // Reset the underlying model
     void reset();
@@ -165,7 +167,7 @@ public:
     bool timeout() { return false; };
     bool haveFeasibleSolution() { return true; };
     void setTimeLimit( double ) {};
-
+    double getObjectiveBound() { return 0; };
     void dump() {}
 };
 

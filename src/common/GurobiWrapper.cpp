@@ -274,6 +274,11 @@ void GurobiWrapper::extractSolution( Map<String, double> &values, double &costOr
     }
 }
 
+double GurobiWrapper::getObjectiveBound()
+{
+    return _model->get( GRB_DoubleAttr_ObjBound );
+}
+
 void GurobiWrapper::dumpModel( String name )
 {
     _model->write( name.ascii() );

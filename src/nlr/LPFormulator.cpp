@@ -41,8 +41,8 @@ double LPFormulator::solveLPRelaxation( const Map<unsigned, Layer *> &layers,
 {
     GurobiWrapper gurobi;
 
-    if ( _cutoffInUse )
-        gurobi.setCutoff( _cutoffValue );
+    // if ( _cutoffInUse )
+    //     gurobi.setCutoff( _cutoffValue );
 
     createLPRelaxation( layers, gurobi, lastLayer );
 
@@ -75,8 +75,8 @@ void LPFormulator::optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned
 {
     GurobiWrapper gurobi;
 
-    if ( _cutoffInUse )
-        gurobi.setCutoff( _cutoffValue );
+    // if ( _cutoffInUse )
+    //     gurobi.setCutoff( _cutoffValue );
 
     List<GurobiWrapper::Term> terms;
     Map<String, double> dontCare;
