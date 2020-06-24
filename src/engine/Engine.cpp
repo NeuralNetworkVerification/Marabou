@@ -1802,7 +1802,7 @@ void Engine::performSymbolicBoundTightening()
         }
 
         if ( tightening._type == Tightening::UB &&
-             FloatUtils::gt ( tightening._value, _tableau->getUpperBound( tightening._variable ) ) )
+             FloatUtils::lt ( tightening._value, _tableau->getUpperBound( tightening._variable ) ) )
         {
             _tableau->tightenUpperBound( tightening._variable, tightening._value );
             ++numTightenedBounds;
