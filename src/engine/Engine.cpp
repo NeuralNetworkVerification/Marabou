@@ -47,7 +47,6 @@ Engine::Engine( unsigned verbosity )
     , _verbosity( verbosity )
     , _lastNumVisitedStates( 0 )
     , _lastIterationWithProgress( 0 )
-    , _sbtRound( 0 )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -1781,15 +1780,6 @@ void Engine::performSymbolicBoundTightening()
     List<Tightening> tightenings;
     _networkLevelReasoner->getConstraintTightenings( tightenings );
 
-    printf( "Dumping SBT bounds (round %u):\n", _sbtRound );
-    ++_sbtRound;
-
-    /* for (unsigned i = 0; i < _tableau->getN(); ++i){ */
-    /*     printf( "\tx%u >= %.5lf\n", i, _tableau->getLowerBound( i ) ); */
-    /*     printf( "\tx%u <= %.5lf\n", i, _tableau->getUpperBound( i ) ); */
-    /* } */
-
-
     for ( const auto &tightening : tightenings )
     {
 
@@ -1798,7 +1788,6 @@ void Engine::performSymbolicBoundTightening()
         {
             _tableau->tightenLowerBound( tightening._variable, tightening._value );
             ++numTightenedBounds;
-            printf( "\tx%u >= %.5lf\n", tightening._variable, tightening._value );
         }
 
         if ( tightening._type == Tightening::UB &&
@@ -1806,10 +1795,8 @@ void Engine::performSymbolicBoundTightening()
         {
             _tableau->tightenUpperBound( tightening._variable, tightening._value );
             ++numTightenedBounds;
-            printf( "\tx%u <= %.5lf\n", tightening._variable, tightening._value );
         }
     }
-    printf( "(Done)\n\n" );
 
     struct timespec end = TimeUtils::sampleMicro();
     _statistics.addTimeForSymbolicBoundTightening( TimeUtils::timePassed( start, end ) );
