@@ -82,6 +82,7 @@ void MILPFormulator::optimizeBoundsWithIncrementalMILPEncoding( const Map<unsign
           point we discover a bound that crosses the cutoff value, we
           stop.
         */
+        bool layerRequiresMILP = layerRequiresMILPEncoding( layer );
         for ( unsigned j = 0; j < layer->getSize(); ++j )
         {
             if ( layer->neuronEliminated( j ) )
@@ -91,7 +92,11 @@ void MILPFormulator::optimizeBoundsWithIncrementalMILPEncoding( const Map<unsign
             currentUb = layer->getUb( j );
 
             if ( _cutoffInUse && ( currentLb > _cutoffValue || currentUb < _cutoffValue ) )
+            {
+                if ( layerRequiresMILP )
+                    addNeuronToModel( gurobi, layer, j );
                 continue;
+            }
 
             unsigned variable = layer->neuronToVariable( j );
             Stringf variableName( "x%u", variable );
@@ -101,17 +106,24 @@ void MILPFormulator::optimizeBoundsWithIncrementalMILPEncoding( const Map<unsign
 
             // Maximize, using just the LP relaxation for the current layer
             if ( tightenUpperBound( gurobi, layer, j, variable, currentUb ) )
+            {
+                if ( layerRequiresMILP )
+                    addNeuronToModel( gurobi, layer, j );
                 continue;
+            }
 
             // Minimize, using just the LP relaxation for the current layer
             if ( tightenLowerBound( gurobi, layer, j, variable, currentLb ) )
+            {
+                if ( layerRequiresMILP )
+                    addNeuronToModel( gurobi, layer, j );
                 continue;
+            }
 
             // If the current layer is a weighted sum layer, the MILP
             // encoding doesn't add any additional assertions to the
             // model, and we can stop here.
-            if ( layer->getLayerType() == Layer::INPUT ||
-                 layer->getLayerType() == Layer::WEIGHTED_SUM )
+            if ( !layerRequiresMILP )
                 continue;
 
             addNeuronToModel( gurobi, layer, j );
@@ -528,6 +540,11 @@ bool MILPFormulator::tightenLowerBound( GurobiWrapper &gurobi,
     }
 
     return false;
+}
+
+bool MILPFormulator::layerRequiresMILPEncoding( const Layer *layer )
+{
+    return layer->getLayerType() == Layer::RELU;
 }
 
 void MILPFormulator::log( const String &message )

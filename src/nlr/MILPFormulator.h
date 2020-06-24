@@ -91,6 +91,8 @@ private:
                           unsigned variable,
                           double newLb );
 
+    bool layerRequiresMILPEncoding( const Layer *layer );
+
     static void log( const String &message );
 };
 
