@@ -39,7 +39,7 @@ public:
     }
 
 
-    void btest_sign_1() // similar to test_relu_2, with unSAT result required
+    void test_sign_1() // similar to test_relu_2, with unSAT result required
     {
         InputQuery inputQuery;
         inputQuery.setNumberOfVariables( 6 );
@@ -88,7 +88,7 @@ public:
     }
 
 
-    void btest_sign_2() // similar to test_relu_2, only now its SAT
+    void test_sign_2() // similar to test_relu_2, only now its SAT
     {
         InputQuery inputQuery;
         inputQuery.setNumberOfVariables( 6 );
@@ -305,7 +305,7 @@ public:
         inputQuery.setUpperBound( 0, -2 );
 
         // means unSAT !
-        inputQuery.setLowerBound( 10, -2.5 ); // unSAT! because x10 = -1 -1 -1 = -3 (always)
+        inputQuery.setLowerBound( 10, -2.8 ); // unSAT! because x10 = -1 -1 -1 = -3 (always)
 
         // equations of 1st layer (x0 is input)
         Equation equation1;
