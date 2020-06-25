@@ -134,7 +134,7 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
 
         # Valid names to use for input or output operations
         valid_names = [op.node_def.name for op in self.sess.graph.get_operations() if self.isVariable(op)]
-        
+
         # Get output operation if outputName is given
         if outputName:
             if outputName not in valid_names:
@@ -508,6 +508,59 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
                 e.setScalar(-sgn1 * input1[i])
                 self.addEquation(e)
 
+    def mulEquations(self, op):
+        """
+        Function to generate equations corresponding to multiply and divide operations
+        Arguments:
+            op: (tf.op) representing an element-wise multiply or divide operation
+        """
+        # Get inputs and outputs
+        assert len(op.inputs) == 2
+        input1, input1_isVar = self.getValues(op.inputs[0].op)
+        input2, input2_isVar = self.getValues(op.inputs[1].op)
+        
+        # For linear equations, both inputs cannot be variables
+        assert not input1_isVar or not input2_isVar
+        
+        # If multiplying by 1, no need for new equations
+        if input1_isVar and np.all(input2 == 1.0):
+            self.varMap[op] = input1
+            return
+        if input2_isVar and np.all(input1 == 1.0):
+            self.varMap[op] = input2
+            return
+
+        # Broadcast and flatten. Assert that lengths are all the same
+        input1, input2 = np.broadcast_arrays(input1, input2)
+        input1 = input1.flatten()
+        input2 = input2.flatten()
+        outputVars = self.makeNewVariables(op).flatten()
+        assert len(input1) == len(input2)
+        assert len(outputVars) == len(input1)
+        
+        # Handle divide by negating power
+        power = 1.0
+        if op.node_def.op in ["RealDiv"]:
+            power = -1.0
+            
+        # Equations
+        if input1_isVar:
+            for i in range(len(outputVars)):
+                e = MarabouUtils.Equation()
+                e.addAddend(input2[i]**power, input1[i])
+                e.addAddend(-1, outputVars[i])
+                e.setScalar(0.0)
+                self.addEquation(e)
+        else:
+            if power == -1.0:
+                raise RuntimeError("Dividing a constant by a variable is not allowed")
+            for i in range(len(outputVars)):
+                e = MarabouUtils.Equation()
+                e.addAddend(input1[i], input2[i])
+                e.addAddend(-1, outputVars[i])
+                e.setScalar(0.0)
+                self.addEquation(e)
+        
     def conv2DEquations(self, op):
         """
         Function to generate equations corresponding to 2D convolution operation
@@ -791,13 +844,14 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             self.matMulEquations(op)
         elif op.node_def.op in ['BiasAdd', 'Add', 'AddV2', 'Sub']:
             self.addEquations(op)
+        elif op.node_def.op in ['Mul', 'RealDiv']:
+            self.mulEquations(op)
         elif op.node_def.op == 'Conv2D':
             self.conv2DEquations(op)
         elif op.node_def.op == 'Relu':
             self.reluEquations(op)
         elif op.node_def.op == 'MaxPool':
             self.maxpoolEquations(op)
-            
             
         # If we've recursed to find a Placeholder operation, this operation needs to be added the inputName list
         elif op.node_def.op == 'Placeholder':
