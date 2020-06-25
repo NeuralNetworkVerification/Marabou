@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file HeapData.cpp
+/*! \file MatrixMultiplication.cpp
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz
