@@ -32,6 +32,7 @@ common_add_unit_test(Queue)
 common_add_unit_test(Set)
 common_add_unit_test(Stack)
 common_add_unit_test(Vector)
+common_add_unit_test(MatrixMultiplication)
 
 if (${BUILD_PYTHON})
 target_include_directories(${MARABOU_PY} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
