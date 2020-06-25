@@ -21,6 +21,7 @@
 #include "FloatUtils.h"
 #include "LayerOwner.h"
 #include "MarabouError.h"
+#include "MatrixMultiplication.h"
 #include "NeuronIndex.h"
 #include "ReluConstraint.h"
 
