@@ -77,7 +77,7 @@ const GlobalConfiguration::ExplicitBasisBoundTighteningType GlobalConfiguration:
 const bool GlobalConfiguration::EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION = false;
 
 const GlobalConfiguration::MILPSolverBoundTighteningType GlobalConfiguration::MILP_SOLVER_BOUND_TIGHTENING_TYPE =
-    GlobalConfiguration::MILP_ENCODING;
+    GlobalConfiguration::LP_RELAXATION;
 
 const unsigned GlobalConfiguration::MILPSolverTimeoutValueInSeconds = 1;
 
