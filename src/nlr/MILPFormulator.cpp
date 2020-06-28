@@ -47,8 +47,8 @@ void MILPFormulator::optimizeBoundsWithIncrementalMILPEncoding( const Map<unsign
 
     GurobiWrapper gurobi;
 
-    double newLb;
-    double newUb;
+    gurobi.setTimeLimit( GlobalConfiguration::MILPSolverTimeoutValueInSeconds );
+
     double currentLb;
     double currentUb;
     List<GurobiWrapper::Term> terms;
@@ -79,6 +79,7 @@ void MILPFormulator::optimizeBoundsWithIncrementalMILPEncoding( const Map<unsign
           point we discover a bound that crosses the cutoff value, we
           stop.
         */
+        bool layerRequiresMILP = layerRequiresMILPEncoding( layer );
         for ( unsigned j = 0; j < layer->getSize(); ++j )
         {
             if ( layer->neuronEliminated( j ) )
@@ -88,7 +89,11 @@ void MILPFormulator::optimizeBoundsWithIncrementalMILPEncoding( const Map<unsign
             currentUb = layer->getUb( j );
 
             if ( _cutoffInUse && ( currentLb > _cutoffValue || currentUb < _cutoffValue ) )
+            {
+                if ( layerRequiresMILP )
+                    addNeuronToModel( gurobi, layer, j );
                 continue;
+            }
 
             unsigned variable = layer->neuronToVariable( j );
             Stringf variableName( "x%u", variable );
@@ -97,28 +102,35 @@ void MILPFormulator::optimizeBoundsWithIncrementalMILPEncoding( const Map<unsign
             terms.append( GurobiWrapper::Term( 1, variableName ) );
 
             // Maximize, using just the LP relaxation for the current layer
-            if ( tightenUpperBound( gurobi, layer, j, variable, currentUb, newUb ) )
+            if ( tightenUpperBound( gurobi, layer, j, variable, currentUb ) )
+            {
+                if ( layerRequiresMILP )
+                    addNeuronToModel( gurobi, layer, j );
                 continue;
+            }
 
             // Minimize, using just the LP relaxation for the current layer
-            if ( tightenLowerBound( gurobi, layer, j, variable, currentLb, newLb ) )
+            if ( tightenLowerBound( gurobi, layer, j, variable, currentLb ) )
+            {
+                if ( layerRequiresMILP )
+                    addNeuronToModel( gurobi, layer, j );
                 continue;
+            }
 
             // If the current layer is a weighted sum layer, the MILP
             // encoding doesn't add any additional assertions to the
             // model, and we can stop here.
-            if ( layer->getLayerType() == Layer::INPUT ||
-                 layer->getLayerType() == Layer::WEIGHTED_SUM )
+            if ( !layerRequiresMILP )
                 continue;
 
             addNeuronToModel( gurobi, layer, j );
 
             // Maximize, using just the exact MILP encoding
-            if ( tightenUpperBound( gurobi, layer, j, variable, currentUb, newUb ) )
+            if ( tightenUpperBound( gurobi, layer, j, variable, currentUb ) )
                 continue;
 
             // Minimize, using just the exact MILP encoding
-            if ( tightenLowerBound( gurobi, layer, j, variable, currentLb, newLb ) )
+            if ( tightenLowerBound( gurobi, layer, j, variable, currentLb ) )
                 continue;
         }
     }
@@ -326,6 +338,9 @@ double MILPFormulator::solveMILPEncoding( const Map<unsigned, Layer *> &layers,
                                           unsigned lastLayer )
 {
     GurobiWrapper gurobi;
+
+    gurobi.setTimeLimit( GlobalConfiguration::MILPSolverTimeoutValueInSeconds );
+
     createMILPEncoding( layers, gurobi, lastLayer );
 
     List<GurobiWrapper::Term> terms;
@@ -341,13 +356,22 @@ double MILPFormulator::solveMILPEncoding( const Map<unsigned, Layer *> &layers,
     if ( gurobi.infeasbile() )
         throw InfeasibleQueryException();
 
-    if ( !gurobi.optimal() )
-        throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
+    if ( gurobi.cutoffOccurred() )
+        return _cutoffValue;
 
-    Map<String, double> dontCare;
-    double result = 0;
-    gurobi.extractSolution( dontCare, result );
-    return result;
+    if ( gurobi.optimal() )
+    {
+        Map<String, double> dontCare;
+        double result = 0;
+        gurobi.extractSolution( dontCare, result );
+        return result;
+    }
+    else if ( gurobi.timeout() )
+    {
+        return gurobi.getObjectiveBound();
+    }
+
+    throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
 }
 
 void MILPFormulator::storeUbIfNeeded( Layer *layer, unsigned neuron, unsigned variable, double newUb )
@@ -392,9 +416,10 @@ bool MILPFormulator::tightenUpperBound( GurobiWrapper &gurobi,
                                         Layer *layer,
                                         unsigned neuron,
                                         unsigned variable,
-                                        double &currentUb,
-                                        double &newUb )
+                                        double &currentUb )
 {
+    double newUb = FloatUtils::infinity();
+
     Stringf variableName( "x%u", variable );
 
     List<GurobiWrapper::Term> terms;
@@ -407,8 +432,23 @@ bool MILPFormulator::tightenUpperBound( GurobiWrapper &gurobi,
     if ( gurobi.infeasbile() )
         throw InfeasibleQueryException();
 
-    if ( !gurobi.optimal() )
+    if ( gurobi.cutoffOccurred() )
+    {
+        newUb = _cutoffValue;
+    }
+    else if ( gurobi.optimal() )
+    {
+        Map<String, double> dontCare;
+        gurobi.extractSolution( dontCare, newUb );
+    }
+    else if ( gurobi.timeout() )
+    {
+        newUb = gurobi.getObjectiveBound();
+    }
+    else
+    {
         throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
+    }
 
     Map<String, double> dontCare;
     gurobi.extractSolution( dontCare, newUb );
@@ -444,9 +484,9 @@ bool MILPFormulator::tightenLowerBound( GurobiWrapper &gurobi,
                                         Layer *layer,
                                         unsigned neuron,
                                         unsigned variable,
-                                        double &currentLb,
-                                        double &newLb )
+                                        double &currentLb )
 {
+    double newLb = FloatUtils::negativeInfinity();
     Stringf variableName( "x%u", variable );
 
     List<GurobiWrapper::Term> terms;
@@ -455,14 +495,27 @@ bool MILPFormulator::tightenLowerBound( GurobiWrapper &gurobi,
     gurobi.reset();
     gurobi.setCost( terms );
     gurobi.solve();
+
     if ( gurobi.infeasbile() )
         throw InfeasibleQueryException();
 
-    if ( !gurobi.optimal() )
+    if ( gurobi.cutoffOccurred() )
+    {
+        newLb = _cutoffValue;
+    }
+    else if ( gurobi.optimal() )
+    {
+        Map<String, double> dontCare;
+        gurobi.extractSolution( dontCare, newLb );
+    }
+    else if ( gurobi.timeout() )
+    {
+        newLb = gurobi.getObjectiveBound();
+    }
+    else
+    {
         throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
-
-    Map<String, double> dontCare;
-    gurobi.extractSolution( dontCare, newLb );
+    }
 
     // If the bound is tighter, store it
     if ( newLb > currentLb )
@@ -489,6 +542,11 @@ bool MILPFormulator::tightenLowerBound( GurobiWrapper &gurobi,
     }
 
     return false;
+}
+
+bool MILPFormulator::layerRequiresMILPEncoding( const Layer *layer )
+{
+    return layer->getLayerType() == Layer::RELU;
 }
 
 void MILPFormulator::log( const String &message )
