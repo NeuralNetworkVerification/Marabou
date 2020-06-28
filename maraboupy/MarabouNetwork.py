@@ -17,6 +17,7 @@
 '''
 
 from maraboupy import MarabouCore
+
 import numpy as np
 
 class MarabouNetwork:
@@ -287,3 +288,25 @@ class MarabouNetwork:
         outNotMar = self.evaluate(inputValues, useMarabou=False, options=options, filename=filename)
         err = np.abs(outMar - outNotMar)
         return err
+
+    def evaluateWithoutMarabou(self, inputValues):
+        """
+        Function to evaluate network directly (without Marabou) at a given point
+        Arguments:
+            inputValues: list of (np arrays) representing input to network
+        Returns:
+            outputValues: (np array) representing output of network
+
+        TO-DO: Implement appropriate conversions between expected inputs of
+              evaluate() and evaluateNetwork()
+
+        NOTE: evaluateNetwork is only implemented for MarabouNetworkNNet!
+        NOTE: evaluateNetwork takes and returns a list
+        """
+        try:
+            return self.evaluateNetwork(inputValues.flatten().tolist(), normalize_inputs=self.normalize,
+                                        normalize_outputs=self.normalize)
+        except NameError:
+            return []
+
+

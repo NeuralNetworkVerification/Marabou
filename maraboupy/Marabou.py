@@ -16,7 +16,7 @@
  **/
 '''
 import warnings
-from .MarabouCore import *
+from maraboupy.MarabouCore import *
 
 # Import parsers if required packages are installed
 try:
