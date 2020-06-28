@@ -12,11 +12,9 @@ option(RUN_REGRESS_TEST "run regression tests on build" OFF)
 option(RUN_SYSTEM_TEST "run system tests on build" OFF)
 option(RUN_MEMORY_TEST "run cxxtest testing with ASAN ON" ON)
 option(RUN_PYTHON_TEST "run python API tests if building with python" OFF)
-
-# To run coverage we need to add -g and -O0 flags, so we allow it only in debug mode
-option(CODE_COVERAGE  "add code coverage" OFF)  
-
 option(ENABLE_GUROBI "Enable use the Gurobi optimizer" OFF)
+option(ENABLE_OPENBLAS "Do symbolic bound tighting using blas" ON) # Not available on windows
+option(CODE_COVERAGE "add code coverage" OFF)  # Available only in debug mode
 
 set(DEFAULT_PYTHON_VERSION "3" CACHE STRING "Default Python version 2/3")
 set(PYTHON_VERSIONS_SUPPORTED 2 3)
@@ -39,9 +37,11 @@ set(REGRESS_DIR "${PROJECT_SOURCE_DIR}/regress")
 set(ENGINE_DIR "${SRC_DIR}/engine")
 set(PYBIND11_DIR "${TOOLS_DIR}/pybind11-2.3.0")
 set(BOOST_DIR "${TOOLS_DIR}/boost_1_68_0")
+set(OPENBLAS_DIR "${TOOLS_DIR}/OpenBLAS-0.3.9")
 set(COMMON_DIR "${SRC_DIR}/common")
 set(BASIS_DIR "${SRC_DIR}/basis_factorization")
 
+set(OPENBLAS_LIB openblas)
 
 set(BIN_DIR "${CMAKE_BINARY_DIR}/bin")
 
@@ -198,6 +198,20 @@ if (${ENABLE_GUROBI})
   set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi90.so)
   list(APPEND LIBS ${GUROBI_LIB2})
   target_include_directories(${GUROBI_LIB2} INTERFACE ${GUROBI_DIR}/include/)
+endif()
+
+if (${ENABLE_OPENBLAS} AND NOT MSVC)
+    message(STATUS "using openblas for matrix multiplication")
+    add_compile_definitions(ENABLE_OPENBLAS)
+    #OpenBLAS
+    if(NOT EXISTS "${OPENBLAS_DIR}/installed/lib/libopenblas.a")
+        execute_process(COMMAND ${TOOLS_DIR}/get-openBLAS.sh)
+    endif()
+
+    add_library(${OPENBLAS_LIB} SHARED IMPORTED)
+    set_target_properties(${OPENBLAS_LIB} PROPERTIES IMPORTED_LOCATION ${OPENBLAS_DIR}/installed/lib/libopenblas.a)
+    list(APPEND LIBS ${OPENBLAS_LIB})
+    target_include_directories(${OPENBLAS_LIB} INTERFACE ${OPENBLAS_DIR}/installed/include)
 endif()
 
 # pthread

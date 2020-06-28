@@ -879,37 +879,35 @@ void Layer::computeSymbolicBoundsForWeightedSum()
         const Layer *sourceLayer = _layerOwner->getLayer( sourceLayerEntry.first );
 
         /*
-          Perform the multiplication.
+          Perform the multiplication
 
           newUB = oldUB * posWeights + oldLB * negWeights
           newLB = oldUB * negWeights + oldLB * posWeights
         */
 
-        for ( unsigned i = 0; i < _inputLayerSize; ++i )
+
+        matrixMultiplication( sourceLayer->getSymbolicUb(), _layerToPositiveWeights[sourceLayerIndex],
+                              _symbolicUb, _inputLayerSize,
+                              sourceLayerSize, _size);
+        matrixMultiplication( sourceLayer->getSymbolicLb(), _layerToNegativeWeights[sourceLayerIndex],
+                              _symbolicUb, _inputLayerSize,
+                              sourceLayerSize, _size);
+        matrixMultiplication( sourceLayer->getSymbolicLb(), _layerToPositiveWeights[sourceLayerIndex],
+                              _symbolicLb, _inputLayerSize,
+                              sourceLayerSize, _size);
+        matrixMultiplication( sourceLayer->getSymbolicUb(), _layerToNegativeWeights[sourceLayerIndex],
+                              _symbolicLb, _inputLayerSize, sourceLayerSize,
+                              _size);
+
+        // Restore the zero bound on eliminated neurons
+        unsigned index;
+        for ( const auto &eliminated : _eliminatedNeurons )
         {
-            for ( unsigned j = 0; j < _size; ++j )
+            for ( unsigned i = 0; i < _inputLayerSize; ++i )
             {
-                if ( _eliminatedNeurons.exists( j ) )
-                    continue;
-
-                for ( unsigned k = 0; k < sourceLayerSize; ++k )
-                {
-                    _symbolicLb[i * _size + j] +=
-                        sourceLayer->getSymbolicUb()[i * sourceLayerSize + k] *
-                        _layerToNegativeWeights[sourceLayerIndex][k * _size + j];
-
-                    _symbolicLb[i * _size + j] +=
-                        sourceLayer->getSymbolicLb()[i * sourceLayerSize + k] *
-                        _layerToPositiveWeights[sourceLayerIndex][k * _size + j];
-
-                    _symbolicUb[i * _size + j] +=
-                        sourceLayer->getSymbolicUb()[i * sourceLayerSize + k] *
-                        _layerToPositiveWeights[sourceLayerIndex][k * _size + j];
-
-                    _symbolicUb[i * _size + j] +=
-                        sourceLayer->getSymbolicLb()[i * sourceLayerSize + k] *
-                        _layerToNegativeWeights[sourceLayerIndex][k * _size + j];
-                }
+                index = i * _size + eliminated.first;
+                _symbolicLb[index] = 0;
+                _symbolicUb[index] = 0;
             }
         }
 
