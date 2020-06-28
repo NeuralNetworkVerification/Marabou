@@ -119,6 +119,11 @@ void GurobiWrapper::setUpperBound( String name, double ub )
     var.set( GRB_DoubleAttr_UB, ub );
 }
 
+void GurobiWrapper::setCutoff( double cutoff )
+{
+    _model->set( GRB_DoubleParam_Cutoff, cutoff );
+}
+
 void GurobiWrapper::addLeqConstraint( const List<Term> &terms, double scalar )
 {
     addConstraint( terms, scalar, GRB_LESS_EQUAL );
@@ -204,6 +209,11 @@ void GurobiWrapper::setObjective( const List<Term> &terms )
     }
 }
 
+void GurobiWrapper::setTimeLimit( double seconds )
+{
+    _model->set( GRB_DoubleParam_TimeLimit, seconds );
+}
+
 void GurobiWrapper::solve()
 {
     try
@@ -221,12 +231,27 @@ void GurobiWrapper::solve()
 
 bool GurobiWrapper::optimal()
 {
-    return ( _model->get( GRB_IntAttr_Status ) == GRB_OPTIMAL );
+    return _model->get( GRB_IntAttr_Status ) == GRB_OPTIMAL;
+}
+
+bool GurobiWrapper::cutoffOccurred()
+{
+    return _model->get( GRB_IntAttr_Status ) == GRB_CUTOFF;
 }
 
 bool GurobiWrapper::infeasbile()
 {
-    return ( _model->get( GRB_IntAttr_Status ) == GRB_INFEASIBLE );
+    return _model->get( GRB_IntAttr_Status ) == GRB_INFEASIBLE;
+}
+
+bool GurobiWrapper::timeout()
+{
+    return _model->get( GRB_IntAttr_Status ) == GRB_TIME_LIMIT;
+}
+
+bool GurobiWrapper::haveFeasibleSolution()
+{
+    return _model->get( GRB_IntAttr_SolCount ) > 0;
 }
 
 void GurobiWrapper::extractSolution( Map<String, double> &values, double &costOrObjective )
@@ -247,6 +272,11 @@ void GurobiWrapper::extractSolution( Map<String, double> &values, double &costOr
                                     e.getErrorCode(),
                                     e.getMessage().c_str() ).ascii() );
     }
+}
+
+double GurobiWrapper::getObjectiveBound()
+{
+    return _model->get( GRB_DoubleAttr_ObjBound );
 }
 
 void GurobiWrapper::dumpModel( String name )
