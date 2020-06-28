@@ -1,8 +1,16 @@
-//
-// Created by guyam on 5/20/20.
-//
-
-#include "SignConstraint.h"
+/*********************                                                        */
+/*! \file ReluConstraint.cpp
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Guy Amir
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+ **/
 
 #include "ConstraintBoundTightener.h"
 #include "Debug.h"
@@ -12,9 +20,10 @@
 #include "ITableau.h"
 #include "InputQuery.h"
 #include "MStringf.h"
+#include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "ReluConstraint.h"
-#include "MarabouError.h"
+#include "SignConstraint.h"
 #include "Statistics.h"
 #include "TableauRow.h"
 
@@ -22,20 +31,13 @@
 #define __attribute__(x)
 #endif
 
-
-
-
 SignConstraint::SignConstraint( unsigned b, unsigned f )
-        : _b( b )
-        , _f( f )
-        , _direction( PhaseStatus::PHASE_NOT_FIXED )
-        , _haveEliminatedVariables( false )
+    : _b( b )
+    , _f( f )
+    , _haveEliminatedVariables( false )
 {
     setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
 }
-
-
-
 
 PiecewiseLinearConstraint *SignConstraint::duplicateConstraint() const
 {
@@ -50,22 +52,17 @@ void SignConstraint::restoreState( const PiecewiseLinearConstraint *state )
     *this = *sign;
 }
 
-
 void SignConstraint::registerAsWatcher( ITableau *tableau )
 {
     tableau->registerToWatchVariable( this, _b );
     tableau->registerToWatchVariable( this, _f );
-
-
 }
 
 void SignConstraint::unregisterAsWatcher( ITableau *tableau )
 {
     tableau->unregisterToWatchVariable( this, _b );
     tableau->unregisterToWatchVariable( this, _f );
-
 }
-
 
 bool SignConstraint::participatingVariable( unsigned variable ) const
 {
@@ -77,8 +74,6 @@ List<unsigned> SignConstraint::getParticipatingVariables() const
     return List<unsigned>( { _b, _f } );
 }
 
-
-
 bool SignConstraint::satisfied() const
 {
     if ( !( _assignment.exists( _b ) && _assignment.exists( _f ) ) )
@@ -87,83 +82,70 @@ bool SignConstraint::satisfied() const
     double bValue = _assignment.get( _b );
     double fValue = _assignment.get( _f );
 
-    if ( FloatUtils::isNegative( bValue ) && FloatUtils::areEqual( fValue, -1 ) )
-        return true;
+    printf( "b value: %.5lf, f value: %.5lf\n", bValue, fValue );
 
-    if ( (!FloatUtils::isNegative( bValue )) && FloatUtils::areEqual( fValue, 1 ) )
-        //if ( FloatUtils::isPositive( bValue ) && FloatUtils::areEqual( fValue, 1 ) )
-        return true;
+    // if bValue is negative, f should be -1
+    if ( FloatUtils::isNegative( bValue ) )
+        return FloatUtils::areEqual( fValue, -1 );
 
-    else
-        return false;
+    // bValue is non-negative, f should be 1
+    return FloatUtils::areEqual( fValue, 1 );
 }
 
-
-List<PiecewiseLinearCaseSplit> SignConstraint::getCaseSplits() const {
-    if (_phaseStatus != PhaseStatus::PHASE_NOT_FIXED)
-        throw MarabouError(MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT);
+List<PiecewiseLinearCaseSplit> SignConstraint::getCaseSplits() const
+{
+    if ( _phaseStatus != PhaseStatus::PHASE_NOT_FIXED )
+        throw MarabouError( MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
 
     List <PiecewiseLinearCaseSplit> splits;
 
-    if (_direction == PHASE_NEGATIVE) {
-        splits.append(getNegativeSplit());
-        splits.append(getPositiveSplit());
-        return splits;
-    }
-    if (_direction == PHASE_POSITIVE) {
-        splits.append(getPositiveSplit());
-        splits.append(getNegativeSplit());
-        return splits;
-    }
-
     // If we have existing knowledge about the assignment, use it to
     // influence the order of splits
-    if (_assignment.exists(_f)) {
-        if (FloatUtils::isPositive(_assignment[_f])) {
-            splits.append(getPositiveSplit());
-            splits.append(getNegativeSplit());
-        } else {
-            splits.append(getNegativeSplit());
-            splits.append(getPositiveSplit());
+    if ( _assignment.exists( _f ) )
+    {
+        if ( FloatUtils::isPositive( _assignment[_f] ) )
+        {
+            splits.append( getPositiveSplit() );
+            splits.append( getNegativeSplit() );
         }
-    } else {
-        // Default: start with the inactive case, because it doesn't
-        // introduce a new equation and is hence computationally cheaper.
-        splits.append(getNegativeSplit()); // notice no change from ReLU function
-        splits.append(getPositiveSplit()); // notice no change from ReLU function
+        else
+        {
+            splits.append( getNegativeSplit() );
+            splits.append( getPositiveSplit() );
+        }
+    }
+    else
+    {
+        // Default
+        splits.append( getNegativeSplit() );
+        splits.append( getPositiveSplit() );
     }
 
     return splits;
 }
 
-
 PiecewiseLinearCaseSplit SignConstraint::getNegativeSplit() const
 {
-    // Negative phase: b <= 0, f = -1
+    // Negative phase: b < 0, f = -1
     PiecewiseLinearCaseSplit negativePhase;
     negativePhase.storeBoundTightening( Tightening( _b, 0.0, Tightening::UB ) );
     negativePhase.storeBoundTightening( Tightening( _f, -1.0, Tightening::UB ) );
     return negativePhase;
 }
 
-PiecewiseLinearCaseSplit SignConstraint::getPositiveSplit() const {
-    // Positive phase: b >= 0, b - f = 0
+PiecewiseLinearCaseSplit SignConstraint::getPositiveSplit() const
+{
+    // Positive phase: b >= 0, f = 1
     PiecewiseLinearCaseSplit positivePhase;
-    positivePhase.storeBoundTightening(Tightening(_b, 0.0, Tightening::LB));
-    positivePhase.storeBoundTightening(Tightening(_f, 1.0, Tightening::LB));
+    positivePhase.storeBoundTightening( Tightening( _b, 0.0, Tightening::LB ) );
+    positivePhase.storeBoundTightening( Tightening( _f, 1.0, Tightening::LB ) );
     return positivePhase;
 }
-
-
-
-
-
 
 bool SignConstraint::phaseFixed() const
 {
     return _phaseStatus != PhaseStatus::PHASE_NOT_FIXED;
 }
-
 
 PiecewiseLinearCaseSplit SignConstraint::getValidCaseSplit() const
 {
@@ -175,24 +157,16 @@ PiecewiseLinearCaseSplit SignConstraint::getValidCaseSplit() const
     return getNegativeSplit();
 }
 
-
-
 bool SignConstraint::constraintObsolete() const
 {
     return _haveEliminatedVariables;
 }
 
-
-
-
-
 String SignConstraint::serializeToString() const
 {
-    // Output format is: relu,f,b
+    // Output format is: sign,f,b
     return Stringf( "sign,%u,%u", _f, _b );
 }
-
-
 
 bool SignConstraint::haveOutOfBoundVariables() const
 {
@@ -207,7 +181,6 @@ bool SignConstraint::haveOutOfBoundVariables() const
 
     return false;
 }
-
 
 String SignConstraint::phaseToString( PhaseStatus phase )
 {
@@ -227,79 +200,78 @@ String SignConstraint::phaseToString( PhaseStatus phase )
     }
 };
 
-
 void SignConstraint::notifyVariableValue( unsigned variable, double value )
 {
-    if ( FloatUtils::isZero( value, GlobalConfiguration::RELU_CONSTRAINT_COMPARISON_TOLERANCE ) )
+    if ( FloatUtils::isZero( value ) )
         value = 0.0;
 
     _assignment[variable] = value;
 }
 
-
-void SignConstraint::notifyLowerBound( unsigned variable, double bound ) {
-    if (_statistics)
+void SignConstraint::notifyLowerBound( unsigned variable, double bound )
+{
+    if ( _statistics )
         _statistics->incNumBoundNotificationsPlConstraints();
 
-    // if lower bound exists and better than suggested 'bound' input - return
-    if (_lowerBounds.exists(variable) && !FloatUtils::gt(bound, _lowerBounds[variable]))
+    // If there's an already-stored tighter bound, return
+    if ( _lowerBounds.exists( variable ) && !FloatUtils::gt( bound, _lowerBounds[variable] ) )
         return;
-    // otherwise - update bound
+
+    // Otherwise - update bound
     _lowerBounds[variable] = bound;
 
-    if (variable == _f && FloatUtils::gt(bound, -1)) {
-        setPhaseStatus(PhaseStatus::PHASE_POSITIVE);
-        if (_constraintBoundTightener){
-            _constraintBoundTightener->registerTighterLowerBound(_f, 1);
-            _constraintBoundTightener->registerTighterLowerBound(_b, 0);
+    if ( variable == _f && FloatUtils::gt( bound, -1 ) )
+    {
+        setPhaseStatus( PhaseStatus::PHASE_POSITIVE );
+        if ( _constraintBoundTightener )
+        {
+            _constraintBoundTightener->registerTighterLowerBound( _f, 1 );
+            _constraintBoundTightener->registerTighterLowerBound( _b, 0 );
         }
     }
-    else if (variable == _b && !FloatUtils::isNegative(bound))  // if b (input) is >= 0
+    else if ( variable == _b && !FloatUtils::isNegative( bound ) )
     {
-        setPhaseStatus(PhaseStatus::PHASE_POSITIVE);
-        if (_constraintBoundTightener)
+        setPhaseStatus( PhaseStatus::PHASE_POSITIVE );
+        if ( _constraintBoundTightener )
         {
-            _constraintBoundTightener->registerTighterLowerBound(_f, 1);
-            _constraintBoundTightener->registerTighterLowerBound(_b, bound);
+            _constraintBoundTightener->registerTighterLowerBound( _f, 1 );
+            _constraintBoundTightener->registerTighterLowerBound( _b, bound );
         }
     }
 }
 
-
-
-
-void SignConstraint::notifyUpperBound(unsigned variable, double bound) {
-    if (_statistics)
+void SignConstraint::notifyUpperBound( unsigned variable, double bound )
+{
+    if ( _statistics )
         _statistics->incNumBoundNotificationsPlConstraints();
 
-    if (_upperBounds.exists(variable) && !FloatUtils::lt(bound, _upperBounds[variable]))
+    // If there's an already-stored tighter bound, return
+    if ( _upperBounds.exists( variable ) && !FloatUtils::lt( bound, _upperBounds[variable] ) )
         return;
-    // otherwise - update bound
+
+    // Otherwise - update bound
     _upperBounds[variable] = bound;
 
-    if (variable == _f && FloatUtils::lt(bound, 1)) {
-        setPhaseStatus(PhaseStatus::PHASE_NEGATIVE);
-        if (_constraintBoundTightener){
-            _constraintBoundTightener->registerTighterUpperBound(_f, -1);
-            _constraintBoundTightener->registerTighterUpperBound(_b, 0);
-        }
-
-    } else if (variable == _b && FloatUtils::isNegative(bound))  // if b (input) is < 0
+    if ( variable == _f && FloatUtils::lt( bound, 1 ) )
     {
-        setPhaseStatus(PhaseStatus::PHASE_NEGATIVE);
-        if (_constraintBoundTightener){
-            _constraintBoundTightener->registerTighterUpperBound(_f, -1);
-            _constraintBoundTightener->registerTighterUpperBound(_b, bound);
+        setPhaseStatus( PhaseStatus::PHASE_NEGATIVE );
+        if ( _constraintBoundTightener )
+        {
+            _constraintBoundTightener->registerTighterUpperBound( _f, -1 );
+            _constraintBoundTightener->registerTighterUpperBound( _b, 0 );
         }
-
+    }
+    else if ( variable == _b && FloatUtils::isNegative( bound ) )
+    {
+        setPhaseStatus( PhaseStatus::PHASE_NEGATIVE );
+        if ( _constraintBoundTightener )
+        {
+            _constraintBoundTightener->registerTighterUpperBound( _f, -1 );
+            _constraintBoundTightener->registerTighterUpperBound( _b, bound );
+        }
     }
 }
 
-
-
-
-// todo - check thoroughly!
-// todo - Guy - do I need also conditions of phases?
 List<PiecewiseLinearConstraint::Fix> SignConstraint::getPossibleFixes() const
 {
     ASSERT( !satisfied() );
@@ -307,47 +279,22 @@ List<PiecewiseLinearConstraint::Fix> SignConstraint::getPossibleFixes() const
     ASSERT( _assignment.exists( _f ) );
 
     double bValue = _assignment.get( _b );
-    double fValue = _assignment.get( _f );
+    double newFValue = FloatUtils::isNegative( bValue ) ? -1 : 1;
 
     List<PiecewiseLinearConstraint::Fix> fixes;
-
-    // Possible violations:
-    //   1. f is NOT +1, b is >= 0
-    //   2. f is  NOT -1, b is < 0
-    if ( !FloatUtils::isNegative( bValue ) ) // if b >= 0 -> make f = 1
-    {
-        if (!FloatUtils::areEqual(fValue, 1)) {
-            fixes.append(PiecewiseLinearConstraint::Fix(_f, 1));
-        }
-    }
-     else  // if b < 0 -> make f = (-1)
-    {
-        if (!FloatUtils::areEqual(fValue, -1)) {
-            fixes.append(PiecewiseLinearConstraint::Fix(_f, -1));
-        }
-    }
+    fixes.append( PiecewiseLinearConstraint::Fix( _f, newFValue ) );
     return fixes;
 }
 
-
-
-
-List<PiecewiseLinearConstraint::Fix> SignConstraint::getSmartFixes( ITableau *tableau ) const
+List<PiecewiseLinearConstraint::Fix> SignConstraint::getSmartFixes( ITableau * ) const
 {
-    ASSERT(!satisfied());
-    ASSERT(_assignment.exists(_f) && _assignment.size() > 1);
-    (void) tableau; // todo - void line added so compiler will see var used
-
     return getPossibleFixes();
 }
-
-
 
 void SignConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
 {
     ASSERT( _lowerBounds.exists( _b ) && _lowerBounds.exists( _f ) &&
             _upperBounds.exists( _b ) && _upperBounds.exists( _f ) );
-
 
     double bLowerBound = _lowerBounds[_b];
     double fLowerBound = _lowerBounds[_f];
@@ -355,46 +302,31 @@ void SignConstraint::getEntailedTightenings( List<Tightening> &tightenings ) con
     double bUpperBound = _upperBounds[_b];
     double fUpperBound = _upperBounds[_f];
 
-    // always make f between -1 and 1
+    // Always make f between -1 and 1
     tightenings.append( Tightening( _f, -1, Tightening::LB ) );
     tightenings.append( Tightening( _f, 1, Tightening::UB ) );
 
-    // any other update can be done only if we are in the POSITIVE phase or the NEGATIVE phase
-
-    // Determine if we are in the positive phase, negative phase or unknown phase
-
-
+    // Additional bounds can only be propagated if we are in the POSITIVE or NEGATIVE phases
     if ( !FloatUtils::isNegative( bLowerBound ) ||
-         FloatUtils::gt(fLowerBound, -1))
+         FloatUtils::gt( fLowerBound, -1 ) )
     {
-        // positive case
-
+        // Positive case
         tightenings.append( Tightening( _b, 0, Tightening::LB ) );
         tightenings.append( Tightening( _f, 1, Tightening::LB ) );
-
     }
     else if ( FloatUtils::isNegative( bUpperBound ) ||
-              FloatUtils::lt(fUpperBound, 1) )
+              FloatUtils::lt( fUpperBound, 1 ) )
     {
-        // negative case
-
+        // Negative case
         tightenings.append( Tightening( _b, 0, Tightening::UB ) );
         tightenings.append( Tightening( _f, -1, Tightening::UB ) );
-
     }
-
 }
-
-
-
 
 void SignConstraint::setPhaseStatus( PhaseStatus phaseStatus )
 {
     _phaseStatus = phaseStatus;
 }
-
-
-
 
 void SignConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
@@ -436,17 +368,19 @@ void SignConstraint::eliminateVariable( __attribute__((unused)) unsigned variabl
     DEBUG({
               if ( variable == _f )
               {
-                  ASSERT((FloatUtils::areEqual(fixedValue,1))||(FloatUtils::areEqual(fixedValue,-1) ));
-                  if ( FloatUtils::areEqual(fixedValue, 1 ) )
+                  ASSERT( ( FloatUtils::areEqual( fixedValue, 1 ) ) ||
+                          ( FloatUtils::areEqual( fixedValue,-1 ) ) );
+
+                  if ( FloatUtils::areEqual( fixedValue, 1 ) )
                   {
                       ASSERT( _phaseStatus != PHASE_NEGATIVE );
                   }
-                  else if (FloatUtils::areEqual(fixedValue, -1 )  )
+                  else if (FloatUtils::areEqual( fixedValue, -1 ) )
                   {
                       ASSERT( _phaseStatus != PHASE_POSITIVE );
                   }
               }
-              else if (variable == _b)
+              else if ( variable == _b )
               {
                   if ( FloatUtils::gte( fixedValue, 0 ) )
                   {
@@ -457,8 +391,8 @@ void SignConstraint::eliminateVariable( __attribute__((unused)) unsigned variabl
                       ASSERT( _phaseStatus != PHASE_POSITIVE );
                   }
               }
+        });
 
-          });
     // In a Sign constraint, if a variable is removed the entire constraint can be discarded.
     _haveEliminatedVariables = true;
 }

@@ -67,8 +67,8 @@ endif()
 
 # We build a static library that is the core of the project, the link it to the
 # API's (executable and python at the moment)
-add_library(${MARABOU_LIB} ${SRCS_COMMON_REAL} ${SRCS_ENGINE_REAL} src/engine/SignConstraint.cpp src/engine/SignConstraint.h)
-add_executable(${MARABOU_EXE} "${ENGINE_DIR}/main.cpp" src/engine/tests/Test_SignConstraint.h src/system_tests/Test_sign.h)
+add_library(${MARABOU_LIB} ${SRCS_COMMON_REAL} ${SRCS_ENGINE_REAL})
+add_executable(${MARABOU_EXE} "${ENGINE_DIR}/main.cpp")
 set(MARABOU_EXE_PATH "${BIN_DIR}/${MARABOU_EXE}")
 add_custom_command(TARGET ${MARABOU_EXE} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${MARABOU_EXE}> ${MARABOU_EXE_PATH} )

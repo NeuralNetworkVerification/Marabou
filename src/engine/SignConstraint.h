@@ -1,19 +1,29 @@
-//
-// Created by guyam on 5/20/20.
-//
+/*********************                                                        */
+/*! \file ReluConstraint.h
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Guy Amir
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
 
+ **/
 
-#ifndef MARABOU_SIGNCONSTRAINT_H
-#define MARABOU_SIGNCONSTRAINT_H
+#ifndef __SignConstraint_h__
+#define __SignConstraint_h__
 
 #include "Map.h"
 #include "PiecewiseLinearConstraint.h"
 
+/*
+  The Sign function returns +1 for any input x >=0 (including 0),
+  and -1 if x < 0
+*/
 
-
-
-
-// the SIGN function labels '+1' for any input x >=0 (including 0)
 class SignConstraint : public PiecewiseLinearConstraint
 {
 public:
@@ -25,14 +35,10 @@ public:
 
     SignConstraint( unsigned b, unsigned f );
 
-    //SignConstraint( const String &serializedSign );
-
-
     /*
-    Returns true iff the assignment satisfies the constraint
+      Returns true iff the assignment satisfies the constraint
     */
     bool satisfied() const;
-
 
     /*
       Returns the list of case splits that this piecewise linear
@@ -41,7 +47,6 @@ public:
       then ~l1 /\ ~l2 /\ ... /\ ~ln-1 --> ln.
      */
     List<PiecewiseLinearCaseSplit> getCaseSplits() const;
-
 
     /*
       Return a clone of the constraint.
@@ -53,13 +58,11 @@ public:
     */
     void restoreState( const PiecewiseLinearConstraint *state );
 
-
     /*
       Register/unregister the constraint with a talbeau.
      */
     void registerAsWatcher( ITableau *tableau );
     void unregisterAsWatcher( ITableau *tableau );
-
 
     /*
       These callbacks are invoked when a watched variable's value
@@ -68,7 +71,6 @@ public:
     void notifyVariableValue( unsigned variable, double value );
     void notifyLowerBound( unsigned variable, double bound );
     void notifyUpperBound( unsigned variable, double bound );
-
 
     /*
       Returns true iff the variable participates in this piecewise
@@ -81,61 +83,51 @@ public:
     */
     List<unsigned> getParticipatingVariables() const;
 
-
     /*
       Returns a list of possible fixes for the violated constraint.
     */
     List<PiecewiseLinearConstraint::Fix> getPossibleFixes() const;
-
 
     /*
       Return a list of smart fixes for violated constraint.
     */
     List<PiecewiseLinearConstraint::Fix> getSmartFixes( ITableau *tableau ) const;
 
-
     /*
       Check if the constraint's phase has been fixed.
     */
     bool phaseFixed() const;
-
-
 
     /*
       If the constraint's phase has been fixed, get the (valid) case split.
     */
     PiecewiseLinearCaseSplit getValidCaseSplit() const;
 
-
-
     /*
-    Preprocessing related functions, to inform that a variable has
-    been eliminated completely because it was fixed to some value,
-    or that a variable's index has changed (e.g., x4 is now called
-    x2). constraintObsolete() returns true iff and the constraint
-    has become obsolote as a result of variable eliminations.
+      Preprocessing related functions, to inform that a variable has
+      been eliminated completely because it was fixed to some value,
+      or that a variable's index has changed (e.g., x4 is now called
+      x2). constraintObsolete() returns true iff and the constraint
+      has become obsolote as a result of variable eliminations.
     */
     void eliminateVariable( unsigned variable, double fixedValue );
     void updateVariableIndex( unsigned oldIndex, unsigned newIndex );
+
     /*
-     Returns true iff and the constraint has become obsolote as a result of variable eliminations.
+      Returns true iff and the constraint has become obsolote as a
+      result of variable eliminations.
     */
     bool constraintObsolete() const;
-
-
 
     /*
       Get the tightenings entailed by the constraint.
     */
     void getEntailedTightenings( List<Tightening> &tightenings ) const;
 
-
-
     /*
       Returns string with shape: sign, _f, _b
     */
     String serializeToString() const;
-
 
 private:
     unsigned _b, _f;
@@ -150,31 +142,18 @@ private:
     PiecewiseLinearCaseSplit getNegativeSplit() const;
     PiecewiseLinearCaseSplit getPositiveSplit() const;
 
-
     bool _haveEliminatedVariables;
-
 
     /*
       Set the phase status.
     */
     void setPhaseStatus( PhaseStatus phaseStatus );
-
     static String phaseToString( PhaseStatus phase );
 
     /*
       Return true iff b or f are out of bounds.
     */
     bool haveOutOfBoundVariables() const; // same as ReLU code
-
-
-
-
-
-
-
 };
 
-
-
-
-#endif //MARABOU_SIGNCONSTRAINT_H
+#endif // __SignConstraint_h__

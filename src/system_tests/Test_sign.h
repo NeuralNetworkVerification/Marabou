@@ -13,19 +13,12 @@
 
 **/
 
-
-
-
 #include <cxxtest/TestSuite.h>
 
 #include "Engine.h"
 #include "InputQuery.h"
 #include "FloatUtils.h"
 #include "SignConstraint.h"
-
-
-#ifndef MARABOU_TEST_SIGN_H
-#define MARABOU_TEST_SIGN_H
 
 class SignTestSuite : public CxxTest::TestSuite
 {
@@ -38,7 +31,6 @@ public:
     {
     }
 
-
     void test_sign_1() // similar to test_relu_2, with unSAT result required
     {
         InputQuery inputQuery;
@@ -49,7 +41,6 @@ public:
         inputQuery.setUpperBound( 0, 10 );
 
         inputQuery.setLowerBound( 5, 0.01 ); // unSAT! x5 = 0 always
-
 
         Equation equation1;
         equation1.addAddend( 1, 0 );
@@ -798,14 +789,6 @@ public:
         TS_ASSERT( correctSolution );
 
     }
-
-
-
-
-
-
-
-
 };
 
 //
@@ -815,7 +798,3 @@ public:
 // c-basic-offset: 4
 // End:
 //
-
-
-
-#endif //MARABOU_TEST_SIGN_H

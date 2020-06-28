@@ -1,29 +1,30 @@
-//
-// Created by guyam on 6/4/20.
-//
+/*********************                                                        */
+/*! \file Test_ReluConstraint.h
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Guy Amir
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
 
-#ifndef MARABOU_TEST_SIGNCONSTRAINT_H
-#define MARABOU_TEST_SIGNCONSTRAINT_H
-
+**/
 
 #include <cxxtest/TestSuite.h>
 
 #include "InputQuery.h"
+#include "MarabouError.h"
 #include "MockConstraintBoundTightener.h"
+#include "MockErrno.h"
 #include "MockTableau.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "ReluConstraint.h"
 #include "SignConstraint.h"
-#include "MarabouError.h"
-#include "/cs/usr/guyam/CLionProjects/Marabou/src/common/tests/MockErrno.h"
-//#include "MockErrno.h" // todo - yuval says red line ok
-
 
 #include <string.h>
-
-
-
-
 
 class MockForSignConstraint
         : public MockErrno
@@ -31,26 +32,27 @@ class MockForSignConstraint
 public:
 };
 
-
-
-
-class SignConstraintTestSuite : public CxxTest::TestSuite {
+class SignConstraintTestSuite : public CxxTest::TestSuite
+{
 public:
     MockForSignConstraint *mock;
 
-    void setUp() {
+    void setUp()
+    {
         TS_ASSERT(mock = new MockForSignConstraint);
     }
 
-    void tearDown() {
+    void tearDown()
+    {
         TS_ASSERT_THROWS_NOTHING(delete mock);
     }
 
-    void test_sign_constraint() { // TODO - PASSES
+    void test_sign_constraint()
+    {
         unsigned b = 1;
         unsigned f = 4;
 
-        SignConstraint sign(b, f); // define constraint
+        SignConstraint sign( b, f ); // define constraint
 
         List<unsigned> participatingVariables; // needs to return 1 and 4 - the tableu vars
         TS_ASSERT_THROWS_NOTHING(
@@ -943,13 +945,3 @@ public:
 
 
 };
-
-
-
-
-
-
-
-
-
-#endif //MARABOU_TEST_SIGNCONSTRAINT_H
