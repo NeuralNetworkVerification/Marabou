@@ -75,15 +75,35 @@ public:
     void setCost( const List<Term> &terms );
     void setObjective( const List<Term> &terms );
 
-    // Return true iff an optimal solution has been found
+    // Set a cutoff value for the objective function. For example, if
+    // maximizing x with cutoff value 0, Gurobi will return the
+    // optimal value if greater than 0, and 0 if the optimal value is
+    // less than 0.
+    void setCutoff( double cutoff );
+
+    // Returns true iff an optimal solution has been found
     bool optimal();
 
-    // Return true iff the instance is infeasible
+    // Returns true iff the cutoff value was used
+    bool cutoffOccurred();
+
+    // Returns true iff the instance is infeasible
     bool infeasbile();
 
-    // Solve and extract the solution
+    // Returns true iff the instance timed out
+    bool timeout();
+
+    // Returns true iff a feasible solution has been found
+    bool haveFeasibleSolution();
+
+    // Specify a time limit, in seconds
+    void setTimeLimit( double seconds );
+
+    // Solve and extract the solution, or the best known bound on the
+    // objective function
     void solve();
     void extractSolution( Map<String, double> &values, double &costOrObjective );
+    double getObjectiveBound();
 
     // Reset the underlying model
     void reset();
@@ -137,12 +157,17 @@ public:
     void addEqConstraint( const List<Term> &, double ) {}
     void setCost( const List<Term> & ) {}
     void setObjective( const List<Term> & ) {}
+    void setCutoff( double ) {};
     void solve() {}
     void extractSolution( Map<String, double> &, double & ) {}
     void reset() {}
     bool optimal() { return true; }
+    bool cutoffOccurred() { return false; };
     bool infeasbile() { return false; };
-
+    bool timeout() { return false; };
+    bool haveFeasibleSolution() { return true; };
+    void setTimeLimit( double ) {};
+    double getObjectiveBound() { return 0; };
     void dump() {}
 };
 
