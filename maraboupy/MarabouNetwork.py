@@ -17,6 +17,7 @@
 '''
 
 from maraboupy import MarabouCore
+import warnings
 
 import numpy as np
 
@@ -307,6 +308,7 @@ class MarabouNetwork:
             return self.evaluateNetwork(inputValues.flatten().tolist(), normalize_inputs=self.normalize,
                                         normalize_outputs=self.normalize)
         except NameError:
+            warnings.warn('Evaluate without Marabou is not implemented for this type of network.')
             return []
 
 
