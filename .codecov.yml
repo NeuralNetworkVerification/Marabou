@@ -1,5 +1,17 @@
-comment: false
 
-ignore:
-  - "**/__init__.py"
-  - "maraboupy/test"
+status:
+  project:
+    default:
+      # basic
+      target: auto
+      threshold: 1%
+      base: auto
+      paths:
+        - "src"
+        - "maraboupy"
+ 
+      comment: false
+
+      ignore:
+        - "**/__init__.py"
+        - "maraboupy/test"
