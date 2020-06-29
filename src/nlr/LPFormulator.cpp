@@ -40,6 +40,9 @@ double LPFormulator::solveLPRelaxation( const Map<unsigned, Layer *> &layers,
                                         unsigned lastLayer )
 {
     GurobiWrapper gurobi;
+
+    gurobi.setTimeLimit( GlobalConfiguration::MILPSolverTimeoutValueInSeconds );
+
     createLPRelaxation( layers, gurobi, lastLayer );
 
     List<GurobiWrapper::Term> terms;
@@ -55,18 +58,30 @@ double LPFormulator::solveLPRelaxation( const Map<unsigned, Layer *> &layers,
     if ( gurobi.infeasbile() )
         throw InfeasibleQueryException();
 
-    if ( !gurobi.optimal() )
-        throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
+    if ( gurobi.cutoffOccurred() )
+        return _cutoffValue;
 
-    Map<String, double> dontCare;
-    double result = 0;
-    gurobi.extractSolution( dontCare, result );
-    return result;
+    if ( gurobi.optimal() )
+    {
+        Map<String, double> dontCare;
+        double result = 0;
+        gurobi.extractSolution( dontCare, result );
+        return result;
+    }
+    else if ( gurobi.timeout() )
+    {
+        return gurobi.getObjectiveBound();
+    }
+
+    throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
 }
 
 void LPFormulator::optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned, Layer *> &layers )
 {
     GurobiWrapper gurobi;
+
+    gurobi.setTimeLimit( GlobalConfiguration::MILPSolverTimeoutValueInSeconds );
+
     List<GurobiWrapper::Term> terms;
     Map<String, double> dontCare;
     double lb = 0;
@@ -116,13 +131,26 @@ void LPFormulator::optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned
             gurobi.reset();
             gurobi.setObjective( terms );
             gurobi.solve();
+
             if ( gurobi.infeasbile() )
                 throw InfeasibleQueryException();
 
-            if ( !gurobi.optimal() )
+            if ( gurobi.cutoffOccurred() )
+            {
+                ub = _cutoffValue;
+            }
+            else if ( gurobi.optimal() )
+            {
+                gurobi.extractSolution( dontCare, ub );
+            }
+            else if ( gurobi.timeout() )
+            {
+                ub = gurobi.getObjectiveBound();
+            }
+            else
+            {
                 throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
-
-            gurobi.extractSolution( dontCare, ub );
+            }
 
             // If the bound is tighter, store it
             if ( ub < currentUb )
@@ -150,13 +178,26 @@ void LPFormulator::optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned
             gurobi.reset();
             gurobi.setCost( terms );
             gurobi.solve();
+
             if ( gurobi.infeasbile() )
                 throw InfeasibleQueryException();
 
-            if ( !gurobi.optimal() )
+            if ( gurobi.cutoffOccurred() )
+            {
+                lb = _cutoffValue;
+            }
+            else if ( gurobi.optimal() )
+            {
+                gurobi.extractSolution( dontCare, lb );
+            }
+            else if ( gurobi.timeout() )
+            {
+                lb = gurobi.getObjectiveBound();
+            }
+            else
+            {
                 throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
-
-            gurobi.extractSolution( dontCare, lb );
+            }
 
             // If the bound is tighter, store it
             if ( lb > currentLb )
@@ -315,7 +356,7 @@ void LPFormulator::addLayerToModel( GurobiWrapper &gurobi, const Layer *layer )
         break;
 
     default:
-        throw NLRError( NLRError::LAYER_TYPE_NOT_SUPPORTED, "MILPFormulator" );
+        throw NLRError( NLRError::LAYER_TYPE_NOT_SUPPORTED, "LPFormulator" );
         break;
     }
 }

@@ -1782,15 +1782,16 @@ void Engine::performSymbolicBoundTightening()
 
     for ( const auto &tightening : tightenings )
     {
+
         if ( tightening._type == Tightening::LB &&
-             _tableau->getLowerBound( tightening._variable ) < tightening._value )
+             FloatUtils::gt ( tightening._value, _tableau->getLowerBound( tightening._variable ) ) )
         {
             _tableau->tightenLowerBound( tightening._variable, tightening._value );
             ++numTightenedBounds;
         }
 
         if ( tightening._type == Tightening::UB &&
-             _tableau->getUpperBound( tightening._variable ) > tightening._value )
+             FloatUtils::lt ( tightening._value, _tableau->getUpperBound( tightening._variable ) ) )
         {
             _tableau->tightenUpperBound( tightening._variable, tightening._value );
             ++numTightenedBounds;

@@ -4,8 +4,8 @@ affiliations. All rights reserved.
 
 The source code of Marabou is open and available to study, to modify, and to
 redistribute original or modified versions; distribution is under the terms of
-the modified BSD license (reproduced below). Marabou links against Boost which
-is separately licensed under the Boost Software License.
+the modified BSD license (reproduced below). Marabou links against multiple
+third-party libraries, see details below.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -34,4 +34,17 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-----------------------------------------------------------------------
+-------------------------------------------------------------------------------
+ Third-Party Software
+-------------------------------------------------------------------------------
+
+The Marabou source code includes third-party software which has its own copyright
+and licensing terms, as described below. 
+
+Marabou links (by default) against the following libraries:
+    Boost        Boost Software License     (https://www.boost.org)
+    OpenBlas     BSD license                (https://www.openblas.net) 
+
+Marabou can also be linked (however, by default it is not) against the following libraries:
+  Gurobi                                    (https://www.gurobi.com)
+
