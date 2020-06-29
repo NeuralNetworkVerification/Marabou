@@ -45,12 +45,6 @@ Download
 ------------------------------------------------------------------------------
 The latest version of Marabou is available on [https://github.com/NeuralNetworkVerification/Marabou].
 
-## Static binaries
-
-Pre-compiled binary for Linux is available:
-
-[marabou-1.0-x86_64-linux.zip](https://aisafety.stanford.edu/marabou/marabou-1.0-x86_64-linux.zip)
-
 Build and Dependencies
 ------------------------------------------------------------------------------
 
@@ -158,6 +152,10 @@ edit your environmental variables so PYTHONPATH includes the marabou folder.
 #### Troubleshooting
 
 - On Windows - Make sure the detected python ("Found PythonInterp: ....") is a windows python and not cygwin or something like that (if it is cygwin, use -DPYTHON_EXECUTABLE flag to override the default python, or manuialy download the linux pybind and locate it in the tools directory)
+
+- 32bit Python - By default we install a 64bit Marabou and consequently a 64bit
+  python interface, the maraboupy/build_python_x86.sh file builds a 32bit
+  version.
 
 
 
