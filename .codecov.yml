@@ -9,14 +9,23 @@ ignore:
 
 coverage:
   status:
+    # Make sure the total coverage decreased by at most 1%
     project:
       default:
-        # basic
         target: auto
         threshold: 1%
         base: auto
         paths:
           - "src"
           - "maraboupy"
+    # Make sure the new added code is at least 80% covered 
+    patch: 
+      default:
+        target: 80%
+        base: auto
+        paths:
+          - "src"
+          - "maraboupy"
+
    
 
