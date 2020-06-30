@@ -12,15 +12,6 @@ network_filename = "./resources/nnet/acasxu/ACASXU_experimental_v2a_1_9.nnet"
 layer = 2
 
 
-def test_write_to_file():
-    output_filename = "./maraboupy/test/ACASXU_experimental_v2a_1_9_output.nnet"
-
-    nnet_object = MarabouNetworkNNet(filename=network_filename)
-    nnet_object.writeNNet(output_filename)
-
-    call(['diff', output_filename,network_filename])
-
-
 def test_evaluate_network():
     nnet_object = MarabouNetworkNNet(filename=network_filename)
 
@@ -28,10 +19,10 @@ def test_evaluate_network():
     for i in range(N):
         inputs = nnet_object.createRandomInputsForNetwork()
 
-        output1 = nnet_object.evaluateNetworkLayerToLayer(inputs, last_layer=-1, normalize_inputs=False,
-                                                          normalize_outputs=False, activate_output_layer=False)
+        output1 = nnet_object.evaluateNNet(inputs, last_layer=-1, normalize_inputs=False,
+                                           normalize_outputs=False, activate_output_layer=False)
 
-        output2 = nnet_object.evaluateNetworkLayerToLayer(inputs,normalize_inputs=False,normalize_outputs=False)
+        output2 = nnet_object.evaluateNNet(inputs, normalize_inputs=False, normalize_outputs=False)
 
         assert (output1 == output2).all()
 
@@ -48,21 +39,21 @@ def test_evaluate_network():
 
         # Adding input and output normalization
 
-        output1 = nnet_object.evaluateNetworkLayerToLayer(inputs, last_layer=-1, normalize_inputs=True,
-                                                     normalize_outputs=True, activate_output_layer=False)
+        output1 = nnet_object.evaluateNNet(inputs, last_layer=-1, normalize_inputs=True,
+                                           normalize_outputs=True, activate_output_layer=False)
 
-        output2 = nnet_object.evaluateNetwork(inputs, normalize_inputs=True, normalize_outputs=True)
+        output2 = nnet_object.evaluateNNet(inputs, normalize_inputs=True, normalize_outputs=True)
 
         assert (output1 == output2).all()
 
 
         # Compare direct evaluation to evaluating to a certain layer, and then from that layer onward
 
-        layer_output = nnet_object.evaluateNetworkLayerToLayer(inputs, last_layer=layer, normalize_inputs=False,
-                                                            normalize_outputs=False, activate_output_layer=True)
-        output1 = nnet_object.evaluateNetworkLayerToLayer(layer_output, first_layer=layer)
+        layer_output = nnet_object.evaluateNNet(inputs, last_layer=layer, normalize_inputs=False,
+                                                normalize_outputs=False, activate_output_layer=True)
+        output1 = nnet_object.evaluateNNet(layer_output, first_layer=layer)
 
-        output2 = nnet_object.evaluateNetworkLayerToLayer(inputs, normalize_inputs=False, normalize_outputs=False)
+        output2 = nnet_object.evaluateNNet(inputs, normalize_inputs=False, normalize_outputs=False)
 
 
         assert (output1 == output2).all()
@@ -70,11 +61,11 @@ def test_evaluate_network():
 
         # Same with input and output normalization
 
-        layer_output = nnet_object.evaluateNetworkToLayer(inputs, last_layer=layer, normalize_inputs=True,
-                                                            normalize_outputs=False, activate_output_layer=True)
-        output1 = nnet_object.evaluateNetworkFromLayer(layer_output, first_layer=layer, normalize_outputs=True)
+        layer_output = nnet_object.evaluateNNet(inputs, last_layer=layer, normalize_inputs=True,
+                                                normalize_outputs=False, activate_output_layer=True)
+        output1 = nnet_object.evaluateNNet(layer_output, first_layer=layer, normalize_outputs=True)
 
-        output2 = nnet_object.evaluateNetwork(inputs, normalize_inputs=True, normalize_outputs=True)
+        output2 = nnet_object.evaluateNNet(inputs, normalize_inputs=True, normalize_outputs=True)
 
         assert (output1 == output2).all()
 
@@ -91,13 +82,13 @@ def test_write_read_evaluate():
     for i in range(N):
         inputs = nnet_object_a.createRandomInputsForNetwork()
 
-        output1 = nnet_object.evaluateNetwork(inputs,normalize_inputs=False,normalize_outputs=False)
-        output2 = nnet_object_a.evaluateNetwork(inputs,normalize_inputs=False,normalize_outputs=False)
+        output1 = nnet_object.evaluateNNet(inputs, normalize_inputs=False, normalize_outputs=False)
+        output2 = nnet_object_a.evaluateNNet(inputs, normalize_inputs=False, normalize_outputs=False)
         assert (output1 == output2).all()
 
         # Compare evaluation with and without Marabou
-        without_marabou_output = nnet_object_a.evaluate(np.array([inputs]),useMarabou=False).flatten()
-        with_marabou_output = nnet_object_a.evaluate(np.array([inputs]),useMarabou=True).flatten()
+        without_marabou_output = nnet_object_a.evaluate(np.array([inputs]), useMarabou=False).flatten()
+        with_marabou_output = nnet_object_a.evaluate(np.array([inputs]), useMarabou=True).flatten()
 
         # Assert that all of the above agree up to TOL
         assert (output2 == without_marabou_output).all()
@@ -105,8 +96,8 @@ def test_write_read_evaluate():
 
         # Adding input and output normalization
 
-        output1 = nnet_object.evaluateNetwork(inputs, normalize_inputs=True, normalize_outputs=True)
-        output2 = nnet_object_a.evaluateNetwork(inputs, normalize_inputs=True, normalize_outputs=True)
+        output1 = nnet_object.evaluateNNet(inputs, normalize_inputs=True, normalize_outputs=True)
+        output2 = nnet_object_a.evaluateNNet(inputs, normalize_inputs=True, normalize_outputs=True)
         assert (output1 == output2).all()
 
 
@@ -128,11 +119,11 @@ def test_normalize_read_flag():
     for i in range(N):
         inputs = nnet_object_a.createRandomInputsForNetwork()
 
-        output1 = nnet_object.evaluateNetwork(inputs, normalize_inputs=True, normalize_outputs=True)
-        output2 = nnet_object_a.evaluateNetwork(inputs,normalize_inputs=True, normalize_outputs=True)
+        output1 = nnet_object.evaluateNNet(inputs, normalize_inputs=True, normalize_outputs=True)
+        output2 = nnet_object_a.evaluateNNet(inputs, normalize_inputs=True, normalize_outputs=True)
         assert (output1 == output2).all()
 
-        without_marabou_output = nnet_object_a.evaluate(np.array([inputs]),useMarabou=False).flatten()
+        without_marabou_output = nnet_object_a.evaluate(np.array([inputs]), useMarabou=False).flatten()
         assert (output2 == without_marabou_output).all()
 
         with_marabou_output = nnet_object_a.evaluate(np.array([inputs]), useMarabou=True).flatten()
@@ -141,7 +132,6 @@ def test_normalize_read_flag():
 
 
 if __name__ == "__main__":
-    test_write_to_file()
     test_evaluate_network()
     test_write_read_evaluate()
     test_normalize_read_flag()
