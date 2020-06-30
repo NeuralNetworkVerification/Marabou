@@ -1,3 +1,4 @@
+''''''
 '''
 /* *******************                                                        */
 /*! \file MarabouUtils.py
@@ -19,31 +20,34 @@
 from maraboupy import MarabouCore
 
 class Equation:
-    """
-    Python class to conveniently represent MarabouCore.Equation
+    """Python class to conveniently represent :class:`~maraboupy.MarabouCore.Equation`
+
+    Attributes:
+        addendList (list of tuples), which each contain a coefficient and variable number
+        scalar (float): Scalar term for equation
+        EquationType (:func:`~maraboupy.MarabouCore.EquationType`): Equation type (EQ, LE, GE)
     """
     def __init__(self, EquationType=MarabouCore.Equation.EQ):
-        """
-        Construct empty equation
+        """Construct empty equation
         """
         self.addendList = []
         self.scalar = None
         self.EquationType = EquationType
 
     def setScalar(self, x):
-        """
-        Set scalar of equation
-        Arguments:
-            x: (float) scalar RHS of equation
+        """Set scalar of equation
+
+        Args:
+            x (float): scalar RHS of equation
         """
         self.scalar = x
 
     def addAddend(self, c, x):
-        """
-        Add addend to equation
-        Arguments:
-            c: (float) coefficient of addend
-            x: (int) variable number of variable in addend
+        """Add addend to equation
+
+        Args:
+            c (float): coefficient of addend
+            x (int): variable number of variable in addend
         """
         self.addendList += [(c, x)]
 

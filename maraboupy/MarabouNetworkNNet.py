@@ -1,3 +1,4 @@
+''''''
 '''
 /* *******************                                                        */
 /*! \file MarabouNetworkNNet.py
@@ -22,12 +23,7 @@ from maraboupy import MarabouNetwork
 import numpy as np
 
 class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
-    """
-    Class that implements a MarabouNetwork from an NNet file.
-    """
-    def __init__ (self, filename, normalize=False):
-        """
-        Constructs a MarabouNetworkNNet object from an .nnet file.
+    """Constructs a MarabouNetworkNNet object from an .nnet file.
 
         Args:
             filename: path to the .nnet file.
@@ -49,6 +45,9 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
             weights          (list of list of lists) Outer index corresponds to layer
                                 number.
             biases           (list of lists) Outer index corresponds to layer number.
+        """
+    def __init__ (self, filename, normalize=False):
+        """Read nnet file and extract network equations and constraints
         """
         super().__init__()
 
@@ -77,17 +76,15 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         # Set the number of variables
         self.numVars = self.numberOfVariables()
 
-    def getMarabouQuery(self):
-        ipq = super(MarabouNetworkNNet, self).getMarabouQuery()
-        return ipq
-
-    """
-    Read the nnet file, load all the values and assign the class members.
-
-    Args:
-        filename: path to the .nnet file.
-    """
     def read_nnet(self, file_name):
+        """
+        Read the nnet file, load all the values and assign the class members.
+
+        Args:
+            filename: path to the .nnet file.
+            
+        :meta private:
+        """
         with open(file_name) as f:
             line = f.readline()
             cnt = 1
@@ -158,13 +155,11 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
                     self.inputMinimums[i] = (self.inputMinimums[i] - self.inputMeans[i]) / self.inputRanges[i]
                     self.inputMaximums[i] = (self.inputMaximums[i] - self.inputMeans[i]) / self.inputRanges[i]
 
-    """
-    Compute the variable number ranges for each type (b, f)
-
-    Args:
-        None
-    """
     def variableRanges(self):
+        """Compute the variable number ranges for each type (b, f)
+        
+        :meta private:
+        """
         input_variables = []
         b_variables = []
         f_variables = []
@@ -191,18 +186,18 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         self.f_variables = f_variables
         self.outputVars = np.array([output_variables])
 
-    """
-    Compute the variable number for the b variables in that correspond to the
-        layer, node argument.
-
-    Args:
-        layer: (int) layer number.
-        node: (int) node number.
-    Returns:
-        variable number: (int) variable number that corresponds to the b variable
-        of the node defined by the layer, node indices.
-    """
     def nodeTo_b(self, layer, node):
+        """Compute variable number for the b variable of a node in a layer
+
+        Args:
+            layer (int): Layer number
+            node (int): Node number.
+
+        Returns:
+            (int)
+        
+        :meta private:
+        """
         assert(0 < layer)
         assert(node < self.layerSizes[layer])
 
@@ -211,18 +206,19 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
         return offset + node
 
-    """
-    Compute the variable number for the f variables in that correspond to the
-        layer, node argument.
-
-    Args:
-        layer: (int) layer number.
-        node: (int) node number.
-    Returns:
-        variable number: (int) variable number that corresponds to the f variable
-        of the node defined by the layer, node indices.
-    """
+        
     def nodeTo_f(self, layer, node):
+        """Compute variable number for the f variable of a node in a layer
+
+        Args:
+            layer (int): Layer number
+            node (int): Node number
+            
+        Returns:
+            (int)
+        
+        :meta private:
+        """
         assert(layer < len(self.layerSizes))
         assert(node < self.layerSizes[layer])
 
@@ -234,12 +230,12 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
             offset += self.layerSizes[layer]
 
             return offset + node
-    """
-    Construct the Marabou equations
-    Arguments:
-        None
-    """
+
     def buildEquations(self):
+        """Construct the Marabou equations
+        
+        :meta private:
+        """
         for layer, size in enumerate(self.layerSizes):
             if layer == 0:
                 continue
@@ -271,12 +267,11 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
                 e.setScalar(-bias)
                 self.addEquation(e)
 
-    """
-    Identify all relus and their associated variable numbers and add them to Marabou network
-    Arguments:
-        None
-    """
     def addRelus(self):
+        """Identify all relus and their associated variable numbers and add them to Marabou network
+        
+        :meta private:
+        """
         relus = []
         hidden_layers = self.layerSizes[1:-1]
         for layer, size in enumerate(hidden_layers):
@@ -284,10 +279,29 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
                 self.addRelu(self.nodeTo_b(layer+1, node), self.nodeTo_f(layer+1, node))
 
     def numberOfVariables(self):
+        """Get number of variables in network
+        
+        Returns:
+            (int)
+        """
         return self.layerSizes[0] + 2*sum(self.layerSizes[1:-1]) + 1*self.layerSizes[-1]
 
     def getInputMinimum(self, inputVar):
+        """Get minimum value for given input variable
+
+        Args:
+            inputVar (int): Input variable
+        Returns:
+            (float)
+        """
         return self.inputMinimums[inputVar]
 
     def getInputMaximum(self, inputVar):
+        """Get maximum value for given input variable
+
+        Args:
+            inputVar (int): Input variable
+        Returns:
+            (float)
+        """
         return self.inputMaximums[inputVar]
