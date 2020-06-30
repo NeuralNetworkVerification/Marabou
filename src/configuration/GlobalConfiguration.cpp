@@ -89,7 +89,7 @@ const GlobalConfiguration::BasisFactorizationType GlobalConfiguration::BASIS_FAC
 const unsigned GlobalConfiguration::RUNTIME_ESTIMATE_THRESHOLD = 5;
 
 // Logging - note that it is enabled only in Debug mode
-const bool GlobalConfiguration::DNC_MANAGER_LOGGING = false;
+const bool GlobalConfiguration::DNC_MANAGER_LOGGING = true;
 const bool GlobalConfiguration::ENGINE_LOGGING = false;
 const bool GlobalConfiguration::TABLEAU_LOGGING = false;
 const bool GlobalConfiguration::SMT_CORE_LOGGING = false;

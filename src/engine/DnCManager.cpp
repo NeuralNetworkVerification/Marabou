@@ -23,6 +23,7 @@
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
+#include "PolarityBasedDivider.h"
 #include "QueryDivider.h"
 #include "TimeUtils.h"
 #include "Vector.h"
@@ -75,11 +76,18 @@ DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
 {
     if ( divideStrategy == DivideStrategy::Auto )
     {
+        DNC_MANAGER_LOG( Stringf( "Deciding splitting strategy automatically...\n" ).ascii() );
         if ( inputQuery->getNumInputVariables() <
              GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD )
+        {
+            DNC_MANAGER_LOG( Stringf( "\tUsing Largest Interval Heuristics\n" ).ascii() );
             _divideStrategy = DivideStrategy::LargestInterval;
+        }
         else
+        {
+            DNC_MANAGER_LOG( Stringf( "\tUsing Polarity-based Heuristics\n" ).ascii() );
             _divideStrategy = DivideStrategy::Polarity;
+        }
     }
     else
         _divideStrategy = divideStrategy;
@@ -345,45 +353,42 @@ bool DnCManager::createEngines()
 
 void DnCManager::initialDivide( SubQueries &subQueries )
 {
-    const List<unsigned> inputVariables( _baseEngine->getInputVariables() );
+    auto split = std::unique_ptr<PiecewiseLinearCaseSplit>
+        ( new PiecewiseLinearCaseSplit() );
     std::unique_ptr<QueryDivider> queryDivider = nullptr;
-    if ( _divideStrategy == DivideStrategy::LargestInterval )
+    if ( _divideStrategy == DivideStrategy::Polarity )
     {
         queryDivider = std::unique_ptr<QueryDivider>
-            ( new LargestIntervalDivider( inputVariables ) );
+            ( new PolarityBasedDivider( _baseEngine ) );
     }
-    else
+    else // Default is LargestInterval
     {
-        // Default
+        const List<unsigned> inputVariables( _baseEngine->getInputVariables() );
         queryDivider = std::unique_ptr<QueryDivider>
             ( new LargestIntervalDivider( inputVariables ) );
+        QueryDivider::InputRegion initialRegion;
+        InputQuery *inputQuery = _baseEngine->getInputQuery();
+        for ( const auto &variable : inputVariables )
+        {
+            initialRegion._lowerBounds[variable] =
+                inputQuery->getLowerBounds()[variable];
+            initialRegion._upperBounds[variable] =
+                inputQuery->getUpperBounds()[variable];
+        }
+        // Add bound as equations for each input variable
+        for ( const auto &variable : inputVariables )
+        {
+            double lb = initialRegion._lowerBounds[variable];
+            double ub = initialRegion._upperBounds[variable];
+            split->storeBoundTightening( Tightening( variable, lb,
+                                                     Tightening::LB ) );
+            split->storeBoundTightening( Tightening( variable, ub,
+                                                     Tightening::UB ) );
+        }
     }
 
     String queryId;
     // Create a new case split
-    QueryDivider::InputRegion initialRegion;
-    InputQuery *inputQuery = _baseEngine->getInputQuery();
-    for ( const auto &variable : inputVariables )
-    {
-        initialRegion._lowerBounds[variable] =
-            inputQuery->getLowerBounds()[variable];
-        initialRegion._upperBounds[variable] =
-            inputQuery->getUpperBounds()[variable];
-    }
-
-    auto split = std::unique_ptr<PiecewiseLinearCaseSplit>
-        ( new PiecewiseLinearCaseSplit() );
-
-    // Add bound as equations for each input variable
-    for ( const auto &variable : inputVariables )
-    {
-        double lb = initialRegion._lowerBounds[variable];
-        double ub = initialRegion._upperBounds[variable];
-        split->storeBoundTightening( Tightening( variable, lb,
-                                                 Tightening::LB ) );
-        split->storeBoundTightening( Tightening( variable, ub,
-                                                 Tightening::UB ) );
-    }
 
     queryDivider->createSubQueries( pow( 2, _initialDivides ), queryId,
                                     *split, _initialTimeout, subQueries );
