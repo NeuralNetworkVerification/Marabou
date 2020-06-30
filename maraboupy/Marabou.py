@@ -20,15 +20,15 @@ from maraboupy.MarabouCore import *
 
 # Import parsers if required packages are installed
 try:
-    from .MarabouNetworkNNet import *
+    from maraboupy.MarabouNetworkNNet import *
 except ImportError:
     warnings.warn("NNet parser is unavailable because the numpy package is not installed")
 try:
-    from .MarabouNetworkTF import *
+    from maraboupy.MarabouNetworkTF import *
 except ImportError:
     warnings.warn("Tensorflow parser is unavailable because tensorflow package is not installed")
 try:
-    from .MarabouNetworkONNX import *
+    from maraboupy.MarabouNetworkONNX import *
 except ImportError:
     warnings.warn("ONNX parser is unavailable because onnx or onnxruntime packages are not installed")
 

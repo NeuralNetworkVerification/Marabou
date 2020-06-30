@@ -1,5 +1,6 @@
 
 from maraboupy.MarabouNetworkNNet import *
+import Marabou
 
 
 from subprocess import call
@@ -13,7 +14,7 @@ layer = 2
 
 
 def test_evaluate_network():
-    nnet_object = MarabouNetworkNNet(filename=network_filename)
+    nnet_object = Marabou.read_nnet(filename=network_filename)
 
     N = 10
     for i in range(N):
@@ -73,10 +74,10 @@ def test_evaluate_network():
 def test_write_read_evaluate():
     output_filename = "./maraboupy/test/ACASXU_experimental_v2a_1_9_output.nnet"
 
-    nnet_object = MarabouNetworkNNet(filename=network_filename)
+    nnet_object = Marabou.read_nnet(filename=network_filename)
     nnet_object.writeNNet(output_filename)
 
-    nnet_object_a = MarabouNetworkNNet(filename=output_filename)
+    nnet_object_a = Marabou.read_nnet(filename=output_filename)
 
     N = 10
     for i in range(N):
@@ -110,10 +111,10 @@ def test_normalize_read_flag():
     '''
     output_filename = "./maraboupy/test/ACASXU_experimental_v2a_1_9_output.nnet"
 
-    nnet_object = MarabouNetworkNNet(filename=network_filename, normalize=True)
+    nnet_object = Marabou.read_nnet(filename=network_filename, normalize=True)
     nnet_object.writeNNet(output_filename)
 
-    nnet_object_a = MarabouNetworkNNet(filename=output_filename, normalize=True)
+    nnet_object_a = Marabou.read_nnet(filename=output_filename, normalize=True)
 
     N = 10
     for i in range(N):
