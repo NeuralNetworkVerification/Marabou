@@ -20,6 +20,8 @@
 #include "MStringf.h"
 #include "MarabouError.h"
 
+#define INPUT_QUERY_LOG( x, ... ) LOG( GlobalConfiguration::INPUT_QUERY_LOGGING, "Preprocessor: %s\n", x )
+
 InputQuery::InputQuery()
     : _networkLevelReasoner( NULL )
 {
@@ -545,6 +547,237 @@ void InputQuery::setNetworkLevelReasoner( NLR::NetworkLevelReasoner *nlr )
 NLR::NetworkLevelReasoner *InputQuery::getNetworkLevelReasoner() const
 {
     return _networkLevelReasoner;
+}
+
+bool InputQuery::constructNetworkLevelReasoner()
+{
+    INPUT_QUERY_LOG( "PP: constructing an NLR... " );
+
+    if ( _networkLevelReasoner )
+        delete _networkLevelReasoner;
+    NLR::NetworkLevelReasoner *nlr = new NLR::NetworkLevelReasoner;
+
+    Map<unsigned, unsigned> handledVariableToLayer;
+
+    // First, put all the input neurons in layer 0
+    List<unsigned> inputs = getInputVariables();
+    nlr->addLayer( 0, NLR::Layer::INPUT, inputs.size() );
+    unsigned index = 0;
+    for ( const auto &inputVariable : inputs )
+    {
+        nlr->setNeuronVariable( NLR::NeuronIndex( 0, index ), inputVariable );
+        handledVariableToLayer[inputVariable] = 0;
+        ++index;
+    }
+
+    unsigned newLayerIndex = 1;
+    // Now, repeatedly attempt to construct addditional layers
+    while ( constructWeighedSumLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
+            constructReluLayer( nlr, handledVariableToLayer, newLayerIndex ) )
+    {
+        ++newLayerIndex;
+    }
+
+    bool success = ( newLayerIndex > 1 );
+
+    if ( success )
+    {
+        unsigned count = 0;
+        for ( unsigned i = 0; i < nlr->getNumberOfLayers(); ++i )
+            count += nlr->getLayer( i )->getSize();
+
+        INPUT_QUERY_LOG( Stringf( "successful. Constructed %u layers with %u neurons (out of %u)\n",
+                      newLayerIndex,
+                      count,
+                      getNumberOfVariables() ).ascii() );
+
+        _networkLevelReasoner = nlr;
+    }
+    else
+    {
+        INPUT_QUERY_LOG( "unsuccessful\n" );
+        delete nlr;
+    }
+
+    return success;
+}
+
+bool InputQuery::constructWeighedSumLayer( NLR::NetworkLevelReasoner *nlr,
+                                           Map<unsigned, unsigned> &handledVariableToLayer,
+                                           unsigned newLayerIndex )
+{
+    struct NeuronInformation
+    {
+    public:
+
+        NeuronInformation( unsigned variable, unsigned neuron, const Equation *eq )
+            : _variable( variable )
+            , _neuron( neuron )
+            , _eq( eq )
+        {
+        }
+
+        NeuronInformation()
+            : _eq( NULL )
+        {
+        }
+
+        unsigned _variable;
+        unsigned _neuron;
+        const Equation *_eq;
+    };
+
+    List<NeuronInformation> newNeurons;
+
+    // Look for equations where all variables except one have already been handled
+    const List<Equation> &equations = getEquations();
+    for ( const auto &eq : equations )
+    {
+        // Only consider equalities
+        if ( eq._type != Equation::EQ )
+            continue;
+
+        List<unsigned> eqVariables = eq.getListParticipatingVariables();
+        auto it = eqVariables.begin();
+        while ( it != eqVariables.end() )
+        {
+            if ( handledVariableToLayer.exists( *it ) )
+                it = eqVariables.erase( it );
+            else
+                ++it;
+        }
+
+        if ( eqVariables.size() == 1 )
+        {
+            // Add the surviving variable to the new layer
+            newNeurons.append( NeuronInformation( *eqVariables.begin(), newNeurons.size(), &eq ) );
+        }
+    }
+
+    // No neurons found for the new layer
+    if ( newNeurons.empty() )
+        return false;
+
+    nlr->addLayer( newLayerIndex, NLR::Layer::WEIGHTED_SUM, newNeurons.size() );
+    for ( const auto &newNeuron : newNeurons )
+    {
+        handledVariableToLayer[newNeuron._variable] = newLayerIndex;
+
+        // Add the new neuron
+        nlr->setNeuronVariable( NLR::NeuronIndex( newLayerIndex, newNeuron._neuron ), newNeuron._variable );
+
+        /*
+          We assume equations have the form
+
+          2x1 + 3x2 - y = 5
+
+          Where y is our weighted sum variable. If y's coefficient is
+          not -1, we make it -1 by multiplying everything else
+        */
+
+        ASSERT( !FloatUtils::isZero( newNeuron._eq->getCoefficient( newNeuron._variable ) ) );
+        double factor = -1.0 / newNeuron._eq->getCoefficient( newNeuron._variable );
+
+        // Bias
+        nlr->setBias( newLayerIndex, newNeuron._neuron, factor * -newNeuron._eq->_scalar );
+
+        // Weighted sum
+        for ( const auto &addend : newNeuron._eq->_addends )
+        {
+            if ( addend._variable == newNeuron._variable )
+                continue;
+
+            unsigned sourceLayer = handledVariableToLayer[addend._variable];
+            unsigned sourceNeuron = nlr->getLayer( sourceLayer )->variableToNeuron( addend._variable );
+
+            // Mark the layer dependency
+            nlr->addLayerDependency( sourceLayer, newLayerIndex );
+
+            nlr->setWeight( sourceLayer,
+                            sourceNeuron,
+                            newLayerIndex,
+                            newNeuron._neuron,
+                            factor * addend._coefficient );
+        }
+    }
+
+    return true;
+}
+
+bool InputQuery::constructReluLayer( NLR::NetworkLevelReasoner *nlr,
+                                     Map<unsigned, unsigned> &handledVariableToLayer,
+                                     unsigned newLayerIndex )
+{
+    struct NeuronInformation
+    {
+    public:
+
+        NeuronInformation( unsigned variable, unsigned neuron, unsigned sourceVariable )
+            : _variable( variable )
+            , _neuron( neuron )
+            , _sourceVariable( sourceVariable )
+        {
+        }
+
+        unsigned _variable;
+        unsigned _neuron;
+        unsigned _sourceVariable;
+    };
+
+    List<NeuronInformation> newNeurons;
+
+    // Look for ReLUs where all b variables have already been handled
+    const List<PiecewiseLinearConstraint *> &plConstraints =
+        getPiecewiseLinearConstraints();
+
+    for ( const auto &plc : plConstraints )
+    {
+        // Only consider ReLUs
+        if ( plc->getType() != RELU )
+            continue;
+
+        const ReluConstraint *relu = (const ReluConstraint *)plc;
+
+        // Has the b variable been handled?
+        unsigned b = relu->getB();
+        if ( !handledVariableToLayer.exists( b ) )
+            continue;
+
+        // If the f variable has also been handled, ignore this constraint
+        unsigned f = relu->getF();
+        if ( handledVariableToLayer.exists( f ) )
+            continue;
+
+        // B has been handled, f hasn't. Add f
+        newNeurons.append( NeuronInformation( f, newNeurons.size(), b ) );
+    }
+
+    // No neurons found for the new layer
+    if ( newNeurons.empty() )
+        return false;
+
+    nlr->addLayer( newLayerIndex, NLR::Layer::RELU, newNeurons.size() );
+    for ( const auto &newNeuron : newNeurons )
+    {
+        handledVariableToLayer[newNeuron._variable] = newLayerIndex;
+
+        unsigned sourceLayer = handledVariableToLayer[newNeuron._sourceVariable];
+        unsigned sourceNeuron = nlr->getLayer( sourceLayer )->variableToNeuron( newNeuron._sourceVariable );
+
+        // Mark the layer dependency
+        nlr->addLayerDependency( sourceLayer, newLayerIndex );
+
+        // Add the new neuron
+        nlr->setNeuronVariable( NLR::NeuronIndex( newLayerIndex, newNeuron._neuron ), newNeuron._variable );
+
+        // Mark the activation connection
+        nlr->addActivationSource( sourceLayer,
+                                  sourceNeuron,
+                                  newLayerIndex,
+                                  newNeuron._neuron );
+    }
+
+    return true;
 }
 
 //
