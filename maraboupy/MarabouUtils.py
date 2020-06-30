@@ -23,9 +23,9 @@ class Equation:
     """Python class to conveniently represent :class:`~maraboupy.MarabouCore.Equation`
 
     Attributes:
-        addendList (list of tuples), which each contain a coefficient and variable number
+        addendList (list of tuples): Each addend tuple contains a coefficient and variable number
         scalar (float): Scalar term for equation
-        EquationType (:func:`~maraboupy.MarabouCore.EquationType`): Equation type (EQ, LE, GE)
+        EquationType (:class:`~maraboupy.MarabouCore.EquationType`): Equation type (EQ, LE, GE)
     """
     def __init__(self, EquationType=MarabouCore.Equation.EQ):
         """Construct empty equation
@@ -43,7 +43,7 @@ class Equation:
         self.scalar = x
 
     def addAddend(self, c, x):
-        """Add addend to equation
+        """Add an addend to the equation
 
         Args:
             c (float): coefficient of addend

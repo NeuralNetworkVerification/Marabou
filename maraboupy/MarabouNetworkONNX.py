@@ -28,17 +28,17 @@ from onnx import TensorProto
 import itertools
 
 class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
+    """Constructs a MarabouNetworkONNX object from an ONNX file
+
+    Args:
+        filename (str): Path to the ONNX file
+        inputNames: (list of str, optional): List of node names corresponding to inputs
+        outputName: (string, optional): Name of node corresponding to output
+
+    Returns:
+        :class:`~maraboupy.Marabou.marabouNetworkONNX.marabouNetworkONNX`
+    """
     def __init__(self, filename, inputNames=None, outputName=None):
-        """Constructs a MarabouNetworkONNX object from an ONNX file
-
-        Args:
-            filename (str): Path to the ONNX file
-            inputNames: (list of str, optional): List of node names corresponding to inputs
-            outputName: (string, optional): Name of node corresponding to output
-
-        Returns:
-            :class:`~maraboupy.Marabou.marabouNetworkONNX.marabouNetworkONNX`
-        """
         super().__init__()
         self.readONNX(filename, inputNames, outputName)
 
@@ -55,15 +55,12 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         self.graph = None
         
     def readONNX(self, filename, inputNames, outputName):
-        """Constructs a MarabouNetworkONNX object from an ONNX file
+        """Read an ONNX file and create a MarabouNetworkONNX object
 
         Args:
             filename: (str): Path to the ONNX file
             inputNames: (list of str): List of names corresponding to inputs
             outputName: (str): Name of node corresponding to output
-
-        Returns:
-            marabouNetworkONNX: (MarabouNetworkONNX) representing network
             
         :meta private:
         """
@@ -214,7 +211,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             nodeName (str): Name of node to find in graph
             
         Returns:
-            ONNX node named nodeName
+            (str): ONNX node named nodeName
 
         :meta private:
         """
@@ -229,7 +226,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             nodeName (str): Name of node
 
         Returns:
-            (np.array): Array of variable numbers 
+            (numpy array): Array of variable numbers 
 
         :meta private:
         """
@@ -245,11 +242,11 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         """Get names of nodes that are inputs to the given node
 
         Args:
-            nodeName: (str) name of node
-            saveConstant: (bool) if true, save constant variables to self.constantMap
+            nodeName (str): Name of node
+            saveConstant (bool): If true, save constant variables to self.constantMap
 
         Returns:
-            inNodes: (list of str) names of nodes that are inputs to the given node
+            (list of str): Names of nodes that are inputs to the given node
 
         :meta private:
         """
@@ -266,7 +263,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         """Function representing a constant tensor
 
         Args:
-            node: (node) representing constant operation
+            node (node): ONNX node representing constant operation
 
         :meta private:
         """
@@ -281,7 +278,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         """Function representing identity
 
         Args:
-            node: (node) representing identity operation
+            node (node): ONNX node representing identity operation
 
         :meta private:
         """
@@ -297,7 +294,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         """Function representing cast
 
         Args:
-            node: (node) representing cast operation
+            node (node): ONNX node representing cast operation
 
         :meta private:
         """
@@ -350,7 +347,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         """Function representing reshape
 
         Args:
-            node: (node) representing reshape operation
+            node (node): ONNX node representing reshape operation
 
         :meta private:
         """
@@ -366,14 +363,14 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             self.constantMap[nodeName] = self.constantMap[inputName1].reshape(reshapeVals)
 
     def flatten(self, node):
-        """Function representing flatten.
+        """Function representing flatten
 
         Unlike numpy.flatten(), ONNX's Flatten operation reshapes
         a (d_0, d_1, ..., d_n) tensor into a 2D tensor with shape
         (d_0 * d_1 * ... * d_(axis-1), d_axis * d_(axis+1) * ... * d_n).
 
         Args:
-            node: (node) representing flatten operation
+            node (node): ONNX node representing flatten operation
 
         :meta private:
         """
@@ -400,7 +397,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         """Function representing transpose
 
         Args:
-            node: (node) representing transpose operation
+            node (node): ONNX node representing transpose operation
 
         :meta private:
         """
@@ -424,8 +421,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         """Function to generate maxpooling equations
 
         Args:
-            node: (node) representing maxpool operation
-            makeEquations: (bool) True if we need to create new variables and maxpool constraints
+            node (node): ONNX node representing maxpool operation
+            makeEquations (bool): True if we need to create new variables and maxpool constraints
 
         :meta private:
         """
@@ -465,8 +462,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         """Function to generate equations for a 2D convolution
 
         Args:
-            node: (node) representing the 2D Convolution operation
-            makeEquations: (bool) True if we need to create new variables and write Marabou equations
+            node (node): ONNX node representing the 2D Convolution operation
+            makeEquations (bool): True if we need to create new variables and write Marabou equations
 
         :meta private:
         """
@@ -544,8 +541,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         """Function to generate equations corresponding to Gemm (general matrix multiplication)
 
         Args:
-            node: (node) representing the Gemm operation
-            makeEquations: (bool) True if we need to create new variables and write Marabou equations
+            node (node): ONNX node representing the Gemm operation
+            makeEquations (bool): True if we need to create new variables and write Marabou equations
 
         :meta private:
         """  
@@ -615,8 +612,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         """Function to generate equations corresponding to matrix multiplication
 
         Args:
-            node: (node) representing the MatMul operation
-            makeEquations: (bool) True if we need to create new variables and write Marabou equations
+            node (node): ONNX node representing the MatMul operation
+            makeEquations (bool): True if we need to create new variables and write Marabou equations
 
         :meta private:
         """
@@ -697,8 +694,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         """Function to generate equations corresponding to addition
 
         Args:
-            node: (node) representing the Add operation
-            makeEquations: (bool) True if we need to create new variables and write Marabou equations
+            node (node): ONNX node representing the Add operation
+            makeEquations (bool): True if we need to create new variables and write Marabou equations
 
         :meta private:
         """
@@ -803,8 +800,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         """Function to generate equations corresponding to pointwise Relu
 
         Args:
-            node: (node) representing the Relu operation
-            makeEquations: (bool) True if we need to create new variables and add new Relus
+            node (node): ONNX node representing the Relu operation
+            makeEquations (bool): True if we need to create new variables and add new Relus
 
         :meta private:
         """
@@ -829,7 +826,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         """Remove unused shapes
         
         After constructing equations, remove shapes from self.shapeMap that are part of the graph but not
-        relevant for this input query. This is only cosmetic and does not impact Marabou
+        relevant for this input query. This is only cosmetic and does not impact Marabou.
 
         :meta private:
         """
@@ -841,16 +838,16 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         """Reassign output variable so that output variables follow input variables
 
         This function computes what the given variable should be when the output variables are 
-        moved to come after the input variables
+        moved to come after the input variables.
 
         Args:
-            var: (int) Original variable number
-            numInVars: (int) Number of input variables
-            outVars: (array of int) Original output variables
-            newOutVars: (array of int) New output variables
+            var (int): Original variable number
+            numInVars (int): Number of input variables
+            outVars (numpy array of int): Original output variables
+            newOutVars (numpy array of int): New output variables
 
         Returns:
-            (int) New variable assignment
+            (int): New variable assignment
 
         :meta private:
         """
@@ -917,10 +914,10 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         """Try to evaluate the network with the given inputs using ONNX
 
         Args:
-            inputValues (list of np.arrays): Input values representing inputs to network
+            inputValues (list of numpy array): Input values representing inputs to network
 
         Returns:
-            (np.array) Output values of neural network
+            (numpy array): Output values of neural network
         """
         # Check that all input variables are designated as inputs in the graph
         # Unlike Tensorflow, ONNX only allows assignment of values to input/output nodes

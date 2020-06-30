@@ -39,20 +39,18 @@ except:
     pass
 
 class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
-    def __init__(self, filename, inputNames=None, outputName=None, modelType="frozen", savedModelTags=[]):
-        """Constructs a MarabouNetworkTF object from a frozen Tensorflow protobuf or SavedModel
+    """Constructs a MarabouNetworkTF object from a frozen Tensorflow protobuf or SavedModel
 
-        Args:
-            filename: (string) If savedModel is false, path to the frozen graph .pb file.
-                               If savedModel is true, path to SavedModel folder, which
-                               contains .pb file and variables subdirectory.
-            inputName: (string) optional, name of operation corresponding to input.
-            outputName: (string) optional, name of operation corresponding to output.
-            modelType: (string) optional, type of model to read. The default is "frozen" for a frozen graph.
-                                Can also use "savedModel_v1" or "savedModel_v2" for the SavedModel format
-                                created from either tensorflow versions 1.X or 2.X respectively.
-            savedModelTags: (list of strings) If loading a SavedModel, the user must specify tags used.
-        """
+    Args:
+        filename (str): Path to tensorflow network
+        inputNames (list of str, optional): List of operation names corresponding to inputs
+        outputName (str, optional): Name of operation corresponding to output
+        modelType (str, optional): Type of model to read. The default is "frozen" for a frozen graph.
+                            Can also use "savedModel_v1" or "savedModel_v2" for the SavedModel format
+                            created from either tensorflow versions 1.X or 2.X respectively.
+        savedModelTags (list of str, optional): If loading a SavedModel, the user must specify tags used, default is []
+    """
+    def __init__(self, filename, inputNames=None, outputName=None, modelType="frozen", savedModelTags=[]):
         super().__init__()
         self.readTF(filename, inputNames, outputName, modelType, savedModelTags)
 
@@ -69,20 +67,16 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         self.sess = None
 
     def readTF(self, filename, inputNames, outputName, modelType, savedModelTags):
-        """Constructs a MarabouNetworkTF object from a frozen Tensorflow protobuf or SavedModel
+        """Read a tensorflow file to create a MarabouNetworkTF object
 
         Args:
-            filename: (string) If savedModel is false, path to the frozen graph .pb file.
-                               If savedModel is true, path to SavedModel folder, which
-                               contains .pb file and variables subdirectory.
-            inputName: (string) optional, name of operation corresponding to input.
-            outputName: (string) optional, name of operation corresponding to output.
-            modelType: (string) optional, type of model to read, such as "frozen" for a frozen graph.
+            filename (str): Path to tensorflow network
+            inputNames (list of str, optional): List of operation names corresponding to inputs
+            outputName (str, optional): Name of operation corresponding to output
+            modelType (str, optional): Type of model to read. The default is "frozen" for a frozen graph.
                                 Can also use "savedModel_v1" or "savedModel_v2" for the SavedModel format
                                 created from either tensorflow versions 1.X or 2.X respectively.
-            savedModelTags: (list of strings) If loading a SavedModel, the user must specify tags used.
-
-        :meta private:
+            savedModelTags (list of str, optional): If loading a SavedModel, the user must specify tags used, default is []
         """
         # Read tensorflow model
         if modelType == "frozen":

@@ -23,32 +23,29 @@ from maraboupy import MarabouNetwork
 import numpy as np
 
 class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
-    """Constructs a MarabouNetworkNNet object from an .nnet file.
+    """Constructs a MarabouNetworkNNet object from an .nnet file
 
-        Args:
-            filename: path to the .nnet file.
-            normalize: (bool) True if network parameters should be adjusted to incorporate
-                          network input/output normalization. Otherwise, properties must be written
-                          with the normalization already incorporated.
-        Attributes:
-            numLayers        (int) The number of layers in the network
-            layerSizes       (list of ints) Layer sizes.
-            inputSize        (int) Size of the input.
-            outputSize       (int) Size of the output.
-            maxLayersize     (int) Size of largest layer.
-            inputMinimums    (list of floats) Minimum value for each input.
-            inputMaximums    (list of floats) Maximum value for each input.
-            inputMeans       (list of floats) Mean value for each input.
-            inputRanges      (list of floats) Range for each input
-            outputMean       (float) Mean value of outputs
-            outputRange      (float) Range of output values
-            weights          (list of list of lists) Outer index corresponds to layer
-                                number.
-            biases           (list of lists) Outer index corresponds to layer number.
-        """
+    Args:
+        filename: path to the .nnet file
+        normalize: (bool) True if network parameters should be adjusted to incorporate
+                      network input/output normalization. Otherwise, properties must be written
+                      with the normalization already incorporated.
+    Attributes:
+        numLayers (int): The number of layers in the network
+        layerSizes (list of int): Layer sizes
+        inputSize (int): Size of the input
+        outputSize (int): Size of the output
+        maxLayersize (int): Size of largest layer
+        inputMinimums (list of float): Minimum value for each input
+        inputMaximums (list of float): Maximum value for each input
+        inputMeans (list of floats): Mean value for each input
+        inputRanges (list of floats): Range for each input
+        outputMean (float): Mean value of outputs
+        outputRange (float): Range of output values
+        weights (list): Network weight matrices, where the outer index corresponds to layer number
+        biases (list): Network bias vectors, where the outer index corresponds to layer number
+     """
     def __init__ (self, filename, normalize=False):
-        """Read nnet file and extract network equations and constraints
-        """
         super().__init__()
 
         self.normalize = normalize
@@ -77,11 +74,10 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         self.numVars = self.numberOfVariables()
 
     def read_nnet(self, file_name):
-        """
-        Read the nnet file, load all the values and assign the class members.
+        """Read the nnet file, load all the values and assign the class members
 
         Args:
-            filename: path to the .nnet file.
+            filename: path to the .nnet file
             
         :meta private:
         """
@@ -187,11 +183,11 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         self.outputVars = np.array([output_variables])
 
     def nodeTo_b(self, layer, node):
-        """Compute variable number for the b variable of a node in a layer
+        """Compute variable number for the backward variable of a node in a layer
 
         Args:
             layer (int): Layer number
-            node (int): Node number.
+            node (int): Node number
 
         Returns:
             (int)
@@ -208,7 +204,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
         
     def nodeTo_f(self, layer, node):
-        """Compute variable number for the f variable of a node in a layer
+        """Compute variable number for the forward variable of a node in a layer
 
         Args:
             layer (int): Layer number
@@ -291,6 +287,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
         Args:
             inputVar (int): Input variable
+
         Returns:
             (float)
         """
@@ -301,6 +298,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
         Args:
             inputVar (int): Input variable
+
         Returns:
             (float)
         """

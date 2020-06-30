@@ -25,15 +25,15 @@ class MarabouNetwork:
     """Abstract class representing general Marabou network
     
     Attributes:
-        numVars: Total number of variables to represent network
-        equList: List of :class:`~maraboupy.MarabouUtils.Equation`
-        reluList: List of relu constraints
-        maxList: List of max constraints
-        varsParticipatingInConstraints: Set of variables involved in some constraint
-        lowerBounds: Dictionary of lower bounds of variables
-        upperBounds: Dictionary of upper bounds of variables
-        inputVars: List of np arrays of input variables
-        outputVars: np array of output variables
+        numVars (int): Total number of variables to represent network
+        equList (list of :class:`~maraboupy.MarabouUtils.Equation`): Network equations
+        reluList (list of tuples): List of relu constraint tuples, where each tuple contains the backward and forward variables
+        maxList (list of tuples): List of max constraint tuples, where each tuple conatins the set of input variables and output variable
+        varsParticipatingInConstraints (set of int): Variables involved in some constraint
+        lowerBounds (Dict[int, float]): Lower bounds of variables
+        upperBounds (Dict[int, float]): Upper bounds of variables
+        inputVars (list of numpy arrays): Input variables
+        outputVars (numpy array): Output variables
     """
     def __init__(self):
         """Constructs a MarabouNetwork object and calls function to initialize
@@ -54,7 +54,7 @@ class MarabouNetwork:
         self.outputVars = np.array([])
 
     def getNewVariable(self):
-        """Function to request allocation of new variable
+        """Function to create a new variable
 
         Returns:
             (int): New variable number
@@ -142,7 +142,7 @@ class MarabouNetwork:
         """Function to add equality constraint to network
 
         .. math::
-            \sum_i \text{vars}_i \times \text{coeffs}_i = \text{scalar}
+            \sum_i vars_i * coeffs_i = scalar
 
         Args:
             vars (list of int): Variable numbers
@@ -160,7 +160,7 @@ class MarabouNetwork:
         """Function to add inequality constraint to network
 
         .. math::
-            \sum_i \text{vars}_i \times \text{coeffs}_i \le \text{scalar}
+            \sum_i vars_i * coeffs_i \le scalar
 
         Args:
             vars (list of int): Variable numbers
@@ -231,10 +231,9 @@ class MarabouNetwork:
             options (:class:`~maraboupy.MarabouCore.Options`): Object for specifying Marabou options, defaults to None
 
         Returns:
-            dict[int->float]: Empty dictionary if UNSAT, otherwise a dictionary of SATisfying values for variables
-            :class:`~maraboupy.MarabouCore.Statistics`: A Statistics object as defined in Marabou,
-                which has multiple methods that provide information related
-                to how the input query was solved.
+            (tuple): tuple containing:
+                - vals (Dict[int, float]): Empty dictionary if UNSAT, otherwise a dictionary of SATisfying values for variables
+                - stats (:class:`~maraboupy.MarabouCore.Statistics`): A Statistics object to how Marabou performed
         """
         ipq = self.getMarabouQuery()
         if options == None:

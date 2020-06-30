@@ -42,7 +42,7 @@ def read_nnet(filename, normalize=False):
                   into first and last layers of network
 
     Returns:
-        :class:`~maraboupy.MarabouNetworkNNet.MarabouNetworkNNet` object
+        :class:`~maraboupy.MarabouNetworkNNet.MarabouNetworkNNet`
     """
     return MarabouNetworkNNet(filename, normalize=normalize)
 
@@ -57,10 +57,10 @@ def read_tf(filename, inputNames=None, outputName=None, modelType="frozen", save
         modelType (str, optional): Type of model to read. The default is "frozen" for a frozen graph.
                             Can also use "savedModel_v1" or "savedModel_v2" for the SavedModel format
                             created from either tensorflow versions 1.X or 2.X respectively.
-        savedModelTags: (list of str, optional) If loading a SavedModel, the user must specify tags used, default is []
+        savedModelTags (list of str, optional): If loading a SavedModel, the user must specify tags used, default is []
 
     Returns:
-        :class:`~maraboupy.MarabouNetworkTF.MarabouNetworkTF` object
+        :class:`~maraboupy.MarabouNetworkTF.MarabouNetworkTF`
     """
     return MarabouNetworkTF(filename, inputNames, outputName, modelType, savedModelTags)
 
@@ -73,7 +73,7 @@ def read_onnx(filename, inputNames=None, outputName=None):
         outputName (str, optional): Name of node corresponding to output.
 
     Returns:
-        :class:`~maraboupy.MarabouNetworkONNX.MarabouNetworkONNX` object
+        :class:`~maraboupy.MarabouNetworkONNX.MarabouNetworkONNX`
     """
     return MarabouNetworkONNX(filename, inputNames, outputName)
 
@@ -83,7 +83,7 @@ def load_query(filename):
         filename (str): File to read for loading input query
 
     Returns:
-        :class:`~maraboupy.MarabouCore.InputQuery` object
+        :class:`~maraboupy.MarabouCore.InputQuery`
     """
     return MarabouCore.loadQuery(filename)
 
@@ -95,14 +95,13 @@ def solve_query(ipq, filename="", verbose=True, options=None):
         ipq (:class:`~maraboupy.MarabouCore.InputQuery`): InputQuery object, which can be obtained from
                    :func:`~maraboupy.MarabouNetwork.getInputQuery` or :func:`~maraboupy.Marabou.load_query`
         filename (str, optional): Path to redirect output to, defaults to ""
-        verbose (bool, optional) Whether to print out solution after solve finishes, defaults to True
-        options: (:class:`~maraboupy.MarabouCore.Options`) Object for specifying Marabou options
+        verbose (bool, optional): Whether to print out solution after solve finishes, defaults to True
+        options: (:class:`~maraboupy.MarabouCore.Options`): Object for specifying Marabou options
 
     Returns:
-        dict[int->float]: Empty dictionary if UNSAT, otherwise a dictionary of SATisfying values for variables
-        :class:`~maraboupy.MarabouCore.Statistics`: A Statistics object as defined in Marabou,
-                    which has multiple methods that provide information related
-                    to how the input query was solved.
+        (tuple): tuple containing:
+            - vals (Dict[int, float]): Empty dictionary if UNSAT, otherwise a dictionary of SATisfying values for variables
+            - stats (:class:`~maraboupy.MarabouCore.Statistics`): A Statistics object to how Marabou performed
     """
     if options is None:
         options = createOptions()
