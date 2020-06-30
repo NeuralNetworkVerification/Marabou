@@ -23,8 +23,6 @@
 #include "PiecewiseLinearConstraint.h"
 #include "Set.h"
 
-#define PREPROCESSOR_LOG( x, ... ) LOG( GlobalConfiguration::PREPROCESSOR_LOGGING, "Preprocessor: %s\n", x )
-
 class Preprocessor
 {
 public:
@@ -100,19 +98,6 @@ private:
       Call on the PL constraints to add any auxiliary equations
     */
     void addPlAuxiliaryEquations();
-
-    /*
-      Attempt to figure out the network topology and construct a
-      network level reasoner. Return true iff the construction was
-      successful
-    */
-    bool constructNetworkLevelReasoner();
-    bool constructWeighedSumLayer( NLR::NetworkLevelReasoner *nlr,
-                                   Map<unsigned, unsigned> &handledVariableToLayer,
-                                   unsigned newLayerIndex );
-    bool constructReluLayer( NLR::NetworkLevelReasoner *nlr,
-                             Map<unsigned, unsigned> &handledVariableToLayer,
-                             unsigned newLayerIndex );
 
     /*
       All input/output variables

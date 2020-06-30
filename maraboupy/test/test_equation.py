@@ -5,7 +5,6 @@ warnings.filterwarnings('ignore', category = PendingDeprecationWarning)
 
 import pytest
 from .. import Marabou
-from .. import MarabouUtils
 import numpy as np
 import os
 
@@ -28,7 +27,7 @@ def test_equality_output():
         
         # Add output equality constraints
         outputValue = np.random.random() * 5 + 3
-        MarabouUtils.addEquality(network, [outputVar], [1.0], outputValue)
+        network.addEquality([outputVar], [1.0], outputValue)
 
         # Call to Marabou solver
         vals, _ = network.solve(options = OPT, verbose = False)
@@ -49,7 +48,7 @@ def test_equality_input():
     inputVars = network.inputVars[0][0]
     weights = np.ones(inputVars.shape)/inputVars.size
     averageInputValue = 5.0
-    MarabouUtils.addEquality(network, inputVars, weights, averageInputValue)
+    network.addEquality(inputVars, weights, averageInputValue)
     
     # Lower bound on second output variable
     outputVars = network.outputVars.flatten()
@@ -75,7 +74,7 @@ def test_inequality_output():
         
         # Output inequality constraint
         outputValue = np.random.random() * 90 + 10
-        MarabouUtils.addInequality(network, outputVars, weights, outputValue)
+        network.addInequality(outputVars, weights, outputValue)
 
         # Call to Marabou solver
         vals, _ = network.solve(options = OPT, verbose = False)
@@ -96,7 +95,7 @@ def test_inequality_input():
     inputVars = network.inputVars[0][0]
     weights = np.ones(inputVars.shape)/inputVars.size
     averageInputValue = -5.0
-    MarabouUtils.addInequality(network, inputVars, weights, averageInputValue)
+    network.addInequality(inputVars, weights, averageInputValue)
     
     # Add lower bound on second output variable
     outputVars = network.outputVars.flatten()

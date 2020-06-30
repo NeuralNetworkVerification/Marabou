@@ -205,7 +205,7 @@ if (${ENABLE_OPENBLAS} AND NOT MSVC)
     add_compile_definitions(ENABLE_OPENBLAS)
     #OpenBLAS
     if(NOT EXISTS "${OPENBLAS_DIR}/installed/lib/libopenblas.a")
-        execute_process(COMMAND ${TOOLS_DIR}/get-openBLAS.sh)
+        execute_process(COMMAND ${TOOLS_DIR}/download_openBLAS.sh)
     endif()
 
     add_library(${OPENBLAS_LIB} SHARED IMPORTED)

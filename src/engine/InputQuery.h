@@ -122,6 +122,13 @@ public:
                                    const Map<unsigned, unsigned> &mergedVariables );
 
     /*
+      Attempt to figure out the network topology and construct a
+      network level reasoner. Return true iff the construction was
+      successful
+    */
+    bool constructNetworkLevelReasoner();
+
+    /*
       Include a network level reasoner in the query
     */
     void setNetworkLevelReasoner( NLR::NetworkLevelReasoner *nlr );
@@ -140,6 +147,17 @@ private:
       Free any stored pl constraints.
     */
     void freeConstraintsIfNeeded();
+
+    /*
+      Methods called by constructNetworkLevelReasoner
+    */
+    bool constructWeighedSumLayer( NLR::NetworkLevelReasoner *nlr,
+                                   Map<unsigned, unsigned> &handledVariableToLayer,
+                                   unsigned newLayerIndex );
+    bool constructReluLayer( NLR::NetworkLevelReasoner *nlr,
+                             Map<unsigned, unsigned> &handledVariableToLayer,
+                             unsigned newLayerIndex );
+
 
 public:
     /*
