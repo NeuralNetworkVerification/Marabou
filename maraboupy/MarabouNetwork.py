@@ -3,7 +3,7 @@
 /*! \file MarabouNetwork.py
  ** \verbatim
  ** Top contributors (to current version):
- **   Christopher Lazarus, Shantanu Thakoor, Andrew Wu
+ **   Christopher Lazarus, Shantanu Thakoor, Andrew Wu, Kyle Julian
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -17,6 +17,7 @@
 '''
 
 from maraboupy import MarabouCore
+from maraboupy import MarabouUtils
 import numpy as np
 
 class MarabouNetwork:
@@ -127,6 +128,42 @@ class MarabouNetwork:
         """
         # ReLUs
         return x in self.varsParticipatingInConstraints
+
+    def addEquality(self, vars, coeffs, scalar):
+        """Function to add equality constraint to network
+
+        .. math::
+            \sum_i \text{vars}_i \times \text{coeffs}_i = \text{scalar}
+
+        Args:
+            vars (list of int): Variable numbers
+            coeffs (list of float): Coefficients
+            scalar (float): Right hand side constant of equation
+        """
+        assert len(vars)==len(coeffs)
+        e = MarabouUtils.Equation()
+        for i in range(len(vars)):
+            e.addAddend(coeffs[i], vars[i])
+        e.setScalar(scalar)
+        self.addEquation(e)
+
+    def addInequality(self, vars, coeffs, scalar):
+        """Function to add inequality constraint to network
+
+        .. math::
+            \sum_i \text{vars}_i \times \text{coeffs}_i \le \text{scalar}
+
+        Args:
+            vars (list of int): Variable numbers
+            coeffs (list of float): Coefficients
+            scalar (float): Right hand side constant of inequality
+        """
+        assert len(vars)==len(coeffs)
+        e = MarabouUtils.Equation(MarabouCore.Equation.LE)
+        for i in range(len(vars)):
+            e.addAddend(coeffs[i], vars[i])
+        e.setScalar(scalar)
+        self.addEquation(e)
 
     def getMarabouQuery(self):
         """
