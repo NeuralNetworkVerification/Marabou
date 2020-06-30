@@ -7,7 +7,6 @@ from subprocess import call
 
 TOL = 1e-8
 
-property_filename = "./resources/properties/acas_property_4.txt"
 network_filename = "./resources/nnet/acasxu/ACASXU_experimental_v2a_1_9.nnet"
 
 layer = 2
