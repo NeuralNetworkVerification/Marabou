@@ -55,7 +55,7 @@ void BoundManager::initialize( unsigned numberOfVariables)
 bool BoundManager::updateLowerBound( unsigned variable, double value )
 {
     ASSERT( variable < _size );
-    if ( value < getLowerBound( variable ) )
+    if ( value > getLowerBound( variable ) )
     {
         _lowerBounds[variable]->push_back( value );
         return true;
@@ -66,7 +66,7 @@ bool BoundManager::updateLowerBound( unsigned variable, double value )
 bool BoundManager::updateUpperBound( unsigned variable, double value )
 {
      ASSERT( variable < _size );
-    if ( value > getUpperBound( variable ) )
+    if ( value < getUpperBound( variable ) )
     {
         _upperBounds[variable]->push_back( value );
         return true;

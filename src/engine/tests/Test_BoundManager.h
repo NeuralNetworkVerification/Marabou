@@ -32,6 +32,10 @@ public:
     {
     }
 
+    /*
+     * Initialize creates bounds for every variable up to numberOfVariables
+     * and sets their lower/upper bounds to -/+infinity respectively
+     */
     void test_bound_manager_initialize()
     {
         CVC4::context::Context context;
@@ -46,65 +50,107 @@ public:
           TS_ASSERT( boundManager.getUpperBound( i ) <= FloatUtils::infinity() ) ;
         }
 
+    }
 
-        /* RowBoundTightener tightener( *tableau, boundManager ); */
+    /*
+     * BoundManager correctly updates bounds with advancement and backtracking of context
+     * 
+     */
+    void test_bound_manager_context_interaction()
+    {
+      CVC4::context::Context context;
 
-        /* tableau->setDimensions( 2, 5 ); */
+      BoundManager boundManager(context);
 
-        /* // Current bounds: */
-        /* //  0 <= x0 <= 0 */
-        /* //    5  <= x1 <= 10 */
-        /* //    -2 <= x2 <= 3 */
-        /* //  -100 <= x4 <= 100 */
-        /* tableau->setLowerBound( 0, -200 ); */
-        /* tableau->setUpperBound( 0, 200 ); */
-        /* tableau->setLowerBound( 1, 5 ); */
-        /* tableau->setUpperBound( 1, 10 ); */
-        /* tableau->setLowerBound( 2, -2 ); */
-        /* tableau->setUpperBound( 2, 3 ); */
-        /* tableau->setLowerBound( 3, -5 ); */
-        /* tableau->setUpperBound( 3, 5 ); */
-        /* tableau->setLowerBound( 4, -100 ); */
-        /* tableau->setUpperBound( 4, 100 ); */
+      unsigned numberOfVariables = 5u;
 
-        /* tightener.setDimensions(); */
+      TS_ASSERT_THROWS_NOTHING( boundManager.initialize( numberOfVariables) );
 
-        /* TableauRow row( 3 ); */
-        /* // 1 - x0 - x1 + 2x2 */
-        /* row._row[0] = TableauRow::Entry( 0, -1 ); */
-        /* row._row[1] = TableauRow::Entry( 1, -1 ); */
-        /* row._row[2] = TableauRow::Entry( 2, 2 ); */
-        /* row._scalar = 1; */
-        /* row._lhs = 4; */
+      double level0Lower[] = { -12.357682,  0.230001234, -333.78091231, 100.00,    -9.000002354 };
+      double level0Upper[] = {  15.387692, 20.301878234,   45.79159213, 120.03559, 89.53402 };
+      double level1Lower[] = { -2.357682,   5.230001234, -222.87012913, 103.5682,  -5.002300054 };
+      double level1Upper[] = {  5.387692,  15.308798432,   26.79159213, 119.5559,  77.500002 };
+      double level2Lower[] = {  2.523786,   8.231234000, -122.01291387, 111.5392,  10.002300054 };
+      double level2Upper[] = {  3.738962,   8.308432000,   16.79211593, 115.9003,  57.5459822 };
 
-        /* tableau->nextPivotRow = &row; */
 
-        /* // 1 - x0 - x1 + 2x2 = x4 (pre pivot) */
-        /* // x0 entering, x4 leaving */
-        /* // x0 = 1 - x1 + 2 x2 - x4 */
+      TS_ASSERT_THROWS_NOTHING( context.push() );
 
-        /* TS_ASSERT_THROWS_NOTHING( tightener.examinePivotRow() ); */
+      for ( unsigned v = 0; v < numberOfVariables; ++v )
+      {
+        TS_ASSERT_THROWS_NOTHING( boundManager.updateLowerBound( v, level0Lower[v] ) );
+        TS_ASSERT_THROWS_NOTHING( boundManager.updateUpperBound( v, level0Upper[v] ) );
 
-        /* List<Tightening> tightenings; */
-        /* TS_ASSERT_THROWS_NOTHING( tightener.getRowTightenings( tightenings ) ); */
+        TS_ASSERT_EQUALS( boundManager.getLowerBound( v ), level0Lower[v] );
+        TS_ASSERT_EQUALS( boundManager.getUpperBound( v ), level0Upper[v] );
+      }
 
-        /* // Lower and upper bounds should have been tightened */
-        /* TS_ASSERT_EQUALS( tightenings.size(), 2U ); */
+      TS_ASSERT_THROWS_NOTHING( context.push() );
 
-        /* auto lower = tightenings.begin(); */
-        /* while ( ( lower != tightenings.end() ) && !( ( lower->_variable == 0 ) && ( lower->_type == Tightening::LB ) ) ) */
-        /*     ++lower; */
-        /* TS_ASSERT( lower != tightenings.end() ); */
+      for ( unsigned v = 0; v < numberOfVariables; ++v )
+      {
+          TS_ASSERT_THROWS_NOTHING( boundManager.updateLowerBound( v, level1Lower[v] ) );
+          TS_ASSERT_THROWS_NOTHING( boundManager.updateUpperBound( v, level1Upper[v] ) );
 
-        /* auto upper = tightenings.begin(); */
-        /* while ( ( upper != tightenings.end() ) && !( ( upper->_variable == 0 ) && ( upper->_type == Tightening::UB ) ) ) */
-        /*     ++upper; */
-        /* TS_ASSERT( upper != tightenings.end() ); */
+          TS_ASSERT_EQUALS( boundManager.getLowerBound( v ), level1Lower[v] );
+          TS_ASSERT_EQUALS( boundManager.getUpperBound( v ), level1Upper[v] );
+      }
 
-        /* // LB -> 1 - 10 - 4 -100 */
-        /* // UB -> 1 - 5 + 6 + 100 */
-        /* TS_ASSERT_EQUALS( lower->_value, -113 ); */
-        /* TS_ASSERT_EQUALS( upper->_value, 102 ); */
+
+      TS_ASSERT_THROWS_NOTHING( context.push() );
+
+      for ( unsigned v = 0; v < numberOfVariables; ++v )
+      {
+          TS_ASSERT_THROWS_NOTHING( boundManager.updateLowerBound( v, level2Lower[v] ) );
+          TS_ASSERT_THROWS_NOTHING( boundManager.updateUpperBound( v, level2Upper[v] ) );
+
+          TS_ASSERT_EQUALS( boundManager.getLowerBound( v ), level2Lower[v] );
+          TS_ASSERT_EQUALS( boundManager.getUpperBound( v ), level2Upper[v] );
+       }
+
+
+      TS_ASSERT_THROWS_NOTHING( context.pop() );
+
+      for ( unsigned v = 0; v < numberOfVariables; ++v )
+      {
+          TS_ASSERT_EQUALS( boundManager.getLowerBound( v ), level1Lower[v] );
+          TS_ASSERT_EQUALS( boundManager.getUpperBound( v ), level1Upper[v] );
+      }
+
+
+      TS_ASSERT_THROWS_NOTHING( context.pop() );
+
+      for ( unsigned v = 0; v < numberOfVariables; ++v )
+      {
+          TS_ASSERT_EQUALS( boundManager.getLowerBound( v ), level0Lower[v] );
+          TS_ASSERT_EQUALS( boundManager.getUpperBound( v ), level0Upper[v] );
+      }
+
+      for ( unsigned v = 0; v < numberOfVariables; ++v )
+      {
+          TS_ASSERT_THROWS_NOTHING( boundManager.updateLowerBound( v, level1Lower[v] ) );
+          TS_ASSERT_THROWS_NOTHING( boundManager.updateUpperBound( v, level1Upper[v] ) );
+
+          TS_ASSERT_EQUALS( boundManager.getLowerBound( v ), level1Lower[v] );
+          TS_ASSERT_EQUALS( boundManager.getUpperBound( v ), level1Upper[v] );
+      }
+
+      for ( unsigned v = 0; v < numberOfVariables; ++v )
+        {
+          TS_ASSERT_THROWS_NOTHING( boundManager.updateLowerBound( v, level2Lower[v] ) );
+          TS_ASSERT_THROWS_NOTHING( boundManager.updateUpperBound( v, level2Upper[v] ) );
+
+          TS_ASSERT_EQUALS( boundManager.getLowerBound( v ), level2Lower[v] );
+          TS_ASSERT_EQUALS( boundManager.getUpperBound( v ), level2Upper[v] );
+        }
+
+      TS_ASSERT_THROWS_NOTHING( context.pop() );
+
+      for ( unsigned v = 0; v < numberOfVariables; ++v )
+        {
+          TS_ASSERT_EQUALS( boundManager.getLowerBound( v ), FloatUtils::negativeInfinity() );
+          TS_ASSERT_EQUALS( boundManager.getUpperBound( v ), FloatUtils::infinity() );
+        }
     }
 
 };
@@ -115,4 +161,4 @@ public:
 // tags-file-name: "../../../TAGS"
 // c-basic-offset: 4
 // End:
-//
+
