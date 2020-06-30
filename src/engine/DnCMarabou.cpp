@@ -80,6 +80,14 @@ void DnCMarabou::run()
     }
     printf( "\n" );
 
+    String queryDumpFilePath = Options::get()->getString( Options::QUERY_DUMP_FILE );
+    if ( queryDumpFilePath.length() > 0 )
+    {
+        _inputQuery.saveQuery( queryDumpFilePath );
+        printf( "\nInput query successfully dumped to file\n" );
+        exit( 0 );
+    }
+
     /*
       Step 3: initialize the DNC core
     */
