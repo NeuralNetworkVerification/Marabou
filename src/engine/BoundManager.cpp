@@ -13,6 +13,7 @@
 
 **/
 
+#include "FloatUtils.h"
 #include "BoundManager.h"
 #include "Debug.h"
 
@@ -42,6 +43,12 @@ void BoundManager::initialize( unsigned numberOfVariables)
     {
         _lowerBounds.append( new (true) CDList<double>( &_context ) );
         _upperBounds.append( new (true) CDList<double>( &_context ) );
+    }
+
+    for ( unsigned i = 0; i < _size; ++i)
+    {
+        _lowerBounds[i]->push_back( FloatUtils::negativeInfinity() );
+        _upperBounds[i]->push_back( FloatUtils::infinity() );
     }
 }
 
