@@ -107,7 +107,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         self.clear()
 
         self.numLayers = 0
-        self.layerSizes = 0
+        self.layerSizes = []
         self.inputSize = 0
         self.outputSize = 0
         self.maxLayersize = 0
@@ -120,6 +120,19 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
     def resetNetworkFromParameters(self, inputMinimums: list, inputMaximums: list, inputMeans: list, inputRanges: list,
                                    outputMean: float, outputRange: float, weights: list, biases: list):
+        '''
+        Recomputes the attributes of the network from the basic ones
+
+        :param inputMinimums: (list of floats)
+        :param inputMaximums: (list of floats)
+        :param inputMeans:  (list of floats) Mean value for each input.
+        :param inputRanges: (list of floats) Range for each input
+        :param outputMean:  (float) Mean value of outputs
+        :param outputRange: (float) Range of output values
+        :param weights:     (list of list of lists) Outer index corresponds to layer number.
+        :param biases:      (list of lists) Outer index corresponds to layer number.
+        :return: None
+        '''
 
         # Clearing the attributes that will be computed (clear() method from parent)
         self.clear()
@@ -156,7 +169,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         self.biases = biases
 
         self.computeNetworkAttributes()
-        # TODO (necessary? desireable?): create a new filename for the network
+        # TODO (necessary? desirable?): create a new filename for the network
 
     def computeNetworkAttributes(self):
 
@@ -573,7 +586,6 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         Arguments:
             None
         """
-        relus = []
         hidden_layers = self.layerSizes[1:-1]
         for layer, size in enumerate(hidden_layers):
             for node in range(size):

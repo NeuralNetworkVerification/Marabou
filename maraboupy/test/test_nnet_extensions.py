@@ -71,8 +71,8 @@ def test_evaluate_network():
         assert (output1 == output2).all()
 
 
-def test_write_read_evaluate():
-    output_filename = "./maraboupy/test/ACASXU_experimental_v2a_1_9_output.nnet"
+def test_write_read_evaluate(tmpdir):
+    output_filename = tmpdir.mkdir("output_network").join("ACASXU_experimental_v2a_1_9_output.nnet").strpath
 
     nnet_object = Marabou.read_nnet(filename=network_filename)
     nnet_object.writeNNet(output_filename)
@@ -103,13 +103,13 @@ def test_write_read_evaluate():
 
 
 
-def test_normalize_read_flag():
+def test_normalize_read_flag(tmpdir):
     '''
     Similar tests to those in test_write_read_evaluate(), but turns normalize flag on when creating the
     MarabouNetworkNNet objects.
     Note that in this case inputs and outputs need to be normalized.
     '''
-    output_filename = "./maraboupy/test/ACASXU_experimental_v2a_1_9_output.nnet"
+    output_filename = tmpdir.mkdir("output_network").join("ACASXU_experimental_v2a_1_9_output.nnet").strpath
 
     nnet_object = Marabou.read_nnet(filename=network_filename, normalize=True)
     nnet_object.writeNNet(output_filename)
@@ -131,8 +131,3 @@ def test_normalize_read_flag():
         assert (abs(without_marabou_output - with_marabou_output) < TOL).all()
 
 
-
-if __name__ == "__main__":
-    test_evaluate_network()
-    test_write_read_evaluate()
-    test_normalize_read_flag()
