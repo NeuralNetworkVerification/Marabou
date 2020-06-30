@@ -1,18 +1,17 @@
-''''''
 '''
-/* *******************                                                        */
-/*! \file MarabouNetworkTF.py
- ** \verbatim
- ** Top contributors (to current version):
- **   Kyle Julian, Christopher Lazarus, Shantanu Thakoor, Chelsea Sidrane
- ** This file is part of the Marabou project.
- ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
- ** in the top-level source directory) and their institutional affiliations.
- ** All rights reserved. See the file COPYING in the top-level source
- ** directory for licensing information.\endverbatim
- **
- ** \brief This file reads tensorflow networks to create Marabou equations and constraints
- **/
+Top contributors (to current version):
+    - Kyle Julian
+    - Christopher Lazarus
+    - Shantanu Thakoor
+    - Chelsea Sidrane
+    
+This file is part of the Marabou project.
+Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+in the top-level source directory) and their institutional affiliations.
+All rights reserved. See the file COPYING in the top-level source
+directory for licensing information.
+
+MarabouNetworkTF represents neural networks with piecewise linear constraints derived from tensorflow formats
 '''
 
 import numpy as np
