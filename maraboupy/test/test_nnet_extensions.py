@@ -1,6 +1,6 @@
 
 from maraboupy.MarabouNetworkNNet import *
-import Marabou
+from maraboupy import Marabou
 
 
 from subprocess import call
