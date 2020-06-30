@@ -236,6 +236,7 @@ public:
     static const bool DANTZIGS_RULE_LOGGING;
     static const bool BASIS_FACTORIZATION_LOGGING;
     static const bool PREPROCESSOR_LOGGING;
+    static const bool INPUT_QUERY_LOGGING;
     static const bool PROJECTED_STEEPEST_EDGE_LOGGING;
     static const bool GAUSSIAN_ELIMINATION_LOGGING;
     static const bool QUERY_LOADER_LOGGING;

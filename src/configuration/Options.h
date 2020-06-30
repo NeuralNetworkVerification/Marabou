@@ -69,6 +69,7 @@ public:
         INPUT_QUERY_FILE_PATH,
         SUMMARY_FILE,
         SPLITTING_STRATEGY,
+        QUERY_DUMP_FILE,
     };
 
     /*
