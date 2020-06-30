@@ -98,6 +98,9 @@ void DnCMarabou::run()
     unsigned timeoutInSeconds = Options::get()->getInt( Options::TIMEOUT );
     float timeoutFactor = Options::get()->getFloat( Options::TIMEOUT_FACTOR );
 
+    DivideStrategy strategy = Options::get()->getDivideStrategy
+        ( Options::SPLITTING_STRATEGY );
+
     int splitThreshold = Options::get()->getInt( Options::SPLIT_THRESHOLD );
     if ( splitThreshold < 0 )
     {
@@ -110,7 +113,7 @@ void DnCMarabou::run()
     _dncManager = std::unique_ptr<DnCManager>
       ( new DnCManager( numWorkers, initialDivides, initialTimeout,
                         onlineDivides, timeoutFactor,
-                        DivideStrategy::LargestInterval, &_inputQuery,
+                        strategy, &_inputQuery,
                         verbosity ) );
     _dncManager->setConstraintViolationThreshold( splitThreshold );
 

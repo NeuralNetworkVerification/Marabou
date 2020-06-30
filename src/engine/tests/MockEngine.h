@@ -143,11 +143,11 @@ public:
         return _inputVariables;
     }
 
-    void updateScores()
+    void updateScores( DivideStrategy /**/ )
     {
     }
 
-    PiecewiseLinearConstraint *pickSplitPLConstraint()
+    PiecewiseLinearConstraint *pickSplitPLConstraint( DivideStrategy /**/ )
     {
         return NULL;
     }

@@ -25,6 +25,7 @@
 #include "DantzigsRule.h"
 #include "DegradationChecker.h"
 #include "DivideStrategy.h"
+#include "GlobalConfiguration.h"
 #include "IEngine.h"
 #include "InputQuery.h"
 #include "Map.h"
@@ -133,12 +134,12 @@ public:
     /*
       Pick the piecewise linear constraint for splitting
     */
-    PiecewiseLinearConstraint *pickSplitPLConstraint();
+    PiecewiseLinearConstraint *pickSplitPLConstraint( DivideStrategy strategy );
 
     /*
       Update the scores of each candidate splitting PL constraints
     */
-    void updateScores();
+    void updateScores( DivideStrategy strategy );
 
     /*
       Set the constraint violation threshold of SmtCore

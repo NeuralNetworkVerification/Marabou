@@ -60,6 +60,9 @@ void OptionParser::initialize()
         ( "num-workers",
           boost::program_options::value<int>( &((*_intOptions)[Options::NUM_WORKERS]) ),
           "(DNC) Number of workers" )
+        ( "split-strategy",
+          boost::program_options::value<int>( &((*_intOptions)[Options::SPLITTING_STRATEGY]) ),
+          "(DNC) Number of workers" )
         ( "initial-divides",
           boost::program_options::value<int>( &((*_intOptions)[Options::NUM_INITIAL_DIVIDES]) ),
           "(DNC) Number of times to initially bisect the input region" )

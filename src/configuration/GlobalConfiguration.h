@@ -114,6 +114,10 @@ public:
 
     static const DivideStrategy SPLITTING_HEURISTICS;
 
+    // When automatically deciding which splitting strategy to use, we use relu-splitting if
+    // the number of inputs is larger than this number.
+    static const unsigned INTERVAL_SPLITTING_THRESHOLD;
+
     // How often should we perform full bound tightening, on the entire contraints matrix A.
     static const unsigned BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY;
 

@@ -400,7 +400,8 @@ PiecewiseLinearConstraint *SmtCore::chooseViolatedConstraintForFixing( List<Piec
 bool SmtCore::pickSplitPLConstraint()
 {
     if ( _needToSplit )
-        _constraintForSplitting = _engine->pickSplitPLConstraint();
+        _constraintForSplitting = _engine->pickSplitPLConstraint
+            ( GlobalConfiguration::SPLITTING_HEURISTICS );
     return _constraintForSplitting != NULL;
 }
 

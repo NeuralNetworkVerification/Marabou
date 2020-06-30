@@ -16,6 +16,7 @@
 #ifndef __Options_h__
 #define __Options_h__
 
+#include "DivideStrategy.h"
 #include "MString.h"
 #include "Map.h"
 #include "OptionParser.h"
@@ -67,6 +68,7 @@ public:
         PROPERTY_FILE_PATH,
         INPUT_QUERY_FILE_PATH,
         SUMMARY_FILE,
+        SPLITTING_STRATEGY,
     };
 
     /*
@@ -86,6 +88,7 @@ public:
     int getInt( unsigned option ) const;
     float getFloat( unsigned option ) const;
     String getString( unsigned option ) const;
+    DivideStrategy getDivideStrategy( unsigned option ) const;
 
     /*
       Options that are determined at compile time

@@ -1951,10 +1951,9 @@ void Engine::updateDirections()
                 constraint->updateDirection();
 }
 
-void Engine::updateScores()
+void Engine::updateScores( DivideStrategy strategy )
 {
-    if ( _networkLevelReasoner &&
-         GlobalConfiguration::SPLITTING_HEURISTICS == DivideStrategy::Polarity )
+    if ( _networkLevelReasoner && strategy  == DivideStrategy::Polarity )
     {
         // We find the earliest K ReLUs that have not been fixed, update
         // their scores, and pop them to the _candidatePlConstraints
@@ -1976,8 +1975,7 @@ void Engine::updateScores()
             }
         }
     }
-    else if ( GlobalConfiguration::SPLITTING_HEURISTICS ==
-              DivideStrategy::EarliestReLU )
+    else if ( strategy == DivideStrategy::EarliestReLU )
     {
         for ( const auto plConstraint : _plConstraints )
         {
@@ -1995,11 +1993,11 @@ void Engine::updateScores()
     }
 }
 
-PiecewiseLinearConstraint *Engine::pickSplitPLConstraint()
+PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy strategy )
 {
     _candidatePlConstraints.clear();
     ENGINE_LOG( Stringf( "Picking a split PLConstraint..." ).ascii() );
-    updateScores();
+    updateScores( strategy );
     ENGINE_LOG( Stringf( "Done updating scores..." ).ascii() );
     if ( _candidatePlConstraints.empty() )
     {

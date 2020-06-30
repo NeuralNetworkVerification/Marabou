@@ -67,6 +67,7 @@ void Options::initializeDefaultValues()
     _stringOptions[PROPERTY_FILE_PATH] = "";
     _stringOptions[INPUT_QUERY_FILE_PATH] = "";
     _stringOptions[SUMMARY_FILE] = "";
+    _stringOptions[SPLITTING_STRATEGY] = "";
 }
 
 void Options::parseOptions( int argc, char **argv )
@@ -92,6 +93,17 @@ float Options::getFloat( unsigned option ) const
 String Options::getString( unsigned option ) const
 {
     return String( _stringOptions.get( option ) );
+}
+
+DivideStrategy Options::getDivideStrategy( unsigned option ) const
+{
+    String strategyString = String( _stringOptions.get( option ) );
+    if ( strategyString == "polarity" )
+        return DivideStrategy::Polarity;
+    else if ( strategyString == "largest-interval" )
+        return DivideStrategy::LargestInterval;
+    else
+        return DivideStrategy::Auto;
 }
 
 //

@@ -16,6 +16,7 @@
 #ifndef __IEngine_h__
 #define __IEngine_h__
 
+#include "DivideStrategy.h"
 #include "List.h"
 
 #ifdef _WIN32
@@ -70,12 +71,13 @@ public:
     virtual void reset() = 0;
     virtual List<unsigned> getInputVariables() const = 0;
 
-    virtual void updateScores() = 0;
+    virtual void updateScores( DivideStrategy strategy ) = 0;
 
     /*
       Pick the piecewise linear constraint for splitting
     */
-    virtual PiecewiseLinearConstraint *pickSplitPLConstraint() = 0;
+    virtual PiecewiseLinearConstraint *pickSplitPLConstraint( DivideStrategy
+                                                              strategy ) = 0;
 
 };
 

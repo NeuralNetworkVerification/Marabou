@@ -65,7 +65,6 @@ DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
     , _initialTimeout( initialTimeout )
     , _onlineDivides( onlineDivides )
     , _timeoutFactor( timeoutFactor )
-    , _divideStrategy( divideStrategy )
     , _baseInputQuery( inputQuery )
     , _exitCode( DnCManager::NOT_DONE )
     , _workload( NULL )
@@ -74,6 +73,16 @@ DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
     , _verbosity( verbosity )
     , _constraintViolationThreshold( GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD )
 {
+    if ( divideStrategy == DivideStrategy::Auto )
+    {
+        if ( inputQuery->getNumInputVariables() <
+             GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD )
+            _divideStrategy = DivideStrategy::LargestInterval;
+        else
+            _divideStrategy = DivideStrategy::Polarity;
+    }
+    else
+        _divideStrategy = divideStrategy;
 }
 
 DnCManager::~DnCManager()
