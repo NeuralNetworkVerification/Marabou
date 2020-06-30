@@ -99,6 +99,7 @@ PiecewiseLinearConstraint *PolarityBasedDivider::getPLConstraintToSplit
 
     PiecewiseLinearConstraint *constraintToSplit = NULL;
     constraintToSplit = _engine->pickSplitPLConstraint( DivideStrategy::Polarity );
+    std::cout << constraintToSplit << std::endl;
     _engine->restoreState( *engineStateBeforeSplit );
     delete engineStateBeforeSplit;
     return constraintToSplit;

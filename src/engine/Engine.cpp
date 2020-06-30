@@ -1953,7 +1953,7 @@ void Engine::updateDirections()
 
 void Engine::updateScores( DivideStrategy strategy )
 {
-    if ( _networkLevelReasoner && strategy  == DivideStrategy::Polarity )
+    if ( _networkLevelReasoner && strategy == DivideStrategy::Polarity )
     {
         // We find the earliest K ReLUs that have not been fixed, update
         // their scores, and pop them to the _candidatePlConstraints
@@ -1962,6 +1962,8 @@ void Engine::updateScores( DivideStrategy strategy )
 
         List<PiecewiseLinearConstraint *> constraints =
             _networkLevelReasoner->getConstraintsInTopologicalOrder();
+
+        std::cout << constraints.size() << std::endl;
 
         for ( auto &plConstraint : constraints )
         {
