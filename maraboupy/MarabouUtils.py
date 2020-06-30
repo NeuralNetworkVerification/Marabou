@@ -47,36 +47,3 @@ class Equation:
         """
         self.addendList += [(c, x)]
 
-def addEquality(network, vars, coeffs, scalar):
-    """
-    Function to conveniently add equality constraint to network
-    \sum_i vars_i*coeffs_i = scalar
-    Arguments:
-        network: (MarabouNetwork) to which to add constraint
-        vars: (list) of variable numbers
-        coeffs: (list) of coefficients
-        scalar: (float) representing RHS of equation
-    """
-    assert len(vars)==len(coeffs)
-    e = Equation()
-    for i in range(len(vars)):
-        e.addAddend(coeffs[i], vars[i])
-    e.setScalar(scalar)
-    network.addEquation(e)
-
-def addInequality(network, vars, coeffs, scalar):
-    """
-    Function to conveniently add inequality constraint to network
-    \sum_i vars_i*coeffs_i <= scalar
-    Arguments:
-        network: (MarabouNetwork) to which to add constraint
-        vars: (list) of variable numbers
-        coeffs: (list) of coefficients
-        scalar: (float) representing RHS of equation
-    """
-    assert len(vars)==len(coeffs)
-    e = Equation(MarabouCore.Equation.LE)
-    for i in range(len(vars)):
-        e.addAddend(coeffs[i], vars[i])
-    e.setScalar(scalar)
-    network.addEquation(e)

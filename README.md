@@ -45,12 +45,6 @@ Download
 ------------------------------------------------------------------------------
 The latest version of Marabou is available on [https://github.com/NeuralNetworkVerification/Marabou].
 
-## Static binaries
-
-Pre-compiled binary for Linux is available:
-
-[marabou-1.0-x86_64-linux.zip](https://aisafety.stanford.edu/marabou/marabou-1.0-x86_64-linux.zip)
-
 Build and Dependencies
 ------------------------------------------------------------------------------
 
@@ -134,26 +128,10 @@ written to build/Debug.
 It may be useful to set up a Python virtual environment, see
 [here](https://docs.python.org/3/tutorial/venv.html) for more information.
 
-The python interface was tested only on versions >3.5 and >2.7. The build process preffers python3 but will work if there is only python 2.7 avilable. (To control the default change the DEFAULT_PYTHON_VERSION variable).  
+The python interface was tested only on versions >3.5 and >2.7. The build process prefers python3 but will work if there is only python 2.7 available. (To control the default change the DEFAULT_PYTHON_VERSION variable).  
 The Python interface requires *pybind11* (which is automatically downloaded). 
-To also build the python API on Linux or MacOS, run:
-```
-cd path/to/marabou/repo/folder
-mkdir build 
-cd build
-cmake .. -DBUILD_PYTHON=ON
-cmake --build .
-```
-On Windows, run:
-```
-cd path\to\marabou\repo\folder
-mkdir build 
-cd build
-cmake .. -G"Visual Studio 15 2017 Win64" -DBUILD_PYTHON=ON
-cmake --build . --config Release
-```
-Make sure the detected python ("Found PythonInterp: ....") is a windows python and not cygwin or something like that (if it is cygwin, use -DPYTHON_EXECUTABLE flag to override the default python, or manuialy download the linux pybind and locate it in the tools directory)
-
+By default Marabou builds also the python API, the BUILD_PYTHON variable
+controls that.
 This process will produce the binary file and the shared library for the Python 
 API. The shared library will be in the maraboupy folder for Linux and MacOS. 
 On Windows, the shared library is written to a Release subfolder in maraboupy, 
@@ -170,6 +148,16 @@ JUPYTER_PATH=JUPYTER_PATH:/path/to/marabou/folder
 ```
 and Marabou is ready to be used from a Python or a Jupyter script. On Windows, 
 edit your environmental variables so PYTHONPATH includes the marabou folder.
+
+#### Troubleshooting
+
+- On Windows - Make sure the detected python ("Found PythonInterp: ....") is a windows python and not cygwin or something like that (if it is cygwin, use -DPYTHON_EXECUTABLE flag to override the default python, or manuialy download the linux pybind and locate it in the tools directory)
+
+- 32bit Python - By default we install a 64bit Marabou and consequently a 64bit
+  python interface, the maraboupy/build_python_x86.sh file builds a 32bit
+  version.
+
+
 
 Getting Started
 -----------------------------------------------------------------------------
