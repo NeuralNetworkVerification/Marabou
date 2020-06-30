@@ -19,7 +19,6 @@
 #include "InputParserError.h"
 #include "InputQuery.h"
 #include "MString.h"
-#include "NetworkLevelReasoner.h"
 #include "ReluConstraint.h"
 
 AcasParser::NodeIndex::NodeIndex( unsigned layer, unsigned node )

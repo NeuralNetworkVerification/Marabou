@@ -736,7 +736,7 @@ bool InputQuery::constructReluLayer( NLR::NetworkLevelReasoner *nlr,
         if ( plc->getType() != RELU )
             continue;
 
-        const ReluConstraint *relu = (const ReluConstraint *)plc;
+        ReluConstraint *relu = (ReluConstraint *)plc;
 
         // Has the b variable been handled?
         unsigned b = relu->getB();
@@ -750,6 +750,7 @@ bool InputQuery::constructReluLayer( NLR::NetworkLevelReasoner *nlr,
 
         // B has been handled, f hasn't. Add f
         newNeurons.append( NeuronInformation( f, newNeurons.size(), b ) );
+        nlr->addConstraintInTopologicalOrder( relu );
     }
 
     // No neurons found for the new layer
