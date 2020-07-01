@@ -34,7 +34,7 @@ def read_nnet(filename, normalize=False):
     """Constructs a MarabouNetworkNnet object from a .nnet file
 
     Args:
-        filename (str): Path to the .nnet file.
+        filename (str): Path to the .nnet file
         normalize (bool, optional): If true, incorporate input/output normalization
                   into first and last layers of network
 
@@ -66,8 +66,8 @@ def read_onnx(filename, inputNames=None, outputName=None):
 
     Args:
         filename (str): Path to the ONNX file
-        inputNames (list of str, optional): List of node names corresponding to inputs.
-        outputName (str, optional): Name of node corresponding to output.
+        inputNames (list of str, optional): List of node names corresponding to inputs
+        outputName (str, optional): Name of node corresponding to output
 
     Returns:
         :class:`~maraboupy.MarabouNetworkONNX.MarabouNetworkONNX`
@@ -76,6 +76,7 @@ def read_onnx(filename, inputNames=None, outputName=None):
 
 def load_query(filename):
     """Load the serialized inputQuery from the given filename
+
     Args:
         filename (str): File to read for loading input query
 
@@ -83,7 +84,6 @@ def load_query(filename):
         :class:`~maraboupy.MarabouCore.InputQuery`
     """
     return MarabouCore.loadQuery(filename)
-
 
 def solve_query(ipq, filename="", verbose=True, options=None):
     """Function to solve query represented by this network
@@ -98,7 +98,7 @@ def solve_query(ipq, filename="", verbose=True, options=None):
     Returns:
         (tuple): tuple containing:
             - vals (Dict[int, float]): Empty dictionary if UNSAT, otherwise a dictionary of SATisfying values for variables
-            - stats (:class:`~maraboupy.MarabouCore.Statistics`): A Statistics object to how Marabou performed
+            - stats (:class:`~maraboupy.MarabouCore.Statistics`, optional): A Statistics object to how Marabou performed
     """
     if options is None:
         options = createOptions()
@@ -124,8 +124,10 @@ def createOptions(numWorkers=4, initialTimeout=5, initialDivides=0, onlineDivide
     Args:
         numWorkers (int, optional): Number of workers to use in DNC mode, defaults to 4
         initialTimeout (int, optional): Initial timeout in seconds for DNC mode before dividing, defaults to 5 
-        initialDivides (int, optional): Initial divides in DNC mode, defaults to 0
-        onlineDivides (int, optional): Online divides in DNC mode, defaults to 2
+        initialDivides (int, optional): Number of time sto perform the initial partitioning.
+            This creates 2^(initialDivides) sub-problems for DNC mode, defaults to 0
+        onlineDivides (int, optional): Number of times to perform the online partitioning when a sub-query
+            time out. This creates 2^(onlineDivides) sub-problems for DNC mode, defaults to 2
         timeoutInSeconds (int, optional): Timeout duration for Marabouin seconds, defaults to 0
         timeoutFactor (float, optional): Timeout factor for DNC mode, defaults to 1.5
         verbosity (int, optional): Verbosity level for Marabou, defaults to 2
