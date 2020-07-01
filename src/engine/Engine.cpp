@@ -1963,10 +1963,9 @@ void Engine::updateScores( DivideStrategy strategy )
         List<PiecewiseLinearConstraint *> constraints =
             _networkLevelReasoner->getConstraintsInTopologicalOrder();
 
-        std::cout << constraints.size() << std::endl;
-
         for ( auto &plConstraint : constraints )
         {
+            std::cout << "In " << _plConstraints.exists( plConstraint ) << std::endl;
             if ( plConstraint->isActive() && !plConstraint->phaseFixed() )
             {
                 plConstraint->updateScore();

@@ -160,7 +160,10 @@ void NetworkLevelReasoner::freeMemoryIfNeeded()
     _layerIndexToLayer.clear();
 }
 
-void NetworkLevelReasoner::storeIntoOther( NetworkLevelReasoner &other ) const
+void NetworkLevelReasoner::storeIntoOther( NetworkLevelReasoner &other,
+                                           Map<PiecewiseLinearConstraint *,
+                                           PiecewiseLinearConstraint *>
+                                           &oldToNewRelu ) const
 {
     other.freeMemoryIfNeeded();
 
@@ -172,7 +175,8 @@ void NetworkLevelReasoner::storeIntoOther( NetworkLevelReasoner &other ) const
         other._layerIndexToLayer[newLayer->getLayerIndex()] = newLayer;
     }
 
-    other._constraintsInTopologicalOrder = _constraintsInTopologicalOrder;
+    for ( const auto &constraint : other._constraintsInTopologicalOrder )
+      other._constraintsInTopologicalOrder.append( oldToNewRelu[constraint] );
 }
 
 void NetworkLevelReasoner::updateVariableIndices( const Map<unsigned, unsigned> &oldIndexToNewIndex,

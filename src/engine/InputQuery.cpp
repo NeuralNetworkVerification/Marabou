@@ -221,14 +221,21 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
     _outputIndexToVariable = other._outputIndexToVariable;
 
     freeConstraintsIfNeeded();
+
+    Map<PiecewiseLinearConstraint *, PiecewiseLinearConstraint *> oldToNewRelu;
     for ( const auto &constraint : other._plConstraints )
-        _plConstraints.append( constraint->duplicateConstraint() );
+    {
+        auto dup = constraint->duplicateConstraint();
+        oldToNewRelu[constraint] = dup;
+        _plConstraints.append( dup );
+    }
 
     if ( other._networkLevelReasoner )
     {
         if ( !_networkLevelReasoner )
             _networkLevelReasoner = new NLR::NetworkLevelReasoner;
-        other._networkLevelReasoner->storeIntoOther( *_networkLevelReasoner );
+        other._networkLevelReasoner->storeIntoOther( *_networkLevelReasoner,
+                                                     oldToNewRelu );
     }
     else
     {

@@ -118,7 +118,9 @@ public:
     /*
       Duplicate the reasoner
     */
-    void storeIntoOther( NetworkLevelReasoner &other ) const;
+    void storeIntoOther( NetworkLevelReasoner &other,
+                         Map<PiecewiseLinearConstraint *,
+                         PiecewiseLinearConstraint *> &oldToNewRelu ) const;
 
     /*
       Methods that are typically invoked by the preprocessor, to
