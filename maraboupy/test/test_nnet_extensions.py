@@ -2,9 +2,6 @@
 from maraboupy.MarabouNetworkNNet import *
 from maraboupy import Marabou
 
-
-from subprocess import call
-
 TOL = 1e-8
 
 network_filename = "./resources/nnet/acasxu/ACASXU_experimental_v2a_1_9.nnet"
@@ -130,3 +127,64 @@ def test_normalize_read_flag(tmpdir):
         assert (abs(without_marabou_output - with_marabou_output) < TOL).all()
 
 
+def test_reset_network():
+    '''
+    Tests resetNetworkFromParameters()
+    :return:
+    '''
+    nnet_object1 = Marabou.read_nnet(filename=network_filename)
+    nnet_object2 = MarabouNetworkNNet()
+
+    # Using default parameters
+    nnet_object2.resetNetworkFromParameters(weights=nnet_object1.weights, biases=nnet_object1.biases)
+
+    N = 10
+    for i in range(N):
+        inputs = nnet_object1.createRandomInputsForNetwork()
+
+        output1 = nnet_object1.evaluateNNet(inputs, normalize_inputs=False, normalize_outputs=False)
+        output2 = nnet_object2.evaluateNNet(inputs, normalize_inputs=False, normalize_outputs=False)
+
+        # Normalization should not matter with default parameters
+        output2_norm = nnet_object2.evaluateNNet(inputs, normalize_inputs=True, normalize_outputs=True)
+        assert (abs(output1 - output2) < TOL).all()
+        assert (abs(output1 - output2_norm) < TOL).all()
+
+    nnet_object1 = Marabou.read_nnet(filename=network_filename, normalize=True)
+
+    # Using the exact same parameters as in the original network
+    nnet_object2.resetNetworkFromParameters(weights=nnet_object1.weights, biases=nnet_object1.biases,
+                                            normalize=nnet_object1.normalize,
+                                            inputMinimums=nnet_object1.inputMinimums,
+                                            inputMaximums=nnet_object1.inputMaximums,
+                                            inputMeans=nnet_object1.inputMeans,
+                                            inputRanges=nnet_object1.inputRanges,
+                                            outputMean=nnet_object1.outputMean,
+                                            outputRange=nnet_object1.outputRange)
+
+    # All evaluations with normalization should now give the same results.
+    for i in range(N):
+        inputs = nnet_object2.createRandomInputsForNetwork()
+
+        output1 = nnet_object1.evaluateNNet(inputs, normalize_inputs=False, normalize_outputs=False)
+        output2 = nnet_object2.evaluateNNet(inputs, normalize_inputs=False, normalize_outputs=False)
+        assert (abs(output1 - output2) < TOL).all()
+
+        output1_norm = nnet_object1.evaluateNNet(inputs, normalize_inputs=True, normalize_outputs=True)
+        output2_norm = nnet_object2.evaluateNNet(inputs, normalize_inputs=True, normalize_outputs=True)
+        assert (abs(output1_norm - output2_norm) < TOL).all()
+
+
+        without_marabou_output1 = nnet_object1.evaluate(np.array([inputs]), useMarabou=False).flatten()
+        with_marabou_output1 = nnet_object1.evaluate(np.array([inputs]), useMarabou=True).flatten()
+        without_marabou_output2 = nnet_object2.evaluate(np.array([inputs]), useMarabou=False).flatten()
+        with_marabou_output2 = nnet_object2.evaluate(np.array([inputs]), useMarabou=True).flatten()
+
+        assert (abs(with_marabou_output1 - with_marabou_output2) < TOL).all()
+        assert (abs(without_marabou_output1 - without_marabou_output2) < TOL).all()
+        assert (abs(with_marabou_output2 - without_marabou_output2) < TOL).all()
+        assert (abs(output1_norm - with_marabou_output2) < TOL).all()
+
+
+
+test_reset_network()
