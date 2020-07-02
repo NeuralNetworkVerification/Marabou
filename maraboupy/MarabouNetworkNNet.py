@@ -218,7 +218,6 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         return ipq
 
     def read_nnet(self, file_name):
-
         """
         Read the nnet file, load all the values and assign the class members.
 
@@ -331,17 +330,6 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
             # f2.write("// Attribution 4.0 International License: https://creativecommons.org/licenses/by/4.0/\n")
             f2.write("// Neural Network File Format by Kyle Julian, Stanford 2016\n")
             f2.write("// Network written to file by writeNNet() method of class MarabouNetworkNNet\n")
-
-            # Extract the necessary information and write the header information
-            # numLayers = len(weights)
-            # inputSize = weights[0].shape[1]
-            # outputSize = len(biases[-1])
-            # maxLayerSize = inputSize
-
-            # Find maximum size of any hidden layer
-            # for b in biases:
-            #     if len(b) > maxLayerSize:
-            #         maxLayerSize = len(b)
 
             # Write data to header
             f2.write("%d,%d,%d,%d,\n" % (self.numLayers, self.inputSize, self.outputSize, self.maxLayersize))
@@ -567,7 +555,6 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         return self.inputMaximums[inputVar]
 
 
-
     def evaluateWithoutMarabou(self, inputValues):
         """
         Function to evaluate network directly (without Marabou) at a given point
@@ -584,7 +571,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         """
 
         return self.evaluateNNet(inputValues.flatten().tolist(), normalize_inputs=self.normalize,
-                                        normalize_outputs=self.normalize)
+                                 normalize_outputs=self.normalize)
 
 
     def evaluateNNet(self, inputs, first_layer = 0, last_layer=-1, normalize_inputs=False,
