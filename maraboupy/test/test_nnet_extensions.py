@@ -184,7 +184,3 @@ def test_reset_network():
         assert (abs(without_marabou_output1 - without_marabou_output2) < TOL).all()
         assert (abs(with_marabou_output2 - without_marabou_output2) < TOL).all()
         assert (abs(output1_norm - with_marabou_output2) < TOL).all()
-
-
-
-test_reset_network()

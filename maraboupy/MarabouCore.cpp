@@ -2,7 +2,7 @@
 /*! \file MarabouCore.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Christopher Lazarus, Andrew Wu, Shantanu Thakoor
+ **   Christopher Lazarus, Andrew Wu, Shantanu Thakoor, Kyle Julian
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -213,13 +213,58 @@ InputQuery loadQuery(std::string filename){
 // Code necessary to generate Python library
 // Describes which classes and functions are exposed to API
 PYBIND11_MODULE(MarabouCore, m) {
-    m.doc() = "Marabou API Library";
+    m.doc() = "Maraboupy bindings to the C++ Marabou via pybind11";
     m.def("createInputQuery", &createInputQuery, "Create input query from network and property file");
-    m.def("solve", &solve, "Takes in a description of the InputQuery and returns the solution", py::arg("inputQuery"), py::arg("options"), py::arg("redirect") = "");
-    m.def("saveQuery", &saveQuery, "Serializes the inputQuery in the given filename");
-    m.def("loadQuery", &loadQuery, "Loads and returns a serialized inputQuery from the given filename");
-    m.def("addReluConstraint", &addReluConstraint, "Add a Relu constraint to the InputQuery");
-    m.def("addMaxConstraint", &addMaxConstraint, "Add a Max constraint to the InputQuery");
+    m.def("solve", &solve, R"pbdoc(
+        Takes in a description of the InputQuery and returns the solution
+
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
+            options (class:`~maraboupy.MarabouCore.Options`): Object defining the options used for Marabou
+            redirect (str, optional): Filepath to direct standard output, defaults to ""
+
+        Returns:
+            (tuple): tuple containing:
+                - vals (Dict[int, float]): Empty dictionary if UNSAT, otherwise a dictionary of SATisfying values for variables
+                - stats (:class:`~maraboupy.MarabouCore.Statistics`): A Statistics object to how Marabou performed
+        )pbdoc",
+        py::arg("inputQuery"), py::arg("options"), py::arg("redirect") = "");
+    m.def("saveQuery", &saveQuery, R"pbdoc(
+        Serializes the inputQuery in the given filename
+
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be saved
+            filename (str): Name of file to save query
+        )pbdoc",
+        py::arg("inputQuery"), py::arg("filename"));
+    m.def("loadQuery", &loadQuery, R"pbdoc(
+        Loads and returns a serialized InputQuery from the given filename
+
+        Args:
+            filename (str): Name of file to load into an InputQuery
+
+        Returns:
+            :class:`~maraboupy.MarabouCore.InputQuery`
+        )pbdoc",
+        py::arg("filename"));
+    m.def("addReluConstraint", &addReluConstraint, R"pbdoc(
+        Add a Relu constraint to the InputQuery
+
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
+            var1 (int): Input variable to Relu constraint
+            var2 (int): Output variable to Relu constraint
+        )pbdoc",
+        py::arg("inputQuery"), py::arg("var1"), py::arg("var2"));
+    m.def("addMaxConstraint", &addMaxConstraint, R"pbdoc(
+        Add a Max constraint to the InputQuery
+
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
+            elements (set of int): Input variables to max constraint
+            v (int): Output variable from max constraint
+        )pbdoc",
+        py::arg("inputQuery"), py::arg("elements"), py::arg("v"));
     py::class_<InputQuery>(m, "InputQuery")
         .def(py::init())
         .def("setUpperBound", &InputQuery::setUpperBound)
