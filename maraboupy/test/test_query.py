@@ -4,6 +4,7 @@ warnings.filterwarnings('ignore', category = DeprecationWarning)
 warnings.filterwarnings('ignore', category = PendingDeprecationWarning)
 
 import pytest
+from subprocess import call
 from .. import Marabou
 from .. import MarabouCore
 import numpy as np
