@@ -209,10 +209,6 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         # Set the number of variables
         self.numVars = self.numberOfVariables()
 
-    # def getMarabouQuery(self):
-    #     ipq = super(MarabouNetworkNNet, self).getMarabouQuery()
-    #     return ipq
-
     def read_nnet(self, file_name):
         """Read the nnet file, load all the values and assign the class members
 

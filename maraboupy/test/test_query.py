@@ -115,7 +115,7 @@ def test_get_marabou_query(tmpdir):
     MarabouCore.createInputQuery(ipq2, network_filename, '')
 
     ipq1_filename = tmpdir.mkdir("query").join("query1.txt").strpath
-    ipq2_filename = tmpdir.mkdir("query").join("query2.txt").strpath
+    ipq2_filename = tmpdir.join("query2.txt").strpath
 
     MarabouCore.saveQuery(ipq1, ipq1_filename)
     MarabouCore.saveQuery(ipq1, ipq2_filename)
