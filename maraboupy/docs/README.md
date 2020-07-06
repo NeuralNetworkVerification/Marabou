@@ -1,4 +1,4 @@
-## Maraboupy Documentation
+# Maraboupy Documentation
 
 This folder contains the files needed to build the Marabopy html documentation.
 
@@ -22,7 +22,7 @@ This process pulls in information from python source files in the maraboupy fold
 (parent directory of this folder) as well as python examples in the maraboupy/examples
 folder. The output html documentation will be located in the created folder, \_build/html.
 
-### Documentation organization
+## Documentation organization
 
 The configuration file conf.py contains important settings for building documentation,
 including color schemes, sphinx extensions, and definitions of hyperlinks to source code 
