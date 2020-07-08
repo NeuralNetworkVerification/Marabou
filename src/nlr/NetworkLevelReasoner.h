@@ -118,9 +118,7 @@ public:
     /*
       Duplicate the reasoner
     */
-    void storeIntoOther( NetworkLevelReasoner &other,
-                         Map<PiecewiseLinearConstraint *,
-                         PiecewiseLinearConstraint *> &oldToNewRelu ) const;
+    void storeIntoOther( NetworkLevelReasoner &other ) const;
 
     /*
       Methods that are typically invoked by the preprocessor, to
@@ -137,6 +135,8 @@ public:
     */
     List<PiecewiseLinearConstraint *> getConstraintsInTopologicalOrder();
     void addConstraintInTopologicalOrder( PiecewiseLinearConstraint *constraint );
+
+    void removeConstraintFromTopologicalOrder( PiecewiseLinearConstraint *constraint );
 
 private:
     Map<unsigned, Layer *> _layerIndexToLayer;

@@ -222,20 +222,12 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
 
     freeConstraintsIfNeeded();
 
-    Map<PiecewiseLinearConstraint *, PiecewiseLinearConstraint *> oldToNewRelu;
-    for ( const auto &constraint : other._plConstraints )
-    {
-        auto dup = constraint->duplicateConstraint();
-        oldToNewRelu[constraint] = dup;
-        _plConstraints.append( dup );
-    }
-
+    // Setting NLR
     if ( other._networkLevelReasoner )
     {
         if ( !_networkLevelReasoner )
             _networkLevelReasoner = new NLR::NetworkLevelReasoner;
-        other._networkLevelReasoner->storeIntoOther( *_networkLevelReasoner,
-                                                     oldToNewRelu );
+        other._networkLevelReasoner->storeIntoOther( *_networkLevelReasoner );
     }
     else
     {
@@ -243,6 +235,25 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
         {
             delete _networkLevelReasoner;
             _networkLevelReasoner = NULL;
+        }
+    }
+
+    // Setting plConstraints and topological order
+    if ( !other._networkLevelReasoner )
+    {
+        for ( const auto &constraint : other._plConstraints )
+            _plConstraints.append( constraint->duplicateConstraint() );
+    }
+    else
+    {
+        for ( const auto &constraint : other._networkLevelReasoner->
+                  getConstraintsInTopologicalOrder() )
+        {
+            if ( !other._plConstraints.exists( constraint ) )
+                continue;
+            auto *newPlc = constraint->duplicateConstraint();
+            _plConstraints.append( newPlc );
+            _networkLevelReasoner->addConstraintInTopologicalOrder( newPlc );
         }
     }
 
@@ -757,7 +768,7 @@ bool InputQuery::constructReluLayer( NLR::NetworkLevelReasoner *nlr,
 
         // B has been handled, f hasn't. Add f
         newNeurons.append( NeuronInformation( f, newNeurons.size(), b ) );
-        nlr->addConstraintInTopologicalOrder( relu );
+        nlr->addConstraintInTopologicalOrder( plc );
     }
 
     // No neurons found for the new layer
