@@ -35,7 +35,6 @@ Preprocessor::Preprocessor()
 
 InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariableElimination )
 {
-    std::cout << "Copying" << std::endl;
     _preprocessed = query;
 
     /*
@@ -92,7 +91,6 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     if ( attemptVariableElimination )
         eliminateVariables();
 
-    std::cout << "Copying again" << std::endl;
     return _preprocessed;
 }
 
@@ -693,7 +691,6 @@ void Preprocessor::eliminateVariables()
         {
             if ( _statistics )
                 _statistics->ppIncNumConstraintsRemoved();
-            std::cout << "Deleting... " << *constraint << std::endl;
             delete *constraint;
             *constraint = NULL;
             constraint = constraints.erase( constraint );
