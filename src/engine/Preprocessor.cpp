@@ -38,17 +38,30 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     _preprocessed = query;
 
     /*
+      Next, make sure all equations are of type EQUALITY. If not, turn them
+      into one.
+    */
+    makeAllEquationsEqualities();
+
+    /*
+      Attempt to construct a network level reasonor
+    */
+    _preprocessed.constructNetworkLevelReasoner();
+
+    /*
+      Collect input and output variables
+    */
+    for ( const auto &var : _preprocessed.getInputVariables() )
+        _inputOutputVariables.insert( var );
+    for ( const auto &var : _preprocessed.getOutputVariables() )
+        _inputOutputVariables.insert( var );
+
+    /*
       Initial work: if needed, have the PL constraints add their additional
       equations to the pool.
     */
     if ( GlobalConfiguration::PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS )
         addPlAuxiliaryEquations();
-
-    /*
-      Next, make sure all equations are of type EQUALITY. If not, turn them
-      into one.
-    */
-    makeAllEquationsEqualities();
 
     /*
       Do the preprocessing steps:
@@ -459,10 +472,20 @@ bool Preprocessor::processIdenticalVariables()
 
         ASSERT( term1._variable != term2._variable );
 
-        // The equation matches the pattern, process and remove it
-        found = true;
+        // The equation matches the pattern, extract the variables
         unsigned v1 = term1._variable;
         unsigned v2 = term2._variable;
+
+        // Input and output variables should not be merged
+        if ( _inputOutputVariables.exists( v1 ) ||
+             _inputOutputVariables.exists( v2 ) )
+        {
+            ++equation;
+            continue;
+        }
+
+        // This equation can be removed
+        found = true;
 
         double bestLowerBound =
             _preprocessed.getLowerBound( v1 ) > _preprocessed.getLowerBound( v2 ) ?
@@ -506,9 +529,12 @@ void Preprocessor::collectFixedValues()
         usedVariables.insert( merged.first );
 
     // Collect any variables with identical lower and upper bounds, or
-    // which are unused
+    // which are unused, unless they are input/output variables
 	for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
 	{
+        if ( _inputOutputVariables.exists( i ) )
+            continue;
+
         if ( FloatUtils::areEqual( _preprocessed.getLowerBound( i ), _preprocessed.getUpperBound( i ) ) )
         {
             _fixedVariables[i] = _preprocessed.getLowerBound( i );
@@ -557,7 +583,8 @@ void Preprocessor::eliminateVariables()
         }
     }
 
-    // Check and remove any merged variables from the debugging solution
+    // Check and remove any merged variables from the debugging
+    // solution
     for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
     {
         if ( _mergedVariables.exists( i ) && _preprocessed._debuggingSolution.exists( i ) )

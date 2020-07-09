@@ -31,6 +31,11 @@ DisjunctionConstraint::DisjunctionConstraint( const String &/* serializedDisjunc
                         "Construct DisjunctionConstraint from String" );
 }
 
+PiecewiseLinearFunctionType DisjunctionConstraint::getType() const
+{
+    return PiecewiseLinearFunctionType::DISJUNCTION;
+}
+
 PiecewiseLinearConstraint *DisjunctionConstraint::duplicateConstraint() const
 {
     DisjunctionConstraint *clone = new DisjunctionConstraint( _disjuncts );

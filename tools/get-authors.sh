@@ -8,6 +8,11 @@
 # This script uses git to get the original author
 #
 
+#
+# This script was originally adapeted from a similar script in the
+# CVC4 project: https://github.com/CVC4/CVC4
+#
+
 gituser="`git config user.name` <`git config user.email`>"
 
 if [ "$1" = "--email" ]; then

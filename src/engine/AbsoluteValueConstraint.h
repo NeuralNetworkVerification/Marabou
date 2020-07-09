@@ -35,6 +35,11 @@ public:
     AbsoluteValueConstraint( unsigned b, unsigned f );
 
     /*
+      Get the type of this constraint.
+    */
+    PiecewiseLinearFunctionType getType() const;
+
+    /*
       Return a clone of the constraint.
     */
     PiecewiseLinearConstraint *duplicateConstraint() const;

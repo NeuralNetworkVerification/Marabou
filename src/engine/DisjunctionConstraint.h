@@ -27,6 +27,11 @@ public:
     DisjunctionConstraint( const String &serializedDisjunction );
 
     /*
+      Get the type of this constraint.
+    */
+    PiecewiseLinearFunctionType getType() const;
+
+    /*
       Return a clone of the constraint.
     */
     PiecewiseLinearConstraint *duplicateConstraint() const;
