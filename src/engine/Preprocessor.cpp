@@ -472,8 +472,7 @@ bool Preprocessor::processIdenticalVariables()
 
         ASSERT( term1._variable != term2._variable );
 
-        // The equation matches the pattern, process and remove it
-        found = true;
+        // The equation matches the pattern, extract the variables
         unsigned v1 = term1._variable;
         unsigned v2 = term2._variable;
 
@@ -484,6 +483,9 @@ bool Preprocessor::processIdenticalVariables()
             ++equation;
             continue;
         }
+
+        // This equation can be removed
+        found = true;
 
         double bestLowerBound =
             _preprocessed.getLowerBound( v1 ) > _preprocessed.getLowerBound( v2 ) ?
