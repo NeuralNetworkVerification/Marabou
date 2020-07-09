@@ -223,9 +223,9 @@ class MarabouNetwork:
             if stats.hasTimedOut():
                 print("TO")
             elif len(vals)==0:
-                print("UNSAT")
+                print("unsat")
             else:
-                print("SAT")
+                print("sat")
                 for j in range(len(self.inputVars)):
                     for i in range(self.inputVars[j].size):
                         print("input {} = {}".format(i, vals[self.inputVars[j].item(i)]))

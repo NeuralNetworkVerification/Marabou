@@ -220,9 +220,9 @@ String DnCWorker::exitCodeToString( IEngine::ExitCode result )
     switch ( result )
     {
     case IEngine::UNSAT:
-        return "UNSAT";
+        return "unsat";
     case IEngine::SAT:
-        return "SAT";
+        return "sat";
     case IEngine::ERROR:
         return "ERROR";
     case IEngine::TIMEOUT:

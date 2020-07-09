@@ -37,6 +37,7 @@ DnCMarabou::DnCMarabou()
 
 void DnCMarabou::run()
 {
+
     String inputQueryFilePath = Options::get()->getString( Options::INPUT_QUERY_FILE_PATH );
     if ( inputQueryFilePath.length() > 0 )
     {
@@ -93,14 +94,14 @@ void DnCMarabou::run()
     printf( "\n" );
 
     /*
-      Step 3: initialize the DNC core
+      Step 2: initialize the DNC core
     */
     unsigned initialDivides = Options::get()->getInt( Options::NUM_INITIAL_DIVIDES );
 
     int initialTimeoutInt = Options::get()->getInt( Options::INITIAL_TIMEOUT );
     unsigned initialTimeout = 0;
     if ( initialTimeoutInt < 0 )
-        initialTimeout = _inputQuery.getPiecewiseLinearConstraints().size() / 2.5;
+        initialTimeout = _inputQuery.getPiecewiseLinearConstraints().size() / 10;
     else
         initialTimeout = static_cast<unsigned>(initialTimeoutInt);
 
@@ -129,6 +130,15 @@ void DnCMarabou::run()
     BiasStrategy biasStrategy = setBiasStrategyFromOptions
         ( Options::get()->getString( Options::BIAS_STRATEGY ) );
 
+    int splitThreshold = Options::get()->getInt( Options::SPLIT_THRESHOLD );
+    if ( splitThreshold < 0 )
+    {
+	printf( "Invalid constraint violation threshold value %d,"
+		" using default value %u.\n\n", splitThreshold,
+		GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD );
+	splitThreshold = GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD;
+    }
+
     std::cout << "Initial Divides: " << initialDivides << std::endl;
     std::cout << "Initial Timeout: " << initialTimeout << std::endl;
     std::cout << "Number of Workers: " << numWorkers << std::endl;
@@ -140,26 +150,31 @@ void DnCMarabou::run()
                                           DivideStrategy::LargestInterval ?
                                           "Largest Interval" : "Split Relu" )
               << std::endl;
-    std::cout << "Focus Layers: " << biasedLayer << std::endl;
+    std::cout << "Split Only: " << Options::get()->getBool( Options::SPLIT_ONLY )
+              << std::endl;
     std::cout << "Max Depth: " << maxDepth << std::endl;
     std::cout << "Perform tree state restoration: " << ( restoreTreeStates ? "Yes" : "No" )
               << std::endl;
+    std::cout << "Focus layer: " << biasedLayer << std::endl;
+    std::cout << "Bias Strategy: " << ( biasStrategy == BiasStrategy::Estimate ?
+                                          "estimate" : "no estimate" )
+              << std::endl;
+    std::cout << "Split threshold: " << splitThreshold << std::endl;
 
     struct timespec start = TimeUtils::sampleMicro();
 
     Map<unsigned, unsigned> idToPhase;
     if ( _baseEngine->processInputQuery( _inputQuery ) &&
-         lookAheadPreprocessing( idToPhase ) &&
+         lookAheadPreprocessing( idToPhase, splitThreshold ) &&
          !Options::get()->getBool( Options::PREPROCESS_ONLY ) )
     {
-        if ( !Options::get()->getBool( Options::PREPROCESS_ONLY ) )
+        String fixedReluFilePath = Options::get()->getString( Options::FIXED_RELU_PATH );
+        if ( fixedReluFilePath != "" )
         {
-            String fixedReluFilePath = Options::get()->getString( Options::FIXED_RELU_PATH );
-            if ( fixedReluFilePath != "" )
-            {
-                printf( "Fixed Relus: %s\n", fixedReluFilePath.ascii() );
-                FixedReluParser().parse( fixedReluFilePath, idToPhase );
-            }
+            printf( "Fixed Relus: %s\n", fixedReluFilePath.ascii() );
+            FixedReluParser().parse( fixedReluFilePath, idToPhase );
+        }
+
 
             _dncManager = std::unique_ptr<DnCManager>
                 ( new DnCManager( numWorkers, initialDivides, initialTimeout,
@@ -167,6 +182,15 @@ void DnCMarabou::run()
                                   _baseEngine->getInputQuery(), verbosity,
                                   idToPhase, biasedLayer, biasStrategy,
                                   maxDepth ) );
+	    _dncManager->setConstraintViolationThreshold( splitThreshold );
+
+        if ( Options::get()->getBool( Options::SPLIT_ONLY ) )
+        {
+            _dncManager->splitOnly( Options::get()->getString( Options::PROPERTY_FILE_PATH ),
+                                    Options::get()->getString( Options::SUBPROPERTY_PREFIX ) );
+        }
+        else
+        {
             _dncManager->solve( timeoutInSeconds, restoreTreeStates );
         }
     }
@@ -180,22 +204,16 @@ void DnCMarabou::run()
     displayResults( totalElapsed );
 }
 
-bool DnCMarabou::lookAheadPreprocessing( Map<unsigned, unsigned> &idToPhase )
+bool DnCMarabou::lookAheadPreprocessing( Map<unsigned, unsigned> &idToPhase, unsigned splitThreshold )
 {
     bool feasible = true;
     if ( Options::get()->getBool( Options::LOOK_AHEAD_PREPROCESSING ) )
     {
         struct timespec start = TimeUtils::sampleMicro();
 
-        int initialTimeoutInt = Options::get()->getInt( Options::INITIAL_TIMEOUT );
-        unsigned initialTimeout = 0;
-        if ( initialTimeoutInt < 0 )
-            initialTimeout = _inputQuery.getPiecewiseLinearConstraints().size() / 2.5;
-        else
-            initialTimeout = static_cast<unsigned>(initialTimeoutInt);
         auto lookAheadPreprocessor = new LookAheadPreprocessor
             ( Options::get()->getInt( Options::NUM_WORKERS ),
-              *(_baseEngine->getInputQuery()), initialTimeout );
+              *(_baseEngine->getInputQuery()), splitThreshold );
         List<unsigned> maxTimes;
         feasible = lookAheadPreprocessor->run( idToPhase, maxTimes );
         struct timespec end = TimeUtils::sampleMicro();
@@ -272,7 +290,7 @@ BiasStrategy DnCMarabou::setBiasStrategyFromOptions( const String strategy )
     else
     {
         printf ("Unknown bias strategy, using default (centroid).\n");
-        return BiasStrategy::Centroid;
+        return BiasStrategy::Estimate;
     }
 }
 

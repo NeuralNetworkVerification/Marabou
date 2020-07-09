@@ -502,11 +502,19 @@ PiecewiseLinearCaseSplit ReluConstraint::getActiveSplit() const
     // Active phase: b >= 0, b - f = 0
     PiecewiseLinearCaseSplit activePhase;
     activePhase.storeBoundTightening( Tightening( _b, 0.0, Tightening::LB ) );
-    Equation activeEquation( Equation::EQ );
-    activeEquation.addAddend( 1, _b );
-    activeEquation.addAddend( -1, _f );
-    activeEquation.setScalar( 0 );
-    activePhase.addEquation( activeEquation );
+
+    if ( _auxVarInUse )
+    {
+        activePhase.storeBoundTightening( Tightening( _aux, 0.0, Tightening::UB ) );
+    }
+    else
+    {
+        Equation activeEquation( Equation::EQ );
+        activeEquation.addAddend( 1, _b );
+        activeEquation.addAddend( -1, _f );
+        activeEquation.setScalar( 0 );
+        activePhase.addEquation( activeEquation );
+    }
     return activePhase;
 }
 

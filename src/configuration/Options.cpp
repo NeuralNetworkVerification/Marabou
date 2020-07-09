@@ -42,6 +42,7 @@ void Options::initializeDefaultValues()
       Bool options
     */
     _boolOptions[DNC_MODE] = false;
+    _boolOptions[SPLIT_ONLY] = false;
     _boolOptions[PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS] = false;
     _boolOptions[RESTORE_TREE_STATES] = false;
     _boolOptions[LOOK_AHEAD_PREPROCESSING] = false;
@@ -56,9 +57,9 @@ void Options::initializeDefaultValues()
     _intOptions[VERBOSITY] = 2;
     _intOptions[TIMEOUT] = 0;
     _intOptions[FOCUS_LAYER] = 0;
-    _intOptions[MAX_DEPTH] = 5;
+    _intOptions[MAX_DEPTH] = 4;
     _intOptions[MAX_TREE_DEPTH] = 10;
-
+    _intOptions[SPLIT_THRESHOLD] = 1;
 
     /*
       Float options
@@ -75,6 +76,7 @@ void Options::initializeDefaultValues()
     _stringOptions[SUMMARY_FILE] = "";
     _stringOptions[DIVIDE_STRATEGY] = "auto";
     _stringOptions[BIAS_STRATEGY] = "";
+    _stringOptions[SUBPROPERTY_PREFIX] = "subproperty";
 }
 
 void Options::parseOptions( int argc, char **argv )

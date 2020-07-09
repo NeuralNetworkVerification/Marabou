@@ -133,6 +133,12 @@ public:
     void setVerbosity( unsigned verbosity );
 
     /*
+      Set the constraint violation threshold of SmtCore
+    */
+    void setConstraintViolationThreshold( unsigned threshold );
+
+
+    /*
       PSA: The following two methods are for DnC only and should be used very
       cautiously.
      */
@@ -161,8 +167,6 @@ public:
                        Map <unsigned, double> &runtimeEstimates );
 
     bool lookAheadPropagate( Map<unsigned, unsigned> &allSplits, bool sbtOnly );
-
-    void quickSolve( unsigned depthThreshold );
 
     void numberOfActive();
 
@@ -361,6 +365,8 @@ public:
     */
     unsigned _lastNumVisitedStates;
     unsigned long long _lastIterationWithProgress;
+
+    unsigned _constraintViolationThreshold;
 
     /*
       Perform a simplex step: compute the cost function, pick the

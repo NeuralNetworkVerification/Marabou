@@ -37,7 +37,7 @@ private:
 
     std::unique_ptr<DnCManager> _dncManager;
 
-    bool lookAheadPreprocessing( Map<unsigned, unsigned> &idToPhase );
+    bool lookAheadPreprocessing( Map<unsigned, unsigned> &idToPhase, unsigned splitThreshold );
 
     InputQuery _inputQuery;
 

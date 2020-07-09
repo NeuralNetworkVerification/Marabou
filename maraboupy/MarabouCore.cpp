@@ -131,13 +131,15 @@ struct MarabouOptions {
         , _timeoutFactor( 1.5 )
         , _verbosity( 2 )
         , _dnc( false )
-        , _restoreTreeStates( false )
+        , _restoreTreeStates( true )
         , _lookAheadPreprocessing( false )
         , _preprocessOnly( false )
         , _divideStrategy( "auto" )
-        , _biasStrategy( "centroid" )
-        , _maxDepth( 5 )
+        , _biasStrategy( "estimate" )
+        , _maxDepth( 4 )
 	, _maxTreeDepth( 10 )  
+	, _splitThreshold( 20 )
+      , _preprocessingTime( 2 )
     {};
 
     unsigned _numWorkers;
@@ -156,6 +158,8 @@ struct MarabouOptions {
     std::string _biasStrategy;
     unsigned _maxDepth;
     unsigned _maxTreeDepth;
+    int _splitThreshold;
+  unsigned _preprocessingTime;
 };
 
 BiasStrategy setBiasStrategyFromOptions( const String strategy )
@@ -171,7 +175,7 @@ BiasStrategy setBiasStrategyFromOptions( const String strategy )
     else
         {
             printf ("Unknown divide strategy, using default (centroid).\n");
-            return BiasStrategy::Centroid;
+            return BiasStrategy::Estimate;
         }
 }
 
@@ -212,10 +216,14 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
         int initialTimeoutInt = options._initialTimeout;
         unsigned initialTimeout = 0;
         if ( initialTimeoutInt < 0 )
-            initialTimeout = inputQuery.getPiecewiseLinearConstraints().size() / 2.5;
+            initialTimeout = inputQuery.getPiecewiseLinearConstraints().size() / 10;
         else
             initialTimeout = static_cast<unsigned>(initialTimeoutInt);
 	
+	int splitThreshold = options._splitThreshold;
+	if (splitThreshold == -1)
+	  splitThreshold = (inputQuery.getInputVariables().size() < 10) ? 1 : 20;
+
         DivideStrategy divideStrategy = DivideStrategy::SplitRelu;
         if ( options._divideStrategy == "auto" )
         {
@@ -243,9 +251,10 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
 
         if ( lookAheadPreprocessing )
         {
+            unsigned preprocessingTime = options._preprocessingTime;
             struct timespec start = TimeUtils::sampleMicro();
             auto lookAheadPreprocessor = new LookAheadPreprocessor
-	      ( numWorkers, *(engine.getInputQuery()), initialTimeout );
+	      ( numWorkers, *(engine.getInputQuery()), preprocessingTime );
 	    List<unsigned> maxTimes;
             bool feasible = lookAheadPreprocessor->run( idToPhase, maxTimes );
             struct timespec end = TimeUtils::sampleMicro();
@@ -308,6 +317,7 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
 				engine.getInputQuery(), verbosity, idToPhase,
 				focusLayer, biasStrategy, maxDepth ) );
 	    
+	    dncManager->setConstraintViolationThreshold( splitThreshold );
             dncManager->solve( timeoutInSeconds, restoreTreeStates );
             switch ( dncManager->getExitCode() )
 	    {
@@ -329,7 +339,8 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
         } else
         {
             engine.applySplits( idToPhase );
-            if(!engine.solve(timeoutInSeconds)) return std::make_pair(ret, *(engine.getStatistics()));
+            engine.setConstraintViolationThreshold( splitThreshold );
+	    if(!engine.solve(timeoutInSeconds)) return std::make_pair(ret, *(engine.getStatistics()));
 
             if (engine.getExitCode() == Engine::SAT)
                 engine.extractSolution(inputQuery);
@@ -402,7 +413,9 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_divideStrategy", &MarabouOptions::_divideStrategy)
         .def_readwrite("_biasStrategy", &MarabouOptions::_biasStrategy)
         .def_readwrite("_maxDepth", &MarabouOptions::_maxDepth)
-        .def_readwrite("_maxTreeDepth", &MarabouOptions::_maxTreeDepth );
+        .def_readwrite("_maxTreeDepth", &MarabouOptions::_maxTreeDepth )
+        .def_readwrite("_splitThreshold", &MarabouOptions::_splitThreshold)
+        .def_readwrite("_preprocessingTime", &MarabouOptions::_preprocessingTime);
     py::class_<SymbolicBoundTightener, std::unique_ptr<SymbolicBoundTightener,py::nodelete>>(m, "SymbolicBoundTightener")
         .def(py::init())
         .def("setNumberOfLayers", &SymbolicBoundTightener::setNumberOfLayers)
