@@ -89,7 +89,7 @@ before_deploy:
 
 deploy:
   provider: pages
-  skip_cleanup = true
+  skip_cleanup: true
   github_token: "$GITHUB_PAGES_DEPLOY_TOKEN"
   local_dir: maraboupy/docs/_build/html
   on:
