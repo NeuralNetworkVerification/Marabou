@@ -94,7 +94,7 @@ deploy:
   local_dir: maraboupy/docs/_build/html
   on:
     branch: master
-  #  condition: "$TRAVIS_COMPILER" = "gcc"
+    condition: $TRAVIS_COMPILER = gcc
 
 notifications:
   email:
