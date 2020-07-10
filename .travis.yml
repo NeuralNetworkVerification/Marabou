@@ -80,7 +80,6 @@ after_success:
       bash <(curl -s https://codecov.io/bash) -f coverage.info || echo "Codecov did not collect coverage reports";
     fi
 
-
 before_deploy:
   - if [ "$TRAVIS_COMPILER" = "gcc" ]; then
     pip install --user -r maraboupy/docs/requirements.txt --progress-bar off
@@ -91,11 +90,11 @@ before_deploy:
 deploy:
   provider: pages
   skip_cleanup = true
-  github_token: "$GITHUB_PAGES_DEPLOY_TOKEN"
+  github_token: $GITHUB_PAGES_DEPLOY_TOKEN
   local_dir: maraboupy/docs/_build/html
   on:
     branch: master
-    condition: "$TRAVIS_COMPILER" = "gcc"
+    condition: $TRAVIS_COMPILER = "gcc"
 
 notifications:
   email:
