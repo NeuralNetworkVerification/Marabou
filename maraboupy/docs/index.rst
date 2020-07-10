@@ -14,7 +14,6 @@ constraints, or SAT if a satisfying assignment exists.
 This documentation explains how to setup Maraboupy, shows examples using Maraboupy,
 and provides API documentation.
 
-
 .. _Setup:
 .. toctree::
    :maxdepth: 1
