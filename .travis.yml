@@ -80,6 +80,7 @@ after_success:
       bash <(curl -s https://codecov.io/bash) -f coverage.info || echo "Codecov did not collect coverage reports";
     fi
 
+
 before_deploy:
   - if [ "$TRAVIS_COMPILER" = "gcc" ]; then
     pip install --user -r maraboupy/docs/requirements.txt --progress-bar off
