@@ -82,19 +82,19 @@ after_success:
 
 before_deploy:
   - if [ "$TRAVIS_COMPILER" = "gcc" ]; then
-    pip install --user -r maraboupy/docs/requirements.txt --progress-bar off;
-    make -C maraboupy/docs html;
-    touch maraboupy/docs/_build/html/.nojekyll;
-  fi
+      pip install --user -r maraboupy/docs/requirements.txt --progress-bar off;
+      make -C maraboupy/docs html;
+      touch maraboupy/docs/_build/html/.nojekyll;
+    fi
 
-deploy:
-  provider: pages
-  skip_cleanup = true
-  github_token: $GITHUB_PAGES_DEPLOY_TOKEN
-  local_dir: maraboupy/docs/_build/html
-  on:
-    branch: master
-    condition: $TRAVIS_COMPILER = "gcc"
+#deploy:
+#  provider: pages
+#  skip_cleanup = true
+#  github_token: $GITHUB_PAGES_DEPLOY_TOKEN
+#  local_dir: maraboupy/docs/_build/html
+#  on:
+#    branch: master
+#    condition: $TRAVIS_COMPILER = "gcc"
 
 notifications:
   email:
