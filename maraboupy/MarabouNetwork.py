@@ -11,7 +11,7 @@ in the top-level source directory) and their institutional affiliations.
 All rights reserved. See the file COPYING in the top-level source
 directory for licensing information.
 
-MarabouNetwork defines an abstract class to represent neural networks with piecewise linear constraints
+MarabouNetwork defines an abstract class that represents neural networks with piecewise linear constraints
 '''
 
 from maraboupy import MarabouCore
