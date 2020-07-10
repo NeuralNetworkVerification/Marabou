@@ -87,14 +87,14 @@ before_deploy:
       touch maraboupy/docs/_build/html/.nojekyll;
     fi
 
-#deploy:
-#  provider: pages
-#  skip_cleanup = true
-#  github_token: $GITHUB_PAGES_DEPLOY_TOKEN
-#  local_dir: maraboupy/docs/_build/html
-#  on:
-#    branch: master
-#    condition: $TRAVIS_COMPILER = "gcc"
+deploy:
+  provider: pages
+  skip_cleanup = true
+  github_token: "$GITHUB_PAGES_DEPLOY_TOKEN"
+  local_dir: maraboupy/docs/_build/html
+  on:
+    branch: master
+    condition: "$TRAVIS_COMPILER" = "gcc"
 
 notifications:
   email:
