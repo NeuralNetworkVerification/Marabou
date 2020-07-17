@@ -96,6 +96,10 @@ void addMaxConstraint(InputQuery& ipq, std::set<unsigned> elements, unsigned v){
     ipq.addPiecewiseLinearConstraint(m);
 }
 
+void addAbsConstraint(InputQuery& ipq, unsigned b, unsigned f){
+    ipq.addPiecewiseLinearConstraint(new AbsoluteValueConstraint(b, f));
+}
+
 void createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::string propertyFilePath){
   AcasParser* acasParser = new AcasParser( String(networkFilePath) );
   acasParser->generateQuery( inputQuery );
@@ -265,6 +269,15 @@ PYBIND11_MODULE(MarabouCore, m) {
             v (int): Output variable from max constraint
         )pbdoc",
         py::arg("inputQuery"), py::arg("elements"), py::arg("v"));
+    m.def("addAbsConstraint", &addAbsConstraint, R"pbdoc(
+        Add an Abs constraint to the InputQuery
+
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
+            b (int): Input variable
+            f (int): Output variable
+        )pbdoc",
+        py::arg("inputQuery"), py::arg("b"), py::arg("f"));
     py::class_<InputQuery>(m, "InputQuery")
         .def(py::init())
         .def("setUpperBound", &InputQuery::setUpperBound)
