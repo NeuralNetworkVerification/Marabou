@@ -294,6 +294,23 @@ void AbsoluteValueConstraint::eliminateVariable( unsigned variable, double /* fi
     _haveEliminatedVariables = true;
 }
 
+void AbsoluteValueConstraint::dump( String &output ) const
+{
+    output = Stringf( "AbsoluteValueCosntraint: x%u = Abs( x%u ). Active? %s. PhaseStatus = %u (%s).\n",
+                      _f, _b,
+                      _constraintActive ? "Yes" : "No",
+                      _phaseStatus, phaseToString( _phaseStatus ).ascii()
+                      );
+
+    output += Stringf( "b in [%s, %s], ",
+                       _lowerBounds.exists( _b ) ? Stringf( "%lf", _lowerBounds[_b] ).ascii() : "-inf",
+                       _upperBounds.exists( _b ) ? Stringf( "%lf", _upperBounds[_b] ).ascii() : "inf" );
+
+    output += Stringf( "f in [%s, %s]",
+                       _lowerBounds.exists( _f ) ? Stringf( "%lf", _lowerBounds[_f] ).ascii() : "-inf",
+                       _upperBounds.exists( _f ) ? Stringf( "%lf", _upperBounds[_f] ).ascii() : "inf" );
+}
+
 void AbsoluteValueConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
     ASSERT( oldIndex == _b || oldIndex == _f );
@@ -448,6 +465,24 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
         return;
     }
 }
+
+String AbsoluteValueConstraint::phaseToString( PhaseStatus phase )
+{
+    switch ( phase )
+    {
+    case PHASE_NOT_FIXED:
+        return "PHASE_NOT_FIXED";
+
+    case PHASE_POSITIVE:
+        return "PHASE_POSITIVE";
+
+    case PHASE_NEGATIVE:
+        return "PHASE_NEGATIVE";
+
+    default:
+        return "UNKNOWN";
+    }
+};
 
 void AbsoluteValueConstraint::setPhaseStatus( PhaseStatus phaseStatus )
 {
