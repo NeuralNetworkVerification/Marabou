@@ -33,6 +33,7 @@ public:
       f = | b |
     */
     AbsoluteValueConstraint( unsigned b, unsigned f );
+    AbsoluteValueConstraint( const String &serializedAbs );
 
     /*
       Get the type of this constraint.

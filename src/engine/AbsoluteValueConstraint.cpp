@@ -30,6 +30,26 @@ AbsoluteValueConstraint::AbsoluteValueConstraint( unsigned b, unsigned f )
     setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
 }
 
+AbsoluteValueConstraint::AbsoluteValueConstraint( const String &serializedAbs )
+    : _haveEliminatedVariables( false )
+{
+    String constraintType = serializedAbs.substring( 0, 13 );
+    ASSERT( constraintType == String( "absoluteValue" ) );
+
+    // Remove the constraint type in serialized form
+    String serializedValues = serializedAbs.substring( 14, serializedAbs.length() - 14 );
+    List<String> values = serializedValues.tokenize( "," );
+
+    ASSERT( values.size() == 2 );
+
+    auto var = values.begin();
+    _f = atoi( var->ascii() );
+    ++var;
+    _b = atoi( var->ascii() );
+
+    setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
+}
+
 PiecewiseLinearFunctionType AbsoluteValueConstraint::getType() const
 {
     return PiecewiseLinearFunctionType::ABSOLUTE_VALUE;

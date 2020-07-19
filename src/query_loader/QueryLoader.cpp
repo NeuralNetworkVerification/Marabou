@@ -209,6 +209,10 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         {
             constraint = new MaxConstraint( serializeConstraint );
         }
+        else if ( coType == "absoluteValue" )
+        {
+            constraint = new AbsoluteValueConstraint( serializeConstraint );
+        }
         else
         {
             throw MarabouError( MarabouError::UNSUPPORTED_PIECEWISE_CONSTRAINT, Stringf( "Unsupported piecewise constraint: %s\n", coType.ascii() ).ascii() );
