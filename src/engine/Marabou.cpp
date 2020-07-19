@@ -72,6 +72,12 @@ void Marabou::prepareInputQuery()
 
         printf( "InputQuery: %s\n", inputQueryFilePath.ascii() );
         _inputQuery = QueryLoader::loadQuery( inputQueryFilePath );
+        _inputQuery.constructNetworkLevelReasoner();
+
+        /*
+          Step 2: extract options
+        */
+        extractOptions();
     }
     else
     {
@@ -108,15 +114,7 @@ void Marabou::prepareInputQuery()
         /*
           Step 3: extract options
         */
-        int splitThreshold = Options::get()->getInt( Options::SPLIT_THRESHOLD );
-        if ( splitThreshold < 0 )
-        {
-            printf( "Invalid constraint violation threshold value %d,"
-                    " using default value %u.\n\n", splitThreshold,
-                    GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD );
-            splitThreshold = GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD;
-        }
-        _engine.setConstraintViolationThreshold( splitThreshold );
+        extractOptions();
     }
 
     String queryDumpFilePath = Options::get()->getString( Options::QUERY_DUMP_FILE );
@@ -201,6 +199,19 @@ void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
 
         summaryFile.write( "\n" );
     }
+}
+
+void Marabou::extractOptions()
+{
+    int splitThreshold = Options::get()->getInt( Options::SPLIT_THRESHOLD );
+    if ( splitThreshold < 0 )
+    {
+        printf( "Invalid constraint violation threshold value %d,"
+                " using default value %u.\n\n", splitThreshold,
+                GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD );
+        splitThreshold = GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD;
+    }
+    _engine.setConstraintViolationThreshold( splitThreshold );
 }
 
 //
