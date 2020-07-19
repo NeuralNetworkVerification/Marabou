@@ -11,7 +11,7 @@ in the top-level source directory) and their institutional affiliations.
 All rights reserved. See the file COPYING in the top-level source
 directory for licensing information.
 
-MarabouNetwork defines an abstract class to represent neural networks with piecewise linear constraints
+MarabouNetwork defines an abstract class that represents neural networks with piecewise linear constraints
 '''
 
 from maraboupy import MarabouCore
@@ -270,7 +270,7 @@ class MarabouNetwork:
             options (:class:`~maraboupy.MarabouCore.Options`): Object for specifying Marabou options, defaults to None
 
         Returns:
-            (np array): Values representing the output of the network
+            (np array): Values representing the output of the network or None if system is UNSAT
         """
         # Make sure inputValues is a list of np arrays and not list of lists
         inputValues = [np.array(inVal) for inVal in inputValues]
@@ -293,6 +293,11 @@ class MarabouNetwork:
         if options == None:
             options = MarabouCore.Options()
         outputDict, _ = MarabouCore.solve(ipq, options, filename)
+
+        # When the query is UNSAT an empty dictionary is returned
+        if outputDict == {}:
+            return None
+
         outputValues = outputVars.reshape(-1).astype(np.float64)
         for i in range(len(outputValues)):
             outputValues[i] = outputDict[outputValues[i]]
@@ -309,7 +314,7 @@ class MarabouNetwork:
             filename (str): Path to redirect output if using Marabou solver, defaults to "evaluateWithMarabou.log"
 
         Returns:
-            (np array): Values representing the output of the network
+            (np array): Values representing the output of the network or None if output cannot be computed
         """
         if useMarabou:
             return self.evaluateWithMarabou(inputValues, filename=filename, options=options)
