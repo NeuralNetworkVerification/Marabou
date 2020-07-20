@@ -31,8 +31,8 @@ def test_abs_constraint():
     # Replace two output variables with their's absolute value
     for out in [0, 2]:
         abs_out = network.getNewVariable()
-        network.outputVars[0][out] = abs_out
         network.addAbsConstraint(network.outputVars[0][out], abs_out)
+        network.outputVars[0][out] = abs_out
 
     abs_inp = network.getNewVariable()
     network.outputVars = np.array([list(network.outputVars[0])+[abs_inp]]) 
