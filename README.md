@@ -177,8 +177,8 @@ build\Release\Marabou.exe resources\nnet\acasxu\ACASXU_experimental_v2a_2_7.nnet
 on Windows.
 
 ### Using Python interface 
-The *maraboupy/examples* folder contains several python scripts and Jupyter
-notebooks that can be used as starting points. 
+Please see our [documentation](https://neuralnetworkverification.github.io/Marabou/)
+for the python interface, which contains examples, API documentation, and a developer's guide.
 
 ### Using the Divide and Conquer (DNC) mode
 In the DNC mode, activated by *--dnc* Marabou decomposes the problem into *n0*
