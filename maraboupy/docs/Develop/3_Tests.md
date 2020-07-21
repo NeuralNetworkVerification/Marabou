@@ -1,8 +1,11 @@
 # Tests
 
 The maraboupy code is tested to ensure that methods run correctly and without errors, or that user
-errors are caught and handled appropriately. These tests live in the maraboupy/test folder and are
-defined in files with the "test_"prefix. Each test file contains a set of methods, where methods
+errors are caught and handled appropriately. Ideally, a test should be added with each pull request
+that adds new code to make sure that the changes function correctly.
+
+The Maraboupy tests live in the maraboupy/test folder and are
+defined in files with the "test_" prefix. Each test file contains a set of methods, where methods
 beginning with "test_" are the tests, and other methods are helper methods. Note that no main method is
 needed in these test files because tests are run using pytest.
 

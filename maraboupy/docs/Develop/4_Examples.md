@@ -14,13 +14,16 @@ run in 0 seconds. Also, the bottom of the html files allows a user to download a
 file for the example directly from the html documentation.
 
 The example files should begin with a comment block that has the example name
-followed by a line of equals lines. This is the standard way to write a header line in
+followed by a line of equal signs. This is the standard way to write a header line in
 reStucturedText format. Comment lines can also leverage the reStructredText format to make headers,
-links, bold text, etc. 
+links, bold text, etc. More information on the reStructuredText format can be found
+[here](https://docutils.sourceforge.io/rst.html).
 
 The names of the example files are prefixed with a number, which indicates the order in which the
 examples will appear in the menu of the html documentation.
 
 When adding a new example file, it is a good idea to build the documentation locally and ensure that
 the html generated from the example looks correct. Instructions for building the documentation can
-be found in the README.md of the maraboupy/docs folder.
+be found in the README.md of the maraboupy/docs folder. The new examples will be deployed online
+after being merged into the master branch, so it's important to check that the examples are
+going to be displayed correctly before merging.

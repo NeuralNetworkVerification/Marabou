@@ -100,7 +100,7 @@ Returns:
 '''
 ```
 
-If there are multiple returns, use the format
+The Returns section can be omitted if the function does not return anything. If there are multiple returns, use the format
 ```
 '''
 Returns:
