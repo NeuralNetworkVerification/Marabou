@@ -73,11 +73,6 @@ void Marabou::prepareInputQuery()
         printf( "InputQuery: %s\n", inputQueryFilePath.ascii() );
         _inputQuery = QueryLoader::loadQuery( inputQueryFilePath );
         _inputQuery.constructNetworkLevelReasoner();
-
-        /*
-          Step 2: extract options
-        */
-        extractOptions();
     }
     else
     {
@@ -110,12 +105,9 @@ void Marabou::prepareInputQuery()
             printf( "Property: None\n" );
 
         printf( "\n" );
-
-        /*
-          Step 3: extract options
-        */
-        extractOptions();
     }
+
+    extractSplittingThreshold();
 
     String queryDumpFilePath = Options::get()->getString( Options::QUERY_DUMP_FILE );
     if ( queryDumpFilePath.length() > 0 )
@@ -201,7 +193,7 @@ void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
     }
 }
 
-void Marabou::extractOptions()
+void Marabou::extractSplittingThreshold()
 {
     int splitThreshold = Options::get()->getInt( Options::SPLIT_THRESHOLD );
     if ( splitThreshold < 0 )

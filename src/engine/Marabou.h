@@ -39,7 +39,7 @@ private:
       use them to generate the input query
     */
     void prepareInputQuery();
-    void extractOptions();
+    void extractSplittingThreshold();
 
     /*
       Invoke the engine to solve the input query
