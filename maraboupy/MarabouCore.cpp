@@ -150,7 +150,10 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
         Engine engine;
         engine.setVerbosity(verbosity);
 
-        if(!engine.processInputQuery(inputQuery)) return std::make_pair(ret, *(engine.getStatistics()));
+        if(!engine.processInputQuery(inputQuery)) {
+            retStats = *(engine.getStatistics());
+            goto cleanup;
+        }
         if ( dnc )
         {
             unsigned initialDivides = options._initialDivides;
@@ -177,14 +180,17 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
             {
                 retStats = Statistics();
                 retStats.timeout();
-                return std::make_pair( ret, retStats );
             }
             default:
-                return std::make_pair( ret, Statistics() ); // TODO: meaningful DnCStatistics
+                retStats = Statistics(); // TODO: meaningful DnCStatistics
+                goto cleanup;
             }
         } else
         {
-            if(!engine.solve(timeoutInSeconds)) return std::make_pair(ret, *(engine.getStatistics()));
+            if(!engine.solve(timeoutInSeconds)) {
+                retStats = *(engine.getStatistics());
+                goto cleanup;
+            }
 
             if (engine.getExitCode() == Engine::SAT)
                 engine.extractSolution(inputQuery);
@@ -195,10 +201,11 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
     }
     catch(const MarabouError &e){
         printf( "Caught a MarabouError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );
-        return std::make_pair(ret, retStats);
+        goto cleanup;
     }
-    if(output != -1)
-        restoreOutputStream(output);
+
+cleanup:
+    if(output != -1) restoreOutputStream(output);
     return std::make_pair(ret, retStats);
 }
 
