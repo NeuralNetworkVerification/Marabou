@@ -625,11 +625,15 @@ void Preprocessor::eliminateVariables()
 
     // Compute the new variable indices, after the elimination of fixed variables
  	int offset = 0;
+    unsigned numEliminated = 0;
 	for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
 	{
         if ( ( _fixedVariables.exists( i ) || _mergedVariables.exists( i ) ) &&
 			 !_inputOutputVariables.exists( i ) )
+        {
+            ++numEliminated;
             ++offset;
+        }
         else
             _oldIndexToNewIndex[i] = i - offset;
 	}
@@ -753,7 +757,7 @@ void Preprocessor::eliminateVariables()
     }
 
     // Adjust the number of variables in the query
-    _preprocessed.setNumberOfVariables( _preprocessed.getNumberOfVariables() - _fixedVariables.size() - _mergedVariables.size() );
+    _preprocessed.setNumberOfVariables( _preprocessed.getNumberOfVariables() - numEliminated );
 
     // Adjust the input/output mappings in the query
     _preprocessed.adjustInputOutputMapping( _oldIndexToNewIndex, _mergedVariables );
