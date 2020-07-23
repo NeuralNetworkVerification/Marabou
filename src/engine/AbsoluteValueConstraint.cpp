@@ -267,7 +267,7 @@ PiecewiseLinearCaseSplit AbsoluteValueConstraint::getValidCaseSplit() const
 void AbsoluteValueConstraint::eliminateVariable( unsigned variable, double /* fixedValue */ )
 {
     (void)variable;
-    ASSERT( variable = _b );
+    ASSERT( ( variable == _f ) || ( variable == _b ) );
 
     // In an absolute value constraint, if a variable is removed the
     // entire constraint can be discarded
