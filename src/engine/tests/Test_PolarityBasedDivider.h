@@ -117,11 +117,8 @@ public:
         unsigned index = 0;
         for ( const auto &subQuery : subQueries )
         {
-            std::cout << "\n" << index << "--------------------------" << std::endl;
             TS_ASSERT( subQuery->_queryId == queryId +
                        Stringf( "-%u", index + 1 ) );
-            subQuery->_split->dump();
-            newSplits[index].dump();
             TS_ASSERT( *(subQuery->_split) == newSplits[index] );
             TS_ASSERT( subQuery->_timeoutInSeconds == correctTimeoutInSeconds );
             ++index;
