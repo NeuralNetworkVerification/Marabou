@@ -203,7 +203,8 @@ if (${ENABLE_GUROBI})
   target_include_directories(${GUROBI_LIB2} INTERFACE ${GUROBI_DIR}/include/)
 endif()
 
-if (NOT MSVC AND ${ENABLE_OPENBLAS})
+if (NOT MSVC)
+if (${ENABLE_OPENBLAS})
     message(STATUS "using openblas for matrix multiplication")
     add_compile_definitions(ENABLE_OPENBLAS)
     #OpenBLAS
@@ -221,6 +222,7 @@ if (NOT MSVC AND ${ENABLE_OPENBLAS})
     set_target_properties(${OPENBLAS_LIB} PROPERTIES IMPORTED_LOCATION ${OPENBLAS_DIR}/installed/lib/libopenblas.a)
     list(APPEND LIBS ${OPENBLAS_LIB})
     target_include_directories(${OPENBLAS_LIB} INTERFACE ${OPENBLAS_DIR}/installed/include)
+endif()
 endif()
 
 # pthread
