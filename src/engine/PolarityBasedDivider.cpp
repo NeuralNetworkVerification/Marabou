@@ -58,9 +58,8 @@ void PolarityBasedDivider::createSubQueries( unsigned numNewSubqueries, const
                 for ( const auto &caseSplit : caseSplits )
                 {
                     auto newSplit = new PiecewiseLinearCaseSplit();
-                    *newSplit = caseSplit;
-
-                    for ( const auto &tightening : split->getBoundTightenings() )
+                    *newSplit = *split;
+                    for ( const auto &tightening : caseSplit.getBoundTightenings() )
                         newSplit->storeBoundTightening( tightening );
                     newSplits.append( newSplit );
                 }

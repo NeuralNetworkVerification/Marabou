@@ -147,9 +147,22 @@ public:
     {
     }
 
+    List<PiecewiseLinearConstraint *> _constraintsToSplit;
+    void setSplitPLConstraint( PiecewiseLinearConstraint *constraint )
+    {
+        _constraintsToSplit.append( constraint );
+    }
+
     PiecewiseLinearConstraint *pickSplitPLConstraint( DivideStrategy /**/ )
     {
-        return NULL;
+        if ( !_constraintsToSplit.empty() )
+        {
+            PiecewiseLinearConstraint * ptr = *_constraintsToSplit.begin();
+            _constraintsToSplit.erase( ptr );
+            return ptr;
+        }
+        else
+            return NULL;
     }
 };
 
