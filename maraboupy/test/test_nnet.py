@@ -116,6 +116,25 @@ def test_acas_2_9_normalize():
     ]
     evaluateFile(filename, testInputs, testOutputs, normalize = True)
 
+def test_evaluateUNSAT():
+    """
+    When an UNSAT system is evaluated, evaluateWithMarabou should return None
+    """
+    filename = "acasxu/ACASXU_experimental_v2a_2_9.nnet"
+    filename = os.path.join(os.path.dirname(__file__), NETWORK_FOLDER, filename)
+    network = Marabou.read_nnet(filename, normalize = True)
+
+    # Add a constraint that makes the system UNSAT at the evaluation point
+    # The sum of output values must be less than -100
+    outputVars = network.outputVars[0]
+    outputWeights = [1.0] * len(outputVars)
+    network.addInequality(outputVars, outputWeights, -100.0)
+
+    # Evaluate network at test point, which should return None because the system is UNSAT
+    testInput = [1000.0, 0.0, -1.5, 100.0, 100.0]
+    marabouEval = network.evaluateWithMarabou([testInput], options=OPT, filename="")
+    assert marabouEval is None
+
 def evaluateFile(filename, testInputs, testOutputs, normalize = False, normInput = False, denormOutput = False):
     """
     Load network and evaluate testInputs with and without Marabou
