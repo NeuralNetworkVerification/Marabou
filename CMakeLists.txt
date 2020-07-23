@@ -203,14 +203,14 @@ if (${ENABLE_GUROBI})
   target_include_directories(${GUROBI_LIB2} INTERFACE ${GUROBI_DIR}/include/)
 endif()
 
-if (${ENABLE_OPENBLAS} AND NOT MSVC)
+if (NOT MSVC AND ${ENABLE_OPENBLAS})
     message(STATUS "using openblas for matrix multiplication")
     add_compile_definitions(ENABLE_OPENBLAS)
     #OpenBLAS
     if(NOT EXISTS "${OPENBLAS_DIR}/installed/lib/libopenblas.a")
-        message("Can't find open blas, installing. If open blas is isntalled
-        please use the OPENBLAS_DIR parameter to pass the path")
-        if (${OPENBLAS_DIR} EQUAL ${OPENBLAS_DEFAULT_DIR})
+        message("Can't find open blas, installing. If open blas is isntalled please use the OPENBLAS_DIR parameter to pass the path")
+        if (${OPENBLAS_DIR} STREQUAL ${OPENBLAS_DEFAULT_DIR})
+            message("installing openblas")
             execute_process(COMMAND ${TOOLS_DIR}/download_openBLAS.sh)
         else()
             message(FATAL_ERROR "Can't find openblas in the supplied directory")
