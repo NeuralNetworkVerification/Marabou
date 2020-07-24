@@ -23,12 +23,10 @@ import sys
 
 
 class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
-    """ Abstract class representing a Marabou network from an NNet file
+    """ Class representing a Marabou network from an NNet file
         Inherits from MarabouNetwork class
 
         Attributes:
-
-        initialized in __init__:
             numLayers (int): The number of layers in the network
             layerSizes (list of int): Layer sizes
             inputSize (int): Size of the input
@@ -42,40 +40,25 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
             outputRange (float): Range of output values
             weights (list): Network weight matrices, where the outer index corresponds to layer number
             biases (list): Network bias vectors, where the outer index corresponds to layer number
-
-        initialized elsewhere:
             b_variables (list): List of b variables
             f_variables (list): list of f variables
 
-        attributes from parent MarabouNetwork:
-            numVars (int): Total number of variables to represent network
-            equList (list of :class:`~maraboupy.MarabouUtils.Equation`): Network equations
-            reluList (list of tuples): List of relu constraint tuples
-            maxList (list of tuples): List of max constraint tuples
-            varsParticipatingInConstraints (set of int): Variables involved in some constraint
-            lowerBounds (Dict[int, float]): Lower bounds of variables
-            upperBounds (Dict[int, float]): Upper bounds of variables
-            inputVars (list of numpy arrays): Input variables
-            outputVars (numpy array): Output variables
+        Args:
+            filename (str):     path to the .nnet file
+            normalize (bool):   True if network parameters should be adjusted to incorporate
+                                network input/output normalization. Otherwise, properties must be written
+                                with the normalization already incorporated.
 
     """
 
-
     def __init__(self, filename='', normalize=False):
-        """Constructs a MarabouNetworkNNet object from an .nnet file
-
-        Args:
-            filename: path to the .nnet file
-            normalize: (bool) True if network parameters should be adjusted to incorporate
-                          network input/output normalization. Otherwise, properties must be written
-                          with the normalization already incorporated.
-         """
         super().__init__()
+
+        self.clearNetwork()
 
         self.normalize = normalize
 
         if not filename:
-            self.clearNetwork()
             return
 
         # Read the file and load values
@@ -103,16 +86,17 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         self.outputRange = 0
         self.weights = []
         self.biases = []
+        self.f_variables = []
+        self.b_variables = []
 
     def resetNetworkFromParameters(self, weights: list, biases: list, normalize = False,
                                    inputMinimums=[], inputMaximums=[], inputMeans=[], inputRanges=[],
                                    outputMean=0, outputRange=1):
-        """Recompute the attributes of the network from the basic argumemts
+        """Recompute the attributes of the network from basic arguments
 
         Args:
             weights (list of list of lists): Outer index corresponds to layer number
             biases (list of lists): Outer index corresponds to layer number
-
             inputMinimums (list of floats) Observed minimal values for the network
             inputMaximums (list of floats) Observed maximal values for the network
             inputMeans  (list of floats): Mean value for each input
@@ -122,8 +106,8 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
         """
 
-        # Clearing the attributes that will be computed (clear() method from parent)
-        self.clear()
+        # Clearing the network
+        self.clearNetwork()
 
         self.normalize = normalize
 
@@ -187,6 +171,10 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         # TODO (necessary? desirable?): create a new filename for the network
 
     def computeNetworkAttributes(self):
+        """Computes the derived network attributes (equations, relus, bounds)
+
+        :meta private:
+        """
 
         # Add equations that govern the network
         self.buildEquations()
@@ -213,7 +201,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         """Read the nnet file, load all the values and assign the class members
 
         Args:
-            filename: path to the .nnet file
+            filename (str): path to the .nnet file
             
         :meta private:
         """
@@ -293,8 +281,6 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
         Args:
             file_name (str): File where the network will be written
-
-        :meta private:
         """
 
         # Open the file we wish to write
@@ -409,16 +395,13 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         self.outputVars = np.array([output_variables])
 
     def nodeTo_b(self, layer, node):
-        """Compute variable number for the backward variable of a node in a layer
-
+        """Get variable number for the backward variable corresponding to layer, node
         Args:
-            layer (int): Layer number
-            node (int): Node number
+            layer (int): layer number
+            node (int): node index within layer
 
         Returns:
             (int)
-        
-        :meta private:
         """
         assert(0 < layer)
         assert(node < self.layerSizes[layer])
@@ -429,16 +412,14 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         return offset + node
 
     def nodeTo_f(self, layer, node):
-        """Compute variable number for the forward variable of a node in a layer
+        """Get variable number for the forward variable corresponding to layer, node
 
         Args:
-            layer (int): Layer number
-            node (int): Node number
+            layer (int): layer number
+            node (int): node index within layer
             
         Returns:
             (int)
-        
-        :meta private:
         """
         assert(layer < len(self.layerSizes))
         assert(node < self.layerSizes[layer])
@@ -453,27 +434,32 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
             return offset + node
 
     def getVariable(self, layer, node, f=True):
-        """ Returns variable number corresponding to layer, node
-            If f=True, f variables
-            Otherwise, b variables
+        """ Get variable number corresponding to layer, node
+
+            If f=True, f variable
+            Otherwise, b variable
+
         Args:
-            layer (int)
-            node (int)
-            f (bool)
-        Return:
+            layer (int): layer number
+            node (int): node index within layer
+            f (bool): if True, the f variable is considered, otherwise the b variable
+        Returns:
             (int)
         """
         return self.nodeTo_f(layer, node) if f else self.nodeTo_b(layer, node)
 
     def getUpperBound(self, layer, node, f=True):
-        """ Returns upper bound for the variable corresponding to layer, node
+        """ Get upper bound for the variable corresponding to layer, node
+
             If f=True, f variable
             Otherwise, b variable
+
         Args:
-            layer (int)
-            node (int)
-            f (bool)
-        Return:
+            layer (int): layer number
+            node (int): node index within layer
+            f (bool): if True, the f variable is considered, otherwise the b variable
+
+        Returns:
             (float)
         """
         var = self.getVariable(layer, node, f)
@@ -482,14 +468,17 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         return None
 
     def getLowerBound(self, layer, node, f=True):
-        """ Returns lower bound for the variable corresponding to layer, node
+        """ Get lower bound for the variable corresponding to layer, node
+
             If f=True, f variable
             Otherwise, b variable
+
         Args:
-            layer (int)
-            node (int)
-            f (bool)
-        Return:
+            layer (int): layer number
+            node (int): node index within layer
+            f (bool): if True, the f variable is considered, otherwise the b variable
+
+        Returns:
             (float)
         """
         var = self.getVariable(layer, node, f)
@@ -499,12 +488,15 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
     def getUpperBoundsForLayer(self, layer, f=True):
         """ Returns a list of upper bounds for the given layer
-            If f=True, f variable
-            Otherwise, b variable
+
+            If f=True, f variables
+            Otherwise, b variables
+
         Args:
-            layer (int)
-            f (bool)
-        Return:
+            layer (int): layer number
+            f (bool): if True, the f variables are considered, otherwise the b variables
+
+        Returns:
             (list of floats)
         """
         bound_list = [self.getUpperBound(layer, node, f) for node in range(self.layerSizes[layer])]
@@ -512,44 +504,74 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
     def getLowerBoundsForLayer(self, layer, f=True):
         """ Returns a list of lower bounds for the given layer
-            If f=True, f variable
-            Otherwise, b variable
+
+            If f=True, f variables
+            Otherwise, b variables
+
         Args:
-            layer (int)
-            f (bool)
-        Return:
+            layer (int): layer number
+            f (bool): if True, the f variables are considered, otherwise the b variables
+
+        Returns:
             (list of floats)
+
         """
         bound_list = [self.getLowerBound(layer, node, f) for node in range(self.layerSizes[layer])]
         return bound_list
 
     def getBoundsForLayer(self, layer, f=True):
         """ Returns a tuple of two lists, the lower and upper bounds for the variables corresponding to the given layer
+
             If f=True, f variable
             Otherwise, b variable
+
         Args:
-            layer (int)
-            f (bool)
+            layer (int): layer number
+            f (bool): if True, the f variables are considered, otherwise the b variables
+
         Returns:
-            tuple of two list of floats (1st is lower bounds)
+            (tuple of two lists of floats): 1st list of lower bounds, 2nd list of upper bounds
         """
         return self.getLowerBoundsForLayer(layer, f), self.getUpperBoundsForLayer(layer, f)
 
 
     def numberOfVariables(self):
+        """Get total number of variables in network
+
+        Returns:
+            (int)
+        """
         return self.layerSizes[0] + 2 * sum(self.layerSizes[1:-1]) + 1 * self.layerSizes[-1]
 
-    def getInputMinimum(self, inputVar):
-        return self.inputMinimums[inputVar]
+    def getInputMinimum(self, input_var):
+        """Get minimum value for given input variable
 
-    def getInputMaximum(self, inputVar):
-        return self.inputMaximums[inputVar]
+        Args:
+            input_var (int): index of input variable
+
+        Returns:
+            (float)
+        """
+        return self.inputMinimums[input_var]
+
+    def getInputMaximum(self, input_var):
+        """Get maximal value for given input variable
+
+        Args:
+            input_var (int): index of input variable
+
+        Returns:
+            (float)
+        """
+        return self.inputMaximums[input_var]
 
 
     def evaluateWithoutMarabou(self, inputValues):
         """ Evaluate network directly (without Marabou) at a given point
+
         Args:
             inputValues (list of np arrays): input to network
+
         Returns:
             (np array): output of the network
         """
@@ -561,8 +583,9 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
     def evaluateNNet(self, inputs, first_layer = 0, last_layer=-1, normalize_inputs=False,
                      normalize_outputs=False, activate_output_layer=False):
         """ Evaluate nnet directly (without Marabou) at a given point
-                between layer first_layer (input layer by default)
-                and layer last_layer (output layer by default)
+
+        Evaluates the network on input inputs between layer first_layer (input layer by default)
+        and layer last_layer (output layer by default)
 
         Args:
             inputs: (list of floats):         Network inputs to be evaluated
@@ -634,6 +657,11 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
 
     def createRandomInputsForNetwork(self):
+        """Create a random input for the network.
+
+        The value for each input variable is chosen uniformly at random between the lower and the upper bounds
+        for that variable.
+        """
 
         inputs = []
         for input_var in self.inputVars.flatten():
@@ -692,34 +720,4 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         for layer, size in enumerate(hidden_layers):
             for node in range(size):
                 self.addRelu(self.nodeTo_b(layer + 1, node), self.nodeTo_f(layer + 1, node))
-
-    def numberOfVariables(self):
-        """Get number of variables in network
-        
-        Returns:
-            (int)
-        """
-        return self.layerSizes[0] + 2*sum(self.layerSizes[1:-1]) + 1*self.layerSizes[-1]
-
-    def getInputMinimum(self, inputVar):
-        """Get minimum value for given input variable
-
-        Args:
-            inputVar (int): Input variable
-
-        Returns:
-            (float)
-        """
-        return self.inputMinimums[inputVar]
-
-    def getInputMaximum(self, inputVar):
-        """Get maximum value for given input variable
-
-        Args:
-            inputVar (int): Input variable
-
-        Returns:
-            (float)
-        """
-        return self.inputMaximums[inputVar]
 
