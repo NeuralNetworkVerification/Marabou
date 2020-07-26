@@ -184,3 +184,39 @@ def test_reset_network():
         assert (abs(without_marabou_output1 - without_marabou_output2) < TOL).all()
         assert (abs(with_marabou_output2 - without_marabou_output2) < TOL).all()
         assert (abs(output1_norm - with_marabou_output2) < TOL).all()
+
+
+def test_bound_getters():
+    nnet_object = Marabou.read_nnet(filename=network_filename, normalize=False)
+
+    ipq = nnet_object.getMarabouQuery()
+
+    num_input_vars = ipq.getNumInputVariables()
+    assert num_input_vars == nnet_object.inputSize
+
+    # Test getVariable and numberOfVariables
+    assert ipq.getNumberOfVariables() == nnet_object.numberOfVariables()
+    assert nnet_object.getVariable(1, 1, b=True) == num_input_vars + 1
+    assert nnet_object.getVariable(1, 1, b=False) == num_input_vars + nnet_object.layerSizes[1]+1
+
+    # Testing bound getters
+
+    random_hidden_layer = np.random.randint(1,nnet_object.numLayers)
+    random_node = np.random.randint(0, nnet_object.layerSizes[random_hidden_layer])
+    assert nnet_object.getLowerBound(random_hidden_layer, random_node, b=False) == 0
+
+    # Test getLowerBoundsForLayer and getUpperBoundsForLayer on the input layer
+    input_lower_bounds = [ipq.getLowerBound(var) for var in range(num_input_vars)]
+    assert input_lower_bounds == nnet_object.getLowerBoundsForLayer(0, b=False)
+    input_upper_bounds = [ipq.getUpperBound(var) for var in range(num_input_vars)]
+    assert input_upper_bounds == nnet_object.getUpperBoundsForLayer(0, b=False)
+
+    # Test nnet_object.getBoundsForLayer and that getVariable always returns the f variable for layer == 0
+    assert nnet_object.getBoundsForLayer(0) == (input_lower_bounds, input_upper_bounds)
+
+
+
+
+
+
+
