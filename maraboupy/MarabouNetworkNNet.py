@@ -525,7 +525,6 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
         Returns:
             (list of float)
-
         """
         bound_list = [self.getLowerBound(layer, node, b) for node in range(self.layerSizes[layer])]
         return bound_list
@@ -578,7 +577,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
 
     def evaluateWithoutMarabou(self, inputValues):
-        """ Evaluate network directly (without Marabou) at a given point    
+        """ Evaluate network directly (without Marabou) at a given point
 
         Args:
             inputValues (list of np array): Input to network
@@ -586,7 +585,6 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         Returns:
             (np array): Output of the network
         """
-
         return self.evaluateNNet(inputValues.flatten().tolist(), normalize_inputs=self.normalize,
                                  normalize_outputs=self.normalize)
 
@@ -676,7 +674,6 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         Returns:
             (list of float)
         """
-
         inputs = []
         for input_var in self.inputVars.flatten():
             assert self.upperBoundExists(input_var)
