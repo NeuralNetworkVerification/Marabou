@@ -578,10 +578,10 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
 
     def evaluateWithoutMarabou(self, inputValues):
-        """ Evaluate network directly (without Marabou) at a given point
+        """ Evaluate network directly (without Marabou) at a given point    
 
         Args:
-            inputValues (list of np arrays): Input to network
+            inputValues (list of np array): Input to network
 
         Returns:
             (np array): Output of the network
@@ -599,7 +599,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         and layer last_layer (output layer by default)
 
         Args:
-            inputs: (list of floats):         Network inputs to be evaluated
+            inputs: (list of float):         Network inputs to be evaluated
             first_layer:  (int):              The initial layer of the evaluation
             last_layer: (int):                The last layer of the evaluation
             normalize_inputs: (bool):         If True and first_layer==0, normalization of inputs is performed
