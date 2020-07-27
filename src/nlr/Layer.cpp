@@ -870,6 +870,11 @@ void Layer::computeSymbolicBoundsForWeightedSum()
             _symbolicLbOfUb[i] = _eliminatedNeurons[i];
             _symbolicUbOfUb[i] = _eliminatedNeurons[i];
         }
+        else
+        {
+            _symbolicLowerBias[i] = _bias[i];
+            _symbolicUpperBias[i] = _bias[i];
+        }
     }
 
     for ( const auto &sourceLayerEntry : _sourceLayers )
@@ -885,19 +890,18 @@ void Layer::computeSymbolicBoundsForWeightedSum()
           newLB = oldUB * negWeights + oldLB * posWeights
         */
 
-
         matrixMultiplication( sourceLayer->getSymbolicUb(), _layerToPositiveWeights[sourceLayerIndex],
                               _symbolicUb, _inputLayerSize,
-                              sourceLayerSize, _size);
+                              sourceLayerSize, _size );
         matrixMultiplication( sourceLayer->getSymbolicLb(), _layerToNegativeWeights[sourceLayerIndex],
                               _symbolicUb, _inputLayerSize,
-                              sourceLayerSize, _size);
+                              sourceLayerSize, _size );
         matrixMultiplication( sourceLayer->getSymbolicLb(), _layerToPositiveWeights[sourceLayerIndex],
                               _symbolicLb, _inputLayerSize,
                               sourceLayerSize, _size);
         matrixMultiplication( sourceLayer->getSymbolicUb(), _layerToNegativeWeights[sourceLayerIndex],
-                              _symbolicLb, _inputLayerSize, sourceLayerSize,
-                              _size);
+                              _symbolicLb, _inputLayerSize,
+                              sourceLayerSize, _size);
 
         // Restore the zero bound on eliminated neurons
         unsigned index;
@@ -919,9 +923,6 @@ void Layer::computeSymbolicBoundsForWeightedSum()
             if ( _eliminatedNeurons.exists( j ) )
                 continue;
 
-            _symbolicLowerBias[j] = _bias[j];
-            _symbolicUpperBias[j] = _bias[j];
-
             // Add the weighted bias from the source layer
             for ( unsigned k = 0; k < sourceLayerSize; ++k )
             {
@@ -939,71 +940,72 @@ void Layer::computeSymbolicBoundsForWeightedSum()
                 }
             }
         }
+    }
+
+
+    /*
+      We now have the symbolic representation for the current
+      layer. Next, we compute new lower and upper bounds for
+      it. For each of these bounds, we compute an upper bound and
+      a lower bound.
+    */
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        if ( _eliminatedNeurons.exists( i ) )
+            continue;
+
+        _symbolicLbOfLb[i] = _symbolicLowerBias[i];
+        _symbolicUbOfLb[i] = _symbolicLowerBias[i];
+        _symbolicLbOfUb[i] = _symbolicUpperBias[i];
+        _symbolicUbOfUb[i] = _symbolicUpperBias[i];
+
+        for ( unsigned j = 0; j < _inputLayerSize; ++j )
+        {
+            double inputLb = _layerOwner->getLayer( 0 )->getLb( j );
+            double inputUb = _layerOwner->getLayer( 0 )->getUb( j );
+
+            double entry = _symbolicLb[j * _size + i];
+
+            if ( entry >= 0 )
+            {
+                _symbolicLbOfLb[i] += ( entry * inputLb );
+                _symbolicUbOfLb[i] += ( entry * inputUb );
+            }
+            else
+            {
+                _symbolicLbOfLb[i] += ( entry * inputUb );
+                _symbolicUbOfLb[i] += ( entry * inputLb );
+            }
+
+            entry = _symbolicUb[j * _size + i];
+
+            if ( entry >= 0 )
+            {
+                _symbolicLbOfUb[i] += ( entry * inputLb );
+                _symbolicUbOfUb[i] += ( entry * inputUb );
+            }
+            else
+            {
+                _symbolicLbOfUb[i] += ( entry * inputUb );
+                _symbolicUbOfUb[i] += ( entry * inputLb );
+            }
+        }
 
         /*
-          We now have the symbolic representation for the current
-          layer. Next, we compute new lower and upper bounds for
-          it. For each of these bounds, we compute an upper bound and
-          a lower bound.
+          We now have the tightest bounds we can for the
+          weighted sum variable. If they are tigheter than
+          what was previously known, store them.
         */
-        for ( unsigned i = 0; i < _size; ++i )
+        if ( _lb[i] < _symbolicLbOfLb[i] )
         {
-            if ( _eliminatedNeurons.exists( i ) )
-                continue;
+            _lb[i] = _symbolicLbOfLb[i];
+            _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
+        }
 
-            _symbolicLbOfLb[i] = _symbolicLowerBias[i];
-            _symbolicUbOfLb[i] = _symbolicLowerBias[i];
-            _symbolicLbOfUb[i] = _symbolicUpperBias[i];
-            _symbolicUbOfUb[i] = _symbolicUpperBias[i];
-
-            for ( unsigned j = 0; j < _inputLayerSize; ++j )
-            {
-                double inputLb = _layerOwner->getLayer( 0 )->getLb( j );
-                double inputUb = _layerOwner->getLayer( 0 )->getUb( j );
-
-                double entry = _symbolicLb[j * _size + i];
-
-                if ( entry >= 0 )
-                {
-                    _symbolicLbOfLb[i] += ( entry * inputLb );
-                    _symbolicUbOfLb[i] += ( entry * inputUb );
-                }
-                else
-                {
-                    _symbolicLbOfLb[i] += ( entry * inputUb );
-                    _symbolicUbOfLb[i] += ( entry * inputLb );
-                }
-
-                entry = _symbolicUb[j * _size + i];
-
-                if ( entry >= 0 )
-                {
-                    _symbolicLbOfUb[i] += ( entry * inputLb );
-                    _symbolicUbOfUb[i] += ( entry * inputUb );
-                }
-                else
-                {
-                    _symbolicLbOfUb[i] += ( entry * inputUb );
-                    _symbolicUbOfUb[i] += ( entry * inputLb );
-                }
-            }
-
-            /*
-              We now have the tightest bounds we can for the
-              weighted sum variable. If they are tigheter than
-              what was previously known, store them.
-            */
-            if ( _lb[i] < _symbolicLbOfLb[i] )
-            {
-                _lb[i] = _symbolicLbOfLb[i];
-                _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
-            }
-
-            if ( _ub[i] > _symbolicUbOfUb[i] )
-            {
-                _ub[i] = _symbolicUbOfUb[i];
-                _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
-            }
+        if ( _ub[i] > _symbolicUbOfUb[i] )
+        {
+            _ub[i] = _symbolicUbOfUb[i];
+            _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
         }
     }
 }
@@ -1310,10 +1312,9 @@ void Layer::dump() const
                 continue;
             }
 
-            printf( "\t\tx%u = %+.4lf\n", _neuronToVariable[i], _bias[i] );
+            printf( "\t\tx%u = %+.4lf\n\t\t\t", _neuronToVariable[i], _bias[i] );
             for ( const auto &sourceLayerEntry : _sourceLayers )
             {
-                printf( "\t\t\t" );
                 const Layer *sourceLayer = _layerOwner->getLayer( sourceLayerEntry.first );
                 for ( unsigned j = 0; j < sourceLayer->getSize(); ++j )
                 {
