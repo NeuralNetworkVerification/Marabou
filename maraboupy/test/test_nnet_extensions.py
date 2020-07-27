@@ -199,11 +199,20 @@ def test_bound_getters():
     assert nnet_object.getVariable(1, 1, b=True) == num_input_vars + 1
     assert nnet_object.getVariable(1, 1, b=False) == num_input_vars + nnet_object.layerSizes[1]+1
 
-    # Testing bound getters
-
+    # Testing the variable and bound getters on a random hidden node
     random_hidden_layer = np.random.randint(1,nnet_object.numLayers)
     random_node = np.random.randint(0, nnet_object.layerSizes[random_hidden_layer])
+    var_b = nnet_object.getVariable(random_hidden_layer, random_node)
+    var_f = nnet_object.getVariable(random_hidden_layer, random_node, b=False)
+    assert var_b == nnet_object.nodeTo_b(random_hidden_layer,random_node)
+    assert var_f == nnet_object.nodeTo_f(random_hidden_layer, random_node)
     assert nnet_object.getLowerBound(random_hidden_layer, random_node, b=False) == 0
+    if not nnet_object.upperBoundExists(var_b):
+        assert not nnet_object.upperBoundExists(var_f)
+        assert nnet_object.getUpperBound(random_hidden_layer,random_node, b=False) is None
+        assert nnet_object.getUpperBound(random_hidden_layer, random_node, b=True) is None
+    if not nnet_object.lowerBoundExists(var_b):
+        assert nnet_object.getLowerBound(random_hidden_layer, random_node) is None
 
     # Test getLowerBoundsForLayer and getUpperBoundsForLayer on the input layer
     input_lower_bounds = [ipq.getLowerBound(var) for var in range(num_input_vars)]
