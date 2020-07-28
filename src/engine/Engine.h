@@ -76,6 +76,8 @@ public:
     /*
       Methods for storing and restoring the state of the engine.
     */
+    void storeTableauState( TableauState &state ) const;
+    void restoreTableauState( const TableauState &state );
     void storeState( EngineState &state, bool storeAlsoTableauState ) const;
     void restoreState( const EngineState &state );
     void setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints );
