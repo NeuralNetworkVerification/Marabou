@@ -245,9 +245,9 @@ void DnCManager::getSolution( std::map<int, double> &ret,
                               InputQuery &inputQuery )
 {
     ASSERT( _engineWithSATAssignment != nullptr );
-    EngineState stateWithSolution;
-    _engineWithSATAssignment->storeState( stateWithSolution, true );
-    _baseEngine->restoreState( stateWithSolution );
+    TableauState tableauStateWithSolution;
+    _engineWithSATAssignment->storeTableauState( tableauStateWithSolution );
+    _baseEngine->restoreTableauState( tableauStateWithSolution );
     _baseEngine->extractSolution( inputQuery );
 
     for ( unsigned i = 0; i < inputQuery.getNumberOfVariables(); ++i )

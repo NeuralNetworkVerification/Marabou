@@ -1219,6 +1219,17 @@ void Engine::reportPlViolation()
     _smtCore.reportViolatedConstraint( _plConstraintToFix );
 }
 
+void Engine::storeTableauState( TableauState &state ) const
+{
+    _tableau->storeState( state );
+}
+
+void Engine::restoreTableauState( const TableauState &state )
+{
+    ENGINE_LOG( "\tRestoring tableau state" );
+    _tableau->restoreState( state );
+}
+
 void Engine::storeState( EngineState &state, bool storeAlsoTableauState ) const
 {
     if ( storeAlsoTableauState )
