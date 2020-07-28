@@ -173,10 +173,10 @@ BiasStrategy setBiasStrategyFromOptions( const String strategy )
     else if ( strategy == "estimate" )
         return BiasStrategy::Estimate;
     else
-        {
-            printf ("Unknown divide strategy, using default (centroid).\n");
-            return BiasStrategy::Estimate;
-        }
+    {
+      printf ("Unknown divide strategy, using default (centroid).\n");
+      return BiasStrategy::Estimate;
+    }
 }
 
 DivideStrategy setDivideStrategyFromOptions( const String strategy )
@@ -324,7 +324,7 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
 	    case DnCManager::SAT:
 	    {
 	      retStats = Statistics();
-	      dncManager->getSolution( ret );
+          dncManager->getSolution( ret, inputQuery );
 	      break;
             }
             case DnCManager::TIMEOUT:

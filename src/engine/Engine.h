@@ -79,6 +79,7 @@ public:
       Methods for storing and restoring the state of the engine.
     */
     void storeState( EngineState &state, bool storeAlsoTableauState ) const;
+    void restoreTableauState( const EngineState &state );
     void restoreState( const EngineState &state );
     void setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints );
 

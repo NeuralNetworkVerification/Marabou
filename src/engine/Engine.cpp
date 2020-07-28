@@ -1395,6 +1395,17 @@ void Engine::storeState( EngineState &state, bool storeAlsoTableauState ) const
     state._numPlConstraintsDisabledByValidSplits = _numPlConstraintsDisabledByValidSplits;
 }
 
+void Engine::restoreTableauState( const EngineState &state )
+{
+    log( "Restore state starting" );
+
+    if ( !state._tableauStateIsStored )
+        throw MarabouError( MarabouError::RESTORING_ENGINE_FROM_INVALID_STATE );
+
+    log( "\tRestoring tableau state" );
+    _tableau->restoreState( state._tableauState );
+}
+
 void Engine::restoreState( const EngineState &state )
 {
     log( "Restore state starting" );

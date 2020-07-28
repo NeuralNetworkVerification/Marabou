@@ -290,15 +290,17 @@ String DnCManager::getResultString()
     }
 }
 
-void DnCManager::getSolution( std::map<int, double> &ret )
+void DnCManager::getSolution( std::map<int, double> &ret,
+                              InputQuery &inputQuery )
 {
     ASSERT( _engineWithSATAssignment != nullptr );
+    EngineState stateWithSolution;
+    _engineWithSATAssignment->storeState( stateWithSolution, true );
+    _baseEngine->restoreTableauState( stateWithSolution );
+    _baseEngine->extractSolution( inputQuery );
 
-    InputQuery *inputQuery = _engineWithSATAssignment->getInputQuery();
-    _engineWithSATAssignment->extractSolution( *( inputQuery ) );
-
-    for ( unsigned i = 0; i < inputQuery->getNumberOfVariables(); ++i )
-        ret[i] = inputQuery->getSolutionValue( i );
+    for ( unsigned i = 0; i < inputQuery.getNumberOfVariables(); ++i )
+        ret[i] = inputQuery.getSolutionValue( i );
 
     return;
 }

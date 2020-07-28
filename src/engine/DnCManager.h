@@ -77,7 +77,7 @@ public:
     /*
       Store the solution into the map
     */
-    void getSolution( std::map<int, double> &ret );
+    void getSolution( std::map<int, double> &ret, InputQuery &inputQuery );
 
     /*
       The exit code of the DnCManager.
