@@ -439,6 +439,13 @@ bool Preprocessor::processConstraints()
                                        GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD ) )
                 _preprocessed.setUpperBound( tightening._variable,
                                              _preprocessed.getLowerBound( tightening._variable ) );
+
+            if ( FloatUtils::gt( _preprocessed.getLowerBound( tightening._variable ),
+                                 _preprocessed.getUpperBound( tightening._variable ),
+                                 GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD ) )
+            {
+                throw InfeasibleQueryException();
+            }
 		}
 	}
 

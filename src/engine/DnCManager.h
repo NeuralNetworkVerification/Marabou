@@ -73,7 +73,7 @@ public:
     /*
       Store the solution into the map
     */
-    void getSolution( std::map<int, double> &ret );
+    void getSolution( std::map<int, double> &ret, InputQuery &inputQuery );
 
     void setConstraintViolationThreshold( unsigned threshold );
 

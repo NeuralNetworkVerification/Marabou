@@ -33,6 +33,7 @@ public:
       f = | b |
     */
     AbsoluteValueConstraint( unsigned b, unsigned f );
+    AbsoluteValueConstraint( const String &serializedAbs );
 
     /*
       Get the type of this constraint.
@@ -127,6 +128,11 @@ public:
     void getEntailedTightenings( List<Tightening> &tightenings ) const;
 
     /*
+      Dump the current state of the constraint.
+    */
+    void dump( String &output ) const;
+
+    /*
       For preprocessing: get any auxiliary equations that this
       constraint would like to add to the equation pool. In the ReLU
       case, this is an equation of the form aux = f - b, where aux is
@@ -162,6 +168,8 @@ private:
     */
     PhaseStatus _phaseStatus;
     void setPhaseStatus( PhaseStatus phaseStatus );
+
+    static String phaseToString( PhaseStatus phase );
 
     /*
       The two case splits.

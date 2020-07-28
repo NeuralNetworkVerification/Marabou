@@ -321,11 +321,11 @@ void InputQuery::saveQuery( const String &fileName )
 
     // Lower Bounds
     for ( const auto &lb : _lowerBounds )
-        queryFile->write( Stringf( "\n%d,%f", lb.first, lb.second ) );
+        queryFile->write( Stringf( "\n%d,%.10f", lb.first, lb.second ) );
 
     // Upper Bounds
     for ( const auto &ub : _upperBounds )
-        queryFile->write( Stringf( "\n%d,%f", ub.first, ub.second ) );
+        queryFile->write( Stringf( "\n%d,%.10f", ub.first, ub.second ) );
 
     // Equations
     i = 0;
@@ -338,9 +338,9 @@ void InputQuery::saveQuery( const String &fileName )
         queryFile->write( Stringf( "%01d,", e._type ) );
 
         // Equation scalar
-        queryFile->write( Stringf( "%f", e._scalar ) );
+        queryFile->write( Stringf( "%.10f", e._scalar ) );
         for ( const auto &a : e._addends )
-            queryFile->write( Stringf( ",%u,%f", a._variable, a._coefficient ) );
+            queryFile->write( Stringf( ",%u,%.10f", a._variable, a._coefficient ) );
 
         ++i;
     }
