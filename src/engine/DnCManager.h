@@ -86,7 +86,8 @@ private:
                           std::atomic_uint &numUnsolvedSubQueries,
                           std::atomic_bool &shouldQuitSolving,
                           unsigned threadId, unsigned onlineDivides,
-                          float timeoutFactor, DivideStrategy divideStrategy );
+                          float timeoutFactor, DivideStrategy divideStrategy,
+                          unsigned verbosity );
 
     /*
       Create the base engine from the network and property files,
