@@ -46,10 +46,42 @@ public:
 
         for ( unsigned i = 0; i < numberOfVariables; ++i)
         {
-          TS_ASSERT( boundManager.getLowerBound( i ) >= FloatUtils::negativeInfinity() ) ;
-          TS_ASSERT( boundManager.getUpperBound( i ) <= FloatUtils::infinity() ) ;
+            TS_ASSERT( FloatUtils::areEqual( boundManager.getLowerBound( i ),
+                                             FloatUtils::negativeInfinity() ) );
+            TS_ASSERT( FloatUtils::areEqual( boundManager.getUpperBound( i ),
+                                             FloatUtils::infinity() ) );
         }
 
+    }
+
+    /*
+     * BoundManager correctly updates the number of variables with advancement
+     * and backtracking of context
+     *
+     */
+    void test_register_variable()
+    {
+        CVC4::context::Context context;
+
+        BoundManager boundManager(context);
+
+        unsigned numberOfVariables = 5u;
+
+        TS_ASSERT_THROWS_NOTHING( boundManager.initialize( numberOfVariables ) );
+
+        TS_ASSERT_EQUALS( boundManager.getSize(), 5u );
+        TS_ASSERT( FloatUtils::areEqual( boundManager.getLowerBound( 4 ),
+                                         FloatUtils::negativeInfinity() ) );
+        TS_ASSERT( FloatUtils::areEqual( boundManager.getUpperBound( 4 ),
+                                         FloatUtils::infinity() ) );
+
+        TS_ASSERT_THROWS_NOTHING( boundManager.registerNewVariable() );
+        TS_ASSERT_THROWS_NOTHING( boundManager.registerNewVariable() );
+        TS_ASSERT_EQUALS( boundManager.getSize(), 7u );
+        TS_ASSERT( FloatUtils::areEqual( boundManager.getLowerBound( 6 ),
+                                         FloatUtils::negativeInfinity() ) );
+        TS_ASSERT( FloatUtils::areEqual( boundManager.getUpperBound( 6 ),
+                                         FloatUtils::infinity() ) );
     }
 
     /*
@@ -64,7 +96,7 @@ public:
 
       unsigned numberOfVariables = 5u;
 
-      TS_ASSERT_THROWS_NOTHING( boundManager.initialize( numberOfVariables) );
+      TS_ASSERT_THROWS_NOTHING( boundManager.initialize( numberOfVariables ) );
 
       double level0Lower[] = { -12.357682,  0.230001234, -333.78091231, 100.00,    -9.000002354 };
       double level0Upper[] = {  15.387692, 20.301878234,   45.79159213, 120.03559, 89.53402 };
