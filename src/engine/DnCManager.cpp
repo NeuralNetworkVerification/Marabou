@@ -36,7 +36,8 @@ void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine
                            std::atomic_uint &numUnsolvedSubQueries,
                            std::atomic_bool &shouldQuitSolving,
                            unsigned threadId, unsigned onlineDivides,
-                           float timeoutFactor, DivideStrategy divideStrategy )
+                           float timeoutFactor, DivideStrategy divideStrategy,
+                           unsigned verbosity )
 {
     unsigned cpuId = 0;
     (void) threadId;
@@ -49,7 +50,7 @@ void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine
 
     DnCWorker worker( workload, engine, std::ref( numUnsolvedSubQueries ),
                       std::ref( shouldQuitSolving ), threadId, onlineDivides,
-                      timeoutFactor, divideStrategy );
+                      timeoutFactor, divideStrategy, verbosity );
     while ( !shouldQuitSolving.load() )
     {
         worker.popOneSubQueryAndSolve();
@@ -152,7 +153,8 @@ void DnCManager::solve( unsigned timeoutInSeconds )
                                         std::ref( _numUnsolvedSubQueries ),
                                         std::ref( shouldQuitSolving ),
                                         threadId, _onlineDivides,
-                                        _timeoutFactor, _divideStrategy ) );
+                                        _timeoutFactor, _divideStrategy,
+                                        _verbosity ) );
     }
 
     // Wait until either all subQueries are solved or a satisfying assignment is
@@ -321,14 +323,14 @@ void DnCManager::printResult()
 bool DnCManager::createEngines()
 {
     // Create the base engine
-    _baseEngine = std::make_shared<Engine>();
+    _baseEngine = std::make_shared<Engine>( _verbosity );
     if ( !_baseEngine->processInputQuery( *_baseInputQuery ) )
         // Solved by preprocessing, we are done!
         return false;
     // Create engines for each thread
     for ( unsigned i = 0; i < _numWorkers; ++i )
     {
-        auto engine = std::make_shared<Engine>( _verbosity );
+        auto engine = std::make_shared<Engine>( 0 );
         engine->setConstraintViolationThreshold( _constraintViolationThreshold );
         _engines.append( engine );
     }
