@@ -275,8 +275,6 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
                     self.inputMinimums[i] = (self.inputMinimums[i] - self.inputMeans[i]) / self.inputRanges[i]
                     self.inputMaximums[i] = (self.inputMaximums[i] - self.inputMeans[i]) / self.inputRanges[i]
 
-
-
     def writeNNet(self, file_name: str):
         """Write network data into an .nnet file
 
@@ -363,7 +361,6 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
                 for i in range(len(b)):
                     f2.write(
                         "%.5e,\n" % b[i])  # Five digits written. More can be used, but that requires more more space.
-
 
     def variableRanges(self):
         """Compute the variable number ranges for each type (b, f)
@@ -544,7 +541,6 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         """
         return self.getLowerBoundsForLayer(layer, b), self.getUpperBoundsForLayer(layer, b)
 
-
     def numberOfVariables(self):
         """Get total number of variables in network
 
@@ -575,7 +571,6 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         """
         return self.inputMaximums[input_var]
 
-
     def evaluateWithoutMarabou(self, inputValues):
         """ Evaluate network directly (without Marabou) at a given point
 
@@ -587,7 +582,6 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         """
         return self.evaluateNNet(inputValues.flatten().tolist(), normalize_inputs=self.normalize,
                                  normalize_outputs=self.normalize)
-
 
     def evaluateNNet(self, inputs, first_layer = 0, last_layer=-1, normalize_inputs=False,
                      normalize_outputs=False, activate_output_layer=False):
@@ -664,7 +658,6 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
         return outputs
 
-
     def createRandomInputsForNetwork(self):
         """Create a random input for the network.
 
@@ -682,7 +675,6 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
                                              high=self.upperBounds[input_var])
             inputs.append(random_value)
         return inputs
-
 
     def buildEquations(self):
         """Construct the Marabou equations
@@ -729,4 +721,3 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         for layer, size in enumerate(hidden_layers):
             for node in range(size):
                 self.addRelu(self.nodeTo_b(layer + 1, node), self.nodeTo_f(layer + 1, node))
-
