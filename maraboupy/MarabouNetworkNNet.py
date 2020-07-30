@@ -401,7 +401,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         Returns:
             (int)
 
-        :meta-private:
+        :meta private:
         """
         assert(0 < layer)
         assert(layer <= self.numLayers)
@@ -422,7 +422,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         Returns:
             (int)
 
-        :meta-private:
+        :meta private:
         """
         assert(layer >= 0)
         assert(layer < self.numLayers)
