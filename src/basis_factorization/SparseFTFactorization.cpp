@@ -407,12 +407,6 @@ void SparseFTFactorization::invertBasis( double *result )
     _sparseLUFactors.invertBasis( result );
 }
 
-void SparseFTFactorization::log( const String &message )
-{
-    if ( GlobalConfiguration::BASIS_FACTORIZATION_LOGGING )
-        printf( "SparseFTFactorization: %s\n", message.ascii() );
-}
-
 bool SparseFTFactorization::explicitBasisAvailable() const
 {
     return _etas.empty() && !_sparseLUFactors._usePForF;

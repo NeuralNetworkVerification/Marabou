@@ -18,6 +18,7 @@
 
 #include "Map.h"
 #include "PiecewiseLinearConstraint.h"
+#include <cmath>
 
 class ReluConstraint : public PiecewiseLinearConstraint
 {
@@ -28,8 +29,17 @@ public:
         PHASE_INACTIVE = 2,
     };
 
+    /*
+      The f variable is the relu output on the b variable:
+      f = relu( b )
+    */
     ReluConstraint( unsigned b, unsigned f );
     ReluConstraint( const String &serializedRelu );
+
+    /*
+      Get the type of this constraint.
+    */
+    PiecewiseLinearFunctionType getType() const;
 
     /*
       Return a clone of the constraint.
@@ -145,6 +155,7 @@ public:
       Get the index of the B variable.
     */
     unsigned getB() const;
+    unsigned getF() const;
 
     /*
       Get the current phase status.
@@ -185,6 +196,8 @@ public:
     void updateDirection();
 
     PhaseStatus getDirection() const;
+
+    void updateScore();
 
 private:
     unsigned _b, _f;

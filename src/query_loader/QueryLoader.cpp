@@ -42,11 +42,11 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
     unsigned numEquations = atoi( input->readLine().trim().ascii() );
     unsigned numConstraints = atoi( input->readLine().trim().ascii() );
 
-    log( Stringf( "Number of variables: %u\n", numVars ) );
-    log( Stringf( "Number of lower bounds: %u\n", numLowerBounds ) );
-    log( Stringf( "Number of upper bounds: %u\n", numUpperBounds ) );
-    log( Stringf( "Number of equations: %u\n", numEquations ) );
-    log( Stringf( "Number of constraints: %u\n", numConstraints ) );
+    QL_LOG( Stringf( "Number of variables: %u\n", numVars ).ascii() );
+    QL_LOG( Stringf( "Number of lower bounds: %u\n", numLowerBounds ).ascii() );
+    QL_LOG( Stringf( "Number of upper bounds: %u\n", numUpperBounds ).ascii() );
+    QL_LOG( Stringf( "Number of equations: %u\n", numEquations ).ascii() );
+    QL_LOG( Stringf( "Number of constraints: %u\n", numConstraints ).ascii() );
 
     inputQuery.setNumberOfVariables( numVars );
 
@@ -81,7 +81,7 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
     // Lower Bounds
     for ( unsigned i = 0; i < numLowerBounds; ++i )
     {
-        log( Stringf( "Bound: %u\n", i ) );
+        QL_LOG( Stringf( "Bound: %u\n", i ).ascii() );
         String line = input->readLine();
         List<String> tokens = line.tokenize( "," );
 
@@ -95,14 +95,14 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         double lb = atof( it->ascii() );
         ++it;
 
-        log( Stringf( "Var: %u, L: %f\n", varToBound, lb ) );
+        QL_LOG( Stringf( "Var: %u, L: %f\n", varToBound, lb ).ascii() );
         inputQuery.setLowerBound( varToBound, lb );
     }
 
     // Upper Bounds
     for ( unsigned i = 0; i < numUpperBounds; ++i )
     {
-        log( Stringf( "Bound: %u\n", i ) );
+        QL_LOG( Stringf( "Bound: %u\n", i ).ascii() );
         String line = input->readLine();
         List<String> tokens = line.tokenize( "," );
 
@@ -116,14 +116,14 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         double ub = atof( it->ascii() );
         ++it;
 
-        log( Stringf( "Var: %u, U: %f\n", varToBound, ub ) );
+        QL_LOG( Stringf( "Var: %u, U: %f\n", varToBound, ub ).ascii() );
         inputQuery.setUpperBound( varToBound, ub );
     }
 
     // Equations
     for( unsigned i = 0; i < numEquations; ++i )
     {
-        log( Stringf( "Equation: %u ", i ) );
+        QL_LOG( Stringf( "Equation: %u ", i ).ascii() );
         String line = input->readLine();
 
         List<String> tokens = line.tokenize( "," );
@@ -134,10 +134,10 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         // Skip equation number
         ++it;
         int eqType = atoi( it->ascii() );
-        log( Stringf("Type: %u ", eqType ) );
+        QL_LOG( Stringf("Type: %u ", eqType ).ascii() );
         ++it;
         double eqScalar = atof( it->ascii() );
-        log( Stringf( "Scalar: %f\n", eqScalar ) );
+        QL_LOG( Stringf( "Scalar: %f\n", eqScalar ).ascii() );
 
         Equation::EquationType type = Equation::EQ;
 
@@ -171,7 +171,7 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
             ASSERT( it != tokens.end() );
             double coeff = atof( it->ascii() );
 
-            log( Stringf( "\tVar_no: %i, Coeff: %f\n", varNo, coeff ) );
+            QL_LOG( Stringf( "\tVar_no: %i, Coeff: %f\n", varNo, coeff ).ascii() );
 
             equation.addAddend( coeff, varNo );
         }
@@ -199,8 +199,8 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         serializeConstraint = serializeConstraint.substring( 0, serializeConstraint.length() - 1 );
 
         PiecewiseLinearConstraint *constraint = NULL;
-        log( Stringf( "Constraint: %u, Type: %s \n", i, coType.ascii() ) );
-        log( Stringf( "\tserialized:\t%s \n", serializeConstraint.ascii() ) );
+        QL_LOG( Stringf( "Constraint: %u, Type: %s \n", i, coType.ascii() ).ascii() );
+        QL_LOG( Stringf( "\tserialized:\t%s \n", serializeConstraint.ascii() ).ascii() );
         if ( coType == "relu" )
         {
             constraint = new ReluConstraint( serializeConstraint );
@@ -208,6 +208,10 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         else if ( coType == "max" )
         {
             constraint = new MaxConstraint( serializeConstraint );
+        }
+        else if ( coType == "absoluteValue" )
+        {
+            constraint = new AbsoluteValueConstraint( serializeConstraint );
         }
         else
         {
@@ -221,11 +225,6 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
     return inputQuery;
 }
 
-void QueryLoader::log( const String &message )
-{
-    if ( GlobalConfiguration::QUERY_LOADER_LOGGING )
-        printf( "Engine: %s\n", message.ascii() );
-}
 
 //
 // Local Variables:

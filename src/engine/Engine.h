@@ -40,6 +40,8 @@
 #undef ERROR
 #endif
 
+#define ENGINE_LOG(x, ...) LOG(GlobalConfiguration::ENGINE_LOGGING, "Engine: %s\n", x)
+
 class EngineState;
 class InputQuery;
 class PiecewiseLinearConstraint;
@@ -74,6 +76,8 @@ public:
     /*
       Methods for storing and restoring the state of the engine.
     */
+    void storeTableauState( TableauState &state ) const;
+    void restoreTableauState( const TableauState &state );
     void storeState( EngineState &state, bool storeAlsoTableauState ) const;
     void restoreState( const EngineState &state );
     void setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints );
@@ -220,11 +224,6 @@ private:
     AutoRowBoundTightener _rowBoundTightener;
 
     /*
-      Symbolic bound tightnere.
-    */
-    SymbolicBoundTightener *_symbolicBoundTightener;
-
-    /*
       The SMT engine is in charge of case splitting.
     */
     SmtCore _smtCore;
@@ -303,7 +302,7 @@ private:
       and can be used for various operations such as network
       evaluation of topology-based bound tightening.
      */
-    NetworkLevelReasoner *_networkLevelReasoner;
+    NLR::NetworkLevelReasoner *_networkLevelReasoner;
 
     /*
       Verbosity level:
@@ -417,8 +416,6 @@ private:
     void performPrecisionRestoration( PrecisionRestorer::RestoreBasics restoreBasics );
     bool basisRestorationNeeded() const;
 
-    static void log( const String &message );
-
     /*
       For debugging purposes:
       Check that the current lower and upper bounds are consistent
@@ -472,6 +469,7 @@ private:
     double *createConstraintMatrix();
     void addAuxiliaryVariables();
     void augmentInitialBasisIfNeeded( List<unsigned> &initialBasis, const List<unsigned> &basicRows );
+    void performMILPSolverBoundedTightening();
 
     /*
       Update the preferred direction to perform fixes and the preferred order

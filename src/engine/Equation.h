@@ -75,6 +75,12 @@ public:
       equation.
     */
     Set<unsigned> getParticipatingVariables() const;
+    List<unsigned> getListParticipatingVariables() const;
+
+    /*
+      Retrieve the coefficient of a variable
+    */
+    double getCoefficient( unsigned variable ) const;
 
     List<Addend> _addends;
     double _scalar;

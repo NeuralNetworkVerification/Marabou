@@ -1048,6 +1048,25 @@ public:
         for ( const auto &it : a )
             TS_ASSERT( b.exists( it ) );
     }
+
+    void test_serialize_and_unserialize()
+    {
+        unsigned b = 42;
+        unsigned f = 7;
+
+        AbsoluteValueConstraint originalAbs( b, f );
+        originalAbs.notifyLowerBound( b, -10 );
+        originalAbs.notifyUpperBound( f, 5 );
+        originalAbs.notifyUpperBound( f, 5 );
+
+        String originalSerialized = originalAbs.serializeToString();
+        AbsoluteValueConstraint recoveredAbs( originalSerialized );
+
+        TS_ASSERT_EQUALS( originalAbs.serializeToString(),
+                          recoveredAbs.serializeToString() );
+
+        TS_ASSERT_EQUALS( originalSerialized, "absoluteValue,7,42" );
+    }
 };
 
 //

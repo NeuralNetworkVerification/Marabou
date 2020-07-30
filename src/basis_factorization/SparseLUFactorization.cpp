@@ -19,7 +19,6 @@
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
 #include "LPElement.h"
-#include "MStringf.h"
 #include "MalformedBasisException.h"
 #include "SparseLUFactorization.h"
 
@@ -84,7 +83,7 @@ void SparseLUFactorization::updateToAdjacentBasis( unsigned columnIndex,
 
 	if ( _etas.size() > GlobalConfiguration::REFACTORIZATION_THRESHOLD )
 	{
-        log( "Number of etas exceeds threshold. Refactoring basis\n" );
+        BASIS_FACTORIZATION_LOG( "Number of etas exceeds threshold. Refactoring basis\n" );
         obtainFreshBasis();
 	}
 }
@@ -213,12 +212,6 @@ void SparseLUFactorization::invertBasis( double *result )
     ASSERT( result );
 
     _sparseLUFactors.invertBasis( result );
-}
-
-void SparseLUFactorization::log( const String &message )
-{
-    if ( GlobalConfiguration::BASIS_FACTORIZATION_LOGGING )
-        printf( "SparseLUFactorization: %s\n", message.ascii() );
 }
 
 bool SparseLUFactorization::explicitBasisAvailable() const

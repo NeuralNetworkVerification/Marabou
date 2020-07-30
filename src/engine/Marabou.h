@@ -35,10 +35,11 @@ private:
     InputQuery _inputQuery;
 
     /*
-      Extract the input files: network and property, and use them
-      to generate the input query
+      Extract the options and input files (network and property), and
+      use them to generate the input query
     */
     void prepareInputQuery();
+    void extractSplittingThreshold();
 
     /*
       Invoke the engine to solve the input query

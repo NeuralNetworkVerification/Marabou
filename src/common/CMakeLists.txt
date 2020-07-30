@@ -19,23 +19,21 @@ common_add_unit_test(ConstSimpleData)
 common_add_unit_test(Error)
 common_add_unit_test(File)
 common_add_unit_test(FloatUtils)
+common_add_unit_test(GurobiWrapper)
 common_add_unit_test(HashMap)
 common_add_unit_test(HashSet)
 common_add_unit_test(HeapData)
 common_add_unit_test(List)
-common_add_unit_test(Map)
 common_add_unit_test(MString)
 common_add_unit_test(MStringf)
+common_add_unit_test(Map)
 common_add_unit_test(Pair)
 common_add_unit_test(Queue)
 common_add_unit_test(Set)
 common_add_unit_test(Stack)
 common_add_unit_test(Vector)
+common_add_unit_test(MatrixMultiplication)
 
 if (${BUILD_PYTHON})
 target_include_directories(${MARABOU_PY} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 endif()
-
-
-
-

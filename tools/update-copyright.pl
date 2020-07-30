@@ -3,6 +3,11 @@
 # update-copyright.pl
 # Copyright (c) 2017-2019, the Marabou project
 #
+#
+# This script was originally adapeted from a similar script in the
+# CVC4 project: https://github.com/CVC4/CVC4
+#
+#
 # usage: update-copyright [-m] [files/directories...]
 #        update-copyright [-h | --help]
 #

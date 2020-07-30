@@ -24,8 +24,17 @@ class MaxConstraint : public PiecewiseLinearConstraint
  public:
     ~MaxConstraint();
 
+    /*
+      The f variable is the output of max over the variables stored in elements:
+      f = max( elements )
+    */
     MaxConstraint( unsigned f, const Set<unsigned> &elements );
     MaxConstraint( const String &serializedMax );
+
+    /*
+      Get the type of this constraint.
+    */
+    PiecewiseLinearFunctionType getType() const;
 
     /*
       Return a clone of the constraint.
@@ -125,6 +134,7 @@ class MaxConstraint : public PiecewiseLinearConstraint
  private:
     unsigned _f;
     Set<unsigned> _elements;
+
     unsigned _maxIndex;
     bool _maxIndexSet;
     double _maxLowerBound;
@@ -136,7 +146,6 @@ class MaxConstraint : public PiecewiseLinearConstraint
       Returns the phase where variable argMax has maximum value.
     */
     PiecewiseLinearCaseSplit getSplit( unsigned argMax ) const;
-
 };
 
 #endif // __MaxConstraint_h__

@@ -22,7 +22,6 @@
 #include "Map.h"
 #include "NetworkLevelReasoner.h"
 #include "PiecewiseLinearConstraint.h"
-#include "SymbolicBoundTightener.h"
 
 class InputQuery
 {
@@ -85,18 +84,13 @@ public:
     /*
       Remove an equation from equation list
     */
-    void removeEquation(Equation e);
+    void removeEquation( Equation e );
 
     /*
       Assignment operator and copy constructor, duplicate the constraints.
     */
     InputQuery &operator=( const InputQuery &other );
     InputQuery( const InputQuery &other );
-
-    /*
-      Attach a symbolic bound tightener to the input query
-    */
-    void setSymbolicBoundTightener( SymbolicBoundTightener *sbt );
 
     /*
       Debugging methods
@@ -128,10 +122,17 @@ public:
                                    const Map<unsigned, unsigned> &mergedVariables );
 
     /*
+      Attempt to figure out the network topology and construct a
+      network level reasoner. Return true iff the construction was
+      successful
+    */
+    bool constructNetworkLevelReasoner();
+
+    /*
       Include a network level reasoner in the query
     */
-    void setNetworkLevelReasoner( NetworkLevelReasoner *nlr );
-    NetworkLevelReasoner *getNetworkLevelReasoner() const;
+    void setNetworkLevelReasoner( NLR::NetworkLevelReasoner *nlr );
+    NLR::NetworkLevelReasoner *getNetworkLevelReasoner() const;
 
 private:
     unsigned _numberOfVariables;
@@ -146,6 +147,17 @@ private:
       Free any stored pl constraints.
     */
     void freeConstraintsIfNeeded();
+
+    /*
+      Methods called by constructNetworkLevelReasoner
+    */
+    bool constructWeighedSumLayer( NLR::NetworkLevelReasoner *nlr,
+                                   Map<unsigned, unsigned> &handledVariableToLayer,
+                                   unsigned newLayerIndex );
+    bool constructReluLayer( NLR::NetworkLevelReasoner *nlr,
+                             Map<unsigned, unsigned> &handledVariableToLayer,
+                             unsigned newLayerIndex );
+
 
 public:
     /*
@@ -162,12 +174,7 @@ public:
       and can be used for various operations such as network
       evaluation of topology-based bound tightening.
      */
-    NetworkLevelReasoner *_networkLevelReasoner;
-
-    /*
-      Symbolic bound tightener.
-    */
-    SymbolicBoundTightener *_sbt;
+    NLR::NetworkLevelReasoner *_networkLevelReasoner;
 };
 
 #endif // __InputQuery_h__

@@ -156,9 +156,11 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
             unsigned b = _nodeToB[NodeIndex(i, j)];
             unsigned f = _nodeToF[NodeIndex(i, j)];
             PiecewiseLinearConstraint *relu = new ReluConstraint( b, f );
+
             if ( GlobalConfiguration::SPLITTING_HEURISTICS ==
                  DivideStrategy::EarliestReLU )
                 relu->setScore( i );
+
             inputQuery.addPiecewiseLinearConstraint( relu );
         }
     }
@@ -169,121 +171,6 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
 
     for ( unsigned i = 0; i < outputLayerSize; ++i )
         inputQuery.markOutputVariable( _nodeToB[NodeIndex( numberOfLayers - 1, i )], i );
-
-    // Populate the Network-Level Reasoner
-    NetworkLevelReasoner *nlr = new NetworkLevelReasoner;
-
-    nlr->setNumberOfLayers( numberOfLayers );
-
-    for ( unsigned i = 0; i < numberOfLayers; ++i )
-        nlr->setLayerSize( i, _acasNeuralNetwork.getLayerSize( i ) );
-
-    nlr->allocateWeightMatrices();
-
-    // Biases
-    for ( unsigned i = 1; i < numberOfLayers; ++i )
-        for ( unsigned j = 0; j < _acasNeuralNetwork.getLayerSize( i ); ++j )
-            nlr->setBias( i, j, _acasNeuralNetwork.getBias( i, j ) );
-
-    // Weights
-    for ( unsigned layer = 0; layer < numberOfLayers - 1; ++layer )
-    {
-        unsigned targetLayerSize = _acasNeuralNetwork.getLayerSize( layer + 1 );
-        for ( unsigned target = 0; target < targetLayerSize; ++target )
-        {
-            for ( unsigned source = 0; source < _acasNeuralNetwork.getLayerSize( layer ); ++source )
-                nlr->setWeight( layer, source, target, _acasNeuralNetwork.getWeight( layer, source, target ) );
-        }
-    }
-
-    // Mark all hidden nodes as ReLU nodes, per the ACAS implicit convention
-    for ( unsigned layer = 1; layer < numberOfLayers - 1; ++layer )
-    {
-        unsigned layerSize = _acasNeuralNetwork.getLayerSize( layer  );
-        for ( unsigned neuron = 0; neuron < layerSize; ++neuron )
-        {
-            nlr->setNeuronActivationFunction( layer, neuron, NetworkLevelReasoner::ReLU );
-        }
-    }
-
-    // Variable indexing
-    for ( unsigned i = 1; i < numberOfLayers - 1; ++i )
-    {
-        unsigned layerSize = _acasNeuralNetwork.getLayerSize( i );
-
-        for ( unsigned j = 0; j < layerSize; ++j )
-        {
-            unsigned b = _nodeToB[NodeIndex( i, j )];
-            unsigned f = _nodeToF[NodeIndex( i, j )];
-            nlr->setWeightedSumVariable( i, j, b );
-            nlr->setActivationResultVariable( i, j, f );
-        }
-    }
-
-    // Store the reasoner in the input query
-    inputQuery.setNetworkLevelReasoner( nlr );
-
-    // TODO: remove the below, once SBT is merged into NLR
-    if ( GlobalConfiguration::USE_SYMBOLIC_BOUND_TIGHTENING )
-    {
-        // Prepare the symbolic bound tightener
-        SymbolicBoundTightener *sbt = new SymbolicBoundTightener;
-
-        sbt->setNumberOfLayers( numberOfLayers );
-
-        for ( unsigned i = 0; i < numberOfLayers; ++i )
-            sbt->setLayerSize( i, _acasNeuralNetwork.getLayerSize( i ) );
-
-        sbt->allocateWeightAndBiasSpace();
-
-        // Biases
-        for ( unsigned i = 1; i < numberOfLayers; ++i )
-            for ( unsigned j = 0; j < _acasNeuralNetwork.getLayerSize( i ); ++j )
-                sbt->setBias( i, j, _acasNeuralNetwork.getBias( i, j ) );
-
-        // Weights
-        for ( unsigned layer = 0; layer < numberOfLayers - 1; ++layer )
-        {
-            unsigned targetLayerSize = _acasNeuralNetwork.getLayerSize( layer + 1 );
-            for ( unsigned target = 0; target < targetLayerSize; ++target )
-            {
-                for ( unsigned source = 0; source < _acasNeuralNetwork.getLayerSize( layer ); ++source )
-                    sbt->setWeight( layer, source, target, _acasNeuralNetwork.getWeight( layer, source, target ) );
-            }
-        }
-
-        // Initial bounds
-        for ( unsigned i = 0; i < inputLayerSize; ++i )
-        {
-            double min, max;
-            _acasNeuralNetwork.getInputRange( i, min, max );
-
-            sbt->setInputLowerBound( i, min );
-            sbt->setInputUpperBound( i, max );
-        }
-
-        // Variable indexing
-        for ( unsigned i = 1; i < numberOfLayers - 1; ++i )
-        {
-            unsigned layerSize = _acasNeuralNetwork.getLayerSize( i );
-
-            for ( unsigned j = 0; j < layerSize; ++j )
-            {
-                unsigned b = _nodeToB[NodeIndex( i, j )];
-                sbt->setReluBVariable( i, j, b );
-
-                unsigned f = _nodeToF[NodeIndex( i, j )];
-                sbt->setReluFVariable( i, j, f );
-            }
-        }
-
-        for ( unsigned i = 0; i < outputLayerSize; ++i )
-        {
-            sbt->setReluFVariable( numberOfLayers - 1, i, _nodeToB[NodeIndex( numberOfLayers - 1, i )] );
-        }
-
-        inputQuery.setSymbolicBoundTightener( sbt );
-    }
 }
 
 unsigned AcasParser::getNumInputVaribales() const
