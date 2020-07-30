@@ -33,7 +33,17 @@ public:
         PHASE_NEGATIVE = 2,
     };
 
+    /*
+      The f variable is the sign output on the b variable:
+      f = sign( b )
+    */
     SignConstraint( unsigned b, unsigned f );
+    SignConstraint( const String &serializedSign );
+
+    /*
+      Get the type of this constraint.
+    */
+    PiecewiseLinearFunctionType getType() const;
 
     /*
       Returns true iff the assignment satisfies the constraint
@@ -153,7 +163,7 @@ private:
     /*
       Return true iff b or f are out of bounds.
     */
-    bool haveOutOfBoundVariables() const; // same as ReLU code
+    bool haveOutOfBoundVariables() const;
 };
 
 #endif // __SignConstraint_h__

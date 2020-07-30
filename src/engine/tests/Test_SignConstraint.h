@@ -27,7 +27,7 @@
 #include <string.h>
 
 class MockForSignConstraint
-        : public MockErrno
+    : public MockErrno
 {
 public:
 };
@@ -39,12 +39,12 @@ public:
 
     void setUp()
     {
-        TS_ASSERT(mock = new MockForSignConstraint);
+        TS_ASSERT( mock = new MockForSignConstraint );
     }
 
     void tearDown()
     {
-        TS_ASSERT_THROWS_NOTHING(delete mock);
+        TS_ASSERT_THROWS_NOTHING( delete mock );
     }
 
     void test_sign_constraint()
@@ -52,284 +52,291 @@ public:
         unsigned b = 1;
         unsigned f = 4;
 
-        SignConstraint sign( b, f ); // define constraint
+        SignConstraint sign( b, f );
 
-        List<unsigned> participatingVariables; // needs to return 1 and 4 - the tableu vars
-        TS_ASSERT_THROWS_NOTHING(
-                participatingVariables = sign.getParticipatingVariables()); // see doesnt throw
-        TS_ASSERT_EQUALS(participatingVariables.size(),
-                         2U); // check that equals 2 - becausse there are 2vars
+        List<unsigned> participatingVariables;
+
+        TS_ASSERT_THROWS_NOTHING( participatingVariables = sign.getParticipatingVariables() );
+
+        TS_ASSERT_EQUALS( participatingVariables.size(), 2U );
+
         auto it = participatingVariables.begin();
-        TS_ASSERT_EQUALS(*it, b);
+        TS_ASSERT_EQUALS( *it, b );
         ++it;
-        TS_ASSERT_EQUALS(*it, f);
+        TS_ASSERT_EQUALS( *it, f );
 
-        TS_ASSERT(sign.participatingVariable(b));
-        TS_ASSERT(sign.participatingVariable(f));
-        TS_ASSERT(!sign.participatingVariable(2));
-        TS_ASSERT(!sign.participatingVariable(0));
-        TS_ASSERT(!sign.participatingVariable(5));
+        TS_ASSERT( sign.participatingVariable( b ) );
+        TS_ASSERT( sign.participatingVariable( f ) );
+        TS_ASSERT( !sign.participatingVariable( 2 ) );
+        TS_ASSERT( !sign.participatingVariable( 0 ) );
+        TS_ASSERT( !sign.participatingVariable( 5 ) );
 
-        TS_ASSERT_THROWS_EQUALS(sign.satisfied(),
-                                const MarabouError &e,
-                                e.getCode(),
-                                MarabouError::PARTICIPATING_VARIABLES_ABSENT);
+        TS_ASSERT_THROWS_EQUALS( sign.satisfied(),
+                                 const MarabouError &e,
+                                 e.getCode(),
+                                 MarabouError::PARTICIPATING_VARIABLES_ABSENT );
 
-        sign.notifyVariableValue(b, -1); // change val of b to '-1'
-        sign.notifyVariableValue(f, -1); // change val of f to '1
+        sign.notifyVariableValue( b, -1 );
+        sign.notifyVariableValue( f, -1 );
 
-        TS_ASSERT(sign.satisfied()); // f= Relu (b) or f=sign(b)
+        TS_ASSERT( sign.satisfied() );
 
-        sign.notifyVariableValue(f, 1);
+        sign.notifyVariableValue( f, 1 );
 
-        TS_ASSERT(!sign.satisfied());
+        TS_ASSERT( !sign.satisfied() );
 
-        sign.notifyVariableValue(b, 2);
+        sign.notifyVariableValue( b, 2 );
 
-        TS_ASSERT(sign.satisfied());
+        TS_ASSERT( sign.satisfied() );
 
-        sign.notifyVariableValue(b, -2);
+        sign.notifyVariableValue( b, -2 );
 
-        TS_ASSERT(!sign.satisfied()); // because f is '1'
+        TS_ASSERT( !sign.satisfied() );
 
-        sign.notifyVariableValue(f, 1);
+        sign.notifyVariableValue( f, 1 );
 
-        TS_ASSERT(!sign.satisfied());
+        TS_ASSERT( !sign.satisfied() );
 
-        sign.notifyVariableValue(b, 0);
+        sign.notifyVariableValue( b, 0 );
 
-        TS_ASSERT(sign.satisfied());
+        TS_ASSERT( sign.satisfied() );
 
-        sign.notifyVariableValue(b, 9);
+        sign.notifyVariableValue( b, 9 );
 
-        TS_ASSERT(sign.satisfied());
+        TS_ASSERT( sign.satisfied() );
 
-        sign.notifyVariableValue(4, -8); // is first var is 'f'
+        sign.notifyVariableValue( 4, -8 );
+
+        // A sign constraint cannot be satisfied if f is not '1' or '-1'
+        TS_ASSERT( !sign.satisfied() );
+
+        sign.notifyVariableValue( 4, 1.5 );
 
         // A relu cannot be satisfied if f is not '1' or '-1'
-        TS_ASSERT(!sign.satisfied());
+        TS_ASSERT( !sign.satisfied() );
 
-        sign.notifyVariableValue(4, 1.5); // is first var is 'f'
+        sign.notifyVariableValue( f, -1 );
+        sign.notifyVariableValue( b, 11 );
 
-        // A relu cannot be satisfied if f is not '1' or '-1'
-        TS_ASSERT(!sign.satisfied());
-
-        sign.notifyVariableValue(f, -1);
-        sign.notifyVariableValue(b, 11);
-
-        TS_ASSERT(!sign.satisfied());
+        TS_ASSERT( !sign.satisfied() );
 
         // Changing variable indices
-        sign.notifyVariableValue(b, 1);
-        sign.notifyVariableValue(f, 1);
-        TS_ASSERT(sign.satisfied());
-
+        sign.notifyVariableValue( b, 1 );
+        sign.notifyVariableValue( f, 1 );
+        TS_ASSERT( sign.satisfied() );
 
         unsigned newB = 12;
         unsigned newF = 14;
 
-        TS_ASSERT_THROWS_NOTHING(sign.updateVariableIndex(b, newB));
-        TS_ASSERT_THROWS_NOTHING(sign.updateVariableIndex(f, newF));
+        TS_ASSERT_THROWS_NOTHING( sign.updateVariableIndex( b, newB ) );
+        TS_ASSERT_THROWS_NOTHING( sign.updateVariableIndex( f, newF ) );
 
-        TS_ASSERT(sign.satisfied());
+        TS_ASSERT( sign.satisfied() );
 
-        sign.notifyVariableValue(newF, -1);
+        sign.notifyVariableValue( newF, -1 );
 
-        TS_ASSERT(!sign.satisfied());
+        TS_ASSERT( !sign.satisfied() );
 
-        sign.notifyVariableValue(newB, -0.1);
+        sign.notifyVariableValue( newB, -0.1 );
 
-        TS_ASSERT(sign.satisfied());
+        TS_ASSERT( sign.satisfied());
     }
 
-
-    void test_sign_fixes() {
+    void test_sign_fixes()
+    {
         unsigned b = 1;
         unsigned f = 4;
 
-        SignConstraint sign(b, f);
+        SignConstraint sign( b, f );
 
         List<PiecewiseLinearConstraint::Fix> fixes;
         List<PiecewiseLinearConstraint::Fix>::iterator it;
 
-        sign.notifyVariableValue(b, -1);
-        sign.notifyVariableValue(f, 1);
-        fixes = sign.getPossibleFixes();
-        it = fixes.begin();
-        TS_ASSERT_EQUALS(it->_variable, f);
-        TS_ASSERT_EQUALS(it->_value, -1); // check if fix we changed to make f '-1'
-
-        sign.notifyVariableValue(b, 0);
-        sign.notifyVariableValue(f, -1);
-        fixes = sign.getPossibleFixes();
-        it = fixes.begin();
-        TS_ASSERT_EQUALS(it->_variable, f);
-        TS_ASSERT_EQUALS(it->_value, 1); // check if fix we changed to make f '1'
-
-
-        sign.notifyVariableValue(b, 3);
-        sign.notifyVariableValue(f, -1);
-        fixes = sign.getPossibleFixes();
-        it = fixes.begin();
-        TS_ASSERT_EQUALS(it->_variable, f);
-        TS_ASSERT_EQUALS(it->_value, 1); // check if fix we changed to make f '1'
-
-
-
-        sign.notifyVariableValue(b, -2);
-        sign.notifyVariableValue(f, 1);
+        sign.notifyVariableValue( b, -1 );
+        sign.notifyVariableValue( f, 1 );
 
         fixes = sign.getPossibleFixes();
         it = fixes.begin();
-        TS_ASSERT_EQUALS(it->_variable, f);
-        TS_ASSERT_EQUALS(it->_value, -1);
 
+        TS_ASSERT_EQUALS( it->_variable, f );
+        TS_ASSERT_EQUALS( it->_value, -1 );
 
-        sign.notifyVariableValue(b, 11);
-        sign.notifyVariableValue(f, 0);
+        sign.notifyVariableValue( b, 0 );
+        sign.notifyVariableValue( f, -1 );
 
         fixes = sign.getPossibleFixes();
         it = fixes.begin();
-        TS_ASSERT_EQUALS(it->_variable, f);
-        TS_ASSERT_EQUALS(it->_value, 1);
+
+        TS_ASSERT_EQUALS( it->_variable, f );
+        TS_ASSERT_EQUALS( it->_value, 1 );
+
+        sign.notifyVariableValue( b, 3 );
+        sign.notifyVariableValue( f, -1 );
+
+        fixes = sign.getPossibleFixes();
+        it = fixes.begin();
+
+        TS_ASSERT_EQUALS( it->_variable, f );
+        TS_ASSERT_EQUALS( it->_value, 1 );
+
+        sign.notifyVariableValue( b, -2);
+        sign.notifyVariableValue( f, 1 );
+
+        fixes = sign.getPossibleFixes();
+        it = fixes.begin();
+
+        TS_ASSERT_EQUALS( it->_variable, f );
+        TS_ASSERT_EQUALS( it->_value, -1 );
+
+        sign.notifyVariableValue( b, 11 );
+        sign.notifyVariableValue( f, 0 );
+
+        fixes = sign.getPossibleFixes();
+        it = fixes.begin();
+
+        TS_ASSERT_EQUALS( it->_variable, f );
+        TS_ASSERT_EQUALS( it->_value, 1 );
     }
 
-
-    void test_sign_case_splits() {
-
+    void test_sign_case_splits()
+    {
         unsigned b = 1;
         unsigned f = 4;
 
-        SignConstraint sign(b, f);
+        SignConstraint sign( b, f );
 
         List<PiecewiseLinearConstraint::Fix> fixes;
         List<PiecewiseLinearConstraint::Fix>::iterator it;
 
-        List<PiecewiseLinearCaseSplit> splits = sign.getCaseSplits(); // returns list with 2 elemns for relu
+        List<PiecewiseLinearCaseSplit> splits = sign.getCaseSplits();
 
-        Equation activeEquation, inactiveEquation;
-
-        TS_ASSERT_EQUALS(splits.size(), 2U);
+        TS_ASSERT_EQUALS( splits.size(), 2U );
 
         List<PiecewiseLinearCaseSplit>::iterator split1 = splits.begin();
         List<PiecewiseLinearCaseSplit>::iterator split2 = split1;
         ++split2;
 
-        TS_ASSERT(isPositiveSplit(b, f, split1) || isPositiveSplit(b, f, split2));
-        TS_ASSERT(isNegativeSplit(b, f, split1) || isNegativeSplit(b, f, split2));
+        TS_ASSERT( isPositiveSplit( b, f, split1 ) || isPositiveSplit( b, f, split2 ) );
+        TS_ASSERT( isNegativeSplit( b, f, split1 ) || isNegativeSplit( b, f, split2 ) );
     }
 
-
-    bool isPositiveSplit(unsigned b, unsigned f,
-                         List<PiecewiseLinearCaseSplit>::iterator &split) { // return true only if 2 matching bound and no equations
+    bool isPositiveSplit( unsigned b, unsigned f,
+                          List<PiecewiseLinearCaseSplit>::iterator &split )
+    {
+        // Return true only if the 2 bounds match and there are no equations
         List<Tightening> bounds = split->getBoundTightenings();
 
         auto bound = bounds.begin();
         Tightening bound1 = *bound;
 
-        TS_ASSERT_EQUALS(bound1._variable, b);
-        TS_ASSERT_EQUALS(bound1._value, 0.0);
-
-        if (bound1._type != Tightening::LB)
+        if ( ( bound1._variable != b ) ||
+             ( bound1._value != 0.0 ) ||
+             ( bound1._type != Tightening::LB ) )
             return false;
 
-        TS_ASSERT_EQUALS(bounds.size(), 2U);
+        if ( bounds.size() != 2U )
+            return false;
 
         ++bound;
         Tightening bound2 = *bound;
 
-        TS_ASSERT_EQUALS(bound2._variable, f);
-        TS_ASSERT_EQUALS(bound2._value, 1);
-        TS_ASSERT_EQUALS(bound2._type, Tightening::LB);
+        if ( ( bound2._variable != f ) ||
+             ( bound2._value != 1 ) ||
+             ( bound2._type != Tightening::LB ) )
+            return false;
 
-        auto equations = split->getEquations();
-        TS_ASSERT(equations.empty());
+        if ( !split->getEquations().empty() )
+            return false;
 
         return true;
     }
 
-
-    bool isNegativeSplit(unsigned b, unsigned f,
-                         List<PiecewiseLinearCaseSplit>::iterator &split) { // return true only if 2 matching bound and no equations
+    bool isNegativeSplit( unsigned b, unsigned f,
+                          List<PiecewiseLinearCaseSplit>::iterator &split )
+    {
+        // Return true only if the 2 bounds match and there are no equations
         List<Tightening> bounds = split->getBoundTightenings();
 
         auto bound = bounds.begin();
         Tightening bound1 = *bound;
 
-        TS_ASSERT_EQUALS(bound1._variable, b);
-        TS_ASSERT_EQUALS(bound1._value, 0.0);
-
-        if (bound1._type != Tightening::UB)
+        if ( ( bound1._variable != b ) ||
+             ( bound1._value != 0.0 ) ||
+             ( bound1._type != Tightening::UB ) )
             return false;
 
-        TS_ASSERT_EQUALS(bounds.size(), 2U);
+        if ( bounds.size() != 2U )
+            return false;
 
         ++bound;
         Tightening bound2 = *bound;
 
-        TS_ASSERT_EQUALS(bound2._variable, f);
-        TS_ASSERT_EQUALS(bound2._value, -1);
-        TS_ASSERT_EQUALS(bound2._type, Tightening::UB);
+        if ( ( bound2._variable != f ) ||
+             ( bound2._value != -1 ) ||
+             ( bound2._type != Tightening::UB ) )
+            return false;
 
-        auto equations = split->getEquations();
-        TS_ASSERT(equations.empty());
+        if ( !split->getEquations().empty() )
+            return false;
 
         return true;
     }
 
-
-    void test_register_as_watcher() {
+    void test_register_as_watcher()
+    {
         unsigned b = 1;
         unsigned f = 4;
 
         MockTableau tableau;
 
-        ReluConstraint relu(b, f);
+        SignConstraint sign( b, f );
 
-        TS_ASSERT_THROWS_NOTHING(relu.registerAsWatcher(&tableau));
+        TS_ASSERT_THROWS_NOTHING( sign.registerAsWatcher( &tableau ) );
 
-        TS_ASSERT_EQUALS(tableau.lastRegisteredVariableToWatcher.size(), 2U);
-        TS_ASSERT(tableau.lastUnregisteredVariableToWatcher.empty());
-        TS_ASSERT_EQUALS(tableau.lastRegisteredVariableToWatcher[b].size(), 1U);
-        TS_ASSERT(tableau.lastRegisteredVariableToWatcher[b].exists(&relu));
-        TS_ASSERT_EQUALS(tableau.lastRegisteredVariableToWatcher[f].size(), 1U);
-        TS_ASSERT(tableau.lastRegisteredVariableToWatcher[f].exists(&relu));
+        TS_ASSERT_EQUALS( tableau.lastRegisteredVariableToWatcher.size(), 2U );
+        TS_ASSERT( tableau.lastUnregisteredVariableToWatcher.empty() );
+        TS_ASSERT_EQUALS( tableau.lastRegisteredVariableToWatcher[b].size(), 1U );
+        TS_ASSERT( tableau.lastRegisteredVariableToWatcher[b].exists( &sign ) );
+        TS_ASSERT_EQUALS( tableau.lastRegisteredVariableToWatcher[f].size(), 1U );
+        TS_ASSERT( tableau.lastRegisteredVariableToWatcher[f].exists( &sign ) );
 
         tableau.lastRegisteredVariableToWatcher.clear();
 
-        TS_ASSERT_THROWS_NOTHING(relu.unregisterAsWatcher(&tableau));
+        TS_ASSERT_THROWS_NOTHING( sign.unregisterAsWatcher( &tableau ) );
 
-        TS_ASSERT(tableau.lastRegisteredVariableToWatcher.empty());
-        TS_ASSERT_EQUALS(tableau.lastUnregisteredVariableToWatcher.size(), 2U);
-        TS_ASSERT_EQUALS(tableau.lastUnregisteredVariableToWatcher[b].size(), 1U);
-        TS_ASSERT(tableau.lastUnregisteredVariableToWatcher[b].exists(&relu));
-        TS_ASSERT_EQUALS(tableau.lastUnregisteredVariableToWatcher[f].size(), 1U);
-        TS_ASSERT(tableau.lastUnregisteredVariableToWatcher[f].exists(&relu));
+        TS_ASSERT( tableau.lastRegisteredVariableToWatcher.empty() );
+        TS_ASSERT_EQUALS( tableau.lastUnregisteredVariableToWatcher.size(), 2U );
+        TS_ASSERT_EQUALS( tableau.lastUnregisteredVariableToWatcher[b].size(), 1U );
+        TS_ASSERT( tableau.lastUnregisteredVariableToWatcher[b].exists( &sign ) );
+        TS_ASSERT_EQUALS( tableau.lastUnregisteredVariableToWatcher[f].size(), 1U );
+        TS_ASSERT( tableau.lastUnregisteredVariableToWatcher[f].exists( &sign ) );
     }
 
-
-    void test_fix_positive() {
+    void test_fix_positive()
+    {
         unsigned b = 1;
         unsigned f = 4;
 
         MockTableau tableau;
 
-        SignConstraint sign(b, f);
+        SignConstraint sign( b, f );
 
-        sign.registerAsWatcher(&tableau);
+        sign.registerAsWatcher( &tableau );
 
+        // GK: the test's name doesn't match its contents; it seems to be about getCaseSplits()
         List<PiecewiseLinearCaseSplit> splits = sign.getCaseSplits();
-        TS_ASSERT_EQUALS(splits.size(), 2U);
-        MockConstraintBoundTightener tightener; // & to send address - YONI!!
-        sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
-        sign.notifyLowerBound(1, 0);
+        TS_ASSERT_EQUALS( splits.size(), 2U );
 
-        TS_ASSERT_THROWS_EQUALS(splits = sign.getCaseSplits(),
-                                const MarabouError &e,
-                                e.getCode(),
-                                MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT);
+        MockConstraintBoundTightener tightener;
+        sign.registerConstraintBoundTightener( &tightener );
+        sign.notifyLowerBound( 1, 0 );
 
-        sign.unregisterAsWatcher(&tableau);
+        TS_ASSERT_THROWS_EQUALS( splits = sign.getCaseSplits(),
+                                 const MarabouError &e,
+                                 e.getCode(),
+                                 MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
+
+        sign.unregisterAsWatcher( &tableau );
 
         sign = SignConstraint(b, f);
         sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
@@ -354,7 +361,7 @@ public:
 
         MockTableau tableau;
 
-        SignConstraint sign(b, f);
+        SignConstraint sign( b, f );
 
         sign.registerAsWatcher(&tableau);
         MockConstraintBoundTightener tightener; // & to send address - YONI!!
@@ -399,116 +406,116 @@ public:
 
         // Upper bounds
         {
-            SignConstraint sign(b, f);
+            SignConstraint sign( b, f );
             sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
-            TS_ASSERT(!sign.phaseFixed());
+            TS_ASSERT( !sign.phaseFixed());
             sign.notifyUpperBound(b, -0.1);
-            TS_ASSERT(sign.phaseFixed());
+            TS_ASSERT( sign.phaseFixed());
         }
 
         {
-            SignConstraint sign(b, f);
+            SignConstraint sign( b, f );
             sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
-            TS_ASSERT(!sign.phaseFixed());
+            TS_ASSERT( !sign.phaseFixed());
             sign.notifyUpperBound(b, -0.001);
-            TS_ASSERT(sign.phaseFixed());
+            TS_ASSERT( sign.phaseFixed());
         }
 
         {
-            SignConstraint sign(b, f);
+            SignConstraint sign( b, f );
             sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
-            TS_ASSERT(!sign.phaseFixed());
+            TS_ASSERT( !sign.phaseFixed());
             sign.notifyUpperBound(f, 1);
-            TS_ASSERT(!sign.phaseFixed());
+            TS_ASSERT( !sign.phaseFixed());
         }
 
         {
-            SignConstraint sign(b, f);
+            SignConstraint sign( b, f );
             sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
-            TS_ASSERT(!sign.phaseFixed());
+            TS_ASSERT( !sign.phaseFixed());
             sign.notifyUpperBound(f, 0.5);
-            TS_ASSERT(sign.phaseFixed());
+            TS_ASSERT( sign.phaseFixed());
         }
 
         {
-            SignConstraint sign(b, f);
+            SignConstraint sign( b, f );
             sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
-            TS_ASSERT(!sign.phaseFixed());
+            TS_ASSERT( !sign.phaseFixed());
             sign.notifyUpperBound(b, 3.0);
-            TS_ASSERT(!sign.phaseFixed());
+            TS_ASSERT( !sign.phaseFixed());
         }
 
         {
-            SignConstraint sign(b, f);
+            SignConstraint sign( b, f );
             sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
-            TS_ASSERT(!sign.phaseFixed());
+            TS_ASSERT( !sign.phaseFixed());
             sign.notifyUpperBound(b, 0);
-            TS_ASSERT(!sign.phaseFixed());
+            TS_ASSERT( !sign.phaseFixed());
         }
 
         // Lower bounds
         {
-            SignConstraint sign(b, f);
+            SignConstraint sign( b, f );
             sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
-            TS_ASSERT(!sign.phaseFixed());
+            TS_ASSERT( !sign.phaseFixed());
             sign.notifyLowerBound(b, -0.1);
-            TS_ASSERT(!sign.phaseFixed());
+            TS_ASSERT( !sign.phaseFixed());
         }
 
         {
-            SignConstraint sign(b, f);
+            SignConstraint sign( b, f );
             sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
-            TS_ASSERT(!sign.phaseFixed());
+            TS_ASSERT( !sign.phaseFixed());
             sign.notifyLowerBound(b, 0);
-            TS_ASSERT(sign.phaseFixed());
+            TS_ASSERT( sign.phaseFixed());
         }
 
         {
-            SignConstraint sign(b, f);
+            SignConstraint sign( b, f );
             sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
-            TS_ASSERT(!sign.phaseFixed());
+            TS_ASSERT( !sign.phaseFixed());
             sign.notifyLowerBound(f, -1);
-            TS_ASSERT(!sign.phaseFixed());
+            TS_ASSERT( !sign.phaseFixed());
         }
 
         {
-            SignConstraint sign(b, f);
+            SignConstraint sign( b, f );
             sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
-            TS_ASSERT(!sign.phaseFixed());
+            TS_ASSERT( !sign.phaseFixed());
             sign.notifyLowerBound(f, -0.6);
-            TS_ASSERT(sign.phaseFixed());
+            TS_ASSERT( sign.phaseFixed());
         }
 
         {
-            SignConstraint sign(b, f);
+            SignConstraint sign( b, f );
             sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
-            TS_ASSERT(!sign.phaseFixed());
+            TS_ASSERT( !sign.phaseFixed());
             sign.notifyLowerBound(b, 0.0);
-            TS_ASSERT(sign.phaseFixed());
+            TS_ASSERT( sign.phaseFixed());
         }
 
         {
-            SignConstraint sign(b, f);
+            SignConstraint sign( b, f );
             sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
-            TS_ASSERT(!sign.phaseFixed());
+            TS_ASSERT( !sign.phaseFixed());
             sign.notifyLowerBound(f, 6.0);
-            TS_ASSERT(sign.phaseFixed());
+            TS_ASSERT( sign.phaseFixed());
         }
 
         {
-            SignConstraint sign(b, f);
+            SignConstraint sign( b, f );
             sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
-            TS_ASSERT(!sign.phaseFixed());
+            TS_ASSERT( !sign.phaseFixed());
             sign.notifyLowerBound(f, 0.0);
-            TS_ASSERT(sign.phaseFixed());
+            TS_ASSERT( sign.phaseFixed());
         }
 
         {
-            SignConstraint sign(b, f);
+            SignConstraint sign( b, f );
             sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
-            TS_ASSERT(!sign.phaseFixed());
+            TS_ASSERT( !sign.phaseFixed());
             sign.notifyLowerBound(b, -2.0);
-            TS_ASSERT(!sign.phaseFixed());
+            TS_ASSERT( !sign.phaseFixed());
         }
 
     }
@@ -519,19 +526,19 @@ public:
         unsigned f = 4;
 
 
-        SignConstraint sign(b, f);
+        SignConstraint sign( b, f );
         MockConstraintBoundTightener tightener; // & to send address - YONI!!
         sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
 
         List<PiecewiseLinearConstraint::Fix> fixes;
         List<PiecewiseLinearConstraint::Fix>::iterator it;
 
-        TS_ASSERT(!sign.phaseFixed());
+        TS_ASSERT( !sign.phaseFixed());
         TS_ASSERT_THROWS_NOTHING(sign.notifyLowerBound(b, -0.5));
-        TS_ASSERT(!sign.phaseFixed());
+        TS_ASSERT( !sign.phaseFixed());
 
         TS_ASSERT_THROWS_NOTHING(sign.notifyLowerBound(b, 0));
-        TS_ASSERT(sign.phaseFixed());
+        TS_ASSERT( sign.phaseFixed());
 
         PiecewiseLinearCaseSplit split;
         TS_ASSERT_THROWS_NOTHING(split = sign.getValidCaseSplit());
@@ -564,7 +571,7 @@ public:
         unsigned b = 1;
         unsigned f = 4;
 
-        SignConstraint sign(b, f);
+        SignConstraint sign( b, f );
 
         MockConstraintBoundTightener tightener; // & to send address - YONI!!
         sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
@@ -572,13 +579,13 @@ public:
         List<PiecewiseLinearConstraint::Fix> fixes;
         List<PiecewiseLinearConstraint::Fix>::iterator it;
 
-        TS_ASSERT(!sign.phaseFixed());
+        TS_ASSERT( !sign.phaseFixed());
 
         TS_ASSERT_THROWS_NOTHING(sign.notifyUpperBound(b, 0.5));
-        TS_ASSERT(!sign.phaseFixed());
+        TS_ASSERT( !sign.phaseFixed());
 
         TS_ASSERT_THROWS_NOTHING(sign.notifyUpperBound(b, -2));
-        TS_ASSERT(sign.phaseFixed());
+        TS_ASSERT( sign.phaseFixed());
 
         PiecewiseLinearCaseSplit split;
         TS_ASSERT_THROWS_NOTHING(split = sign.getValidCaseSplit());
@@ -624,21 +631,21 @@ public:
         PiecewiseLinearConstraint *sign2 = sign1->duplicateConstraint();
 
         sign1->notifyVariableValue(4, -2); // b
-        TS_ASSERT(!sign1->satisfied()); // f != sign(b)
+        TS_ASSERT( !sign1->satisfied()); // f != sign(b)
 
         sign1->notifyVariableValue(6, -1); // f
-        TS_ASSERT(sign1->satisfied()); // f = sign(b)
+        TS_ASSERT( sign1->satisfied()); // f = sign(b)
 
 
         sign1->notifyVariableValue(6, 0.5); // f
-        TS_ASSERT(!sign1->satisfied()); // f != sign(b)
+        TS_ASSERT( !sign1->satisfied()); // f != sign(b)
 
 
-        TS_ASSERT(!sign2->isActive());
-        TS_ASSERT(sign2->satisfied());
+        TS_ASSERT( !sign2->isActive());
+        TS_ASSERT( sign2->satisfied());
 
         sign2->restoreState(sign1);
-        TS_ASSERT(!sign2->satisfied());
+        TS_ASSERT( !sign2->satisfied());
 
         TS_ASSERT_THROWS_NOTHING(delete sign1);
         TS_ASSERT_THROWS_NOTHING(delete sign2);
@@ -650,13 +657,13 @@ public:
 
         MockTableau tableau;
 
-        SignConstraint sign(b, f);
+        SignConstraint sign( b, f );
 
         sign.registerAsWatcher(&tableau);
 
-        TS_ASSERT(!sign.constraintObsolete());
+        TS_ASSERT( !sign.constraintObsolete());
         TS_ASSERT_THROWS_NOTHING(sign.eliminateVariable(b, 5));
-        TS_ASSERT(sign.constraintObsolete());
+        TS_ASSERT( sign.constraintObsolete());
     }
 
 
@@ -668,7 +675,7 @@ public:
         dontCare.setNumberOfVariables(500);
 
 
-        SignConstraint sign(b, f);
+        SignConstraint sign( b, f );
 
         MockConstraintBoundTightener tightener; // & to send address - YONI!!
         sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
@@ -806,7 +813,7 @@ public:
 
 
     SignConstraint prepareSign(unsigned b, unsigned f, IConstraintBoundTightener *tightener) {
-        SignConstraint sign(b, f);
+        SignConstraint sign( b, f );
 
         sign.registerConstraintBoundTightener( tightener ); // & to send address - YONI!!
 
@@ -943,5 +950,19 @@ public:
 
     }
 
+    void test_serialize_and_unserialize()
+    {
+        unsigned b = 42;
+        unsigned f = 7;
 
+        SignConstraint originalSign( b, f );
+        originalSign.notifyLowerBound( b, -10 );
+        originalSign.notifyUpperBound( f, 3 );
+
+        String originalSerialized = originalSign.serializeToString();
+        SignConstraint recoveredSign( originalSerialized );
+
+        TS_ASSERT_EQUALS( originalSign.serializeToString(),
+                          recoveredSign.serializeToString() );
+    }
 };

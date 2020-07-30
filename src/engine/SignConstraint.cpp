@@ -39,6 +39,31 @@ SignConstraint::SignConstraint( unsigned b, unsigned f )
     setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
 }
 
+SignConstraint::SignConstraint( const String &serializedSign )
+    : _haveEliminatedVariables( false )
+{
+    String constraintType = serializedSign.substring( 0, 4 );
+    ASSERT( constraintType == String( "sign" ) );
+
+    // Remove the constraint type in serialized form
+    String serializedValues = serializedSign.substring( 5, serializedSign.length() - 5 );
+    List<String> values = serializedValues.tokenize( "," );
+
+    ASSERT( values.size() == 2 );
+
+    auto var = values.begin();
+    _f = atoi( var->ascii() );
+    ++var;
+    _b = atoi( var->ascii() );
+
+    setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
+}
+
+PiecewiseLinearFunctionType SignConstraint::getType() const
+{
+    return PiecewiseLinearFunctionType::SIGN;
+}
+
 PiecewiseLinearConstraint *SignConstraint::duplicateConstraint() const
 {
     SignConstraint *clone = new SignConstraint( _b, _f );
@@ -81,8 +106,6 @@ bool SignConstraint::satisfied() const
 
     double bValue = _assignment.get( _b );
     double fValue = _assignment.get( _f );
-
-    printf( "b value: %.5lf, f value: %.5lf\n", bValue, fValue );
 
     // if bValue is negative, f should be -1
     if ( FloatUtils::isNegative( bValue ) )
@@ -235,7 +258,6 @@ void SignConstraint::notifyLowerBound( unsigned variable, double bound )
         if ( _constraintBoundTightener )
         {
             _constraintBoundTightener->registerTighterLowerBound( _f, 1 );
-            _constraintBoundTightener->registerTighterLowerBound( _b, bound );
         }
     }
 }
@@ -267,7 +289,6 @@ void SignConstraint::notifyUpperBound( unsigned variable, double bound )
         if ( _constraintBoundTightener )
         {
             _constraintBoundTightener->registerTighterUpperBound( _f, -1 );
-            _constraintBoundTightener->registerTighterUpperBound( _b, bound );
         }
     }
 }
