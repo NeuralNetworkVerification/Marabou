@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file Test_ReluConstraint.h
+/*! \file Test_SignConstraint.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Amir
@@ -112,7 +112,7 @@ public:
 
         sign.notifyVariableValue( 4, 1.5 );
 
-        // A relu cannot be satisfied if f is not '1' or '-1'
+        // A sign cannot be satisfied if f is not '1' or '-1'
         TS_ASSERT( !sign.satisfied() );
 
         sign.notifyVariableValue( f, -1 );
@@ -220,10 +220,10 @@ public:
         TS_ASSERT( isNegativeSplit( b, f, split1 ) || isNegativeSplit( b, f, split2 ) );
     }
 
+    // Return true only if the 2 bounds match and there are no equations
     bool isPositiveSplit( unsigned b, unsigned f,
                           List<PiecewiseLinearCaseSplit>::iterator &split )
     {
-        // Return true only if the 2 bounds match and there are no equations
         List<Tightening> bounds = split->getBoundTightenings();
 
         auto bound = bounds.begin();
@@ -251,10 +251,10 @@ public:
         return true;
     }
 
+    // Return true only if the 2 bounds match and there are no equations
     bool isNegativeSplit( unsigned b, unsigned f,
                           List<PiecewiseLinearCaseSplit>::iterator &split )
     {
-        // Return true only if the 2 bounds match and there are no equations
         List<Tightening> bounds = split->getBoundTightenings();
 
         auto bound = bounds.begin();
@@ -323,14 +323,12 @@ public:
 
         sign.registerAsWatcher( &tableau );
 
-        // GK: the test's name doesn't match its contents; it seems to be about getCaseSplits()
         List<PiecewiseLinearCaseSplit> splits = sign.getCaseSplits();
         TS_ASSERT_EQUALS( splits.size(), 2U );
 
         MockConstraintBoundTightener tightener;
         sign.registerConstraintBoundTightener( &tightener );
         sign.notifyLowerBound( 1, 0 );
-
         TS_ASSERT_THROWS_EQUALS( splits = sign.getCaseSplits(),
                                  const MarabouError &e,
                                  e.getCode(),
@@ -339,7 +337,7 @@ public:
         sign.unregisterAsWatcher( &tableau );
 
         sign = SignConstraint(b, f);
-        sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
+        sign.registerConstraintBoundTightener( &tightener );
         sign.registerAsWatcher(&tableau);
 
         splits = sign.getCaseSplits();
@@ -354,7 +352,6 @@ public:
         sign.unregisterAsWatcher(&tableau);
     }
 
-
     void test_fix_negative() {
         unsigned b = 1;
         unsigned f = 4;
@@ -364,8 +361,8 @@ public:
         SignConstraint sign( b, f );
 
         sign.registerAsWatcher(&tableau);
-        MockConstraintBoundTightener tightener; // & to send address - YONI!!
-        sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
+        MockConstraintBoundTightener tightener;
+        sign.registerConstraintBoundTightener( &tightener );
 
         List<PiecewiseLinearCaseSplit> splits = sign.getCaseSplits();
         TS_ASSERT_EQUALS(splits.size(), 2U);
@@ -378,11 +375,10 @@ public:
 
         sign.unregisterAsWatcher(&tableau);
 
-
         sign = SignConstraint(b, f);
 
         sign.registerAsWatcher(&tableau);
-        sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
+        sign.registerConstraintBoundTightener( &tightener );
         splits = sign.getCaseSplits();
         TS_ASSERT_EQUALS(splits.size(), 2U);
 
@@ -393,21 +389,20 @@ public:
                                 MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT);
 
         sign.unregisterAsWatcher(&tableau);
-
     }
 
-
-    void test_constraint_phase_gets_fixed() {
+    void test_constraint_phase_gets_fixed()
+    {
         unsigned b = 1;
         unsigned f = 4;
 
         MockTableau tableau;
-        MockConstraintBoundTightener tightener; // & to send address - YONI!!
+        MockConstraintBoundTightener tightener;
 
         // Upper bounds
         {
             SignConstraint sign( b, f );
-            sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
+            sign.registerConstraintBoundTightener( &tightener );
             TS_ASSERT( !sign.phaseFixed());
             sign.notifyUpperBound(b, -0.1);
             TS_ASSERT( sign.phaseFixed());
@@ -415,7 +410,7 @@ public:
 
         {
             SignConstraint sign( b, f );
-            sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
+            sign.registerConstraintBoundTightener( &tightener );
             TS_ASSERT( !sign.phaseFixed());
             sign.notifyUpperBound(b, -0.001);
             TS_ASSERT( sign.phaseFixed());
@@ -423,7 +418,7 @@ public:
 
         {
             SignConstraint sign( b, f );
-            sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
+            sign.registerConstraintBoundTightener( &tightener );
             TS_ASSERT( !sign.phaseFixed());
             sign.notifyUpperBound(f, 1);
             TS_ASSERT( !sign.phaseFixed());
@@ -431,7 +426,7 @@ public:
 
         {
             SignConstraint sign( b, f );
-            sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
+            sign.registerConstraintBoundTightener( &tightener );
             TS_ASSERT( !sign.phaseFixed());
             sign.notifyUpperBound(f, 0.5);
             TS_ASSERT( sign.phaseFixed());
@@ -439,7 +434,7 @@ public:
 
         {
             SignConstraint sign( b, f );
-            sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
+            sign.registerConstraintBoundTightener( &tightener );
             TS_ASSERT( !sign.phaseFixed());
             sign.notifyUpperBound(b, 3.0);
             TS_ASSERT( !sign.phaseFixed());
@@ -447,7 +442,7 @@ public:
 
         {
             SignConstraint sign( b, f );
-            sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
+            sign.registerConstraintBoundTightener( &tightener );
             TS_ASSERT( !sign.phaseFixed());
             sign.notifyUpperBound(b, 0);
             TS_ASSERT( !sign.phaseFixed());
@@ -456,7 +451,7 @@ public:
         // Lower bounds
         {
             SignConstraint sign( b, f );
-            sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
+            sign.registerConstraintBoundTightener( &tightener );
             TS_ASSERT( !sign.phaseFixed());
             sign.notifyLowerBound(b, -0.1);
             TS_ASSERT( !sign.phaseFixed());
@@ -464,7 +459,7 @@ public:
 
         {
             SignConstraint sign( b, f );
-            sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
+            sign.registerConstraintBoundTightener( &tightener );
             TS_ASSERT( !sign.phaseFixed());
             sign.notifyLowerBound(b, 0);
             TS_ASSERT( sign.phaseFixed());
@@ -472,7 +467,7 @@ public:
 
         {
             SignConstraint sign( b, f );
-            sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
+            sign.registerConstraintBoundTightener( &tightener );
             TS_ASSERT( !sign.phaseFixed());
             sign.notifyLowerBound(f, -1);
             TS_ASSERT( !sign.phaseFixed());
@@ -480,7 +475,7 @@ public:
 
         {
             SignConstraint sign( b, f );
-            sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
+            sign.registerConstraintBoundTightener( &tightener );
             TS_ASSERT( !sign.phaseFixed());
             sign.notifyLowerBound(f, -0.6);
             TS_ASSERT( sign.phaseFixed());
@@ -488,7 +483,7 @@ public:
 
         {
             SignConstraint sign( b, f );
-            sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
+            sign.registerConstraintBoundTightener( &tightener );
             TS_ASSERT( !sign.phaseFixed());
             sign.notifyLowerBound(b, 0.0);
             TS_ASSERT( sign.phaseFixed());
@@ -496,7 +491,7 @@ public:
 
         {
             SignConstraint sign( b, f );
-            sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
+            sign.registerConstraintBoundTightener( &tightener );
             TS_ASSERT( !sign.phaseFixed());
             sign.notifyLowerBound(f, 6.0);
             TS_ASSERT( sign.phaseFixed());
@@ -504,7 +499,7 @@ public:
 
         {
             SignConstraint sign( b, f );
-            sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
+            sign.registerConstraintBoundTightener( &tightener );
             TS_ASSERT( !sign.phaseFixed());
             sign.notifyLowerBound(f, 0.0);
             TS_ASSERT( sign.phaseFixed());
@@ -512,23 +507,21 @@ public:
 
         {
             SignConstraint sign( b, f );
-            sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
+            sign.registerConstraintBoundTightener( &tightener );
             TS_ASSERT( !sign.phaseFixed());
             sign.notifyLowerBound(b, -2.0);
             TS_ASSERT( !sign.phaseFixed());
         }
-
     }
 
-
-    void test_valid_split_sign_phase_fixed_to_positive() {
+    void test_valid_split_sign_phase_fixed_to_positive()
+    {
         unsigned b = 1;
         unsigned f = 4;
 
-
         SignConstraint sign( b, f );
-        MockConstraintBoundTightener tightener; // & to send address - YONI!!
-        sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
+        MockConstraintBoundTightener tightener;
+        sign.registerConstraintBoundTightener( &tightener );
 
         List<PiecewiseLinearConstraint::Fix> fixes;
         List<PiecewiseLinearConstraint::Fix>::iterator it;
@@ -566,15 +559,15 @@ public:
         TS_ASSERT(equations.empty());
     }
 
-
-    void test_valid_split_sign_phase_fixed_to_negative() {
+    void test_valid_split_sign_phase_fixed_to_negative()
+    {
         unsigned b = 1;
         unsigned f = 4;
 
         SignConstraint sign( b, f );
 
-        MockConstraintBoundTightener tightener; // & to send address - YONI!!
-        sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
+        MockConstraintBoundTightener tightener;
+        sign.registerConstraintBoundTightener( &tightener );
 
         List<PiecewiseLinearConstraint::Fix> fixes;
         List<PiecewiseLinearConstraint::Fix>::iterator it;
@@ -613,33 +606,33 @@ public:
         TS_ASSERT(equations.empty());
     }
 
-
     void test_sign_duplicate_and_restore() {
         SignConstraint *sign1 = new SignConstraint(4, 6);
-        MockConstraintBoundTightener tightener; // & to send address - YONI!!
-        sign1->registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
+        MockConstraintBoundTightener tightener;
+        sign1->registerConstraintBoundTightener( &tightener );
         sign1->setActiveConstraint(false);
-        sign1->notifyVariableValue(4, 1.0); // b
-        sign1->notifyVariableValue(6, 1.0); // f
+        sign1->notifyVariableValue(4, 1.0);
+        sign1->notifyVariableValue(6, 1.0);
 
-        sign1->notifyLowerBound(4, -8.0); // b
-        sign1->notifyUpperBound(4, 8.0);  // b
+        sign1->notifyLowerBound(4, -8.0);
+        sign1->notifyUpperBound(4, 8.0);
 
-        sign1->notifyLowerBound(6, -1); // f
-        sign1->notifyUpperBound(6, 1); // f
+        sign1->notifyLowerBound(6, -1);
+        sign1->notifyUpperBound(6, 1);
 
         PiecewiseLinearConstraint *sign2 = sign1->duplicateConstraint();
 
-        sign1->notifyVariableValue(4, -2); // b
-        TS_ASSERT( !sign1->satisfied()); // f != sign(b)
+        sign1->notifyVariableValue(4, -2);
+        // f != sign(b)
+        TS_ASSERT( !sign1->satisfied());
 
-        sign1->notifyVariableValue(6, -1); // f
-        TS_ASSERT( sign1->satisfied()); // f = sign(b)
+        sign1->notifyVariableValue(6, -1);
+        // f = sign(b)
+        TS_ASSERT( sign1->satisfied());
 
-
-        sign1->notifyVariableValue(6, 0.5); // f
-        TS_ASSERT( !sign1->satisfied()); // f != sign(b)
-
+        sign1->notifyVariableValue(6, 0.5);
+        // f != sign(b)
+        TS_ASSERT( !sign1->satisfied());
 
         TS_ASSERT( !sign2->isActive());
         TS_ASSERT( sign2->satisfied());
@@ -651,7 +644,8 @@ public:
         TS_ASSERT_THROWS_NOTHING(delete sign2);
     }
 
-    void test_eliminate_variable_active() {
+    void test_eliminate_variable_active()
+    {
         unsigned b = 1;
         unsigned f = 4;
 
@@ -666,19 +660,18 @@ public:
         TS_ASSERT( sign.constraintObsolete());
     }
 
-
-    void test_sign_entailed_tightenings() {
+    void test_sign_entailed_tightenings()
+    {
         unsigned b = 1;
         unsigned f = 4;
 
         InputQuery dontCare;
         dontCare.setNumberOfVariables(500);
 
-
         SignConstraint sign( b, f );
 
-        MockConstraintBoundTightener tightener; // & to send address - YONI!!
-        sign.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
+        MockConstraintBoundTightener tightener;
+        sign.registerConstraintBoundTightener( &tightener );
 
         sign.notifyLowerBound(b, -1);
         sign.notifyUpperBound(b, 7);
@@ -694,17 +687,14 @@ public:
         TS_ASSERT(entailedTightenings.exists(Tightening(f, 1, Tightening::UB)));
         TS_ASSERT(entailedTightenings.exists(Tightening(f, -1, Tightening::LB)));
 
-
         entailedTightenings.clear();
 
-
-
         sign.notifyLowerBound(b, -1);
-        sign.notifyUpperBound(b, -0.5); // the important line
+        // the most important test
+        sign.notifyUpperBound(b, -0.5);
 
         sign.notifyLowerBound(f, -1);
         sign.notifyUpperBound(f, 1);
-
 
         sign.getEntailedTightenings(entailedTightenings);
 
@@ -717,11 +707,11 @@ public:
 
         entailedTightenings.clear();
 
-
         sign.notifyLowerBound(b, -1);
         sign.notifyUpperBound(b, -0.5);
         sign.notifyLowerBound(f, -1);
-        sign.notifyUpperBound(f, 0.5); // the important line
+        // the most important test
+        sign.notifyUpperBound(f, 0.5);
 
         sign.getEntailedTightenings(entailedTightenings);
 
@@ -748,9 +738,7 @@ public:
         TS_ASSERT(entailedTightenings.exists(Tightening(f, 1, Tightening::LB)));
         TS_ASSERT(entailedTightenings.exists(Tightening(b, 0, Tightening::LB)));
 
-
         entailedTightenings.clear();
-
 
         sign.notifyLowerBound(b, -5);
         sign.notifyUpperBound(b, 5);
@@ -768,7 +756,6 @@ public:
 
         entailedTightenings.clear();
 
-
         unsigned b2 = 1;
         unsigned f2 = 4;
 
@@ -777,7 +764,7 @@ public:
 
         SignConstraint sign2(b2, f2);
 
-        sign2.registerConstraintBoundTightener( &tightener ); // & to send address - YONI!!
+        sign2.registerConstraintBoundTightener( &tightener );
 
         sign2.notifyLowerBound(b2, -1);
         sign2.notifyUpperBound(b2, 1);
@@ -806,19 +793,15 @@ public:
         TS_ASSERT(entailedTightenings2.exists(Tightening(f2, -1, Tightening::LB)));
 
         entailedTightenings2.clear();
-
-
-
     }
 
-
-    SignConstraint prepareSign(unsigned b, unsigned f, IConstraintBoundTightener *tightener) {
+    SignConstraint prepareSign(unsigned b, unsigned f, IConstraintBoundTightener *tightener)
+    {
         SignConstraint sign( b, f );
 
-        sign.registerConstraintBoundTightener( tightener ); // & to send address - YONI!!
+        sign.registerConstraintBoundTightener( tightener );
 
         InputQuery dontCare;
-//        dontCare.setNumberOfVariables();
 
         sign.notifyLowerBound(b, -10);
         sign.notifyUpperBound(b, 15);
@@ -826,16 +809,12 @@ public:
         sign.notifyLowerBound(f, -1);
         sign.notifyUpperBound(f, 1);
 
-
-
         sign.registerConstraintBoundTightener(tightener);
 
         return sign;
     }
 
-
-
-    void test_notify_bounds()  // TODO CHECK
+    void test_notify_bounds()
     {
         unsigned b = 1;
         unsigned f = 4;
@@ -875,31 +854,27 @@ public:
             tightener.getConstraintTightenings( tightenings );
             TS_ASSERT( tightenings.empty() );
 
-
             sign.notifyUpperBound( f, 1 );
             tightener.getConstraintTightenings( tightenings );
             TS_ASSERT( tightenings.empty() );
 
-            sign.notifyLowerBound( b, -2 ); // although higher lower bound - then bounds are reported only if phase is fixed!
+            // although higher lower bound - then bounds are reported only if phase is fixed!
+            sign.notifyLowerBound( b, -2 );
             tightener.getConstraintTightenings( tightenings );
             TS_ASSERT( tightenings.empty() );
-
         }
-
 
         {
             // Tighter lower bound for b/f that is positive
             SignConstraint sign = prepareSign( b, f, &tightener );
-            sign.notifyLowerBound( b, 13 );
+            sign.notifyLowerBound( b, 1 );
             tightener.getConstraintTightenings( tightenings );
-            TS_ASSERT_EQUALS(tightenings.size(), 2U);
-            TS_ASSERT( tightenings.exists( Tightening( b, 13, Tightening::LB ) ) );
+            TS_ASSERT_EQUALS(tightenings.size(), 1U);
             TS_ASSERT( tightenings.exists( Tightening( f, 1, Tightening::LB ) ) );
 
             sign.notifyUpperBound( f, -0.5 );
             tightener.getConstraintTightenings( tightenings );
             TS_ASSERT( tightenings.exists( Tightening( f, -1, Tightening::UB ) ) );
-            TS_ASSERT( tightenings.exists( Tightening( b, 0, Tightening::UB ) ) );
         }
 
         {
@@ -910,31 +885,24 @@ public:
             TS_ASSERT_EQUALS(tightenings.size(), 2U);
             TS_ASSERT( tightenings.exists( Tightening( b, 0, Tightening::UB ) ) );
             TS_ASSERT( tightenings.exists( Tightening( f, -1, Tightening::UB ) ) );
-
         }
 
-
         {
-            // upper bound 0 for b is inconclusive (TRICKY) - because for 0 its +1, for <0 its '-1'
+            // upper bound 0 for b is inconclusive - because for 0 its +1, for <0 its '-1'
             SignConstraint sign = prepareSign( b, f, &tightener );
             sign.notifyUpperBound( b, 0 );
             tightener.getConstraintTightenings( tightenings );
             TS_ASSERT( tightenings.empty() );
-
         }
-
 
         {
             // lower bound 0 for b is '+1'
             SignConstraint sign = prepareSign( b, f, &tightener );
             sign.notifyLowerBound( b, 0 );
             tightener.getConstraintTightenings( tightenings );
-            TS_ASSERT_EQUALS(tightenings.size(), 2U);
-            TS_ASSERT( tightenings.exists( Tightening( b, 0, Tightening::LB ) ) );
+            TS_ASSERT_EQUALS(tightenings.size(), 1U);
             TS_ASSERT( tightenings.exists( Tightening( f, 1, Tightening::LB ) ) );
-
         }
-
 
         {
             // Tighter negative upper bound for b
@@ -945,9 +913,6 @@ public:
             TS_ASSERT( tightenings.exists( Tightening( f, -1, Tightening::UB ) ) );
             TS_ASSERT( tightenings.exists( Tightening( b, 0, Tightening::UB ) ) );
         }
-
-
-
     }
 
     void test_serialize_and_unserialize()
