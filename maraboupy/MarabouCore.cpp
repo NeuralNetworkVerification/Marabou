@@ -2,7 +2,7 @@
 /*! \file MarabouCore.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Christopher Lazarus, Andrew Wu, Shantanu Thakoor
+ **   Christopher Lazarus, Andrew Wu, Shantanu Thakoor, Kyle Julian
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -96,6 +96,10 @@ void addMaxConstraint(InputQuery& ipq, std::set<unsigned> elements, unsigned v){
     ipq.addPiecewiseLinearConstraint(m);
 }
 
+void addAbsConstraint(InputQuery& ipq, unsigned b, unsigned f){
+    ipq.addPiecewiseLinearConstraint(new AbsoluteValueConstraint(b, f));
+}
+
 void createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::string propertyFilePath){
   AcasParser* acasParser = new AcasParser( String(networkFilePath) );
   acasParser->generateQuery( inputQuery );
@@ -170,14 +174,14 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
             case DnCManager::SAT:
             {
                 retStats = Statistics();
-                dncManager->getSolution( ret );
+                dncManager->getSolution( ret, inputQuery );
                 break;
             }
             case DnCManager::TIMEOUT:
             {
                 retStats = Statistics();
                 retStats.timeout();
-                return std::make_pair( ret, Statistics() );
+                return std::make_pair( ret, retStats );
             }
             default:
                 return std::make_pair( ret, Statistics() ); // TODO: meaningful DnCStatistics
@@ -213,13 +217,67 @@ InputQuery loadQuery(std::string filename){
 // Code necessary to generate Python library
 // Describes which classes and functions are exposed to API
 PYBIND11_MODULE(MarabouCore, m) {
-    m.doc() = "Marabou API Library";
+    m.doc() = "Maraboupy bindings to the C++ Marabou via pybind11";
     m.def("createInputQuery", &createInputQuery, "Create input query from network and property file");
-    m.def("solve", &solve, "Takes in a description of the InputQuery and returns the solution", py::arg("inputQuery"), py::arg("options"), py::arg("redirect") = "");
-    m.def("saveQuery", &saveQuery, "Serializes the inputQuery in the given filename");
-    m.def("loadQuery", &loadQuery, "Loads and returns a serialized inputQuery from the given filename");
-    m.def("addReluConstraint", &addReluConstraint, "Add a Relu constraint to the InputQuery");
-    m.def("addMaxConstraint", &addMaxConstraint, "Add a Max constraint to the InputQuery");
+    m.def("solve", &solve, R"pbdoc(
+        Takes in a description of the InputQuery and returns the solution
+
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
+            options (class:`~maraboupy.MarabouCore.Options`): Object defining the options used for Marabou
+            redirect (str, optional): Filepath to direct standard output, defaults to ""
+
+        Returns:
+            (tuple): tuple containing:
+                - vals (Dict[int, float]): Empty dictionary if UNSAT, otherwise a dictionary of SATisfying values for variables
+                - stats (:class:`~maraboupy.MarabouCore.Statistics`): A Statistics object to how Marabou performed
+        )pbdoc",
+        py::arg("inputQuery"), py::arg("options"), py::arg("redirect") = "");
+    m.def("saveQuery", &saveQuery, R"pbdoc(
+        Serializes the inputQuery in the given filename
+
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be saved
+            filename (str): Name of file to save query
+        )pbdoc",
+        py::arg("inputQuery"), py::arg("filename"));
+    m.def("loadQuery", &loadQuery, R"pbdoc(
+        Loads and returns a serialized InputQuery from the given filename
+
+        Args:
+            filename (str): Name of file to load into an InputQuery
+
+        Returns:
+            :class:`~maraboupy.MarabouCore.InputQuery`
+        )pbdoc",
+        py::arg("filename"));
+    m.def("addReluConstraint", &addReluConstraint, R"pbdoc(
+        Add a Relu constraint to the InputQuery
+
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
+            var1 (int): Input variable to Relu constraint
+            var2 (int): Output variable to Relu constraint
+        )pbdoc",
+        py::arg("inputQuery"), py::arg("var1"), py::arg("var2"));
+    m.def("addMaxConstraint", &addMaxConstraint, R"pbdoc(
+        Add a Max constraint to the InputQuery
+
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
+            elements (set of int): Input variables to max constraint
+            v (int): Output variable from max constraint
+        )pbdoc",
+        py::arg("inputQuery"), py::arg("elements"), py::arg("v"));
+    m.def("addAbsConstraint", &addAbsConstraint, R"pbdoc(
+        Add an Abs constraint to the InputQuery
+
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
+            b (int): Input variable
+            f (int): Output variable
+        )pbdoc",
+        py::arg("inputQuery"), py::arg("b"), py::arg("f"));
     py::class_<InputQuery>(m, "InputQuery")
         .def(py::init())
         .def("setUpperBound", &InputQuery::setUpperBound)
@@ -236,8 +294,7 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def("inputVariableByIndex", &InputQuery::inputVariableByIndex)
         .def("markInputVariable", &InputQuery::markInputVariable)
         .def("markOutputVariable", &InputQuery::markOutputVariable)
-        .def("outputVariableByIndex", &InputQuery::outputVariableByIndex)
-        .def("setNetworkLevelReasoner", &InputQuery::setNetworkLevelReasoner);
+        .def("outputVariableByIndex", &InputQuery::outputVariableByIndex);
     py::class_<MarabouOptions>(m, "Options")
         .def(py::init())
         .def_readwrite("_numWorkers", &MarabouOptions::_numWorkers)
@@ -248,19 +305,11 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_timeoutFactor", &MarabouOptions::_timeoutFactor)
         .def_readwrite("_verbosity", &MarabouOptions::_verbosity)
         .def_readwrite("_dnc", &MarabouOptions::_dnc);
-    py::class_<NetworkLevelReasoner, std::unique_ptr<NetworkLevelReasoner,py::nodelete>> nlr(m, "NetworkLevelReasoner");
-    nlr.def(py::init());
-    nlr.def("setNumberOfLayers", &NetworkLevelReasoner::setNumberOfLayers);
-    nlr.def("setLayerSize", &NetworkLevelReasoner::setLayerSize);
-    nlr.def("setNeuronActivationFunction", &NetworkLevelReasoner::setNeuronActivationFunction);
-    nlr.def("setBias", &NetworkLevelReasoner::setBias);
-    nlr.def("setWeight", &NetworkLevelReasoner::setWeight);
-    nlr.def("allocateMemoryByTopology", &NetworkLevelReasoner::allocateMemoryByTopology);
-    nlr.def("setWeightedSumVariable", &NetworkLevelReasoner::setWeightedSumVariable);
-    nlr.def("setActivationResultVariable", &NetworkLevelReasoner::setActivationResultVariable);
-    py::enum_<NetworkLevelReasoner::ActivationFunction>(nlr, "ActivationFunction")
-        .value("ReLU", NetworkLevelReasoner::ActivationFunction::ReLU)
-        .value("AbsoluteValue", NetworkLevelReasoner::ActivationFunction::AbsoluteValue)
+    py::enum_<PiecewiseLinearFunctionType>(m, "PiecewiseLinearFunctionType")
+        .value("ReLU", PiecewiseLinearFunctionType::RELU)
+        .value("AbsoluteValue", PiecewiseLinearFunctionType::ABSOLUTE_VALUE)
+        .value("Max", PiecewiseLinearFunctionType::MAX)
+        .value("Disjunction", PiecewiseLinearFunctionType::DISJUNCTION)
         .export_values();
     py::class_<Equation> eq(m, "Equation");
     eq.def(py::init());

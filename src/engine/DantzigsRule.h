@@ -18,6 +18,8 @@
 
 #include "EntrySelectionStrategy.h"
 
+#define DANTZIG_LOG( x, ... ) LOG( GlobalConfiguration::DANTZIGS_RULE_LOGGING, "DantzigsRule: %s\n", x )
+
 class String;
 
 class DantzigsRule : public EntrySelectionStrategy
@@ -30,8 +32,6 @@ public:
     bool select( ITableau &tableau,
                  const List<unsigned> &candidates,
                  const Set<unsigned> &excluded );
-
-    static void log( const String &message );
 };
 
 #endif // __DantzigsRule_h__

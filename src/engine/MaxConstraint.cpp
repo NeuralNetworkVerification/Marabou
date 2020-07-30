@@ -65,6 +65,11 @@ MaxConstraint::~MaxConstraint()
     _elements.clear();
 }
 
+PiecewiseLinearFunctionType MaxConstraint::getType() const
+{
+    return PiecewiseLinearFunctionType::MAX;
+}
+
 PiecewiseLinearConstraint *MaxConstraint::duplicateConstraint() const
 {
     MaxConstraint *clone = new MaxConstraint( _f, _elements );
@@ -265,18 +270,41 @@ bool MaxConstraint::satisfied() const
 void MaxConstraint::resetMaxIndex()
 {
     double maxValue = FloatUtils::negativeInfinity();
-    for ( auto element : _elements )
+    _maxIndexSet = false;
+
+    if ( _assignment.empty() ||
+         ( _assignment.size() == 1 && _assignment.begin()->first == _f ) )
     {
-        ASSERT( _assignment.exists( element ) );
-        double elementValue = _assignment.get( element );
-        if ( elementValue > maxValue )
-        {
-            maxValue = elementValue;
-            _maxIndex = element;
-        }
+        // If none of the variables has been assigned, the max index is
+        // not set
+        return;
     }
-	ASSERT( FloatUtils::isFinite( maxValue ) ); // || _elements.empty() );
-    _maxIndexSet = FloatUtils::isFinite( maxValue );
+    else
+    {
+        for ( auto element : _elements )
+        {
+            if ( _assignment.exists( element ) )
+            {
+                double elementValue = _assignment[element];
+
+                if ( !_maxIndexSet )
+                {
+                    _maxIndexSet = true;
+                    _maxIndex = element;
+                    maxValue = elementValue;
+                }
+                else if ( elementValue > maxValue )
+                {
+                    _maxIndex = element;
+                    maxValue = elementValue;
+                }
+            }
+        }
+
+        ASSERT( _maxIndexSet );
+    }
+
+    ASSERT( !_maxIndexSet || FloatUtils::isFinite( maxValue ) );
 }
 
 List<PiecewiseLinearConstraint::Fix> MaxConstraint::getPossibleFixes() const

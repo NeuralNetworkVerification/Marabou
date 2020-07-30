@@ -104,8 +104,6 @@ void CSRMatrix::initializeToEmpty( unsigned m, unsigned n )
 
 void CSRMatrix::increaseCapacity()
 {
-    ASSERT( _m > 0 && _n > 0 );
-
     unsigned estimatedNumRowEntries = std::max( 2U, _n / ROW_DENSITY_ESTIMATE );
     unsigned newEstimatedNnz = _estimatedNnz + ( estimatedNumRowEntries * _m );
 

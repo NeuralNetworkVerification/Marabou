@@ -76,6 +76,11 @@ ReluConstraint::ReluConstraint( const String &serializedRelu )
     setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
 }
 
+PiecewiseLinearFunctionType ReluConstraint::getType() const
+{
+    return PiecewiseLinearFunctionType::RELU;
+}
+
 PiecewiseLinearConstraint *ReluConstraint::duplicateConstraint() const
 {
     ReluConstraint *clone = new ReluConstraint( _b, _f );
@@ -852,6 +857,11 @@ unsigned ReluConstraint::getB() const
     return _b;
 }
 
+unsigned ReluConstraint::getF() const
+{
+    return _f;
+}
+
 ReluConstraint::PhaseStatus ReluConstraint::getPhaseStatus() const
 {
     return _phaseStatus;
@@ -896,6 +906,11 @@ void ReluConstraint::updateDirection()
 ReluConstraint::PhaseStatus ReluConstraint::getDirection() const
 {
     return _direction;
+}
+
+void ReluConstraint::updateScore()
+{
+    _score = std::abs( computePolarity() );
 }
 
 //
