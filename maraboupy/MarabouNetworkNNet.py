@@ -284,7 +284,6 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
         # Open the file we wish to write
         with open(file_name, 'w') as f2:
-
             #####################
             # First, we write the header lines:
             # The first line written is just a line of text
@@ -304,8 +303,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
             #     used during training
             # The ninth line begins the network weights and biases
             ####################
-            # f2.write("// The contents of this file are licensed under the Creative Commons\n")
-            # f2.write("// Attribution 4.0 International License: https://creativecommons.org/licenses/by/4.0/\n")
+
             f2.write("// Neural Network File Format by Kyle Julian, Stanford 2016\n")
             f2.write("// Network written to file by writeNNet() method of class MarabouNetworkNNet\n")
 

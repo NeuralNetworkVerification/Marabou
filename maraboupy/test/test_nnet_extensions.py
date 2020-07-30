@@ -3,6 +3,7 @@ import os
 from maraboupy.MarabouNetworkNNet import *
 from maraboupy import Marabou
 
+# Global settings
 TOL = 1e-8
 
 NETWORK_FOLDER = "../../resources/nnet/"
@@ -11,8 +12,10 @@ NETWORK_FILENAME = os.path.join(os.path.dirname(__file__), NETWORK_FOLDER, 'acas
 
 LAYER = 2
 
-
 def test_evaluate_network():
+    """
+    Test and compare different ways of evaluating nnet
+    """
     nnet_object = Marabou.read_nnet(filename=NETWORK_FILENAME)
 
     N = 10
@@ -38,7 +41,6 @@ def test_evaluate_network():
         assert (without_marabou_output_rounded == with_marabou_output_rounded).all()
 
         # Adding input and output normalization
-
         output1 = nnet_object.evaluateNNet(inputs, last_layer=-1, normalize_inputs=True,
                                            normalize_outputs=True, activate_output_layer=False)
 
@@ -46,21 +48,16 @@ def test_evaluate_network():
 
         assert (output1 == output2).all()
 
-
         # Compare direct evaluation to evaluating to a certain layer, and then from that layer onward
-
         layer_output = nnet_object.evaluateNNet(inputs, last_layer=LAYER, normalize_inputs=False,
                                                 normalize_outputs=False, activate_output_layer=True)
         output1 = nnet_object.evaluateNNet(layer_output, first_layer=LAYER)
 
         output2 = nnet_object.evaluateNNet(inputs, normalize_inputs=False, normalize_outputs=False)
 
-
         assert (output1 == output2).all()
 
-
         # Same with input and output normalization
-
         layer_output = nnet_object.evaluateNNet(inputs, last_layer=LAYER, normalize_inputs=True,
                                                 normalize_outputs=False, activate_output_layer=True)
         output1 = nnet_object.evaluateNNet(layer_output, first_layer=LAYER, normalize_outputs=True)
@@ -69,8 +66,11 @@ def test_evaluate_network():
 
         assert (output1 == output2).all()
 
-
 def test_write_read_evaluate(tmpdir):
+    """
+    Test writeNNet by writing an nnet into a file, reading from that file, and comparing by evaluating on
+    random inputs.
+    """
     output_filename = tmpdir.mkdir("output_network").join("ACASXU_experimental_v2a_1_9_output.nnet").strpath
 
     nnet_object = Marabou.read_nnet(filename=NETWORK_FILENAME)
@@ -95,18 +95,16 @@ def test_write_read_evaluate(tmpdir):
         assert (abs(without_marabou_output - with_marabou_output) < TOL).all()
 
         # Adding input and output normalization
-
         output1 = nnet_object.evaluateNNet(inputs, normalize_inputs=True, normalize_outputs=True)
         output2 = nnet_object_a.evaluateNNet(inputs, normalize_inputs=True, normalize_outputs=True)
         assert (output1 == output2).all()
 
-
 def test_normalize_read_flag(tmpdir):
-    '''
+    """
     Similar tests to those in test_write_read_evaluate(), but turns normalize flag on when creating the
     MarabouNetworkNNet objects.
     Note that in this case inputs and outputs need to be normalized.
-    '''
+    """
     output_filename = tmpdir.mkdir("output_network").join("ACASXU_experimental_v2a_1_9_output.nnet").strpath
 
     nnet_object = Marabou.read_nnet(filename=NETWORK_FILENAME, normalize=True)
@@ -128,12 +126,10 @@ def test_normalize_read_flag(tmpdir):
         with_marabou_output = nnet_object_a.evaluate(np.array([inputs]), useMarabou=True).flatten()
         assert (abs(without_marabou_output - with_marabou_output) < TOL).all()
 
-
 def test_reset_network():
-    '''
-    Tests resetNetworkFromParameters()
-    :return:
-    '''
+    """
+    Test resetNetworkFromParameters()
+    """
     nnet_object1 = Marabou.read_nnet(filename=NETWORK_FILENAME)
     nnet_object2 = MarabouNetworkNNet()
 
@@ -176,7 +172,6 @@ def test_reset_network():
         output2_norm = nnet_object2.evaluateNNet(inputs, normalize_inputs=True, normalize_outputs=True)
         assert (abs(output1_norm - output2_norm) < TOL).all()
 
-
         without_marabou_output1 = nnet_object1.evaluate(np.array([inputs]), useMarabou=False).flatten()
         with_marabou_output1 = nnet_object1.evaluate(np.array([inputs]), useMarabou=True).flatten()
         without_marabou_output2 = nnet_object2.evaluate(np.array([inputs]), useMarabou=False).flatten()
@@ -188,6 +183,9 @@ def test_reset_network():
         assert (abs(output1_norm - with_marabou_output2) < TOL).all()
 
 def test_bound_getters():
+    """
+    Test getVariable, getLowerBound, getUpperBound
+    """
     nnet_object = Marabou.read_nnet(filename=NETWORK_FILENAME, normalize=False)
 
     ipq = nnet_object.getMarabouQuery()
