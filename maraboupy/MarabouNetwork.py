@@ -16,6 +16,7 @@ MarabouNetwork defines an abstract class that represents neural networks with pi
 
 from maraboupy import MarabouCore
 from maraboupy import MarabouUtils
+
 import numpy as np
 
 class MarabouNetwork:
@@ -352,3 +353,4 @@ class MarabouNetwork:
         outNotMar = self.evaluate(inputValues, useMarabou=False, options=options, filename=filename)
         err = np.abs(outMar - outNotMar)
         return err
+
