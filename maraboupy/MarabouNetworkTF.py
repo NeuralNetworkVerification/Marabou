@@ -1,17 +1,17 @@
 '''
-/* *******************                                                        */
-/*! \file MarabouNetworkTF.py
- ** \verbatim
- ** Top contributors (to current version):
- **   Kyle Julian, Christopher Lazarus, Shantanu Thakoor, Chelsea Sidrane
- ** This file is part of the Marabou project.
- ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
- ** in the top-level source directory) and their institutional affiliations.
- ** All rights reserved. See the file COPYING in the top-level source
- ** directory for licensing information.\endverbatim
- **
- ** \brief This file reads tensorflow networks to create Marabou equations and constraints
- **/
+Top contributors (to current version):
+    - Kyle Julian
+    - Christopher Lazarus
+    - Shantanu Thakoor
+    - Chelsea Sidrane
+    
+This file is part of the Marabou project.
+Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+in the top-level source directory) and their institutional affiliations.
+All rights reserved. See the file COPYING in the top-level source
+directory for licensing information.
+
+MarabouNetworkTF represents neural networks with piecewise linear constraints derived from tensorflow formats
 '''
 
 import numpy as np
@@ -38,27 +38,23 @@ except:
     pass
 
 class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
-    def __init__(self, filename, inputNames=None, outputName=None, modelType="frozen", savedModelTags=[]):
-        """
-        Constructs a MarabouNetworkTF object from a frozen Tensorflow protobuf or SavedModel
+    """Constructs a MarabouNetworkTF object from a frozen Tensorflow protobuf or SavedModel
 
-        Args:
-            filename: (string) If savedModel is false, path to the frozen graph .pb file.
-                               If savedModel is true, path to SavedModel folder, which
-                               contains .pb file and variables subdirectory.
-            inputName: (string) optional, name of operation corresponding to input.
-            outputName: (string) optional, name of operation corresponding to output.
-            modelType: (string) optional, type of model to read. The default is "frozen" for a frozen graph.
-                                Can also use "savedModel_v1" or "savedModel_v2" for the SavedModel format
-                                created from either tensorflow versions 1.X or 2.X respectively.
-            savedModelTags: (list of strings) If loading a SavedModel, the user must specify tags used.
-        """
+    Args:
+        filename (str): Path to tensorflow network
+        inputNames (list of str, optional): List of operation names corresponding to inputs
+        outputName (str, optional): Name of operation corresponding to output
+        modelType (str, optional): Type of model to read. The default is "frozen" for a frozen graph.
+                            Can also use "savedModel_v1" or "savedModel_v2" for the SavedModel format
+                            created from either tensorflow versions 1.X or 2.X respectively.
+        savedModelTags (list of str, optional): If loading a SavedModel, the user must specify tags used, default is []
+    """
+    def __init__(self, filename, inputNames=None, outputName=None, modelType="frozen", savedModelTags=[]):
         super().__init__()
         self.readTF(filename, inputNames, outputName, modelType, savedModelTags)
 
     def clear(self):
-        """
-        Reset values to represent empty network
+        """Reset values to represent empty network
         """
         super().clear()
         self.madeGraphEquations = []
@@ -70,19 +66,16 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         self.sess = None
 
     def readTF(self, filename, inputNames, outputName, modelType, savedModelTags):
-        """
-        Constructs a MarabouNetworkTF object from a frozen Tensorflow protobuf or SavedModel
+        """Read a tensorflow file to create a MarabouNetworkTF object
 
         Args:
-            filename: (string) If savedModel is false, path to the frozen graph .pb file.
-                               If savedModel is true, path to SavedModel folder, which
-                               contains .pb file and variables subdirectory.
-            inputName: (string) optional, name of operation corresponding to input.
-            outputName: (string) optional, name of operation corresponding to output.
-            modelType: (string) optional, type of model to read, such as "frozen" for a frozen graph.
+            filename (str): Path to tensorflow network
+            inputNames (list of str, optional): List of operation names corresponding to inputs
+            outputName (str, optional): Name of operation corresponding to output
+            modelType (str, optional): Type of model to read. The default is "frozen" for a frozen graph.
                                 Can also use "savedModel_v1" or "savedModel_v2" for the SavedModel format
                                 created from either tensorflow versions 1.X or 2.X respectively.
-            savedModelTags: (list of strings) If loading a SavedModel, the user must specify tags used.
+            savedModelTags (list of str, optional): If loading a SavedModel, the user must specify tags used, default is []
         """
         # Read tensorflow model
         if modelType == "frozen":
@@ -190,13 +183,16 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         self.reassignOutputVariables()
 
     def findPlaceholders(self, op, returnOps):
-        """
-        Function that recursively finds the placeholder operations that contribute to a given operation
-        Arguments:
+        """Function that recursively finds the placeholder operations that contribute to a given operation
+
+        Args:
             op: (tf.op) representing operation in network
             returnOps (list of tf.op) Placehoder operartions already found
+
         Returns:
             returnOps (list of tf.op) Placehoder operartions found so far
+
+        :meta private:
         """
         if op in returnOps:
             return returnOps
@@ -209,10 +205,12 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         return returnOps
     
     def setInputOps(self, ops):
-        """
-        Function to set input operations
-        Arguments:
+        """Function to set input operations
+
+        Args:
             ops: (list of tf.op) list representing input operations
+
+        :meta private:
         """
         self.inputVars = []
         self.inputShapes = []
@@ -226,10 +224,12 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         self.inputOps = ops
 
     def setOutputOp(self, op):
-        """
-        Function to set output operation
-        Arguments:
+        """Function to set output operation
+
+        Args:
             op: (tf.op) representing output operation
+
+        :meta private:
         """
         shape = op.outputs[0].shape.as_list()
         if shape[0] == None:
@@ -238,12 +238,14 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         self.outputOp = op
 
     def makeNewVariables(self, x):
-        """
-        Function to find variables corresponding to operation
-        Arguments:
+        """Function to find variables corresponding to operation
+
+        Args:
             x: (tf.op) the operation to find variables for
         Returns:
             v: (np array) of variable numbers, in same shape as x
+
+        :meta private:
         """
         # Find number and shape of new variables representing output of given operation
         shape = [a if a is not None else 1 for a in x.outputs[0].get_shape().as_list()]
@@ -256,25 +258,31 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         return v
 
     def getValues(self, op):
-        """
-        Function to find underlying constants or variables representing operation
-        Arguments:
+        """Function to find underlying constants or variables representing operation
+
+        Args:
             op: (tf.op) operation to find values for
+
         Returns:
             values: (np array) scalars or variable numbers representing the operation
             isVar: (bool) true if the operation is represented by variables
+
+        :meta private:
         """
         if op in self.varMap:
             return self.varMap[op], True
         return self.constantMap[op], False
 
     def isVariable(self, op):
-        """
-        Function returning whether operation represents variable or constant
-        Arguments:
+        """Function returning whether operation represents variable or constant
+
+        Args:
             op: (tf.op) representing operation in network
+
         Returns:
             isVariable: (bool) true if variable, false if constant
+
+        :meta private:
         """
         if op.node_def.op == 'Const' or op in self.constantMap:
             return False
@@ -283,38 +291,46 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         return any([self.isVariable(i.op) for i in op.inputs])
 
     def identity(self, op):
-        """
-        Function handling identity operation, performed on variables
-        Arguments:
+        """Function handling identity operation, performed on variables
+
+        Args:
             op: (tf.op) identity operation
+
+        :meta private:
         """
         self.varMap[op] = self.varMap[op.inputs[0].op]
         
     def reshape(self, op):
-        """
-        Function handling reshape operation, performed on variables
-        Arguments:
+        """Function handling reshape operation, performed on variables
+
+        Args:
             op: (tf.op) reshape operation
+
+        :meta private:
         """
         variables = self.varMap[op.inputs[0].op]
         shape = self.constantMap[op.inputs[1].op]
         self.varMap[op] = variables.reshape(shape)
         
     def transpose(self, op):
-        """
-        Function handling transpose operation, performed on variables
-        Arguments:
+        """Function handling transpose operation, performed on variables
+
+        Args:
             op: (tf.op) transpose operation
+
+        :meta private:
         """
         variables = self.varMap[op.inputs[0].op]
         perm = self.constantMap[op.inputs[1].op]
         self.varMap[op] = np.transpose(variables, perm)
         
     def concat(self, op):
-        """
-        Function handling concat operation, performed on variables
-        Arguments:
+        """Function handling concat operation, performed on variables
+
+        Args:
             op: (tf.op) concat operation
+
+        :meta private:
         """
         input1 = self.varMap[op.inputs[0].op]
         input2 = self.varMap[op.inputs[1].op]
@@ -322,10 +338,12 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         self.varMap[op] = np.concatenate([input1, input2], axis=axis)
         
     def matMulEquations(self, op):
-        """
-        Function to generate equations corresponding to matrix multiplication
-        Arguments:
+        """Function to generate equations corresponding to matrix multiplication
+
+        Args:
             op: (tf.op) representing matrix multiplication operation
+
+        :meta private:
         """
         # Get variables and constants of inputs
         assert len(op.inputs) == 2
@@ -368,18 +386,23 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
                 self.addEquation(e)
                 
     def getScalars(self, op, outputVars):
-        """
+        """Get scalar values
+        
         This helper function determines if MatMul of Conv2D equations can be combined with a subsequent
         addition or subtraction operation. If so, this function returns a scalar array, as well as
         the sign used for the matmul variables and scalar constants. If combining MatMul/Conv2D with
         addition fails, this returns values so that MatMul or Conv2D equations are unaffected.
-        Arguments:
+
+        Args:
             op: (tf.op) representing conv2D operation
             outputVars: (np array) output variables from MatMul/Conv2D
+
         Returns:
             scalars (np array) array of scalar values to be used with MatMul/Conv2D
             sgnVar (int) sign for input variables to MatMul/Conv2D
             sgnScalar (int) sign for scalars to MatMul/Conv2D
+
+        :meta private:
         """
         # If the given operation is the output operation, don't add any scalars
         if op == self.outputOp:
@@ -440,10 +463,12 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         return scalars, sgnVar, sgnScalar
             
     def addEquations(self, op):
-        """
-        Function to generate equations corresponding to all types of add/subtraction operations
-        Arguments:
+        """Function to generate equations corresponding to all types of add/subtraction operations
+
+        Args:
             op: (tf.op) representing addition or subtraction operations
+
+        :meta private:
         """
         # We may have included the add equation with a prior matmul equation
         if op in self.varMap:
@@ -509,10 +534,12 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
                 self.addEquation(e)
 
     def mulEquations(self, op):
-        """
-        Function to generate equations corresponding to multiply and divide operations
-        Arguments:
+        """Function to generate equations corresponding to multiply and divide operations
+
+        Args:
             op: (tf.op) representing an element-wise multiply or divide operation
+
+        :meta private:
         """
         # Get inputs and outputs
         assert len(op.inputs) == 2
@@ -562,10 +589,12 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
                 self.addEquation(e)
         
     def conv2DEquations(self, op):
-        """
-        Function to generate equations corresponding to 2D convolution operation
-        Arguments:
+        """Function to generate equations corresponding to 2D convolution operation
+
+        Args:
             op: (tf.op) representing conv2D operation
+
+        :meta private:
         """
 
         # Get input variables and constants
@@ -654,10 +683,12 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
                             self.addEquation(e)
 
     def reluEquations(self, op):
-        """
-        Function to generate equations corresponding to pointwise Relu
-        Arguments:
+        """Function to generate equations corresponding to pointwise Relu
+
+        Args:
             op: (tf.op) representing Relu operation
+
+        :meta private:
         """
         # Get input and output variables
         assert len(op.inputs) == 1
@@ -671,10 +702,12 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             self.setLowerBound(outVar, 0.0)
 
     def maxpoolEquations(self, op):
-        """
-        Function to generate maxpooling equations
-        Arguments:
+        """Function to generate maxpooling equations
+
+        Args:
             op: (tf.op) representing maxpool operation
+
+        :meta private:
         """
         # Get input and output variables
         assert len(op.inputs) == 1
@@ -748,16 +781,18 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
                             self.addMaxConstraint(maxVars, outputVars[n][k][i][j])
                     
     def reassignVariable(self, var, numInVars, outVars, newOutVars):
-        """
-        This function computes what the given variable should be when the output variables are 
-        moved to come after the input variables
-        Arguments:
+        """ Reassign variable number so output variables follow input variables
+
+        Args:
             var: (int) Original variable number
             numInVars: (int) Number of input variables
             outVars: (array of int) Original output variables
             newOutVars: (array of int) New output variables
+
         Returns:
             (int) New variable assignment
+
+        :meta private:
         """
         # Do not change input variables
         if var < numInVars:
@@ -772,9 +807,12 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         return var + newOutVars.size - np.sum([outVar < var for outVar in outVars])
     
     def reassignOutputVariables(self):
-        """
+        """Reassign all variables so that output variables follow input variables
+
         Other input parsers assign output variables after input variables and before any intermediate variables.
         This function reassigns the numbers for the output variables and shifts all other variables up to make space.
+
+        :meta private:
         """
         outVars = self.outputVars.flatten()
         numInVars = np.sum([inVar.size for inVar in self.inputVars])
@@ -824,10 +862,12 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         self.varMap[self.outputOp] = self.outputVars 
         
     def makeEquations(self, op):
-        """
-        Function to generate equations corresponding to given operation
-        Arguments:
+        """Function to generate equations corresponding to given operation
+
+        Args:
             op: (tf.op) for which to generate equations
+
+        :meta private:
         """
         # These operations do not create new equations, but manipulate the output from previous equations
         if op.node_def.op == "Identity":
@@ -860,10 +900,12 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             raise NotImplementedError("Operation %s not implemented" % (op.node_def.op))
 
     def buildEquations(self, op):
-        """
-        Function that searches the graph recursively and builds equations necessary to calculate op
-        Arguments:
+        """Function that searches the graph recursively and builds equations necessary to calculate op
+
+        Args:
             op: (tf.op) representing operation until which we want to generate equations
+
+        :meta private:
         """
         # No need to make more equations if we've already seen this operation
         if op in self.madeGraphEquations:
@@ -892,10 +934,11 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         self.makeEquations(op)
 
     def evaluateWithoutMarabou(self, inputValues):
-        """
-        Function to evaluate network at a given point using Tensorflow
-        Arguments:
+        """Function to evaluate network at a given point using Tensorflow
+
+        Args:
             inputValues: (list of np arrays) representing inputs to network
+
         Returns:
             outputValues: (np array) representing output of network
         """
