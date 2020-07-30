@@ -1219,6 +1219,17 @@ void Engine::reportPlViolation()
     _smtCore.reportViolatedConstraint( _plConstraintToFix );
 }
 
+void Engine::storeTableauState( TableauState &state ) const
+{
+    _tableau->storeState( state );
+}
+
+void Engine::restoreTableauState( const TableauState &state )
+{
+    ENGINE_LOG( "\tRestoring tableau state" );
+    _tableau->restoreState( state );
+}
+
 void Engine::storeState( EngineState &state, bool storeAlsoTableauState ) const
 {
     if ( storeAlsoTableauState )
@@ -1552,7 +1563,7 @@ bool Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
         String constraintString;
         constraint->dump( constraintString );
         ENGINE_LOG( Stringf( "A constraint has become valid. Dumping constraint: %s",
-                      constraintString.ascii() ).ascii() );
+                             constraintString.ascii() ).ascii() );
 
         constraint->setActiveConstraint( false );
         PiecewiseLinearCaseSplit validSplit = constraint->getValidCaseSplit();

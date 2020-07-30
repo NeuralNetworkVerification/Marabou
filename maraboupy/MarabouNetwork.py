@@ -11,7 +11,7 @@ in the top-level source directory) and their institutional affiliations.
 All rights reserved. See the file COPYING in the top-level source
 directory for licensing information.
 
-MarabouNetwork defines an abstract class to represent neural networks with piecewise linear constraints
+MarabouNetwork defines an abstract class that represents neural networks with piecewise linear constraints
 '''
 
 from maraboupy import MarabouCore
@@ -27,6 +27,7 @@ class MarabouNetwork:
         equList (list of :class:`~maraboupy.MarabouUtils.Equation`): Network equations
         reluList (list of tuples): List of relu constraint tuples, where each tuple contains the backward and forward variables
         maxList (list of tuples): List of max constraint tuples, where each tuple conatins the set of input variables and output variable
+        absList (list of tuples): List of abs constraint tuples, where each tuple conatins the input variable and the output variable
         varsParticipatingInConstraints (set of int): Variables involved in some constraint
         lowerBounds (Dict[int, float]): Lower bounds of variables
         upperBounds (Dict[int, float]): Upper bounds of variables
@@ -45,6 +46,7 @@ class MarabouNetwork:
         self.equList = []
         self.reluList = []
         self.maxList = []
+        self.absList = []
         self.varsParticipatingInConstraints = set()
         self.lowerBounds = dict()
         self.upperBounds = dict()
@@ -110,6 +112,17 @@ class MarabouNetwork:
         self.varsParticipatingInConstraints.add(v)
         for i in elements:
             self.varsParticipatingInConstraints.add(i)
+
+    def addAbsConstraint(self, b, f):
+        """Function to add a new Abs constraint
+
+        Args:
+            b (int): Variable representing input of the Abs constraint
+            f (int): Variable representing output of the Abs constraint
+        """
+        self.absList += [(b, f)]
+        self.varsParticipatingInConstraints.add(b)
+        self.varsParticipatingInConstraints.add(f)
 
     def lowerBoundExists(self, x):
         """Function to check whether lower bound for a variable is known
@@ -210,6 +223,9 @@ class MarabouNetwork:
                 assert e < self.numVars
             MarabouCore.addMaxConstraint(ipq, m[0], m[1])
 
+        for b, f in self.absList:
+            MarabouCore.addAbsConstraint(ipq, b, f)
+
         for l in self.lowerBounds:
             assert l < self.numVars
             ipq.setLowerBound(l, self.lowerBounds[l])
@@ -271,7 +287,7 @@ class MarabouNetwork:
             options (:class:`~maraboupy.MarabouCore.Options`): Object for specifying Marabou options, defaults to None
 
         Returns:
-            (np array): Values representing the output of the network
+            (np array): Values representing the output of the network or None if system is UNSAT
         """
         # Make sure inputValues is a list of np arrays and not list of lists
         inputValues = [np.array(inVal) for inVal in inputValues]
@@ -294,6 +310,11 @@ class MarabouNetwork:
         if options == None:
             options = MarabouCore.Options()
         outputDict, _ = MarabouCore.solve(ipq, options, filename)
+
+        # When the query is UNSAT an empty dictionary is returned
+        if outputDict == {}:
+            return None
+
         outputValues = outputVars.reshape(-1).astype(np.float64)
         for i in range(len(outputValues)):
             outputValues[i] = outputDict[outputValues[i]]
@@ -310,7 +331,7 @@ class MarabouNetwork:
             filename (str): Path to redirect output if using Marabou solver, defaults to "evaluateWithMarabou.log"
 
         Returns:
-            (np array): Values representing the output of the network
+            (np array): Values representing the output of the network or None if output cannot be computed
         """
         if useMarabou:
             return self.evaluateWithMarabou(inputValues, filename=filename, options=options)

@@ -439,6 +439,13 @@ bool Preprocessor::processConstraints()
                                        GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD ) )
                 _preprocessed.setUpperBound( tightening._variable,
                                              _preprocessed.getLowerBound( tightening._variable ) );
+
+            if ( FloatUtils::gt( _preprocessed.getLowerBound( tightening._variable ),
+                                 _preprocessed.getUpperBound( tightening._variable ),
+                                 GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD ) )
+            {
+                throw InfeasibleQueryException();
+            }
 		}
 	}
 
@@ -472,8 +479,7 @@ bool Preprocessor::processIdenticalVariables()
 
         ASSERT( term1._variable != term2._variable );
 
-        // The equation matches the pattern, process and remove it
-        found = true;
+        // The equation matches the pattern, extract the variables
         unsigned v1 = term1._variable;
         unsigned v2 = term2._variable;
 
@@ -484,6 +490,9 @@ bool Preprocessor::processIdenticalVariables()
             ++equation;
             continue;
         }
+
+        // This equation can be removed
+        found = true;
 
         double bestLowerBound =
             _preprocessed.getLowerBound( v1 ) > _preprocessed.getLowerBound( v2 ) ?
@@ -527,12 +536,9 @@ void Preprocessor::collectFixedValues()
         usedVariables.insert( merged.first );
 
     // Collect any variables with identical lower and upper bounds, or
-    // which are unused, unless they are input/output variables
+    // which are unused
 	for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
 	{
-        if ( _inputOutputVariables.exists( i ) )
-            continue;
-
         if ( FloatUtils::areEqual( _preprocessed.getLowerBound( i ), _preprocessed.getUpperBound( i ) ) )
         {
             _fixedVariables[i] = _preprocessed.getLowerBound( i );
@@ -611,19 +617,30 @@ void Preprocessor::eliminateVariables()
         }
     }
 
-    // Inform the NLR about eliminated varibales
-    if ( _preprocessed._networkLevelReasoner )
-    {
-        for ( const auto &fixed : _fixedVariables )
-            _preprocessed._networkLevelReasoner->eliminateVariable( fixed.first, fixed.second );
-    }
+    // Inform the NLR about eliminated varibales, unless they are
+    // input/output variables
+	if ( _preprocessed._networkLevelReasoner )
+	{
+		for ( const auto &fixed : _fixedVariables )
+		{
+			if ( _inputOutputVariables.exists( fixed.first ) )
+				continue;
+
+			_preprocessed._networkLevelReasoner->eliminateVariable( fixed.first, fixed.second );
+		}
+	}
 
     // Compute the new variable indices, after the elimination of fixed variables
  	int offset = 0;
+    unsigned numEliminated = 0;
 	for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
 	{
-        if ( _fixedVariables.exists( i ) || _mergedVariables.exists( i ) )
+        if ( ( _fixedVariables.exists( i ) || _mergedVariables.exists( i ) ) &&
+			 !_inputOutputVariables.exists( i ) )
+        {
+            ++numEliminated;
             ++offset;
+        }
         else
             _oldIndexToNewIndex[i] = i - offset;
 	}
@@ -718,7 +735,8 @@ void Preprocessor::eliminateVariables()
     // Update the lower/upper bound maps
     for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
 	{
-        if ( _fixedVariables.exists( i ) || _mergedVariables.exists( i ) )
+        if ( ( _fixedVariables.exists( i ) || _mergedVariables.exists( i ) ) &&
+			 !_inputOutputVariables.exists( i ) )
             continue;
 
         ASSERT( _oldIndexToNewIndex.at( i ) <= i );
@@ -746,7 +764,7 @@ void Preprocessor::eliminateVariables()
     }
 
     // Adjust the number of variables in the query
-    _preprocessed.setNumberOfVariables( _preprocessed.getNumberOfVariables() - _fixedVariables.size() - _mergedVariables.size() );
+    _preprocessed.setNumberOfVariables( _preprocessed.getNumberOfVariables() - numEliminated );
 
     // Adjust the input/output mappings in the query
     _preprocessed.adjustInputOutputMapping( _oldIndexToNewIndex, _mergedVariables );
