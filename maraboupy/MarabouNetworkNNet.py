@@ -589,12 +589,12 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         and layer last_layer (output layer by default)
 
         Args:
-            inputs: (list of float):         Network inputs to be evaluated
-            first_layer:  (int):              The initial layer of the evaluation
-            last_layer: (int):                The last layer of the evaluation
-            normalize_inputs: (bool):         If True and first_layer==0, normalization of inputs is performed
-            normalize_outputs: (bool):        If True, normalization of output is undone
-            activate_output_layer: (bool):    If True, the last layer is activated, otherwise it is not.
+            inputs (list of float):         Network inputs to be evaluated
+            first_layer  (int):              The initial layer of the evaluation
+            last_layer (int):                The last layer of the evaluation
+            normalize_inputs (bool):         If True and first_layer==0, normalization of inputs is performed
+            normalize_outputs (bool):        If True, normalization of output is undone
+            activate_output_layer (bool):    If True, the last layer is activated, otherwise it is not.
 
         Returns:
             (list of float): the result of the evaluation
