@@ -180,7 +180,11 @@ bool Engine::solve( unsigned timeoutInSeconds )
             }
 
             if ( _tableau->basisMatrixAvailable() )
+            {
                 explicitBasisBoundTightening();
+                applyAllBoundTightenings();
+                applyAllValidConstraintCaseSplits();
+            }
 
             if ( splitJustPerformed )
             {
