@@ -11,6 +11,7 @@ add_system_test(lp)
 add_system_test(max)
 add_system_test(mps)
 add_system_test(relu)
+add_system_test(sign)
 add_system_test(Disjunction)
 add_system_test(AbsoluteValue)
 
