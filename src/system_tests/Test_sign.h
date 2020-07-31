@@ -16,8 +16,8 @@
 #include <cxxtest/TestSuite.h>
 
 #include "Engine.h"
-#include "InputQuery.h"
 #include "FloatUtils.h"
+#include "InputQuery.h"
 #include "SignConstraint.h"
 
 class SignTestSuite : public CxxTest::TestSuite
@@ -31,7 +31,6 @@ public:
     {
     }
 
-    // similar to test_relu_2, with unSAT result required
     void test_sign_1()
     {
         InputQuery inputQuery;
@@ -69,10 +68,10 @@ public:
         // x5 = x2 + x4
         inputQuery.addEquation( equation3 );
 
-        //  x2 = sign (x1)
+        // x2 = sign (x1)
         SignConstraint *sign1 = new SignConstraint( 1, 2 );
 
-        //  x4 = sign (x3)
+        // x4 = sign (x3)
         SignConstraint *sign2 = new SignConstraint( 3, 4 );
 
         inputQuery.addPiecewiseLinearConstraint( sign1 );
@@ -80,13 +79,10 @@ public:
 
         Engine engine;
 
-        // should return 'false' = unSAT
+        // should return 'false' = UNSAT
         TS_ASSERT( !engine.processInputQuery( inputQuery ) );
-
-//        TS_ASSERT( !engine.solve() );
     }
 
-    // similar to test_relu_2, only now its SAT
     void test_sign_2()
     {
         InputQuery inputQuery;
@@ -135,9 +131,9 @@ public:
 
         Engine engine;
 
-        TS_ASSERT(engine.processInputQuery( inputQuery ) );
+        TS_ASSERT( engine.processInputQuery( inputQuery ) );
 
-        TS_ASSERT(engine.solve() );
+        TS_ASSERT( engine.solve() );
 
         engine.extractSolution( inputQuery );
 
@@ -159,36 +155,36 @@ public:
             correctSolution = false;
 
         // if x1>= 0 -> we want x2 = 1
-        if (!FloatUtils::lt(value_x1, 0))
+        if ( !FloatUtils::lt( value_x1, 0 ) )
         {
-            if (!FloatUtils::areEqual( value_x2, 1 ))
+            if ( !FloatUtils::areEqual( value_x2, 1 ) )
             {
                 correctSolution = false;
             }
         }
 
         // if x1< 0 -> we want x2 = - 1
-        if (FloatUtils::lt(value_x1, 0))
+        if ( FloatUtils::lt( value_x1, 0 ) )
         {
-            if (!FloatUtils::areEqual( value_x2, -1 ))
+            if ( !FloatUtils::areEqual( value_x2, -1 ) )
             {
                 correctSolution = false;
             }
         }
 
         // if x3>= 0 -> we want x4 = 1
-        if (!FloatUtils::lt(value_x3, 0))
+        if ( !FloatUtils::lt( value_x3, 0 ) )
         {
-            if (!FloatUtils::areEqual( value_x4, 1 ))
+            if ( !FloatUtils::areEqual( value_x4, 1 ) )
             {
                 correctSolution = false;
             }
         }
 
         // if x3< 0 -> we want x4 = - 1
-        if (FloatUtils::lt(value_x3, 0))
+        if ( FloatUtils::lt( value_x3, 0 ) )
         {
-            if (!FloatUtils::areEqual( value_x4, -1 ))
+            if ( !FloatUtils::areEqual( value_x4, -1 ) )
             {
                 correctSolution = false;
             }
@@ -302,10 +298,9 @@ public:
         inputQuery.addEquation( equation7 );
 
         Engine engine;
-        // should return 'false' = unSAT
+        // should return 'false' = UNSAT
 
         TS_ASSERT( !engine.processInputQuery( inputQuery ) );
-//        TS_ASSERT( !engine.solve() );
     }
 
     // more advanced BNN
@@ -402,10 +397,8 @@ public:
 
         Engine engine;
 
-        // should return 'false' = unSAT
+        // should return 'false' = UNSAT
         TS_ASSERT( !engine.processInputQuery( inputQuery ) );
-
-//        TS_ASSERT( !engine.solve() );
     }
 
     void test_sign_5()
@@ -502,7 +495,7 @@ public:
         Engine engine;
 
         // should return SAT
-        TS_ASSERT(engine.processInputQuery( inputQuery ) );
+        TS_ASSERT( engine.processInputQuery( inputQuery ) );
         TS_ASSERT( engine.solve() );
 
         engine.extractSolution( inputQuery );
@@ -562,18 +555,18 @@ public:
         // check 3rd layer
         // we want x7 = sign(x4)
         // if x4>= 0 -> we want x7 = 1
-        if (!FloatUtils::lt(value_x4, 0))
+        if ( !FloatUtils::lt( value_x4, 0 ) )
         {
-            if (!FloatUtils::areEqual( value_x7, 1 ))
+            if ( !FloatUtils::areEqual( value_x7, 1 ) )
             {
                 correctSolution = false;
             }
         }
 
         // if x4< 0 -> we want x7 = - 1
-        if (FloatUtils::lt(value_x4, 0))
+        if ( FloatUtils::lt( value_x4, 0 ) )
         {
-            if (!FloatUtils::areEqual( value_x7, -1 ))
+            if ( !FloatUtils::areEqual( value_x7, -1 ) )
             {
                 correctSolution = false;
             }
@@ -581,18 +574,18 @@ public:
 
         // we want x8 = sign(x5)
         // if x5>= 0 -> we want x8 = 1
-        if (!FloatUtils::lt(value_x5, 0))
+        if ( !FloatUtils::lt( value_x5, 0 ) )
         {
-            if (!FloatUtils::areEqual( value_x8, 1 ))
+            if ( !FloatUtils::areEqual( value_x8, 1 ) )
             {
                 correctSolution = false;
             }
         }
 
         // if x5< 0 -> we want x8 = - 1
-        if (FloatUtils::lt(value_x5, 0))
+        if ( FloatUtils::lt( value_x5, 0 ) )
         {
-            if (!FloatUtils::areEqual( value_x8, -1 ))
+            if ( !FloatUtils::areEqual( value_x8, -1 ) )
             {
                 correctSolution = false;
             }
@@ -600,18 +593,18 @@ public:
 
         // we want x9 = sign(x6)
         // if x6>= 0 -> we want x9 = 1
-        if (!FloatUtils::lt(value_x6, 0))
+        if ( !FloatUtils::lt( value_x6, 0 ) )
         {
-            if (!FloatUtils::areEqual( value_x9, 1 ))
+            if ( !FloatUtils::areEqual( value_x9, 1 ) )
             {
                 correctSolution = false;
             }
         }
 
         // if x6< 0 -> we want x9 = - 1
-        if (FloatUtils::lt(value_x6, 0))
+        if ( FloatUtils::lt( value_x6, 0 ) )
         {
-            if (!FloatUtils::areEqual( value_x9, -1 ))
+            if ( !FloatUtils::areEqual( value_x9, -1 ) )
             {
                 correctSolution = false;
             }
@@ -721,7 +714,7 @@ public:
         // should return SAT
         Engine engine;
 
-        TS_ASSERT(engine.processInputQuery( inputQuery ) );
+        TS_ASSERT( engine.processInputQuery( inputQuery ) );
         TS_ASSERT( engine.solve() );
 
         engine.extractSolution( inputQuery );
@@ -781,18 +774,18 @@ public:
         // check 3rd layer
         // want x7 = sign(x4)
         // if x4>= 0 -> we want x7 = 1
-        if (!FloatUtils::lt(value_x4, 0))
+        if ( !FloatUtils::lt( value_x4, 0 ) )
         {
-            if (!FloatUtils::areEqual( value_x7, 1 ))
+            if ( !FloatUtils::areEqual( value_x7, 1 ) )
             {
                 correctSolution = false;
             }
         }
 
         // if x4< 0 -> we want x7 = - 1
-        if (FloatUtils::lt(value_x4, 0))
+        if ( FloatUtils::lt( value_x4, 0 ) )
         {
-            if (!FloatUtils::areEqual( value_x7, -1 ))
+            if ( !FloatUtils::areEqual( value_x7, -1 ) )
             {
                 correctSolution = false;
             }
@@ -800,18 +793,18 @@ public:
 
         // want x8 = sign(x5)
         // if x5>= 0 -> we want x8 = 1
-        if (!FloatUtils::lt(value_x5, 0))
+        if ( !FloatUtils::lt( value_x5, 0 ) )
         {
-            if (!FloatUtils::areEqual( value_x8, 1 ))
+            if ( !FloatUtils::areEqual( value_x8, 1 ) )
             {
                 correctSolution = false;
             }
         }
 
         // if x5< 0 -> we want x8 = - 1
-        if (FloatUtils::lt(value_x5, 0))
+        if ( FloatUtils::lt( value_x5, 0 ) )
         {
-            if (!FloatUtils::areEqual( value_x8, -1 ))
+            if ( !FloatUtils::areEqual( value_x8, -1 ) )
             {
                 correctSolution = false;
             }
@@ -819,18 +812,18 @@ public:
 
         // we want x9 = sign(x6)
         // if x6>= 0 -> we want x9 = 1
-        if (!FloatUtils::lt(value_x6, 0))
+        if ( !FloatUtils::lt( value_x6, 0 ) )
         {
-            if (!FloatUtils::areEqual( value_x9, 1 ))
+            if ( !FloatUtils::areEqual( value_x9, 1 ) )
             {
                 correctSolution = false;
             }
         }
 
         // if x6< 0 -> we want x9 = - 1
-        if (FloatUtils::lt(value_x6, 0))
+        if ( FloatUtils::lt( value_x6, 0 ) )
         {
-            if (!FloatUtils::areEqual( value_x9, -1 ))
+            if ( !FloatUtils::areEqual( value_x9, -1 ) )
             {
                 correctSolution = false;
             }
