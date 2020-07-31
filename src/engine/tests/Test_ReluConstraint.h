@@ -622,7 +622,7 @@ public:
         TS_ASSERT( equations.empty() );
     }
 
-    void test_relu_entailed_tightenings() // TODO FINISH
+    void test_relu_entailed_tightenings()
     {
         unsigned b = 1;
         unsigned f = 4;
@@ -1011,9 +1011,9 @@ public:
         dontCare.setNumberOfVariables( aux );
 
         relu.notifyLowerBound( b, -10 );
-        relu.notifyUpperBound( b, 15 );
-
         relu.notifyLowerBound( f, 0 );
+
+        relu.notifyUpperBound( b, 15 );
         relu.notifyUpperBound( f, 15 );
 
         TS_ASSERT_THROWS_NOTHING( relu.addAuxiliaryEquations( dontCare ) );
@@ -1021,12 +1021,12 @@ public:
         relu.notifyLowerBound( aux, 0 );
         relu.notifyUpperBound( aux, 10 );
 
-        relu.registerConstraintBoundTightener( tightener ); // here
+        relu.registerConstraintBoundTightener( tightener );
 
         return relu;
     }
 
-    void test_notify_bounds() // TODO FINISH
+    void test_notify_bounds()
     {
         unsigned b = 1;
         unsigned f = 4;
