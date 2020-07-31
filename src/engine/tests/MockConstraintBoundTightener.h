@@ -17,6 +17,7 @@
 #define __MockConstraintBoundTightener_h__
 
 #include "IConstraintBoundTightener.h"
+#include <cxxtest/TestSuite.h>
 
 class MockConstraintBoundTightener : public IConstraintBoundTightener
 {
