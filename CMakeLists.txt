@@ -195,13 +195,13 @@ if (${ENABLE_GUROBI})
   target_include_directories(${GUROBI_LIB1} INTERFACE ${GUROBI_DIR}/include/)
 
   add_library(${GUROBI_LIB2} SHARED IMPORTED)
-  
-  # MACOSx uses .dylib instead of .so for its Guroobi downloads.
+
+  # MACOSx uses .dylib instead of .so for its Gurobi downloads.
   if (APPLE)
     set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi90.dylib)
-  else
+  else()
     set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi90.so)
-  endif (APPLE)
+  endif ()
 
   list(APPEND LIBS ${GUROBI_LIB2})
   target_include_directories(${GUROBI_LIB2} INTERFACE ${GUROBI_DIR}/include/)
