@@ -143,12 +143,6 @@ private:
     unsigned _b, _f;
     PhaseStatus _phaseStatus;
 
-    /*
-      Denotes which case split to handle first.
-      And which phase status to repair a relu into.
-    */
-    PhaseStatus _direction;
-
     PiecewiseLinearCaseSplit getNegativeSplit() const;
     PiecewiseLinearCaseSplit getPositiveSplit() const;
 
