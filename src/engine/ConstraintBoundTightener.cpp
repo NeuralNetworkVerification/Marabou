@@ -128,7 +128,7 @@ void ConstraintBoundTightener::notifyDimensionChange( unsigned /* m */ , unsigne
 
 void ConstraintBoundTightener::registerTighterLowerBound( unsigned variable, double bound )
 {
-    if ( bound > _lowerBounds[variable] )
+    if ( FloatUtils::gt( bound, _lowerBounds[variable] ) )
     {
         _lowerBounds[variable] = bound;
         _tightenedLower[variable] = true;
@@ -137,7 +137,7 @@ void ConstraintBoundTightener::registerTighterLowerBound( unsigned variable, dou
 
 void ConstraintBoundTightener::registerTighterUpperBound( unsigned variable, double bound )
 {
-    if ( bound < _upperBounds[variable] )
+    if ( FloatUtils::lt( bound, _upperBounds[variable] ) )
     {
         _upperBounds[variable] = bound;
         _tightenedUpper[variable] = true;
