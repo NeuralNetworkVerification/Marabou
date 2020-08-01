@@ -181,7 +181,7 @@ set(LIBS ${Boost_LIBRARIES})
 
 if (${ENABLE_GUROBI})
   message(STATUS "Using Gurobi for LP relaxation for bound tightening")
-  if (NOT DEFINED GUROBI_DIR) 
+  if (NOT DEFINED GUROBI_DIR)
     set(GUROBI_DIR $ENV{GUROBI_HOME})
   endif()
   add_compile_definitions(ENABLE_GUROBI)
@@ -195,7 +195,14 @@ if (${ENABLE_GUROBI})
   target_include_directories(${GUROBI_LIB1} INTERFACE ${GUROBI_DIR}/include/)
 
   add_library(${GUROBI_LIB2} SHARED IMPORTED)
-  set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi90.so)
+
+  # MACOSx uses .dylib instead of .so for its Gurobi downloads.
+  if (APPLE)
+    set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi90.dylib)
+  else()
+    set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi90.so)
+  endif ()
+
   list(APPEND LIBS ${GUROBI_LIB2})
   target_include_directories(${GUROBI_LIB2} INTERFACE ${GUROBI_DIR}/include/)
 endif()
@@ -374,4 +381,3 @@ set(MARABOU_VERSION 1.0.+)
 add_definitions("-DGIT_COMMIT_HASH=\"${GIT_COMMIT_HASH}\"")
 add_definitions("-DGIT_BRANCH=\"${GIT_BRANCH}\"")
 add_definitions("-DMARABOU_VERSION=\"${MARABOU_VERSION}\"")
-
