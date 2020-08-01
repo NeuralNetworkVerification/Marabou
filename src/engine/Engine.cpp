@@ -1130,7 +1130,7 @@ void Engine::performMILPSolverBoundedTightening()
             _networkLevelReasoner->MILPPropagation();
             break;
         case GlobalConfiguration::NONE:
-            break;
+            return;
         }
 
         List<Tightening> tightenings;
