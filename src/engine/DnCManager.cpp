@@ -14,7 +14,7 @@
  **/
 
 #include "Debug.h"
-#include "DivideStrategy.h"
+#include "SnCDivideStrategy.h"
 #include "DnCManager.h"
 #include "DnCWorker.h"
 #include "GetCPUData.h"
@@ -37,7 +37,7 @@ void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine
                            std::atomic_uint &numUnsolvedSubQueries,
                            std::atomic_bool &shouldQuitSolving,
                            unsigned threadId, unsigned onlineDivides,
-                           float timeoutFactor, DivideStrategy divideStrategy )
+                           float timeoutFactor, SnCDivideStrategy divideStrategy )
 {
     unsigned cpuId = 0;
     (void) threadId;
@@ -59,7 +59,7 @@ void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine
 
 DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
                         unsigned initialTimeout, unsigned onlineDivides,
-                        float timeoutFactor, DivideStrategy divideStrategy,
+                        float timeoutFactor, SnCDivideStrategy divideStrategy,
                         InputQuery *inputQuery, unsigned verbosity )
     : _numWorkers( numWorkers )
     , _initialDivides( initialDivides )
@@ -74,19 +74,19 @@ DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
     , _verbosity( verbosity )
     , _constraintViolationThreshold( GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD )
 {
-    if ( divideStrategy == DivideStrategy::Auto )
+    if ( divideStrategy == SnCDivideStrategy::Auto )
     {
         DNC_MANAGER_LOG( Stringf( "Deciding splitting strategy automatically...\n" ).ascii() );
         if ( inputQuery->getNumInputVariables() <
              GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD )
         {
             DNC_MANAGER_LOG( Stringf( "\tUsing Largest Interval Heuristics\n" ).ascii() );
-            _divideStrategy = DivideStrategy::LargestInterval;
+            _divideStrategy = SnCDivideStrategy::LargestInterval;
         }
         else
         {
             DNC_MANAGER_LOG( Stringf( "\tUsing Polarity-based Heuristics\n" ).ascii() );
-            _divideStrategy = DivideStrategy::Polarity;
+            _divideStrategy = SnCDivideStrategy::Polarity;
         }
     }
     else
@@ -356,7 +356,7 @@ void DnCManager::initialDivide( SubQueries &subQueries )
     auto split = std::unique_ptr<PiecewiseLinearCaseSplit>
         ( new PiecewiseLinearCaseSplit() );
     std::unique_ptr<QueryDivider> queryDivider = nullptr;
-    if ( _divideStrategy == DivideStrategy::Polarity )
+    if ( _divideStrategy == SnCDivideStrategy::Polarity )
     {
         queryDivider = std::unique_ptr<QueryDivider>
             ( new PolarityBasedDivider( _baseEngine ) );
@@ -366,20 +366,12 @@ void DnCManager::initialDivide( SubQueries &subQueries )
         const List<unsigned> inputVariables( _baseEngine->getInputVariables() );
         queryDivider = std::unique_ptr<QueryDivider>
             ( new LargestIntervalDivider( inputVariables ) );
-        QueryDivider::InputRegion initialRegion;
         InputQuery *inputQuery = _baseEngine->getInputQuery();
-        for ( const auto &variable : inputVariables )
-        {
-            initialRegion._lowerBounds[variable] =
-                inputQuery->getLowerBounds()[variable];
-            initialRegion._upperBounds[variable] =
-                inputQuery->getUpperBounds()[variable];
-        }
         // Add bound as equations for each input variable
         for ( const auto &variable : inputVariables )
         {
-            double lb = initialRegion._lowerBounds[variable];
-            double ub = initialRegion._upperBounds[variable];
+            double lb = inputQuery->getLowerBounds()[variable];
+            double ub = inputQuery->getUpperBounds()[variable];
             split->storeBoundTightening( Tightening( variable, lb,
                                                      Tightening::LB ) );
             split->storeBoundTightening( Tightening( variable, ub,

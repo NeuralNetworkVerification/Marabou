@@ -25,6 +25,7 @@
 #include "DantzigsRule.h"
 #include "DegradationChecker.h"
 #include "DivideStrategy.h"
+#include "SnCDivideStrategy.h"
 #include "GlobalConfiguration.h"
 #include "IEngine.h"
 #include "InputQuery.h"
@@ -132,14 +133,10 @@ public:
     void setVerbosity( unsigned verbosity );
 
     /*
+      Call-back from QueryDividers
       Pick the piecewise linear constraint for splitting
     */
-    PiecewiseLinearConstraint *pickSplitPLConstraint( DivideStrategy strategy );
-
-    /*
-      Update the scores of each candidate splitting PL constraints
-    */
-    void updateScores( DivideStrategy strategy );
+    PiecewiseLinearConstraint *pickSplitPLConstraintSnC( SnCDivideStrategy strategy );
 
     /*
       Set the constraint violation threshold of SmtCore
@@ -475,6 +472,29 @@ private:
       to handle case splits
     */
     void updateDirections();
+
+    /*
+      Pick the piecewise linear constraint for splitting
+    */
+    PiecewiseLinearConstraint *pickSplitPLConstraint( DivideStrategy strategy );
+
+
+    /*
+      Update the polarity scores of each candidate splitting PL constraints
+    */
+    void updateScoresBasedOnPolarity();
+
+    /*
+      Update the scores of each candidate splitting PL constraints
+    */
+    void updateScores( DivideStrategy strategy );
+
+    /*
+      Update the polarity scores of each candidate splitting PL constraints
+    */
+    void updateScoresSnC( SnCDivideStrategy strategy );
+
+
 };
 
 #endif // __Engine_h__

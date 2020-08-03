@@ -164,6 +164,19 @@ public:
         else
             return NULL;
     }
+
+    PiecewiseLinearConstraint *pickSplitPLConstraintSnC( SnCDivideStrategy /**/ )
+    {
+        if ( !_constraintsToSplit.empty() )
+            {
+                PiecewiseLinearConstraint * ptr = *_constraintsToSplit.begin();
+                _constraintsToSplit.erase( ptr );
+                return ptr;
+            }
+        else
+            return NULL;
+    }
+
 };
 
 #endif // __MockEngine_h__

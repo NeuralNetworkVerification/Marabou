@@ -16,10 +16,11 @@
 #ifndef __Options_h__
 #define __Options_h__
 
-#include "DivideStrategy.h"
 #include "MString.h"
 #include "Map.h"
 #include "OptionParser.h"
+#include "SnCDivideStrategy.h"
+
 #include "boost/program_options.hpp"
 
 /*
@@ -89,7 +90,7 @@ public:
     int getInt( unsigned option ) const;
     float getFloat( unsigned option ) const;
     String getString( unsigned option ) const;
-    DivideStrategy getDivideStrategy( unsigned option ) const;
+    SnCDivideStrategy getSnCDivideStrategy( unsigned option ) const;
 
     /*
       Options that are determined at compile time

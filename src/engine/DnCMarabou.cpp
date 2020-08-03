@@ -99,7 +99,7 @@ void DnCMarabou::run()
     unsigned timeoutInSeconds = Options::get()->getInt( Options::TIMEOUT );
     float timeoutFactor = Options::get()->getFloat( Options::TIMEOUT_FACTOR );
 
-    DivideStrategy strategy = Options::get()->getDivideStrategy
+    SnCDivideStrategy strategy = Options::get()->getSnCDivideStrategy
         ( Options::SPLITTING_STRATEGY );
 
     int splitThreshold = Options::get()->getInt( Options::SPLIT_THRESHOLD );

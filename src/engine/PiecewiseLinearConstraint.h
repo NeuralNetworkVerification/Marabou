@@ -230,7 +230,7 @@ public:
     {
     }
 
-    virtual void updateScore()
+    virtual void updateScoreBasedOnPolarity()
     {
     }
 

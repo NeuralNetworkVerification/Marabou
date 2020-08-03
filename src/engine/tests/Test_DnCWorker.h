@@ -122,7 +122,7 @@ public:
         unsigned threadId = 0;
         unsigned onlineDivides = 2;
         float timeoutFactor = 1;
-        DivideStrategy divideStrategy = DivideStrategy::LargestInterval;
+        SnCDivideStrategy divideStrategy = SnCDivideStrategy::LargestInterval;
         DnCWorker dncWorker( _workload, _engine, numUnsolvedSubQueries,
                              shouldQuitSolving, threadId, onlineDivides,
                              timeoutFactor, divideStrategy );

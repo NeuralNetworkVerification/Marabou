@@ -14,7 +14,7 @@
  **/
 
 #include "Debug.h"
-#include "DivideStrategy.h"
+#include "SnCDivideStrategy.h"
 #include "DnCWorker.h"
 #include "IEngine.h"
 #include "EngineState.h"
@@ -34,7 +34,7 @@ DnCWorker::DnCWorker( WorkerQueue *workload, std::shared_ptr<IEngine> engine,
                       std::atomic_uint &numUnsolvedSubQueries,
                       std::atomic_bool &shouldQuitSolving,
                       unsigned threadId, unsigned onlineDivides,
-                      float timeoutFactor, DivideStrategy divideStrategy )
+                      float timeoutFactor, SnCDivideStrategy divideStrategy )
     : _workload( workload )
     , _engine( engine )
     , _numUnsolvedSubQueries( &numUnsolvedSubQueries )
@@ -50,9 +50,9 @@ DnCWorker::DnCWorker( WorkerQueue *workload, std::shared_ptr<IEngine> engine,
     _engine->storeState( *_initialState, true );
 }
 
-void DnCWorker::setQueryDivider( DivideStrategy divideStrategy )
+void DnCWorker::setQueryDivider( SnCDivideStrategy divideStrategy )
 {
-    if ( divideStrategy == DivideStrategy::Polarity )
+    if ( divideStrategy == SnCDivideStrategy::Polarity )
         _queryDivider = std::unique_ptr<QueryDivider>
             ( new PolarityBasedDivider( _engine ) );
     else
