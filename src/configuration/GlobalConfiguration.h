@@ -172,6 +172,8 @@ public:
         // more expensive to solve
         MILP_ENCODING = 2,
         MILP_ENCODING_INCREMENTAL = 3,
+        // Option to have no MILP bound tightening performed
+        NONE = 4,
     };
 
     static const MILPSolverBoundTighteningType MILP_SOLVER_BOUND_TIGHTENING_TYPE;
