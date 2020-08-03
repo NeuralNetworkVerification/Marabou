@@ -34,7 +34,8 @@ DnCWorker::DnCWorker( WorkerQueue *workload, std::shared_ptr<IEngine> engine,
                       std::atomic_uint &numUnsolvedSubQueries,
                       std::atomic_bool &shouldQuitSolving,
                       unsigned threadId, unsigned onlineDivides,
-                      float timeoutFactor, SnCDivideStrategy divideStrategy )
+                      float timeoutFactor, SnCDivideStrategy divideStrategy,
+                      unsigned verbosity )
     : _workload( workload )
     , _engine( engine )
     , _numUnsolvedSubQueries( &numUnsolvedSubQueries )
@@ -42,6 +43,7 @@ DnCWorker::DnCWorker( WorkerQueue *workload, std::shared_ptr<IEngine> engine,
     , _threadId( threadId )
     , _onlineDivides( onlineDivides )
     , _timeoutFactor( timeoutFactor )
+    , _verbosity( verbosity )
 {
     setQueryDivider( divideStrategy );
 
@@ -88,7 +90,9 @@ void DnCWorker::popOneSubQueryAndSolve()
         _engine->solve( timeoutInSeconds );
 
         IEngine::ExitCode result = _engine->getExitCode();
-        printProgress( queryId, result );
+
+        if ( _verbosity > 0 )
+            printProgress( queryId, result );
         // Switch on the result
         if ( result == IEngine::UNSAT )
         {
