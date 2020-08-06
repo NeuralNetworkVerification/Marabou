@@ -16,7 +16,7 @@
 #ifndef __BoundManager_h__
 #define __BoundManager_h__
 
-#include "context/cdlist.h"
+#include "context/cdo.h"
 #include "context/context.h"
 
 #include "Vector.h"
@@ -49,8 +49,8 @@ private:
     CVC4::context::Context &_context;
     unsigned _size; // TODO: Make context sensitive, to account for growing 
     // For now, assume variable number is the vector index
-    Vector<CVC4::context::CDList<double> *> _lowerBounds;
-    Vector<CVC4::context::CDList<double> *> _upperBounds;
+    Vector<CVC4::context::CDO<double> *> _lowerBounds;
+    Vector<CVC4::context::CDO<double> *> _upperBounds;
 
 };
 

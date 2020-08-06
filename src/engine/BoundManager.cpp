@@ -41,11 +41,11 @@ unsigned BoundManager::registerNewVariable()
 
     unsigned newVar = _size++; 
 
-    _lowerBounds.append( new (true) CDList<double>( &_context ) );
-    _upperBounds.append( new (true) CDList<double>( &_context ) );
+    _lowerBounds.append( new (true) CDO<double>( &_context ) );
+    _upperBounds.append( new (true) CDO<double>( &_context ) );
 
-    _lowerBounds[newVar]->push_back( FloatUtils::negativeInfinity() );
-    _upperBounds[newVar]->push_back( FloatUtils::infinity() );
+    *_lowerBounds[newVar] = FloatUtils::negativeInfinity();
+    *_upperBounds[newVar] = FloatUtils::infinity();
 
     ASSERT( _lowerBounds.size() == _size );
     ASSERT( _upperBounds.size() == _size );
@@ -68,7 +68,7 @@ bool BoundManager::setLowerBound( unsigned variable, double value )
     ASSERT( variable < _size );
     if ( value > getLowerBound( variable ) )
     {
-        _lowerBounds[variable]->push_back( value );
+        *_lowerBounds[variable] = value;
         return true;
     }
     return false;
@@ -79,7 +79,7 @@ bool BoundManager::setUpperBound( unsigned variable, double value )
      ASSERT( variable < _size );
     if ( value < getUpperBound( variable ) )
     {
-        _upperBounds[variable]->push_back( value );
+        *_upperBounds[variable] = value ;
         return true;
     }
     return false;
@@ -88,14 +88,14 @@ bool BoundManager::setUpperBound( unsigned variable, double value )
 double BoundManager::getLowerBound( unsigned variable )
 {
   ASSERT( variable < _size );
-  return _lowerBounds[variable]->back();
+  return *_lowerBounds[variable];
 }
 
 
 double BoundManager::getUpperBound( unsigned variable )
 {
   ASSERT( variable < _size );
-  return _upperBounds[variable]->back();
+  return *_upperBounds[variable];
 }
 
 unsigned BoundManager::getSize( )
