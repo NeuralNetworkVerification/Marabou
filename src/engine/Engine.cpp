@@ -292,8 +292,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
     }
 
     struct timespec mainLoopStart = TimeUtils::sampleMicro();
-    bool performSBT = getInputVariables().size() < 30;
-    printf("Perform SBT %d", performSBT);
+    bool performSBT = getInputVariables().size() < 10;
     while ( true )
     {
         struct timespec mainLoopEnd = TimeUtils::sampleMicro();
@@ -2160,7 +2159,7 @@ bool Engine::propagate()
     {
         tightenBoundsOnConstraintMatrix();
         applyAllBoundTightenings();
-	bool performSBT = getInputVariables().size() < 30;
+	bool performSBT = getInputVariables().size() < 10;
         do
             {
                 performSymbolicBoundTightening( performSBT );
@@ -2251,7 +2250,7 @@ bool Engine::restoreSmtState( SmtState &smtState )
 {
     try
     {
-	bool performSBT = getInputVariables().size() < 30;
+	bool performSBT = getInputVariables().size() < 10;
         // Step 1: all implied valid splits at root
         for ( auto &validSplit : smtState._impliedValidSplitsAtRoot )
         {
