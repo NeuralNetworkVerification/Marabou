@@ -42,6 +42,7 @@ void Options::initializeDefaultValues()
       Bool options
     */
     _boolOptions[DNC_MODE] = false;
+    _boolOptions[USE_GUROBI] = false;
     _boolOptions[PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS] = false;
 
     /*

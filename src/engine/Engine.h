@@ -155,6 +155,8 @@ public:
     void resetExitCode();
     void resetBoundTighteners();
 
+    void useGurobi();
+
 private:
     enum BasisRestorationRequired {
         RESTORATION_NOT_NEEDED = 0,
@@ -323,6 +325,11 @@ private:
     unsigned long long _lastIterationWithProgress;
 
     /*
+      Use an MIP encoding of the inputQuery and solve with Gurobi
+    */
+    bool _useGurobi;
+
+    /*
       Perform a simplex step: compute the cost function, pick the
       entering and leaving variables and perform a pivot.
     */
@@ -476,6 +483,11 @@ private:
       to handle case splits
     */
     void updateDirections();
+
+    /*
+      Solve the query with Gurobi
+    */
+    bool solveWithGurobi( unsigned timeoutInSeconds );
 };
 
 #endif // __Engine_h__

@@ -108,6 +108,8 @@ void Marabou::prepareInputQuery()
     }
 
     extractSplittingThreshold();
+    if ( Options::get()->getBool( Options::USE_GUROBI ) )
+        _engine.useGurobi();
 
     String queryDumpFilePath = Options::get()->getString( Options::QUERY_DUMP_FILE );
     if ( queryDumpFilePath.length() > 0 )

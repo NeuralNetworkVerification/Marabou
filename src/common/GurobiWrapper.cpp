@@ -67,6 +67,19 @@ void GurobiWrapper::reset()
     _model->reset();
 }
 
+void GurobiWrapper::encodeInputQuery( const InputQuery &inputQuery )
+{
+    reset();
+    for ( unsigned var = 0; var < inputQuery.getNumberOfVariables(); var++ )
+    {
+        double lb = inputQuery.getLowerBound( var );
+        double ub = inputQuery.getUpperBound( var );
+        addVariable( Stringf( "x%u", var ), lb, ub );
+    }
+
+
+}
+
 void GurobiWrapper::addVariable( String name, double lb, double ub, VariableType type )
 {
     ASSERT( !_nameToVariable.exists( name ) );
