@@ -11,8 +11,8 @@ implementation of Marabou. In general, the solver will return either UNSAT if no
 assignment of values to all network variables can satisfy all equations and
 constraints, or SAT if a satisfying assignment exists.
 
-This documentation explains how to setup Maraboupy, shows examples using Maraboupy,
-and provides API documentation.
+This documentation explains how to setup Maraboupy, shows examples using Maraboupy, provides API documentation,
+and explains how to contribute to Maraboupy.
 
 .. _Setup:
 .. toctree::
@@ -38,3 +38,11 @@ and provides API documentation.
    :caption: API Documentation
 
    API/*
+   
+.. _Develop:
+.. toctree::
+   :maxdepth: 1
+   :glob:
+   :caption: Developer's Guide
+
+   Develop/*

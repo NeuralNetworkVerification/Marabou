@@ -2,7 +2,7 @@
 /*! \file ReluConstraint.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Shiran Aziz, Guy Katz
+ **   Guy Amir
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -13,14 +13,19 @@
 
  **/
 
-#ifndef __AbsoluteValueConstraint_h__
-#define __AbsoluteValueConstraint_h__
+#ifndef __SignConstraint_h__
+#define __SignConstraint_h__
 
+#include "Map.h"
 #include "PiecewiseLinearConstraint.h"
 
-class AbsoluteValueConstraint : public PiecewiseLinearConstraint
-{
+/*
+  The Sign function returns +1 for any input x >=0 (including 0),
+  and -1 if x < 0
+*/
 
+class SignConstraint : public PiecewiseLinearConstraint
+{
 public:
     enum PhaseStatus {
         PHASE_NOT_FIXED = 0,
@@ -29,16 +34,29 @@ public:
     };
 
     /*
-      The f variable is the absolute value of the b variable:
-      f = | b |
+      The f variable is the sign output on the b variable:
+      f = sign( b )
     */
-    AbsoluteValueConstraint( unsigned b, unsigned f );
-    AbsoluteValueConstraint( const String &serializedAbs );
+    SignConstraint( unsigned b, unsigned f );
+    SignConstraint( const String &serializedSign );
 
     /*
       Get the type of this constraint.
     */
     PiecewiseLinearFunctionType getType() const;
+
+    /*
+      Returns true iff the assignment satisfies the constraint
+    */
+    bool satisfied() const;
+
+    /*
+      Returns the list of case splits that this piecewise linear
+      constraint breaks into. These splits need to complementary,
+      i.e. if the list is {l1, l2, ..., ln-1, ln},
+      then ~l1 /\ ~l2 /\ ... /\ ~ln-1 --> ln.
+     */
+    List<PiecewiseLinearCaseSplit> getCaseSplits() const;
 
     /*
       Return a clone of the constraint.
@@ -53,8 +71,8 @@ public:
     /*
       Register/unregister the constraint with a talbeau.
      */
-    void registerAsWatcher( ITableau *tableau);
-    void unregisterAsWatcher( ITableau *tableau);
+    void registerAsWatcher( ITableau *tableau );
+    void unregisterAsWatcher( ITableau *tableau );
 
     /*
       These callbacks are invoked when a watched variable's value
@@ -65,9 +83,9 @@ public:
     void notifyUpperBound( unsigned variable, double bound );
 
     /*
-       Returns true iff the variable participates in this piecewise
-       linear constraint.
-     */
+      Returns true iff the variable participates in this piecewise
+      linear constraint
+    */
     bool participatingVariable( unsigned variable ) const;
 
     /*
@@ -76,39 +94,23 @@ public:
     List<unsigned> getParticipatingVariables() const;
 
     /*
-      Returns true iff the assignment satisfies the constraint
-    */
-    bool satisfied() const;
-
-    /*
       Returns a list of possible fixes for the violated constraint.
     */
     List<PiecewiseLinearConstraint::Fix> getPossibleFixes() const;
 
     /*
       Return a list of smart fixes for violated constraint.
-      Currently not implemented, just calls getPossibleFixes().
     */
     List<PiecewiseLinearConstraint::Fix> getSmartFixes( ITableau *tableau ) const;
 
     /*
-      Returns the list of case splits that this piecewise linear
-      constraint breaks into:
-
-      y = |x| <-->
-         ( x <= 0 /\ y = -x ) \/ ( x >= 0 /\ y = x )
+      Check if the constraint's phase has been fixed.
     */
-    List<PiecewiseLinearCaseSplit> getCaseSplits() const;
-
-    /*
-      Check whether the constraint's phase has been fixed.
-    */
-    void fixPhaseIfNeeded();
     bool phaseFixed() const;
 
     /*
-     * If the constraint's phase has been fixed, get the (valid) case split.
-     */
+      If the constraint's phase has been fixed, get the (valid) case split.
+    */
     PiecewiseLinearCaseSplit getValidCaseSplit() const;
 
     /*
@@ -117,9 +119,14 @@ public:
       or that a variable's index has changed (e.g., x4 is now called
       x2). constraintObsolete() returns true iff and the constraint
       has become obsolote as a result of variable eliminations.
-     */
+    */
     void eliminateVariable( unsigned variable, double fixedValue );
     void updateVariableIndex( unsigned oldIndex, unsigned newIndex );
+
+    /*
+      Returns true iff and the constraint has become obsolote as a
+      result of variable eliminations.
+    */
     bool constraintObsolete() const;
 
     /*
@@ -128,62 +135,29 @@ public:
     void getEntailedTightenings( List<Tightening> &tightenings ) const;
 
     /*
-      Dump the current state of the constraint.
+      Returns string with shape: sign, _f, _b
     */
-    void dump( String &output ) const;
-
-    /*
-      For preprocessing: get any auxiliary equations that this
-      constraint would like to add to the equation pool. In the ReLU
-      case, this is an equation of the form aux = f - b, where aux is
-      non-negative.
-    */
-    void getAuxiliaryEquations( List<Equation> &newEquations ) const;
-
-    /*
-      Returns string with shape: absoluteValue,_f,_b
-     */
     String serializeToString() const;
 
-    /*
-      Return true if and only if this piecewise linear constraint supports
-      symbolic bound tightening.
-    */
-    bool supportsSymbolicBoundTightening() const;
-
 private:
-    /*
-      The variables that make up this constraint; _f = | _b |.
-    */
     unsigned _b, _f;
+    PhaseStatus _phaseStatus;
 
-    /*
-      True iff _b or _f have been eliminated.
-    */
+    PiecewiseLinearCaseSplit getNegativeSplit() const;
+    PiecewiseLinearCaseSplit getPositiveSplit() const;
+
     bool _haveEliminatedVariables;
 
     /*
-      The phase status of this constraint: positive, negative, or not
-      yet fixed.
+      Set the phase status.
     */
-    PhaseStatus _phaseStatus;
     void setPhaseStatus( PhaseStatus phaseStatus );
-
     static String phaseToString( PhaseStatus phase );
 
     /*
-      The two case splits.
+      Return true iff b or f are out of bounds.
     */
-    PiecewiseLinearCaseSplit getPositiveSplit() const;
-    PiecewiseLinearCaseSplit getNegativeSplit() const;
+    bool haveOutOfBoundVariables() const;
 };
 
-#endif // __AbsoluteValueConstraint_h__
-
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//
+#endif // __SignConstraint_h__

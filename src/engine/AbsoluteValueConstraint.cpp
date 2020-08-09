@@ -30,6 +30,26 @@ AbsoluteValueConstraint::AbsoluteValueConstraint( unsigned b, unsigned f )
     setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
 }
 
+AbsoluteValueConstraint::AbsoluteValueConstraint( const String &serializedAbs )
+    : _haveEliminatedVariables( false )
+{
+    String constraintType = serializedAbs.substring( 0, 13 );
+    ASSERT( constraintType == String( "absoluteValue" ) );
+
+    // Remove the constraint type in serialized form
+    String serializedValues = serializedAbs.substring( 14, serializedAbs.length() - 14 );
+    List<String> values = serializedValues.tokenize( "," );
+
+    ASSERT( values.size() == 2 );
+
+    auto var = values.begin();
+    _f = atoi( var->ascii() );
+    ++var;
+    _b = atoi( var->ascii() );
+
+    setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
+}
+
 PiecewiseLinearFunctionType AbsoluteValueConstraint::getType() const
 {
     return PiecewiseLinearFunctionType::ABSOLUTE_VALUE;
@@ -267,11 +287,28 @@ PiecewiseLinearCaseSplit AbsoluteValueConstraint::getValidCaseSplit() const
 void AbsoluteValueConstraint::eliminateVariable( unsigned variable, double /* fixedValue */ )
 {
     (void)variable;
-    ASSERT( variable = _b );
+    ASSERT( ( variable == _f ) || ( variable == _b ) );
 
     // In an absolute value constraint, if a variable is removed the
     // entire constraint can be discarded
     _haveEliminatedVariables = true;
+}
+
+void AbsoluteValueConstraint::dump( String &output ) const
+{
+    output = Stringf( "AbsoluteValueCosntraint: x%u = Abs( x%u ). Active? %s. PhaseStatus = %u (%s).\n",
+                      _f, _b,
+                      _constraintActive ? "Yes" : "No",
+                      _phaseStatus, phaseToString( _phaseStatus ).ascii()
+                      );
+
+    output += Stringf( "b in [%s, %s], ",
+                       _lowerBounds.exists( _b ) ? Stringf( "%lf", _lowerBounds[_b] ).ascii() : "-inf",
+                       _upperBounds.exists( _b ) ? Stringf( "%lf", _upperBounds[_b] ).ascii() : "inf" );
+
+    output += Stringf( "f in [%s, %s]",
+                       _lowerBounds.exists( _f ) ? Stringf( "%lf", _lowerBounds[_f] ).ascii() : "-inf",
+                       _upperBounds.exists( _f ) ? Stringf( "%lf", _upperBounds[_f] ).ascii() : "inf" );
 }
 
 void AbsoluteValueConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
@@ -428,6 +465,24 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
         return;
     }
 }
+
+String AbsoluteValueConstraint::phaseToString( PhaseStatus phase )
+{
+    switch ( phase )
+    {
+    case PHASE_NOT_FIXED:
+        return "PHASE_NOT_FIXED";
+
+    case PHASE_POSITIVE:
+        return "PHASE_POSITIVE";
+
+    case PHASE_NEGATIVE:
+        return "PHASE_NEGATIVE";
+
+    default:
+        return "UNKNOWN";
+    }
+};
 
 void AbsoluteValueConstraint::setPhaseStatus( PhaseStatus phaseStatus )
 {

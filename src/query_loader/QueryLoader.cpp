@@ -24,6 +24,7 @@
 #include "MaxConstraint.h"
 #include "QueryLoader.h"
 #include "ReluConstraint.h"
+#include "SignConstraint.h"
 
 InputQuery QueryLoader::loadQuery( const String &fileName )
 {
@@ -208,6 +209,14 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         else if ( coType == "max" )
         {
             constraint = new MaxConstraint( serializeConstraint );
+        }
+        else if ( coType == "absoluteValue" )
+        {
+            constraint = new AbsoluteValueConstraint( serializeConstraint );
+        }
+        else if ( coType == "sign" )
+        {
+            constraint = new SignConstraint( serializeConstraint );
         }
         else
         {

@@ -16,6 +16,7 @@ MarabouNetwork defines an abstract class that represents neural networks with pi
 
 from maraboupy import MarabouCore
 from maraboupy import MarabouUtils
+
 import numpy as np
 
 class MarabouNetwork:
@@ -26,6 +27,7 @@ class MarabouNetwork:
         equList (list of :class:`~maraboupy.MarabouUtils.Equation`): Network equations
         reluList (list of tuples): List of relu constraint tuples, where each tuple contains the backward and forward variables
         maxList (list of tuples): List of max constraint tuples, where each tuple conatins the set of input variables and output variable
+        absList (list of tuples): List of abs constraint tuples, where each tuple conatins the input variable and the output variable
         varsParticipatingInConstraints (set of int): Variables involved in some constraint
         lowerBounds (Dict[int, float]): Lower bounds of variables
         upperBounds (Dict[int, float]): Upper bounds of variables
@@ -44,6 +46,7 @@ class MarabouNetwork:
         self.equList = []
         self.reluList = []
         self.maxList = []
+        self.absList = []
         self.varsParticipatingInConstraints = set()
         self.lowerBounds = dict()
         self.upperBounds = dict()
@@ -109,6 +112,17 @@ class MarabouNetwork:
         self.varsParticipatingInConstraints.add(v)
         for i in elements:
             self.varsParticipatingInConstraints.add(i)
+
+    def addAbsConstraint(self, b, f):
+        """Function to add a new Abs constraint
+
+        Args:
+            b (int): Variable representing input of the Abs constraint
+            f (int): Variable representing output of the Abs constraint
+        """
+        self.absList += [(b, f)]
+        self.varsParticipatingInConstraints.add(b)
+        self.varsParticipatingInConstraints.add(f)
 
     def lowerBoundExists(self, x):
         """Function to check whether lower bound for a variable is known
@@ -208,6 +222,9 @@ class MarabouNetwork:
             for e in m[0]:
                 assert e < self.numVars
             MarabouCore.addMaxConstraint(ipq, m[0], m[1])
+
+        for b, f in self.absList:
+            MarabouCore.addAbsConstraint(ipq, b, f)
 
         for l in self.lowerBounds:
             assert l < self.numVars
@@ -336,3 +353,4 @@ class MarabouNetwork:
         outNotMar = self.evaluate(inputValues, useMarabou=False, options=options, filename=filename)
         err = np.abs(outMar - outNotMar)
         return err
+
