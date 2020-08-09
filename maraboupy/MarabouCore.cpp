@@ -36,8 +36,8 @@
 #include "PropertyParser.h"
 #include "QueryLoader.h"
 #include "ReluConstraint.h"
-#include "SignConstraint.h"
 #include "Set.h"
+#include "SignConstraint.h"
 
 #ifdef _WIN32
 #define STDOUT_FILENO 1
