@@ -27,6 +27,7 @@ LPFormulator::LPFormulator( LayerOwner *layerOwner )
     : _layerOwner( layerOwner )
     , _cutoffInUse( false )
     , _cutoffValue( 0 )
+    , _gurobiEnvironment( NULL )
 {
 }
 
@@ -34,12 +35,17 @@ LPFormulator::~LPFormulator()
 {
 }
 
+void LPFormulator::setGurobiEnvironment( GRBEnv *env )
+{
+    _gurobiEnvironment = env;
+}
+
 double LPFormulator::solveLPRelaxation( const Map<unsigned, Layer *> &layers,
                                         MinOrMax minOrMax,
                                         String variableName,
                                         unsigned lastLayer )
 {
-    GurobiWrapper gurobi;
+    GurobiWrapper gurobi( _gurobiEnvironment );
 
     gurobi.setTimeLimit( GlobalConfiguration::MILPSolverTimeoutValueInSeconds );
 
@@ -78,7 +84,7 @@ double LPFormulator::solveLPRelaxation( const Map<unsigned, Layer *> &layers,
 
 void LPFormulator::optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned, Layer *> &layers )
 {
-    GurobiWrapper gurobi;
+  GurobiWrapper gurobi( _gurobiEnvironment );
 
     gurobi.setTimeLimit( GlobalConfiguration::MILPSolverTimeoutValueInSeconds );
 

@@ -24,6 +24,8 @@
 #include "PiecewiseLinearFunctionType.h"
 #include "Tightening.h"
 
+#include "gurobi_c++.h"
+
 namespace NLR {
 
 /*
@@ -136,12 +138,17 @@ public:
     List<PiecewiseLinearConstraint *> getConstraintsInTopologicalOrder();
     void addConstraintInTopologicalOrder( PiecewiseLinearConstraint *constraint );
 
+    void setGurobiEnvironment( GRBEnv *env );
+    GRBEnv *getGurobiEnvironment();
+
 private:
     Map<unsigned, Layer *> _layerIndexToLayer;
     const ITableau *_tableau;
 
     // Tightenings discovered by the various layers
     List<Tightening> _boundTightenings;
+
+    GRBEnv *_gurobiEnvironment;
 
     void freeMemoryIfNeeded();
 

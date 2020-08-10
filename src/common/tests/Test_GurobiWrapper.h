@@ -39,7 +39,8 @@ public:
     void test_optimize()
     {
 #ifdef ENABLE_GUROBI
-        GurobiWrapper gurobi;
+        GRBEnv *env = new GRBEnv;
+        GurobiWrapper gurobi( env );
 
         gurobi.addVariable( "x", 0, 3 );
         gurobi.addVariable( "y", 0, 3 );
@@ -77,6 +78,7 @@ public:
 
         TS_ASSERT( FloatUtils::areEqual( costValue, -8 ) );
 
+        delete env;
 #else
         TS_ASSERT( true );
 #endif // ENABLE_GUROBI

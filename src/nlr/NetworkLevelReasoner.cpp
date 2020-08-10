@@ -29,6 +29,7 @@ namespace NLR {
 
 NetworkLevelReasoner::NetworkLevelReasoner()
     : _tableau( NULL )
+    , _gurobiEnvironment( NULL )
 {
 }
 
@@ -47,6 +48,17 @@ bool NetworkLevelReasoner::functionTypeSupported( PiecewiseLinearFunctionType ty
 
     return false;
 }
+
+void NetworkLevelReasoner::setGurobiEnvironment( GRBEnv *env )
+{
+    _gurobiEnvironment = env;
+}
+
+GRBEnv *NetworkLevelReasoner::getGurobiEnvironment()
+{
+    return _gurobiEnvironment;
+}
+
 
 void NetworkLevelReasoner::addLayer( unsigned layerIndex, Layer::Type type, unsigned layerSize )
 {
@@ -124,6 +136,8 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
 void NetworkLevelReasoner::lpRelaxationPropagation()
 {
     LPFormulator lpFormulator( this );
+    lpFormulator.setGurobiEnvironment( _gurobiEnvironment );
+
     lpFormulator.setCutoff( 0 );
 
     if ( GlobalConfiguration::MILP_SOLVER_BOUND_TIGHTENING_TYPE ==
@@ -137,6 +151,8 @@ void NetworkLevelReasoner::lpRelaxationPropagation()
 void NetworkLevelReasoner::MILPPropagation()
 {
     MILPFormulator milpFormulator( this );
+    milpFormulator.setGurobiEnvironment( _gurobiEnvironment );
+
     milpFormulator.setCutoff( 0 );
 
     if ( GlobalConfiguration::MILP_SOLVER_BOUND_TIGHTENING_TYPE ==

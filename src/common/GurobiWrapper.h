@@ -53,7 +53,7 @@ public:
         String _variable;
     };
 
-    GurobiWrapper();
+    GurobiWrapper( GRBEnv *env );
     ~GurobiWrapper();
 
     // Add a new variabel to the model

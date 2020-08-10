@@ -19,19 +19,16 @@
 #include "GurobiWrapper.h"
 #include "MarabouError.h"
 #include "MStringf.h"
-#include "gurobi_c.h"
 
 #include <iostream>
 
 using namespace std;
 
-GurobiWrapper::GurobiWrapper()
-    : _environment( NULL )
+GurobiWrapper::GurobiWrapper( GRBEnv *env )
+    : _environment( env )
     , _model( NULL )
 {
-    _environment = new GRBEnv;
     _model = new GRBModel( *_environment );
-
     // Suppress printing
     _model->getEnv().set( GRB_IntParam_OutputFlag, 0 );
 }
@@ -54,12 +51,6 @@ void GurobiWrapper::freeMemoryIfNeeded()
     {
         delete _model;
         _model = NULL;
-    }
-
-    if ( _environment )
-    {
-        delete _environment;
-        _environment = NULL;
     }
 }
 

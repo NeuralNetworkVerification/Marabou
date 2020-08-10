@@ -18,6 +18,7 @@
 #include "Debug.h"
 #include "Engine.h"
 #include "EngineState.h"
+#include "GurobiWrapper.h"
 #include "InfeasibleQueryException.h"
 #include "InputQuery.h"
 #include "MStringf.h"
@@ -48,6 +49,7 @@ Engine::Engine( unsigned verbosity )
     , _lastNumVisitedStates( 0 )
     , _lastIterationWithProgress( 0 )
     , _useGurobi( false )
+    , _gurobiEnvironment( NULL )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -67,6 +69,12 @@ Engine::~Engine()
     {
         delete[] _work;
         _work = NULL;
+    }
+
+    if ( _gurobiEnvironment )
+    {
+        delete _gurobiEnvironment;
+        _gurobiEnvironment = NULL;
     }
 }
 
@@ -90,7 +98,7 @@ void Engine::adjustWorkMemorySize()
 
 bool Engine::solveWithGurobi( unsigned timeoutInSeconds )
 {
-    GurobiWrapper gurobi;
+    GurobiWrapper gurobi( _gurobiEnvironment );
     ENGINE_LOG( "Solving the input query with Gurobi...\n" );
     for ( unsigned var = 0; var < _preprocessedQuery.getNumberOfVariables(); var++ )
     {
@@ -1109,7 +1117,11 @@ void Engine::initializeNetworkLevelReasoning()
     _networkLevelReasoner = _preprocessedQuery.getNetworkLevelReasoner();
 
     if ( _networkLevelReasoner )
+    {
         _networkLevelReasoner->setTableau( _tableau );
+        if ( _gurobiEnvironment )
+            _networkLevelReasoner->setGurobiEnvironment( _gurobiEnvironment );
+    }
 }
 
 bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
@@ -1940,6 +1952,7 @@ void Engine::resetBoundTighteners()
 void Engine::useGurobi()
 {
     _useGurobi = true;
+    _gurobiEnvironment = new GRBEnv;
 }
 
 void Engine::warmStart()

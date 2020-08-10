@@ -35,6 +35,8 @@ public:
     LPFormulator( LayerOwner *layerOwner );
     ~LPFormulator();
 
+    void setGurobiEnvironment( GRBEnv *env );
+
     /*
       Perform bound tightening based on LP-relaxation. Use these calls
       if the LPFormulator is used in stand-alone mode. The process can
@@ -72,6 +74,8 @@ private:
     LayerOwner *_layerOwner;
     bool _cutoffInUse;
     double _cutoffValue;
+
+    GRBEnv *_gurobiEnvironment;
 
     void addInputLayerToLpRelaxation( GurobiWrapper &gurobi,
                                       const Layer *layer );

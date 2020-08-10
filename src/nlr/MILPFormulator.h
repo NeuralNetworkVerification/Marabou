@@ -42,6 +42,8 @@ public:
     */
     void setCutoff( double cutoff );
 
+    void setGurobiEnvironment( GRBEnv *env );
+
 private:
     LayerOwner *_layerOwner;
     LPFormulator _lpFormulator;
@@ -50,6 +52,7 @@ private:
     unsigned _cutoffs;
     bool _cutoffInUse;
     double _cutoffValue;
+    GRBEnv *_gurobiEnvironment;
 
     bool tightenLowerBound( GurobiWrapper &gurobi,
                             Layer *layer,

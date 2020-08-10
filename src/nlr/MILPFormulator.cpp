@@ -32,11 +32,18 @@ MILPFormulator::MILPFormulator( LayerOwner *layerOwner )
     , _cutoffs( 0 )
     , _cutoffInUse( false )
     , _cutoffValue( 0 )
+    , _gurobiEnvironment( NULL )
 {
 }
 
 MILPFormulator::~MILPFormulator()
 {
+}
+
+void MILPFormulator::setGurobiEnvironment( GRBEnv *env )
+{
+    _lpFormulator.setGurobiEnvironment( env );
+    _gurobiEnvironment = env;
 }
 
 void MILPFormulator::optimizeBoundsWithIncrementalMILPEncoding( const Map<unsigned, Layer *> &layers )
@@ -45,7 +52,7 @@ void MILPFormulator::optimizeBoundsWithIncrementalMILPEncoding( const Map<unsign
     _signChanges = 0;
     _cutoffs = 0;
 
-    GurobiWrapper gurobi;
+    GurobiWrapper gurobi( _gurobiEnvironment );
 
     gurobi.setTimeLimit( GlobalConfiguration::MILPSolverTimeoutValueInSeconds );
 
@@ -337,7 +344,7 @@ double MILPFormulator::solveMILPEncoding( const Map<unsigned, Layer *> &layers,
                                           String variableName,
                                           unsigned lastLayer )
 {
-    GurobiWrapper gurobi;
+    GurobiWrapper gurobi( _gurobiEnvironment );
 
     gurobi.setTimeLimit( GlobalConfiguration::MILPSolverTimeoutValueInSeconds );
 
