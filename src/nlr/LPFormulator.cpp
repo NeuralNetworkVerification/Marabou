@@ -255,6 +255,7 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
 
         for ( unsigned i = 0; i < layer->getSize(); ++i )
         {
+            std::cout << "index: " << layer->getLayerIndex() << " " << i << std::endl;;
             if ( layer->neuronEliminated( i ) )
                 continue;
 
@@ -291,7 +292,6 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
                     continue;
                 }
             }
-
             lb = solveLPRelaxation( layers,
                                     MinOrMax::MIN,
                                     variableName,

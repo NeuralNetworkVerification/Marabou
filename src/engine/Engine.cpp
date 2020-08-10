@@ -141,7 +141,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
     if ( _useGurobi )
     {
-        ENGINE_LOG( "Solving with Gurobi" );
+        std::cout << "Solving with Gurobi\n";
 
         explicitBasisBoundTightening();
         applyAllBoundTightenings();
