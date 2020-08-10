@@ -17,6 +17,7 @@
 
 #include "Debug.h"
 #include "GurobiWrapper.h"
+#include "MarabouError.h"
 #include "MStringf.h"
 #include "gurobi_c.h"
 
@@ -98,6 +99,39 @@ void GurobiWrapper::encodeInputQuery( const InputQuery &inputQuery )
         }
     }
 
+    unsigned ind = 0;
+    for ( const auto&plConstraint : inputQuery.getPiecewiseLinearConstraints() )
+    {
+        if ( !plConstraint->isActive() || plConstraint->phaseFixed() )
+            continue;
+        if ( plConstraint->getType() != PiecewiseLinearFunctionType::RELU )
+            throw MarabouError( MarabouError::UNSUPPORTED_PIECEWISE_CONSTRAINT,
+                                "GurobiWrapper::encodeInputQuery: "
+                                "Only ReLU is supported\n" );
+
+        auto relu = ( ReluConstraint *) plConstraint;
+        addVariable( Stringf( "a%u", ind ),
+                     0,
+                     1,
+                     GurobiWrapper::BINARY );
+
+        unsigned sourceVariable = relu->getB();
+        unsigned targetVariable = relu->getF();
+        double sourceLb = inputQuery.getLowerBound( sourceVariable );
+        double sourceUb = inputQuery.getUpperBound( sourceVariable );
+
+        List<GurobiWrapper::Term> terms;
+        terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
+        terms.append( GurobiWrapper::Term( -1, Stringf( "x%u", sourceVariable ) ) );
+        terms.append( GurobiWrapper::Term( -sourceLb, Stringf( "a%u", ind ) ) );
+        addLeqConstraint( terms, -sourceLb );
+
+        terms.clear();
+        terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
+        terms.append( GurobiWrapper::Term( -sourceUb, Stringf( "a%u", ind ) ) );
+        addLeqConstraint( terms, 0 );
+        ind++;
+    }
 }
 
 void GurobiWrapper::addVariable( String name, double lb, double ub, VariableType type )
@@ -182,6 +216,7 @@ void GurobiWrapper::addConstraint( const List<Term> &terms, double scalar, char 
 
         for ( const auto &term : terms )
         {
+            std::cout << term._variable.ascii() << std::endl;
             ASSERT( _nameToVariable.exists( term._variable ) );
             constraint += GRBLinExpr( *_nameToVariable[term._variable], term._coefficient );
         }
