@@ -48,7 +48,6 @@ Engine::Engine( unsigned verbosity )
     , _verbosity( verbosity )
     , _lastNumVisitedStates( 0 )
     , _lastIterationWithProgress( 0 )
-    , _useGurobi( false )
     , _gurobiEnvironment( NULL )
 {
     _smtCore.setStatistics( &_statistics );
@@ -96,71 +95,10 @@ void Engine::adjustWorkMemorySize()
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "Engine::work" );
 }
 
-bool Engine::solveWithGurobi( unsigned timeoutInSeconds )
-{
-    GurobiWrapper gurobi( _gurobiEnvironment );
-    ENGINE_LOG( "Solving the input query with Gurobi...\n" );
-    for ( unsigned var = 0; var < _preprocessedQuery.getNumberOfVariables(); var++ )
-    {
-        double lb = _tableau->getLowerBound( var );
-        if ( lb > _preprocessedQuery.getLowerBound( var ) )
-            _preprocessedQuery.setLowerBound( var, lb );
-        double ub = _tableau->getUpperBound( var );
-        if ( ub < _preprocessedQuery.getUpperBound( var ) )
-            _preprocessedQuery.setUpperBound( var, ub );
-    }
-    gurobi.encodeInputQuery( _preprocessedQuery );
-    ENGINE_LOG( "Query encoded in Gurobi...\n" );
-
-    if ( timeoutInSeconds != 0 )
-    {
-        ENGINE_LOG( "Gurobi timeout set to %u\n", timeoutInSeconds );
-        gurobi.setTimeLimit( timeoutInSeconds );
-    }
-
-    gurobi.solve();
-
-    if ( gurobi.haveFeasibleSolution() )
-    {
-        Map<String, double> dontCare;
-        double dontCare2;
-        gurobi.extractSolution( dontCare, dontCare2 );
-        for ( unsigned i = 0; i < 5; i++ )
-        {
-            Stringf var ("x%u", i);
-            std::cout << var.ascii() << " " << dontCare[var] << std::endl;
-        }
-        _exitCode = IEngine::SAT;
-        return true;
-    }
-    else if ( gurobi.infeasbile() )
-        _exitCode = IEngine::UNSAT;
-    else if ( gurobi.timeout() )
-        _exitCode = IEngine::TIMEOUT;
-    else
-        throw MarabouError( MarabouError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
-    return false;
-}
-    
 bool Engine::solve( unsigned timeoutInSeconds )
 {
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
-
-    if ( _useGurobi )
-    {
-        std::cout << "Solving with Gurobi\n";
-
-        explicitBasisBoundTightening();
-        applyAllBoundTightenings();
-
-        do
-        {
-            performSymbolicBoundTightening();
-        }
-        while ( applyAllValidConstraintCaseSplits() );
-        return solveWithGurobi( timeoutInSeconds );
-    }
 
     updateDirections();
     storeInitialEngineState();
@@ -1951,7 +1889,6 @@ void Engine::resetBoundTighteners()
 
 void Engine::useGurobi()
 {
-    _useGurobi = true;
     _gurobiEnvironment = new GRBEnv;
 }
 

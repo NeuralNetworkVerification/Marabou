@@ -108,10 +108,12 @@ void Marabou::prepareInputQuery()
     }
 
     extractSplittingThreshold();
-    if ( Options::get()->getBool( Options::USE_GUROBI ) )
+
+#ifdef ENABLE_GUROBI
     {
         _engine.useGurobi();
     }
+#endif // ENABLE_GUROBI
 
     String queryDumpFilePath = Options::get()->getString( Options::QUERY_DUMP_FILE );
     if ( queryDumpFilePath.length() > 0 )

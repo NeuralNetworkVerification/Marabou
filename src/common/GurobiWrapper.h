@@ -114,8 +114,6 @@ public:
     // default
     void dumpModel( String name );
 
-    void encodeInputQuery( const InputQuery &inputQuery );
-
 private:
     GRBEnv *_environment;
     GRBModel *_model;
@@ -172,8 +170,6 @@ public:
     void setTimeLimit( double ) {};
     double getObjectiveBound() { return 0; };
     void dump() {};
-
-    void encodeInputQuery( const InputQuery &inputQuery ) ();
 };
 
 #endif // ENABLE_GUROBI

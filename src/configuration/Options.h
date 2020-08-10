@@ -34,9 +34,6 @@ public:
         // Should DNC mode be on or off
         DNC_MODE,
 
-        // Use gurobi as main solver
-        USE_GUROBI,
-
         // Help flag
         HELP,
 
