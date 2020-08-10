@@ -76,7 +76,27 @@ void GurobiWrapper::encodeInputQuery( const InputQuery &inputQuery )
         double ub = inputQuery.getUpperBound( var );
         addVariable( Stringf( "x%u", var ), lb, ub );
     }
-
+    for ( const auto &eq : inputQuery.getEquations() )
+    {
+        List<Term> terms;
+        double scalar = eq._scalar;
+        for ( const auto term : eq._addends )
+            terms.append( Term( term._coefficient, Stringf( "x%u", term._variable ) ) );
+        switch ( eq._type )
+        {
+        case Equation::EQ:
+            addEqConstraint( terms, scalar );
+            break;
+        case Equation::LE:
+            addLeqConstraint( terms, scalar );
+            break;
+        case Equation::GE:
+            addGeqConstraint( terms, scalar );
+            break;
+        default:
+            break;
+        }
+    }
 
 }
 
@@ -123,6 +143,7 @@ void GurobiWrapper::addVariable( String name, double lb, double ub, VariableType
 void GurobiWrapper::setLowerBound( String name, double lb )
 {
     GRBVar var = _model->getVarByName( name.ascii() );
+    std::cout << "found!" << std::endl;
     var.set( GRB_DoubleAttr_LB, lb );
 }
 

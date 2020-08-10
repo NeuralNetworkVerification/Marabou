@@ -25,6 +25,7 @@
 #include "DantzigsRule.h"
 #include "DegradationChecker.h"
 #include "DivideStrategy.h"
+#include "GurobiWrapper.h"
 #include "IEngine.h"
 #include "InputQuery.h"
 #include "Map.h"
@@ -211,6 +212,11 @@ private:
 	  Preprocessed InputQuery
 	*/
 	InputQuery _preprocessedQuery;
+
+	/*
+	  Preprocessed InputQuery without Auxiliary Variables
+	*/
+	InputQuery _preprocessedQueryWithoutAux;
 
     /*
       Pivot selection strategies.

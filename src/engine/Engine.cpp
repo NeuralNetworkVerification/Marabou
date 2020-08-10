@@ -18,7 +18,6 @@
 #include "Debug.h"
 #include "Engine.h"
 #include "EngineState.h"
-#include "GurobiWrapper.h"
 #include "InfeasibleQueryException.h"
 #include "InputQuery.h"
 #include "MStringf.h"
@@ -91,24 +90,38 @@ void Engine::adjustWorkMemorySize()
 
 bool Engine::solveWithGurobi( unsigned timeoutInSeconds )
 {
-
-    ENGINE_LOG( "Solving the input query with Gurobi" );
     GurobiWrapper gurobi;
+    ENGINE_LOG( "Solving the input query with Gurobi...\n" );
+    for ( unsigned var = 0; var < _preprocessedQuery.getNumberOfVariables(); var++ )
+    {
+        double lb = _tableau->getLowerBound( var );
+        if ( lb > _preprocessedQuery.getLowerBound( var ) )
+            _preprocessedQuery.setLowerBound( var, lb );
+        double ub = _tableau->getUpperBound( var );
+        if ( ub < _preprocessedQuery.getUpperBound( var ) )
+            _preprocessedQuery.setUpperBound( var, ub );
+    }
+    gurobi.encodeInputQuery( _preprocessedQuery );
+    ENGINE_LOG( "Query encoded in Gurobi...\n" );
+
     if ( timeoutInSeconds != 0 )
     {
         ENGINE_LOG( "Gurobi timeout set to %u\n", timeoutInSeconds );
         gurobi.setTimeLimit( timeoutInSeconds );
     }
 
-    gurobi.encodeInputQuery( _preprocessedQuery );
-
     gurobi.solve();
 
     if ( gurobi.haveFeasibleSolution() )
     {
-        //Map<String, double> dontCare;
-        //double dontCare2;
-        //gurobi.extractSolution( dontCare, dontCare2 );
+        Map<String, double> dontCare;
+        double dontCare2;
+        gurobi.extractSolution( dontCare, dontCare2 );
+        for ( unsigned i = 0; i < 5; i++ )
+        {
+            Stringf var ("x%u", i);
+            std::cout << var.ascii() << " " << dontCare[var] << std::endl;
+        }
         _exitCode = IEngine::SAT;
         return true;
     }
@@ -129,6 +142,15 @@ bool Engine::solve( unsigned timeoutInSeconds )
     if ( _useGurobi )
     {
         ENGINE_LOG( "Solving with Gurobi" );
+
+        explicitBasisBoundTightening();
+        applyAllBoundTightenings();
+
+        do
+        {
+            performSymbolicBoundTightening();
+        }
+        while ( applyAllValidConstraintCaseSplits() );
         return solveWithGurobi( timeoutInSeconds );
     }
 
@@ -1105,35 +1127,31 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         initializeNetworkLevelReasoning();
 
-        if ( !_useGurobi )
-        {
-            double *constraintMatrix = createConstraintMatrix();
-            removeRedundantEquations( constraintMatrix );
+        double *constraintMatrix = createConstraintMatrix();
+        removeRedundantEquations( constraintMatrix );
 
-            // The equations have changed, recreate the constraint matrix
-            delete[] constraintMatrix;
-            constraintMatrix = createConstraintMatrix();
+        // The equations have changed, recreate the constraint matrix
+        delete[] constraintMatrix;
+        constraintMatrix = createConstraintMatrix();
 
-            List<unsigned> initialBasis;
-            List<unsigned> basicRows;
-            selectInitialVariablesForBasis( constraintMatrix, initialBasis, basicRows );
-            addAuxiliaryVariables();
-            augmentInitialBasisIfNeeded( initialBasis, basicRows );
+        List<unsigned> initialBasis;
+        List<unsigned> basicRows;
+        selectInitialVariablesForBasis( constraintMatrix, initialBasis, basicRows );
+        addAuxiliaryVariables();
+        augmentInitialBasisIfNeeded( initialBasis, basicRows );
 
-            storeEquationsInDegradationChecker();
+        storeEquationsInDegradationChecker();
 
-            // The equations have changed, recreate the constraint matrix
-            delete[] constraintMatrix;
-            constraintMatrix = createConstraintMatrix();
+        // The equations have changed, recreate the constraint matrix
+        delete[] constraintMatrix;
+        constraintMatrix = createConstraintMatrix();
 
-            initializeTableau( constraintMatrix, initialBasis );
+        initializeTableau( constraintMatrix, initialBasis );
 
-            if ( GlobalConfiguration::WARM_START )
-                warmStart();
+        if ( GlobalConfiguration::WARM_START )
+            warmStart();
 
-            delete[] constraintMatrix;
-        }
-
+        delete[] constraintMatrix;
         performMILPSolverBoundedTightening();
 
         struct timespec end = TimeUtils::sampleMicro();
@@ -1180,29 +1198,16 @@ void Engine::performMILPSolverBoundedTightening()
         List<Tightening> tightenings;
         _networkLevelReasoner->getConstraintTightenings( tightenings );
 
-        if ( _useGurobi )
+        for ( const auto &tightening : tightenings )
         {
-            for ( const auto &tightening : tightenings )
-            {
-                if ( tightening._type == Tightening::LB )
-                    _preprocessedQuery->setLowerBound( tightening._variable, tightening._value );
-                else if ( tightening._type == Tightening::UB )
-                    _preprocessedQuery->setUpperBound( tightening._variable, tightening._value );
-            }
-        }
-        else
-        {
-            for ( const auto &tightening : tightenings )
-            {
-                if ( tightening._type == Tightening::LB )
-                    _tableau->tightenLowerBound( tightening._variable, tightening._value );
+            if ( tightening._type == Tightening::LB )
+                _tableau->tightenLowerBound( tightening._variable, tightening._value );
 
-                else if ( tightening._type == Tightening::UB )
-                    _tableau->tightenUpperBound( tightening._variable, tightening._value );
-            }
-
-            applyAllValidConstraintCaseSplits();
+            else if ( tightening._type == Tightening::UB )
+                _tableau->tightenUpperBound( tightening._variable, tightening._value );
         }
+
+        applyAllValidConstraintCaseSplits();
     }
 }
 
