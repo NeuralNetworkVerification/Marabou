@@ -216,7 +216,6 @@ void GurobiWrapper::addConstraint( const List<Term> &terms, double scalar, char 
 
         for ( const auto &term : terms )
         {
-            std::cout << term._variable.ascii() << std::endl;
             ASSERT( _nameToVariable.exists( term._variable ) );
             constraint += GRBLinExpr( *_nameToVariable[term._variable], term._coefficient );
         }
