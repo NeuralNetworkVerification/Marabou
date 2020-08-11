@@ -72,15 +72,13 @@ private:
     LayerOwner *_layerOwner;
     bool _cutoffInUse;
     double _cutoffValue;
+    GurobiWrapper _gurobi;
 
-    void addInputLayerToLpRelaxation( GurobiWrapper &gurobi,
-                                      const Layer *layer );
+    void addInputLayerToLpRelaxation( GurobiWrapper &gurobi, const Layer *layer );
 
-    void addReluLayerToLpRelaxation( GurobiWrapper &gurobi,
-                                     const Layer *layer );
+    void addReluLayerToLpRelaxation( GurobiWrapper &gurobi, const Layer *layer );
 
-    void addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi,
-                                            const Layer *layer );
+    void addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi, const Layer *layer );
 };
 
 } // namespace NLR
