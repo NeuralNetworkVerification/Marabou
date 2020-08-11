@@ -111,7 +111,7 @@ void Marabou::prepareInputQuery()
 
 #ifdef ENABLE_GUROBI
     {
-        _engine.useGurobi();
+        _engine.createGurobiEnvironment();
     }
 #endif // ENABLE_GUROBI
 

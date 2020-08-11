@@ -18,7 +18,6 @@
 #include "Debug.h"
 #include "Engine.h"
 #include "EngineState.h"
-#include "GurobiWrapper.h"
 #include "InfeasibleQueryException.h"
 #include "InputQuery.h"
 #include "MStringf.h"
@@ -1075,8 +1074,6 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         if ( _verbosity > 0 )
             printInputBounds( inputQuery );
 
-        initializeNetworkLevelReasoning();
-
         double *constraintMatrix = createConstraintMatrix();
         removeRedundantEquations( constraintMatrix );
 
@@ -1096,6 +1093,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         delete[] constraintMatrix;
         constraintMatrix = createConstraintMatrix();
 
+        initializeNetworkLevelReasoning();
         initializeTableau( constraintMatrix, initialBasis );
 
         if ( GlobalConfiguration::WARM_START )
@@ -1887,7 +1885,7 @@ void Engine::resetBoundTighteners()
     _rowBoundTightener->resetBounds();
 }
 
-void Engine::useGurobi()
+void Engine::createGurobiEnvironment()
 {
     _gurobiEnvironment = new GRBEnv;
 }

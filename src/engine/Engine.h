@@ -155,7 +155,10 @@ public:
     void resetExitCode();
     void resetBoundTighteners();
 
-    void useGurobi();
+    /*
+      Create a Gurobi environment which will be used for future gurobi call
+    */
+    void createGurobiEnvironment();
 
 private:
     enum BasisRestorationRequired {
@@ -332,7 +335,6 @@ private:
     /*
       Use an MIP encoding of the inputQuery and solve with Gurobi
     */
-    bool _useGurobi;
     GRBEnv *_gurobiEnvironment;
 
 

@@ -322,7 +322,11 @@ void DnCManager::printResult()
 
 bool DnCManager::createEngines()
 {
-    // Create the base engine
+#ifdef ENABLE_GUROBI
+    {
+        _baseEngine->createGurobiEnvironment();
+    }
+#endif // ENABLE_GUROBI
     _baseEngine = std::make_shared<Engine>( _verbosity );
     if ( !_baseEngine->processInputQuery( *_baseInputQuery ) )
         // Solved by preprocessing, we are done!

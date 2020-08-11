@@ -17,7 +17,6 @@
 
 #include "Debug.h"
 #include "GurobiWrapper.h"
-#include "MarabouError.h"
 #include "MStringf.h"
 
 #include <iostream>
@@ -102,7 +101,6 @@ void GurobiWrapper::addVariable( String name, double lb, double ub, VariableType
 void GurobiWrapper::setLowerBound( String name, double lb )
 {
     GRBVar var = _model->getVarByName( name.ascii() );
-    std::cout << "found!" << std::endl;
     var.set( GRB_DoubleAttr_LB, lb );
 }
 

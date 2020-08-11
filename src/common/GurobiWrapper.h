@@ -18,7 +18,6 @@
 
 #ifdef ENABLE_GUROBI
 
-#include "InputQuery.h"
 #include "MString.h"
 #include "Map.h"
 
