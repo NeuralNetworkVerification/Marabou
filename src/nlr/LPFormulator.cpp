@@ -358,7 +358,7 @@ void LPFormulator::addLayerToModel( GurobiWrapper &gurobi, const Layer *layer )
 }
 
 void LPFormulator::addInputLayerToLpRelaxation( GurobiWrapper &gurobi,
-                                               const Layer *layer )
+                                                const Layer *layer )
 {
     for ( unsigned i = 0; i < layer->getSize(); ++i )
     {
