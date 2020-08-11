@@ -16,6 +16,7 @@
 #ifndef __NetworkLevelReasoner_h__
 #define __NetworkLevelReasoner_h__
 
+#include "GurobiWrapper.h"
 #include "ITableau.h"
 #include "Layer.h"
 #include "LayerOwner.h"
@@ -23,10 +24,6 @@
 #include "NeuronIndex.h"
 #include "PiecewiseLinearFunctionType.h"
 #include "Tightening.h"
-
-#ifdef ENABLE_GUROBI
-#include "gurobi_c++.h"
-#endif // ENABLE_GUROBI
 
 namespace NLR {
 

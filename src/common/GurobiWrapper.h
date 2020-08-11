@@ -128,6 +128,8 @@ private:
 #include "MString.h"
 #include "Map.h"
 
+class GRBEnv{};
+
 class GurobiWrapper
 {
 public:
@@ -146,7 +148,7 @@ public:
         Term() {}
     };
 
-    GurobiWrapper() {}
+    GurobiWrapper( GRBEnv */**/ ){};
     ~GurobiWrapper() {}
 
     void addVariable( String, double, double, VariableType type = CONTINUOUS ) { (void)type; }
