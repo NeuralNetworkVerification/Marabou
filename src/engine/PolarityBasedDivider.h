@@ -37,7 +37,8 @@ private:
     std::shared_ptr<IEngine> _engine;
 
     /*
-      Returns the variable with the largest range
+      Aong the K earliest unfixed ReLUs in the topological order, pick the one
+      with polarity closest to 0. K is equal to GlobalConfiguration::POLARITY_CAONDIDATES_THRESHOLD
     */
     PiecewiseLinearConstraint *getPLConstraintToSplit( const
                                                        PiecewiseLinearCaseSplit

@@ -480,11 +480,17 @@ private:
     */
     PiecewiseLinearConstraint *pickSplitPLConstraint( DivideStrategy strategy );
 
+    /*
+      Find the earliest K ReLUs that have not been fixed, update
+      their scores, and push them to the _candidatePlConstraints
+      K is equal to GlobalConfiguration::POLARITY_CANDIDATES_THRESHOLD
+    */
+    void pushToCandidatePlConstraintsBasedOnPolarity();
 
     /*
-      Update the polarity scores of each candidate splitting PL constraints
+      Push the first unfixed ReLU in the topological order to _candidatePlConstraints
     */
-    void updateScoresBasedOnPolarity();
+    void pushToCandidatePlConstraintsBasedOnTopology();
 
     /*
       Update the scores of each candidate splitting PL constraints

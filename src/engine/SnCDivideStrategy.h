@@ -23,6 +23,7 @@ enum class SnCDivideStrategy
 
     // Relu splitting
     Polarity,      // Pick the ReLU with the polarity closest to 0 among the first K nodes
+    EarliestReLU,
 
     Auto
 };

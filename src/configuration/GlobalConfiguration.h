@@ -224,7 +224,7 @@ public:
     /* In the polarity-based branching heuristics, only this many earliest nodes
        are considered to branch on.
     */
-    static const unsigned RUNTIME_ESTIMATE_THRESHOLD;
+    static const unsigned POLARITY_CANDIDATES_THRESHOLD;
 
     /*
       Logging options

@@ -14,7 +14,6 @@
 **/
 
 #include "AcasParser.h"
-#include "DivideStrategy.h"
 #include "FloatUtils.h"
 #include "InputParserError.h"
 #include "InputQuery.h"
@@ -155,10 +154,6 @@ void AcasParser::generateQuery( InputQuery &inputQuery )
             unsigned b = _nodeToB[NodeIndex(i, j)];
             unsigned f = _nodeToF[NodeIndex(i, j)];
             PiecewiseLinearConstraint *relu = new ReluConstraint( b, f );
-
-            if ( GlobalConfiguration::SPLITTING_HEURISTICS ==
-                 DivideStrategy::EarliestReLU )
-                relu->setScore( i );
 
             inputQuery.addPiecewiseLinearConstraint( relu );
         }

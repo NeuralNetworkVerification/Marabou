@@ -1962,48 +1962,42 @@ void Engine::updateDirections()
                 constraint->updateDirection();
 }
 
-void Engine::updateScoresBasedOnPolarity()
+void Engine::pushToCandidatePlConstraintsBasedOnPolarity()
 {
-    // We find the earliest K ReLUs that have not been fixed, update
-    // their scores, and pop them to the _candidatePlConstraints
-    // K is equal to GlobalConfiguration::RUNTIME_ESTIMATE_THRESHOLD
     ENGINE_LOG( Stringf( "Using polarity heuristics..." ).ascii() );
 
     List<PiecewiseLinearConstraint *> constraints =
         _networkLevelReasoner->getConstraintsInTopologicalOrder();
 
     for ( auto &plConstraint : constraints )
-        {
-            if ( plConstraint->supportPolarity() &&
-                 plConstraint->isActive() && !plConstraint->phaseFixed() )
-                {
-                    plConstraint->updateScoreBasedOnPolarity();
-                    _candidatePlConstraints.insert( plConstraint );
-                    if ( _candidatePlConstraints.size() >=
-                         GlobalConfiguration::RUNTIME_ESTIMATE_THRESHOLD )
-                        break;
-                }
-        }
-}
-
-void Engine::updateScores( DivideStrategy strategy )
-{
-    if ( _networkLevelReasoner && strategy == DivideStrategy::Polarity )
-        updateScoresBasedOnPolarity();
-    else if ( strategy == DivideStrategy::EarliestReLU )
     {
-        for ( const auto plConstraint : _plConstraints )
+        if ( plConstraint->supportPolarity() &&
+             plConstraint->isActive() && !plConstraint->phaseFixed() )
         {
-            if ( plConstraint->isActive() && !plConstraint->phaseFixed() )
-            {
-                _candidatePlConstraints.insert( plConstraint );
-            }
+            plConstraint->updateScoreBasedOnPolarity();
+            _candidatePlConstraints.insert( plConstraint );
+            if ( _candidatePlConstraints.size() >=
+                 GlobalConfiguration::POLARITY_CANDIDATES_THRESHOLD )
+                break;
         }
     }
-    else
+}
+
+void Engine::pushToCandidatePlConstraintsBasedOnTopology()
+{
+    // We push the first unfixed ReLU in the topology order to the _candidatePlConstraints
+    ENGINE_LOG( Stringf( "Using EarliestReLU heuristics..." ).ascii() );
+
+    List<PiecewiseLinearConstraint *> constraints =
+        _networkLevelReasoner->getConstraintsInTopologicalOrder();
+
+    for ( auto &plConstraint : constraints )
     {
-        // Otherwise, we fall back to the constraint violation based
-        // splitting heuristic - nothing to do.
+        if ( plConstraint->isActive() && !plConstraint->phaseFixed() )
+        {
+            _candidatePlConstraints.insert( plConstraint );
+            return;
+        }
     }
 }
 
@@ -2011,7 +2005,11 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy strateg
 {
     _candidatePlConstraints.clear();
     ENGINE_LOG( Stringf( "Picking a split PLConstraint..." ).ascii() );
-    updateScores( strategy );
+    if ( strategy == DivideStrategy::Polarity )
+        pushToCandidatePlConstraintsBasedOnPolarity();
+    else if ( strategy == DivideStrategy::EarliestReLU )
+        pushToCandidatePlConstraintsBasedOnTopology();
+
     ENGINE_LOG( Stringf( "Done updating scores..." ).ascii() );
     if ( _candidatePlConstraints.empty() )
     {
@@ -2026,22 +2024,14 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy strateg
     }
 }
 
-void Engine::updateScoresSnC( SnCDivideStrategy strategy )
-{
-
-    // Currently only Polarity-based heuristics will reach here.
-    if ( _networkLevelReasoner )
-        throw MarabouError( MarabouError::NETWORK_LEVEL_REASONER_NOT_AVAILABLE );
-    ASSERT( strategy == SnCDivideStrategy::Polarity );
-    if ( strategy == SnCDivideStrategy::Polarity )
-        updateScoresBasedOnPolarity();
-}
-
 PiecewiseLinearConstraint *Engine::pickSplitPLConstraintSnC( SnCDivideStrategy strategy )
 {
     _candidatePlConstraints.clear();
     ENGINE_LOG( Stringf( "Picking a split PLConstraint..." ).ascii() );
-    updateScoresSnC( strategy );
+    if ( strategy == SnCDivideStrategy::Polarity )
+        pushToCandidatePlConstraintsBasedOnPolarity();
+    else if ( strategy == SnCDivideStrategy::EarliestReLU )
+        pushToCandidatePlConstraintsBasedOnTopology();
     ENGINE_LOG( Stringf( "Done updating scores..." ).ascii() );
     if ( _candidatePlConstraints.empty() )
     {
