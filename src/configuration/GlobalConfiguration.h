@@ -225,6 +225,11 @@ public:
     static const unsigned RUNTIME_ESTIMATE_THRESHOLD;
 
     /*
+      The number of threads Gurobi spawns
+    */
+    static const unsigned GUROBI_NUMBER_OF_THREADS;
+
+    /*
       Logging options
     */
     static const bool DNC_MANAGER_LOGGING;
