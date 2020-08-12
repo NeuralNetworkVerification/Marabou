@@ -103,6 +103,16 @@ bool Engine::solve( unsigned timeoutInSeconds )
         printf( "\n---\n" );
     }
 
+    DEBUG({
+            // Initially, all constraints should be active
+            for ( const auto &plc : _plConstraints )
+            {
+                ASSERT( plc->isActive() );
+            }
+        });
+
+    applyAllValidConstraintCaseSplits();
+
     bool splitJustPerformed = true;
     struct timespec mainLoopStart = TimeUtils::sampleMicro();
     while ( true )
@@ -1129,6 +1139,8 @@ void Engine::performMILPSolverBoundedTightening()
         case GlobalConfiguration::MILP_ENCODING_INCREMENTAL:
             _networkLevelReasoner->MILPPropagation();
             break;
+        case GlobalConfiguration::NONE:
+            return;
         }
 
         List<Tightening> tightenings;
@@ -1142,8 +1154,6 @@ void Engine::performMILPSolverBoundedTightening()
             else if ( tightening._type == Tightening::UB )
                 _tableau->tightenUpperBound( tightening._variable, tightening._value );
         }
-
-        applyAllValidConstraintCaseSplits();
     }
 }
 
