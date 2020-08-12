@@ -249,9 +249,6 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
         for ( const auto &constraint : other._networkLevelReasoner->
                   getConstraintsInTopologicalOrder() )
         {
-            if ( !other._plConstraints.exists( constraint ) )
-                continue;
-
             auto *newPlc = constraint->duplicateConstraint();
             _plConstraints.append( newPlc );
             _networkLevelReasoner->addConstraintInTopologicalOrder( newPlc );

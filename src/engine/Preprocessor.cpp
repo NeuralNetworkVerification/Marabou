@@ -708,6 +708,8 @@ void Preprocessor::eliminateVariables()
         {
             if ( _statistics )
                 _statistics->ppIncNumConstraintsRemoved();
+            if ( _preprocessed._networkLevelReasoner )
+                _preprocessed._networkLevelReasoner->removeConstraintFromTopologicalOrder( *constraint );
             delete *constraint;
             *constraint = NULL;
             constraint = constraints.erase( constraint );

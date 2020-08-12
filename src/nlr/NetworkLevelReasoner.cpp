@@ -229,4 +229,11 @@ void NetworkLevelReasoner::addConstraintInTopologicalOrder( PiecewiseLinearConst
     _constraintsInTopologicalOrder.append( constraint );
 }
 
+void NetworkLevelReasoner::removeConstraintFromTopologicalOrder( PiecewiseLinearConstraint *constraint )
+{
+  if ( _constraintsInTopologicalOrder.exists( constraint ) )
+       _constraintsInTopologicalOrder.erase( constraint );
+}
+
+
 } // namespace NLR
