@@ -385,8 +385,21 @@ void LPFormulator::addReluLayerToLpRelaxation( GurobiWrapper &gurobi,
             List<NeuronIndex> sources = layer->getActivationSources( i );
             const Layer *sourceLayer = _layerOwner->getLayer( sources.begin()->_layer );
             unsigned sourceNeuron = sources.begin()->_neuron;
-            unsigned sourceVariable = sourceLayer->neuronToVariable( sourceNeuron );
 
+            if ( sourceLayer->neuronEliminated( sourceNeuron ) )
+            {
+                // If the source neuron has been eliminated, this neuron is constant
+                double sourceValue = sourceLayer->getEliminatedNeuronValue( sourceNeuron );
+                double targetValue = sourceValue > 0 ? sourceValue : 0;
+
+                gurobi.addVariable( Stringf( "x%u", targetVariable ),
+                                    targetValue,
+                                    targetValue );
+
+                continue;
+            }
+
+            unsigned sourceVariable = sourceLayer->neuronToVariable( sourceNeuron );
             double sourceLb = sourceLayer->getLb( sourceNeuron );
             double sourceUb = sourceLayer->getUb( sourceNeuron );
 
