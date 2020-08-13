@@ -194,11 +194,6 @@ private:
     List<PiecewiseLinearConstraint *> _plConstraints;
 
     /*
-      The ordered set of candidate PL constraints for splitting
-    */
-    Set<PiecewiseLinearConstraint *> _candidatePlConstraints;
-
-    /*
       Piecewise linear constraints that are currently violated.
     */
     List<PiecewiseLinearConstraint *> _violatedPlConstraints;
@@ -481,16 +476,15 @@ private:
     void updateDirections();
 
     /*
-      Find the earliest K ReLUs that have not been fixed, update
-      their scores, and push them to the _candidatePlConstraints
+      Among the earliest K ReLUs, pick the one with Polarity closest to 0.
       K is equal to GlobalConfiguration::POLARITY_CANDIDATES_THRESHOLD
     */
-    void pushToCandidatePlConstraintsBasedOnPolarity();
+    PiecewiseLinearConstraint *pickSplitPLConstraintBasedOnPolarity();
 
     /*
-      Push the first unfixed ReLU in the topological order to _candidatePlConstraints
+      Pick the first unfixed ReLU in the topological order
     */
-    void pushToCandidatePlConstraintsBasedOnTopology();
+    PiecewiseLinearConstraint *pickSplitPLConstraintBasedOnTopology();
 };
 
 #endif // __Engine_h__

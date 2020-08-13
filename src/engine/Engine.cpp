@@ -1972,7 +1972,7 @@ void Engine::updateDirections()
                 constraint->updateDirection();
 }
 
-void Engine::pushToCandidatePlConstraintsBasedOnPolarity()
+PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnPolarity()
 {
     ENGINE_LOG( Stringf( "Using polarity heuristics..." ).ascii() );
 
@@ -1982,21 +1982,26 @@ void Engine::pushToCandidatePlConstraintsBasedOnPolarity()
     List<PiecewiseLinearConstraint *> constraints =
         _networkLevelReasoner->getConstraintsInTopologicalOrder();
 
+    Map<double, PiecewiseLinearConstraint *> scoreToConstraint;
     for ( auto &plConstraint : constraints )
     {
         if ( plConstraint->supportPolarity() &&
              plConstraint->isActive() && !plConstraint->phaseFixed() )
         {
             plConstraint->updateScoreBasedOnPolarity();
-            _candidatePlConstraints.insert( plConstraint );
-            if ( _candidatePlConstraints.size() >=
+            scoreToConstraint[plConstraint->getScore()] = plConstraint;
+            if ( scoreToConstraint.size() >=
                  GlobalConfiguration::POLARITY_CANDIDATES_THRESHOLD )
                 break;
         }
     }
+    if ( scoreToConstraint.size() > 0 )
+        return (*scoreToConstraint.begin()).second;
+    else
+        return NULL;
 }
 
-void Engine::pushToCandidatePlConstraintsBasedOnTopology()
+PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnTopology()
 {
     // We push the first unfixed ReLU in the topology order to the _candidatePlConstraints
     ENGINE_LOG( Stringf( "Using EarliestReLU heuristics..." ).ascii() );
@@ -2010,57 +2015,41 @@ void Engine::pushToCandidatePlConstraintsBasedOnTopology()
     for ( auto &plConstraint : constraints )
     {
         if ( plConstraint->isActive() && !plConstraint->phaseFixed() )
-        {
-            _candidatePlConstraints.insert( plConstraint );
-            return;
-        }
+            return plConstraint;
     }
+    return NULL;
 }
 
 PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy strategy )
 {
-    _candidatePlConstraints.clear();
     ENGINE_LOG( Stringf( "Picking a split PLConstraint..." ).ascii() );
 
+    PiecewiseLinearConstraint *candidatePLConstraint = NULL;
     if ( strategy == DivideStrategy::Polarity )
-        pushToCandidatePlConstraintsBasedOnPolarity();
+        candidatePLConstraint = pickSplitPLConstraintBasedOnPolarity();
     else if ( strategy == DivideStrategy::EarliestReLU )
-        pushToCandidatePlConstraintsBasedOnTopology();
+        candidatePLConstraint = pickSplitPLConstraintBasedOnTopology();
 
     ENGINE_LOG( Stringf( "Done updating scores..." ).ascii() );
-    if ( _candidatePlConstraints.empty() )
-    {
-        ENGINE_LOG( Stringf( "Unable to pick using the current strategy..." ).ascii() );
-        return NULL;
-    }
-    else
-    {
-        auto constraint = *_candidatePlConstraints.begin();
-        ENGINE_LOG( Stringf( "Picked..." ).ascii() );
-        return constraint;
-    }
+    ENGINE_LOG( Stringf( ( candidatePLConstraint ?
+                           "Unable to pick using the current strategy..." :
+                           "Picked..." ) ).ascii() );
+    return candidatePLConstraint;
 }
 
 PiecewiseLinearConstraint *Engine::pickSplitPLConstraintSnC( SnCDivideStrategy strategy )
 {
-    _candidatePlConstraints.clear();
-    ENGINE_LOG( Stringf( "Picking a split PLConstraint..." ).ascii() );
+    PiecewiseLinearConstraint *candidatePLConstraint = NULL;
     if ( strategy == SnCDivideStrategy::Polarity )
-        pushToCandidatePlConstraintsBasedOnPolarity();
+        candidatePLConstraint = pickSplitPLConstraintBasedOnPolarity();
     else if ( strategy == SnCDivideStrategy::EarliestReLU )
-        pushToCandidatePlConstraintsBasedOnTopology();
+        candidatePLConstraint = pickSplitPLConstraintBasedOnTopology();
+
     ENGINE_LOG( Stringf( "Done updating scores..." ).ascii() );
-    if ( _candidatePlConstraints.empty() )
-    {
-        ENGINE_LOG( Stringf( "Unable to pick using the current strategy..." ).ascii() );
-        return NULL;
-    }
-    else
-    {
-        auto constraint = *_candidatePlConstraints.begin();
-        ENGINE_LOG( Stringf( "Picked..." ).ascii() );
-        return constraint;
-    }
+    ENGINE_LOG( Stringf( ( candidatePLConstraint ?
+                           "Unable to pick using the current strategy..." :
+                           "Picked..." ) ).ascii() );
+    return candidatePLConstraint;
 }
 
 void Engine::setConstraintViolationThreshold( unsigned threshold )

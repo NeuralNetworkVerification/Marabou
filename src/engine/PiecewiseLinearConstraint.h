@@ -230,6 +230,12 @@ public:
     {
     }
 
+    double getScore() const
+    {
+        return _score;
+    }
+
+
     virtual void updateScoreBasedOnPolarity()
     {
     }
