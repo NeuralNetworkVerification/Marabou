@@ -1976,6 +1976,9 @@ void Engine::pushToCandidatePlConstraintsBasedOnPolarity()
 {
     ENGINE_LOG( Stringf( "Using polarity heuristics..." ).ascii() );
 
+    if ( !_networkLevelReasoner )
+        throw MarabouError( MarabouError::NETWORK_LEVEL_REASONER_NOT_AVAILABLE );
+
     List<PiecewiseLinearConstraint *> constraints =
         _networkLevelReasoner->getConstraintsInTopologicalOrder();
 
@@ -1998,6 +2001,9 @@ void Engine::pushToCandidatePlConstraintsBasedOnTopology()
     // We push the first unfixed ReLU in the topology order to the _candidatePlConstraints
     ENGINE_LOG( Stringf( "Using EarliestReLU heuristics..." ).ascii() );
 
+    if ( !_networkLevelReasoner )
+        throw MarabouError( MarabouError::NETWORK_LEVEL_REASONER_NOT_AVAILABLE );
+
     List<PiecewiseLinearConstraint *> constraints =
         _networkLevelReasoner->getConstraintsInTopologicalOrder();
 
@@ -2015,6 +2021,7 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy strateg
 {
     _candidatePlConstraints.clear();
     ENGINE_LOG( Stringf( "Picking a split PLConstraint..." ).ascii() );
+
     if ( strategy == DivideStrategy::Polarity )
         pushToCandidatePlConstraintsBasedOnPolarity();
     else if ( strategy == DivideStrategy::EarliestReLU )

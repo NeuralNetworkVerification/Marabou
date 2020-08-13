@@ -135,6 +135,11 @@ public:
     void setVerbosity( unsigned verbosity );
 
     /*
+      Pick the piecewise linear constraint for splitting
+    */
+    PiecewiseLinearConstraint *pickSplitPLConstraint( DivideStrategy strategy );
+
+    /*
       Call-back from QueryDividers
       Pick the piecewise linear constraint for splitting
     */
@@ -476,11 +481,6 @@ private:
     void updateDirections();
 
     /*
-      Pick the piecewise linear constraint for splitting
-    */
-    PiecewiseLinearConstraint *pickSplitPLConstraint( DivideStrategy strategy );
-
-    /*
       Find the earliest K ReLUs that have not been fixed, update
       their scores, and push them to the _candidatePlConstraints
       K is equal to GlobalConfiguration::POLARITY_CANDIDATES_THRESHOLD
@@ -491,18 +491,6 @@ private:
       Push the first unfixed ReLU in the topological order to _candidatePlConstraints
     */
     void pushToCandidatePlConstraintsBasedOnTopology();
-
-    /*
-      Update the scores of each candidate splitting PL constraints
-    */
-    void updateScores( DivideStrategy strategy );
-
-    /*
-      Update the polarity scores of each candidate splitting PL constraints
-    */
-    void updateScoresSnC( SnCDivideStrategy strategy );
-
-
 };
 
 #endif // __Engine_h__
