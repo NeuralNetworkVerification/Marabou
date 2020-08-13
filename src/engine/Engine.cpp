@@ -1978,7 +1978,7 @@ void Engine::updateDirections()
 
 PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnPolarity()
 {
-    ENGINE_LOG( Stringf( "Using polarity heuristics..." ).ascii() );
+    ENGINE_LOG( Stringf( "Using Polarity-based heuristics..." ).ascii() );
 
     if ( !_networkLevelReasoner )
         throw MarabouError( MarabouError::NETWORK_LEVEL_REASONER_NOT_AVAILABLE );
@@ -2000,7 +2000,11 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnPolarity()
         }
     }
     if ( scoreToConstraint.size() > 0 )
+    {
+        ENGINE_LOG( Stringf( "Score of the picked ReLU: %f",
+                             ( *scoreToConstraint.begin() ).first ).ascii() );
         return (*scoreToConstraint.begin()).second;
+    }
     else
         return NULL;
 }

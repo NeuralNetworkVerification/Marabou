@@ -347,6 +347,13 @@ public:
         TS_ASSERT( !constraintToSplit->phaseFixed() );
         TS_ASSERT( constraintToSplit->isActive() );
         std::cout << "Polarity: " << ( ( ReluConstraint * ) constraintToSplit )->computePolarity() << std::endl;
+        for ( const auto &constraint : engine.getInputQuery()->
+                  getNetworkLevelReasoner()->getConstraintsInTopologicalOrder() )
+        {
+            TS_ASSERT( std::abs( ( ( ReluConstraint * ) constraintToSplit )->computePolarity() ) <=
+                       std::abs( ( ( ReluConstraint * ) constraint )->computePolarity() ) );
+        }
+
         TS_ASSERT_EQUALS( 0, ( ( ReluConstraint * ) constraintToSplit )->computePolarity() );
     }
 
