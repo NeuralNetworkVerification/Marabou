@@ -28,6 +28,7 @@ LPFormulator::LPFormulator( LayerOwner *layerOwner )
     , _cutoffInUse( false )
     , _cutoffValue( 0 )
 {
+    _gurobi.setTimeLimit( GlobalConfiguration::MILPSolverTimeoutValueInSeconds );
 }
 
 LPFormulator::~LPFormulator()
@@ -39,38 +40,35 @@ double LPFormulator::solveLPRelaxation( const Map<unsigned, Layer *> &layers,
                                         String variableName,
                                         unsigned lastLayer )
 {
-    GurobiWrapper gurobi;
-
-    gurobi.setTimeLimit( GlobalConfiguration::MILPSolverTimeoutValueInSeconds );
-
-    createLPRelaxation( layers, gurobi, lastLayer );
+    _gurobi.resetModel();
+    createLPRelaxation( layers, _gurobi, lastLayer );
 
     List<GurobiWrapper::Term> terms;
     terms.append( GurobiWrapper::Term( 1, variableName ) );
 
     if ( minOrMax == MAX )
-        gurobi.setObjective( terms );
+        _gurobi.setObjective( terms );
     else
-        gurobi.setCost( terms );
+        _gurobi.setCost( terms );
 
-    gurobi.solve();
+    _gurobi.solve();
 
-    if ( gurobi.infeasbile() )
+    if ( _gurobi.infeasbile() )
         throw InfeasibleQueryException();
 
-    if ( gurobi.cutoffOccurred() )
+    if ( _gurobi.cutoffOccurred() )
         return _cutoffValue;
 
-    if ( gurobi.optimal() )
+    if ( _gurobi.optimal() )
     {
         Map<String, double> dontCare;
         double result = 0;
-        gurobi.extractSolution( dontCare, result );
+        _gurobi.extractSolution( dontCare, result );
         return result;
     }
-    else if ( gurobi.timeout() )
+    else if ( _gurobi.timeout() )
     {
-        return gurobi.getObjectiveBound();
+        return _gurobi.getObjectiveBound();
     }
 
     throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
@@ -78,9 +76,7 @@ double LPFormulator::solveLPRelaxation( const Map<unsigned, Layer *> &layers,
 
 void LPFormulator::optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned, Layer *> &layers )
 {
-    GurobiWrapper gurobi;
-
-    gurobi.setTimeLimit( GlobalConfiguration::MILPSolverTimeoutValueInSeconds );
+    _gurobi.resetModel();
 
     List<GurobiWrapper::Term> terms;
     Map<String, double> dontCare;
@@ -108,7 +104,7 @@ void LPFormulator::optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned
         */
         ASSERT( layers.exists( i ) );
         Layer *layer = layers[i];
-        addLayerToModel( gurobi, layer );
+        addLayerToModel( _gurobi, layer );
 
         for ( unsigned j = 0; j < layer->getSize(); ++j )
         {
@@ -128,24 +124,24 @@ void LPFormulator::optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned
             terms.append( GurobiWrapper::Term( 1, variableName ) );
 
             // Maximize
-            gurobi.reset();
-            gurobi.setObjective( terms );
-            gurobi.solve();
+            _gurobi.reset();
+            _gurobi.setObjective( terms );
+            _gurobi.solve();
 
-            if ( gurobi.infeasbile() )
+            if ( _gurobi.infeasbile() )
                 throw InfeasibleQueryException();
 
-            if ( gurobi.cutoffOccurred() )
+            if ( _gurobi.cutoffOccurred() )
             {
                 ub = _cutoffValue;
             }
-            else if ( gurobi.optimal() )
+            else if ( _gurobi.optimal() )
             {
-                gurobi.extractSolution( dontCare, ub );
+                _gurobi.extractSolution( dontCare, ub );
             }
-            else if ( gurobi.timeout() )
+            else if ( _gurobi.timeout() )
             {
-                ub = gurobi.getObjectiveBound();
+                ub = _gurobi.getObjectiveBound();
             }
             else
             {
@@ -155,7 +151,7 @@ void LPFormulator::optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned
             // If the bound is tighter, store it
             if ( ub < currentUb )
             {
-                gurobi.setUpperBound( variableName, ub );
+                _gurobi.setUpperBound( variableName, ub );
 
                 if ( FloatUtils::isPositive( currentUb ) &&
                      !FloatUtils::isPositive( ub ) )
@@ -175,24 +171,24 @@ void LPFormulator::optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned
             }
 
             // Minimize
-            gurobi.reset();
-            gurobi.setCost( terms );
-            gurobi.solve();
+            _gurobi.reset();
+            _gurobi.setCost( terms );
+            _gurobi.solve();
 
-            if ( gurobi.infeasbile() )
+            if ( _gurobi.infeasbile() )
                 throw InfeasibleQueryException();
 
-            if ( gurobi.cutoffOccurred() )
+            if ( _gurobi.cutoffOccurred() )
             {
                 lb = _cutoffValue;
             }
-            else if ( gurobi.optimal() )
+            else if ( _gurobi.optimal() )
             {
-                gurobi.extractSolution( dontCare, lb );
+                _gurobi.extractSolution( dontCare, lb );
             }
-            else if ( gurobi.timeout() )
+            else if ( _gurobi.timeout() )
             {
-                lb = gurobi.getObjectiveBound();
+                lb = _gurobi.getObjectiveBound();
             }
             else
             {
@@ -202,7 +198,7 @@ void LPFormulator::optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned
             // If the bound is tighter, store it
             if ( lb > currentLb )
             {
-                gurobi.setLowerBound( variableName, lb );
+                _gurobi.setLowerBound( variableName, lb );
 
                 if ( FloatUtils::isNegative( currentLb ) &&
                      !FloatUtils::isNegative( lb ) )
@@ -366,8 +362,8 @@ void LPFormulator::addInputLayerToLpRelaxation( GurobiWrapper &gurobi,
 {
     for ( unsigned i = 0; i < layer->getSize(); ++i )
     {
-        unsigned varibale = layer->neuronToVariable( i );
-        gurobi.addVariable( Stringf( "x%u", varibale ),
+        unsigned variable = layer->neuronToVariable( i );
+        gurobi.addVariable( Stringf( "x%u", variable ),
                             layer->getLb( i ),
                             layer->getUb( i ) );
     }
@@ -462,21 +458,20 @@ void LPFormulator::addReluLayerToLpRelaxation( GurobiWrapper &gurobi,
     }
 }
 
-void LPFormulator::addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi,
-                                                      const Layer *layer )
+void LPFormulator::addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi, const Layer *layer )
 {
     for ( unsigned i = 0; i < layer->getSize(); ++i )
     {
         if ( !layer->neuronEliminated( i ) )
         {
-            unsigned varibale = layer->neuronToVariable( i );
+            unsigned variable = layer->neuronToVariable( i );
 
-            gurobi.addVariable( Stringf( "x%u", varibale ),
+            gurobi.addVariable( Stringf( "x%u", variable ),
                                 layer->getLb( i ),
                                 layer->getUb( i ) );
 
             List<GurobiWrapper::Term> terms;
-            terms.append( GurobiWrapper::Term( -1, Stringf( "x%u", varibale ) ) );
+            terms.append( GurobiWrapper::Term( -1, Stringf( "x%u", variable ) ) );
 
             double bias = -layer->getBias( i );
 
