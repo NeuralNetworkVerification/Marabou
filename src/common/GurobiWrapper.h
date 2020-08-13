@@ -108,6 +108,9 @@ public:
     // Reset the underlying model
     void reset();
 
+    // Clear the underlying model and create a fresh model
+    void resetModel();
+
     // Dump the model to a file. Note that the suffix of the file is
     // used by Gurobi to determine the format. Using ".lp" is a good
     // default
@@ -120,6 +123,7 @@ private:
 
     void addConstraint( const List<Term> &terms, double scalar, char sense );
 
+    void freeModelIfNeeded();
     void freeMemoryIfNeeded();
 };
 
@@ -161,6 +165,7 @@ public:
     void solve() {}
     void extractSolution( Map<String, double> &, double & ) {}
     void reset() {}
+    void resetModel() {}
     bool optimal() { return true; }
     bool cutoffOccurred() { return false; };
     bool infeasbile() { return false; };
