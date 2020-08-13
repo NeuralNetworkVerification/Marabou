@@ -269,6 +269,7 @@ public:
         // x6 = -x4 + x5  ( x6 \in [-2, 8] )
         // x7 = -x4 + x5 - 3 ( x7 \in [-5, 5] )
         // Based on the polarity, relu(x7, x9) should be picked
+        // And the picked ReLU must have |polarity| not larger than the other unfixed ReLUs
 
         InputQuery inputQuery;
         inputQuery.setNumberOfVariables( 10 );
@@ -346,7 +347,6 @@ public:
         TS_ASSERT( constraintToSplit );
         TS_ASSERT( !constraintToSplit->phaseFixed() );
         TS_ASSERT( constraintToSplit->isActive() );
-        std::cout << "Polarity: " << ( ( ReluConstraint * ) constraintToSplit )->computePolarity() << std::endl;
         for ( const auto &constraint : engine.getInputQuery()->
                   getNetworkLevelReasoner()->getConstraintsInTopologicalOrder() )
         {
