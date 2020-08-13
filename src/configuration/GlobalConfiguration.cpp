@@ -87,7 +87,9 @@ const GlobalConfiguration::BasisFactorizationType GlobalConfiguration::BASIS_FAC
 
 const unsigned GlobalConfiguration::RUNTIME_ESTIMATE_THRESHOLD = 5;
 
+#ifdef ENABLE_GUROBI
 const unsigned GlobalConfiguration::GUROBI_NUMBER_OF_THREADS = 1;
+#endif // ENABLE_GUROBI
 
 // Logging - note that it is enabled only in Debug mode
 const bool GlobalConfiguration::DNC_MANAGER_LOGGING = false;
