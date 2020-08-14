@@ -72,7 +72,7 @@ public:
 
         // Divide the previousSplit
         SubQueries subQueries;
-        queryDivider->createSubQueries( numNewSubQueries, queryId,
+        queryDivider->createSubQueries( numNewSubQueries, queryId, 0,
                                         *previousSplit, (unsigned)
                                         timeoutInSeconds * timeoutFactor,
                                         subQueries );
@@ -119,6 +119,7 @@ public:
         {
             TS_ASSERT( subQuery->_queryId == queryId +
                        Stringf( "-%u", index + 1 ) );
+            TS_ASSERT( subQuery->_depth == 1 );
             TS_ASSERT( *(subQuery->_split) == newSplits[index] );
             TS_ASSERT( subQuery->_timeoutInSeconds == correctTimeoutInSeconds );
             ++index;

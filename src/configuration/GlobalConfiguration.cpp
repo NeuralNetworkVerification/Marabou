@@ -88,6 +88,8 @@ const GlobalConfiguration::BasisFactorizationType GlobalConfiguration::BASIS_FAC
 
 const unsigned GlobalConfiguration::POLARITY_CANDIDATES_THRESHOLD = 5;
 
+const unsigned GlobalConfiguration::DNC_DEPTH_THRESHOLD = 5;
+
 #ifdef ENABLE_GUROBI
 const unsigned GlobalConfiguration::GUROBI_NUMBER_OF_THREADS = 1;
 #endif // ENABLE_GUROBI

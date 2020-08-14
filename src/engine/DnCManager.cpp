@@ -386,7 +386,7 @@ void DnCManager::initialDivide( SubQueries &subQueries )
     String queryId;
     // Create a new case split
 
-    queryDivider->createSubQueries( pow( 2, _initialDivides ), queryId,
+    queryDivider->createSubQueries( pow( 2, _initialDivides ), queryId, 0,
                                     *split, _initialTimeout, subQueries );
 }
 

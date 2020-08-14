@@ -74,6 +74,7 @@ void DnCWorker::popOneSubQueryAndSolve()
     if ( _workload->pop( subQuery ) )
     {
         String queryId = subQuery->_queryId;
+        unsigned depth = subQuery->_depth;
         auto split = std::move( subQuery->_split );
         unsigned timeoutInSeconds = subQuery->_timeoutInSeconds;
 
@@ -107,10 +108,11 @@ void DnCWorker::popOneSubQueryAndSolve()
             // If TIMEOUT, split the current input region and add the
             // new subQueries to the current queue
             SubQueries subQueries;
+            unsigned newTimeout = ( depth >= GlobalConfiguration::DNC_DEPTH_THRESHOLD ?
+                                    0 : ( unsigned ) timeoutInSeconds * _timeoutFactor );
             _queryDivider->createSubQueries( pow( 2, _onlineDivides ),
-                                             queryId, *split,
-                                             (unsigned)timeoutInSeconds *
-                                             _timeoutFactor, subQueries );
+                                             queryId, depth , *split,
+                                             newTimeout, subQueries );
             for ( auto &newSubQuery : subQueries )
             {
                 if ( !_workload->push( std::move( newSubQuery ) ) )

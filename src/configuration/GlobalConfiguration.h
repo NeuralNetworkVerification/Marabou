@@ -228,6 +228,9 @@ public:
     */
     static const unsigned POLARITY_CANDIDATES_THRESHOLD;
 
+    /* The max number of DnC splits
+    */
+    static const unsigned DNC_DEPTH_THRESHOLD;
 
 #ifdef ENABLE_GUROBI
     /*

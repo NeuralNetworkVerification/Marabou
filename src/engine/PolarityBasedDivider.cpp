@@ -27,6 +27,7 @@ PolarityBasedDivider::PolarityBasedDivider( std::shared_ptr<IEngine> engine )
 
 void PolarityBasedDivider::createSubQueries( unsigned numNewSubqueries, const
                                              String queryIdPrefix, const
+                                             unsigned previousDepth, const
                                              PiecewiseLinearCaseSplit
                                              &previousSplit, const unsigned
                                              timeoutInSeconds, SubQueries
@@ -83,7 +84,8 @@ void PolarityBasedDivider::createSubQueries( unsigned numNewSubqueries, const
         // Construct the new subquery and add it to subqueries
         SubQuery *subQuery = new SubQuery;
         subQuery->_queryId = queryId;
-        subQuery->_split.reset(split);
+        subQuery->_depth = previousDepth + 1;
+        subQuery->_split.reset( split );
         subQuery->_timeoutInSeconds = timeoutInSeconds;
         subQueries.append( subQuery );
     }
