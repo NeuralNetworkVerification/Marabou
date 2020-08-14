@@ -33,7 +33,8 @@ DnCWorker::DnCWorker( WorkerQueue *workload, std::shared_ptr<IEngine> engine,
                       std::atomic_uint &numUnsolvedSubQueries,
                       std::atomic_bool &shouldQuitSolving,
                       unsigned threadId, unsigned onlineDivides,
-                      float timeoutFactor, DivideStrategy divideStrategy )
+                      float timeoutFactor, DivideStrategy divideStrategy,
+                      unsigned verbosity )
     : _workload( workload )
     , _engine( engine )
     , _numUnsolvedSubQueries( &numUnsolvedSubQueries )
@@ -41,6 +42,7 @@ DnCWorker::DnCWorker( WorkerQueue *workload, std::shared_ptr<IEngine> engine,
     , _threadId( threadId )
     , _onlineDivides( onlineDivides )
     , _timeoutFactor( timeoutFactor )
+    , _verbosity( verbosity )
 {
     setQueryDivider( divideStrategy );
 
@@ -101,7 +103,8 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
             result = IEngine::UNSAT;
         }
 
-        printProgress( queryId, result );
+        if ( _verbosity > 0 )
+            printProgress( queryId, result );
         // Switch on the result
         if ( result == IEngine::UNSAT )
         {
@@ -206,9 +209,9 @@ String DnCWorker::exitCodeToString( IEngine::ExitCode result )
     switch ( result )
     {
     case IEngine::UNSAT:
-        return "UNSAT";
+        return "unsat";
     case IEngine::SAT:
-        return "SAT";
+        return "sat";
     case IEngine::ERROR:
         return "ERROR";
     case IEngine::TIMEOUT:

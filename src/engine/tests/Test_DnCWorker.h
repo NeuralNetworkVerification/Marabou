@@ -56,11 +56,15 @@ public:
     unsigned clearSubQueries()
     {
         unsigned counter = 0;
-        SubQuery *subQuery;
+        SubQuery *subQuery = NULL;
         while ( !_workload->empty() )
         {
             _workload->pop( subQuery );
-            delete subQuery;
+            if ( subQuery )
+            {
+                delete subQuery;
+                subQuery = NULL;
+            }
             ++counter;
         }
 
@@ -119,9 +123,10 @@ public:
         unsigned onlineDivides = 2;
         float timeoutFactor = 1;
         DivideStrategy divideStrategy = DivideStrategy::LargestInterval;
+        unsigned verbosity = 0;
         DnCWorker dncWorker( _workload, _engine, numUnsolvedSubQueries,
                              shouldQuitSolving, threadId, onlineDivides,
-                             timeoutFactor, divideStrategy );
+                             timeoutFactor, divideStrategy, verbosity );
 
         dncWorker.popOneSubQueryAndSolve();
         TS_ASSERT( _engine->getExitCode() == IEngine::TIMEOUT );
@@ -145,7 +150,7 @@ public:
         shouldQuitSolving= false;
 		dncWorker = DnCWorker( _workload, _engine, numUnsolvedSubQueries,
                                shouldQuitSolving, threadId, onlineDivides,
-                               timeoutFactor, divideStrategy );
+                               timeoutFactor, divideStrategy, verbosity );
 
         dncWorker.popOneSubQueryAndSolve();
         TS_ASSERT( _engine->getExitCode() == IEngine::UNSAT );
@@ -171,7 +176,7 @@ public:
 
         dncWorker = DnCWorker( _workload, _engine, numUnsolvedSubQueries,
                                shouldQuitSolving, threadId, onlineDivides,
-                               timeoutFactor, divideStrategy );
+                               timeoutFactor, divideStrategy, verbosity );
 
         dncWorker.popOneSubQueryAndSolve();
         TS_ASSERT( _engine->getExitCode() == IEngine::UNSAT );
@@ -195,7 +200,7 @@ public:
         shouldQuitSolving=( false );
 		dncWorker = DnCWorker( _workload, _engine, numUnsolvedSubQueries,
                              shouldQuitSolving, threadId, onlineDivides,
-                              timeoutFactor, divideStrategy );
+                               timeoutFactor, divideStrategy, verbosity );
 
         dncWorker.popOneSubQueryAndSolve();
         TS_ASSERT( _engine->getExitCode() == IEngine::SAT );
@@ -218,7 +223,7 @@ public:
         shouldQuitSolving =  true;
 		dncWorker = DnCWorker( _workload, _engine, numUnsolvedSubQueries,
                                shouldQuitSolving, threadId, onlineDivides,
-                               timeoutFactor, divideStrategy );
+                               timeoutFactor, divideStrategy, verbosity );
         dncWorker.popOneSubQueryAndSolve();
         TS_ASSERT( _engine->getExitCode() == IEngine::QUIT_REQUESTED );
         TS_ASSERT( numUnsolvedSubQueries.load() == 1 );
@@ -237,9 +242,10 @@ public:
         _engine->setExitCode( IEngine::ERROR );
          numUnsolvedSubQueries= 1;
         shouldQuitSolving = false;
+
 		dncWorker = DnCWorker( _workload, _engine, numUnsolvedSubQueries,
                                shouldQuitSolving, threadId, onlineDivides,
-                               timeoutFactor, divideStrategy );
+                               timeoutFactor, divideStrategy, verbosity );
 
         dncWorker.popOneSubQueryAndSolve();
         TS_ASSERT( _engine->getExitCode() == IEngine::ERROR );

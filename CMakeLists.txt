@@ -4,12 +4,17 @@ project(Marabou)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+option(BUILD_STATIC_MARABOU "Build static Marabou binary" OFF)
 option(BUILD_PYTHON "Build Python" ON)
 option(FORCE_PYTHON_BUILD "Build python even if there is only python32" OFF)
 option(RUN_UNIT_TEST "run unit tests on build" ON)
 option(RUN_REGRESS_TEST "run regression tests on build" OFF)
 option(RUN_SYSTEM_TEST "run system tests on build" OFF)
 option(RUN_MEMORY_TEST "run cxxtest testing with ASAN ON" ON)
+option(RUN_PYTHON_TEST "run python API tests if building with python" OFF)
+option(ENABLE_GUROBI "Enable use the Gurobi optimizer" OFF)
+option(ENABLE_OPENBLAS "Do symbolic bound tighting using blas" ON) # Not available on windows
+option(CODE_COVERAGE "add code coverage" OFF)  # Available only in debug mode
 
 set(DEFAULT_PYTHON_VERSION "3" CACHE STRING "Default Python version 2/3")
 set(PYTHON_VERSIONS_SUPPORTED 2 3)
@@ -32,9 +37,11 @@ set(REGRESS_DIR "${PROJECT_SOURCE_DIR}/regress")
 set(ENGINE_DIR "${SRC_DIR}/engine")
 set(PYBIND11_DIR "${TOOLS_DIR}/pybind11-2.3.0")
 set(BOOST_DIR "${TOOLS_DIR}/boost_1_68_0")
+set(OPENBLAS_DIR "${TOOLS_DIR}/OpenBLAS-0.3.9")
 set(COMMON_DIR "${SRC_DIR}/common")
 set(BASIS_DIR "${SRC_DIR}/basis_factorization")
 
+set(OPENBLAS_LIB openblas)
 
 set(BIN_DIR "${CMAKE_BINARY_DIR}/bin")
 
@@ -61,6 +68,28 @@ include(ProcessorCount)
 ProcessorCount(CTEST_NTHREADS)
 if(CTEST_NTHREADS EQUAL 0)
   set(CTEST_NTHREADS 1)
+endif()
+
+# --------------- set build type ----------------------------
+set(BUILD_TYPES Release Debug MinSizeRel RelWithDebInfo)
+
+# Set the default build type to Production
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE
+      Release CACHE STRING "Options are: Release Debug MinSizeRel RelWithDebInfo" FORCE)
+  # Provide drop down menu options in cmake-gui
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${BUILD_TYPES})
+endif()
+message(STATUS "Building ${CMAKE_BUILD_TYPE} build")
+
+
+#-------------------------set code coverage----------------------------------#
+# Allow coverage only in debug mode only in gcc
+if(CODE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND CMAKE_BUILD_TYPE MATCHES Debug)
+  message(STATUS "Building with code coverage")
+  set(COVERAGE_COMPILER_FLAGS "-g -O0 --coverage" CACHE INTERNAL "")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COVERAGE_COMPILER_FLAGS}")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
 endif()
 
 
@@ -92,7 +121,7 @@ endif()
 
 if (NOT MSVC)
     set(COMPILE_FLAGS  -Wall -Wextra  -Werror -MMD) #-Wno-deprecated
-    set(RELEASE_FLAGS -O3) #-Wno-deprecated
+    set(RELEASE_FLAGS ${COMPILE_FLAGS} -O3) #-Wno-deprecated
 endif()
 
 if (RUN_MEMORY_TEST)
@@ -104,10 +133,10 @@ endif()
 add_definitions(-DRESOURCES_DIR="${RESOURCES_DIR}")
 
 if (NOT MSVC)
-    set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS} -g -DDEBUG_ON)
+    set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS} -g)
     set(CXXTEST_FLAGS ${DEBUG_FLAGS}  -Wno-ignored-qualifiers)
 else()
-    set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS} /DDEBUG_ON)
+    set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS})
     add_definitions(-DNOMINMAX) # remove min max macros
 endif()
 
@@ -115,9 +144,6 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     set(CXXTEST_FLAGS ${CXXTEST_FLAGS} -Wno-terminate)
 endif()
 
-if (NOT MSVC)
-    set(RELEASE_FLAGS  ${COMPILE_FLAGS} -O3)
-endif()
 
 
 # Boost
@@ -153,14 +179,60 @@ endif()
 set(LIBS_INCLUDES ${Boost_INCLUDE_DIRS})
 set(LIBS ${Boost_LIBRARIES})
 
+if (${ENABLE_GUROBI})
+  message(STATUS "Using Gurobi for LP relaxation for bound tightening")
+  if (NOT DEFINED GUROBI_DIR)
+    set(GUROBI_DIR $ENV{GUROBI_HOME})
+  endif()
+  add_compile_definitions(ENABLE_GUROBI)
+
+  set(GUROBI_LIB1 "gurobi_c++")
+  set(GUROBI_LIB2 "gurobi90")
+
+  add_library(${GUROBI_LIB1} SHARED IMPORTED)
+  set_target_properties(${GUROBI_LIB1} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi_c++.a)
+  list(APPEND LIBS ${GUROBI_LIB1})
+  target_include_directories(${GUROBI_LIB1} INTERFACE ${GUROBI_DIR}/include/)
+
+  add_library(${GUROBI_LIB2} SHARED IMPORTED)
+
+  # MACOSx uses .dylib instead of .so for its Gurobi downloads.
+  if (APPLE)
+    set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi90.dylib)
+  else()
+    set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi90.so)
+  endif ()
+
+  list(APPEND LIBS ${GUROBI_LIB2})
+  target_include_directories(${GUROBI_LIB2} INTERFACE ${GUROBI_DIR}/include/)
+endif()
+
+if (${ENABLE_OPENBLAS} AND NOT MSVC)
+    message(STATUS "using openblas for matrix multiplication")
+    add_compile_definitions(ENABLE_OPENBLAS)
+    #OpenBLAS
+    if(NOT EXISTS "${OPENBLAS_DIR}/installed/lib/libopenblas.a")
+        execute_process(COMMAND ${TOOLS_DIR}/download_openBLAS.sh)
+    endif()
+
+    add_library(${OPENBLAS_LIB} SHARED IMPORTED)
+    set_target_properties(${OPENBLAS_LIB} PROPERTIES IMPORTED_LOCATION ${OPENBLAS_DIR}/installed/lib/libopenblas.a)
+    list(APPEND LIBS ${OPENBLAS_LIB})
+    target_include_directories(${OPENBLAS_LIB} INTERFACE ${OPENBLAS_DIR}/installed/include)
+endif()
 
 # pthread
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 list(APPEND LIBS Threads::Threads)
 
-# build a static library
-target_link_libraries(${MARABOU_LIB} ${LIBS})
+if (BUILD_STATIC_MARABOU)
+  # build a static library
+  target_link_libraries(${MARABOU_LIB} ${LIBS} -static)
+else()
+  target_link_libraries(${MARABOU_LIB} ${LIBS})
+endif()
+
 target_include_directories(${MARABOU_LIB} PRIVATE ${LIBS_INCLUDES})
 target_compile_options(${MARABOU_LIB} PRIVATE ${RELEASE_FLAGS})
 
@@ -262,6 +334,22 @@ if (NOT ${TESTS_TO_RUN} STREQUAL "")
         TARGET build-tests
         POST_BUILD
         COMMAND ctest --output-on-failure  -L "\"(${TESTS_TO_RUN})\"" -j${CTEST_NTHREADS} $$ARGS
+    )
+endif()
+
+if (${BUILD_PYTHON} AND ${RUN_PYTHON_TEST})
+    if (MSVC)
+        add_custom_command(
+            TARGET build-tests
+            POST_BUILD
+            COMMAND cp ${PYTHON_API_DIR}/Release/* ${PYTHON_API_DIR}
+        )
+    endif()
+
+    add_custom_command(
+        TARGET build-tests
+        POST_BUILD
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PYTHON_API_DIR}/test
     )
 endif()
 

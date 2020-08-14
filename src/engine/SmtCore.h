@@ -23,6 +23,8 @@
 #include "StackEntry.h"
 #include "Statistics.h"
 
+#define SMT_LOG( x, ... ) LOG( GlobalConfiguration::SMT_CORE_LOGGING, "SmtCore: %s\n", x )
+
 class EngineState;
 class IEngine;
 class String;
@@ -111,6 +113,12 @@ public:
     void storeSmtState( SmtState &smtState );
 
     /*
+      Pick the piecewise linear constraint for splitting, returns true
+      if a constraint for splitting is successfully picked
+    */
+    bool pickSplitPLConstraint();
+
+    /*
       For debugging purposes only - store a correct possible solution
     */
     void storeDebuggingSolution( const Map<unsigned, double> &debuggingSolution );
@@ -153,8 +161,6 @@ private:
       Count how many times each constraint has been violated.
     */
     Map<PiecewiseLinearConstraint *, unsigned> _constraintToViolationCount;
-
-    static void log( const String &message );
 
     /*
       For debugging purposes only

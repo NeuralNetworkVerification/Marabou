@@ -70,6 +70,7 @@ public:
         PROPERTY_FILE_PATH,
         INPUT_QUERY_FILE_PATH,
         SUMMARY_FILE,
+        QUERY_DUMP_FILE,
     };
 
     /*
@@ -89,6 +90,18 @@ public:
     int getInt( unsigned option ) const;
     float getFloat( unsigned option ) const;
     String getString( unsigned option ) const;
+
+    /*
+      Options that are determined at compile time
+    */
+    bool gurobiEnabled() const
+    {
+#ifdef ENABLE_GUROBI
+        return true;
+#else
+        return false;
+#endif
+    }
 
 private:
     /*

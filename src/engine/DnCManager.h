@@ -24,6 +24,8 @@
 
 #include <atomic>
 
+#define DNC_MANAGER_LOG( x, ... ) LOG( GlobalConfiguration::DNC_MANAGER_LOGGING, "DnCManager: %s\n", x )
+
 class DnCManager
 {
 public:
@@ -71,7 +73,7 @@ public:
     /*
       Store the solution into the map
     */
-    void getSolution( std::map<int, double> &ret );
+    void getSolution( std::map<int, double> &ret, InputQuery &inputQuery );
 
     void setConstraintViolationThreshold( unsigned threshold );
 
@@ -80,11 +82,12 @@ private:
       Create and run a DnCWorker
     */
     static void dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine,
+                          std::unique_ptr<InputQuery> inputQuery,
                           std::atomic_uint &numUnsolvedSubQueries,
                           std::atomic_bool &shouldQuitSolving,
                           unsigned threadId, unsigned onlineDivides,
                           float timeoutFactor, DivideStrategy divideStrategy,
-                          bool restoreTreeStates );
+                          bool restoreTreeStates, unsigned verbosity );
 
     /*
       Create the base engine from the network and property files,
@@ -108,8 +111,6 @@ private:
     */
     void updateTimeoutReached( timespec startTime,
                                unsigned long long timeoutInMicroSeconds );
-
-    static void log( const String &message );
 
     /*
       The base engine that is used to perform the initial divides

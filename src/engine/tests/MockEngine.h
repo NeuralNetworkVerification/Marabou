@@ -156,6 +156,15 @@ public:
     {
         lastStoredSmtState = &smtState;
     }
+
+    void updateScores()
+    {
+    }
+
+    PiecewiseLinearConstraint *pickSplitPLConstraint()
+    {
+        return NULL;
+    }
 };
 
 #endif // __MockEngine_h__

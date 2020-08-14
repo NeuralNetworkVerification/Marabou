@@ -264,6 +264,73 @@ public:
         return true;
     }
 
+    void test_relu_case_splits_with_aux_var()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        ReluConstraint relu( b, f );
+
+        relu.notifyLowerBound( b, -10 );
+        relu.notifyUpperBound( b, 5 );
+        relu.notifyUpperBound( f, 5 );
+
+        unsigned auxVar = 10;
+        InputQuery inputQuery;
+        inputQuery.setNumberOfVariables( auxVar );
+
+        relu.addAuxiliaryEquations( inputQuery );
+
+        TS_ASSERT( relu.auxVariableInUse() );
+        TS_ASSERT_EQUALS( relu.getAux(), auxVar );
+
+        List<PiecewiseLinearConstraint::Fix> fixes;
+        List<PiecewiseLinearConstraint::Fix>::iterator it;
+
+        List<PiecewiseLinearCaseSplit> splits = relu.getCaseSplits();
+
+        Equation activeEquation, inactiveEquation;
+
+        TS_ASSERT_EQUALS( splits.size(), 2U );
+
+        List<PiecewiseLinearCaseSplit>::iterator split1 = splits.begin();
+        List<PiecewiseLinearCaseSplit>::iterator split2 = split1;
+        ++split2;
+
+        TS_ASSERT( isActiveSplitWithAux( b, auxVar, split1 ) || isActiveSplitWithAux( b, auxVar, split2 ) );
+        TS_ASSERT( isInactiveSplit( b, f, split1 ) || isInactiveSplit( b, f, split2 ) );
+    }
+
+    bool isActiveSplitWithAux( unsigned b, unsigned aux, List<PiecewiseLinearCaseSplit>::iterator &split )
+    {
+        List<Tightening> bounds = split->getBoundTightenings();
+
+        TS_ASSERT_EQUALS( bounds.size(), 2U );
+
+        auto bound = bounds.begin();
+        Tightening bound1 = *bound;
+
+        TS_ASSERT_EQUALS( bound1._variable, b );
+        TS_ASSERT_EQUALS( bound1._value, 0.0 );
+
+        if ( bound1._type != Tightening::LB )
+            return false;
+
+        ++bound;
+
+        Tightening bound2 = *bound;
+
+        TS_ASSERT_EQUALS( bound2._variable, aux );
+        TS_ASSERT_EQUALS( bound2._value, 0.0 );
+
+        if ( bound2._type != Tightening::UB )
+            return false;
+
+        TS_ASSERT( split->getEquations().empty() );
+
+        return true;
+    }
+
     void test_register_as_watcher()
     {
         unsigned b = 1;
@@ -1157,7 +1224,6 @@ public:
         }
     }
 };
-
 
 //
 // Local Variables:
