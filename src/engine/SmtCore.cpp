@@ -437,7 +437,7 @@ void SmtCore::storeSmtState( SmtState & smtState )
         smtState._stack.append( duplicateStackEntry( *stackEntry ) );
 }
 
-StackEntry * SmtCore::duplicateStackEntry(const StackEntry & stackEntry)
+StackEntry * SmtCore::duplicateStackEntry( const StackEntry & stackEntry )
 {
     StackEntry *copy = new StackEntry();
 

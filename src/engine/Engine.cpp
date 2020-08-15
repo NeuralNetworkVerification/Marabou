@@ -1980,6 +1980,8 @@ bool Engine::restoreSmtState( SmtState & smtState )
 {
     try
     {
+        ASSERT( _smtCore.getStackDepth() == 0 );
+
         // Step 1: all implied valid splits at root
         for ( auto &validSplit : smtState._impliedValidSplitsAtRoot )
         {
