@@ -115,6 +115,15 @@ def test_sm2_fc1():
     network = Marabou.read_tf(filename, modelType = "savedModel_v2")
     evaluateNetwork(network)
 
+def test_sm2_sign():
+    """
+    Test a fully-connected neural network with sign activations, written in the
+    SavedModel format created by tensorflow version 2.X
+    """
+    filename = os.path.join(os.path.dirname(__file__), SM2_FOLDER, "signNetwork")
+    network = Marabou.read_tf(filename, modelType = "savedModel_v2")
+    evaluateNetwork(network)
+
 def test_sub_concat():
     """
     Test a fully-connected neural network
