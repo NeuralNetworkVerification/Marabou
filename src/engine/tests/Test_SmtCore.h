@@ -538,26 +538,51 @@ public:
         TS_ASSERT( *smtState._impliedValidSplitsAtRoot.begin() == split1 );
 
         TS_ASSERT( smtState._stack.size() == 2 );
-
         // Examine the first stackEntry
         StackEntry *stackEntry = *( smtState._stack.begin() );
         ASSERT( stackEntry->_activeSplit == *( relu1.getCaseSplits().begin() ) );
         ASSERT( *( stackEntry->_alternativeSplits.begin() ) == *( ++relu1.getCaseSplits().begin() ) );
         ASSERT( stackEntry->_impliedValidSplits.size() == 1 );
         ASSERT( *( stackEntry->_impliedValidSplits.begin() ) == split2 );
-
+        // Examine the second stackEntry
         stackEntry = *( ++smtState._stack.begin() );
         ASSERT( stackEntry->_activeSplit == *( relu2.getCaseSplits().begin() ) );
         ASSERT( *( stackEntry->_alternativeSplits.begin() ) == *( ++relu2.getCaseSplits().begin() ) );
         ASSERT( stackEntry->_impliedValidSplits.size() == 0 );
 
-        destructSmtState( smtState );
+        clearSmtState( smtState );
+
+        TS_ASSERT_THROWS_NOTHING( smtCore.popSplit() );
+
+        smtCore.storeSmtState( smtState );
+        TS_ASSERT( smtState._impliedValidSplitsAtRoot.size() == 1 );
+        TS_ASSERT( *smtState._impliedValidSplitsAtRoot.begin() == split1 );
+
+        TS_ASSERT( smtState._stack.size() == 2 );
+        // Examine the first stackEntry
+        stackEntry = *( smtState._stack.begin() );
+        ASSERT( stackEntry->_activeSplit == *( relu1.getCaseSplits().begin() ) );
+        ASSERT( *( stackEntry->_alternativeSplits.begin() ) == *( ++relu1.getCaseSplits().begin() ) );
+        ASSERT( stackEntry->_impliedValidSplits.size() == 1 );
+        ASSERT( *( stackEntry->_impliedValidSplits.begin() ) == split2 );
+        // Examine the second stackEntry
+        stackEntry = *( ++smtState._stack.begin() );
+        ASSERT( stackEntry->_activeSplit == *( ++relu2.getCaseSplits().begin() ) );
+        ASSERT( stackEntry->_alternativeSplits.empty() );
+        ASSERT( stackEntry->_impliedValidSplits.size() == 0 );
+
+        clearSmtState( smtState );
+
+        TS_ASSERT_THROWS_NOTHING( smtCore.popSplit() );
+
     }
 
-    void destructSmtState( SmtState &smtState )
+    void clearSmtState( SmtState &smtState )
     {
         for ( const auto &stackEntry : smtState._stack )
             delete stackEntry;
+        smtState._stack = List<StackEntry *>();
+        smtState._impliedValidSplitsAtRoot = List<PiecewiseLinearCaseSplit>();
     }
 
     void test_todo()
