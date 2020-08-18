@@ -103,14 +103,6 @@ bool Engine::solve( unsigned timeoutInSeconds )
         printf( "\n---\n" );
     }
 
-    DEBUG({
-            // Initially, all constraints should be active
-            for ( const auto &plc : _plConstraints )
-            {
-                ASSERT( plc->isActive() );
-            }
-        });
-
     applyAllValidConstraintCaseSplits();
 
     bool splitJustPerformed = true;
@@ -1122,6 +1114,14 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
     ENGINE_LOG( "processInputQuery done\n" );
 
+    DEBUG({
+            // Initially, all constraints should be active
+            for ( const auto &plc : _plConstraints )
+                {
+                    ASSERT( plc->isActive() );
+                }
+        });
+
     _smtCore.storeDebuggingSolution( _preprocessedQuery._debuggingSolution );
     return true;
 }
@@ -2030,8 +2030,6 @@ bool Engine::restoreSmtState( SmtState & smtState )
             return false;
         }
     }
-    for ( PiecewiseLinearConstraint *p : _plConstraints )
-        p->setActiveConstraint( true );
     return true;
 }
 
