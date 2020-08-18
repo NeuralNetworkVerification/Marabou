@@ -539,7 +539,7 @@ public:
 
         TS_ASSERT( smtState._stack.size() == 2 );
         // Examine the first stackEntry
-        StackEntry *stackEntry = *( smtState._stack.begin() );
+        SmtStackEntry *stackEntry = *( smtState._stack.begin() );
         ASSERT( stackEntry->_activeSplit == *( relu1.getCaseSplits().begin() ) );
         ASSERT( *( stackEntry->_alternativeSplits.begin() ) == *( ++relu1.getCaseSplits().begin() ) );
         ASSERT( stackEntry->_impliedValidSplits.size() == 1 );
@@ -581,7 +581,7 @@ public:
     {
         for ( const auto &stackEntry : smtState._stack )
             delete stackEntry;
-        smtState._stack = List<StackEntry *>();
+        smtState._stack = List<SmtStackEntry *>();
         smtState._impliedValidSplitsAtRoot = List<PiecewiseLinearCaseSplit>();
     }
 

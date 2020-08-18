@@ -2000,7 +2000,7 @@ bool Engine::restoreSmtState( SmtState & smtState )
         // Step 2: replay the stack
         for ( auto &stackEntry : smtState._stack )
         {
-            _smtCore.replayStackEntry( stackEntry );
+            _smtCore.replaySmtStackEntry( stackEntry );
             // Do all the bound propagation, and set ReLU constraints to inactive (at
             // least the one corresponding to the _activeSplit applied above.
             tightenBoundsOnConstraintMatrix();

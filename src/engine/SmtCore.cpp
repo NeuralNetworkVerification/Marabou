@@ -121,7 +121,7 @@ void SmtCore::performSplit()
     ++_stateId;
     _engine->storeState( *stateBeforeSplits, true );
 
-    StackEntry *stackEntry = new StackEntry;
+    SmtStackEntry *stackEntry = new SmtStackEntry;
     // Perform the first split: add bounds and equations
     List<PiecewiseLinearCaseSplit>::iterator split = splits.begin();
     _engine->applySplit( *split );
@@ -193,7 +193,7 @@ bool SmtCore::popSplit()
         throw MarabouError( MarabouError::DEBUGGING_ERROR );
     }
 
-    StackEntry *stackEntry = _stack.back();
+    SmtStackEntry *stackEntry = _stack.back();
 
     // Restore the state of the engine
     SMT_LOG( "\tRestoring engine state..." );
@@ -397,7 +397,7 @@ PiecewiseLinearConstraint *SmtCore::chooseViolatedConstraintForFixing( List<Piec
     return candidate;
 }
 
-void SmtCore::replayStackEntry( StackEntry * stackEntry )
+void SmtCore::replaySmtStackEntry( SmtStackEntry *stackEntry )
 {
     struct timespec start = TimeUtils::sampleMicro();
 
@@ -429,24 +429,14 @@ void SmtCore::replayStackEntry( StackEntry * stackEntry )
     }
 }
 
-void SmtCore::storeSmtState( SmtState & smtState )
+void SmtCore::storeSmtState( SmtState &smtState )
 {
     smtState._impliedValidSplitsAtRoot = _impliedValidSplitsAtRoot;
 
     for ( auto &stackEntry : _stack )
-        smtState._stack.append( duplicateStackEntry( *stackEntry ) );
-}
+        smtState._stack.append( stackEntry->duplicateSmtStackEntry() );
 
-StackEntry * SmtCore::duplicateStackEntry( const StackEntry & stackEntry )
-{
-    StackEntry *copy = new StackEntry();
-
-    copy->_activeSplit = stackEntry._activeSplit;
-    copy->_impliedValidSplits = stackEntry._impliedValidSplits;
-    copy->_alternativeSplits = stackEntry._alternativeSplits;
-    copy->_engineState = NULL;
-
-    return copy;
+    smtState._stateId = _stateId;
 }
 
 bool SmtCore::pickSplitPLConstraint()

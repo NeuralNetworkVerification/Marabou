@@ -97,7 +97,8 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
         {
             _engine->solve( timeoutInSeconds );
             result = _engine->getExitCode();
-        } else
+        }
+        else
         {
             // UNSAT is proven when replaying stack-entries
             result = IEngine::UNSAT;

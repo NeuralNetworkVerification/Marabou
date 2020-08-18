@@ -19,7 +19,7 @@
 #include "List.h"
 #include "Map.h"
 #include "PiecewiseLinearConstraint.h"
-#include "StackEntry.h"
+#include "SmtStackEntry.h"
 
 class SmtState
 {
@@ -32,7 +32,13 @@ public:
     /*
       The stack.
     */
-    List< StackEntry *> _stack;
+    List<SmtStackEntry *> _stack;
+
+    /*
+      A unique ID allocated to every state that is stored, for
+      debugging purposes.
+    */
+    unsigned _stateId;
 };
 
 #endif // __SmtState_h__

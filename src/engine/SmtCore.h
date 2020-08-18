@@ -20,7 +20,7 @@
 #include "PiecewiseLinearConstraint.h"
 #include "SmtState.h"
 #include "Stack.h"
-#include "StackEntry.h"
+#include "SmtStackEntry.h"
 #include "Statistics.h"
 
 #define SMT_LOG( x, ... ) LOG( GlobalConfiguration::SMT_CORE_LOGGING, "SmtCore: %s\n", x )
@@ -105,10 +105,10 @@ public:
     /*
       Replay a stackEntry
     */
-    void replayStackEntry( StackEntry *stackEntry );
+    void replaySmtStackEntry( SmtStackEntry *stackEntry );
 
     /*
-      Store the current stack into smtState
+      Store the current state of the SmtCore into smtState
     */
     void storeSmtState( SmtState &smtState );
 
@@ -127,11 +127,6 @@ public:
 
 private:
     /*
-      duplicate the StackEntry
-    */
-    StackEntry *duplicateStackEntry( const StackEntry &stackEntry );
-
-    /*
       Valid splits that were implied by level 0 of the stack.
     */
     List<PiecewiseLinearCaseSplit> _impliedValidSplitsAtRoot;
@@ -144,7 +139,7 @@ private:
     /*
       The case-split stack.
     */
-    List<StackEntry *> _stack;
+    List<SmtStackEntry *> _stack;
 
     /*
       The engine.
