@@ -802,7 +802,7 @@ bool InputQuery::constructAbsoluteValueLayer( NLR::NetworkLevelReasoner *nlr,
 
     List<NeuronInformation> newNeurons;
 
-    // Look for ReLUs where all b variables have already been handled
+    // Look for ABSOLUTE_VALUEs where all b variables have already been handled
     const List<PiecewiseLinearConstraint *> &plConstraints =
         getPiecewiseLinearConstraints();
 
