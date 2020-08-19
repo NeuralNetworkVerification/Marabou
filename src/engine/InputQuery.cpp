@@ -812,7 +812,7 @@ bool InputQuery::constructAbsoluteValueLayer( NLR::NetworkLevelReasoner *nlr,
         if ( plc->getType() != ABSOLUTE_VALUE )
             continue;
 
-        const AbsoluteValueConstraint *abs = ( const AbsoluteValueConstraint *)plc;
+        const AbsoluteValueConstraint *abs = (const AbsoluteValueConstraint *)plc;
 
         // Has the b variable been handled?
         unsigned b = abs->getB();
