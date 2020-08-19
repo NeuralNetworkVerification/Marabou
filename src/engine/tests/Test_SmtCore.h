@@ -574,7 +574,6 @@ public:
         clearSmtState( smtState );
 
         TS_ASSERT_THROWS_NOTHING( smtCore.popSplit() );
-
     }
 
     void clearSmtState( SmtState &smtState )
