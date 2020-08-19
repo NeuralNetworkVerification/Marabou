@@ -574,7 +574,7 @@ bool InputQuery::constructNetworkLevelReasoner()
     // Now, repeatedly attempt to construct addditional layers
     while ( constructWeighedSumLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
             constructReluLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
-            constructAbsoluteValueLayer( nlr, handledVariableToLayer, newLayerIndex )
+            constructAbsoluteValueLayer( nlr, handledVariableToLayer, newLayerIndex ) )
     {
         ++newLayerIndex;
     }
@@ -809,19 +809,19 @@ bool InputQuery::constructAbsoluteValueLayer( NLR::NetworkLevelReasoner *nlr,
 
     for ( const auto &plc : plConstraints )
     {
-        // Only consider ReLUs
+        // Only consider ABSOLUTE_VALUE
         if ( plc->getType() != ABSOLUTE_VALUE )
             continue;
 
-        const AbsoluteValueConstraint *relu = ( const AbsoluteValueConstraint *)plc;
+        const AbsoluteValueConstraint *abs = ( const AbsoluteValueConstraint *)plc;
 
         // Has the b variable been handled?
-        unsigned b = relu->getB();
+        unsigned b = abs->getB();
         if ( !handledVariableToLayer.exists( b ) )
             continue;
 
         // If the f variable has also been handled, ignore this constraint
-        unsigned f = relu->getF();
+        unsigned f = abs->getF();
         if ( handledVariableToLayer.exists( f ) )
             continue;
 
