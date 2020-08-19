@@ -25,7 +25,9 @@
 class EngineState;
 class Equation;
 class PiecewiseLinearCaseSplit;
+class SmtState;
 class PiecewiseLinearConstraint;
+
 class IEngine
 {
 public:
@@ -52,6 +54,17 @@ public:
     virtual void storeState( EngineState &state, bool storeAlsoTableauState ) const = 0;
     virtual void restoreState( const EngineState &state ) = 0;
     virtual void setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints ) = 0;
+
+    /*
+      Store the current stack of the smtCore into smtState
+    */
+    virtual void storeSmtState( SmtState &smtState ) = 0;
+
+    /*
+      Apply the stack to the newly created SmtCore, returns false if UNSAT is
+      found in this process.
+    */
+    virtual bool restoreSmtState( SmtState &smtState ) = 0;
 
     /*
       Solve the encoded query.
