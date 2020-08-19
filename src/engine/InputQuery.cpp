@@ -208,7 +208,6 @@ void InputQuery::removeEquation( Equation e )
 
 InputQuery &InputQuery::operator=( const InputQuery &other )
 {
-    INPUT_QUERY_LOG( "Making a deep copy of the InputQuery..." );
     _numberOfVariables = other._numberOfVariables;
     _equations = other._equations;
     _lowerBounds = other._lowerBounds;
