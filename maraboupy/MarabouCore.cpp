@@ -37,6 +37,7 @@
 #include "QueryLoader.h"
 #include "ReluConstraint.h"
 #include "Set.h"
+#include "SignConstraint.h"
 
 #ifdef _WIN32
 #define STDOUT_FILENO 1
@@ -85,6 +86,11 @@ void restoreOutputStream(int outputStream)
 
 void addReluConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
     PiecewiseLinearConstraint* r = new ReluConstraint(var1, var2);
+    ipq.addPiecewiseLinearConstraint(r);
+}
+
+void addSignConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
+    PiecewiseLinearConstraint* r = new SignConstraint(var1, var2);
     ipq.addPiecewiseLinearConstraint(r);
 }
 
@@ -260,6 +266,15 @@ PYBIND11_MODULE(MarabouCore, m) {
             var2 (int): Output variable to Relu constraint
         )pbdoc",
         py::arg("inputQuery"), py::arg("var1"), py::arg("var2"));
+    m.def("addSignConstraint", &addSignConstraint, R"pbdoc(
+        Add a Sign constraint to the InputQuery
+
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
+            var1 (int): Input variable to Sign constraint
+            var2 (int): Output variable to Sign constraint
+        )pbdoc",
+          py::arg("inputQuery"), py::arg("var1"), py::arg("var2"));
     m.def("addMaxConstraint", &addMaxConstraint, R"pbdoc(
         Add a Max constraint to the InputQuery
 

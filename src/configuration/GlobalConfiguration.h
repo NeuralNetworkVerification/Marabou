@@ -224,6 +224,14 @@ public:
     */
     static const unsigned RUNTIME_ESTIMATE_THRESHOLD;
 
+
+#ifdef ENABLE_GUROBI
+    /*
+      The number of threads Gurobi spawns
+    */
+    static const unsigned GUROBI_NUMBER_OF_THREADS;
+#endif // ENABLE_GUROBI
+
     /*
       Logging options
     */

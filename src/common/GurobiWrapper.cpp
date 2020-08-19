@@ -16,6 +16,7 @@
 #ifdef ENABLE_GUROBI
 
 #include "Debug.h"
+#include "GlobalConfiguration.h"
 #include "GurobiWrapper.h"
 #include "MStringf.h"
 #include "gurobi_c.h"
@@ -30,9 +31,10 @@ GurobiWrapper::GurobiWrapper()
 {
     _environment = new GRBEnv;
     _model = new GRBModel( *_environment );
-
     // Suppress printing
     _model->getEnv().set( GRB_IntParam_OutputFlag, 0 );
+    _model->getEnv().set( GRB_IntParam_Threads,
+                          GlobalConfiguration::GUROBI_NUMBER_OF_THREADS );
 }
 
 GurobiWrapper::~GurobiWrapper()
@@ -40,7 +42,7 @@ GurobiWrapper::~GurobiWrapper()
     freeMemoryIfNeeded();
 }
 
-void GurobiWrapper::freeMemoryIfNeeded()
+void GurobiWrapper::freeModelIfNeeded()
 {
     for ( auto &entry : _nameToVariable )
     {
@@ -54,12 +56,25 @@ void GurobiWrapper::freeMemoryIfNeeded()
         delete _model;
         _model = NULL;
     }
+}
+
+void GurobiWrapper::freeMemoryIfNeeded()
+{
+    freeModelIfNeeded();
 
     if ( _environment )
     {
         delete _environment;
         _environment = NULL;
     }
+}
+
+void GurobiWrapper::resetModel()
+{
+    freeModelIfNeeded();
+    _model = new GRBModel( *_environment );
+    _model->getEnv().set( GRB_IntParam_OutputFlag, 0 );
+    _model->getEnv().set( GRB_IntParam_Threads, 1 );
 }
 
 void GurobiWrapper::reset()
