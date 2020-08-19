@@ -757,7 +757,7 @@ bool InputQuery::constructReluLayer( NLR::NetworkLevelReasoner *nlr,
         if ( plc->getType() != RELU )
             continue;
 
-        ReluConstraint *relu = (ReluConstraint *)plc;
+        const ReluConstraint *relu = ( const ReluConstraint *)plc;
 
         // Has the b variable been handled?
         unsigned b = relu->getB();

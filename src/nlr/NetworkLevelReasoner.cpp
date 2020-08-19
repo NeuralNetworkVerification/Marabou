@@ -235,5 +235,4 @@ void NetworkLevelReasoner::removeConstraintFromTopologicalOrder( PiecewiseLinear
        _constraintsInTopologicalOrder.erase( constraint );
 }
 
-
 } // namespace NLR
