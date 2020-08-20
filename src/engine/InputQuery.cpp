@@ -658,7 +658,7 @@ bool InputQuery::constructWeighedSumLayer( NLR::NetworkLevelReasoner *nlr,
     // No neurons found for the new layer
     if ( newNeurons.empty() )
     {
-        INPUT_QUERY_LOG( "\tFailed" );
+        INPUT_QUERY_LOG( "\tFailed!" );
         return false;
     }
 
@@ -704,7 +704,8 @@ bool InputQuery::constructWeighedSumLayer( NLR::NetworkLevelReasoner *nlr,
                             factor * addend._coefficient );
         }
     }
-    INPUT_QUERY_LOG( "\tSuccessful" );
+    
+    INPUT_QUERY_LOG( "\tSuccessful!" );
     return true;
 }
 
