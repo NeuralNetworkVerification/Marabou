@@ -168,6 +168,7 @@ private:
     void computeIntervalArithmeticBoundsForWeightedSum();
     void computeIntervalArithmeticBoundsForRelu();
     void computeIntervalArithmeticBoundsForAbs();
+    void computeIntervalArithmeticBoundsForSign();
 
     const double *getSymbolicLb() const;
     const double *getSymbolicUb() const;
