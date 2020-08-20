@@ -19,6 +19,7 @@
 #include "IEngine.h"
 #include "List.h"
 #include "PiecewiseLinearCaseSplit.h"
+#include "PiecewiseLinearConstraint.h"
 
 class MockEngine : public IEngine
 {
@@ -30,7 +31,7 @@ public:
 
         lastStoredState = NULL;
     }
-
+    
     ~MockEngine()
     {
     }
@@ -145,6 +146,19 @@ public:
 
     void updateScores( DivideStrategy /**/ )
     {
+    }
+
+    mutable SmtState *lastRestoredSmtState;
+    bool restoreSmtState( SmtState &smtState )
+    {
+        lastRestoredSmtState = &smtState;
+        return true;
+    }
+
+    mutable SmtState *lastStoredSmtState;
+    void storeSmtState( SmtState &smtState )
+    {
+        lastStoredSmtState = &smtState;
     }
 
     List<PiecewiseLinearConstraint *> _constraintsToSplit;

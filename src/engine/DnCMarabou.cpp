@@ -98,6 +98,7 @@ void DnCMarabou::run()
     unsigned verbosity = Options::get()->getInt( Options::VERBOSITY );
     unsigned timeoutInSeconds = Options::get()->getInt( Options::TIMEOUT );
     float timeoutFactor = Options::get()->getFloat( Options::TIMEOUT_FACTOR );
+    bool restoreTreeStates = Options::get()->getBool( Options::RESTORE_TREE_STATES );
 
     SnCDivideStrategy strategy = Options::get()->getSnCDivideStrategy
         ( Options::SPLITTING_STRATEGY );
@@ -120,7 +121,7 @@ void DnCMarabou::run()
 
     struct timespec start = TimeUtils::sampleMicro();
 
-    _dncManager->solve( timeoutInSeconds );
+    _dncManager->solve( timeoutInSeconds, restoreTreeStates );
 
     struct timespec end = TimeUtils::sampleMicro();
 
