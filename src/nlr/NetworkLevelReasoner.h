@@ -135,6 +135,7 @@ public:
     */
     List<PiecewiseLinearConstraint *> getConstraintsInTopologicalOrder();
     void addConstraintInTopologicalOrder( PiecewiseLinearConstraint *constraint );
+    void removeConstraintFromTopologicalOrder( PiecewiseLinearConstraint *constraint );
 
 private:
     Map<unsigned, Layer *> _layerIndexToLayer;
