@@ -540,15 +540,15 @@ public:
         TS_ASSERT( smtState._stack.size() == 2 );
         // Examine the first stackEntry
         SmtStackEntry *stackEntry = *( smtState._stack.begin() );
-        ASSERT( stackEntry->_activeSplit == *( relu1.getCaseSplits().begin() ) );
-        ASSERT( *( stackEntry->_alternativeSplits.begin() ) == *( ++relu1.getCaseSplits().begin() ) );
-        ASSERT( stackEntry->_impliedValidSplits.size() == 1 );
-        ASSERT( *( stackEntry->_impliedValidSplits.begin() ) == split2 );
+        TS_ASSERT( stackEntry->_activeSplit == *( relu1.getCaseSplits().begin() ) );
+        TS_ASSERT( *( stackEntry->_alternativeSplits.begin() ) == *( ++relu1.getCaseSplits().begin() ) );
+        TS_ASSERT( stackEntry->_impliedValidSplits.size() == 1 );
+        TS_ASSERT( *( stackEntry->_impliedValidSplits.begin() ) == split2 );
         // Examine the second stackEntry
         stackEntry = *( ++smtState._stack.begin() );
-        ASSERT( stackEntry->_activeSplit == *( relu2.getCaseSplits().begin() ) );
-        ASSERT( *( stackEntry->_alternativeSplits.begin() ) == *( ++relu2.getCaseSplits().begin() ) );
-        ASSERT( stackEntry->_impliedValidSplits.size() == 0 );
+        TS_ASSERT( stackEntry->_activeSplit == *( relu2.getCaseSplits().begin() ) );
+        TS_ASSERT( *( stackEntry->_alternativeSplits.begin() ) == *( ++relu2.getCaseSplits().begin() ) );
+        TS_ASSERT( stackEntry->_impliedValidSplits.size() == 0 );
 
         clearSmtState( smtState );
 
@@ -561,15 +561,15 @@ public:
         TS_ASSERT( smtState._stack.size() == 2 );
         // Examine the first stackEntry
         stackEntry = *( smtState._stack.begin() );
-        ASSERT( stackEntry->_activeSplit == *( relu1.getCaseSplits().begin() ) );
-        ASSERT( *( stackEntry->_alternativeSplits.begin() ) == *( ++relu1.getCaseSplits().begin() ) );
-        ASSERT( stackEntry->_impliedValidSplits.size() == 1 );
-        ASSERT( *( stackEntry->_impliedValidSplits.begin() ) == split2 );
+        TS_ASSERT( stackEntry->_activeSplit == *( relu1.getCaseSplits().begin() ) );
+        TS_ASSERT( *( stackEntry->_alternativeSplits.begin() ) == *( ++relu1.getCaseSplits().begin() ) );
+        TS_ASSERT( stackEntry->_impliedValidSplits.size() == 1 );
+        TS_ASSERT( *( stackEntry->_impliedValidSplits.begin() ) == split2 );
         // Examine the second stackEntry
         stackEntry = *( ++smtState._stack.begin() );
-        ASSERT( stackEntry->_activeSplit == *( ++relu2.getCaseSplits().begin() ) );
-        ASSERT( stackEntry->_alternativeSplits.empty() );
-        ASSERT( stackEntry->_impliedValidSplits.size() == 0 );
+        TS_ASSERT( stackEntry->_activeSplit == *( ++relu2.getCaseSplits().begin() ) );
+        TS_ASSERT( stackEntry->_alternativeSplits.empty() );
+        TS_ASSERT( stackEntry->_impliedValidSplits.size() == 0 );
 
         clearSmtState( smtState );
 
