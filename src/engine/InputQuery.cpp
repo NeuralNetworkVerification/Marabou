@@ -704,6 +704,7 @@ bool InputQuery::constructWeighedSumLayer( NLR::NetworkLevelReasoner *nlr,
                             factor * addend._coefficient );
         }
     }
+    
     INPUT_QUERY_LOG( "\tSuccessful!" );
     return true;
 }
