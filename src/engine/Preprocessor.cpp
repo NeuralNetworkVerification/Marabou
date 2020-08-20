@@ -712,6 +712,8 @@ void Preprocessor::eliminateVariables()
             delete *constraint;
             *constraint = NULL;
             constraint = constraints.erase( constraint );
+            _preprocessed.getNetworkLevelReasoner()->
+                removeConstraintFromTopologicalOrder( *constraint );
         }
         else
             ++constraint;

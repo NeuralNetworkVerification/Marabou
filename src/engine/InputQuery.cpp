@@ -606,6 +606,7 @@ bool InputQuery::constructWeighedSumLayer( NLR::NetworkLevelReasoner *nlr,
                                            Map<unsigned, unsigned> &handledVariableToLayer,
                                            unsigned newLayerIndex )
 {
+    INPUT_QUERY_LOG( "Attempting to contruct weightedSumLayer..." );
     struct NeuronInformation
     {
     public:
@@ -656,7 +657,10 @@ bool InputQuery::constructWeighedSumLayer( NLR::NetworkLevelReasoner *nlr,
 
     // No neurons found for the new layer
     if ( newNeurons.empty() )
+    {
+        INPUT_QUERY_LOG( "\tFailed" );
         return false;
+    }
 
     nlr->addLayer( newLayerIndex, NLR::Layer::WEIGHTED_SUM, newNeurons.size() );
     for ( const auto &newNeuron : newNeurons )
@@ -700,7 +704,7 @@ bool InputQuery::constructWeighedSumLayer( NLR::NetworkLevelReasoner *nlr,
                             factor * addend._coefficient );
         }
     }
-
+    INPUT_QUERY_LOG( "\tSuccessful" );
     return true;
 }
 
@@ -708,6 +712,7 @@ bool InputQuery::constructReluLayer( NLR::NetworkLevelReasoner *nlr,
                                      Map<unsigned, unsigned> &handledVariableToLayer,
                                      unsigned newLayerIndex )
 {
+    INPUT_QUERY_LOG( "Attempting to contruct ReluLayer..." );
     struct NeuronInformation
     {
     public:
@@ -750,11 +755,15 @@ bool InputQuery::constructReluLayer( NLR::NetworkLevelReasoner *nlr,
 
         // B has been handled, f hasn't. Add f
         newNeurons.append( NeuronInformation( f, newNeurons.size(), b ) );
+        nlr->addConstraintInTopologicalOrder( plc );
     }
 
     // No neurons found for the new layer
     if ( newNeurons.empty() )
+    {
+        INPUT_QUERY_LOG( "\tFailed!" );
         return false;
+    }
 
     nlr->addLayer( newLayerIndex, NLR::Layer::RELU, newNeurons.size() );
     for ( const auto &newNeuron : newNeurons )
@@ -777,6 +786,7 @@ bool InputQuery::constructReluLayer( NLR::NetworkLevelReasoner *nlr,
                                   newNeuron._neuron );
     }
 
+    INPUT_QUERY_LOG( "\tSuccessful!" );
     return true;
 }
 
@@ -784,6 +794,7 @@ bool InputQuery::constructAbsoluteValueLayer( NLR::NetworkLevelReasoner *nlr,
                                               Map<unsigned, unsigned> &handledVariableToLayer,
                                               unsigned newLayerIndex )
 {
+    INPUT_QUERY_LOG( "Attempting to contruct AbsoluteValueLayer..." );
     struct NeuronInformation
     {
     public:
@@ -831,7 +842,10 @@ bool InputQuery::constructAbsoluteValueLayer( NLR::NetworkLevelReasoner *nlr,
 
     // No neurons found for the new layer
     if ( newNeurons.empty() )
+    {
+        INPUT_QUERY_LOG( "\tFailed!" );
         return false;
+    }
 
     nlr->addLayer( newLayerIndex, NLR::Layer::ABSOLUTE_VALUE, newNeurons.size() );
     for ( const auto &newNeuron : newNeurons )
@@ -854,6 +868,7 @@ bool InputQuery::constructAbsoluteValueLayer( NLR::NetworkLevelReasoner *nlr,
                                   newNeuron._neuron );
     }
 
+    INPUT_QUERY_LOG( "\tSuccessful!" );
     return true;
 }
 
