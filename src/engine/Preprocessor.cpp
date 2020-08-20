@@ -709,12 +709,12 @@ void Preprocessor::eliminateVariables()
             if ( _statistics )
                 _statistics->ppIncNumConstraintsRemoved();
 
-            delete *constraint;
-            *constraint = NULL;
-            constraint = constraints.erase( constraint );
             if ( _preprocessed._networkLevelReasoner )
                 _preprocessed._networkLevelReasoner->
                     removeConstraintFromTopologicalOrder( *constraint );
+            delete *constraint;
+            *constraint = NULL;
+            constraint = constraints.erase( constraint );
         }
         else
             ++constraint;
