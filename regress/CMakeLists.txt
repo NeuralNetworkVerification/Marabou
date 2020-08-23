@@ -42,6 +42,11 @@ macro(marabou_add_acasxu_dnc_test level net_file prop_num result)
         "${CMAKE_SOURCE_DIR}/resources/properties/acas_property_${prop_num}.txt" "${result}" "--dnc" "acasxu")
 endmacro()
 
+macro(marabou_add_mnist_test level net_file property_file result)
+  marabou_add_regress_test(${level}
+    "${CMAKE_SOURCE_DIR}/resources/nnet/mnist/${net_file}"
+    "${CMAKE_SOURCE_DIR}/resources/properties/mnist/${property_file}" "${result}" "" "mnist")
+endmacro()
             
 
 message(${MPS_PARSER_PATH})

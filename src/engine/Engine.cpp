@@ -103,14 +103,6 @@ bool Engine::solve( unsigned timeoutInSeconds )
         printf( "\n---\n" );
     }
 
-    DEBUG({
-            // Initially, all constraints should be active
-            for ( const auto &plc : _plConstraints )
-            {
-                ASSERT( plc->isActive() );
-            }
-        });
-
     applyAllValidConstraintCaseSplits();
 
     bool splitJustPerformed = true;
@@ -1122,6 +1114,14 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
     ENGINE_LOG( "processInputQuery done\n" );
 
+    DEBUG({
+            // Initially, all constraints should be active
+            for ( const auto &plc : _plConstraints )
+                {
+                    ASSERT( plc->isActive() );
+                }
+        });
+
     _smtCore.storeDebuggingSolution( _preprocessedQuery._debuggingSolution );
     return true;
 }
@@ -1974,6 +1974,68 @@ void Engine::updateDirections()
             if ( constraint->supportPolarity() &&
                  constraint->isActive() && !constraint->phaseFixed() )
                 constraint->updateDirection();
+}
+
+bool Engine::restoreSmtState( SmtState & smtState )
+{
+    try
+    {
+        ASSERT( _smtCore.getStackDepth() == 0 );
+
+        // Step 1: all implied valid splits at root
+        for ( auto &validSplit : smtState._impliedValidSplitsAtRoot )
+        {
+            applySplit( validSplit );
+            _smtCore.recordImpliedValidSplit( validSplit );
+        }
+
+        tightenBoundsOnConstraintMatrix();
+        applyAllBoundTightenings();
+        // For debugging purposes
+        checkBoundCompliancyWithDebugSolution();
+        do
+            performSymbolicBoundTightening();
+        while ( applyAllValidConstraintCaseSplits() );
+
+        // Step 2: replay the stack
+        for ( auto &stackEntry : smtState._stack )
+        {
+            _smtCore.replaySmtStackEntry( stackEntry );
+            // Do all the bound propagation, and set ReLU constraints to inactive (at
+            // least the one corresponding to the _activeSplit applied above.
+            tightenBoundsOnConstraintMatrix();
+            applyAllBoundTightenings();
+            // For debugging purposes
+            checkBoundCompliancyWithDebugSolution();
+            do
+                performSymbolicBoundTightening();
+            while ( applyAllValidConstraintCaseSplits() );
+
+        }
+    }
+    catch ( const InfeasibleQueryException & )
+    {
+        // The current query is unsat, and we need to pop.
+        // If we're at level 0, the whole query is unsat.
+        if ( !_smtCore.popSplit() )
+        {
+            if ( _verbosity > 0 )
+            {
+                printf( "\nEngine::solve: UNSAT query\n" );
+                _statistics.print();
+            }
+            _exitCode = Engine::UNSAT;
+            for ( PiecewiseLinearConstraint *p : _plConstraints )
+                p->setActiveConstraint( true );
+            return false;
+        }
+    }
+    return true;
+}
+
+void Engine::storeSmtState( SmtState & smtState )
+{
+    _smtCore.storeSmtState( smtState );
 }
 
 void Engine::updateScores()
