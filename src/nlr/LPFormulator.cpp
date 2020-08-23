@@ -575,7 +575,7 @@ void LPFormulator::addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi, con
                     }
                     else
                     {
-                        bias += weight * sourceLayer->getEliminatedNeuronValue( j );
+                        bias -= weight * sourceLayer->getEliminatedNeuronValue( j );
                     }
                 }
             }

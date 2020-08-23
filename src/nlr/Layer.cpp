@@ -168,6 +168,17 @@ void Layer::computeAssignment()
         }
     }
 
+    else if ( _type == SIGN )
+    {
+        for ( unsigned i = 0; i < _size; ++i )
+        {
+            NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
+            double inputValue = _layerOwner->getLayer( sourceIndex._layer )->getAssignment( sourceIndex._neuron );
+
+            _assignment[i] = FloatUtils::isNegative( inputValue ) ? -1 : 1;
+        }
+    }
+
     else
     {
         printf( "Error! Neuron type %u unsupported\n", _type );
