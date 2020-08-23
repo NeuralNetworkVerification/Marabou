@@ -244,7 +244,7 @@ double Layer::getBias( unsigned neuron ) const
 
 void Layer::addActivationSource( unsigned sourceLayer, unsigned sourceNeuron, unsigned targetNeuron )
 {
-    ASSERT( _type == RELU || _type == ABSOLUTE_VALUE || _type == MAX );
+    ASSERT( _type == RELU || _type == ABSOLUTE_VALUE || _type == MAX || _type == SIGN );
 
     if ( !_neuronToActivationSources.exists( targetNeuron ) )
         _neuronToActivationSources[targetNeuron] = List<NeuronIndex>();
@@ -252,7 +252,7 @@ void Layer::addActivationSource( unsigned sourceLayer, unsigned sourceNeuron, un
     _neuronToActivationSources[targetNeuron].append( NeuronIndex( sourceLayer, sourceNeuron ) );
 
     DEBUG({
-            if ( _type == RELU || _type == ABSOLUTE_VALUE )
+            if ( _type == RELU || _type == ABSOLUTE_VALUE || _type == SIGN )
                 ASSERT( _neuronToActivationSources[targetNeuron].size() == 1 );
         });
 }
@@ -345,10 +345,14 @@ void Layer::computeIntervalArithmeticBounds()
         computeIntervalArithmeticBoundsForAbs();
         break;
 
+    case SIGN:
+        computeIntervalArithmeticBoundsForSign();
+        break;
+
     case MAX:
 
     default:
-        printf( "Error! Actiation type %u unsupported\n", _type );
+        printf( "Error! Activation type %u unsupported\n", _type );
         throw MarabouError( MarabouError::NETWORK_LEVEL_REASONER_ACTIVATION_NOT_SUPPORTED );
         break;
     }
@@ -497,6 +501,37 @@ void Layer::computeIntervalArithmeticBoundsForAbs()
                 _ub[i] = FloatUtils::max( ub, -lb );
                 _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
             }
+        }
+    }
+}
+
+void Layer::computeIntervalArithmeticBoundsForSign()
+{
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        if ( _eliminatedNeurons.exists( i ) )
+            continue;
+
+        NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
+        const Layer *sourceLayer = _layerOwner->getLayer( sourceIndex._layer );
+
+        double lb = sourceLayer->getLb( sourceIndex._neuron );
+        double ub = sourceLayer->getUb( sourceIndex._neuron );
+
+        if ( !FloatUtils::isNegative( lb ) )
+        {
+            _lb[i] = 1;
+            _ub[i] = 1;
+        }
+        else if ( FloatUtils::isNegative( ub ) )
+        {
+            _lb[i] = -1;
+            _ub[i] = -1;
+        }
+        else
+        {
+            _lb[i] = -1;
+            _ub[i] = 1;
         }
     }
 }
@@ -1281,6 +1316,10 @@ String Layer::typeToString( Type type )
         return "MAX";
         break;
 
+    case SIGN:
+        return "SIGN";
+        break;
+
     default:
         return "UNKNOWN TYPE";
         break;
@@ -1337,6 +1376,7 @@ void Layer::dump() const
     case RELU:
     case ABSOLUTE_VALUE:
     case MAX:
+    case SIGN:
 
         for ( unsigned i = 0; i < _size; ++i )
         {

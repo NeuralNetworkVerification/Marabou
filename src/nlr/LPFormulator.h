@@ -80,6 +80,9 @@ private:
     void addReluLayerToLpRelaxation( GurobiWrapper &gurobi,
                                      const Layer *layer );
 
+    void addSignLayerToLpRelaxation( GurobiWrapper &gurobi,
+                                     const Layer *layer );
+
     void addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi,
                                             const Layer *layer );
 };

@@ -24,6 +24,7 @@
 #include "MatrixMultiplication.h"
 #include "NeuronIndex.h"
 #include "ReluConstraint.h"
+#include "SignConstraint.h"
 
 namespace NLR {
 
@@ -39,6 +40,7 @@ public:
         RELU,
         ABSOLUTE_VALUE,
         MAX,
+        SIGN,
     };
 
     /*
@@ -166,6 +168,7 @@ private:
     void computeIntervalArithmeticBoundsForWeightedSum();
     void computeIntervalArithmeticBoundsForRelu();
     void computeIntervalArithmeticBoundsForAbs();
+    void computeIntervalArithmeticBoundsForSign();
 
     const double *getSymbolicLb() const;
     const double *getSymbolicUb() const;

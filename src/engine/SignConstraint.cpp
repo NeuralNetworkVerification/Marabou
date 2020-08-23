@@ -412,3 +412,13 @@ void SignConstraint::eliminateVariable( __attribute__((unused)) unsigned variabl
     // In a Sign constraint, if a variable is removed the entire constraint can be discarded.
     _haveEliminatedVariables = true;
 }
+
+unsigned SignConstraint::getB() const
+{
+    return _b;
+}
+
+unsigned SignConstraint::getF() const
+{
+    return _f;
+}
