@@ -157,6 +157,9 @@ private:
     bool constructReluLayer( NLR::NetworkLevelReasoner *nlr,
                              Map<unsigned, unsigned> &handledVariableToLayer,
                              unsigned newLayerIndex );
+    bool constructAbsoluteValueLayer( NLR::NetworkLevelReasoner *nlr,
+                                      Map<unsigned, unsigned> &handledVariableToLayer,
+                                      unsigned newLayerIndex );
     bool constructSignLayer( NLR::NetworkLevelReasoner *nlr,
                              Map<unsigned, unsigned> &handledVariableToLayer,
                              unsigned newLayerIndex );
