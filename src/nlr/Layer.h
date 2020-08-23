@@ -161,6 +161,7 @@ private:
     void computeSymbolicBoundsForRelu();
     void computeSymbolicBoundsForAbsoluteValue();
     void computeSymbolicBoundsForWeightedSum();
+    void computeSymbolicBoundsDefault();
 
     /*
       Helper functions for interval bound tightening

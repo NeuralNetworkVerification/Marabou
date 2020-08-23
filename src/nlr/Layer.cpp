@@ -568,12 +568,44 @@ void Layer::computeSymbolicBounds()
         computeSymbolicBoundsForAbsoluteValue();
         break;
 
-    case MAX:
-
     default:
-        printf( "Error! Actiation type %u unsupported\n", _type );
-        throw MarabouError( MarabouError::NETWORK_LEVEL_REASONER_ACTIVATION_NOT_SUPPORTED );
+        computeSymbolicBoundsDefault();
         break;
+    }
+}
+
+void Layer::computeSymbolicBoundsDefault()
+{
+    // This is the default operation, for layers that are not
+    // supported yet. The "symbolic" bounds computed are just the
+    // concrete bounds.
+
+    std::fill_n( _symbolicLb, _size * _inputLayerSize, 0 );
+    std::fill_n( _symbolicUb, _size * _inputLayerSize, 0 );
+
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        double lb;
+        double ub;
+
+        if ( _eliminatedNeurons.exists( i ) )
+        {
+            lb = _eliminatedNeurons[i];
+            ub = _eliminatedNeurons[i];
+        }
+        else
+        {
+            lb = _lb[i];
+            ub = _ub[i];
+        }
+
+        _symbolicLowerBias[i] = lb;
+        _symbolicUpperBias[i] = ub;
+
+        _symbolicLbOfLb[i] = lb;
+        _symbolicUbOfLb[i] = ub;
+        _symbolicLbOfUb[i] = lb;
+        _symbolicUbOfUb[i] = ub;
     }
 }
 
