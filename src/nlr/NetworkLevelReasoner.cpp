@@ -14,8 +14,10 @@
  **/
 
 #include "AbsoluteValueConstraint.h"
+#include "AbsoluteValueConstraint.h"
 #include "Debug.h"
 #include "FloatUtils.h"
+#include "InputQuery.h"
 #include "LPFormulator.h"
 #include "MILPFormulator.h"
 #include "MStringf.h"
@@ -23,6 +25,7 @@
 #include "NLRError.h"
 #include "NetworkLevelReasoner.h"
 #include "ReluConstraint.h"
+#include "SignConstraint.h"
 #include <cstring>
 
 namespace NLR {
@@ -234,6 +237,128 @@ void NetworkLevelReasoner::addConstraintInTopologicalOrder( PiecewiseLinearConst
 void NetworkLevelReasoner::removeConstraintFromTopologicalOrder( PiecewiseLinearConstraint *constraint )
 {
   _constraintsInTopologicalOrder.erase( constraint );
+}
+
+InputQuery NetworkLevelReasoner::generateInputQuery()
+{
+    InputQuery result;
+
+    // Number of variables
+    unsigned numberOfVariables = 0;
+    for ( const auto &it : _layerIndexToLayer )
+        numberOfVariables += it.second->getSize();
+    result.setNumberOfVariables( numberOfVariables );
+
+    // Handle the various layers
+    for ( const auto &it : _layerIndexToLayer )
+        generateInputQueryForLayer( result, *it.second );
+
+    // Mark the input variables
+    const Layer *inputLayer = _layerIndexToLayer[0];
+    for ( unsigned i = 0; i < inputLayer->getSize(); ++i )
+        result.markInputVariable( inputLayer->neuronToVariable( i ), i );
+
+    // Mark the output variables
+    const Layer *outputLayer = _layerIndexToLayer[_layerIndexToLayer.size() - 1];
+    for ( unsigned i = 0; i < outputLayer->getSize(); ++i )
+        result.markOutputVariable( outputLayer->neuronToVariable( i ), i );
+
+    // Store any known bounds of the input layer
+    for ( unsigned i = 0; i < inputLayer->getSize(); ++i )
+    {
+        unsigned variable = inputLayer->neuronToVariable( i );
+        result.setLowerBound( variable, inputLayer->getLb( i ) );
+        result.setUpperBound( variable, inputLayer->getUb( i ) );
+    }
+
+    return result;
+}
+
+void NetworkLevelReasoner::generateInputQueryForLayer( InputQuery &inputQuery,
+                                                       const Layer &layer )
+{
+    switch ( layer.getLayerType() )
+    {
+    case Layer::INPUT:
+        break;
+
+    case Layer::WEIGHTED_SUM:
+        generateInputQueryForWeightedSumLayer( inputQuery, layer );
+        break;
+
+    case Layer::RELU:
+        generateInputQueryForReluLayer( inputQuery, layer );
+        break;
+
+    case Layer::SIGN:
+        generateInputQueryForSignLayer( inputQuery, layer );
+        break;
+
+    case Layer::ABSOLUTE_VALUE:
+        generateInputQueryForAbsoluteValueLayer( inputQuery, layer );
+        break;
+
+    default:
+        throw NLRError( NLRError::LAYER_TYPE_NOT_SUPPORTED,
+                        Stringf( "Layer %u not yet supported", layer.getLayerType() ).ascii() );
+        break;
+    }
+}
+
+void NetworkLevelReasoner::generateInputQueryForReluLayer( InputQuery &inputQuery, const Layer &layer )
+{
+    for ( unsigned i = 0; i < layer.getSize(); ++i )
+    {
+        NeuronIndex sourceIndex = *layer.getActivationSources( i ).begin();
+        const Layer *sourceLayer = _layerIndexToLayer[sourceIndex._layer];
+        ReluConstraint *relu = new ReluConstraint( sourceLayer->neuronToVariable( sourceIndex._neuron ), layer.neuronToVariable( i ) );
+        inputQuery.addPiecewiseLinearConstraint( relu );
+    }
+}
+
+void NetworkLevelReasoner::generateInputQueryForSignLayer( InputQuery &inputQuery, const Layer &layer )
+{
+    for ( unsigned i = 0; i < layer.getSize(); ++i )
+    {
+        NeuronIndex sourceIndex = *layer.getActivationSources( i ).begin();
+        const Layer *sourceLayer = _layerIndexToLayer[sourceIndex._layer];
+        SignConstraint *sign = new SignConstraint( sourceLayer->neuronToVariable( sourceIndex._neuron ), layer.neuronToVariable( i ) );
+        inputQuery.addPiecewiseLinearConstraint( sign );
+    }
+}
+
+void NetworkLevelReasoner::generateInputQueryForAbsoluteValueLayer( InputQuery &inputQuery, const Layer &layer )
+{
+    for ( unsigned i = 0; i < layer.getSize(); ++i )
+    {
+        NeuronIndex sourceIndex = *layer.getActivationSources( i ).begin();
+        const Layer *sourceLayer = _layerIndexToLayer[sourceIndex._layer];
+        AbsoluteValueConstraint *absoluteValue = new AbsoluteValueConstraint( sourceLayer->neuronToVariable( sourceIndex._neuron ), layer.neuronToVariable( i ) );
+        inputQuery.addPiecewiseLinearConstraint( absoluteValue );
+    }
+}
+
+void NetworkLevelReasoner::generateInputQueryForWeightedSumLayer( InputQuery &inputQuery, const Layer &layer )
+{
+    for ( unsigned i = 0; i < layer.getSize(); ++i )
+    {
+        Equation eq;
+        eq.setScalar( -layer.getBias( i ) );
+        eq.addAddend( -1, layer.neuronToVariable( i ) );
+
+        for ( const auto &it : layer.getSourceLayers() )
+        {
+            const Layer *sourceLayer = _layerIndexToLayer[it.first];
+
+            for ( unsigned j = 0; j < sourceLayer->getSize(); ++j )
+            {
+                double coefficient = layer.getWeight( sourceLayer->getLayerIndex(), j, i );
+                eq.addAddend( coefficient, sourceLayer->neuronToVariable( j ) );
+            }
+        }
+
+        inputQuery.addEquation( eq );
+    }
 }
 
 } // namespace NLR
