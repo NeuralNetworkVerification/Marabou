@@ -705,7 +705,7 @@ bool InputQuery::constructWeighedSumLayer( NLR::NetworkLevelReasoner *nlr,
                             factor * addend._coefficient );
         }
     }
-    
+
     INPUT_QUERY_LOG( "\tSuccessful!" );
     return true;
 }
@@ -878,6 +878,7 @@ bool InputQuery::constructSignLayer( NLR::NetworkLevelReasoner *nlr,
                                      Map<unsigned, unsigned> &handledVariableToLayer,
                                      unsigned newLayerIndex )
 {
+    INPUT_QUERY_LOG( "Attempting to contruct SignLayer..." );
     struct NeuronInformation
     {
     public:
@@ -920,11 +921,15 @@ bool InputQuery::constructSignLayer( NLR::NetworkLevelReasoner *nlr,
 
         // B has been handled, f hasn't. Add f
         newNeurons.append( NeuronInformation( f, newNeurons.size(), b ) );
+        nlr->addConstraintInTopologicalOrder( plc );
     }
 
     // No neurons found for the new layer
     if ( newNeurons.empty() )
+    {
+        INPUT_QUERY_LOG( "\tFailed!" );
         return false;
+    }
 
     nlr->addLayer( newLayerIndex, NLR::Layer::SIGN, newNeurons.size() );
     for ( const auto &newNeuron : newNeurons )
@@ -947,13 +952,6 @@ bool InputQuery::constructSignLayer( NLR::NetworkLevelReasoner *nlr,
                                   newNeuron._neuron );
     }
 
+    INPUT_QUERY_LOG( "\tSuccessful!" );
     return true;
 }
-
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//
