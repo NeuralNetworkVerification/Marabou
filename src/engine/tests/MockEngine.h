@@ -190,7 +190,6 @@ public:
         else
             return NULL;
     }
-
 };
 
 #endif // __MockEngine_h__

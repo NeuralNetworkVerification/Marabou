@@ -46,7 +46,6 @@ public:
 
     void test_create_subqueries()
     {
-
         TS_ASSERT_THROWS_NOTHING( engine = std::make_shared<MockEngine>() );
 
         PiecewiseLinearConstraint *relu1 = new ReluConstraint( 1, 2 );

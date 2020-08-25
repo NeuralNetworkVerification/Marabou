@@ -23,7 +23,7 @@
 PolarityBasedDivider::PolarityBasedDivider( std::shared_ptr<IEngine> engine )
     : _engine( std::move( engine ) )
 {
-};
+}
 
 void PolarityBasedDivider::createSubQueries( unsigned numNewSubqueries, const
                                              String queryIdPrefix, const
