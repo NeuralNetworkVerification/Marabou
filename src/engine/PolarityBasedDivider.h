@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file LargestIntervalDivider.h
+/*! \file PolarityBasedDivider.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Haoze Wu
@@ -13,18 +13,18 @@
 
 **/
 
-#ifndef __LargestIntervalDivider_h__
-#define __LargestIntervalDivider_h__
+#ifndef __PolarityBasedDivider_h__
+#define __PolarityBasedDivider_h__
 
 #include "List.h"
 #include "QueryDivider.h"
 
 #include <math.h>
 
-class LargestIntervalDivider : public QueryDivider
+class PolarityBasedDivider : public QueryDivider
 {
 public:
-    LargestIntervalDivider( const List<unsigned> &inputVariables );
+    PolarityBasedDivider( std::shared_ptr<IEngine> engine );
 
     void createSubQueries( unsigned numNewSubQueries,
                            const String queryIdPrefix,
@@ -34,17 +34,16 @@ public:
                            const unsigned timeoutInSeconds,
                            SubQueries &subQueries );
 
-    /*
-      Returns the variable with the largest range
-    */
-    unsigned getLargestInterval( const InputRegion &inputRegion );
-
 private:
-    /*
-      All input variables of the network
-    */
-    const List<unsigned> _inputVariables;
+    std::shared_ptr<IEngine> _engine;
 
+    /*
+      Aong the K earliest unfixed ReLUs in the topological order, pick the one
+      with polarity closest to 0. K is equal to GlobalConfiguration::POLARITY_CAONDIDATES_THRESHOLD
+    */
+    PiecewiseLinearConstraint *getPLConstraintToSplit( const
+                                                       PiecewiseLinearCaseSplit
+                                                       &split );
 };
 
 #endif // __LargestIntervalDivider_h__

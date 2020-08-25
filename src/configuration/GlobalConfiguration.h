@@ -114,6 +114,10 @@ public:
 
     static const DivideStrategy SPLITTING_HEURISTICS;
 
+    // When automatically deciding which splitting strategy to use, we use relu-splitting if
+    // the number of inputs is larger than this number.
+    static const unsigned INTERVAL_SPLITTING_THRESHOLD;
+
     // How often should we perform full bound tightening, on the entire contraints matrix A.
     static const unsigned BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY;
 
@@ -222,8 +226,11 @@ public:
     /* In the polarity-based branching heuristics, only this many earliest nodes
        are considered to branch on.
     */
-    static const unsigned RUNTIME_ESTIMATE_THRESHOLD;
+    static const unsigned POLARITY_CANDIDATES_THRESHOLD;
 
+    /* The max number of DnC splits
+    */
+    static const unsigned DNC_DEPTH_THRESHOLD;
 
 #ifdef ENABLE_GUROBI
     /*

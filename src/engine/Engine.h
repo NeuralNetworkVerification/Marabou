@@ -25,6 +25,8 @@
 #include "DantzigsRule.h"
 #include "DegradationChecker.h"
 #include "DivideStrategy.h"
+#include "SnCDivideStrategy.h"
+#include "GlobalConfiguration.h"
 #include "IEngine.h"
 #include "InputQuery.h"
 #include "Map.h"
@@ -146,12 +148,13 @@ public:
     /*
       Pick the piecewise linear constraint for splitting
     */
-    PiecewiseLinearConstraint *pickSplitPLConstraint();
+    PiecewiseLinearConstraint *pickSplitPLConstraint( DivideStrategy strategy );
 
     /*
-      Update the scores of each candidate splitting PL constraints
+      Call-back from QueryDividers
+      Pick the piecewise linear constraint for splitting
     */
-    void updateScores();
+    PiecewiseLinearConstraint *pickSplitPLConstraintSnC( SnCDivideStrategy strategy );
 
     /*
       Set the constraint violation threshold of SmtCore
@@ -200,11 +203,6 @@ private:
       The existing piecewise-linear constraints.
     */
     List<PiecewiseLinearConstraint *> _plConstraints;
-
-    /*
-      The ordered set of candidate PL constraints for splitting
-    */
-    Set<PiecewiseLinearConstraint *> _candidatePlConstraints;
 
     /*
       Piecewise linear constraints that are currently violated.
@@ -487,6 +485,17 @@ private:
       to handle case splits
     */
     void updateDirections();
+
+    /*
+      Among the earliest K ReLUs, pick the one with Polarity closest to 0.
+      K is equal to GlobalConfiguration::POLARITY_CANDIDATES_THRESHOLD
+    */
+    PiecewiseLinearConstraint *pickSplitPLConstraintBasedOnPolarity();
+
+    /*
+      Pick the first unfixed ReLU in the topological order
+    */
+    PiecewiseLinearConstraint *pickSplitPLConstraintBasedOnTopology();
 };
 
 #endif // __Engine_h__

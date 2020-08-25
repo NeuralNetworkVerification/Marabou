@@ -908,7 +908,7 @@ ReluConstraint::PhaseStatus ReluConstraint::getDirection() const
     return _direction;
 }
 
-void ReluConstraint::updateScore()
+void ReluConstraint::updateScoreBasedOnPolarity()
 {
     _score = std::abs( computePolarity() );
 }

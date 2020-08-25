@@ -27,6 +27,7 @@ LargestIntervalDivider::LargestIntervalDivider( const List<unsigned>
 
 void LargestIntervalDivider::createSubQueries( unsigned numNewSubqueries,
                                                const String queryIdPrefix,
+                                               const unsigned previousDepth,
                                                const PiecewiseLinearCaseSplit
                                                &previousSplit,
                                                const unsigned timeoutInSeconds,
@@ -95,6 +96,7 @@ void LargestIntervalDivider::createSubQueries( unsigned numNewSubqueries,
         subQuery->_queryId = queryId;
         subQuery->_split = std::move(split);
         subQuery->_timeoutInSeconds = timeoutInSeconds;
+        subQuery->_depth = previousDepth + 1;
         subQueries.append( subQuery );
     }
 }

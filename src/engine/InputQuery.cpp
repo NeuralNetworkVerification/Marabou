@@ -208,6 +208,8 @@ void InputQuery::removeEquation( Equation e )
 
 InputQuery &InputQuery::operator=( const InputQuery &other )
 {
+    INPUT_QUERY_LOG( "Calling deep copy constructor..." );
+
     _numberOfVariables = other._numberOfVariables;
     _equations = other._equations;
     _lowerBounds = other._lowerBounds;
@@ -221,9 +223,8 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
     _outputIndexToVariable = other._outputIndexToVariable;
 
     freeConstraintsIfNeeded();
-    for ( const auto &constraint : other._plConstraints )
-        _plConstraints.append( constraint->duplicateConstraint() );
 
+    // Setting NLR
     if ( other._networkLevelReasoner )
     {
         if ( !_networkLevelReasoner )
@@ -238,6 +239,33 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
             _networkLevelReasoner = NULL;
         }
     }
+
+    // Setting plConstraints and topological order
+    if ( !other._networkLevelReasoner )
+    {
+        for ( const auto &constraint : other._plConstraints )
+            _plConstraints.append( constraint->duplicateConstraint() );
+    }
+    else
+    {
+        INPUT_QUERY_LOG( Stringf( "Number of piecewise linear constraints in input query: %u",
+                                  other._plConstraints.size() ).ascii() );
+        INPUT_QUERY_LOG( Stringf( "Number of piecewise linear constraints in topological order %u",
+                                  other._networkLevelReasoner->getConstraintsInTopologicalOrder().size() ).ascii() );
+
+        ASSERT( other._networkLevelReasoner->getConstraintsInTopologicalOrder().size()
+                == other._plConstraints.size() );
+
+        for ( const auto &constraint : other._networkLevelReasoner->
+                  getConstraintsInTopologicalOrder() )
+        {
+            auto *newPlc = constraint->duplicateConstraint();
+            _plConstraints.append( newPlc );
+            _networkLevelReasoner->addConstraintInTopologicalOrder( newPlc );
+        }
+    }
+
+    INPUT_QUERY_LOG( "Calling deep copy constructor - done\n" );
     return *this;
 }
 

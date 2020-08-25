@@ -171,8 +171,6 @@ void NetworkLevelReasoner::storeIntoOther( NetworkLevelReasoner &other ) const
         newLayer->setLayerOwner( &other );
         other._layerIndexToLayer[newLayer->getLayerIndex()] = newLayer;
     }
-
-    other._constraintsInTopologicalOrder = _constraintsInTopologicalOrder;
 }
 
 void NetworkLevelReasoner::updateVariableIndices( const Map<unsigned, unsigned> &oldIndexToNewIndex,
@@ -233,7 +231,8 @@ void NetworkLevelReasoner::addConstraintInTopologicalOrder( PiecewiseLinearConst
 
 void NetworkLevelReasoner::removeConstraintFromTopologicalOrder( PiecewiseLinearConstraint *constraint )
 {
-  _constraintsInTopologicalOrder.erase( constraint );
+    if ( _constraintsInTopologicalOrder.exists( constraint ) )
+        _constraintsInTopologicalOrder.erase( constraint );
 }
 
 } // namespace NLR
