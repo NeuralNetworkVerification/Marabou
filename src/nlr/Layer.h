@@ -161,6 +161,7 @@ private:
     void computeSymbolicBoundsForRelu();
     void computeSymbolicBoundsForAbsoluteValue();
     void computeSymbolicBoundsForWeightedSum();
+    void computeSymbolicBoundsDefault();
 
     /*
       Helper functions for interval bound tightening
@@ -168,6 +169,7 @@ private:
     void computeIntervalArithmeticBoundsForWeightedSum();
     void computeIntervalArithmeticBoundsForRelu();
     void computeIntervalArithmeticBoundsForAbs();
+    void computeIntervalArithmeticBoundsForSign();
 
     const double *getSymbolicLb() const;
     const double *getSymbolicUb() const;

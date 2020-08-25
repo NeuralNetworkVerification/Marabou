@@ -151,6 +151,10 @@ public:
     */
     bool supportsSymbolicBoundTightening() const;
 
+    inline unsigned getB() const { return _b; };
+
+    inline unsigned getF() const { return _f; };
+
 private:
     /*
       The variables that make up this constraint; _f = | _b |.
