@@ -197,7 +197,7 @@ public:
 
     PhaseStatus getDirection() const;
 
-    void updateScore();
+    void updateScoreBasedOnPolarity();
 
 private:
     unsigned _b, _f;

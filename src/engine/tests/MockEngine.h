@@ -144,6 +144,10 @@ public:
         return _inputVariables;
     }
 
+    void updateScores( DivideStrategy /**/ )
+    {
+    }
+
     mutable SmtState *lastRestoredSmtState;
     bool restoreSmtState( SmtState &smtState )
     {
@@ -157,13 +161,34 @@ public:
         lastStoredSmtState = &smtState;
     }
 
-    void updateScores()
+    List<PiecewiseLinearConstraint *> _constraintsToSplit;
+    void setSplitPLConstraint( PiecewiseLinearConstraint *constraint )
     {
+        _constraintsToSplit.append( constraint );
     }
 
-    PiecewiseLinearConstraint *pickSplitPLConstraint()
+    PiecewiseLinearConstraint *pickSplitPLConstraint( DivideStrategy /**/ )
     {
-        return NULL;
+        if ( !_constraintsToSplit.empty() )
+        {
+            PiecewiseLinearConstraint * ptr = *_constraintsToSplit.begin();
+            _constraintsToSplit.erase( ptr );
+            return ptr;
+        }
+        else
+            return NULL;
+    }
+
+    PiecewiseLinearConstraint *pickSplitPLConstraintSnC( SnCDivideStrategy /**/ )
+    {
+        if ( !_constraintsToSplit.empty() )
+            {
+                PiecewiseLinearConstraint * ptr = *_constraintsToSplit.begin();
+                _constraintsToSplit.erase( ptr );
+                return ptr;
+            }
+        else
+            return NULL;
     }
 };
 

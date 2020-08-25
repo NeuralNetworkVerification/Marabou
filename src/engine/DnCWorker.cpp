@@ -14,7 +14,7 @@
  **/
 
 #include "Debug.h"
-#include "DivideStrategy.h"
+#include "SnCDivideStrategy.h"
 #include "DnCWorker.h"
 #include "IEngine.h"
 #include "EngineState.h"
@@ -22,6 +22,7 @@
 #include "MarabouError.h"
 #include "MStringf.h"
 #include "PiecewiseLinearCaseSplit.h"
+#include "PolarityBasedDivider.h"
 #include "SubQuery.h"
 
 #include <atomic>
@@ -33,7 +34,7 @@ DnCWorker::DnCWorker( WorkerQueue *workload, std::shared_ptr<IEngine> engine,
                       std::atomic_uint &numUnsolvedSubQueries,
                       std::atomic_bool &shouldQuitSolving,
                       unsigned threadId, unsigned onlineDivides,
-                      float timeoutFactor, DivideStrategy divideStrategy,
+                      float timeoutFactor, SnCDivideStrategy divideStrategy,
                       unsigned verbosity )
     : _workload( workload )
     , _engine( engine )
@@ -51,11 +52,12 @@ DnCWorker::DnCWorker( WorkerQueue *workload, std::shared_ptr<IEngine> engine,
     _engine->storeState( *_initialState, true );
 }
 
-void DnCWorker::setQueryDivider( DivideStrategy divideStrategy )
+void DnCWorker::setQueryDivider( SnCDivideStrategy divideStrategy )
 {
-    // For now, there is only one strategy
-    ASSERT( divideStrategy == DivideStrategy::LargestInterval );
-    if ( divideStrategy == DivideStrategy::LargestInterval )
+    if ( divideStrategy == SnCDivideStrategy::Polarity )
+        _queryDivider = std::unique_ptr<QueryDivider>
+            ( new PolarityBasedDivider( _engine ) );
+    else
     {
         const List<unsigned> &inputVariables = _engine->getInputVariables();
         _queryDivider = std::unique_ptr<LargestIntervalDivider>
@@ -72,6 +74,7 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
     if ( _workload->pop( subQuery ) )
     {
         String queryId = subQuery->_queryId;
+        unsigned depth = subQuery->_depth;
         auto split = std::move( subQuery->_split );
         std::unique_ptr<SmtState> smtState = nullptr;
         if ( restoreTreeStates && subQuery->_smtState )
@@ -120,7 +123,8 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
             // If TIMEOUT, split the current input region and add the
             // new subQueries to the current queue
             SubQueries subQueries;
-
+            unsigned newTimeout = ( depth >= GlobalConfiguration::DNC_DEPTH_THRESHOLD - 1 ?
+                                    0 : ( unsigned ) timeoutInSeconds * _timeoutFactor );
             unsigned numNewSubQueries = pow( 2, _onlineDivides );
             std::vector<std::unique_ptr<SmtState>> newSmtStates;
             if ( restoreTreeStates )
@@ -134,9 +138,8 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
                 }
             }
 
-            _queryDivider->createSubQueries( numNewSubQueries, queryId, *split,
-                                             (unsigned)timeoutInSeconds *
-                                             _timeoutFactor, subQueries );
+            _queryDivider->createSubQueries( numNewSubQueries, queryId, depth,
+                                             *split, newTimeout, subQueries );
 
             unsigned i = 0;
             for ( auto &newSubQuery : subQueries )
