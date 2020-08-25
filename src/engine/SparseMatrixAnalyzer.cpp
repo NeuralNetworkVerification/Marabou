@@ -121,11 +121,37 @@ void SparseMatrixAnalyzer::analyze( const double *matrix, unsigned m, unsigned n
     _A.initialize( matrix, m, n );
     _A.transposeIntoOther( &_At );
 
+    allocateMemory();
+
+    // Perform the actual Gaussian elimination
+    gaussianElimination();
+}
+
+void SparseMatrixAnalyzer::analyze( const SparseUnsortedList **matrix,
+                                    unsigned m,
+                                    unsigned n )
+{
+    freeMemoryIfNeeded();
+
+    _m = m;
+    _n = n;
+
+    _A.initialize( matrix, m, n );
+    _A.transposeIntoOther( &_At );
+
+    allocateMemory();
+
+    // Perform the actual Gaussian elimination
+    gaussianElimination();
+}
+
+void SparseMatrixAnalyzer::allocateMemory()
+{
     // Initialize the row and column headers
-    _rowHeaders = new unsigned[m];
-    _columnHeaders = new unsigned[n];
-    _rowHeadersInverse = new unsigned[m];
-    _columnHeadersInverse = new unsigned[n];
+    _rowHeaders = new unsigned[_m];
+    _columnHeaders = new unsigned[_n];
+    _rowHeadersInverse = new unsigned[_m];
+    _columnHeadersInverse = new unsigned[_n];
 
     for ( unsigned i = 0; i < _m; ++i )
     {
@@ -140,8 +166,8 @@ void SparseMatrixAnalyzer::analyze( const double *matrix, unsigned m, unsigned n
     }
 
     // Initialize the row and column counters
-    _numRowElements = new unsigned[m];
-    _numColumnElements = new unsigned[n];
+    _numRowElements = new unsigned[_m];
+    _numColumnElements = new unsigned[_n];
 
     for ( unsigned i = 0; i < _m; ++i )
         _numRowElements[i] = _A.getRow( i )->getNnz();
@@ -150,11 +176,8 @@ void SparseMatrixAnalyzer::analyze( const double *matrix, unsigned m, unsigned n
         _numColumnElements[i] = _At.getRow( i )->getNnz();
 
     // Work memory
-    _workRow = new double[n];
-    _workRow2 = new double[n];
-
-    // Perform the actual Gaussian elimination
-    gaussianElimination();
+    _workRow = new double[_n];
+    _workRow2 = new double[_n];
 }
 
 void SparseMatrixAnalyzer::gaussianElimination()

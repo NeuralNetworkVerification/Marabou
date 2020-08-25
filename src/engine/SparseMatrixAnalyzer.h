@@ -27,7 +27,6 @@ class SparseMatrixAnalyzer
 public:
     SparseMatrixAnalyzer();
     ~SparseMatrixAnalyzer();
-    void freeMemoryIfNeeded();
 
     /*
       Analyze the input matrix in order to find its canonical form
@@ -35,7 +34,7 @@ public:
       major format.
     */
     void analyze( const double *matrix, unsigned m, unsigned n );
-    // void analyze( const SparseMatrix *matrix, unsigned m, unsigned n );
+    void analyze( const SparseUnsortedList **matrix, unsigned m, unsigned n );
     List<unsigned> getIndependentColumns() const;
     Set<unsigned> getRedundantRows() const;
 
@@ -66,6 +65,12 @@ private:
     unsigned *_columnHeaders;
     unsigned *_rowHeadersInverse;
     unsigned *_columnHeadersInverse;
+
+    /*
+      Memory management
+    */
+    void freeMemoryIfNeeded();
+    void allocateMemory();
 
     /*
       Helper functions for performing Gaussian elimination.
