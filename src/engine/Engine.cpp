@@ -26,7 +26,6 @@
 #include "Options.h"
 #include "PiecewiseLinearConstraint.h"
 #include "Preprocessor.h"
-#include "SparseMatrixAnalyzer.h"
 #include "TableauRow.h"
 #include "TimeUtils.h"
 
@@ -770,14 +769,14 @@ void Engine::removeRedundantEquations( const double *constraintMatrix )
     unsigned n = _preprocessedQuery.getNumberOfVariables();
 
     // Step 1: analyze the matrix to identify redundant rows
-    SparseMatrixAnalyzer analyzer;
-    analyzer.analyze( constraintMatrix, m, n );
+    AutoConstraintMatrixAnalyzer analyzer;
+    analyzer->analyze( constraintMatrix, m, n );
 
     ENGINE_LOG( Stringf( "Number of redundant rows: %u out of %u",
                          analyzer.getRedundantRows().size(), m ).ascii() );
 
     // Step 2: remove any equations corresponding to redundant rows
-    Set<unsigned> redundantRows = analyzer.getRedundantRows();
+    Set<unsigned> redundantRows = analyzer->getRedundantRows();
 
     if ( !redundantRows.empty() )
     {

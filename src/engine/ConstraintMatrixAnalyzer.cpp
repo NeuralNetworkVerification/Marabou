@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file SparseMatrixAnalyzer.cpp
+/*! \file ConstraintMatrixAnalyzer.cpp
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz, Shantanu Thakoor
@@ -13,12 +13,12 @@
 
  **/
 
+#include "ConstraintMatrixAnalyzer.h"
 #include "FloatUtils.h"
 #include "List.h"
 #include "MStringf.h"
-#include "SparseMatrixAnalyzer.h"
 
-SparseMatrixAnalyzer::SparseMatrixAnalyzer()
+ConstraintMatrixAnalyzer::ConstraintMatrixAnalyzer()
     : _numRowElements( NULL )
     , _numColumnElements( NULL )
     , _workRow( NULL )
@@ -30,12 +30,12 @@ SparseMatrixAnalyzer::SparseMatrixAnalyzer()
 {
 }
 
-SparseMatrixAnalyzer::~SparseMatrixAnalyzer()
+ConstraintMatrixAnalyzer::~ConstraintMatrixAnalyzer()
 {
     freeMemoryIfNeeded();
 }
 
-void SparseMatrixAnalyzer::freeMemoryIfNeeded()
+void ConstraintMatrixAnalyzer::freeMemoryIfNeeded()
 {
     if ( _rowHeaders )
     {
@@ -86,31 +86,7 @@ void SparseMatrixAnalyzer::freeMemoryIfNeeded()
     }
 }
 
-// void SparseMatrixAnalyzer::analyze( const SparseMatrix *matrix, unsigned m, unsigned n )
-// {
-//     freeMemoryIfNeeded();
-
-//     _m = m;
-//     _n = n;
-
-//     _matrix = new double[m * n];
-//     _work = new double[n];
-//     _rowHeaders = new unsigned[m];
-//     _columnHeaders = new unsigned[n];
-
-//     matrix->toDense( _matrix );
-
-//     // Initialize the row and column headers
-//     for ( unsigned i = 0; i < _m; ++i )
-//         _rowHeaders[i] = i;
-
-//     for ( unsigned i = 0; i < _n; ++i )
-//         _columnHeaders[i] = i;
-
-//     gaussianElimination();
-// }
-
-void SparseMatrixAnalyzer::analyze( const double *matrix, unsigned m, unsigned n )
+void ConstraintMatrixAnalyzer::analyze( const double *matrix, unsigned m, unsigned n )
 {
     freeMemoryIfNeeded();
 
@@ -127,9 +103,9 @@ void SparseMatrixAnalyzer::analyze( const double *matrix, unsigned m, unsigned n
     gaussianElimination();
 }
 
-void SparseMatrixAnalyzer::analyze( const SparseUnsortedList **matrix,
-                                    unsigned m,
-                                    unsigned n )
+void ConstraintMatrixAnalyzer::analyze( const SparseUnsortedList **matrix,
+                                        unsigned m,
+                                        unsigned n )
 {
     freeMemoryIfNeeded();
 
@@ -145,7 +121,7 @@ void SparseMatrixAnalyzer::analyze( const SparseUnsortedList **matrix,
     gaussianElimination();
 }
 
-void SparseMatrixAnalyzer::allocateMemory()
+void ConstraintMatrixAnalyzer::allocateMemory()
 {
     // Initialize the row and column headers
     _rowHeaders = new unsigned[_m];
@@ -180,7 +156,7 @@ void SparseMatrixAnalyzer::allocateMemory()
     _workRow2 = new double[_n];
 }
 
-void SparseMatrixAnalyzer::gaussianElimination()
+void ConstraintMatrixAnalyzer::gaussianElimination()
 {
     /*
       We work column-by-column, until m columns are found
@@ -217,7 +193,7 @@ void SparseMatrixAnalyzer::gaussianElimination()
     }
 }
 
-bool SparseMatrixAnalyzer::choosePivot()
+bool ConstraintMatrixAnalyzer::choosePivot()
 {
     printf( "\tChoose pivot invoked\n" );
 
@@ -383,7 +359,7 @@ bool SparseMatrixAnalyzer::choosePivot()
     return true;
 }
 
-void SparseMatrixAnalyzer::permute()
+void ConstraintMatrixAnalyzer::permute()
 {
     // Permute the rows
     unsigned temp = _rowHeaders[_eliminationStep];
@@ -411,7 +387,7 @@ void SparseMatrixAnalyzer::permute()
     _numColumnElements[_pivotColumn] = temp;
 }
 
-void SparseMatrixAnalyzer::eliminate()
+void ConstraintMatrixAnalyzer::eliminate()
 {
     /*
       Eliminate all entries below the pivot element A[k,k]
@@ -500,7 +476,7 @@ void SparseMatrixAnalyzer::eliminate()
     }
 }
 
-List<unsigned> SparseMatrixAnalyzer::getIndependentColumns() const
+List<unsigned> ConstraintMatrixAnalyzer::getIndependentColumns() const
 {
     List<unsigned> result;
     for ( unsigned i = 0; i < _eliminationStep; ++i )
@@ -508,7 +484,7 @@ List<unsigned> SparseMatrixAnalyzer::getIndependentColumns() const
     return result;
 }
 
-Set<unsigned> SparseMatrixAnalyzer::getRedundantRows() const
+Set<unsigned> ConstraintMatrixAnalyzer::getRedundantRows() const
 {
     Set<unsigned> result;
     for ( unsigned i = _eliminationStep; i < _m; ++i )

@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file SparseMatrixAnalyzer.h
+/*! \file ConstraintMatrixAnalyzer.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz, Shantanu Thakoor
@@ -13,8 +13,8 @@
 
 **/
 
-#ifndef __SparseMatrixAnalyzer_h__
-#define __SparseMatrixAnalyzer_h__
+#ifndef __ConstraintMatrixAnalyzer_h__
+#define __ConstraintMatrixAnalyzer_h__
 
 #include "List.h"
 #include "Set.h"
@@ -22,16 +22,15 @@
 
 class String;
 
-class SparseMatrixAnalyzer
+class ConstraintMatrixAnalyzer
 {
 public:
-    SparseMatrixAnalyzer();
-    ~SparseMatrixAnalyzer();
+    ConstraintMatrixAnalyzer();
+    ~ConstraintMatrixAnalyzer();
 
     /*
-      Analyze the input matrix in order to find its canonical form
-      and rank. The matrix is m by n, and is assumed to be in column-
-      major format.
+      Analyze the input matrix in order to find its sets of
+      (in)dependent columns and rows
     */
     void analyze( const double *matrix, unsigned m, unsigned n );
     void analyze( const SparseUnsortedList **matrix, unsigned m, unsigned n );
@@ -81,7 +80,7 @@ private:
     void eliminate();
 };
 
-#endif // __SparseMatrixAnalyzer_h__
+#endif // __ConstraintMatrixAnalyzer_h__
 
 //
 // Local Variables:

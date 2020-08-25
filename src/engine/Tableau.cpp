@@ -15,6 +15,7 @@
 
 #include "BasisFactorizationFactory.h"
 #include "CSRMatrix.h"
+#include "ConstraintMatrixAnalyzer.h"
 #include "Debug.h"
 #include "EntrySelectionStrategy.h"
 #include "Equation.h"
@@ -24,7 +25,6 @@
 #include "MalformedBasisException.h"
 #include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
-#include "SparseMatrixAnalyzer.h"
 #include "Tableau.h"
 #include "TableauRow.h"
 #include "TableauState.h"
@@ -1866,7 +1866,7 @@ unsigned Tableau::addEquation( const Equation &equation )
     }
     else
     {
-        SparseMatrixAnalyzer analyzer;
+        ConstraintMatrixAnalyzer analyzer;
         analyzer.analyze( (const SparseUnsortedList **)_sparseRowsOfA, _m, _n );
         List<unsigned> independentColumns = analyzer.getIndependentColumns();
 

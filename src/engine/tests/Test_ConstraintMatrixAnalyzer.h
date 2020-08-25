@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file Test_SparseMatrixAnalyzer.h
+/*! \file Test_ConstraintMatrixAnalyzer.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz, Shantanu Thakoor
@@ -16,24 +16,24 @@
 
 #include <cxxtest/TestSuite.h>
 
-#include "SparseMatrixAnalyzer.h"
+#include "ConstraintMatrixAnalyzer.h"
 
 #include <string.h>
 #include <cstdio>
 
-class MockForSparseMatrixAnalyzer
+class MockForConstraintMatrixAnalyzer
 {
 public:
 };
 
-class SparseMatrixAnalyzerTestSuite : public CxxTest::TestSuite
+class ConstraintMatrixAnalyzerTestSuite : public CxxTest::TestSuite
 {
 public:
-	MockForSparseMatrixAnalyzer *mock;
+	MockForConstraintMatrixAnalyzer *mock;
 
 	void setUp()
 	{
-		TS_ASSERT( mock = new MockForSparseMatrixAnalyzer );
+		TS_ASSERT( mock = new MockForConstraintMatrixAnalyzer );
 	}
 
 	void tearDown()
@@ -55,7 +55,7 @@ public:
 
     void test_analyze__gaussian_eliminiation()
     {
-        SparseMatrixAnalyzer analyzer;
+        ConstraintMatrixAnalyzer analyzer;
 
         {
             double A1[] = {
