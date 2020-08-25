@@ -351,6 +351,10 @@ void LPFormulator::addLayerToModel( GurobiWrapper &gurobi, const Layer *layer )
         addWeightedSumLayerToLpRelaxation( gurobi, layer );
         break;
 
+    case Layer::SIGN:
+        addSignLayerToLpRelaxation( gurobi, layer );
+        break;
+
     default:
         throw NLRError( NLRError::LAYER_TYPE_NOT_SUPPORTED, "LPFormulator" );
         break;
@@ -458,6 +462,86 @@ void LPFormulator::addReluLayerToLpRelaxation( GurobiWrapper &gurobi,
     }
 }
 
+void LPFormulator::addSignLayerToLpRelaxation( GurobiWrapper &gurobi,
+                                               const Layer *layer )
+{
+    for ( unsigned i = 0; i < layer->getSize(); ++i )
+    {
+        if ( layer->neuronEliminated( i ) )
+            continue;
+
+        unsigned targetVariable = layer->neuronToVariable( i );
+
+        List<NeuronIndex> sources = layer->getActivationSources( i );
+        const Layer *sourceLayer = _layerOwner->getLayer( sources.begin()->_layer );
+        unsigned sourceNeuron = sources.begin()->_neuron;
+
+        if ( sourceLayer->neuronEliminated( sourceNeuron ) )
+        {
+            // If the source neuron has been eliminated, this neuron is constant
+            double sourceValue = sourceLayer->getEliminatedNeuronValue( sourceNeuron );
+            double targetValue = FloatUtils::isNegative( sourceValue ) ? -1 : 1;
+
+            gurobi.addVariable( Stringf( "x%u", targetVariable ),
+                                targetValue,
+                                targetValue );
+
+            continue;
+        }
+
+        unsigned sourceVariable = sourceLayer->neuronToVariable( sourceNeuron );
+        double sourceLb = sourceLayer->getLb( sourceNeuron );
+        double sourceUb = sourceLayer->getUb( sourceNeuron );
+
+        if ( !FloatUtils::isNegative( sourceLb ) )
+        {
+            // The Sign is positive, y = 1
+            gurobi.addVariable( Stringf( "x%u", targetVariable ), 1, 1 );
+        }
+        else if ( FloatUtils::isNegative( sourceUb ) )
+        {
+            // The Sign is negative, y = -1
+            gurobi.addVariable( Stringf( "x%u", targetVariable ), -1, -1 );
+        }
+        else
+        {
+            /*
+              The phase of this Sign is not yet fixed.
+
+              For y = Sign(x), we add the following parallelogram relaxation:
+
+              1. y >= -1
+              2. y <= -1
+              3. y is below the line the crosses (x.lb,-1) and (0,1)
+              4. y is above the line the crosses (0,-1) and (x.ub,1)
+            */
+
+            // -1 <= y <= 1
+            gurobi.addVariable( Stringf( "x%u", targetVariable ), -1, 1 );
+
+            /*
+                     2
+              y <= ----- x + 1
+                    - l
+            */
+            List<GurobiWrapper::Term> terms;
+            terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
+            terms.append( GurobiWrapper::Term( 2.0 / sourceLb, Stringf( "x%u", sourceVariable ) ) );
+            gurobi.addLeqConstraint( terms, 1 );
+
+            /*
+                     2
+              y >= ----- x - 1
+                     u
+            */
+            terms.clear();
+            terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
+            terms.append( GurobiWrapper::Term( -2.0 / sourceUb, Stringf( "x%u", sourceVariable ) ) );
+            gurobi.addGeqConstraint( terms, -1 );
+        }
+    }
+}
+
 void LPFormulator::addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi, const Layer *layer )
 {
     for ( unsigned i = 0; i < layer->getSize(); ++i )
@@ -491,7 +575,7 @@ void LPFormulator::addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi, con
                     }
                     else
                     {
-                        bias += weight * sourceLayer->getEliminatedNeuronValue( j );
+                        bias -= weight * sourceLayer->getEliminatedNeuronValue( j );
                     }
                 }
             }
