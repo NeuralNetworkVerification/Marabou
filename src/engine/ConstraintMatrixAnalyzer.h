@@ -16,13 +16,14 @@
 #ifndef __ConstraintMatrixAnalyzer_h__
 #define __ConstraintMatrixAnalyzer_h__
 
+#include "IConstraintMatrixAnalyzer.h"
 #include "List.h"
 #include "Set.h"
 #include "SparseUnsortedArrays.h"
 
 class String;
 
-class ConstraintMatrixAnalyzer
+class ConstraintMatrixAnalyzer : public IConstraintMatrixAnalyzer
 {
 public:
     ConstraintMatrixAnalyzer();
