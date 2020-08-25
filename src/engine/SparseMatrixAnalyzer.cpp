@@ -391,7 +391,7 @@ void SparseMatrixAnalyzer::permute()
     _rowHeaders[_pivotRow] = temp;
 
     _rowHeadersInverse[_rowHeaders[_eliminationStep]] = _eliminationStep;
-    _rowHeadersInverse[_rowHeaders[_pivotRow]] = _eliminationStep;
+    _rowHeadersInverse[_rowHeaders[_pivotRow]] = _pivotRow;
 
     // Permute the columns
     temp = _columnHeaders[_eliminationStep];
@@ -399,7 +399,7 @@ void SparseMatrixAnalyzer::permute()
     _columnHeaders[_pivotColumn] = temp;
 
     _columnHeadersInverse[_columnHeaders[_eliminationStep]] = _eliminationStep;
-    _columnHeadersInverse[_columnHeaders[_pivotColumn]] = _eliminationStep;
+    _columnHeadersInverse[_columnHeaders[_pivotColumn]] = _pivotColumn;
 
     // Permute the element counters
     temp = _numRowElements[_eliminationStep];
