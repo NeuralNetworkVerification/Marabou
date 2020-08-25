@@ -164,8 +164,6 @@ void ConstraintMatrixAnalyzer::gaussianElimination()
     */
     for ( _eliminationStep = 0; _eliminationStep < _m; ++_eliminationStep )
     {
-        printf( "GE starting, elimination step %u\n", _eliminationStep );
-
         /*
           Step 1:
           -------
@@ -195,8 +193,6 @@ void ConstraintMatrixAnalyzer::gaussianElimination()
 
 bool ConstraintMatrixAnalyzer::choosePivot()
 {
-    printf( "\tChoose pivot invoked\n" );
-
     /*
       Apply the Markowitz rule: in the active sub-matrix,
       let p_i denote the number of non-zero elements in the i'th
@@ -226,10 +222,6 @@ bool ConstraintMatrixAnalyzer::choosePivot()
             _pivotColumn = _columnHeadersInverse[entry->_index];
             _pivotElement = entry->_value;
 
-            printf( "\tChoose pivot selected a pivot (singleton row): <%u,%u> = %lf\n",
-                    _pivotRow,
-                    _pivotColumn,
-                    _pivotElement );
             return true;
         }
     }
@@ -267,10 +259,6 @@ bool ConstraintMatrixAnalyzer::choosePivot()
 
             ASSERT( found );
 
-            printf( "\tChoose pivot selected a pivot (singleton column): <%u,%u> = %lf\n",
-                    _pivotRow,
-                    _pivotColumn,
-                    _pivotElement );
             return true;
         }
     }
@@ -344,19 +332,7 @@ bool ConstraintMatrixAnalyzer::choosePivot()
         }
     }
 
-    if ( !found )
-    {
-        // Not more pivots, we are done
-        return false;
-    }
-
-    printf( "\tChoose pivot selected a pivot: <%u,%u> = %lf (cost %u)\n",
-            _pivotRow,
-            _pivotColumn,
-            _pivotElement,
-            minimalCost );
-
-    return true;
+    return found;
 }
 
 void ConstraintMatrixAnalyzer::permute()
