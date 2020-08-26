@@ -133,12 +133,10 @@ public:
     void dump( String &output ) const;
 
     /*
-      For preprocessing: get any auxiliary equations that this
-      constraint would like to add to the equation pool. In the ReLU
-      case, this is an equation of the form aux = f - b, where aux is
-      non-negative.
+      For preprocessing: get any auxiliary equations that this constraint would
+      like to add to the equation pool.
     */
-    void getAuxiliaryEquations( List<Equation> &newEquations ) const;
+    void addAuxiliaryEquations( InputQuery &inputQuery );
 
     /*
       Returns string with shape: absoluteValue,_f,_b
@@ -160,6 +158,12 @@ private:
       The variables that make up this constraint; _f = | _b |.
     */
     unsigned _b, _f;
+
+    /*
+      Auxiliary variables
+    */
+    unsigned _posAux, _negAux;
+    bool _auxVarsInUse;
 
     /*
       True iff _b or _f have been eliminated.
