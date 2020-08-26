@@ -17,6 +17,7 @@
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
+#include "InputQuery.h"
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
@@ -496,7 +497,7 @@ void AbsoluteValueConstraint::getEntailedTightenings( List<Tightening> &tighteni
         tightenings.append( Tightening( _b, fUpperBound, Tightening::UB ) );
 
         if ( _auxVarsInUse )
-            tightenings.append( Tightening( _posAux, 0.0. Tightening::UB ) );
+            tightenings.append( Tightening( _posAux, 0.0, Tightening::UB ) );
     }
 
     else if ( bUpperBound <= 0 )
@@ -509,7 +510,7 @@ void AbsoluteValueConstraint::getEntailedTightenings( List<Tightening> &tighteni
         tightenings.append( Tightening( _b, -fLowerBound, Tightening::UB ) );
 
         if ( _auxVarsInUse )
-            tightenings.append( Tightening( _negAux, 0.0. Tightening::UB ) );
+            tightenings.append( Tightening( _negAux, 0.0, Tightening::UB ) );
     }
 
     else if ( bLowerBound < 0 && bUpperBound >= 0 && FloatUtils::isZero( fLowerBound ) )
@@ -523,10 +524,10 @@ void AbsoluteValueConstraint::getEntailedTightenings( List<Tightening> &tighteni
         {
             tightenings.append( Tightening( _posAux,
                                             fUpperBound - bLowerBound,
-                                            Tightening::UB ) )
+                                            Tightening::UB ) );
             tightenings.append( Tightening( _negAux,
                                             fUpperBound + bUpperBound,
-                                            Tightening::UB ) )
+                                            Tightening::UB ) );
         }
     }
 
@@ -541,10 +542,10 @@ void AbsoluteValueConstraint::getEntailedTightenings( List<Tightening> &tighteni
         {
             tightenings.append( Tightening( _posAux,
                                             fUpperBound - bLowerBound,
-                                            Tightening::UB ) )
+                                            Tightening::UB ) );
             tightenings.append( Tightening( _negAux,
                                             fUpperBound + bUpperBound,
-                                            Tightening::UB ) )
+                                            Tightening::UB ) );
         }
 
         // Below we test if the phase has actually become fixed
@@ -553,7 +554,7 @@ void AbsoluteValueConstraint::getEntailedTightenings( List<Tightening> &tighteni
             // Positive phase
             tightenings.append( Tightening( _b, fLowerBound, Tightening::LB ) );
             if ( _auxVarsInUse )
-                tightenings.append( Tightening( _posAux, 0.0. Tightening::UB ) );
+                tightenings.append( Tightening( _posAux, 0.0, Tightening::UB ) );
         }
 
         if ( fLowerBound > bUpperBound )
@@ -561,7 +562,7 @@ void AbsoluteValueConstraint::getEntailedTightenings( List<Tightening> &tighteni
             // Negative phase
             tightenings.append( Tightening( _b, -fLowerBound, Tightening::UB ) );
             if ( _auxVarsInUse )
-                tightenings.append( Tightening( _negAux, 0.0. Tightening::UB ) );
+                tightenings.append( Tightening( _negAux, 0.0, Tightening::UB ) );
         }
     }
 }
@@ -594,7 +595,7 @@ void AbsoluteValueConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
     Equation posEquation( Equation::EQ );
     posEquation.addAddend( 1.0, _f );
     posEquation.addAddend( -1.0, _b );
-    posEquation.addAddend( -1.0, _aux );
+    posEquation.addAddend( -1.0, _posAux );
     posEquation.setScalar( 0 );
     inputQuery.addEquation( posEquation );
 
@@ -602,7 +603,7 @@ void AbsoluteValueConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
     Equation negEquation( Equation::EQ );
     negEquation.addAddend( 1.0, _f );
     negEquation.addAddend( 1.0, _b );
-    negEquation.addAddend( -1.0, _aux );
+    negEquation.addAddend( -1.0, _negAux );
     negEquation.setScalar( 0 );
     inputQuery.addEquation( negEquation );
 
@@ -611,8 +612,8 @@ void AbsoluteValueConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
     inputQuery.setLowerBound( _negAux, 0 );
 
     // Set their upper bounds
-    inputQuery.setUpperBound( _posAux, _upperBounds[f] - _lowerBounds[b] );
-    inputQuery.setUpperBound( _negAux, _upperBounds[f] + _lowerBounds[b] );
+    inputQuery.setUpperBound( _posAux, _upperBounds[_f] - _lowerBounds[_b] );
+    inputQuery.setUpperBound( _negAux, _upperBounds[_f] + _lowerBounds[_b] );
 
     // Mark that the aux vars are in use
     _auxVarsInUse = true;
@@ -718,11 +719,6 @@ String AbsoluteValueConstraint::phaseToString( PhaseStatus phase )
 void AbsoluteValueConstraint::setPhaseStatus( PhaseStatus phaseStatus )
 {
     _phaseStatus = phaseStatus;
-}
-
-bool AbsoluteValueConstraint::supportsSymbolicBoundTightening() const
-{
-    return false; // TODO: remove this completely?
 }
 
 //

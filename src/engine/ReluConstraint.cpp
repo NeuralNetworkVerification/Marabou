@@ -867,11 +867,6 @@ ReluConstraint::PhaseStatus ReluConstraint::getPhaseStatus() const
     return _phaseStatus;
 }
 
-bool ReluConstraint::supportsSymbolicBoundTightening() const
-{
-    return true;
-}
-
 bool ReluConstraint::supportPolarity() const
 {
     return true;

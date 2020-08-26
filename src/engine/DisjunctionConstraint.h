@@ -140,12 +140,6 @@ public:
     */
     String serializeToString() const;
 
-    /*
-      Return true if and only if this piecewise linear constraint supports
-      symbolic bound tightening.
-    */
-    bool supportsSymbolicBoundTightening() const;
-
 private:
     /*
       The disjuncts that form this PL constraint
