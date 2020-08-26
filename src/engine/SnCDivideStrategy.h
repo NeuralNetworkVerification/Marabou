@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file DivideStrategy.h
+/*! \file SnCDivideStrategy.h
 ** \verbatim
 ** Top contributors (to current version):
 **   Haoze Wu
@@ -13,18 +13,22 @@
 
 **/
 
-#ifndef __DivideStrategy_h__
-#define __DivideStrategy_h__
+#ifndef __SnCDivideStrategy_h__
+#define __SnCDivideStrategy_h__
 
-enum class DivideStrategy
+enum class SnCDivideStrategy
 {
+    // Input splitting
+    LargestInterval = 0,
+
     // Relu splitting
-    Polarity = 0,      // Pick the ReLU with the polarity closest to 0 among the first K nodes
-    EarliestReLU,  // Pick a ReLU that appears in the earliest layer
-    ReLUViolation, // Pick the ReLU that has been violated for the most times
+    Polarity,      // Pick the ReLU with the polarity closest to 0 among the first K nodes
+    EarliestReLU,
+
+    Auto
 };
 
-#endif // __DivideStrategy_h__
+#endif // __SnCDivideStrategy_h__
 
 //
 // Local Variables:
