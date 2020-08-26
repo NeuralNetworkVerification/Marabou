@@ -16,7 +16,7 @@
 #ifndef __DnCWorker_h__
 #define __DnCWorker_h__
 
-#include "DivideStrategy.h"
+#include "SnCDivideStrategy.h"
 #include "Engine.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "QueryDivider.h"
@@ -30,7 +30,7 @@ public:
                std::atomic_uint &numUnsolvedSubqueries,
                std::atomic_bool &shouldQuitSolving, unsigned threadId,
                unsigned onlineDivides, float timeoutFactor,
-               DivideStrategy divideStrategy, unsigned verbosity );
+               SnCDivideStrategy divideStrategy, unsigned verbosity );
 
     /*
       Pop one subQuery, solve it and handle the result
@@ -42,7 +42,7 @@ private:
     /*
       Initiate the query-divider object
     */
-    void setQueryDivider( DivideStrategy divideStrategy );
+    void setQueryDivider( SnCDivideStrategy divideStrategy );
 
     /*
       Convert the exitCode to string
