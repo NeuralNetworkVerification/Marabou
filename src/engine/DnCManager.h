@@ -16,7 +16,7 @@
 #ifndef __DnCManager_h__
 #define __DnCManager_h__
 
-#include "DivideStrategy.h"
+#include "SnCDivideStrategy.h"
 #include "Engine.h"
 #include "InputQuery.h"
 #include "SubQuery.h"
@@ -43,7 +43,7 @@ public:
 
     DnCManager( unsigned numWorkers, unsigned initialDivides, unsigned
                 initialTimeout, unsigned onlineDivides, float timeoutFactor,
-                DivideStrategy divideStrategy, InputQuery *inputQuery,
+                SnCDivideStrategy divideStrategy, InputQuery *inputQuery,
                 unsigned verbosity );
 
     ~DnCManager();
@@ -53,7 +53,7 @@ public:
     /*
       Perform the Divide-and-conquer solving
     */
-    void solve( unsigned timeoutInSeconds );
+    void solve( unsigned timeoutInSeconds, bool restoreTreeStates = false );
 
     /*
       Return the DnCExitCode of the DnCManager
@@ -86,8 +86,8 @@ private:
                           std::atomic_uint &numUnsolvedSubQueries,
                           std::atomic_bool &shouldQuitSolving,
                           unsigned threadId, unsigned onlineDivides,
-                          float timeoutFactor, DivideStrategy divideStrategy,
-                          unsigned verbosity );
+                          float timeoutFactor, SnCDivideStrategy divideStrategy,
+                          bool restoreTreeStates, unsigned verbosity );
 
     /*
       Create the base engine from the network and property files,
@@ -160,7 +160,7 @@ private:
     /*
       The strategy for dividing a query
     */
-    DivideStrategy _divideStrategy;
+    SnCDivideStrategy _divideStrategy;
 
     /*
       Alternatively, we could construct the DnCManager by directly providing the

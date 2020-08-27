@@ -204,6 +204,13 @@ public:
             return;
         }
 
+        TS_ASSERT( engine.getInputQuery()->getNetworkLevelReasoner() );
+
+        auto constraintsInTopologicalOrder = engine.getInputQuery()->
+            getNetworkLevelReasoner()->getConstraintsInTopologicalOrder();
+        auto allConstraints = engine.getInputQuery()->getPiecewiseLinearConstraints();
+        TS_ASSERT_EQUALS( constraintsInTopologicalOrder.size(), allConstraints.size() );
+
         bool result = engine.solve();
         if ( !result )
         {

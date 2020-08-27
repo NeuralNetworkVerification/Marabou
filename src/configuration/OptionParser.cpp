@@ -45,6 +45,9 @@ void OptionParser::initialize()
         ( "dnc",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::DNC_MODE]) ),
           "Use the divide-and-conquer solving mode" )
+        ( "restore-tree-states",
+          boost::program_options::bool_switch( &((*_boolOptions)[Options::RESTORE_TREE_STATES]) ),
+          "Restore tree states in dnc mode" )
         ( "input",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::INPUT_FILE_PATH]) ),
           "Neural netowrk file" )
@@ -63,6 +66,9 @@ void OptionParser::initialize()
         ( "num-workers",
           boost::program_options::value<int>( &((*_intOptions)[Options::NUM_WORKERS]) ),
           "(DNC) Number of workers" )
+        ( "split-strategy",
+          boost::program_options::value<std::string>( &((*_stringOptions)[Options::SPLITTING_STRATEGY]) ),
+          "The splitting strategy" )
         ( "initial-divides",
           boost::program_options::value<int>( &((*_intOptions)[Options::NUM_INITIAL_DIVIDES]) ),
           "(DNC) Number of times to initially bisect the input region" )

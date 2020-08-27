@@ -43,6 +43,7 @@ void Options::initializeDefaultValues()
     */
     _boolOptions[DNC_MODE] = false;
     _boolOptions[PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS] = false;
+    _boolOptions[RESTORE_TREE_STATES] = false;
 
     /*
       Int options
@@ -67,6 +68,7 @@ void Options::initializeDefaultValues()
     _stringOptions[PROPERTY_FILE_PATH] = "";
     _stringOptions[INPUT_QUERY_FILE_PATH] = "";
     _stringOptions[SUMMARY_FILE] = "";
+    _stringOptions[SPLITTING_STRATEGY] = "";
     _stringOptions[QUERY_DUMP_FILE] = "";
 }
 
@@ -93,6 +95,17 @@ float Options::getFloat( unsigned option ) const
 String Options::getString( unsigned option ) const
 {
     return String( _stringOptions.get( option ) );
+}
+
+SnCDivideStrategy Options::getSnCDivideStrategy( unsigned option ) const
+{
+    String strategyString = String( _stringOptions.get( option ) );
+    if ( strategyString == "polarity" )
+        return SnCDivideStrategy::Polarity;
+    else if ( strategyString == "largest-interval" )
+        return SnCDivideStrategy::LargestInterval;
+    else
+        return SnCDivideStrategy::Auto;
 }
 
 //

@@ -18,7 +18,9 @@
 
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
+#include "SmtState.h"
 #include "Stack.h"
+#include "SmtStackEntry.h"
 #include "Statistics.h"
 
 #define SMT_LOG( x, ... ) LOG( GlobalConfiguration::SMT_CORE_LOGGING, "SmtCore: %s\n", x )
@@ -101,6 +103,16 @@ public:
     void setConstraintViolationThreshold( unsigned threshold );
 
     /*
+      Replay a stackEntry
+    */
+    void replaySmtStackEntry( SmtStackEntry *stackEntry );
+
+    /*
+      Store the current state of the SmtCore into smtState
+    */
+    void storeSmtState( SmtState &smtState );
+
+    /*
       Pick the piecewise linear constraint for splitting, returns true
       if a constraint for splitting is successfully picked
     */
@@ -115,20 +127,6 @@ public:
 
 private:
     /*
-      A stack entry consists of the engine state before the split,
-      the active split, the alternative splits (in case of backtrack),
-      and also any implied splits that were discovered subsequently.
-    */
-    struct StackEntry
-    {
-    public:
-        PiecewiseLinearCaseSplit _activeSplit;
-        List<PiecewiseLinearCaseSplit> _impliedValidSplits;
-        List<PiecewiseLinearCaseSplit> _alternativeSplits;
-        EngineState *_engineState;
-    };
-
-    /*
       Valid splits that were implied by level 0 of the stack.
     */
     List<PiecewiseLinearCaseSplit> _impliedValidSplitsAtRoot;
@@ -141,7 +139,7 @@ private:
     /*
       The case-split stack.
     */
-    List<StackEntry *> _stack;
+    List<SmtStackEntry *> _stack;
 
     /*
       The engine.

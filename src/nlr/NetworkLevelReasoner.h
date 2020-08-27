@@ -135,6 +135,13 @@ public:
     */
     List<PiecewiseLinearConstraint *> getConstraintsInTopologicalOrder();
     void addConstraintInTopologicalOrder( PiecewiseLinearConstraint *constraint );
+    void removeConstraintFromTopologicalOrder( PiecewiseLinearConstraint *constraint );
+
+    /*
+      Generate an input query from this NLR, according to the
+      discovered network topology
+    */
+    InputQuery generateInputQuery();
 
 private:
     Map<unsigned, Layer *> _layerIndexToLayer;
@@ -146,6 +153,13 @@ private:
     void freeMemoryIfNeeded();
 
     List<PiecewiseLinearConstraint *> _constraintsInTopologicalOrder;
+
+    // Helper functions for generating an input query
+    void generateInputQueryForLayer( InputQuery &inputQuery, const Layer &layer );
+    void generateInputQueryForWeightedSumLayer( InputQuery &inputQuery, const Layer &layer );
+    void generateInputQueryForReluLayer( InputQuery &inputQuery, const Layer &layer );
+    void generateInputQueryForSignLayer( InputQuery &inputQuery, const Layer &layer );
+    void generateInputQueryForAbsoluteValueLayer( InputQuery &inputQuery, const Layer &layer );
 };
 
 } // namespace NLR

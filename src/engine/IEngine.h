@@ -16,6 +16,8 @@
 #ifndef __IEngine_h__
 #define __IEngine_h__
 
+#include "DivideStrategy.h"
+#include "SnCDivideStrategy.h"
 #include "List.h"
 
 #ifdef _WIN32
@@ -25,7 +27,9 @@
 class EngineState;
 class Equation;
 class PiecewiseLinearCaseSplit;
+class SmtState;
 class PiecewiseLinearConstraint;
+
 class IEngine
 {
 public:
@@ -54,6 +58,17 @@ public:
     virtual void setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints ) = 0;
 
     /*
+      Store the current stack of the smtCore into smtState
+    */
+    virtual void storeSmtState( SmtState &smtState ) = 0;
+
+    /*
+      Apply the stack to the newly created SmtCore, returns false if UNSAT is
+      found in this process.
+    */
+    virtual bool restoreSmtState( SmtState &smtState ) = 0;
+
+    /*
       Solve the encoded query.
     */
     virtual bool solve( unsigned timeoutInSeconds ) = 0;
@@ -70,12 +85,17 @@ public:
     virtual void reset() = 0;
     virtual List<unsigned> getInputVariables() const = 0;
 
-    virtual void updateScores() = 0;
+    /*
+      Pick the piecewise linear constraint for internal splitting
+    */
+    virtual PiecewiseLinearConstraint *pickSplitPLConstraint( DivideStrategy
+                                                              strategy ) = 0;
 
     /*
-      Pick the piecewise linear constraint for splitting
+      Pick the piecewise linear constraint for SnC splitting
     */
-    virtual PiecewiseLinearConstraint *pickSplitPLConstraint() = 0;
+    virtual PiecewiseLinearConstraint *pickSplitPLConstraintSnC( SnCDivideStrategy
+                                                                 strategy ) = 0;
 
 };
 

@@ -152,7 +152,7 @@ public:
     String serializeToString() const;
 
     /*
-      Get the index of the B variable.
+      Get the index of the B and F variables.
     */
     unsigned getB() const;
     unsigned getF() const;
@@ -197,7 +197,7 @@ public:
 
     PhaseStatus getDirection() const;
 
-    void updateScore();
+    void updateScoreBasedOnPolarity();
 
 private:
     unsigned _b, _f;

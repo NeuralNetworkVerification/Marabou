@@ -139,6 +139,12 @@ public:
     */
     String serializeToString() const;
 
+    /*
+      Get the index of the B and F variables.
+    */
+    unsigned getB() const;
+    unsigned getF() const;
+
 private:
     unsigned _b, _f;
     PhaseStatus _phaseStatus;

@@ -28,6 +28,7 @@ public:
 
     void createSubQueries( unsigned numNewSubQueries,
                            const String queryIdPrefix,
+                           const unsigned previousDepth,
                            const PiecewiseLinearCaseSplit
                            &previousSplit,
                            const unsigned timeoutInSeconds,

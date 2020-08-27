@@ -25,6 +25,8 @@
 #include "DantzigsRule.h"
 #include "DegradationChecker.h"
 #include "DivideStrategy.h"
+#include "SnCDivideStrategy.h"
+#include "GlobalConfiguration.h"
 #include "IEngine.h"
 #include "InputQuery.h"
 #include "Map.h"
@@ -133,14 +135,26 @@ public:
     void setVerbosity( unsigned verbosity );
 
     /*
-      Pick the piecewise linear constraint for splitting
+      Apply the stack to the newly created SmtCore, returns false if UNSAT is
+      found in this process.
     */
-    PiecewiseLinearConstraint *pickSplitPLConstraint();
+    bool restoreSmtState( SmtState &smtState );
 
     /*
-      Update the scores of each candidate splitting PL constraints
+      Store the current stack of the smtCore into smtState
     */
-    void updateScores();
+    void storeSmtState( SmtState &smtState );
+
+    /*
+      Pick the piecewise linear constraint for splitting
+    */
+    PiecewiseLinearConstraint *pickSplitPLConstraint( DivideStrategy strategy );
+
+    /*
+      Call-back from QueryDividers
+      Pick the piecewise linear constraint for splitting
+    */
+    PiecewiseLinearConstraint *pickSplitPLConstraintSnC( SnCDivideStrategy strategy );
 
     /*
       Set the constraint violation threshold of SmtCore
@@ -189,11 +203,6 @@ private:
       The existing piecewise-linear constraints.
     */
     List<PiecewiseLinearConstraint *> _plConstraints;
-
-    /*
-      The ordered set of candidate PL constraints for splitting
-    */
-    Set<PiecewiseLinearConstraint *> _candidatePlConstraints;
 
     /*
       Piecewise linear constraints that are currently violated.
@@ -476,6 +485,17 @@ private:
       to handle case splits
     */
     void updateDirections();
+
+    /*
+      Among the earliest K ReLUs, pick the one with Polarity closest to 0.
+      K is equal to GlobalConfiguration::POLARITY_CANDIDATES_THRESHOLD
+    */
+    PiecewiseLinearConstraint *pickSplitPLConstraintBasedOnPolarity();
+
+    /*
+      Pick the first unfixed ReLU in the topological order
+    */
+    PiecewiseLinearConstraint *pickSplitPLConstraintBasedOnTopology();
 };
 
 #endif // __Engine_h__

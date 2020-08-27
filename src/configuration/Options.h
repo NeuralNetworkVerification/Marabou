@@ -19,6 +19,8 @@
 #include "MString.h"
 #include "Map.h"
 #include "OptionParser.h"
+#include "SnCDivideStrategy.h"
+
 #include "boost/program_options.hpp"
 
 /*
@@ -33,6 +35,9 @@ public:
 
         // Should DNC mode be on or off
         DNC_MODE,
+
+        // Restore tree states of the parent when handling children in DnC.
+        RESTORE_TREE_STATES,
 
         // Help flag
         HELP,
@@ -67,6 +72,7 @@ public:
         PROPERTY_FILE_PATH,
         INPUT_QUERY_FILE_PATH,
         SUMMARY_FILE,
+        SPLITTING_STRATEGY,
         QUERY_DUMP_FILE,
     };
 
@@ -87,6 +93,7 @@ public:
     int getInt( unsigned option ) const;
     float getFloat( unsigned option ) const;
     String getString( unsigned option ) const;
+    SnCDivideStrategy getSnCDivideStrategy( unsigned option ) const;
 
     /*
       Options that are determined at compile time
