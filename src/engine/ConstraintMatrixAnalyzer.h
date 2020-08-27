@@ -58,7 +58,7 @@ private:
     double *_workRow2;
 
     /*
-      The i'th (permuted) column of the matrix is stored in memory
+      The i'th (permuted) row of the matrix is stored in memory
       location _rowHeaders[i]. Likewise for columns.
     */
     unsigned *_rowHeaders;
