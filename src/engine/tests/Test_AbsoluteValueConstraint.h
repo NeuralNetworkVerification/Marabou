@@ -16,6 +16,7 @@
 #include <cxxtest/TestSuite.h>
 
 #include "AbsoluteValueConstraint.h"
+#include "InputQuery.h"
 #include "MarabouError.h"
 #include "MockErrno.h"
 #include "MockTableau.h"
@@ -1066,6 +1067,60 @@ public:
                           recoveredAbs.serializeToString() );
 
         TS_ASSERT_EQUALS( originalSerialized, "absoluteValue,7,42" );
+    }
+
+    void test_abs_with_aux_vars()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        AbsoluteValueConstraint abs( b, f );
+
+        InputQuery ipq;
+        ipq.setNumberOfVariables( 10 );
+        unsigned posAux = 10;
+        unsigned negAux = 11;
+
+        abs.notifyLowerBound( b, -5 );
+        abs.notifyUpperBound( b, 7 );
+        abs.notifyLowerBound( f, 0 );
+        abs.notifyUpperBound( f, 7 );
+
+        TS_ASSERT( !abs.participatingVariable( posAux ) );
+        TS_ASSERT( !abs.participatingVariable( negAux ) );
+
+               TS_ASSERT_THROWS_NOTHING( abs.addAuxiliaryEquations( ipq ) );
+
+        TS_ASSERT_EQUALS( abs.getParticipatingVariables(),
+                          List<unsigned>( { b, f, posAux, negAux } ) );
+
+        TS_ASSERT( abs.participatingVariable( posAux ) );
+        TS_ASSERT( abs.participatingVariable( negAux ) );
+
+        List<Tightening> tightenings;
+        TS_ASSERT_THROWS_NOTHING( abs.getEntailedTightenings( tightenings ) );
+
+        List<Tightening> expectedTightenings =
+            {
+                // B var, from f bounds
+                Tightening( b, -7, Tightening::LB ),
+                Tightening( b, 7, Tightening::UB ),
+
+                // F var, from b bounds
+                Tightening( f, 7, Tightening::UB ),
+
+                // Aux vars
+                Tightening( posAux, 0, Tightening::LB ),
+                Tightening( negAux, 0, Tightening::LB ),
+
+                Tightening( posAux, 12, Tightening::UB ),
+                Tightening( negAux, 14, Tightening::UB ),
+            };
+
+        TS_ASSERT_EQUALS( expectedTightenings.size(), tightenings.size() );
+
+        for ( const auto &it : tightenings )
+            TS_ASSERT( expectedTightenings.exists( it ) );
     }
 };
 

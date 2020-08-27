@@ -245,7 +245,7 @@ void AbsoluteValueConstraint::notifyUpperBound( unsigned variable, double bound 
     }
 }
 
-bool AbsoluteValueConstraint::participatingVariable(unsigned variable ) const
+bool AbsoluteValueConstraint::participatingVariable( unsigned variable ) const
 {
     return ( variable == _b ) || ( variable == _f )
         || ( _auxVarsInUse && ( variable == _posAux || variable == _negAux ) );
