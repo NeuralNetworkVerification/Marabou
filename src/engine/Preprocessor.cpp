@@ -44,6 +44,11 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     makeAllEquationsEqualities();
 
     /*
+      Set any missing bounds
+    */
+    setMissingBoundsToInfinity();
+
+    /*
       Attempt to construct a network level reasonor
     */
     _preprocessed.constructNetworkLevelReasoner();
@@ -804,6 +809,17 @@ unsigned Preprocessor::getNewIndex( unsigned oldIndex ) const
 void Preprocessor::setStatistics( Statistics *statistics )
 {
     _statistics = statistics;
+}
+
+void Preprocessor::setMissingBoundsToInfinity()
+{
+    for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
+    {
+        if ( !_preprocessed.getLowerBounds().exists( i ) )
+            _preprocessed.setLowerBound( i, FloatUtils::negativeInfinity() );
+        if ( !_preprocessed.getUpperBounds().exists( i ) )
+            _preprocessed.setUpperBound( i, FloatUtils::infinity() );
+    }
 }
 
 void Preprocessor::addPlAuxiliaryEquations()
