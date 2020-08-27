@@ -364,32 +364,53 @@ void NetworkLevelReasoner::generateInputQueryForWeightedSumLayer( InputQuery &in
 
 // todo new code - START
 
-void NetworkLevelReasoner::eliminateSubsequentWS( )
+void NetworkLevelReasoner::mergeConsecutiveWSLayers()
 {
-    // iterate over all layers
+    // Iterate over all layers
     for ( unsigned i = 0; i < getNumberOfLayers() - 1; ++i )
     {
+        unsigned firstLayerIndex = i;
+        unsigned secondLayerIndex = i + 1;
 
-        unsigned firstLayerIdx = i;
-        unsigned secondLayerIdx = i + 1;
+        const Layer *firstLayer = _layerIndexToLayer[firstLayerIndex];
+        const Layer *secondLayer = _layerIndexToLayer[secondLayerIndex];
 
-        const Layer *firstLayer = _layerIndexToLayer[firstLayerIdx];
-        const Layer *secondLayer = _layerIndexToLayer[secondLayerIdx];
+        /*
+          Guy K's comment:
+          If you have a bunch of ifs like this:
 
-        // if two subsequent layers are WS
-        if ( (firstLayer->getLayerType() == Layer::WEIGHTED_SUM) && (secondLayer->getLayerType() == Layer::WEIGHTED_SUM) )
+          if ( a )
+             if ( b )
+                if ( c )
+                    do something...
+
+          It is often more readable to write instead:
+
+          if ( !a )
+             continue;
+          if ( !b )
+             continue
+          if ( !c )
+             continue
+
+          do something
+        */
+
+        // if Two subsequent layers are WS
+        if ( ( firstLayer->getLayerType() == Layer::WEIGHTED_SUM ) &&
+             ( secondLayer->getLayerType() == Layer::WEIGHTED_SUM ) )
         {
             // if the first layer's input is the second layer
-            if ( secondLayer->getSourceLayers().exists(firstLayerIdx) )
+            if ( secondLayer->getSourceLayers().size() == 1 &&
+                 secondLayer->getSourceLayers().exists( firstLayerIndex ) )
             {
-                if ( isReductionPossible( firstLayerIdx, secondLayerIdx ) )
+                if ( isReductionPossible( firstLayerIndex, secondLayerIndex ) )
                 {
                     // remove both layers and insert *new* first layer
                     // todo continue - call mergeSubsequentLayers()
 
                     // reduce -1 from all indexes
-                    reduceLayerIdx( secondLayerIdx );
-
+                    reduceLayerIndex( secondLayerIndex );
                 }
             }
         }
@@ -408,67 +429,70 @@ void NetworkLevelReasoner::eliminateSubsequentWS( )
 
 
 // assume we get two subsequent WS layers with WS -> WS
-bool NetworkLevelReasoner:: isReductionPossible( unsigned firstLayerIdx, unsigned secondLayerIdx )
+bool NetworkLevelReasoner::isReductionPossible( unsigned firstLayerIndex, unsigned secondLayerIndex )
 {
-    for ( unsigned j = 0; j < getNumberOfLayers() ; ++j ) // here without '-1' an end
+    for ( unsigned i = 0; i < getNumberOfLayers(); ++i ) // here without '-1' an end
     {
-        if ( j == firstLayerIdx )
-        {
+        if ( i == firstLayerIndex )
             continue;
-        }
 
         // found a third layer which the first layer is a source to
-        if ( (j != secondLayerIdx) && (_layerIndexToLayer[j]->getSourceLayers().exists(firstLayerIdx)) )
-        {
+        if ( i != secondLayerIndex &&
+             _layerIndexToLayer[i]->getSourceLayers().exists( firstLayerIndex ) )
             return false;
-        }
     }
 
-    // the 2nd input idx is the only one for which the source is the later at the 1st input idx
+    // the 2nd input index is the only one for which the source is the later at the 1st input index
     return true;
-
 }
 
 // reduce -1 from all layer indexes starting from (including) the given input index
-void NetworkLevelReasoner:: reduceLayerIdx ( unsigned idxToStart )
+void NetworkLevelReasoner::reduceLayerIndex( unsigned indexToStart )
 {
-    for (unsigned layerIdx = 0; layerIdx < getNumberOfLayers(); ++layerIdx)
+    for ( unsigned layerIndex = 0; layerIndex < getNumberOfLayers(); ++layerIndex )
     {
-        Layer *layer = _layerIndexToLayer[layerIdx];
+        Layer *layer = _layerIndexToLayer[layerIndex];
 
         auto layerSourceMap = layer->getSourceLayers();
         auto layerWeightMap = layer->getWeights();
         auto layerPositiveWeightMap = layer->getPositiveWeights();
         auto layerNegativeWeightMap = layer->getNegativeWeights();
 
-        reduceLayerIdxHelper( idxToStart , layerSourceMap );
-        reduceLayerIdxHelper( idxToStart , layerWeightMap );
-        reduceLayerIdxHelper( idxToStart , layerPositiveWeightMap );
-        reduceLayerIdxHelper( idxToStart , layerNegativeWeightMap );
+        reduceLayerIndexHelper( indexToStart, layerSourceMap );
+        reduceLayerIndexHelper( indexToStart, layerWeightMap );
+        reduceLayerIndexHelper( indexToStart, layerPositiveWeightMap );
+        reduceLayerIndexHelper( indexToStart, layerNegativeWeightMap );
 
-        reduceLayerIdxHelper( idxToStart , _layerIndexToLayer );
-
+        reduceLayerIndexHelper( indexToStart, _layerIndexToLayer );
     }
 }
 
-
 template <typename T>
-void NetworkLevelReasoner:: reduceLayerIdxHelper ( unsigned idxToStart , Map <unsigned, T> layerMap)
+void NetworkLevelReasoner::reduceLayerIndexHelper( unsigned indexToStart, Map<unsigned, T> layerMap )
 {
-    for (  auto pair = layerMap.begin() ; pair != layerMap.end() ;  )
-    {
+    /*
+      Guy K: this is a big no-no. It is very dangerous to loop over a
+      map and at the same time erase and insert elements from that
+      map. If pair points to element 2, and you delete 2, what
+      happens to pair? Much safer to work on a separate map and then
+      replace them.
 
+      Also, templates are something that you read about in textbooks,
+      but should very rarely use in practice - because they make code
+      much less readable. In this case it's an appropriate use, but
+      keep in mind to use them sparsely.
+    */
+    for ( auto pair = layerMap.begin(); pair != layerMap.end(); ++pair )
+    {
         auto layerKey = pair->first;
         auto layerValue = pair->second;
-        ++pair;
 
-        if ( layerKey >= idxToStart )
+        if ( layerKey >= indexToStart )
         {
             layerMap.erase( layerKey );
-            layerMap.insert( layerKey - 1 , layerValue);
+            layerMap.insert( layerKey - 1, layerValue );
         }
     }
-
 }
 
 
