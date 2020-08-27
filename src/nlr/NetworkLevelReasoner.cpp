@@ -24,6 +24,7 @@
 #include "NLRError.h"
 #include "NetworkLevelReasoner.h"
 #include "ReluConstraint.h"
+#include "SignConstraint.h"
 #include <cstring>
 
 namespace NLR {
@@ -44,6 +45,9 @@ bool NetworkLevelReasoner::functionTypeSupported( PiecewiseLinearFunctionType ty
         return true;
 
     if ( type == PiecewiseLinearFunctionType::ABSOLUTE_VALUE )
+        return true;
+
+    if ( type == PiecewiseLinearFunctionType::SIGN )
         return true;
 
     return false;
@@ -77,10 +81,10 @@ void NetworkLevelReasoner::setBias( unsigned layer, unsigned neuron, double bias
 
 void NetworkLevelReasoner::addActivationSource( unsigned sourceLayer,
                                                 unsigned sourceNeuron,
-                                                unsigned targetLeyer,
+                                                unsigned targetLayer,
                                                 unsigned targetNeuron )
 {
-    _layerIndexToLayer[targetLeyer]->addActivationSource( sourceLayer, sourceNeuron, targetNeuron );
+    _layerIndexToLayer[targetLayer]->addActivationSource( sourceLayer, sourceNeuron, targetNeuron );
 }
 
 const Layer *NetworkLevelReasoner::getLayer( unsigned index ) const
@@ -357,5 +361,119 @@ void NetworkLevelReasoner::generateInputQueryForWeightedSumLayer( InputQuery &in
         inputQuery.addEquation( eq );
     }
 }
+
+// todo new code - START
+
+void NetworkLevelReasoner::eliminateSubsequentWS( )
+{
+    // iterate over all layers
+    for ( unsigned i = 0; i < getNumberOfLayers() - 1; ++i )
+    {
+
+        unsigned firstLayerIdx = i;
+        unsigned secondLayerIdx = i + 1;
+
+        const Layer *firstLayer = _layerIndexToLayer[firstLayerIdx];
+        const Layer *secondLayer = _layerIndexToLayer[secondLayerIdx];
+
+        // if two subsequent layers are WS
+        if ( (firstLayer->getLayerType() == Layer::WEIGHTED_SUM) && (secondLayer->getLayerType() == Layer::WEIGHTED_SUM) )
+        {
+            // if the first layer's input is the second layer
+            if ( secondLayer->getSourceLayers().exists(firstLayerIdx) )
+            {
+                if ( isReductionPossible( firstLayerIdx, secondLayerIdx ) )
+                {
+                    // remove both layers and insert *new* first layer
+                    // todo continue - call mergeSubsequentLayers()
+
+                    // reduce -1 from all indexes
+                    reduceLayerIdx( secondLayerIdx );
+
+                }
+            }
+        }
+    }
+}
+
+// change matrix of first layer,
+//void NetworkLevelReasoner:: mergeSubsequentLayers ( unsigned firstLayerIdx, unsigned secondLayerIdx)
+//{
+//    // todo continue - how to remove two layers?
+//    // todo continue - how to multiply two matrices?
+//    return;
+//}
+
+
+
+
+// assume we get two subsequent WS layers with WS -> WS
+bool NetworkLevelReasoner:: isReductionPossible( unsigned firstLayerIdx, unsigned secondLayerIdx )
+{
+    for ( unsigned j = 0; j < getNumberOfLayers() ; ++j ) // here without '-1' an end
+    {
+        if ( j == firstLayerIdx )
+        {
+            continue;
+        }
+
+        // found a third layer which the first layer is a source to
+        if ( (j != secondLayerIdx) && (_layerIndexToLayer[j]->getSourceLayers().exists(firstLayerIdx)) )
+        {
+            return false;
+        }
+    }
+
+    // the 2nd input idx is the only one for which the source is the later at the 1st input idx
+    return true;
+
+}
+
+// reduce -1 from all layer indexes starting from (including) the given input index
+void NetworkLevelReasoner:: reduceLayerIdx ( unsigned idxToStart )
+{
+    for (unsigned layerIdx = 0; layerIdx < getNumberOfLayers(); ++layerIdx)
+    {
+        Layer *layer = _layerIndexToLayer[layerIdx];
+
+        auto layerSourceMap = layer->getSourceLayers();
+        auto layerWeightMap = layer->getWeights();
+        auto layerPositiveWeightMap = layer->getPositiveWeights();
+        auto layerNegativeWeightMap = layer->getNegativeWeights();
+
+        reduceLayerIdxHelper( idxToStart , layerSourceMap );
+        reduceLayerIdxHelper( idxToStart , layerWeightMap );
+        reduceLayerIdxHelper( idxToStart , layerPositiveWeightMap );
+        reduceLayerIdxHelper( idxToStart , layerNegativeWeightMap );
+
+        reduceLayerIdxHelper( idxToStart , _layerIndexToLayer );
+
+    }
+}
+
+
+template <typename T>
+void NetworkLevelReasoner:: reduceLayerIdxHelper ( unsigned idxToStart , Map <unsigned, T> layerMap)
+{
+    for (  auto pair = layerMap.begin() ; pair != layerMap.end() ;  )
+    {
+
+        auto layerKey = pair->first;
+        auto layerValue = pair->second;
+        ++pair;
+
+        if ( layerKey >= idxToStart )
+        {
+            layerMap.erase( layerKey );
+            layerMap.insert( layerKey - 1 , layerValue);
+        }
+    }
+
+}
+
+
+
+// todo new code - END
+
 
 } // namespace NLR
