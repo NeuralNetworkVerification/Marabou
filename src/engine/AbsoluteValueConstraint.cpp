@@ -33,7 +33,8 @@ AbsoluteValueConstraint::AbsoluteValueConstraint( unsigned b, unsigned f )
 }
 
 AbsoluteValueConstraint::AbsoluteValueConstraint( const String &serializedAbs )
-    : _haveEliminatedVariables( false )
+    : _auxVarsInUse( false )
+    , _haveEliminatedVariables( false )
 {
     String constraintType = serializedAbs.substring( 0, 13 );
     ASSERT( constraintType == String( "absoluteValue" ) );
@@ -422,12 +423,12 @@ void AbsoluteValueConstraint::dump( String &output ) const
 
     if ( _auxVarsInUse )
     {
-        output += Stringf( ". PosAux: %u. Range: [%s, %s]\n",
+        output += Stringf( ". PosAux: %u. Range: [%s, %s]",
                            _posAux,
                            _lowerBounds.exists( _posAux ) ? Stringf( "%lf", _lowerBounds[_posAux] ).ascii() : "-inf",
                            _upperBounds.exists( _posAux ) ? Stringf( "%lf", _upperBounds[_posAux] ).ascii() : "inf" );
 
-        output += Stringf( ". NegAux: %u. Range: [%s, %s]\n",
+        output += Stringf( ". NegAux: %u. Range: [%s, %s]",
                            _negAux,
                            _lowerBounds.exists( _negAux ) ? Stringf( "%lf", _lowerBounds[_negAux] ).ascii() : "-inf",
                            _upperBounds.exists( _negAux ) ? Stringf( "%lf", _upperBounds[_negAux] ).ascii() : "inf" );
@@ -640,7 +641,7 @@ String AbsoluteValueConstraint::serializeToString() const
 {
     // Output format is: Abs,f,b,posAux,NegAux
     return _auxVarsInUse ?
-        Stringf( "absoluteValue,%u,%u", _f, _b, _posAux, _negAux ) :
+        Stringf( "absoluteValue,%u,%u,%u,%u", _f, _b, _posAux, _negAux ) :
         Stringf( "absoluteValue,%u,%u", _f, _b );
 }
 

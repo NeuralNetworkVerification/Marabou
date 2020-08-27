@@ -1089,7 +1089,7 @@ public:
         TS_ASSERT( !abs.participatingVariable( posAux ) );
         TS_ASSERT( !abs.participatingVariable( negAux ) );
 
-               TS_ASSERT_THROWS_NOTHING( abs.addAuxiliaryEquations( ipq ) );
+        TS_ASSERT_THROWS_NOTHING( abs.addAuxiliaryEquations( ipq ) );
 
         TS_ASSERT_EQUALS( abs.getParticipatingVariables(),
                           List<unsigned>( { b, f, posAux, negAux } ) );
@@ -1121,6 +1121,24 @@ public:
 
         for ( const auto &it : tightenings )
             TS_ASSERT( expectedTightenings.exists( it ) );
+
+        String serialized = abs.serializeToString();
+
+        TS_TRACE( serialized.ascii() );
+
+        AbsoluteValueConstraint abs2( serialized );
+
+        TS_ASSERT( !abs2.phaseFixed() );
+        abs2.notifyLowerBound( b, 2 );
+        TS_ASSERT( abs2.phaseFixed() );
+
+        PiecewiseLinearCaseSplit validSplit = abs2.getValidCaseSplit();
+        TS_ASSERT( validSplit.getEquations().empty() );
+        TS_ASSERT_EQUALS( validSplit.getBoundTightenings().size(), 2U );
+        TS_ASSERT_EQUALS( *validSplit.getBoundTightenings().begin(),
+                          Tightening( b, 0, Tightening::LB ) );
+        TS_ASSERT_EQUALS( *validSplit.getBoundTightenings().rbegin(),
+                          Tightening( posAux, 0, Tightening::UB ) );
     }
 };
 
