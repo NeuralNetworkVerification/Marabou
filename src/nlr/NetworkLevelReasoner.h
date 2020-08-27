@@ -160,7 +160,18 @@ private:
     void generateInputQueryForReluLayer( InputQuery &inputQuery, const Layer &layer );
     void generateInputQueryForSignLayer( InputQuery &inputQuery, const Layer &layer );
     void generateInputQueryForAbsoluteValueLayer( InputQuery &inputQuery, const Layer &layer );
-};
+
+    // function for finding subsequent WS layers and eliminating them
+    void eliminateSubsequentWS(); // todo added
+    bool isReductionPossible( unsigned firstLayerIdx, unsigned secondLayerIdx ); // todo added
+
+    void mergeSubsequentLayers ( unsigned firstLayerIdx, unsigned secondLayerIdx); // todo added
+    void reduceLayerIdx ( unsigned idxToStart ); // todo added
+
+    template <typename T>
+    void reduceLayerIdxHelper ( unsigned idxToStart , Map <unsigned, T> layerMap); // todo added
+
+    };
 
 } // namespace NLR
 
