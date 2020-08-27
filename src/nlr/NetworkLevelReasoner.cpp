@@ -397,12 +397,23 @@ void NetworkLevelReasoner::eliminateSubsequentWS( )
 }
 
 // change matrix of first layer,
-//void NetworkLevelReasoner:: mergeSubsequentLayers ( unsigned firstLayerIdx, unsigned secondLayerIdx)
-//{
-//    // todo continue - how to remove two layers?
-//    // todo continue - how to multiply two matrices?
-//    return;
-//}
+void NetworkLevelReasoner:: mergeSubsequentLayers ( unsigned firstLayerIdx,  unsigned secondLayerIdx)
+{
+    // todo continue - how to remove two layers?
+    // todo continue - how to multiply two matrices?
+    // todo continue - size of any layer changes?
+
+    Layer *firstLayer = _layerIndexToLayer[firstLayerIdx];
+    Layer *secondLayer = _layerIndexToLayer[secondLayerIdx];
+
+    auto firstLayerMatrix = firstLayer->getWeights() [firstLayer - 1];
+    auto secondLayerMatrix = secondLayer->getWeights()[firstLayer];
+
+//    auto firstLayerMatrix = firstLayer->getWeights()[firstLayer - 1]
+//    auto secondLayerMatrix = secondLayer->getWeights()[firstLayer]
+
+    return;
+}
 
 
 
@@ -422,6 +433,13 @@ bool NetworkLevelReasoner:: isReductionPossible( unsigned firstLayerIdx, unsigne
         {
             return false;
         }
+
+        // found a third layer which the second layer is a sink to
+        if ( (j != firstLayerIdx) && ( _layerIndexToLayer[secondLayerIdx]->getSourceLayers().exists(j) ) )
+        {
+            return false;
+        }
+
     }
 
     // the 2nd input idx is the only one for which the source is the later at the 1st input idx
