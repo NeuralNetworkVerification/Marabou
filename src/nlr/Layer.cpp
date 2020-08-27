@@ -218,6 +218,27 @@ const Map<unsigned, unsigned> &Layer::getSourceLayers() const
     return _sourceLayers;
 }
 
+Map<unsigned, unsigned> &Layer::getSourceLayers()
+{
+    return _sourceLayers;
+}
+
+Map<unsigned, double*> &Layer::getWeights()
+{
+    return _layerToWeights;
+}
+
+Map<unsigned, double*> &Layer::getPositiveWeights()
+{
+    return _layerToPositiveWeights;
+}
+
+Map<unsigned, double*> &Layer::getNegativeWeights()
+{
+    return _layerToNegativeWeights;
+}
+
+
 void Layer::setWeight( unsigned sourceLayer, unsigned sourceNeuron, unsigned targetNeuron, double weight )
 {
     unsigned index = sourceNeuron * _size + targetNeuron;
