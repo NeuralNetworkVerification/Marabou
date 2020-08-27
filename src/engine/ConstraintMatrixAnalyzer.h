@@ -18,7 +18,8 @@
 
 #include "IConstraintMatrixAnalyzer.h"
 #include "List.h"
-#include "SparseMatrix.h"
+#include "Set.h"
+#include "SparseUnsortedArrays.h"
 
 class String;
 
@@ -27,48 +28,57 @@ class ConstraintMatrixAnalyzer : public IConstraintMatrixAnalyzer
 public:
     ConstraintMatrixAnalyzer();
     ~ConstraintMatrixAnalyzer();
-    void freeMemoryIfNeeded();
 
     /*
-      Analyze the input matrix in order to find its canonical form
-      and rank. The matrix is m by n, and is assumed to be in column-
-      major format.
+      Analyze the input matrix in order to find its sets of
+      (in)dependent columns and rows
     */
     void analyze( const double *matrix, unsigned m, unsigned n );
-    void analyze( const SparseMatrix *matrix, unsigned m, unsigned n );
-    void getCanonicalForm( double *matrix );
-    unsigned getRank() const;
+    void analyze( const SparseUnsortedList **matrix, unsigned m, unsigned n );
     List<unsigned> getIndependentColumns() const;
     Set<unsigned> getRedundantRows() const;
 
 private:
-    double *_matrix;
-    double *_work;
     unsigned _m;
     unsigned _n;
     unsigned _eliminationStep;
-    bool _logging;
     List<unsigned> _independentColumns;
 
+    SparseUnsortedArrays _A;
+    SparseUnsortedArrays _At;
+
+    unsigned *_numRowElements;
+    unsigned *_numColumnElements;
+
+    unsigned _pivotRow;
+    unsigned _pivotColumn;
+    double _pivotElement;
+
+    double *_workRow;
+    double *_workRow2;
+
     /*
-      The i'th (permuted) column of the matrix is stored in memory
+      The i'th (permuted) row of the matrix is stored in memory
       location _rowHeaders[i]. Likewise for columns.
     */
     unsigned *_rowHeaders;
     unsigned *_columnHeaders;
+    unsigned *_rowHeadersInverse;
+    unsigned *_columnHeadersInverse;
+
+    /*
+      Memory management
+    */
+    void freeMemoryIfNeeded();
+    void allocateMemory();
 
     /*
       Helper functions for performing Gaussian elimination.
     */
     void gaussianElimination();
-    void swapRows( unsigned i, unsigned j );
-    void swapColumns( unsigned i, unsigned j );
-
-    /*
-      Debugging: print the matrix and the log message, if logging
-      is enabled.
-    */
-    void dumpMatrix( const String &message );
+    bool choosePivot();
+    void permute();
+    void eliminate();
 };
 
 #endif // __ConstraintMatrixAnalyzer_h__
