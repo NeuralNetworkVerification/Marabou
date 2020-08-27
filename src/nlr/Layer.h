@@ -54,6 +54,12 @@ public:
     void setLayerOwner( LayerOwner *layerOwner );
     void addSourceLayer( unsigned layerNumber, unsigned layerSize );
     const Map<unsigned, unsigned> &getSourceLayers() const;
+    Map<unsigned, unsigned> &getSourceLayers(); // todo added
+    Map<unsigned, double*> &getWeights(); // todo added
+    Map<unsigned, double*> &getPositiveWeights(); // todo added
+    Map<unsigned, double*> &getNegativeWeights(); // todo added
+
+
 
     void setWeight( unsigned sourceLayer,
                     unsigned sourceNeuron,
