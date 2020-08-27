@@ -421,7 +421,7 @@ void AbsoluteValueConstraint::dump( String &output ) const
 void AbsoluteValueConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
     ASSERT( oldIndex == _b || oldIndex == _f ||
-            ( _auxVarsInUse && ( variable == _posAux || variable == _negAux ) ) );
+            ( _auxVarsInUse && ( oldIndex == _posAux || oldIndex == _negAux ) ) );
 
     ASSERT( !_assignment.exists( newIndex ) &&
             !_lowerBounds.exists( newIndex ) &&
