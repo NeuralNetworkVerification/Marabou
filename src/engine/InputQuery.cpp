@@ -598,7 +598,7 @@ bool InputQuery::constructNetworkLevelReasoner()
     }
 
     unsigned newLayerIndex = 1;
-    // Now, repeatedly attempt to construct addditional layers
+    // Now, repeatedly attempt to construct additional layers
     while ( constructWeighedSumLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
             constructReluLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
             constructAbsoluteValueLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
@@ -635,7 +635,7 @@ bool InputQuery::constructWeighedSumLayer( NLR::NetworkLevelReasoner *nlr,
                                            Map<unsigned, unsigned> &handledVariableToLayer,
                                            unsigned newLayerIndex )
 {
-    INPUT_QUERY_LOG( "Attempting to contruct weightedSumLayer..." );
+    INPUT_QUERY_LOG( "Attempting to construct weightedSumLayer..." );
     struct NeuronInformation
     {
     public:
@@ -742,7 +742,7 @@ bool InputQuery::constructReluLayer( NLR::NetworkLevelReasoner *nlr,
                                      Map<unsigned, unsigned> &handledVariableToLayer,
                                      unsigned newLayerIndex )
 {
-    INPUT_QUERY_LOG( "Attempting to contruct ReluLayer..." );
+    INPUT_QUERY_LOG( "Attempting to construct ReluLayer..." );
     struct NeuronInformation
     {
     public:
@@ -824,7 +824,7 @@ bool InputQuery::constructAbsoluteValueLayer( NLR::NetworkLevelReasoner *nlr,
                                               Map<unsigned, unsigned> &handledVariableToLayer,
                                               unsigned newLayerIndex )
 {
-    INPUT_QUERY_LOG( "Attempting to contruct AbsoluteValueLayer..." );
+    INPUT_QUERY_LOG( "Attempting to construct AbsoluteValueLayer..." );
     struct NeuronInformation
     {
     public:
@@ -906,7 +906,7 @@ bool InputQuery::constructSignLayer( NLR::NetworkLevelReasoner *nlr,
                                      Map<unsigned, unsigned> &handledVariableToLayer,
                                      unsigned newLayerIndex )
 {
-    INPUT_QUERY_LOG( "Attempting to contruct SignLayer..." );
+    INPUT_QUERY_LOG( "Attempting to construct SignLayer..." );
     struct NeuronInformation
     {
     public:
