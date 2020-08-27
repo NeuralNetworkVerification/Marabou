@@ -209,7 +209,7 @@ void AbsoluteValueConstraint::notifyUpperBound( unsigned variable, double bound 
             if ( -bound > _lowerBounds[_b] )
                 _constraintBoundTightener->registerTighterLowerBound( _b, -bound );
 
-            if ( _auxVarsInUse )
+            if ( _auxVarsInUse && _lowerBounds.exists( _b ) )
             {
                 // And also the upper bounds of both aux variables
                 _constraintBoundTightener->
@@ -226,20 +226,36 @@ void AbsoluteValueConstraint::notifyUpperBound( unsigned variable, double bound 
                 // posAux.ub = f.ub - b.lb, and so this tightening can cause:
                 //    1. f.ub = b.lb + posAux.ub
                 //    2. b.lb = f.ub - posAux.ub
-                _constraintBoundTightener->
-                    registerTighterUpperBound( _f, _lowerBounds[_b] + bound );
-                _constraintBoundTightener->
-                    registerTighterLowerBound( _b, _upperBounds[_f] - bound );
+
+                if ( _lowerBounds.exists( _b ) )
+                {
+                    _constraintBoundTightener->
+                        registerTighterUpperBound( _f, _lowerBounds[_b] + bound );
+                }
+
+                if ( _upperBounds.exists( _f ) )
+                {
+                    _constraintBoundTightener->
+                        registerTighterLowerBound( _b, _upperBounds[_f] - bound );
+                }
             }
             else if ( variable == _negAux )
             {
                 // negAux.ub = f.ub + b.ub, and so this tightening can cause:
                 //    1. f.ub = negAux.ub - b.ub
                 //    2. b.ub = negAux.ub - f.ub
-                _constraintBoundTightener->
-                    registerTighterUpperBound( _f, bound - _upperBounds[_b] );
-                _constraintBoundTightener->
-                    registerTighterUpperBound( _b, bound - _upperBounds[_f] );
+
+                if ( _upperBounds.exists( _b ) )
+                {
+                    _constraintBoundTightener->
+                        registerTighterUpperBound( _f, bound - _upperBounds[_b] );
+                }
+
+                if ( _upperBounds.exists( _f ) )
+                {
+                    _constraintBoundTightener->
+                        registerTighterUpperBound( _b, bound - _upperBounds[_f] );
+                }
             }
         }
     }
@@ -611,9 +627,10 @@ void AbsoluteValueConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
     inputQuery.setLowerBound( _posAux, 0 );
     inputQuery.setLowerBound( _negAux, 0 );
 
-    // Set their upper bounds
-    inputQuery.setUpperBound( _posAux, _upperBounds[_f] - _lowerBounds[_b] );
-    inputQuery.setUpperBound( _negAux, _upperBounds[_f] + _lowerBounds[_b] );
+    _lowerBounds[_posAux] = 0;
+    _lowerBounds[_negAux] = 0;
+    _upperBounds[_posAux] = FloatUtils::infinity();
+    _upperBounds[_negAux] = FloatUtils::infinity();
 
     // Mark that the aux vars are in use
     _auxVarsInUse = true;
@@ -674,7 +691,7 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
 
         // Option 6: posAux can never be zero, phase is negative
         if ( _lowerBounds.exists( _posAux )
-             && FloatUtils::isPositive( _upperBounds[_posAux] ) )
+             && FloatUtils::isPositive( _lowerBounds[_posAux] ) )
         {
             setPhaseStatus( PHASE_NEGATIVE );
             return;
