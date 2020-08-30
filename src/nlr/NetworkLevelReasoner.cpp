@@ -417,27 +417,46 @@ void NetworkLevelReasoner::mergeSubsequentLayers ( unsigned firstLayerIndex,  un
     Layer *firstLayer = _layerIndexToLayer[firstLayerIndex];
     Layer *secondLayer = _layerIndexToLayer[secondLayerIndex];
 
-    double *firstLayerMatrix = firstLayer->getWeightsMap()[firstLayerIndex - 1];
-    double *secondLayerMatrix = secondLayer->getWeightsMap()[firstLayerIndex];
 
     unsigned inputDimension = inputLayerToFirst->getSize();
     unsigned middleDimension = firstLayer->getSize();
     unsigned outputDimension = secondLayer->getSize();
 
-    // Multiply both matrices
+    // Multiply both layers - all weights
+    double *firstLayerMatrix = firstLayer->getWeightsMap()[firstLayerIndex - 1];
+    double *secondLayerMatrix = secondLayer->getWeightsMap()[firstLayerIndex];
     double *newWeightsMatrix = multiplyWeights( firstLayerMatrix, secondLayerMatrix, inputDimension, middleDimension, outputDimension );
 
-    // Pop old weights and update new weights - for first layer
     auto weightsOfFirstAfterPop = firstLayer->popLayerWeights( firstLayer->getWeightsMap(), firstLayerIndex - 1 );
     auto weightsOfFirstAfterUpdate = firstLayer->addLayerWeights( weightsOfFirstAfterPop, firstLayerIndex - 1, newWeightsMatrix );
     firstLayer->setWeightsMap( weightsOfFirstAfterUpdate );
 
-    // Pop old weights and - for second layer
     auto weightsOfSecondAfterPop = secondLayer->popLayerWeights( secondLayer->getWeightsMap(), firstLayerIndex );
     secondLayer->setWeightsMap( weightsOfSecondAfterPop );
 
-    // todo - take care of positive and negative weights
+    // Multiply both matrices - positive weights
+    double *firstLayerPositiveMatrix = firstLayer->getPositiveWeights()[firstLayerIndex - 1];
+    double *secondLayerPositiveMatrix = secondLayer->getPositiveWeights()[firstLayerIndex];
+    double *newWeightsPositiveMatrix = multiplyWeights( firstLayerPositiveMatrix, secondLayerPositiveMatrix, inputDimension, middleDimension, outputDimension );
 
+    auto posWeightsOfFirstAfterPop = firstLayer->popLayerWeights( firstLayer->getPositiveWeights(), firstLayerIndex - 1 );
+    auto posWeightsOfFirstAfterUpdate = firstLayer->addLayerWeights( posWeightsOfFirstAfterPop, firstLayerIndex - 1, newWeightsPositiveMatrix );
+    firstLayer->setPositiveWeights( posWeightsOfFirstAfterUpdate );
+
+    auto posWeightsOfSecondAfterPop = secondLayer->popLayerWeights( secondLayer->getPositiveWeights(), firstLayerIndex );
+    secondLayer->setPositiveWeights( posWeightsOfSecondAfterPop );
+
+    // Multiply both matrices - negative weights
+    double *firstLayerNegativeMatrix = firstLayer->getNegativeWeights()[firstLayerIndex - 1];
+    double *secondLayerNegativeMatrix = secondLayer->getNegativeWeights()[firstLayerIndex];
+    double *newWeightsNegativeMatrix = multiplyWeights( firstLayerNegativeMatrix, secondLayerNegativeMatrix, inputDimension, middleDimension, outputDimension );
+
+    auto negWeightsOfFirstAfterPop = firstLayer->popLayerWeights( firstLayer->getNegativeWeights(), firstLayerIndex - 1 );
+    auto negWeightsOfFirstAfterUpdate = firstLayer->addLayerWeights( negWeightsOfFirstAfterPop, firstLayerIndex - 1, newWeightsNegativeMatrix );
+    firstLayer->setNegativeWeights( negWeightsOfFirstAfterPop );
+
+    auto negWeightsOfSecondAfterPop = secondLayer->popLayerWeights( secondLayer->getNegativeWeights(), firstLayerIndex );
+    secondLayer->setNegativeWeights( negWeightsOfSecondAfterPop );
 }
 
 
