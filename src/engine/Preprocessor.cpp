@@ -48,10 +48,11 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     */
     _preprocessed.constructNetworkLevelReasoner();
 
+    if (query._networkLevelReasoner != NULL)
+    {
+        query._networkLevelReasoner->mergeWSLayers();
+    }
 
-    query._networkLevelReasoner->mergeWSLayers();
-
-    // todo - make test PASS
     // todo - add printing of summary after preprocessing?
 
     /*
