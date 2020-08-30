@@ -218,25 +218,55 @@ const Map<unsigned, unsigned> &Layer::getSourceLayers() const
     return _sourceLayers;
 }
 
-Map<unsigned, unsigned> &Layer::getSourceLayers()
+void Layer::setSourceLayers( Map<unsigned, unsigned> inputMap )
 {
-    return _sourceLayers;
+    _sourceLayers = inputMap;
 }
 
-Map<unsigned, double*> &Layer::getWeights()
+const Map<unsigned, double*> &Layer::getWeightsMap() const
 {
     return _layerToWeights;
 }
 
-Map<unsigned, double*> &Layer::getPositiveWeights()
+void Layer::setWeightsMap( Map<unsigned, double*> inputMap )
+{
+    _layerToWeights = inputMap;
+}
+
+const Map<unsigned, double*> &Layer::getPositiveWeights() const
 {
     return _layerToPositiveWeights;
 }
 
-Map<unsigned, double*> &Layer::getNegativeWeights()
+void Layer::setPositiveWeights( Map<unsigned, double*> inputMap )
+{
+    _layerToPositiveWeights = inputMap;
+}
+
+const Map<unsigned, double*> &Layer::getNegativeWeights() const
 {
     return _layerToNegativeWeights;
 }
+
+void Layer::setNegativeWeights( Map<unsigned, double*> inputMap )
+{
+    _layerToNegativeWeights = inputMap;
+}
+
+Map<unsigned, double*> Layer::addLayerWeights( Map<unsigned, double*> inputMap, unsigned layerIndex, double* newWeightValue )
+{
+    // todo - make sure the updated map is returned! with the new value of the index
+    inputMap[layerIndex] = newWeightValue;
+    return inputMap;
+}
+
+Map<unsigned, double*> Layer::popLayerWeights( Map<unsigned, double*> inputMap, unsigned layerIndex )
+{
+    // todo - make sure the updated map is returned!
+    inputMap.erase( layerIndex );
+    return inputMap;
+}
+
 
 
 void Layer::setWeight( unsigned sourceLayer, unsigned sourceNeuron, unsigned targetNeuron, double weight )

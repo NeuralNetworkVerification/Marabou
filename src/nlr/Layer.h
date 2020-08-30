@@ -54,13 +54,20 @@ public:
     void setLayerOwner( LayerOwner *layerOwner );
     void addSourceLayer( unsigned layerNumber, unsigned layerSize );
     const Map<unsigned, unsigned> &getSourceLayers() const;
+//    Map<unsigned, unsigned> &getSourceLayers(); // todo added
+    const Map<unsigned, double*> &getWeightsMap() const; // todo added
+    const Map<unsigned, double*> &getPositiveWeights() const; // todo added
+    const Map<unsigned, double*> &getNegativeWeights() const; // todo added
 
-    Map<unsigned, unsigned> &getSourceLayers(); // todo added
-    // Guy: I'm not a fan of returning non-const references to
-    // internal data structures unless its absolutely needed
-    Map<unsigned, double*> &getWeights(); // todo added
-    Map<unsigned, double*> &getPositiveWeights(); // todo added
-    Map<unsigned, double*> &getNegativeWeights(); // todo added
+    void setSourceLayers( Map<unsigned, unsigned> inputMap ); // todo added
+    void setWeightsMap( Map<unsigned, double*> inputMap ); // todo added
+    void setPositiveWeights( Map<unsigned, double*> inputMap ); // todo added
+    void setNegativeWeights( Map<unsigned, double*> inputMap ); // todo added
+    Map<unsigned, double*> addLayerWeights( Map<unsigned, double*> inputMap, unsigned layerIndex, double* newWeightValue ); // todo added
+    Map<unsigned, double*> popLayerWeights( Map<unsigned, double*> inputMap, unsigned layerIndex ); // todo added
+
+
+
 
     void setWeight( unsigned sourceLayer,
                     unsigned sourceNeuron,

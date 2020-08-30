@@ -44,9 +44,15 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     makeAllEquationsEqualities();
 
     /*
-      Attempt to construct a network level reasonor
+      Attempt to construct a network level reasoner
     */
     _preprocessed.constructNetworkLevelReasoner();
+
+
+    query._networkLevelReasoner->mergeWSLayers();
+
+    // todo - make test PASS
+    // todo - add printing of summary after preprocessing?
 
     /*
       Collect input and output variables

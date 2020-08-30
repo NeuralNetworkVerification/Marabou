@@ -143,6 +143,12 @@ public:
     */
     InputQuery generateInputQuery();
 
+    /*
+        Finds subsequent WS layers and merges them, in order to reduce the number of total layers
+        and variables in the created inputQuery object
+    */
+    void mergeWSLayers(); // todo added
+
 private:
     Map<unsigned, Layer *> _layerIndexToLayer;
     const ITableau *_tableau;
@@ -161,17 +167,18 @@ private:
     void generateInputQueryForSignLayer( InputQuery &inputQuery, const Layer &layer );
     void generateInputQueryForAbsoluteValueLayer( InputQuery &inputQuery, const Layer &layer );
 
-    // function for finding subsequent WS layers and eliminating them
-    void mergeConsecutiveWSLayers(); // todo added
-    bool isReductionPossible( unsigned firstLayerIndex, unsigned secondLayerIndex ); // todo added
-
     void mergeSubsequentLayers( unsigned firstLayerIndex, unsigned secondLayerIndex ); // todo added
-    void reduceLayerIndex( unsigned indexToStart ); // todo added
+    bool isReductionPossible( unsigned firstLayerIndex, unsigned secondLayerIndex ); // todo added
+    double *multiplyWeights ( double *firstMat, double *secondMatrix, unsigned inputDimension, unsigned middleDimension, unsigned outputDimension ); // todo added
 
     template <typename T>
-    void reduceLayerIndexHelper( unsigned indexToStart , Map <unsigned, T> layerMap ); // todo added
+    Map <unsigned, T> reduceLayerIndexHelper( unsigned indexToStart , Map <unsigned, T> layerMap ); // todo added
+    void reduceLayerIndex( unsigned indexToStart ); // todo added
 
-    };
+
+
+
+};
 
 } // namespace NLR
 

@@ -364,131 +364,187 @@ void NetworkLevelReasoner::generateInputQueryForWeightedSumLayer( InputQuery &in
 
 // todo new code - START
 
-void NetworkLevelReasoner::eliminateSubsequentWS( )
+void NetworkLevelReasoner::mergeWSLayers( )
 {
-    // iterate over all layers
+    // Iterate over all layers
     for ( unsigned i = 0; i < getNumberOfLayers() - 1; ++i )
     {
 
-        unsigned firstLayerIdx = i;
-        unsigned secondLayerIdx = i + 1;
+        unsigned firstLayerIndex = i;
+        unsigned secondLayerIndex = i + 1;
 
-        const Layer *firstLayer = _layerIndexToLayer[firstLayerIdx];
-        const Layer *secondLayer = _layerIndexToLayer[secondLayerIdx];
+        const Layer *firstLayer = _layerIndexToLayer[firstLayerIndex];
+        const Layer *secondLayer = _layerIndexToLayer[secondLayerIndex];
 
-        // if two subsequent layers are WS
-        if ( (firstLayer->getLayerType() == Layer::WEIGHTED_SUM) && (secondLayer->getLayerType() == Layer::WEIGHTED_SUM) )
+        // If two subsequent layers are WS
+        if ( firstLayer->getLayerType() != Layer::WEIGHTED_SUM )
         {
-            // if the first layer's input is the second layer
-            if ( secondLayer->getSourceLayers().exists(firstLayerIdx) )
-            {
-                if ( isReductionPossible( firstLayerIdx, secondLayerIdx ) )
-                {
-                    // remove both layers and insert *new* first layer
-                    // todo continue - call mergeSubsequentLayers()
-
-                    // reduce -1 from all indexes
-                    reduceLayerIdx( secondLayerIdx );
-
-                }
-            }
+            continue;
         }
-    }
-}
-
-// change matrix of first layer,
-void NetworkLevelReasoner:: mergeSubsequentLayers ( unsigned firstLayerIdx,  unsigned secondLayerIdx)
-{
-    // todo continue - how to remove two layers?
-    // todo continue - how to multiply two matrices?
-    // todo continue - size of any layer changes?
-
-    Layer *firstLayer = _layerIndexToLayer[firstLayerIdx];
-    Layer *secondLayer = _layerIndexToLayer[secondLayerIdx];
-
-    auto firstLayerMatrix = firstLayer->getWeights() [firstLayer - 1];
-    auto secondLayerMatrix = secondLayer->getWeights()[firstLayer];
-
-//    auto firstLayerMatrix = firstLayer->getWeights()[firstLayer - 1]
-//    auto secondLayerMatrix = secondLayer->getWeights()[firstLayer]
-
-    return;
-}
-
-
-
-
-// assume we get two subsequent WS layers with WS -> WS
-bool NetworkLevelReasoner:: isReductionPossible( unsigned firstLayerIdx, unsigned secondLayerIdx )
-{
-    for ( unsigned j = 0; j < getNumberOfLayers() ; ++j ) // here without '-1' an end
-    {
-        if ( j == firstLayerIdx )
+        if ( secondLayer->getLayerType() != Layer::WEIGHTED_SUM )
+        {
+            continue;
+        }
+        if ( ! secondLayer->getSourceLayers().exists( firstLayerIndex ) )
         {
             continue;
         }
 
-        // found a third layer which the first layer is a source to
-        if ( (j != secondLayerIdx) && (_layerIndexToLayer[j]->getSourceLayers().exists(firstLayerIdx)) )
+        // If the first layer's input is the second layer
+
+        if ( ! isReductionPossible( firstLayerIndex, secondLayerIndex ) )
         {
-            return false;
+            continue;
         }
 
-        // found a third layer which the second layer is a sink to
-        if ( (j != firstLayerIdx) && ( _layerIndexToLayer[secondLayerIdx]->getSourceLayers().exists(j) ) )
-        {
-            return false;
-        }
+        // Remove both layers and insert *new* first layer
+        // todo continue - call mergeSubsequentLayers()
+        mergeSubsequentLayers( firstLayerIndex, secondLayerIndex );
+
+        // Reduce -1 from all indexes
+        reduceLayerIndex( secondLayerIndex );
 
     }
+}
 
-    // the 2nd input idx is the only one for which the source is the later at the 1st input idx
-    return true;
+
+
+// Change matrix of first layer,
+void NetworkLevelReasoner::mergeSubsequentLayers ( unsigned firstLayerIndex,  unsigned secondLayerIndex)
+{
+    // todo make sure I don't start with INPUT LAYER
+    Layer *inputLayerToFirst = _layerIndexToLayer[firstLayerIndex - 1];
+    Layer *firstLayer = _layerIndexToLayer[firstLayerIndex];
+    Layer *secondLayer = _layerIndexToLayer[secondLayerIndex];
+
+    double *firstLayerMatrix = firstLayer->getWeightsMap()[firstLayerIndex - 1];
+    double *secondLayerMatrix = secondLayer->getWeightsMap()[firstLayerIndex];
+
+    unsigned inputDimension = inputLayerToFirst->getSize();
+    unsigned middleDimension = firstLayer->getSize();
+    unsigned outputDimension = secondLayer->getSize();
+
+    // Multiply both matrices
+    double *newWeightsMatrix = multiplyWeights( firstLayerMatrix, secondLayerMatrix, inputDimension, middleDimension, outputDimension );
+
+    // Pop old weights and update new weights - for first layer
+    auto weightsOfFirstAfterPop = firstLayer->popLayerWeights( firstLayer->getWeightsMap(), firstLayerIndex - 1 );
+    auto weightsOfFirstAfterUpdate = firstLayer->addLayerWeights( weightsOfFirstAfterPop, firstLayerIndex - 1, newWeightsMatrix );
+    firstLayer->setWeightsMap( weightsOfFirstAfterUpdate );
+
+    // Pop old weights and - for second layer
+    auto weightsOfSecondAfterPop = secondLayer->popLayerWeights( secondLayer->getWeightsMap(), firstLayerIndex );
+    secondLayer->setWeightsMap( weightsOfSecondAfterPop );
+
+    // todo - take care of positive and negative weights
 
 }
 
-// reduce -1 from all layer indexes starting from (including) the given input index
-void NetworkLevelReasoner:: reduceLayerIdx ( unsigned idxToStart )
+
+// TODO check thoroughly!!!!
+double *NetworkLevelReasoner:: multiplyWeights ( double *firstMatrix, double *secondMatrix, unsigned inputDimension,unsigned middleDimension, unsigned outputDimension ) {
+
+        double *newMatrix = new double[inputDimension * outputDimension];
+        unsigned indexInNewMatrix = 0;
+
+        for (unsigned row = 0; row < inputDimension; ++row)
+        {
+            for (unsigned column = 0; column < outputDimension; ++column)
+            {
+                // Calculate [i, j]
+                double sum = 0;
+                for (unsigned index = 0; index < middleDimension; ++index) {
+                    sum += firstMatrix[(row * middleDimension) + index] *
+                           secondMatrix[(index * outputDimension) + column];
+                }
+                newMatrix[indexInNewMatrix] = sum;
+                ++indexInNewMatrix;
+            }
+        }
+        return newMatrix;
+}
+
+
+// Assume we get two subsequent WS layers with WS -> WS
+bool NetworkLevelReasoner::isReductionPossible( unsigned firstLayerIndex, unsigned secondLayerIndex )
 {
-    for (unsigned layerIdx = 0; layerIdx < getNumberOfLayers(); ++layerIdx)
+    for ( unsigned i = 0; i < getNumberOfLayers(); ++i ) // here without '-1' an end
     {
-        Layer *layer = _layerIndexToLayer[layerIdx];
+        // Found a third layer which the first layer is a source to
+        if ( ( i != secondLayerIndex ) && ( _layerIndexToLayer[i]->getSourceLayers().exists( firstLayerIndex ) ) )
+        {
+            return false;
+        }
+
+        // Found a third layer which the second layer is a sink to
+        if ( ( i != firstLayerIndex ) && ( _layerIndexToLayer[secondLayerIndex]->getSourceLayers().exists( i ) ) )
+        {
+            return false;
+        }
+    }
+
+    // The 2nd input index is the only one for which the source is the later at the 1st input index
+    return true;
+}
+
+// Reduce -1 from all layer indexes starting from (including) the given input index
+void NetworkLevelReasoner::reduceLayerIndex ( unsigned indexToStart )
+{
+    for ( unsigned layerIndex = 0; layerIndex < getNumberOfLayers(); ++layerIndex )
+    {
+        Layer *layer = _layerIndexToLayer[layerIndex];
 
         auto layerSourceMap = layer->getSourceLayers();
-        auto layerWeightMap = layer->getWeights();
+        auto newSourceMap = reduceLayerIndexHelper( indexToStart , layerSourceMap );
+        layer->setSourceLayers( newSourceMap );
+
+        auto layerWeightsMap = layer->getWeightsMap();
+        auto newWeightsMap = reduceLayerIndexHelper( indexToStart , layerWeightsMap );
+        layer->setWeightsMap ( newWeightsMap );
+
         auto layerPositiveWeightMap = layer->getPositiveWeights();
+        auto newPositiveWeightsMap = reduceLayerIndexHelper( indexToStart , layerPositiveWeightMap );
+        layer->setPositiveWeights( newPositiveWeightsMap );
+
         auto layerNegativeWeightMap = layer->getNegativeWeights();
+        auto newNegativeWeightsMap = reduceLayerIndexHelper( indexToStart , layerNegativeWeightMap );
+        layer->setNegativeWeights( newNegativeWeightsMap );
 
-        reduceLayerIdxHelper( idxToStart , layerSourceMap );
-        reduceLayerIdxHelper( idxToStart , layerWeightMap );
-        reduceLayerIdxHelper( idxToStart , layerPositiveWeightMap );
-        reduceLayerIdxHelper( idxToStart , layerNegativeWeightMap );
-
-        reduceLayerIdxHelper( idxToStart , _layerIndexToLayer );
+        auto newIdxToLayerMap = reduceLayerIndexHelper( indexToStart , _layerIndexToLayer );
+        _layerIndexToLayer = newIdxToLayerMap;
 
     }
 }
 
 
 template <typename T>
-void NetworkLevelReasoner:: reduceLayerIdxHelper ( unsigned idxToStart , Map <unsigned, T> layerMap)
+Map <unsigned, T> NetworkLevelReasoner::reduceLayerIndexHelper ( unsigned indexToStart , Map <unsigned, T> layerMap )
 {
-    for (  auto pair = layerMap.begin() ; pair != layerMap.end() ;  )
+
+    Map <unsigned, T> newMap = Map <unsigned, T>();
+
+    for (  auto pair = layerMap.begin() ; pair != layerMap.end(); ++pair )
     {
 
         auto layerKey = pair->first;
         auto layerValue = pair->second;
-        ++pair;
 
-        if ( layerKey >= idxToStart )
+
+        if  ( layerKey < indexToStart )
         {
-            layerMap.erase( layerKey );
-            layerMap.insert( layerKey - 1 , layerValue);
+            newMap.insert( layerKey , layerValue );
+        }
+
+        // layerKey >= indexToStart
+        else
+        {
+            newMap.insert( layerKey - 1 , layerValue );
         }
     }
 
-}
+    return newMap;
 
+}
 
 
 // todo new code - END
