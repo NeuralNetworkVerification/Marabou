@@ -17,7 +17,8 @@
 #include "Statistics.h"
 
 PiecewiseLinearConstraint::PiecewiseLinearConstraint()
-    : _constraintActive( true )
+    : _temporary( false )
+    , _constraintActive( true )
     , _score( FloatUtils::negativeInfinity() )
     , _constraintBoundTightener( NULL )
     , _statistics( NULL )

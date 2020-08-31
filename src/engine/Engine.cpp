@@ -16,6 +16,7 @@
 
 #include "AutoConstraintMatrixAnalyzer.h"
 #include "Debug.h"
+#include "DisjunctionConstraint.h"
 #include "Engine.h"
 #include "EngineState.h"
 #include "InfeasibleQueryException.h"
@@ -2028,6 +2029,47 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnTopology()
     return NULL;
 }
 
+PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnIntervalWidth()
+{
+  // We push the first unfixed ReLU in the topology order to the _candidatePlConstraints
+  ENGINE_LOG( Stringf( "Using LargestInterval heuristics..." ).ascii() );
+
+  unsigned inputVariableWithLargestInterval = 0;
+  double largestIntervalSoFar = 0;
+  for ( const auto&variable : _preprocessedQuery.getInputVariables() )
+  {
+    double interval = _tableau->getUpperBound( variable ) -
+      _tableau->getLowerBound( variable );
+    if ( interval > largestIntervalSoFar )
+    {
+      inputVariableWithLargestInterval = variable;
+      largestIntervalSoFar = interval;
+    }
+  }
+
+  if ( largestIntervalSoFar == 0 )
+    return NULL;
+  else
+  {
+    double mid = ( _tableau->getLowerBound( inputVariableWithLargestInterval )
+                   + _tableau->getUpperBound( inputVariableWithLargestInterval )
+                   ) / 2;
+    PiecewiseLinearCaseSplit s1;
+    s1.storeBoundTightening( Tightening( inputVariableWithLargestInterval,
+                                         mid, Tightening::UB ) );
+    PiecewiseLinearCaseSplit s2;
+    s2.storeBoundTightening( Tightening( inputVariableWithLargestInterval,
+                                         mid, Tightening::LB ) );
+
+    List<PiecewiseLinearCaseSplit> splits;
+    splits.append( s1 );
+    splits.append( s2 );
+    DisjunctionConstraint *bisection = new DisjunctionConstraint( splits );
+    bisection->setTemporary( true );
+    return bisection;
+  }
+}
+
 PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy strategy )
 {
     ENGINE_LOG( Stringf( "Picking a split PLConstraint..." ).ascii() );
@@ -2037,11 +2079,23 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy strateg
         candidatePLConstraint = pickSplitPLConstraintBasedOnPolarity();
     else if ( strategy == DivideStrategy::EarliestReLU )
         candidatePLConstraint = pickSplitPLConstraintBasedOnTopology();
+    else if ( strategy == DivideStrategy::LargestInterval )
+      candidatePLConstraint = pickSplitPLConstraintBasedOnIntervalWidth();
 
-    ENGINE_LOG( Stringf( "Done updating scores..." ).ascii() );
     ENGINE_LOG( Stringf( ( candidatePLConstraint ?
-                           "Unable to pick using the current strategy..." :
-                           "Picked..." ) ).ascii() );
+                           "Picked..." :
+                           "Unable to pick using the current strategy..." ) ).ascii() );
+
+    DEBUG({
+        if ( candidatePLConstraint )
+        {
+          String s;
+          candidatePLConstraint->dump( s );
+          printf( "PLConstraint picked: \n" );
+          std::cout << s.ascii();
+        }
+      });
+
     return candidatePLConstraint;
 }
 

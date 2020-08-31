@@ -44,7 +44,7 @@ const bool GlobalConfiguration::USE_COLUMN_MERGING_EQUATIONS = false;
 const double GlobalConfiguration::GAUSSIAN_ELIMINATION_PIVOT_SCALE_THRESHOLD = 0.1;
 const unsigned GlobalConfiguration::MAX_SIMPLEX_PIVOT_SEARCH_ITERATIONS = 5;
 const unsigned GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD = 20;
-const DivideStrategy GlobalConfiguration::SPLITTING_HEURISTICS = DivideStrategy::ReLUViolation;
+const DivideStrategy GlobalConfiguration::SPLITTING_HEURISTICS = DivideStrategy::LargestInterval;
 const unsigned GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD = 10;
 const unsigned GlobalConfiguration::BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY = 100;
 const unsigned GlobalConfiguration::ROW_BOUND_TIGHTENER_SATURATION_ITERATIONS = 20;
@@ -96,7 +96,7 @@ const unsigned GlobalConfiguration::GUROBI_NUMBER_OF_THREADS = 1;
 
 // Logging - note that it is enabled only in Debug mode
 const bool GlobalConfiguration::DNC_MANAGER_LOGGING = false;
-const bool GlobalConfiguration::ENGINE_LOGGING = false;
+const bool GlobalConfiguration::ENGINE_LOGGING = true;
 const bool GlobalConfiguration::TABLEAU_LOGGING = false;
 const bool GlobalConfiguration::SMT_CORE_LOGGING = false;
 const bool GlobalConfiguration::DANTZIGS_RULE_LOGGING = false;

@@ -496,6 +496,12 @@ private:
       Pick the first unfixed ReLU in the topological order
     */
     PiecewiseLinearConstraint *pickSplitPLConstraintBasedOnTopology();
+
+    /*
+      Pick the input variable with the largest interval
+    */
+    PiecewiseLinearConstraint *pickSplitPLConstraintBasedOnIntervalWidth();
+
 };
 
 #endif // __Engine_h__
